@@ -1,0 +1,22 @@
+#!/bin/sh
+# vim: expandtab sw=4 ts=4 sts=4:
+
+set -e
+
+if [ -z "$1" ] ; then
+    echo "Usage: ./admin/new-lang ll"
+    exit 1
+fi
+
+mkdir langs/$1
+
+for loc in vpsadmin ; do
+    msginit -i langs/$loc.pot -o langs/$1/$loc.po -l $1 --no-translator
+done
+
+svn add langs/$1
+
+tmp=`mktemp`
+svn propget svn:ignore langs/cs/ > $tmp
+svn propset svn:ignore -F $tmp langs/$1
+rm -f $tmp

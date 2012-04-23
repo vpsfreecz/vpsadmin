@@ -1,0 +1,1487 @@
+# (c) vpsAdmin 2010
+msgid ""
+msgstr ""
+
+"Project-Id-Version: vpsAdmin\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2010-01-18 22:20+0100\n"
+"PO-Revision-Date: \n"
+"Last-Translator: Tomas Srnka <tomas.srnka@gmail.com>\n"
+"Language-Team: vpsAdmin team\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPath-1: lib\n"
+"X-Poedit-SearchPath-2: pages\n"
+
+#: index.php:53
+msgid "Username"
+msgstr "Užívateľské meno"
+
+#: index.php:54
+msgid "Password"
+msgstr "Heslo"
+
+#: index.php:55
+msgid "Login"
+msgstr "Prihlásiť sa"
+
+#: index.php:56
+msgid "Logout"
+msgstr "Odhlasiť sa"
+
+#: index.php:58
+#: index.php:114
+msgid "Transaction log"
+msgstr "Tranzakčný log"
+
+#: index.php:59
+msgid "last 10"
+msgstr "posledných 10"
+
+#: index.php:60
+msgid "Action"
+msgstr "Akcia"
+
+#: index.php:108
+#: index.php:121
+msgid "Status"
+msgstr "Status"
+
+#: index.php:109
+msgid "Manage VPS"
+msgstr "Spravovať VPS"
+
+#: index.php:110
+msgid "Manage Members"
+msgstr "Spravovať členov"
+
+#: index.php:111
+msgid "Manage Networking"
+msgstr "Spravovať sieťovanie"
+
+#: index.php:113
+msgid "Manage Cluster"
+msgstr "Spravovať cluster"
+
+#: index.php:116
+#: index.php:122
+msgid "About vpsAdmin"
+msgstr "O vpsAdmin-e"
+
+#: lib/cluster.lib.php:355
+msgid "WARNING: All IPs will be removed from VPS!"
+msgstr "POZOR: Všetky IP adresy budu vymazané z VPS!"
+
+#: lib/cluster.lib.php:748
+#: lib/cluster.lib.php:749
+msgid "Please define some DNS servers in Manage cluster."
+msgstr "Prosím definujte DNS servery v Správe cluster-u"
+
+#: lib/cluster_ip.lib.php:25
+msgid "nick"
+msgstr "prezývka"
+
+#: lib/cluster_ip.lib.php:27
+#: lib/cluster_ip.lib.php:81
+#: lib/cluster_ip.lib.php:107
+msgid "IPv"
+msgstr "IPv"
+
+#: lib/cluster_ip.lib.php:27
+#: lib/cluster_ip.lib.php:81
+msgid "Address"
+msgstr "Adresa"
+
+#: lib/cluster_ip.lib.php:28
+#: lib/cluster_ip.lib.php:82
+#: lib/cluster_ip.lib.php:108
+msgid "Location"
+msgstr "Poloha"
+
+#: lib/cluster_ip.lib.php:40
+#: lib/cluster_ip.lib.php:91
+msgid "Delete from cluster"
+msgstr "Zmazať z cluster-u"
+
+#: lib/cluster_ip.lib.php:41
+msgid "Remove from VPS"
+msgstr "Zmazať z VPS"
+
+#: lib/cluster_ip.lib.php:63
+msgid "Deletion of IP planned"
+msgstr "Zmazanie IP naplánované"
+
+#: lib/cluster_ip.lib.php:101
+msgid "Add IPv"
+msgstr "Pridať IPv"
+
+#: lib/cluster_ip.lib.php:102
+msgid "Back"
+msgstr "Späť"
+
+#: lib/cluster_ip.lib.php:109
+msgid "Add"
+msgstr "Pridať"
+
+#: lib/cluster_ip.lib.php:122
+msgid "Operation successful"
+msgstr "Operácia bola úspešná"
+
+#: lib/cluster_ip.lib.php:122
+#, php-format
+msgid "IP address '%s' has been successfully added"
+msgstr "IP adresa '%s' bola úspešne pridaná"
+
+#: lib/cluster_ip.lib.php:124
+#: lib/cluster_ip.lib.php:128
+msgid "Operation not successful"
+msgstr "Operácia nebola úspešná"
+
+#: lib/cluster_ip.lib.php:124
+msgid "An error has occured, while you were trying to add a new IP"
+msgstr "Nastala chyba počas toho, ako ste sa snažili pridať novú IP adresu"
+
+#: lib/cluster_ip.lib.php:128
+msgid "IP already exists in DB"
+msgstr "IP adresa už existuje v DB"
+
+#: lib/lang.lib.php:38
+msgid "ERROR: Language not found"
+msgstr "CHYBA: Jazyk nenájdený"
+
+#: lib/xtemplate.lib.php:603
+#, php-format
+msgid "<span id='inputh%s'>%d</span> chars remaining; "
+msgstr "Ostáva <span id='inputh%s'>%d</span> znakov; "
+
+#: lib/xtemplate.lib.php:607
+#, php-format
+msgid "<span id='inputh%s'>%d</span> chars needed; "
+msgstr "Potrebných je ešte <span id='inputh%s'>%d</span> znakov; "
+
+#: pages/page_adminm.php:24
+msgid "Add a member"
+msgstr "Pridať člena"
+
+#: pages/page_adminm.php:29
+#: pages/page_adminm.php:47
+#: pages/page_adminm.php:88
+#: pages/page_adminm.php:139
+#: pages/page_adminm.php:154
+msgid "Nickname"
+msgstr "Prezývka"
+
+#: pages/page_adminm.php:29
+#: pages/page_adminm.php:47
+msgid "A-Z, a-z, dot, dash"
+msgstr "A-Z, a-z, bodka, pomlčka"
+
+#: pages/page_adminm.php:30
+#: pages/page_adminm.php:48
+#: pages/page_adminm.php:49
+#: pages/page_adminm.php:87
+#: pages/page_adminm.php:138
+msgid "Privileges"
+msgstr "Práva"
+
+#: pages/page_adminm.php:32
+#: pages/page_adminm.php:51
+msgid "Repeat password"
+msgstr "Zopakovať heslo"
+
+#: pages/page_adminm.php:33
+#: pages/page_adminm.php:52
+msgid "Full name"
+msgstr "Plné meno"
+
+#: pages/page_adminm.php:33
+#: pages/page_adminm.php:52
+msgid "A-Z, a-z, with diacritic"
+msgstr "A-Z, a-z, s diakritikou"
+
+#: pages/page_adminm.php:34
+#: pages/page_adminm.php:53
+#: pages/page_adminm.php:85
+#: pages/page_adminm.php:136
+msgid "E-mail"
+msgstr "E-mail"
+
+#: pages/page_adminm.php:35
+#: pages/page_adminm.php:54
+msgid "Postal address"
+msgstr "Poštová adresa"
+
+#: pages/page_adminm.php:36
+#: pages/page_adminm.php:55
+#: pages/page_adminm.php:231
+#: pages/page_cluster.php:204
+#: pages/page_cluster.php:228
+#: pages/page_cluster.php:540
+msgid "Info"
+msgstr "Info"
+
+#: pages/page_adminm.php:36
+#: pages/page_adminm.php:55
+#: pages/page_cluster.php:204
+#: pages/page_cluster.php:228
+msgid "Note for administrators"
+msgstr "Poznámka pre administratórov"
+
+#: pages/page_adminm.php:42
+#: pages/page_adminm.php:62
+#: pages/page_adminm.php:175
+msgid "Manage members"
+msgstr "Spravovať členov"
+
+#: pages/page_adminm.php:50
+#: pages/page_adminm.php:51
+msgid "fill in only when change is required"
+msgstr "vyplňte iba, ak požadujete zmenu"
+
+#: pages/page_adminm.php:56
+#: pages/page_adminm.php:160
+msgid "Save"
+msgstr "Uložiť"
+
+#: pages/page_adminm.php:61
+msgid "New member"
+msgstr "Nový člen"
+
+#: pages/page_adminm.php:81
+msgid "Member added"
+msgstr "Člen pridaný"
+
+#: pages/page_adminm.php:81
+#: pages/page_adminm.php:82
+#: pages/page_adminm.php:83
+#: pages/page_adminm.php:103
+#: pages/page_adminm.php:104
+#: pages/page_adminm.php:131
+#: pages/page_adminm.php:133
+#: pages/page_adminm.php:134
+#: pages/page_adminm.php:166
+#: pages/page_adminm.php:167
+msgid "Continue"
+msgstr "Pokračovať"
+
+#: pages/page_adminm.php:81
+#: pages/page_adminm.php:82
+#: pages/page_adminm.php:83
+#: pages/page_adminm.php:103
+#: pages/page_adminm.php:104
+#: pages/page_adminm.php:131
+#: pages/page_adminm.php:133
+#: pages/page_adminm.php:134
+#: pages/page_adminm.php:166
+#: pages/page_adminm.php:167
+msgid "Here"
+msgstr "Tu"
+
+#: pages/page_adminm.php:82
+#: pages/page_adminm.php:83
+#: pages/page_adminm.php:104
+#: pages/page_adminm.php:134
+#: pages/page_adminm.php:167
+#: pages/page_adminvps.php:88
+#: pages/page_adminvps.php:93
+#: pages/page_adminvps.php:112
+#: pages/page_adminvps.php:119
+#: pages/page_adminvps.php:134
+#: pages/page_adminvps.php:143
+#: pages/page_adminvps.php:145
+#: pages/page_adminvps.php:156
+#: pages/page_adminvps.php:158
+#: pages/page_adminvps.php:168
+#: pages/page_adminvps.php:178
+#: pages/page_adminvps.php:188
+#: pages/page_adminvps.php:198
+#: pages/page_adminvps.php:228
+#: pages/page_login.php:39
+#: pages/page_login.php:40
+#: pages/page_login.php:41
+msgid "Error"
+msgstr "Chyba"
+
+#: pages/page_adminm.php:83
+#: pages/page_adminm.php:96
+msgid "User already exists"
+msgstr "Užívateľ už existuje"
+
+#: pages/page_adminm.php:85
+#: pages/page_adminm.php:86
+#: pages/page_adminm.php:87
+#: pages/page_adminm.php:88
+#: pages/page_adminm.php:136
+#: pages/page_adminm.php:137
+#: pages/page_adminm.php:138
+#: pages/page_adminm.php:139
+msgid "Invalid entry"
+msgstr "Nesprávny vstup"
+
+#: pages/page_adminm.php:96
+msgid "Are you sure, you want to delete"
+msgstr "Ste si istý, že chcete zmazať"
+
+#: pages/page_adminm.php:96
+#: pages/page_adminvps.php:98
+#: pages/page_adminvps.php:213
+#: pages/page_cluster.php:275
+msgid "Yes"
+msgstr "Áno"
+
+#: pages/page_adminm.php:103
+msgid "Member deleted"
+msgstr "Člen zmazaný"
+
+#: pages/page_adminm.php:131
+#: pages/page_cluster.php:61
+#: pages/page_cluster.php:82
+#: pages/page_cluster.php:118
+#: pages/page_cluster.php:137
+#: pages/page_cluster.php:214
+#: pages/page_cluster.php:238
+#: pages/page_cluster.php:310
+#: pages/page_cluster.php:329
+#: pages/page_cluster.php:359
+#: pages/page_cluster.php:379
+msgid "Changes saved"
+msgstr "Zmeny uložené"
+
+#: pages/page_adminm.php:133
+msgid "No change"
+msgstr "Žiadne zmeny"
+
+#: pages/page_adminm.php:146
+msgid "Edit payments"
+msgstr "Upraviť platby"
+
+#: pages/page_adminm.php:148
+msgid "Paid until"
+msgstr "Zaplatené do "
+
+#: pages/page_adminm.php:151
+msgid "Never been paid"
+msgstr "Nidky nezaplatené"
+
+#: pages/page_adminm.php:157
+msgid "Newly paid until"
+msgstr "Novo zaplatené do"
+
+#: pages/page_adminm.php:166
+msgid "Payment successfully set"
+msgstr "Platba úspešne nastavená"
+
+#: pages/page_adminm.php:173
+msgid "Manage members [Admin mode]"
+msgstr "Spravovať členov [Admin mód]"
+
+#: pages/page_adminm.php:177
+msgid "NICKNAME"
+msgstr "PREZÝVKA"
+
+#: pages/page_adminm.php:178
+msgid "FULL NAME"
+msgstr "CELÉ MENO"
+
+#: pages/page_adminm.php:179
+msgid "E-MAIL"
+msgstr "E-MAIL"
+
+#: pages/page_adminm.php:180
+msgid "LAST ACTIVITY"
+msgstr "POSLEDNÁ AKTIVITA"
+
+#: pages/page_adminm.php:181
+msgid "PAYMENT"
+msgstr "PLATBA"
+
+#: pages/page_adminm.php:213
+#: pages/page_adminm.php:221
+msgid "info. missing"
+msgstr "info. chýba"
+
+#: pages/page_adminm.php:215
+#: pages/page_adminm.php:223
+msgid "not paid!"
+msgstr "nezaplatené!"
+
+#: pages/page_adminm.php:218
+#: pages/page_adminm.php:226
+msgid "Until"
+msgstr "Do"
+
+#: pages/page_adminm.php:228
+#: pages/page_cluster.php:534
+#: pages/page_cluster.php:566
+#: pages/page_cluster.php:595
+#: pages/page_cluster.php:625
+#: pages/page_cluster.php:659
+msgid "Edit"
+msgstr "Upraviť"
+
+#: pages/page_adminm.php:229
+#: pages/page_adminvps.php:267
+#: pages/page_cluster.php:539
+#: pages/page_cluster.php:570
+#: pages/page_cluster.php:599
+#: pages/page_cluster.php:629
+#: pages/page_cluster.php:660
+msgid "Delete"
+msgstr "Zmazať"
+
+#: pages/page_adminm.php:241
+msgid "Members in total"
+msgstr "Členov celkovo"
+
+#: pages/page_adminm.php:248
+#: pages/page_adminvps.php:462
+#: pages/page_cluster.php:669
+#: pages/page_networking.php:178
+#: pages/page_transactions.php:83
+msgid "Access forbidden"
+msgstr "Prístup zakázaný"
+
+#: pages/page_adminm.php:248
+#: pages/page_adminvps.php:462
+#: pages/page_cluster.php:669
+#: pages/page_networking.php:178
+#: pages/page_transactions.php:83
+msgid "You have to log in to be able to access vpsAdmin's functions"
+msgstr "Musíte sa prihlásiť, aby ste mohli využívať funkcie vpsAdmin-u"
+
+#: pages/page_adminvps.php:24
+msgid "Create VPS"
+msgstr "Vytvoriť VPS"
+
+#: pages/page_adminvps.php:26
+#: pages/page_adminvps.php:313
+#: pages/page_adminvps.php:381
+msgid "Hostname"
+msgstr ""
+
+#: pages/page_adminvps.php:26
+#: pages/page_adminvps.php:381
+msgid "A-z, a-z"
+msgstr "A-z, a-z"
+
+#: pages/page_adminvps.php:27
+msgid "HW server"
+msgstr "HW server"
+
+#: pages/page_adminvps.php:28
+#: pages/page_adminvps.php:296
+#: pages/page_adminvps.php:436
+msgid "Owner"
+msgstr "Vlastník"
+
+#: pages/page_adminvps.php:29
+#: pages/page_adminvps.php:316
+#: pages/page_adminvps.php:389
+msgid "Distribution"
+msgstr "Distribúcia"
+
+#: pages/page_adminvps.php:30
+#: pages/page_adminvps.php:299
+#: pages/page_adminvps.php:397
+msgid "RAM"
+msgstr "RAM"
+
+#: pages/page_adminvps.php:31
+#: pages/page_adminvps.php:303
+#: pages/page_adminvps.php:398
+msgid "Disk space"
+msgstr "Diskový priestor"
+
+#: pages/page_adminvps.php:32
+msgid "Boot on create"
+msgstr "Bootovať po vytvorení"
+
+#: pages/page_adminvps.php:33
+msgid "Extra information about VPS"
+msgstr "Extran informácia o VPS"
+
+#: pages/page_adminvps.php:37
+msgid "Create"
+msgstr "Vytvoriť"
+
+#: pages/page_adminvps.php:49
+msgid "Stop VPS"
+msgstr "Zastaviť VPS"
+
+#: pages/page_adminvps.php:49
+#: pages/page_adminvps.php:55
+#: pages/page_adminvps.php:61
+#: pages/page_adminvps.php:102
+#: pages/page_adminvps.php:111
+#: pages/page_adminvps.php:130
+#: pages/page_adminvps.php:142
+#: pages/page_adminvps.php:220
+msgid "planned"
+msgstr "naplanované"
+
+#: pages/page_adminvps.php:55
+msgid "Start of"
+msgstr "Štart"
+
+#: pages/page_adminvps.php:56
+msgid "Payment missing"
+msgstr ""
+
+#: pages/page_adminvps.php:56
+msgid "You are not allowed to make \"start\" opetarion.<br />Please pay all your fees. Once we receive all missing payments, your access will be resumed."
+msgstr "Nemáte povolenie na \"štart\" operáciu.<br />Prosím, uhradiť všetky svoje poplatky. Hneď ako obdržime chýbajúce platby, prístup Vám bude navrátený."
+
+#: pages/page_adminvps.php:61
+msgid "Restart of"
+msgstr "Reštart"
+
+#: pages/page_adminvps.php:81
+#: pages/page_adminvps.php:84
+msgid "VPS create "
+msgstr "VPS vytvorený "
+
+#: pages/page_adminvps.php:81
+msgid "VPS will be created and booted afterwards."
+msgstr "VPS bude vytvorené a následne nabootované"
+
+#: pages/page_adminvps.php:84
+msgid "VPS will be created. You can start it manually."
+msgstr "VPS bude vytvorené. Môžete ho spustiť manuálne."
+
+#: pages/page_adminvps.php:88
+msgid "VPS already exists"
+msgstr "VPS už existuje."
+
+#: pages/page_adminvps.php:93
+#: pages/page_adminvps.php:119
+msgid "Wrong hostname name"
+msgstr "Zlé hostname meno."
+
+#: pages/page_adminvps.php:98
+msgid "Are you sure you want to delete VPS number"
+msgstr "Ste si istý, že chcete zmazať VPS s číslom"
+
+#: pages/page_adminvps.php:98
+#: pages/page_adminvps.php:213
+#: pages/page_cluster.php:274
+msgid "No"
+msgstr "Nie"
+
+#: pages/page_adminvps.php:102
+msgid "Deletion of VPS"
+msgstr "Zmazanie VPS"
+
+#: pages/page_adminvps.php:111
+msgid "Change of user's password"
+msgstr "Zmena užívateľovho hesla"
+
+#: pages/page_adminvps.php:112
+msgid "Wrong username or unsafe password"
+msgstr "Zlé užívateľské meno alebo nebezpečné heslo"
+
+#: pages/page_adminvps.php:118
+msgid "Hostname change planned"
+msgstr "Zmena hostname naplánovaná"
+
+#: pages/page_adminvps.php:130
+msgid "Limits change"
+msgstr "Limity zmenené"
+
+#: pages/page_adminvps.php:142
+msgid "Owner change"
+msgstr "Zmena vlastníka"
+
+#: pages/page_adminvps.php:152
+#: pages/page_adminvps.php:154
+msgid "Addition of IP planned"
+msgstr "Pridanie IP naplnánované"
+
+#: pages/page_adminvps.php:175
+msgid "DNS change planned"
+msgstr "Zmena DNS naplánovaná"
+
+#: pages/page_adminvps.php:185
+msgid "Offline migration planned"
+msgstr "Offline migrácia naplánovaná"
+
+#: pages/page_adminvps.php:195
+msgid "Online Migration added to transaction log"
+msgstr "Online migrácia pridaná do tranzakčného logu"
+
+#: pages/page_adminvps.php:204
+msgid "List of IP addresses"
+msgstr "Zoznam všetkyách IP adries"
+
+#: pages/page_adminvps.php:204
+#: pages/page_adminvps.php:239
+#: pages/page_adminvps.php:286
+msgid "[Admin mode]"
+msgstr "[Admin mód]"
+
+#: pages/page_adminvps.php:213
+msgid "Are you sure you want to reinstall VPS"
+msgstr "Ste si istý, že chcete preinštalovať VPS"
+
+#: pages/page_adminvps.php:220
+msgid "Reinstallation of VPS"
+msgstr "Reinštalácia VPS"
+
+#: pages/page_adminvps.php:220
+msgid "You will have to reset your <b>root</b> password"
+msgstr "Budete si musieť resetnúť Vaše <b>root</b> heslo"
+
+#: pages/page_adminvps.php:226
+#: pages/page_adminvps.php:428
+msgid "Enable devices"
+msgstr "Povoliť zariadenia"
+
+#: pages/page_adminvps.php:239
+#: pages/page_adminvps.php:241
+msgid "VPS list"
+msgstr "Zoznam VPS"
+
+#: pages/page_adminvps.php:241
+#: pages/page_adminvps.php:288
+msgid "[User mode]"
+msgstr "[Užívateľský mód]"
+
+#: pages/page_adminvps.php:244
+msgid "owner"
+msgstr "vlastník"
+
+#: pages/page_adminvps.php:245
+msgid "processes"
+msgstr "procesy"
+
+#: pages/page_adminvps.php:246
+msgid "hostname"
+msgstr ""
+
+#: pages/page_adminvps.php:247
+msgid "used RAM"
+msgstr "použitá RAM"
+
+#: pages/page_adminvps.php:248
+msgid "used HDD space"
+msgstr "použitý diskový priestor"
+
+#: pages/page_adminvps.php:265
+msgid "Restart"
+msgstr "Reštart"
+
+#: pages/page_adminvps.php:265
+msgid "Unable to restart"
+msgstr "Nepodarilo sa reštartovať"
+
+#: pages/page_adminvps.php:266
+msgid "Stop"
+msgstr "Stop"
+
+#: pages/page_adminvps.php:266
+msgid "Start"
+msgstr "Štart"
+
+#: pages/page_adminvps.php:267
+msgid "Unable to delete"
+msgstr "Nie je možné zmazať"
+
+#: pages/page_adminvps.php:276
+msgid "Total number of VPS"
+msgstr "Celkový počet VPS"
+
+#: pages/page_adminvps.php:280
+msgid "New VPS"
+msgstr "Nový VPS"
+
+#: pages/page_adminvps.php:281
+msgid "List IP addresses"
+msgstr "Zoznam všetkých IP adries"
+
+#: pages/page_adminvps.php:286
+#: pages/page_adminvps.php:288
+msgid "VPS details"
+msgstr "VPS detaily"
+
+#: pages/page_adminvps.php:308
+msgid "running"
+msgstr "bežiaci"
+
+#: pages/page_adminvps.php:308
+msgid "stop"
+msgstr "stop"
+
+#: pages/page_adminvps.php:308
+msgid "stopped"
+msgstr "zastavený"
+
+#: pages/page_adminvps.php:308
+msgid "start"
+msgstr "štart"
+
+#: pages/page_adminvps.php:310
+msgid "Processes"
+msgstr "Procesy"
+
+#: pages/page_adminvps.php:328
+msgid "Unix username"
+msgstr "Užívateľské meno do Unixu"
+
+#: pages/page_adminvps.php:329
+msgid "Safe password"
+msgstr "Bezpečné heslo"
+
+#: pages/page_adminvps.php:330
+msgid "Once again"
+msgstr "Znovu"
+
+#: pages/page_adminvps.php:331
+msgid "Set password"
+msgstr "Nastaviť heslo"
+
+#: pages/page_adminvps.php:332
+msgid "(in your VPS, not in vpsAdmin!)"
+msgstr "(vo Vašom VPS, nie vo vpsAdmin)"
+
+#: pages/page_adminvps.php:333
+#: pages/page_adminvps.php:357
+#: pages/page_adminvps.php:377
+#: pages/page_adminvps.php:384
+#: pages/page_adminvps.php:392
+#: pages/page_adminvps.php:401
+#: pages/page_adminvps.php:430
+#: pages/page_adminvps.php:439
+#: pages/page_adminvps.php:448
+#: pages/page_adminvps.php:456
+msgid "Go >>"
+msgstr "Choď >>"
+
+#: pages/page_adminvps.php:341
+#: pages/page_adminvps.php:364
+msgid "IPv4"
+msgstr "IPv4"
+
+#: pages/page_adminvps.php:342
+#: pages/page_adminvps.php:365
+#: pages/page_cluster.php:610
+msgid "IPv6"
+msgstr "IPv6"
+
+#: pages/page_adminvps.php:344
+msgid "Remove"
+msgstr "Odstrániť"
+
+#: pages/page_adminvps.php:351
+msgid "Add IPv4 address"
+msgstr "Pridať IPv4 adresu"
+
+#: pages/page_adminvps.php:353
+msgid "Add IPv6 address"
+msgstr "Pridať IPv6 adresu"
+
+#: pages/page_adminvps.php:355
+#: pages/page_adminvps.php:359
+msgid "Add IP address"
+msgstr "Pridať IP adresu"
+
+#: pages/page_adminvps.php:360
+msgid "(Please contact administrator for change)"
+msgstr "(Prosím, kontaktujte administrátora pre zmenu)"
+
+#: pages/page_adminvps.php:374
+msgid "DNS servers address"
+msgstr "Adresa DNS serverov"
+
+#: pages/page_adminvps.php:375
+msgid "DNS server"
+msgstr "DNS server"
+
+#: pages/page_adminvps.php:382
+msgid "Hostname list"
+msgstr "Zoznam hostname-ov"
+
+#: pages/page_adminvps.php:388
+msgid "Reinstall distribution"
+msgstr "Preinštalovať distribúciu"
+
+#: pages/page_adminvps.php:388
+msgid "Install base system again"
+msgstr "Nainštalovať základný systém znovu"
+
+#: pages/page_adminvps.php:390
+msgid "Reinstall"
+msgstr "Preinštalovať"
+
+#: pages/page_adminvps.php:399
+msgid "Change limits"
+msgstr "Zmena limitov"
+
+#: pages/page_adminvps.php:408
+#: pages/page_adminvps.php:410
+msgid "Enable TUN/TAP"
+msgstr "Povoliť TUN/TAP"
+
+#: pages/page_adminvps.php:411
+#: pages/page_adminvps.php:418
+#: pages/page_adminvps.php:425
+msgid "enabled"
+msgstr "povoliť"
+
+#: pages/page_adminvps.php:415
+#: pages/page_adminvps.php:417
+msgid "Enable iptables"
+msgstr "Povoliť iptables"
+
+#: pages/page_adminvps.php:422
+#: pages/page_adminvps.php:424
+msgid "Enable FUSE"
+msgstr "Povoliť FUSE"
+
+#: pages/page_adminvps.php:437
+msgid "Change owner"
+msgstr "Zmena vlastníka"
+
+#: pages/page_adminvps.php:445
+msgid "Target server"
+msgstr "Cieľový server"
+
+#: pages/page_adminvps.php:446
+msgid "Offline VPS Migration"
+msgstr "Offline VPS Migrácia"
+
+#: pages/page_adminvps.php:453
+msgid "Target server:"
+msgstr "Cieľový server:"
+
+#: pages/page_adminvps.php:454
+msgid "Online VPS Migration"
+msgstr "Online VPS Migrácia"
+
+#: pages/page_cluster.php:31
+msgid "Are you sure to reboot node"
+msgstr "Ste si istý, že chcete reštartovať uzol"
+
+#: pages/page_cluster.php:36
+msgid "WARNING: This will stop ALL VPSes on the node. Really continue?"
+msgstr "VAROVANIE: Toto zastávi VŠETKY VPS na tomto uzli. Naozaj chcete pokračovať?"
+
+#: pages/page_cluster.php:49
+#: pages/page_cluster.php:664
+msgid "New DNS Server"
+msgstr "Nový DNS Server"
+
+#: pages/page_cluster.php:53
+#: pages/page_cluster.php:70
+#: pages/page_networking.php:146
+msgid "IP Address"
+msgstr "IP Adresa"
+
+#: pages/page_cluster.php:54
+#: pages/page_cluster.php:71
+#: pages/page_cluster.php:112
+#: pages/page_cluster.php:127
+#: pages/page_cluster.php:203
+#: pages/page_cluster.php:227
+#: pages/page_cluster.php:304
+#: pages/page_cluster.php:319
+#: pages/page_cluster.php:352
+#: pages/page_cluster.php:368
+#: pages/page_cluster.php:521
+#: pages/page_cluster.php:553
+#: pages/page_cluster.php:581
+#: pages/page_cluster.php:639
+msgid "Label"
+msgstr "Popis"
+
+#: pages/page_cluster.php:54
+#: pages/page_cluster.php:71
+msgid "DNS Label"
+msgstr "Popis DNS"
+
+#: pages/page_cluster.php:55
+#: pages/page_cluster.php:72
+msgid "Is this DNS location independent?"
+msgstr "Je táto DNS lokácia nezávislá?"
+
+#: pages/page_cluster.php:57
+#: pages/page_cluster.php:74
+#: pages/page_cluster.php:114
+#: pages/page_cluster.php:129
+#: pages/page_cluster.php:205
+#: pages/page_cluster.php:229
+#: pages/page_cluster.php:306
+#: pages/page_cluster.php:321
+#: pages/page_cluster.php:355
+#: pages/page_cluster.php:371
+#: pages/page_cluster.php:406
+#: pages/page_cluster.php:435
+msgid "Save changes"
+msgstr "Uložiť zmeny"
+
+#: pages/page_cluster.php:61
+msgid "DNS server added."
+msgstr "DNS server pridaný"
+
+#: pages/page_cluster.php:66
+msgid "Edit DNS Server"
+msgstr "Upraviť DNS server"
+
+#: pages/page_cluster.php:82
+msgid "DNS server saved."
+msgstr "DNS serve uložený"
+
+#: pages/page_cluster.php:91
+#: pages/page_cluster.php:102
+#: pages/page_cluster.php:339
+#: pages/page_cluster.php:389
+msgid "Item deleted"
+msgstr "Položka zmazaná"
+
+#: pages/page_cluster.php:91
+msgid "DNS Server deleted."
+msgstr "DNS Server zmazaný"
+
+#: pages/page_cluster.php:102
+msgid "Location deleted."
+msgstr "Lokácia zmazaná."
+
+#: pages/page_cluster.php:108
+msgid "New cluster location"
+msgstr "Nová lokácia clusteru"
+
+#: pages/page_cluster.php:112
+#: pages/page_cluster.php:127
+msgid "Location name"
+msgstr "Názov lokácie"
+
+#: pages/page_cluster.php:113
+#: pages/page_cluster.php:128
+msgid "Has this location IPv6 support?"
+msgstr "Má táto lokácia podporu IPv6?"
+
+#: pages/page_cluster.php:118
+msgid "Location added."
+msgstr "Lokácia pridaná."
+
+#: pages/page_cluster.php:123
+msgid "Edit location label"
+msgstr "Upraviť popis lokácie"
+
+#: pages/page_cluster.php:137
+msgid "Location label saved."
+msgstr "Popis lokácie uložený."
+
+#: pages/page_cluster.php:144
+#: pages/page_cluster.php:150
+msgid "Used IP addresses"
+msgstr "Použité IP adresy"
+
+#: pages/page_cluster.php:145
+#: pages/page_cluster.php:151
+msgid "Unused IP addresses"
+msgstr "Nepoužíté IP adresy"
+
+#: pages/page_cluster.php:147
+msgid "Add IPv4"
+msgstr "Pridať IPv4"
+
+#: pages/page_cluster.php:153
+msgid "Add IPv6"
+msgstr "Pridať IPv6"
+
+#: pages/page_cluster.php:163
+msgid "Operation not succesful"
+msgstr "Operácia nebola úspešná"
+
+#: pages/page_cluster.php:163
+msgid "An error has occured, while you were trying to delete IP"
+msgstr "Nastala chyba pri odstraňovaní IP adresy"
+
+#: pages/page_cluster.php:165
+msgid "Operation succesful"
+msgstr "Operácia úspešná"
+
+#: pages/page_cluster.php:165
+msgid "IP address has been successfully deleted."
+msgstr "IP adresa bola úspešne zmazaná"
+
+#: pages/page_cluster.php:198
+msgid "Edit template"
+msgstr "Upraviť template"
+
+#: pages/page_cluster.php:202
+#: pages/page_cluster.php:226
+#: pages/page_cluster.php:520
+msgid "Filename"
+msgstr "Názov súboru"
+
+#: pages/page_cluster.php:202
+#: pages/page_cluster.php:226
+msgid "filename without .tar.gz"
+msgstr "názov súboru bez .tar.gz"
+
+#: pages/page_cluster.php:203
+#: pages/page_cluster.php:227
+#: pages/page_cluster.php:304
+#: pages/page_cluster.php:319
+#: pages/page_cluster.php:352
+#: pages/page_cluster.php:368
+msgid "User friendly label"
+msgstr "Užívateľsky prívetivý popis"
+
+#: pages/page_cluster.php:214
+msgid "Changes you've made to template were saved."
+msgstr "Zmeny, ktoré ste vykonali template-u boli uložené."
+
+#: pages/page_cluster.php:222
+#: pages/page_cluster.php:544
+msgid "Register new template"
+msgstr "Zaregistrovať nový template"
+
+#: pages/page_cluster.php:230
+#: pages/page_cluster.php:252
+#: pages/page_cluster.php:545
+msgid "Help"
+msgstr "Pomoc"
+
+#: pages/page_cluster.php:230
+msgid ""
+"This procedure only <b>registers template</b> into the system database.\n"
+"\t\t\t\t     You need copy the template to proper path onto one of servers\n"
+"\t\t\t\t     and then proceed \"Copy template over nodes\" function.\n"
+"\t\t\t\t    "
+msgstr ""
+"Táto procedúra iba <b>registruje template</b> do databázy.\n"
+"\t\t\t\t     Musíte ručne nakopírovať template do správneho priečinku na jeden zo serverov\n"
+"\t\t\t\t     a potom spustiť \"Kopírovať template na uzly\".\n"
+"\t\t\t\t    "
+
+#: pages/page_cluster.php:238
+msgid "Template successfully registered."
+msgstr "Template úspešne zaregistrovaný"
+
+#: pages/page_cluster.php:246
+msgid "Copy template over cluster nodes"
+msgstr "Kopírovať template na uzly"
+
+#: pages/page_cluster.php:250
+msgid "Source node"
+msgstr "Zdrojový uzol"
+
+#: pages/page_cluster.php:251
+msgid "Copy template"
+msgstr "Kopírovať template"
+
+#: pages/page_cluster.php:252
+msgid ""
+"This procedure takes template file from source server and copies it using 'scp'\n"
+"\t\t\t\t\tover all nodes of cluster. This may take large amount of I/O resources,\n"
+"\t\t\t\t\ttherefore it is recommended to use it only when cluster is not under full load.\n"
+"\t\t\t\t\t"
+msgstr ""
+"Táto procedúra zoberie template zo zdrojového serveru a skopíruje ho pomocou 'scp'\n"
+"\t\t\t\t\tna všetky uzly v cluster-i. Táto operácia môže zabrať veľa I/O zdrojov,\n"
+"\t\t\t\t\tpreto je odporúčané ju použiť iba, ak nie je cluster plne vyťažený.\n"
+"\t\t\t\t\t"
+
+#: pages/page_cluster.php:264
+msgid "Template copy added to transactions log"
+msgstr "Kopírovanie template-u pridané do tranzakčného logu"
+
+#: pages/page_cluster.php:273
+msgid "Are you sure to delete template"
+msgstr "Ste si istý, že chcete zmazať template"
+
+#: pages/page_cluster.php:300
+msgid "New HDD limits item"
+msgstr "Nový diskový limit pridaný"
+
+#: pages/page_cluster.php:305
+#: pages/page_cluster.php:320
+msgid "Value [GB]"
+msgstr "Hodnota [GB]"
+
+#: pages/page_cluster.php:310
+#: pages/page_cluster.php:329
+msgid "HDD Limit item successfully saved."
+msgstr "Diskový limit úspešne uložený."
+
+#: pages/page_cluster.php:315
+msgid "Edit HDD limits item"
+msgstr "Upraviť diskový limit"
+
+#: pages/page_cluster.php:339
+msgid "HDD Limit deleted."
+msgstr "Diskový limit zmazaný"
+
+#: pages/page_cluster.php:348
+msgid "New RAM limits item"
+msgstr "Nové RAM limity"
+
+#: pages/page_cluster.php:353
+#: pages/page_cluster.php:369
+msgid "Soft limit [MB]"
+msgstr "Mäkky limit [MB]"
+
+#: pages/page_cluster.php:354
+#: pages/page_cluster.php:370
+msgid "Hard limit [MB]"
+msgstr "Tvrdý limit [MB]"
+
+#: pages/page_cluster.php:359
+#: pages/page_cluster.php:379
+msgid "RAM Limit item successfully saved."
+msgstr "RAM Limit úspešne uložený."
+
+#: pages/page_cluster.php:364
+msgid "Edit RAM limits item"
+msgstr "Upraviť RAM limity"
+
+#: pages/page_cluster.php:389
+msgid "RAM Limit deleted."
+msgstr "RAM limit zmazaný."
+
+#: pages/page_cluster.php:395
+msgid "Register new server into cluster"
+msgstr "Registrovať nový server do cluster-u"
+
+#: pages/page_cluster.php:399
+#: pages/page_cluster.php:519
+#: pages/page_cluster.php:551
+#: pages/page_cluster.php:578
+#: pages/page_cluster.php:607
+#: pages/page_cluster.php:637
+msgid "ID"
+msgstr "ID"
+
+#: pages/page_cluster.php:400
+msgid "Name"
+msgstr "Meno"
+
+#: pages/page_cluster.php:402
+msgid "Server IPv4 address"
+msgstr "Server IPv4 adresy"
+
+#: pages/page_cluster.php:403
+msgid "Availability icon (if you wish)"
+msgstr "Ikonka dostupnosti (ak si prajete)"
+
+#: pages/page_cluster.php:403
+msgid "Paste HTML link here"
+msgstr "Sem vložiť HTML odkaz"
+
+#: pages/page_cluster.php:404
+msgid "Max VPS count"
+msgstr "Max počet VPS"
+
+#: pages/page_cluster.php:405
+msgid "OpenVZ Path"
+msgstr "Cesta OpenVZ"
+
+#: pages/page_cluster.php:428
+msgid "Edit textfields"
+msgstr "Upraviť textové polia"
+
+#: pages/page_cluster.php:432
+msgid "Text on sidebar"
+msgstr "Text v bočnom paneli"
+
+#: pages/page_cluster.php:432
+#: pages/page_cluster.php:433
+#: pages/page_cluster.php:434
+msgid "HTML"
+msgstr "HTML"
+
+#: pages/page_cluster.php:433
+msgid "Page Status infobox title"
+msgstr "Titulka infoboxu stránky"
+
+#: pages/page_cluster.php:434
+msgid "Page Status infobox content"
+msgstr "Obsah infoboxu stránky"
+
+#: pages/page_cluster.php:448
+msgid "Register new node"
+msgstr "Registrovať nový uzol"
+
+#: pages/page_cluster.php:449
+msgid "Manage VPS templates"
+msgstr "Spravovať VPS template-y"
+
+#: pages/page_cluster.php:450
+msgid "Manage RAM limits"
+msgstr "Spravovať RAM limity"
+
+#: pages/page_cluster.php:451
+msgid "Manage HDD limits"
+msgstr "Spravovať diskové limity"
+
+#: pages/page_cluster.php:452
+msgid "Manage IPv4 address list"
+msgstr "Spravovať zoznam IPv4 adries"
+
+#: pages/page_cluster.php:453
+msgid "Manage IPv6 address list"
+msgstr "Spravovať zoznam IPv6 adries"
+
+#: pages/page_cluster.php:454
+msgid "Manage DNS servers"
+msgstr "Spravovať DNS servery"
+
+#: pages/page_cluster.php:455
+msgid "Manage locations"
+msgstr "Spravovať lokácie"
+
+#: pages/page_cluster.php:456
+msgid "Edit vpsAdmin textfields"
+msgstr "Upraviť textové polia vpsAdmin-u"
+
+#: pages/page_cluster.php:464
+msgid "Reboot node"
+msgstr "Reštartovať uzol"
+
+#: pages/page_cluster.php:468
+msgid "CPU load:"
+msgstr "Záťaž CPU"
+
+#: pages/page_cluster.php:471
+msgid "Free RAM:"
+msgstr "Voľná RAM:"
+
+#: pages/page_cluster.php:474
+msgid "Free OpenVZ diskspace:"
+msgstr "Voľný diskový priestor OpenVZ:"
+
+#: pages/page_cluster.php:477
+msgid "Server location:"
+msgstr "Lokácia serveru:"
+
+#: pages/page_cluster.php:481
+msgid "Availability:"
+msgstr "Dostupnosť:"
+
+#: pages/page_cluster.php:489
+msgid "VPS count:"
+msgstr "Počet VPS:"
+
+#: pages/page_cluster.php:491
+msgid "Free slots:"
+msgstr "Voľné sloty:"
+
+#: pages/page_cluster.php:499
+#: pages/page_cluster.php:500
+#: pages/page_index.php:73
+msgid "The server is currently processing"
+msgstr "Server práve pracuje"
+
+#: pages/page_cluster.php:503
+#: pages/page_cluster.php:504
+#: pages/page_index.php:75
+msgid "The server is not responding"
+msgstr "Server nereaguje"
+
+#: pages/page_cluster.php:507
+#: pages/page_cluster.php:508
+#: pages/page_index.php:77
+msgid "The server is online"
+msgstr "Server je online"
+
+#: pages/page_cluster.php:518
+msgid "Templates list"
+msgstr "Zoznam template-ov"
+
+#: pages/page_cluster.php:522
+#: pages/page_cluster.php:554
+#: pages/page_cluster.php:582
+msgid "Uses"
+msgstr "Používa"
+
+#: pages/page_cluster.php:535
+msgid "Copy over nodes"
+msgstr "Skopírovať na uzly"
+
+#: pages/page_cluster.php:537
+msgid "Delete - N/A, template is in use"
+msgstr "Zmazať - N/A, template sa používa"
+
+#: pages/page_cluster.php:545
+msgid ""
+"This is simple cluster template management.\n"
+"\t\t\t\tTo add new template, save it to one node, then click 'Register new template' and finally copy it over all nodes.\n"
+"\t\t\t\t"
+msgstr ""
+"Toto je jednoduchý template management na cluster-i.\n"
+"\t\t\t\tPre pridanie template-u, uložte ho prosím na jeden uzol, potom kliknite na 'Registrovať nový template' a nakoniec ho nakopírujte na všetky uzly.\n"
+"\t\t\t\t"
+
+#: pages/page_cluster.php:550
+msgid "HDD limits list"
+msgstr "Zoznam diskových limitov"
+
+#: pages/page_cluster.php:552
+msgid "Disk space [GB]"
+msgstr "Diskový priestor [GB]"
+
+#: pages/page_cluster.php:568
+#: pages/page_cluster.php:597
+#: pages/page_cluster.php:627
+msgid "Delete - N/A, item is in use"
+msgstr "Zmazať - N/A, položka sa používa"
+
+#: pages/page_cluster.php:574
+msgid "New HDD limit"
+msgstr "Nový disková limit"
+
+#: pages/page_cluster.php:577
+msgid "Virtual memory limits list"
+msgstr "Zoznam virtual memory limitov"
+
+#: pages/page_cluster.php:579
+msgid "Value soft [MB]"
+msgstr "Mäkká hodnota [MB]"
+
+#: pages/page_cluster.php:580
+msgid "Value hard [MB]"
+msgstr "Tvrdá hodnta[MB]"
+
+#: pages/page_cluster.php:603
+msgid "New RAM limit"
+msgstr "Nový RAM limit"
+
+#: pages/page_cluster.php:606
+msgid "Cluster locations list"
+msgstr "Zoznam cluster lokácií"
+
+#: pages/page_cluster.php:608
+msgid "Location label"
+msgstr "Popis lokácie"
+
+#: pages/page_cluster.php:609
+msgid "Servers"
+msgstr "Servery"
+
+#: pages/page_cluster.php:633
+msgid "New location"
+msgstr "Nová lokácia"
+
+#: pages/page_cluster.php:636
+msgid "DNS Servers list"
+msgstr "Zoznam DNS serverov"
+
+#: pages/page_cluster.php:638
+msgid "IP"
+msgstr "IP"
+
+#: pages/page_cluster.php:640
+msgid "All locations"
+msgstr "Všetky lokácie"
+
+#: pages/page_index.php:22
+msgid "Cluster statistics"
+msgstr "Štatistiky cluster-u"
+
+#: pages/page_index.php:26
+msgid "Members total:"
+msgstr "Celkový počet členov:"
+
+#: pages/page_index.php:33
+msgid "Total number of VPS:"
+msgstr "Celkový počet VPS:"
+
+#: pages/page_index.php:40
+msgid "Total number of free IPv4 addresses:"
+msgstr "Celkový počet voľných IPv4 adries:"
+
+#: pages/page_index.php:47
+msgid "Node"
+msgstr "Uzol"
+
+#: pages/page_index.php:48
+msgid "Availability"
+msgstr "Dostupnosť"
+
+#: pages/page_index.php:49
+msgid "VPS total"
+msgstr "VPS celkovo"
+
+#: pages/page_index.php:50
+msgid "Free VPS slots"
+msgstr "Voľných VPS"
+
+#: pages/page_index.php:51
+msgid "Last update"
+msgstr "Posledná aktualizácia"
+
+#: pages/page_index.php:52
+msgid "vpsAdmin version"
+msgstr "verzia vpsAdmin-u"
+
+#: pages/page_login.php:35
+msgid "Welcome, "
+msgstr "Vitajte, "
+
+#: pages/page_login.php:35
+msgid "Login successful <br /> Your privilege level: "
+msgstr "Prihlásenie úspešné <br /> Vaše privilégia: "
+
+#: pages/page_login.php:39
+#: pages/page_login.php:40
+#: pages/page_login.php:41
+msgid "Wrong username or password"
+msgstr "Zlé uživateľské meno alebo heslo"
+
+#: pages/page_login.php:47
+msgid "Goodbye"
+msgstr "Dovidenia"
+
+#: pages/page_login.php:47
+msgid "Logout successful"
+msgstr "Odhlásenie úspešné"
+
+#: pages/page_networking.php:147
+msgid "NIX [GB]"
+msgstr ""
+
+#: pages/page_networking.php:148
+msgid "TRANZIT [GB]"
+msgstr ""
+
+#: pages/page_networking.php:149
+msgid "TOTAL [GB]"
+msgstr ""
+
+#: pages/page_transactions.php:44
+msgid "time of addition"
+msgstr "čas pridania"
+
+#: pages/page_transactions.php:45
+msgid "member"
+msgstr "člen"
+
+#: pages/page_transactions.php:46
+msgid "server"
+msgstr "server"
+
+#: pages/page_transactions.php:47
+msgid "vps"
+msgstr "vps"
+
+#: pages/page_transactions.php:48
+msgid "type of action"
+msgstr "typ akcie"
+
+#: pages/page_transactions.php:49
+msgid "done"
+msgstr "hotovo"
+
+#: pages/page_transactions.php:50
+msgid "ok?"
+msgstr "ok?"
+
+#: pages/page_transactions.php:64
+#: pages/page_transactions.php:65
+msgid "--Every--"
+msgstr "--Všetky--"
+

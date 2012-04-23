@@ -1,0 +1,31 @@
+#!/bin/sh
+# vim: expandtab sw=4 ts=4 sts=4:
+LOCS=`ls langs/*/vpsadmin.po | sed 's@.*/\(.*\)/[^/]*@\1@'`
+xgettext \
+    -d vpsadmin \
+    --msgid-bugs-address=michal@cihar.com \
+    -o langs/vpsadmin.pot \
+    --language=PHP \
+    --add-comments=l10n \
+    --add-location \
+    --keyword=N_ \
+    --copyright-holder="vpsFree.cz" \
+    `find . -name '*.php' | sort`
+
+#ver=`sed -n "/version =/ s/.*= '\(.*\)'.*/\1/p" lib/version.php`
+sed -i '
+    s/SOME DESCRIPTIVE TITLE/vpsadmin translation/;
+    s/PACKAGE/vpsadmin/;
+    s/(C) YEAR/(C) 2008 - '`date +%Y`'/;
+    s/VERSION/1.0.0/;
+    ' langs/vpsadmin.pot
+
+for loc in $LOCS ; do
+    sed -i '
+        s/SOME DESCRIPTIVE TITLE/vpsadmin translation/;
+        s/PACKAGE/vpsadmin/;
+        s/VERSION/'$ver'/;
+        s/Project-Id-Version: vpsadmin [0-9.]*/Project-Id-Version: vpsadmin '$ver'/;
+        ' langs/$loc/vpsadmin.po
+    msgmerge --previous -U langs/$loc/vpsadmin.po langs/vpsadmin.pot
+done

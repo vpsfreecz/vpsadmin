@@ -1,0 +1,68 @@
+/* ----------------------------------------------------------------------------------------------------------
+    This website template was downloaded from http://www.nuviotemplates.com - visit us for more templates
+
+---------------------------------------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------------------------------------------
+HTML
+---------------------------------------------------------------------------------------------------------- */
+
+
+body {background:#CDCDBE; color:#000; font-family: Calibri,Helvetica,Arial,sans-serif;}
+h1, h2, h3, h4, h5, h6 {}
+
+a {color:#2998FF;}
+a:hover {color:#7C7C60;}
+
+fieldset {border:1px solid #D4E7F7;}
+legend {background:#FFF; color:#969678;}
+
+table.table-style01 th {background:#5EAFFF; color:#FFF;}
+table.table-style01 th, table.table-style01 td {border:1px solid #B2DAFF;}
+table.table-style01 tr.bg td {background:#D0D0BB;}
+
+/* ----------------------------------------------------------------------------------------------------------
+Layout
+---------------------------------------------------------------------------------------------------------- */
+
+#header {background:#1F1F1F;}
+
+#logo {border-bottom:1px solid #464646; color:#FFF;}
+#logo span {color: #FFFFFF;}
+#logo a {color:#FFF;}
+
+#slogan {color:#B0B0B0;}
+#search span {color:#FFFFFF;}
+#search #search-input {border:1px solid #FFF;}
+#search #search-submit {border:1px solid #969678; background:#969678; color:#FFF;}
+#input {border:1px solid #B0B0B0;}
+#button {border:1px solid #000; background:#969678; color:#FFF;}
+
+#nav {background-color:#004C8E;}
+#nav li a {border-left:1px solid #009DD7; color:#FFF;}
+#nav li.last a {border-right:1px solid #009DD7;}
+#nav li#nav-active a {background:#969678; color:#FFF;}
+#nav li a:hover {background:#008ABE; color:#FFF;}
+
+#cols .main {background-color:#FFF;}
+
+#content h1 {border-bottom:1px solid #77BCFF;letter-spacing: 0px;}
+#content h2, #content h3, #content h4 {border-bottom:1px solid #CDCDBE; color:#52523F;}
+
+#aside h3 {color:#6E6E55;}
+#aside ul li {border-bottom:1px solid #D8D8CC;}
+
+#footer {background:#4F4F4F; color:#BFBFBF;}
+#footer a {color:#BFBFBF;}
+#footer a:hover {color:#FFF;}
+
+/* ----------------------------------------------------------------------------------------------------------
+Page: Homepage
+---------------------------------------------------------------------------------------------------------- */
+
+#perex {border-bottom:5px solid #77BCFF; background:#E1EEFA;}             
+
+.section {border-bottom:1px solid #CDCDBE; background:#EEEEE9;}
+.section h3 {background-color:#979779; color:#FFF;}
+.section h3 a {color:#FFF;}
+.section h3 a:hover {color:#444434;}

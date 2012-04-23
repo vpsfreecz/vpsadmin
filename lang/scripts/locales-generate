@@ -1,0 +1,7 @@
+#!/bin/sh
+for x in langs/*/vpsadmin.po  ; do 
+    lang=`echo $x | sed 's@langs/\(.*\)/vpsadmin.po@\1@'`
+    echo -n "$lang: "
+    mkdir -p langs-data/$lang/LC_MESSAGES
+    msgfmt --statistics --check -o langs-data/$lang/LC_MESSAGES/vpsadmin.mo $x
+done

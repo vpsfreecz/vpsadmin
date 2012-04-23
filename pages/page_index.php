@@ -1,0 +1,189 @@
+<?php
+/*
+    ./pages/page_index.php
+
+    vpsAdmin
+    Web-admin interface for OpenVZ (see http://openvz.org)
+    Copyright (C) 2008-2009 Pavel Snajdr, snajpa@snajpa.net
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+$xtpl->title(_("Cluster statistics"));
+
+$xtpl->table_add_category('Members total');
+
+$xtpl->table_add_category('VPS total');
+
+$xtpl->table_add_category('IPv4 left');
+
+$members = 0;
+	$sql = 'SELECT COUNT(m_id) as count FROM members WHERE m_id != 2';
+	$result = $db->query($sql);
+  if ($res = $db->fetch_array($result))
+    $members = $res['count'];
+
+$xtpl->table_td($members, false, true);
+
+
+	$servers = 0;
+	$sql = 'SELECT COUNT(vps_id) as count FROM vps';
+	$result = $db->query($sql);
+  if ($res = $db->fetch_array($result))
+    $servers = $res['count'];
+    
+$xtpl->table_td($servers, false, true);
+
+	$ip4 = count((array)get_free_ip_list(4));
+$xtpl->table_td($ip4, false, true);
+$xtpl->table_tr();
+
+
+$xtpl->table_out();
+
+
+		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("vpsAdmin"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
+
+		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("vpsAdmin"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_tr();
+
+$sql = 'SELECT * FROM servers ORDER BY server_location,server_id';
+$rslt = $db->query($sql);
+
+$position = 1;
+$last_location = 0;
+
+while ($srv = $db->fetch_array($rslt)) {
+	if (
+			($last_location != 0) &&
+			($last_location != $srv["server_location"])
+		 ) {
+
+		 if ($position == 2) {
+			$xtpl->table_td('', false, false, 5);
+		}
+
+		$xtpl->table_tr(true);
+		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("vpsAdmin"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
+
+		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("vpsAdmin"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_tr(true);
+		
+		
+		$position = 1;
+	}
+		
+	$last_location = $srv["server_location"];
+
+	$xtpl->table_td($srv["server_name"]);
+		
+	$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$srv["server_id"].'" ORDER BY id DESC LIMIT 1';
+		
+	if ($result = $db->query($sql))
+	    $status = $db->fetch_array($result);
+		
+	$vpses = 0;
+	
+	$res = $db->query('SELECT * FROM vps WHERE vps_server ="'.$srv["server_id"].'"');
+		
+	while($vps = $db->fetch_array($res)) {
+			$res_stat = $db->query('SELECT * FROM vps_status WHERE vps_id ="'.$vps["vps_id"].'" ORDER BY id DESC LIMIT 1');
+		
+			if ($stat = $db->fetch_array($res_stat)) {
+				if ($stat["vps_up"]) {
+					$vpses++;
+				}
+			}
+	}
+		
+	$xtpl->table_td($vpses, false, true);
+	$xtpl->table_td(($srv["server_maxvps"]-$vpses), false, true);
+	$xtpl->table_td($status["vpsadmin_version"], false, true);
+		
+	$icons = "";
+		
+	$last_update = date('Y-m-d H:i:s', $status["timestamp"]).' ('.date('i:s', (time()-$status["timestamp"])).')';
+	
+	if ($cluster_cfg->get("lock_cron_".$srv["server_id"])) {
+		
+		$icons .= '<img title="'._("The server is currently processing")
+					 . ', last update: ' . $last_update
+					 . '" src="template/icons/warning.png"/>';
+	
+	} elseif ((time()-$status["timestamp"]) > 360) {
+	
+		$icons .= '<img title="'._("The server is not responding")
+					 . ', last update: ' . $last_update
+					 . '" src="template/icons/error.png"/>';
+	
+	} elseif ($status['daemon'] > 0) {
+	
+		$icons .= '<img title="'._("vpsAdmin on this server is not responding")
+					 . ', last update: ' . $last_update
+					 . '" src="template/icons/server_daemon_offline.png" alt="'
+					 . _("vpsAdmin is down").'" />';
+	
+	} else {
+
+		$icons .= '<img title="'._("The server is online")
+					 . ', last update: ' . $last_update
+					 . '" src="template/icons/server_online.png"/>';
+
+	}
+
+		if ($cluster_cfg->get("lock_cron_backup_".$srv["server_id"])) {
+			if ($_SESSION["is_admin"]) {
+				$icons .= ' <a href="?page=cluster&action=freelock&lock=backuper&id='
+							 . $srv["server_id"]
+							 . '"><img title="'
+							 . _("The server is performing a backup; click to free this lock (WARNING: can corrupt backups!)")
+							 . '" src="template/icons/backup_progress.png"/></a>';
+			} else {
+				$icons .= ' <img title="'._("The server is performing a backup")
+							 . '" src="template/icons/backup_progress.png"/>';
+			}
+		}
+
+		$xtpl->table_td($icons);
+
+		$position++;
+		if ($position == 3) {
+			$position = 1;
+			$xtpl->table_tr(true);
+		}
+
+}
+
+$xtpl->table_out();
+
+$xtpl->table_add_category($cluster_cfg->get('page_index_info_box_title'));
+$xtpl->table_td($cluster_cfg->get('page_index_info_box_content'));
+$xtpl->table_tr();
+$xtpl->table_out();
+

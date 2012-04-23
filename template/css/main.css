@@ -1,0 +1,167 @@
+/* ----------------------------------------------------------------------------------------------------------
+
+    This website template was downloaded from http://www.nuviotemplates.com - visit us for more templates
+
+    Structure:
+    display; position; float; z-index; overflow; width; height; margin; padding; border; background; align; font;
+
+    Content:
+    
+        1) HTML tags, reset
+        2) Universal styles (display, float, margin, text-align...)
+        3) Generally HTML styles (table, ul, dl...)
+        4) Layout
+        5) Page: Homepage
+        
+---------------------------------------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------------------------------------------
+1) HTML tags, reset
+---------------------------------------------------------------------------------------------------------- */
+
+* {margin:0; padding:0;}
+body, div, span, p, a, img, ul, ol, li, caption, table, thead, tbody, tfoot, tr, th, td, form, fieldset, legend, label, dl, dt, dd, blockquote, applet, object, h1, h2, h3, h4, h5 {border:0;}
+body {font:0.8em/1.5 "arial",sans-serif; text-align:center;}
+
+h1, h2, h3, h4, h5, h6 {margin:15px 0 10px 0;}
+
+p, table, ul, ol, dl, fieldset {margin:15px 0;}
+
+table {border-collapse:collapse; border-spacing:0; font-size:100%;}
+th {text-align:center; font-weight:bold;}
+th, td {padding:3px 7px;}
+
+ul, ol {margin-left:30px;}
+ul ul, ol ol {margin:0; margin-left:20px;}
+ol {list-style-type:decimal;}
+li {display:list-item;}
+
+dt {font-weight:bold;}
+dd {margin-left:30px;}
+
+fieldset {position:relative; padding:10px;}
+legend {position:absolute; top:-1em; margin:0; padding:5px 10px; font-size:100%; font-weight:bold;}
+
+/* ----------------------------------------------------------------------------------------------------------
+2) Universal styles (display, float, margin, text-align...)
+---------------------------------------------------------------------------------------------------------- */
+
+.box {min-height:1px;}
+.box:after {display:block; visibility:hidden; clear:both; line-height:0; font-size:0; content:".";}
+
+.relative {position:relative;}
+
+.clear {clear:both;}
+
+.f-left {float:left !important;} img.f-left {float:left; margin-right:10px;}
+.f-right {float:right !important;} img.f-right {float:right; margin-left:10px;}
+
+.t-left {text-align:left !important;}
+.t-center {text-align:center !important;}
+.t-right {text-align:right !important;}
+.t-justify {text-align:justify !important;}
+
+.va-top {vertical-align:top;}
+.va-middle {vertical-align:middle;}
+.va-bottom {vertical-align:bottom;}
+
+.nom {margin:0 !important;}
+.nomt {margin-top:0 !important;}
+.nomb {margin-bottom:0 !important;}
+
+.noscreen {display:none;}
+
+    .bigger {font-size:110%;}
+    .smaller {font-size:85%;}
+
+/* ----------------------------------------------------------------------------------------------------------
+3) Generally HTML styles (table, ul, dl...)
+---------------------------------------------------------------------------------------------------------- */
+
+ul.ul-style01 {margin:15px 0 15px 20px; list-style:none;}
+ul.ul-style01 li {padding-left:12px; background:url("../design/ul-style01.gif") 0 5px no-repeat;}
+ul.ul-style01 ul {margin:0; list-style:none;}
+ul.ul-style01 ul li {padding-left:12px; background:url("../design/ul-style01.gif") 0 5px no-repeat;}
+
+/* ----------------------------------------------------------------------------------------------------------
+4) Layout
+---------------------------------------------------------------------------------------------------------- */
+
+.main {position:relative; width:1100px; margin:0 auto; text-align:left;}
+
+	#header {padding:10px 0; overflow:hidden}
+
+        #logo {margin:0; margin-bottom:3px; font:normal 260%/1.2 "arial",sans-serif; letter-spacing:-1px;}
+        #logo span {font-weight:bold;}
+        #logo a {text-decoration:none;}
+
+        #slogan {margin:0;float:left;}
+    	
+        #search {position:absolute; top:30px; right:0;}
+        #search #search-input {width:170px; padding:4px; font:normal 100%/1.2 "arial",sans-serif;}
+        #search #search-submit {padding:3px 5px; font:bold 100%/1.2 "arial",sans-serif;}
+
+    #nav {clear:both; background:url("../design/nav.gif") 0 0 repeat-x;}
+    #nav ul {margin:0; padding:0; list-style:none;}
+    #nav li {display:inline; margin:0; padding:0;}
+    #nav li a {display:block; float:left; padding:10px 20px; text-decoration:underline; font-weight:bold;}
+    #nav li#nav-active a {font-weight:bold; text-decoration:none;}
+	   
+    #cols .main {padding-bottom:15px; background:url("../design/aside.gif") 100% 0 repeat-y;}
+
+    	#content {float:left; width:820px;}
+    	#content p {text-align:justify;}
+    	
+    	#content-in {padding-left:15px;}
+
+            #content h1 {margin:0; margin-bottom:10px; font-size:160%; letter-spacing:-1px;}
+            #content h2, #content h3, #content h4 {margin-bottom:0; margin-bottom:10px; font-size:140%; letter-spacing:-1px;}
+            #content h3, #content h4 {letter-spacing:0; font-size:120%;}
+                            
+    	#aside {float:right; width:275px; padding-right:1px; overflow:hidden;}
+    	
+    	   #aside h3 {padding-right:15px; background:url("../design/arrow.gif") 100% 50% no-repeat; font-size:100%;}
+    	   #aside ul {margin:5px 0 15px 0; padding:0; list-style:none;}
+    	   #aside ul li {margin:0; padding:4px 10px 4px 0;}
+	   #aside table {width: 100%; }
+	#footer {clear:both; padding:15px 0;}
+    #footer p {margin:0;}
+
+/* ----------------------------------------------------------------------------------------------------------
+5) Page: Homepage
+---------------------------------------------------------------------------------------------------------- */
+
+#perex {margin-bottom:15px; padding:15px;}
+#perex p {margin:0;}                
+
+.section {float:left; width:225px; overflow:hidden;}
+.section.margin {margin:0 5px;}
+.section h3 {margin:0; padding:5px 15px; border:0 !important; background:url("../design/section.gif") 0 0 repeat-x; font-size:120%;}
+
+#transactions table {border-collapse:collapse; border-spacing:0; font-size:100%;}
+#transactions th {text-align:center; font-weight:bold;}
+#transactions th, td {padding:3px 7px;}
+#transactions  th {background:#5EAFFF; color:#FFF;}
+#transactions  th, td {border:1px solid #B2DAFF;}
+#transactions  tr.bg td {background:#A1C9AA;}
+#transactions  tr.ok, tr.ok {background:#AAFFAA;}
+#transactions  tr.pending, tr.pending {background:#FFF8DC;}
+#transactions  tr.error, tr.error {background:#FF5555;}
+
+div#l_form {float: right; padding-bottom: 5px;}
+
+
+div.page_listing {text-align: center;}
+
+#slogan_wrap { width: 1100px; }
+#version { float: left; }
+#langbox { float: right; }
+#langbox ul { margin: 0; padding: 0; list-style: none; }
+#langbox li { margin: 0; padding: 0 10px 0 0; float: left;}
+#langbox li a { text-decoration: none; }
+#langbox img.chosen { border: 3px solid #0682C7;}
+#langbox img { border: 3px solid #1F1F1F;}
+
+#l_form a {text-decoration: none;}
+#l_form img {padding-right: 10px;}
+.oddrow {background: #EAEAFF;}

@@ -1,0 +1,6 @@
+#!/bin/sh
+for x in langs/*/vpsadmin.po  ; do 
+    lang=`echo $x | sed 's@langs/\(.*\)/vpsadmin.po@\1@'`
+    echo -n "$lang: "
+    msgfmt --statistics --check -o - $x > /dev/null
+done
