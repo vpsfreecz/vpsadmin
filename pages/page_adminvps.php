@@ -255,7 +255,7 @@ switch ($_GET["action"]) {
 			$vps->restart();
 			$list_vps=true;
 			break;
-		case 'enabledevices':
+		case 'enablefeatures':
 			if (isset($_REQUEST["veid"]) && isset($_REQUEST["enable"]) && $_REQUEST["enable"]) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 				$xtpl->perex_cmd_output(_("Enable devices"), $vps->enable_features());
@@ -530,38 +530,36 @@ if (isset($show_info) && $show_info) {
 	}
 
 // Enable devices/capabilities
-	$xtpl->form_create('?page=adminvps&action=enabledevices&veid='.$vps->veid, 'post');
-	if (!$vps->is_enabled("tuntap")) {
+	$xtpl->form_create('?page=adminvps&action=enablefeatures&veid='.$vps->veid, 'post');
+	if (!$vps->ve["vps_features_enabled"]) {
 		$xtpl->table_td(_("Enable TUN/TAP"));
 		$xtpl->table_td(_("disabled"));
 		$xtpl->table_tr();
-	} else {
-		$xtpl->table_td(_("Enable TUN/TAP"));
-		$xtpl->table_td(_("enabled"));
-		$xtpl->table_tr();
-	}
-	if (!$vps->is_enabled("iptables")) {
 		$xtpl->table_td(_("Enable iptables"));
 		$xtpl->table_td(_("disabled"));
 		$xtpl->table_tr();
+    $xtpl->table_td(_("Enable FUSE"));
+    $xtpl->table_td(_("disabled"));
+    $xtpl->table_tr();
+    $xtpl->table_td(_("NFS server + client"));
+    $xtpl->table_td(_("disabled"));
+    $xtpl->table_tr();
+    $xtpl->form_add_checkbox(_("Enable all").':', 'enable', '1', false);
 	} else {
+    $xtpl->table_td(_("Enable TUN/TAP"));
+    $xtpl->table_td(_("enabled"));
+    $xtpl->table_tr();
 		$xtpl->table_td(_("Enable iptables"));
 		$xtpl->table_td(_("enabled"));
 		$xtpl->table_tr();
+    $xtpl->table_td(_("Enable FUSE"));
+    $xtpl->table_td(_("enabled"));
+    $xtpl->table_tr();
+    $xtpl->table_td(_("NFS server + client"));
+    $xtpl->table_td(_("enabled"));
+    $xtpl->table_tr();
 	}
-	if (!$vps->is_enabled("fuse")) {
-		$xtpl->table_td(_("Enable FUSE"));
-		$xtpl->table_td(_("disabled"));
-		$xtpl->table_tr();
-	} else {
-		$xtpl->table_td(_("Enable FUSE"));
-		$xtpl->table_td(_("enabled"));
-		$xtpl->table_tr();
-	}
-	if (!$vps->is_enabled("fuse") || !$vps->is_enabled("iptables") || !$vps->is_enabled("tuntap")) {
-			$xtpl->form_add_checkbox(_("Enable all").':', 'enable', '1', false);
-	}
-	$xtpl->table_add_category(_("Enable devices"));
+	$xtpl->table_add_category(_("Enable features"));
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->form_out(_("Go >>"));
 

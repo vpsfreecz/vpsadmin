@@ -38,8 +38,8 @@ define ('T_CLUSTER_TEMPLATE_COPY', 7101);
 define ('T_CLUSTER_TEMPLATE_DELETE', 7102);
 define ('T_CLUSTER_IP_REGISTER', 7201);
 define ('T_ENABLE_FEATURES', 8001);
-define ('T_ENABLE_TUNTAP', 8002);
-define ('T_ENABLE_IPTABLES', 8003);
+define ('T_ENABLE_TUNTAP', 8002); //deprecated
+define ('T_ENABLE_IPTABLES', 8003); //deprecated
 define ('T_ENABLE_FUSE', 8004);
 define ('T_SPECIAL_ISPCP', 8101);
 
@@ -448,6 +448,7 @@ function do_transaction($t) {
 	case T_ENABLE_FEATURES:
 		umount_backuper($t['t_vps']);
 		exec_wrapper (BIN_VZCTL. ' stop '.$db->check($t['t_vps']), $trash, $trash2);
+    exec_wrapper (BIN_VZCTL.' set '.$db->check($t['t_vps']).' --feature "nfsd:on" --feature "nfs:on" --save', $output, $retval);
 		exec_wrapper (BIN_VZCTL.' set '.$db->check($t['t_vps']).' --capability net_admin:on --save', $output, $retval);
 		exec_wrapper (BIN_VZCTL.' exec '.$db->check($t['t_vps']).' mkdir -p /dev/net', $output, $retval);
 		exec_wrapper (BIN_VZCTL.' exec '.$db->check($t['t_vps']).' mknod /dev/net/tun c 10 200', $output, $retval);

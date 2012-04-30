@@ -54,9 +54,6 @@ class vps_load {
   public $veid = 0;
   public $ve = array();
   public $exists = false;
-  public $devices = array("tuntap" => array(T_ENABLE_TUNTAP, 'c:10:200:rw'),
-						  "iptables" => array(T_ENABLE_IPTABLES, ''),
-						  "fuse" => array(T_ENABLE_FUSE, 'c:10:229:rw'));
 
   function vps_load($ve_id = 'none') {
 	global $db, $request_page;
@@ -138,9 +135,7 @@ class vps_load {
 		foreach ($ips as $ip) {
 			$this->ipadd($ip["ip_addr"]);
 		}
-		$sql = 'UPDATE vps SET  vps_tuntap_enabled = 0,
-					vps_fuse_enabled = 0,
-					vps_iptables_enabled = 0,
+		$sql = 'UPDATE vps SET  vps_features_enabled=0,
 					vps_specials_installed = ""
 					WHERE vps_id='.$db->check($this->veid);
 		$result = $db->query($sql);
@@ -407,9 +402,7 @@ function ipadd($ip, $type = 4) {
 
   function enable_features() {
 		global $db;
-	  $sql = 'UPDATE vps SET vps_fuse_enabled = "1",
-													 vps_tuntap_enabled = "1",
-													 vps_iptables_enabled = "1"
+	  $sql = 'UPDATE vps SET vps_features_enabled = "1"
 						WHERE vps_id = '.$db->check($this->veid);
 	  $db->query($sql);
 	  if ($db->affected_rows() == 1) {
@@ -426,31 +419,6 @@ function ipadd($ip, $type = 4) {
     }
   }
 
-//   function enable_devices($devices, $force = false) {
-// 	if (($this->exists) || $force) {
-// 	  foreach ($devices as $device) {
-// 		$this->enable_device($device);
-// 	  }
-// 	}
-//   }
-
-  function is_enabled($device) {
-	global $db;
-	if (!isset($this->devices[$device]))
-	  return false;
-
-	$sql = 'SELECT vps_'.$device.'_enabled FROM vps WHERE vps_id = '.$db->check($this->veid);
-	if ($result = $db->query($sql)) {
-	  if ($row = $db->fetch_row($result)) {
-		$ret = $row[0];
-	  } else {
-		$ret = false;
-	  }
-	} else {
-	  $ret = false;
-	}
-	return $ret;
-  }
   function set_backuper($how) {
   	global $db;
 	if ($_SESSION["is_admin"]) {
