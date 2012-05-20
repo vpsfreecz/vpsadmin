@@ -303,7 +303,11 @@ function ipadd($ip, $type = 4) {
 		$target_server = server_by_id($target_id);
 		$loc["location_has_shared_storage"] = false;
 		if ($this_loc != $cluster->get_location_of_server($target_id)) {
-		    $params["ips"] = $this->iplist();
+		    $ips = $this->iplist();
+		    $params["ips"] = array();
+		    
+		    foreach($ips as $ip)
+			$params["ips"][] = $ip["ip_addr"];
 		} else {
 			$loc = $db->findByColumnOnce("locations", "location_id", $this_loc);
 			if ($loc["location_has_shared_storage"]) {
