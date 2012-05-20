@@ -379,7 +379,7 @@ function do_transaction($t) {
 			if ($vps = vps_load($t['t_vps'])) {
 				foreach($params["ips"] as $ip)
 					$vps->ipdel($ip);
-				$vps->nameserver($cluster->get_first_suitable_dns($cluster->get_location_of_server($vps->ve["vps_server")));
+				$vps->nameserver($cluster->get_first_suitable_dns($cluster->get_location_of_server($vps->ve["vps_server"])));
 			}
 		}
 		$ret = ($retval == 0);
