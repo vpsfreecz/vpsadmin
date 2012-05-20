@@ -376,6 +376,11 @@ function do_transaction($t) {
 			add_transaction($_SESSION["member"]["m_id"], $db->check($params['target_id']), $db->check($t['t_vps']), T_MIGRATE_OFFLINE_PART2, array());
 		} else {
 			exec_wrapper('vzmigrate '.$db->check($params['target']).' '.$db->check($t['t_vps']), $output, $retval);
+			if ($vps = vps_load($t['t_vps'])) {
+				foreach($params["ips"] as $ip)
+					$vps->ipdel($ip);
+				$vps->nameserver($cluster->get_first_suitable_dns($cluster->get_location_of_server($vps->ve["vps_server"));
+			}
 		}
 		$ret = ($retval == 0);
 		break;
