@@ -302,7 +302,9 @@ function ipadd($ip, $type = 4) {
 		$this_loc = $this->get_location();
 		$target_server = server_by_id($target_id);
 		$loc["location_has_shared_storage"] = false;
-		if ($this_loc == $cluster->get_location_of_server($target_id)) {
+		if ($this_loc != $cluster->get_location_of_server($target_id)) {
+		    $params["ips"] = $this->iplist();
+		} else {
 			$loc = $db->findByColumnOnce("locations", "location_id", $this_loc);
 			if ($loc["location_has_shared_storage"]) {
 				$params["on_shared_storage"] = true;
@@ -312,17 +314,6 @@ function ipadd($ip, $type = 4) {
 		$params["target"] = $target_server["server_ip4"];
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_MIGRATE_OFFLINE, $params);
 		$this->ve["vps_server"] = $target_id;
-		if ($this_loc != $cluster->get_location_of_server($target_id)) {
-		    $this->nameserver($cluster->get_first_suitable_dns($cluster->get_location_of_server($target_id)));
-		}
-		
-		if ($this_loc != $cluster->get_location_of_server($target_id)) {
-		    $ips = $this->iplist();
-		    if ($ips)
-		    foreach ($ips as $ip) {
-			    $this->ipdel($ip["ip_addr"]);
-		    }
-		}
 	  }
 	}
   }
