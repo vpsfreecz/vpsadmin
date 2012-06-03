@@ -101,7 +101,6 @@ class vps_load {
 		$this->exists = true;
 		$params["hostname"] = $hostname;
 		$params["template"] = $template["templ_name"];
-		$params["nameserver"] = $cluster->get_first_suitable_dns($cluster->get_location_of_server($server_id));
 		$params["onboot"] = $location["location_vps_onboot"];
 		$this->ve["vps_server"] = $server_id;
 		$this->ve["vps_nameserver"] = $params["nameserver"];
@@ -110,6 +109,7 @@ class vps_load {
 		add_transaction($_SESSION["member"]["m_id"], $server_id, $this->veid, T_CREATE_VE, $params);
 		$this->set_privvmpages($privvmpages, true);
 		$this->set_diskspace($diskspace, true);
+    $this->nameserver($cluster->get_first_suitable_dns($cluster->get_location_of_server($server_id)));
 	}
   }
   function reinstall(){
