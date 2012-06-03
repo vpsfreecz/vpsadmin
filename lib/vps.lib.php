@@ -102,6 +102,7 @@ class vps_load {
 		$params["hostname"] = $hostname;
 		$params["template"] = $template["templ_name"];
 		$params["onboot"] = $location["location_vps_onboot"];
+    $this->nameserver = $cluster->get_first_suitable_dns($cluster->get_location_of_server($server_id));
 		$this->ve["vps_server"] = $server_id;
 		$this->ve["vps_nameserver"] = $params["nameserver"];
 		$this->ve["vps_template"] = $template["templ_name"];
