@@ -102,7 +102,7 @@ class vps_load {
 		$params["hostname"] = $hostname;
 		$params["template"] = $template["templ_name"];
 		$params["onboot"] = $location["location_vps_onboot"];
-    $this->nameserver = $cluster->get_first_suitable_dns($cluster->get_location_of_server($server_id));
+    $this->nameserver = "8.8.8.8";
 		$this->ve["vps_server"] = $server_id;
 		$this->ve["vps_nameserver"] = $params["nameserver"];
 		$this->ve["vps_template"] = $template["templ_name"];
@@ -124,7 +124,7 @@ class vps_load {
 		$template = template_by_id($this->ve["vps_template"]);
 		$params["hostname"] = $this->ve["vps_hostname"];
 		$params["template"] = $template["templ_name"];
-		$params["nameserver"] = $cluster->get_first_suitable_dns($cluster->get_location_of_server($this->ve["vps_server"]));
+    $this->nameserver = "8.8.8.8";
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_REINSTALL_VE, $params);
 		$tmp["vps_privvmpages"] = $this->ve["vps_privvmpages"];
 		$tmp["vps_diskspace"] = $this->ve["vps_diskspace"];
@@ -132,6 +132,7 @@ class vps_load {
 		$this->set_diskspace(10, true);
 		$this->set_privvmpages($tmp["vps_privvmpages"], true);
 		$this->set_diskspace($tmp["vps_diskspace"], true);
+    $this->nameserver($cluster->get_first_suitable_dns($cluster->get_location_of_server($server_id)));
 		if ($ips)
 		foreach ($ips as $ip) {
 			$this->ipadd($ip["ip_addr"]);
