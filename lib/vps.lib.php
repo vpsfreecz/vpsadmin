@@ -59,7 +59,7 @@ class vps_load {
 	global $db, $request_page;
 	if(is_numeric($ve_id)) {
 		if ($_SESSION["is_admin"]) {
-			$sql = 'SELECT * FROM vps,servers,members,cfg_templates WHERE vps.vps_template = cfg_templates.templ_id AND vps.m_id = members.m_id AND server_id = vps_server AND vps_id = "'.$db->check($ve_id).'"';	
+			$sql = 'SELECT * FROM vps,servers,members,cfg_templates WHERE vps.vps_template = cfg_templates.templ_id AND vps.m_id = members.m_id AND server_id = vps_server AND vps_id = "'.$db->check($ve_id).'"';
 		} else {
 			$sql = 'SELECT * FROM vps,servers,members,cfg_templates WHERE vps.m_id = "'.$_SESSION["member"]["m_id"].'" AND vps.vps_template = cfg_templates.templ_id AND vps.m_id = members.m_id AND server_id = vps_server AND vps_id = "'.$db->check($ve_id).'"';
 		}
@@ -286,7 +286,11 @@ function ipadd($ip, $type = 4) {
 	if ($this->exists) {
 	  $sql = 'UPDATE vps SET vps_nameserver = "'.$db->check($nameserver).'" WHERE vps_id = '.$db->check($this->veid);
 	  $db->query($sql);
-	  $command = '--nameserver '.$nameserver;
+	  $nameservers = explode(",", $nameserver);
+	  $command = '';
+	  foreach ($nameservers as $ns) {
+      $command .= '--nameserver '.$ns.' ';
+	  }
 	  $this->ve["vps_nameserver"] = $nameserver;
 	  add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_DNS, $command);
 	}
@@ -305,7 +309,7 @@ function ipadd($ip, $type = 4) {
 		if ($this_loc != $cluster->get_location_of_server($target_id)) {
 		    $ips = $this->iplist();
 		    $params["ips"] = array();
-		    
+
 		    foreach($ips as $ip)
 			$params["ips"][] = $ip["ip_addr"];
 		} else {

@@ -73,7 +73,7 @@ switch($_REQUEST["action"]) {
 		}
 		break;
 	case "dns_delete":
-		if ($item = $cluster->get_dns_by_id($_REQUEST["id"])) {
+		if ($item = $cluster->get_dns_server_by_id($_REQUEST["id"])) {
 			$cluster->delete_dns_server($_REQUEST["id"]);
 			$xtpl->perex(_("Item deleted"), _("DNS Server deleted."));
 		}
