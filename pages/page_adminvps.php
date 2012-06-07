@@ -80,7 +80,7 @@ switch ($_GET["action"]) {
 					{
 					if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 					if (!$vps->exists) {
-						
+
 						$perex = $vps->create_new($server["server_id"],
 																			$_REQUEST["vps_template"],
 																			$_REQUEST["vps_hostname"],
@@ -88,16 +88,16 @@ switch ($_GET["action"]) {
 																			$_REQUEST["vps_privvmpages"],
 																			$_REQUEST["vps_diskspace"],
 																			$_REQUEST["vps_info"]);
-						
+
 						$veid = $vps->veid;
-						
+
 						if ($_REQUEST["boot_after_create"]) {
 							$vps->start();
 							$xtpl->perex(_("VPS create ").' '.$vps->veid, _("VPS will be created and booted afterwards."));
 						} else {
 							$xtpl->perex(_("VPS create ").' '.$vps->veid, _("VPS will be created. You can start it manually."));
 						}
-						
+
 						$xtpl->delayed_redirect('?page=adminvps&action=info&veid='.$vps->veid, 350);
 					}
 					else {
@@ -129,10 +129,10 @@ switch ($_GET["action"]) {
 			if (($_REQUEST["pass"] == $_REQUEST["pass2"]) &&
 					(strlen($_REQUEST["pass"]) >= 5) &&
 					(strlen($_REQUEST["user"]) >= 2) &&
-					!preg_match("/\\/", $_REQUEST["pass"]) &&
+					!preg_match("/\\\/", $_REQUEST["pass"]) &&
 					!preg_match("/\`/", $_REQUEST["pass"]) &&
 					!preg_match("/\"/", $_REQUEST["pass"]) &&
-					!preg_match("/\\/", $_REQUEST["user"]) &&
+					!preg_match("/\\\/", $_REQUEST["user"]) &&
 					!preg_match("/\`/", $_REQUEST["user"]) &&
 					!preg_match("/\"/", $_REQUEST["user"]))
 			{

@@ -1,3 +1,0 @@
-<?php
-header('Location: https://prasiatko.vpsfree.cz/vpsadmin/');
-?>

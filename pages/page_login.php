@@ -27,14 +27,14 @@ if ($_GET["action"] == 'login') {
 		$sql = 'SELECT * FROM members WHERE m_pass = "'
 				 . $db->check( md5($_REQUEST["username"] . $_REQUEST["passwd"]) )
 				 . '" AND m_nick = "' . $db->check($_REQUEST["username"]) . '"';
-		
+
 		if ($result = $db->query($sql)) {
-			
+
 			if ($member = $db->fetch_array($result)) {
-			
+
 			session_destroy();
 			session_start();
-			
+
 			$_SESSION["logged_in"] = true;
 			$_SESSION["member"] = $member;
 			$_SESSION["is_user"] =       ($member["m_level"] >= PRIV_USER) ?       true : false;
@@ -91,13 +91,13 @@ if ($_SESSION["is_admin"] && ($_GET["action"] == 'switch_context') && isset($_GE
 			$_SESSION["is_poweruser"] =  ($member["m_level"] >= PRIV_POWERUSER) ?  true : false;
 			$_SESSION["is_admin"] =      ($member["m_level"] >= PRIV_ADMIN) ?      true : false;
 			$_SESSION["is_superadmin"] = ($member["m_level"] >= PRIV_SUPERADMIN) ? true : false;
-			
+
 			$xtpl->perex(_("Change to ").$member["m_nick"],
 					_(" successful <br /> Your privilege level: ")
 					. $cfg_privlevel[$member["m_level"]]);
 
 			$xtpl->delayed_redirect('?page=', 350);
-			
+
 			$_member = member_load($member["m_id"]);
 			$_member->touch_activity();
 

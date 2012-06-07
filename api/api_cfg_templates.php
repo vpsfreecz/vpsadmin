@@ -7,18 +7,18 @@ case 'list':
 	$whereCond[] = 1;
 
 	api_parse_filter(&$reqbody, &$whereCond, array("templ_id" => PARAM_ARRAY));
-	
+
 	$count = 0;
 	$list = array();
-	
+
 	while ($item = $db->find("cfg_templates", $whereCond)) {
 		$count++;
-		
+
 		api_clean_db_item($item);
-		
+
 		$list[] = $item;
 	}
-	
+
 	api_reply(RET_OK, array("list" => $list, "count" => $count));
 	break;
 

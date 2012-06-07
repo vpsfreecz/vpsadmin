@@ -69,7 +69,7 @@ if ($_SESSION["logged_in"]) {
 
 
 	if ($_SESSION["is_admin"]) {
-	
+
 	$xtpl->sbar_add(_("<b>DANGEROUS:</b> clean-up all deleted"), '?page=backup&action=cleanup_all');
 
 		$listCond[] = "1";

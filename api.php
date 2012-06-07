@@ -66,7 +66,7 @@ if (!$cluster_cfg->get("api_enabled")) {
 }
 
 // authenticate the call
-if (!isset($_POST["api_key"]) || 
+if (!isset($_POST["api_key"]) ||
 		!($api_key = $cluster_cfg->get("api_key")) ||
 		!($_POST["api_key"] == $api_key)
 		) {

@@ -11,18 +11,18 @@ case 'list':
 																								 "ip_v" => PARAM_ARRAY,
 																								 "vps_server" => PARAM_ARRAY
 																								 ));
-	
+
 	$count = 0;
 	$list = array();
-	
+
 	while ($item = $db->find("vps", $whereCond)) {
 		$count++;
-		
+
 		api_clean_db_item($item);
-		
+
 		$list[] = $item;
 	}
-	
+
 	api_reply(RET_OK, array("list" => $list, "count" => $count));
 	break;
 

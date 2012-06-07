@@ -41,7 +41,7 @@ $xtpl->table_td($members, false, true);
 	$result = $db->query($sql);
   if ($res = $db->fetch_array($result))
     $servers = $res['count'];
-    
+
 $xtpl->table_td($servers, false, true);
 
 	$ip4 = count((array)get_free_ip_list(4));
@@ -94,61 +94,61 @@ while ($srv = $db->fetch_array($rslt)) {
 		$xtpl->table_td(_("vpsAdmin"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_tr(true);
-		
-		
+
+
 		$position = 1;
 	}
-		
+
 	$last_location = $srv["server_location"];
 
 	$xtpl->table_td($srv["server_name"]);
-		
+
 	$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$srv["server_id"].'" ORDER BY id DESC LIMIT 1';
-		
+
 	if ($result = $db->query($sql))
 	    $status = $db->fetch_array($result);
-		
+
 	$vpses = 0;
-	
+
 	$res = $db->query('SELECT * FROM vps WHERE vps_server ="'.$srv["server_id"].'"');
-		
+
 	while($vps = $db->fetch_array($res)) {
 			$res_stat = $db->query('SELECT * FROM vps_status WHERE vps_id ="'.$vps["vps_id"].'" ORDER BY id DESC LIMIT 1');
-		
+
 			if ($stat = $db->fetch_array($res_stat)) {
 				if ($stat["vps_up"]) {
 					$vpses++;
 				}
 			}
 	}
-		
+
 	$xtpl->table_td($vpses, false, true);
 	$xtpl->table_td(($srv["server_maxvps"]-$vpses), false, true);
 	$xtpl->table_td($status["vpsadmin_version"], false, true);
-		
+
 	$icons = "";
-		
+
 	$last_update = date('Y-m-d H:i:s', $status["timestamp"]).' ('.date('i:s', (time()-$status["timestamp"])).')';
-	
+
 	if ($cluster_cfg->get("lock_cron_".$srv["server_id"])) {
-		
+
 		$icons .= '<img title="'._("The server is currently processing")
 					 . ', last update: ' . $last_update
 					 . '" src="template/icons/warning.png"/>';
-	
+
 	} elseif ((time()-$status["timestamp"]) > 360) {
-	
+
 		$icons .= '<img title="'._("The server is not responding")
 					 . ', last update: ' . $last_update
 					 . '" src="template/icons/error.png"/>';
-	
+
 	} elseif ($status['daemon'] > 0) {
-	
+
 		$icons .= '<img title="'._("vpsAdmin on this server is not responding")
 					 . ', last update: ' . $last_update
 					 . '" src="template/icons/server_daemon_offline.png" alt="'
 					 . _("vpsAdmin is down").'" />';
-	
+
 	} else {
 
 		$icons .= '<img title="'._("The server is online")
