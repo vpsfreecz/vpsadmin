@@ -122,8 +122,8 @@ function save_traffic_to_this_day ($diff, $generated) {
 	foreach ($diff as $ip => $ip_diff) {
 		if ($this_day = $this->get_traffic_by_ip_this_day($ip)) {
 			$sql = 'UPDATE transfered
-						SET tr_out = "'.($this_day['tr_out'] + $db->check( $ip_diff['out'] )).'",
-								tr_in  = "'.($this_day['tr_in'] + $db->check( $ip_diff['in']  )).'"
+						SET tr_out = "'.($this_day['out'] + $db->check( $ip_diff['out'] )).'",
+								tr_in  = "'.($this_day['in'] + $db->check( $ip_diff['in']  )).'"
 						WHERE tr_id = "'.$this_day['tr_id'].'"';
 		} else {
 			$sql = 'INSERT INTO transfered
