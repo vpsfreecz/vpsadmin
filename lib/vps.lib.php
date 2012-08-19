@@ -79,7 +79,7 @@ class vps_load {
 	return true;
   }
 
-  function create_new($server_id, $template_id, $hostname, $m_id, $privvmpages, $diskspace, $info) {
+  function create_new($server_id, $template_id, $hostname, $m_id, $privvmpages, $diskspace, $cpulimit, $info) {
 	global $db, $cluster;
 	if (!$this->exists && $template = template_by_id($template_id)) {
 		$server = $db->findByColumnOnce("servers", "server_id", $server_id);
@@ -95,7 +95,8 @@ class vps_load {
 				    vps_onboot ="'.$db->check($location["location_vps_onboot"]).'",
 				    vps_privvmpages = 0,
 				    vps_onstartall = 1,
-				    vps_diskspace = 0';
+				    vps_diskspace = 0,
+				    vps_cpulimit = 0';
 		$db->query($sql);
 		$this->veid = $db->insert_id();
 		$this->exists = true;
@@ -111,6 +112,7 @@ class vps_load {
 		add_transaction($_SESSION["member"]["m_id"], $server_id, $this->veid, T_CREATE_VE, $params);
 		$this->set_privvmpages($privvmpages, true);
 		$this->set_diskspace($diskspace, true);
+		$this->set_cpulimit($cpulimit, true);
     $this->nameserver($cluster->get_first_suitable_dns($cluster->get_location_of_server($server_id)));
 	}
   }
@@ -403,6 +405,70 @@ function ipadd($ip, $type = 4) {
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_LIMITS, $command);
 	  } else return array('0' => '');
 	}
+  }
+  
+  function set_cpulimit($cpulimit, $force = false) {
+	global $db;
+	if (($this->exists && $_SESSION["is_admin"]) || $force) {
+	  $cpu = limit_cpulimit_by_id($cpulimit);
+	  $sql = 'UPDATE vps SET vps_cpulimit = "'.$db->check($cpulimit).'" WHERE vps_id = '.$db->check($this->veid);
+	  $db->query($sql);
+	  if ($db->affected_rows() == 1) {
+		$command = "--cpulimit {$cpu["cpu_limit"]} --cpus {$cpu["cpu_cpus"]}";
+		$this->ve["vps_cpulimit"] = $cpulimit;
+		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_LIMITS, $command);
+	  } else return array('0' => '');
+	}
+  }
+  
+  function limit_change_notify() {
+	global $db, $cluster_cfg;
+  
+	$headers  = "From: ".$cluster_cfg->get("mailer_from")."\n";
+        $headers .= "Reply-To: ".$cluster_cfg->get("mailer_from")."\n";
+        $headers .= "Return-Path: ".$cluster_cfg->get("mailer_from")."\n";
+        if ($cluster_cfg->get("mailer_admins_in_cc")) {
+            $headers .= "BCC: ".$cluster_cfg->get("mailer_admins_cc_mails")."\n";
+        }
+        $headers .= "X-Mailer: vpsAdmin\n";
+        $headers .= "MIME-Version: 1.0\n";
+        $headers .= "Content-type: text/plain; charset=UTF-8\n";
+
+        $subject = $cluster_cfg->get("mailer_tpl_limits_change_subj");
+        $subject = str_replace("%member%", $this->ve["m_nick"], $subject);
+        $subject = str_replace("%vpsid%", $this->veid, $subject);
+	
+	if(($cpu = limit_cpulimit_by_id($this->ve["vps_cpulimit"])))
+		$cpulimit = $cpu["cpu_label"];
+	else $cpulimit = "Undefined";
+	
+	if(($ram = limit_privvmpages_by_id($this->ve["vps_privvmpages"])))
+		$privvmpages = $ram["vm_label"];
+	else $privvmpages = "Undefined";
+	
+	if(($hdd = limit_diskspace_by_id($this->ve["vps_diskspace"])))
+		$hddlimit = $hdd["d_label"];
+	else $hddlimit = "Undefined";
+	
+        $content = $cluster_cfg->get("mailer_tpl_limits_changed");
+        $content = str_replace("%member%", $this->ve["m_nick"], $content);
+        $content = str_replace("%vpsid%", $this->veid, $content);
+        $content = str_replace("%cpulimit%", $cpulimit, $content);
+	$content = str_replace("%ramlimit%", $privvmpages, $content);
+	$content = str_replace("%hddlimit%", $hddlimit, $content);
+	
+	$mail = array();
+        $mail["sentTime"] = time();
+        $mail["member_id"] = $this->ve["m_id"];
+        $mail["type"] = "limit_changed";
+        $mail["details"] .= "TO: {$this->ve["m_mail"]}\n";
+        $mail["details"] .= $headers;
+        $mail["details"] .= "\nSUBJECT: $subject\n\n";
+        $mail["details"] .= $content;
+	
+	mail($this->ve["m_mail"], $subject, $content, $headers);
+	
+	$db->save(true, $mail, "mailer");
   }
 
   function enable_features() {

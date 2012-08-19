@@ -402,6 +402,56 @@ switch($_REQUEST["action"]) {
 		}
 		$list_ramlimits = true;
 		break;
+	case "cpulimits":
+		$list_cpulimits = true;
+		break;
+	case "cpulimit_new":
+		$xtpl->title2(_("New CPU limits item"));
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		$xtpl->form_create('?page=cluster&action=cpulimit_new_save', 'post');
+		$xtpl->form_add_input(_("Label").':', 'text', '30', 'cpu_label', '', _("User friendly label"));
+		$xtpl->form_add_input(_("CPU limit [%]").':', 'text', '10', 'cpu_limit', '', '');
+		$xtpl->form_add_input(_("CPUs").':', 'text', '10', 'cpu_cpus', '', '');
+		$xtpl->form_out(_("Save changes"));
+		break;
+	case "cpulimit_new_save":
+		$cluster->set_cpulimit(NULL, $_REQUEST["cpu_label"], $_REQUEST["cpu_limit"], $_REQUEST["cpu_cpus"]);
+		$xtpl->perex(_("Changes saved"), _("CPU Limit item successfully saved."));
+		$list_cpulimits = true;
+		break;
+	case "cpulimit_edit":
+		if ($item = $cluster->get_cpulimit_by_id($_REQUEST["id"])) {
+			$xtpl->title2(_("Edit CPU limits item"));
+			$xtpl->table_add_category('');
+			$xtpl->table_add_category('');
+			$xtpl->form_create('?page=cluster&action=cpulimit_edit_save&id='.$_REQUEST["id"], 'post');
+			$xtpl->form_add_input(_("Label").':', 'text', '30', 'cpu_label', $item["cpu_label"], _("User friendly label"));
+			$xtpl->form_add_input(_("CPU limit [%]").':', 'text', '10', 'cpu_limit', $item["cpu_limit"], '');
+			$xtpl->form_add_input(_("CPUs").':', 'text', '10', 'cpu_cpus', $item["cpu_cpus"], '');
+			$xtpl->form_out(_("Save changes"));
+		} else {
+			$list_cpulimits = true;
+		}
+		break;
+	case "cpulimit_edit_save":
+		if ($item = $cluster->get_cpulimit_by_id($_REQUEST["id"])) {
+			$cluster->set_cpulimit($_REQUEST["id"], $_REQUEST["cpu_label"], $_REQUEST["cpu_limit"], $_REQUEST["cpu_cpus"]);
+			$xtpl->perex(_("Changes saved"), _("CPU Limit item successfully saved."));
+			$list_cpulimits = true;
+		} else {
+			$list_cpulimits = true;
+		}
+		break;
+	case "cpulimit_delete":
+		if ($item = $cluster->get_cpulimit_by_id($_REQUEST["id"])) {
+			if ($cluster->get_cpulimit_usage($_REQUEST["id"]) <= 0) {
+			$cluster->delete_cpulimit($_REQUEST["id"]);
+			$xtpl->perex(_("Item deleted"), _("CPU Limit deleted."));
+			}
+		}
+		$list_cpulimits = true;
+		break;
 	case "newnode":
 		$xtpl->title2(_("Register new server into cluster"));
 		$xtpl->table_add_category('');
@@ -479,6 +529,14 @@ switch($_REQUEST["action"]) {
 								%memberid% - member id<br />
 								%pass% - password<br />
 								');
+		$xtpl->form_add_input(_("Limits change subject").':', 'text', '40', 'tpl_limits_change_subj', $cluster_cfg->get("mailer_tpl_limits_change_subj"), '%member% - nick<br />%vpsid% = VPS ID');
+		$xtpl->form_add_textarea(_("Limits changed<br /> template").':', 50, 8, 'tpl_limits_changed', $cluster_cfg->get("mailer_tpl_limits_changed"), '
+								%member% - nick<br />
+								%vpsid% - VPS ID<br />
+								%cpulimit% - CPU limit<br />
+								%ramlimit% - RAM limit<br />
+								%hddlimit% - HDD limit
+								');
 		$xtpl->form_out(_("Save changes"));
 		$xtpl->sbar_add(_("Back"), '?page=cluster&action=mailer');
 		break;
@@ -491,6 +549,8 @@ switch($_REQUEST["action"]) {
 		$cluster_cfg->set("mailer_tpl_payment_warning", $_REQUEST["tpl_payment_warning"]);
 		$cluster_cfg->set("mailer_tpl_member_added_subj", $_REQUEST["tpl_member_added_subj"]);
 		$cluster_cfg->set("mailer_tpl_member_added", $_REQUEST["tpl_member_added"]);
+		$cluster_cfg->set("mailer_tpl_limits_change_subj", $_REQUEST["tpl_limits_change_subj"]);
+		$cluster_cfg->set("mailer_tpl_limits_changed", $_REQUEST["tpl_limits_changed"]);
 		$list_mails = true;
 		break;
 	case "freelock":
@@ -599,6 +659,7 @@ if ($list_nodes) {
 	$xtpl->sbar_add(_("Manage VPS templates"), '?page=cluster&action=templates');
 	$xtpl->sbar_add(_("Manage RAM limits"), '?page=cluster&action=ramlimits');
 	$xtpl->sbar_add(_("Manage HDD limits"), '?page=cluster&action=hddlimits');
+	$xtpl->sbar_add(_("Manage CPU limits"), '?page=cluster&action=cpulimits');
 	$xtpl->sbar_add(_("Manage IPv4 address list"), '?page=cluster&action=ipv4addr');
 	$xtpl->sbar_add(_("Manage IPv6 address list"), '?page=cluster&action=ipv6addr');
 	$xtpl->sbar_add(_("Manage DNS servers"), '?page=cluster&action=dns');
@@ -746,6 +807,36 @@ if ($list_ramlimits) {
 	}
 	$xtpl->table_out();
 	$xtpl->sbar_add(_("New RAM limit"), '?page=cluster&action=ramlimit_new');
+}
+
+if ($list_cpulimits) {
+	$xtpl->title2(_("CPU limits list"));
+	$xtpl->table_add_category(_("ID"));
+	$xtpl->table_add_category(_("CPU Limit [%]"));
+	$xtpl->table_add_category(_("CPUs"));
+	$xtpl->table_add_category(_("Label"));
+	$xtpl->table_add_category(_("Uses"));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+	$list = $cluster->get_cpulimits();
+	if ($list)
+	foreach($list as $item) {
+	$usage = 0;
+	$usage = $cluster->get_cpulimit_usage($item["cpu_id"]);
+	$xtpl->table_td($item["cpu_id"], false, true);
+	$xtpl->table_td($item["cpu_limit"], false, true);
+	$xtpl->table_td($item["cpu_cpus"], false, true);
+	$xtpl->table_td($item["cpu_label"]);
+	$xtpl->table_td($usage, false, true);
+	$xtpl->table_td('<a href="?page=cluster&action=cpulimit_edit&id='.$item["cpu_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+	if ($usage > 0)
+		$xtpl->table_td('<img src="template/icons/delete_grey.png" title="'._("Delete - N/A, item is in use").'">');
+	else
+		$xtpl->table_td('<a href="?page=cluster&action=cpulimit_delete&id='.$item["cpu_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+	$xtpl->table_tr();
+	}
+	$xtpl->table_out();
+	$xtpl->sbar_add(_("New CPU limit"), '?page=cluster&action=cpulimit_new');
 }
 if ($list_locations) {
 	$xtpl->title2(_("Cluster locations list"));

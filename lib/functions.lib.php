@@ -137,6 +137,24 @@ function limit_privvmpages_by_id ($id) {
     return false;
 }
 
+function list_limit_cpulimit($force = false) {
+    global $db;
+    $sql = 'SELECT * FROM cfg_cpulimits'.(($force) ? ' WHERE cpu_usable=1' : '');
+    if ($result = $db->query($sql))
+	while ($row = $db->fetch_array($result))
+	    $ret[$row["cpu_id"]] = $row["cpu_label"];
+    return $ret;
+}
+
+function limit_cpulimit_by_id ($id) {
+    global $db;
+    $sql = 'SELECT * FROM cfg_cpulimits WHERE cpu_id="'.$db->check($id).'" LIMIT 1';
+    if ($result = $db->query($sql))
+	if ($row = $db->fetch_array($result))
+	    return $row;
+    return false;
+}
+
 function list_templates() {
     global $db;
     $sql = 'SELECT * FROM cfg_templates ORDER BY templ_label ASC';

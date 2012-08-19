@@ -605,7 +605,64 @@ class cluster {
 	global $db;
 	if ($this->get_ramlimit_usage($vm_id) <= 0) {
 	    $sql = 'DELETE FROM cfg_privvmpages
-			WHERE vm_id = "'.$db->check($id).'"';
+			WHERE vm_id = "'.$db->check($vm_id).'"';
+	    $db->query($sql);
+	}
+    }
+     function list_cpulimits() {
+	global $db;
+	$sql = 'SELECT * FROM cfg_cpulimits'.(($force) ? ' WHERE cpu_usable=1' : '');
+	if ($result = $db->query($sql))
+	    while ($row = $db->fetch_array($result))
+		$ret[$row["vm_id"]] = $row["vm_label"];
+	return $ret;
+    }
+    function get_cpulimits() {
+	global $db;
+	$sql = 'SELECT * FROM cfg_cpulimits'.(($force) ? ' WHERE cpu_usable=1' : '');
+	if ($result = $db->query($sql))
+	    while ($row = $db->fetch_array($result))
+		$ret[] = $row;
+	return $ret;
+    }
+    function get_cpulimit_usage($cpu_id) {
+	global $db;
+	$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_cpulimit='.$db->check($cpu_id);
+	if ($result = $db->query($sql)) {
+	    $row = $db->fetch_array($result);
+	    return $row["count"];
+	} else {
+	    return false;
+	}
+    }
+    function get_cpulimit_by_id($cpu_id) {
+	global $db;
+	$sql = 'SELECT * FROM cfg_cpulimits WHERE cpu_id='.$db->check($cpu_id);
+	$ret = false;
+	if ($result = $db->query($sql))
+	    $ret = $db->fetch_array($result);
+	return $ret;
+    }
+    function set_cpulimit($id = NULL, $label, $limit, $cpus) {
+	global $db;
+	if ($id != NULL)
+	    $sql = 'UPDATE cfg_cpulimits
+			SET cpu_label = "'.$db->check($label).'",
+			    cpu_limit =    "'.$db->check($limit).'",
+			    cpu_cpus =    "'.$db->check($cpus).'"
+			WHERE cpu_id = "'.$db->check($id).'"';
+	else
+	    $sql = 'INSERT INTO cfg_cpulimits
+			SET cpu_label = "'.$db->check($label).'",
+			    cpu_limit =    "'.$db->check($limit).'",
+			    cpu_cpus =    "'.$db->check($cpus).'"';
+	return ($db->query($sql));
+    }
+    function delete_cpulimit($cpu_id) {
+	global $db;
+	if ($this->get_ramlimit_usage($cpu_id) <= 0) {
+	    $sql = 'DELETE FROM cfg_cpulimits
+			WHERE cpu_id = "'.$db->check($cpu_id).'"';
 	    $db->query($sql);
 	}
     }

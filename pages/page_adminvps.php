@@ -29,6 +29,7 @@ function print_newvps() {
 	$xtpl->form_add_select(_("Distribution").':', 'vps_template', list_templates(), '',  '');
 	$xtpl->form_add_select(_("RAM").':', 'vps_privvmpages', list_limit_privvmpages(), '1',  '');
 	$xtpl->form_add_select(_("Disk space").':', 'vps_diskspace', list_limit_diskspace(), '1',  '');
+	$xtpl->form_add_select(_("CPU").':', 'vps_cpulimit', list_limit_cpulimit(), '1',  '');
 	//$xtpl->form_add_select(_("IPv4").':', 'ipv4', get_all_ip_list(4), '1', '');
 	$xtpl->form_add_checkbox(_("Boot on create").':', 'boot_after_create', '1', true, $hint = '');
 	$xtpl->form_add_textarea(_("Extra information about VPS").':', 28, 4, 'vps_info', '', '');
@@ -53,10 +54,10 @@ if ($_GET["run"] == 'stop') {
 }
 
 if ($_GET["run"] == 'start') {
-	if (($member_of_session->has_paid_now()) || (!$cluster_cfg->get("payments_enabled"))) {
+	if (($member_of_session->is_new()) || ($member_of_session->has_paid_now()) || (!$cluster_cfg->get("payments_enabled"))) {
 			$vps = vps_load($_GET["veid"]);
 			$xtpl->perex_cmd_output(_("Start of")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->start());
-	} else $xtpl->perex(_("Payment missing"), _("You are not allowed to make \"start\" opetarion.<br />Please pay all your fees. Once we receive all missing payments, your access will be resumed."));
+	} else $xtpl->perex(_("Payment missing"), _("You are not allowed to make \"start\" operation.<br />Please pay all your fees. Once we receive all missing payments, your access will be resumed."));
 }
 
 if ($_GET["run"] == 'restart') {
@@ -87,6 +88,7 @@ switch ($_GET["action"]) {
 																			$_REQUEST["m_id"],
 																			$_REQUEST["vps_privvmpages"],
 																			$_REQUEST["vps_diskspace"],
+																			$_REQUEST["vps_cpulimit"],
 																			$_REQUEST["vps_info"]);
 
 						$veid = $vps->veid;
@@ -156,13 +158,18 @@ switch ($_GET["action"]) {
 			if (isset($_REQUEST["veid"]) && $_SESSION["is_admin"]
 			    && ($diskspace = limit_diskspace_by_id($_REQUEST["vps_diskspace"]))
 			    && ($privvmpages = limit_privvmpages_by_id($_REQUEST["vps_privvmpages"]))
+			    && ($cpulimit = limit_cpulimit_by_id($_REQUEST["vps_cpulimit"]))
 			    ) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 				if ($vps->exists) {
 					$vps->set_privvmpages($_REQUEST["vps_privvmpages"]);
 					$vps->set_diskspace($_REQUEST["vps_diskspace"]);
+					$vps->set_cpulimit($_REQUEST["vps_cpulimit"]);
 					$xtpl->perex_cmd_output(_("Limits change")." {$vps->veid} ".strtolower(_("planned")), $out);
 					$show_info=true;
+					
+					if($_REQUEST["notify_owner"])
+						$vps->limit_change_notify();
 				}
 			} else {
 				$xtpl->perex(_("Error"), 'Error, contact your administrator');
@@ -379,7 +386,6 @@ if (isset($show_info) && $show_info) {
 		$xtpl->title(_("VPS details").' '._("[Admin mode]"));
 	else
 		$xtpl->title(_("VPS details").' '._("[User mode]"));
-  // FIXME: next line generates nasty notice!!!
 	if (!$vps->exists)
       $vps = vps_load($veid);
 
@@ -455,6 +461,15 @@ if (isset($show_info) && $show_info) {
 	$xtpl->form_add_input(_("Unix username").':', 'text', '30', 'user', 'root', '');
 	$xtpl->form_add_input(_("Safe password").':', 'password', '30', 'pass', '', '', -5);
 	$xtpl->form_add_input(_("Once again").':', 'password', '30', 'pass2', '', '');
+	if (!$_SESSION["is_admin"]) {
+    $xtpl->table_td('');
+    $xtpl->table_td('<b> Warning </b>: In order to set the password, <br />
+                    it has to be <b>sent in plaintext</b> to the target server. <br />
+                    This password changer is here only to enable first access to SSH of VPS. <br />
+                    Please use some simple password here and then change it <br />
+                    with <b>passwd</b> command once you\'ve logged onto SSH.');
+    $xtpl->table_tr();
+  }
 	$xtpl->table_add_category(_("Set password"));
 	$xtpl->table_add_category(_("(in your VPS, not in vpsAdmin!)"));
 	$xtpl->form_out(_("Go >>"));
@@ -524,6 +539,8 @@ if (isset($show_info) && $show_info) {
 		$xtpl->form_create('?page=adminvps&action=editlimits&veid='.$vps->veid, 'post');
 		$xtpl->form_add_select(_("RAM").':', 'vps_privvmpages', list_limit_privvmpages(), $vps->ve["vps_privvmpages"],  '');
 		$xtpl->form_add_select(_("Disk space").':', 'vps_diskspace', list_limit_diskspace(), $vps->ve["vps_diskspace"],  '');
+		$xtpl->form_add_select(_("CPU").':', 'vps_cpulimit', list_limit_cpulimit(), $vps->ve["vps_cpulimit"],  '');
+		$xtpl->form_add_checkbox(_("Notify owner").':', 'notify_owner', '1', true);
 		$xtpl->table_add_category(_("Change limits"));
 		$xtpl->table_add_category('&nbsp;');
 		$xtpl->form_out(_("Go >>"));
