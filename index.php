@@ -113,9 +113,12 @@ if (($_GET["page"] != "login") &&
 		case 'cluster':
 			include WWW_ROOT.'pages/page_cluster.php';
 			break;
-		case 'backup':
-			include WWW_ROOT.'pages/page_backup.php';
-			break;
+    case 'backup':
+      include WWW_ROOT.'pages/page_backup.php';
+      break;
+    case 'gencfg':
+      include WWW_ROOT.'pages/page_gencfg.php';
+      break;
 		case 'lang';
 			$lang->change($_GET['newlang']);
 			break;

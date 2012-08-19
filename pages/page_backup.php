@@ -22,24 +22,6 @@ if ($_SESSION["logged_in"]) {
 	$xtpl->title(_("Manage Backups"));
 	$list_backups = false;
 	switch ($_GET["action"]) {
-		case "mount":
-			if ($vps = $db->findByColumnOnce("vps", "vps_id", $_GET["mvps_id"])) {
-				if ($_SESSION["is_admin"] || ($vps["m_id"] == $_SESSION["member"]["m_id"])) {
-					add_transaction($_SESSION["member"]["m_id"], $vps["vps_server"], $vps["vps_id"], T_BACKUP_MOUNT);
-				} else $list_backups = true;
-			} else $list_backups = true;
-			break;
-		case "umount":
-			if ($vps = $db->findByColumnOnce("vps", "vps_id", $_GET["uvps_id"])) {
-				if ($_SESSION["is_admin"] || ($vps["m_id"] == $_SESSION["member"]["m_id"])) {
-					add_transaction($_SESSION["member"]["m_id"], $vps["vps_server"], $vps["vps_id"], T_BACKUP_UMOUNT);
-				} else $list_backups = true;
-			} else $list_backups = true;
-			break;
-		case "download":
-			break;
-		case "restore":
-			break;
 		case "cleanup":
 			if ($_SESSION["is_admin"]) {
 				if (!($vps = $db->findByColumnOnce("vps", "vps_id", $_GET["vps_id"]))) {
@@ -91,10 +73,10 @@ if ($_SESSION["logged_in"]) {
 		}
 		$listCond[] = implode(" OR ", $vpses);
 	}
-	while ($backup = $db->find("vps_backups", $listCond, "vps_id, idB ASC")) {
-		$vps_backups[$backup["vps_id"]][] = $backup;
+	while ($backup = $db->find("vps_backups", $listCond, "vps_id")) {
+		$vps_backups[$backup["vps_id"]] = $backup;
 	}
-	if ($vps_backups) foreach ($vps_backups as $k=>$backups) {
+	if ($vps_backups) foreach ($vps_backups as $k=>$backup) {
 		if (isset($loaded_vps[$k])) {
 			$vps = $loaded_vps[$k];
 		} else {
@@ -114,33 +96,14 @@ if ($_SESSION["logged_in"]) {
 		} else {
 			$xtpl->table_title("VPS {$k} [{$vps["vps_hostname"]}]");
 		}
-		$xtpl->table_add_category(_("ID"));
-		$xtpl->table_add_category(_("Start"));
-		$xtpl->table_add_category(_("End"));
-		$xtpl->table_add_category(_("Elapsed"));
-		$xtpl->table_add_category(_("Diff size"));
-		foreach ($backups as $backup) {
-			$details = unserialize($backup["details"]);
-			$xtpl->table_td($backup["idB"], false, true);
-			$xtpl->table_td(date("d.m.Y H:i:s",$details["StartTime"][1]));
-			$xtpl->table_td(date("d.m.Y H:i:s",$details["EndTime"][1]));
-			$xtpl->table_td(sec2hms($details["ElapsedTime"][1]));
-			$xtpl->table_td(sprintf("%2.2f GB", ($details["TotalDestinationSizeChange"][1]/1024/1024/1024)), false, true);
-			$xtpl->table_tr();
-		}
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		$details = nl2br(base64_decode($backup["details"]));
+    $xtpl->table_td($details, false, false, 2);
+    $xtpl->table_tr();
 		$xtpl->table_out();
-		if (!$is_deleted) {
-			$xtpl->table_td(_("Mount Backup FS into /vpsadmin_backuper/:"));
-			if ($vps["vps_backup_mounted"]) {
-				$xtpl->table_td("<a href=\"?page=backup&action=umount&uvps_id={$vps["vps_id"]}\">[Umount Backup FS]</a>");
-			} else {
-				$xtpl->table_td("<a href=\"?page=backup&action=mount&mvps_id={$vps["vps_id"]}\">[Mount Backup FS]</a>");
-			}
-			$xtpl->table_tr();
-			$xtpl->table_out();
-		}
 	} else {
-		$xtpl->title2(_("Sorry, no backups found. Perhaps the location does not support rdiff-backup."));
+		$xtpl->title2(_("No backups found."));
 	}
 
 if ($_SESSION["is_admin"]) {

@@ -88,7 +88,7 @@ while ($t = $db->find("transactions", $whereCond, "t_id DESC", $limit)) {
 	$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $t["t_time"]));
 	$xtpl->table_td("{$m["m_id"]} {$m["m_nick"]}");
 	$xtpl->table_td(($s) ? "{$s["server_id"]} {$s["server_name"]}" : '---');
-	$xtpl->table_td(($t["t_vps"] == 0) ? _("--Every--") : "{$t["t_vps"]}");
+	$xtpl->table_td(($t["t_vps"] == 0) ? _("--Every--") : "<a href='?page=adminvps&action=info&veid={$t["t_vps"]}'>{$t["t_vps"]}</a>");
 	$xtpl->table_td("{$t["t_type"]}".' '.transaction_label($t["t_type"]));
 	$xtpl->table_td($t["t_done"]);
 	$xtpl->table_td($t["t_success"]);

@@ -247,5 +247,9 @@ class member_load {
       }
       return false;
   }
+
+  function is_new() {
+    return isset($this->m["m_created"]) && ((time() - $this->m["m_created"]) <= 3600*24*7);
+  }
 }
 ?>

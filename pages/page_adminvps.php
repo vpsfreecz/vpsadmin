@@ -405,6 +405,10 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_td(_("Owner").':');
 	$xtpl->table_td($vps->ve["m_nick"]);
 		$xtpl->table_tr();
+	$xtpl->table_td(_("CPU").':');
+	$cpulimit = limit_cpulimit_by_id($vps->ve["vps_cpulimit"]);
+	$xtpl->table_td($cpulimit["cpu_label"]);
+		$xtpl->table_tr();
 	$xtpl->table_td(_("RAM").':');
 	$privvmpages = limit_privvmpages_by_id($vps->ve["vps_privvmpages"]);
 	$xtpl->table_td($privvmpages["vm_label"]);
