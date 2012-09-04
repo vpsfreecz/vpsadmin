@@ -128,14 +128,11 @@ class vps_load {
 		$params["hostname"] = $this->ve["vps_hostname"];
 		$params["template"] = $template["templ_name"];
 		$this->ve["vps_nameserver"] = "8.8.8.8";
-    $params["nameserver"] = $this->ve["vps_nameserver"];
+		$params["nameserver"] = $this->ve["vps_nameserver"];
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_REINSTALL_VE, $params);
-		$tmp["vps_privvmpages"] = $this->ve["vps_privvmpages"];
-		$tmp["vps_diskspace"] = $this->ve["vps_diskspace"];
-		$this->set_privvmpages(10, true);
-		$this->set_diskspace(10, true);
-		$this->set_privvmpages($tmp["vps_privvmpages"], true);
-		$this->set_diskspace($tmp["vps_diskspace"], true);
+		$this->set_privvmpages($this->ve["vps_privvmpages"], true);
+		$this->set_diskspace($this->ve["vps_diskspace"], true);
+		$this->set_cpulimit($this->ve["vps_cpulimit"], true);
     if ($ips)
       foreach ($ips as $ip) {
         $this->ipadd($ip["ip_addr"]);
@@ -384,7 +381,7 @@ function ipadd($ip, $type = 4) {
 	  $vzctl = "{$vm["vm_lim_soft"]}M". (($vm["vm_lim_hard"]) ? ":{$vm["vm_lim_hard"]}M" : '');
 	  $sql = 'UPDATE vps SET vps_privvmpages = "'.$db->check($privvmpages).'" WHERE vps_id = '.$db->check($this->veid);
 	  $db->query($sql);
-	  if ($db->affected_rows() == 1) {
+	  if ($db->affected_rows() == 1 || $force) {
 		$command = '--privvmpages '.$vzctl;
 		$this->ve["vps_privvmpages"] = $privvmpages;
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_LIMITS, $command);
@@ -399,7 +396,7 @@ function ipadd($ip, $type = 4) {
 	  $vzctl = "{$d["d_gb"]}G:{$d["d_gb"]}G";
 	  $sql = 'UPDATE vps SET vps_diskspace = "'.$db->check($diskspace).'" WHERE vps_id = '.$db->check($this->veid);
 	  $db->query($sql);
-	  if ($db->affected_rows() == 1) {
+	  if ($db->affected_rows() == 1 || $force) {
 		$command = '--diskspace '.$vzctl;
 		$this->ve["vps_diskspace"] = $diskspace;
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_LIMITS, $command);
@@ -413,7 +410,7 @@ function ipadd($ip, $type = 4) {
 	  $cpu = limit_cpulimit_by_id($cpulimit);
 	  $sql = 'UPDATE vps SET vps_cpulimit = "'.$db->check($cpulimit).'" WHERE vps_id = '.$db->check($this->veid);
 	  $db->query($sql);
-	  if ($db->affected_rows() == 1) {
+	  if ($db->affected_rows() == 1 || $force) {
 		$command = "--cpulimit {$cpu["cpu_limit"]} --cpus {$cpu["cpu_cpus"]}";
 		$this->ve["vps_cpulimit"] = $cpulimit;
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_LIMITS, $command);

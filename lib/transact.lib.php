@@ -274,6 +274,14 @@ function transaction_label ($t_type) {
 return $action_label;
 }
 
+function ensure_mountfile($vps_id) {
+  if ((! file_exists("/etc/vz/conf/{$vps_id}.mount")) &&
+      (file_exists(WWW_ROOT.'scripts/ve.mount'))) {
+    exec_wrapper ("cp -f " . WWW_ROOT.'scripts/ve.mount' . " /etc/vz/conf/{$vps_id}.mount");
+    exec_wrapper ("chmod +x /etc/vz/conf/{$vps_id}.mount");
+  }
+}
+
 function umount_backuper($vps_id) {
 	global $db;
 	$server = $db->findByColumnOnce("servers", "server_id", SERVER_ID);
@@ -300,6 +308,7 @@ function do_transaction($t) {
 	case T_START_VE:
 		$params = unserialize($t['t_param']);
 		if ($vps = vps_load($t['t_vps'])) {
+        ensure_mountfile($t['t_vps']);
 		    exec_wrapper (BIN_VZCTL.' start '.$db->check($vps->veid), $output, $retval);
 		    $ret = ($retval == 0);
 		    if ($params["onboot"]) {

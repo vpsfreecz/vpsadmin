@@ -403,7 +403,7 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_td($s->get_location_label());
 	$xtpl->table_tr();
 	$xtpl->table_td(_("Owner").':');
-	$xtpl->table_td($vps->ve["m_nick"]);
+	$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$vps->ve['m_id'].'">'.(isset($vps->ve["m_nick"]) ? $vps->ve["m_nick"] : false ).'</a>');
 		$xtpl->table_tr();
 	$xtpl->table_td(_("CPU").':');
 	$cpulimit = limit_cpulimit_by_id($vps->ve["vps_cpulimit"]);
@@ -435,6 +435,10 @@ if (isset($show_info) && $show_info) {
 	    $xtpl->table_td($vps->ve["vps_specials_installed"]);
 		$xtpl->table_tr();
 	}
+	$xtpl->table_td(_("Backuper").':');
+	$xtpl->table_td($vps->ve["vps_backup_enabled"] ? _("enabled") : _("disabled"));
+		$xtpl->table_tr();
+	
 	$xtpl->table_out();
 
     // set up ispcp
