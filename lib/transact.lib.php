@@ -319,7 +319,7 @@ function do_transaction($t) {
 		break;
 	case T_STOP_VE:
 		if ($vps = vps_load($t['t_vps'])) {
-			umount_backuper($t['t_vps']);
+        umount_backuper($t['t_vps']);
 		    exec_wrapper (BIN_VZCTL.' stop '.$db->check($vps->veid), $output, $retval);
 		    $ret = ($retval == 0);
 		    exec_wrapper (BIN_VZCTL.' set '.$db->check($vps->veid).' --save --onboot no', $output, $retval);
@@ -329,7 +329,8 @@ function do_transaction($t) {
 	case T_RESTART_VE:
 		$params = unserialize($t['t_param']);
 		if ($vps = vps_load($t['t_vps'])) {
-			umount_backuper($t['t_vps']);
+        umount_backuper($t['t_vps']);
+        ensure_mountfile($t['t_vps']);
 		    exec_wrapper (BIN_VZCTL.' restart '.$db->check($vps->veid), $output, $retval);
 		    $ret = ($retval == 0);
 		    if ($params["onboot"]) {
