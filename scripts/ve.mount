@@ -5,3 +5,5 @@ SRC=/mnt/storage.prg.vpsfree.cz/$VEID
 DST=/vpsadmin_backuper
 if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
 [ -d $SRC ] && mount -r -n -t simfs ${SRC} ${VE_ROOT}${DST} -o ${SRC}
+
+exit 0
