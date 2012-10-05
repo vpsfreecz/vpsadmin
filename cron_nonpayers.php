@@ -42,22 +42,45 @@ include WWW_ROOT.'lib/cluster.lib.php';
 include WWW_ROOT.'lib/cluster_status.lib.php';
 
 $db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME);
-$neverpaid = "";
-$nonpayers = "";
+
+$nonpayers = "<table cellspacing=\"0\">\n";
+
+$nonpayers .= "\t<tr>\n";
+$nonpayers .= "\t\t<th>"._("Nickname")."</th>\n\t\t<th>"._("Expiration")."</th>\n\t\t<th>"._("Info")."</th>\n";
+$nonpayers .= "\t</tr>\n";
+
 $whereCond = "m_paid_until IS NOT NULL AND m_paid_until != '' AND ADDDATE(FROM_UNIXTIME(m_paid_until), INTERVAL 14 DAY) < NOW()";
 
 while ($m = $db->find("members", $whereCond, "FROM_UNIXTIME(m_paid_until)")) {
 	$member = member_load($m["m_id"]);
 	
-	$nonpayers .= "\t".$member->m["m_nick"]." - ". strftime("%Y-%m-%d %H:%M", $member->m["m_paid_until"])." (".round(($member->m["m_paid_until"] - time()) / 60 / 60 / 24).")\n";
+	$nonpayers .= "\t<tr>\n";
+	$nonpayers .= "\t\t<td>".$member->m["m_nick"]."</td>\n";
+	$nonpayers .= "\t\t<td>".strftime("%Y-%m-%d %H:%M", $member->m["m_paid_until"])." (".round(($member->m["m_paid_until"] - time()) / 60 / 60 / 24).")</td>\n";
+	$nonpayers .= "\t\t<td>".$member->m["m_info"]."</td>\n";
+	$nonpayers .= "\t</tr>\n";
 }
 
+$nonpayers .= "</table>\n";
+
+$neverpaid = "<table cellspacing=\"0\">\n";
+$neverpaid .= "\t<tr>\n";
+$neverpaid .= "\t\t<th>"._("Nickname")."</th>\n\t\t<th>"._("Created")."</th>\n\t\t<th>"._("Info")."</th>\n";
+$neverpaid .= "\t</tr>\n";
+
 $whereCond = "(m_paid_until IS NULL OR m_paid_until = '') AND ADDDATE(FROM_UNIXTIME(m_created), INTERVAL 7 DAY) < NOW()";
+
 while ($m = $db->find("members", $whereCond, "m_created")) {
 	$member = member_load($m["m_id"]);
 	
-	$neverpaid .= "\t".$member->m["m_nick"]." - vytvořen ".strftime("%Y-%m-%d %H:%M", $member->m["m_created"])." (".round(($member->m["m_created"] - time()) / 60 / 60 / 24).")\n";
+	$neverpaid .= "\t<tr>\n";
+	$neverpaid .= "\t\t<td>".$member->m["m_nick"]."</td>\n";
+	$neverpaid .= "\t\t<td>".strftime("%Y-%m-%d %H:%M", $member->m["m_created"])." (".round(($member->m["m_created"] - time()) / 60 / 60 / 24).")</td>\n";
+	$neverpaid .= "\t\t<td>".$member->m["m_info"]."</td>\n";
+	$neverpaid .= "\t</tr>\n";
 }
+
+$neverpaid .= "</table>\n";
 
 if(empty($neverpaid) && empty($nonpayers))
 	die;
@@ -69,7 +92,7 @@ $headers .= "Reply-To: ".$cluster_cfg->get("mailer_from")."\n";
 $headers .= "Return-Path: ".$cluster_cfg->get("mailer_from")."\n";
 $headers .= "X-Mailer: vpsAdmin\n";
 $headers .= "MIME-Version: 1.0\n";
-$headers .= "Content-type: text/plain; charset=UTF-8\n";
+$headers .= "Content-type: text/html; charset=UTF-8\n";
 
 $subject = $cluster_cfg->get("mailer_tpl_nonpayers_subj");
 
