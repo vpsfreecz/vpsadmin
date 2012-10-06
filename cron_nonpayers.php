@@ -43,7 +43,7 @@ include WWW_ROOT.'lib/cluster_status.lib.php';
 
 $db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME);
 
-$nonpayers = "<table cellspacing=\"0\">\n";
+$nonpayers = "<table cellspacing=\"0\" cellpadding=\"6\" border=\"1\">\n";
 
 $nonpayers .= "\t<tr>\n";
 $nonpayers .= "\t\t<th>"._("Nickname")."</th>\n\t\t<th>"._("Expiration")."</th>\n\t\t<th>"._("Info")."</th>\n";
@@ -63,7 +63,7 @@ while ($m = $db->find("members", $whereCond, "FROM_UNIXTIME(m_paid_until)")) {
 
 $nonpayers .= "</table>\n";
 
-$neverpaid = "<table cellspacing=\"0\">\n";
+$neverpaid = "<table cellspacing=\"0\" cellpadding=\"6\" border=\"1\">\n";
 $neverpaid .= "\t<tr>\n";
 $neverpaid .= "\t\t<th>"._("Nickname")."</th>\n\t\t<th>"._("Created")."</th>\n\t\t<th>"._("Info")."</th>\n";
 $neverpaid .= "\t</tr>\n";
