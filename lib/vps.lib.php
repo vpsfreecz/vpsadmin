@@ -154,7 +154,7 @@ class vps_load {
   function passwd ($user, $new_pass) {
 		global $db;
 		if ($this->exists) {
-			$command = '--userpasswd '.$user.':'.$db->check($new_pass);
+			$command = array('userpasswd' => $user.':'.$db->check($new_pass));
 			add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_PASSWD, $command);
 		}
   }
@@ -200,7 +200,7 @@ class vps_load {
     if ($this->exists) {
 	$sql = 'UPDATE vps SET vps_hostname = "'.$db->check($new_hostname).'" WHERE vps_id='.$db->check($this->veid);
 	if ($result = $db->query($sql)) {
-	    $command = '--hostname '.$new_hostname;
+	    $command = array('hostname' => $new_hostname);
 	    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_HOSTNAME, $command);
 	}
     }
@@ -263,7 +263,7 @@ function ipadd($ip, $type = 4) {
 			WHERE ip_id = "'.$db->check($ipadr["ip_id"]).'"';
 		$db->query($sql);
 		if ($db->affected_rows() > 0) {
-		    $command = '--ipadd '.$ip;
+		    $command = array('ipadd' => $ip);
 		    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_IPADD, $command);
 		} else
 		    return NULL;
@@ -276,7 +276,7 @@ function ipadd($ip, $type = 4) {
 	if ($this->exists) {
 	  $sql = 'UPDATE vps_ip SET vps_id = 0 WHERE ip_addr="'.$db->check($ip).'"';
 	  if ($result = $db->query($sql)) {
-	  	$command = '--ipdel '.$ip;
+	  	$command = array('ipdel' => $ip);
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_IPDEL, $command);
 	  	}
 	  else
@@ -290,9 +290,9 @@ function ipadd($ip, $type = 4) {
 	  $sql = 'UPDATE vps SET vps_nameserver = "'.$db->check($nameserver).'" WHERE vps_id = '.$db->check($this->veid);
 	  $db->query($sql);
 	  $nameservers = explode(",", $nameserver);
-	  $command = '';
+	  $command = array("nameservers" => array());
 	  foreach ($nameservers as $ns) {
-      $command .= '--nameserver '.$ns.' ';
+      $command["nameservers"][] = $ns;
 	  }
 	  $this->ve["vps_nameserver"] = $nameserver;
 	  add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_DNS, $command);
@@ -382,7 +382,7 @@ function ipadd($ip, $type = 4) {
 	  $sql = 'UPDATE vps SET vps_privvmpages = "'.$db->check($privvmpages).'" WHERE vps_id = '.$db->check($this->veid);
 	  $db->query($sql);
 	  if ($db->affected_rows() == 1 || $force) {
-		$command = '--privvmpages '.$vzctl;
+		$command = array('privvmpages' => $vzctl);
 		$this->ve["vps_privvmpages"] = $privvmpages;
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_LIMITS, $command);
 	  } else return array('0' => '');
@@ -397,7 +397,7 @@ function ipadd($ip, $type = 4) {
 	  $sql = 'UPDATE vps SET vps_diskspace = "'.$db->check($diskspace).'" WHERE vps_id = '.$db->check($this->veid);
 	  $db->query($sql);
 	  if ($db->affected_rows() == 1 || $force) {
-		$command = '--diskspace '.$vzctl;
+		$command = array('diskspace' => $vzctl);
 		$this->ve["vps_diskspace"] = $diskspace;
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_LIMITS, $command);
 	  } else return array('0' => '');
@@ -411,7 +411,7 @@ function ipadd($ip, $type = 4) {
 	  $sql = 'UPDATE vps SET vps_cpulimit = "'.$db->check($cpulimit).'" WHERE vps_id = '.$db->check($this->veid);
 	  $db->query($sql);
 	  if ($db->affected_rows() == 1 || $force) {
-		$command = "--cpulimit {$cpu["cpu_limit"]} --cpus {$cpu["cpu_cpus"]}";
+		$command = array("cpulimit" => $cpu["cpu_limit"], "cpus" => $cpu["cpu_cpus"]);
 		$this->ve["vps_cpulimit"] = $cpulimit;
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_LIMITS, $command);
 	  } else return array('0' => '');
