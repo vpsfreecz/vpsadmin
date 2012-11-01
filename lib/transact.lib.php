@@ -88,7 +88,7 @@ function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = 'none',
 			    t_type = "'.$db->check($t_type).'",
 			    t_success = 0,
 			    t_done = 0,
-			    t_param = "'.$db->check(serialize($t_param)).'"';
+			    t_param = "'.$db->check(json_encode($t_param)).'"';
 	if ($transact_group) $sql .= ', t_group="'.$transact_group.'"';
 	$result = $db->query_trans($sql);
     }
