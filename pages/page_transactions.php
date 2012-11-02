@@ -104,7 +104,12 @@ while ($t = $db->find("transactions", $whereCond, "t_id DESC", $limit)) {
 	} else
 		$xtpl->table_tr();
 	if ($_REQUEST["details"]) {
-		$xtpl->table_td(nl2br(print_r(json_decode(stripslashes($t["t_param"]), true), true)), false, false, 8);
+		$xtpl->table_td(nl2br(
+			"<strong>"._("Input").":</strong>\n".
+			print_r(json_decode(stripslashes($t["t_param"]), true), true).
+			"\n<strong>"._("Output").":</strong>\n".
+			print_r(json_decode(stripslashes($t["t_output"]), true), true)
+		), false, false, 8);
 		$xtpl->table_tr();
 	}
 }
