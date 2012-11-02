@@ -675,7 +675,7 @@ class cluster {
 	return false;
     }
     function set_location($id = NULL, $label, $has_ipv6 = false, $onboot, $has_ospf, $has_rdiff, $rd_tgt,
-    						$rd_hist, $rd_sshfs, $rd_archfs, $rd_tgt_path) {
+    						$rd_hist, $rd_sshfs, $rd_archfs, $rd_tgt_path, $tpl_sync_path) {
 	global $db;
 	if ($id != NULL)
 	    $sql = 'UPDATE locations
@@ -688,6 +688,7 @@ class cluster {
 			    location_rdiff_mount_sshfs = "'.$db->check($rd_sshfs).'",
 			    location_rdiff_mount_archfs = "'.$db->check($rd_archfs).'",
 			    location_rdiff_target_path = "'.$db->check($rd_tgt_path).'",
+			    location_tpl_sync_path = "'.$db->check($tpl_sync_path).'",
 			    location_vps_onboot = "'.$db->check($onboot).'"
 			WHERE location_id = "'.$db->check($id).'"';
 	else
@@ -701,6 +702,7 @@ class cluster {
 			    location_rdiff_mount_sshfs = "'.$db->check($rd_sshfs).'",
 			    location_rdiff_mount_archfs = "'.$db->check($rd_archfs).'",
 			    location_rdiff_target_path = "'.$db->check($rd_tgt_path).'",
+			    location_tpl_sync_path = "'.$db->check($tpl_sync_path).'",
 			    location_vps_onboot = "'.$db->check($onboot).'"';
 	return ($db->query($sql));
     }
