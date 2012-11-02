@@ -65,7 +65,7 @@ function add_transaction_locationwide($m_id, $vps_id, $t_type, $t_param = 'none'
 	add_transaction($m_id, $id, $vps_id, $t_type, $t_param, $group_id);
 }
 
-function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = 'none', $transact_group = NULL) {
+function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = array(), $transact_group = NULL) {
     global $db;
     $sql_check = 'SELECT COUNT(*) AS count FROM transactions
 		WHERE

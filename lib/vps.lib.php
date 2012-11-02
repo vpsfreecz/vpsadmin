@@ -227,7 +227,7 @@ class vps_load {
 	  if ($result = $db->query($sql))
 	  	if ($result2 = $db->query($sql2)) {
 			$this->exists = false;
-	  		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_DESTROY_VE, 'none');
+	  		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_DESTROY_VE);
 			}
 	  	else return false;
 	  else return false;
@@ -292,7 +292,7 @@ function ipadd($ip, $type = 4) {
 	  $nameservers = explode(",", $nameserver);
 	  $command = array("nameservers" => array());
 	  foreach ($nameservers as $ns) {
-      $command["nameservers"][] = $ns;
+      $command["nameserver"][] = $ns;
 	  }
 	  $this->ve["vps_nameserver"] = $nameserver;
 	  add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_DNS, $command);
