@@ -734,6 +734,9 @@ class XTemplate {
 		    case "ok":
 			$this->assign('T_ICO', '<img src="template/icons/transact_ok.png"> ');
 			break;
+			case "warning":
+			$this->assign('T_ICO', '<img src="template/icons/warning.png"> ');
+			break;
 		    default:
 			$this->assign('T_ICO', '<img src="template/icons/transact_fail.png"> ');
 			break;

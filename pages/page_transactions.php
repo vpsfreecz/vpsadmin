@@ -96,6 +96,8 @@ while ($t = $db->find("transactions", $whereCond, "t_id DESC", $limit)) {
 		$xtpl->table_tr(false, 'ok');
 	else if ($t["t_done"]==1 && $t["t_success"]==0)
 		$xtpl->table_tr(false, 'error');
+	else if ($t["t_done"]==1 && $t["t_success"]==2)
+		$xtpl->table_tr(false, 'warning');
 	elseif ($t["t_done"]==0 && $t["t_success"]==0) {
 		if ($_SESSION["is_admin"]) {
 			$xtpl->table_td('<a href="?page=transactions&action=delete&did='.$t["t_id"].'"><img src="template/icons/vps_delete.png"  title="'._("Delete transaction").'"/></a>');

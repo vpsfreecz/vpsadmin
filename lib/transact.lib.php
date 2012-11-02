@@ -153,8 +153,10 @@ function list_transactions() {
     if ($result = $db->query($sql))
 	while ($t = $db->fetch_array($result)) {
 	    if ($t['t_done'] == 0) $status = 'pending';
-	    if (($t['t_done'] == 1) && ($t['t_success'] == 0)) $status = 'error';
-	    if (($t['t_done'] == 1) && ($t['t_success'] == 1)) $status = 'ok';
+	    else if (($t['t_done'] == 1) && ($t['t_success'] == 0)) $status = 'error';
+	    else if (($t['t_done'] == 1) && ($t['t_success'] == 1)) $status = 'ok';
+	    else if (($t['t_done'] == 1) && ($t['t_success'] == 2)) $status = 'warning';
+	    
 	    $xtpl->transaction($t['t_id'],($t["server_name"] == "") ? "---" : $t["server_name"],
 				    ($t["t_vps"] == 0) ? "---" : $t["t_vps"], transaction_label($t['t_type']), $status);
 	}
