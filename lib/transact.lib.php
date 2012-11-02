@@ -65,7 +65,7 @@ function add_transaction_locationwide($m_id, $vps_id, $t_type, $t_param = 'none'
 	add_transaction($m_id, $id, $vps_id, $t_type, $t_param, $group_id);
 }
 
-function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = array(), $transact_group = NULL) {
+function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = array(), $transact_group = NULL, $dep = NULL) {
     global $db;
     $sql_check = 'SELECT COUNT(*) AS count FROM transactions
 		WHERE
@@ -74,6 +74,7 @@ function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = array()
 		AND	t_server = "'.$db->check($server_id).'"
 		AND	t_vps = "'.$db->check($vps_id).'"
 		AND	t_type = "'.$db->check($t_type).'"
+		AND t_depends_on = '. ($dep ? '"'.$db->check($dep).'"' : 'NULL') .'
 		AND	t_success = 0
 		AND	t_done = 0
 		AND	t_param = "'.$db->check(serialize($t_param)).'"';
@@ -86,11 +87,12 @@ function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = array()
 			    t_server = "'.$db->check($server_id).'",
 			    t_vps = "'.$db->check($vps_id).'",
 			    t_type = "'.$db->check($t_type).'",
+			    t_depends_on = '. ($dep ? '"'.$db->check($dep).'"' : 'NULL') .',
 			    t_success = 0,
 			    t_done = 0,
 			    t_param = "'.$db->check(json_encode($t_param)).'"';
 	if ($transact_group) $sql .= ', t_group="'.$transact_group.'"';
-	$result = $db->query_trans($sql);
+	$result = $db->query($sql);
     }
 }
 

@@ -271,13 +271,13 @@ function ipadd($ip, $type = 4) {
 	}
 }
 
-  function ipdel($ip) {
+  function ipdel($ip, $dep = NULL) {
 	global $db;
 	if ($this->exists) {
 	  $sql = 'UPDATE vps_ip SET vps_id = 0 WHERE ip_addr="'.$db->check($ip).'"';
 	  if ($result = $db->query($sql)) {
 	  	$command = array('ipdel' => $ip);
-		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_IPDEL, $command);
+		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_IPDEL, $command, NULL, $dep);
 	  	}
 	  else
 	  	return NULL;
@@ -302,20 +302,14 @@ function ipadd($ip, $type = 4) {
   function offline_migrate($target_id) {
 	global $db, $cluster;
 	if ($this->exists) {
-	  $servers = list_servers();
-	  if (isset($servers[$target_id])) {
+		$servers = list_servers();
+		if (isset($servers[$target_id])) {
 		$sql = 'UPDATE vps SET vps_server = "'.$db->check($target_id).'" WHERE vps_id = '.$db->check($this->veid);
 		$db->query($sql);
 		$this_loc = $this->get_location();
 		$target_server = server_by_id($target_id);
 		$loc["location_has_shared_storage"] = false;
-		if ($this_loc != $cluster->get_location_of_server($target_id)) {
-		    $ips = $this->iplist();
-		    $params["ips"] = array();
-
-		    foreach($ips as $ip)
-			$params["ips"][] = $ip["ip_addr"];
-		} else {
+		if ($this_loc == $cluster->get_location_of_server($target_id)) {
 			$loc = $db->findByColumnOnce("locations", "location_id", $this_loc);
 			if ($loc["location_has_shared_storage"]) {
 				$params["on_shared_storage"] = true;
@@ -324,7 +318,16 @@ function ipadd($ip, $type = 4) {
 		}
 		$params["target"] = $target_server["server_ip4"];
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_MIGRATE_OFFLINE, $params);
+		$migration_id = $db->insertId();
+		
 		$this->ve["vps_server"] = $target_id;
+		
+		if ($this_loc != $cluster->get_location_of_server($target_id)) {
+			$ips = $this->iplist();
+			
+			foreach($ips as $ip)
+				$this->ipdel($ip["ip_addr"], $migration_id);
+		}
 	  }
 	}
   }
