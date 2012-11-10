@@ -16,12 +16,12 @@ module VpsAdmind
 		end
 		
 		def start
-			update_status
+			update_status if Settings::UPDATE_VPS_STATUS
 			
 			loop do
 				sleep(Settings::CHECK_INTERVAL)
 				
-				update_status unless @status_thread.alive?
+				update_status if Settings::UPDATE_VPS_STATUS and not @status_thread.alive?
 				
 				@workers.delete_if do |wid, w|
 					until w.done.empty?

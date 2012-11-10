@@ -15,6 +15,8 @@ module Settings
 	STATUS_INTERVAL = 300
 	DB_RETRY_INTERVAL = 30
 	
+	UPDATE_VPS_STATUS = true
+	
 	VZCTL = "/usr/sbin/vzctl"
 	VZLIST = "/usr/sbin/vzlist"
 	VZQUOTA = "/usr/sbin/vzquota"
