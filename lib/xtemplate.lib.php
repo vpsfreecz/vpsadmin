@@ -702,6 +702,20 @@ class XTemplate {
 		if ($hint != '') $this->table_td($hint);
 		$this->table_tr();
 	}
+	
+	/**
+	  * Add radio to form
+	  * @param $label - label of radio
+	  * @param $name - $_RESULT[name]
+	  * @param $value - value if checked
+	  * @param $checked - if it is checked by default
+	  * @param $hint - helping hint
+	  */
+	function form_add_radio($label = 'popisek', $name = 'input_fromgen', $value = '', $checked=false, $hint = '') {
+		$this->table_td($label);
+		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' />');
+		if ($hint != '') $this->table_td($hint);
+	}
 
 	/**
 	  * Parse out the form
