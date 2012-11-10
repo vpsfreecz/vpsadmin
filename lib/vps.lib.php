@@ -490,18 +490,50 @@ function ipadd($ip, $type = 4) {
     }
   }
 
-  function set_backuper($how) {
+  function set_backuper($how, $exclude) {
   	global $db;
 	if ($_SESSION["is_admin"]) {
-		if ($how) {
-			$this->ve["vps_backup_enabled"] = true;
-			$sql = 'UPDATE vps SET vps_backup_enabled=1 WHERE vps_id = '.$db->check($this->veid);
-		} else {
-			$this->ve["vps_backup_enabled"] = false;
-			$sql = 'UPDATE vps SET vps_backup_enabled=0 WHERE vps_id = '.$db->check($this->veid);
+		$this->ve["vps_backup_enabled"] = (bool)$how;
+		$sql = 'UPDATE vps SET vps_backup_enabled='.($how ? '1' : '0').', vps_backup_exclude = "'.$db->check($exclude).'" WHERE vps_id = '.$db->check($this->veid);
+  	} else
+		$sql = 'UPDATE vps SET vps_backup_exclude = "'.$db->check($exclude).'" WHERE vps_id = '.$db->check($this->veid);
+  	
+  	$db->query($sql);
+  }
+  
+  function restore($timestamp, $backup_first = false) {
+	if(!$this->exists)
+		return NULL;
+  
+	global $db;
+	$backup_id = NULL;
+	
+	if ($backup_first)
+	{
+		$params = array(
+			"server_name" => $this->ve["server_name"],
+			"exclude" => preg_split ("/(\r\n|\n|\r)/", $this->ve["vps_backup_exclude"]),
+		);
+		$backuper = $this->get_backuper_server();
+		echo var_dump($backuper);
+		add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, T_BACKUP_SCHEDULE, $params);
+		$backup_id = $db->insertId();
+	}
+	
+	$params = array("datetime" => date("c", (int)$timestamp));
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_RESTORE, $params, NULL, $backup_id);
+  }
+  
+  function get_backuper_server() {
+	global $db;
+	$sql = "SELECT s.* FROM locations l INNER JOIN servers s ON s.server_id = l.location_backup_server_id WHERE location_id = '".$db->check($this->ve["server_location"])."'";
+	if ($result = $db->query($sql)) {
+		if ($row = $db->fetch_array($result)) {
+			return $row;
 		}
-		$db->query($sql);
-  	}
+	}
+	
+	return NULL;
   }
 
   function get_location() {
