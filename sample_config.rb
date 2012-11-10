@@ -2,6 +2,7 @@
 
 require 'lib/node'
 require 'lib/vps'
+require 'lib/backuper'
 
 module Settings
 	DB_HOST = "localhost"
@@ -32,6 +33,10 @@ module Settings
 	BACKUPS_DIR = "/mnt/storage.prg.vpsfree.cz"
 	RESTORE_TARGET = "/vz/private/%s.restoring"
 	
+	BACKUPER_LOCK_INTERVAL = 30
+	BACKUPER_MOUNTPOINT = "/mnt"
+	BACKUPER_DEST = "/storage/vpsfree.cz/vps"
+	
 	COMMANDS = {
 		3 => {:class => "Node", :method => "reboot"},
 		4 => {:class => "Node", :method => "sync_templates"},
@@ -49,7 +54,9 @@ module Settings
 		3003 => {:class => "VPS", :method => "reinstall"},
 		4001 => {:class => "VPS", :method => "migrate_offline"},
 		4002 => {:class => "VPS", :method => "migrate_online"},
-		5003 => {:Class => "VPS", :method => "restore"},
+		5003 => {:class => "VPS", :method => "restore"},
+		5005 => {:class => "Backuper", :method => "backup"},
+		5006 => {:class => "Backuper", :method => "backup"},
 		8001 => {:class => "VPS", :method => "features"},
 	}
 end
