@@ -90,11 +90,8 @@ class VPS < Executor
 		syscmd("#{Settings::RM} -rf #{restore}") if File.exists?(restore)
 		syscmd("#{Settings::RDIFF_BACKUP} -r #{@params["datetime"]} #{Settings::BACKUPS_DIR}/#{@veid} #{restore}")
 		stop
-		#syscmd("#{Settings::MV} /vz/private/#{@veid} /vz/private/#{@veid}.backup")
+		syscmd("#{Settings::RM} -rf /vz/private/#{@veid}")
 		syscmd("#{Settings::MV} #{restore} /vz/private/#{@veid}")
-		start
-		sleep(1)
-		stop
 		syscmd("#{Settings::VZQUOTA} drop #{@veid}")
 		start
 	end

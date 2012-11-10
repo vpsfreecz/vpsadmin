@@ -13,10 +13,14 @@ class Db
 	end
 	
 	def prepared(q, *params)
+		prepared_st(q, *params).close
+	end
+	
+	def prepared_st(q, *params)
 		protect do
 			st = @my.prepare(q)
 			st.execute(*params)
-			st.close
+			st
 		end
 	end
 	
