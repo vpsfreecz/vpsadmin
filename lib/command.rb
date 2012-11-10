@@ -20,6 +20,8 @@ class Command
 		
 		@executor = Kernel.const_get(cmd[:class]).new(@trans["t_vps"], JSON.parse(@trans["t_param"]))
 		
+		@time_start = Time.new.to_i
+		
 		begin
 			@status = @executor.method(cmd[:method]).call[:ret]
 		rescue CommandFailed => err
@@ -28,12 +30,14 @@ class Command
 			@output[:exitstatus] = err.rc
 			@output[:error] = err.output
 		end
+		
+		@time_end = Time.new.to_i
 	end
 	
 	def save(db)
 		db.prepared(
-			"UPDATE transactions SET t_done=1, t_success=?, t_output=? WHERE t_id=?",
-			{:failed => 0, :ok => 1, :warning => 2}[@status], (@executor ? @output.merge(@executor.output) : @output).to_json, @trans["t_id"]
+			"UPDATE transactions SET t_done=1, t_success=?, t_output=?, t_real_start=?, t_end=? WHERE t_id=?",
+			{:failed => 0, :ok => 1, :warning => 2}[@status], (@executor ? @output.merge(@executor.output) : @output).to_json, @time_start, @time_end, @trans["t_id"]
 		)
 		
 		@executor.post_save(db) if @executor
