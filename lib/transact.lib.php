@@ -28,6 +28,8 @@ define ('T_BACKUP_MOUNT', 5001);
 define ('T_BACKUP_UMOUNT', 5002);
 define ('T_BACKUP_RESTORE', 5003);
 define ('T_BACKUP_DOWNLOAD', 5004);
+define ('T_BACKUP_SCHEDULE', 5005);
+define ('T_BACKUP_REGULAR', 5006);
 define ('T_FIREWALL_RELOAD', 6001);
 define ('T_FIREWALL_FLUSH', 6002);
 define ('T_CLUSTER_STORAGE_CFG_RELOAD', 7001);
@@ -271,6 +273,15 @@ function transaction_label ($t_type) {
 		break;
 	case T_BACKUP_UMOUNT:
 	    $action_label = 'Umount backup';
+		break;
+	case T_BACKUP_RESTORE:
+		$action_label = 'Restore';
+		break;
+	case T_BACKUP_SCHEDULE:
+		$action_label = 'Forced backup';
+		break;
+	case T_BACKUP_REGULAR:
+		$action_label = 'Backup';
 		break;
 	default:
 	    $action_label = '['.$t_type.']';
