@@ -278,7 +278,7 @@ function transaction_label ($t_type) {
 		$action_label = 'Restore';
 		break;
 	case T_BACKUP_SCHEDULE:
-		$action_label = 'Forced backup';
+		$action_label = 'On-demand backup';
 		break;
 	case T_BACKUP_REGULAR:
 		$action_label = 'Backup';

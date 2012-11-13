@@ -96,7 +96,7 @@ if ($_SESSION["logged_in"]) {
 			
 			if($lastId != $backup["vps_id"]) {
 				if($lastId > 0) {
-					$xtpl->form_add_checkbox(_("Backup prior to restore?"), "backup_first", "1", false);
+					$xtpl->form_add_checkbox(_("Make a full backup before restore?"), "backup_first", "1", false);
 					$xtpl->form_out(_("Restore"));
 				}
 					
@@ -119,7 +119,7 @@ if ($_SESSION["logged_in"]) {
 		}
 		
 		if ($lastId) {
-			$xtpl->form_add_checkbox(_("Backup prior to restore?"), "backup_first", "1", false);
+			$xtpl->form_add_checkbox(_("Make a full backup before restore?"), "backup_first", "1", false);
 			$xtpl->form_out(_("Restore"));
 		} else
 			$xtpl->title2(_("No backups found."));
