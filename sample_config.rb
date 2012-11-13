@@ -10,6 +10,7 @@ module Settings
 	DB_PASS = "password"
 	DB_NAME = "vpsadmin"
 	SERVER_ID = 1
+	DOMAIN = "vpsfree.cz"
 	NETDEV = "eth0"
 	THREADS = 6
 	CHECK_INTERVAL = 1
@@ -22,6 +23,7 @@ module Settings
 	VZLIST = "/usr/sbin/vzlist"
 	VZQUOTA = "/usr/sbin/vzquota"
 	VZMIGRATE = "/usr/sbin/vzmigrate"
+	VZ_ROOT = "/vz"
 	
 	CAT = "/bin/cat"
 	DF = "/bin/df"
@@ -30,8 +32,8 @@ module Settings
 	RDIFF_BACKUP = "/usr/bin/rdiff-backup"
 	RSYNC = "/usr/bin/rsync"
 	
-	BACKUPS_DIR = "/mnt/storage.prg.vpsfree.cz"
-	RESTORE_TARGET = "/vz/private/%s.restoring"
+	BACKUPS_MNT_DIR = "/mnt"
+	RESTORE_TARGET = "#{VZ_ROOT}/private/%s.restoring"
 	
 	BACKUPER_LOCK_INTERVAL = 30
 	BACKUPER_MOUNTPOINT = "/mnt"

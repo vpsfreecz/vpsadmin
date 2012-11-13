@@ -40,7 +40,7 @@ class Backuper < Executor
 	end
 	
 	def mountpoint
-		"#{Settings::BACKUPER_MOUNTPOINT}/#{@params["server_name"]}.vpsfree.cz/#{@veid}"
+		"#{Settings::BACKUPER_MOUNTPOINT}/#{@params["server_name"]}.#{Settings::DOMAIN}/#{@veid}"
 	end
 	
 	def post_save(db)

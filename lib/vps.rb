@@ -7,9 +7,9 @@ class VPS < Executor
 		check_onboot
 	end
 	
-	def stop
+	def stop(params = {})
 		@update = true
-		vzctl(:stop, @veid)
+		vzctl(:stop, @veid, {}, false, params[:force] ? [5,66] : [])
 		vzctl(:set, @veid, {:onboot => "no"}, true)
 	end
 	
@@ -86,12 +86,14 @@ class VPS < Executor
 	end
 	
 	def restore
-		restore = Settings::RESTORE_TARGET % [@veid,]
-		syscmd("#{Settings::RM} -rf #{restore}") if File.exists?(restore)
-		syscmd("#{Settings::RDIFF_BACKUP} -r #{@params["datetime"]} #{Settings::BACKUPS_DIR}/#{@veid} #{restore}")
+		target = Settings::RESTORE_TARGET % [@veid,]
+		syscmd("#{Settings::RM} -rf #{target}") if File.exists?(target)
+		syscmd("#{Settings::RDIFF_BACKUP} -r #{@params["datetime"]} #{Settings::BACKUPS_MNT_DIR}/#{@params["backuper"]}.#{Settings::DOMAIN}/#{@veid} #{target}")
+		stop(:force => true)
+		syscmd("#{Settings::VZQUOTA} off #{@veid} -f", [6,])
 		stop
-		syscmd("#{Settings::RM} -rf /vz/private/#{@veid}")
-		syscmd("#{Settings::MV} #{restore} /vz/private/#{@veid}")
+		syscmd("#{Settings::RM} -rf #{Settings::VZ_ROOT}/private/#{@veid}")
+		syscmd("#{Settings::MV} #{target} #{Settings::VZ_ROOT}/private/#{@veid}")
 		syscmd("#{Settings::VZQUOTA} drop #{@veid}")
 		start
 	end
