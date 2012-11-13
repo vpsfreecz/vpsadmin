@@ -74,6 +74,7 @@ $xtpl->form_out(_("Show"));
 
 $xtpl->table_add_category("ID");
 $xtpl->table_add_category("TIME");
+$xtpl->table_add_category("TOOK");
 $xtpl->table_add_category("MEMBER");
 $xtpl->table_add_category("SERVER");
 $xtpl->table_add_category("VPS");
@@ -81,13 +82,13 @@ $xtpl->table_add_category("TYPE");
 $xtpl->table_add_category("DEP");
 $xtpl->table_add_category("DONE?");
 $xtpl->table_add_category("OK?");
-$xtpl->table_add_category("TOOK");
 
 while ($t = $db->find("transactions", $whereCond, "t_id DESC", $limit)) {
 	$m = $db->findByColumnOnce("members", "m_id", $t["t_m_id"]);
 	$s = $db->findByColumnOnce("servers", "server_id", $t["t_server"]);
 	$xtpl->table_td($t["t_id"]);
 	$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $t["t_time"]));
+	$xtpl->table_td($t["t_end"] - $t["t_real_start"] . " s");
 	$xtpl->table_td("{$m["m_id"]} {$m["m_nick"]}");
 	$xtpl->table_td(($s) ? "{$s["server_id"]} {$s["server_name"]}" : '---');
 	$xtpl->table_td(($t["t_vps"] == 0) ? _("--Every--") : "<a href='?page=adminvps&action=info&veid={$t["t_vps"]}'>{$t["t_vps"]}</a>");
@@ -95,7 +96,6 @@ while ($t = $db->find("transactions", $whereCond, "t_id DESC", $limit)) {
 	$xtpl->table_td($t["t_depends_on"]);
 	$xtpl->table_td($t["t_done"]);
 	$xtpl->table_td($t["t_success"]);
-	$xtpl->table_td($t["t_end"] - $t["t_real_start"] . " s");
 	if ($t["t_done"]==1 && $t["t_success"]==1)
 		$xtpl->table_tr(false, 'ok');
 	else if ($t["t_done"]==1 && $t["t_success"]==0)
@@ -112,9 +112,9 @@ while ($t = $db->find("transactions", $whereCond, "t_id DESC", $limit)) {
 	if ($_REQUEST["details"]) {
 		$xtpl->table_td(nl2br(
 			"<strong>"._("Input").":</strong>\n".
-			print_r(json_decode(stripslashes($t["t_param"]), true), true).
+			print_r(json_decode($t["t_param"], true), true).
 			"\n<strong>"._("Output").":</strong>\n".
-			print_r(json_decode(stripslashes($t["t_output"]), true), true)
+			print_r(json_decode($t["t_output"], true), true)
 		), false, false, 10);
 		$xtpl->table_tr();
 	}
