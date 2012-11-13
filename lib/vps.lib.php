@@ -507,6 +507,7 @@ function ipadd($ip, $type = 4) {
   
 	global $db;
 	$backup_id = NULL;
+	$backuper = $this->get_backuper_server();
 	
 	if ($backup_first)
 	{
@@ -514,13 +515,15 @@ function ipadd($ip, $type = 4) {
 			"server_name" => $this->ve["server_name"],
 			"exclude" => preg_split ("/(\r\n|\n|\r)/", $this->ve["vps_backup_exclude"]),
 		);
-		$backuper = $this->get_backuper_server();
-		echo var_dump($backuper);
+		
 		add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, T_BACKUP_SCHEDULE, $params);
 		$backup_id = $db->insertId();
 	}
 	
-	$params = array("datetime" => date("c", (int)$timestamp));
+	$params = array(
+		"datetime" => date("c", (int)$timestamp),
+		"backuper" => $backuper["server_name"],
+	);
 	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_RESTORE, $params, NULL, $backup_id);
   }
   
