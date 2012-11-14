@@ -12,6 +12,8 @@ $xtpl->title(_("Manage Cluster"));
 $list_nodes = false;
 $list_templates = false;
 
+$server_types = array("node" => "Node", "backuper" => "Backuper", "storage" => "Storage");
+
 switch($_REQUEST["action"]) {
 	case "restart_node":
 		$node = new cluster_node($_REQUEST["id"]);
@@ -461,6 +463,7 @@ switch($_REQUEST["action"]) {
 		$xtpl->form_create('?page=cluster&action=newnode_save', 'post');
 		$xtpl->form_add_input(_("ID").':', 'text', '8', 'server_id', '', '');
 		$xtpl->form_add_input(_("Name").':', 'text', '30', 'server_name', '', '');
+		$xtpl->form_add_select(_("Type").':', 'server_type', $server_types);
 		$xtpl->form_add_select(_("Location").':', 'server_location', $cluster->list_locations(), '',  '');
 		$xtpl->form_add_input(_("Server IPv4 address").':', 'text', '30', 'server_ip4', '', '');
 		$xtpl->form_add_textarea(_("Availability icon (if you wish)").':', 28, 4, 'server_availstat', '', _("Paste HTML link here"));
@@ -474,11 +477,13 @@ switch($_REQUEST["action"]) {
 			isset($_REQUEST["server_ip4"]) &&
 			isset($_REQUEST["server_location"]) &&
 			isset($_REQUEST["server_maxvps"]) &&
-			isset($_REQUEST["server_path_vz"])
+			isset($_REQUEST["server_path_vz"]) &&
+			isset($_REQUEST["server_type"]) && in_array($_REQUEST["server_type"], array_keys($server_types))
 		) {
 			$sql = 'INSERT INTO servers
 					SET server_id = "'.$db->check($_REQUEST["server_id"]).'",
 					server_name = "'.$db->check($_REQUEST["server_name"]).'",
+					server_type = "'.$db->check($_REQUEST["server_type"]).'",
 					server_location = "'.$db->check($_REQUEST["server_location"]).'",
 					server_availstat = "'.$db->check($_REQUEST["server_availstat"]).'",
 					server_maxvps = "'.$db->check($_REQUEST["server_maxvps"]).'",
