@@ -674,8 +674,8 @@ class cluster {
 		return $row;
 	return false;
     }
-    function set_location($id = NULL, $label, $has_ipv6 = false, $onboot, $has_ospf, $has_rdiff, $rd_tgt,
-    						$rd_hist, $rd_sshfs, $rd_archfs, $rd_tgt_path, $tpl_sync_path) {
+    function set_location($id = NULL, $label, $has_ipv6 = false, $onboot, $has_ospf, $has_rdiff, $backuper,
+    						$rd_hist, $rd_sshfs, $rd_archfs, $tpl_sync_path) {
 	global $db;
 	if ($id != NULL)
 	    $sql = 'UPDATE locations
@@ -683,11 +683,10 @@ class cluster {
 			    location_has_ipv6 = "'.$db->check($has_ipv6).'",
 			    location_has_ospf = "'.$db->check($has_ospf).'",
 			    location_has_rdiff_backup = "'.$db->check($has_rdiff).'",
-			    location_rdiff_target = "'.$db->check($rd_tgt).'",
+			    location_backup_server_id = "'.$db->check($backuper).'",
 			    location_rdiff_history = "'.$db->check($rd_hist).'",
 			    location_rdiff_mount_sshfs = "'.$db->check($rd_sshfs).'",
 			    location_rdiff_mount_archfs = "'.$db->check($rd_archfs).'",
-			    location_rdiff_target_path = "'.$db->check($rd_tgt_path).'",
 			    location_tpl_sync_path = "'.$db->check($tpl_sync_path).'",
 			    location_vps_onboot = "'.$db->check($onboot).'"
 			WHERE location_id = "'.$db->check($id).'"';
@@ -697,11 +696,10 @@ class cluster {
 			    location_has_ipv6 = "'.$db->check($has_ipv6).'",
 			    location_has_ospf = "'.$db->check($has_ospf).'",
 			    location_has_rdiff_backup = "'.$db->check($has_rdiff).'",
-			    location_rdiff_target = "'.$db->check($rd_tgt).'",
+			    location_backup_server_id = "'.$db->check($backuper).'",
 			    location_rdiff_history = "'.$db->check($rd_hist).'",
 			    location_rdiff_mount_sshfs = "'.$db->check($rd_sshfs).'",
 			    location_rdiff_mount_archfs = "'.$db->check($rd_archfs).'",
-			    location_rdiff_target_path = "'.$db->check($rd_tgt_path).'",
 			    location_tpl_sync_path = "'.$db->check($tpl_sync_path).'",
 			    location_vps_onboot = "'.$db->check($onboot).'"';
 	return ($db->query($sql));
@@ -751,6 +749,22 @@ class cluster {
 		return $row["server_location"];
 	return false;
     }
+    
+    function list_backupers($location_id = NULL) {
+		global $db;
+		
+		$ret = array();
+		$conds = array("server_type = 'backuper'");
+		
+		if($location_id)
+			$conds[] = "server_location = '".$db->check($location_id)."'";
+		
+		while ($row = $db->find("servers", $conds, "server_id"))
+			$ret[$row["server_id"]] = $row["server_name"];
+		
+		return $ret;
+    }
+    
     function get_dns_server_by_id($dns_id) {
 	global $db;
 	$sql = 'SELECT * FROM cfg_dns WHERE dns_id='.$db->check($dns_id);

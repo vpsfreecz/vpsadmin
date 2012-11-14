@@ -121,6 +121,10 @@ switch($_REQUEST["action"]) {
 		break;
 	case "location_edit":
 		if ($item = $cluster->get_location_by_id($_REQUEST["id"])) {
+			$backupers = $cluster->list_backupers();
+			
+			array_splice($backupers, 0, 0, array("---"));
+			
 			$xtpl->title2(_("Edit location"));
 			$xtpl->table_add_category('');
 			$xtpl->table_add_category('');
@@ -130,8 +134,7 @@ switch($_REQUEST["action"]) {
 			$xtpl->form_add_checkbox(_("Does it use OSPF?").':', 'has_ospf', '1', $item["location_has_ospf"], _("Or another kind of dynamic routing"));
 			$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', $item["location_vps_onboot"], '');
 			$xtpl->form_add_checkbox(_("Does use Rdiff-backup?").':', 'has_rdiff_backup', '1', $item["location_has_rdiff_backup"], _("<b>Note:</b> check only if available across all nodes in this location"));
-			$xtpl->form_add_input(_("Target Rdiff-backup host").':', 'text', '30', 		'rdiff_target', 		$item["location_rdiff_target"], _("IP or hostname, needs to be SSH paired"));
-			$xtpl->form_add_input(_("Path on backup host").':', 'text', '30', 			'rdiff_target_path',	$item["location_rdiff_target_path"], ' ');
+			$xtpl->form_add_select(_("Backuper").':', 'backup_server_id', $backupers, $item["location_backup_server_id"], _("Needs to be SSH paired"));
 			$xtpl->form_add_input(_("How many backups to store").':', 'text', '30', 	'rdiff_history',		$item["location_rdiff_history"], _("Number"));
 			$xtpl->form_add_input(_("Local node SSHFS mountpath").':', 'text', '30', 	'rdiff_mount_sshfs',	$item["location_rdiff_mount_sshfs"], _("Path, use {vps_id}"));
 			$xtpl->form_add_input(_("Local node ArchFS mountpath").':', 'text', '30',	'rdiff_mount_archfs',	$item["location_rdiff_mount_archfs"], _("Path, use {vps_id}"));
@@ -145,8 +148,8 @@ switch($_REQUEST["action"]) {
 		if ($item = $cluster->get_location_by_id($_REQUEST["id"])) {
 			$cluster->set_location($_REQUEST["id"], $_REQUEST["location_label"], $_REQUEST["has_ipv6"],
 							$_REQUEST["onboot"], $_REQUEST["has_ospf"], $_REQUEST["has_rdiff_backup"],
-							$_REQUEST["rdiff_target"], $_REQUEST["rdiff_history"], $_REQUEST["rdiff_mount_sshfs"],
-							$_REQUEST["rdiff_mount_archfs"], $_REQUEST["rdiff_target_path"], $_REQUEST["tpl_sync_path"]);
+							$_REQUEST["backup_server_id"], $_REQUEST["rdiff_history"], $_REQUEST["rdiff_mount_sshfs"],
+							$_REQUEST["rdiff_mount_archfs"], $_REQUEST["tpl_sync_path"]);
 			$xtpl->perex(_("Changes saved"), _("Location label saved."));
 			$list_locations = true;
 		} else {
