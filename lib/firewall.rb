@@ -1,8 +1,8 @@
 require 'lib/executor'
 
 class Firewall < Executor
-	def initialize
-		
+	def initialize(veid = -1, params = {})
+		super(veid, params) if veid.to_i > -1
 	end
 	
 	def init(db)
@@ -14,12 +14,23 @@ class Firewall < Executor
 		
 		# FIXME: OSPF
 		
-		rs = db.query("SELECT ip_addr, ip_v FROM vps_ip")
+		rs = db.query("SELECT ip_addrr, ip_v FROM vps_ip")
 		rs.each_hash do |ip|
-			v = ip["ip_v"].to_i
-			iptables(v, {:A => "aztotal", :s => ip["ip_addr"]})
-			iptables(v, {:A => "aztotal", :d => ip["ip_addr"]})
+			reg_ip(ip["ip_addr"], ip["ip_v"].to_i)
 		end
+	end
+	
+	def reg_ip(addr, v)
+		iptables(v, {:A => "aztotal", :s => addr})
+		iptables(v, {:A => "aztotal", :d => addr})
+	end
+	
+	def reg_ips
+		@params["ip_addrs"].each do |ip|
+			reg_ip(ip["addr"], ip["ver"])
+		end
+		
+		{:ret => :ok}
 	end
 	
 	def read_traffic

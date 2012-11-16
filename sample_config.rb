@@ -3,6 +3,7 @@
 require 'lib/node'
 require 'lib/vps'
 require 'lib/backuper'
+require 'lib/firewall'
 
 module Settings
 	DB_HOST = "localhost"
@@ -61,6 +62,7 @@ module Settings
 		5003 => {:class => "VPS", :method => "restore"},
 		5005 => {:class => "Backuper", :method => "backup"},
 		5006 => {:class => "Backuper", :method => "backup"},
+		7201 => {:class => "Firewall", :method => "reg_ips"},
 		8001 => {:class => "VPS", :method => "features"},
 	}
 end

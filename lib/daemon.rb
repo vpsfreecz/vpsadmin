@@ -2,6 +2,7 @@ require 'config'
 require 'lib/db'
 require 'lib/worker'
 require 'lib/command'
+require 'lib/vps'
 require 'lib/firewall'
 
 module VpsAdmind
