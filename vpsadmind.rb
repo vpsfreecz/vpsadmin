@@ -11,9 +11,14 @@ require 'daemons'
 
 options = {
 	:daemonize => false,
+	:init => false,
 }
 
 OptionParser.new do |opts|
+	opts.on("-i", "--init", "Init firewall rules") do
+		options[:init] = true
+	end
+	
 	opts.on("-d", "--daemonize", "Run in background") do
 		options[:daemonize] = true
 	end
@@ -33,4 +38,5 @@ end
 
 Thread.abort_on_exception = true
 vpsAdmind = VpsAdmind::Daemon.new()
+vpsAdmind.init if options[:init]
 vpsAdmind.start

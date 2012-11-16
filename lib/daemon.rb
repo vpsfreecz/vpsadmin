@@ -16,6 +16,11 @@ module VpsAdmind
 			@cmds = []
 		end
 		
+		def init
+			@fw = Firewall.new
+			@fw.init(db)
+		end
+		
 		def start
 			update_status if Settings::UPDATE_VPS_STATUS
 			
