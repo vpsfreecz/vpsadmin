@@ -31,6 +31,8 @@ module Settings
 	MV = "/bin/mv"
 	RDIFF_BACKUP = "/usr/bin/rdiff-backup"
 	RSYNC = "/usr/bin/rsync"
+	IPTABLES = "/sbin/iptables"
+	IP6TABLES = "/sbin/ip6tables"
 	
 	BACKUPS_MNT_DIR = "/mnt"
 	RESTORE_TARGET = "#{VZ_ROOT}/private/%s.restoring"

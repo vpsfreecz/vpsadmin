@@ -2,6 +2,7 @@ require 'config'
 require 'lib/db'
 require 'lib/worker'
 require 'lib/command'
+require 'lib/firewall'
 
 module VpsAdmind
 	VERSION = "1.4.0-dev"
@@ -47,8 +48,6 @@ module VpsAdmind
 				time = rs.fetch_row.first.to_i
 				
 				if time > @last_change
-					puts "Yeah, we have new set of commands!"
-					
 					do_commands
 					
 					@last_change = time
@@ -93,18 +92,15 @@ module VpsAdmind
 			wid = cmd.worker_id
 			
 			if @workers.has_key?(wid)
-				p "#{cmd.id} assigned to worker"
 				@workers[wid] << cmd
 			else
 				if @workers.size >= Settings::THREADS
-					p "#{cmd.id} assigned to queue"
 					@queue << cmd unless in_queue
 					
 					return false
 				end
 				
 				@workers[wid] = Worker.new(cmd)
-				
 			end
 			
 			true
@@ -119,6 +115,22 @@ module VpsAdmind
 					ct = VPS.new(vps["vps_id"])
 					ct.update_status(my)
 				end
+				
+				fw = Firewall.new
+				fw.read_traffic.each do |ip, traffic|
+					next if traffic[:in] == 0 and traffic[:out] == 0
+					
+					st = my.prepared_st("UPDATE transfered SET tr_in = tr_in + ?, tr_out = tr_out + ?, tr_time = UNIX_TIMESTAMP(NOW())
+					                    WHERE tr_ip = ? AND tr_time >= UNIX_TIMESTAMP(CURDATE())",
+					                    traffic[:in], traffic[:out], ip)
+					
+					unless st.affected_rows == 1
+						st.close
+						my.prepared("INSERT INTO transfered SET tr_in = ?, tr_out = ?, tr_ip = ?, tr_time = UNIX_TIMESTAMP(NOW())",  traffic[:in], traffic[:out], ip)
+					end
+				end
+				
+				fw.reset_traffic_counter
 				
 				my.close
 				
