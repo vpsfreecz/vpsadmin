@@ -193,9 +193,9 @@ switch($_REQUEST["action"]) {
 		break;
 	case "ipaddr_add":
 		if ($_REQUEST['v']==4)
-			$Cluster_ipv4->table_add_1(15);
+			$Cluster_ipv4->table_add_1();
 		elseif ($_REQUEST['v']==6)
-			$Cluster_ipv6->table_add_1(39);
+			$Cluster_ipv6->table_add_1();
 		break;
 	case "ipaddr_add2":
 		if (isset($_REQUEST['m_ip']) && isset($_REQUEST["m_location"])) {
@@ -204,9 +204,9 @@ switch($_REQUEST["action"]) {
 			elseif ($_REQUEST['v']==6)
 			$Cluster_ipv6->table_add_2($_REQUEST['m_ip'], $_REQUEST['m_location']);
 		if ($_REQUEST['v']==4)
-			$Cluster_ipv4->table_add_1(15, $_REQUEST['m_ip'], $_REQUEST['m_location']);
+			$Cluster_ipv4->table_add_1($_REQUEST['m_ip'], $_REQUEST['m_location']);
 		elseif ($_REQUEST['v']==6)
-			$Cluster_ipv6->table_add_1(39, $_REQUEST['m_ip'], $_REQUEST['m_location']);
+			$Cluster_ipv6->table_add_1($_REQUEST['m_ip'], $_REQUEST['m_location']);
 		}
 		break;
 	case "templates":
