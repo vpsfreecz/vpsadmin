@@ -14,7 +14,7 @@ class Firewall < Executor
 		
 		# FIXME: OSPF
 		
-		rs = db.query("SELECT ip_addrr, ip_v FROM vps_ip")
+		rs = db.query("SELECT ip_addr, ip_v FROM vps_ip")
 		rs.each_hash do |ip|
 			reg_ip(ip["ip_addr"], ip["ip_v"].to_i)
 		end
