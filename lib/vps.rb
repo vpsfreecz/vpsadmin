@@ -1,4 +1,5 @@
 require 'lib/executor'
+require 'lib/backuper'
 
 class VPS < Executor
 	def start
@@ -90,7 +91,11 @@ class VPS < Executor
 	def restore
 		target = Settings::RESTORE_TARGET % [@veid,]
 		syscmd("#{Settings::RM} -rf #{target}") if File.exists?(target)
-		syscmd("#{Settings::RDIFF_BACKUP} -r #{@params["datetime"]} #{Settings::BACKUPS_MNT_DIR}/#{@params["backuper"]}.#{Settings::DOMAIN}/#{@veid} #{target}")
+		
+		Backuper.wait_for_lock(Db.new, @veid) do
+			syscmd("#{Settings::RDIFF_BACKUP} -r #{@params["datetime"]} #{Settings::BACKUPS_MNT_DIR}/#{@params["backuper"]}.#{Settings::DOMAIN}/#{@veid} #{target}")
+		end
+		
 		stop(:force => true)
 		syscmd("#{Settings::VZQUOTA} off #{@veid} -f", [6,])
 		stop
@@ -165,6 +170,8 @@ class VPS < Executor
 			end
 			syscmd("#{Settings::CHMOD} +x #{p}")
 		end
+		
+		{:ret => :ok}
 	end
 	
 	def post_save(con)

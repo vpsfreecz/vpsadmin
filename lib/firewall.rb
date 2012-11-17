@@ -25,6 +25,11 @@ class Firewall < Executor
 		iptables(v, {:A => "aztotal", :d => addr})
 	end
 	
+	def unreg_ip(addr, v)
+		iptables(v, {:Z => "aztotal", :s => addr})
+		iptables(v, {:Z => "aztotal", :d => addr})
+	end
+	
 	def reg_ips
 		@params["ip_addrs"].each do |ip|
 			reg_ip(ip["addr"], ip["ver"])

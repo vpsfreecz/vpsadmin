@@ -83,7 +83,7 @@ module VpsAdmind
 				c = Command.new(row)
 				
 				unless row["depencency_success"].to_i > 0
-					c.dependency_failed(@con)
+					c.dependency_failed(@db)
 					next
 				end
 				

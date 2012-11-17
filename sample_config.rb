@@ -34,6 +34,8 @@ module Settings
 	MV = "/bin/mv"
 	CP = "/bin/cp"
 	MKDIR = "/bin/mkdir"
+	CHMOD = "/bin/chmod"
+	TAR = "/bin/tar"
 	SCP = "/usr/bin/scp"
 	RDIFF_BACKUP = "/usr/bin/rdiff-backup"
 	RSYNC = "/usr/bin/rsync"
@@ -46,6 +48,8 @@ module Settings
 	BACKUPER_LOCK_INTERVAL = 30
 	BACKUPER_MOUNTPOINT = "/mnt"
 	BACKUPER_DEST = "/storage/vpsfree.cz/vps"
+	BACKUPER_TMP_RESTORE = "/storage/vpsfree.cz/restore"
+	BACKUPER_DOWNLOAD = "/storage/vpsfree.cz/download"
 	
 	SMTP_SERVER = "localhost"
 	SMTP_PORT = 25
@@ -69,6 +73,7 @@ module Settings
 		4001 => {:class => "VPS", :method => "migrate_offline"},
 		4002 => {:class => "VPS", :method => "migrate_online"},
 		5003 => {:class => "VPS", :method => "restore"},
+		5004 => {:class => "Backuper", :method => "download"},
 		5005 => {:class => "Backuper", :method => "backup"},
 		5006 => {:class => "Backuper", :method => "backup"},
 		7201 => {:class => "Firewall", :method => "reg_ips"},

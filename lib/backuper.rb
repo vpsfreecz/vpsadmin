@@ -6,15 +6,7 @@ class Backuper < Executor
 	def backup
 		db = Db.new
 		
-		loop do
-			if (st = db.prepared_st("UPDATE vps SET vps_backup_lock = 1 WHERE vps_id = ? AND vps_backup_lock = 0", @veid)).affected_rows == 1
-				break
-			end
-			
-			st.close
-			
-			sleep(Settings::BACKUPER_LOCK_INTERVAL)
-		end
+		Backuper.wait_for_lock(db, @veid)
 		
 		f = Tempfile.new("backuper_exclude")
 		@params["exclude"].each do |s|
@@ -39,40 +31,46 @@ class Backuper < Executor
 		{:ret => :ok}
 	end
 	
+	def download
+		Backuper.wait_for_lock(Db.new, @veid)
+		
+		syscmd("#{Settings::MKDIR} -p #{Settings::BACKUPER_DOWNLOAD}/#{@params["secret"]}")
+		
+		if @params["server_name"]
+			syscmd("#{Settings::TAR} -czf #{Settings::BACKUPER_DOWNLOAD}/#{@params["secret"]}/#{@params["filename"]} #{mountpoint}")
+		else
+			syscmd("#{Settings::RDIFF_BACKUP} -r #{@params["datetime"]} #{Settings::BACKUPER_DEST}/#{@veid} #{Settings::BACKUPER_TMP_RESTORE}/#{@veid}")
+			syscmd("#{Settings::TAR} -czf #{Settings::BACKUPER_DOWNLOAD}/#{@params["secret"]}/#{@params["filename"]} #{Settings::BACKUPER_TMP_RESTORE}/#{@veid}")
+			syscmd("#{Settings::RM} -rf #{Settings::BACKUPER_TMP_RESTORE}/#{@veid}")
+		end
+	end
+	
 	def mountpoint
 		"#{Settings::BACKUPER_MOUNTPOINT}/#{@params["server_name"]}.#{Settings::DOMAIN}/#{@veid}"
 	end
 	
 	def post_save(db)
-		db.prepared("UPDATE vps SET vps_backup_lock = 0 WHERE vps_id = ?", @veid)
+		Backuper.unlock(db, @veid)
 	end
 	
-	def backup_all
-		backups = []
-		db = Db.new
-		
-		# FIXME: select only vpses whose servers are in location that has set this backup server
-		rs = db.query("SELECT server_name, vps_id
-		              FROM vps v INNER JOIN servers s ON v.vps_server = s.server_id")
-		
-		db.close
-		
-		rs.each do |row|
-			while backups.count == Settings::BACKUPER_CONCURRENCY
-				backups.delete_if do |t|
-					not t.alive?
-				end
-				
-				sleep(60) if backups.count == Settings::BACKUPER_CONCURRENCY
+	def Backuper.wait_for_lock(db, veid)
+		loop do
+			if (st = db.prepared_st("UPDATE vps SET vps_backup_lock = 1 WHERE vps_id = ? AND vps_backup_lock = 0", veid)).affected_rows == 1
+				break
 			end
 			
-			backups << Thread.new do
-				backup(:veid => row["vps_id"], :server_name => row["server_name"])
-			end
+			st.close
+			
+			sleep(Settings::BACKUPER_LOCK_INTERVAL)
 		end
 		
-		backups.each do |t|
-			t.join
+		if block_given?
+			yield
+			Backuper.unlock(db, veid)
 		end
+	end
+	
+	def Backuper.unlock(db, veid)
+		db.prepared("UPDATE vps SET vps_backup_lock = 0 WHERE vps_id = ?", veid)
 	end
 end
