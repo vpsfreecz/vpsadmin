@@ -4,6 +4,7 @@ require 'lib/node'
 require 'lib/vps'
 require 'lib/backuper'
 require 'lib/firewall'
+require 'lib/mailer'
 
 module Settings
 	DB_HOST = "localhost"
@@ -46,6 +47,9 @@ module Settings
 	BACKUPER_MOUNTPOINT = "/mnt"
 	BACKUPER_DEST = "/storage/vpsfree.cz/vps"
 	
+	SMTP_SERVER = "localhost"
+	SMTP_PORT = 25
+	
 	COMMANDS = {
 		3 => {:class => "Node", :method => "reboot"},
 		4 => {:class => "Node", :method => "sync_templates"},
@@ -69,5 +73,6 @@ module Settings
 		5006 => {:class => "Backuper", :method => "backup"},
 		7201 => {:class => "Firewall", :method => "reg_ips"},
 		8001 => {:class => "VPS", :method => "features"},
+		9001 => {:class => "Mailer", :method => "send"},
 	}
 end
