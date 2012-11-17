@@ -1,0 +1,9 @@
+#!/bin/bash
+. /etc/vz/vz.conf
+. ${VE_CONFFILE}
+SRC=/mnt/%%BACKUP_SERVER%%/$VEID
+DST=/vpsadmin_backuper
+if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
+[ -d $SRC ] && mount -r -n -t simfs ${SRC} ${VE_ROOT}${DST} -o ${SRC}
+
+exit 0

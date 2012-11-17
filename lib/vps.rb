@@ -5,6 +5,7 @@ class VPS < Executor
 		@update = true
 		vzctl(:start, @veid, {}, false, [32,])
 		check_onboot
+		ensure_mountfile
 	end
 	
 	def stop(params = {})
@@ -17,6 +18,7 @@ class VPS < Executor
 		@update = true
 		vzctl(:restart, @veid)
 		check_onboot
+		ensure_mountfile
 	end
 	
 	def create
@@ -152,6 +154,17 @@ class VPS < Executor
 			@veid.to_i, Time.now.to_i, up, nproc, mem, disk, VpsAdmind::VERSION,
 			Time.now.to_i, up, nproc, mem, disk, VpsAdmind::VERSION
 		)
+	end
+	
+	def ensure_mountfile
+		p = "#{Settings::VZ_CONF}/conf/#{@veid}.mount"
+		
+		unless File.exists?(p)
+			File.open(p, "w") do |f|
+				f.write(File.open("scripts/ve.mount").read.gsub(/%%BACKUP_SERVER%%/, "storage.prg.#{Settings::DOMAIN}"))
+			end
+			syscmd("#{Settings::CHMOD} +x #{p}")
+		end
 	end
 	
 	def post_save(con)
