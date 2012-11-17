@@ -45,6 +45,7 @@ define ('T_ENABLE_TUNTAP', 8002); //deprecated
 define ('T_ENABLE_IPTABLES', 8003); //deprecated
 define ('T_ENABLE_FUSE', 8004);
 define ('T_SPECIAL_ISPCP', 8101);
+define ('T_MAIL_SEND', 9001);
 
 function add_transaction_clusterwide($m_id, $vps_id, $t_type, $t_param = 'none') {
     global $db, $cluster;
@@ -286,6 +287,9 @@ function transaction_label ($t_type) {
 		break;
 	case T_BACKUP_REGULAR:
 		$action_label = 'Backup';
+		break;
+	case T_MAIL_SEND:
+		$action_label = 'Mail';
 		break;
 	default:
 	    $action_label = '['.$t_type.']';

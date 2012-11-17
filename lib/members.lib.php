@@ -90,15 +90,6 @@ class member_load {
         $this->exists = true;
         $this->mid = $db->insert_id();
         $this->m["m_id"] = $this->mid;
-        $headers  = "From: ".$cluster_cfg->get("mailer_from")."\n";
-        $headers .= "Reply-To: ".$cluster_cfg->get("mailer_from")."\n";
-        $headers .= "Return-Path: ".$cluster_cfg->get("mailer_from")."\n";
-        if ($cluster_cfg->get("mailer_admins_in_cc")) {
-            $headers .= "BCC: ".$cluster_cfg->get("mailer_admins_cc_mails")."\n";
-        }
-        $headers .= "X-Mailer: vpsAdmin\n";
-        $headers .= "MIME-Version: 1.0\n";
-        $headers .= "Content-type: text/plain; charset=UTF-8\n";
 
         $subject = $cluster_cfg->get("mailer_tpl_member_added_subj");
         $subject = str_replace("%member%", $this->m["m_nick"], $subject);
@@ -108,18 +99,7 @@ class member_load {
         $content = str_replace("%memberid%", $this->m["m_id"], $content);
         $content = str_replace("%pass%", $item["m_pass"], $content);
 
-        $mail = array();
-        $mail["sentTime"] = time();
-        $mail["member_id"] = $this->m["m_id"];
-        $mail["type"] = "member_added";
-        $mail["details"] .= "TO: {$this->m["m_mail"]}\n";
-        $mail["details"] .= $headers;
-        $mail["details"] .= "\nSUBJECT: $subject\n\n";
-        $mail["details"] .= $content;
-
-        mail($this->m["m_mail"], $subject, $content, $headers);
-
-        $db->save(true, $mail, "mailer");
+        send_mail($this->m["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
 
         return true;
       }

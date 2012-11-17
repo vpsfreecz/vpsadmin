@@ -38,6 +38,7 @@ include WWW_ROOT.'lib/firewall.lib.php';
 include WWW_ROOT.'lib/cluster.lib.php';
 include WWW_ROOT.'lib/cluster_ip.lib.php';
 include WWW_ROOT.'lib/ajax.lib.php';
+include WWW_ROOT.'lib/mail.lib.php';
 
 include WWW_ROOT.'lib/gettext_stream.lib.php';
 include WWW_ROOT.'lib/gettext_inc.lib.php';

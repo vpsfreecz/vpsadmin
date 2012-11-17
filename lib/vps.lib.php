@@ -423,20 +423,10 @@ function ipadd($ip, $type = 4) {
   
   function limit_change_notify() {
 	global $db, $cluster_cfg;
-  
-	$headers  = "From: ".$cluster_cfg->get("mailer_from")."\n";
-        $headers .= "Reply-To: ".$cluster_cfg->get("mailer_from")."\n";
-        $headers .= "Return-Path: ".$cluster_cfg->get("mailer_from")."\n";
-        if ($cluster_cfg->get("mailer_admins_in_cc")) {
-            $headers .= "BCC: ".$cluster_cfg->get("mailer_admins_cc_mails")."\n";
-        }
-        $headers .= "X-Mailer: vpsAdmin\n";
-        $headers .= "MIME-Version: 1.0\n";
-        $headers .= "Content-type: text/plain; charset=UTF-8\n";
 
-        $subject = $cluster_cfg->get("mailer_tpl_limits_change_subj");
-        $subject = str_replace("%member%", $this->ve["m_nick"], $subject);
-        $subject = str_replace("%vpsid%", $this->veid, $subject);
+	$subject = $cluster_cfg->get("mailer_tpl_limits_change_subj");
+	$subject = str_replace("%member%", $this->ve["m_nick"], $subject);
+	$subject = str_replace("%vpsid%", $this->veid, $subject);
 	
 	if(($cpu = limit_cpulimit_by_id($this->ve["vps_cpulimit"])))
 		$cpulimit = $cpu["cpu_label"];
@@ -450,25 +440,14 @@ function ipadd($ip, $type = 4) {
 		$hddlimit = $hdd["d_label"];
 	else $hddlimit = "Undefined";
 	
-        $content = $cluster_cfg->get("mailer_tpl_limits_changed");
-        $content = str_replace("%member%", $this->ve["m_nick"], $content);
-        $content = str_replace("%vpsid%", $this->veid, $content);
-        $content = str_replace("%cpulimit%", $cpulimit, $content);
+	$content = $cluster_cfg->get("mailer_tpl_limits_changed");
+	$content = str_replace("%member%", $this->ve["m_nick"], $content);
+	$content = str_replace("%vpsid%", $this->veid, $content);
+	$content = str_replace("%cpulimit%", $cpulimit, $content);
 	$content = str_replace("%ramlimit%", $privvmpages, $content);
 	$content = str_replace("%hddlimit%", $hddlimit, $content);
 	
-	$mail = array();
-        $mail["sentTime"] = time();
-        $mail["member_id"] = $this->ve["m_id"];
-        $mail["type"] = "limit_changed";
-        $mail["details"] .= "TO: {$this->ve["m_mail"]}\n";
-        $mail["details"] .= $headers;
-        $mail["details"] .= "\nSUBJECT: $subject\n\n";
-        $mail["details"] .= $content;
-	
-	mail($this->ve["m_mail"], $subject, $content, $headers);
-	
-	$db->save(true, $mail, "mailer");
+	send_mail($this->ve["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
   }
 
   function enable_features() {
