@@ -296,6 +296,17 @@ switch ($_GET["action"]) {
 			}
 			$show_info=true;
 			break;
+		case 'clone':
+			if (isset($_REQUEST["veid"]) && isset($_REQUEST["target_server_id"])) {
+				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
+				
+				$vps->clone_vps($_REQUEST["target_owner_id"], $_REQUEST["target_server_id"], $_REQUEST["hostname"], $_REQUEST["limits"], $_REQUEST["features"], $_REQUEST["backuper"]);
+				$xtpl->perex(_("Clone in progress"), '');
+			} else
+				 $xtpl->perex(_("Invalid data"), _("Please fill the form correctly."));
+			
+			$show_info=true;
+			break;
 		case 'setbackuper':
 			if (isset($_REQUEST["veid"])) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
@@ -613,6 +624,20 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_add_category('&nbsp;');
 		$xtpl->form_out(_("Go >>"));
 	}
+// Clone
+	if ($_SESSION["is_admin"]) {
+		$xtpl->form_create('?page=adminvps&action=clone&veid='.$vps->veid, 'post');
+		$xtpl->form_add_select(_("Target owner").':', 'target_owner_id', members_list(), $vps->ve["m_id"]);
+		$xtpl->form_add_select(_("Target server").':', 'target_server_id', $cluster->list_servers(), $vps->ve["vps_server"]);
+		$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'hostname', $vps->ve["vps_hostname"] . "-{$vps->veid}-clone");
+		$xtpl->form_add_checkbox(_("Clone limits").':', 'limits', '1', true);
+		$xtpl->form_add_checkbox(_("Clone features").':', 'features', '1', true);
+		$xtpl->form_add_checkbox(_("Clone backuper").':', 'backuper', '1', true);
+		$xtpl->table_add_category(_("Clone"));
+		$xtpl->table_add_category('&nbsp;');
+		$xtpl->form_out(_("Go >>"));
+	}
+	
 // Backuper
 	$xtpl->form_create('?page=adminvps&action=setbackuper&veid='.$vps->veid, 'post');
 	if ($_SESSION["is_admin"])

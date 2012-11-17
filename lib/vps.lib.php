@@ -527,6 +527,50 @@ function ipadd($ip, $type = 4) {
 	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_RESTORE, $params, NULL, $backup_id);
   }
   
+  function clone_vps($m_id, $server_id, $hostname, $limits, $features, $backuper) {
+	global $db;
+	$sql = 'INSERT INTO vps
+			SET m_id = "'.$db->check($m_id).'",
+				vps_created = "'.$db->check(time()).'",
+				vps_template = "'.$db->check($this->ve["vps_template"]).'",
+				vps_info ="'.$db->check("Cloned from {$this->veid}").'",
+				vps_hostname ="'.$db->check($hostname).'",
+				vps_nameserver ="'.$db->check($this->ve["vps_nameserver"]).'",
+				vps_server ="'.$db->check($server_id).'",
+				vps_onboot ="'.$db->check($this->ve["vps_onboot"]).'",
+				vps_privvmpages = 0,
+				vps_onstartall = '.$db->check($this->ve["vps_onstartall"]).',
+				vps_diskspace = 0,
+				vps_cpulimit = 0,
+				vps_features_enabled = 0,
+				vps_backup_enabled = '.$db->check($backuper ? $this->ve["vps_backup_enabled"] : 1).',
+				vps_backup_exclude = "'.$db->check($backuper ? $this->ve["vps_backup_exclude"] : '').'"';
+		$db->query($sql);
+		$clone = vps_load($db->insert_id());
+		
+		$params = array(
+			"src_veid" => $this->veid,
+			"src_server_ip" => $this->ve["server_ip4"],
+			"is_local" => $server_id == $this->ve["vps_server"],
+			"template" => $clone->ve["templ_name"],
+			"hostname" => $clone->ve["vps_hostname"],
+			"nameserver" => $clone->ve["vps_nameserver"],
+		);
+		
+		add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_CLONE_VE, $params);
+		
+		$clone->set_privvmpages($limits ? $this->ve["vps_privvmpages"] : 1);
+		$clone->set_diskspace($limits ? $this->ve["vps_diskspace"] : 1);
+		$clone->set_cpulimit($limits ? $this->ve["vps_cpulimit"] : 1);
+		
+		if ($features && $this->ve["vps_features_enabled"])
+			add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_ENABLE_FEATURES);
+			
+		$this->info();
+		if ($this->ve["vps_up"])
+			$clone->start();
+  }
+  
   function get_backuper_server() {
 	global $db;
 	$sql = "SELECT s.* FROM locations l INNER JOIN servers s ON s.server_id = l.location_backup_server_id WHERE location_id = '".$db->check($this->ve["server_location"])."'";

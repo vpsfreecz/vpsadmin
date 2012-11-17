@@ -20,6 +20,7 @@ define ('T_EXEC_IPDEL', 2007);
 define ('T_CREATE_VE', 3001);
 define ('T_DESTROY_VE', 3002);
 define ('T_REINSTALL_VE', 3003);
+define ('T_CLONE_VE', 3004);
 define ('T_MIGRATE_OFFLINE', 4001);
 define ('T_MIGRATE_OFFLINE_PART2', 4011);
 define ('T_MIGRATE_ONLINE', 4002);
@@ -211,6 +212,9 @@ function transaction_label ($t_type) {
 	case T_REINSTALL_VE:
 	    $action_label = 'Reinstall';
 	    break;
+	case T_CLONE_VE:
+		$action_label = 'Clone';
+		break;
 	case T_MIGRATE_OFFLINE:
 	    $action_label = 'Migrate';
 	    break;
