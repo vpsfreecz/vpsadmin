@@ -55,9 +55,9 @@ class VPS < Executor
 			:capability => "net_admin:on",
 		}, true)
 		vzctl(:exec, @veid, "mkdir -p /dev/net")
-		vzctl(:exec, @veid, "mknod /dev/net/tun c 10 200")
+		vzctl(:exec, @veid, "mknod /dev/net/tun c 10 200", false, [8,])
 		vzctl(:exec, @veid, "chmod 600 /dev/net/tun")
-		vzctl(:exec, @veid, "mknod /dev/fuse c 10 229")
+		vzctl(:exec, @veid, "mknod /dev/fuse c 10 229", false, [8,])
 		vzctl(:set, @veid, {
 			:iptables => ['ip_conntrack', 'ip_conntrack_ftp', 'ip_conntrack_irc', 'ip_nat_ftp',
 			              'ip_nat_irc', 'ip_tables', 'ipt_LOG', 'ipt_REDIRECT', 'ipt_REJECT',
