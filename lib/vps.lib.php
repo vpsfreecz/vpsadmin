@@ -506,6 +506,40 @@ function ipadd($ip, $type = 4) {
 	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_RESTORE, $params, NULL, $backup_id);
   }
   
+  function download_backup($timestamp) {
+	if(!$this->exists)
+		return NULL;
+	
+	global $db, $cluster_cfg;
+	
+	$backuper = $this->get_backuper_server();
+	$secret = hash("sha256", $this->veid . $timestamp . time() . rand(0, 99999999));
+	$params = array("secret" => $secret);
+	
+	if ($timestamp == "current") {
+		$params["filename"] = "{$this->veid}-current.tar.gz";
+		$params["server_name"] = $this->ve["server_name"];
+	} else {
+		$params["filename"] = "{$this->veid}-".strftime("%Y-%m-%d--%H-%M", (int)$timestamp).".tar.gz";
+		$params["datetime"] = date("c", (int)$timestamp);
+	}
+	
+	add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, T_BACKUP_DOWNLOAD, $params);
+	$dl_id = $db->insertId();
+	
+	$subj = $cluster_cfg->get("mailer_tpl_dl_backup_subj");
+	$subj = str_replace("%member%", $this->ve["m_nick"], $subj);
+	$subj = str_replace("%vpsid%", $this->veid, $subj);
+	
+	$content = $cluster_cfg->get("mailer_tpl_dl_backup");
+	$content = str_replace("%member%", $this->ve["m_nick"], $content);
+	$content = str_replace("%vpsid%", $this->veid, $content);
+	$content = str_replace("%url%", "https://prasiatko.vpsfree.cz/backups/$secret/" . $params["filename"], $content);
+	$content = str_replace("%datetime%", $timestamp == "current" ? _("current VPS state") : strftime("%Y-%m-%d %H:%M", $timestamp), $content);
+	
+	send_mail($_SESSION["member"]["m_mail"], $subj, $content, array(), array(), true, $dl_id);
+  }
+  
   function clone_vps($m_id, $server_id, $hostname, $limits, $features, $backuper) {
 	global $db;
 	$sql = 'INSERT INTO vps

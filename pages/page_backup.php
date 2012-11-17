@@ -55,6 +55,13 @@ if ($_SESSION["logged_in"]) {
 			$xtpl->perex_cmd_output(_("Restoration of VPS")." {$_GET["vps_id"]} from ".strftime("%Y-%m-%d %H:%M", $_GET["timestamp"])." ".strtolower(_("planned")));
 			$vps->restore($_GET["timestamp"], $_GET["backup_first"]);
 			break;
+		case 'download':
+			$vps = vps_load($_GET["veid"]);
+			$xtpl->perex(_("Download of backup from ").strftime("%Y-%m-%d %H:%M", $_GET["timestamp"])." ".strtolower(_("planned")),
+				_("Preparing the archive may take several hours. You will receive email with download link when it is done.")
+			);
+			$vps->download_backup($_GET["timestamp"]);
+			break;
 		default:
 			$list_backups = true;
 	}
@@ -96,6 +103,10 @@ if ($_SESSION["logged_in"]) {
 			
 			if($lastId != $backup["vps_id"]) {
 				if($lastId > 0) {
+					$xtpl->table_td(_("Current VPS state"));
+					$xtpl->table_td('-');
+					$xtpl->table_td('[<a href="?page=backup&action=download&veid='.$lastId.'&timestamp=current">'._("Download").'</a>]');
+					$xtpl->table_tr();
 					$xtpl->form_add_checkbox(_("Make a full backup before restore?"), "backup_first", "1", false);
 					$xtpl->form_out(_("Restore"));
 				}
@@ -107,18 +118,27 @@ if ($_SESSION["logged_in"]) {
 					$xtpl->table_title("VPS {$backup["vps_id"]} [{$vps["vps_hostname"]}]");
 				
 				$xtpl->table_add_category(_('Date and time'));
-				$xtpl->table_add_category('');
+				$xtpl->table_add_category(_('Restore'));
+				$xtpl->table_add_category(_('Download'));
 				
 				$xtpl->form_create('?page=backup&action=restore&vps_id='.$backup["vps_id"].'', 'post');
 				
 				$lastId = $backup["vps_id"];
 			}
 			
-			$xtpl->form_add_radio(strftime("%Y-%m-%d %H:%M", $backup["timestamp"]), "restore_timestamp", $backup["timestamp"]);
+			$xtpl->form_add_radio(
+				strftime("%Y-%m-%d %H:%M", $backup["timestamp"]),
+				"restore_timestamp", $backup["timestamp"]
+			);
+			$xtpl->table_td('[<a href="?page=backup&action=download&veid='.$backup["vps_id"].'&timestamp='.$backup["timestamp"].'">'._("Download").'</a>]');
 			$xtpl->table_tr();
 		}
 		
 		if ($lastId) {
+			$xtpl->table_td(_("Current VPS state"));
+			$xtpl->table_td('-');
+			$xtpl->table_td('[<a href="?page=backup&action=download&veid='.$lastId.'&timestamp=current">'._("Download").'</a>]');
+			$xtpl->table_tr();
 			$xtpl->form_add_checkbox(_("Make a full backup before restore?"), "backup_first", "1", false);
 			$xtpl->form_out(_("Restore"));
 		} else

@@ -124,10 +124,6 @@ switch($_REQUEST["action"]) {
 		break;
 	case "location_edit":
 		if ($item = $cluster->get_location_by_id($_REQUEST["id"])) {
-			$backupers = $cluster->list_backupers();
-			
-			array_splice($backupers, 0, 0, array("---"));
-			
 			$xtpl->title2(_("Edit location"));
 			$xtpl->table_add_category('');
 			$xtpl->table_add_category('');
@@ -137,7 +133,7 @@ switch($_REQUEST["action"]) {
 			$xtpl->form_add_checkbox(_("Does it use OSPF?").':', 'has_ospf', '1', $item["location_has_ospf"], _("Or another kind of dynamic routing"));
 			$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', $item["location_vps_onboot"], '');
 			$xtpl->form_add_checkbox(_("Does use Rdiff-backup?").':', 'has_rdiff_backup', '1', $item["location_has_rdiff_backup"], _("<b>Note:</b> check only if available across all nodes in this location"));
-			$xtpl->form_add_select(_("Backuper").':', 'backup_server_id', $backupers, $item["location_backup_server_id"], _("Needs to be SSH paired"));
+			$xtpl->form_add_select(_("Backuper").':', 'backup_server_id', $cluster->list_backupers(), $item["location_backup_server_id"], _("Needs to be SSH paired"));
 			$xtpl->form_add_input(_("How many backups to store").':', 'text', '30', 	'rdiff_history',		$item["location_rdiff_history"], _("Number"));
 			$xtpl->form_add_input(_("Local node SSHFS mountpath").':', 'text', '30', 	'rdiff_mount_sshfs',	$item["location_rdiff_mount_sshfs"], _("Path, use {vps_id}"));
 			$xtpl->form_add_input(_("Local node ArchFS mountpath").':', 'text', '30',	'rdiff_mount_archfs',	$item["location_rdiff_mount_archfs"], _("Path, use {vps_id}"));
@@ -556,6 +552,13 @@ switch($_REQUEST["action"]) {
 								%never_paid% - list of members who have never paid before<br />
 								%nonpayers% - list of nonpayers
 								');
+		$xtpl->form_add_input(_("Download backup subject").':', 'text', '40', 'tpl_dl_backup_subj', $cluster_cfg->get("mailer_tpl_dl_backup_subj"), '%member% - nick<br />%vpsid% = VPS ID');
+		$xtpl->form_add_textarea(_("Download backup<br /> template").':', 50, 8, 'tpl_dl_backup', $cluster_cfg->get("mailer_tpl_dl_backup"), '
+								%member% - nick<br />
+								%vpsid% - VPS ID<br />
+								%url% - download link<br />
+								%datetime% - date and time of backup
+								');
 		$xtpl->form_out(_("Save changes"));
 		$xtpl->sbar_add(_("Back"), '?page=cluster&action=mailer');
 		break;
@@ -573,6 +576,8 @@ switch($_REQUEST["action"]) {
 		$cluster_cfg->set("mailer_nonpayers_mail", $_REQUEST["nonpayers_mail"]);
 		$cluster_cfg->set("mailer_tpl_nonpayers_subj", $_REQUEST["tpl_nonpayers_subj"]);
 		$cluster_cfg->set("mailer_tpl_nonpayers", $_REQUEST["tpl_nonpayers"]);
+		$cluster_cfg->set("mailer_tpl_dl_backup_subj", $_REQUEST["tpl_dl_backup_subj"]);
+		$cluster_cfg->set("mailer_tpl_dl_backup", $_REQUEST["tpl_dl_backup"]);
 		$list_mails = true;
 		break;
 	case "freelock":
