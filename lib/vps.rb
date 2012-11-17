@@ -51,16 +51,10 @@ class VPS < Executor
 	end
 	
 	def features
-		start
+		stop
 		vzctl(:set, @veid, {
-			:feature => ["nfsd:on", "nfs:on"],
+			:feature => ["nfsd:on", "nfs:on", "ppp:on"],
 			:capability => "net_admin:on",
-		}, true)
-		vzctl(:exec, @veid, "mkdir -p /dev/net")
-		vzctl(:exec, @veid, "mknod /dev/net/tun c 10 200", false, [8,])
-		vzctl(:exec, @veid, "chmod 600 /dev/net/tun")
-		vzctl(:exec, @veid, "mknod /dev/fuse c 10 229", false, [8,])
-		vzctl(:set, @veid, {
 			:iptables => ['ip_conntrack', 'ip_conntrack_ftp', 'ip_conntrack_irc', 'ip_nat_ftp',
 			              'ip_nat_irc', 'ip_tables', 'ipt_LOG', 'ipt_REDIRECT', 'ipt_REJECT',
 			              'ipt_TCPMSS', 'ipt_TOS', 'ipt_conntrack', 'ipt_helper', 'ipt_length',
@@ -69,7 +63,13 @@ class VPS < Executor
 			:numiptent => "1000",
 			:devices => ["c:10:200:rw", "c:10:229:rw"],
 		}, true)
-		restart
+		start
+		vzctl(:exec, @veid, "mkdir -p /dev/net")
+		vzctl(:exec, @veid, "mknod /dev/net/tun c 10 200", false, [8,])
+		vzctl(:exec, @veid, "chmod 600 /dev/net/tun")
+		vzctl(:exec, @veid, "mknod /dev/fuse c 10 229", false, [8,])
+		vzctl(:exec, @veid, "mknod /dev/ppp c 108 0", false, [8,])
+		vzctl(:exec, @veid, "chmod 600 /dev/ppp")
 	end
 	
 	def migrate_offline
