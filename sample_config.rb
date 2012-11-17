@@ -25,11 +25,15 @@ module Settings
 	VZQUOTA = "/usr/sbin/vzquota"
 	VZMIGRATE = "/usr/sbin/vzmigrate"
 	VZ_ROOT = "/vz"
+	VZ_CONF = "/etc/vz"
 	
 	CAT = "/bin/cat"
 	DF = "/bin/df"
 	RM = "/bin/rm"
 	MV = "/bin/mv"
+	CP = "/bin/cp"
+	MKDIR = "/bin/mkdir"
+	SCP = "/usr/bin/scp"
 	RDIFF_BACKUP = "/usr/bin/rdiff-backup"
 	RSYNC = "/usr/bin/rsync"
 	IPTABLES = "/sbin/iptables"
@@ -57,6 +61,7 @@ module Settings
 		3001 => {:class => "VPS", :method => "create"},
 		3002 => {:class => "VPS", :method => "destroy"},
 		3003 => {:class => "VPS", :method => "reinstall"},
+		3004 => {:class => "VPS", :method => "clone"},
 		4001 => {:class => "VPS", :method => "migrate_offline"},
 		4002 => {:class => "VPS", :method => "migrate_online"},
 		5003 => {:class => "VPS", :method => "restore"},

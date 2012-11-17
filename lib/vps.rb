@@ -98,6 +98,17 @@ class VPS < Executor
 		start
 	end
 	
+	def clone
+		create
+		syscmd("#{Settings::RM} -rf #{Settings::VZ_ROOT}/private/#{@veid}")
+		
+		if @params["is_local"]
+			syscmd("#{Settings::CP} -a #{Settings::VZ_ROOT}/private/#{@params["src_veid"]}/ #{Settings::VZ_ROOT}/private/#{@veid}")
+		else
+			syscmd("#{Settings::RSYNC} -a #{@params["src_server_ip"]}:#{Settings::VZ_ROOT}/private/#{@params["src_veid"]}/ #{Settings::VZ_ROOT}/private/#{@veid}");
+		end
+	end
+	
 	def check_onboot(force = false)
 		if (@params.instance_of?(Hash) and @params["onboot"]) or force
 			vzctl(:set, @veid, {:onboot => "yes"}, true)
