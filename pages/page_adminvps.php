@@ -447,7 +447,7 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_tr();
 	}
 	$xtpl->table_td(_("Backuper").':');
-	$xtpl->table_td($vps->ve["vps_backup_enabled"] ? _("enabled") : _("disabled"));
+	$xtpl->table_td(($vps->ve["vps_backup_enabled"] ? _("enabled") : _("disabled")) . ($vps->ve["vps_backup_lock"] ? "<br/>"._("backup in progress") : ""));
 		$xtpl->table_tr();
 	
 	$xtpl->table_out();
@@ -580,6 +580,9 @@ if (isset($show_info) && $show_info) {
     $xtpl->table_td(_("NFS server + client"));
     $xtpl->table_td(_("disabled"));
     $xtpl->table_tr();
+    $xtpl->table_td(_("PPP"));
+    $xtpl->table_td(_("disabled"));
+    $xtpl->table_tr();
     $xtpl->form_add_checkbox(_("Enable all").':', 'enable', '1', false);
 	} else {
     $xtpl->table_td(_("Enable TUN/TAP"));
@@ -592,6 +595,9 @@ if (isset($show_info) && $show_info) {
     $xtpl->table_td(_("enabled"));
     $xtpl->table_tr();
     $xtpl->table_td(_("NFS server + client"));
+    $xtpl->table_td(_("enabled"));
+    $xtpl->table_tr();
+    $xtpl->table_td(_("PPP"));
     $xtpl->table_td(_("enabled"));
     $xtpl->table_tr();
 	}
