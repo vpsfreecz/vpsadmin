@@ -393,6 +393,22 @@ class cluster {
 		$ret[$row["server_id"]] = new cluster_node($row["server_id"]);
 	return $ret;
     }
+    
+     function list_servers_with_type($type, $location_id = NULL) {
+		global $db;
+		
+		$ret = array();
+		$conds = array("server_type = '". $db->check($type)."'");
+		
+		if($location_id)
+			$conds[] = "server_location = '".$db->check($location_id)."'";
+		
+		while ($row = $db->find("servers", $conds, "server_id"))
+			$ret[$row["server_id"]] = $row["server_name"];
+		
+		return $ret;
+    }
+    
     /**
       * Get array of templates Cluster-wide available
       * @return array of template arrays, empty array on error
@@ -748,21 +764,6 @@ class cluster {
 	    if ($row = $db->fetch_array($result))
 		return $row["server_location"];
 	return false;
-    }
-    
-    function list_backupers($location_id = NULL) {
-		global $db;
-		
-		$ret = array();
-		$conds = array("server_type = 'backuper'");
-		
-		if($location_id)
-			$conds[] = "server_location = '".$db->check($location_id)."'";
-		
-		while ($row = $db->find("servers", $conds, "server_id"))
-			$ret[$row["server_id"]] = $row["server_name"];
-		
-		return $ret;
     }
     
     function get_dns_server_by_id($dns_id) {
