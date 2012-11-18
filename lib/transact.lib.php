@@ -100,6 +100,23 @@ function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = array()
     }
 }
 
+function is_transaction_in_queue($t_type, $veid) {
+	global $db;
+	
+	$rs = $db->query("SELECT COUNT(t_id) AS cnt FROM transactions WHERE t_type = '".$db->check($t_type)."' AND t_done = 0 AND t_vps = '".$db->check($veid)."'");
+	$row = $db->fetch_array($rs);
+	
+	return $row["cnt"] > 0;
+}
+
+function get_last_transaction($t_type, $veid) {
+	global $db;
+	
+	$rs = $db->query("SELECT * FROM transactions WHERE t_type = '".$db->check($t_type)."' AND t_vps = '".$db->check($veid)."' ORDER BY t_id DESC LIMIT 1");
+	
+	return $db->fetch_array($rs);
+}
+
 function del_transaction($t_id) {
     global $db;
     $sql = 'DELETE FROM transactions WHERE t_id = '.$db->check($t_id);

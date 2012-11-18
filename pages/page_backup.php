@@ -45,15 +45,43 @@ if ($_SESSION["logged_in"]) {
 			$xtpl->perex("Backups cleaned-up", $perex);
 			break;
 		case "restore":
-			$xtpl->perex(
-				_("Are you sure you want to restore VPS").' '.$_GET["vps_id"].' from '.strftime("%Y-%m-%d %H:%M", $_POST["restore_timestamp"]).'?',
-				'<a href="?page=backup">'.strtoupper(_("No")).'</a> | <a href="?page=backup&action=restore2&vps_id='.$_GET["vps_id"].'&timestamp='.$_POST["restore_timestamp"].'&backup_first='.$_POST["backup_first"].'">'.strtoupper(_("Yes")).'</a>'
-			);
+			$vps = vps_load($_GET["vps_id"]);
+			
+			if ($_REQUEST["backup_first"])
+				$last_t = get_last_transaction(T_BACKUP_SCHEDULE, $vps->veid);
+			
+			if (is_transaction_in_queue(T_BACKUP_RESTORE, $vps->veid))
+				$xtpl->perex(
+					_("Restore already in queue"),
+					_("Restoration request for this VPS is already in queue, you must wait until it is done.")
+				);
+			else if ($_REQUEST["backup_first"] && $last_t["t_time"] > (time() - 24*60*60))
+				$xtpl->perex(
+					_("Backup before restore not allowed"),
+					_("You can use backup before restore function only once per day.")
+				);
+			else
+				$xtpl->perex(
+					_("Are you sure you want to restore VPS").' '.$_GET["vps_id"].' from '.strftime("%Y-%m-%d %H:%M", $_POST["restore_timestamp"]).'?',
+					'<a href="?page=backup">'.strtoupper(_("No")).'</a> | <a href="?page=backup&action=restore2&vps_id='.$_GET["vps_id"].'&timestamp='.$_POST["restore_timestamp"].'&backup_first='.$_POST["backup_first"].'">'.strtoupper(_("Yes")).'</a>'
+				);
 			break;
 		case 'restore2':
 			$vps = vps_load($_GET["vps_id"]);
-			$xtpl->perex_cmd_output(_("Restoration of VPS")." {$_GET["vps_id"]} from ".strftime("%Y-%m-%d %H:%M", $_GET["timestamp"])." ".strtolower(_("planned")));
-			$vps->restore($_GET["timestamp"], $_GET["backup_first"]);
+			if (is_transaction_in_queue(T_BACKUP_RESTORE, $vps->veid))
+				$xtpl->perex(
+					_("Restore already in queue"),
+					_("Restoration request for this VPS is already in queue, you must wait until it is done.")
+				);
+			else if ($_REQUEST["backup_first"] && $last_t["t_time"] > (time() - 24*60*60))
+				$xtpl->perex(
+					_("Backup before restore not allowed"),
+					_("You can use backup before restore function only once per day.")
+				);
+			else {
+				$xtpl->perex_cmd_output(_("Restoration of VPS")." {$_GET["vps_id"]} from ".strftime("%Y-%m-%d %H:%M", $_GET["timestamp"])." ".strtolower(_("planned")));
+				$vps->restore($_GET["timestamp"], $_GET["backup_first"]);
+			}
 			break;
 		case 'download':
 			$vps = vps_load($_GET["veid"]);
@@ -103,11 +131,19 @@ if ($_SESSION["logged_in"]) {
 			
 			if($lastId != $backup["vps_id"]) {
 				if($lastId > 0) {
+					$last_t = get_last_transaction(T_BACKUP_SCHEDULE, $lastId);
+					
 					$xtpl->table_td(_("Current VPS state"));
 					$xtpl->table_td('-');
 					$xtpl->table_td('[<a href="?page=backup&action=download&veid='.$lastId.'&timestamp=current">'._("Download").'</a>]');
 					$xtpl->table_tr();
-					$xtpl->form_add_checkbox(_("Make a full backup before restore?"), "backup_first", "1", false);
+					
+					if ($last_t["t_time"] > (time() - 24*60*60)) {
+						$xtpl->table_td(_("Make a full backup before restore?"));
+						$xtpl->table_td(_("Allowed only once per day"));
+						$xtpl->table_tr();
+					} else
+						$xtpl->form_add_checkbox(_("Make a full backup before restore?"), "backup_first", "1", false);
 					$xtpl->form_out(_("Restore"));
 				}
 					
@@ -135,11 +171,19 @@ if ($_SESSION["logged_in"]) {
 		}
 		
 		if ($lastId) {
+			$last_t = get_last_transaction(T_BACKUP_SCHEDULE, $lastId);
+			
 			$xtpl->table_td(_("Current VPS state"));
 			$xtpl->table_td('-');
 			$xtpl->table_td('[<a href="?page=backup&action=download&veid='.$lastId.'&timestamp=current">'._("Download").'</a>]');
 			$xtpl->table_tr();
-			$xtpl->form_add_checkbox(_("Make a full backup before restore?"), "backup_first", "1", false);
+			
+			if ($last_t["t_time"] > (time() - 24*60*60)) {
+				$xtpl->table_td(_("Make a full backup before restore?"));
+				$xtpl->table_td(_("Allowed only once per day"));
+				$xtpl->table_tr();
+			} else
+				$xtpl->form_add_checkbox(_("Make a full backup before restore?"), "backup_first", "1", false);
 			$xtpl->form_out(_("Restore"));
 		} else
 			$xtpl->title2(_("No backups found."));
