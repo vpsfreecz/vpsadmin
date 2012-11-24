@@ -271,6 +271,16 @@ function ipadd($ip, $type = 4) {
 	}
 }
 
+  function add_first_available_ip($loc, $v) {
+	global $db;
+	
+	$rs = $db->query("SELECT ip_addr FROM vps_ip WHERE vps_id = 0 AND ip_v = '".$db->check($v)."' AND ip_location = '".$db->check($loc)."' ORDER BY ip_id LIMIT 1");
+	$ip = $db->fetch_array($rs);
+	
+	if ($ip)
+		$this->ipadd($ip["ip_addr"], $v);
+  }
+
   function ipdel($ip, $dep = NULL) {
 	global $db;
 	if ($this->exists) {
@@ -537,7 +547,7 @@ function ipadd($ip, $type = 4) {
 	$content = str_replace("%url%", "https://prasiatko.vpsfree.cz/backups/$secret/" . $params["filename"], $content);
 	$content = str_replace("%datetime%", $timestamp == "current" ? _("current VPS state") : strftime("%Y-%m-%d %H:%M", $timestamp), $content);
 	
-	send_mail($_SESSION["member"]["m_mail"], $subj, $content, array(), array(), true, $dl_id);
+	send_mail($this->ve["m_mail"], $subj, $content, array(), array(), true, $dl_id);
   }
   
   function clone_vps($m_id, $server_id, $hostname, $limits, $features, $backuper) {

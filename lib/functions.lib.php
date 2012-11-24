@@ -186,6 +186,19 @@ function list_servers($without_id = false) {
     return $ret;
 }
 
+function list_devel_servers($without_id = false) {
+    global $db;
+	if ($without_id)
+		$sql = "SELECT server_id, server_name FROM servers INNER JOIN locations ON server_location = location_id WHERE server_id != '".$db->check($without_id)."' AND location_type = 'devel' ORDER BY server_location,server_id";
+	else
+		$sql = "SELECT server_id, server_name FROM servers INNER JOIN locations ON server_location = location_id WHERE location_type = 'devel' ORDER BY server_location,server_id";
+
+    if ($result = $db->query($sql))
+	while ($row = $db->fetch_array($result))
+	    $ret[$row["server_id"]] = $row["server_name"];
+    return $ret;
+}
+
 function server_by_id ($id) {
     global $db;
     $sql = 'SELECT * FROM servers WHERE server_id="'.$db->check($id).'" LIMIT 1';

@@ -409,6 +409,27 @@ class cluster {
 		return $ret;
     }
     
+    function exists_devel_location() {
+		global $db;
+		
+		$rs = $db->query("SELECT COUNT(location_id) AS cnt FROM locations WHERE location_type = 'devel'");
+		$row = $db->fetch_array($rs);
+		
+		return $row["cnt"] > 0;
+    }
+    
+    function list_devel_servers($location_id = NULL) {
+		global $db;
+		
+		$ret  = array();
+		$rs = $db->query("SELECT s.* FROM servers s INNER JOIN locations ON server_location = location_id WHERE location_type = 'devel'");
+		
+		while ($row = $db->fetch_array($rs))
+			$ret[] = $row;
+		
+		return $ret;
+    }
+    
     /**
       * Get array of templates Cluster-wide available
       * @return array of template arrays, empty array on error
@@ -690,12 +711,13 @@ class cluster {
 		return $row;
 	return false;
     }
-    function set_location($id = NULL, $label, $has_ipv6 = false, $onboot, $has_ospf, $has_rdiff, $backuper,
+    function set_location($id = NULL, $label, $type, $has_ipv6 = false, $onboot, $has_ospf, $has_rdiff, $backuper,
     						$rd_hist, $rd_sshfs, $rd_archfs, $tpl_sync_path) {
 	global $db;
 	if ($id != NULL)
 	    $sql = 'UPDATE locations
 			SET location_label = "'.$db->check($label).'",
+			    location_type = "'.$db->check($type).'",
 			    location_has_ipv6 = "'.$db->check($has_ipv6).'",
 			    location_has_ospf = "'.$db->check($has_ospf).'",
 			    location_has_rdiff_backup = "'.$db->check($has_rdiff).'",
@@ -709,6 +731,7 @@ class cluster {
 	else
 	    $sql = 'INSERT INTO locations
 			SET location_label = "'.$db->check($label).'",
+			    location_type = "'.$db->check($type).'",
 			    location_has_ipv6 = "'.$db->check($has_ipv6).'",
 			    location_has_ospf = "'.$db->check($has_ospf).'",
 			    location_has_rdiff_backup = "'.$db->check($has_rdiff).'",

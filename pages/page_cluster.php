@@ -13,6 +13,7 @@ $list_nodes = false;
 $list_templates = false;
 
 $server_types = array("node" => "Node", "backuper" => "Backuper", "storage" => "Storage", "mailer" => "Mailer");
+$location_types = array("production" => "Production", "devel" => "Devel");
 
 switch($_REQUEST["action"]) {
 	case "restart_node":
@@ -99,6 +100,7 @@ switch($_REQUEST["action"]) {
 		$xtpl->table_add_category('');
 		$xtpl->form_create('?page=cluster&action=location_new_save', 'post');
 		$xtpl->form_add_input(_("Label").':', 'text', '30', 'location_label', '', _("Location name"));
+		$xtpl->form_add_select(_("Type").':', 'type', $location_types, '', '');
 		$xtpl->form_add_checkbox(_("Has this location IPv6 support?").':', 'has_ipv6', '1', false, '');
 		$xtpl->form_add_checkbox(_("Does it use OSPF?").':', 'has_ospf', '1', '0', _("Or another kind of dynamic routing"));
 		$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', '1', '');
@@ -111,7 +113,7 @@ switch($_REQUEST["action"]) {
 		$xtpl->form_out(_("Save changes"));
 		break;
 	case "location_new_save":
-		$cluster->set_location(NULL, $_REQUEST["location_label"], $_REQUEST["has_ipv6"],
+		$cluster->set_location(NULL, $_REQUEST["location_label"], $_REQUEST["type"], $_REQUEST["has_ipv6"],
 							$_REQUEST["onboot"], $_REQUEST["has_ospf"], $_REQUEST["has_rdiff_backup"],
 							$_REQUEST["backup_server_id"], $_REQUEST["rdiff_history"], $_REQUEST["rdiff_mount_sshfs"],
 							$_REQUEST["rdiff_mount_archfs"], $_REQUEST["tpl_sync_path"]);
@@ -125,6 +127,7 @@ switch($_REQUEST["action"]) {
 			$xtpl->table_add_category('');
 			$xtpl->form_create('?page=cluster&action=location_edit_save&id='.$_REQUEST["id"], 'post');
 			$xtpl->form_add_input(_("Label").':', 'text', '30', 'location_label', $item["location_label"], _("Location name"));
+			$xtpl->form_add_select(_("Type").':', 'type', $location_types, $item["location_type"], '');
 			$xtpl->form_add_checkbox(_("Has this location IPv6 support?").':', 'has_ipv6', '1', $item["location_has_ipv6"], '');
 			$xtpl->form_add_checkbox(_("Does it use OSPF?").':', 'has_ospf', '1', $item["location_has_ospf"], _("Or another kind of dynamic routing"));
 			$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', $item["location_vps_onboot"], '');
@@ -141,7 +144,7 @@ switch($_REQUEST["action"]) {
 		break;
 	case "location_edit_save":
 		if ($item = $cluster->get_location_by_id($_REQUEST["id"])) {
-			$cluster->set_location($_REQUEST["id"], $_REQUEST["location_label"], $_REQUEST["has_ipv6"],
+			$cluster->set_location($_REQUEST["id"], $_REQUEST["location_label"], $_REQUEST["type"], $_REQUEST["has_ipv6"],
 							$_REQUEST["onboot"], $_REQUEST["has_ospf"], $_REQUEST["has_rdiff_backup"],
 							$_REQUEST["backup_server_id"], $_REQUEST["rdiff_history"], $_REQUEST["rdiff_mount_sshfs"],
 							$_REQUEST["rdiff_mount_archfs"], $_REQUEST["tpl_sync_path"]);
