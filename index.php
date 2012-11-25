@@ -68,7 +68,8 @@ $xtpl->assign("L_ACTION", _("Action"));
 if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
     $_member = member_load($_SESSION["member"]["m_id"]);
     if ($_member->has_not_expired_activity()) {
-	$_member->touch_activity();
+		$_member->touch_activity();
+		$xtpl->assign('AJAX_SCRIPT', ajax_getHTML('ajax.php?page=transactbox', 'transactions', 1000));
     } else {
 	session_destroy();
 	$_GET["page"] = "";
@@ -123,6 +124,9 @@ if (($_GET["page"] != "login") &&
 		case 'lang';
 			$lang->change($_GET['newlang']);
 			break;
+		case 'console':
+			include WWW_ROOT.'pages/page_console.php';
+			break;
 		default:
 			include WWW_ROOT.'pages/page_index.php';
 	}
@@ -147,7 +151,6 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
     }
 
     list_transactions();
-    $xtpl->assign('AJAX_SCRIPT', ajax_getHTML('ajax.php?page=transactbox', 'transactions', 1000));
 } else {
     $xtpl->menu_add(_("Status"),'?page=', ($_GET["page"] == ''));
     $xtpl->menu_add(_("About vpsAdmin"),'?page=about', ($_GET["page"] == 'about'), true);

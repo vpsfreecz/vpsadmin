@@ -382,6 +382,7 @@ if (isset($list_vps) && $list_vps) {
 					$xtpl->table_add_category('');
 					$xtpl->table_add_category('');
 					$xtpl->table_add_category('');
+					$xtpl->table_add_category('');
 				}
 
 				$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->veid.'">'.$vps->veid.'</a>');
@@ -397,6 +398,7 @@ if (isset($list_vps) && $list_vps) {
 //				$xtpl->table_td($vps->ve["templ_label"]);
 				$xtpl->table_td(($vps->ve["vps_up"]) ? '<a href="?page=adminvps&run=restart&veid='.$vps->veid.'"><img src="template/icons/vps_restart.png" title="'._("Restart").'"/></a>' : '<img src="template/icons/vps_restart_grey.png"  title="'._("Unable to restart").'" />');
 				$xtpl->table_td(($vps->ve["vps_up"]) ? '<a href="?page=adminvps&run=stop&veid='.$vps->veid.'"><img src="template/icons/vps_stop.png"  title="'._("Stop").'"/></a>' : '<a href="?page=adminvps&run=start&veid='.$vps->veid.'"><img src="template/icons/vps_start.png"  title="'._("Start").'"/></a>');
+				$xtpl->table_td('<a href="?page=console&veid='.$vps->veid.'"><img src="template/icons/console.png"  title="'._("Remote Console").'"/></a>');
 				if ($_SESSION["is_admin"]){
 				    $xtpl->table_td((!$vps->ve["vps_up"]) ? '<a href="?page=adminvps&action=delete&veid='.$vps->veid.'"><img src="template/icons/vps_delete.png"  title="'._("Delete").'"/></a>' : '<img src="template/icons/vps_delete_grey.png"  title="'._("Unable to delete").'"/>');
 				} else {
@@ -455,7 +457,13 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_td($diskspace["d_label"]);
 		$xtpl->table_tr();
 	$xtpl->table_td(_("Status").':');
-	$xtpl->table_td(($vps->ve["vps_up"]) ? _("running").' <a href="?page=adminvps&action=info&run=stop&veid='.$vps->veid.'">('._("stop").')</a>' : _("stopped").' <a href="?page=adminvps&action=info&run=start&veid='.$vps->veid.'">('._("start").')</a>');
+	$xtpl->table_td(
+		(($vps->ve["vps_up"]) ?
+			_("running").' (<a href="?page=adminvps&action=info&run=stop&veid='.$vps->veid.'">'._("stop").'</a>'
+			: 
+			_("stopped").' (<a href="?page=adminvps&action=info&run=start&veid='.$vps->veid.'">'._("start").'</a>') .
+			', <a href="?page=console&veid='.$vps->veid.'">'._("open remote console").'</a>)'
+	);
 		$xtpl->table_tr();
 	$xtpl->table_td(_("Processes").':');
 	$xtpl->table_td($vps->ve["vps_nproc"]);

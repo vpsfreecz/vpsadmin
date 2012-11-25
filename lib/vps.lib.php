@@ -610,5 +610,29 @@ function ipadd($ip, $type = 4) {
 	global $cluster;
 	return $cluster->get_location_of_server($this->ve["vps_server"]);
   }
+  
+  function create_console_session() {
+	global $db;
+	
+	$key = hash('sha256', $vps->veid . time() . rand(0, 99999999));
+	$sql = "INSERT INTO vps_console SET vps_id = ".$db->check($this->veid).", `key` = '".$db->check($key)."', expiration = ADDDATE(NOW(), INTERVAL 30 SECOND)";
+	
+	if ($db->query($sql))
+		return $key;
+	else return false;
+  }
+  
+  function get_console_server() {
+	global $db;
+	
+	$sql = "SELECT location_remote_console_server FROM locations WHERE location_id = '".$db->check($this->ve["server_location"])."'";
+	if ($result = $db->query($sql)) {
+		if ($row = $db->fetch_array($result)) {
+			return $row["location_remote_console_server"];
+		}
+	}
+	
+	return NULL;
+  }
 }
 ?>

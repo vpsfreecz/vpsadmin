@@ -54,7 +54,7 @@ function ajax_getHTML($url, $div, $time=1000)
             });'."\n";
 	$out.= 'request_perform'. $uid .' = function () {
               req'. $uid .'.send(\'r=\' + $time() + $random(0, 100)); // hack for IE7,8 & webkit (Safari, Chrome, Arora...)
-         }
+         };
         request_periodical'. $uid .' = request_perform'. $uid .'.periodical('. $time .');
     ';
 	$out.= ' });'."\n";

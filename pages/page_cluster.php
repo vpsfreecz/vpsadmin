@@ -110,13 +110,14 @@ switch($_REQUEST["action"]) {
 		$xtpl->form_add_input(_("Local node SSHFS mountpath").':', 'text', '30', 	'rdiff_mount_sshfs',	'', _("Path, use {vps_id}"));
 		$xtpl->form_add_input(_("Local node ArchFS mountpath").':', 'text', '30',	'rdiff_mount_archfs',	'', _("Path, use {vps_id}"));
 		$xtpl->form_add_input(_("Template sync path").':', 'text', '30',	'tpl_sync_path',	'', _("Used with rsync"));
+		$xtpl->form_add_input(_("Remote console server").':', 'text', '30',	'remote_console_server',	'', _("URL"));
 		$xtpl->form_out(_("Save changes"));
 		break;
 	case "location_new_save":
 		$cluster->set_location(NULL, $_REQUEST["location_label"], $_REQUEST["type"], $_REQUEST["has_ipv6"],
 							$_REQUEST["onboot"], $_REQUEST["has_ospf"], $_REQUEST["has_rdiff_backup"],
 							$_REQUEST["backup_server_id"], $_REQUEST["rdiff_history"], $_REQUEST["rdiff_mount_sshfs"],
-							$_REQUEST["rdiff_mount_archfs"], $_REQUEST["tpl_sync_path"]);
+							$_REQUEST["rdiff_mount_archfs"], $_REQUEST["tpl_sync_path"], $_REQUEST["remote_console_server"]);
 		$xtpl->perex(_("Changes saved"), _("Location added."));
 		$list_locations = true;
 		break;
@@ -137,6 +138,7 @@ switch($_REQUEST["action"]) {
 			$xtpl->form_add_input(_("Local node SSHFS mountpath").':', 'text', '30', 	'rdiff_mount_sshfs',	$item["location_rdiff_mount_sshfs"], _("Path, use {vps_id}"));
 			$xtpl->form_add_input(_("Local node ArchFS mountpath").':', 'text', '30',	'rdiff_mount_archfs',	$item["location_rdiff_mount_archfs"], _("Path, use {vps_id}"));
 			$xtpl->form_add_input(_("Template sync path").':', 'text', '30',	'tpl_sync_path',	$item["location_tpl_sync_path"], _("Used with rsync"));
+			$xtpl->form_add_input(_("Remote console server").':', 'text', '30',	'remote_console_server',	$item["location_remote_console_server"], _("URL"));
 			$xtpl->form_out(_("Save changes"));
 		} else {
 			$list_ramlimits = true;
@@ -147,7 +149,7 @@ switch($_REQUEST["action"]) {
 			$cluster->set_location($_REQUEST["id"], $_REQUEST["location_label"], $_REQUEST["type"], $_REQUEST["has_ipv6"],
 							$_REQUEST["onboot"], $_REQUEST["has_ospf"], $_REQUEST["has_rdiff_backup"],
 							$_REQUEST["backup_server_id"], $_REQUEST["rdiff_history"], $_REQUEST["rdiff_mount_sshfs"],
-							$_REQUEST["rdiff_mount_archfs"], $_REQUEST["tpl_sync_path"]);
+							$_REQUEST["rdiff_mount_archfs"], $_REQUEST["tpl_sync_path"], $_REQUEST["remote_console_server"]);
 			$xtpl->perex(_("Changes saved"), _("Location label saved."));
 			$list_locations = true;
 		} else {
