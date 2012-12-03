@@ -409,20 +409,20 @@ class cluster {
 		return $ret;
     }
     
-    function exists_devel_location() {
+    function exists_playground_location() {
 		global $db;
 		
-		$rs = $db->query("SELECT COUNT(location_id) AS cnt FROM locations WHERE location_type = 'devel'");
+		$rs = $db->query("SELECT COUNT(location_id) AS cnt FROM locations WHERE location_type = 'playground'");
 		$row = $db->fetch_array($rs);
 		
 		return $row["cnt"] > 0;
     }
     
-    function list_devel_servers($location_id = NULL) {
+    function list_playground_servers($location_id = NULL) {
 		global $db;
 		
 		$ret  = array();
-		$rs = $db->query("SELECT s.* FROM servers s INNER JOIN locations ON server_location = location_id WHERE location_type = 'devel'");
+		$rs = $db->query("SELECT s.* FROM servers s INNER JOIN locations ON server_location = location_id WHERE location_type = 'playground'");
 		
 		while ($row = $db->fetch_array($rs))
 			$ret[] = $row;

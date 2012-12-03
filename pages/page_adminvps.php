@@ -24,7 +24,7 @@ function print_newvps() {
 	$xtpl->title(_("Create VPS"));
 	$xtpl->form_create('?page=adminvps&section=vps&action=new2&create=1', 'post');
 	$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'vps_hostname', '', _("A-z, a-z"), 30);
-	$xtpl->form_add_select(_("HW server").':', 'vps_server', $_SESSION["is_admin"] ? list_servers() : list_devel_servers(), '2', '');
+	$xtpl->form_add_select(_("HW server").':', 'vps_server', $_SESSION["is_admin"] ? list_servers() : list_playground_servers(), '2', '');
 	if ($_SESSION["is_admin"])
 		$xtpl->form_add_select(_("Owner").':', 'm_id', members_list(), '', '');
 	$xtpl->form_add_select(_("Distribution").':', 'vps_template', list_templates(), '',  '');
@@ -76,27 +76,27 @@ switch ($_GET["action"]) {
 			print_newvps();
 			break;
 		case 'new2':
-			$dev_servers = $cluster->list_devel_servers();
-			$dev_mode = !$_SESSION["is_admin"] && count($dev_servers) > 0;
+			$playground_servers = $cluster->list_playground_servers();
+			$playground_mode = !$_SESSION["is_admin"] && count($playground_servers) > 0;
 		
 			if ((ereg('^[a-zA-Z0-9\.\-]{1,30}$',$_REQUEST["vps_hostname"])
 			    && $_GET["create"]
-			    && ($diskspace = limit_diskspace_by_id($_REQUEST["vps_diskspace"]) || $dev_mode)
-			    && ($privvmpages = limit_privvmpages_by_id($_REQUEST["vps_privvmpages"]) || $dev_mode))
+			    && ($diskspace = limit_diskspace_by_id($_REQUEST["vps_diskspace"]) || $playground_mode)
+			    && ($privvmpages = limit_privvmpages_by_id($_REQUEST["vps_privvmpages"]) || $playground_mode))
 			    && ($server = server_by_id($_REQUEST["vps_server"]))
-			    && ($_SESSION["is_admin"] || $dev_mode))
+			    && ($_SESSION["is_admin"] || $playground_mode))
 					{
 					
-					if ($dev_mode) {
+					if ($playground_mode) {
 						$is_dev = false;
-						foreach ($dev_servers as $dev)
+						foreach ($playground_servers as $dev)
 							if($dev["server_id"] == $server["server_id"]) {
 								$is_dev = true;
 								break;
 							}
 						
 						if (!$is_dev) {
-							$xtpl->perex(_("Error"), _("Selected node is not devel node, you bloody hacker."));
+							$xtpl->perex(_("Error"), _("Selected node is not playground node, you bloody hacker."));
 							break;
 						}
 					}
@@ -106,20 +106,20 @@ switch ($_GET["action"]) {
 						$perex = $vps->create_new($server["server_id"],
 													$_REQUEST["vps_template"],
 													$_REQUEST["vps_hostname"],
-													$dev_mode ? $_SESSION["member"]["m_id"] : $_REQUEST["m_id"],
-													$dev_mode ? 1 : $_REQUEST["vps_privvmpages"],
-													$dev_mode ? 1 : $_REQUEST["vps_diskspace"],
-													$dev_mode ? 1 : $_REQUEST["vps_cpulimit"],
-													$dev_mode ? '' : $_REQUEST["vps_info"]);
+													$playground_mode ? $_SESSION["member"]["m_id"] : $_REQUEST["m_id"],
+													$playground_mode ? 1 : $_REQUEST["vps_privvmpages"],
+													$playground_mode ? 1 : $_REQUEST["vps_diskspace"],
+													$playground_mode ? 1 : $_REQUEST["vps_cpulimit"],
+													$playground_mode ? '' : $_REQUEST["vps_info"]);
 						
-						if ($dev_mode) {
+						if ($playground_mode) {
 							$vps->add_first_available_ip($server["server_location"], 4);
 							$vps->add_first_available_ip($server["server_location"], 6);
 						}
 
 						$veid = $vps->veid;
 
-						if ($_REQUEST["boot_after_create"] || $dev_mode) {
+						if ($_REQUEST["boot_after_create"] || $playground_mode) {
 							$vps->start();
 							$xtpl->perex(_("VPS create ").' '.$vps->veid, _("VPS will be created and booted afterwards."));
 						} else {
@@ -416,7 +416,7 @@ if (isset($list_vps) && $list_vps) {
 			$xtpl->table_add_category($listed_vps);
 			$xtpl->table_out();
 			}
-if ($_SESSION["is_admin"] || $cluster->exists_devel_location()) $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new');
+if ($_SESSION["is_admin"] || $cluster->exists_playground_location()) $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new');
 if ($_SESSION["is_admin"]) $xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List IP addresses").'" /> '._("List IP addresses"), '?page=adminvps&action=alliplist');
 }
 if (isset($show_info) && $show_info) {

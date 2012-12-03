@@ -186,12 +186,12 @@ function list_servers($without_id = false) {
     return $ret;
 }
 
-function list_devel_servers($without_id = false) {
+function list_playground_servers($without_id = false) {
     global $db;
 	if ($without_id)
-		$sql = "SELECT server_id, server_name FROM servers INNER JOIN locations ON server_location = location_id WHERE server_id != '".$db->check($without_id)."' AND location_type = 'devel' ORDER BY server_location,server_id";
+		$sql = "SELECT server_id, server_name FROM servers INNER JOIN locations ON server_location = location_id WHERE server_id != '".$db->check($without_id)."' AND location_type = 'playground' ORDER BY server_location,server_id";
 	else
-		$sql = "SELECT server_id, server_name FROM servers INNER JOIN locations ON server_location = location_id WHERE location_type = 'devel' ORDER BY server_location,server_id";
+		$sql = "SELECT server_id, server_name FROM servers INNER JOIN locations ON server_location = location_id WHERE location_type = 'playground' ORDER BY server_location,server_id";
 
     if ($result = $db->query($sql))
 	while ($row = $db->fetch_array($result))
