@@ -84,6 +84,7 @@ class member_load {
                 m_mail = "'.$db->check($this->m["m_mail"]).'",
                 m_address = "'.$db->check($this->m["m_address"]).'",
                 m_mailer_enable = "'.$db->check($this->m["m_mailer_enable"]).'",
+				m_playground_enable = "'.$db->check($this->m["m_playground_enable"]).'",
                 m_info = "'.$db->check($this->m["m_info"]).'"';
       $db->query($sql);
       if ($db->affected_rows() > 0) {
@@ -152,7 +153,8 @@ class member_load {
               m_info = "'.$db->check(addslashes($this->m["m_info"])).'",
               m_paid_until = "'.$db->check($this->m["m_paid_until"]).'",
               m_mailer_enable = "'.$db->check($this->m["m_mailer_enable"]).'",
-              m_monthly_payment = "'.$db->check($this->m["m_monthly_payment"]).'"
+              m_monthly_payment = "'.$db->check($this->m["m_monthly_payment"]).'",
+              m_playground_enable = "'.$db->check($this->m["m_playground_enable"]).'"
           WHERE m_id="'.$db->check($this->mid).'"';
       }
       $db->query($sql);
@@ -230,6 +232,26 @@ class member_load {
 
   function is_new() {
     return isset($this->m["m_created"]) && ((time() - $this->m["m_created"]) <= 3600*24*7);
+  }
+  
+  function can_use_playground() {
+	global $db;
+	
+	if (!$this->m["m_playground_enable"])
+		return false;
+	
+	$sql = "SELECT COUNT(vps_id) AS count
+		FROM vps
+		INNER JOIN servers ON vps_server = server_id
+		INNER JOIN locations ON location_id = server_location
+		WHERE m_id = ".$db->check($this->m["m_id"])." AND location_type = 'playground'";
+	if ($result = $db->query($sql)) {
+		if ($row = $db->fetch_array($result)) {
+			return $row["count"] < 1;
+		}
+	}
+	
+	return false;
   }
 }
 ?>

@@ -70,7 +70,7 @@ if ($_GET["run"] == 'restart') {
 }
 
 $playground_servers = $cluster->list_playground_servers();
-$playground_mode = !$_SESSION["is_admin"] && count($playground_servers) > 0;
+$playground_mode = !$_SESSION["is_admin"] && count($playground_servers) > 0 && $member_of_session->can_use_playground();
 
 $_GET["action"] = isset($_GET["action"]) ? $_GET["action"] : false;
 
@@ -436,7 +436,7 @@ if (isset($list_vps) && $list_vps) {
 			$xtpl->table_add_category($listed_vps);
 			$xtpl->table_out();
 			}
-if ($_SESSION["is_admin"] || $cluster->exists_playground_location()) $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new');
+if ($_SESSION["is_admin"] || $playground_mode) $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new');
 if ($_SESSION["is_admin"]) $xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List IP addresses").'" /> '._("List IP addresses"), '?page=adminvps&action=alliplist');
 }
 if (isset($show_info) && $show_info) {
