@@ -69,6 +69,9 @@ if ($_GET["run"] == 'restart') {
 	$xtpl->perex_cmd_output(_("Restart of")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->restart());
 }
 
+$playground_servers = $cluster->list_playground_servers();
+$playground_mode = !$_SESSION["is_admin"] && count($playground_servers) > 0;
+
 $_GET["action"] = isset($_GET["action"]) ? $_GET["action"] : false;
 
 switch ($_GET["action"]) {
@@ -76,9 +79,6 @@ switch ($_GET["action"]) {
 			print_newvps();
 			break;
 		case 'new2':
-			$playground_servers = $cluster->list_playground_servers();
-			$playground_mode = !$_SESSION["is_admin"] && count($playground_servers) > 0;
-		
 			if ((ereg('^[a-zA-Z0-9\.\-]{1,30}$',$_REQUEST["vps_hostname"])
 			    && $_GET["create"]
 			    && ($diskspace = limit_diskspace_by_id($_REQUEST["vps_diskspace"]) || $playground_mode)
@@ -88,14 +88,14 @@ switch ($_GET["action"]) {
 					{
 					
 					if ($playground_mode) {
-						$is_dev = false;
-						foreach ($playground_servers as $dev)
-							if($dev["server_id"] == $server["server_id"]) {
-								$is_dev = true;
+						$is_pg = false;
+						foreach ($playground_servers as $pg)
+							if($pg["server_id"] == $server["server_id"]) {
+								$is_pg = true;
 								break;
 							}
 						
-						if (!$is_dev) {
+						if (!$is_pg) {
 							$xtpl->perex(_("Error"), _("Selected node is not playground node, you bloody hacker."));
 							break;
 						}
@@ -323,10 +323,30 @@ switch ($_GET["action"]) {
 			$show_info=true;
 			break;
 		case 'clone':
-			if (isset($_REQUEST["veid"]) && isset($_REQUEST["target_server_id"])) {
+			if (isset($_REQUEST["veid"])  && ($_SESSION["is_admin"] || $playground_mode) && ($server = server_by_id($_REQUEST["target_server_id"]))) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 				
-				$vps->clone_vps($_REQUEST["target_owner_id"], $_REQUEST["target_server_id"], $_REQUEST["hostname"], $_REQUEST["limits"], $_REQUEST["features"], $_REQUEST["backuper"]);
+				if ($playground_mode) {
+					$is_pg = false;
+					foreach ($playground_servers as $pg)
+						if($pg["server_id"] == $server["server_id"]) {
+							$is_pg = true;
+							break;
+						}
+					
+					if (!$is_pg) {
+						$xtpl->perex(_("Error"), _("Selected node is not playground node, you bloody hacker."));
+						break;
+					}
+				}
+				
+				$vps->clone_vps($playground_mode ? $vps->ve["m_id"] : $_REQUEST["target_owner_id"],
+								$_REQUEST["target_server_id"],
+								$_REQUEST["hostname"],
+								$playground_mode ? 1 : $_REQUEST["limits"],
+								$playground_mode ? 1 : $_REQUEST["features"],
+								$playground_mode ? 0 : $_REQUEST["backuper"]
+				);
 				$xtpl->perex(_("Clone in progress"), '');
 			} else
 				 $xtpl->perex(_("Invalid data"), _("Please fill the form correctly."));
@@ -665,14 +685,19 @@ if (isset($show_info) && $show_info) {
 		$xtpl->form_out(_("Go >>"));
 	}
 // Clone
-	if ($_SESSION["is_admin"]) {
+	if ($_SESSION["is_admin"] || $playground_mode) {
 		$xtpl->form_create('?page=adminvps&action=clone&veid='.$vps->veid, 'post');
-		$xtpl->form_add_select(_("Target owner").':', 'target_owner_id', members_list(), $vps->ve["m_id"]);
+		
+		if ($_SESSION["is_admin"])
+			$xtpl->form_add_select(_("Target owner").':', 'target_owner_id', members_list(), $vps->ve["m_id"]);
 		$xtpl->form_add_select(_("Target server").':', 'target_server_id', $cluster->list_servers(), $vps->ve["vps_server"]);
 		$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'hostname', $vps->ve["vps_hostname"] . "-{$vps->veid}-clone");
-		$xtpl->form_add_checkbox(_("Clone limits").':', 'limits', '1', true);
-		$xtpl->form_add_checkbox(_("Clone features").':', 'features', '1', true);
-		$xtpl->form_add_checkbox(_("Clone backuper").':', 'backuper', '1', true);
+		
+		if ($_SESSION["is_admin"]) {
+			$xtpl->form_add_checkbox(_("Clone limits").':', 'limits', '1', true);
+			$xtpl->form_add_checkbox(_("Clone features").':', 'features', '1', true);
+			$xtpl->form_add_checkbox(_("Clone backuper").':', 'backuper', '1', true);
+		}
 		$xtpl->table_add_category(_("Clone"));
 		$xtpl->table_add_category('&nbsp;');
 		$xtpl->form_out(_("Go >>"));
