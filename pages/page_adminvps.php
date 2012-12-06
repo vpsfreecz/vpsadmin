@@ -107,9 +107,9 @@ switch ($_GET["action"]) {
 													$_REQUEST["vps_template"],
 													$_REQUEST["vps_hostname"],
 													$playground_mode ? $_SESSION["member"]["m_id"] : $_REQUEST["m_id"],
-													$playground_mode ? 1 : $_REQUEST["vps_privvmpages"],
-													$playground_mode ? 1 : $_REQUEST["vps_diskspace"],
-													$playground_mode ? 1 : $_REQUEST["vps_cpulimit"],
+													$playground_mode ? $cluster_cfg->get("playground_limit_privvmpages") : $_REQUEST["vps_privvmpages"],
+													$playground_mode ? $cluster_cfg->get("playground_limit_diskspace") : $_REQUEST["vps_diskspace"],
+													$playground_mode ? $cluster_cfg->get("playground_limit_cpulimit") : $_REQUEST["vps_cpulimit"],
 													$playground_mode ? '' : $_REQUEST["vps_info"]);
 						
 						if ($playground_mode) {

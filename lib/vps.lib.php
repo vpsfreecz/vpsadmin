@@ -582,9 +582,21 @@ function ipadd($ip, $type = 4) {
 		
 		add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_CLONE_VE, $params);
 		
-		$clone->set_privvmpages($limits ? $this->ve["vps_privvmpages"] : 1);
-		$clone->set_diskspace($limits ? $this->ve["vps_diskspace"] : 1);
-		$clone->set_cpulimit($limits ? $this->ve["vps_cpulimit"] : 1);
+		$l = array();
+		switch($limits) {
+			case 0:
+				$l = array(1, 1, 1);
+				break;
+			case 1:
+				$l = array($this->ve["vps_privvmpages"], $this->ve["vps_diskspace"], $this->ve["vps_cpulimit"]);
+				break;
+			case 2:
+				$l = array($cluster_cfg->get("playground_limit_privvmpages"), $cluster_cfg->get("playground_limit_diskspace"), $cluster_cfg->get("playground_limit_cpulimit"));
+				break;
+		}
+		$clone->set_privvmpages($l[0]);
+		$clone->set_diskspace($l[1]);
+		$clone->set_cpulimit($l[2]);
 		
 		if ($features && $this->ve["vps_features_enabled"])
 			add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_ENABLE_FEATURES);

@@ -634,6 +634,24 @@ switch($_REQUEST["action"]) {
 		$xtpl->perex(_("API settings saved"), '');
 		$list_nodes = true;
 		break;
+	case "playground_settings":
+		$xtpl->title2("Manage Playground Settings");
+		$xtpl->table_add_category(_('Default limits'));
+		$xtpl->table_add_category('');
+		$xtpl->form_create('?page=cluster&action=playground_settings_save', 'post');
+		$xtpl->form_add_select(_("RAM").':', 'vps_privvmpages', list_limit_privvmpages(), $cluster_cfg->get("playground_limit_privvmpages"));
+		$xtpl->form_add_select(_("Disk space").':', 'vps_diskspace', list_limit_diskspace(), $cluster_cfg->get("playground_limit_diskspace"));
+		$xtpl->form_add_select(_("CPU").':', 'vps_cpulimit', list_limit_cpulimit(), $cluster_cfg->get("playground_limit_cpulimit"));
+		$xtpl->form_out(_("Save changes"));
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		break;
+	case "playground_settings_save":
+		$cluster_cfg->set("playground_limit_privvmpages", $_REQUEST["vps_privvmpages"]);
+		$cluster_cfg->set("playground_limit_diskspace", $_REQUEST["vps_diskspace"]);
+		$cluster_cfg->set("playground_limit_cpulimit", $_REQUEST["vps_cpulimit"]);
+		$xtpl->perex(_("Playground settings saved"), '');
+		$list_nodes = true;
+		break;
 	default:
 		$list_nodes = true;
 }
@@ -695,6 +713,7 @@ if ($list_nodes) {
 	$xtpl->sbar_add(_("Manage Mailer"), '?page=cluster&action=mailer');
 	$xtpl->sbar_add(_("Manage Payments"), '?page=cluster&action=payments_settings');
 	$xtpl->sbar_add(_("Manage API"), '?page=cluster&action=api_settings');
+	$xtpl->sbar_add(_("Manage playground"), '?page=cluster&action=playground_settings');
 	$xtpl->sbar_add(_("Edit vpsAdmin textfields"), '?page=cluster&action=fields');
 	$sql = 'SELECT * FROM servers ORDER BY server_location,server_id';
 	$list_result = $db->query($sql);
