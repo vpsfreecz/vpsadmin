@@ -31,7 +31,7 @@ class Executor
 			options << opts
 		end
 		
-		syscmd("#{Settings::VZCTL} #{cmd} #{veid} #{options.join(" ")} #{"--save" if save}", valid_rcs)
+		syscmd("#{$APP_CONFIG[:vz][:vzctl]} #{cmd} #{veid} #{options.join(" ")} #{"--save" if save}", valid_rcs)
 	end
 	
 	def syscmd(cmd, valid_rcs = [])

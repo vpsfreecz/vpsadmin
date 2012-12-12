@@ -74,12 +74,12 @@ class VPS < Executor
 	end
 	
 	def migrate_offline
-		syscmd("#{Settings::VZMIGRATE} #{@params["target"]} #{@veid}")
+		syscmd("#{$APP_CONFIG[:vz][:vzmigrate]} #{@params["target"]} #{@veid}")
 	end
 	
 	def migrate_online
 		begin
-			syscmd("#{Settings::VZMIGRATE} --online #{@params["target"]} #{@veid}")
+			syscmd("#{$APP_CONFIG[:vz][:vzmigrate]} --online #{@params["target"]} #{@veid}")
 		rescue CommandFailed => err
 			@output[:migration_cmd] = err.cmd
 			@output[:migration_exitstatus] = err.rc
@@ -89,30 +89,30 @@ class VPS < Executor
 	end
 	
 	def restore
-		target = Settings::RESTORE_TARGET % [@veid,]
-		syscmd("#{Settings::RM} -rf #{target}") if File.exists?(target)
+		target = $APP_CONFIG[:vpsadmin][:restore_target] % [@veid,]
+		syscmd("#{$APP_CONFIG[:bin][:rm]} -rf #{target}") if File.exists?(target)
 		
 		Backuper.wait_for_lock(Db.new, @veid) do
-			syscmd("#{Settings::RDIFF_BACKUP} -r #{@params["datetime"]} #{Settings::BACKUPS_MNT_DIR}/#{@params["backuper"]}.#{Settings::DOMAIN}/#{@veid} #{target}")
+			syscmd("#{$APP_CONFIG[:bin][:rdiff_backup]} -r #{@params["datetime"]} #{$APP_CONFIG[:vpsadmin][:backups_mnt_dir]}/#{@params["backuper"]}.#{$APP_CONFIG[:vpsadmin][:domain]}/#{@veid} #{target}")
 		end
 		
 		stop(:force => true)
-		syscmd("#{Settings::VZQUOTA} off #{@veid} -f", [6,])
+		syscmd("#{$APP_CONFIG[:vz][:vzquota]} off #{@veid} -f", [6,])
 		stop
-		syscmd("#{Settings::RM} -rf #{Settings::VZ_ROOT}/private/#{@veid}")
-		syscmd("#{Settings::MV} #{target} #{Settings::VZ_ROOT}/private/#{@veid}")
-		syscmd("#{Settings::VZQUOTA} drop #{@veid}")
+		syscmd("#{$APP_CONFIG[:bin][:rm]} -rf #{$APP_CONFIG[:vz][:vz_root]}/private/#{@veid}")
+		syscmd("#{$APP_CONFIG[:bin][:mv]} #{target} #{$APP_CONFIG[:vz][:vz_root]}/private/#{@veid}")
+		syscmd("#{$APP_CONFIG[:vz][:vzquota]} drop #{@veid}")
 		start
 	end
 	
 	def clone
 		create
-		syscmd("#{Settings::RM} -rf #{Settings::VZ_ROOT}/private/#{@veid}")
+		syscmd("#{$APP_CONFIG[:bin][:rm]} -rf #{$APP_CONFIG[:vz][:vz_root]}/private/#{@veid}")
 		
 		if @params["is_local"]
-			syscmd("#{Settings::CP} -a #{Settings::VZ_ROOT}/private/#{@params["src_veid"]}/ #{Settings::VZ_ROOT}/private/#{@veid}")
+			syscmd("#{$APP_CONFIG[:bin][:cp]} -a #{$APP_CONFIG[:vz][:vz_root]}/private/#{@params["src_veid"]}/ #{$APP_CONFIG[:vz][:vz_root]}/private/#{@veid}")
 		else
-			syscmd("#{Settings::RSYNC} -a #{@params["src_server_ip"]}:#{Settings::VZ_ROOT}/private/#{@params["src_veid"]}/ #{Settings::VZ_ROOT}/private/#{@veid}");
+			syscmd("#{$APP_CONFIG[:bin][:rsync]} -a #{@params["src_server_ip"]}:#{$APP_CONFIG[:vz][:vz_root]}/private/#{@params["src_veid"]}/ #{$APP_CONFIG[:vz][:vz_root]}/private/#{@veid}");
 		end
 	end
 	
@@ -135,7 +135,7 @@ class VPS < Executor
 		disk = 0
 		
 		begin
-			IO.popen("#{Settings::VZLIST} --no-header #{@veid}") do |io|
+			IO.popen("#{$APP_CONFIG[:vz][:vzlist]} --no-header #{@veid}") do |io|
 				status = io.read.split(" ")
 				up = status[2] == "running" ? 1 : 0
 				nproc = status[1].to_i
@@ -143,7 +143,7 @@ class VPS < Executor
 				mem_str = load_file("/proc/meminfo")[:output]
 				mem = (mem_str.match(/^MemTotal\:\s+(\d+) kB$/)[1].to_i - mem_str.match(/^MemFree\:\s+(\d+) kB$/)[1].to_i) / 1024
 				
-				disk_str = vzctl(:exec, @veid, "#{Settings::DF} -k /")[:output]
+				disk_str = vzctl(:exec, @veid, "#{$APP_CONFIG[:bin][:df]} -k /")[:output]
 				disk = disk_str.split("\n")[1].split(" ")[2].to_i / 1024
 			end
 		rescue
@@ -162,13 +162,13 @@ class VPS < Executor
 	end
 	
 	def ensure_mountfile
-		p = "#{Settings::VZ_CONF}/conf/#{@veid}.mount"
+		p = "#{$APP_CONFIG[:vz][:vz_conf]}/conf/#{@veid}.mount"
 		
 		unless File.exists?(p)
 			File.open(p, "w") do |f|
-				f.write(File.open("scripts/ve.mount").read.gsub(/%%BACKUP_SERVER%%/, "storage.prg.#{Settings::DOMAIN}"))
+				f.write(File.open("scripts/ve.mount").read.gsub(/%%BACKUP_SERVER%%/, "storage.prg.#{$APP_CONFIG[:vpsadmin][:domain]}"))
 			end
-			syscmd("#{Settings::CHMOD} +x #{p}")
+			syscmd("#{$APP_CONFIG[:bin][:chmod]} +x #{p}")
 		end
 		
 		{:ret => :ok}

@@ -1,9 +1,16 @@
 require 'lib/executor'
+require 'lib/node'
+require 'lib/vps'
+require 'lib/firewall'
+require 'lib/mailer'
+require 'lib/backuper'
 
 require 'rubygems'
 require 'json'
 
 class Command
+	@@handlers = {}
+	
 	def initialize(trans)
 		@trans = trans
 		@output = {}
@@ -11,7 +18,7 @@ class Command
 	end
 	
 	def execute
-		cmd = Settings::COMMANDS[ @trans["t_type"].to_i ]
+		cmd = @@handlers[ @trans["t_type"].to_i ]
 		
 		unless cmd
 			@output[:error] = "Unsupported command"
@@ -58,6 +65,15 @@ class Command
 			@trans["t_vps"]
 		else
 			0
+		end
+	end
+	
+	def Command.load_handlers
+		$APP_CONFIG[:handlers].each do |klass, cmds|
+			cmds.each do |cmd, method|
+				@@handlers[cmd] = {:class => klass, :method => method}
+				puts "Cmd ##{cmd} => #{klass}.#{method}"
+			end
 		end
 	end
 end

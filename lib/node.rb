@@ -7,7 +7,7 @@ class Node < Executor
 	end
 	
 	def sync_templates
-		syscmd("#{Settings::RSYNC} -a --delete #{@params["sync_path"]} #{Settings::VZ_ROOT}/template/cache/")
+		syscmd("#{$APP_CONFIG[:bin][:rsync]} -a --delete #{@params["sync_path"]} #{$APP_CONFIG[:vz][:vz_root]}/template/cache/")
 	end
 	
 	def post_save(con)
