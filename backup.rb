@@ -68,7 +68,7 @@ until vpses.empty?
 			}.to_json
 			
 			if options[:dry_run]
-				#puts "BACKUP VPS=#{vps[:veid]}, FROM SERVER=#{s_name}, TO SERVER=#{vps[:backuper]}, PARAMS=#{params}"
+				puts "BACKUP VPS=#{vps[:veid]}, FROM SERVER=#{s_name}, TO SERVER=#{vps[:backuper]}, PARAMS=#{params}"
 			else
 				db.prepared("INSERT INTO transactions SET
 							t_time = NOW(),

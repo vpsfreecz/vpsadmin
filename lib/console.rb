@@ -57,13 +57,13 @@ class VzServer < EventMachine::Connection
 					@console = VzConsole.consoles[@veid]
 					@console.register(self)
 				else
-					@console = EventMachine.popen("#{Settings::VZCTL} console #{@veid}", VzConsole, @veid, self)
+					@console = EventMachine.popen("#{$APP_CONFIG[:vz][:vzctl]} console #{@veid}", VzConsole, @veid, self)
 				end
 				
 				send_data("Welcome to vpsFree.cz Remote Console\r\n")
 				data = lines[1..-1].join('\r\n')
 			rescue
-				failed_to_attach
+				return failed_to_attach
 			end
 		end
 		
@@ -81,7 +81,7 @@ class VzServer < EventMachine::Connection
 	end
 	
 	def unbind
-		detach unless @detached
+		detach if !@detached && @console
 	end
 	
 	def failed_to_attach

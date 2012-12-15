@@ -22,7 +22,7 @@ HEADERS
 #{@params["msg"]}
 MSG
 		begin
-			Net::SMTP.start(Settings::SMTP_SERVER, Settings::SMTP_PORT) do |smtp|
+			Net::SMTP.start($APP_CONFIG[:mailer][:smtp_server], $APP_CONFIG[:mailer][:smtp_port]) do |smtp|
 				smtp.send_message(msg, "podpora@vpsfree.cz", [@params["to"],] + @params["cc"] + @params["bcc"])
 			end
 		rescue

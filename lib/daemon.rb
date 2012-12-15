@@ -22,7 +22,7 @@ module VpsAdmind
 		
 		def init
 			@fw = Firewall.new
-			@fw.init(db)
+			@fw.init(@db)
 		end
 		
 		def start

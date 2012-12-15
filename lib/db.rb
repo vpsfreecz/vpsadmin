@@ -33,6 +33,7 @@ class Db
 	def connect
 		protect do
 			@my = Mysql.new($APP_CONFIG[:db][:host], $APP_CONFIG[:db][:user], $APP_CONFIG[:db][:pass], $APP_CONFIG[:db][:name])
+			@my.reconnect = true
 		end
 	end
 	
