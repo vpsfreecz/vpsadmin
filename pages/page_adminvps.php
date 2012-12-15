@@ -276,7 +276,15 @@ switch ($_GET["action"]) {
 			break;
 		case 'reinstall':
 			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-			if ($_REQUEST["reinstallsure"] && $_REQUEST["vps_template"]) {
+			$tpl = template_by_id($_REQUEST["vps_template"]);
+			
+			if (!$tpl) {
+				$xtpl->perex(_("Template does not exist!"));
+				$show_info=true;
+			} else if (!$tpl["templ_enabled"]) {
+				$xtpl->perex(_("Template not enabled, it cannot be used!"));
+				$show_info=true;
+			} else if ($_REQUEST["reinstallsure"] && $_REQUEST["vps_template"]) {
 				$xtpl->perex(_("Are you sure you want to reinstall VPS").' '.$_GET["veid"].'?', '<a href="?page=adminvps">'.strtoupper(_("No")).'</a> | <a href="?page=adminvps&action=reinstall2&veid='.$_GET["veid"].'">'.strtoupper(_("Yes")).'</a>');
 				$vps->change_distro_before_reinstall($_REQUEST["vps_template"]);
 			}

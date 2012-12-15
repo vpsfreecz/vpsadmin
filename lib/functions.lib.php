@@ -159,8 +159,11 @@ function list_templates() {
     global $db;
     $sql = 'SELECT * FROM cfg_templates ORDER BY templ_label ASC';
     if ($result = $db->query($sql))
-	while ($row = $db->fetch_array($result))
+	while ($row = $db->fetch_array($result)) {
 	    $ret[$row["templ_id"]] = $row["templ_label"];
+	    if (!$row["templ_enabled"])
+			$ret[$row["templ_id"]] .= ' '._('(IMPORTANT: This template is currently disabled, it cannot be used)');
+	}
     return $ret;
 }
 
