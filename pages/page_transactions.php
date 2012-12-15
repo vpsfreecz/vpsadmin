@@ -77,10 +77,12 @@ if ($_SESSION["is_admin"]) {
 
 $xtpl->table_add_category("ID");
 $xtpl->table_add_category("TIME");
+$xtpl->table_add_category("TOOK");
 $xtpl->table_add_category("MEMBER");
 $xtpl->table_add_category("SERVER");
 $xtpl->table_add_category("VPS");
 $xtpl->table_add_category("TYPE");
+$xtpl->table_add_category("DEP");
 $xtpl->table_add_category("DONE?");
 $xtpl->table_add_category("OK?");
 
@@ -93,21 +95,26 @@ while ($t = $db->find("transactions", $whereCond, "t_id DESC", $limit)) {
     $xtpl->table_td($t["t_id"]);
 	}
 	$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $t["t_time"]));
+	$xtpl->table_td($t["t_end"] - $t["t_real_start"] . " s");
 	$xtpl->table_td("{$m["m_id"]} {$m["m_nick"]}");
 	$xtpl->table_td(($s) ? "{$s["server_id"]} {$s["server_name"]}" : '---');
 	$xtpl->table_td(($t["t_vps"] == 0) ? _("--Every--") : "<a href='?page=adminvps&action=info&veid={$t["t_vps"]}'>{$t["t_vps"]}</a>");
-  if ($_SESSION["is_admin"]) {
-    $xtpl->table_td('<a href="?page=transactions&filter=yes&details=1&type='.$t["t_type"].'">'.$t["t_type"].'</a>'
-                    .' '.transaction_label($t["t_type"]));
-  } else {
-    $xtpl->table_td("{$t["t_type"]}".' '.transaction_label($t["t_type"]));
-  }
+	
+	if ($_SESSION["is_admin"]) {
+		$xtpl->table_td('<a href="?page=transactions&filter=yes&details=1&type='.$t["t_type"].'">'.$t["t_type"].'</a>'
+						.' '.transaction_label($t["t_type"]));
+	} else {
+		$xtpl->table_td("{$t["t_type"]}".' '.transaction_label($t["t_type"]));
+	}
+	$xtpl->table_td($t["t_depends_on"]);
 	$xtpl->table_td($t["t_done"]);
 	$xtpl->table_td($t["t_success"]);
 	if ($t["t_done"]==1 && $t["t_success"]==1)
 		$xtpl->table_tr(false, 'ok');
 	else if ($t["t_done"]==1 && $t["t_success"]==0)
 		$xtpl->table_tr(false, 'error');
+	else if ($t["t_done"]==1 && $t["t_success"]==2)
+		$xtpl->table_tr(false, 'warning');
 	elseif ($t["t_done"]==0 && $t["t_success"]==0) {
 		if ($_SESSION["is_admin"]) {
 			$xtpl->table_td('<a href="?page=transactions&action=delete&did='.$t["t_id"].'"><img src="template/icons/vps_delete.png"  title="'._("Delete transaction").'"/></a>');
@@ -116,7 +123,12 @@ while ($t = $db->find("transactions", $whereCond, "t_id DESC", $limit)) {
 	} else
 		$xtpl->table_tr();
 	if ($_REQUEST["details"]) {
-		$xtpl->table_td(nl2br(print_r(unserialize(stripslashes($t["t_param"])), true)), false, false, 8);
+		$xtpl->table_td(nl2br(
+			"<strong>"._("Input").":</strong>\n".
+			print_r(json_decode($t["t_param"], true), true).
+			"\n<strong>"._("Output").":</strong>\n".
+			print_r(json_decode($t["t_output"], true), true)
+		), false, false, 10);
 		$xtpl->table_tr();
 	}
 }

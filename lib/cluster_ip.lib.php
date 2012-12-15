@@ -96,7 +96,7 @@ abstract class Cluster_ip {
     $this->xtpl->table_out();
   }
 
-  public function table_add_1($max=0, $previous_ip=false, $previous_location=false) {
+  public function table_add_1($previous_ips = false, $previous_location=false) {
     global $cluster;
     $this->xtpl->title(_("Add IPv").$this->type);
     $this->xtpl->sbar_add(_("Back"), '?page=cluster&action=ipv'.$this->type.'addr');
@@ -104,30 +104,48 @@ abstract class Cluster_ip {
     $this->xtpl->table_add_category('&nbsp;');
     $this->xtpl->table_add_category('&nbsp;');
     $this->xtpl->form_create('?page=cluster&action=ipaddr_add2&v='.$this->type, 'post');
-    $this->xtpl->form_add_input(_("IPv").$this->type.':', 'text', '30', 'm_ip', (($previous_ip) ? $previous_ip : ''), '', $max);
+    $this->xtpl->form_add_textarea(_("IPv").$this->type.':', 40, 10, 'm_ip', (($previous_ips) ? $previous_ips : ''));
     $this->xtpl->form_add_select(_("Location").':', 'm_location', $cluster->list_locations(), (($previous_location) ? $previous_location : ''),  '');
     $this->xtpl->form_out(_("Add"));
   }
 
-  public function table_add_2($ip_addr, $location_id) {
-    if ($this->check_syntax($ip_addr)==false) {
-    } else {
-      if (!ip_exists_in_table($ip_addr)){
-	$sql = "INSERT INTO `vps_ip` SET `ip_v`=".$this->type.",`ip_location`=".$location_id.", `vps_id`=0, `ip_addr`='".$ip_addr."';";
-	if ($this->db->query($sql)) {
-	    $t_param["ip_v"] = $this->type;
-	    $t_param["ip_addr"] = $ip_addr;
-	    $t_param["ip_id"] = $this->db->insert_id();
-	    add_transaction_locationwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_IP_REGISTER, $t_param, $location_id);
-	    $this->xtpl->perex(_("Operation successful"), sprintf(_("IP address '%s' has been successfully added"), $ip_addr));
-	} else {
-	    $this->xtpl->perex(_("Operation not successful"), _("An error has occured, while you were trying to add a new IP"));
+  public function table_add_2($ip_addrs, $location_id) {
+	$raw_ips = preg_split("/(\r\n|\n|\r)/", $ip_addrs);
+	$out = array();
+	$insert = array();
+	$cleaned = array();
+	$err = true;
+	
+	foreach ($raw_ips as $ip_addr) {
+		if (!$this->check_syntax($ip_addr))
+			$out[] = _("Bad format") . ": '$ip_addr'";
+		else if (ip_exists_in_table($ip_addr))
+			$out[] = "IP '$ip_addr' is already in database";
+		else {
+			$out[] = _("Added IP") . " $ip_addr";
+			$insert[] = "({$this->type}, ".$this->db->check($location_id).", 0, '{$ip_addr}')";
+			$cleaned[] = array("ver" => $this->type, "addr" => $ip_addr);
+			$err = false;
+		}
 	}
-
-    } else {
-	$this->xtpl->perex(_("Operation not successful"), _("IP already exists in DB"));
-    }
-    }
+	
+	if($err) {
+		$this->xtpl->perex(_("Operation not successful"), implode("<br/>", $out));
+		return;
+	}
+	
+	if(!count($insert))
+		return;
+		
+	$sql = "INSERT INTO vps_ip (ip_v, ip_location, vps_id, ip_addr) VALUES " . implode(",", $insert);
+	
+	if ($this->db->query($sql)) {
+		$params = array("ip_addrs" => $cleaned);
+	    add_transaction_locationwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_IP_REGISTER, $params, $location_id);
+	    $this->xtpl->perex(_("Operation successful"), implode("<br/>", $out));
+	} else {
+	    $this->xtpl->perex(_("Operation not successful"), _("Insert into database failed."));
+	}
   }
 
    //abstract public function check_syntax($ip_addr);

@@ -393,6 +393,43 @@ class cluster {
 		$ret[$row["server_id"]] = new cluster_node($row["server_id"]);
 	return $ret;
     }
+    
+     function list_servers_with_type($type, $location_id = NULL) {
+		global $db;
+		
+		$ret = array();
+		$conds = array("server_type = '". $db->check($type)."'");
+		
+		if($location_id)
+			$conds[] = "server_location = '".$db->check($location_id)."'";
+		
+		while ($row = $db->find("servers", $conds, "server_id"))
+			$ret[$row["server_id"]] = $row["server_name"];
+		
+		return $ret;
+    }
+    
+    function exists_playground_location() {
+		global $db;
+		
+		$rs = $db->query("SELECT COUNT(location_id) AS cnt FROM locations WHERE location_type = 'playground'");
+		$row = $db->fetch_array($rs);
+		
+		return $row["cnt"] > 0;
+    }
+    
+    function list_playground_servers($location_id = NULL) {
+		global $db;
+		
+		$ret  = array();
+		$rs = $db->query("SELECT s.* FROM servers s INNER JOIN locations ON server_location = location_id WHERE location_type = 'playground'");
+		
+		while ($row = $db->fetch_array($rs))
+			$ret[] = $row;
+		
+		return $ret;
+    }
+    
     /**
       * Get array of templates Cluster-wide available
       * @return array of template arrays, empty array on error
@@ -455,21 +492,23 @@ class cluster {
       * @param $info - Note for admins
       * @return descriptor of SQL result
       */
-    function set_template($id = NULL, $name, $label, $info = "", $special = "") {
+    function set_template($id = NULL, $name, $label, $info = "", $special = "", $enabled = 1) {
 	global $db;
 	if ($id != NULL)
 	    $sql = 'UPDATE cfg_templates
 			SET templ_name = "'.$db->check($name).'",
 			    templ_label = "'.$db->check($label).'",
 			    templ_info = "'.$db->check($info).'",
-			    special = "'.$db->check($special).'"
+			    special = "'.$db->check($special).'",
+			    templ_enabled = "'.$db->check($enabled).'"
 			WHERE templ_id = "'.$db->check($id).'"';
 	else
 	    $sql = 'INSERT INTO cfg_templates
 			SET templ_name = "'.$db->check($name).'",
 			    templ_label = "'.$db->check($label).'",
 			    templ_info = "'.$db->check($info).'",
-			    special = "'.$db->check($special).'"';
+			    special = "'.$db->check($special).'",
+			    templ_enabled = "'.$db->check($enabled).'"';
 	return ($db->query($sql));
     }
     /**
@@ -674,33 +713,37 @@ class cluster {
 		return $row;
 	return false;
     }
-    function set_location($id = NULL, $label, $has_ipv6 = false, $onboot, $has_ospf, $has_rdiff, $rd_tgt,
-    						$rd_hist, $rd_sshfs, $rd_archfs, $rd_tgt_path) {
+    function set_location($id = NULL, $label, $type, $has_ipv6 = false, $onboot, $has_ospf, $has_rdiff, $backuper,
+    						$rd_hist, $rd_sshfs, $rd_archfs, $tpl_sync_path, $remote_console_server) {
 	global $db;
 	if ($id != NULL)
 	    $sql = 'UPDATE locations
 			SET location_label = "'.$db->check($label).'",
+			    location_type = "'.$db->check($type).'",
 			    location_has_ipv6 = "'.$db->check($has_ipv6).'",
 			    location_has_ospf = "'.$db->check($has_ospf).'",
 			    location_has_rdiff_backup = "'.$db->check($has_rdiff).'",
-			    location_rdiff_target = "'.$db->check($rd_tgt).'",
+			    location_backup_server_id = "'.$db->check($backuper).'",
 			    location_rdiff_history = "'.$db->check($rd_hist).'",
 			    location_rdiff_mount_sshfs = "'.$db->check($rd_sshfs).'",
 			    location_rdiff_mount_archfs = "'.$db->check($rd_archfs).'",
-			    location_rdiff_target_path = "'.$db->check($rd_tgt_path).'",
+			    location_tpl_sync_path = "'.$db->check($tpl_sync_path).'",
+			    location_remote_console_server = "'.$db->check($remote_console_server).'",
 			    location_vps_onboot = "'.$db->check($onboot).'"
 			WHERE location_id = "'.$db->check($id).'"';
 	else
 	    $sql = 'INSERT INTO locations
 			SET location_label = "'.$db->check($label).'",
+			    location_type = "'.$db->check($type).'",
 			    location_has_ipv6 = "'.$db->check($has_ipv6).'",
 			    location_has_ospf = "'.$db->check($has_ospf).'",
 			    location_has_rdiff_backup = "'.$db->check($has_rdiff).'",
-			    location_rdiff_target = "'.$db->check($rd_tgt).'",
+			    location_backup_server_id = "'.$db->check($backuper).'",
 			    location_rdiff_history = "'.$db->check($rd_hist).'",
 			    location_rdiff_mount_sshfs = "'.$db->check($rd_sshfs).'",
 			    location_rdiff_mount_archfs = "'.$db->check($rd_archfs).'",
-			    location_rdiff_target_path = "'.$db->check($rd_tgt_path).'",
+			    location_tpl_sync_path = "'.$db->check($tpl_sync_path).'",
+			    location_remote_console_server = "'.$db->check($remote_console_server).'",
 			    location_vps_onboot = "'.$db->check($onboot).'"';
 	return ($db->query($sql));
     }
@@ -749,6 +792,7 @@ class cluster {
 		return $row["server_location"];
 	return false;
     }
+    
     function get_dns_server_by_id($dns_id) {
 	global $db;
 	$sql = 'SELECT * FROM cfg_dns WHERE dns_id='.$db->check($dns_id);

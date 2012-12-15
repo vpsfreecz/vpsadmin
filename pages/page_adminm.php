@@ -32,7 +32,8 @@ function print_newm() {
 	if ($cluster_cfg->get("mailer_enabled")) {
 		$xtpl->form_add_checkbox(_("Enable vpsAdmin mailer").':', 'm_mailer_enable', '1', true, $hint = '');
 	}
-
+	
+	$xtpl->form_add_checkbox(_("Enable playground VPS").':', 'm_playground_enable', '1', true, $hint = '');
 	$xtpl->form_add_textarea(_("Info").':', 28, 4, 'm_info', '', _("Note for administrators"));
 	$xtpl->form_out(_("Add"));
 
@@ -169,6 +170,7 @@ function print_editm($member) {
 
 	if ($_SESSION["is_admin"]) {
 	    $xtpl->form_add_input(_("Monthly payment").':', 'text', '30', 'm_monthly_payment', $member->m["m_monthly_payment"], ' ');
+	    $xtpl->form_add_checkbox(_("Enable playground VPS").':', 'm_playground_enable', '1', $member->m["m_playground_enable"], $hint = '');
 	    $xtpl->form_add_textarea(_("Info").':', 28, 4, 'm_info', $member->m["m_info"], _("Note for administrators"));
 	}
 
@@ -305,6 +307,7 @@ if ($_SESSION["logged_in"]) {
 							    $member->m["m_level"] = $_REQUEST["m_level"];
 							    $member->m["m_info"] = $_REQUEST["m_info"];
 							    $member->m["m_monthly_payment"] = $_REQUEST["m_monthly_payment"];
+							    $member->m["m_playground_enable"] = $_REQUEST["m_playground_enable"];
 							}
 
 							if (($_REQUEST["m_pass"] != '') && (strlen($_REQUEST["m_pass"]) >= 5)) {

@@ -65,6 +65,9 @@ if ($_SESSION["logged_in"]) {
 			$xtpl->parse('main');
 			$xtpl->out('main');
 			break;
+		case 'vps':
+			include WWW_ROOT.'pages/ajax_vps.php';
+			break;
 		default:
 			header("HTTP/1.0 404 Not Found");
 	}

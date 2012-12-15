@@ -20,6 +20,7 @@ define ('T_EXEC_IPDEL', 2007);
 define ('T_CREATE_VE', 3001);
 define ('T_DESTROY_VE', 3002);
 define ('T_REINSTALL_VE', 3003);
+define ('T_CLONE_VE', 3004);
 define ('T_MIGRATE_OFFLINE', 4001);
 define ('T_MIGRATE_OFFLINE_PART2', 4011);
 define ('T_MIGRATE_ONLINE', 4002);
@@ -28,6 +29,8 @@ define ('T_BACKUP_MOUNT', 5001);
 define ('T_BACKUP_UMOUNT', 5002);
 define ('T_BACKUP_RESTORE', 5003);
 define ('T_BACKUP_DOWNLOAD', 5004);
+define ('T_BACKUP_SCHEDULE', 5005);
+define ('T_BACKUP_REGULAR', 5006);
 define ('T_FIREWALL_RELOAD', 6001);
 define ('T_FIREWALL_FLUSH', 6002);
 define ('T_CLUSTER_STORAGE_CFG_RELOAD', 7001);
@@ -42,6 +45,7 @@ define ('T_ENABLE_TUNTAP', 8002); //deprecated
 define ('T_ENABLE_IPTABLES', 8003); //deprecated
 define ('T_ENABLE_FUSE', 8004);
 define ('T_SPECIAL_ISPCP', 8101);
+define ('T_MAIL_SEND', 9001);
 
 function add_transaction_clusterwide($m_id, $vps_id, $t_type, $t_param = 'none') {
     global $db, $cluster;
@@ -65,7 +69,7 @@ function add_transaction_locationwide($m_id, $vps_id, $t_type, $t_param = 'none'
 	add_transaction($m_id, $id, $vps_id, $t_type, $t_param, $group_id);
 }
 
-function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = 'none', $transact_group = NULL) {
+function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = array(), $transact_group = NULL, $dep = NULL) {
     global $db;
     $sql_check = 'SELECT COUNT(*) AS count FROM transactions
 		WHERE
@@ -74,6 +78,7 @@ function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = 'none',
 		AND	t_server = "'.$db->check($server_id).'"
 		AND	t_vps = "'.$db->check($vps_id).'"
 		AND	t_type = "'.$db->check($t_type).'"
+		AND t_depends_on = '. ($dep ? '"'.$db->check($dep).'"' : 'NULL') .'
 		AND	t_success = 0
 		AND	t_done = 0
 		AND	t_param = "'.$db->check(serialize($t_param)).'"';
@@ -86,12 +91,30 @@ function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = 'none',
 			    t_server = "'.$db->check($server_id).'",
 			    t_vps = "'.$db->check($vps_id).'",
 			    t_type = "'.$db->check($t_type).'",
+			    t_depends_on = '. ($dep ? '"'.$db->check($dep).'"' : 'NULL') .',
 			    t_success = 0,
 			    t_done = 0,
-			    t_param = "'.$db->check(serialize($t_param)).'"';
+			    t_param = "'.$db->check(json_encode($t_param)).'"';
 	if ($transact_group) $sql .= ', t_group="'.$transact_group.'"';
-	$result = $db->query_trans($sql);
+	$result = $db->query($sql);
     }
+}
+
+function is_transaction_in_queue($t_type, $veid) {
+	global $db;
+	
+	$rs = $db->query("SELECT COUNT(t_id) AS cnt FROM transactions WHERE t_type = '".$db->check($t_type)."' AND t_done = 0 AND t_vps = '".$db->check($veid)."'");
+	$row = $db->fetch_array($rs);
+	
+	return $row["cnt"] > 0;
+}
+
+function get_last_transaction($t_type, $veid) {
+	global $db;
+	
+	$rs = $db->query("SELECT * FROM transactions WHERE t_type = '".$db->check($t_type)."' AND t_vps = '".$db->check($veid)."' ORDER BY t_id DESC LIMIT 1");
+	
+	return $db->fetch_array($rs);
 }
 
 function del_transaction($t_id) {
@@ -153,8 +176,10 @@ function list_transactions() {
     if ($result = $db->query($sql))
 	while ($t = $db->fetch_array($result)) {
 	    if ($t['t_done'] == 0) $status = 'pending';
-	    if (($t['t_done'] == 1) && ($t['t_success'] == 0)) $status = 'error';
-	    if (($t['t_done'] == 1) && ($t['t_success'] == 1)) $status = 'ok';
+	    else if (($t['t_done'] == 1) && ($t['t_success'] == 0)) $status = 'error';
+	    else if (($t['t_done'] == 1) && ($t['t_success'] == 1)) $status = 'ok';
+	    else if (($t['t_done'] == 1) && ($t['t_success'] == 2)) $status = 'warning';
+	    
 	    $xtpl->transaction($t['t_id'],($t["server_name"] == "") ? "---" : $t["server_name"],
 				    ($t["t_vps"] == 0) ? "---" : $t["t_vps"], transaction_label($t['t_type']), $status);
 	}
@@ -205,6 +230,9 @@ function transaction_label ($t_type) {
 	case T_REINSTALL_VE:
 	    $action_label = 'Reinstall';
 	    break;
+	case T_CLONE_VE:
+		$action_label = 'Clone';
+		break;
 	case T_MIGRATE_OFFLINE:
 	    $action_label = 'Migrate';
 	    break;
@@ -267,6 +295,21 @@ function transaction_label ($t_type) {
 		break;
 	case T_BACKUP_UMOUNT:
 	    $action_label = 'Umount backup';
+		break;
+	case T_BACKUP_RESTORE:
+		$action_label = 'Restore';
+		break;
+	case T_BACKUP_DOWNLOAD:
+		$action_label = 'Download backup';
+		break;
+	case T_BACKUP_SCHEDULE:
+		$action_label = 'On-demand backup';
+		break;
+	case T_BACKUP_REGULAR:
+		$action_label = 'Backup';
+		break;
+	case T_MAIL_SEND:
+		$action_label = 'Mail';
 		break;
 	default:
 	    $action_label = '['.$t_type.']';

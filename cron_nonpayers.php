@@ -40,6 +40,7 @@ include WWW_ROOT.'lib/networking.lib.php';
 include WWW_ROOT.'lib/version.lib.php';
 include WWW_ROOT.'lib/cluster.lib.php';
 include WWW_ROOT.'lib/cluster_status.lib.php';
+include WWW_ROOT.'lib/mail.lib.php';
 
 $db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME);
 
@@ -86,29 +87,10 @@ if(empty($neverpaid) && empty($nonpayers))
 	die;
 
 $to = $cluster_cfg->get("mailer_nonpayers_mail");
-	
-$headers  = "From: ".$cluster_cfg->get("mailer_from")."\n";
-$headers .= "Reply-To: ".$cluster_cfg->get("mailer_from")."\n";
-$headers .= "Return-Path: ".$cluster_cfg->get("mailer_from")."\n";
-$headers .= "X-Mailer: vpsAdmin\n";
-$headers .= "MIME-Version: 1.0\n";
-$headers .= "Content-type: text/html; charset=UTF-8\n";
-
 $subject = $cluster_cfg->get("mailer_tpl_nonpayers_subj");
 
 $content = $cluster_cfg->get("mailer_tpl_nonpayers");
 $content = str_replace("%never_paid%", $neverpaid, $content);
 $content = str_replace("%nonpayers%", $nonpayers, $content);
 
-$mail = array();
-$mail["sentTime"] = time();
-$mail["member_id"] = 0;
-$mail["type"] = "nonpayers_info";
-$mail["details"] .= "TO: $to\n";
-$mail["details"] .= $headers;
-$mail["details"] .= "\nSUBJECT: $subject\n\n";
-$mail["details"] .= $content;
-
-mail($to, $subject, $content, $headers);
-
-$db->save(true, $mail, "mailer");
+send_mail($to, $subject, $content);

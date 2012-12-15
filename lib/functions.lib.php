@@ -159,8 +159,11 @@ function list_templates() {
     global $db;
     $sql = 'SELECT * FROM cfg_templates ORDER BY templ_label ASC';
     if ($result = $db->query($sql))
-	while ($row = $db->fetch_array($result))
+	while ($row = $db->fetch_array($result)) {
 	    $ret[$row["templ_id"]] = $row["templ_label"];
+	    if (!$row["templ_enabled"])
+			$ret[$row["templ_id"]] .= ' '._('(IMPORTANT: This template is currently disabled, it cannot be used)');
+	}
     return $ret;
 }
 
@@ -179,6 +182,19 @@ function list_servers($without_id = false) {
 		$sql = 'SELECT * FROM servers WHERE server_id != \''.$db->check($without_id).'\' ORDER BY server_location,server_id';
 	else
 		$sql = 'SELECT * FROM servers ORDER BY server_location,server_id';
+
+    if ($result = $db->query($sql))
+	while ($row = $db->fetch_array($result))
+	    $ret[$row["server_id"]] = $row["server_name"];
+    return $ret;
+}
+
+function list_playground_servers($without_id = false) {
+    global $db;
+	if ($without_id)
+		$sql = "SELECT server_id, server_name FROM servers INNER JOIN locations ON server_location = location_id WHERE server_id != '".$db->check($without_id)."' AND location_type = 'playground' ORDER BY server_location,server_id";
+	else
+		$sql = "SELECT server_id, server_name FROM servers INNER JOIN locations ON server_location = location_id WHERE location_type = 'playground' ORDER BY server_location,server_id";
 
     if ($result = $db->query($sql))
 	while ($row = $db->fetch_array($result))

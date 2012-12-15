@@ -20,19 +20,23 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 function print_newvps() {
-	global $xtpl;
+	global $xtpl, $cluster;
 	$xtpl->title(_("Create VPS"));
 	$xtpl->form_create('?page=adminvps&section=vps&action=new2&create=1', 'post');
 	$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'vps_hostname', '', _("A-z, a-z"), 30);
-	$xtpl->form_add_select(_("HW server").':', 'vps_server', list_servers(), '2', '');
-	$xtpl->form_add_select(_("Owner").':', 'm_id', members_list(), '', '');
+	$xtpl->form_add_select(_("HW server").':', 'vps_server', $_SESSION["is_admin"] ? list_servers() : list_playground_servers(), '2', '');
+	if ($_SESSION["is_admin"])
+		$xtpl->form_add_select(_("Owner").':', 'm_id', members_list(), '', '');
 	$xtpl->form_add_select(_("Distribution").':', 'vps_template', list_templates(), '',  '');
-	$xtpl->form_add_select(_("RAM").':', 'vps_privvmpages', list_limit_privvmpages(), '1',  '');
-	$xtpl->form_add_select(_("Disk space").':', 'vps_diskspace', list_limit_diskspace(), '1',  '');
-	$xtpl->form_add_select(_("CPU").':', 'vps_cpulimit', list_limit_cpulimit(), '1',  '');
-	//$xtpl->form_add_select(_("IPv4").':', 'ipv4', get_all_ip_list(4), '1', '');
-	$xtpl->form_add_checkbox(_("Boot on create").':', 'boot_after_create', '1', true, $hint = '');
-	$xtpl->form_add_textarea(_("Extra information about VPS").':', 28, 4, 'vps_info', '', '');
+	
+	if ($_SESSION["is_admin"]) {
+		$xtpl->form_add_select(_("RAM").':', 'vps_privvmpages', list_limit_privvmpages(), '1',  '');
+		$xtpl->form_add_select(_("Disk space").':', 'vps_diskspace', list_limit_diskspace(), '1',  '');
+		$xtpl->form_add_select(_("CPU").':', 'vps_cpulimit', list_limit_cpulimit(), '1',  '');
+		//$xtpl->form_add_select(_("IPv4").':', 'ipv4', get_all_ip_list(4), '1', '');
+		$xtpl->form_add_checkbox(_("Boot on create").':', 'boot_after_create', '1', true, $hint = '');
+		$xtpl->form_add_textarea(_("Extra information about VPS").':', 28, 4, 'vps_info', '', '');
+	}
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->table_add_category('&nbsp;');
@@ -65,6 +69,9 @@ if ($_GET["run"] == 'restart') {
 	$xtpl->perex_cmd_output(_("Restart of")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->restart());
 }
 
+$playground_servers = $cluster->list_playground_servers();
+$playground_mode = !$_SESSION["is_admin"] && count($playground_servers) > 0 && $member_of_session->can_use_playground();
+
 $_GET["action"] = isset($_GET["action"]) ? $_GET["action"] : false;
 
 switch ($_GET["action"]) {
@@ -74,26 +81,45 @@ switch ($_GET["action"]) {
 		case 'new2':
 			if ((ereg('^[a-zA-Z0-9\.\-]{1,30}$',$_REQUEST["vps_hostname"])
 			    && $_GET["create"]
-			    && ($diskspace = limit_diskspace_by_id($_REQUEST["vps_diskspace"]))
-			    && ($privvmpages = limit_privvmpages_by_id($_REQUEST["vps_privvmpages"])))
+			    && ($diskspace = limit_diskspace_by_id($_REQUEST["vps_diskspace"]) || $playground_mode)
+			    && ($privvmpages = limit_privvmpages_by_id($_REQUEST["vps_privvmpages"]) || $playground_mode))
 			    && ($server = server_by_id($_REQUEST["vps_server"]))
-			    && ($_SESSION["is_admin"]))
+			    && ($_SESSION["is_admin"] || $playground_mode))
 					{
+					
+					if ($playground_mode) {
+						$is_pg = false;
+						foreach ($playground_servers as $pg)
+							if($pg["server_id"] == $server["server_id"]) {
+								$is_pg = true;
+								break;
+							}
+						
+						if (!$is_pg) {
+							$xtpl->perex(_("Error"), _("Selected node is not playground node, you bloody hacker."));
+							break;
+						}
+					}
+					
 					if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 					if (!$vps->exists) {
-
 						$perex = $vps->create_new($server["server_id"],
-																			$_REQUEST["vps_template"],
-																			$_REQUEST["vps_hostname"],
-																			$_REQUEST["m_id"],
-																			$_REQUEST["vps_privvmpages"],
-																			$_REQUEST["vps_diskspace"],
-																			$_REQUEST["vps_cpulimit"],
-																			$_REQUEST["vps_info"]);
+													$_REQUEST["vps_template"],
+													$_REQUEST["vps_hostname"],
+													$playground_mode ? $_SESSION["member"]["m_id"] : $_REQUEST["m_id"],
+													$playground_mode ? $cluster_cfg->get("playground_limit_privvmpages") : $_REQUEST["vps_privvmpages"],
+													$playground_mode ? $cluster_cfg->get("playground_limit_diskspace") : $_REQUEST["vps_diskspace"],
+													$playground_mode ? $cluster_cfg->get("playground_limit_cpulimit") : $_REQUEST["vps_cpulimit"],
+													$playground_mode ? '' : $_REQUEST["vps_info"]);
+						
+						if ($playground_mode) {
+							$vps->add_first_available_ip($server["server_location"], 4);
+							$vps->add_first_available_ip($server["server_location"], 6);
+						}
 
 						$veid = $vps->veid;
 
-						if ($_REQUEST["boot_after_create"]) {
+						if ($_REQUEST["boot_after_create"] || $playground_mode) {
 							$vps->start();
 							$xtpl->perex(_("VPS create ").' '.$vps->veid, _("VPS will be created and booted afterwards."));
 						} else {
@@ -250,7 +276,15 @@ switch ($_GET["action"]) {
 			break;
 		case 'reinstall':
 			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-			if ($_REQUEST["reinstallsure"] && $_REQUEST["vps_template"]) {
+			$tpl = template_by_id($_REQUEST["vps_template"]);
+			
+			if (!$tpl) {
+				$xtpl->perex(_("Template does not exist!"));
+				$show_info=true;
+			} else if (!$tpl["templ_enabled"]) {
+				$xtpl->perex(_("Template not enabled, it cannot be used!"));
+				$show_info=true;
+			} else if ($_REQUEST["reinstallsure"] && $_REQUEST["vps_template"]) {
 				$xtpl->perex(_("Are you sure you want to reinstall VPS").' '.$_GET["veid"].'?', '<a href="?page=adminvps">'.strtoupper(_("No")).'</a> | <a href="?page=adminvps&action=reinstall2&veid='.$_GET["veid"].'">'.strtoupper(_("Yes")).'</a>');
 				$vps->change_distro_before_reinstall($_REQUEST["vps_template"]);
 			}
@@ -296,10 +330,41 @@ switch ($_GET["action"]) {
 			}
 			$show_info=true;
 			break;
-		case 'setbackuper':
-			if ($_SESSION["is_admin"] && isset($_REQUEST["veid"])) {
+		case 'clone':
+			if (isset($_REQUEST["veid"])  && ($_SESSION["is_admin"] || $playground_mode) && ($server = server_by_id($_REQUEST["target_server_id"]))) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				$xtpl->perex_cmd_output(_("Backuper status changed"), $vps->set_backuper($_REQUEST["backup_enabled"]));
+				
+				if ($playground_mode) {
+					$is_pg = false;
+					foreach ($playground_servers as $pg)
+						if($pg["server_id"] == $server["server_id"]) {
+							$is_pg = true;
+							break;
+						}
+					
+					if (!$is_pg) {
+						$xtpl->perex(_("Error"), _("Selected node is not playground node, you bloody hacker."));
+						break;
+					}
+				}
+				
+				$vps->clone_vps($playground_mode ? $vps->ve["m_id"] : $_REQUEST["target_owner_id"],
+								$_REQUEST["target_server_id"],
+								$_REQUEST["hostname"],
+								$playground_mode ? 1 : $_REQUEST["limits"],
+								$playground_mode ? 1 : $_REQUEST["features"],
+								$playground_mode ? 0 : $_REQUEST["backuper"]
+				);
+				$xtpl->perex(_("Clone in progress"), '');
+			} else
+				 $xtpl->perex(_("Invalid data"), _("Please fill the form correctly."));
+			
+			$show_info=true;
+			break;
+		case 'setbackuper':
+			if (isset($_REQUEST["veid"])) {
+				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
+				$xtpl->perex_cmd_output(_("Backuper status changed"), $vps->set_backuper($_SESSION["is_admin"] ? $_REQUEST["backup_enabled"] : NULL, $_REQUEST["backup_exclude"]));
 			} else {
 				$xtpl->perex(_("Error"), '');
 			}
@@ -345,6 +410,7 @@ if (isset($list_vps) && $list_vps) {
 					$xtpl->table_add_category('');
 					$xtpl->table_add_category('');
 					$xtpl->table_add_category('');
+					$xtpl->table_add_category('');
 				}
 
 				$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->veid.'">'.$vps->veid.'</a>');
@@ -360,6 +426,7 @@ if (isset($list_vps) && $list_vps) {
 //				$xtpl->table_td($vps->ve["templ_label"]);
 				$xtpl->table_td(($vps->ve["vps_up"]) ? '<a href="?page=adminvps&run=restart&veid='.$vps->veid.'"><img src="template/icons/vps_restart.png" title="'._("Restart").'"/></a>' : '<img src="template/icons/vps_restart_grey.png"  title="'._("Unable to restart").'" />');
 				$xtpl->table_td(($vps->ve["vps_up"]) ? '<a href="?page=adminvps&run=stop&veid='.$vps->veid.'"><img src="template/icons/vps_stop.png"  title="'._("Stop").'"/></a>' : '<a href="?page=adminvps&run=start&veid='.$vps->veid.'"><img src="template/icons/vps_start.png"  title="'._("Start").'"/></a>');
+				$xtpl->table_td('<a href="?page=console&veid='.$vps->veid.'"><img src="template/icons/console.png"  title="'._("Remote Console").'"/></a>');
 				if ($_SESSION["is_admin"]){
 				    $xtpl->table_td((!$vps->ve["vps_up"]) ? '<a href="?page=adminvps&action=delete&veid='.$vps->veid.'"><img src="template/icons/vps_delete.png"  title="'._("Delete").'"/></a>' : '<img src="template/icons/vps_delete_grey.png"  title="'._("Unable to delete").'"/>');
 				} else {
@@ -377,7 +444,7 @@ if (isset($list_vps) && $list_vps) {
 			$xtpl->table_add_category($listed_vps);
 			$xtpl->table_out();
 			}
-if ($_SESSION["is_admin"]) $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new');
+if ($_SESSION["is_admin"] || $playground_mode) $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new');
 if ($_SESSION["is_admin"]) $xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List IP addresses").'" /> '._("List IP addresses"), '?page=adminvps&action=alliplist');
 }
 if (isset($show_info) && $show_info) {
@@ -418,7 +485,13 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_td($diskspace["d_label"]);
 		$xtpl->table_tr();
 	$xtpl->table_td(_("Status").':');
-	$xtpl->table_td(($vps->ve["vps_up"]) ? _("running").' <a href="?page=adminvps&action=info&run=stop&veid='.$vps->veid.'">('._("stop").')</a>' : _("stopped").' <a href="?page=adminvps&action=info&run=start&veid='.$vps->veid.'">('._("start").')</a>');
+	$xtpl->table_td(
+		(($vps->ve["vps_up"]) ?
+			_("running").' (<a href="?page=adminvps&action=info&run=stop&veid='.$vps->veid.'">'._("stop").'</a>'
+			: 
+			_("stopped").' (<a href="?page=adminvps&action=info&run=start&veid='.$vps->veid.'">'._("start").'</a>') .
+			', <a href="?page=console&veid='.$vps->veid.'">'._("open remote console").'</a>)'
+	);
 		$xtpl->table_tr();
 	$xtpl->table_td(_("Processes").':');
 	$xtpl->table_td($vps->ve["vps_nproc"]);
@@ -436,7 +509,7 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_tr();
 	}
 	$xtpl->table_td(_("Backuper").':');
-	$xtpl->table_td($vps->ve["vps_backup_enabled"] ? _("enabled") : _("disabled"));
+	$xtpl->table_td(($vps->ve["vps_backup_enabled"] ? _("enabled") : _("disabled")) . ($vps->ve["vps_backup_lock"] ? "<br/>"._("backup in progress") : ""));
 		$xtpl->table_tr();
 	
 	$xtpl->table_out();
@@ -569,6 +642,9 @@ if (isset($show_info) && $show_info) {
     $xtpl->table_td(_("NFS server + client"));
     $xtpl->table_td(_("disabled"));
     $xtpl->table_tr();
+    $xtpl->table_td(_("PPP"));
+    $xtpl->table_td(_("disabled"));
+    $xtpl->table_tr();
     $xtpl->form_add_checkbox(_("Enable all").':', 'enable', '1', false);
 	} else {
     $xtpl->table_td(_("Enable TUN/TAP"));
@@ -581,6 +657,9 @@ if (isset($show_info) && $show_info) {
     $xtpl->table_td(_("enabled"));
     $xtpl->table_tr();
     $xtpl->table_td(_("NFS server + client"));
+    $xtpl->table_td(_("enabled"));
+    $xtpl->table_tr();
+    $xtpl->table_td(_("PPP"));
     $xtpl->table_td(_("enabled"));
     $xtpl->table_tr();
 	}
@@ -613,14 +692,33 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_add_category('&nbsp;');
 		$xtpl->form_out(_("Go >>"));
 	}
-// Backuper
-	if ($_SESSION["is_admin"]) {
-		$xtpl->form_create('?page=adminvps&action=setbackuper&veid='.$vps->veid, 'post');
-			$xtpl->form_add_checkbox(_("Backup enabled").':', 'backup_enabled', '1', $vps->ve["vps_backup_enabled"]);
-		$xtpl->table_add_category(_("Backuper"));
+// Clone
+	if ($_SESSION["is_admin"] || $playground_mode) {
+		$xtpl->form_create('?page=adminvps&action=clone&veid='.$vps->veid, 'post');
+		
+		if ($_SESSION["is_admin"])
+			$xtpl->form_add_select(_("Target owner").':', 'target_owner_id', members_list(), $vps->ve["m_id"]);
+		$xtpl->form_add_select(_("Target server").':', 'target_server_id', $cluster->list_servers(), $vps->ve["vps_server"]);
+		$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'hostname', $vps->ve["vps_hostname"] . "-{$vps->veid}-clone");
+		
+		if ($_SESSION["is_admin"]) {
+			$xtpl->form_add_checkbox(_("Clone limits").':', 'limits', '1', true);
+			$xtpl->form_add_checkbox(_("Clone features").':', 'features', '1', true);
+			$xtpl->form_add_checkbox(_("Clone backuper").':', 'backuper', '1', true);
+		}
+		$xtpl->table_add_category(_("Clone"));
 		$xtpl->table_add_category('&nbsp;');
 		$xtpl->form_out(_("Go >>"));
 	}
+	
+// Backuper
+	$xtpl->form_create('?page=adminvps&action=setbackuper&veid='.$vps->veid, 'post');
+	if ($_SESSION["is_admin"])
+		$xtpl->form_add_checkbox(_("Backup enabled").':', 'backup_enabled', '1', $vps->ve["vps_backup_enabled"]);
+	$xtpl->form_add_textarea(_("Exclude files").':', 60, 10, "backup_exclude", $vps->ve["vps_backup_exclude"], _("One path per line"));
+	$xtpl->table_add_category(_("Backuper"));
+	$xtpl->table_add_category('&nbsp;');
+	$xtpl->form_out(_("Go >>"));
 
 }
 

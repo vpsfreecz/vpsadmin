@@ -39,47 +39,24 @@ include WWW_ROOT.'lib/networking.lib.php';
 include WWW_ROOT.'lib/version.lib.php';
 include WWW_ROOT.'lib/cluster.lib.php';
 include WWW_ROOT.'lib/cluster_status.lib.php';
-
+include WWW_ROOT.'lib/mail.lib.php';
 
 $db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME);
 
 $whereCond = "m_mailer_enable = 1";
 while ($m = $db->find("members", $whereCond)) {
-    $member = member_load($m["m_id"]);
-    if (($member->m["m_paid_until"] - time()) <= 604800) {
-/*	echo "Mailing {$m["m_nick"]} to {$m["m_mail"]}\n";*/
-
-	$headers  = "From: ".$cluster_cfg->get("mailer_from")."\n";
-	$headers .= "Reply-To: ".$cluster_cfg->get("mailer_from")."\n";
-	$headers .= "Return-Path: ".$cluster_cfg->get("mailer_from")."\n";
-	if ($cluster_cfg->get("mailer_admins_in_cc")) {
-	    $headers .= "CC: ".$cluster_cfg->get("mailer_admins_cc_mails")."\n";
-	}
-	$headers .= "X-Mailer: vpsAdmin\n";
-	$headers .= "MIME-Version: 1.0\n";
-	$headers .= "Content-type: text/plain; charset=UTF-8\n";
-
-	$subject = $cluster_cfg->get("mailer_tpl_payment_warning_subj");
-	$subject = str_replace("%member%", $m["m_nick"], $subject);
-
-	$content = $cluster_cfg->get("mailer_tpl_payment_warning");
-	$content = str_replace("%member%", $m["m_nick"], $content);
-	$content = str_replace("%memberid%", $m["m_id"], $content);
-	$content = str_replace("%expiredate%", ($m["m_paid_until"]) ? strftime("%Y-%m-%d", $m["m_paid_until"]) : '---', $content);
-	$content = str_replace("%monthly%", $m["m_monthly_payment"], $content);
-
-	$mail = array();
-	$mail["sentTime"] = time();
-	$mail["member_id"] = $m["m_id"];
-	$mail["type"] = "payment_warning";
-	$mail["details"] .= "TO: {$m["m_mail"]}\n";
-	$mail["details"] .= $headers;
-	$mail["details"] .= "\nSUBJECT: $subject\n\n";
-	$mail["details"] .= $content;
-
-	mail($m["m_mail"], $subject, $content, $headers);
-
-	$db->save(true, $mail, "mailer");
+	$member = member_load($m["m_id"]);
+	if (($member->m["m_paid_until"] - time()) <= 604800) {
+		$subject = $cluster_cfg->get("mailer_tpl_payment_warning_subj");
+		$subject = str_replace("%member%", $m["m_nick"], $subject);
+		
+		$content = $cluster_cfg->get("mailer_tpl_payment_warning");
+		$content = str_replace("%member%", $m["m_nick"], $content);
+		$content = str_replace("%memberid%", $m["m_id"], $content);
+		$content = str_replace("%expiredate%", ($m["m_paid_until"]) ? strftime("%Y-%m-%d", $m["m_paid_until"]) : '---', $content);
+		$content = str_replace("%monthly%", $m["m_monthly_payment"], $content);
+		
+		send_mail($m["m_mail"], $subject, $content, $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
     }
 }
 ?>

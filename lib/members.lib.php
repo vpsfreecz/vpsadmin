@@ -84,21 +84,13 @@ class member_load {
                 m_mail = "'.$db->check($this->m["m_mail"]).'",
                 m_address = "'.$db->check($this->m["m_address"]).'",
                 m_mailer_enable = "'.$db->check($this->m["m_mailer_enable"]).'",
+				m_playground_enable = "'.$db->check($this->m["m_playground_enable"]).'",
                 m_info = "'.$db->check($this->m["m_info"]).'"';
       $db->query($sql);
       if ($db->affected_rows() > 0) {
         $this->exists = true;
         $this->mid = $db->insert_id();
         $this->m["m_id"] = $this->mid;
-        $headers  = "From: ".$cluster_cfg->get("mailer_from")."\n";
-        $headers .= "Reply-To: ".$cluster_cfg->get("mailer_from")."\n";
-        $headers .= "Return-Path: ".$cluster_cfg->get("mailer_from")."\n";
-        if ($cluster_cfg->get("mailer_admins_in_cc")) {
-            $headers .= "BCC: ".$cluster_cfg->get("mailer_admins_cc_mails")."\n";
-        }
-        $headers .= "X-Mailer: vpsAdmin\n";
-        $headers .= "MIME-Version: 1.0\n";
-        $headers .= "Content-type: text/plain; charset=UTF-8\n";
 
         $subject = $cluster_cfg->get("mailer_tpl_member_added_subj");
         $subject = str_replace("%member%", $this->m["m_nick"], $subject);
@@ -108,18 +100,7 @@ class member_load {
         $content = str_replace("%memberid%", $this->m["m_id"], $content);
         $content = str_replace("%pass%", $item["m_pass"], $content);
 
-        $mail = array();
-        $mail["sentTime"] = time();
-        $mail["member_id"] = $this->m["m_id"];
-        $mail["type"] = "member_added";
-        $mail["details"] .= "TO: {$this->m["m_mail"]}\n";
-        $mail["details"] .= $headers;
-        $mail["details"] .= "\nSUBJECT: $subject\n\n";
-        $mail["details"] .= $content;
-
-        mail($this->m["m_mail"], $subject, $content, $headers);
-
-        $db->save(true, $mail, "mailer");
+        send_mail($this->m["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
 
         return true;
       }
@@ -172,7 +153,8 @@ class member_load {
               m_info = "'.$db->check(addslashes($this->m["m_info"])).'",
               m_paid_until = "'.$db->check($this->m["m_paid_until"]).'",
               m_mailer_enable = "'.$db->check($this->m["m_mailer_enable"]).'",
-              m_monthly_payment = "'.$db->check($this->m["m_monthly_payment"]).'"
+              m_monthly_payment = "'.$db->check($this->m["m_monthly_payment"]).'",
+              m_playground_enable = "'.$db->check($this->m["m_playground_enable"]).'"
           WHERE m_id="'.$db->check($this->mid).'"';
       }
       $db->query($sql);
@@ -250,6 +232,26 @@ class member_load {
 
   function is_new() {
     return isset($this->m["m_created"]) && ((time() - $this->m["m_created"]) <= 3600*24*7);
+  }
+  
+  function can_use_playground() {
+	global $db;
+	
+	if (!$this->m["m_playground_enable"])
+		return false;
+	
+	$sql = "SELECT COUNT(vps_id) AS count
+		FROM vps
+		INNER JOIN servers ON vps_server = server_id
+		INNER JOIN locations ON location_id = server_location
+		WHERE m_id = ".$db->check($this->m["m_id"])." AND location_type = 'playground'";
+	if ($result = $db->query($sql)) {
+		if ($row = $db->fetch_array($result)) {
+			return $row["count"] < 1;
+		}
+	}
+	
+	return false;
   }
 }
 ?>

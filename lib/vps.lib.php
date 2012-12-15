@@ -154,7 +154,7 @@ class vps_load {
   function passwd ($user, $new_pass) {
 		global $db;
 		if ($this->exists) {
-			$command = '--userpasswd '.$user.':'.$db->check($new_pass);
+			$command = array('userpasswd' => $user.':'.$db->check($new_pass));
 			add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_PASSWD, $command);
 		}
   }
@@ -200,7 +200,7 @@ class vps_load {
     if ($this->exists) {
 	$sql = 'UPDATE vps SET vps_hostname = "'.$db->check($new_hostname).'" WHERE vps_id='.$db->check($this->veid);
 	if ($result = $db->query($sql)) {
-	    $command = '--hostname '.$new_hostname;
+	    $command = array('hostname' => $new_hostname);
 	    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_HOSTNAME, $command);
 	}
     }
@@ -227,7 +227,7 @@ class vps_load {
 	  if ($result = $db->query($sql))
 	  	if ($result2 = $db->query($sql2)) {
 			$this->exists = false;
-	  		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_DESTROY_VE, 'none');
+	  		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_DESTROY_VE);
 			}
 	  	else return false;
 	  else return false;
@@ -263,7 +263,7 @@ function ipadd($ip, $type = 4) {
 			WHERE ip_id = "'.$db->check($ipadr["ip_id"]).'"';
 		$db->query($sql);
 		if ($db->affected_rows() > 0) {
-		    $command = '--ipadd '.$ip;
+		    $command = array('ipadd' => $ip);
 		    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_IPADD, $command);
 		} else
 		    return NULL;
@@ -271,13 +271,23 @@ function ipadd($ip, $type = 4) {
 	}
 }
 
-  function ipdel($ip) {
+  function add_first_available_ip($loc, $v) {
+	global $db;
+	
+	$rs = $db->query("SELECT ip_addr FROM vps_ip WHERE vps_id = 0 AND ip_v = '".$db->check($v)."' AND ip_location = '".$db->check($loc)."' ORDER BY ip_id LIMIT 1");
+	$ip = $db->fetch_array($rs);
+	
+	if ($ip)
+		$this->ipadd($ip["ip_addr"], $v);
+  }
+
+  function ipdel($ip, $dep = NULL) {
 	global $db;
 	if ($this->exists) {
 	  $sql = 'UPDATE vps_ip SET vps_id = 0 WHERE ip_addr="'.$db->check($ip).'"';
 	  if ($result = $db->query($sql)) {
-	  	$command = '--ipdel '.$ip;
-		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_IPDEL, $command);
+	  	$command = array('ipdel' => $ip);
+		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_IPDEL, $command, NULL, $dep);
 	  	}
 	  else
 	  	return NULL;
@@ -290,9 +300,9 @@ function ipadd($ip, $type = 4) {
 	  $sql = 'UPDATE vps SET vps_nameserver = "'.$db->check($nameserver).'" WHERE vps_id = '.$db->check($this->veid);
 	  $db->query($sql);
 	  $nameservers = explode(",", $nameserver);
-	  $command = '';
+	  $command = array("nameservers" => array());
 	  foreach ($nameservers as $ns) {
-      $command .= '--nameserver '.$ns.' ';
+      $command["nameserver"][] = $ns;
 	  }
 	  $this->ve["vps_nameserver"] = $nameserver;
 	  add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_DNS, $command);
@@ -302,20 +312,14 @@ function ipadd($ip, $type = 4) {
   function offline_migrate($target_id) {
 	global $db, $cluster;
 	if ($this->exists) {
-	  $servers = list_servers();
-	  if (isset($servers[$target_id])) {
+		$servers = list_servers();
+		if (isset($servers[$target_id])) {
 		$sql = 'UPDATE vps SET vps_server = "'.$db->check($target_id).'" WHERE vps_id = '.$db->check($this->veid);
 		$db->query($sql);
 		$this_loc = $this->get_location();
 		$target_server = server_by_id($target_id);
 		$loc["location_has_shared_storage"] = false;
-		if ($this_loc != $cluster->get_location_of_server($target_id)) {
-		    $ips = $this->iplist();
-		    $params["ips"] = array();
-
-		    foreach($ips as $ip)
-			$params["ips"][] = $ip["ip_addr"];
-		} else {
+		if ($this_loc == $cluster->get_location_of_server($target_id)) {
 			$loc = $db->findByColumnOnce("locations", "location_id", $this_loc);
 			if ($loc["location_has_shared_storage"]) {
 				$params["on_shared_storage"] = true;
@@ -324,7 +328,16 @@ function ipadd($ip, $type = 4) {
 		}
 		$params["target"] = $target_server["server_ip4"];
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_MIGRATE_OFFLINE, $params);
+		$migration_id = $db->insertId();
+		
 		$this->ve["vps_server"] = $target_id;
+		
+		if ($this_loc != $cluster->get_location_of_server($target_id)) {
+			$ips = $this->iplist();
+			
+			foreach($ips as $ip)
+				$this->ipdel($ip["ip_addr"], $migration_id);
+		}
 	  }
 	}
   }
@@ -382,7 +395,7 @@ function ipadd($ip, $type = 4) {
 	  $sql = 'UPDATE vps SET vps_privvmpages = "'.$db->check($privvmpages).'" WHERE vps_id = '.$db->check($this->veid);
 	  $db->query($sql);
 	  if ($db->affected_rows() == 1 || $force) {
-		$command = '--privvmpages '.$vzctl;
+		$command = array('privvmpages' => $vzctl);
 		$this->ve["vps_privvmpages"] = $privvmpages;
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_LIMITS, $command);
 	  } else return array('0' => '');
@@ -397,7 +410,7 @@ function ipadd($ip, $type = 4) {
 	  $sql = 'UPDATE vps SET vps_diskspace = "'.$db->check($diskspace).'" WHERE vps_id = '.$db->check($this->veid);
 	  $db->query($sql);
 	  if ($db->affected_rows() == 1 || $force) {
-		$command = '--diskspace '.$vzctl;
+		$command = array('diskspace' => $vzctl);
 		$this->ve["vps_diskspace"] = $diskspace;
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_LIMITS, $command);
 	  } else return array('0' => '');
@@ -411,7 +424,7 @@ function ipadd($ip, $type = 4) {
 	  $sql = 'UPDATE vps SET vps_cpulimit = "'.$db->check($cpulimit).'" WHERE vps_id = '.$db->check($this->veid);
 	  $db->query($sql);
 	  if ($db->affected_rows() == 1 || $force) {
-		$command = "--cpulimit {$cpu["cpu_limit"]} --cpus {$cpu["cpu_cpus"]}";
+		$command = array("cpulimit" => $cpu["cpu_limit"], "cpus" => $cpu["cpu_cpus"]);
 		$this->ve["vps_cpulimit"] = $cpulimit;
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_LIMITS, $command);
 	  } else return array('0' => '');
@@ -420,20 +433,10 @@ function ipadd($ip, $type = 4) {
   
   function limit_change_notify() {
 	global $db, $cluster_cfg;
-  
-	$headers  = "From: ".$cluster_cfg->get("mailer_from")."\n";
-        $headers .= "Reply-To: ".$cluster_cfg->get("mailer_from")."\n";
-        $headers .= "Return-Path: ".$cluster_cfg->get("mailer_from")."\n";
-        if ($cluster_cfg->get("mailer_admins_in_cc")) {
-            $headers .= "BCC: ".$cluster_cfg->get("mailer_admins_cc_mails")."\n";
-        }
-        $headers .= "X-Mailer: vpsAdmin\n";
-        $headers .= "MIME-Version: 1.0\n";
-        $headers .= "Content-type: text/plain; charset=UTF-8\n";
 
-        $subject = $cluster_cfg->get("mailer_tpl_limits_change_subj");
-        $subject = str_replace("%member%", $this->ve["m_nick"], $subject);
-        $subject = str_replace("%vpsid%", $this->veid, $subject);
+	$subject = $cluster_cfg->get("mailer_tpl_limits_change_subj");
+	$subject = str_replace("%member%", $this->ve["m_nick"], $subject);
+	$subject = str_replace("%vpsid%", $this->veid, $subject);
 	
 	if(($cpu = limit_cpulimit_by_id($this->ve["vps_cpulimit"])))
 		$cpulimit = $cpu["cpu_label"];
@@ -447,25 +450,14 @@ function ipadd($ip, $type = 4) {
 		$hddlimit = $hdd["d_label"];
 	else $hddlimit = "Undefined";
 	
-        $content = $cluster_cfg->get("mailer_tpl_limits_changed");
-        $content = str_replace("%member%", $this->ve["m_nick"], $content);
-        $content = str_replace("%vpsid%", $this->veid, $content);
-        $content = str_replace("%cpulimit%", $cpulimit, $content);
+	$content = $cluster_cfg->get("mailer_tpl_limits_changed");
+	$content = str_replace("%member%", $this->ve["m_nick"], $content);
+	$content = str_replace("%vpsid%", $this->veid, $content);
+	$content = str_replace("%cpulimit%", $cpulimit, $content);
 	$content = str_replace("%ramlimit%", $privvmpages, $content);
 	$content = str_replace("%hddlimit%", $hddlimit, $content);
 	
-	$mail = array();
-        $mail["sentTime"] = time();
-        $mail["member_id"] = $this->ve["m_id"];
-        $mail["type"] = "limit_changed";
-        $mail["details"] .= "TO: {$this->ve["m_mail"]}\n";
-        $mail["details"] .= $headers;
-        $mail["details"] .= "\nSUBJECT: $subject\n\n";
-        $mail["details"] .= $content;
-	
-	mail($this->ve["m_mail"], $subject, $content, $headers);
-	
-	$db->save(true, $mail, "mailer");
+	send_mail($this->ve["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
   }
 
   function enable_features() {
@@ -487,23 +479,172 @@ function ipadd($ip, $type = 4) {
     }
   }
 
-  function set_backuper($how) {
+  function set_backuper($how, $exclude) {
   	global $db;
 	if ($_SESSION["is_admin"]) {
-		if ($how) {
-			$this->ve["vps_backup_enabled"] = true;
-			$sql = 'UPDATE vps SET vps_backup_enabled=1 WHERE vps_id = '.$db->check($this->veid);
-		} else {
-			$this->ve["vps_backup_enabled"] = false;
-			$sql = 'UPDATE vps SET vps_backup_enabled=0 WHERE vps_id = '.$db->check($this->veid);
-		}
+		$this->ve["vps_backup_enabled"] = (bool)$how;
+		$sql = 'UPDATE vps SET vps_backup_enabled='.($how ? '1' : '0').', vps_backup_exclude = "'.$db->check($exclude).'" WHERE vps_id = '.$db->check($this->veid);
+  	} else
+		$sql = 'UPDATE vps SET vps_backup_exclude = "'.$db->check($exclude).'" WHERE vps_id = '.$db->check($this->veid);
+  	
+  	$db->query($sql);
+  }
+  
+  function restore($timestamp, $backup_first = false) {
+	if(!$this->exists)
+		return NULL;
+  
+	global $db;
+	$backup_id = NULL;
+	$backuper = $this->get_backuper_server();
+	
+	if ($backup_first)
+	{
+		$params = array(
+			"server_name" => $this->ve["server_name"],
+			"exclude" => preg_split ("/(\r\n|\n|\r)/", $this->ve["vps_backup_exclude"]),
+		);
+		
+		add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, T_BACKUP_SCHEDULE, $params);
+		$backup_id = $db->insertId();
+	}
+	
+	$params = array(
+		"datetime" => date("c", (int)$timestamp),
+		"backuper" => $backuper["server_name"],
+	);
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_RESTORE, $params, NULL, $backup_id);
+  }
+  
+  function download_backup($timestamp) {
+	if(!$this->exists)
+		return NULL;
+	
+	global $db, $cluster_cfg;
+	
+	$backuper = $this->get_backuper_server();
+	$secret = hash("sha256", $this->veid . $timestamp . time() . rand(0, 99999999));
+	$params = array("secret" => $secret);
+	
+	if ($timestamp == "current") {
+		$params["filename"] = "{$this->veid}-current.tar.gz";
+		$params["server_name"] = $this->ve["server_name"];
+	} else {
+		$params["filename"] = "{$this->veid}-".strftime("%Y-%m-%d--%H-%M", (int)$timestamp).".tar.gz";
+		$params["datetime"] = date("c", (int)$timestamp);
+	}
+	
+	add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, T_BACKUP_DOWNLOAD, $params);
+	$dl_id = $db->insertId();
+	
+	$subj = $cluster_cfg->get("mailer_tpl_dl_backup_subj");
+	$subj = str_replace("%member%", $this->ve["m_nick"], $subj);
+	$subj = str_replace("%vpsid%", $this->veid, $subj);
+	
+	$content = $cluster_cfg->get("mailer_tpl_dl_backup");
+	$content = str_replace("%member%", $this->ve["m_nick"], $content);
+	$content = str_replace("%vpsid%", $this->veid, $content);
+	$content = str_replace("%url%", "https://prasiatko.vpsfree.cz/backups/$secret/" . $params["filename"], $content);
+	$content = str_replace("%datetime%", $timestamp == "current" ? _("current VPS state") : strftime("%Y-%m-%d %H:%M", $timestamp), $content);
+	
+	send_mail($this->ve["m_mail"], $subj, $content, array(), array(), true, $dl_id);
+  }
+  
+  function clone_vps($m_id, $server_id, $hostname, $limits, $features, $backuper) {
+	global $db;
+	$sql = 'INSERT INTO vps
+			SET m_id = "'.$db->check($m_id).'",
+				vps_created = "'.$db->check(time()).'",
+				vps_template = "'.$db->check($this->ve["vps_template"]).'",
+				vps_info ="'.$db->check("Cloned from {$this->veid}").'",
+				vps_hostname ="'.$db->check($hostname).'",
+				vps_nameserver ="'.$db->check($this->ve["vps_nameserver"]).'",
+				vps_server ="'.$db->check($server_id).'",
+				vps_onboot ="'.$db->check($this->ve["vps_onboot"]).'",
+				vps_privvmpages = 0,
+				vps_onstartall = '.$db->check($this->ve["vps_onstartall"]).',
+				vps_diskspace = 0,
+				vps_cpulimit = 0,
+				vps_features_enabled = 0,
+				vps_backup_enabled = '.$db->check($backuper ? $this->ve["vps_backup_enabled"] : 1).',
+				vps_backup_exclude = "'.$db->check($backuper ? $this->ve["vps_backup_exclude"] : '').'"';
 		$db->query($sql);
-  	}
+		$clone = vps_load($db->insert_id());
+		
+		$params = array(
+			"src_veid" => $this->veid,
+			"src_server_ip" => $this->ve["server_ip4"],
+			"is_local" => $server_id == $this->ve["vps_server"],
+			"template" => $clone->ve["templ_name"],
+			"hostname" => $clone->ve["vps_hostname"],
+			"nameserver" => $clone->ve["vps_nameserver"],
+		);
+		
+		add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_CLONE_VE, $params);
+		
+		$l = array();
+		switch($limits) {
+			case 0:
+				$l = array(1, 1, 1);
+				break;
+			case 1:
+				$l = array($this->ve["vps_privvmpages"], $this->ve["vps_diskspace"], $this->ve["vps_cpulimit"]);
+				break;
+			case 2:
+				$l = array($cluster_cfg->get("playground_limit_privvmpages"), $cluster_cfg->get("playground_limit_diskspace"), $cluster_cfg->get("playground_limit_cpulimit"));
+				break;
+		}
+		$clone->set_privvmpages($l[0]);
+		$clone->set_diskspace($l[1]);
+		$clone->set_cpulimit($l[2]);
+		
+		if ($features && $this->ve["vps_features_enabled"])
+			add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_ENABLE_FEATURES);
+			
+		$this->info();
+		if ($this->ve["vps_up"])
+			$clone->start();
+  }
+  
+  function get_backuper_server() {
+	global $db;
+	$sql = "SELECT s.* FROM locations l INNER JOIN servers s ON s.server_id = l.location_backup_server_id WHERE location_id = '".$db->check($this->ve["server_location"])."'";
+	if ($result = $db->query($sql)) {
+		if ($row = $db->fetch_array($result)) {
+			return $row;
+		}
+	}
+	
+	return NULL;
   }
 
   function get_location() {
 	global $cluster;
 	return $cluster->get_location_of_server($this->ve["vps_server"]);
+  }
+  
+  function create_console_session() {
+	global $db;
+	
+	$key = hash('sha256', $vps->veid . time() . rand(0, 99999999));
+	$sql = "INSERT INTO vps_console SET vps_id = ".$db->check($this->veid).", `key` = '".$db->check($key)."', expiration = ADDDATE(NOW(), INTERVAL 30 SECOND)";
+	
+	if ($db->query($sql))
+		return $key;
+	else return false;
+  }
+  
+  function get_console_server() {
+	global $db;
+	
+	$sql = "SELECT location_remote_console_server FROM locations WHERE location_id = '".$db->check($this->ve["server_location"])."'";
+	if ($result = $db->query($sql)) {
+		if ($row = $db->fetch_array($result)) {
+			return $row["location_remote_console_server"];
+		}
+	}
+	
+	return NULL;
   }
 }
 ?>

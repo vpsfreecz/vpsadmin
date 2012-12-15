@@ -147,6 +147,7 @@ ul.ul-style01 ul li {padding-left:12px; background:url("../design/ul-style01.gif
 #transactions  tr.ok, tr.ok {background:#AAFFAA;}
 #transactions  tr.pending, tr.pending {background:#FFF8DC;}
 #transactions  tr.error, tr.error {background:#FF5555;}
+#transactions  tr.warning, tr.warning {background:#FFBE30;}
 
 div#l_form {float: right; padding-bottom: 5px;}
 
