@@ -33,43 +33,46 @@ if ($_SESSION["is_admin"]) {
 $whereCond = array();
 $whereCond[] = 1;
 
-if ($_REQUEST["from"] != "") {
-	$whereCond[] = "t_id < {$_REQUEST["from"]}";
-} elseif ($_REQUEST["id"] != "") {
-	$whereCond[] = "t_id = {$_REQUEST["id"]}";
-}
-if ($_REQUEST["vps"] != "") {
-	$whereCond[] = "t_vps = {$_REQUEST["vps"]}";
-}
-if ($_REQUEST["member"] != "") {
-	$whereCond[] = "t_m_id = {$_REQUEST["member"]}";
-}
-if ($_REQUEST["server"] != "") {
-	$whereCond[] = "t_server = {$_REQUEST["server"]}";
-}
-if ($_REQUEST["type"] != "") {
-	$whereCond[] = "t_type = {$_REQUEST["type"]}";
-}
-if ($_REQUEST["limit"] != "") {
-	$limit = $_REQUEST["limit"];
-} else {
-	$limit = 50;
-}
-if (!$_SESSION["is_admin"]) {
-	$whereCond[] = "t_m_id = {$_SESSION["member"]["m_id"]}";
-	$_REQUEST["details"] = 0;
-}
+if ($_SESSION["is_admin"]) {
+  if ($_REQUEST["from"] != "") {
+    $whereCond[] = "t_id < {$_REQUEST["from"]}";
+  } elseif ($_REQUEST["id"] != "") {
+    $whereCond[] = "t_id = {$_REQUEST["id"]}";
+  }
+  if ($_REQUEST["vps"] != "") {
+    $whereCond[] = "t_vps = {$_REQUEST["vps"]}";
+  }
+  if ($_REQUEST["member"] != "") {
+    $whereCond[] = "t_m_id = {$_REQUEST["member"]}";
+  }
+  if ($_REQUEST["server"] != "") {
+    $whereCond[] = "t_server = {$_REQUEST["server"]}";
+  }
+  if ($_REQUEST["type"] != "") {
+    $whereCond[] = "t_type = {$_REQUEST["type"]}";
+  }
+  if ($_REQUEST["limit"] != "") {
+    $limit = $_REQUEST["limit"];
+  } else {
+    $limit = 50;
+  }
 
-$xtpl->form_create('?page=transactions&filter=yes', 'post');
-$xtpl->form_add_input(_("Limit").':', 'text', '40', 'limit', $limit, '');
-$xtpl->form_add_input(_("Start from ID").':', 'text', '40', 'from', $_REQUEST["from"], '');
-$xtpl->form_add_input(_("Exact ID").':', 'text', '40', 'id', $_REQUEST["id"], '');
-$xtpl->form_add_input(_("Member ID").':', 'text', '40', 'member', $_REQUEST["member"], '');
-$xtpl->form_add_input(_("VPS ID").':', 'text', '40', 'vps', $_REQUEST["vps"], '');
-$xtpl->form_add_input(_("Server ID").':', 'text', '40', 'server', $_REQUEST["server"], '');
-$xtpl->form_add_input(_("Transaction type").':', 'text', '40', 'type', $_REQUEST["type"], '');
-$xtpl->form_add_checkbox(_("Detailed mode").':', 'details', '1', $_REQUEST["details"], $hint = '');
-$xtpl->form_out(_("Show"));
+  $xtpl->form_create('?page=transactions&filter=yes', 'post');
+  $xtpl->form_add_input(_("Limit").':', 'text', '40', 'limit', $limit, '');
+  $xtpl->form_add_input(_("Start from ID").':', 'text', '40', 'from', $_REQUEST["from"], '');
+  $xtpl->form_add_input(_("Exact ID").':', 'text', '40', 'id', $_REQUEST["id"], '');
+  $xtpl->form_add_input(_("Member ID").':', 'text', '40', 'member', $_REQUEST["member"], '');
+  $xtpl->form_add_input(_("VPS ID").':', 'text', '40', 'vps', $_REQUEST["vps"], '');
+  $xtpl->form_add_input(_("Server ID").':', 'text', '40', 'server', $_REQUEST["server"], '');
+  $xtpl->form_add_input(_("Transaction type").':', 'text', '40', 'type', $_REQUEST["type"], '');
+  $xtpl->form_add_checkbox(_("Detailed mode").':', 'details', '1', $_REQUEST["details"], $hint = '');
+  $xtpl->form_out(_("Show"));
+
+} else {
+  $whereCond[] = "t_m_id = {$_SESSION["member"]["m_id"]}";
+  $_REQUEST["details"] = 0;
+  $limit = 100;
+}
 
 
 $xtpl->table_add_category("ID");
@@ -84,12 +87,21 @@ $xtpl->table_add_category("OK?");
 while ($t = $db->find("transactions", $whereCond, "t_id DESC", $limit)) {
 	$m = $db->findByColumnOnce("members", "m_id", $t["t_m_id"]);
 	$s = $db->findByColumnOnce("servers", "server_id", $t["t_server"]);
-	$xtpl->table_td($t["t_id"]);
+	if ($_SESSION["is_admin"]) {
+    $xtpl->table_td('<a href="?page=transactions&filter=yes&details=1&id='.$t["t_id"].'">'.$t["t_id"].'</a>');
+	} else {
+    $xtpl->table_td($t["t_id"]);
+	}
 	$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $t["t_time"]));
 	$xtpl->table_td("{$m["m_id"]} {$m["m_nick"]}");
 	$xtpl->table_td(($s) ? "{$s["server_id"]} {$s["server_name"]}" : '---');
 	$xtpl->table_td(($t["t_vps"] == 0) ? _("--Every--") : "<a href='?page=adminvps&action=info&veid={$t["t_vps"]}'>{$t["t_vps"]}</a>");
-	$xtpl->table_td("{$t["t_type"]}".' '.transaction_label($t["t_type"]));
+  if ($_SESSION["is_admin"]) {
+    $xtpl->table_td('<a href="?page=transactions&filter=yes&details=1&type='.$t["t_type"].'">'.$t["t_type"].'</a>'
+                    .' '.transaction_label($t["t_type"]));
+  } else {
+    $xtpl->table_td("{$t["t_type"]}".' '.transaction_label($t["t_type"]));
+  }
 	$xtpl->table_td($t["t_done"]);
 	$xtpl->table_td($t["t_success"]);
 	if ($t["t_done"]==1 && $t["t_success"]==1)

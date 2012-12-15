@@ -503,7 +503,8 @@ if ($_SESSION["logged_in"]) {
 			$xtpl->table_add_category("CHANGED TO");
 			$xtpl->table_add_category("CHANGED");
 			$xtpl->table_add_category("FROM");
-			$xtpl->table_add_category("TO");
+      $xtpl->table_add_category("TO");
+      $xtpl->table_add_category("MONTHS");
 
 			while ($hist = $db->find("members_payments", $whereCond, "id DESC", $limit)) {
 				$acct_m = $db->findByColumnOnce("members", "m_id", $hist["acct_m_id"]);
@@ -513,9 +514,13 @@ if ($_SESSION["logged_in"]) {
 				$xtpl->table_td($acct_m["m_id"].' '.$acct_m["m_nick"]);
 				$xtpl->table_td($m["m_id"].' '.$m["m_nick"]);
 				$xtpl->table_td(date('Y-m-d H:i', $hist["timestamp"]));
-				$xtpl->table_td(date('Y-m-d', $hist["change_from"]));
-				$xtpl->table_td(date('Y-m-d', $hist["change_to"]));
-
+				$xtpl->table_td(date('<- Y-m-d', $hist["change_from"]));
+				$xtpl->table_td(date('-> Y-m-d', $hist["change_to"]));
+				if ($hist["change_from"]) {
+          $xtpl->table_td(round(($hist["change_to"]-$hist["change_from"])/2629800), false, true);
+        } else {
+          $xtpl->table_td('---', false, true);
+        }
 				$xtpl->table_tr();
 			}
 
