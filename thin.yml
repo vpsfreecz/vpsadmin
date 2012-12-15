@@ -1,0 +1,13 @@
+environment: development
+chdir: /opt/vpsadmind
+address: 172.16.142.106
+user: root
+group: root
+port: 4567
+pid: /var/run/console_router.pid
+rackup: /opt/vpsadmind/console_router.ru
+log: /var/log/console_router.log
+max_conns: 1024
+timeout: 30
+max_persistent_conns: 512
+daemonize: true
