@@ -1,0 +1,10 @@
+# Configuration file for the vpsadmind service.
+
+# yes or no
+#INIT=yes
+#EXPORT_CONSOLE=yes
+#DAEMON=yes
+
+#PIDFILE=/var/run/vpsadmind.pid
+#LOGFILE=/var/log
+#CONFIG=/etc/vpsadmin/vpsadmind.yml

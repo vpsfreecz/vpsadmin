@@ -1,0 +1,93 @@
+#!/bin/bash
+#
+# vpsadmind        Startup script for vpsAdmind
+#
+# chkconfig: - 80 15
+# description: vpsAdmind is daemon for vpsAdmin
+# processname: vpsadmind
+# pidfile: /var/run/vpsadmind.pid
+#
+### BEGIN INIT INFO
+# Provides: vpsadmind
+# Required-Start: $local_fs $remote_fs $network $named
+# Required-Stop: $local_fs $remote_fs $network
+# Should-Start:
+# Short-Description: start and stop vpsAdmind
+# Description: vpsAdmind is daemon for vpsAdmin
+### END INIT INFO
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+VPSADMIND="/opt/vpsadmind/vpsadmind.rb"
+PIDFILE="/var/run/vpsadmind.pid"
+LOGFILE="/var/log"
+INIT="yes"
+CONFIG="/etc/vpsadmin/vpsadmind.yml"
+DAEMON="yes"
+EXPORT_CONSOLE="yes"
+
+if [ -f /etc/sysconfig/vpsadmind ]; then
+	. /etc/sysconfig/vpsadmind
+fi
+
+start() {
+	if [ -f $PIDFILE ] ; then
+		echo "vpsAdmind is already running."
+		echo "Delete $PIDFILE if it is not."
+		exit 1
+	fi
+	
+	echo -n "Starting vpsAdmind... "
+	
+	CMD="$VPSADMIND --config $CONFIG --pidfile $PIDFILE"
+	
+	if [ "$INIT" == "yes" ] ; then
+		CMD="$CMD --init"
+	fi
+	
+	if [ "$EXPORT_CONSOLE" == "yes" ] ; then
+		CMD="$CMD --export-console"
+	fi
+	
+	if [ "$DAEMON" == "yes" ] ; then
+		CMD="$CMD --daemonize --logfile $LOGFILE"
+	fi
+	
+	$CMD
+	
+	echo "done"
+}
+
+stop() {
+	echo -n "Stopping vpsAdmind... "
+
+	if [ -f $PIDFILE ] ; then
+		kill `cat $PIDFILE`
+		
+		if [ "$?" == "0" ] ; then
+			rm -f $PIDFILE
+			echo "done"
+		else
+			echo "failed"
+		fi
+	else
+		echo "not running"
+	fi
+}
+
+case $1 in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart)
+		stop
+		start
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart}"
+		;;
+esac
