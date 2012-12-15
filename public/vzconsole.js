@@ -91,7 +91,7 @@ function extend(subClass, baseClass) {
 
 function ShellInABox(veid, session, container) {
   this.veid = veid;
-  this.url = "http://172.16.142.106:4567/console/feed/" + this.veid
+  this.url = "/console/feed/" + this.veid
   this.nextUrl    = this.url;
   this.session    = session;
   this.pendingKeys  = '';
