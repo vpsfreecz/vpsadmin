@@ -42,13 +42,13 @@ class Firewall < Executor
 		ret = {}
 		{4 => "0.0.0.0/0", 6 => "::/0"}.each do |v, all|
 			iptables(v, {:L => "aztotal", "-nvx" => nil})[:output].split("\n")[2..-1].each do |l|
-				fields = l.split(/\s+/)
-				src = fields[7]
-				dst = fields[8]
+				fields = l.strip.split(/\s+/)
+				src = fields[v == 4 ? 6 : 5]
+				dst = fields[v == 4 ? 7 : 6]
 				ip = src == all ? dst : src
 				
 				ret[ip] = {} unless ret.include?(ip)
-				ret[ip][src == all ? :in : :out] = fields[2].to_i
+				ret[ip][src == all ? :in : :out] = fields[1].to_i
 			end
 		end
 		
