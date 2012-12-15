@@ -21,7 +21,7 @@
 
 VPSADMIND="/opt/vpsadmind/vpsadmind.rb"
 PIDFILE="/var/run/vpsadmind.pid"
-LOGFILE="/var/log"
+LOGDIR="/var/log"
 INIT="yes"
 CONFIG="/etc/vpsadmin/vpsadmind.yml"
 DAEMON="yes"
@@ -51,7 +51,7 @@ start() {
 	fi
 	
 	if [ "$DAEMON" == "yes" ] ; then
-		CMD="$CMD --daemonize --logfile $LOGFILE"
+		CMD="$CMD --daemonize --logdir $LOGDIR"
 	fi
 	
 	$CMD
