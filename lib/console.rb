@@ -51,7 +51,7 @@ class VzServer < EventMachine::Connection
 		unless @veid
 			begin
 				lines = data.split
-				@veid = lines[0].strip
+				@veid = lines[0].strip.to_i
 				
 				if VzConsole.consoles.include?(@veid)
 					@console = VzConsole.consoles[@veid]
