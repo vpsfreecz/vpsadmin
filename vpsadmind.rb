@@ -15,6 +15,8 @@ options = {
 	:config => "/etc/vpsadmin/vpsadmind.yml",
 	:daemonize => false,
 	:export_console => false,
+	:logdir => "/var/log",
+	:piddir => "/var/run",
 }
 
 OptionParser.new do |opts|
@@ -34,6 +36,16 @@ OptionParser.new do |opts|
 		options[:daemonize] = true
 	end
 	
+	opts.on("-l", "--logdir [LOG DIR]", "Log dir") do |log|
+		parts = log.split(File::SEPARATOR)
+		options[:logdir] = log
+	end
+	
+	opts.on("p", "--pidfile [PID FILE]", "PID file") do |pid|
+		parts = pid.split(File::SEPARATOR)
+		options[:piddir] = parts.slice(0, parts.count-1).join(File::SEPARATOR)
+	end
+	
 	opts.on_tail("-h", "--help", "Show this message") do
 		puts opts
 		exit
@@ -44,6 +56,9 @@ if options[:daemonize]
 	Daemons.daemonize({
 		:app_name => "vpsadmind",
 		:log_output => true,
+		:log_dir => options[:logdir],
+		:dir_mode => :normal,
+		:dir => options[:piddir],
 	})
 end
 
