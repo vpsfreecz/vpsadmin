@@ -62,6 +62,8 @@ if options[:daemonize]
 	})
 end
 
+Dir.chdir("/opt/vpsadmind")
+
 load_cfg(options[:config])
 
 Thread.abort_on_exception = true
