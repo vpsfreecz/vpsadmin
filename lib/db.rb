@@ -42,7 +42,7 @@ class Db
 			yield
 		rescue Mysql::Error => err
 			puts "MySQL error ##{err.errno}: #{err.error}"
-			close
+			close if @my
 			sleep($APP_CONFIG[:db][:retry_interval])
 			connect
 			retry if try_again
