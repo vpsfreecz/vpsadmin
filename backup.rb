@@ -40,7 +40,7 @@ rs = db.query("SELECT vps_id, vps_backup_exclude, server_id, server_name, locati
               FROM vps
               INNER JOIN servers ON server_id = vps_server
               INNER JOIN locations ON location_id = server_location
-              WHERE vps_backup_enabled = 1
+              WHERE vps_backup_enabled = 1 AND (SELECT t_id FROM transactions WHERE t_type = 5006 AND t_done = 0 AND t_vps = vps_id) IS NULL
               ORDER BY RAND()")
 rs.each_hash do |row|
 	s_id = row["server_id"].to_i
@@ -71,7 +71,7 @@ until vpses.empty?
 				puts "BACKUP VPS=#{vps[:veid]}, FROM SERVER=#{s_name}, TO SERVER=#{vps[:backuper]}, PARAMS=#{params}"
 			else
 				db.prepared("INSERT INTO transactions SET
-							t_time = NOW(),
+							t_time = UNIX_TIMESTAMP(NOW()),
 							t_m_id = 0,
 							t_server = ?,
 							t_vps = ?,
