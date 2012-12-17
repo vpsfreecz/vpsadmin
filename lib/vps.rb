@@ -62,7 +62,7 @@ class VPS < Executor
 			              'ipt_limit', 'ipt_multiport', 'ipt_state', 'ipt_tcpmss', 'ipt_tos',
 			              'ipt_ttl', 'iptable_filter', 'iptable_mangle', 'iptable_nat'],
 			:numiptent => "1000",
-			:devices => ["c:10:200:rw", "c:10:229:rw"],
+			:devices => ["c:10:200:rw", "c:10:229:rw", "c:108:0:rw"],
 		}, true)
 		start
 		vzctl(:exec, @veid, "mkdir -p /dev/net")
