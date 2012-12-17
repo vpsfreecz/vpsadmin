@@ -65,8 +65,10 @@ if ($_GET["run"] == 'start') {
 }
 
 if ($_GET["run"] == 'restart') {
-	$vps = vps_load($_GET["veid"]);
-	$xtpl->perex_cmd_output(_("Restart of")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->restart());
+	if (($member_of_session->is_new()) || ($member_of_session->has_paid_now()) || (!$cluster_cfg->get("payments_enabled"))) {
+		$vps = vps_load($_GET["veid"]);
+		$xtpl->perex_cmd_output(_("Restart of")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->restart());
+	} else $xtpl->perex(_("Payment missing"), _("You are not allowed to make \"start\" operation.<br />Please pay all your fees. Once we receive all missing payments, your access will be resumed."));
 }
 
 $playground_servers = $cluster->list_playground_servers();
@@ -355,6 +357,11 @@ switch ($_GET["action"]) {
 								$playground_mode ? 1 : $_REQUEST["features"],
 								$playground_mode ? 0 : $_REQUEST["backuper"]
 				);
+				
+				if ($playground_mode) {
+					$vps->add_first_available_ip($server["server_location"], 4);
+					$vps->add_first_available_ip($server["server_location"], 6);
+				}
 				$xtpl->perex(_("Clone in progress"), '');
 			} else
 				 $xtpl->perex(_("Invalid data"), _("Please fill the form correctly."));
