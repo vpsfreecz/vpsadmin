@@ -28,7 +28,7 @@ class Backuper < Executor
 		
 		db.close
 		
-		{:ret => :ok}
+		ok
 	end
 	
 	def download

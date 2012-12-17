@@ -3,7 +3,7 @@ require 'lib/executor'
 class Node < Executor
 	def reboot
 		@reboot = true
-		{:ret => true}
+		ok
 	end
 	
 	def sync_templates

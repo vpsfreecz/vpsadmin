@@ -40,6 +40,7 @@
     :rsync: /usr/bin/rsync
     :iptables: /sbin/iptables
     :ip6tables: /sbin/ip6tables
+    :git: /usr/bin/git
 
 :backuper:
     :lock_interval: 30
@@ -57,6 +58,10 @@
     :port: 8081
 
 :handlers:
+    VpsAdmin:
+        101: stop
+        102: restart
+        103: update
     Node:
         3: reboot
         4: sync_templates

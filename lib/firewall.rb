@@ -35,7 +35,7 @@ class Firewall < Executor
 			reg_ip(ip["addr"], ip["ver"])
 		end
 		
-		{:ret => :ok}
+		ok
 	end
 	
 	def read_traffic

@@ -1,4 +1,5 @@
 require 'lib/executor'
+require 'lib/vpsadmin'
 require 'lib/node'
 require 'lib/vps'
 require 'lib/firewall'
@@ -25,7 +26,14 @@ class Command
 			return false
 		end
 		
-		@executor = Kernel.const_get(cmd[:class]).new(@trans["t_vps"], JSON.parse(@trans["t_param"]))
+		begin
+			param = JSON.parse(@trans["t_param"])
+		rescue TypeError
+			@output[:error] = "Bad param syntax"
+			return false
+		end
+		
+		@executor = Kernel.const_get(cmd[:class]).new(@trans["t_vps"], param)
 		
 		@time_start = Time.new.to_i
 		

@@ -17,7 +17,10 @@ options = {
 	:export_console => false,
 	:logdir => "/var/log",
 	:piddir => "/var/run",
+	:wrapper => true,
 }
+
+orig_options = ARGV.join(" ")
 
 OptionParser.new do |opts|
 	opts.on("-i", "--init", "Init firewall rules") do
@@ -46,11 +49,46 @@ OptionParser.new do |opts|
 		options[:piddir] = parts.slice(0, parts.count-1).join(File::SEPARATOR)
 	end
 	
+	opts.on("-w", "--no-wrapper", "Do not run script in wrapper - auto restart won't work") do
+		options[:wrapper] = false
+	end
+	
 	opts.on_tail("-h", "--help", "Show this message") do
 		puts opts
 		exit
 	end
 end.parse!
+
+Dir.chdir("/opt/vpsadmind")
+
+if options[:wrapper]
+	loop do
+		IO.popen("#{File.expand_path($0)} --no-wrapper #{orig_options} 2>&1") do |io|
+			puts io.read
+		end
+		
+		case $?.exitstatus
+		when VpsAdmind::EXIT_OK
+			exit
+		when VpsAdmind::EXIT_RESTART
+			next
+		when VpsAdmind::EXIT_UPDATE
+			load_cfg(options[:config])
+			
+			IO.popen("#{$APP_CONFIG[:bin][:git]} pull 2>&1") do |io|
+				g = io.read
+			end
+			
+			if $? == 0
+				next
+			else
+				exit(false)
+			end
+		else
+			exit(false)
+		end
+	end
+end
 
 if options[:daemonize]
 	Daemons.daemonize({
@@ -61,8 +99,6 @@ if options[:daemonize]
 		:dir => options[:piddir],
 	})
 end
-
-Dir.chdir("/opt/vpsadmind")
 
 load_cfg(options[:config])
 

@@ -9,7 +9,17 @@ require 'eventmachine'
 module VpsAdmind
 	VERSION = "1.4.0-dev"
 	
+	EXIT_OK = 0
+	EXIT_ERR = 1
+	EXIT_STOP = 100
+	EXIT_RESTART = 150
+	EXIT_UPDATE = 200
+	
 	class Daemon
+		@@run = true
+		@@exitstatus = 0
+		@@mutex = Mutex.new
+		
 		def initialize
 			@db = Db.new
 			@last_change = 0
@@ -44,6 +54,14 @@ module VpsAdmind
 				end
 				
 				next if @workers.size >= $APP_CONFIG[:vpsadmin][:threads]
+				
+				@@mutex.synchronize do
+					unless @@run
+						@queue.clear
+						exit(@@exitstatus) if @workers.empty?
+						next
+					end
+				end
 				
 				@queue.delete_if do |cmd|
 					do_command(cmd, true)
@@ -161,6 +179,13 @@ module VpsAdmind
 				EventMachine.run do
 					EventMachine.start_server($APP_CONFIG[:console][:host], $APP_CONFIG[:console][:port], VzServer)
 				end
+			end
+		end
+		
+		def Daemon.safe_exit(status)
+			@@mutex.synchronize do
+				@@run = false
+				@@exitstatus = status
 			end
 		end
 	end

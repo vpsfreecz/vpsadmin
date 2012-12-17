@@ -51,4 +51,8 @@ class Executor
 	def post_save(con)
 		
 	end
+	
+	def ok
+		{:ret => :ok}
+	end
 end

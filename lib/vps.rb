@@ -121,7 +121,7 @@ class VPS < Executor
 			vzctl(:set, @veid, {:onboot => "yes"}, true)
 		end
 		
-		{:ret => :ok}
+		ok
 	end
 	
 	def load_file(file)
@@ -171,7 +171,7 @@ class VPS < Executor
 			syscmd("#{$APP_CONFIG[:bin][:chmod]} +x #{p}")
 		end
 		
-		{:ret => :ok}
+		ok
 	end
 	
 	def post_save(con)
