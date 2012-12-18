@@ -74,9 +74,15 @@ Dir.chdir($APP_CONFIG[:vpsadmin][:root])
 
 if options[:wrapper]
 	loop do
-		IO.popen("#{executable} --no-wrapper --config #{options[:config]} #{"--init" if options[:init]} #{"--export-console" if options[:export_console]} 2>&1") do |io|
-			puts io.read
+		p = IO.popen("exec #{executable} --no-wrapper --config #{options[:config]} #{"--init" if options[:init]} #{"--export-console" if options[:export_console]} 2>&1")
+		
+		Signal.trap("TERM") do
+			puts "Killing daemon"
+			Process.kill("TERM", p.pid)
 		end
+		
+		puts p.read
+		Process.waitpid(p.pid)
 		
 		case $?.exitstatus
 		when VpsAdmind::EXIT_OK
