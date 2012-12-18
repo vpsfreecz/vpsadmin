@@ -20,8 +20,6 @@ options = {
 	:wrapper => true,
 }
 
-orig_options = ARGV.join(" ")
-
 OptionParser.new do |opts|
 	opts.on("-i", "--init", "Init firewall rules") do
 		options[:init] = true
@@ -59,11 +57,24 @@ OptionParser.new do |opts|
 	end
 end.parse!
 
-Dir.chdir("/opt/vpsadmind")
+executable = File.expand_path($0)
+load_cfg(options[:config])
+
+if options[:daemonize]
+	Daemons.daemonize({
+		:app_name => "vpsadmind",
+		:log_output => true,
+		:log_dir => options[:logdir],
+		:dir_mode => :normal,
+		:dir => options[:piddir],
+	})
+end
+
+Dir.chdir($APP_CONFIG[:vpsadmin][:root])
 
 if options[:wrapper]
 	loop do
-		IO.popen("#{File.expand_path($0)} --no-wrapper #{orig_options} 2>&1") do |io|
+		IO.popen("#{executable} --no-wrapper --config #{options[:config]} #{"--init" if options[:init]} #{"--export-console" if options[:export_console]} 2>&1") do |io|
 			puts io.read
 		end
 		
@@ -89,18 +100,6 @@ if options[:wrapper]
 		end
 	end
 end
-
-if options[:daemonize]
-	Daemons.daemonize({
-		:app_name => "vpsadmind",
-		:log_output => true,
-		:log_dir => options[:logdir],
-		:dir_mode => :normal,
-		:dir => options[:piddir],
-	})
-end
-
-load_cfg(options[:config])
 
 Thread.abort_on_exception = true
 vpsAdmind = VpsAdmind::Daemon.new()

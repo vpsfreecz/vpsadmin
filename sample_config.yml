@@ -17,6 +17,7 @@
     :update_vps_status: true
     :backups_mnt_dir: /mnt
     :restore_target: '/vz/private/%s.restoring'
+    :root: /opt/vpsadmind
 
 :vz:
     :vzctl: /usr/sbin/vzctl
