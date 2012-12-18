@@ -93,4 +93,4 @@ $content = $cluster_cfg->get("mailer_tpl_nonpayers");
 $content = str_replace("%never_paid%", $neverpaid, $content);
 $content = str_replace("%nonpayers%", $nonpayers, $content);
 
-send_mail($to, $subject, $content);
+send_mail($to, $subject, $content, array(), array(), true);
