@@ -26,6 +26,7 @@ module VpsAdmind
 			@workers = {}
 			@queue = []
 			@cmds = []
+			@safe_exit = false
 			
 			Command.load_handlers()
 		end
@@ -57,7 +58,12 @@ module VpsAdmind
 				
 				@@mutex.synchronize do
 					unless @@run
-						@queue.clear
+						unless @safe_exit
+							@queue.clear
+							@workers.each { |w| w.drop_queue }
+							@safe_exit = true
+						end
+						
 						exit(@@exitstatus) if @workers.empty?
 						next
 					end

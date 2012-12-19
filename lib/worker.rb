@@ -20,15 +20,23 @@ class Worker
 		end
 		
 		@thread = Thread.new do
-			until @queue.empty?
-				cmd = @queue.pop
-				cmd.execute
-				@done << cmd
+			begin
+				until @queue.empty?
+					cmd = @queue.pop(true)
+					cmd.execute
+					@done << cmd
+				end
+			rescue ThreadError
+				
 			end
 		end
 	end
 	
 	def working?
 		@thread and @thread.alive?
+	end
+	
+	def drop_queue
+		@queue.clear
 	end
 end
