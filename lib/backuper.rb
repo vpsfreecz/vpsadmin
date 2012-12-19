@@ -37,7 +37,7 @@ class Backuper < Executor
 		syscmd("#{$APP_CONFIG[:bin][:mkdir]} -p #{$APP_CONFIG[:backuper][:download]}/#{@params["secret"]}")
 		
 		if @params["server_name"]
-			syscmd("#{$APP_CONFIG[:bin][:tar]} -czf #{$APP_CONFIG[:backuper][:download]}/#{@params["secret"]}/#{@params["filename"]} #{mountpoint}")
+			syscmd("#{$APP_CONFIG[:bin][:tar]} -czf #{$APP_CONFIG[:backuper][:download]}/#{@params["secret"]}/#{@params["filename"]} #{mountpoint}", [1,])
 		else
 			syscmd("#{$APP_CONFIG[:bin][:rdiff_backup]} -r #{@params["datetime"]} #{$APP_CONFIG[:backuper][:dest]}/#{@veid} #{$APP_CONFIG[:backuper][:tmp_restore]}/#{@veid}")
 			syscmd("#{$APP_CONFIG[:bin][:tar]} -czf #{$APP_CONFIG[:backuper][:download]}/#{@params["secret"]}/#{@params["filename"]} #{$APP_CONFIG[:backuper][:tmp_restore]}/#{@veid}")
