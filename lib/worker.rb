@@ -1,17 +1,9 @@
 class Worker
-	attr_reader :done
+	attr_reader :cmd
 	
 	def initialize(cmd)
-		@queue = Queue.new
-		@queue << cmd
-		@done = Queue.new
+		@cmd = cmd
 		work
-	end
-	
-	def <<(cmd)
-		@queue << cmd
-		
-		work unless self.working?
 	end
 	
 	def work
@@ -20,23 +12,11 @@ class Worker
 		end
 		
 		@thread = Thread.new do
-			begin
-				until @queue.empty?
-					cmd = @queue.pop(true)
-					cmd.execute
-					@done << cmd
-				end
-			rescue ThreadError
-				
-			end
+			@cmd.execute
 		end
 	end
 	
 	def working?
 		@thread and @thread.alive?
-	end
-	
-	def drop_queue
-		@queue.clear
 	end
 end

@@ -7,7 +7,7 @@ require 'rubygems'
 require 'eventmachine'
 
 module VpsAdmind
-	VERSION = "1.4.0"
+	VERSION = "1.4.1"
 	
 	EXIT_OK = 0
 	EXIT_ERR = 1
@@ -24,9 +24,6 @@ module VpsAdmind
 			@db = Db.new
 			@last_change = 0
 			@workers = {}
-			@queue = []
-			@cmds = []
-			@safe_exit = false
 			
 			Command.load_handlers()
 		end
@@ -45,37 +42,24 @@ module VpsAdmind
 				update_status unless @status_thread.alive?
 				
 				@workers.delete_if do |wid, w|
-					until w.done.empty?
-						c = w.done.pop
+					if not w.working?
+						c = w.cmd
 						c.save(@db)
-						@cmds.delete(c.id)
+						
+						next true
 					end
 					
-					not w.working?
+					false
 				end
 				
 				next if @workers.size >= $APP_CONFIG[:vpsadmin][:threads]
 				
 				@@mutex.synchronize do
 					unless @@run
-						unless @safe_exit
-							@queue.clear
-							@workers.each { |w| w.drop_queue }
-							@safe_exit = true
-						end
-						
 						exit(@@exitstatus) if @workers.empty?
 						next
 					end
 				end
-				
-				@queue.delete_if do |cmd|
-					do_command(cmd, true)
-				end
-				
-				#@workers.each { |wid,w| w.work }
-				
-				next unless @queue.empty?
 				
 				rs = @db.query("SELECT UNIX_TIMESTAMP(UPDATE_TIME) AS time FROM `information_schema`.`tables` WHERE `TABLE_SCHEMA` = 'vpsadmin' AND `TABLE_NAME` = 'transactions'")
 				time = rs.fetch_row.first.to_i
@@ -89,54 +73,41 @@ module VpsAdmind
 		end
 		
 		def do_commands
-			rs = @db.query("SELECT *, 1 AS depencency_success FROM transactions
+			rs = @db.query("(SELECT *, 1 AS depencency_success FROM transactions
 							WHERE t_done = 0 AND t_server = #{$APP_CONFIG[:vpsadmin][:server_id]} AND t_depends_on IS NULL
+							GROUP BY t_vps)
 						
 							UNION
 							
-							SELECT t.*, d.t_success AS dependency_success
+							(SELECT t.*, d.t_success AS dependency_success
 							FROM transactions t
 							INNER JOIN transactions d ON t.t_depends_on = d.t_id
 							WHERE
 							t.t_done = 0
 							AND d.t_done = 1
 							AND t.t_server = #{$APP_CONFIG[:vpsadmin][:server_id]}
+							GROUP BY t_vps)
 							
-							ORDER BY t_id ASC")
+							ORDER BY t_id ASC LIMIT #{$APP_CONFIG[:vpsadmin][:threads]}")
 			
 			rs.each_hash do |row|
-				next if @cmds.include?(row["t_id"])
-				
 				c = Command.new(row)
 				
 				unless row["depencency_success"].to_i > 0
 					c.dependency_failed(@db)
-					next
+					return
 				end
 				
-				@cmds << row["t_id"]
 				do_command(c)
 			end
-			
-			#@workers.each { |wid,w| w.work }
 		end
 		
-		def do_command(cmd, in_queue = false)
+		def do_command(cmd)
 			wid = cmd.worker_id
 			
-			if @workers.has_key?(wid)
-				@workers[wid] << cmd
-			else
-				if @workers.size >= $APP_CONFIG[:vpsadmin][:threads]
-					@queue << cmd unless in_queue
-					
-					return false
-				end
-				
+			if !@workers.has_key?(wid) && @workers.size < $APP_CONFIG[:vpsadmin][:threads]
 				@workers[wid] = Worker.new(cmd)
 			end
-			
-			true
 		end
 		
 		def update_status
