@@ -73,22 +73,25 @@ module VpsAdmind
 		end
 		
 		def do_commands
-			rs = @db.query("(SELECT *, 1 AS depencency_success FROM transactions
-							WHERE t_done = 0 AND t_server = #{$APP_CONFIG[:vpsadmin][:server_id]} AND t_depends_on IS NULL
-							GROUP BY t_vps)
-						
-							UNION
+			rs = @db.query("SELECT * FROM (
+								(SELECT *, 1 AS depencency_success FROM transactions
+								WHERE t_done = 0 AND t_server = #{$APP_CONFIG[:vpsadmin][:server_id]} AND t_depends_on IS NULL
+								GROUP BY t_vps, t_priority)
 							
-							(SELECT t.*, d.t_success AS dependency_success
-							FROM transactions t
-							INNER JOIN transactions d ON t.t_depends_on = d.t_id
-							WHERE
-							t.t_done = 0
-							AND d.t_done = 1
-							AND t.t_server = #{$APP_CONFIG[:vpsadmin][:server_id]}
-							GROUP BY t_vps)
-							
-							ORDER BY t_id ASC LIMIT #{$APP_CONFIG[:vpsadmin][:threads]}")
+								UNION ALL
+								
+								(SELECT t.*, d.t_success AS dependency_success
+								FROM transactions t
+								INNER JOIN transactions d ON t.t_depends_on = d.t_id
+								WHERE
+								t.t_done = 0
+								AND d.t_done = 1
+								AND t.t_server = #{$APP_CONFIG[:vpsadmin][:server_id]}
+								
+								GROUP BY t_vps, t_priority)
+								ORDER BY t_priority DESC, t_id ASC LIMIT #{$APP_CONFIG[:vpsadmin][:threads]}
+							) tmp
+							GROUP BY t_vps")
 			
 			rs.each_hash do |row|
 				c = Command.new(row)
