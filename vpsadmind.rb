@@ -79,6 +79,11 @@ if options[:wrapper]
 		Signal.trap("TERM") do
 			puts "Killing daemon"
 			Process.kill("TERM", p.pid)
+			exit
+		end
+		
+		Signal.trap("HUP") do
+			Process.kill("HUP", p.pid)
 		end
 		
 		puts p.read
@@ -105,6 +110,11 @@ if options[:wrapper]
 			exit(false)
 		end
 	end
+end
+
+Signal.trap("HUP") do
+	puts "Reloading config..."
+	reload_cfg(options[:config])
 end
 
 Thread.abort_on_exception = true
