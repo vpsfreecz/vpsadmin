@@ -79,7 +79,7 @@ Dir.chdir($APP_CONFIG[:vpsadmin][:root])
 
 if options[:wrapper]
 	loop do
-		p = IO.popen("exec #{executable} --no-wrapper --config #{options[:config]} #{"--init" if options[:init]} #{"--export-console" if options[:export_console]} 2>&1")
+		p = IO.popen("exec #{executable} --no-wrapper --config #{options[:config]} #{"--init" if options[:init]} #{"--export-console" if options[:export_console]} #{"--remote-control" if options[:remote]} 2>&1")
 		
 		Signal.trap("TERM") do
 			puts "Killing daemon"
