@@ -17,6 +17,7 @@ options = {
 	:export_console => false,
 	:logdir => "/var/log",
 	:piddir => "/var/run",
+	:remote => true,
 	:wrapper => true,
 }
 
@@ -45,6 +46,10 @@ OptionParser.new do |opts|
 	opts.on("p", "--pidfile [PID FILE]", "PID file") do |pid|
 		parts = pid.split(File::SEPARATOR)
 		options[:piddir] = parts.slice(0, parts.count-1).join(File::SEPARATOR)
+	end
+	
+	opts.on("-r", "--remote-control", "Enable remote control") do
+		options[:remote] = true
 	end
 	
 	opts.on("-w", "--no-wrapper", "Do not run script in wrapper - auto restart won't work") do
@@ -120,5 +125,5 @@ end
 Thread.abort_on_exception = true
 vpsAdmind = VpsAdmind::Daemon.new()
 vpsAdmind.init if options[:init]
-vpsAdmind.export_console if options[:export_console]
+vpsAdmind.start_em(options[:export_console], options[:remote]) if options[:export_console] || options[:remote]
 vpsAdmind.start

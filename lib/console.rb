@@ -1,3 +1,5 @@
+require 'monitor'
+
 require 'rubygems'
 require 'eventmachine'
 
@@ -5,13 +7,16 @@ class VzConsole < EventMachine::Connection
 	attr_accessor :usage
 	
 	@@consoles = {}
+	@@mutex = Monitor.new
 	
 	def initialize(veid, listener)
 		@veid = veid
 		@listeners = [listener,]
 		@usage = 1
 		
-		@@consoles[@veid] = self
+		@@mutex.synchronize do
+			@@consoles[@veid] = self
+		end
 	end
 	
 	def post_init
@@ -38,7 +43,9 @@ class VzConsole < EventMachine::Connection
 	end
 	
 	def VzConsole.consoles
-		@@consoles
+		@@mutex.synchronize do
+			yield(@@consoles)
+		end
 	end
 end
 
@@ -53,11 +60,13 @@ class VzServer < EventMachine::Connection
 				lines = data.split
 				@veid = lines[0].strip.to_i
 				
-				if VzConsole.consoles.include?(@veid)
-					@console = VzConsole.consoles[@veid]
-					@console.register(self)
-				else
-					@console = EventMachine.popen("#{$APP_CONFIG[:vz][:vzctl]} console #{@veid}", VzConsole, @veid, self)
+				VzConsole.consoles do |c|
+					if c.include?(@veid)
+						@console = c[@veid]
+						@console.register(self)
+					else
+						@console = EventMachine.popen("#{$APP_CONFIG[:vz][:vzctl]} console #{@veid}", VzConsole, @veid, self)
+					end
 				end
 				
 				send_data("Welcome to vpsFree.cz Remote Console\r\n")
@@ -76,7 +85,9 @@ class VzServer < EventMachine::Connection
 			
 			close_connection_after_writing
 		else
-			VzConsole.consoles[@veid].send_data(data)
+			VzConsole.consoles do |c|
+				c[@veid].send_data(data)
+			end
 		end
 	end
 	
@@ -95,10 +106,12 @@ class VzServer < EventMachine::Connection
 		@console.usage -= 1
 			
 		if @console.usage == 0
-			VzConsole.consoles[@veid].send_data(13.chr)
-			VzConsole.consoles[@veid].send_data(27.chr)
-			VzConsole.consoles[@veid].send_data(".")
-			VzConsole.consoles.delete(@veid) 
+			VzConsole.consoles do |c|
+				c[@veid].send_data(13.chr)
+				c[@veid].send_data(27.chr)
+				c[@veid].send_data(".")
+				c.delete(@veid)
+			end
 		end
 	end
 end

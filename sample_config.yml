@@ -18,6 +18,40 @@
     :backups_mnt_dir: /mnt
     :restore_target: '/vz/private/%s.restoring'
     :root: /opt/vpsadmind
+    :handlers:
+        VpsAdmin:
+            101: stop
+            102: restart
+            103: update
+        Node:
+            3: reboot
+            4: sync_templates
+        VPS:
+            1001: start
+            1002: stop
+            1003: restart
+            2002: set_params
+            2003: set_params
+            2004: set_params
+            2005: set_params
+            2006: set_params
+            2007: set_params
+            3001: create
+            3002: destroy
+            3003: reinstall
+            3004: clone
+            4001: migrate_offline
+            4002: migrate_online
+            5003: restore
+            8001: features
+        Backuper:
+            5004: download
+            5005: backup
+            5006: backup
+        Firewall:
+            7201: reg_ips
+        Mailer:
+            9001: send
 
 :vz:
     :vzctl: /usr/sbin/vzctl
@@ -58,37 +92,12 @@
     :host: localhost
     :port: 8081
 
-:handlers:
-    VpsAdmin:
-        101: stop
-        102: restart
-        103: update
-    Node:
-        3: reboot
-        4: sync_templates
-    VPS:
-        1001: start
-        1002: stop
-        1003: restart
-        2002: set_params
-        2003: set_params
-        2004: set_params
-        2005: set_params
-        2006: set_params
-        2007: set_params
-        3001: create
-        3002: destroy
-        3003: reinstall
-        3004: clone
-        4001: migrate_offline
-        4002: migrate_online
-        5003: restore
-        8001: features
-    Backuper:
-        5004: download
-        5005: backup
-        5006: backup
-    Firewall:
-        7201: reg_ips
-    Mailer:
-        9001: send
+:remote:
+    :socket: /var/run/vpsadmind.sock
+    :handlers:
+        VpsAdmin:
+            - :reload
+            - :restart
+            - :status
+            - :stop
+            - :update

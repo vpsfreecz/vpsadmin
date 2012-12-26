@@ -2,12 +2,13 @@ require 'lib/db'
 require 'lib/worker'
 require 'lib/command'
 require 'lib/console'
+require 'lib/remote'
 
 require 'rubygems'
 require 'eventmachine'
 
 module VpsAdmind
-	VERSION = "1.4.1"
+	VERSION = "1.4.2"
 	
 	EXIT_OK = 0
 	EXIT_ERR = 1
@@ -16,6 +17,8 @@ module VpsAdmind
 	EXIT_UPDATE = 200
 	
 	class Daemon
+		attr_reader :start_time, :export_console
+		
 		@@run = true
 		@@exitstatus = 0
 		@@mutex = Mutex.new
@@ -24,6 +27,9 @@ module VpsAdmind
 			@db = Db.new
 			@last_change = 0
 			@workers = {}
+			@m_workers = Mutex.new
+			@start_time = Time.new
+			@export_console = false
 			
 			Command.load_handlers()
 		end
@@ -41,33 +47,37 @@ module VpsAdmind
 				
 				update_status unless @status_thread.alive?
 				
-				@workers.delete_if do |wid, w|
-					if not w.working?
-						c = w.cmd
-						c.save(@db)
+				catch (:next) do
+					@m_workers.synchronize do
+						@workers.delete_if do |wid, w|
+							if not w.working?
+								c = w.cmd
+								c.save(@db)
+								
+								next true
+							end
+							
+							false
+						end
 						
-						next true
+						throw :next if @workers.size >= $APP_CONFIG[:vpsadmin][:threads]
+						
+						@@mutex.synchronize do
+							unless @@run
+								exit(@@exitstatus) if @workers.empty?
+								throw :next
+							end
+						end
+						
+						rs = @db.query("SELECT UNIX_TIMESTAMP(UPDATE_TIME) AS time FROM `information_schema`.`tables` WHERE `TABLE_SCHEMA` = 'vpsadmin' AND `TABLE_NAME` = 'transactions'")
+						time = rs.fetch_row.first.to_i
+						
+						if time > @last_change
+							do_commands
+							
+							@last_change = time
+						end
 					end
-					
-					false
-				end
-				
-				next if @workers.size >= $APP_CONFIG[:vpsadmin][:threads]
-				
-				@@mutex.synchronize do
-					unless @@run
-						exit(@@exitstatus) if @workers.empty?
-						next
-					end
-				end
-				
-				rs = @db.query("SELECT UNIX_TIMESTAMP(UPDATE_TIME) AS time FROM `information_schema`.`tables` WHERE `TABLE_SCHEMA` = 'vpsadmin' AND `TABLE_NAME` = 'transactions'")
-				time = rs.fetch_row.first.to_i
-				
-				if time > @last_change
-					do_commands
-					
-					@last_change = time
 				end
 			end
 		end
@@ -154,11 +164,22 @@ module VpsAdmind
 			end
 		end
 		
-		def export_console
-			@console_thread = Thread.new do
+		def start_em(console, remote)
+			@export_console = console
+			
+			RemoteControl.load_handlers if remote
+			
+			@em_thread = Thread.new do
 				EventMachine.run do
-					EventMachine.start_server($APP_CONFIG[:console][:host], $APP_CONFIG[:console][:port], VzServer)
+					EventMachine.start_server($APP_CONFIG[:console][:host], $APP_CONFIG[:console][:port], VzServer) if console
+					EventMachine.start_unix_domain_server($APP_CONFIG[:remote][:socket], RemoteControl, self) if remote
 				end
+			end
+		end
+		
+		def workers
+			@m_workers.synchronize do
+				yield(@workers)
 			end
 		end
 		

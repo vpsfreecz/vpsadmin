@@ -10,6 +10,8 @@ require 'rubygems'
 require 'json'
 
 class Command
+	attr_reader :trans, :time_start
+	
 	@@handlers = {}
 	
 	def initialize(trans)
@@ -77,7 +79,7 @@ class Command
 	end
 	
 	def Command.load_handlers
-		$APP_CONFIG[:handlers].each do |klass, cmds|
+		$APP_CONFIG[:vpsadmin][:handlers].each do |klass, cmds|
 			cmds.each do |cmd, method|
 				@@handlers[cmd] = {:class => klass, :method => method}
 				puts "Cmd ##{cmd} => #{klass}.#{method}"

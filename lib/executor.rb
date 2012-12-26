@@ -11,10 +11,11 @@ end
 class Executor
 	attr_accessor :output
 	
-	def initialize(veid, params = {})
+	def initialize(veid, params = {}, daemon = nil)
 		@veid = veid
 		@params = params
 		@output = {}
+		@daemon = daemon
 	end
 	
 	def vzctl(cmd, veid, opts = {}, save = false, valid_rcs = [])

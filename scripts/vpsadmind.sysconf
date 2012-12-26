@@ -2,9 +2,9 @@
 
 # yes or no
 #INIT=yes
-#EXPORT_CONSOLE=yes
 #DAEMON=yes
+#OPTS="--export-console --remote-control"
 
 #PIDFILE=/var/run/vpsadmind.pid
-#LOGFILE=/var/log
+#LOGDIR=/var/log
 #CONFIG=/etc/vpsadmin/vpsadmind.yml
