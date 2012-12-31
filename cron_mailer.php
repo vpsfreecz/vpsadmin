@@ -34,11 +34,9 @@ include WWW_ROOT.'lib/functions.lib.php';
 include WWW_ROOT.'lib/transact.lib.php';
 include WWW_ROOT.'lib/vps.lib.php';
 include WWW_ROOT.'lib/members.lib.php';
-include WWW_ROOT.'lib/vps_status.lib.php';
 include WWW_ROOT.'lib/networking.lib.php';
 include WWW_ROOT.'lib/version.lib.php';
 include WWW_ROOT.'lib/cluster.lib.php';
-include WWW_ROOT.'lib/cluster_status.lib.php';
 include WWW_ROOT.'lib/mail.lib.php';
 
 $db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME);
