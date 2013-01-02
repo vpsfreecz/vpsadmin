@@ -4,9 +4,9 @@ require 'lib/backuper'
 class VPS < Executor
 	def start
 		@update = true
+		ensure_mountfile
 		vzctl(:start, @veid, {}, false, [32,])
 		check_onboot
-		ensure_mountfile
 	end
 	
 	def stop(params = {})
@@ -17,9 +17,9 @@ class VPS < Executor
 	
 	def restart
 		@update = true
+		ensure_mountfile
 		vzctl(:restart, @veid)
 		check_onboot
-		ensure_mountfile
 	end
 	
 	def create
@@ -49,6 +49,12 @@ class VPS < Executor
 	
 	def set_params
 		vzctl(:set, @veid, @params, true)
+	end
+	
+	def applyconfig
+		@params["configs"].each do |cfg|
+			vzctl(:set, @veid, {:applyconfig => cfg}, true)
+		end
 	end
 	
 	def features
