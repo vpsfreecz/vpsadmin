@@ -17,6 +17,7 @@ define ('T_EXEC_HOSTNAME', 2004);
 define ('T_EXEC_DNS', 2005);
 define ('T_EXEC_IPADD', 2006);
 define ('T_EXEC_IPDEL', 2007);
+define ('T_EXEC_APPLYCONFIG', 2008);
 define ('T_CREATE_VE', 3001);
 define ('T_DESTROY_VE', 3002);
 define ('T_REINSTALL_VE', 3003);
@@ -40,6 +41,8 @@ define ('T_CLUSTER_STORAGE_SOFTWARE_INSTALL', 7004);
 define ('T_CLUSTER_TEMPLATE_COPY', 7101);
 define ('T_CLUSTER_TEMPLATE_DELETE', 7102);
 define ('T_CLUSTER_IP_REGISTER', 7201);
+define ('T_CLUSTER_CONFIG_CREATE', 7301);
+define ('T_CLUSTER_CONFIG_DELETE', 7302);
 define ('T_ENABLE_FEATURES', 8001);
 define ('T_ENABLE_TUNTAP', 8002); //deprecated
 define ('T_ENABLE_IPTABLES', 8003); //deprecated
@@ -202,6 +205,9 @@ function transaction_label ($t_type) {
 	case T_EXEC_IPDEL:
 	    $action_label = 'IP -';
 	    break;
+	case T_EXEC_APPLYCONFIG:
+	    $action_label = 'Apply config';
+	    break;
 	case T_EXEC_OTHER:
 	    $action_label = 'exec';
 	    break;
@@ -256,6 +262,12 @@ function transaction_label ($t_type) {
 	case T_CLUSTER_IP_REGISTER:
 	    $action_label = 'IP reg';
 	    break;
+	case T_CLUSTER_CONFIG_CREATE:
+		$action_label = 'Create config';
+		break;
+	case T_CLUSTER_CONFIG_DELETE:
+		$action_label = 'Delete config';
+		break;
 	case T_ENABLE_FEATURES:
 	    $action_label = 'Enable features';
 	    break;

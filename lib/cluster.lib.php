@@ -290,7 +290,7 @@ class cluster_cfg {
 	$sql = 'SELECT * FROM sysconfig WHERE cfg_name="'.$db->check($setting).'"';
 	if ($result = $db->query($sql)) {
 	    if ($row = $db->fetch_array($result)) {
-		return stripslashes(unserialize($row["cfg_value"]));
+		return unserialize(stripslashes($row["cfg_value"]));
 	    } else return false;
 	} else return false;
     }
@@ -705,6 +705,56 @@ class cluster {
 	    $db->query($sql);
 	}
     }
+    
+    function save_config($id, $name, $label, $config) {
+		global $db;
+		
+		if($id != NULL)
+			$sql = "UPDATE `config` SET name = '".$db->check($name)."',
+			        label = '".$db->check($label)."',
+			        `config` = '".$db->check($config)."'
+			        WHERE id = '".$db->check($id)."'";
+		else
+			$sql = "INSERT INTO `config` SET name = '".$db->check($name)."',
+			        label = '".$db->check($label)."',
+			        `config` = '".$db->check($config)."'";
+		
+		add_transaction_clusterwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_CONFIG_CREATE, array("name" => $name, "config" => $config));
+		
+		return $db->query($sql);
+    }
+    
+    function delete_config($id) {
+		global $db;
+		
+		if($cfg = $db->findByColumnOnce("config", "id", $id)) {
+			$db->query('DELETE FROM vps_has_config WHERE config_id = "'.$db->check($id).'"');
+			$db->query('DELETE FROM `config` WHERE id = "'.$db->check($id).'"');
+			
+			add_transaction_clusterwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_CONFIG_DELETE, array("name" => $cfg["name"]));
+		}
+    }
+    
+    function save_default_configs($configs, $new, $cfg_order, $syscfg_name) {
+		global $cluster_cfg;
+		
+		$res = array();
+		
+		if ($cfg_order) {
+			foreach($cfg_order as $cfg)
+				$res[] = ($cfg == "add_config") ? $new : $cfg;
+		} else {
+			$res = $configs;
+			
+			if ($new)
+				$res[] = $new;
+		}
+		
+		$cluster_cfg->set($syscfg_name, $res);
+		
+		return true;
+	}
+    
     function get_location_by_id ($location_id) {
 	global $db;
 	$sql = 'SELECT * FROM locations WHERE location_id = "'.$db->check($location_id).'"';

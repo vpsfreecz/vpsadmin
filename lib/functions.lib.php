@@ -155,6 +155,51 @@ function limit_cpulimit_by_id ($id) {
     return false;
 }
 
+function list_limits() {
+	global $db;
+	
+	$sql = "SELECT gt.id AS grouptype_id, gt.label AS limit_label, g.id AS group_id, g.label AS value_label FROM limit_group g
+	        INNER JOIN limit_grouptype gt ON g.grouptype_id = gt.id
+	        ORDER BY gt.id";
+	$ret = array();
+	$limit = "";
+	$values = array();
+	$gt_id = null;
+	
+	if ($result = $db->query($sql)) {
+		while ($row = $db->fetch_array($result)) {
+			if ($gt_id != $row["grouptype_id"]) {
+				if ($gt_id != null) {
+					$ret[$gt_id] = array("label" => $limit, "values" => $values);
+				}
+				
+				$limit = $row["limit_label"];
+				$values = array();
+				$gt_id = $row["grouptype_id"];
+			}
+			
+			$values[$row["group_id"]] = $row["value_label"];
+		}
+		
+		$ret[$gt_id] = array("label" => $limit, "values" => $values);
+	}
+	
+	return $ret;
+}
+
+function list_configs($empty = false) {
+	global $db;
+	
+	$sql = "SELECT id, `label` FROM config ORDER BY name";
+	$ret = $empty ? array(0 => '---') : array();
+	
+	if ($result = $db->query($sql))
+		while ($row = $db->fetch_array($result))
+			$ret[$row["id"]] = $row["label"];
+	
+	return $ret;
+}
+
 function list_templates() {
     global $db;
     $sql = 'SELECT * FROM cfg_templates ORDER BY templ_label ASC';

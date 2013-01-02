@@ -461,6 +461,119 @@ switch($_REQUEST["action"]) {
 		}
 		$list_cpulimits = true;
 		break;
+	case "limits":
+		$xtpl->title2(_("Limits"));
+		$limits = list_limits();
+		
+		foreach($limits as $gt_id => $limit) {
+			$xtpl->table_title(_($limit["label"]));
+			$xtpl->table_add_category('#');
+			$xtpl->table_add_category(_('Label'));
+			$xtpl->table_add_category(_('Default'));
+			$xtpl->table_add_category('');
+			$xtpl->form_create('?page=cluster&action=limits_edit', 'post');
+			foreach($limit["values"] as $value) {
+				$xtpl->form_add_input_pure('text', '2', 'order[]', '0');
+				$xtpl->form_add_input_pure('text', '20', 'label[]', $value);
+				$xtpl->form_add_checkbox_pure('default[]', '1', 0);
+				$xtpl->table_td('<a href="?page=cluster&action=limits_detail">'._('Edit config').'</a>');
+				$xtpl->table_tr();
+			}
+			$xtpl->table_td('<a href="?page=cluster&action=limits_new_limit&group='.$gt_id.'">'._('New limit').'</a>', false, false, 2);
+			$xtpl->form_out(_("Save changes"));
+		}
+		
+		$xtpl->sbar_add(_("New limit group"), '?page=cluster&action=limits_new_group');
+		break;
+	case "configs":
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		$list_configs = true;
+		break;
+	case "config_new":
+		$xtpl->sbar_add(_("Back"), '?page=cluster&action=configs');
+		$xtpl->title2(_("Create config"));
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		$xtpl->form_create('?page=cluster&action=config_new_save', 'post');
+		$xtpl->form_add_input(_('Name'), 'text', '30', 'name');
+		$xtpl->form_add_input(_('Label'), 'text', '30', 'label');
+		$xtpl->form_add_textarea(_('Config'), '60', '30', 'config');
+		$xtpl->form_out(_('Save'));
+		break;
+	case "config_new_save":
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		if (isset($_POST["config"])) {
+			$cluster->save_config(NULL, $_POST["name"], $_POST["label"], $_POST["config"]);
+			$xtpl->perex(_("Changes saved"), _("Config successfully saved."));
+		}
+		$list_configs = true;
+		break;
+	case "config_edit":
+		if ($cfg = $db->findByColumnOnce("config", "id", $_GET["config"])) {
+			$xtpl->title2(_("Edit config"));
+			$xtpl->table_add_category('');
+			$xtpl->table_add_category('');
+			$xtpl->form_create('?page=cluster&action=config_edit_save&config='.$cfg["id"], 'post');
+			$xtpl->form_add_input(_('Name'), 'text', '30', 'name', $cfg["name"]);
+			$xtpl->form_add_input(_('Label'), 'text', '30', 'label', $cfg["label"]);
+			$xtpl->form_add_textarea(_('Config'), '60', '30', 'config', $cfg["config"]);
+			$xtpl->form_out(_('Save'));
+		}
+		
+		$xtpl->sbar_add(_("Back"), '?page=cluster&action=configs');
+		
+		break;
+	case "config_edit_save":
+		if (isset($_POST["config"])) {
+			$cluster->save_config($_GET["config"], $_POST["name"], $_POST["label"], $_POST["config"]);
+			$xtpl->perex(_("Changes saved"), _("Config successfully saved."));
+		}
+		$list_configs = true;
+		break;
+	case "config_delete":
+		$cluster->delete_config($_GET["config"]);
+		$xtpl->perex(_("Item deleted"), _("Config deleted."));
+		$list_configs = true;
+		break;
+	case "configs_default_save":
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		
+		if (isset($_POST["configs"]) || isset($_POST["add_config"])) {
+			$raw_order = explode('&', $_POST['configs_order']);
+			$cfgs = array();
+			
+			foreach($raw_order as $item) {
+				$item = explode('=', $item);
+				
+				if (!$item[1])
+					continue;
+				elseif ($item[1] == "add_config")
+					$cfgs[] = $item[1];
+				else {
+					$order = explode('_', $item[1]);
+					$cfgs[] = $order[1];
+				}
+			}
+			$cluster->save_default_configs($_POST["configs"] ? $_POST["configs"] : array(), $_POST["add_config"], $cfgs, "default_config_chain");
+			
+			$list_configs=true;
+		} else {
+			$xtpl->perex(_("Error"), 'Error, contact your administrator');
+			$list_configs=true;
+		}
+		
+		break;
+	case "configs_default_del":
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		$chain = $cluster_cfg->get("default_config_chain");
+		$keys = array_keys($chain, $_GET["config"]);
+		
+		foreach($keys as $key)
+			unset($chain[$key]);
+		
+		$cluster_cfg->set("default_config_chain", $chain);
+		$list_configs=true;
+		break;
 	case "newnode":
 		$xtpl->title2(_("Register new server into cluster"));
 		$xtpl->table_add_category('');
@@ -637,22 +750,54 @@ switch($_REQUEST["action"]) {
 		$list_nodes = true;
 		break;
 	case "playground_settings":
-		$xtpl->title2("Manage Playground Settings");
-		$xtpl->table_add_category(_('Default limits'));
-		$xtpl->table_add_category('');
-		$xtpl->form_create('?page=cluster&action=playground_settings_save', 'post');
-		$xtpl->form_add_select(_("RAM").':', 'vps_privvmpages', list_limit_privvmpages(), $cluster_cfg->get("playground_limit_privvmpages"));
-		$xtpl->form_add_select(_("Disk space").':', 'vps_diskspace', list_limit_diskspace(), $cluster_cfg->get("playground_limit_diskspace"));
-		$xtpl->form_add_select(_("CPU").':', 'vps_cpulimit', list_limit_cpulimit(), $cluster_cfg->get("playground_limit_cpulimit"));
-		$xtpl->form_out(_("Save changes"));
 		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		$playground_settings=true;
 		break;
 	case "playground_settings_save":
 		$cluster_cfg->set("playground_limit_privvmpages", $_REQUEST["vps_privvmpages"]);
 		$cluster_cfg->set("playground_limit_diskspace", $_REQUEST["vps_diskspace"]);
 		$cluster_cfg->set("playground_limit_cpulimit", $_REQUEST["vps_cpulimit"]);
 		$xtpl->perex(_("Playground settings saved"), '');
-		$list_nodes = true;
+		$playground_settings = true;
+		break;
+	case "playground_configs_default_save":
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		
+		if (isset($_POST["configs"]) || isset($_POST["add_config"])) {
+			$raw_order = explode('&', $_POST['configs_order']);
+			$cfgs = array();
+			
+			foreach($raw_order as $item) {
+				$item = explode('=', $item);
+				
+				if (!$item[1])
+					continue;
+				elseif ($item[1] == "add_config")
+					$cfgs[] = $item[1];
+				else {
+					$order = explode('_', $item[1]);
+					$cfgs[] = $order[1];
+				}
+			}
+			$cluster->save_default_configs($_POST["configs"] ? $_POST["configs"] : array(), $_POST["add_config"], $cfgs, "playground_default_config_chain");
+			
+			$playground_settings=true;
+		} else {
+			$xtpl->perex(_("Error"), 'Error, contact your administrator');
+			$playground_settings=true;
+		}
+		
+		break;
+	case "playground_configs_default_del":
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		$chain = $cluster_cfg->get("playground_default_config_chain");
+		$keys = array_keys($chain, $_GET["config"]);
+		
+		foreach($keys as $key)
+			unset($chain[$key]);
+		
+		$cluster_cfg->set("playground_default_config_chain", $chain);
+		$playground_settings=true;
 		break;
 	default:
 		$list_nodes = true;
@@ -705,6 +850,7 @@ if ($list_mails) {
 if ($list_nodes) {
 	$xtpl->sbar_add(_("Register new node"), '?page=cluster&action=newnode');
 	$xtpl->sbar_add(_("Manage VPS templates"), '?page=cluster&action=templates');
+	$xtpl->sbar_add(_("Manage configs"), '?page=cluster&action=configs');
 	$xtpl->sbar_add(_("Manage RAM limits"), '?page=cluster&action=ramlimits');
 	$xtpl->sbar_add(_("Manage HDD limits"), '?page=cluster&action=hddlimits');
 	$xtpl->sbar_add(_("Manage CPU limits"), '?page=cluster&action=cpulimits');
@@ -889,6 +1035,61 @@ if ($list_cpulimits) {
 	$xtpl->table_out();
 	$xtpl->sbar_add(_("New CPU limit"), '?page=cluster&action=cpulimit_new');
 }
+
+if ($list_configs) {
+	$xtpl->sbar_add(_("New config"), '?page=cluster&action=config_new');
+	
+	$xtpl->title2(_("Configs"));
+		
+	$xtpl->table_add_category(_('Label'));
+	$xtpl->table_add_category(_('Name'));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+	
+	while($row = $db->find("config", NULL, "name")) {
+		$xtpl->table_td($row["label"]);
+		$xtpl->table_td($row["name"]);
+		$xtpl->table_td('<a href="?page=cluster&action=config_edit&config='.$row["id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		$xtpl->table_td('<a href="?page=cluster&action=config_delete&id='.$row["id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_out();
+	
+	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$("#configs").tableDnD({
+				onDrop: function(table, row) {
+					order = $.tableDnD.serialize();
+					$("#configs_order").val(order);
+					if(row.id == "add_config") return;
+					$.post("ajax.php?page=cluster&action=default_configs_order", {order: order});
+				}
+			});
+		});
+    </script>');
+	
+	$chain = $cluster_cfg->get("default_config_chain");
+	$configs = list_configs();
+	
+	$xtpl->form_create('?page=cluster&action=configs_default_save', 'post');
+	$xtpl->table_title(_("Default config chain"));
+	$xtpl->table_add_category(_('Config'));
+	$xtpl->table_add_category('');
+	
+	foreach($chain as $cfg) {
+		$xtpl->form_add_select_pure('configs[]', $configs, $cfg);
+		$xtpl->table_td('<a href="?page=cluster&action=configs_default_del&config='.$cfg.'">'._('delete').'</a>');
+		$xtpl->table_tr(false, false, false, "order_$cfg");
+	}
+	
+	$xtpl->table_td('<input type="hidden" name="configs_order" id="configs_order" value="">' .  _('Add').':');
+	$xtpl->form_add_select_pure('add_config', list_configs(true));
+	$xtpl->table_tr(false, false, false, 'add_config');
+	$xtpl->form_out(_("Save changes"), 'configs');
+}
+
 if ($list_locations) {
 	$xtpl->title2(_("Cluster locations list"));
 	$xtpl->table_add_category(_("ID"));
@@ -969,6 +1170,50 @@ if ($list_dns) {
 	}
 	$xtpl->table_out();
 	$xtpl->sbar_add(_("New DNS Server"), '?page=cluster&action=dns_new');
+}
+
+if ($playground_settings) {
+	$xtpl->title2("Manage Playground Settings");
+	$xtpl->table_add_category(_('Default limits'));
+	$xtpl->table_add_category('');
+	$xtpl->form_create('?page=cluster&action=playground_settings_save', 'post');
+	$xtpl->form_add_select(_("RAM").':', 'vps_privvmpages', list_limit_privvmpages(), $cluster_cfg->get("playground_limit_privvmpages"));
+	$xtpl->form_add_select(_("Disk space").':', 'vps_diskspace', list_limit_diskspace(), $cluster_cfg->get("playground_limit_diskspace"));
+	$xtpl->form_add_select(_("CPU").':', 'vps_cpulimit', list_limit_cpulimit(), $cluster_cfg->get("playground_limit_cpulimit"));
+	$xtpl->form_out(_("Save changes"));
+	
+	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$("#configs").tableDnD({
+				onDrop: function(table, row) {
+					order = $.tableDnD.serialize();
+					$("#configs_order").val(order);
+					if(row.id == "add_config") return;
+					$.post("ajax.php?page=cluster&action=playground_default_configs_order", {order: order});
+				}
+			});
+		});
+	</script>');
+	
+	$chain = $cluster_cfg->get("playground_default_config_chain");
+	$configs = list_configs();
+	
+	$xtpl->form_create('?page=cluster&action=playground_configs_default_save', 'post');
+	$xtpl->table_title(_("Playground config chain"));
+	$xtpl->table_add_category(_('Config'));
+	$xtpl->table_add_category('');
+	
+	foreach($chain as $cfg) {
+		$xtpl->form_add_select_pure('configs[]', $configs, $cfg);
+		$xtpl->table_td('<a href="?page=cluster&action=playground_configs_default_del&config='.$cfg.'">'._('delete').'</a>');
+		$xtpl->table_tr(false, false, false, "order_$cfg");
+	}
+	
+	$xtpl->table_td('<input type="hidden" name="configs_order" id="configs_order" value="">' .  _('Add').':');
+	$xtpl->form_add_select_pure('add_config', list_configs(true));
+	$xtpl->table_tr(false, false, false, 'add_config');
+	$xtpl->form_out(_("Save changes"), 'configs');
 }
 
 $xtpl->sbar_out(_("Manage Cluster"));
