@@ -79,7 +79,7 @@ class vps_load {
 	return true;
   }
 
-  function create_new($server_id, $template_id, $hostname, $m_id, $privvmpages, $diskspace, $cpulimit, $info) {
+  function create_new($server_id, $template_id, $hostname, $m_id, $info) {
 	global $db, $cluster;
 	if (!$this->exists && $template = template_by_id($template_id)) {
 		$server = $db->findByColumnOnce("servers", "server_id", $server_id);
@@ -93,10 +93,7 @@ class vps_load {
 				    vps_hostname ="'.$db->check($hostname).'",
 				    vps_server ="'.$db->check($server_id).'",
 				    vps_onboot ="'.$db->check($location["location_vps_onboot"]).'",
-				    vps_privvmpages = 0,
-				    vps_onstartall = 1,
-				    vps_diskspace = 0,
-				    vps_cpulimit = 0';
+				    vps_onstartall = 1';
 		$db->query($sql);
 		$this->veid = $db->insert_id();
 		$this->exists = true;
@@ -110,9 +107,6 @@ class vps_load {
 		$this->ve["vps_template"] = $template["templ_name"];
 		$this->ve["vps_onboot"] = $location["location_vps_onboot"];
 		add_transaction($_SESSION["member"]["m_id"], $server_id, $this->veid, T_CREATE_VE, $params);
-		$this->set_privvmpages($privvmpages, true);
-		$this->set_diskspace($diskspace, true);
-		$this->set_cpulimit($cpulimit, true);
     $this->nameserver($cluster->get_first_suitable_dns($cluster->get_location_of_server($server_id)));
 	}
   }
@@ -130,9 +124,6 @@ class vps_load {
 		$this->ve["vps_nameserver"] = "8.8.8.8";
 		$params["nameserver"] = $this->ve["vps_nameserver"];
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_REINSTALL_VE, $params);
-		$this->set_privvmpages($this->ve["vps_privvmpages"], true);
-		$this->set_diskspace($this->ve["vps_diskspace"], true);
-		$this->set_cpulimit($this->ve["vps_cpulimit"], true);
 		$this->applyconfigs();
     if ($ips)
       foreach ($ips as $ip) {
@@ -386,67 +377,6 @@ function ipadd($ip, $type = 4) {
 	  } else return false;
 	}
   }
-
-
-  function set_privvmpages($privvmpages, $force = false) {
-	global $db;
-	if (($this->exists && $_SESSION["is_admin"]) || $force) {
-	  $vm = limit_privvmpages_by_id($privvmpages);
-	  $vzctl = "{$vm["vm_lim_soft"]}M". (($vm["vm_lim_hard"]) ? ":{$vm["vm_lim_hard"]}M" : '');
-	  $sql = 'UPDATE vps SET vps_privvmpages = "'.$db->check($privvmpages).'" WHERE vps_id = '.$db->check($this->veid);
-	  $db->query($sql);
-	  if ($db->affected_rows() == 1 || $force) {
-		$command = array('privvmpages' => $vzctl);
-		$this->ve["vps_privvmpages"] = $privvmpages;
-		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_LIMITS, $command);
-	  } else return array('0' => '');
-	}
-  }
-
-  function set_diskspace($diskspace, $force = false) {
-	global $db;
-	if (($this->exists && $_SESSION["is_admin"]) || $force) {
-	  $d = limit_diskspace_by_id($diskspace);
-	  $vzctl = "{$d["d_gb"]}G:{$d["d_gb"]}G";
-	  $sql = 'UPDATE vps SET vps_diskspace = "'.$db->check($diskspace).'" WHERE vps_id = '.$db->check($this->veid);
-	  $db->query($sql);
-	  if ($db->affected_rows() == 1 || $force) {
-		$command = array('diskspace' => $vzctl);
-		$this->ve["vps_diskspace"] = $diskspace;
-		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_LIMITS, $command);
-	  } else return array('0' => '');
-	}
-  }
-  
-  function set_cpulimit($cpulimit, $force = false) {
-	global $db;
-	if (($this->exists && $_SESSION["is_admin"]) || $force) {
-	  $cpu = limit_cpulimit_by_id($cpulimit);
-	  $sql = 'UPDATE vps SET vps_cpulimit = "'.$db->check($cpulimit).'" WHERE vps_id = '.$db->check($this->veid);
-	  $db->query($sql);
-	  if ($db->affected_rows() == 1 || $force) {
-		$command = array("cpulimit" => $cpu["cpu_limit"], "cpus" => $cpu["cpu_cpus"]);
-		$this->ve["vps_cpulimit"] = $cpulimit;
-		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_LIMITS, $command);
-	  } else return array('0' => '');
-	}
-  }
-  
-  function get_limits() {
-	global $db;
-	
-	$sql = "SELECT g.grouptype_id, g.id AS group_id, gt.label AS limit_label, g.label AS limit_value FROM vps_has_limit_group vl
-	        INNER JOIN limit_group g ON vl.group_id = g.id
-	        INNER JOIN limit_grouptype gt ON g.grouptype_id = gt.id
-	        WHERE vl.vps_id = ".$db->check($this->veid)."";
-	$ret = array();
-	
-	if ($result = $db->query($sql))
-		while ($row = $db->fetch_array($result))
-			$ret[$row["grouptype_id"]] = array("group_id" => $row["group_id"], "limit" => $row["limit_label"], "value" => $row["limit_value"]);
-	
-	return $ret;
-  }
   
   function get_configs() {
 	global $db;
@@ -540,31 +470,24 @@ function ipadd($ip, $type = 4) {
 	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_APPLYCONFIG, $cmd);
   }
   
-  function limit_change_notify() {
+  function configs_change_notify() {
 	global $db, $cluster_cfg;
 
 	$subject = $cluster_cfg->get("mailer_tpl_limits_change_subj");
 	$subject = str_replace("%member%", $this->ve["m_nick"], $subject);
 	$subject = str_replace("%vpsid%", $this->veid, $subject);
 	
-	if(($cpu = limit_cpulimit_by_id($this->ve["vps_cpulimit"])))
-		$cpulimit = $cpu["cpu_label"];
-	else $cpulimit = "Undefined";
-	
-	if(($ram = limit_privvmpages_by_id($this->ve["vps_privvmpages"])))
-		$privvmpages = $ram["vm_label"];
-	else $privvmpages = "Undefined";
-	
-	if(($hdd = limit_diskspace_by_id($this->ve["vps_diskspace"])))
-		$hddlimit = $hdd["d_label"];
-	else $hddlimit = "Undefined";
-	
 	$content = $cluster_cfg->get("mailer_tpl_limits_changed");
 	$content = str_replace("%member%", $this->ve["m_nick"], $content);
 	$content = str_replace("%vpsid%", $this->veid, $content);
-	$content = str_replace("%cpulimit%", $cpulimit, $content);
-	$content = str_replace("%ramlimit%", $privvmpages, $content);
-	$content = str_replace("%hddlimit%", $hddlimit, $content);
+	
+	$configs_str = "";
+	$configs = $this->get_configs();
+	
+	foreach($configs as $id => $label)
+		$configs_str .= "\t- $label\n";
+	
+	$content = str_replace("%configs%", $configs_str, $content);
 	
 	send_mail($this->ve["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
   }
@@ -659,7 +582,7 @@ function ipadd($ip, $type = 4) {
 	send_mail($this->ve["m_mail"], $subj, $content, array(), array(), true, $dl_id);
   }
   
-  function clone_vps($m_id, $server_id, $hostname, $limits, $features, $backuper) {
+  function clone_vps($m_id, $server_id, $hostname, $configs, $features, $backuper) {
 	global $db;
 	$sql = 'INSERT INTO vps
 			SET m_id = "'.$db->check($m_id).'",
@@ -670,14 +593,11 @@ function ipadd($ip, $type = 4) {
 				vps_nameserver ="'.$db->check($this->ve["vps_nameserver"]).'",
 				vps_server ="'.$db->check($server_id).'",
 				vps_onboot ="'.$db->check($this->ve["vps_onboot"]).'",
-				vps_privvmpages = 0,
 				vps_onstartall = '.$db->check($this->ve["vps_onstartall"]).',
-				vps_diskspace = 0,
-				vps_cpulimit = 0,
 				vps_features_enabled = 0,
 				vps_backup_enabled = '.$db->check($backuper ? $this->ve["vps_backup_enabled"] : 1).',
 				vps_backup_exclude = "'.$db->check($backuper ? $this->ve["vps_backup_exclude"] : '').'",
-				vps_config = "'.$db->check($limits ? $this->ve["vps_config"] : '').'"';
+				vps_config = "'.$db->check($configs ? $this->ve["vps_config"] : '').'"';
 		$db->query($sql);
 		$clone = vps_load($db->insert_id());
 		
@@ -692,24 +612,18 @@ function ipadd($ip, $type = 4) {
 		
 		add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_CLONE_VE, $params);
 		
-		$l = array();
-		switch($limits) {
+		switch($configs) {
 			case 0:
-				$l = array(1, 1, 1);
+			$clone->add_default_configs("default_config_chain");
 				break;
 			case 1:
-				$l = array($this->ve["vps_privvmpages"], $this->ve["vps_diskspace"], $this->ve["vps_cpulimit"]);
 				$db->query("INSERT INTO vps_has_config (vps_id, config_id, `order`) SELECT '".$db->check($clone->veid)."' AS vps_id, config_id, `order` FROM vps_has_config WHERE vps_id = '".$db->check($this->veid)."'");
 				$clone->applyconfigs();
 				break;
 			case 2:
-				$l = array($cluster_cfg->get("playground_limit_privvmpages"), $cluster_cfg->get("playground_limit_diskspace"), $cluster_cfg->get("playground_limit_cpulimit"));
 				$clone->add_default_configs("playground_default_config_chain");
 				break;
 		}
-		$clone->set_privvmpages($l[0]);
-		$clone->set_diskspace($l[1]);
-		$clone->set_cpulimit($l[2]);
 		
 		if ($features && $this->ve["vps_features_enabled"])
 			add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_ENABLE_FEATURES);
