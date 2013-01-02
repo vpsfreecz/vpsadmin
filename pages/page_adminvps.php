@@ -115,8 +115,11 @@ switch ($_GET["action"]) {
 													$playground_mode ? '' : $_REQUEST["vps_info"]);
 						
 						if ($playground_mode) {
+							$vps->add_default_configs("playground_default_config_chain");
 							$vps->add_first_available_ip($server["server_location"], 4);
 							$vps->add_first_available_ip($server["server_location"], 6);
+						} else {
+							$vps->add_default_configs("default_config_chain");
 						}
 
 						$veid = $vps->veid;
@@ -203,6 +206,59 @@ switch ($_GET["action"]) {
 				$xtpl->perex(_("Error"), 'Error, contact your administrator');
 				$show_info=true;
 			}
+			break;
+		case 'configs':
+			if ($_SESSION["is_admin"] && isset($_REQUEST["veid"]) && (isset($_POST["configs"]) || isset($_POST["add_config"]))) {
+				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
+				if ($vps->exists) {
+					$raw_order = explode('&', $_POST['configs_order']);
+					$cfgs = array();
+					
+					foreach($raw_order as $item) {
+						$item = explode('=', $item);
+						
+						if (!$item[1])
+							continue;
+						elseif ($item[1] == "add_config")
+							$cfgs[] = $item[1];
+						else {
+							$order = explode('_', $item[1]);
+							$cfgs[] = $order[1];
+						}
+					}
+					$vps->update_configs($_POST["configs"] ? $_POST["configs"] : array(), $_POST["add_config"], $cfgs);
+					
+					$show_info=true;
+				}
+			} else {
+				$xtpl->perex(_("Error"), 'Error, contact your administrator');
+				$show_info=true;
+			}
+			break;
+		case 'config_del':
+			if ($_SESSION["is_admin"] && isset($_REQUEST["veid"])) {
+				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
+				if ($vps->exists) {
+					$vps->config_del($_GET["config"]);
+					$show_info=true;
+				}
+			} else {
+				$xtpl->perex(_("Error"), 'Error, contact your administrator');
+				$show_info=true;
+			}
+			break;
+		case 'custom_config':
+			if ($_SESSION["is_admin"] && isset($_POST["custom_config"])) {
+				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
+				if ($vps->exists) {
+					$vps->update_custom_config($_POST["custom_config"]);
+					$show_info=true;
+				}
+			} else {
+				$xtpl->perex(_("Error"), 'Error, contact your administrator');
+				$show_info=true;
+			}
+			
 			break;
 		case 'chown':
 			if (($_REQUEST["m_id"] > 0) && isset($_REQUEST["veid"]) && $_SESSION["is_admin"]) {
@@ -479,18 +535,17 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_td(_("Owner").':');
 	$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$vps->ve['m_id'].'">'.(isset($vps->ve["m_nick"]) ? $vps->ve["m_nick"] : false ).'</a>');
 		$xtpl->table_tr();
-	$xtpl->table_td(_("CPU").':');
-	$cpulimit = limit_cpulimit_by_id($vps->ve["vps_cpulimit"]);
-	$xtpl->table_td($cpulimit["cpu_label"]);
+	
+	/*
+	$vps_limits = $vps->get_limits();
+	
+	foreach($vps_limits as $gt_id => $limit) {
+		$xtpl->table_td(_($limit["limit"]).':');
+		$xtpl->table_td($limit["value"]);
 		$xtpl->table_tr();
-	$xtpl->table_td(_("RAM").':');
-	$privvmpages = limit_privvmpages_by_id($vps->ve["vps_privvmpages"]);
-	$xtpl->table_td($privvmpages["vm_label"]);
-		$xtpl->table_tr();
-	$xtpl->table_td(_("Disk space").':');
-	$diskspace = limit_diskspace_by_id($vps->ve["vps_diskspace"]);
-	$xtpl->table_td($diskspace["d_label"]);
-		$xtpl->table_tr();
+	}
+	*/
+	
 	$xtpl->table_td(_("Status").':');
 	$xtpl->table_td(
 		(($vps->ve["vps_up"]) ?
@@ -622,8 +677,77 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->form_out(_("Go >>"));
 
+// Configs
+	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$("#configs").tableDnD({
+				onDrop: function(table, row) {
+					order = $.tableDnD.serialize();
+					$("#configs_order").val(order);
+					if(row.id == "add_config") return;
+					$.post("ajax.php?page=vps&action=configs_order&veid='.$vps->veid.'", {order: order});
+				}
+			});
+			
+			$("#table-5 tr").hover(function() {
+				$(this.cells[0]).addClass("showDragHandle");
+				}, function() {
+				$(this.cells[0]).removeClass("showDragHandle");
+			});
+		});
+    </script>');
+	
+	$vps_configs = $vps->get_configs();
+	$configs = list_configs();
+	
+	if ($_SESSION["is_admin"])
+		$xtpl->form_create('?page=adminvps&action=configs&veid='.$vps->veid, 'post');
+	$xtpl->table_add_category(_('Configs'));
+	
+	if ($_SESSION["is_admin"])
+		$xtpl->table_add_category('');
+	
+	foreach($vps_configs as $id => $label) {
+		if ($_SESSION["is_admin"]) {
+			$xtpl->form_add_select_pure('configs[]', $configs, $id);
+			$xtpl->table_td('<a href="?page=adminvps&action=config_del&veid='.$vps->veid.'&config='.$id.'">'._('delete').'</a>');
+		} else $xtpl->table_td($label);
+		$xtpl->table_tr(false, false, false, "order_$id");
+	}
+	
+	if ($_SESSION["is_admin"]) {
+		$xtpl->table_td('<input type="hidden" name="configs_order" id="configs_order" value="">' .  _('Add').':');
+		$xtpl->form_add_select_pure('add_config', list_configs(true));
+		$xtpl->table_tr(false, false, false, 'add_config');
+		$xtpl->form_out(_("Go >>>"), 'configs');
+	}
+	
+// Custom config
+	if ($_SESSION["is_admin"]) {
+		$xtpl->form_create('?page=adminvps&action=custom_config&veid='.$vps->veid, 'post');
+		$xtpl->table_add_category(_("Custom config"));
+		$xtpl->table_add_category('');
+		$xtpl->form_add_textarea(_("Config").':', 60, 10, 'custom_config', $vps->ve["vps_config"], _('Applied last'));
+		$xtpl->form_out(_("Go >>"));
+	}
+	
 // VPS Limits
 	if ($_SESSION["is_admin"]) {
+	/*
+		$limits = list_limits();
+		
+		$xtpl->form_create('?page=adminvps&action=editlimits&veid='.$vps->veid, 'post');
+		
+		foreach($limits as $gt_id => $lim) 
+			$xtpl->form_add_select(_($lim["label"]).':', $gt_id, $lim["values"], $vps_limits[$gt_id]["group_id"],  '');
+		
+		$xtpl->form_add_checkbox(_("Notify owner").':', 'notify_owner', '1', true);
+		$xtpl->table_add_category(_("Change limits"));
+		$xtpl->table_add_category('&nbsp;');
+		$xtpl->form_out(_("Go >>"));
+		*/
+	
 		$xtpl->form_create('?page=adminvps&action=editlimits&veid='.$vps->veid, 'post');
 		$xtpl->form_add_select(_("RAM").':', 'vps_privvmpages', list_limit_privvmpages(), $vps->ve["vps_privvmpages"],  '');
 		$xtpl->form_add_select(_("Disk space").':', 'vps_diskspace', list_limit_diskspace(), $vps->ve["vps_diskspace"],  '');

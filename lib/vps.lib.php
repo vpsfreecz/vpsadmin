@@ -133,6 +133,7 @@ class vps_load {
 		$this->set_privvmpages($this->ve["vps_privvmpages"], true);
 		$this->set_diskspace($this->ve["vps_diskspace"], true);
 		$this->set_cpulimit($this->ve["vps_cpulimit"], true);
+		$this->applyconfigs();
     if ($ips)
       foreach ($ips as $ip) {
         $this->ipadd($ip["ip_addr"]);
@@ -431,6 +432,114 @@ function ipadd($ip, $type = 4) {
 	}
   }
   
+  function get_limits() {
+	global $db;
+	
+	$sql = "SELECT g.grouptype_id, g.id AS group_id, gt.label AS limit_label, g.label AS limit_value FROM vps_has_limit_group vl
+	        INNER JOIN limit_group g ON vl.group_id = g.id
+	        INNER JOIN limit_grouptype gt ON g.grouptype_id = gt.id
+	        WHERE vl.vps_id = ".$db->check($this->veid)."";
+	$ret = array();
+	
+	if ($result = $db->query($sql))
+		while ($row = $db->fetch_array($result))
+			$ret[$row["grouptype_id"]] = array("group_id" => $row["group_id"], "limit" => $row["limit_label"], "value" => $row["limit_value"]);
+	
+	return $ret;
+  }
+  
+  function get_configs() {
+	global $db;
+	
+	$sql = "SELECT config_id, c.label FROM vps_has_config vhc
+	        INNER JOIN config c ON c.id = vhc.config_id
+	        WHERE vhc.vps_id = ".$db->check($this->veid)."
+	        ORDER BY vhc.order ASC";
+	$ret = array();
+	
+	if ($result = $db->query($sql))
+		while ($row = $db->fetch_array($result))
+			$ret[$row["config_id"]] = $row["label"];
+	
+	return $ret;
+  }
+  
+  function update_configs($configs, $new, $cfg_order) {
+	global $db;
+	
+	if (!$db->query("DELETE FROM vps_has_config WHERE vps_id = ".$db->check($this->veid))) {
+		return false;
+	}
+	
+	$i = 1;
+	
+	if ($cfg_order) {
+		foreach($cfg_order as $cfg) {
+			$db->query("INSERT INTO vps_has_config SET vps_id = ".$db->check($this->veid).", config_id = ".$db->check(($cfg == "add_config") ? $new : $cfg).", `order` = ".$i++."");
+		}
+	} else {
+		foreach($configs as $cfg) {
+			$db->query("INSERT INTO vps_has_config SET vps_id = ".$db->check($this->veid).", config_id = ".$db->check($cfg).", `order` = ".$i++."");
+		}
+		if ($new)
+			$db->query("INSERT INTO vps_has_config SET vps_id = ".$db->check($this->veid).", config_id = ".$db->check($new).", `order` = ".$i++);
+	}
+	
+	$this->applyconfigs();
+	
+	return true;
+  }
+  
+  function config_del($cfg) {
+	global $db;
+	
+	if ($db->query("DELETE FROM vps_has_config WHERE vps_id = ".$db->check($this->veid)." AND config_id = ".$db->check($cfg)."")) {
+		$this->applyconfigs();
+		return true;
+	}
+	return false;
+  }
+  
+  function update_custom_config($cfg) {
+	global $db;
+	
+	$db->query("UPDATE vps SET vps_config = '".$db->check($cfg)."' WHERE vps_id = '".$db->check($this->veid)."'");
+	
+	add_transaction_clusterwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_CONFIG_CREATE, array("name" => "vps-".$this->veid, "config" => $cfg));
+	$this->applyconfigs();
+  }
+  
+  function add_default_configs($cfg_name) {
+	global $db, $cluster_cfg;
+	
+	$chain = $cluster_cfg->get($cfg_name);
+	$i = 1;
+	foreach ($chain as $cfg) {
+		$db->query("INSERT INTO vps_has_config SET vps_id = '".$db->check($this->veid)."', config_id = '".$db->check($cfg)."', `order` = ".$i++."");
+	}
+	
+	$this->applyconfigs();
+  }
+  
+  function applyconfigs() {
+	global $db;
+	
+	$sql = "SELECT c.name FROM vps_has_config vhc
+	        INNER JOIN config c ON c.id = vhc.config_id
+	        WHERE vhc.vps_id = ".$db->check($this->veid)."
+	        ORDER BY vhc.order ASC";
+	$cmd = array("configs" => array());
+	
+	if ($result = $db->query($sql))
+		while ($row = $db->fetch_array($result))
+			$cmd["configs"][] = $row["name"];
+			
+	if ($this->ve["vps_config"])
+		$cmd["configs"][] = "vps-".$this->veid;
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_APPLYCONFIG, $cmd);
+  }
+  
   function limit_change_notify() {
 	global $db, $cluster_cfg;
 
@@ -567,7 +676,8 @@ function ipadd($ip, $type = 4) {
 				vps_cpulimit = 0,
 				vps_features_enabled = 0,
 				vps_backup_enabled = '.$db->check($backuper ? $this->ve["vps_backup_enabled"] : 1).',
-				vps_backup_exclude = "'.$db->check($backuper ? $this->ve["vps_backup_exclude"] : '').'"';
+				vps_backup_exclude = "'.$db->check($backuper ? $this->ve["vps_backup_exclude"] : '').'",
+				vps_config = "'.$db->check($limits ? $this->ve["vps_config"] : '').'"';
 		$db->query($sql);
 		$clone = vps_load($db->insert_id());
 		
@@ -589,9 +699,12 @@ function ipadd($ip, $type = 4) {
 				break;
 			case 1:
 				$l = array($this->ve["vps_privvmpages"], $this->ve["vps_diskspace"], $this->ve["vps_cpulimit"]);
+				$db->query("INSERT INTO vps_has_config (vps_id, config_id, `order`) SELECT '".$db->check($clone->veid)."' AS vps_id, config_id, `order` FROM vps_has_config WHERE vps_id = '".$db->check($this->veid)."'");
+				$clone->applyconfigs();
 				break;
 			case 2:
 				$l = array($cluster_cfg->get("playground_limit_privvmpages"), $cluster_cfg->get("playground_limit_diskspace"), $cluster_cfg->get("playground_limit_cpulimit"));
+				$clone->add_default_configs("playground_default_config_chain");
 				break;
 		}
 		$clone->set_privvmpages($l[0]);
