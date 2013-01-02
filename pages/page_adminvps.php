@@ -30,9 +30,6 @@ function print_newvps() {
 	$xtpl->form_add_select(_("Distribution").':', 'vps_template', list_templates(), '',  '');
 	
 	if ($_SESSION["is_admin"]) {
-		$xtpl->form_add_select(_("RAM").':', 'vps_privvmpages', list_limit_privvmpages(), '1',  '');
-		$xtpl->form_add_select(_("Disk space").':', 'vps_diskspace', list_limit_diskspace(), '1',  '');
-		$xtpl->form_add_select(_("CPU").':', 'vps_cpulimit', list_limit_cpulimit(), '1',  '');
 		//$xtpl->form_add_select(_("IPv4").':', 'ipv4', get_all_ip_list(4), '1', '');
 		$xtpl->form_add_checkbox(_("Boot on create").':', 'boot_after_create', '1', true, $hint = '');
 		$xtpl->form_add_textarea(_("Extra information about VPS").':', 28, 4, 'vps_info', '', '');
@@ -83,10 +80,8 @@ switch ($_GET["action"]) {
 		case 'new2':
 			if ((ereg('^[a-zA-Z0-9\.\-]{1,30}$',$_REQUEST["vps_hostname"])
 			    && $_GET["create"]
-			    && ($diskspace = limit_diskspace_by_id($_REQUEST["vps_diskspace"]) || $playground_mode)
-			    && ($privvmpages = limit_privvmpages_by_id($_REQUEST["vps_privvmpages"]) || $playground_mode))
 			    && ($server = server_by_id($_REQUEST["vps_server"]))
-			    && ($_SESSION["is_admin"] || $playground_mode))
+			    && ($_SESSION["is_admin"] || $playground_mode)))
 					{
 					
 					if ($playground_mode) {
@@ -109,9 +104,6 @@ switch ($_GET["action"]) {
 													$_REQUEST["vps_template"],
 													$_REQUEST["vps_hostname"],
 													$playground_mode ? $_SESSION["member"]["m_id"] : $_REQUEST["m_id"],
-													$playground_mode ? $cluster_cfg->get("playground_limit_privvmpages") : $_REQUEST["vps_privvmpages"],
-													$playground_mode ? $cluster_cfg->get("playground_limit_diskspace") : $_REQUEST["vps_diskspace"],
-													$playground_mode ? $cluster_cfg->get("playground_limit_cpulimit") : $_REQUEST["vps_cpulimit"],
 													$playground_mode ? '' : $_REQUEST["vps_info"]);
 						
 						if ($playground_mode) {
@@ -185,28 +177,6 @@ switch ($_GET["action"]) {
 				$show_info=true;
 			}
 			break;
-		case 'editlimits':
-			if (isset($_REQUEST["veid"]) && $_SESSION["is_admin"]
-			    && ($diskspace = limit_diskspace_by_id($_REQUEST["vps_diskspace"]))
-			    && ($privvmpages = limit_privvmpages_by_id($_REQUEST["vps_privvmpages"]))
-			    && ($cpulimit = limit_cpulimit_by_id($_REQUEST["vps_cpulimit"]))
-			    ) {
-				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				if ($vps->exists) {
-					$vps->set_privvmpages($_REQUEST["vps_privvmpages"]);
-					$vps->set_diskspace($_REQUEST["vps_diskspace"]);
-					$vps->set_cpulimit($_REQUEST["vps_cpulimit"]);
-					$xtpl->perex_cmd_output(_("Limits change")." {$vps->veid} ".strtolower(_("planned")), $out);
-					$show_info=true;
-					
-					if($_REQUEST["notify_owner"])
-						$vps->limit_change_notify();
-				}
-			} else {
-				$xtpl->perex(_("Error"), 'Error, contact your administrator');
-				$show_info=true;
-			}
-			break;
 		case 'configs':
 			if ($_SESSION["is_admin"] && isset($_REQUEST["veid"]) && (isset($_POST["configs"]) || isset($_POST["add_config"]))) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
@@ -227,6 +197,9 @@ switch ($_GET["action"]) {
 						}
 					}
 					$vps->update_configs($_POST["configs"] ? $_POST["configs"] : array(), $_POST["add_config"], $cfgs);
+					
+					if($_REQUEST["notify_owner"])
+						$vps->configs_change_notify();
 					
 					$show_info=true;
 				}
@@ -409,7 +382,7 @@ switch ($_GET["action"]) {
 				$vps->clone_vps($playground_mode ? $vps->ve["m_id"] : $_REQUEST["target_owner_id"],
 								$_REQUEST["target_server_id"],
 								$_REQUEST["hostname"],
-								$playground_mode ? 1 : $_REQUEST["limits"],
+								$playground_mode ? 1 : $_REQUEST["configs"],
 								$playground_mode ? 1 : $_REQUEST["features"],
 								$playground_mode ? 0 : $_REQUEST["backuper"]
 				);
@@ -535,16 +508,6 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_td(_("Owner").':');
 	$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$vps->ve['m_id'].'">'.(isset($vps->ve["m_nick"]) ? $vps->ve["m_nick"] : false ).'</a>');
 		$xtpl->table_tr();
-	
-	/*
-	$vps_limits = $vps->get_limits();
-	
-	foreach($vps_limits as $gt_id => $limit) {
-		$xtpl->table_td(_($limit["limit"]).':');
-		$xtpl->table_td($limit["value"]);
-		$xtpl->table_tr();
-	}
-	*/
 	
 	$xtpl->table_td(_("Status").':');
 	$xtpl->table_td(
@@ -720,7 +683,11 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_td('<input type="hidden" name="configs_order" id="configs_order" value="">' .  _('Add').':');
 		$xtpl->form_add_select_pure('add_config', list_configs(true));
 		$xtpl->table_tr(false, false, false, 'add_config');
+		$xtpl->form_add_checkbox(_("Notify owner").':', 'notify_owner', '1', true);
+		$xtpl->table_tr(false, "nodrag nodrop", false);
 		$xtpl->form_out(_("Go >>>"), 'configs');
+	} else {
+		$xtpl->table_out();
 	}
 	
 // Custom config
@@ -729,32 +696,6 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_add_category(_("Custom config"));
 		$xtpl->table_add_category('');
 		$xtpl->form_add_textarea(_("Config").':', 60, 10, 'custom_config', $vps->ve["vps_config"], _('Applied last'));
-		$xtpl->form_out(_("Go >>"));
-	}
-	
-// VPS Limits
-	if ($_SESSION["is_admin"]) {
-	/*
-		$limits = list_limits();
-		
-		$xtpl->form_create('?page=adminvps&action=editlimits&veid='.$vps->veid, 'post');
-		
-		foreach($limits as $gt_id => $lim) 
-			$xtpl->form_add_select(_($lim["label"]).':', $gt_id, $lim["values"], $vps_limits[$gt_id]["group_id"],  '');
-		
-		$xtpl->form_add_checkbox(_("Notify owner").':', 'notify_owner', '1', true);
-		$xtpl->table_add_category(_("Change limits"));
-		$xtpl->table_add_category('&nbsp;');
-		$xtpl->form_out(_("Go >>"));
-		*/
-	
-		$xtpl->form_create('?page=adminvps&action=editlimits&veid='.$vps->veid, 'post');
-		$xtpl->form_add_select(_("RAM").':', 'vps_privvmpages', list_limit_privvmpages(), $vps->ve["vps_privvmpages"],  '');
-		$xtpl->form_add_select(_("Disk space").':', 'vps_diskspace', list_limit_diskspace(), $vps->ve["vps_diskspace"],  '');
-		$xtpl->form_add_select(_("CPU").':', 'vps_cpulimit', list_limit_cpulimit(), $vps->ve["vps_cpulimit"],  '');
-		$xtpl->form_add_checkbox(_("Notify owner").':', 'notify_owner', '1', true);
-		$xtpl->table_add_category(_("Change limits"));
-		$xtpl->table_add_category('&nbsp;');
 		$xtpl->form_out(_("Go >>"));
 	}
 
@@ -833,7 +774,7 @@ if (isset($show_info) && $show_info) {
 		$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'hostname', $vps->ve["vps_hostname"] . "-{$vps->veid}-clone");
 		
 		if ($_SESSION["is_admin"]) {
-			$xtpl->form_add_checkbox(_("Clone limits").':', 'limits', '1', true);
+			$xtpl->form_add_checkbox(_("Clone configs").':', 'configs', '1', true);
 			$xtpl->form_add_checkbox(_("Clone features").':', 'features', '1', true);
 			$xtpl->form_add_checkbox(_("Clone backuper").':', 'backuper', '1', true);
 		}
