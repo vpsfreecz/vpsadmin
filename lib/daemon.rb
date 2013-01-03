@@ -97,8 +97,8 @@ module VpsAdmind
 								t.t_done = 0
 								AND d.t_done = 1
 								AND t.t_server = #{$APP_CONFIG[:vpsadmin][:server_id]}
-								
 								GROUP BY t_vps, t_priority)
+							
 								ORDER BY t_priority DESC, t_id ASC LIMIT #{$APP_CONFIG[:vpsadmin][:threads]}
 							) tmp
 							GROUP BY t_vps")
@@ -152,10 +152,10 @@ module VpsAdmind
 						
 						fw.reset_traffic_counter
 					end
-		
+					
 					my.prepared("INSERT INTO servers_status
-								SET server_id = ?, timestamp = UNIX_TIMESTAMP(NOW()), ram_free_mb = ?, disk_vz_free_gb = ?, cpu_load = ?, daemon = ?, vpsadmin_version = ?",
-								$APP_CONFIG[:vpsadmin][:server_id], 0, 0, 0, 0, VpsAdmind::VERSION)
+								SET server_id = ?, timestamp = UNIX_TIMESTAMP(NOW()), cpu_load = ?, daemon = ?, vpsadmin_version = ?",
+								$APP_CONFIG[:vpsadmin][:server_id], 0, 0, VpsAdmind::VERSION)
 					
 					my.close
 					
