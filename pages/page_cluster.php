@@ -342,9 +342,10 @@ switch($_REQUEST["action"]) {
 			$xtpl->table_add_category('');
 			$xtpl->table_add_category('');
 			$xtpl->form_create('?page=cluster&action=config_edit_save&config='.$cfg["id"], 'post');
-			$xtpl->form_add_input(_('Name'), 'text', '30', 'name', $cfg["name"]);
-			$xtpl->form_add_input(_('Label'), 'text', '30', 'label', $cfg["label"]);
-			$xtpl->form_add_textarea(_('Config'), '60', '30', 'config', $cfg["config"]);
+			$xtpl->form_add_input(_('Name').':', 'text', '30', 'name', $cfg["name"]);
+			$xtpl->form_add_input(_('Label').':', 'text', '30', 'label', $cfg["label"]);
+			$xtpl->form_add_textarea(_('Config').':', '60', '30', 'config', $cfg["config"]);
+			$xtpl->form_add_checkbox(_("Reconfigure all affected VPSes").':', 'reapply', '1', '1');
 			$xtpl->form_out(_('Save'));
 		}
 		
@@ -353,7 +354,7 @@ switch($_REQUEST["action"]) {
 		break;
 	case "config_edit_save":
 		if (isset($_POST["config"])) {
-			$cluster->save_config($_GET["config"], $_POST["name"], $_POST["label"], $_POST["config"]);
+			$cluster->save_config($_GET["config"], $_POST["name"], $_POST["label"], $_POST["config"], $_POST["reapply"]);
 			$xtpl->perex(_("Changes saved"), _("Config successfully saved."));
 		}
 		$list_configs = true;
@@ -683,55 +684,86 @@ if ($list_nodes) {
 	$xtpl->sbar_add(_("Manage API"), '?page=cluster&action=api_settings');
 	$xtpl->sbar_add(_("Manage playground"), '?page=cluster&action=playground_settings');
 	$xtpl->sbar_add(_("Edit vpsAdmin textfields"), '?page=cluster&action=fields');
+	
 	$sql = 'SELECT * FROM servers ORDER BY server_location,server_id';
 	$list_result = $db->query($sql);
-	$xtpl->table_add_category(_("NAME"));
-	$xtpl->table_add_category(_("LOAD"));
-	$xtpl->table_add_category(_("RAM FREE"));
-	$xtpl->table_add_category(_("HDD FREE"));
-	$xtpl->table_add_category(_("LOCATION"));
-	$xtpl->table_add_category(_("AVAIL"));
-	$xtpl->table_add_category(_("MAX VPS"));
-	$xtpl->table_add_category(_("NOW VPS"));
-	$xtpl->table_add_category(_("STAT"));
-	$xtpl->table_add_category(' ');
-	$xtpl->table_add_category(' ');
+	
+	$i = 1;
+	$on_row = 2;
+	
+	for ($j = 0; $j < $on_row; $j++) {
+		$xtpl->table_add_category(_("NAME"));
+		$xtpl->table_add_category(_("L"));
+		$xtpl->table_add_category(_("R"));
+		$xtpl->table_add_category(_("S"));
+		$xtpl->table_add_category(_("T"));
+		$xtpl->table_add_category(_("M"));
+		$xtpl->table_add_category(_("V"));
+		$xtpl->table_add_category(_("A"));
+		$xtpl->table_add_category(' ');
+		
+		if ($j+1 < $on_row)
+			$xtpl->table_add_category(' ');
+	}
+	
 	while ($srv = $db->fetch_array($list_result)) {
 		$xtpl->table_td($srv["server_name"]);
+		
 		$node = new cluster_node($srv["server_id"]);
 		$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$srv["server_id"].'" ORDER BY id DESC LIMIT 1';
+		
 		if ($result = $db->query($sql))
-		$status = $db->fetch_array($result);
+			$status = $db->fetch_array($result);
+		
 		$xtpl->table_td($status["cpu_load"], false, true);
-		$xtpl->table_td($status["ram_free_mb"].' MB', false, true);
-		$xtpl->table_td($status["disk_vz_free_gb"].' GB', false, true);
-		$xtpl->table_td($node->get_location_label(), false, false);
-		if ($srv["server_availstat"]) {
-		$xtpl->table_td($srv["server_availstat"], false, true);
-		} else {
-		$xtpl->table_td('---', false, true);
-		}
-		$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_server='.$db->check($srv["server_id"]);
-		$vps_count = 0;
+		
+		$sql = 'SELECT COUNT(*) AS count FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1 AND vps_server = '.$db->check($srv["server_id"]);
+		
 		if ($result = $db->query($sql))
-		$vps_count = $db->fetch_array($result);
+			$running_count = $db->fetch_array($result);
+		
+		$xtpl->table_td($running_count["count"]);
+		
+		$sql = 'SELECT COUNT(*) AS count FROM vps v LEFT JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 0 AND vps_server = '.$db->check($srv["server_id"]);
+		
+		if ($result = $db->query($sql))
+			$stopped_count = $db->fetch_array($result);
+			
+		$xtpl->table_td($stopped_count["count"]);
+		
+		$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_server='.$db->check($srv["server_id"]);
+		
+		if ($result = $db->query($sql))
+			$vps_count = $db->fetch_array($result);
+		
 		$xtpl->table_td($vps_count["count"], false, true);
+		
+		$xtpl->table_td($srv["server_maxvps"]);
+		
+		/*
 		$vps_free = ((int)$srv["server_maxvps"]-(int)$vps_count["count"]);
 		$xtpl->table_td($vps_free, false, true);
-
+		*/
+		
+		$xtpl->table_td($status["vpsadmin_version"]);
+		
 		$icons = "";
+		
 		if ($cluster_cfg->get("lock_cron_".$srv["server_id"]))	{
-		$icons .= '<img title="'._("The server is currently processing").'" src="template/icons/warning.png"/>';
+			$icons .= '<img title="'._("The server is currently processing").'" src="template/icons/warning.png"/>';
 		} elseif ((time()-$status["timestamp"]) > 360) {
-		$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
+			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
 		} else {
-		$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
+			$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
 		}
+		
 		$xtpl->table_td($icons, false, true);
-		$xtpl->table_td('<a href="?page=cluster&action=restart_node&id='.$srv["server_id"].'"><img src="template/icons/vps_restart.png" title="'._("Reboot node").'"/></a>');
 		$xtpl->table_td('<a href="?page=cluster&action=node_start_vpses&id='.$srv["server_id"].'"><img src="template/icons/vps_start.png" title="'._("Start all VPSes here").'"/></a>');
-		$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$srv["server_id"].'" ORDER BY id DESC LIMIT 1';
-		$xtpl->table_tr();
+		
+		if (!($i++ % $on_row))
+			$xtpl->table_tr();
+		else
+			$xtpl->table_td('');
 	}
 	$xtpl->table_out();
 }

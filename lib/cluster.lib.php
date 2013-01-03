@@ -536,7 +536,7 @@ class cluster {
 	    }
 	}
     }
-    function save_config($id, $name, $label, $config) {
+    function save_config($id, $name, $label, $config, $reapply = false) {
 		global $db;
 		
 		if($id != NULL)
@@ -551,7 +551,14 @@ class cluster {
 		
 		add_transaction_clusterwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_CONFIG_CREATE, array("name" => $name, "config" => $config));
 		
-		return $db->query($sql);
+		$db->query($sql);
+		
+		if ($reapply) {
+			while($row = $db->findByColumn("vps_has_config", "config_id", $id)) {
+				$vps = vps_load($row["vps_id"]);
+				$vps->applyconfigs();
+			}
+		}
     }
     
     function delete_config($id) {
