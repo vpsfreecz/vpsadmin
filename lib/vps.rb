@@ -55,6 +55,7 @@ class VPS < Executor
 		@params["configs"].each do |cfg|
 			vzctl(:set, @veid, {:applyconfig => cfg}, true)
 		end
+		ok
 	end
 	
 	def features
