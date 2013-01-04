@@ -572,19 +572,19 @@ class cluster {
 		}
     }
     
-    function save_default_configs($configs, $new, $cfg_order, $syscfg_name) {
+    function save_default_configs($configs, $cfg_order, $new_cfgs, $syscfg_name) {
 		global $cluster_cfg;
 		
 		$res = array();
 		
 		if ($cfg_order) {
-			foreach($cfg_order as $cfg)
-				$res[] = ($cfg == "add_config") ? $new : $cfg;
+			$res = $cfg_order;
 		} else {
 			$res = $configs;
 			
-			if ($new)
-				$res[] = $new;
+			foreach($new_cfgs as $cfg)
+				if ($cfg)
+					$res[] = $cfg;
 		}
 		
 		$cluster_cfg->set($syscfg_name, $res);

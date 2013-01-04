@@ -183,36 +183,25 @@ switch ($_GET["action"]) {
 				if ($vps->exists) {
 					$raw_order = explode('&', $_POST['configs_order']);
 					$cfgs = array();
+					$i = 0;
 					
 					foreach($raw_order as $item) {
 						$item = explode('=', $item);
 						
 						if (!$item[1])
 							continue;
-						elseif ($item[1] == "add_config")
-							$cfgs[] = $item[1];
+						elseif (!strncmp($item[1], "add_config", strlen("add_config")))
+							$cfgs[] = $_POST['add_config'][$i++];
 						else {
 							$order = explode('_', $item[1]);
 							$cfgs[] = $order[1];
 						}
 					}
-					$vps->update_configs($_POST["configs"] ? $_POST["configs"] : array(), $_POST["add_config"], $cfgs);
+					$vps->update_configs($_POST["configs"] ? $_POST["configs"] : array(), $cfgs, $_POST['add_config']);
 					
 					if($_REQUEST["notify_owner"])
 						$vps->configs_change_notify();
 					
-					$show_info=true;
-				}
-			} else {
-				$xtpl->perex(_("Error"), 'Error, contact your administrator');
-				$show_info=true;
-			}
-			break;
-		case 'config_del':
-			if ($_SESSION["is_admin"] && isset($_REQUEST["veid"])) {
-				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				if ($vps->exists) {
-					$vps->config_del($_GET["config"]);
 					$show_info=true;
 				}
 			} else {
@@ -641,22 +630,34 @@ if (isset($show_info) && $show_info) {
 	$xtpl->form_out(_("Go >>"));
 
 // Configs
+	$configs_select = list_configs(true);
+	$options = "";
+	
+	foreach($configs_select as $id => $label)
+		$options .= '<option value="'.$id.'">'.$label.'</option>';
+	
 	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
 	<script type="text/javascript">
-		$(document).ready(function() {
+		function dnd() {
 			$("#configs").tableDnD({
 				onDrop: function(table, row) {
-					order = $.tableDnD.serialize();
-					$("#configs_order").val(order);
-					if(row.id == "add_config") return;
-					$.post("ajax.php?page=vps&action=configs_order&veid='.$vps->veid.'", {order: order});
+					$("#configs_order").val($.tableDnD.serialize());
 				}
 			});
+		}
+		
+		$(document).ready(function() {
+			var add_config_id = 1;
 			
-			$("#table-5 tr").hover(function() {
-				$(this.cells[0]).addClass("showDragHandle");
-				}, function() {
-				$(this.cells[0]).removeClass("showDragHandle");
+			dnd();
+			
+			$("#add_row").click(function (){
+				$(\'<tr id="add_config_\' + add_config_id++ + \'"><td>'._('Add').':</td><td><select name="add_config[]">'.$options.'</select></td></tr>\').fadeIn("slow").insertBefore("#configs tr:nth-last-child(3)");
+				dnd();
+			});
+			
+			$(".delete-config").click(function (){
+				$(this).closest("tr").remove();
 			});
 		});
     </script>');
@@ -674,18 +675,18 @@ if (isset($show_info) && $show_info) {
 	foreach($vps_configs as $id => $label) {
 		if ($_SESSION["is_admin"]) {
 			$xtpl->form_add_select_pure('configs[]', $configs, $id);
-			$xtpl->table_td('<a href="?page=adminvps&action=config_del&veid='.$vps->veid.'&config='.$id.'">'._('delete').'</a>');
+			$xtpl->table_td('<a href="javascript:" class="delete-config">'._('delete').'</a>');
 		} else $xtpl->table_td($label);
 		$xtpl->table_tr(false, false, false, "order_$id");
 	}
 	
 	if ($_SESSION["is_admin"]) {
 		$xtpl->table_td('<input type="hidden" name="configs_order" id="configs_order" value="">' .  _('Add').':');
-		$xtpl->form_add_select_pure('add_config', list_configs(true));
+		$xtpl->form_add_select_pure('add_config[]', $configs_select);
 		$xtpl->table_tr(false, false, false, 'add_config');
 		$xtpl->form_add_checkbox(_("Notify owner").':', 'notify_owner', '1', true);
 		$xtpl->table_tr(false, "nodrag nodrop", false);
-		$xtpl->form_out(_("Go >>>"), 'configs');
+		$xtpl->form_out(_("Go >>>"), 'configs', '<a href="javascript:" id="add_row">+</a>');
 	} else {
 		$xtpl->table_out();
 	}

@@ -66,9 +66,6 @@ if ($_SESSION["logged_in"]) {
 		case 'vps':
 			include WWW_ROOT.'pages/ajax_vps.php';
 			break;
-		case 'cluster':
-			include WWW_ROOT.'pages/ajax_cluster.php';
-			break;
 		default:
 			header("HTTP/1.0 404 Not Found");
 	}

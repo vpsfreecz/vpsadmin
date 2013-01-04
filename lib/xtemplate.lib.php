@@ -776,10 +776,10 @@ class XTemplate {
 	  * Parse out the form
 	  * @param $submit_label - label of submit button of the form
 	  */
-	function form_out($submit_label, $id = null) {
-		$this->table_td('');
+	function form_out($submit_label, $id = null, $label = '') {
+		$this->table_td($label);
 		$this->table_td('<input type="submit" value=" '.$submit_label.' "  id="button"/>');
-		$this->table_tr('');
+		$this->table_tr(false, 'nodrag nodrop');
 		$this->assign('TABLE_FORM_END','</form>');
 		$this->table_out($id);
 	}

@@ -394,7 +394,7 @@ function ipadd($ip, $type = 4) {
 	return $ret;
   }
   
-  function update_configs($configs, $new, $cfg_order) {
+  function update_configs($configs, $cfg_order, $new_cfgs) {
 	global $db;
 	
 	if (!$db->query("DELETE FROM vps_has_config WHERE vps_id = ".$db->check($this->veid))) {
@@ -405,14 +405,17 @@ function ipadd($ip, $type = 4) {
 	
 	if ($cfg_order) {
 		foreach($cfg_order as $cfg) {
-			$db->query("INSERT INTO vps_has_config SET vps_id = ".$db->check($this->veid).", config_id = ".$db->check(($cfg == "add_config") ? $new : $cfg).", `order` = ".$i++."");
+			$db->query("INSERT INTO vps_has_config SET vps_id = ".$db->check($this->veid).", config_id = ".$db->check($cfg).", `order` = ".$i++."");
 		}
 	} else {
 		foreach($configs as $cfg) {
 			$db->query("INSERT INTO vps_has_config SET vps_id = ".$db->check($this->veid).", config_id = ".$db->check($cfg).", `order` = ".$i++."");
 		}
-		if ($new)
-			$db->query("INSERT INTO vps_has_config SET vps_id = ".$db->check($this->veid).", config_id = ".$db->check($new).", `order` = ".$i++);
+		
+		foreach($new_cfgs as $cfg) {
+			if ($cfg)
+				$db->query("INSERT INTO vps_has_config SET vps_id = ".$db->check($this->veid).", config_id = ".$db->check($cfg).", `order` = ".$i++."");
+		}
 	}
 	
 	$this->applyconfigs();

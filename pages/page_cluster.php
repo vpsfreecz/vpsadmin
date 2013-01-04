@@ -359,31 +359,27 @@ switch($_REQUEST["action"]) {
 		}
 		$list_configs = true;
 		break;
-	case "config_delete":
-		$cluster->delete_config($_GET["config"]);
-		$xtpl->perex(_("Item deleted"), _("Config deleted."));
-		$list_configs = true;
-		break;
 	case "configs_default_save":
 		$xtpl->sbar_add(_("Back"), '?page=cluster');
 		
 		if (isset($_POST["configs"]) || isset($_POST["add_config"])) {
 			$raw_order = explode('&', $_POST['configs_order']);
 			$cfgs = array();
+			$i = 0;
 			
 			foreach($raw_order as $item) {
 				$item = explode('=', $item);
 				
 				if (!$item[1])
 					continue;
-				elseif ($item[1] == "add_config")
-					$cfgs[] = $item[1];
+				elseif (!strncmp($item[1], "add_config", strlen("add_config")))
+					$cfgs[] = $_POST['add_config'][$i++];
 				else {
 					$order = explode('_', $item[1]);
 					$cfgs[] = $order[1];
 				}
 			}
-			$cluster->save_default_configs($_POST["configs"] ? $_POST["configs"] : array(), $_POST["add_config"], $cfgs, "default_config_chain");
+			$cluster->save_default_configs($_POST["configs"] ? $_POST["configs"] : array(), $cfgs, $_POST["add_config"], "default_config_chain");
 			
 			$list_configs=true;
 		} else {
@@ -590,20 +586,21 @@ switch($_REQUEST["action"]) {
 		if (isset($_POST["configs"]) || isset($_POST["add_config"])) {
 			$raw_order = explode('&', $_POST['configs_order']);
 			$cfgs = array();
+			$i = 0;
 			
 			foreach($raw_order as $item) {
 				$item = explode('=', $item);
 				
 				if (!$item[1])
 					continue;
-				elseif ($item[1] == "add_config")
-					$cfgs[] = $item[1];
+				elseif (!strncmp($item[1], "add_config", strlen("add_config")))
+					$cfgs[] = $_POST['add_config'][$i++];
 				else {
 					$order = explode('_', $item[1]);
 					$cfgs[] = $order[1];
 				}
 			}
-			$cluster->save_default_configs($_POST["configs"] ? $_POST["configs"] : array(), $_POST["add_config"], $cfgs, "playground_default_config_chain");
+			$cluster->save_default_configs($_POST["configs"] ? $_POST["configs"] : array(), $cfgs, $_POST["add_config"], "playground_default_config_chain");
 			
 			$playground_settings=true;
 		} else {
@@ -611,17 +608,6 @@ switch($_REQUEST["action"]) {
 			$playground_settings=true;
 		}
 		
-		break;
-	case "playground_configs_default_del":
-		$xtpl->sbar_add(_("Back"), '?page=cluster');
-		$chain = $cluster_cfg->get("playground_default_config_chain");
-		$keys = array_keys($chain, $_GET["config"]);
-		
-		foreach($keys as $key)
-			unset($chain[$key]);
-		
-		$cluster_cfg->set("playground_default_config_chain", $chain);
-		$playground_settings=true;
 		break;
 	default:
 		$list_nodes = true;
@@ -822,16 +808,34 @@ if ($list_configs) {
 	
 	$xtpl->table_out();
 	
+	$configs_select = list_configs(true);
+	$options = "";
+	
+	foreach($configs_select as $id => $label)
+		$options .= '<option value="'.$id.'">'.$label.'</option>';
+	
 	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
 	<script type="text/javascript">
-		$(document).ready(function() {
+		function dnd() {
 			$("#configs").tableDnD({
 				onDrop: function(table, row) {
-					order = $.tableDnD.serialize();
-					$("#configs_order").val(order);
-					if(row.id == "add_config") return;
-					$.post("ajax.php?page=cluster&action=default_configs_order", {order: order});
+					$("#configs_order").val($.tableDnD.serialize());
 				}
+			});
+		}
+		
+		$(document).ready(function() {
+			var add_config_id = 1;
+			
+			dnd();
+			
+			$("#add_row").click(function (){
+				$(\'<tr id="add_config_\' + add_config_id++ + \'"><td>'._('Add').':</td><td><select name="add_config[]">'.$options.'</select></td></tr>\').fadeIn("slow").insertBefore("#configs tr:nth-last-child(1)");
+				dnd();
+			});
+			
+			$(".delete-config").click(function (){
+				$(this).closest("tr").remove();
 			});
 		});
     </script>');
@@ -846,14 +850,14 @@ if ($list_configs) {
 	
 	foreach($chain as $cfg) {
 		$xtpl->form_add_select_pure('configs[]', $configs, $cfg);
-		$xtpl->table_td('<a href="?page=cluster&action=configs_default_del&config='.$cfg.'">'._('delete').'</a>');
+		$xtpl->table_td('<a href="javascript:" class="delete-config">'._('delete').'</a>');
 		$xtpl->table_tr(false, false, false, "order_$cfg");
 	}
 	
 	$xtpl->table_td('<input type="hidden" name="configs_order" id="configs_order" value="">' .  _('Add').':');
-	$xtpl->form_add_select_pure('add_config', list_configs(true));
+	$xtpl->form_add_select_pure('add_config[]', $configs_select);
 	$xtpl->table_tr(false, false, false, 'add_config');
-	$xtpl->form_out(_("Save changes"), 'configs');
+	$xtpl->form_out(_("Save changes"), 'configs', '<a href="javascript:" id="add_row">+</a>');
 }
 
 if ($list_locations) {
@@ -941,19 +945,37 @@ if ($list_dns) {
 if ($playground_settings) {
 	$xtpl->title2("Manage Playground Settings");
 	
+	$configs_select = list_configs(true);
+	$options = "";
+	
+	foreach($configs_select as $id => $label)
+		$options .= '<option value="'.$id.'">'.$label.'</option>';
+	
 	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
 	<script type="text/javascript">
-		$(document).ready(function() {
+		function dnd() {
 			$("#configs").tableDnD({
 				onDrop: function(table, row) {
-					order = $.tableDnD.serialize();
-					$("#configs_order").val(order);
-					if(row.id == "add_config") return;
-					$.post("ajax.php?page=cluster&action=playground_default_configs_order", {order: order});
+					$("#configs_order").val($.tableDnD.serialize());
 				}
 			});
+		}
+		
+		$(document).ready(function() {
+			var add_config_id = 1;
+			
+			dnd();
+			
+			$("#add_row").click(function (){
+				$(\'<tr id="add_config_\' + add_config_id++ + \'"><td>'._('Add').':</td><td><select name="add_config[]">'.$options.'</select></td></tr>\').fadeIn("slow").insertBefore("#configs tr:nth-last-child(1)");
+				dnd();
+			});
+			
+			$(".delete-config").click(function (){
+				$(this).closest("tr").remove();
+			});
 		});
-	</script>');
+    </script>');
 	
 	$chain = $cluster_cfg->get("playground_default_config_chain");
 	$configs = list_configs();
@@ -965,14 +987,14 @@ if ($playground_settings) {
 	
 	foreach($chain as $cfg) {
 		$xtpl->form_add_select_pure('configs[]', $configs, $cfg);
-		$xtpl->table_td('<a href="?page=cluster&action=playground_configs_default_del&config='.$cfg.'">'._('delete').'</a>');
+		$xtpl->table_td('<a href="javascript:" class="delete-config">'._('delete').'</a>');
 		$xtpl->table_tr(false, false, false, "order_$cfg");
 	}
 	
 	$xtpl->table_td('<input type="hidden" name="configs_order" id="configs_order" value="">' .  _('Add').':');
-	$xtpl->form_add_select_pure('add_config', list_configs(true));
+	$xtpl->form_add_select_pure('add_config[]', $configs_select);
 	$xtpl->table_tr(false, false, false, 'add_config');
-	$xtpl->form_out(_("Save changes"), 'configs');
+	$xtpl->form_out(_("Save changes"), 'configs', '<a href="javascript:" id="add_row">+</a>');
 }
 
 $xtpl->sbar_out(_("Manage Cluster"));
