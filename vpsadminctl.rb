@@ -14,15 +14,9 @@ options = {
 	}
 }
 
-unless ARGV.size > 0
-	$stderr.puts "No command specified"
-	exit(false)
-end
-
-rc = VpsAdminCtl::RemoteControl.new(options[:sock])
 command = ARGV[0]
 
-OptionParser.new do |opts|
+opt_parser = OptionParser.new do |opts|
 	opts.banner = <<END_BANNER
 Usage: vpsadminctl <command> [options]
 
@@ -54,12 +48,30 @@ END_BANNER
 		puts opts
 		exit
 	end
-end.parse!
+end
+
+unless ARGV.size > 0
+	$stderr.puts "No command specified"
+	puts opt_parser
+	exit(false)
+end
+
+begin
+	opt_parser.parse!
+rescue OptionParser::InvalidOption
+	$stderr.puts $!
+	puts opt_parser
+	exit(false)
+end
+
+rc = VpsAdminCtl::RemoteControl.new(options[:sock])
 
 unless rc.is_valid?(command)
 	$stderr.puts "Invalid command"
+	puts opt_parser
 	exit(false)
 end
+
 
 ret = rc.exec(command)
 
