@@ -1,7 +1,7 @@
 require 'lib/vpsadmind'
 
 module VpsAdminCtl
-	VERSION = "1.4.0"
+	VERSION = "1.5.0"
 	ACTIONS = [:status, :reload, :stop, :restart, :update]
 	
 	class RemoteControl
