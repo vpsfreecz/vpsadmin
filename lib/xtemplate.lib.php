@@ -685,9 +685,9 @@ class XTemplate {
 	  * @param $selected_value - default selected value
 	  * @param $hint - helping hint
 	  */
-	function form_add_select($label = 'popisek', $name = 'select_fromgen', $options, $selected_value = '', $hint = '') {
+	function form_add_select($label = 'popisek', $name = 'select_fromgen', $options, $selected_value = '', $hint = '', $multiple = false, $size = '5', $colspan = '1') {
 		$this->table_td($label);
-		$code = ('<select  name="'.$name.'" id="input">');
+		$code = ('<select  name="'.$name.'" id="input" '.($multiple ? 'multiple size="'.$size.'"' : '').'>');
 		if ($options)
 		foreach ($options as $key=>$value) {
 		if ($selected_value == $key)
@@ -695,7 +695,7 @@ class XTemplate {
 			else $code .= '<option value="'.$key.'" title="">'.$value.'</option> \n';
 		}
 		$code .= ('</select>');
-		$this->table_td($code);
+		$this->table_td($code, false, false, $colspan);
 		if ($hint != '') $this->table_td($hint);
 		$this->table_tr(false, false, false, $name);
 	}
@@ -706,13 +706,14 @@ class XTemplate {
 	  * @param $options - array of options, $option[option_name] = "Option Label"
 	  * @param $selected_value - default selected value
 	  */
-	function form_add_select_pure($name = 'select_fromgen', $options, $selected_value = '') {
-		$code = ('<select  name="'.$name.'" id="input">');
+	function form_add_select_pure($name = 'select_fromgen', $options, $selected_value = '', $multiple = false, $size = '5') {
+		$code = ('<select  name="'.$name.'" id="input" '.($multiple ? 'multiple size="'.$size.'"' : '').'>');
 		if ($options)
 		foreach ($options as $key=>$value) {
-		if ($selected_value == $key)
-			$code .= '<option selected="selected" value="'.$key.'" title="">'.$value.'</option> \n';
-			else $code .= '<option value="'.$key.'" title="">'.$value.'</option> \n';
+			if ( $selected_value == $key || ($multiple && is_array($selected_value) && in_array($key, $selected_value)) )
+				$code .= '<option selected="selected" value="'.$key.'" title="">'.$value.'</option> \n';
+			else
+				$code .= '<option value="'.$key.'" title="">'.$value.'</option> \n';
 		}
 		$code .= ('</select>');
 		$this->table_td($code);
@@ -776,9 +777,9 @@ class XTemplate {
 	  * Parse out the form
 	  * @param $submit_label - label of submit button of the form
 	  */
-	function form_out($submit_label, $id = null, $label = '') {
+	function form_out($submit_label, $id = null, $label = '', $colspan = '1') {
 		$this->table_td($label);
-		$this->table_td('<input type="submit" value=" '.$submit_label.' "  id="button"/>');
+		$this->table_td('<input type="submit" value=" '.$submit_label.' "  id="button"/>', false, false, $colspan);
 		$this->table_tr(false, 'nodrag nodrop');
 		$this->assign('TABLE_FORM_END','</form>');
 		$this->table_out($id);
