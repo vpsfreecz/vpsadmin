@@ -79,6 +79,7 @@
     :iptables: /sbin/iptables
     :ip6tables: /sbin/ip6tables
     :git: /usr/bin/git
+    :zfs: /sbin/zfs
 
 :backuper:
     :lock_interval: 30
@@ -86,6 +87,8 @@
     :dest: /storage/vpsfree.cz/vps
     :tmp_restore: /storage/vpsfree.cz/restore
     :download: /storage/vpsfree.cz/download
+    :zfs:
+        :zpool: storage/vpsfree.cz/backup
 
 :mailer:
     :smtp_server: localhost
