@@ -1,10 +1,10 @@
 require 'lib/executor'
-require 'lib/vpsadmin'
-require 'lib/node'
-require 'lib/vps'
-require 'lib/firewall'
-require 'lib/mailer'
-require 'lib/backuper'
+require 'lib/handlers/vpsadmin'
+require 'lib/handlers/node'
+require 'lib/handlers/vps'
+require 'lib/handlers/firewall'
+require 'lib/handlers/mailer'
+require 'lib/handlers/backuper'
 
 require 'rubygems'
 require 'json'
@@ -46,6 +46,9 @@ class Command
 			@output[:cmd] = err.cmd
 			@output[:exitstatus] = err.rc
 			@output[:error] = err.output
+		rescue CommandNotImplemented
+			@status = :failed
+			@output[:error] = "Command not implemented"
 		end
 		
 		@time_end = Time.new.to_i

@@ -1,5 +1,5 @@
 require 'lib/executor'
-require 'lib/backuper'
+require 'lib/handlers/backuper'
 
 class VPS < Executor
 	def start

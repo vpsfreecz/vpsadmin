@@ -8,6 +8,10 @@ class CommandFailed < StandardError
 	end
 end
 
+class CommandNotImplemented < StandardError
+	
+end
+
 class Executor
 	attr_accessor :output
 	
