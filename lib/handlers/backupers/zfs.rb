@@ -3,7 +3,7 @@ require 'lib/handlers/backuper'
 require 'tempfile'
 
 module BackuperBackend
-	class Zfs < Backuper
+	class Zfs < BackuperInterface
 		def backup
 			db = Db.new
 			

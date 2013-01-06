@@ -1,8 +1,12 @@
 require 'lib/executor'
 
 class Backuper < Executor
-	def self.new(*args)
-		BackuperBackend.const_get($APP_CONFIG[:backuper][:method]).new(*args)
+	class << self
+		alias_method :new_orig, :new
+		
+		def new(*args)
+			BackuperBackend.const_get($APP_CONFIG[:backuper][:method]).new(*args)
+		end
 	end
 	
 	def backup
@@ -40,6 +44,12 @@ class Backuper < Executor
 	
 	def Backuper.unlock(db, veid)
 		db.prepared("UPDATE vps SET vps_backup_lock = 0 WHERE vps_id = ?", veid)
+	end
+end
+
+class BackuperInterface < Backuper
+	def self.new(*args)
+		new_orig(*args)
 	end
 end
 

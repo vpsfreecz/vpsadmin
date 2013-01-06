@@ -82,6 +82,7 @@
     :zfs: /sbin/zfs
 
 :backuper:
+    :method: RdiffBackup
     :lock_interval: 30
     :mountpoint: /mnt
     :dest: /storage/vpsfree.cz/vps

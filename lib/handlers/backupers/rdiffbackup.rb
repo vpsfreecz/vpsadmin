@@ -3,7 +3,7 @@ require 'lib/handlers/backuper'
 require 'tempfile'
 
 module BackuperBackend
-	class RdiffBackup < Backuper
+	class RdiffBackup < BackuperInterface
 		def backup
 			db = Db.new
 			
