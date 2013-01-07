@@ -16,7 +16,7 @@ module BackuperBackend
 			f.close
 			
 			syscmd("#{$APP_CONFIG[:bin][:zfs]} create -p #{$APP_CONFIG[:backuper][:zfs][:zpool]}/#{@veid}")
-			syscmd("#{$APP_CONFIG[:bin][:rsync]} -rlptgoDHX --numeric-ids --inplace --delete-after --exclude-from #{f.path} #{mountpoint}/ #{$APP_CONFIG[:backuper][:dest]}/#{@veid}/", [24,])
+			syscmd("#{$APP_CONFIG[:bin][:rsync]} -rlptgoDHX --numeric-ids --inplace --delete-after --exclude .zfs/ --exclude-from #{f.path} #{mountpoint}/ #{$APP_CONFIG[:backuper][:dest]}/#{@veid}/", [24,])
 			syscmd("#{$APP_CONFIG[:bin][:zfs]} snapshot #{$APP_CONFIG[:backuper][:zfs][:zpool]}/#{@veid}@#{Time.new.strftime("%Y-%m-%dT%H:%M:%S")}")
 			
 			db.prepared("DELETE FROM vps_backups WHERE vps_id = ?", @veid)
