@@ -76,6 +76,6 @@ end
 ret = rc.exec(command)
 
 if ret && ret[:status] == :failed
-	$stderr.puts "Command error: #{ret["error"]}"
+	$stderr.puts "Command error: #{ret[:error]}"
 	exit(false)
 end

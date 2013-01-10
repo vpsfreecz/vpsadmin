@@ -1,7 +1,8 @@
 require 'lib/vpsadmind'
+require 'lib/utils'
 
 module VpsAdminCtl
-	VERSION = "1.5.0"
+	VERSION = "1.5.1"
 	ACTIONS = [:status, :reload, :stop, :restart, :update]
 	
 	class RemoteControl
@@ -11,11 +12,11 @@ module VpsAdminCtl
 		
 		def status
 			puts "Version: #{@vpsadmind.version}"
-			puts "Uptime: #{Time.new.to_i - @res["start_time"]} s"
+			puts "Uptime: #{format_duration(Time.new.to_i - @res["start_time"])}"
 			puts "Concurrency: #{@res["threads"]}"
 			puts "Workers: #{@res["workers"].size}"
 			@res["workers"].each do |wid, w|
-				puts "\tWorker ##{wid}: #{w["type"]} (#{Time.new.to_i - w["start"]} s)"
+				puts "\tWorker ##{wid}: #{w["type"]} (#{format_duration(Time.new.to_i - w["start"])})"
 			end
 			puts "Exported consoles: #{@res["export_console"] ? @res["consoles"].size : "disabled"}"
 			@res["consoles"].each do |veid, usage|
