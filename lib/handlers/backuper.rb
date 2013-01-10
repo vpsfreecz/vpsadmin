@@ -5,7 +5,7 @@ class Backuper < Executor
 		alias_method :new_orig, :new
 		
 		def new(*args)
-			BackuperBackend.const_get($APP_CONFIG[:backuper][:method]).new(*args)
+			BackuperBackend.const_get($CFG.get(:backuper, :method)).new_orig(*args)
 		end
 	end
 	
@@ -18,7 +18,7 @@ class Backuper < Executor
 	end
 	
 	def mountpoint
-		"#{$APP_CONFIG[:backuper][:mountpoint]}/#{@params["server_name"]}.#{$APP_CONFIG[:vpsadmin][:domain]}/#{@veid}"
+		"#{$CFG.get(:backuper, :mountpoint)}/#{@params["server_name"]}.#{$CFG.get(:vpsadmin, :domain)}/#{@veid}"
 	end
 	
 	def post_save(db)
@@ -33,7 +33,7 @@ class Backuper < Executor
 			
 			st.close
 			
-			sleep($APP_CONFIG[:backuper][:lock_interval])
+			sleep($CFG.get(:backuper, :lock_interval))
 		end
 		
 		if block_given?
@@ -44,12 +44,6 @@ class Backuper < Executor
 	
 	def Backuper.unlock(db, veid)
 		db.prepared("UPDATE vps SET vps_backup_lock = 0 WHERE vps_id = ?", veid)
-	end
-end
-
-class BackuperInterface < Backuper
-	def self.new(*args)
-		new_orig(*args)
 	end
 end
 

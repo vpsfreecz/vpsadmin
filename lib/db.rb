@@ -32,7 +32,7 @@ class Db
 	
 	def connect
 		protect do
-			@my = Mysql.new($APP_CONFIG[:db][:host], $APP_CONFIG[:db][:user], $APP_CONFIG[:db][:pass], $APP_CONFIG[:db][:name])
+			@my = Mysql.new($CFG.get(:db, :host), $CFG.get(:db, :user), $CFG.get(:db, :pass), $CFG.get(:db, :name))
 			@my.reconnect = true
 		end
 	end
@@ -43,7 +43,7 @@ class Db
 		rescue Mysql::Error => err
 			puts "MySQL error ##{err.errno}: #{err.error}"
 			close if @my
-			sleep($APP_CONFIG[:db][:retry_interval])
+			sleep($CFG.get(:db, :retry_interval))
 			connect
 			retry if try_again
 		end

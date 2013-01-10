@@ -82,7 +82,7 @@ class Command
 	end
 	
 	def Command.load_handlers
-		$APP_CONFIG[:vpsadmin][:handlers].each do |klass, cmds|
+		$CFG.get(:vpsadmin, :handlers).each do |klass, cmds|
 			cmds.each do |cmd, method|
 				@@handlers[cmd] = {:class => klass, :method => method}
 				puts "Cmd ##{cmd} => #{klass}.#{method}"

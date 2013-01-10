@@ -41,7 +41,7 @@ class VpsAdmin < Executor
 		{:ret => :ok,
 			:output => {
 				:workers => res_workers,
-				:threads => $APP_CONFIG[:vpsadmin][:threads],
+				:threads => $CFG.get(:vpsadmin, :threads),
 				:export_console => @daemon.export_console,
 				:consoles => consoles,
 				:start_time => @daemon.start_time.to_i

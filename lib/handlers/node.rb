@@ -7,7 +7,7 @@ class Node < Executor
 	end
 	
 	def sync_templates
-		syscmd("#{$APP_CONFIG[:bin][:rsync]} -a --delete #{@params["sync_path"]} #{$APP_CONFIG[:vz][:vz_root]}/template/cache/")
+		syscmd("#{$CFG.get(:bin, :rsync)} -a --delete #{@params["sync_path"]} #{$CFG.get(:vz, :vz_root)}/template/cache/")
 	end
 	
 	def create_config
@@ -23,7 +23,7 @@ class Node < Executor
 	end
 	
 	def conf_path
-		"#{$APP_CONFIG[:vz][:vz_conf]}/conf/ve-#{@params["name"]}.conf-sample"
+		"#{$CFG.get(:vz, :vz_conf)}/conf/ve-#{@params["name"]}.conf-sample"
 	end
 	
 	def post_save(con)

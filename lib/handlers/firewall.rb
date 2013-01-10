@@ -73,6 +73,6 @@ class Firewall < Executor
 			options << opts
 		end
 		
-		syscmd("#{$APP_CONFIG[:bin][ver == 4 ? :iptables : :ip6tables]} #{options.join(" ")}")
+		syscmd("#{$CFG.get(:bin, ver == 4 ? :iptables : :ip6tables)} #{options.join(" ")}")
 	end
 end
