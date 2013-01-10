@@ -7,7 +7,11 @@ class VpsAdmind
 	attr_reader :version
 	
 	def initialize(sock)
-		@sock = UNIXSocket.new(sock)
+		@sock_path = sock
+	end
+	
+	def open
+		@sock = UNIXSocket.new(@sock_path)
 		greetings = reply
 		@version = greetings["version"]
 	end

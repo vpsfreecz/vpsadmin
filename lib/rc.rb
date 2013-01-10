@@ -2,7 +2,7 @@ require 'lib/vpsadmind'
 require 'lib/utils'
 
 module VpsAdminCtl
-	VERSION = "1.5.1"
+	VERSION = "1.5.2"
 	ACTIONS = [:status, :reload, :stop, :restart, :update]
 	
 	class RemoteControl
@@ -47,8 +47,15 @@ module VpsAdminCtl
 		def exec(cmd, *args)
 			return unless is_valid?(cmd)
 			
-			@vpsadmind.cmd(cmd)
-			@reply = @vpsadmind.reply
+			begin
+				@vpsadmind.open
+				@vpsadmind.cmd(cmd)
+				@reply = @vpsadmind.reply
+			rescue
+				$stderr.puts "Error occured: #{$!}"
+				$stderr.puts "Are you sure that vpsAdmind is running and configured properly?"
+				return
+			end
 			
 			unless @reply["status"] == "ok"
 				return {:status => :failed, :error => @reply["error"]}

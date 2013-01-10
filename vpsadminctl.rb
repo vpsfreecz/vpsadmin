@@ -22,7 +22,7 @@ Usage: vpsadminctl <command> [options]
 
 Commands:
     status      Show vpsAdmind's status
-    reload      Reload vpsAdmind's configuration (currently only thread count)
+    reload      Reload vpsAdmind's configuration
     stop        Safely stop vpsAdmind - wait for all commands to finish
     restart     Safely restart vpsAdmind
     update      Safely stop vpsAdmind, then update by git pull and start again
@@ -42,6 +42,11 @@ END_BANNER
 	
 	opts.on("-s", "--socket [SOCKET]", "Specify socket") do |s|
 		options[:sock] = s
+	end
+	
+	opts.on("-v", "--version", "Print version and exit") do
+		puts VpsAdminCtl::VERSION
+		exit
 	end
 	
 	opts.on_tail("-h", "--help", "Show this message") do
