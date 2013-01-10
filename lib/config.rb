@@ -120,11 +120,11 @@ IMPLICIT_CONFIG = {
 		:socket => "/var/run/vpsadmind.sock",
 		:handlers => {
 			"VpsAdmin" => [
-				:reload,
-				:restart,
-				:status,
-				:stop,
-				:update
+				"reload",
+				"restart",
+				"status",
+				"stop",
+				"update"
 			]
 		}
 	}

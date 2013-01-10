@@ -22,7 +22,7 @@ class RemoteControl < EventMachine::Connection
 			return error("Syntax error")
 		end
 		
-		cmd = @@handlers[req["command"].to_sym]
+		cmd = @@handlers[req["command"]]
 		
 		return error("Unsupported command") unless cmd
 		
