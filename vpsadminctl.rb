@@ -10,7 +10,9 @@ require 'lib/rc'
 options = {
 	:sock => "/var/run/vpsadmind.sock",
 	:status => {
-		:all => true,
+		:workers => false,
+		:consoles => false,
+		:header => true,
 	}
 }
 
@@ -27,14 +29,24 @@ Commands:
     restart     Safely restart vpsAdmind
     update      Safely stop vpsAdmind, then update by git pull and start again
 
+For specific options type: vpsadminctl <command> --help
+
 END_BANNER
 
 	opts.separator "Specific options:"
 	
 	case command
 	when "status"
-		opts.on("-a", "--all", "Display all") do
-			options[:status][:all] = true
+		opts.on("-c", "--consoles", "List exported consoles") do
+			options[:status][:consoles] = true
+		end
+		
+		opts.on("-w", "--workers", "List workers") do
+			options[:status][:workers] = true
+		end
+		
+		opts.on("-H", "--no-header", "Suppress columns header") do
+			options[:status][:header] = false
 		end
 	end
 	
@@ -78,7 +90,7 @@ unless rc.is_valid?(command)
 end
 
 
-ret = rc.exec(command)
+ret = rc.exec(command, options[command.to_sym])
 
 if ret && ret[:status] == :failed
 	$stderr.puts "Command error: #{ret[:error]}"

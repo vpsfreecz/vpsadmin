@@ -1,8 +1,11 @@
 require 'lib/vpsadmind'
 require 'lib/utils'
 
+require 'rubygems'
+require 'text-table'
+
 module VpsAdminCtl
-	VERSION = "1.5.2"
+	VERSION = "1.5.3"
 	ACTIONS = [:status, :reload, :stop, :restart, :update]
 	
 	class RemoteControl
@@ -11,16 +14,23 @@ module VpsAdminCtl
 		end
 		
 		def status
-			puts "Version: #{@vpsadmind.version}"
-			puts "Uptime: #{format_duration(Time.new.to_i - @res["start_time"])}"
-			puts "Concurrency: #{@res["threads"]}"
-			puts "Workers: #{@res["workers"].size}"
-			@res["workers"].each do |wid, w|
-				puts "\tWorker ##{wid}: #{w["type"]} (#{format_duration(Time.new.to_i - w["start"])})"
-			end
-			puts "Exported consoles: #{@res["export_console"] ? @res["consoles"].size : "disabled"}"
-			@res["consoles"].each do |veid, usage|
-				puts "\tConsole ##{veid}: #{usage} listeners"
+			if @opts[:workers]
+				puts sprintf("%-5s %-20.15s %-5s %-18.16s %s", "VEID", "HANDLER", "TYPE", "TIME", "STEP") if @opts[:header]
+				
+				@res["workers"].each do |wid, w|
+					puts sprintf("%-5d %-20.15s %-5d %-18.16s %s", wid, w["handler"], w["type"], format_duration(Time.new.to_i - w["start"]), w["step"])
+				end
+			elsif @opts[:consoles]
+				puts sprintf("%-5s %s", "VEID", "LISTENERS")  if @opts[:header]
+				
+				@res["consoles"].each do |veid, usage|
+					puts sprintf("%-5d %d", veid, usage)
+				end
+			else
+				puts "Version: #{@vpsadmind.version}"
+				puts "Uptime: #{format_duration(Time.new.to_i - @res["start_time"])}"
+				puts "Workers: #{@res["workers"].size}/#{@res["threads"]}"
+				puts "Exported consoles: #{@res["export_console"] ? @res["consoles"].size : "disabled"}"
 			end
 		end
 		
@@ -44,7 +54,7 @@ module VpsAdminCtl
 			ACTIONS.include?(cmd.to_sym)
 		end
 		
-		def exec(cmd, *args)
+		def exec(cmd, opts)
 			return unless is_valid?(cmd)
 			
 			begin
@@ -62,8 +72,9 @@ module VpsAdminCtl
 			end
 			
 			@res = @reply["response"]
+			@opts = opts
 			
-			method(cmd).call(*args)
+			method(cmd).call()
 		end
 	end
 end
