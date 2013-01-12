@@ -10,7 +10,7 @@ require 'rubygems'
 require 'json'
 
 class Command
-	attr_reader :trans, :time_start
+	attr_reader :trans
 	
 	@@handlers = {}
 	
@@ -18,10 +18,11 @@ class Command
 		@trans = trans
 		@output = {}
 		@status = :failed
+		@m_attr = Mutex.new
 	end
 	
 	def execute
-		cmd = @@handlers[ @trans["t_type"].to_i ]
+		cmd = handler
 		
 		unless cmd
 			@output[:error] = "Unsupported command"
@@ -37,7 +38,7 @@ class Command
 		
 		@executor = Kernel.const_get(cmd[:class]).new(@trans["t_vps"], param)
 		
-		@time_start = Time.new.to_i
+		@m_attr.synchronize { @time_start = Time.new.to_i }
 		
 		begin
 			@status = @executor.method(cmd[:method]).call[:ret]
@@ -79,6 +80,18 @@ class Command
 		else
 			0
 		end
+	end
+	
+	def handler
+		@@handlers[ @trans["t_type"].to_i ]
+	end
+	
+	def step
+		@executor.step
+	end
+	
+	def time_start
+		@m_attr.synchronize { @time_start }
 	end
 	
 	def Command.load_handlers

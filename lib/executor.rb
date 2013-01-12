@@ -20,6 +20,19 @@ class Executor
 		@params = params
 		@output = {}
 		@daemon = daemon
+		@m_attr = Mutex.new
+	end
+	
+	def attrs
+		@m_attr.synchronize do
+			yield
+		end
+	end
+	
+	def step
+		attrs do
+			@step
+		end
 	end
 	
 	def vzctl(cmd, veid, opts = {}, save = false, valid_rcs = [])
@@ -40,6 +53,8 @@ class Executor
 	end
 	
 	def syscmd(cmd, valid_rcs = [])
+		set_step(cmd)
+		
 		out = ""
 		puts "Executing: #{cmd}"
 		IO.popen("#{cmd} 2>&1") do |io|
@@ -59,5 +74,13 @@ class Executor
 	
 	def ok
 		{:ret => :ok}
+	end
+	
+	private
+	
+	def set_step(str)
+		attrs do
+			@step = str
+		end
 	end
 end

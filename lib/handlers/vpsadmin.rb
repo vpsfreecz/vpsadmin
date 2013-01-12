@@ -24,10 +24,17 @@ class VpsAdmin < Executor
 	
 	def status
 		res_workers = {}
-			
+		
 		@daemon.workers do |workers|
 			workers.each do |wid, w|
-				res_workers[wid] = {:type => w.cmd.trans["t_type"].to_i, :start => w.cmd.time_start}
+				h = w.cmd.handler
+				
+				res_workers[wid] = {
+					:type => w.cmd.trans["t_type"].to_i,
+					:handler => "#{h[:class]}.#{h[:method]}",
+					:step => w.cmd.step,
+					:start => w.cmd.time_start,
+				}
 			end
 		end
 		
@@ -44,7 +51,7 @@ class VpsAdmin < Executor
 				:threads => $CFG.get(:vpsadmin, :threads),
 				:export_console => @daemon.export_console,
 				:consoles => consoles,
-				:start_time => @daemon.start_time.to_i
+				:start_time => @daemon.start_time.to_i,
 			}
 		}
 	end
