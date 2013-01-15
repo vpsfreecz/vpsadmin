@@ -81,6 +81,7 @@ class VPS < Executor
 	end
 	
 	def migrate_offline
+		stop if @params["stop"]
 		syscmd("#{$CFG.get(:vz, :vzmigrate)} #{@params["target"]} #{@veid}")
 	end
 	
