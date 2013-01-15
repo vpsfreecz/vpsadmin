@@ -269,7 +269,7 @@ switch ($_GET["action"]) {
 		case 'offlinemigrate':
 			if ($_SESSION["is_admin"] && isset($_REQUEST["veid"])) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				$xtpl->perex_cmd_output(_("Offline migration planned"), $vps->offline_migrate($_REQUEST["target_id"]));
+				$xtpl->perex_cmd_output(_("Offline migration planned"), $vps->offline_migrate($_REQUEST["target_id"], $_POST["stop"]));
 				}
 			else {
 				$xtpl->perex(_("Error"), '');
@@ -515,6 +515,7 @@ switch ($_GET["action"]) {
 					$t = _("Mass offline migration");
 					
 					$xtpl->form_add_select(_("Target server").':', 'target_id', $cluster->list_servers(), '');
+					$xtpl->form_add_checkbox(_("Stop before migration").':', 'stop', '1', false);
 					$xtpl->table_td('<strong>'._('Do not forget that if you are migrating to different location, IP address are removed!').'</strong>', false, false, '2');
 					$xtpl->table_tr();
 					break;
@@ -633,7 +634,7 @@ switch ($_GET["action"]) {
 					foreach ($vpses as $veid) {
 						$vps = vps_load($veid);
 						if ($vps->exists)
-							$vps->offline_migrate($_POST["target_id"]);
+							$vps->offline_migrate($_POST["target_id"], $_POST["stop"]);
 					}
 					break;
 				case "migrate_online":
@@ -1010,6 +1011,7 @@ if (isset($show_info) && $show_info) {
 	if ($_SESSION["is_admin"]) {
 		$xtpl->form_create('?page=adminvps&action=offlinemigrate&veid='.$vps->veid, 'post');
 		$xtpl->form_add_select(_("Target server").':', 'target_id', $cluster->list_servers($vps->ve["vps_server"], $vps->get_location(), true), '');
+		$xtpl->form_add_checkbox(_("Stop before migration").':', 'stop', '1', false);
 		$xtpl->table_add_category(_("Offline VPS Migration"));
 		$xtpl->table_add_category('&nbsp;');
 		$xtpl->form_out(_("Go >>"));

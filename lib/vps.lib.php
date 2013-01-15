@@ -301,7 +301,7 @@ function ipadd($ip, $type = 4) {
 	}
   }
 
-  function offline_migrate($target_id) {
+  function offline_migrate($target_id, $stop = false) {
 	global $db, $cluster;
 	if ($this->exists) {
 		$servers = list_servers();
@@ -318,7 +318,9 @@ function ipadd($ip, $type = 4) {
 				$params["target_id"] = $target_id;
 			}
 		}
+		
 		$params["target"] = $target_server["server_ip4"];
+		$params["stop"] = (bool)$stop;
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_MIGRATE_OFFLINE, $params);
 		$migration_id = $db->insertId();
 		
