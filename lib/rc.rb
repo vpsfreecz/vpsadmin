@@ -1,11 +1,8 @@
 require 'lib/vpsadmind'
 require 'lib/utils'
 
-require 'rubygems'
-require 'text-table'
-
 module VpsAdminCtl
-	VERSION = "1.5.3"
+	VERSION = "1.5.4"
 	ACTIONS = [:status, :reload, :stop, :restart, :update]
 	
 	class RemoteControl
@@ -30,6 +27,7 @@ module VpsAdminCtl
 				puts "Version: #{@vpsadmind.version}"
 				puts "Uptime: #{format_duration(Time.new.to_i - @res["start_time"])}"
 				puts "Workers: #{@res["workers"].size}/#{@res["threads"]}"
+				puts "Queue size: #{@res["queue_size"]}"
 				puts "Exported consoles: #{@res["export_console"] ? @res["consoles"].size : "disabled"}"
 			end
 		end
