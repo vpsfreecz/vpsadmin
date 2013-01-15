@@ -103,6 +103,7 @@ IMPLICIT_CONFIG = {
 		:download => "/storage/vpsfree.cz/download",
 		:zfs => {
 			:zpool => "storage/vpsfree.cz/backup",
+			:rsync => "%{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after --exclude .zfs/ --exclude-from %{exclude} %{src} %{dst}",
 		}
 	},
 	

@@ -9,14 +9,14 @@ module BackuperBackend
 			
 			Backuper.wait_for_lock(db, @veid)
 			
-			f = Tempfile.new("backuper_exclude")
+			@exclude = Tempfile.new("backuper_exclude")
 			@params["exclude"].each do |s|
-				f.puts(File.join(mountpoint, s))
+				@exclude.puts(File.join(mountpoint, s))
 			end
-			f.close
+			@exclude.close
 			
 			syscmd("#{$CFG.get(:bin, :zfs)} create -p #{$CFG.get(:backuper, :zfs)[:zpool]}/#{@veid}")
-			syscmd("#{$CFG.get(:bin, :rsync)} -rlptgoDHX --numeric-ids --inplace --delete-after --exclude .zfs/ --exclude-from #{f.path} #{mountpoint}/ #{$CFG.get(:backuper, :dest)}/#{@veid}/", [24,])
+			syscmd(rsync, [23, 24])
 			syscmd("#{$CFG.get(:bin, :zfs)} snapshot #{$CFG.get(:backuper, :zfs)[:zpool]}/#{@veid}@#{Time.new.strftime("%Y-%m-%dT%H:%M:%S")}")
 			
 			db.prepared("DELETE FROM vps_backups WHERE vps_id = ?", @veid)
@@ -28,6 +28,14 @@ module BackuperBackend
 			db.close
 			
 			ok
+		end
+		
+		def rsync
+			$CFG.get(:backuper, :zfs, :rsync) \
+				.gsub(/%\{rsync\}/, $CFG.get(:bin, :rsync)) \
+				.gsub(/%\{exclude\}/, @exclude.path) \
+				.gsub(/%\{src\}/, mountpoint + "/") \
+				.gsub(/%\{dst\}/, "#{$CFG.get(:backuper, :dest)}/#{@veid}/")
 		end
 	end
 end
