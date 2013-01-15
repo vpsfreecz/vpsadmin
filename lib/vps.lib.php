@@ -568,7 +568,7 @@ function ipadd($ip, $type = 4) {
 		$params["server_name"] = $this->ve["server_name"];
 	} else {
 		$params["filename"] = "{$this->veid}-".strftime("%Y-%m-%d--%H-%M", (int)$timestamp).".tar.gz";
-		$params["datetime"] = date("c", (int)$timestamp);
+		$params["datetime"] = strftime("%Y-%m-%dT%H-%M-%S", (int)$timestamp);
 	}
 	
 	add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, T_BACKUP_DOWNLOAD, $params);
