@@ -30,6 +30,18 @@ module BackuperBackend
 			ok
 		end
 		
+		def download
+			Backuper.wait_for_lock(Db.new, @veid)
+			
+			syscmd("#{$CFG.get(:bin, :mkdir)} -p #{$CFG.get(:backuper, :download)}/#{@params["secret"]}")
+			
+			if @params["server_name"]
+				syscmd("#{$CFG.get(:bin, :tar)} -czf #{$CFG.get(:backuper, :download)}/#{@params["secret"]}/#{@params["filename"]} #{mountpoint}", [1,])
+			else
+				syscmd("#{$CFG.get(:bin, :tar)} -czf -s '/#{@params["datetime"].gsub(/\-/, "\\-")}/#{@veid}/' #{$CFG.get(:backuper, :download)}/#{@params["secret"]}/#{@params["filename"]} #{$CFG.get(:backuper, :dest)}/#{@veid}/.zfs/snapshot/#{@params["datetime"]}")
+			end
+		end
+		
 		def rsync
 			$CFG.get(:backuper, :zfs, :rsync) \
 				.gsub(/%\{rsync\}/, $CFG.get(:bin, :rsync)) \
