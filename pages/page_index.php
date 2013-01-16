@@ -19,7 +19,15 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-$xtpl->title(_("Cluster statistics"));
+
+$xtpl->title(_("Overview"));
+
+$xtpl->table_add_category(_("Notice board"));
+$xtpl->table_td($cluster_cfg->get("noticeboard"));
+$xtpl->table_tr();
+$xtpl->table_out("notice_board");
+
+$xtpl->table_title(_("Cluster statistics"));
 
 $xtpl->table_add_category('Members total');
 
@@ -51,18 +59,15 @@ $xtpl->table_tr();
 
 $xtpl->table_out();
 
-
+		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("vpsAdmin"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 
+		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("vpsAdmin"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_tr();
 
 $sql = 'SELECT * FROM servers ORDER BY server_location,server_id';
@@ -82,17 +87,15 @@ while ($srv = $db->fetch_array($rslt)) {
 		}
 
 		$xtpl->table_tr(true);
+		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("vpsAdmin"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 
+		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("vpsAdmin"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_tr(true);
 
 
@@ -100,32 +103,12 @@ while ($srv = $db->fetch_array($rslt)) {
 	}
 
 	$last_location = $srv["server_location"];
-
-	$xtpl->table_td($srv["server_name"]);
-
+	
 	$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$srv["server_id"].'" ORDER BY id DESC LIMIT 1';
 
 	if ($result = $db->query($sql))
 	    $status = $db->fetch_array($result);
-
-	$vpses = 0;
-
-	$res = $db->query('SELECT * FROM vps WHERE vps_server ="'.$srv["server_id"].'"');
-
-	while($vps = $db->fetch_array($res)) {
-			$res_stat = $db->query('SELECT * FROM vps_status WHERE vps_id ="'.$vps["vps_id"].'" ORDER BY id DESC LIMIT 1');
-
-			if ($stat = $db->fetch_array($res_stat)) {
-				if ($stat["vps_up"]) {
-					$vpses++;
-				}
-			}
-	}
-
-	$xtpl->table_td($vpses, false, true);
-	$xtpl->table_td(($srv["server_maxvps"]-$vpses), false, true);
-	$xtpl->table_td($status["vpsadmin_version"], false, true);
-
+	
 	$icons = "";
 
 	$last_update = date('Y-m-d H:i:s', $status["timestamp"]).' ('.date('i:s', (time()-$status["timestamp"])).')';
@@ -171,6 +154,25 @@ while ($srv = $db->fetch_array($rslt)) {
 		}
 
 		$xtpl->table_td($icons);
+	
+	$xtpl->table_td($srv["server_name"]);
+
+	$vpses = 0;
+
+	$res = $db->query('SELECT * FROM vps WHERE vps_server ="'.$srv["server_id"].'"');
+
+	while($vps = $db->fetch_array($res)) {
+			$res_stat = $db->query('SELECT * FROM vps_status WHERE vps_id ="'.$vps["vps_id"].'" ORDER BY id DESC LIMIT 1');
+
+			if ($stat = $db->fetch_array($res_stat)) {
+				if ($stat["vps_up"]) {
+					$vpses++;
+				}
+			}
+	}
+
+	$xtpl->table_td($vpses, false, true);
+	$xtpl->table_td(($srv["server_maxvps"]-$vpses), false, true);
 
 		$position++;
 		if ($position == 3) {

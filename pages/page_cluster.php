@@ -313,153 +313,91 @@ switch($_REQUEST["action"]) {
 			$list_templates = true;
 		}
 		break;
-	case "hddlimits":
-		$list_hddlimits = true;
+	case "configs":
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		$list_configs = true;
 		break;
-	case "hddlimit_new":
-		$xtpl->title2(_("New HDD limits item"));
+	case "config_new":
+		$xtpl->sbar_add(_("Back"), '?page=cluster&action=configs');
+		$xtpl->title2(_("Create config"));
 		$xtpl->table_add_category('');
 		$xtpl->table_add_category('');
-		$xtpl->form_create('?page=cluster&action=hddlimit_new_save', 'post');
-		$xtpl->form_add_input(_("Label").':', 'text', '30', 'd_label', '', _("User friendly label"));
-		$xtpl->form_add_input(_("Value [GB]").':', 'text', '10', 'd_gb', '', '');
-		$xtpl->form_out(_("Save changes"));
+		$xtpl->form_create('?page=cluster&action=config_new_save', 'post');
+		$xtpl->form_add_input(_('Name'), 'text', '30', 'name');
+		$xtpl->form_add_input(_('Label'), 'text', '30', 'label');
+		$xtpl->form_add_textarea(_('Config'), '60', '30', 'config');
+		$xtpl->form_out(_('Save'));
 		break;
-	case "hddlimit_new_save":
-		$cluster->set_hddlimit(NULL, $_REQUEST["d_label"], $_REQUEST["d_gb"]);
-		$xtpl->perex(_("Changes saved"), _("HDD Limit item successfully saved."));
-		$list_hddlimits = true;
+	case "config_new_save":
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		if (isset($_POST["config"])) {
+			$cluster->save_config(NULL, $_POST["name"], $_POST["label"], $_POST["config"]);
+			$xtpl->perex(_("Changes saved"), _("Config successfully saved."));
+		}
+		$list_configs = true;
 		break;
-	case "hddlimit_edit":
-		if ($item = $cluster->get_hddlimit_by_id($_REQUEST["id"])) {
-			$xtpl->title2(_("Edit HDD limits item"));
+	case "config_edit":
+		if ($cfg = $db->findByColumnOnce("config", "id", $_GET["config"])) {
+			$xtpl->title2(_("Edit config"));
 			$xtpl->table_add_category('');
 			$xtpl->table_add_category('');
-			$xtpl->form_create('?page=cluster&action=hddlimit_edit_save&id='.$_REQUEST["id"], 'post');
-			$xtpl->form_add_input(_("Label").':', 'text', '30', 'd_label', $item["d_label"], _("User friendly label"));
-			$xtpl->form_add_input(_("Value [GB]").':', 'text', '10', 'd_gb', $item["d_gb"], '');
-			$xtpl->form_out(_("Save changes"));
-		} else {
-			$list_hddlimits = true;
+			$xtpl->form_create('?page=cluster&action=config_edit_save&config='.$cfg["id"], 'post');
+			$xtpl->form_add_input(_('Name').':', 'text', '30', 'name', $cfg["name"]);
+			$xtpl->form_add_input(_('Label').':', 'text', '30', 'label', $cfg["label"]);
+			$xtpl->form_add_textarea(_('Config').':', '60', '30', 'config', $cfg["config"]);
+			$xtpl->form_add_checkbox(_("Reconfigure all affected VPSes").':', 'reapply', '1', '1');
+			$xtpl->form_out(_('Save'));
 		}
+		
+		$xtpl->sbar_add(_("Back"), '?page=cluster&action=configs');
+		
 		break;
-	case "hddlimit_edit_save":
-		if ($item = $cluster->get_hddlimit_by_id($_REQUEST["id"])) {
-			$cluster->set_hddlimit($_REQUEST["id"], $_REQUEST["d_label"], $_REQUEST["d_gb"]);
-			$xtpl->perex(_("Changes saved"), _("HDD Limit item successfully saved."));
-			$list_hddlimits = true;
-		} else {
-			$list_hddlimits = true;
+	case "config_edit_save":
+		if (isset($_POST["config"])) {
+			$cluster->save_config($_GET["config"], $_POST["name"], $_POST["label"], $_POST["config"], $_POST["reapply"]);
+			$xtpl->perex(_("Changes saved"), _("Config successfully saved."));
 		}
+		$list_configs = true;
 		break;
-	case "hddlimit_delete":
-		if ($item = $cluster->get_hddlimit_by_id($_REQUEST["id"])) {
-			if ($cluster->get_hddlimit_usage($_REQUEST["id"]) <= 0) {
-			$cluster->delete_hddlimit($_REQUEST["id"]);
-			$xtpl->perex(_("Item deleted"), _("HDD Limit deleted."));
+	case "configs_default_save":
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		
+		if (isset($_POST["configs"]) || isset($_POST["add_config"])) {
+			$raw_order = explode('&', $_POST['configs_order']);
+			$cfgs = array();
+			$i = 0;
+			
+			foreach($raw_order as $item) {
+				$item = explode('=', $item);
+				
+				if (!$item[1])
+					continue;
+				elseif (!strncmp($item[1], "add_config", strlen("add_config")))
+					$cfgs[] = $_POST['add_config'][$i++];
+				else {
+					$order = explode('_', $item[1]);
+					$cfgs[] = $order[1];
+				}
 			}
-		}
-		$list_hddlimits = true;
-		break;
-	case "ramlimits":
-		$list_ramlimits = true;
-		break;
-	case "ramlimit_new":
-		$xtpl->title2(_("New RAM limits item"));
-		$xtpl->table_add_category('');
-		$xtpl->table_add_category('');
-		$xtpl->form_create('?page=cluster&action=ramlimit_new_save', 'post');
-		$xtpl->form_add_input(_("Label").':', 'text', '30', 'vm_label', '', _("User friendly label"));
-		$xtpl->form_add_input(_("Soft limit [MB]").':', 'text', '10', 'vm_lim_soft', '', '');
-		$xtpl->form_add_input(_("Hard limit [MB]").':', 'text', '10', 'vm_lim_hard', '', '');
-		$xtpl->form_out(_("Save changes"));
-		break;
-	case "ramlimit_new_save":
-		$cluster->set_ramlimit(NULL, $_REQUEST["vm_label"], $_REQUEST["vm_lim_soft"], $_REQUEST["vm_lim_hard"]);
-		$xtpl->perex(_("Changes saved"), _("RAM Limit item successfully saved."));
-		$list_ramlimits = true;
-		break;
-	case "ramlimit_edit":
-		if ($item = $cluster->get_ramlimit_by_id($_REQUEST["id"])) {
-			$xtpl->title2(_("Edit RAM limits item"));
-			$xtpl->table_add_category('');
-			$xtpl->table_add_category('');
-			$xtpl->form_create('?page=cluster&action=ramlimit_edit_save&id='.$_REQUEST["id"], 'post');
-			$xtpl->form_add_input(_("Label").':', 'text', '30', 'vm_label', $item["vm_label"], _("User friendly label"));
-			$xtpl->form_add_input(_("Soft limit [MB]").':', 'text', '10', 'vm_lim_soft', $item["vm_lim_soft"], '');
-			$xtpl->form_add_input(_("Hard limit [MB]").':', 'text', '10', 'vm_lim_hard', $item["vm_lim_hard"], '');
-			$xtpl->form_out(_("Save changes"));
+			$cluster->save_default_configs($_POST["configs"] ? $_POST["configs"] : array(), $cfgs, $_POST["add_config"], "default_config_chain");
+			
+			$list_configs=true;
 		} else {
-			$list_ramlimits = true;
+			$xtpl->perex(_("Error"), 'Error, contact your administrator');
+			$list_configs=true;
 		}
+		
 		break;
-	case "ramlimit_edit_save":
-		if ($item = $cluster->get_ramlimit_by_id($_REQUEST["id"])) {
-			$cluster->set_ramlimit($_REQUEST["id"], $_REQUEST["vm_label"], $_REQUEST["vm_lim_soft"], $_REQUEST["vm_lim_hard"]);
-			$xtpl->perex(_("Changes saved"), _("RAM Limit item successfully saved."));
-			$list_ramlimits = true;
-		} else {
-			$list_ramlimits = true;
-		}
-		break;
-	case "ramlimit_delete":
-		if ($item = $cluster->get_ramlimit_by_id($_REQUEST["id"])) {
-			if ($cluster->get_ramlimit_usage($_REQUEST["id"]) <= 0) {
-			$cluster->delete_ramlimit($_REQUEST["id"]);
-			$xtpl->perex(_("Item deleted"), _("RAM Limit deleted."));
-			}
-		}
-		$list_ramlimits = true;
-		break;
-	case "cpulimits":
-		$list_cpulimits = true;
-		break;
-	case "cpulimit_new":
-		$xtpl->title2(_("New CPU limits item"));
-		$xtpl->table_add_category('');
-		$xtpl->table_add_category('');
-		$xtpl->form_create('?page=cluster&action=cpulimit_new_save', 'post');
-		$xtpl->form_add_input(_("Label").':', 'text', '30', 'cpu_label', '', _("User friendly label"));
-		$xtpl->form_add_input(_("CPU limit [%]").':', 'text', '10', 'cpu_limit', '', '');
-		$xtpl->form_add_input(_("CPUs").':', 'text', '10', 'cpu_cpus', '', '');
-		$xtpl->form_out(_("Save changes"));
-		break;
-	case "cpulimit_new_save":
-		$cluster->set_cpulimit(NULL, $_REQUEST["cpu_label"], $_REQUEST["cpu_limit"], $_REQUEST["cpu_cpus"]);
-		$xtpl->perex(_("Changes saved"), _("CPU Limit item successfully saved."));
-		$list_cpulimits = true;
-		break;
-	case "cpulimit_edit":
-		if ($item = $cluster->get_cpulimit_by_id($_REQUEST["id"])) {
-			$xtpl->title2(_("Edit CPU limits item"));
-			$xtpl->table_add_category('');
-			$xtpl->table_add_category('');
-			$xtpl->form_create('?page=cluster&action=cpulimit_edit_save&id='.$_REQUEST["id"], 'post');
-			$xtpl->form_add_input(_("Label").':', 'text', '30', 'cpu_label', $item["cpu_label"], _("User friendly label"));
-			$xtpl->form_add_input(_("CPU limit [%]").':', 'text', '10', 'cpu_limit', $item["cpu_limit"], '');
-			$xtpl->form_add_input(_("CPUs").':', 'text', '10', 'cpu_cpus', $item["cpu_cpus"], '');
-			$xtpl->form_out(_("Save changes"));
-		} else {
-			$list_cpulimits = true;
-		}
-		break;
-	case "cpulimit_edit_save":
-		if ($item = $cluster->get_cpulimit_by_id($_REQUEST["id"])) {
-			$cluster->set_cpulimit($_REQUEST["id"], $_REQUEST["cpu_label"], $_REQUEST["cpu_limit"], $_REQUEST["cpu_cpus"]);
-			$xtpl->perex(_("Changes saved"), _("CPU Limit item successfully saved."));
-			$list_cpulimits = true;
-		} else {
-			$list_cpulimits = true;
-		}
-		break;
-	case "cpulimit_delete":
-		if ($item = $cluster->get_cpulimit_by_id($_REQUEST["id"])) {
-			if ($cluster->get_cpulimit_usage($_REQUEST["id"]) <= 0) {
-			$cluster->delete_cpulimit($_REQUEST["id"]);
-			$xtpl->perex(_("Item deleted"), _("CPU Limit deleted."));
-			}
-		}
-		$list_cpulimits = true;
+	case "configs_default_del":
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		$chain = $cluster_cfg->get("default_config_chain");
+		$keys = array_keys($chain, $_GET["config"]);
+		
+		foreach($keys as $key)
+			unset($chain[$key]);
+		
+		$cluster_cfg->set("default_config_chain", $chain);
+		$list_configs=true;
 		break;
 	case "newnode":
 		$xtpl->title2(_("Register new server into cluster"));
@@ -545,9 +483,7 @@ switch($_REQUEST["action"]) {
 		$xtpl->form_add_textarea(_("Limits changed<br /> template").':', 50, 8, 'tpl_limits_changed', $cluster_cfg->get("mailer_tpl_limits_changed"), '
 								%member% - nick<br />
 								%vpsid% - VPS ID<br />
-								%cpulimit% - CPU limit<br />
-								%ramlimit% - RAM limit<br />
-								%hddlimit% - HDD limit
+								%configs% - List of configs
 								');
 		$xtpl->form_add_input(_("Send nonpayers info to").':', 'text', '40', 'nonpayers_mail', $cluster_cfg->get("mailer_nonpayers_mail"), '');
 		$xtpl->form_add_input(_("Nonpayer subject").':', 'text', '40', 'tpl_nonpayers_subj', $cluster_cfg->get("mailer_tpl_nonpayers_subj"), '');
@@ -637,21 +573,55 @@ switch($_REQUEST["action"]) {
 		$list_nodes = true;
 		break;
 	case "playground_settings":
-		$xtpl->title2("Manage Playground Settings");
-		$xtpl->table_add_category(_('Default limits'));
-		$xtpl->table_add_category('');
-		$xtpl->form_create('?page=cluster&action=playground_settings_save', 'post');
-		$xtpl->form_add_select(_("RAM").':', 'vps_privvmpages', list_limit_privvmpages(), $cluster_cfg->get("playground_limit_privvmpages"));
-		$xtpl->form_add_select(_("Disk space").':', 'vps_diskspace', list_limit_diskspace(), $cluster_cfg->get("playground_limit_diskspace"));
-		$xtpl->form_add_select(_("CPU").':', 'vps_cpulimit', list_limit_cpulimit(), $cluster_cfg->get("playground_limit_cpulimit"));
-		$xtpl->form_out(_("Save changes"));
 		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		$playground_settings=true;
 		break;
 	case "playground_settings_save":
-		$cluster_cfg->set("playground_limit_privvmpages", $_REQUEST["vps_privvmpages"]);
-		$cluster_cfg->set("playground_limit_diskspace", $_REQUEST["vps_diskspace"]);
-		$cluster_cfg->set("playground_limit_cpulimit", $_REQUEST["vps_cpulimit"]);
 		$xtpl->perex(_("Playground settings saved"), '');
+		$playground_settings = true;
+		break;
+	case "playground_configs_default_save":
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		
+		if (isset($_POST["configs"]) || isset($_POST["add_config"])) {
+			$raw_order = explode('&', $_POST['configs_order']);
+			$cfgs = array();
+			$i = 0;
+			
+			foreach($raw_order as $item) {
+				$item = explode('=', $item);
+				
+				if (!$item[1])
+					continue;
+				elseif (!strncmp($item[1], "add_config", strlen("add_config")))
+					$cfgs[] = $_POST['add_config'][$i++];
+				else {
+					$order = explode('_', $item[1]);
+					$cfgs[] = $order[1];
+				}
+			}
+			$cluster->save_default_configs($_POST["configs"] ? $_POST["configs"] : array(), $cfgs, $_POST["add_config"], "playground_default_config_chain");
+			
+			$playground_settings=true;
+		} else {
+			$xtpl->perex(_("Error"), 'Error, contact your administrator');
+			$playground_settings=true;
+		}
+		
+		break;
+	case "noticeboard":
+		$xtpl->table_title(_("Notice board"));
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		$xtpl->form_create('?page=cluster&action=noticeboard_save', 'post');
+		$xtpl->form_add_textarea(_("Text").':', 80, 25, 'noticeboard', $cluster_cfg->get("noticeboard"));
+		$xtpl->form_out(_("Save changes"));
+		
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		break;
+	case "noticeboard_save":
+		$cluster_cfg->set("noticeboard", $_POST["noticeboard"]);
+		$xtpl->perex(_("Notice board saved"), '');
 		$list_nodes = true;
 		break;
 	default:
@@ -705,9 +675,7 @@ if ($list_mails) {
 if ($list_nodes) {
 	$xtpl->sbar_add(_("Register new node"), '?page=cluster&action=newnode');
 	$xtpl->sbar_add(_("Manage VPS templates"), '?page=cluster&action=templates');
-	$xtpl->sbar_add(_("Manage RAM limits"), '?page=cluster&action=ramlimits');
-	$xtpl->sbar_add(_("Manage HDD limits"), '?page=cluster&action=hddlimits');
-	$xtpl->sbar_add(_("Manage CPU limits"), '?page=cluster&action=cpulimits');
+	$xtpl->sbar_add(_("Manage configs"), '?page=cluster&action=configs');
 	$xtpl->sbar_add(_("Manage IPv4 address list"), '?page=cluster&action=ipv4addr');
 	$xtpl->sbar_add(_("Manage IPv6 address list"), '?page=cluster&action=ipv6addr');
 	$xtpl->sbar_add(_("Manage DNS servers"), '?page=cluster&action=dns');
@@ -716,57 +684,123 @@ if ($list_nodes) {
 	$xtpl->sbar_add(_("Manage Payments"), '?page=cluster&action=payments_settings');
 	$xtpl->sbar_add(_("Manage API"), '?page=cluster&action=api_settings');
 	$xtpl->sbar_add(_("Manage playground"), '?page=cluster&action=playground_settings');
+	$xtpl->sbar_add(_("Notice board"), '?page=cluster&action=noticeboard');
 	$xtpl->sbar_add(_("Edit vpsAdmin textfields"), '?page=cluster&action=fields');
+	
 	$sql = 'SELECT * FROM servers ORDER BY server_location,server_id';
 	$list_result = $db->query($sql);
-	$xtpl->table_add_category(_("NAME"));
-	$xtpl->table_add_category(_("LOAD"));
-	$xtpl->table_add_category(_("RAM FREE"));
-	$xtpl->table_add_category(_("HDD FREE"));
-	$xtpl->table_add_category(_("LOCATION"));
-	$xtpl->table_add_category(_("AVAIL"));
-	$xtpl->table_add_category(_("MAX VPS"));
-	$xtpl->table_add_category(_("NOW VPS"));
-	$xtpl->table_add_category(_("STAT"));
-	$xtpl->table_add_category(' ');
-	$xtpl->table_add_category(' ');
+	
+	$i = 1;
+	$on_row = 2;
+	
+	for ($j = 0; $j < $on_row; $j++) {
+		$xtpl->table_add_category(_("A"));
+		$xtpl->table_add_category(_("NAME"));
+		$xtpl->table_add_category(_("L"));
+		$xtpl->table_add_category(_("R"));
+		$xtpl->table_add_category(_("S"));
+		$xtpl->table_add_category(_("T"));
+		$xtpl->table_add_category(_("M"));
+		$xtpl->table_add_category(_("V"));
+		$xtpl->table_add_category(' ');
+		
+		if ($j+1 < $on_row)
+			$xtpl->table_add_category(' ');
+	}
+	
 	while ($srv = $db->fetch_array($list_result)) {
-		$xtpl->table_td($srv["server_name"]);
+		
 		$node = new cluster_node($srv["server_id"]);
 		$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$srv["server_id"].'" ORDER BY id DESC LIMIT 1';
+		
 		if ($result = $db->query($sql))
-		$status = $db->fetch_array($result);
-		$xtpl->table_td($status["cpu_load"], false, true);
-		$xtpl->table_td($status["ram_free_mb"].' MB', false, true);
-		$xtpl->table_td($status["disk_vz_free_gb"].' GB', false, true);
-		$xtpl->table_td($node->get_location_label(), false, false);
-		if ($srv["server_availstat"]) {
-		$xtpl->table_td($srv["server_availstat"], false, true);
+			$status = $db->fetch_array($result);
+		
+		$icons = "";
+		
+		if ($cluster_cfg->get("lock_cron_".$srv["server_id"]))	{
+			$icons .= '<img title="'._("The server is currently processing").'" src="template/icons/warning.png"/>';
+		} elseif ((time()-$status["timestamp"]) > 360) {
+			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
 		} else {
-		$xtpl->table_td('---', false, true);
+			$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
 		}
-		$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_server='.$db->check($srv["server_id"]);
-		$vps_count = 0;
+		
+		$xtpl->table_td($icons, false, true);
+		
+		$xtpl->table_td($srv["server_name"]);
+		$xtpl->table_td($status["cpu_load"], false, true);
+		
+		$sql = 'SELECT COUNT(*) AS count FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1 AND vps_server = '.$db->check($srv["server_id"]);
+		
 		if ($result = $db->query($sql))
-		$vps_count = $db->fetch_array($result);
+			$running_count = $db->fetch_array($result);
+		
+		$xtpl->table_td($running_count["count"]);
+		
+		$sql = 'SELECT COUNT(*) AS count FROM vps v LEFT JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 0 AND vps_server = '.$db->check($srv["server_id"]);
+		
+		if ($result = $db->query($sql))
+			$stopped_count = $db->fetch_array($result);
+			
+		$xtpl->table_td($stopped_count["count"]);
+		
+		$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_server='.$db->check($srv["server_id"]);
+		
+		if ($result = $db->query($sql))
+			$vps_count = $db->fetch_array($result);
+		
 		$xtpl->table_td($vps_count["count"], false, true);
+		
+		$xtpl->table_td($srv["server_maxvps"]);
+		
+		/*
 		$vps_free = ((int)$srv["server_maxvps"]-(int)$vps_count["count"]);
 		$xtpl->table_td($vps_free, false, true);
-
-		$icons = "";
-		if ($cluster_cfg->get("lock_cron_".$srv["server_id"]))	{
-		$icons .= '<img title="'._("The server is currently processing").'" src="template/icons/warning.png"/>';
-		} elseif ((time()-$status["timestamp"]) > 360) {
-		$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
-		} else {
-		$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
-		}
-		$xtpl->table_td($icons, false, true);
-		$xtpl->table_td('<a href="?page=cluster&action=restart_node&id='.$srv["server_id"].'"><img src="template/icons/vps_restart.png" title="'._("Reboot node").'"/></a>');
+		*/
+		
+		$xtpl->table_td($status["vpsadmin_version"]);
+		
 		$xtpl->table_td('<a href="?page=cluster&action=node_start_vpses&id='.$srv["server_id"].'"><img src="template/icons/vps_start.png" title="'._("Start all VPSes here").'"/></a>');
-		$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$srv["server_id"].'" ORDER BY id DESC LIMIT 1';
-		$xtpl->table_tr();
+		
+		if (!($i++ % $on_row))
+			$xtpl->table_tr();
+		else
+			$xtpl->table_td('');
 	}
+	$xtpl->table_out();
+	
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('Legend');
+	
+	$xtpl->table_td("A");
+	$xtpl->table_td(_("Availability"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td("L");
+	$xtpl->table_td(_("Load"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td("R");
+	$xtpl->table_td(_("Running"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td("S");
+	$xtpl->table_td(_("Stopped"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td("T");
+	$xtpl->table_td(_("Total"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td("M");
+	$xtpl->table_td(_("Max"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td("V");
+	$xtpl->table_td(_("vpsAdmin"));
+	$xtpl->table_tr();
+	
 	$xtpl->table_out();
 }
 if ($list_templates) {
@@ -803,92 +837,79 @@ if ($list_templates) {
 				To add new template, save it to one node, then click 'Register new template' and finally copy it over all nodes.
 				"));
 }
-if ($list_hddlimits) {
-	$xtpl->title2(_("HDD limits list"));
-	$xtpl->table_add_category(_("ID"));
-	$xtpl->table_add_category(_("Disk space [GB]"));
-	$xtpl->table_add_category(_("Label"));
-	$xtpl->table_add_category(_("Uses"));
+
+if ($list_configs) {
+	$xtpl->sbar_add(_("New config"), '?page=cluster&action=config_new');
+	
+	$xtpl->title2(_("Configs"));
+		
+	$xtpl->table_add_category(_('Label'));
+	$xtpl->table_add_category(_('Name'));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
-	$list = $cluster->get_hddlimits();
-	if ($list)
-	foreach($list as $item) {
-	$usage = 0;
-	$usage = $cluster->get_hddlimit_usage($item["d_id"], false, true);
-	$xtpl->table_td($item["d_id"], false, true);
-	$xtpl->table_td($item["d_gb"], false, true);
-	$xtpl->table_td($item["d_label"], false, true);
-	$xtpl->table_td($usage);
-	$xtpl->table_td('<a href="?page=cluster&action=hddlimit_edit&id='.$item["d_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-	if ($usage > 0)
-		$xtpl->table_td('<img src="template/icons/delete_grey.png" title="'._("Delete - N/A, item is in use").'">');
-	else
-		$xtpl->table_td('<a href="?page=cluster&action=hddlimit_delete&id='.$item["d_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
-	$xtpl->table_tr();
+	
+	while($row = $db->find("config", NULL, "name")) {
+		$xtpl->table_td($row["label"]);
+		$xtpl->table_td($row["name"]);
+		$xtpl->table_td('<a href="?page=cluster&action=config_edit&config='.$row["id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		$xtpl->table_td('<a href="?page=cluster&action=config_delete&id='.$row["id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		$xtpl->table_tr();
 	}
+	
 	$xtpl->table_out();
-	$xtpl->sbar_add(_("New HDD limit"), '?page=cluster&action=hddlimit_new');
-}
-if ($list_ramlimits) {
-	$xtpl->title2(_("Virtual memory limits list"));
-	$xtpl->table_add_category(_("ID"));
-	$xtpl->table_add_category(_("Value soft [MB]"));
-	$xtpl->table_add_category(_("Value hard [MB]"));
-	$xtpl->table_add_category(_("Label"));
-	$xtpl->table_add_category(_("Uses"));
+	
+	$configs_select = list_configs(true);
+	$options = "";
+	
+	foreach($configs_select as $id => $label)
+		$options .= '<option value="'.$id.'">'.$label.'</option>';
+	
+	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
+	<script type="text/javascript">
+		function dnd() {
+			$("#configs").tableDnD({
+				onDrop: function(table, row) {
+					$("#configs_order").val($.tableDnD.serialize());
+				}
+			});
+		}
+		
+		$(document).ready(function() {
+			var add_config_id = 1;
+			
+			dnd();
+			
+			$("#add_row").click(function (){
+				$(\'<tr id="add_config_\' + add_config_id++ + \'"><td>'._('Add').':</td><td><select name="add_config[]">'.$options.'</select></td></tr>\').fadeIn("slow").insertBefore("#configs tr:nth-last-child(1)");
+				dnd();
+			});
+			
+			$(".delete-config").click(function (){
+				$(this).closest("tr").remove();
+			});
+		});
+    </script>');
+	
+	$chain = $cluster_cfg->get("default_config_chain");
+	$configs = list_configs();
+	
+	$xtpl->form_create('?page=cluster&action=configs_default_save', 'post');
+	$xtpl->table_title(_("Default config chain"));
+	$xtpl->table_add_category(_('Config'));
 	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
-	$list = $cluster->get_ramlimits();
-	if ($list)
-	foreach($list as $item) {
-	$usage = 0;
-	$usage = $cluster->get_ramlimit_usage($item["vm_id"]);
-	$xtpl->table_td($item["vm_id"], false, true);
-	$xtpl->table_td($item["vm_lim_soft"], false, true);
-	$xtpl->table_td($item["vm_lim_hard"], false, true);
-	$xtpl->table_td($item["vm_label"]);
-	$xtpl->table_td($usage, false, true);
-	$xtpl->table_td('<a href="?page=cluster&action=ramlimit_edit&id='.$item["vm_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-	if ($usage > 0)
-		$xtpl->table_td('<img src="template/icons/delete_grey.png" title="'._("Delete - N/A, item is in use").'">');
-	else
-		$xtpl->table_td('<a href="?page=cluster&action=ramlimit_delete&id='.$item["vm_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
-	$xtpl->table_tr();
+	
+	foreach($chain as $cfg) {
+		$xtpl->form_add_select_pure('configs[]', $configs, $cfg);
+		$xtpl->table_td('<a href="javascript:" class="delete-config">'._('delete').'</a>');
+		$xtpl->table_tr(false, false, false, "order_$cfg");
 	}
-	$xtpl->table_out();
-	$xtpl->sbar_add(_("New RAM limit"), '?page=cluster&action=ramlimit_new');
+	
+	$xtpl->table_td('<input type="hidden" name="configs_order" id="configs_order" value="">' .  _('Add').':');
+	$xtpl->form_add_select_pure('add_config[]', $configs_select);
+	$xtpl->table_tr(false, false, false, 'add_config');
+	$xtpl->form_out(_("Save changes"), 'configs', '<a href="javascript:" id="add_row">+</a>');
 }
 
-if ($list_cpulimits) {
-	$xtpl->title2(_("CPU limits list"));
-	$xtpl->table_add_category(_("ID"));
-	$xtpl->table_add_category(_("CPU Limit [%]"));
-	$xtpl->table_add_category(_("CPUs"));
-	$xtpl->table_add_category(_("Label"));
-	$xtpl->table_add_category(_("Uses"));
-	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
-	$list = $cluster->get_cpulimits();
-	if ($list)
-	foreach($list as $item) {
-	$usage = 0;
-	$usage = $cluster->get_cpulimit_usage($item["cpu_id"]);
-	$xtpl->table_td($item["cpu_id"], false, true);
-	$xtpl->table_td($item["cpu_limit"], false, true);
-	$xtpl->table_td($item["cpu_cpus"], false, true);
-	$xtpl->table_td($item["cpu_label"]);
-	$xtpl->table_td($usage, false, true);
-	$xtpl->table_td('<a href="?page=cluster&action=cpulimit_edit&id='.$item["cpu_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-	if ($usage > 0)
-		$xtpl->table_td('<img src="template/icons/delete_grey.png" title="'._("Delete - N/A, item is in use").'">');
-	else
-		$xtpl->table_td('<a href="?page=cluster&action=cpulimit_delete&id='.$item["cpu_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
-	$xtpl->table_tr();
-	}
-	$xtpl->table_out();
-	$xtpl->sbar_add(_("New CPU limit"), '?page=cluster&action=cpulimit_new');
-}
 if ($list_locations) {
 	$xtpl->title2(_("Cluster locations list"));
 	$xtpl->table_add_category(_("ID"));
@@ -969,6 +990,61 @@ if ($list_dns) {
 	}
 	$xtpl->table_out();
 	$xtpl->sbar_add(_("New DNS Server"), '?page=cluster&action=dns_new');
+}
+
+if ($playground_settings) {
+	$xtpl->title2("Manage Playground Settings");
+	
+	$configs_select = list_configs(true);
+	$options = "";
+	
+	foreach($configs_select as $id => $label)
+		$options .= '<option value="'.$id.'">'.$label.'</option>';
+	
+	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
+	<script type="text/javascript">
+		function dnd() {
+			$("#configs").tableDnD({
+				onDrop: function(table, row) {
+					$("#configs_order").val($.tableDnD.serialize());
+				}
+			});
+		}
+		
+		$(document).ready(function() {
+			var add_config_id = 1;
+			
+			dnd();
+			
+			$("#add_row").click(function (){
+				$(\'<tr id="add_config_\' + add_config_id++ + \'"><td>'._('Add').':</td><td><select name="add_config[]">'.$options.'</select></td></tr>\').fadeIn("slow").insertBefore("#configs tr:nth-last-child(1)");
+				dnd();
+			});
+			
+			$(".delete-config").click(function (){
+				$(this).closest("tr").remove();
+			});
+		});
+    </script>');
+	
+	$chain = $cluster_cfg->get("playground_default_config_chain");
+	$configs = list_configs();
+	
+	$xtpl->form_create('?page=cluster&action=playground_configs_default_save', 'post');
+	$xtpl->table_title(_("Playground config chain"));
+	$xtpl->table_add_category(_('Config'));
+	$xtpl->table_add_category('');
+	
+	foreach($chain as $cfg) {
+		$xtpl->form_add_select_pure('configs[]', $configs, $cfg);
+		$xtpl->table_td('<a href="javascript:" class="delete-config">'._('delete').'</a>');
+		$xtpl->table_tr(false, false, false, "order_$cfg");
+	}
+	
+	$xtpl->table_td('<input type="hidden" name="configs_order" id="configs_order" value="">' .  _('Add').':');
+	$xtpl->form_add_select_pure('add_config[]', $configs_select);
+	$xtpl->table_tr(false, false, false, 'add_config');
+	$xtpl->form_out(_("Save changes"), 'configs', '<a href="javascript:" id="add_row">+</a>');
 }
 
 $xtpl->sbar_out(_("Manage Cluster"));

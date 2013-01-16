@@ -101,58 +101,17 @@ function ip_is_free($ip_addr) {
 	else return false;
 }
 
-function list_limit_diskspace() {
-    global $db;
-    $sql = 'SELECT * FROM cfg_diskspace';
-    if ($result = $db->query($sql))
-	while ($row = $db->fetch_array($result))
-	    $ret[$row["d_id"]] = $row["d_label"];
-    return $ret;
-}
-
-function limit_diskspace_by_id ($id) {
-    global $db;
-    $sql = 'SELECT * FROM cfg_diskspace WHERE d_id="'.$db->check($id).'" LIMIT 1';
-    if ($result = $db->query($sql))
-	if ($row = $db->fetch_array($result))
-	    return $row;
-    return false;
-}
-
-function list_limit_privvmpages($force = false) {
-    global $db;
-    $sql = 'SELECT * FROM cfg_privvmpages'.(($force) ? ' WHERE vm_usable=1' : '');
-    if ($result = $db->query($sql))
-	while ($row = $db->fetch_array($result))
-	    $ret[$row["vm_id"]] = $row["vm_label"];
-    return $ret;
-}
-
-function limit_privvmpages_by_id ($id) {
-    global $db;
-    $sql = 'SELECT * FROM cfg_privvmpages WHERE vm_id="'.$db->check($id).'" LIMIT 1';
-    if ($result = $db->query($sql))
-	if ($row = $db->fetch_array($result))
-	    return $row;
-    return false;
-}
-
-function list_limit_cpulimit($force = false) {
-    global $db;
-    $sql = 'SELECT * FROM cfg_cpulimits'.(($force) ? ' WHERE cpu_usable=1' : '');
-    if ($result = $db->query($sql))
-	while ($row = $db->fetch_array($result))
-	    $ret[$row["cpu_id"]] = $row["cpu_label"];
-    return $ret;
-}
-
-function limit_cpulimit_by_id ($id) {
-    global $db;
-    $sql = 'SELECT * FROM cfg_cpulimits WHERE cpu_id="'.$db->check($id).'" LIMIT 1';
-    if ($result = $db->query($sql))
-	if ($row = $db->fetch_array($result))
-	    return $row;
-    return false;
+function list_configs($empty = false) {
+	global $db;
+	
+	$sql = "SELECT id, `label` FROM config ORDER BY name";
+	$ret = $empty ? array(0 => '---') : array();
+	
+	if ($result = $db->query($sql))
+		while ($row = $db->fetch_array($result))
+			$ret[$row["id"]] = $row["label"];
+	
+	return $ret;
 }
 
 function list_templates() {

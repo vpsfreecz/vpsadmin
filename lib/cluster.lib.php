@@ -290,7 +290,7 @@ class cluster_cfg {
 	$sql = 'SELECT * FROM sysconfig WHERE cfg_name="'.$db->check($setting).'"';
 	if ($result = $db->query($sql)) {
 	    if ($row = $db->fetch_array($result)) {
-		return stripslashes(unserialize($row["cfg_value"]));
+		return unserialize(stripslashes($row["cfg_value"]));
 	    } else return false;
 	} else return false;
     }
@@ -536,175 +536,68 @@ class cluster {
 	    }
 	}
     }
-    function list_hddlimits() {
-	global $db;
-	$sql = 'SELECT * FROM cfg_diskspace';
-	if ($result = $db->query($sql))
-	    while ($row = $db->fetch_array($result))
-		$ret[$row["d_id"]] = $row["d_label"];
-	return $ret;
+    function save_config($id, $name, $label, $config, $reapply = false) {
+		global $db;
+		
+		$params = array("name" => $name, "config" => $config);
+		
+		if($id != NULL) {
+			$sql = "UPDATE `config` SET name = '".$db->check($name)."',
+			        label = '".$db->check($label)."',
+			        `config` = '".$db->check($config)."'
+			        WHERE id = '".$db->check($id)."'";
+			$c = $db->findByColumnOnce("config", "id", $id);
+			
+			if ($c["name"] != $name)
+				$params["old_name"] = $c["name"];
+		} else
+			$sql = "INSERT INTO `config` SET name = '".$db->check($name)."',
+			        label = '".$db->check($label)."',
+			        `config` = '".$db->check($config)."'";
+		
+		add_transaction_clusterwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_CONFIG_CREATE, $params);
+		
+		$db->query($sql);
+		
+		if ($reapply) {
+			while($row = $db->findByColumn("vps_has_config", "config_id", $id)) {
+				$vps = vps_load($row["vps_id"]);
+				$vps->applyconfigs();
+			}
+		}
     }
-    function get_hddlimits() {
-	global $db;
-	$sql = 'SELECT * FROM cfg_diskspace';
-	if ($result = $db->query($sql))
-	    while ($row = $db->fetch_array($result))
-		$ret[] = $row;
-	return $ret;
+    
+    function delete_config($id) {
+		global $db;
+		
+		if($cfg = $db->findByColumnOnce("config", "id", $id)) {
+			$db->query('DELETE FROM vps_has_config WHERE config_id = "'.$db->check($id).'"');
+			$db->query('DELETE FROM `config` WHERE id = "'.$db->check($id).'"');
+			
+			add_transaction_clusterwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_CONFIG_DELETE, array("name" => $cfg["name"]));
+		}
     }
-    function get_hddlimit_usage($d_id) {
-	global $db;
-	$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_diskspace='.$db->check($d_id);
-	if ($result = $db->query($sql)) {
-	    $row = $db->fetch_array($result);
-	    return $row["count"];
-	} else {
-	    return false;
+    
+    function save_default_configs($configs, $cfg_order, $new_cfgs, $syscfg_name) {
+		global $cluster_cfg;
+		
+		$res = array();
+		
+		if ($cfg_order) {
+			$res = $cfg_order;
+		} else {
+			$res = $configs;
+			
+			foreach($new_cfgs as $cfg)
+				if ($cfg)
+					$res[] = $cfg;
+		}
+		
+		$cluster_cfg->set($syscfg_name, $res);
+		
+		return true;
 	}
-    }
-    function get_hddlimit_by_id($d_id) {
-	global $db;
-	$sql = 'SELECT * FROM cfg_diskspace WHERE d_id='.$db->check($d_id);
-	$ret = false;
-	if ($result = $db->query($sql))
-	    $ret = $db->fetch_array($result);
-	return $ret;
-    }
-    function set_hddlimit($id = NULL, $label, $d_gb) {
-	global $db;
-	if ($id != NULL)
-	    $sql = 'UPDATE cfg_diskspace
-			SET d_label = "'.$db->check($label).'",
-			    d_gb =    "'.$db->check($d_gb).'"
-			WHERE d_id = "'.$db->check($id).'"';
-	else
-	    $sql = 'INSERT INTO cfg_diskspace
-			SET d_label = "'.$db->check($label).'",
-			    d_gb = "'.$db->check($d_gb).'"';
-	return ($db->query($sql));
-    }
-    function delete_hddlimit($d_id) {
-	global $db;
-	if ($this->get_hddlimit_usage($d_id) <= 0) {
-	    $sql = 'DELETE FROM cfg_diskspace
-			WHERE d_id = "'.$db->check($d_id).'"';
-	    $db->query($sql);
-	}
-    }
-    function list_ramlimits() {
-	global $db;
-	$sql = 'SELECT * FROM cfg_privvmpages'.(($force) ? ' WHERE vm_usable=1' : '');
-	if ($result = $db->query($sql))
-	    while ($row = $db->fetch_array($result))
-		$ret[$row["vm_id"]] = $row["vm_label"];
-	return $ret;
-    }
-    function get_ramlimits() {
-	global $db;
-	$sql = 'SELECT * FROM cfg_privvmpages'.(($force) ? ' WHERE vm_usable=1' : '');
-	if ($result = $db->query($sql))
-	    while ($row = $db->fetch_array($result))
-		$ret[] = $row;
-	return $ret;
-    }
-    function get_ramlimit_usage($vm_id) {
-	global $db;
-	$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_privvmpages='.$db->check($vm_id);
-	if ($result = $db->query($sql)) {
-	    $row = $db->fetch_array($result);
-	    return $row["count"];
-	} else {
-	    return false;
-	}
-    }
-    function get_ramlimit_by_id($vm_id) {
-	global $db;
-	$sql = 'SELECT * FROM cfg_privvmpages WHERE vm_id='.$db->check($vm_id);
-	$ret = false;
-	if ($result = $db->query($sql))
-	    $ret = $db->fetch_array($result);
-	return $ret;
-    }
-    function set_ramlimit($id = NULL, $label, $softlimit, $hardlimit) {
-	global $db;
-	if ($id != NULL)
-	    $sql = 'UPDATE cfg_privvmpages
-			SET vm_label = "'.$db->check($label).'",
-			    vm_lim_soft =    "'.$db->check($softlimit).'",
-			    vm_lim_hard =    "'.$db->check($hardlimit).'"
-			WHERE vm_id = "'.$db->check($id).'"';
-	else
-	    $sql = 'INSERT INTO cfg_privvmpages
-			SET vm_label = "'.$db->check($label).'",
-			    vm_lim_soft =    "'.$db->check($softlimit).'",
-			    vm_lim_hard =    "'.$db->check($hardlimit).'"';
-	return ($db->query($sql));
-    }
-    function delete_ramlimit($vm_id) {
-	global $db;
-	if ($this->get_ramlimit_usage($vm_id) <= 0) {
-	    $sql = 'DELETE FROM cfg_privvmpages
-			WHERE vm_id = "'.$db->check($vm_id).'"';
-	    $db->query($sql);
-	}
-    }
-     function list_cpulimits() {
-	global $db;
-	$sql = 'SELECT * FROM cfg_cpulimits'.(($force) ? ' WHERE cpu_usable=1' : '');
-	if ($result = $db->query($sql))
-	    while ($row = $db->fetch_array($result))
-		$ret[$row["vm_id"]] = $row["vm_label"];
-	return $ret;
-    }
-    function get_cpulimits() {
-	global $db;
-	$sql = 'SELECT * FROM cfg_cpulimits'.(($force) ? ' WHERE cpu_usable=1' : '');
-	if ($result = $db->query($sql))
-	    while ($row = $db->fetch_array($result))
-		$ret[] = $row;
-	return $ret;
-    }
-    function get_cpulimit_usage($cpu_id) {
-	global $db;
-	$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_cpulimit='.$db->check($cpu_id);
-	if ($result = $db->query($sql)) {
-	    $row = $db->fetch_array($result);
-	    return $row["count"];
-	} else {
-	    return false;
-	}
-    }
-    function get_cpulimit_by_id($cpu_id) {
-	global $db;
-	$sql = 'SELECT * FROM cfg_cpulimits WHERE cpu_id='.$db->check($cpu_id);
-	$ret = false;
-	if ($result = $db->query($sql))
-	    $ret = $db->fetch_array($result);
-	return $ret;
-    }
-    function set_cpulimit($id = NULL, $label, $limit, $cpus) {
-	global $db;
-	if ($id != NULL)
-	    $sql = 'UPDATE cfg_cpulimits
-			SET cpu_label = "'.$db->check($label).'",
-			    cpu_limit =    "'.$db->check($limit).'",
-			    cpu_cpus =    "'.$db->check($cpus).'"
-			WHERE cpu_id = "'.$db->check($id).'"';
-	else
-	    $sql = 'INSERT INTO cfg_cpulimits
-			SET cpu_label = "'.$db->check($label).'",
-			    cpu_limit =    "'.$db->check($limit).'",
-			    cpu_cpus =    "'.$db->check($cpus).'"';
-	return ($db->query($sql));
-    }
-    function delete_cpulimit($cpu_id) {
-	global $db;
-	if ($this->get_ramlimit_usage($cpu_id) <= 0) {
-	    $sql = 'DELETE FROM cfg_cpulimits
-			WHERE cpu_id = "'.$db->check($cpu_id).'"';
-	    $db->query($sql);
-	}
-    }
+    
     function get_location_by_id ($location_id) {
 	global $db;
 	$sql = 'SELECT * FROM locations WHERE location_id = "'.$db->check($location_id).'"';

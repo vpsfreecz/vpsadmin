@@ -45,8 +45,11 @@ if ($_GET["action"] == 'login') {
 			$xtpl->perex(_("Welcome, ").$member["m_nick"],
 					_("Login successful <br /> Your privilege level: ")
 					. $cfg_privlevel[$member["m_level"]]);
-
-			$xtpl->delayed_redirect('?page=', 350);
+			
+			if ($_SESSION["is_admin"])
+				header('Location: ?page=cluster');
+			else
+				header('Location: ?page=');
 
 			$_member = member_load($member["m_id"]);
 			$_member->touch_activity();

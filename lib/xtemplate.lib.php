@@ -566,7 +566,7 @@ class XTemplate {
 	  * @param $tr_class - CSS class of row
 	  * @param $tr_class_hover - CSS class when mouse over
 	  */
-	function table_tr ($tr_back_color=false, $tr_class=false, $tr_class_hover=false) {
+	function table_tr ($tr_back_color=false, $tr_class=false, $tr_class_hover=false, $id = null) {
 		// UPDATED BY toms
 		$this->table_rows++;
 		if ($tr_back_color)
@@ -593,12 +593,22 @@ class XTemplate {
 				$this->assign('TRCLASS', 'oddrow');
 			}
 		}
+		
+		if ($id)
+			$this->assign('TRID', 'id="'.$id.'"');
+		else $this->assign('TRID', '');
+		
 		$this->parse('main.table.tr');
 	}
 	/**
 	  * Parse out the table
 	  */
-	function table_out() {
+	function table_out($id = null) {
+		if ($id) {
+			$this->assign('TABLE_ID', 'id="'.$id.'"');
+			$this->parse('main.table.table_id');
+		}
+		
 		$this->table_rows = 0;
 		$this->parse('main.table');
 	}
@@ -651,6 +661,22 @@ class XTemplate {
 
 		return 'input'.$uid;
 	}
+	
+	/**
+	  * Add input to form without label
+	  * @param $type - type of HTML input
+	  * @param $size - size of element
+	  * @param $name - $_RESULT[name]
+	  * @param $value - default value
+	  *
+	  * @return uid;
+	  */
+	function form_add_input_pure($type = 'text', $size = '30', $name = 'input_fromgen', $value = '') {
+		$this->table_td('<input type="'.$type.'" size="'.$size.'" name="'.$name.'" id="input'. $uid .'" value="'.$value.'" '.$maxlength.' '.$extra.' />');
+		
+		return 'input'.$uid;
+	}
+	
 	/**
 	  * Add select (combobox) to form
 	  * @param $label - label of textarea
@@ -659,9 +685,9 @@ class XTemplate {
 	  * @param $selected_value - default selected value
 	  * @param $hint - helping hint
 	  */
-	function form_add_select($label = 'popisek', $name = 'select_fromgen', $options, $selected_value = '', $hint = '') {
+	function form_add_select($label = 'popisek', $name = 'select_fromgen', $options, $selected_value = '', $hint = '', $multiple = false, $size = '5', $colspan = '1') {
 		$this->table_td($label);
-		$code = ('<select  name="'.$name.'" id="input">');
+		$code = ('<select  name="'.$name.'" id="input" '.($multiple ? 'multiple size="'.$size.'"' : '').'>');
 		if ($options)
 		foreach ($options as $key=>$value) {
 		if ($selected_value == $key)
@@ -669,10 +695,30 @@ class XTemplate {
 			else $code .= '<option value="'.$key.'" title="">'.$value.'</option> \n';
 		}
 		$code .= ('</select>');
-		$this->table_td($code);
+		$this->table_td($code, false, false, $colspan);
 		if ($hint != '') $this->table_td($hint);
-		$this->table_tr();
+		$this->table_tr(false, false, false, $name);
 	}
+	
+	/**
+	  * Add select (combobox) to form
+	  * @param $name - $_RESULT[name]
+	  * @param $options - array of options, $option[option_name] = "Option Label"
+	  * @param $selected_value - default selected value
+	  */
+	function form_add_select_pure($name = 'select_fromgen', $options, $selected_value = '', $multiple = false, $size = '5') {
+		$code = ('<select  name="'.$name.'" id="input" '.($multiple ? 'multiple size="'.$size.'"' : '').'>');
+		if ($options)
+		foreach ($options as $key=>$value) {
+			if ( $selected_value == $key || ($multiple && is_array($selected_value) && in_array($key, $selected_value)) )
+				$code .= '<option selected="selected" value="'.$key.'" title="">'.$value.'</option> \n';
+			else
+				$code .= '<option value="'.$key.'" title="">'.$value.'</option> \n';
+		}
+		$code .= ('</select>');
+		$this->table_td($code);
+	}
+	
 	/**
 	  * Add textarea to form
 	  * @param $label - label of textarea
@@ -704,6 +750,16 @@ class XTemplate {
 	}
 	
 	/**
+	  * Add checkobox to form without label
+	  * @param $name - $_RESULT[name]
+	  * @param $value - value if checked
+	  * @param $checked - if it is checked by default
+	  */
+	function form_add_checkbox_pure($name = 'input_fromgen', $value = '', $checked=false) {
+		$this->table_td('<input type="checkbox" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' />');
+	}
+	
+	/**
 	  * Add radio to form
 	  * @param $label - label of radio
 	  * @param $name - $_RESULT[name]
@@ -721,12 +777,12 @@ class XTemplate {
 	  * Parse out the form
 	  * @param $submit_label - label of submit button of the form
 	  */
-	function form_out($submit_label) {
-		$this->table_td('');
-		$this->table_td('<input type="submit" value=" '.$submit_label.' "  id="button"/>');
-		$this->table_tr('');
+	function form_out($submit_label, $id = null, $label = '', $colspan = '1') {
+		$this->table_td($label);
+		$this->table_td('<input type="submit" value=" '.$submit_label.' "  id="button"/>', false, false, $colspan);
+		$this->table_tr(false, 'nodrag nodrop');
 		$this->assign('TABLE_FORM_END','</form>');
-		$this->table_out();
+		$this->table_out($id);
 	}
 	/**
 	  * Add transaction line to rightside shortlog

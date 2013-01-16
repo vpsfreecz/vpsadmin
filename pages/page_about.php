@@ -10,8 +10,8 @@
 $xtpl->perex('vpsAdmin',nl2br(
 '		vpsAdmin '.VERSION.'
 		Web-admin interface for OpenVZ (see <a href="http://openvz.org">http://openvz.org</a>)
-		Copyright &copy; 2008-2012 Pavel Snajdr
-		Copyright &copy; 2012 Jakub Skokan
+		Copyright &copy; 2008-2013 Pavel Snajdr
+		Copyright &copy; 2012-2013 Jakub Skokan
 		All rights reserved.
 
     Library lib/xtemplate.lib.php is based on Xtemplate,

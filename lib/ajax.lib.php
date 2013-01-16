@@ -33,32 +33,17 @@ $html_js_e = '</script>';
 */
 function ajax_getHTML($url, $div, $time=1000)
 {
-	global $html_js_b;
-	global $html_js_e;
-
-	$uid = uniqid();
-	$out = $html_js_b."\n";
-	$out.= ' var request_perform'. $uid .';'."\n";
-	$out.= ' var request_periodical'. $uid .';'."\n";
-
-	$out.= ' window.addEvent(\'domready\', function() {'."\n";
-  	$out.= '  var req'. $uid .' = new Request.HTML({
-                method: \'get\',
-                url: \''. $url .'\',
-                onRequest: function() {  },
-                update: $(\''. $div .'\'),
-                onComplete: function(response) {
-                  $(\''. $div .'\').set(\'html\', \'\');
-                  $(\''. $div .'\').adopt(response);
-                }
-            });'."\n";
-	$out.= 'request_perform'. $uid .' = function () {
-              req'. $uid .'.send(\'r=\' + $time() + $random(0, 100)); // hack for IE7,8 & webkit (Safari, Chrome, Arora...)
-         };
-        request_periodical'. $uid .' = request_perform'. $uid .'.periodical('. $time .');
-    ';
-	$out.= ' });'."\n";
-	$out.= $html_js_e."\n";
+	$out = '
+	<script type="text/javascript">
+		$(document).ready(function (){
+			setInterval(function () {
+				$.get("'.$url.'", function(data) {
+					$("#'.$div.'").html(data);
+				});
+			}, '.$time.');
+		});
+	</script>
+	';
 
     return $out;
 }

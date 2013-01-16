@@ -79,7 +79,7 @@ class vps_load {
 	return true;
   }
 
-  function create_new($server_id, $template_id, $hostname, $m_id, $privvmpages, $diskspace, $cpulimit, $info) {
+  function create_new($server_id, $template_id, $hostname, $m_id, $info) {
 	global $db, $cluster;
 	if (!$this->exists && $template = template_by_id($template_id)) {
 		$server = $db->findByColumnOnce("servers", "server_id", $server_id);
@@ -93,10 +93,7 @@ class vps_load {
 				    vps_hostname ="'.$db->check($hostname).'",
 				    vps_server ="'.$db->check($server_id).'",
 				    vps_onboot ="'.$db->check($location["location_vps_onboot"]).'",
-				    vps_privvmpages = 0,
-				    vps_onstartall = 1,
-				    vps_diskspace = 0,
-				    vps_cpulimit = 0';
+				    vps_onstartall = 1';
 		$db->query($sql);
 		$this->veid = $db->insert_id();
 		$this->exists = true;
@@ -110,9 +107,6 @@ class vps_load {
 		$this->ve["vps_template"] = $template["templ_name"];
 		$this->ve["vps_onboot"] = $location["location_vps_onboot"];
 		add_transaction($_SESSION["member"]["m_id"], $server_id, $this->veid, T_CREATE_VE, $params);
-		$this->set_privvmpages($privvmpages, true);
-		$this->set_diskspace($diskspace, true);
-		$this->set_cpulimit($cpulimit, true);
     $this->nameserver($cluster->get_first_suitable_dns($cluster->get_location_of_server($server_id)));
 	}
   }
@@ -130,9 +124,7 @@ class vps_load {
 		$this->ve["vps_nameserver"] = "8.8.8.8";
 		$params["nameserver"] = $this->ve["vps_nameserver"];
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_REINSTALL_VE, $params);
-		$this->set_privvmpages($this->ve["vps_privvmpages"], true);
-		$this->set_diskspace($this->ve["vps_diskspace"], true);
-		$this->set_cpulimit($this->ve["vps_cpulimit"], true);
+		$this->applyconfigs();
     if ($ips)
       foreach ($ips as $ip) {
         $this->ipadd($ip["ip_addr"]);
@@ -309,7 +301,7 @@ function ipadd($ip, $type = 4) {
 	}
   }
 
-  function offline_migrate($target_id) {
+  function offline_migrate($target_id, $stop = false) {
 	global $db, $cluster;
 	if ($this->exists) {
 		$servers = list_servers();
@@ -326,7 +318,9 @@ function ipadd($ip, $type = 4) {
 				$params["target_id"] = $target_id;
 			}
 		}
+		
 		$params["target"] = $target_server["server_ip4"];
+		$params["stop"] = (bool)$stop;
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_MIGRATE_OFFLINE, $params);
 		$migration_id = $db->insertId();
 		
@@ -385,77 +379,120 @@ function ipadd($ip, $type = 4) {
 	  } else return false;
 	}
   }
-
-
-  function set_privvmpages($privvmpages, $force = false) {
+  
+  function get_configs() {
 	global $db;
-	if (($this->exists && $_SESSION["is_admin"]) || $force) {
-	  $vm = limit_privvmpages_by_id($privvmpages);
-	  $vzctl = "{$vm["vm_lim_soft"]}M". (($vm["vm_lim_hard"]) ? ":{$vm["vm_lim_hard"]}M" : '');
-	  $sql = 'UPDATE vps SET vps_privvmpages = "'.$db->check($privvmpages).'" WHERE vps_id = '.$db->check($this->veid);
-	  $db->query($sql);
-	  if ($db->affected_rows() == 1 || $force) {
-		$command = array('privvmpages' => $vzctl);
-		$this->ve["vps_privvmpages"] = $privvmpages;
-		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_LIMITS, $command);
-	  } else return array('0' => '');
-	}
-  }
-
-  function set_diskspace($diskspace, $force = false) {
-	global $db;
-	if (($this->exists && $_SESSION["is_admin"]) || $force) {
-	  $d = limit_diskspace_by_id($diskspace);
-	  $vzctl = "{$d["d_gb"]}G:{$d["d_gb"]}G";
-	  $sql = 'UPDATE vps SET vps_diskspace = "'.$db->check($diskspace).'" WHERE vps_id = '.$db->check($this->veid);
-	  $db->query($sql);
-	  if ($db->affected_rows() == 1 || $force) {
-		$command = array('diskspace' => $vzctl);
-		$this->ve["vps_diskspace"] = $diskspace;
-		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_LIMITS, $command);
-	  } else return array('0' => '');
-	}
+	
+	$sql = "SELECT config_id, c.label FROM vps_has_config vhc
+	        INNER JOIN config c ON c.id = vhc.config_id
+	        WHERE vhc.vps_id = ".$db->check($this->veid)."
+	        ORDER BY vhc.order ASC";
+	$ret = array();
+	
+	if ($result = $db->query($sql))
+		while ($row = $db->fetch_array($result))
+			$ret[$row["config_id"]] = $row["label"];
+	
+	return $ret;
   }
   
-  function set_cpulimit($cpulimit, $force = false) {
+  function update_configs($configs, $cfg_order, $new_cfgs) {
 	global $db;
-	if (($this->exists && $_SESSION["is_admin"]) || $force) {
-	  $cpu = limit_cpulimit_by_id($cpulimit);
-	  $sql = 'UPDATE vps SET vps_cpulimit = "'.$db->check($cpulimit).'" WHERE vps_id = '.$db->check($this->veid);
-	  $db->query($sql);
-	  if ($db->affected_rows() == 1 || $force) {
-		$command = array("cpulimit" => $cpu["cpu_limit"], "cpus" => $cpu["cpu_cpus"]);
-		$this->ve["vps_cpulimit"] = $cpulimit;
-		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_LIMITS, $command);
-	  } else return array('0' => '');
+	
+	if (!$db->query("DELETE FROM vps_has_config WHERE vps_id = ".$db->check($this->veid))) {
+		return false;
 	}
+	
+	$i = 1;
+	
+	if ($cfg_order) {
+		foreach($cfg_order as $cfg) {
+			$db->query("INSERT INTO vps_has_config SET vps_id = ".$db->check($this->veid).", config_id = ".$db->check($cfg).", `order` = ".$i++."");
+		}
+	} else {
+		foreach($configs as $cfg) {
+			$db->query("INSERT INTO vps_has_config SET vps_id = ".$db->check($this->veid).", config_id = ".$db->check($cfg).", `order` = ".$i++."");
+		}
+		
+		foreach($new_cfgs as $cfg) {
+			if ($cfg)
+				$db->query("INSERT INTO vps_has_config SET vps_id = ".$db->check($this->veid).", config_id = ".$db->check($cfg).", `order` = ".$i++."");
+		}
+	}
+	
+	$this->applyconfigs();
+	
+	return true;
   }
   
-  function limit_change_notify() {
+  function config_del($cfg) {
+	global $db;
+	
+	if ($db->query("DELETE FROM vps_has_config WHERE vps_id = ".$db->check($this->veid)." AND config_id = ".$db->check($cfg)."")) {
+		$this->applyconfigs();
+		return true;
+	}
+	return false;
+  }
+  
+  function update_custom_config($cfg) {
+	global $db;
+	
+	$db->query("UPDATE vps SET vps_config = '".$db->check($cfg)."' WHERE vps_id = '".$db->check($this->veid)."'");
+	
+	add_transaction_clusterwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_CONFIG_CREATE, array("name" => "vps-".$this->veid, "config" => $cfg));
+	$this->applyconfigs();
+  }
+  
+  function add_default_configs($cfg_name) {
+	global $db, $cluster_cfg;
+	
+	$chain = $cluster_cfg->get($cfg_name);
+	$i = 1;
+	foreach ($chain as $cfg) {
+		$db->query("INSERT INTO vps_has_config SET vps_id = '".$db->check($this->veid)."', config_id = '".$db->check($cfg)."', `order` = ".$i++."");
+	}
+	
+	$this->applyconfigs();
+  }
+  
+  function applyconfigs() {
+	global $db;
+	
+	$sql = "SELECT c.name FROM vps_has_config vhc
+	        INNER JOIN config c ON c.id = vhc.config_id
+	        WHERE vhc.vps_id = ".$db->check($this->veid)."
+	        ORDER BY vhc.order ASC";
+	$cmd = array("configs" => array());
+	
+	if ($result = $db->query($sql))
+		while ($row = $db->fetch_array($result))
+			$cmd["configs"][] = $row["name"];
+			
+	if ($this->ve["vps_config"])
+		$cmd["configs"][] = "vps-".$this->veid;
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_APPLYCONFIG, $cmd);
+  }
+  
+  function configs_change_notify() {
 	global $db, $cluster_cfg;
 
 	$subject = $cluster_cfg->get("mailer_tpl_limits_change_subj");
 	$subject = str_replace("%member%", $this->ve["m_nick"], $subject);
 	$subject = str_replace("%vpsid%", $this->veid, $subject);
 	
-	if(($cpu = limit_cpulimit_by_id($this->ve["vps_cpulimit"])))
-		$cpulimit = $cpu["cpu_label"];
-	else $cpulimit = "Undefined";
-	
-	if(($ram = limit_privvmpages_by_id($this->ve["vps_privvmpages"])))
-		$privvmpages = $ram["vm_label"];
-	else $privvmpages = "Undefined";
-	
-	if(($hdd = limit_diskspace_by_id($this->ve["vps_diskspace"])))
-		$hddlimit = $hdd["d_label"];
-	else $hddlimit = "Undefined";
-	
 	$content = $cluster_cfg->get("mailer_tpl_limits_changed");
 	$content = str_replace("%member%", $this->ve["m_nick"], $content);
 	$content = str_replace("%vpsid%", $this->veid, $content);
-	$content = str_replace("%cpulimit%", $cpulimit, $content);
-	$content = str_replace("%ramlimit%", $privvmpages, $content);
-	$content = str_replace("%hddlimit%", $hddlimit, $content);
+	
+	$configs_str = "";
+	$configs = $this->get_configs();
+	
+	foreach($configs as $id => $label)
+		$configs_str .= "\t- $label\n";
+	
+	$content = str_replace("%configs%", $configs_str, $content);
 	
 	send_mail($this->ve["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
   }
@@ -531,7 +568,7 @@ function ipadd($ip, $type = 4) {
 		$params["server_name"] = $this->ve["server_name"];
 	} else {
 		$params["filename"] = "{$this->veid}-".strftime("%Y-%m-%d--%H-%M", (int)$timestamp).".tar.gz";
-		$params["datetime"] = date("c", (int)$timestamp);
+		$params["datetime"] = strftime("%Y-%m-%dT%H-%M-%S", (int)$timestamp);
 	}
 	
 	add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, T_BACKUP_DOWNLOAD, $params);
@@ -550,7 +587,7 @@ function ipadd($ip, $type = 4) {
 	send_mail($this->ve["m_mail"], $subj, $content, array(), array(), true, $dl_id);
   }
   
-  function clone_vps($m_id, $server_id, $hostname, $limits, $features, $backuper) {
+  function clone_vps($m_id, $server_id, $hostname, $configs, $features, $backuper) {
 	global $db;
 	$sql = 'INSERT INTO vps
 			SET m_id = "'.$db->check($m_id).'",
@@ -561,13 +598,11 @@ function ipadd($ip, $type = 4) {
 				vps_nameserver ="'.$db->check($this->ve["vps_nameserver"]).'",
 				vps_server ="'.$db->check($server_id).'",
 				vps_onboot ="'.$db->check($this->ve["vps_onboot"]).'",
-				vps_privvmpages = 0,
 				vps_onstartall = '.$db->check($this->ve["vps_onstartall"]).',
-				vps_diskspace = 0,
-				vps_cpulimit = 0,
 				vps_features_enabled = 0,
 				vps_backup_enabled = '.$db->check($backuper ? $this->ve["vps_backup_enabled"] : 1).',
-				vps_backup_exclude = "'.$db->check($backuper ? $this->ve["vps_backup_exclude"] : '').'"';
+				vps_backup_exclude = "'.$db->check($backuper ? $this->ve["vps_backup_exclude"] : '').'",
+				vps_config = "'.$db->check($configs ? $this->ve["vps_config"] : '').'"';
 		$db->query($sql);
 		$clone = vps_load($db->insert_id());
 		
@@ -582,21 +617,18 @@ function ipadd($ip, $type = 4) {
 		
 		add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_CLONE_VE, $params);
 		
-		$l = array();
-		switch($limits) {
+		switch($configs) {
 			case 0:
-				$l = array(1, 1, 1);
+			$clone->add_default_configs("default_config_chain");
 				break;
 			case 1:
-				$l = array($this->ve["vps_privvmpages"], $this->ve["vps_diskspace"], $this->ve["vps_cpulimit"]);
+				$db->query("INSERT INTO vps_has_config (vps_id, config_id, `order`) SELECT '".$db->check($clone->veid)."' AS vps_id, config_id, `order` FROM vps_has_config WHERE vps_id = '".$db->check($this->veid)."'");
+				$clone->applyconfigs();
 				break;
 			case 2:
-				$l = array($cluster_cfg->get("playground_limit_privvmpages"), $cluster_cfg->get("playground_limit_diskspace"), $cluster_cfg->get("playground_limit_cpulimit"));
+				$clone->add_default_configs("playground_default_config_chain");
 				break;
 		}
-		$clone->set_privvmpages($l[0]);
-		$clone->set_diskspace($l[1]);
-		$clone->set_cpulimit($l[2]);
 		
 		if ($features && $this->ve["vps_features_enabled"])
 			add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_ENABLE_FEATURES);
