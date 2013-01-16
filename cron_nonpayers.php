@@ -29,7 +29,6 @@ define ('CRON_MODE', true);
 define ('DEMO_MODE', false);
 
 // Include libraries
-include WWW_ROOT.'lib/cli.lib.php';
 include WWW_ROOT.'lib/db.lib.php';
 include WWW_ROOT.'lib/functions.lib.php';
 include WWW_ROOT.'lib/transact.lib.php';

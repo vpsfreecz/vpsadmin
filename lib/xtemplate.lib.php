@@ -691,8 +691,8 @@ class XTemplate {
 		if ($options)
 		foreach ($options as $key=>$value) {
 		if ($selected_value == $key)
-			$code .= '<option selected="selected" value="'.$key.'" title="">'.$value.'</option> \n';
-			else $code .= '<option value="'.$key.'" title="">'.$value.'</option> \n';
+			$code .= '<option selected="selected" value="'.$key.'" title="">'.$value.'</option>'."\n";
+			else $code .= '<option value="'.$key.'" title="">'.$value.'</option>'."\n";
 		}
 		$code .= ('</select>');
 		$this->table_td($code, false, false, $colspan);
@@ -711,9 +711,9 @@ class XTemplate {
 		if ($options)
 		foreach ($options as $key=>$value) {
 			if ( $selected_value == $key || ($multiple && is_array($selected_value) && in_array($key, $selected_value)) )
-				$code .= '<option selected="selected" value="'.$key.'" title="">'.$value.'</option> \n';
+				$code .= '<option selected="selected" value="'.$key.'" title="">'.$value.'</option>'."\n";
 			else
-				$code .= '<option value="'.$key.'" title="">'.$value.'</option> \n';
+				$code .= '<option value="'.$key.'" title="">'.$value.'</option>'."\n";
 		}
 		$code .= ('</select>');
 		$this->table_td($code);
