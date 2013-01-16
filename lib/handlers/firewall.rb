@@ -2,7 +2,11 @@ require 'lib/executor'
 
 class Firewall < Executor
 	def initialize(veid = -1, params = {})
-		super(veid, params) if veid.to_i > -1
+		if veid.to_i > -1
+			super(veid, params)
+		else
+			@m_attr = Mutex.new
+		end
 	end
 	
 	def init(db)
@@ -73,6 +77,6 @@ class Firewall < Executor
 			options << opts
 		end
 		
-		syscmd("#{$APP_CONFIG[:bin][ver == 4 ? :iptables : :ip6tables]} #{options.join(" ")}")
+		syscmd("#{$CFG.get(:bin, ver == 4 ? :iptables : :ip6tables)} #{options.join(" ")}")
 	end
 end

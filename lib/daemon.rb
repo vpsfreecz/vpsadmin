@@ -8,7 +8,7 @@ require 'rubygems'
 require 'eventmachine'
 
 module VpsAdmind
-	VERSION = "1.4.2"
+	VERSION = "1.5.0-dev"
 	
 	EXIT_OK = 0
 	EXIT_ERR = 1
@@ -30,6 +30,7 @@ module VpsAdmind
 			@m_workers = Mutex.new
 			@start_time = Time.new
 			@export_console = false
+			@cmd_counter = 0
 			
 			Command.load_handlers()
 		end
@@ -43,7 +44,7 @@ module VpsAdmind
 			update_status
 			
 			loop do
-				sleep($APP_CONFIG[:vpsadmin][:check_interval])
+				sleep($CFG.get(:vpsadmin, :check_interval))
 				
 				update_status unless @status_thread.alive?
 				
@@ -60,7 +61,7 @@ module VpsAdmind
 							false
 						end
 						
-						throw :next if @workers.size >= $APP_CONFIG[:vpsadmin][:threads]
+						throw :next if @workers.size >= $CFG.get(:vpsadmin, :threads)
 						
 						@@mutex.synchronize do
 							unless @@run
@@ -85,7 +86,7 @@ module VpsAdmind
 		def do_commands
 			rs = @db.query("SELECT * FROM (
 								(SELECT *, 1 AS depencency_success FROM transactions
-								WHERE t_done = 0 AND t_server = #{$APP_CONFIG[:vpsadmin][:server_id]} AND t_depends_on IS NULL
+								WHERE t_done = 0 AND t_server = #{$CFG.get(:vpsadmin, :server_id)} AND t_depends_on IS NULL
 								GROUP BY t_vps, t_priority)
 							
 								UNION ALL
@@ -96,10 +97,10 @@ module VpsAdmind
 								WHERE
 								t.t_done = 0
 								AND d.t_done = 1
-								AND t.t_server = #{$APP_CONFIG[:vpsadmin][:server_id]}
-								
+								AND t.t_server = #{$CFG.get(:vpsadmin, :server_id)}
 								GROUP BY t_vps, t_priority)
-								ORDER BY t_priority DESC, t_id ASC LIMIT #{$APP_CONFIG[:vpsadmin][:threads]}
+							
+								ORDER BY t_priority DESC, t_id ASC LIMIT #{$CFG.get(:vpsadmin, :threads)}
 							) tmp
 							GROUP BY t_vps")
 			
@@ -118,7 +119,8 @@ module VpsAdmind
 		def do_command(cmd)
 			wid = cmd.worker_id
 			
-			if !@workers.has_key?(wid) && @workers.size < $APP_CONFIG[:vpsadmin][:threads]
+			if !@workers.has_key?(wid) && @workers.size < $CFG.get(:vpsadmin, :threads)
+				@cmd_counter += 1
 				@workers[wid] = Worker.new(cmd)
 			end
 		end
@@ -128,8 +130,8 @@ module VpsAdmind
 				loop do
 					my = Db.new
 					
-					if $APP_CONFIG[:vpsadmin][:update_vps_status]
-						rs = my.query("SELECT vps_id FROM vps WHERE vps_server = #{$APP_CONFIG[:vpsadmin][:server_id]}")
+					if $CFG.get(:vpsadmin, :update_vps_status)
+						rs = my.query("SELECT vps_id FROM vps WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}")
 						
 						rs.each_hash do |vps|
 							ct = VPS.new(vps["vps_id"])
@@ -152,14 +154,14 @@ module VpsAdmind
 						
 						fw.reset_traffic_counter
 					end
-		
+					
 					my.prepared("INSERT INTO servers_status
-								SET server_id = ?, timestamp = UNIX_TIMESTAMP(NOW()), ram_free_mb = ?, disk_vz_free_gb = ?, cpu_load = ?, daemon = ?, vpsadmin_version = ?",
-								$APP_CONFIG[:vpsadmin][:server_id], 0, 0, 0, 0, VpsAdmind::VERSION)
+								SET server_id = ?, timestamp = UNIX_TIMESTAMP(NOW()), cpu_load = ?, daemon = ?, vpsadmin_version = ?",
+								$CFG.get(:vpsadmin, :server_id), 0, 0, VpsAdmind::VERSION)
 					
 					my.close
 					
-					sleep($APP_CONFIG[:vpsadmin][:status_interval])
+					sleep($CFG.get(:vpsadmin, :status_interval))
 				end
 			end
 		end
@@ -171,8 +173,8 @@ module VpsAdmind
 			
 			@em_thread = Thread.new do
 				EventMachine.run do
-					EventMachine.start_server($APP_CONFIG[:console][:host], $APP_CONFIG[:console][:port], VzServer) if console
-					EventMachine.start_unix_domain_server($APP_CONFIG[:remote][:socket], RemoteControl, self) if remote
+					EventMachine.start_server($CFG.get(:console, :host), $CFG.get(:console, :port), VzServer) if console
+					EventMachine.start_unix_domain_server($CFG.get(:remote, :socket), RemoteControl, self) if remote
 				end
 			end
 		end

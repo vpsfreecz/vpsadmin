@@ -154,7 +154,11 @@ class Router
 	end
 end
 
-load_cfg(ENV["config"] || "/etc/vpsadmin/vpsadmind.yml")
+$CFG = AppConfig.new(ENV["config"] || "/etc/vpsadmin/vpsadmind.yml")
+
+unless $CFG.load
+	exit(false)
+end
 
 r = Router.new
 

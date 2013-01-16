@@ -1,16 +1,16 @@
 require 'lib/executor'
-require 'lib/vpsadmin'
-require 'lib/node'
-require 'lib/vps'
-require 'lib/firewall'
-require 'lib/mailer'
-require 'lib/backuper'
+require 'lib/handlers/vpsadmin'
+require 'lib/handlers/node'
+require 'lib/handlers/vps'
+require 'lib/handlers/firewall'
+require 'lib/handlers/mailer'
+require 'lib/handlers/backuper'
 
 require 'rubygems'
 require 'json'
 
 class Command
-	attr_reader :trans, :time_start
+	attr_reader :trans
 	
 	@@handlers = {}
 	
@@ -18,10 +18,11 @@ class Command
 		@trans = trans
 		@output = {}
 		@status = :failed
+		@m_attr = Mutex.new
 	end
 	
 	def execute
-		cmd = @@handlers[ @trans["t_type"].to_i ]
+		cmd = handler
 		
 		unless cmd
 			@output[:error] = "Unsupported command"
@@ -37,7 +38,7 @@ class Command
 		
 		@executor = Kernel.const_get(cmd[:class]).new(@trans["t_vps"], param)
 		
-		@time_start = Time.new.to_i
+		@m_attr.synchronize { @time_start = Time.new.to_i }
 		
 		begin
 			@status = @executor.method(cmd[:method]).call[:ret]
@@ -46,6 +47,9 @@ class Command
 			@output[:cmd] = err.cmd
 			@output[:exitstatus] = err.rc
 			@output[:error] = err.output
+		rescue CommandNotImplemented
+			@status = :failed
+			@output[:error] = "Command not implemented"
 		end
 		
 		@time_end = Time.new.to_i
@@ -78,8 +82,20 @@ class Command
 		end
 	end
 	
+	def handler
+		@@handlers[ @trans["t_type"].to_i ]
+	end
+	
+	def step
+		@executor.step
+	end
+	
+	def time_start
+		@m_attr.synchronize { @time_start }
+	end
+	
 	def Command.load_handlers
-		$APP_CONFIG[:vpsadmin][:handlers].each do |klass, cmds|
+		$CFG.get(:vpsadmin, :handlers).each do |klass, cmds|
 			cmds.each do |cmd, method|
 				@@handlers[cmd] = {:class => klass, :method => method}
 				puts "Cmd ##{cmd} => #{klass}.#{method}"

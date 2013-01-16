@@ -14,6 +14,7 @@ options = {
 	:init => false,
 	:config => "/etc/vpsadmin/vpsadmind.yml",
 	:daemonize => false,
+	:check => false,
 	:export_console => false,
 	:logdir => "/var/log",
 	:piddir => "/var/run",
@@ -36,6 +37,10 @@ OptionParser.new do |opts|
 	
 	opts.on("-d", "--daemonize", "Run in background") do
 		options[:daemonize] = true
+	end
+	
+	opts.on("-k", "--check", "Check config file syntax") do
+		options[:check] = true
 	end
 	
 	opts.on("-l", "--logdir [LOG DIR]", "Log dir") do |log|
@@ -62,8 +67,19 @@ OptionParser.new do |opts|
 	end
 end.parse!
 
+if options[:check]
+	c = AppConfig.new(options[:config])
+	puts "Config seems ok" if c.load
+	exit
+end
+
 executable = File.expand_path($0)
-load_cfg(options[:config])
+
+$CFG = AppConfig.new(options[:config])
+
+unless $CFG.load
+	exit(false)
+end
 
 if options[:daemonize]
 	Daemons.daemonize({
@@ -75,7 +91,7 @@ if options[:daemonize]
 	})
 end
 
-Dir.chdir($APP_CONFIG[:vpsadmin][:root])
+Dir.chdir($CFG.get(:vpsadmin, :root))
 
 if options[:wrapper]
 	loop do
@@ -100,9 +116,7 @@ if options[:wrapper]
 		when VpsAdmind::EXIT_RESTART
 			next
 		when VpsAdmind::EXIT_UPDATE
-			load_cfg(options[:config])
-			
-			IO.popen("#{$APP_CONFIG[:bin][:git]} pull 2>&1") do |io|
+			IO.popen("#{$CFG.get(:bin, :git)} pull 2>&1") do |io|
 				g = io.read
 			end
 			
@@ -119,7 +133,7 @@ end
 
 Signal.trap("HUP") do
 	puts "Reloading config..."
-	reload_cfg(options[:config])
+	$CFG.reload
 end
 
 Thread.abort_on_exception = true

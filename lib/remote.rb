@@ -58,7 +58,7 @@ class RemoteControl < EventMachine::Connection
 	end
 	
 	def RemoteControl.load_handlers
-		$APP_CONFIG[:remote][:handlers].each do |klass, cmds|
+		$CFG.get(:remote, :handlers).each do |klass, cmds|
 			cmds.each do |cmd|
 				@@handlers[cmd] = {:class => klass, :method => cmd}
 				puts "Remote cmd #{cmd} => #{klass}.#{cmd}"

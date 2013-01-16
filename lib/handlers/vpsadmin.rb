@@ -23,11 +23,19 @@ class VpsAdmin < Executor
 	end
 	
 	def status
+		db = Db.new
 		res_workers = {}
-			
+		
 		@daemon.workers do |workers|
 			workers.each do |wid, w|
-				res_workers[wid] = {:type => w.cmd.trans["t_type"].to_i, :start => w.cmd.time_start}
+				h = w.cmd.handler
+				
+				res_workers[wid] = {
+					:type => w.cmd.trans["t_type"].to_i,
+					:handler => "#{h[:class]}.#{h[:method]}",
+					:step => w.cmd.step,
+					:start => w.cmd.time_start,
+				}
 			end
 		end
 		
@@ -38,13 +46,18 @@ class VpsAdmin < Executor
 			end
 		end
 		
+		st = db.prepared_st("SELECT COUNT(t_id) AS cnt FROM transactions WHERE t_server = ? AND t_done = 0", $CFG.get(:vpsadmin, :server_id))
+		q_size = st.fetch()[0]
+		st.close
+		
 		{:ret => :ok,
 			:output => {
 				:workers => res_workers,
-				:threads => $APP_CONFIG[:vpsadmin][:threads],
+				:threads => $CFG.get(:vpsadmin, :threads),
 				:export_console => @daemon.export_console,
 				:consoles => consoles,
-				:start_time => @daemon.start_time.to_i
+				:start_time => @daemon.start_time.to_i,
+				:queue_size => q_size - res_workers.size,
 			}
 		}
 	end

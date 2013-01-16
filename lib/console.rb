@@ -65,7 +65,7 @@ class VzServer < EventMachine::Connection
 						@console = c[@veid]
 						@console.register(self)
 					else
-						@console = EventMachine.popen("#{$APP_CONFIG[:vz][:vzctl]} console #{@veid}", VzConsole, @veid, self)
+						@console = EventMachine.popen("#{$CFG.get(:vz, :vzctl)} console #{@veid}", VzConsole, @veid, self)
 					end
 				end
 				

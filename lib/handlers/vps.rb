@@ -1,12 +1,12 @@
 require 'lib/executor'
-require 'lib/backuper'
+require 'lib/handlers/backuper'
 
 class VPS < Executor
 	def start
 		@update = true
+		ensure_mountfile
 		vzctl(:start, @veid, {}, false, [32,])
 		check_onboot
-		ensure_mountfile
 	end
 	
 	def stop(params = {})
@@ -17,9 +17,9 @@ class VPS < Executor
 	
 	def restart
 		@update = true
+		ensure_mountfile
 		vzctl(:restart, @veid)
 		check_onboot
-		ensure_mountfile
 	end
 	
 	def create
@@ -51,6 +51,13 @@ class VPS < Executor
 		vzctl(:set, @veid, @params, true)
 	end
 	
+	def applyconfig
+		@params["configs"].each do |cfg|
+			vzctl(:set, @veid, {:applyconfig => cfg}, true)
+		end
+		ok
+	end
+	
 	def features
 		stop
 		vzctl(:set, @veid, {
@@ -74,12 +81,13 @@ class VPS < Executor
 	end
 	
 	def migrate_offline
-		syscmd("#{$APP_CONFIG[:vz][:vzmigrate]} #{@params["target"]} #{@veid}")
+		stop if @params["stop"]
+		syscmd("#{$CFG.get(:vz, :vzmigrate)} #{@params["target"]} #{@veid}")
 	end
 	
 	def migrate_online
 		begin
-			syscmd("#{$APP_CONFIG[:vz][:vzmigrate]} --online #{@params["target"]} #{@veid}")
+			syscmd("#{$CFG.get(:vz, :vzmigrate)} --online #{@params["target"]} #{@veid}")
 		rescue CommandFailed => err
 			@output[:migration_cmd] = err.cmd
 			@output[:migration_exitstatus] = err.rc
@@ -89,30 +97,30 @@ class VPS < Executor
 	end
 	
 	def restore
-		target = $APP_CONFIG[:vpsadmin][:restore_target] % [@veid,]
-		syscmd("#{$APP_CONFIG[:bin][:rm]} -rf #{target}") if File.exists?(target)
+		target = $CFG.get(:vpsadmin, :restore_target) % [@veid,]
+		syscmd("#{$CFG.get(:bin, :rm)} -rf #{target}") if File.exists?(target)
 		
 		Backuper.wait_for_lock(Db.new, @veid) do
-			syscmd("#{$APP_CONFIG[:bin][:rdiff_backup]} -r #{@params["datetime"]} #{$APP_CONFIG[:vpsadmin][:backups_mnt_dir]}/#{@params["backuper"]}.#{$APP_CONFIG[:vpsadmin][:domain]}/#{@veid} #{target}")
+			syscmd("#{$CFG.get(:bin, :rdiff_backup)} -r #{@params["datetime"]} #{$CFG.get(:vpsadmin, :backups_mnt_dir)}/#{@params["backuper"]}.#{$CFG.get(:vpsadmin, :domain)}/#{@veid} #{target}")
 		end
 		
 		stop(:force => true)
-		syscmd("#{$APP_CONFIG[:vz][:vzquota]} off #{@veid} -f", [6,])
+		syscmd("#{$CFG.get(:vz, :vzquota)} off #{@veid} -f", [6,])
 		stop
-		syscmd("#{$APP_CONFIG[:bin][:rm]} -rf #{$APP_CONFIG[:vz][:vz_root]}/private/#{@veid}")
-		syscmd("#{$APP_CONFIG[:bin][:mv]} #{target} #{$APP_CONFIG[:vz][:vz_root]}/private/#{@veid}")
-		syscmd("#{$APP_CONFIG[:vz][:vzquota]} drop #{@veid}")
+		syscmd("#{$CFG.get(:bin, :rm)} -rf #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
+		syscmd("#{$CFG.get(:bin, :mv)} #{target} #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
+		syscmd("#{$CFG.get(:vz, :vzquota)} drop #{@veid}")
 		start
 	end
 	
 	def clone
 		create
-		syscmd("#{$APP_CONFIG[:bin][:rm]} -rf #{$APP_CONFIG[:vz][:vz_root]}/private/#{@veid}")
+		syscmd("#{$CFG.get(:bin, :rm)} -rf #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
 		
 		if @params["is_local"]
-			syscmd("#{$APP_CONFIG[:bin][:cp]} -a #{$APP_CONFIG[:vz][:vz_root]}/private/#{@params["src_veid"]}/ #{$APP_CONFIG[:vz][:vz_root]}/private/#{@veid}")
+			syscmd("#{$CFG.get(:bin, :cp)} -a #{$CFG.get(:vz, :vz_root)}/private/#{@params["src_veid"]}/ #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
 		else
-			syscmd("#{$APP_CONFIG[:bin][:rsync]} -a #{@params["src_server_ip"]}:#{$APP_CONFIG[:vz][:vz_root]}/private/#{@params["src_veid"]}/ #{$APP_CONFIG[:vz][:vz_root]}/private/#{@veid}");
+			syscmd("#{$CFG.get(:bin, :rsync)} -a #{@params["src_server_ip"]}:#{$CFG.get(:vz, :vz_root)}/private/#{@params["src_veid"]}/ #{$CFG.get(:vz, :vz_root)}/private/#{@veid}");
 		end
 	end
 	
@@ -135,7 +143,7 @@ class VPS < Executor
 		disk = 0
 		
 		begin
-			IO.popen("#{$APP_CONFIG[:vz][:vzlist]} --no-header #{@veid}") do |io|
+			IO.popen("#{$CFG.get(:vz, :vzlist)} --no-header #{@veid}") do |io|
 				status = io.read.split(" ")
 				up = status[2] == "running" ? 1 : 0
 				nproc = status[1].to_i
@@ -143,7 +151,7 @@ class VPS < Executor
 				mem_str = load_file("/proc/meminfo")[:output]
 				mem = (mem_str.match(/^MemTotal\:\s+(\d+) kB$/)[1].to_i - mem_str.match(/^MemFree\:\s+(\d+) kB$/)[1].to_i) / 1024
 				
-				disk_str = vzctl(:exec, @veid, "#{$APP_CONFIG[:bin][:df]} -k /")[:output]
+				disk_str = vzctl(:exec, @veid, "#{$CFG.get(:bin, :df)} -k /")[:output]
 				disk = disk_str.split("\n")[1].split(" ")[2].to_i / 1024
 			end
 		rescue
@@ -162,13 +170,13 @@ class VPS < Executor
 	end
 	
 	def ensure_mountfile
-		p = "#{$APP_CONFIG[:vz][:vz_conf]}/conf/#{@veid}.mount"
+		p = "#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.mount"
 		
 		unless File.exists?(p)
 			File.open(p, "w") do |f|
-				f.write(File.open("scripts/ve.mount").read.gsub(/%%BACKUP_SERVER%%/, "storage.prg.#{$APP_CONFIG[:vpsadmin][:domain]}"))
+				f.write(File.open("scripts/ve.mount").read.gsub(/%%BACKUP_SERVER%%/, "storage.prg.#{$CFG.get(:vpsadmin, :domain)}"))
 			end
-			syscmd("#{$APP_CONFIG[:bin][:chmod]} +x #{p}")
+			syscmd("#{$CFG.get(:bin, :chmod)} +x #{p}")
 		end
 		
 		ok
