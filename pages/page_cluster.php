@@ -609,6 +609,21 @@ switch($_REQUEST["action"]) {
 		}
 		
 		break;
+	case "noticeboard":
+		$xtpl->table_title(_("Notice board"));
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		$xtpl->form_create('?page=cluster&action=noticeboard_save', 'post');
+		$xtpl->form_add_textarea(_("Text").':', 80, 25, 'noticeboard', $cluster_cfg->get("noticeboard"));
+		$xtpl->form_out(_("Save changes"));
+		
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		break;
+	case "noticeboard_save":
+		$cluster_cfg->set("noticeboard", $_POST["noticeboard"]);
+		$xtpl->perex(_("Notice board saved"), '');
+		$list_nodes = true;
+		break;
 	default:
 		$list_nodes = true;
 }
@@ -669,6 +684,7 @@ if ($list_nodes) {
 	$xtpl->sbar_add(_("Manage Payments"), '?page=cluster&action=payments_settings');
 	$xtpl->sbar_add(_("Manage API"), '?page=cluster&action=api_settings');
 	$xtpl->sbar_add(_("Manage playground"), '?page=cluster&action=playground_settings');
+	$xtpl->sbar_add(_("Notice board"), '?page=cluster&action=noticeboard');
 	$xtpl->sbar_add(_("Edit vpsAdmin textfields"), '?page=cluster&action=fields');
 	
 	$sql = 'SELECT * FROM servers ORDER BY server_location,server_id';
@@ -678,6 +694,7 @@ if ($list_nodes) {
 	$on_row = 2;
 	
 	for ($j = 0; $j < $on_row; $j++) {
+		$xtpl->table_add_category(_("A"));
 		$xtpl->table_add_category(_("NAME"));
 		$xtpl->table_add_category(_("L"));
 		$xtpl->table_add_category(_("R"));
@@ -685,7 +702,6 @@ if ($list_nodes) {
 		$xtpl->table_add_category(_("T"));
 		$xtpl->table_add_category(_("M"));
 		$xtpl->table_add_category(_("V"));
-		$xtpl->table_add_category(_("A"));
 		$xtpl->table_add_category(' ');
 		
 		if ($j+1 < $on_row)
@@ -693,7 +709,6 @@ if ($list_nodes) {
 	}
 	
 	while ($srv = $db->fetch_array($list_result)) {
-		$xtpl->table_td($srv["server_name"]);
 		
 		$node = new cluster_node($srv["server_id"]);
 		$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$srv["server_id"].'" ORDER BY id DESC LIMIT 1';
@@ -701,6 +716,19 @@ if ($list_nodes) {
 		if ($result = $db->query($sql))
 			$status = $db->fetch_array($result);
 		
+		$icons = "";
+		
+		if ($cluster_cfg->get("lock_cron_".$srv["server_id"]))	{
+			$icons .= '<img title="'._("The server is currently processing").'" src="template/icons/warning.png"/>';
+		} elseif ((time()-$status["timestamp"]) > 360) {
+			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
+		} else {
+			$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
+		}
+		
+		$xtpl->table_td($icons, false, true);
+		
+		$xtpl->table_td($srv["server_name"]);
 		$xtpl->table_td($status["cpu_load"], false, true);
 		
 		$sql = 'SELECT COUNT(*) AS count FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1 AND vps_server = '.$db->check($srv["server_id"]);
@@ -733,17 +761,6 @@ if ($list_nodes) {
 		
 		$xtpl->table_td($status["vpsadmin_version"]);
 		
-		$icons = "";
-		
-		if ($cluster_cfg->get("lock_cron_".$srv["server_id"]))	{
-			$icons .= '<img title="'._("The server is currently processing").'" src="template/icons/warning.png"/>';
-		} elseif ((time()-$status["timestamp"]) > 360) {
-			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
-		} else {
-			$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
-		}
-		
-		$xtpl->table_td($icons, false, true);
 		$xtpl->table_td('<a href="?page=cluster&action=node_start_vpses&id='.$srv["server_id"].'"><img src="template/icons/vps_start.png" title="'._("Start all VPSes here").'"/></a>');
 		
 		if (!($i++ % $on_row))
@@ -751,6 +768,39 @@ if ($list_nodes) {
 		else
 			$xtpl->table_td('');
 	}
+	$xtpl->table_out();
+	
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('Legend');
+	
+	$xtpl->table_td("A");
+	$xtpl->table_td(_("Availability"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td("L");
+	$xtpl->table_td(_("Load"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td("R");
+	$xtpl->table_td(_("Running"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td("S");
+	$xtpl->table_td(_("Stopped"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td("T");
+	$xtpl->table_td(_("Total"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td("M");
+	$xtpl->table_td(_("Max"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td("V");
+	$xtpl->table_td(_("vpsAdmin"));
+	$xtpl->table_tr();
+	
 	$xtpl->table_out();
 }
 if ($list_templates) {
