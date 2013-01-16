@@ -539,17 +539,23 @@ class cluster {
     function save_config($id, $name, $label, $config, $reapply = false) {
 		global $db;
 		
-		if($id != NULL)
+		$params = array("name" => $name, "config" => $config);
+		
+		if($id != NULL) {
 			$sql = "UPDATE `config` SET name = '".$db->check($name)."',
 			        label = '".$db->check($label)."',
 			        `config` = '".$db->check($config)."'
 			        WHERE id = '".$db->check($id)."'";
-		else
+			$c = $db->findByColumnOnce("config", "id", $id);
+			
+			if ($c["name"] != $name)
+				$params["old_name"] = $c["name"];
+		} else
 			$sql = "INSERT INTO `config` SET name = '".$db->check($name)."',
 			        label = '".$db->check($label)."',
 			        `config` = '".$db->check($config)."'";
 		
-		add_transaction_clusterwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_CONFIG_CREATE, array("name" => $name, "config" => $config));
+		add_transaction_clusterwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_CONFIG_CREATE, $params);
 		
 		$db->query($sql);
 		
