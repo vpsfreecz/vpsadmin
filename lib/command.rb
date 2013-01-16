@@ -76,7 +76,7 @@ class Command
 	
 	def worker_id
 		if @trans.has_key?("t_vps")
-			@trans["t_vps"]
+			@trans["t_vps"].to_i
 		else
 			0
 		end
