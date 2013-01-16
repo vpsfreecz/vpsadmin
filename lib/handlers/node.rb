@@ -11,6 +11,8 @@ class Node < Executor
 	end
 	
 	def create_config
+		File.delete(conf_path(@params["old_name"])) if @params["old_name"]
+		
 		f = File.new(conf_path, "w")
 		f.write(@params["config"])
 		f.close
@@ -22,8 +24,8 @@ class Node < Executor
 		ok
 	end
 	
-	def conf_path
-		"#{$CFG.get(:vz, :vz_conf)}/conf/ve-#{@params["name"]}.conf-sample"
+	def conf_path(name = nil)
+		"#{$CFG.get(:vz, :vz_conf)}/conf/ve-#{name ? name : @params["name"]}.conf-sample"
 	end
 	
 	def post_save(con)

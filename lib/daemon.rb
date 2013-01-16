@@ -30,6 +30,7 @@ module VpsAdmind
 			@m_workers = Mutex.new
 			@start_time = Time.new
 			@export_console = false
+			@cmd_counter = 0
 			
 			Command.load_handlers()
 		end
@@ -119,6 +120,7 @@ module VpsAdmind
 			wid = cmd.worker_id
 			
 			if !@workers.has_key?(wid) && @workers.size < $CFG.get(:vpsadmin, :threads)
+				@cmd_counter += 1
 				@workers[wid] = Worker.new(cmd)
 			end
 		end
