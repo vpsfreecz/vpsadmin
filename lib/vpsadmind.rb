@@ -17,11 +17,18 @@ class VpsAdmind
 	end
 	
 	def cmd(cmd)
-		@sock.send({:command => cmd}.to_json, 0)
+		@sock.send({:command => cmd}.to_json + "\n", 0)
 	end
 	
 	def reply
-		parse(@sock.recv(4096))
+		buf = ""
+		
+		while m = @sock.recv(1024)
+			buf = buf + m
+			break if m[-1].chr == "\n"
+		end
+		
+		parse(buf)
 	end
 	
 	def response
