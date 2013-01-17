@@ -30,7 +30,11 @@ OptionParser.new do |opts|
 	end
 end.parse!
 
-load_cfg(options[:config])
+$CFG = AppConfig.new(options[:config])
+
+unless $CFG.load
+	exit(false)
+end
 
 db = Db.new
 servers = {}

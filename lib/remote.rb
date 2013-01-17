@@ -12,7 +12,7 @@ class RemoteControl < EventMachine::Connection
 	end
 	
 	def post_init
-		send_data({:version => VpsAdmind::VERSION}.to_json)
+		send_data({:version => VpsAdmind::VERSION}.to_json + "\n")
 	end
 	
 	def receive_data(data)
@@ -50,11 +50,11 @@ class RemoteControl < EventMachine::Connection
 	end
 	
 	def error(err)
-		send_data({:status => :failed, :error => err}.to_json)
+		send_data({:status => :failed, :error => err}.to_json + "\n")
 	end
 	
 	def ok(res)
-		send_data({:status => :ok, :response => res}.to_json)
+		send_data({:status => :ok, :response => res}.to_json + "\n")
 	end
 	
 	def RemoteControl.load_handlers
