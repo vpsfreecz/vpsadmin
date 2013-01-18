@@ -50,34 +50,21 @@ function ajax_getHTML($url, $div, $time=1000)
 
 function moo_inputremaining($input, $output, $chars, $uid)
 {
-  global $html_js_b;
-  global $html_js_e;
+	global $html_js_b;
+	global $html_js_e;
 
-  $out = $html_js_b."\n";
+	$out = $html_js_b."\n";
+	
+	$out .= '
+	$(document).ready(function (){
+		$("#'.$input.'").keyup(function (o){
+			$("#'.$output.'").text( '.abs($chars).' - $(this).val().length );
+		});
+	});
+	';
 
-  $out .= 'window.addEvent(\'domready\', function() {
-            $(\''. $input .'\').addEvent(\'keyup\', function() {
-               orig_chars = chars = '. $chars .';
-               current_value   = $(\''. $input .'\').value;
-               current_length  = current_value.length;
-               if (chars<0)
-                chars=chars*-1;
-               remaining_chars = chars-current_length;
-               if (remaining_chars<0)
-                 remaining_chars = 0;
-               $(\''. $output .'\').innerHTML = remaining_chars;
-               ';
-  $out .= '    if(remaining_chars<=5 && orig_chars>0){';
-  $out .= '       $(\''. $output .'\').setStyle(\'color\', \'#990000\');
-               } else {
-                  $(\''. $output .'\').setStyle(\'color\', \'#000000\');
-               }
-            });
-          });
-  '."\n";
+	$out .= $html_js_e."\n";
 
-  $out .= $html_js_e."\n";
-
-  return $out;
+	return $out;
 }
 ?>
