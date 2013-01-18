@@ -18,6 +18,10 @@ function sec2hms ($sec, $padHours = false) {
 	$hms .= str_pad($seconds, 2, "0", STR_PAD_LEFT);
 	return $hms;
 }
+
+if (!$_SESSION["is_admin"])
+	exit;
+
 if ($_SESSION["logged_in"]) {
 	$xtpl->title(_("Manage Backups"));
 	$list_backups = false;
