@@ -22,8 +22,12 @@
 
 $xtpl->title(_("Overview"));
 
-$xtpl->table_add_category(_("Notice board"));
-$xtpl->table_td($cluster_cfg->get("noticeboard"));
+if ($_SESSION["is_admin"]) {
+  $xtpl->table_add_category(_("vpsFree.cz Log <a href=\"?page=cluster&action=noticeboard\">[edit]</a>"));
+} else {
+  $xtpl->table_add_category(_("vpsFree.cz Log"));
+}
+$xtpl->table_td(nl2br($cluster_cfg->get("noticeboard")));
 $xtpl->table_tr();
 $xtpl->table_out("notice_board");
 

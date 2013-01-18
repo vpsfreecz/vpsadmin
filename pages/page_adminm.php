@@ -55,8 +55,8 @@ function print_newm() {
 
 				function formSubmit() {
 					var randpwd = randomPassword(8);
-  					$(\''.$m_pass_uid.'\').set(\'value\', randpwd);
-  					$(\''.$m_pass2_uid.'\').set(\'value\', randpwd);
+  					$("#'.$m_pass_uid.'").val(randpwd);
+  					$("#'.$m_pass2_uid.'").val(randpwd);
 
   					return false;
 				}
