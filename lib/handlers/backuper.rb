@@ -67,7 +67,7 @@ class Backuper < Executor
 			next if d == "." || d == ".."
 			
 			options.each do |o|
-				f.puts("#{dest}/#{@veid} #{o}")
+				f.puts("#{dest}/#{d} #{o}")
 			end
 		end
 	end
