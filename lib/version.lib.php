@@ -4,6 +4,7 @@
     Web-admin interface for OpenVZ (see http://openvz.org)
     Copyright (C) 2008-2011 Pavel Snajdr, snajpa@snajpa.net
 */
-define("VERSION", '1.5.2');
+
+define("VERSION", '1.6.0');
 define("DEMO_MODE", false);
 ?>
