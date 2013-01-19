@@ -48,7 +48,7 @@ module BackuperBackend
 		
 		def restore_prepare
 			target = $CFG.get(:backuper, :restore_target) \
-				.gsub(/%\{node\}/, @params["backuper"] + "." + $CFG.get(:vpsadmin, :domain)) \
+				.gsub(/%\{node\}/, @params["server_name"] + "." + $CFG.get(:vpsadmin, :domain)) \
 				.gsub(/%\{veid\}/, @veid)
 			syscmd("#{$CFG.get(:bin, :rm)} -rf #{target}") if File.exists?(target)
 			
