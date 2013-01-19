@@ -306,7 +306,7 @@ function transaction_label ($t_type) {
 	case T_BACKUP_REGULAR:
 		$action_label = 'Backup';
 		break;
-	case T_BACKUP_REGULAR:
+	case T_BACKUP_EXPORTS:
 		$action_label = 'Exports';
 		break;
 	case T_MAIL_SEND:
