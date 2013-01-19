@@ -44,6 +44,8 @@ module BackuperBackend
 					syscmd("#{$CFG.get(:bin, :tar)} -czf #{$CFG.get(:backuper, :download)}/#{@params["secret"]}/#{@params["filename"]} -s '/#{@params["datetime"].gsub(/\-/, "\\-")}/#{@veid}/' #{$CFG.get(:backuper, :dest)}/#{@veid}/.zfs/snapshot/#{@params["datetime"]}")
 				end
 			end
+			
+			ok
 		end
 		
 		def restore_prepare
