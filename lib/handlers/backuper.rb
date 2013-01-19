@@ -40,7 +40,7 @@ class Backuper < Executor
 		while line = src.gets
 			dst.write(line)
 			
-			if line == delimiter
+			if line.strip == delimiter
 				written = true
 				write_exports(dst, dest)
 				break
