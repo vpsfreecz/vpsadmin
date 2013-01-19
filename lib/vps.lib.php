@@ -547,10 +547,13 @@ function ipadd($ip, $type = 4) {
 	}
 	
 	$params = array(
-		"datetime" => date("c", (int)$timestamp),
+		"datetime" => strftime("%Y-%m-%dT%H-%M-%S", (int)$timestamp),
 		"backuper" => $backuper["server_name"],
 	);
-	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_RESTORE, $params, NULL, $backup_id);
+	add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, T_BACKUP_RESTORE_PREPARE, $params, NULL, $backup_id);
+	$prepare_id = $db->insertId();
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_RESTORE_FINISH, $params, NULL, $prepare_id);
   }
   
   function download_backup($timestamp) {
