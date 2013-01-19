@@ -53,7 +53,7 @@ module BackuperBackend
 			syscmd("#{$CFG.get(:bin, :rm)} -rf #{target}") if File.exists?(target)
 			
 			acquire_lock(Db.new) do
-				syscmd("#{$CFG.get(:bin, :rdiff_backup)} -r #{@params["datetime"]} #{$CFG.get(:vpsadmin, :backups_mnt_dir)}/#{@params["backuper"]}.#{$CFG.get(:vpsadmin, :domain)}/#{@veid} #{target}")
+				syscmd("#{$CFG.get(:bin, :rdiff_backup)} -r #{@params["datetime"]} #{$CFG.get(:vpsadmin, :dest)}/#{@veid} #{target}")
 			end
 		end
 		
