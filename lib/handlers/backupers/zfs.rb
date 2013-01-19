@@ -78,7 +78,6 @@ module BackuperBackend
 			
 			delimiter = $CFG.get(:backuper, :exports, :delimiter)
 			dest = $CFG.get(:backuper, :dest)
-			options = $CFG.get(:backuper, :exports, :options)
 			path = $CFG.get(:backuper, :exports, :path)
 			path_new = path + ".new"
 			
@@ -110,10 +109,14 @@ module BackuperBackend
 		end
 		
 		def write_exports(f, dest)
+			options = $CFG.get(:backuper, :exports, :options)
+			
 			Dir.entries(dest).each do |d|
 				next if d == "." || d == ".."
 				
-				f.puts("#{dest}/#{@veid} #{options}")
+				options.each do |o|
+					f.puts("#{dest}/#{@veid} #{o}")
+				end
 			end
 		end
 		
