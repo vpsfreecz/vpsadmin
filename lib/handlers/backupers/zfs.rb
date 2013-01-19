@@ -41,7 +41,7 @@ module BackuperBackend
 				if @params["server_name"]
 					syscmd("#{$CFG.get(:bin, :tar)} -czf #{$CFG.get(:backuper, :download)}/#{@params["secret"]}/#{@params["filename"]} #{mountpoint}", [1,])
 				else
-					syscmd("#{$CFG.get(:bin, :tar)} -czf #{$CFG.get(:backuper, :download)}/#{@params["secret"]}/#{@params["filename"]} -s '/#{@params["datetime"].gsub(/\-/, "\\-")}/#{@veid}/' #{$CFG.get(:backuper, :dest)}/#{@veid}/.zfs/snapshot/#{@params["datetime"]}")
+					syscmd("#{$CFG.get(:bin, :tar)} -czf #{$CFG.get(:backuper, :download)}/#{@params["secret"]}/#{@params["filename"]} -s '/#{@params["datetime"].gsub(/\-/, "\\-")}/#{@veid}/' -C #{$CFG.get(:backuper, :dest)}/#{@veid}/.zfs/snapshot #{@params["datetime"]}")
 				end
 			end
 			
