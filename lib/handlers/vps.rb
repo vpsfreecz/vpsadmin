@@ -153,13 +153,20 @@ class VPS < Executor
 	end
 	
 	def ensure_mountfile
-		p = "#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.mount"
+		m = "#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.mount"
+		u = "#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.umount"
 		
-		unless File.exists?(p)
-			File.open(p, "w") do |f|
+		unless File.exists?(m) && File.exists?(u)
+			File.open(m, "w") do |f|
 				f.write(File.open("scripts/ve.mount").read.gsub(/%%BACKUP_SERVER%%/, "storage.prg.#{$CFG.get(:vpsadmin, :domain)}"))
 			end
-			syscmd("#{$CFG.get(:bin, :chmod)} +x #{p}")
+			
+			File.open(u, "w") do |f|
+				f.write(File.open("scripts/ve.umount").read)
+			end
+			
+			syscmd("#{$CFG.get(:bin, :chmod)} +x #{m}")
+			syscmd("#{$CFG.get(:bin, :chmod)} +x #{u}")
 		end
 		
 		ok

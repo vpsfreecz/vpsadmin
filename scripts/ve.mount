@@ -1,9 +1,9 @@
 #!/bin/bash
 . /etc/vz/vz.conf
 . ${VE_CONFFILE}
-SRC=/mnt/%%BACKUP_SERVER%%/$VEID
+SRC="172.16.100.5:/storage/vpsfree.cz/backup/$VEID"
 DST=/vpsadmin_backuper
 if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
-[ -d $SRC ] && mount -r -n -t simfs ${SRC} ${VE_ROOT}${DST} -o ${SRC}
+mount -r -n -t nfs -o bg,ro,vers=3,proto=udp ${SRC} ${VE_ROOT}${DST}
 
 exit 0
