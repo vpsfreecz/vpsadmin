@@ -55,6 +55,8 @@ module BackuperBackend
 			acquire_lock(Db.new) do
 				syscmd("#{$CFG.get(:bin, :rdiff_backup)} -r #{@params["datetime"]} #{$CFG.get(:vpsadmin, :dest)}/#{@veid} #{target}")
 			end
+			
+			ok
 		end
 		
 		def restore_finish

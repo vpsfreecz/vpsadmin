@@ -55,6 +55,8 @@ module BackuperBackend
 			acquire_lock(Db.new) do
 				syscmd("#{$CFG.get(:bin, :rsync)} #{$CFG.get(:backuper, :dest)}/#{@veid}/.zfs/snapshot/#{@params["datetime"]}/ #{target}")
 			end
+			
+			ok
 		end
 		
 		def restore_finish
