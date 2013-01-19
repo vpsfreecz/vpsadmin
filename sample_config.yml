@@ -19,8 +19,6 @@
 #     :check_interval: 1
 #     :status_interval: 300
 #     :update_vps_status: true
-#     :backups_mnt_dir: /mnt
-#     :restore_target: '/vz/private/%s.restoring'
 #     :root: /opt/vpsadmind
 #     :handlers:
 #         VpsAdmin:
@@ -49,9 +47,10 @@
 #             3004: clone
 #             4001: migrate_offline
 #             4002: migrate_online
-#             5003: restore
 #             8001: features
 #         Backuper:
+#             5002: restore_prepare
+#             5003: restore_finish
 #             5004: download
 #             5005: backup
 #             5006: backup
@@ -89,12 +88,21 @@
 #     :method: RdiffBackup
 #     :lock_interval: 30
 #     :mountpoint: /mnt
-#     :dest: /storage/vpsfree.cz/vps
+#     :dest: /storage/vpsfree.cz/backup
 #     :tmp_restore: /storage/vpsfree.cz/restore
+#     :backups_mnt_dir: /mnt
+#     :restore_target: /mnt/%{node}/%{veid}.restoring
+#     :restore_src: /vz/private/%{veid}.restoring
 #     :download: /storage/vpsfree.cz/download
 #     :zfs:
 #         :zpool: storage/vpsfree.cz/backup
 #         :rsync: %{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after --exclude .zfs/ --exclude-from %{exclude} %{src} %{dst}
+#     :exports:
+#         :enabled: true,
+#         :delimiter: "### vpsAdmin ###"
+#         :options: ""
+#         :path: /etc/exports
+#         :reexport: exportfs -r
 # 
 # :mailer:
 #     :smtp_server: localhost
