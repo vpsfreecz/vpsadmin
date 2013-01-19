@@ -47,22 +47,26 @@ module BackuperBackend
 		
 		def restore_prepare
 			target = $CFG.get(:backuper, :restore_target) \
-				.gsub(/%\{node\}/, @params["backuper"] + "." + $CFG.get(:vpsadmin, :domain)) \
+				.gsub(/%\{node\}/, @params["server_name"] + "." + $CFG.get(:vpsadmin, :domain)) \
 				.gsub(/%\{veid\}/, @veid)
 			
 			syscmd("#{$CFG.get(:bin, :rm)} -rf #{target}") if File.exists?(target)
 			
 			acquire_lock(Db.new) do
-				syscmd("#{$CFG.get(:bin, :rdiff_backup)} -r #{@params["datetime"]} #{$CFG.get(:vpsadmin, :backups_mnt_dir)}/#{@params["backuper"]}.#{$CFG.get(:vpsadmin, :domain)}/#{@veid} #{target}")
+				syscmd("#{$CFG.get(:bin, :rdiff_backup)} -r #{@params["datetime"]} #{$CFG.get(:vpsadmin, :dest)}/#{@veid} #{target}")
 			end
+			
+			ok
 		end
 		
 		def restore_finish
 			target = $CFG.get(:backuper, :restore_src).gsub(/%\{veid\}/, @veid)
 			
-			stop(:force => true)
+			vps = VPS.new(@veid)
+			
+			vps.stop(:force => true)
 			syscmd("#{$CFG.get(:vz, :vzquota)} off #{@veid} -f", [6,])
-			stop
+			vps.stop
 			
 			acquire_lock(Db.new) do
 				syscmd("#{$CFG.get(:bin, :rm)} -rf #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
@@ -70,7 +74,7 @@ module BackuperBackend
 			end
 			
 			syscmd("#{$CFG.get(:vz, :vzquota)} drop #{@veid}")
-			start
+			vps.start
 		end
 	end
 end

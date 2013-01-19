@@ -56,6 +56,7 @@ IMPLICIT_CONFIG = {
 				5004 => "download",
 				5005 => "backup",
 				5006 => "backup",
+				5007 => "exports",
 			},
 			"Firewall" => {
 				7201 => "reg_ips",

@@ -17,7 +17,7 @@ module BackuperBackend
 				
 				unless File.exists?("#{$CFG.get(:backuper, :dest)}/#{@veid}")
 					syscmd("#{$CFG.get(:bin, :zfs)} create #{$CFG.get(:backuper, :zfs)[:zpool]}/#{@veid}")
-					export if $CFG.get(:backuper, :exports, :enabled)
+					exports if $CFG.get(:backuper, :exports, :enabled)
 				end
 				
 				syscmd(rsync, [23, 24])
@@ -48,21 +48,25 @@ module BackuperBackend
 		
 		def restore_prepare
 			target = $CFG.get(:backuper, :restore_target) \
-				.gsub(/%\{node\}/, @params["backuper"] + "." + $CFG.get(:vpsadmin, :domain)) \
+				.gsub(/%\{node\}/, @params["server_name"] + "." + $CFG.get(:vpsadmin, :domain)) \
 				.gsub(/%\{veid\}/, @veid)
 			syscmd("#{$CFG.get(:bin, :rm)} -rf #{target}") if File.exists?(target)
 			
 			acquire_lock(Db.new) do
-				syscmd("#{$CFG.get(:bin, :rsync)} #{$CFG.get(:backuper, :backups_mnt_dir)}/#{@params["backuper"]}.#{$CFG.get(:vpsadmin, :domain)}/#{@veid}/.zfs/snapshot/#{@params["datetime"]}/ #{target}")
+				syscmd("#{$CFG.get(:bin, :rsync)} -rlptgoDHX --numeric-ids --inplace --delete-after --exclude .zfs/ #{$CFG.get(:backuper, :dest)}/#{@veid}/.zfs/snapshot/#{@params["datetime"]}/ #{target}")
 			end
+			
+			ok
 		end
 		
 		def restore_finish
 			target = $CFG.get(:backuper, :restore_src).gsub(/%\{veid\}/, @veid)
 			
-			stop(:force => true)
+			vps = VPS.new(@veid)
+			
+			vps.stop(:force => true)
 			syscmd("#{$CFG.get(:vz, :vzquota)} off #{@veid} -f", [6,])
-			stop
+			vps.stop
 			
 			acquire_lock(Db.new) do
 				syscmd("#{$CFG.get(:bin, :rm)} -rf #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
@@ -70,51 +74,7 @@ module BackuperBackend
 			end
 			
 			syscmd("#{$CFG.get(:vz, :vzquota)} drop #{@veid}")
-			start
-		end
-		
-		def export
-			raise CommandFailed("export", 1, "Exports disabled in configuration") unless $CFG.get(:backuper, :exports, :enabled)
-			
-			delimiter = $CFG.get(:backuper, :exports, :delimiter)
-			dest = $CFG.get(:backuper, :dest)
-			options = $CFG.get(:backuper, :exports, :options)
-			path = $CFG.get(:backuper, :exports, :path)
-			path_new = path + ".new"
-			
-			src = File.open(path, "r")
-			dst = File.open(path_new, "w")
-			written = false
-			
-			while line = src.gets
-				dst.write(line)
-				
-				if line == delimiter
-					written = true
-					write_exports(dst, dest)
-					break
-				end
-			end
-			
-			unless written
-				dst.puts(delimiter)
-				write_exports(dst, dest)
-			end
-			
-			src.close
-			dst.close
-			
-			FileUtils.mv(path_new, path)
-			
-			syscmd($CFG.get(:backuper, :exports, :reexport))
-		end
-		
-		def write_exports(f, dest)
-			Dir.entries(dest).each do |d|
-				next if d == "." || d == ".."
-				
-				f.puts("#{dest}/#{@veid} #{options}")
-			end
+			vps.start
 		end
 		
 		def rsync
