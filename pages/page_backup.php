@@ -83,7 +83,7 @@ if ($_SESSION["logged_in"]) {
 					_("You can use backup before restore function only once per day.")
 				);
 			else {
-				$xtpl->perex_cmd_output(_("Restoration of VPS")." {$_GET["vps_id"]} from ".strftime("%Y-%m-%d %H:%M", $_GET["timestamp"])." ".strtolower(_("planned")));
+				$xtpl->perex(_("Restoration of VPS")." {$_GET["vps_id"]} from ".strftime("%Y-%m-%d %H:%M", $_GET["timestamp"])." ".strtolower(_("planned")));
 				$vps->restore($_GET["timestamp"], $_GET["backup_first"]);
 			}
 			break;
