@@ -96,23 +96,6 @@ class VPS < Executor
 		end
 	end
 	
-	def restore
-		target = $CFG.get(:vpsadmin, :restore_target) % [@veid,]
-		syscmd("#{$CFG.get(:bin, :rm)} -rf #{target}") if File.exists?(target)
-		
-		Backuper.wait_for_lock(Db.new, @veid) do
-			syscmd("#{$CFG.get(:bin, :rdiff_backup)} -r #{@params["datetime"]} #{$CFG.get(:vpsadmin, :backups_mnt_dir)}/#{@params["backuper"]}.#{$CFG.get(:vpsadmin, :domain)}/#{@veid} #{target}")
-		end
-		
-		stop(:force => true)
-		syscmd("#{$CFG.get(:vz, :vzquota)} off #{@veid} -f", [6,])
-		stop
-		syscmd("#{$CFG.get(:bin, :rm)} -rf #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
-		syscmd("#{$CFG.get(:bin, :mv)} #{target} #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
-		syscmd("#{$CFG.get(:vz, :vzquota)} drop #{@veid}")
-		start
-	end
-	
 	def clone
 		create
 		syscmd("#{$CFG.get(:bin, :rm)} -rf #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")

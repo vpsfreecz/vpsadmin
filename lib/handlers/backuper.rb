@@ -17,8 +17,28 @@ class Backuper < Executor
 		raise CommandNotImplemented
 	end
 	
+	def restore_prepare
+		raise CommandNotImplemented
+	end
+	
+	def restore_finish
+		raise CommandNotImplemented
+	end
+	
+	def export
+		raise CommandNotImplemented
+	end
+	
 	def mountpoint
 		"#{$CFG.get(:backuper, :mountpoint)}/#{@params["server_name"]}.#{$CFG.get(:vpsadmin, :domain)}/#{@veid}"
+	end
+	
+	def acquire_lock(db)
+		set_step("[waiting for lock]")
+		
+		Backuper.wait_for_lock(db, @veid) do
+			yield
+		end
 	end
 	
 	def post_save(db)
