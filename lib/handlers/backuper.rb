@@ -22,7 +22,21 @@ class Backuper < Executor
 	end
 	
 	def restore_finish
-		raise CommandNotImplemented
+		target = $CFG.get(:backuper, :restore_src).gsub(/%\{veid\}/, @veid)
+		
+		vps = VPS.new(@veid)
+		
+		vps.stop(:force => true)
+		syscmd("#{$CFG.get(:vz, :vzquota)} off #{@veid} -f", [6,])
+		vps.stop
+		
+		acquire_lock(Db.new) do
+			syscmd("#{$CFG.get(:bin, :rm)} -rf #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
+			syscmd("#{$CFG.get(:bin, :mv)} #{target} #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
+		end
+		
+		syscmd("#{$CFG.get(:vz, :vzquota)} drop #{@veid}")
+		vps.start
 	end
 	
 	def exports
@@ -40,7 +54,7 @@ class Backuper < Executor
 		while line = src.gets
 			dst.write(line)
 			
-			if line == delimiter
+			if line.strip == delimiter
 				written = true
 				write_exports(dst, dest)
 				break
@@ -67,7 +81,7 @@ class Backuper < Executor
 			next if d == "." || d == ".."
 			
 			options.each do |o|
-				f.puts("#{dest}/#{@veid} #{o}")
+				f.puts("#{dest}/#{d} #{o}")
 			end
 		end
 	end

@@ -58,23 +58,5 @@ module BackuperBackend
 			
 			ok
 		end
-		
-		def restore_finish
-			target = $CFG.get(:backuper, :restore_src).gsub(/%\{veid\}/, @veid)
-			
-			vps = VPS.new(@veid)
-			
-			vps.stop(:force => true)
-			syscmd("#{$CFG.get(:vz, :vzquota)} off #{@veid} -f", [6,])
-			vps.stop
-			
-			acquire_lock(Db.new) do
-				syscmd("#{$CFG.get(:bin, :rm)} -rf #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
-				syscmd("#{$CFG.get(:bin, :mv)} #{target} #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
-			end
-			
-			syscmd("#{$CFG.get(:vz, :vzquota)} drop #{@veid}")
-			vps.start
-		end
 	end
 end

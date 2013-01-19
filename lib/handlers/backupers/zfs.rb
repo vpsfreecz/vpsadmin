@@ -25,7 +25,7 @@ module BackuperBackend
 				
 				db.prepared("DELETE FROM vps_backups WHERE vps_id = ?", @veid)
 				
-				syscmd("#{$CFG.get(:bin, :zfs)} list -r -t snapshot -H -o name #{$CFG.get(:backuper, :zfs)[:zpool]}/#{@veid}")[:output].split('\n').each do |snapshot|
+				syscmd("#{$CFG.get(:bin, :zfs)} list -r -t snapshot -H -o name #{$CFG.get(:backuper, :zfs)[:zpool]}/#{@veid}")[:output].split().each do |snapshot|
 					db.prepared("INSERT INTO vps_backups SET vps_id = ?, timestamp = UNIX_TIMESTAMP(?)", @veid, snapshot.split("@")[1])
 				end
 			end
@@ -41,7 +41,7 @@ module BackuperBackend
 				if @params["server_name"]
 					syscmd("#{$CFG.get(:bin, :tar)} -czf #{$CFG.get(:backuper, :download)}/#{@params["secret"]}/#{@params["filename"]} #{mountpoint}", [1,])
 				else
-					syscmd("#{$CFG.get(:bin, :tar)} -czf -s '/#{@params["datetime"].gsub(/\-/, "\\-")}/#{@veid}/' #{$CFG.get(:backuper, :download)}/#{@params["secret"]}/#{@params["filename"]} #{$CFG.get(:backuper, :dest)}/#{@veid}/.zfs/snapshot/#{@params["datetime"]}")
+					syscmd("#{$CFG.get(:bin, :tar)} -czf #{$CFG.get(:backuper, :download)}/#{@params["secret"]}/#{@params["filename"]} -s '/#{@params["datetime"].gsub(/\-/, "\\-")}/#{@veid}/' #{$CFG.get(:backuper, :dest)}/#{@veid}/.zfs/snapshot/#{@params["datetime"]}")
 				end
 			end
 		end
@@ -57,24 +57,6 @@ module BackuperBackend
 			end
 			
 			ok
-		end
-		
-		def restore_finish
-			target = $CFG.get(:backuper, :restore_src).gsub(/%\{veid\}/, @veid)
-			
-			vps = VPS.new(@veid)
-			
-			vps.stop(:force => true)
-			syscmd("#{$CFG.get(:vz, :vzquota)} off #{@veid} -f", [6,])
-			vps.stop
-			
-			acquire_lock(Db.new) do
-				syscmd("#{$CFG.get(:bin, :rm)} -rf #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
-				syscmd("#{$CFG.get(:bin, :mv)} #{target} #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
-			end
-			
-			syscmd("#{$CFG.get(:vz, :vzquota)} drop #{@veid}")
-			vps.start
 		end
 		
 		def rsync
