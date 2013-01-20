@@ -45,7 +45,7 @@ include WWW_ROOT.'lib/gettext_lang.lib.php';
 include WWW_ROOT.'config_cfg.php';
 
 // connect to database
-$db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME);
+$db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_SOCK, true);
 
 
 // Create a template class
@@ -167,6 +167,9 @@ $lang->lang_switcher();
 
 $xtpl->assign('PAGE_TITLE', $cluster_cfg->get("page_title"));
 
+if (defined('TRACKING_CODE')) {
+  $xtpl->assign('TRACKING_CODE', TRACKING_CODE);
+}
 $xtpl->parse('main');
 $xtpl->out('main');
 

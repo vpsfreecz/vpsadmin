@@ -103,15 +103,19 @@ class sql_db {
     private $diff = array();
     private $diffCount = 0;
 
-    function __construct($host,$user,$pass,$name) {
+    function __construct($host,$user,$pass,$name, $sock = null, $use_socket = false) {
       $this->db = mysqli_init();
-
-      @$this->db->real_connect($host, $user, $pass, $name);
+      if ($use_socket && $sock) {
+        $this->db->real_connect("localhost", $user, $pass, $name, ini_get("mysqli.default_port"), $sock);      
+      } else {
+        $this->db->real_connect($host, $user, $pass, $name);
+      }
 	$this->host = $host;
 	$this->user = $user;
 	$this->pass = $pass;
 	$this->name = $name;
-	if ($this->db->connect_errno)
+  $this->sock = $sock;
+  if ($this->db->connect_errno)
 		die ('Unable to connect to the database. Error: '.$this->db->errno.' '.$this->db->error);
 
 	return true;

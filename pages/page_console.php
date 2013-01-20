@@ -12,11 +12,7 @@ if ($_SESSION["logged_in"]) {
 			$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
 <script type="text/javascript">
 function ajax_vps(cmd) {
-	var myRequest = new Request({
-		method: \'get\',
-		url: \'ajax.php?page=vps&action=\' + cmd + \'&veid='.$vps->veid.'\'
-	});
-	myRequest.send();
+	$.get("ajax.php?page=vps&action=" + cmd + "&veid='.$vps->veid.'");
 }
 </script>
 ');
