@@ -585,7 +585,7 @@ function ipadd($ip, $type = 4) {
 	$content = $cluster_cfg->get("mailer_tpl_dl_backup");
 	$content = str_replace("%member%", $this->ve["m_nick"], $content);
 	$content = str_replace("%vpsid%", $this->veid, $content);
-	$content = str_replace("%url%", "https://prasiatko.vpsfree.cz/backups/$secret/" . $params["filename"], $content);
+	$content = str_replace("%url%", "https://vpsadmin.vpsfree.cz/backup/$secret/" . $params["filename"], $content);
 	$content = str_replace("%datetime%", $timestamp == "current" ? _("current VPS state") : strftime("%Y-%m-%d %H:%M", $timestamp), $content);
 	
 	send_mail($this->ve["m_mail"], $subj, $content, array(), array(), true, $dl_id);
