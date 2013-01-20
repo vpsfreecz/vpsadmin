@@ -41,7 +41,7 @@ include WWW_ROOT.'lib/gettext_stream.lib.php';
 include WWW_ROOT.'lib/gettext_inc.lib.php';
 include WWW_ROOT.'lib/gettext_lang.lib.php';
 
-$db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME);
+$db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_SOCK, true);
 
 
 
