@@ -51,6 +51,8 @@ if ($_SESSION["logged_in"]) {
 		case "restore":
 			$vps = vps_load($_GET["vps_id"]);
 			
+			/* Permissions are checked in vps.lib.php */
+			
 			if ($_REQUEST["backup_first"])
 				$last_t = get_last_transaction(T_BACKUP_SCHEDULE, $vps->veid);
 			
@@ -83,14 +85,28 @@ if ($_SESSION["logged_in"]) {
 					_("You can use backup before restore function only once per day.")
 				);
 			else {
-				$xtpl->perex(_("Restoration of VPS")." {$_GET["vps_id"]} from ".strftime("%Y-%m-%d %H:%M", $_GET["timestamp"])." ".strtolower(_("planned")));
+				$xtpl->perex(_("Restoration of VPS")." {$_GET["vps_id"]} from ".strftime("%Y-%m-%d %H:%M", $_GET["timestamp"])." ".strtolower(_("planned")), '');
 				$vps->restore($_GET["timestamp"], $_GET["backup_first"]);
 			}
 			break;
 		case 'download':
-			$vps = vps_load($_GET["veid"]);
-			$xtpl->perex(_("Download of backup from ").strftime("%Y-%m-%d %H:%M", $_GET["timestamp"])." ".strtolower(_("planned")),
-				_("Preparing the archive may take several hours. You will receive email with download link when it is done.")
+			$vps = vps_load($_GET["vps_id"]);
+			
+			$xtpl->perex(
+				($_GET["timestamp"] == "current") ?
+					_("Are you sure you want to download current state of VPS?")
+					: _("Are you sure you want to download VPS").' '.$_GET["vps_id"].' from '.strftime("%Y-%m-%d %H:%M", $_GET["timestamp"]).'?'
+				, '<a href="?page=backup">'.strtoupper(_("No")).'</a> | <a href="?page=backup&action=download2&vps_id='.$_GET["vps_id"].'&timestamp='.$_GET["timestamp"].'">'.strtoupper(_("Yes")).'</a>'
+			);
+			break;
+		case 'download2':
+			$vps = vps_load($_GET["vps_id"]);
+			
+			$xtpl->perex(
+				($_GET["timestamp"] == "current") ?
+					_("Download current state of VPS planned")
+					: _("Download of backup from ").strftime("%Y-%m-%d %H:%M", $_GET["timestamp"])." ".strtolower(_("planned"))
+				, _("Preparing the archive may take several hours. You will receive email with download link when it is done.")
 			);
 			$vps->download_backup($_GET["timestamp"]);
 			break;
@@ -139,7 +155,7 @@ if ($_SESSION["logged_in"]) {
 					
 					$xtpl->table_td(_("Current VPS state"));
 					$xtpl->table_td('-');
-					$xtpl->table_td('[<a href="?page=backup&action=download&veid='.$lastId.'&timestamp=current">'._("Download").'</a>]');
+					$xtpl->table_td('[<a href="?page=backup&action=download&vps_id='.$lastId.'&timestamp=current">'._("Download").'</a>]');
 					$xtpl->table_tr();
 					
 					if ($last_t["t_time"] > (time() - 24*60*60)) {
@@ -170,7 +186,7 @@ if ($_SESSION["logged_in"]) {
 				strftime("%Y-%m-%d %H:%M", $backup["timestamp"]),
 				"restore_timestamp", $backup["timestamp"]
 			);
-			$xtpl->table_td('[<a href="?page=backup&action=download&veid='.$backup["vps_id"].'&timestamp='.$backup["timestamp"].'">'._("Download").'</a>]');
+			$xtpl->table_td('[<a href="?page=backup&action=download&vps_id='.$backup["vps_id"].'&timestamp='.$backup["timestamp"].'">'._("Download").'</a>]');
 			$xtpl->table_tr();
 		}
 		
@@ -179,7 +195,7 @@ if ($_SESSION["logged_in"]) {
 			
 			$xtpl->table_td(_("Current VPS state"));
 			$xtpl->table_td('-');
-			$xtpl->table_td('[<a href="?page=backup&action=download&veid='.$lastId.'&timestamp=current">'._("Download").'</a>]');
+			$xtpl->table_td('[<a href="?page=backup&action=download&vps_id='.$lastId.'&timestamp=current">'._("Download").'</a>]');
 			$xtpl->table_tr();
 			
 			if ($last_t["t_time"] > (time() - 24*60*60)) {
