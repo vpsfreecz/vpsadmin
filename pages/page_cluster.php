@@ -13,7 +13,7 @@ $list_nodes = false;
 $list_templates = false;
 
 $server_types = array("node" => "Node", "backuper" => "Backuper", "storage" => "Storage", "mailer" => "Mailer");
-$location_types = array("production" => "Production", "devel" => "Devel");
+$location_types = array("production" => "Production", "playground" => "Playground");
 
 switch($_REQUEST["action"]) {
 	case "restart_node":
