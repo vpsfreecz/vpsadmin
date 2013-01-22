@@ -388,16 +388,10 @@ switch($_REQUEST["action"]) {
 		}
 		
 		break;
-	case "configs_default_del":
-		$xtpl->sbar_add(_("Back"), '?page=cluster');
-		$chain = $cluster_cfg->get("default_config_chain");
-		$keys = array_keys($chain, $_GET["config"]);
+	case "configs_regen":
+		$cluster->regenerate_all_configs();
 		
-		foreach($keys as $key)
-			unset($chain[$key]);
-		
-		$cluster_cfg->set("default_config_chain", $chain);
-		$list_configs=true;
+		$xtpl->perex(_("Regeneration scheduled"), _("Regeneration of all configs on all nodes scheduled."));
 		break;
 	case "newnode":
 		$xtpl->title2(_("Register new server into cluster"));
@@ -840,6 +834,7 @@ if ($list_templates) {
 
 if ($list_configs) {
 	$xtpl->sbar_add(_("New config"), '?page=cluster&action=config_new');
+	$xtpl->sbar_add(_("Regenerate all configs on all nodes"), '?page=cluster&action=configs_regen');
 	
 	$xtpl->title2(_("Configs"));
 		
