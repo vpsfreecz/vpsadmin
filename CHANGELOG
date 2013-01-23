@@ -1,0 +1,39 @@
+* Sun Jan 20 2013 - version 1.6.2
+- Db: use socket
+- Tracking code support
+- Backup download: fix url, confirm download
+- Fix location type 'playground'
+
+* Sat Jan 19 2013 - version 1.6.1
+- Backup restore: fix transaction params
+
+* Sat Jan 19 2013 - version 1.6.1
+- Backup restore: fix datetime formatting
+
+* Sat Jan 19 2013 - version 1.6.0
+- Backup restore split to two steps
+
+* Fri Jan 18 2013 - version 1.5.2
+- Replace mootools with jQuery
+- Log
+
+* Wed Jan 16 2013 - version 1.5.1
+- Fix broken includes
+
+* Wed Jan 16 2013 - version 1.5.0
+- Replace limits by config management
+- Reorganize page cluster
+- VPS mass management
+- Safe migration
+- Notice board
+
+* Wed Jan 2 2013 - version 1.4.0
+- Backup exclude, restore, download
+- Remote console
+- PPP support
+- Playground support
+- VPS clone
+- Transaction dependencies
+- Transaction state 'warning'
+- CPU limits
+- Supports only new vpsAdmind
