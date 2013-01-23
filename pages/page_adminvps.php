@@ -534,6 +534,11 @@ switch ($_GET["action"]) {
 					$xtpl->table_td('<strong>'._('Keep in mind that online migration is useless while migrating to different location, use offline migration!').'</strong>', false, false, '2');
 					$xtpl->table_tr();
 					break;
+				case "backuper":
+					$t = _("Mass set backuper");
+					$xtpl->form_add_checkbox(_("Backup enabled").':', 'backup_enabled', '1');
+					$xtpl->form_add_checkbox(_("Notify owners").':', 'notify_owners', '1', true);
+					$xtpl->table_tr();
 				default:
 					break;
 			}
@@ -651,6 +656,15 @@ switch ($_GET["action"]) {
 						$vps = vps_load($veid);
 						if ($vps->exists)
 							$vps->online_migrate($_POST["target_id"]);
+					}
+					break;
+				case "backuper":
+					foreach ($vpses as $veid) {
+						$vps = vps_load($veid);
+						$vps->set_backuper($_POST["backup_enabled"], false);
+						
+						if($_POST["notify_owners"])
+							$vps->backuper_change_notify();
 					}
 					break;
 				default:
@@ -1224,7 +1238,8 @@ if ($mass_management && $_SESSION["is_admin"]) {
 			"passwd" => _("Set password"),
 			"dns" => _("Set DNS server"),
 			"migrate_offline" => _("Offline migration"),
-			"migrate_online" => _("Online migration")
+			"migrate_online" => _("Online migration"),
+			"backuper" => _("Set backuper")
 		), '', '', false, '5', '8'
 	);
 	

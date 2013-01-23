@@ -535,7 +535,10 @@ function ipadd($ip, $type = 4) {
   	global $db;
 	if ($_SESSION["is_admin"] || $force) {
 		$this->ve["vps_backup_enabled"] = (bool)$how;
-		$sql = 'UPDATE vps SET vps_backup_enabled='.($how ? '1' : '0').', vps_backup_exclude = "'.$db->check($exclude).'" WHERE vps_id = '.$db->check($this->veid);
+		if ($exclude === false)
+			$sql = 'UPDATE vps SET vps_backup_enabled='.($how ? '1' : '0').' WHERE vps_id = '.$db->check($this->veid);
+		else
+			$sql = 'UPDATE vps SET vps_backup_enabled='.($how ? '1' : '0').', vps_backup_exclude = "'.$db->check($exclude).'" WHERE vps_id = '.$db->check($this->veid);
   	} else
 		$sql = 'UPDATE vps SET vps_backup_exclude = "'.$db->check($exclude).'" WHERE vps_id = '.$db->check($this->veid);
   	
