@@ -572,6 +572,10 @@ switch($_REQUEST["action"]) {
 		break;
 	case "playground_settings_save":
 		$xtpl->perex(_("Playground settings saved"), '');
+		
+		$cluster_cfg->set("playground_enabled", (bool)$_POST["enabled"]);
+		$cluster_cfg->set("playground_backup", (bool)$_POST["backup"]);
+		
 		$playground_settings = true;
 		break;
 	case "playground_configs_default_save":
@@ -989,6 +993,13 @@ if ($list_dns) {
 
 if ($playground_settings) {
 	$xtpl->title2("Manage Playground Settings");
+	
+	$xtpl->table_add_category(_('Playground'));
+	$xtpl->table_add_category('');
+	$xtpl->form_create('?page=cluster&action=playground_settings_save', 'post');
+	$xtpl->form_add_checkbox(_('Enabled').':', 'enabled', '1', $cluster_cfg->get("playground_enabled"), _('Allow members to create playground VPS'));
+	$xtpl->form_add_checkbox(_('Backup').':', 'backup', '1', $cluster_cfg->get("playground_backup"), _('Should be newly created VPS backed up?'));
+	$xtpl->form_out(_('Save'));
 	
 	$configs_select = list_configs(true);
 	$options = "";

@@ -516,9 +516,9 @@ function ipadd($ip, $type = 4) {
     }
   }
 
-  function set_backuper($how, $exclude) {
+  function set_backuper($how, $exclude, $force = false) {
   	global $db;
-	if ($_SESSION["is_admin"]) {
+	if ($_SESSION["is_admin"] || $force) {
 		$this->ve["vps_backup_enabled"] = (bool)$how;
 		$sql = 'UPDATE vps SET vps_backup_enabled='.($how ? '1' : '0').', vps_backup_exclude = "'.$db->check($exclude).'" WHERE vps_id = '.$db->check($this->veid);
   	} else
@@ -607,39 +607,42 @@ function ipadd($ip, $type = 4) {
 				vps_backup_enabled = '.$db->check($backuper ? $this->ve["vps_backup_enabled"] : 1).',
 				vps_backup_exclude = "'.$db->check($backuper ? $this->ve["vps_backup_exclude"] : '').'",
 				vps_config = "'.$db->check($configs ? $this->ve["vps_config"] : '').'"';
-		$db->query($sql);
-		$clone = vps_load($db->insert_id());
+	
+	$db->query($sql);
+	$clone = vps_load($db->insert_id());
+	
+	$params = array(
+		"src_veid" => $this->veid,
+		"src_server_ip" => $this->ve["server_ip4"],
+		"is_local" => $server_id == $this->ve["vps_server"],
+		"template" => $clone->ve["templ_name"],
+		"hostname" => $clone->ve["vps_hostname"],
+		"nameserver" => $clone->ve["vps_nameserver"],
+	);
+	
+	add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_CLONE_VE, $params);
+	
+	switch($configs) {
+		case 0:
+		$clone->add_default_configs("default_config_chain");
+			break;
+		case 1:
+			$db->query("INSERT INTO vps_has_config (vps_id, config_id, `order`) SELECT '".$db->check($clone->veid)."' AS vps_id, config_id, `order` FROM vps_has_config WHERE vps_id = '".$db->check($this->veid)."'");
+			$clone->applyconfigs();
+			break;
+		case 2:
+			$clone->add_default_configs("playground_default_config_chain");
+			break;
+	}
+	
+	if ($features && $this->ve["vps_features_enabled"])
+		add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_ENABLE_FEATURES);
 		
-		$params = array(
-			"src_veid" => $this->veid,
-			"src_server_ip" => $this->ve["server_ip4"],
-			"is_local" => $server_id == $this->ve["vps_server"],
-			"template" => $clone->ve["templ_name"],
-			"hostname" => $clone->ve["vps_hostname"],
-			"nameserver" => $clone->ve["vps_nameserver"],
-		);
-		
-		add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_CLONE_VE, $params);
-		
-		switch($configs) {
-			case 0:
-			$clone->add_default_configs("default_config_chain");
-				break;
-			case 1:
-				$db->query("INSERT INTO vps_has_config (vps_id, config_id, `order`) SELECT '".$db->check($clone->veid)."' AS vps_id, config_id, `order` FROM vps_has_config WHERE vps_id = '".$db->check($this->veid)."'");
-				$clone->applyconfigs();
-				break;
-			case 2:
-				$clone->add_default_configs("playground_default_config_chain");
-				break;
-		}
-		
-		if ($features && $this->ve["vps_features_enabled"])
-			add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_ENABLE_FEATURES);
-			
-		$this->info();
-		if ($this->ve["vps_up"])
-			$clone->start();
+	$this->info();
+	if ($this->ve["vps_up"])
+		$clone->start();
+	
+	return $clone;
   }
   
   function get_backuper_server() {
