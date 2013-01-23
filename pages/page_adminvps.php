@@ -539,6 +539,12 @@ switch ($_GET["action"]) {
 					$xtpl->form_add_checkbox(_("Backup enabled").':', 'backup_enabled', '1');
 					$xtpl->form_add_checkbox(_("Notify owners").':', 'notify_owners', '1', true);
 					$xtpl->table_tr();
+					break;
+				case "backup_lock":
+					$t = _("Mass set backup lock");
+					$xtpl->form_add_checkbox(_("Backup lock").':', 'backup_lock', '1');
+					$xtpl->table_tr();
+					break;
 				default:
 					break;
 			}
@@ -665,6 +671,13 @@ switch ($_GET["action"]) {
 						
 						if($_POST["notify_owners"])
 							$vps->backuper_change_notify();
+					}
+					break;
+				case "backup_lock":
+					foreach ($vpses as $veid) {
+						$vps = vps_load($veid);
+						if ($vps->exists)
+							$vps->set_backup_lock($_POST["backup_lock"]);
 					}
 					break;
 				default:
@@ -1239,7 +1252,8 @@ if ($mass_management && $_SESSION["is_admin"]) {
 			"dns" => _("Set DNS server"),
 			"migrate_offline" => _("Offline migration"),
 			"migrate_online" => _("Online migration"),
-			"backuper" => _("Set backuper")
+			"backuper" => _("Set backuper"),
+			"backup_lock" => _("Set backup lock")
 		), '', '', false, '5', '8'
 	);
 	

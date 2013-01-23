@@ -545,6 +545,14 @@ function ipadd($ip, $type = 4) {
   	$db->query($sql);
   }
   
+  function set_backup_lock($lock) {
+	global $db;
+	
+	$sql = 'UPDATE vps SET vps_backup_lock = '.($lock ? '1' : '0').' WHERE vps_id = '.$db->check($this->veid);
+	
+  	$db->query($sql);
+  }
+  
   function restore($timestamp, $backup_first = false) {
 	if(!$this->exists)
 		return NULL;
