@@ -388,16 +388,10 @@ switch($_REQUEST["action"]) {
 		}
 		
 		break;
-	case "configs_default_del":
-		$xtpl->sbar_add(_("Back"), '?page=cluster');
-		$chain = $cluster_cfg->get("default_config_chain");
-		$keys = array_keys($chain, $_GET["config"]);
+	case "configs_regen":
+		$cluster->regenerate_all_configs();
 		
-		foreach($keys as $key)
-			unset($chain[$key]);
-		
-		$cluster_cfg->set("default_config_chain", $chain);
-		$list_configs=true;
+		$xtpl->perex(_("Regeneration scheduled"), _("Regeneration of all configs on all nodes scheduled."));
 		break;
 	case "newnode":
 		$xtpl->title2(_("Register new server into cluster"));
@@ -485,6 +479,12 @@ switch($_REQUEST["action"]) {
 								%vpsid% - VPS ID<br />
 								%configs% - List of configs
 								');
+		$xtpl->form_add_input(_("Backuper change subject").':', 'text', '40', 'tpl_backuper_change_subj', $cluster_cfg->get("mailer_tpl_backuper_change_subj"), '%member% - nick<br />%vpsid% = VPS ID');
+		$xtpl->form_add_textarea(_("Backuper changed<br /> template").':', 50, 8, 'tpl_backuper_changed', $cluster_cfg->get("mailer_tpl_backuper_changed"), '
+								%member% - nick<br />
+								%vpsid% - VPS ID<br />
+								%backuper% - State
+								');
 		$xtpl->form_add_input(_("Send nonpayers info to").':', 'text', '40', 'nonpayers_mail', $cluster_cfg->get("mailer_nonpayers_mail"), '');
 		$xtpl->form_add_input(_("Nonpayer subject").':', 'text', '40', 'tpl_nonpayers_subj', $cluster_cfg->get("mailer_tpl_nonpayers_subj"), '');
 		$xtpl->form_add_textarea(_("Nonpayer text<br /> template").':', 50, 8, 'tpl_nonpayers', $cluster_cfg->get("mailer_tpl_nonpayers"), '
@@ -512,6 +512,8 @@ switch($_REQUEST["action"]) {
 		$cluster_cfg->set("mailer_tpl_member_added", $_REQUEST["tpl_member_added"]);
 		$cluster_cfg->set("mailer_tpl_limits_change_subj", $_REQUEST["tpl_limits_change_subj"]);
 		$cluster_cfg->set("mailer_tpl_limits_changed", $_REQUEST["tpl_limits_changed"]);
+		$cluster_cfg->set("mailer_tpl_backuper_change_subj", $_REQUEST["tpl_backuper_change_subj"]);
+		$cluster_cfg->set("mailer_tpl_backuper_changed", $_REQUEST["tpl_backuper_changed"]);
 		$cluster_cfg->set("mailer_nonpayers_mail", $_REQUEST["nonpayers_mail"]);
 		$cluster_cfg->set("mailer_tpl_nonpayers_subj", $_REQUEST["tpl_nonpayers_subj"]);
 		$cluster_cfg->set("mailer_tpl_nonpayers", $_REQUEST["tpl_nonpayers"]);
@@ -578,6 +580,10 @@ switch($_REQUEST["action"]) {
 		break;
 	case "playground_settings_save":
 		$xtpl->perex(_("Playground settings saved"), '');
+		
+		$cluster_cfg->set("playground_enabled", (bool)$_POST["enabled"]);
+		$cluster_cfg->set("playground_backup", (bool)$_POST["backup"]);
+		
 		$playground_settings = true;
 		break;
 	case "playground_configs_default_save":
@@ -687,88 +693,91 @@ if ($list_nodes) {
 	$xtpl->sbar_add(_("Notice board"), '?page=cluster&action=noticeboard');
 	$xtpl->sbar_add(_("Edit vpsAdmin textfields"), '?page=cluster&action=fields');
 	
-	$sql = 'SELECT * FROM servers ORDER BY server_location,server_id';
-	$list_result = $db->query($sql);
-	
-	$i = 1;
 	$on_row = 2;
 	
-	for ($j = 0; $j < $on_row; $j++) {
-		$xtpl->table_add_category(_("A"));
-		$xtpl->table_add_category(_("NAME"));
-		$xtpl->table_add_category(_("L"));
-		$xtpl->table_add_category(_("R"));
-		$xtpl->table_add_category(_("S"));
-		$xtpl->table_add_category(_("T"));
-		$xtpl->table_add_category(_("M"));
-		$xtpl->table_add_category(_("V"));
-		$xtpl->table_add_category(' ');
+	while($location = $db->find("locations", NULL, "location_id")) {
+		$i = 1;
 		
-		if ($j+1 < $on_row)
+		$sql = 'SELECT * FROM servers WHERE server_location = '.$db->check($location["location_id"]).' ORDER BY server_id';
+		$list_result = $db->query($sql);
+		
+		for ($j = 0; $j < $on_row; $j++) {
+			$xtpl->table_add_category(_("A"));
+			$xtpl->table_add_category(_("NAME"));
+			$xtpl->table_add_category(_("L"));
+			$xtpl->table_add_category(_("R"));
+			$xtpl->table_add_category(_("S"));
+			$xtpl->table_add_category(_("T"));
+			$xtpl->table_add_category(_("M"));
+			$xtpl->table_add_category(_("V"));
 			$xtpl->table_add_category(' ');
-	}
-	
-	while ($srv = $db->fetch_array($list_result)) {
-		
-		$node = new cluster_node($srv["server_id"]);
-		$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$srv["server_id"].'" ORDER BY id DESC LIMIT 1';
-		
-		if ($result = $db->query($sql))
-			$status = $db->fetch_array($result);
-		
-		$icons = "";
-		
-		if ($cluster_cfg->get("lock_cron_".$srv["server_id"]))	{
-			$icons .= '<img title="'._("The server is currently processing").'" src="template/icons/warning.png"/>';
-		} elseif ((time()-$status["timestamp"]) > 360) {
-			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
-		} else {
-			$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
+			
+			if ($j+1 < $on_row)
+				$xtpl->table_add_category(' ');
 		}
 		
-		$xtpl->table_td($icons, false, true);
-		
-		$xtpl->table_td($srv["server_name"]);
-		$xtpl->table_td($status["cpu_load"], false, true);
-		
-		$sql = 'SELECT COUNT(*) AS count FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1 AND vps_server = '.$db->check($srv["server_id"]);
-		
-		if ($result = $db->query($sql))
-			$running_count = $db->fetch_array($result);
-		
-		$xtpl->table_td($running_count["count"]);
-		
-		$sql = 'SELECT COUNT(*) AS count FROM vps v LEFT JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 0 AND vps_server = '.$db->check($srv["server_id"]);
-		
-		if ($result = $db->query($sql))
-			$stopped_count = $db->fetch_array($result);
+		while ($srv = $db->fetch_array($list_result)) {
+			$node = new cluster_node($srv["server_id"]);
+			$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$srv["server_id"].'" ORDER BY id DESC LIMIT 1';
 			
-		$xtpl->table_td($stopped_count["count"]);
-		
-		$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_server='.$db->check($srv["server_id"]);
-		
-		if ($result = $db->query($sql))
-			$vps_count = $db->fetch_array($result);
-		
-		$xtpl->table_td($vps_count["count"], false, true);
-		
-		$xtpl->table_td($srv["server_maxvps"]);
-		
-		/*
-		$vps_free = ((int)$srv["server_maxvps"]-(int)$vps_count["count"]);
-		$xtpl->table_td($vps_free, false, true);
-		*/
-		
-		$xtpl->table_td($status["vpsadmin_version"]);
-		
-		$xtpl->table_td('<a href="?page=cluster&action=node_start_vpses&id='.$srv["server_id"].'"><img src="template/icons/vps_start.png" title="'._("Start all VPSes here").'"/></a>');
-		
-		if (!($i++ % $on_row))
-			$xtpl->table_tr();
-		else
-			$xtpl->table_td('');
+			if ($result = $db->query($sql))
+				$status = $db->fetch_array($result);
+			
+			$icons = "";
+			
+			if ($cluster_cfg->get("lock_cron_".$srv["server_id"]))	{
+				$icons .= '<img title="'._("The server is currently processing").'" src="template/icons/warning.png"/>';
+			} elseif ((time()-$status["timestamp"]) > 360) {
+				$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
+			} else {
+				$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
+			}
+			
+			$xtpl->table_td($icons, false, true);
+			
+			$xtpl->table_td($srv["server_name"]);
+			$xtpl->table_td($status["cpu_load"], false, true);
+			
+			$sql = 'SELECT COUNT(*) AS count FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1 AND vps_server = '.$db->check($srv["server_id"]);
+			
+			if ($result = $db->query($sql))
+				$running_count = $db->fetch_array($result);
+			
+			$xtpl->table_td($running_count["count"]);
+			
+			$sql = 'SELECT COUNT(*) AS count FROM vps v LEFT JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 0 AND vps_server = '.$db->check($srv["server_id"]);
+			
+			if ($result = $db->query($sql))
+				$stopped_count = $db->fetch_array($result);
+				
+			$xtpl->table_td($stopped_count["count"]);
+			
+			$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_server='.$db->check($srv["server_id"]);
+			
+			if ($result = $db->query($sql))
+				$vps_count = $db->fetch_array($result);
+			
+			$xtpl->table_td($vps_count["count"], false, true);
+			
+			$xtpl->table_td($srv["server_maxvps"]);
+			
+			/*
+			$vps_free = ((int)$srv["server_maxvps"]-(int)$vps_count["count"]);
+			$xtpl->table_td($vps_free, false, true);
+			*/
+			
+			$xtpl->table_td($status["vpsadmin_version"]);
+			
+			$xtpl->table_td('<a href="?page=cluster&action=node_start_vpses&id='.$srv["server_id"].'"><img src="template/icons/vps_start.png" title="'._("Start all VPSes here").'"/></a>');
+			
+			if (!($i++ % $on_row))
+				$xtpl->table_tr();
+			else
+				$xtpl->table_td('');
+		}
+		$xtpl->table_tr();
+		$xtpl->table_out();
 	}
-	$xtpl->table_out();
 	
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('Legend');
@@ -840,6 +849,7 @@ if ($list_templates) {
 
 if ($list_configs) {
 	$xtpl->sbar_add(_("New config"), '?page=cluster&action=config_new');
+	$xtpl->sbar_add(_("Regenerate all configs on all nodes"), '?page=cluster&action=configs_regen');
 	
 	$xtpl->title2(_("Configs"));
 		
@@ -994,6 +1004,13 @@ if ($list_dns) {
 
 if ($playground_settings) {
 	$xtpl->title2("Manage Playground Settings");
+	
+	$xtpl->table_add_category(_('Playground'));
+	$xtpl->table_add_category('');
+	$xtpl->form_create('?page=cluster&action=playground_settings_save', 'post');
+	$xtpl->form_add_checkbox(_('Enabled').':', 'enabled', '1', $cluster_cfg->get("playground_enabled"), _('Allow members to create playground VPS'));
+	$xtpl->form_add_checkbox(_('Backup').':', 'backup', '1', $cluster_cfg->get("playground_backup"), _('Should be newly created VPS backed up?'));
+	$xtpl->form_out(_('Save'));
 	
 	$configs_select = list_configs(true);
 	$options = "";

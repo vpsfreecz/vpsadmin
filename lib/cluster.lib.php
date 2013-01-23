@@ -578,6 +578,15 @@ class cluster {
 		}
     }
     
+    function regenerate_all_configs() {
+		global $db;
+		
+		while ($cfg = $db->find("config", NULL, "name")) {
+			$params = array("name" => $cfg["name"], "config" => $cfg["config"]);
+			add_transaction_clusterwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_CONFIG_CREATE, $params);
+		}
+    }
+    
     function save_default_configs($configs, $cfg_order, $new_cfgs, $syscfg_name) {
 		global $cluster_cfg;
 		

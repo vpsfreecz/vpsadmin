@@ -69,7 +69,7 @@ if ($_GET["run"] == 'restart') {
 }
 
 $playground_servers = $cluster->list_playground_servers();
-$playground_mode = !$_SESSION["is_admin"] && count($playground_servers) > 0 && $member_of_session->can_use_playground();
+$playground_mode = !$_SESSION["is_admin"] && $cluster_cfg->get("playground_enabled") && count($playground_servers) > 0 && $member_of_session->can_use_playground();
 
 $_GET["action"] = isset($_GET["action"]) ? $_GET["action"] : false;
 
@@ -110,6 +110,7 @@ switch ($_GET["action"]) {
 							$vps->add_default_configs("playground_default_config_chain");
 							$vps->add_first_available_ip($server["server_location"], 4);
 							$vps->add_first_available_ip($server["server_location"], 6);
+							$vps->set_backuper($cluster_cfg->get("playground_backup"), "", true);
 						} else {
 							$vps->add_default_configs("default_config_chain");
 						}
@@ -368,17 +369,22 @@ switch ($_GET["action"]) {
 					}
 				}
 				
-				$vps->clone_vps($playground_mode ? $vps->ve["m_id"] : $_REQUEST["target_owner_id"],
+				$pg_backup = $cluster_cfg->get("playground_backup");
+				
+				$cloned = $vps->clone_vps($playground_mode ? $vps->ve["m_id"] : $_REQUEST["target_owner_id"],
 								$_REQUEST["target_server_id"],
 								$_REQUEST["hostname"],
-								$playground_mode ? 1 : $_REQUEST["configs"],
+								$playground_mode ? 2 : $_REQUEST["configs"],
 								$playground_mode ? 1 : $_REQUEST["features"],
-								$playground_mode ? 0 : $_REQUEST["backuper"]
+								$playground_mode ? $pg_backup : $_REQUEST["backuper"]
 				);
 				
 				if ($playground_mode) {
-					$vps->add_first_available_ip($server["server_location"], 4);
-					$vps->add_first_available_ip($server["server_location"], 6);
+					$cloned->add_first_available_ip($server["server_location"], 4);
+					$cloned->add_first_available_ip($server["server_location"], 6);
+					
+					if (!$pg_backup)
+						$cloned->set_backuper($pg_backup, "", true);
 				}
 				$xtpl->perex(_("Clone in progress"), '');
 			} else
@@ -390,6 +396,9 @@ switch ($_GET["action"]) {
 			if (isset($_REQUEST["veid"])) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 				$xtpl->perex_cmd_output(_("Backuper status changed"), $vps->set_backuper($_SESSION["is_admin"] ? $_REQUEST["backup_enabled"] : NULL, $_REQUEST["backup_exclude"]));
+				
+				if ($_SESSION["is_admin"] && $_REQUEST["notify_owner"])
+					$vps->backuper_change_notify();
 			} else {
 				$xtpl->perex(_("Error"), '');
 			}
@@ -525,6 +534,17 @@ switch ($_GET["action"]) {
 					$xtpl->table_td('<strong>'._('Keep in mind that online migration is useless while migrating to different location, use offline migration!').'</strong>', false, false, '2');
 					$xtpl->table_tr();
 					break;
+				case "backuper":
+					$t = _("Mass set backuper");
+					$xtpl->form_add_checkbox(_("Backup enabled").':', 'backup_enabled', '1');
+					$xtpl->form_add_checkbox(_("Notify owners").':', 'notify_owners', '1', true);
+					$xtpl->table_tr();
+					break;
+				case "backup_lock":
+					$t = _("Mass set backup lock");
+					$xtpl->form_add_checkbox(_("Backup lock").':', 'backup_lock', '1');
+					$xtpl->table_tr();
+					break;
 				default:
 					break;
 			}
@@ -642,6 +662,22 @@ switch ($_GET["action"]) {
 						$vps = vps_load($veid);
 						if ($vps->exists)
 							$vps->online_migrate($_POST["target_id"]);
+					}
+					break;
+				case "backuper":
+					foreach ($vpses as $veid) {
+						$vps = vps_load($veid);
+						$vps->set_backuper($_POST["backup_enabled"], false);
+						
+						if($_POST["notify_owners"])
+							$vps->backuper_change_notify();
+					}
+					break;
+				case "backup_lock":
+					foreach ($vpses as $veid) {
+						$vps = vps_load($veid);
+						if ($vps->exists)
+							$vps->set_backup_lock($_POST["backup_lock"]);
 					}
 					break;
 				default:
@@ -781,8 +817,15 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_tr();
 	}
 	$xtpl->table_td(_("Backuper").':');
-	$xtpl->table_td(($vps->ve["vps_backup_enabled"] ? _("enabled") : _("disabled")) . ($vps->ve["vps_backup_lock"] ? "<br/>"._("backup in progress") : ""));
+	$xtpl->table_td(($vps->ve["vps_backup_enabled"] ? _("enabled") : _("disabled")));
 		$xtpl->table_tr();
+	
+	if ($_SESSION["is_admin"]) {
+		$xtpl->table_td(_("Backup lock").':');
+		$xtpl->table_td($vps->ve["vps_backup_lock"] ? _("locked") : _("unlocked"));
+		$xtpl->table_tr();
+	}
+	
 	
 	$xtpl->table_out();
 
@@ -1030,7 +1073,7 @@ if (isset($show_info) && $show_info) {
 		
 		if ($_SESSION["is_admin"])
 			$xtpl->form_add_select(_("Target owner").':', 'target_owner_id', members_list(), $vps->ve["m_id"]);
-		$xtpl->form_add_select(_("Target server").':', 'target_server_id', $cluster->list_servers(), $vps->ve["vps_server"]);
+		$xtpl->form_add_select(_("Target server").':', 'target_server_id', $playground_mode ? list_playground_servers() : $cluster->list_servers(), $vps->ve["vps_server"]);
 		$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'hostname', $vps->ve["vps_hostname"] . "-{$vps->veid}-clone");
 		
 		if ($_SESSION["is_admin"]) {
@@ -1045,8 +1088,10 @@ if (isset($show_info) && $show_info) {
 	
 // Backuper
 	$xtpl->form_create('?page=adminvps&action=setbackuper&veid='.$vps->veid, 'post');
-	if ($_SESSION["is_admin"])
+	if ($_SESSION["is_admin"]) {
 		$xtpl->form_add_checkbox(_("Backup enabled").':', 'backup_enabled', '1', $vps->ve["vps_backup_enabled"]);
+		$xtpl->form_add_checkbox(_("Notify owner").':', 'notify_owner', '1', true);
+	}
 	$xtpl->form_add_textarea(_("Exclude files").':', 60, 10, "backup_exclude", $vps->ve["vps_backup_exclude"], _("One path per line"));
 	$xtpl->table_add_category(_("Backuper"));
 	$xtpl->table_add_category('&nbsp;');
@@ -1206,7 +1251,9 @@ if ($mass_management && $_SESSION["is_admin"]) {
 			"passwd" => _("Set password"),
 			"dns" => _("Set DNS server"),
 			"migrate_offline" => _("Offline migration"),
-			"migrate_online" => _("Online migration")
+			"migrate_online" => _("Online migration"),
+			"backuper" => _("Set backuper"),
+			"backup_lock" => _("Set backup lock")
 		), '', '', false, '5', '8'
 	);
 	
