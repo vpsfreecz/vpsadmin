@@ -1,10 +1,10 @@
-* Sun Jan 20 2013 - version 1.6.2
+* Sun Jan 20 2013 - version 1.6.3
 - Db: use socket
 - Tracking code support
 - Backup download: fix url, confirm download
 - Fix location type 'playground'
 
-* Sat Jan 19 2013 - version 1.6.1
+* Sat Jan 19 2013 - version 1.6.2
 - Backup restore: fix transaction params
 
 * Sat Jan 19 2013 - version 1.6.1
