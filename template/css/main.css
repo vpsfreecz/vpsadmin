@@ -87,7 +87,7 @@ ul.ul-style01 ul li {padding-left:12px; background:url("../design/ul-style01.gif
 4) Layout
 ---------------------------------------------------------------------------------------------------------- */
 
-.main {position:relative; width:1100px; margin:0 auto; text-align:left;}
+.main {position:relative; width:1150px; margin:0 auto; text-align:left;}
 
 	#header {padding:10px 0; overflow:hidden}
 
@@ -118,7 +118,7 @@ ul.ul-style01 ul li {padding-left:12px; background:url("../design/ul-style01.gif
             #content h2, #content h3, #content h4 {margin-bottom:0; margin-bottom:10px; font-size:140%; letter-spacing:-1px;}
             #content h3, #content h4 {letter-spacing:0; font-size:120%;}
                             
-    	#aside {float:right; width:275px; padding-right:1px; overflow:hidden;}
+    	#aside {float:right; width:300px; padding-right:1px; overflow:hidden;}
     	
     	   #aside h3 {padding-right:15px; background:url("../design/arrow.gif") 100% 50% no-repeat; font-size:100%;}
     	   #aside ul {margin:5px 0 15px 0; padding:0; list-style:none;}
