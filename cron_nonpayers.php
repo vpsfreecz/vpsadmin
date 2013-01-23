@@ -25,6 +25,7 @@
 
 include '/etc/vpsadmin/config.php';
 session_start();
+$_SESSION["is_admin"] = true;
 define ('CRON_MODE', true);
 define ('DEMO_MODE', false);
 
