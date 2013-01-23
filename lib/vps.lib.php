@@ -516,6 +516,21 @@ function ipadd($ip, $type = 4) {
     }
   }
 
+  function backuper_change_notify() {
+	global $db, $cluster_cfg;
+
+	$subject = $cluster_cfg->get("mailer_tpl_backuper_change_subj");
+	$subject = str_replace("%member%", $this->ve["m_nick"], $subject);
+	$subject = str_replace("%vpsid%", $this->veid, $subject);
+	
+	$content = $cluster_cfg->get("mailer_tpl_backuper_changed");
+	$content = str_replace("%member%", $this->ve["m_nick"], $content);
+	$content = str_replace("%vpsid%", $this->veid, $content);
+	$content = str_replace("%backuper%", $this->ve["vps_backup_enabled"] ? _("enabled") : _("disabled"), $content);
+	
+	send_mail($this->ve["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
+  }
+  
   function set_backuper($how, $exclude, $force = false) {
   	global $db;
 	if ($_SESSION["is_admin"] || $force) {

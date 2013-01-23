@@ -479,6 +479,12 @@ switch($_REQUEST["action"]) {
 								%vpsid% - VPS ID<br />
 								%configs% - List of configs
 								');
+		$xtpl->form_add_input(_("Backuper change subject").':', 'text', '40', 'tpl_backuper_change_subj', $cluster_cfg->get("mailer_tpl_backuper_change_subj"), '%member% - nick<br />%vpsid% = VPS ID');
+		$xtpl->form_add_textarea(_("Backuper changed<br /> template").':', 50, 8, 'tpl_backuper_changed', $cluster_cfg->get("mailer_tpl_backuper_changed"), '
+								%member% - nick<br />
+								%vpsid% - VPS ID<br />
+								%backuper% - State
+								');
 		$xtpl->form_add_input(_("Send nonpayers info to").':', 'text', '40', 'nonpayers_mail', $cluster_cfg->get("mailer_nonpayers_mail"), '');
 		$xtpl->form_add_input(_("Nonpayer subject").':', 'text', '40', 'tpl_nonpayers_subj', $cluster_cfg->get("mailer_tpl_nonpayers_subj"), '');
 		$xtpl->form_add_textarea(_("Nonpayer text<br /> template").':', 50, 8, 'tpl_nonpayers', $cluster_cfg->get("mailer_tpl_nonpayers"), '
@@ -506,6 +512,8 @@ switch($_REQUEST["action"]) {
 		$cluster_cfg->set("mailer_tpl_member_added", $_REQUEST["tpl_member_added"]);
 		$cluster_cfg->set("mailer_tpl_limits_change_subj", $_REQUEST["tpl_limits_change_subj"]);
 		$cluster_cfg->set("mailer_tpl_limits_changed", $_REQUEST["tpl_limits_changed"]);
+		$cluster_cfg->set("mailer_tpl_backuper_change_subj", $_REQUEST["tpl_backuper_change_subj"]);
+		$cluster_cfg->set("mailer_tpl_backuper_changed", $_REQUEST["tpl_backuper_changed"]);
 		$cluster_cfg->set("mailer_nonpayers_mail", $_REQUEST["nonpayers_mail"]);
 		$cluster_cfg->set("mailer_tpl_nonpayers_subj", $_REQUEST["tpl_nonpayers_subj"]);
 		$cluster_cfg->set("mailer_tpl_nonpayers", $_REQUEST["tpl_nonpayers"]);
