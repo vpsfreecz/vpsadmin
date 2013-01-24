@@ -69,7 +69,8 @@ if ($_GET["run"] == 'restart') {
 }
 
 $playground_servers = $cluster->list_playground_servers();
-$playground_mode = !$_SESSION["is_admin"] && $cluster_cfg->get("playground_enabled") && count($playground_servers) > 0 && $member_of_session->can_use_playground();
+$playground_enabled = $cluster_cfg->get("playground_enabled");
+$playground_mode = !$_SESSION["is_admin"] && $playground_enabled && count($playground_servers) > 0 && $member_of_session->can_use_playground();
 
 $_GET["action"] = isset($_GET["action"]) ? $_GET["action"] : false;
 
@@ -147,8 +148,19 @@ switch ($_GET["action"]) {
 			break;
 		case 'delete2':
 			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-			if ($_SESSION["is_admin"]) {
-				$xtpl->perex_cmd_output(_("Deletion of VPS")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->destroy());
+			
+			$can_delete = false;
+				
+			if ($playground_enabled && $_SESSION["member"]["m_id"] == $vps->ve["m_id"]) {
+				foreach ($playground_servers as $pg)
+					if ($pg["server_id"] == $vps->ve["server_id"]) {
+						$can_delete = true;
+						break;
+					}
+			}
+			
+			if ($_SESSION["is_admin"] || $can_delete) {
+				$xtpl->perex_cmd_output(_("Deletion of VPS")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->destroy($can_delete));
 				$list_vps=true;
 			}
 			break;
@@ -749,7 +761,18 @@ if (isset($list_vps) && $list_vps) {
 				$xtpl->table_td(($vps->ve["vps_up"]) ? '<a href="?page=adminvps&run=restart&veid='.$vps->veid.'"><img src="template/icons/vps_restart.png" title="'._("Restart").'"/></a>' : '<img src="template/icons/vps_restart_grey.png"  title="'._("Unable to restart").'" />');
 				$xtpl->table_td(($vps->ve["vps_up"]) ? '<a href="?page=adminvps&run=stop&veid='.$vps->veid.'"><img src="template/icons/vps_stop.png"  title="'._("Stop").'"/></a>' : '<a href="?page=adminvps&run=start&veid='.$vps->veid.'"><img src="template/icons/vps_start.png"  title="'._("Start").'"/></a>');
 				$xtpl->table_td('<a href="?page=console&veid='.$vps->veid.'"><img src="template/icons/console.png"  title="'._("Remote Console").'"/></a>');
-				if ($_SESSION["is_admin"]){
+				
+				$can_delete = false;
+				
+				if ($playground_enabled && $_SESSION["member"]["m_id"] == $vps->ve["m_id"]) {
+					foreach ($playground_servers as $pg)
+						if ($pg["server_id"] == $vps->ve["server_id"]) {
+							$can_delete = true;
+							break;
+						}
+				}
+				
+				if ($_SESSION["is_admin"] || $can_delete){
 				    $xtpl->table_td((!$vps->ve["vps_up"]) ? '<a href="?page=adminvps&action=delete&veid='.$vps->veid.'"><img src="template/icons/vps_delete.png"  title="'._("Delete").'"/></a>' : '<img src="template/icons/vps_delete_grey.png"  title="'._("Unable to delete").'"/>');
 				} else {
 				    $xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'._("Cannot delete").'"/>');

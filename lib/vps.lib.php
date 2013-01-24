@@ -211,9 +211,9 @@ class vps_load {
   }
 
 
-  function destroy() {
+  function destroy($force = false) {
 	global $db;
-	if ($this->exists && $_SESSION["is_admin"]) {
+	if ($this->exists && ($_SESSION["is_admin"] || $force)) {
 	  $sql = 'DELETE FROM vps WHERE vps_id='.$db->check($this->veid);
 	  $sql2 = 'UPDATE vps_ip SET vps_id = 0 WHERE vps_id='.$db->check($this->veid);
 	  if ($result = $db->query($sql))
