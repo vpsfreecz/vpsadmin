@@ -257,8 +257,10 @@ class member_load {
   function stop_all_vpses() {
 	global $db;
 	
-	while($vps = $db->findByColumn("vps", "m_id", $this->m["m_id"]))
+	while($row = $db->findByColumn("vps", "m_id", $this->m["m_id"])) {
+		$vps = new vps_load($row["vps_id"]);
 		$vps->stop();
+	}
   }
   
   function set_info($info) {
