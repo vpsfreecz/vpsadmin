@@ -583,7 +583,7 @@ class cluster {
 		
 		while ($cfg = $db->find("config", NULL, "name")) {
 			$params = array("name" => $cfg["name"], "config" => $cfg["config"]);
-			add_transaction_clusterwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_CONFIG_CREATE, $params);
+			add_transaction_clusterwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_CONFIG_CREATE, $params, array('node'));
 		}
     }
     

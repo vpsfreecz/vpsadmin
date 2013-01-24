@@ -24,10 +24,10 @@ function print_newvps() {
 	$xtpl->title(_("Create VPS"));
 	$xtpl->form_create('?page=adminvps&section=vps&action=new2&create=1', 'post');
 	$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'vps_hostname', '', _("A-z, a-z"), 30);
-	$xtpl->form_add_select(_("HW server").':', 'vps_server', $_SESSION["is_admin"] ? list_servers() : list_playground_servers(), '2', '');
+	$xtpl->form_add_select(_("HW server").':', 'vps_server', $_SESSION["is_admin"] ? list_servers(false, array("node")) : list_playground_servers(), '2', '');
 	if ($_SESSION["is_admin"])
 		$xtpl->form_add_select(_("Owner").':', 'm_id', members_list(), '', '');
-	$xtpl->form_add_select(_("Distribution").':', 'vps_template', list_templates(), '',  '');
+	$xtpl->form_add_select(_("Distribution").':', 'vps_template', list_templates(false), '',  '');
 	
 	if ($_SESSION["is_admin"]) {
 		//$xtpl->form_add_select(_("IPv4").':', 'ipv4', get_all_ip_list(4), '1', '');
@@ -83,6 +83,12 @@ switch ($_GET["action"]) {
 			    && ($server = server_by_id($_REQUEST["vps_server"]))
 			    && ($_SESSION["is_admin"] || $playground_mode)))
 					{
+					$tpl = template_by_id($_REQUEST["vps_template"]);
+					
+					if (!$tpl["templ_enabled"]) {
+						$xtpl->perex(_("Error"), _("Template not enabled, it cannot be used, you bloody hacker."));
+						break;
+					}
 					
 					if ($playground_mode) {
 						$is_pg = false;
@@ -303,7 +309,7 @@ switch ($_GET["action"]) {
 				$xtpl->perex(_("Template does not exist!"));
 				$show_info=true;
 			} else if (!$tpl["templ_enabled"]) {
-				$xtpl->perex(_("Template not enabled, it cannot be used!"));
+				$xtpl->perex(_("Template not enabled, it cannot be used!"), _("You will have to use different template."));
 				$show_info=true;
 			} else if ($_REQUEST["reinstallsure"] && $_REQUEST["vps_template"]) {
 				$xtpl->perex(_("Are you sure you want to reinstall VPS").' '.$_GET["veid"].'?', '<a href="?page=adminvps">'.strtoupper(_("No")).'</a> | <a href="?page=adminvps&action=reinstall2&veid='.$_GET["veid"].'">'.strtoupper(_("Yes")).'</a>');

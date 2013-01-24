@@ -114,9 +114,9 @@ function list_configs($empty = false) {
 	return $ret;
 }
 
-function list_templates() {
+function list_templates($disabled = true) {
     global $db;
-    $sql = 'SELECT * FROM cfg_templates ORDER BY templ_label ASC';
+    $sql = 'SELECT * FROM cfg_templates '.($disabled ? '' : 'WHERE templ_enabled = 1').' ORDER BY templ_label ASC';
     if ($result = $db->query($sql))
 	while ($row = $db->fetch_array($result)) {
 	    $ret[$row["templ_id"]] = $row["templ_label"];
@@ -135,13 +135,13 @@ function template_by_id ($id) {
     return false;
 }
 
-function list_servers($without_id = false) {
+function list_servers($without_id = false, $roles = array('node', 'backuper', 'mailer', 'storage')) {
     global $db;
 	if ($without_id)
-		$sql = 'SELECT * FROM servers WHERE server_id != \''.$db->check($without_id).'\' ORDER BY server_location,server_id';
+		$sql = 'SELECT * FROM servers WHERE server_id != \''.$db->check($without_id).'\' AND server_type IN (\''.implode("','", $roles).'\') ORDER BY server_location,server_id';
 	else
-		$sql = 'SELECT * FROM servers ORDER BY server_location,server_id';
-
+		$sql = 'SELECT * FROM servers WHERE server_type IN (\''.implode("','", $roles).'\') ORDER BY server_location,server_id';
+	
     if ($result = $db->query($sql))
 	while ($row = $db->fetch_array($result))
 	    $ret[$row["server_id"]] = $row["server_name"];
