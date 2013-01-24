@@ -175,6 +175,15 @@ function print_editm($member) {
 	}
 
 	$xtpl->form_out(_("Save"));
+	
+	if ($cluster_cfg->get("payments_enabled")) {
+		$xtpl->table_title(_("Suspend account"));
+		$xtpl->table_add_category('&nbsp;');
+		$xtpl->table_add_category('&nbsp;');
+		$xtpl->form_create('?page=adminm&section=members&action=suspend&id='.$_GET["id"], 'post');
+		$xtpl->form_add_input(_("Reason").':', 'text', '30', 'reason');
+		$xtpl->form_out(_("Suspend"));
+	}
 }
 
 if ($_SESSION["logged_in"]) {
@@ -335,6 +344,17 @@ if ($_SESSION["logged_in"]) {
 				print_editm($member);
 			} else {
 			    $xtpl->delayed_redirect('?page=adminm', 350);
+			}
+			break;
+		case 'suspend':
+			$member = member_load($_GET["id"]);
+			
+			if ($_SESSION["is_admin"] && $member->exists) {
+				$member->stop_all_vpses();
+				$member->set_info( $member->m["m_info"]."\n".strftime("%d.%m.%Y")." - "._("suspended")." - ".$_POST["reason"] );
+				$member->notify_suspend();
+				
+				$xtpl->perex(_("Account suspended"), _("All member's VPS were stopped, notification mail sent."));
 			}
 			break;
 		case 'payset':

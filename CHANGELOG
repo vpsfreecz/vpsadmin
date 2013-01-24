@@ -1,4 +1,9 @@
-* Wed jan 23 2013 - version 1.6.4
+* Thu Jan 24 2013 - version 1.6.5
+- Playground: allow members to delete VPS
+- Members: account suspension
+- Server list filtering
+
+* Wed Jan 23 2013 - version 1.6.4
 - Configs: add command to regenerate all configs on all nodes
 - Playground settings
 - Cluster: fix node list

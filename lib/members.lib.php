@@ -253,5 +253,30 @@ class member_load {
 	
 	return false;
   }
+  
+  function stop_all_vpses() {
+	global $db;
+	
+	while($vps = $db->findByColumn("vps", "m_id", $this->m["m_id"]))
+		$vps->stop();
+  }
+  
+  function set_info($info) {
+	global $db;
+	
+	$db->query('UPDATE members SET m_info = "'.$db->check($info).'" WHERE m_id = '.$db->check($this->m["m_id"]).'');
+  }
+  
+  function notify_suspend() {
+	global $db, $cluster_cfg;
+
+	$subject = $cluster_cfg->get("mailer_tpl_suspend_account_subj");
+	$subject = str_replace("%member%", $this->m["m_nick"], $subject);
+	
+	$content = $cluster_cfg->get("mailer_tpl_suspend_account");
+	$content = str_replace("%member%", $this->m["m_nick"], $content);
+	
+	send_mail($this->m["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
+  }
 }
 ?>
