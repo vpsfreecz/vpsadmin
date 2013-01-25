@@ -1,0 +1,50 @@
+* Fri Jan 25 2013 - version 1.6.3
+- Backup download: fix tar args, execution; script to delete expired archives
+- ZFS backuper: fix exclude
+
+* Sat Jan 19 2013 - version 1.6.2
+- VE umount script
+- Restore: reorganize code
+- Fix exports
+- Backup download: fix tar args
+
+* Sat Jan 19 2013 - version 1.6.1
+- Exports: reorganize code
+
+* Sat Jan 19 2013 - version 1.6.0
+- New command exports
+- Restore split to two steps (prepare on backuper, finish on node)
+
+* Wed Jan 16 2013 - version 1.5.2
+- Daily backup scheduler: fix config loading
+- Remote control: change communication format
+
+* Wed Jan 16 2013 - version 1.5.1
+- Fix command identifier (probably not needed)
+
+* Wed Jan 16 2013 - version 1.5.0
+- Manage OpenVZ sample configs
+- Applyconfig support
+- vpsAdmind's config can contain only needed settings, not all of them
+- Support for ZFS backups
+- Saving transaction's execution step
+- Safe migration
+
+* Wed Dec 26 2012 - version 1.4.2
+- Remote control (interface for vpsadminctl)
+- Reload thread count from config on SIGHUP
+
+* Sat Dec 22 2012 - version 1.4.1
+- Transaction priorities
+- Always fetch queue from DB, do not cache anything
+- Backup download: handle tar exit code 1
+
+* Wed Dec 19 2012 - version 1.4.0
+- First release
+- Backups: backup, restore, download
+- VPS cloning
+- PPP
+- Mailer
+- VE console exporting
+- vpsAdmind runs in wrapper - capable of self stop, restart, update
+- Commands executed in multiple threads
