@@ -11,7 +11,7 @@ module BackuperBackend
 			acquire_lock(db) do
 				@exclude = Tempfile.new("backuper_exclude")
 				@params["exclude"].each do |s|
-					@exclude.puts("-rsp #{s}")
+					@exclude.puts(s)
 				end
 				@exclude.close
 				
