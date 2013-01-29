@@ -475,7 +475,8 @@ switch($_REQUEST["action"]) {
 								');
 		$xtpl->form_add_input(_("Suspend subject").':', 'text', '40', 'tpl_suspend_account_subj', $cluster_cfg->get("mailer_tpl_suspend_account_subj"), '%member% - nick');
 		$xtpl->form_add_textarea(_("Suspend<br />account").':', 50, 8, 'tpl_suspend_account', $cluster_cfg->get("mailer_tpl_suspend_account"), '
-								%member% - nick');
+								%member% - nick<br />
+								%reason% - suspend reason');
 		$xtpl->form_add_input(_("Limits change subject").':', 'text', '40', 'tpl_limits_change_subj', $cluster_cfg->get("mailer_tpl_limits_change_subj"), '%member% - nick<br />%vpsid% = VPS ID');
 		$xtpl->form_add_textarea(_("Limits changed<br /> template").':', 50, 8, 'tpl_limits_changed', $cluster_cfg->get("mailer_tpl_limits_changed"), '
 								%member% - nick<br />

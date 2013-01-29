@@ -269,7 +269,19 @@ class member_load {
 	$db->query('UPDATE members SET m_info = "'.$db->check($info).'" WHERE m_id = '.$db->check($this->m["m_id"]).'');
   }
   
-  function notify_suspend() {
+  function suspend($reason) {
+	global $db;
+	
+	$db->query('UPDATE members SET m_active = 0, m_suspend_reason = "'.$db->check($reason).'" WHERE m_id = '.$db->check($this->m["m_id"]).'');
+  }
+  
+  function restore() {
+	global $db;
+	
+	$db->query("UPDATE members SET m_active = 1, m_suspend_reason = '' WHERE m_id = ".$db->check($this->m["m_id"]));
+  }
+  
+  function notify_suspend($reason) {
 	global $db, $cluster_cfg;
 
 	$subject = $cluster_cfg->get("mailer_tpl_suspend_account_subj");
@@ -277,6 +289,7 @@ class member_load {
 	
 	$content = $cluster_cfg->get("mailer_tpl_suspend_account");
 	$content = str_replace("%member%", $this->m["m_nick"], $content);
+	$content = str_replace("%reason%", $reason, $content);
 	
 	send_mail($this->m["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
   }
