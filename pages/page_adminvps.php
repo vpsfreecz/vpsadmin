@@ -55,17 +55,17 @@ if ($_GET["run"] == 'stop') {
 }
 
 if ($_GET["run"] == 'start') {
-	if (($member_of_session->is_new()) || ($member_of_session->has_paid_now()) || (!$cluster_cfg->get("payments_enabled"))) {
+	if ($member_of_session->m["m_active"] || (!$cluster_cfg->get("payments_enabled"))) {
 			$vps = vps_load($_GET["veid"]);
 			$xtpl->perex_cmd_output(_("Start of")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->start());
-	} else $xtpl->perex(_("Payment missing"), _("You are not allowed to make \"start\" operation.<br />Please pay all your fees. Once we receive all missing payments, your access will be resumed."));
+	} else $xtpl->perex(_("Account suspended"), _("You are not allowed to make \"start\" operation.<br />Your account is suspended because of:") . ' ' . $member_of_session->m["m_suspend_reason"]);
 }
 
 if ($_GET["run"] == 'restart') {
-	if (($member_of_session->is_new()) || ($member_of_session->has_paid_now()) || (!$cluster_cfg->get("payments_enabled"))) {
+	if ($member_of_session->m["m_active"] || (!$cluster_cfg->get("payments_enabled"))) {
 		$vps = vps_load($_GET["veid"]);
 		$xtpl->perex_cmd_output(_("Restart of")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->restart());
-	} else $xtpl->perex(_("Payment missing"), _("You are not allowed to make \"start\" operation.<br />Please pay all your fees. Once we receive all missing payments, your access will be resumed."));
+	} else $xtpl->perex(_("Account suspended"), _("You are not allowed to make \"restart\" operation.<br />Your account is suspended because of:") . ' ' . $member_of_session->m["m_suspend_reason"]);
 }
 
 $playground_servers = $cluster->list_playground_servers();

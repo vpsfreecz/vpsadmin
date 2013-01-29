@@ -237,7 +237,7 @@ class member_load {
   function can_use_playground() {
 	global $db;
 	
-	if (!$this->m["m_playground_enable"])
+	if (!$this->m["m_playground_enable"] || !$this->m["m_active"])
 		return false;
 	
 	$sql = "SELECT COUNT(vps_id) AS count
