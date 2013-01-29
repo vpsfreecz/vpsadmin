@@ -196,6 +196,29 @@ function print_editm($member) {
 			$xtpl->form_out(_("Restore"));
 		}
 	}
+	
+	print_deletem($member);
+}
+
+function print_deletem($member) {
+	global $db, $xtpl;
+	
+	$xtpl->table_title(_("Delete member"));
+	$xtpl->table_td(_("Full name").':');
+	$xtpl->table_td($member->m["m_name"]);
+	$xtpl->table_tr();
+	$xtpl->form_create('?page=adminm&section=members&action=delete2&id='.$_GET["id"], 'post');
+	$xtpl->table_td(_("VPSes to be deleted").':');
+	
+	$vpses = '';
+	
+	while ($vps = $db->findByColumn("vps", "m_id", $member->m["m_id"]))
+		$vpses .= '<a href="?page=adminvps&action=info&veid='.$vps["vps_id"].'">#'.$vps["vps_id"].' - '.$vps["vps_hostname"].'</a><br>';
+	
+	$xtpl->table_td($vpses);
+	$xtpl->table_tr();
+	$xtpl->form_add_checkbox(_("Notify member").':', 'notify', '1', true);
+	$xtpl->form_out(_("Delete"));
 }
 
 if ($_SESSION["logged_in"]) {
@@ -264,21 +287,32 @@ if ($_SESSION["logged_in"]) {
 			if ($_SESSION["is_admin"] && ($m = member_load($_GET["id"]))) {
 
 				$xtpl->perex(_("Are you sure, you want to delete")
-								.' '.$m->m["m_nick"].'?',
-								'<a href="?page=adminm&section=members">'
-								. strtoupper(_("No"))
-								. '</a> | <a href="?page=adminm&section=members&action=delete2&id='.$_GET["id"].'">'
-								. strtoupper(_("Yes")).'</a>');
+								.' '.$m->m["m_nick"].'?','');
+				print_deletem($m);
 
 			}
 			break;
 		case 'delete2':
+			if ($_SESSION["is_admin"] && ($m = member_load($_GET["id"]))) {
+				$xtpl->perex(_("Are you sure, you want to delete")
+						.' '.$m->m["m_nick"].'?',
+						'<a href="?page=adminm&section=members">'
+						. strtoupper(_("No"))
+						. '</a> | <a href="?page=adminm&section=members&action=delete3&id='.$_GET["id"].'&notify='.$_REQUEST["notify"].'">'
+						. strtoupper(_("Yes")).'</a>');
+				}
+			break;
+		case 'delete3':
 			if ($_SESSION["is_admin"]) {
 
 				if ($m = member_load($_GET["id"]))
-
+					
+					$m->delete_all_vpses();
+					
 					if ($m->destroy()) {
-
+						if ($_GET["notify"])
+							$m->notify_delete();
+						
 						$xtpl->perex(_("Member deleted"), _("Continue").' <a href="?page=adminm&section=members">'.strtolower(_("Here")).'</a>');
 						$xtpl->delayed_redirect('?page=adminm', 350);
 
@@ -733,12 +767,12 @@ if ($_SESSION["logged_in"]) {
 
 					if ($_SESSION["is_admin"]) {
 
-						if ($vps_count > 0) {
-							$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'. _("Cannot delete, has VPSes") .'" />');
-
-						} else {
+// 						if ($vps_count > 0) {
+// 							$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'. _("Cannot delete, has VPSes") .'" />');
+// 
+// 						} else {
 							$xtpl->table_td('<a href="?page=adminm&section=members&action=delete&id='.$member->mid.'"><img src="template/icons/m_delete.png"  title="'. _("Delete") .'" /></a>');
-						}
+// 						}
 
 					} else {
 						$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'. _("Cannot delete yourself") .'" />');

@@ -263,6 +263,16 @@ class member_load {
 	}
   }
   
+  function delete_all_vpses() {
+	global $db;
+	
+	while($row = $db->findByColumn("vps", "m_id", $this->m["m_id"])) {
+		$vps = new vps_load($row["vps_id"]);
+		$vps->stop();
+		$vps->destroy();
+	}
+  }
+  
   function set_info($info) {
 	global $db;
 	
@@ -290,6 +300,18 @@ class member_load {
 	$content = $cluster_cfg->get("mailer_tpl_suspend_account");
 	$content = str_replace("%member%", $this->m["m_nick"], $content);
 	$content = str_replace("%reason%", $reason, $content);
+	
+	send_mail($this->m["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
+  }
+  
+  function notify_delete() {
+	global $db, $cluster_cfg;
+
+	$subject = $cluster_cfg->get("mailer_tpl_delete_member_subj");
+	$subject = str_replace("%member%", $this->m["m_nick"], $subject);
+	
+	$content = $cluster_cfg->get("mailer_tpl_delete_member");
+	$content = str_replace("%member%", $this->m["m_nick"], $content);
 	
 	send_mail($this->m["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
   }
