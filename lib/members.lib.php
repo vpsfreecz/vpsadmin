@@ -71,6 +71,7 @@ class member_load {
       $this->m["m_name"] = $item["m_name"];
       $this->m["m_mail"] = $item["m_mail"];
       $this->m["m_mailer_enable"] = $item["m_mailer_enable"];
+      $this->m["m_playground_enable"] = $item["m_playground_enable"];
       $this->m["m_pass"] = md5($item["m_nick"].$item["m_pass"]);
       $this->m["m_address"] = $item["m_address"];
       $this->m["m_info"] = "";

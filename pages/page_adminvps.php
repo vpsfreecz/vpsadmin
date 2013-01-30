@@ -789,7 +789,11 @@ if (isset($list_vps) && $list_vps) {
 			$xtpl->table_add_category($listed_vps);
 			$xtpl->table_out();
 			}
-if ($_SESSION["is_admin"] || $playground_mode) $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new');
+if ($_SESSION["is_admin"] || $playground_mode) {
+	$new_title = $playground_mode ? _("New playground VPS") : _("New VPS");
+	$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'.$new_title.'" /> '.$new_title, '?page=adminvps&section=vps&action=new');
+}
+
 if ($_SESSION["is_admin"]) {
 	$xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List IP addresses").'" /> '._("List IP addresses"), '?page=adminvps&action=alliplist');
 	$xtpl->sbar_add('<img src="template/icons/tool.png"  title="'._("Mass management").'" /> '._("Mass management"), '?page=adminvps&action=mass_management');
@@ -1110,7 +1114,7 @@ if (isset($show_info) && $show_info) {
 			$xtpl->form_add_checkbox(_("Clone features").':', 'features', '1', true);
 			$xtpl->form_add_checkbox(_("Clone backuper").':', 'backuper', '1', true);
 		}
-		$xtpl->table_add_category(_("Clone"));
+		$xtpl->table_add_category($playground_mode ? _("Clone to playground") : _("Clone"));
 		$xtpl->table_add_category('&nbsp;');
 		$xtpl->form_out(_("Go >>"));
 	}
