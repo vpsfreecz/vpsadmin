@@ -37,6 +37,7 @@ include WWW_ROOT.'lib/cluster.lib.php';
 include WWW_ROOT.'lib/cluster_ip.lib.php';
 include WWW_ROOT.'lib/ajax.lib.php';
 include WWW_ROOT.'lib/mail.lib.php';
+include WWW_ROOT.'lib/log.lib.php';
 
 include WWW_ROOT.'lib/gettext_stream.lib.php';
 include WWW_ROOT.'lib/gettext_inc.lib.php';
@@ -112,6 +113,9 @@ if (($_GET["page"] != "login") &&
 			break;
 		case 'cluster':
 			include WWW_ROOT.'pages/page_cluster.php';
+			break;
+		case 'log':
+			include WWW_ROOT.'pages/page_log.php';
 			break;
     case 'backup':
       include WWW_ROOT.'pages/page_backup.php';

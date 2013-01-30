@@ -1,3 +1,9 @@
+* Wed Jan 30 2013 - version 1.6.7
+- Account suspend: generalize - reason in mail, add restore
+- Delete member: delete all member's VPSes, send notification mail
+- Log
+- Playground: rename new and clone VPS links, fix playground setting in member add
+
 * Thu Jan 24 2013 - version 1.6.6
 - Members: fix account suspension
 

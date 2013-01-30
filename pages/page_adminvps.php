@@ -55,17 +55,17 @@ if ($_GET["run"] == 'stop') {
 }
 
 if ($_GET["run"] == 'start') {
-	if (($member_of_session->is_new()) || ($member_of_session->has_paid_now()) || (!$cluster_cfg->get("payments_enabled"))) {
+	if ($member_of_session->m["m_active"] || (!$cluster_cfg->get("payments_enabled"))) {
 			$vps = vps_load($_GET["veid"]);
 			$xtpl->perex_cmd_output(_("Start of")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->start());
-	} else $xtpl->perex(_("Payment missing"), _("You are not allowed to make \"start\" operation.<br />Please pay all your fees. Once we receive all missing payments, your access will be resumed."));
+	} else $xtpl->perex(_("Account suspended"), _("You are not allowed to make \"start\" operation.<br />Your account is suspended because of:") . ' ' . $member_of_session->m["m_suspend_reason"]);
 }
 
 if ($_GET["run"] == 'restart') {
-	if (($member_of_session->is_new()) || ($member_of_session->has_paid_now()) || (!$cluster_cfg->get("payments_enabled"))) {
+	if ($member_of_session->m["m_active"] || (!$cluster_cfg->get("payments_enabled"))) {
 		$vps = vps_load($_GET["veid"]);
 		$xtpl->perex_cmd_output(_("Restart of")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->restart());
-	} else $xtpl->perex(_("Payment missing"), _("You are not allowed to make \"start\" operation.<br />Please pay all your fees. Once we receive all missing payments, your access will be resumed."));
+	} else $xtpl->perex(_("Account suspended"), _("You are not allowed to make \"restart\" operation.<br />Your account is suspended because of:") . ' ' . $member_of_session->m["m_suspend_reason"]);
 }
 
 $playground_servers = $cluster->list_playground_servers();
@@ -789,7 +789,11 @@ if (isset($list_vps) && $list_vps) {
 			$xtpl->table_add_category($listed_vps);
 			$xtpl->table_out();
 			}
-if ($_SESSION["is_admin"] || $playground_mode) $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new');
+if ($_SESSION["is_admin"] || $playground_mode) {
+	$new_title = $playground_mode ? _("New playground VPS") : _("New VPS");
+	$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'.$new_title.'" /> '.$new_title, '?page=adminvps&section=vps&action=new');
+}
+
 if ($_SESSION["is_admin"]) {
 	$xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List IP addresses").'" /> '._("List IP addresses"), '?page=adminvps&action=alliplist');
 	$xtpl->sbar_add('<img src="template/icons/tool.png"  title="'._("Mass management").'" /> '._("Mass management"), '?page=adminvps&action=mass_management');
@@ -1110,7 +1114,7 @@ if (isset($show_info) && $show_info) {
 			$xtpl->form_add_checkbox(_("Clone features").':', 'features', '1', true);
 			$xtpl->form_add_checkbox(_("Clone backuper").':', 'backuper', '1', true);
 		}
-		$xtpl->table_add_category(_("Clone"));
+		$xtpl->table_add_category($playground_mode ? _("Clone to playground") : _("Clone"));
 		$xtpl->table_add_category('&nbsp;');
 		$xtpl->form_out(_("Go >>"));
 	}

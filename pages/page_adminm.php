@@ -177,13 +177,48 @@ function print_editm($member) {
 	$xtpl->form_out(_("Save"));
 	
 	if ($cluster_cfg->get("payments_enabled")) {
-		$xtpl->table_title(_("Suspend account"));
-		$xtpl->table_add_category('&nbsp;');
-		$xtpl->table_add_category('&nbsp;');
-		$xtpl->form_create('?page=adminm&section=members&action=suspend&id='.$_GET["id"], 'post');
-		$xtpl->form_add_input(_("Reason").':', 'text', '30', 'reason');
-		$xtpl->form_out(_("Suspend"));
+		if ($member->m["m_active"]) {
+			$xtpl->table_title(_("Suspend account"));
+			$xtpl->table_add_category('&nbsp;');
+			$xtpl->table_add_category('&nbsp;');
+			$xtpl->form_create('?page=adminm&section=members&action=suspend&id='.$_GET["id"], 'post');
+			$xtpl->form_add_input(_("Reason").':', 'text', '30', 'reason');
+			$xtpl->form_add_checkbox(_("Stop all VPSes").':', 'stop_all_vpses', '1', true);
+			$xtpl->form_out(_("Suspend"));
+		} else {
+			$xtpl->table_title(_("Account is suspended"));
+			$xtpl->table_add_category('&nbsp;');
+			$xtpl->table_add_category('&nbsp;');
+			$xtpl->form_create('?page=adminm&section=members&action=restore&id='.$_GET["id"], 'post');
+			$xtpl->table_td(_('Reason').':');
+			$xtpl->table_td($member->m["m_suspend_reason"]);
+			$xtpl->table_tr();
+			$xtpl->form_out(_("Restore"));
+		}
 	}
+	
+	print_deletem($member);
+}
+
+function print_deletem($member) {
+	global $db, $xtpl;
+	
+	$xtpl->table_title(_("Delete member"));
+	$xtpl->table_td(_("Full name").':');
+	$xtpl->table_td($member->m["m_name"]);
+	$xtpl->table_tr();
+	$xtpl->form_create('?page=adminm&section=members&action=delete2&id='.$_GET["id"], 'post');
+	$xtpl->table_td(_("VPSes to be deleted").':');
+	
+	$vpses = '';
+	
+	while ($vps = $db->findByColumn("vps", "m_id", $member->m["m_id"]))
+		$vpses .= '<a href="?page=adminvps&action=info&veid='.$vps["vps_id"].'">#'.$vps["vps_id"].' - '.$vps["vps_hostname"].'</a><br>';
+	
+	$xtpl->table_td($vpses);
+	$xtpl->table_tr();
+	$xtpl->form_add_checkbox(_("Notify member").':', 'notify', '1', true);
+	$xtpl->form_out(_("Delete"));
 }
 
 if ($_SESSION["logged_in"]) {
@@ -252,21 +287,32 @@ if ($_SESSION["logged_in"]) {
 			if ($_SESSION["is_admin"] && ($m = member_load($_GET["id"]))) {
 
 				$xtpl->perex(_("Are you sure, you want to delete")
-								.' '.$m->m["m_nick"].'?',
-								'<a href="?page=adminm&section=members">'
-								. strtoupper(_("No"))
-								. '</a> | <a href="?page=adminm&section=members&action=delete2&id='.$_GET["id"].'">'
-								. strtoupper(_("Yes")).'</a>');
+								.' '.$m->m["m_nick"].'?','');
+				print_deletem($m);
 
 			}
 			break;
 		case 'delete2':
+			if ($_SESSION["is_admin"] && ($m = member_load($_GET["id"]))) {
+				$xtpl->perex(_("Are you sure, you want to delete")
+						.' '.$m->m["m_nick"].'?',
+						'<a href="?page=adminm&section=members">'
+						. strtoupper(_("No"))
+						. '</a> | <a href="?page=adminm&section=members&action=delete3&id='.$_GET["id"].'&notify='.$_REQUEST["notify"].'">'
+						. strtoupper(_("Yes")).'</a>');
+				}
+			break;
+		case 'delete3':
 			if ($_SESSION["is_admin"]) {
 
 				if ($m = member_load($_GET["id"]))
-
+					
+					$m->delete_all_vpses();
+					
 					if ($m->destroy()) {
-
+						if ($_GET["notify"])
+							$m->notify_delete();
+						
 						$xtpl->perex(_("Member deleted"), _("Continue").' <a href="?page=adminm&section=members">'.strtolower(_("Here")).'</a>');
 						$xtpl->delayed_redirect('?page=adminm', 350);
 
@@ -350,11 +396,27 @@ if ($_SESSION["logged_in"]) {
 			$member = member_load($_GET["id"]);
 			
 			if ($_SESSION["is_admin"] && $member->exists) {
-				$member->stop_all_vpses();
-				$member->set_info( $member->m["m_info"]."\n".strftime("%d.%m.%Y")." - "._("suspended")." - ".$_POST["reason"] );
-				$member->notify_suspend();
+				$member->suspend($_POST["reason"]);
 				
-				$xtpl->perex(_("Account suspended"), _("All member's VPS were stopped, notification mail sent."));
+				if ($_POST["stop_all_vpses"])
+					$member->stop_all_vpses();
+				
+				$member->set_info( $member->m["m_info"]."\n".strftime("%d.%m.%Y")." - "._("suspended")." - ".$_POST["reason"] );
+				$member->notify_suspend($_POST["reason"]);
+				
+				$xtpl->perex(_("Account suspended"),
+					$_POST["stop_all_vpses"] ? _("All member's VPSes were stopped, notification mail sent.")
+					: _("All member's VPSes kept running, notification mail sent.")
+				);
+			}
+			break;
+		case 'restore':
+			$member = member_load($_GET["id"]);
+			
+			if ($_SESSION["is_admin"] && $member->exists) {
+				$member->restore();
+				
+				$xtpl->perex(_("Account restored"), _("Member can now use his VPSes."));
 			}
 			break;
 		case 'payset':
@@ -705,12 +767,12 @@ if ($_SESSION["logged_in"]) {
 
 					if ($_SESSION["is_admin"]) {
 
-						if ($vps_count > 0) {
-							$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'. _("Cannot delete, has VPSes") .'" />');
-
-						} else {
+// 						if ($vps_count > 0) {
+// 							$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'. _("Cannot delete, has VPSes") .'" />');
+// 
+// 						} else {
 							$xtpl->table_td('<a href="?page=adminm&section=members&action=delete&id='.$member->mid.'"><img src="template/icons/m_delete.png"  title="'. _("Delete") .'" /></a>');
-						}
+// 						}
 
 					} else {
 						$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'. _("Cannot delete yourself") .'" />');
@@ -726,6 +788,8 @@ if ($_SESSION["logged_in"]) {
 						$xtpl->table_tr('#66FF66');
 					} elseif ($member->m["m_level"] >= PRIV_POWERUSER) {
 						$xtpl->table_tr('#BBFFBB');
+					} elseif (!$member->m["m_active"]) {
+						$xtpl->table_tr('#A6A6A6');
 					} else {
 						$xtpl->table_tr();
 					}

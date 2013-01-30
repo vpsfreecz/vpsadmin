@@ -475,6 +475,10 @@ switch($_REQUEST["action"]) {
 								');
 		$xtpl->form_add_input(_("Suspend subject").':', 'text', '40', 'tpl_suspend_account_subj', $cluster_cfg->get("mailer_tpl_suspend_account_subj"), '%member% - nick');
 		$xtpl->form_add_textarea(_("Suspend<br />account").':', 50, 8, 'tpl_suspend_account', $cluster_cfg->get("mailer_tpl_suspend_account"), '
+								%member% - nick<br />
+								%reason% - suspend reason');
+		$xtpl->form_add_input(_("Delete member subject").':', 'text', '40', 'tpl_delete_member_subj', $cluster_cfg->get("mailer_tpl_delete_member_subj"), '%member% - nick');
+		$xtpl->form_add_textarea(_("Delete<br />member").':', 50, 8, 'tpl_delete_member', $cluster_cfg->get("mailer_tpl_delete_member"), '
 								%member% - nick');
 		$xtpl->form_add_input(_("Limits change subject").':', 'text', '40', 'tpl_limits_change_subj', $cluster_cfg->get("mailer_tpl_limits_change_subj"), '%member% - nick<br />%vpsid% = VPS ID');
 		$xtpl->form_add_textarea(_("Limits changed<br /> template").':', 50, 8, 'tpl_limits_changed', $cluster_cfg->get("mailer_tpl_limits_changed"), '
@@ -515,6 +519,8 @@ switch($_REQUEST["action"]) {
 		$cluster_cfg->set("mailer_tpl_member_added", $_REQUEST["tpl_member_added"]);
 		$cluster_cfg->set("mailer_tpl_suspend_account_subj", $_REQUEST["tpl_suspend_account_subj"]);
 		$cluster_cfg->set("mailer_tpl_suspend_account", $_REQUEST["tpl_suspend_account"]);
+		$cluster_cfg->set("mailer_tpl_delete_member_subj", $_REQUEST["tpl_delete_member_subj"]);
+		$cluster_cfg->set("mailer_tpl_delete_member", $_REQUEST["tpl_delete_member"]);
 		$cluster_cfg->set("mailer_tpl_limits_change_subj", $_REQUEST["tpl_limits_change_subj"]);
 		$cluster_cfg->set("mailer_tpl_limits_changed", $_REQUEST["tpl_limits_changed"]);
 		$cluster_cfg->set("mailer_tpl_backuper_change_subj", $_REQUEST["tpl_backuper_change_subj"]);
@@ -621,19 +627,45 @@ switch($_REQUEST["action"]) {
 		
 		break;
 	case "noticeboard":
-		$xtpl->table_title(_("Notice board"));
-		$xtpl->table_add_category('');
-		$xtpl->table_add_category('');
-		$xtpl->form_create('?page=cluster&action=noticeboard_save', 'post');
-		$xtpl->form_add_textarea(_("Text").':', 80, 25, 'noticeboard', $cluster_cfg->get("noticeboard"));
-		$xtpl->form_out(_("Save changes"));
-		
-		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		$noticeboard = true;
 		break;
 	case "noticeboard_save":
 		$cluster_cfg->set("noticeboard", $_POST["noticeboard"]);
 		$xtpl->perex(_("Notice board saved"), '');
 		$list_nodes = true;
+		break;
+	case "log_add":
+		$noticeboard = true;
+		if ($_POST["datetime"] && $_POST["msg"]) {
+			log_add($_POST["datetime"], $_POST["msg"]);
+			
+			$xtpl->perex(_("Log message added"), _("Message successfully saved."));
+		}
+		break;
+	case "log_edit":
+		$log = $db->findByColumnOnce("log", "id", $_GET["id"]);
+		
+		$xtpl->form_create('?page=cluster&action=log_edit_save&id='.$log["id"], 'post');
+		$xtpl->form_add_input(_("Date and time").':', 'text', '30', 'datetime', strftime("%Y-%m-%d %H:%M", $log["timestamp"]));
+		$xtpl->form_add_textarea(_("Message").':', 80, 5, 'msg', $log["msg"]);
+		$xtpl->form_out(_("Update"));
+		
+		break;
+	case "log_edit_save":
+		$noticeboard = true;
+		
+		if ($_GET["id"]) {
+			log_save($_GET["id"], $_POST["datetime"], $_POST["msg"]);
+			$xtpl->perex(_("Log message updated"), _("Message successfully updated."));
+		}
+		
+		break;
+	case "log_del":
+		$noticeboard = true;
+		
+		log_del($_GET["id"]);
+		
+		$xtpl->perex(_("Log message deleted"), _("Message successfully deleted."));
 		break;
 	default:
 		$list_nodes = true;
@@ -695,7 +727,7 @@ if ($list_nodes) {
 	$xtpl->sbar_add(_("Manage Payments"), '?page=cluster&action=payments_settings');
 	$xtpl->sbar_add(_("Manage API"), '?page=cluster&action=api_settings');
 	$xtpl->sbar_add(_("Manage playground"), '?page=cluster&action=playground_settings');
-	$xtpl->sbar_add(_("Notice board"), '?page=cluster&action=noticeboard');
+	$xtpl->sbar_add(_("Notice board & log"), '?page=cluster&action=noticeboard');
 	$xtpl->sbar_add(_("Edit vpsAdmin textfields"), '?page=cluster&action=fields');
 	
 	$on_row = 2;
@@ -1067,6 +1099,40 @@ if ($playground_settings) {
 	$xtpl->form_add_select_pure('add_config[]', $configs_select);
 	$xtpl->table_tr(false, false, false, 'add_config');
 	$xtpl->form_out(_("Save changes"), 'configs', '<a href="javascript:" id="add_row">+</a>');
+}
+
+if ($noticeboard) {
+	$xtpl->table_title(_("Notice board"));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+	$xtpl->form_create('?page=cluster&action=noticeboard_save', 'post');
+	$xtpl->form_add_textarea(_("Text").':', 80, 15, 'noticeboard', $cluster_cfg->get("noticeboard"));
+	$xtpl->form_out(_("Save changes"));
+	
+	$xtpl->table_title(_("Log"));
+	$xtpl->table_add_category('Add entry');
+	$xtpl->table_add_category('');
+	$xtpl->form_create('?page=cluster&action=log_add', 'post');
+	$xtpl->form_add_input(_("Date and time").':', 'text', '30', 'datetime', strftime("%Y-%m-%d %H:%M"));
+	$xtpl->form_add_textarea(_("Message").':', 80, 5, 'msg');
+	$xtpl->form_out(_("Add"));
+	
+	$xtpl->table_add_category(_('Date and time'));
+	$xtpl->table_add_category(_('Message'));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+	
+	while($log = $db->find("log", NULL, "timestamp DESC")) {
+		$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $log["timestamp"]));
+		$xtpl->table_td($log["msg"]);
+		$xtpl->table_td('<a href="?page=cluster&action=log_edit&id='.$log["id"].'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		$xtpl->table_td('<a href="?page=cluster&action=log_del&id='.$log["id"].'" title="'._("Delete").'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_out();
+	
+	$xtpl->sbar_add(_("Back"), '?page=cluster');
 }
 
 $xtpl->sbar_out(_("Manage Cluster"));

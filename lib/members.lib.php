@@ -71,6 +71,7 @@ class member_load {
       $this->m["m_name"] = $item["m_name"];
       $this->m["m_mail"] = $item["m_mail"];
       $this->m["m_mailer_enable"] = $item["m_mailer_enable"];
+      $this->m["m_playground_enable"] = $item["m_playground_enable"];
       $this->m["m_pass"] = md5($item["m_nick"].$item["m_pass"]);
       $this->m["m_address"] = $item["m_address"];
       $this->m["m_info"] = "";
@@ -237,7 +238,7 @@ class member_load {
   function can_use_playground() {
 	global $db;
 	
-	if (!$this->m["m_playground_enable"])
+	if (!$this->m["m_playground_enable"] || !$this->m["m_active"])
 		return false;
 	
 	$sql = "SELECT COUNT(vps_id) AS count
@@ -263,19 +264,54 @@ class member_load {
 	}
   }
   
+  function delete_all_vpses() {
+	global $db;
+	
+	while($row = $db->findByColumn("vps", "m_id", $this->m["m_id"])) {
+		$vps = new vps_load($row["vps_id"]);
+		$vps->stop();
+		$vps->destroy();
+	}
+  }
+  
   function set_info($info) {
 	global $db;
 	
 	$db->query('UPDATE members SET m_info = "'.$db->check($info).'" WHERE m_id = '.$db->check($this->m["m_id"]).'');
   }
   
-  function notify_suspend() {
+  function suspend($reason) {
+	global $db;
+	
+	$db->query('UPDATE members SET m_active = 0, m_suspend_reason = "'.$db->check($reason).'" WHERE m_id = '.$db->check($this->m["m_id"]).'');
+  }
+  
+  function restore() {
+	global $db;
+	
+	$db->query("UPDATE members SET m_active = 1, m_suspend_reason = '' WHERE m_id = ".$db->check($this->m["m_id"]));
+  }
+  
+  function notify_suspend($reason) {
 	global $db, $cluster_cfg;
 
 	$subject = $cluster_cfg->get("mailer_tpl_suspend_account_subj");
 	$subject = str_replace("%member%", $this->m["m_nick"], $subject);
 	
 	$content = $cluster_cfg->get("mailer_tpl_suspend_account");
+	$content = str_replace("%member%", $this->m["m_nick"], $content);
+	$content = str_replace("%reason%", $reason, $content);
+	
+	send_mail($this->m["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
+  }
+  
+  function notify_delete() {
+	global $db, $cluster_cfg;
+
+	$subject = $cluster_cfg->get("mailer_tpl_delete_member_subj");
+	$subject = str_replace("%member%", $this->m["m_nick"], $subject);
+	
+	$content = $cluster_cfg->get("mailer_tpl_delete_member");
 	$content = str_replace("%member%", $this->m["m_nick"], $content);
 	
 	send_mail($this->m["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
