@@ -27,7 +27,20 @@ if ($_SESSION["is_admin"]) {
 } else {
   $xtpl->table_add_category(_("vpsFree.cz Log"));
 }
-$xtpl->table_td(nl2br($cluster_cfg->get("noticeboard")));
+$xtpl->table_add_category('');
+
+$noticeboard = $cluster_cfg->get("noticeboard");
+
+if ($noticeboard) {
+	$xtpl->table_td(nl2br($noticeboard), false, false, 2);
+	$xtpl->table_tr();
+}
+while($log = $db->find("log", NULL, "timestamp DESC", "5")) {
+	$xtpl->table_td('['.strftime("%Y-%m-%d %H:%M", $log["timestamp"]).']');
+	$xtpl->table_td($log["msg"]);
+	$xtpl->table_tr();
+}
+$xtpl->table_td('<a href="?page=log">'._("View all").'</a>', false, false, '2');
 $xtpl->table_tr();
 $xtpl->table_out("notice_board");
 
