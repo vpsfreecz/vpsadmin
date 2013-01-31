@@ -2,7 +2,7 @@ require 'lib/vpsadmind'
 require 'lib/utils'
 
 module VpsAdminCtl
-	VERSION = "1.5.6"
+	VERSION = "1.6.0"
 	ACTIONS = [:status, :reload, :stop, :restart, :update]
 	
 	class RemoteControl
@@ -66,6 +66,7 @@ module VpsAdminCtl
 			rescue
 				$stderr.puts "Error occured: #{$!}"
 				$stderr.puts "Are you sure that vpsAdmind is running and configured properly?"
+				$stderr.puts "Note that remote control in vpsAdmind must be explicitly enabled by --remote-control switch"
 				return
 			end
 			
