@@ -4,6 +4,7 @@ $: << File.dirname(__FILE__) unless $:.include? File.dirname(__FILE__)
 
 require 'lib/config'
 require 'lib/daemon'
+require 'lib/utils'
 
 require 'optparse'
 
@@ -48,7 +49,7 @@ OptionParser.new do |opts|
 		options[:logdir] = log
 	end
 	
-	opts.on("p", "--pidfile [PID FILE]", "PID file") do |pid|
+	opts.on("-p", "--pidfile [PID FILE]", "PID file") do |pid|
 		parts = pid.split(File::SEPARATOR)
 		options[:piddir] = parts.slice(0, parts.count-1).join(File::SEPARATOR)
 	end
@@ -94,11 +95,13 @@ end
 Dir.chdir($CFG.get(:vpsadmin, :root))
 
 if options[:wrapper]
+	log "vpsAdmind wrapper starting"
+	
 	loop do
 		p = IO.popen("exec #{executable} --no-wrapper --config #{options[:config]} #{"--init" if options[:init]} #{"--export-console" if options[:export_console]} #{"--remote-control" if options[:remote]} 2>&1")
 		
 		Signal.trap("TERM") do
-			puts "Killing daemon"
+			log "Killing daemon"
 			Process.kill("TERM", p.pid)
 			exit
 		end
@@ -107,15 +110,21 @@ if options[:wrapper]
 			Process.kill("HUP", p.pid)
 		end
 		
-		puts p.read
+		p.each do |line|
+			puts line
+		end
+		
 		Process.waitpid(p.pid)
 		
 		case $?.exitstatus
 		when VpsAdmind::EXIT_OK
+			log "Stopping daemon"
 			exit
 		when VpsAdmind::EXIT_RESTART
+			log "Restarting daemon"
 			next
 		when VpsAdmind::EXIT_UPDATE
+			log "Updating daemon"
 			IO.popen("#{$CFG.get(:bin, :git)} pull 2>&1") do |io|
 				g = io.read
 			end
@@ -126,15 +135,18 @@ if options[:wrapper]
 				exit(false)
 			end
 		else
+			log "Daemon crashed with exit status #{$?.exitstatus}"
 			exit(false)
 		end
 	end
 end
 
 Signal.trap("HUP") do
-	puts "Reloading config..."
+	log "Reloading config"
 	$CFG.reload
 end
+
+log "vpsAdmind starting"
 
 Thread.abort_on_exception = true
 vpsAdmind = VpsAdmind::Daemon.new()

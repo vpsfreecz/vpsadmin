@@ -61,7 +61,7 @@ class RemoteControl < EventMachine::Connection
 		$CFG.get(:remote, :handlers).each do |klass, cmds|
 			cmds.each do |cmd|
 				@@handlers[cmd] = {:class => klass, :method => cmd}
-				puts "Remote cmd #{cmd} => #{klass}.#{cmd}"
+				log "Remote cmd #{cmd} => #{klass}.#{cmd}"
 			end
 		end
 	end

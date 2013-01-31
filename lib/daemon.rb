@@ -80,6 +80,9 @@ module VpsAdmind
 						end
 					end
 				end
+				
+				$stdout.flush
+				$stderr.flush
 			end
 		end
 		

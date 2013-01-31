@@ -25,6 +25,8 @@ MSG
 			Net::SMTP.start($CFG.get(:mailer, :smtp_server), $CFG.get(:mailer, :smtp_port)) do |smtp|
 				smtp.send_message(msg, "podpora@vpsfree.cz", [@params["to"],] + @params["cc"] + @params["bcc"])
 			end
+		rescue Timeout::Error
+			retry
 		rescue
 			@output[:exception] = $!.inspect
 			@output[:msg] = $!.message
