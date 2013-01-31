@@ -12,22 +12,17 @@ require 'rubygems'
 require 'daemons'
 
 options = {
-	:init => false,
 	:config => "/etc/vpsadmin/vpsadmind.yml",
 	:daemonize => false,
 	:check => false,
 	:export_console => false,
 	:logdir => "/var/log",
 	:piddir => "/var/run",
-	:remote => true,
+	:remote => false,
 	:wrapper => true,
 }
 
 OptionParser.new do |opts|
-	opts.on("-i", "--init", "Init firewall rules") do
-		options[:init] = true
-	end
-	
 	opts.on("-c", "--config [CONFIG FILE]", "Config file") do |cfg|
 		options[:config] = cfg
 	end
@@ -98,7 +93,7 @@ if options[:wrapper]
 	log "vpsAdmind wrapper starting"
 	
 	loop do
-		p = IO.popen("exec #{executable} --no-wrapper --config #{options[:config]} #{"--init" if options[:init]} #{"--export-console" if options[:export_console]} #{"--remote-control" if options[:remote]} 2>&1")
+		p = IO.popen("exec #{executable} --no-wrapper --config #{options[:config]} #{"--export-console" if options[:export_console]} #{"--remote-control" if options[:remote]} 2>&1")
 		
 		Signal.trap("TERM") do
 			log "Killing daemon"
@@ -150,6 +145,6 @@ log "vpsAdmind starting"
 
 Thread.abort_on_exception = true
 vpsAdmind = VpsAdmind::Daemon.new()
-vpsAdmind.init if options[:init]
+vpsAdmind.init
 vpsAdmind.start_em(options[:export_console], options[:remote]) if options[:export_console] || options[:remote]
 vpsAdmind.start

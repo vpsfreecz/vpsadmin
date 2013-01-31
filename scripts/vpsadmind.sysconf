@@ -1,7 +1,6 @@
 # Configuration file for the vpsadmind service.
 
 # yes or no
-#INIT=yes
 #DAEMON=yes
 #OPTS="--export-console --remote-control"
 

@@ -11,7 +11,14 @@ class Firewall < Executor
 	
 	def init(db)
 		[4, 6].each do |v|
-			iptables(v, {:N => "aztotal"})
+			ret = iptables(v, {:N => "aztotal"}, [1,])
+			
+			# Chain already exists, we don't have to continue
+			if ret[:exitstatus] == 1
+				log "Skipping init"
+				return
+			end
+			
 			iptables(v, {:Z => "aztotal"})
 			iptables(v, {:A => "FORWARD", :j => "aztotal"})
 		end
@@ -65,7 +72,7 @@ class Firewall < Executor
 		end
 	end
 	
-	def iptables(ver, opts)
+	def iptables(ver, opts, valid_rcs = [])
 		options = []
 		
 		if opts.instance_of?(Hash)
@@ -77,6 +84,6 @@ class Firewall < Executor
 			options << opts
 		end
 		
-		syscmd("#{$CFG.get(:bin, ver == 4 ? :iptables : :ip6tables)} #{options.join(" ")}")
+		syscmd("#{$CFG.get(:bin, ver == 4 ? :iptables : :ip6tables)} #{options.join(" ")}", valid_rcs)
 	end
 end

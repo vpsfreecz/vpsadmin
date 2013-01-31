@@ -65,7 +65,7 @@ class Executor
 			raise CommandFailed.new(cmd, $?.exitstatus, out)
 		end
 		
-		{:ret => :ok, :output => out}
+		{:ret => :ok, :output => out, :exitstatus => $?.exitstatus}
 	end
 	
 	def post_save(con)
