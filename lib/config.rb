@@ -19,6 +19,7 @@ IMPLICIT_CONFIG = {
 		:status_interval => 300,
 		:update_vps_status => true,
 		:root => "/opt/vpsadmind",
+		:init => true,
 		:handlers => {
 			"VpsAdmin" => {
 				101 => "stop",

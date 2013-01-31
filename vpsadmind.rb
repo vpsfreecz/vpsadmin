@@ -152,6 +152,6 @@ log "vpsAdmind starting"
 
 Thread.abort_on_exception = true
 vpsAdmind = VpsAdmind::Daemon.new()
-vpsAdmind.init
+vpsAdmind.init if $CFG.get(:vpsadmin, :init)
 vpsAdmind.start_em(options[:export_console], options[:remote]) if options[:export_console] || options[:remote]
 vpsAdmind.start
