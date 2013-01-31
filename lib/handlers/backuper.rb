@@ -86,8 +86,12 @@ class Backuper < Executor
 		end
 	end
 	
+	def mountdir
+		"#{$CFG.get(:backuper, :mountpoint)}/#{@params["server_name"]}.#{$CFG.get(:vpsadmin, :domain)}"
+	end
+	
 	def mountpoint
-		"#{$CFG.get(:backuper, :mountpoint)}/#{@params["server_name"]}.#{$CFG.get(:vpsadmin, :domain)}/#{@veid}"
+		"#{mountdir}/#{@veid}"
 	end
 	
 	def acquire_lock(db)
