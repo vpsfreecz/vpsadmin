@@ -109,6 +109,7 @@ if options[:wrapper]
 			puts line
 		end
 		
+		# Sets $?
 		Process.waitpid(p.pid)
 		
 		case $?.exitstatus
@@ -120,13 +121,19 @@ if options[:wrapper]
 			next
 		when VpsAdmind::EXIT_UPDATE
 			log "Updating daemon"
+			
+			g = ""
+			
 			IO.popen("#{$CFG.get(:bin, :git)} pull 2>&1") do |io|
 				g = io.read
 			end
 			
-			if $? == 0
+			if $?.exitstatus == 0
 				next
 			else
+				log "Update failed, git says:"
+				puts g
+				log "Exiting"
 				exit(false)
 			end
 		else
