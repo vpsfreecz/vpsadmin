@@ -176,7 +176,7 @@ function print_editm($member) {
 
 	$xtpl->form_out(_("Save"));
 	
-	if ($cluster_cfg->get("payments_enabled")) {
+	if ($_SESSION["is_admin"] && $cluster_cfg->get("payments_enabled")) {
 		if ($member->m["m_active"]) {
 			$xtpl->table_title(_("Suspend account"));
 			$xtpl->table_add_category('&nbsp;');
@@ -197,7 +197,8 @@ function print_editm($member) {
 		}
 	}
 	
-	print_deletem($member);
+	if ($_SESSION["is_admin"])
+		print_deletem($member);
 }
 
 function print_deletem($member) {
