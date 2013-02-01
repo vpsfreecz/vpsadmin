@@ -1,3 +1,8 @@
+* Fri Feb 01 2013 - version 1.6.8
+- Account suspend: mail notification is optional
+- Account restore: add optional mail notification and VPS start
+- Suspend, restore, delete: fix permission check - forms can see only admins
+
 * Wed Jan 30 2013 - version 1.6.7
 - Account suspend: generalize - reason in mail, add restore
 - Delete member: delete all member's VPSes, send notification mail

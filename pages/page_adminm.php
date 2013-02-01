@@ -176,7 +176,7 @@ function print_editm($member) {
 
 	$xtpl->form_out(_("Save"));
 	
-	if ($cluster_cfg->get("payments_enabled")) {
+	if ($_SESSION["is_admin"] && $cluster_cfg->get("payments_enabled")) {
 		if ($member->m["m_active"]) {
 			$xtpl->table_title(_("Suspend account"));
 			$xtpl->table_add_category('&nbsp;');
@@ -184,6 +184,7 @@ function print_editm($member) {
 			$xtpl->form_create('?page=adminm&section=members&action=suspend&id='.$_GET["id"], 'post');
 			$xtpl->form_add_input(_("Reason").':', 'text', '30', 'reason');
 			$xtpl->form_add_checkbox(_("Stop all VPSes").':', 'stop_all_vpses', '1', true);
+			$xtpl->form_add_checkbox(_("Notify member").':', 'notify', '1', true);
 			$xtpl->form_out(_("Suspend"));
 		} else {
 			$xtpl->table_title(_("Account is suspended"));
@@ -193,11 +194,14 @@ function print_editm($member) {
 			$xtpl->table_td(_('Reason').':');
 			$xtpl->table_td($member->m["m_suspend_reason"]);
 			$xtpl->table_tr();
+			$xtpl->form_add_checkbox(_("Start all VPSes").':', 'start_all_vpses', '1', true);
+			$xtpl->form_add_checkbox(_("Notify member").':', 'notify', '1', true);
 			$xtpl->form_out(_("Restore"));
 		}
 	}
 	
-	print_deletem($member);
+	if ($_SESSION["is_admin"])
+		print_deletem($member);
 }
 
 function print_deletem($member) {
@@ -402,11 +406,13 @@ if ($_SESSION["logged_in"]) {
 					$member->stop_all_vpses();
 				
 				$member->set_info( $member->m["m_info"]."\n".strftime("%d.%m.%Y")." - "._("suspended")." - ".$_POST["reason"] );
-				$member->notify_suspend($_POST["reason"]);
+				
+				if ($_POST["notify"])
+					$member->notify_suspend($_POST["reason"]);
 				
 				$xtpl->perex(_("Account suspended"),
-					$_POST["stop_all_vpses"] ? _("All member's VPSes were stopped, notification mail sent.")
-					: _("All member's VPSes kept running, notification mail sent.")
+					$_POST["stop_all_vpses"] ? _("All member's VPSes were stopped.")
+					: _("All member's VPSes kept running.")
 				);
 			}
 			break;
@@ -415,6 +421,12 @@ if ($_SESSION["logged_in"]) {
 			
 			if ($_SESSION["is_admin"] && $member->exists) {
 				$member->restore();
+				
+				if ($_POST["start_all_vpses"])
+					$member->start_all_vpses();
+				
+				if ($_POST["notify"])
+					$member->notify_restore();
 				
 				$xtpl->perex(_("Account restored"), _("Member can now use his VPSes."));
 			}
