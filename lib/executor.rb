@@ -56,7 +56,7 @@ class Executor
 		set_step(cmd)
 		
 		out = ""
-		puts "Executing: #{cmd}"
+		log "Executing: #{cmd}"
 		IO.popen("#{cmd} 2>&1") do |io|
 			out = io.read
 		end
@@ -65,7 +65,7 @@ class Executor
 			raise CommandFailed.new(cmd, $?.exitstatus, out)
 		end
 		
-		{:ret => :ok, :output => out}
+		{:ret => :ok, :output => out, :exitstatus => $?.exitstatus}
 	end
 	
 	def post_save(con)

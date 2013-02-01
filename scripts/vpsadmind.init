@@ -41,10 +41,6 @@ start() {
 	
 	CMD="$VPSADMIND --config $CONFIG --pidfile $PIDFILE"
 	
-	if [ "$INIT" == "yes" ] ; then
-		CMD="$CMD --init"
-	fi
-	
 	if [ "$DAEMON" == "yes" ] ; then
 		CMD="$CMD --daemonize --logdir $LOGDIR"
 	fi

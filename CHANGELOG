@@ -1,3 +1,9 @@
+* Fri Feb 01 2013 - version 1.6.4
+- Wrapper: real-time logging, log date and time
+- Init: remove option, setting in config; if already initialized, skip
+- Self-update: improve error handling
+- ZFS backuper - download: remove BSD specific options from tar
+
 * Fri Jan 25 2013 - version 1.6.3
 - Backup download: fix tar args, execution; script to delete expired archives
 - ZFS backuper: fix exclude

@@ -98,7 +98,7 @@ class Command
 		$CFG.get(:vpsadmin, :handlers).each do |klass, cmds|
 			cmds.each do |cmd, method|
 				@@handlers[cmd] = {:class => klass, :method => method}
-				puts "Cmd ##{cmd} => #{klass}.#{method}"
+				log "Cmd ##{cmd} => #{klass}.#{method}"
 			end
 		end
 	end
