@@ -456,10 +456,14 @@ switch($_REQUEST["action"]) {
 		$xtpl->table_add_category('');
 		$xtpl->table_add_category('');
 		$xtpl->form_create('?page=cluster&action=mailer_settings_save', 'post');
+		
+		// Mailer settings
 		$xtpl->form_add_checkbox(_("Mailer enabled").':', 'mailer_enabled', '1', $cluster_cfg->get("mailer_enabled"), $hint = '');
 		$xtpl->form_add_checkbox(_("Admins in CC").':', 'admins_in_cc', '1', $cluster_cfg->get("mailer_admins_in_cc"), $hint = '');
 		$xtpl->form_add_input(_("Admins in CC (mails)").':', 'text', '40', 'admin_mails', $cluster_cfg->get("mailer_admins_cc_mails"), '');
 		$xtpl->form_add_input(_("Mails sent from").':', 'text', '40', 'mail_from', $cluster_cfg->get("mailer_from"), '');
+		
+		// Payment warning
 		$xtpl->form_add_input(_("Payment warning subject").':', 'text', '40', 'tpl_payment_warning_subj', $cluster_cfg->get("mailer_tpl_payment_warning_subj"), '%member% - nick');
 		$xtpl->form_add_textarea(_("Payment warning<br /> template").':', 50, 8, 'tpl_payment_warning', $cluster_cfg->get("mailer_tpl_payment_warning"), '
 								%member% - nick<br />
@@ -467,37 +471,56 @@ switch($_REQUEST["action"]) {
 								%expiredate% - payment expiration date<br />
 								%monthly% - monthly payment<br />
 								');
+		
+		// Member add
 		$xtpl->form_add_input(_("Member added subject").':', 'text', '40', 'tpl_member_added_subj', $cluster_cfg->get("mailer_tpl_member_added_subj"), '%member% - nick');
 		$xtpl->form_add_textarea(_("Member added<br /> template").':', 50, 8, 'tpl_member_added', $cluster_cfg->get("mailer_tpl_member_added"), '
 								%member% - nick<br />
 								%memberid% - member id<br />
 								%pass% - password<br />
 								');
+		
+		// Suspend account
 		$xtpl->form_add_input(_("Suspend subject").':', 'text', '40', 'tpl_suspend_account_subj', $cluster_cfg->get("mailer_tpl_suspend_account_subj"), '%member% - nick');
 		$xtpl->form_add_textarea(_("Suspend<br />account").':', 50, 8, 'tpl_suspend_account', $cluster_cfg->get("mailer_tpl_suspend_account"), '
 								%member% - nick<br />
 								%reason% - suspend reason');
+		
+		// Restore account
+		$xtpl->form_add_input(_("Restore subject").':', 'text', '40', 'tpl_restore_account_subj', $cluster_cfg->get("mailer_tpl_restore_account_subj"), '%member% - nick');
+		$xtpl->form_add_textarea(_("Restore<br />account").':', 50, 8, 'tpl_restore_account', $cluster_cfg->get("mailer_tpl_restore_account"), '
+								%member% - nick');
+		
+		// Delete member
 		$xtpl->form_add_input(_("Delete member subject").':', 'text', '40', 'tpl_delete_member_subj', $cluster_cfg->get("mailer_tpl_delete_member_subj"), '%member% - nick');
 		$xtpl->form_add_textarea(_("Delete<br />member").':', 50, 8, 'tpl_delete_member', $cluster_cfg->get("mailer_tpl_delete_member"), '
 								%member% - nick');
+		
+		// Configs changed
 		$xtpl->form_add_input(_("Limits change subject").':', 'text', '40', 'tpl_limits_change_subj', $cluster_cfg->get("mailer_tpl_limits_change_subj"), '%member% - nick<br />%vpsid% = VPS ID');
 		$xtpl->form_add_textarea(_("Limits changed<br /> template").':', 50, 8, 'tpl_limits_changed', $cluster_cfg->get("mailer_tpl_limits_changed"), '
 								%member% - nick<br />
 								%vpsid% - VPS ID<br />
 								%configs% - List of configs
 								');
+		
+		// Backuper changed
 		$xtpl->form_add_input(_("Backuper change subject").':', 'text', '40', 'tpl_backuper_change_subj', $cluster_cfg->get("mailer_tpl_backuper_change_subj"), '%member% - nick<br />%vpsid% = VPS ID');
 		$xtpl->form_add_textarea(_("Backuper changed<br /> template").':', 50, 8, 'tpl_backuper_changed', $cluster_cfg->get("mailer_tpl_backuper_changed"), '
 								%member% - nick<br />
 								%vpsid% - VPS ID<br />
 								%backuper% - State
 								');
+		
+		// Nonpayers
 		$xtpl->form_add_input(_("Send nonpayers info to").':', 'text', '40', 'nonpayers_mail', $cluster_cfg->get("mailer_nonpayers_mail"), '');
 		$xtpl->form_add_input(_("Nonpayer subject").':', 'text', '40', 'tpl_nonpayers_subj', $cluster_cfg->get("mailer_tpl_nonpayers_subj"), '');
 		$xtpl->form_add_textarea(_("Nonpayer text<br /> template").':', 50, 8, 'tpl_nonpayers', $cluster_cfg->get("mailer_tpl_nonpayers"), '
 								%never_paid% - list of members who have never paid before<br />
 								%nonpayers% - list of nonpayers
 								');
+		
+		// Backup download notification
 		$xtpl->form_add_input(_("Download backup subject").':', 'text', '40', 'tpl_dl_backup_subj', $cluster_cfg->get("mailer_tpl_dl_backup_subj"), '%member% - nick<br />%vpsid% = VPS ID');
 		$xtpl->form_add_textarea(_("Download backup<br /> template").':', 50, 8, 'tpl_dl_backup', $cluster_cfg->get("mailer_tpl_dl_backup"), '
 								%member% - nick<br />
@@ -505,6 +528,7 @@ switch($_REQUEST["action"]) {
 								%url% - download link<br />
 								%datetime% - date and time of backup
 								');
+								
 		$xtpl->form_out(_("Save changes"));
 		$xtpl->sbar_add(_("Back"), '?page=cluster&action=mailer');
 		break;
@@ -513,23 +537,35 @@ switch($_REQUEST["action"]) {
 		$cluster_cfg->set("mailer_admins_in_cc", $_REQUEST["admins_in_cc"]);
 		$cluster_cfg->set("mailer_admins_cc_mails", $_REQUEST["admin_mails"]);
 		$cluster_cfg->set("mailer_from", $_REQUEST["mail_from"]);
+		
 		$cluster_cfg->set("mailer_tpl_payment_warning_subj", $_REQUEST["tpl_payment_warning_subj"]);
 		$cluster_cfg->set("mailer_tpl_payment_warning", $_REQUEST["tpl_payment_warning"]);
+		
 		$cluster_cfg->set("mailer_tpl_member_added_subj", $_REQUEST["tpl_member_added_subj"]);
 		$cluster_cfg->set("mailer_tpl_member_added", $_REQUEST["tpl_member_added"]);
+		
 		$cluster_cfg->set("mailer_tpl_suspend_account_subj", $_REQUEST["tpl_suspend_account_subj"]);
 		$cluster_cfg->set("mailer_tpl_suspend_account", $_REQUEST["tpl_suspend_account"]);
+		
+		$cluster_cfg->set("mailer_tpl_restore_account_subj", $_REQUEST["tpl_restore_account_subj"]);
+		$cluster_cfg->set("mailer_tpl_restore_account", $_REQUEST["tpl_restore_account"]);
+		
 		$cluster_cfg->set("mailer_tpl_delete_member_subj", $_REQUEST["tpl_delete_member_subj"]);
 		$cluster_cfg->set("mailer_tpl_delete_member", $_REQUEST["tpl_delete_member"]);
+		
 		$cluster_cfg->set("mailer_tpl_limits_change_subj", $_REQUEST["tpl_limits_change_subj"]);
 		$cluster_cfg->set("mailer_tpl_limits_changed", $_REQUEST["tpl_limits_changed"]);
+		
 		$cluster_cfg->set("mailer_tpl_backuper_change_subj", $_REQUEST["tpl_backuper_change_subj"]);
 		$cluster_cfg->set("mailer_tpl_backuper_changed", $_REQUEST["tpl_backuper_changed"]);
+		
 		$cluster_cfg->set("mailer_nonpayers_mail", $_REQUEST["nonpayers_mail"]);
 		$cluster_cfg->set("mailer_tpl_nonpayers_subj", $_REQUEST["tpl_nonpayers_subj"]);
 		$cluster_cfg->set("mailer_tpl_nonpayers", $_REQUEST["tpl_nonpayers"]);
+		
 		$cluster_cfg->set("mailer_tpl_dl_backup_subj", $_REQUEST["tpl_dl_backup_subj"]);
 		$cluster_cfg->set("mailer_tpl_dl_backup", $_REQUEST["tpl_dl_backup"]);
+		
 		$list_mails = true;
 		break;
 	case "freelock":
