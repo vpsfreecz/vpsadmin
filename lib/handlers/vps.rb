@@ -156,17 +156,22 @@ class VPS < Executor
 		m = "#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.mount"
 		u = "#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.umount"
 		
-		unless File.exists?(m) && File.exists?(u)
-			File.open(m, "w") do |f|
-				f.write(File.open("scripts/ve.mount").read.gsub(/%%BACKUP_SERVER%%/, "storage.prg.#{$CFG.get(:vpsadmin, :domain)}"))
+		if @params["backup_mount"] == 1
+			unless File.exists?(m) && File.exists?(u)
+				File.open(m, "w") do |f|
+					f.write(File.open("scripts/ve.mount").read.gsub(/%%BACKUP_SERVER%%/, "storage.prg.#{$CFG.get(:vpsadmin, :domain)}"))
+				end
+				
+				File.open(u, "w") do |f|
+					f.write(File.open("scripts/ve.umount").read)
+				end
+				
+				syscmd("#{$CFG.get(:bin, :chmod)} +x #{m}")
+				syscmd("#{$CFG.get(:bin, :chmod)} +x #{u}")
 			end
-			
-			File.open(u, "w") do |f|
-				f.write(File.open("scripts/ve.umount").read)
-			end
-			
-			syscmd("#{$CFG.get(:bin, :chmod)} +x #{m}")
-			syscmd("#{$CFG.get(:bin, :chmod)} +x #{u}")
+		else
+			File.delete(m) if File.exists?(m)
+			File.delete(u) if File.exists?(u)
 		end
 		
 		ok
