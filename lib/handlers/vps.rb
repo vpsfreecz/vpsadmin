@@ -72,6 +72,7 @@ class VPS < Executor
 			:devices => ["c:10:200:rw", "c:10:229:rw", "c:108:0:rw"],
 		}, true)
 		start
+		sleep(3)
 		vzctl(:exec, @veid, "mkdir -p /dev/net")
 		vzctl(:exec, @veid, "mknod /dev/net/tun c 10 200", false, [8,])
 		vzctl(:exec, @veid, "chmod 600 /dev/net/tun")
