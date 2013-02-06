@@ -1009,7 +1009,7 @@ switch($_REQUEST["action"]) {
 			case "backuper":
 				foreach ($vpses as $veid) {
 					$vps = vps_load($veid);
-					$vps->set_backuper($_POST["backup_enabled"], false);
+					$vps->set_backuper($_POST["backup_enabled"], $_POST["backup_enabled"] ? NULL : false, false);
 					
 					if($_POST["notify_owners"])
 						$vps->backuper_change_notify();

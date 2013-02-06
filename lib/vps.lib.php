@@ -165,7 +165,7 @@ class vps_load {
 	    $db->query('UPDATE vps SET vps_onstartall = 1 WHERE vps_id='.$db->check($this->veid));
 	    $server = $db->findByColumnOnce("servers", "server_id", $this->ve["vps_server"]);
 	    $location = $db->findByColumnOnce("locations", "location_id", $server["server_location"]);
-	    $params["onboot"] = $location["location_vps_onboot"];
+	    $params = array("onboot" => $location["location_vps_onboot"], "backup_mount" => $this->ve["vps_backup_mount"]);
 	    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_START_VE, $params);
 	}
   }
@@ -175,7 +175,7 @@ class vps_load {
 	if ($this->exists) {
 	    $server = $db->findByColumnOnce("servers", "server_id", $this->ve["vps_server"]);
 	    $location = $db->findByColumnOnce("locations", "location_id", $server["server_location"]);
-	    $params["onboot"] = $location["location_vps_onboot"];
+	    $params = array("onboot" => $location["location_vps_onboot"], "backup_mount" => $this->ve["vps_backup_mount"]);
 	    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_RESTART_VE, $params);
 	}
   }
@@ -531,16 +531,30 @@ function ipadd($ip, $type = 4) {
 	send_mail($this->ve["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
   }
   
-  function set_backuper($how, $exclude, $force = false) {
+  function set_backuper($how, $mount, $exclude, $force = false) {
   	global $db;
+	
+	/**
+	 * mount: do not touch if NULL
+	 * exclude: do not touch if === false
+	 */
+	
+	$update = "";
+	
+	if ($mount != NULL) {
+		$this->ve["vps_backup_mount"] = $mount;
+		$update .= ", vps_backup_mount = '".$db->check($mount)."'";
+	}
+	
 	if ($_SESSION["is_admin"] || $force) {
 		$this->ve["vps_backup_enabled"] = (bool)$how;
-		if ($exclude === false)
-			$sql = 'UPDATE vps SET vps_backup_enabled='.($how ? '1' : '0').' WHERE vps_id = '.$db->check($this->veid);
-		else
-			$sql = 'UPDATE vps SET vps_backup_enabled='.($how ? '1' : '0').', vps_backup_exclude = "'.$db->check($exclude).'" WHERE vps_id = '.$db->check($this->veid);
+		
+		if ($exclude !== false)
+			$update .= ", vps_backup_exclude = '".$db->check($exclude)."'";
+		
+		$sql = 'UPDATE vps SET vps_backup_enabled='.($how ? '1' : '0').' '.$update.' WHERE vps_id = '.$db->check($this->veid);
   	} else
-		$sql = 'UPDATE vps SET vps_backup_exclude = "'.$db->check($exclude).'" WHERE vps_id = '.$db->check($this->veid);
+		$sql = 'UPDATE vps SET vps_backup_exclude = "'.$db->check($exclude).'" '.$update.' WHERE vps_id = '.$db->check($this->veid);
   	
   	$db->query($sql);
   }
@@ -631,6 +645,7 @@ function ipadd($ip, $type = 4) {
 				vps_onstartall = '.$db->check($this->ve["vps_onstartall"]).',
 				vps_features_enabled = 0,
 				vps_backup_enabled = '.$db->check($backuper ? $this->ve["vps_backup_enabled"] : 1).',
+				vps_backup_mount = '.$db->check($backuper ? $this->ve["vps_backup_mount"] : 1).',
 				vps_backup_exclude = "'.$db->check($backuper ? $this->ve["vps_backup_exclude"] : '').'",
 				vps_config = "'.$db->check($configs ? $this->ve["vps_config"] : '').'"';
 	
