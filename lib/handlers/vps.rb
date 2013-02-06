@@ -104,7 +104,12 @@ class VPS < Executor
 		if @params["is_local"]
 			syscmd("#{$CFG.get(:bin, :cp)} -a #{$CFG.get(:vz, :vz_root)}/private/#{@params["src_veid"]}/ #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
 		else
-			syscmd("#{$CFG.get(:bin, :rsync)} -a #{@params["src_server_ip"]}:#{$CFG.get(:vz, :vz_root)}/private/#{@params["src_veid"]}/ #{$CFG.get(:vz, :vz_root)}/private/#{@veid}");
+			rsync = $CFG.get(:vps, :clone, :rsync) \
+				.gsub(/%\{rsync\}/, $CFG.get(:bin, :rsync)) \
+				.gsub(/%\{src\}/, "#{@params["src_server_ip"]}:#{$CFG.get(:vz, :vz_root)}/private/#{@params["src_veid"]}/") \
+				.gsub(/%\{dst\}/, "#{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
+			
+			syscmd(rsync)
 		end
 	end
 	

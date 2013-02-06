@@ -95,6 +95,12 @@ IMPLICIT_CONFIG = {
 		:zfs => "zfs",
 	},
 	
+	:vps => {
+		:clone => {
+			:rsync => "%{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after %{src} %{dst}",
+		}
+	},
+	
 	:backuper => {
 		:method => "RdiffBackup",
 		:lock_interval => "30",
