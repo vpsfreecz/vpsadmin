@@ -4,7 +4,7 @@ require 'lib/handlers/backuper'
 class VPS < Executor
 	def start
 		@update = true
-		ensure_mountfile
+		ve_mountfile
 		vzctl(:start, @veid, {}, false, [32,])
 		check_onboot
 	end
@@ -17,7 +17,7 @@ class VPS < Executor
 	
 	def restart
 		@update = true
-		ensure_mountfile
+		ve_mountfile
 		vzctl(:restart, @veid)
 		check_onboot
 	end
@@ -152,9 +152,9 @@ class VPS < Executor
 		)
 	end
 	
-	def ensure_mountfile
-		m = "#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.mount"
-		u = "#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.umount"
+	def ve_mountfile
+		m = script_mount
+		u = script_umount
 		
 		unless File.exists?(m) && File.exists?(u)
 			File.open(m, "w") do |f|
@@ -170,6 +170,31 @@ class VPS < Executor
 		end
 		
 		ok
+	end
+	
+	def backup_mount
+		syscmd("VEID=#{@veid} VE_CONFFILE=#{ve_conf} #{script_mount} 2>&1")
+	end
+	
+	def backup_umount
+		syscmd("VEID=#{@veid} VE_CONFFILE=#{ve_conf} #{script_umount} 2>&1")
+	end
+	
+	def backup_remount
+		backup_umount
+		backup_mount
+	end
+	
+	def script_mount
+		"#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.mount"
+	end
+	
+	def script_umount
+		"#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.umount"
+	end
+	
+	def ve_conf
+		"#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.conf"
 	end
 	
 	def post_save(con)
