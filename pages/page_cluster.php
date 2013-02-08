@@ -1591,6 +1591,10 @@ if ($mass_management) {
 	
 	$xtpl->table_tr();
 	
+	$xtpl->form_add_select(_('Mount backup').':', 'backup_mount', array("" => _("All"), 1 => _("Yes"), 2 => _("No")), $_GET["backup_mount"]);
+	
+	$xtpl->table_tr();
+	
 	$xtpl->form_out( _("Show"), null, '', '3');
 	
 	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
@@ -1657,6 +1661,18 @@ if ($mass_management) {
 				break;
 			case 2:
 				$conds[] = "v.vps_backup_lock = 0";
+				break;
+			default:
+				break;
+		}
+	
+	if (isset($_GET["backup_mount"]))
+		switch ($_GET["backup_mount"]) {
+			case 1:
+				$conds[] = "v.vps_backup_mount = 1";
+				break;
+			case 2:
+				$conds[] = "v.vps_backup_mount = 0";
 				break;
 			default:
 				break;
