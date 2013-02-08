@@ -887,6 +887,15 @@ switch($_REQUEST["action"]) {
 				$xtpl->form_add_checkbox(_("Backup lock").':', 'backup_lock', '1');
 				$xtpl->table_tr();
 				break;
+			case "backup_mount":
+				$t = _("Mass backup mount");
+				break;
+			case "backup_umount":
+				$t = _("Mass backup umount");
+				break;
+			case "backup_remount":
+				$t = _("Mass backup remount");
+				break;
 			default:
 				break;
 		}
@@ -1020,6 +1029,27 @@ switch($_REQUEST["action"]) {
 					$vps = vps_load($veid);
 					if ($vps->exists)
 						$vps->set_backup_lock($_POST["backup_lock"]);
+				}
+				break;
+			case "backup_mount":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->backup_mount();
+				}
+				break;
+			case "backup_umount":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->backup_umount();
+				}
+				break;
+			case "backup_remount":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->backup_remount();
 				}
 				break;
 			default:
@@ -1683,7 +1713,10 @@ if ($mass_management) {
 			"migrate_offline" => _("Offline migration"),
 			"migrate_online" => _("Online migration"),
 			"backuper" => _("Set backuper"),
-			"backup_lock" => _("Set backup lock")
+			"backup_lock" => _("Set backup lock"),
+			"backup_mount" => _("Mount backup"),
+			"backup_umount" => _("Umount backup"),
+			"backup_remount" => _("Remount backup"),
 		), '', '', false, '5', '8'
 	);
 	

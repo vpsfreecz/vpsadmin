@@ -567,6 +567,24 @@ function ipadd($ip, $type = 4) {
   	$db->query($sql);
   }
   
+  function backup_mount() {
+	global $db;
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_VE_MOUNT);
+  }
+  
+  function backup_umount() {
+	global $db;
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_VE_UMOUNT);
+  }
+  
+  function backup_remount() {
+	global $db;
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_VE_REMOUNT);
+  }
+  
   function restore($timestamp, $backup_first = false) {
 	if(!$this->exists)
 		return NULL;
