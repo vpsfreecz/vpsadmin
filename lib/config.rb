@@ -49,6 +49,9 @@ IMPLICIT_CONFIG = {
 				3004 => "clone",
 				4001 => "migrate_offline",
 				4002 => "migrate_online",
+				5101 => "backup_mount",
+				5102 => "backup_umount",
+				5103 => "backup_remount",
 				8001 => "features",
 			},
 			"Backuper" => {
