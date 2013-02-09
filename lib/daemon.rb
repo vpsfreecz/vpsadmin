@@ -105,7 +105,7 @@ module VpsAdmind
 							
 								ORDER BY t_priority DESC, t_id ASC LIMIT #{$CFG.get(:vpsadmin, :threads)}
 							) tmp
-							GROUP BY t_vps")
+							GROUP BY t_vps ORDER BY t_priority DESC, t_id ASC")
 			
 			rs.each_hash do |row|
 				c = Command.new(row)
