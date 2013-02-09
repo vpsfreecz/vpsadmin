@@ -535,26 +535,33 @@ function ipadd($ip, $type = 4) {
   	global $db;
 	
 	/**
+	 * how: do not touch if NULL
 	 * mount: do not touch if NULL
 	 * exclude: do not touch if === false
 	 */
 	
-	$update = "";
+	$update = array();
 	
-	if ($mount != NULL) {
+	if ($mount !== NULL) {
 		$this->ve["vps_backup_mount"] = $mount;
-		$update .= ", vps_backup_mount = '".$db->check($mount)."'";
+		$update[] = "vps_backup_mount = '".($mount ? '1' : '0')."'";
 	}
 	
 	if ($_SESSION["is_admin"] || $force) {
-		$this->ve["vps_backup_enabled"] = (bool)$how;
+		if ($how !== NULL) {
+			$update[] = "vps_backup_enabled = " . ($how ? '1' : '0');
+			$this->ve["vps_backup_enabled"] = (bool)$how;
+		}
 		
 		if ($exclude !== false)
-			$update .= ", vps_backup_exclude = '".$db->check($exclude)."'";
+			$update[] = "vps_backup_exclude = '".$db->check($exclude)."'";
 		
-		$sql = 'UPDATE vps SET vps_backup_enabled='.($how ? '1' : '0').' '.$update.' WHERE vps_id = '.$db->check($this->veid);
+		if (!count($update))
+			return;
+		
+		$sql = 'UPDATE vps SET '.implode(",", $update).' WHERE vps_id = '.$db->check($this->veid);
   	} else
-		$sql = 'UPDATE vps SET vps_backup_exclude = "'.$db->check($exclude).'" '.$update.' WHERE vps_id = '.$db->check($this->veid);
+		$sql = 'UPDATE vps SET vps_backup_exclude = "'.$db->check($exclude).'", '.implode(",", $update).' WHERE vps_id = '.$db->check($this->veid);
   	
   	$db->query($sql);
   }
