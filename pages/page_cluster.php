@@ -703,6 +703,371 @@ switch($_REQUEST["action"]) {
 		
 		$xtpl->perex(_("Log message deleted"), _("Message successfully deleted."));
 		break;
+	
+	case "helpboxes":
+		$helpbox = true;
+		
+		break;
+	case "helpboxes_add":
+		$helpbox = true;
+		
+		if (isset($_POST["help_page"])) {
+			helpbox_add($_POST["help_page"], $_POST["help_action"], $_POST["help_content"]);
+			
+			$xtpl->perex(_("Help box added"), _("Help box successfully saved."));
+		}
+		
+		break;
+	case "helpboxes_edit":
+		$help = $db->findByColumnOnce("helpbox", "id", $_GET["id"]);
+		
+		$xtpl->form_create('?page=cluster&action=helpboxes_edit_save&id='.$help["id"], 'post');
+		$xtpl->form_add_input(_("Page").':', 'text', '30', 'help_page', $help["page"]);
+		$xtpl->form_add_input(_("Action").':', 'text', '30', 'help_action', $help["action"]);
+		$xtpl->form_add_textarea(_("Content").':', 80, 15, 'help_content', $help["content"]);
+		$xtpl->form_out(_("Update"));
+		
+		break;
+	case "helpboxes_edit_save":
+		$helpbox = true;
+		
+		if ($_GET["id"]) {
+			helpbox_save($_GET["id"], $_POST["help_page"], $_POST["help_action"], $_POST["help_content"]);
+			
+			$xtpl->perex(_("Help box updated"), _("Help box successfully updated."));
+		}
+		
+		break;
+	case "helpboxes_del":
+		$helpbox = true;
+		
+		helpbox_del($_GET["id"]);
+		
+		$xtpl->perex(_("Help box deleted"), _("Help box successfully deleted."));
+		
+		break;
+			case 'mass_management':
+			if ($_SESSION["is_admin"])
+				$mass_management = true;
+			break;
+	case 'mass_management_exec':
+		if (!$_SESSION["is_admin"])
+			break;
+		
+		if (!$_POST["cmd"] || $_POST["cmd"] == "none") {
+			$xtpl->perex(_('Select action'), _('You must first select some action.'));
+			break;
+		}
+		
+		$xtpl->form_create('?page=cluster&action=mass_management_exec2&cmd=' . $_POST["cmd"], 'post');
+		$xtpl->table_td(
+			_("Selected VPSes").':<br><a href="'.$_POST["selection"].'">'._("Change selection").'</a>' .
+			'<input type="hidden" name="vpses" value="'.implode(";", $_POST["vpses"]).'">'
+		);
+		
+		$vpses = array();
+		
+		foreach ($_POST["vpses"] as $veid)
+			$vpses[] = '<a href="?page=cluster&action=info&veid='.$veid.'">'.$veid.'</a>';
+		
+		$xtpl->table_td(implode(", ", $vpses));
+		$xtpl->table_tr(false, 'nodrag nodrop');
+		
+		$t = "";
+		$table_id = null;
+		$submit_label = "";
+		
+		switch ($_POST["cmd"]) {
+			case "start":
+				$t = _("Mass start");
+				break;
+			case "stop":
+				$t = _("Mass stop");
+				break;
+			case "restart":
+				$t = _("Mass restart");
+				break;
+			case "reinstall":
+				$t = _("Mass reinstall");
+				
+				$xtpl->form_add_select(_("Distribution").':', 'vps_template', list_templates());
+				break;
+			case "configs":
+				$t = _("Mass config management");
+				$table_id = "configs";
+				$submit_label = '<a href="javascript:" id="add_row">+</a>';
+				
+				$configs = list_configs();
+				$configs_select = list_configs(true);
+				$options = "";
+				
+				foreach($configs_select as $id => $label)
+					$options .= '<option value="'.$id.'">'.$label.'</option>';
+				
+				$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
+					<script type="text/javascript">
+						function dnd() {
+							$("#configs").tableDnD({
+								onDrop: function(table, row) {
+									$("#configs_order").val($.tableDnD.serialize());
+								}
+							});
+						}
+						
+						$(document).ready(function() {
+							var add_config_id = 1;
+							
+							dnd();
+							
+							$("#add_row").click(function (){
+								$(\'<tr id="add_config_\' + add_config_id++ + \'"><td>'._('Add').':</td><td><select name="add_config[]">'.$options.'</select></td></tr>\').fadeIn("slow").insertBefore("#configs tr:nth-last-child(3)");
+								dnd();
+							});
+							
+							$(".delete-config").click(function (){
+								$(this).closest("tr").remove();
+							});
+						});
+					</script>'
+				);
+				
+				$default_configs = $cluster_cfg->get('default_config_chain');
+				
+				foreach($default_configs as $id) {
+					$xtpl->form_add_select_pure('configs[]', $configs, $id);
+					$xtpl->table_td('<a href="javascript:" class="delete-config">'._('delete').'</a>');
+					$xtpl->table_tr(false, false, false, "order_$id");
+				}
+				
+				$xtpl->table_td('<input type="hidden" name="configs_order" id="configs_order" value="">' .  _('Add').':');
+				$xtpl->form_add_select_pure('add_config[]', $configs_select);
+				$xtpl->table_tr(false, false, false, 'add_config');
+				$xtpl->form_add_checkbox(_("Notify owners").':', 'notify_owners', '1', true);
+				$xtpl->table_tr(false, "nodrag nodrop", false);					
+				break;
+			case "owner":
+				$t = _("Mass owner change");
+				
+				$xtpl->form_add_select(_("Owner").':', 'm_id', members_list());
+				break;
+			case "passwd":
+				$t = _("Mass password change");
+				
+				$xtpl->form_add_input(_("Unix username").':', 'text', '30', 'user', 'root', '');
+				$xtpl->form_add_input(_("Safe password").':', 'password', '30', 'pass', '', '', -5);
+				$xtpl->form_add_input(_("Once again").':', 'password', '30', 'pass2', '', '');
+				break;
+			case "dns":
+				$t = _("Mass DNS server change");
+				
+				$xtpl->form_add_select(_("DNS servers address").':', 'nameserver', $cluster->list_dns_servers());
+				break;
+			case "migrate_offline":
+				$t = _("Mass offline migration");
+				
+				$xtpl->form_add_select(_("Target server").':', 'target_id', $cluster->list_servers(), '');
+				$xtpl->form_add_checkbox(_("Stop before migration").':', 'stop', '1', false);
+				$xtpl->table_td('<strong>'._('Do not forget that if you are migrating to different location, IP address are removed!').'</strong>', false, false, '2');
+				$xtpl->table_tr();
+				break;
+			case "migrate_online":
+				$t = _("Mass online migration");
+				$xtpl->form_add_select(_("Target server").':', 'target_id', $cluster->list_servers(), '');
+				$xtpl->table_td('<strong>'._('Keep in mind that online migration is useless while migrating to different location, use offline migration!').'</strong>', false, false, '2');
+				$xtpl->table_tr();
+				break;
+			case "backuper":
+				$t = _("Mass set backuper");
+				$xtpl->form_add_checkbox(_("Backup enabled").':', 'backup_enabled', '1');
+				$xtpl->form_add_checkbox(_("Notify owners").':', 'notify_owners', '1', true);
+				$xtpl->table_tr();
+				break;
+			case "backup_lock":
+				$t = _("Mass set backup lock");
+				$xtpl->form_add_checkbox(_("Backup lock").':', 'backup_lock', '1');
+				$xtpl->table_tr();
+				break;
+			case "backup_mount":
+				$t = _("Mass backup mount");
+				break;
+			case "backup_umount":
+				$t = _("Mass backup umount");
+				break;
+			case "backup_remount":
+				$t = _("Mass backup remount");
+				break;
+			case "backup_generate_scripts":
+				$t = _("Mass backup mount scripts generation");
+				break;
+			default:
+				break;
+		}
+		
+		$xtpl->table_title($t);
+		$xtpl->form_out(_("Execute"), $table_id, $submit_label);
+		break;
+	case 'mass_management_exec2':
+		if (!$_SESSION["is_admin"])
+			break;
+		
+		$vpses = explode(";", $_POST["vpses"]);
+		
+		switch ($_GET["cmd"]) {
+			case "start":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->start();
+				}
+				break;
+			case "stop":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->stop();
+				}
+				break;
+			case "restart":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->restart();
+				}
+				break;
+			case "reinstall":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists) {
+						$vps->change_distro_before_reinstall($_POST["vps_template"]);
+						$vps->reinstall();
+					}
+				}
+				break;
+			case "configs":
+				$raw_order = explode('&', $_POST['configs_order']);
+				$cfgs = array();
+				$i = 0;
+				
+				foreach($raw_order as $item) {
+					$item = explode('=', $item);
+					
+					if (!$item[1])
+						continue;
+					elseif (!strncmp($item[1], "add_config", strlen("add_config")))
+						$cfgs[] = $_POST['add_config'][$i++];
+					else {
+						$order = explode('_', $item[1]);
+						$cfgs[] = $order[1];
+					}
+				}
+				
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					$vps->update_configs($_POST["configs"] ? $_POST["configs"] : array(), $cfgs, $_POST['add_config']);
+					
+					if($_POST["notify_owners"])
+						$vps->configs_change_notify();
+				}
+				
+				break;
+			case "owner":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->vchown($_POST["m_id"]);
+				}
+				break;
+			case "passwd":
+				if (($_POST["pass"] == $_POST["pass2"]) &&
+					(strlen($_POST["pass"]) >= 5) &&
+					(strlen($_POST["user"]) >= 2) &&
+					!preg_match("/\\\/", $_POST["pass"]) &&
+					!preg_match("/\`/", $_POST["pass"]) &&
+					!preg_match("/\"/", $_POST["pass"]) &&
+					!preg_match("/\\\/", $_POST["user"]) &&
+					!preg_match("/\`/", $_POST["user"]) &&
+					!preg_match("/\"/", $_POST["user"]))
+				{
+					foreach ($vpses as $veid) {
+						$vps = vps_load($veid);
+						if ($vps->exists)
+							$vps->passwd($_POST["user"], $_POST["pass"]);
+					}
+				} else {
+					$xtpl->perex(_("Error"), _("Wrong username or unsafe password"));
+				}
+				break;
+			case "dns":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->nameserver($_POST["nameserver"]);
+				}
+				break;
+			case "migrate_offline":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->offline_migrate($_POST["target_id"], $_POST["stop"]);
+				}
+				break;
+			case "migrate_online":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->online_migrate($_POST["target_id"]);
+				}
+				break;
+			case "backuper":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					$vps->set_backuper($_POST["backup_enabled"], $_POST["backup_enabled"] ? NULL : false, false);
+					
+					if($_POST["notify_owners"])
+						$vps->backuper_change_notify();
+				}
+				break;
+			case "backup_lock":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->set_backup_lock($_POST["backup_lock"]);
+				}
+				break;
+			case "backup_mount":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->backup_mount();
+				}
+				break;
+			case "backup_umount":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->backup_umount();
+				}
+				break;
+			case "backup_remount":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->backup_remount();
+				}
+				break;
+			case "backup_generate_scripts":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->backup_generate_scripts();
+				}
+				break;
+			default:
+				break;
+		}
+		
+		$xtpl->perex(_('Command executed'), _('Command successfuly executed for VPSes: ') . implode(', ', $vpses));
+		break;
 	default:
 		$list_nodes = true;
 }
@@ -763,7 +1128,9 @@ if ($list_nodes) {
 	$xtpl->sbar_add(_("Manage Payments"), '?page=cluster&action=payments_settings');
 	$xtpl->sbar_add(_("Manage API"), '?page=cluster&action=api_settings');
 	$xtpl->sbar_add(_("Manage playground"), '?page=cluster&action=playground_settings');
+	$xtpl->sbar_add(_("VPS mass management"), '?page=cluster&action=mass_management');
 	$xtpl->sbar_add(_("Notice board & log"), '?page=cluster&action=noticeboard');
+	$xtpl->sbar_add(_("Help boxes"), '?page=cluster&action=helpboxes');
 	$xtpl->sbar_add(_("Edit vpsAdmin textfields"), '?page=cluster&action=fields');
 	
 	$on_row = 2;
@@ -1169,6 +1536,218 @@ if ($noticeboard) {
 	$xtpl->table_out();
 	
 	$xtpl->sbar_add(_("Back"), '?page=cluster');
+}
+
+if ($helpbox) {
+	$xtpl->table_title(_("Help boxes"));
+	
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+	$xtpl->form_create('?page=cluster&action=helpboxes_add', 'post');
+	$xtpl->form_add_input(_("Page").':', 'text', '30', 'help_page', $_GET["help_page"]);
+	$xtpl->form_add_input(_("Action").':', 'text', '30', 'help_action', $_GET["help_action"]);
+	$xtpl->form_add_textarea(_("Content").':', 80, 15, 'help_content');
+	$xtpl->form_out(_("Add"));
+	
+	$xtpl->table_add_category(_("Page"));
+	$xtpl->table_add_category(_("Action"));
+	$xtpl->table_add_category(_("Content"));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+	
+	while ($help = $db->find("helpbox", NULL, "page ASC, action ASC")) {
+		$xtpl->table_td($help["page"]);
+		$xtpl->table_td($help["action"]);
+		$xtpl->table_td($help["content"]);
+		$xtpl->table_td('<a href="?page=cluster&action=helpboxes_edit&id='.$help["id"].'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		$xtpl->table_td('<a href="?page=cluster&action=helpboxes_del&id='.$help["id"].'" title="'._("Delete").'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_out();
+	
+	$xtpl->sbar_add(_("Back"), '?page=cluster');
+}
+
+if ($mass_management) {
+	$xtpl->title(_("Mass managenent"));
+	
+	$xtpl->table_title(_("Filters"));
+	$xtpl->form_create('', 'get');
+	
+	$xtpl->table_td('<input type="hidden" name="page" value="cluster">
+	                 <input type="hidden" name="action" value="mass_management">' .
+		            _('Locations').':');
+	$xtpl->form_add_select_pure('l[]', $cluster->list_locations(), $_GET["l"], true, '10');
+	
+	$xtpl->table_td(_('Nodes').':');
+	$xtpl->form_add_select_pure('n[]', $cluster->list_servers(), $_GET["n"], true, '10');
+	
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_('Owners').':');
+	$xtpl->form_add_select_pure('o[]', members_list(), $_GET["o"], true, '10');
+	
+	$xtpl->table_td(_('Templates').':');
+	$xtpl->form_add_select_pure('t[]', list_templates(), $_GET["t"], true, '10');
+	
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_('State').':');
+	$xtpl->form_add_select_pure('state', array("" => _("All"), 1 => _("Running"), 2 => _("Stopped")), $_GET["state"]);
+	
+	$xtpl->table_td(_('Backup lock').':');
+	$xtpl->form_add_select_pure('backup_lock', array("" => _("All"), 1 => _("Locked"), 2 => _("Unlocked")), $_GET["backup_lock"]);
+	
+	$xtpl->table_tr();
+	
+	$xtpl->form_add_select(_('Mount backup').':', 'backup_mount', array("" => _("All"), 1 => _("Yes"), 2 => _("No")), $_GET["backup_mount"]);
+	
+	$xtpl->table_tr();
+	
+	$xtpl->form_out( _("Show"), null, '', '3');
+	
+	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
+		<script type="text/javascript">
+			function all() {
+				$("#vps_list input[type=\"checkbox\"]").attr("checked", true);
+			}
+			
+			function none() {
+				$("#vps_list input[type=\"checkbox\"]").attr("checked", false);
+			}
+			
+			function reverse() {
+				$("#vps_list input[type=\"checkbox\"]").each(function (el) {
+					$(this).attr("checked", !$(this).attr("checked"));
+				});
+			}
+		</script>
+	');
+	
+	$selectors = '<a href="javascript:all()">A</a> | <a href="javascript:none()">N</a> | <a href="javascript:reverse()">R</a>';
+	
+	$xtpl->form_create('?page=cluster&action=mass_management_exec', 'post');
+	$xtpl->table_add_category($selectors);
+	$xtpl->table_add_category('VPS ID');
+	$xtpl->table_add_category('NODE');
+	$xtpl->table_add_category('OWNER');
+	$xtpl->table_add_category('HOSTNAME');
+	$xtpl->table_add_category('TEMPLATE');
+	$xtpl->table_add_category('#P');
+	$xtpl->table_add_category('MEM');
+	$xtpl->table_add_category('HDD');
+	
+	$conds = array();
+	
+	if (isset($_GET["l"]))
+		$conds[] = "l.location_id IN (".$db->check(is_array($_GET["l"]) ? implode(",", $_GET["l"]) : $_GET["l"]).")";
+	
+	if (isset($_GET["n"]))
+		$conds[] = "s.server_id IN (".$db->check(is_array($_GET["n"]) ? implode(",", $_GET["n"]) : $_GET["n"]).")";
+	
+	if (isset($_GET["o"]))
+		$conds[] = "m.m_id IN (".$db->check(is_array($_GET["o"]) ? implode(",", $_GET["o"]) : $_GET["o"]).")";
+	
+	if (isset($_GET["t"]))
+		$conds[] = "t.templ_id IN (".$db->check(is_array($_GET["t"]) ? implode(",", $_GET["t"]) : $_GET["t"]).")";
+	
+	if (isset($_GET["state"]))
+		switch ($_GET["state"]) {
+			case 1:
+				$conds[] = "st.vps_up = 1";
+				break;
+			case 2:
+				$conds[] = "st.vps_up = 0";
+				break;
+			default:
+				break;
+		}
+	
+	if (isset($_GET["backup_lock"]))
+		switch ($_GET["backup_lock"]) {
+			case 1:
+				$conds[] = "v.vps_backup_lock = 1";
+				break;
+			case 2:
+				$conds[] = "v.vps_backup_lock = 0";
+				break;
+			default:
+				break;
+		}
+	
+	if (isset($_GET["backup_mount"]))
+		switch ($_GET["backup_mount"]) {
+			case 1:
+				$conds[] = "v.vps_backup_mount = 1";
+				break;
+			case 2:
+				$conds[] = "v.vps_backup_mount = 0";
+				break;
+			default:
+				break;
+		}
+	
+	$conditions = array();
+	
+	foreach($conds as $c)
+		$conditions[] = "($c)";
+	
+	$sql = "SELECT * FROM vps v
+	        INNER JOIN vps_status st ON v.vps_id = st.vps_id
+	        INNER JOIN servers s ON v.vps_server = s.server_id
+	        INNER JOIN locations l ON s.server_location = l.location_id
+	        INNER JOIN members m ON v.m_id = m.m_id
+	        INNER JOIN cfg_templates t ON v.vps_template = t.templ_id
+	        ".(count($conditions) > 0 ? "WHERE " . implode(" AND ", $conds) : "")."
+	        GROUP BY v.vps_id
+	        ORDER BY v.vps_id ASC";
+	$res = $db->query($sql);
+	
+	while ($row = $db->fetch_array($res)) {
+		$vps = vps_load($row["vps_id"]);
+		$vps->info();
+		
+		$xtpl->form_add_checkbox_pure('vpses[]', $vps->veid, true);
+		$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->veid.'">'.$vps->veid.'</a>');
+		$xtpl->table_td('<a href="?page=cluster&action=mass_management&n[]='.$vps->ve['server_name'].'">'.$vps->ve["server_name"].'</a>');
+		$xtpl->table_td('<a href="?page=adminm&action=mass_management&o[]='.$vps->ve['m_id'].'">'.$vps->ve["m_nick"].'</a>');
+		$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->veid.'"><img src="template/icons/vps_edit.png"  title="'._("Edit").'"/> '.$vps->ve["vps_hostname"].'</a>');
+		$xtpl->table_td('<a href="?page=cluster&action=mass_management&t[]='.$row["templ_id"].'">'.$row["templ_label"].'</a>');
+		$xtpl->table_td($vps->ve["vps_nproc"], false, true);
+		$xtpl->table_td(sprintf('%4d MB', $vps->ve["vps_vm_used_mb"]), false, true);
+		
+		if ($vps->ve["vps_disk_used_mb"] > 0)
+			$xtpl->table_td(sprintf('%.2f GB',round($vps->ve["vps_disk_used_mb"]/1024,2)), false, true);
+		else
+			$xtpl->table_td('---', false, true);
+		
+		$xtpl->table_tr(($vps->ve["vps_up"]) ? false : '#FFCCCC');
+	}
+	
+	$xtpl->form_add_select(_('Action').':', 'cmd',
+		array(
+			"none" => "---",
+			"start" => _("Start"),
+			"stop" => _("Stop"),
+			"restart" => _("Restart"),
+			"reinstall" => _("Reinstall"),
+			"configs" => _("Manage configs"),
+			"owner" => _("Change owner"),
+			"passwd" => _("Set password"),
+			"dns" => _("Set DNS server"),
+			"migrate_offline" => _("Offline migration"),
+			"migrate_online" => _("Online migration"),
+			"backuper" => _("Set backuper"),
+			"backup_lock" => _("Set backup lock"),
+			"backup_mount" => _("Mount backup"),
+			"backup_umount" => _("Umount backup"),
+			"backup_remount" => _("Remount backup"),
+			"backup_generate_scripts" => _("Generate mount scripts"),
+		), '', '', false, '5', '8'
+	);
+	
+	$xtpl->form_out(_("Stage"), "vps_list", '<input type="hidden" name="selection" value="'.$_SERVER["REQUEST_URI"].'">' . $selectors, '8');
 }
 
 $xtpl->sbar_out(_("Manage Cluster"));

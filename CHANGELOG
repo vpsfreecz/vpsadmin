@@ -1,3 +1,11 @@
+* Sat Feb 09 2013 - version 1.7.0
+- Help boxes
+- Make backup mount optional
+- New transactions for mount/umount/remount of backups in VPS, regenerate mount/umount
+  actions scripts and corresponding mass mangement actions
+- VPS mass management: move from adminvps to cluster, add filter backup mount
+- Track database scheme
+
 * Fri Feb 01 2013 - version 1.6.8
 - Account suspend: mail notification is optional
 - Account restore: add optional mail notification and VPS start

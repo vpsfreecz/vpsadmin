@@ -38,6 +38,7 @@ include WWW_ROOT.'lib/cluster_ip.lib.php';
 include WWW_ROOT.'lib/ajax.lib.php';
 include WWW_ROOT.'lib/mail.lib.php';
 include WWW_ROOT.'lib/log.lib.php';
+include WWW_ROOT.'lib/helpbox.lib.php';
 
 include WWW_ROOT.'lib/gettext_stream.lib.php';
 include WWW_ROOT.'lib/gettext_inc.lib.php';
@@ -166,6 +167,17 @@ $xtpl->logbox(
 );
 
 $xtpl->adminbox($cluster_cfg->get("adminbox_content"));
+
+$help = get_helpbox();
+
+if ($help) {
+	if ($_SESSION["is_admin"])
+		$help["content"] .= '<br><br><a href="?page=cluster&action=helpboxes_edit&id='.$help["id"].'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'">'._("Edit help box").'</a>';
+	
+	$xtpl->helpbox(_("Help"), nl2br($help["content"]));
+} else if ($_SESSION["is_admin"]) {
+	$xtpl->helpbox(_("Help"), '<a href="?page=cluster&action=helpboxes_add&help_page='.$_GET["page"].'&help_action='.$_GET["action"].'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'">'._("Edit help box").'</a>');
+}
 
 $lang->lang_switcher();
 

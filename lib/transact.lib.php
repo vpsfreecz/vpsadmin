@@ -26,7 +26,7 @@ define ('T_MIGRATE_OFFLINE', 4001);
 define ('T_MIGRATE_OFFLINE_PART2', 4011);
 define ('T_MIGRATE_ONLINE', 4002);
 define ('T_MIGRATE_ONLINE_PART2', 4012);
-define ('T_BACKUP_MOUNT', 5001);
+// define ('T_BACKUP_MOUNT', 5001);
 // define ('T_BACKUP_UMOUNT', 5002);
 define ('T_BACKUP_RESTORE_PREPARE', 5002);
 define ('T_BACKUP_RESTORE_FINISH', 5003);
@@ -34,6 +34,10 @@ define ('T_BACKUP_DOWNLOAD', 5004);
 define ('T_BACKUP_SCHEDULE', 5005);
 define ('T_BACKUP_REGULAR', 5006);
 define ('T_BACKUP_EXPORTS', 5007);
+define ('T_BACKUP_VE_MOUNT', 5101);
+define ('T_BACKUP_VE_UMOUNT', 5102);
+define ('T_BACKUP_VE_REMOUNT', 5103);
+define ('T_BACKUP_VE_GENERATE_MOUNT_SCRIPTS', 5104);
 define ('T_FIREWALL_RELOAD', 6001);
 define ('T_FIREWALL_FLUSH', 6002);
 define ('T_CLUSTER_STORAGE_CFG_RELOAD', 7001);
@@ -308,6 +312,18 @@ function transaction_label ($t_type) {
 		break;
 	case T_BACKUP_EXPORTS:
 		$action_label = 'Exports';
+		break;
+	case T_BACKUP_VE_MOUNT:
+		$action_label = 'Mount backup';
+		break;
+	case T_BACKUP_VE_UMOUNT:
+		$action_label = 'Umount backup';
+		break;
+	case T_BACKUP_VE_REMOUNT:
+		$action_label = 'Remount backup';
+		break;
+	case T_BACKUP_VE_GENERATE_MOUNT_SCRIPTS:
+		$action_label = 'Generate mount scripts';
 		break;
 	case T_MAIL_SEND:
 		$action_label = 'Mail';
