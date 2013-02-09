@@ -568,21 +568,19 @@ function ipadd($ip, $type = 4) {
   }
   
   function backup_mount() {
-	global $db;
-	
 	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_VE_MOUNT);
   }
   
   function backup_umount() {
-	global $db;
-	
 	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_VE_UMOUNT);
   }
   
   function backup_remount() {
-	global $db;
-	
 	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_VE_REMOUNT);
+  }
+  
+  function backup_generate_scripts() {
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_VE_GENERATE_MOUNT_SCRIPTS, array("backup_mount" => $this->ve["vps_backup_mount"]));
   }
   
   function restore($timestamp, $backup_first = false) {

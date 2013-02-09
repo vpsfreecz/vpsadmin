@@ -896,6 +896,9 @@ switch($_REQUEST["action"]) {
 			case "backup_remount":
 				$t = _("Mass backup remount");
 				break;
+			case "backup_generate_scripts":
+				$t = _("Mass backup mount scripts generation");
+				break;
 			default:
 				break;
 		}
@@ -1050,6 +1053,13 @@ switch($_REQUEST["action"]) {
 					$vps = vps_load($veid);
 					if ($vps->exists)
 						$vps->backup_remount();
+				}
+				break;
+			case "backup_generate_scripts":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->backup_generate_scripts();
 				}
 				break;
 			default:
@@ -1733,6 +1743,7 @@ if ($mass_management) {
 			"backup_mount" => _("Mount backup"),
 			"backup_umount" => _("Umount backup"),
 			"backup_remount" => _("Remount backup"),
+			"backup_generate_scripts" => _("Generate mount scripts"),
 		), '', '', false, '5', '8'
 	);
 	
