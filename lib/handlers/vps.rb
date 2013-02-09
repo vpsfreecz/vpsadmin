@@ -4,7 +4,7 @@ require 'lib/handlers/backuper'
 class VPS < Executor
 	def start
 		@update = true
-		ensure_mountfile
+		ve_mountfile
 		vzctl(:start, @veid, {}, false, [32,])
 		check_onboot
 	end
@@ -17,7 +17,7 @@ class VPS < Executor
 	
 	def restart
 		@update = true
-		ensure_mountfile
+		ve_mountfile
 		vzctl(:restart, @veid)
 		check_onboot
 	end
@@ -72,6 +72,7 @@ class VPS < Executor
 			:devices => ["c:10:200:rw", "c:10:229:rw", "c:108:0:rw"],
 		}, true)
 		start
+		sleep(3)
 		vzctl(:exec, @veid, "mkdir -p /dev/net")
 		vzctl(:exec, @veid, "mknod /dev/net/tun c 10 200", false, [8,])
 		vzctl(:exec, @veid, "chmod 600 /dev/net/tun")
@@ -103,7 +104,12 @@ class VPS < Executor
 		if @params["is_local"]
 			syscmd("#{$CFG.get(:bin, :cp)} -a #{$CFG.get(:vz, :vz_root)}/private/#{@params["src_veid"]}/ #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
 		else
-			syscmd("#{$CFG.get(:bin, :rsync)} -a #{@params["src_server_ip"]}:#{$CFG.get(:vz, :vz_root)}/private/#{@params["src_veid"]}/ #{$CFG.get(:vz, :vz_root)}/private/#{@veid}");
+			rsync = $CFG.get(:vps, :clone, :rsync) \
+				.gsub(/%\{rsync\}/, $CFG.get(:bin, :rsync)) \
+				.gsub(/%\{src\}/, "#{@params["src_server_ip"]}:#{$CFG.get(:vz, :vz_root)}/private/#{@params["src_veid"]}/") \
+				.gsub(/%\{dst\}/, "#{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
+			
+			syscmd(rsync)
 		end
 	end
 	
@@ -152,24 +158,54 @@ class VPS < Executor
 		)
 	end
 	
-	def ensure_mountfile
-		m = "#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.mount"
-		u = "#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.umount"
+	def ve_mountfile
+		m = script_mount
+		u = script_umount
 		
-		unless File.exists?(m) && File.exists?(u)
-			File.open(m, "w") do |f|
-				f.write(File.open("scripts/ve.mount").read.gsub(/%%BACKUP_SERVER%%/, "storage.prg.#{$CFG.get(:vpsadmin, :domain)}"))
+		if @params["backup_mount"] == 1
+			unless File.exists?(m) && File.exists?(u)
+				File.open(m, "w") do |f|
+					f.write(File.open("scripts/ve.mount").read.gsub(/%%BACKUP_SERVER%%/, "storage.prg.#{$CFG.get(:vpsadmin, :domain)}"))
+				end
+				
+				File.open(u, "w") do |f|
+					f.write(File.open("scripts/ve.umount").read)
+				end
+				
+				syscmd("#{$CFG.get(:bin, :chmod)} +x #{m}")
+				syscmd("#{$CFG.get(:bin, :chmod)} +x #{u}")
 			end
-			
-			File.open(u, "w") do |f|
-				f.write(File.open("scripts/ve.umount").read)
-			end
-			
-			syscmd("#{$CFG.get(:bin, :chmod)} +x #{m}")
-			syscmd("#{$CFG.get(:bin, :chmod)} +x #{u}")
+		else
+			File.delete(m) if File.exists?(m)
+			File.delete(u) if File.exists?(u)
 		end
 		
 		ok
+	end
+	
+	def backup_mount
+		syscmd("VEID=#{@veid} VE_CONFFILE=#{ve_conf} #{script_mount} 2>&1")
+	end
+	
+	def backup_umount
+		syscmd("VEID=#{@veid} VE_CONFFILE=#{ve_conf} #{script_umount} 2>&1")
+	end
+	
+	def backup_remount
+		backup_umount
+		backup_mount
+	end
+	
+	def script_mount
+		"#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.mount"
+	end
+	
+	def script_umount
+		"#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.umount"
+	end
+	
+	def ve_conf
+		"#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.conf"
 	end
 	
 	def post_save(con)

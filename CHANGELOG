@@ -1,3 +1,11 @@
+* Sat Feb 09 2013 - version 1.7.0
+- Make backup mount optional
+- Features: add slight delay after VPS start - wait for it to mount properly
+- Clone: make rsync command configurable
+- Manual mount/umount/remount of backups in VPS
+- Register handler for generating mount/umount action scripts for VPS
+- Scheduler: fix random order reversing
+
 * Fri Feb 01 2013 - version 1.6.4
 - Wrapper: real-time logging, log date and time
 - Init: remove option, setting in config; if already initialized, skip

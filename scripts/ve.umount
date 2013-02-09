@@ -3,6 +3,6 @@
 . ${VE_CONFFILE}
 SRC=172.16.100.5:/storage/vpsfree.cz/backup/$VEID
 DST=/vpsadmin_backuper
-if mount | grep ${VE_ROOT}${DST}; then umount -fl ${VE_ROOT}${DST}; fi
+if grep ${VE_ROOT}${DST} /proc/mounts; then umount -fl ${VE_ROOT}${DST}; fi
 
 exit 0
