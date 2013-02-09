@@ -878,7 +878,8 @@ switch($_REQUEST["action"]) {
 				break;
 			case "backuper":
 				$t = _("Mass set backuper");
-				$xtpl->form_add_checkbox(_("Backup enabled").':', 'backup_enabled', '1');
+				$xtpl->form_add_select(_("Backup enabled").':', 'backup_enabled', array("" => _("Do not touch"), 1 => _("Yes"), 2 => _("No")));
+				$xtpl->form_add_select(_("Mount backup").':', 'backup_mount', array("" => _("Do not touch"), 1 => _("Yes"), 2 => _("No")));
 				$xtpl->form_add_checkbox(_("Notify owners").':', 'notify_owners', '1', true);
 				$xtpl->table_tr();
 				break;
@@ -1019,9 +1020,32 @@ switch($_REQUEST["action"]) {
 				}
 				break;
 			case "backuper":
+				$enable = NULL;
+				$mount = NULL;
+				
+				switch($_POST["backup_enabled"]) {
+					case 1:
+						$enable = true;
+						break;
+					case 2:
+						$enable = false;
+						break;
+					default:break;
+				}
+				
+				switch($_POST["backup_mount"]) {
+					case 1:
+						$mount = true;
+						break;
+					case 2:
+						$mount = false;
+						break;
+					default:break;
+				}
+				
 				foreach ($vpses as $veid) {
 					$vps = vps_load($veid);
-					$vps->set_backuper($_POST["backup_enabled"], $_POST["backup_enabled"] ? NULL : false, false);
+					$vps->set_backuper($enable, $mount, false);
 					
 					if($_POST["notify_owners"])
 						$vps->backuper_change_notify();

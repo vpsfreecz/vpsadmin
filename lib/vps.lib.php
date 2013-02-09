@@ -440,7 +440,7 @@ function ipadd($ip, $type = 4) {
 	
 	$db->query("UPDATE vps SET vps_config = '".$db->check($cfg)."' WHERE vps_id = '".$db->check($this->veid)."'");
 	
-	add_transaction_clusterwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_CONFIG_CREATE, array("name" => "vps-".$this->veid, "config" => $cfg));
+	add_transaction_clusterwide($_SESSION["member"]["m_id"], $this->veid, T_CLUSTER_CONFIG_CREATE, array("name" => "vps-".$this->veid, "config" => $cfg), array('node'));
 	$this->applyconfigs();
   }
   
@@ -456,7 +456,7 @@ function ipadd($ip, $type = 4) {
 	$this->applyconfigs();
   }
   
-  function applyconfigs() {
+  function applyconfigs($dep = NULL) {
 	global $db;
 	
 	$sql = "SELECT c.name FROM vps_has_config vhc
@@ -472,7 +472,7 @@ function ipadd($ip, $type = 4) {
 	if ($this->ve["vps_config"])
 		$cmd["configs"][] = "vps-".$this->veid;
 	
-	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_APPLYCONFIG, $cmd);
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_APPLYCONFIG, $cmd, NULL, $dep);
   }
   
   function configs_change_notify() {
@@ -535,26 +535,33 @@ function ipadd($ip, $type = 4) {
   	global $db;
 	
 	/**
+	 * how: do not touch if NULL
 	 * mount: do not touch if NULL
 	 * exclude: do not touch if === false
 	 */
 	
-	$update = "";
+	$update = array();
 	
-	if ($mount != NULL) {
+	if ($mount !== NULL) {
 		$this->ve["vps_backup_mount"] = $mount;
-		$update .= ", vps_backup_mount = '".$db->check($mount)."'";
+		$update[] = "vps_backup_mount = '".($mount ? '1' : '0')."'";
 	}
 	
 	if ($_SESSION["is_admin"] || $force) {
-		$this->ve["vps_backup_enabled"] = (bool)$how;
+		if ($how !== NULL) {
+			$update[] = "vps_backup_enabled = " . ($how ? '1' : '0');
+			$this->ve["vps_backup_enabled"] = (bool)$how;
+		}
 		
 		if ($exclude !== false)
-			$update .= ", vps_backup_exclude = '".$db->check($exclude)."'";
+			$update[] = "vps_backup_exclude = '".$db->check($exclude)."'";
 		
-		$sql = 'UPDATE vps SET vps_backup_enabled='.($how ? '1' : '0').' '.$update.' WHERE vps_id = '.$db->check($this->veid);
+		if (!count($update))
+			return;
+		
+		$sql = 'UPDATE vps SET '.implode(",", $update).' WHERE vps_id = '.$db->check($this->veid);
   	} else
-		$sql = 'UPDATE vps SET vps_backup_exclude = "'.$db->check($exclude).'" '.$update.' WHERE vps_id = '.$db->check($this->veid);
+		$sql = 'UPDATE vps SET vps_backup_exclude = "'.$db->check($exclude).'", '.implode(",", $update).' WHERE vps_id = '.$db->check($this->veid);
   	
   	$db->query($sql);
   }
@@ -685,7 +692,11 @@ function ipadd($ip, $type = 4) {
 			break;
 		case 1:
 			$db->query("INSERT INTO vps_has_config (vps_id, config_id, `order`) SELECT '".$db->check($clone->veid)."' AS vps_id, config_id, `order` FROM vps_has_config WHERE vps_id = '".$db->check($this->veid)."'");
-			$clone->applyconfigs();
+			
+			if ($clone->ve["vps_config"])
+				$clone->update_custom_config($clone->ve["vps_config"]); // applyconfig called inside
+			else
+				$clone->applyconfigs();
 			break;
 		case 2:
 			$clone->add_default_configs("playground_default_config_chain");

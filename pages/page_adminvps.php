@@ -411,9 +411,9 @@ switch ($_GET["action"]) {
 			$show_info=true;
 			break;
 		case 'setbackuper':
-			if (isset($_REQUEST["veid"])) {
+			if (isset($_REQUEST["veid"]) && isset($_POST["backup_exclude"])) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				$xtpl->perex_cmd_output(_("Backuper status changed"), $vps->set_backuper($_SESSION["is_admin"] ? $_REQUEST["backup_enabled"] : NULL, $_POST["mount"], $_REQUEST["backup_exclude"]));
+				$xtpl->perex_cmd_output(_("Backuper status changed"), $vps->set_backuper($_SESSION["is_admin"] ? ($_REQUEST["backup_enabled"] ? true : false) : NULL, $_POST["mount"] ? true : false, $_REQUEST["backup_exclude"]));
 				
 				if ($_SESSION["is_admin"] && $_REQUEST["notify_owner"])
 					$vps->backuper_change_notify();
@@ -545,7 +545,7 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_td(_("Status").':');
 	$xtpl->table_td(
 		(($vps->ve["vps_up"]) ?
-			_("running").' (<a href="?page=adminvps&action=info&run=stop&veid='.$vps->veid.'">'._("stop").'</a>'
+			_("running").' (<a href="?page=adminvps&action=info&run=restart&veid='.$vps->veid.'">'._("restart").'</a>, <a href="?page=adminvps&action=info&run=stop&veid='.$vps->veid.'">'._("stop").'</a>'
 			: 
 			_("stopped").' (<a href="?page=adminvps&action=info&run=start&veid='.$vps->veid.'">'._("start").'</a>') .
 			', <a href="?page=console&veid='.$vps->veid.'">'._("open remote console").'</a>)'

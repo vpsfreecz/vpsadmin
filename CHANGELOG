@@ -1,8 +1,15 @@
+* Sat Feb 09 2013 - version 1.7.1
+- Fix optional backup mount in mass management and VPS details
+- Configs: add dependency to reapply configs to all affected VPSes on create config
+- Clone: create custom config if any
+- Member details: add VPS count
+- VPS details: add restart
+
 * Sat Feb 09 2013 - version 1.7.0
 - Help boxes
 - Make backup mount optional
 - New transactions for mount/umount/remount of backups in VPS, regenerate mount/umount
-  actions scripts and corresponding mass mangement actions
+  actions scripts and corresponding mass management actions
 - VPS mass management: move from adminvps to cluster, add filter backup mount
 - Track database scheme
 
