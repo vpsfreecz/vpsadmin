@@ -545,7 +545,7 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_td(_("Status").':');
 	$xtpl->table_td(
 		(($vps->ve["vps_up"]) ?
-			_("running").' (<a href="?page=adminvps&action=info&run=stop&veid='.$vps->veid.'">'._("stop").'</a>'
+			_("running").' (<a href="?page=adminvps&action=info&run=restart&veid='.$vps->veid.'">'._("restart").'</a>, <a href="?page=adminvps&action=info&run=stop&veid='.$vps->veid.'">'._("stop").'</a>'
 			: 
 			_("stopped").' (<a href="?page=adminvps&action=info&run=start&veid='.$vps->veid.'">'._("start").'</a>') .
 			', <a href="?page=console&veid='.$vps->veid.'">'._("open remote console").'</a>)'
