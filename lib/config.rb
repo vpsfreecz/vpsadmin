@@ -52,6 +52,7 @@ IMPLICIT_CONFIG = {
 				5101 => "backup_mount",
 				5102 => "backup_umount",
 				5103 => "backup_remount",
+				5104 => "ve_mountfile",
 				8001 => "features",
 			},
 			"Backuper" => {
