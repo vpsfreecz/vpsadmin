@@ -104,7 +104,13 @@ function print_editm($member) {
 	$xtpl->form_add_input(_("Full name").':', 'text', '30', 'm_name', $member->m["m_name"], _("A-Z, a-z, with diacritic"), 255);
 	$xtpl->form_add_input(_("E-mail").':', 'text', '30', 'm_mail', $member->m["m_mail"], ' ');
 	$xtpl->form_add_input(_("Postal address").':', 'text', '30', 'm_address', $member->m["m_address"], ' ');
-
+	
+	if ($_SESSION["is_admin"]) {
+		$xtpl->table_td(_("VPS count").':');
+		$xtpl->table_td("<a href='?page=adminvps&m_nick=".$member->m["m_nick"]."'>".$member->get_vps_count()."</a>");
+		$xtpl->table_tr();
+	}
+	
 	if ($cluster_cfg->get("payments_enabled")) {
 		$xtpl->table_td(_("Paid until").':');
 
