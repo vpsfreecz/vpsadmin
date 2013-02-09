@@ -440,7 +440,7 @@ function ipadd($ip, $type = 4) {
 	
 	$db->query("UPDATE vps SET vps_config = '".$db->check($cfg)."' WHERE vps_id = '".$db->check($this->veid)."'");
 	
-	add_transaction_clusterwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_CONFIG_CREATE, array("name" => "vps-".$this->veid, "config" => $cfg));
+	add_transaction_clusterwide($_SESSION["member"]["m_id"], $this->veid, T_CLUSTER_CONFIG_CREATE, array("name" => "vps-".$this->veid, "config" => $cfg), array('node'));
 	$this->applyconfigs();
   }
   
@@ -692,7 +692,11 @@ function ipadd($ip, $type = 4) {
 			break;
 		case 1:
 			$db->query("INSERT INTO vps_has_config (vps_id, config_id, `order`) SELECT '".$db->check($clone->veid)."' AS vps_id, config_id, `order` FROM vps_has_config WHERE vps_id = '".$db->check($this->veid)."'");
-			$clone->applyconfigs();
+			
+			if ($clone->ve["vps_config"])
+				$clone->update_custom_config($clone->ve["vps_config"]); // applyconfig called inside
+			else
+				$clone->applyconfigs();
 			break;
 		case 2:
 			$clone->add_default_configs("playground_default_config_chain");
