@@ -555,14 +555,19 @@ class cluster {
 			        label = '".$db->check($label)."',
 			        `config` = '".$db->check($config)."'";
 		
-		add_transaction_clusterwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_CONFIG_CREATE, $params);
+		$servers = list_servers(false, array('node'));
 		
-		$db->query($sql);
-		
-		if ($reapply) {
-			while($row = $db->findByColumn("vps_has_config", "config_id", $id)) {
-				$vps = vps_load($row["vps_id"]);
-				$vps->applyconfigs();
+		foreach ($servers as $sid => $name) {
+			add_transaction($_SESSION["member"]["m_id"], $sid, 0, T_CLUSTER_CONFIG_CREATE, $params);
+			$dep = $db->insertId();
+			
+			if ($reapply) {
+				$rs = $db->query("SELECT v.vps_id FROM vps v INNER JOIN vps_has_config c ON v.vps_id = c.vps_id WHERE c.config_id = ".$db->check($id)." AND vps_server = ".$db->check($sid));
+				
+				while ($row = $db->fetch_array($rs)) {
+					$vps = vps_load($row["vps_id"]);
+					$vps->applyconfigs($dep);
+				}
 			}
 		}
     }

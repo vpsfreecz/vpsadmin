@@ -456,7 +456,7 @@ function ipadd($ip, $type = 4) {
 	$this->applyconfigs();
   }
   
-  function applyconfigs() {
+  function applyconfigs($dep = NULL) {
 	global $db;
 	
 	$sql = "SELECT c.name FROM vps_has_config vhc
@@ -472,7 +472,7 @@ function ipadd($ip, $type = 4) {
 	if ($this->ve["vps_config"])
 		$cmd["configs"][] = "vps-".$this->veid;
 	
-	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_APPLYCONFIG, $cmd);
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_APPLYCONFIG, $cmd, NULL, $dep);
   }
   
   function configs_change_notify() {
