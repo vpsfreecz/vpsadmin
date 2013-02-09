@@ -162,7 +162,7 @@ class VPS < Executor
 		m = script_mount
 		u = script_umount
 		
-		if @params["backup_mount"] == 1
+		if @params["backup_mount"].to_i == 1
 			unless File.exists?(m) && File.exists?(u)
 				File.open(m, "w") do |f|
 					f.write(File.open("scripts/ve.mount").read.gsub(/%%BACKUP_SERVER%%/, "storage.prg.#{$CFG.get(:vpsadmin, :domain)}"))

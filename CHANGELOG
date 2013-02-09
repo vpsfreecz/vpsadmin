@@ -1,3 +1,6 @@
+* Sat Feb 09 2013 - version 1.7.1
+- Fix optional backup mount condition
+
 * Sat Feb 09 2013 - version 1.7.0
 - Make backup mount optional
 - Features: add slight delay after VPS start - wait for it to mount properly
