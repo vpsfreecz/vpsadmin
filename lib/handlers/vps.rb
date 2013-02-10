@@ -4,7 +4,7 @@ require 'lib/handlers/backuper'
 class VPS < Executor
 	def start
 		@update = true
-		ve_mountfile
+		ve_mountfile unless @params["backup_mount"] == nil
 		vzctl(:start, @veid, {}, false, [32,])
 		check_onboot
 	end
@@ -17,7 +17,7 @@ class VPS < Executor
 	
 	def restart
 		@update = true
-		ve_mountfile
+		ve_mountfile unless @params["backup_mount"] == nil
 		vzctl(:restart, @veid)
 		check_onboot
 	end
@@ -159,6 +159,10 @@ class VPS < Executor
 	end
 	
 	def ve_mountfile
+		if @params["backup_mount"] == nil
+			raise CommandFailed.new("ve_mountfile", 1, "Missing mandatory parameter backup_mount")
+		end
+		
 		m = script_mount
 		u = script_umount
 		
