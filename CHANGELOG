@@ -1,3 +1,6 @@
+* Sun Feb 09 2013 - version 1.7.2
+- Fix ve_mountfile calling
+
 * Sat Feb 09 2013 - version 1.7.1
 - Fix optional backup mount condition
 
