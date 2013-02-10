@@ -40,7 +40,7 @@ class Backuper < Executor
 	end
 	
 	def exports
-		raise CommandFailed("exports", 1, "Exports disabled in configuration") unless $CFG.get(:backuper, :exports, :enabled)
+		raise CommandFailed.new("exports", 1, "Exports disabled in configuration") unless $CFG.get(:backuper, :exports, :enabled)
 		
 		delimiter = $CFG.get(:backuper, :exports, :delimiter)
 		dest = $CFG.get(:backuper, :dest)
