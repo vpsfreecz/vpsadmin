@@ -1,0 +1,2 @@
+source :rugygems
+gem "json"
