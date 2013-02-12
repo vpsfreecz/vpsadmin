@@ -554,7 +554,10 @@ function ipadd($ip, $type = 4) {
 		}
 		
 		if ($exclude !== false)
+		{
 			$update[] = "vps_backup_exclude = '".$db->check($exclude)."'";
+			$this->ve["vps_backup_exclude"] = $exclude;
+		}
 		
 		if (!count($update))
 			return;
