@@ -554,7 +554,10 @@ function ipadd($ip, $type = 4) {
 		}
 		
 		if ($exclude !== false)
+		{
 			$update[] = "vps_backup_exclude = '".$db->check($exclude)."'";
+			$this->ve["vps_backup_exclude"] = $exclude;
+		}
 		
 		if (!count($update))
 			return;
@@ -666,7 +669,7 @@ function ipadd($ip, $type = 4) {
 				vps_server ="'.$db->check($server_id).'",
 				vps_onboot ="'.$db->check($this->ve["vps_onboot"]).'",
 				vps_onstartall = '.$db->check($this->ve["vps_onstartall"]).',
-				vps_features_enabled = 0,
+				vps_features_enabled = '.$db->check($features ? $this->ve["vps_features_enabled"] : 0).',
 				vps_backup_enabled = '.$db->check($backuper ? $this->ve["vps_backup_enabled"] : 1).',
 				vps_backup_mount = '.$db->check($backuper ? $this->ve["vps_backup_mount"] : 1).',
 				vps_backup_exclude = "'.$db->check($backuper ? $this->ve["vps_backup_exclude"] : '').'",

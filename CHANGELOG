@@ -1,3 +1,9 @@
+* Tue Feb 12 2013 - version 1.7.3
+- Fixed sample config saving
+- Clone: fixed not settings features enabled flag
+- Set backuper: remove the need of page refresh to see the changes
+- Transactions: yet another fix of t_params is always hash, never array
+
 * Sun Feb 10 2013 - version 1.7.2
 - Transactions: t_params is always hash, never array
 
