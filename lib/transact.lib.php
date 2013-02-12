@@ -103,7 +103,7 @@ function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = array()
 			    t_depends_on = '. ($dep ? '"'.$db->check($dep).'"' : 'NULL') .',
 			    t_success = 0,
 			    t_done = 0,
-			    t_param = "'.$db->check(json_encode($t_param, JSON_FORCE_OBJECT)).'"';
+			    t_param = "'.$db->check(count($t_param) ? json_encode($t_param) : '{}').'"';
 	if ($transact_group) $sql .= ', t_group="'.$transact_group.'"';
 	$result = $db->query($sql);
     }
