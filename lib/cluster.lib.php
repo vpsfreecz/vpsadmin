@@ -555,6 +555,8 @@ class cluster {
 			        label = '".$db->check($label)."',
 			        `config` = '".$db->check($config)."'";
 		
+		$db->query($sql);
+		
 		$servers = list_servers(false, array('node'));
 		
 		foreach ($servers as $sid => $name) {
