@@ -1,2 +1,2 @@
-source :rugygems
+source :rubygems
 gem "json"
