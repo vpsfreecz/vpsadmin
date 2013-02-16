@@ -44,6 +44,7 @@ class VPS < Executor
 		destroy
 		create
 		start
+		vzctl(:set, @veid, {:ipadd => @params["ip_addrs"]}, true) if @params["ip_addrs"].count > 0
 		check_onboot(true)
 	end
 	
