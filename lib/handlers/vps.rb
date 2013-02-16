@@ -53,7 +53,7 @@ class VPS < Executor
 	
 	def applyconfig
 		@params["configs"].each do |cfg|
-			vzctl(:set, @veid, {:applyconfig => cfg}, true)
+			vzctl(:set, @veid, {:applyconfig => cfg, :setmode => "restart"}, true)
 		end
 		ok
 	end
