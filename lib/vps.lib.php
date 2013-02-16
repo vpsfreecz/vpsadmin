@@ -114,10 +114,11 @@ class vps_load {
 	global $cluster, $db;
 	if ($this->exists) {
 		$ips = $this->iplist();
+		$params = array("ip_addrs" => array());
 		if ($ips)
-      foreach ($ips as $ip) {
-        $this->ipdel($ip["ip_addr"]);
-      }
+			foreach ($ips as $ip) {
+				$params["ip_addrs"][] = $ip["ip_addr"];
+			}
 		$template = template_by_id($this->ve["vps_template"]);
 		$params["hostname"] = $this->ve["vps_hostname"];
 		$params["template"] = $template["templ_name"];
@@ -125,10 +126,6 @@ class vps_load {
 		$params["nameserver"] = $this->ve["vps_nameserver"];
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_REINSTALL_VE, $params);
 		$this->applyconfigs();
-    if ($ips)
-      foreach ($ips as $ip) {
-        $this->ipadd($ip["ip_addr"]);
-      }
 		$sql = 'UPDATE vps SET  vps_features_enabled=0,
 					vps_specials_installed = ""
 					WHERE vps_id='.$db->check($this->veid);
