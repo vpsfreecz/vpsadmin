@@ -23,6 +23,8 @@ module BackuperBackend
 				syscmd(rsync, [23, 24])
 				syscmd("#{$CFG.get(:bin, :zfs)} snapshot #{$CFG.get(:backuper, :zfs)[:zpool]}/#{@veid}@#{Time.new.strftime("%Y-%m-%dT%H:%M:%S")}")
 				
+				clear_backups(true)
+				
 				db.prepared("DELETE FROM vps_backups WHERE vps_id = ?", @veid)
 				
 				syscmd("#{$CFG.get(:bin, :zfs)} list -r -t snapshot -H -o name #{$CFG.get(:backuper, :zfs)[:zpool]}/#{@veid}")[:output].split().each do |snapshot|
@@ -32,6 +34,42 @@ module BackuperBackend
 			
 			db.close
 			ok
+		end
+		
+		def clear_backups(locked = false)
+			unless locked
+				Backuper.wait_for_lock(Db.new, @veid)
+			end
+			
+			snapshots = syscmd("#{$CFG.get(:bin, :zfs)} list -r -t snapshot -H -o name #{$CFG.get(:backuper, :zfs, :zpool)}/#{@veid}")[:output].split()
+
+			deleted = 0
+			min_backups = $CFG.get(:backuper, :store, :min_backups)
+			max_backups = $CFG.get(:backuper, :store, :max_backups)
+			oldest_backup = Time.new - $CFG.get(:backuper, :store, :max_age) * 24 * 60 * 60
+			
+			if snapshots.count <= min_backups
+				return # Nothing to delete
+			end
+			
+			snapshots.each do |snapshot|
+				t = Time.parse(snapshot.split("@")[1])
+				
+				if (t < oldest_backup && (snapshots.count - deleted) > min_backups) or ((snapshots.count - deleted) > max_backups)
+					deleted += 1
+					delete_snapshot(snapshot)
+				end
+				
+				if snapshots.count <= min_backups or (t > oldest_backup && (snapshots.count - deleted) <= max_backups)
+					break
+				end
+			end
+			
+			ok
+		end
+		
+		def delete_snapshot(snapshot)
+			syscmd("#{$CFG.get(:bin, :zfs)} destroy #{snapshot}")
 		end
 		
 		def download

@@ -13,6 +13,10 @@ class Backuper < Executor
 		raise CommandNotImplemented
 	end
 	
+	def clear_backups(locked = false)
+		raise CommandNotImplemented
+	end
+	
 	def download
 		raise CommandNotImplemented
 	end

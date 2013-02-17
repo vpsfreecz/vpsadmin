@@ -119,6 +119,11 @@ IMPLICIT_CONFIG = {
 			:zpool => "storage/vpsfree.cz/backup",
 			:rsync => "%{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after --exclude .zfs/ --exclude-from %{exclude} %{src} %{dst}",
 		},
+		:store => {
+			:min_backups => 14,
+			:max_backups => 20,
+			:max_age => 14,
+		},
 		:exports => {
 			:enabled => true,
 			:delimiter => "### vpsAdmin ###",

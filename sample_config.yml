@@ -95,6 +95,7 @@
 #         :rsync: %{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after %{src} %{dst}
 # 
 # :backuper:
+## RdiffBackup or Zfs
 #     :method: RdiffBackup
 #     :lock_interval: 30
 #     :mountpoint: /mnt
@@ -107,6 +108,14 @@
 #     :zfs:
 #         :zpool: storage/vpsfree.cz/backup
 #         :rsync: %{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after --exclude .zfs/ --exclude-from %{exclude} %{src} %{dst}
+## How many backups to store, unit is a day
+#     :store:
+## Minimum number of backups that must be stored
+#         :min_backups: 14
+## Maximum number of backups to store
+#         :max_backups: 20
+## Max age, older backups will be kept only if you have less or equal number of backups than :min_backups
+#         :max_age: 14
 #     :exports:
 #         :enabled: true,
 #         :delimiter: "### vpsAdmin ###"
