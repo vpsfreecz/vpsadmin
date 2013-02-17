@@ -847,6 +847,34 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_add_category(_("Backuper"));
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->form_out(_("Go >>"));
+	
+// Mounts
+	if ($_SESSION["is_admin"]) {
+		$xtpl->table_add_category(_('Mount type'));
+		$xtpl->table_add_category(_('Source'));
+		$xtpl->table_add_category(_('Destination'));
+		$xtpl->table_add_category(_('Options'));
+		$xtpl->table_add_category(_('Mode'));
+		$xtpl->table_add_category(_('Server'));
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		
+		$mounts = $vps->get_mounts();
+		
+		foreach ($mounts as $mnt) {
+			$xtpl->table_td($mnt["type"]);
+			$xtpl->table_td($mnt["src"]);
+			$xtpl->table_td($mnt["dst"]);
+			$xtpl->table_td($mnt["options"]);
+			$xtpl->table_td($mnt["mode"]);
+			$xtpl->table_td($mnt["server_name"]);
+			$xtpl->table_td('');
+			$xtpl->table_td('');
+			$xtpl->table_tr();
+		}
+		
+		$xtpl->table_out();
+	}
 
 }
 

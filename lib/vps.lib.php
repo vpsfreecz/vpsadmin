@@ -106,6 +106,10 @@ class vps_load {
 		$this->ve["vps_nameserver"] = $params["nameserver"];
 		$this->ve["vps_template"] = $template["templ_name"];
 		$this->ve["vps_onboot"] = $location["location_vps_onboot"];
+		
+		mount_add("backup");
+		$params["mounts"] = $this->mount_regen();
+		
 		add_transaction($_SESSION["member"]["m_id"], $server_id, $this->veid, T_CREATE_VE, $params);
     $this->nameserver($cluster->get_first_suitable_dns($cluster->get_location_of_server($server_id)));
 	}
@@ -124,6 +128,7 @@ class vps_load {
 		$params["template"] = $template["templ_name"];
 		$this->ve["vps_nameserver"] = "8.8.8.8";
 		$params["nameserver"] = $this->ve["vps_nameserver"];
+		$params["mounts"] = $this->mount_regen();
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_REINSTALL_VE, $params);
 		$this->applyconfigs();
 		$sql = 'UPDATE vps SET  vps_features_enabled=0,
@@ -162,7 +167,7 @@ class vps_load {
 	    $db->query('UPDATE vps SET vps_onstartall = 1 WHERE vps_id='.$db->check($this->veid));
 	    $server = $db->findByColumnOnce("servers", "server_id", $this->ve["vps_server"]);
 	    $location = $db->findByColumnOnce("locations", "location_id", $server["server_location"]);
-	    $params = array("onboot" => $location["location_vps_onboot"], "backup_mount" => $this->ve["vps_backup_mount"]);
+	    $params = array("onboot" => $location["location_vps_onboot"], "backup_mount" => $this->ve["vps_backup_mount"], "mounts" => $this->mount_regen());
 	    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_START_VE, $params);
 	}
   }
@@ -172,7 +177,7 @@ class vps_load {
 	if ($this->exists) {
 	    $server = $db->findByColumnOnce("servers", "server_id", $this->ve["vps_server"]);
 	    $location = $db->findByColumnOnce("locations", "location_id", $server["server_location"]);
-	    $params = array("onboot" => $location["location_vps_onboot"], "backup_mount" => $this->ve["vps_backup_mount"]);
+	    $params = array("onboot" => $location["location_vps_onboot"], "backup_mount" => $this->ve["vps_backup_mount"], "mounts" => $this->mount_regen());
 	    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_RESTART_VE, $params);
 	}
   }
@@ -542,6 +547,11 @@ function ipadd($ip, $type = 4) {
 	if ($mount !== NULL) {
 		$this->ve["vps_backup_mount"] = $mount;
 		$update[] = "vps_backup_mount = '".($mount ? '1' : '0')."'";
+		
+		if ($mount)
+			$this->mount_add("backup");
+		else
+			$this->mount_del("backup");
 	}
 	
 	if ($_SESSION["is_admin"] || $force) {
@@ -675,6 +685,10 @@ function ipadd($ip, $type = 4) {
 	$db->query($sql);
 	$clone = vps_load($db->insert_id());
 	
+	if ($backuper && $this->ve["vps_backup_mount"]) {
+		mount_add("backup");
+	}
+	
 	$params = array(
 		"src_veid" => $this->veid,
 		"src_server_ip" => $this->ve["server_ip4"],
@@ -682,6 +696,7 @@ function ipadd($ip, $type = 4) {
 		"template" => $clone->ve["templ_name"],
 		"hostname" => $clone->ve["vps_hostname"],
 		"nameserver" => $clone->ve["vps_nameserver"],
+		"mounts" => $clone->mount_regen()
 	);
 	
 	add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_CLONE_VE, $params);
@@ -711,6 +726,82 @@ function ipadd($ip, $type = 4) {
 		$clone->start();
 	
 	return $clone;
+  }
+  
+  function mount_add($type) {
+	global $db;
+	
+	$mode = "";
+	$src = "";
+	$dst = "";
+	$options = "";
+	$server = "NULL";
+	
+	switch($type) {
+		case "backup":
+			$mode = "nfs";
+			$src = "/storage/vpsfree.cz/backup/" . $this->veid;
+			$dst = "/var/lib/vz/root/" . $this->veid . "/vpsadmin_backuper";
+			$options = "-r -n -t nfs -o bg,ro,vers=3,proto=udp"; // FIXME: this should probably be somewhere in settings
+			
+			$backuper = $this->get_backuper_server();
+			$server = $backuper["server_id"];
+			
+			break;
+		
+		case "nas":
+			return;
+			break;
+		
+		default:return;
+	}
+	
+	$cnt = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps_mount WHERE vps_id = ".$db->check($this->veid)." AND dst = '".$db->check($dst)."'"));
+	
+	if ($cnt["cnt"] == 0) {
+		$db->query("INSERT INTO vps_mount SET vps_id = ".$db->check($this->veid).",
+					mode = '".$db->check($mode)."',
+					src = '".$db->check($src)."',
+					dst = '".$db->check($dst)."',
+					type = '".$db->check($type)."',
+					options = '".$db->check($options)."',
+					server_id = ".$db->check($server)."");
+	}
+  }
+  
+  function mount_del($type) {
+	global $db;
+	
+	$db->query("DELETE FROM vps_mount WHERE vps_id = " . $db->check($this->veid) . " AND type = '".$db->check($type)."'");
+  }
+  
+  function mount_regen() {
+	$mounts = $this->get_mounts();
+	$ret = array();
+	
+	foreach ($mounts as $mnt) {
+		$ret[] = array(
+			"mode" => $mnt["mode"],
+			"src" => $mnt["src"],
+			"dst" => $mnt["dst"],
+			"opts" => $mnt["options"],
+			"target_server" => $mnt["server_id"]
+		);
+	}
+	
+	return $ret;
+  }
+  
+  function get_mounts() {
+	global $db;
+	
+	$ret = array();
+	$rs = $db->query("SELECT * FROM vps_mount m LEFT JOIN servers s ON m.server_id = s.server_id WHERE vps_id = " . $db->check($this->veid));
+	
+	while ($row = $db->fetch_array($rs))
+		$ret[] = $row;
+	
+	return $ret;
   }
   
   function get_backuper_server() {

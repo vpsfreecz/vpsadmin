@@ -239,3 +239,15 @@ CREATE TABLE IF NOT EXISTS `vps_status` (
   UNIQUE KEY `vps_id_2` (`vps_id`),
   KEY `vps_id` (`vps_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
+
+CREATE TABLE IF NOT EXISTS `vps_mount` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `vps_id` int(11) NOT NULL,
+  `src` varchar(500) COLLATE utf8_czech_ci NOT NULL,
+  `dst` varchar(500) COLLATE utf8_czech_ci NOT NULL,
+  `options` varchar(255) COLLATE utf8_czech_ci NOT NULL,
+  `mode` enum('bind','nfs') COLLATE utf8_czech_ci NOT NULL,
+  `server_id` int(11) DEFAULT NULL,
+  `type` enum('backup','nas','custom') COLLATE utf8_czech_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci ;
