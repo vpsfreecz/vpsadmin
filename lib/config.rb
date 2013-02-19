@@ -107,7 +107,7 @@ IMPLICIT_CONFIG = {
 	
 	:backuper => {
 		:method => "RdiffBackup",
-		:lock_interval => "30",
+		:lock_interval => 30,
 		:mountpoint => "/mnt",
 		:dest => "/storage/vpsfree.cz/backup",
 		:tmp_restore => "/storage/vpsfree.cz/restore",
@@ -130,12 +130,12 @@ IMPLICIT_CONFIG = {
 	
 	:mailer => {
 		:smtp_server => "localhost",
-		:smtp_port => "25",
+		:smtp_port => 25,
 	},
 	
 	:console => {
 		:host => "localhost",
-		:port => "8081",
+		:port => 8081,
 	},
 	
 	:remote => {
