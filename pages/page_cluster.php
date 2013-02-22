@@ -430,6 +430,48 @@ switch($_REQUEST["action"]) {
 			$list_nodes = true;
 		}
 		break;
+	case "node_edit":
+		$node = new cluster_node($_GET["node_id"]);
+		
+		if ($node->exists) {
+			$xtpl->title2(_("Register new server into cluster"));
+			$xtpl->table_add_category('');
+			$xtpl->table_add_category('');
+			$xtpl->form_create('?page=cluster&action=node_edit_save&node_id='.$node->s["server_id"], 'post');
+			$xtpl->form_add_input(_("Name").':', 'text', '30', 'server_name', $node->s["server_name"]);
+			$xtpl->form_add_select(_("Type").':', 'server_type', $server_types, $node->s["server_type"]);
+			$xtpl->form_add_select(_("Location").':', 'server_location', $cluster->list_locations(), $node->s["server_location"]);
+			$xtpl->form_add_input(_("Server IPv4 address").':', 'text', '30', 'server_ip4', $node->s["server_ip4"]);
+			$xtpl->form_add_textarea(_("Availability icon (if you wish)").':', 28, 4, 'server_availstat', $node->s["server_availstat"], _("Paste HTML link here"));
+			
+			switch ($node->s["server_type"]) {
+				case "node":
+					$xtpl->form_add_input(_("Max VPS count").':', 'text', '8', 'server_maxvps', $node->s["server_maxvps"]);
+					$xtpl->form_add_input(_("OpenVZ Path").':', 'text', '10', 'server_path_vz', $node->s["server_path_vz"]);
+					break;
+				case "storage":
+					$xtpl->form_add_input(_("Root dataset").':', 'text', '30', 'storage_root_dataset', $node->role["root_dataset"]);
+					$xtpl->form_add_input(_("Root path").':', 'text', '30', 'storage_root_path', $node->role["root_path"]);
+					$xtpl->form_add_select(_("Storage type").':', 'storage_type', $STORAGE_TYPES, $node->role["type"]);
+					$xtpl->form_add_checkbox(_("User export").':', 'storage_user_export', '1', $node->role["user_export"], _("Can user manage exports?"));
+					$xtpl->form_add_select(_("User mount").':', 'storage_user_mount', $STORAGE_MOUNT_TYPES, $node->role["user_mount"]);
+					break;
+				default:break;
+			}
+			
+			$xtpl->form_out(_("Save"));
+		}
+		break;
+	case "node_edit_save":
+		$node = new cluster_node($_GET["node_id"]);
+		
+		if ($node->exists) {
+			$node->update_settings($_POST);
+			$xtpl->perex(_("Settings updated"), _("Settings succesfully updated."));
+		}
+		
+		$list_nodes = true;
+		break;
 	case "fields":
 		$xtpl->title2(_("Edit textfields"));
 		$xtpl->table_add_category('');
@@ -1175,6 +1217,7 @@ if ($list_nodes) {
 			$xtpl->table_add_category(_("M"));
 			$xtpl->table_add_category(_("V"));
 			$xtpl->table_add_category(' ');
+			$xtpl->table_add_category(' ');
 			
 			if ($j+1 < $on_row)
 				$xtpl->table_add_category(' ');
@@ -1233,6 +1276,7 @@ if ($list_nodes) {
 			$xtpl->table_td($status["vpsadmin_version"]);
 			
 			$xtpl->table_td('<a href="?page=cluster&action=node_start_vpses&id='.$srv["server_id"].'"><img src="template/icons/vps_start.png" title="'._("Start all VPSes here").'"/></a>');
+			$xtpl->table_td('<a href="?page=cluster&action=node_edit&node_id='.$srv["server_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 			
 			if (!($i++ % $on_row))
 				$xtpl->table_tr();

@@ -7,11 +7,15 @@
     Copyright (C) 2008-2011 Pavel Snajdr, snajpa@snajpa.net
 */
 
+$STORAGE_TYPES = array("per_member" => _("Per member"), "per_vps" => _("Per VPS"));
+$STORAGE_MOUNT_TYPES = array("none" => _("None"), "ro" => _("Read only"), "rw" => _("Read and write"));
+
 class cluster_node {
     // Server descriptor
     public $s;
     // True if exists
-    protected $exists;
+    public $exists;
+    public $role = array();
 
     function cluster_node ($server_id) {
 	global $db;
@@ -19,6 +23,14 @@ class cluster_node {
 	if ($result = $db->query($sql))
 	    if ($row = $db->fetch_array($result)) {
 		$this->s = $row;
+		
+		switch ($row["server_type"]) {
+			case "storage":
+				$this->role = $db->fetch_array($db->query("SELECT * FROM node_storage WHERE node_id = ".$db->check($row["server_id"])));
+				break;
+			default:break;
+		}
+		
 		$this->exists = true;
 	    } else {
 		$this->exists = false;
@@ -258,6 +270,47 @@ end-volume
       * @return TBD
       */
     function install_vpsadmin_backend() {
+    }
+    
+    function update_settings($data) {
+		global $db;
+		
+		$sql = 'UPDATE servers
+				server_name = "'.$db->check($data["server_name"]).'",
+				server_type = "'.$db->check($data["server_type"]).'",
+				server_location = "'.$db->check($data["server_location"]).'",
+				server_availstat = "'.$db->check($data["server_availstat"]).'",
+				server_maxvps = "'.$db->check($data["server_maxvps"]).'",
+				server_ip4 = "'.$db->check($data["server_ip4"]).'",
+				server_path_vz = "'.$db->check($data["server_path_vz"]).'"';
+		$db->query($sql);
+		
+		switch ($data["server_type"]) {
+			case "storage":
+				if (isset($data["storage_root_dataset"])) {
+					$db->query("INSERT INTO node_storage (node_id, root_dataset, root_path, type, user_export, user_mount)
+						VALUES ('".$this->s["server_id"]."', '".$data["storage_root_dataset"]."', '".$data["storage_root_path"]."',
+						'".$data["storage_type"]."', '".$data["storage_user_export"]."', '".$data["storage_user_mount"]."')
+						ON DUPLICATE KEY UPDATE
+						root_dataset = '".$data["storage_root_dataset"]."',
+						root_path = '".$data["storage_root_path"]."',
+						type = '".$data["storage_type"]."',
+						user_export = '".$data["storage_user_export"]."',
+						user_mount = '".$data["storage_user_mount"]."'
+					");
+				}
+				break;
+			default:break;
+		}
+		
+		if ($data["server_type"] != $this->s["server_type"]) {
+			switch ($data["server_type"]) {
+				case "storage":
+					$db->query("DELETE FROM node_storage WHERE node_id = " . $db->check($this->s["server_id"]));
+					break;
+				default:break;
+			}
+		}
     }
 }
 
