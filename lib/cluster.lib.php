@@ -7,6 +7,7 @@
     Copyright (C) 2008-2011 Pavel Snajdr, snajpa@snajpa.net
 */
 
+$NODE_TYPES = array('node', 'mailer', 'storage');
 $STORAGE_TYPES = array("per_member" => _("Per member"), "per_vps" => _("Per VPS"));
 $STORAGE_MOUNT_TYPES = array("none" => _("None"), "ro" => _("Read only"), "rw" => _("Read and write"));
 

@@ -135,8 +135,12 @@ function template_by_id ($id) {
     return false;
 }
 
-function list_servers($without_id = false, $roles = array('node', 'backuper', 'mailer', 'storage')) {
+function list_servers($without_id = false, $roles = NULL) {
     global $db;
+    
+	if ($roles === NULL)
+		$roles = $NODE_TYPES;
+	
 	if ($without_id)
 		$sql = 'SELECT * FROM servers WHERE server_id != \''.$db->check($without_id).'\' AND server_type IN (\''.implode("','", $roles).'\') ORDER BY server_location,server_id';
 	else

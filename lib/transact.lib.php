@@ -56,8 +56,12 @@ define ('T_ENABLE_FUSE', 8004);
 define ('T_SPECIAL_ISPCP', 8101);
 define ('T_MAIL_SEND', 9001);
 
-function add_transaction_clusterwide($m_id, $vps_id, $t_type, $t_param = array(), $server_types = array('node', 'backuper', 'mailer', 'storage')) {
+function add_transaction_clusterwide($m_id, $vps_id, $t_type, $t_param = array(), $server_types = NULL) {
     global $db, $cluster;
+	
+	if ($server_types === NULL)
+		$server_types = $NODE_TYPES;
+	
     $sql = "INSERT INTO transaction_groups
 		    SET is_clusterwide=1";
     $db->query_trans($sql);
