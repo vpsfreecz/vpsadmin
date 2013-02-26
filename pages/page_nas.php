@@ -1,5 +1,31 @@
 <?php
 
+function export_add_form() {
+	global $xtpl, $NAS_QUOTA_UNITS;
+	
+	$xtpl->table_title(_("Add export"));
+	$xtpl->form_create('?page=nas&action=export_add_save', 'post');
+	if ($_SESSION["is_admin"])
+		$xtpl->form_add_select(_("Member").':', 'member', members_list(), $_POST["member"]);
+	$xtpl->form_add_select(_("Node").':', 'node', get_nas_node_list_where("user_export = 1"), $_POST["node"]);
+// 			$xtpl->form_add_select(_("Parent export").':', 'parent_id', get_nas_export_list(), '', _("Node and parent export's node must be the same"));
+	if ($_SESSION["is_admin"])
+		$xtpl->form_add_input(_("Dataset").':', 'text', '30', 'dataset', $_POST["dataset"], _("Allowed chars: a-z A-Z 0-9 _ : . -"));
+	$xtpl->form_add_input(_("Path").':', 'text', '30', 'path', $_POST["path"], _("Allowed chars: a-z A-Z 0-9 _ : . -"));
+	
+	$xtpl->table_td(_("Quota").':');
+	$xtpl->form_add_input_pure('text', '30', 'quota_val', $_POST["quota_val"] ? $_POST["quota_val"] : '0');
+	$xtpl->form_add_select_pure('quota_unit', $NAS_QUOTA_UNITS, $_POST["quota_unit"]);
+	$xtpl->table_tr();
+	
+	if ($_SESSION["is_admin"])
+		$xtpl->form_add_checkbox(_("User editable").':', 'user_editable', '1', $_POST["user_editable"]);
+	
+	$xtpl->form_out(_("Export"));
+	
+	$xtpl->sbar_add(_("Back"), '?page=nas');
+}
+
 if ($_SESSION["logged_in"]) {
 	
 	$list_nas = false;
@@ -8,27 +34,7 @@ if ($_SESSION["logged_in"]) {
 	
 	switch ($_GET["action"]) {
 		case "export_add":
-			$xtpl->table_title(_("Add export"));
-			$xtpl->form_create('?page=nas&action=export_add_save', 'post');
-			if ($_SESSION["is_admin"])
-				$xtpl->form_add_select(_("Member").':', 'member', members_list());
-			$xtpl->form_add_select(_("Node").':', 'node', get_nas_node_list_where("user_export = 1"));
-// 			$xtpl->form_add_select(_("Parent export").':', 'parent_id', get_nas_export_list(), '', _("Node and parent export's node must be the same"));
-			if ($_SESSION["is_admin"])
-				$xtpl->form_add_input(_("Dataset").':', 'text', '30', 'dataset', '', '');
-			$xtpl->form_add_input(_("Path").':', 'text', '30', 'path', '', '');
-			
-			$xtpl->table_td(_("Quota").':');
-			$xtpl->form_add_input_pure('text', '30', 'quota_val', '0');
-			$xtpl->form_add_select_pure('quota_unit', $NAS_QUOTA_UNITS);
-			$xtpl->table_tr();
-			
-			if ($_SESSION["is_admin"])
-				$xtpl->form_add_checkbox(_("User editable").':', 'user_editable', '1', false);
-			
-			$xtpl->form_out(_("Export"));
-			
-			$xtpl->sbar_add(_("Back"), '?page=nas');
+			export_add_form();
 			break;
 			
 		case "export_add_save":
@@ -36,23 +42,35 @@ if ($_SESSION["logged_in"]) {
 				$exportable_nodes = get_nas_node_list_where("user_export = 1");
 				$q = $_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]);
 				$ok = false;
+				$m = new member_load($_POST["member"]);
 				
 				foreach ($exportable_nodes as $n_id => $n) {
 					if ($n_id == $_POST["node"])
 						$ok = true;
 				}
 				
-				if ($ok)
+				$allowed = "/^[a-zA-Z0-9\/\-\:\.\_]+$/";
+				$path = trim($_POST["path"]);
+				$ds = trim($_POST["dataset"]);
+				
+				if (!preg_match($allowed, $path)) {
+					$xtpl->perex(_("Path contains forbidden characters"), '');
+					export_add_form();
+				} else if ($_SESSION["is_admin"] && !preg_match($allowed, $ds)) {
+					$xtpl->perex(_("Dataset contains forbidden characters"), '');
+					export_add_form();
+				} else if ($ok && $m->exists) {
 					nas_export_add(
 						$_SESSION["is_admin"] ? $_POST["member"] : $_SESSION["member"]["m_id"],
 						$_POST["node"],
-						$_SESSION["is_admin"] ? $_POST["dataset"] : NULL,
-						$_POST["path"],
+						$_SESSION["is_admin"] ? $ds : NULL,
+						$path,
 						$q,
 						$_SESSION["is_admin"] ? $_POST["user_editable"] : -1
 					);
-			
-			$list_nas = true;
+					
+					$list_nas = true;
+				}
 			break;
 		
 		case "export_edit":
