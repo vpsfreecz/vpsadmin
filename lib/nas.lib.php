@@ -62,7 +62,7 @@ function nas_export_add($member, $node, $dataset, $path, $quota, $user_editable)
 				dataset = '".$db->check($dataset)."',
 				path = '".$db->check($path)."',
 				quota = '".$db->check($quota)."',
-				user_editable = '".$db->check( $user_editable === NULL ? '1' : $user_editable )."'");
+				user_editable = '".( $user_editable == -1 ? '1' : ($user_editable ? '1' : '0') )."'");
 	
 	// FIXME: add transact to do zfs create & zfs set sharenfs
 }
@@ -72,8 +72,8 @@ function nas_export_update($id, $quota, $user_editable) {
 	
 	$update = "";
 	
-	if ($user_editable !== NULL)
-		$update = ", user_editable = '".$db->check($user_editable)."'";
+	if ($user_editable != -1)
+		$update = ", user_editable = ".($user_editable ? '1' : '0')."";
 	
 	$db->query("UPDATE storage_export SET quota = '".$db->check($quota)."' ".$update." WHERE id = '".$db->check($id)."'");
 }

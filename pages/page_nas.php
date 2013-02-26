@@ -49,7 +49,7 @@ if ($_SESSION["logged_in"]) {
 						$_SESSION["is_admin"] ? $_POST["dataset"] : NULL,
 						$_POST["path"],
 						$q,
-						$_SESSION["is_admin"] ? $_POST["user_editable"] : NULL
+						$_SESSION["is_admin"] ? $_POST["user_editable"] : -1
 					);
 			
 			$list_nas = true;
@@ -68,7 +68,7 @@ if ($_SESSION["logged_in"]) {
 				$xtpl->form_add_select_pure('quota_unit', array("m" => "MiB", "g" => "GiB", "t" => "TiB"), $q[1]);
 				$xtpl->table_tr();
 				if ($_SESSION["is_admin"])
-					$xtpl->form_add_checkbox(_("User editable").':', 'user_editable', '1', false);
+					$xtpl->form_add_checkbox(_("User editable").':', 'user_editable', '1', $e["user_editable"]);
 				$xtpl->form_out(_("Save"));
 			}
 			
@@ -81,7 +81,7 @@ if ($_SESSION["logged_in"]) {
 				// FIXME: control if quota is not less than used
 				
 				if (nas_can_user_manage_export($e))
-					nas_export_update($_GET["id"], $_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]), $_SESSION["is_admin"] ? $_POST["user_editable"] : NULL);
+					nas_export_update($_GET["id"], $_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]), $_SESSION["is_admin"] ? $_POST["user_editable"] : -1);
 				
 				$xtpl->perex(_("Export updated."), '');
 			}
