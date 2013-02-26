@@ -305,7 +305,6 @@ switch($_REQUEST["action"]) {
 				$params["templ_id"] = $_REQUEST["id"];
 				add_transaction($_SESSION["member"]["m_id"], $node->s["server_id"], 0, T_CLUSTER_TEMPLATE_DELETE, $params);
 			}
-			$cluster->delete_template($template["templ_id"]);
 			} else {
 			$list_templates = true;
 			}
@@ -454,7 +453,7 @@ switch($_REQUEST["action"]) {
 					$xtpl->form_add_input(_("Root path").':', 'text', '30', 'storage_root_path', $node->role["root_path"]);
 					$xtpl->form_add_select(_("Storage type").':', 'storage_type', $STORAGE_TYPES, $node->role["type"]);
 					$xtpl->form_add_checkbox(_("User export").':', 'storage_user_export', '1', $node->role["user_export"], _("Can user manage exports?"));
-					$xtpl->form_add_select(_("User mount").':', 'storage_user_mount', $STORAGE_MOUNT_TYPES, $node->role["user_mount"]);
+					$xtpl->form_add_select(_("User mount").':', 'storage_user_mount', $STORAGE_MOUNT_MODES, $node->role["user_mount"]);
 					break;
 				default:break;
 			}
@@ -661,6 +660,21 @@ switch($_REQUEST["action"]) {
 		$cluster_cfg->set("api_enabled", $_REQUEST["api_enabled"]);
 		$cluster_cfg->set("api_key", $_REQUEST["api_key"]);
 		$xtpl->perex(_("API settings saved"), '');
+		$list_nodes = true;
+		break;
+	case "nas_settings":
+		$xtpl->title2("Manage NAS");
+		$xtpl->form_create('?page=cluster&action=nas_settings_save', 'post');
+		$xtpl->form_add_input(_("Default mount options").':', 'text', '40', 'mount_options', $cluster_cfg->get("nas_default_mount_options"), '');
+		$xtpl->form_add_input(_("Default umount options").':', 'text', '40', 'umount_options', $cluster_cfg->get("nas_default_umount_options"), '');
+		$xtpl->form_out(_("Save changes"));
+		
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		break;
+	case "nas_settings_save":
+		$cluster_cfg->set("nas_default_mount_options", $_POST["mount_options"]);
+		$cluster_cfg->set("nas_default_umount_options", $_POST["umount_options"]);
+		$xtpl->perex(_("NAS settings saved"), '');
 		$list_nodes = true;
 		break;
 	case "playground_settings":
@@ -1193,6 +1207,7 @@ if ($list_nodes) {
 	$xtpl->sbar_add(_("Manage Mailer"), '?page=cluster&action=mailer');
 	$xtpl->sbar_add(_("Manage Payments"), '?page=cluster&action=payments_settings');
 	$xtpl->sbar_add(_("Manage API"), '?page=cluster&action=api_settings');
+	$xtpl->sbar_add(_("Manage NAS"), '?page=cluster&action=nas_settings');
 	$xtpl->sbar_add(_("Manage playground"), '?page=cluster&action=playground_settings');
 	$xtpl->sbar_add(_("VPS mass management"), '?page=cluster&action=mass_management');
 	$xtpl->sbar_add(_("Notice board & log"), '?page=cluster&action=noticeboard');

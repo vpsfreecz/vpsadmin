@@ -57,7 +57,7 @@ define ('T_SPECIAL_ISPCP', 8101);
 define ('T_MAIL_SEND', 9001);
 
 function add_transaction_clusterwide($m_id, $vps_id, $t_type, $t_param = array(), $server_types = NULL) {
-    global $db, $cluster;
+    global $db, $cluster, $NODE_TYPES;
 	
 	if ($server_types === NULL)
 		$server_types = $NODE_TYPES;

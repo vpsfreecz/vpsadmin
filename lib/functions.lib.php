@@ -136,7 +136,7 @@ function template_by_id ($id) {
 }
 
 function list_servers($without_id = false, $roles = NULL) {
-    global $db;
+    global $db, $NODE_TYPES;
     
 	if ($roles === NULL)
 		$roles = $NODE_TYPES;

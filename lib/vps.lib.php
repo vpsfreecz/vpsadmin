@@ -43,6 +43,22 @@ function get_vps_array($by_m_id = false, $by_server = false){
 	return $ret;
 }
 
+function get_user_vps_list() {
+	global $db;
+	
+	$ret = array();
+	
+	if ($_SESSION["is_admin"])
+		$rs = $db->query("SELECT * FROM vps INNER JOIN members m ON vps.m_id = m.m_id ORDER BY vps_id ASC");
+	else
+		$rs = $db->query("SELECT * FROM vps INNER JOIN members m ON vps.m_id = m.m_id WHERE vps.m_id = '".$db->check($_SESSION["member"]["m_id"])."' ORDER BY vps_id ASC");
+	
+	while ($row = $db->fetch_array($rs))
+		$ret[$row["vps_id"]] = $row["m_nick"].": #".$row["vps_id"]." ".$row["vps_hostname"];
+		
+	return $ret;
+}
+
 function vps_load ($veid = false) {
 	$vps = new vps_load($veid);
 	return $vps;

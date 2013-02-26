@@ -39,6 +39,7 @@ include WWW_ROOT.'lib/ajax.lib.php';
 include WWW_ROOT.'lib/mail.lib.php';
 include WWW_ROOT.'lib/log.lib.php';
 include WWW_ROOT.'lib/helpbox.lib.php';
+include WWW_ROOT.'lib/nas.lib.php';
 
 include WWW_ROOT.'lib/gettext_stream.lib.php';
 include WWW_ROOT.'lib/gettext_inc.lib.php';
@@ -118,12 +119,15 @@ if (($_GET["page"] != "login") &&
 		case 'log':
 			include WWW_ROOT.'pages/page_log.php';
 			break;
-    case 'backup':
-      include WWW_ROOT.'pages/page_backup.php';
-      break;
-    case 'gencfg':
-      include WWW_ROOT.'pages/page_gencfg.php';
-      break;
+		case 'backup':
+			include WWW_ROOT.'pages/page_backup.php';
+			break;
+		case 'nas':
+			include WWW_ROOT.'pages/page_nas.php';
+			break;
+		case 'gencfg':
+			include WWW_ROOT.'pages/page_gencfg.php';
+			break;
 		case 'lang';
 			$lang->change($_GET['newlang']);
 			break;
@@ -144,11 +148,13 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
     $xtpl->menu_add(_("VPS"),'?page=adminvps', ($_GET["page"] == 'adminvps'));
     if ($_SESSION["is_admin"]) {
 		$xtpl->menu_add(_("Backups"),'?page=backup', ($_GET["page"] == 'backup'));
+		$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
 		$xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));
 		$xtpl->menu_add(_("Cluster"),'?page=cluster', ($_GET["page"] == 'cluster'));
 		$xtpl->menu_add(_("Transaction log"),'?page=transactions', ($_GET["page"] == 'transactions'), true);
     } else {
 		$xtpl->menu_add(_("Backups"),'?page=backup', ($_GET["page"] == 'backup'));
+		$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
 		$xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));
 		$xtpl->menu_add(_("Transaction log"),'?page=transactions', ($_GET["page"] == 'transactions'), true);
     }
