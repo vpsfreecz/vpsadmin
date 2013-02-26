@@ -56,6 +56,13 @@ function nas_export_add($member, $node, $dataset, $path, $quota, $user_editable)
 	if ($dataset === NULL)
 		$dataset = $path;
 	
+	$n = new cluster_node($node);
+	
+	if ($n->role["type"] == "per_member") {
+		$dataset = $member."/".$dataset;
+		$path = $member."/".$path;
+	}
+	
 	$db->query("INSERT INTO storage_export SET
 				member_id = '".$db->check($member)."',
 				server_id = '".$db->check($node)."',
