@@ -210,6 +210,18 @@ function nas_list_mounts() {
 	return $ret;
 }
 
+function nas_can_user_manage_export($e) {
+	return $e && (($e["user_editable"] && $e["member_id"] == $_SESSION["member"]["m_id"]) || $_SESSION["is_admin"]);
+}
+
+function nas_can_user_add_mount($e, $vps) {
+	return $e && ($e["member_id"] == $_SESSION["member"]["m_id"] || $_SESSION["is_admin"]) && $vps->exists;
+}
+
+function nas_can_user_manage_mount($m, $vps) {
+	return $m && ($m["m_id"] == $_SESSION["member"]["m_id"] || $_SESSION["is_admin"]) && $vps->exists;
+}
+
 function nas_quota_to_val_unit($val) {
 	$units = array("t" => 39, "g" => 29, "m" => 19);
 	

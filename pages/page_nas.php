@@ -58,7 +58,7 @@ if ($_SESSION["logged_in"]) {
 		case "export_edit":
 			$e = nas_get_export_by_id($_GET["id"]);
 			
-			if ($e && ($e["user_editable"] || $_SESSION["is_admin"]) && $e["member_id"] == $_SESSION["member"]["m_id"]) {
+			if (nas_can_user_manage_export($e)) {
 				$q = nas_quota_to_val_unit($e["quota"]);
 				
 				$xtpl->table_title(_("Edit export")." ".$e["server_name"].": ". $e["path"]);
@@ -80,7 +80,7 @@ if ($_SESSION["logged_in"]) {
 				$e = nas_get_export_by_id($_GET["id"]);
 				// FIXME: control if quota is not less than used
 				
-				if ($e && ($e["user_editable"] || $_SESSION["is_admin"]) && $e["member_id"] == $_SESSION["member"]["m_id"])
+				if (nas_can_user_manage_export($e))
 					nas_export_update($_GET["id"], $_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]), $_SESSION["is_admin"] ? $_POST["user_editable"] : NULL);
 				
 				$xtpl->perex(_("Export updated."), '');
@@ -140,7 +140,7 @@ if ($_SESSION["logged_in"]) {
 				$e = nas_get_export_by_id($_POST["export_id"]);
 				$vps = new vps_load($_POST["vps_id"]);
 				
-				if ($e && ($e["member_id"] == $_SESSION["member"]["m_id"] || $_SESSION["is_admin"]) && $vps->exists)
+				if (nas_can_user_add_mount($e, $vps))
 					nas_mount_add(
 						$_POST["export_id"],
 						$_POST["vps_id"],
@@ -167,7 +167,7 @@ if ($_SESSION["logged_in"]) {
 				$e = nas_get_export_by_id($_POST["export_id"]);
 				$vps = new vps_load($_POST["vps_id"]);
 				
-				if ($e && ($e["member_id"] == $_SESSION["member"]["m_id"] || $_SESSION["is_admin"]) && $vps->exists)
+				if (nas_can_user_add_mount($e, $vps))
 					nas_mount_add(
 						0,
 						$_POST["vps_id"],
@@ -189,9 +189,9 @@ if ($_SESSION["logged_in"]) {
 		
 		case "mount_edit":
 			$m = nas_get_mount_by_id($_GET["id"]);
+			$vps = new vps_load($m["vps_id"]);
 			
-			if ($m && ($m["m_id"] == $_SESSION["member"]["m_id"] || $_SESSION["is_admin"])) {
-				
+			if (nas_can_user_manage_mount($m, $vps)) {
 				$e_list = get_nas_export_list();
 				$nodes = list_servers();
 				$empty = array("" => "---");
@@ -227,7 +227,7 @@ if ($_SESSION["logged_in"]) {
 				$m = nas_get_mount_by_id($_GET["id"]);
 				$vps = new vps_load($_POST["vps_id"]);
 				
-				if ($m && ($m["m_id"] == $_SESSION["member"]["m_id"] || $_SESSION["is_admin"]) && $vps->exists)
+				if (nas_can_user_manage_mount($m, $vps))
 					nas_mount_update(
 						$_GET["id"],
 						$_POST["export_id"],
@@ -288,7 +288,7 @@ if ($_SESSION["logged_in"]) {
 			$xtpl->table_td(nas_size_to_humanreadable($e["used"]));
 			$xtpl->table_td(nas_size_to_humanreadable($e["avail"]));
 			
-			if (($e["user_export"] && $e["user_editable"]) || $_SESSION["is_admin"]) {
+			if (nas_can_user_manage_export($e)) {
 				$xtpl->table_td('<a href="?page=nas&action=export_edit&id='.$e["id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 				$xtpl->table_td('<a href="?page=nas&action=export_del&id='.$e["id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
 			} else {
