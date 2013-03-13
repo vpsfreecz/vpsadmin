@@ -7,25 +7,15 @@ $STORAGE_MOUNT_MODES_RO_RW = array("ro" => _("Read only"), "rw" => _("Read and w
 $NAS_QUOTA_UNITS = array("m" => "MiB", "g" => "GiB", "t" => "TiB");
 $NAS_UNITS_TR = array("m" => 19, "g" => 29, "t" => 39);
 
-function get_nas_nodes_where($cond) {
+function nas_root_list_where($cond) {
 	global $db;
 	
 	$ret = array();
-	$rs = $db->query("SELECT * FROM servers s INNER JOIN node_storage ns ON s.server_id = ns.node_id WHERE server_type = 'storage' AND " . $cond);
+	$rs = $db->query("SELECT id, label FROM servers s INNER JOIN storage_root r ON s.server_id = r.node_id WHERE server_type = 'storage' AND " . $cond);
 	
 	while ($row = $db->fetch_array($rs)) {
-		$ret[] = $row;
+		$ret[$row["id"]] = $row["label"];
 	}
-	
-	return $ret;
-}
-
-function get_nas_node_list_where($cond) {
-	$nodes = get_nas_nodes_where($cond);
-	$ret = array();
-	
-	foreach ($nodes as $n)
-		$ret[$n["server_id"]] = $n["server_name"];
 	
 	return $ret;
 }
@@ -34,10 +24,13 @@ function get_nas_export_list() {
 	global $db;
 	
 	$ret = array();
-	$rs = $db->query("SELECT * FROM storage_export e INNER JOIN servers s ON s.server_id = e.server_id WHERE server_type = 'storage' ORDER BY s.server_id ASC, path ASC");
+	$rs = $db->query("SELECT e.id, r.label, e.path FROM storage_export e
+						INNER JOIN storage_root r ON r.id = e.root_id
+						INNER JOIN servers s ON s.server_id = r.node_id
+						WHERE server_type = 'storage' ORDER BY s.server_id ASC, path ASC");
 	
 	while ($row = $db->fetch_array($rs)) {
-		$ret[$row["id"]] = $row["server_name"].": ".$row["path"];
+		$ret[$row["id"]] = $row["label"].": ".$row["path"];
 	}
 	
 	return $ret;
@@ -46,17 +39,54 @@ function get_nas_export_list() {
 function nas_get_export_by_id($id) {
 	global $db;
 	
-	$rs = $db->query("SELECT * FROM storage_export e INNER JOIN servers s ON s.server_id = e.server_id WHERE server_type = 'storage' AND e.id = '".$db->check($id)."'");
+	$rs = $db->query("SELECT * FROM storage_export e
+						INNER JOIN storage_root r ON r.id = e.root_id
+						INNER JOIN servers s ON s.server_id = r.node_id
+						WHERE server_type = 'storage' AND e.id = '".$db->check($id)."'");
 	return $db->fetch_array($rs);
 }
 
-function nas_export_add($member, $node, $dataset, $path, $quota, $user_editable) {
+function nas_root_add($node_id, $label, $dataset, $path, $type, $user_export, $user_mount) {
+	global $db;
+	
+	$db->query("INSERT INTO storage_root SET
+					node_id = '".$db->check($node_id)."',
+					label = '".$db->check($label)."',
+					root_dataset = '".$db->check($dataset)."',
+					root_path = '".$db->check($path)."',
+					type = '".$db->check($type)."',
+					user_export = '".$db->check($user_export)."',
+					user_mount = '".$db->check($user_mount)."'");
+}
+
+function nas_root_update($root_id, $label, $dataset, $path, $type, $user_export, $user_mount) {
+	global $db;
+	
+	$db->query("UPDATE storage_root SET
+					label = '".$db->check($label)."',
+					root_dataset = '".$db->check($dataset)."',
+					root_path = '".$db->check($path)."',
+					type = '".$db->check($type)."',
+					user_export = '".$db->check($user_export)."',
+					user_mount = '".$db->check($user_mount)."'
+				WHERE id = '".$db->check($root_id)."'
+	");
+}
+
+function nas_node_id_by_root($root_id) {
+	global $db;
+	
+	$node = $db->fetch_array($db->query("SELECT node_id FROM storage_root WHERE id = '".$db->check($root_id)."'"));
+	return $node["node_id"];
+}
+
+function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable) {
 	global $db;
 	
 	if ($dataset === NULL)
 		$dataset = $path;
 	
-	$n = new cluster_node($node);
+	$n = new cluster_node(nas_node_id_by_root($root));
 	
 	if ($n->role["type"] == "per_member") {
 		$dataset = $member."/".$dataset;
@@ -65,7 +95,7 @@ function nas_export_add($member, $node, $dataset, $path, $quota, $user_editable)
 	
 	$db->query("INSERT INTO storage_export SET
 				member_id = '".$db->check($member)."',
-				server_id = '".$db->check($node)."',
+				root_id = '".$db->check($root)."',
 				dataset = '".$db->check($dataset)."',
 				path = '".$db->check($path)."',
 				quota = '".$db->check($quota)."',
@@ -172,13 +202,13 @@ function nas_list_exports() {
 	
 	if ($_SESSION["is_admin"])
 		$sql = "SELECT * FROM storage_export e
-				INNER JOIN servers s ON e.server_id = s.server_id
-				INNER JOIN node_storage ns ON ns.node_id = s.server_id
+				INNER JOIN storage_root r ON r.id = e.root_id
+				INNER JOIN servers s ON r.node_id = s.server_id
 				LEFT JOIN members m ON m.m_id = e.member_id
 				ORDER BY s.server_id ASC, path ASC";
 	else $sql = "SELECT * FROM storage_export e
-				INNER JOIN servers s ON e.server_id = s.server_id
-				INNER JOIN node_storage ns ON ns.node_id = s.server_id
+				INNER JOIN storage_root r ON r.id = e.root_id
+				INNER JOIN servers s ON r.node_id = s.server_id
 				LEFT JOIN members m ON m.m_id = e.member_id
 				WHERE e.member_id = " . $db->check($_SESSION["member"]["m_id"])."
 				ORDER BY s.server_id ASC, path ASC";
@@ -196,16 +226,18 @@ function nas_list_mounts() {
 	global $db;
 	
 	if ($_SESSION["is_admin"])
-		$sql = "SELECT m.*, e.*, s.*, m.id AS mount_id, e.server_id AS export_server_id, es.server_name AS export_server_name
+		$sql = "SELECT m.*, e.*, s.*, m.id AS mount_id, r.node_id AS export_server_id, es.server_name AS export_server_name, r.label AS root_label
 				FROM vps_mount m
 				LEFT JOIN servers s ON m.server_id = s.server_id
 				LEFT JOIN storage_export e ON m.storage_export_id = e.id
-				LEFT JOIN servers es ON e.server_id = es.server_id";
-	else $sql = "SELECT m.*, e.*, s.*, m.id AS mount_id, e.server_id AS export_server_id, es.server_name AS export_server_name
+				LEFT JOIN storage_root r ON e.root_id = r.id
+				LEFT JOIN servers es ON r.node_id = es.server_id";
+	else $sql = "SELECT m.*, e.*, s.*, m.id AS mount_id, r.node_id AS export_server_id, es.server_name AS export_server_name, r.label AS root_label
 				FROM vps_mount m
 				LEFT JOIN servers s ON m.server_id = s.server_id
 				LEFT JOIN storage_export e ON m.storage_export_id = e.id
-				LEFT JOIN servers es ON e.server_id = es.server_id
+				LEFT JOIN storage_root r ON e.root_id = r.id
+				LEFT JOIN servers es ON r.node_id = es.server_id
 				WHERE e.member_id = ".$db->check($_SESSION["member"]["m_id"]);
 	
 	$ret = array();

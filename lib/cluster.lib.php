@@ -25,7 +25,15 @@ class cluster_node {
 		
 		switch ($row["server_type"]) {
 			case "storage":
-				$this->role = $db->fetch_array($db->query("SELECT * FROM node_storage WHERE node_id = ".$db->check($row["server_id"])));
+				$this->role = array(); // FIXME: remove
+				
+				$roots = array();
+				$rs = $db->query("SELECT * FROM storage_root WHERE node_id = ".$db->check($row["server_id"]));
+				
+				while($r = $db->fetch_array($rs))
+					$roots[] = $r;
+				
+				$this->storage_roots = $roots;
 				break;
 			default:break;
 		}
@@ -65,30 +73,7 @@ class cluster_node {
 		$db->query($sql);
 		
 		switch ($data["server_type"]) {
-			case "storage":
-				if (isset($data["storage_root_dataset"])) {
-					$db->query("INSERT INTO node_storage (node_id, root_dataset, root_path, type, user_export, user_mount)
-						VALUES ('".$this->s["server_id"]."', '".$data["storage_root_dataset"]."', '".$data["storage_root_path"]."',
-						'".$data["storage_type"]."', '".$data["storage_user_export"]."', '".$data["storage_user_mount"]."')
-						ON DUPLICATE KEY UPDATE
-						root_dataset = '".$data["storage_root_dataset"]."',
-						root_path = '".$data["storage_root_path"]."',
-						type = '".$data["storage_type"]."',
-						user_export = '".$data["storage_user_export"]."',
-						user_mount = '".$data["storage_user_mount"]."'
-					");
-				}
-				break;
 			default:break;
-		}
-		
-		if ($data["server_type"] != $this->s["server_type"]) {
-			switch ($data["server_type"]) {
-				case "storage":
-					$db->query("DELETE FROM node_storage WHERE node_id = " . $db->check($this->s["server_id"]));
-					break;
-				default:break;
-			}
 		}
     }
 }

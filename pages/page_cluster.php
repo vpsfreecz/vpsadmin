@@ -432,8 +432,10 @@ switch($_REQUEST["action"]) {
 	case "node_edit":
 		$node = new cluster_node($_GET["node_id"]);
 		
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		
 		if ($node->exists) {
-			$xtpl->title2(_("Register new server into cluster"));
+			$xtpl->title2(_("Edit node"));
 			$xtpl->table_add_category('');
 			$xtpl->table_add_category('');
 			$xtpl->form_create('?page=cluster&action=node_edit_save&node_id='.$node->s["server_id"], 'post');
@@ -448,17 +450,32 @@ switch($_REQUEST["action"]) {
 					$xtpl->form_add_input(_("Max VPS count").':', 'text', '8', 'server_maxvps', $node->s["server_maxvps"]);
 					$xtpl->form_add_input(_("OpenVZ Path").':', 'text', '10', 'server_path_vz', $node->s["server_path_vz"]);
 					break;
-				case "storage":
-					$xtpl->form_add_input(_("Root dataset").':', 'text', '30', 'storage_root_dataset', $node->role["root_dataset"]);
-					$xtpl->form_add_input(_("Root path").':', 'text', '30', 'storage_root_path', $node->role["root_path"]);
-					$xtpl->form_add_select(_("Storage type").':', 'storage_type', $STORAGE_TYPES, $node->role["type"]);
-					$xtpl->form_add_checkbox(_("User export").':', 'storage_user_export', '1', $node->role["user_export"], _("Can user manage exports?"));
-					$xtpl->form_add_select(_("User mount").':', 'storage_user_mount', $STORAGE_MOUNT_MODES, $node->role["user_mount"]);
-					break;
 				default:break;
 			}
 			
 			$xtpl->form_out(_("Save"));
+			
+			switch ($node->s["server_type"]) {
+				case "storage":
+					$xtpl->table_title(_("Export roots"));
+					
+					foreach($node->storage_roots as $root) {
+						$xtpl->table_add_category('');
+						$xtpl->table_add_category('');
+						$xtpl->form_create('?page=cluster&action=node_storage_root_save&node_id='.$node->s["server_id"].'&root_id='.$root["id"], 'post');
+						$xtpl->form_add_input(_("Label").':', 'text', '30', 'storage_label', $root["label"]);
+						$xtpl->form_add_input(_("Root dataset").':', 'text', '30', 'storage_root_dataset', $root["root_dataset"]);
+						$xtpl->form_add_input(_("Root path").':', 'text', '30', 'storage_root_path', $root["root_path"]);
+						$xtpl->form_add_select(_("Storage type").':', 'storage_type', $STORAGE_TYPES, $root["type"]);
+						$xtpl->form_add_checkbox(_("User export").':', 'storage_user_export', '1', $root["user_export"], _("Can user manage exports?"));
+						$xtpl->form_add_select(_("User mount").':', 'storage_user_mount', $STORAGE_MOUNT_MODES, $root["user_mount"]);
+						$xtpl->form_out(_("Save"));
+					}
+					
+					$xtpl->sbar_add(_("Add export root"), '?page=cluster&action=node_storage_root_add&node_id='.$node->s["server_id"]);
+					break;
+				default:break;
+			}
 		}
 		break;
 	case "node_edit_save":
@@ -470,6 +487,53 @@ switch($_REQUEST["action"]) {
 		}
 		
 		$list_nodes = true;
+		break;
+	case "node_storage_root_add":
+		$node = new cluster_node($_GET["node_id"]);
+		
+		if ($node->exists) {
+			$xtpl->title2(_("Add export root"));
+			$xtpl->table_add_category('');
+			$xtpl->table_add_category('');
+			$xtpl->form_create('?page=cluster&action=node_storage_root_save&node_id='.$node->s["server_id"], 'post');
+			$xtpl->form_add_input(_("Label").':', 'text', '30', 'storage_label');
+			$xtpl->form_add_input(_("Root dataset").':', 'text', '30', 'storage_root_dataset');
+			$xtpl->form_add_input(_("Root path").':', 'text', '30', 'storage_root_path');
+			$xtpl->form_add_select(_("Storage type").':', 'storage_type', $STORAGE_TYPES);
+			$xtpl->form_add_checkbox(_("User export").':', 'storage_user_export', '1', '', _("Can user manage exports?"));
+			$xtpl->form_add_select(_("User mount").':', 'storage_user_mount', $STORAGE_MOUNT_MODES);
+			$xtpl->form_out(_("Save"));
+		}
+		
+		break;
+	case "node_storage_root_save":
+		$node = new cluster_node($_GET["node_id"]);
+		
+		if($node->exists && $_POST["storage_root_dataset"] && $_POST["storage_root_path"]) {
+			if($_GET["root_id"]) {
+				nas_root_update(
+					$_GET["root_id"],
+					$_POST["storage_label"],
+					$_POST["storage_root_dataset"],
+					$_POST["storage_root_path"],
+					$_POST["storage_type"],
+					$_POST["storage_user_export"],
+					$_POST["storage_user_mount"]
+				);
+			} else {
+				nas_root_add(
+					$_GET["node_id"],
+					$_POST["storage_label"],
+					$_POST["storage_root_dataset"],
+					$_POST["storage_root_path"],
+					$_POST["storage_type"],
+					$_POST["storage_user_export"],
+					$_POST["storage_user_mount"]
+				);
+			}
+			
+			header('Location: ?page=cluster&action=node_edit&node_id='.$node->s["server_id"]);
+		}
 		break;
 	case "fields":
 		$xtpl->title2(_("Edit textfields"));

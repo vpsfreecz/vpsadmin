@@ -7,8 +7,7 @@ function export_add_form() {
 	$xtpl->form_create('?page=nas&action=export_add_save', 'post');
 	if ($_SESSION["is_admin"])
 		$xtpl->form_add_select(_("Member").':', 'member', members_list(), $_POST["member"]);
-	$xtpl->form_add_select(_("Node").':', 'node', get_nas_node_list_where("user_export = 1"), $_POST["node"]);
-// 			$xtpl->form_add_select(_("Parent export").':', 'parent_id', get_nas_export_list(), '', _("Node and parent export's node must be the same"));
+	$xtpl->form_add_select(_("Server").':', 'root_id', nas_root_list_where("user_export = 1"), $_POST["root_id"]);
 	if ($_SESSION["is_admin"])
 		$xtpl->form_add_input(_("Dataset").':', 'text', '30', 'dataset', $_POST["dataset"], _("Allowed chars: a-z A-Z 0-9 _ : . -"));
 	$xtpl->form_add_input(_("Path").':', 'text', '30', 'path', $_POST["path"], _("Allowed chars: a-z A-Z 0-9 _ : . -"));
@@ -39,13 +38,13 @@ if ($_SESSION["logged_in"]) {
 			
 		case "export_add_save":
 			if ($_POST["node"] && $_POST["path"])
-				$exportable_nodes = get_nas_node_list_where("user_export = 1");
+				
 				$q = $_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]);
 				$ok = false;
 				$m = new member_load($_POST["member"]);
 				
-				foreach ($exportable_nodes as $n_id => $n) {
-					if ($n_id == $_POST["node"])
+				foreach (nas_root_list_where("user_export = 1") as $r_id => $r) {
+					if ($r_id == $_POST["root_id"])
 						$ok = true;
 				}
 				
@@ -62,7 +61,7 @@ if ($_SESSION["logged_in"]) {
 				} else if ($ok && $m->exists) {
 					nas_export_add(
 						$_SESSION["is_admin"] ? $_POST["member"] : $_SESSION["member"]["m_id"],
-						$_POST["node"],
+						$_POST["root_id"],
 						$_SESSION["is_admin"] ? $ds : NULL,
 						$path,
 						$q,
@@ -216,11 +215,11 @@ if ($_SESSION["logged_in"]) {
 				
 				$xtpl->table_title(_("Edit mount")." ".$m["dst"]);
 				$xtpl->form_create('?page=nas&action=mount_edit_save&id='.$_GET["id"], 'post');
-				$xtpl->form_add_select(_("Export").':', 'export_id', array_merge($empty, $e_list), (int)$m["storage_export_id"]);
+				$xtpl->form_add_select(_("Export").':', 'export_id', $empty + $e_list, (int)$m["storage_export_id"]);
 				$xtpl->form_add_select(_("VPS").':', 'vps_id', get_user_vps_list(), $m["vps_id"]);
-				$xtpl->form_add_select(_("Access mode").':', 'access_mode', $STORAGE_MOUNT_MODES_RO_RW, $m["mdode"]);
+				$xtpl->form_add_select(_("Access mode").':', 'access_mode', $STORAGE_MOUNT_MODES_RO_RW, $m["mode"]);
 				if ($_SESSION["is_admin"]) {
-					$xtpl->form_add_select(_("Source node").':', 'source_node_id', array_merge($empty, $nodes), $m["server_id"], _("Has no effect if export is selected."));
+					$xtpl->form_add_select(_("Source node").':', 'source_node_id', $empty + $nodes, $m["server_id"], _("Has no effect if export is selected."));
 					$xtpl->form_add_input(_("Source").':', 'text', '50', 'src', $m["src"], _("Path is relative to source node root if specified, otherwise absolute. Has no effect if export is selected."));
 				}
 				$xtpl->form_add_input(_("Destination").':', 'text', '50', 'dst', $m["dst"], _("Path is relative to VPS root"));
@@ -284,7 +283,7 @@ if ($_SESSION["logged_in"]) {
 			
 		$xtpl->table_title(_("Exports"));
 		$xtpl->table_add_category(_("Member"));
-		$xtpl->table_add_category(_("Node"));
+		$xtpl->table_add_category(_("Server"));
 		if ($_SESSION["is_admin"])
 			$xtpl->table_add_category(_("Dataset"));
 		$xtpl->table_add_category(_("Path"));
@@ -298,7 +297,7 @@ if ($_SESSION["logged_in"]) {
 		
 		foreach ($exports as $e) {
 			$xtpl->table_td($e["m_nick"]);
-			$xtpl->table_td($e["server_name"]);
+			$xtpl->table_td($e["label"]);
 			if ($_SESSION["is_admin"])
 				$xtpl->table_td($e["dataset"]);
 			$xtpl->table_td($e["path"]);
@@ -333,7 +332,7 @@ if ($_SESSION["logged_in"]) {
 		
 		foreach ($mounts as $m) {
 			$xtpl->table_td($m["vps_id"]);
-			$xtpl->table_td($m["storage_export_id"] ? $m["export_server_name"].":".$m["path"] : $m["server_name"].":".$m["src"]);
+			$xtpl->table_td($m["storage_export_id"] ? $m["root_label"].":".$m["path"] : $m["server_name"].":".$m["src"]);
 			$xtpl->table_td($m["dst"]);
 // 			$xtpl->table_td($m["options"]);
 			$xtpl->table_td('<a href="?page=nas&action=mount&id='.$m["mount_id"].'">'._("Mount").'</a>');
