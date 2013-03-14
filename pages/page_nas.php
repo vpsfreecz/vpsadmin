@@ -39,7 +39,6 @@ if ($_SESSION["logged_in"]) {
 		case "export_add_save":
 			if ($_POST["node"] && $_POST["path"])
 				
-				$q = $_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]);
 				$ok = false;
 				$m = new member_load($_SESSION["is_admin"] ? $_POST["member"] : $_SESSION["member"]["m_id"]);
 				
@@ -64,7 +63,7 @@ if ($_SESSION["logged_in"]) {
 						$_POST["root_id"],
 						$_SESSION["is_admin"] ? $ds : NULL,
 						$path,
-						$q,
+						$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]),
 						$_SESSION["is_admin"] ? $_POST["user_editable"] : -1
 					);
 					
