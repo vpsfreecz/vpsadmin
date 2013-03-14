@@ -7,7 +7,7 @@ function export_add_form() {
 	$xtpl->form_create('?page=nas&action=export_add_save', 'post');
 	if ($_SESSION["is_admin"])
 		$xtpl->form_add_select(_("Member").':', 'member', members_list(), $_POST["member"]);
-	$xtpl->form_add_select(_("Server").':', 'root_id', nas_root_list_where("user_export = 1"), $_POST["root_id"]);
+	$xtpl->form_add_select(_("Server").':', 'root_id', nas_root_list_where($_SESSION["is_admin"] ? '' : "user_export = 1"), $_POST["root_id"]);
 	if ($_SESSION["is_admin"])
 		$xtpl->form_add_input(_("Dataset").':', 'text', '30', 'dataset', $_POST["dataset"], _("Allowed chars: a-z A-Z 0-9 _ : . -"));
 	$xtpl->form_add_input(_("Path").':', 'text', '30', 'path', $_POST["path"], _("Allowed chars: a-z A-Z 0-9 _ : . -"));
@@ -41,9 +41,9 @@ if ($_SESSION["logged_in"]) {
 				
 				$q = $_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]);
 				$ok = false;
-				$m = new member_load($_POST["member"]);
+				$m = new member_load($_SESSION["is_admin"] ? $_POST["member"] : $_SESSION["member"]["m_id"]);
 				
-				foreach (nas_root_list_where("user_export = 1") as $r_id => $r) {
+				foreach (nas_root_list_where($_SESSION["is_admin"] ? '' : "user_export = 1") as $r_id => $r) {
 					if ($r_id == $_POST["root_id"])
 						$ok = true;
 				}

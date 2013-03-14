@@ -10,8 +10,13 @@ $NAS_UNITS_TR = array("m" => 19, "g" => 29, "t" => 39);
 function nas_root_list_where($cond) {
 	global $db;
 	
+	$sql = "SELECT id, label FROM servers s INNER JOIN storage_root r ON s.server_id = r.node_id WHERE server_type = 'storage'";
+	
+	if($cond)
+		$sql .= " AND " . $cond;
+	
 	$ret = array();
-	$rs = $db->query("SELECT id, label FROM servers s INNER JOIN storage_root r ON s.server_id = r.node_id WHERE server_type = 'storage' AND " . $cond);
+	$rs = $db->query($sql);
 	
 	while ($row = $db->fetch_array($rs)) {
 		$ret[$row["id"]] = $row["label"];
@@ -23,11 +28,20 @@ function nas_root_list_where($cond) {
 function get_nas_export_list() {
 	global $db;
 	
+	if($_SESSION["is_admin"])
+		$sql = "SELECT e.id, r.label, e.path FROM storage_export e
+				INNER JOIN storage_root r ON r.id = e.root_id
+				INNER JOIN servers s ON s.server_id = r.node_id
+				WHERE server_type = 'storage' ORDER BY s.server_id ASC, path ASC";
+	else
+		$sql = "SELECT e.id, r.label, e.path FROM storage_export e
+				INNER JOIN storage_root r ON r.id = e.root_id
+				INNER JOIN servers s ON s.server_id = r.node_id
+				WHERE server_type = 'storage' AND e.member_id = '".$db->check($_SESSION["member"]["m_id"])."'
+				ORDER BY s.server_id ASC, path ASC";
+	
 	$ret = array();
-	$rs = $db->query("SELECT e.id, r.label, e.path FROM storage_export e
-						INNER JOIN storage_root r ON r.id = e.root_id
-						INNER JOIN servers s ON s.server_id = r.node_id
-						WHERE server_type = 'storage' ORDER BY s.server_id ASC, path ASC");
+	$rs = $db->query($sql);
 	
 	while ($row = $db->fetch_array($rs)) {
 		$ret[$row["id"]] = $row["label"].": ".$row["path"];
