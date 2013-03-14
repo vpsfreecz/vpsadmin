@@ -3,6 +3,7 @@
 $STORAGE_TYPES = array("per_member" => _("Per member"), "per_vps" => _("Per VPS"));
 $STORAGE_MOUNT_TYPES = array("bind" => _("Bind"), "nfs" => _("NFS"));
 $STORAGE_MOUNT_MODES = array("none" => _("None"), "ro" => _("Read only"), "rw" => _("Read and write"));
+$STORAGE_MOUNT_MODES_RO = array("ro" => _("Read only"));
 $STORAGE_MOUNT_MODES_RO_RW = array("ro" => _("Read only"), "rw" => _("Read and write"));
 $NAS_QUOTA_UNITS = array("m" => "MiB", "g" => "GiB", "t" => "TiB");
 $NAS_UNITS_TR = array("m" => 19, "g" => 29, "t" => 39);
@@ -149,6 +150,13 @@ function nas_mount_add($e_id, $vps_id, $access, $node_id, $src, $dst, $m_opts, $
 	if ($u_opts === NULL)
 		$u_opts = $cluster_cfg->get("nas_default_umount_options");
 	
+	if($e_id) {
+		$export = nas_get_export_by_id($e_id);
+		
+		if($export["user_mount"] == "ro")
+			$access = "ro";
+	}
+	
 	$db->query("INSERT INTO vps_mount SET
 				storage_export_id = '".$db->check($e_id)."',
 				vps_id = '".$db->check($vps_id)."',
@@ -174,6 +182,13 @@ function nas_mount_add($e_id, $vps_id, $access, $node_id, $src, $dst, $m_opts, $
 
 function nas_mount_update($m_id, $e_id, $vps_id, $access, $node_id, $src, $dst, $m_opts, $u_opts, $type, $premount, $postmount, $preumount, $postumount, $now) {
 	global $db;
+	
+	if($e_id) {
+		$export = nas_get_export_by_id($e_id);
+		
+		if($export["user_mount"] == "ro")
+			$access = "ro";
+	}
 	
 	$sql = "UPDATE vps_mount SET
 			storage_export_id = '".$db->check($e_id)."',
