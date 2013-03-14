@@ -306,8 +306,8 @@ if ($_SESSION["logged_in"]) {
 			$xtpl->table_td(nas_size_to_humanreadable($e["avail"]));
 			
 			if (nas_can_user_manage_export($e)) {
-				$xtpl->table_td('<a href="?page=nas&action=export_edit&id='.$e["id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-				$xtpl->table_td('<a href="?page=nas&action=export_del&id='.$e["id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+				$xtpl->table_td('<a href="?page=nas&action=export_edit&id='.$e["export_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+				$xtpl->table_td('<a href="?page=nas&action=export_del&id='.$e["export_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
 			} else {
 				$xtpl->table_td('');
 				$xtpl->table_td('');

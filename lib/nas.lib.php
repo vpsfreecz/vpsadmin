@@ -215,12 +215,12 @@ function nas_list_exports() {
 	global $db;
 	
 	if ($_SESSION["is_admin"])
-		$sql = "SELECT * FROM storage_export e
+		$sql = "SELECT *, e.id AS export_id FROM storage_export e
 				INNER JOIN storage_root r ON r.id = e.root_id
 				INNER JOIN servers s ON r.node_id = s.server_id
 				LEFT JOIN members m ON m.m_id = e.member_id
 				ORDER BY s.server_id ASC, path ASC";
-	else $sql = "SELECT * FROM storage_export e
+	else $sql = "SELECT *, e.id AS export_id FROM storage_export e
 				INNER JOIN storage_root r ON r.id = e.root_id
 				INNER JOIN servers s ON r.node_id = s.server_id
 				LEFT JOIN members m ON m.m_id = e.member_id
