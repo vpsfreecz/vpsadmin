@@ -744,53 +744,6 @@ function ipadd($ip, $type = 4) {
 	return $clone;
   }
   
-  function mount_add($type) {
-	global $db;
-	
-	$mode = "";
-	$src = "";
-	$dst = "";
-	$options = "";
-	$server = "NULL";
-	
-	switch($type) {
-		case "backup":
-			$mode = "nfs";
-			$src = "/storage/vpsfree.cz/backup/" . $this->veid;
-			$dst = "/var/lib/vz/root/" . $this->veid . "/vpsadmin_backuper";
-			$options = "-r -n -t nfs -o bg,ro,vers=3,proto=udp"; // FIXME: this should probably be somewhere in settings
-			
-			$backuper = $this->get_backuper_server();
-			$server = $backuper["server_id"];
-			
-			break;
-		
-		case "nas":
-			return;
-			break;
-		
-		default:return;
-	}
-	
-	$cnt = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps_mount WHERE vps_id = ".$db->check($this->veid)." AND dst = '".$db->check($dst)."'"));
-	
-	if ($cnt["cnt"] == 0) {
-		$db->query("INSERT INTO vps_mount SET vps_id = ".$db->check($this->veid).",
-					mode = '".$db->check($mode)."',
-					src = '".$db->check($src)."',
-					dst = '".$db->check($dst)."',
-					type = '".$db->check($type)."',
-					options = '".$db->check($options)."',
-					server_id = ".$db->check($server)."");
-	}
-  }
-  
-  function mount_del($type) {
-	global $db;
-	
-	$db->query("DELETE FROM vps_mount WHERE vps_id = " . $db->check($this->veid) . " AND type = '".$db->check($type)."'");
-  }
-  
   function mount_regen() {
 	$mounts = $this->get_mounts();
 	$ret = array();
