@@ -1,3 +1,6 @@
+* Thu Mar 14 2013 - version 1.7.3
+- Fix config: numbers are not strings
+
 * Sun Feb 09 2013 - version 1.7.2
 - Fix ve_mountfile calling
 
