@@ -460,6 +460,8 @@ switch($_REQUEST["action"]) {
 					$xtpl->table_title(_("Export roots"));
 					
 					foreach($node->storage_roots as $root) {
+						$q = nas_quota_to_val_unit($root["quota"]);
+						
 						$xtpl->table_add_category('');
 						$xtpl->table_add_category('');
 						$xtpl->form_create('?page=cluster&action=node_storage_root_save&node_id='.$node->s["server_id"].'&root_id='.$root["id"], 'post');
@@ -469,6 +471,10 @@ switch($_REQUEST["action"]) {
 						$xtpl->form_add_select(_("Storage type").':', 'storage_type', $STORAGE_TYPES, $root["type"]);
 						$xtpl->form_add_checkbox(_("User export").':', 'storage_user_export', '1', $root["user_export"], _("Can user manage exports?"));
 						$xtpl->form_add_select(_("User mount").':', 'storage_user_mount', $STORAGE_MOUNT_MODES, $root["user_mount"]);
+						$xtpl->table_td(_("Quota").':');
+						$xtpl->form_add_input_pure('text', '30', 'quota_val', $q[0]);
+						$xtpl->form_add_select_pure('quota_unit', $NAS_QUOTA_UNITS, $q[1]);
+						$xtpl->table_tr();
 						$xtpl->form_out(_("Save"));
 					}
 					
@@ -502,6 +508,10 @@ switch($_REQUEST["action"]) {
 			$xtpl->form_add_select(_("Storage type").':', 'storage_type', $STORAGE_TYPES);
 			$xtpl->form_add_checkbox(_("User export").':', 'storage_user_export', '1', '', _("Can user manage exports?"));
 			$xtpl->form_add_select(_("User mount").':', 'storage_user_mount', $STORAGE_MOUNT_MODES);
+			$xtpl->table_td(_("Quota").':');
+			$xtpl->form_add_input_pure('text', '30', 'quota_val', $_POST["quota_val"] ? $_POST["quota_val"] : '0');
+			$xtpl->form_add_select_pure('quota_unit', $NAS_QUOTA_UNITS, $_POST["quota_unit"]);
+			$xtpl->table_tr();
 			$xtpl->form_out(_("Save"));
 		}
 		
@@ -518,7 +528,8 @@ switch($_REQUEST["action"]) {
 					$_POST["storage_root_path"],
 					$_POST["storage_type"],
 					$_POST["storage_user_export"],
-					$_POST["storage_user_mount"]
+					$_POST["storage_user_mount"],
+					$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]])
 				);
 			} else {
 				nas_root_add(
@@ -528,7 +539,8 @@ switch($_REQUEST["action"]) {
 					$_POST["storage_root_path"],
 					$_POST["storage_type"],
 					$_POST["storage_user_export"],
-					$_POST["storage_user_mount"]
+					$_POST["storage_user_mount"],
+					$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]])
 				);
 			}
 			

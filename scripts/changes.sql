@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS `storage_root` (
   `type` enum('per_member','per_vps') COLLATE utf8_czech_ci NOT NULL,
   `user_export` tinyint(4) NOT NULL DEFAULT '0',
   `user_mount` enum('none','ro','rw') COLLATE utf8_czech_ci NOT NULL DEFAULT 'none',
+  `quota` bigint(20) unsigned NOT NULL,
+  `used` bigint(20) unsigned NOT NULL,
+  `avail` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 

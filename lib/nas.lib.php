@@ -61,7 +61,7 @@ function nas_get_export_by_id($id) {
 	return $db->fetch_array($rs);
 }
 
-function nas_root_add($node_id, $label, $dataset, $path, $type, $user_export, $user_mount) {
+function nas_root_add($node_id, $label, $dataset, $path, $type, $user_export, $user_mount, $quota) {
 	global $db;
 	
 	$db->query("INSERT INTO storage_root SET
@@ -71,10 +71,11 @@ function nas_root_add($node_id, $label, $dataset, $path, $type, $user_export, $u
 					root_path = '".$db->check($path)."',
 					type = '".$db->check($type)."',
 					user_export = '".$db->check($user_export)."',
-					user_mount = '".$db->check($user_mount)."'");
+					user_mount = '".$db->check($user_mount)."',
+					quota = '".$db->check($quota)."'");
 }
 
-function nas_root_update($root_id, $label, $dataset, $path, $type, $user_export, $user_mount) {
+function nas_root_update($root_id, $label, $dataset, $path, $type, $user_export, $user_mount, $quota) {
 	global $db;
 	
 	$db->query("UPDATE storage_root SET
@@ -83,7 +84,8 @@ function nas_root_update($root_id, $label, $dataset, $path, $type, $user_export,
 					root_path = '".$db->check($path)."',
 					type = '".$db->check($type)."',
 					user_export = '".$db->check($user_export)."',
-					user_mount = '".$db->check($user_mount)."'
+					user_mount = '".$db->check($user_mount)."',
+					quota = '".$db->check($quota)."'
 				WHERE id = '".$db->check($root_id)."'
 	");
 }
@@ -230,12 +232,14 @@ function nas_list_exports() {
 	global $db;
 	
 	if ($_SESSION["is_admin"])
-		$sql = "SELECT *, e.id AS export_id FROM storage_export e
+		$sql = "SELECT *, e.id AS export_id, e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail
+				FROM storage_export e
 				INNER JOIN storage_root r ON r.id = e.root_id
 				INNER JOIN servers s ON r.node_id = s.server_id
 				LEFT JOIN members m ON m.m_id = e.member_id
 				ORDER BY s.server_id ASC, path ASC";
-	else $sql = "SELECT *, e.id AS export_id FROM storage_export e
+	else $sql = "SELECT *, e.id AS export_id, e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail
+				FROM storage_export e
 				INNER JOIN storage_root r ON r.id = e.root_id
 				INNER JOIN servers s ON r.node_id = s.server_id
 				LEFT JOIN members m ON m.m_id = e.member_id
@@ -255,13 +259,15 @@ function nas_list_mounts() {
 	global $db;
 	
 	if ($_SESSION["is_admin"])
-		$sql = "SELECT m.*, e.*, s.*, m.id AS mount_id, r.node_id AS export_server_id, es.server_name AS export_server_name, r.label AS root_label
+		$sql = "SELECT m.*, e.*, s.*, m.id AS mount_id, r.node_id AS export_server_id, es.server_name AS export_server_name, r.label AS root_label,
+					e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail
 				FROM vps_mount m
 				LEFT JOIN servers s ON m.server_id = s.server_id
 				LEFT JOIN storage_export e ON m.storage_export_id = e.id
 				LEFT JOIN storage_root r ON e.root_id = r.id
 				LEFT JOIN servers es ON r.node_id = es.server_id";
-	else $sql = "SELECT m.*, e.*, s.*, m.id AS mount_id, r.node_id AS export_server_id, es.server_name AS export_server_name, r.label AS root_label
+	else $sql = "SELECT m.*, e.*, s.*, m.id AS mount_id, r.node_id AS export_server_id, es.server_name AS export_server_name, r.label AS root_label,
+					e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail
 				FROM vps_mount m
 				LEFT JOIN servers s ON m.server_id = s.server_id
 				LEFT JOIN storage_export e ON m.storage_export_id = e.id

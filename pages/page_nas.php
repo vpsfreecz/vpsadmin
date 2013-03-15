@@ -300,9 +300,9 @@ if ($_SESSION["logged_in"]) {
 			if ($_SESSION["is_admin"])
 				$xtpl->table_td($e["dataset"]);
 			$xtpl->table_td($e["path"]);
-			$xtpl->table_td(nas_size_to_humanreadable($e["quota"]));
-			$xtpl->table_td(nas_size_to_humanreadable($e["used"]));
-			$xtpl->table_td(nas_size_to_humanreadable($e["avail"]));
+			$xtpl->table_td(nas_size_to_humanreadable($e["export_quota"]));
+			$xtpl->table_td(nas_size_to_humanreadable($e["export_used"]));
+			$xtpl->table_td(nas_size_to_humanreadable($e["export_avail"]));
 			
 			if (nas_can_user_manage_export($e)) {
 				$xtpl->table_td('<a href="?page=nas&action=export_edit&id='.$e["export_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
