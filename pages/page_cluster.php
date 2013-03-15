@@ -475,6 +475,7 @@ switch($_REQUEST["action"]) {
 						$xtpl->form_add_input_pure('text', '30', 'quota_val', $q[0]);
 						$xtpl->form_add_select_pure('quota_unit', $NAS_QUOTA_UNITS, $q[1]);
 						$xtpl->table_tr();
+						$xtpl->form_add_input(_("Share options").':', 'text', '30', 'share_options', $root["share_options"], _("Passed directly to zfs sharenfs"));
 						$xtpl->form_out(_("Save"));
 					}
 					
@@ -512,6 +513,7 @@ switch($_REQUEST["action"]) {
 			$xtpl->form_add_input_pure('text', '30', 'quota_val', $_POST["quota_val"] ? $_POST["quota_val"] : '0');
 			$xtpl->form_add_select_pure('quota_unit', $NAS_QUOTA_UNITS, $_POST["quota_unit"]);
 			$xtpl->table_tr();
+			$xtpl->form_add_input(_("Share options").':', 'text', '30', 'share_options', $root["share_options"], _("Passed directly to zfs sharenfs"));
 			$xtpl->form_out(_("Save"));
 		}
 		
@@ -529,7 +531,8 @@ switch($_REQUEST["action"]) {
 					$_POST["storage_type"],
 					$_POST["storage_user_export"],
 					$_POST["storage_user_mount"],
-					$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]])
+					$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]),
+					$_POST["share_options"]
 				);
 			} else {
 				nas_root_add(
@@ -540,7 +543,8 @@ switch($_REQUEST["action"]) {
 					$_POST["storage_type"],
 					$_POST["storage_user_export"],
 					$_POST["storage_user_mount"],
-					$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]])
+					$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]),
+					$_POST["share_options"]
 				);
 			}
 			

@@ -61,7 +61,7 @@ function nas_get_export_by_id($id) {
 	return $db->fetch_array($rs);
 }
 
-function nas_root_add($node_id, $label, $dataset, $path, $type, $user_export, $user_mount, $quota) {
+function nas_root_add($node_id, $label, $dataset, $path, $type, $user_export, $user_mount, $quota, $share_options) {
 	global $db;
 	
 	$db->query("INSERT INTO storage_root SET
@@ -72,10 +72,11 @@ function nas_root_add($node_id, $label, $dataset, $path, $type, $user_export, $u
 					type = '".$db->check($type)."',
 					user_export = '".$db->check($user_export)."',
 					user_mount = '".$db->check($user_mount)."',
-					quota = '".$db->check($quota)."'");
+					quota = '".$db->check($quota)."',
+					share_options = '".$db->check($share_options)."'");
 }
 
-function nas_root_update($root_id, $label, $dataset, $path, $type, $user_export, $user_mount, $quota) {
+function nas_root_update($root_id, $label, $dataset, $path, $type, $user_export, $user_mount, $quota, $share_options) {
 	global $db;
 	
 	$db->query("UPDATE storage_root SET
@@ -85,7 +86,8 @@ function nas_root_update($root_id, $label, $dataset, $path, $type, $user_export,
 					type = '".$db->check($type)."',
 					user_export = '".$db->check($user_export)."',
 					user_mount = '".$db->check($user_mount)."',
-					quota = '".$db->check($quota)."'
+					quota = '".$db->check($quota)."',
+					share_options = '".$db->check($share_options)."'
 				WHERE id = '".$db->check($root_id)."'
 	");
 }

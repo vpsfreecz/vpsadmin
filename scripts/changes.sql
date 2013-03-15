@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS `storage_root` (
   `quota` bigint(20) unsigned NOT NULL,
   `used` bigint(20) unsigned NOT NULL,
   `avail` bigint(20) unsigned NOT NULL,
+  `share_options` varchar(500) COLLATE utf8_czech_ci NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 
