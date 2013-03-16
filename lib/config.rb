@@ -55,6 +55,10 @@ IMPLICIT_CONFIG = {
 				5104 => "ve_mountfile",
 				8001 => "features",
 			},
+			"Storage" => {
+				5201 => "create_ds",
+				5202 => "update_ds",
+			},
 			"Backuper" => {
 				5002 => "restore_prepare",
 				5003 => "restore_finish",

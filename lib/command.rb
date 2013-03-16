@@ -4,6 +4,7 @@ require 'lib/handlers/node'
 require 'lib/handlers/vps'
 require 'lib/handlers/firewall'
 require 'lib/handlers/mailer'
+require 'lib/handlers/storage'
 require 'lib/handlers/backuper'
 
 require 'rubygems'
