@@ -56,8 +56,8 @@ IMPLICIT_CONFIG = {
 				8001 => "features",
 			},
 			"Storage" => {
-				5201 => "create_ds",
-				5202 => "update_ds",
+				5201 => "create_export",
+				5202 => "update_export",
 			},
 			"Backuper" => {
 				5002 => "restore_prepare",
@@ -107,6 +107,10 @@ IMPLICIT_CONFIG = {
 		:clone => {
 			:rsync => "%{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after %{src} %{dst}",
 		}
+	},
+	
+	:storage => {
+		:method => "Zfs",
 	},
 	
 	:backuper => {

@@ -1,10 +1,13 @@
 require 'lib/handlers/backuper'
+require 'lib/utils/zfs'
 
 require 'fileutils'
 require 'tempfile'
 
 module BackuperBackend
 	class Zfs < Backuper
+		include ZfsUtils
+		
 		def backup
 			db = Db.new
 			

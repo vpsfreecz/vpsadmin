@@ -1,32 +1,40 @@
 require 'lib/executor'
 
-# Represents storage node, handles datasets and exports, supports only ZFS
+# Represents storage node, handles exports, actual implementation provide backends
+# in module StorageBackend.
+# 
+# Backend is set in config :storage -> :method
+#
+# Parameters of methods in this class may have slightly different meaning in each backend.
 
 class Storage < Executor
-	# Create dataset
-	# 
-	# Params:
-	# [dataset]       string; name of dataset
-	# [share_options] string, optional; options passed directly to zfs sharenfs
-	# [quota]         number; quota for this dataset, in bytes
-	def create_ds
-		zfs(:create, "-p", @params["dataset"])
-		update_ds
+	class << self
+		alias_method :new_orig, :new
+		
+		def new(*args)
+			StorageBackend.const_get($CFG.get(:storage, :method)).new_orig(*args)
+		end
 	end
 	
-	# Update dataset
+	# Create export
 	# 
 	# Params:
-	# [dataset]       string; name of dataset
-	# [share_options] string, optional; options passed directly to zfs sharenfs
-	# [quota]         number; quota for this dataset, in bytes
-	def update_ds
-		zfs(:set, "sharenfs=\"#{@params["share_options"]}\"", @params["dataset"]) if @params["share_options"]
-		zfs(:set, "quota=#{@params["quota"] == 0 ? "none" : @params["quota"]}", @params["dataset"])
+	# [path]          string; path of export
+	# [share_options] string, optional
+	# [quota]         number; quota for this export, in bytes
+	def create_export
+		raise CommandNotImplemented
 	end
 	
-	# Shortcut for #syscmd
-	def zfs(cmd, opts, component, valid_rcs = [])
-		syscmd("#{$CFG.get(:bin, :zfs)} #{cmd.to_s} #{opts} #{component}", valid_rcs)
+	# Update export
+	# 
+	# Params:
+	# [path]          string; path of export
+	# [share_options] string, optional
+	# [quota]         number; quota for this export, in bytes
+	def update_export
+		raise CommandNotImplemented
 	end
 end
+
+require 'lib/handlers/storage/zfs'
