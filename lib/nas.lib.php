@@ -54,10 +54,11 @@ function get_nas_export_list() {
 function nas_get_export_by_id($id) {
 	global $db;
 	
-	$rs = $db->query("SELECT * FROM storage_export e
-						INNER JOIN storage_root r ON r.id = e.root_id
-						INNER JOIN servers s ON s.server_id = r.node_id
-						WHERE server_type = 'storage' AND e.id = '".$db->check($id)."'");
+	$rs = $db->query("SELECT *, e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail
+					FROM storage_export e
+					INNER JOIN storage_root r ON r.id = e.root_id
+					INNER JOIN servers s ON s.server_id = r.node_id
+					WHERE server_type = 'storage' AND e.id = '".$db->check($id)."'");
 	return $db->fetch_array($rs);
 }
 
@@ -74,6 +75,14 @@ function nas_root_add($node_id, $label, $dataset, $path, $type, $user_export, $u
 					user_mount = '".$db->check($user_mount)."',
 					quota = '".$db->check($quota)."',
 					share_options = '".$db->check($share_options)."'");
+	
+	$params = array(
+		"dataset" => $dataset,
+		"share_options" => $share_options,
+		"quota" => $quota,
+	);
+	
+	add_transaction($_SESSION["member"]["m_id"], $node_id, 0, T_STORAGE_EXPORT_CREATE, $params);
 }
 
 function nas_root_update($root_id, $label, $dataset, $path, $type, $user_export, $user_mount, $quota, $share_options) {
@@ -90,6 +99,14 @@ function nas_root_update($root_id, $label, $dataset, $path, $type, $user_export,
 					share_options = '".$db->check($share_options)."'
 				WHERE id = '".$db->check($root_id)."'
 	");
+	
+	$params = array(
+		"dataset" => $dataset,
+		"share_options" => $share_options,
+		"quota" => $quota,
+	);
+	
+	add_transaction($_SESSION["member"]["m_id"], nas_node_id_by_root($root_id), 0, T_STORAGE_EXPORT_UPDATE, $params);
 }
 
 function nas_node_id_by_root($root_id) {
@@ -120,7 +137,19 @@ function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable)
 				quota = '".$db->check($quota)."',
 				user_editable = '".( $user_editable == -1 ? '1' : ($user_editable ? '1' : '0') )."'");
 	
-	// FIXME: add transact to do zfs create & zfs set sharenfs
+	foreach($n->storage_roots as $r) {
+		if ($r["id"] == $root) {
+			$dataset = $r["root_dataset"]."/".$dataset;
+			break;
+		}
+	}
+	
+	$params = array(
+		"dataset" => $dataset,
+		"quota" => $quota,
+	);
+	
+	add_transaction($_SESSION["member"]["m_id"], $n->s["server_id"], 0, T_STORAGE_EXPORT_CREATE, $params);
 }
 
 function nas_export_update($id, $quota, $user_editable) {
@@ -132,6 +161,15 @@ function nas_export_update($id, $quota, $user_editable) {
 		$update = ", user_editable = ".($user_editable ? '1' : '0')."";
 	
 	$db->query("UPDATE storage_export SET quota = '".$db->check($quota)."' ".$update." WHERE id = '".$db->check($id)."'");
+	
+	$node = $db->fetch_array($db->query("SELECT r.node_id FROM storage_root r INNER JOIN storage_export e ON e.root_id = r.id WHERE e.id = '".$db->check($id)."'"));
+	
+	$params = array(
+		"dataset" => $dataset,
+		"quota" => $quota,
+	);
+	
+	add_transaction($_SESSION["member"]["m_id"], $node["node_id"], 0, T_STORAGE_EXPORT_UPDATE, $params);
 }
 
 function nas_get_mount_by_id($id) {
@@ -302,7 +340,7 @@ function nas_quota_to_val_unit($val) {
 	$units = array("t" => 39, "g" => 29, "m" => 19);
 	
 	foreach ($units as $u => $ex) {
-		if ($val > (2 << $ex))
+		if ($val >= (2 << $ex))
 			return array($val / (2 << $ex), $u);
 	}
 	

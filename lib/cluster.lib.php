@@ -15,6 +15,7 @@ class cluster_node {
     // True if exists
     public $exists;
     public $role = array();
+    public $storage_roots = array();
 
     function cluster_node ($server_id) {
 	global $db;
@@ -62,14 +63,16 @@ class cluster_node {
     function update_settings($data) {
 		global $db;
 		
-		$sql = 'UPDATE servers
+		$sql = 'UPDATE servers SET
 				server_name = "'.$db->check($data["server_name"]).'",
 				server_type = "'.$db->check($data["server_type"]).'",
 				server_location = "'.$db->check($data["server_location"]).'",
 				server_availstat = "'.$db->check($data["server_availstat"]).'",
 				server_maxvps = "'.$db->check($data["server_maxvps"]).'",
 				server_ip4 = "'.$db->check($data["server_ip4"]).'",
-				server_path_vz = "'.$db->check($data["server_path_vz"]).'"';
+				server_path_vz = "'.$db->check($data["server_path_vz"]).'"
+				WHERE server_id = '.$this->s["server_id"];
+		
 		$db->query($sql);
 		
 		switch ($data["server_type"]) {

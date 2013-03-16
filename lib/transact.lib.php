@@ -38,6 +38,9 @@ define ('T_BACKUP_VE_MOUNT', 5101);
 define ('T_BACKUP_VE_UMOUNT', 5102);
 define ('T_BACKUP_VE_REMOUNT', 5103);
 define ('T_BACKUP_VE_GENERATE_MOUNT_SCRIPTS', 5104);
+define ('T_STORAGE_EXPORT_CREATE', 5201);
+define ('T_STORAGE_EXPORT_UPDATE', 5202);
+define ('T_STORAGE_EXPORT_DELETE', 5203);
 define ('T_FIREWALL_RELOAD', 6001);
 define ('T_FIREWALL_FLUSH', 6002);
 define ('T_CLUSTER_STORAGE_CFG_RELOAD', 7001);
@@ -328,6 +331,15 @@ function transaction_label ($t_type) {
 		break;
 	case T_BACKUP_VE_GENERATE_MOUNT_SCRIPTS:
 		$action_label = 'Generate mount scripts';
+		break;
+	case T_STORAGE_EXPORT_CREATE:
+		$action_label = 'Export +';
+		break;
+	case T_STORAGE_EXPORT_UPDATE:
+		$action_label = "Export *";
+		break;
+	case T_STORAGE_EXPORT_DELETE:
+		$action_label = 'Export -';
 		break;
 	case T_MAIL_SEND:
 		$action_label = 'Mail';

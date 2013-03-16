@@ -75,7 +75,7 @@ if ($_SESSION["logged_in"]) {
 			$e = nas_get_export_by_id($_GET["id"]);
 			
 			if (nas_can_user_manage_export($e)) {
-				$q = nas_quota_to_val_unit($e["quota"]);
+				$q = nas_quota_to_val_unit($e["export_quota"]);
 				
 				$xtpl->table_title(_("Edit export")." ".$e["server_name"].": ". $e["path"]);
 				$xtpl->form_create('?page=nas&action=export_edit_save&id='.$_GET["id"], 'post');
