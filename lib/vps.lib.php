@@ -758,7 +758,7 @@ function ipadd($ip, $type = 4) {
 					WHERE m.vps_id = " . $db->check($this->veid) . " ORDER BY m.id ASC");
 	
 	while($mnt = $db->fetch_array($rs)) {
-		$params["mounts"][] = nas_mount_params($mnt);
+		$params["mounts"][] = nas_mount_params($mnt, false);
 	}
 	
 	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_NAS_VE_MOUNT_GEN, $params);

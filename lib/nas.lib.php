@@ -375,7 +375,7 @@ function nas_size_to_humanreadable($val) {
 	return $res[0] . " " . $NAS_QUOTA_UNITS[$res[1]];
 }
 
-function nas_mount_params($mnt) {
+function nas_mount_params($mnt, $cmds = true) {
 	$src = "";
 		
 	if ($mnt["storage_export_id"]) {
@@ -386,11 +386,22 @@ function nas_mount_params($mnt) {
 		$src = $mnt["src"];
 	}
 	
-	return array(
+	$ret = array(
 		"src" => $src,
 		"dst" => $mnt["dst"],
 		"mount_opts" => $mnt["mount_opts"],
 		"umount_opts" => $mnt["umount_opts"],
-		"mode" => $mnt["mode"]
+		"mode" => $mnt["mode"],
 	);
+	
+	if($cmds) {
+		$ret = $ret + array(
+			"premount" => $mnt["cmd_premount"],
+			"postmount" => $mnt["cmd_postmount"],
+			"preumount" => $mnt["cmd_preumount"],
+			"postumount" => $mnt["cmd_postumount"],
+		);
+	}
+	
+	return $ret;
 }
