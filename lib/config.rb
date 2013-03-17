@@ -49,10 +49,10 @@ IMPLICIT_CONFIG = {
 				3004 => "clone",
 				4001 => "migrate_offline",
 				4002 => "migrate_online",
-				5101 => "backup_mount",
-				5102 => "backup_umount",
-				5103 => "backup_remount",
-				5104 => "ve_mountfile",
+				5301 => "nas_mounts",
+				5302 => "nas_mount",
+				5303 => "nas_umount",
+				5304 => "nas_remount",
 				8001 => "features",
 			},
 			"Storage" => {
@@ -101,6 +101,8 @@ IMPLICIT_CONFIG = {
 		:ip6tables => "ip6tables",
 		:git => "git",
 		:zfs => "zfs",
+		:mount => "mount",
+		:umount => "umount",
 	},
 	
 	:vps => {
