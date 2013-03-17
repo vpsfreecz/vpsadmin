@@ -259,7 +259,7 @@ if ($_SESSION["logged_in"]) {
 						$_POST["cmd_postmount"],
 						$_POST["cmd_preumount"],
 						$_POST["cmd_postumount"],
-						$_POST["mount_immediately"]
+						$_POST["remount_immediately"]
 					);
 				
 				$xtpl->perex(_("Mount updated."), '');
@@ -269,6 +269,34 @@ if ($_SESSION["logged_in"]) {
 			break;
 		
 		case "mount_del":
+			break;
+			
+		case "mount":
+			if ($_GET["id"]) {
+				$m = nas_get_mount_by_id($_GET["id"]);
+				$vps = new vps_load($m["vps_id"]);
+				
+				if (nas_can_user_manage_mount($m, $vps))
+					$vps->mount($m);
+				
+				$xtpl->perex(_("Mount scheduled."), '');
+			} else $xtpl->perex(_("Mount id missing."), '');
+			
+			$list_nas = true;
+			break;
+			
+		case "umount":
+			if ($_GET["id"]) {
+				$m = nas_get_mount_by_id($_GET["id"]);
+				$vps = new vps_load($m["vps_id"]);
+				
+				if (nas_can_user_manage_mount($m, $vps))
+					$vps->umount($m);
+				
+				$xtpl->perex(_("Umount scheduled."), '');
+			} else $xtpl->perex(_("Mount id missing."), '');
+			
+			$list_nas = true;
 			break;
 		
 		default:

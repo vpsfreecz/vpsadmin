@@ -745,20 +745,23 @@ function ipadd($ip, $type = 4) {
   }
   
   function mount_regen() {
-	$mounts = $this->get_mounts();
-	$ret = array();
+	global $db;
 	
-	foreach ($mounts as $mnt) {
-		$ret[] = array(
-			"mode" => $mnt["mode"],
-			"src" => $mnt["src"],
-			"dst" => $mnt["dst"],
-			"opts" => $mnt["options"],
-			"target_server" => $mnt["server_id"]
-		);
+	$params = array( "mounts" => array() );
+	$rs = $db->query("SELECT m.src, m.dst, m.mount_opts, m.umount_opts, m.mode, m.storage_export_id, m.server_id, r.root_path, e.path,
+						s.server_ip4 AS mount_server_ip4, es.server_ip4 AS export_server_ip4
+					FROM vps_mount m
+					LEFT JOIN storage_export e ON e.id = m.storage_export_id
+					LEFT JOIN storage_root r ON e.root_id = r.id
+					LEFT JOIN servers es ON es.server_id = r.node_id
+					LEFT JOIN servers s ON m.server_id = s.server_id
+					WHERE m.vps_id = " . $db->check($this->veid) . " ORDER BY m.id ASC");
+	
+	while($mnt = $db->fetch_array($rs)) {
+		$params["mounts"][] = nas_mount_params($mnt);
 	}
 	
-	return $ret;
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_NAS_VE_MOUNT_GEN, $params);
   }
   
   function get_mounts() {
@@ -771,6 +774,24 @@ function ipadd($ip, $type = 4) {
 		$ret[] = $row;
 	
 	return $ret;
+  }
+  
+  function mount($mount) {
+	global $db;
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_NAS_VE_MOUNT, nas_mount_params($mount));
+  }
+  
+  function umount($mount) {
+	global $db;
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_NAS_VE_UMOUNT, nas_mount_params($mount));
+  }
+  
+  function remount($mount) {
+	global $db;
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_NAS_VE_REMOUNT, nas_mount_params($mount));
   }
   
   function get_backuper_server() {

@@ -124,9 +124,11 @@ function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable)
 	
 	$n = new cluster_node(nas_node_id_by_root($root));
 	
-	if ($n->role["type"] == "per_member") {
-		$dataset = $member."/".$dataset;
-		$path = $member."/".$path;
+	foreach($n->storage_roots as $r) {
+		if ($r["id"] == $root && $r["type"] == "per_member") {
+			$dataset = $member."/".$dataset;
+			$path = $member."/".$path;
+		}
 	}
 	
 	$db->query("INSERT INTO storage_export SET
@@ -175,11 +177,16 @@ function nas_export_update($id, $quota, $user_editable) {
 function nas_get_mount_by_id($id) {
 	global $db;
 	
-	$rs = $db->query("SELECT m.*, s.*, me.m_id FROM vps_mount m
-					LEFT JOIN servers s ON s.server_id = m.server_id
+	$rs = $db->query("SELECT m.*, r.root_path, e.path,
+					s.server_ip4 AS mount_server_ip4, es.server_ip4 AS export_server_ip4, me.m_id
+					FROM vps_mount m
+					LEFT JOIN storage_export e ON e.id = m.storage_export_id
+					LEFT JOIN storage_root r ON e.root_id = r.id
+					LEFT JOIN servers es ON es.server_id = r.node_id
+					LEFT JOIN servers s ON m.server_id = s.server_id
 					INNER JOIN vps v ON v.vps_id = m.vps_id
 					INNER JOIN members me ON v.m_id = me.m_id
-					WHERE m.id = '".$db->check($id)."'");
+					WHERE m.id = '".$id."'");
 	return $db->fetch_array($rs);
 }
 
@@ -215,15 +222,26 @@ function nas_mount_add($e_id, $vps_id, $access, $node_id, $src, $dst, $m_opts, $
 				cmd_postumount = '".$db->check($postumount)."'
 	");
 	
+	$mount_id = $db->insertId();
+	
 	// FIXME: add transact gen mounts & umounts action scripts
 	
+	$vps = new vps_load($vps_id);
+	$vps->mount_regen();
+	
 	if ($now) {
-		// add mount transact
+		$vps->mount(nas_get_mount_by_id($mount_id));
 	}
 }
 
 function nas_mount_update($m_id, $e_id, $vps_id, $access, $node_id, $src, $dst, $m_opts, $u_opts, $type, $premount, $postmount, $preumount, $postumount, $now) {
 	global $db;
+	
+	$vps = new vps_load($vps_id);
+	$old = nas_get_mount_by_id($m_id);
+	
+	if($old["dst"] != $dst)
+		$vps->umount($old);
 	
 	if($e_id) {
 		$export = nas_get_export_by_id($e_id);
@@ -261,10 +279,10 @@ function nas_mount_update($m_id, $e_id, $vps_id, $access, $node_id, $src, $dst, 
 	
 	$db->query($sql);
 	
-	// FIXME: add transact gen mounts & umounts action scripts
+	$vps->mount_regen();
 	
 	if ($now) {
-		// add mount transact
+		$vps->remount(nas_get_mount_by_id($m_id));
 	}
 }
 
@@ -355,4 +373,24 @@ function nas_size_to_humanreadable($val) {
 	
 	$res = nas_quota_to_val_unit($val);
 	return $res[0] . " " . $NAS_QUOTA_UNITS[$res[1]];
+}
+
+function nas_mount_params($mnt) {
+	$src = "";
+		
+	if ($mnt["storage_export_id"]) {
+		$src = $mnt["export_server_ip4"].":".$mnt["root_path"]."/".$mnt["path"];
+	} else if ($mnt["server_id"]) {
+		$src = $mnt["mount_server_ip4"].":".$mnt["src"];
+	} else {
+		$src = $mnt["src"];
+	}
+	
+	return array(
+		"src" => $src,
+		"dst" => $mnt["dst"],
+		"mount_opts" => $mnt["mount_opts"],
+		"umount_opts" => $mnt["umount_opts"],
+		"mode" => $mnt["mode"]
+	);
 }
