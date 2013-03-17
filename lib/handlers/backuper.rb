@@ -1,5 +1,6 @@
 require 'lib/executor'
 
+# Handles backups on storage node
 class Backuper < Executor
 	class << self
 		alias_method :new_orig, :new
@@ -9,22 +10,46 @@ class Backuper < Executor
 		end
 	end
 	
+	# Backup VPS
+	#
+	# Params:
+	# [exclude]     list; paths to be excluded from backup
+	# [server_name] string; name of server VPS runs on
 	def backup
 		raise CommandNotImplemented
 	end
 	
+	# Delete old backups
+	#
+	# No parameters.
 	def clear_backups(locked = false)
 		raise CommandNotImplemented
 	end
 	
+	# Prepare archive of selected VPS backup or its current state
+	#
+	# Params:
+	# [secret]      string; secret key, used as name of directory
+	# [filename]    string; full name of archive
+	# [datetime]    string, date format %Y-%m-%dT%H:%M:%S; download backup from this date
+	# [server_name] string; if specified, do not download backup but VPS current state from node with this name
 	def download
 		raise CommandNotImplemented
 	end
 	
+	# First part of restore, run on storage node
+	#
+	# Params:
+	# [datetime]    string, date format %Y-%m-%dT%H:%M:%S; restore from backup from this date
+	# [backuper]    string; name of backuper server
+	# [server_name] string; name of server VPS runs on
 	def restore_prepare
 		raise CommandNotImplemented
 	end
 	
+	# Second part of restore, run on vz node
+	#
+	# Parameters same as for #restore_prepare.
 	def restore_finish
 		target = $CFG.get(:backuper, :restore_src).gsub(/%\{veid\}/, @veid)
 		
@@ -98,6 +123,7 @@ class Backuper < Executor
 		"#{mountdir}/#{@veid}"
 	end
 	
+	# Sets appropriate command state, wait for lock, run block and unclock VPS again
 	def acquire_lock(db)
 		set_step("[waiting for lock]")
 		
@@ -110,6 +136,7 @@ class Backuper < Executor
 		Backuper.unlock(db, @veid)
 	end
 	
+	# Blocks until it locks VPS
 	def Backuper.wait_for_lock(db, veid)
 		loop do
 			if (st = db.prepared_st("UPDATE vps SET vps_backup_lock = 1 WHERE vps_id = ? AND vps_backup_lock = 0", veid)).affected_rows == 1
@@ -127,6 +154,7 @@ class Backuper < Executor
 		end
 	end
 	
+	# Unlock VPS
 	def Backuper.unlock(db, veid)
 		db.prepared("UPDATE vps SET vps_backup_lock = 0 WHERE vps_id = ?", veid)
 	end
