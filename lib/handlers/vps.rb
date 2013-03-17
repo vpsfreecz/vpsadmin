@@ -2,6 +2,7 @@ require 'lib/executor'
 require 'lib/handlers/backuper'
 
 require 'erb'
+require 'tempfile'
 
 class VPS < Executor
 	def start
@@ -134,11 +135,15 @@ class VPS < Executor
 		
 		Dir.mkdir(dst) unless File.exists?(dst)
 		
+		runscript("premount")
 		syscmd("#{$CFG.get(:bin, :mount)} #{@params["mount_opts"]} -o #{@params["mode"]} #{@params["src"]} #{dst}")
+		runscript("postmount")
 	end
 	
 	def nas_umount(valid_rcs = [])
+		runscript("preumount")
 		syscmd("#{$CFG.get(:bin, :umount)} #{@params["umount_opts"]} #{ve_root}/#{@params["dst"]}", valid_rcs)
+		runscript("postumount")
 	end
 	
 	def nas_remount
@@ -205,6 +210,16 @@ class VPS < Executor
 	
 	def ve_root
 		"#{$CFG.get(:vz, :vz_root)}/root/#{@veid}"
+	end
+	
+	def runscript(script)
+		return ok unless @params[script].length > 0
+		
+		f = Tempfile.new("vpsadmind_#{script}")
+		f.write("#!/bin/sh\n#{@params[script]}")
+		f.close
+		
+		vzctl(:runscript, @veid, f.path)
 	end
 	
 	def post_save(con)
