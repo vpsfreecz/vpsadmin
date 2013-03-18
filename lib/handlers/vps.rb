@@ -3,6 +3,7 @@ require 'lib/handlers/backuper'
 
 require 'erb'
 require 'tempfile'
+require 'fileutils'
 
 class VPS < Executor
 	def start
@@ -116,24 +117,14 @@ class VPS < Executor
 	end
 	
 	def nas_mounts
-		fm = File.open(script_mount, "w")
-		fu = File.open(script_umount, "w")
-		
-		mounts = @params["mounts"]
-		
-		fm.write(ERB.new(File.new("templates/ve_mount.erb").read, 0).result(binding))
-		fu.write(ERB.new(File.new("templates/ve_umount.erb").read, 0).result(binding))
-		
-		fm.close
-		fu.close
-		
-		ok
+		action_script("mount")
+		action_script("umount")
 	end
 	
 	def nas_mount
 		dst = "#{ve_root}/#{@params["dst"]}"
 		
-		Dir.mkdir(dst) unless File.exists?(dst)
+		FileUtils.mkpath(dst) unless File.exists?(dst)
 		
 		runscript("premount")
 		syscmd("#{$CFG.get(:bin, :mount)} #{@params["mount_opts"]} -o #{@params["mode"]} #{@params["src"]} #{dst}")
@@ -149,6 +140,19 @@ class VPS < Executor
 	def nas_remount
 		nas_umount([1])
 		nas_mount
+	end
+	
+	def action_script(action)
+		path = "#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.#{action}"
+		existed = File.exists?(path)
+		
+		File.open(path, "w") do |f|
+			f.write(ERB.new(File.new("templates/ve_#{action}.erb").read, 0).result(binding))
+		end
+		
+		syscmd("#{$CFG.get(:bin, :chmod)} +x #{path}") unless existed
+		
+		ok
 	end
 	
 	def check_onboot(force = false)

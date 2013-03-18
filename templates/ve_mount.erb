@@ -2,7 +2,7 @@
 . /etc/vz/vz.conf
 . ${VE_CONFFILE}
 
-<% mounts.each do |mnt| %>
+<% @params["mounts"].each do |mnt| %>
 SRC="<%= mnt["src"] %>"
 DST="<%= mnt["dst"] %>"
 if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
