@@ -239,9 +239,14 @@ if ($_SESSION["logged_in"]) {
 			break;
 		
 		case "mount_edit_save":
-			if ($_GET["id"] && ($_POST["export_id"] || $_POST["src"])) {
+			if ($_GET["id"] && ($_POST["export_id"] || $_POST["src"]) && $_POST["dst"]) {
 				$m = nas_get_mount_by_id($_GET["id"]);
 				$vps = new vps_load($_POST["vps_id"]);
+				
+				$dst = preg_replace('/\.\.\//', '', trim($_POST["dst"]));
+				
+				if (strpos($dst, "/") !== 0)
+					$dst = "/" . $dst;
 				
 				if (nas_can_user_manage_mount($m, $vps))
 					nas_mount_update(
@@ -251,7 +256,7 @@ if ($_SESSION["logged_in"]) {
 						$_POST["access_mode"],
 						$_SESSION["is_admin"] ? $_POST["source_node_id"] : NULL,
 						$_SESSION["is_admin"] ? $_POST["src"] : NULL,
-						$_POST["dst"],
+						$dst,
 						$_SESSION["is_admin"] ? $_POST["m_opts"] : NULL,
 						$_SESSION["is_admin"] ? $_POST["u_opts"] : NULL,
 						$_SESSION["is_admin"] ? $_POST["type"] : NULL,
