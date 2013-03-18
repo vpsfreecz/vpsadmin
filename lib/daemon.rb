@@ -90,7 +90,7 @@ module VpsAdmind
 			rs = @db.query("SELECT * FROM (
 								(SELECT *, 1 AS depencency_success FROM transactions
 								WHERE t_done = 0 AND t_server = #{$CFG.get(:vpsadmin, :server_id)} AND t_depends_on IS NULL
-								GROUP BY t_vps, t_priority)
+								GROUP BY t_vps, t_priority, t_id)
 							
 								UNION ALL
 								
@@ -101,11 +101,11 @@ module VpsAdmind
 								t.t_done = 0
 								AND d.t_done = 1
 								AND t.t_server = #{$CFG.get(:vpsadmin, :server_id)}
-								GROUP BY t_vps, t_priority)
+								GROUP BY t_vps, t_priority, t_id)
 							
 								ORDER BY t_priority DESC, t_id ASC LIMIT #{$CFG.get(:vpsadmin, :threads)}
 							) tmp
-							GROUP BY t_vps ORDER BY t_priority DESC, t_id ASC")
+							GROUP BY t_vps, t_priority, t_id ORDER BY t_priority DESC, t_id ASC")
 			
 			rs.each_hash do |row|
 				c = Command.new(row)
