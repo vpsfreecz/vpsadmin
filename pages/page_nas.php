@@ -1,5 +1,17 @@
 <?php
 
+function is_mount_dst_valid($dst) {
+	$dst = trim($dst);
+	
+	if(!preg_match("/^[a-zA-Z0-9\_\-\/\.]+$/", $dst) || preg_match("/\.\./", $dst))
+		return false;
+	
+	if (strpos($dst, "/") !== 0)
+		$dst = "/" . $dst;
+	
+	return $dst;
+}
+
 function export_add_form() {
 	global $xtpl, $NAS_QUOTA_UNITS;
 	
@@ -23,6 +35,79 @@ function export_add_form() {
 	$xtpl->form_out(_("Export"));
 	
 	$xtpl->sbar_add(_("Back"), '?page=nas');
+}
+
+function mount_add_form() {
+	global $STORAGE_MOUNT_MODES_RO_RW, $STORAGE_MOUNT_TYPES, $xtpl, $cluster_cfg;
+	
+	$xtpl->table_title(_("Mount export"));
+	$xtpl->form_create('?page=nas&action=mount_export_add_save', 'post');
+	$xtpl->form_add_select(_("Export").':', 'export_id', get_nas_export_list(), $_POST["export_id"]);
+	$xtpl->form_add_select(_("VPS").':', 'vps_id', get_user_vps_list(), $_POST["vps_id"]);
+	$xtpl->form_add_select(_("Access mode").':', 'access_mode', $STORAGE_MOUNT_MODES_RO_RW, $_POST["access_mode"]);
+	$xtpl->form_add_input(_("Destination").':', 'text', '50', 'dst', $_POST["dst"], _("Path is relative to VPS root"));
+	if ($_SESSION["is_admin"]) {
+		$xtpl->form_add_input(_("Mount options").':', 'text', '50', 'm_opts', $_POST["m_opts"] ? $_POST["m_opts"] : $cluster_cfg->get("nas_default_mount_options"), '');
+		$xtpl->form_add_input(_("Umount options").':', 'text', '50', 'u_opts', $_POST["u_opts"] ? $_POST["u_opts"] : $cluster_cfg->get("nas_default_umount_options"), '');
+	}
+	$xtpl->form_add_input(_("Pre-mount command").':', 'text', '50', 'cmd_premount', $_POST["cmd_premount"], _("Command that is executed within VPS context <strong>before</strong> mount"));
+	$xtpl->form_add_input(_("Post-mount command").':', 'text', '50', 'cmd_postmount', $_POST["cmd_postmount"], _("Command that is executed within VPS context <strong>after</strong> mount"));
+	$xtpl->form_add_input(_("Pre-umount command").':', 'text', '50', 'cmd_preumount', $_POST["cmd_preumount"], _("Command that is executed within VPS context <strong>before</strong> umount"));
+	$xtpl->form_add_input(_("Post-umount command").':', 'text', '50', 'cmd_postumount', $_POST["cmd_postumount"], _("Command that is executed within VPS context <strong>after</strong> umount"));
+	$xtpl->form_add_checkbox(_("Mount immediately").':', 'mount_immediately', '1', $_POST["mount_immediately"] ? $_POST["mount_immediately"] : true);
+	$xtpl->form_out(_("Add mount"));
+	
+	if ($_SESSION["is_admin"]) {
+		$nodes = list_servers();
+		$empty = array("" => "---");
+		
+		$xtpl->table_title(_("Custom mount"));
+		$xtpl->form_create('?page=nas&action=mount_custom_add_save', 'post');
+		$xtpl->form_add_select(_("VPS").':', 'vps_id', get_user_vps_list(), $_POST["vps_id"]);
+		$xtpl->form_add_select(_("Access mode").':', 'access_mode', $STORAGE_MOUNT_MODES_RO_RW, $_POST["access_mode"]);
+		$xtpl->form_add_select(_("Source node").':', 'source_node_id', array_merge($empty, $nodes), $_POST["source_node_id"], '');
+		$xtpl->form_add_input(_("Source").':', 'text', '50', 'src', $_POST["src"], _("Path is relative to source node root if specified, otherwise absolute"));
+		$xtpl->form_add_input(_("Destination").':', 'text', '50', 'dst', $_POST["dst"], _("Path is relative to VPS root"));
+		$xtpl->form_add_input(_("Mount options").':', 'text', '50', 'm_opts', $_POST["m_opts"] ? $_POST["m_opts"] : $cluster_cfg->get("nas_default_mount_options"), '');
+		$xtpl->form_add_input(_("Umount options").':', 'text', '50', 'u_opts', $_POST["u_opts"] ? $_POST["u_opts"] : $cluster_cfg->get("nas_default_umount_options"), '');
+		$xtpl->form_add_select(_("Type").':', 'type', $STORAGE_MOUNT_TYPES, $_POST["type"]);
+		$xtpl->form_add_input(_("Pre-mount command").':', 'text', '50', 'cmd_premount', $_POST["cmd_premount"], _("Command that is executed within VPS context <strong>before</strong> mount"));
+		$xtpl->form_add_input(_("Post-mount command").':', 'text', '50', 'cmd_postmount', $_POST["cmd_postmount"], _("Command that is executed within VPS context <strong>after</strong> mount"));
+		$xtpl->form_add_input(_("Pre-umount command").':', 'text', '50', 'cmd_preumount', $_POST["cmd_preumount"], _("Command that is executed within VPS context <strong>before</strong> umount"));
+		$xtpl->form_add_input(_("Post-umount command").':', 'text', '50', 'cmd_postumount', $_POST["cmd_postumount"], _("Command that is executed within VPS context <strong>after</strong> umount"));
+		$xtpl->form_add_checkbox(_("Mount immediately").':', 'mount_immediately', '1', $_POST["mount_immediately"] ? $_POST["mount_immediately"] : true);
+		$xtpl->form_out(_("Add mount"));
+	}
+}
+
+function mount_edit_form($m) {
+	global $STORAGE_MOUNT_MODES_RO_RW, $STORAGE_MOUNT_TYPES, $xtpl;
+	
+	$e_list = get_nas_export_list();
+	$nodes = list_servers();
+	$empty = array("" => "---");
+	
+	$xtpl->table_title(_("Edit mount")." ".$m["dst"]);
+	$xtpl->form_create('?page=nas&action=mount_edit_save&id='.$_GET["id"], 'post');
+	$xtpl->form_add_select(_("Export").':', 'export_id', $empty + $e_list, $_POST["export_id"] ? $_POST["export_id"] : (int)$m["storage_export_id"]);
+	$xtpl->form_add_select(_("VPS").':', 'vps_id', get_user_vps_list(), $_POST["vps_id"] ? $_POST["vps_id"] : $m["vps_id"]);
+	$xtpl->form_add_select(_("Access mode").':', 'access_mode', $STORAGE_MOUNT_MODES_RO_RW, $_POST["mode"] ? $_POST["mode"] : $m["mode"]);
+	if ($_SESSION["is_admin"]) {
+		$xtpl->form_add_select(_("Source node").':', 'source_node_id', $empty + $nodes, $_POST["source_node_id"] ? $_POST["source_node_id"] : $m["server_id"], _("Has no effect if export is selected."));
+		$xtpl->form_add_input(_("Source").':', 'text', '50', 'src', $_POST["src"] ? $_POST["src"] : $m["src"], _("Path is relative to source node root if specified, otherwise absolute. Has no effect if export is selected."));
+	}
+	$xtpl->form_add_input(_("Destination").':', 'text', '50', 'dst', $_POST["dst"] ? $_POST["dst"] : $m["dst"], _("Path is relative to VPS root,<br>allowed chars: a-Z A-Z 0-9 _ - . /"));
+	if ($_SESSION["is_admin"]) {
+		$xtpl->form_add_input(_("Mount options").':', 'text', '50', 'm_opts', $_POST["m_opts"] ? $_POST["m_opts"] : $m["mount_opts"], '');
+		$xtpl->form_add_input(_("Umount options").':', 'text', '50', 'u_opts', $_POST["u_opts"] ? $_POST["u_opts"] : $m["umount_opts"], '');
+		$xtpl->form_add_select(_("Type").':', 'type', $STORAGE_MOUNT_TYPES, $_POST["type"] ? $_POST["type"] : $m["type"]);
+	}
+	$xtpl->form_add_input(_("Pre-mount command").':', 'text', '50', 'cmd_premount', $_POST["cmd_premount"] ? $_POST["cmd_premount"] : $m["cmd_premount"], _("Command that is executed within VPS context <strong>before</strong> mount"));
+	$xtpl->form_add_input(_("Post-mount command").':', 'text', '50', 'cmd_postmount', $_POST["cmd_postmount"] ? $_POST["cmd_postmount"] : $m["cmd_postmount"], _("Command that is executed within VPS context <strong>after</strong> mount"));
+	$xtpl->form_add_input(_("Pre-umount command").':', 'text', '50', 'cmd_preumount', $_POST["cmd_preumount"] ? $_POST["cmd_preumount"] : $m["cmd_preumount"], _("Command that is executed within VPS context <strong>before</strong> umount"));
+	$xtpl->form_add_input(_("Post-umount command").':', 'text', '50', 'cmd_postumount', $_POST["cmd_postumount"] ? $_POST["cmd_postumount"] : $m["cmd_postumount"], _("Command that is executed within VPS context <strong>after</strong> umount"));
+	$xtpl->form_add_checkbox(_("Remount immediately").':', 'remount_immediately', '1', $_POST["type"] ? $_POST["remount_immediately"] : true, "<strong>"._("Recommended")."</strong>");
+	$xtpl->form_out(_("Save"));
 }
 
 if ($_SESSION["logged_in"]) {
@@ -109,44 +194,7 @@ if ($_SESSION["logged_in"]) {
 			break;
 		
 		case "mount_add":
-			$xtpl->table_title(_("Mount export"));
-			$xtpl->form_create('?page=nas&action=mount_export_add_save', 'post');
-			$xtpl->form_add_select(_("Export").':', 'export_id', get_nas_export_list());
-			$xtpl->form_add_select(_("VPS").':', 'vps_id', get_user_vps_list());
-			$xtpl->form_add_select(_("Access mode").':', 'access_mode', $STORAGE_MOUNT_MODES_RO_RW);
-			$xtpl->form_add_input(_("Destination").':', 'text', '50', 'dst', '', _("Path is relative to VPS root"));
-			if ($_SESSION["is_admin"]) {
-				$xtpl->form_add_input(_("Mount options").':', 'text', '50', 'm_opts', $cluster_cfg->get("nas_default_mount_options"), '');
-				$xtpl->form_add_input(_("Umount options").':', 'text', '50', 'u_opts', $cluster_cfg->get("nas_default_umount_options"), '');
-			}
-			$xtpl->form_add_input(_("Pre-mount command").':', 'text', '50', 'cmd_premount', '', _("Command that is executed within VPS context <strong>before</strong> mount"));
-			$xtpl->form_add_input(_("Post-mount command").':', 'text', '50', 'cmd_postmount', '', _("Command that is executed within VPS context <strong>after</strong> mount"));
-			$xtpl->form_add_input(_("Pre-umount command").':', 'text', '50', 'cmd_preumount', '', _("Command that is executed within VPS context <strong>before</strong> umount"));
-			$xtpl->form_add_input(_("Post-umount command").':', 'text', '50', 'cmd_postumount', '', _("Command that is executed within VPS context <strong>after</strong> umount"));
-			$xtpl->form_add_checkbox(_("Mount immediately").':', 'mount_immediately', '1', true);
-			$xtpl->form_out(_("Add mount"));
-			
-			if ($_SESSION["is_admin"]) {
-				$nodes = list_servers();
-				$empty = array("" => "---");
-				
-				$xtpl->table_title(_("Custom mount"));
-				$xtpl->form_create('?page=nas&action=mount_custom_add_save', 'post');
-				$xtpl->form_add_select(_("VPS").':', 'vps_id', get_user_vps_list());
-				$xtpl->form_add_select(_("Access mode").':', 'access_mode', $STORAGE_MOUNT_MODES_RO_RW);
-				$xtpl->form_add_select(_("Source node").':', 'source_node_id', array_merge($empty, $nodes), '', '');
-				$xtpl->form_add_input(_("Source").':', 'text', '50', 'src', '', _("Path is relative to source node root if specified, otherwise absolute"));
-				$xtpl->form_add_input(_("Destination").':', 'text', '50', 'dst', '', _("Path is relative to VPS root"));
-				$xtpl->form_add_input(_("Mount options").':', 'text', '50', 'm_opts', $cluster_cfg->get("nas_default_mount_options"), '');
-				$xtpl->form_add_input(_("Umount options").':', 'text', '50', 'u_opts', $cluster_cfg->get("nas_default_umount_options"), '');
-				$xtpl->form_add_select(_("Type").':', 'type', $STORAGE_MOUNT_TYPES);
-				$xtpl->form_add_input(_("Pre-mount command").':', 'text', '50', 'cmd_premount', '', _("Command that is executed within VPS context <strong>before</strong> mount"));
-				$xtpl->form_add_input(_("Post-mount command").':', 'text', '50', 'cmd_postmount', '', _("Command that is executed within VPS context <strong>after</strong> mount"));
-				$xtpl->form_add_input(_("Pre-umount command").':', 'text', '50', 'cmd_premount', '', _("Command that is executed within VPS context <strong>before</strong> umount"));
-				$xtpl->form_add_input(_("Post-umount command").':', 'text', '50', 'cmd_postmount', '', _("Command that is executed within VPS context <strong>after</strong> umount"));
-				$xtpl->form_add_checkbox(_("Mount immediately").':', 'mount_immediately', '1', true);
-				$xtpl->form_out(_("Add mount"));
-			}
+			mount_add_form();
 			
 			$xtpl->sbar_add(_("Back"), '?page=nas');
 			break;
@@ -156,7 +204,10 @@ if ($_SESSION["logged_in"]) {
 				$e = nas_get_export_by_id($_POST["export_id"]);
 				$vps = new vps_load($_POST["vps_id"]);
 				
-				if (nas_can_user_add_mount($e, $vps))
+				if(is_mount_dst_valid($_POST["dst"]) === false) {
+					$xtpl->perex(_("Destination contains forbidden characters"), '');
+					mount_add_form();
+				} elseif (nas_can_user_add_mount($e, $vps))
 					nas_mount_add(
 						$_POST["export_id"],
 						$_POST["vps_id"],
@@ -183,7 +234,10 @@ if ($_SESSION["logged_in"]) {
 				$e = nas_get_export_by_id($_POST["export_id"]);
 				$vps = new vps_load($_POST["vps_id"]);
 				
-				if (nas_can_user_add_mount($e, $vps))
+				if(is_mount_dst_valid($_POST["dst"]) === false) {
+					$xtpl->perex(_("Destination contains forbidden characters"), '');
+					mount_add_form();
+				} elseif (nas_can_user_add_mount($e, $vps))
 					nas_mount_add(
 						0,
 						$_POST["vps_id"],
@@ -208,31 +262,7 @@ if ($_SESSION["logged_in"]) {
 			$vps = new vps_load($m["vps_id"]);
 			
 			if (nas_can_user_manage_mount($m, $vps)) {
-				$e_list = get_nas_export_list();
-				$nodes = list_servers();
-				$empty = array("" => "---");
-				
-				$xtpl->table_title(_("Edit mount")." ".$m["dst"]);
-				$xtpl->form_create('?page=nas&action=mount_edit_save&id='.$_GET["id"], 'post');
-				$xtpl->form_add_select(_("Export").':', 'export_id', $empty + $e_list, (int)$m["storage_export_id"]);
-				$xtpl->form_add_select(_("VPS").':', 'vps_id', get_user_vps_list(), $m["vps_id"]);
-				$xtpl->form_add_select(_("Access mode").':', 'access_mode', $STORAGE_MOUNT_MODES_RO_RW, $m["mode"]);
-				if ($_SESSION["is_admin"]) {
-					$xtpl->form_add_select(_("Source node").':', 'source_node_id', $empty + $nodes, $m["server_id"], _("Has no effect if export is selected."));
-					$xtpl->form_add_input(_("Source").':', 'text', '50', 'src', $m["src"], _("Path is relative to source node root if specified, otherwise absolute. Has no effect if export is selected."));
-				}
-				$xtpl->form_add_input(_("Destination").':', 'text', '50', 'dst', $m["dst"], _("Path is relative to VPS root"));
-				if ($_SESSION["is_admin"]) {
-					$xtpl->form_add_input(_("Mount options").':', 'text', '50', 'm_opts', $m["mount_opts"], '');
-					$xtpl->form_add_input(_("Umount options").':', 'text', '50', 'u_opts', $m["umount_opts"], '');
-					$xtpl->form_add_select(_("Type").':', 'type', $STORAGE_MOUNT_TYPES, $m["type"]);
-				}
-				$xtpl->form_add_input(_("Pre-mount command").':', 'text', '50', 'cmd_premount', $m["cmd_premount"], _("Command that is executed within VPS context <strong>before</strong> mount"));
-				$xtpl->form_add_input(_("Post-mount command").':', 'text', '50', 'cmd_postmount', $m["cmd_postmount"], _("Command that is executed within VPS context <strong>after</strong> mount"));
-				$xtpl->form_add_input(_("Pre-umount command").':', 'text', '50', 'cmd_preumount', $m["cmd_preumount"], _("Command that is executed within VPS context <strong>before</strong> umount"));
-				$xtpl->form_add_input(_("Post-umount command").':', 'text', '50', 'cmd_postumount', $m["cmd_postumount"], _("Command that is executed within VPS context <strong>after</strong> umount"));
-				$xtpl->form_add_checkbox(_("Remount immediately").':', 'remount_immediately', '1', true, "<strong>"._("Recommended")."</strong>");
-				$xtpl->form_out(_("Save"));
+				mount_edit_form($m);
 			}
 			
 			$xtpl->sbar_add(_("Back"), '?page=nas');
@@ -243,31 +273,31 @@ if ($_SESSION["logged_in"]) {
 				$m = nas_get_mount_by_id($_GET["id"]);
 				$vps = new vps_load($_POST["vps_id"]);
 				
-				$dst = preg_replace('/\.\.\//', '', trim($_POST["dst"]));
-				
-				if (strpos($dst, "/") !== 0)
-					$dst = "/" . $dst;
-				
-				if (nas_can_user_manage_mount($m, $vps))
-					nas_mount_update(
-						$_GET["id"],
-						$_POST["export_id"],
-						$_POST["vps_id"],
-						$_POST["access_mode"],
-						$_SESSION["is_admin"] ? $_POST["source_node_id"] : NULL,
-						$_SESSION["is_admin"] ? $_POST["src"] : NULL,
-						$dst,
-						$_SESSION["is_admin"] ? $_POST["m_opts"] : NULL,
-						$_SESSION["is_admin"] ? $_POST["u_opts"] : NULL,
-						$_SESSION["is_admin"] ? $_POST["type"] : NULL,
-						$_POST["cmd_premount"],
-						$_POST["cmd_postmount"],
-						$_POST["cmd_preumount"],
-						$_POST["cmd_postumount"],
-						$_POST["remount_immediately"]
-					);
-				
-				$xtpl->perex(_("Mount updated."), '');
+				if ( ($dst = is_mount_dst_valid($_POST["dst"])) === false ) {
+					$xtpl->perex(_("Destination contains forbidden characters"), '');
+					mount_edit_form($m);
+				} else {
+					if (nas_can_user_manage_mount($m, $vps))
+						nas_mount_update(
+							$_GET["id"],
+							$_POST["export_id"],
+							$_POST["vps_id"],
+							$_POST["access_mode"],
+							$_SESSION["is_admin"] ? $_POST["source_node_id"] : NULL,
+							$_SESSION["is_admin"] ? $_POST["src"] : NULL,
+							$dst,
+							$_SESSION["is_admin"] ? $_POST["m_opts"] : NULL,
+							$_SESSION["is_admin"] ? $_POST["u_opts"] : NULL,
+							$_SESSION["is_admin"] ? $_POST["type"] : NULL,
+							$_POST["cmd_premount"],
+							$_POST["cmd_postmount"],
+							$_POST["cmd_preumount"],
+							$_POST["cmd_postumount"],
+							$_POST["remount_immediately"]
+						);
+					
+					$xtpl->perex(_("Mount updated."), '');
+				}
 			} else $xtpl->perex(_("Mount NOT updated."), '');
 			
 			$list_nas = true;
