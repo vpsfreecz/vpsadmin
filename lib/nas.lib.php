@@ -116,7 +116,7 @@ function nas_node_id_by_root($root_id) {
 	return $node["node_id"];
 }
 
-function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable) {
+function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable, $member_prefix = true) {
 	global $db;
 	
 	if ($dataset === NULL)
@@ -125,9 +125,10 @@ function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable)
 	$n = new cluster_node(nas_node_id_by_root($root));
 	
 	foreach($n->storage_roots as $r) {
-		if ($r["id"] == $root && $r["type"] == "per_member") {
+		if ($r["id"] == $root && $r["type"] == "per_member" && $member_prefix) {
 			$dataset = $member."/".$dataset;
 			$path = $member."/".$path;
+			break;
 		}
 	}
 	
