@@ -165,10 +165,10 @@ function nas_export_update($id, $quota, $user_editable) {
 	
 	$db->query("UPDATE storage_export SET quota = '".$db->check($quota)."' ".$update." WHERE id = '".$db->check($id)."'");
 	
-	$node = $db->fetch_array($db->query("SELECT r.node_id FROM storage_root r INNER JOIN storage_export e ON e.root_id = r.id WHERE e.id = '".$db->check($id)."'"));
+	$node = $db->fetch_array($db->query("SELECT r.node_id, e.dataset, r.root_dataset FROM storage_root r INNER JOIN storage_export e ON e.root_id = r.id WHERE e.id = '".$db->check($id)."'"));
 	
 	$params = array(
-		"dataset" => $dataset,
+		"dataset" => $node["root_dataset"]."/".$node["dataset"],
 		"quota" => $quota,
 	);
 	
