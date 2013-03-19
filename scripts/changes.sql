@@ -47,3 +47,5 @@ CREATE TABLE IF NOT EXISTS `vps_mount` (
 
 UPDATE `servers` SET `server_type` = 'storage' WHERE `server_type` = 'backuper';
 ALTER TABLE  `servers` CHANGE  `server_type`  `server_type` ENUM(  'node',  'storage',  'mailer' ) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL;
+
+ALTER TABLE `vps` DROP `vps_backup_mount`;

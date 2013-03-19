@@ -185,7 +185,6 @@ CREATE TABLE IF NOT EXISTS `vps` (
   `vps_onboot` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `vps_onstartall` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `vps_backup_enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
-  `vps_backup_mount` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `vps_specials_installed` varchar(255) DEFAULT NULL,
   `vps_features_enabled` tinyint(1) NOT NULL DEFAULT '0',
   `vps_backup_lock` tinyint(4) NOT NULL DEFAULT '0',

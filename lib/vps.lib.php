@@ -123,9 +123,6 @@ class vps_load {
 		$this->ve["vps_template"] = $template["templ_name"];
 		$this->ve["vps_onboot"] = $location["location_vps_onboot"];
 		
-		mount_add("backup");
-		$params["mounts"] = $this->mount_regen();
-		
 		add_transaction($_SESSION["member"]["m_id"], $server_id, $this->veid, T_CREATE_VE, $params);
     $this->nameserver($cluster->get_first_suitable_dns($cluster->get_location_of_server($server_id)));
 	}
@@ -183,7 +180,7 @@ class vps_load {
 	    $db->query('UPDATE vps SET vps_onstartall = 1 WHERE vps_id='.$db->check($this->veid));
 	    $server = $db->findByColumnOnce("servers", "server_id", $this->ve["vps_server"]);
 	    $location = $db->findByColumnOnce("locations", "location_id", $server["server_location"]);
-	    $params = array("onboot" => $location["location_vps_onboot"], "backup_mount" => $this->ve["vps_backup_mount"], "mounts" => $this->mount_regen());
+	    $params = array("onboot" => $location["location_vps_onboot"]);
 	    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_START_VE, $params);
 	}
   }
@@ -193,7 +190,7 @@ class vps_load {
 	if ($this->exists) {
 	    $server = $db->findByColumnOnce("servers", "server_id", $this->ve["vps_server"]);
 	    $location = $db->findByColumnOnce("locations", "location_id", $server["server_location"]);
-	    $params = array("onboot" => $location["location_vps_onboot"], "backup_mount" => $this->ve["vps_backup_mount"], "mounts" => $this->mount_regen());
+	    $params = array("onboot" => $location["location_vps_onboot"]);
 	    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_RESTART_VE, $params);
 	}
   }
@@ -549,26 +546,15 @@ function ipadd($ip, $type = 4) {
 	send_mail($this->ve["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
   }
   
-  function set_backuper($how, $mount, $exclude, $force = false) {
+  function set_backuper($how, $exclude, $force = false) {
   	global $db;
 	
 	/**
 	 * how: do not touch if NULL
-	 * mount: do not touch if NULL
 	 * exclude: do not touch if === false
 	 */
 	
 	$update = array();
-	
-	if ($mount !== NULL) {
-		$this->ve["vps_backup_mount"] = $mount;
-		$update[] = "vps_backup_mount = '".($mount ? '1' : '0')."'";
-		
-		if ($mount)
-			$this->mount_add("backup");
-		else
-			$this->mount_del("backup");
-	}
 	
 	if ($_SESSION["is_admin"] || $force) {
 		if ($how !== NULL) {
@@ -598,22 +584,6 @@ function ipadd($ip, $type = 4) {
 	$sql = 'UPDATE vps SET vps_backup_lock = '.($lock ? '1' : '0').' WHERE vps_id = '.$db->check($this->veid);
 	
   	$db->query($sql);
-  }
-  
-  function backup_mount() {
-	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_VE_MOUNT);
-  }
-  
-  function backup_umount() {
-	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_VE_UMOUNT);
-  }
-  
-  function backup_remount() {
-	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_VE_REMOUNT);
-  }
-  
-  function backup_generate_scripts() {
-	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_VE_GENERATE_MOUNT_SCRIPTS, array("backup_mount" => $this->ve["vps_backup_mount"]));
   }
   
   function restore($timestamp, $backup_first = false) {
@@ -694,16 +664,11 @@ function ipadd($ip, $type = 4) {
 				vps_onstartall = '.$db->check($this->ve["vps_onstartall"]).',
 				vps_features_enabled = '.$db->check($features ? $this->ve["vps_features_enabled"] : 0).',
 				vps_backup_enabled = '.$db->check($backuper ? $this->ve["vps_backup_enabled"] : 1).',
-				vps_backup_mount = '.$db->check($backuper ? $this->ve["vps_backup_mount"] : 1).',
 				vps_backup_exclude = "'.$db->check($backuper ? $this->ve["vps_backup_exclude"] : '').'",
 				vps_config = "'.$db->check($configs ? $this->ve["vps_config"] : '').'"';
 	
 	$db->query($sql);
 	$clone = vps_load($db->insert_id());
-	
-	if ($backuper && $this->ve["vps_backup_mount"]) {
-		mount_add("backup");
-	}
 	
 	$params = array(
 		"src_veid" => $this->veid,

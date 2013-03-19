@@ -1015,7 +1015,6 @@ switch($_REQUEST["action"]) {
 			case "backuper":
 				$t = _("Mass set backuper");
 				$xtpl->form_add_select(_("Backup enabled").':', 'backup_enabled', array("" => _("Do not touch"), 1 => _("Yes"), 2 => _("No")));
-				$xtpl->form_add_select(_("Mount backup").':', 'backup_mount', array("" => _("Do not touch"), 1 => _("Yes"), 2 => _("No")));
 				$xtpl->form_add_checkbox(_("Notify owners").':', 'notify_owners', '1', true);
 				$xtpl->table_tr();
 				break;
@@ -1023,18 +1022,6 @@ switch($_REQUEST["action"]) {
 				$t = _("Mass set backup lock");
 				$xtpl->form_add_checkbox(_("Backup lock").':', 'backup_lock', '1');
 				$xtpl->table_tr();
-				break;
-			case "backup_mount":
-				$t = _("Mass backup mount");
-				break;
-			case "backup_umount":
-				$t = _("Mass backup umount");
-				break;
-			case "backup_remount":
-				$t = _("Mass backup remount");
-				break;
-			case "backup_generate_scripts":
-				$t = _("Mass backup mount scripts generation");
 				break;
 			default:
 				break;
@@ -1157,7 +1144,6 @@ switch($_REQUEST["action"]) {
 				break;
 			case "backuper":
 				$enable = NULL;
-				$mount = NULL;
 				
 				switch($_POST["backup_enabled"]) {
 					case 1:
@@ -1169,19 +1155,9 @@ switch($_REQUEST["action"]) {
 					default:break;
 				}
 				
-				switch($_POST["backup_mount"]) {
-					case 1:
-						$mount = true;
-						break;
-					case 2:
-						$mount = false;
-						break;
-					default:break;
-				}
-				
 				foreach ($vpses as $veid) {
 					$vps = vps_load($veid);
-					$vps->set_backuper($enable, $mount, false);
+					$vps->set_backuper($enable, false);
 					
 					if($_POST["notify_owners"])
 						$vps->backuper_change_notify();
@@ -1192,34 +1168,6 @@ switch($_REQUEST["action"]) {
 					$vps = vps_load($veid);
 					if ($vps->exists)
 						$vps->set_backup_lock($_POST["backup_lock"]);
-				}
-				break;
-			case "backup_mount":
-				foreach ($vpses as $veid) {
-					$vps = vps_load($veid);
-					if ($vps->exists)
-						$vps->backup_mount();
-				}
-				break;
-			case "backup_umount":
-				foreach ($vpses as $veid) {
-					$vps = vps_load($veid);
-					if ($vps->exists)
-						$vps->backup_umount();
-				}
-				break;
-			case "backup_remount":
-				foreach ($vpses as $veid) {
-					$vps = vps_load($veid);
-					if ($vps->exists)
-						$vps->backup_remount();
-				}
-				break;
-			case "backup_generate_scripts":
-				foreach ($vpses as $veid) {
-					$vps = vps_load($veid);
-					if ($vps->exists)
-						$vps->backup_generate_scripts();
 				}
 				break;
 			default:
@@ -1764,10 +1712,6 @@ if ($mass_management) {
 	
 	$xtpl->table_tr();
 	
-	$xtpl->form_add_select(_('Mount backup').':', 'backup_mount', array("" => _("All"), 1 => _("Yes"), 2 => _("No")), $_GET["backup_mount"]);
-	
-	$xtpl->table_tr();
-	
 	$xtpl->form_out( _("Show"), null, '', '3');
 	
 	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
@@ -1839,18 +1783,6 @@ if ($mass_management) {
 				break;
 		}
 	
-	if (isset($_GET["backup_mount"]))
-		switch ($_GET["backup_mount"]) {
-			case 1:
-				$conds[] = "v.vps_backup_mount = 1";
-				break;
-			case 2:
-				$conds[] = "v.vps_backup_mount = 0";
-				break;
-			default:
-				break;
-		}
-	
 	$conditions = array();
 	
 	foreach($conds as $c)
@@ -1903,10 +1835,6 @@ if ($mass_management) {
 			"migrate_online" => _("Online migration"),
 			"backuper" => _("Set backuper"),
 			"backup_lock" => _("Set backup lock"),
-			"backup_mount" => _("Mount backup"),
-			"backup_umount" => _("Umount backup"),
-			"backup_remount" => _("Remount backup"),
-			"backup_generate_scripts" => _("Generate mount scripts"),
 		), '', '', false, '5', '8'
 	);
 	
