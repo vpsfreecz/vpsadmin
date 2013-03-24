@@ -26,14 +26,14 @@ function nas_root_list_where($cond) {
 	return $ret;
 }
 
-function get_nas_export_list() {
+function get_nas_export_list($default) {
 	global $db;
 	
 	if($_SESSION["is_admin"])
 		$sql = "SELECT e.id, r.label, e.path FROM storage_export e
 				INNER JOIN storage_root r ON r.id = e.root_id
 				INNER JOIN servers s ON s.server_id = r.node_id
-				WHERE server_type = 'storage' ORDER BY s.server_id ASC, path ASC";
+				WHERE server_type = 'storage' AND `default` IN (".($default ? "'member','vps','no'" : "'no'").") ORDER BY s.server_id ASC, path ASC";
 	else
 		$sql = "SELECT e.id, r.label, e.path FROM storage_export e
 				INNER JOIN storage_root r ON r.id = e.root_id
@@ -47,6 +47,45 @@ function get_nas_export_list() {
 	while ($row = $db->fetch_array($rs)) {
 		$ret[$row["id"]] = $row["label"].": ".$row["path"];
 	}
+	
+	return $ret;
+}
+
+function nas_list_default_exports($type) {
+	global $db;
+	
+	$ret = array();
+	
+	$rs = $db->query("SELECT *, e.id AS export_id, e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail
+		FROM storage_export e
+		INNER JOIN storage_root r ON r.id = e.root_id
+		INNER JOIN servers s ON r.node_id = s.server_id
+		LEFT JOIN members m ON m.m_id = e.member_id
+		WHERE `default` ".(($type == "member" || $type == "vps") ? "= '$type'" : "!= 'no'")."
+		ORDER BY s.server_id ASC, path ASC");
+	
+	while($row = $db->fetch_array($rs))
+		$ret[] = $row;
+	
+	return $ret;
+}
+
+function nas_list_default_mounts() {
+	global $db;
+	
+	$ret = array();
+
+	$rs = $db->query("SELECT m.*, e.*, s.*, m.id AS mount_id, r.node_id AS export_server_id, es.server_name AS export_server_name, r.label AS root_label,
+						e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail
+					FROM vps_mount m
+					LEFT JOIN servers s ON m.server_id = s.server_id
+					LEFT JOIN storage_export e ON m.storage_export_id = e.id
+					LEFT JOIN storage_root r ON e.root_id = r.id
+					LEFT JOIN servers es ON r.node_id = es.server_id
+					WHERE m.`default` = 1");
+	
+	while($row = $db->fetch_array($rs))
+		$ret[] = $row;
 	
 	return $ret;
 }
@@ -116,7 +155,7 @@ function nas_node_id_by_root($root_id) {
 	return $node["node_id"];
 }
 
-function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable, $member_prefix = true) {
+function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable, $default = "no", $member_prefix = true) {
 	global $db;
 	
 	if ($dataset === NULL)
@@ -124,13 +163,14 @@ function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable,
 	
 	$n = new cluster_node(nas_node_id_by_root($root));
 	
-	foreach($n->storage_roots as $r) {
-		if ($r["id"] == $root && $r["type"] == "per_member" && $member_prefix) {
-			$dataset = $member."/".$dataset;
-			$path = $member."/".$path;
-			break;
+	if($default == "no" && $member_prefix)
+		foreach($n->storage_roots as $r) {
+			if ($r["id"] == $root && $r["type"] == "per_member") {
+				$dataset = $member."/".$dataset;
+				$path = $member."/".$path;
+				break;
+			}
 		}
-	}
 	
 	$db->query("INSERT INTO storage_export SET
 				member_id = '".$db->check($member)."',
@@ -138,7 +178,10 @@ function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable,
 				dataset = '".$db->check($dataset)."',
 				path = '".$db->check($path)."',
 				quota = '".$db->check($quota)."',
-				user_editable = '".( $user_editable == -1 ? '1' : ($user_editable ? '1' : '0') )."'");
+				user_editable = '".( $user_editable == -1 ? '1' : ($user_editable ? '1' : '0') )."',
+				`default` = '".$db->check($default)."'");
+	
+	$export_id = $db->insertId();
 	
 	foreach($n->storage_roots as $r) {
 		if ($r["id"] == $root) {
@@ -147,12 +190,17 @@ function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable,
 		}
 	}
 	
+	if($default != "no")
+		return $export_id;
+	
 	$params = array(
 		"dataset" => $dataset,
 		"quota" => $quota,
 	);
 	
 	add_transaction($_SESSION["member"]["m_id"], $n->s["server_id"], 0, T_STORAGE_EXPORT_CREATE, $params);
+	
+	return $export_id;
 }
 
 function nas_export_update($id, $quota, $user_editable) {
@@ -166,6 +214,11 @@ function nas_export_update($id, $quota, $user_editable) {
 	$db->query("UPDATE storage_export SET quota = '".$db->check($quota)."' ".$update." WHERE id = '".$db->check($id)."'");
 	
 	$node = $db->fetch_array($db->query("SELECT r.node_id, e.dataset, r.root_dataset FROM storage_root r INNER JOIN storage_export e ON e.root_id = r.id WHERE e.id = '".$db->check($id)."'"));
+	
+	$e = nas_get_export_by_id($id);
+	
+	if($e["default"] != "no")
+		return;
 	
 	$params = array(
 		"dataset" => $node["root_dataset"]."/".$node["dataset"],
@@ -185,13 +238,13 @@ function nas_get_mount_by_id($id) {
 					LEFT JOIN storage_root r ON e.root_id = r.id
 					LEFT JOIN servers es ON es.server_id = r.node_id
 					LEFT JOIN servers s ON m.server_id = s.server_id
-					INNER JOIN vps v ON v.vps_id = m.vps_id
-					INNER JOIN members me ON v.m_id = me.m_id
+					LEFT JOIN vps v ON v.vps_id = m.vps_id
+					LEFT JOIN members me ON v.m_id = me.m_id
 					WHERE m.id = '".$id."'");
 	return $db->fetch_array($rs);
 }
 
-function nas_mount_add($e_id, $vps_id, $access, $node_id, $src, $dst, $m_opts, $u_opts, $type, $premount, $postmount, $preumount, $postumount, $now) {
+function nas_mount_add($e_id, $vps_id, $access, $node_id, $src, $dst, $m_opts, $u_opts, $type, $premount, $postmount, $preumount, $postumount, $now, $default = false) {
 	global $db, $cluster_cfg;
 	
 	if ($m_opts === NULL)
@@ -220,12 +273,14 @@ function nas_mount_add($e_id, $vps_id, $access, $node_id, $src, $dst, $m_opts, $
 				cmd_premount = '".$db->check($premount)."',
 				cmd_postmount = '".$db->check($postmount)."',
 				cmd_preumount = '".$db->check($preumount)."',
-				cmd_postumount = '".$db->check($postumount)."'
+				cmd_postumount = '".$db->check($postumount)."',
+				`default` = ".($default ? 1 : 0)."
 	");
 	
-	$mount_id = $db->insertId();
+	if($default)
+		return;
 	
-	// FIXME: add transact gen mounts & umounts action scripts
+	$mount_id = $db->insertId();
 	
 	$vps = new vps_load($vps_id);
 	$vps->mount_regen();
@@ -235,7 +290,7 @@ function nas_mount_add($e_id, $vps_id, $access, $node_id, $src, $dst, $m_opts, $
 	}
 }
 
-function nas_mount_update($m_id, $e_id, $vps_id, $access, $node_id, $src, $dst, $m_opts, $u_opts, $type, $premount, $postmount, $preumount, $postumount, $now) {
+function nas_mount_update($m_id, $e_id, $vps_id, $access, $node_id, $src, $dst, $m_opts, $u_opts, $type, $premount, $postmount, $preumount, $postumount, $now, $default = false) {
 	global $db;
 	
 	$vps = new vps_load($vps_id);
@@ -280,6 +335,9 @@ function nas_mount_update($m_id, $e_id, $vps_id, $access, $node_id, $src, $dst, 
 	
 	$db->query($sql);
 	
+	if($default)
+		return;
+	
 	$vps->mount_regen();
 	
 	if ($now) {
@@ -296,13 +354,14 @@ function nas_list_exports() {
 				INNER JOIN storage_root r ON r.id = e.root_id
 				INNER JOIN servers s ON r.node_id = s.server_id
 				LEFT JOIN members m ON m.m_id = e.member_id
+				WHERE e.`default` = 'no'
 				ORDER BY s.server_id ASC, path ASC";
 	else $sql = "SELECT *, e.id AS export_id, e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail
 				FROM storage_export e
 				INNER JOIN storage_root r ON r.id = e.root_id
 				INNER JOIN servers s ON r.node_id = s.server_id
 				LEFT JOIN members m ON m.m_id = e.member_id
-				WHERE e.member_id = " . $db->check($_SESSION["member"]["m_id"])."
+				WHERE e.`default` = 'no' AND e.member_id = " . $db->check($_SESSION["member"]["m_id"])."
 				ORDER BY s.server_id ASC, path ASC";
 	
 	$ret = array();
@@ -324,7 +383,8 @@ function nas_list_mounts() {
 				LEFT JOIN servers s ON m.server_id = s.server_id
 				LEFT JOIN storage_export e ON m.storage_export_id = e.id
 				LEFT JOIN storage_root r ON e.root_id = r.id
-				LEFT JOIN servers es ON r.node_id = es.server_id";
+				LEFT JOIN servers es ON r.node_id = es.server_id
+				WHERE m.`default` = 'no'";
 	else $sql = "SELECT m.*, e.*, s.*, m.id AS mount_id, r.node_id AS export_server_id, es.server_name AS export_server_name, r.label AS root_label,
 					e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail
 				FROM vps_mount m
@@ -332,7 +392,7 @@ function nas_list_mounts() {
 				LEFT JOIN storage_export e ON m.storage_export_id = e.id
 				LEFT JOIN storage_root r ON e.root_id = r.id
 				LEFT JOIN servers es ON r.node_id = es.server_id
-				WHERE e.member_id = ".$db->check($_SESSION["member"]["m_id"]);
+				WHERE m.`default` = 'no' AND e.member_id = ".$db->check($_SESSION["member"]["m_id"]);
 	
 	$ret = array();
 	$rs = $db->query($sql);
@@ -348,7 +408,7 @@ function nas_can_user_manage_export($e) {
 }
 
 function nas_can_user_add_mount($e, $vps) {
-	return $e && ($e["member_id"] == $_SESSION["member"]["m_id"] || $_SESSION["is_admin"]) && $vps->exists;
+	return $e && ($e["member_id"] == $_SESSION["member"]["m_id"] || $_SESSION["is_admin"]) && $vps->exists && $e["default"] == "no";
 }
 
 function nas_can_user_manage_mount($m, $vps) {
@@ -405,4 +465,68 @@ function nas_mount_params($mnt, $cmds = true) {
 	}
 	
 	return $ret;
+}
+
+function nas_create_default_exports($type, $obj) {
+	$exports = nas_list_default_exports($type);
+	$mapping = array();
+	
+	foreach ($exports as $e) {
+		$ds = str_replace("%member_id%", $obj["m_id"], $e["dataset"]);
+		$ds = str_replace("%veid%", $obj["vps_id"], $ds);
+		
+		$path = str_replace("%member_id%", $obj["m_id"], $e["path"]);
+		$path = str_replace("%veid%", $obj["vps_id"], $path);
+		
+		$new_id = nas_export_add(
+			$e["member_id"] ? $e["member_id"] : $obj["m_id"],
+			$e["root_id"],
+			$ds,
+			$path,
+			$e["export_quota"],
+			$e["user_editable"],
+			"no",
+			false
+		);
+		
+		$mapping[$e["export_id"]] = $new_id;
+	}
+	
+	return $mapping;
+}
+
+function nas_create_default_mounts($obj, $mapping = array()) {
+	$mounts = nas_list_default_mounts();
+	
+	foreach ($mounts as $m) {
+		$src = str_replace("%member_id%", $obj["m_id"], $m["src"]);
+		$src = str_replace("%veid%", $obj["vps_id"], $src);
+		
+		$storage_export_id = $m["storage_export_id"];
+		
+		if($storage_export_id) {
+			$e = nas_get_export_by_id($storage_export_id);
+			
+			if($e["default"] != "no")
+				$storage_export_id = $mapping[$storage_export_id];
+		}
+		
+		nas_mount_add(
+			$storage_export_id,
+			$m["vps_id"] ? $m["vps_id"] : $obj["vps_id"],
+			$m["mode"],
+			$m["server_id"],
+			$src,
+			$m["dst"],
+			$m["mount_opts"],
+			$m["umount_opts"],
+			$m["type"],
+			$m["cmd_premount"],
+			$m["cmd_postmount"],
+			$m["cmd_preumount"],
+			$m["cmd_postumount"],
+			false,
+			false
+		);
+	}
 }

@@ -174,4 +174,25 @@ function server_by_id ($id) {
     return false;
 }
 
+function notify_user($title, $msg) {
+	$_SESSION["notification"] = array(
+		"title" => $title,
+		"msg" => $msg,
+	);
+}
+
+function show_notification() {
+	global $xtpl;
+	
+	if(!isset($_SESSION["notification"]))
+		return;
+	
+	$xtpl->perex($_SESSION["notification"]["title"], $_SESSION["notification"]["msg"]);
+	unset($_SESSION["notification"]);
+}
+
+function redirect($loc) {
+	header('Location: '.$loc);
+}
+
 ?>

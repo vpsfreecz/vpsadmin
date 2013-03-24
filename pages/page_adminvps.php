@@ -113,6 +113,9 @@ switch ($_GET["action"]) {
 													$playground_mode ? $_SESSION["member"]["m_id"] : $_REQUEST["m_id"],
 													$playground_mode ? '' : $_REQUEST["vps_info"]);
 						
+						$mapping = nas_create_default_exports("vps", $vps->ve);
+						nas_create_default_mounts($vps->ve, $mapping);
+						
 						if ($playground_mode) {
 							$vps->add_default_configs("playground_default_config_chain");
 							$vps->add_first_available_ip($server["server_location"], 4);

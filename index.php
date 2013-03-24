@@ -41,6 +41,8 @@ include WWW_ROOT.'lib/log.lib.php';
 include WWW_ROOT.'lib/helpbox.lib.php';
 include WWW_ROOT.'lib/nas.lib.php';
 
+include WWW_ROOT.'forms/nas.forms.php';
+
 include WWW_ROOT.'lib/gettext_stream.lib.php';
 include WWW_ROOT.'lib/gettext_inc.lib.php';
 include WWW_ROOT.'lib/gettext_lang.lib.php';
@@ -94,6 +96,8 @@ if (($_GET["page"] != "login") &&
 										This is usually used in outage mode to prevent data corruption.<br />
 										Please be patient."));
 } else {
+	show_notification();
+	
 	switch ($_GET["page"]) {
 		case 'adminvps':
 			include WWW_ROOT.'pages/page_adminvps.php';

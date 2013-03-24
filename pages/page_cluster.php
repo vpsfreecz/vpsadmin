@@ -15,6 +15,8 @@ $list_templates = false;
 $server_types = array("node" => "Node", "storage" => "Storage", "mailer" => "Mailer");
 $location_types = array("production" => "Production", "playground" => "Playground");
 
+$export_add_target = '?page=cluster&action=nas_def_export_save&for='.$_GET["for"];
+
 switch($_REQUEST["action"]) {
 	case "restart_node":
 		$node = new cluster_node($_REQUEST["id"]);
@@ -749,13 +751,215 @@ switch($_REQUEST["action"]) {
 		$xtpl->form_add_input(_("Default umount options").':', 'text', '40', 'umount_options', $cluster_cfg->get("nas_default_umount_options"), '');
 		$xtpl->form_out(_("Save changes"));
 		
+		$xtpl->table_title(_("Default exports created for new members"));
+		$xtpl->table_add_category(_("Member"));
+		$xtpl->table_add_category(_("Server"));
+		$xtpl->table_add_category(_("Dataset"));
+		$xtpl->table_add_category(_("Path"));
+		$xtpl->table_add_category(_("Quota"));
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		
+		$exports_m = nas_list_default_exports("member");
+		
+		foreach($exports_m as $e) {
+			$xtpl->table_td($e["member_id"] ? $e["m_nick"] : _("new member"));
+			$xtpl->table_td($e["label"]);
+			if ($_SESSION["is_admin"])
+				$xtpl->table_td($e["dataset"]);
+			$xtpl->table_td($e["path"]);
+			$xtpl->table_td(nas_size_to_humanreadable($e["export_quota"]));
+			$xtpl->table_td('<a href="?page=cluster&action=nas_def_export_edit&id='.$e["export_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+			$xtpl->table_td('<a href="?page=cluster&action=nas_def_export_del&id='.$e["export_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+			
+			$xtpl->table_tr();
+		}
+		
+		$xtpl->table_out();
+		
+		$xtpl->table_title(_("Default exports created for new VPS"));
+		
+		$xtpl->table_add_category(_("Member"));
+		$xtpl->table_add_category(_("Server"));
+		$xtpl->table_add_category(_("Dataset"));
+		$xtpl->table_add_category(_("Path"));
+		$xtpl->table_add_category(_("Quota"));
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		
+		$exports_m = nas_list_default_exports("vps");
+		
+		foreach($exports_m as $e) {
+			$xtpl->table_td($e["member_id"] ? $e["m_nick"] : _("VPS owner"));
+			$xtpl->table_td($e["label"]);
+			if ($_SESSION["is_admin"])
+				$xtpl->table_td($e["dataset"]);
+			$xtpl->table_td($e["path"]);
+			$xtpl->table_td(nas_size_to_humanreadable($e["export_quota"]));
+			$xtpl->table_td('<a href="?page=cluster&action=nas_def_export_edit&id='.$e["export_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+			$xtpl->table_td('<a href="?page=cluster&action=nas_def_export_del&id='.$e["export_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+			
+			$xtpl->table_tr();
+		}
+		
+		$xtpl->table_out();
+		
+		$xtpl->table_title(_("Default mounts created for new VPS"));
+		
+		$xtpl->table_add_category(_("Source"));
+		$xtpl->table_add_category(_("Destination"));
+		$xtpl->table_add_category(_("Mount options"));
+		$xtpl->table_add_category(_("Umount options"));
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		
+		$mounts = nas_list_default_mounts();
+		
+		foreach ($mounts as $m) {
+			$xtpl->table_td($m["storage_export_id"] ? $m["root_label"].":".$m["path"] : $m["server_name"].":".$m["src"]);
+			$xtpl->table_td($m["dst"]);
+			$xtpl->table_td($m["mount_opts"]);
+			$xtpl->table_td($m["umount_opts"]);
+			$xtpl->table_td('<a href="?page=cluster&action=nas_def_mount_edit&id='.$m["mount_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+			$xtpl->table_td('<a href="?page=cluster&action=nas_def_mount_del&id='.$m["mount_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+			$xtpl->table_tr();
+		}
+		
+		$xtpl->table_out();
+		
 		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		$xtpl->sbar_add(_("Add default export for member"), '?page=cluster&action=nas_def_export_add&for=member');
+		$xtpl->sbar_add(_("Add default export for VPS"), '?page=cluster&action=nas_def_export_add&for=vps');
+		$xtpl->sbar_add(_("Add default mount for VPS"), '?page=cluster&action=nas_def_mount_add');
 		break;
 	case "nas_settings_save":
 		$cluster_cfg->set("nas_default_mount_options", $_POST["mount_options"]);
 		$cluster_cfg->set("nas_default_umount_options", $_POST["umount_options"]);
 		$xtpl->perex(_("NAS settings saved"), '');
 		$list_nodes = true;
+		break;
+	case "nas_def_export_add":
+		$xtpl->table_title(_("Add default export for new").' '.($_GET["for"] == "member" ? _("member") : _("VPS")));
+		export_add_form($export_add_target, true);
+		$xtpl->sbar_add(_("Back"), '?page=cluster&action=nas_settings');
+		break;
+	case "nas_def_export_edit":
+		$e = nas_get_export_by_id($_GET["id"]);
+		
+		export_edit_form('?page=cluster&action=nas_def_export_save', $e);
+		break;
+	case "nas_def_export_save":
+		if(isset($_POST["root_id"]) || isset($_POST["quota_val"])) {
+			if($_GET["id"]) {
+				nas_export_update(
+					$_GET["id"],
+					$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]),
+					$_POST["user_editable"]
+				);
+			} else {
+				nas_export_add(
+					$_POST["member"],
+					$_POST["root_id"],
+					$_POST["dataset"],
+					$_POST["path"],
+					$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]),
+					$_POST["user_editable"],
+					$_GET["for"]
+				);
+			}
+			
+			notify_user(_("Default export saved"), '');
+			redirect('?page=cluster&action=nas_settings');
+		}
+		break;
+	case "nas_def_export_del":
+		break;
+	case "nas_def_mount_add":
+		$xtpl->table_title(_("Add default mount for new VPS"));
+		mount_add_form('?page=cluster&action=nas_def_export_mount_save', '?page=cluster&action=nas_def_custom_mount_save', true);
+		$xtpl->sbar_add(_("Back"), '?page=cluster&action=nas_settings');
+		break;
+	case "nas_def_export_mount_save":
+		if ($_POST["export_id"] && $_POST["dst"] && isset($_POST["vps_id"])) {
+			nas_mount_add(
+				$_POST["export_id"],
+				$_POST["vps_id"],
+				$_POST["access_mode"],
+				0,
+				"",
+				$_POST["dst"],
+				$_SESSION["is_admin"] ? $_POST["m_opts"] : NULL,
+				$_SESSION["is_admin"] ? $_POST["u_opts"] : NULL,
+				"nfs",
+				$_POST["cmd_premount"],
+				$_POST["cmd_postmount"],
+				$_POST["cmd_preumount"],
+				$_POST["cmd_postumount"],
+				false,
+				true
+			);
+			
+			notify_user(_("Default mount saved"), '');
+			redirect('?page=cluster&action=nas_settings');
+		}
+		break;
+	case "nas_def_custom_mount_save":
+		if ($_POST["export_id"] && $_POST["dst"] && isset($_POST["vps_id"])) {
+			nas_mount_add(
+				0,
+				$_POST["vps_id"],
+				$_POST["access_mode"],
+				$_POST["source_node_id"],
+				$_POST["src"],
+				$_POST["dst"],
+				$_POST["m_opts"],
+				$_POST["u_opts"],
+				$_POST["type"],
+				$_POST["cmd_premount"],
+				$_POST["cmd_postmount"],
+				$_POST["cmd_preumount"],
+				$_POST["cmd_postumount"],
+				false,
+				true
+			);
+			
+			notify_user(_("Default mount saved"), '');
+			redirect('?page=cluster&action=nas_settings');
+		}
+		break;
+	case "nas_def_mount_edit":
+		$m = nas_get_mount_by_id($_GET["id"]);
+		
+		mount_edit_form('?page=cluster&action=nas_def_mount_edit_save', $m, true);
+		
+		$xtpl->sbar_add(_("Back"), '?page=cluster&action=nas_settings');
+		break;
+	case "nas_def_mount_edit_save":
+		if ($_GET["id"] && ($_POST["export_id"] || $_POST["src"]) && $_POST["dst"]) {
+			nas_mount_update(
+				$_GET["id"],
+				$_POST["export_id"],
+				$_POST["vps_id"],
+				$_POST["access_mode"],
+				$_POST["source_node_id"],
+				$_POST["src"],
+				$_POST["dst"],
+				$_POST["m_opts"],
+				$_POST["u_opts"],
+				$_POST["type"],
+				$_POST["cmd_premount"],
+				$_POST["cmd_postmount"],
+				$_POST["cmd_preumount"],
+				$_POST["cmd_postumount"],
+				false,
+				true
+			);
+			
+			notify_user(_("Default mount saved"), '');
+			redirect('?page=cluster&action=nas_settings');
+		}
+		break;
+	case "nas_def_mount_del":
 		break;
 	case "playground_settings":
 		$xtpl->sbar_add(_("Back"), '?page=cluster');

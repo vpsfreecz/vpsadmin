@@ -122,6 +122,8 @@ class vps_load {
 		$this->ve["vps_nameserver"] = $params["nameserver"];
 		$this->ve["vps_template"] = $template["templ_name"];
 		$this->ve["vps_onboot"] = $location["location_vps_onboot"];
+		$this->ve["m_id"] = $m_id;
+		$this->ve["vps_id"] = $this->veid;
 		
 		add_transaction($_SESSION["member"]["m_id"], $server_id, $this->veid, T_CREATE_VE, $params);
     $this->nameserver($cluster->get_first_suitable_dns($cluster->get_location_of_server($server_id)));
@@ -720,7 +722,7 @@ function ipadd($ip, $type = 4) {
 					LEFT JOIN storage_root r ON e.root_id = r.id
 					LEFT JOIN servers es ON es.server_id = r.node_id
 					LEFT JOIN servers s ON m.server_id = s.server_id
-					WHERE m.vps_id = " . $db->check($this->veid) . " ORDER BY m.id ASC");
+					WHERE m.vps_id = " . $db->check($this->veid) . " AND m.`default` = 0 ORDER BY m.id ASC");
 	
 	while($mnt = $db->fetch_array($rs)) {
 		$params["mounts"][] = nas_mount_params($mnt, false);

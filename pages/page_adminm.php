@@ -264,7 +264,8 @@ if ($_SESSION["logged_in"]) {
 								if (!$m->exists) {
 
 									if ($m->create_new($_REQUEST)) {
-
+										nas_create_default_exports("member", $m->m);
+										
 										$xtpl->perex(_("Member added"),
 														_("Continue")
 														. ' <a href="?page=adminm&section=members">'.strtolower(_("Here")).'</a>');
