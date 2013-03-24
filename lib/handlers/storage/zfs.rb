@@ -25,7 +25,7 @@ module StorageBackend
 		# [quota]         number; quota for this export, in bytes
 		def update_export
 			zfs(:set, "sharenfs=\"#{@params["share_options"]}\"", @params["dataset"]) if @params["share_options"]
-			zfs(:set, "quota=#{@params["quota"] == 0 ? "none" : @params["quota"]}", @params["dataset"])
+			zfs(:set, "quota=#{@params["quota"].to_i == 0 ? "none" : @params["quota"]}", @params["dataset"])
 		end
 	end
 end
