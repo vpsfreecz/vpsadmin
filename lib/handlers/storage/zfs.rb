@@ -27,5 +27,14 @@ module StorageBackend
 			zfs(:set, "sharenfs=\"#{@params["share_options"]}\"", @params["dataset"]) if @params["share_options"]
 			zfs(:set, "quota=#{@params["quota"].to_i == 0 ? "none" : @params["quota"]}", @params["dataset"])
 		end
+		
+		# Delete export
+		#
+		# Params:
+		# [path]      string; name of dataset
+		# [recursive] bool; if true then delete all descendants
+		def delete_export
+			zfs(:destroy, @params["recursive"] ? "-r" : nil, @params["path"])
+		end
 	end
 end

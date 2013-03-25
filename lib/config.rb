@@ -58,6 +58,7 @@ IMPLICIT_CONFIG = {
 			"Storage" => {
 				5201 => "create_export",
 				5202 => "update_export",
+				5203 => "delete_export",
 			},
 			"Backuper" => {
 				5002 => "restore_prepare",
