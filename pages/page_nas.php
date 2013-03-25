@@ -72,6 +72,71 @@ if ($_SESSION["logged_in"]) {
 			break;
 		
 		case "export_del":
+			if(isset($_GET["id"])) {
+				$e = nas_get_export_by_id($_GET["id"]);
+				$mounts = nas_get_mounts_for_export($_GET["id"]);
+				
+				$msg = _("All data from this export will be DELETED!")."<br>";
+				$msg .= _("Current size:").' <strong>'.nas_size_to_humanreadable($e["export_used"])."</strong><br><br>";
+				
+				$children = nas_get_export_children($_GET["id"]);
+				
+				if(count($children) > 0) {
+					$msg .= _("This export has following subdirectories and ALL OF THEM will be DELETED too:");
+					$msg .= "<br><ul>";
+					
+					foreach($children as $child) {
+						$mounts = array_merge($mounts, nas_get_mounts_for_export($child["id"]));
+						$msg .= "<li>".$child["path"]." (".nas_size_to_humanreadable($child["used"]).")</li>";
+					}
+					
+					$msg .= "</ul>";
+				}
+				
+				if(count($mounts) > 0) {
+					$msg .= _("Following mounts of these exports will be deleted too:")."<ul>";
+					
+					foreach($mounts as $m) {
+						$msg .= "<li> VPS #".$m["vps_id"]."; "._("path")." ".$m["dst"]."</li>";
+					}
+					
+					$msg .= "</ul>";
+				}
+				
+				$confirm = true;
+				
+				if($e["export_used"] == 0 && count($children) == 0 && count($mounts) == 0)
+					$confirm = false;
+				
+				$msg .= '<br><a href="?page=nas">'.strtoupper(_("No")).'</a> | <a href="?page=nas&action='.($confirm ? 'export_del2' : 'export_del3').'&id='.$_GET["id"].'">'.strtoupper(_("Yes, I want to delete this export with all its subdirectories and data")).'</a>';
+				
+				$xtpl->perex(_("Do you really want to delete export").' '.$e["path"].'?', $msg);
+			}
+			break;
+		
+		case "export_del2":
+			if(isset($_GET["id"])) {
+				$e = nas_get_export_by_id($_GET["id"]);
+				
+				$msg = _("This is your last chance, all data from this export, including all its subdirectories and mounts, will be deleted and cannot be restored.");
+				$msg .= "<br><br><strong>"._("This action is irreversible.")."</strong><br><br>";
+				$msg .= '<a href="?page=nas">'._("Cancel deletion").'</a> | <a href="?page=nas&action=export_del3&id='.$_GET["id"].'">'.strtoupper(_("DELETE")).'</a>';
+				
+				$xtpl->perex(_("Please confirm deletion of export ").$e["path"]._(" and all its subdirectories and mounts"), $msg);
+			}
+			break;
+		
+		case "export_del3":
+			if(isset($_GET["id"])) {
+				$e = nas_get_export_by_id($_GET["id"]);
+				
+				if(nas_can_user_manage_export($e)) {
+					nas_export_delete($e["export_id"]);
+					
+					notify_user(_("Export deleted"), _("Export was successfuly deleted."));
+					redirect('?page=nas');
+				}
+			}
 			break;
 		
 		case "mount_add":

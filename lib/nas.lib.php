@@ -93,7 +93,7 @@ function nas_list_default_mounts() {
 function nas_get_export_by_id($id) {
 	global $db;
 	
-	$rs = $db->query("SELECT *, e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail
+	$rs = $db->query("SELECT *, e.id AS export_id, e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail
 					FROM storage_export e
 					INNER JOIN storage_root r ON r.id = e.root_id
 					INNER JOIN servers s ON s.server_id = r.node_id
@@ -228,10 +228,97 @@ function nas_export_update($id, $quota, $user_editable) {
 	add_transaction($_SESSION["member"]["m_id"], $node["node_id"], 0, T_STORAGE_EXPORT_UPDATE, $params);
 }
 
+function nas_export_delete($id) {
+	global $db;
+	
+	$e = nas_get_export_by_id($id);
+	$children = nas_get_export_children($id);
+	$vpses = array();
+	
+	foreach($children as $child) {
+		nas_delete_export_mounts($child["id"], $vpses);
+		nas_export_delete_direct($child, false);
+	}
+	
+	nas_delete_export_mounts($id, $vpses);
+	nas_export_delete_direct($e, true);
+	
+	$params = array(
+		"path" => $e["root_dataset"]."/".$e["dataset"],
+		"recursive" => true,
+	);
+	
+	add_transaction($_SESSION["member"]["m_id"], $e["node_id"], 0, T_STORAGE_EXPORT_DELETE, $params);
+	
+	foreach($vpses as $veid) {
+		$vps = new vps_load($veid);
+		$vps->mount_regen();
+	}
+}
+
+function nas_delete_export_mounts($id, &$vpses) {
+	$mounts = nas_get_mounts_for_export($id);
+	
+	foreach($mounts as $m) {
+		nas_mount_delete($m["id"], true, false);
+		
+		if(!in_array($m["vps_id"], $vpses))
+			$vpses[] = $m["vps_id"];
+	}
+}
+
+function nas_delete_mounts_for_vps($veid) {
+	global $db;
+	
+	$vps = new vps_load($veid);
+	$rs = $db->query("SELECT * FROM vps_mount WHERE vps_id = '".$db->check($veid)."'");
+	
+	while($m = $db->fetch_array($rs))
+		nas_mount_delete($m["id"], true, false);
+	
+	$vps->mount_regen();
+}
+
+function nas_export_delete_direct($export, $commit) {
+	global $db;
+	
+	$db->query("DELETE FROM storage_export WHERE id = '".$db->check($export["export_id"])."'");
+}
+
+function nas_get_export_children($id) {
+	global $db;
+	
+	$e = nas_get_export_by_id($id);
+	
+	$ret = array();
+	$rs = $db->query("SELECT *
+				FROM storage_export e1
+				WHERE dataset LIKE '".$db->check($e["dataset"])."/%'
+					AND root_id = '".$e["root_id"]."'
+				ORDER BY dataset");
+	
+	while($row = $db->fetch_array($rs))
+		$ret[] = $row;
+	
+	return $ret;
+}
+
+function nas_get_mounts_for_export($id) {
+	global $db;
+	
+	$ret = array();
+	$rs = $db->query("SELECT * FROM vps_mount WHERE storage_export_id = '".$db->check($id)."' ORDER BY vps_id");
+	
+	while($row = $db->fetch_array($rs))
+		$ret[] = $row;
+	
+	return $ret;
+}
+
 function nas_get_mount_by_id($id) {
 	global $db;
 	
-	$rs = $db->query("SELECT m.*, r.root_path, e.path,
+	$rs = $db->query("SELECT m.*, r.root_path, e.path, m.id AS mount_id,
 					s.server_ip4 AS mount_server_ip4, es.server_ip4 AS export_server_ip4, me.m_id
 					FROM vps_mount m
 					LEFT JOIN storage_export e ON e.id = m.storage_export_id
@@ -343,6 +430,21 @@ function nas_mount_update($m_id, $e_id, $vps_id, $access, $node_id, $src, $dst, 
 	if ($now) {
 		$vps->remount(nas_get_mount_by_id($m_id));
 	}
+}
+
+function nas_mount_delete($id, $umount, $regen = true) {
+	global $db;
+	
+	$m = nas_get_mount_by_id($id);
+	$vps = new vps_load($m["vps_id"]);
+	
+	if($umount)
+		$vps->umount($m);
+	
+	$db->query("DELETE FROM vps_mount WHERE id = '".$db->check($id)."'");
+	
+	if($regen)
+		$vps->mount_regen();
 }
 
 function nas_list_exports() {
