@@ -133,7 +133,7 @@ if ($_SESSION["logged_in"]) {
 				if(nas_can_user_manage_export($e)) {
 					nas_export_delete($e["export_id"]);
 					
-					notify_user(_("Export deleted"), _("Export was successfuly deleted."));
+					notify_user(_("Export deleted"), _("Export was successfully deleted."));
 					redirect('?page=nas');
 				}
 			}
@@ -269,7 +269,7 @@ if ($_SESSION["logged_in"]) {
 				
 				if(nas_can_user_manage_mount($m, $vps)) {
 					nas_mount_delete($_GET["id"], true);
-					notify_user(_("Mount deleted"), _("Mount was successfuly deleted."));
+					notify_user(_("Mount deleted"), _("Mount was successfully deleted."));
 					redirect('?page=nas');
 				}
 			}

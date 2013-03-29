@@ -237,22 +237,24 @@ function nas_export_delete($id) {
 	
 	foreach($children as $child) {
 		nas_delete_export_mounts($child["id"], $vpses);
-		nas_export_delete_direct($child, false);
+		nas_export_delete_direct($child["id"], false);
 	}
 	
 	nas_delete_export_mounts($id, $vpses);
 	nas_export_delete_direct($e, true);
 	
-	$params = array(
-		"path" => $e["root_dataset"]."/".$e["dataset"],
-		"recursive" => true,
-	);
-	
-	add_transaction($_SESSION["member"]["m_id"], $e["node_id"], 0, T_STORAGE_EXPORT_DELETE, $params);
-	
-	foreach($vpses as $veid) {
-		$vps = new vps_load($veid);
-		$vps->mount_regen();
+	if($e["default"] == "no") {
+		$params = array(
+			"path" => $e["root_dataset"]."/".$e["dataset"],
+			"recursive" => true,
+		);
+		
+		add_transaction($_SESSION["member"]["m_id"], $e["node_id"], 0, T_STORAGE_EXPORT_DELETE, $params);
+		
+		foreach($vpses as $veid) {
+			$vps = new vps_load($veid);
+			$vps->mount_regen();
+		}
 	}
 }
 
@@ -438,12 +440,12 @@ function nas_mount_delete($id, $umount, $regen = true) {
 	$m = nas_get_mount_by_id($id);
 	$vps = new vps_load($m["vps_id"]);
 	
-	if($umount)
+	if($umount && !$m["default"])
 		$vps->umount($m);
 	
 	$db->query("DELETE FROM vps_mount WHERE id = '".$db->check($id)."'");
 	
-	if($regen)
+	if($regen && !$m["default"])
 		$vps->mount_regen();
 }
 

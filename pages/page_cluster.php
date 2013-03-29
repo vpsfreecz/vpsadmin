@@ -873,6 +873,47 @@ switch($_REQUEST["action"]) {
 		}
 		break;
 	case "nas_def_export_del":
+		if($_GET["id"] && ($e = nas_get_export_by_id($_GET["id"]))) {
+			$mounts = nas_get_mounts_for_export($_GET["id"]);
+			$msg = "";
+			$children = nas_get_export_children($_GET["id"]);
+			
+			if(count($children) > 0) {
+				$msg .= _("This export has following subdirectories and ALL OF THEM will be DELETED too:");
+				$msg .= "<br><ul>";
+				
+				foreach($children as $child) {
+					$mounts = array_merge($mounts, nas_get_mounts_for_export($child["id"]));
+					$msg .= "<li>".$child["path"]." (".nas_size_to_humanreadable($child["used"]).")</li>";
+				}
+				
+				$msg .= "</ul>";
+			}
+			
+			if(count($mounts) > 0) {
+				$msg .= _("Following mounts of these exports will be deleted too:")."<ul>";
+				
+				foreach($mounts as $m) {
+					$msg .= "<li> VPS #".$m["vps_id"]."; "._("path")." ".$m["dst"]."</li>";
+				}
+				
+				$msg .= "</ul>";
+			}
+			
+			$msg .= '<br><br><a href="?page=cluster&action=nas_settings">'.strtoupper(_("No")).'</a> | <a href="?page=cluster&action=nas_def_export_del2&id='.$_GET["id"].'">'.strtoupper(_("Yes")).'</a>';
+			
+			$xtpl->perex(
+				_("Do you really want to delete export").' '.$e["path"].'?',
+				$msg
+			);
+		}
+		break;
+	case "nas_def_export_del2":
+		if($_GET["id"] && ($e = nas_get_export_by_id($_GET["id"]))) {
+			nas_export_delete($_GET["id"]);
+			notify_user(_("Default export deleted"), _("Default export successfully deleted."));
+			redirect('?page=cluster&action=nas_settings');
+		}
 		break;
 	case "nas_def_mount_add":
 		$xtpl->table_title(_("Add default mount for new VPS"));
@@ -960,6 +1001,19 @@ switch($_REQUEST["action"]) {
 		}
 		break;
 	case "nas_def_mount_del":
+		if($_GET["id"] && ($m = nas_get_mount_by_id($_GET["id"]))) {
+			$xtpl->perex(
+					_("Do you really want to delete default mount").' '.$m["dst"].' '._("at").' #'.$m["vps_id"].'?',
+					'<a href="?page=cluster&action=nas_settings">'.strtoupper(_("No")).'</a> | <a href="?page=cluster&action=nas_def_mount_del2&id='.$_GET["id"].'">'.strtoupper(_("Yes")).'</a>'
+				);
+			}
+		break;
+	case "nas_def_mount_del2":
+		if($_GET["id"] && ($m = nas_get_mount_by_id($_GET["id"]))) {
+			nas_mount_delete($_GET["id"], false, false);
+			notify_user(_("Default mount deleted"), _("Default mount was successfully deleted."));
+			redirect('?page=cluster&action=nas_settings');
+		}
 		break;
 	case "playground_settings":
 		$xtpl->sbar_add(_("Back"), '?page=cluster');
@@ -1378,7 +1432,7 @@ switch($_REQUEST["action"]) {
 				break;
 		}
 		
-		$xtpl->perex(_('Command executed'), _('Command successfuly executed for VPSes: ') . implode(', ', $vpses));
+		$xtpl->perex(_('Command executed'), _('Command successfully executed for VPSes: ') . implode(', ', $vpses));
 		break;
 	default:
 		$list_nodes = true;
