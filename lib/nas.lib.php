@@ -5,8 +5,8 @@ $STORAGE_MOUNT_TYPES = array("bind" => _("Bind"), "nfs" => _("NFS"));
 $STORAGE_MOUNT_MODES = array("none" => _("None"), "ro" => _("Read only"), "rw" => _("Read and write"));
 $STORAGE_MOUNT_MODES_RO = array("ro" => _("Read only"));
 $STORAGE_MOUNT_MODES_RO_RW = array("ro" => _("Read only"), "rw" => _("Read and write"));
-$NAS_QUOTA_UNITS = array("m" => "MiB", "g" => "GiB", "t" => "TiB");
-$NAS_UNITS_TR = array("m" => 19, "g" => 29, "t" => 39);
+$NAS_QUOTA_UNITS = array("k" => "KiB", "m" => "MiB", "g" => "GiB", "t" => "TiB");
+$NAS_UNITS_TR = array("k" => 9, "m" => 19, "g" => 29, "t" => 39);
 
 function nas_root_list_where($cond) {
 	global $db;
@@ -520,7 +520,7 @@ function nas_can_user_manage_mount($m, $vps) {
 }
 
 function nas_quota_to_val_unit($val) {
-	$units = array("t" => 39, "g" => 29, "m" => 19);
+	$units = array("t" => 39, "g" => 29, "m" => 19, "k" => 9);
 	
 	foreach ($units as $u => $ex) {
 		if ($val >= (2 << $ex))
@@ -537,7 +537,7 @@ function nas_size_to_humanreadable($val) {
 		return _("none");
 	
 	$res = nas_quota_to_val_unit($val);
-	return $res[0] . " " . $NAS_QUOTA_UNITS[$res[1]];
+	return round($res[0], 2) . " " . $NAS_QUOTA_UNITS[$res[1]];
 }
 
 function nas_mount_params($mnt, $cmds = true) {
