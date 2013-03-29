@@ -250,8 +250,31 @@ if ($_SESSION["logged_in"]) {
 			break;
 		
 		case "mount_del":
+			if($_GET["id"] && ($m = nas_get_mount_by_id($_GET["id"]))) {
+				$vps = new vps_load($m["vps_id"]);
+				
+				if(nas_can_user_manage_mount($m, $vps)) {
+					$xtpl->perex(
+						_("Do you really want to delete mount").' '.$m["dst"].' '._("at").' #'.$m["vps_id"].'?',
+						_("No data is deleted, only the mount.")."<br><br>".
+						'<a href="?page=nas">'.strtoupper(_("No")).'</a> | <a href="?page=nas&action=mount_del2&id='.$_GET["id"].'">'.strtoupper(_("Yes")).'</a>'
+					);
+				}
+			}
 			break;
-			
+		
+		case "mount_del2":
+			if($_GET["id"] && ($m = nas_get_mount_by_id($_GET["id"]))) {
+				$vps = new vps_load($m["vps_id"]);
+				
+				if(nas_can_user_manage_mount($m, $vps)) {
+					nas_mount_delete($_GET["id"], true);
+					notify_user(_("Mount deleted"), _("Mount was successfuly deleted."));
+					redirect('?page=nas');
+				}
+			}
+			break;
+		
 		case "mount":
 			if ($_GET["id"]) {
 				$m = nas_get_mount_by_id($_GET["id"]);
