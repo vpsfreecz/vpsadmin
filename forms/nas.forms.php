@@ -39,7 +39,7 @@ function export_add_form($target, $default = false) {
 	$xtpl->form_create($target, 'post');
 	if ($_SESSION["is_admin"])
 		$xtpl->form_add_select(_("Member").':', 'member', $members, $_POST["member"]);
-	$xtpl->form_add_select(_("Server").':', 'root_id', nas_root_list_where($_SESSION["is_admin"] ? '' : "user_export = 1"), $_POST["root_id"]);
+	$xtpl->form_add_select(_("Pool").':', 'root_id', nas_root_list_where($_SESSION["is_admin"] ? '' : "user_export = 1"), $_POST["root_id"]);
 	if ($_SESSION["is_admin"])
 		$xtpl->form_add_input(_("Dataset").':', 'text', '30', 'dataset', $_POST["dataset"], $ds_help);
 	$xtpl->form_add_input(_("Path").':', 'text', '30', 'path', $_POST["path"], $ds_help);

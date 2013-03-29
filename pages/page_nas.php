@@ -314,7 +314,7 @@ if ($_SESSION["logged_in"]) {
 			
 		$xtpl->table_title(_("Exports"));
 		$xtpl->table_add_category(_("Member"));
-		$xtpl->table_add_category(_("Server"));
+		$xtpl->table_add_category(_("Pool"));
 		if ($_SESSION["is_admin"])
 			$xtpl->table_add_category(_("Dataset"));
 		$xtpl->table_add_category(_("Path"));

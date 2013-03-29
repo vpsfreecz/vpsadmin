@@ -753,7 +753,7 @@ switch($_REQUEST["action"]) {
 		
 		$xtpl->table_title(_("Default exports created for new members"));
 		$xtpl->table_add_category(_("Member"));
-		$xtpl->table_add_category(_("Server"));
+		$xtpl->table_add_category(_("Pool"));
 		$xtpl->table_add_category(_("Dataset"));
 		$xtpl->table_add_category(_("Path"));
 		$xtpl->table_add_category(_("Quota"));
@@ -780,7 +780,7 @@ switch($_REQUEST["action"]) {
 		$xtpl->table_title(_("Default exports created for new VPS"));
 		
 		$xtpl->table_add_category(_("Member"));
-		$xtpl->table_add_category(_("Server"));
+		$xtpl->table_add_category(_("Pool"));
 		$xtpl->table_add_category(_("Dataset"));
 		$xtpl->table_add_category(_("Path"));
 		$xtpl->table_add_category(_("Quota"));
