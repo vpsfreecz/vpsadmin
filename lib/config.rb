@@ -114,6 +114,7 @@ IMPLICIT_CONFIG = {
 	
 	:storage => {
 		:method => "Zfs",
+		:update_status => true,
 	},
 	
 	:backuper => {

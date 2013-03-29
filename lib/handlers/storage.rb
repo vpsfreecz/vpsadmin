@@ -35,6 +35,20 @@ class Storage < Executor
 	def update_export
 		raise CommandNotImplemented
 	end
+	
+	# Update exports status
+	def update_status
+		
+	end
+	
+	# Returns a list of exports on this node
+	def list_exports(db)
+		db.query("SELECT e.id, e.dataset, e.path, r.root_dataset, r.root_path FROM storage_export e
+		         INNER JOIN storage_root r ON r.id = e.root_id
+		         WHERE
+		         e.`default` = 'no' AND
+		         r.node_id = #{$CFG.get(:vpsadmin, :server_id)}")
+	end
 end
 
 require 'lib/handlers/storage/zfs'

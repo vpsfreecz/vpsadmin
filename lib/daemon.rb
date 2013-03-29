@@ -31,6 +31,7 @@ module VpsAdmind
 			@start_time = Time.new
 			@export_console = false
 			@cmd_counter = 0
+			@threads = {}
 			
 			Command.load_handlers()
 		end
@@ -41,12 +42,10 @@ module VpsAdmind
 		end
 		
 		def start
-			update_status
-			
 			loop do
 				sleep($CFG.get(:vpsadmin, :check_interval))
 				
-				update_status unless @status_thread.alive?
+				run_threads
 				
 				catch (:next) do
 					@m_workers.synchronize do
@@ -128,43 +127,49 @@ module VpsAdmind
 			end
 		end
 		
-		def update_status
-			@status_thread = Thread.new do
-				loop do
-					my = Db.new
-					
-					if $CFG.get(:vpsadmin, :update_vps_status)
-						rs = my.query("SELECT vps_id FROM vps WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}")
+		def run_threads
+			if !@threads[:status] || !@threads[:status].alive?
+				@threads[:status] = Thread.new do
+					loop do
+						my = Db.new
 						
-						rs.each_hash do |vps|
-							ct = VPS.new(vps["vps_id"])
-							ct.update_status(my)
-						end
-						
-						fw = Firewall.new
-						fw.read_traffic.each do |ip, traffic|
-							next if traffic[:in] == 0 and traffic[:out] == 0
+						if $CFG.get(:vpsadmin, :update_vps_status)
+							rs = my.query("SELECT vps_id FROM vps WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}")
 							
-							st = my.prepared_st("UPDATE transfered SET tr_in = tr_in + ?, tr_out = tr_out + ?, tr_time = UNIX_TIMESTAMP(NOW())
-												WHERE tr_ip = ? AND tr_time >= UNIX_TIMESTAMP(CURDATE())",
-												traffic[:in], traffic[:out], ip)
-							
-							unless st.affected_rows == 1
-								st.close
-								my.prepared("INSERT INTO transfered SET tr_in = ?, tr_out = ?, tr_ip = ?, tr_time = UNIX_TIMESTAMP(NOW())",  traffic[:in], traffic[:out], ip)
+							rs.each_hash do |vps|
+								ct = VPS.new(vps["vps_id"])
+								ct.update_status(my)
 							end
+							
+							fw = Firewall.new
+							fw.read_traffic.each do |ip, traffic|
+								next if traffic[:in] == 0 and traffic[:out] == 0
+								
+								st = my.prepared_st("UPDATE transfered SET tr_in = tr_in + ?, tr_out = tr_out + ?, tr_time = UNIX_TIMESTAMP(NOW())
+													WHERE tr_ip = ? AND tr_time >= UNIX_TIMESTAMP(CURDATE())",
+													traffic[:in], traffic[:out], ip)
+								
+								unless st.affected_rows == 1
+									st.close
+									my.prepared("INSERT INTO transfered SET tr_in = ?, tr_out = ?, tr_ip = ?, tr_time = UNIX_TIMESTAMP(NOW())",  traffic[:in], traffic[:out], ip)
+								end
+							end
+							
+							fw.reset_traffic_counter
 						end
 						
-						fw.reset_traffic_counter
+						if $CFG.get(:storage, :update_status)
+							Storage.new(0).update_status
+						end
+						
+						my.prepared("INSERT INTO servers_status
+									SET server_id = ?, timestamp = UNIX_TIMESTAMP(NOW()), cpu_load = ?, daemon = ?, vpsadmin_version = ?",
+									$CFG.get(:vpsadmin, :server_id), 0, 0, VpsAdmind::VERSION)
+						
+						my.close
+						
+						sleep($CFG.get(:vpsadmin, :status_interval))
 					end
-					
-					my.prepared("INSERT INTO servers_status
-								SET server_id = ?, timestamp = UNIX_TIMESTAMP(NOW()), cpu_load = ?, daemon = ?, vpsadmin_version = ?",
-								$CFG.get(:vpsadmin, :server_id), 0, 0, VpsAdmind::VERSION)
-					
-					my.close
-					
-					sleep($CFG.get(:vpsadmin, :status_interval))
 				end
 			end
 		end

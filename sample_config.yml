@@ -98,6 +98,10 @@
 #     :clone:
 #         :rsync: %{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after %{src} %{dst}
 # 
+# :storage:
+#     :method: Zfs
+#     :update_status: true
+# 
 # :backuper:
 ## RdiffBackup or Zfs
 #     :method: RdiffBackup

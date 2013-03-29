@@ -56,7 +56,7 @@ class Executor
 		set_step(cmd)
 		
 		out = ""
-		log "Executing: #{cmd}"
+		log "Exec #{cmd}"
 		IO.popen("#{cmd} 2>&1") do |io|
 			out = io.read
 		end
