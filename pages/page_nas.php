@@ -327,7 +327,7 @@ if ($_SESSION["logged_in"]) {
 		$exports = nas_list_exports();
 		
 		foreach ($exports as $e) {
-			$xtpl->table_td($e["m_nick"]);
+			$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$e["m_id"].'">'.$e["m_nick"].'</a>');
 			$xtpl->table_td($e["label"]);
 			if ($_SESSION["is_admin"])
 				$xtpl->table_td($e["dataset"]);
@@ -350,7 +350,7 @@ if ($_SESSION["logged_in"]) {
 		$xtpl->table_out();
 		
 		$xtpl->table_title(_("Mounts"));
-		$xtpl->table_add_category(_("VEID"));
+		$xtpl->table_add_category(_("VPS"));
 		$xtpl->table_add_category(_("Source"));
 		$xtpl->table_add_category(_("Destination"));
 // 		$xtpl->table_add_category(_("Options"));
@@ -362,7 +362,7 @@ if ($_SESSION["logged_in"]) {
 		$mounts = nas_list_mounts();
 		
 		foreach ($mounts as $m) {
-			$xtpl->table_td($m["vps_id"]);
+			$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$m["vps_id"].'">'.$m["vps_id"].'</a>');
 			$xtpl->table_td($m["storage_export_id"] ? $m["root_label"].":".$m["path"] : $m["server_name"].":".$m["src"]);
 			$xtpl->table_td($m["dst"]);
 // 			$xtpl->table_td($m["options"]);
