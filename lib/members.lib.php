@@ -123,9 +123,9 @@ class member_load {
 	
 	if ($this->exists || $this->deleted) {
 		if($lazy)
-			$sql = "UPDATE members SET m_state = 'deleted', m_deleted = ".time()." WHERE m_id=".$db->check($_GET["id"]);
+			$sql = "UPDATE members SET m_state = 'deleted', m_deleted = ".time()." WHERE m_id=".$db->check($this->mid);
 		else {
-			$sql = 'DELETE FROM members WHERE m_id='.$db->check($_GET["id"]);
+			$sql = 'DELETE FROM members WHERE m_id='.$db->check($this->mid);
 			
 			nas_delete_members_exports($this->mid);
 		}

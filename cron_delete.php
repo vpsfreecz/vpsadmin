@@ -46,7 +46,7 @@ $db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME);
 // First delete members
 $member_timeout = $cluster_cfg->get("general_member_delete_timeout") * 24 * 60 * 60;
 
-$rs = $db->query("SELECT m_id FROM members WHERE m_state = 'deleted' AND m_deleted > ".$db->check((time() - $member_timeout)));
+$rs = $db->query("SELECT m_id FROM members WHERE m_state = 'deleted' AND m_deleted < ".$db->check((time() - $member_timeout)));
 
 while($row = $db->fetch_array($rs)) {
 	$m = new member_load($row["m_id"]);
@@ -58,7 +58,7 @@ while($row = $db->fetch_array($rs)) {
 // Delete expired VPSes
 $vps_timeout = $cluster_cfg->get("general_vps_delete_timeout") * 24 * 60 * 60;
 
-$rs = $db->query("SELECT vps_id FROM vps WHERE vps_deleted IS NOT NULL AND vps_deleted > ".$db->check((time() - $vps_timeout)));
+$rs = $db->query("SELECT vps_id FROM vps WHERE vps_deleted IS NOT NULL AND vps_deleted < ".$db->check((time() - $vps_timeout)));
 
 while($row = $db->fetch_array($rs)) {
 	$vps = new vps_load($row["vps_id"]);
