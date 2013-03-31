@@ -70,6 +70,7 @@ class vps_load {
   public $veid = 0;
   public $ve = array();
   public $exists = false;
+  public $deleted = false;
 
   function vps_load($ve_id = 'none') {
 	global $db, $request_page;
@@ -82,7 +83,11 @@ class vps_load {
 		if ($result = $db->query($sql))
 			if ($tmpve = $db->fetch_array($result))
 				if (empty($request_page) || ($tmpve["vps_id"] == $ve_id) && (($tmpve["m_id"] == $_SESSION["member"]["m_id"]) || $_SESSION["is_admin"])) {
-					$this->exists = true;
+					if($tmpve["vps_deleted"]) {
+						$this->exists = false;
+						$this->deleted = true;
+					} else $this->exists = true;
+					
 					$this->veid = $ve_id;
 					$this->ve = $tmpve;
 					}
@@ -228,21 +233,27 @@ class vps_load {
   }
 
 
-  function destroy($force = false) {
+  function destroy($lazy, $force = false) {
 	global $db;
-	if ($this->exists && ($_SESSION["is_admin"] || $force)) {
-	  $sql = 'DELETE FROM vps WHERE vps_id='.$db->check($this->veid);
-	  $sql2 = 'UPDATE vps_ip SET vps_id = 0 WHERE vps_id='.$db->check($this->veid);
-	  
-	  nas_delete_mounts_for_vps($this->veid);
-	  
-	  if ($result = $db->query($sql))
-	  	if ($result2 = $db->query($sql2)) {
-			$this->exists = false;
-	  		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_DESTROY_VE);
-			}
-	  	else return false;
-	  else return false;
+	if (($this->exists || $this->deleted) && ($_SESSION["is_admin"] || $force)) {
+		
+		if($lazy) {
+			if($db->query("UPDATE vps SET vps_deleted = ".time()." WHERE vps_id = ". $db->check($this->veid)))
+				$this->exists = false;
+			else return false;
+		} else {
+			$sql = 'DELETE FROM vps WHERE vps_id='.$db->check($this->veid);
+			$sql2 = 'UPDATE vps_ip SET vps_id = 0 WHERE vps_id='.$db->check($this->veid);
+
+			nas_delete_mounts_for_vps($this->veid);
+
+			if ($result = $db->query($sql)) {
+				if ($result2 = $db->query($sql2)) {
+					$this->exists = false;
+					add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_DESTROY_VE);
+				} else return false;
+			} else return false;
+		}
 	}
   }
 
@@ -551,11 +562,12 @@ function ipadd($ip, $type = 4) {
 	send_mail($this->ve["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
   }
   
-  function set_backuper($how, $exclude, $force = false) {
+  function set_backuper($how, $export, $exclude, $force = false) {
   	global $db;
 	
 	/**
 	 * how: do not touch if NULL
+	 * export: do not touch if === NULL
 	 * exclude: do not touch if === false
 	 */
 	
@@ -565,6 +577,11 @@ function ipadd($ip, $type = 4) {
 		if ($how !== NULL) {
 			$update[] = "vps_backup_enabled = " . ($how ? '1' : '0');
 			$this->ve["vps_backup_enabled"] = (bool)$how;
+		}
+		
+		if ($export !== NULL) {
+			$update[] = "vps_backup_export = '".$db->check($export)."'";
+			$this->ve["vps_backup_export"] = $export;
 		}
 		
 		if ($exclude !== false)
@@ -703,6 +720,8 @@ function ipadd($ip, $type = 4) {
 			$clone->add_default_configs("playground_default_config_chain");
 			break;
 	}
+	
+	// FIxme:: create default exports & mounts
 	
 	if ($features && $this->ve["vps_features_enabled"])
 		add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_ENABLE_FEATURES);

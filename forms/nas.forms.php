@@ -22,7 +22,7 @@ function is_ds_valid($p) {
 }
 
 function export_add_form($target, $default = false) {
-	global $xtpl, $NAS_QUOTA_UNITS;
+	global $xtpl, $NAS_QUOTA_UNITS, $NAS_EXPORT_TYPES;
 	
 	$empty = array(0 => ($_GET["for"] == "member" ? "--- new member ---" : "--- VPS owner ---"));
 	$members = members_list();
@@ -49,14 +49,16 @@ function export_add_form($target, $default = false) {
 	$xtpl->form_add_select_pure('quota_unit', $NAS_QUOTA_UNITS, $_POST["quota_unit"]);
 	$xtpl->table_tr();
 	
-	if ($_SESSION["is_admin"])
+	if ($_SESSION["is_admin"]) {
 		$xtpl->form_add_checkbox(_("User editable").':', 'user_editable', '1', $_POST["user_editable"]);
+		$xtpl->form_add_select(_("Type").':', 'type', $NAS_EXPORT_TYPES, $_POST["type"]);
+	}
 	
 	$xtpl->form_out(_("Export"));
 }
 
 function export_edit_form($target, $e) {
-	global $xtpl;
+	global $xtpl, $NAS_EXPORT_TYPES;
 	
 	$q = nas_quota_to_val_unit($e["export_quota"]);
 	
@@ -66,8 +68,10 @@ function export_edit_form($target, $e) {
 	$xtpl->form_add_input_pure('text', '30', 'quota_val', $q[0]);
 	$xtpl->form_add_select_pure('quota_unit', array("m" => "MiB", "g" => "GiB", "t" => "TiB"), $q[1]);
 	$xtpl->table_tr();
-	if ($_SESSION["is_admin"])
+	if ($_SESSION["is_admin"]) {
 		$xtpl->form_add_checkbox(_("User editable").':', 'user_editable', '1', $e["user_editable"]);
+		$xtpl->form_add_select(_("Type").':', 'type', $NAS_EXPORT_TYPES, $e["export_type"]);
+	}
 	$xtpl->form_out(_("Save"));
 }
 

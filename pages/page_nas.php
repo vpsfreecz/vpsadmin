@@ -40,7 +40,8 @@ if ($_SESSION["logged_in"]) {
 						$_SESSION["is_admin"] ? $ds : NULL,
 						$path,
 						$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]),
-						$_SESSION["is_admin"] ? $_POST["user_editable"] : -1
+						$_SESSION["is_admin"] ? $_POST["user_editable"] : -1,
+						$_SESSION["is_admin"] ? $_POST["type"] : "data"
 					);
 					
 					$list_nas = true;
@@ -63,7 +64,12 @@ if ($_SESSION["logged_in"]) {
 				// FIXME: control if quota is not less than used
 				
 				if (nas_can_user_manage_export($e))
-					nas_export_update($_GET["id"], $_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]), $_SESSION["is_admin"] ? $_POST["user_editable"] : -1);
+					nas_export_update(
+						$_GET["id"],
+						$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]),
+						$_SESSION["is_admin"] ? $_POST["user_editable"] : -1,
+						$_SESSION["is_admin"] ? $_POST["type"] : NULL
+					);
 				
 				$xtpl->perex(_("Export updated."), '');
 			}

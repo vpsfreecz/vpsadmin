@@ -14,7 +14,7 @@ define ('MEMBER_SESSION_TIMEOUT_SECS', 1800);
   */
 function get_members_array(){
   global $db;
-  $sql = 'SELECT m_id FROM members '. (($_SESSION["is_admin"]) ? '' : " WHERE m_id = {$db->check($_SESSION["member"]["m_id"])}");
+  $sql = "SELECT m_id FROM members WHERE m_state != 'deleted' ". ($_SESSION["is_admin"] ? '' : " AND m_id = ".$db->check($_SESSION["member"]["m_id"]));
   if ($result = $db->query($sql))
     while ($row = $db->fetch_array($result)) {
       $ret [] = new member_load($row["m_id"]);
@@ -36,6 +36,7 @@ class member_load {
 
   public $m;
   public $exists;
+  public $deleted = false;
   public $mid;
 
   function member_load($m_id) {
@@ -46,7 +47,11 @@ class member_load {
         if ($tmpm = $db->fetch_array($result))
           if ($tmpm["m_id"] == $m_id && (($tmpm["m_id"] == $_SESSION["member"]["m_id"]) || $_SESSION["is_admin"])) {
             $this->m["m_info"] = stripslashes($this->m["m_info"]);
-            $this->exists = true;
+            
+            if($tmpm["m_state"] == "deleted") {
+              $this->exists = false;
+              $this->deleted = true;
+            } else $this->exists = true;
             $this->mid = $m_id;
             $this->m = $tmpm;
             }
@@ -113,17 +118,24 @@ class member_load {
     * Destroy member from database
     * @return true on success, false if fails
     */
-  function destroy() {
-    global $db, $cluster_cfg;
-    if ($this->exists) {
-      $sql = 'DELETE FROM members WHERE m_id='.$db->check($_GET["id"]);
-      $db->query($sql);
-      if ($db->affected_rows() > 0) {
-        $this->exists = false;
-        return true;
-        }
-      else return false;
-    } else return false;
+  function destroy($lazy) {
+	global $db, $cluster_cfg;
+	
+	if ($this->exists || $this->deleted) {
+		if($lazy)
+			$sql = "UPDATE members SET m_state = 'deleted', m_deleted = ".time()." WHERE m_id=".$db->check($_GET["id"]);
+		else {
+			$sql = 'DELETE FROM members WHERE m_id='.$db->check($_GET["id"]);
+			
+			nas_delete_members_exports($this->mid);
+		}
+		$db->query($sql);
+	
+		if ($db->affected_rows() > 0) {
+			$this->exists = false;
+			return true;
+		} else return false;
+	} else return false;
   }
   /**
     * Saves $this->m to the DB
@@ -238,7 +250,7 @@ class member_load {
   function can_use_playground() {
 	global $db;
 	
-	if (!$this->m["m_playground_enable"] || !$this->m["m_active"])
+	if (!$this->exists || !$this->m["m_playground_enable"] || $this->m["m_state"] != "active")
 		return false;
 	
 	$sql = "SELECT COUNT(vps_id) AS count
@@ -276,13 +288,15 @@ class member_load {
 	}
   }
   
-  function delete_all_vpses() {
+  function delete_all_vpses($lazy) {
 	global $db;
 	
-	while($row = $db->findByColumn("vps", "m_id", $this->m["m_id"])) {
-		$vps = new vps_load($row["vps_id"]);
-		$vps->stop();
-		$vps->destroy();
+	if($this->exists) {
+		while($row = $db->findByColumn("vps", "m_id", $this->m["m_id"])) {
+			$vps = new vps_load($row["vps_id"]);
+			$vps->stop();
+			$vps->destroy($lazy);
+		}
 	}
   }
   
@@ -295,13 +309,13 @@ class member_load {
   function suspend($reason) {
 	global $db;
 	
-	$db->query('UPDATE members SET m_active = 0, m_suspend_reason = "'.$db->check($reason).'" WHERE m_id = '.$db->check($this->m["m_id"]).'');
+	$db->query('UPDATE members SET m_state = \'suspended\', m_suspend_reason = "'.$db->check($reason).'" WHERE m_id = '.$db->check($this->m["m_id"]).'');
   }
   
   function restore() {
 	global $db;
 	
-	$db->query("UPDATE members SET m_active = 1, m_suspend_reason = '' WHERE m_id = ".$db->check($this->m["m_id"]));
+	$db->query("UPDATE members SET m_state = 'active', m_suspend_reason = '' WHERE m_id = ".$db->check($this->m["m_id"]));
   }
   
   function notify_suspend($reason) {
@@ -329,7 +343,8 @@ class member_load {
 	send_mail($this->m["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
   }
   
-  function notify_delete() {
+  function notify_delete($lazy) {
+	// FIXME: lazy
 	global $db, $cluster_cfg;
 
 	$subject = $cluster_cfg->get("mailer_tpl_delete_member_subj");

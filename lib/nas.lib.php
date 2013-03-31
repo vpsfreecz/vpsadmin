@@ -7,6 +7,7 @@ $STORAGE_MOUNT_MODES_RO = array("ro" => _("Read only"));
 $STORAGE_MOUNT_MODES_RO_RW = array("ro" => _("Read only"), "rw" => _("Read and write"));
 $NAS_QUOTA_UNITS = array("k" => "KiB", "m" => "MiB", "g" => "GiB", "t" => "TiB");
 $NAS_UNITS_TR = array("k" => 9, "m" => 19, "g" => 29, "t" => 39);
+$NAS_EXPORT_TYPES = array("data" => _("Data"), "backup" => _("Backup"));
 
 function nas_root_list_where($cond) {
 	global $db;
@@ -56,7 +57,7 @@ function nas_list_default_exports($type) {
 	
 	$ret = array();
 	
-	$rs = $db->query("SELECT *, e.id AS export_id, e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail
+	$rs = $db->query("SELECT *, e.id AS export_id, e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail, e.type AS export_type
 		FROM storage_export e
 		INNER JOIN storage_root r ON r.id = e.root_id
 		INNER JOIN servers s ON r.node_id = s.server_id
@@ -93,7 +94,7 @@ function nas_list_default_mounts() {
 function nas_get_export_by_id($id) {
 	global $db;
 	
-	$rs = $db->query("SELECT *, e.id AS export_id, e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail
+	$rs = $db->query("SELECT *, e.id AS export_id, e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail, e.type AS export_type
 					FROM storage_export e
 					INNER JOIN storage_root r ON r.id = e.root_id
 					INNER JOIN servers s ON s.server_id = r.node_id
@@ -155,7 +156,7 @@ function nas_node_id_by_root($root_id) {
 	return $node["node_id"];
 }
 
-function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable, $default = "no", $member_prefix = true) {
+function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable, $type, $default = "no", $member_prefix = true) {
 	global $db;
 	
 	if ($dataset === NULL)
@@ -179,6 +180,7 @@ function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable,
 				path = '".$db->check($path)."',
 				quota = '".$db->check($quota)."',
 				user_editable = '".( $user_editable == -1 ? '1' : ($user_editable ? '1' : '0') )."',
+				type = '".$db->check($type)."',
 				`default` = '".$db->check($default)."'");
 	
 	$export_id = $db->insertId();
@@ -203,13 +205,16 @@ function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable,
 	return $export_id;
 }
 
-function nas_export_update($id, $quota, $user_editable) {
+function nas_export_update($id, $quota, $user_editable, $type) {
 	global $db;
 	
 	$update = "";
 	
 	if ($user_editable != -1)
-		$update = ", user_editable = ".($user_editable ? '1' : '0')."";
+		$update .= ", user_editable = ".($user_editable ? '1' : '0')."";
+	
+	if ($type !== NULL)
+		$update .= ", type = '".$db->check($type)."'";
 	
 	$db->query("UPDATE storage_export SET quota = '".$db->check($quota)."' ".$update." WHERE id = '".$db->check($id)."'");
 	
@@ -255,6 +260,24 @@ function nas_export_delete($id) {
 			$vps = new vps_load($veid);
 			$vps->mount_regen();
 		}
+	}
+}
+
+function nas_delete_members_exports($m_id) {
+	global $db;
+	
+	$sql = "SELECT *, e.id AS export_id, e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail
+			FROM storage_export e
+			INNER JOIN storage_root r ON r.id = e.root_id
+			INNER JOIN servers s ON r.node_id = s.server_id
+			LEFT JOIN members m ON m.m_id = e.member_id
+			WHERE e.`default` = 'no' AND e.member_id = ".$db->check($m_id)."
+			ORDER BY s.server_id ASC, path ASC";
+	
+	$rs = $db->query($sql);
+	
+	while($row = $db->fetch_array($rs)) {
+		nas_export_delete($row["export_id"]);
 	}
 }
 
@@ -589,11 +612,17 @@ function nas_create_default_exports($type, $obj) {
 			$path,
 			$e["export_quota"],
 			$e["user_editable"],
+			$e["export_type"],
 			"no",
 			false
 		);
 		
 		$mapping[$e["export_id"]] = $new_id;
+		
+		if($type == "vps" && $e["export_type"] == "backup") {
+			$vps = new vps_load($obj["vps_id"]);
+			$vps->set_backuper(NULL, $new_id, false);
+		}
 	}
 	
 	return $mapping;

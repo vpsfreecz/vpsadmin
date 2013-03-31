@@ -23,7 +23,7 @@
 function members_list () {
 	global $db;
 	if ($_SESSION["is_admin"]) {
-		$sql = 'SELECT * FROM members ORDER BY m_nick ASC';
+		$sql = "SELECT * FROM members WHERE m_state != 'deleted' ORDER BY m_nick ASC";
 		if ($result = $db->query($sql))
 			while ($m = $db->fetch_array($result)) {
 			$out[$m["m_id"]] = $m["m_nick"];

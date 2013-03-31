@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS `members` (
   `m_info` text,
   `m_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `m_created` int(11) unsigned DEFAULT NULL,
+  `m_deleted` INT NULL,
   `m_level` int(10) unsigned NOT NULL,
   `m_nick` varchar(63) NOT NULL,
   `m_name` varchar(255) NOT NULL,
@@ -85,7 +86,7 @@ CREATE TABLE IF NOT EXISTS `members` (
   `m_monthly_payment` int(10) unsigned NOT NULL DEFAULT '300',
   `m_mailer_enable` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `m_playground_enable` tinyint(1) NOT NULL DEFAULT '1',
-  `m_active` tinyint(4) NOT NULL DEFAULT '1',
+  `m_state` ENUM(  'active',  'suspended',  'deleted' ) NOT NULL DEFAULT  'active',
   `m_suspend_reason` varchar(100) NOT NULL,
   PRIMARY KEY (`m_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
@@ -172,21 +173,19 @@ CREATE TABLE IF NOT EXISTS `transfered` (
 CREATE TABLE IF NOT EXISTS `vps` (
   `vps_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `vps_created` int(11) unsigned DEFAULT NULL,
+  `vps_deleted` INT( 11 ) NULL,
   `m_id` int(63) unsigned NOT NULL,
   `vps_hostname` varchar(64) DEFAULT 'darkstar',
   `vps_template` int(10) unsigned NOT NULL DEFAULT '1',
   `vps_info` mediumtext,
   `vps_nameserver` varchar(255) NOT NULL DEFAULT '4.2.2.2',
-  `vps_privvmpages` int(10) unsigned NOT NULL DEFAULT '1',
-  `vps_cpulimit` int(11) DEFAULT NULL,
-  `vps_cpuprio` varchar(255) DEFAULT NULL,
-  `vps_diskspace` bigint(10) unsigned NOT NULL DEFAULT '0',
   `vps_server` int(11) unsigned NOT NULL,
   `vps_onboot` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `vps_onstartall` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `vps_backup_enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `vps_specials_installed` varchar(255) DEFAULT NULL,
   `vps_features_enabled` tinyint(1) NOT NULL DEFAULT '0',
+  `vps_backup_export` INT NOT NULL,
   `vps_backup_lock` tinyint(4) NOT NULL DEFAULT '0',
   `vps_backup_exclude` text NOT NULL,
   `vps_config` text CHARACTER SET utf8 COLLATE utf8_czech_ci NOT NULL,
@@ -265,6 +264,7 @@ CREATE TABLE IF NOT EXISTS `storage_export` (
   `used` bigint(20) unsigned NOT NULL,
   `avail` bigint(20) unsigned NOT NULL,
   `user_editable` tinyint(4) NOT NULL DEFAULT '0',
+  `type` ENUM(  'data',  'backup' ) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci ;
 

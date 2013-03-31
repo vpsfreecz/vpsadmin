@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS `storage_export` (
   `used` bigint(20) unsigned NOT NULL,
   `avail` bigint(20) unsigned NOT NULL,
   `user_editable` tinyint(4) NOT NULL DEFAULT '0',
+  `type` ENUM(  'data',  'backup' ) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci ;
 
@@ -49,3 +50,14 @@ UPDATE `servers` SET `server_type` = 'storage' WHERE `server_type` = 'backuper';
 ALTER TABLE  `servers` CHANGE  `server_type`  `server_type` ENUM(  'node',  'storage',  'mailer' ) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL;
 
 ALTER TABLE `vps` DROP `vps_backup_mount`;
+ALTER TABLE `vps`
+  DROP `vps_privvmpages`,
+  DROP `vps_cpulimit`,
+  DROP `vps_cpuprio`,
+  DROP `vps_diskspace`;
+
+ALTER TABLE  `vps` ADD  `vps_deleted` INT( 11 ) NULL AFTER  `vps_created`;
+ALTER TABLE  `vps` ADD  `vps_backup_export` INT NOT NULL AFTER  `vps_features_enabled`;
+
+ALTER TABLE  `members` CHANGE  `m_active`  `m_state` ENUM(  'active',  'suspended',  'deleted' ) NOT NULL DEFAULT  'active';
+ALTER TABLE  `members` ADD  `m_deleted` INT NULL AFTER  `m_created`;

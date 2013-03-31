@@ -26,7 +26,7 @@ if ($_GET["action"] == 'login') {
 
 		$sql = 'SELECT * FROM members WHERE m_pass = "'
 				 . $db->check( md5($_REQUEST["username"] . $_REQUEST["passwd"]) )
-				 . '" AND m_nick = "' . $db->check($_REQUEST["username"]) . '"';
+				 . '" AND m_nick = "' . $db->check($_REQUEST["username"]) . '" AND m_state != "deleted"';
 
 		if ($result = $db->query($sql)) {
 

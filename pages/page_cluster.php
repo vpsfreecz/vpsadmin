@@ -18,6 +18,21 @@ $location_types = array("production" => "Production", "playground" => "Playgroun
 $export_add_target = '?page=cluster&action=nas_def_export_save&for='.$_GET["for"];
 
 switch($_REQUEST["action"]) {
+	case "general_settings":
+		$xtpl->title2(_("General settings"));
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		$xtpl->form_create('?page=cluster&action=general_settings_save', 'post');
+		$xtpl->form_add_input(_("Member delete timeout").':', 'text', '30', 'member_del_timeout', $cluster_cfg->get("general_member_delete_timeout"), _("days"));
+		$xtpl->form_add_input(_("VPS delete timeout").':', 'text', '30', 'vps_del_timeout', $cluster_cfg->get("general_vps_delete_timeout"), _("days"));
+		$xtpl->form_out(_("Save changes"));
+		break;
+	case "general_settings_save":
+		$cluster_cfg->set("general_member_delete_timeout", $_POST["member_del_timeout"]);
+		$cluster_cfg->set("general_vps_delete_timeout", $_POST["vps_del_timeout"]);
+		notify_user(_("Changes saved"), _("Changes sucessfully saved."));
+		redirect('?page=cluster&action=general_settings');
+		break;
 	case "restart_node":
 		$node = new cluster_node($_REQUEST["id"]);
 		$xtpl->perex(_("Are you sure to reboot node").' '.$node->s["server_name"].'?',
@@ -854,7 +869,8 @@ switch($_REQUEST["action"]) {
 				nas_export_update(
 					$_GET["id"],
 					$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]),
-					$_POST["user_editable"]
+					$_POST["user_editable"],
+					$_POST["type"]
 				);
 			} else {
 				nas_export_add(
@@ -864,6 +880,7 @@ switch($_REQUEST["action"]) {
 					$_POST["path"],
 					$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]),
 					$_POST["user_editable"],
+					$_POST["type"],
 					$_GET["for"]
 				);
 			}
@@ -1415,7 +1432,7 @@ switch($_REQUEST["action"]) {
 				
 				foreach ($vpses as $veid) {
 					$vps = vps_load($veid);
-					$vps->set_backuper($enable, false);
+					$vps->set_backuper($enable, NULL, false);
 					
 					if($_POST["notify_owners"])
 						$vps->backuper_change_notify();
@@ -1483,6 +1500,7 @@ if ($list_mails) {
 	$xtpl->sbar_add(_("Mailer settings"), '?page=cluster&action=mailer_settings');
 }
 if ($list_nodes) {
+	$xtpl->sbar_add(_("General settings"), '?page=cluster&action=general_settings');
 	$xtpl->sbar_add(_("Register new node"), '?page=cluster&action=newnode');
 	$xtpl->sbar_add(_("Manage VPS templates"), '?page=cluster&action=templates');
 	$xtpl->sbar_add(_("Manage configs"), '?page=cluster&action=configs');

@@ -183,7 +183,7 @@ function print_editm($member) {
 	$xtpl->form_out(_("Save"));
 	
 	if ($_SESSION["is_admin"] && $cluster_cfg->get("payments_enabled")) {
-		if ($member->m["m_active"]) {
+		if ($member->m["m_state"] == "active") {
 			$xtpl->table_title(_("Suspend account"));
 			$xtpl->table_add_category('&nbsp;');
 			$xtpl->table_add_category('&nbsp;');
@@ -227,6 +227,9 @@ function print_deletem($member) {
 	
 	$xtpl->table_td($vpses);
 	$xtpl->table_tr();
+	$xtpl->form_add_checkbox(_("Lazy delete").':', 'lazy_delete', '1', true,
+		_("If checked, do not delete member and his VPSes immediately, but after passing of predefined time. ".
+		"During this time, member and his VPSes including NAS data can be restored - nothing is actually deleted."));
 	$xtpl->form_add_checkbox(_("Notify member").':', 'notify', '1', true);
 	$xtpl->form_out(_("Delete"));
 }
@@ -309,7 +312,7 @@ if ($_SESSION["logged_in"]) {
 						.' '.$m->m["m_nick"].'?',
 						'<a href="?page=adminm&section=members">'
 						. strtoupper(_("No"))
-						. '</a> | <a href="?page=adminm&section=members&action=delete3&id='.$_GET["id"].'&notify='.$_REQUEST["notify"].'">'
+						. '</a> | <a href="?page=adminm&section=members&action=delete3&id='.$_GET["id"].'&notify='.$_REQUEST["notify"].'&lazy='.$_REQUEST["lazy_delete"].'">'
 						. strtoupper(_("Yes")).'</a>');
 				}
 			break;
@@ -318,11 +321,13 @@ if ($_SESSION["logged_in"]) {
 
 				if ($m = member_load($_GET["id"]))
 					
-					$m->delete_all_vpses();
+					$lazy = $_GET["lazy"] ? true : false;
 					
-					if ($m->destroy()) {
+					$m->delete_all_vpses($lazy);
+					
+					if ($m->destroy($lazy)) {
 						if ($_GET["notify"])
-							$m->notify_delete();
+							$m->notify_delete($lazy);
 						
 						$xtpl->perex(_("Member deleted"), _("Continue").' <a href="?page=adminm&section=members">'.strtolower(_("Here")).'</a>');
 						$xtpl->delayed_redirect('?page=adminm', 350);
@@ -807,7 +812,7 @@ if ($_SESSION["logged_in"]) {
 						$xtpl->table_tr('#66FF66');
 					} elseif ($member->m["m_level"] >= PRIV_POWERUSER) {
 						$xtpl->table_tr('#BBFFBB');
-					} elseif (!$member->m["m_active"]) {
+					} elseif ($member->m["m_state"] != "active") {
 						$xtpl->table_tr('#A6A6A6');
 					} else {
 						$xtpl->table_tr();
