@@ -291,7 +291,7 @@ class member_load {
   function delete_all_vpses($lazy) {
 	global $db;
 	
-	if($this->exists) {
+	if($this->exists || $this->deleted) {
 		while($row = $db->findByColumn("vps", "m_id", $this->m["m_id"])) {
 			$vps = new vps_load($row["vps_id"]);
 			$vps->stop();
