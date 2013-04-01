@@ -47,6 +47,7 @@ function export_add_form($target, $default = false) {
 	$xtpl->table_td(_("Quota").':');
 	$xtpl->form_add_input_pure('text', '30', 'quota_val', $_POST["quota_val"] ? $_POST["quota_val"] : '0');
 	$xtpl->form_add_select_pure('quota_unit', $NAS_QUOTA_UNITS, $_POST["quota_unit"]);
+	$xtpl->table_td(_("0 is none"));
 	$xtpl->table_tr();
 	
 	if ($_SESSION["is_admin"]) {
@@ -67,6 +68,7 @@ function export_edit_form($target, $e) {
 	$xtpl->table_td(_("Quota").':');
 	$xtpl->form_add_input_pure('text', '30', 'quota_val', $q[0]);
 	$xtpl->form_add_select_pure('quota_unit', array("m" => "MiB", "g" => "GiB", "t" => "TiB"), $q[1]);
+	$xtpl->table_td(_("0 is none"));
 	$xtpl->table_tr();
 	if ($_SESSION["is_admin"]) {
 		$xtpl->form_add_checkbox(_("User editable").':', 'user_editable', '1', $e["user_editable"]);

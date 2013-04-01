@@ -26,6 +26,8 @@ switch($_REQUEST["action"]) {
 		$xtpl->form_add_input(_("Member delete timeout").':', 'text', '30', 'member_del_timeout', $cluster_cfg->get("general_member_delete_timeout"), _("days"));
 		$xtpl->form_add_input(_("VPS delete timeout").':', 'text', '30', 'vps_del_timeout', $cluster_cfg->get("general_vps_delete_timeout"), _("days"));
 		$xtpl->form_out(_("Save changes"));
+		
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
 		break;
 	case "general_settings_save":
 		$cluster_cfg->set("general_member_delete_timeout", $_POST["member_del_timeout"]);
@@ -772,6 +774,7 @@ switch($_REQUEST["action"]) {
 		$xtpl->table_add_category(_("Dataset"));
 		$xtpl->table_add_category(_("Path"));
 		$xtpl->table_add_category(_("Quota"));
+		$xtpl->table_add_category(_("Type"));
 		$xtpl->table_add_category('');
 		$xtpl->table_add_category('');
 		
@@ -784,6 +787,7 @@ switch($_REQUEST["action"]) {
 				$xtpl->table_td($e["dataset"]);
 			$xtpl->table_td($e["path"]);
 			$xtpl->table_td(nas_size_to_humanreadable($e["export_quota"]));
+			$xtpl->table_td($e["export_type"]);
 			$xtpl->table_td('<a href="?page=cluster&action=nas_def_export_edit&id='.$e["export_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 			$xtpl->table_td('<a href="?page=cluster&action=nas_def_export_del&id='.$e["export_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
 			
@@ -799,6 +803,7 @@ switch($_REQUEST["action"]) {
 		$xtpl->table_add_category(_("Dataset"));
 		$xtpl->table_add_category(_("Path"));
 		$xtpl->table_add_category(_("Quota"));
+		$xtpl->table_add_category(_("Type"));
 		$xtpl->table_add_category('');
 		$xtpl->table_add_category('');
 		
@@ -811,6 +816,7 @@ switch($_REQUEST["action"]) {
 				$xtpl->table_td($e["dataset"]);
 			$xtpl->table_td($e["path"]);
 			$xtpl->table_td(nas_size_to_humanreadable($e["export_quota"]));
+			$xtpl->table_td($e["export_type"]);
 			$xtpl->table_td('<a href="?page=cluster&action=nas_def_export_edit&id='.$e["export_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 			$xtpl->table_td('<a href="?page=cluster&action=nas_def_export_del&id='.$e["export_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
 			
@@ -1518,124 +1524,135 @@ if ($list_nodes) {
 	$xtpl->sbar_add(_("Help boxes"), '?page=cluster&action=helpboxes');
 	$xtpl->sbar_add(_("Edit vpsAdmin textfields"), '?page=cluster&action=fields');
 	
-	$on_row = 2;
+	$xtpl->table_title(_("Summary"));
 	
-	while($location = $db->find("locations", NULL, "location_id")) {
-		$i = 1;
-		
-		$sql = 'SELECT * FROM servers WHERE server_location = '.$db->check($location["location_id"]).' ORDER BY server_id';
-		$list_result = $db->query($sql);
-		
-		for ($j = 0; $j < $on_row; $j++) {
-			$xtpl->table_add_category(_("A"));
-			$xtpl->table_add_category(_("NAME"));
-			$xtpl->table_add_category(_("L"));
-			$xtpl->table_add_category(_("R"));
-			$xtpl->table_add_category(_("S"));
-			$xtpl->table_add_category(_("T"));
-			$xtpl->table_add_category(_("M"));
-			$xtpl->table_add_category(_("V"));
-			$xtpl->table_add_category(' ');
-			$xtpl->table_add_category(' ');
-			
-			if ($j+1 < $on_row)
-				$xtpl->table_add_category(' ');
-		}
-		
-		while ($srv = $db->fetch_array($list_result)) {
-			$node = new cluster_node($srv["server_id"]);
-			$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$srv["server_id"].'" ORDER BY id DESC LIMIT 1';
-			
-			if ($result = $db->query($sql))
-				$status = $db->fetch_array($result);
-			
-			$icons = "";
-			
-			if ($cluster_cfg->get("lock_cron_".$srv["server_id"]))	{
-				$icons .= '<img title="'._("The server is currently processing").'" src="template/icons/warning.png"/>';
-			} elseif ((time()-$status["timestamp"]) > 360) {
-				$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
-			} else {
-				$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
-			}
-			
-			$xtpl->table_td($icons, false, true);
-			
-			$xtpl->table_td($srv["server_name"]);
-			$xtpl->table_td($status["cpu_load"], false, true);
-			
-			$sql = 'SELECT COUNT(*) AS count FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1 AND vps_server = '.$db->check($srv["server_id"]);
-			
-			if ($result = $db->query($sql))
-				$running_count = $db->fetch_array($result);
-			
-			$xtpl->table_td($running_count["count"]);
-			
-			$sql = 'SELECT COUNT(*) AS count FROM vps v LEFT JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 0 AND vps_server = '.$db->check($srv["server_id"]);
-			
-			if ($result = $db->query($sql))
-				$stopped_count = $db->fetch_array($result);
-				
-			$xtpl->table_td($stopped_count["count"]);
-			
-			$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_server='.$db->check($srv["server_id"]);
-			
-			if ($result = $db->query($sql))
-				$vps_count = $db->fetch_array($result);
-			
-			$xtpl->table_td($vps_count["count"], false, true);
-			
-			$xtpl->table_td($srv["server_maxvps"]);
-			
-			/*
-			$vps_free = ((int)$srv["server_maxvps"]-(int)$vps_count["count"]);
-			$xtpl->table_td($vps_free, false, true);
-			*/
-			
-			$xtpl->table_td($status["vpsadmin_version"]);
-			
-			$xtpl->table_td('<a href="?page=cluster&action=node_start_vpses&id='.$srv["server_id"].'"><img src="template/icons/vps_start.png" title="'._("Start all VPSes here").'"/></a>');
-			$xtpl->table_td('<a href="?page=cluster&action=node_edit&node_id='.$srv["server_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-			
-			if (!($i++ % $on_row))
-				$xtpl->table_tr();
-			else
-				$xtpl->table_td('');
-		}
-		$xtpl->table_tr();
-		$xtpl->table_out();
-	}
+	$nodes_on = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM (
+                                               SELECT s.server_id
+                                               FROM servers s INNER JOIN servers_status t ON s.server_id = t.server_id
+                                               WHERE (UNIX_TIMESTAMP() - t.timestamp) <= 360
+                                               GROUP BY s.server_id
+                                               ORDER BY t.id DESC
+                                             ) tmp"));
 	
+	$nodes_all = $db->fetch_array($db->query("SELECT COUNT(server_id) AS cnt FROM servers"));
+	
+	$xtpl->table_td(_("Nodes").':');
+	$xtpl->table_td($nodes_on["cnt"] .' '._("online").' / '. $nodes_all["cnt"] .' '._("total"), $nodes_on["cnt"] < $nodes_all["cnt"] ? '#FFA500' : '#66FF66');
+	$xtpl->table_tr();
+	
+	$vps_on = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1"));
+	$vps_all = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id"));
+	
+	$xtpl->table_td(_("VPS").':');
+	$xtpl->table_td($vps_on["cnt"] .' '._("running").' / '. $vps_all["cnt"] .' '._("total"));
+	$xtpl->table_tr();
+	
+	$m_active = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM members WHERE m_state = 'active'"));
+	$m_suspended = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM members WHERE m_state = 'suspended'"));
+	$m_total = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM members"));;
+	$m_deleted = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM members WHERE m_state = 'deleted'"));;
+	
+	$xtpl->table_td(_("Members").':');
+	$xtpl->table_td($m_active["cnt"] .' '._("active").' / '. $m_suspended["cnt"] .' '._("suspended")
+	                .' / '. $m_deleted["cnt"] .' '._("deleted").' / '. $m_total["cnt"] .' '._("total"));
+	$xtpl->table_tr();
+	
+	$free = count((array)get_free_ip_list(4));
+	$all = count((array)get_all_ip_list(4));
+	
+	$xtpl->table_td(_("IPv4 addresses").':');
+	$xtpl->table_td($all - $free .' '._("used").' / '. $all .' '._("total"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_out();
+	
+	$xtpl->table_title(_("Node list"));
 	$xtpl->table_add_category('');
-	$xtpl->table_add_category('Legend');
+	$xtpl->table_add_category(_("Name"));
+	$xtpl->table_add_category(_("Load"));
+	$xtpl->table_add_category(_("Running"));
+	$xtpl->table_add_category(_("Stopped"));
+	$xtpl->table_add_category(_("Deleted"));
+	$xtpl->table_add_category(_("Total"));
+	$xtpl->table_add_category(_("Free"));
+	$xtpl->table_add_category(_("Max"));
+	$xtpl->table_add_category(_("Version"));
+	$xtpl->table_add_category(' ');
+	$xtpl->table_add_category(' ');
 	
-	$xtpl->table_td("A");
-	$xtpl->table_td(_("Availability"));
-	$xtpl->table_tr();
+	$rs = $db->query("SELECT server_id FROM locations l INNER JOIN servers s ON l.location_id = s.server_location ORDER BY l.location_id, s.server_id");
 	
-	$xtpl->table_td("L");
-	$xtpl->table_td(_("Load"));
-	$xtpl->table_tr();
-	
-	$xtpl->table_td("R");
-	$xtpl->table_td(_("Running"));
-	$xtpl->table_tr();
-	
-	$xtpl->table_td("S");
-	$xtpl->table_td(_("Stopped"));
-	$xtpl->table_tr();
-	
-	$xtpl->table_td("T");
-	$xtpl->table_td(_("Total"));
-	$xtpl->table_tr();
-	
-	$xtpl->table_td("M");
-	$xtpl->table_td(_("Max"));
-	$xtpl->table_tr();
-	
-	$xtpl->table_td("V");
-	$xtpl->table_td(_("vpsAdmin"));
-	$xtpl->table_tr();
+	while($row = $db->fetch_array($rs)) {
+		$node = new cluster_node($row["server_id"]);
+		
+		// Availability
+		$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$node->s["server_id"].'" ORDER BY id DESC LIMIT 1';
+			
+		if ($result = $db->query($sql))
+			$status = $db->fetch_array($result);
+		
+		$icons = "";
+		
+		if ($cluster_cfg->get("lock_cron_".$node->s["server_id"]))	{
+			$icons .= '<img title="'._("The server is currently processing").'" src="template/icons/warning.png"/>';
+		} elseif ((time()-$status["timestamp"]) > 360) {
+			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
+		} else {
+			$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
+		}
+		
+		$xtpl->table_td($icons, false, true);
+		
+		// Name, load
+		$xtpl->table_td($node->s["server_name"]);
+		$xtpl->table_td($status["cpu_load"], false, true);
+		
+		// Running
+		$sql = 'SELECT COUNT(*) AS count FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1 AND vps_server = '.$db->check($node->s["server_id"]);
+			
+		if ($result = $db->query($sql))
+			$running_count = $db->fetch_array($result);
+		
+		$xtpl->table_td($running_count["count"], false, true);
+		
+		// Stopped
+		$sql = 'SELECT COUNT(*) AS count FROM vps v LEFT JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 0 AND vps_server = '.$db->check($node->s["server_id"]);
+		
+		if ($result = $db->query($sql))
+			$stopped_count = $db->fetch_array($result);
+			
+		$xtpl->table_td($stopped_count["count"], false, true);
+		
+		// Deleted
+		$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_deleted IS NOT NULL AND vps_deleted > 0 AND vps_server = '.$db->check($node->s["server_id"]);
+		
+		if ($result = $db->query($sql))
+			$deleted_count = $db->fetch_array($result);
+			
+		$xtpl->table_td($deleted_count["count"], false, true);
+		
+		// Total
+		$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_server='.$db->check($node->s["server_id"]);
+		
+		if ($result = $db->query($sql))
+			$vps_count = $db->fetch_array($result);
+		
+		$xtpl->table_td($vps_count["count"], false, true);
+		
+		// Free
+		$xtpl->table_td($node->s["server_maxvps"] - $running_count["count"], false, true);
+		
+		// Max
+		$xtpl->table_td($node->s["server_maxvps"], false, true);
+		
+		// vpsAdmind
+		$xtpl->table_td($status["vpsadmin_version"]);
+		
+		$xtpl->table_td('<a href="?page=cluster&action=node_start_vpses&id='.$node->s["server_id"].'"><img src="template/icons/vps_start.png" title="'._("Start all VPSes here").'"/></a>');
+		$xtpl->table_td('<a href="?page=cluster&action=node_edit&node_id='.$node->s["server_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		
+		$xtpl->table_tr();
+	}
 	
 	$xtpl->table_out();
 }

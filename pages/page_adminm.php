@@ -228,8 +228,7 @@ function print_deletem($member) {
 	$xtpl->table_td($vpses);
 	$xtpl->table_tr();
 	$xtpl->form_add_checkbox(_("Lazy delete").':', 'lazy_delete', '1', true,
-		_("If checked, do not delete member and his VPSes immediately, but after passing of predefined time. ".
-		"During this time, member and his VPSes including NAS data can be restored - nothing is actually deleted."));
+		_("Do not delete member and his VPSes immediately, but after passing of predefined time."));
 	$xtpl->form_add_checkbox(_("Notify member").':', 'notify', '1', true);
 	$xtpl->form_out(_("Delete"));
 }

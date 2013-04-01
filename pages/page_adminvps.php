@@ -158,8 +158,7 @@ switch ($_GET["action"]) {
 			
 			if($_SESSION["is_admin"]) {
 				$xtpl->form_add_checkbox(_("Lazy delete").':', 'lazy_delete', '1', true,
-					_("If checked, do not delete VPS immediately, but after passing of predefined time. ".
-					"During this time, the VPS, including NAS data, can be restored - nothing is actually deleted."));
+					_("Do not delete VPS immediately, but after passing of predefined time."));
 			}
 			$xtpl->form_out(_("Delete"));
 			break;
