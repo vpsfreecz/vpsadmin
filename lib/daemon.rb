@@ -147,11 +147,11 @@ module VpsAdmind
 								
 								st = my.prepared_st("UPDATE transfered SET tr_in = tr_in + ?, tr_out = tr_out + ?, tr_time = UNIX_TIMESTAMP(NOW())
 													WHERE tr_ip = ? AND tr_time >= UNIX_TIMESTAMP(CURDATE())",
-													traffic[:in], traffic[:out], ip)
+													traffic[:in].to_i, traffic[:out].to_i, ip)
 								
 								unless st.affected_rows == 1
 									st.close
-									my.prepared("INSERT INTO transfered SET tr_in = ?, tr_out = ?, tr_ip = ?, tr_time = UNIX_TIMESTAMP(NOW())",  traffic[:in], traffic[:out], ip)
+									my.prepared("INSERT INTO transfered SET tr_in = ?, tr_out = ?, tr_ip = ?, tr_time = UNIX_TIMESTAMP(NOW())",  traffic[:in].to_i, traffic[:out].to_i, ip)
 								end
 							end
 							

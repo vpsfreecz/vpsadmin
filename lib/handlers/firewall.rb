@@ -52,8 +52,7 @@ class Firewall < Executor
 	def read_traffic
 		ret = {}
 		{4 => "0.0.0.0/0", 6 => "::/0"}.each do |v, all|
-			#iptables(v, {:L => "aztotal", "-nvx" => nil})[:output].split("\n")[2..-1].each do |l|
-			File.new("node8.ipv#{v}.traffic.txt").read.split("\n")[2..-1].each do |l|
+			iptables(v, {:L => "aztotal", "-nvx" => nil})[:output].split("\n")[2..-1].each do |l|
 				fields = l.strip.split(/\s+/)
 				src = fields[v == 4 ? 6 : 5]
 				dst = fields[v == 4 ? 7 : 6]
@@ -65,12 +64,6 @@ class Firewall < Executor
 				
 				ret[ip] ||= {}
 				ret[ip][src == all ? :in : :out] = fields[1].to_i
-				
-				if src == all
-					puts "#{ip} in #{fields[1]}"
-				else
-					puts "#{ip} out #{fields[1]}"
-				end
 			end
 		end
 		
