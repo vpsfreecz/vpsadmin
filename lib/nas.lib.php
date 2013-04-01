@@ -462,8 +462,9 @@ function nas_mount_delete($id, $umount, $regen = true) {
 	
 	$m = nas_get_mount_by_id($id);
 	$vps = new vps_load($m["vps_id"]);
+	$vps->info();
 	
-	if($umount && !$m["default"])
+	if($umount && !$m["default"] && $vps->ve["vps_up"])
 		$vps->umount($m);
 	
 	$db->query("DELETE FROM vps_mount WHERE id = '".$db->check($id)."'");
