@@ -58,7 +58,7 @@ while($row = $db->fetch_array($rs)) {
 // Delete expired VPSes
 $vps_timeout = $cluster_cfg->get("general_vps_delete_timeout") * 24 * 60 * 60;
 
-$rs = $db->query("SELECT vps_id FROM vps WHERE vps_deleted IS NOT NULL AND vps_deleted < ".$db->check((time() - $vps_timeout)));
+$rs = $db->query("SELECT vps_id FROM vps WHERE vps_deleted IS NOT NULL AND vps_deleted > 0 AND vps_deleted < ".$db->check((time() - $vps_timeout)));
 
 while($row = $db->fetch_array($rs)) {
 	$vps = new vps_load($row["vps_id"]);
