@@ -61,3 +61,13 @@ ALTER TABLE  `vps` ADD  `vps_backup_export` INT NOT NULL AFTER  `vps_features_en
 
 ALTER TABLE  `members` CHANGE  `m_active`  `m_state` ENUM(  'active',  'suspended',  'deleted' ) NOT NULL DEFAULT  'active';
 ALTER TABLE  `members` ADD  `m_deleted` INT NULL AFTER  `m_created`;
+
+-- Fix traffic accounting - replace NULLs with 0
+UPDATE `transfered` SET tr_in = 0 WHERE tr_in IS NULL;
+UPDATE `transfered` SET tr_out = 0 WHERE tr_out IS NULL;
+
+ALTER TABLE  `transfered` CHANGE  `tr_in`  `tr_in` BIGINT( 63 ) UNSIGNED NOT NULL DEFAULT  '0',
+CHANGE  `tr_out`  `tr_out` BIGINT( 63 ) UNSIGNED NOT NULL DEFAULT  '0';
+
+-- Fix IPv6 traffic
+UPDATE `transfered` SET tr_ip = REPLACE( tr_ip,  '/128',  '' ) WHERE tr_ip LIKE  '%/128';

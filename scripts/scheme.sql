@@ -164,8 +164,8 @@ CREATE TABLE IF NOT EXISTS `transaction_groups` (
 CREATE TABLE IF NOT EXISTS `transfered` (
   `tr_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `tr_ip` varchar(127) NOT NULL,
-  `tr_in` bigint(63) unsigned DEFAULT '0',
-  `tr_out` bigint(63) unsigned DEFAULT '0',
+  `tr_in` bigint(63) unsigned NOT NULL DEFAULT '0',
+  `tr_out` bigint(63) unsigned NOT NULL DEFAULT '0',
   `tr_time` int(10) unsigned NOT NULL,
   PRIMARY KEY (`tr_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
