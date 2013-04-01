@@ -104,6 +104,7 @@ IMPLICIT_CONFIG = {
 		:zfs => "zfs",
 		:mount => "mount",
 		:umount => "umount",
+		:uptime => "uptime",
 	},
 	
 	:vps => {

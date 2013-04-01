@@ -164,7 +164,7 @@ module VpsAdmind
 						
 						my.prepared("INSERT INTO servers_status
 									SET server_id = ?, timestamp = UNIX_TIMESTAMP(NOW()), cpu_load = ?, daemon = ?, vpsadmin_version = ?",
-									$CFG.get(:vpsadmin, :server_id), 0, 0, VpsAdmind::VERSION)
+									$CFG.get(:vpsadmin, :server_id), Node.new(0).load[5], 0, VpsAdmind::VERSION)
 						
 						my.close
 						

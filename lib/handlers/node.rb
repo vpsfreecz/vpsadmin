@@ -24,6 +24,16 @@ class Node < Executor
 		ok
 	end
 	
+	def load
+		m = /load average\: (\d+\.\d+), (\d+\.\d+), (\d+\.\d+)/.match(syscmd($CFG.get(:bin, :uptime))[:output])
+		
+		if m
+			{1 => m[1], 5 => m[2], 15 => m[3]}
+		else
+			{}
+		end
+	end
+	
 	def conf_path(name = nil)
 		"#{$CFG.get(:vz, :vz_conf)}/conf/ve-#{name ? name : @params["name"]}.conf-sample"
 	end

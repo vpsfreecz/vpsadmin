@@ -93,6 +93,9 @@
 #     :ip6tables: ip6tables
 #     :git: git
 #     :zfs: zfs
+#     :mount: mount
+#     :umount: umount
+#     :uptime: uptime
 # 
 # :vps:
 #     :clone:
