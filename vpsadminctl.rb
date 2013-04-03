@@ -13,6 +13,10 @@ options = {
 		:workers => false,
 		:consoles => false,
 		:header => true,
+	},
+	:kill => {
+		:all => false,
+		:type => nil,
 	}
 }
 
@@ -23,11 +27,12 @@ opt_parser = OptionParser.new do |opts|
 Usage: vpsadminctl <command> [options]
 
 Commands:
-    status      Show vpsAdmind's status
-    reload      Reload vpsAdmind's configuration
-    stop        Safely stop vpsAdmind - wait for all commands to finish
-    restart     Safely restart vpsAdmind
-    update      Safely stop vpsAdmind, then update by git pull and start again
+    status             Show vpsAdmind's status
+    reload             Reload vpsAdmind's configuration
+    stop               Safely stop vpsAdmind - wait for all commands to finish
+    restart            Safely restart vpsAdmind
+    update             Safely stop vpsAdmind, then update by git pull and start again
+    kill [ID|TYPE]...  Kill transaction(s) that are being processed
 
 For specific options type: vpsadminctl <command> --help
 
@@ -47,6 +52,13 @@ END_BANNER
 		
 		opts.on("-H", "--no-header", "Suppress columns header") do
 			options[:status][:header] = false
+		end
+	when "kill"
+		opts.on("-a", "--all", "Kill all transactions") do
+			options[:kill][:all] = true
+		end
+		opts.on("-t", "--type", "Kill all transactions of this type") do
+			options[:kill][:type] = true
 		end
 	end
 	
@@ -88,7 +100,6 @@ unless rc.is_valid?(command)
 	puts opt_parser
 	exit(false)
 end
-
 
 ret = rc.exec(command, options[command.to_sym])
 
