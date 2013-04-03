@@ -804,14 +804,8 @@ function ipadd($ip, $type = 4) {
   
   function get_backuper_server() {
 	global $db;
-	$sql = "SELECT s.* FROM locations l INNER JOIN servers s ON s.server_id = l.location_backup_server_id WHERE location_id = '".$db->check($this->ve["server_location"])."'";
-	if ($result = $db->query($sql)) {
-		if ($row = $db->fetch_array($result)) {
-			return $row;
-		}
-	}
-	
-	return NULL;
+	$e = nas_get_export_by_id($this->ve["vps_backup_export"]);
+	return $e["node_id"];
   }
 
   function get_location() {
