@@ -108,7 +108,7 @@ while ($t = $db->find("transactions", $whereCond, "t_id DESC", $limit)) {
 	} else {
 		$xtpl->table_td("{$t["t_type"]}".' '.transaction_label($t["t_type"]));
 	}
-	$xtpl->table_td($t["t_depends_on"]);
+	$xtpl->table_td('<a href="?page=transactions&filter=yes&details=1&id='.$t["t_depends_on"].'">'. $t["t_depends_on"] .'</a>');
 	$xtpl->table_td($t["t_done"]);
 	$xtpl->table_td($t["t_success"]);
 	if ($t["t_done"]==1 && $t["t_success"]==1)
