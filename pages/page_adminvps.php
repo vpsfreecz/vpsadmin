@@ -178,6 +178,11 @@ switch ($_GET["action"]) {
 			}
 			
 			if ($_SESSION["is_admin"] || $can_delete) {
+				if(!$lazy && $vps->ve["vps_backup_export"]) {
+					nas_export_delete($vps->ve["vps_backup_export"]);
+					$vps->delete_all_backups();
+				}
+				
 				$xtpl->perex_cmd_output(_("Deletion of VPS")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->destroy($lazy, $can_delete));
 				$list_vps=true;
 			}

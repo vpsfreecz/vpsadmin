@@ -615,12 +615,18 @@ function ipadd($ip, $type = 4) {
 	global $db;
 	$backup_id = NULL;
 	$backuper = $this->get_backuper_server();
+	$e = nas_get_export_by_id($this->ve["vps_backup_export"]);
+	
+	$dataset = $e["root_dataset"] . "/" . $e["dataset"];
+	$path = $e["root_path"] . "/" . $e["path"];
 	
 	if ($backup_first)
 	{
 		$params = array(
 			"server_name" => $this->ve["server_name"],
 			"exclude" => preg_split ("/(\r\n|\n|\r)/", $this->ve["vps_backup_exclude"]),
+			"dataset" => $dataset,
+			"path" => $path,
 		);
 		
 		add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, T_BACKUP_SCHEDULE, $params);
@@ -631,6 +637,8 @@ function ipadd($ip, $type = 4) {
 		"datetime" => strftime("%Y-%m-%dT%H:%M:%S", (int)$timestamp),
 		"backuper" => $backuper["server_name"],
 		"server_name" => $this->ve["server_name"],
+		"dataset" => $dataset,
+		"path" => $path,
 	);
 	add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, T_BACKUP_RESTORE_PREPARE, $params, NULL, $backup_id);
 	$prepare_id = $db->insertId();
@@ -645,8 +653,13 @@ function ipadd($ip, $type = 4) {
 	global $db, $cluster_cfg;
 	
 	$backuper = $this->get_backuper_server();
+	$e = nas_get_export_by_id($this->ve["vps_backup_export"]);
 	$secret = hash("sha256", $this->veid . $timestamp . time() . rand(0, 99999999));
-	$params = array("secret" => $secret);
+	$params = array(
+		"secret" => $secret,
+		"dataset" => $e["root_dataset"] . "/" . $e["dataset"],
+		"path" => $e["root_path"] . "/" . $e["path"],
+	);
 	
 	if ($timestamp == "current") {
 		$params["filename"] = "{$this->veid}-current.tar.gz";
@@ -781,6 +794,12 @@ function ipadd($ip, $type = 4) {
 	global $db;
 	
 	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_NAS_VE_REMOUNT, nas_mount_params($mount));
+  }
+  
+  function delete_all_backups() {
+	global $db;
+	
+	$db->query("DELETE FROM vps_backups WHERE vps_id = ". $this->veid);
   }
   
   function get_backuper_server() {

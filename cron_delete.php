@@ -63,8 +63,10 @@ $rs = $db->query("SELECT vps_id FROM vps WHERE vps_deleted IS NOT NULL AND vps_d
 while($row = $db->fetch_array($rs)) {
 	$vps = new vps_load($row["vps_id"]);
 	
-	if($vps->ve["vps_backup_export"])
+	if($vps->ve["vps_backup_export"]) {
 		nas_export_delete($vps->ve["vps_backup_export"]);
+		$vps->delete_all_backups();
+	}
 	
 	$vps->destroy(false);
 }
