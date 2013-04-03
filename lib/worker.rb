@@ -16,6 +16,11 @@ class Worker
 		end
 	end
 	
+	def kill
+		cmd.killed
+		@thread.kill!
+	end
+	
 	def working?
 		@thread and @thread.alive?
 	end

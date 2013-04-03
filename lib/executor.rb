@@ -15,7 +15,7 @@ end
 class Executor
 	attr_accessor :output
 	
-	def initialize(veid, params = {}, daemon = nil)
+	def initialize(veid = nil, params = {}, daemon = nil)
 		@veid = veid
 		@params = params
 		@output = {}

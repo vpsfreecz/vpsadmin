@@ -164,7 +164,8 @@ IMPLICIT_CONFIG = {
 				"restart",
 				"status",
 				"stop",
-				"update"
+				"update",
+				"kill"
 			]
 		}
 	}

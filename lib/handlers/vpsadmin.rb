@@ -31,6 +31,7 @@ class VpsAdmin < Executor
 				h = w.cmd.handler
 				
 				res_workers[wid] = {
+					:id => w.cmd.id,
 					:type => w.cmd.trans["t_type"].to_i,
 					:handler => "#{h[:class]}.#{h[:method]}",
 					:step => w.cmd.step,
@@ -60,5 +61,52 @@ class VpsAdmin < Executor
 				:queue_size => q_size - res_workers.size,
 			}
 		}
+	end
+	
+	def kill
+		cnt = 0
+		msgs = {}
+		
+		if @params["transactions"] == "all"
+			cnt = walk_workers { |w| true }
+		elsif @params["types"]
+			@params["types"].each do |t|
+				killed = walk_workers { |w| w.cmd.type == t }
+				
+				if killed == 0
+					msgs[t] = "No transaction with this type"
+				end
+				
+				cnt += killed
+			end
+		else
+			@params["transactions"].each do |t|
+				killed = walk_workers { |w| w.cmd.id == t }
+				
+				if killed == 0
+					msgs[t] = "No such transaction"
+				end
+				
+				cnt += killed
+			end
+		end
+		
+		{:ret => :ok, :output => {:killed => cnt, :msgs => msgs}}
+	end
+	
+	def walk_workers
+		killed = 0
+		
+		@daemon.workers do |workers|
+			workers.each do |wid, w|
+				if yield(w)
+					log "Killing transaction #{w.cmd.id}"
+					w.kill
+					killed += 1
+				end
+			end
+		end
+		
+		killed
 	end
 end
