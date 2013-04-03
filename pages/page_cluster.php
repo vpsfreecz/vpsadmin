@@ -1541,10 +1541,14 @@ if ($list_nodes) {
 	$xtpl->table_tr();
 	
 	$vps_on = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1"));
-	$vps_all = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id"));
+	$vps_stopped = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id INNER JOIN members m ON m.m_id = v.m_id WHERE vps_up = 0 AND vps_deleted IS NULL AND m_state = 'active'"));
+	$vps_suspended = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps v INNER JOIN members m ON v.m_id = m.m_id WHERE m_state = 'suspended'"));
+	$vps_deleted = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps WHERE vps_deleted IS NOT NULL AND vps_deleted > 0"));
+	$vps_all = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps"));
 	
 	$xtpl->table_td(_("VPS").':');
-	$xtpl->table_td($vps_on["cnt"] .' '._("running").' / '. $vps_all["cnt"] .' '._("total"));
+	$xtpl->table_td($vps_on["cnt"] .' '._("running").' / '. $vps_stopped["cnt"] .' '._("stopped").' / '. $vps_suspended["cnt"] .' '._("suspended").' / '.
+					$vps_deleted["cnt"] .' '._("deleted").' / '. $vps_all["cnt"] .' '._("total"));
 	$xtpl->table_tr();
 	
 	$m_active = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM members WHERE m_state = 'active'"));
@@ -1568,7 +1572,9 @@ if ($list_nodes) {
 	
 	$xtpl->table_title(_("Node list"));
 	$xtpl->table_add_category('');
+	$xtpl->table_add_category('#');
 	$xtpl->table_add_category(_("Name"));
+	$xtpl->table_add_category(_("IP"));
 	$xtpl->table_add_category(_("Load"));
 	$xtpl->table_add_category(_("Running"));
 	$xtpl->table_add_category(_("Stopped"));
@@ -1602,9 +1608,11 @@ if ($list_nodes) {
 		}
 		
 		$xtpl->table_td($icons, false, true);
+		$xtpl->table_td($node->s["server_id"]);
 		
-		// Name, load
+		// Name, IP, load
 		$xtpl->table_td($node->s["server_name"]);
+		$xtpl->table_td($node->s["server_ip4"]);
 		$xtpl->table_td($status["cpu_load"], false, true);
 		
 		// Running
@@ -1616,7 +1624,10 @@ if ($list_nodes) {
 		$xtpl->table_td($running_count["count"], false, true);
 		
 		// Stopped
-		$sql = 'SELECT COUNT(*) AS count FROM vps v LEFT JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 0 AND vps_server = '.$db->check($node->s["server_id"]);
+		$sql = "SELECT COUNT(*) AS count FROM vps v
+				LEFT JOIN vps_status s ON v.vps_id = s.vps_id
+				INNER JOIN members m ON m.m_id = v.m_id
+				WHERE m_state = 'active' AND vps_up = 0 AND vps_deleted IS NULL AND vps_server = ".$db->check($node->s["server_id"]);
 		
 		if ($result = $db->query($sql))
 			$stopped_count = $db->fetch_array($result);
