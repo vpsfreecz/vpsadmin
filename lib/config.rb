@@ -122,15 +122,13 @@ IMPLICIT_CONFIG = {
 		:method => "RdiffBackup",
 		:lock_interval => 30,
 		:mountpoint => "/mnt",
-		:dest => "/storage/vpsfree.cz/backup",
 		:tmp_restore => "/storage/vpsfree.cz/restore",
 		:backups_mnt_dir => "/mnt",
 		:restore_target => "/mnt/%{node}/%{veid}.restoring",
 		:restore_src => "/vz/private/%{veid}.restoring",
 		:download => "/storage/vpsfree.cz/download",
 		:zfs => {
-			:zpool => "storage/vpsfree.cz/backup",
-			:rsync => "%{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after --exclude .zfs/ --exclude-from %{exclude} %{src} %{dst}",
+			:rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after --exclude .zfs/ --exclude-from %{exclude} %{src} %{dst}",
 		},
 		:store => {
 			:min_backups => 14,

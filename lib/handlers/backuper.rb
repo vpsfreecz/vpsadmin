@@ -15,13 +15,16 @@ class Backuper < Executor
 	# Params:
 	# [exclude]     list; paths to be excluded from backup
 	# [server_name] string; name of server VPS runs on
+	# [dataset]     string; backup to this dataset
+	# [path]        string; backup is in this path
 	def backup
 		raise CommandNotImplemented
 	end
 	
 	# Delete old backups
 	#
-	# No parameters.
+	# [dataset]     string; backup to this dataset
+	# [path]        string; backup is in this path
 	def clear_backups(locked = false)
 		raise CommandNotImplemented
 	end
@@ -33,6 +36,8 @@ class Backuper < Executor
 	# [filename]    string; full name of archive
 	# [datetime]    string, date format %Y-%m-%dT%H:%M:%S; download backup from this date
 	# [server_name] string; if specified, do not download backup but VPS current state from node with this name
+	# [dataset]     string; backup to this dataset
+	# [path]        string; backup is in this path
 	def download
 		raise CommandNotImplemented
 	end
@@ -43,6 +48,8 @@ class Backuper < Executor
 	# [datetime]    string, date format %Y-%m-%dT%H:%M:%S; restore from backup from this date
 	# [backuper]    string; name of backuper server
 	# [server_name] string; name of server VPS runs on
+	# [dataset]     string; backup to this dataset
+	# [path]        string; backup is in this path
 	def restore_prepare
 		raise CommandNotImplemented
 	end
@@ -68,6 +75,7 @@ class Backuper < Executor
 		vps.start
 	end
 	
+	# Deprecated, not working
 	def exports
 		raise CommandFailed.new("exports", 1, "Exports disabled in configuration") unless $CFG.get(:backuper, :exports, :enabled)
 		
@@ -103,6 +111,7 @@ class Backuper < Executor
 		syscmd($CFG.get(:backuper, :exports, :reexport))
 	end
 	
+	# Deprecated, not working
 	def write_exports(f, dest)
 		options = $CFG.get(:backuper, :exports, :options)
 		
