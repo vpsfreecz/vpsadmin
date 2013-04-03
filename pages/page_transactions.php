@@ -76,8 +76,9 @@ if ($_SESSION["is_admin"]) {
 
 
 $xtpl->table_add_category("ID");
+$xtpl->table_add_category("QUEUED");
 $xtpl->table_add_category("TIME");
-$xtpl->table_add_category("TOOK");
+$xtpl->table_add_category("REAL");
 $xtpl->table_add_category("MEMBER");
 $xtpl->table_add_category("SERVER");
 $xtpl->table_add_category("VPS");
@@ -95,7 +96,8 @@ while ($t = $db->find("transactions", $whereCond, "t_id DESC", $limit)) {
     $xtpl->table_td($t["t_id"]);
 	}
 	$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $t["t_time"]));
-	$xtpl->table_td($t["t_end"] - $t["t_real_start"] . " s");
+	$xtpl->table_td(format_duration(($t["t_end"] ? $t["t_end"] - $t["t_time"] : 0)), false, true);
+	$xtpl->table_td(format_duration($t["t_end"] - $t["t_real_start"]), false, true);
 	$xtpl->table_td("{$m["m_id"]} {$m["m_nick"]}");
 	$xtpl->table_td(($s) ? "{$s["server_id"]} {$s["server_name"]}" : '---');
 	$xtpl->table_td(($t["t_vps"] == 0) ? _("--Every--") : "<a href='?page=adminvps&action=info&veid={$t["t_vps"]}'>{$t["t_vps"]}</a>");

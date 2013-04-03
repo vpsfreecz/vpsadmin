@@ -195,4 +195,16 @@ function redirect($loc) {
 	header('Location: '.$loc);
 }
 
+function format_duration($interval) {
+	$d = $interval / 86400;
+	$h = $interval / 3600 % 24;
+	$m = $interval / 60 % 60;
+	$s = $interval % 60;
+	
+	if($d >= 1)
+		return sprintf("%d days, %02d:%02d:%02d", round($d), $h, $m, $s);
+	else
+		return sprintf("%02d:%02d:%02d", $h, $m, $s);
+}
+
 ?>
