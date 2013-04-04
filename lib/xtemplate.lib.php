@@ -459,9 +459,15 @@ class XTemplate {
 	  * @param $logged - is user logged in?
 	  * @param $user_name - if so, what is is nick?
 	  */
-	function logbox ($logged = false, $user_name = 'none', $is_admin=false, $maint_mode = false) {
+	function logbox ($logged = false, $user_name = 'none', $is_admin=false, $maint_mode = false, $db_upgrade = false) {
 		if ($logged) {
 			if ($is_admin) {
+				
+				if($db_upgrade) {
+					$this->assign("L_DB_UPGRADE",_("Database needs to be upgraded!"));
+					$this->parse("main.loggedbox.is_admin.db_upgrade");
+				}
+				
 				if ($maint_mode) {
 					$this->assign("L_MAINTENANCE_MODE_ON",_("Maintenance mode status: ON"));
 					$this->parse("main.loggedbox.is_admin.maintenance_mode_on");
@@ -733,6 +739,17 @@ class XTemplate {
 		$this->table_td('<textarea name="'.$name.'" cols="'.$cols.'" rows="'.$rows.'" id="input">'.$value.'</textarea>');
 		if ($hint != '') $this->table_td($hint);
 		$this->table_tr();
+	}
+	/**
+	  * Add textarea to form
+	  * @param $cols - number of columns
+	  * @param $rows - number of rows
+	  * @param $name - $_RESULT[name]
+	  * @param $value - default value
+	  * @param $hint - helping hint
+	  */
+	function form_add_textarea_pure($cols = 10, $rows = 4, $name = 'textarea_formgen', $value = '') {
+		$this->table_td('<textarea name="'.$name.'" cols="'.$cols.'" rows="'.$rows.'" id="input">'.$value.'</textarea>');
 	}
 	/**
 	  * Add checkobox to form

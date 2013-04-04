@@ -7,4 +7,6 @@
 
 define("VERSION", '1.8.0-dev');
 define("DEMO_MODE", false);
+
+define("DB_VERSION", 3);
 ?>

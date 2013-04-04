@@ -84,6 +84,12 @@ $Cluster_ipv6 = new Cluster_ipv6($xtpl, $db);
 
 $_GET["page"] = isset($_GET["page"]) ? $_GET["page"] : false;
 
+$db_ver = $cluster_cfg->get("db_version");
+$db_check = $db_ver == DB_VERSION;
+$xtpl->assign('DB_VERSION', $db_ver);
+
+$cluster_cfg->set("maintenance_mode", true);
+
 if (($_GET["page"] != "login") &&
 				($_GET["page"] != "lang") &&
 				($_GET["page"] != "about") &&
@@ -173,7 +179,8 @@ $xtpl->logbox(
 	isset($_SESSION["logged_in"]) ? $_SESSION["logged_in"] : false,
 	isset($_SESSION["member"]) ? $_SESSION["member"]["m_nick"] : false,
 	isset($_SESSION["is_admin"]) ? $_SESSION["is_admin"] : false,
-	$cluster_cfg->get("maintenance_mode")
+	$cluster_cfg->get("maintenance_mode"),
+	!$db_check
 );
 
 $xtpl->adminbox($cluster_cfg->get("adminbox_content"));
