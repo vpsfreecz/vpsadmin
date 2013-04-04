@@ -110,7 +110,7 @@ class cluster_cfg {
 	$sql = 'SELECT * FROM sysconfig WHERE cfg_name="'.$db->check($setting).'"';
 	if ($result = $db->query($sql)) {
 	    if ($row = $db->fetch_array($result)) {
-		return unserialize(stripslashes($row["cfg_value"]));
+		return json_decode($row["cfg_value"]);
 	    } else return false;
 	} else return false;
     }
@@ -123,9 +123,9 @@ class cluster_cfg {
     function set($setting, $value) {
 	global $db;
 	if ($this->exists($setting))
-	    $sql = 'UPDATE sysconfig SET cfg_value = "'.addslashes(serialize($value)).'" WHERE cfg_name = "'.$db->check($setting).'"';
+	    $sql = 'UPDATE sysconfig SET cfg_value = "'.$db->check(json_encode($value)).'" WHERE cfg_name = "'.$db->check($setting).'"';
 	else
-    	    $sql = 'INSERT INTO sysconfig SET cfg_value = "'.addslashes(serialize($value)).'", cfg_name = "'.$db->check($setting).'"';
+    	    $sql = 'INSERT INTO sysconfig SET cfg_value = "'.$db->check(json_encode($value)).'", cfg_name = "'.$db->check($setting).'"';
 	return ($db->query($sql));
     }
 }
