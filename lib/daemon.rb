@@ -9,6 +9,7 @@ require 'eventmachine'
 
 module VpsAdmind
 	VERSION = "1.8.0-dev"
+	DB_VERSION = 1
 	
 	EXIT_OK = 0
 	EXIT_ERR = 1
@@ -42,6 +43,8 @@ module VpsAdmind
 		end
 		
 		def start
+			check_db_version
+			
 			loop do
 				sleep($CFG.get(:vpsadmin, :check_interval))
 				
@@ -190,6 +193,20 @@ module VpsAdmind
 		def workers
 			@m_workers.synchronize do
 				yield(@workers)
+			end
+		end
+		
+		def check_db_version
+			loop do
+				rs = @db.query("SELECT cfg_value FROM sysconfig WHERE cfg_name = 'db_version'")
+				ver = rs.fetch_row.first.to_i
+				
+				if VpsAdmind::DB_VERSION != ver
+					log "Database version does not match: required #{VpsAdmind::DB_VERSION}, current #{ver}"
+					sleep(30)
+				else
+					return
+				end
 			end
 		end
 		
