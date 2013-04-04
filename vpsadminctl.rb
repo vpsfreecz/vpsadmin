@@ -14,6 +14,12 @@ options = {
 		:consoles => false,
 		:header => true,
 	},
+	:stop => {
+		:force => false,
+	},
+	:restart => {
+		:force => false,
+	},
 	:kill => {
 		:all => false,
 		:type => nil,
@@ -52,6 +58,14 @@ END_BANNER
 		
 		opts.on("-H", "--no-header", "Suppress columns header") do
 			options[:status][:header] = false
+		end
+	when "stop"
+		opts.on("-f", "--force", "Force stop - kills all transactions that are being processed and exits immediately") do
+			options[:stop][:force] = true
+		end
+	when "restart"
+		opts.on("-f", "--force", "Force restart - kills all transactions that are being processed and restarts immediately") do
+			options[:restart][:force] = true
 		end
 	when "kill"
 		opts.on("-a", "--all", "Kill all transactions") do

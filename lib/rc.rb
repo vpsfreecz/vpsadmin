@@ -40,9 +40,15 @@ module VpsAdminCtl
 			puts "Config reloaded"
 		end
 		
+		def pre_stop
+			{:force => @opts[:force]}
+		end
+		
 		def stop
 			puts "Stop scheduled"
 		end
+		
+		alias_method :pre_restart, :pre_stop
 		
 		def restart
 			puts "Restart scheduled"
