@@ -9,11 +9,19 @@ class VpsAdmin < Executor
 	
 	def stop
 		VpsAdmind::Daemon.safe_exit(VpsAdmind::EXIT_STOP)
+		if @params["force"]
+			walk_workers { |w| :silent }
+			drop_workers
+		end
 		ok
 	end
 	
 	def restart
 		VpsAdmind::Daemon.safe_exit(VpsAdmind::EXIT_RESTART)
+		if @params["force"]
+			walk_workers { |w| :silent }
+			drop_workers
+		end
 		ok
 	end
 	
@@ -99,14 +107,19 @@ class VpsAdmin < Executor
 		
 		@daemon.workers do |workers|
 			workers.each do |wid, w|
-				if yield(w)
+				ret = yield(w)
+				if ret
 					log "Killing transaction #{w.cmd.id}"
-					w.kill
+					w.kill(ret != :silent)
 					killed += 1
 				end
 			end
 		end
 		
 		killed
+	end
+	
+	def drop_workers
+		@daemon.workers { |w| w.clear }
 	end
 end

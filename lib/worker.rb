@@ -16,8 +16,8 @@ class Worker
 		end
 	end
 	
-	def kill
-		cmd.killed
+	def kill(set_status = true)
+		cmd.killed if set_status
 		@thread.kill!
 	end
 	

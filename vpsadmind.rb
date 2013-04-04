@@ -116,6 +116,9 @@ if options[:wrapper]
 		when VpsAdmind::EXIT_OK
 			log "Stopping daemon"
 			exit
+		when VpsAdmind::EXIT_STOP
+			log "Stopping daemon"
+			exit
 		when VpsAdmind::EXIT_RESTART
 			log "Restarting daemon"
 			next
