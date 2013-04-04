@@ -112,7 +112,7 @@ class VPS < Executor
 				.gsub(/%\{src\}/, "#{@params["src_server_ip"]}:#{$CFG.get(:vz, :vz_root)}/private/#{@params["src_veid"]}/") \
 				.gsub(/%\{dst\}/, "#{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
 			
-			syscmd(rsync)
+			syscmd(rsync, [23, 24])
 		end
 	end
 	
