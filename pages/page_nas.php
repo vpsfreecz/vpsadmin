@@ -1,5 +1,5 @@
 <?php
-if ($_SESSION["logged_in"]) {
+if ($_SESSION["logged_in"] && (NAS_PUBLIC || $_SESSION["is_admin"])) {
 	
 	$list_nas = false;
 	

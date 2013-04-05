@@ -159,13 +159,19 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
     $xtpl->menu_add(_("VPS"),'?page=adminvps', ($_GET["page"] == 'adminvps'));
     if ($_SESSION["is_admin"]) {
 		$xtpl->menu_add(_("Backups"),'?page=backup', ($_GET["page"] == 'backup'));
-		$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
+		
+		if(NAS_PUBLIC || $_SESSION["is_admin"])
+			$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
+		
 		$xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));
 		$xtpl->menu_add(_("Cluster"),'?page=cluster', ($_GET["page"] == 'cluster'));
 		$xtpl->menu_add(_("Transaction log"),'?page=transactions', ($_GET["page"] == 'transactions'), true);
     } else {
 		$xtpl->menu_add(_("Backups"),'?page=backup', ($_GET["page"] == 'backup'));
-		$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
+		
+		if(NAS_PUBLIC || $_SESSION["is_admin"])
+			$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
+		
 		$xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));
 		$xtpl->menu_add(_("Transaction log"),'?page=transactions', ($_GET["page"] == 'transactions'), true);
     }
