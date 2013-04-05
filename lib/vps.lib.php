@@ -734,7 +734,34 @@ function ipadd($ip, $type = 4) {
 			break;
 	}
 	
-	// FIxme:: create default exports & mounts
+	// Clone mounts - exports are the same, except backup, that must be created
+	$db->query("INSERT INTO vps_mount (vps_id, src, dst, mount_opts, umount_opts, type, server_id, storage_export_id, mode, cmd_premount, cmd_postmount, cmd_preumount, cmd_postumount)
+	            SELECT ".$clone->veid." AS vps_id, src, dst, mount_opts, umount_opts, type, server_id, storage_export_id, mode, cmd_premount, cmd_postmount, cmd_preumount, cmd_postumount
+	            FROM vps_mount
+	            WHERE vps_id = ".$db->check($this->veid));
+	
+	$def_exports = nas_list_default_exports("vps");
+	$cloned_backup_export = 0;
+	
+	foreach($def_exports as $e) {
+		if($e["export_type"] == "backup") {
+			$cloned_backup_export = nas_export_add(
+				$clone->ve["m_id"],
+				$e["root_id"],
+				nas_resolve_vars($e["dataset"], $clone->ve),
+				nas_resolve_vars($e["path"], $clone->ve),
+				$e["export_quota"],
+				$e["user_editable"],
+				$e["export_type"]
+			);
+			break;
+		}
+	}
+	
+	if($cloned_backup_export) {
+		$db->query("UPDATE vps_mount SET storage_export_id = ".$db->check($cloned_backup_export)."
+		            WHERE vps_id = ".$db->check($clone->veid)." AND storage_export_id = ".$db->check($this->ve["vps_backup_export"]));
+	}
 	
 	if ($features && $this->ve["vps_features_enabled"])
 		add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_ENABLE_FEATURES);

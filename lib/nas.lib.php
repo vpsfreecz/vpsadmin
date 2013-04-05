@@ -600,17 +600,11 @@ function nas_create_default_exports($type, $obj) {
 	$mapping = array();
 	
 	foreach ($exports as $e) {
-		$ds = str_replace("%member_id%", $obj["m_id"], $e["dataset"]);
-		$ds = str_replace("%veid%", $obj["vps_id"], $ds);
-		
-		$path = str_replace("%member_id%", $obj["m_id"], $e["path"]);
-		$path = str_replace("%veid%", $obj["vps_id"], $path);
-		
 		$new_id = nas_export_add(
 			$e["member_id"] ? $e["member_id"] : $obj["m_id"],
 			$e["root_id"],
-			$ds,
-			$path,
+			nas_resolve_vars($e["dataset"], $obj),
+			nas_resolve_vars($e["path"], $obj),
 			$e["export_quota"],
 			$e["user_editable"],
 			$e["export_type"],
@@ -633,9 +627,6 @@ function nas_create_default_mounts($obj, $mapping = array()) {
 	$mounts = nas_list_default_mounts();
 	
 	foreach ($mounts as $m) {
-		$src = str_replace("%member_id%", $obj["m_id"], $m["src"]);
-		$src = str_replace("%veid%", $obj["vps_id"], $src);
-		
 		$storage_export_id = $m["storage_export_id"];
 		
 		if($storage_export_id) {
@@ -650,7 +641,7 @@ function nas_create_default_mounts($obj, $mapping = array()) {
 			$m["vps_id"] ? $m["vps_id"] : $obj["vps_id"],
 			$m["mode"],
 			$m["server_id"],
-			$src,
+			nas_resolve_vars($m["src"], $obj),
 			$m["dst"],
 			$m["mount_opts"],
 			$m["umount_opts"],
@@ -663,4 +654,11 @@ function nas_create_default_mounts($obj, $mapping = array()) {
 			false
 		);
 	}
+}
+
+function nas_resolve_vars($str, $obj) {
+	$str = str_replace("%member_id%", $obj["m_id"], $str);
+	$str = str_replace("%veid%", $obj["vps_id"], $str);
+	
+	return $str;
 }
