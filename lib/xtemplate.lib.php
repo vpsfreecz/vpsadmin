@@ -696,7 +696,7 @@ class XTemplate {
 		$code = ('<select  name="'.$name.'" id="input" '.($multiple ? 'multiple size="'.$size.'"' : '').'>');
 		if ($options)
 		foreach ($options as $key=>$value) {
-		if ($selected_value == $key && $selected_value != NULL)
+		if (($selected_value == $key && $selected_value != NULL) || ($multiple && is_array($selected_value) && in_array($key, $selected_value)))
 			$code .= '<option selected="selected" value="'.$key.'" title="">'.$value.'</option>'."\n";
 			else $code .= '<option value="'.$key.'" title="">'.$value.'</option>'."\n";
 		}

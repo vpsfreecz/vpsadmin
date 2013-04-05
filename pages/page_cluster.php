@@ -1338,6 +1338,10 @@ switch($_REQUEST["action"]) {
 				$xtpl->form_add_checkbox(_("Backup lock").':', 'backup_lock', '1');
 				$xtpl->table_tr();
 				break;
+			case "remount":
+				$t = _("Mass remount");
+				$xtpl->form_add_select(_("Remount mounts from").':', 'source_nodes[]', $cluster->list_servers_with_type("storage"), '', '', true, '5');
+				break;
 			default:
 				break;
 		}
@@ -1483,6 +1487,26 @@ switch($_REQUEST["action"]) {
 					$vps = vps_load($veid);
 					if ($vps->exists)
 						$vps->set_backup_lock($_POST["backup_lock"]);
+				}
+				break;
+			case "remount":
+				$nodes = $db->check(is_array($_POST["source_nodes"]) ? implode(",", $_POST["source_nodes"]) : $_POST["source_nodes"]);
+				
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					
+					$rs = $db->query("SELECT m.id
+					                  FROM vps_mount m
+		                              LEFT JOIN storage_export e ON m.storage_export_id = e.id
+		                              LEFT JOIN storage_root r ON e.root_id = r.id
+		                              WHERE m.vps_id = ".$db->check($vps->veid)."
+		                                    AND (m.server_id IN (".$nodes.") OR r.node_id IN (".$nodes."))
+					                  ");
+					
+					while($row = $db->fetch_array($rs)) {
+						$m = nas_get_mount_by_id($row["id"]);
+						$vps->remount($m);
+					}
 				}
 				break;
 			default:
@@ -2053,6 +2077,8 @@ if ($mass_management) {
 	
 	$xtpl->table_tr();
 	
+	$xtpl->form_add_select(_("Has mount on").':', 'm[]', $cluster->list_servers_with_type("storage"), $_GET["m"], '', true, '5');
+	
 	$xtpl->form_out( _("Show"), null, '', '3');
 	
 	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
@@ -2124,6 +2150,15 @@ if ($mass_management) {
 				break;
 		}
 	
+	if (isset($_GET["m"])) {
+		$nodes = $db->check(is_array($_GET["m"]) ? implode(",", $_GET["m"]) : $_GET["m"]);
+		$conds[] = "(SELECT m.id FROM vps_mount m
+		             LEFT JOIN storage_export e ON m.storage_export_id = e.id
+		             LEFT JOIN storage_root r ON e.root_id = r.id
+		             WHERE m.vps_id = v.vps_id
+		                   AND (m.server_id IN (".$nodes.") OR r.node_id IN (".$nodes."))) IS NOT NULL";
+	}
+	
 	$conditions = array();
 	
 	foreach($conds as $c)
@@ -2176,6 +2211,7 @@ if ($mass_management) {
 			"migrate_online" => _("Online migration"),
 			"backuper" => _("Set backuper"),
 			"backup_lock" => _("Set backup lock"),
+			"remount" => _("Remount"),
 		), '', '', false, '5', '8'
 	);
 	
