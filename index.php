@@ -88,7 +88,8 @@ $db_ver = $cluster_cfg->get("db_version");
 $db_check = $db_ver == DB_VERSION;
 $xtpl->assign('DB_VERSION', $db_ver);
 
-$cluster_cfg->set("maintenance_mode", true);
+if(!$db_check)
+	$cluster_cfg->set("maintenance_mode", true);
 
 if (($_GET["page"] != "login") &&
 				($_GET["page"] != "lang") &&
