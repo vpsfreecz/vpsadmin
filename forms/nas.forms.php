@@ -99,7 +99,7 @@ function mount_add_form($target_e, $target_c, $default = false) {
 	$xtpl->form_add_input(_("Post-mount command").':', 'text', '50', 'cmd_postmount', $_POST["cmd_postmount"], _("Command that is executed within VPS context <strong>after</strong> mount"));
 	$xtpl->form_add_input(_("Pre-umount command").':', 'text', '50', 'cmd_preumount', $_POST["cmd_preumount"], _("Command that is executed within VPS context <strong>before</strong> umount"));
 	$xtpl->form_add_input(_("Post-umount command").':', 'text', '50', 'cmd_postumount', $_POST["cmd_postumount"], _("Command that is executed within VPS context <strong>after</strong> umount"));
-	$xtpl->form_add_checkbox(_("Mount immediately").':', 'mount_immediately', '1', $_POST["mount_immediately"] ? $_POST["mount_immediately"] : true);
+	$xtpl->form_add_checkbox(_("Mount on save").':', 'mount_immediately', '1', $_POST["mount_immediately"] ? $_POST["mount_immediately"] : true);
 	$xtpl->form_out(_("Add mount"));
 	
 	if ($_SESSION["is_admin"]) {
@@ -120,7 +120,7 @@ function mount_add_form($target_e, $target_c, $default = false) {
 		$xtpl->form_add_input(_("Post-mount command").':', 'text', '50', 'cmd_postmount', $_POST["cmd_postmount"], _("Command that is executed within VPS context <strong>after</strong> mount"));
 		$xtpl->form_add_input(_("Pre-umount command").':', 'text', '50', 'cmd_preumount', $_POST["cmd_preumount"], _("Command that is executed within VPS context <strong>before</strong> umount"));
 		$xtpl->form_add_input(_("Post-umount command").':', 'text', '50', 'cmd_postumount', $_POST["cmd_postumount"], _("Command that is executed within VPS context <strong>after</strong> umount"));
-		$xtpl->form_add_checkbox(_("Mount immediately").':', 'mount_immediately', '1', $_POST["mount_immediately"] ? $_POST["mount_immediately"] : true);
+		$xtpl->form_add_checkbox(_("Mount on save").':', 'mount_immediately', '1', $_POST["mount_immediately"] ? $_POST["mount_immediately"] : true);
 		$xtpl->form_out(_("Add mount"));
 	}
 }
@@ -151,6 +151,6 @@ function mount_edit_form($target, $m, $default = false) {
 	$xtpl->form_add_input(_("Post-mount command").':', 'text', '50', 'cmd_postmount', $_POST["cmd_postmount"] ? $_POST["cmd_postmount"] : $m["cmd_postmount"], _("Command that is executed within VPS context <strong>after</strong> mount"));
 	$xtpl->form_add_input(_("Pre-umount command").':', 'text', '50', 'cmd_preumount', $_POST["cmd_preumount"] ? $_POST["cmd_preumount"] : $m["cmd_preumount"], _("Command that is executed within VPS context <strong>before</strong> umount"));
 	$xtpl->form_add_input(_("Post-umount command").':', 'text', '50', 'cmd_postumount', $_POST["cmd_postumount"] ? $_POST["cmd_postumount"] : $m["cmd_postumount"], _("Command that is executed within VPS context <strong>after</strong> umount"));
-	$xtpl->form_add_checkbox(_("Remount immediately").':', 'remount_immediately', '1', $_POST["type"] ? $_POST["remount_immediately"] : true, "<strong>"._("Recommended")."</strong>");
+	$xtpl->form_add_checkbox(_("Remount on save").':', 'remount_immediately', '1', $_POST["type"] ? $_POST["remount_immediately"] : true, "<strong>"._("Recommended")."</strong>");
 	$xtpl->form_out(_("Save"));
 }
