@@ -59,7 +59,9 @@ ALTER TABLE `vps`
 ALTER TABLE  `vps` ADD  `vps_deleted` INT( 11 ) NULL AFTER  `vps_created`;
 ALTER TABLE  `vps` ADD  `vps_backup_export` INT NOT NULL AFTER  `vps_features_enabled`;
 
-ALTER TABLE  `members` CHANGE  `m_active`  `m_state` ENUM(  'active',  'suspended',  'deleted' ) NOT NULL DEFAULT  'active';
+ALTER TABLE  `members` ADD  `m_state` ENUM(  'active',  'suspended',  'deleted' ) NOT NULL DEFAULT  'active' AFTER `m_active`;
+UPDATE members SET m_state = 'suspended' WHERE m_active = 0;
+ALTER TABLE members DROP `m_active`;
 ALTER TABLE  `members` ADD  `m_deleted` INT NULL AFTER  `m_created`;
 
 -- Fix traffic accounting - replace NULLs with 0
