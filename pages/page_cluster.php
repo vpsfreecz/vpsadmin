@@ -12,10 +12,29 @@ $xtpl->title(_("Manage Cluster"));
 $list_nodes = false;
 $list_templates = false;
 
-$server_types = array("node" => "Node", "backuper" => "Backuper", "storage" => "Storage", "mailer" => "Mailer");
+$server_types = array("node" => "Node", "storage" => "Storage", "mailer" => "Mailer");
 $location_types = array("production" => "Production", "playground" => "Playground");
 
+$export_add_target = '?page=cluster&action=nas_def_export_save&for='.$_GET["for"];
+
 switch($_REQUEST["action"]) {
+	case "general_settings":
+		$xtpl->title2(_("General settings"));
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		$xtpl->form_create('?page=cluster&action=general_settings_save', 'post');
+		$xtpl->form_add_input(_("Member delete timeout").':', 'text', '30', 'member_del_timeout', $cluster_cfg->get("general_member_delete_timeout"), _("days"));
+		$xtpl->form_add_input(_("VPS delete timeout").':', 'text', '30', 'vps_del_timeout', $cluster_cfg->get("general_vps_delete_timeout"), _("days"));
+		$xtpl->form_out(_("Save changes"));
+		
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		break;
+	case "general_settings_save":
+		$cluster_cfg->set("general_member_delete_timeout", $_POST["member_del_timeout"]);
+		$cluster_cfg->set("general_vps_delete_timeout", $_POST["vps_del_timeout"]);
+		notify_user(_("Changes saved"), _("Changes sucessfully saved."));
+		redirect('?page=cluster&action=general_settings');
+		break;
 	case "restart_node":
 		$node = new cluster_node($_REQUEST["id"]);
 		$xtpl->perex(_("Are you sure to reboot node").' '.$node->s["server_name"].'?',
@@ -105,7 +124,6 @@ switch($_REQUEST["action"]) {
 		$xtpl->form_add_checkbox(_("Does it use OSPF?").':', 'has_ospf', '1', '0', _("Or another kind of dynamic routing"));
 		$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', '1', '');
 		$xtpl->form_add_checkbox(_("Does use Rdiff-backup?").':', 'has_rdiff_backup', '1', '', _("<b>Note:</b> check only if available across all nodes in this location"));
-		$xtpl->form_add_select(_("Backuper").':', 'backup_server_id', $cluster->list_servers_with_type("backuper"), '', _("Needs to be SSH paired"));
 		$xtpl->form_add_input(_("How many backups to store").':', 'text', '3', 	'rdiff_history',		'', _("Number"));
 		$xtpl->form_add_input(_("Local node SSHFS mountpath").':', 'text', '30', 	'rdiff_mount_sshfs',	'', _("Path, use {vps_id}"));
 		$xtpl->form_add_input(_("Local node ArchFS mountpath").':', 'text', '30',	'rdiff_mount_archfs',	'', _("Path, use {vps_id}"));
@@ -116,7 +134,7 @@ switch($_REQUEST["action"]) {
 	case "location_new_save":
 		$cluster->set_location(NULL, $_REQUEST["location_label"], $_REQUEST["type"], $_REQUEST["has_ipv6"],
 							$_REQUEST["onboot"], $_REQUEST["has_ospf"], $_REQUEST["has_rdiff_backup"],
-							$_REQUEST["backup_server_id"], $_REQUEST["rdiff_history"], $_REQUEST["rdiff_mount_sshfs"],
+							$_REQUEST["rdiff_history"], $_REQUEST["rdiff_mount_sshfs"],
 							$_REQUEST["rdiff_mount_archfs"], $_REQUEST["tpl_sync_path"], $_REQUEST["remote_console_server"]);
 		$xtpl->perex(_("Changes saved"), _("Location added."));
 		$list_locations = true;
@@ -133,7 +151,6 @@ switch($_REQUEST["action"]) {
 			$xtpl->form_add_checkbox(_("Does it use OSPF?").':', 'has_ospf', '1', $item["location_has_ospf"], _("Or another kind of dynamic routing"));
 			$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', $item["location_vps_onboot"], '');
 			$xtpl->form_add_checkbox(_("Does use Rdiff-backup?").':', 'has_rdiff_backup', '1', $item["location_has_rdiff_backup"], _("<b>Note:</b> check only if available across all nodes in this location"));
-			$xtpl->form_add_select(_("Backuper").':', 'backup_server_id', $cluster->list_servers_with_type("backuper"), $item["location_backup_server_id"], _("Needs to be SSH paired"));
 			$xtpl->form_add_input(_("How many backups to store").':', 'text', '30', 	'rdiff_history',		$item["location_rdiff_history"], _("Number"));
 			$xtpl->form_add_input(_("Local node SSHFS mountpath").':', 'text', '30', 	'rdiff_mount_sshfs',	$item["location_rdiff_mount_sshfs"], _("Path, use {vps_id}"));
 			$xtpl->form_add_input(_("Local node ArchFS mountpath").':', 'text', '30',	'rdiff_mount_archfs',	$item["location_rdiff_mount_archfs"], _("Path, use {vps_id}"));
@@ -148,7 +165,7 @@ switch($_REQUEST["action"]) {
 		if ($item = $cluster->get_location_by_id($_REQUEST["id"])) {
 			$cluster->set_location($_REQUEST["id"], $_REQUEST["location_label"], $_REQUEST["type"], $_REQUEST["has_ipv6"],
 							$_REQUEST["onboot"], $_REQUEST["has_ospf"], $_REQUEST["has_rdiff_backup"],
-							$_REQUEST["backup_server_id"], $_REQUEST["rdiff_history"], $_REQUEST["rdiff_mount_sshfs"],
+							$_REQUEST["rdiff_history"], $_REQUEST["rdiff_mount_sshfs"],
 							$_REQUEST["rdiff_mount_archfs"], $_REQUEST["tpl_sync_path"], $_REQUEST["remote_console_server"]);
 			$xtpl->perex(_("Changes saved"), _("Location label saved."));
 			$list_locations = true;
@@ -305,7 +322,6 @@ switch($_REQUEST["action"]) {
 				$params["templ_id"] = $_REQUEST["id"];
 				add_transaction($_SESSION["member"]["m_id"], $node->s["server_id"], 0, T_CLUSTER_TEMPLATE_DELETE, $params);
 			}
-			$cluster->delete_template($template["templ_id"]);
 			} else {
 			$list_templates = true;
 			}
@@ -428,6 +444,128 @@ switch($_REQUEST["action"]) {
 					server_path_vz = "'.$db->check($_REQUEST["server_path_vz"]).'"';
 			$db->query($sql);
 			$list_nodes = true;
+		}
+		break;
+	case "node_edit":
+		$node = new cluster_node($_GET["node_id"]);
+		
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		
+		if ($node->exists) {
+			$xtpl->title2(_("Edit node"));
+			$xtpl->table_add_category('');
+			$xtpl->table_add_category('');
+			$xtpl->form_create('?page=cluster&action=node_edit_save&node_id='.$node->s["server_id"], 'post');
+			$xtpl->form_add_input(_("Name").':', 'text', '30', 'server_name', $node->s["server_name"]);
+			$xtpl->form_add_select(_("Type").':', 'server_type', $server_types, $node->s["server_type"]);
+			$xtpl->form_add_select(_("Location").':', 'server_location', $cluster->list_locations(), $node->s["server_location"]);
+			$xtpl->form_add_input(_("Server IPv4 address").':', 'text', '30', 'server_ip4', $node->s["server_ip4"]);
+			$xtpl->form_add_textarea(_("Availability icon (if you wish)").':', 28, 4, 'server_availstat', $node->s["server_availstat"], _("Paste HTML link here"));
+			
+			switch ($node->s["server_type"]) {
+				case "node":
+					$xtpl->form_add_input(_("Max VPS count").':', 'text', '8', 'server_maxvps', $node->s["server_maxvps"]);
+					$xtpl->form_add_input(_("OpenVZ Path").':', 'text', '10', 'server_path_vz', $node->s["server_path_vz"]);
+					break;
+				default:break;
+			}
+			
+			$xtpl->form_out(_("Save"));
+			
+			switch ($node->s["server_type"]) {
+				case "storage":
+					$xtpl->table_title(_("Export roots"));
+					
+					foreach($node->storage_roots as $root) {
+						$q = nas_quota_to_val_unit($root["quota"]);
+						
+						$xtpl->table_add_category('');
+						$xtpl->table_add_category('');
+						$xtpl->form_create('?page=cluster&action=node_storage_root_save&node_id='.$node->s["server_id"].'&root_id='.$root["id"], 'post');
+						$xtpl->form_add_input(_("Label").':', 'text', '30', 'storage_label', $root["label"]);
+						$xtpl->form_add_input(_("Root dataset").':', 'text', '30', 'storage_root_dataset', $root["root_dataset"]);
+						$xtpl->form_add_input(_("Root path").':', 'text', '30', 'storage_root_path', $root["root_path"]);
+						$xtpl->form_add_select(_("Storage type").':', 'storage_type', $STORAGE_TYPES, $root["type"]);
+						$xtpl->form_add_checkbox(_("User export").':', 'storage_user_export', '1', $root["user_export"], _("Can user manage exports?"));
+						$xtpl->form_add_select(_("User mount").':', 'storage_user_mount', $STORAGE_MOUNT_MODES, $root["user_mount"]);
+						$xtpl->table_td(_("Quota").':');
+						$xtpl->form_add_input_pure('text', '30', 'quota_val', $q[0]);
+						$xtpl->form_add_select_pure('quota_unit', $NAS_QUOTA_UNITS, $q[1]);
+						$xtpl->table_tr();
+						$xtpl->form_add_input(_("Share options").':', 'text', '30', 'share_options', $root["share_options"], _("Passed directly to zfs sharenfs"));
+						$xtpl->form_out(_("Save"));
+					}
+					
+					$xtpl->sbar_add(_("Add export root"), '?page=cluster&action=node_storage_root_add&node_id='.$node->s["server_id"]);
+					break;
+				default:break;
+			}
+		}
+		break;
+	case "node_edit_save":
+		$node = new cluster_node($_GET["node_id"]);
+		
+		if ($node->exists) {
+			$node->update_settings($_POST);
+			$xtpl->perex(_("Settings updated"), _("Settings succesfully updated."));
+		}
+		
+		$list_nodes = true;
+		break;
+	case "node_storage_root_add":
+		$node = new cluster_node($_GET["node_id"]);
+		
+		if ($node->exists) {
+			$xtpl->title2(_("Add export root"));
+			$xtpl->table_add_category('');
+			$xtpl->table_add_category('');
+			$xtpl->form_create('?page=cluster&action=node_storage_root_save&node_id='.$node->s["server_id"], 'post');
+			$xtpl->form_add_input(_("Label").':', 'text', '30', 'storage_label');
+			$xtpl->form_add_input(_("Root dataset").':', 'text', '30', 'storage_root_dataset');
+			$xtpl->form_add_input(_("Root path").':', 'text', '30', 'storage_root_path');
+			$xtpl->form_add_select(_("Storage type").':', 'storage_type', $STORAGE_TYPES);
+			$xtpl->form_add_checkbox(_("User export").':', 'storage_user_export', '1', '', _("Can user manage exports?"));
+			$xtpl->form_add_select(_("User mount").':', 'storage_user_mount', $STORAGE_MOUNT_MODES);
+			$xtpl->table_td(_("Quota").':');
+			$xtpl->form_add_input_pure('text', '30', 'quota_val', $_POST["quota_val"] ? $_POST["quota_val"] : '0');
+			$xtpl->form_add_select_pure('quota_unit', $NAS_QUOTA_UNITS, $_POST["quota_unit"]);
+			$xtpl->table_tr();
+			$xtpl->form_add_input(_("Share options").':', 'text', '30', 'share_options', $root["share_options"], _("Passed directly to zfs sharenfs"));
+			$xtpl->form_out(_("Save"));
+		}
+		
+		break;
+	case "node_storage_root_save":
+		$node = new cluster_node($_GET["node_id"]);
+		
+		if($node->exists && $_POST["storage_root_dataset"] && $_POST["storage_root_path"]) {
+			if($_GET["root_id"]) {
+				nas_root_update(
+					$_GET["root_id"],
+					$_POST["storage_label"],
+					$_POST["storage_root_dataset"],
+					$_POST["storage_root_path"],
+					$_POST["storage_type"],
+					$_POST["storage_user_export"],
+					$_POST["storage_user_mount"],
+					$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]),
+					$_POST["share_options"]
+				);
+			} else {
+				nas_root_add(
+					$_GET["node_id"],
+					$_POST["storage_label"],
+					$_POST["storage_root_dataset"],
+					$_POST["storage_root_path"],
+					$_POST["storage_type"],
+					$_POST["storage_user_export"],
+					$_POST["storage_user_mount"],
+					$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]),
+					$_POST["share_options"]
+				);
+			}
+			
+			header('Location: ?page=cluster&action=node_edit&node_id='.$node->s["server_id"]);
 		}
 		break;
 	case "fields":
@@ -583,8 +721,12 @@ switch($_REQUEST["action"]) {
 		break;
 	case "maintenance_toggle":
 		if ($cluster_cfg->get("maintenance_mode")) {
-			$cluster_cfg->set("maintenance_mode", false);
-			$xtpl->perex(_("Maintenance mode status: OFF"), '');
+			if(!db_check_version()) {
+				$xtpl->perex(_("Unable to turn off maintenance mode"), _("Database needs to be upgraded first."));
+			} else {
+				$cluster_cfg->set("maintenance_mode", false);
+				$xtpl->perex(_("Maintenance mode status: OFF"), '');
+			}
 		} else {
 			$cluster_cfg->set("maintenance_mode", true);
 			$xtpl->perex(_("Maintenance mode status: ON"), '');
@@ -620,6 +762,283 @@ switch($_REQUEST["action"]) {
 		$cluster_cfg->set("api_key", $_REQUEST["api_key"]);
 		$xtpl->perex(_("API settings saved"), '');
 		$list_nodes = true;
+		break;
+	case "nas_settings":
+		$xtpl->title2("Manage NAS");
+		$xtpl->form_create('?page=cluster&action=nas_settings_save', 'post');
+		$xtpl->form_add_input(_("Default mount options").':', 'text', '40', 'mount_options', $cluster_cfg->get("nas_default_mount_options"), '');
+		$xtpl->form_add_input(_("Default umount options").':', 'text', '40', 'umount_options', $cluster_cfg->get("nas_default_umount_options"), '');
+		$xtpl->form_out(_("Save changes"));
+		
+		$xtpl->table_title(_("Default exports created for new members"));
+		$xtpl->table_add_category(_("Member"));
+		$xtpl->table_add_category(_("Pool"));
+		$xtpl->table_add_category(_("Dataset"));
+		$xtpl->table_add_category(_("Path"));
+		$xtpl->table_add_category(_("Quota"));
+		$xtpl->table_add_category(_("Type"));
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		
+		$exports_m = nas_list_default_exports("member");
+		
+		foreach($exports_m as $e) {
+			$xtpl->table_td($e["member_id"] ? $e["m_nick"] : _("new member"));
+			$xtpl->table_td($e["label"]);
+			if ($_SESSION["is_admin"])
+				$xtpl->table_td($e["dataset"]);
+			$xtpl->table_td($e["path"]);
+			$xtpl->table_td(nas_size_to_humanreadable($e["export_quota"]));
+			$xtpl->table_td($e["export_type"]);
+			$xtpl->table_td('<a href="?page=cluster&action=nas_def_export_edit&id='.$e["export_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+			$xtpl->table_td('<a href="?page=cluster&action=nas_def_export_del&id='.$e["export_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+			
+			$xtpl->table_tr();
+		}
+		
+		$xtpl->table_out();
+		
+		$xtpl->table_title(_("Default exports created for new VPS"));
+		
+		$xtpl->table_add_category(_("Member"));
+		$xtpl->table_add_category(_("Pool"));
+		$xtpl->table_add_category(_("Dataset"));
+		$xtpl->table_add_category(_("Path"));
+		$xtpl->table_add_category(_("Quota"));
+		$xtpl->table_add_category(_("Type"));
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		
+		$exports_m = nas_list_default_exports("vps");
+		
+		foreach($exports_m as $e) {
+			$xtpl->table_td($e["member_id"] ? $e["m_nick"] : _("VPS owner"));
+			$xtpl->table_td($e["label"]);
+			if ($_SESSION["is_admin"])
+				$xtpl->table_td($e["dataset"]);
+			$xtpl->table_td($e["path"]);
+			$xtpl->table_td(nas_size_to_humanreadable($e["export_quota"]));
+			$xtpl->table_td($e["export_type"]);
+			$xtpl->table_td('<a href="?page=cluster&action=nas_def_export_edit&id='.$e["export_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+			$xtpl->table_td('<a href="?page=cluster&action=nas_def_export_del&id='.$e["export_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+			
+			$xtpl->table_tr();
+		}
+		
+		$xtpl->table_out();
+		
+		$xtpl->table_title(_("Default mounts created for new VPS"));
+		
+		$xtpl->table_add_category(_("Source"));
+		$xtpl->table_add_category(_("Destination"));
+		$xtpl->table_add_category(_("Mount options"));
+		$xtpl->table_add_category(_("Umount options"));
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		
+		$mounts = nas_list_default_mounts();
+		
+		foreach ($mounts as $m) {
+			$xtpl->table_td($m["storage_export_id"] ? $m["root_label"].":".$m["path"] : $m["server_name"].":".$m["src"]);
+			$xtpl->table_td($m["dst"]);
+			$xtpl->table_td($m["mount_opts"]);
+			$xtpl->table_td($m["umount_opts"]);
+			$xtpl->table_td('<a href="?page=cluster&action=nas_def_mount_edit&id='.$m["mount_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+			$xtpl->table_td('<a href="?page=cluster&action=nas_def_mount_del&id='.$m["mount_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+			$xtpl->table_tr();
+		}
+		
+		$xtpl->table_out();
+		
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		$xtpl->sbar_add(_("Add default export for member"), '?page=cluster&action=nas_def_export_add&for=member');
+		$xtpl->sbar_add(_("Add default export for VPS"), '?page=cluster&action=nas_def_export_add&for=vps');
+		$xtpl->sbar_add(_("Add default mount for VPS"), '?page=cluster&action=nas_def_mount_add');
+		break;
+	case "nas_settings_save":
+		$cluster_cfg->set("nas_default_mount_options", $_POST["mount_options"]);
+		$cluster_cfg->set("nas_default_umount_options", $_POST["umount_options"]);
+		$xtpl->perex(_("NAS settings saved"), '');
+		$list_nodes = true;
+		break;
+	case "nas_def_export_add":
+		$xtpl->table_title(_("Add default export for new").' '.($_GET["for"] == "member" ? _("member") : _("VPS")));
+		export_add_form($export_add_target, true);
+		$xtpl->sbar_add(_("Back"), '?page=cluster&action=nas_settings');
+		break;
+	case "nas_def_export_edit":
+		$e = nas_get_export_by_id($_GET["id"]);
+		
+		export_edit_form('?page=cluster&action=nas_def_export_save', $e);
+		break;
+	case "nas_def_export_save":
+		if(isset($_POST["root_id"]) || isset($_POST["quota_val"])) {
+			if($_GET["id"]) {
+				nas_export_update(
+					$_GET["id"],
+					$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]),
+					$_POST["user_editable"],
+					$_POST["type"]
+				);
+			} else {
+				nas_export_add(
+					$_POST["member"],
+					$_POST["root_id"],
+					$_POST["dataset"],
+					$_POST["path"],
+					$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]),
+					$_POST["user_editable"],
+					$_POST["type"],
+					$_GET["for"]
+				);
+			}
+			
+			notify_user(_("Default export saved"), '');
+			redirect('?page=cluster&action=nas_settings');
+		}
+		break;
+	case "nas_def_export_del":
+		if($_GET["id"] && ($e = nas_get_export_by_id($_GET["id"]))) {
+			$mounts = nas_get_mounts_for_export($_GET["id"]);
+			$msg = "";
+			$children = nas_get_export_children($_GET["id"]);
+			
+			if(count($children) > 0) {
+				$msg .= _("This export has following subdirectories and ALL OF THEM will be DELETED too:");
+				$msg .= "<br><ul>";
+				
+				foreach($children as $child) {
+					$mounts = array_merge($mounts, nas_get_mounts_for_export($child["id"]));
+					$msg .= "<li>".$child["path"]." (".nas_size_to_humanreadable($child["used"]).")</li>";
+				}
+				
+				$msg .= "</ul>";
+			}
+			
+			if(count($mounts) > 0) {
+				$msg .= _("Following mounts of these exports will be deleted too:")."<ul>";
+				
+				foreach($mounts as $m) {
+					$msg .= "<li> VPS #".$m["vps_id"]."; "._("path")." ".$m["dst"]."</li>";
+				}
+				
+				$msg .= "</ul>";
+			}
+			
+			$msg .= '<br><br><a href="?page=cluster&action=nas_settings">'.strtoupper(_("No")).'</a> | <a href="?page=cluster&action=nas_def_export_del2&id='.$_GET["id"].'">'.strtoupper(_("Yes")).'</a>';
+			
+			$xtpl->perex(
+				_("Do you really want to delete export").' '.$e["path"].'?',
+				$msg
+			);
+		}
+		break;
+	case "nas_def_export_del2":
+		if($_GET["id"] && ($e = nas_get_export_by_id($_GET["id"]))) {
+			nas_export_delete($_GET["id"]);
+			notify_user(_("Default export deleted"), _("Default export successfully deleted."));
+			redirect('?page=cluster&action=nas_settings');
+		}
+		break;
+	case "nas_def_mount_add":
+		$xtpl->table_title(_("Add default mount for new VPS"));
+		mount_add_form('?page=cluster&action=nas_def_export_mount_save', '?page=cluster&action=nas_def_custom_mount_save', true);
+		$xtpl->sbar_add(_("Back"), '?page=cluster&action=nas_settings');
+		break;
+	case "nas_def_export_mount_save":
+		if ($_POST["export_id"] && $_POST["dst"] && isset($_POST["vps_id"])) {
+			nas_mount_add(
+				$_POST["export_id"],
+				$_POST["vps_id"],
+				$_POST["access_mode"],
+				0,
+				"",
+				$_POST["dst"],
+				$_SESSION["is_admin"] ? $_POST["m_opts"] : NULL,
+				$_SESSION["is_admin"] ? $_POST["u_opts"] : NULL,
+				"nfs",
+				$_POST["cmd_premount"],
+				$_POST["cmd_postmount"],
+				$_POST["cmd_preumount"],
+				$_POST["cmd_postumount"],
+				false,
+				true
+			);
+			
+			notify_user(_("Default mount saved"), '');
+			redirect('?page=cluster&action=nas_settings');
+		}
+		break;
+	case "nas_def_custom_mount_save":
+		if ($_POST["export_id"] && $_POST["dst"] && isset($_POST["vps_id"])) {
+			nas_mount_add(
+				0,
+				$_POST["vps_id"],
+				$_POST["access_mode"],
+				$_POST["source_node_id"],
+				$_POST["src"],
+				$_POST["dst"],
+				$_POST["m_opts"],
+				$_POST["u_opts"],
+				$_POST["type"],
+				$_POST["cmd_premount"],
+				$_POST["cmd_postmount"],
+				$_POST["cmd_preumount"],
+				$_POST["cmd_postumount"],
+				false,
+				true
+			);
+			
+			notify_user(_("Default mount saved"), '');
+			redirect('?page=cluster&action=nas_settings');
+		}
+		break;
+	case "nas_def_mount_edit":
+		$m = nas_get_mount_by_id($_GET["id"]);
+		
+		mount_edit_form('?page=cluster&action=nas_def_mount_edit_save', $m, true);
+		
+		$xtpl->sbar_add(_("Back"), '?page=cluster&action=nas_settings');
+		break;
+	case "nas_def_mount_edit_save":
+		if ($_GET["id"] && ($_POST["export_id"] || $_POST["src"]) && $_POST["dst"]) {
+			nas_mount_update(
+				$_GET["id"],
+				$_POST["export_id"],
+				$_POST["vps_id"],
+				$_POST["access_mode"],
+				$_POST["source_node_id"],
+				$_POST["src"],
+				$_POST["dst"],
+				$_POST["m_opts"],
+				$_POST["u_opts"],
+				$_POST["type"],
+				$_POST["cmd_premount"],
+				$_POST["cmd_postmount"],
+				$_POST["cmd_preumount"],
+				$_POST["cmd_postumount"],
+				false,
+				true
+			);
+			
+			notify_user(_("Default mount saved"), '');
+			redirect('?page=cluster&action=nas_settings');
+		}
+		break;
+	case "nas_def_mount_del":
+		if($_GET["id"] && ($m = nas_get_mount_by_id($_GET["id"]))) {
+			$xtpl->perex(
+					_("Do you really want to delete default mount").' '.$m["dst"].' '._("at").' #'.$m["vps_id"].'?',
+					'<a href="?page=cluster&action=nas_settings">'.strtoupper(_("No")).'</a> | <a href="?page=cluster&action=nas_def_mount_del2&id='.$_GET["id"].'">'.strtoupper(_("Yes")).'</a>'
+				);
+			}
+		break;
+	case "nas_def_mount_del2":
+		if($_GET["id"] && ($m = nas_get_mount_by_id($_GET["id"]))) {
+			nas_mount_delete($_GET["id"], false, false);
+			notify_user(_("Default mount deleted"), _("Default mount was successfully deleted."));
+			redirect('?page=cluster&action=nas_settings');
+		}
 		break;
 	case "playground_settings":
 		$xtpl->sbar_add(_("Back"), '?page=cluster');
@@ -746,10 +1165,42 @@ switch($_REQUEST["action"]) {
 		$xtpl->perex(_("Help box deleted"), _("Help box successfully deleted."));
 		
 		break;
-			case 'mass_management':
-			if ($_SESSION["is_admin"])
-				$mass_management = true;
-			break;
+	case 'db_upgrade':
+		$db_ver = $cluster_cfg->get("db_version");
+		$xtpl->title2(_("Upgrade database scheme from v"). $db_ver .' '._("to").' v'.DB_VERSION);
+		
+		$xtpl->form_create('?page=cluster&action=db_upgrade_do', 'post');
+		$xtpl->table_td('');
+		$xtpl->form_add_textarea_pure(90, 40, 'sqlcode', db_build_upgrade_code($db_ver, DB_VERSION));
+		$xtpl->table_tr();
+		$xtpl->form_out(_("Upgrade"));
+		
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		
+		break;
+	case 'db_upgrade_do':
+		$error = "";
+		
+		if(db_do_upgrade(DB_VERSION, $_POST["sqlcode"], $error)) {
+			notify_user(_("Database upgraded"), _("Database scheme was successfully upgraded to ")."v".DB_VERSION);
+			redirect('?page=cluster');
+		} else {
+			$xtpl->perex(_("Upgrade failed"), _("Please check the SQL code for errors.")."<br><br>".$error."<br><br>"._("Changes were rolled back."));
+			
+			$xtpl->form_create('?page=cluster&action=db_upgrade_do', 'post');
+			$xtpl->table_td('');
+			$xtpl->form_add_textarea_pure(90, 40, 'sqlcode', $_POST["sqlcode"]);
+			$xtpl->table_tr();
+			$xtpl->form_out(_("Upgrade"));
+		}
+		
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		
+		break;
+	case 'mass_management':
+		if ($_SESSION["is_admin"])
+			$mass_management = true;
+		break;
 	case 'mass_management_exec':
 		if (!$_SESSION["is_admin"])
 			break;
@@ -879,7 +1330,6 @@ switch($_REQUEST["action"]) {
 			case "backuper":
 				$t = _("Mass set backuper");
 				$xtpl->form_add_select(_("Backup enabled").':', 'backup_enabled', array("" => _("Do not touch"), 1 => _("Yes"), 2 => _("No")));
-				$xtpl->form_add_select(_("Mount backup").':', 'backup_mount', array("" => _("Do not touch"), 1 => _("Yes"), 2 => _("No")));
 				$xtpl->form_add_checkbox(_("Notify owners").':', 'notify_owners', '1', true);
 				$xtpl->table_tr();
 				break;
@@ -888,17 +1338,9 @@ switch($_REQUEST["action"]) {
 				$xtpl->form_add_checkbox(_("Backup lock").':', 'backup_lock', '1');
 				$xtpl->table_tr();
 				break;
-			case "backup_mount":
-				$t = _("Mass backup mount");
-				break;
-			case "backup_umount":
-				$t = _("Mass backup umount");
-				break;
-			case "backup_remount":
-				$t = _("Mass backup remount");
-				break;
-			case "backup_generate_scripts":
-				$t = _("Mass backup mount scripts generation");
+			case "remount":
+				$t = _("Mass remount");
+				$xtpl->form_add_select(_("Remount mounts from").':', 'source_nodes[]', $cluster->list_servers_with_type("storage"), '', '', true, '5');
 				break;
 			default:
 				break;
@@ -1021,7 +1463,6 @@ switch($_REQUEST["action"]) {
 				break;
 			case "backuper":
 				$enable = NULL;
-				$mount = NULL;
 				
 				switch($_POST["backup_enabled"]) {
 					case 1:
@@ -1033,19 +1474,9 @@ switch($_REQUEST["action"]) {
 					default:break;
 				}
 				
-				switch($_POST["backup_mount"]) {
-					case 1:
-						$mount = true;
-						break;
-					case 2:
-						$mount = false;
-						break;
-					default:break;
-				}
-				
 				foreach ($vpses as $veid) {
 					$vps = vps_load($veid);
-					$vps->set_backuper($enable, $mount, false);
+					$vps->set_backuper($enable, NULL, false);
 					
 					if($_POST["notify_owners"])
 						$vps->backuper_change_notify();
@@ -1058,39 +1489,31 @@ switch($_REQUEST["action"]) {
 						$vps->set_backup_lock($_POST["backup_lock"]);
 				}
 				break;
-			case "backup_mount":
+			case "remount":
+				$nodes = $db->check(is_array($_POST["source_nodes"]) ? implode(",", $_POST["source_nodes"]) : $_POST["source_nodes"]);
+				
 				foreach ($vpses as $veid) {
 					$vps = vps_load($veid);
-					if ($vps->exists)
-						$vps->backup_mount();
-				}
-				break;
-			case "backup_umount":
-				foreach ($vpses as $veid) {
-					$vps = vps_load($veid);
-					if ($vps->exists)
-						$vps->backup_umount();
-				}
-				break;
-			case "backup_remount":
-				foreach ($vpses as $veid) {
-					$vps = vps_load($veid);
-					if ($vps->exists)
-						$vps->backup_remount();
-				}
-				break;
-			case "backup_generate_scripts":
-				foreach ($vpses as $veid) {
-					$vps = vps_load($veid);
-					if ($vps->exists)
-						$vps->backup_generate_scripts();
+					
+					$rs = $db->query("SELECT m.id
+					                  FROM vps_mount m
+		                              LEFT JOIN storage_export e ON m.storage_export_id = e.id
+		                              LEFT JOIN storage_root r ON e.root_id = r.id
+		                              WHERE m.vps_id = ".$db->check($vps->veid)."
+		                                    AND (m.server_id IN (".$nodes.") OR r.node_id IN (".$nodes."))
+					                  ");
+					
+					while($row = $db->fetch_array($rs)) {
+						$m = nas_get_mount_by_id($row["id"]);
+						$vps->remount($m);
+					}
 				}
 				break;
 			default:
 				break;
 		}
 		
-		$xtpl->perex(_('Command executed'), _('Command successfuly executed for VPSes: ') . implode(', ', $vpses));
+		$xtpl->perex(_('Command executed'), _('Command successfully executed for VPSes: ') . implode(', ', $vpses));
 		break;
 	default:
 		$list_nodes = true;
@@ -1141,6 +1564,10 @@ if ($list_mails) {
 	$xtpl->sbar_add(_("Mailer settings"), '?page=cluster&action=mailer_settings');
 }
 if ($list_nodes) {
+	if(!db_check_version())
+		$xtpl->sbar_add(strtoupper(_("Upgrade database")), '?page=cluster&action=db_upgrade');
+	
+	$xtpl->sbar_add(_("General settings"), '?page=cluster&action=general_settings');
 	$xtpl->sbar_add(_("Register new node"), '?page=cluster&action=newnode');
 	$xtpl->sbar_add(_("Manage VPS templates"), '?page=cluster&action=templates');
 	$xtpl->sbar_add(_("Manage configs"), '?page=cluster&action=configs');
@@ -1151,128 +1578,153 @@ if ($list_nodes) {
 	$xtpl->sbar_add(_("Manage Mailer"), '?page=cluster&action=mailer');
 	$xtpl->sbar_add(_("Manage Payments"), '?page=cluster&action=payments_settings');
 	$xtpl->sbar_add(_("Manage API"), '?page=cluster&action=api_settings');
+	$xtpl->sbar_add(_("Manage NAS"), '?page=cluster&action=nas_settings');
 	$xtpl->sbar_add(_("Manage playground"), '?page=cluster&action=playground_settings');
 	$xtpl->sbar_add(_("VPS mass management"), '?page=cluster&action=mass_management');
 	$xtpl->sbar_add(_("Notice board & log"), '?page=cluster&action=noticeboard');
 	$xtpl->sbar_add(_("Help boxes"), '?page=cluster&action=helpboxes');
 	$xtpl->sbar_add(_("Edit vpsAdmin textfields"), '?page=cluster&action=fields');
 	
-	$on_row = 2;
+	$xtpl->table_title(_("Summary"));
 	
-	while($location = $db->find("locations", NULL, "location_id")) {
-		$i = 1;
-		
-		$sql = 'SELECT * FROM servers WHERE server_location = '.$db->check($location["location_id"]).' ORDER BY server_id';
-		$list_result = $db->query($sql);
-		
-		for ($j = 0; $j < $on_row; $j++) {
-			$xtpl->table_add_category(_("A"));
-			$xtpl->table_add_category(_("NAME"));
-			$xtpl->table_add_category(_("L"));
-			$xtpl->table_add_category(_("R"));
-			$xtpl->table_add_category(_("S"));
-			$xtpl->table_add_category(_("T"));
-			$xtpl->table_add_category(_("M"));
-			$xtpl->table_add_category(_("V"));
-			$xtpl->table_add_category(' ');
-			
-			if ($j+1 < $on_row)
-				$xtpl->table_add_category(' ');
-		}
-		
-		while ($srv = $db->fetch_array($list_result)) {
-			$node = new cluster_node($srv["server_id"]);
-			$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$srv["server_id"].'" ORDER BY id DESC LIMIT 1';
-			
-			if ($result = $db->query($sql))
-				$status = $db->fetch_array($result);
-			
-			$icons = "";
-			
-			if ($cluster_cfg->get("lock_cron_".$srv["server_id"]))	{
-				$icons .= '<img title="'._("The server is currently processing").'" src="template/icons/warning.png"/>';
-			} elseif ((time()-$status["timestamp"]) > 360) {
-				$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
-			} else {
-				$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
-			}
-			
-			$xtpl->table_td($icons, false, true);
-			
-			$xtpl->table_td($srv["server_name"]);
-			$xtpl->table_td($status["cpu_load"], false, true);
-			
-			$sql = 'SELECT COUNT(*) AS count FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1 AND vps_server = '.$db->check($srv["server_id"]);
-			
-			if ($result = $db->query($sql))
-				$running_count = $db->fetch_array($result);
-			
-			$xtpl->table_td($running_count["count"]);
-			
-			$sql = 'SELECT COUNT(*) AS count FROM vps v LEFT JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 0 AND vps_server = '.$db->check($srv["server_id"]);
-			
-			if ($result = $db->query($sql))
-				$stopped_count = $db->fetch_array($result);
-				
-			$xtpl->table_td($stopped_count["count"]);
-			
-			$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_server='.$db->check($srv["server_id"]);
-			
-			if ($result = $db->query($sql))
-				$vps_count = $db->fetch_array($result);
-			
-			$xtpl->table_td($vps_count["count"], false, true);
-			
-			$xtpl->table_td($srv["server_maxvps"]);
-			
-			/*
-			$vps_free = ((int)$srv["server_maxvps"]-(int)$vps_count["count"]);
-			$xtpl->table_td($vps_free, false, true);
-			*/
-			
-			$xtpl->table_td($status["vpsadmin_version"]);
-			
-			$xtpl->table_td('<a href="?page=cluster&action=node_start_vpses&id='.$srv["server_id"].'"><img src="template/icons/vps_start.png" title="'._("Start all VPSes here").'"/></a>');
-			
-			if (!($i++ % $on_row))
-				$xtpl->table_tr();
-			else
-				$xtpl->table_td('');
-		}
-		$xtpl->table_tr();
-		$xtpl->table_out();
-	}
+	$nodes_on = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM (
+                                               SELECT s.server_id
+                                               FROM servers s INNER JOIN servers_status t ON s.server_id = t.server_id
+                                               WHERE (UNIX_TIMESTAMP() - t.timestamp) <= 360
+                                               GROUP BY s.server_id
+                                               ORDER BY t.id DESC
+                                             ) tmp"));
 	
+	$nodes_all = $db->fetch_array($db->query("SELECT COUNT(server_id) AS cnt FROM servers"));
+	
+	$xtpl->table_td(_("Nodes").':');
+	$xtpl->table_td($nodes_on["cnt"] .' '._("online").' / '. $nodes_all["cnt"] .' '._("total"), $nodes_on["cnt"] < $nodes_all["cnt"] ? '#FFA500' : '#66FF66');
+	$xtpl->table_tr();
+	
+	$vps_on = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1"));
+	$vps_stopped = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id INNER JOIN members m ON m.m_id = v.m_id WHERE vps_up = 0 AND vps_deleted IS NULL AND m_state = 'active'"));
+	$vps_suspended = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps v INNER JOIN members m ON v.m_id = m.m_id WHERE m_state = 'suspended'"));
+	$vps_deleted = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps WHERE vps_deleted IS NOT NULL AND vps_deleted > 0"));
+	$vps_all = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps"));
+	
+	$xtpl->table_td(_("VPS").':');
+	$xtpl->table_td($vps_on["cnt"] .' '._("running").' / '. $vps_stopped["cnt"] .' '._("stopped").' / '. $vps_suspended["cnt"] .' '._("suspended").' / '.
+					$vps_deleted["cnt"] .' '._("deleted").' / '. $vps_all["cnt"] .' '._("total"));
+	$xtpl->table_tr();
+	
+	$m_active = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM members WHERE m_state = 'active'"));
+	$m_suspended = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM members WHERE m_state = 'suspended'"));
+	$m_total = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM members"));;
+	$m_deleted = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM members WHERE m_state = 'deleted'"));;
+	
+	$xtpl->table_td(_("Members").':');
+	$xtpl->table_td($m_active["cnt"] .' '._("active").' / '. $m_suspended["cnt"] .' '._("suspended")
+	                .' / '. $m_deleted["cnt"] .' '._("deleted").' / '. $m_total["cnt"] .' '._("total"));
+	$xtpl->table_tr();
+	
+	$free = count((array)get_free_ip_list(4));
+	$all = count((array)get_all_ip_list(4));
+	
+	$xtpl->table_td(_("IPv4 addresses").':');
+	$xtpl->table_td($all - $free .' '._("used").' / '. $all .' '._("total"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_out();
+	
+	$xtpl->table_title(_("Node list"));
 	$xtpl->table_add_category('');
-	$xtpl->table_add_category('Legend');
+	$xtpl->table_add_category('#');
+	$xtpl->table_add_category(_("Name"));
+	$xtpl->table_add_category(_("IP"));
+	$xtpl->table_add_category(_("Load"));
+	$xtpl->table_add_category(_("Running"));
+	$xtpl->table_add_category(_("Stopped"));
+	$xtpl->table_add_category(_("Deleted"));
+	$xtpl->table_add_category(_("Total"));
+	$xtpl->table_add_category(_("Free"));
+	$xtpl->table_add_category(_("Max"));
+	$xtpl->table_add_category(_("Version"));
+	$xtpl->table_add_category(' ');
+	$xtpl->table_add_category(' ');
 	
-	$xtpl->table_td("A");
-	$xtpl->table_td(_("Availability"));
-	$xtpl->table_tr();
+	$rs = $db->query("SELECT server_id FROM locations l INNER JOIN servers s ON l.location_id = s.server_location ORDER BY l.location_id, s.server_id");
 	
-	$xtpl->table_td("L");
-	$xtpl->table_td(_("Load"));
-	$xtpl->table_tr();
-	
-	$xtpl->table_td("R");
-	$xtpl->table_td(_("Running"));
-	$xtpl->table_tr();
-	
-	$xtpl->table_td("S");
-	$xtpl->table_td(_("Stopped"));
-	$xtpl->table_tr();
-	
-	$xtpl->table_td("T");
-	$xtpl->table_td(_("Total"));
-	$xtpl->table_tr();
-	
-	$xtpl->table_td("M");
-	$xtpl->table_td(_("Max"));
-	$xtpl->table_tr();
-	
-	$xtpl->table_td("V");
-	$xtpl->table_td(_("vpsAdmin"));
-	$xtpl->table_tr();
+	while($row = $db->fetch_array($rs)) {
+		$node = new cluster_node($row["server_id"]);
+		
+		// Availability
+		$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$node->s["server_id"].'" ORDER BY id DESC LIMIT 1';
+			
+		if ($result = $db->query($sql))
+			$status = $db->fetch_array($result);
+		
+		$icons = "";
+		
+		if ($cluster_cfg->get("lock_cron_".$node->s["server_id"]))	{
+			$icons .= '<img title="'._("The server is currently processing").'" src="template/icons/warning.png"/>';
+		} elseif ((time()-$status["timestamp"]) > 360) {
+			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
+		} else {
+			$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
+		}
+		
+		$xtpl->table_td($icons, false, true);
+		$xtpl->table_td($node->s["server_id"]);
+		
+		// Name, IP, load
+		$xtpl->table_td($node->s["server_name"]);
+		$xtpl->table_td($node->s["server_ip4"]);
+		$xtpl->table_td($status["cpu_load"], false, true);
+		
+		// Running
+		$sql = 'SELECT COUNT(*) AS count FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1 AND vps_server = '.$db->check($node->s["server_id"]);
+			
+		if ($result = $db->query($sql))
+			$running_count = $db->fetch_array($result);
+		
+		$xtpl->table_td($running_count["count"], false, true);
+		
+		// Stopped
+		$sql = "SELECT COUNT(*) AS count FROM vps v
+				LEFT JOIN vps_status s ON v.vps_id = s.vps_id
+				INNER JOIN members m ON m.m_id = v.m_id
+				WHERE m_state = 'active' AND vps_up = 0 AND vps_deleted IS NULL AND vps_server = ".$db->check($node->s["server_id"]);
+		
+		if ($result = $db->query($sql))
+			$stopped_count = $db->fetch_array($result);
+			
+		$xtpl->table_td($stopped_count["count"], false, true);
+		
+		// Deleted
+		$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_deleted IS NOT NULL AND vps_deleted > 0 AND vps_server = '.$db->check($node->s["server_id"]);
+		
+		if ($result = $db->query($sql))
+			$deleted_count = $db->fetch_array($result);
+			
+		$xtpl->table_td($deleted_count["count"], false, true);
+		
+		// Total
+		$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_server='.$db->check($node->s["server_id"]);
+		
+		if ($result = $db->query($sql))
+			$vps_count = $db->fetch_array($result);
+		
+		$xtpl->table_td($vps_count["count"], false, true);
+		
+		// Free
+		$xtpl->table_td($node->s["server_maxvps"] - $running_count["count"], false, true);
+		
+		// Max
+		$xtpl->table_td($node->s["server_maxvps"], false, true);
+		
+		// vpsAdmind
+		$xtpl->table_td($status["vpsadmin_version"]);
+		
+		$xtpl->table_td('<a href="?page=cluster&action=node_start_vpses&id='.$node->s["server_id"].'"><img src="template/icons/vps_start.png" title="'._("Start all VPSes here").'"/></a>');
+		$xtpl->table_td('<a href="?page=cluster&action=node_edit&node_id='.$node->s["server_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		
+		$xtpl->table_tr();
+	}
 	
 	$xtpl->table_out();
 }
@@ -1625,9 +2077,7 @@ if ($mass_management) {
 	
 	$xtpl->table_tr();
 	
-	$xtpl->form_add_select(_('Mount backup').':', 'backup_mount', array("" => _("All"), 1 => _("Yes"), 2 => _("No")), $_GET["backup_mount"]);
-	
-	$xtpl->table_tr();
+	$xtpl->form_add_select(_("Has mount on").':', 'm[]', $cluster->list_servers_with_type("storage"), $_GET["m"], '', true, '5');
 	
 	$xtpl->form_out( _("Show"), null, '', '3');
 	
@@ -1700,17 +2150,14 @@ if ($mass_management) {
 				break;
 		}
 	
-	if (isset($_GET["backup_mount"]))
-		switch ($_GET["backup_mount"]) {
-			case 1:
-				$conds[] = "v.vps_backup_mount = 1";
-				break;
-			case 2:
-				$conds[] = "v.vps_backup_mount = 0";
-				break;
-			default:
-				break;
-		}
+	if (isset($_GET["m"])) {
+		$nodes = $db->check(is_array($_GET["m"]) ? implode(",", $_GET["m"]) : $_GET["m"]);
+		$conds[] = "(SELECT m.id FROM vps_mount m
+		             LEFT JOIN storage_export e ON m.storage_export_id = e.id
+		             LEFT JOIN storage_root r ON e.root_id = r.id
+		             WHERE m.vps_id = v.vps_id
+		                   AND (m.server_id IN (".$nodes.") OR r.node_id IN (".$nodes."))) IS NOT NULL";
+	}
 	
 	$conditions = array();
 	
@@ -1764,10 +2211,7 @@ if ($mass_management) {
 			"migrate_online" => _("Online migration"),
 			"backuper" => _("Set backuper"),
 			"backup_lock" => _("Set backup lock"),
-			"backup_mount" => _("Mount backup"),
-			"backup_umount" => _("Umount backup"),
-			"backup_remount" => _("Remount backup"),
-			"backup_generate_scripts" => _("Generate mount scripts"),
+			"remount" => _("Remount"),
 		), '', '', false, '5', '8'
 	);
 	

@@ -1,3 +1,14 @@
+* Sun Apr 07 2013 - version 1.8.0
+- Implement NAS - exports on storage nodes and their mounts on vz nodes
+- Backups are built on NAS as well
+- Database versioning with automated upgrade
+- Lazy deletion of members and VPS
+- Reorganized page cluster
+- Sysconfig uses JSON instead of (un)serialize
+- VPS reinstall: skip IP del
+- Traffic accounting: fix IPv6 data, fix table columns
+- Transactions: show both time since addition to queue and real execution time
+
 * Tue Feb 12 2013 - version 1.7.3
 - Fixed sample config saving
 - Clone: fixed not settings features enabled flag

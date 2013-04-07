@@ -23,7 +23,7 @@
 function members_list () {
 	global $db;
 	if ($_SESSION["is_admin"]) {
-		$sql = 'SELECT * FROM members ORDER BY m_nick ASC';
+		$sql = "SELECT * FROM members WHERE m_state != 'deleted' ORDER BY m_nick ASC";
 		if ($result = $db->query($sql))
 			while ($m = $db->fetch_array($result)) {
 			$out[$m["m_id"]] = $m["m_nick"];
@@ -135,8 +135,12 @@ function template_by_id ($id) {
     return false;
 }
 
-function list_servers($without_id = false, $roles = array('node', 'backuper', 'mailer', 'storage')) {
-    global $db;
+function list_servers($without_id = false, $roles = NULL) {
+    global $db, $NODE_TYPES;
+    
+	if ($roles === NULL)
+		$roles = $NODE_TYPES;
+	
 	if ($without_id)
 		$sql = 'SELECT * FROM servers WHERE server_id != \''.$db->check($without_id).'\' AND server_type IN (\''.implode("','", $roles).'\') ORDER BY server_location,server_id';
 	else
@@ -168,6 +172,39 @@ function server_by_id ($id) {
 	if ($row = $db->fetch_array($result))
 	    return $row;
     return false;
+}
+
+function notify_user($title, $msg) {
+	$_SESSION["notification"] = array(
+		"title" => $title,
+		"msg" => $msg,
+	);
+}
+
+function show_notification() {
+	global $xtpl;
+	
+	if(!isset($_SESSION["notification"]))
+		return;
+	
+	$xtpl->perex($_SESSION["notification"]["title"], $_SESSION["notification"]["msg"]);
+	unset($_SESSION["notification"]);
+}
+
+function redirect($loc) {
+	header('Location: '.$loc);
+}
+
+function format_duration($interval) {
+	$d = $interval / 86400;
+	$h = $interval / 3600 % 24;
+	$m = $interval / 60 % 60;
+	$s = $interval % 60;
+	
+	if($d >= 1)
+		return sprintf("%d days, %02d:%02d:%02d", round($d), $h, $m, $s);
+	else
+		return sprintf("%02d:%02d:%02d", $h, $m, $s);
 }
 
 ?>

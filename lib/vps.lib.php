@@ -43,6 +43,22 @@ function get_vps_array($by_m_id = false, $by_server = false){
 	return $ret;
 }
 
+function get_user_vps_list() {
+	global $db;
+	
+	$ret = array();
+	
+	if ($_SESSION["is_admin"])
+		$rs = $db->query("SELECT * FROM vps INNER JOIN members m ON vps.m_id = m.m_id ORDER BY vps_id ASC");
+	else
+		$rs = $db->query("SELECT * FROM vps INNER JOIN members m ON vps.m_id = m.m_id WHERE vps.m_id = '".$db->check($_SESSION["member"]["m_id"])."' ORDER BY vps_id ASC");
+	
+	while ($row = $db->fetch_array($rs))
+		$ret[$row["vps_id"]] = $row["m_nick"].": #".$row["vps_id"]." ".$row["vps_hostname"];
+		
+	return $ret;
+}
+
 function vps_load ($veid = false) {
 	$vps = new vps_load($veid);
 	return $vps;
@@ -54,6 +70,7 @@ class vps_load {
   public $veid = 0;
   public $ve = array();
   public $exists = false;
+  public $deleted = false;
 
   function vps_load($ve_id = 'none') {
 	global $db, $request_page;
@@ -66,7 +83,11 @@ class vps_load {
 		if ($result = $db->query($sql))
 			if ($tmpve = $db->fetch_array($result))
 				if (empty($request_page) || ($tmpve["vps_id"] == $ve_id) && (($tmpve["m_id"] == $_SESSION["member"]["m_id"]) || $_SESSION["is_admin"])) {
-					$this->exists = true;
+					if($tmpve["vps_deleted"]) {
+						$this->exists = false;
+						$this->deleted = true;
+					} else $this->exists = true;
+					
 					$this->veid = $ve_id;
 					$this->ve = $tmpve;
 					}
@@ -106,6 +127,9 @@ class vps_load {
 		$this->ve["vps_nameserver"] = $params["nameserver"];
 		$this->ve["vps_template"] = $template["templ_name"];
 		$this->ve["vps_onboot"] = $location["location_vps_onboot"];
+		$this->ve["m_id"] = $m_id;
+		$this->ve["vps_id"] = $this->veid;
+		
 		add_transaction($_SESSION["member"]["m_id"], $server_id, $this->veid, T_CREATE_VE, $params);
     $this->nameserver($cluster->get_first_suitable_dns($cluster->get_location_of_server($server_id)));
 	}
@@ -114,21 +138,19 @@ class vps_load {
 	global $cluster, $db;
 	if ($this->exists) {
 		$ips = $this->iplist();
+		$params = array("ip_addrs" => array());
 		if ($ips)
-      foreach ($ips as $ip) {
-        $this->ipdel($ip["ip_addr"]);
-      }
+			foreach ($ips as $ip) {
+				$params["ip_addrs"][] = $ip["ip_addr"];
+			}
 		$template = template_by_id($this->ve["vps_template"]);
 		$params["hostname"] = $this->ve["vps_hostname"];
 		$params["template"] = $template["templ_name"];
 		$this->ve["vps_nameserver"] = "8.8.8.8";
 		$params["nameserver"] = $this->ve["vps_nameserver"];
+		$params["mounts"] = $this->mount_regen();
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_REINSTALL_VE, $params);
 		$this->applyconfigs();
-    if ($ips)
-      foreach ($ips as $ip) {
-        $this->ipadd($ip["ip_addr"]);
-      }
 		$sql = 'UPDATE vps SET  vps_features_enabled=0,
 					vps_specials_installed = ""
 					WHERE vps_id='.$db->check($this->veid);
@@ -165,7 +187,7 @@ class vps_load {
 	    $db->query('UPDATE vps SET vps_onstartall = 1 WHERE vps_id='.$db->check($this->veid));
 	    $server = $db->findByColumnOnce("servers", "server_id", $this->ve["vps_server"]);
 	    $location = $db->findByColumnOnce("locations", "location_id", $server["server_location"]);
-	    $params = array("onboot" => $location["location_vps_onboot"], "backup_mount" => $this->ve["vps_backup_mount"]);
+	    $params = array("onboot" => $location["location_vps_onboot"]);
 	    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_START_VE, $params);
 	}
   }
@@ -175,7 +197,7 @@ class vps_load {
 	if ($this->exists) {
 	    $server = $db->findByColumnOnce("servers", "server_id", $this->ve["vps_server"]);
 	    $location = $db->findByColumnOnce("locations", "location_id", $server["server_location"]);
-	    $params = array("onboot" => $location["location_vps_onboot"], "backup_mount" => $this->ve["vps_backup_mount"]);
+	    $params = array("onboot" => $location["location_vps_onboot"]);
 	    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_RESTART_VE, $params);
 	}
   }
@@ -211,18 +233,27 @@ class vps_load {
   }
 
 
-  function destroy($force = false) {
+  function destroy($lazy, $force = false) {
 	global $db;
-	if ($this->exists && ($_SESSION["is_admin"] || $force)) {
-	  $sql = 'DELETE FROM vps WHERE vps_id='.$db->check($this->veid);
-	  $sql2 = 'UPDATE vps_ip SET vps_id = 0 WHERE vps_id='.$db->check($this->veid);
-	  if ($result = $db->query($sql))
-	  	if ($result2 = $db->query($sql2)) {
-			$this->exists = false;
-	  		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_DESTROY_VE);
-			}
-	  	else return false;
-	  else return false;
+	if (($this->exists || $this->deleted) && ($_SESSION["is_admin"] || $force)) {
+		
+		if($lazy) {
+			if($db->query("UPDATE vps SET vps_deleted = ".time()." WHERE vps_id = ". $db->check($this->veid)))
+				$this->exists = false;
+			else return false;
+		} else {
+			$sql = 'DELETE FROM vps WHERE vps_id='.$db->check($this->veid);
+			$sql2 = 'UPDATE vps_ip SET vps_id = 0 WHERE vps_id='.$db->check($this->veid);
+
+			nas_delete_mounts_for_vps($this->veid);
+
+			if ($result = $db->query($sql)) {
+				if ($result2 = $db->query($sql2)) {
+					$this->exists = false;
+					add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_DESTROY_VE);
+				} else return false;
+			} else return false;
+		}
 	}
   }
 
@@ -531,26 +562,26 @@ function ipadd($ip, $type = 4) {
 	send_mail($this->ve["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
   }
   
-  function set_backuper($how, $mount, $exclude, $force = false) {
+  function set_backuper($how, $export, $exclude, $force = false) {
   	global $db;
 	
 	/**
 	 * how: do not touch if NULL
-	 * mount: do not touch if NULL
+	 * export: do not touch if === NULL
 	 * exclude: do not touch if === false
 	 */
 	
 	$update = array();
 	
-	if ($mount !== NULL) {
-		$this->ve["vps_backup_mount"] = $mount;
-		$update[] = "vps_backup_mount = '".($mount ? '1' : '0')."'";
-	}
-	
 	if ($_SESSION["is_admin"] || $force) {
 		if ($how !== NULL) {
 			$update[] = "vps_backup_enabled = " . ($how ? '1' : '0');
 			$this->ve["vps_backup_enabled"] = (bool)$how;
+		}
+		
+		if ($export !== NULL) {
+			$update[] = "vps_backup_export = '".$db->check($export)."'";
+			$this->ve["vps_backup_export"] = $export;
 		}
 		
 		if ($exclude !== false)
@@ -577,22 +608,6 @@ function ipadd($ip, $type = 4) {
   	$db->query($sql);
   }
   
-  function backup_mount() {
-	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_VE_MOUNT);
-  }
-  
-  function backup_umount() {
-	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_VE_UMOUNT);
-  }
-  
-  function backup_remount() {
-	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_VE_REMOUNT);
-  }
-  
-  function backup_generate_scripts() {
-	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_VE_GENERATE_MOUNT_SCRIPTS, array("backup_mount" => $this->ve["vps_backup_mount"]));
-  }
-  
   function restore($timestamp, $backup_first = false) {
 	if(!$this->exists)
 		return NULL;
@@ -600,12 +615,18 @@ function ipadd($ip, $type = 4) {
 	global $db;
 	$backup_id = NULL;
 	$backuper = $this->get_backuper_server();
+	$e = nas_get_export_by_id($this->ve["vps_backup_export"]);
+	
+	$dataset = $e["root_dataset"] . "/" . $e["dataset"];
+	$path = $e["root_path"] . "/" . $e["path"];
 	
 	if ($backup_first)
 	{
 		$params = array(
 			"server_name" => $this->ve["server_name"],
 			"exclude" => preg_split ("/(\r\n|\n|\r)/", $this->ve["vps_backup_exclude"]),
+			"dataset" => $dataset,
+			"path" => $path,
 		);
 		
 		add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, T_BACKUP_SCHEDULE, $params);
@@ -616,6 +637,8 @@ function ipadd($ip, $type = 4) {
 		"datetime" => strftime("%Y-%m-%dT%H:%M:%S", (int)$timestamp),
 		"backuper" => $backuper["server_name"],
 		"server_name" => $this->ve["server_name"],
+		"dataset" => $dataset,
+		"path" => $path,
 	);
 	add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, T_BACKUP_RESTORE_PREPARE, $params, NULL, $backup_id);
 	$prepare_id = $db->insertId();
@@ -630,8 +653,13 @@ function ipadd($ip, $type = 4) {
 	global $db, $cluster_cfg;
 	
 	$backuper = $this->get_backuper_server();
+	$e = nas_get_export_by_id($this->ve["vps_backup_export"]);
 	$secret = hash("sha256", $this->veid . $timestamp . time() . rand(0, 99999999));
-	$params = array("secret" => $secret);
+	$params = array(
+		"secret" => $secret,
+		"dataset" => $e["root_dataset"] . "/" . $e["dataset"],
+		"path" => $e["root_path"] . "/" . $e["path"],
+	);
 	
 	if ($timestamp == "current") {
 		$params["filename"] = "{$this->veid}-current.tar.gz";
@@ -671,7 +699,6 @@ function ipadd($ip, $type = 4) {
 				vps_onstartall = '.$db->check($this->ve["vps_onstartall"]).',
 				vps_features_enabled = '.$db->check($features ? $this->ve["vps_features_enabled"] : 0).',
 				vps_backup_enabled = '.$db->check($backuper ? $this->ve["vps_backup_enabled"] : 1).',
-				vps_backup_mount = '.$db->check($backuper ? $this->ve["vps_backup_mount"] : 1).',
 				vps_backup_exclude = "'.$db->check($backuper ? $this->ve["vps_backup_exclude"] : '').'",
 				vps_config = "'.$db->check($configs ? $this->ve["vps_config"] : '').'"';
 	
@@ -685,6 +712,7 @@ function ipadd($ip, $type = 4) {
 		"template" => $clone->ve["templ_name"],
 		"hostname" => $clone->ve["vps_hostname"],
 		"nameserver" => $clone->ve["vps_nameserver"],
+		"mounts" => $clone->mount_regen()
 	);
 	
 	add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_CLONE_VE, $params);
@@ -706,6 +734,35 @@ function ipadd($ip, $type = 4) {
 			break;
 	}
 	
+	// Clone mounts - exports are the same, except backup, that must be created
+	$db->query("INSERT INTO vps_mount (vps_id, src, dst, mount_opts, umount_opts, type, server_id, storage_export_id, mode, cmd_premount, cmd_postmount, cmd_preumount, cmd_postumount)
+	            SELECT ".$clone->veid." AS vps_id, src, dst, mount_opts, umount_opts, type, server_id, storage_export_id, mode, cmd_premount, cmd_postmount, cmd_preumount, cmd_postumount
+	            FROM vps_mount
+	            WHERE vps_id = ".$db->check($this->veid));
+	
+	$def_exports = nas_list_default_exports("vps");
+	$cloned_backup_export = 0;
+	
+	foreach($def_exports as $e) {
+		if($e["export_type"] == "backup") {
+			$cloned_backup_export = nas_export_add(
+				$clone->ve["m_id"],
+				$e["root_id"],
+				nas_resolve_vars($e["dataset"], $clone->ve),
+				nas_resolve_vars($e["path"], $clone->ve),
+				$e["export_quota"],
+				$e["user_editable"],
+				$e["export_type"]
+			);
+			break;
+		}
+	}
+	
+	if($cloned_backup_export) {
+		$db->query("UPDATE vps_mount SET storage_export_id = ".$db->check($cloned_backup_export)."
+		            WHERE vps_id = ".$db->check($clone->veid)." AND storage_export_id = ".$db->check($this->ve["vps_backup_export"]));
+	}
+	
 	if ($features && $this->ve["vps_features_enabled"])
 		add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_ENABLE_FEATURES);
 		
@@ -716,16 +773,66 @@ function ipadd($ip, $type = 4) {
 	return $clone;
   }
   
-  function get_backuper_server() {
+  function mount_regen() {
 	global $db;
-	$sql = "SELECT s.* FROM locations l INNER JOIN servers s ON s.server_id = l.location_backup_server_id WHERE location_id = '".$db->check($this->ve["server_location"])."'";
-	if ($result = $db->query($sql)) {
-		if ($row = $db->fetch_array($result)) {
-			return $row;
-		}
+	
+	$params = array( "mounts" => array() );
+	$rs = $db->query("SELECT m.src, m.dst, m.mount_opts, m.umount_opts, m.mode, m.storage_export_id, m.server_id, r.root_path, e.path,
+						s.server_ip4 AS mount_server_ip4, es.server_ip4 AS export_server_ip4
+					FROM vps_mount m
+					LEFT JOIN storage_export e ON e.id = m.storage_export_id
+					LEFT JOIN storage_root r ON e.root_id = r.id
+					LEFT JOIN servers es ON es.server_id = r.node_id
+					LEFT JOIN servers s ON m.server_id = s.server_id
+					WHERE m.vps_id = " . $db->check($this->veid) . " AND m.`default` = 0 ORDER BY m.id ASC");
+	
+	while($mnt = $db->fetch_array($rs)) {
+		$params["mounts"][] = nas_mount_params($mnt, false);
 	}
 	
-	return NULL;
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_NAS_VE_MOUNT_GEN, $params);
+  }
+  
+  function get_mounts() {
+	global $db;
+	
+	$ret = array();
+	$rs = $db->query("SELECT * FROM vps_mount m LEFT JOIN servers s ON m.server_id = s.server_id WHERE vps_id = " . $db->check($this->veid));
+	
+	while ($row = $db->fetch_array($rs))
+		$ret[] = $row;
+	
+	return $ret;
+  }
+  
+  function mount($mount) {
+	global $db;
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_NAS_VE_MOUNT, nas_mount_params($mount));
+  }
+  
+  function umount($mount) {
+	global $db;
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_NAS_VE_UMOUNT, nas_mount_params($mount));
+  }
+  
+  function remount($mount) {
+	global $db;
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_NAS_VE_REMOUNT, nas_mount_params($mount));
+  }
+  
+  function delete_all_backups() {
+	global $db;
+	
+	$db->query("DELETE FROM vps_backups WHERE vps_id = ". $this->veid);
+  }
+  
+  function get_backuper_server() {
+	global $db;
+	$e = nas_get_export_by_id($this->ve["vps_backup_export"]);
+	return $e["node_id"];
   }
 
   function get_location() {

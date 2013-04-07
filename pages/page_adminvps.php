@@ -55,14 +55,14 @@ if ($_GET["run"] == 'stop') {
 }
 
 if ($_GET["run"] == 'start') {
-	if ($member_of_session->m["m_active"] || (!$cluster_cfg->get("payments_enabled"))) {
+	if ($member_of_session->m["m_state"] == "active" || (!$cluster_cfg->get("payments_enabled"))) {
 			$vps = vps_load($_GET["veid"]);
 			$xtpl->perex_cmd_output(_("Start of")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->start());
 	} else $xtpl->perex(_("Account suspended"), _("You are not allowed to make \"start\" operation.<br />Your account is suspended because of:") . ' ' . $member_of_session->m["m_suspend_reason"]);
 }
 
 if ($_GET["run"] == 'restart') {
-	if ($member_of_session->m["m_active"] || (!$cluster_cfg->get("payments_enabled"))) {
+	if ($member_of_session->m["m_state"] == "active" || (!$cluster_cfg->get("payments_enabled"))) {
 		$vps = vps_load($_GET["veid"]);
 		$xtpl->perex_cmd_output(_("Restart of")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->restart());
 	} else $xtpl->perex(_("Account suspended"), _("You are not allowed to make \"restart\" operation.<br />Your account is suspended because of:") . ' ' . $member_of_session->m["m_suspend_reason"]);
@@ -113,11 +113,14 @@ switch ($_GET["action"]) {
 													$playground_mode ? $_SESSION["member"]["m_id"] : $_REQUEST["m_id"],
 													$playground_mode ? '' : $_REQUEST["vps_info"]);
 						
+						$mapping = nas_create_default_exports("vps", $vps->ve);
+						nas_create_default_mounts($vps->ve, $mapping);
+						
 						if ($playground_mode) {
 							$vps->add_default_configs("playground_default_config_chain");
 							$vps->add_first_available_ip($server["server_location"], 4);
 							$vps->add_first_available_ip($server["server_location"], 6);
-							$vps->set_backuper($cluster_cfg->get("playground_backup"), "", true);
+							$vps->set_backuper($cluster_cfg->get("playground_backup"), NULL, "", true);
 						} else {
 							$vps->add_default_configs("default_config_chain");
 						}
@@ -144,23 +147,43 @@ switch ($_GET["action"]) {
 				}
 			break;
 		case 'delete':
-			$xtpl->perex(_("Are you sure you want to delete VPS number").' '.$_GET["veid"].'?', '<a href="?page=adminvps&section=ps">'.strtoupper(_("No")).'</a> | <a href="?page=adminvps&section=vps&action=delete2&veid='.$_GET["veid"].'">'.strtoupper(_("Yes")).'</a>');
+			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
+			
+			$xtpl->perex(_("Are you sure you want to delete VPS number").' '.$_GET["veid"].'?', '');
+			$xtpl->table_title(_("Delete VPS"));
+			$xtpl->table_td(_("Hostname").':');
+			$xtpl->table_td($vps->ve["vps_hostname"]);
+			$xtpl->table_tr();
+			$xtpl->form_create('?page=adminvps&section=vps&action=delete2&veid='.$_GET["veid"], 'post');
+			
+			if($_SESSION["is_admin"]) {
+				$xtpl->form_add_checkbox(_("Lazy delete").':', 'lazy_delete', '1', true,
+					_("Do not delete VPS immediately, but after passing of predefined time."));
+			}
+			$xtpl->form_out(_("Delete"));
 			break;
 		case 'delete2':
 			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 			
+			$lazy = $_POST["lazy_delete"] ? true : false;
 			$can_delete = false;
 				
 			if ($playground_enabled && $_SESSION["member"]["m_id"] == $vps->ve["m_id"]) {
 				foreach ($playground_servers as $pg)
 					if ($pg["server_id"] == $vps->ve["server_id"]) {
 						$can_delete = true;
+						$lazy = true;
 						break;
 					}
 			}
 			
 			if ($_SESSION["is_admin"] || $can_delete) {
-				$xtpl->perex_cmd_output(_("Deletion of VPS")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->destroy($can_delete));
+				if(!$lazy && $vps->ve["vps_backup_export"]) {
+					nas_export_delete($vps->ve["vps_backup_export"]);
+					$vps->delete_all_backups();
+				}
+				
+				$xtpl->perex_cmd_output(_("Deletion of VPS")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->destroy($lazy, $can_delete));
 				$list_vps=true;
 			}
 			break;
@@ -402,7 +425,7 @@ switch ($_GET["action"]) {
 					$cloned->add_first_available_ip($server["server_location"], 6);
 					
 					if (!$pg_backup)
-						$cloned->set_backuper($pg_backup, $pg_backup, "", true);
+						$cloned->set_backuper($pg_backup, NULL, "", true);
 				}
 				$xtpl->perex(_("Clone in progress"), '');
 			} else
@@ -413,7 +436,14 @@ switch ($_GET["action"]) {
 		case 'setbackuper':
 			if (isset($_REQUEST["veid"]) && isset($_POST["backup_exclude"])) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				$xtpl->perex_cmd_output(_("Backuper status changed"), $vps->set_backuper($_SESSION["is_admin"] ? ($_REQUEST["backup_enabled"] ? true : false) : NULL, $_POST["mount"] ? true : false, $_REQUEST["backup_exclude"]));
+				$xtpl->perex_cmd_output(
+					_("Backuper status changed"),
+					$vps->set_backuper(
+						$_SESSION["is_admin"] ? ($_POST["backup_enabled"] ? true : false) : NULL,
+						$_SESSION["is_admin"] ? $_POST["backup_export"] : NULL,
+						$_POST["backup_exclude"]
+					)
+				);
 				
 				if ($_SESSION["is_admin"] && $_REQUEST["notify_owner"])
 					$vps->backuper_change_notify();
@@ -495,7 +525,15 @@ if (isset($list_vps) && $list_vps) {
 				} else {
 				    $xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'._("Cannot delete").'"/>');
 				}
-				$xtpl->table_tr(($vps->ve["vps_up"]) ? false : '#FFCCCC');
+				
+				$color = '#FFCCCC';
+				
+				if($vps->ve["vps_deleted"])
+					$color = '#A6A6A6';
+				elseif($vps->ve["vps_up"])
+					$color = false;
+				
+				$xtpl->table_tr($color);
 				$listed_vps++;
 				$old_server_name = $vps->ve['server_name'];
 			}
@@ -840,9 +878,9 @@ if (isset($show_info) && $show_info) {
 	$xtpl->form_create('?page=adminvps&action=setbackuper&veid='.$vps->veid, 'post');
 	if ($_SESSION["is_admin"]) {
 		$xtpl->form_add_checkbox(_("Backup enabled").':', 'backup_enabled', '1', $vps->ve["vps_backup_enabled"]);
+		$xtpl->form_add_select(_("Export").':', 'backup_export', get_nas_export_list(false), $vps->ve["vps_backup_export"]);
 		$xtpl->form_add_checkbox(_("Notify owner").':', 'notify_owner', '1', true);
 	}
-	$xtpl->form_add_checkbox(_("Mount backups to VPS").':', 'mount', '1', $vps->ve["vps_backup_mount"], _("Requires restart to take effect"));
 	$xtpl->form_add_textarea(_("Exclude files").':', 60, 10, "backup_exclude", $vps->ve["vps_backup_exclude"], _("One path per line"));
 	$xtpl->table_add_category(_("Backuper"));
 	$xtpl->table_add_category('&nbsp;');

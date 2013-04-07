@@ -7,11 +7,15 @@
     Copyright (C) 2008-2011 Pavel Snajdr, snajpa@snajpa.net
 */
 
+$NODE_TYPES = array('node', 'mailer', 'storage');
+
 class cluster_node {
     // Server descriptor
     public $s;
     // True if exists
-    protected $exists;
+    public $exists;
+    public $role = array();
+    public $storage_roots = array();
 
     function cluster_node ($server_id) {
 	global $db;
@@ -19,12 +23,29 @@ class cluster_node {
 	if ($result = $db->query($sql))
 	    if ($row = $db->fetch_array($result)) {
 		$this->s = $row;
+		
+		switch ($row["server_type"]) {
+			case "storage":
+				$this->role = array(); // FIXME: remove
+				
+				$roots = array();
+				$rs = $db->query("SELECT * FROM storage_root WHERE node_id = ".$db->check($row["server_id"]));
+				
+				while($r = $db->fetch_array($rs))
+					$roots[] = $r;
+				
+				$this->storage_roots = $roots;
+				break;
+			default:break;
+		}
+		
 		$this->exists = true;
 	    } else {
 		$this->exists = false;
 	    }
 	return $this->exists;
     }
+    
     /**
       * Get node's location label
       * @return string of location_label
@@ -38,226 +59,25 @@ class cluster_node {
 	}
 	return false;
     }
-    /**
-      * Run command while in CRON_MODE
-      * WARNING: Ment to use only in CRON_MODE
-      * @param $command - Shell command to run
-      * @return true if success, false on fail or if not in CRON_MODE
-      */
-    function execute($command) {
-	if (CRON_MODE) {
-	    exec_wrapper ($command, $dumb, $retval);
-	    return ($retval == 0);
-	} else {
-	    return false;
-	}
-    }
-    /**
-      * WARNING: Ment to use only in CRON_MODE
-      * Write content to file while in CRON_MODE, if file exists it will be overwritten
-      * @param $path - Absolute file path
-      * @param $content - New file content (string)
-      */
-    function write_file($path, $content) {
-	$handle = fopen($path, "w");
-	fwrite($handle, $content);
-	fclose($handle);
-    }
-    /**
-      * Startup Cluster storage and mount it
-      * If not in CRON_MODE, add transaction to do it
-      * @return true if success, false on fail
-      */
-    function startup_cluster_storage() {
-	global $cluster_cfg;
-	if ($this->s[server_cluster_storage_sw_installed] && CRON_MODE) {
-	    if ($this->execute("glusterfsd -s /etc/glusterfs/glusterfs-server.vol -l /var/log/glusterfsd.log")) {
-		if ($this->execute("modprobe fuse")) {
-		    if ($this->execute("glusterfs -f /etc/glusterfs/glusterfs-client.vol {$this->s["server_path_vz"]}/cluster_mount/")) {
-			$cluster_cfg->set("cluster_storage_running_{$this->s["server_id"]}", true);
-			return true;
-		    } else return false;
-		} else return false;
-	    } else return false;
-	} elseif (!CRON_MODE) {
-	    if (!$cluster_cfg->get("cluster_storage_running_{$this->s["server_id"]}")) {
-		add_transaction($_SESSION["member"]["m_id"], $this->s["server_id"], 0, T_CLUSTER_STORAGE_STARTUP);
-		return true;
-	    }
-	}
-    }
-    /**
-      * Unmount and stop all daemons for Cluster storage
-      * If not in CRON_MODE, add transaction to do it
-      * @return true if success, false on fail
-      */
-    function shutdown_cluster_storage() {
-	global $cluster_cfg;
-	if (CRON_MODE) {
-	    if ($cluster_cfg->get("cluster_storage_running_{$this->s["server_id"]}")) {
-		if ($this->execute("umount {$this->s["server_path_vz"]}/cluster_mount/")) {
-		    $this->execute("killall glusterfsd");
-		    $cluster_cfg->set("cluster_storage_running_{$this->s["server_id"]}", false);
-		    return true;
-		} else {
-		    return false;
+    
+    function update_settings($data) {
+		global $db;
+		
+		$sql = 'UPDATE servers SET
+				server_name = "'.$db->check($data["server_name"]).'",
+				server_type = "'.$db->check($data["server_type"]).'",
+				server_location = "'.$db->check($data["server_location"]).'",
+				server_availstat = "'.$db->check($data["server_availstat"]).'",
+				server_maxvps = "'.$db->check($data["server_maxvps"]).'",
+				server_ip4 = "'.$db->check($data["server_ip4"]).'",
+				server_path_vz = "'.$db->check($data["server_path_vz"]).'"
+				WHERE server_id = '.$this->s["server_id"];
+		
+		$db->query($sql);
+		
+		switch ($data["server_type"]) {
+			default:break;
 		}
-	    } else {
-		return false;
-	    }
-	} else {
-	    add_transaction($_SESSION["member"]["m_id"], $this->s["server_id"], 0, T_CLUSTER_STORAGE_SHUTDOWN);
-	    return true;
-	}
-    }
-    /**
-      * Install Cluster storage, assumes FUSE & GlusterFS v2 is already installed
-      * If not in CRON_MODE, add transaction to do it
-      * @return true if success, false on fail
-      */
-    function install_cluster_storage_software() {
-	global $db;
-	if (CRON_MODE) {
-	    $this->execute("mkdir -p {$this->s["server_path_vz"]}/cluster_storage");
-	    $this->execute("mkdir -p {$this->s["server_path_vz"]}/cluster_mount");
-	    $this->execute("mkdir -p /etc/glusterfs/");
-	    $server_config = '
-volume posix
-  type storage/posix
-  option directory '.$this->s["server_path_vz"].'/cluster_storage
-end-volume
-
-volume locks
-  type features/locks
-  subvolumes posix
-end-volume
-
-volume brick
-  type performance/io-threads
-  option thread-count 8
-  subvolumes locks
-end-volume
-
-volume server
-  type protocol/server
-  option transport-type tcp
-  option auth.addr.brick.allow *
-  subvolumes brick
-end-volume
-';
-	    $this->write_file('/etc/glusterfs/glusterfs-server.vol', $server_config);
-	    $sql = 'UPDATE servers SET server_cluster_storage_sw_installed=1 WHERE server_id='.$db->check($this->s["server_id"]);
-	    $db->query($sql);
-	    $this->s["server_cluster_storage_sw_installed"] = 1;
-	    add_transaction_clusterwide(0, 0, T_CLUSTER_STORAGE_CFG_RELOAD);
-	    return true;
-	} else {
-	    add_transaction($_SESSION["member"]["m_id"], $this->s["server_id"], 0, T_CLUSTER_STORAGE_SOFTWARE_INSTALL);
-	    return true;
-	}
-    }
-    /**
-      * Update glusterfs-client.vol file to reflect changes in Cluster storage nodes
-      * WARNING: Ment to use only in CRON_MODE
-      * @return true if success, false on fail or if not in CRON_MODE
-      */
-    function regenerate_cluster_storage_client_config() {
-	global $db;
-	if (CRON_MODE) {
-	    if ($this->s["server_cluster_storage_sw_installed"]) {
-		$sql = 'SELECT * FROM servers WHERE server_cluster_storage_sw_installed=1';
-		$content = "";
-		$node_line = "";
-		if ($result = $db->query($sql)) {
-		    while ($row = $db->fetch_array($result)) {
-			$content .= '
-volume remote'.$row["server_id"].'
-  type protocol/client
-  option transport-type tcp
-  option remote-host '.$row["server_ip4"].'
-  option remote-subvolume brick
-end-volume
-';
-			$node_line .= ' remote'.$row["server_id"];
-		    }
-		    if ($content != "") {
-			$content .= '
-volume replicate
-  type cluster/replicate
-  subvolumes'.$node_line.'
-end-volume
-
-volume writebehind
-  type performance/write-behind
-  option window-size 1MB
-  subvolumes replicate
-end-volume
-
-volume cache
-  type performance/io-cache
-  option cache-size 512MB
-  subvolumes writebehind
-end-volume
-';
-			$this->write_file('/etc/glusterfs/glusterfs-client.vol');
-			return true;
-		    } else {
-			return false;
-		    }
-		}
-		$this->write_file($content);
-	    }
-	} else {
-	    return false;
-	}
-    }
-    /**
-      * Uses 'scp' to copy template from remote node
-      * WARNING: Ment to use only in CRON_MODE
-      * @param $templ_id - template id in DB
-      * @param $remote_server_id - source server id in DB
-      * @return TBD
-      */
-    function fetch_remote_template($templ_id, $remote_server_id) {
-	global $cluster;
-	if (CRON_MODE) {
-	    if ($remote_node = new cluster_node($remote_server_id)) {
-		if ($template = $cluster->get_template_by_id($templ_id)) {
-		    return $this->execute('scp '.$remote_node->s["server_ip4"].':'.
-					    $remote_node->s["server_path_vz"].'/template/cache/'.$template["templ_name"].'.*'.
-					    ' '.$this->s["server_path_vz"].'/template/cache/'
-					    );
-		}
-	    }
-	} else {
-	    return false;
-	}
-    }
-    /**
-      * Deletes local copy of template
-      * WARNING: Ment to use only in CRON_MODE
-      * @param $templ_id - template id in DB
-      */
-    function delete_template($templ_id) {
-	global $cluster, $db;
-	if (CRON_MODE) {
-	    if ($template = $cluster->get_template_by_id($templ_id)) {
-		return $this->execute('rm -f '.$this->s["server_path_vz"].'/template/cache/'.$template["templ_name"].'.*');
-	    }
-	} else {
-	    $sql = 'DELETE FROM cfg_templates WHERE templ_id = '.$db->check($templ_id);
-	    $db->query($sql);
-	    $params["templ_id"] = $templ_id;
-	    add_transaction($_SESSION["member"]["m_id"], $this->s["server_id"], 0, T_CLUSTER_TEMPLATE_DELETE, $params);
-	    return true;
-	}
-    }
-    /**
-      * TODO: Install vpsAdmin backend on foreign fresh node
-      * @param TBD
-      * @return TBD
-      */
-    function install_vpsadmin_backend() {
     }
 }
 
@@ -290,7 +110,7 @@ class cluster_cfg {
 	$sql = 'SELECT * FROM sysconfig WHERE cfg_name="'.$db->check($setting).'"';
 	if ($result = $db->query($sql)) {
 	    if ($row = $db->fetch_array($result)) {
-		return unserialize(stripslashes($row["cfg_value"]));
+		return json_decode($row["cfg_value"]);
 	    } else return false;
 	} else return false;
     }
@@ -303,9 +123,9 @@ class cluster_cfg {
     function set($setting, $value) {
 	global $db;
 	if ($this->exists($setting))
-	    $sql = 'UPDATE sysconfig SET cfg_value = "'.addslashes(serialize($value)).'" WHERE cfg_name = "'.$db->check($setting).'"';
+	    $sql = 'UPDATE sysconfig SET cfg_value = "'.$db->check(json_encode($value)).'" WHERE cfg_name = "'.$db->check($setting).'"';
 	else
-    	    $sql = 'INSERT INTO sysconfig SET cfg_value = "'.addslashes(serialize($value)).'", cfg_name = "'.$db->check($setting).'"';
+    	    $sql = 'INSERT INTO sysconfig SET cfg_value = "'.$db->check(json_encode($value)).'", cfg_name = "'.$db->check($setting).'"';
 	return ($db->query($sql));
     }
 }
@@ -622,7 +442,7 @@ class cluster {
 		return $row;
 	return false;
     }
-    function set_location($id = NULL, $label, $type, $has_ipv6 = false, $onboot, $has_ospf, $has_rdiff, $backuper,
+    function set_location($id = NULL, $label, $type, $has_ipv6 = false, $onboot, $has_ospf, $has_rdiff,
     						$rd_hist, $rd_sshfs, $rd_archfs, $tpl_sync_path, $remote_console_server) {
 	global $db;
 	if ($id != NULL)
@@ -632,7 +452,6 @@ class cluster {
 			    location_has_ipv6 = "'.$db->check($has_ipv6).'",
 			    location_has_ospf = "'.$db->check($has_ospf).'",
 			    location_has_rdiff_backup = "'.$db->check($has_rdiff).'",
-			    location_backup_server_id = "'.$db->check($backuper).'",
 			    location_rdiff_history = "'.$db->check($rd_hist).'",
 			    location_rdiff_mount_sshfs = "'.$db->check($rd_sshfs).'",
 			    location_rdiff_mount_archfs = "'.$db->check($rd_archfs).'",
@@ -647,7 +466,6 @@ class cluster {
 			    location_has_ipv6 = "'.$db->check($has_ipv6).'",
 			    location_has_ospf = "'.$db->check($has_ospf).'",
 			    location_has_rdiff_backup = "'.$db->check($has_rdiff).'",
-			    location_backup_server_id = "'.$db->check($backuper).'",
 			    location_rdiff_history = "'.$db->check($rd_hist).'",
 			    location_rdiff_mount_sshfs = "'.$db->check($rd_sshfs).'",
 			    location_rdiff_mount_archfs = "'.$db->check($rd_archfs).'",

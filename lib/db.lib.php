@@ -310,7 +310,7 @@ class sql_db {
     function check($string) {
 	return $this->db->real_escape_string($string);
     }
-    function query_trans($cmd)
+    function query_trans($cmd, &$error)
     {
     	$this->query("BEGIN;");
 
@@ -318,6 +318,7 @@ class sql_db {
     		$this->query("COMMIT;");
     		return true;
     	} else {
+			$error = $this->db->error;
     		$this->query("ROLLBACK;");
     		return false;
     	}
@@ -345,6 +346,11 @@ class sql_db {
     function insert_id() {
 	return $this->insertId();
     }
+    
+    function error() {
+    return $this->db->error;
+    }
+    
     function __destruct() {
     	$this->db->close();
     }
@@ -440,3 +446,41 @@ class sql_db {
 	}
   };*/
 
+function db_check_version() {
+	global $cluster_cfg;
+	
+	$rev = $cluster_cfg->get("db_version");
+	
+	if(!$rev) {
+		$rev = 1;
+		$cluster_cfg->set("db_version", 1);
+	}
+	
+	return $rev == DB_VERSION;
+}
+
+function db_build_upgrade_code($from, $to) {
+	$sql = "";
+	
+	for($i = $from+1; $i <= $to; $i++)
+	{
+		$sql .= "-- Upgrade v".($i-1)." to v$i\n";
+		$sql .= file_get_contents(WWW_ROOT."/scripts/upgrade/db/$i.sql");
+		$sql .= "\n";
+	}
+	
+	return $sql;
+}
+
+function db_do_upgrade($to, $sql, &$error) {
+	global $db;
+	
+	if($db->query_trans($sql, $error)) {
+		$cluster_cfg->set("db_version", $to);
+		
+		return true;
+	}
+	
+	return false;
+}
+  

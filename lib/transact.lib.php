@@ -26,18 +26,25 @@ define ('T_MIGRATE_OFFLINE', 4001);
 define ('T_MIGRATE_OFFLINE_PART2', 4011);
 define ('T_MIGRATE_ONLINE', 4002);
 define ('T_MIGRATE_ONLINE_PART2', 4012);
-// define ('T_BACKUP_MOUNT', 5001);
-// define ('T_BACKUP_UMOUNT', 5002);
+// define ('T_BACKUP_MOUNT', 5001); // Delete
+// define ('T_BACKUP_UMOUNT', 5002); // Delete
 define ('T_BACKUP_RESTORE_PREPARE', 5002);
 define ('T_BACKUP_RESTORE_FINISH', 5003);
 define ('T_BACKUP_DOWNLOAD', 5004);
 define ('T_BACKUP_SCHEDULE', 5005);
 define ('T_BACKUP_REGULAR', 5006);
-define ('T_BACKUP_EXPORTS', 5007);
-define ('T_BACKUP_VE_MOUNT', 5101);
-define ('T_BACKUP_VE_UMOUNT', 5102);
-define ('T_BACKUP_VE_REMOUNT', 5103);
-define ('T_BACKUP_VE_GENERATE_MOUNT_SCRIPTS', 5104);
+define ('T_BACKUP_EXPORTS', 5007); // Delete
+define ('T_BACKUP_VE_MOUNT', 5101); // Delete
+define ('T_BACKUP_VE_UMOUNT', 5102); // Delete
+define ('T_BACKUP_VE_REMOUNT', 5103); // Delete
+define ('T_BACKUP_VE_GENERATE_MOUNT_SCRIPTS', 5104); // Delete
+define ('T_STORAGE_EXPORT_CREATE', 5201);
+define ('T_STORAGE_EXPORT_UPDATE', 5202);
+define ('T_STORAGE_EXPORT_DELETE', 5203);
+define ('T_NAS_VE_MOUNT_GEN', 5301);
+define ('T_NAS_VE_MOUNT', 5302);
+define ('T_NAS_VE_UMOUNT', 5303);
+define ('T_NAS_VE_REMOUNT', 5304);
 define ('T_FIREWALL_RELOAD', 6001);
 define ('T_FIREWALL_FLUSH', 6002);
 define ('T_CLUSTER_STORAGE_CFG_RELOAD', 7001);
@@ -56,8 +63,12 @@ define ('T_ENABLE_FUSE', 8004);
 define ('T_SPECIAL_ISPCP', 8101);
 define ('T_MAIL_SEND', 9001);
 
-function add_transaction_clusterwide($m_id, $vps_id, $t_type, $t_param = array(), $server_types = array('node', 'backuper', 'mailer', 'storage')) {
-    global $db, $cluster;
+function add_transaction_clusterwide($m_id, $vps_id, $t_type, $t_param = array(), $server_types = NULL) {
+    global $db, $cluster, $NODE_TYPES;
+	
+	if ($server_types === NULL)
+		$server_types = $NODE_TYPES;
+	
     $sql = "INSERT INTO transaction_groups
 		    SET is_clusterwide=1";
     $db->query_trans($sql);
@@ -324,6 +335,27 @@ function transaction_label ($t_type) {
 		break;
 	case T_BACKUP_VE_GENERATE_MOUNT_SCRIPTS:
 		$action_label = 'Generate mount scripts';
+		break;
+	case T_STORAGE_EXPORT_CREATE:
+		$action_label = 'Export +';
+		break;
+	case T_STORAGE_EXPORT_UPDATE:
+		$action_label = "Export *";
+		break;
+	case T_STORAGE_EXPORT_DELETE:
+		$action_label = 'Export -';
+		break;
+	case T_NAS_VE_MOUNT_GEN:
+		$action_label = "Mounts";
+		break;
+	case T_NAS_VE_MOUNT:
+		$action_label = "Mount";
+		break;
+	case T_NAS_VE_UMOUNT:
+		$action_label = "Umount";
+		break;
+	case T_NAS_VE_REMOUNT:
+		$action_label = "Remount";
 		break;
 	case T_MAIL_SEND:
 		$action_label = 'Mail';

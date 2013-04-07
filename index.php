@@ -39,6 +39,9 @@ include WWW_ROOT.'lib/ajax.lib.php';
 include WWW_ROOT.'lib/mail.lib.php';
 include WWW_ROOT.'lib/log.lib.php';
 include WWW_ROOT.'lib/helpbox.lib.php';
+include WWW_ROOT.'lib/nas.lib.php';
+
+include WWW_ROOT.'forms/nas.forms.php';
 
 include WWW_ROOT.'lib/gettext_stream.lib.php';
 include WWW_ROOT.'lib/gettext_inc.lib.php';
@@ -81,6 +84,13 @@ $Cluster_ipv6 = new Cluster_ipv6($xtpl, $db);
 
 $_GET["page"] = isset($_GET["page"]) ? $_GET["page"] : false;
 
+$db_ver = $cluster_cfg->get("db_version");
+$db_check = $db_ver == DB_VERSION;
+$xtpl->assign('DB_VERSION', $db_ver);
+
+if(!$db_check)
+	$cluster_cfg->set("maintenance_mode", true);
+
 if (($_GET["page"] != "login") &&
 				($_GET["page"] != "lang") &&
 				($_GET["page"] != "about") &&
@@ -93,6 +103,8 @@ if (($_GET["page"] != "login") &&
 										This is usually used in outage mode to prevent data corruption.<br />
 										Please be patient."));
 } else {
+	show_notification();
+	
 	switch ($_GET["page"]) {
 		case 'adminvps':
 			include WWW_ROOT.'pages/page_adminvps.php';
@@ -118,12 +130,15 @@ if (($_GET["page"] != "login") &&
 		case 'log':
 			include WWW_ROOT.'pages/page_log.php';
 			break;
-    case 'backup':
-      include WWW_ROOT.'pages/page_backup.php';
-      break;
-    case 'gencfg':
-      include WWW_ROOT.'pages/page_gencfg.php';
-      break;
+		case 'backup':
+			include WWW_ROOT.'pages/page_backup.php';
+			break;
+		case 'nas':
+			include WWW_ROOT.'pages/page_nas.php';
+			break;
+		case 'gencfg':
+			include WWW_ROOT.'pages/page_gencfg.php';
+			break;
 		case 'lang';
 			$lang->change($_GET['newlang']);
 			break;
@@ -144,11 +159,19 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
     $xtpl->menu_add(_("VPS"),'?page=adminvps', ($_GET["page"] == 'adminvps'));
     if ($_SESSION["is_admin"]) {
 		$xtpl->menu_add(_("Backups"),'?page=backup', ($_GET["page"] == 'backup'));
+		
+		if(NAS_PUBLIC || $_SESSION["is_admin"])
+			$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
+		
 		$xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));
 		$xtpl->menu_add(_("Cluster"),'?page=cluster', ($_GET["page"] == 'cluster'));
 		$xtpl->menu_add(_("Transaction log"),'?page=transactions', ($_GET["page"] == 'transactions'), true);
     } else {
 		$xtpl->menu_add(_("Backups"),'?page=backup', ($_GET["page"] == 'backup'));
+		
+		if(NAS_PUBLIC || $_SESSION["is_admin"])
+			$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
+		
 		$xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));
 		$xtpl->menu_add(_("Transaction log"),'?page=transactions', ($_GET["page"] == 'transactions'), true);
     }
@@ -163,7 +186,8 @@ $xtpl->logbox(
 	isset($_SESSION["logged_in"]) ? $_SESSION["logged_in"] : false,
 	isset($_SESSION["member"]) ? $_SESSION["member"]["m_nick"] : false,
 	isset($_SESSION["is_admin"]) ? $_SESSION["is_admin"] : false,
-	$cluster_cfg->get("maintenance_mode")
+	$cluster_cfg->get("maintenance_mode"),
+	!$db_check
 );
 
 $xtpl->adminbox($cluster_cfg->get("adminbox_content"));

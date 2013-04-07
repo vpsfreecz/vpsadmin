@@ -48,7 +48,7 @@
         <h3 id="logo"><img src="template/vpsAdmin-logo.png" alt="Logo" /></h3>
         <div id="slogan_wrap">
 	    <div id="version">
-		<p id="slogan">version: {VERSION}</p>
+		<p id="slogan">version: {VERSION}, db rev: {DB_VERSION}</p>
 	    </div>
 	    <div id="langbox">
 	    <ul>
@@ -80,6 +80,9 @@
             <form action="?page=login&action=logout" method="post">
             	<div id="l_form">
             		<!-- BEGIN: is_admin -->
+									<!-- BEGIN: db_upgrade -->
+									<span><a href="?page=cluster&action=db_upgrade">{L_DB_UPGRADE}</a></span>
+									<!-- END: db_upgrade -->
 									<!-- BEGIN: maintenance_mode_on -->
 										<span><a href="?page=cluster&action=maintenance_toggle"><img src="template/icons/error.png" title="{L_MAINTENANCE_MODE_ON}" /></a></span>
 									<!-- END: maintenance_mode_on -->

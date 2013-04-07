@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS `members` (
   `m_info` text,
   `m_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `m_created` int(11) unsigned DEFAULT NULL,
+  `m_deleted` INT NULL,
   `m_level` int(10) unsigned NOT NULL,
   `m_nick` varchar(63) NOT NULL,
   `m_name` varchar(255) NOT NULL,
@@ -85,7 +86,7 @@ CREATE TABLE IF NOT EXISTS `members` (
   `m_monthly_payment` int(10) unsigned NOT NULL DEFAULT '300',
   `m_mailer_enable` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `m_playground_enable` tinyint(1) NOT NULL DEFAULT '1',
-  `m_active` tinyint(4) NOT NULL DEFAULT '1',
+  `m_state` ENUM(  'active',  'suspended',  'deleted' ) NOT NULL DEFAULT  'active',
   `m_suspend_reason` varchar(100) NOT NULL,
   PRIMARY KEY (`m_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
@@ -163,8 +164,8 @@ CREATE TABLE IF NOT EXISTS `transaction_groups` (
 CREATE TABLE IF NOT EXISTS `transfered` (
   `tr_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `tr_ip` varchar(127) NOT NULL,
-  `tr_in` bigint(63) unsigned DEFAULT '0',
-  `tr_out` bigint(63) unsigned DEFAULT '0',
+  `tr_in` bigint(63) unsigned NOT NULL DEFAULT '0',
+  `tr_out` bigint(63) unsigned NOT NULL DEFAULT '0',
   `tr_time` int(10) unsigned NOT NULL,
   PRIMARY KEY (`tr_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
@@ -172,22 +173,19 @@ CREATE TABLE IF NOT EXISTS `transfered` (
 CREATE TABLE IF NOT EXISTS `vps` (
   `vps_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `vps_created` int(11) unsigned DEFAULT NULL,
+  `vps_deleted` INT( 11 ) NULL,
   `m_id` int(63) unsigned NOT NULL,
   `vps_hostname` varchar(64) DEFAULT 'darkstar',
   `vps_template` int(10) unsigned NOT NULL DEFAULT '1',
   `vps_info` mediumtext,
   `vps_nameserver` varchar(255) NOT NULL DEFAULT '4.2.2.2',
-  `vps_privvmpages` int(10) unsigned NOT NULL DEFAULT '1',
-  `vps_cpulimit` int(11) DEFAULT NULL,
-  `vps_cpuprio` varchar(255) DEFAULT NULL,
-  `vps_diskspace` bigint(10) unsigned NOT NULL DEFAULT '0',
   `vps_server` int(11) unsigned NOT NULL,
   `vps_onboot` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `vps_onstartall` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `vps_backup_enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
-  `vps_backup_mount` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `vps_specials_installed` varchar(255) DEFAULT NULL,
   `vps_features_enabled` tinyint(1) NOT NULL DEFAULT '0',
+  `vps_backup_export` INT NOT NULL,
   `vps_backup_lock` tinyint(4) NOT NULL DEFAULT '0',
   `vps_backup_exclude` text NOT NULL,
   `vps_config` text CHARACTER SET utf8 COLLATE utf8_czech_ci NOT NULL,
@@ -239,3 +237,54 @@ CREATE TABLE IF NOT EXISTS `vps_status` (
   UNIQUE KEY `vps_id_2` (`vps_id`),
   KEY `vps_id` (`vps_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
+
+CREATE TABLE IF NOT EXISTS `storage_export` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `member_id` int(11) NOT NULL,
+  `root_id` int(11) NOT NULL,
+  `dataset` varchar(500) COLLATE utf8_czech_ci NOT NULL,
+  `path` varchar(500) COLLATE utf8_czech_ci NOT NULL,
+  `quota` bigint(20) unsigned NOT NULL,
+  `used` bigint(20) unsigned NOT NULL,
+  `avail` bigint(20) unsigned NOT NULL,
+  `user_editable` tinyint(4) NOT NULL DEFAULT '0',
+  `add_member_prefix` tinyint(4) NOT NULL,
+  `default` enum('no','member','vps') COLLATE utf8_czech_ci NOT NULL DEFAULT 'no',
+  `type` enum('data','backup') COLLATE utf8_czech_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+
+CREATE TABLE IF NOT EXISTS `storage_root` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `node_id` int(11) NOT NULL,
+  `label` varchar(255) COLLATE utf8_czech_ci NOT NULL,
+  `root_dataset` varchar(500) COLLATE utf8_czech_ci NOT NULL,
+  `root_path` varchar(500) COLLATE utf8_czech_ci NOT NULL,
+  `type` enum('per_member','per_vps') COLLATE utf8_czech_ci NOT NULL,
+  `user_export` tinyint(4) NOT NULL DEFAULT '0',
+  `user_mount` enum('none','ro','rw') COLLATE utf8_czech_ci NOT NULL DEFAULT 'none',
+  `quota` bigint(20) unsigned NOT NULL,
+  `used` bigint(20) unsigned NOT NULL,
+  `avail` bigint(20) unsigned NOT NULL,
+  `share_options` varchar(500) COLLATE utf8_czech_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+
+CREATE TABLE IF NOT EXISTS `vps_mount` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `vps_id` int(11) NOT NULL,
+  `src` varchar(500) COLLATE utf8_czech_ci NOT NULL,
+  `dst` varchar(500) COLLATE utf8_czech_ci NOT NULL,
+  `mount_opts` varchar(255) COLLATE utf8_czech_ci NOT NULL,
+  `umount_opts` varchar(255) COLLATE utf8_czech_ci NOT NULL,
+  `type` enum('bind','nfs') COLLATE utf8_czech_ci NOT NULL,
+  `server_id` int(11) DEFAULT NULL,
+  `storage_export_id` int(11) DEFAULT NULL,
+  `mode` enum('ro','rw') COLLATE utf8_czech_ci NOT NULL,
+  `cmd_premount` varchar(500) COLLATE utf8_czech_ci NOT NULL,
+  `cmd_postmount` varchar(500) COLLATE utf8_czech_ci NOT NULL,
+  `cmd_preumount` varchar(500) COLLATE utf8_czech_ci NOT NULL,
+  `cmd_postumount` varchar(500) COLLATE utf8_czech_ci NOT NULL,
+  `default` tinyint(4) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
