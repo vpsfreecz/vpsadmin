@@ -238,6 +238,22 @@ CREATE TABLE IF NOT EXISTS `vps_status` (
   KEY `vps_id` (`vps_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
 
+CREATE TABLE IF NOT EXISTS `storage_export` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `member_id` int(11) NOT NULL,
+  `root_id` int(11) NOT NULL,
+  `dataset` varchar(500) COLLATE utf8_czech_ci NOT NULL,
+  `path` varchar(500) COLLATE utf8_czech_ci NOT NULL,
+  `quota` bigint(20) unsigned NOT NULL,
+  `used` bigint(20) unsigned NOT NULL,
+  `avail` bigint(20) unsigned NOT NULL,
+  `user_editable` tinyint(4) NOT NULL DEFAULT '0',
+  `add_member_prefix` tinyint(4) NOT NULL,
+  `default` enum('no','member','vps') COLLATE utf8_czech_ci NOT NULL DEFAULT 'no',
+  `type` enum('data','backup') COLLATE utf8_czech_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+
 CREATE TABLE IF NOT EXISTS `storage_root` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `node_id` int(11) NOT NULL,
@@ -252,21 +268,7 @@ CREATE TABLE IF NOT EXISTS `storage_root` (
   `avail` bigint(20) unsigned NOT NULL,
   `share_options` varchar(500) COLLATE utf8_czech_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
-
-CREATE TABLE IF NOT EXISTS `storage_export` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `member_id` int(11) NOT NULL,
-  `root_id` int(11) NOT NULL,
-  `dataset` varchar(500) COLLATE utf8_czech_ci NOT NULL,
-  `path` varchar(500) COLLATE utf8_czech_ci NOT NULL,
-  `quota` bigint(20) unsigned NOT NULL,
-  `used` bigint(20) unsigned NOT NULL,
-  `avail` bigint(20) unsigned NOT NULL,
-  `user_editable` tinyint(4) NOT NULL DEFAULT '0',
-  `type` ENUM(  'data',  'backup' ) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 
 CREATE TABLE IF NOT EXISTS `vps_mount` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -283,5 +285,6 @@ CREATE TABLE IF NOT EXISTS `vps_mount` (
   `cmd_postmount` varchar(500) COLLATE utf8_czech_ci NOT NULL,
   `cmd_preumount` varchar(500) COLLATE utf8_czech_ci NOT NULL,
   `cmd_postumount` varchar(500) COLLATE utf8_czech_ci NOT NULL,
+  `default` tinyint(4) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
