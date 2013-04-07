@@ -346,6 +346,11 @@ class sql_db {
     function insert_id() {
 	return $this->insertId();
     }
+    
+    function error() {
+    return $this->db->error;
+    }
+    
     function __destruct() {
     	$this->db->close();
     }
