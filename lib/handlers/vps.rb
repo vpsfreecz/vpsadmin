@@ -1,10 +1,13 @@
 require 'lib/executor'
 require 'lib/handlers/backuper'
 
+require 'erb'
+require 'tempfile'
+require 'fileutils'
+
 class VPS < Executor
 	def start
 		@update = true
-		ve_mountfile if @params["backup_mount"]
 		vzctl(:start, @veid, {}, false, [32,])
 		check_onboot
 	end
@@ -17,7 +20,6 @@ class VPS < Executor
 	
 	def restart
 		@update = true
-		ve_mountfile if @params["backup_mount"]
 		vzctl(:restart, @veid)
 		check_onboot
 	end
@@ -44,6 +46,7 @@ class VPS < Executor
 		destroy
 		create
 		start
+		vzctl(:set, @veid, {:ipadd => @params["ip_addrs"]}, true) if @params["ip_addrs"].count > 0
 		check_onboot(true)
 	end
 	
@@ -53,7 +56,7 @@ class VPS < Executor
 	
 	def applyconfig
 		@params["configs"].each do |cfg|
-			vzctl(:set, @veid, {:applyconfig => cfg}, true)
+			vzctl(:set, @veid, {:applyconfig => cfg, :setmode => "restart"}, true)
 		end
 		ok
 	end
@@ -109,8 +112,47 @@ class VPS < Executor
 				.gsub(/%\{src\}/, "#{@params["src_server_ip"]}:#{$CFG.get(:vz, :vz_root)}/private/#{@params["src_veid"]}/") \
 				.gsub(/%\{dst\}/, "#{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
 			
-			syscmd(rsync)
+			syscmd(rsync, [23, 24])
 		end
+	end
+	
+	def nas_mounts
+		action_script("mount")
+		action_script("umount")
+	end
+	
+	def nas_mount
+		dst = "#{ve_root}/#{@params["dst"]}"
+		
+		FileUtils.mkpath(dst) unless File.exists?(dst)
+		
+		runscript("premount")
+		syscmd("#{$CFG.get(:bin, :mount)} #{@params["mount_opts"]} -o #{@params["mode"]} #{@params["src"]} #{dst}")
+		runscript("postmount")
+	end
+	
+	def nas_umount(valid_rcs = [])
+		runscript("preumount")
+		syscmd("#{$CFG.get(:bin, :umount)} #{@params["umount_opts"]} #{ve_root}/#{@params["dst"]}", valid_rcs)
+		runscript("postumount")
+	end
+	
+	def nas_remount
+		nas_umount([1])
+		nas_mount
+	end
+	
+	def action_script(action)
+		path = "#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.#{action}"
+		existed = File.exists?(path)
+		
+		File.open(path, "w") do |f|
+			f.write(ERB.new(File.new("templates/ve_#{action}.erb").read, 0).result(binding))
+		end
+		
+		syscmd("#{$CFG.get(:bin, :chmod)} +x #{path}") unless existed
+		
+		ok
 	end
 	
 	def check_onboot(force = false)
@@ -158,48 +200,6 @@ class VPS < Executor
 		)
 	end
 	
-	def ve_mountfile
-		unless @params["backup_mount"]
-			raise CommandFailed.new("ve_mountfile", 1, "Missing mandatory parameter backup_mount")
-		end
-		
-		m = script_mount
-		u = script_umount
-		
-		if @params["backup_mount"].to_i == 1
-			unless File.exists?(m) && File.exists?(u)
-				File.open(m, "w") do |f|
-					f.write(File.open("scripts/ve.mount").read.gsub(/%%BACKUP_SERVER%%/, "storage.prg.#{$CFG.get(:vpsadmin, :domain)}"))
-				end
-				
-				File.open(u, "w") do |f|
-					f.write(File.open("scripts/ve.umount").read)
-				end
-				
-				syscmd("#{$CFG.get(:bin, :chmod)} +x #{m}")
-				syscmd("#{$CFG.get(:bin, :chmod)} +x #{u}")
-			end
-		else
-			File.delete(m) if File.exists?(m)
-			File.delete(u) if File.exists?(u)
-		end
-		
-		ok
-	end
-	
-	def backup_mount
-		syscmd("VEID=#{@veid} VE_CONFFILE=#{ve_conf} #{script_mount} 2>&1")
-	end
-	
-	def backup_umount
-		syscmd("VEID=#{@veid} VE_CONFFILE=#{ve_conf} #{script_umount} 2>&1")
-	end
-	
-	def backup_remount
-		backup_umount
-		backup_mount
-	end
-	
 	def script_mount
 		"#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.mount"
 	end
@@ -210,6 +210,20 @@ class VPS < Executor
 	
 	def ve_conf
 		"#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.conf"
+	end
+	
+	def ve_root
+		"#{$CFG.get(:vz, :vz_root)}/root/#{@veid}"
+	end
+	
+	def runscript(script)
+		return ok unless @params[script].length > 0
+		
+		f = Tempfile.new("vpsadmind_#{script}")
+		f.write("#!/bin/sh\n#{@params[script]}")
+		f.close
+		
+		vzctl(:runscript, @veid, f.path)
 	end
 	
 	def post_save(con)

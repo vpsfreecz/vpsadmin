@@ -40,18 +40,29 @@ db = Db.new
 servers = {}
 vpses = {}
 
-rs = db.query("SELECT vps_id, vps_backup_exclude, server_id, server_name, location_backup_server_id
+rs = db.query("SELECT vps_id, vps_backup_exclude, server_id, server_name, r.node_id AS backuper_server_id, e.dataset, e.path, r.root_dataset, r.root_path
               FROM vps
               INNER JOIN servers ON server_id = vps_server
               INNER JOIN locations ON location_id = server_location
-              WHERE vps_backup_enabled = 1 AND (SELECT t_id FROM transactions WHERE t_type = 5006 AND t_done = 0 AND t_vps = vps_id) IS NULL
+              INNER JOIN storage_export e ON e.id = vps_backup_export
+              INNER JOIN storage_root r ON r.id = e.root_id
+              INNER JOIN members m ON vps.m_id = m.m_id
+              WHERE
+                vps_deleted IS NULL AND m.m_state = 'active' AND
+                vps_backup_enabled = 1 AND (SELECT t_id FROM transactions WHERE t_type = 5006 AND t_done = 0 AND t_vps = vps_id) IS NULL
               ORDER BY RAND()")
 rs.each_hash do |row|
 	s_id = row["server_id"].to_i
 	
 	servers[s_id] ||= row["server_name"]
 	vpses[s_id] ||= []
-	vpses[s_id] << {:veid => row["vps_id"].to_i, :exclude => row["vps_backup_exclude"].split, :backuper => row["location_backup_server_id"].to_i}
+	vpses[s_id] << {
+		:veid => row["vps_id"].to_i,
+		:dataset => row["root_dataset"] + "/" + row["dataset"],
+		:path => row["root_path"] + "/" + row["path"],
+		:exclude => row["vps_backup_exclude"].split,
+		:backuper => row["backuper_server_id"].to_i
+	}
 end
 
 until vpses.empty?
@@ -69,6 +80,8 @@ until vpses.empty?
 			params = {
 				:server_name => s_name,
 				:exclude => vps[:exclude],
+				:dataset => vps[:dataset],
+				:path => vps[:path],
 			}.to_json
 			
 			if options[:dry_run]

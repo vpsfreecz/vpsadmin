@@ -15,7 +15,7 @@ end
 class Executor
 	attr_accessor :output
 	
-	def initialize(veid, params = {}, daemon = nil)
+	def initialize(veid = nil, params = {}, daemon = nil)
 		@veid = veid
 		@params = params
 		@output = {}
@@ -56,7 +56,7 @@ class Executor
 		set_step(cmd)
 		
 		out = ""
-		log "Executing: #{cmd}"
+		log "Exec #{cmd}"
 		IO.popen("#{cmd} 2>&1") do |io|
 			out = io.read
 		end

@@ -4,7 +4,7 @@ $: << File.dirname(__FILE__) unless $:.include? File.dirname(__FILE__)
 
 require 'lib/config'
 require 'lib/daemon'
-require 'lib/utils'
+require 'lib/utils/common'
 
 require 'optparse'
 
@@ -114,6 +114,9 @@ if options[:wrapper]
 		
 		case $?.exitstatus
 		when VpsAdmind::EXIT_OK
+			log "Stopping daemon"
+			exit
+		when VpsAdmind::EXIT_STOP
 			log "Stopping daemon"
 			exit
 		when VpsAdmind::EXIT_RESTART

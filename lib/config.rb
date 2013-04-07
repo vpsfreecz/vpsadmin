@@ -49,11 +49,16 @@ IMPLICIT_CONFIG = {
 				3004 => "clone",
 				4001 => "migrate_offline",
 				4002 => "migrate_online",
-				5101 => "backup_mount",
-				5102 => "backup_umount",
-				5103 => "backup_remount",
-				5104 => "ve_mountfile",
+				5301 => "nas_mounts",
+				5302 => "nas_mount",
+				5303 => "nas_umount",
+				5304 => "nas_remount",
 				8001 => "features",
+			},
+			"Storage" => {
+				5201 => "create_export",
+				5202 => "update_export",
+				5203 => "delete_export",
 			},
 			"Backuper" => {
 				5002 => "restore_prepare",
@@ -97,6 +102,9 @@ IMPLICIT_CONFIG = {
 		:ip6tables => "ip6tables",
 		:git => "git",
 		:zfs => "zfs",
+		:mount => "mount",
+		:umount => "umount",
+		:uptime => "uptime",
 	},
 	
 	:vps => {
@@ -105,19 +113,27 @@ IMPLICIT_CONFIG = {
 		}
 	},
 	
+	:storage => {
+		:method => "Zfs",
+		:update_status => true,
+	},
+	
 	:backuper => {
 		:method => "RdiffBackup",
 		:lock_interval => 30,
 		:mountpoint => "/mnt",
-		:dest => "/storage/vpsfree.cz/backup",
 		:tmp_restore => "/storage/vpsfree.cz/restore",
 		:backups_mnt_dir => "/mnt",
 		:restore_target => "/mnt/%{node}/%{veid}.restoring",
 		:restore_src => "/vz/private/%{veid}.restoring",
 		:download => "/storage/vpsfree.cz/download",
 		:zfs => {
-			:zpool => "storage/vpsfree.cz/backup",
-			:rsync => "%{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after --exclude .zfs/ --exclude-from %{exclude} %{src} %{dst}",
+			:rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after --exclude .zfs/ --exclude-from %{exclude} %{src} %{dst}",
+		},
+		:store => {
+			:min_backups => 14,
+			:max_backups => 20,
+			:max_age => 14,
 		},
 		:exports => {
 			:enabled => true,
@@ -146,7 +162,8 @@ IMPLICIT_CONFIG = {
 				"restart",
 				"status",
 				"stop",
-				"update"
+				"update",
+				"kill"
 			]
 		}
 	}

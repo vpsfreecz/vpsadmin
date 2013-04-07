@@ -58,7 +58,11 @@ class Firewall < Executor
 				dst = fields[v == 4 ? 7 : 6]
 				ip = src == all ? dst : src
 				
-				ret[ip] = {} unless ret.include?(ip)
+				if v == 6
+					ip = ip.split("/").first
+				end
+				
+				ret[ip] ||= {}
 				ret[ip][src == all ? :in : :out] = fields[1].to_i
 			end
 		end

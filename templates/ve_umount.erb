@@ -1,0 +1,11 @@
+#!/bin/bash
+. /etc/vz/vz.conf
+. ${VE_CONFFILE}
+
+<% @params["mounts"].each do |mnt| %>
+SRC="<%= mnt["src"] %>"
+DST="<%= mnt["dst"] %>"
+if grep ${VE_ROOT}${DST} /proc/mounts; then umount <%= mnt["umount_opts"] %> ${VE_ROOT}${DST}; fi
+<% end %>
+
+exit 0

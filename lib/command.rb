@@ -4,7 +4,9 @@ require 'lib/handlers/node'
 require 'lib/handlers/vps'
 require 'lib/handlers/firewall'
 require 'lib/handlers/mailer'
+require 'lib/handlers/storage'
 require 'lib/handlers/backuper'
+require 'lib/handlers/dummy'
 
 require 'rubygems'
 require 'json'
@@ -70,6 +72,11 @@ class Command
 		save(db)
 	end
 	
+	def killed
+		@output[:error] = "Killed"
+		@status = :failed
+	end
+	
 	def id
 		@trans["t_id"]
 	end
@@ -80,6 +87,10 @@ class Command
 		else
 			0
 		end
+	end
+	
+	def type
+		@trans["t_type"]
 	end
 	
 	def handler

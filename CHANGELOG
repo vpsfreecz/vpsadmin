@@ -1,3 +1,14 @@
+* Sun Apr 07 2013 - version 1.8.0
+- Implement Storage executor with backends, so far only ZFS is supported
+- NAS mount/umount, generation of vzctl action scripts, pre/post (u)mount scripts
+- Fix queue ordering
+- Save node load
+- Traffic accounting: fix IPv6 parsing, do not save NULL
+- Add remote commands for transaction killing and forced stop/restart
+- Check database version
+- VPS clone: accept rsync return code 23 and 24
+- Backup scheduler: use exports, schedule only VPS which are not marked for deletion and their owners are active
+
 * Thu Mar 14 2013 - version 1.7.3
 - Fix config: numbers are not strings
 

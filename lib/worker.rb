@@ -16,6 +16,11 @@ class Worker
 		end
 	end
 	
+	def kill(set_status = true)
+		cmd.killed if set_status
+		@thread.kill!
+	end
+	
 	def working?
 		@thread and @thread.alive?
 	end
