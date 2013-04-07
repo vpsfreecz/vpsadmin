@@ -2,8 +2,8 @@ require 'lib/vpsadmind'
 require 'lib/utils'
 
 module VpsAdminCtl
-	VERSION = "1.6.0"
-	ACTIONS = [:status, :reload, :stop, :restart, :update]
+	VERSION = "1.8.0"
+	ACTIONS = [:status, :reload, :stop, :restart, :update, :kill]
 	
 	class RemoteControl
 		def initialize(sock)
@@ -12,10 +12,10 @@ module VpsAdminCtl
 		
 		def status
 			if @opts[:workers]
-				puts sprintf("%-5s %-20.15s %-5s %-18.16s %s", "VEID", "HANDLER", "TYPE", "TIME", "STEP") if @opts[:header]
+				puts sprintf("%-8s %-5s %-20.19s %-5s %-18.16s %s", "TRANS", "VEID", "HANDLER", "TYPE", "TIME", "STEP") if @opts[:header]
 				
 				@res["workers"].sort.each do |w|
-					puts sprintf("%-5d %-20.15s %-5d %-18.16s %s", w[0], w[1]["handler"], w[1]["type"], format_duration(Time.new.to_i - w[1]["start"]), w[1]["step"])
+					puts sprintf("%-8d %-5d %-20.19s %-5d %-18.16s %s", w[1]["id"], w[0], w[1]["handler"], w[1]["type"], format_duration(Time.new.to_i - w[1]["start"]), w[1]["step"])
 				end
 			end
 			
@@ -40,9 +40,15 @@ module VpsAdminCtl
 			puts "Config reloaded"
 		end
 		
+		def pre_stop
+			{:force => @opts[:force]}
+		end
+		
 		def stop
 			puts "Stop scheduled"
 		end
+		
+		alias_method :pre_restart, :pre_stop
 		
 		def restart
 			puts "Restart scheduled"
@@ -50,6 +56,36 @@ module VpsAdminCtl
 		
 		def update
 			puts "Update scheduled"
+		end
+		
+		def pre_kill
+			if @opts[:all]
+				{:transactions => :all}
+			elsif @opts[:type]
+				if ARGV.size < 2
+					$stderr.puts "Kill: missing transaction type(s)"
+					return nil
+				end
+				
+				{:types => ARGV[1..-1]}
+			else
+				if ARGV.size < 2
+					$stderr.puts "Kill: missing transaction id(s)"
+					return nil
+				end
+				
+				{:transactions => ARGV[1..-1]}
+			end
+		end
+		
+		def kill
+			@res["msgs"].each do |i, msg|
+				puts "#{i}: #{msg}"
+			end
+			
+			puts "" if @res["msgs"].size > 0
+			
+			puts "Killed #{@res["killed"]} transactions"
 		end
 		
 		def is_valid?(cmd)
@@ -61,23 +97,36 @@ module VpsAdminCtl
 			
 			begin
 				@vpsadmind.open
-				@vpsadmind.cmd(cmd)
+				
+				@opts = opts
+				params = {}
+				
+				begin
+					params = method("pre_#{cmd}").call
+					
+					unless params
+						$stderr.puts "Command failed"
+						return
+					end
+				rescue NameError
+					
+				end
+				
+				@vpsadmind.cmd(cmd, params)
 				@reply = @vpsadmind.reply
 			rescue
 				$stderr.puts "Error occured: #{$!}"
 				$stderr.puts "Are you sure that vpsAdmind is running and configured properly?"
-				$stderr.puts "Note that remote control in vpsAdmind must be explicitly enabled by --remote-control switch"
 				return
 			end
 			
 			unless @reply["status"] == "ok"
-				return {:status => :failed, :error => @reply["error"]}
+				return {:status => :failed, :error => @reply["error"]["error"]}
 			end
 			
 			@res = @reply["response"]
-			@opts = opts
 			
-			method(cmd).call()
+			method(cmd).call
 		end
 	end
 end

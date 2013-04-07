@@ -16,8 +16,8 @@ class VpsAdmind
 		@version = greetings["version"]
 	end
 	
-	def cmd(cmd)
-		@sock.send({:command => cmd}.to_json + "\n", 0)
+	def cmd(cmd, params = {})
+		@sock.send({:command => cmd, :params => params}.to_json + "\n", 0)
 	end
 	
 	def reply
