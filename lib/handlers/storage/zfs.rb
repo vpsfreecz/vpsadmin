@@ -42,7 +42,11 @@ module StorageBackend
 			list_exports(db).each_hash do |e|
 				quota = used = avail = 0
 				
-				zfs(:get, "-H -p -o property,value quota,used,available", "#{e["root_dataset"]}/#{e["dataset"]}")[:output].split("\n").each do |prop|
+				get = zfs(:get, "-H -p -o property,value quota,used,available", "#{e["root_dataset"]}/#{e["dataset"]}", [1,])
+				
+				next if get[:exitstatus] == 1
+				
+				get[:output].split("\n").each do |prop|
 					p = prop.split
 					
 					case p[0]
