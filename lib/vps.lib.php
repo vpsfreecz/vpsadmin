@@ -148,9 +148,9 @@ class vps_load {
 		$params["template"] = $template["templ_name"];
 		$this->ve["vps_nameserver"] = "8.8.8.8";
 		$params["nameserver"] = $this->ve["vps_nameserver"];
-		$params["mounts"] = $this->mount_regen();
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_REINSTALL_VE, $params);
 		$this->applyconfigs();
+		$this->mount_regen();
 		$sql = 'UPDATE vps SET  vps_features_enabled=0,
 					vps_specials_installed = ""
 					WHERE vps_id='.$db->check($this->veid);
@@ -712,7 +712,6 @@ function ipadd($ip, $type = 4) {
 		"template" => $clone->ve["templ_name"],
 		"hostname" => $clone->ve["vps_hostname"],
 		"nameserver" => $clone->ve["vps_nameserver"],
-		"mounts" => $clone->mount_regen()
 	);
 	
 	add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_CLONE_VE, $params);
@@ -762,6 +761,8 @@ function ipadd($ip, $type = 4) {
 		$db->query("UPDATE vps_mount SET storage_export_id = ".$db->check($cloned_backup_export)."
 		            WHERE vps_id = ".$db->check($clone->veid)." AND storage_export_id = ".$db->check($this->ve["vps_backup_export"]));
 	}
+	
+	$clone->mount_regen();
 	
 	if ($features && $this->ve["vps_features_enabled"])
 		add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_ENABLE_FEATURES);
