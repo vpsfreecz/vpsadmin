@@ -24,9 +24,10 @@ function print_newvps() {
 	$xtpl->title(_("Create VPS"));
 	$xtpl->form_create('?page=adminvps&section=vps&action=new2&create=1', 'post');
 	$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'vps_hostname', '', _("A-z, a-z"), 30);
-	$xtpl->form_add_select(_("HW server").':', 'vps_server', $_SESSION["is_admin"] ? list_servers(false, array("node")) : list_playground_servers(), '2', '');
-	if ($_SESSION["is_admin"])
+	if ($_SESSION["is_admin"]) {
+		$xtpl->form_add_select(_("HW server").':', 'vps_server', list_servers(false, array("node")), '2', '');
 		$xtpl->form_add_select(_("Owner").':', 'm_id', members_list(), '', '');
+	}
 	$xtpl->form_add_select(_("Distribution").':', 'vps_template', list_templates(false), '',  '');
 	
 	if ($_SESSION["is_admin"]) {
@@ -81,7 +82,6 @@ switch ($_GET["action"]) {
 		case 'new2':
 			if ((ereg('^[a-zA-Z0-9\.\-]{1,30}$',$_REQUEST["vps_hostname"])
 			    && $_GET["create"]
-			    && ($server = server_by_id($_REQUEST["vps_server"]))
 			    && ($_SESSION["is_admin"] || $playground_mode)))
 					{
 					$tpl = template_by_id($_REQUEST["vps_template"]);
@@ -91,18 +91,14 @@ switch ($_GET["action"]) {
 						break;
 					}
 					
-					if ($playground_mode) {
-						$is_pg = false;
-						foreach ($playground_servers as $pg)
-							if($pg["server_id"] == $server["server_id"]) {
-								$is_pg = true;
-								break;
-							}
-						
-						if (!$is_pg) {
-							$xtpl->perex(_("Error"), _("Selected node is not playground node, you bloody hacker."));
-							break;
-						}
+					if ($playground_mode)
+						$server = pick_playground_server();
+					else
+						$server = server_by_id($_REQUEST["vps_server"]);
+					
+					if(!$server) {
+						$xtpl->perex(_("Error"), _("Selected serve does not exist."));
+						break;
 					}
 					
 					if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
@@ -355,7 +351,6 @@ switch ($_GET["action"]) {
 		case 'reinstall2':
 			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 			$xtpl->perex_cmd_output(_("Reinstallation of VPS")." {$_GET["veid"]} ".strtolower(_("planned")).'<br />'._("You will have to reset your <b>root</b> password"), $vps->reinstall());
-			$vps->restart();
 			$list_vps=true;
 			break;
 		case 'enablefeatures':
