@@ -832,7 +832,8 @@ function ipadd($ip, $type = 4) {
   function get_backuper_server() {
 	global $db;
 	$e = nas_get_export_by_id($this->ve["vps_backup_export"]);
-	return $e["node_id"];
+	$n = new cluster_node($e["node_id"]);
+	return $n->s;
   }
 
   function get_location() {
