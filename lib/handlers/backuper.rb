@@ -61,6 +61,7 @@ class Backuper < Executor
 		target = $CFG.get(:backuper, :restore_src).gsub(/%\{veid\}/, @veid)
 		
 		vps = VPS.new(@veid)
+		stat = vps.status
 		
 		vps.stop(:force => true)
 		syscmd("#{$CFG.get(:vz, :vzquota)} off #{@veid} -f", [6,])
@@ -72,7 +73,7 @@ class Backuper < Executor
 		end
 		
 		syscmd("#{$CFG.get(:vz, :vzquota)} drop #{@veid}")
-		vps.start
+		vps.start if stat[:running]
 	end
 	
 	# Deprecated, not working

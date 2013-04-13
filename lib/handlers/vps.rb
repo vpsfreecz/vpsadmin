@@ -42,12 +42,19 @@ class VPS < Executor
 	end
 	
 	def reinstall
+		stat = status
+		
 		stop
 		destroy
 		create
-		start
 		vzctl(:set, @veid, {:ipadd => @params["ip_addrs"]}, true) if @params["ip_addrs"].count > 0
-		check_onboot(true)
+		
+		if stat[:running]
+			check_onboot(true)
+			start
+		end
+		
+		ok
 	end
 	
 	def set_params
@@ -58,10 +65,13 @@ class VPS < Executor
 		@params["configs"].each do |cfg|
 			vzctl(:set, @veid, {:applyconfig => cfg, :setmode => "restart"}, true)
 		end
+		
 		ok
 	end
 	
 	def features
+		stat = status
+		
 		stop
 		vzctl(:set, @veid, {
 			:feature => ["nfsd:on", "nfs:on", "ppp:on"],
@@ -82,6 +92,7 @@ class VPS < Executor
 		vzctl(:exec, @veid, "mknod /dev/fuse c 10 229", false, [8,])
 		vzctl(:exec, @veid, "mknod /dev/ppp c 108 0", false, [8,])
 		vzctl(:exec, @veid, "chmod 600 /dev/ppp")
+		stop unless stat[:running]
 	end
 	
 	def migrate_offline
@@ -224,6 +235,11 @@ class VPS < Executor
 		f.close
 		
 		vzctl(:runscript, @veid, f.path)
+	end
+	
+	def status
+		stat = vzctl(:status, @veid)[:output].split(" ")[2..-1]
+		{:exists => stat[0] == "exist", :mounted => stat[1] == "mounted", :running => stat[2] == "running"}
 	end
 	
 	def post_save(con)
