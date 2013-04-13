@@ -473,7 +473,7 @@ function db_build_upgrade_code($from, $to) {
 }
 
 function db_do_upgrade($to, $sql, &$error) {
-	global $db;
+	global $db, $cluster_cfg;
 	
 	if($db->query_trans($sql, $error)) {
 		$cluster_cfg->set("db_version", $to);
