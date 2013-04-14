@@ -30,7 +30,7 @@ function get_vps_array($by_m_id = false, $by_server = false){
 			$sql .= " WHERE vps_server = $by_server ";
 		$sql .= ' ORDER BY vps_server,m_id,vps_id ASC';
 	} else {
-		$sql .= " WHERE m_id = {$db->check($_SESSION["member"]["m_id"])}";
+		$sql .= " WHERE m_id = {$db->check($_SESSION["member"]["m_id"])} AND vps_deleted IS NULL";
 		if ($by_server)
 			$sql .= " AND vps_server = $by_server";
 	}
@@ -864,6 +864,12 @@ function ipadd($ip, $type = 4) {
 	}
 	
 	return NULL;
+  }
+  
+  function set_expiration($timestamp) {
+	global $db;
+	
+	$db->query("UPDATE vps SET vps_expiration = ".$db->check($timestamp ? (int)$timestamp : "NULL")." WHERE vps_id = ".$db->check($this->veid));
   }
 }
 ?>

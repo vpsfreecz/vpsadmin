@@ -41,7 +41,7 @@ include WWW_ROOT.'lib/mail.lib.php';
 
 $db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME);
 
-$whereCond = "m_mailer_enable = 1";
+$whereCond = "m_mailer_enable = 1 AND m_state != 'deleted'";
 while ($m = $db->find("members", $whereCond)) {
 	$member = member_load($m["m_id"]);
 	if (($member->m["m_paid_until"] - time()) <= 604800) {
@@ -57,4 +57,20 @@ while ($m = $db->find("members", $whereCond)) {
 		send_mail($m["m_mail"], $subject, $content, $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
     }
 }
-?>
+
+$rs = $db->query("SELECT v.vps_id, vps_expiration, m_nick, m_mail FROM vps v
+                  INNER JOIN members m ON v.m_id = m.m_id
+                  WHERE m_mailer_enable = 1 AND vps_expiration IS NOT NULL AND DATE_SUB(FROM_UNIXTIME(vps_expiration), INTERVAL 7 DAY) < NOW() AND FROM_UNIXTIME(vps_expiration) > NOW()");
+
+while($row = $db->fetch_array($rs)) {
+	$subject = $cluster_cfg->get("mailer_tpl_vps_expiration_subj");
+	$subject = str_replace("%member%", $row["m_nick"], $subject);
+	$subject = str_replace("%vpsid%", $row["vps_id"], $subject);
+	
+	$content = $cluster_cfg->get("mailer_tpl_vps_expiration");
+	$content = str_replace("%member%", $row["m_nick"], $content);
+	$content = str_replace("%vpsid%", $row["vps_id"], $content);
+	$content = str_replace("%datetime%", strftime("%Y-%m-%d %H:%M", $row["vps_expiration"]), $content);
+	
+	send_mail($row["m_mail"], $subject, $content);
+}

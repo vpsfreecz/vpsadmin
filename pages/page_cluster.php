@@ -659,14 +659,22 @@ switch($_REQUEST["action"]) {
 								');
 		
 		// Backup download notification
-		$xtpl->form_add_input(_("Download backup subject").':', 'text', '40', 'tpl_dl_backup_subj', $cluster_cfg->get("mailer_tpl_dl_backup_subj"), '%member% - nick<br />%vpsid% = VPS ID');
+		$xtpl->form_add_input(_("Download backup subject").':', 'text', '40', 'tpl_dl_backup_subj', $cluster_cfg->get("mailer_tpl_dl_backup_subj"), '%member% - nick<br />%vpsid% - VPS ID');
 		$xtpl->form_add_textarea(_("Download backup<br /> template").':', 50, 8, 'tpl_dl_backup', $cluster_cfg->get("mailer_tpl_dl_backup"), '
 								%member% - nick<br />
 								%vpsid% - VPS ID<br />
 								%url% - download link<br />
 								%datetime% - date and time of backup
 								');
-								
+		
+		// VPS expiration
+		$xtpl->form_add_input(_("VPS expiration subject").':', 'text', '40', 'tpl_vps_expiration_subj', $cluster_cfg->get("mailer_tpl_vps_expiration_subj"), '%member% - nick<br />%vpsid% - VPS ID');
+		$xtpl->form_add_textarea(_("VPS expiration<br /> template").':', 50, 8, 'tpl_vps_expiration', $cluster_cfg->get("mailer_tpl_vps_expiration"), '
+								%member% - nick<br />
+								%vpsid% - VPS ID<br />
+								%datetime% - date and time of expiration
+								');
+		
 		$xtpl->form_out(_("Save changes"));
 		$xtpl->sbar_add(_("Back"), '?page=cluster&action=mailer');
 		break;
@@ -703,6 +711,9 @@ switch($_REQUEST["action"]) {
 		
 		$cluster_cfg->set("mailer_tpl_dl_backup_subj", $_REQUEST["tpl_dl_backup_subj"]);
 		$cluster_cfg->set("mailer_tpl_dl_backup", $_REQUEST["tpl_dl_backup"]);
+		
+		$cluster_cfg->set("mailer_tpl_vps_expiration_subj", $_REQUEST["tpl_vps_expiration_subj"]);
+		$cluster_cfg->set("mailer_tpl_vps_expiration", $_REQUEST["tpl_vps_expiration"]);
 		
 		$list_mails = true;
 		break;
@@ -1049,6 +1060,7 @@ switch($_REQUEST["action"]) {
 		
 		$cluster_cfg->set("playground_enabled", (bool)$_POST["enabled"]);
 		$cluster_cfg->set("playground_backup", (bool)$_POST["backup"]);
+		$cluster_cfg->set("playground_vps_lifetime", (int)$_POST["lifetime"]);
 		
 		$playground_settings = true;
 		break;
@@ -1926,6 +1938,7 @@ if ($playground_settings) {
 	$xtpl->form_create('?page=cluster&action=playground_settings_save', 'post');
 	$xtpl->form_add_checkbox(_('Enabled').':', 'enabled', '1', $cluster_cfg->get("playground_enabled"), _('Allow members to create playground VPS'));
 	$xtpl->form_add_checkbox(_('Backup').':', 'backup', '1', $cluster_cfg->get("playground_backup"), _('Should be newly created VPS backed up?'));
+	$xtpl->form_add_input(_("Default VPS lifetime").':', 'text', '5', 'lifetime', $cluster_cfg->get("playground_vps_lifetime"), _("days"));
 	$xtpl->form_out(_('Save'));
 	
 	$configs_select = list_configs(true);
