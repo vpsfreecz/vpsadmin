@@ -1,3 +1,6 @@
+* Mon Apr 15 2013 - version 1.8.1
+- Always honor VPS state when manipulating it
+
 * Sun Apr 07 2013 - version 1.8.0
 - Implement Storage executor with backends, so far only ZFS is supported
 - NAS mount/umount, generation of vzctl action scripts, pre/post (u)mount scripts
