@@ -55,7 +55,17 @@ while($row = $db->fetch_array($rs)) {
 	$m->destroy(false);
 }
 
-// Delete expired VPSes
+// Mark expired VPSes for lazy deletion
+$rs = $db->query("SELECT vps_id FROM vps WHERE vps_expiration IS NOT NULL AND vps_deleted IS NULL AND FROM_UNIXTIME(vps_expiration) < NOW()");
+
+while($row = $db->fetch_array($rs)) {
+	$vps = new vps_load($row["vps_id"]);
+	
+	$vps->stop();
+	$vps->destroy(true);
+}
+
+// Delete lazy deleted VPSes
 $vps_timeout = $cluster_cfg->get("general_vps_delete_timeout") * 24 * 60 * 60;
 
 $rs = $db->query("SELECT vps_id FROM vps WHERE vps_deleted IS NOT NULL AND vps_deleted > 0 AND vps_deleted < ".$db->check((time() - $vps_timeout)));

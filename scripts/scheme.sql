@@ -173,6 +173,7 @@ CREATE TABLE IF NOT EXISTS `transfered` (
 CREATE TABLE IF NOT EXISTS `vps` (
   `vps_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `vps_created` int(11) unsigned DEFAULT NULL,
+  `vps_expiration` INT NULL DEFAULT NULL,
   `vps_deleted` INT( 11 ) NULL,
   `m_id` int(63) unsigned NOT NULL,
   `vps_hostname` varchar(64) DEFAULT 'darkstar',

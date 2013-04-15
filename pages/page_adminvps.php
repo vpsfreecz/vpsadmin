@@ -24,9 +24,10 @@ function print_newvps() {
 	$xtpl->title(_("Create VPS"));
 	$xtpl->form_create('?page=adminvps&section=vps&action=new2&create=1', 'post');
 	$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'vps_hostname', '', _("A-z, a-z"), 30);
-	$xtpl->form_add_select(_("HW server").':', 'vps_server', $_SESSION["is_admin"] ? list_servers(false, array("node")) : list_playground_servers(), '2', '');
-	if ($_SESSION["is_admin"])
+	if ($_SESSION["is_admin"]) {
+		$xtpl->form_add_select(_("HW server").':', 'vps_server', list_servers(false, array("node")), '2', '');
 		$xtpl->form_add_select(_("Owner").':', 'm_id', members_list(), '', '');
+	}
 	$xtpl->form_add_select(_("Distribution").':', 'vps_template', list_templates(false), '',  '');
 	
 	if ($_SESSION["is_admin"]) {
@@ -69,7 +70,7 @@ if ($_GET["run"] == 'restart') {
 }
 
 $playground_servers = $cluster->list_playground_servers();
-$playground_enabled = $cluster_cfg->get("playground_enabled");
+$playground_enabled = $cluster_cfg->get("playground_enabled") && !$_SESSION["is_admin"];
 $playground_mode = !$_SESSION["is_admin"] && $playground_enabled && count($playground_servers) > 0 && $member_of_session->can_use_playground();
 
 $_GET["action"] = isset($_GET["action"]) ? $_GET["action"] : false;
@@ -81,7 +82,6 @@ switch ($_GET["action"]) {
 		case 'new2':
 			if ((ereg('^[a-zA-Z0-9\.\-]{1,30}$',$_REQUEST["vps_hostname"])
 			    && $_GET["create"]
-			    && ($server = server_by_id($_REQUEST["vps_server"]))
 			    && ($_SESSION["is_admin"] || $playground_mode)))
 					{
 					$tpl = template_by_id($_REQUEST["vps_template"]);
@@ -91,18 +91,14 @@ switch ($_GET["action"]) {
 						break;
 					}
 					
-					if ($playground_mode) {
-						$is_pg = false;
-						foreach ($playground_servers as $pg)
-							if($pg["server_id"] == $server["server_id"]) {
-								$is_pg = true;
-								break;
-							}
-						
-						if (!$is_pg) {
-							$xtpl->perex(_("Error"), _("Selected node is not playground node, you bloody hacker."));
-							break;
-						}
+					if ($playground_mode)
+						$server = pick_playground_server();
+					else
+						$server = server_by_id($_REQUEST["vps_server"]);
+					
+					if(!$server) {
+						$xtpl->perex(_("Error"), _("Selected serve does not exist."));
+						break;
 					}
 					
 					if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
@@ -121,6 +117,7 @@ switch ($_GET["action"]) {
 							$vps->add_first_available_ip($server["server_location"], 4);
 							$vps->add_first_available_ip($server["server_location"], 6);
 							$vps->set_backuper($cluster_cfg->get("playground_backup"), NULL, "", true);
+							$vps->set_expiration(time() + $cluster_cfg->get("playground_vps_lifetime") * 24 * 60 * 60);
 						} else {
 							$vps->add_default_configs("default_config_chain");
 						}
@@ -274,6 +271,16 @@ switch ($_GET["action"]) {
 			else $xtpl->perex(_("Error"), '');
 			$show_info=true;
 			break;
+		case 'expiration':
+			if ($_SESSION["is_admin"] && $_POST["date"]) {
+				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
+				if ($vps->exists) {
+					$vps->set_expiration($_POST["no_expiration"] ? 0 : strtotime($_POST["date"]));
+					notify_user(_("Expiration set"), $_POST["no_expiration"] ? _("Expiration disabled") : _("Expiration set to").' '.$_POST["date"]);
+					redirect('?page=adminvps&action=info&veid='.$vps->veid);
+				}
+			}
+			break;
 		case 'addip':
 			if (isset($_REQUEST["veid"]) && $_SESSION["is_admin"]) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
@@ -355,7 +362,6 @@ switch ($_GET["action"]) {
 		case 'reinstall2':
 			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 			$xtpl->perex_cmd_output(_("Reinstallation of VPS")." {$_GET["veid"]} ".strtolower(_("planned")).'<br />'._("You will have to reset your <b>root</b> password"), $vps->reinstall());
-			$vps->restart();
 			$list_vps=true;
 			break;
 		case 'enablefeatures':
@@ -579,6 +585,12 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_td(_("Owner").':');
 	$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$vps->ve['m_id'].'">'.(isset($vps->ve["m_nick"]) ? $vps->ve["m_nick"] : false ).'</a>');
 		$xtpl->table_tr();
+	
+	if($vps->ve["vps_expiration"]) {
+		$xtpl->table_td(_("Expiration").':');
+		$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $vps->ve["vps_expiration"]));
+		$xtpl->table_tr();
+	}
 	
 	$xtpl->table_td(_("Status").':');
 	$xtpl->table_td(
@@ -834,6 +846,16 @@ if (isset($show_info) && $show_info) {
 		$xtpl->form_create('?page=adminvps&action=chown&veid='.$vps->veid, 'post');
 		$xtpl->form_add_select(_("Owner").':', 'm_id', members_list(), $vps->ve["m_id"]);
 		$xtpl->table_add_category(_("Change owner"));
+		$xtpl->table_add_category('&nbsp;');
+		$xtpl->form_out(_("Go >>"));
+	}
+
+// Expiration
+	if ($_SESSION["is_admin"]) {
+		$xtpl->form_create('?page=adminvps&action=expiration&veid='.$vps->veid, 'post');
+		$xtpl->form_add_input(_("Date and time").':', 'text', '30', 'date', strftime("%Y-%m-%d %H:%M"));
+		$xtpl->form_add_checkbox(_("No expiration").':', 'no_expiration', '1', false);
+		$xtpl->table_add_category(_("Set expiration"));
 		$xtpl->table_add_category('&nbsp;');
 		$xtpl->form_out(_("Go >>"));
 	}

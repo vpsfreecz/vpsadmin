@@ -257,7 +257,7 @@ class member_load {
 		FROM vps
 		INNER JOIN servers ON vps_server = server_id
 		INNER JOIN locations ON location_id = server_location
-		WHERE m_id = ".$db->check($this->m["m_id"])." AND location_type = 'playground'";
+		WHERE m_id = ".$db->check($this->m["m_id"])." AND location_type = 'playground' AND vps_deleted IS NULL";
 	if ($result = $db->query($sql)) {
 		if ($row = $db->fetch_array($result)) {
 			return $row["count"] < 1;

@@ -165,6 +165,27 @@ function list_playground_servers($without_id = false) {
     return $ret;
 }
 
+function pick_playground_server() {
+	global $db;
+	
+	$servers = list_servers(false, array("node"));
+	
+	$sql = "SELECT server_id FROM servers s
+	        INNER JOIN vps v ON v.vps_server = s.server_id
+	        INNER JOIN vps_status st ON v.vps_id = st.vps_id
+	        WHERE st.vps_up = 1 AND server_location IN (SELECT location_id FROM locations WHERE location_type = 'playground')
+	        GROUP BY server_id
+	        ORDER BY COUNT(v.vps_id) ASC
+	        LIMIT 1
+	        ";
+	
+	$rs = $db->query($sql);
+	
+	if($row = $db->fetch_array($rs)) {
+		return $row["server_id"];
+	} else return false;
+}
+
 function server_by_id ($id) {
     global $db;
     $sql = 'SELECT * FROM servers WHERE server_id="'.$db->check($id).'" LIMIT 1';
