@@ -70,7 +70,7 @@ if ($_GET["run"] == 'restart') {
 }
 
 $playground_servers = $cluster->list_playground_servers();
-$playground_enabled = $cluster_cfg->get("playground_enabled");
+$playground_enabled = $cluster_cfg->get("playground_enabled") && !$_SESSION["is_admin"];
 $playground_mode = !$_SESSION["is_admin"] && $playground_enabled && count($playground_servers) > 0 && $member_of_session->can_use_playground();
 
 $_GET["action"] = isset($_GET["action"]) ? $_GET["action"] : false;
