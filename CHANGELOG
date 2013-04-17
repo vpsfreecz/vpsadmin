@@ -1,3 +1,6 @@
+* Wed Apr 17 2013 - version 1.8.2
+- VPS enable features: fixed crash caused by wrong return value
+
 * Mon Apr 15 2013 - version 1.8.1
 - Always honor VPS state when manipulating it
 

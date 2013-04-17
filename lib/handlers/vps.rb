@@ -93,6 +93,7 @@ class VPS < Executor
 		vzctl(:exec, @veid, "mknod /dev/ppp c 108 0", false, [8,])
 		vzctl(:exec, @veid, "chmod 600 /dev/ppp")
 		stop unless stat[:running]
+		ok
 	end
 	
 	def migrate_offline
