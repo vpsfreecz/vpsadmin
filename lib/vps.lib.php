@@ -256,6 +256,12 @@ class vps_load {
 		}
 	}
   }
+  
+  function revive() {
+	global $db;
+	
+	$db->query("UPDATE vps SET vps_deleted = NULL WHERE vps_id = ".$this->veid);
+  }
 
   function iplist($v = false) {
 	global $db;
