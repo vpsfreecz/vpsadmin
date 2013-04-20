@@ -789,7 +789,17 @@ class XTemplate {
 		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' />');
 		if ($hint != '') $this->table_td($hint);
 	}
-
+	
+	/**
+	  * Add radio to form
+	  * @param $name - $_RESULT[name]
+	  * @param $value - value if checked
+	  * @param $checked - if it is checked by default
+	  */
+	function form_add_radio_pure($name = 'input_fromgen', $value = '', $checked=false) {
+		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' />');
+	}
+	
 	/**
 	  * Parse out the form
 	  * @param $submit_label - label of submit button of the form
