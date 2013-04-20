@@ -416,31 +416,28 @@ switch ($_GET["action"]) {
 			$show_info=true;
 			break;
 		case 'clone':
-			if (isset($_REQUEST["veid"])  && ($_SESSION["is_admin"] || $playground_mode) && ($server = server_by_id($_REQUEST["target_server_id"]))) {
+			if (isset($_REQUEST["veid"])  && ($_SESSION["is_admin"] || $playground_mode)) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 				
 				if ($playground_mode) {
-					$is_pg = false;
-					foreach ($playground_servers as $pg)
-						if($pg["server_id"] == $server["server_id"]) {
-							$is_pg = true;
-							break;
-						}
-					
-					if (!$is_pg) {
-						$xtpl->perex(_("Error"), _("Selected node is not playground node, you bloody hacker."));
-						break;
-					}
+					$server = server_by_id(pick_playground_server());
+				} else {
+					$server = server_by_id($_POST["target_server_id"]);
+				}
+				
+				if(!$server) {
+					$xtpl->perex(_("Error"), _("Selected server does not exist."));
+					break;
 				}
 				
 				$pg_backup = $cluster_cfg->get("playground_backup");
 				
-				$cloned = $vps->clone_vps($playground_mode ? $vps->ve["m_id"] : $_REQUEST["target_owner_id"],
-								$_REQUEST["target_server_id"],
-								$_REQUEST["hostname"],
-								$playground_mode ? 2 : $_REQUEST["configs"],
-								$playground_mode ? 1 : $_REQUEST["features"],
-								$playground_mode ? $pg_backup : $_REQUEST["backuper"]
+				$cloned = $vps->clone_vps($playground_mode ? $vps->ve["m_id"] : $_POST["target_owner_id"],
+								$server["server_id"],
+								$_POST["hostname"],
+								$playground_mode ? 2 : $_POST["configs"],
+								$playground_mode ? 1 : $_POST["features"],
+								$playground_mode ? $pg_backup : $_POST["backuper"]
 				);
 				
 				if ($playground_mode) {
@@ -902,9 +899,10 @@ if (isset($show_info) && $show_info) {
 	if ($_SESSION["is_admin"] || $playground_mode) {
 		$xtpl->form_create('?page=adminvps&action=clone&veid='.$vps->veid, 'post');
 		
-		if ($_SESSION["is_admin"])
+		if ($_SESSION["is_admin"]) {
 			$xtpl->form_add_select(_("Target owner").':', 'target_owner_id', members_list(), $vps->ve["m_id"]);
-		$xtpl->form_add_select(_("Target server").':', 'target_server_id', $playground_mode ? list_playground_servers() : $cluster->list_servers(), $vps->ve["vps_server"]);
+			$xtpl->form_add_select(_("Target server").':', 'target_server_id', $cluster->list_servers(), $vps->ve["vps_server"]);
+		}
 		$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'hostname', $vps->ve["vps_hostname"] . "-{$vps->veid}-clone");
 		
 		if ($_SESSION["is_admin"]) {
