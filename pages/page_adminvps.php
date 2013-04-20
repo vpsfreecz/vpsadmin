@@ -92,7 +92,7 @@ switch ($_GET["action"]) {
 					}
 					
 					if ($playground_mode)
-						$server = pick_playground_server();
+						$server = server_by_id(pick_playground_server());
 					else
 						$server = server_by_id($_REQUEST["vps_server"]);
 					
