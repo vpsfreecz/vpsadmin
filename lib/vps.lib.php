@@ -594,8 +594,10 @@ function ipadd($ip, $type = 4) {
 			return;
 		
 		$sql = 'UPDATE vps SET '.implode(",", $update).' WHERE vps_id = '.$db->check($this->veid);
-  	} else
-		$sql = 'UPDATE vps SET vps_backup_exclude = "'.$db->check($exclude).'", '.implode(",", $update).' WHERE vps_id = '.$db->check($this->veid);
+  	} else {
+		$this->ve["vps_backup_exclude"] = $exclude;
+		$sql = 'UPDATE vps SET vps_backup_exclude = "'.$db->check($exclude).'" WHERE vps_id = '.$db->check($this->veid);
+	}
   	
   	$db->query($sql);
   }
