@@ -2165,11 +2165,12 @@ if ($mass_management) {
 	
 	if (isset($_GET["m"])) {
 		$nodes = $db->check(is_array($_GET["m"]) ? implode(",", $_GET["m"]) : $_GET["m"]);
-		$conds[] = "(SELECT m.id FROM vps_mount m
-		             LEFT JOIN storage_export e ON m.storage_export_id = e.id
+		$conds[] = "(SELECT mo.id FROM vps_mount mo
+		             LEFT JOIN storage_export e ON mo.storage_export_id = e.id
 		             LEFT JOIN storage_root r ON e.root_id = r.id
-		             WHERE m.vps_id = v.vps_id
-		                   AND (m.server_id IN (".$nodes.") OR r.node_id IN (".$nodes."))) IS NOT NULL";
+		             WHERE mo.vps_id = v.vps_id
+		                   AND (mo.server_id IN (".$nodes.") OR r.node_id IN (".$nodes."))
+	                 LIMIT 1) IS NOT NULL";
 	}
 	
 	$conditions = array();
