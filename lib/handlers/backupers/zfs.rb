@@ -30,7 +30,8 @@ module BackuperBackend
 				db.prepared("DELETE FROM vps_backups WHERE vps_id = ?", @veid)
 				
 				zfs(:list, "-r -t snapshot -H -o name", "#{@params["dataset"]}")[:output].split().each do |snapshot|
-					db.prepared("INSERT INTO vps_backups SET vps_id = ?, timestamp = UNIX_TIMESTAMP(?)", @veid, snapshot.split("@")[1])
+					refer = zfs(:get, "-p -H -o value referenced", snapshot)[:output].to_i
+					db.prepared("INSERT INTO vps_backups SET vps_id = ?, timestamp = UNIX_TIMESTAMP(?), size = ?", @veid, snapshot.split("@")[1], refer)
 				end
 			end
 			
