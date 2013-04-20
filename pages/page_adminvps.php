@@ -126,12 +126,12 @@ switch ($_GET["action"]) {
 
 						if ($_REQUEST["boot_after_create"] || $playground_mode) {
 							$vps->start();
-							$xtpl->perex(_("VPS create ").' '.$vps->veid, _("VPS will be created and booted afterwards."));
+							notify_user(_("VPS create ").' '.$vps->veid, _("VPS will be created and booted afterwards."));
 						} else {
-							$xtpl->perex(_("VPS create ").' '.$vps->veid, _("VPS will be created. You can start it manually."));
+							notify_user(_("VPS create ").' '.$vps->veid, _("VPS will be created. You can start it manually."));
 						}
 
-						$xtpl->delayed_redirect('?page=adminvps&action=info&veid='.$vps->veid, 350);
+						redirect('?page=adminvps&action=info&veid='.$vps->veid);
 					}
 					else {
 						$xtpl->perex(_("Error"), _("VPS already exists"));
@@ -180,8 +180,9 @@ switch ($_GET["action"]) {
 					$vps->delete_all_backups();
 				}
 				
-				$xtpl->perex_cmd_output(_("Deletion of VPS")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->destroy($lazy, $can_delete));
-				$list_vps=true;
+				$vps->destroy($lazy, $can_delete);
+				notify_user(_("Delete VPS").' #'.$vps->veid, _("Deletion of VPS")." {$_GET["veid"]} ".strtolower(_("planned")));
+				redirect('?page=adminvps');
 			}
 			break;
 		case 'info':
@@ -200,7 +201,8 @@ switch ($_GET["action"]) {
 					!preg_match("/\`/", $_REQUEST["user"]) &&
 					!preg_match("/\"/", $_REQUEST["user"]))
 			{
-				$xtpl->perex_cmd_output(_("Change of user's password").' '.$_REQUEST["user"].' '.strtolower(_("planned")), $vps->passwd($_REQUEST["user"], $_REQUEST["pass"]));
+				notify_user(_("Change of user's password").' '.$_REQUEST["user"].' '.strtolower(_("planned")), $vps->passwd($_REQUEST["user"], $_REQUEST["pass"]));
+				redirect('?page=adminvps&action=info&veid='.$vps->veid);
 			} else {
 				$xtpl->perex(_("Error"), _("Wrong username or unsafe password"));
 			}
@@ -210,10 +212,13 @@ switch ($_GET["action"]) {
 		case 'hostname':
 			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 			if ($vps->exists) {
-				if (ereg('^[a-zA-Z0-9\.\-]{1,30}$',$_REQUEST["hostname"]))
-				$xtpl->perex_cmd_output(_("Hostname change planned"), $vps->set_hostname($_REQUEST["hostname"]));
-				else $xtpl->perex(_("Error"), _("Wrong hostname name"));
-				$show_info=true;
+				if (ereg('^[a-zA-Z0-9\.\-]{1,30}$',$_REQUEST["hostname"])) {
+					notify_user(_("Hostname change planned"), $vps->set_hostname($_REQUEST["hostname"]));
+					redirect('?page=adminvps&action=info&veid='.$vps->veid);
+				} else {
+					$xtpl->perex(_("Error"), _("Wrong hostname name"));
+					$show_info=true;
+				}
 			}
 			break;
 		case 'configs':
@@ -241,7 +246,7 @@ switch ($_GET["action"]) {
 					if($_REQUEST["notify_owner"])
 						$vps->configs_change_notify();
 					
-					$show_info=true;
+					redirect('?page=adminvps&action=info&veid='.$vps->veid);
 				}
 			} else {
 				$xtpl->perex(_("Error"), 'Error, contact your administrator');
@@ -253,7 +258,7 @@ switch ($_GET["action"]) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 				if ($vps->exists) {
 					$vps->update_custom_config($_POST["custom_config"]);
-					$show_info=true;
+					redirect('?page=adminvps&action=info&veid='.$vps->veid);
 				}
 			} else {
 				$xtpl->perex(_("Error"), 'Error, contact your administrator');
@@ -264,11 +269,14 @@ switch ($_GET["action"]) {
 		case 'chown':
 			if (($_REQUEST["m_id"] > 0) && isset($_REQUEST["veid"]) && $_SESSION["is_admin"]) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				if ($vps->vchown($_REQUEST["m_id"]))
-					$xtpl->perex(_("Owner change"), '' .strtolower(_("planned")));
-				else $xtpl->perex(_("Error"), '');
-				}
-			else $xtpl->perex(_("Error"), '');
+				
+				if ($vps->vchown($_REQUEST["m_id"])) {
+					notify_user(_("Owner change"), '' .strtolower(_("planned")));
+					redirect('?page=adminvps&action=info&veid='.$vps->veid);
+				} else $xtpl->perex(_("Error"), '');
+				
+			} else $xtpl->perex(_("Error"), '');
+			
 			$show_info=true;
 			break;
 		case 'expiration':
@@ -285,11 +293,13 @@ switch ($_GET["action"]) {
 			if (isset($_REQUEST["veid"]) && $_SESSION["is_admin"]) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 					if (ip_is_free($_REQUEST["ip_recycle"]))
-						$xtpl->perex_cmd_output(_("Addition of IP planned")." {$_REQUEST["ip"]}", $vps->ipadd($_POST["ip_recycle"]));
+						notify_user(_("Addition of IP planned")." {$_REQUEST["ip"]}", $vps->ipadd($_POST["ip_recycle"]));
 					elseif (ip_is_free($_REQUEST["ip6_recycle"]))
-						$xtpl->perex_cmd_output(_("Addition of IP planned")." {$_REQUEST["ip"]}", $vps->ipadd($_POST["ip6_recycle"]));
+						notify_user(_("Addition of IP planned")." {$_REQUEST["ip"]}", $vps->ipadd($_POST["ip6_recycle"]));
 					else
-						$xtpl->perex(_("Error"), 'Contact your administrator');
+						notify_user(_("Error"), 'Contact your administrator');
+					
+					redirect('?page=adminvps&action=info&veid='.$vps->veid);
 			} else {
 				$xtpl->perex(_("Error"), 'Contact your administrator');
 			}
@@ -298,41 +308,45 @@ switch ($_GET["action"]) {
 		case 'delip':
 			if ((validate_ip_address($_REQUEST["ip"])) && isset($_REQUEST["veid"]) && $_SESSION["is_admin"]) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				$xtpl->perex_cmd_output(_("Deletion of IP planned")." {$_REQUEST["ip"]}", $vps->ipdel($_REQUEST["ip"]));
-				}
-			else {
+				
+				notify_user(_("Deletion of IP planned")." {$_REQUEST["ip"]}", $vps->ipdel($_REQUEST["ip"]));
+				redirect('?page=adminvps&action=info&veid='.$vps->veid);
+			} else {
 				$xtpl->perex(_("Error"), 'Contact your administrator');
-				}
+			}
 			$show_info=true;
 			break;
 		case 'nameserver':
 			if ((isset($_REQUEST["nameserver"])) && isset($_REQUEST["veid"])) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				$xtpl->perex_cmd_output(_("DNS change planned"), $vps->nameserver($_REQUEST["nameserver"]));
-				}
-			else {
+				
+				notify_user(_("DNS change planned"), $vps->nameserver($_REQUEST["nameserver"]));
+				redirect('?page=adminvps&action=info&veid='.$vps->veid);
+			} else {
 				$xtpl->perex(_("Error"), '');
-				}
+			}
 			$show_info=true;
 			break;
 		case 'offlinemigrate':
 			if ($_SESSION["is_admin"] && isset($_REQUEST["veid"])) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				$xtpl->perex_cmd_output(_("Offline migration planned"), $vps->offline_migrate($_REQUEST["target_id"], $_POST["stop"]));
-				}
-			else {
+				
+				notify_user(_("Offline migration planned"), $vps->offline_migrate($_REQUEST["target_id"], $_POST["stop"]));
+				redirect('?page=adminvps&action=info&veid='.$vps->veid);
+			} else {
 				$xtpl->perex(_("Error"), '');
-				}
+			}
 			$show_info=true;
 			break;
 		case 'onlinemigrate':
 			if ($_SESSION["is_admin"] && isset($_REQUEST["veid"])) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				$xtpl->perex_cmd_output(_("Online Migration added to transaction log"), $vps->online_migrate($_REQUEST["target_id"]));
-				}
-			else {
+				
+				notify_user(_("Online Migration added to transaction log"), $vps->online_migrate($_REQUEST["target_id"]));
+				redirect('?page=adminvps&action=info&veid='.$vps->veid);
+			} else {
 				$xtpl->perex(_("Error"), '');
-				}
+			}
 			$show_info=true;
 			break;
 		case 'alliplist':
@@ -361,13 +375,16 @@ switch ($_GET["action"]) {
 			break;
 		case 'reinstall2':
 			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-			$xtpl->perex_cmd_output(_("Reinstallation of VPS")." {$_GET["veid"]} ".strtolower(_("planned")).'<br />'._("You will have to reset your <b>root</b> password"), $vps->reinstall());
-			$list_vps=true;
+			
+			notify_user(_("Reinstallation of VPS")." {$_GET["veid"]} ".strtolower(_("planned")).'<br />'._("You will have to reset your <b>root</b> password"), $vps->reinstall());
+			redirect('?page=adminvps&action=info&veid='.$vps->veid);
 			break;
 		case 'enablefeatures':
 			if (isset($_REQUEST["veid"]) && isset($_REQUEST["enable"]) && $_REQUEST["enable"]) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				$xtpl->perex_cmd_output(_("Enable devices"), $vps->enable_features());
+				
+				notify_user(_("Enable devices"), $vps->enable_features());
+				redirect('?page=adminvps&action=info&veid='.$vps->veid);
 			} else {
 				$xtpl->perex(_("Error"), '');
 			}
@@ -433,7 +450,9 @@ switch ($_GET["action"]) {
 					if (!$pg_backup)
 						$cloned->set_backuper($pg_backup, NULL, "", true);
 				}
-				$xtpl->perex(_("Clone in progress"), '');
+				
+				notify_user(_("Clone in progress"), '');
+				redirect('?page=adminvps&action=info&veid='.$cloned->veid);
 			} else
 				 $xtpl->perex(_("Invalid data"), _("Please fill the form correctly."));
 			
@@ -442,7 +461,7 @@ switch ($_GET["action"]) {
 		case 'setbackuper':
 			if (isset($_REQUEST["veid"]) && isset($_POST["backup_exclude"])) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				$xtpl->perex_cmd_output(
+				notify_user(
 					_("Backuper status changed"),
 					$vps->set_backuper(
 						$_SESSION["is_admin"] ? ($_POST["backup_enabled"] ? true : false) : NULL,
@@ -453,6 +472,8 @@ switch ($_GET["action"]) {
 				
 				if ($_SESSION["is_admin"] && $_REQUEST["notify_owner"])
 					$vps->backuper_change_notify();
+				
+				redirect('?page=adminvps&action=info&veid='.$vps->veid);
 			} else {
 				$xtpl->perex(_("Error"), '');
 			}
