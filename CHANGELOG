@@ -1,3 +1,6 @@
+* Mon May 13 2013 - version 1.8.2
+- Mailer: do not alert about expiring VPS that are already deleted
+
 * Mon Apr 15 2013 - version 1.8.1
 - VPS clone & reinstall: fixed mounts regeneration
 - VPS restore & download: fixed trasaction server id
