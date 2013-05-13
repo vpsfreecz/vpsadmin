@@ -60,7 +60,11 @@ while ($m = $db->find("members", $whereCond)) {
 
 $rs = $db->query("SELECT v.vps_id, vps_expiration, m_nick, m_mail FROM vps v
                   INNER JOIN members m ON v.m_id = m.m_id
-                  WHERE m_mailer_enable = 1 AND vps_expiration IS NOT NULL AND DATE_SUB(FROM_UNIXTIME(vps_expiration), INTERVAL 7 DAY) < NOW() AND FROM_UNIXTIME(vps_expiration) > NOW()");
+                  WHERE m_mailer_enable = 1
+                    AND vps_expiration IS NOT NULL
+                    AND vps_deleted IS NULL
+                    AND DATE_SUB(FROM_UNIXTIME(vps_expiration), INTERVAL 7 DAY) < NOW()
+                    AND FROM_UNIXTIME(vps_expiration) > NOW()");
 
 while($row = $db->fetch_array($rs)) {
 	$subject = $cluster_cfg->get("mailer_tpl_vps_expiration_subj");
