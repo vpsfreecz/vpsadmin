@@ -253,8 +253,8 @@ switch ($_GET["action"]) {
 					}
 					$vps->update_configs($_POST["configs"] ? $_POST["configs"] : array(), $cfgs, $_POST['add_config']);
 					
-					if($_REQUEST["notify_owner"])
-						$vps->configs_change_notify();
+					if($_POST["reason"])
+						$vps->configs_change_notify($_POST["reason"]);
 					
 					redirect('?page=adminvps&action=info&veid='.$vps->veid);
 				}
@@ -829,7 +829,9 @@ if (isset($show_info) && $show_info) {
 			$xtpl->table_td('<input type="hidden" name="configs_order" id="configs_order" value="">' .  _('Add').':');
 			$xtpl->form_add_select_pure('add_config[]', $configs_select);
 			$xtpl->table_tr(false, false, false, 'add_config');
-			$xtpl->form_add_checkbox(_("Notify owner").':', 'notify_owner', '1', true);
+// 			$xtpl->form_add_checkbox(_("Notify owner").':', 'notify_owner', '1', true);
+			$xtpl->table_td(_("Reason").':');
+			$xtpl->form_add_input_pure('text', '30', 'reason', '', _("If filled, user will be notified by email"));
 			$xtpl->table_tr(false, "nodrag nodrop", false);
 			$xtpl->form_out(_("Go >>>"), 'configs', '<a href="javascript:" id="add_row">+</a>');
 		} else {

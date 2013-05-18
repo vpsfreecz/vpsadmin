@@ -639,6 +639,7 @@ switch($_REQUEST["action"]) {
 		$xtpl->form_add_textarea(_("Limits changed<br /> template").':', 50, 8, 'tpl_limits_changed', $cluster_cfg->get("mailer_tpl_limits_changed"), '
 								%member% - nick<br />
 								%vpsid% - VPS ID<br />
+								%reason% - reason<br />
 								%configs% - List of configs
 								');
 		

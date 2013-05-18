@@ -512,7 +512,7 @@ function ipadd($ip, $type = 4) {
 	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_APPLYCONFIG, $cmd, NULL, $dep);
   }
   
-  function configs_change_notify() {
+  function configs_change_notify($reason) {
 	global $db, $cluster_cfg;
 
 	$subject = $cluster_cfg->get("mailer_tpl_limits_change_subj");
@@ -522,6 +522,7 @@ function ipadd($ip, $type = 4) {
 	$content = $cluster_cfg->get("mailer_tpl_limits_changed");
 	$content = str_replace("%member%", $this->ve["m_nick"], $content);
 	$content = str_replace("%vpsid%", $this->veid, $content);
+	$content = str_replace("%reason%", $reason, $content);
 	
 	$configs_str = "";
 	$configs = $this->get_configs();
