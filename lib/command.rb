@@ -43,7 +43,17 @@ class Command
 		@m_attr.synchronize { @time_start = Time.new.to_i }
 		
 		begin
-			@status = @executor.method(cmd[:method]).call[:ret]
+			ret = @executor.method(cmd[:method]).call
+			
+			begin
+				@status = ret[:ret]
+				
+				if @status == nil
+					bad_value(cmd)
+				end
+			rescue
+				bad_value(cmd)
+			end
 		rescue CommandFailed => err
 			@status = :failed
 			@output[:cmd] = err.cmd
@@ -55,6 +65,10 @@ class Command
 		end
 		
 		@time_end = Time.new.to_i
+	end
+	
+	def bad_value(cmd)
+		raise CommandFailed.new("process handler return value", 1, "#{cmd[:class]}.#{cmd[:method]} did not return expected value")
 	end
 	
 	def save(db)
