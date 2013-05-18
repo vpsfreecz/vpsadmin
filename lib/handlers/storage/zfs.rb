@@ -45,7 +45,7 @@ module StorageBackend
 		end
 		
 		def post_save(db)
-			if @delete_export > 0
+			if @delete_export
 				db.prepared("DELETE FROM storage_export WHERE id = ?", @delete_export)
 			end
 		end
