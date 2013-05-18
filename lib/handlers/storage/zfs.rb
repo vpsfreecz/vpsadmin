@@ -9,10 +9,17 @@ module StorageBackend
 		# Create export
 		# 
 		# Params:
-		# [path]          string; name of dataset
+		# [dataset]       string; name of dataset
+		# [path]          string; mountpoint path
+		# [export_id]     number; id of export
 		# [share_options] string, optional; passed directly to zfs sharenfs
 		# [quota]         number; quota for this export, in bytes
 		def create_export
+			if File.directory?(@params["path"])
+				@delete_export = @params["export_id"]
+				raise CommandFailed.new("create_export", 1, "Mountpoint already exists, cannot continue")
+			end
+			
 			zfs(:create, "-p", @params["dataset"])
 			update_export
 		end
@@ -20,7 +27,7 @@ module StorageBackend
 		# Update export
 		# 
 		# Params:
-		# [path]          string; name of dataset
+		# [dataset]       string; name of dataset
 		# [share_options] string, optional; passed directly to zfs sharenfs
 		# [quota]         number; quota for this export, in bytes
 		def update_export
@@ -35,6 +42,12 @@ module StorageBackend
 		# [recursive] bool; if true then delete all descendants
 		def delete_export
 			zfs(:destroy, @params["recursive"] ? "-r" : nil, @params["path"])
+		end
+		
+		def post_save(db)
+			if @delete_export > 0
+				db.prepared("DELETE FROM storage_export WHERE id = ?", @delete_export)
+			end
 		end
 		
 		def update_status
