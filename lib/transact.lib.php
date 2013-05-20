@@ -71,7 +71,7 @@ function add_transaction_clusterwide($m_id, $vps_id, $t_type, $t_param = array()
 	
     $sql = "INSERT INTO transaction_groups
 		    SET is_clusterwide=1";
-    $db->query_trans($sql);
+    $db->query_trans($sql, $err);
     $group_id = $db->insert_id();
     $servers = list_servers(false, $server_types);
     foreach ($servers as $id=>$name)

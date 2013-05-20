@@ -465,6 +465,24 @@ switch ($_GET["action"]) {
 			
 			$show_info=true;
 			break;
+		case 'swap':
+			if(isset($_GET["veid"]) && isset($_POST["swap_vps"]) && ($vps = vps_load($_GET["veid"])) && ($with = vps_load($_POST["swap_vps"]))) {
+				if(!$vps->exists || !$with->exists || $vps->veid == $with->veid)
+					break;
+				
+				$vps->swap(
+					$with,
+					$_SESSION["is_admin"] ? $_POST["owner"] : 0,
+					$_POST["hostname"],
+					$_SESSION["is_admin"] ? $_POST["ips"] : 1,
+					$_SESSION["is_admin"] ? $_POST["configs"] : 1,
+					$_SESSION["is_admin"] ? $_POST["expiration"] : 1,
+					$_SESSION["is_admin"] ? $_POST["backups"] : 1,
+					$_POST["dns"]
+				);
+			}
+			
+			break;
 		case 'setbackuper':
 			if (isset($_REQUEST["veid"]) && isset($_POST["backup_exclude"])) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
@@ -918,7 +936,7 @@ if (isset($show_info) && $show_info) {
 	// Online migration
 		if ($_SESSION["is_admin"]) {
 			$xtpl->form_create('?page=adminvps&action=onlinemigrate&veid='.$vps->veid, 'post');
-			$xtpl->form_add_select(_("Target server:").':', 'target_id', $cluster->list_servers($vps->ve["vps_server"], $vps->get_location()), '');
+			$xtpl->form_add_select(_("Target server").':', 'target_id', $cluster->list_servers($vps->ve["vps_server"], $vps->get_location()), '');
 			$xtpl->table_add_category(_("Online VPS Migration"));
 			$xtpl->table_add_category('&nbsp;');
 			$xtpl->form_out(_("Go >>"));
@@ -942,6 +960,30 @@ if (isset($show_info) && $show_info) {
 			$xtpl->table_add_category('&nbsp;');
 			$xtpl->form_out(_("Go >>"));
 		}
+		
+	// Swap
+		$xtpl->form_create('?page=adminvps&action=swap&veid='.$vps->veid, 'post');
+		
+		$xtpl->table_add_category(_("Swap VPS"));
+		$xtpl->table_add_category('&nbsp;');
+		
+		$xtpl->form_add_select(_("Swap with").':', 'swap_vps', get_user_vps_list(array($vps->veid)));
+		
+		if($_SESSION["is_admin"])
+			$xtpl->form_add_checkbox(_("Swap owner").':', 'owner', '1', true);
+			
+		$xtpl->form_add_checkbox(_("Swap hostname").':', 'hostname', '1', true);
+		
+		if($_SESSION["is_admin"]) {
+			$xtpl->form_add_checkbox(_("Swap IP addresses").':', 'ips', '1', true);
+			$xtpl->form_add_checkbox(_("Swap configs").':', 'configs', '1', true);
+			$xtpl->form_add_checkbox(_("Swap expirations").':', 'expiration', '1', true);
+			$xtpl->form_add_checkbox(_("Swap backup settings").':', 'backups', '1', true);
+		}
+		
+		$xtpl->form_add_checkbox(_("Swap DNS servers").':', 'dns', '1', true);
+		
+		$xtpl->form_out(_("Go >>"));
 		
 	// Backuper
 		$xtpl->form_create('?page=adminvps&action=setbackuper&veid='.$vps->veid, 'post');

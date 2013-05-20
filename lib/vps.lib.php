@@ -43,15 +43,21 @@ function get_vps_array($by_m_id = false, $by_server = false){
 	return $ret;
 }
 
-function get_user_vps_list() {
+function get_user_vps_list($exclude = array()) {
 	global $db;
 	
 	$ret = array();
+	$sql = "";
+	
+	if($exclude)
+		$cond = "vps_id NOT IN (".implode(",", $exclude).")";
 	
 	if ($_SESSION["is_admin"])
-		$rs = $db->query("SELECT * FROM vps INNER JOIN members m ON vps.m_id = m.m_id ORDER BY vps_id ASC");
+		$sql = "SELECT * FROM vps INNER JOIN members m ON vps.m_id = m.m_id ".($cond ? "WHERE $cond" : "")." ORDER BY vps_id ASC";
 	else
-		$rs = $db->query("SELECT * FROM vps INNER JOIN members m ON vps.m_id = m.m_id WHERE vps.m_id = '".$db->check($_SESSION["member"]["m_id"])."' ORDER BY vps_id ASC");
+		$sql = "SELECT * FROM vps INNER JOIN members m ON vps.m_id = m.m_id WHERE vps.m_id = '".$db->check($_SESSION["member"]["m_id"])."' ".($cond ? "AND $cond" : "")." ORDER BY vps_id ASC";
+	
+	$rs = $db->query($sql);
 	
 	while ($row = $db->fetch_array($rs))
 		$ret[$row["vps_id"]] = $row["m_nick"].": #".$row["vps_id"]." ".$row["vps_hostname"];
@@ -209,13 +215,13 @@ class vps_load {
 	}
   }
 
-  function set_hostname($new_hostname) {
+  function set_hostname($new_hostname, $dep = NULL) {
     global $db;
     if ($this->exists) {
 	$sql = 'UPDATE vps SET vps_hostname = "'.$db->check($new_hostname).'" WHERE vps_id='.$db->check($this->veid);
 	if ($result = $db->query($sql)) {
 	    $command = array('hostname' => $new_hostname);
-	    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_HOSTNAME, $command);
+	    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_HOSTNAME, $command, NULL, $dep);
 	}
     }
   }
@@ -283,7 +289,7 @@ class vps_load {
 	}
   }
 
-function ipadd($ip, $type = 4) {
+function ipadd($ip, $type = 4, $dep = NULL) {
 	global $db;
 	if ($this->exists) {
 	    if ($ipadr = ip_exists_in_table($ip)) {
@@ -293,7 +299,8 @@ function ipadd($ip, $type = 4) {
 		$db->query($sql);
 		if ($db->affected_rows() > 0) {
 		    $command = array('ipadd' => $ip);
-		    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_IPADD, $command);
+		    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_IPADD, $command, NULL, $dep);
+		    return $db->insertId();
 		} else
 		    return NULL;
 	    }
@@ -317,13 +324,14 @@ function ipadd($ip, $type = 4) {
 	  if ($result = $db->query($sql)) {
 	  	$command = array('ipdel' => $ip);
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_IPDEL, $command, NULL, $dep);
+		return $db->insertId();
 	  	}
 	  else
 	  	return NULL;
 	}
   }
 
-  function nameserver($nameserver) {
+  function nameserver($nameserver, $dep = NULL) {
 	global $db;
 	if ($this->exists) {
 	  $sql = 'UPDATE vps SET vps_nameserver = "'.$db->check($nameserver).'" WHERE vps_id = '.$db->check($this->veid);
@@ -334,11 +342,11 @@ function ipadd($ip, $type = 4) {
       $command["nameserver"][] = $ns;
 	  }
 	  $this->ve["vps_nameserver"] = $nameserver;
-	  add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_DNS, $command);
+	  add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_DNS, $command, NULL, $dep);
 	}
   }
 
-  function offline_migrate($target_id, $stop = false) {
+  function offline_migrate($target_id, $stop = false, $dep = NULL) {
 	global $db, $cluster;
 	if ($this->exists) {
 		$servers = list_servers();
@@ -358,7 +366,7 @@ function ipadd($ip, $type = 4) {
 		
 		$params["target"] = $target_server["server_ip4"];
 		$params["stop"] = (bool)$stop;
-		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_MIGRATE_OFFLINE, $params);
+		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_MIGRATE_OFFLINE, $params, NULL, $dep);
 		$migration_id = $db->insertId();
 		
 		$this->ve["vps_server"] = $target_id;
@@ -366,9 +374,13 @@ function ipadd($ip, $type = 4) {
 		if ($this_loc != $cluster->get_location_of_server($target_id)) {
 			$ips = $this->iplist();
 			
-			foreach($ips as $ip)
-				$this->ipdel($ip["ip_addr"], $migration_id);
+			if($ips) {
+				foreach($ips as $ip)
+					$this->ipdel($ip["ip_addr"], $migration_id);
+			}
 		}
+		
+		return $migration_id;
 	  }
 	}
   }
@@ -472,13 +484,13 @@ function ipadd($ip, $type = 4) {
 	return false;
   }
   
-  function update_custom_config($cfg) {
+  function update_custom_config($cfg, $dep = NULL) {
 	global $db;
 	
 	$db->query("UPDATE vps SET vps_config = '".$db->check($cfg)."' WHERE vps_id = '".$db->check($this->veid)."'");
 	
 	add_transaction_clusterwide($_SESSION["member"]["m_id"], $this->veid, T_CLUSTER_CONFIG_CREATE, array("name" => "vps-".$this->veid, "config" => $cfg), array('node'));
-	$this->applyconfigs();
+	$this->applyconfigs($dep);
   }
   
   function add_default_configs($cfg_name) {
@@ -781,6 +793,117 @@ function ipadd($ip, $type = 4) {
 		$clone->start();
 	
 	return $clone;
+  }
+  
+  function swap($with, $owner, $hostname, $ips, $configs, $expiration, $backups, $dns) {
+	global $db;
+	
+	$with_server = $with->ve["vps_server"];
+	
+	if($ips) {
+		$with_ips = $with->iplist();
+		$my_ips = $this->iplist();
+	}
+	
+	if($with_server != $this->ve["vps_server"]) {
+		$t_with_id = $with->offline_migrate($this->ve["vps_server"]);
+		
+		if($ips) {
+			if($this->ve["server_location"] == $with->ve["server_location"]) {
+				foreach($with_ips as $ip)
+					$with->ipdel($ip["ip_addr"], $t_with_id);
+			}
+			
+			foreach($my_ips as $ip) {
+				$t = $this->ipdel($ip["ip_addr"], $t_with_id);
+				$with->ipadd($ip["ip_addr"], $ip["ip_v"], $t);
+			}
+			
+		}
+		
+		$t_my_id = $this->offline_migrate($with_server, false, $t_with_id);
+		
+		if($ips) {
+			foreach($with_ips as $ip)
+				$this->ipadd($ip["ip_addr"], $ip["ip_v"], $t_my_id);
+		}
+		
+	} else if($ips) {
+		foreach($my_ips as $ip) {
+			$t = $this->ipdel($ip["ip_addr"]);
+			$with->ipadd($ip["ip_addr"], $ip["ip_v"], $t);
+		}
+		
+		foreach($with_ips as $ip) {
+			$t = $with->ipdel($ip["ip_addr"]);
+			$this->ipadd($ip["ip_addr"], $ip["ip_v"], $t);
+		}
+	}
+	
+	if($owner) {
+		$my_owner = $this->ve["m_id"];
+		$with_owner = $with->ve["m_id"];
+		
+		$this->vchown($with_owner);
+		$with->vchown($my_owner);
+	}
+	
+	if($hostname) {
+		$my_h = $this->ve["vps_hostname"];
+		$with_h = $with->ve["vps_hostname"];
+		
+		$this->set_hostname($with_h, $t_my_id);
+		$with->set_hostname($my_h, $t_with_id);
+	}
+	
+	if($configs) {
+		$my_configs = $this->get_configs();
+		$with_configs = $with->get_configs();
+		$my_custom = $this->ve["vps_config"];
+		$with_custom = $with->ve["vps_config"];
+		
+		$db->query("DELETE FROM vps_has_config WHERE vps_id = ".$db->check($this->veid)." OR vps_id = ".$db->check($with->veid));
+		
+		$i = 1;
+		
+		foreach($my_configs as $id => $label)
+			$db->query("INSERT INTO vps_has_config SET vps_id = ".$db->check($with->veid).", config_id = ".$db->check($id).", `order` = ".$i++);
+		
+		$i = 1;
+		
+		foreach($with_configs as $id => $label)
+			$db->query("INSERT INTO vps_has_config SET vps_id = ".$db->check($this->veid).", config_id = ".$db->check($id).", `order` = ".$i++);
+		
+		$this->update_custom_config($with_custom, $t_my_id);
+		$with->update_custom_config($my_custom, $t_with_id);
+	}
+	
+	if($expiration) {
+		$my_e = $this->ve["vps_expiration"];
+		$with_e = $with->ve["vps_expiration"];
+		
+		$this->set_expiration($with_e);
+		$with->set_expiration($my_e);
+	}
+	
+	if($backups) {
+		$my_enabled = $this->ve["vps_backup_enabled"];
+		$my_exclude = $this->ve["vps_backup_exclude"];
+		
+		$with_enabled = $with->ve["vps_backup_enabled"];
+		$with_exclude = $with->ve["vps_backup_exclude"];
+		
+		$this->set_backuper($with_enabled, NULL, $with_exclude);
+		$with->set_backuper($my_enabled, NULL, $my_exclude);
+	}
+	
+	if($dns) {
+		$my_d = $this->ve["vps_nameserver"];
+		$with_d = $with->ve["vps_nameserver"];
+		
+		$this->nameserver($with_d, $t_my_id);
+		$with->nameserver($my_d, $t_with_id);
+	}
   }
   
   function mount_regen() {
