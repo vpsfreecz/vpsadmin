@@ -467,7 +467,20 @@ switch ($_GET["action"]) {
 			break;
 		case 'swap':
 			if(isset($_GET["veid"]) && isset($_POST["swap_vps"]) && ($vps = vps_load($_GET["veid"])) && ($with = vps_load($_POST["swap_vps"]))) {
-				if(!$vps->exists || !$with->exists || $vps->veid == $with->veid)
+				if(!$vps->exists || !$with->exists || $vps->veid == $with->veid || (!$_SESSION["is_admin"] && $vps->is_playground()))
+					break;
+				
+				$allowed = get_vps_swap_list($vps);
+				$ok = false;
+				
+				foreach($allowed as $id => $v) {
+					if($id == $with->veid) {
+						$ok = true;
+						break;
+					}
+				}
+				
+				if(!$ok)
 					break;
 				
 				$vps->swap(
@@ -480,6 +493,9 @@ switch ($_GET["action"]) {
 					$_SESSION["is_admin"] ? $_POST["backups"] : 1,
 					$_POST["dns"]
 				);
+				
+				notify_user(_("Swap in progress"), '');
+				redirect('?page=adminvps&action=info&veid='.$vps->veid);
 			}
 			
 			break;
@@ -962,12 +978,13 @@ if (isset($show_info) && $show_info) {
 		}
 		
 	// Swap
+	if ($_SESSION["is_admin"] || !$vps->is_playground()) {
 		$xtpl->form_create('?page=adminvps&action=swap&veid='.$vps->veid, 'post');
 		
 		$xtpl->table_add_category(_("Swap VPS"));
 		$xtpl->table_add_category('&nbsp;');
 		
-		$xtpl->form_add_select(_("Swap with").':', 'swap_vps', get_user_vps_list(array($vps->veid)));
+		$xtpl->form_add_select(_("Swap with").':', 'swap_vps', get_vps_swap_list($vps));
 		
 		if($_SESSION["is_admin"])
 			$xtpl->form_add_checkbox(_("Swap owner").':', 'owner', '1', true);
@@ -984,6 +1001,7 @@ if (isset($show_info) && $show_info) {
 		$xtpl->form_add_checkbox(_("Swap DNS servers").':', 'dns', '1', true);
 		
 		$xtpl->form_out(_("Go >>"));
+	}
 		
 	// Backuper
 		$xtpl->form_create('?page=adminvps&action=setbackuper&veid='.$vps->veid, 'post');

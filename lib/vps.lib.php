@@ -65,6 +65,30 @@ function get_user_vps_list($exclude = array()) {
 	return $ret;
 }
 
+function get_vps_swap_list($vps) {
+	global $db;
+	
+	if($_SESSION["is_admin"])
+		return get_user_vps_list(array($vps->veid));
+	
+	$sql = "SELECT vps_id, vps_hostname FROM vps v
+	        INNER JOIN servers s ON v.vps_server = s.server_id
+		    INNER JOIN locations l ON s.server_location = l.location_id
+		    WHERE
+		      m_id = ".$db->check($_SESSION["member"]["m_id"])."
+		      AND
+		      l.location_type = '".( $vps->is_playground() ? 'production' : 'playground' )."'";
+	
+	$rs = $db->query($sql);
+	$ret = array();
+	
+	while( $row = $db->fetch_array($rs) ) {
+		$ret[$row["vps_id"]] ="#".$row["vps_id"]." ".$row["vps_hostname"];
+	}
+	
+	return $ret;
+}
+
 function vps_load ($veid = false) {
 	$vps = new vps_load($veid);
 	return $vps;
@@ -1002,6 +1026,14 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 	global $db;
 	
 	$db->query("UPDATE vps SET vps_expiration = ".$db->check($timestamp ? (int)$timestamp : "NULL")." WHERE vps_id = ".$db->check($this->veid));
+  }
+  
+  function is_playground() {
+	global $db;
+	
+	$l = $db->findByColumnOnce("locations", "location_id", $this->ve["server_location"]);
+	
+	return $l["location_type"] == "playground";
   }
 }
 ?>
