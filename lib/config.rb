@@ -164,7 +164,8 @@ IMPLICIT_CONFIG = {
 				"stop",
 				"update",
 				"kill",
-				"reinit"
+				"reinit",
+				"refresh"
 			]
 		}
 	}

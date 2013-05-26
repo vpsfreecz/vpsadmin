@@ -134,37 +134,43 @@ module VpsAdmind
 			if !@threads[:status] || !@threads[:status].alive?
 				@threads[:status] = Thread.new do
 					loop do
-						my = Db.new
+						log "Regular update"
 						
-						if $CFG.get(:vpsadmin, :update_vps_status)
-							rs = my.query("SELECT vps_id FROM vps WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}")
-							
-							rs.each_hash do |vps|
-								ct = VPS.new(vps["vps_id"])
-								ct.update_status(my)
-							end
-							
-							Firewall.mutex.synchronize do
-								fw = Firewall.new
-								fw.update_traffic(my)
-								fw.reset_traffic_counter
-							end
-						end
-						
-						if $CFG.get(:storage, :update_status)
-							Storage.new(0).update_status
-						end
-						
-						my.prepared("INSERT INTO servers_status
-									SET server_id = ?, timestamp = UNIX_TIMESTAMP(NOW()), cpu_load = ?, daemon = ?, vpsadmin_version = ?",
-									$CFG.get(:vpsadmin, :server_id), Node.new(0).load[5], 0, VpsAdmind::VERSION)
-						
-						my.close
+						update_status
 						
 						sleep($CFG.get(:vpsadmin, :status_interval))
 					end
 				end
 			end
+		end
+		
+		def update_status
+			my = Db.new
+			
+			if $CFG.get(:vpsadmin, :update_vps_status)
+				rs = my.query("SELECT vps_id FROM vps WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}")
+				
+				rs.each_hash do |vps|
+					ct = VPS.new(vps["vps_id"])
+					ct.update_status(my)
+				end
+				
+				Firewall.mutex.synchronize do
+					fw = Firewall.new
+					fw.update_traffic(my)
+					fw.reset_traffic_counter
+				end
+			end
+			
+			if $CFG.get(:storage, :update_status)
+				Storage.new(0).update_status
+			end
+			
+			my.prepared("INSERT INTO servers_status
+						SET server_id = ?, timestamp = UNIX_TIMESTAMP(NOW()), cpu_load = ?, daemon = ?, vpsadmin_version = ?",
+						$CFG.get(:vpsadmin, :server_id), Node.new(0).load[5], 0, VpsAdmind::VERSION)
+			
+			my.close
 		end
 		
 		def start_em(console, remote)

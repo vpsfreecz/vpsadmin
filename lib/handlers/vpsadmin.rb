@@ -103,11 +103,20 @@ class VpsAdmin < Executor
 	end
 	
 	def reinit
+		log "Reinitialization requested"
+		
 		Firewall.mutex.synchronize do
 			fw = Firewall.new
 			fw.reinit
 		end
 		
+		ok
+	end
+	
+	def refresh
+		log "Update requested"
+		
+		@daemon.update_status
 		ok
 	end
 	

@@ -39,6 +39,8 @@ class Firewall < Executor
 		update_traffic(db)
 		cleanup
 		init(db)
+		
+		db.close
 	end
 	
 	def reg_ip(addr, v)
