@@ -35,6 +35,12 @@ class Executor
 		end
 	end
 	
+	def subtask
+		attrs do
+			@subtask
+		end
+	end
+	
 	def vzctl(cmd, veid, opts = {}, save = false, valid_rcs = [])
 		options = []
 		
@@ -57,8 +63,17 @@ class Executor
 		
 		out = ""
 		log "Exec #{cmd}"
-		IO.popen("#{cmd} 2>&1") do |io|
+		
+		IO.popen("exec #{cmd} 2>&1") do |io|
+			attrs do
+				@subtask = io.pid
+			end
+			
 			out = io.read
+		end
+		
+		attrs do
+			@subtask = nil
 		end
 		
 		if $?.exitstatus != 0 and not valid_rcs.include?($?.exitstatus)
