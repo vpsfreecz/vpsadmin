@@ -15,20 +15,20 @@ class Firewall < Executor
 			
 			# Chain already exists, we don't have to continue
 			if ret[:exitstatus] == 1
-				log "Skipping init"
-				return
+				log "Skipping init for IPv#{v}, chain aztotal already exists"
+				next
 			end
 			
 			iptables(v, {:Z => "aztotal"})
 			iptables(v, {:A => "FORWARD", :j => "aztotal"})
+			
+			rs = db.query("SELECT ip_addr, ip_v FROM vps_ip, servers WHERE server_id = #{$CFG.get(:vpsadmin, :server_id)} AND ip_v = #{v} AND ip_location = server_location")
+			rs.each_hash do |ip|
+				reg_ip(ip["ip_addr"], v)
+			end
 		end
 		
 		# FIXME: OSPF
-		
-		rs = db.query("SELECT ip_addr, ip_v FROM vps_ip")
-		rs.each_hash do |ip|
-			reg_ip(ip["ip_addr"], ip["ip_v"].to_i)
-		end
 	end
 	
 	def reg_ip(addr, v)
