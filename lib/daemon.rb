@@ -8,7 +8,7 @@ require 'rubygems'
 require 'eventmachine'
 
 module VpsAdmind
-	VERSION = "1.8.3-dev"
+	VERSION = "1.9.0-dev"
 	DB_VERSION = 3
 	
 	EXIT_OK = 0
@@ -114,7 +114,7 @@ module VpsAdmind
 				
 				unless row["depencency_success"].to_i > 0
 					c.dependency_failed(@db)
-					return
+					next
 				end
 				
 				do_command(c)
@@ -197,13 +197,25 @@ module VpsAdmind
 		end
 		
 		def check_db_version
+			informed = false
+			
 			loop do
+				@@mutex.synchronize do
+					exit(@@exitstatus) unless @@run
+				end
+				
 				rs = @db.query("SELECT cfg_value FROM sysconfig WHERE cfg_name = 'db_version'")
 				ver = rs.fetch_row.first.to_i
 				
 				if VpsAdmind::DB_VERSION != ver
-					log "Database version does not match: required #{VpsAdmind::DB_VERSION}, current #{ver}"
-					sleep(30)
+					unless informed
+						log "Database version does not match: required #{VpsAdmind::DB_VERSION}, current #{ver}"
+						$stdout.flush
+						
+						informed = true
+					end
+					
+					sleep(10)
 				else
 					return
 				end
