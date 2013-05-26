@@ -1251,6 +1251,9 @@ switch($_REQUEST["action"]) {
 			case "restart":
 				$t = _("Mass restart");
 				break;
+			case "restore_state":
+				$t = _("Restore VPS run state");
+				break;
 			case "reinstall":
 				$t = _("Mass reinstall");
 				
@@ -1388,6 +1391,13 @@ switch($_REQUEST["action"]) {
 					$vps = vps_load($veid);
 					if ($vps->exists)
 						$vps->restart();
+				}
+				break;
+			case "restore_state":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->restore_run_state();
 				}
 				break;
 			case "reinstall":
@@ -2217,6 +2227,7 @@ if ($mass_management) {
 			"start" => _("Start"),
 			"stop" => _("Stop"),
 			"restart" => _("Restart"),
+			"restore_state" => _("Restore VPS run state (start or stop)"),
 			"reinstall" => _("Reinstall"),
 			"configs" => _("Manage configs"),
 			"owner" => _("Change owner"),

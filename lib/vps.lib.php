@@ -232,6 +232,15 @@ class vps_load {
 	}
   }
 
+  function restore_run_state() {
+	$this->info();
+	
+	if($this->ve["vps_onstartall"] && !$this->ve["vps_up"])
+		$this->start();
+	else if(!$this->ve["vps_onstartall"] && $this->ve["vps_up"])
+		$this->stop();
+  }
+  
   function is_owner ($m_id) {
 	global $db;
 	if ($this->exists) {
