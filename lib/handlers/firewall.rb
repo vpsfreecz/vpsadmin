@@ -12,6 +12,8 @@ class Firewall < Executor
 	end
 	
 	def init(db)
+		res = {}
+		
 		[4, 6].each do |v|
 			ret = iptables(v, {:N => "aztotal"}, [1,])
 			
@@ -28,9 +30,14 @@ class Firewall < Executor
 			rs.each_hash do |ip|
 				reg_ip(ip["ip_addr"], v)
 			end
+			
+			res[v] = rs.num_rows
+			log "Added #{res[v]} rules for IPv#{v}"
 		end
 		
 		# FIXME: OSPF
+		
+		res
 	end
 	
 	def reinit
@@ -38,9 +45,10 @@ class Firewall < Executor
 		
 		update_traffic(db)
 		cleanup
-		init(db)
+		r = init(db)
 		
 		db.close
+		r
 	end
 	
 	def reg_ip(addr, v)
