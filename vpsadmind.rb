@@ -18,7 +18,7 @@ options = {
 	:export_console => false,
 	:logdir => "/var/log",
 	:piddir => "/var/run",
-	:remote => false,
+	:remote => true,
 	:wrapper => true,
 }
 
@@ -49,12 +49,12 @@ OptionParser.new do |opts|
 		options[:piddir] = parts.slice(0, parts.count-1).join(File::SEPARATOR)
 	end
 	
-	opts.on("-r", "--remote-control", "Enable remote control") do
-		options[:remote] = true
+	opts.on("-r", "--[no-]remote-control", "Enable remote control") do |r|
+		options[:remote] = r
 	end
 	
-	opts.on("-w", "--no-wrapper", "Do not run script in wrapper - auto restart won't work") do
-		options[:wrapper] = false
+	opts.on("-w", "--[no-]wrapper", "Run script in wrapper or not - auto restart won't work") do |w|
+		options[:wrapper] = w
 	end
 	
 	opts.on_tail("-h", "--help", "Show this message") do

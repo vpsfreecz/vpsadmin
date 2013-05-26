@@ -24,6 +24,19 @@ class Node < Executor
 		ok
 	end
 	
+	def gen_known_hosts
+		db = Db.new
+		f = File.open($CFG.get(:node, :known_hosts), "w")
+		
+		rs = db.query("SELECT node_id, `key`, server_ip4 FROM servers s INNER JOIN node_pubkey p ON s.server_id = p.node_id ORDER BY node_id, `type`")
+		rs.each_hash do |r|
+			f.write("#{r["server_ip4"]} #{r["key"]}\n")
+		end
+		
+		f.close
+		ok
+	end
+	
 	def load
 		m = /load average\: (\d+\.\d+), (\d+\.\d+), (\d+\.\d+)/.match(syscmd($CFG.get(:bin, :uptime))[:output])
 		

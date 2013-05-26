@@ -3,6 +3,7 @@ require 'lib/worker'
 require 'lib/command'
 require 'lib/console'
 require 'lib/remote'
+require 'lib/transaction'
 
 require 'rubygems'
 require 'eventmachine'
