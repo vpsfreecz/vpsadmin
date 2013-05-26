@@ -40,6 +40,7 @@ Commands:
     update             Safely stop vpsAdmind, then update by git pull and start again
     kill [ID|TYPE]...  Kill transaction(s) that are being processed
     reinit             Reinitialize firewall chains and rules
+    refresh            Update VPS status, traffic counters, storage usage and server status
 
 For specific options type: vpsadminctl <command> --help
 

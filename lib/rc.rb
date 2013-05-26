@@ -3,7 +3,7 @@ require 'lib/utils'
 
 module VpsAdminCtl
 	VERSION = "1.9.0-dev"
-	ACTIONS = [:status, :reload, :stop, :restart, :update, :kill, :reinit]
+	ACTIONS = [:status, :reload, :stop, :restart, :update, :kill, :reinit, :refresh]
 	
 	class RemoteControl
 		def initialize(sock)
@@ -90,6 +90,10 @@ module VpsAdminCtl
 		
 		def reinit
 			puts "Reinitialized"
+		end
+		
+		def refresh
+			puts "Refreshed"
 		end
 		
 		def is_valid?(cmd)
