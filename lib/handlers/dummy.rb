@@ -5,6 +5,10 @@ class Dummy < Executor
 		sleep(60)
 	end
 	
+	def dummy2
+		nil
+	end
+	
 	def dummydummydummy
 		dummy
 	end

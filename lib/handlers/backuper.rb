@@ -74,6 +74,8 @@ class Backuper < Executor
 		
 		syscmd("#{$CFG.get(:vz, :vzquota)} drop #{@veid}")
 		vps.start if stat[:running]
+		
+		ok
 	end
 	
 	# Deprecated, not working

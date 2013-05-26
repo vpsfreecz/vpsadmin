@@ -1,3 +1,6 @@
+* Tue May 07 2013 - version 1.8.3
+- Backup restore: fix crash
+
 * Wed Apr 17 2013 - version 1.8.2
 - VPS enable features: fixed crash caused by wrong return value
 

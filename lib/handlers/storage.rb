@@ -19,7 +19,9 @@ class Storage < Executor
 	# Create export
 	# 
 	# Params:
+	# [dataset]       string; name of dataset
 	# [path]          string; path of export
+	# [export_id]     number; id of export
 	# [share_options] string, optional
 	# [quota]         number; quota for this export, in bytes
 	def create_export
