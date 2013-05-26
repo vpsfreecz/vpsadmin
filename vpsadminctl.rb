@@ -39,6 +39,7 @@ Commands:
     restart            Safely restart vpsAdmind
     update             Safely stop vpsAdmind, then update by git pull and start again
     kill [ID|TYPE]...  Kill transaction(s) that are being processed
+    reinit             Reinitialize firewall chains and rules
 
 For specific options type: vpsadminctl <command> --help
 

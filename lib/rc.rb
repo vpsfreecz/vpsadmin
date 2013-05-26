@@ -2,8 +2,8 @@ require 'lib/vpsadmind'
 require 'lib/utils'
 
 module VpsAdminCtl
-	VERSION = "1.8.0-dev"
-	ACTIONS = [:status, :reload, :stop, :restart, :update, :kill]
+	VERSION = "1.9.0-dev"
+	ACTIONS = [:status, :reload, :stop, :restart, :update, :kill, :reinit]
 	
 	class RemoteControl
 		def initialize(sock)
@@ -86,6 +86,10 @@ module VpsAdminCtl
 			puts "" if @res["msgs"].size > 0
 			
 			puts "Killed #{@res["killed"]} transactions"
+		end
+		
+		def reinit
+			puts "Reinitialized"
 		end
 		
 		def is_valid?(cmd)
