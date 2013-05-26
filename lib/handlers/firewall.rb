@@ -1,6 +1,8 @@
 require 'lib/executor'
 
 class Firewall < Executor
+	@@mutex = Mutex.new
+	
 	def initialize(veid = -1, params = {})
 		if veid.to_i > -1
 			super(veid, params)
@@ -29,6 +31,14 @@ class Firewall < Executor
 		end
 		
 		# FIXME: OSPF
+	end
+	
+	def reinit
+		db = Db.new
+		
+		update_traffic(db)
+		cleanup
+		init(db)
 	end
 	
 	def reg_ip(addr, v)
@@ -70,9 +80,32 @@ class Firewall < Executor
 		ret
 	end
 	
+	def update_traffic(db)
+		read_traffic.each do |ip, traffic|
+			next if traffic[:in] == 0 && traffic[:out] == 0
+			
+			st = db.prepared_st("UPDATE transfered SET tr_in = tr_in + ?, tr_out = tr_out + ?, tr_time = UNIX_TIMESTAMP(NOW())
+								WHERE tr_ip = ? AND tr_time >= UNIX_TIMESTAMP(CURDATE())",
+								traffic[:in].to_i, traffic[:out].to_i, ip)
+			
+			unless st.affected_rows == 1
+				st.close
+				db.prepared("INSERT INTO transfered SET tr_in = ?, tr_out = ?, tr_ip = ?, tr_time = UNIX_TIMESTAMP(NOW())",  traffic[:in].to_i, traffic[:out].to_i, ip)
+			end
+		end
+	end
+	
 	def reset_traffic_counter
 		[4, 6].each do |v|
 			iptables(v, {:Z => "aztotal"})
+		end
+	end
+	
+	def cleanup
+		[4, 6].each do |v|
+			iptables(v, {:F => "aztotal"})
+			iptables(v, {:D => "FORWARD", :j => "aztotal"})
+			iptables(v, {:X => "aztotal"})
 		end
 	end
 	
@@ -89,5 +122,9 @@ class Firewall < Executor
 		end
 		
 		syscmd("#{$CFG.get(:bin, ver == 4 ? :iptables : :ip6tables)} #{options.join(" ")}", valid_rcs)
+	end
+	
+	def Firewall.mutex
+		@@mutex
 	end
 end

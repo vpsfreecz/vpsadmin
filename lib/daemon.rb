@@ -144,21 +144,11 @@ module VpsAdmind
 								ct.update_status(my)
 							end
 							
-							fw = Firewall.new
-							fw.read_traffic.each do |ip, traffic|
-								next if traffic[:in] == 0 and traffic[:out] == 0
-								
-								st = my.prepared_st("UPDATE transfered SET tr_in = tr_in + ?, tr_out = tr_out + ?, tr_time = UNIX_TIMESTAMP(NOW())
-													WHERE tr_ip = ? AND tr_time >= UNIX_TIMESTAMP(CURDATE())",
-													traffic[:in].to_i, traffic[:out].to_i, ip)
-								
-								unless st.affected_rows == 1
-									st.close
-									my.prepared("INSERT INTO transfered SET tr_in = ?, tr_out = ?, tr_ip = ?, tr_time = UNIX_TIMESTAMP(NOW())",  traffic[:in].to_i, traffic[:out].to_i, ip)
-								end
+							Firewall.mutex.synchronize do
+								fw = Firewall.new
+								fw.update_traffic(my)
+								fw.reset_traffic_counter
 							end
-							
-							fw.reset_traffic_counter
 						end
 						
 						if $CFG.get(:storage, :update_status)

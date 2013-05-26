@@ -149,3 +149,5 @@
 #             - :status
 #             - :stop
 #             - :update
+#             - :kill
+#             - :reinit

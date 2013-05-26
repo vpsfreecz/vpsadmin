@@ -102,6 +102,15 @@ class VpsAdmin < Executor
 		{:ret => :ok, :output => {:killed => cnt, :msgs => msgs}}
 	end
 	
+	def reinit
+		Firewall.mutex.synchronize do
+			fw = Firewall.new
+			fw.reinit
+		end
+		
+		ok
+	end
+	
 	def walk_workers
 		killed = 0
 		

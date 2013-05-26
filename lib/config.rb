@@ -163,7 +163,8 @@ IMPLICIT_CONFIG = {
 				"status",
 				"stop",
 				"update",
-				"kill"
+				"kill",
+				"reinit"
 			]
 		}
 	}
