@@ -1,7 +1,8 @@
 require 'lib/executor'
+require 'thread'
 
 class Firewall < Executor
-	@@mutex = Mutex.new
+	@@mutex = ::Mutex.new
 	
 	def initialize(veid = -1, params = {})
 		if veid.to_i > -1
