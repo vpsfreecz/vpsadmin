@@ -90,6 +90,9 @@ module VpsAdminCtl
 		
 		def reinit
 			puts "Reinitialized"
+			@res.each do |k, v|
+				puts "#{v} rules for IPv#{k}"
+			end
 		end
 		
 		def refresh
