@@ -24,6 +24,10 @@ class Db
 		end
 	end
 	
+	def insert_id
+		@my.insert_id
+	end
+	
 	def close
 		@my.close
 	end

@@ -17,8 +17,11 @@ class Worker
 	end
 	
 	def kill(set_status = true)
-		cmd.killed if set_status
+		@cmd.killed if set_status
 		@thread.kill!
+		
+		sub = @cmd.subtask
+		Process.kill("TERM", sub) if sub
 	end
 	
 	def working?

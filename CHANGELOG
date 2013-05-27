@@ -1,3 +1,16 @@
+* Mon May 27 2013 - version 1.9.0
+- Implement new remote commands:
+    - install - add node to cluster, save public keys
+    - refresh - immediately reload VPS state, server status and storage usage
+    - reinit - flush iptables and do init again
+- Manage known_hosts
+- Report backup sizes
+- DB version checking: flush stdout, check exit flag, log just once
+- Firewall: init now checks chains for IPv4 and IPv6 separately, initializing them if missing
+- Fix transaction killing - subprocesses are now sent SIGTERM
+- Fix creating datasets when mountpoint not empty
+- Fix crash when command did not return expected value
+
 * Tue May 07 2013 - version 1.8.3
 - Backup restore: fix crash
 

@@ -29,6 +29,7 @@ IMPLICIT_CONFIG = {
 			"Node" => {
 				3 => "reboot",
 				4 => "sync_templates",
+				5 => "gen_known_hosts",
 				7301 => "create_config",
 				7302 => "delete_config",
 			},
@@ -105,12 +106,21 @@ IMPLICIT_CONFIG = {
 		:mount => "mount",
 		:umount => "umount",
 		:uptime => "uptime",
+		:hostname => "hostname",
 	},
 	
 	:vps => {
 		:clone => {
 			:rsync => "%{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after %{src} %{dst}",
 		}
+	},
+	
+	:node => {
+		:pubkey => {
+			:types => ['rsa', 'dsa'],
+			:path => "/etc/ssh/ssh_host_%{type}_key.pub",
+		},
+		:known_hosts => "/root/.ssh/known_hosts",
 	},
 	
 	:storage => {
@@ -163,7 +173,10 @@ IMPLICIT_CONFIG = {
 				"status",
 				"stop",
 				"update",
-				"kill"
+				"kill",
+				"reinit",
+				"refresh",
+				"install"
 			]
 		}
 	}

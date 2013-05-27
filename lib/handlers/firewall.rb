@@ -1,6 +1,9 @@
 require 'lib/executor'
+require 'thread'
 
 class Firewall < Executor
+	@@mutex = ::Mutex.new
+	
 	def initialize(veid = -1, params = {})
 		if veid.to_i > -1
 			super(veid, params)
@@ -10,25 +13,43 @@ class Firewall < Executor
 	end
 	
 	def init(db)
+		res = {}
+		
 		[4, 6].each do |v|
 			ret = iptables(v, {:N => "aztotal"}, [1,])
 			
 			# Chain already exists, we don't have to continue
 			if ret[:exitstatus] == 1
-				log "Skipping init"
-				return
+				log "Skipping init for IPv#{v}, chain aztotal already exists"
+				next
 			end
 			
 			iptables(v, {:Z => "aztotal"})
 			iptables(v, {:A => "FORWARD", :j => "aztotal"})
+			
+			rs = db.query("SELECT ip_addr, ip_v FROM vps_ip, servers WHERE server_id = #{$CFG.get(:vpsadmin, :server_id)} AND ip_v = #{v} AND ip_location = server_location")
+			rs.each_hash do |ip|
+				reg_ip(ip["ip_addr"], v)
+			end
+			
+			res[v] = rs.num_rows
+			log "Added #{res[v]} rules for IPv#{v}"
 		end
 		
 		# FIXME: OSPF
 		
-		rs = db.query("SELECT ip_addr, ip_v FROM vps_ip")
-		rs.each_hash do |ip|
-			reg_ip(ip["ip_addr"], ip["ip_v"].to_i)
-		end
+		res
+	end
+	
+	def reinit
+		db = Db.new
+		
+		update_traffic(db)
+		cleanup
+		r = init(db)
+		
+		db.close
+		r
 	end
 	
 	def reg_ip(addr, v)
@@ -70,9 +91,32 @@ class Firewall < Executor
 		ret
 	end
 	
+	def update_traffic(db)
+		read_traffic.each do |ip, traffic|
+			next if traffic[:in] == 0 && traffic[:out] == 0
+			
+			st = db.prepared_st("UPDATE transfered SET tr_in = tr_in + ?, tr_out = tr_out + ?, tr_time = UNIX_TIMESTAMP(NOW())
+								WHERE tr_ip = ? AND tr_time >= UNIX_TIMESTAMP(CURDATE())",
+								traffic[:in].to_i, traffic[:out].to_i, ip)
+			
+			unless st.affected_rows == 1
+				st.close
+				db.prepared("INSERT INTO transfered SET tr_in = ?, tr_out = ?, tr_ip = ?, tr_time = UNIX_TIMESTAMP(NOW())",  traffic[:in].to_i, traffic[:out].to_i, ip)
+			end
+		end
+	end
+	
 	def reset_traffic_counter
 		[4, 6].each do |v|
 			iptables(v, {:Z => "aztotal"})
+		end
+	end
+	
+	def cleanup
+		[4, 6].each do |v|
+			iptables(v, {:F => "aztotal"})
+			iptables(v, {:D => "FORWARD", :j => "aztotal"})
+			iptables(v, {:X => "aztotal"})
 		end
 	end
 	
@@ -89,5 +133,9 @@ class Firewall < Executor
 		end
 		
 		syscmd("#{$CFG.get(:bin, ver == 4 ? :iptables : :ip6tables)} #{options.join(" ")}", valid_rcs)
+	end
+	
+	def Firewall.mutex
+		@@mutex
 	end
 end

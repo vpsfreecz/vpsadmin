@@ -115,6 +115,10 @@ class Command
 		@executor.step
 	end
 	
+	def subtask
+		@executor.subtask
+	end
+	
 	def time_start
 		@m_attr.synchronize { @time_start }
 	end

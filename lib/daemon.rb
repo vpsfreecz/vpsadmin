@@ -3,12 +3,13 @@ require 'lib/worker'
 require 'lib/command'
 require 'lib/console'
 require 'lib/remote'
+require 'lib/transaction'
 
 require 'rubygems'
 require 'eventmachine'
 
 module VpsAdmind
-	VERSION = "1.9.0-dev"
+	VERSION = "1.9.0"
 	DB_VERSION = 3
 	
 	EXIT_OK = 0
@@ -114,7 +115,7 @@ module VpsAdmind
 				
 				unless row["depencency_success"].to_i > 0
 					c.dependency_failed(@db)
-					return
+					next
 				end
 				
 				do_command(c)
@@ -134,47 +135,43 @@ module VpsAdmind
 			if !@threads[:status] || !@threads[:status].alive?
 				@threads[:status] = Thread.new do
 					loop do
-						my = Db.new
+						log "Regular update"
 						
-						if $CFG.get(:vpsadmin, :update_vps_status)
-							rs = my.query("SELECT vps_id FROM vps WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}")
-							
-							rs.each_hash do |vps|
-								ct = VPS.new(vps["vps_id"])
-								ct.update_status(my)
-							end
-							
-							fw = Firewall.new
-							fw.read_traffic.each do |ip, traffic|
-								next if traffic[:in] == 0 and traffic[:out] == 0
-								
-								st = my.prepared_st("UPDATE transfered SET tr_in = tr_in + ?, tr_out = tr_out + ?, tr_time = UNIX_TIMESTAMP(NOW())
-													WHERE tr_ip = ? AND tr_time >= UNIX_TIMESTAMP(CURDATE())",
-													traffic[:in].to_i, traffic[:out].to_i, ip)
-								
-								unless st.affected_rows == 1
-									st.close
-									my.prepared("INSERT INTO transfered SET tr_in = ?, tr_out = ?, tr_ip = ?, tr_time = UNIX_TIMESTAMP(NOW())",  traffic[:in].to_i, traffic[:out].to_i, ip)
-								end
-							end
-							
-							fw.reset_traffic_counter
-						end
-						
-						if $CFG.get(:storage, :update_status)
-							Storage.new(0).update_status
-						end
-						
-						my.prepared("INSERT INTO servers_status
-									SET server_id = ?, timestamp = UNIX_TIMESTAMP(NOW()), cpu_load = ?, daemon = ?, vpsadmin_version = ?",
-									$CFG.get(:vpsadmin, :server_id), Node.new(0).load[5], 0, VpsAdmind::VERSION)
-						
-						my.close
+						update_status
 						
 						sleep($CFG.get(:vpsadmin, :status_interval))
 					end
 				end
 			end
+		end
+		
+		def update_status
+			my = Db.new
+			
+			if $CFG.get(:vpsadmin, :update_vps_status)
+				rs = my.query("SELECT vps_id FROM vps WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}")
+				
+				rs.each_hash do |vps|
+					ct = VPS.new(vps["vps_id"])
+					ct.update_status(my)
+				end
+				
+				Firewall.mutex.synchronize do
+					fw = Firewall.new
+					fw.update_traffic(my)
+					fw.reset_traffic_counter
+				end
+			end
+			
+			if $CFG.get(:storage, :update_status)
+				Storage.new(0).update_status
+			end
+			
+			my.prepared("INSERT INTO servers_status
+						SET server_id = ?, timestamp = UNIX_TIMESTAMP(NOW()), cpu_load = ?, daemon = ?, vpsadmin_version = ?",
+						$CFG.get(:vpsadmin, :server_id), Node.new(0).load[5], 0, VpsAdmind::VERSION)
+			
+			my.close
 		end
 		
 		def start_em(console, remote)
@@ -197,14 +194,25 @@ module VpsAdmind
 		end
 		
 		def check_db_version
+			informed = false
+			
 			loop do
+				@@mutex.synchronize do
+					exit(@@exitstatus) unless @@run
+				end
+				
 				rs = @db.query("SELECT cfg_value FROM sysconfig WHERE cfg_name = 'db_version'")
 				ver = rs.fetch_row.first.to_i
 				
 				if VpsAdmind::DB_VERSION != ver
-					log "Database version does not match: required #{VpsAdmind::DB_VERSION}, current #{ver}"
-					$stdout.flush
-					sleep(30)
+					unless informed
+						log "Database version does not match: required #{VpsAdmind::DB_VERSION}, current #{ver}"
+						$stdout.flush
+						
+						informed = true
+					end
+					
+					sleep(10)
 				else
 					return
 				end

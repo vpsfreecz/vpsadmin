@@ -102,6 +102,93 @@ class VpsAdmin < Executor
 		{:ret => :ok, :output => {:killed => cnt, :msgs => msgs}}
 	end
 	
+	def reinit
+		log "Reinitialization requested"
+		r = nil
+		
+		Firewall.mutex.synchronize do
+			fw = Firewall.new
+			r = fw.reinit
+		end
+		
+		ok.update({:output => r})
+	end
+	
+	def refresh
+		log "Update requested"
+		
+		@daemon.update_status
+		ok
+	end
+	
+	def install
+		db = Db.new
+		
+		node_id = $CFG.get(:vpsadmin, :server_id)
+		
+		unless @params["pubkey"]
+			if @params["id"]
+				node_id = @params["id"]
+			elsif node_id > 1
+				# it's ok
+			else
+				node_id = nil
+			end
+			
+			loc = @params["location"].to_i
+			
+			if loc == 0
+				st = db.prepared_st("SELECT location_id FROM locations WHERE location_label = ?", @params["location"])
+				row = st.fetch()
+				
+				if row.nil?
+					raise CommandFailed.new(nil, nil, "Location '#{@params["location"]}' does not exist")
+				end
+				
+				loc = row[0].to_i
+			end
+			
+			name = get_hostname
+			
+			db.prepared("INSERT INTO servers SET
+			            server_id = ?, server_name = ?, server_type = ?, server_location = ?,
+			            server_ip4 = ?, server_maxvps = ?, server_path_vz = ?
+			            ",
+			            node_id, name, @params["type"], loc,
+			            @params["addr"], @params["maxvps"], @params["vzpath"])
+			node_id = db.insert_id
+			
+			log "Node registered in database:"
+			log "\tid = #{node_id}"
+			log "\tname = #{name}"
+			log "\ttype = #{@params["type"]}"
+			log "\tlocation = #{loc}"
+			log "\taddr = #{@params["addr"]}"
+			log "\tmaxvps = #{@params["maxvps"]}"
+			log "\tvzpath = #{@params["vzpath"]}"
+			
+			refresh
+		end
+		
+		log "Updating public keys"
+		
+		get_pubkeys.each do |t, k|
+			db.prepared("INSERT INTO node_pubkey (node_id, `type`, `key`) VALUES (?, ?, ?)
+			             ON DUPLICATE KEY UPDATE `key` = ?",
+			             node_id, t, k, k)
+		end
+		
+		if @params["propagate"]
+			Transaction.new(db).cluster_wide({
+				:m_id => 0,
+				:node => node_id,
+				:type => :gen_known_hosts,
+			})
+		end
+		
+		ok
+	end
+	
 	def walk_workers
 		killed = 0
 		
@@ -121,5 +208,23 @@ class VpsAdmin < Executor
 	
 	def drop_workers
 		@daemon.workers { |w| w.clear }
+	end
+	
+	def get_hostname
+		if @params["name"]
+			@params["name"]
+		else
+			syscmd($CFG.get(:bin, :hostname))[:output].strip
+		end
+	end
+	
+	def get_pubkeys
+		ret = {}
+		
+		$CFG.get(:node, :pubkey, :types).each do |t|
+			ret[t] = File.open($CFG.get(:node, :pubkey, :path).gsub(/%\{type\}/, t)).read.strip
+		end
+		
+		ret
 	end
 end
