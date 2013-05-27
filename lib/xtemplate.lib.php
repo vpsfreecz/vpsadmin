@@ -477,6 +477,10 @@ class XTemplate {
 				}
 				$this->assign("L_DROP_PRIVILEGES",_("Drop privileges"));
 				$this->parse("main.loggedbox.is_admin");
+			} else {
+				$this->assign('L_USER_ID', $_SESSION["member"]["m_id"]);
+				$this->assign('L_EDIT_PROFILE', _("Edit profile"));
+				$this->parse("main.loggedbox.not_admin");
 			}
 			$this->assign('USER_NAME', $user_name);
 			$this->parse('main.loggedbox');
@@ -789,7 +793,17 @@ class XTemplate {
 		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' />');
 		if ($hint != '') $this->table_td($hint);
 	}
-
+	
+	/**
+	  * Add radio to form
+	  * @param $name - $_RESULT[name]
+	  * @param $value - value if checked
+	  * @param $checked - if it is checked by default
+	  */
+	function form_add_radio_pure($name = 'input_fromgen', $value = '', $checked=false) {
+		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' />');
+	}
+	
 	/**
 	  * Parse out the form
 	  * @param $submit_label - label of submit button of the form

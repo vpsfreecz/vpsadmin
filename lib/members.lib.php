@@ -234,7 +234,7 @@ class member_load {
 
   function get_vps_count() {
       global $db;
-      $sql = 'SELECT COUNT(*) AS count FROM vps WHERE m_id ='.$db->check($this->m["m_id"]);
+      $sql = 'SELECT COUNT(*) AS count FROM vps WHERE '.($_SESSION["is_admin"] ? '' : 'vps_deleted IS NULL AND').' m_id ='.$db->check($this->m["m_id"]);
       if ($result = $db->query($sql)) {
     if ($row = $db->fetch_array($result)) {
         return $row["count"];

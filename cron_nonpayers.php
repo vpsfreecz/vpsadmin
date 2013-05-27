@@ -48,7 +48,7 @@ $nonpayers .= "\t<tr>\n";
 $nonpayers .= "\t\t<th>"._("Nickname")."</th>\n\t\t<th>"._("Expiration")."</th>\n\t\t<th>"._("Info")."</th>\n";
 $nonpayers .= "\t</tr>\n";
 
-$whereCond = "m_paid_until IS NOT NULL AND m_paid_until != '' AND ADDDATE(FROM_UNIXTIME(m_paid_until), INTERVAL 14 DAY) < NOW()";
+$whereCond = "m_state != 'deleted' AND m_paid_until IS NOT NULL AND m_paid_until != '' AND ADDDATE(FROM_UNIXTIME(m_paid_until), INTERVAL 14 DAY) < NOW()";
 
 while ($m = $db->find("members", $whereCond, "FROM_UNIXTIME(m_paid_until)")) {
 	$member = member_load($m["m_id"]);
@@ -67,7 +67,7 @@ $neverpaid .= "\t<tr>\n";
 $neverpaid .= "\t\t<th>"._("Nickname")."</th>\n\t\t<th>"._("Created")."</th>\n\t\t<th>"._("Info")."</th>\n";
 $neverpaid .= "\t</tr>\n";
 
-$whereCond = "(m_paid_until IS NULL OR m_paid_until = '') AND ADDDATE(FROM_UNIXTIME(m_created), INTERVAL 7 DAY) < NOW()";
+$whereCond = "m_state != 'deleted' AND (m_paid_until IS NULL OR m_paid_until = '') AND ADDDATE(FROM_UNIXTIME(m_created), INTERVAL 7 DAY) < NOW()";
 
 while ($m = $db->find("members", $whereCond, "m_created")) {
 	$member = member_load($m["m_id"]);

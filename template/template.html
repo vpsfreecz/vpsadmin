@@ -91,6 +91,9 @@
 									<!-- END: maintenance_mode_off -->
             		<span><a href="?page=login&action=drop_admin"><img src="template/icons/m_dropadmin.png" title="{L_DROP_PRIVILEGES}" /></a></span>
             		<!-- END: is_admin -->
+            		<!-- BEGIN: not_admin -->
+						<span><a href="?page=adminm&section=members&action=edit&id={L_USER_ID}">{L_EDIT_PROFILE}</a></span>
+					<!-- END: not_admin -->
 				        <input type="submit" value="{L_LOGOUT} ({USER_NAME})" id="search-submit" />
             	</div>
             </form>

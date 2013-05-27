@@ -1,3 +1,11 @@
+* Mon May 27 2013 - version 1.9.0
+- VPS swapping
+- Add link to user profile next to logout button
+- Show backup sizes
+- Add reason field to VPS config change
+- VPS mass management: add action restore VPS run state
+- Fix backup exclude saving
+
 * Mon May 13 2013 - version 1.8.2
 - Mailer: do not alert about expiring VPS that are already deleted
 

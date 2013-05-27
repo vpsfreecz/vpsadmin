@@ -197,6 +197,7 @@ CREATE TABLE IF NOT EXISTS `vps` (
 CREATE TABLE IF NOT EXISTS `vps_backups` (
   `vps_id` int(10) unsigned NOT NULL,
   `timestamp` int(10) unsigned NOT NULL,
+  `size` bigint(20) unsigned NOT NULL,
   KEY `vps_id` (`vps_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -249,7 +250,6 @@ CREATE TABLE IF NOT EXISTS `storage_export` (
   `used` bigint(20) unsigned NOT NULL,
   `avail` bigint(20) unsigned NOT NULL,
   `user_editable` tinyint(4) NOT NULL DEFAULT '0',
-  `add_member_prefix` tinyint(4) NOT NULL,
   `default` enum('no','member','vps') COLLATE utf8_czech_ci NOT NULL DEFAULT 'no',
   `type` enum('data','backup') COLLATE utf8_czech_ci NOT NULL,
   PRIMARY KEY (`id`)

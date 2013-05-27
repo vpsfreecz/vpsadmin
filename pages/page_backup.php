@@ -152,6 +152,7 @@ if ($_SESSION["logged_in"]) {
 					
 					$xtpl->table_td(_("Current VPS state"));
 					$xtpl->table_td('-');
+					$xtpl->table_td('-');
 					$xtpl->table_td('[<a href="?page=backup&action=download&vps_id='.$lastId.'&timestamp=current">'._("Download").'</a>]');
 					$xtpl->table_tr();
 					
@@ -171,6 +172,7 @@ if ($_SESSION["logged_in"]) {
 					$xtpl->table_title("VPS {$backup["vps_id"]} [{$vps["vps_hostname"]}]");
 				
 				$xtpl->table_add_category(_('Date and time'));
+				$xtpl->table_add_category(_('Approximate size'));
 				$xtpl->table_add_category(_('Restore'));
 				$xtpl->table_add_category(_('Download'));
 				
@@ -179,10 +181,9 @@ if ($_SESSION["logged_in"]) {
 				$lastId = $backup["vps_id"];
 			}
 			
-			$xtpl->form_add_radio(
-				strftime("%Y-%m-%d %H:%M", $backup["timestamp"]),
-				"restore_timestamp", $backup["timestamp"]
-			);
+			$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $backup["timestamp"]));
+			$xtpl->table_td(nas_size_to_humanreadable($backup["size"]));
+			$xtpl->form_add_radio_pure("restore_timestamp", $backup["timestamp"]);
 			$xtpl->table_td('[<a href="?page=backup&action=download&vps_id='.$backup["vps_id"].'&timestamp='.$backup["timestamp"].'">'._("Download").'</a>]');
 			$xtpl->table_tr();
 		}
@@ -191,6 +192,7 @@ if ($_SESSION["logged_in"]) {
 			$last_t = get_last_transaction(T_BACKUP_SCHEDULE, $lastId);
 			
 			$xtpl->table_td(_("Current VPS state"));
+			$xtpl->table_td('-');
 			$xtpl->table_td('-');
 			$xtpl->table_td('[<a href="?page=backup&action=download&vps_id='.$lastId.'&timestamp=current">'._("Download").'</a>]');
 			$xtpl->table_tr();

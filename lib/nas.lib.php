@@ -188,6 +188,7 @@ function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable,
 	foreach($n->storage_roots as $r) {
 		if ($r["id"] == $root) {
 			$dataset = $r["root_dataset"]."/".$dataset;
+			$path = $r["root_path"]."/".$path;
 			break;
 		}
 	}
@@ -197,7 +198,9 @@ function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable,
 	
 	$params = array(
 		"dataset" => $dataset,
+		"path" => $path,
 		"quota" => $quota,
+		"export_id" => $export_id,
 	);
 	
 	add_transaction($_SESSION["member"]["m_id"], $n->s["server_id"], 0, T_STORAGE_EXPORT_CREATE, $params);

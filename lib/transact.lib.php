@@ -7,6 +7,7 @@
     Copyright (C) 2008-2011 Pavel Snajdr, snajpa@snajpa.net
 */
 define ('T_RESTART_NODE', 3);
+define ('T_GEN_KNOWN_HOSTS', 5);
 define ('T_START_VE', 1001);
 define ('T_STOP_VE', 1002);
 define ('T_RESTART_VE', 1003);
@@ -71,7 +72,7 @@ function add_transaction_clusterwide($m_id, $vps_id, $t_type, $t_param = array()
 	
     $sql = "INSERT INTO transaction_groups
 		    SET is_clusterwide=1";
-    $db->query_trans($sql);
+    $db->query_trans($sql, $err);
     $group_id = $db->insert_id();
     $servers = list_servers(false, $server_types);
     foreach ($servers as $id=>$name)
@@ -195,6 +196,9 @@ function transaction_label ($t_type) {
 	case T_RESTART_NODE:
 	    $action_label = 'REBOOT';
 	    break;
+	case T_GEN_KNOWN_HOSTS:
+		$action_label = 'Known hosts';
+		break;
 	case T_START_VE:
 	    $action_label = 'Start';
 	    break;
