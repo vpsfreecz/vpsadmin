@@ -72,7 +72,8 @@ class Backuper < Executor
 			syscmd("#{$CFG.get(:bin, :mv)} #{target} #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
 		end
 		
-		syscmd("#{$CFG.get(:vz, :vzquota)} drop #{@veid}")
+		# Ignore rc 11 - returned when quota does not exist
+		syscmd("#{$CFG.get(:vz, :vzquota)} drop #{@veid}", [11,])
 		vps.start if stat[:running]
 		
 		ok
