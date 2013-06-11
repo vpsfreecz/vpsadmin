@@ -1,3 +1,7 @@
+* Tue Jun 11 2013 - version 1.9.1
+- Fix missing onboot flags after some transactions like enable features
+- Restore finish: ignore vzquota drop error if quota does not exist
+
 * Mon May 27 2013 - version 1.9.0
 - Implement new remote commands:
     - install - add node to cluster, save public keys

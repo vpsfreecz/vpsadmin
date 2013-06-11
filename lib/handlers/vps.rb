@@ -9,7 +9,7 @@ class VPS < Executor
 	def start
 		@update = true
 		vzctl(:start, @veid, {}, false, [32,])
-		check_onboot
+		vzctl(:set, @veid, {:onboot => "yes"}, true)
 	end
 	
 	def stop(params = {})
@@ -21,7 +21,7 @@ class VPS < Executor
 	def restart
 		@update = true
 		vzctl(:restart, @veid)
-		check_onboot
+		vzctl(:set, @veid, {:onboot => "yes"}, true)
 	end
 	
 	def create
@@ -29,7 +29,6 @@ class VPS < Executor
 			:ostemplate => @params["template"],
 			:hostname => @params["hostname"],
 		})
-		check_onboot
 		vzctl(:set, @veid, {
 			:applyconfig => "basic",
 			:nameserver => @params["nameserver"],
@@ -50,7 +49,6 @@ class VPS < Executor
 		vzctl(:set, @veid, {:ipadd => @params["ip_addrs"]}, true) if @params["ip_addrs"].count > 0
 		
 		if stat[:running]
-			check_onboot(true)
 			start
 		end
 		
@@ -163,14 +161,6 @@ class VPS < Executor
 		end
 		
 		syscmd("#{$CFG.get(:bin, :chmod)} +x #{path}") unless existed
-		
-		ok
-	end
-	
-	def check_onboot(force = false)
-		if (@params.instance_of?(Hash) and @params["onboot"]) or force
-			vzctl(:set, @veid, {:onboot => "yes"}, true)
-		end
 		
 		ok
 	end
