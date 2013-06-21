@@ -9,7 +9,7 @@ require 'rubygems'
 require 'eventmachine'
 
 module VpsAdmind
-	VERSION = "1.9.1"
+	VERSION = "1.10.0-dev"
 	DB_VERSION = 3
 	
 	EXIT_OK = 0

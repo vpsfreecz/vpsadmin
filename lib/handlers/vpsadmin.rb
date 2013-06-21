@@ -153,9 +153,17 @@ class VpsAdmin < Executor
 			db.prepared("INSERT INTO servers SET
 			            server_id = ?, server_name = ?, server_type = ?, server_location = ?,
 			            server_ip4 = ?, server_maxvps = ?, server_path_vz = ?
+			            ON DUPLICATE KEY UPDATE
+			            server_name = ?, server_type = ?, server_location = ?,
+			            server_ip4 = ?, server_maxvps = ?, server_path_vz = ?
 			            ",
+			            # insert
 			            node_id, name, @params["type"], loc,
-			            @params["addr"], @params["maxvps"], @params["vzpath"])
+			            @params["addr"], @params["maxvps"], @params["vzpath"],
+			            # update
+			            name, @params["type"], loc,
+			            @params["addr"], @params["maxvps"], @params["vzpath"]
+			)
 			node_id = db.insert_id
 			
 			log "Node registered in database:"
