@@ -117,7 +117,7 @@ class VpsAdmin < Executor
 	def refresh
 		log "Update requested"
 		
-		@daemon.update_status
+		@daemon.update_all
 		ok
 	end
 	

@@ -17,6 +17,7 @@ IMPLICIT_CONFIG = {
 		:threads => 6,
 		:check_interval => 1,
 		:status_interval => 300,
+		:resources_interval => 300,
 		:update_vps_status => true,
 		:root => "/opt/vpsadmind",
 		:init => true,

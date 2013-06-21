@@ -135,7 +135,7 @@ module VpsAdmind
 			if !@threads[:status] || !@threads[:status].alive?
 				@threads[:status] = Thread.new do
 					loop do
-						log "Regular update"
+						log "Update status"
 						
 						update_status
 						
@@ -143,9 +143,35 @@ module VpsAdmind
 					end
 				end
 			end
+			
+			if !@threads[:resources] || !@threads[:resources].alive?
+				@threads[:resources] = Thread.new do
+					loop do
+						log "Update resources"
+						
+						update_resources
+						
+						sleep($CFG.get(:vpsadmin, :resources_interval))
+					end
+				end
+			end
+		end
+		
+		def update_all
+			update_status
+			update_resources
 		end
 		
 		def update_status
+			my = Db.new
+			my.prepared("INSERT INTO servers_status
+						SET server_id = ?, timestamp = UNIX_TIMESTAMP(NOW()), cpu_load = ?, daemon = ?, vpsadmin_version = ?",
+						$CFG.get(:vpsadmin, :server_id), Node.new(0).load[5], 0, VpsAdmind::VERSION)
+			
+			my.close
+		end
+		
+		def update_resources
 			my = Db.new
 			
 			if $CFG.get(:vpsadmin, :update_vps_status)
@@ -166,10 +192,6 @@ module VpsAdmind
 			if $CFG.get(:storage, :update_status)
 				Storage.new(0).update_status
 			end
-			
-			my.prepared("INSERT INTO servers_status
-						SET server_id = ?, timestamp = UNIX_TIMESTAMP(NOW()), cpu_load = ?, daemon = ?, vpsadmin_version = ?",
-						$CFG.get(:vpsadmin, :server_id), Node.new(0).load[5], 0, VpsAdmind::VERSION)
 			
 			my.close
 		end
