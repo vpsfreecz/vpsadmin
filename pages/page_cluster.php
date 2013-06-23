@@ -420,8 +420,6 @@ switch($_REQUEST["action"]) {
 		$xtpl->form_add_select(_("Location").':', 'server_location', $cluster->list_locations(), '',  '');
 		$xtpl->form_add_input(_("Server IPv4 address").':', 'text', '30', 'server_ip4', '', '');
 		$xtpl->form_add_textarea(_("Availability icon (if you wish)").':', 28, 4, 'server_availstat', '', _("Paste HTML link here"));
-		$xtpl->form_add_input(_("Max VPS count").':', 'text', '8', 'server_maxvps', '', '');
-		$xtpl->form_add_input(_("OpenVZ Path").':', 'text', '10', 'server_path_vz', '/var/lib/vz', '');
 		$xtpl->form_out(_("Save changes"));
 		break;
 	case "newnode_save":
@@ -429,8 +427,6 @@ switch($_REQUEST["action"]) {
 			isset($_REQUEST["server_name"]) &&
 			isset($_REQUEST["server_ip4"]) &&
 			isset($_REQUEST["server_location"]) &&
-			isset($_REQUEST["server_maxvps"]) &&
-			isset($_REQUEST["server_path_vz"]) &&
 			isset($_REQUEST["server_type"]) && in_array($_REQUEST["server_type"], array_keys($server_types))
 		) {
 			$sql = 'INSERT INTO servers
@@ -439,9 +435,7 @@ switch($_REQUEST["action"]) {
 					server_type = "'.$db->check($_REQUEST["server_type"]).'",
 					server_location = "'.$db->check($_REQUEST["server_location"]).'",
 					server_availstat = "'.$db->check($_REQUEST["server_availstat"]).'",
-					server_maxvps = "'.$db->check($_REQUEST["server_maxvps"]).'",
-					server_ip4 = "'.$db->check($_REQUEST["server_ip4"]).'",
-					server_path_vz = "'.$db->check($_REQUEST["server_path_vz"]).'"';
+					server_ip4 = "'.$db->check($_REQUEST["server_ip4"]).'"';
 			$db->query($sql);
 			$list_nodes = true;
 		}
@@ -464,8 +458,8 @@ switch($_REQUEST["action"]) {
 			
 			switch ($node->s["server_type"]) {
 				case "node":
-					$xtpl->form_add_input(_("Max VPS count").':', 'text', '8', 'server_maxvps', $node->s["server_maxvps"]);
-					$xtpl->form_add_input(_("OpenVZ Path").':', 'text', '10', 'server_path_vz', $node->s["server_path_vz"]);
+					$xtpl->form_add_input(_("Max VPS count").':', 'text', '8', 'max_vps', $node->role["max_vps"]);
+					$xtpl->form_add_input(_("Path to VE private").':', 'text', '30', 've_private', $node->role["ve_private"], _("%veid% - VPS ID"));
 					break;
 				default:break;
 			}
@@ -1735,10 +1729,10 @@ if ($list_nodes) {
 		$xtpl->table_td($vps_count["count"], false, true);
 		
 		// Free
-		$xtpl->table_td($node->s["server_maxvps"] - $running_count["count"], false, true);
+		$xtpl->table_td($node->role["max_vps"] - $running_count["count"], false, true);
 		
 		// Max
-		$xtpl->table_td($node->s["server_maxvps"], false, true);
+		$xtpl->table_td($node->role["max_vps"], false, true);
 		
 		// vpsAdmind
 		$xtpl->table_td($status["vpsadmin_version"]);

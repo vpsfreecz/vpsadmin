@@ -214,6 +214,7 @@ function show_notification() {
 
 function redirect($loc) {
 	header('Location: '.$loc);
+	exit;
 }
 
 function format_duration($interval) {

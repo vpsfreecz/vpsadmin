@@ -25,6 +25,10 @@ class cluster_node {
 		$this->s = $row;
 		
 		switch ($row["server_type"]) {
+			case "node":
+				$this->role = $db->findByColumnOnce("node_node", "node_id", $row["server_id"]);
+				break;
+				
 			case "storage":
 				$this->role = array(); // FIXME: remove
 				
@@ -36,6 +40,7 @@ class cluster_node {
 				
 				$this->storage_roots = $roots;
 				break;
+				
 			default:break;
 		}
 		
@@ -68,14 +73,20 @@ class cluster_node {
 				server_type = "'.$db->check($data["server_type"]).'",
 				server_location = "'.$db->check($data["server_location"]).'",
 				server_availstat = "'.$db->check($data["server_availstat"]).'",
-				server_maxvps = "'.$db->check($data["server_maxvps"]).'",
-				server_ip4 = "'.$db->check($data["server_ip4"]).'",
-				server_path_vz = "'.$db->check($data["server_path_vz"]).'"
+				server_ip4 = "'.$db->check($data["server_ip4"]).'"
 				WHERE server_id = '.$this->s["server_id"];
 		
 		$db->query($sql);
 		
 		switch ($data["server_type"]) {
+			case "node":
+				$sql = "UPDATE node_node SET
+				        max_vps = '".$db->check($data["max_vps"])."',
+				        ve_private = '".$db->check($data["ve_private"])."'
+				        WHERE node_id = ".$db->check($this->s["server_id"]);
+				$db->query($sql);
+				break;
+			
 			default:break;
 		}
     }
@@ -91,13 +102,14 @@ class cluster_cfg {
       * @return true if exists, false if not or error occurs
       */
     function exists($setting) {
-	global $db;
-	$sql = 'SELECT * FROM sysconfig WHERE cfg_name="'.$db->check($setting).'"';
-	if ($result = $db->query($sql)) {
-	    if ($row = $db->fetch_array($result)) {
-		return true;
-	    } else return false;
-	} else return false;
+		global $db;
+		$sql = 'SELECT * FROM sysconfig WHERE cfg_name="'.$db->check($setting).'"';
+		
+		if ($result = $db->query($sql)) {
+			if ($row = $db->fetch_array($result)) {
+				return true;
+			} else return false;
+		} else return false;
     }
     /**
       * Get value of saved setting
@@ -126,6 +138,7 @@ class cluster_cfg {
 	    $sql = 'UPDATE sysconfig SET cfg_value = "'.$db->check(json_encode($value)).'" WHERE cfg_name = "'.$db->check($setting).'"';
 	else
     	    $sql = 'INSERT INTO sysconfig SET cfg_value = "'.$db->check(json_encode($value)).'", cfg_name = "'.$db->check($setting).'"';
+	
 	return ($db->query($sql));
     }
 }

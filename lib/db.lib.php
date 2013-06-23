@@ -255,7 +255,7 @@ class sql_db {
 	return ($this->affectedRows());
     }
 
-    function query($sql, $cache = false, $transactional = false) {
+    function query($sql, $cache = false, $transactional = false, $multi = false) {
 	if ($this->debug == true) {
 	    $this->history[] = $sql;
 	}
@@ -268,6 +268,14 @@ class sql_db {
 		$this->db->_query("COMMIT;");
 	    else
 		$this->db->query("ROLLBACK;");
+	} else if($multi) {
+		$out = true;
+		$this->db->multi_query($sql);
+		
+		while($this->db->next_result());
+		
+		if($this->db->errno)
+			$out = false;
 	} else {
 	    $out = $this->db->query($sql);
 	}
@@ -310,11 +318,11 @@ class sql_db {
     function check($string) {
 	return $this->db->real_escape_string($string);
     }
-    function query_trans($cmd, &$error)
+    function query_trans($cmd, &$error, $multi = false)
     {
     	$this->query("BEGIN;");
-
-    	if ($this->query($cmd)) {
+    	
+    	if ($this->query($cmd, false, false, $multi)) {
     		$this->query("COMMIT;");
     		return true;
     	} else {
@@ -475,7 +483,7 @@ function db_build_upgrade_code($from, $to) {
 function db_do_upgrade($to, $sql, &$error) {
 	global $db, $cluster_cfg;
 	
-	if($db->query_trans($sql, $error)) {
+	if($db->query_trans($sql, $error, true)) {
 		$cluster_cfg->set("db_version", $to);
 		
 		return true;
