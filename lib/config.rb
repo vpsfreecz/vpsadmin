@@ -51,13 +51,18 @@ IMPLICIT_CONFIG = {
 				3002 => "destroy",
 				3003 => "reinstall",
 				3004 => "clone",
-				4001 => "migrate_offline",
 				4002 => "migrate_online",
 				5301 => "nas_mounts",
 				5302 => "nas_mount",
 				5303 => "nas_umount",
 				5304 => "nas_remount",
 				8001 => "features",
+			},
+			"Migration" => {
+				4011 => "prepare",
+				4021 => "migrate_part1",
+				4022 => "migrate_part2",
+				4031 => "cleanup",
 			},
 			"Storage" => {
 				5201 => "create_export",
@@ -119,6 +124,9 @@ IMPLICIT_CONFIG = {
 		},
 		:zfs => {
 			:root_dataset => "vz/private",
+		},
+		:migration => {
+			:rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}",
 		},
 	},
 	

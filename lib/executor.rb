@@ -62,6 +62,10 @@ class Executor
 		syscmd("#{$CFG.get(:vz, :vzctl)} #{cmd} #{veid} #{options.join(" ")} #{"--save" if save}", valid_rcs)
 	end
 	
+	def scp(what, where, opts = nil)
+		syscmd("#{$CFG.get(:bin, :scp)} #{opts} #{what} #{where}")
+	end
+	
 	def syscmd(cmd, valid_rcs = [])
 		set_step(cmd)
 		

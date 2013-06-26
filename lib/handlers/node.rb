@@ -11,18 +11,47 @@ class Node < Executor
 	end
 	
 	def create_config
-		# FIXME
-		
-		File.delete(conf_path(@params["old_name"])) if @params["old_name"]
+		if @params["old_name"]
+			File.delete(conf_path(@params["old_name"]))
+			
+			path = conf_path("original-#{@params["old_name"]}")
+			
+			if zfs? && File.exists?(path)
+				File.delete(path)
+			end
+		end
 		
 		f = File.new(conf_path, "w")
-		f.write(@params["config"])
+		
+		if zfs?
+			f.write(@params["config"] \
+				.gsub(/^DISKSPACE\=\".+\:.+\"/, "") \
+				.gsub(/^DISKINODES\=\".+\:.+\"/, "") \
+				.gsub(/^QUOTAUGIDLIMIT\=\"\d+\"/, ""))
+		else
+			f.write(@params["config"])
+		end
+		
 		f.close
+		
+		if zfs? && @params["config"] =~ /^DISKSPACE\=\".+\:.+\"/
+			f = File.new(conf_path("original-#{@params["name"]}"), "w")
+			f.write(@params["config"])
+			f.close
+		end
+		
 		ok
 	end
 	
 	def delete_config
 		File.delete(conf_path) if File.exists?(conf_path)
+		
+		path = conf_path("original-#{@params["name"]}")
+			
+		if zfs? && File.exists(path)
+			File.delete(path)
+		end
+		
 		ok
 	end
 	

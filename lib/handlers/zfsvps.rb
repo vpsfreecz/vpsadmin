@@ -17,6 +17,36 @@ class ZfsVPS < VPS
 		syscmd("#{$CFG.get(:bin, :mv)} #{ve_conf} #{ve_conf}.destroyed")
 	end
 	
+	def applyconfig
+		n = Node.new
+		
+		@params["configs"].each do |cfg|
+			vzctl(:set, @veid, {:applyconfig => cfg, :setmode => "restart"}, true)
+			
+			path = n.conf_path("original-#{cfg}")
+			
+			if File.exists?(path)
+				content = File.new(path).read
+				
+				m = nil
+				quota = nil
+				
+				if (m = content.match(/^DISKSPACE\=\"\d+\:(\d+)\"/)) # vzctl saves diskspace in kB
+					quota = m[1].to_i * 1024
+					
+				elsif (m = content.match(/^DISKSPACE\=\"\d+[GMK]\:(\d+[GMK])\"/))
+					quota = m[1]
+				end
+				
+				if quota
+					zfs(:set, "quota=#{quota}", ve_private_ds)
+				end
+			end
+		end
+		
+		ok
+	end
+	
 	def ve_private_ds
 		"#{$CFG.get(:vps, :zfs, :root_dataset)}/#{@veid}"
 	end
