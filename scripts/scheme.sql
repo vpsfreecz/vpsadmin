@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS `servers_status` (
 CREATE TABLE IF NOT EXISTS `node_node` (
   `node_id` int(11) NOT NULL,
   `max_vps` int(11) NOT NULL,
-  `ve_private` varchar(255) NOT NULL DEFAULT '/vz/private/%veid%',
+  `ve_private` varchar(255) NOT NULL DEFAULT '/vz/private/%{veid}',
   PRIMARY KEY (`node_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

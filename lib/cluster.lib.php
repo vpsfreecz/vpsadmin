@@ -8,6 +8,7 @@
 */
 
 $NODE_TYPES = array('node', 'mailer', 'storage');
+$NODE_FSTYPES = array("ext4" => "Ext4", "zfs" => "ZFS");
 
 class cluster_node {
     // Server descriptor
@@ -80,10 +81,15 @@ class cluster_node {
 		
 		switch ($data["server_type"]) {
 			case "node":
-				$sql = "UPDATE node_node SET
+				$sql = "INSERT INTO node_node SET
+				        node_id = ".$db->check($this->s["server_id"]).",
 				        max_vps = '".$db->check($data["max_vps"])."',
-				        ve_private = '".$db->check($data["ve_private"])."'
-				        WHERE node_id = ".$db->check($this->s["server_id"]);
+				        ve_private = '".$db->check($data["ve_private"])."',
+				        fstype = '".$db->check($data["fstype"])."'
+				        ON DUPLICATE KEY UPDATE
+				        max_vps = '".$db->check($data["max_vps"])."',
+				        ve_private = '".$db->check($data["ve_private"])."',
+				        fstype = '".$db->check($data["fstype"])."'";
 				$db->query($sql);
 				break;
 			

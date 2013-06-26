@@ -459,7 +459,8 @@ switch($_REQUEST["action"]) {
 			switch ($node->s["server_type"]) {
 				case "node":
 					$xtpl->form_add_input(_("Max VPS count").':', 'text', '8', 'max_vps', $node->role["max_vps"]);
-					$xtpl->form_add_input(_("Path to VE private").':', 'text', '30', 've_private', $node->role["ve_private"], _("%veid% - VPS ID"));
+					$xtpl->form_add_input(_("Path to VE private").':', 'text', '30', 've_private', $node->role["ve_private"], _("%{veid} - VPS ID"));
+					$xtpl->form_add_select(_("FS type").':', 'fstype', $NODE_FSTYPES, $node->role["fstype"]);
 					break;
 				default:break;
 			}
