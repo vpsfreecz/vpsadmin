@@ -23,8 +23,10 @@ define ('T_CREATE_VE', 3001);
 define ('T_DESTROY_VE', 3002);
 define ('T_REINSTALL_VE', 3003);
 define ('T_CLONE_VE', 3004);
-define ('T_MIGRATE_OFFLINE', 4001);
-define ('T_MIGRATE_OFFLINE_PART2', 4011);
+define ('T_MIGRATE_OFFLINE_PREPARE', 4011);
+define ('T_MIGRATE_OFFLINE_PART1', 4021);
+define ('T_MIGRATE_OFFLINE_PART2', 4022);
+define ('T_MIGRATE_CLEANUP', 4031);
 define ('T_MIGRATE_ONLINE', 4002);
 define ('T_MIGRATE_ONLINE_PART2', 4012);
 // define ('T_BACKUP_MOUNT', 5001); // Delete
@@ -244,9 +246,18 @@ function transaction_label ($t_type) {
 	case T_CLONE_VE:
 		$action_label = 'Clone';
 		break;
-	case T_MIGRATE_OFFLINE:
-	    $action_label = 'Migrate';
+	case T_MIGRATE_OFFLINE_PREPARE:
+		$action_label = 'Prepare migration';
+		break;
+	case T_MIGRATE_OFFLINE_PART1:
+	    $action_label = 'Migrate (1)';
 	    break;
+	case T_MIGRATE_OFFLINE_PART2:
+		$action_label = 'Migrate (2)';
+		break;
+	case T_MIGRATE_CLEANUP:
+		$action_label = 'Cleanup';
+		break;
 	case T_MIGRATE_ONLINE:
 	    $action_label = 'Migrate live';
 	    break;
