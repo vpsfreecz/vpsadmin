@@ -11,6 +11,8 @@ class Node < Executor
 	end
 	
 	def create_config
+		# FIXME
+		
 		File.delete(conf_path(@params["old_name"])) if @params["old_name"]
 		
 		f = File.new(conf_path, "w")

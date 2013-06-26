@@ -61,22 +61,20 @@ class Backuper < Executor
 		target = $CFG.get(:backuper, :restore_src).gsub(/%\{veid\}/, @veid)
 		
 		vps = VPS.new(@veid)
-		stat = vps.status
 		
-		vps.stop(:force => true)
-		syscmd("#{$CFG.get(:vz, :vzquota)} off #{@veid} -f", [6,])
-		vps.stop
-		
-		acquire_lock(Db.new) do
-			syscmd("#{$CFG.get(:bin, :rm)} -rf #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
-			syscmd("#{$CFG.get(:bin, :mv)} #{target} #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
+		vps.honor_state do
+			vps.stop(:force => true)
+			syscmd("#{$CFG.get(:vz, :vzquota)} off #{@veid} -f", [6,])
+			vps.stop
+			
+			acquire_lock(Db.new) do
+				syscmd("#{$CFG.get(:bin, :rm)} -rf #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
+				syscmd("#{$CFG.get(:bin, :mv)} #{target} #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
+			end
+			
+			# Ignore rc 11 - returned when quota does not exist
+			syscmd("#{$CFG.get(:vz, :vzquota)} drop #{@veid}", [11,])
 		end
-		
-		# Ignore rc 11 - returned when quota does not exist
-		syscmd("#{$CFG.get(:vz, :vzquota)} drop #{@veid}", [11,])
-		vps.start if stat[:running]
-		
-		ok
 	end
 	
 	# Deprecated, not working

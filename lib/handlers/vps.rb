@@ -6,6 +6,14 @@ require 'tempfile'
 require 'fileutils'
 
 class VPS < Executor
+	class << self
+		alias_method :new_orig, :new
+		
+		def new(*args)
+			Kernel.const_get($CFG.get(:vpsadmin, :fstype) == :zfs ? :ZfsVPS : :VPS).new_orig(*args)
+		end
+	end
+	
 	def start
 		@update = true
 		vzctl(:start, @veid, {}, false, [32,])
@@ -28,6 +36,7 @@ class VPS < Executor
 		vzctl(:create, @veid, {
 			:ostemplate => @params["template"],
 			:hostname => @params["hostname"],
+			:private => ve_private,
 		})
 		vzctl(:set, @veid, {
 			:applyconfig => "basic",
@@ -41,18 +50,12 @@ class VPS < Executor
 	end
 	
 	def reinstall
-		stat = status
-		
-		stop
-		destroy
-		create
-		vzctl(:set, @veid, {:ipadd => @params["ip_addrs"]}, true) if @params["ip_addrs"].count > 0
-		
-		if stat[:running]
-			start
+		honor_state do
+			stop
+			destroy
+			create
+			vzctl(:set, @veid, {:ipadd => @params["ip_addrs"]}, true) if @params["ip_addrs"].count > 0
 		end
-		
-		ok
 	end
 	
 	def set_params
@@ -68,30 +71,28 @@ class VPS < Executor
 	end
 	
 	def features
-		stat = status
-		
-		stop
-		vzctl(:set, @veid, {
-			:feature => ["nfsd:on", "nfs:on", "ppp:on"],
-			:capability => "net_admin:on",
-			:iptables => ['ip_conntrack', 'ip_conntrack_ftp', 'ip_conntrack_irc', 'ip_nat_ftp',
-			              'ip_nat_irc', 'ip_tables', 'ipt_LOG', 'ipt_REDIRECT', 'ipt_REJECT',
-			              'ipt_TCPMSS', 'ipt_TOS', 'ipt_conntrack', 'ipt_helper', 'ipt_length',
-			              'ipt_limit', 'ipt_multiport', 'ipt_state', 'ipt_tcpmss', 'ipt_tos',
-			              'ipt_ttl', 'iptable_filter', 'iptable_mangle', 'iptable_nat'],
-			:numiptent => "1000",
-			:devices => ["c:10:200:rw", "c:10:229:rw", "c:108:0:rw"],
-		}, true)
-		start
-		sleep(3)
-		vzctl(:exec, @veid, "mkdir -p /dev/net")
-		vzctl(:exec, @veid, "mknod /dev/net/tun c 10 200", false, [8,])
-		vzctl(:exec, @veid, "chmod 600 /dev/net/tun")
-		vzctl(:exec, @veid, "mknod /dev/fuse c 10 229", false, [8,])
-		vzctl(:exec, @veid, "mknod /dev/ppp c 108 0", false, [8,])
-		vzctl(:exec, @veid, "chmod 600 /dev/ppp")
-		stop unless stat[:running]
-		ok
+		honor_state do
+			stop
+			vzctl(:set, @veid, {
+				:feature => ["nfsd:on", "nfs:on", "ppp:on"],
+				:capability => "net_admin:on",
+				:iptables => ['ip_conntrack', 'ip_conntrack_ftp', 'ip_conntrack_irc', 'ip_nat_ftp',
+							'ip_nat_irc', 'ip_tables', 'ipt_LOG', 'ipt_REDIRECT', 'ipt_REJECT',
+							'ipt_TCPMSS', 'ipt_TOS', 'ipt_conntrack', 'ipt_helper', 'ipt_length',
+							'ipt_limit', 'ipt_multiport', 'ipt_state', 'ipt_tcpmss', 'ipt_tos',
+							'ipt_ttl', 'iptable_filter', 'iptable_mangle', 'iptable_nat'],
+				:numiptent => "1000",
+				:devices => ["c:10:200:rw", "c:10:229:rw", "c:108:0:rw"],
+			}, true)
+			start
+			sleep(3)
+			vzctl(:exec, @veid, "mkdir -p /dev/net")
+			vzctl(:exec, @veid, "mknod /dev/net/tun c 10 200", false, [8,])
+			vzctl(:exec, @veid, "chmod 600 /dev/net/tun")
+			vzctl(:exec, @veid, "mknod /dev/fuse c 10 229", false, [8,])
+			vzctl(:exec, @veid, "mknod /dev/ppp c 108 0", false, [8,])
+			vzctl(:exec, @veid, "chmod 600 /dev/ppp")
+		end
 	end
 	
 	def migrate_offline
@@ -214,6 +215,10 @@ class VPS < Executor
 		"#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.conf"
 	end
 	
+	def ve_private
+		$CFG.get(:vz, :ve_private).gsub(/%\{veid\}/, @veid)
+	end
+	
 	def ve_root
 		"#{$CFG.get(:vz, :vz_root)}/root/#{@veid}"
 	end
@@ -231,6 +236,20 @@ class VPS < Executor
 	def status
 		stat = vzctl(:status, @veid)[:output].split(" ")[2..-1]
 		{:exists => stat[0] == "exist", :mounted => stat[1] == "mounted", :running => stat[2] == "running"}
+	end
+	
+	def honor_state
+		before = status
+		yield
+		after = status
+		
+		if before[:running] && !after[:running]
+			start
+		elsif !before[:running] && after[:running]
+			stop
+		end
+		
+		ok
 	end
 	
 	def post_save(con)
