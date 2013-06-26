@@ -21,6 +21,8 @@ IMPLICIT_CONFIG = {
 		:update_vps_status => true,
 		:root => "/opt/vpsadmind",
 		:init => true,
+		:fstype => :ext4, # loaded from db
+		:type => nil, # loaded from db
 		:handlers => {
 			"VpsAdmin" => {
 				101 => "stop",
@@ -86,6 +88,7 @@ IMPLICIT_CONFIG = {
 		:vzmigrate => "vzmigrate",
 		:vz_root => "/vz",
 		:vz_conf => "/etc/vz",
+		:ve_private => "/vz/private/%{veid}", # loaded from db
 	},
 	
 	:bin => {
@@ -113,7 +116,10 @@ IMPLICIT_CONFIG = {
 	:vps => {
 		:clone => {
 			:rsync => "%{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after %{src} %{dst}",
-		}
+		},
+		:zfs => {
+			:root_dataset => "vz/private",
+		},
 	},
 	
 	:node => {
@@ -205,7 +211,40 @@ class AppConfig
 		
 		@cfg = merge(IMPLICIT_CONFIG, tmp)
 		
+		load_db_settings
+		
 		true
+	end
+	
+	def load_db_settings
+		db = Db.new(@cfg[:db])
+		
+		st = db.prepared_st("SELECT server_type FROM servers WHERE server_id = ?", @cfg[:vpsadmin][:server_id])
+		rs = st.fetch
+		
+		unless rs
+			$stderr.puts "Node is not registered in database!"
+			return
+		end
+		
+		@cfg[:vpsadmin][:type] = rs[0].to_sym
+		
+		case @cfg[:vpsadmin][:type]
+		when :node
+			st = db.prepared_st("SELECT ve_private, fstype FROM node_node WHERE node_id = ?", @cfg[:vpsadmin][:server_id])
+			rs = st.fetch
+			
+			if rs
+				@cfg[:vz][:ve_private] = rs[0]
+				@cfg[:vpsadmin][:fstype] = rs[1].to_sym
+			else
+				$stderr.puts "Failed to load settings from database"
+			end
+			
+			st.close
+		end
+		
+		db.close
 	end
 	
 	def reload

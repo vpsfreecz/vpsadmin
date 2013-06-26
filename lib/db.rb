@@ -2,8 +2,10 @@ require 'rubygems'
 require 'mysql'
 
 class Db
-	def initialize
-		connect
+	def initialize(host = nil)
+		host ||= $CFG.get(:db)
+		
+		connect(host)
 	end
 	
 	def query(q)
@@ -34,9 +36,9 @@ class Db
 	
 	private
 	
-	def connect
+	def connect(host)
 		protect do
-			@my = Mysql.new($CFG.get(:db, :host), $CFG.get(:db, :user), $CFG.get(:db, :pass), $CFG.get(:db, :name))
+			@my = Mysql.new(host[:host], host[:user], host[:pass], host[:name])
 			@my.reconnect = true
 		end
 	end
