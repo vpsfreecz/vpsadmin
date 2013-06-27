@@ -20,7 +20,8 @@ require 'lib/executor'
 # 2. Dst: Migrate part 1
 # 3. Src: Stop (2)
 # 4. Dst: Migrate part 2 (3)
-# 5. Src: Cleanup (4)
+# 5. Dst: Apply configs (4)
+# 6. Src: Cleanup (4)
 
 class Migration < Executor
 	class << self

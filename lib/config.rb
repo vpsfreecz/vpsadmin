@@ -103,6 +103,7 @@ IMPLICIT_CONFIG = {
 		:mv => "mv",
 		:cp => "cp",
 		:mkdir => "mkdir",
+		:rmdir => "rmdir",
 		:chmod => "chmod",
 		:tar => "tar",
 		:scp => "scp",
