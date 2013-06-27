@@ -519,11 +519,12 @@ function nas_list_mounts() {
 	else $sql = "SELECT m.*, e.*, s.*, m.id AS mount_id, r.node_id AS export_server_id, es.server_name AS export_server_name, r.label AS root_label,
 					e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail
 				FROM vps_mount m
+				LEFT JOIN vps v ON m.vps_id = v.vps_id
 				LEFT JOIN servers s ON m.server_id = s.server_id
 				LEFT JOIN storage_export e ON m.storage_export_id = e.id
 				LEFT JOIN storage_root r ON e.root_id = r.id
 				LEFT JOIN servers es ON r.node_id = es.server_id
-				WHERE m.`default` = 'no' AND e.member_id = ".$db->check($_SESSION["member"]["m_id"]);
+				WHERE m.`default` = 'no' AND v.vps_deleted IS NULL AND e.member_id = ".$db->check($_SESSION["member"]["m_id"]);
 	
 	$ret = array();
 	$rs = $db->query($sql);
