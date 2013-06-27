@@ -411,6 +411,10 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			add_transaction($_SESSION["member"]["m_id"], $target_server->s["server_id"], $this->veid, T_MIGRATE_OFFLINE_PART2, $params, NULL, $migration_id);
 			$migration_id = $db->insertId();
 			
+			$this->ve["vps_server"] = $target_server->s["server_id"];
+			$this->applyconfigs($migration_id);
+			$this->ve["vps_server"] = $source_server->s["server_id"];
+			
 			add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_MIGRATE_CLEANUP, $params, NULL, $migration_id);
 			$migration_id = $db->insertId();
 			
