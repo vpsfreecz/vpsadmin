@@ -26,7 +26,7 @@ class RemoteControl < EventMachine::Connection
 		
 		return error("Unsupported command") unless cmd
 		
-		executor = Kernel.const_get(cmd[:class]).new(nil, req["params"], @daemon)
+		executor = Kernel.const_get(cmd[:class]).new(nil, req["params"], nil, @daemon)
 		output = {}
 		
 		begin

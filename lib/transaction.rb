@@ -1,6 +1,9 @@
 class Transaction
 	@@types = {
 		:gen_known_hosts => 5,
+		:backup => 5006,
+		:backup_snapshot => 5011,
+		:rotate_snapshots => 5101,
 	}
 	
 	def initialize(db = nil)
@@ -22,5 +25,7 @@ class Transaction
 		@db.prepared("INSERT INTO transactions (`t_time`, `t_m_id`, `t_server`, `t_vps`, `t_type`, `t_depends_on`, `t_priority`, `t_param`, `t_done`, `t_success`)
 		             VALUES (NOW(), ?, ?, ?, ?, ?, ?, ?, 0, 0)",
 		             p[:m_id], p[:node], p[:vps], @@types[p[:type]], p[:depends], p[:priority] || 0, param)
+		
+		@db.insert_id
 	end
 end

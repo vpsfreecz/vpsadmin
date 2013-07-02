@@ -39,6 +39,16 @@ module BackuperBackend
 			ok
 		end
 		
+		# Make VPS snapshot and enqueue VPS backup
+		# 
+		# Params:
+		# [backuper]  number; ID of backuper
+		# [dataset]   string; backup to this dataset
+		# [path]      string; backup is in this path
+		def backup_snapshot
+			
+		end
+		
 		def clear_backups(locked = false)
 			unless locked
 				Backuper.wait_for_lock(Db.new, @veid)

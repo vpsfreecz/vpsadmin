@@ -40,7 +40,7 @@ class Command
 			return false
 		end
 		
-		@executor = Kernel.const_get(cmd[:class]).new(@trans["t_vps"], param)
+		@executor = Kernel.const_get(cmd[:class]).new(@trans["t_vps"], param, self)
 		
 		@m_attr.synchronize { @time_start = Time.new.to_i }
 		

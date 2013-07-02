@@ -15,10 +15,11 @@ end
 class Executor
 	attr_accessor :output
 	
-	def initialize(veid = nil, params = {}, daemon = nil)
+	def initialize(veid = nil, params = {}, command = nil, daemon = nil)
 		@veid = veid
 		@params = params
 		@output = {}
+		@command = command
 		@daemon = daemon
 		@m_attr = Mutex.new
 	end

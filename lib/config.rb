@@ -13,6 +13,7 @@ IMPLICIT_CONFIG = {
 	:vpsadmin => {
 		:server_id => nil,
 		:domain => "vpsfree.cz",
+		:node_addr => nil, # loaded from db
 		:netdev => "eth0",
 		:threads => 6,
 		:check_interval => 1,
@@ -52,6 +53,7 @@ IMPLICIT_CONFIG = {
 				3003 => "reinstall",
 				3004 => "clone",
 				4002 => "migrate_online",
+				5101 => "rotate_snapshots",
 				5301 => "nas_mounts",
 				5302 => "nas_mount",
 				5303 => "nas_umount",
@@ -76,6 +78,7 @@ IMPLICIT_CONFIG = {
 				5005 => "backup",
 				5006 => "backup",
 				5007 => "exports",
+				5011 => "backup_snapshot",
 			},
 			"Firewall" => {
 				7201 => "reg_ips",
@@ -228,7 +231,7 @@ class AppConfig
 	def load_db_settings
 		db = Db.new(@cfg[:db])
 		
-		st = db.prepared_st("SELECT server_type FROM servers WHERE server_id = ?", @cfg[:vpsadmin][:server_id])
+		st = db.prepared_st("SELECT server_type, server_ip4 FROM servers WHERE server_id = ?", @cfg[:vpsadmin][:server_id])
 		rs = st.fetch
 		
 		unless rs
@@ -237,6 +240,7 @@ class AppConfig
 		end
 		
 		@cfg[:vpsadmin][:type] = rs[0].to_sym
+		@cfg[:vpsadmin][:node_addr] = rs[1]
 		
 		case @cfg[:vpsadmin][:type]
 		when :node

@@ -6,7 +6,21 @@ class Backuper < Executor
 		alias_method :new_orig, :new
 		
 		def new(*args)
-			BackuperBackend.const_get($CFG.get(:backuper, :method)).new_orig(*args)
+			klass = nil
+			src = args[1]["src_node_type"].to_sym
+			dst = args[1]["dst_node_type"].to_sym
+			
+			if src == :ext4 && dst == :zfs
+				klass = :ExtToZfs
+				
+			elsif src == :zfs && dst == :zfs
+				klass = :ZfsToZfs
+				
+			else
+				raise CommandFailed.new("Backuper.new", 1, "Unsupported backup type #{src} to #{dst}")
+			end
+			
+			BackuperBackend.const_get(klass).new_orig(*args)
 		end
 	end
 	
@@ -172,4 +186,5 @@ class Backuper < Executor
 end
 
 require 'lib/handlers/backupers/rdiffbackup'
-require 'lib/handlers/backupers/zfs'
+require 'lib/handlers/backupers/zfs/exttozfs'
+require 'lib/handlers/backupers/zfs/zfstozfs'

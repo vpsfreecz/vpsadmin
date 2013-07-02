@@ -53,6 +53,20 @@ class ZfsVPS < VPS
 		ok
 	end
 	
+	def snapshot(ds, name)
+		zfs(:snapshot, nil, "#{ds}@#{name}")
+	end
+	
+	def rotate_snapshots
+		snapshots = list_snapshots(ve_private_ds)
+		
+		snapshots[0..-2].each do |s|
+			zfs(:destroy, nil, s)
+		end
+		
+		ok
+	end
+	
 	def ve_private_ds
 		"#{$CFG.get(:vps, :zfs, :root_dataset)}/#{@veid}"
 	end
