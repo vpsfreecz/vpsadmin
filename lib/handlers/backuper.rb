@@ -7,17 +7,23 @@ class Backuper < Executor
 		
 		def new(*args)
 			klass = nil
-			src = args[1]["src_node_type"].to_sym
-			dst = args[1]["dst_node_type"].to_sym
 			
-			if src == :ext4 && dst == :zfs
-				klass = :ExtToZfs
+			begin
+				src = args[1]["src_node_type"].to_sym
+				dst = args[1]["dst_node_type"].to_sym
 				
-			elsif src == :zfs && dst == :zfs
-				klass = :ZfsToZfs
-				
-			else
-				raise CommandFailed.new("Backuper.new", 1, "Unsupported backup type #{src} to #{dst}")
+				if src == :ext4 && dst == :zfs
+					klass = :ExtToZfs
+					
+				elsif src == :zfs && dst == :zfs
+					klass = :ZfsToZfs
+					
+				else
+					raise CommandFailed.new("Backuper.new", 1, "Unsupported backup type #{src} to #{dst}")
+				end
+			
+			rescue NoMethodError
+				klass = :ZfsBackuperCommon
 			end
 			
 			BackuperBackend.const_get(klass).new_orig(*args)
@@ -27,6 +33,8 @@ class Backuper < Executor
 	# Backup VPS
 	#
 	# Params:
+	# [src_node_type]  string; ext4 or zfs
+	# [dst_node_type]  string; ext4 or zfs
 	# [exclude]     list; paths to be excluded from backup
 	# [server_name] string; name of server VPS runs on
 	# [dataset]     string; backup to this dataset

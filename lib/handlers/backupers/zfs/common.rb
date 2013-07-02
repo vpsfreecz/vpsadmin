@@ -5,6 +5,35 @@ module BackuperBackend
 	class ZfsBackuperCommon < Backuper
 		include ::ZfsUtils
 		
+		
+		# Moves current backups to 'trash'
+		#
+		# Params:
+		# [dataset]  string; name of dataset
+		def replace_backups
+			trash = "#{$CFG.get(:backuper, :zfs, :trash, :dataset)}"
+			index = -1
+			
+			zfs(:list, "-r -d 1 -H -o name", trash)[:output].split().each do |ds|
+				m = nil
+				
+				if (m = ds.match(/#{trash}\/#{@veid}\.(\d+)/))
+					i = m[1].to_i
+					
+					index = i if i > index
+				end
+			end
+			
+			zfs(:rename, nil, "#{@params["dataset"]} #{trash}/#{@veid}.#{index+1}")
+			zfs(:create, nil, @params["dataset"])
+			
+			db = Db.new
+			update_backups(db)
+			db.close
+			
+			ok
+		end
+		
 		def clear_backups(locked = false)
 			unless locked
 				Backuper.wait_for_lock(Db.new, @veid)

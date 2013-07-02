@@ -21,7 +21,7 @@ module BackuperBackend
 				end
 				
 				syscmd(rsync, [23, 24])
-				zfs(:snapshot, nil, "#{@params["dataset"]}@#{Time.new.strftime("%Y-%m-%dT%H:%M:%S")}")
+				zfs(:snapshot, nil, "#{@params["dataset"]}@backup-#{Time.new.strftime("%Y-%m-%dT%H:%M:%S")}")
 				
 				clear_backups(true)
 				update_backups(db)

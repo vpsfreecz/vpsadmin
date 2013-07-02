@@ -79,6 +79,7 @@ IMPLICIT_CONFIG = {
 				5006 => "backup",
 				5007 => "exports",
 				5011 => "backup_snapshot",
+				5021 => "replace_backups",
 			},
 			"Firewall" => {
 				7201 => "reg_ips",
@@ -158,6 +159,9 @@ IMPLICIT_CONFIG = {
 		:download => "/storage/vpsfree.cz/download",
 		:zfs => {
 			:rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after --exclude .zfs/ --exclude-from %{exclude} %{src} %{dst}",
+			:trash => {
+				:dataset => "storage/vpsfree.cz/trash",
+			},
 		},
 		:store => {
 			:min_backups => 14,
