@@ -37,10 +37,8 @@ define ('T_BACKUP_DOWNLOAD', 5004);
 define ('T_BACKUP_SCHEDULE', 5005);
 define ('T_BACKUP_REGULAR', 5006);
 define ('T_BACKUP_EXPORTS', 5007); // Delete
-define ('T_BACKUP_VE_MOUNT', 5101); // Delete
-define ('T_BACKUP_VE_UMOUNT', 5102); // Delete
-define ('T_BACKUP_VE_REMOUNT', 5103); // Delete
-define ('T_BACKUP_VE_GENERATE_MOUNT_SCRIPTS', 5104); // Delete
+define ('T_BACKUP_SNAPSHOT', 5011);
+define ('T_BACKUP_VE_RORATE_SNAPSHOTS', 5101);
 define ('T_STORAGE_EXPORT_CREATE', 5201);
 define ('T_STORAGE_EXPORT_UPDATE', 5202);
 define ('T_STORAGE_EXPORT_DELETE', 5203);
@@ -339,17 +337,11 @@ function transaction_label ($t_type) {
 	case T_BACKUP_EXPORTS:
 		$action_label = 'Exports';
 		break;
-	case T_BACKUP_VE_MOUNT:
-		$action_label = 'Mount backup';
+	case T_BACKUP_SNAPSHOT:
+		$action_label = 'Backup snapshot';
 		break;
-	case T_BACKUP_VE_UMOUNT:
-		$action_label = 'Umount backup';
-		break;
-	case T_BACKUP_VE_REMOUNT:
-		$action_label = 'Remount backup';
-		break;
-	case T_BACKUP_VE_GENERATE_MOUNT_SCRIPTS:
-		$action_label = 'Generate mount scripts';
+	case T_BACKUP_VE_RORATE_SNAPSHOTS:
+		$action_label = 'Rotate snapshots';
 		break;
 	case T_STORAGE_EXPORT_CREATE:
 		$action_label = 'Export +';
