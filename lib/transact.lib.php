@@ -38,6 +38,7 @@ define ('T_BACKUP_SCHEDULE', 5005);
 define ('T_BACKUP_REGULAR', 5006);
 define ('T_BACKUP_EXPORTS', 5007); // Delete
 define ('T_BACKUP_SNAPSHOT', 5011);
+define ('T_BACKUP_TRASH', 5021);
 define ('T_BACKUP_VE_RORATE_SNAPSHOTS', 5101);
 define ('T_STORAGE_EXPORT_CREATE', 5201);
 define ('T_STORAGE_EXPORT_UPDATE', 5202);
@@ -339,6 +340,9 @@ function transaction_label ($t_type) {
 		break;
 	case T_BACKUP_SNAPSHOT:
 		$action_label = 'Backup snapshot';
+		break;
+	case T_BACKUP_TRASH:
+		$action_label = 'Trash backups';
 		break;
 	case T_BACKUP_VE_RORATE_SNAPSHOTS:
 		$action_label = 'Rotate snapshots';

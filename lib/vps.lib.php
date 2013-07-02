@@ -415,6 +415,17 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			$this->applyconfigs($migration_id);
 			$this->ve["vps_server"] = $source_server->s["server_id"];
 			
+			if ($source_server->role["fstype"] != $target_server->role["fstype"])
+			{
+				$e = nas_get_export_by_id($this->ve["vps_backup_export"]);
+				
+				$trash = array(
+					"dataset" => $e["root_dataset"]."/".$e["dataset"],
+				);
+				
+				add_transaction($_SESSION["member"]["m_id"], $e["node_id"], $this->veid, T_BACKUP_TRASH, $trash, NULL, $migration_id);
+			}
+			
 			add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_MIGRATE_CLEANUP, $params, NULL, $migration_id);
 			$migration_id = $db->insertId();
 			
