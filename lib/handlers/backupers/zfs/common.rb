@@ -44,7 +44,7 @@ module BackuperBackend
 				refer = zfs(:get, "-p -H -o value referenced", snapshot)[:output].to_i
 				name = snapshot.split("@")[1]
 				
-				if name.starts_with?("backup-")
+				if name.start_with?("backup-")
 					name = name[7..-1]
 				end
 				
