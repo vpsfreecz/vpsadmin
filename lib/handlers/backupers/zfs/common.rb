@@ -42,7 +42,7 @@ module BackuperBackend
 			snapshots = zfs(:list, "-r -t snapshot -H -o name", @params["dataset"])[:output].split()
 			
 			snapshots.delete_if do |sn|
-				sn.start_with?("restore-")
+				!sn["@restore-"].nil?
 			end
 			
 			deleted = 0

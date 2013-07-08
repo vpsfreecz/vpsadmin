@@ -131,6 +131,7 @@ rs.each_hash do |row|
 		:dataset => row["root_dataset"] + "/" + row["dataset"],
 		:path => row["root_path"] + "/" + row["path"],
 		:backuper => row["backuper_server_id"].to_i,
+		:backup_type => :backup_regular,
 	}
 	
 	if options[:dry_run]

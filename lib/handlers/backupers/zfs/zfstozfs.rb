@@ -39,6 +39,7 @@ module BackuperBackend
 		# [backuper]        number; ID of backuper
 		# [dataset]         string; backup to this dataset
 		# [path]            string; backup is in this path
+		# [backup_type]     number; transaction type ID, regular or on-demand backup
 		# [set_dependency]  number, optional; the ID of transaction that should depend on the backup
 		def backup_snapshot
 			vps = ZfsVPS.new(@veid)
@@ -55,7 +56,7 @@ module BackuperBackend
 			t_id = t.queue({
 				:node => @params["backuper"],
 				:vps => @veid,
-				:type => :backup, # FIXME: can be regular on on-demand
+				:type => @params["backup_type"] == 5005 ? :backup_schedule : :backup_regular,
 				:depends => @command.id,
 				:param => {
 					:src_node_type => @params["src_node_type"],

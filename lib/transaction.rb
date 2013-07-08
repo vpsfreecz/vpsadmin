@@ -1,7 +1,8 @@
 class Transaction
 	@@types = {
 		:gen_known_hosts => 5,
-		:backup => 5006,
+		:backup_schedule => 5005,
+		:backup_regular => 5006,
 		:backup_snapshot => 5011,
 		:rotate_snapshots => 5101,
 	}
