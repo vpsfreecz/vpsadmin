@@ -24,7 +24,7 @@ class Transaction
 		param = "{}" if param == "null"
 		
 		@db.prepared("INSERT INTO transactions (`t_time`, `t_m_id`, `t_server`, `t_vps`, `t_type`, `t_depends_on`, `t_priority`, `t_param`, `t_done`, `t_success`)
-		             VALUES (NOW(), ?, ?, ?, ?, ?, ?, ?, 0, 0)",
+		             VALUES (UNIX_TIMESTAMP(NOW()), ?, ?, ?, ?, ?, ?, ?, 0, 0)",
 		             p[:m_id], p[:node], p[:vps], @@types[p[:type]], p[:depends], p[:priority] || 0, param)
 		
 		@db.insert_id
