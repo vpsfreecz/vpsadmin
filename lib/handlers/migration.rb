@@ -1,4 +1,4 @@
-require 'lib/executor'
+require 'lib/handlers/vpstransport'
 
 # Offline migration abstraction
 #
@@ -23,7 +23,7 @@ require 'lib/executor'
 # 5. Dst: Apply configs (4)
 # 6. Src: Cleanup (4)
 
-class Migration < Executor
+class Migration < VpsTransport
 	class << self
 		alias_method :new_orig, :new
 		
@@ -96,31 +96,6 @@ class Migration < Executor
 	# Post-migration actions, run on source vz node
 	def cleanup
 		@vps.destroy
-	end
-	
-	def copy_configs
-		scp("#{@params["src_addr"]}:#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.*", "#{$CFG.get(:vz, :vz_conf)}/conf/")
-	end
-	
-	def create_root
-		path = "#{$CFG.get(:vz, :vz_root)}/root/#{@veid}"
-		
-		if File.exists?(path)
-			begin
-				Dir.rmdir(path)
-			rescue SystemCallError => err
-				raise CommandFailed.new("rmdir", 1, err.to_s)
-			end
-		end
-		
-		syscmd("#{$CFG.get(:bin, :mkdir)} #{path}")
-	end
-	
-	def sync_private
-		syscmd($CFG.get(:vps, :migration, :rsync) \
-			.gsub(/%\{rsync\}/, $CFG.get(:bin, :rsync)) \
-			.gsub(/%\{src\}/, "#{@params["src_addr"]}:#{@params["src_ve_private"]}/") \
-			.gsub(/%\{dst\}/, @vps.ve_private))
 	end
 	
 	def post_save(db)

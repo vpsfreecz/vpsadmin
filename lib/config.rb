@@ -51,7 +51,6 @@ IMPLICIT_CONFIG = {
 				3001 => "create",
 				3002 => "destroy",
 				3003 => "reinstall",
-				3004 => "clone",
 				4002 => "migrate_online",
 				5101 => "rotate_snapshots",
 				5301 => "nas_mounts",
@@ -59,6 +58,10 @@ IMPLICIT_CONFIG = {
 				5303 => "nas_umount",
 				5304 => "nas_remount",
 				8001 => "features",
+			},
+			"Clone" => {
+				3004 => "local_clone",
+				3005 => "remote_clone",
 			},
 			"Migration" => {
 				4011 => "prepare",
