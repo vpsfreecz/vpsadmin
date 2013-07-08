@@ -171,6 +171,16 @@ class Backuper < Executor
 		"#{mountdir}/#{@veid}"
 	end
 	
+	def backup_snapshot_path
+		path = "#{@params["path"]}/.zfs/snapshot/#{@params["datetime"]}"
+		
+		if File.exists?(path)
+			return path
+		end
+		
+		"#{@params["path"]}/.zfs/snapshot/backup-#{@params["datetime"]}"
+	end
+	
 	# Sets appropriate command state, wait for lock, run block and unclock VPS again
 	def acquire_lock(db)
 		set_step("[waiting for lock]")

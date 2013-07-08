@@ -149,15 +149,5 @@ module BackuperBackend
 				end
 			end
 		end
-		
-		def backup_snapshot_path
-			path = "#{@params["path"]}/.zfs/snapshot/#{@params["datetime"]}"
-			
-			if File.exists?(path)
-				return path
-			end
-			
-			"#{@params["path"]}/.zfs/snapshot/backup-#{@params["datetime"]}"
-		end
 	end
 end

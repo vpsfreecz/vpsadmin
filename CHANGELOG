@@ -1,3 +1,6 @@
+* Mon Jul 08 2013 - version 1.10.1
+- Fix ext restoring
+
 * Mon Jul 08 2013 - version 1.10.0
 - Add support for ZFS nodes (configs, backups, restore, migrations, cloning)
 - New implementation of offline migration and clone
