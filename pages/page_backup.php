@@ -53,7 +53,9 @@ if ($_SESSION["logged_in"]) {
 			if ($_REQUEST["backup_first"])
 				$last_t = get_last_transaction(T_BACKUP_SCHEDULE, $vps->veid);
 			
-			if (is_transaction_in_queue(T_BACKUP_RESTORE, $vps->veid))
+			if (is_transaction_in_queue(T_BACKUP_RESTORE_PREPARE, $vps->veid)
+				|| is_transaction_in_queue(T_BACKUP_RESTORE_RESTORE, $vps->veid)
+				|| is_transaction_in_queue(T_BACKUP_RESTORE_FINISH, $vps->veid))
 				$xtpl->perex(
 					_("Restore already in queue"),
 					_("Restoration request for this VPS is already in queue, you must wait until it is done.")
@@ -71,7 +73,9 @@ if ($_SESSION["logged_in"]) {
 			break;
 		case 'restore2':
 			$vps = vps_load($_GET["vps_id"]);
-			if (is_transaction_in_queue(T_BACKUP_RESTORE, $vps->veid))
+			if (is_transaction_in_queue(T_BACKUP_RESTORE_PREPARE, $vps->veid)
+				|| is_transaction_in_queue(T_BACKUP_RESTORE_RESTORE, $vps->veid)
+				|| is_transaction_in_queue(T_BACKUP_RESTORE_FINISH, $vps->veid))
 				$xtpl->perex(
 					_("Restore already in queue"),
 					_("Restoration request for this VPS is already in queue, you must wait until it is done.")
