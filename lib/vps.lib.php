@@ -819,16 +819,17 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 	$db->query($sql);
 	$clone = vps_load($db->insert_id());
 	
+	$src_node = new cluster_node($this->ve["vps_server"]);
+	$dst_node = new cluster_node($server_id);
+	
 	$params = array(
 		"src_veid" => $this->veid,
-		"src_server_ip" => $this->ve["server_ip4"],
-		"is_local" => $server_id == $this->ve["vps_server"],
-		"template" => $clone->ve["templ_name"],
-		"hostname" => $clone->ve["vps_hostname"],
-		"nameserver" => $clone->ve["vps_nameserver"],
+		"src_addr" => $this->ve["server_ip4"],
+		"src_node_type" => $src_node->role["fstype"],
+		"dst_node_type" => $dst_node->role["fstype"],
 	);
 	
-	add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_CLONE_VE, $params);
+	add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, $server_id == $this->ve["vps_server"] ? T_CLONE_VE_LOCAL : T_CLONE_VE_REMOTE, $params);
 	
 	switch($configs) {
 		case 0:

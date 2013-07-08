@@ -22,7 +22,8 @@ define ('T_EXEC_APPLYCONFIG', 2008);
 define ('T_CREATE_VE', 3001);
 define ('T_DESTROY_VE', 3002);
 define ('T_REINSTALL_VE', 3003);
-define ('T_CLONE_VE', 3004);
+define ('T_CLONE_VE_LOCAL', 3004);
+define ('T_CLONE_VE_REMOTE', 3005);
 define ('T_MIGRATE_OFFLINE_PREPARE', 4011);
 define ('T_MIGRATE_OFFLINE_PART1', 4021);
 define ('T_MIGRATE_OFFLINE_PART2', 4022);
@@ -243,7 +244,8 @@ function transaction_label ($t_type) {
 	case T_REINSTALL_VE:
 	    $action_label = 'Reinstall';
 	    break;
-	case T_CLONE_VE:
+	case T_CLONE_VE_LOCAL:
+	case T_CLONE_VE_REMOTE:
 		$action_label = 'Clone';
 		break;
 	case T_MIGRATE_OFFLINE_PREPARE:
