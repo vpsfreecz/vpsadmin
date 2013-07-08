@@ -447,10 +447,12 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			if ($this_loc != $cluster->get_location_of_server($target_id)) {
 				$ips = $this->iplist();
 				
+				$this->ve["vps_server"] = $target_server->s["server_id"];
 				if($ips) {
 					foreach($ips as $ip)
 						$this->ipdel($ip["ip_addr"], $migration_id);
 				}
+				$this->ve["vps_server"] = $source_server->s["server_id"];
 			}
 			
 			return $migration_id;

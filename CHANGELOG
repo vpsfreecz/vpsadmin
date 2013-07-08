@@ -1,3 +1,7 @@
+* Mon Jul 08 2013 - version 1.10.1
+- Offline migration: remove IPs on destination node
+- Status page: fix VPS count
+
 * Mon Jul 08 2013 - version 1.10.0
 - Own implementation of offline migration
 - ZFS support for backups and restore
