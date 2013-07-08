@@ -25,7 +25,7 @@ module BackuperBackend
 				
 				syscmd("ssh #{@params["node_addr"]} #{send} | #{recv}")
 				
-				clear_backups(true)
+				clear_backups(true) if @params["rotate_backups"]
 				update_backups(db)
 			end
 			
@@ -66,6 +66,7 @@ module BackuperBackend
 					:path => @params["path"],
 					:snapshot1 => oldest_snapshot ? oldest_snapshot.split("@")[1] : nil,
 					:snapshot2 => time,
+					:rotate_backups => @params["rotate_backups"],
 				},
 				
 			})

@@ -37,12 +37,13 @@ class Backuper < Executor
 	# Backup VPS
 	#
 	# Params:
-	# [src_node_type]  string; ext4 or zfs
-	# [dst_node_type]  string; ext4 or zfs
-	# [exclude]     list; paths to be excluded from backup
-	# [server_name] string; name of server VPS runs on
-	# [dataset]     string; backup to this dataset
-	# [path]        string; backup is in this path
+	# [src_node_type]   string; ext4 or zfs
+	# [dst_node_type]   string; ext4 or zfs
+	# [exclude]         list; paths to be excluded from backup
+	# [server_name]     string; name of server VPS runs on
+	# [dataset]         string; backup to this dataset
+	# [path]            string; backup is in this path
+	# [rotate_backups]  bool; rotate backups?
 	def backup
 		raise CommandNotImplemented
 	end

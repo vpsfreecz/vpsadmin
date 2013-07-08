@@ -132,6 +132,7 @@ rs.each_hash do |row|
 		:path => row["root_path"] + "/" + row["path"],
 		:backuper => row["backuper_server_id"].to_i,
 		:backup_type => :backup_regular,
+		:rotate_backups => true,
 	}
 	
 	if options[:dry_run]

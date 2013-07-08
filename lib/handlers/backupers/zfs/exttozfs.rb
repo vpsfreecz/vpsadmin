@@ -23,7 +23,7 @@ module BackuperBackend
 				syscmd(rsync, [23, 24])
 				zfs(:snapshot, nil, "#{@params["dataset"]}@backup-#{Time.new.strftime("%Y-%m-%dT%H:%M:%S")}")
 				
-				clear_backups(true)
+				clear_backups(true) if @params["rotate_backups"]
 				update_backups(db)
 			end
 			

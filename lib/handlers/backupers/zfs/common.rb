@@ -41,10 +41,6 @@ module BackuperBackend
 			
 			snapshots = zfs(:list, "-r -t snapshot -H -o name", @params["dataset"])[:output].split()
 			
-			snapshots.delete_if do |sn|
-				!sn["@restore-"].nil?
-			end
-			
 			deleted = 0
 			min_backups = $CFG.get(:backuper, :store, :min_backups)
 			max_backups = $CFG.get(:backuper, :store, :max_backups)
@@ -59,6 +55,8 @@ module BackuperBackend
 				
 				if name.start_with?("backup-")
 					name = name[7..-1]
+				elsif name.start_with?("restore-")
+					name = name[8..-1].split(".")[0]
 				end
 				
 				t = Time.parse(name)
