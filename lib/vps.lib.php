@@ -729,6 +729,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			"path" => $path,
 			"backuper" => $backuper["server_id"],
 			"set_dependency" => $restore_id,
+			"backup_type" => T_BACKUP_SCHEDULE,
 		);
 		
 		if($node->role["fstype"] == "zfs") {
