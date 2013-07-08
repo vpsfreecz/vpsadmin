@@ -277,23 +277,36 @@ class vps_load {
 	if (($this->exists || $this->deleted) && ($_SESSION["is_admin"] || $force)) {
 		
 		if($lazy) {
-			if($db->query("UPDATE vps SET vps_deleted = ".time()." WHERE vps_id = ". $db->check($this->veid)))
+			if($db->query("UPDATE vps SET vps_deleted = ".time()." WHERE vps_id = ". $db->check($this->veid))) {
 				$this->exists = false;
-			else return false;
+				
+				if($this->is_playground())
+					$this->delete_all_ips();
+				
+				return true;
+				
+			} else return false;
+			
 		} else {
 			$sql = 'DELETE FROM vps WHERE vps_id='.$db->check($this->veid);
-			$sql2 = 'UPDATE vps_ip SET vps_id = 0 WHERE vps_id='.$db->check($this->veid);
 
 			nas_delete_mounts_for_vps($this->veid);
 
 			if ($result = $db->query($sql)) {
-				if ($result2 = $db->query($sql2)) {
+				if ($this->delete_all_ips()) {
 					$this->exists = false;
 					add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_DESTROY_VE);
+					return true;
 				} else return false;
 			} else return false;
 		}
 	}
+  }
+  
+  function delete_all_ips() {
+	global $db;
+	
+	return $db->query('UPDATE vps_ip SET vps_id = 0 WHERE vps_id='.$db->check($this->veid));
   }
   
   function revive() {
