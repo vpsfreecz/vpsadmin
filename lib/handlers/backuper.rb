@@ -1,6 +1,10 @@
 require 'lib/executor'
 
 # Handles backups on storage node
+#
+# The naming of specific implementations has the following format:
+#   <node>To<backuper>, eg. ExtToZfs
+# even if the order of operation is opposite.
 class Backuper < Executor
 	class << self
 		alias_method :new_orig, :new
@@ -64,21 +68,31 @@ class Backuper < Executor
 		raise CommandNotImplemented
 	end
 	
-	# First part of restore, run on storage node
-	#
-	# Params:
-	# [datetime]    string, date format %Y-%m-%dT%H:%M:%S; restore from backup from this date
-	# [backuper]    string; name of backuper server
-	# [server_name] string; name of server VPS runs on
-	# [dataset]     string; backup to this dataset
-	# [path]        string; backup is in this path
+	# First part of restore, run on vz node
+	# [src_node_type]  string; ext4 or zfs
+	# [dst_node_type]  string; ext4 or zfs
 	def restore_prepare
 		raise CommandNotImplemented
 	end
 	
-	# Second part of restore, run on vz node
+	# Copy data from backuper to vz node, run on backuper
 	#
-	# Parameters same as for #restore_prepare.
+	# Params:
+	# [src_node_type]  string; ext4 or zfs
+	# [dst_node_type]  string; ext4 or zfs
+	# [datetime]    string, date format %Y-%m-%dT%H:%M:%S; restore from backup from this date
+	# [backuper]    string; name of backuper server
+	# [server_name] string; name of server VPS runs on
+	# [node_addr]   string; IP address of server VPS runs on
+	# [dataset]     string; backup to this dataset
+	# [path]        string; backup is in this path
+	def restore_restore
+		raise CommandNotImplemented
+	end
+	
+	# Final part of restore, run on vz node
+	#
+	# Parameters same as for #restore_restore.
 	def restore_finish
 		target = $CFG.get(:backuper, :restore_src).gsub(/%\{veid\}/, @veid)
 		

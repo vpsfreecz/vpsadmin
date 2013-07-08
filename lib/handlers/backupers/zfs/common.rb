@@ -70,8 +70,11 @@ module BackuperBackend
 			db.prepared("DELETE FROM vps_backups WHERE vps_id = ?", @veid)
 			
 			list_snapshots(@params["dataset"]).each do |snapshot|
-				refer = zfs(:get, "-p -H -o value referenced", snapshot)[:output].to_i
 				name = snapshot.split("@")[1]
+				
+				next if name.start_with?("restore-")
+				
+				refer = zfs(:get, "-p -H -o value referenced", snapshot)[:output].to_i
 				
 				if name.start_with?("backup-")
 					name = name[7..-1]

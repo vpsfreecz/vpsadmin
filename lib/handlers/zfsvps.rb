@@ -4,6 +4,12 @@ require 'lib/utils/zfs'
 class ZfsVPS < VPS
 	include ZfsUtils
 	
+	class << self
+		def new(*args)
+			ZfsVPS.new_orig(*args)
+		end
+	end
+	
 	def create
 		zfs(:create, nil, ve_private_ds)
 		

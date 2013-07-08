@@ -79,16 +79,74 @@ module BackuperBackend
 		end
 		
 		def restore_prepare
-			target = $CFG.get(:backuper, :restore_target) \
-				.gsub(/%\{node\}/, @params["server_name"] + "." + $CFG.get(:vpsadmin, :domain)) \
-				.gsub(/%\{veid\}/, @veid)
-			syscmd("#{$CFG.get(:bin, :rm)} -rf #{target}") if File.exists?(target)
+			ds = "#{ZfsVPS.new(@veid).ve_private_ds}.restoring"
 			
-			acquire_lock(Db.new) do
-				syscmd("#{$CFG.get(:bin, :rsync)} -rlptgoDH --numeric-ids --inplace --delete-after --exclude .zfs/ #{@params["path"]}/.zfs/snapshot/#{@params["datetime"]}/ #{target}")
+			begin
+				zfs(:get, "name", ds)
+				zfs(:destroy, "-r", ds)
+			
+			rescue CommandFailed => e
+				raise e if e.rc != 1
+				
+			ensure
+				zfs(:create, nil, ds)
 			end
 			
 			ok
+		end
+		
+		def restore_restore
+			syscmd($CFG.get(:backuper, :restore, :zfs, :head_rsync) \
+				.gsub(/%\{rsync\}/, $CFG.get(:bin, :rsync)) \
+				.gsub(/%\{src\}/, backup_snapshot_path + "/") \
+				.gsub(/%\{dst\}/, @params["path"]))
+			
+			index = -1
+			
+			list_snapshots(@params["dataset"]).each do |sn|
+				m = nil
+				
+				if (m = sn.match(/#{@params["dataset"]}@restore-\d+-\d+-\d+T\d+\:\d+\:\d+\.(\d+)/))
+					i = m[1].to_i
+					
+					index = i if i > index
+				end
+			end
+			
+			snapshot = "#{@params["dataset"]}@restore-#{@params["datetime"]}.#{index+1}"
+			zfs(:snapshot, nil, snapshot)
+			
+			send = "zfs send #{snapshot}"
+			recv = "zfs recv -F #{ZfsVPS.new(@veid).ve_private_ds}.restoring"
+			
+			syscmd("#{send} | ssh #{@params["node_addr"]} #{recv}")
+		end
+		
+		def restore_finish
+			vps = ZfsVPS.new(@veid)
+			tmp = "#{vps.ve_private_ds}.restoring"
+			
+			vps.honor_state do
+				vps.stop
+				
+				acquire_lock(Db.new) do
+					zfs(:set, "quota=#{zfs(:get, "-H -ovalue quota", vps.ve_private_ds)[:output].strip}", tmp)
+					zfs(:destroy, "-r", vps.ve_private_ds)
+					zfs(:rename, nil, "#{tmp} #{vps.ve_private_ds}")
+					
+					zfs(:mount, nil, vps.ve_private_ds, [1,]) # FIXME: why is it unmounted?
+				end
+			end
+		end
+		
+		def backup_snapshot_path
+			path = "#{@params["path"]}/.zfs/snapshot/#{@params["datetime"]}"
+			
+			if File.exists?(path)
+				return path
+			end
+			
+			"#{@params["path"]}/.zfs/snapshot/backup-#{@params["datetime"]}"
 		end
 	end
 end

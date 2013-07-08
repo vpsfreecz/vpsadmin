@@ -72,7 +72,8 @@ IMPLICIT_CONFIG = {
 				5203 => "delete_export",
 			},
 			"Backuper" => {
-				5002 => "restore_prepare",
+				5001 => "restore_prepare",
+				5002 => "restore_restore",
 				5003 => "restore_finish",
 				5004 => "download",
 				5005 => "backup",
@@ -167,6 +168,11 @@ IMPLICIT_CONFIG = {
 			:min_backups => 14,
 			:max_backups => 20,
 			:max_age => 14,
+		},
+		:restore => {
+			:zfs => {
+				:head_rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}",
+			},
 		},
 		:exports => {
 			:enabled => true,

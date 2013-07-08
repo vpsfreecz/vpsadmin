@@ -32,10 +32,15 @@ module BackuperBackend
 		end
 		
 		def restore_prepare
+			target = $CFG.get(:backuper, :restore_src).gsub(/%\{veid\}/, @veid)
+			
+			syscmd("#{$CFG.get(:bin, :rm)} -rf #{target}") if File.exists?(target)
+		end
+		
+		def restore_restore
 			target = $CFG.get(:backuper, :restore_target) \
 				.gsub(/%\{node\}/, @params["server_name"] + "." + $CFG.get(:vpsadmin, :domain)) \
 				.gsub(/%\{veid\}/, @veid)
-			syscmd("#{$CFG.get(:bin, :rm)} -rf #{target}") if File.exists?(target)
 			
 			acquire_lock(Db.new) do
 				syscmd("#{$CFG.get(:bin, :rsync)} -rlptgoDH --numeric-ids --inplace --delete-after --exclude .zfs/ #{@params["path"]}/.zfs/snapshot/#{@params["datetime"]}/ #{target}")
