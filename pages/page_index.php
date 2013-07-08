@@ -176,7 +176,7 @@ while ($srv = $db->fetch_array($rslt)) {
 	
 	$xtpl->table_td($srv["server_name"]);
 
-	$vps_on = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1"));
+	$vps_on = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1 AND vps_server = ".$db->check($node->s["server_id"])));
 	$vpses = $node->s["server_type"] == "node" ? $vps_on["cnt"] : "-";
 	
 	$xtpl->table_td($vpses, false, true);
