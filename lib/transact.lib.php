@@ -31,7 +31,8 @@ define ('T_MIGRATE_ONLINE', 4002);
 define ('T_MIGRATE_ONLINE_PART2', 4012);
 // define ('T_BACKUP_MOUNT', 5001); // Delete
 // define ('T_BACKUP_UMOUNT', 5002); // Delete
-define ('T_BACKUP_RESTORE_PREPARE', 5002);
+define ('T_BACKUP_RESTORE_PREPARE', 5001);
+define ('T_BACKUP_RESTORE_RESTORE', 5002);
 define ('T_BACKUP_RESTORE_FINISH', 5003);
 define ('T_BACKUP_DOWNLOAD', 5004);
 define ('T_BACKUP_SCHEDULE', 5005);
@@ -321,10 +322,13 @@ function transaction_label ($t_type) {
 	    $action_label = 'Mount backup';
 		break;
 	case T_BACKUP_RESTORE_PREPARE:
-		$action_label = 'Restore (1)';
+		$action_label = 'Restore (step 1)';
+		break;
+	case T_BACKUP_RESTORE_RESTORE:
+		$action_label = 'Restore (step 2)';
 		break;
 	case T_BACKUP_RESTORE_FINISH:
-		$action_label = 'Restore (2)';
+		$action_label = 'Restore (step 3)';
 		break;
 	case T_BACKUP_DOWNLOAD:
 		$action_label = 'Download backup';
