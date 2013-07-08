@@ -1,3 +1,12 @@
+* Mon Jul 08 2013 - version 1.10.0
+- Own implementation of offline migration
+- ZFS support for backups and restore
+- VPS clone: fix backup export setting, support new implementation
+- VPS swap: adapt to new implementation of offline migration
+- NAS mount list: do not show mounts for deleted VPSes
+- Playground: unassigned IP addresses from lazy deleted VPS (#39), improve automated server picking
+- Restore: fix checking if another restore is already queued
+
 * Mon May 27 2013 - version 1.9.0
 - VPS swapping
 - Add link to user profile next to logout button
