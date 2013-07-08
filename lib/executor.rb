@@ -15,10 +15,11 @@ end
 class Executor
 	attr_accessor :output
 	
-	def initialize(veid = nil, params = {}, daemon = nil)
+	def initialize(veid = nil, params = {}, command = nil, daemon = nil)
 		@veid = veid
 		@params = params
 		@output = {}
+		@command = command
 		@daemon = daemon
 		@m_attr = Mutex.new
 	end
@@ -41,6 +42,10 @@ class Executor
 		end
 	end
 	
+	def zfs?
+		$CFG.get(:vpsadmin, :fstype) == :zfs
+	end
+	
 	def vzctl(cmd, veid, opts = {}, save = false, valid_rcs = [])
 		options = []
 		
@@ -56,6 +61,10 @@ class Executor
 		end
 		
 		syscmd("#{$CFG.get(:vz, :vzctl)} #{cmd} #{veid} #{options.join(" ")} #{"--save" if save}", valid_rcs)
+	end
+	
+	def scp(what, where, opts = nil)
+		syscmd("#{$CFG.get(:bin, :scp)} #{opts} #{what} #{where}")
 	end
 	
 	def syscmd(cmd, valid_rcs = [])

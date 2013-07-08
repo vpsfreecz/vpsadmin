@@ -2,6 +2,9 @@ require 'lib/executor'
 require 'lib/handlers/vpsadmin'
 require 'lib/handlers/node'
 require 'lib/handlers/vps'
+require 'lib/handlers/zfsvps'
+require 'lib/handlers/clone'
+require 'lib/handlers/migration'
 require 'lib/handlers/firewall'
 require 'lib/handlers/mailer'
 require 'lib/handlers/storage'
@@ -38,7 +41,7 @@ class Command
 			return false
 		end
 		
-		@executor = Kernel.const_get(cmd[:class]).new(@trans["t_vps"], param)
+		@executor = Kernel.const_get(cmd[:class]).new(@trans["t_vps"], param, self)
 		
 		@m_attr.synchronize { @time_start = Time.new.to_i }
 		

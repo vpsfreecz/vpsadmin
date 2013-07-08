@@ -13,13 +13,17 @@ IMPLICIT_CONFIG = {
 	:vpsadmin => {
 		:server_id => nil,
 		:domain => "vpsfree.cz",
+		:node_addr => nil, # loaded from db
 		:netdev => "eth0",
 		:threads => 6,
 		:check_interval => 1,
 		:status_interval => 300,
+		:resources_interval => 300,
 		:update_vps_status => true,
 		:root => "/opt/vpsadmind",
 		:init => true,
+		:fstype => :ext4, # loaded from db
+		:type => nil, # loaded from db
 		:handlers => {
 			"VpsAdmin" => {
 				101 => "stop",
@@ -47,14 +51,23 @@ IMPLICIT_CONFIG = {
 				3001 => "create",
 				3002 => "destroy",
 				3003 => "reinstall",
-				3004 => "clone",
-				4001 => "migrate_offline",
 				4002 => "migrate_online",
+				5101 => "rotate_snapshots",
 				5301 => "nas_mounts",
 				5302 => "nas_mount",
 				5303 => "nas_umount",
 				5304 => "nas_remount",
 				8001 => "features",
+			},
+			"Clone" => {
+				3004 => "local_clone",
+				3005 => "remote_clone",
+			},
+			"Migration" => {
+				4011 => "prepare",
+				4021 => "migrate_part1",
+				4022 => "migrate_part2",
+				4031 => "cleanup",
 			},
 			"Storage" => {
 				5201 => "create_export",
@@ -62,12 +75,15 @@ IMPLICIT_CONFIG = {
 				5203 => "delete_export",
 			},
 			"Backuper" => {
-				5002 => "restore_prepare",
+				5001 => "restore_prepare",
+				5002 => "restore_restore",
 				5003 => "restore_finish",
 				5004 => "download",
 				5005 => "backup",
 				5006 => "backup",
 				5007 => "exports",
+				5011 => "backup_snapshot",
+				5021 => "replace_backups",
 			},
 			"Firewall" => {
 				7201 => "reg_ips",
@@ -85,6 +101,7 @@ IMPLICIT_CONFIG = {
 		:vzmigrate => "vzmigrate",
 		:vz_root => "/vz",
 		:vz_conf => "/etc/vz",
+		:ve_private => "/vz/private/%{veid}", # loaded from db
 	},
 	
 	:bin => {
@@ -94,6 +111,7 @@ IMPLICIT_CONFIG = {
 		:mv => "mv",
 		:cp => "cp",
 		:mkdir => "mkdir",
+		:rmdir => "rmdir",
 		:chmod => "chmod",
 		:tar => "tar",
 		:scp => "scp",
@@ -112,7 +130,13 @@ IMPLICIT_CONFIG = {
 	:vps => {
 		:clone => {
 			:rsync => "%{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after %{src} %{dst}",
-		}
+		},
+		:zfs => {
+			:root_dataset => "vz/private",
+		},
+		:migration => {
+			:rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}",
+		},
 	},
 	
 	:node => {
@@ -139,11 +163,19 @@ IMPLICIT_CONFIG = {
 		:download => "/storage/vpsfree.cz/download",
 		:zfs => {
 			:rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after --exclude .zfs/ --exclude-from %{exclude} %{src} %{dst}",
+			:trash => {
+				:dataset => "storage/vpsfree.cz/trash",
+			},
 		},
 		:store => {
 			:min_backups => 14,
 			:max_backups => 20,
 			:max_age => 14,
+		},
+		:restore => {
+			:zfs => {
+				:head_rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}",
+			},
 		},
 		:exports => {
 			:enabled => true,
@@ -204,7 +236,41 @@ class AppConfig
 		
 		@cfg = merge(IMPLICIT_CONFIG, tmp)
 		
+		load_db_settings
+		
 		true
+	end
+	
+	def load_db_settings
+		db = Db.new(@cfg[:db])
+		
+		st = db.prepared_st("SELECT server_type, server_ip4 FROM servers WHERE server_id = ?", @cfg[:vpsadmin][:server_id])
+		rs = st.fetch
+		
+		unless rs
+			$stderr.puts "Node is not registered in database!"
+			return
+		end
+		
+		@cfg[:vpsadmin][:type] = rs[0].to_sym
+		@cfg[:vpsadmin][:node_addr] = rs[1]
+		
+		case @cfg[:vpsadmin][:type]
+		when :node
+			st = db.prepared_st("SELECT ve_private, fstype FROM node_node WHERE node_id = ?", @cfg[:vpsadmin][:server_id])
+			rs = st.fetch
+			
+			if rs
+				@cfg[:vz][:ve_private] = rs[0]
+				@cfg[:vpsadmin][:fstype] = rs[1].to_sym
+			else
+				$stderr.puts "Failed to load settings from database"
+			end
+			
+			st.close
+		end
+		
+		db.close
 	end
 	
 	def reload
