@@ -19,6 +19,6 @@ class VpsTransport < Executor
 		syscmd($CFG.get(:vps, :migration, :rsync) \
 			.gsub(/%\{rsync\}/, $CFG.get(:bin, :rsync)) \
 			.gsub(/%\{src\}/, "#{@params["src_addr"]}:#{@params["src_ve_private"]}/") \
-			.gsub(/%\{dst\}/, @vps.ve_private))
+			.gsub(/%\{dst\}/, @vps.ve_private), [23, 24])
 	end
 end
