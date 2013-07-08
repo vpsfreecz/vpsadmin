@@ -36,9 +36,10 @@ module BackuperBackend
 		# Make VPS snapshot and enqueue VPS backup, run on vz node
 		# 
 		# Params:
-		# [backuper]  number; ID of backuper
-		# [dataset]   string; backup to this dataset
-		# [path]      string; backup is in this path
+		# [backuper]        number; ID of backuper
+		# [dataset]         string; backup to this dataset
+		# [path]            string; backup is in this path
+		# [set_dependency]  number, optional; the ID of transaction that should depend on the backup
 		def backup_snapshot
 			vps = ZfsVPS.new(@veid)
 			time = "backup-" + Time.new.strftime("%Y-%m-%dT%H:%M:%S")
@@ -48,7 +49,9 @@ module BackuperBackend
 			
 			vps.snapshot(vps.ve_private_ds, time)
 			
-			t = Transaction.new
+			db = Db.new
+			
+			t = Transaction.new(db)
 			t_id = t.queue({
 				:node => @params["backuper"],
 				:vps => @veid,
@@ -67,13 +70,19 @@ module BackuperBackend
 			})
 			
 			if oldest_snapshot
-				t.queue({
+				t_id = t.queue({
 					:node => $CFG.get(:vpsadmin, :server_id),
 					:vps => @veid,
 					:type => :rotate_snapshots,
 					:depends => t_id,
 				})
 			end
+			
+			if @params["set_dependency"]
+				db.prepared("UPDATE transactions SET t_depends_on = ? WHERE t_id = ?", t_id, @params["set_dependency"])
+			end
+			
+			db.close
 			
 			ok
 		end
