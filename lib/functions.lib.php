@@ -170,13 +170,23 @@ function pick_playground_server() {
 	
 	$servers = list_servers(false, array("node"));
 	
-	$sql = "SELECT server_id FROM servers s
-	        INNER JOIN vps v ON v.vps_server = s.server_id
-	        INNER JOIN vps_status st ON v.vps_id = st.vps_id
-	        WHERE st.vps_up = 1 AND server_location IN (SELECT location_id FROM locations WHERE location_type = 'playground')
+	$sql = "(SELECT server_id FROM servers s
+	        LEFT JOIN vps v ON v.vps_server = s.server_id
+	        LEFT JOIN vps_status st ON v.vps_id = st.vps_id
+	        WHERE (st.vps_up = 1 OR st.vps_up = 0) AND server_location IN (SELECT location_id FROM locations WHERE location_type = 'playground')
 	        GROUP BY server_id
-	        ORDER BY COUNT(v.vps_id) ASC
-	        LIMIT 1
+                 ORDER BY COUNT(v.vps_id) ASC
+	        LIMIT 1)
+            
+            UNION ALL
+            
+            (SELECT server_id FROM servers s
+	        LEFT JOIN vps v ON v.vps_server = s.server_id
+	        LEFT JOIN vps_status st ON v.vps_id = st.vps_id
+	        WHERE (st.vps_up = 0 OR st.vps_up IS NULL) AND server_location IN (SELECT location_id FROM locations WHERE location_type = 'playground')
+	        GROUP BY server_id
+            LIMIT 1)
+            LIMIT 1
 	        ";
 	
 	$rs = $db->query($sql);
