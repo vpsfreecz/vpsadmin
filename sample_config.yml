@@ -47,25 +47,34 @@
 #             3001: create
 #             3002: destroy
 #             3003: reinstall
-#             3004: clone
-#             4001: migrate_offline
 #             4002: migrate_online
 #             5301: nas_mounts
 #             5302: nas_mount
 #             5303: nas_umount
 #             5304: nas_remount
 #             8001: features
+#         Clone:
+#             3004: local_clone
+#             3005: remote_clone
+#         Migration:
+#             4011: prepare
+#             4021: migrate_part1
+#             4022: migrate_part2
+#             4031: cleanup
 #         Storage:
 #             5201: create_export
 #             5202: update_export
 #             5203: delete_export
 #         Backuper:
-#             5002: restore_prepare
+#             5001: restore_prepare
+#             5002: restore_restore
 #             5003: restore_finish
 #             5004: download
 #             5005: backup
 #             5006: backup
 #             5007: exports
+#             5011: backup_snapshot
+#             5021: replace_backups
 #         Firewall:
 #             7201: reg_ips
 #         Mailer:
@@ -86,6 +95,7 @@
 #     :mv: mv
 #     :cp: cp
 #     :mkdir: mkdir
+#     :rmdir: rmdir
 #     :chmod: chmod
 #     :tar: tar
 #     :scp: scp
@@ -100,6 +110,14 @@
 #     :uptime: uptime
 #     :hostname: hostname
 # 
+:vps:
+    :clone:
+        :rsync: %{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after %{src} %{dst}
+    :zfs:
+        :root_dataset: vz/private
+    :migration:
+        :rsync: %{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}
+
 # :node:
 #     :pubkey:
 #         :types:
@@ -107,10 +125,6 @@
 #             - dsa
 #         :path: /etc/ssh/ssh_host_%{type}_key.pub
 #     :known_hosts: /root/.ssh/known_hosts
-# 
-# :vps:
-#     :clone:
-#         :rsync: %{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after %{src} %{dst}
 # 
 # :storage:
 #     :method: Zfs
@@ -136,6 +150,9 @@
 #         :max_backups: 20
 ## Max age, older backups will be kept only if you have less or equal number of backups than :min_backups
 #         :max_age: 14
+#     :restore:
+#         :zfs:
+#             :head_rsync: %{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}
 #     :exports:
 #         :enabled: true,
 #         :delimiter: "### vpsAdmin ###"
