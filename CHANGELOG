@@ -1,3 +1,6 @@
+* Mon Jul 08 2013 - version 1.10.2
+- Offline migration: accept rsync return codes 23 and 24
+
 * Mon Jul 08 2013 - version 1.10.1
 - Fix ext restoring
 
