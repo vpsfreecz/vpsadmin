@@ -35,6 +35,8 @@ module BackuperBackend
 			target = $CFG.get(:backuper, :restore_src).gsub(/%\{veid\}/, @veid)
 			
 			syscmd("#{$CFG.get(:bin, :rm)} -rf #{target}") if File.exists?(target)
+			
+			ok
 		end
 		
 		def restore_restore
@@ -43,7 +45,7 @@ module BackuperBackend
 				.gsub(/%\{veid\}/, @veid)
 			
 			acquire_lock(Db.new) do
-				syscmd("#{$CFG.get(:bin, :rsync)} -rlptgoDH --numeric-ids --inplace --delete-after --exclude .zfs/ #{@params["path"]}/.zfs/snapshot/#{@params["datetime"]}/ #{target}")
+				syscmd("#{$CFG.get(:bin, :rsync)} -rlptgoDH --numeric-ids --inplace --delete-after --exclude .zfs/ #{backup_snapshot_path}/ #{target}")
 			end
 			
 			ok
