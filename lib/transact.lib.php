@@ -22,23 +22,26 @@ define ('T_EXEC_APPLYCONFIG', 2008);
 define ('T_CREATE_VE', 3001);
 define ('T_DESTROY_VE', 3002);
 define ('T_REINSTALL_VE', 3003);
-define ('T_CLONE_VE', 3004);
-define ('T_MIGRATE_OFFLINE', 4001);
-define ('T_MIGRATE_OFFLINE_PART2', 4011);
+define ('T_CLONE_VE_LOCAL', 3004);
+define ('T_CLONE_VE_REMOTE', 3005);
+define ('T_MIGRATE_OFFLINE_PREPARE', 4011);
+define ('T_MIGRATE_OFFLINE_PART1', 4021);
+define ('T_MIGRATE_OFFLINE_PART2', 4022);
+define ('T_MIGRATE_CLEANUP', 4031);
 define ('T_MIGRATE_ONLINE', 4002);
 define ('T_MIGRATE_ONLINE_PART2', 4012);
 // define ('T_BACKUP_MOUNT', 5001); // Delete
 // define ('T_BACKUP_UMOUNT', 5002); // Delete
-define ('T_BACKUP_RESTORE_PREPARE', 5002);
+define ('T_BACKUP_RESTORE_PREPARE', 5001);
+define ('T_BACKUP_RESTORE_RESTORE', 5002);
 define ('T_BACKUP_RESTORE_FINISH', 5003);
 define ('T_BACKUP_DOWNLOAD', 5004);
 define ('T_BACKUP_SCHEDULE', 5005);
 define ('T_BACKUP_REGULAR', 5006);
 define ('T_BACKUP_EXPORTS', 5007); // Delete
-define ('T_BACKUP_VE_MOUNT', 5101); // Delete
-define ('T_BACKUP_VE_UMOUNT', 5102); // Delete
-define ('T_BACKUP_VE_REMOUNT', 5103); // Delete
-define ('T_BACKUP_VE_GENERATE_MOUNT_SCRIPTS', 5104); // Delete
+define ('T_BACKUP_SNAPSHOT', 5011);
+define ('T_BACKUP_TRASH', 5021);
+define ('T_BACKUP_VE_RORATE_SNAPSHOTS', 5101);
 define ('T_STORAGE_EXPORT_CREATE', 5201);
 define ('T_STORAGE_EXPORT_UPDATE', 5202);
 define ('T_STORAGE_EXPORT_DELETE', 5203);
@@ -241,12 +244,22 @@ function transaction_label ($t_type) {
 	case T_REINSTALL_VE:
 	    $action_label = 'Reinstall';
 	    break;
-	case T_CLONE_VE:
+	case T_CLONE_VE_LOCAL:
+	case T_CLONE_VE_REMOTE:
 		$action_label = 'Clone';
 		break;
-	case T_MIGRATE_OFFLINE:
-	    $action_label = 'Migrate';
+	case T_MIGRATE_OFFLINE_PREPARE:
+		$action_label = 'Prepare migration';
+		break;
+	case T_MIGRATE_OFFLINE_PART1:
+	    $action_label = 'Migrate (1)';
 	    break;
+	case T_MIGRATE_OFFLINE_PART2:
+		$action_label = 'Migrate (2)';
+		break;
+	case T_MIGRATE_CLEANUP:
+		$action_label = 'Cleanup';
+		break;
 	case T_MIGRATE_ONLINE:
 	    $action_label = 'Migrate live';
 	    break;
@@ -311,10 +324,13 @@ function transaction_label ($t_type) {
 	    $action_label = 'Mount backup';
 		break;
 	case T_BACKUP_RESTORE_PREPARE:
-		$action_label = 'Restore (1)';
+		$action_label = 'Restore (step 1)';
+		break;
+	case T_BACKUP_RESTORE_RESTORE:
+		$action_label = 'Restore (step 2)';
 		break;
 	case T_BACKUP_RESTORE_FINISH:
-		$action_label = 'Restore (2)';
+		$action_label = 'Restore (step 3)';
 		break;
 	case T_BACKUP_DOWNLOAD:
 		$action_label = 'Download backup';
@@ -328,17 +344,14 @@ function transaction_label ($t_type) {
 	case T_BACKUP_EXPORTS:
 		$action_label = 'Exports';
 		break;
-	case T_BACKUP_VE_MOUNT:
-		$action_label = 'Mount backup';
+	case T_BACKUP_SNAPSHOT:
+		$action_label = 'Backup snapshot';
 		break;
-	case T_BACKUP_VE_UMOUNT:
-		$action_label = 'Umount backup';
+	case T_BACKUP_TRASH:
+		$action_label = 'Trash backups';
 		break;
-	case T_BACKUP_VE_REMOUNT:
-		$action_label = 'Remount backup';
-		break;
-	case T_BACKUP_VE_GENERATE_MOUNT_SCRIPTS:
-		$action_label = 'Generate mount scripts';
+	case T_BACKUP_VE_RORATE_SNAPSHOTS:
+		$action_label = 'Rotate snapshots';
 		break;
 	case T_STORAGE_EXPORT_CREATE:
 		$action_label = 'Export +';

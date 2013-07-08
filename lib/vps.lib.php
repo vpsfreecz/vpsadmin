@@ -203,11 +203,11 @@ class vps_load {
 		}
   }
 
-  function stop () {
+  function stop ($dep = NULL) {
 	global $db;
 	if ($this->exists) {
 	    $db->query('UPDATE vps SET vps_onstartall = 0 WHERE vps_id='.$db->check($this->veid));
-	    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_STOP_VE);
+	    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_STOP_VE, array(), NULL, $dep);
 	}
   }
 
@@ -277,23 +277,36 @@ class vps_load {
 	if (($this->exists || $this->deleted) && ($_SESSION["is_admin"] || $force)) {
 		
 		if($lazy) {
-			if($db->query("UPDATE vps SET vps_deleted = ".time()." WHERE vps_id = ". $db->check($this->veid)))
+			if($db->query("UPDATE vps SET vps_deleted = ".time()." WHERE vps_id = ". $db->check($this->veid))) {
 				$this->exists = false;
-			else return false;
+				
+				if($this->is_playground())
+					$this->delete_all_ips();
+				
+				return true;
+				
+			} else return false;
+			
 		} else {
 			$sql = 'DELETE FROM vps WHERE vps_id='.$db->check($this->veid);
-			$sql2 = 'UPDATE vps_ip SET vps_id = 0 WHERE vps_id='.$db->check($this->veid);
 
 			nas_delete_mounts_for_vps($this->veid);
 
 			if ($result = $db->query($sql)) {
-				if ($result2 = $db->query($sql2)) {
+				if ($this->delete_all_ips()) {
 					$this->exists = false;
 					add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_DESTROY_VE);
+					return true;
 				} else return false;
 			} else return false;
 		}
 	}
+  }
+  
+  function delete_all_ips() {
+	global $db;
+	
+	return $db->query('UPDATE vps_ip SET vps_id = 0 WHERE vps_id='.$db->check($this->veid));
   }
   
   function revive() {
@@ -384,37 +397,64 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 	if ($this->exists) {
 		$servers = list_servers();
 		if (isset($servers[$target_id])) {
-		$sql = 'UPDATE vps SET vps_server = "'.$db->check($target_id).'" WHERE vps_id = '.$db->check($this->veid);
-		$db->query($sql);
-		$this_loc = $this->get_location();
-		$target_server = server_by_id($target_id);
-		$loc["location_has_shared_storage"] = false;
-		if ($this_loc == $cluster->get_location_of_server($target_id)) {
-			$loc = $db->findByColumnOnce("locations", "location_id", $this_loc);
-			if ($loc["location_has_shared_storage"]) {
-				$params["on_shared_storage"] = true;
-				$params["target_id"] = $target_id;
-			}
-		}
-		
-		$params["target"] = $target_server["server_ip4"];
-		$params["stop"] = (bool)$stop;
-		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_MIGRATE_OFFLINE, $params, NULL, $dep);
-		$migration_id = $db->insertId();
-		
-		$this->ve["vps_server"] = $target_id;
-		
-		if ($this_loc != $cluster->get_location_of_server($target_id)) {
-			$ips = $this->iplist();
+// 			$sql = 'UPDATE vps SET vps_server = "'.$db->check($target_id).'" WHERE vps_id = '.$db->check($this->veid);
+// 			$db->query($sql);
+			$this_loc = $this->get_location();
+			$this->info();
 			
-			if($ips) {
-				foreach($ips as $ip)
-					$this->ipdel($ip["ip_addr"], $migration_id);
+			$source_server = new cluster_node($this->ve["vps_server"]);
+			$target_server = new cluster_node($target_id);
+			
+			$params["src_node_type"] = $source_server->role["fstype"];
+			$params["dst_node_type"] = $target_server->role["fstype"];
+			$params["src_addr"] = $source_server->s["server_ip4"];
+			$params["src_ve_private"] = str_replace("%{veid}", $this->veid, $source_server->role["ve_private"]);
+			$params["start"] = $this->ve["vps_up"] == 1;
+			$params["stop"] = (bool)$stop;
+			
+			add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_MIGRATE_OFFLINE_PREPARE, $params, NULL, $dep);
+			$migration_id = $db->insertId();
+			
+			add_transaction($_SESSION["member"]["m_id"], $target_server->s["server_id"], $this->veid, T_MIGRATE_OFFLINE_PART1, $params, NULL, $migration_id);
+			$migration_id = $db->insertId();
+			
+			$this->stop($migration_id);
+			$migration_id = $db->insert_id();
+			
+			add_transaction($_SESSION["member"]["m_id"], $target_server->s["server_id"], $this->veid, T_MIGRATE_OFFLINE_PART2, $params, NULL, $migration_id);
+			$migration_id = $db->insertId();
+			
+			$this->ve["vps_server"] = $target_server->s["server_id"];
+			$this->applyconfigs($migration_id);
+			$this->ve["vps_server"] = $source_server->s["server_id"];
+			
+			if ($source_server->role["fstype"] != $target_server->role["fstype"])
+			{
+				$e = nas_get_export_by_id($this->ve["vps_backup_export"]);
+				
+				$trash = array(
+					"dataset" => $e["root_dataset"]."/".$e["dataset"],
+				);
+				
+				add_transaction($_SESSION["member"]["m_id"], $e["node_id"], $this->veid, T_BACKUP_TRASH, $trash, NULL, $migration_id);
 			}
+			
+			add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_MIGRATE_CLEANUP, $params, NULL, $migration_id);
+			$migration_id = $db->insertId();
+			
+			//$this->ve["vps_server"] = $target_id;
+			
+			if ($this_loc != $cluster->get_location_of_server($target_id)) {
+				$ips = $this->iplist();
+				
+				if($ips) {
+					foreach($ips as $ip)
+						$this->ipdel($ip["ip_addr"], $migration_id);
+				}
+			}
+			
+			return $migration_id;
 		}
-		
-		return $migration_id;
-	  }
 	}
   }
 
@@ -667,37 +707,70 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 		return NULL;
   
 	global $db;
+	
+	$node = new cluster_node($this->ve["vps_server"]);
 	$backup_id = NULL;
+	$restore_id = NULL;
 	$backuper = $this->get_backuper_server();
 	$e = nas_get_export_by_id($this->ve["vps_backup_export"]);
 	
 	$dataset = $e["root_dataset"] . "/" . $e["dataset"];
 	$path = $e["root_path"] . "/" . $e["path"];
 	
+	$restore_params = array(
+		"src_node_type" => $node->role["fstype"],
+		"dst_node_type" => "zfs", # FIXME
+		"datetime" => strftime("%Y-%m-%dT%H:%M:%S", (int)$timestamp),
+		"backuper" => $backuper["server_name"],
+		"server_name" => $this->ve["server_name"],
+		"node_addr" => $this->ve["server_ip4"],
+		"dataset" => $dataset,
+		"path" => $path,
+	);
+	
 	if ($backup_first)
 	{
+		if($node->role["fstype"] == "zfs")
+			$restore_id = $this->restore_transactions($backuper["server_id"], $restore_params, -1);
+		
 		$params = array(
+			"src_node_type" => $node->role["fstype"],
+			"dst_node_type" => "zfs", # FIXME
 			"server_name" => $this->ve["server_name"],
 			"exclude" => preg_split ("/(\r\n|\n|\r)/", $this->ve["vps_backup_exclude"]),
 			"dataset" => $dataset,
 			"path" => $path,
+			"backuper" => $backuper["server_id"],
+			"set_dependency" => $restore_id,
+			"backup_type" => T_BACKUP_SCHEDULE,
+			"rotate_backups" => false,
 		);
 		
-		add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, T_BACKUP_SCHEDULE, $params);
+		if($node->role["fstype"] == "zfs") {
+			add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_SNAPSHOT, $params);
+			
+		} else {
+			add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, T_BACKUP_SCHEDULE, $params);
+		}
 		$backup_id = $db->insertId();
 	}
 	
-	$params = array(
-		"datetime" => strftime("%Y-%m-%dT%H:%M:%S", (int)$timestamp),
-		"backuper" => $backuper["server_name"],
-		"server_name" => $this->ve["server_name"],
-		"dataset" => $dataset,
-		"path" => $path,
-	);
-	add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, T_BACKUP_RESTORE_PREPARE, $params, NULL, $backup_id);
+	if($node->role["fstype"] != "zfs")
+		$this->restore_transactions($backuper["server_id"], $restore_params, $backup_id);
+  }
+  
+  function restore_transactions($backuper, $params, $dep) {
+	global $db;
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_RESTORE_PREPARE, $params, NULL, $dep);
 	$prepare_id = $db->insertId();
 	
-	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_RESTORE_FINISH, $params, NULL, $prepare_id);
+	add_transaction($_SESSION["member"]["m_id"], $backuper, $this->veid, T_BACKUP_RESTORE_RESTORE, $params, NULL, $prepare_id);
+	$restore_id = $db->insertId();
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_RESTORE_FINISH, $params, NULL, $restore_id);
+	
+	return $prepare_id;
   }
   
   function download_backup($timestamp) {
@@ -759,16 +832,17 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 	$db->query($sql);
 	$clone = vps_load($db->insert_id());
 	
+	$src_node = new cluster_node($this->ve["vps_server"]);
+	$dst_node = new cluster_node($server_id);
+	
 	$params = array(
 		"src_veid" => $this->veid,
-		"src_server_ip" => $this->ve["server_ip4"],
-		"is_local" => $server_id == $this->ve["vps_server"],
-		"template" => $clone->ve["templ_name"],
-		"hostname" => $clone->ve["vps_hostname"],
-		"nameserver" => $clone->ve["vps_nameserver"],
+		"src_addr" => $this->ve["server_ip4"],
+		"src_node_type" => $src_node->role["fstype"],
+		"dst_node_type" => $dst_node->role["fstype"],
 	);
 	
-	add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_CLONE_VE, $params);
+	add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, $server_id == $this->ve["vps_server"] ? T_CLONE_VE_LOCAL : T_CLONE_VE_REMOTE, $params);
 	
 	switch($configs) {
 		case 0:
@@ -814,9 +888,13 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 	if($cloned_backup_export) {
 		$db->query("UPDATE vps_mount SET storage_export_id = ".$db->check($cloned_backup_export)."
 		            WHERE vps_id = ".$db->check($clone->veid)." AND storage_export_id = ".$db->check($this->ve["vps_backup_export"]));
+		
+		$clone->set_backuper(NULL, $cloned_backup_export, false);
 	}
 	
 	$clone->mount_regen();
+	
+	$clone->set_hostname($hostname);
 	
 	if ($features && $this->ve["vps_features_enabled"])
 		add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_ENABLE_FEATURES);
@@ -840,6 +918,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 	
 	if($with_server != $this->ve["vps_server"]) {
 		$t_with_id = $with->offline_migrate($this->ve["vps_server"]);
+		$with->ve["vps_server"] = $this->ve["vps_server"];
 		
 		if($ips) {
 			if($this->ve["server_location"] == $with->ve["server_location"]) {
@@ -855,6 +934,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 		}
 		
 		$t_my_id = $this->offline_migrate($with_server, false, $t_with_id);
+		$this->ve["vps_server"] = $with_server;
 		
 		if($ips) {
 			foreach($with_ips as $ip)

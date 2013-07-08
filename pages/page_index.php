@@ -94,6 +94,8 @@ $position = 1;
 $last_location = 0;
 
 while ($srv = $db->fetch_array($rslt)) {
+	$node = new cluster_node($srv["server_id"]);
+	
 	if (
 			($last_location != 0) &&
 			($last_location != $srv["server_location"])
@@ -174,22 +176,11 @@ while ($srv = $db->fetch_array($rslt)) {
 	
 	$xtpl->table_td($srv["server_name"]);
 
-	$vpses = 0;
-
-	$res = $db->query('SELECT * FROM vps WHERE vps_server ="'.$srv["server_id"].'"');
-
-	while($vps = $db->fetch_array($res)) {
-			$res_stat = $db->query('SELECT * FROM vps_status WHERE vps_id ="'.$vps["vps_id"].'" ORDER BY id DESC LIMIT 1');
-
-			if ($stat = $db->fetch_array($res_stat)) {
-				if ($stat["vps_up"]) {
-					$vpses++;
-				}
-			}
-	}
-
+	$vps_on = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1"));
+	$vpses = $node->s["server_type"] == "node" ? $vps_on["cnt"] : "-";
+	
 	$xtpl->table_td($vpses, false, true);
-	$xtpl->table_td(($srv["server_maxvps"]-$vpses), false, true);
+	$xtpl->table_td($node->s["server_type"] == "node" ? ($node->role["max_vps"] - $vpses) : "-", false, true);
 
 		$position++;
 		if ($position == 3) {

@@ -108,8 +108,6 @@ CREATE TABLE IF NOT EXISTS `servers` (
   `server_location` int(10) unsigned NOT NULL,
   `server_availstat` text,
   `server_ip4` varchar(127) NOT NULL,
-  `server_maxvps` int(10) unsigned DEFAULT NULL,
-  `server_path_vz` varchar(63) NOT NULL DEFAULT '/var/lib/vz',
   PRIMARY KEY (`server_id`),
   KEY `server_location` (`server_location`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
@@ -126,6 +124,13 @@ CREATE TABLE IF NOT EXISTS `servers_status` (
   PRIMARY KEY (`id`),
   KEY `server_id` (`server_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
+
+CREATE TABLE IF NOT EXISTS `node_node` (
+  `node_id` int(11) NOT NULL,
+  `max_vps` int(11) NOT NULL,
+  `ve_private` varchar(255) NOT NULL DEFAULT '/vz/private/%{veid}',
+  PRIMARY KEY (`node_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `sysconfig` (
   `cfg_name` varchar(127) NOT NULL,
