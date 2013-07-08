@@ -918,6 +918,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 	
 	if($with_server != $this->ve["vps_server"]) {
 		$t_with_id = $with->offline_migrate($this->ve["vps_server"]);
+		$with->ve["vps_server"] = $this->ve["vps_server"];
 		
 		if($ips) {
 			if($this->ve["server_location"] == $with->ve["server_location"]) {
@@ -933,6 +934,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 		}
 		
 		$t_my_id = $this->offline_migrate($with_server, false, $t_with_id);
+		$this->ve["vps_server"] = $with_server;
 		
 		if($ips) {
 			foreach($with_ips as $ip)
