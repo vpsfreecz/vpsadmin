@@ -875,9 +875,13 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 	if($cloned_backup_export) {
 		$db->query("UPDATE vps_mount SET storage_export_id = ".$db->check($cloned_backup_export)."
 		            WHERE vps_id = ".$db->check($clone->veid)." AND storage_export_id = ".$db->check($this->ve["vps_backup_export"]));
+		
+		$clone->set_backuper(NULL, $cloned_backup_export, false);
 	}
 	
 	$clone->mount_regen();
+	
+	$clone->set_hostname($hostname);
 	
 	if ($features && $this->ve["vps_features_enabled"])
 		add_transaction($_SESSION["member"]["m_id"], $server_id, $clone->veid, T_ENABLE_FEATURES);
