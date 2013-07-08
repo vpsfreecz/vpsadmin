@@ -3,7 +3,7 @@ require 'lib/handlers/clone'
 module CloneBackend
 	class ZfsToExtClone < Clone
 		def remote_clone
-			copy_configs
+			copy_config
 			create_root
 			
 			rsync = $CFG.get(:vps, :clone, :rsync) \
@@ -12,6 +12,9 @@ module CloneBackend
 				.gsub(/%\{dst\}/, "#{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
 			
 			syscmd(rsync, [23, 24])
+			
+			vzctl(:set, @veid, {:root => @new_vps.ve_root, :private => @new_vps.ve_private}, true)
+			del_ips
 		end
 	end
 end

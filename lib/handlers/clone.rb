@@ -50,8 +50,12 @@ class Clone < VpsTransport
 		raise CommandNotImplemented
 	end
 	
-	def copy_configs
-		scp("#{@params["src_addr"]}:#{$CFG.get(:vz, :vz_conf)}/conf/#{@params["src_veid"]}.*", "#{$CFG.get(:vz, :vz_conf)}/conf/")
+	def copy_config
+		scp("#{@params["src_addr"]}:#{$CFG.get(:vz, :vz_conf)}/conf/#{@params["src_veid"]}.conf", "#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.conf")
+	end
+	
+	def del_ips
+		vzctl(:set, @veid, {:ipdel => "all"}, true)
 	end
 end
 

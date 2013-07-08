@@ -6,7 +6,7 @@ module CloneBackend
 		include ZfsUtils
 		
 		def remote_clone
-			copy_configs
+			copy_config
 			create_root
 			
 			zfs(:create, nil, @new_vps.ve_private_ds)
@@ -19,6 +19,7 @@ module CloneBackend
 			syscmd(rsync, [23, 24])
 			
 			vzctl(:set, @veid, {:root => @new_vps.ve_root, :private => @new_vps.ve_private}, true)
+			del_ips
 		end
 	end
 end

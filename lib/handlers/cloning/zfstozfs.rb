@@ -6,7 +6,7 @@ module CloneBackend
 		include ZfsUtils
 		
 		def local_clone # FIXME lock and stuff
-			copy_configs
+			copy_config
 			create_root
 			
 			@src_vps.snapshot(@src_vps.ve_private_ds, "clone")
@@ -15,13 +15,17 @@ module CloneBackend
 			zfs(:promote, nil, @new_vps.vps_private_ds)
 			
 			zfs(:destroy, nil, "#{@src_vps.ve_private_ds}@clone")
+			
+			del_ips
 		end
 		
 		def remote_clone
-			copy_configs
+			copy_config
 			create_root
 			
 			FIXME
+			
+			del_ips
 		end
 	end
 end

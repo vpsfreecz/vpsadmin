@@ -98,6 +98,10 @@ class Migration < VpsTransport
 		@vps.destroy
 	end
 	
+	def copy_configs
+		scp("#{@params["src_addr"]}:#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.*", "#{$CFG.get(:vz, :vz_conf)}/conf/")
+	end
+	
 	def post_save(db)
 		if @relocate
 			db.prepared("UPDATE vps SET vps_server = ? WHERE vps_id = ?", $CFG.get(:vpsadmin, :server_id), @veid)
