@@ -72,7 +72,7 @@ class Executor
 		vars[:rsync] ||= $CFG.get(:bin, :rsync)
 		
 		vars.each do |k, v|
-			cmd.gsub!(/%\{#{k}\}/, v)
+			cmd = cmd.gsub(/%\{#{k}\}/, v)
 		end
 		
 		syscmd(cmd, rcs)
