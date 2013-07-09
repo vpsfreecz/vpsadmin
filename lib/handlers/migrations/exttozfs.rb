@@ -9,7 +9,7 @@ module MigrationBackend
 			copy_configs
 			create_root
 			
-			zfs(:create, nil, @vps.ve_private_ds)
+			zfs(:create, "-p", @vps.ve_private_ds)
 			sync_private
 		end
 		
