@@ -1,3 +1,16 @@
+* Mon Jul 08 2013 - version 1.10.2
+- Offline migration: accept rsync return codes 23 and 24
+
+* Mon Jul 08 2013 - version 1.10.1
+- Fix ext restoring
+
+* Mon Jul 08 2013 - version 1.10.0
+- Add support for ZFS nodes (configs, backups, restore, migrations, cloning)
+- New implementation of offline migration and clone
+- Status updating: separate update of alive status and resources status
+- Node install: fix hang when node with same ID is already in database
+- Load selected settings from database
+
 * Tue Jun 11 2013 - version 1.9.1
 - Fix missing onboot flags after some transactions like enable features
 - Restore finish: ignore vzquota drop error if quota does not exist
