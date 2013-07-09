@@ -52,6 +52,8 @@ class Clone < VpsTransport
 	
 	def copy_config
 		scp("#{@params["src_addr"]}:#{$CFG.get(:vz, :vz_conf)}/conf/#{@params["src_veid"]}.conf", "#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.conf")
+		
+		vzctl(:set, @veid, {:private => @new_vps.ve_private, :root => @new_vps.ve_root}, true)
 	end
 	
 	def del_ips
