@@ -176,6 +176,9 @@ IMPLICIT_CONFIG = {
 			:zfs => {
 				:head_rsync => "%{rsync} -rlptgoDHS --numeric-ids --inplace --delete-after %{src} %{dst}",
 			},
+			:exttozfs => {
+				:rsync => "%{rsync} -rlptgoDHS --numeric-ids --inplace --delete-after --exclude .zfs/ %{src} %{dst}",
+			}
 		},
 		:exports => {
 			:enabled => true,

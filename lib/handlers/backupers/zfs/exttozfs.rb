@@ -20,7 +20,11 @@ module BackuperBackend
 					zfs(:create, nil, @params["dataset"])
 				end
 				
-				syscmd(rsync, [23, 24])
+				rsync([:backuper, :zfs, :rsync], {
+					:exclude => @exclude.path,
+					:src => mountpoint + "/",
+					:dst => @params["path"],
+				})
 				zfs(:snapshot, nil, "#{@params["dataset"]}@backup-#{Time.new.strftime("%Y-%m-%dT%H:%M:%S")}")
 				
 				clear_backups(true) if @params["rotate_backups"]
@@ -45,18 +49,13 @@ module BackuperBackend
 				.gsub(/%\{veid\}/, @veid)
 			
 			acquire_lock(Db.new) do
-				syscmd("#{$CFG.get(:bin, :rsync)} -rlptgoDH --numeric-ids --inplace --delete-after --exclude .zfs/ #{backup_snapshot_path}/ #{target}")
+				rsync([:backuper, :restore, :exttozfs, :rsync], {
+					:src => "#{backup_snapshot_path}/",
+					:dst => target,
+				})
 			end
 			
 			ok
-		end
-		
-		def rsync
-			$CFG.get(:backuper, :zfs, :rsync) \
-				.gsub(/%\{rsync\}/, $CFG.get(:bin, :rsync)) \
-				.gsub(/%\{exclude\}/, @exclude.path) \
-				.gsub(/%\{src\}/, mountpoint + "/") \
-				.gsub(/%\{dst\}/, @params["path"])
 		end
 	end
 end
