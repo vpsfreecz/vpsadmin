@@ -201,20 +201,16 @@ switch ($_GET["action"]) {
 		case 'passwd':
 			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 
-			if (($_REQUEST["pass"] == $_REQUEST["pass2"]) &&
-					(strlen($_REQUEST["pass"]) >= 5) &&
-					(strlen($_REQUEST["user"]) >= 2) &&
-					!preg_match("/\\\/", $_REQUEST["pass"]) &&
-					!preg_match("/\`/", $_REQUEST["pass"]) &&
-					!preg_match("/\"/", $_REQUEST["pass"]) &&
-					!preg_match("/\\\/", $_REQUEST["user"]) &&
-					!preg_match("/\`/", $_REQUEST["user"]) &&
-					!preg_match("/\"/", $_REQUEST["user"]))
+			if (strlen($_POST["user"]) >= 2 && strlen($_POST["user"]) <= 32 && 
+				preg_match("/^[a-z_][a-zA-Z0-9_-]+$/", $_POST["user"]))
 			{
-				notify_user(_("Change of user's password").' '.$_REQUEST["user"].' '.strtolower(_("planned")), $vps->passwd($_REQUEST["user"], $_REQUEST["pass"]));
+				notify_user(
+					_("Change of user's password").' '.$_POST["user"].' '.strtolower(_("planned")),
+					_("New password is: ")."<b>".$vps->passwd($_POST["user"])."</b>"
+				);
 				redirect('?page=adminvps&action=info&veid='.$vps->veid);
 			} else {
-				$xtpl->perex(_("Error"), _("Wrong username or unsafe password"));
+				$xtpl->perex(_("Error"), _("Wrong username"));
 			}
 
 			$show_info=true;
@@ -733,14 +729,11 @@ if (isset($show_info) && $show_info) {
 	// Password changer
 		$xtpl->form_create('?page=adminvps&action=passwd&veid='.$vps->veid, 'post');
 		$xtpl->form_add_input(_("Unix username").':', 'text', '30', 'user', 'root', '');
-		$xtpl->form_add_input(_("Safe password").':', 'password', '30', 'pass', '', '', -5);
-		$xtpl->form_add_input(_("Once again").':', 'password', '30', 'pass2', '', '');
 		if (!$_SESSION["is_admin"]) {
 		$xtpl->table_td('');
-		$xtpl->table_td('<b> Warning </b>: In order to set the password, <br />
-						it has to be <b>sent in plaintext</b> to the target server. <br />
+		$xtpl->table_td('<b> Warning </b>: Password is randomly generated and shown <b>only once</b>. <br />
 						This password changer is here only to enable first access to SSH of VPS. <br />
-						Please use some simple password here and then change it <br />
+						You can change it <br />
 						with <b>passwd</b> command once you\'ve logged onto SSH.');
 		$xtpl->table_tr();
 	}

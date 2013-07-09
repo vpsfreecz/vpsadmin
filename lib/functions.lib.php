@@ -239,4 +239,14 @@ function format_duration($interval) {
 		return sprintf("%02d:%02d:%02d", $h, $m, $s);
 }
 
+function random_string($len) {
+	$str = "";
+	$chars = array_merge(range(0, 9), range('a', 'z'), range('A', 'Z'));
+	
+	for($i = 0; $i < $len; $i++)
+		$str .= $chars[array_rand($chars)];
+	
+	return $str;
+}
+
 ?>

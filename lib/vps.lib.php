@@ -195,11 +195,15 @@ class vps_load {
 	    $this->ve["vps_template"] = $template_id;
 	}
   }
-  function passwd ($user, $new_pass) {
+  function passwd ($user) {
 		global $db;
 		if ($this->exists) {
-			$command = array('userpasswd' => $user.':'.$db->check($new_pass));
+			$new_pass = random_string(15);
+			
+			$command = array('user' => $user, 'password' => $new_pass);
 			add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_PASSWD, $command);
+			
+			return $new_pass;
 		}
   }
 
