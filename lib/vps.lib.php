@@ -993,8 +993,11 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 		foreach($with_configs as $id => $label)
 			$db->query("INSERT INTO vps_has_config SET vps_id = ".$db->check($this->veid).", config_id = ".$db->check($id).", `order` = ".$i++);
 		
-		$this->update_custom_config($with_custom, $t_my_id);
-		$with->update_custom_config($my_custom, $t_with_id);
+		if($my_custom != $with_custom)
+		{
+			$this->update_custom_config($with_custom, $t_my_id);
+			$with->update_custom_config($my_custom, $t_with_id);
+		}
 	}
 	
 	if($expiration) {
