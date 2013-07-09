@@ -16,7 +16,7 @@ module CloneBackend
 			create_root
 			
 			rsync([:vps, :clone, :rsync], {
-				:src => "#{@src_vps.ve_private}/",
+				:src => "#{@params["src_addr"]}:#{@src_vps.ve_private}/",
 				:dst => @new_vps.ve_private,
 			})
 			
