@@ -1,3 +1,8 @@
+* Tue Jul 09 2013 - version 1.11.0
+- New command VPS.passwd
+- Migration: reuse dataset if it already exists
+- Clone: fix root and private of cloned VPS
+
 * Mon Jul 08 2013 - version 1.10.2
 - Offline migration: accept rsync return codes 23 and 24
 

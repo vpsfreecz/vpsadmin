@@ -67,6 +67,17 @@ class Executor
 		syscmd("#{$CFG.get(:bin, :scp)} #{opts} #{what} #{where}")
 	end
 	
+	def rsync(cfg, vars, rcs = [23, 24])
+		cmd = $CFG.get(*cfg)
+		vars[:rsync] ||= $CFG.get(:bin, :rsync)
+		
+		vars.each do |k, v|
+			cmd.gsub!(/%\{#{k}\}/, v)
+		end
+		
+		syscmd(cmd, rcs)
+	end
+	
 	def syscmd(cmd, valid_rcs = [])
 		set_step(cmd)
 		

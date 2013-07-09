@@ -41,7 +41,7 @@ IMPLICIT_CONFIG = {
 				1001 => "start",
 				1002 => "stop",
 				1003 => "restart",
-				2002 => "set_params",
+				2002 => "passwd",
 				2003 => "set_params",
 				2004 => "set_params",
 				2005 => "set_params",
@@ -129,7 +129,7 @@ IMPLICIT_CONFIG = {
 	
 	:vps => {
 		:clone => {
-			:rsync => "%{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after %{src} %{dst}",
+			:rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}",
 		},
 		:zfs => {
 			:root_dataset => "vz/private",
@@ -176,6 +176,9 @@ IMPLICIT_CONFIG = {
 			:zfs => {
 				:head_rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}",
 			},
+			:exttozfs => {
+				:rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after --exclude .zfs/ %{src} %{dst}",
+			}
 		},
 		:exports => {
 			:enabled => true,

@@ -15,12 +15,10 @@ module CloneBackend
 			copy_config
 			create_root
 			
-			rsync = $CFG.get(:vps, :clone, :rsync) \
-				.gsub(/%\{rsync\}/, $CFG.get(:bin, :rsync)) \
-				.gsub(/%\{src\}/, "#{@src_vps.ve_private}/") \
-				.gsub(/%\{dst\}/, @new_vps.ve_private)
-			
-			syscmd(rsync, [23, 24])
+			rsync([:vps, :clone, :rsync], {
+				:src => "#{@src_vps.ve_private}/",
+				:dst => @new_vps.ve_private,
+			})
 			
 			del_ips
 		end

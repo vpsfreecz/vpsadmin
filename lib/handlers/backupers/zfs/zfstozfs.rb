@@ -107,10 +107,10 @@ module BackuperBackend
 		end
 		
 		def restore_restore
-			syscmd($CFG.get(:backuper, :restore, :zfs, :head_rsync) \
-				.gsub(/%\{rsync\}/, $CFG.get(:bin, :rsync)) \
-				.gsub(/%\{src\}/, backup_snapshot_path + "/") \
-				.gsub(/%\{dst\}/, @params["path"]))
+			rsync([:backuper, :restore, :zfs, :head_rsync], {
+				:src => backup_snapshot_path + "/",
+				:dst => @params["path"],
+			})
 			
 			index = -1
 			

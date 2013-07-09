@@ -62,6 +62,12 @@ class VPS < Executor
 		vzctl(:set, @veid, @params, true)
 	end
 	
+	def passwd
+		vzctl(:set, @veid, {:userpasswd => "#{@params["user"]}:#{@params["password"]}"})
+		@passwd = true
+		ok
+	end
+	
 	def applyconfig
 		@params["configs"].each do |cfg|
 			vzctl(:set, @veid, {:applyconfig => cfg, :setmode => "restart"}, true)
@@ -254,5 +260,9 @@ class VPS < Executor
 	
 	def post_save(con)
 		update_status(con) if @update
+		
+		if @passwd
+			con.prepared("UPDATE transactions SET t_param = '{}' WHERE t_id = ?", @command.id)
+		end
 	end
 end
