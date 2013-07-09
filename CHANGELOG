@@ -1,3 +1,6 @@
+* Tue Jul 09 2013 - version 1.11.1
+- Fix merge error
+
 * Tue Jul 09 2013 - version 1.11.0
 - New command VPS.passwd
 - Migration: reuse dataset if it already exists
