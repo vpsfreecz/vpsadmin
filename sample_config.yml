@@ -110,14 +110,14 @@
 #     :uptime: uptime
 #     :hostname: hostname
 # 
-:vps:
-    :clone:
-        :rsync: %{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after %{src} %{dst}
-    :zfs:
-        :root_dataset: vz/private
-    :migration:
-        :rsync: %{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}
-
+# :vps:
+#     :clone:
+#         :rsync: %{rsync} -rlptgoDHS --numeric-ids --inplace --delete-after %{src} %{dst}
+#     :zfs:
+#         :root_dataset: vz/private
+#     :migration:
+#         :rsync: %{rsync} -rlptgoDHS --numeric-ids --inplace --delete-after %{src} %{dst}
+# 
 # :node:
 #     :pubkey:
 #         :types:
@@ -141,7 +141,7 @@
 #     :restore_src: /vz/private/%{veid}.restoring
 #     :download: /storage/vpsfree.cz/download
 #     :zfs:
-#         :rsync: %{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after --exclude .zfs/ --exclude-from %{exclude} %{src} %{dst}
+#         :rsync: %{rsync} -rlptgoDHS --numeric-ids --inplace --delete-after --exclude .zfs/ --exclude-from %{exclude} %{src} %{dst}
 ## How many backups to store, unit is a day
 #     :store:
 ## Minimum number of backups that must be stored
@@ -152,7 +152,7 @@
 #         :max_age: 14
 #     :restore:
 #         :zfs:
-#             :head_rsync: %{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}
+#             :head_rsync: %{rsync} -rlptgoDHS --numeric-ids --inplace --delete-after %{src} %{dst}
 #     :exports:
 #         :enabled: true,
 #         :delimiter: "### vpsAdmin ###"

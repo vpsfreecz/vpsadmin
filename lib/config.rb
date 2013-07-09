@@ -129,13 +129,13 @@ IMPLICIT_CONFIG = {
 	
 	:vps => {
 		:clone => {
-			:rsync => "%{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after %{src} %{dst}",
+			:rsync => "%{rsync} -rlptgoDHS --numeric-ids --inplace --delete-after %{src} %{dst}",
 		},
 		:zfs => {
 			:root_dataset => "vz/private",
 		},
 		:migration => {
-			:rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}",
+			:rsync => "%{rsync} -rlptgoDHS --numeric-ids --inplace --delete-after %{src} %{dst}",
 		},
 	},
 	
@@ -162,7 +162,7 @@ IMPLICIT_CONFIG = {
 		:restore_src => "/vz/private/%{veid}.restoring",
 		:download => "/storage/vpsfree.cz/download",
 		:zfs => {
-			:rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after --exclude .zfs/ --exclude-from %{exclude} %{src} %{dst}",
+			:rsync => "%{rsync} -rlptgoDHS --numeric-ids --inplace --delete-after --exclude .zfs/ --exclude-from %{exclude} %{src} %{dst}",
 			:trash => {
 				:dataset => "storage/vpsfree.cz/trash",
 			},
@@ -174,7 +174,7 @@ IMPLICIT_CONFIG = {
 		},
 		:restore => {
 			:zfs => {
-				:head_rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}",
+				:head_rsync => "%{rsync} -rlptgoDHS --numeric-ids --inplace --delete-after %{src} %{dst}",
 			},
 		},
 		:exports => {
