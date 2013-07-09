@@ -195,11 +195,15 @@ class vps_load {
 	    $this->ve["vps_template"] = $template_id;
 	}
   }
-  function passwd ($user, $new_pass) {
+  function passwd ($user) {
 		global $db;
 		if ($this->exists) {
-			$command = array('userpasswd' => $user.':'.$db->check($new_pass));
+			$new_pass = random_string(15);
+			
+			$command = array('user' => $user, 'password' => $new_pass);
 			add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_PASSWD, $command);
+			
+			return $new_pass;
 		}
   }
 
@@ -989,8 +993,11 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 		foreach($with_configs as $id => $label)
 			$db->query("INSERT INTO vps_has_config SET vps_id = ".$db->check($this->veid).", config_id = ".$db->check($id).", `order` = ".$i++);
 		
-		$this->update_custom_config($with_custom, $t_my_id);
-		$with->update_custom_config($my_custom, $t_with_id);
+		if($my_custom != $with_custom)
+		{
+			$this->update_custom_config($with_custom, $t_my_id);
+			$with->update_custom_config($my_custom, $t_with_id);
+		}
 	}
 	
 	if($expiration) {

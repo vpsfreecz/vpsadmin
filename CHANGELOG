@@ -1,3 +1,7 @@
+* Tue Jul 09 2013 - version 1.11.0
+- Password changer: fix critical bug, password is randomly generated
+- VPS swap: update custom configs only if they differ
+
 * Mon Jul 08 2013 - version 1.10.1
 - Offline migration: remove IPs on destination node
 - Status page: fix VPS count
