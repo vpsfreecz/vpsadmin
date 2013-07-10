@@ -50,7 +50,7 @@ class Db
 			puts "MySQL error ##{err.errno}: #{err.error}"
 			close if @my
 			sleep($CFG.get(:db, :retry_interval))
-			connect
+			connect($CFG.get(:db))
 			retry if try_again
 		end
 	end
