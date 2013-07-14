@@ -285,7 +285,7 @@ class vps_load {
 				$this->exists = false;
 				
 				if($this->is_playground())
-					$this->delete_all_ips();
+					$this->delete_all_ips(true);
 				
 				return true;
 				
@@ -307,10 +307,17 @@ class vps_load {
 	}
   }
   
-  function delete_all_ips() {
+  function delete_all_ips($trans = false) {
 	global $db;
 	
-	return $db->query('UPDATE vps_ip SET vps_id = 0 WHERE vps_id='.$db->check($this->veid));
+	if($trans) {
+		$ips = $this->iplist();
+		
+		foreach($ips as $ip)
+			$this->ipdel($ip["ip_addr"]);
+		
+	} else
+		return $db->query('UPDATE vps_ip SET vps_id = 0 WHERE vps_id='.$db->check($this->veid));
   }
   
   function revive() {
