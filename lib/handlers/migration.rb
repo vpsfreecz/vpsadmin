@@ -85,9 +85,18 @@ class Migration < VpsTransport
 	# [dst_node_type]  string; ext or zfs
 	# [src_addr]       string; IP address of source node
 	# [src_ve_private] string; Path to VE private on source node
+	# [online]         bool; is migration online?
 	# [start]          bool; start VPS after migration?
 	def migrate_part2
-		@vps.start if @params["start"]
+		if @params["online"]
+			vps = VPS.new(@veid)
+			
+			scp("#{@params["src_addr"]}:#{vps.dumpfile}", vps.dumpfile)
+			
+			vps.resume
+		else
+			@vps.start if @params["start"]
+		end
 		
 		@relocate = true
 		ok

@@ -49,6 +49,14 @@ class VPS < Executor
 		vzctl(:destroy, @veid)
 	end
 	
+	def suspend
+		vzctl(:suspend, @veid, {:dumpfile => dumpfile})
+	end
+	
+	def resume
+		vzctl(:resume, @veid, {:dumpfile => dumpfile})
+	end
+	
 	def reinstall
 		honor_state do
 			stop
@@ -227,6 +235,10 @@ class VPS < Executor
 	
 	def ve_root
 		"#{$CFG.get(:vz, :vz_root)}/root/#{@veid}"
+	end
+	
+	def dumpfile
+		$CFG.get(:vps, :migration, :dumpfile).gsub(/%\{veid\}/, @veid)
 	end
 	
 	def runscript(script)
