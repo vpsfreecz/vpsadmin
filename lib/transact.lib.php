@@ -11,6 +11,7 @@ define ('T_GEN_KNOWN_HOSTS', 5);
 define ('T_START_VE', 1001);
 define ('T_STOP_VE', 1002);
 define ('T_RESTART_VE', 1003);
+define ('T_SUSPEND_VE', 1101);
 define ('T_EXEC_OTHER', 2001);
 define ('T_EXEC_PASSWD', 2002);
 define ('T_EXEC_LIMITS', 2003);
@@ -24,9 +25,9 @@ define ('T_DESTROY_VE', 3002);
 define ('T_REINSTALL_VE', 3003);
 define ('T_CLONE_VE_LOCAL', 3004);
 define ('T_CLONE_VE_REMOTE', 3005);
-define ('T_MIGRATE_OFFLINE_PREPARE', 4011);
-define ('T_MIGRATE_OFFLINE_PART1', 4021);
-define ('T_MIGRATE_OFFLINE_PART2', 4022);
+define ('T_MIGRATE_PREPARE', 4011);
+define ('T_MIGRATE_PART1', 4021);
+define ('T_MIGRATE_PART2', 4022);
 define ('T_MIGRATE_CLEANUP', 4031);
 define ('T_MIGRATE_ONLINE', 4002);
 define ('T_MIGRATE_ONLINE_PART2', 4012);
@@ -211,6 +212,9 @@ function transaction_label ($t_type) {
 	case T_RESTART_VE:
 	    $action_label = 'Restart';
 	    break;
+	case T_SUSPEND_VE:
+		$action_label = 'Suspend';
+		break;
 	case T_EXEC_LIMITS:
 	    $action_label = 'Limits';
 	    break;
@@ -248,13 +252,13 @@ function transaction_label ($t_type) {
 	case T_CLONE_VE_REMOTE:
 		$action_label = 'Clone';
 		break;
-	case T_MIGRATE_OFFLINE_PREPARE:
+	case T_MIGRATE_PREPARE:
 		$action_label = 'Prepare migration';
 		break;
-	case T_MIGRATE_OFFLINE_PART1:
+	case T_MIGRATE_PART1:
 	    $action_label = 'Migrate (1)';
 	    break;
-	case T_MIGRATE_OFFLINE_PART2:
+	case T_MIGRATE_PART2:
 		$action_label = 'Migrate (2)';
 		break;
 	case T_MIGRATE_CLEANUP:
@@ -262,12 +266,6 @@ function transaction_label ($t_type) {
 		break;
 	case T_MIGRATE_ONLINE:
 	    $action_label = 'Migrate live';
-	    break;
-	case T_MIGRATE_OFFLINE_PART2:
-	    $action_label = '*Off-Migrace';
-	    break;
-	case T_MIGRATE_ONLINE_PART2:
-	    $action_label = '*ON-MIGRACE';
 	    break;
 	case T_FIREWALL_RELOAD:
 	    $action_label = 'FW Reload';
