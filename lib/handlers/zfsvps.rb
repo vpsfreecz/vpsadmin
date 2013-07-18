@@ -22,7 +22,7 @@ class ZfsVPS < VPS
 		
 		zfs(:destroy, "-r", ve_private_ds)
 		
-		Dir.glob("#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.*").each do |cfg|
+		Dir.glob("#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.{mount,umount,conf}").each do |cfg|
 			syscmd("#{$CFG.get(:bin, :mv)} #{cfg} #{cfg}.destroyed")
 		end
 		

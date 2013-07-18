@@ -1,3 +1,7 @@
+* Thu Jul 18 2013 - version 1.12.0
+- Online migration
+- ZFS VPS destroying: fix config renaming
+
 * Tue Jul 09 2013 - version 1.11.1
 - Fix merge error
 

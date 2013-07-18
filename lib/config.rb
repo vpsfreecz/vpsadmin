@@ -41,6 +41,7 @@ IMPLICIT_CONFIG = {
 				1001 => "start",
 				1002 => "stop",
 				1003 => "restart",
+				1101 => "suspend",
 				2002 => "passwd",
 				2003 => "set_params",
 				2004 => "set_params",
@@ -136,6 +137,7 @@ IMPLICIT_CONFIG = {
 		},
 		:migration => {
 			:rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}",
+			:dumpfile => "/vz/dump/Dump.%{veid}",
 		},
 	},
 	
