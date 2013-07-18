@@ -50,11 +50,29 @@ class VPS < Executor
 	end
 	
 	def suspend
+		unless File.exists?("#{ve_private}/sbin/iptables-save")
+			File.symlink("/bin/true", "#{ve_private}/sbin/iptables-save")
+			del = true
+		end
+		
 		vzctl(:suspend, @veid, {:dumpfile => dumpfile})
+		
+		File.delete("#{ve_private}/sbin/iptables-save") if del
+		
+		ok
 	end
 	
 	def resume
+		unless File.exists?("#{ve_private}/sbin/iptables-restore")
+			File.symlink("/bin/true", "#{ve_private}/sbin/iptables-restore")
+			del = true
+		end
+		
 		vzctl(:resume, @veid, {:dumpfile => dumpfile})
+		
+		File.delete("#{ve_private}/sbin/iptables-restore") if del
+		
+		ok
 	end
 	
 	def reinstall
