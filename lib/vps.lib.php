@@ -404,6 +404,14 @@ function ipadd($ip, $type = 4, $dep = NULL) {
   }
 
   function offline_migrate($target_id, $stop = false, $dep = NULL) {
+	$this->migrate(false, $target_id, $stop, $dep);
+  }
+
+  function online_migrate($target_id) {
+	$this->migrate(true, $target_id);
+  }
+  
+  function migrate($online, $target_id, $stop = false, $dep = NULL) {
 	global $db, $cluster;
 	if ($this->exists) {
 		$servers = list_servers();
@@ -422,17 +430,24 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			$params["src_ve_private"] = str_replace("%{veid}", $this->veid, $source_server->role["ve_private"]);
 			$params["start"] = $this->ve["vps_up"] == 1;
 			$params["stop"] = (bool)$stop;
+			$params["online"] = $online;
 			
-			add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_MIGRATE_OFFLINE_PREPARE, $params, NULL, $dep);
+			add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_MIGRATE_PREPARE, $params, NULL, $dep);
 			$migration_id = $db->insertId();
 			
-			add_transaction($_SESSION["member"]["m_id"], $target_server->s["server_id"], $this->veid, T_MIGRATE_OFFLINE_PART1, $params, NULL, $migration_id);
+			add_transaction($_SESSION["member"]["m_id"], $target_server->s["server_id"], $this->veid, T_MIGRATE_PART1, $params, NULL, $migration_id);
 			$migration_id = $db->insertId();
 			
-			$this->stop($migration_id);
-			$migration_id = $db->insert_id();
+			if ($online) {
+				add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_SUSPEND_VE, $params, NULL, $migration_id);
+				$migration_id = $db->insert_id();
+				
+			} else {
+				$this->stop($migration_id);
+				$migration_id = $db->insert_id();
+			}
 			
-			add_transaction($_SESSION["member"]["m_id"], $target_server->s["server_id"], $this->veid, T_MIGRATE_OFFLINE_PART2, $params, NULL, $migration_id);
+			add_transaction($_SESSION["member"]["m_id"], $target_server->s["server_id"], $this->veid, T_MIGRATE_PART2, $params, NULL, $migration_id);
 			$migration_id = $db->insertId();
 			
 			$this->ve["vps_server"] = $target_server->s["server_id"];
@@ -470,26 +485,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 		}
 	}
   }
-
-  function online_migrate($target_id) {
-	global $db;
-	if ($this->exists) {
-	  $servers = list_servers();
-	  if (isset($servers[$target_id])) {
-		$sql = 'UPDATE vps SET vps_server = "'.$db->check($target_id).'" WHERE vps_id = '.$db->check($this->veid);
-		$db->query($sql);
-		$target_server = server_by_id($target_id);
-		$params["target"] = $target_server["server_ip4"];
-		$params["target_id"] = $target_id;
-		$loc = $db->findByColumnOnce("locations", "location_id", $this->get_location());
-		if ($loc["location_has_shared_storage"]) {
-			$params["on_shared_storage"] = true;
-		}
-		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_MIGRATE_ONLINE, $params);
-		$this->ve["vps_server"] = $target_id;
-	  }
-	}
-  }
+  
   function change_server($target_id) {
 	global $db;
 	if ($this->exists) {
