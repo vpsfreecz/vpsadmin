@@ -107,10 +107,17 @@ module BackuperBackend
 		end
 		
 		def restore_restore
+			restore_ds = "#{$CFG.get(:backuper, :restore, :zfs, :dataset)}/#{@veid}"
+			
+			# This code does not count with older snapshot naming without backup- prefix
+			zfs(:clone, nil, "#{@params["dataset"]}@backup-#{@params["datetime"]} #{restore_ds}")
+			
 			rsync([:backuper, :restore, :zfs, :head_rsync], {
-				:src => backup_snapshot_path + "/",
+				:src => "/#{restore_ds}/",
 				:dst => @params["path"],
 			})
+			
+			zfs(:destroy, "-r", restore_ds)
 			
 			index = -1
 			
