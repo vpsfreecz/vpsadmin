@@ -1,3 +1,6 @@
+* Fri Jul 26 2013 - version 1.12.1
+- ZFS restore: fix transaction addition when on-demand backup is not checked
+
 * Thu Jul 18 2013 - version 1.12.0
 - Online migration
 
