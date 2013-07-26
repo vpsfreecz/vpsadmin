@@ -176,7 +176,7 @@ IMPLICIT_CONFIG = {
 		},
 		:restore => {
 			:zfs => {
-				:head_rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}",
+				:head_rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after --exclude .zfs/ %{src} %{dst}",
 				:dataset => "storage/vpsfree.cz/restore",
 			},
 			:exttozfs => {
