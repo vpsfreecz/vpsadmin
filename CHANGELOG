@@ -1,3 +1,8 @@
+* Fri Jul 26 2013 - version 1.12.1
+- Fix ext backup rotation
+- ZFS to ZFS restore: clone snapshot before rsyncing to head
+- ZFS VPS: use refquota instead of quota
+
 * Thu Jul 18 2013 - version 1.12.0
 - Online migration
 - ZFS VPS destroying: fix config renaming
