@@ -762,9 +762,11 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, T_BACKUP_SCHEDULE, $params);
 		}
 		$backup_id = $db->insertId();
-	}
-	
-	if($node->role["fstype"] != "zfs")
+		
+		if($node->role["fstype"] != "zfs")
+			$this->restore_transactions($backuper["server_id"], $restore_params, $backup_id);
+		
+	} else
 		$this->restore_transactions($backuper["server_id"], $restore_params, $backup_id);
   }
   
