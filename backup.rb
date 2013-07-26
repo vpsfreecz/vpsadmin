@@ -89,6 +89,7 @@ until vpses.empty?
 				:exclude => vps[:exclude],
 				:dataset => vps[:dataset],
 				:path => vps[:path],
+				:rotate_backups => true,
 			}.to_json
 			
 			if options[:dry_run]
