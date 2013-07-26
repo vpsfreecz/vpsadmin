@@ -51,7 +51,7 @@ class ZfsVPS < VPS
 				end
 				
 				if quota
-					zfs(:set, "quota=#{quota}", ve_private_ds)
+					zfs(:set, "refquota=#{quota}", ve_private_ds)
 				end
 			end
 		end

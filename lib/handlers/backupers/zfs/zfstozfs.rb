@@ -148,7 +148,7 @@ module BackuperBackend
 				vps.stop
 				
 				acquire_lock(Db.new) do
-					zfs(:set, "quota=#{zfs(:get, "-H -ovalue quota", vps.ve_private_ds)[:output].strip}", tmp)
+					zfs(:set, "refquota=#{zfs(:get, "-H -ovalue refquota", vps.ve_private_ds)[:output].strip}", tmp)
 					zfs(:destroy, "-r", vps.ve_private_ds)
 					zfs(:rename, nil, "#{tmp} #{vps.ve_private_ds}")
 					
