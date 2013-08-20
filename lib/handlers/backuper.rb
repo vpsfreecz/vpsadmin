@@ -105,6 +105,7 @@ class Backuper < Executor
 			vps.stop
 			
 			acquire_lock(Db.new) do
+				syscmd("#{$CFG.get(:bin, :chmod)} -R -t #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
 				syscmd("#{$CFG.get(:bin, :rm)} -rf #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
 				syscmd("#{$CFG.get(:bin, :mv)} #{target} #{$CFG.get(:vz, :vz_root)}/private/#{@veid}")
 			end
