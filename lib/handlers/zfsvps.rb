@@ -18,7 +18,6 @@ class ZfsVPS < VPS
 	
 	def destroy
 		syscmd("#{$CFG.get(:bin, :rmdir)} #{ve_root}")
-		syscmd("#{$CFG.get(:bin, :rm)} -rf #{ve_private}")
 		
 		zfs(:destroy, "-r", ve_private_ds)
 		
