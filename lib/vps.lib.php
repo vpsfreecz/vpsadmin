@@ -404,11 +404,11 @@ function ipadd($ip, $type = 4, $dep = NULL) {
   }
 
   function offline_migrate($target_id, $stop = false, $dep = NULL) {
-	$this->migrate(false, $target_id, $stop, $dep);
+	return $this->migrate(false, $target_id, $stop, $dep);
   }
 
   function online_migrate($target_id) {
-	$this->migrate(true, $target_id);
+	return $this->migrate(true, $target_id);
   }
   
   function migrate($online, $target_id, $stop = false, $dep = NULL) {
