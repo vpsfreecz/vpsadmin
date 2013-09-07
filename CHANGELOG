@@ -1,3 +1,12 @@
+* Sat Sep 07 2013 - version 1.13.0
+- Daily reports
+
+* Fri Sep 06 2013 - version 1.12.3
+- ZFS backup download: fix snapshot name
+- Remove sticky bit from all directories in VE_PRIVATE before trying to remove it
+- ZFS VPS: destroy only dataset, do not delete data before
+- Fix queue processing: do not GROUP BY t_id
+
 * Fri Jul 26 2013 - version 1.12.2
 - Finally fix ZFS restore
 

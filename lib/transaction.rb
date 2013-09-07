@@ -1,3 +1,6 @@
+require 'rubygems'
+require 'json'
+
 class Transaction
 	@@types = {
 		:gen_known_hosts => 5,
@@ -5,6 +8,7 @@ class Transaction
 		:backup_regular => 5006,
 		:backup_snapshot => 5011,
 		:rotate_snapshots => 5101,
+		:send_mail => 9001,
 	}
 	
 	def initialize(db = nil)
