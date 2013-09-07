@@ -5,7 +5,7 @@
     Copyright (C) 2008-2011 Pavel Snajdr, snajpa@snajpa.net
 */
 
-define("VERSION", '1.12.3');
+define("VERSION", '1.13.0');
 define("DEMO_MODE", false);
 
 define("DB_VERSION", 4);

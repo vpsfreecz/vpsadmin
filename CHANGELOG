@@ -1,3 +1,9 @@
+* Sat Sep 07 2013 - version 1.13.0
+- Configuration form for daily reports
+
+* Fri Sep 06 2013 - version 1.12.3
+- Fix VPS online and offline migration return value
+
 * Fri Jul 26 2013 - version 1.12.1
 - ZFS restore: fix transaction addition when on-demand backup is not checked
 
