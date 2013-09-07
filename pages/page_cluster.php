@@ -713,6 +713,16 @@ switch($_REQUEST["action"]) {
 		
 		$list_mails = true;
 		break;
+	case "daily_reports":
+		$xtpl->form_create('?page=cluster&action=daily_reports_save', 'post');
+		$xtpl->form_add_input(_("Send to").':', 'text', '40', 'sendto', $cluster_cfg->get("mailer_daily_report_sendto"));
+		$xtpl->form_out(_('Save changes'));
+		break;
+	case "daily_reports_save":
+		$cluster_cfg->set("mailer_daily_report_sendto", $_POST["sendto"]);
+		
+		$list_mails = true;
+		break;
 	case "freelock":
 		$xtpl->perex(_("Are you sure to delete this lock?"), '<a href="?page=">'.strtoupper(_("No")).'</a> | <a href="?page=cluster&action=freelock2&lock=backuper&id='.$_GET["id"].'">'.strtoupper(_("Yes")).'</a>');
 		$list_nodes = true;
@@ -1580,6 +1590,7 @@ if ($list_mails) {
 	}
 	$xtpl->table_out();
 	$xtpl->sbar_add(_("Mailer settings"), '?page=cluster&action=mailer_settings');
+	$xtpl->sbar_add(_("Daily reports"), '?page=cluster&action=daily_reports');
 }
 if ($list_nodes) {
 	if(!db_check_version())
