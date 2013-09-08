@@ -35,6 +35,8 @@ unless $CFG.load
 	exit(false)
 end
 
+Dir.chdir($CFG.get(:vpsadmin, :root))
+
 $db = Db.new
 
 def trans_stat(done = nil, success = nil)
@@ -59,6 +61,16 @@ end
 
 def time(t)
 	Time.at(t).strftime("%Y-%m-%d %H:%M:%S")
+end
+
+def date(t)
+	return "-" unless t > 0
+	Time.at(t).strftime("%Y-%m-%d")
+end
+
+def months(from, to)
+	return "-" unless from > 0
+	((to - from) / (30 * 24 * 60 * 60)).round
 end
 
 def duration(interval)
@@ -99,6 +111,12 @@ m_deleted = $db.query("SELECT m.*, (SELECT COUNT(*) FROM vps v WHERE v.m_id = m.
                       WHERE m_deleted > UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 1 DAY)) AND m_state = 'deleted'
                       ORDER BY m_id")
 
+m_payments = $db.query("SELECT p.*, m.m_nick
+                       FROM members_payments p
+                       INNER JOIN members m ON p.m_id = m.m_id
+                       WHERE `timestamp` > UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 1 DAY))
+                       ORDER BY `timestamp`")
+
 failed_transactions = $db.query("SELECT t.*, m.m_nick, s.server_name FROM transactions t
                                LEFT JOIN members m ON t_m_id = m_id
                                LEFT JOIN servers s ON t_server = server_id
@@ -108,19 +126,19 @@ report = ERB.new(File.new("templates/daily_report.erb").read, 0).result(binding)
 
 dest = $db.query("SELECT cfg_value FROM sysconfig WHERE cfg_name = 'mailer_daily_report_sendto'").fetch_row[0].gsub("\"", "").split(",")
 
+if options[:verbose]
+	puts "Send to:"
+	p dest
+	puts report
+end
+
 node = nil
 
 begin
 	node = $db.query("SELECT server_id FROM servers WHERE server_type = 'mailer' ORDER BY server_id LIMIT 1").fetch_row[0].to_i
 rescue NoMethodError
 	$stderr.puts "No mailer available"
-# 	exit(false)
-end
-
-if options[:verbose]
-	puts "Send to:"
-	p dest
-	puts report
+	exit(false)
 end
 
 t = Transaction.new($db)

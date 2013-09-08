@@ -84,6 +84,26 @@
 		</table>
 		<% end %>
 		
+		<% if m_payments.num_rows > 0 %>
+		<h2>Payments</h2>
+		<table>
+			<tr>
+				<th>MEMBER</th>
+				<th>FROM</th>
+				<th>TO</th>
+				<th>MONTHS</th>
+			</tr>
+			<% m_payments.each_hash do |p| %>
+			<tr>
+				<td><a href="<%= url("adminm", "section=members&action=edit&id=#{p["m_id"]}") %>"><%= "#{p["m_id"]} #{p["m_nick"]}" %></a></td>
+				<td><%= date(p["change_from"].to_i) %></td>
+				<td><%= date(p["change_to"].to_i) %></td>
+				<td><%= months(p["change_from"].to_i, p["change_to"].to_i) %></td>
+			</tr>
+			<% end %>
+		</table>
+		<% end %>
+		
 		<h2>Transactions</h2>
 		<dl>
 			<dt>Total:</dt>
@@ -102,6 +122,7 @@
 			<dd><%= trans_stat(1, 0) %></dd>
 		</dl>
 		
+		<% if failed_transactions.num_rows > 0 %>
 		<h3>Failed transactions</h3>
 		<table>
 			<tr>
@@ -125,13 +146,14 @@
 				<td><%= duration(t["t_end"].to_i - t["t_real_start"].to_i) %></td>
 				<td><a href="<%= url("adminm", "section=members&action=edit&id=#{t["t_m_id"]}") %>"><%= "#{t["t_m_id"]} #{t["m_nick"]}" %></a></td>
 				<td><a href="<%= url("cluster") %>"><%= t["t_server"] %> <%= t["server_name"] %></a></td>
-				<td><a href="<%= url("adminvps", "&action=info&veid=#{t["t_vps"]}") %>"><%= t["t_vps"] %></a></td>
-				<td><a href="<%= url("transactions", "filter=yes&type=#{t["t_type"]}") %>"><%= t["t_type"] %></a></td>
+				<td><% if t["t_vps"].nil? %>-<% else %><a href="<%= url("adminvps", "&action=info&veid=#{t["t_vps"]}") %>"><%= t["t_vps"] %></a><% end %></td>
+				<td><a href="<%= url("transactions", "filter=yes&type=#{t["t_type"]}") %>"><%= t["t_type"] %></a> <%= Transaction.label(t["t_type"].to_i) %></td>
 				<td><a href="<%= url("transactions", "filter=yes&details=1&id=#{t["t_depends_on"]}") %>"><%= t["t_depends_on"] %></a></td>
 				<td><%= t["t_done"] %></td>
 				<td><%= t["t_success"] %></td>
 			</tr>
 			<% end %>
 		</table>
+		<% end %>
 	</body>
 </html>
