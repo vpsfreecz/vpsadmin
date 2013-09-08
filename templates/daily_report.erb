@@ -102,6 +102,7 @@
 			<dd><%= trans_stat(1, 0) %></dd>
 		</dl>
 		
+		<% if failed_transactions.num_rows > 0 %>
 		<h3>Failed transactions</h3>
 		<table>
 			<tr>
@@ -126,12 +127,13 @@
 				<td><a href="<%= url("adminm", "section=members&action=edit&id=#{t["t_m_id"]}") %>"><%= "#{t["t_m_id"]} #{t["m_nick"]}" %></a></td>
 				<td><a href="<%= url("cluster") %>"><%= t["t_server"] %> <%= t["server_name"] %></a></td>
 				<td><a href="<%= url("adminvps", "&action=info&veid=#{t["t_vps"]}") %>"><%= t["t_vps"] %></a></td>
-				<td><a href="<%= url("transactions", "filter=yes&type=#{t["t_type"]}") %>"><%= t["t_type"] %></a></td>
+				<td><a href="<%= url("transactions", "filter=yes&type=#{t["t_type"]}") %>"><%= t["t_type"] %></a> <%= Transaction.label(t["t_type"].to_i) %></td>
 				<td><a href="<%= url("transactions", "filter=yes&details=1&id=#{t["t_depends_on"]}") %>"><%= t["t_depends_on"] %></a></td>
 				<td><%= t["t_done"] %></td>
 				<td><%= t["t_success"] %></td>
 			</tr>
 			<% end %>
 		</table>
+		<% end %>
 	</body>
 </html>

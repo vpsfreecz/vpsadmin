@@ -35,6 +35,8 @@ unless $CFG.load
 	exit(false)
 end
 
+Dir.chdir($CFG.get(:vpsadmin, :root))
+
 $db = Db.new
 
 def trans_stat(done = nil, success = nil)
@@ -114,7 +116,7 @@ begin
 	node = $db.query("SELECT server_id FROM servers WHERE server_type = 'mailer' ORDER BY server_id LIMIT 1").fetch_row[0].to_i
 rescue NoMethodError
 	$stderr.puts "No mailer available"
-# 	exit(false)
+	exit(false)
 end
 
 if options[:verbose]
