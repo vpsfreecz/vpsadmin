@@ -84,6 +84,26 @@
 		</table>
 		<% end %>
 		
+		<% if m_payments.num_rows > 0 %>
+		<h2>Payments</h2>
+		<table>
+			<tr>
+				<th>MEMBER</th>
+				<th>FROM</th>
+				<th>TO</th>
+				<th>MONTHS</th>
+			</tr>
+			<% m_payments.each_hash do |p| %>
+			<tr>
+				<td><a href="<%= url("adminm", "section=members&action=edit&id=#{p["m_id"]}") %>"><%= "#{p["m_id"]} #{p["m_nick"]}" %></a></td>
+				<td><%= date(p["change_from"].to_i) %></td>
+				<td><%= date(p["change_to"].to_i) %></td>
+				<td><%= months(p["change_from"].to_i, p["change_to"].to_i) %></td>
+			</tr>
+			<% end %>
+		</table>
+		<% end %>
+		
 		<h2>Transactions</h2>
 		<dl>
 			<dt>Total:</dt>
