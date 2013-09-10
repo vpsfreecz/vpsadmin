@@ -13,10 +13,10 @@ class Clone < VpsTransport
 			if src == :ext4 && dst == :ext4
 				klass = :ExtToExtClone
 				
-			elsif src == :ext4 && dst == :zfs
+			elsif (src == :ext4 && dst == :zfs) || (src == :ext4 && dst == :zfs_compat)
 				klass = :ExtToZfsClone
 				
-			elsif src == :zfs && dst == :ext4
+			elsif (src == :zfs && dst == :ext4) || (src == :zfs_compat && dst == :ext4)
 				klass = :ZfsToExtClone
 				
 			else

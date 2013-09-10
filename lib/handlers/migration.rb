@@ -36,10 +36,10 @@ class Migration < VpsTransport
 			if src == :ext4 && dst == :ext4
 				klass = :ExtToExtMigration
 				
-			elsif src == :ext4 && dst == :zfs
+			elsif (src == :ext4 && dst == :zfs) || (src == :ext4 && dst == :zfs_compat)
 				klass = :ExtToZfsMigration
 				
-			elsif src == :zfs && dst == :ext4
+			elsif (src == :zfs && dst == :ext4) || (src == :zfs_compat && dst == :ext4)
 				klass = :ZfsToExtMigration
 				
 			else

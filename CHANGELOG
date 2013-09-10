@@ -1,3 +1,6 @@
+* Tue Sep 10 2013 - version 1.14.0
+- ZFS backups, clone and migration: new ZFS compatibility mode which does not use zfs send/recv, but rsync
+
 * Sun Sep 08 2013 - version 1.13.1
 - Daily report: show transaction label, payments
 
