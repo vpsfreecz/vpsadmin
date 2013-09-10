@@ -361,7 +361,7 @@ switch($_REQUEST["action"]) {
 			$xtpl->form_add_input(_('Name').':', 'text', '30', 'name', $cfg["name"]);
 			$xtpl->form_add_input(_('Label').':', 'text', '30', 'label', $cfg["label"]);
 			$xtpl->form_add_textarea(_('Config').':', '60', '30', 'config', $cfg["config"]);
-			$xtpl->form_add_checkbox(_("Reconfigure all affected VPSes").':', 'reapply', '1', '1');
+			$xtpl->form_add_checkbox(_("Reconfigure all affected VPSes").':', 'reapply', '1', '0');
 			$xtpl->form_out(_('Save'));
 		}
 		
