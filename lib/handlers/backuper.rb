@@ -22,6 +22,9 @@ class Backuper < Executor
 				elsif src == :zfs && dst == :zfs
 					klass = :ZfsToZfs
 					
+				elsif src == :zfs_compat && dst == :zfs
+					klass = :ZfsCompatToZfs
+					
 				else
 					raise CommandFailed.new("Backuper.new", 1, "Unsupported backup type #{src} to #{dst}")
 				end
@@ -41,6 +44,7 @@ class Backuper < Executor
 	# [dst_node_type]   string; ext4 or zfs
 	# [exclude]         list; paths to be excluded from backup
 	# [server_name]     string; name of server VPS runs on
+	# [node_addr]   string; IP address of server VPS runs on
 	# [dataset]         string; backup to this dataset
 	# [path]            string; backup is in this path
 	# [rotate_backups]  bool; rotate backups?
@@ -63,6 +67,7 @@ class Backuper < Executor
 	# [filename]    string; full name of archive
 	# [datetime]    string, date format %Y-%m-%dT%H:%M:%S; download backup from this date
 	# [server_name] string; if specified, do not download backup but VPS current state from node with this name
+	# [node_addr]   string; IP address of server VPS runs on
 	# [dataset]     string; backup to this dataset
 	# [path]        string; backup is in this path
 	def download
@@ -164,12 +169,12 @@ class Backuper < Executor
 		end
 	end
 	
-	def mountdir
-		"#{$CFG.get(:backuper, :mountpoint)}/#{@params["server_name"]}.#{$CFG.get(:vpsadmin, :domain)}"
+	def mountdir(node_name = nil)
+		"#{$CFG.get(:backuper, :mountpoint)}/#{node_name.nil? ? @params["server_name"] : node_name}.#{$CFG.get(:vpsadmin, :domain)}"
 	end
 	
-	def mountpoint
-		"#{mountdir}/#{@veid}"
+	def mountpoint(node_name = nil, veid = nil)
+		"#{mountdir(node_name)}/#{veid.nil? ? @veid : veid}"
 	end
 	
 	def backup_snapshot_path
@@ -222,3 +227,4 @@ end
 require 'lib/handlers/backupers/rdiffbackup'
 require 'lib/handlers/backupers/zfs/exttozfs'
 require 'lib/handlers/backupers/zfs/zfstozfs'
+require 'lib/handlers/backupers/zfs/zfscompattozfs'

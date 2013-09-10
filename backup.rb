@@ -43,7 +43,8 @@ db = Db.new
 servers = {}
 vpses = {}
 
-rs = db.query("SELECT vps_id, vps_backup_exclude, server_id, server_name, r.node_id AS backuper_server_id, e.dataset, e.path, r.root_dataset, r.root_path
+rs = db.query("SELECT vps_id, vps_backup_exclude, server_id, server_name, r.node_id AS backuper_server_id,
+                      e.dataset, e.path, r.root_dataset, r.root_path, n.fstype, server_ip4
               FROM vps
               INNER JOIN servers ON server_id = vps_server
               INNER JOIN node_node n ON vps_server = n.node_id
@@ -52,7 +53,7 @@ rs = db.query("SELECT vps_id, vps_backup_exclude, server_id, server_name, r.node
               INNER JOIN storage_root r ON r.id = e.root_id
               INNER JOIN members m ON vps.m_id = m.m_id
               WHERE
-                n.fstype = 'ext4' AND
+                n.fstype IN ('ext4', 'zfs_compat') AND
                 vps_deleted IS NULL AND m.m_state = 'active' AND
                 vps_backup_enabled = 1 AND (SELECT t_id FROM transactions WHERE t_type = 5006 AND t_done = 0 AND t_vps = vps_id) IS NULL
               ORDER BY RAND()")
@@ -66,7 +67,9 @@ rs.each_hash do |row|
 		:dataset => row["root_dataset"] + "/" + row["dataset"],
 		:path => row["root_path"] + "/" + row["path"],
 		:exclude => row["vps_backup_exclude"].split,
-		:backuper => row["backuper_server_id"].to_i
+		:backuper => row["backuper_server_id"].to_i,
+		:fstype => row["fstype"],
+		:node_addr => row["server_ip4"],
 	}
 end
 
@@ -83,9 +86,10 @@ until vpses.empty?
 			vps = vpses[s_id].pop
 			
 			params = {
-				:src_node_type => :ext4,
+				:src_node_type => vps[:fstype],
 				:dst_node_type => :zfs, # FIXME
 				:server_name => s_name,
+				:node_addr => vps[:node_addr],
 				:exclude => vps[:exclude],
 				:dataset => vps[:dataset],
 				:path => vps[:path],
