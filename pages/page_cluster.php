@@ -1317,6 +1317,13 @@ switch($_REQUEST["action"]) {
 				$xtpl->form_add_checkbox(_("Notify owners").':', 'notify_owners', '1', true);
 				$xtpl->table_tr(false, "nodrag nodrop", false);					
 				break;
+			case "change_config":
+				$t = _("Mass change config");
+				
+				$xtpl->form_add_select(_("Old").':', 'old_config', list_configs());
+				$xtpl->form_add_select(_("New").':', 'new_config', list_configs());
+				$xtpl->form_add_input(_("Reason").':', 'text', '30', 'reason', '', _("If filled, user will be notified by email"));
+				break;
 			case "owner":
 				$t = _("Mass owner change");
 				
@@ -1438,6 +1445,28 @@ switch($_REQUEST["action"]) {
 					
 					if($_POST["notify_owners"])
 						$vps->configs_change_notify();
+				}
+				
+				break;
+			case "change_config":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if (!$vps->exists && !$vps->deleted)
+						continue;
+					
+					$cfgs = $vps->get_configs();
+					
+					foreach($cfgs as $cfg_id => $cfg_label) {
+						if($cfg_id == $_POST["old_config"]) {
+							$db->query("UPDATE vps_has_config SET config_id = ".$db->check($_POST["new_config"])."
+							            WHERE vps_id = ".$db->check($vps->veid)." AND config_id = ".$db->check($_POST["old_config"]));
+							
+							if($_POST["reason"])
+								$vps->configs_change_notify($_POST["reason"]);
+							
+							break;
+						}
+					}
 				}
 				
 				break;
@@ -2250,6 +2279,7 @@ if ($mass_management) {
 			"restore_state" => _("Restore VPS run state (start or stop)"),
 			"reinstall" => _("Reinstall"),
 			"configs" => _("Manage configs"),
+			"change_config" => _("Change config"),
 			"owner" => _("Change owner"),
 			"passwd" => _("Set password"),
 			"dns" => _("Set DNS server"),
