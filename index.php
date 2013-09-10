@@ -182,6 +182,9 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
     $xtpl->menu_add(_("About vpsAdmin"),'?page=about', ($_GET["page"] == 'about'), true);
 }
 
+if(!$_SESSION["logged_in"])
+	$_SESSION["access_url"] = $_SERVER["REQUEST_URI"];
+
 $xtpl->logbox(
 	isset($_SESSION["logged_in"]) ? $_SESSION["logged_in"] : false,
 	isset($_SESSION["member"]) ? $_SESSION["member"]["m_nick"] : false,
