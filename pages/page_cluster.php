@@ -2107,7 +2107,13 @@ if ($mass_management) {
 	
 	$xtpl->table_tr();
 	
-	$xtpl->form_add_select(_("Has mount on").':', 'm[]', $cluster->list_servers_with_type("storage"), $_GET["m"], '', true, '5');
+	$xtpl->table_td(_("Has mount on").':');
+	$xtpl->form_add_select_pure('m[]', $cluster->list_servers_with_type("storage"), $_GET["m"], true, '5');
+	
+	$xtpl->table_td(_("Has configs").':');
+	$xtpl->form_add_select_pure('c[]', list_configs(), $_GET["c"], true, '5');
+	
+	$xtpl->table_tr();
 	
 	$xtpl->form_out( _("Show"), null, '', '3');
 	
@@ -2188,6 +2194,14 @@ if ($mass_management) {
 		             WHERE mo.vps_id = v.vps_id
 		                   AND (mo.server_id IN (".$nodes.") OR r.node_id IN (".$nodes."))
 	                 LIMIT 1) IS NOT NULL";
+	}
+	
+	if (isset($_GET["c"])) {
+		$conds[] = "(SELECT c.vps_id
+		             FROM vps_has_config c
+		             WHERE c.vps_id = v.vps_id
+		                   AND c.config_id IN (".implode(",", $_GET["c"]).")
+		             LIMIT 1) IS NOT NULL";
 	}
 	
 	$conditions = array();
