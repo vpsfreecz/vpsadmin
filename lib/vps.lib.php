@@ -746,6 +746,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			"src_node_type" => $node->role["fstype"],
 			"dst_node_type" => "zfs", # FIXME
 			"server_name" => $this->ve["server_name"],
+			"node_addr" => $this->ve["server_ip4"],
 			"exclude" => preg_split ("/(\r\n|\n|\r)/", $this->ve["vps_backup_exclude"]),
 			"dataset" => $dataset,
 			"path" => $path,
