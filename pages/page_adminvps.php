@@ -671,6 +671,12 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_td(_("Hostname").':');
 	$xtpl->table_td($vps->ve["vps_hostname"]);
 		$xtpl->table_tr();
+	$xtpl->table_td(_("RAM").':');
+	$xtpl->table_td(sprintf('%4d MB',$vps->ve["vps_vm_used_mb"]));
+		$xtpl->table_tr();
+	$xtpl->table_td(_("HDD").':');
+	$xtpl->table_td(sprintf('%.2f GB',round($vps->ve["vps_disk_used_mb"]/1024,2)));
+		$xtpl->table_tr();
 	$xtpl->table_td(_("Distribution").':');
 	$templ = template_by_id($vps->ve["vps_template"]);
 	$xtpl->table_td($templ["templ_label"]);
