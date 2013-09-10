@@ -1,3 +1,10 @@
+* Tue Sep 10 2013 - version 1.14.0
+- Mass management: filter by config, new action change config
+- VPS details: show used RAM and HDD
+- Cluster config edit: leave checkbox 'reconfigure all affected VPS' unchecked by default
+- Login: redirect user to page he came to
+- ZFS backups, clone and migration: new ZFS compatibility mode
+
 * Sat Sep 07 2013 - version 1.13.0
 - Configuration form for daily reports
 

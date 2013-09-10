@@ -361,7 +361,7 @@ switch($_REQUEST["action"]) {
 			$xtpl->form_add_input(_('Name').':', 'text', '30', 'name', $cfg["name"]);
 			$xtpl->form_add_input(_('Label').':', 'text', '30', 'label', $cfg["label"]);
 			$xtpl->form_add_textarea(_('Config').':', '60', '30', 'config', $cfg["config"]);
-			$xtpl->form_add_checkbox(_("Reconfigure all affected VPSes").':', 'reapply', '1', '1');
+			$xtpl->form_add_checkbox(_("Reconfigure all affected VPSes").':', 'reapply', '1', '0');
 			$xtpl->form_out(_('Save'));
 		}
 		
@@ -1317,6 +1317,13 @@ switch($_REQUEST["action"]) {
 				$xtpl->form_add_checkbox(_("Notify owners").':', 'notify_owners', '1', true);
 				$xtpl->table_tr(false, "nodrag nodrop", false);					
 				break;
+			case "change_config":
+				$t = _("Mass change config");
+				
+				$xtpl->form_add_select(_("Old").':', 'old_config', list_configs());
+				$xtpl->form_add_select(_("New").':', 'new_config', list_configs());
+				$xtpl->form_add_input(_("Reason").':', 'text', '30', 'reason', '', _("If filled, user will be notified by email"));
+				break;
 			case "owner":
 				$t = _("Mass owner change");
 				
@@ -1438,6 +1445,28 @@ switch($_REQUEST["action"]) {
 					
 					if($_POST["notify_owners"])
 						$vps->configs_change_notify();
+				}
+				
+				break;
+			case "change_config":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if (!$vps->exists && !$vps->deleted)
+						continue;
+					
+					$cfgs = $vps->get_configs();
+					
+					foreach($cfgs as $cfg_id => $cfg_label) {
+						if($cfg_id == $_POST["old_config"]) {
+							$db->query("UPDATE vps_has_config SET config_id = ".$db->check($_POST["new_config"])."
+							            WHERE vps_id = ".$db->check($vps->veid)." AND config_id = ".$db->check($_POST["old_config"]));
+							
+							if($_POST["reason"])
+								$vps->configs_change_notify($_POST["reason"]);
+							
+							break;
+						}
+					}
 				}
 				
 				break;
@@ -2107,7 +2136,13 @@ if ($mass_management) {
 	
 	$xtpl->table_tr();
 	
-	$xtpl->form_add_select(_("Has mount on").':', 'm[]', $cluster->list_servers_with_type("storage"), $_GET["m"], '', true, '5');
+	$xtpl->table_td(_("Has mount on").':');
+	$xtpl->form_add_select_pure('m[]', $cluster->list_servers_with_type("storage"), $_GET["m"], true, '5');
+	
+	$xtpl->table_td(_("Has configs").':');
+	$xtpl->form_add_select_pure('c[]', list_configs(), $_GET["c"], true, '5');
+	
+	$xtpl->table_tr();
 	
 	$xtpl->form_out( _("Show"), null, '', '3');
 	
@@ -2190,6 +2225,14 @@ if ($mass_management) {
 	                 LIMIT 1) IS NOT NULL";
 	}
 	
+	if (isset($_GET["c"])) {
+		$conds[] = "(SELECT c.vps_id
+		             FROM vps_has_config c
+		             WHERE c.vps_id = v.vps_id
+		                   AND c.config_id IN (".implode(",", $_GET["c"]).")
+		             LIMIT 1) IS NOT NULL";
+	}
+	
 	$conditions = array();
 	
 	foreach($conds as $c)
@@ -2236,6 +2279,7 @@ if ($mass_management) {
 			"restore_state" => _("Restore VPS run state (start or stop)"),
 			"reinstall" => _("Reinstall"),
 			"configs" => _("Manage configs"),
+			"change_config" => _("Change config"),
 			"owner" => _("Change owner"),
 			"passwd" => _("Set password"),
 			"dns" => _("Set DNS server"),

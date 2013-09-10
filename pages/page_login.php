@@ -21,7 +21,8 @@
 */
 
 if ($_GET["action"] == 'login') {
-
+	$access_url = $_SESSION["access_url"];
+	
 	if (($_REQUEST["passwd"] != '') && ($_REQUEST["username"])) {
 
 		$sql = 'SELECT * FROM members WHERE m_pass = "'
@@ -46,13 +47,17 @@ if ($_GET["action"] == 'login') {
 					_("Login successful <br /> Your privilege level: ")
 					. $cfg_privlevel[$member["m_level"]]);
 			
-			if ($_SESSION["is_admin"])
-				header('Location: ?page=cluster');
-			else
-				header('Location: ?page=');
-
 			$_member = member_load($member["m_id"]);
 			$_member->touch_activity();
+			
+			if($access_url)
+				redirect($access_url);
+				
+			elseif ($_SESSION["is_admin"])
+				redirect('?page=cluster');
+				
+			else
+				redirect('?page=');
 
 			} else $xtpl->perex(_("Error"), _("Wrong username or password"));
 		} else $xtpl->perex(_("Error"), _("Wrong username or password"));

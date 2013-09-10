@@ -8,7 +8,7 @@
 */
 
 $NODE_TYPES = array('node', 'mailer', 'storage');
-$NODE_FSTYPES = array("ext4" => "Ext4", "zfs" => "ZFS");
+$NODE_FSTYPES = array("ext4" => "Ext4", "zfs" => "ZFS", "zfs_compat" => "ZFS in compatibility mode");
 
 class cluster_node {
     // Server descriptor
