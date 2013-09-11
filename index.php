@@ -145,6 +145,9 @@ if (($_GET["page"] != "login") &&
 		case 'console':
 			include WWW_ROOT.'pages/page_console.php';
 			break;
+		case 'jumpto':
+			include WWW_ROOT.'pages/page_jumpto.php';
+			break;
 		default:
 			include WWW_ROOT.'pages/page_index.php';
 	}

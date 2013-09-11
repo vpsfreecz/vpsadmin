@@ -462,10 +462,16 @@ class XTemplate {
 	function logbox ($logged = false, $user_name = 'none', $is_admin=false, $maint_mode = false, $db_upgrade = false) {
 		if ($logged) {
 			if ($is_admin) {
+				$this->assign("L_MEMBER", _("Member"));
+				$this->assign("L_VPS", _("VPS"));
+				$this->assign("V_MEMBER", $_SESSION["jumpto"]["member"]);
+				$this->assign("V_VPS", $_SESSION["jumpto"]["vps"]);
+				$this->assign("L_JUMP", _("Jump"));
+				$this->parse("main.loggedbox.jumpto");
 				
 				if($db_upgrade) {
 					$this->assign("L_DB_UPGRADE",_("Database needs to be upgraded!"));
-					$this->parse("main.loggedbox.is_admin.db_upgrade");
+					$this->parse("main.db_upgrade");
 				}
 				
 				if ($maint_mode) {
