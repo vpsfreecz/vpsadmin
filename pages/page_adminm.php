@@ -717,7 +717,7 @@ if ($_SESSION["logged_in"]) {
 
 					if (($_SESSION["is_admin"]) && ($member->m["m_id"] != $_SESSION["member"]["m_id"])) {
 
-						$xtpl->table_td("<a href='?page=login&action=switch_context&m_id={$member->m["m_id"]}'><img src=\"template/icons/m_switch.png\"  title=". _("Switch context") ." /></a>".
+						$xtpl->table_td("<a href='?page=login&action=switch_context&m_id={$member->m["m_id"]}&next=".urlencode($_SERVER["REQUEST_URI"])."'><img src=\"template/icons/m_switch.png\"  title=". _("Switch context") ." /></a>".
 						$member->m["m_nick"]);
 
 					} else {

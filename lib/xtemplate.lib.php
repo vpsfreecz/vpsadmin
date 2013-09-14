@@ -482,11 +482,18 @@ class XTemplate {
 					$this->parse("main.loggedbox.is_admin.maintenance_mode_off");
 				}
 				$this->assign("L_DROP_PRIVILEGES",_("Drop privileges"));
+				$this->assign("V_NEXT", urlencode($_SERVER["REQUEST_URI"]));
 				$this->parse("main.loggedbox.is_admin");
 			} else {
 				$this->assign('L_USER_ID', $_SESSION["member"]["m_id"]);
 				$this->assign('L_EDIT_PROFILE', _("Edit profile"));
 				$this->parse("main.loggedbox.not_admin");
+				
+				if($_SESSION["context_switch"]) {
+					$this->assign('L_REGAIN_PRIVILEGES', _("Regain privileges"));
+					$this->assign('V_NEXT', urlencode($_SERVER["REQUEST_URI"]));
+					$this->parse('main.loggedbox.context_switch');
+				}
 			}
 			$this->assign('USER_NAME', $user_name);
 			$this->parse('main.loggedbox');
