@@ -204,9 +204,11 @@ switch ($_GET["action"]) {
 			if (strlen($_POST["user"]) >= 2 && strlen($_POST["user"]) <= 32 && 
 				preg_match("/^[a-z_][a-zA-Z0-9_-]+$/", $_POST["user"]))
 			{
+				$_SESSION["vps_password"] = $vps->passwd($_POST["user"]);
+				
 				notify_user(
 					_("Change of user's password").' '.$_POST["user"].' '.strtolower(_("planned")),
-					_("New password is: ")."<b>".$vps->passwd($_POST["user"])."</b>"
+					_("New password is: ")."<b>".$_SESSION["vps_password"]."</b>"
 				);
 				redirect('?page=adminvps&action=info&veid='.$vps->veid);
 			} else {
@@ -735,14 +737,26 @@ if (isset($show_info) && $show_info) {
 	// Password changer
 		$xtpl->form_create('?page=adminvps&action=passwd&veid='.$vps->veid, 'post');
 		$xtpl->form_add_input(_("Unix username").':', 'text', '30', 'user', 'root', '');
-		if (!$_SESSION["is_admin"]) {
-		$xtpl->table_td('');
-		$xtpl->table_td('<b> Warning </b>: Password is randomly generated and shown <b>only once</b>. <br />
-						This password changer is here only to enable first access to SSH of VPS. <br />
-						You can change it <br />
-						with <b>passwd</b> command once you\'ve logged onto SSH.');
+		
+		$xtpl->table_td(_("Password").':');
+		
+		if($_SESSION["vps_password"]) {
+			$xtpl->table_td("<b>".$_SESSION["vps_password"]."</b>");
+			unset($_SESSION["vps_password"]);
+			
+		} else
+			$xtpl->table_td(_("will be generated"));
+		
 		$xtpl->table_tr();
-	}
+		
+		if (!$_SESSION["is_admin"]) {
+			$xtpl->table_td('');
+			$xtpl->table_td('<b> Warning </b>: Password is randomly generated and shown <b>only once</b>. <br />
+							This password changer is here only to enable first access to SSH of VPS. <br />
+							You can change it <br />
+							with <b>passwd</b> command once you\'ve logged onto SSH.');
+			$xtpl->table_tr();
+		}
 		$xtpl->table_add_category(_("Set password"));
 		$xtpl->table_add_category(_("(in your VPS, not in vpsAdmin!)"));
 		$xtpl->form_out(_("Go >>"));
