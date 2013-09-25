@@ -41,6 +41,9 @@ class Migration < VpsTransport
 				
 			elsif (src == :zfs && dst == :ext4) || (src == :zfs_compat && dst == :ext4)
 				klass = :ZfsToExtMigration
+			
+			elsif src == :zfs_compat && dst == :zfs_compat
+				klass = :ExtToZfsMigration
 				
 			else
 				klass = :ZfsToZfsMigration
