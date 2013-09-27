@@ -196,6 +196,37 @@ function pick_playground_server() {
 	} else return false;
 }
 
+function pick_free_node($location) {
+	global $db;
+	
+	$servers = list_servers(false, array("node"));
+	
+	$sql = "(SELECT server_id FROM servers s
+	        LEFT JOIN vps v ON v.vps_server = s.server_id
+	        LEFT JOIN vps_status st ON v.vps_id = st.vps_id
+	        WHERE (st.vps_up = 1 OR st.vps_up = 0) AND server_location = ".$db->check($location)."
+	        GROUP BY server_id
+                 ORDER BY COUNT(v.vps_id) ASC
+	        LIMIT 1)
+            
+            UNION ALL
+            
+            (SELECT server_id FROM servers s
+	        LEFT JOIN vps v ON v.vps_server = s.server_id
+	        LEFT JOIN vps_status st ON v.vps_id = st.vps_id
+	        WHERE (st.vps_up = 0 OR st.vps_up IS NULL) AND server_location = ".$db->check($location)."
+	        GROUP BY server_id
+            LIMIT 1)
+            LIMIT 1
+	        ";
+	
+	$rs = $db->query($sql);
+	
+	if($row = $db->fetch_array($rs)) {
+		return $row["server_id"];
+	} else return false;
+}
+
 function server_by_id ($id) {
     global $db;
     $sql = 'SELECT * FROM servers WHERE server_id="'.$db->check($id).'" LIMIT 1';

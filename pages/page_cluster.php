@@ -723,6 +723,61 @@ switch($_REQUEST["action"]) {
 		
 		$list_mails = true;
 		break;
+	case "approval_requests":
+		$xtpl->form_create('?page=cluster&action=approval_requests_save', 'post');
+		$xtpl->form_add_input(_("Send to").':', 'text', '40', 'sendto', $cluster_cfg->get("mailer_requests_sendto"));
+		
+		$xtpl->form_add_input(_("Admin subject").':', 'text', '40', 'admin_sub', $cluster_cfg->get("mailer_requests_admin_sub"), '
+								%request_id% - ID<br />
+								%type% <br />
+								%state% - approved/denied/ignored<br />
+								%member_id% - id<br />
+								%member% - nick
+								');
+		$xtpl->form_add_textarea(_("Admin mail").':', 50, 8, 'admin_text', $cluster_cfg->get("mailer_requests_admin_text"), '
+								%created% - datetime<br />
+								%changed_at% - datetime<br />
+								%request_id%<br />
+								%type% <br />
+								%state% - approved/denied/ignored<br />
+								%member_id% - id<br />
+								%member% - nick<br />
+								%admin_id% - admin id<br />
+								%admin% - admin nick<br />
+								%changed_info% - changed data<br />
+								%reason%<br />
+								%ip%<br />
+								%ptr%
+								');
+		
+		$xtpl->form_add_input(_("Member subject").':', 'text', '40', 'member_sub', $cluster_cfg->get("mailer_requests_member_sub"), '
+								%request_id% - ID<br />
+								%state% - approved/denied<br />
+								%member_id% - id<br />
+								%member% - nick
+								');
+		$xtpl->form_add_textarea(_("Member mail").':', 50, 8, 'member_text', $cluster_cfg->get("mailer_requests_member_text"), '
+								%request_id% - ID
+								%state% - approved/denied<br />
+								%member_id% - id<br />
+								%member% - nick<br />
+								%admin_id% - admin id<br />
+								%admin% - admin nick
+								');
+		
+		$xtpl->form_out(_('Save changes'));
+		break;
+	case "approval_requests_save":
+		$cluster_cfg->set("mailer_requests_sendto", $_POST["sendto"]);
+		
+		$cluster_cfg->set("mailer_requests_admin_sub", $_POST["admin_sub"]);
+		$cluster_cfg->set("mailer_requests_admin_text", $_POST["admin_text"]);
+		
+		$cluster_cfg->set("mailer_requests_member_sub", $_POST["member_sub"]);
+		$cluster_cfg->set("mailer_requests_member_text", $_POST["member_text"]);
+		
+		$list_mails = true;
+		break;
 	case "freelock":
 		$xtpl->perex(_("Are you sure to delete this lock?"), '<a href="?page=">'.strtoupper(_("No")).'</a> | <a href="?page=cluster&action=freelock2&lock=backuper&id='.$_GET["id"].'">'.strtoupper(_("Yes")).'</a>');
 		$list_nodes = true;
@@ -1620,6 +1675,7 @@ if ($list_mails) {
 	$xtpl->table_out();
 	$xtpl->sbar_add(_("Mailer settings"), '?page=cluster&action=mailer_settings');
 	$xtpl->sbar_add(_("Daily reports"), '?page=cluster&action=daily_reports');
+	$xtpl->sbar_add(_("Approval requests"), '?page=cluster&action=approval_requests');
 }
 if ($list_nodes) {
 	if(!db_check_version())

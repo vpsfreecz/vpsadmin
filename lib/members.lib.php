@@ -93,6 +93,7 @@ class member_load {
 				m_playground_enable = "'.$db->check($this->m["m_playground_enable"]).'",
                 m_info = "'.$db->check($this->m["m_info"]).'"';
       $db->query($sql);
+      $m_id = $db->insert_id();
       if ($db->affected_rows() > 0) {
         $this->exists = true;
         $this->mid = $db->insert_id();
@@ -108,7 +109,7 @@ class member_load {
 
         send_mail($this->m["m_mail"], $subject, $content, array(), $cluster_cfg->get("mailer_admins_in_cc") ? explode(",", $cluster_cfg->get("mailer_admins_cc_mails")) : array());
 
-        return true;
+        return $m_id;;
       }
       else return false;
     } else return false;

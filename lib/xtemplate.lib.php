@@ -817,6 +817,19 @@ class XTemplate {
 		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' />');
 	}
 	
+	function html_submit($value, $name = null) {
+		return '<input type="submit" name="'.$name.'" value="'.$value.'" class="button" />';
+	}
+	
+	/**
+	  * Parse out the form
+	  * @param $submit_label - label of submit button of the form
+	  */
+	function form_out_raw() {
+		$this->assign('TABLE_FORM_END','</form>');
+		$this->table_out($id);
+	}
+	
 	/**
 	  * Parse out the form
 	  * @param $submit_label - label of submit button of the form
@@ -825,8 +838,7 @@ class XTemplate {
 		$this->table_td($label);
 		$this->table_td('<input type="submit" value=" '.$submit_label.' "  id="button"/>', false, false, $colspan);
 		$this->table_tr(false, 'nodrag nodrop');
-		$this->assign('TABLE_FORM_END','</form>');
-		$this->table_out($id);
+		$this->form_out_raw();
 	}
 	/**
 	  * Add transaction line to rightside shortlog
