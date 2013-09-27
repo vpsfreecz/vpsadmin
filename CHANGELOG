@@ -1,3 +1,7 @@
+* Fri Sep 27 2013 - version 1.15.0
+- ZFS compat to ZFS compat clone and migration, fixes
+- Mailer: add params for headers message-id, in-reply-to and references
+
 * Tue Sep 10 2013 - version 1.14.0
 - ZFS backups, clone and migration: new ZFS compatibility mode which does not use zfs send/recv, but rsync
 

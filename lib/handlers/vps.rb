@@ -10,7 +10,7 @@ class VPS < Executor
 		alias_method :new_orig, :new
 		
 		def new(*args)
-			Kernel.const_get($CFG.get(:vpsadmin, :fstype) == :zfs ? :ZfsVPS : :VPS).new_orig(*args)
+			Kernel.const_get([:zfs, :zfs_compat].include?($CFG.get(:vpsadmin, :fstype)) ? :ZfsVPS : :VPS).new_orig(*args)
 		end
 	end
 	

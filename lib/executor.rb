@@ -43,7 +43,7 @@ class Executor
 	end
 	
 	def zfs?
-		$CFG.get(:vpsadmin, :fstype) == :zfs
+		[:zfs, :zfs_compat].include?($CFG.get(:vpsadmin, :fstype))
 	end
 	
 	def vzctl(cmd, veid, opts = {}, save = false, valid_rcs = [])

@@ -19,6 +19,9 @@ class Clone < VpsTransport
 			elsif (src == :zfs && dst == :ext4) || (src == :zfs_compat && dst == :ext4)
 				klass = :ZfsToExtClone
 				
+			elsif src == :zfs_compat && dst == :zfs_compat
+				klass = :ZfsCompatToZfsCompatClone
+				
 			else
 				klass = :ZfsToZfsClone
 			end
@@ -65,3 +68,4 @@ require 'lib/handlers/cloning/exttoext'
 require 'lib/handlers/cloning/exttozfs'
 require 'lib/handlers/cloning/zfstoext'
 require 'lib/handlers/cloning/zfstozfs'
+require 'lib/handlers/cloning/zfscompattozfscompat'
