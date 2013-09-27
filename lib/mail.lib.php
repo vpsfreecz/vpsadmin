@@ -63,6 +63,7 @@ function request_change_mail_send($request, $state, $who, $member, $admin, $mail
 	$subject = str_replace("%state%", $state, $subject);
 	$subject = str_replace("%member_id%", $member["m_id"], $subject);
 	$subject = str_replace("%member%", $member["m_nick"], $subject);
+	$subject = str_replace("%name%", $request["m_type"] == "change" ? $request["current_name"] : $request["m_name"], $subject);
 	
 	$text = str_replace("%created%", strftime("%Y-%m-%d %H:%M", $request["m_created"]), $text);
 	$text = str_replace("%changed_at%", $request["m_changed_at"] ? strftime("%Y-%m-%d %H:%M", $request["m_changed_at"]) : "-", $text);
@@ -74,6 +75,7 @@ function request_change_mail_send($request, $state, $who, $member, $admin, $mail
 	$text = str_replace("%admin_id%", $admin["m_id"], $text);
 	$text = str_replace("%admin%", $admin["m_nick"], $text);
 	$text = str_replace("%reason%", $request["m_reason"], $text);
+	$text = str_replace("%admin_response%", $request["m_admin_response"], $text);
 	$text = str_replace("%ip%", $request["m_addr"], $text);
 	$text = str_replace("%ptr%", $request["m_addr_reverse"], $text);
 	

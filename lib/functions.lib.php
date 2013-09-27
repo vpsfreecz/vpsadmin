@@ -280,4 +280,18 @@ function random_string($len) {
 	return $str;
 }
 
+function request_by_id($id) {
+	global $db;
+	
+	$rs = $db->query("SELECT c.*, applicant.m_nick AS applicant_nick, applicant.m_name AS current_name,
+						applicant.m_mail AS current_mail, applicant.m_address AS current_address,
+						applicant.m_id AS applicant_id, admin.m_id AS admin_id, admin.m_nick AS admin_nick
+						FROM members_changes c
+						LEFT JOIN members applicant ON c.m_applicant = applicant.m_id
+						LEFT JOIN members admin ON c.m_changed_by = admin.m_id
+						WHERE c.m_id = ".$db->check($id)."");
+	
+	return $db->fetch_array($rs);
+}
+
 ?>

@@ -258,15 +258,7 @@ function request_approve() {
 	if(!$_SESSION["is_admin"])
 		return;
 	
-	$rs = $db->query("SELECT c.*, applicant.m_nick AS applicant_nick, applicant.m_name AS current_name,
-						applicant.m_mail AS current_mail, applicant.m_address AS current_address,
-						applicant.m_id AS applicant_id, admin.m_id AS admin_id, admin.m_nick AS admin_nick
-						FROM members_changes c
-						LEFT JOIN members applicant ON c.m_applicant = applicant.m_id
-						LEFT JOIN members admin ON c.m_changed_by = admin.m_id
-						WHERE c.m_id = ".$db->check($_GET["id"])."");
-	
-	$row = $db->fetch_array($rs);
+	$row = request_by_id($_GET["id"]);
 	
 	if(!$row)
 		return;
@@ -328,7 +320,14 @@ function request_approve() {
 			break;
 	}
 	
-	$db->query("UPDATE members_changes SET m_state = 'approved', m_changed_at = ".time()." WHERE m_id = ".$db->check($row["m_id"]));
+	$db->query("UPDATE members_changes SET
+	            m_state = 'approved',
+	            m_changed_by = ".$db->check($_SESSION["member"]["m_id"]).",
+	            m_admin_response = '".$db->check($data["m_admin_response"])."',
+	            m_changed_at = ".time()."
+	            WHERE m_id = ".$db->check($row["m_id"]));
+	
+	$row = request_by_id($_GET["id"]);
 	
 	// mail admins about the approval
 	request_change_mail_admins($row, "approved");
@@ -344,15 +343,7 @@ function request_deny() {
 	if(!$_SESSION["is_admin"])
 		return;
 	
-	$rs = $db->query("SELECT c.*, applicant.m_nick AS applicant_nick, applicant.m_name AS current_name,
-						applicant.m_mail AS current_mail, applicant.m_address AS current_address,
-						applicant.m_id AS applicant_id, admin.m_id AS admin_id, admin.m_nick AS admin_nick
-						FROM members_changes c
-						LEFT JOIN members applicant ON c.m_applicant = applicant.m_id
-						LEFT JOIN members admin ON c.m_changed_by = admin.m_id
-						WHERE c.m_id = ".$db->check($_GET["id"])."");
-	
-	$row = $db->fetch_array($rs);
+	$row = request_by_id($_GET["id"]);
 	
 	if(!$row)
 		return;
@@ -366,13 +357,57 @@ function request_deny() {
 		$data = $row;
 	}
 	
-	$db->query("UPDATE members_changes SET m_state = 'denied', m_changed_at = ".time()." WHERE m_id = ".$db->check($row["m_id"]));
+	$db->query("UPDATE members_changes SET
+	            m_state = 'denied',
+	            m_changed_by = ".$db->check($_SESSION["member"]["m_id"]).",
+	            m_admin_response = '".$db->check($data["m_admin_response"])."',
+	            m_changed_at = ".time()."
+	            WHERE m_id = ".$db->check($row["m_id"]));
+	
+	$row = request_by_id($_GET["id"]);
 	
 	// mail user about the denial
 	// mail admins about the denial
 	request_change_mail_all($row, "denied", $row["current_mail"]);
 	
-	notify_user(_("Request approved"), '');
+	notify_user(_("Request denied"), '');
+	redirect('?page=adminm&section=members&action=approval_requests');
+}
+
+function request_invalidate() {
+	global $db;
+	
+	if(!$_SESSION["is_admin"])
+		return;
+	
+	$row = request_by_id($_GET["id"]);
+	
+	if(!$row)
+		return;
+	
+	$data = null;
+	
+	if(isset($_POST["m_name"])) { // called from request details
+		$data = $_POST;
+		
+	} else { // accessed from request list or mail
+		$data = $row;
+	}
+	
+	$db->query("UPDATE members_changes SET
+	            m_state = 'invalid',
+	            m_changed_by = ".$db->check($_SESSION["member"]["m_id"]).",
+	            m_admin_response = '".$db->check($data["m_admin_response"])."',
+	            m_changed_at = ".time()."
+	            WHERE m_id = ".$db->check($row["m_id"]));
+	
+	$row = request_by_id($_GET["id"]);
+	
+	// mail user about the invalidation
+	// mail admins about the invalidation
+	request_change_mail_all($row, "invalid", $row["current_mail"]);
+	
+	notify_user(_("Request invalidated"), '');
 	redirect('?page=adminm&section=members&action=approval_requests');
 }
 
@@ -382,15 +417,7 @@ function request_ignore() {
 	if(!$_SESSION["is_admin"])
 		return;
 	
-	$rs = $db->query("SELECT c.*, applicant.m_nick AS applicant_nick, applicant.m_name AS current_name,
-						applicant.m_mail AS current_mail, applicant.m_address AS current_address,
-						applicant.m_id AS applicant_id, admin.m_id AS admin_id, admin.m_nick AS admin_nick
-						FROM members_changes c
-						LEFT JOIN members applicant ON c.m_applicant = applicant.m_id
-						LEFT JOIN members admin ON c.m_changed_by = admin.m_id
-						WHERE c.m_id = ".$db->check($_GET["id"])."");
-	
-	$row = $db->fetch_array($rs);
+	$row = request_by_id($_GET["id"]);
 	
 	if(!$row)
 		return;
@@ -404,13 +431,20 @@ function request_ignore() {
 		$data = $row;
 	}
 	
-	$db->query("UPDATE members_changes SET m_state = 'ignored', m_changed_at = ".time()." WHERE m_id = ".$db->check($row["m_id"]));
+	$db->query("UPDATE members_changes SET
+	            m_state = 'ignored',
+	            m_changed_by = ".$db->check($_SESSION["member"]["m_id"]).",
+	            m_admin_response = '".$db->check($data["m_admin_response"])."',
+	            m_changed_at = ".time()."
+	            WHERE m_id = ".$db->check($row["m_id"]));
+	
+	$row = request_by_id($_GET["id"]);
 	
 	// mail admins about the ignoring
 	request_change_mail_admins($row, "ignored");
 	request_mail_last_update($row);
 	
-	notify_user(_("Request approved"), '');
+	notify_user(_("Request ignored"), '');
 	redirect('?page=adminm&section=members&action=approval_requests');
 }
 
@@ -871,6 +905,7 @@ if ($_SESSION["logged_in"]) {
 				"awaiting" => _("awaiting"),
 				"approved" => _("approved"),
 				"denied" => _("denied"),
+				"invalid" => _("invalid"),
 				"ignored" => _("ignored")
 			), $_GET["state"] ? $_GET["state"] : "awaiting");
 			
@@ -1032,10 +1067,13 @@ if ($_SESSION["logged_in"]) {
 					$xtpl->form_add_select(_("IPv4").':', 'ipv4', array_merge($empty, get_free_ip_list(4, $row["m_location"])), '', _("listing IPs from application location only"));
 					$xtpl->form_add_select(_("IPv6").':', 'ipv6', array_merge($empty, get_free_ip_list(6, $row["m_location"])), '', _("listing IPs from application location only"));
 					
+					$xtpl->form_add_input(_("Admin response").':', 'text', '30', 'm_admin_response', $row["m_admin_response"]);
+					
 					$xtpl->table_td('');
 					$xtpl->table_td(
 						$xtpl->html_submit(_("Approve"), "approve").
 						$xtpl->html_submit(_("Deny"), "deny").
+						$xtpl->html_submit(_("Invalidate"), "invalidate").
 						$xtpl->html_submit(_("Ignore"), "ignore")
 					);
 					$xtpl->table_tr();
@@ -1070,10 +1108,13 @@ if ($_SESSION["logged_in"]) {
 					$xtpl->table_td($row["m_reason"], false, false, 2);
 					$xtpl->table_tr();
 					
+					$xtpl->form_add_input(_("Admin response").':', 'text', '30', 'm_admin_response', $row["m_admin_response"]);
+					
 					$xtpl->table_td('');
 					$xtpl->table_td(
 						$xtpl->html_submit(_("Approve"), "approve").
 						$xtpl->html_submit(_("Deny"), "deny").
+						$xtpl->html_submit(_("Invalidate"), "invalidate").
 						$xtpl->html_submit(_("Ignore"), "ignore")
 					);
 					$xtpl->table_tr();
@@ -1094,6 +1135,9 @@ if ($_SESSION["logged_in"]) {
 			
 			elseif(isset($_POST["deny"]) || $_GET["rule"] == "deny")
 				request_deny();
+			
+			elseif(isset($_POST["invalidate"]) || $_GET["rule"] == "invalidate")
+				request_invalidate();
 			
 			elseif(isset($_POST["ignore"]) || $_GET["rule"] == "ignore")
 				request_ignore();

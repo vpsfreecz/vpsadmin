@@ -746,6 +746,7 @@ switch($_REQUEST["action"]) {
 								%admin% - admin nick<br />
 								%changed_info% - changed data<br />
 								%reason%<br />
+								%admin_response%<br />
 								%ip%<br />
 								%ptr%
 								');
@@ -762,7 +763,8 @@ switch($_REQUEST["action"]) {
 								%member_id% - id<br />
 								%member% - nick<br />
 								%admin_id% - admin id<br />
-								%admin% - admin nick
+								%admin% - admin nick<br />
+								%admin_response%<br />
 								');
 		
 		$xtpl->form_out(_('Save changes'));
