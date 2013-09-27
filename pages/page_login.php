@@ -50,7 +50,7 @@ if ($_GET["action"] == 'login') {
 			$_member = member_load($member["m_id"]);
 			$_member->touch_activity();
 			
-			if($access_url)
+			if($access_url && strpos($access_url, "?page=login&action=login") === false)
 				redirect($access_url);
 				
 			elseif ($_SESSION["is_admin"])
