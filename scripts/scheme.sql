@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS `cfg_templates` (
   `special` varchar(255) DEFAULT NULL,
   `templ_enabled` tinyint(4) NOT NULL DEFAULT '1',
   `templ_supported` tinyint(4) NOT NULL DEFAULT '1',
+  `templ_order` tinyint(4) NOT NULL DEFAULT '1',
   PRIMARY KEY (`templ_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
 

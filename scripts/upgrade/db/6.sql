@@ -26,3 +26,4 @@ CREATE TABLE IF NOT EXISTS `members_changes` (
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
 
 ALTER TABLE cfg_templates ADD `templ_supported` tinyint(4) NOT NULL DEFAULT '1' AFTER templ_enabled;
+ALTER TABLE cfg_templates ADD `templ_order` tinyint(4) NOT NULL DEFAULT '1' AFTER templ_supported;

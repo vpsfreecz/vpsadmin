@@ -238,6 +238,7 @@ switch($_REQUEST["action"]) {
 			$xtpl->form_add_input(_("Special").':', 'text', '40', 'special', $template["special"], _("Special template features"));
 			$xtpl->form_add_checkbox(_("Enabled").':', 'templ_enabled', 1, $template["templ_enabled"]);
 			$xtpl->form_add_checkbox(_("Supported").':', 'templ_supported', 1, $template["templ_supported"]);
+			$xtpl->form_add_input(_("Order").':', 'text', '30', 'templ_order', $template["templ_order"]);
 			$xtpl->form_out(_("Save changes"));
 		} else {
 			$list_templates = true;
@@ -246,7 +247,7 @@ switch($_REQUEST["action"]) {
 	case "templates_edit_save":
 		if ($template = $cluster->get_template_by_id($_REQUEST["id"])) {
 			if (ereg('^[a-zA-Z0-9_\.\-]{1,63}$',$_REQUEST["templ_name"])) {
-			$cluster->set_template($_REQUEST["id"], $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["special"], $_REQUEST["templ_enabled"], $_REQUEST["templ_supported"]);
+			$cluster->set_template($_REQUEST["id"], $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["special"], $_REQUEST["templ_enabled"], $_REQUEST["templ_supported"], $_REQUEST["templ_order"]);
 			$xtpl->perex(_("Changes saved"), _("Changes you've made to template were saved."));
 			$list_templates = true;
 			} else $list_templates = true;
@@ -265,6 +266,7 @@ switch($_REQUEST["action"]) {
 	$xtpl->form_add_input(_("Special").':', 'text', '40', 'special', '', _("Special template features"));
 	$xtpl->form_add_checkbox(_("Enabled").':', 'templ_enabled', 1, 1);
 	$xtpl->form_add_checkbox(_("Supported").':', 'templ_supported', 1, 1);
+	$xtpl->form_add_input(_("Order").':', 'text', '30', 'templ_order', "1");
 	$xtpl->form_out(_("Save changes"));
 	$xtpl->helpbox(_("Help"), _("This procedure only <b>registers template</b> into the system database.
 					 You need copy the template to proper path onto one of servers
@@ -273,7 +275,7 @@ switch($_REQUEST["action"]) {
 	break;
 	case "template_register_save":
 		if (ereg('^[a-zA-Z0-9_\.\-]{1,63}$',$_REQUEST["templ_name"])) {
-			$cluster->set_template(NULL, $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["special"], $_REQUEST["templ_enabled"], $_REQUEST["templ_supported"]);
+			$cluster->set_template(NULL, $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["special"], $_REQUEST["templ_enabled"], $_REQUEST["templ_supported"], $_REQUEST["templ_order"]);
 			$xtpl->perex(_("Changes saved"), _("Template successfully registered."));
 			$list_templates = true;
 		} else {
@@ -1854,6 +1856,7 @@ if ($list_templates) {
 	$xtpl->table_add_category(_("Uses"));
 	$xtpl->table_add_category(_("Enabled"));
 	$xtpl->table_add_category(_("Supported"));
+	$xtpl->table_add_category(_("#"));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
@@ -1867,6 +1870,7 @@ if ($list_templates) {
 	$xtpl->table_td($usage);
 	$xtpl->table_td('<img src="template/icons/transact_'.($template["templ_enabled"] ? "ok" : "fail").'.png" alt="'.($template["templ_enabled"] ? _('Enabled') : _('Disabled')).'">');
 	$xtpl->table_td('<img src="template/icons/transact_'.($template["templ_supported"] ? "ok" : "fail").'.png" alt="'.($template["templ_supported"] ? _('Yes') : _('No')).'">');
+	$xtpl->table_td($template["templ_order"]);
 	$xtpl->table_td('<a href="?page=cluster&action=templates_edit&id='.$template["templ_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 	$xtpl->table_td('<a href="?page=cluster&action=templates_copy_over_nodes&id='.$template["templ_id"].'"><img src="template/icons/copy_template.png" title="'._("Copy over nodes").'"></a>');
 	if ($usage > 0)
