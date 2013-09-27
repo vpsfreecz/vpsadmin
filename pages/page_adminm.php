@@ -1061,7 +1061,7 @@ if ($_SESSION["logged_in"]) {
 					
 					$empty = array("" => _("pick automatically"));
 					$nodes = list_servers(false, array('node'));
-					$xtpl->form_add_select(_("Node").':', 'm_node', array_merge($empty, $nodes));
+					$xtpl->form_add_select(_("Node").':', 'm_node', $empty + $nodes);
 					
 					$xtpl->form_add_checkbox(_("Assign IP addresses").':', 'm_assign_ips', '1', true);
 					$xtpl->form_add_select(_("IPv4").':', 'ipv4', array_merge($empty, get_free_ip_list(4, $row["m_location"])), '', _("listing IPs from application location only"));
