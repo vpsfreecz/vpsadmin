@@ -462,10 +462,16 @@ class XTemplate {
 	function logbox ($logged = false, $user_name = 'none', $is_admin=false, $maint_mode = false, $db_upgrade = false) {
 		if ($logged) {
 			if ($is_admin) {
+				$this->assign("L_MEMBER", _("Member"));
+				$this->assign("L_VPS", _("VPS"));
+				$this->assign("V_MEMBER", $_SESSION["jumpto"]["member"]);
+				$this->assign("V_VPS", $_SESSION["jumpto"]["vps"]);
+				$this->assign("L_JUMP", _("Jump"));
+				$this->parse("main.loggedbox.jumpto");
 				
 				if($db_upgrade) {
 					$this->assign("L_DB_UPGRADE",_("Database needs to be upgraded!"));
-					$this->parse("main.loggedbox.is_admin.db_upgrade");
+					$this->parse("main.db_upgrade");
 				}
 				
 				if ($maint_mode) {
@@ -476,11 +482,18 @@ class XTemplate {
 					$this->parse("main.loggedbox.is_admin.maintenance_mode_off");
 				}
 				$this->assign("L_DROP_PRIVILEGES",_("Drop privileges"));
+				$this->assign("V_NEXT", urlencode($_SERVER["REQUEST_URI"]));
 				$this->parse("main.loggedbox.is_admin");
 			} else {
 				$this->assign('L_USER_ID', $_SESSION["member"]["m_id"]);
 				$this->assign('L_EDIT_PROFILE', _("Edit profile"));
 				$this->parse("main.loggedbox.not_admin");
+				
+				if($_SESSION["context_switch"]) {
+					$this->assign('L_REGAIN_PRIVILEGES', _("Regain privileges"));
+					$this->assign('V_NEXT', urlencode($_SERVER["REQUEST_URI"]));
+					$this->parse('main.loggedbox.context_switch');
+				}
 			}
 			$this->assign('USER_NAME', $user_name);
 			$this->parse('main.loggedbox');
@@ -804,6 +817,19 @@ class XTemplate {
 		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' />');
 	}
 	
+	function html_submit($value, $name = null) {
+		return '<input type="submit" name="'.$name.'" value="'.$value.'" class="button" />';
+	}
+	
+	/**
+	  * Parse out the form
+	  * @param $submit_label - label of submit button of the form
+	  */
+	function form_out_raw() {
+		$this->assign('TABLE_FORM_END','</form>');
+		$this->table_out($id);
+	}
+	
 	/**
 	  * Parse out the form
 	  * @param $submit_label - label of submit button of the form
@@ -812,8 +838,7 @@ class XTemplate {
 		$this->table_td($label);
 		$this->table_td('<input type="submit" value=" '.$submit_label.' "  id="button"/>', false, false, $colspan);
 		$this->table_tr(false, 'nodrag nodrop');
-		$this->assign('TABLE_FORM_END','</form>');
-		$this->table_out($id);
+		$this->form_out_raw();
 	}
 	/**
 	  * Add transaction line to rightside shortlog

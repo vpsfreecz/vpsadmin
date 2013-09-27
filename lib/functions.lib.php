@@ -196,6 +196,37 @@ function pick_playground_server() {
 	} else return false;
 }
 
+function pick_free_node($location) {
+	global $db;
+	
+	$servers = list_servers(false, array("node"));
+	
+	$sql = "(SELECT server_id FROM servers s
+	        LEFT JOIN vps v ON v.vps_server = s.server_id
+	        LEFT JOIN vps_status st ON v.vps_id = st.vps_id
+	        WHERE (st.vps_up = 1 OR st.vps_up = 0) AND server_location = ".$db->check($location)."
+	        GROUP BY server_id
+                 ORDER BY COUNT(v.vps_id) ASC
+	        LIMIT 1)
+            
+            UNION ALL
+            
+            (SELECT server_id FROM servers s
+	        LEFT JOIN vps v ON v.vps_server = s.server_id
+	        LEFT JOIN vps_status st ON v.vps_id = st.vps_id
+	        WHERE (st.vps_up = 0 OR st.vps_up IS NULL) AND server_location = ".$db->check($location)."
+	        GROUP BY server_id
+            LIMIT 1)
+            LIMIT 1
+	        ";
+	
+	$rs = $db->query($sql);
+	
+	if($row = $db->fetch_array($rs)) {
+		return $row["server_id"];
+	} else return false;
+}
+
 function server_by_id ($id) {
     global $db;
     $sql = 'SELECT * FROM servers WHERE server_id="'.$db->check($id).'" LIMIT 1';
@@ -247,6 +278,20 @@ function random_string($len) {
 		$str .= $chars[array_rand($chars)];
 	
 	return $str;
+}
+
+function request_by_id($id) {
+	global $db;
+	
+	$rs = $db->query("SELECT c.*, applicant.m_nick AS applicant_nick, applicant.m_name AS current_name,
+						applicant.m_mail AS current_mail, applicant.m_address AS current_address,
+						applicant.m_id AS applicant_id, admin.m_id AS admin_id, admin.m_nick AS admin_nick
+						FROM members_changes c
+						LEFT JOIN members applicant ON c.m_applicant = applicant.m_id
+						LEFT JOIN members admin ON c.m_changed_by = admin.m_id
+						WHERE c.m_id = ".$db->check($id)."");
+	
+	return $db->fetch_array($rs);
 }
 
 ?>

@@ -48,7 +48,12 @@
         <h3 id="logo"><img src="template/vpsAdmin-logo.png" alt="Logo" /></h3>
         <div id="slogan_wrap">
 	    <div id="version">
-		<p id="slogan">version: {VERSION}, db rev: {DB_VERSION}</p>
+		<p id="slogan">
+			version: {VERSION}, db rev: {DB_VERSION}
+			<!-- BEGIN: db_upgrade -->
+			<span><a href="?page=cluster&action=db_upgrade">{L_DB_UPGRADE}</a></span>
+			<!-- END: db_upgrade -->
+		</p>
 	    </div>
 	    <div id="langbox">
 	    <ul>
@@ -77,23 +82,38 @@
             </form>
 	<!-- END: logbox -->
 	<!-- BEGIN: loggedbox -->
+			<!-- BEGIN: jumpto -->
+			<form action="?page=jumpto" method="post" id="jumpto">
+				<table>
+					<tr>
+						<td><span>{L_MEMBER}:</span></td>
+						<td><input type="text" name="member" size="10" value="{V_MEMBER}"></td>
+						<td rowspan="2"><input type="submit" name="jump" value="{L_JUMP}"></td>
+					</tr>
+					<tr>
+						<td><span>{L_VPS}:</span></td>
+						<td><input type="text" name="vps" size="10" value="{V_VPS}"></td>
+					</tr>
+				</table>
+			</form>
+			<!-- END: jumpto -->
             <form action="?page=login&action=logout" method="post">
             	<div id="l_form">
             		<!-- BEGIN: is_admin -->
-									<!-- BEGIN: db_upgrade -->
-									<span><a href="?page=cluster&action=db_upgrade">{L_DB_UPGRADE}</a></span>
-									<!-- END: db_upgrade -->
-									<!-- BEGIN: maintenance_mode_on -->
-										<span><a href="?page=cluster&action=maintenance_toggle"><img src="template/icons/error.png" title="{L_MAINTENANCE_MODE_ON}" /></a></span>
-									<!-- END: maintenance_mode_on -->
-									<!-- BEGIN: maintenance_mode_off -->
-										<span><a href="?page=cluster&action=maintenance_toggle"><img src="template/icons/server_online.png" title="{L_MAINTENANCE_MODE_OFF}" /></a></span>
-									<!-- END: maintenance_mode_off -->
-            		<span><a href="?page=login&action=drop_admin"><img src="template/icons/m_dropadmin.png" title="{L_DROP_PRIVILEGES}" /></a></span>
+						<!-- BEGIN: maintenance_mode_on -->
+							<span><a href="?page=cluster&action=maintenance_toggle"><img src="template/icons/error.png" title="{L_MAINTENANCE_MODE_ON}" /></a></span>
+						<!-- END: maintenance_mode_on -->
+						<!-- BEGIN: maintenance_mode_off -->
+							<span><a href="?page=cluster&action=maintenance_toggle"><img src="template/icons/server_online.png" title="{L_MAINTENANCE_MODE_OFF}" /></a></span>
+						<!-- END: maintenance_mode_off -->
+            		<span><a href="?page=login&action=drop_admin&next={V_NEXT}"><img src="template/icons/m_dropadmin.png" title="{L_DROP_PRIVILEGES}" /></a></span>
             		<!-- END: is_admin -->
             		<!-- BEGIN: not_admin -->
 						<span><a href="?page=adminm&section=members&action=edit&id={L_USER_ID}">{L_EDIT_PROFILE}</a></span>
 					<!-- END: not_admin -->
+					<!-- BEGIN: context_switch -->
+						<span><a href="?page=login&action=regain_admin&next={V_NEXT}"><img src="template/icons/m_dropadmin.png" title="{L_REGAIN_PRIVILEGES}" /></a></span>
+					<!-- END: context_switch -->
 				        <input type="submit" value="{L_LOGOUT} ({USER_NAME})" id="search-submit" />
             	</div>
             </form>

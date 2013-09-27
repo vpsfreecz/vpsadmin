@@ -237,6 +237,8 @@ switch($_REQUEST["action"]) {
 			$xtpl->form_add_textarea(_("Info").':', 28, 4, 'templ_info', $template["templ_info"], _("Note for administrators"));
 			$xtpl->form_add_input(_("Special").':', 'text', '40', 'special', $template["special"], _("Special template features"));
 			$xtpl->form_add_checkbox(_("Enabled").':', 'templ_enabled', 1, $template["templ_enabled"]);
+			$xtpl->form_add_checkbox(_("Supported").':', 'templ_supported', 1, $template["templ_supported"]);
+			$xtpl->form_add_input(_("Order").':', 'text', '30', 'templ_order', $template["templ_order"]);
 			$xtpl->form_out(_("Save changes"));
 		} else {
 			$list_templates = true;
@@ -245,7 +247,7 @@ switch($_REQUEST["action"]) {
 	case "templates_edit_save":
 		if ($template = $cluster->get_template_by_id($_REQUEST["id"])) {
 			if (ereg('^[a-zA-Z0-9_\.\-]{1,63}$',$_REQUEST["templ_name"])) {
-			$cluster->set_template($_REQUEST["id"], $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["special"], $_REQUEST["templ_enabled"]);
+			$cluster->set_template($_REQUEST["id"], $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["special"], $_REQUEST["templ_enabled"], $_REQUEST["templ_supported"], $_REQUEST["templ_order"]);
 			$xtpl->perex(_("Changes saved"), _("Changes you've made to template were saved."));
 			$list_templates = true;
 			} else $list_templates = true;
@@ -263,6 +265,8 @@ switch($_REQUEST["action"]) {
 	$xtpl->form_add_textarea(_("Info").':', 28, 4, 'templ_info', '', _("Note for administrators"));
 	$xtpl->form_add_input(_("Special").':', 'text', '40', 'special', '', _("Special template features"));
 	$xtpl->form_add_checkbox(_("Enabled").':', 'templ_enabled', 1, 1);
+	$xtpl->form_add_checkbox(_("Supported").':', 'templ_supported', 1, 1);
+	$xtpl->form_add_input(_("Order").':', 'text', '30', 'templ_order', "1");
 	$xtpl->form_out(_("Save changes"));
 	$xtpl->helpbox(_("Help"), _("This procedure only <b>registers template</b> into the system database.
 					 You need copy the template to proper path onto one of servers
@@ -271,7 +275,7 @@ switch($_REQUEST["action"]) {
 	break;
 	case "template_register_save":
 		if (ereg('^[a-zA-Z0-9_\.\-]{1,63}$',$_REQUEST["templ_name"])) {
-			$cluster->set_template(NULL, $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["special"], $_REQUEST["templ_enabled"]);
+			$cluster->set_template(NULL, $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["special"], $_REQUEST["templ_enabled"], $_REQUEST["templ_supported"], $_REQUEST["templ_order"]);
 			$xtpl->perex(_("Changes saved"), _("Template successfully registered."));
 			$list_templates = true;
 		} else {
@@ -720,6 +724,63 @@ switch($_REQUEST["action"]) {
 		break;
 	case "daily_reports_save":
 		$cluster_cfg->set("mailer_daily_report_sendto", $_POST["sendto"]);
+		
+		$list_mails = true;
+		break;
+	case "approval_requests":
+		$xtpl->form_create('?page=cluster&action=approval_requests_save', 'post');
+		$xtpl->form_add_input(_("Send to").':', 'text', '40', 'sendto', $cluster_cfg->get("mailer_requests_sendto"));
+		
+		$xtpl->form_add_input(_("Admin subject").':', 'text', '40', 'admin_sub', $cluster_cfg->get("mailer_requests_admin_sub"), '
+								%request_id% - ID<br />
+								%type% <br />
+								%state% - approved/denied/ignored<br />
+								%member_id% - id<br />
+								%member% - nick
+								');
+		$xtpl->form_add_textarea(_("Admin mail").':', 50, 8, 'admin_text', $cluster_cfg->get("mailer_requests_admin_text"), '
+								%created% - datetime<br />
+								%changed_at% - datetime<br />
+								%request_id%<br />
+								%type% <br />
+								%state% - approved/denied/ignored<br />
+								%member_id% - id<br />
+								%member% - nick<br />
+								%admin_id% - admin id<br />
+								%admin% - admin nick<br />
+								%changed_info% - changed data<br />
+								%reason%<br />
+								%admin_response%<br />
+								%ip%<br />
+								%ptr%
+								');
+		
+		$xtpl->form_add_input(_("Member subject").':', 'text', '40', 'member_sub', $cluster_cfg->get("mailer_requests_member_sub"), '
+								%request_id% - ID<br />
+								%state% - approved/denied<br />
+								%member_id% - id<br />
+								%member% - nick
+								');
+		$xtpl->form_add_textarea(_("Member mail").':', 50, 8, 'member_text', $cluster_cfg->get("mailer_requests_member_text"), '
+								%request_id% - ID
+								%state% - approved/denied<br />
+								%member_id% - id<br />
+								%member% - nick<br />
+								%admin_id% - admin id<br />
+								%admin% - admin nick<br />
+								%admin_response%<br />
+								');
+		
+		$xtpl->form_out(_('Save changes'));
+		break;
+	case "approval_requests_save":
+		$cluster_cfg->set("mailer_requests_sendto", $_POST["sendto"]);
+		
+		$cluster_cfg->set("mailer_requests_admin_sub", $_POST["admin_sub"]);
+		$cluster_cfg->set("mailer_requests_admin_text", $_POST["admin_text"]);
+		
+		$cluster_cfg->set("mailer_requests_member_sub", $_POST["member_sub"]);
+		$cluster_cfg->set("mailer_requests_member_text", $_POST["member_text"]);
 		
 		$list_mails = true;
 		break;
@@ -1620,6 +1681,7 @@ if ($list_mails) {
 	$xtpl->table_out();
 	$xtpl->sbar_add(_("Mailer settings"), '?page=cluster&action=mailer_settings');
 	$xtpl->sbar_add(_("Daily reports"), '?page=cluster&action=daily_reports');
+	$xtpl->sbar_add(_("Approval requests"), '?page=cluster&action=approval_requests');
 }
 if ($list_nodes) {
 	if(!db_check_version())
@@ -1793,6 +1855,8 @@ if ($list_templates) {
 	$xtpl->table_add_category(_("Label"));
 	$xtpl->table_add_category(_("Uses"));
 	$xtpl->table_add_category(_("Enabled"));
+	$xtpl->table_add_category(_("Supported"));
+	$xtpl->table_add_category(_("#"));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
@@ -1805,6 +1869,8 @@ if ($list_templates) {
 	$xtpl->table_td($template["templ_label"]);
 	$xtpl->table_td($usage);
 	$xtpl->table_td('<img src="template/icons/transact_'.($template["templ_enabled"] ? "ok" : "fail").'.png" alt="'.($template["templ_enabled"] ? _('Enabled') : _('Disabled')).'">');
+	$xtpl->table_td('<img src="template/icons/transact_'.($template["templ_supported"] ? "ok" : "fail").'.png" alt="'.($template["templ_supported"] ? _('Yes') : _('No')).'">');
+	$xtpl->table_td($template["templ_order"]);
 	$xtpl->table_td('<a href="?page=cluster&action=templates_edit&id='.$template["templ_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 	$xtpl->table_td('<a href="?page=cluster&action=templates_copy_over_nodes&id='.$template["templ_id"].'"><img src="template/icons/copy_template.png" title="'._("Copy over nodes").'"></a>');
 	if ($usage > 0)

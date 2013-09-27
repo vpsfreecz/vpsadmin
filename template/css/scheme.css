@@ -36,7 +36,8 @@ Layout
 #search #search-input {border:1px solid #FFF;}
 #search #search-submit {border:1px solid #969678; background:#969678; color:#FFF;}
 #input {border:1px solid #B0B0B0;}
-#button {border:1px solid #000; background:#969678; color:#FFF;}
+#button, .button {border:1px solid #000; background:#969678; color:#FFF;}
+.button {margin-right: 30px;}
 
 #nav {background-color:#004C8E;}
 #nav li a {border-left:1px solid #009DD7; color:#FFF;}

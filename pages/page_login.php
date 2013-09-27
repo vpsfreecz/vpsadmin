@@ -50,7 +50,7 @@ if ($_GET["action"] == 'login') {
 			$_member = member_load($member["m_id"]);
 			$_member->touch_activity();
 			
-			if($access_url)
+			if($access_url && strpos($access_url, "?page=login&action=login") === false)
 				redirect($access_url);
 				
 			elseif ($_SESSION["is_admin"])
@@ -75,16 +75,18 @@ if ($_GET["action"] == 'logout') {
 }
 
 if ($_SESSION["is_admin"] && ($_GET["action"] == 'drop_admin')) {
-
+	$_SESSION["context_switch"] = true;
+	$_SESSION["original_admin"] = $_SESSION;
 	$_SESSION["is_admin"] = false;
-
+	
 	$xtpl->perex(_("Dropped admin privileges"), '');
-	$xtpl->delayed_redirect('?page=', 800);
+	redirect($_GET["next"]);
 }
 
 if ($_SESSION["is_admin"] && ($_GET["action"] == 'switch_context') && isset($_GET["m_id"])) {
 
 	$sql = 'SELECT * FROM members WHERE m_id="' . $db->check($_GET["m_id"]) . '"';
+	$admin = $_SESSION;
 
 	if ($result = $db->query($sql)) {
 
@@ -99,16 +101,30 @@ if ($_SESSION["is_admin"] && ($_GET["action"] == 'switch_context') && isset($_GE
 			$_SESSION["is_poweruser"] =  ($member["m_level"] >= PRIV_POWERUSER) ?  true : false;
 			$_SESSION["is_admin"] =      ($member["m_level"] >= PRIV_ADMIN) ?      true : false;
 			$_SESSION["is_superadmin"] = ($member["m_level"] >= PRIV_SUPERADMIN) ? true : false;
+			
+			$_SESSION["context_switch"] = true;
+			$_SESSION["original_admin"] = $admin;
 
 			$xtpl->perex(_("Change to ").$member["m_nick"],
 					_(" successful <br /> Your privilege level: ")
 					. $cfg_privlevel[$member["m_level"]]);
 
-			$xtpl->delayed_redirect('?page=', 350);
-
 			$_member = member_load($member["m_id"]);
 			$_member->touch_activity();
+			
+			redirect($_GET["next"]);
 
 		} else $xtpl->perex(_("Error"), _("Wrong username or password"));
 	} else $xtpl->perex(_("Error"), _("Wrong username or password"));
+}
+
+if ($_GET["action"] == "regain_admin" && $_SESSION["context_switch"]) {
+	$admin = $_SESSION["original_admin"];
+	
+	session_destroy();
+	session_start();
+		
+	$_SESSION = $admin;
+	
+	redirect($_GET["next"]);
 }
