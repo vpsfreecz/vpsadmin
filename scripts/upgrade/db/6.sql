@@ -24,3 +24,5 @@ CREATE TABLE IF NOT EXISTS `members_changes` (
   `m_last_mail_id` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`m_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
+
+ALTER TABLE cfg_templates ADD `templ_supported` tinyint(4) NOT NULL DEFAULT '1' AFTER templ_enabled;

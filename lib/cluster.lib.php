@@ -331,7 +331,7 @@ class cluster {
       * @param $info - Note for admins
       * @return descriptor of SQL result
       */
-    function set_template($id = NULL, $name, $label, $info = "", $special = "", $enabled = 1) {
+    function set_template($id = NULL, $name, $label, $info = "", $special = "", $enabled = 1, $supported = 1) {
 	global $db;
 	if ($id != NULL)
 	    $sql = 'UPDATE cfg_templates
@@ -339,7 +339,8 @@ class cluster {
 			    templ_label = "'.$db->check($label).'",
 			    templ_info = "'.$db->check($info).'",
 			    special = "'.$db->check($special).'",
-			    templ_enabled = "'.$db->check($enabled).'"
+			    templ_enabled = "'.$db->check($enabled).'",
+			    templ_supported = "'.$db->check($supported).'"
 			WHERE templ_id = "'.$db->check($id).'"';
 	else
 	    $sql = 'INSERT INTO cfg_templates
@@ -347,7 +348,8 @@ class cluster {
 			    templ_label = "'.$db->check($label).'",
 			    templ_info = "'.$db->check($info).'",
 			    special = "'.$db->check($special).'",
-			    templ_enabled = "'.$db->check($enabled).'"';
+			    templ_enabled = "'.$db->check($enabled).'",
+			    templ_supported = "'.$db->check($supported).'"';
 	return ($db->query($sql));
     }
     /**
