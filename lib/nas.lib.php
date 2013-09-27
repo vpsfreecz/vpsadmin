@@ -620,7 +620,7 @@ function nas_create_default_exports($type, $obj) {
 		
 		if($type == "vps" && $e["export_type"] == "backup") {
 			$vps = new vps_load($obj["vps_id"]);
-			$vps->set_backuper(NULL, $new_id, false);
+			$vps->set_backuper(NULL, $new_id, false, true);
 		}
 	}
 	
