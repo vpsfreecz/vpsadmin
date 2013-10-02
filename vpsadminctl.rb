@@ -27,11 +27,16 @@ options = {
 	:install => {
 		:id => nil,
 		:name => nil,
-		:type => :node,
+		:role => :node,
 		:location => nil,
 		:addr => nil,
+		# node
 		:maxvps => 30,
-		:vzpath => "/vz",
+		:ve_private => "/vz",
+		:fstype => "ext4",
+		# storage
+		# mailer
+		# end
 		:pubkey => false,
 		:propagate => false,
 	}
@@ -97,7 +102,7 @@ END_BANNER
 			options[:install][:name] = name
 		end
 		
-		opts.on("--type TYPE", [:node, :storage, :mailer], "Node type (node, storage or mailer)") do |t|
+		opts.on("--role TYPE", [:node, :storage, :mailer], "Node type (node, storage or mailer)") do |t|
 			options[:install][:type] = t
 		end
 		
@@ -109,14 +114,6 @@ END_BANNER
 			options[:install][:addr] = addr
 		end
 		
-		opts.on("--maxvps CNT", Integer, "Max number of VPS") do |m|
-			options[:install][:maxvps] = m
-		end
-		
-		opts.on("--vzpath PATH", "OpenVZ root") do |r|
-			options[:install][:vzpath] = r
-		end
-		
 		opts.on("--only-pubkey", "Update only server public key, do not create node") do
 			options[:install][:pubkey] = true
 		end
@@ -124,8 +121,24 @@ END_BANNER
 		opts.on("--[no-]propagate", "Regenerate known_hosts on all nodes") do |p|
 			options[:install][:propagate] = p
 		end
+		
+		opts.separator ""
+		opts.separator "Options for role NODE"
+		
+		opts.on("--maxvps CNT", Integer, "Max number of VPS") do |m|
+			options[:install][:maxvps] = m
+		end
+		
+		opts.on("--ve-private PATH", "Path to VE_PRIVATE, expands variable %{veid}") do |p|
+			options[:install][:ve_private] = p
+		end
+		
+		opts.on("--fstype FSTYPE", [:ext4, :zfs, :zfs_compat], "Select FS type (ext4, zfs, zfs_compat)") do |fs|
+			options[:install][:fstype] = fs
+		end
 	end
 	
+	opts.separator ""
 	opts.separator "Common options:"
 	
 	opts.on("-s", "--socket SOCKET", "Specify socket") do |s|
