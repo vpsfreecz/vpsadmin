@@ -263,6 +263,12 @@ function request_approve() {
 	if(!$row)
 		return;
 	
+	elseif($row["m_state"] == "approved") {
+		notify_user(_("Request has already been approved"), '');
+		redirect('?page=adminm&section=members&action=request_details&id='.$row["m_id"]);
+		return;
+	}
+	
 	$data = null;
 	
 	if(isset($_POST["m_name"])) { // called from request details
@@ -348,6 +354,12 @@ function request_deny() {
 	if(!$row)
 		return;
 	
+	elseif($row["m_state"] == "denied") {
+		notify_user(_("Request has already been denied"), '');
+		redirect('?page=adminm&section=members&action=request_details&id='.$row["m_id"]);
+		return;
+	}
+	
 	$data = null;
 	
 	if(isset($_POST["m_name"])) { // called from request details
@@ -385,6 +397,12 @@ function request_invalidate() {
 	if(!$row)
 		return;
 	
+	elseif($row["m_state"] == "invalid") {
+		notify_user(_("Request has already been invalidated"), '');
+		redirect('?page=adminm&section=members&action=request_details&id='.$row["m_id"]);
+		return;
+	}
+	
 	$data = null;
 	
 	if(isset($_POST["m_name"])) { // called from request details
@@ -421,6 +439,12 @@ function request_ignore() {
 	
 	if(!$row)
 		return;
+	
+	elseif($row["m_state"] == "ignored") {
+		notify_user(_("Request has already been ignored"), '');
+		redirect('?page=adminm&section=members&action=request_details&id='.$row["m_id"]);
+		return;
+	}
 	
 	$data = null;
 	
