@@ -44,6 +44,17 @@ function print_newvps() {
 function print_editvps($vps) {
 }
 
+function vps_run_redirect_path($vps) {
+	if($_SERVER["HTTP_REFERER"])
+		return $_SERVER["HTTP_REFERER"];
+	
+	elseif($_GET["action"] == "info")
+		return '?page=adminvps&action=info&veid='.$vps->veid;
+	
+	else
+		return '?page=adminvps';
+}
+
 if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
 
 $member_of_session = member_load($_SESSION["member"]["m_id"]);
@@ -52,21 +63,34 @@ $_GET["run"] = isset($_GET["run"]) ? $_GET["run"] : false;
 
 if ($_GET["run"] == 'stop') {
 	$vps = vps_load($_GET["veid"]);
-	$xtpl->perex_cmd_output(_("Stop VPS")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->stop());
+	$vps->stop();
+	
+	notify_user(_("Stop VPS")." {$_GET["veid"]} "._("planned"));
+	redirect(vps_run_redirect_path($vps));
 }
 
 if ($_GET["run"] == 'start') {
 	if ($member_of_session->m["m_state"] == "active" || (!$cluster_cfg->get("payments_enabled"))) {
-			$vps = vps_load($_GET["veid"]);
-			$xtpl->perex_cmd_output(_("Start of")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->start());
-	} else $xtpl->perex(_("Account suspended"), _("You are not allowed to make \"start\" operation.<br />Your account is suspended because of:") . ' ' . $member_of_session->m["m_suspend_reason"]);
+		$vps = vps_load($_GET["veid"]);
+		$vps->start();
+		
+		notify_user(_("Start of")." {$_GET["veid"]} "._("planned"));
+		redirect(vps_run_redirect_path($vps));
+		
+	} else
+		$xtpl->perex(_("Account suspended"), _("You are not allowed to make \"start\" operation.<br />Your account is suspended because of:") . ' ' . $member_of_session->m["m_suspend_reason"]);
 }
 
 if ($_GET["run"] == 'restart') {
 	if ($member_of_session->m["m_state"] == "active" || (!$cluster_cfg->get("payments_enabled"))) {
 		$vps = vps_load($_GET["veid"]);
-		$xtpl->perex_cmd_output(_("Restart of")." {$_GET["veid"]} ".strtolower(_("planned")), $vps->restart());
-	} else $xtpl->perex(_("Account suspended"), _("You are not allowed to make \"restart\" operation.<br />Your account is suspended because of:") . ' ' . $member_of_session->m["m_suspend_reason"]);
+		$vps->restart();
+		
+		notify_user(_("Restart of")." {$_GET["veid"]} "._("planned"));
+		redirect(vps_run_redirect_path($vps));
+		
+	} else
+		$xtpl->perex(_("Account suspended"), _("You are not allowed to make \"restart\" operation.<br />Your account is suspended because of:") . ' ' . $member_of_session->m["m_suspend_reason"]);
 }
 
 $playground_servers = $cluster->list_playground_servers();
