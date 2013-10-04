@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS `members_payments` (
 CREATE TABLE IF NOT EXISTS `servers` (
   `server_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `server_name` varchar(64) NOT NULL,
-  `server_type` enum('node','backuper','storage','mailer') NOT NULL,
+  `server_type` enum('node','storage','mailer') NOT NULL,
   `server_location` int(10) unsigned NOT NULL,
   `server_availstat` text,
   `server_ip4` varchar(127) NOT NULL,
@@ -158,6 +158,7 @@ CREATE TABLE IF NOT EXISTS `node_node` (
   `node_id` int(11) NOT NULL,
   `max_vps` int(11) NOT NULL,
   `ve_private` varchar(255) NOT NULL DEFAULT '/vz/private/%{veid}',
+  `fstype` enum('ext4','zfs','zfs_compat') NOT NULL DEFAULT 'ext4',
   PRIMARY KEY (`node_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

@@ -1,3 +1,9 @@
+* Fri Oct 4 2013 - version 1.15.1
+- Fix node selection in approval request details
+- Complete DB scheme
+- Requests for approval: do not allow duplicit actions
+- VPS start/stop/restart: redirect afterwards
+
 * Fri Sep 27 2013 - version 1.15.0
 - Jump box in header to quickly find members and VPS
 - Regain admin privileges after dropping them without the need to relogin
