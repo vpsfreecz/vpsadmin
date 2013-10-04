@@ -1,3 +1,7 @@
+* Fri Oct 4 2013 - version 1.15.1
+- Mailer: fix message headers
+- Fix vpsadminctl install
+
 * Fri Sep 27 2013 - version 1.15.0
 - ZFS compat to ZFS compat clone and migration, fixes
 - Mailer: add params for headers message-id, in-reply-to and references

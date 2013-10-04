@@ -152,28 +152,44 @@ class VpsAdmin < Executor
 			
 			db.prepared("INSERT INTO servers SET
 			            server_id = ?, server_name = ?, server_type = ?, server_location = ?,
-			            server_ip4 = ?, server_maxvps = ?, server_path_vz = ?
+			            server_ip4 = ?
 			            ON DUPLICATE KEY UPDATE
 			            server_name = ?, server_type = ?, server_location = ?,
-			            server_ip4 = ?, server_maxvps = ?, server_path_vz = ?
+			            server_ip4 = ?
 			            ",
 			            # insert
-			            node_id, name, @params["type"], loc,
-			            @params["addr"], @params["maxvps"], @params["vzpath"],
+			            node_id, name, @params["role"], loc,  @params["addr"],
 			            # update
-			            name, @params["type"], loc,
-			            @params["addr"], @params["maxvps"], @params["vzpath"]
+			            name, @params["role"], loc,  @params["addr"]
 			)
 			node_id = db.insert_id
+			
+			if @params["role"] == "node"
+				db.prepared("INSERT INTO node_node SET
+				            node_id = ?, max_vps = ?, ve_private = ?, fstype = ?
+				            ON DUPLICATE KEY UPDATE
+				            max_vps = ?, ve_private = ?, fstype = ?
+				            ",
+				            # insert
+				            node_id, @params["maxvps"], @params["ve_private"], @params["fstype"],
+				            # update
+				            @params["maxvps"], @params["ve_private"], @params["fstype"]
+				)
+			end
 			
 			log "Node registered in database:"
 			log "\tid = #{node_id}"
 			log "\tname = #{name}"
-			log "\ttype = #{@params["type"]}"
+			log "\trole = #{@params["role"]}"
 			log "\tlocation = #{loc}"
 			log "\taddr = #{@params["addr"]}"
-			log "\tmaxvps = #{@params["maxvps"]}"
-			log "\tvzpath = #{@params["vzpath"]}"
+			
+			case @params["role"]
+			when "node"
+				log "\tmaxvps = #{@params["maxvps"]}"
+				log "\tve_private = #{@params["ve_private"]}"
+				log "\tfstype = #{@params["fstype"]}"
+			end
 			
 			refresh
 		end
