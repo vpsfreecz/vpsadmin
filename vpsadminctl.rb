@@ -123,7 +123,7 @@ END_BANNER
 		end
 		
 		opts.separator ""
-		opts.separator "Options for role NODE"
+		opts.separator "Options for role NODE:"
 		
 		opts.on("--maxvps CNT", Integer, "Max number of VPS") do |m|
 			options[:install][:maxvps] = m
