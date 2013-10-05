@@ -23,6 +23,7 @@ switch($_REQUEST["action"]) {
 		$xtpl->table_add_category('');
 		$xtpl->table_add_category('');
 		$xtpl->form_create('?page=cluster&action=general_settings_save', 'post');
+		$xtpl->form_add_input(_("Base URL").':', 'text', '30', 'base_url', $cluster_cfg->get("general_base_url"));
 		$xtpl->form_add_input(_("Member delete timeout").':', 'text', '30', 'member_del_timeout', $cluster_cfg->get("general_member_delete_timeout"), _("days"));
 		$xtpl->form_add_input(_("VPS delete timeout").':', 'text', '30', 'vps_del_timeout', $cluster_cfg->get("general_vps_delete_timeout"), _("days"));
 		$xtpl->form_out(_("Save changes"));
@@ -30,6 +31,7 @@ switch($_REQUEST["action"]) {
 		$xtpl->sbar_add(_("Back"), '?page=cluster');
 		break;
 	case "general_settings_save":
+		$cluster_cfg->set("general_base_url", $_POST["base_url"]);
 		$cluster_cfg->set("general_member_delete_timeout", $_POST["member_del_timeout"]);
 		$cluster_cfg->set("general_vps_delete_timeout", $_POST["vps_del_timeout"]);
 		notify_user(_("Changes saved"), _("Changes sucessfully saved."));
