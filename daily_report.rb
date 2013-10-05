@@ -8,6 +8,7 @@ require 'lib/transaction'
 
 require 'optparse'
 require 'erb'
+require 'json'
 
 options = {
 	:config => "/etc/vpsadmin/vpsadmind.yml",
@@ -38,6 +39,7 @@ end
 Dir.chdir($CFG.get(:vpsadmin, :root))
 
 $db = Db.new
+$base_url = JSON.parse('{"tmp":' + $db.query("SELECT cfg_value FROM sysconfig WHERE cfg_name = 'general_base_url'").fetch_row[0] + '}')["tmp"]
 
 def trans_stat(done = nil, success = nil)
 	q = "SELECT COUNT(*) AS cnt
@@ -56,7 +58,7 @@ def trans_stat(done = nil, success = nil)
 end
 
 def url(page, params = nil)
-	"http://vpsadmin.vpsfree.cz/?page=#{page}#{params ? "&#{params}" : ""}"
+	$base_url + "?page=" + page + (params ? "&#{params}" : "")
 end
 
 def time(t)
