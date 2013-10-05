@@ -588,11 +588,15 @@ switch($_REQUEST["action"]) {
 	case "mailer":
 		$list_mails = true;
 		break;
-	case "mailer_settings":
-		$xtpl->title2("Manage Mailer Settings");
+	case "mailer_save":
+		$cluster_cfg->set("mailer_from_name", $_POST["from_name"]);
+		$cluster_cfg->set("mailer_from_mail", $_POST["from_mail"]);
+		break;
+	case "mail_templates":
+		$xtpl->title2("Manage Mail Templates");
 		$xtpl->table_add_category('');
 		$xtpl->table_add_category('');
-		$xtpl->form_create('?page=cluster&action=mailer_settings_save', 'post');
+		$xtpl->form_create('?page=cluster&action=mail_templates_save', 'post');
 		
 		// Mailer settings
 		$xtpl->form_add_checkbox(_("Mailer enabled").':', 'mailer_enabled', '1', $cluster_cfg->get("mailer_enabled"), $hint = '');
@@ -678,7 +682,7 @@ switch($_REQUEST["action"]) {
 		$xtpl->form_out(_("Save changes"));
 		$xtpl->sbar_add(_("Back"), '?page=cluster&action=mailer');
 		break;
-	case "mailer_settings_save":
+	case "mail_templates_save":
 		$cluster_cfg->set("mailer_enabled", $_REQUEST["mailer_enabled"]);
 		$cluster_cfg->set("mailer_admins_in_cc", $_REQUEST["admins_in_cc"]);
 		$cluster_cfg->set("mailer_admins_cc_mails", $_REQUEST["admin_mails"]);
@@ -721,6 +725,8 @@ switch($_REQUEST["action"]) {
 		$xtpl->form_create('?page=cluster&action=daily_reports_save', 'post');
 		$xtpl->form_add_input(_("Send to").':', 'text', '40', 'sendto', $cluster_cfg->get("mailer_daily_report_sendto"));
 		$xtpl->form_out(_('Save changes'));
+		
+		$xtpl->sbar_add(_("Back"), '?page=cluster&action=mailer');
 		break;
 	case "daily_reports_save":
 		$cluster_cfg->set("mailer_daily_report_sendto", $_POST["sendto"]);
@@ -772,6 +778,8 @@ switch($_REQUEST["action"]) {
 								');
 		
 		$xtpl->form_out(_('Save changes'));
+		
+		$xtpl->sbar_add(_("Back"), '?page=cluster&action=mailer');
 		break;
 	case "approval_requests_save":
 		$cluster_cfg->set("mailer_requests_sendto", $_POST["sendto"]);
@@ -1637,49 +1645,14 @@ switch($_REQUEST["action"]) {
 		$list_nodes = true;
 }
 if ($list_mails) {
-	$xtpl->title2("Sent mails log");
-	$whereCond = array();
-	$whereCond[] = 1;
-
-	if ($_REQUEST["from"] != "") {
-	$whereCond[] = "id < {$_REQUEST["from"]}";
-	} elseif ($_REQUEST["id"] != "") {
-	$whereCond[] = "id = {$_REQUEST["id"]}";
-	}
-	if ($_REQUEST["member"] != "") {
-	$whereCond[] = "m_id = {$_REQUEST["member"]}";
-	}
-	if ($_REQUEST["limit"] != "") {
-	$limit = $_REQUEST["limit"];
-	} else {
-	$limit = 50;
-	}
-	$xtpl->form_create('?page=cluster&action=mailer', 'post');
-	$xtpl->form_add_input(_("Limit").':', 'text', '40', 'limit', $limit, '');
-	$xtpl->form_add_input(_("Start from ID").':', 'text', '40', 'from', $_REQUEST["from"], '');
-	$xtpl->form_add_input(_("Exact ID").':', 'text', '40', 'id', $_REQUEST["id"], '');
-	$xtpl->form_add_input(_("Member ID").':', 'text', '40', 'member', $_REQUEST["member"], '');
-	$xtpl->form_add_checkbox(_("Detailed mode").':', 'details', '1', $_REQUEST["details"], $hint = '');
-	$xtpl->form_out(_("Show"));
-
-	$xtpl->table_add_category('ID');
-	$xtpl->table_add_category('MEMBER');
-	$xtpl->table_add_category('TYPE');
-	$xtpl->table_add_category('SENT');
-	while ($mail = $db->find("mailer", $whereCond, "id DESC", $limit)) {
-	$xtpl->table_td($mail["id"]);
-	$member = $db->findByColumnOnce("members", "m_id", $mail["member_id"]);
-	$xtpl->table_td($member["m_nick"]);
-	$xtpl->table_td($mail["type"]);
-	$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $mail["sentTime"]));
-	$xtpl->table_tr();
-	if ($_REQUEST["details"]) {
-		$xtpl->table_td(nl2br($mail["details"]), false, false, 4);
-		$xtpl->table_tr();
-	}
-	}
-	$xtpl->table_out();
-	$xtpl->sbar_add(_("Mailer settings"), '?page=cluster&action=mailer_settings');
+	$xtpl->title2("Mailer");
+	
+	$xtpl->form_create('?page=cluster&action=mailer_save', 'post');
+	$xtpl->form_add_input(_("Send mails from name").':', 'text', '40', 'from_name', $cluster_cfg->get("mailer_from_name"));
+	$xtpl->form_add_input(_("Send mails from mail").':', 'text', '40', 'from_mail', $cluster_cfg->get("mailer_from_mail"));
+	$xtpl->form_out(_("Save"));
+	
+	$xtpl->sbar_add(_("Mail templates"), '?page=cluster&action=mail_templates');
 	$xtpl->sbar_add(_("Daily reports"), '?page=cluster&action=daily_reports');
 	$xtpl->sbar_add(_("Approval requests"), '?page=cluster&action=approval_requests');
 }

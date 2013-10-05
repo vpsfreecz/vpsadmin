@@ -1,11 +1,13 @@
 <?php
 function send_mail($to, $subject, $msg, $cc = array(), $bcc = array(), $html = false, $dep = NULL,
                    $message_id = NULL, $in_reply_to = NULL, $references = array()) {
-	global $cluster;
+	global $cluster, $cluster_cfg;
 	$mailers = $cluster->list_servers_with_type("mailer");
 	$ids = array_keys($mailers);
 	
 	add_transaction($_SESSION["member"]["m_id"], $ids[0], 0, T_MAIL_SEND, array(
+		"from_name" => $cluster_cfg->get("mailer_from_name"),
+		"from_mail" => $cluster_cfg->get("mailer_from_mail"),
 		"to" => $to,
 		"subject" => $subject,
 		"msg" => $msg,
