@@ -99,6 +99,13 @@ def balance(a, b)
 	"#{sign}#{ret}"
 end
 
+def cfg_get(key)
+	st = db.prepared_st("SELECT cfg_value FROM sysconfig WHERE cfg_name = ?", key)
+	ret = st.fetch[0]
+	st.close
+	ret
+end
+
 date_start = (Time.new - 24*60*60).strftime("%Y-%m-%d %H:%M")
 date_end = Time.new.strftime("%Y-%m-%d %H:%M")
 
@@ -141,6 +148,8 @@ rescue NoMethodError
 	exit(false)
 end
 
+rs = db.query("SELECT cfg_value FROM")
+
 t = Transaction.new($db)
 t.queue({
 	:node => node,
@@ -148,6 +157,8 @@ t.queue({
 	:type => :send_mail,
 	:depends => nil,
 	:param => {
+		:from_name => cfg_get("mailer_from_name"),
+		:from_mail => cfg_get("mailer_from_mail"),
 		:to => dest.first,
 		:subject => "vpsAdmin daily report #{Time.new.strftime("%d/%m/%Y")}",
 		:msg => report,

@@ -3,7 +3,7 @@ require 'lib/executor'
 
 class Mailer < Executor
 	def send
-		from = "vpsAdmin - vpsFree.cz <podpora@vpsfree.cz>"
+		from = "#{@params["from_name"]} <#{@params["from_mail"]}>"
 		headers = <<HEADERS
 From: #{from}
 To: #{@params["to"]}
@@ -26,7 +26,7 @@ HEADERS
 MSG
 		begin
 			Net::SMTP.start($CFG.get(:mailer, :smtp_server), $CFG.get(:mailer, :smtp_port)) do |smtp|
-				smtp.send_message(msg, "podpora@vpsfree.cz", [@params["to"],] + @params["cc"] + @params["bcc"])
+				smtp.send_message(msg, @params["from_mail"], [@params["to"],] + @params["cc"] + @params["bcc"])
 			end
 		rescue Timeout::Error
 			retry
