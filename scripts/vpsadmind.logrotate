@@ -1,0 +1,8 @@
+/var/log/vpsadmind.output {
+    missingok
+    notifempty
+    daily
+    copytruncate
+    maxage 30
+    dateext
+}
