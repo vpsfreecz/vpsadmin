@@ -103,7 +103,7 @@ END_BANNER
 		end
 		
 		opts.on("--role TYPE", [:node, :storage, :mailer], "Node type (node, storage or mailer)") do |t|
-			options[:install][:type] = t
+			options[:install][:role] = t
 		end
 		
 		opts.on("--location LOCATION", "Node location, might be id or label") do |l|
