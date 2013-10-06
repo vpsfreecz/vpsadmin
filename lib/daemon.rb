@@ -224,7 +224,15 @@ module VpsAdmind
 				end
 				
 				rs = @db.query("SELECT cfg_value FROM sysconfig WHERE cfg_name = 'db_version'")
-				ver = rs.fetch_row.first.to_i
+				raw_ver = rs.fetch_row.first
+				
+				if raw_ver == '"install"'
+					log "Setting database version #{DB_VERSION}"
+					@db.prepared("UPDATE sysconfig SET cfg_value=? WHERE cfg_name = 'db_version'", DB_VERSION)
+					return
+				end
+				
+				ver = raw_ver.to_i
 				
 				if VpsAdmind::DB_VERSION != ver
 					unless informed
