@@ -2,8 +2,8 @@ require 'lib/vpsadmind'
 require 'lib/utils'
 
 module VpsAdminCtl
-	VERSION = "1.15.1"
-	ACTIONS = [:status, :reload, :stop, :restart, :update, :kill, :reinit, :refresh, :install]
+	VERSION = "1.16.0-dev"
+	ACTIONS = [:status, :reload, :stop, :restart, :update, :kill, :reinit, :refresh, :install, :autodetect]
 	
 	class RemoteControl
 		def initialize(sock)
@@ -100,10 +100,8 @@ module VpsAdminCtl
 		end
 		
 		def pre_install
-			unless @opts[:pubkey]
-				if @opts[:addr].nil? || @opts[:location].nil?
-					raise OptionParser::MissingArgument.new("--addr and --location must be specified if creating new node")
-				end
+			if @opts[:create] && (@opts[:addr].nil? || @opts[:location].nil?)
+				raise OptionParser::MissingArgument.new("--addr and --location must be specified if creating new node")
 			end
 			
 			@opts
@@ -111,6 +109,10 @@ module VpsAdminCtl
 		
 		def install
 			puts "Installed"
+		end
+		
+		def autodetect
+			puts "Done"
 		end
 		
 		def is_valid?(cmd)

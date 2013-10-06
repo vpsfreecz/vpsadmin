@@ -37,8 +37,9 @@ options = {
 		# storage
 		# mailer
 		# end
-		:pubkey => false,
+		:create => true,
 		:propagate => false,
+		:gen_configs => false,
 	}
 }
 
@@ -57,7 +58,7 @@ Commands:
     kill [ID|TYPE]...  Kill transaction(s) that are being processed
     reinit             Reinitialize firewall chains and rules
     refresh            Update VPS status, traffic counters, storage usage and server status
-    install            Add node to cluster, save public key to DB
+    install            Add node to cluster, save public key to DB, generate configs
 
 For specific options type: vpsadminctl <command> --help
 
@@ -114,12 +115,16 @@ END_BANNER
 			options[:install][:addr] = addr
 		end
 		
-		opts.on("--only-pubkey", "Update only server public key, do not create node") do
-			options[:install][:pubkey] = true
+		opts.on("--[no-]create", "Update only server public key and/or generate configs, do not create node") do |i|
+			options[:install][:create] = i
 		end
 		
 		opts.on("--[no-]propagate", "Regenerate known_hosts on all nodes") do |p|
 			options[:install][:propagate] = p
+		end
+		
+		opts.on("--[no-]generate-configs", "Generate configs on this node") do |g|
+			options[:install][:gen_configs] = g
 		end
 		
 		opts.separator ""
