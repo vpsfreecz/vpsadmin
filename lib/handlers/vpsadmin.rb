@@ -126,7 +126,7 @@ class VpsAdmin < Executor
 		
 		node_id = $CFG.get(:vpsadmin, :server_id)
 		
-		unless @params["pubkey"]
+		if @params["create"]
 			if @params["id"]
 				node_id = @params["id"]
 			elsif node_id > 1
@@ -208,6 +208,15 @@ class VpsAdmin < Executor
 				:node => node_id,
 				:type => :gen_known_hosts,
 			})
+		end
+		
+		if @params["gen_configs"]
+			log "Creating configs"
+			n = Node.new
+			db.query("SELECT name, config FROM config").each_hash do |cfg|
+				log "  #{cfg["name"]}"
+				n.create_config(cfg)
+			end
 		end
 		
 		ok
