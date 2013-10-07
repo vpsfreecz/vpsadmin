@@ -8,6 +8,7 @@ require 'optparse'
 require 'lib/rc'
 
 options = {
+	:parsable => false,
 	:sock => "/var/run/vpsadmind.sock",
 	:status => {
 		:workers => false,
@@ -146,6 +147,10 @@ END_BANNER
 	opts.separator ""
 	opts.separator "Common options:"
 	
+	opts.on("-p", "--parsable", "Use in scripts, output can be easily parsed") do
+		options[:parsable] = true
+	end
+	
 	opts.on("-s", "--socket SOCKET", "Specify socket") do |s|
 		options[:sock] = s
 	end
@@ -175,7 +180,7 @@ rescue OptionParser::InvalidOption
 	exit(false)
 end
 
-rc = VpsAdminCtl::RemoteControl.new(options[:sock])
+rc = VpsAdminCtl::RemoteControl.new(options)
 
 unless rc.is_valid?(command)
 	$stderr.puts "Invalid command"
@@ -185,7 +190,10 @@ end
 
 ret = rc.exec(command, options[command.to_sym])
 
-if ret && ret[:status] == :failed
+if ret.nil?
+	exit(false)
+	
+elsif ret && ret[:status] == :failed
 	$stderr.puts "Command error: #{ret[:error]}"
 	exit(false)
 end

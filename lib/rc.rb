@@ -3,11 +3,12 @@ require 'lib/utils'
 
 module VpsAdminCtl
 	VERSION = "1.16.0-dev"
-	ACTIONS = [:status, :reload, :stop, :restart, :update, :kill, :reinit, :refresh, :install, :autodetect]
+	ACTIONS = [:status, :reload, :stop, :restart, :update, :kill, :reinit, :refresh, :install]
 	
 	class RemoteControl
-		def initialize(sock)
-			@vpsadmind = VpsAdmind.new(sock)
+		def initialize(options)
+			@global_opts = options
+			@vpsadmind = VpsAdmind.new(options[:sock])
 		end
 		
 		def status
@@ -108,7 +109,11 @@ module VpsAdminCtl
 		end
 		
 		def install
-			puts "Installed"
+			if @global_opts[:parsable]
+				puts @res["node_id"]
+			else
+				puts "#{@opts[:create] ? "Installed" : "Updated"} node #{@res["node_id"]}"
+			end
 		end
 		
 		def autodetect
