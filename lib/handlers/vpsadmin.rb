@@ -219,7 +219,7 @@ class VpsAdmin < Executor
 			end
 		end
 		
-		ok
+		ok.update({:output => {:node_id => node_id}})
 	end
 	
 	def walk_workers
