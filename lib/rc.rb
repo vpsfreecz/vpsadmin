@@ -149,7 +149,7 @@ module VpsAdminCtl
 			rescue
 				$stderr.puts "Error occured: #{$!}"
 				$stderr.puts "Are you sure that vpsAdmind is running and configured properly?"
-				return
+				return {:status => :failed, :error => "Cannot connect to vpsAdmind"}
 			end
 			
 			unless @reply["status"] == "ok"

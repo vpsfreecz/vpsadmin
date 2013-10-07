@@ -190,10 +190,7 @@ end
 
 ret = rc.exec(command, options[command.to_sym])
 
-if ret.nil?
-	exit(false)
-	
-elsif ret && ret[:status] == :failed
+if ret && ret[:status] == :failed
 	$stderr.puts "Command error: #{ret[:error]}"
 	exit(false)
 end
