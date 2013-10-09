@@ -231,6 +231,8 @@ class VpsAdmin < Executor
 				priv_path = "/root/.ssh/id_#{type}"
 				pub_path = "#{priv_path}.pub"
 				
+				File.delete(priv_path) if File.exists?(priv_path)
+				
 				syscmd("#{$CFG.get(:bin, :ssh_keygen)} -q -t #{type} -N \"\" -f #{priv_path}")
 				
 				priv = File.new(priv_path).read
