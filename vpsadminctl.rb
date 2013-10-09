@@ -8,6 +8,7 @@ require 'optparse'
 require 'lib/rc'
 
 options = {
+	:parsable => false,
 	:sock => "/var/run/vpsadmind.sock",
 	:status => {
 		:workers => false,
@@ -37,8 +38,10 @@ options = {
 		# storage
 		# mailer
 		# end
-		:pubkey => false,
+		:create => true,
 		:propagate => false,
+		:gen_configs => false,
+		:ssh_key => false,
 	}
 }
 
@@ -57,7 +60,7 @@ Commands:
     kill [ID|TYPE]...  Kill transaction(s) that are being processed
     reinit             Reinitialize firewall chains and rules
     refresh            Update VPS status, traffic counters, storage usage and server status
-    install            Add node to cluster, save public key to DB
+    install            Add node to cluster, save public key to DB, generate configs
 
 For specific options type: vpsadminctl <command> --help
 
@@ -103,7 +106,7 @@ END_BANNER
 		end
 		
 		opts.on("--role TYPE", [:node, :storage, :mailer], "Node type (node, storage or mailer)") do |t|
-			options[:install][:type] = t
+			options[:install][:role] = t
 		end
 		
 		opts.on("--location LOCATION", "Node location, might be id or label") do |l|
@@ -114,12 +117,20 @@ END_BANNER
 			options[:install][:addr] = addr
 		end
 		
-		opts.on("--only-pubkey", "Update only server public key, do not create node") do
-			options[:install][:pubkey] = true
+		opts.on("--[no-]create", "Update only server public key and/or generate configs, do not create node") do |i|
+			options[:install][:create] = i
 		end
 		
 		opts.on("--[no-]propagate", "Regenerate known_hosts on all nodes") do |p|
 			options[:install][:propagate] = p
+		end
+		
+		opts.on("--[no-]generate-configs", "Generate configs on this node") do |g|
+			options[:install][:gen_configs] = g
+		end
+		
+		opts.on("--[no-]ssh-key", "Handle SSH key and authorized_keys") do |k|
+			options[:install][:ssh_key] = k
 		end
 		
 		opts.separator ""
@@ -140,6 +151,10 @@ END_BANNER
 	
 	opts.separator ""
 	opts.separator "Common options:"
+	
+	opts.on("-p", "--parsable", "Use in scripts, output can be easily parsed") do
+		options[:parsable] = true
+	end
 	
 	opts.on("-s", "--socket SOCKET", "Specify socket") do |s|
 		options[:sock] = s
@@ -170,7 +185,7 @@ rescue OptionParser::InvalidOption
 	exit(false)
 end
 
-rc = VpsAdminCtl::RemoteControl.new(options[:sock])
+rc = VpsAdminCtl::RemoteControl.new(options)
 
 unless rc.is_valid?(command)
 	$stderr.puts "Invalid command"

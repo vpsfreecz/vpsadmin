@@ -2,12 +2,13 @@ require 'lib/vpsadmind'
 require 'lib/utils'
 
 module VpsAdminCtl
-	VERSION = "1.15.1"
+	VERSION = "1.16.0-dev"
 	ACTIONS = [:status, :reload, :stop, :restart, :update, :kill, :reinit, :refresh, :install]
 	
 	class RemoteControl
-		def initialize(sock)
-			@vpsadmind = VpsAdmind.new(sock)
+		def initialize(options)
+			@global_opts = options
+			@vpsadmind = VpsAdmind.new(options[:sock])
 		end
 		
 		def status
@@ -100,17 +101,23 @@ module VpsAdminCtl
 		end
 		
 		def pre_install
-			unless @opts[:pubkey]
-				if @opts[:addr].nil? || @opts[:location].nil?
-					raise OptionParser::MissingArgument.new("--addr and --location must be specified if creating new node")
-				end
+			if @opts[:create] && (@opts[:addr].nil? || @opts[:location].nil?)
+				raise OptionParser::MissingArgument.new("--addr and --location must be specified if creating new node")
 			end
 			
 			@opts
 		end
 		
 		def install
-			puts "Installed"
+			if @global_opts[:parsable]
+				puts @res["node_id"]
+			else
+				puts "#{@opts[:create] ? "Installed" : "Updated"} node #{@res["node_id"]}"
+			end
+		end
+		
+		def autodetect
+			puts "Done"
 		end
 		
 		def is_valid?(cmd)
@@ -142,7 +149,7 @@ module VpsAdminCtl
 			rescue
 				$stderr.puts "Error occured: #{$!}"
 				$stderr.puts "Are you sure that vpsAdmind is running and configured properly?"
-				return
+				return {:status => :failed, :error => "Cannot connect to vpsAdmind"}
 			end
 			
 			unless @reply["status"] == "ok"
