@@ -17,7 +17,7 @@ HEADERS
 
 		headers += "CC: #{@params["cc"].join(",")}\n" if @params["cc"].count > 0
 		headers += "Message-ID: <#{@params["msg_id"]}>\n" unless @params["msg_id"].nil?
-		headers += "In-Reply-To: <#{@params["in_reply_to"]}>\n" unless @params["in_reply_to"].nil?
+		headers += "In-Reply-To: <#{@params["in_reply_to"]}>\n" unless @params["in_reply_to"].nil? || @params["in_reply_to"].empty?
 		headers += "References: <#{@params["references"].join("\n  ")}>\n" unless @params["references"].nil? || @params["references"].empty?
 
 		msg = <<MSG
