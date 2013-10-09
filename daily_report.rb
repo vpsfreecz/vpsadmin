@@ -8,6 +8,7 @@ require 'lib/transaction'
 
 require 'optparse'
 require 'erb'
+require 'json'
 
 options = {
 	:config => "/etc/vpsadmin/vpsadmind.yml",
@@ -38,6 +39,7 @@ end
 Dir.chdir($CFG.get(:vpsadmin, :root))
 
 $db = Db.new
+$base_url = JSON.parse('{"tmp":' + $db.query("SELECT cfg_value FROM sysconfig WHERE cfg_name = 'general_base_url'").fetch_row[0] + '}')["tmp"]
 
 def trans_stat(done = nil, success = nil)
 	q = "SELECT COUNT(*) AS cnt
@@ -56,7 +58,7 @@ def trans_stat(done = nil, success = nil)
 end
 
 def url(page, params = nil)
-	"http://vpsadmin.vpsfree.cz/?page=#{page}#{params ? "&#{params}" : ""}"
+	$base_url + "?page=" + page + (params ? "&#{params}" : "")
 end
 
 def time(t)
@@ -97,6 +99,13 @@ def balance(a, b)
 	end
 	
 	"#{sign}#{ret}"
+end
+
+def cfg_get(key)
+	st = db.prepared_st("SELECT cfg_value FROM sysconfig WHERE cfg_name = ?", key)
+	ret = st.fetch[0]
+	st.close
+	ret
 end
 
 date_start = (Time.new - 24*60*60).strftime("%Y-%m-%d %H:%M")
@@ -141,6 +150,8 @@ rescue NoMethodError
 	exit(false)
 end
 
+rs = db.query("SELECT cfg_value FROM")
+
 t = Transaction.new($db)
 t.queue({
 	:node => node,
@@ -148,6 +159,8 @@ t.queue({
 	:type => :send_mail,
 	:depends => nil,
 	:param => {
+		:from_name => cfg_get("mailer_from_name"),
+		:from_mail => cfg_get("mailer_from_mail"),
 		:to => dest.first,
 		:subject => "vpsAdmin daily report #{Time.new.strftime("%d/%m/%Y")}",
 		:msg => report,

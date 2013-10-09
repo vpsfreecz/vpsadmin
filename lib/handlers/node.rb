@@ -10,7 +10,9 @@ class Node < Executor
 		syscmd("#{$CFG.get(:bin, :rsync)} -a --delete #{@params["sync_path"]} #{$CFG.get(:vz, :vz_root)}/template/cache/")
 	end
 	
-	def create_config
+	def create_config(cfg = nil)
+		@params = cfg if cfg
+		
 		if @params["old_name"]
 			File.delete(conf_path(@params["old_name"]))
 			

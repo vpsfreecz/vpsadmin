@@ -126,7 +126,7 @@ class VpsAdmin < Executor
 		
 		node_id = $CFG.get(:vpsadmin, :server_id)
 		
-		unless @params["pubkey"]
+		if @params["create"]
 			if @params["id"]
 				node_id = @params["id"]
 			elsif node_id > 1
@@ -210,7 +210,65 @@ class VpsAdmin < Executor
 			})
 		end
 		
-		ok
+		if @params["gen_configs"]
+			log "Creating configs"
+			n = Node.new
+			db.query("SELECT name, config FROM config").each_hash do |cfg|
+				log "  #{cfg["name"]}"
+				n.create_config(cfg)
+			end
+		end
+		
+		if @params["ssh_key"]
+			priv = syscfg_get(db, "node_private_key")
+			pub = nil
+			type = "dsa"
+			priv_path = nil
+			pub_path = nil
+			
+			if priv.nil?
+				log "No SSH key configured, generating new one"
+				priv_path = "/root/.ssh/id_#{type}"
+				pub_path = "#{priv_path}.pub"
+				
+				File.delete(priv_path) if File.exists?(priv_path)
+				
+				syscmd("#{$CFG.get(:bin, :ssh_keygen)} -q -t #{type} -N \"\" -f #{priv_path}")
+				
+				priv = File.new(priv_path).read
+				pub = File.new(pub_path).read
+				
+				syscfg_set(db, "node_private_key", priv)
+				syscfg_set(db, "node_public_key", pub)
+				syscfg_set(db, "node_key_type", type)
+				
+			else
+				log "SSH key configured"
+				
+				type = syscfg_get(db, "node_key_type")
+				priv_path = "/root/.ssh/id_#{type}"
+				pub_path = "#{priv_path}.pub"
+				
+				priv = syscfg_get(db, "node_private_key")
+				pub = syscfg_get(db, "node_public_key")
+			end
+			
+			open(priv_path, "w") do |f|
+				f.puts priv
+			end
+			
+			open(pub_path, "w") do |f|
+				f.puts pub
+			end
+			
+			open("/root/.ssh/authorized_keys", "a") do |f|
+				f.puts pub
+			end
+			
+			log "SSH keys written"
+		end
+		
+		ok.update({:output => {:node_id => node_id}})
 	end
 	
 	def walk_workers
@@ -250,5 +308,21 @@ class VpsAdmin < Executor
 		end
 		
 		ret
+	end
+	
+	def syscfg_get(db, key)
+		st = db.prepared_st("SELECT cfg_value FROM sysconfig WHERE cfg_name = ?", key)
+		ret = st.num_rows > 0 ? JSON.parse("{\"tmp\": #{st.fetch[0]} }")["tmp"] : nil
+		st.close
+		
+		ret
+	end
+	
+	def syscfg_set(db, key, val)
+		encoded = val.to_json
+		
+		db.prepared("INSERT INTO sysconfig SET cfg_name = ?, cfg_value = ?
+		             ON DUPLICATE KEY UPDATE cfg_value = ?",
+		             key, encoded, encoded)
 	end
 end

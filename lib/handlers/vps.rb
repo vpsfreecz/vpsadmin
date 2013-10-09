@@ -167,7 +167,15 @@ class VPS < Executor
 	def nas_mount
 		dst = "#{ve_root}/#{@params["dst"]}"
 		
-		FileUtils.mkpath(dst) unless File.exists?(dst)
+		unless File.exists?(dst)
+			begin
+				FileUtils.mkpath(dst)
+			
+			# it means, that the folder is mounted but was removed on the other end
+			rescue Errno::EEXIST => e
+				syscmd("#{$CFG.get(:bin, :umount)} -f #{dst}")
+			end
+		end
 		
 		runscript("premount")
 		syscmd("#{$CFG.get(:bin, :mount)} #{@params["mount_opts"]} -o #{@params["mode"]} #{@params["src"]} #{dst}")

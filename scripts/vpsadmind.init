@@ -30,6 +30,8 @@ if [ -f /etc/sysconfig/vpsadmind ]; then
 	. /etc/sysconfig/vpsadmind
 fi
 
+PATH="$PATH:/usr/local/bin"
+
 start() {
 	if [ -f $PIDFILE ] ; then
 		echo "vpsAdmind is already running."
@@ -67,6 +69,19 @@ stop() {
 	fi
 }
 
+status() {
+	STATUS="`vpsadminctl status`"
+	
+	if [ "$?" == 0 ] ; then
+		echo "$STATUS"
+		exit 0
+		
+	else
+		echo "vpsAdmind is not running or has disabled remote control."
+		exit 1
+	fi
+}
+
 case $1 in
 	start)
 		start
@@ -77,6 +92,9 @@ case $1 in
 	restart)
 		stop
 		start
+		;;
+	status)
+		status
 		;;
 	*)
 		echo "Usage: $0 {start|stop|restart}"
