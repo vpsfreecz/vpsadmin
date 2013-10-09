@@ -41,6 +41,7 @@ options = {
 		:create => true,
 		:propagate => false,
 		:gen_configs => false,
+		:ssh_key => false,
 	}
 }
 
@@ -126,6 +127,10 @@ END_BANNER
 		
 		opts.on("--[no-]generate-configs", "Generate configs on this node") do |g|
 			options[:install][:gen_configs] = g
+		end
+		
+		opts.on("--[no-]ssh-key", "Handle SSH key and authorized_keys") do |k|
+			options[:install][:ssh_key] = k
 		end
 		
 		opts.separator ""
