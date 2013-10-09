@@ -26,12 +26,22 @@ if ($_SESSION["is_admin"]) {
 					$xtpl->perex(_("Transaction deleted"), '');
 				}
 				break;
+			case "redo":
+				$db->query("UPDATE transactions SET t_done=0 WHERE t_id ='{$_GET["id"]}'", false, false, false);
+				$xtpl->perex(_("Transaction marked as not finished."), '');
+				break;
 		}
 	}
 }
 
 $whereCond = array();
+
 $whereCond[] = 1;
+if ($_REQUEST["limit"] != "") {
+  $limit = $_REQUEST["limit"];
+} else {
+  $limit = 50;
+}
 
 if ($_SESSION["is_admin"]) {
   if ($_REQUEST["from"] != "") {
@@ -48,13 +58,14 @@ if ($_SESSION["is_admin"]) {
   if ($_REQUEST["server"] != "") {
     $whereCond[] = "t_server = {$_REQUEST["server"]}";
   }
+  if ($_REQUEST["done"] != "") {
+    $whereCond[] = "t_done = {$_REQUEST["done"]}";
+  }
+  if ($_REQUEST["success"] != "") {
+    $whereCond[] = "t_success = {$_REQUEST["success"]}";
+  }
   if ($_REQUEST["type"] != "") {
     $whereCond[] = "t_type = {$_REQUEST["type"]}";
-  }
-  if ($_REQUEST["limit"] != "") {
-    $limit = $_REQUEST["limit"];
-  } else {
-    $limit = 50;
   }
 
   $xtpl->form_create('?page=transactions&filter=yes', 'post');
@@ -64,14 +75,22 @@ if ($_SESSION["is_admin"]) {
   $xtpl->form_add_input(_("Member ID").':', 'text', '40', 'member', $_REQUEST["member"], '');
   $xtpl->form_add_input(_("VPS ID").':', 'text', '40', 'vps', $_REQUEST["vps"], '');
   $xtpl->form_add_input(_("Server ID").':', 'text', '40', 'server', $_REQUEST["server"], '');
-  $xtpl->form_add_input(_("Transaction type").':', 'text', '40', 'type', $_REQUEST["type"], '');
+  $xtpl->form_add_input(_("Type").':', 'text', '40', 'type', $_REQUEST["type"], '');
+  $xtpl->form_add_input(_("Done").':', 'text', '40', 'done', $_REQUEST["done"], '');
+  $xtpl->form_add_input(_("Success").':', 'text', '40', 'success', $_REQUEST["success"], '');
   $xtpl->form_add_checkbox(_("Detailed mode").':', 'details', '1', $_REQUEST["details"], $hint = '');
   $xtpl->form_out(_("Show"));
 
 } else {
   $whereCond[] = "t_m_id = {$_SESSION["member"]["m_id"]}";
-  $_REQUEST["details"] = 0;
-  $limit = 100;
+  if ($_REQUEST["id"] != "") {
+    $whereCond[] = "t_id = {$_REQUEST["id"]}";
+  }
+  $xtpl->form_create('?page=transactions&filter=yes', 'post');
+  $xtpl->form_add_input(_("Limit").':', 'text', '40', 'limit', $limit, '');
+  $xtpl->form_add_input(_("Exact ID").':', 'text', '40', 'id', $_REQUEST["id"], '');
+  $xtpl->form_add_checkbox(_("Detailed mode").':', 'details', '1', $_REQUEST["details"], $hint = '');
+  $xtpl->form_out(_("Show"));
 }
 
 
@@ -87,7 +106,10 @@ $xtpl->table_add_category("DEP");
 $xtpl->table_add_category("DONE?");
 $xtpl->table_add_category("OK?");
 
+$rows = 0;
 while ($t = $db->find("transactions", $whereCond, "t_id DESC", $limit)) {
+	$rows++;
+
 	$m = $db->findByColumnOnce("members", "m_id", $t["t_m_id"]);
 	$s = $db->findByColumnOnce("servers", "server_id", $t["t_server"]);
 	if ($_SESSION["is_admin"]) {
@@ -111,6 +133,9 @@ while ($t = $db->find("transactions", $whereCond, "t_id DESC", $limit)) {
 	$xtpl->table_td('<a href="?page=transactions&filter=yes&details=1&id='.$t["t_depends_on"].'">'. $t["t_depends_on"] .'</a>');
 	$xtpl->table_td($t["t_done"]);
 	$xtpl->table_td($t["t_success"]);
+	if (($_SESSION["is_admin"]) && (!$t["t_success"])) {
+		$xtpl->table_td('<a href="?page=transactions&action=redo&id='.$t["t_id"].'"><img src="template/icons/vps_restart.png"  title="'._("Redo transaction").'"/></a>');
+	}
 	if ($t["t_done"]==1 && $t["t_success"]==1)
 		$xtpl->table_tr(false, 'ok');
 	else if ($t["t_done"]==1 && $t["t_success"]==0)
@@ -135,6 +160,11 @@ while ($t = $db->find("transactions", $whereCond, "t_id DESC", $limit)) {
 	}
 }
 
+$xtpl->table_out();
+
+$xtpl->table_td("Total listed:");
+$xtpl->table_td($rows);
+$xtpl->table_tr();
 $xtpl->table_out();
 
 if ($_SESSION["is_admin"]) {
