@@ -324,3 +324,10 @@ CREATE TABLE IF NOT EXISTS `vps_mount` (
   `default` tinyint(4) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+
+CREATE TABLE IF NOT EXISTS `node_pubkey` (
+  `node_id` int(11) NOT NULL,
+  `type` enum('rsa','dsa') COLLATE utf8_czech_ci NOT NULL,
+  `key` text COLLATE utf8_czech_ci NOT NULL,
+  PRIMARY KEY (`node_id`,`type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
