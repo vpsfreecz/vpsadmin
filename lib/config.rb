@@ -126,6 +126,7 @@ IMPLICIT_CONFIG = {
 		:umount => "umount",
 		:uptime => "uptime",
 		:hostname => "hostname",
+		:ssh_keygen => "ssh-keygen",
 	},
 	
 	:vps => {
@@ -214,7 +215,8 @@ IMPLICIT_CONFIG = {
 				"kill",
 				"reinit",
 				"refresh",
-				"install"
+				"install",
+				"autodetect",
 			]
 		}
 	}

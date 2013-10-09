@@ -109,6 +109,7 @@
 #     :umount: umount
 #     :uptime: uptime
 #     :hostname: hostname
+#     :ssh_keygen: ssh-keygen
 # 
 # :vps:
 #     :clone:
