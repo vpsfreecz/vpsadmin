@@ -7,9 +7,9 @@ require 'tempfile'
 module BackuperBackend
 	class ZfsCompatToZfs < ExtToZfs
 		def backup
-			mount_vps
-			
-			super
+			mount_vps do
+				super
+			end
 		end
 		
 		def restore_prepare
@@ -30,20 +30,19 @@ module BackuperBackend
 		end
 		
 		def restore_restore
-			mount_vps
-			vps = ZfsVPS.new(@veid)
-			src = "#{@params["node_addr"]}:/#{vps.ve_private_ds}.restoring"
-			dst = "#{mountpoint}.restoring"
-			
-			Dir.mkdir(dst) unless File.exists?(dst)
-			syscmd("#{$CFG.get(:bin, :mount)} #{src} #{dst}")
-			
-			super
-			
-			syscmd("#{$CFG.get(:bin, :umount)} #{dst}")
-			Dir.rmdir(dst)
-			
-			ok
+			mount_vps do
+				vps = ZfsVPS.new(@veid)
+				src = "#{@params["node_addr"]}:/#{vps.ve_private_ds}.restoring"
+				dst = "#{mountpoint}.restoring"
+				
+				Dir.mkdir(dst) unless File.exists?(dst)
+				syscmd("#{$CFG.get(:bin, :mount)} #{src} #{dst}")
+				
+				super
+				
+				syscmd("#{$CFG.get(:bin, :umount)} #{dst}")
+				Dir.rmdir(dst)
+			end
 		end
 		
 		def restore_finish
@@ -64,9 +63,9 @@ module BackuperBackend
 		end
 		
 		def download
-			mount_vps
-			
-			super
+			mount_vps do
+				super
+			end
 		end
 		
 		def mount_all
@@ -83,10 +82,19 @@ module BackuperBackend
 			Dir.mkdir(m) unless File.exists?(m)
 			
 			begin
-				syscmd("#{$CFG.get(:bin, :mount)} #{node_addr}:/vz/private/#{veid} #{m}")
+				syscmd("#{$CFG.get(:bin, :mount)} -overs=3 #{node_addr}:/vz/private/#{veid} #{m}")
 			rescue CommandFailed => err
 				raise err if err.rc != 33
 			end
+			
+			if block_given?
+				yield
+				
+				syscmd("#{$CFG.get(:bin, :umount)} -f #{m}")
+				Dir.rmdir(m)
+			end
+			
+			ok
 		end
 	end
 end
