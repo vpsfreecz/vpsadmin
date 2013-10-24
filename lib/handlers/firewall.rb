@@ -4,9 +4,9 @@ require 'thread'
 class Firewall < Executor
 	@@mutex = ::Mutex.new
 	
-	def initialize(veid = -1, params = {})
+	def initialize(veid = -1, params = {}, command = nil, daemon = nil)
 		if veid.to_i > -1
-			super(veid, params)
+			super(veid, params, command, daemon)
 		else
 			@m_attr = Mutex.new
 		end
