@@ -986,8 +986,9 @@ if (isset($show_info) && $show_info) {
 			$xtpl->table_add_category('&nbsp;');
 			$xtpl->form_out(_("Go >>"));
 		}
+	
 	// Online migration
-		if ($_SESSION["is_admin"]) {
+		if (ENABLE_ONLINE_MIGRATION && $_SESSION["is_admin"]) {
 			$xtpl->form_create('?page=adminvps&action=onlinemigrate&veid='.$vps->veid, 'post');
 			$xtpl->form_add_select(_("Target server").':', 'target_id', $cluster->list_servers($vps->ve["vps_server"], $vps->get_location()), '');
 			$xtpl->table_add_category(_("Online VPS Migration"));
