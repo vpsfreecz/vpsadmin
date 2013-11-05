@@ -255,6 +255,7 @@ class VpsAdmin < Executor
 			
 			open(priv_path, "w") do |f|
 				f.puts priv
+				f.chmod(0600)
 			end
 			
 			open(pub_path, "w") do |f|
