@@ -97,15 +97,15 @@ module BackuperBackend
 		end
 		
 		def download
-			mount_vps do
-				acquire_lock(Db.new) do
-					syscmd("#{$CFG.get(:bin, :mkdir)} -p #{$CFG.get(:backuper, :download)}/#{@params["secret"]}")
-					
-					if @params["server_name"]
+			acquire_lock(Db.new) do
+				syscmd("#{$CFG.get(:bin, :mkdir)} -p #{$CFG.get(:backuper, :download)}/#{@params["secret"]}")
+				
+				if @params["server_name"]
+					mount_vps do
 						syscmd("#{$CFG.get(:bin, :tar)} -czf #{$CFG.get(:backuper, :download)}/#{@params["secret"]}/#{@params["filename"]} -C #{mountdir} #{@veid}", [1,])
-					else
-						syscmd("#{$CFG.get(:bin, :tar)} -czf #{$CFG.get(:backuper, :download)}/#{@params["secret"]}/#{@params["filename"]} -C #{@params["path"]}/.zfs/snapshot backup-#{@params["datetime"]}")
 					end
+				else
+					syscmd("#{$CFG.get(:bin, :tar)} -czf #{$CFG.get(:backuper, :download)}/#{@params["secret"]}/#{@params["filename"]} -C #{@params["path"]}/.zfs/snapshot backup-#{@params["datetime"]}")
 				end
 			end
 			
