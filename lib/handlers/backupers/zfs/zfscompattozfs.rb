@@ -61,40 +61,5 @@ module BackuperBackend
 				end
 			end
 		end
-		
-		def download
-			mount_vps do
-				super
-			end
-		end
-		
-		def mount_all
-			
-		end
-		
-		def mount_vps(node_addr = nil, node_name = nil, veid = nil)
-			node_addr ||= @params["node_addr"]
-			node_name ||= @params["server_name"]
-			veid ||= @veid
-			
-			m = mountpoint(node_name, veid)
-			
-			Dir.mkdir(m) unless File.exists?(m)
-			
-			begin
-				syscmd("#{$CFG.get(:bin, :mount)} -overs=3 #{node_addr}:/vz/private/#{veid} #{m}")
-			rescue CommandFailed => err
-				raise err if err.rc != 33
-			end
-			
-			if block_given?
-				yield
-				
-				syscmd("#{$CFG.get(:bin, :umount)} -f #{m}")
-				Dir.rmdir(m)
-			end
-			
-			ok
-		end
 	end
 end
