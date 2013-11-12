@@ -798,6 +798,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 		"secret" => $secret,
 		"dataset" => $e["root_dataset"] . "/" . $e["dataset"],
 		"path" => $e["root_path"] . "/" . $e["path"],
+		"node_addr" => $this->ve["server_ip4"],
 	);
 	
 	if ($timestamp == "current") {

@@ -825,7 +825,7 @@ class XTemplate {
 	  * Parse out the form
 	  * @param $submit_label - label of submit button of the form
 	  */
-	function form_out_raw() {
+	function form_out_raw($id) {
 		$this->assign('TABLE_FORM_END','</form>');
 		$this->table_out($id);
 	}
@@ -838,7 +838,7 @@ class XTemplate {
 		$this->table_td($label);
 		$this->table_td('<input type="submit" value=" '.$submit_label.' "  id="button"/>', false, false, $colspan);
 		$this->table_tr(false, 'nodrag nodrop');
-		$this->form_out_raw();
+		$this->form_out_raw($id);
 	}
 	/**
 	  * Add transaction line to rightside shortlog
