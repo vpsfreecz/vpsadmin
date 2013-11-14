@@ -36,7 +36,7 @@ module BackuperBackend
 				dst = "#{mountpoint}.restoring"
 				
 				Dir.mkdir(dst) unless File.exists?(dst)
-				syscmd("#{$CFG.get(:bin, :mount)} #{src} #{dst}")
+				syscmd("#{$CFG.get(:bin, :mount)} -overs=3 #{src} #{dst}")
 				
 				super
 				
