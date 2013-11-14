@@ -222,8 +222,11 @@ function print_editm($member) {
 		}
 	}
 	
-	if ($_SESSION["is_admin"])
+	if ($_SESSION["is_admin"]) {
 		print_deletem($member);
+		
+		$xtpl->sbar_add("<br><img src=\"template/icons/m_switch.png\"  title=". _("Switch context") ." /> Switch context", "?page=login&action=switch_context&m_id={$member->m["m_id"]}&next=".urlencode($_SERVER["REQUEST_URI"]));
+	}
 }
 
 function print_deletem($member) {
@@ -484,8 +487,6 @@ if ($_SESSION["logged_in"]) {
 		}
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Deleted members").'" /> '._("Deleted members"), '?page=adminm&section=members&action=show_deleted');
 	}
-
-	$xtpl->sbar_out(_("Manage members"));
 
 	switch ($_GET["action"]) {
 		case 'new':
@@ -1400,6 +1401,8 @@ if ($_SESSION["logged_in"]) {
 			}
 			break;
 	}
+	
+	$xtpl->sbar_out(_("Manage members"));
 
 } else $xtpl->perex(_("Access forbidden"), _("You have to log in to be able to access vpsAdmin's functions"));
 ?>
