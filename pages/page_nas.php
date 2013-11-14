@@ -44,7 +44,8 @@ if ($_SESSION["logged_in"] && (NAS_PUBLIC || $_SESSION["is_admin"])) {
 						$_SESSION["is_admin"] ? $_POST["type"] : "data"
 					);
 					
-					$list_nas = true;
+					notify_user(_("Export created"), _("Export was created."));
+					redirect('?page=nas');
 				}
 			break;
 		
@@ -71,10 +72,12 @@ if ($_SESSION["logged_in"] && (NAS_PUBLIC || $_SESSION["is_admin"])) {
 						$_SESSION["is_admin"] ? $_POST["type"] : NULL
 					);
 				
-				$xtpl->perex(_("Export updated."), '');
-			}
+				notify_user(_("Export Updated"), _("Export was successfully updated."));
+				
+			} else
+				notify_user(_("Export NOT updated"), _("Export was not updated."));
 			
-			$list_nas = true;
+			redirect('?page=nas');
 			break;
 		
 		case "export_del":
@@ -176,9 +179,10 @@ if ($_SESSION["logged_in"] && (NAS_PUBLIC || $_SESSION["is_admin"])) {
 						$_POST["cmd_postumount"],
 						$_POST["mount_immediately"]
 					);
+					
+					notify_user(_("Mount created"), _("Mount was successfully created."));
+					redirect('?page=nas');
 			}
-			
-			$list_nas = true;
 			break;
 		
 		case "mount_custom_add_save":
@@ -206,6 +210,9 @@ if ($_SESSION["logged_in"] && (NAS_PUBLIC || $_SESSION["is_admin"])) {
 						$_POST["cmd_postumount"],
 						$_POST["mount_immediately"]
 					);
+					
+					notify_user(_("Mount created"), _("Mount was successfully created."));
+					redirect('?page=nas');
 			}
 			break;
 		
@@ -248,11 +255,13 @@ if ($_SESSION["logged_in"] && (NAS_PUBLIC || $_SESSION["is_admin"])) {
 							$_POST["remount_immediately"]
 						);
 					
-					$xtpl->perex(_("Mount updated."), '');
+					notify_user(_("Mount updated."), '');
 				}
-			} else $xtpl->perex(_("Mount NOT updated."), '');
+				
+			} else
+				notify_user(_("Mount NOT updated."), '');
 			
-			$list_nas = true;
+			redirect('?page=nas');
 			break;
 		
 		case "mount_del":
@@ -289,10 +298,12 @@ if ($_SESSION["logged_in"] && (NAS_PUBLIC || $_SESSION["is_admin"])) {
 				if (nas_can_user_manage_mount($m, $vps))
 					$vps->mount($m);
 				
-				$xtpl->perex(_("Mount scheduled."), '');
-			} else $xtpl->perex(_("Mount id missing."), '');
+				notify_user(_("Mount scheduled."), '');
+				
+			} else
+				notify_user(_("Mount id missing."), '');
 			
-			$list_nas = true;
+			redirect('?page=nas');
 			break;
 			
 		case "umount":
@@ -303,10 +314,12 @@ if ($_SESSION["logged_in"] && (NAS_PUBLIC || $_SESSION["is_admin"])) {
 				if (nas_can_user_manage_mount($m, $vps))
 					$vps->umount($m);
 				
-				$xtpl->perex(_("Umount scheduled."), '');
-			} else $xtpl->perex(_("Mount id missing."), '');
+				notify_user(_("Umount scheduled."), '');
+				
+			} else
+				notify_user(_("Mount id missing."), '');
 			
-			$list_nas = true;
+			redirect('?page=nas');
 			break;
 		
 		default:
