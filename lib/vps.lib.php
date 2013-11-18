@@ -77,6 +77,8 @@ function get_vps_swap_list($vps) {
 		    WHERE
 		      m_id = ".$db->check($_SESSION["member"]["m_id"])."
 		      AND
+		      v.vps_deleted IS NULL
+		      AND
 		      l.location_type = '".( $vps->is_playground() ? 'production' : 'playground' )."'";
 	
 	$rs = $db->query($sql);

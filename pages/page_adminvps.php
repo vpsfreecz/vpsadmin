@@ -766,7 +766,6 @@ if (isset($show_info) && $show_info) {
 		
 		if($_SESSION["vps_password"]) {
 			$xtpl->table_td("<b>".$_SESSION["vps_password"]."</b>");
-			unset($_SESSION["vps_password"]);
 			
 		} else
 			$xtpl->table_td(_("will be generated"));
