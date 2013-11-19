@@ -61,5 +61,46 @@ module BackuperBackend
 				end
 			end
 		end
+		
+		def download
+			acquire_lock(Db.new) do
+				syscmd("#{$CFG.get(:bin, :mkdir)} -p #{$CFG.get(:backuper, :download)}/#{@params["secret"]}")
+				
+				if @params["server_name"]
+					mount_vps do
+						syscmd("#{$CFG.get(:bin, :tar)} -czf #{$CFG.get(:backuper, :download)}/#{@params["secret"]}/#{@params["filename"]} -C #{mountdir} #{@veid}", [1,])
+					end
+				else
+					syscmd("#{$CFG.get(:bin, :tar)} -czf #{$CFG.get(:backuper, :download)}/#{@params["secret"]}/#{@params["filename"]} -C #{@params["path"]}/.zfs/snapshot backup-#{@params["datetime"]}")
+				end
+			end
+			
+			ok
+		end
+		
+		def mount_all
+			
+		end
+		
+		def mount_vps(node_addr = nil, node_name = nil, veid = nil)
+			node_addr ||= @params["node_addr"]
+			node_name ||= @params["server_name"]
+			veid ||= @veid
+			
+			m = mountpoint(node_name, veid)
+			
+			Dir.mkdir(m) unless File.exists?(m)
+			
+			syscmd("#{$CFG.get(:bin, :mount)} -overs=3 #{node_addr}:/vz/private/#{veid} #{m}")
+			
+			if block_given?
+				yield
+				
+				syscmd("#{$CFG.get(:bin, :umount)} -f #{m}")
+				Dir.rmdir(m)
+			end
+			
+			ok
+		end
 	end
 end
