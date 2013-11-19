@@ -793,10 +793,13 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 	
 	global $db, $cluster_cfg;
 	
+	$node = new cluster_node($this->ve["vps_server"]);
 	$backuper = $this->get_backuper_server();
 	$e = nas_get_export_by_id($this->ve["vps_backup_export"]);
 	$secret = hash("sha256", $this->veid . $timestamp . time() . rand(0, 99999999));
 	$params = array(
+		"src_node_type" => $node->role["fstype"],
+		"dst_node_type" => "zfs", # FIXME,
 		"secret" => $secret,
 		"dataset" => $e["root_dataset"] . "/" . $e["dataset"],
 		"path" => $e["root_path"] . "/" . $e["path"],
