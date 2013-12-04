@@ -244,7 +244,7 @@ switch ($_GET["action"]) {
 		case 'hostname':
 			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 			if ($vps->exists) {
-				if (ereg('^[a-zA-Z0-9\.\-]{1,30}$',$_REQUEST["hostname"])) {
+				if (ereg('^[a-zA-Z0-9\.\-]{1,255}$',$_REQUEST["hostname"])) {
 					notify_user(_("Hostname change planned"), $vps->set_hostname($_REQUEST["hostname"]));
 					redirect('?page=adminvps&action=info&veid='.$vps->veid);
 				} else {
@@ -831,7 +831,7 @@ if (isset($show_info) && $show_info) {
 
 	// Hostname change
 		$xtpl->form_create('?page=adminvps&action=hostname&veid='.$vps->veid, 'post');
-		$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'hostname', $vps->ve["vps_hostname"], _("A-z, a-z"), 30);
+		$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'hostname', $vps->ve["vps_hostname"], _("A-z, a-z"), 255);
 		$xtpl->table_add_category(_("Hostname list"));
 		$xtpl->table_add_category('&nbsp;');
 		$xtpl->form_out(_("Go >>"));
