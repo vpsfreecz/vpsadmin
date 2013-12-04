@@ -104,7 +104,7 @@ switch ($_GET["action"]) {
 			print_newvps();
 			break;
 		case 'new2':
-			if ((ereg('^[a-zA-Z0-9\.\-]{1,30}$',$_REQUEST["vps_hostname"])
+			if ((ereg('^[a-zA-Z0-9\.\-]{1,255}$',$_REQUEST["vps_hostname"])
 			    && $_GET["create"]
 			    && ($_SESSION["is_admin"] || $playground_mode)))
 					{
