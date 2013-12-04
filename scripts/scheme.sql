@@ -211,7 +211,7 @@ CREATE TABLE IF NOT EXISTS `vps` (
   `vps_expiration` INT NULL DEFAULT NULL,
   `vps_deleted` INT( 11 ) NULL,
   `m_id` int(63) unsigned NOT NULL,
-  `vps_hostname` varchar(64) DEFAULT 'darkstar',
+  `vps_hostname` varchar(255) DEFAULT 'vps',
   `vps_template` int(10) unsigned NOT NULL DEFAULT '1',
   `vps_info` mediumtext,
   `vps_nameserver` varchar(255) NOT NULL DEFAULT '4.2.2.2',
