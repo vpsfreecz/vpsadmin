@@ -23,7 +23,7 @@ function print_newvps() {
 	global $xtpl, $cluster;
 	$xtpl->title(_("Create VPS"));
 	$xtpl->form_create('?page=adminvps&section=vps&action=new2&create=1', 'post');
-	$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'vps_hostname', '', _("A-z, a-z"), 30);
+	$xtpl->form_add_input(_("Hostname").':', 'text', '255', 'vps_hostname', '', _("A-z, a-z"), 255);
 	if ($_SESSION["is_admin"]) {
 		$xtpl->form_add_select(_("HW server").':', 'vps_server', list_servers(false, array("node")), '2', '');
 		$xtpl->form_add_select(_("Owner").':', 'm_id', members_list(), '', '');
