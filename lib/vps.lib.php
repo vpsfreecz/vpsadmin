@@ -907,7 +907,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 		$db->query("UPDATE vps_mount SET storage_export_id = ".$db->check($cloned_backup_export)."
 		            WHERE vps_id = ".$db->check($clone->veid)." AND storage_export_id = ".$db->check($this->ve["vps_backup_export"]));
 		
-		$clone->set_backuper(NULL, $cloned_backup_export, false);
+		$clone->set_backuper(NULL, $cloned_backup_export, false, true);
 	}
 	
 	$clone->mount_regen();
