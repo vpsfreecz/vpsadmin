@@ -284,10 +284,10 @@ class vps_load {
 		
 		if($lazy) {
 			if($db->query("UPDATE vps SET vps_deleted = ".time()." WHERE vps_id = ". $db->check($this->veid))) {
-				$this->exists = false;
-				
 				if($this->is_playground())
 					$this->delete_all_ips(true);
+					
+				$this->exists = false;
 				
 				return true;
 				
