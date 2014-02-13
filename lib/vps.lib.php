@@ -1010,6 +1010,9 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			$this->update_custom_config($with_custom, $t_my_id);
 			$with->update_custom_config($my_custom, $t_with_id);
 		}
+		
+		$this->applyconfigs($t_my_id);
+		$with->applyconfigs($t_with_id);
 	}
 	
 	if($expiration) {
@@ -1027,8 +1030,8 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 		$with_enabled = $with->ve["vps_backup_enabled"];
 		$with_exclude = $with->ve["vps_backup_exclude"];
 		
-		$this->set_backuper($with_enabled, NULL, $with_exclude);
-		$with->set_backuper($my_enabled, NULL, $my_exclude);
+		$this->set_backuper($with_enabled, NULL, $with_exclude, true);
+		$with->set_backuper($my_enabled, NULL, $my_exclude, true);
 	}
 	
 	if($dns) {
