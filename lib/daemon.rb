@@ -39,6 +39,9 @@ module VpsAdmind
 		end
 		
 		def init
+			node = Node.new
+			node.init
+			
 			@fw = Firewall.new
 			@fw.init(@db)
 		end

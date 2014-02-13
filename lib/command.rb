@@ -36,7 +36,7 @@ class Command
 		
 		begin
 			param = JSON.parse(@trans["t_param"])
-		rescue TypeError
+		rescue
 			@output[:error] = "Bad param syntax"
 			return false
 		end
@@ -65,6 +65,10 @@ class Command
 		rescue CommandNotImplemented
 			@status = :failed
 			@output[:error] = "Command not implemented"
+		rescue => err
+			@status = :failed
+			@output[:error] = err.inspect
+			@output[:backgrace] = err.backtrace
 		end
 		
 		@time_end = Time.new.to_i

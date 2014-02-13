@@ -127,6 +127,7 @@ IMPLICIT_CONFIG = {
 		:uptime => "uptime",
 		:hostname => "hostname",
 		:ssh_keygen => "ssh-keygen",
+		:exportfs => "exportfs",
 	},
 	
 	:vps => {
@@ -135,6 +136,7 @@ IMPLICIT_CONFIG = {
 		},
 		:zfs => {
 			:root_dataset => "vz/private",
+			:sharenfs => nil,
 		},
 		:migration => {
 			:rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}",
