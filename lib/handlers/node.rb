@@ -1,6 +1,29 @@
 require 'lib/executor'
+require 'lib/utils/zfs'
 
 class Node < Executor
+	include ZfsUtils
+	
+	def init
+		return unless zfs?
+		
+		sharenfs = $CFG.get(:vps, :zfs, :sharenfs)
+		
+		unless sharenfs.nil?
+			ds = $CFG.get(:vps, :zfs, :root_dataset)
+			
+			if syscmd("#{$CFG.get(:bin, :exportfs)}")[:output] =~ /^\/#{ds}\/\d+$/
+				log "ZFS exports already loaded"
+				return
+			end
+			
+			log "Reload ZFS exports"
+			
+			zfs(:set, "sharenfs=off", ds)
+			zfs(:set, "sharenfs=\"#{sharenfs}\"", ds)
+		end
+	end
+	
 	def reboot
 		@reboot = true
 		ok

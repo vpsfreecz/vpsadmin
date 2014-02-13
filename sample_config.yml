@@ -110,12 +110,14 @@
 #     :uptime: uptime
 #     :hostname: hostname
 #     :ssh_keygen: ssh-keygen
+#     :exportfs: exportfs
 # 
 # :vps:
 #     :clone:
 #         :rsync: %{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}
 #     :zfs:
 #         :root_dataset: vz/private
+#         :sharenfs: ~
 #     :migration:
 #         :rsync: %{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}
 # 
