@@ -36,7 +36,7 @@ class Command
 		
 		begin
 			param = JSON.parse(@trans["t_param"])
-		rescue TypeError
+		rescue
 			@output[:error] = "Bad param syntax"
 			return false
 		end
