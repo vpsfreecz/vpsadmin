@@ -1,4 +1,4 @@
-<?php
+6<?php
 /*
     ./pages/page_backup.php
 
@@ -53,7 +53,12 @@ if ($_SESSION["logged_in"]) {
 			if ($_REQUEST["backup_first"])
 				$last_t = get_last_transaction(T_BACKUP_SCHEDULE, $vps->veid);
 			
-			if (is_transaction_in_queue(T_BACKUP_RESTORE_PREPARE, $vps->veid)
+			if(!$_POST["restore_timestamp"]) {
+				$xtpl->perex(
+					_("No backup selected"),
+					_("You must select which backup do you want to be restored.")
+				);
+			} else if (is_transaction_in_queue(T_BACKUP_RESTORE_PREPARE, $vps->veid)
 				|| is_transaction_in_queue(T_BACKUP_RESTORE_RESTORE, $vps->veid)
 				|| is_transaction_in_queue(T_BACKUP_RESTORE_FINISH, $vps->veid))
 				$xtpl->perex(
@@ -73,7 +78,13 @@ if ($_SESSION["logged_in"]) {
 			break;
 		case 'restore2':
 			$vps = vps_load($_GET["vps_id"]);
-			if (is_transaction_in_queue(T_BACKUP_RESTORE_PREPARE, $vps->veid)
+			
+			if(!$_GET["timestamp"]) {
+				$xtpl->perex(
+					_("No backup selected"),
+					_("You must select which backup do you want to be restored.")
+				);
+			} else if (is_transaction_in_queue(T_BACKUP_RESTORE_PREPARE, $vps->veid)
 				|| is_transaction_in_queue(T_BACKUP_RESTORE_RESTORE, $vps->veid)
 				|| is_transaction_in_queue(T_BACKUP_RESTORE_FINISH, $vps->veid))
 				$xtpl->perex(
