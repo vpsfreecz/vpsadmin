@@ -598,7 +598,7 @@ class cluster {
     }
     function get_first_suitable_dns($location) {
 	global $db;
-	$sql = 'SELECT * FROM cfg_dns WHERE (dns_location="'.$db->check($location).'") AND (dns_is_universal = 0) LIMIT 1';
+	$sql = 'SELECT * FROM cfg_dns WHERE (dns_location="'.$db->check($location).'") OR (dns_is_universal = 1) ORDER BY dns_is_universal LIMIT 1';
 	if ($result = $db->query($sql))
 	    if ($row = $db->fetch_array($result))
 		return $row["dns_ip"];
