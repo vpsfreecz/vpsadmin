@@ -2185,6 +2185,11 @@ if ($mass_management) {
 	
 	$xtpl->table_tr();
 	
+	$xtpl->table_td(_("Has DNS resolvers").':');
+	$xtpl->form_add_select_pure('r[]', list_dns_resolvers(), $_GET["r"], true, '5');
+	
+	$xtpl->table_tr();
+	
 	$xtpl->form_out( _("Show"), null, '', '3');
 	
 	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
@@ -2231,6 +2236,9 @@ if ($mass_management) {
 	
 	if (isset($_GET["t"]))
 		$conds[] = "t.templ_id IN (".$db->check(is_array($_GET["t"]) ? implode(",", $_GET["t"]) : $_GET["t"]).")";
+	
+	if (isset($_GET["r"]))
+		$conds[] = "dns.dns_id IN (".$db->check(is_array($_GET["r"]) ? implode(",", $_GET["r"]) : $_GET["r"]).")";
 	
 	if (isset($_GET["state"]))
 		switch ($_GET["state"]) {
@@ -2285,6 +2293,7 @@ if ($mass_management) {
 	        INNER JOIN locations l ON s.server_location = l.location_id
 	        INNER JOIN members m ON v.m_id = m.m_id
 	        INNER JOIN cfg_templates t ON v.vps_template = t.templ_id
+	        INNER JOIN cfg_dns dns ON v.vps_nameserver = dns.dns_ip
 	        ".(count($conditions) > 0 ? "WHERE " . implode(" AND ", $conds) : "")."
 	        GROUP BY v.vps_id
 	        ORDER BY v.vps_id ASC";

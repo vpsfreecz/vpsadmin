@@ -165,6 +165,20 @@ function list_playground_servers($without_id = false) {
     return $ret;
 }
 
+function list_dns_resolvers() {
+	global $cluster;
+	
+	$resolvers = $cluster->get_dns_servers();
+	$ret = array();
+	
+	foreach($resolvers as $resolver) {
+		$loc = $cluster->get_location_by_id($resolver["dns_location"]);
+		$ret[ $resolver["dns_id"] ] = $resolver["dns_label"] . " (".($resolver["dns_is_universal"] ? _("everywhere") : $loc["location_label"]).")";
+	}
+	
+	return $ret;
+}
+
 function pick_playground_server() {
 	global $db;
 	
