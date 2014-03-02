@@ -1437,6 +1437,9 @@ switch($_REQUEST["action"]) {
 				$xtpl->form_add_checkbox(_("Backup lock").':', 'backup_lock', '1');
 				$xtpl->table_tr();
 				break;
+			case "backup":
+				$t = _("Mass backup");
+				break;
 			case "remount":
 				$t = _("Mass remount");
 				$xtpl->form_add_select(_("Remount mounts from").':', 'source_nodes[]', $cluster->list_servers_with_type("storage"), '', '', true, '5');
@@ -1615,6 +1618,13 @@ switch($_REQUEST["action"]) {
 					$vps = vps_load($veid);
 					if ($vps->exists)
 						$vps->set_backup_lock($_POST["backup_lock"]);
+				}
+				break;
+			case "backup":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->backup(T_BACKUP_SCHEDULE);
 				}
 				break;
 			case "remount":
@@ -2337,6 +2347,7 @@ if ($mass_management) {
 			"migrate_online" => _("Online migration"),
 			"backuper" => _("Set backuper"),
 			"backup_lock" => _("Set backup lock"),
+			"backup" => _("Backup"),
 			"remount" => _("Remount"),
 		), '', '', false, '5', '8'
 	);
