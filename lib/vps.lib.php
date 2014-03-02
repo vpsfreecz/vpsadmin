@@ -713,6 +713,40 @@ function ipadd($ip, $type = 4, $dep = NULL) {
   	$db->query($sql);
   }
   
+  function backup($type) {
+	global $db;
+	
+	$node = new cluster_node($this->ve["vps_server"]);
+	$backuper = $this->get_backuper_server();
+	$e = nas_get_export_by_id($this->ve["vps_backup_export"]);
+	
+	$dataset = $e["root_dataset"] . "/" . $e["dataset"];
+	$path = $e["root_path"] . "/" . $e["path"];
+  
+	$params = array(
+		"src_node_type" => $node->role["fstype"],
+		"dst_node_type" => "zfs", # FIXME
+		"server_name" => $this->ve["server_name"],
+		"node_addr" => $this->ve["server_ip4"],
+		"exclude" => preg_split ("/(\r\n|\n|\r)/", $this->ve["vps_backup_exclude"]),
+		"dataset" => $dataset,
+		"path" => $path,
+		"backuper" => $backuper["server_id"],
+		"set_dependency" => $restore_id,
+		"backup_type" => $type,
+		"rotate_backups" => false,
+	);
+	
+	if($node->role["fstype"] == "zfs") {
+		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_SNAPSHOT, $params);
+		
+	} else {
+		add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, $type, $params);
+	}
+	
+	return $db->insertId();
+  }
+  
   function restore($timestamp, $backup_first = false) {
 	if(!$this->exists)
 		return NULL;
@@ -744,27 +778,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 		if($node->role["fstype"] == "zfs")
 			$restore_id = $this->restore_transactions($backuper["server_id"], $restore_params, -1);
 		
-		$params = array(
-			"src_node_type" => $node->role["fstype"],
-			"dst_node_type" => "zfs", # FIXME
-			"server_name" => $this->ve["server_name"],
-			"node_addr" => $this->ve["server_ip4"],
-			"exclude" => preg_split ("/(\r\n|\n|\r)/", $this->ve["vps_backup_exclude"]),
-			"dataset" => $dataset,
-			"path" => $path,
-			"backuper" => $backuper["server_id"],
-			"set_dependency" => $restore_id,
-			"backup_type" => T_BACKUP_SCHEDULE,
-			"rotate_backups" => false,
-		);
-		
-		if($node->role["fstype"] == "zfs") {
-			add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_BACKUP_SNAPSHOT, $params);
-			
-		} else {
-			add_transaction($_SESSION["member"]["m_id"], $backuper["server_id"], $this->veid, T_BACKUP_SCHEDULE, $params);
-		}
-		$backup_id = $db->insertId();
+		$backup_id = $this->backup(T_BACKUP_SCHEDULE);
 		
 		if($node->role["fstype"] != "zfs")
 			$this->restore_transactions($backuper["server_id"], $restore_params, $backup_id);
