@@ -1,4 +1,4 @@
-6<?php
+<?php
 /*
     ./pages/page_backup.php
 
