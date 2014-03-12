@@ -14,27 +14,27 @@ function print_newm() {
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->form_create('?page=adminm&section=members&action=new2', 'post');
-	$xtpl->form_add_input(_("Nickname").':', 'text', '30', 'm_nick', '', _("A-Z, a-z, dot, dash"), 63);
-	$xtpl->form_add_select(_("Privileges").':', 'm_level', $cfg_privlevel, '2',  ' ');
+	$xtpl->form_add_input(_("Nickname").':', 'text', '30', 'm_nick', $_POST["m_nick"], _("A-Z, a-z, dot, dash"), 63);
+	$xtpl->form_add_select(_("Privileges").':', 'm_level', $cfg_privlevel, $_POST["m_level"] ? $_POST["m_level"] : '2',  ' ');
 
 	$m_pass_uid  = $xtpl->form_add_input(_("Password").':', 'password', '30', 'm_pass', '', '', -5);
 	$m_pass2_uid = $xtpl->form_add_input(_("Repeat password").':', 'password', '30', 'm_pass2', '', ' ');
 
 	$xtpl->form_add_input('', 'button', '', 'g_pass', _("Generate password"), '', '', 'onClick="javascript:formSubmit()"');
-	$xtpl->form_add_input(_("Full name").':', 'text', '30', 'm_name', '', _("A-Z, a-z, with diacritic"), 255);
-	$xtpl->form_add_input(_("E-mail").':', 'text', '30', 'm_mail', '', ' ');
-	$xtpl->form_add_input(_("Postal address").':', 'text', '30', 'm_address', '', ' ');
+	$xtpl->form_add_input(_("Full name").':', 'text', '30', 'm_name', $_POST["m_name"], _("A-Z, a-z, with diacritic"), 255);
+	$xtpl->form_add_input(_("E-mail").':', 'text', '30', 'm_mail', $_POST["m_mail"], ' ');
+	$xtpl->form_add_input(_("Postal address").':', 'text', '30', 'm_address', $_POST["m_address"], ' ');
 
 	if ($cluster_cfg->get("payments_enabled")) {
-		$xtpl->form_add_input(_("Monthly payment").':', 'text', '30', 'm_monthly_payment', '300', ' ');
+		$xtpl->form_add_input(_("Monthly payment").':', 'text', '30', 'm_monthly_payment', $_POST["m_monthly_payment"] ? $_POST["m_monthly_payment"] : '300', ' ');
 	}
 
 	if ($cluster_cfg->get("mailer_enabled")) {
-		$xtpl->form_add_checkbox(_("Enable vpsAdmin mailer").':', 'm_mailer_enable', '1', true, $hint = '');
+		$xtpl->form_add_checkbox(_("Enable vpsAdmin mailer").':', 'm_mailer_enable', '1', $_POST["m_nick"] ? $_POST["m_mailer_enable"] : true, $hint = '');
 	}
 	
-	$xtpl->form_add_checkbox(_("Enable playground VPS").':', 'm_playground_enable', '1', true, $hint = '');
-	$xtpl->form_add_textarea(_("Info").':', 28, 4, 'm_info', '', _("Note for administrators"));
+	$xtpl->form_add_checkbox(_("Enable playground VPS").':', 'm_playground_enable', '1', $_POST["m_nick"] ? $_POST["m_playground_enable"] : true, $hint = '');
+	$xtpl->form_add_textarea(_("Info").':', 28, 4, 'm_info', $_POST["m_info"], _("Note for administrators"));
 	$xtpl->form_out(_("Add"));
 
 	$xtpl->assign('SCRIPT', '
@@ -255,6 +255,24 @@ function print_deletem($member) {
 	$xtpl->form_out(_("Delete"));
 }
 
+function validate_username($username) {
+	global $db, $xtpl;
+	
+	if(!ereg('^[a-zA-Z0-9\.\-]{1,63}$', $username)) {
+		$xtpl->perex(_("Invalid entry").': '._("Nickname"),'');
+		return false;
+	}
+	
+	if($user = $db->findByColumnOnce("members", "m_nick", $username)) {
+		$xtpl->perex(
+			_("Error").': '._("User already exists"),
+			_("See").' <a href="?page=adminm&section=members&action=edit&id='.$user["m_id"].'">'.($user["m_name"] ? $user["m_name"] : $user["m_nick"]).'</a>');
+		return false;
+	}
+	
+	return true;
+}
+
 function request_approve() {
 	global $db;
 	
@@ -273,16 +291,23 @@ function request_approve() {
 	}
 	
 	$data = null;
+	$mail = false;
 	
 	if(isset($_POST["m_name"])) { // called from request details
 		$data = $_POST;
 		
 	} else { // accessed from request list or mail
 		$data = $row;
+		$mail = true;
 	}
 	
 	switch($row["m_type"]) {
 		case "add":
+			if(!validate_username($data["m_nick"])) {
+				notify_user(_("User with this login already exists."), '');
+				redirect('?page=adminm&section=members&action=request_details&id='.$row["m_id"]);
+			}
+		
 			$data["m_level"] = PRIV_USER;
 			$data["m_playground_enable"] = true;
 			$data["m_mailer_enable"] = true;
@@ -292,7 +317,7 @@ function request_approve() {
 			$m = member_load();
 			$m_id = $m->create_new($data);
 			
-			if(!isset($_POST["m_create_vps"]) || $_POST["m_create_vps"]) { // create vps
+			if($mail || $_POST["m_create_vps"]) { // create vps
 				$server = null;
 				
 				if($_POST["m_node"])
@@ -497,7 +522,7 @@ if ($_SESSION["logged_in"]) {
 		case 'new2':
 			if ($_SESSION["is_admin"]) {
 				$ereg_ok = false;
-				if (ereg('^[a-zA-Z0-9\.\-]{1,63}$',$_REQUEST["m_nick"])) {
+				if (validate_username($_REQUEST["m_nick"])) {
 					if (ereg('^[0-9]{1,4}$',$_REQUEST["m_level"])) {
 						if (($_REQUEST["m_pass"] == $_REQUEST["m_pass2"]) && (strlen($_REQUEST["m_pass"]) >= 5)) {
 							if (is_string($_REQUEST["m_mail"])) {
@@ -525,7 +550,7 @@ if ($_SESSION["logged_in"]) {
 							} else $xtpl->perex(_("Invalid entry").': '._("E-mail"),'');
 						} else $xtpl->perex(_("Invalid entry").': '._("Password"),'');
 					} else $xtpl->perex(_("Invalid entry").': '._("Privileges"),'');
-				} else $xtpl->perex(_("Invalid entry").': '._("Nickname"),'');
+				}
 
 				if (!$ereg_ok) {
 
