@@ -825,7 +825,7 @@ class XTemplate {
 	  * Parse out the form
 	  * @param $submit_label - label of submit button of the form
 	  */
-	function form_out_raw($id) {
+	function form_out_raw($id = null) {
 		$this->assign('TABLE_FORM_END','</form>');
 		$this->table_out($id);
 	}
