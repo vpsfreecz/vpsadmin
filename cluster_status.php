@@ -36,6 +36,11 @@ include WWW_ROOT.'lib/cluster.lib.php';
 
 $db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME);
 
+if($cluster_cfg->get("maintenance_mode")) {
+	echo "MAINTENANCE";
+	exit;
+}
+
 $rs = $db->query("SELECT server_id, server_name FROM locations l INNER JOIN servers s ON l.location_id = s.server_location ORDER BY l.location_id, s.server_id");
 $bad = false;
 
