@@ -478,6 +478,8 @@ switch ($_GET["action"]) {
 					
 					if (!$pg_backup)
 						$cloned->set_backuper($pg_backup, NULL, "", true);
+					
+					$cloned->set_expiration(time() + $cluster_cfg->get("playground_vps_lifetime") * 24 * 60 * 60);
 				}
 				
 				notify_user(_("Clone in progress"), '');
