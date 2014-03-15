@@ -16,20 +16,29 @@ class VPS < Executor
 	
 	def start
 		@update = true
-		vzctl(:start, @veid, {}, false, [32,])
-		vzctl(:set, @veid, {:onboot => "yes"}, true)
+
+    acquire_lock_unless(zfs?) do
+      vzctl(:start, @veid, {}, false, [32,])
+      vzctl(:set, @veid, {:onboot => "yes"}, true)
+    end
 	end
 	
 	def stop(params = {})
 		@update = true
-		vzctl(:stop, @veid, {}, false, params[:force] ? [5,66] : [])
-		vzctl(:set, @veid, {:onboot => "no"}, true)
+
+    acquire_lock_unless(zfs?) do
+      vzctl(:stop, @veid, {}, false, params[:force] ? [5,66] : [])
+      vzctl(:set, @veid, {:onboot => "no"}, true)
+    end
 	end
 	
 	def restart
 		@update = true
-		vzctl(:restart, @veid)
-		vzctl(:set, @veid, {:onboot => "yes"}, true)
+
+    acquire_lock_unless(zfs?) do
+      vzctl(:restart, @veid)
+      vzctl(:set, @veid, {:onboot => "yes"}, true)
+    end
 	end
 	
 	def create
@@ -46,42 +55,47 @@ class VPS < Executor
 	
 	def destroy
 		stop
-		vzctl(:destroy, @veid)
+
+    acquire_lock do
+		  vzctl(:destroy, @veid)
+    end
 	end
 	
 	def suspend
-		unless File.exists?("#{ve_private}/sbin/iptables-save")
-			File.symlink("/bin/true", "#{ve_private}/sbin/iptables-save")
-			del = true
-		end
-		
-		vzctl(:suspend, @veid, {:dumpfile => dumpfile})
-		
-		File.delete("#{ve_private}/sbin/iptables-save") if del
-		
-		ok
+    acquire_lock do
+      unless File.exists?("#{ve_private}/sbin/iptables-save")
+        File.symlink("/bin/true", "#{ve_private}/sbin/iptables-save")
+        del = true
+      end
+
+      vzctl(:suspend, @veid, {:dumpfile => dumpfile})
+
+      File.delete("#{ve_private}/sbin/iptables-save") if del
+    end
 	end
 	
 	def resume
-		unless File.exists?("#{ve_private}/sbin/iptables-restore")
-			File.symlink("/bin/true", "#{ve_private}/sbin/iptables-restore")
-			del = true
+    acquire_lock do
+      unless File.exists?("#{ve_private}/sbin/iptables-restore")
+        File.symlink("/bin/true", "#{ve_private}/sbin/iptables-restore")
+        del = true
+      end
+
+      vzctl(:resume, @veid, {:dumpfile => dumpfile})
+
+      File.delete("#{ve_private}/sbin/iptables-restore") if del
 		end
-		
-		vzctl(:resume, @veid, {:dumpfile => dumpfile})
-		
-		File.delete("#{ve_private}/sbin/iptables-restore") if del
-		
-		ok
 	end
 	
 	def reinstall
-		honor_state do
-			stop
-			destroy
-			create
-			vzctl(:set, @veid, {:ipadd => @params["ip_addrs"]}, true) if @params["ip_addrs"].count > 0
-		end
+    acquire_lock do
+      honor_state do
+        stop
+        destroy
+        create
+        vzctl(:set, @veid, {:ipadd => @params["ip_addrs"]}, true) if @params["ip_addrs"].count > 0
+      end
+    end
 	end
 	
 	def set_params
@@ -95,36 +109,38 @@ class VPS < Executor
 	end
 	
 	def applyconfig
-		@params["configs"].each do |cfg|
-			vzctl(:set, @veid, {:applyconfig => cfg, :setmode => "restart"}, true)
+    acquire_lock do
+      @params["configs"].each do |cfg|
+        vzctl(:set, @veid, {:applyconfig => cfg, :setmode => "restart"}, true)
+      end
 		end
-		
-		ok
 	end
 	
 	def features
-		honor_state do
-			stop
-			vzctl(:set, @veid, {
-				:feature => ["nfsd:on", "nfs:on", "ppp:on"],
-				:capability => "net_admin:on",
-				:iptables => ['ip_conntrack', 'ip_conntrack_ftp', 'ip_conntrack_irc', 'ip_nat_ftp',
-							'ip_nat_irc', 'ip_tables', 'ipt_LOG', 'ipt_REDIRECT', 'ipt_REJECT',
-							'ipt_TCPMSS', 'ipt_TOS', 'ipt_conntrack', 'ipt_helper', 'ipt_length',
-							'ipt_limit', 'ipt_multiport', 'ipt_state', 'ipt_tcpmss', 'ipt_tos',
-							'ipt_ttl', 'iptable_filter', 'iptable_mangle', 'iptable_nat'],
-				:numiptent => "1000",
-				:devices => ["c:10:200:rw", "c:10:229:rw", "c:108:0:rw"],
-			}, true)
-			start
-			sleep(3)
-			vzctl(:exec, @veid, "mkdir -p /dev/net")
-			vzctl(:exec, @veid, "mknod /dev/net/tun c 10 200", false, [8,])
-			vzctl(:exec, @veid, "chmod 600 /dev/net/tun")
-			vzctl(:exec, @veid, "mknod /dev/fuse c 10 229", false, [8,])
-			vzctl(:exec, @veid, "mknod /dev/ppp c 108 0", false, [8,])
-			vzctl(:exec, @veid, "chmod 600 /dev/ppp")
-		end
+    acquire_lock do
+      honor_state do
+        stop
+        vzctl(:set, @veid, {
+          :feature => ["nfsd:on", "nfs:on", "ppp:on"],
+          :capability => "net_admin:on",
+          :iptables => ['ip_conntrack', 'ip_conntrack_ftp', 'ip_conntrack_irc', 'ip_nat_ftp',
+                'ip_nat_irc', 'ip_tables', 'ipt_LOG', 'ipt_REDIRECT', 'ipt_REJECT',
+                'ipt_TCPMSS', 'ipt_TOS', 'ipt_conntrack', 'ipt_helper', 'ipt_length',
+                'ipt_limit', 'ipt_multiport', 'ipt_state', 'ipt_tcpmss', 'ipt_tos',
+                'ipt_ttl', 'iptable_filter', 'iptable_mangle', 'iptable_nat'],
+          :numiptent => "1000",
+          :devices => ["c:10:200:rw", "c:10:229:rw", "c:108:0:rw"],
+        }, true)
+        start
+        sleep(3)
+        vzctl(:exec, @veid, "mkdir -p /dev/net")
+        vzctl(:exec, @veid, "mknod /dev/net/tun c 10 200", false, [8,])
+        vzctl(:exec, @veid, "chmod 600 /dev/net/tun")
+        vzctl(:exec, @veid, "mknod /dev/fuse c 10 229", false, [8,])
+        vzctl(:exec, @veid, "mknod /dev/ppp c 108 0", false, [8,])
+        vzctl(:exec, @veid, "chmod 600 /dev/ppp")
+      end
+    end
 	end
 	
 	def migrate_offline
@@ -281,7 +297,7 @@ class VPS < Executor
 		stat = vzctl(:status, @veid)[:output].split(" ")[2..-1]
 		{:exists => stat[0] == "exist", :mounted => stat[1] == "mounted", :running => stat[2] == "running"}
 	end
-	
+
 	def honor_state
 		before = status
 		yield

@@ -48,7 +48,46 @@ class Executor
 	
 	def zfs?
 		[:zfs, :zfs_compat].include?($CFG.get(:vpsadmin, :fstype))
-	end
+  end
+
+  # Sets appropriate command state, wait for lock, run block and unclock VPS again
+  def acquire_lock(db = nil)
+    if @lock_acquired
+      yield
+      return ok
+    end
+
+    db ||= Db.new
+    set_step("[waiting for lock]")
+
+    Backuper.wait_for_lock(db, @veid) do
+      @lock_acquired = true
+
+      begin
+        yield
+      rescue => error
+        Backuper.unlock(db, @veid)
+        @lock_acquired = true
+        raise error
+      end
+    end
+
+    @lock_acquired = true
+
+    ok
+  end
+
+  def acquire_lock_unless(cond)
+    if cond
+      yield
+    else
+      acquire_lock do
+        yield
+      end
+    end
+
+    ok
+  end
 	
 	def vzctl(cmd, veid, opts = {}, save = false, valid_rcs = [])
 		options = []
