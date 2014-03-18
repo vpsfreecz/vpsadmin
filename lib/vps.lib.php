@@ -209,11 +209,11 @@ class vps_load {
 		}
   }
 
-  function stop ($dep = NULL) {
+  function stop ($dep = NULL, $fallback = array()) {
 	global $db;
 	if ($this->exists) {
 	    $db->query('UPDATE vps SET vps_onstartall = 0 WHERE vps_id='.$db->check($this->veid));
-	    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_STOP_VE, array(), NULL, $dep);
+	    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_STOP_VE, array(), NULL, $dep, $fallback);
 	}
   }
 
@@ -430,9 +430,21 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			$params["dst_node_type"] = $target_server->role["fstype"];
 			$params["src_addr"] = $source_server->s["server_ip4"];
 			$params["src_ve_private"] = str_replace("%{veid}", $this->veid, $source_server->role["ve_private"]);
-			$params["start"] = $this->ve["vps_up"] == 1;
+			$params["start"] = $this->ve["vps_onstartall"] == 1;
 			$params["stop"] = (bool)$stop;
 			$params["online"] = $online;
+			
+			$fallback = array(
+				"transactions" => array(
+				array( // start VE on source node when anything fails
+					"t_type" => 1001,
+					"t_m_id" => $_SESSION["member"]["m_id"],
+					"t_server" => $source_server->s["server_id"],
+					"t_vps" => $this->veid,
+					"t_priority" => 100,
+					"t_param" => array("onboot" => $this_loc["location_vps_onboot"]),
+				))
+			);
 			
 			add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_MIGRATE_PREPARE, $params, NULL, $dep);
 			$migration_id = $db->insertId();
@@ -441,15 +453,15 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			$migration_id = $db->insertId();
 			
 			if ($online) {
-				add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_SUSPEND_VE, $params, NULL, $migration_id);
+				add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_SUSPEND_VE, $params, NULL, $migration_id, $fallback);
 				$migration_id = $db->insert_id();
 				
 			} else {
-				$this->stop($migration_id);
+				add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_STOP_VE, array(), NULL, $migration_id, $fallback);
 				$migration_id = $db->insert_id();
 			}
 			
-			add_transaction($_SESSION["member"]["m_id"], $target_server->s["server_id"], $this->veid, T_MIGRATE_PART2, $params, NULL, $migration_id);
+			add_transaction($_SESSION["member"]["m_id"], $target_server->s["server_id"], $this->veid, T_MIGRATE_PART2, $params, NULL, $migration_id, $fallback);
 			$migration_id = $db->insertId();
 			
 			$this->ve["vps_server"] = $target_server->s["server_id"];
