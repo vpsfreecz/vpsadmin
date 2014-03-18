@@ -53,7 +53,7 @@ $xtpl->table_add_category('VPS total');
 $xtpl->table_add_category('IPv4 left');
 
 $members = 0;
-	$sql = "SELECT COUNT(m_id) as count FROM members WHERE m_state != 'deleted'";
+	$sql = "SELECT COUNT(m_id) as count FROM members WHERE m_state = 'active'";
 	$result = $db->query($sql);
   if ($res = $db->fetch_array($result))
     $members = $res['count'];
