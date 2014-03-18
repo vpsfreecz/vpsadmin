@@ -88,7 +88,28 @@ class Executor
 
     ok
   end
-	
+
+  def try_harder(attempts = 3)
+    @output[:attempts] = []
+
+    attempts.times do |i|
+      begin
+        return yield
+      rescue CommandFailed => err
+        log "Attempt #{i+1} of #{attempts} failed for '#{err.cmd}'"
+        @output[:attempts] << {
+            :cmd => err.cmd,
+            :exitstatus => err.rc,
+            :error => err.output,
+        }
+
+        raise err if i == attempts - 1
+
+        sleep(5)
+      end
+    end
+  end
+
 	def vzctl(cmd, veid, opts = {}, save = false, valid_rcs = [])
 		options = []
 		
@@ -117,8 +138,10 @@ class Executor
 		vars.each do |k, v|
 			cmd = cmd.gsub(/%\{#{k}\}/, v)
 		end
-		
-		syscmd(cmd, rcs)
+
+    try_harder do
+		  syscmd(cmd, rcs)
+    end
 	end
 	
 	def syscmd(cmd, valid_rcs = [])

@@ -18,8 +18,10 @@ class VPS < Executor
 		@update = true
 
     acquire_lock_unless(zfs?) do
-      vzctl(:start, @veid, {}, false, [32,])
-      vzctl(:set, @veid, {:onboot => "yes"}, true)
+      try_harder do
+        vzctl(:start, @veid, {}, false, [32,])
+        vzctl(:set, @veid, {:onboot => "yes"}, true)
+      end
     end
 	end
 	
@@ -27,8 +29,10 @@ class VPS < Executor
 		@update = true
 
     acquire_lock_unless(zfs?) do
-      vzctl(:stop, @veid, {}, false, params[:force] ? [5,66] : [])
-      vzctl(:set, @veid, {:onboot => "no"}, true)
+      try_harder do
+        vzctl(:stop, @veid, {}, false, params[:force] ? [5,66] : [])
+        vzctl(:set, @veid, {:onboot => "no"}, true)
+      end
     end
 	end
 	
