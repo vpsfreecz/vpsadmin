@@ -43,6 +43,7 @@ class VpsAdmin < Executor
 					:type => w.cmd.trans["t_type"].to_i,
 					:handler => "#{h[:class]}.#{h[:method]}",
 					:step => w.cmd.step,
+          :pid => w.cmd.subtask,
 					:start => w.cmd.time_start,
 				}
 			end
