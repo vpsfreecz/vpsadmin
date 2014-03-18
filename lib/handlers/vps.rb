@@ -54,9 +54,8 @@ class VPS < Executor
 	end
 	
 	def destroy
-		stop
-
-    acquire_lock do
+		acquire_lock do
+      stop
 		  vzctl(:destroy, @veid)
     end
 	end

@@ -99,7 +99,7 @@ class Migration < VpsTransport
 			vps.resume
 		else
 			@vps.start if @params["start"]
-		end
+    end
 		
 		@relocate = true
 		ok
@@ -112,6 +112,8 @@ class Migration < VpsTransport
 	
 	def copy_configs
 		scp("#{@params["src_addr"]}:#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.*", "#{$CFG.get(:vz, :vz_conf)}/conf/")
+
+    vzctl(:set, @veid, {:onboot => 'no'}, true)
 	end
 	
 	def post_save(db)

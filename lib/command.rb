@@ -68,8 +68,39 @@ class Command
 		rescue => err
 			@status = :failed
 			@output[:error] = err.inspect
-			@output[:backgrace] = err.backtrace
-		end
+			@output[:backtrace] = err.backtrace
+    end
+
+    if @status == :failed
+      @output[:fallback] = {}
+
+      begin
+        fallback = JSON.parse(@trans["t_fallback"])
+
+        unless fallback.empty?
+          log "Transaction #{@trans['t_id']} failed, falling back"
+
+          transaction = Transaction.new
+          @output[:fallback][:transactions] = []
+
+          fallback['transactions'].each do |t|
+            @output[:fallback][:transactions] << transaction.queue({
+              :m_id => t['t_m_id'],
+              :node => t['t_server'],
+              :vps => t['t_vps'],
+              :type => t['t_type'],
+              :depends => t['t_depends_on'],
+              :priority => t['t_priority'],
+              :param => t['t_params'],
+           })
+          end
+        end
+      rescue => err
+        @output[:fallback][:msg] = 'Fallback failed'
+        @output[:fallback][:error] = err.inspect
+        @output[:fallback][:backtrace] = err.backtrace
+      end
+    end
 		
 		@time_end = Time.new.to_i
 	end
