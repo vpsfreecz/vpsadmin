@@ -123,7 +123,7 @@ while ($srv = $db->fetch_array($rslt)) {
 
 	$last_location = $srv["server_location"];
 	
-	$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$srv["server_id"].'" ORDER BY id DESC LIMIT 1';
+	$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$srv["server_id"].'"';
 
 	if ($result = $db->query($sql))
 	    $status = $db->fetch_array($result);

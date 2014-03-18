@@ -1695,9 +1695,8 @@ if ($list_nodes) {
 	$nodes_on = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM (
                                                SELECT s.server_id
                                                FROM servers s INNER JOIN servers_status t ON s.server_id = t.server_id
-                                               WHERE (UNIX_TIMESTAMP() - t.timestamp) <= 360
+                                               WHERE (UNIX_TIMESTAMP() - t.timestamp) <= 150
                                                GROUP BY s.server_id
-                                               ORDER BY t.id DESC
                                              ) tmp"));
 	
 	$nodes_all = $db->fetch_array($db->query("SELECT COUNT(server_id) AS cnt FROM servers"));
@@ -1758,7 +1757,7 @@ if ($list_nodes) {
 		$node = new cluster_node($row["server_id"]);
 		
 		// Availability
-		$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$node->s["server_id"].'" ORDER BY id DESC LIMIT 1';
+		$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$node->s["server_id"].'"';
 			
 		if ($result = $db->query($sql))
 			$status = $db->fetch_array($result);
@@ -1767,7 +1766,7 @@ if ($list_nodes) {
 		
 		if ($cluster_cfg->get("lock_cron_".$node->s["server_id"]))	{
 			$icons .= '<img title="'._("The server is currently processing").'" src="template/icons/warning.png"/>';
-		} elseif ((time()-$status["timestamp"]) > 360) {
+		} elseif ((time()-$status["timestamp"]) > 150) {
 			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
 		} else {
 			$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
