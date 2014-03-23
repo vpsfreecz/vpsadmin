@@ -2,7 +2,7 @@ require 'lib/vpsadmind'
 require 'lib/utils'
 
 module VpsAdminCtl
-	VERSION = "1.16.0-dev"
+	VERSION = "1.16.0"
 	ACTIONS = [:status, :reload, :stop, :restart, :update, :kill, :reinit, :refresh, :install]
 	
 	class RemoteControl
@@ -13,10 +13,18 @@ module VpsAdminCtl
 		
 		def status
 			if @opts[:workers]
-				puts sprintf("%-8s %-5s %-20.19s %-5s %-18.16s %s", "TRANS", "VEID", "HANDLER", "TYPE", "TIME", "STEP") if @opts[:header]
+				puts sprintf("%-8s %-5s %-20.19s %-5s %-18.16s %-8s %s", "TRANS", "VEID", "HANDLER", "TYPE", "TIME", "PID", "STEP") if @opts[:header]
 				
 				@res["workers"].sort.each do |w|
-					puts sprintf("%-8d %-5d %-20.19s %-5d %-18.16s %s", w[1]["id"], w[0], w[1]["handler"], w[1]["type"], format_duration(Time.new.to_i - w[1]["start"]), w[1]["step"])
+					puts sprintf("%-8d %-5d %-20.19s %-5d %-18.16s %-8s %s",
+                       w[1]["id"],
+                       w[0],
+                       w[1]["handler"],
+                       w[1]["type"],
+                       format_duration(Time.new.to_i - w[1]["start"]),
+                       w[1]["pid"],
+                       w[1]["step"]
+               )
 				end
 			end
 			
