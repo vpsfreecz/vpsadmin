@@ -186,16 +186,7 @@ class Backuper < Executor
 		
 		"#{@params["path"]}/.zfs/snapshot/backup-#{@params["datetime"]}"
 	end
-	
-	# Sets appropriate command state, wait for lock, run block and unclock VPS again
-	def acquire_lock(db)
-		set_step("[waiting for lock]")
-		
-		Backuper.wait_for_lock(db, @veid) do
-			yield
-		end
-	end
-	
+
 	def post_save(db)
 		Backuper.unlock(db, @veid)
 	end

@@ -1,3 +1,22 @@
+* Sun March 23 2014 - version 1.16.0
+- Mailer: new param 'from', fix in-reply-to
+- NAS mount: umount destination if mounted and not responding
+- Daily report: use base URL from general settings
+- Config for logrotate
+- Updates for vpsadmininstall
+- Install: generate configs, return node ID, handle SSH key and authorized_keys
+- Add sinatra to Gemfile
+- Init script: add status
+- Fix mount for ZFS compat backups
+- Fix backups downloading
+- Command#execute: catch all exceptions, do not crash
+- Reload ZFS exports if not loaded
+- Intensify VPS locking
+- Shorten interval for status updating, save just current status
+- Transaction fallbacks used for migrations
+- Attempt to do some actions several time before failing
+- Remote control: send subtask PID
+
 * Fri Oct 4 2013 - version 1.15.1
 - Mailer: fix message headers
 - Fix vpsadminctl install

@@ -48,8 +48,68 @@ class Executor
 	
 	def zfs?
 		[:zfs, :zfs_compat].include?($CFG.get(:vpsadmin, :fstype))
-	end
-	
+  end
+
+  # Sets appropriate command state, wait for lock, run block and unclock VPS again
+  def acquire_lock(db = nil)
+    if @lock_acquired
+      yield
+      return ok
+    end
+
+    db ||= Db.new
+    set_step("[waiting for lock]")
+
+    Backuper.wait_for_lock(db, @veid) do
+      @lock_acquired = true
+
+      begin
+        yield
+      rescue => error
+        Backuper.unlock(db, @veid)
+        @lock_acquired = true
+        raise error
+      end
+    end
+
+    @lock_acquired = true
+
+    ok
+  end
+
+  def acquire_lock_unless(cond)
+    if cond
+      yield
+    else
+      acquire_lock do
+        yield
+      end
+    end
+
+    ok
+  end
+
+  def try_harder(attempts = 3)
+    @output[:attempts] = []
+
+    attempts.times do |i|
+      begin
+        return yield
+      rescue CommandFailed => err
+        log "Attempt #{i+1} of #{attempts} failed for '#{err.cmd}'"
+        @output[:attempts] << {
+            :cmd => err.cmd,
+            :exitstatus => err.rc,
+            :error => err.output,
+        }
+
+        raise err if i == attempts - 1
+
+        sleep(5)
+      end
+    end
+  end
+
 	def vzctl(cmd, veid, opts = {}, save = false, valid_rcs = [])
 		options = []
 		
@@ -78,8 +138,10 @@ class Executor
 		vars.each do |k, v|
 			cmd = cmd.gsub(/%\{#{k}\}/, v)
 		end
-		
-		syscmd(cmd, rcs)
+
+    try_harder do
+		  syscmd(cmd, rcs)
+    end
 	end
 	
 	def syscmd(cmd, valid_rcs = [])

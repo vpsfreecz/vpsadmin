@@ -16,9 +16,11 @@ class VpsTransport < Executor
 	end
 	
 	def sync_private
-		rsync([:vps, :migration, :rsync], {
-			:src => "#{@params["src_addr"]}:#{@params["src_ve_private"]}/",
-			:dst => @vps.ve_private,
-		})
+    acquire_lock do
+      rsync([:vps, :migration, :rsync], {
+        :src => "#{@params["src_addr"]}:#{@params["src_ve_private"]}/",
+        :dst => @vps.ve_private,
+      })
+    end
 	end
 end
