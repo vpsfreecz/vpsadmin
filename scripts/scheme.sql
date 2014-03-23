@@ -141,8 +141,7 @@ CREATE TABLE IF NOT EXISTS `servers` (
   KEY `server_location` (`server_location`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
 
-CREATE TABLE IF NOT EXISTS `servers_status` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+CREATE TABLE `servers_status` (
   `server_id` int(10) unsigned NOT NULL,
   `timestamp` int(10) unsigned NOT NULL,
   `ram_free_mb` int(10) unsigned DEFAULT NULL,
@@ -150,9 +149,8 @@ CREATE TABLE IF NOT EXISTS `servers_status` (
   `cpu_load` float unsigned DEFAULT NULL,
   `daemon` tinyint(1) NOT NULL,
   `vpsadmin_version` varchar(63) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `server_id` (`server_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
+  PRIMARY KEY (`server_id`)
+) ENGINE=MEMORY  DEFAULT CHARSET=utf8 ;
 
 CREATE TABLE IF NOT EXISTS `node_node` (
   `node_id` int(11) NOT NULL,
@@ -179,6 +177,7 @@ CREATE TABLE IF NOT EXISTS `transactions` (
   `t_vps` int(10) unsigned DEFAULT NULL,
   `t_type` int(10) unsigned NOT NULL,
   `t_depends_on` int(11) DEFAULT NULL,
+  `t_fallback` text,
   `t_priority` int(11) NOT NULL DEFAULT '0',
   `t_success` int(10) unsigned NOT NULL,
   `t_done` tinyint(1) unsigned NOT NULL,

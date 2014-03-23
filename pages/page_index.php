@@ -53,7 +53,7 @@ $xtpl->table_add_category('VPS total');
 $xtpl->table_add_category('IPv4 left');
 
 $members = 0;
-	$sql = "SELECT COUNT(m_id) as count FROM members WHERE m_state != 'deleted'";
+	$sql = "SELECT COUNT(m_id) as count FROM members WHERE m_state = 'active'";
 	$result = $db->query($sql);
   if ($res = $db->fetch_array($result))
     $members = $res['count'];
@@ -123,7 +123,7 @@ while ($srv = $db->fetch_array($rslt)) {
 
 	$last_location = $srv["server_location"];
 	
-	$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$srv["server_id"].'" ORDER BY id DESC LIMIT 1';
+	$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$srv["server_id"].'"';
 
 	if ($result = $db->query($sql))
 	    $status = $db->fetch_array($result);

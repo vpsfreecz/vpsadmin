@@ -1,3 +1,26 @@
+* Sun March 23 2014 - version 1.16.0
+- Remove deprecated mail log
+- General settings: add base URL
+- Fix & update DB scheme
+- Fix transactions box refreshing in Chrome
+- Transactions: filter by done, success; redo transaction, user can filter
+- Mass management: fix select all/none/reverse, filter by DNS resolvers, add backup
+- Status page: rename event log, show only active members
+- Config boolean to toggle online migrations
+- NAS: add redirects after actions
+- Member edit: add switch context link
+- Login: prevent redirect loop for jumpto.php
+- VPS swap: do not list lazy deleted VPS, fix backuper and config swapping
+- VPS passwd: show generated password till logout
+- VPS hostname: max length set to 255
+- VPS clone to playground: fix backup export setting, fix expiration
+- Transactions created in web UI have priority set to 10
+- Backup restore: add missing check if user selected backup to restore from
+- User requests: fix deny/ignore/invalidate for registration requests
+- /cluster_status.php reports cluster state
+- Transaction fallbacks
+- Save only one server status, change storage to memory
+
 * Fri Oct 4 2013 - version 1.15.1
 - Fix node selection in approval request details
 - Complete DB scheme

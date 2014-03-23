@@ -45,12 +45,12 @@ $rs = $db->query("SELECT server_id, server_name FROM locations l INNER JOIN serv
 $bad = false;
 
 while($row = $db->fetch_array($rs)) {
-	$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$row["server_id"].'" ORDER BY id DESC LIMIT 1';
+	$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$row["server_id"].'"';
 		
 	if ($result = $db->query($sql))
 		$status = $db->fetch_array($result);
 	
-	if ((time()-$status["timestamp"]) > 360) {
+	if ((time()-$status["timestamp"]) > 150) {
 		if(!$bad) {
 			$bad = true;
 			header('HTTP/1.1 503 Service Unavailable');
