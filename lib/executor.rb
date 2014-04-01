@@ -67,12 +67,12 @@ class Executor
         yield
       rescue => error
         Backuper.unlock(db, @veid)
-        @lock_acquired = true
+        @lock_acquired = false
         raise error
       end
     end
 
-    @lock_acquired = true
+    @lock_acquired = false
 
     ok
   end
@@ -87,6 +87,15 @@ class Executor
     end
 
     ok
+  end
+
+  # Pretend that we have a lock
+  def assume_lock
+    @lock_acquired = true
+
+    yield
+
+    @lock_acquired = false
   end
 
   def try_harder(attempts = 3)
