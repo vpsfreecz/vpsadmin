@@ -103,6 +103,10 @@ class Node < Executor
     end
   end
 
+  def kernel
+    syscmd("#{$CFG.get(:bin, :uname)} -r")[:output].strip
+  end
+
   def conf_path(name = nil)
     "#{$CFG.get(:vz, :vz_conf)}/conf/ve-#{name ? name : @params["name"]}.conf-sample"
   end

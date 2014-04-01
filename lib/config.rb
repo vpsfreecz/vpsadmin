@@ -125,6 +125,7 @@ IMPLICIT_CONFIG = {
         :mount => "mount",
         :umount => "umount",
         :uptime => "uptime",
+        :uname => "uname",
         :hostname => "hostname",
         :ssh_keygen => "ssh-keygen",
         :exportfs => "exportfs",

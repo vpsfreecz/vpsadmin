@@ -10,7 +10,7 @@ require 'eventmachine'
 
 module VpsAdmind
   VERSION = "1.16.0"
-  DB_VERSION = 9
+  DB_VERSION = 10
 
   EXIT_OK = 0
   EXIT_ERR = 1
@@ -39,6 +39,8 @@ module VpsAdmind
     end
 
     def init
+      update_status(true)
+
       node = Node.new
       node.init
 
@@ -165,18 +167,24 @@ module VpsAdmind
       update_resources
     end
 
-    def update_status
-      system_load = Node.new(0).load[5]
+    def update_status(kernel = nil)
+      node = Node.new(0)
+      system_load = node.load[5]
+      server_id = $CFG.get(:vpsadmin, :server_id)
 
       my = Db.new
-      my.prepared("INSERT INTO servers_status
-						SET server_id = ?, timestamp = UNIX_TIMESTAMP(NOW()), cpu_load = ?, daemon = ?, vpsadmin_version = ?
-            ON DUPLICATE KEY UPDATE
-            timestamp = UNIX_TIMESTAMP(NOW()), cpu_load = ?, daemon = ?, vpsadmin_version = ?",
-                  $CFG.get(:vpsadmin, :server_id),
+      my.prepared('INSERT INTO servers_status
+                  SET server_id = ?, timestamp = UNIX_TIMESTAMP(NOW()), cpu_load = ?, daemon = ?, vpsadmin_version = ?
+                  ON DUPLICATE KEY UPDATE
+                  timestamp = UNIX_TIMESTAMP(NOW()), cpu_load = ?, daemon = ?, vpsadmin_version = ?',
+                  server_id,
                   system_load, 0, VpsAdmind::VERSION,
                   system_load, 0, VpsAdmind::VERSION
       )
+
+      unless kernel.nil?
+        my.prepared('UPDATE servers_status SET kernel = ? WHERE server_id = ?', node.kernel, server_id)
+      end
 
       my.close
     end
