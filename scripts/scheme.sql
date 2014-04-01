@@ -149,6 +149,7 @@ CREATE TABLE `servers_status` (
   `cpu_load` float unsigned DEFAULT NULL,
   `daemon` tinyint(1) NOT NULL,
   `vpsadmin_version` varchar(63) DEFAULT NULL,
+  `kernel` varchar(50) NOT NULL,
   PRIMARY KEY (`server_id`)
 ) ENGINE=MEMORY  DEFAULT CHARSET=utf8 ;
 

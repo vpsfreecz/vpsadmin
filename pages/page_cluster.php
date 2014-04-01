@@ -1748,7 +1748,7 @@ if ($list_nodes) {
 	$xtpl->table_add_category(_("Free"));
 	$xtpl->table_add_category(_("Max"));
 	$xtpl->table_add_category(_("Version"));
-	$xtpl->table_add_category(' ');
+	$xtpl->table_add_category(_("Kernel"));
 	$xtpl->table_add_category(' ');
 	
 	$rs = $db->query("SELECT server_id FROM locations l INNER JOIN servers s ON l.location_id = s.server_location ORDER BY l.location_id, s.server_id");
@@ -1823,8 +1823,8 @@ if ($list_nodes) {
 		
 		// vpsAdmind
 		$xtpl->table_td($status["vpsadmin_version"]);
+		$xtpl->table_td($status["kernel"]);
 		
-		$xtpl->table_td('<a href="?page=cluster&action=node_start_vpses&id='.$node->s["server_id"].'"><img src="template/icons/vps_start.png" title="'._("Start all VPSes here").'"/></a>');
 		$xtpl->table_td('<a href="?page=cluster&action=node_edit&node_id='.$node->s["server_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 		
 		$xtpl->table_tr();
