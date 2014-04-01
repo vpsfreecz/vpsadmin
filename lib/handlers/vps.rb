@@ -30,7 +30,7 @@ class VPS < Executor
 
     acquire_lock_unless(zfs?) do
       try_harder do
-        vzctl(:stop, @veid, {}, false, params[:force] ? [5,66] : [])
+        vzctl(:stop, @veid, {}, false, params[:force] ? [5, 66] : [])
         vzctl(:set, @veid, {:onboot => "no"}, true)
       end
     end
@@ -47,13 +47,13 @@ class VPS < Executor
 
   def create
     vzctl(:create, @veid, {
-      :ostemplate => @params["template"],
-      :hostname => @params["hostname"],
-      :private => ve_private,
+        :ostemplate => @params["template"],
+        :hostname => @params["hostname"],
+        :private => ve_private,
     })
     vzctl(:set, @veid, {
-      :applyconfig => "basic",
-      :nameserver => @params["nameserver"],
+        :applyconfig => "basic",
+        :nameserver => @params["nameserver"],
     }, true)
   end
 
@@ -124,15 +124,15 @@ class VPS < Executor
       honor_state do
         stop
         vzctl(:set, @veid, {
-          :feature => ["nfsd:on", "nfs:on", "ppp:on"],
-          :capability => "net_admin:on",
-          :iptables => ['ip_conntrack', 'ip_conntrack_ftp', 'ip_conntrack_irc', 'ip_nat_ftp',
-                'ip_nat_irc', 'ip_tables', 'ipt_LOG', 'ipt_REDIRECT', 'ipt_REJECT',
-                'ipt_TCPMSS', 'ipt_TOS', 'ipt_conntrack', 'ipt_helper', 'ipt_length',
-                'ipt_limit', 'ipt_multiport', 'ipt_state', 'ipt_tcpmss', 'ipt_tos',
-                'ipt_ttl', 'iptable_filter', 'iptable_mangle', 'iptable_nat'],
-          :numiptent => "1000",
-          :devices => ["c:10:200:rw", "c:10:229:rw", "c:108:0:rw"],
+            :feature => ["nfsd:on", "nfs:on", "ppp:on"],
+            :capability => "net_admin:on",
+            :iptables => ['ip_conntrack', 'ip_conntrack_ftp', 'ip_conntrack_irc', 'ip_nat_ftp',
+                          'ip_nat_irc', 'ip_tables', 'ipt_LOG', 'ipt_REDIRECT', 'ipt_REJECT',
+                          'ipt_TCPMSS', 'ipt_TOS', 'ipt_conntrack', 'ipt_helper', 'ipt_length',
+                          'ipt_limit', 'ipt_multiport', 'ipt_state', 'ipt_tcpmss', 'ipt_tos',
+                          'ipt_ttl', 'iptable_filter', 'iptable_mangle', 'iptable_nat'],
+            :numiptent => "1000",
+            :devices => ["c:10:200:rw", "c:10:229:rw", "c:108:0:rw"],
         }, true)
         start
         sleep(3)
@@ -190,7 +190,7 @@ class VPS < Executor
       begin
         FileUtils.mkpath(dst)
 
-      # it means, that the folder is mounted but was removed on the other end
+          # it means, that the folder is mounted but was removed on the other end
       rescue Errno::EEXIST => e
         syscmd("#{$CFG.get(:bin, :umount)} -f #{dst}")
       end
@@ -252,13 +252,13 @@ class VPS < Executor
     end
 
     db.prepared(
-      "INSERT INTO vps_status (vps_id, timestamp, vps_up, vps_nproc,
+        "INSERT INTO vps_status (vps_id, timestamp, vps_up, vps_nproc,
       vps_vm_used_mb, vps_disk_used_mb, vps_admin_ver) VALUES
       (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE
       timestamp = ?, vps_up = ?, vps_nproc = ?, vps_vm_used_mb = ?,
       vps_disk_used_mb = ?, vps_admin_ver = ?",
-      @veid.to_i, Time.now.to_i, up, nproc, mem, disk, VpsAdmind::VERSION,
-      Time.now.to_i, up, nproc, mem, disk, VpsAdmind::VERSION
+        @veid.to_i, Time.now.to_i, up, nproc, mem, disk, VpsAdmind::VERSION,
+        Time.now.to_i, up, nproc, mem, disk, VpsAdmind::VERSION
     )
   end
 
