@@ -19,6 +19,7 @@
 #     :check_interval: 1
 #     :status_interval: 60
 #     :resources_interval: 300
+#     :transfers_interval: 10
 #     :update_vps_status: true
 #     :root: /opt/vpsadmind
 #     :init: true

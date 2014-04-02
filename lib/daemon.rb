@@ -137,27 +137,41 @@ module VpsAdmind
     end
 
     def run_threads
-      if !@threads[:status] || !@threads[:status].alive?
-        @threads[:status] = Thread.new do
-          loop do
-            log "Update status"
+      run_thread_unless_runs(:status) do
+        loop do
+          log 'Update status'
 
-            update_status
+          update_status
 
-            sleep($CFG.get(:vpsadmin, :status_interval))
-          end
+          sleep($CFG.get(:vpsadmin, :status_interval))
         end
       end
 
-      if !@threads[:resources] || !@threads[:resources].alive?
-        @threads[:resources] = Thread.new do
-          loop do
-            log "Update resources"
+      run_thread_unless_runs(:resources) do
+        loop do
+          log 'Update resources'
 
-            update_resources
+          update_resources
 
-            sleep($CFG.get(:vpsadmin, :resources_interval))
-          end
+          sleep($CFG.get(:vpsadmin, :resources_interval))
+        end
+      end
+
+      run_thread_unless_runs(:transfers) do
+        loop do
+          log 'Update transfers'
+
+          update_transfers
+
+          sleep($CFG.get(:vpsadmin, :transfers_interval))
+        end
+      end
+    end
+
+    def run_thread_unless_runs(name)
+      if !@threads[name] || !@threads[name].alive?
+        @threads[name] = Thread.new do
+          yield
         end
       end
     end
@@ -199,12 +213,6 @@ module VpsAdmind
           ct = VPS.new(vps["vps_id"])
           ct.update_status(my)
         end
-
-        Firewall.mutex.synchronize do
-          fw = Firewall.new
-          fw.update_traffic(my)
-          fw.reset_traffic_counter
-        end
       end
 
       if $CFG.get(:storage, :update_status)
@@ -212,6 +220,16 @@ module VpsAdmind
       end
 
       my.close
+    end
+
+    def update_transfers
+      Firewall.mutex.synchronize do
+        my = Db.new
+        fw = Firewall.new
+        fw.update_traffic(my)
+        fw.reset_traffic_counter
+        my.close
+      end
     end
 
     def start_em(console, remote)
