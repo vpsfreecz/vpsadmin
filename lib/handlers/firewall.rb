@@ -102,9 +102,9 @@ class Firewall < Executor
 
   def update_traffic(db)
     read_traffic.each do |ip, traffic|
-      next if traffic[:in] == 0 && traffic[:out] == 0
-
       traffic.each do |proto, t|
+        next if t[:packets][:in] == 0 && t[:packets][:out] == 0
+
         db.prepared('INSERT INTO transfered_recent SET
                       tr_ip = ?, tr_proto = ?,
                       tr_packets_in = ?, tr_packets_out = ?,
