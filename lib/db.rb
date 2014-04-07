@@ -30,6 +30,18 @@ class Db
     @my.insert_id
   end
 
+  def transaction
+    begin
+      @my.query('BEGIN')
+      yield(DbTransaction.new(@my))
+      @my.query('COMMIT')
+    rescue => err
+      puts 'MySQL transactions failed, rolling back'
+      p err.inspect
+      @my.query('ROLLBACK')
+    end
+  end
+
   def close
     @my.close
   end
@@ -52,6 +64,21 @@ class Db
       sleep($CFG.get(:db, :retry_interval))
       connect($CFG.get(:db))
       retry if try_again
+    end
+  end
+end
+
+class DbTransaction < Db
+  def initialize(my)
+    @my = my
+  end
+
+  def protect(try_again = true)
+    begin
+      yield
+    rescue Mysql::Error => err
+      puts "MySQL error ##{err.errno}: #{err.error}"
+      raise err
     end
   end
 end
