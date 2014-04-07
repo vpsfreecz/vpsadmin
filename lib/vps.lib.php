@@ -430,7 +430,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			$params["dst_node_type"] = $target_server->role["fstype"];
 			$params["src_addr"] = $source_server->s["server_ip4"];
 			$params["src_ve_private"] = str_replace("%{veid}", $this->veid, $source_server->role["ve_private"]);
-			$params["start"] = $this->ve["vps_onstartall"] == 1;
+			$params["start"] = $this->ve["vps_onstartall"] == 1 || $this->ve["vps_up"];
 			$params["stop"] = (bool)$stop;
 			$params["online"] = $online;
 			
