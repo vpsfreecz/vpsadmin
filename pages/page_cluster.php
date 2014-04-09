@@ -2329,8 +2329,8 @@ if ($mass_management) {
 		
 		$xtpl->form_add_checkbox_pure('vpses[]', $vps->veid, true);
 		$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->veid.'">'.$vps->veid.'</a>');
-		$xtpl->table_td('<a href="?page=cluster&action=mass_management&n[]='.$vps->ve['server_name'].'">'.$vps->ve["server_name"].'</a>');
-		$xtpl->table_td('<a href="?page=adminm&action=mass_management&o[]='.$vps->ve['m_id'].'">'.$vps->ve["m_nick"].'</a>');
+		$xtpl->table_td('<a href="?page=cluster&action=mass_management&n[]='.$vps->ve['server_id'].'">'.$vps->ve["server_name"].'</a>');
+		$xtpl->table_td('<a href="?page=cluster&action=mass_management&o[]='.$vps->ve['m_id'].'">'.$vps->ve["m_nick"].'</a>');
 		$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->veid.'"><img src="template/icons/vps_edit.png"  title="'._("Edit").'"/> '.$vps->ve["vps_hostname"].'</a>');
 		$xtpl->table_td('<a href="?page=cluster&action=mass_management&t[]='.$row["templ_id"].'">'.$row["templ_label"].'</a>');
 		$xtpl->table_td($vps->ve["vps_nproc"], false, true);
