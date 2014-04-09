@@ -41,7 +41,11 @@ if($cluster_cfg->get("maintenance_mode")) {
 	exit;
 }
 
-$rs = $db->query("SELECT server_id, server_name FROM locations l INNER JOIN servers s ON l.location_id = s.server_location ORDER BY l.location_id, s.server_id");
+$rs = $db->query("SELECT server_id, server_name
+                  FROM locations l
+                  INNER JOIN servers s ON l.location_id = s.server_location
+                  WHERE server_maintenance = 0
+                  ORDER BY l.location_id, s.server_id");
 $bad = false;
 
 while($row = $db->fetch_array($rs)) {

@@ -308,4 +308,23 @@ function request_by_id($id) {
 	return $db->fetch_array($rs);
 }
 
+function format_data_rate($n, $suffix) {
+	$units = array(
+		2 << 29 => 'G',
+		2 << 19 => 'M',
+		2 << 9 => 'k',
+	);
+	
+	$ret = "";
+	$selected = 0;
+	
+	foreach($units as $threshold => $unit) {
+		if($n > $threshold) {
+			return round(($n / $threshold), 2)." $unit$suffix";
+		}
+	}
+	
+	return round($n, 2)." $suffix";
+}
+
 ?>

@@ -415,6 +415,13 @@ switch($_REQUEST["action"]) {
 		
 		$xtpl->perex(_("Regeneration scheduled"), _("Regeneration of all configs on all nodes scheduled."));
 		break;
+	case "node_toggle_maintenance":
+		$node = new cluster_node($_GET["node_id"]);
+		$node->toggle_maintenance();
+		
+		notify_user($node->s["server_name"].': '._('maintenance').' '.($node->is_under_maintenance() ? _('ON') : _('OFF')));
+		redirect('?page=cluster');
+		break;
 	case "newnode":
 		$xtpl->title2(_("Register new server into cluster"));
 		$xtpl->table_add_category('');
@@ -1748,7 +1755,7 @@ if ($list_nodes) {
 	$xtpl->table_add_category(_("Free"));
 	$xtpl->table_add_category(_("Max"));
 	$xtpl->table_add_category(_("Version"));
-	$xtpl->table_add_category(' ');
+	$xtpl->table_add_category(_("Kernel"));
 	$xtpl->table_add_category(' ');
 	
 	$rs = $db->query("SELECT server_id FROM locations l INNER JOIN servers s ON l.location_id = s.server_location ORDER BY l.location_id, s.server_id");
@@ -1764,13 +1771,17 @@ if ($list_nodes) {
 		
 		$icons = "";
 		
-		if ($cluster_cfg->get("lock_cron_".$node->s["server_id"]))	{
+		if($node->is_under_maintenance()) {
+			$icons .= '<img title="'._("The server is currently under maintenance.").'" src="template/icons/maintenance_mode.png">';
+		} elseif ($cluster_cfg->get("lock_cron_".$node->s["server_id"]))	{
 			$icons .= '<img title="'._("The server is currently processing").'" src="template/icons/warning.png"/>';
 		} elseif ((time()-$status["timestamp"]) > 150) {
 			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
 		} else {
 			$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
 		}
+		
+		$icons = '<a href="?page=cluster&action=node_toggle_maintenance&node_id='.$node->s["server_id"].'">'.$icons.'</a>';
 		
 		$xtpl->table_td($icons, false, true);
 		$xtpl->table_td($node->s["server_id"]);
@@ -1824,7 +1835,11 @@ if ($list_nodes) {
 		// vpsAdmind
 		$xtpl->table_td($status["vpsadmin_version"]);
 		
-		$xtpl->table_td('<a href="?page=cluster&action=node_start_vpses&id='.$node->s["server_id"].'"><img src="template/icons/vps_start.png" title="'._("Start all VPSes here").'"/></a>');
+		if(preg_match("/\d+stab.+/", $status['kernel'], $matches))
+			$xtpl->table_td($matches[0]);
+		else
+			$xtpl->table_td($status["kernel"]);
+		
 		$xtpl->table_td('<a href="?page=cluster&action=node_edit&node_id='.$node->s["server_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 		
 		$xtpl->table_tr();
@@ -2314,8 +2329,8 @@ if ($mass_management) {
 		
 		$xtpl->form_add_checkbox_pure('vpses[]', $vps->veid, true);
 		$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->veid.'">'.$vps->veid.'</a>');
-		$xtpl->table_td('<a href="?page=cluster&action=mass_management&n[]='.$vps->ve['server_name'].'">'.$vps->ve["server_name"].'</a>');
-		$xtpl->table_td('<a href="?page=adminm&action=mass_management&o[]='.$vps->ve['m_id'].'">'.$vps->ve["m_nick"].'</a>');
+		$xtpl->table_td('<a href="?page=cluster&action=mass_management&n[]='.$vps->ve['server_id'].'">'.$vps->ve["server_name"].'</a>');
+		$xtpl->table_td('<a href="?page=cluster&action=mass_management&o[]='.$vps->ve['m_id'].'">'.$vps->ve["m_nick"].'</a>');
 		$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->veid.'"><img src="template/icons/vps_edit.png"  title="'._("Edit").'"/> '.$vps->ve["vps_hostname"].'</a>');
 		$xtpl->table_td('<a href="?page=cluster&action=mass_management&t[]='.$row["templ_id"].'">'.$row["templ_label"].'</a>');
 		$xtpl->table_td($vps->ve["vps_nproc"], false, true);

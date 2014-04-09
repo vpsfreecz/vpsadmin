@@ -100,7 +100,7 @@ if (($_GET["page"] != "login") &&
 		$request_page = "";
 		include WWW_ROOT.'pages/page_index.php';
 		$xtpl->perex(_("Maintenance mode"), _("vpsAdmin is currently in maintenance mode, any actions are disabled. <br />
-										This is usually used in outage mode to prevent data corruption.<br />
+										This is usually used during outage to prevent data corruption.<br />
 										Please be patient."));
 } else {
 	show_notification();

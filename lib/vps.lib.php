@@ -79,6 +79,8 @@ function get_vps_swap_list($vps) {
 		      AND
 		      v.vps_deleted IS NULL
 		      AND
+		      s.server_maintenance = 0
+		      AND
 		      l.location_type = '".( $vps->is_playground() ? 'production' : 'playground' )."'";
 	
 	$rs = $db->query($sql);
@@ -122,6 +124,10 @@ class vps_load {
 					
 					$this->veid = $ve_id;
 					$this->ve = $tmpve;
+					
+					if(!$_SESSION["is_admin"] && !$this->is_manipulable())
+						$this->exists = false;
+					
 					}
 				else  {
 				    die ("Hacking attempt. This incident will be reported.");
@@ -430,7 +436,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			$params["dst_node_type"] = $target_server->role["fstype"];
 			$params["src_addr"] = $source_server->s["server_ip4"];
 			$params["src_ve_private"] = str_replace("%{veid}", $this->veid, $source_server->role["ve_private"]);
-			$params["start"] = $this->ve["vps_onstartall"] == 1;
+			$params["start"] = $this->ve["vps_onstartall"] == 1 || $this->ve["vps_up"];
 			$params["stop"] = (bool)$stop;
 			$params["online"] = $online;
 			
@@ -1173,6 +1179,10 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 	$l = $db->findByColumnOnce("locations", "location_id", $this->ve["server_location"]);
 	
 	return $l["location_type"] == "playground";
+  }
+  
+  function is_manipulable() {
+	return $_SESSION["is_admin"] || !$this->ve["server_maintenance"];
   }
 }
 ?>

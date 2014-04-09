@@ -1,3 +1,12 @@
+* Web Apr 09 2014 - version 1.17.0
+- Track kernel version
+- VPS migration: start VPS afterwards if it should be online or is online
+  at the moment
+- Live network monitor
+- Per-node maintenance mode
+- NAS export add: improve path validation
+- Pages networking and adminvps: show index for admins, do not list
+
 * Sun March 23 2014 - version 1.16.0
 - Remove deprecated mail log
 - General settings: add base URL
