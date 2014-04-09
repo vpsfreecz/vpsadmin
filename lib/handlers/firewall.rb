@@ -55,15 +55,15 @@ class Firewall < Executor
 
   def reg_ip(addr, v)
     PROTOCOLS.each do |p|
-      iptables(v, {:A => CHAIN, :s => addr, :p => p.to_s})
-      iptables(v, {:A => CHAIN, :d => addr, :p => p.to_s})
+      iptables(v, ['-A', CHAIN, '-s', addr, '-p', p.to_s])
+      iptables(v, ['-A', CHAIN, '-d', addr, '-p', p.to_s])
     end
   end
 
   def unreg_ip(addr, v)
     PROTOCOLS.each do |p|
-      iptables(v, {:Z => CHAIN, :s => addr, :p => p.to_s})
-      iptables(v, {:Z => CHAIN, :d => addr, :p => p.to_s})
+      iptables(v, ['-Z', CHAIN, '-s', addr, '-p', p.to_s])
+      iptables(v, ['-Z', CHAIN, '-d', addr, '-p', p.to_s])
     end
   end
 
@@ -79,7 +79,7 @@ class Firewall < Executor
     ret = {}
 
     {4 => '0.0.0.0/0', 6 => '::/0'}.each do |v, all|
-      iptables(v, {:L => CHAIN, '-nvx' => nil})[:output].split("\n")[2..-1].each do |l|
+      iptables(v, ['-L', CHAIN, '-nvx', '-Z'])[:output].split("\n")[2..-2].each do |l|
         fields = l.strip.split(/\s+/)
         src = fields[v == 4 ? 6 : 5]
         dst = fields[v == 4 ? 7 : 6]
@@ -140,6 +140,8 @@ class Firewall < Executor
         k = k.to_s
         options << "#{k.start_with?("-") ? "" : (k.length > 1 ? "--" : "-")}#{k}#{v ? " " : ""}#{v}"
       end
+    elsif opts.instance_of?(Array)
+      options = opts
     else
       options << opts
     end

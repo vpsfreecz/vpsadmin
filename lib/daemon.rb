@@ -227,7 +227,6 @@ module VpsAdmind
         my = Db.new
         fw = Firewall.new
         fw.update_traffic(my)
-        fw.reset_traffic_counter
         my.close
       end
     end
