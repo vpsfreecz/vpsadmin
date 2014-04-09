@@ -100,6 +100,9 @@ $playground_mode = !$_SESSION["is_admin"] && $playground_enabled && count($playg
 $_GET["action"] = isset($_GET["action"]) ? $_GET["action"] : false;
 
 switch ($_GET["action"]) {
+		case 'list':
+			$list_vps = true;
+			break;
 		case 'new':
 			print_newvps();
 			break;
@@ -545,10 +548,19 @@ switch ($_GET["action"]) {
 			$show_info=true;
 			break;
 		default:
-			// Vypsat všechny VPS registrované ve vpsAdminu
-			$list_vps=true;
+			if(!$_SESSION["is_admin"])
+				$list_vps=true;
+			else
+				$show_index = true;
 			break;
 	}
+
+if ($show_index) {
+	$xtpl->perex('',
+		'<h3><a href="?page=adminvps&action=list">List VPSes</a></h3>'.
+		'<h3><a href="?page=adminvps&action=new">New VPS</a></h3>'
+	);
+}
 
 if (isset($list_vps) && $list_vps) {
 	if ($_SESSION["is_admin"])
@@ -633,19 +645,25 @@ if (isset($list_vps) && $list_vps) {
 			$_SESSION["member"]["number_owned_vps"] = count($all_vps);
 
 	if ($_SESSION["is_admin"]) {
-			$xtpl->table_add_category(_("Total number of VPS").':');
-			$xtpl->table_add_category($listed_vps);
-			$xtpl->table_out();
-			}
-if ($_SESSION["is_admin"] || $playground_mode) {
-	$new_title = $playground_mode ? _("New playground VPS") : _("New VPS");
-	$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'.$new_title.'" /> '.$new_title, '?page=adminvps&section=vps&action=new');
+		$xtpl->table_add_category(_("Total number of VPS").':');
+		$xtpl->table_add_category($listed_vps);
+		$xtpl->table_out();
+	}
+
+	if ($playground_mode) {
+		$new_title = _("New playground VPS");
+		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'.$new_title.'" /> '.$new_title, '?page=adminvps&section=vps&action=new');
+	}
 }
 
-if ($_SESSION["is_admin"]) {
-	$xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List IP addresses").'" /> '._("List IP addresses"), '?page=adminvps&action=alliplist');
+if($_SESSION["is_admin"] && ($list_vps || $show_index)) {
+	if ($_SESSION["is_admin"]) {
+		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new');
+		$xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List VPSes").'" /> '._("List VPSes"), '?page=adminvps&action=list');
+		$xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List IP addresses").'" /> '._("List IP addresses"), '?page=adminvps&action=alliplist');
+	}
 }
-}
+
 if (isset($show_info) && $show_info) {
 	if (!isset($veid)) $veid = $_GET["veid"];
 	if ($_SESSION["is_admin"])
