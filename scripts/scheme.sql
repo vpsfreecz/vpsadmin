@@ -137,6 +137,7 @@ CREATE TABLE IF NOT EXISTS `servers` (
   `server_location` int(10) unsigned NOT NULL,
   `server_availstat` text,
   `server_ip4` varchar(127) NOT NULL,
+  `server_maintenance` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`server_id`),
   KEY `server_location` (`server_location`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;

@@ -131,8 +131,11 @@ while ($srv = $db->fetch_array($rslt)) {
 	$icons = "";
 
 	$last_update = date('Y-m-d H:i:s', $status["timestamp"]).' ('.date('i:s', (time()-$status["timestamp"])).')';
-
-	if ($cluster_cfg->get("lock_cron_".$srv["server_id"])) {
+	
+	if($node->is_under_maintenance()) {
+		$icons .= '<img title="'._("The server is currently under maintenance.").'" src="template/icons/maintenance_mode.png">';
+		
+	} elseif ($cluster_cfg->get("lock_cron_".$srv["server_id"])) {
 
 		$icons .= '<img title="'._("The server is currently processing")
 					 . ', last update: ' . $last_update

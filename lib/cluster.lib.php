@@ -96,6 +96,17 @@ class cluster_node {
 			default:break;
 		}
     }
+    
+    function is_under_maintenance() {
+		return $this->s["server_maintenance"];
+    }
+    
+    function toggle_maintenance() {
+		global $db;
+		
+		$db->query("UPDATE servers SET server_maintenance = !server_maintenance WHERE server_id = ".$db->check($this->s["server_id"]));
+		$this->s["server_maintenance"] = !$this->s["server_maintenance"];
+    }
 }
 
 class cluster_cfg {
