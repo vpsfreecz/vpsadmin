@@ -15,7 +15,13 @@ function is_mount_dst_valid($dst) {
 function is_ds_valid($p) {
 	$p = trim($p);
 	
+	if(preg_match("/^\//", $p))
+		return false;
+	
 	if(!preg_match("/^[a-zA-Z0-9\/\-\:\.\_]+$/", $p))
+		return false;
+	
+	if(preg_match("/\/\//", $p))
 		return false;
 	
 	return $p;
@@ -26,7 +32,10 @@ function export_add_form($target, $default = false) {
 	
 	$empty = array(0 => ($_GET["for"] == "member" ? "--- new member ---" : "--- VPS owner ---"));
 	$members = members_list();
-	$ds_help = _("Allowed chars: a-z A-Z 0-9 _ : . -");
+	$ds_help = _("Allowed chars: a-z A-Z 0-9 _ : . - /<br>".
+	             "Must NOT start with '/'.<br>".
+	             "Must NOT contain more '/' in row.<br>".
+	             "Create child exports using '/'. They will share parent's quota.");
 	
 	if($default) {
 		$members = $empty + $members;
