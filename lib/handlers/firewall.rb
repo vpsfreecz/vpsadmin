@@ -109,7 +109,12 @@ class Firewall < Executor
                       tr_ip = ?, tr_proto = ?,
                       tr_packets_in = ?, tr_packets_out = ?,
                       tr_bytes_in = ?, tr_bytes_out = ?,
-                      tr_date = NOW()',
+                      tr_date = NOW()
+                     ON DUPLICATE KEY UPDATE
+                      tr_packets_in = tr_packets_in + values(tr_packets_in),
+                      tr_packets_out = tr_packets_out + values(tr_packets_out)
+                      tr_bytes_in = tr_bytes_in + values(tr_bytes_in)
+                      tr_bytes_out = tr_bytes_out + values(tr_bytes_out)',
                     ip, proto.to_s,
                     t[:packets][:in], t[:packets][:out],
                     t[:bytes][:in], t[:bytes][:out]
