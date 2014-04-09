@@ -141,7 +141,7 @@ while ($srv = $db->fetch_array($rslt)) {
 					 . ', last update: ' . $last_update
 					 . '" src="template/icons/warning.png"/>';
 
-	} elseif ((time()-$status["timestamp"]) > 360) {
+	} elseif ((time()-$status["timestamp"]) > 150) {
 
 		$icons .= '<img title="'._("The server is not responding")
 					 . ', last update: ' . $last_update
