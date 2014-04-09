@@ -197,13 +197,26 @@ CREATE TABLE IF NOT EXISTS `transaction_groups` (
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
 
 CREATE TABLE IF NOT EXISTS `transfered` (
-  `tr_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `tr_ip` varchar(127) NOT NULL,
-  `tr_in` bigint(63) unsigned NOT NULL DEFAULT '0',
-  `tr_out` bigint(63) unsigned NOT NULL DEFAULT '0',
-  `tr_time` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`tr_id`)
+  `tr_proto` varchar(4) NOT NULL,
+  `tr_packets_in` bigint(63) unsigned NOT NULL DEFAULT '0',
+  `tr_packets_out` bigint(63) unsigned NOT NULL DEFAULT '0',
+  `tr_bytes_in` bigint(63) unsigned NOT NULL DEFAULT '0',
+  `tr_bytes_out` bigint(63) unsigned NOT NULL DEFAULT '0',
+  `tr_date` datetime NOT NULL,
+  PRIMARY KEY (`tr_ip`, `tr_proto`, `tr_date`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;
+
+CREATE TABLE IF NOT EXISTS `transfered_recent` (
+  `tr_ip` varchar(127) NOT NULL,
+  `tr_proto` varchar(5) NOT NULL,
+  `tr_packets_in` bigint(63) unsigned NOT NULL DEFAULT '0',
+  `tr_packets_out` bigint(63) unsigned NOT NULL DEFAULT '0',
+  `tr_bytes_in` bigint(63) unsigned NOT NULL DEFAULT '0',
+  `tr_bytes_out` bigint(63) unsigned NOT NULL DEFAULT '0',
+  `tr_date` datetime NOT NULL,
+  PRIMARY KEY (`tr_ip`, `tr_proto`, `tr_date`)
+) ENGINE=MEMORY DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `vps` (
   `vps_id` int(10) unsigned NOT NULL AUTO_INCREMENT,

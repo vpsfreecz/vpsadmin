@@ -8,11 +8,37 @@
 */
 if ($_SESSION["logged_in"]) {
 
-$xtpl->title(_("Manage Networking"));
+$xtpl->sbar_add(_("List monthly traffic"), '?page=networking&action=list');
+$xtpl->sbar_add(_("Live monitor"), '?page=networking&action=live');
+$xtpl->sbar_out(_('Networking'));
 
-$show_list = true;
+switch($_GET['action']) {
+	case 'list':
+		$show_list = true;
+		break;
+	
+	case 'live':
+		$show_live = true;
+		break;
+	
+	default:
+		if(!$_SESSION["is_admin"])
+			$show_list = true;
+		else
+			$show_index = true;
+		break;
+}
+
+if ($show_index) {
+	$xtpl->perex('',
+		'<h3><a href="?page=networking&action=list">List monthly traffic</a></h3>'.
+		'<h3><a href="?page=networking&action=live">Live monitor</a></h3>'
+	);
+}
 
 if ($show_list) {
+	$xtpl->title(_("Networking"));
+	
 	$this_month = date("n");
 	$xtpl->table_title(_("Month:"));
 	for ($i=1;$i<=12;$i++) {
@@ -87,6 +113,81 @@ if ($show_list) {
 		$xtpl->table_tr();
 	}
 }
+	$xtpl->table_out();
+}
+
+
+if ($show_live) {
+	$xtpl->title(_('Live monitor'));
+	
+	if($_SESSION["is_admin"]) {
+		$xtpl->form_create('?page=adminm&section=members&action=approval_requests', 'get');
+		
+		$xtpl->table_td(_("Limit").':'.
+			'<input type="hidden" name="page" value="networking">'.
+			'<input type="hidden" name="action" value="live">'
+		);
+		$xtpl->form_add_input_pure('text', '30', 'limit', $_GET["limit"] ? $_GET["limit"] : 50);
+		$xtpl->table_tr();
+		
+		$xtpl->form_add_input(_("IP address").':', 'text', '30', 'ip', $_GET["ip"]);
+		$xtpl->form_add_input(_("VPS ID").':', 'text', '30', 'vps', $_GET["vps"]);
+		$xtpl->form_add_input(_("Member ID").':', 'text', '30', 'member', $_GET["member"]);
+		
+		$xtpl->form_out(_("Show"));
+	}
+	
+	
+	$xtpl->table_add_category(_('VPS'));
+	$xtpl->table_add_category(_('IP'));
+	$xtpl->table_add_category(_('TCP<br>IN'));
+	$xtpl->table_add_category(_('TCP<br>OUT'));
+	$xtpl->table_add_category(_('UDP<br>IN'));
+	$xtpl->table_add_category(_('UDP<br>OUT'));
+	$xtpl->table_add_category(_('OTHERS<br>IN'));
+	$xtpl->table_add_category(_('OTHERS<br>OUT'));
+	$xtpl->table_add_category(_('TOTAL<br>IN'));
+	$xtpl->table_add_category(_('TOTAL<br>OUT'));
+	
+	$traffic = null;
+	
+	if($_SESSION["is_admin"]) {
+		$traffic = $accounting->get_live_traffic_by_ip(
+			$_GET["limit"] ? (int)$_GET["limit"] : 50,
+			$_GET["ip"],
+			(int)$_GET["vps"],
+			(int)$_GET["member"]
+		);
+	} else {
+		$traffic = $accounting->get_live_traffic_by_ip(
+			50,
+			false,
+			false,
+			$_SESSION["member"]["m_id"]
+		);
+	}
+	
+	$cols = array('tcp', 'udp', 'others', 'all');
+	
+	foreach($traffic as $data) {
+		$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$data['vps_id'].'">'.$data['vps_id'].'</a>');
+		$xtpl->table_td($data['ip_addr']);
+		
+		foreach($cols as $col) {
+			$xtpl->table_td(
+				format_data_rate($data['protocols'][$col]['bps']['in'] * 8, 'bps')."<br>".
+				format_data_rate($data['protocols'][$col]['pps']['in'] * 8, 'pps')
+			);
+			
+			$xtpl->table_td(
+				format_data_rate($data['protocols'][$col]['bps']['out'] * 8, 'bps')."<br>".
+				format_data_rate($data['protocols'][$col]['pps']['out'] * 8, 'pps')
+			);
+		}
+		
+		$xtpl->table_tr();
+	}
+	
 	$xtpl->table_out();
 }
 
