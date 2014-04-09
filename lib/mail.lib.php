@@ -17,6 +17,7 @@ function send_mail($to, $subject, $msg, $cc = array(), $bcc = array(), $html = f
 		"msg_id" => $message_id,
 		"in_reply_to" => $in_reply_to,
 		"references" => $references,
+		"date" => date("r"),
 	), NULL, $dep);
 }
 
