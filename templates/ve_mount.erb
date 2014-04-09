@@ -3,10 +3,10 @@
 . ${VE_CONFFILE}
 
 <% @params["mounts"].each do |mnt| %>
-SRC="<%= mnt["src"] %>"
-DST="<%= mnt["dst"] %>"
-if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
-mount <%= mnt["mount_opts"] %> -o <%= mnt["mode"] %> ${SRC} ${VE_ROOT}${DST}
+  SRC="<%= mnt["src"] %>"
+  DST="<%= mnt["dst"] %>"
+  if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
+  mount <%= mnt["mount_opts"] %> -o <%= mnt["mode"] %> ${SRC} ${VE_ROOT}${DST}
 <% end %>
 
 exit 0

@@ -1,3 +1,10 @@
+* Web Apr 09 2014 - version 1.17.0
+- Track kernel version
+- VPS.destroy: fix waiting for lock
+- Update network transfers in separate threads and more often
+- Script for moving recent transfers from memory to disk
+- Mailer: add header date
+
 * Sun March 23 2014 - version 1.16.0
 - Mailer: new param 'from', fix in-reply-to
 - NAS mount: umount destination if mounted and not responding
