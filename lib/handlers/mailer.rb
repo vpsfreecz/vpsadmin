@@ -13,6 +13,7 @@ X-Mailer: vpsAdmin
 MIME-Version: 1.0
 Content-type: text/#{@params["html"] ? "html" : "plain"}; charset=UTF-8
 Subject: #{@params["subject"]}
+Date: #{@params["date"]}
 HEADERS
 
     headers += "CC: #{@params["cc"].join(",")}\n" if @params["cc"].count > 0
