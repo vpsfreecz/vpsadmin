@@ -10,7 +10,7 @@ require 'eventmachine'
 
 module VpsAdmind
   VERSION = '1.16.0'
-  DB_VERSION = 11
+  DB_VERSION = 12
 
   EXIT_OK = 0
   EXIT_ERR = 1
