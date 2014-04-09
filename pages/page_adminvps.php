@@ -548,7 +548,7 @@ switch ($_GET["action"]) {
 			$show_info=true;
 			break;
 		default:
-			if(!$_SESSION["is_admin"])
+			if(!$_SESSION["is_admin"] || $_GET["m_nick"])
 				$list_vps=true;
 			else
 				$show_index = true;
