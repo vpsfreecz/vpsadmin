@@ -1823,7 +1823,11 @@ if ($list_nodes) {
 		
 		// vpsAdmind
 		$xtpl->table_td($status["vpsadmin_version"]);
-		$xtpl->table_td($status["kernel"]);
+		
+		if(preg_match("/\d+stab.+/", $status['kernel'], $matches))
+			$xtpl->table_td($matches[0]);
+		else
+			$xtpl->table_td($status["kernel"]);
 		
 		$xtpl->table_td('<a href="?page=cluster&action=node_edit&node_id='.$node->s["server_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 		
