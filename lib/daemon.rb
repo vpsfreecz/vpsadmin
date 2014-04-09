@@ -223,6 +223,8 @@ module VpsAdmind
     end
 
     def update_transfers
+      return unless $CFG.get(:vpsadmin, :track_transfers)
+
       Firewall.mutex.synchronize do
         my = Db.new
         fw = Firewall.new

@@ -21,6 +21,7 @@ IMPLICIT_CONFIG = {
         :resources_interval => 300,
         :transfers_interval => 10,
         :update_vps_status => true,
+        :track_transfers => true,
         :root => "/opt/vpsadmind",
         :init => true,
         :fstype => :ext4, # loaded from db
