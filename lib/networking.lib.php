@@ -32,15 +32,14 @@ function get_traffic_by_ip_this_day ($ip, $generated = false) {
 	$day = date('d', $generated);
 	// hour, minute, second, month, day, year
 	$this_day = mktime (0, 0, 0, $month, $day, $year);
-	$sql = 'SELECT * FROM transfered WHERE tr_time >= "'.$db->check($this_day).'" AND tr_ip = "'.$db->check($ip).'" ORDER BY tr_id DESC LIMIT 1';
+	$sql = 'SELECT * FROM transfered WHERE tr_date >= FROM_UNIXTIME('.$db->check($this_day).') AND tr_ip = "'.$db->check($ip).'" ORDER BY tr_date DESC LIMIT 1';
 	$ret['in']    = 0;
 	$ret['out']   = 0;
 	if ($result = $db->query($sql)) {
 		if ($row = $db->fetch_array($result)) {
-			$ret['in']    += $row['tr_in'];
-			$ret['out']   += $row['tr_out'];
+			$ret['in']    += $row['tr_bytes_in'];
+			$ret['out']   += $row['tr_bytes_out'];
 			$ret['tr_id'] = $row['tr_id'];
-			$ret['tr_ip'] = $row['tr_ip'];
 		}
 		else return false;
 	}
@@ -56,21 +55,21 @@ function get_traffic_by_ip_this_month ($ip, $generated = false) {
 	    $year = date('Y', $generated);
 	    $month = date('m', $generated);
 	    $this_month = mktime (0, 0, 0, $month, 0, $year);
-	    $sql = 'SELECT * FROM transfered WHERE tr_time >= "'.$db->check($this_month).'" AND tr_ip = "'.$db->check($ip).'" ORDER BY tr_id DESC';
+	    $sql = 'SELECT * FROM transfered WHERE tr_date >= FROM_UNIXTIME('.$db->check($this_month).') AND tr_ip = "'.$db->check($ip).'" ORDER BY tr_date DESC';
 	} else {
 	    $year = date('Y', $generated);
 	    $month = date('m', $generated);
 	    $this_month = mktime (0, 0, 0, $month, 0, $year);
 	    $time_lastmonth = mktime (0, 0, 0, $month+1, 0, $year);
-	    $sql = 'SELECT * FROM transfered WHERE tr_time < "'.$time_lastmonth.'" AND tr_time >= "'.$db->check($this_month).'" AND tr_ip = "'.$db->check($ip).'" ORDER BY tr_id DESC';
+	    $sql = 'SELECT * FROM transfered WHERE tr_date < FROM_UNIXTIME('.$time_lastmonth.') AND tr_date >= FROM_UNIXTIME('.$db->check($this_month).') AND tr_ip = "'.$db->check($ip).'" ORDER BY tr_date DESC';
 	}
 	// hour, minute, second, month, day, year
 	$ret['in']    = 0;
 	$ret['out']   = 0;
 	if ($result = $db->query($sql)) {
 		while ($row = $db->fetch_array($result)) {
-			$ret['in']    += $row['tr_in'];
-			$ret['out']   += $row['tr_out'];
+			$ret['in']    += $row['tr_bytes_in'];
+			$ret['out']   += $row['tr_bytes_out'];
 		}
 	}
 	else return false;
