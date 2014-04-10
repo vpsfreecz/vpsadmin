@@ -102,7 +102,7 @@ def balance(a, b)
 end
 
 def cfg_get(key)
-  st = db.prepared_st("SELECT cfg_value FROM sysconfig WHERE cfg_name = ?", key)
+  st = $db.prepared_st("SELECT cfg_value FROM sysconfig WHERE cfg_name = ?", key)
   ret = st.fetch[0]
   st.close
   ret
@@ -149,8 +149,6 @@ rescue NoMethodError
   $stderr.puts "No mailer available"
   exit(false)
 end
-
-rs = db.query("SELECT cfg_value FROM")
 
 t = Transaction.new($db)
 t.queue({
