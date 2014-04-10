@@ -84,24 +84,14 @@ function get_live_traffic_by_ip($limit_cnt, $limit_ip = false, $limit_vps = fals
 	
 	$sql = "
 		SELECT
-		tr_ip, tr_proto, tr_packets_in, tr_packets_out, tr_bytes_in, tr_bytes_out, tr_date, vps_ip.vps_id,
-		(
-			SELECT TIMESTAMPDIFF(SECOND, r2.tr_date, r1.tr_date)
-			FROM transfered_recent r2
-			WHERE
-			  r2.tr_ip = r1.tr_ip
-			  AND r2.tr_proto = r2.tr_proto
-			  AND r2.tr_date < r1.tr_date
-			ORDER BY r2.tr_date DESC
-			LIMIT 1
-		) AS tr_date_diff
+		tr_ip, tr_proto, tr_packets_in, tr_packets_out, tr_bytes_in, tr_bytes_out, tr_date, vps_ip.vps_id
 		FROM transfered_recent r1
 		INNER JOIN vps_ip ON ip_addr = r1.tr_ip
 		".($limit_member ? 'INNER JOIN vps ON vps.vps_id = vps_ip.vps_id
 		                    INNER JOIN members ON vps.m_id = members.m_id' : '')."
 		WHERE
 		  tr_date > DATE_SUB(NOW(), INTERVAL 60 SECOND)
-		  ".($limit_ip ? 'AND tr_ip = '.$db->check($limit_ip) : '')."
+		  ".($limit_ip ? "AND tr_ip = '".$db->check($limit_ip)."'" : '')."
 		  ".($limit_vps ? 'AND vps_id = '.$db->check($limit_vps) : '')."
 		  ".($limit_member ? 'AND members.m_id = '.$db->check($limit_member) : '')."
 		GROUP BY tr_ip, tr_proto
@@ -112,6 +102,8 @@ function get_live_traffic_by_ip($limit_cnt, $limit_ip = false, $limit_vps = fals
 	$rs = $db->query($sql);
 	
 	while($row = $db->fetch_array($rs)) {
+		$row['tr_date_diff'] = 10;
+		
 		if(!$row['tr_date_diff'] || $row['tr_date_diff'] > 60)
 			continue;
 		
@@ -158,10 +150,10 @@ function get_live_traffic_by_ip($limit_cnt, $limit_ip = false, $limit_vps = fals
 			if($proto == 'others' || $proto == 'all')
 				continue;
 			
-			$ip['protocols']['others']['bps']['in'] -= $data['bps']['in'];
-			$ip['protocols']['others']['bps']['out'] -= $data['bps']['out'];
-			$ip['protocols']['others']['pps']['in'] -= $data['pps']['in'];
-			$ip['protocols']['others']['pps']['out'] -= $data['pps']['out'];
+			$ip['protocols']['all']['bps']['in'] += $data['bps']['in'];
+			$ip['protocols']['all']['bps']['out'] += $data['bps']['out'];
+			$ip['protocols']['all']['pps']['in'] += $data['pps']['in'];
+			$ip['protocols']['all']['pps']['out'] += $data['pps']['out'];
 		}
 		unset($data);
 		
