@@ -94,7 +94,7 @@ function add_transaction_locationwide($m_id, $vps_id, $t_type, $t_param = '', $l
 	add_transaction($m_id, $id, $vps_id, $t_type, $t_param, $group_id);
 }
 
-function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = array(), $transact_group = NULL, $dep = NULL, $fallback = array()) {
+function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = array(), $transact_group = NULL, $dep = NULL, $fallback = array(), $urgent = false) {
     global $db;
     $sql_check = 'SELECT COUNT(*) AS count FROM transactions
 		WHERE
@@ -105,6 +105,7 @@ function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = array()
 		AND	t_type = "'.$db->check($t_type).'"
 		AND t_depends_on = '. ($dep ? '"'.$db->check($dep).'"' : 'NULL') .'
 		AND t_fallback = "'.$db->check(count($fallback) ? json_encode($fallback) : '{}').'"
+		AND t_urgent = '.($urgent ? 1 : 0).'
 		AND t_priority = 10
 		AND	t_success = 0
 		AND	t_done = 0
@@ -120,6 +121,7 @@ function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = array()
 			    t_type = "'.$db->check($t_type).'",
 			    t_depends_on = '. ($dep ? '"'.$db->check($dep).'"' : 'NULL') .',
 			    t_fallback = "'.$db->check(count($fallback) ? json_encode($fallback) : '{}').'",
+			    t_urgent = '.($urgent ? 1 : 0).',
 			    t_priority = 10,
 			    t_success = 0,
 			    t_done = 0,

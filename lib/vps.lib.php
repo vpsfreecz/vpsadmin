@@ -447,6 +447,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 					"t_m_id" => $_SESSION["member"]["m_id"],
 					"t_server" => $source_server->s["server_id"],
 					"t_vps" => $this->veid,
+					"t_urgent" => 1,
 					"t_priority" => 100,
 					"t_param" => array("onboot" => $this_loc["location_vps_onboot"]),
 				))
@@ -467,7 +468,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 				$migration_id = $db->insert_id();
 			}
 			
-			add_transaction($_SESSION["member"]["m_id"], $target_server->s["server_id"], $this->veid, T_MIGRATE_PART2, $params, NULL, $migration_id, $fallback);
+			add_transaction($_SESSION["member"]["m_id"], $target_server->s["server_id"], $this->veid, T_MIGRATE_PART2, $params, NULL, $migration_id, $fallback, true);
 			$migration_id = $db->insertId();
 			
 			$this->ve["vps_server"] = $target_server->s["server_id"];

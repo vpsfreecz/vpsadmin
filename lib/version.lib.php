@@ -8,5 +8,5 @@
 define("VERSION", '1.17.1');
 define("DEMO_MODE", false);
 
-define("DB_VERSION", 12);
+define("DB_VERSION", 13);
 ?>

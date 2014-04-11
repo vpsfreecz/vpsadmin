@@ -180,6 +180,7 @@ CREATE TABLE IF NOT EXISTS `transactions` (
   `t_type` int(10) unsigned NOT NULL,
   `t_depends_on` int(11) DEFAULT NULL,
   `t_fallback` text,
+  `t_urgent` tinyint(1) NOT NULL DEFAULT '0',
   `t_priority` int(11) NOT NULL DEFAULT '0',
   `t_success` int(10) unsigned NOT NULL,
   `t_done` tinyint(1) unsigned NOT NULL,
