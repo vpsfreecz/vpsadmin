@@ -16,6 +16,7 @@ IMPLICIT_CONFIG = {
         :node_addr => nil, # loaded from db
         :netdev => "eth0",
         :threads => 6,
+        :urgent_threads => 6,
         :check_interval => 1,
         :status_interval => 30,
         :resources_interval => 300,

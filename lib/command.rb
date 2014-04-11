@@ -75,7 +75,7 @@ class Command
       @output[:fallback] = {}
 
       begin
-        fallback = JSON.parse(@trans["t_fallback"])
+        fallback = JSON.parse(@trans['t_fallback'])
 
         unless fallback.empty?
           log "Transaction #{@trans['t_id']} failed, falling back"
@@ -90,6 +90,7 @@ class Command
                                                                        :vps => t['t_vps'],
                                                                        :type => t['t_type'],
                                                                        :depends => t['t_depends_on'],
+                                                                       :urgent => t['t_urgent'],
                                                                        :priority => t['t_priority'],
                                                                        :param => t['t_params'],
                                                                    })
@@ -143,6 +144,10 @@ class Command
 
   def type
     @trans["t_type"]
+  end
+
+  def urgent?
+    @trans['t_urgent'].to_i == 1
   end
 
   def handler

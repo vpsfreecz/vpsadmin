@@ -16,6 +16,7 @@
 #     :domain: vpsfree.cz
 #     :netdev: eth0
 #     :threads: 6
+#     :urgent_threads: 6
 #     :check_interval: 1
 #     :status_interval: 60
 #     :resources_interval: 300
