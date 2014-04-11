@@ -71,36 +71,7 @@ class Command
       @output[:backtrace] = err.backtrace
     end
 
-    if @status == :failed
-      @output[:fallback] = {}
-
-      begin
-        fallback = JSON.parse(@trans["t_fallback"])
-
-        unless fallback.empty?
-          log "Transaction #{@trans['t_id']} failed, falling back"
-
-          transaction = Transaction.new
-          @output[:fallback][:transactions] = []
-
-          fallback['transactions'].each do |t|
-            @output[:fallback][:transactions] << transaction.queue({
-                                                                       :m_id => t['t_m_id'],
-                                                                       :node => t['t_server'],
-                                                                       :vps => t['t_vps'],
-                                                                       :type => t['t_type'],
-                                                                       :depends => t['t_depends_on'],
-                                                                       :priority => t['t_priority'],
-                                                                       :param => t['t_params'],
-                                                                   })
-          end
-        end
-      rescue => err
-        @output[:fallback][:msg] = 'Fallback failed'
-        @output[:fallback][:error] = err.inspect
-        @output[:fallback][:backtrace] = err.backtrace
-      end
-    end
+    fallback if @status == :failed
 
     @time_end = Time.new.to_i
   end
@@ -124,9 +95,47 @@ class Command
     save(db)
   end
 
-  def killed
-    @output[:error] = "Killed"
-    @status = :failed
+  def killed(hard)
+    @executor.killed
+
+    if hard
+      @output[:error] = 'Killed'
+      @status = :failed
+
+      fallback
+    end
+  end
+
+  def fallback
+    @output[:fallback] = {}
+
+    begin
+      fallback = JSON.parse(@trans['t_fallback'])
+
+      unless fallback.empty?
+        log "Transaction #{@trans['t_id']} failed, falling back"
+
+        transaction = Transaction.new
+        @output[:fallback][:transactions] = []
+
+        fallback['transactions'].each do |t|
+          @output[:fallback][:transactions] << transaction.queue({
+                                                                     :m_id => t['t_m_id'],
+                                                                     :node => t['t_server'],
+                                                                     :vps => t['t_vps'],
+                                                                     :type => t['t_type'],
+                                                                     :depends => t['t_depends_on'],
+                                                                     :urgent => t['t_urgent'],
+                                                                     :priority => t['t_priority'],
+                                                                     :param => t['t_params'],
+                                                                 })
+        end
+      end
+    rescue => err
+      @output[:fallback][:msg] = 'Fallback failed'
+      @output[:fallback][:error] = err.inspect
+      @output[:fallback][:backtrace] = err.backtrace
+    end
   end
 
   def id
@@ -143,6 +152,10 @@ class Command
 
   def type
     @trans["t_type"]
+  end
+
+  def urgent?
+    @trans['t_urgent'].to_i == 1
   end
 
   def handler

@@ -96,6 +96,8 @@ class Executor
     yield
 
     @lock_acquired = false
+
+    ok
   end
 
   def try_harder(attempts = 3)
@@ -180,6 +182,12 @@ class Executor
 
   def post_save(con)
 
+  end
+
+  def killed
+    if @lock_acquired
+      Backuper.unlock(Db.new, @veid)
+    end
   end
 
   def ok

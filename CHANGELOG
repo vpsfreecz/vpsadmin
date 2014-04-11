@@ -1,3 +1,8 @@
+* Fri Apr 11 2014 - version 1.18.0
+- Urgent transactions
+- Fix return value for Executor#assume_lock
+- Fallback on transaction hard kill, release lock
+
 * Thu Apr 10 2014 - version 1.17.1
 - Fix daily report
 - Add -j ACCEPT to traffic accounting

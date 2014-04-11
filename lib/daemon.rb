@@ -9,8 +9,8 @@ require 'rubygems'
 require 'eventmachine'
 
 module VpsAdmind
-  VERSION = '1.17.1'
-  DB_VERSION = 12
+  VERSION = '1.18.0'
+  DB_VERSION = 13
 
   EXIT_OK = 0
   EXIT_ERR = 1
@@ -69,7 +69,7 @@ module VpsAdmind
               false
             end
 
-            throw :next if @workers.size >= $CFG.get(:vpsadmin, :threads)
+            throw :next if @workers.size >= ($CFG.get(:vpsadmin, :threads) + $CFG.get(:vpsadmin, :urgent_threads))
 
             @@mutex.synchronize do
               unless @@run
@@ -130,7 +130,10 @@ module VpsAdmind
     def do_command(cmd)
       wid = cmd.worker_id
 
-      if !@workers.has_key?(wid) && @workers.size < $CFG.get(:vpsadmin, :threads)
+      threads = $CFG.get(:vpsadmin, :threads)
+      urgent = $CFG.get(:vpsadmin, :urgent_threads)
+
+      if !@workers.has_key?(wid) && (@workers.size < threads || (cmd.urgent? && @workers.size < (threads+urgent)))
         @cmd_counter += 1
         @workers[wid] = Worker.new(cmd)
       end
