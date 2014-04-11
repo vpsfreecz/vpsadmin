@@ -21,8 +21,6 @@ class VpsTransport < Executor
           :src => "#{@params["src_addr"]}:#{@params["src_ve_private"]}/",
           :dst => @vps.ve_private,
       })
-
-      sleep(30)
     end
   end
 end
