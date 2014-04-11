@@ -17,7 +17,8 @@ class Worker
   end
 
   def kill(set_status = true)
-    @cmd.killed if set_status
+    @thread.stop
+    @cmd.killed(set_status)
     @thread.kill!
 
     sub = @cmd.subtask

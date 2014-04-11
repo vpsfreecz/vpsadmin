@@ -184,6 +184,12 @@ class Executor
 
   end
 
+  def killed
+    if @lock_acquired
+      Backuper.unlock(Db.new, @veid)
+    end
+  end
+
   def ok
     {:ret => :ok}
   end
