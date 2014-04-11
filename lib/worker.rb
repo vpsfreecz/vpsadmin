@@ -3,6 +3,7 @@ class Worker
 
   def initialize(cmd)
     @cmd = cmd
+    @killing = false
     work
   end
 
@@ -17,15 +18,18 @@ class Worker
   end
 
   def kill(set_status = true)
-    @thread.stop
-    @cmd.killed(set_status)
+    @killing = true
+
     @thread.kill!
+    @cmd.killed(set_status)
 
     sub = @cmd.subtask
-    Process.kill("TERM", sub) if sub
+    Process.kill('TERM', sub) if sub
+
+    @killing = false
   end
 
   def working?
-    @thread and @thread.alive?
+    (@thread && @thread.alive?) || @killing
   end
 end
