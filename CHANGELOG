@@ -1,3 +1,6 @@
+* Fri Apr 11 2014 - version 1.18.1
+- Fix VPS reinstall hang
+
 * Fri Apr 11 2014 - version 1.18.0
 - Urgent transactions
 - Fix return value for Executor#assume_lock

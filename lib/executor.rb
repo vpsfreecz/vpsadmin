@@ -58,7 +58,8 @@ class Executor
     end
 
     db ||= Db.new
-    set_step("[waiting for lock]")
+
+    set_step('[waiting for lock]')
 
     Backuper.wait_for_lock(db, @veid) do
       @lock_acquired = true
@@ -91,6 +92,11 @@ class Executor
 
   # Pretend that we have a lock
   def assume_lock
+    if @lock_acquired
+      yield
+      return ok
+    end
+
     @lock_acquired = true
 
     yield
