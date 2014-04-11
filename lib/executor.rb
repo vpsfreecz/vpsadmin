@@ -96,6 +96,8 @@ class Executor
     yield
 
     @lock_acquired = false
+
+    ok
   end
 
   def try_harder(attempts = 3)
