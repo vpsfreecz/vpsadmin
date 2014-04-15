@@ -176,19 +176,21 @@ if ($show_live) {
 		foreach($cols as $col) {
 			$xtpl->table_td(
 				format_data_rate($data['protocols'][$col]['bps']['in'] * 8, 'bps')."<br>".
-				format_data_rate($data['protocols'][$col]['pps']['in'] * 8, 'pps')
+				format_data_rate($data['protocols'][$col]['pps']['in'] * 8, 'pps'),
+				false, true
 			);
 			
 			$xtpl->table_td(
 				format_data_rate($data['protocols'][$col]['bps']['out'] * 8, 'bps')."<br>".
-				format_data_rate($data['protocols'][$col]['pps']['out'] * 8, 'pps')
+				format_data_rate($data['protocols'][$col]['pps']['out'] * 8, 'pps'),
+				false, true
 			);
 		}
 		
 		$xtpl->table_tr();
 	}
 	
-	$xtpl->table_out();
+	$xtpl->table_out('live_monitor');
 }
 
 } else $xtpl->perex(_("Access forbidden"), _("You have to log in to be able to access vpsAdmin's functions"));

@@ -1,3 +1,8 @@
+* Tue Apr 15 2014 - version 1.18.2
+- Status page: fix formatting when node count is odd
+- Live network monitor: improve formatting, align to right, use full width
+- Node maintenance toggle: move to extra column
+
 * Fri Apr 11 2014 - version 1.18.0
 - Urgent transactions
 
