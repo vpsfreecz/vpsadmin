@@ -193,6 +193,11 @@ while ($srv = $db->fetch_array($rslt)) {
 
 }
 
+if($position == 2) { // last row has only one node
+	$xtpl->table_td('', false, false, 5);
+	$xtpl->table_tr(true);
+}
+
 $xtpl->table_out();
 
 $xtpl->table_add_category($cluster_cfg->get('page_index_info_box_title'));
