@@ -1748,14 +1748,15 @@ if ($list_nodes) {
 	$xtpl->table_add_category(_("Name"));
 	$xtpl->table_add_category(_("IP"));
 	$xtpl->table_add_category(_("Load"));
-	$xtpl->table_add_category(_("Running"));
-	$xtpl->table_add_category(_("Stopped"));
-	$xtpl->table_add_category(_("Deleted"));
-	$xtpl->table_add_category(_("Total"));
+	$xtpl->table_add_category(_("Up"));
+	$xtpl->table_add_category(_("Down"));
+	$xtpl->table_add_category(_("Del"));
+	$xtpl->table_add_category(_("Sum"));
 	$xtpl->table_add_category(_("Free"));
 	$xtpl->table_add_category(_("Max"));
 	$xtpl->table_add_category(_("Version"));
 	$xtpl->table_add_category(_("Kernel"));
+	$xtpl->table_add_category('<img title="'._("Toggle maintenance on node.").'" alt="'._("Toggle maintenance on node.").'" src="template/icons/maintenance_mode.png">');
 	$xtpl->table_add_category(' ');
 	
 	$rs = $db->query("SELECT server_id FROM locations l INNER JOIN servers s ON l.location_id = s.server_location ORDER BY l.location_id, s.server_id");
@@ -1771,9 +1772,7 @@ if ($list_nodes) {
 		
 		$icons = "";
 		
-		if($node->is_under_maintenance()) {
-			$icons .= '<img title="'._("The server is currently under maintenance.").'" src="template/icons/maintenance_mode.png">';
-		} elseif ($cluster_cfg->get("lock_cron_".$node->s["server_id"]))	{
+		if ($cluster_cfg->get("lock_cron_".$node->s["server_id"]))	{
 			$icons .= '<img title="'._("The server is currently processing").'" src="template/icons/warning.png"/>';
 		} elseif ((time()-$status["timestamp"]) > 150) {
 			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
@@ -1840,12 +1839,15 @@ if ($list_nodes) {
 		else
 			$xtpl->table_td($status["kernel"]);
 		
+		$m_icon_on = '<img alt="'._('Turn maintenance OFF.').'" src="template/icons/maintenance_mode.png">';
+		$m_icon_off = '<img alt="'._('Turn maintenance ON.').'" src="template/icons/transact_ok.png">';
+		$xtpl->table_td('<a href="?page=cluster&action=node_toggle_maintenance&node_id='.$node->s["server_id"].'">'.($node->s["server_maintenance"] ? $m_icon_on : $m_icon_off).'</a>');
 		$xtpl->table_td('<a href="?page=cluster&action=node_edit&node_id='.$node->s["server_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 		
 		$xtpl->table_tr();
 	}
 	
-	$xtpl->table_out();
+	$xtpl->table_out('cluster_node_list');
 }
 if ($list_templates) {
 	$xtpl->title2(_("Templates list"));

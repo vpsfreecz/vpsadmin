@@ -171,4 +171,4 @@ div.page_listing {text-align: center;}
 #l_form img {padding-right: 10px;}
 .oddrow {background: #EAEAFF;}
 
-#notice_board, #live_monitor {width: 100%;}
+#notice_board, #live_monitor, #cluster_node_list {width: 100%;}
