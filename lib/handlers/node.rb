@@ -18,9 +18,7 @@ class Node < Executor
       end
 
       log "Reload ZFS exports"
-
-      zfs(:set, "sharenfs=off", ds)
-      zfs(:set, "sharenfs=\"#{sharenfs}\"", ds)
+      zfs(:share, '-a', '')
     end
   end
 

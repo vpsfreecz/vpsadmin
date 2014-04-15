@@ -9,7 +9,7 @@ require 'rubygems'
 require 'eventmachine'
 
 module VpsAdmind
-  VERSION = '1.18.1'
+  VERSION = '1.18.2'
   DB_VERSION = 13
 
   EXIT_OK = 0
@@ -111,9 +111,11 @@ module VpsAdmind
 								AND t.t_server = #{$CFG.get(:vpsadmin, :server_id)}
 								GROUP BY t_vps, t_priority, t_id)
 							
-								ORDER BY t_priority DESC, t_id ASC LIMIT #{$CFG.get(:vpsadmin, :threads)}
+								ORDER BY t_priority DESC, t_id ASC
 							) tmp
-							GROUP BY t_vps, t_priority ORDER BY t_priority DESC, t_id ASC")
+							GROUP BY t_vps, t_priority
+              ORDER BY t_priority DESC, t_id ASC
+              LIMIT #{$CFG.get(:vpsadmin, :threads)}")
 
       rs.each_hash do |row|
         c = Command.new(row)
@@ -180,7 +182,7 @@ module VpsAdmind
     end
 
     def update_all
-      update_status
+      update_status(true)
       update_resources
     end
 

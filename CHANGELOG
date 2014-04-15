@@ -1,3 +1,8 @@
+* Tue Apr 15 2014 - version 1.18.2
+- Fix transaction scheduler
+- Save kernel version when invoking vpsadminctl refresh
+- Reload ZFS exports by share -a
+
 * Fri Apr 11 2014 - version 1.18.1
 - Fix VPS reinstall hang
 
