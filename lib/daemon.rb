@@ -182,7 +182,7 @@ module VpsAdmind
     end
 
     def update_all
-      update_status
+      update_status(true)
       update_resources
     end
 
