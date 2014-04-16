@@ -234,7 +234,7 @@ class AppConfig
     @mutex = Mutex.new
   end
 
-  def load
+  def load(db = true)
     begin
       tmp = YAML.load(File.read(@file))
     rescue ArgumentError
@@ -250,7 +250,7 @@ class AppConfig
 
     @cfg = merge(IMPLICIT_CONFIG, tmp)
 
-    load_db_settings
+    load_db_settings if db
 
     true
   end
