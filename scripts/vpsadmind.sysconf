@@ -2,7 +2,11 @@
 
 # yes or no
 #DAEMON=yes
-#OPTS="--export-console --remote-control"
+#OPTS="--export-console"
+
+# How long to wait for vpsAdmind to safely stop before killing it.
+# Set to "no" to disable timeout or number of seconds to wait.
+#STOP_TIMEOUT="300"
 
 #PIDFILE=/var/run/vpsadmind.pid
 #LOGDIR=/var/log
