@@ -1,7 +1,7 @@
 module Commands
-  class Show < Command
+  class Get < Command
     args '<command>'
-    description 'Show vpsAdmind internals'
+    description 'Get vpsAdmind resources and properties'
 
     def options(opts, args)
 
