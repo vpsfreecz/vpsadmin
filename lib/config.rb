@@ -223,7 +223,7 @@ IMPLICIT_CONFIG = {
                 "reinit",
                 "refresh",
                 "install",
-                "autodetect",
+                "get",
             ]
         }
     }
@@ -309,6 +309,9 @@ class AppConfig
       if block_given?
         yield(args.empty? ? @cfg : val)
         return
+
+      elsif args.empty?
+        val = @cfg
       end
     end
 
