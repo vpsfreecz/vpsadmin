@@ -48,7 +48,7 @@ if ($show_list) {
 		) {
 			$xtpl->table_td("$i");
 		} else {
-			$xtpl->table_td("<a href=\"?page=networking&month={$i}\">$i</a>");
+			$xtpl->table_td("<a href=\"?page=networking".($_SESSION["is_admin"] ? "&action=list" : "")."&month={$i}\">$i</a>");
 		}
 	}
 	$xtpl->table_tr();
@@ -146,8 +146,7 @@ if ($show_live) {
 	$xtpl->table_add_category(_('UDP<br>OUT'));
 	$xtpl->table_add_category(_('OTHERS<br>IN'));
 	$xtpl->table_add_category(_('OTHERS<br>OUT'));
-	$xtpl->table_add_category(_('TOTAL<br>IN'));
-	$xtpl->table_add_category(_('TOTAL<br>OUT'));
+	$xtpl->table_add_category(_('TOTAL'));
 	
 	$traffic = null;
 	
@@ -167,7 +166,7 @@ if ($show_live) {
 		);
 	}
 	
-	$cols = array('tcp', 'udp', 'others', 'all');
+	$cols = array('tcp', 'udp', 'others');
 	
 	foreach($traffic as $data) {
 		$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$data['vps_id'].'">'.$data['vps_id'].'</a>');
@@ -186,6 +185,12 @@ if ($show_live) {
 				false, true
 			);
 		}
+		
+		$xtpl->table_td(
+			format_data_rate(($data['protocols']['all']['bps']['in'] + $data['protocols']['all']['bps']['out']) * 8, 'bps')."<br>".
+			format_data_rate(($data['protocols']['all']['pps']['in'] + $data['protocols']['all']['pps']['out']) * 8, 'pps'),
+			false, true
+		);
 		
 		$xtpl->table_tr();
 	}
