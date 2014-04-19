@@ -1,9 +1,11 @@
+require 'pp'
 require 'lib/vpsadmind'
 require 'lib/utils'
 
 module VpsAdminCtl
 	VERSION = '1.18.2'
-	ACTIONS = [:status, :reload, :stop, :restart, :update, :kill, :reinit, :refresh, :install]
+	ACTIONS = [:status, :reload, :stop, :restart, :update, :kill, :reinit,
+             :refresh, :install, :show]
 	
 	class RemoteControl
 		def initialize(options)
@@ -122,7 +124,61 @@ module VpsAdminCtl
 			else
 				puts "#{@opts[:create] ? "Installed" : "Updated"} node #{@res["node_id"]}"
 			end
-		end
+    end
+
+    def pre_show
+      if ARGV.size < 2
+        $stderr.puts 'show: missing resource'
+        return nil
+      end
+
+      {:resource => ARGV[1]}
+    end
+
+    def show
+      case ARGV[1]
+        when 'config'
+          cfg = @res['config']
+
+          if ARGV[2]
+            ARGV[2].split('.').each do |s|
+              cfg = cfg[cfg.instance_of?(Array) ? s.to_i : s]
+            end
+          end
+
+          if @global_opts[:parsable]
+            puts cfg.to_json
+          else
+            pp cfg
+          end
+
+        when 'queue'
+          q = @res['queue']
+
+          if @global_opts[:parsable]
+            puts q.to_json
+          else
+            puts sprintf(
+              '%-8s %-3s %-4s %-5s %-5s %-5s %-8s %-18.16s',
+              'TRANS', 'URG', 'PRIO', 'USER', 'VEID', 'TYPE', 'DEP', 'WAITING'
+            )
+
+            q.each do |t|
+              puts sprintf(
+                '%-8d %-3d %-4d %-5d %-5d %-5d %-8d %-18.16s',
+                t['id'], t['urgent'] ? 1 : 0, t['priority'], t['m_id'], t['vps_id'],
+                t['type'], t['depends_on'],
+                format_duration(Time.new.to_i - t['time'])
+               )
+            end
+          end
+
+        else
+          pp @res
+      end
+
+      nil
+    end
 		
 		def autodetect
 			puts "Done"

@@ -61,6 +61,7 @@ Commands:
     reinit             Reinitialize firewall chains and rules
     refresh            Update VPS status, traffic counters, storage usage and server status
     install            Add node to cluster, save public key to DB, generate configs
+    show <resource>    Show vpsAdmind internals
 
 For specific options type: vpsadminctl <command> --help
 
