@@ -5,11 +5,13 @@
 # you want to use, as the default handlers are dropped.
 
 :db:
-    :host: localhost
+    :hosts:
+      - localhost
     :user: vpsadmin
     :pass: password
     :name: vpsadmin
 #     :retry_interval: 30
+#     :ssl: false
 
 :vpsadmin:
     :server_id: 1

@@ -3,11 +3,12 @@ require 'yaml'
 
 IMPLICIT_CONFIG = {
     :db => {
-        :host => nil,
+        :hosts => [],
         :user => nil,
         :pass => nil,
         :name => nil,
         :retry_interval => 30,
+        :ssl => false,
     },
 
     :vpsadmin => {
