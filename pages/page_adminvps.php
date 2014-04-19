@@ -86,7 +86,7 @@ if ($_GET["run"] == 'restart') {
 		$vps = vps_load($_GET["veid"]);
 		$vps->restart();
 		
-		notify_user(_("Restart of")." {$_GET["veid"]} "._("planned"));
+		notify_user(_("Restart of")." {$_GET["veid"]} "._("planned"), '');
 		redirect(vps_run_redirect_path($vps));
 		
 	} else
