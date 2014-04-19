@@ -184,22 +184,19 @@ function pick_playground_server() {
 	
 	$servers = list_servers(false, array("node"));
 	
-	$sql = "(SELECT server_id FROM servers s
+	$sql = "SELECT server_id
+	        FROM servers s
 	        LEFT JOIN vps v ON v.vps_server = s.server_id
 	        LEFT JOIN vps_status st ON v.vps_id = st.vps_id
-	        WHERE (st.vps_up = 1 OR st.vps_up = 0) AND server_location IN (SELECT location_id FROM locations WHERE location_type = 'playground')
+	        INNER JOIN node_node n ON n.node_id = s.server_id
+	        INNER JOIN locations l ON server_location = l.location_id
+	        WHERE
+	          (st.vps_up = 1 OR st.vps_up IS NULL)
+	          AND max_vps > 0
+	          AND server_maintenance = 0
+	          AND location_type = 'playground'
 	        GROUP BY server_id
-                 ORDER BY COUNT(v.vps_id) ASC
-	        LIMIT 1)
-            
-            UNION ALL
-            
-            (SELECT server_id FROM servers s
-	        LEFT JOIN vps v ON v.vps_server = s.server_id
-	        LEFT JOIN vps_status st ON v.vps_id = st.vps_id
-	        WHERE (st.vps_up = 0 OR st.vps_up IS NULL) AND server_location IN (SELECT location_id FROM locations WHERE location_type = 'playground')
-	        GROUP BY server_id
-            LIMIT 1)
+	        ORDER BY COUNT(st.vps_up) / max_vps ASC
             LIMIT 1
 	        ";
 	
@@ -215,22 +212,18 @@ function pick_free_node($location) {
 	
 	$servers = list_servers(false, array("node"));
 	
-	$sql = "(SELECT server_id FROM servers s
+	$sql = "SELECT server_id
+	        FROM servers s
 	        LEFT JOIN vps v ON v.vps_server = s.server_id
 	        LEFT JOIN vps_status st ON v.vps_id = st.vps_id
-	        WHERE (st.vps_up = 1 OR st.vps_up = 0) AND server_location = ".$db->check($location)."
+	        INNER JOIN node_node n ON n.node_id = s.server_id
+	        WHERE
+	          (st.vps_up = 1 OR st.vps_up IS NULL)
+	          AND server_location = ".$db->check($location)."
+	          AND max_vps > 0
+	          AND server_maintenance = 0
 	        GROUP BY server_id
-                 ORDER BY COUNT(v.vps_id) ASC
-	        LIMIT 1)
-            
-            UNION ALL
-            
-            (SELECT server_id FROM servers s
-	        LEFT JOIN vps v ON v.vps_server = s.server_id
-	        LEFT JOIN vps_status st ON v.vps_id = st.vps_id
-	        WHERE (st.vps_up = 0 OR st.vps_up IS NULL) AND server_location = ".$db->check($location)."
-	        GROUP BY server_id
-            LIMIT 1)
+	        ORDER BY COUNT(st.vps_up) / max_vps ASC
             LIMIT 1
 	        ";
 	
