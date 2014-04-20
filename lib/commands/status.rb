@@ -31,13 +31,13 @@ module Commands
 
         @res[:workers].sort.each do |w|
           puts sprintf('%-8d %-5d %-20.19s %-5d %-18.16s %-8s %s',
-                       w[1]['id'],
+                       w[1][:id],
                        w[0],
-                       w[1]['handler'],
-                       w[1]['type'],
-                       format_duration(Time.new.to_i - w[1]['start']),
-                       w[1]['pid'],
-                       w[1]['step']
+                       w[1][:handler],
+                       w[1][:type],
+                       format_duration(Time.new.to_i - w[1][:start]),
+                       w[1][:pid],
+                       w[1][:step]
                )
         end
       end
