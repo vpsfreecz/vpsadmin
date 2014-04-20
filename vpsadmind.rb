@@ -73,7 +73,7 @@ executable = File.expand_path($0)
 
 $CFG = AppConfig.new(options[:config])
 
-unless $CFG.load
+unless $CFG.load(false)
   exit(false)
 end
 

@@ -3,11 +3,12 @@ require 'yaml'
 
 IMPLICIT_CONFIG = {
     :db => {
-        :host => nil,
+        :hosts => [],
         :user => nil,
         :pass => nil,
         :name => nil,
         :retry_interval => 30,
+        :ssl => false,
     },
 
     :vpsadmin => {
@@ -222,7 +223,8 @@ IMPLICIT_CONFIG = {
                 "reinit",
                 "refresh",
                 "install",
-                "autodetect",
+                "get",
+                "set",
             ]
         }
     }
@@ -234,7 +236,7 @@ class AppConfig
     @mutex = Mutex.new
   end
 
-  def load
+  def load(db = true)
     begin
       tmp = YAML.load(File.read(@file))
     rescue ArgumentError
@@ -250,7 +252,7 @@ class AppConfig
 
     @cfg = merge(IMPLICIT_CONFIG, tmp)
 
-    load_db_settings
+    load_db_settings if db
 
     true
   end
@@ -308,10 +310,19 @@ class AppConfig
       if block_given?
         yield(args.empty? ? @cfg : val)
         return
+
+      elsif args.empty?
+        val = @cfg
       end
     end
 
     val
+  end
+
+  def patch(what)
+    sync do
+      @cfg = merge(@cfg, what)
+    end
   end
 
   def merge(src, override)

@@ -17,16 +17,16 @@ class RemoteControl < EventMachine::Connection
 
   def receive_data(data)
     begin
-      req = JSON.parse(data)
+      req = JSON.parse(data, :symbolize_names => true)
     rescue TypeError
       return error("Syntax error")
     end
 
-    cmd = @@handlers[req["command"]]
+    cmd = @@handlers[req[:command]]
 
     return error("Unsupported command") unless cmd
 
-    executor = Kernel.const_get(cmd[:class]).new(nil, req["params"], nil, @daemon)
+    executor = Kernel.const_get(cmd[:class]).new(nil, req[:params], nil, @daemon)
     output = {}
 
     begin

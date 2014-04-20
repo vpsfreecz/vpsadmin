@@ -2,10 +2,10 @@ require 'rubygems'
 require 'mysql'
 
 class Db
-  def initialize(host = nil)
-    host ||= $CFG.get(:db)
+  def initialize(db = nil)
+    db ||= $CFG.get(:db)
 
-    connect(host)
+    connect(db)
   end
 
   def query(q)
@@ -48,10 +48,33 @@ class Db
 
   private
 
-  def connect(host)
-    protect do
-      @my = Mysql.new(host[:host], host[:user], host[:pass], host[:name])
-      @my.reconnect = true
+  def connect(db)
+    if !db[:host].nil? && db[:hosts].empty?
+      db[:hosts] << db[:host]
+    end
+
+    problem = false
+
+    loop do
+      db[:hosts].each do |host|
+        begin
+          log "Trying to connect to #{host}" if problem
+          @my = Mysql.init
+          @my.ssl_set
+          @my.connect(host, db[:user], db[:pass], db[:name])
+          @my.reconnect = true
+          log "Connected to #{host}" if problem
+          return
+        rescue Mysql::Error => err
+          problem = true
+          log "MySQL error ##{err.errno}: #{err.error}"
+          log 'Trying another host'
+        end
+
+        interval = $CFG.get(:db, :retry_interval)
+        log "All hosts failed, next try in #{interval} seconds"
+        sleep(interval)
+      end
     end
   end
 
@@ -59,7 +82,7 @@ class Db
     begin
       yield
     rescue Mysql::Error => err
-      puts "MySQL error ##{err.errno}: #{err.error}"
+      log "MySQL error ##{err.errno}: #{err.error}"
       close if @my
       sleep($CFG.get(:db, :retry_interval))
       connect($CFG.get(:db))

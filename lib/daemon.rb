@@ -9,7 +9,7 @@ require 'rubygems'
 require 'eventmachine'
 
 module VpsAdmind
-  VERSION = '1.18.2'
+  VERSION = '1.19.0'
   DB_VERSION = 13
 
   EXIT_OK = 0
@@ -94,14 +94,16 @@ module VpsAdmind
       end
     end
 
-    def do_commands
-      rs = @db.query("SELECT * FROM (
+    def select_commands(db, limit = nil)
+      limit ||= $CFG.get(:vpsadmin, :threads)
+
+      db.query("SELECT * FROM (
 								(SELECT *, 1 AS depencency_success FROM transactions
 								WHERE t_done = 0 AND t_server = #{$CFG.get(:vpsadmin, :server_id)} AND t_depends_on IS NULL
 								GROUP BY t_vps, t_priority, t_id)
-							
+
 								UNION ALL
-								
+
 								(SELECT t.*, d.t_success AS dependency_success
 								FROM transactions t
 								INNER JOIN transactions d ON t.t_depends_on = d.t_id
@@ -110,12 +112,16 @@ module VpsAdmind
 								AND d.t_done = 1
 								AND t.t_server = #{$CFG.get(:vpsadmin, :server_id)}
 								GROUP BY t_vps, t_priority, t_id)
-							
+
 								ORDER BY t_priority DESC, t_id ASC
 							) tmp
 							GROUP BY t_vps, t_priority
               ORDER BY t_priority DESC, t_id ASC
-              LIMIT #{$CFG.get(:vpsadmin, :threads)}")
+              LIMIT #{limit}")
+    end
+
+    def do_commands
+      rs = select_commands(@db)
 
       rs.each_hash do |row|
         c = Command.new(row)
