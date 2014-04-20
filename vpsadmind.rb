@@ -146,12 +146,14 @@ if options[:wrapper]
   end
 end
 
-Signal.trap("HUP") do
-  log "Reloading config"
+$CFG.load_db_settings
+
+Signal.trap('HUP') do
+  log 'Reloading config'
   $CFG.reload
 end
 
-log "vpsAdmind starting"
+log 'vpsAdmind starting'
 
 Thread.abort_on_exception = true
 vpsAdmind = VpsAdmind::Daemon.new()
