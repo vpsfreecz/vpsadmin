@@ -18,11 +18,11 @@ module Commands
     def process
       case ARGV[1]
         when 'config'
-          cfg = @res['config']
+          cfg = @res[:config]
 
           if ARGV[2]
             ARGV[2].split('.').each do |s|
-              cfg = cfg[cfg.instance_of?(Array) ? s.to_i : s]
+              cfg = cfg[cfg.instance_of?(Array) ? s.to_i : s.to_sym]
             end
           end
 
@@ -33,7 +33,7 @@ module Commands
           end
 
         when 'queue'
-          q = @res['queue']
+          q = @res[:queue]
 
           if @global_opts[:parsable]
             puts q.to_json

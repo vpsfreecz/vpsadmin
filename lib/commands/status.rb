@@ -29,7 +29,7 @@ module Commands
           'TRANS', 'VEID', 'HANDLER', 'TYPE', 'TIME', 'PID', 'STEP'
         ) if @opts[:header]
 
-        @res['workers'].sort.each do |w|
+        @res[:workers].sort.each do |w|
           puts sprintf('%-8d %-5d %-20.19s %-5d %-18.16s %-8s %s',
                        w[1]['id'],
                        w[0],
@@ -45,17 +45,17 @@ module Commands
       if @opts[:consoles]
         puts sprintf('%-5s %s', 'VEID', 'LISTENERS')  if @opts[:header]
 
-        @res['consoles'].sort.each do |c|
+        @res[:consoles].sort.each do |c|
           puts sprintf('%-5d %d', c[0], c[1])
         end
       end
 
       unless @opts[:workers] || @opts[:consoles]
         puts "Version: #{@vpsadmind.version}"
-        puts "Uptime: #{format_duration(Time.new.to_i - @res['start_time'])}"
-        puts "Workers: #{@res['workers'].size}/#{@res['threads']}"
-        puts "Queue size: #{@res['queue_size']}"
-        puts "Exported consoles: #{@res['export_console'] ? @res['consoles'].size : 'disabled'}"
+        puts "Uptime: #{format_duration(Time.new.to_i - @res[:start_time])}"
+        puts "Workers: #{@res[:workers].size}/#{@res[:threads]}"
+        puts "Queue size: #{@res[:queue_size]}"
+        puts "Exported consoles: #{@res[:export_console] ? @res[:consoles].size : 'disabled'}"
       end
     end
   end

@@ -40,6 +40,6 @@ class VpsAdmind
 	end
 	
 	def parse(raw)
-		JSON.parse(raw)
+		JSON.parse(raw, :symbolize_names => true)
 	end
 end

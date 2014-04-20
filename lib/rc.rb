@@ -12,7 +12,7 @@ module VpsAdminCtl
 		end
 		
 		def exec(cmd)
-      cmd.set_args(ARGV[1..-1])
+      cmd.set_args(ARGV[0..-1])
       cmd.set_global_options(@global_opts)
       cmd.vpsadmind(@vpsadmind)
 
@@ -39,12 +39,12 @@ module VpsAdminCtl
         warn 'Are you sure that vpsAdmind is running and configured properly?'
 				return {:status => :failed, :error => 'Cannot connect to vpsAdmind'}
 			end
-			
-			unless @reply['status'] == 'ok'
-				return {:status => :failed, :error => @reply['error']['error']}
+
+			unless @reply[:status] == 'ok'
+				return {:status => :failed, :error => @reply[:error]}
 			end
 
-      cmd.response(@reply['response'])
+      cmd.response(@reply[:response])
 			cmd.process
 		end
 	end

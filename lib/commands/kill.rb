@@ -38,13 +38,13 @@ module Commands
     end
 
     def process
-      @res['msgs'].each do |i, msg|
+      @res[:msgs].each do |i, msg|
         puts "#{i}: #{msg}"
       end
 
-      puts '' if @res['msgs'].size > 0
+      puts '' if @res[:msgs].size > 0
 
-      puts "Killed #{@res['killed']} transactions"
+      puts "Killed #{@res[:killed]} transactions"
     end
   end
 end

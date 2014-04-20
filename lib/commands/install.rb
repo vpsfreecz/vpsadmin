@@ -86,9 +86,9 @@ module Commands
 
     def process
       if @global_opts[:parsable]
-        puts @res['node_id']
+        puts @res[:node_id]
       else
-        puts "#{@opts[:create] ? 'Installed' : 'Updated'} node #{@res['node_id']}"
+        puts "#{@opts[:create] ? 'Installed' : 'Updated'} node #{@res[:node_id]}"
       end
     end
   end
