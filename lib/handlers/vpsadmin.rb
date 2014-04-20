@@ -284,7 +284,7 @@ class VpsAdmin < Executor
         @daemon.workers do |workers|
           db = Db.new
 
-          @daemon.select_commands(db, 50).each_hash do |row|
+          @daemon.select_commands(db, @params[:limit]).each_hash do |row|
             t_id = row['t_id'].to_i
 
             catch (:next) do
