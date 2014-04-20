@@ -3,6 +3,14 @@ module Commands
     args '<command>'
     description 'Set vpsAdmind resources and properties'
 
+    def options(opts, args)
+      opts.separator <<END
+
+Subcommands:
+config <some.key=value>...    Change variable in vpsAdmind's configuration
+END
+    end
+
     def validate
       raise ValidationError.new('missing resource') if @args.size < 2
       raise ValidationError.new('missing arguments') if @args.size < 3

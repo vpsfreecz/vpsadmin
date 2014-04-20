@@ -16,6 +16,13 @@ module Commands
       opts.on('-l', '--limit LIMIT', Integer, 'Limit number of items to get') do |l|
         @opts[:limit] = l
       end
+
+      opts.separator <<END
+
+Subcommands:
+config [some.key]    Show vpsAdmind's config or specific key
+queue                List transactions queued for execution
+END
     end
 
     def validate
