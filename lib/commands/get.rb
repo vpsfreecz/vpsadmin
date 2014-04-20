@@ -4,7 +4,18 @@ module Commands
     description 'Get vpsAdmind resources and properties'
 
     def options(opts, args)
+      @opts = {
+          :header => true,
+          :limit => 50,
+      }
 
+      opts.on('-H', '--no-header', 'Suppress header row') do
+        @opts[:header] = false
+      end
+
+      opts.on('-l', '--limit LIMIT', Integer, 'Limit number of items to get') do |l|
+        @opts[:limit] = l
+      end
     end
 
     def validate
@@ -12,16 +23,16 @@ module Commands
         raise ValidationError.new('missing resource')
       end
 
-      {:resource => ARGV[1]}
+      {:resource => @args[1], :limit => @opts[:limit]}
     end
 
     def process
-      case ARGV[1]
+      case @args[1]
         when 'config'
           cfg = @res[:config]
 
-          if ARGV[2]
-            ARGV[2].split('.').each do |s|
+          if @args[2]
+            @args[2].split('.').each do |s|
               cfg = cfg[cfg.instance_of?(Array) ? s.to_i : s.to_sym]
             end
           end
@@ -41,7 +52,7 @@ module Commands
             puts sprintf(
               '%-8s %-3s %-4s %-5s %-5s %-5s %-8s %-18.16s',
               'TRANS', 'URG', 'PRIO', 'USER', 'VEID', 'TYPE', 'DEP', 'WAITING'
-            )
+            ) if @opts[:header]
 
             q.each do |t|
               puts sprintf(

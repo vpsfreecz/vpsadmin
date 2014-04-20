@@ -17,7 +17,7 @@ module Commands
         @opts[:workers] = true
       end
 
-      opts.on('-H', '--no-header', 'Suppress columns header') do
+      opts.on('-H', '--no-header', 'Suppress header row') do
         @opts[:header] = false
       end
     end
