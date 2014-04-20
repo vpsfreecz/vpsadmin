@@ -36,105 +36,38 @@ Print version and exit.
 Show help and exit.
 
 .SH COMMANDS
-\fBstatus\fR [\fB-Hcw\fR]
+\fBget\fR <\fIsubcommand\fR> [\fB-Hl\fR]
 .RS
-Show vpsAdmind's status. If no option is specified, summary is shown.
+Access vpsAdmind's resources and properties. When used with option \fB-p\fR,
+output is formatted and printed in JSON.
+
+\fBSubcommands\fR
+.RS
+.TP
+\fBconfig\fR [\fIsome.key\fR]
+Read and print config. If no argument is specified, print whole config.
+.PP
+.RS
+Using argument \fIsome.key\fR you can select only specific part of config
+to be printed. Keys are separated by '\fB.\fR'.
+.RE
+
+.TP
+\fBqueue\fR
+List transactions queued for execution. Transactions whose dependencies are not
+met yet are not listed, as it is impossible to know when they will be executed.
+.RE
 
 .TP
 \fB-H\fR, \fB--no-header\fR
-Do not print header row, useful for scripts.
+Suppress header row
 
 .TP
-\fB-c\fR, \fB--consoles\fR
-List exported consoles. Consoles are exported when
-accessed from vpsAdmin web interface.
+\fB-l\fR, \fB--limit\fR \fIn\fR
+Limit numer of listed queued transactions to \fIn\fR. Defaults to 50.
 
-.TP
-\fB-w\fR, \fB--workers\fR
-List transactions and commands that are currently being run.
 .RE
 
-\fBreload\fR
-.RS
-Instructs vpsAdmind to reload its configuration file.
-.PP
-\fBvpsadminctl\fR does not wait for the reload to actually finish, although it happens
-instantly.
-.RE
-
-\fBstop\fR [\fB-f\fR]
-.RS
-Order vpsAdmind to exit. vpsAdmind will wait for transactions that are running
-to finish. It will not execute more transactions.
-.PP
-\fBvpsadminctl\fR does not wait for the stop to finish, it returns immediately.
-
-.TP
-\fB-f\fR, \fB--force\fR
-Stop vpsAdmind immediately, do not wait for transactions to finish.
-All transactions are softly killed and will restart when vpsAdmind is started
-later.
-.RE
-
-\fBrestart\fR [\fB-f\fR]
-.RS
-Order vpsAdmind to restart. vpsAdmind will wait for transactions that are running
-to finish. It will not execute more transactions.
-.PP
-\fBvpsadminctl\fR does not wait for the restart to finish, it returns immediately.
-
-.TP
-\fB-f\fR, \fB--force\fR
-Restart vpsAdmind immediately, do not wait for transactions to finish.
-All transactions are softly killed and will restart when vpsAdmind is started.
-.RE
-
-\fBupdate\fR
-.RS
-Stop vpsAdmind, execute git pull and start it again. This command behaves the
-same as soft \fIstop\fR. It waits for running transactions to finish.
-.PP
-\fBvpsadminctl\fR does not wait for the update to finish, it returns immediately.
-.RE
-
-\fBkill\fR [[\fB-a\fR] | [\fB-t\fR]] [\fIid\fR|\fItype\fR]\fB...\fR
-.RS
-Kill selected running transactions. This command accepts a list of transaction
-\fIids\fR or \fItypes\fR. Arguments are by default treated as transaction
-\fIids\fR. Option \fB-t\fR changes that to transaction \fItype\fR.
-.PP
-This command does not kill transactions
-waiting in queue, only those which are currently running.
-.PP
-Transactions are marked as failed, their error message set to "Killed".
-.PP
-\fBvpsadminctl\fR blocks until all matching transactions are killed.
-
-.TP
-\fB-a\fR, \fB--all\fR
-Kill all running transactions, you do not have to provide list of \fIids\fR or
-\fItypes\fR.
-
-.TP
-\fB-t\fR, \fB--type\fR
-Arguments are transaction \fItypes\fR, not \fIids\fR.
-.RE
-
-\fBreinit\fR
-.RS
-Drops all iptable rules and chains concerning traffic accounting, then create
-them again.
-.PP
-\fBvpsadminctl\fR blocks until reinit is finished.
-.RE
-
-\fBrefresh\fR
-.RS
-Update info about this node, including kernel version, and all its VPSes and
-datasets. Traffic accounting is not updated.
-.PP
-\fBvpsadminctl\fR blocks until refresh is finished.
-.RE
 
 \fBinstall\fR [\fB--create\fR \fB--addr\fR \fIaddr\fR \fB--location\fR
 \fIid\fR|\fIlabel\fR ...] | [\fB--no-create\fR ...]
@@ -231,6 +164,139 @@ a subdirectory, for example \fI/vz/private/%{veid}/private\fR, because
 
 .RE
 
+
+\fBkill\fR [[\fB-a\fR] | [\fB-t\fR]] [\fIid\fR|\fItype\fR]\fB...\fR
+.RS
+Kill selected running transactions. This command accepts a list of transaction
+\fIids\fR or \fItypes\fR. Arguments are by default treated as transaction
+\fIids\fR. Option \fB-t\fR changes that to transaction \fItype\fR.
+.PP
+This command does not kill transactions
+waiting in queue, only those which are currently running.
+.PP
+Transactions are marked as failed, their error message set to "Killed".
+.PP
+\fBvpsadminctl\fR blocks until all matching transactions are killed.
+
+.TP
+\fB-a\fR, \fB--all\fR
+Kill all running transactions, you do not have to provide list of \fIids\fR or
+\fItypes\fR.
+
+.TP
+\fB-t\fR, \fB--type\fR
+Arguments are transaction \fItypes\fR, not \fIids\fR.
+.RE
+
+
+\fBrefresh\fR
+.RS
+Update info about this node, including kernel version, and all its VPSes and
+datasets. Traffic accounting is not updated.
+.PP
+\fBvpsadminctl\fR blocks until refresh is finished.
+.RE
+
+
+\fBreinit\fR
+.RS
+Drops all iptable rules and chains concerning traffic accounting, then create
+them again.
+.PP
+\fBvpsadminctl\fR blocks until reinit is finished.
+.RE
+
+
+\fBreload\fR
+.RS
+Instructs vpsAdmind to reload its configuration file.
+.PP
+\fBvpsadminctl\fR does not wait for the reload to actually finish, although it happens
+instantly.
+.RE
+
+
+\fBrestart\fR [\fB-f\fR]
+.RS
+Order vpsAdmind to restart. vpsAdmind will wait for transactions that are running
+to finish. It will not execute more transactions.
+.PP
+\fBvpsadminctl\fR does not wait for the restart to finish, it returns immediately.
+
+.TP
+\fB-f\fR, \fB--force\fR
+Restart vpsAdmind immediately, do not wait for transactions to finish.
+All transactions are softly killed and will restart when vpsAdmind is started.
+.RE
+
+
+\fBset\fR <\fIsubcommand\fR>
+.RS
+Change vpsAdmind's properties. \fBset\fR changes only runtime configuration,
+nothing is written to disk.
+
+\fBSubcommands\fR
+.RS
+
+.TP
+\fBconfig\fR <\fIsome.key\fR\fB=\fR\fIvalue\fR>...
+Alter vpsAdmind's configuration. Set key \fIsome.key\fR to \fIvalue\fR. Format of
+keys is the same as for \fBget\fR. Multiple keys may be specified, separated
+by spaces.
+
+.RE
+.RE
+
+
+\fBstatus\fR [\fB-Hcw\fR]
+.RS
+Show vpsAdmind's status. If no option is specified, summary is shown.
+
+.TP
+\fB-H\fR, \fB--no-header\fR
+Do not print header row, useful for scripts.
+
+.TP
+\fB-c\fR, \fB--consoles\fR
+List exported consoles. Consoles are exported when
+accessed from vpsAdmin web interface.
+
+.TP
+\fB-w\fR, \fB--workers\fR
+List transactions and commands that are currently being run.
+.RE
+
+
+\fBstop\fR [\fB-f\fR]
+.RS
+Order vpsAdmind to exit. vpsAdmind will wait for transactions that are running
+to finish. It will not execute more transactions.
+.PP
+\fBvpsadminctl\fR does not wait for the stop to finish, it returns immediately.
+
+.TP
+\fB-f\fR, \fB--force\fR
+Stop vpsAdmind immediately, do not wait for transactions to finish.
+All transactions are softly killed and will restart when vpsAdmind is started
+later.
+.RE
+
+
+\fBupdate\fR [\fB-f\fR]
+.RS
+Stop vpsAdmind, execute git pull and start it again. This command behaves the
+same as soft \fIstop\fR. It waits for running transactions to finish.
+.PP
+\fBvpsadminctl\fR does not wait for the update to finish, it returns immediately.
+
+.TP
+\fB-f\fR, \fB--force\fR
+Update vpsAdmind immediately, do not wait for transactions to finish.
+All transactions are softly killed and will restart when vpsAdmind is restarted.
+
+.RE
+
+
 .SH EXAMPLES
 \fBStandard usage\fR
 .PP
@@ -254,6 +320,18 @@ backup, fourth column from \fBvpsadminctl status\fR):
 Update vpsAdmind. Do not forget to update also web interface and database scheme
 afterwards:
   vpsadminctl update
+
+Read server ID:
+  vpsadminctl get config vpsadmin.server_id
+
+Change number of concurrent workers:
+  vpsadminctl set config vpsadmin.threads=10
+
+Confirm change:
+  vpsadminctl get config vpsadmin.threads
+
+See what transactions are queued and will be executed, limit count to 10:
+  vpsadminctl get queue -l 10
 
 \fBInstall new ZFS node\fR
 .PP

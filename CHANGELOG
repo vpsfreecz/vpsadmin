@@ -1,0 +1,4 @@
+* Sun Apr 20 2014 - version 1.19.0
+- Reorganize code, rewrite all commands
+- New commands get and set
+- Update manual page

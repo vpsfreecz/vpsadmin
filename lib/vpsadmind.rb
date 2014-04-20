@@ -13,7 +13,7 @@ class VpsAdmind
 	def open
 		@sock = UNIXSocket.new(@sock_path)
 		greetings = reply
-		@version = greetings["version"]
+		@version = greetings['version']
 	end
 	
 	def cmd(cmd, params = {})
@@ -32,7 +32,7 @@ class VpsAdmind
 	end
 	
 	def response
-		reply["response"]
+		reply['response']
 	end
 	
 	def close
@@ -40,6 +40,6 @@ class VpsAdmind
 	end
 	
 	def parse(raw)
-		JSON.parse(raw)
+		JSON.parse(raw, :symbolize_names => true)
 	end
 end

@@ -1,172 +1,54 @@
+require 'pp'
 require 'lib/vpsadmind'
 require 'lib/utils'
+require 'lib/version'
+require 'lib/command'
 
 module VpsAdminCtl
-	VERSION = '1.18.2'
-	ACTIONS = [:status, :reload, :stop, :restart, :update, :kill, :reinit, :refresh, :install]
-	
 	class RemoteControl
 		def initialize(options)
 			@global_opts = options
 			@vpsadmind = VpsAdmind.new(options[:sock])
 		end
 		
-		def status
-			if @opts[:workers]
-				puts sprintf("%-8s %-5s %-20.19s %-5s %-18.16s %-8s %s", "TRANS", "VEID", "HANDLER", "TYPE", "TIME", "PID", "STEP") if @opts[:header]
-				
-				@res["workers"].sort.each do |w|
-					puts sprintf("%-8d %-5d %-20.19s %-5d %-18.16s %-8s %s",
-                       w[1]["id"],
-                       w[0],
-                       w[1]["handler"],
-                       w[1]["type"],
-                       format_duration(Time.new.to_i - w[1]["start"]),
-                       w[1]["pid"],
-                       w[1]["step"]
-               )
-				end
-			end
-			
-			if @opts[:consoles]
-				puts sprintf("%-5s %s", "VEID", "LISTENERS")  if @opts[:header]
-				
-				@res["consoles"].sort.each do |c|
-					puts sprintf("%-5d %d", c[0], c[1])
-				end
-			end
-			
-			unless @opts[:workers] || @opts[:consoles]
-				puts "Version: #{@vpsadmind.version}"
-				puts "Uptime: #{format_duration(Time.new.to_i - @res["start_time"])}"
-				puts "Workers: #{@res["workers"].size}/#{@res["threads"]}"
-				puts "Queue size: #{@res["queue_size"]}"
-				puts "Exported consoles: #{@res["export_console"] ? @res["consoles"].size : "disabled"}"
-			end
-		end
-		
-		def reload
-			puts "Config reloaded"
-		end
-		
-		def pre_stop
-			{:force => @opts[:force]}
-		end
-		
-		def stop
-			puts "Stop scheduled"
-		end
-		
-		alias_method :pre_restart, :pre_stop
-		
-		def restart
-			puts "Restart scheduled"
-		end
-		
-		def update
-			puts "Update scheduled"
-		end
-		
-		def pre_kill
-			if @opts[:all]
-				{:transactions => :all}
-			elsif @opts[:type]
-				if ARGV.size < 2
-					$stderr.puts "Kill: missing transaction type(s)"
-					return nil
-				end
-				
-				{:types => ARGV[1..-1]}
-			else
-				if ARGV.size < 2
-					$stderr.puts "Kill: missing transaction id(s)"
-					return nil
-				end
-				
-				{:transactions => ARGV[1..-1]}
-			end
-		end
-		
-		def kill
-			@res["msgs"].each do |i, msg|
-				puts "#{i}: #{msg}"
-			end
-			
-			puts "" if @res["msgs"].size > 0
-			
-			puts "Killed #{@res["killed"]} transactions"
-		end
-		
-		def reinit
-			puts "Reinitialized"
-			@res.each do |k, v|
-				puts "#{v} rules for IPv#{k}"
-			end
-		end
-		
-		def refresh
-			puts "Refreshed"
-		end
-		
-		def pre_install
-			if @opts[:create] && (@opts[:addr].nil? || @opts[:location].nil?)
-				raise OptionParser::MissingArgument.new("--addr and --location must be specified if creating new node")
-			end
-			
-			@opts
-		end
-		
-		def install
-			if @global_opts[:parsable]
-				puts @res["node_id"]
-			else
-				puts "#{@opts[:create] ? "Installed" : "Updated"} node #{@res["node_id"]}"
-			end
-		end
-		
-		def autodetect
-			puts "Done"
-		end
-		
-		def is_valid?(cmd)
-			ACTIONS.include?(cmd.to_sym)
-		end
-		
-		def exec(cmd, opts)
-			return unless is_valid?(cmd)
-			
+		def exec(cmd)
+      cmd.set_args(ARGV[0..-1])
+      cmd.set_global_options(@global_opts)
+      cmd.vpsadmind(@vpsadmind)
+
+      begin
+        params = cmd.validate
+      rescue ValidationError => err
+        warn 'Command failed'
+        warn "#{cmd.cmd}: #{err.message}"
+        return
+      rescue => err
+        warn 'Command failed'
+        warn err.inspect
+        return
+      end
+
+      params ||= cmd.prepare
+
 			begin
 				@vpsadmind.open
-				
-				@opts = opts
-				params = {}
-				
-				begin
-					params = method("pre_#{cmd}").call
-					
-					unless params
-						$stderr.puts "Command failed"
-						return
-					end
-				rescue NameError
-					
-				end
-				
-				@vpsadmind.cmd(cmd, params)
+				@vpsadmind.cmd(cmd.cmd, params)
 				@reply = @vpsadmind.reply
 			rescue
-				$stderr.puts "Error occured: #{$!}"
-				$stderr.puts "Are you sure that vpsAdmind is running and configured properly?"
-				return {:status => :failed, :error => "Cannot connect to vpsAdmind"}
+        warn "Error occured: #{$!}"
+        warn 'Are you sure that vpsAdmind is running and configured properly?'
+				return {:status => :failed, :error => 'Cannot connect to vpsAdmind'}
 			end
-			
-			unless @reply["status"] == "ok"
-				return {:status => :failed, :error => @reply["error"]["error"]}
+
+			unless @reply[:status] == 'ok'
+				return {
+          :status => :failed,
+          :error => @reply[:error].instance_of?(Hash) ? @reply[:error][:error] : @reply[:error],
+        }
 			end
-			
-			@res = @reply["response"]
-			
-			method(cmd).call
+
+      cmd.response(@reply[:response])
+			cmd.process
 		end
 	end
 end
