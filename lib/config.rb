@@ -224,6 +224,7 @@ IMPLICIT_CONFIG = {
                 "refresh",
                 "install",
                 "get",
+                "set",
             ]
         }
     }
@@ -316,6 +317,12 @@ class AppConfig
     end
 
     val
+  end
+
+  def patch(what)
+    sync do
+      @cfg = merge(@cfg, what)
+    end
   end
 
   def merge(src, override)

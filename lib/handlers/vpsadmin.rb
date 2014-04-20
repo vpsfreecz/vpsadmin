@@ -9,7 +9,7 @@ class VpsAdmin < Executor
 
   def stop
     VpsAdmind::Daemon.safe_exit(VpsAdmind::EXIT_STOP)
-    if @params["force"]
+    if @params[:force]
       walk_workers { |w| :silent }
       drop_workers
     end
@@ -18,7 +18,7 @@ class VpsAdmin < Executor
 
   def restart
     VpsAdmind::Daemon.safe_exit(VpsAdmind::EXIT_RESTART)
-    if @params["force"]
+    if @params[:force]
       walk_workers { |w| :silent }
       drop_workers
     end
@@ -76,10 +76,10 @@ class VpsAdmin < Executor
     cnt = 0
     msgs = {}
 
-    if @params["transactions"] == "all"
+    if @params[:transactions] == "all"
       cnt = walk_workers { |w| true }
-    elsif @params["types"]
-      @params["types"].each do |t|
+    elsif @params[:types]
+      @params[:types].each do |t|
         killed = walk_workers { |w| w.cmd.type == t }
 
         if killed == 0
@@ -89,7 +89,7 @@ class VpsAdmin < Executor
         cnt += killed
       end
     else
-      @params["transactions"].each do |t|
+      @params[:transactions].each do |t|
         killed = walk_workers { |w| w.cmd.id == t }
 
         if killed == 0
@@ -127,23 +127,23 @@ class VpsAdmin < Executor
 
     node_id = $CFG.get(:vpsadmin, :server_id)
 
-    if @params["create"]
-      if @params["id"]
-        node_id = @params["id"]
+    if @params[:create]
+      if @params[:id]
+        node_id = @params[:id]
       elsif node_id > 1
         # it's ok
       else
         node_id = nil
       end
 
-      loc = @params["location"].to_i
+      loc = @params[:location].to_i
 
       if loc == 0
-        st = db.prepared_st("SELECT location_id FROM locations WHERE location_label = ?", @params["location"])
+        st = db.prepared_st("SELECT location_id FROM locations WHERE location_label = ?", @params[:location])
         row = st.fetch()
 
         if row.nil?
-          raise CommandFailed.new(nil, nil, "Location '#{@params["location"]}' does not exist")
+          raise CommandFailed.new(nil, nil, "Location '#{@params[:location]}' does not exist")
         end
 
         loc = row[0].to_i
@@ -159,37 +159,37 @@ class VpsAdmin < Executor
 			            server_ip4 = ?
 			            ",
                   # insert
-                  node_id, name, @params["role"], loc, @params["addr"],
+                  node_id, name, @params[:role], loc, @params[:addr],
                   # update
-                  name, @params["role"], loc, @params["addr"]
+                  name, @params[:role], loc, @params[:addr]
       )
       node_id = db.insert_id
 
-      if @params["role"] == "node"
+      if @params[:role] == "node"
         db.prepared("INSERT INTO node_node SET
 				            node_id = ?, max_vps = ?, ve_private = ?, fstype = ?
 				            ON DUPLICATE KEY UPDATE
 				            max_vps = ?, ve_private = ?, fstype = ?
 				            ",
                     # insert
-                    node_id, @params["maxvps"], @params["ve_private"], @params["fstype"],
+                    node_id, @params[:maxvps], @params[:ve_private], @params[:fstype],
                     # update
-                    @params["maxvps"], @params["ve_private"], @params["fstype"]
+                    @params[:maxvps], @params[:ve_private], @params[:fstype]
         )
       end
 
       log "Node registered in database:"
       log "\tid = #{node_id}"
       log "\tname = #{name}"
-      log "\trole = #{@params["role"]}"
+      log "\trole = #{@params[:role]}"
       log "\tlocation = #{loc}"
-      log "\taddr = #{@params["addr"]}"
+      log "\taddr = #{@params[:addr]}"
 
-      case @params["role"]
+      case @params[:role]
         when "node"
-          log "\tmaxvps = #{@params["maxvps"]}"
-          log "\tve_private = #{@params["ve_private"]}"
-          log "\tfstype = #{@params["fstype"]}"
+          log "\tmaxvps = #{@params[:maxvps]}"
+          log "\tve_private = #{@params[:ve_private]}"
+          log "\tfstype = #{@params[:fstype]}"
       end
 
       refresh
@@ -203,7 +203,7 @@ class VpsAdmin < Executor
                   node_id, t, k, k)
     end
 
-    if @params["propagate"]
+    if @params[:propagate]
       Transaction.new(db).cluster_wide({
                                            :m_id => 0,
                                            :node => node_id,
@@ -211,7 +211,7 @@ class VpsAdmin < Executor
                                        })
     end
 
-    if @params["gen_configs"]
+    if @params[:gen_configs]
       log "Creating configs"
       n = Node.new
       db.query("SELECT name, config FROM config").each_hash do |cfg|
@@ -220,7 +220,7 @@ class VpsAdmin < Executor
       end
     end
 
-    if @params["ssh_key"]
+    if @params[:ssh_key]
       priv = syscfg_get(db, "node_private_key")
       pub = nil
       type = "dsa"
@@ -274,7 +274,7 @@ class VpsAdmin < Executor
   end
 
   def get
-    case @params['resource']
+    case @params[:resource]
       when 'config'
         ok.update({:output => {:config => $CFG.get}})
 
@@ -314,7 +314,21 @@ class VpsAdmin < Executor
         ok.update({:output => {:queue => queue}})
 
       else
-        raise CommandFailed.new(nil, nil, "Unknown resource #{@params['resource']}")
+        raise CommandFailed.new(nil, nil, "Unknown resource #{@params[:resource]}")
+    end
+  end
+
+  def set
+    case @params[:resource]
+      when 'config'
+        @params[:config].each do |change|
+          $CFG.patch(change)
+        end
+
+        ok
+
+      else
+        raise CommandFailed.new(nil, nil, "Unknown resource #{@params[:resource]}")
     end
   end
 
@@ -340,8 +354,8 @@ class VpsAdmin < Executor
   end
 
   def get_hostname
-    if @params["name"]
-      @params["name"]
+    if @params[:name]
+      @params[:name]
     else
       syscmd($CFG.get(:bin, :hostname))[:output].strip
     end
