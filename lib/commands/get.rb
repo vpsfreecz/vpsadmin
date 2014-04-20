@@ -57,9 +57,9 @@ module Commands
             q.each do |t|
               puts sprintf(
                   '%-8d %-3d %-4d %-5d %-5d %-5d %-8d %-18.16s',
-                  t['id'], t['urgent'] ? 1 : 0, t['priority'], t['m_id'], t['vps_id'],
-                  t['type'], t['depends_on'],
-                  format_duration(Time.new.to_i - t['time'])
+                  t[:id], t[:urgent] ? 1 : 0, t[:priority], t[:m_id], t[:vps_id],
+                  t[:type], t[:depends_on],
+                  format_duration(Time.new.to_i - t[:time])
               )
             end
           end
