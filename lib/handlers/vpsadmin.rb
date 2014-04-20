@@ -27,6 +27,10 @@ class VpsAdmin < Executor
 
   def update
     VpsAdmind::Daemon.safe_exit(VpsAdmind::EXIT_UPDATE)
+    if @params[:force]
+      walk_workers { |w| :silent }
+      drop_workers
+    end
     ok
   end
 
