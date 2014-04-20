@@ -1,3 +1,9 @@
+* Sun Apr 20 2014 - version 1.19.0
+- Transaction add: check for duplicities
+- VPS: fix redirect loop that sometimes happened on start/stop/restart
+- Networking: sum total in and out in live monitor, fix history listing for admins
+- Fix automated node selection algorithm to exclude node in maintenance and order better
+
 * Tue Apr 15 2014 - version 1.18.2
 - Status page: fix formatting when node count is odd
 - Live network monitor: improve formatting, align to right, use full width

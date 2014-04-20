@@ -96,20 +96,20 @@ function add_transaction_locationwide($m_id, $vps_id, $t_type, $t_param = '', $l
 
 function add_transaction($m_id, $server_id, $vps_id, $t_type, $t_param = array(), $transact_group = NULL, $dep = NULL, $fallback = array(), $urgent = false) {
     global $db;
-    $sql_check = 'SELECT COUNT(*) AS count FROM transactions
+    $sql_check = "SELECT COUNT(*) AS count FROM transactions
 		WHERE
-			t_time > "'.(time() - 5).'"
-		AND	t_m_id = "'.$db->check($m_id).'"
-		AND	t_server = "'.$db->check($server_id).'"
-		AND	t_vps = "'.$db->check($vps_id).'"
-		AND	t_type = "'.$db->check($t_type).'"
-		AND t_depends_on = '. ($dep ? '"'.$db->check($dep).'"' : 'NULL') .'
-		AND t_fallback = "'.$db->check(count($fallback) ? json_encode($fallback) : '{}').'"
-		AND t_urgent = '.($urgent ? 1 : 0).'
+			t_time > ".(time() - 60)."
+		AND	t_m_id = ".$db->check($m_id)."
+		AND	t_server = ".$db->check($server_id)."
+		AND	t_vps = ".$db->check($vps_id)."
+		AND	t_type = ".$db->check($t_type)."
+		AND t_depends_on ". ($dep ? "= '".$db->check($dep)."'" : 'IS NULL') ."
+		AND t_fallback = '".$db->check(count($fallback) ? json_encode($fallback) : '{}')."'
+		AND t_urgent = ".($urgent ? 1 : 0)."
 		AND t_priority = 10
 		AND	t_success = 0
 		AND	t_done = 0
-		AND	t_param = "'.$db->check(serialize($t_param)).'"';
+		AND	t_param = '".$db->check(count($t_param) ? json_encode($t_param) : '{}')."'";
     $result_check = $db->query($sql_check);
     $row = $db->fetch_array($result_check);
     if ($row['count'] <= 0) {

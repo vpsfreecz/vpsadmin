@@ -45,7 +45,9 @@ function print_editvps($vps) {
 }
 
 function vps_run_redirect_path($vps) {
-	if($_SERVER["HTTP_REFERER"])
+	$current_url = "http".(isset($_SERVER["HTTPS"]) ? "s" : "")."://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+	
+	if($_SERVER["HTTP_REFERER"] && $_SERVER["HTTP_REFERER"] != $current_url)
 		return $_SERVER["HTTP_REFERER"];
 	
 	elseif($_GET["action"] == "info")
@@ -86,7 +88,7 @@ if ($_GET["run"] == 'restart') {
 		$vps = vps_load($_GET["veid"]);
 		$vps->restart();
 		
-		notify_user(_("Restart of")." {$_GET["veid"]} "._("planned"));
+		notify_user(_("Restart of")." {$_GET["veid"]} "._("planned"), '');
 		redirect(vps_run_redirect_path($vps));
 		
 	} else
