@@ -9,7 +9,9 @@ IMPLICIT_CONFIG = {
         :name => nil,
         :retry_interval => 30,
         :ssl => false,
-        :read_timeout => 15,
+        :connect_timeout => 5,
+        :read_timeout => 5,
+        :write_timeout => 5,
     },
 
     :vpsadmin => {
