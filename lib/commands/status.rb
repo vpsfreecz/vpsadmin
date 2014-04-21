@@ -45,8 +45,8 @@ module Commands
       if @opts[:consoles]
         puts sprintf('%-5s %s', 'VEID', 'LISTENERS')  if @opts[:header]
 
-        @res[:consoles].sort.each do |c|
-          puts sprintf('%-5d %d', c[0], c[1])
+        @res[:consoles].sort { |a, b| a[0].to_s.to_i <=> b[0].to_s.to_i }.each do |c|
+          puts sprintf('%-5d %d', c[0].to_s, c[1])
         end
       end
 
@@ -62,7 +62,15 @@ module Commands
 
     def state
       if @res[:state][:run]
-        'running'
+        if @res[:state][:pause]
+          "running, going to pause after #{@res[:state][:pause]}"
+        else
+          'running'
+        end
+
+      elsif @res[:state][:status] == 0
+        'paused'
+
       else
         "finishing, going to #{translate_exitstatus(@res[:state][:status])}"
       end
