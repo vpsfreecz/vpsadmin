@@ -61,7 +61,7 @@ class Db
           log "Trying to connect to #{host}" if problem
           @my = Mysql.init
           @my.ssl_set if db[:ssl]
-          @my.options(Mysql::OPT_READ_TIMEOUT, 15)
+          @my.options(Mysql::OPT_READ_TIMEOUT, db[:read_timeout])
           @my.connect(host, db[:user], db[:pass], db[:name])
           log "Connected to #{host}" if problem
           return
