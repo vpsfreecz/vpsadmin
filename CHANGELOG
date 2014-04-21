@@ -1,3 +1,6 @@
+* Mon Apr 21 2014 - version 1.20.0
+- No change
+
 * Sun Apr 20 2014 - version 1.19.0
 - Transaction add: check for duplicities
 - VPS: fix redirect loop that sometimes happened on start/stop/restart
