@@ -12,6 +12,7 @@
     :name: vpsadmin
 #     :retry_interval: 30
 #     :ssl: false
+#     :read_timeout: 15
 
 :vpsadmin:
     :server_id: 1
@@ -194,3 +195,5 @@
 #             - :install
 #             - :get
 #             - :set
+#             - :pause
+#             - :resume

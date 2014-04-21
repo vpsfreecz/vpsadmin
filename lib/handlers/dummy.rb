@@ -2,7 +2,7 @@ require 'lib/executor'
 
 class Dummy < Executor
   def dummy
-    sleep(60)
+    sleep(6000)
   end
 
   def dummy2

@@ -9,7 +9,7 @@ require 'rubygems'
 require 'eventmachine'
 
 module VpsAdmind
-  VERSION = '1.19.0'
+  VERSION = '1.20.0'
   DB_VERSION = 13
 
   EXIT_OK = 0
@@ -22,7 +22,7 @@ module VpsAdmind
     attr_reader :start_time, :export_console
 
     @@run = true
-    @@exitstatus = 0
+    @@exitstatus = EXIT_OK
     @@mutex = Mutex.new
 
     def initialize
@@ -59,9 +59,13 @@ module VpsAdmind
         catch (:next) do
           @m_workers.synchronize do
             @workers.delete_if do |wid, w|
-              if not w.working?
+              unless w.working?
                 c = w.cmd
                 c.save(@db)
+
+                if @pause && w.cmd.id.to_i === @pause
+                  pause!(true)
+                end
 
                 next true
               end
@@ -73,7 +77,10 @@ module VpsAdmind
 
             @@mutex.synchronize do
               unless @@run
-                exit(@@exitstatus) if @workers.empty?
+                if !@pause && @workers.empty?
+                  exit(@@exitstatus)
+                end
+
                 throw :next
               end
             end
@@ -295,6 +302,42 @@ module VpsAdmind
           return
         end
       end
+    end
+
+    def pause(t = true)
+      @m_workers.synchronize do
+        pause!(t)
+      end
+    end
+
+    def pause!(t = true)
+      @pause = t
+
+      if @pause === true
+        @@mutex.synchronize do
+          @@run = false
+        end
+      end
+    end
+
+    def resume
+      @m_workers.synchronize do
+        @@run = true
+        @pause = nil
+        @last_change = 0
+      end
+    end
+
+    def run?
+      @@run
+    end
+
+    def paused?
+      @pause
+    end
+
+    def exitstatus
+      @@exitstatus
     end
 
     def Daemon.safe_exit(status)

@@ -9,6 +9,7 @@ IMPLICIT_CONFIG = {
         :name => nil,
         :retry_interval => 30,
         :ssl => false,
+        :read_timeout => 15,
     },
 
     :vpsadmin => {
@@ -225,6 +226,8 @@ IMPLICIT_CONFIG = {
                 "install",
                 "get",
                 "set",
+                "pause",
+                "resume",
             ]
         }
     }

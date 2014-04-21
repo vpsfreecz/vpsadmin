@@ -44,7 +44,7 @@ class VpsAdmin < Executor
 
         res_workers[wid] = {
             :id => w.cmd.id,
-            :type => w.cmd.trans["t_type"].to_i,
+            :type => w.cmd.trans['t_type'].to_i,
             :handler => "#{h[:class]}.#{h[:method]}",
             :step => w.cmd.step,
             :pid => w.cmd.subtask,
@@ -60,12 +60,17 @@ class VpsAdmin < Executor
       end
     end
 
-    st = db.prepared_st("SELECT COUNT(t_id) AS cnt FROM transactions WHERE t_server = ? AND t_done = 0", $CFG.get(:vpsadmin, :server_id))
+    st = db.prepared_st('SELECT COUNT(t_id) AS cnt FROM transactions WHERE t_server = ? AND t_done = 0', $CFG.get(:vpsadmin, :server_id))
     q_size = st.fetch()[0]
     st.close
 
     {:ret => :ok,
      :output => {
+         :state => {
+             :run => @daemon.run?,
+             :pause => @daemon.paused?,
+             :status => @daemon.exitstatus,
+         },
          :workers => res_workers,
          :threads => $CFG.get(:vpsadmin, :threads),
          :export_console => @daemon.export_console,
@@ -293,7 +298,7 @@ class VpsAdmin < Executor
 
             catch (:next) do
               workers.each do |wid, w|
-                throw :next if w.cmd.id == t_id
+                throw :next if w.cmd.id.to_i == t_id
               end
 
               queue << {
@@ -334,6 +339,16 @@ class VpsAdmin < Executor
       else
         raise CommandFailed.new(nil, nil, "Unknown resource #{@params[:resource]}")
     end
+  end
+
+  def pause
+    @daemon.pause(@params[:t_id] || true)
+    ok
+  end
+
+  def resume
+    @daemon.resume
+    ok
   end
 
   def walk_workers
