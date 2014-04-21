@@ -29,10 +29,11 @@ module Commands
           'TRANS', 'VEID', 'HANDLER', 'TYPE', 'TIME', 'PID', 'STEP'
         ) if @opts[:header]
 
-        @res[:workers].sort.each do |w|
+        @res[:workers].sort { |a, b| a[0].to_s.to_i <=> b[0].to_s.to_i
+        }.each do |w|
           puts sprintf('%-8d %-5d %-20.19s %-5d %-18.16s %-8s %s',
                        w[1][:id],
-                       w[0],
+                       w[0].to_s,
                        w[1][:handler],
                        w[1][:type],
                        format_duration(Time.new.to_i - w[1][:start]),
