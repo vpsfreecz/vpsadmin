@@ -293,7 +293,7 @@ class VpsAdmin < Executor
 
             catch (:next) do
               workers.each do |wid, w|
-                throw :next if w.cmd.id == t_id
+                throw :next if w.cmd.id.to_i == t_id
               end
 
               queue << {
