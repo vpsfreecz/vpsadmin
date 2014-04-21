@@ -189,6 +189,21 @@ Arguments are transaction \fItypes\fR, not \fIids\fR.
 .RE
 
 
+\fBpause\fR [\fIid\fR]
+.RS
+Pause execution of queued transactions. Running transactions are finished,
+new transactions are not executed until \fBvpsadminctl resume\fR is called.
+.PP
+Argument \fIid\fR is optional. If used, execution will be paused after
+transaction with id \fIid\fR is finished. Until then, new transactions are
+normally executed.
+.PP
+\fBpause\fR stops the execution of urgent transactions too.
+.PP
+\fBpause\fR returns immediately. It does not wait for the pause to take effect.
+.RE
+
+
 \fBrefresh\fR
 .RS
 Update info about this node, including kernel version, and all its VPSes and
@@ -227,6 +242,24 @@ to finish. It will not execute more transactions.
 \fB-f\fR, \fB--force\fR
 Restart vpsAdmind immediately, do not wait for transactions to finish.
 All transactions are softly killed and will restart when vpsAdmind is started.
+.RE
+
+
+\fBresume\fR
+.RS
+Resume transaction execution after it has been paused by \fBvpsadminctl pause\fR.
+\fBresume\fR cancels both immediate and delayed \fBpause\fR.
+.PP
+\fBresume\fR can also be used to cancel scheduled \fBstop\fR, \fBrestart\fR or
+\fBupdate\fR.
+.PP
+One useful side-effect of \fBresume\fR is that it forces \fBvpsAdmind\fR to check queue
+for new transactions, no matter of database last change. In some rare cases,
+\fBvpsAdmind\fR may seem to be stuck because it is ignoring queued transactions.
+\fBresume\fR can be used to put \fBvpsAdmind\fR in motion again, until the
+actual bug is resolved.
+.PP
+\fBresume\fR returns immediately.
 .RE
 
 

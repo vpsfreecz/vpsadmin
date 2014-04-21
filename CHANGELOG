@@ -1,3 +1,7 @@
+* Mon Apr 21 2014 - version 1.20.0
+- Status: fix -w and -c errors, show daemon state
+- New commands pause and resume
+
 * Sun Apr 20 2014 - version 1.19.0
 - Reorganize code, rewrite all commands
 - New commands get and set
