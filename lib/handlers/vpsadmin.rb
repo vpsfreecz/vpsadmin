@@ -44,7 +44,7 @@ class VpsAdmin < Executor
 
         res_workers[wid] = {
             :id => w.cmd.id,
-            :type => w.cmd.trans["t_type"].to_i,
+            :type => w.cmd.trans['t_type'].to_i,
             :handler => "#{h[:class]}.#{h[:method]}",
             :step => w.cmd.step,
             :pid => w.cmd.subtask,
@@ -60,12 +60,16 @@ class VpsAdmin < Executor
       end
     end
 
-    st = db.prepared_st("SELECT COUNT(t_id) AS cnt FROM transactions WHERE t_server = ? AND t_done = 0", $CFG.get(:vpsadmin, :server_id))
+    st = db.prepared_st('SELECT COUNT(t_id) AS cnt FROM transactions WHERE t_server = ? AND t_done = 0', $CFG.get(:vpsadmin, :server_id))
     q_size = st.fetch()[0]
     st.close
 
     {:ret => :ok,
      :output => {
+         :state => {
+             :run => @daemon.run?,
+             :status => @daemon.exitstatus,
+         },
          :workers => res_workers,
          :threads => $CFG.get(:vpsadmin, :threads),
          :export_console => @daemon.export_console,

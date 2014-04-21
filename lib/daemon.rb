@@ -22,7 +22,7 @@ module VpsAdmind
     attr_reader :start_time, :export_console
 
     @@run = true
-    @@exitstatus = 0
+    @@exitstatus = EXIT_OK
     @@mutex = Mutex.new
 
     def initialize
@@ -295,6 +295,14 @@ module VpsAdmind
           return
         end
       end
+    end
+
+    def run?
+      @@run
+    end
+
+    def exitstatus
+      @@exitstatus
     end
 
     def Daemon.safe_exit(status)
