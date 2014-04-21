@@ -29,8 +29,7 @@ module Commands
           'TRANS', 'VEID', 'HANDLER', 'TYPE', 'TIME', 'PID', 'STEP'
         ) if @opts[:header]
 
-        @res[:workers].sort { |a, b| a[0].to_s.to_i <=> b[0].to_s.to_i
-        }.each do |w|
+        @res[:workers].sort { |a, b| a[0].to_s.to_i <=> b[0].to_s.to_i }.each do |w|
           puts sprintf('%-8d %-5d %-20.19s %-5d %-18.16s %-8s %s',
                        w[1][:id],
                        w[0].to_s,
@@ -52,12 +51,29 @@ module Commands
       end
 
       unless @opts[:workers] || @opts[:consoles]
-        puts "Version: #{@vpsadmind.version}"
-        puts "Uptime: #{format_duration(Time.new.to_i - @res[:start_time])}"
-        puts "Workers: #{@res[:workers].size}/#{@res[:threads]}"
+        puts "   Version: #{@vpsadmind.version}"
+        puts "     State: #{state}"
+        puts "    Uptime: #{format_duration(Time.new.to_i - @res[:start_time])}"
+        puts "   Workers: #{@res[:workers].size}/#{@res[:threads]}"
         puts "Queue size: #{@res[:queue_size]}"
-        puts "Exported consoles: #{@res[:export_console] ? @res[:consoles].size : 'disabled'}"
+        puts "  Consoles: #{@res[:export_console] ? @res[:consoles].size : 'disabled'}"
       end
+    end
+
+    def state
+      if @res[:state][:run]
+        'running'
+      else
+        "finishing, going to #{translate_exitstatus(@res[:state][:status])}"
+      end
+    end
+
+    def translate_exitstatus(s)
+      {
+         100 => 'stop',
+         150 => 'restart',
+         200 => 'update',
+      }[s]
     end
   end
 end
