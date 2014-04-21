@@ -68,6 +68,7 @@ class VpsAdmin < Executor
      :output => {
          :state => {
              :run => @daemon.run?,
+             :pause => @daemon.paused?,
              :status => @daemon.exitstatus,
          },
          :workers => res_workers,
@@ -338,6 +339,16 @@ class VpsAdmin < Executor
       else
         raise CommandFailed.new(nil, nil, "Unknown resource #{@params[:resource]}")
     end
+  end
+
+  def pause
+    @daemon.pause(@params[:t_id] || true)
+    ok
+  end
+
+  def resume
+    @daemon.resume
+    ok
   end
 
   def walk_workers

@@ -194,3 +194,5 @@
 #             - :install
 #             - :get
 #             - :set
+#             - :pause
+#             - :resume

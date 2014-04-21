@@ -59,9 +59,13 @@ module VpsAdmind
         catch (:next) do
           @m_workers.synchronize do
             @workers.delete_if do |wid, w|
-              if not w.working?
+              unless w.working?
                 c = w.cmd
                 c.save(@db)
+
+                if @pause && w.cmd.id.to_i === @pause
+                  pause!(true)
+                end
 
                 next true
               end
@@ -73,7 +77,10 @@ module VpsAdmind
 
             @@mutex.synchronize do
               unless @@run
-                exit(@@exitstatus) if @workers.empty?
+                if !@pause && @workers.empty?
+                  exit(@@exitstatus)
+                end
+
                 throw :next
               end
             end
@@ -297,8 +304,36 @@ module VpsAdmind
       end
     end
 
+    def pause(t = true)
+      @m_workers.synchronize do
+        pause!(t)
+      end
+    end
+
+    def pause!(t = true)
+      @pause = t
+
+      if @pause === true
+        @@mutex.synchronize do
+          @@run = false
+        end
+      end
+    end
+
+    def resume
+      @m_workers.synchronize do
+        @@run = true
+        @pause = nil
+        @last_change = 0
+      end
+    end
+
     def run?
       @@run
+    end
+
+    def paused?
+      @pause
     end
 
     def exitstatus

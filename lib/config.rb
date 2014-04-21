@@ -225,6 +225,8 @@ IMPLICIT_CONFIG = {
                 "install",
                 "get",
                 "set",
+                "pause",
+                "resume",
             ]
         }
     }
