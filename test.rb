@@ -1,10 +1,10 @@
 require './lib/vpsadmin/vpsadmin'
 
-VpsAdmin.resources do |r|
-  puts "Resource #{r}"
-  r.actions do |a|
-    puts "\tAction #{a}: desc=#{a.desc}"
-  end
+VpsAdmin::API.get_version(:all).each do |r|
+  #puts "Resource #{r}"
+  #r.actions do |a|
+  #  puts "\tAction #{a}: desc=#{a.desc}"
+  #end
 
 
   r.routes.each do |r|
@@ -12,4 +12,10 @@ VpsAdmin.resources do |r|
   end
 end
 
-VpsAdmin::API::App.run!
+VpsAdmin::API.use_version(1)
+VpsAdmin::API.mount('/')
+
+#v1 = VpsAdmin::API.get_version(1)
+#VpsAdmin::API.mount('/v1/', v1)
+
+VpsAdmin::API.start!
