@@ -36,7 +36,8 @@ module VpsAdmin
           end
 
           def exec
-            'Well how do you like that?'
+            'Well how do you like that?<br>'
+            "My version is #{@version}"
           end
         end
 

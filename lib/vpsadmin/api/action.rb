@@ -48,8 +48,13 @@ module VpsAdmin
         end
       end
 
-      def initialize(params)
+      def initialize(version, params)
+        @version = version
         @params = params
+      end
+
+      def v?(v)
+        @version == v
       end
     end
   end
