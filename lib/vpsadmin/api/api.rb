@@ -89,39 +89,129 @@ module VpsAdmin
 
     class App < Sinatra::Base
       class << self
-        attr_accessor :versions, :default_version
+        attr_accessor :versions, :default_version, :root, :routes
 
         def mount(prefix='/')
+          @root = prefix
+          @routes = {}
+
           # Mount root
-          # FIXME
+          options @root do
+            JSON.pretty_generate(App.describe)
+          end
 
           @default_version ||= versions.last
 
           # Mount default version first
-          mount_version(prefix, @default_version)
+          mount_version(@root, @default_version)
 
           @versions.each do |v|
-            mount_version("#{prefix}v#{v}/", v)
+            mount_version(version_prefix(v), v)
           end
         end
 
         def mount_version(prefix, v)
+          @routes[v] = {}
+
+          options prefix do
+            JSON.pretty_generate(App.describe_version(v))
+          end
+
           API.get_version_resources(v).each do |resource|
+            @routes[v][resource] = {resources: {}, actions: {}}
+
             resource.routes(prefix).each do |route|
-              self.method(route.http_method).call(route.url) do
-                action = route.action.new(v, params)
-                action.exec
-              end
+              if route.is_a?(Hash)
+                @routes[v][resource][:resources][route.keys.first] = mount_nested_resource(route.values.first)
 
-              options route.url do
-                desc = route.action.describe
-                desc[:url] = route.url
-                desc[:method] = route.http_method.to_s.upcase
-
-                JSON.pretty_generate(desc)
+              else
+                @routes[v][resource][:actions][route.action] = route.url
+                mount_action(route)
               end
             end
           end
+        end
+
+        def mount_nested_resource(routes)
+          ret = {resources: {}, actions: {}}
+
+          routes.each do |route|
+            if route.is_a?(Hash)
+              ret[:resources][route.keys.first] = mount_nested_resource(route.values.first)
+
+            else
+              ret[:actions][route.action] = route.url
+              mount_action(route)
+            end
+          end
+
+          ret
+        end
+
+        def mount_action(route)
+          self.method(route.http_method).call(route.url) do
+            action = route.action.new(v, params)
+            action.exec
+          end
+
+          options route.url do
+            desc = route.action.describe
+            desc[:url] = route.url
+            desc[:method] = route.http_method.to_s.upcase
+
+            JSON.pretty_generate(desc)
+          end
+        end
+
+        def describe
+          ret = {
+              default_version: @default_version,
+              versions: {default: describe_version(@default_version)},
+          }
+
+          @versions.each do |v|
+            ret[:versions][v] = describe_version(v)
+          end
+
+          ret
+        end
+
+        def describe_version(v)
+          ret = {resources: {}}
+
+          #puts JSON.pretty_generate(@routes)
+
+          @routes[v].each do |resource, children|
+            r_name = resource.to_s.demodulize.tableize
+
+            ret[:resources][r_name] = describe_resource(children)
+          end
+
+          ret
+        end
+
+        def describe_resource(hash)
+          ret = {actions: {}, resources: {}}
+
+          hash[:actions].each do |action, url|
+            a_name = action.to_s.demodulize.underscore
+
+            ret[:actions][a_name] = action.describe
+            ret[:actions][a_name].update({
+                                             url: url,
+                                             method: action.http_method.to_s.upcase,
+                                         })
+          end
+
+          hash[:resources].each do |resource, children|
+            ret[:resources][resource.to_s.demodulize.tableize] = describe_resource(children)
+          end
+
+          ret
+        end
+
+        def version_prefix(v)
+          "#{@root}v#{v}/"
         end
       end
     end

@@ -40,7 +40,7 @@ module VpsAdmin
         end
 
         resources do |r|
-          ret += r.routes(prefix)
+          ret << {r => r.routes(prefix)}
         end
 
         ret
