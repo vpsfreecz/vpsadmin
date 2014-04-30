@@ -49,6 +49,15 @@ module VpsAdmin
 
         end
 
+        def example(&block)
+          if block
+            @example = Example.new
+            @example.instance_eval(&block)
+          else
+            @example
+          end
+        end
+
         def build_route(prefix)
           prefix + (@route || to_s.demodulize.underscore) % {resource: self.resource.to_s.demodulize.underscore}
         end
@@ -58,6 +67,7 @@ module VpsAdmin
               description: @desc,
               input: @input ? @input.describe : {},
               output: @output ? @output.describe : {},
+              example: @example ? @example.describe : {},
           }
         end
       end

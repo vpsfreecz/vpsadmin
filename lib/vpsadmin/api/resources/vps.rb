@@ -45,6 +45,12 @@ module VpsAdmin
             })
           end
 
+          example do
+            request({kokot: 'yes'})
+            response({})
+            comment 'no jasne no'
+          end
+
           def exec
             'Well how do you like that?<br>'
             "My version is #{@version}"
