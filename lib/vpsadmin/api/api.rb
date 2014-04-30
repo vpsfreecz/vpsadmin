@@ -155,9 +155,14 @@ module VpsAdmin
           end
 
           options route.url do
+            route_method = route.http_method.to_s.upcase
+
+            pass if params[:method] && params[:method] != route_method
+
             desc = route.action.describe
             desc[:url] = route.url
-            desc[:method] = route.http_method.to_s.upcase
+            desc[:method] = route_method
+            desc[:help] = "#{route_url}?method=#{route_method}"
 
             JSON.pretty_generate(desc)
           end
@@ -195,11 +200,13 @@ module VpsAdmin
 
           hash[:actions].each do |action, url|
             a_name = action.to_s.demodulize.underscore
+            route_method = action.http_method.to_s.upcase
 
             ret[:actions][a_name] = action.describe
             ret[:actions][a_name].update({
                                              url: url,
-                                             method: action.http_method.to_s.upcase,
+                                             method: route_method,
+                                             help: "#{url}?method=#{route_method}"
                                          })
           end
 
