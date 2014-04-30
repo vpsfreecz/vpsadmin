@@ -88,6 +88,10 @@ module VpsAdmin
     end
 
     class App < Sinatra::Base
+      not_found do
+        'action not found'
+      end
+
       class << self
         attr_accessor :versions, :default_version, :root, :routes
 
@@ -122,33 +126,33 @@ module VpsAdmin
 
             resource.routes(prefix).each do |route|
               if route.is_a?(Hash)
-                @routes[v][resource][:resources][route.keys.first] = mount_nested_resource(route.values.first)
+                @routes[v][resource][:resources][route.keys.first] = mount_nested_resource(v, route.values.first)
 
               else
                 @routes[v][resource][:actions][route.action] = route.url
-                mount_action(route)
+                mount_action(v, route)
               end
             end
           end
         end
 
-        def mount_nested_resource(routes)
+        def mount_nested_resource(v, routes)
           ret = {resources: {}, actions: {}}
 
           routes.each do |route|
             if route.is_a?(Hash)
-              ret[:resources][route.keys.first] = mount_nested_resource(route.values.first)
+              ret[:resources][route.keys.first] = mount_nested_resource(v, route.values.first)
 
             else
               ret[:actions][route.action] = route.url
-              mount_action(route)
+              mount_action(v, route)
             end
           end
 
           ret
         end
 
-        def mount_action(route)
+        def mount_action(v, route)
           self.method(route.http_method).call(route.url) do
             action = route.action.new(v, params)
             action.exec
@@ -187,7 +191,7 @@ module VpsAdmin
           #puts JSON.pretty_generate(@routes)
 
           @routes[v].each do |resource, children|
-            r_name = resource.to_s.demodulize.tableize
+            r_name = resource.to_s.demodulize.underscore
 
             ret[:resources][r_name] = describe_resource(children)
           end
@@ -211,7 +215,7 @@ module VpsAdmin
           end
 
           hash[:resources].each do |resource, children|
-            ret[:resources][resource.to_s.demodulize.tableize] = describe_resource(children)
+            ret[:resources][resource.to_s.demodulize.underscore] = describe_resource(children)
           end
 
           ret
