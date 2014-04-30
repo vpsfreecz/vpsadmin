@@ -26,14 +26,27 @@ module VpsAdmin
       class << self
         attr_reader :resource
 
-        def params(&block)
+        def input(&block)
           if block
-            @params = Params.new
-            @params.instance_eval(&block)
-            @params.load_validators(model) if model
+            @input = Params.new
+            @input.instance_eval(&block)
+            @input.load_validators(model) if model
           else
-            @params
+            @input
           end
+        end
+
+        def output(&block)
+          if block
+            @output = Params.new
+            @output.instance_eval(&block)
+          else
+            @output
+          end
+        end
+
+        def params(&block)
+
         end
 
         def build_route(prefix)
@@ -43,7 +56,8 @@ module VpsAdmin
         def describe
           {
               description: @desc,
-              parameters: @params ? @params.describe : {},
+              input: @input ? @input.describe : {},
+              output: @output ? @output.describe : {},
           }
         end
       end

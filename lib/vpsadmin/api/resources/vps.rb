@@ -17,9 +17,17 @@ module VpsAdmin
         class Create < API::Actions::Default::Create
           desc 'Create VPS'
 
-          params do
+          input do
             param :hostname, desc: 'VPS hostname'
             param :distribution, desc: 'Distribution to install'
+            param :one, label: 'One', desc: 'oh yes, very interesting', required: true, type: String
+            param :two, label: 'Two', desc: 'not very interesting', required: false, type: Integer
+          end
+
+          output do
+            structure({
+              status: Boolean,
+            })
           end
 
           def exec
@@ -30,9 +38,11 @@ module VpsAdmin
         class Show < API::Actions::Default::Show
           desc 'Show VPS properties'
 
-          params do
-            param :one, label: 'One', desc: 'oh yes, very interesting', required: true, type: String
-            param :two, label: 'Two', desc: 'not very interesting', required: false, type: Integer
+          output do
+            structure({
+              hostname: String,
+              distribution: Integer,
+            })
           end
 
           def exec
@@ -42,7 +52,7 @@ module VpsAdmin
         end
 
         class Update < API::Actions::Default::Update
-          params do
+          input do
             param :id, desc: 'VPS id'
           end
         end

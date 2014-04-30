@@ -50,6 +50,10 @@ module VpsAdmin
         add_param(*args)
       end
 
+      def structure(s)
+        @structure = s
+      end
+
       def load_validators(model)
         puts "Load validators from #{model}"
 
@@ -63,10 +67,11 @@ module VpsAdmin
       end
 
       def describe
-        ret = {}
+        ret = {parameters: {}}
+        ret[:format] = @structure if @structure
 
         @params.each do |p|
-          ret[p.name] = p.describe
+          ret[:parameters][p.name] = p.describe
         end
 
         ret

@@ -26,8 +26,3 @@ VpsAdmin::API::App.routes.each do |http_method, routes|
 end
 
 VpsAdmin::API.start!
-
-VpsAdmin::API.use_version([1, 2])
-VpsAdmin::API.set_default_version(1)
-VpsAdmin::API.mount('/')
-VpsAdmin::API.start!
