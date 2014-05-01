@@ -26,3 +26,4 @@ VpsAdmin::API::App.routes.each do |http_method, routes|
 end
 
 VpsAdmin::API.start!
+
