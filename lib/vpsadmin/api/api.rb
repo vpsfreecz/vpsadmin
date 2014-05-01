@@ -166,7 +166,7 @@ module VpsAdmin
             desc = route.action.describe
             desc[:url] = route.url
             desc[:method] = route_method
-            desc[:help] = "#{route_url}?method=#{route_method}"
+            desc[:help] = "#{route.url}?method=#{route_method}"
 
             JSON.pretty_generate(desc)
           end
