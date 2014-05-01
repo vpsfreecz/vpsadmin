@@ -100,6 +100,10 @@ module VpsAdmin
         'action not found'
       end
 
+      after do
+        ActiveRecord::Base.clear_active_connections!
+      end
+
       class << self
         attr_accessor :versions, :default_version, :root, :routes
 

@@ -77,6 +77,10 @@ module VpsAdmin
         @params = params
       end
 
+      def exec
+        ['not implemented']
+      end
+
       def v?(v)
         @version == v
       end
