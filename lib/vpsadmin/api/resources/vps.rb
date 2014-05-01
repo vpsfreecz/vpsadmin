@@ -9,8 +9,24 @@ module VpsAdmin
         class Index < API::Actions::Default::Index
           desc 'List VPS'
 
+          output do
+            structure([{
+              vps_id: Integer,
+              hostname: String,
+            }])
+          end
+
           def exec
-            'Howdy?'
+            ret = []
+
+            Vps.all.each do |vps|
+              ret << {
+                vps_id: vps.id,
+                hostname: vps.hostname,
+              }
+            end
+
+            ret
           end
         end
 

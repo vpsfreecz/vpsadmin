@@ -84,6 +84,14 @@ module VpsAdmin
 
     # Start API.
     def self.start!
+      ActiveRecord::Base.establish_connection(
+          adapter:  'mysql',
+          host:     'localhost',
+          username: 'vpsadmin2',
+          password: 'rails',
+          database: 'vpsadmin2'
+      )
+      
       App.start!
     end
 
@@ -155,7 +163,7 @@ module VpsAdmin
         def mount_action(v, route)
           self.method(route.http_method).call(route.url) do
             action = route.action.new(v, params)
-            action.exec
+            JSON.pretty_generate(action.exec)
           end
 
           options route.url do
