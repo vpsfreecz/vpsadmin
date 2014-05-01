@@ -3,12 +3,13 @@ module VpsAdmin
     class Param
       attr_reader :name, :label, :desc, :type
 
-      def initialize(name, required: nil, label: nil, desc: nil, type: String)
+      def initialize(name, required: nil, label: nil, desc: nil, type: nil)
         @required = required
         @name = name
         @label = label || name.to_s.capitalize
         @desc = desc
         @type = type
+        @layout = :custom
       end
 
       def required?
@@ -28,7 +29,7 @@ module VpsAdmin
             required: required?,
             label: @label,
             description: @desc,
-            type: @type.to_s
+            type: @type ? @type.to_s : String.to_s
         }
       end
     end
@@ -50,8 +51,22 @@ module VpsAdmin
         add_param(*args)
       end
 
+      # Action returns custom data.
       def structure(s)
+        @layout = :custom
         @structure = s
+      end
+
+      # Action returns a list of objects.
+      def list_of(hash)
+        @layout = :list
+        @structure = hash
+      end
+
+      # Action returns properties describing one object.
+      def object(hash)
+        @layout = :object
+        @structure = hash
       end
 
       def load_validators(model)
@@ -68,6 +83,7 @@ module VpsAdmin
 
       def describe
         ret = {parameters: {}}
+        ret[:layout] = @layout
         ret[:format] = @structure if @structure
 
         @params.each do |p|

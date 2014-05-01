@@ -10,10 +10,13 @@ module VpsAdmin
           desc 'List VPS'
 
           output do
-            structure([{
+            list_of({
               vps_id: Integer,
               hostname: String,
-            }])
+            })
+
+            param :vps_id, label: 'VPS id'
+            param :hostname, label: 'Hostname'
           end
 
           def exec
@@ -55,7 +58,8 @@ module VpsAdmin
           desc 'Show VPS properties'
 
           output do
-            structure({
+            object({
+              vps_id: Integer,
               hostname: String,
               distribution: Integer,
             })
@@ -68,8 +72,13 @@ module VpsAdmin
           end
 
           def exec
-            'Well how do you like that?<br>'
-            "My version is #{@version}"
+            vps = Vps.find(@params[:vps_id])
+
+            {
+                vps_id: vps.id,
+                hostname: vps.hostname,
+                distribution: 15615
+            }
           end
         end
 

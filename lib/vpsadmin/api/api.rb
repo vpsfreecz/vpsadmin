@@ -167,7 +167,14 @@ module VpsAdmin
         def mount_action(v, route)
           self.method(route.http_method).call(route.url) do
             action = route.action.new(v, params)
-            JSON.pretty_generate(action.exec)
+
+            ret = action.exec
+
+            if ret.is_a?(String)
+              ret.to_json
+            else
+              JSON.pretty_generate(ret)
+            end
           end
 
           options route.url do
