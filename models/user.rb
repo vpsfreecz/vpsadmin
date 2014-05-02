@@ -28,6 +28,16 @@ class User < ActiveRecord::Base
       99 => 'God',
   }
 
+  def role
+    if m_level >= 90
+      :admin
+    elsif m_level >= 21
+      :support
+    elsif m_level >= 1
+      :user
+    end
+  end
+
   def first_name
     m_name.split(' ').first
   end
@@ -52,7 +62,7 @@ class User < ActiveRecord::Base
     u = User.find_by(m_nick: username)
 
     if u
-      u.valid_password?(username, password)
+      u if u.valid_password?(username, password)
     end
   end
 end

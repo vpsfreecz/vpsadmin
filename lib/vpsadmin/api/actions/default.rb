@@ -21,7 +21,7 @@ module VpsAdmin
           route ':%{resource}_id'
           http_method :put
 
-          params do
+          input do
             requires :id
           end
         end

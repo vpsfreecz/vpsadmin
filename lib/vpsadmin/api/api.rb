@@ -105,8 +105,15 @@ module VpsAdmin
 
         def authenticated?
           auth = Rack::Auth::Basic::Request.new(request.env)
-          auth.provided? && auth.basic? && auth.credentials &&
+          if auth.provided? && auth.basic? && auth.credentials
             @current_user = User.authenticate(*auth.credentials)
+          end
+
+          @current_user
+        end
+
+        def current_user
+          @current_user
         end
       end
 
@@ -184,7 +191,11 @@ module VpsAdmin
 
             action = route.action.new(v, params)
 
-            ret = action.exec
+            unless action.authorized?(current_user)
+              halt 403, "you ain't supposed to be here"
+            end
+
+            ret = action.safe_exec
 
             if ret.is_a?(String)
               ret.to_json

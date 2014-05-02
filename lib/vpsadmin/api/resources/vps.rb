@@ -19,10 +19,16 @@ module VpsAdmin
             param :hostname, label: 'Hostname'
           end
 
+          authorize do |u|
+            allow if u.role == :admin
+            restrict m_id: u.m_id
+            allow
+          end
+
           def exec
             ret = []
 
-            Vps.all.each do |vps|
+            Vps.where(with_restricted).each do |vps|
               ret << {
                 vps_id: vps.id,
                 hostname: vps.hostname,
@@ -71,11 +77,16 @@ module VpsAdmin
             comment 'no jasne no'
           end
 
+          authorize do |u|
+            restrict m_id: u.m_id
+            allow
+          end
+
           def exec
-            vps = Vps.find(@params[:vps_id])
+            vps = Vps.find_by!(with_restricted(vps_id: @params[:vps_id]))
 
             {
-                vps_id: vps.id,
+                vps_id: vps.vps_id,
                 hostname: vps.hostname,
                 distribution: 15615
             }
@@ -85,6 +96,11 @@ module VpsAdmin
         class Update < API::Actions::Default::Update
           input do
             param :id, desc: 'VPS id'
+          end
+
+          authorize do |u|
+            restrict m_id: u.m_id
+            whitelist
           end
         end
 

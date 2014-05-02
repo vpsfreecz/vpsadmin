@@ -27,7 +27,7 @@ module VpsAdmin
       end
 
       class << self
-        attr_reader :resource
+        attr_reader :resource, :authorization
 
         def input(&block)
           if block
@@ -48,8 +48,8 @@ module VpsAdmin
           end
         end
 
-        def params(&block)
-
+        def authorize(&block)
+          @authorization = Authorization.new(&block)
         end
 
         def example(&block)
@@ -93,15 +93,51 @@ module VpsAdmin
       def initialize(version, params)
         @version = version
         @params = params
+
+        class_auth = self.class.authorization
+
+        if class_auth
+          @authorization = class_auth.clone
+        else
+          @authorization = Authorization.new {}
+        end
+      end
+
+      def authorized?(user)
+        @current_user = user
+        @authorization.authorized?(user)
+      end
+
+      def current_user
+        @current_user
       end
 
       def exec
         ['not implemented']
       end
 
+      def safe_exec
+        begin
+          exec
+        rescue ActiveRecord::RecordNotFound
+          'not found'
+        rescue => e
+          puts "#{e} just happened"
+       end
+      end
+
       def v?(v)
         @version == v
       end
+
+      protected
+        def with_restricted(*args)
+          if args.empty?
+            @authorization.restrictions
+          else
+            args.first.update(@authorization.restrictions)
+          end
+        end
     end
   end
 end
