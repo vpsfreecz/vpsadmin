@@ -11,10 +11,10 @@ module VpsAdmin
           instance_variable_set("@#{name}", default)
 
           self.class.send(:define_method, name) do |value=nil|
-            if value
-              instance_variable_set("@#{name}", value)
-            else
+            if value.nil?
               instance_variable_get("@#{name}")
+            else
+              instance_variable_set("@#{name}", value)
             end
           end
         end
@@ -27,7 +27,7 @@ module VpsAdmin
           subclass.custom_attrs = []
 
           @custom_attrs.each do |attr|
-            #puts "#{subclass}: Inherit #{attr} = #{instance_variable_get("@#{attr}")}"
+            # puts "#{subclass}: Inherit #{attr} = #{instance_variable_get("@#{attr}")}"
             subclass.method(attr).call(instance_variable_get("@#{attr}"))
             subclass.custom_attrs << attr
           end

@@ -6,14 +6,17 @@ module VpsAdmin
       has_attr :desc
       has_attr :route
       has_attr :http_method, :get
+      has_attr :auth, true
 
       def self.inherited(subclass)
         #puts "Action.inherited called #{subclass} from #{to_s}"
 
         subclass.instance_variable_set(:@obj_type, obj_type)
-        inherit_attrs(subclass)
 
         resource = Kernel.const_get(subclass.to_s.deconstantize)
+
+        inherit_attrs(subclass)
+        inherit_attrs_from_resource(subclass, resource, [:auth])
 
         begin
           subclass.instance_variable_set(:@resource, resource)
@@ -64,11 +67,26 @@ module VpsAdmin
 
         def describe
           {
+              auth: @auth,
               description: @desc,
               input: @input ? @input.describe : {},
               output: @output ? @output.describe : {},
               example: @example ? @example.describe : {},
           }
+        end
+
+        # Inherit attributes from resource action is defined in.
+        def inherit_attrs_from_resource(action, r, attrs)
+          begin
+            return unless r.obj_type == :resource
+
+          rescue NoMethodError
+            return
+          end
+
+          attrs.each do |attr|
+            action.method(attr).call(r.method(attr).call)
+          end
         end
       end
 

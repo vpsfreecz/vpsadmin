@@ -13,6 +13,8 @@ class User < ActiveRecord::Base
   #  c.crypto_provider = Vpsadmin::VpsadminCryptoProvider
   #end
 
+  acts_as_authentic
+
   has_paper_trail ignore: [
       :m_last_activity,
   ]
@@ -42,11 +44,15 @@ class User < ActiveRecord::Base
     m_last_activity ? Time.at(m_last_activity) : 'never'
   end
 
-  def password_valid?(raw_password)
-    Vpsadmin::VpsadminCryptoProvider.matches?(m_pass, m_nick, raw_password)
+  def valid_password?(*credentials)
+    VpsAdmin::API::CryptoProvider.matches?(m_pass, *credentials)
   end
 
-  def self.find_by_username(login)
-    find_by(m_nick: login)
+  def self.authenticate(username, password)
+    u = User.find_by(m_nick: username)
+
+    if u
+      u.valid_password?(username, password)
+    end
   end
 end

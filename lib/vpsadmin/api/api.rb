@@ -96,6 +96,20 @@ module VpsAdmin
     end
 
     class App < Sinatra::Base
+      helpers do
+        def authenticate!
+          unless authenticated?
+            halt 403, {'WWW-Authenticate' => 'Basic realm="Restricted Area"'}, 'no wai'
+          end
+        end
+
+        def authenticated?
+          auth = Rack::Auth::Basic::Request.new(request.env)
+          auth.provided? && auth.basic? && auth.credentials &&
+            @current_user = User.authenticate(*auth.credentials)
+        end
+      end
+
       not_found do
         'action not found'
       end
@@ -166,6 +180,8 @@ module VpsAdmin
 
         def mount_action(v, route)
           self.method(route.http_method).call(route.url) do
+            authenticate! if route.action.auth
+
             action = route.action.new(v, params)
 
             ret = action.exec

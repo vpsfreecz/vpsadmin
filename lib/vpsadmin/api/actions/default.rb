@@ -18,7 +18,7 @@ module VpsAdmin
         end
 
         class Update < Action
-          route ':%{resource}_id/update'
+          route ':%{resource}_id'
           http_method :put
 
           params do
@@ -27,7 +27,7 @@ module VpsAdmin
         end
 
         class Delete < Action
-          route ':%{resource}_id/delete'
+          route ':%{resource}_id'
           http_method :delete
         end
       end

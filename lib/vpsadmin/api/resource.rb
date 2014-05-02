@@ -6,6 +6,7 @@ module VpsAdmin
       has_attr :desc
       has_attr :model
       has_attr :route
+      has_attr :auth, true
 
       def self.inherited(subclass)
         subclass.instance_variable_set(:@obj_type, obj_type)

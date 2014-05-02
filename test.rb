@@ -19,11 +19,11 @@ VpsAdmin::API.mount('/')
 #v1 = VpsAdmin::API.get_version(1)
 #VpsAdmin::API.mount('/v1/', v1)
 
-VpsAdmin::API::App.routes.each do |http_method, routes|
-  routes.each do |route|
-    puts "#{http_method} #{route}"
-  end
-end
+# VpsAdmin::API::App.routes.each do |http_method, routes|
+#   routes.each do |route|
+#     puts "#{http_method} #{route}"
+#   end
+# end
 
 VpsAdmin::API.start!
 
