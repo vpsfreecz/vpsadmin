@@ -10,6 +10,7 @@ module VpsAdmin
         @desc = desc
         @type = type
         @layout = :custom
+        @validators = {}
       end
 
       def required?
@@ -20,8 +21,12 @@ module VpsAdmin
         !@required
       end
 
-      def validator
-        'FIXME'
+      def add_validator(v)
+        @validators.update(v)
+      end
+
+      def validators
+        @validators
       end
 
       def describe
@@ -29,7 +34,8 @@ module VpsAdmin
             required: required?,
             label: @label,
             description: @desc,
-            type: @type ? @type.to_s : String.to_s
+            type: @type ? @type.to_s : String.to_s,
+            validators: @validators,
         }
       end
     end
@@ -70,14 +76,10 @@ module VpsAdmin
       end
 
       def load_validators(model)
-        puts "Load validators from #{model}"
+        tr = ValidatorTranslator.new(@params)
 
         model.validators.each do |validator|
-          ValidatorTranslator.handlers.each do |k, block|
-            if validator.is_a?(k)
-              instance_eval(&block)
-            end
-          end
+          tr.translate(validator)
         end
       end
 

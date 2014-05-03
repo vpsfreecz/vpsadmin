@@ -41,12 +41,13 @@
             <% if info[:input][:parameters].empty? %>
               <p>No parameters.</p>
             <% else %>
-              <table>
+              <table class="table">
                 <tr>
                   <th>Label</th>
                   <th>Name</th>
                   <th>Required</th>
                   <th>Type</th>
+                  <th>Validators</th>
                   <th>Description</th>
                 </tr>
                 <% info[:input][:parameters].each do |param, info| %>
@@ -55,6 +56,7 @@
                     <td><%= param %></td>
                     <td><%= info[:required] ? 'yes' : 'no' %></td>
                     <td><%= info[:type] %></td>
+                    <td><%= info[:validators] %></td>
                     <td><%= info[:description] %></td>
                   </tr>
                 <% end %>
