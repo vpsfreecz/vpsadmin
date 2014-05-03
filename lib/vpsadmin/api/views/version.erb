@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>API v<%= @v %> description</title>
+  <style>
+    html,body { margin: 10px; }
+    .resource { margin-left: 10px; }
+    .resource-body { margin-left: 20px; }
+    .actions { margin-left: 10px; }
+    .action { margin-left: 10px; }
+    .parameters { margin-left: 10px; }
+  </style>
+</head>
+<body>
+<h1>API v<%= @v %></h1>
+<h2>Resources</h2>
+
+<% def render_resource(resource, info) %>
+  <h3 class="resource"><%= resource.humanize %></h3>
+  <div class="resource-body">
+    <p><%= info[:description] %></p>
+
+    <h4>Actions</h4>
+
+    <div class="actions">
+      <% info[:actions].each do |action, info| %>
+        <h5><%= action.capitalize %></h5>
+        <div class="action">
+          <dl>
+            <dt>URL:</dt>
+            <dd><%= info[:method] %> <%= info[:url] %></dd>
+            <dt>Description:</dt>
+            <dd><%= info[:description] %></dd>
+            <dt>Authentication required:</dt>
+            <dd><%= info[:auth] ? 'yes' : 'no' %></dd>
+          </dl>
+
+          <h6>Input parameters</h6>
+          <div class="parameters">
+            <% if info[:input][:parameters].empty? %>
+              <p>No parameters.</p>
+            <% else %>
+              <table>
+                <tr>
+                  <th>Label</th>
+                  <th>Name</th>
+                  <th>Required</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                </tr>
+                <% info[:input][:parameters].each do |param, info| %>
+                  <tr>
+                    <td><%= info[:label] %></td>
+                    <td><%= param %></td>
+                    <td><%= info[:required] ? 'yes' : 'no' %></td>
+                    <td><%= info[:type] %></td>
+                    <td><%= info[:description] %></td>
+                  </tr>
+                <% end %>
+              </table>
+            <% end %>
+          </div>
+        </div>
+    <% end %>
+  </div>
+
+  <% unless info[:resources].empty? %>
+    <h4>Resources</h4>
+    <% info[:resources].each do |resource, info| %>
+      <% render_resource(resource, info) %>
+    <% end %>
+  <% end %>
+  </div> <!-- resource -->
+<% end %>
+
+<% @help[:resources].each do |resource, info| %>
+  <% render_resource(resource, info) %>
+<% end %>
+
+</body>
+</html>

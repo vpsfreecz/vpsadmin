@@ -69,8 +69,8 @@ module VpsAdmin
           {
               auth: @auth,
               description: @desc,
-              input: @input ? @input.describe : {},
-              output: @output ? @output.describe : {},
+              input: @input ? @input.describe : {parameters: {}},
+              output: @output ? @output.describe : {parameters: {}},
               example: @example ? @example.describe : {},
           }
         end

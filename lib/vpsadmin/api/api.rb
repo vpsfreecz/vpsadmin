@@ -96,6 +96,8 @@ module VpsAdmin
     end
 
     class App < Sinatra::Base
+      set :views, settings.root + '/views'
+
       helpers do
         def authenticate!
           unless authenticated?
@@ -133,6 +135,11 @@ module VpsAdmin
           @routes = {}
 
           # Mount root
+          get @root do
+            @api = App.describe
+            erb :index
+          end
+
           options @root do
             JSON.pretty_generate(App.describe)
           end
@@ -149,6 +156,12 @@ module VpsAdmin
 
         def mount_version(prefix, v)
           @routes[v] = {}
+
+          get prefix do
+            @v = v
+            @help = App.describe_version(v)
+            erb :version
+          end
 
           options prefix do
             JSON.pretty_generate(App.describe_version(v))
@@ -232,21 +245,21 @@ module VpsAdmin
         end
 
         def describe_version(v)
-          ret = {resources: {}}
+          ret = {resources: {}, help: version_prefix(v)}
 
           #puts JSON.pretty_generate(@routes)
 
           @routes[v].each do |resource, children|
             r_name = resource.to_s.demodulize.underscore
 
-            ret[:resources][r_name] = describe_resource(children)
+            ret[:resources][r_name] = describe_resource(resource, children)
           end
 
           ret
         end
 
-        def describe_resource(hash)
-          ret = {actions: {}, resources: {}}
+        def describe_resource(r, hash)
+          ret = {description: r.desc, actions: {}, resources: {}}
 
           hash[:actions].each do |action, url|
             a_name = action.to_s.demodulize.underscore
@@ -261,7 +274,7 @@ module VpsAdmin
           end
 
           hash[:resources].each do |resource, children|
-            ret[:resources][resource.to_s.demodulize.underscore] = describe_resource(children)
+            ret[:resources][resource.to_s.demodulize.underscore] = describe_resource(resource, children)
           end
 
           ret
