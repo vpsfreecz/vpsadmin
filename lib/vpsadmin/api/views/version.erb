@@ -30,6 +30,23 @@
 <p>
   When action requires authentication, you have to login with HTTP basic auth.
 </p>
+<p>
+  In addition to output parameters specified below, every API response is wrapped in an envelope.
+  The envelope reports if action succeeded or failed, provides return value or error
+  message.
+</p>
+<p>
+  Envelope:
+  <pre>
+    <code>
+  {
+    "status": true/false,
+    "response": return value,
+    "message": error message, if status is false
+  }
+    </code>
+  </pre>
+</p>
 
 <h1>Resources</h1>
 
