@@ -194,6 +194,7 @@ module VpsAdmin
         ret = {}
 
         hash.each do |k, v|
+          k = k.to_sym
           hit = false
 
           params.each do |p|
@@ -217,6 +218,7 @@ module VpsAdmin
         ret = {}
 
         hash.each do |k, v|
+          k = k.to_sym
           hit = false
 
           params.each do |p|

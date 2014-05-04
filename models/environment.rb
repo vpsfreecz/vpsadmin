@@ -4,7 +4,7 @@ class Environment < ActiveRecord::Base
 
   validates :label, :domain, presence: true
   validates :domain, format: {
-    with: /[0-9a-zA-Z\-\.]{3,63}/,
+    with: /[0-9a-zA-Z\-\.]{3,255}/,
     message: 'invalid format'
   }
 

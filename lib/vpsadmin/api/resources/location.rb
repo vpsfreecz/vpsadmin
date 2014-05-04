@@ -1,0 +1,194 @@
+class VpsAdmin::API::Resources::Location < VpsAdmin::API::Resource
+  version 1
+  model ::Location
+  desc 'Manage locations'
+
+  params(:id) do
+    id :id, label: 'ID', desc: 'Location ID', db_name: :location_id
+  end
+
+  params(:common) do
+    string :label, label: 'Label', desc: 'Location label', db_name: :location_label
+    bool :has_ipv6, label: 'Has IPv6', desc: 'True if location has IPv6 addresses',
+         db_name: :location_has_ipv6
+    bool :vps_onboot, label: 'VPS onboot', desc: 'Start all VPSes in this location on boot?',
+         db_name: :location_vps_onboot
+    string :remote_console_server, label: 'Remote console server', desc: 'URL to HTTP remote console server',
+           db_name: :location_remote_console_server
+    foreign_key :environment_id, label: 'Environment ID', desc: 'Environment ID'
+    string :domain, label: 'Domain', desc: 'Location domain, subdomain at environment domain'
+  end
+
+  params(:all) do
+    use :id
+    use :common
+  end
+
+  class Index < VpsAdmin::API::Actions::Default::Index
+    desc 'List locations'
+
+    output(:locations) do
+      list_of_objects
+      use :all
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    example do
+      request({})
+      response({
+        locations: {
+            label: 'Prague',
+            has_ipv6: true,
+            vps_onboot: true,
+            remote_console_server: 'https://console.vpsadmin.mydomain.com',
+            environment_id: 1,
+            domain: 'prg',
+            created_at: '2014-05-04 16:59:52 +0200',
+            updated_at: '2014-05-04 16:59:52 +0200'
+        }
+      })
+    end
+
+    def exec
+      ret = []
+
+      ::Location.all.each do |loc|
+        ret << to_param_names(loc.attributes, :output)
+      end
+
+      ret
+    end
+  end
+
+  class Create < VpsAdmin::API::Actions::Default::Create
+    desc 'Create new location'
+
+    input do
+      use :common
+    end
+
+    output do
+      use :id
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    example do
+      request({
+        location: {
+            label: 'Brno',
+            has_ipv6: true,
+            vps_onboot: true,
+            remote_console_server: '',
+            environment_id: 1,
+            domain: 'brq'
+        }
+      })
+      response({
+        location: {
+          id: 2
+        }
+      })
+    end
+
+    def exec
+      loc = ::Location.new(to_db_names(params[:location]))
+      loc.location_type = 'production' # FIXME: remove
+
+      if loc.save
+        ok({id: loc.location_id})
+      else
+        error('save failed', to_param_names(loc.errors.to_hash, :input))
+      end
+    end
+  end
+
+  class Show < VpsAdmin::API::Actions::Default::Show
+    desc 'Show location'
+
+    output do
+      use :all
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    example do
+      request({})
+      response({
+        location: {
+          id: 2,
+          label: 'Brno',
+          has_ipv6: true,
+          vps_onboot: true,
+          remote_console_server: '',
+          environment_id: 1,
+          domain: 'brq'
+        }
+      })
+    end
+
+    def exec
+      to_param_names(::Location.find(params[:location_id]).attributes, :output)
+    end
+  end
+
+  class Update < VpsAdmin::API::Actions::Default::Update
+    desc 'Update location'
+
+    input do
+      use :common
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    example do
+      request({
+        location: {
+            label: 'Ostrava',
+            has_ipv6: true,
+            vps_onboot: true,
+            remote_console_server: '',
+            environment_id: 1,
+            domain: 'ova'
+        }
+      })
+      response({})
+    end
+
+    def exec
+      loc = ::Location.find(params[:location_id])
+
+      if loc.update(to_db_names(params[:location]))
+        ok({})
+      else
+        error('update failed', to_param_names(loc.errors.to_hash))
+      end
+    end
+  end
+
+  class Delete < VpsAdmin::API::Actions::Default::Delete
+    desc 'Delete location'
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    example do
+      request({})
+      response({})
+    end
+
+    def exec
+      ::Location.find(params[:location_id]).destroy
+    end
+  end
+end
