@@ -3,40 +3,22 @@ class VpsAdmin::API::Resources::VPS < VpsAdmin::API::Resource
   model ::Vps
   desc 'Manage VPS'
 
-  module Compat
-    def matrix
+  module CompatMatrix
+    include VpsAdmin::API::Compat
+
+    def compat_matrix
       {
-        m_id: :user_id,
-        vps_hostname: :hostname,
-        vps_template: :template_id,
-        vps_info: :info,
-        vps_nameserver: :dns_resolver_id,
-        vps_server: :node_id,
-        vps_onboot: :onboot,
-        vps_onstartall: :onstartall,
-        vps_backup_enabled: :backup_enabled,
-        vps_config: :config
+          m_id: :user_id,
+          vps_hostname: :hostname,
+          vps_template: :template_id,
+          vps_info: :info,
+          vps_nameserver: :dns_resolver_id,
+          vps_server: :node_id,
+          vps_onboot: :onboot,
+          vps_onstartall: :onstartall,
+          vps_backup_enabled: :backup_enabled,
+          vps_config: :config
       }
-    end
-
-    def to_new(hash)
-      ret = {}
-
-      matrix.each do |old, new|
-        ret[new] = hash[old] if hash[old]
-      end
-
-      ret
-    end
-
-    def to_old(hash)
-      ret = {}
-
-      matrix.each do |old, new|
-        ret[old] = hash[new] if hash[new]
-      end
-
-      ret
     end
   end
 
@@ -119,7 +101,7 @@ class VpsAdmin::API::Resources::VPS < VpsAdmin::API::Resource
   end
 
   class Create < VpsAdmin::API::Actions::Default::Create
-    include Compat
+    include CompatMatrix
 
     desc 'Create VPS'
 
