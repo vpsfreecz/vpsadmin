@@ -117,6 +117,11 @@ module VpsAdmin
         def current_user
           @current_user
         end
+
+        def pretty_format(obj)
+          ret = ''
+          PP.pp(obj, ret)
+        end
       end
 
       not_found do

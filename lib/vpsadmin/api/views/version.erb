@@ -14,7 +14,22 @@
 </head>
 <body>
 <h1>API v<%= @v %></h1>
-<p>FIXME Some API description...</p>
+<p>
+  This page contains a list of resources available in API v<%= @v %>, their actions,
+  description, parameters and example usage.
+</p>
+<p>
+  Every action has assigned URL, which may be identical for several actions, but
+  differ in HTTP method.
+</p>
+<p>
+  This API is self-describing. Every action responds to HTTP method <em>OPTIONS</em>,
+  with which you can get description for selected action. To distinguish actions with
+  same URL, use parameter <code>?method=HTTP_METHOD</code>.
+</p>
+<p>
+  When action requires authentication, you have to login with HTTP basic auth.
+</p>
 
 <h1>Resources</h1>
 
@@ -85,7 +100,7 @@
                 <dd><%= info[:output][:namespace] %></dd>
               </dl>
 
-              <pre><code><%= info[:output][:format] %></code></pre>
+              <pre><code><%= pretty_format(info[:output][:format]) %></code></pre>
 
               <table class="table">
                 <tr>
