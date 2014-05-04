@@ -41,16 +41,38 @@ module VpsAdmin
     end
 
     class Params
-      def initialize
+      def initialize(namespace)
         @params = []
+        @namespace = namespace
+        @layout = :object
       end
 
       def requires(*args)
-        add_param(*args)
+        add_param(*apply(args, required: true))
       end
 
       def optional(*args)
-        add_param(*args)
+        add_param(*apply(args, required: true))
+      end
+
+      def string(*args)
+        add_param(*apply(args, type: String))
+      end
+
+      def id(*args)
+        integer(*args)
+      end
+
+      def foreign_key(*args)
+        integer(*args)
+      end
+
+      def bool(*args)
+        add_param(*apply(args, type: Boolean))
+      end
+
+      def integer(*args)
+        add_param(*apply(args, type: Integer))
       end
 
       def param(*args)
@@ -58,21 +80,24 @@ module VpsAdmin
       end
 
       # Action returns custom data.
-      def structure(s)
+      def structure(name, s)
+        @namespace = name
         @layout = :custom
         @structure = s
       end
 
       # Action returns a list of objects.
-      def list_of(hash)
+      def list_of(name, hash)
+        @namespace = name
         @layout = :list
-        @structure = hash
+        @structure = {name => hash}
       end
 
       # Action returns properties describing one object.
-      def object(hash)
+      def object(name, hash)
+        @namespace = name
         @layout = :object
-        @structure = hash
+        @structure = {name => hash}
       end
 
       def load_validators(model)
@@ -86,6 +111,7 @@ module VpsAdmin
       def describe
         ret = {parameters: {}}
         ret[:layout] = @layout
+        ret[:namespace] = @namespace
         ret[:format] = @structure if @structure
 
         @params.each do |p|
@@ -96,9 +122,15 @@ module VpsAdmin
       end
 
       private
-      def add_param(*args)
-        @params << Param.new(*args)
-      end
+        def add_param(*args)
+          @params << Param.new(*args)
+        end
+
+        def apply(args, default)
+          args << {} unless args.last.is_a?(Hash)
+          args.last.update(default)
+          args
+        end
     end
   end
 end

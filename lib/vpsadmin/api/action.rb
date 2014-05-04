@@ -29,9 +29,9 @@ module VpsAdmin
       class << self
         attr_reader :resource, :authorization
 
-        def input(&block)
+        def input(namespace=nil, &block)
           if block
-            @input = Params.new
+            @input = Params.new(namespace || self.resource.to_s.demodulize.underscore)
             @input.instance_eval(&block)
             @input.load_validators(model) if model
           else
@@ -39,9 +39,9 @@ module VpsAdmin
           end
         end
 
-        def output(&block)
+        def output(namespace=nil, &block)
           if block
-            @output = Params.new
+            @output = Params.new(namespace || self.resource.to_s.demodulize.underscore)
             @output.instance_eval(&block)
           else
             @output
