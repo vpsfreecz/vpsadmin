@@ -126,10 +126,20 @@ module VpsAdmin
 
       # Calls exec while catching all exceptions and restricting output only
       # to what user can see.
+      # Return array +[status, data|error]+
       def safe_exec
-        begin
-          ret = exec
+        ret = catch(:return) do
+          begin
+            exec
+          rescue ActiveRecord::RecordNotFound
+            error('object not found')
 
+            # rescue => e
+            #   puts "#{e} just happened"
+            end
+        end
+
+        if ret
           case self.class.output.layout
             when :object
                ret = @authorization.filter_output(ret)
@@ -140,18 +150,19 @@ module VpsAdmin
               end
           end
 
-          {self.class.output.namespace => ret}
+          [true, {self.class.output.namespace => ret}]
 
-        rescue ActiveRecord::RecordNotFound
-          'not found'
-
-        # rescue => e
-        #   puts "#{e} just happened"
-       end
+        else
+          [false, @error]
+        end
       end
 
       def v?(v)
         @version == v
+      end
+
+      def get_error
+        @error
       end
 
       protected
@@ -161,6 +172,15 @@ module VpsAdmin
           else
             args.first.update(@authorization.restrictions)
           end
+        end
+
+        def ok(ret)
+          throw(:return, ret)
+        end
+
+        def error(msg)
+          @error = msg
+          throw(:return, false)
         end
     end
   end

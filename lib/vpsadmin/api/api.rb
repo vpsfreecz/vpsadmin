@@ -77,7 +77,7 @@ module VpsAdmin
 
     # Load routes for all resource from included API versions.
     # All routes are mounted under prefix +path+.
-    # # If no default version is set, the last included version is used.
+    # If no default version is set, the last included version is used.
     def self.mount(path)
       App.mount(path)
     end
@@ -97,11 +97,13 @@ module VpsAdmin
 
     class App < Sinatra::Base
       set :views, settings.root + '/views'
+      set :bind, '0.0.0.0'
 
       helpers do
         def authenticate!
           unless authenticated?
-            halt 403, {'WWW-Authenticate' => 'Basic realm="Restricted Area"'}, 'no wai'
+            report_error(401, {'WWW-Authenticate' => 'Basic realm="Restricted Area"'},
+                         'Action requires user to authenticate')
           end
         end
 
@@ -122,10 +124,18 @@ module VpsAdmin
           ret = ''
           PP.pp(obj, ret)
         end
+
+        def report_error(code, headers, msg)
+          halt code, headers, JSON.pretty_generate({
+            status: false,
+            response: nil,
+            message: msg
+          })
+        end
       end
 
       not_found do
-        'action not found'
+        report_error(404, {}, 'Action not found')
       end
 
       after do
@@ -214,12 +224,13 @@ module VpsAdmin
             end
 
             ret = action.safe_exec
+            reply = {
+                status: ret.first ? true : false,
+                response: ret.first ? ret.last : nil,
+                message: action.get_error,
+            }
 
-            if ret.is_a?(String)
-              ret.to_json
-            else
-              JSON.pretty_generate(ret)
-            end
+            JSON.pretty_generate(reply)
           end
 
           options route.url do

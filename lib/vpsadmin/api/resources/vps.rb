@@ -43,6 +43,25 @@ module VpsAdmin
             allow
           end
 
+          example do
+            request({})
+            response({vpses: [
+              {
+                  vps_id: 150,
+                  user_id: 1,
+                  hostname: 'thehostname',
+                  template_id: 1,
+                  info: 'My very important VPS',
+                  dns_resolver_id: 1,
+                  node_id: 1,
+                  onboot: true,
+                  onstartall: true,
+                  backup_enabled: true,
+                  config: '',
+              }
+            ]})
+          end
+
           def exec
             ret = []
 
@@ -98,16 +117,16 @@ module VpsAdmin
           example do
             request({
               vps: {
-                  user_id: 1,
-                  hostname: 'my-vps',
-                  template_id: 1,
-                  info: '',
-                  dns_resolver_id: 1,
-                  node_id: 1,
-                  onboot: true,
-                  onstartall: true,
-                  backup_enabled: true,
-                  config: ''
+                user_id: 1,
+                hostname: 'my-vps',
+                template_id: 1,
+                info: '',
+                dns_resolver_id: 1,
+                node_id: 1,
+                onboot: true,
+                onstartall: true,
+                backup_enabled: true,
+                config: ''
               }
             })
             response({
@@ -122,7 +141,14 @@ END
           end
 
           def exec
-            puts 'Did magic'
+            vps = Vps.new(params)
+
+            if vps.save
+              ok
+
+            else
+              error('save failed')
+            end
           end
         end
 
