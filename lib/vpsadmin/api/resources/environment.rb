@@ -1,9 +1,9 @@
-class VpsAdmin::API::Resources::Environment < API::Resource
+class VpsAdmin::API::Resources::Environment < VpsAdmin::API::Resource
   version 1
   model ::Environment
   desc 'Manage environments'
 
-  class Index < API::Actions::Default::Index
+  class Index < VpsAdmin::API::Actions::Default::Index
     desc 'List environments'
 
     output(:environments) do

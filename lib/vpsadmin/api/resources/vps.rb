@@ -1,4 +1,4 @@
-class VpsAdmin::API::Resources::VPS < API::Resource
+class VpsAdmin::API::Resources::VPS < VpsAdmin::API::Resource
   version 1
   model ::Vps
   desc 'Manage VPS'
@@ -40,7 +40,7 @@ class VpsAdmin::API::Resources::VPS < API::Resource
     end
   end
 
-  class Index < API::Actions::Default::Index
+  class Index < VpsAdmin::API::Actions::Default::Index
     desc 'List VPS'
 
     output(:vpses) do
@@ -118,7 +118,7 @@ class VpsAdmin::API::Resources::VPS < API::Resource
     end
   end
 
-  class Create < API::Actions::Default::Create
+  class Create < VpsAdmin::API::Actions::Default::Create
     include Compat
 
     desc 'Create VPS'
@@ -192,7 +192,7 @@ END
     end
   end
 
-  class Show < API::Actions::Default::Show
+  class Show < VpsAdmin::API::Actions::Default::Show
     desc 'Show VPS properties'
 
     output do
@@ -226,7 +226,7 @@ END
     end
   end
 
-  class Update < API::Actions::Default::Update
+  class Update < VpsAdmin::API::Actions::Default::Update
     input do
       param :id, desc: 'VPS id'
     end
@@ -237,21 +237,21 @@ END
     end
   end
 
-  class Delete < API::Actions::Default::Delete
+  class Delete < VpsAdmin::API::Actions::Default::Delete
 
   end
 
-  class IpAddress < API::Resource
+  class IpAddress < VpsAdmin::API::Resource
     version 1
     model IpAddress
     route ':vps_id/ip_addresses'
     desc 'Manage VPS IP addresses'
 
-    class Index < API::Actions::Default::Index
+    class Index < VpsAdmin::API::Actions::Default::Index
 
     end
 
-    class Show < API::Actions::Default::Show
+    class Show < VpsAdmin::API::Actions::Default::Show
 
     end
   end

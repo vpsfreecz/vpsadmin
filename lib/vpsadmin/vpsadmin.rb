@@ -7,8 +7,17 @@ require 'authlogic'
 require 'pp'
 
 require_rel '../../models'
-require_rel 'api'
 
 module VpsAdmin
+  module API
+    module Resources
 
+    end
+
+    module Actions
+
+    end
+  end
 end
+
+require_rel 'api'
