@@ -29,11 +29,11 @@ module VpsAdmin
       end
 
       class << self
-        attr_reader :resource, :authorization, :input
+        attr_reader :resource, :authorization, :input, :output
 
         def input(namespace=nil, &block)
           if block
-            @input = Params.new(namespace || self.resource.to_s.demodulize.underscore)
+            @input = Params.new(self, namespace || self.resource.to_s.demodulize.underscore)
             @input.instance_eval(&block)
             @input.load_validators(model) if model
           else
@@ -43,7 +43,7 @@ module VpsAdmin
 
         def output(namespace=nil, &block)
           if block
-            @output = Params.new(namespace || self.resource.to_s.demodulize.underscore)
+            @output = Params.new(self, namespace || self.resource.to_s.demodulize.underscore)
             @output.instance_eval(&block)
           else
             @output
@@ -164,23 +164,69 @@ module VpsAdmin
       end
 
       protected
-        def with_restricted(*args)
-          if args.empty?
-            @authorization.restrictions
-          else
-            args.first.update(@authorization.restrictions)
+      def with_restricted(*args)
+        if args.empty?
+          @authorization.restrictions
+        else
+          args.first.update(@authorization.restrictions)
+        end
+      end
+
+      # Convert parameter names to corresponding DB names.
+      # By default, input parameters are used for the translation.
+      def to_db_names(hash, src=:input)
+        params = self.class.method(src).call.params
+        ret = {}
+
+        hash.each do |k, v|
+          hit = false
+
+          params.each do |p|
+            if k == p.name
+              ret[p.db_name] = v
+              hit = true
+              break
+            end
           end
+
+          ret[k] = v unless hit
         end
 
-        def ok(ret)
-          throw(:return, ret)
+        ret
+      end
+
+      # Convert DB names to corresponding parameter names.
+      # By default, output parameters are used for the translation.
+      def to_param_names(hash, src=:output)
+        params = self.class.method(src).call.params
+        ret = {}
+
+        hash.each do |k, v|
+          hit = false
+
+          params.each do |p|
+            if k == p.db_name
+              ret[p.name] = v
+              hit = true
+              break
+            end
+          end
+
+          ret[k] = v unless hit
         end
 
-        def error(msg, errs={})
-          @message = msg
-          @errors = errs
-          throw(:return, false)
-        end
+        ret
+      end
+
+      def ok(ret)
+        throw(:return, ret)
+      end
+
+      def error(msg, errs={})
+        @message = msg
+        @errors = errs
+        throw(:return, false)
+      end
     end
   end
 end

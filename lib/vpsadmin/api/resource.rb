@@ -12,6 +12,15 @@ module VpsAdmin
         subclass.instance_variable_set(:@obj_type, obj_type)
       end
 
+      def self.params(name, &block)
+        if block
+          @params ||= {}
+          @params[name] = block
+        else
+          @params[name]
+        end
+      end
+
       def self.actions
         constants.select do |c|
           obj = const_get(c)

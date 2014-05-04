@@ -3,23 +3,17 @@ class VpsAdmin::API::Resources::VPS < VpsAdmin::API::Resource
   model ::Vps
   desc 'Manage VPS'
 
-  module CompatMatrix
-    include VpsAdmin::API::Compat
-
-    def compat_matrix
-      {
-          m_id: :user_id,
-          vps_hostname: :hostname,
-          vps_template: :template_id,
-          vps_info: :info,
-          vps_nameserver: :dns_resolver_id,
-          vps_server: :node_id,
-          vps_onboot: :onboot,
-          vps_onstartall: :onstartall,
-          vps_backup_enabled: :backup_enabled,
-          vps_config: :config
-      }
-    end
+  params(:common) do
+    foreign_key :user_id, label: 'User', desc: 'VPS owner', db_name: :m_id
+    string :hostname, desc: 'VPS hostname', db_name: :vps_hostname
+    foreign_key :template_id, label: 'Template', desc: 'id of OS template', db_name: :vps_template
+    string :info, label: 'Info', desc: 'VPS description', db_name: :vps_info
+    foreign_key :dns_resolver_id, label: 'DNS resolver', desc: 'DNS resolver the VPS will use', db_name: :vps_nameserver
+    integer :node_id, label: 'Node', desc: 'Node VPS will run on', db_name: :vps_server
+    bool :onboot, label: 'On boot', desc: 'Start VPS on node boot?', db_name: :vps_onboot
+    bool :onstartall, label: 'On start all', desc: 'Start VPS on start all action?', db_name: :vps_onstartall
+    bool :backup_enabled, label: 'Enable backups', desc: 'Toggle VPS backups', db_name: :vps_backup_enabled
+    string :config, label: 'Config', desc: 'Custom configuration options', db_name: :vps_config
   end
 
   class Index < VpsAdmin::API::Actions::Default::Index
@@ -40,16 +34,7 @@ class VpsAdmin::API::Resources::VPS < VpsAdmin::API::Resource
         config: String,
       })
 
-      foreign_key :user_id, label: 'User', desc: 'VPS owner'
-      string :hostname, desc: 'VPS hostname'
-      foreign_key :template_id, label: 'Template', desc: 'id of OS template'
-      string :info, label: 'Info', desc: 'VPS description'
-      foreign_key :dns_resolver_id, label: 'DNS resolver', desc: 'DNS resolver the VPS will use'
-      integer :node_id, label: 'Node', desc: 'Node VPS will run on'
-      bool :onboot, label: 'On boot', desc: 'Start VPS on node boot?'
-      bool :onstartall, label: 'On start all', desc: 'Start VPS on start all action?'
-      bool :backup_enabled, label: 'Enable backups', desc: 'Toggle VPS backups'
-      string :config, label: 'Config', desc: 'Custom configuration options'
+      use :common
     end
 
     authorize do |u|
@@ -101,21 +86,10 @@ class VpsAdmin::API::Resources::VPS < VpsAdmin::API::Resource
   end
 
   class Create < VpsAdmin::API::Actions::Default::Create
-    include CompatMatrix
-
     desc 'Create VPS'
 
     input(:vps) do
-      id :user_id, label: 'User', desc: 'VPS owner'
-      string :hostname, desc: 'VPS hostname'
-      foreign_key :template_id, label: 'Template', desc: 'id of OS template'
-      string :info, label: 'Info', desc: 'VPS description'
-      foreign_key :dns_resolver_id, label: 'DNS resolver', desc: 'DNS resolver the VPS will use'
-      integer :node_id, label: 'Node', desc: 'Node VPS will run on'
-      bool :onboot, label: 'On boot', desc: 'Start VPS on node boot?'
-      bool :onstartall, label: 'On start all', desc: 'Start VPS on start all action?'
-      bool :backup_enabled, label: 'Enable backups', desc: 'Toggle VPS backups'
-      string :config, label: 'Config', desc: 'Custom configuration options'
+      use :common
     end
 
     output do
@@ -163,13 +137,13 @@ END
         params[:user_id] = current_user.m_id
       end
 
-      vps = Vps.new(to_old(params))
+      vps = Vps.new(to_db_names(params))
 
       if vps.save
         ok({vps_id: vps.id})
 
       else
-        error('save failed', to_new(vps.errors.to_hash))
+        error('save failed', to_param_names(vps.errors.to_hash, :input))
       end
     end
   end
@@ -183,6 +157,8 @@ END
         hostname: String,
         distribution: Integer,
       })
+
+      use :common
     end
 
     # example do
@@ -210,7 +186,7 @@ END
 
   class Update < VpsAdmin::API::Actions::Default::Update
     input do
-      param :id, desc: 'VPS id'
+      use :common
     end
 
     authorize do |u|

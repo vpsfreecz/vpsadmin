@@ -50,7 +50,7 @@ module VpsAdmin
 
       def validator_for(param, v)
         @params.each do |p|
-          if p.name == param
+          if p.db_name == param
             p.add_validator(v)
             break
           end

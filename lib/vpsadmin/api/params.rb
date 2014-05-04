@@ -3,14 +3,19 @@ module VpsAdmin
     class Param
       attr_reader :name, :label, :desc, :type
 
-      def initialize(name, required: nil, label: nil, desc: nil, type: nil)
+      def initialize(name, required: nil, label: nil, desc: nil, type: nil, db_name: nil)
         @required = required
         @name = name
         @label = label || name.to_s.capitalize
         @desc = desc
         @type = type
+        @db_name = db_name
         @layout = :custom
         @validators = {}
+      end
+
+      def db_name
+        @db_name || @name
       end
 
       def required?
@@ -41,10 +46,11 @@ module VpsAdmin
     end
 
     class Params
-      attr_reader :namespace, :layout
+      attr_reader :namespace, :layout, :params
 
-      def initialize(namespace)
+      def initialize(action, namespace)
         @params = []
+        @action = action
         @namespace = namespace
         @layout = :object
       end
@@ -79,6 +85,12 @@ module VpsAdmin
 
       def param(*args)
         add_param(*args)
+      end
+
+      def use(name)
+        block = @action.resource.params(name)
+
+        instance_eval(&block) if block
       end
 
       # Action returns custom data.

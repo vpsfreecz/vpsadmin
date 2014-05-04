@@ -225,7 +225,7 @@ module VpsAdmin
               if body.empty?
                 body = nil
               else
-                body = JSON.parse(tmp, symbolize_names: true)
+                body = JSON.parse(body, symbolize_names: true)
               end
 
             rescue => e

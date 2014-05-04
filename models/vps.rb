@@ -10,9 +10,10 @@ class Vps < ActiveRecord::Base
   has_paper_trail
 
   alias_attribute :hostname, :vps_hostname
+  alias_attribute :user_id, :m_id
 
   validates :m_id, :vps_server, :vps_template, presence: true, numericality: {only_integer: true}
-  validates :hostname, presence: true, format: {
+  validates :vps_hostname, presence: true, format: {
       with: /[a-zA-Z\-_\.0-9]{0,255}/,
       message: 'bad format'
   }
