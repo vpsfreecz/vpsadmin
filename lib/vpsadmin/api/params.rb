@@ -10,7 +10,7 @@ module VpsAdmin
         @desc = desc
         @type = type
         @db_name = db_name
-        @layout = :custom
+        @layout = :object
         @validators = {}
       end
 

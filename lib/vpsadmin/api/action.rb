@@ -150,17 +150,24 @@ module VpsAdmin
         end
 
         if ret
-          case self.class.output.layout
-            when :object
-               ret = @authorization.filter_output(ret)
+          output = self.class.output
 
-            when :list
-              ret.map! do |obj|
-                @authorization.filter_output(obj)
-              end
+          if output
+            case output.layout
+              when :object
+                 ret = @authorization.filter_output(ret)
+
+              when :list
+                ret.map! do |obj|
+                  @authorization.filter_output(obj)
+                end
+            end
+
+            [true, {output.namespace => ret}]
+
+          else
+            [true, {}]
           end
-
-          [true, {self.class.output.namespace => ret}]
 
         else
           [false, @message, @errors]
