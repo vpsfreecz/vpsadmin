@@ -41,6 +41,8 @@ module VpsAdmin
     end
 
     class Params
+      attr_reader :namespace, :layout
+
       def initialize(namespace)
         @params = []
         @namespace = namespace

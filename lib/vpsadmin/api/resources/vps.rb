@@ -9,19 +9,37 @@ module VpsAdmin
         class Index < API::Actions::Default::Index
           desc 'List VPS'
 
-          output do
+          output(:vpses) do
             list_of(:vpses, {
               vps_id: Integer,
+              user_id: Integer,
               hostname: String,
+              template_id: Integer,
+              info: String,
+              dns_resolver_id: Integer,
+              node_id: Integer,
+              onboot: Boolean,
+              onstartall: Boolean,
+              backup_enabled: Boolean,
+              config: String,
             })
 
-            integer :vps_id, label: 'VPS id'
-            string :hostname, label: 'Hostname'
+            foreign_key :user_id, label: 'User', desc: 'VPS owner'
+            string :hostname, desc: 'VPS hostname'
+            foreign_key :template_id, label: 'Template', desc: 'id of OS template'
+            string :info, label: 'Info', desc: 'VPS description'
+            foreign_key :dns_resolver_id, label: 'DNS resolver', desc: 'DNS resolver the VPS will use'
+            integer :node_id, label: 'Node', desc: 'Node VPS will run on'
+            bool :onboot, label: 'On boot', desc: 'Start VPS on node boot?'
+            bool :onstartall, label: 'On start all', desc: 'Start VPS on start all action?'
+            bool :backup_enabled, label: 'Enable backups', desc: 'Toggle VPS backups'
+            string :config, label: 'Config', desc: 'Custom configuration options'
           end
 
           authorize do |u|
             allow if u.role == :admin
             restrict m_id: u.m_id
+            output whitelist: %i(vps_id hostname template_id dns_resolver_id node_id backup_enabled)
             allow
           end
 
@@ -32,6 +50,14 @@ module VpsAdmin
               ret << {
                 vps_id: vps.id,
                 hostname: vps.hostname,
+                template_id: vps.os_template.id,
+                info: vps.vps_info,
+                dns_resolver_id: 1,
+                node_id: vps.node.id,
+                onboot: vps.vps_onboot,
+                onstartall: vps.vps_onstartall,
+                backup_enabled: vps.vps_backup_enabled,
+                config: vps.vps_config,
               }
             end
 
@@ -48,7 +74,7 @@ module VpsAdmin
             foreign_key :template_id, label: 'Template', desc: 'id of OS template'
             string :info, label: 'Info', desc: 'VPS description'
             foreign_key :dns_resolver_id, label: 'DNS resolver', desc: 'DNS resolver the VPS will use'
-            string :node_id, label: 'Node', desc: 'Node VPS will run on'
+            integer :node_id, label: 'Node', desc: 'Node VPS will run on'
             bool :onboot, label: 'On boot', desc: 'Start VPS on node boot?'
             bool :onstartall, label: 'On start all', desc: 'Start VPS on start all action?'
             bool :backup_enabled, label: 'Enable backups', desc: 'Toggle VPS backups'
@@ -61,6 +87,12 @@ module VpsAdmin
             })
 
             integer :vps_id, label: 'VPS id', desc: 'ID of created VPS'
+          end
+
+          authorize do |u|
+            allow if u.role == :admin
+            input whitelist: %i(hostname template_id dns_resolver_id)
+            allow
           end
 
           example do
@@ -83,6 +115,10 @@ module VpsAdmin
                   vps_id: 150
               }
             })
+            comment <<END
+Create VPS owned by user with ID 1, template ID 1 and DNS resolver ID 1. VPS
+will be created on node ID 1. Action returns ID of newly created VPS.
+END
           end
 
           def exec
@@ -108,6 +144,7 @@ module VpsAdmin
           # end
 
           authorize do |u|
+            allow if u.role == :admin
             restrict m_id: u.m_id
             allow
           end

@@ -27,7 +27,7 @@ module VpsAdmin
       end
 
       class << self
-        attr_reader :resource, :authorization
+        attr_reader :resource, :authorization, :input
 
         def input(namespace=nil, &block)
           if block
@@ -112,17 +112,41 @@ module VpsAdmin
         @current_user
       end
 
+      def params
+        return @safe_params if @safe_params
+
+        @safe_params = @authorization.filter_input(@params[self.class.input.namespace])
+      end
+
+      # This method must be reimplemented in every action.
+      # It must not be invoked directly, only via safe_exec, which restricts output.
       def exec
         ['not implemented']
       end
 
+      # Calls exec while catching all exceptions and restricting output only
+      # to what user can see.
       def safe_exec
         begin
-          exec
+          ret = exec
+
+          case self.class.output.layout
+            when :object
+               ret = @authorization.filter_output(ret)
+
+            when :list
+              ret.map! do |obj|
+                @authorization.filter_output(obj)
+              end
+          end
+
+          {self.class.output.namespace => ret}
+
         rescue ActiveRecord::RecordNotFound
           'not found'
-        rescue => e
-          puts "#{e} just happened"
+
+        # rescue => e
+        #   puts "#{e} just happened"
        end
       end
 
