@@ -16,8 +16,13 @@ module VpsAdmin
         constants.select do |c|
           obj = const_get(c)
 
-          if obj.obj_type == :action
-            yield obj
+          begin
+            if obj.obj_type == :action
+              yield obj
+            end
+
+          rescue NoMethodError
+            next
           end
         end
       end
@@ -26,8 +31,13 @@ module VpsAdmin
         constants.select do |c|
           obj = const_get(c)
 
-          if obj.obj_type == :resource
-            yield obj
+          begin
+            if obj.obj_type == :resource
+              yield obj
+            end
+
+          rescue NoMethodError
+            next
           end
         end
       end

@@ -6,6 +6,43 @@ module VpsAdmin
         model ::Vps
         desc 'Manage VPS'
 
+        module Compat
+          def matrix
+            {
+              m_id: :user_id,
+              vps_hostname: :hostname,
+              vps_template: :template_id,
+              vps_info: :info,
+              vps_nameserver: :dns_resolver_id,
+              vps_server: :node_id,
+              vps_onboot: :onboot,
+              vps_onstartall: :onstartall,
+              vps_backup_enabled: :backup_enabled,
+              vps_config: :config
+            }
+          end
+
+          def to_new(hash)
+            ret = {}
+
+            matrix.each do |old, new|
+              ret[new] = hash[old] if hash[old]
+            end
+
+            ret
+          end
+
+          def to_old(hash)
+            ret = {}
+
+            matrix.each do |old, new|
+              ret[old] = hash[new] if hash[new]
+            end
+
+            ret
+          end
+        end
+
         class Index < API::Actions::Default::Index
           desc 'List VPS'
 
@@ -85,9 +122,11 @@ module VpsAdmin
         end
 
         class Create < API::Actions::Default::Create
+          include Compat
+
           desc 'Create VPS'
 
-          input do
+          input(:vps) do
             id :user_id, label: 'User', desc: 'VPS owner'
             string :hostname, desc: 'VPS hostname'
             foreign_key :template_id, label: 'Template', desc: 'id of OS template'
@@ -141,13 +180,17 @@ END
           end
 
           def exec
-            vps = Vps.new(params)
+            if current_user.role != :admin
+              params[:user_id] = current_user.m_id
+            end
+
+            vps = Vps.new(to_old(params))
 
             if vps.save
-              ok
+              ok({vps_id: vps.id})
 
             else
-              error('save failed')
+              error('save failed', to_new(vps.errors.to_hash))
             end
           end
         end
@@ -192,8 +235,8 @@ END
           end
 
           authorize do |u|
+            allow if u.role == :admin
             restrict m_id: u.m_id
-            whitelist
           end
         end
 

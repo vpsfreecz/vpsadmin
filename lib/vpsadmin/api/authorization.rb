@@ -76,7 +76,7 @@ module VpsAdmin
             ret = {}
 
             hash[:whitelist].each do |p|
-              ret[p] = params[p]
+              ret[p] = params[p] if params
             end
 
             ret

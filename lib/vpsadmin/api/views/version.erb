@@ -42,10 +42,17 @@
   {
     "status": true/false,
     "response": return value,
-    "message": error message, if status is false
+    "message": error message, if status is false,
+    "errors: {
+      "parameter1": ["list", "of", "errors"],
+      "parameter2": ["and", "so", "on"]
+    }
   }
     </code>
   </pre>
+</p>
+<p>
+  For now, the only supported input/output format is JSON.
 </p>
 
 <h1>Resources</h1>

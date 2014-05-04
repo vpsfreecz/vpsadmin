@@ -11,6 +11,7 @@ class Vps < ActiveRecord::Base
 
   alias_attribute :hostname, :vps_hostname
 
+  validates :m_id, :vps_server, :vps_template, presence: true, numericality: {only_integer: true}
   validates :hostname, presence: true, format: {
       with: /[a-zA-Z\-_\.0-9]{0,255}/,
       message: 'bad format'

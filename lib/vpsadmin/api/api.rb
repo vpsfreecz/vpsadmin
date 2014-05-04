@@ -217,17 +217,26 @@ module VpsAdmin
           self.method(route.http_method).call(route.url) do
             authenticate! if route.action.auth
 
-            action = route.action.new(v, params)
+            request.body.rewind
+
+            begin
+              body = JSON.parse(request.body.read, symbolize_names: true)
+            rescue => e
+              report_error(400, {}, 'Bad JSON syntax')
+            end
+
+            action = route.action.new(v, params, body)
 
             unless action.authorized?(current_user)
               halt 403, "you ain't supposed to be here"
             end
 
-            ret = action.safe_exec
+            status, reply, errors = action.safe_exec
             reply = {
-                status: ret.first ? true : false,
-                response: ret.first ? ret.last : nil,
-                message: action.get_error,
+                status: status,
+                response: status ? reply : nil,
+                message: !status ? reply : nil,
+                errors: errors
             }
 
             JSON.pretty_generate(reply)

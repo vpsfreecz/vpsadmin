@@ -8,6 +8,8 @@ module VpsAdmin
       has_attr :http_method, :get
       has_attr :auth, true
 
+      attr_reader :message, :errors
+
       def self.inherited(subclass)
         #puts "Action.inherited called #{subclass} from #{to_s}"
 
@@ -90,9 +92,9 @@ module VpsAdmin
         end
       end
 
-      def initialize(version, params)
+      def initialize(version, params, body)
         @version = version
-        @params = params
+        @params = params.update(body)
 
         class_auth = self.class.authorization
 
@@ -153,16 +155,12 @@ module VpsAdmin
           [true, {self.class.output.namespace => ret}]
 
         else
-          [false, @error]
+          [false, @message, @errors]
         end
       end
 
       def v?(v)
         @version == v
-      end
-
-      def get_error
-        @error
       end
 
       protected
@@ -178,8 +176,9 @@ module VpsAdmin
           throw(:return, ret)
         end
 
-        def error(msg)
-          @error = msg
+        def error(msg, errs={})
+          @message = msg
+          @errors = errs
           throw(:return, false)
         end
     end
