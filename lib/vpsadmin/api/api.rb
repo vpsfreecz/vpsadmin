@@ -220,7 +220,14 @@ module VpsAdmin
             request.body.rewind
 
             begin
-              body = JSON.parse(request.body.read, symbolize_names: true)
+              body = request.body.read
+
+              if body.empty?
+                body = nil
+              else
+                body = JSON.parse(tmp, symbolize_names: true)
+              end
+
             rescue => e
               report_error(400, {}, 'Bad JSON syntax')
             end

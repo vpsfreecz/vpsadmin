@@ -94,7 +94,7 @@ module VpsAdmin
 
       def initialize(version, params, body)
         @version = version
-        @params = params.update(body)
+        @params = params.update(body) if body
 
         class_auth = self.class.authorization
 
