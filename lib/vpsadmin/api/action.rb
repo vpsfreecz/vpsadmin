@@ -94,7 +94,8 @@ module VpsAdmin
 
       def initialize(version, params, body)
         @version = version
-        @params = params.update(body) if body
+        @params = params
+        @params.update(body) if body
 
         class_auth = self.class.authorization
 
@@ -117,7 +118,14 @@ module VpsAdmin
       def params
         return @safe_params if @safe_params
 
-        @safe_params = @authorization.filter_input(@params[self.class.input.namespace])
+        @safe_params = @params
+        input = self.class.input
+
+        if input
+          @safe_params[self.class.input.namespace] = @authorization.filter_input(@params[input.namespace])
+        end
+
+        @safe_params
       end
 
       # This method must be reimplemented in every action.

@@ -20,20 +20,7 @@ class VpsAdmin::API::Resources::VPS < VpsAdmin::API::Resource
     desc 'List VPS'
 
     output(:vpses) do
-      list_of(:vpses, {
-        vps_id: Integer,
-        user_id: Integer,
-        hostname: String,
-        template_id: Integer,
-        info: String,
-        dns_resolver_id: Integer,
-        node_id: Integer,
-        onboot: Boolean,
-        onstartall: Boolean,
-        backup_enabled: Boolean,
-        config: String,
-      })
-
+      list_of_objects
       use :common
     end
 
@@ -93,10 +80,7 @@ class VpsAdmin::API::Resources::VPS < VpsAdmin::API::Resource
     end
 
     output do
-      object(:vps, {
-        vps_id: Integer
-      })
-
+      object
       integer :vps_id, label: 'VPS id', desc: 'ID of created VPS'
     end
 
@@ -133,11 +117,13 @@ END
     end
 
     def exec
+      vps_params = params[:vps]
+
       if current_user.role != :admin
-        params[:user_id] = current_user.m_id
+        vps_params[:user_id] = current_user.m_id
       end
 
-      vps = Vps.new(to_db_names(params))
+      vps = Vps.new(to_db_names(vps_params))
 
       if vps.save
         ok({vps_id: vps.id})
@@ -152,12 +138,7 @@ END
     desc 'Show VPS properties'
 
     output do
-      object(:vps, {
-        vps_id: Integer,
-        hostname: String,
-        distribution: Integer,
-      })
-
+      object
       use :common
     end
 
@@ -174,7 +155,7 @@ END
     end
 
     def exec
-      vps = Vps.find_by!(with_restricted(vps_id: @params[:vps_id]))
+      vps = Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
 
       {
           vps_id: vps.vps_id,

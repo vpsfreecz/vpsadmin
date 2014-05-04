@@ -7,13 +7,7 @@ class VpsAdmin::API::Resources::Environment < VpsAdmin::API::Resource
     desc 'List environments'
 
     output(:environments) do
-      list_of(:environments, {
-        id: Integer,
-        label: String,
-        domain: String,
-        created_at: String,
-        updated_at: String
-      })
+      list_of_objects
 
       integer :id, label: 'ID', desc: 'Environment ID'
       string :label, desc: 'Environment label'

@@ -94,24 +94,20 @@ module VpsAdmin
       end
 
       # Action returns custom data.
-      def structure(name, s)
+      def custom_structure(name, s)
         @namespace = name
         @layout = :custom
         @structure = s
       end
 
       # Action returns a list of objects.
-      def list_of(name, hash)
-        @namespace = name
+      def list_of_objects
         @layout = :list
-        @structure = {name => hash}
       end
 
       # Action returns properties describing one object.
-      def object(name, hash)
-        @namespace = name
+      def object
         @layout = :object
-        @structure = {name => hash}
       end
 
       def load_validators(model)
