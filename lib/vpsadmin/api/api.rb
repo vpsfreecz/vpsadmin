@@ -99,6 +99,14 @@ module VpsAdmin
       set :views, settings.root + '/views'
       set :bind, '0.0.0.0'
 
+      # This must be called before registering paper trail, or else it will
+      # not be logging current user.
+      before do
+        authenticated?
+      end
+
+      register PaperTrail::Sinatra
+
       helpers do
         def authenticate!
           unless authenticated?
