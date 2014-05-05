@@ -9,6 +9,7 @@ class VpsAdmin::API::Resources::Location < VpsAdmin::API::Resource
 
   params(:common) do
     string :label, label: 'Label', desc: 'Location label', db_name: :location_label
+    string :type, label: 'Type', desc: 'production or playground', db_name: :location_type
     bool :has_ipv6, label: 'Has IPv6', desc: 'True if location has IPv6 addresses',
          db_name: :location_has_ipv6
     bool :vps_onboot, label: 'VPS onboot', desc: 'Start all VPSes in this location on boot?',

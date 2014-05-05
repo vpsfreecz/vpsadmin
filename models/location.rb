@@ -11,6 +11,10 @@ class Location < ActiveRecord::Base
   validates :location_label, :location_has_ipv6, :location_vps_onboot,
             :environment_id, :domain, presence: true
   validates :environment_id, numericality: {only_integer: true}
+  validates :location_type, inclusion: {
+      in: %w(production playground),
+      message: '%{value} not a valid location type'
+  }
   validates :domain, format: {
       with: /[[0-9a-zA-Z\-\.]{3,255}]/,
       message: 'invalid format'
