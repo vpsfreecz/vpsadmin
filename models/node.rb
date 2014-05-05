@@ -9,6 +9,21 @@ class Node < ActiveRecord::Base
   alias_attribute :name, :server_name
   alias_attribute :addr, :server_ip4
 
+  validates :server_name, :server_type, :server_location, :server_ip4, presence: true
+  validates :server_location, numericality: {only_integer: true}
+  validates :server_name, format: {
+      with: /\A[a-zA-Z0-9\.\-_]+\Z/,
+      message: 'invalid format'
+  }
+  validates :server_type, inclusion: {
+      in: %w(node storage mailer),
+      message: '%{value} is not a valid node role'
+  }
+  validates :server_ip4, format: {
+      with: /\A\d+\.\d+\.\d+\.\d+\Z/,
+      message: 'not a valid IPv4 address'
+  }
+
   def location_domain
     "#{name}.#{location.domain}"
   end

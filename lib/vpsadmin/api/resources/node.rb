@@ -1,0 +1,191 @@
+class VpsAdmin::API::Resources::Node < VpsAdmin::API::Resource
+  version 1
+  model ::Node
+  desc 'Manage nodes'
+
+  params(:id) do
+    id :id, label: 'ID', desc: 'Node ID', db_name: :server_id
+  end
+
+  params(:common) do
+    string :name, label: 'Name', desc: 'Node name', db_name: :server_name
+    string :type, label: 'Role', desc: 'node, storage or mailer', db_name: :server_type
+    foreign_key :location_id, label: 'Location ID', desc: 'Location node is placed in', db_name: :server_location
+    string :availstat, label: 'Availability stats', desc: 'HTML code with availability graphs',
+           db_name: :server_availstat
+    string :ip_addr, label: 'IPv4 address', desc: 'Node\'s IP address', db_name: :server_ip4
+    bool :maintenance, label: 'Maintenance mode', desc: 'Toggle maintenance mode for this node',
+         db_name: :server_maintenance
+  end
+
+  params(:all) do
+    use :id
+    use :common
+  end
+
+  class Index < VpsAdmin::API::Actions::Default::Index
+    desc 'List nodes'
+
+    output(:nodes) do
+      list_of_objects
+      use :all
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    example do
+      request({})
+      response({
+        nodes: {
+          id: 1,
+          name: 'node1',
+          type: 'node',
+          location_id: 1,
+          availstat: '',
+          ip_addr: '192.168.0.10',
+          maintenance: false
+        }
+      })
+    end
+
+    def exec
+      ret = []
+
+      ::Node.all.each do |node|
+        ret << to_param_names(node.attributes, :output)
+      end
+
+      ret
+    end
+  end
+
+  class Create < VpsAdmin::API::Actions::Default::Create
+    desc 'Create new node'
+
+    input do
+      use :common
+    end
+
+    output do
+      use :id
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    example do
+      request({
+        node: {
+          name: 'node2',
+          type: 'node',
+          location_id: 1,
+          availstat: '',
+          ip_addr: '192.168.0.11',
+          maintenance: false
+        }
+      })
+      response({
+        node: {
+          id: 2
+        }
+      })
+    end
+
+    def exec
+      node = ::Node.new(to_db_names(params[:node]))
+
+      if node.save
+        ok({id: node.server_id})
+      else
+        error('save failed', to_param_names(node.errors.to_hash, :input))
+      end
+    end
+  end
+
+  class Show < VpsAdmin::API::Actions::Default::Show
+    desc 'Show node'
+
+    output do
+      use :all
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    example do
+      request({})
+      response({
+        node: {
+          id: 2,
+          name: 'node2',
+          type: 'node',
+          location_id: 1,
+          availstat: '',
+          ip_addr: '192.168.0.11',
+          maintenance: false
+        }
+      })
+    end
+
+    def exec
+      to_param_names(::Node.find(params[:node_id]).attributes)
+    end
+  end
+
+  class Update < VpsAdmin::API::Actions::Default::Update
+    desc 'Update node'
+
+    input do
+      use :common
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    example do
+      request({
+        node: {
+          name: 'node2',
+          type: 'storage',
+          location_id: 1,
+          availstat: '',
+          ip_addr: '192.168.0.11',
+          maintenance: false
+        }
+      })
+      response({})
+    end
+
+    def exec
+      node = ::Node.find(params[:node_id])
+
+      if node.update(to_db_names(params[:node]))
+        ok({})
+      else
+        error('update failed', to_param_names(node.errors.to_hash, :input))
+      end
+    end
+  end
+
+  class Delete < VpsAdmin::API::Actions::Default::Delete
+    desc 'Delete node'
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    example do
+      request({})
+      response({})
+    end
+
+    def exec
+      ::Node.find(params[:node_id]).destroy
+    end
+  end
+end
