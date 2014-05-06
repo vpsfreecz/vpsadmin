@@ -190,6 +190,8 @@ module VpsAdmin
       # Convert parameter names to corresponding DB names.
       # By default, input parameters are used for the translation.
       def to_db_names(hash, src=:input)
+        return {} unless hash
+
         params = self.class.method(src).call.params
         ret = {}
 
@@ -214,6 +216,8 @@ module VpsAdmin
       # Convert DB names to corresponding parameter names.
       # By default, output parameters are used for the translation.
       def to_param_names(hash, src=:output)
+        return {} unless hash
+
         params = self.class.method(src).call.params
         ret = {}
 
@@ -235,7 +239,7 @@ module VpsAdmin
         ret
       end
 
-      def ok(ret)
+      def ok(ret={})
         throw(:return, ret)
       end
 

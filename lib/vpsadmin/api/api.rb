@@ -84,13 +84,7 @@ module VpsAdmin
 
     # Start API.
     def self.start!
-      ActiveRecord::Base.establish_connection(
-          adapter:  'mysql',
-          host:     'localhost',
-          username: 'vpsadmin2',
-          password: 'rails',
-          database: 'vpsadmin2'
-      )
+      # ActiveRecord::Base.establish_connection
       
       App.start!
     end
@@ -116,10 +110,14 @@ module VpsAdmin
         end
 
         def authenticated?
+          return @current_user if @current_user
+
           auth = Rack::Auth::Basic::Request.new(request.env)
           if auth.provided? && auth.basic? && auth.credentials
             @current_user = User.authenticate(*auth.credentials)
           end
+
+          User.current = @current_user
 
           @current_user
         end
