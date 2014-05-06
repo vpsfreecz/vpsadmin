@@ -8,6 +8,9 @@ class Vps < ActiveRecord::Base
   has_many :ip_addresses
   has_many :transactions, foreign_key: :t_vps
 
+  has_many :vps_has_config
+  has_many :vps_configs, through: :vps_has_config
+
   has_paper_trail
 
   alias_attribute :hostname, :vps_hostname

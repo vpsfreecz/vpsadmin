@@ -155,5 +155,17 @@ class Setup < ActiveRecord::Migration
       t.boolean     :dns_is_universal,        null: true,  default: false
       t.integer     :dns_location,            null: true,  default: nil
     end
+
+    create_table :config do |t|
+      t.string      :name,       limit: 50,   null: false
+      t.string      :label,      limit: 50,   null: false
+      t.text        :config,                  null: false
+    end
+
+    create_table :vps_has_config, :id => false do |t|
+      t.integer     :vps_id,                  null: false
+      t.integer     :config_id,               null: false
+      t.integer     :order,                   null: false
+    end
   end
 end
