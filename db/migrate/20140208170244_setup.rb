@@ -148,5 +148,12 @@ class Setup < ActiveRecord::Migration
       t.text        :t_param,                 null: true
       t.text        :t_output,                null: true
     end
+
+    create_table :cfg_dns, :primary_key => 'dns_id' do |t|
+      t.string      :dns_ip,     limit: 63,   null: false
+      t.string      :dns_label,  limit: 63,   null: false
+      t.boolean     :dns_is_universal,        null: true,  default: false
+      t.integer     :dns_location,            null: true,  default: nil
+    end
   end
 end

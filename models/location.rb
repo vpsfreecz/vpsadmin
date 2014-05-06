@@ -4,6 +4,7 @@ class Location < ActiveRecord::Base
   belongs_to :environment
   has_many :nodes, :foreign_key => :server_location
   has_many :ip_addresses, :foreign_key => :ip_location
+  has_many :dns_resolvers, foreign_key: :dns_location
   has_paper_trail
 
   alias_attribute :label, :location_label
