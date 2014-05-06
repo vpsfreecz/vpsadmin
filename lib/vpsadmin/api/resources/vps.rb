@@ -126,6 +126,7 @@ END
       vps = Vps.new(to_db_names(vps_params))
 
       if vps.save
+        Transactions::Vps::New.fire(self)
         ok({vps_id: vps.id})
 
       else
@@ -178,6 +179,57 @@ END
 
   class Delete < VpsAdmin::API::Actions::Default::Delete
 
+  end
+
+  class Start < VpsAdmin::API::Action
+    desc 'Start VPS'
+    route ':%{resource}_id/start'
+    http_method :post
+
+    authorize do |u|
+      allow if u.role == :admin
+      restrict m_id: u.m_id
+      allow
+    end
+
+    def exec
+      ::Vps.find(params[:vps_id]).start
+      ok
+    end
+  end
+
+  class Restart < VpsAdmin::API::Action
+    desc 'Restart VPS'
+    route ':%{resource}_id/restart'
+    http_method :post
+
+    authorize do |u|
+      allow if u.role == :admin
+      restrict m_id: u.m_id
+      allow
+    end
+
+    def exec
+      ::Vps.find(params[:vps_id]).restart
+      ok
+    end
+  end
+
+  class Stop < VpsAdmin::API::Action
+    desc 'Stop VPS'
+    route ':%{resource}_id/stop'
+    http_method :post
+
+    authorize do |u|
+      allow if u.role == :admin
+      restrict m_id: u.m_id
+      allow
+    end
+
+    def exec
+      ::Vps.find(params[:vps_id]).stop
+      ok
+    end
   end
 
   class IpAddress < VpsAdmin::API::Resource
