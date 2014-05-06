@@ -167,5 +167,10 @@ class Setup < ActiveRecord::Migration
       t.integer     :config_id,               null: false
       t.integer     :order,                   null: false
     end
+
+    create_table :sysconfig, :id => false do |t|
+      t.string      :cfg_name,                null: false
+      t.text        :cfg_value,               null: true,  default: nil
+    end
   end
 end
