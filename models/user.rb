@@ -3,6 +3,7 @@ class User < ActiveRecord::Base
   self.primary_key = 'm_id'
 
   has_many :vpses, :foreign_key => :m_id
+  has_many :transactions, foreign_key: :t_m_id
 
   alias_attribute :login, :m_nick
   alias_attribute :role, :m_level
@@ -64,5 +65,13 @@ class User < ActiveRecord::Base
     if u
       u if u.valid_password?(username, password)
     end
+  end
+
+  def self.current
+    Thread.current[:user]
+  end
+
+  def self.current=(user)
+    Thread.current[:user] = user
   end
 end

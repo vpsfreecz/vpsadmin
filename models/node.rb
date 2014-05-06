@@ -4,6 +4,7 @@ class Node < ActiveRecord::Base
 
   belongs_to :location, :foreign_key => :server_location
   has_many :vpses, :foreign_key => :vps_server
+  has_many :transactions, foreign_key: :t_server
   has_paper_trail
 
   alias_attribute :name, :server_name
