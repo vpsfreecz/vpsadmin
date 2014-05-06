@@ -3,4 +3,6 @@ class DnsResolver < ActiveRecord::Base
   self.primary_key = 'dns_id'
 
   belongs_to :location, foreign_key: :dns_location
+
+  validates :dns_ip, :dns_label, presence: true
 end
