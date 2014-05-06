@@ -8,14 +8,6 @@ class User < ActiveRecord::Base
   alias_attribute :login, :m_nick
   alias_attribute :role, :m_level
 
-  #acts_as_authentic do |c|
-  #  c.login_field = :login
-  #  c.crypted_password_field = :m_pass
-  #  c.crypto_provider = Vpsadmin::VpsadminCryptoProvider
-  #end
-
-  acts_as_authentic
-
   has_paper_trail ignore: [
       :m_last_activity,
   ]

@@ -20,13 +20,6 @@ class Setup < ActiveRecord::Migration
       t.string    :m_state,             null: false, limit: 10,  default: 'active'
       t.string    :m_suspend_reason,    null: false, limit: 100
 
-      # required authlogic columns
-      t.string    :persistence_token,   null: false
-
-      # the rest is optional, it will work without them
-      t.string    :single_access_token, null: false
-      t.string    :perishable_token,    null: false
-
       t.integer   :login_count,         null: false,             default: 0
       t.integer   :failed_login_count,  null: false,             default: 0
       t.datetime  :last_request_at
@@ -113,7 +106,7 @@ class Setup < ActiveRecord::Migration
       t.boolean     :vps_onstartall,                   null: false, default: 1
       t.boolean     :vps_backup_enabled,               null: false, default: 1
       t.boolean     :vps_features_enabled, limit: 255, null: false, default: 0
-      t.integer     :vps_backup_export,                null: false
+      t.integer     :vps_backup_export,                null: true
       t.boolean     :vps_backup_lock,                  null: false, default: 0
       t.text        :vps_backup_exclude,               null: false
       t.text        :vps_config,                       null: false
