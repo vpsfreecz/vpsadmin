@@ -62,4 +62,10 @@ class Vps < ActiveRecord::Base
       i += 1
     end
   end
+
+  def add_ip(ip)
+    ip_addresses << ip
+
+    Transactions::Vps::IpAdd.fire(self, ip)
+  end
 end

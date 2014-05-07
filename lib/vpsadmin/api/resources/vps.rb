@@ -256,7 +256,7 @@ END
       def exec
         ret = []
 
-        ::Vps.find(params[:vps_id]).vps_configs.all.each do |c|
+        ::Vps.find(with_restricted(params[:vps_id])).vps_configs.all.each do |c|
           ret << {
               config_id: c.id,
               name: c.name,
@@ -290,12 +290,85 @@ END
 
   class IpAddress < VpsAdmin::API::Resource
     version 1
-    model IpAddress
+    model ::IpAddress
     route ':vps_id/ip_addresses'
     desc 'Manage VPS IP addresses'
 
-    class Index < VpsAdmin::API::Actions::Default::Index
+    params(:common) do
+      id :id, label: 'IP address ID', db_name: :ip_id
+      string :addr, label: 'Address', desc: 'Address itself', db_name: :ip_addr
+      integer :version, label: 'IP version', desc: '4 or 6', db_name: :ip_v
+    end
 
+    class Index < VpsAdmin::API::Actions::Default::Index
+      desc 'List VPS IP addresses'
+
+      input(:ip_addresses) do
+        integer :version, label: 'IP version', desc: '4 or 6', db_name: :ip_v
+      end
+
+      output(:ip_addresses) do
+        list_of_objects
+        use :common
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.m_id
+        allow
+      end
+
+      def exec
+        ret = []
+
+        ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).ip_addresses.where(to_db_names(params[:ip_addresses])).each do |ip|
+          ret << {
+              id: ip.ip_id,
+              addr: ip.ip_addr,
+              version: ip.ip_v,
+          }
+        end
+
+        ret
+      end
+    end
+
+    class Create < VpsAdmin::API::Actions::Default::Create
+      desc 'Assign IP address to VPS'
+
+      input do
+        id :id, label: 'IP address ID',
+           desc: 'If ID is 0, first free IP address of given version is assigned',
+           db_name: :ip_id
+        integer :version, label: 'IP version',
+                desc: '4 or 6, provide only if id is 0', db_name: :ip_v,
+                required: true
+      end
+
+      output do
+        use :common
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        vps = ::Vps.find(params[:vps_id])
+
+        if !params[:ip_address][:id] || params[:ip_address][:id] == 0
+          ip = ::IpAddress.where(ip_v: params[:ip_address][:version]).where('vps_id IS NULL OR vps_id = 0').take!
+        else
+          ip = ::IpAddress.find(params[:ip_address][:id])
+        end
+
+        if ip.free?
+          vps.add_ip(ip)
+          ok
+        else
+          error('IP address is already in use')
+        end
+      end
     end
 
     class Show < VpsAdmin::API::Actions::Default::Show
