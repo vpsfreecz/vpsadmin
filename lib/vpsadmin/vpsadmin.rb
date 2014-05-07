@@ -3,10 +3,7 @@ require 'active_record'
 require 'paper_trail'
 require 'sinatra/base'
 require 'sinatra/activerecord'
-require 'authlogic'
 require 'pp'
-
-require_rel '../../models'
 
 module VpsAdmin
   module API
@@ -20,4 +17,6 @@ module VpsAdmin
   end
 end
 
+require_rel 'api/crypto_provider'
+require_rel '../../models'
 require_rel 'api'

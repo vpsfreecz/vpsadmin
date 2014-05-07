@@ -45,8 +45,8 @@ class Transaction < ActiveRecord::Base
   # all transactions that depends on it fail too.
   # Chain is defined by +block+. It is run in context of Transaction::Chain.
   # Transactions are linked together by Chain#append and Chain#append_to.
-  def self.chain(&block)
-    chain = Chain.new
+  def self.chain(dep=nil, &block)
+    chain = Chain.new(dep)
     chain.exec(&block)
   end
 
@@ -58,9 +58,27 @@ class Transaction < ActiveRecord::Base
     t = new
 
     if t_chain
-      return t.prepare(*args)
+      return t.link_chain(nil, *args)
     end
 
+    t.t_type = t.class.t_type if t.class.t_type
+    t.t_param = (t.prepare(*args) || {}).to_json
+
+    t.save!
+    t.t_id
+  end
+
+  # Called from Transaction.Chain when adding transaction. In addition to .fire,
+  # it has argument +dep+, which is an ID of transaction that will be dependency,
+  # for the new transaction.
+  def self.fire_chained(dep, *args)
+    t = new
+
+    if t_chain
+      return t.link_chain(dep, *args)
+    end
+
+    t.t_depends_on = dep
     t.t_type = t.class.t_type if t.class.t_type
     t.t_param = (t.prepare(*args) || {}).to_json
 
@@ -77,9 +95,14 @@ class Transaction < ActiveRecord::Base
   end
 
   # Must be implemented in subclasses.
-  # Returns hash of parameters for single transaction. If target transaction
-  # is chained, return the ID of last transaction in chain.
+  # Returns hash of parameters for single transaction.
   def prepare(*args)
+    raise NotImplementedError
+  end
+
+  # Must be implemented in subclass with +t_chain+ true.
+  # Return the ID of last transaction in chain.
+  def link_chain(dep, *args)
     raise NotImplementedError
   end
 
@@ -117,8 +140,7 @@ class Transaction < ActiveRecord::Base
 
     private
     def do_append(dep, klass, opts)
-      opts[:t_depends_on] = dep
-      @last_id = klass.fire(opts) # fixme might have to remove +name+
+      @last_id = klass.fire_chained(dep, opts) # fixme might have to remove +name+
       @named[name] = @last_id if opts[:name]
       @last_id
     end

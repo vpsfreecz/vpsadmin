@@ -125,8 +125,7 @@ END
 
       vps = Vps.new(to_db_names(vps_params))
 
-      if vps.save
-        Transactions::Vps::New.fire(self)
+      if vps.create
         ok({vps_id: vps.id})
 
       else
@@ -229,6 +228,63 @@ END
     def exec
       ::Vps.find(params[:vps_id]).stop
       ok
+    end
+  end
+
+  class Config < VpsAdmin::API::Resource
+    version 1
+    route ':vps_id/configs'
+    desc 'Manage VPS configs'
+
+    class Index < VpsAdmin::API::Actions::Default::Index
+      desc 'List VPS configs'
+
+      output(:configs) do
+        list_of_objects
+
+        integer :config_id, label: 'Config ID'
+        string :name, label: 'Config name', desc: 'Used internally'
+        string :label, label: 'Config label', desc: 'Nice name for user'
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.m_id
+        allow
+      end
+
+      def exec
+        ret = []
+
+        ::Vps.find(params[:vps_id]).vps_configs.all.each do |c|
+          ret << {
+              config_id: c.id,
+              name: c.name,
+              label: c.label
+          }
+        end
+
+        ret
+      end
+    end
+
+    class Update < VpsAdmin::API::Actions::Default::Update
+      desc 'Update VPS configs'
+
+      input(:configs) do
+        list_of_objects
+
+        integer :config_id, label: 'Config ID', db_name: :id
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        configs = ::VpsConfig.find(to_db_names(params[:configs]))
+        p configs
+      end
     end
   end
 
