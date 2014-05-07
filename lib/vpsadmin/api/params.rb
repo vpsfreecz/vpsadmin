@@ -1,5 +1,15 @@
 module VpsAdmin
   module API
+    class ValidationError < Exception
+      def initialize(errors)
+        @errors = errors
+      end
+
+      def to_hash
+        @errors
+      end
+    end
+
     class Param
       attr_reader :name, :label, :desc, :type
 
@@ -10,7 +20,7 @@ module VpsAdmin
         @desc = desc
         @type = type
         @db_name = db_name
-        @layout = :object
+        @layout = :custom
         @validators = {}
       end
 
@@ -51,7 +61,7 @@ module VpsAdmin
       def initialize(action, namespace)
         @params = []
         @action = action
-        @namespace = namespace
+        @namespace = namespace.to_sym
         @layout = :object
       end
 
@@ -131,6 +141,24 @@ module VpsAdmin
         ret
       end
 
+      def validate(params)
+        errors = {}
+
+        @params.each do |p|
+          next unless p.required?
+
+          if params[@namespace].nil? || !valid_layout?(params) || params[@namespace][p.name].nil?
+            errors[p.name] = ['required parameter missing']
+          end
+        end
+
+        unless errors.empty?
+          raise ValidationError.new(errors)
+        end
+
+        params
+      end
+
       private
         def add_param(*args)
           @params << Param.new(*args)
@@ -140,6 +168,19 @@ module VpsAdmin
           args << {} unless args.last.is_a?(Hash)
           args.last.update(default)
           args
+        end
+
+        def valid_layout?(params)
+          case @layout
+            when :object
+              params[@namespace].is_a?(Hash)
+
+            when :list
+              params[@namespace].is_a?(Array)
+
+            else
+              false
+          end
         end
     end
   end

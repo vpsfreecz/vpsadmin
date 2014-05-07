@@ -242,7 +242,7 @@ module VpsAdmin
             action = route.action.new(v, params, body)
 
             unless action.authorized?(current_user)
-              halt 403, "you ain't supposed to be here"
+              report_error(403, {}, 'Access denied. Insufficient permissions.')
             end
 
             status, reply, errors = action.safe_exec

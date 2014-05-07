@@ -106,6 +106,14 @@ module VpsAdmin
         end
       end
 
+      def validate!
+        begin
+          @params = validate(params)
+        rescue ValidationError => e
+          error('input parameters not valid', e.to_hash)
+        end
+      end
+
       def authorized?(user)
         @current_user = user
         @authorization.authorized?(user)
@@ -136,9 +144,11 @@ module VpsAdmin
 
       # Calls exec while catching all exceptions and restricting output only
       # to what user can see.
-      # Return array +[status, data|error]+
+      # Return array +[status, data|error, errors]+
       def safe_exec
         ret = catch(:return) do
+          validate!
+
           begin
             exec
           rescue ActiveRecord::RecordNotFound
@@ -237,6 +247,14 @@ module VpsAdmin
         end
 
         ret
+      end
+
+      def validate(params)
+        if self.class.input
+          self.class.input.validate(params)
+        else
+          params
+        end
       end
 
       def ok(ret={})
