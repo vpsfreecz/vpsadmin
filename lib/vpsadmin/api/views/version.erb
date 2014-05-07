@@ -101,8 +101,8 @@
 
     <% unless info[:resources].empty? %>
       <h4>Resources</h4>
-      <% info[:resources].each do |resource, info| %>
-        <% render_resource_body(resource, info, "#{prefix}-#{resource}") %>
+      <% info[:resources].each do |r, i| %>
+        <% render_resource_body(r, i, "#{prefix}-#{resource}") %>
       <% end %>
     <% end %>
 
@@ -120,8 +120,8 @@
         </li>
       <% end %>
 
-      <% info[:resources].each do |resource, info| %>
-        <% render_resource_nav(resource, info, "#{prefix}-#{resource}") %>
+      <% info[:resources].each do |r, i| %>
+        <% render_resource_nav(r, i, "#{prefix}-#{resource}") %>
       <% end %>
     </ul>
   </li>
