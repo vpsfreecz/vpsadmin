@@ -74,4 +74,16 @@ class Vps < ActiveRecord::Base
 
     Transactions::Vps::IpDel.fire(self, ip)
   end
+
+  def delete_ips(v=nil)
+    if v
+      ips = ip_addresses.where(ip_v: v)
+    else
+      ips = ip_addresses.all
+    end
+
+    ips.each do |ip|
+      delete_ip(ip)
+    end
+  end
 end

@@ -357,7 +357,7 @@ END
         vps = ::Vps.find(params[:vps_id])
 
         if !params[:ip_address][:id] || params[:ip_address][:id] == 0
-          ip = ::IpAddress.where(ip_v: params[:ip_address][:version], location: vps.node.location).where('vps_id IS NULL OR vps_id = 0').take!
+          ip = ::IpAddress.where(ip_v: params[:ip_address][:version], location: vps.node.location).where('vps_id IS NULL OR vps_id = 0').order(:ip_id).take!
         else
           ip = ::IpAddress.find_by!(ip_id: params[:ip_address][:id], location: vps.node.location)
         end
@@ -381,6 +381,25 @@ END
       def exec
         vps = ::Vps.find(params[:vps_id])
         vps.delete_ip(vps.ip_addresses.find(params[:ip_address_id]))
+      end
+    end
+
+    class DeleteAll < VpsAdmin::API::Action
+      desc 'Free all IP addresses'
+      route ''
+      http_method :delete
+
+      input(:ip_addresses) do
+        integer :version, label: 'IP version',
+                desc: '4 or 6, delete addresses of selected version', db_name: :ip_v
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        ::Vps.find(params[:vps_id]).delete_ips((params[:ip_addresses] || {})[:version])
       end
     end
   end
