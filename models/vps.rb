@@ -68,4 +68,10 @@ class Vps < ActiveRecord::Base
 
     Transactions::Vps::IpAdd.fire(self, ip)
   end
+
+  def delete_ip(ip)
+    ip_addresses.delete(ip)
+
+    Transactions::Vps::IpDel.fire(self, ip)
+  end
 end

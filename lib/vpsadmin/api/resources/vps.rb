@@ -357,9 +357,9 @@ END
         vps = ::Vps.find(params[:vps_id])
 
         if !params[:ip_address][:id] || params[:ip_address][:id] == 0
-          ip = ::IpAddress.where(ip_v: params[:ip_address][:version]).where('vps_id IS NULL OR vps_id = 0').take!
+          ip = ::IpAddress.where(ip_v: params[:ip_address][:version], location: vps.node.location).where('vps_id IS NULL OR vps_id = 0').take!
         else
-          ip = ::IpAddress.find(params[:ip_address][:id])
+          ip = ::IpAddress.find_by!(ip_id: params[:ip_address][:id], location: vps.node.location)
         end
 
         if ip.free?
@@ -371,8 +371,17 @@ END
       end
     end
 
-    class Show < VpsAdmin::API::Actions::Default::Show
+    class Delete < VpsAdmin::API::Actions::Default::Delete
+      desc 'Free IP address'
 
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        vps = ::Vps.find(params[:vps_id])
+        vps.delete_ip(vps.ip_addresses.find(params[:ip_address_id]))
+      end
     end
   end
 end
