@@ -91,6 +91,7 @@ module VpsAdmin
 
     class App < Sinatra::Base
       set :views, settings.root + '/views'
+      set :public_folder, settings.root + '/public'
       set :bind, '0.0.0.0'
 
       # This must be called before registering paper trail, or else it will
@@ -158,7 +159,7 @@ module VpsAdmin
           # Mount root
           get @root do
             @api = App.describe
-            erb :index
+            erb :index, layout: :main
           end
 
           options @root do
@@ -181,7 +182,7 @@ module VpsAdmin
           get prefix do
             @v = v
             @help = App.describe_version(v)
-            erb :version
+            erb :version, layout: :main
           end
 
           options prefix do

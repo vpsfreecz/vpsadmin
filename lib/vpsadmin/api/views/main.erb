@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>API v<%= @v %> description</title>
+
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <script src="/js/jquery-1.11.1.min.js"></script>
+  <script src="/js/bootstrap.min.js"></script>
+
+  <style>
+    /*html,body { margin: 10px; }*/
+    .resource { margin-left: 10px; }
+    .resource-body { margin-left: 20px; }
+    .actions { margin-left: 10px; }
+    .action { margin-left: 10px; }
+    .parameters { margin-left: 10px; }
+  </style>
+</head>
+<body>
+<div class="container-fluid">
+  <%= yield %>
+</div>
+</body>
+</html>

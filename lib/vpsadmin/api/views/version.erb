@@ -1,64 +1,5 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>API v<%= @v %> description</title>
-  <style>
-    html,body { margin: 10px; }
-    .resource { margin-left: 10px; }
-    .resource-body { margin-left: 20px; }
-    .actions { margin-left: 10px; }
-    .action { margin-left: 10px; }
-    .parameters { margin-left: 10px; }
-  </style>
-</head>
-<body>
-<h1>API v<%= @v %></h1>
-<p>
-  This page contains a list of resources available in API v<%= @v %>, their actions,
-  description, parameters and example usage.
-</p>
-<p>
-  Every action has assigned URL, which may be identical for several actions, but
-  differ in HTTP method.
-</p>
-<p>
-  This API is self-describing. Every action responds to HTTP method <em>OPTIONS</em>,
-  with which you can get description for selected action. To distinguish actions with
-  same URL, use parameter <code>?method=HTTP_METHOD</code>.
-</p>
-<p>
-  When action requires authentication, you have to login with HTTP basic auth.
-</p>
-<p>
-  In addition to output parameters specified below, every API response is wrapped in an envelope.
-  The envelope reports if action succeeded or failed, provides return value or error
-  message.
-</p>
-<p>
-  Envelope:
-  <pre>
-    <code>
-  {
-    "status": true if action succeeded or false if error occured,
-    "response": return value,
-    "message": error message, if status is false,
-    "errors: {
-      "parameter1": ["list", "of", "errors"],
-      "parameter2": ["and", "so", "on"]
-    }
-  }
-    </code>
-  </pre>
-</p>
-<p>
-  For now, the only supported input/output format is JSON.
-</p>
-
-<h1>Resources</h1>
-
-<% def render_resource(resource, info) %>
-  <h2 class="resource"><%= resource.humanize %></h2>
+<% def render_resource_body(resource, info, prefix='root') %>
+  <h2 class="resource" id="<%= "#{prefix}-#{resource}" %>"><%= resource.humanize %></h2>
   <div class="resource-body">
     <p><%= info[:description] %></p>
 
@@ -66,7 +7,7 @@
 
     <div class="actions">
       <% info[:actions].each do |action, info| %>
-        <h4><%= action.capitalize %></h4>
+        <h4 id="<%= "#{prefix}-#{resource}-#{action}" %>"><%= resource.humanize %>.<%= action.capitalize %></h4>
         <div class="action">
           <dl>
             <dt>URL:</dt>
@@ -89,7 +30,7 @@
                 <dd><%= info[:input][:namespace] %></dd>
               </dl>
 
-              <table class="table">
+              <table class="table table-striped table-hover">
                 <tr>
                   <th>Label</th>
                   <th>Name</th>
@@ -124,7 +65,7 @@
                 <dd><%= info[:output][:namespace] %></dd>
               </dl>
 
-              <table class="table">
+              <table class="table table-striped table-hover">
                 <tr>
                   <th>Label</th>
                   <th>Name</th>
@@ -155,22 +96,95 @@
           <% end %>
 
         </div>
-    <% end %>
-  </div>
+      <% end %>
+    </div>
 
-  <% unless info[:resources].empty? %>
-    <h4>Resources</h4>
-    <% info[:resources].each do |resource, info| %>
-      <% render_resource(resource, info) %>
+    <% unless info[:resources].empty? %>
+      <h4>Resources</h4>
+      <% info[:resources].each do |resource, info| %>
+        <% render_resource_body(resource, info, "#{prefix}-#{resource}") %>
+      <% end %>
     <% end %>
-  <% end %>
 
   </div> <!-- resource -->
 <% end %>
 
-<% @help[:resources].each do |resource, info| %>
-  <% render_resource(resource, info) %>
+<% def render_resource_nav(resource, info, prefix='root') %>
+  <li>
+    <a href="#<%= "#{prefix}-#{resource}" %>"><%= resource.humanize %></a>
+
+    <ul class="">
+      <% info[:actions].each do |action, info| %>
+        <li>
+          <a href="#<%= "#{prefix}-#{resource}-#{action}" %>"><%= action.capitalize %></a>
+        </li>
+      <% end %>
+
+      <% info[:resources].each do |resource, info| %>
+        <% render_resource_nav(resource, info, "#{prefix}-#{resource}") %>
+      <% end %>
+    </ul>
+  </li>
 <% end %>
 
-</body>
-</html>
+<div class="row-fluid">
+  <div class="col-md-10" data-spy="scroll" data-target=".table-of-contents">
+    <h1 id="root">API v<%= @v %></h1>
+    <p>
+      This page contains a list of resources available in API v<%= @v %>, their actions,
+      description, parameters and example usage.
+    </p>
+    <p>
+      Every action has assigned URL, which may be identical for several actions, but
+      differ in HTTP method.
+    </p>
+    <p>
+      This API is self-describing. Every action responds to HTTP method <em>OPTIONS</em>,
+      with which you can get description for selected action. To distinguish actions with
+      same URL, use parameter <code>?method=HTTP_METHOD</code>.
+    </p>
+    <p>
+      When action requires authentication, you have to login with HTTP basic auth.
+    </p>
+    <p>
+      In addition to output parameters specified below, every API response is wrapped in an envelope.
+      The envelope reports if action succeeded or failed, provides return value or error
+      message.
+    </p>
+    <p>
+      Envelope:
+      <pre>
+        <code>
+      {
+        "status": true if action succeeded or false if error occured,
+        "response": return value,
+        "message": error message, if status is false,
+        "errors: {
+          "parameter1": ["list", "of", "errors"],
+          "parameter2": ["and", "so", "on"]
+        }
+      }</code>
+      </pre>
+    </p>
+    <p>
+      For now, the only supported input/output format is JSON.
+    </p>
+
+    <h1 id="resources">Resources</h1>
+
+    <% @help[:resources].each do |resource, info| %>
+      <% render_resource_body(resource, info) %>
+    <% end %>
+  </div>
+
+  <div class="col-md-2 table-of-contents nav sidebar-nav-fixed">
+    <h1>Table of contents</h1>
+    <ul class="">
+      <li><a href="root">API v<%= @v %></a></li>
+      <li><a href="resources">Resources</a></li>
+      <% @help[:resources].each do |resource, info| %>
+        <% render_resource_nav(resource, info) %>
+      <% end %>
+    </ul>
+  </div>
+</div>

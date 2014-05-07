@@ -1,20 +1,11 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>API description</title>
-  </head>
-  <body>
-    <h1>API description</h1>
-    <h2>Available versions:</h2>
-    <ul>
-      <% @api[:versions].each do |v, info| %>
-        <% next if v == :default %>
-        <li>
-          <a href="<%= info[:help] %>"><%= v.to_s %></a>
-          <%= '(default)' if v == @api[:default_version] %>
-        </li>
-      <% end %>
-    </ul>
-  </body>
-</html>
+<h1>API description</h1>
+<h2>Available versions:</h2>
+<ul>
+  <% @api[:versions].each do |v, info| %>
+    <% next if v == :default %>
+    <li>
+      <a href="<%= info[:help] %>"><%= v.to_s %></a>
+      <%= '(default)' if v == @api[:default_version] %>
+    </li>
+  <% end %>
+</ul>
