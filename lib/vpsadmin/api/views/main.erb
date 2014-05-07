@@ -9,15 +9,34 @@
   <script src="/js/bootstrap.min.js"></script>
 
   <style>
-    /*html,body { margin: 10px; }*/
     .resource { margin-left: 10px; }
     .resource-body { margin-left: 20px; }
     .actions { margin-left: 10px; }
     .action { margin-left: 10px; }
     .parameters { margin-left: 10px; }
+
+    .table-of-contents {
+      position: relative;
+    }
+    .affix {
+      width: inherit;
+      position: fixed;
+    }
+    .affix-bottom {
+      width: inherit;
+      position: absolute;
+      top: auto;
+      bottom: 200px;
+    }
+    .affix-top {
+
+    }
+    .table-of-contents li.active > a {
+      font-weight: bold;
+    }
   </style>
 </head>
-<body>
+<body data-spy="scroll" data-target=".table-of-contents">
 <div class="container-fluid">
   <%= yield %>
 </div>

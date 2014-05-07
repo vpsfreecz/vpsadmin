@@ -111,12 +111,12 @@
 
 <% def render_resource_nav(resource, info, prefix='root') %>
   <li>
-    <a href="#<%= "#{prefix}-#{resource}" %>"><%= resource.humanize %></a>
+    <a href="#<%= "#{prefix}-#{resource}" %>">.<%= resource.humanize %></a>
 
-    <ul class="">
+    <ul>
       <% info[:actions].each do |action, info| %>
         <li>
-          <a href="#<%= "#{prefix}-#{resource}-#{action}" %>"><%= action.capitalize %></a>
+          <a href="#<%= "#{prefix}-#{resource}-#{action}" %>">#<%= action.capitalize %></a>
         </li>
       <% end %>
 
@@ -128,7 +128,7 @@
 <% end %>
 
 <div class="row-fluid">
-  <div class="col-md-10" data-spy="scroll" data-target=".table-of-contents">
+  <div class="col-md-10">
     <h1 id="root">API v<%= @v %></h1>
     <p>
       This page contains a list of resources available in API v<%= @v %>, their actions,
@@ -139,7 +139,7 @@
       differ in HTTP method.
     </p>
     <p>
-      This API is self-describing. Every action responds to HTTP method <em>OPTIONS</em>,
+      This API is self-describing. Every action responds to HTTP method <code>OPTIONS</code>,
       with which you can get description for selected action. To distinguish actions with
       same URL, use parameter <code>?method=HTTP_METHOD</code>.
     </p>
@@ -177,14 +177,30 @@
     <% end %>
   </div>
 
-  <div class="col-md-2 table-of-contents nav sidebar-nav-fixed">
-    <h1>Table of contents</h1>
-    <ul class="">
-      <li><a href="#root">API v<%= @v %></a></li>
-      <li><a href="#resources">Resources</a></li>
-      <% @help[:resources].each do |resource, info| %>
-        <% render_resource_nav(resource, info) %>
-      <% end %>
-    </ul>
+  <div class="col-md-2 table-of-contents">
+    <div class="nav sidebar-nav-fixed" data-spy="affix" data-offset-top="100" data-offset-bottom="200">
+      <h1>Table of contents</h1>
+      <ul class="top-level">
+        <li><a href="#root">API v<%= @v %></a></li>
+        <li><a href="#resources">Resources</a></li>
+        <% @help[:resources].each do |resource, info| %>
+          <% render_resource_nav(resource, info) %>
+        <% end %>
+      </ul>
+    </div>
   </div>
 </div>
+
+<script type="text/javascript">
+  $(document).ready(function(){
+    $('ul.top-level ul').css('display', 'none');
+
+    $('.table-of-contents').on('activate.bs.scrollspy', function(){
+      var j = $(this);
+
+      j.find('ul.top-level ul').css('display', 'none');
+//      j.find('li.active').parent().css('display', 'block');
+      j.find('ul.top-level li.active > ul').css('display', 'block');
+    });
+  });
+</script>
