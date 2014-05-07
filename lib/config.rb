@@ -278,7 +278,7 @@ class AppConfig
 
     case @cfg[:vpsadmin][:type]
       when :node
-        st = db.prepared_st("SELECT ve_private, fstype FROM node_node WHERE node_id = ?", @cfg[:vpsadmin][:server_id])
+        st = db.prepared_st("SELECT ve_private, fstype FROM servers WHERE server_id = ?", @cfg[:vpsadmin][:server_id])
         rs = st.fetch
 
         if rs
