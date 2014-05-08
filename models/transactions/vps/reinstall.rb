@@ -1,7 +1,7 @@
 module Transactions::Vps
-  class Create < ::Transaction
-    t_name :vps_create
-    t_type 3001
+  class Reinstall < ::Transaction
+    t_name :vps_reinstall
+    t_type 3003
 
     def prepare(vps)
       self.t_vps = vps.vps_id
@@ -12,6 +12,7 @@ module Transactions::Vps
           template: vps.os_template.name,
           onboot: vps.node.location.location_vps_onboot,
           nameserver: '8.8.8.8', # fixme
+          ip_addrs: vps.ip_addresses.all.map { |ip| ip.addr }
       }
     end
   end

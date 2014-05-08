@@ -3,10 +3,14 @@ class VpsAdmin::API::Resources::VPS < VpsAdmin::API::Resource
   model ::Vps
   desc 'Manage VPS'
 
+  params(:template) do
+    foreign_key :template_id, label: 'Template', desc: 'id of OS template', db_name: :vps_template
+  end
+
   params(:common) do
     foreign_key :user_id, label: 'User', desc: 'VPS owner', db_name: :m_id
     string :hostname, desc: 'VPS hostname', db_name: :vps_hostname
-    foreign_key :template_id, label: 'Template', desc: 'id of OS template', db_name: :vps_template
+    use :template
     string :info, label: 'Info', desc: 'VPS description', db_name: :vps_info
     foreign_key :dns_resolver_id, label: 'DNS resolver', desc: 'DNS resolver the VPS will use', db_name: :vps_nameserver
     integer :node_id, label: 'Node', desc: 'Node VPS will run on', db_name: :vps_server
@@ -262,6 +266,33 @@ END
 
     def exec
       {password: ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).passwd}
+    end
+  end
+
+  class Reinstall < VpsAdmin::API::Action
+    desc 'Reinstall VPS'
+    route ':%{resource}_id/reinstall'
+    http_method :post
+
+    input do
+      use :template
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+      restrict m_id: u.m_id
+      allow
+    end
+
+    def exec
+      vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+
+      if vps.update(os_template: ::OsTemplate.find_by!(templ_id: params[:vps][:template_id], templ_enabled: true))
+        vps.reinstall
+        ok
+      else
+        error('reinstall failed', to_param_names(vps.errors.to_hash, :input))
+      end
     end
   end
 
