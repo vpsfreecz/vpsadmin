@@ -123,7 +123,7 @@ END
         vps_params[:user_id] = current_user.m_id
       end
 
-      vps = Vps.new(to_db_names(vps_params))
+      vps = ::Vps.new(to_db_names(vps_params))
 
       if vps.create
         ok({vps_id: vps.id})
@@ -166,6 +166,8 @@ END
   end
 
   class Update < VpsAdmin::API::Actions::Default::Update
+    desc 'Update VPS'
+
     input do
       use :common
     end
@@ -173,6 +175,18 @@ END
     authorize do |u|
       allow if u.role == :admin
       restrict m_id: u.m_id
+      input whitelist: %i(hostname template_id dns_resolver_id)
+      allow
+    end
+
+    def exec
+      vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+
+      if vps.update(to_db_names(params[:vps]))
+        ok
+      else
+        error('update failed', to_param_names(vps.errors.to_hash, :input))
+      end
     end
   end
 

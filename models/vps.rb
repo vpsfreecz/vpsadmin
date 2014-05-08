@@ -23,6 +23,8 @@ class Vps < ActiveRecord::Base
       message: 'bad format'
   }
 
+  after_update :hostname_changed, if: :vps_hostname_changed?
+
   def create
     self.vps_backup_export = 0
     self.vps_backup_exclude = ''
@@ -99,5 +101,9 @@ class Vps < ActiveRecord::Base
   def generate_password
     chars = ('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a
     (0..20).map { chars.sample }.join
+  end
+
+  def hostname_changed
+    Transactions::Vps::Hostname.fire(self)
   end
 end
