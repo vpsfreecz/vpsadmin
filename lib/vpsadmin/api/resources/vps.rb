@@ -231,6 +231,26 @@ END
     end
   end
 
+  class Passwd < VpsAdmin::API::Action
+    desc 'Set root password'
+    route ':%{resource}_id/passwd'
+    http_method :post
+
+    output do
+      string :password, label: 'Password', desc: 'Auto-generated password'
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+      restrict m_id: u.m_id
+      allow
+    end
+
+    def exec
+      {password: ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).passwd}
+    end
+  end
+
   class Config < VpsAdmin::API::Resource
     version 1
     route ':vps_id/configs'

@@ -86,4 +86,18 @@ class Vps < ActiveRecord::Base
       delete_ip(ip)
     end
   end
+
+  def passwd
+    pass = generate_password
+
+    Transactions::Vps::Passwd.fire(self, pass)
+
+    pass
+  end
+
+  private
+  def generate_password
+    chars = ('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a
+    (0..20).map { chars.sample }.join
+  end
 end
