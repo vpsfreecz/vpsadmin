@@ -69,6 +69,53 @@ class VpsAdmin::API::Server
   # If no default version is set, the last included version is used.
   def mount(prefix='/')
     @root = prefix
+
+    @sinatra = Sinatra.new do
+      set :views, settings.root + '/views'
+      set :public_folder, settings.root + '/public'
+      set :bind, '0.0.0.0'
+
+      # This must be called before registering paper trail, or else it will
+      # not be logging current user.
+      before do
+        authenticated?
+      end
+
+      register PaperTrail::Sinatra
+
+      helpers ServerHelpers
+
+      not_found do
+        report_error(404, {}, 'Action not found')
+      end
+
+      after do
+        ActiveRecord::Base.clear_active_connections!
+      end
+    end
+
+    @sinatra.set(:api_server, self)
+
+    @routes = {}
+
+    # Mount root
+    @sinatra.get @root do
+      @api = settings.api_server.describe
+      erb :index, layout: :main
+    end
+
+    @sinatra.options @root do
+      JSON.pretty_generate(settings.api_server.describe)
+    end
+
+    @default_version ||= @versions.last
+
+    # Mount default version first
+    mount_version(@root, @default_version)
+
+    @versions.each do |v|
+      mount_version(version_prefix(v), v)
+    end
   end
 
   def mount_version(prefix, v)
@@ -218,54 +265,11 @@ class VpsAdmin::API::Server
     "#{@root}v#{v}/"
   end
 
+  def app
+    @sinatra
+  end
+
   def start!
-    @sinatra = Sinatra.new do
-      set :views, settings.root + '/views'
-      set :public_folder, settings.root + '/public'
-      set :bind, '0.0.0.0'
-
-      # This must be called before registering paper trail, or else it will
-      # not be logging current user.
-      before do
-        authenticated?
-      end
-
-      register PaperTrail::Sinatra
-
-      helpers ServerHelpers
-
-      not_found do
-        report_error(404, {}, 'Action not found')
-      end
-
-      after do
-        ActiveRecord::Base.clear_active_connections!
-      end
-    end
-
-    @sinatra.set(:api_server, self)
-
-    @routes = {}
-
-    # Mount root
-    @sinatra.get @root do
-      @api = settings.api_server.describe
-      erb :index, layout: :main
-    end
-
-    @sinatra.options @root do
-      JSON.pretty_generate(settings.api_server.describe)
-    end
-
-    @default_version ||= versions.last
-
-    # Mount default version first
-    mount_version(@root, @default_version)
-
-    @versions.each do |v|
-      mount_version(version_prefix(v), v)
-    end
-
     @sinatra.run!
   end
 end
