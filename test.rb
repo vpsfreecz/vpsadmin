@@ -12,9 +12,10 @@ require './lib/vpsadmin/vpsadmin'
 #  end
 #end
 
-VpsAdmin::API.use_version([1, 2])
-VpsAdmin::API.set_default_version(1)
-VpsAdmin::API.mount('/')
+api = VpsAdmin::API::Server.new
+api.use_version([1, 2])
+api.set_default_version(1)
+api.mount('/')
 
 #v1 = VpsAdmin::API.get_version(1)
 #VpsAdmin::API.mount('/v1/', v1)
@@ -24,6 +25,5 @@ VpsAdmin::API.mount('/')
 #     puts "#{http_method} #{route}"
 #   end
 # end
-
-VpsAdmin::API.start!
+api.start!
 
