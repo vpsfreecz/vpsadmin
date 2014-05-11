@@ -81,15 +81,11 @@ class cluster_node {
 		
 		switch ($data["server_type"]) {
 			case "node":
-				$sql = "INSERT INTO node_node SET
-				        node_id = ".$db->check($this->s["server_id"]).",
+				$sql = "UPDATE servers SET
 				        max_vps = '".$db->check($data["max_vps"])."',
 				        ve_private = '".$db->check($data["ve_private"])."',
 				        fstype = '".$db->check($data["fstype"])."'
-				        ON DUPLICATE KEY UPDATE
-				        max_vps = '".$db->check($data["max_vps"])."',
-				        ve_private = '".$db->check($data["ve_private"])."',
-				        fstype = '".$db->check($data["fstype"])."'";
+				        WHERE server_id = ".$this->s["server_id"];
 				$db->query($sql);
 				break;
 			
