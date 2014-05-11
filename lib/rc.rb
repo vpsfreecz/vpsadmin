@@ -4,7 +4,7 @@ require 'lib/utils'
 require 'lib/version'
 require 'lib/command'
 
-module VpsAdminCtl
+module VpsAdmindCtl
 	class RemoteControl
 		def initialize(options)
 			@global_opts = options

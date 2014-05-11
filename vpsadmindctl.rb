@@ -16,7 +16,7 @@ command = nil
 
 opt_parser = OptionParser.new do |opts|
 	opts.banner = <<END_BANNER
-Usage: vpsadminctl <command> [global options] [command options]
+Usage: vpsadmindctl <command> [global options] [command options]
 
 Commands:
 END_BANNER
@@ -27,7 +27,7 @@ END_BANNER
 
   opts.banner += <<END_BANNER
 
-For specific options type: vpsadminctl <command> --help
+For specific options type: vpsadmindctl <command> --help
 
 END_BANNER
 
@@ -54,7 +54,7 @@ END_BANNER
 	end
 	
 	opts.on('-v', '--version', 'Print version and exit') do
-		puts VpsAdminCtl::VERSION
+		puts VpsAdmindCtl::VERSION
 		exit
 	end
 	
@@ -78,7 +78,7 @@ rescue OptionParser::InvalidOption
 	exit(false)
 end
 
-rc = VpsAdminCtl::RemoteControl.new(options)
+rc = VpsAdmindCtl::RemoteControl.new(options)
 
 unless command
 	$stderr.puts 'Invalid command'

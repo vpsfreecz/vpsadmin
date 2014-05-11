@@ -1,21 +1,21 @@
-.\" Manpage for vpsadminctl.
+.\" Manpage for vpsadmindctl.
 .\" Contact jakub.skokan@vpsfree.cz to correct errors or typos.
-.TH vpsadminctl 8 "16 Apr 2014" "1.18.2" "vpsadminctl man page"
+.TH vpsadmindctl 8 "11 May 2014" "1.20.0" "vpsadmindctl man page"
 .SH NAME
-vpsadminctl \- remote control for vpsAdmind
+vpsadmindctl \- remote control for vpsAdmind
 
 .SH SYNOPSIS
-\fBvpsadminctl <command>\fR [\fB-pvh\fR] [\fB-s\fR \fIsocket\fR] ...
+\fBvpsadmindctl <command>\fR [\fB-pvh\fR] [\fB-s\fR \fIsocket\fR] ...
 
 .SH DESCRIPTION
-\fBvpsadminctl\fR interacts with vpsAdmind. It can view its status, reload
+\fBvpsadmindctl\fR interacts with vpsAdmind. It can view its status, reload
 configuration, control its lifetime and more.
 .PP
-\fBvpsadminctl\fR needs vpsAdmind to be running and with enabled remote control at all
+\fBvpsadmindctl\fR needs vpsAdmind to be running and with enabled remote control at all
 times except for using \fB-h\fR or \fB-v\fR.
 .PP
 \fBvpsAdmind\fR must be started using system init script or manually,
-\fBvpsadminctl\fR cannot start it.
+\fBvpsadmindctl\fR cannot start it.
 
 .SH COMMON OPTIONS
 .TP
@@ -77,13 +77,13 @@ Add node to cluster or update node in cluster.
 By default, \fBinstall\fR assumes \fB--create\fR, \fB--no-propagate\fR,
 \fB--no-generate-configs\fR and \fB--no-ssh-key\fR.
 .PP
-\fBvpsadminctl install\fR does not modify vpsAdmind's configuration file,
+\fBvpsadmindctl install\fR does not modify vpsAdmind's configuration file,
 node \fIid\fR must be set in config manually.
 .PP
-When used with \fB-p\fR, \fBvpsadminctl install\fR returns \fIid\fR of newly
+When used with \fB-p\fR, \fBvpsadmindctl install\fR returns \fIid\fR of newly
 created or updated node.
 .PP
-\fBvpsadminctl\fR blocks until \fBinstall\fR is finished. It does not wait for
+\fBvpsadmindctl\fR blocks until \fBinstall\fR is finished. It does not wait for
 all nodes to regenerate configs though, if you choose to propagate changes.
 .TP
 \fB--id\fR \fIid\fR
@@ -129,7 +129,7 @@ Generate (or not) OpenVZ sample configs for this node. This creates
 .RS
 Generate configs only after node filesystem \fItype\fR is set, as each type
 may handle configs differently. If you are installing new ZFS node, you have to
-run \fBvpsadminctl install\fR twice. First to set filesystem \fItype\fR and
+run \fBvpsadmindctl install\fR twice. First to set filesystem \fItype\fR and
 second to correctly generate configs.
 .RE
 
@@ -176,7 +176,7 @@ waiting in queue, only those which are currently running.
 .PP
 Transactions are marked as failed, their error message set to "Killed".
 .PP
-\fBvpsadminctl\fR blocks until all matching transactions are killed.
+\fBvpsadmindctl\fR blocks until all matching transactions are killed.
 
 .TP
 \fB-a\fR, \fB--all\fR
@@ -192,7 +192,7 @@ Arguments are transaction \fItypes\fR, not \fIids\fR.
 \fBpause\fR [\fIid\fR]
 .RS
 Pause execution of queued transactions. Running transactions are finished,
-new transactions are not executed until \fBvpsadminctl resume\fR is called.
+new transactions are not executed until \fBvpsadmindctl resume\fR is called.
 .PP
 Argument \fIid\fR is optional. If used, execution will be paused after
 transaction with id \fIid\fR is finished. Until then, new transactions are
@@ -209,7 +209,7 @@ normally executed.
 Update info about this node, including kernel version, and all its VPSes and
 datasets. Traffic accounting is not updated.
 .PP
-\fBvpsadminctl\fR blocks until refresh is finished.
+\fBvpsadmindctl\fR blocks until refresh is finished.
 .RE
 
 
@@ -218,7 +218,7 @@ datasets. Traffic accounting is not updated.
 Drops all iptable rules and chains concerning traffic accounting, then create
 them again.
 .PP
-\fBvpsadminctl\fR blocks until reinit is finished.
+\fBvpsadmindctl\fR blocks until reinit is finished.
 .RE
 
 
@@ -226,7 +226,7 @@ them again.
 .RS
 Instructs vpsAdmind to reload its configuration file.
 .PP
-\fBvpsadminctl\fR does not wait for the reload to actually finish, although it happens
+\fBvpsadmindctl\fR does not wait for the reload to actually finish, although it happens
 instantly.
 .RE
 
@@ -236,7 +236,7 @@ instantly.
 Order vpsAdmind to restart. vpsAdmind will wait for transactions that are running
 to finish. It will not execute more transactions.
 .PP
-\fBvpsadminctl\fR does not wait for the restart to finish, it returns immediately.
+\fBvpsadmindctl\fR does not wait for the restart to finish, it returns immediately.
 
 .TP
 \fB-f\fR, \fB--force\fR
@@ -247,7 +247,7 @@ All transactions are softly killed and will restart when vpsAdmind is started.
 
 \fBresume\fR
 .RS
-Resume transaction execution after it has been paused by \fBvpsadminctl pause\fR.
+Resume transaction execution after it has been paused by \fBvpsadmindctl pause\fR.
 \fBresume\fR cancels both immediate and delayed \fBpause\fR.
 .PP
 \fBresume\fR can also be used to cancel scheduled \fBstop\fR, \fBrestart\fR or
@@ -305,7 +305,7 @@ List transactions and commands that are currently being run.
 Order vpsAdmind to exit. vpsAdmind will wait for transactions that are running
 to finish. It will not execute more transactions.
 .PP
-\fBvpsadminctl\fR does not wait for the stop to finish, it returns immediately.
+\fBvpsadmindctl\fR does not wait for the stop to finish, it returns immediately.
 
 .TP
 \fB-f\fR, \fB--force\fR
@@ -320,7 +320,7 @@ later.
 Stop vpsAdmind, execute git pull and start it again. This command behaves the
 same as soft \fIstop\fR. It waits for running transactions to finish.
 .PP
-\fBvpsadminctl\fR does not wait for the update to finish, it returns immediately.
+\fBvpsadmindctl\fR does not wait for the update to finish, it returns immediately.
 
 .TP
 \fB-f\fR, \fB--force\fR
@@ -334,37 +334,37 @@ All transactions are softly killed and will restart when vpsAdmind is restarted.
 \fBStandard usage\fR
 .PP
 Check how vpsAdmind is doing:
-  vpsadminctl status
+  vpsadmindctl status
 
 Show what transactions and commands are running at the moment:
-  vpsadminctl status -w
+  vpsadmindctl status -w
 
 Kill two transactions you want to cancel. \fI1234\fR and \fI5678\fR are
-transaction \fIids\fR, first column from \fBvpsadminctl status\fR:
-  vpsadminctl kill 1234 5678
+transaction \fIids\fR, first column from \fBvpsadmindctl status\fR:
+  vpsadmindctl kill 1234 5678
 
 Kill all transactions:
-  vpsadminctl kill -a
+  vpsadmindctl kill -a
 
 Kill all backups (\fI5005\fR is type of regular backup, \fI5006\fR of on-demand
-backup, fourth column from \fBvpsadminctl status\fR):
-  vpsadminctl kill -t 5005 5006
+backup, fourth column from \fBvpsadmindctl status\fR):
+  vpsadmindctl kill -t 5005 5006
 
 Update vpsAdmind. Do not forget to update also web interface and database scheme
 afterwards:
-  vpsadminctl update
+  vpsadmindctl update
 
 Read server ID:
-  vpsadminctl get config vpsadmin.server_id
+  vpsadmindctl get config vpsadmin.server_id
 
 Change number of concurrent workers:
-  vpsadminctl set config vpsadmin.threads=10
+  vpsadmindctl set config vpsadmin.threads=10
 
 Confirm change:
-  vpsadminctl get config vpsadmin.threads
+  vpsadmindctl get config vpsadmin.threads
 
 See what transactions are queued and will be executed, limit count to 10:
-  vpsadminctl get queue -l 10
+  vpsadmindctl get queue -l 10
 
 \fBInstall new ZFS node\fR
 .PP
@@ -375,33 +375,33 @@ Create dataset vz/private and mount it to /vz/private.
 
 When vpsAdmind is running, register node in database, do not create configs:
 
-  vpsadminctl install --name node1 --role node --location 1 --addr 1.2.3.4
+  vpsadmindctl install --name node1 --role node --location 1 --addr 1.2.3.4
                       --maxvps 30 --fstype zfs_compat
                       --ve-private /vz/private/%{veid}/private
                       --no-propagate --no-generate-configs --no-ssh-key
 
 Now, reload config to discover filesystem type as we have set it:
 
-  vpsadminctl reload
+  vpsadmindctl reload
 
-Give it some time, as \fBvpsadminctl reload\fR does not block:
+Give it some time, as \fBvpsadmindctl reload\fR does not block:
 
   sleep 5
 
 Run install again, this time generate configs and keys:
 
-  vpsadminctl install --no-create --propagate --ssh-key --generate-configs
+  vpsadmindctl install --no-create --propagate --ssh-key --generate-configs
 
 Node should be installed and correctly configured.
 
 \fBInstall new EXT4 node\fR
 .PP
-One \fBvpsadminctl install\fR will suffice for now, because ext4 is the default filesystem
+One \fBvpsadmindctl install\fR will suffice for now, because ext4 is the default filesystem
 \fItype\fR in config.
 
 First steps are the same. Configure and start vpsAdmind, then run:
 
-  vpsadminctl install --name node1 --role node --location 1 --addr 1.2.3.4
+  vpsadmindctl install --name node1 --role node --location 1 --addr 1.2.3.4
                       --maxvps 30 --fstype ext4
                       --ve-private /vz/private/%{veid}
                       --propagate --generate-configs --ssh-key
@@ -412,4 +412,4 @@ Node should be installed and correctly configured.
 Jakub Skokan <jakub.skokan@vpsfree.cz>
 
 .SH LICENSE
-\fBvpsadminctl\fR is a part of vpsAdmin project and is released under GNU/GPLv2.
+\fBvpsadmindctl\fR is a part of vpsAdmin project and is released under GNU/GPLv2.
