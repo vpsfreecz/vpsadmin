@@ -70,6 +70,9 @@ class Setup < ActiveRecord::Migration
       t.text       :server_availstat,                null: true
       t.string     :server_ip4,          limit: 127, null: false
       t.boolean    :server_maintenance,              null: false,  default: 0
+      t.integer    :max_vps,                         null: false,  default: 0
+      t.string     :ve_private,          limit: 255, null: false,  default: '/vz/private/%{veid}'
+      t.string     :fstype,              limit: 15,  null: false,  default: 'zfs'
       t.timestamps
     end
 
