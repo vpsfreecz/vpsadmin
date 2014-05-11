@@ -84,6 +84,11 @@
             <% end %>
           </div>
 
+          <div class="action-self-description">
+            <h5>Self-description</h5>
+            <pre><code><%= JSON.pretty_generate(info) %></code></pre>
+          </div>
+
           <% unless info[:example].empty? %>
             <h5>Example</h5>
             <p><%= info[:example][:comment] %></p>
@@ -129,48 +134,82 @@
 
 <div class="row-fluid">
   <div class="col-md-10">
-    <h1 id="root">API v<%= @v %></h1>
+    <h1 id="api">API v<%= @v %></h1>
     <p>
       This page contains a list of resources available in API v<%= @v %>, their actions,
       description, parameters and example usage.
     </p>
     <p>
+      The API tries to be RESTful. It is divided into resources, which may be nested,
+      and their actions (list, create, update, ...).
+    </p>
+    <p>
       Every action has assigned URL, which may be identical for several actions, but
       differ in HTTP method.
     </p>
+
+    <h2 id="self-description">Self-description</h2>
     <p>
-      This API is self-describing. Every action responds to HTTP method <code>OPTIONS</code>,
+      This API is self-describing. It documents itself. Self-description is encoded
+      in JSON and contains access URLs, HTTP methods, input and output parameters
+      and their validators. A part of description is also an example usage and text
+      notes.
+    </p>
+    <p>
+      The API responds to <code>OPTIONS /</code>, which returns description of whole
+      API, containing all its versions. To get description only of selected version,
+      use e.g. <code>OPTIONS /v1/</code>.
+    </p>
+    <p>
+      Every action also responds to HTTP method <code>OPTIONS</code>,
       with which you can get description for selected action. To distinguish actions with
       same URL, use parameter <code>?method=HTTP_METHOD</code>.
     </p>
     <p>
+      Thanks to this ability, API changes immediately reflects in all clients without
+      changing single line of code. A client can also be used on all APIs with compatible
+      self-describing format, without any changes at all.
+    </p>
+
+    <h2 id="envelope">Envelope</h2>
+    <p>
+      In addition to output parameters specified below, every API response (except description)
+      is wrapped in an envelope.
+      The envelope reports if action succeeded or failed, provides return value or error
+      messages.
+    </p>
+    <pre>
+<code>
+  {
+    "status": true if action succeeded or false if error occured,
+    "response": return value,
+    "message": error message, if status is false,
+    "errors: {
+      "parameter1": ["list", "of", "errors"],
+      "parameter2": ["and", "so", "on"]
+    }
+  }</code>
+    </pre>
+
+    <h2 id="authentication">Authentication</h2>
+    <p>
       When action requires authentication, you have to login with HTTP basic auth.
     </p>
+
+    <h2 id="authorization">Authorization</h2>
     <p>
-      In addition to output parameters specified below, every API response is wrapped in an envelope.
-      The envelope reports if action succeeded or failed, provides return value or error
-      message.
+      Actions may require different levels of authorization. This process is not
+      self-described. Required authorization is usually written in text description
+      of an action.
     </p>
-    <p>
-      Envelope:
-      <pre>
-        <code>
-      {
-        "status": true if action succeeded or false if error occured,
-        "response": return value,
-        "message": error message, if status is false,
-        "errors: {
-          "parameter1": ["list", "of", "errors"],
-          "parameter2": ["and", "so", "on"]
-        }
-      }</code>
-      </pre>
-    </p>
+
+    <h2 id="io">Input/output formats</h2>
     <p>
       For now, the only supported input/output format is JSON.
     </p>
 
     <h1 id="resources">Resources</h1>
+    <p>Follows a list of all resources in this API and their actions.</p>
 
     <% @help[:resources].each do |resource, info| %>
       <% render_resource_body(resource, info) %>
@@ -181,7 +220,16 @@
     <div class="nav sidebar-nav-fixed" data-spy="affix" data-offset-top="100" data-offset-bottom="200">
       <h1>Table of contents</h1>
       <ul class="top-level">
-        <li><a href="#root">API v<%= @v %></a></li>
+        <li>
+          <a href="#api">API v<%= @v %></a>
+          <ul>
+            <li><a href="#self-description">Self-description</a></li>
+            <li><a href="#envelope">Envelope</a></li>
+            <li><a href="#authentication">Authentication</a></li>
+            <li><a href="#authorization">Authorization</a></li>
+            <li><a href="#io">Input/output formats</a></li>
+          </ul>
+        </li>
         <li><a href="#resources">Resources</a></li>
         <% @help[:resources].each do |resource, info| %>
           <% render_resource_nav(resource, info) %>
@@ -193,14 +241,42 @@
 
 <script type="text/javascript">
   $(document).ready(function(){
+    // Show/hide items in navigation
     $('ul.top-level ul').css('display', 'none');
 
     $('.table-of-contents').on('activate.bs.scrollspy', function(){
       var j = $(this);
 
       j.find('ul.top-level ul').css('display', 'none');
-//      j.find('li.active').parent().css('display', 'block');
       j.find('ul.top-level li.active > ul').css('display', 'block');
+    });
+
+    // Show/hide button for help messages
+    $('.action .action-self-description').each(function(i, el){
+      // replace text by show/hide button
+      var div = $(el);
+      var pre = div.find('pre');
+      var h5 = div.find('h5');
+      h5.text('');
+
+      h5.append(
+        $('<button>')
+          .attr('type', 'button')
+          .addClass('btn btn-primary btn-sm')
+          .text('Show self-description')
+          .click(function(event) {
+            button = $(this);
+            button.toggleClass('active');
+            pre.toggle('fast');
+
+            if(button.hasClass('active'))
+              button.text('Hide self-description');
+            else
+              button.text('Show self-description');
+          })
+      );
+
+      $(el).find('pre').hide();
     });
   });
 </script>
