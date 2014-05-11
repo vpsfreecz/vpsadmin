@@ -57,7 +57,7 @@ function nas_list_default_exports($type) {
 	
 	$ret = array();
 	
-	$rs = $db->query("SELECT *, e.id AS export_id, e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail, e.type AS export_type
+	$rs = $db->query("SELECT *, e.id AS export_id, e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail, e.data_type AS export_type
 		FROM storage_export e
 		INNER JOIN storage_root r ON r.id = e.root_id
 		INNER JOIN servers s ON r.node_id = s.server_id
@@ -94,7 +94,7 @@ function nas_list_default_mounts() {
 function nas_get_export_by_id($id) {
 	global $db;
 	
-	$rs = $db->query("SELECT *, e.id AS export_id, e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail, e.type AS export_type
+	$rs = $db->query("SELECT *, e.id AS export_id, e.quota AS export_quota, e.used AS export_used, e.avail AS export_avail, e.data_type AS export_type
 					FROM storage_export e
 					INNER JOIN storage_root r ON r.id = e.root_id
 					INNER JOIN servers s ON s.server_id = r.node_id
@@ -102,7 +102,7 @@ function nas_get_export_by_id($id) {
 	return $db->fetch_array($rs);
 }
 
-function nas_root_add($node_id, $label, $dataset, $path, $type, $user_export, $user_mount, $quota, $share_options) {
+function nas_root_add($node_id, $label, $dataset, $path, $storage_layout, $user_export, $user_mount, $quota, $share_options) {
 	global $db;
 	
 	$db->query("INSERT INTO storage_root SET
@@ -110,7 +110,7 @@ function nas_root_add($node_id, $label, $dataset, $path, $type, $user_export, $u
 					label = '".$db->check($label)."',
 					root_dataset = '".$db->check($dataset)."',
 					root_path = '".$db->check($path)."',
-					type = '".$db->check($type)."',
+					storage_layout = '".$db->check($storage_layout)."',
 					user_export = '".$db->check($user_export)."',
 					user_mount = '".$db->check($user_mount)."',
 					quota = '".$db->check($quota)."',
@@ -125,14 +125,14 @@ function nas_root_add($node_id, $label, $dataset, $path, $type, $user_export, $u
 	add_transaction($_SESSION["member"]["m_id"], $node_id, 0, T_STORAGE_EXPORT_CREATE, $params);
 }
 
-function nas_root_update($root_id, $label, $dataset, $path, $type, $user_export, $user_mount, $quota, $share_options) {
+function nas_root_update($root_id, $label, $dataset, $path, $storage_layout, $user_export, $user_mount, $quota, $share_options) {
 	global $db;
 	
 	$db->query("UPDATE storage_root SET
 					label = '".$db->check($label)."',
 					root_dataset = '".$db->check($dataset)."',
 					root_path = '".$db->check($path)."',
-					type = '".$db->check($type)."',
+					storage_layout = '".$db->check($storage_layout)."',
 					user_export = '".$db->check($user_export)."',
 					user_mount = '".$db->check($user_mount)."',
 					quota = '".$db->check($quota)."',
@@ -180,7 +180,7 @@ function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable,
 				path = '".$db->check($path)."',
 				quota = '".$db->check($quota)."',
 				user_editable = '".( $user_editable == -1 ? '1' : ($user_editable ? '1' : '0') )."',
-				type = '".$db->check($type)."',
+				data_type = '".$db->check($type)."',
 				`default` = '".$db->check($default)."'");
 	
 	$export_id = $db->insertId();
@@ -217,7 +217,7 @@ function nas_export_update($id, $quota, $user_editable, $type) {
 		$update .= ", user_editable = ".($user_editable ? '1' : '0')."";
 	
 	if ($type !== NULL)
-		$update .= ", type = '".$db->check($type)."'";
+		$update .= ", data_type = '".$db->check($type)."'";
 	
 	$db->query("UPDATE storage_export SET quota = '".$db->check($quota)."' ".$update." WHERE id = '".$db->check($id)."'");
 	
@@ -382,7 +382,7 @@ function nas_mount_add($e_id, $vps_id, $access, $node_id, $src, $dst, $m_opts, $
 				dst = '".$db->check($dst)."',
 				mount_opts = '".$db->check($m_opts)."',
 				umount_opts = '".$db->check($u_opts)."',
-				type = '".$db->check($type)."',
+				mount_type = '".$db->check($type)."',
 				server_id = '".$db->check($node_id)."',
 				mode = '".$db->check($access)."',
 				cmd_premount = '".$db->check($premount)."',
@@ -444,7 +444,7 @@ function nas_mount_update($m_id, $e_id, $vps_id, $access, $node_id, $src, $dst, 
 		$sql .= ", umount_opts = '".$db->check($u_opts)."'";
 	
 	if ($type !== NULL)
-		$sql .= ", type = '".$db->check($type)."'";
+		$sql .= ", mount_type = '".$db->check($type)."'";
 	
 	$sql .= " WHERE id = '".$db->check($m_id)."'";
 	
@@ -649,7 +649,7 @@ function nas_create_default_mounts($obj, $mapping = array()) {
 			$m["dst"],
 			$m["mount_opts"],
 			$m["umount_opts"],
-			$m["type"],
+			$m["mount_type"],
 			$m["cmd_premount"],
 			$m["cmd_postmount"],
 			$m["cmd_preumount"],

@@ -479,7 +479,7 @@ switch($_REQUEST["action"]) {
 						$xtpl->form_add_input(_("Label").':', 'text', '30', 'storage_label', $root["label"]);
 						$xtpl->form_add_input(_("Root dataset").':', 'text', '30', 'storage_root_dataset', $root["root_dataset"]);
 						$xtpl->form_add_input(_("Root path").':', 'text', '30', 'storage_root_path', $root["root_path"]);
-						$xtpl->form_add_select(_("Storage type").':', 'storage_type', $STORAGE_TYPES, $root["type"]);
+						$xtpl->form_add_select(_("Storage type").':', 'storage_type', $STORAGE_TYPES, $root["storage_layout"]);
 						$xtpl->form_add_checkbox(_("User export").':', 'storage_user_export', '1', $root["user_export"], _("Can user manage exports?"));
 						$xtpl->form_add_select(_("User mount").':', 'storage_user_mount', $STORAGE_MOUNT_MODES, $root["user_mount"]);
 						$xtpl->table_td(_("Quota").':');

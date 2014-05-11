@@ -60,6 +60,9 @@ ALTER TABLE `storage_export` CHANGE `type` `data_type` enum('data', 'backup') NO
 ALTER TABLE `storage_export` MODIFY `used` bigint(20) NOT NULL DEFAULT '0';
 ALTER TABLE `storage_export` MODIFY `avail` bigint(20) NOT NULL DEFAULT '0';
 
+-- Storage mounts
+ALTER TABLE `vps_mount` CHANGE `type` `mount_type` enum('bind', 'nfs') NOT NULL;
+
 -- Templates
 ALTER TABLE `cfg_templates` DROP `special`;
 
