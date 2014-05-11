@@ -205,4 +205,21 @@ class Setup < ActiveRecord::Migration
     change_column :storage_export, :used, 'bigint unsigned'
     change_column :storage_export, :avail, 'bigint unsigned'
   end
+
+  create_table :vps_mount do |t|
+    t.integer       :vps_id,                     null: false
+    t.string        :src,            limit: 500, null: false
+    t.string        :dst,            limit: 500, null: false
+    t.string        :mount_opts,     limit: 255, null: false
+    t.string        :umount_opts,    limit: 255, null: false
+    t.string        :mount_type,     limit: 10,  null: false
+    t.integer       :server_id,                  null: true
+    t.integer       :storage_export_id,          null: true
+    t.string        :mode,           limit: 2,   null: false
+    t.string        :cmd_premount,   limit: 500, null: false
+    t.string        :cmd_postmount,  limit: 500, null: false
+    t.string        :cmd_preumount,  limit: 500, null: false
+    t.string        :cmd_postumount, limit: 500, null: false
+    t.boolean       :default,                    null: false, default: false
+  end
 end

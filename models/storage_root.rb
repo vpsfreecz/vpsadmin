@@ -4,6 +4,8 @@ class StorageRoot < ActiveRecord::Base
   belongs_to :node
   has_many :storage_exports, foreign_key: :root_id
 
+  has_paper_trail
+
   validates :node_id, :label, :root_dataset, :root_path, :storage_layout,
             :user_mount, :quota, :share_options, presence: true
   validates :node_id, :quota, :used, :avail, numericality: { only_integer: true }

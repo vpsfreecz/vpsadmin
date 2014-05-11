@@ -4,6 +4,8 @@ class StorageExport < ActiveRecord::Base
   belongs_to :user, foreign_key: :member_id
   belongs_to :storage_root, foreign_key: :root_id
 
+  has_paper_trail
+
   validates :member_id, :root_id, :dataset, :path, :quota, :data_type,
             presence: true
   validates :member_id, :root_id, :quota, :used, :avail, numericality: {

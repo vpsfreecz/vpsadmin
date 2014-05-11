@@ -4,6 +4,8 @@ class VpsConfig < ActiveRecord::Base
   has_many :vps_has_config, foreign_key: :config_id
   has_many :vpses, through: :vps_has_config
 
+  has_paper_trail
+
   validates :name, :label, :config, presence: true
 
   def self.default_config_chain(location)
