@@ -1,0 +1,55 @@
+node1:
+  server_name: node1
+  server_type: node
+  location: prague
+  server_ip4: 192.168.122.50
+  max_vps: 30
+  ve_private: /vz/private/%{veid}/private
+  fstype: zfs_compat
+  root_dataset: ""
+  root_path: ""
+  storage_layout: ""
+  user_export: 0
+  user_mount: 0
+
+node2:
+  server_name: node2
+  server_type: node
+  location: prague
+  server_ip4: 192.168.122.51
+  max_vps: 30
+  ve_private: /vz/private/%{veid}/private
+  fstype: zfs_compat
+  root_dataset: ""
+  root_path: ""
+  storage_layout: ""
+  user_export: 0
+  user_mount: 0
+
+node3:
+  server_name: node1
+  server_type: node
+  location: brno
+  server_ip4: 192.168.123.53
+  max_vps: 30
+  ve_private: /vz/private/%{veid}/private
+  fstype: zfs_compat
+  root_dataset: ""
+  root_path: ""
+  storage_layout: ""
+  user_export: 0
+  user_mount: 0
+
+node4:
+  server_name: node4
+  server_type: node
+  location: brno
+  server_ip4: 192.168.123.54
+  max_vps: 30
+  ve_private: /vz/private/%{veid}/private
+  fstype: zfs_compat
+  root_dataset: ""
+  root_path: ""
+  storage_layout: ""
+  user_export: 0
+  user_mount: 0

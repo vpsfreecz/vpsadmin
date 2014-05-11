@@ -1,0 +1,27 @@
+admin:
+  m_nick: admin
+  m_level: 99
+  m_name: The Admin
+  m_mail: admin@localhost
+  m_pass: c93ccd78b2076528346216b3b2f701e6 # 1234
+  m_address: Somewhere in the wild
+  m_suspend_reason: none
+
+user01:
+  m_nick: user01
+  m_level: 1
+  m_name: The User 01
+  m_mail: user01@localhost
+  m_pass: 02ba4baef1c3581ada36d83b06177f85 # 1234
+  m_address: Somewhere in the wild
+  m_suspend_reason: none
+
+user02:
+  m_nick: user02
+  m_level: 1
+  m_name: The User 02
+  m_mail: user02@localhost
+  m_pass: 5483e9c51f1c90a7a6832efd251ad3a9 # 1234
+  m_address: Somewhere in the wild
+  m_suspend_reason: none
+

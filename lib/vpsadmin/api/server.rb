@@ -49,7 +49,7 @@ class VpsAdmin::API::Server
     @versions ||= []
 
     if v == :all
-      @versions = get_versions
+      @versions = VpsAdmin::API.get_versions
     elsif v.is_a?(Array)
       @versions += v
       @versions.uniq!
