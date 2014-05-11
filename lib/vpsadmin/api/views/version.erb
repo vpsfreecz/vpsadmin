@@ -130,7 +130,7 @@
 <% end %>
 
 <div class="row-fluid">
-  <div class="col-md-10">
+  <div class="col-sm-10">
     <h1 id="api">API v<%= @v %></h1>
     <p>
       This page contains a list of resources available in API v<%= @v %>, their actions,
@@ -213,7 +213,7 @@
     <% end %>
   </div>
 
-  <div class="col-md-2 table-of-contents">
+  <div class="col-sm-2 table-of-contents">
     <div class="nav sidebar-nav-fixed" data-spy="affix" data-offset-top="100" data-offset-bottom="200">
       <h1>Table of contents</h1>
       <ul class="top-level">
@@ -253,10 +253,10 @@
       // replace text by show/hide button
       var div = $(el);
       var pre = div.find('pre');
-      var h5 = div.find('h5');
-      h5.text('');
+      var h4 = div.find('h4');
+      h4.text('');
 
-      h5.append(
+      h4.append(
         $('<button>')
           .attr('type', 'button')
           .addClass('btn btn-primary btn-sm')
