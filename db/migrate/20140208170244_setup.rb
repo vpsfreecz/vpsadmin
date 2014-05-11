@@ -166,5 +166,23 @@ class Setup < ActiveRecord::Migration
       t.string      :cfg_name,                null: false
       t.text        :cfg_value,               null: true,  default: nil
     end
+
+    create_table :storage_root do |t|
+      t.belongs_to  :node_id,                    null: false
+      t.string      :label,          limit: 255, null: false
+      t.string      :root_dataset,   limit: 500, null: false
+      t.string      :root_path,      limit: 500, null: false
+      t.string      :storage_layout, limit: 10,  null: false
+      t.boolean     :user_export,                null: false
+      t.string      :user_mount,     limit: 10,  null: false
+      t.integer     :quota,                      null: false
+      t.integer     :used,                       null: false, default: 0
+      t.integer     :avail,                      null: false, default: 0
+      t.string      :share_options,  limit: 500, null: false
+    end
+
+    change_column :storage_root, :quota, 'bigint unsigned'
+    change_column :storage_root, :used, 'bigint unsigned'
+    change_column :storage_root, :avail, 'bigint unsigned'
   end
 end
