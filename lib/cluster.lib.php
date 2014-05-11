@@ -338,14 +338,13 @@ class cluster {
       * @param $info - Note for admins
       * @return descriptor of SQL result
       */
-    function set_template($id = NULL, $name, $label, $info = "", $special = "", $enabled = 1, $supported = 1, $order = 1) {
+    function set_template($id = NULL, $name, $label, $info = "", $enabled = 1, $supported = 1, $order = 1) {
 	global $db;
 	if ($id != NULL)
 	    $sql = 'UPDATE cfg_templates
 			SET templ_name = "'.$db->check($name).'",
 			    templ_label = "'.$db->check($label).'",
 			    templ_info = "'.$db->check($info).'",
-			    special = "'.$db->check($special).'",
 			    templ_enabled = "'.$db->check($enabled).'",
 			    templ_supported = "'.$db->check($supported).'",
 			    templ_order = "'.$db->check($order).'"
@@ -355,7 +354,6 @@ class cluster {
 			SET templ_name = "'.$db->check($name).'",
 			    templ_label = "'.$db->check($label).'",
 			    templ_info = "'.$db->check($info).'",
-			    special = "'.$db->check($special).'",
 			    templ_enabled = "'.$db->check($enabled).'",
 			    templ_supported = "'.$db->check($supported).'",
 			    templ_order = "'.$db->check($order).'"';

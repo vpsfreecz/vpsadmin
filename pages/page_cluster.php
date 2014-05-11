@@ -223,7 +223,6 @@ switch($_REQUEST["action"]) {
 			$xtpl->form_add_input(_("Filename").':', 'text', '40', 'templ_name', $template["templ_name"], _("filename without .tar.gz"));
 			$xtpl->form_add_input(_("Label").':', 'text', '30', 'templ_label', $template["templ_label"], _("User friendly label"));
 			$xtpl->form_add_textarea(_("Info").':', 28, 4, 'templ_info', $template["templ_info"], _("Note for administrators"));
-			$xtpl->form_add_input(_("Special").':', 'text', '40', 'special', $template["special"], _("Special template features"));
 			$xtpl->form_add_checkbox(_("Enabled").':', 'templ_enabled', 1, $template["templ_enabled"]);
 			$xtpl->form_add_checkbox(_("Supported").':', 'templ_supported', 1, $template["templ_supported"]);
 			$xtpl->form_add_input(_("Order").':', 'text', '30', 'templ_order', $template["templ_order"]);
@@ -235,7 +234,7 @@ switch($_REQUEST["action"]) {
 	case "templates_edit_save":
 		if ($template = $cluster->get_template_by_id($_REQUEST["id"])) {
 			if (ereg('^[a-zA-Z0-9_\.\-]{1,63}$',$_REQUEST["templ_name"])) {
-			$cluster->set_template($_REQUEST["id"], $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["special"], $_REQUEST["templ_enabled"], $_REQUEST["templ_supported"], $_REQUEST["templ_order"]);
+			$cluster->set_template($_REQUEST["id"], $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["templ_enabled"], $_REQUEST["templ_supported"], $_REQUEST["templ_order"]);
 			$xtpl->perex(_("Changes saved"), _("Changes you've made to template were saved."));
 			$list_templates = true;
 			} else $list_templates = true;
@@ -251,7 +250,6 @@ switch($_REQUEST["action"]) {
 	$xtpl->form_add_input(_("Filename").':', 'text', '40', 'templ_name', '', _("filename without .tar.gz"));
 	$xtpl->form_add_input(_("Label").':', 'text', '30', 'templ_label', '', _("User friendly label"));
 	$xtpl->form_add_textarea(_("Info").':', 28, 4, 'templ_info', '', _("Note for administrators"));
-	$xtpl->form_add_input(_("Special").':', 'text', '40', 'special', '', _("Special template features"));
 	$xtpl->form_add_checkbox(_("Enabled").':', 'templ_enabled', 1, 1);
 	$xtpl->form_add_checkbox(_("Supported").':', 'templ_supported', 1, 1);
 	$xtpl->form_add_input(_("Order").':', 'text', '30', 'templ_order', "1");
@@ -263,7 +261,7 @@ switch($_REQUEST["action"]) {
 	break;
 	case "template_register_save":
 		if (ereg('^[a-zA-Z0-9_\.\-]{1,63}$',$_REQUEST["templ_name"])) {
-			$cluster->set_template(NULL, $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["special"], $_REQUEST["templ_enabled"], $_REQUEST["templ_supported"], $_REQUEST["templ_order"]);
+			$cluster->set_template(NULL, $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["templ_enabled"], $_REQUEST["templ_supported"], $_REQUEST["templ_order"]);
 			$xtpl->perex(_("Changes saved"), _("Template successfully registered."));
 			$list_templates = true;
 		} else {
