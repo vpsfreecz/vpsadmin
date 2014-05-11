@@ -866,7 +866,7 @@ if (isset($show_info) && $show_info) {
 
 	// DNS Server
 		$xtpl->form_create('?page=adminvps&action=nameserver&veid='.$vps->veid, 'post');
-		$xtpl->form_add_select(_("DNS servers address").':', 'nameserver', $cluster->list_dns_servers($vps->get_location()), $vps->ve["vps_nameserver"],  '');
+		$xtpl->form_add_select(_("DNS servers address").':', 'nameserver', $cluster->list_dns_servers($vps->get_location()), $vps->ve["dns_resolver_id"],  '');
 		$xtpl->table_add_category(_("DNS server"));
 		$xtpl->table_add_category('&nbsp;');
 		$xtpl->form_out(_("Go >>"));

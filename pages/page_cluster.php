@@ -2293,7 +2293,7 @@ if ($mass_management) {
 	        INNER JOIN locations l ON s.server_location = l.location_id
 	        INNER JOIN members m ON v.m_id = m.m_id
 	        INNER JOIN cfg_templates t ON v.vps_template = t.templ_id
-	        INNER JOIN cfg_dns dns ON v.vps_nameserver = dns.dns_ip
+	        INNER JOIN cfg_dns dns ON v.dns_resolver_id = dns.dns_id
 	        ".(count($conditions) > 0 ? "WHERE " . implode(" AND ", $conds) : "")."
 	        GROUP BY v.vps_id
 	        ORDER BY v.vps_id ASC";

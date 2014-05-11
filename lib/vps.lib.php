@@ -114,8 +114,8 @@ class vps_load {
 		} else {
 			$sql = 'SELECT * FROM vps,servers,members,cfg_templates WHERE vps.m_id = "'.$_SESSION["member"]["m_id"].'" AND vps.vps_template = cfg_templates.templ_id AND vps.m_id = members.m_id AND server_id = vps_server AND vps_id = "'.$db->check($ve_id).'"';
 		}
-		if ($result = $db->query($sql))
-			if ($tmpve = $db->fetch_array($result))
+		if ($result = $db->query($sql)) {
+			if ($tmpve = $db->fetch_array($result)) {
 				if (empty($request_page) || ($tmpve["vps_id"] == $ve_id) && (($tmpve["m_id"] == $_SESSION["member"]["m_id"]) || $_SESSION["is_admin"])) {
 					if($tmpve["vps_deleted"]) {
 						$this->exists = false;
@@ -132,8 +132,8 @@ class vps_load {
 				else  {
 				    die ("Hacking attempt. This incident will be reported.");
 				}
-			else $this->exists = false;
-		else $this->exists = false;
+			} else $this->exists = false;
+		} else $this->exists = false;
 	} else $this->exists = false;
 	return true;
   }
@@ -148,7 +148,7 @@ class vps_load {
 				    vps_created = "'.$db->check(time()).'",
 				    vps_template = "'.$db->check($template["templ_id"]).'",
 				    vps_info ="'.$db->check(addslashes($info)).'",
-				    vps_nameserver ="'.$db->check($cluster->get_first_suitable_dns($location["location_id"])).'",
+				    dns_resolver_id ="'.$db->check($cluster->get_first_suitable_dns($location["location_id"])).'",
 				    vps_hostname ="'.$db->check($hostname).'",
 				    vps_server ="'.$db->check($server_id).'",
 				    vps_onboot ="'.$db->check($location["location_vps_onboot"]).'",
@@ -397,16 +397,20 @@ function ipadd($ip, $type = 4, $dep = NULL) {
   }
 
   function nameserver($nameserver, $dep = NULL) {
-	global $db;
+	global $db, $cluster;
 	if ($this->exists) {
-	  $sql = 'UPDATE vps SET vps_nameserver = "'.$db->check($nameserver).'" WHERE vps_id = '.$db->check($this->veid);
+	  $sql = 'UPDATE vps SET dns_resolver_id = '.$db->check($nameserver).' WHERE vps_id = '.$db->check($this->veid);
 	  $db->query($sql);
-	  $nameservers = explode(",", $nameserver);
+	  
+	  $resolver = $cluster->get_dns_server_by_id($nameserver);
+	  
+	  $nameservers = explode(",", $resolver['dns_ip']);
 	  $command = array("nameservers" => array());
 	  foreach ($nameservers as $ns) {
       $command["nameserver"][] = $ns;
 	  }
-	  $this->ve["vps_nameserver"] = $nameserver;
+	  $this->ve["vps_nameserver"] = $resolver['dns_ip'];
+	  $this->ve["dns_resolver_id"] = $nameserver;
 	  add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_DNS, $command, NULL, $dep);
 	}
   }
@@ -871,7 +875,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 				vps_template = "'.$db->check($this->ve["vps_template"]).'",
 				vps_info ="'.$db->check("Cloned from {$this->veid}").'",
 				vps_hostname ="'.$db->check($hostname).'",
-				vps_nameserver ="'.$db->check($this->ve["vps_nameserver"]).'",
+				dns_resolver_id ="'.$db->check($this->ve["dns_resolver_id"]).'",
 				vps_server ="'.$db->check($server_id).'",
 				vps_onboot ="'.$db->check($this->ve["vps_onboot"]).'",
 				vps_onstartall = '.$db->check($this->ve["vps_onstartall"]).',
@@ -1068,8 +1072,8 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 	}
 	
 	if($dns) {
-		$my_d = $this->ve["vps_nameserver"];
-		$with_d = $with->ve["vps_nameserver"];
+		$my_d = $this->ve["dns_resolver_id"];
+		$with_d = $with->ve["dns_resolver_id"];
 		
 		$this->nameserver($with_d, $t_my_id);
 		$with->nameserver($my_d, $t_with_id);

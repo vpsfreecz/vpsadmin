@@ -562,7 +562,7 @@ class cluster {
 	    $sql .= ' WHERE dns_location="'.$db->check($location_id).'" OR dns_is_universal=1';
 	if ($result = $db->query($sql)) {
 	    while ($row = $db->fetch_array($result)) {
-		$ret[$row["dns_ip"]] = $row["dns_label"];
+		$ret[$row["dns_id"]] = $row["dns_label"];
 	    }
 	return $ret;
 	}
@@ -595,7 +595,7 @@ class cluster {
 	$sql = 'SELECT * FROM cfg_dns WHERE (dns_location="'.$db->check($location).'") OR (dns_is_universal = 1) ORDER BY dns_is_universal LIMIT 1';
 	if ($result = $db->query($sql))
 	    if ($row = $db->fetch_array($result))
-		return $row["dns_ip"];
+		return $row["dns_id"];
 	    else die (_("Please define some DNS servers in Manage cluster."));
 	else die (_("Please define some DNS servers in Manage cluster."));
     }
