@@ -2,7 +2,7 @@ ve101:
   user: user01
   vps_hostname: vps-101-user01
   os_template: scientific
-  vps_nameserver: 8.8.8.8
+  dns_resolver: prg_google
   node: node1
   vps_backup_export: ""
   vps_backup_exclude: ""
@@ -12,7 +12,7 @@ ve102:
   user: user01
   vps_hostname: vps-102-user01
   os_template: scientific
-  vps_nameserver: 8.8.8.8
+  dns_resolver: prg_google
   node: node1
   vps_backup_export: ""
   vps_backup_exclude: ""
@@ -22,7 +22,7 @@ ve103:
   user: user02
   vps_hostname: vps-103-user02
   os_template: scientific
-  vps_nameserver: 8.8.8.8
+  dns_resolver: prg_google
   node: node1
   vps_backup_export: ""
   vps_backup_exclude: ""
@@ -32,7 +32,7 @@ ve104:
   user: user02
   vps_hostname: vps-104-user02
   os_template: scientific
-  vps_nameserver: 8.8.8.8
+  dns_resolver: prg_google
   node: node1
   vps_backup_export: ""
   vps_backup_exclude: ""

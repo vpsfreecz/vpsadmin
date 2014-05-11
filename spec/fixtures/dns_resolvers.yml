@@ -1,0 +1,17 @@
+localhost:
+  dns_ip: 127.0.0.1
+  dns_label: localhost
+  dns_is_universal: true
+
+prg_google:
+  dns_ip: 8.8.8.8
+  dns_label: Google PRG
+  dns_is_universal: false
+  dns_location: prague
+
+brq_google:
+  dns_ip: 8.8.8.8
+  dns_label: Google BRQ
+  dns_is_universal: false
+  dns_location: brno
+

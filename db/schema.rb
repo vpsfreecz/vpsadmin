@@ -268,20 +268,20 @@ ActiveRecord::Schema.define(version: 0) do
     t.integer "vps_created"
     t.integer "vps_expiration"
     t.integer "vps_deleted"
-    t.integer "m_id",                                                      null: false
+    t.integer "m_id",                                                  null: false
     t.string  "vps_hostname",                          default: "vps"
-    t.integer "vps_template",                          default: 1,         null: false
+    t.integer "vps_template",                          default: 1,     null: false
     t.text    "vps_info",             limit: 16777215
-    t.string  "vps_nameserver",                        default: "4.2.2.2", null: false
-    t.integer "vps_server",                                                null: false
-    t.boolean "vps_onboot",                            default: true,      null: false
-    t.boolean "vps_onstartall",                        default: true,      null: false
-    t.boolean "vps_backup_enabled",                    default: true,      null: false
-    t.boolean "vps_features_enabled",                  default: false,     null: false
-    t.integer "vps_backup_export",                                         null: false
-    t.integer "vps_backup_lock",      limit: 1,        default: 0,         null: false
-    t.text    "vps_backup_exclude",                                        null: false
-    t.text    "vps_config",                                                null: false
+    t.integer "dns_resolver_id"
+    t.integer "vps_server",                                            null: false
+    t.boolean "vps_onboot",                            default: true,  null: false
+    t.boolean "vps_onstartall",                        default: true,  null: false
+    t.boolean "vps_backup_enabled",                    default: true,  null: false
+    t.boolean "vps_features_enabled",                  default: false, null: false
+    t.integer "vps_backup_export",                                     null: false
+    t.integer "vps_backup_lock",      limit: 1,        default: 0,     null: false
+    t.text    "vps_backup_exclude",                                    null: false
+    t.text    "vps_config",                                            null: false
   end
 
   add_index "vps", ["m_id"], name: "m_id", using: :btree

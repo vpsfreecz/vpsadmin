@@ -5,6 +5,7 @@ class Vps < ActiveRecord::Base
   belongs_to :node, :foreign_key => :vps_server
   belongs_to :user, :foreign_key => :m_id
   belongs_to :os_template, :foreign_key => :vps_template
+  belongs_to :dns_resolver
   has_many :ip_addresses
   has_many :transactions, foreign_key: :t_vps
 
@@ -22,6 +23,7 @@ class Vps < ActiveRecord::Base
       with: /[a-zA-Z\-_\.0-9]{0,255}/,
       message: 'bad format'
   }
+  validate :foreign_keys_exist
 
   after_update :hostname_changed, if: :vps_hostname_changed?
 
@@ -109,5 +111,12 @@ class Vps < ActiveRecord::Base
 
   def hostname_changed
     Transactions::Vps::Hostname.fire(self)
+  end
+
+  def foreign_keys_exist
+    User.find(user_id)
+    Node.find(vps_server)
+    OsTemplate.find(vps_template)
+    DnsResolver.find(dns_resolver_id)
   end
 end

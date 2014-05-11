@@ -11,7 +11,7 @@ module Transactions::Vps
           hostname: vps.hostname,
           template: vps.os_template.name,
           onboot: vps.node.location.location_vps_onboot,
-          nameserver: '8.8.8.8', # fixme
+          nameserver: vps.dns_resolver.addr
       }
     end
   end

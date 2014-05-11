@@ -12,7 +12,7 @@ class VpsAdmin::API::Resources::VPS < VpsAdmin::API::Resource
     string :hostname, desc: 'VPS hostname', db_name: :vps_hostname
     use :template
     string :info, label: 'Info', desc: 'VPS description', db_name: :vps_info
-    foreign_key :dns_resolver_id, label: 'DNS resolver', desc: 'DNS resolver the VPS will use', db_name: :vps_nameserver
+    foreign_key :dns_resolver_id, label: 'DNS resolver', desc: 'DNS resolver the VPS will use'
     integer :node_id, label: 'Node', desc: 'Node VPS will run on', db_name: :vps_server
     bool :onboot, label: 'On boot', desc: 'Start VPS on node boot?', db_name: :vps_onboot
     bool :onstartall, label: 'On start all', desc: 'Start VPS on start all action?', db_name: :vps_onstartall

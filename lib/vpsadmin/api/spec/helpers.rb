@@ -1,6 +1,7 @@
 require 'rack/test'
 
 module VpsAdmin::API
+  # Contains methods for specification of API to be used in +description+ block.
   module ApiBuilder
     def use_version(v)
       before(:each) do
@@ -25,9 +26,12 @@ module VpsAdmin::API
     end
   end
 
+  # Helper methods for specs.
   module SpecMethods
     include Rack::Test::Methods
 
+    # This class wraps raw reply from the API and provides more friendly
+    # interface.
     class ApiResponse
       def initialize(body)
         @data = JSON.parse(body, symbolize_names: true)
@@ -39,6 +43,10 @@ module VpsAdmin::API
 
       def ok?
         @data[:status]
+      end
+
+      def failed?
+        !ok?
       end
 
       def response
@@ -66,10 +74,23 @@ module VpsAdmin::API
       api.app
     end
 
+    # Login with HTTP basic auth.
     def login(*credentials)
       basic_authorize(*credentials)
     end
 
+    # Make API request.
+    # This method is a wrapper for Rack::Test::Methods. Input parameters
+    # are encoded into JSON and sent with correct Content-Type.
+    def api(http_method, url, params)
+      method(http_method).call(
+          url,
+          params.to_json,
+          {'Content-Type' => 'application/json'}
+      )
+    end
+
+    # Return parsed API response.
     def api_response
       @api_response ||= ApiResponse.new(last_response.body)
     end

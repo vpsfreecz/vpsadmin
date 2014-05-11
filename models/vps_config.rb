@@ -14,6 +14,8 @@ class VpsConfig < ActiveRecord::Base
       chain = SysConfig.get('playground_default_config_chain')
     end
 
+    chain ||= []
+
     chain.map! do |v|
       v.to_i
     end

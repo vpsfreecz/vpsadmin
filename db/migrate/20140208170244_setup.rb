@@ -100,7 +100,7 @@ class Setup < ActiveRecord::Migration
       t.string      :vps_hostname,   limit: 255,       null: true
       t.integer     :vps_template,                     null: false
       t.text        :vps_info,                         null: true
-      t.string      :vps_nameserver, limit: 255,       null: false
+      t.belongs_to  :dns_resolver,                     null: true
       t.integer     :vps_server,                       null: false, index: true
       t.boolean     :vps_onboot,                       null: false, default: 1
       t.boolean     :vps_onstartall,                   null: false, default: 1
@@ -113,7 +113,8 @@ class Setup < ActiveRecord::Migration
 
       t.timestamps
 
-      # Dropped column vps_specials_installed
+      # Dropped columns vps_specials_installed, vps_nameserver
+      # New column dns_resolver_id
     end
 
     create_table :vps_ip, :primary_key => 'ip_id' do |t|
