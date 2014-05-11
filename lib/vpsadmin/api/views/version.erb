@@ -3,11 +3,9 @@
   <div class="resource-body">
     <p><%= info[:description] %></p>
 
-    <h3>Actions</h3>
-
     <div class="actions">
       <% info[:actions].each do |action, info| %>
-        <h4 id="<%= "#{prefix}-#{resource}-#{action}" %>"><%= resource.humanize %>.<%= action.capitalize %></h4>
+        <h3 id="<%= "#{prefix}-#{resource}-#{action}" %>"><%= resource.humanize %>.<%= action.capitalize %></h3>
         <div class="action">
           <dl>
             <dt>URL:</dt>
@@ -18,7 +16,7 @@
             <dd><%= info[:auth] ? 'yes' : 'no' %></dd>
           </dl>
 
-          <h5>Input parameters</h5>
+          <h4>Input parameters</h4>
           <div class="parameters">
             <% if info[:input][:parameters].empty? %>
               <p>No parameters.</p>
@@ -53,7 +51,7 @@
             <% end %>
           </div>
 
-          <h5>Output parameters</h5>
+          <h4>Output parameters</h4>
           <div class="parameters">
             <% if info[:output][:parameters].empty? && info[:output][:format].nil? %>
               <p>No parameters.</p>
@@ -85,18 +83,18 @@
           </div>
 
           <div class="action-self-description">
-            <h5>Self-description</h5>
+            <h4>Self-description</h4>
             <pre><code><%= JSON.pretty_generate(info) %></code></pre>
           </div>
 
           <% unless info[:example].empty? %>
-            <h5>Example</h5>
+            <h4>Example</h4>
             <p><%= info[:example][:comment] %></p>
 
-            <h6>Request</h6>
+            <h5>Request</h5>
             <pre><code><%= JSON.pretty_generate(info[:example][:request]) %></code></pre>
 
-            <h6>Response</h6>
+            <h5>Response</h5>
             <pre><code><%= JSON.pretty_generate(info[:example][:response]) %></code></pre>
           <% end %>
 
@@ -105,7 +103,6 @@
     </div>
 
     <% unless info[:resources].empty? %>
-      <h4>Resources</h4>
       <% info[:resources].each do |r, i| %>
         <% render_resource_body(r, i, "#{prefix}-#{resource}") %>
       <% end %>
@@ -265,7 +262,7 @@
           .addClass('btn btn-primary btn-sm')
           .text('Show self-description')
           .click(function(event) {
-            button = $(this);
+            var button = $(this);
             button.toggleClass('active');
             pre.toggle('fast');
 
