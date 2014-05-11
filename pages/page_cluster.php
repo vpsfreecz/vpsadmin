@@ -125,11 +125,12 @@ switch($_REQUEST["action"]) {
 		$xtpl->form_add_checkbox(_("Has this location IPv6 support?").':', 'has_ipv6', '1', false, '');
 		$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', '1', '');
 		$xtpl->form_add_input(_("Remote console server").':', 'text', '30',	'remote_console_server',	'', _("URL"));
+		$xtpl->form_add_input(_("Domain").':', 'text', '30',	'domain',	$item["domain"], '');
 		$xtpl->form_out(_("Save changes"));
 		break;
 	case "location_new_save":
 		$cluster->set_location(NULL, $_REQUEST["location_label"], $_REQUEST["type"], $_REQUEST["has_ipv6"],
-							$_REQUEST["onboot"], $_REQUEST["remote_console_server"]);
+							$_REQUEST["onboot"], $_REQUEST["remote_console_server"], $_REQUEST["domain"]);
 		$xtpl->perex(_("Changes saved"), _("Location added."));
 		$list_locations = true;
 		break;
@@ -144,6 +145,7 @@ switch($_REQUEST["action"]) {
 			$xtpl->form_add_checkbox(_("Has this location IPv6 support?").':', 'has_ipv6', '1', $item["location_has_ipv6"], '');
 			$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', $item["location_vps_onboot"], '');
 			$xtpl->form_add_input(_("Remote console server").':', 'text', '30',	'remote_console_server',	$item["location_remote_console_server"], _("URL"));
+			$xtpl->form_add_input(_("Domain").':', 'text', '30',	'domain',	$item["domain"], '');
 			$xtpl->form_out(_("Save changes"));
 		} else {
 			$list_ramlimits = true;
@@ -152,7 +154,7 @@ switch($_REQUEST["action"]) {
 	case "location_edit_save":
 		if ($item = $cluster->get_location_by_id($_REQUEST["id"])) {
 			$cluster->set_location($_REQUEST["id"], $_REQUEST["location_label"], $_REQUEST["type"], $_REQUEST["has_ipv6"],
-							$_REQUEST["onboot"], $_REQUEST["remote_console_server"]);
+							$_REQUEST["onboot"], $_REQUEST["remote_console_server"], $_REQUEST["domain"]);
 			$xtpl->perex(_("Changes saved"), _("Location label saved."));
 			$list_locations = true;
 		} else {
@@ -1951,46 +1953,36 @@ if ($list_locations) {
 	$xtpl->table_add_category(_("Location label"));
 	$xtpl->table_add_category(_("Servers"));
 	$xtpl->table_add_category(_("IPv6"));
-	$xtpl->table_add_category(_("OSPF"));
-	$xtpl->table_add_category(_("RDIFF"));
 	$xtpl->table_add_category(_("On Boot"));
+	$xtpl->table_add_category(_("Domain"));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 	$list = $cluster->get_locations();
 	if ($list)
 	foreach($list as $item) {
-	$servers = 0;
-	$servers = $cluster->get_server_count_in_location($item["location_id"]);
-	$xtpl->table_td($item["location_id"]);
-	$xtpl->table_td($item["location_label"]);
-	$xtpl->table_td($servers, false, true);
-	if ($item["location_has_ipv6"]) {
-		$xtpl->table_td('<img src="template/icons/transact_ok.png" />');
-	} else {
-		$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
-	}
-	if ($item["location_has_ospf"]) {
-		$xtpl->table_td('<img src="template/icons/transact_ok.png" />');
-	} else {
-		$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
-	}
-	if ($item["location_has_rdiff_backup"]) {
-		$xtpl->table_td('<img src="template/icons/transact_ok.png" />');
-	} else {
-		$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
-	}
-	if ($item["location_vps_onboot"]) {
-		$xtpl->table_td('<img src="template/icons/transact_ok.png" />');
-	} else {
-		$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
-	}
-	$xtpl->table_td('<a href="?page=cluster&action=location_edit&id='.$item["location_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-	if ($servers > 0) {
-		$xtpl->table_td('<img src="template/icons/delete_grey.png" title="'._("Delete - N/A, item is in use").'">');
-	} else {
-		$xtpl->table_td('<a href="?page=cluster&action=location_delete&id='.$item["location_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
-	}
-	$xtpl->table_tr();
+		$servers = 0;
+		$servers = $cluster->get_server_count_in_location($item["location_id"]);
+		$xtpl->table_td($item["location_id"]);
+		$xtpl->table_td($item["location_label"]);
+		$xtpl->table_td($servers, false, true);
+		if ($item["location_has_ipv6"]) {
+			$xtpl->table_td('<img src="template/icons/transact_ok.png" />');
+		} else {
+			$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
+		}
+		if ($item["location_vps_onboot"]) {
+			$xtpl->table_td('<img src="template/icons/transact_ok.png" />');
+		} else {
+			$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
+		}
+		$xtpl->table_td($item['domain']);
+		$xtpl->table_td('<a href="?page=cluster&action=location_edit&id='.$item["location_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		if ($servers > 0) {
+			$xtpl->table_td('<img src="template/icons/delete_grey.png" title="'._("Delete - N/A, item is in use").'">');
+		} else {
+			$xtpl->table_td('<a href="?page=cluster&action=location_delete&id='.$item["location_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		}
+		$xtpl->table_tr();
 	}
 	$xtpl->table_out();
 	$xtpl->sbar_add(_("New location"), '?page=cluster&action=location_new');

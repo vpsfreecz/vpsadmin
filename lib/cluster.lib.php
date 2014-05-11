@@ -476,7 +476,7 @@ class cluster {
 		return $row;
 	return false;
     }
-    function set_location($id = NULL, $label, $type, $has_ipv6 = false, $onboot, $remote_console_server) {
+    function set_location($id = NULL, $label, $type, $has_ipv6 = false, $onboot, $remote_console_server, $domain) {
 	global $db;
 	if ($id != NULL)
 	    $sql = 'UPDATE locations
@@ -484,7 +484,8 @@ class cluster {
 			    location_type = "'.$db->check($type).'",
 			    location_has_ipv6 = "'.$db->check($has_ipv6).'",
 			    location_remote_console_server = "'.$db->check($remote_console_server).'",
-			    location_vps_onboot = "'.$db->check($onboot).'"
+			    location_vps_onboot = "'.$db->check($onboot).'",
+			    domain = "'.$db->check($domain).'"
 			WHERE location_id = "'.$db->check($id).'"';
 	else
 	    $sql = 'INSERT INTO locations
@@ -492,7 +493,8 @@ class cluster {
 			    location_type = "'.$db->check($type).'",
 			    location_has_ipv6 = "'.$db->check($has_ipv6).'",
 			    location_remote_console_server = "'.$db->check($remote_console_server).'",
-			    location_vps_onboot = "'.$db->check($onboot).'"';
+			    location_vps_onboot = "'.$db->check($onboot).'",
+			    domain = "'.$db->check($domain).'"';
 	return ($db->query($sql));
     }
     function list_locations($ipv6_only = false) {
