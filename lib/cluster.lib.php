@@ -27,7 +27,7 @@ class cluster_node {
 		
 		switch ($row["server_type"]) {
 			case "node":
-				$this->role = $db->findByColumnOnce("node_node", "node_id", $row["server_id"]);
+				$this->role = $row;
 				break;
 				
 			case "storage":
