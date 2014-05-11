@@ -476,20 +476,13 @@ class cluster {
 		return $row;
 	return false;
     }
-    function set_location($id = NULL, $label, $type, $has_ipv6 = false, $onboot, $has_ospf, $has_rdiff,
-    						$rd_hist, $rd_sshfs, $rd_archfs, $tpl_sync_path, $remote_console_server) {
+    function set_location($id = NULL, $label, $type, $has_ipv6 = false, $onboot, $remote_console_server) {
 	global $db;
 	if ($id != NULL)
 	    $sql = 'UPDATE locations
 			SET location_label = "'.$db->check($label).'",
 			    location_type = "'.$db->check($type).'",
 			    location_has_ipv6 = "'.$db->check($has_ipv6).'",
-			    location_has_ospf = "'.$db->check($has_ospf).'",
-			    location_has_rdiff_backup = "'.$db->check($has_rdiff).'",
-			    location_rdiff_history = "'.$db->check($rd_hist).'",
-			    location_rdiff_mount_sshfs = "'.$db->check($rd_sshfs).'",
-			    location_rdiff_mount_archfs = "'.$db->check($rd_archfs).'",
-			    location_tpl_sync_path = "'.$db->check($tpl_sync_path).'",
 			    location_remote_console_server = "'.$db->check($remote_console_server).'",
 			    location_vps_onboot = "'.$db->check($onboot).'"
 			WHERE location_id = "'.$db->check($id).'"';
@@ -498,12 +491,6 @@ class cluster {
 			SET location_label = "'.$db->check($label).'",
 			    location_type = "'.$db->check($type).'",
 			    location_has_ipv6 = "'.$db->check($has_ipv6).'",
-			    location_has_ospf = "'.$db->check($has_ospf).'",
-			    location_has_rdiff_backup = "'.$db->check($has_rdiff).'",
-			    location_rdiff_history = "'.$db->check($rd_hist).'",
-			    location_rdiff_mount_sshfs = "'.$db->check($rd_sshfs).'",
-			    location_rdiff_mount_archfs = "'.$db->check($rd_archfs).'",
-			    location_tpl_sync_path = "'.$db->check($tpl_sync_path).'",
 			    location_remote_console_server = "'.$db->check($remote_console_server).'",
 			    location_vps_onboot = "'.$db->check($onboot).'"';
 	return ($db->query($sql));
