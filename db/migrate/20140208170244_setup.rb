@@ -187,5 +187,22 @@ class Setup < ActiveRecord::Migration
     change_column :storage_root, :quota, 'bigint unsigned'
     change_column :storage_root, :used, 'bigint unsigned'
     change_column :storage_root, :avail, 'bigint unsigned'
+
+    create_table :storage_export do |t|
+      t.integer     :member_id,                  null: false
+      t.integer     :root_id,                    null: false
+      t.string      :dataset,        limit: 500, null: false
+      t.string      :path,           limit: 500, null: false
+      t.integer     :quota,                      null: false
+      t.integer     :used,                       null: false, default: 0
+      t.integer     :avail,                      null: false, default: 0
+      t.boolean     :user_editable,              null: false, default: false
+      t.string      :default,        limit: 10,  null: false, default: 'no'
+      t.string      :data_type,      limit: 10,  null: false
+    end
+
+    change_column :storage_export, :quota, 'bigint unsigned'
+    change_column :storage_export, :used, 'bigint unsigned'
+    change_column :storage_export, :avail, 'bigint unsigned'
   end
 end

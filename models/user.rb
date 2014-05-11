@@ -4,6 +4,7 @@ class User < ActiveRecord::Base
 
   has_many :vpses, :foreign_key => :m_id
   has_many :transactions, foreign_key: :t_m_id
+  has_many :storage_exports, foreign_key: :member_id
 
   alias_attribute :login, :m_nick
   alias_attribute :role, :m_level
