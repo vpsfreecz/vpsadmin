@@ -11,6 +11,7 @@ class Vps < ActiveRecord::Base
 
   has_many :vps_has_config, -> { order '`order`' }
   has_many :vps_configs, through: :vps_has_config
+  has_many :vps_mounts
 
   has_paper_trail
 
@@ -35,8 +36,26 @@ class Vps < ActiveRecord::Base
     if save
       set_config_chain(VpsConfig.default_config_chain(node.location))
 
-      Transactions::Vps::New.fire(self)
+      last_id = Transactions::Vps::New.fire(self)
 
+      mapping, last_id = StorageExport.create_default_exports(self, depend: last_id)
+
+      VpsMount.default_mounts.each do |m|
+        mnt = VpsMount.new(m.attributes)
+        mnt.id = nil
+        mnt.default = false
+        mnt.vps = self if mnt.vps_id == 0 || mnt.vps_id.nil?
+
+        unless m.storage_export_id.nil? || m.storage_export_id == 0
+          export = StorageExport.find(m.storage_export_id)
+
+          mnt.storage_export_id = mapping[export.id] if export.default != 'no'
+        end
+
+        mnt.save!
+      end
+
+      Transactions::Vps::Mounts.fire_chained(last_id, self, false)
     else
       false
     end

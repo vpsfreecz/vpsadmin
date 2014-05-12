@@ -182,6 +182,8 @@ class Setup < ActiveRecord::Migration
       t.integer     :used,                       null: false, default: 0
       t.integer     :avail,                      null: false, default: 0
       t.string      :share_options,  limit: 500, null: false
+
+      # Rename type to storage_layout.
     end
 
     change_column :storage_root, :quota, 'bigint unsigned'
@@ -199,6 +201,8 @@ class Setup < ActiveRecord::Migration
       t.boolean     :user_editable,              null: false, default: false
       t.string      :default,        limit: 10,  null: false, default: 'no'
       t.string      :data_type,      limit: 10,  null: false
+
+      # Rename type to data_type.
     end
 
     change_column :storage_export, :quota, 'bigint unsigned'

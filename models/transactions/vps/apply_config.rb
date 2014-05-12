@@ -3,7 +3,7 @@ module Transactions::Vps
     t_name :vps_apply_config
     t_type 2008
 
-    def prepare(vps)
+    def params(vps)
       self.t_vps = vps.vps_id
       self.t_server = vps.vps_server
 

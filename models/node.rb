@@ -6,6 +6,7 @@ class Node < ActiveRecord::Base
   has_many :vpses, :foreign_key => :vps_server
   has_many :transactions, foreign_key: :t_server
   has_many :storage_roots
+  has_many :vps_mounts, foreign_key: :server_id
   has_paper_trail
 
   alias_attribute :name, :server_name

@@ -151,7 +151,8 @@ module VpsAdmin
 
           begin
             exec
-          rescue ActiveRecord::RecordNotFound
+          rescue ActiveRecord::RecordNotFound => e
+            pp e
             error('object not found')
 
             # rescue => e

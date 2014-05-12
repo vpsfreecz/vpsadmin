@@ -62,7 +62,7 @@ class Transaction < ActiveRecord::Base
     end
 
     t.t_type = t.class.t_type if t.class.t_type
-    t.t_param = (t.prepare(*args) || {}).to_json
+    t.t_param = (t.params(*args) || {}).to_json
 
     t.save!
     t.t_id
@@ -80,7 +80,7 @@ class Transaction < ActiveRecord::Base
 
     t.t_depends_on = dep
     t.t_type = t.class.t_type if t.class.t_type
-    t.t_param = (t.prepare(*args) || {}).to_json
+    t.t_param = (t.params(*args) || {}).to_json
 
     t.save!
     t.t_id
@@ -96,7 +96,7 @@ class Transaction < ActiveRecord::Base
 
   # Must be implemented in subclasses.
   # Returns hash of parameters for single transaction.
-  def prepare(*args)
+  def params(*args)
     raise NotImplementedError
   end
 
@@ -116,7 +116,7 @@ class Transaction < ActiveRecord::Base
       @last_id = dep
     end
 
-    # Execute giben block in the context of this chain.
+    # Execute given block in the context of this chain.
     def exec(&block)
       ::Transaction.transaction do
         instance_eval(&block)
@@ -126,22 +126,28 @@ class Transaction < ActiveRecord::Base
     end
 
     # Append transaction of +klass+ with +opts+ to the end of the chain.
-    # If +opts+ contains key +:name+, it is used as an anchor which other
+    # If +name+ is set, it is used as an anchor which other
     # transaction in chain might hang onto.
-    def append(klass, opts)
-      do_append(@last_id, klass, opts)
+    # +args+ are forwarded to target transaction.
+    def append(klass, name: nil, args: [])
+      do_append(@last_id, name, klass, args)
     end
 
     # Append transaction of +klass+ with +opts+ to previosly created anchor
-    # +name+ instead of the end of the chain.
-    def append_to(name, klass, opts)
-      do_append(@named[name], klass, opts)
+    # +dep_name+ instead of the end of the chain.
+    # If +name+ is set, it is used as an anchor which other
+    # transaction in chain might hang onto.
+    # +args+ are forwarded to target transaction.
+    def append_to(dep_name, klass, name: nil, args: [])
+      do_append(@named[dep_name], name, klass, args)
     end
 
     private
-    def do_append(dep, klass, opts)
-      @last_id = klass.fire_chained(dep, opts) # fixme might have to remove +name+
-      @named[name] = @last_id if opts[:name]
+    def do_append(dep, name, klass, args)
+      args = [args] unless args.is_a?(Array)
+
+      @last_id = klass.fire_chained(dep, *args)
+      @named[name] = @last_id if name
       @last_id
     end
   end
@@ -149,6 +155,10 @@ end
 
 module Transactions
   module Vps
+
+  end
+
+  module Storage
 
   end
 end

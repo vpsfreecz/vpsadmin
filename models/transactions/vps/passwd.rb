@@ -3,7 +3,7 @@ module Transactions::Vps
     t_name :vps_passwd
     t_type 2002
 
-    def prepare(vps, passwd)
+    def params(vps, passwd)
       self.t_vps = vps.vps_id
       self.t_server = vps.vps_server
 

@@ -4,8 +4,8 @@ module Transactions::Vps
 
     def link_chain(dep, vps)
       Transaction.chain(dep) do
-        append(Create, vps)
-        append(ApplyConfig, vps)
+        append(Create, args: vps)
+        append(ApplyConfig, args: vps)
       end
     end
   end

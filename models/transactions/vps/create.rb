@@ -3,7 +3,7 @@ module Transactions::Vps
     t_name :vps_create
     t_type 3001
 
-    def prepare(vps)
+    def params(vps)
       self.t_vps = vps.vps_id
       self.t_server = vps.vps_server
 

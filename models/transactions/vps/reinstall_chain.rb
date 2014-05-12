@@ -4,8 +4,8 @@ module Transactions::Vps
 
     def link_chain(dep, vps)
       Transaction.chain(dep) do
-        append(Reinstall, vps)
-        append(ApplyConfig, vps)
+        append(Reinstall, args: vps)
+        append(ApplyConfig, args: vps)
         # TODO
         # - mounts
         # - DNS resolver
