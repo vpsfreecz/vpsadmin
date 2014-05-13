@@ -39,21 +39,7 @@ class Vps < ActiveRecord::Base
       last_id = Transactions::Vps::New.fire(self)
 
       mapping, last_id = StorageExport.create_default_exports(self, depend: last_id)
-
-      VpsMount.default_mounts.each do |m|
-        mnt = VpsMount.new(m.attributes)
-        mnt.id = nil
-        mnt.default = false
-        mnt.vps = self if mnt.vps_id == 0 || mnt.vps_id.nil?
-
-        unless m.storage_export_id.nil? || m.storage_export_id == 0
-          export = StorageExport.find(m.storage_export_id)
-
-          mnt.storage_export_id = mapping[export.id] if export.default != 'no'
-        end
-
-        mnt.save!
-      end
+      create_default_mounts(mapping)
 
       Transactions::Vps::Mounts.fire_chained(last_id, self, false)
     else
@@ -137,5 +123,22 @@ class Vps < ActiveRecord::Base
     Node.find(vps_server)
     OsTemplate.find(vps_template)
     DnsResolver.find(dns_resolver_id)
+  end
+
+  def create_default_mounts(mapping)
+    VpsMount.default_mounts.each do |m|
+      mnt = VpsMount.new(m.attributes)
+      mnt.id = nil
+      mnt.default = false
+      mnt.vps = self if mnt.vps_id == 0 || mnt.vps_id.nil?
+
+      unless m.storage_export_id.nil? || m.storage_export_id == 0
+        export = StorageExport.find(m.storage_export_id)
+
+        mnt.storage_export_id = mapping[export.id] if export.default != 'no'
+      end
+
+      mnt.save!
+    end
   end
 end

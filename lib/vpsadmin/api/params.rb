@@ -93,6 +93,10 @@ module VpsAdmin
         add_param(*apply(args, type: Integer))
       end
 
+      def datetime(*args)
+        add_param(*apply(args, type: Datetime))
+      end
+
       def param(*args)
         add_param(*args)
       end

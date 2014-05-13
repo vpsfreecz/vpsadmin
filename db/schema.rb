@@ -80,10 +80,10 @@ ActiveRecord::Schema.define(version: 0) do
     t.integer  "m_deleted"
     t.integer  "m_level",                                            null: false
     t.string   "m_nick",              limit: 63,                     null: false
-    t.string   "m_name",                                             null: false
+    t.string   "m_name"
     t.string   "m_pass",                                             null: false
-    t.string   "m_mail",              limit: 127,                    null: false
-    t.text     "m_address",                                          null: false
+    t.string   "m_mail",              limit: 127
+    t.text     "m_address"
     t.string   "m_lang",              limit: 16
     t.string   "m_paid_until",        limit: 32
     t.integer  "m_last_activity"
@@ -91,7 +91,7 @@ ActiveRecord::Schema.define(version: 0) do
     t.boolean  "m_mailer_enable",                 default: true,     null: false
     t.boolean  "m_playground_enable",             default: true,     null: false
     t.string   "m_state",             limit: 9,   default: "active", null: false
-    t.string   "m_suspend_reason",    limit: 100,                    null: false
+    t.string   "m_suspend_reason",    limit: 100
     t.integer  "login_count",                     default: 0,        null: false
     t.integer  "failed_login_count",              default: 0,        null: false
     t.datetime "last_request_at"
@@ -151,12 +151,7 @@ ActiveRecord::Schema.define(version: 0) do
     t.boolean "server_maintenance",             default: false,                null: false
     t.integer "max_vps",                                                       null: false
     t.string  "ve_private",                     default: "/vz/private/%veid%", null: false
-    t.string  "fstype",             limit: 10,  default: "ext4",               null: false
-    t.string  "root_dataset",       limit: 500,                                null: false
-    t.string  "root_path",          limit: 500,                                null: false
-    t.string  "storage_layout",     limit: 10,                                 null: false
-    t.integer "user_export",        limit: 1,   default: 0,                    null: false
-    t.string  "user_mount",         limit: 4,   default: "none",               null: false
+    t.string  "fstype",             limit: 10,  default: "zfs",                null: false
   end
 
   add_index "servers", ["server_location"], name: "server_location", using: :btree
@@ -177,25 +172,25 @@ ActiveRecord::Schema.define(version: 0) do
     t.string  "dataset",       limit: 500,                null: false
     t.string  "path",          limit: 500,                null: false
     t.integer "quota",         limit: 8,                  null: false
-    t.integer "used",          limit: 8,                  null: false
-    t.integer "avail",         limit: 8,                  null: false
+    t.integer "used",          limit: 8,   default: 0,    null: false
+    t.integer "avail",         limit: 8,   default: 0,    null: false
     t.integer "user_editable", limit: 1,   default: 0,    null: false
     t.string  "default",       limit: 6,   default: "no", null: false
-    t.string  "type",          limit: 6,                  null: false
+    t.string  "data_type",     limit: 6,                  null: false
   end
 
   create_table "storage_root", force: true do |t|
-    t.integer "node_id",                                    null: false
-    t.string  "label",                                      null: false
-    t.string  "root_dataset",  limit: 500,                  null: false
-    t.string  "root_path",     limit: 500,                  null: false
-    t.string  "type",          limit: 10,                   null: false
-    t.integer "user_export",   limit: 1,   default: 0,      null: false
-    t.string  "user_mount",    limit: 4,   default: "none", null: false
-    t.integer "quota",         limit: 8,                    null: false
-    t.integer "used",          limit: 8,                    null: false
-    t.integer "avail",         limit: 8,                    null: false
-    t.string  "share_options", limit: 500,                  null: false
+    t.integer "node_id",                                     null: false
+    t.string  "label",                                       null: false
+    t.string  "root_dataset",   limit: 500,                  null: false
+    t.string  "root_path",      limit: 500,                  null: false
+    t.string  "storage_layout", limit: 10,                   null: false
+    t.integer "user_export",    limit: 1,   default: 0,      null: false
+    t.string  "user_mount",     limit: 4,   default: "none", null: false
+    t.integer "quota",          limit: 8,                    null: false
+    t.integer "used",           limit: 8,   default: 0,      null: false
+    t.integer "avail",          limit: 8,   default: 0,      null: false
+    t.string  "share_options",  limit: 500,                  null: false
   end
 
   create_table "sysconfig", primary_key: "cfg_name", force: true do |t|
@@ -321,7 +316,7 @@ ActiveRecord::Schema.define(version: 0) do
     t.string  "dst",               limit: 500,             null: false
     t.string  "mount_opts",                                null: false
     t.string  "umount_opts",                               null: false
-    t.string  "type",              limit: 4,               null: false
+    t.string  "mount_type",        limit: 4,               null: false
     t.integer "server_id"
     t.integer "storage_export_id"
     t.string  "mode",              limit: 2,               null: false

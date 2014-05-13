@@ -2,3 +2,7 @@
 module Boolean
 
 end
+
+module Datetime
+
+end

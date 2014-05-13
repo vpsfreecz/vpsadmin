@@ -7,10 +7,10 @@ class Setup < ActiveRecord::Migration
       t.integer   :m_deleted,           null: true
       t.integer   :m_level,             null: false
       t.string    :m_nick,              null: false, limit: 63
-      t.string    :m_name,              null: false, limit: 255
+      t.string    :m_name,              null: true,  limit: 255
       t.string    :m_pass,              null: false, limit: 255
-      t.string    :m_mail,              null: false, limit: 127
-      t.text      :m_address,           null: false
+      t.string    :m_mail,              null: true,  limit: 127
+      t.text      :m_address,           null: true
       t.string    :m_lang,              null: true,  limit: 16
       t.string    :m_paid_until,        null: true,  limit: 32
       t.integer   :m_last_activity,     null: true
@@ -18,7 +18,7 @@ class Setup < ActiveRecord::Migration
       t.boolean   :m_mailer_enable,     null: false,             default: 1
       t.boolean   :m_playground_enable, null: false,             default: 1
       t.string    :m_state,             null: false, limit: 10,  default: 'active'
-      t.string    :m_suspend_reason,    null: false, limit: 100
+      t.string    :m_suspend_reason,    null: true,  limit: 100
 
       t.integer   :login_count,         null: false,             default: 0
       t.integer   :failed_login_count,  null: false,             default: 0

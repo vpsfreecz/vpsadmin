@@ -6,12 +6,27 @@ class User < ActiveRecord::Base
   has_many :transactions, foreign_key: :t_m_id
   has_many :storage_exports, foreign_key: :member_id
 
+  before_validation :set_no_password
+
   alias_attribute :login, :m_nick
   alias_attribute :role, :m_level
 
   has_paper_trail ignore: [
       :m_last_activity,
   ]
+
+  validates :m_level, :m_nick, :m_pass, presence: true
+  validates :m_level, numericality: {
+      only_integer: true
+  }
+  validates :m_nick, format: {
+      with: /[a-zA-Z\.\-]{3,63}/,
+      message: 'not a valid login'
+  }, uniqueness: true
+  validates :m_state, inclusion: {
+      in: %w(active suspended deleted),
+      message: '%{value} is not a valid user state'
+  }
 
   ROLES = {
       1 => 'Poor user',
@@ -66,5 +81,10 @@ class User < ActiveRecord::Base
 
   def self.current=(user)
     Thread.current[:user] = user
+  end
+
+  private
+  def set_no_password
+    self.m_pass = '!' if self.m_pass.nil? || self.m_pass.empty?
   end
 end

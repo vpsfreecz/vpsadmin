@@ -82,7 +82,7 @@ module VpsAdmin::API
     # Make API request.
     # This method is a wrapper for Rack::Test::Methods. Input parameters
     # are encoded into JSON and sent with correct Content-Type.
-    def api(http_method, url, params)
+    def api(http_method, url, params={})
       method(http_method).call(
           url,
           params.to_json,

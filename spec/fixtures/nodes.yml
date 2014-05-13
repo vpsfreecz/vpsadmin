@@ -6,11 +6,6 @@ node1:
   max_vps: 30
   ve_private: /vz/private/%{veid}/private
   fstype: zfs_compat
-  root_dataset: ""
-  root_path: ""
-  storage_layout: ""
-  user_export: 0
-  user_mount: 0
 
 node2:
   server_name: node2
@@ -20,11 +15,6 @@ node2:
   max_vps: 30
   ve_private: /vz/private/%{veid}/private
   fstype: zfs_compat
-  root_dataset: ""
-  root_path: ""
-  storage_layout: ""
-  user_export: 0
-  user_mount: 0
 
 node3:
   server_name: node1
@@ -34,11 +24,6 @@ node3:
   max_vps: 30
   ve_private: /vz/private/%{veid}/private
   fstype: zfs_compat
-  root_dataset: ""
-  root_path: ""
-  storage_layout: ""
-  user_export: 0
-  user_mount: 0
 
 node4:
   server_name: node4
@@ -48,8 +33,3 @@ node4:
   max_vps: 30
   ve_private: /vz/private/%{veid}/private
   fstype: zfs_compat
-  root_dataset: ""
-  root_path: ""
-  storage_layout: ""
-  user_export: 0
-  user_mount: 0
