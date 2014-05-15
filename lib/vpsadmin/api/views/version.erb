@@ -221,10 +221,15 @@
       <h1>Authorization</h1>
       <p class="authentication">
         <% if current_user %>
-          Logged as <%= current_user.login %> [<a class="logout" href="<%= logout_url %>">logout</a>]<br>
+          Logged as <%= current_user.login %> [<a class="logout" href="<%= logout_url %>">logout</a>]
+        <% else %>
+          <a class="login btn btn-default" href="<%= url("#{root}_login") %>">Login</a>
+        <% end %>
+      </p>
+      <p>
+        <% if current_user %>
           Listing only accessible resources, actions and parameters.
         <% else %>
-          <a class="login" href="<%= url("#{root}_login") %>">Login</a><br>
           Listing all resources, actions and parameters.
         <% end %>
       </p>
