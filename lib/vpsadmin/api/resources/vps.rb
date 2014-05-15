@@ -321,7 +321,7 @@ END
       def exec
         ret = []
 
-        ::Vps.find(with_restricted(params[:vps_id])).vps_configs.all.each do |c|
+        ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).vps_configs.all.each do |c|
           ret << {
               config_id: c.id,
               name: c.name,
@@ -348,7 +348,6 @@ END
 
       def exec
         configs = ::VpsConfig.find(to_db_names(params[:configs]))
-        p configs
       end
     end
   end

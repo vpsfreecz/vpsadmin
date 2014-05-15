@@ -1,4 +1,4 @@
-require_relative '../../spec_helper'
+require 'spec_helper'
 
 shared_examples :does_not_create do
   before(:all) do
