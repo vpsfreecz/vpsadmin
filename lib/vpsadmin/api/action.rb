@@ -33,7 +33,7 @@ module VpsAdmin
 
         def input(namespace=nil, &block)
           if block
-            @input = Params.new(self, namespace || self.resource.to_s.demodulize.underscore)
+            @input = Params.new(:input, self, namespace || self.resource.to_s.demodulize.underscore)
             @input.instance_eval(&block)
             @input.load_validators(model) if model
           else
@@ -43,7 +43,7 @@ module VpsAdmin
 
         def output(namespace=nil, &block)
           if block
-            @output = Params.new(self, namespace || self.resource.to_s.demodulize.underscore)
+            @output = Params.new(:output, self, namespace || self.resource.to_s.demodulize.underscore)
             @output.instance_eval(&block)
           else
             @output
@@ -67,12 +67,16 @@ module VpsAdmin
           prefix + (@route || to_s.demodulize.underscore) % {resource: self.resource.to_s.demodulize.underscore}
         end
 
-        def describe
+        def describe(user)
+          authorization = (@authorization && @authorization.clone) || Authorization.new
+
+          return false if user && !authorization.authorized?(user)
+
           {
               auth: @auth,
               description: @desc,
-              input: @input ? @input.describe : {parameters: {}},
-              output: @output ? @output.describe : {parameters: {}},
+              input: @input ? @input.describe(authorization) : {parameters: {}},
+              output: @output ? @output.describe(authorization) : {parameters: {}},
               example: @example ? @example.describe : {},
           }
         end

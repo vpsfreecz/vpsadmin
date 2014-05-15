@@ -196,8 +196,11 @@
     <h2 id="authorization">Authorization</h2>
     <p>
       Actions may require different levels of authorization. This process is not
-      self-described. Required authorization is usually written in text description
-      of an action.
+      self-described.
+    </p>
+    <p>
+      If the user is authenticated when requesting self-description, only allowed
+      resources/actions/parameters will be returned.
     </p>
 
     <h2 id="io">Input/output formats</h2>
@@ -215,7 +218,18 @@
 
   <div class="col-sm-2 table-of-contents">
     <div class="nav sidebar-nav-fixed" data-spy="affix" data-offset-top="100" data-offset-bottom="200">
-      <h1>Table of contents</h1>
+      <h1>Authorization</h1>
+      <p class="authentication">
+        <% if current_user %>
+          Logged as <%= current_user.login %> [<a class="logout" href="<%= logout_url %>">logout</a>]<br>
+          Listing only accessible resources, actions and parameters.
+        <% else %>
+          <a class="login" href="<%= url("#{root}_login") %>">Login</a><br>
+          Listing all resources, actions and parameters.
+        <% end %>
+      </p>
+
+      <h1>Contents</h1>
       <ul class="top-level">
         <li>
           <a href="#api">API v<%= @v %></a>
@@ -237,7 +251,49 @@
 </div>
 
 <script type="text/javascript">
+  function getHTTPObject() {
+    if (typeof XMLHttpRequest != 'undefined') {
+      return new XMLHttpRequest();
+    } try {
+      return new ActiveXObject("Msxml2.XMLHTTP");
+    } catch (e) {
+      try {
+        return new ActiveXObject("Microsoft.XMLHTTP");
+      } catch (e) {}
+    }
+    return false;
+  }
+
   $(document).ready(function(){
+    // Login/logout user
+    $('.authentication a.login').click(function(event){
+      $.ajax({
+        type: 'GET',
+        url: this.href,
+        async: false,
+        success: function (){
+          window.location.reload();
+        }
+      });
+
+      event.preventDefault();
+    });
+
+    $('.authentication a.logout').click(function(event){
+      $.ajax({
+        type: 'GET',
+        url: this.href,
+        async: true,
+        username: '_log',
+        password: 'out',
+        complete: function() {
+          window.location.reload();
+        }
+      });
+
+      event.preventDefault();
+    });
+
     // Show/hide items in navigation
     $('ul.top-level ul').css('display', 'none');
 

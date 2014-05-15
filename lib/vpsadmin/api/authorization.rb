@@ -11,7 +11,7 @@ module VpsAdmin
         @restrict = []
 
         catch(:rule) do
-          instance_exec(user, &@block)
+          instance_exec(user, &@block) if @block
           deny # will not be called if block throws allow
         end
       end

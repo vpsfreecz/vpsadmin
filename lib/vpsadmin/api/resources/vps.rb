@@ -3,6 +3,10 @@ class VpsAdmin::API::Resources::VPS < VpsAdmin::API::Resource
   model ::Vps
   desc 'Manage VPS'
 
+  params(:id) do
+    id :id, label: 'VPS id'
+  end
+
   params(:template) do
     foreign_key :template_id, label: 'Template', desc: 'id of OS template', db_name: :vps_template
   end
@@ -25,13 +29,14 @@ class VpsAdmin::API::Resources::VPS < VpsAdmin::API::Resource
 
     output(:vpses) do
       list_of_objects
+      use :id
       use :common
     end
 
     authorize do |u|
       allow if u.role == :admin
       restrict m_id: u.m_id
-      output whitelist: %i(vps_id hostname template_id dns_resolver_id node_id backup_enabled)
+      output whitelist: %i(id hostname template_id dns_resolver_id node_id backup_enabled)
       allow
     end
 

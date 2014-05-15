@@ -58,7 +58,8 @@ module VpsAdmin
     class Params
       attr_reader :namespace, :layout, :params
 
-      def initialize(action, namespace)
+      def initialize(direction, action, namespace)
+        @direction = direction
         @params = []
         @action = action
         @namespace = namespace.to_sym
@@ -132,7 +133,7 @@ module VpsAdmin
         end
       end
 
-      def describe
+      def describe(authorization)
         ret = {parameters: {}}
         ret[:layout] = @layout
         ret[:namespace] = @namespace
@@ -140,6 +141,12 @@ module VpsAdmin
 
         @params.each do |p|
           ret[:parameters][p.name] = p.describe
+        end
+
+        if @direction == :input
+          ret[:parameters] = authorization.filter_input(ret[:parameters])
+        else
+          ret[:parameters] = authorization.filter_output(ret[:parameters])
         end
 
         ret

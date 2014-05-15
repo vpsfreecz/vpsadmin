@@ -1,10 +1,9 @@
 class VpsAdmin::API::Server
+  attr_reader :root
+
   module ServerHelpers
     def authenticate!
-      unless authenticated?
-        report_error(401, {'WWW-Authenticate' => 'Basic realm="Restricted Area"'},
-                     'Action requires user to authenticate')
-      end
+      require_auth! unless authenticated?
     end
 
     def authenticated?
@@ -29,12 +28,26 @@ class VpsAdmin::API::Server
       PP.pp(obj, ret)
     end
 
+    def require_auth!
+      report_error(401, {'WWW-Authenticate' => 'Basic realm="Restricted Area"'},
+                   'Action requires user to authenticate')
+    end
+
     def report_error(code, headers, msg)
       halt code, headers, JSON.pretty_generate({
                                                    status: false,
                                                    response: nil,
                                                    message: msg
                                                })
+    end
+
+    def root
+      settings.api_server.root
+    end
+
+    def logout_url
+      ret = url("#{root}_logout")
+      ret.insert(ret.index('//') + 2, '_log:out@')
     end
   end
 
@@ -100,12 +113,25 @@ class VpsAdmin::API::Server
 
     # Mount root
     @sinatra.get @root do
-      @api = settings.api_server.describe
+      @api = settings.api_server.describe(current_user)
       erb :index, layout: :main
     end
 
     @sinatra.options @root do
-      JSON.pretty_generate(settings.api_server.describe)
+      JSON.pretty_generate(settings.api_server.describe(current_user))
+    end
+
+    # Login/logout links
+    @sinatra.get "#{root}_login" do
+      if current_user
+        redirect back
+      else
+        require_auth!
+      end
+    end
+
+    @sinatra.get "#{root}_logout" do
+      require_auth!
     end
 
     @default_version ||= @versions.last
@@ -123,12 +149,12 @@ class VpsAdmin::API::Server
 
     @sinatra.get prefix do
       @v = v
-      @help = settings.api_server.describe_version(v)
+      @help = settings.api_server.describe_version(v, current_user)
       erb :version, layout: :main
     end
 
     @sinatra.options prefix do
-      JSON.pretty_generate(settings.api_server.describe_version(v))
+      JSON.pretty_generate(settings.api_server.describe_version(v, current_user))
     end
 
     VpsAdmin::API.get_version_resources(v).each do |resource|
@@ -203,7 +229,7 @@ class VpsAdmin::API::Server
 
       pass if params[:method] && params[:method] != route_method
 
-      desc = route.action.describe
+      desc = route.action.describe(current_user)
       desc[:url] = route.url
       desc[:method] = route_method
       desc[:help] = "#{route.url}?method=#{route_method}"
@@ -212,50 +238,57 @@ class VpsAdmin::API::Server
     end
   end
 
-  def describe
+  def describe(user)
     ret = {
         default_version: @default_version,
-        versions: {default: describe_version(@default_version)},
+        versions: {default: describe_version(@default_version, user)},
     }
 
     @versions.each do |v|
-      ret[:versions][v] = describe_version(v)
+      ret[:versions][v] = describe_version(v, user)
     end
 
     ret
   end
 
-  def describe_version(v)
+  def describe_version(v, user)
     ret = {resources: {}, help: version_prefix(v)}
 
     #puts JSON.pretty_generate(@routes)
 
     @routes[v].each do |resource, children|
       r_name = resource.to_s.demodulize.underscore
+      r_desc = describe_resource(resource, children, user)
 
-      ret[:resources][r_name] = describe_resource(resource, children)
+      unless r_desc[:actions].empty? && r_desc[:resources].empty?
+        ret[:resources][r_name] = r_desc
+      end
     end
 
     ret
   end
 
-  def describe_resource(r, hash)
+  def describe_resource(r, hash, user)
     ret = {description: r.desc, actions: {}, resources: {}}
 
     hash[:actions].each do |action, url|
       a_name = action.to_s.demodulize.underscore
       route_method = action.http_method.to_s.upcase
 
-      ret[:actions][a_name] = action.describe
-      ret[:actions][a_name].update({
-                                       url: url,
-                                       method: route_method,
-                                       help: "#{url}?method=#{route_method}"
-                                   })
+      a_desc = action.describe(user)
+
+      if a_desc
+        ret[:actions][a_name] = a_desc
+        ret[:actions][a_name].update({
+                                         url: url,
+                                         method: route_method,
+                                         help: "#{url}?method=#{route_method}"
+                                     })
+      end
     end
 
     hash[:resources].each do |resource, children|
-      ret[:resources][resource.to_s.demodulize.underscore] = describe_resource(resource, children)
+      ret[:resources][resource.to_s.demodulize.underscore] = describe_resource(resource, children, user)
     end
 
     ret
