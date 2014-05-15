@@ -1,3 +1,5 @@
+$: << '/home/aither/workspace/vpsfree.cz/dev1.orion/haveapi/lib'
+
 require './lib/vpsadmin/vpsadmin'
 
 #VpsAdmin::API.get_version(:all).each do |r|
@@ -12,7 +14,7 @@ require './lib/vpsadmin/vpsadmin'
 #  end
 #end
 
-api = VpsAdmin::API::Server.new
+api = HaveAPI::Server.new(VpsAdmin::API::Resources)
 api.use_version([1, 2])
 api.set_default_version(1)
 api.mount('/')

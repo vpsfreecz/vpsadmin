@@ -1,4 +1,4 @@
-class VpsAdmin::API::Resources::Environment < VpsAdmin::API::Resource
+class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
   version 1
   model ::Environment
   desc 'Manage environments'
@@ -17,7 +17,7 @@ class VpsAdmin::API::Resources::Environment < VpsAdmin::API::Resource
     use :common
   end
 
-  class Index < VpsAdmin::API::Actions::Default::Index
+  class Index < HaveAPI::Actions::Default::Index
     desc 'List environments'
 
     output(:environments) do
@@ -55,7 +55,7 @@ class VpsAdmin::API::Resources::Environment < VpsAdmin::API::Resource
     end
   end
 
-  class Create < VpsAdmin::API::Actions::Default::Create
+  class Create < HaveAPI::Actions::Default::Create
     desc 'Create new environment'
 
     input do
@@ -95,7 +95,7 @@ class VpsAdmin::API::Resources::Environment < VpsAdmin::API::Resource
     end
   end
 
-  class Show < VpsAdmin::API::Actions::Default::Show
+  class Show < HaveAPI::Actions::Default::Show
     desc 'Show environment'
 
     output do
@@ -124,7 +124,7 @@ class VpsAdmin::API::Resources::Environment < VpsAdmin::API::Resource
     end
   end
 
-  class Update < VpsAdmin::API::Actions::Default::Update
+  class Update < HaveAPI::Actions::Default::Update
     desc 'Update environment'
 
     input do
@@ -154,7 +154,7 @@ class VpsAdmin::API::Resources::Environment < VpsAdmin::API::Resource
     end
   end
 
-  class Delete < VpsAdmin::API::Actions::Default::Delete
+  class Delete < HaveAPI::Actions::Default::Delete
     desc 'Delete environment'
 
     authorize do |u|

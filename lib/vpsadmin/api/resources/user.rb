@@ -1,4 +1,4 @@
-class VpsAdmin::API::Resources::User < VpsAdmin::API::Resource
+class VpsAdmin::API::Resources::User < HaveAPI::Resource
   version 1
   model ::User
   desc 'Manage users'
@@ -23,7 +23,7 @@ class VpsAdmin::API::Resources::User < VpsAdmin::API::Resource
     datetime :deleted_at, label: 'Deleted at', db_name: :m_deleted
   end
 
-  class Index < VpsAdmin::API::Actions::Default::Index
+  class Index < HaveAPI::Actions::Default::Index
     desc 'List users'
 
     output(:users) do
@@ -47,7 +47,7 @@ class VpsAdmin::API::Resources::User < VpsAdmin::API::Resource
     end
   end
 
-  class Create < VpsAdmin::API::Actions::Default::Create
+  class Create < HaveAPI::Actions::Default::Create
     desc 'Create new user'
 
     input do

@@ -4,14 +4,16 @@ require 'active_support'
 require 'rack/test'
 require 'rails'
 require 'json'
+require 'haveapi/spec/helpers'
 require_relative '../lib/vpsadmin/vpsadmin'
 
 # Connect to database
 environment = 'test'
 configuration = YAML::load(File.open('config/database.yml'))
+
 ActiveRecord::Base.establish_connection(configuration[environment])
 
-# Create database, load schema
+# Create database, load schemac
 include ActiveRecord::Tasks
 
 DatabaseTasks.create_current('test')
@@ -24,12 +26,14 @@ fixtures.each do |fixture|
   ActiveRecord::FixtureSet.create_fixtures('spec/fixtures', File.basename(fixture, '.*'))
 end
 
+HaveAPI.set_module_name(VpsAdmin::API::Resources)
+
 # Configure specs
 RSpec.configure do |config|
   config.order = 'random'
 
-  config.extend VpsAdmin::API::ApiBuilder
-  config.include VpsAdmin::API::SpecMethods
+  config.extend HaveAPI::ApiBuilder
+  config.include HaveAPI::SpecMethods
 
   config.around(:each) do |test|
     ActiveRecord::Base.transaction do

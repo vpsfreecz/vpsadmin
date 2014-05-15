@@ -32,7 +32,7 @@ describe 'Vps.index' do
       user = User.find_by!(m_nick: 'user01')
 
       api_response[:vpses].each do |vps|
-        expect(Vps.find(vps[:vps_id]).m_id).to eq(user.id)
+        expect(Vps.find(vps[:id]).m_id).to eq(user.id)
       end
     end
   end

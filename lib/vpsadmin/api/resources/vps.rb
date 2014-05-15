@@ -1,10 +1,10 @@
-class VpsAdmin::API::Resources::VPS < VpsAdmin::API::Resource
+class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   version 1
   model ::Vps
   desc 'Manage VPS'
 
   params(:id) do
-    id :id, label: 'VPS id'
+    id :id, label: 'VPS id', db_name: :vps_id
   end
 
   params(:template) do
@@ -24,7 +24,7 @@ class VpsAdmin::API::Resources::VPS < VpsAdmin::API::Resource
     string :config, label: 'Config', desc: 'Custom configuration options', db_name: :vps_config
   end
 
-  class Index < VpsAdmin::API::Actions::Default::Index
+  class Index < HaveAPI::Actions::Default::Index
     desc 'List VPS'
 
     output(:vpses) do
@@ -44,7 +44,7 @@ class VpsAdmin::API::Resources::VPS < VpsAdmin::API::Resource
       request({})
       response({vpses: [
         {
-            vps_id: 150,
+            id: 150,
             user_id: 1,
             hostname: 'thehostname',
             template_id: 1,
@@ -64,7 +64,7 @@ class VpsAdmin::API::Resources::VPS < VpsAdmin::API::Resource
 
       Vps.where(with_restricted).each do |vps|
         ret << {
-          vps_id: vps.id,
+          id: vps.id,
           hostname: vps.hostname,
           template_id: vps.os_template.id,
           info: vps.vps_info,
@@ -81,7 +81,7 @@ class VpsAdmin::API::Resources::VPS < VpsAdmin::API::Resource
     end
   end
 
-  class Create < VpsAdmin::API::Actions::Default::Create
+  class Create < HaveAPI::Actions::Default::Create
     desc 'Create VPS'
 
     input(:vps) do
@@ -143,7 +143,7 @@ END
     end
   end
 
-  class Show < VpsAdmin::API::Actions::Default::Show
+  class Show < HaveAPI::Actions::Default::Show
     desc 'Show VPS properties'
 
     output do
@@ -174,7 +174,7 @@ END
     end
   end
 
-  class Update < VpsAdmin::API::Actions::Default::Update
+  class Update < HaveAPI::Actions::Default::Update
     desc 'Update VPS'
 
     input do
@@ -199,11 +199,11 @@ END
     end
   end
 
-  class Delete < VpsAdmin::API::Actions::Default::Delete
+  class Delete < HaveAPI::Actions::Default::Delete
 
   end
 
-  class Start < VpsAdmin::API::Action
+  class Start < HaveAPI::Action
     desc 'Start VPS'
     route ':%{resource}_id/start'
     http_method :post
@@ -220,7 +220,7 @@ END
     end
   end
 
-  class Restart < VpsAdmin::API::Action
+  class Restart < HaveAPI::Action
     desc 'Restart VPS'
     route ':%{resource}_id/restart'
     http_method :post
@@ -237,7 +237,7 @@ END
     end
   end
 
-  class Stop < VpsAdmin::API::Action
+  class Stop < HaveAPI::Action
     desc 'Stop VPS'
     route ':%{resource}_id/stop'
     http_method :post
@@ -254,7 +254,7 @@ END
     end
   end
 
-  class Passwd < VpsAdmin::API::Action
+  class Passwd < HaveAPI::Action
     desc 'Set root password'
     route ':%{resource}_id/passwd'
     http_method :post
@@ -274,7 +274,7 @@ END
     end
   end
 
-  class Reinstall < VpsAdmin::API::Action
+  class Reinstall < HaveAPI::Action
     desc 'Reinstall VPS'
     route ':%{resource}_id/reinstall'
     http_method :post
@@ -301,12 +301,12 @@ END
     end
   end
 
-  class Config < VpsAdmin::API::Resource
+  class Config < HaveAPI::Resource
     version 1
     route ':vps_id/configs'
     desc 'Manage VPS configs'
 
-    class Index < VpsAdmin::API::Actions::Default::Index
+    class Index < HaveAPI::Actions::Default::Index
       desc 'List VPS configs'
 
       output(:configs) do
@@ -338,7 +338,7 @@ END
       end
     end
 
-    class Update < VpsAdmin::API::Actions::Default::Update
+    class Update < HaveAPI::Actions::Default::Update
       desc 'Update VPS configs'
 
       input(:configs) do
@@ -357,7 +357,7 @@ END
     end
   end
 
-  class IpAddress < VpsAdmin::API::Resource
+  class IpAddress < HaveAPI::Resource
     version 1
     model ::IpAddress
     route ':vps_id/ip_addresses'
@@ -369,7 +369,7 @@ END
       integer :version, label: 'IP version', desc: '4 or 6', db_name: :ip_v
     end
 
-    class Index < VpsAdmin::API::Actions::Default::Index
+    class Index < HaveAPI::Actions::Default::Index
       desc 'List VPS IP addresses'
 
       input(:ip_addresses) do
@@ -402,7 +402,7 @@ END
       end
     end
 
-    class Create < VpsAdmin::API::Actions::Default::Create
+    class Create < HaveAPI::Actions::Default::Create
       desc 'Assign IP address to VPS'
 
       input do
@@ -440,7 +440,7 @@ END
       end
     end
 
-    class Delete < VpsAdmin::API::Actions::Default::Delete
+    class Delete < HaveAPI::Actions::Default::Delete
       desc 'Free IP address'
 
       authorize do |u|
@@ -453,7 +453,7 @@ END
       end
     end
 
-    class DeleteAll < VpsAdmin::API::Action
+    class DeleteAll < HaveAPI::Action
       desc 'Free all IP addresses'
       route ''
       http_method :delete

@@ -1,4 +1,4 @@
-class VpsAdmin::API::Resources::IpAddress < VpsAdmin::API::Resource
+class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
   version 1
   model ::IpAddress
   desc 'Manage IP addresses'
@@ -25,7 +25,7 @@ class VpsAdmin::API::Resources::IpAddress < VpsAdmin::API::Resource
     use :common
   end
 
-  class Index < VpsAdmin::API::Actions::Default::Index
+  class Index < HaveAPI::Actions::Default::Index
     desc 'List IP addresses'
 
     input(:ip_addresses) do

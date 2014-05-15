@@ -1,4 +1,4 @@
-class VpsAdmin::API::Resources::Location < VpsAdmin::API::Resource
+class VpsAdmin::API::Resources::Location < HaveAPI::Resource
   version 1
   model ::Location
   desc 'Manage locations'
@@ -25,7 +25,7 @@ class VpsAdmin::API::Resources::Location < VpsAdmin::API::Resource
     use :common
   end
 
-  class Index < VpsAdmin::API::Actions::Default::Index
+  class Index < HaveAPI::Actions::Default::Index
     desc 'List locations'
 
     output(:locations) do
@@ -64,7 +64,7 @@ class VpsAdmin::API::Resources::Location < VpsAdmin::API::Resource
     end
   end
 
-  class Create < VpsAdmin::API::Actions::Default::Create
+  class Create < HaveAPI::Actions::Default::Create
     desc 'Create new location'
 
     input do
@@ -109,7 +109,7 @@ class VpsAdmin::API::Resources::Location < VpsAdmin::API::Resource
     end
   end
 
-  class Show < VpsAdmin::API::Actions::Default::Show
+  class Show < HaveAPI::Actions::Default::Show
     desc 'Show location'
 
     output do
@@ -140,7 +140,7 @@ class VpsAdmin::API::Resources::Location < VpsAdmin::API::Resource
     end
   end
 
-  class Update < VpsAdmin::API::Actions::Default::Update
+  class Update < HaveAPI::Actions::Default::Update
     desc 'Update location'
 
     input do
@@ -176,7 +176,7 @@ class VpsAdmin::API::Resources::Location < VpsAdmin::API::Resource
     end
   end
 
-  class Delete < VpsAdmin::API::Actions::Default::Delete
+  class Delete < HaveAPI::Actions::Default::Delete
     desc 'Delete location'
 
     authorize do |u|

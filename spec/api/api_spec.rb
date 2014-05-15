@@ -11,7 +11,7 @@ describe 'The API' do
     expect(last_response).to be_ok
   end
 
-  VpsAdmin::API.get_versions.each do |v|
+  HaveAPI.get_versions(VpsAdmin::API::Resources).each do |v|
     it "responds to GET /v#{v}/" do
       get "/v#{v}/"
       expect(last_response).to be_ok
