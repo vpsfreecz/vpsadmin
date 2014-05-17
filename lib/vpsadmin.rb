@@ -16,6 +16,6 @@ module VpsAdmin
   end
 end
 
-require_rel 'api/crypto_provider'
-require_rel '../../models'
-require_rel 'api'
+require_relative 'vpsadmin/api/crypto_provider'
+require_rel '../models'
+require_relative 'vpsadmin/api'

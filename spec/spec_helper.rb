@@ -5,7 +5,7 @@ require 'rack/test'
 require 'rails'
 require 'json'
 require 'haveapi/spec/helpers'
-require_relative '../lib/vpsadmin/vpsadmin'
+require_relative '../lib/vpsadmin'
 
 # Connect to database
 environment = 'test'
@@ -27,6 +27,7 @@ fixtures.each do |fixture|
 end
 
 HaveAPI.set_module_name(VpsAdmin::API::Resources)
+HaveAPI.set_default_authenticate(&VpsAdmin::API.authenticate)
 
 # Configure specs
 RSpec.configure do |config|

@@ -1,6 +1,6 @@
 require 'active_record'
 require 'sinatra/activerecord/rake'
-require './lib/vpsadmin/vpsadmin'
+require './lib/vpsadmin'
 
 require 'rspec/core'
 require 'rspec/core/rake_task'
