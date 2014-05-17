@@ -2,4 +2,4 @@
 
 require 'vpsadminctl/cli'
 
-Vpsadminctl::CLI::Cli.run
+Vpsadminctl::Cli.run
