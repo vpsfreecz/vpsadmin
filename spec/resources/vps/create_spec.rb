@@ -7,7 +7,7 @@ describe 'Vps.create' do
     it 'does not create a VPS' do
       post '/v1/vpses', {vps: {
           hostname: 'justatest',
-          template_id: OsTemplate.take!.id,
+          os_template_id: OsTemplate.take!.id,
           dns_resolver_id: DnsResolver.take!.id
       }}
 
@@ -31,7 +31,7 @@ describe 'Vps.create' do
         api :post, '/v1/vpses', {vps: {
             user_id: User.take!.id,
             hostname: 'justatest',
-            template_id: OsTemplate.take!.id,
+            os_template_id: OsTemplate.take!.id,
             dns_resolver_id: DnsResolver.take!.id,
             node_id: Node.take!.id,
         }}
@@ -43,7 +43,7 @@ describe 'Vps.create' do
         api :post, '/v1/vpses', {vps: {
             user_id: 9999,
             hostname: 'justatest',
-            template_id: OsTemplate.take!.id,
+            os_template_id: OsTemplate.take!.id,
             dns_resolver_id: DnsResolver.take!.id,
             node_id: Node.take!.id,
         }}
@@ -55,7 +55,7 @@ describe 'Vps.create' do
         api :post, '/v1/vpses', {vps: {
             user_id: User.take!.id,
             hostname: 'justatest',
-            template_id: OsTemplate.take!.id,
+            os_template_id: OsTemplate.take!.id,
             dns_resolver_id: DnsResolver.take!.id,
             node_id: 9999,
         }}
@@ -67,7 +67,7 @@ describe 'Vps.create' do
         api :post, '/v1/vpses', {vps: {
             user_id: User.take!.id,
             hostname: 'justatest',
-            template_id: 9999,
+            os_template_id: 9999,
             dns_resolver_id: DnsResolver.take!.id,
             node_id: Node.take!.id,
         }}
@@ -79,7 +79,7 @@ describe 'Vps.create' do
         api :post, '/v1/vpses', {vps: {
             user_id: User.take!.id,
             hostname: 'justatest',
-            template_id: OsTemplate.take!.id,
+            os_template_id: OsTemplate.take!.id,
             dns_resolver_id: 9999,
             node_id: Node.take!.id,
         }}

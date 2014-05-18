@@ -9,7 +9,7 @@ describe 'Vps.reinstall' do
     it 'reinstalls own VPS' do
       api :post, "/v1/vpses/#{User.find_by!(m_nick: 'user01').vpses.take.id}/reinstall", {
           vps: {
-            template_id: OsTemplate.take!.id
+              os_template_id: OsTemplate.take!.id
           }
       }
 
@@ -19,7 +19,7 @@ describe 'Vps.reinstall' do
     it "does not reinstalls somebody else's VPS" do
       api :post, "/v1/vpses/#{User.find_by!(m_nick: 'user02').vpses.take.id}/reinstall", {
           vps: {
-            template_id: OsTemplate.take!.id
+              os_template_id: OsTemplate.take!.id
           }
       }
 
@@ -33,7 +33,7 @@ describe 'Vps.reinstall' do
     it 'reinstalls any VPS' do
       api :post, "/v1/vpses/#{User.find_by!(m_nick: 'user01').vpses.take.id}/reinstall", {
           vps: {
-            template_id: OsTemplate.take!.id
+              os_template_id: OsTemplate.take!.id
           }
       }
 
@@ -43,7 +43,7 @@ describe 'Vps.reinstall' do
     it 'does not reinstall with invalid template' do
       api :post, "/v1/vpses/#{User.find_by!(m_nick: 'user01').vpses.take.id}/reinstall", {
           vps: {
-            template_id: 9999
+              os_template_id: 9999
           }
       }
 

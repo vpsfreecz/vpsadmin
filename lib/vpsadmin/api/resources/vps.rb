@@ -8,7 +8,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   end
 
   params(:template) do
-    foreign_key :template_id, label: 'Template', desc: 'id of OS template', db_name: :vps_template
+    foreign_key :os_template_id, label: 'Template', desc: 'id of OS template',
+                db_name: :vps_template
   end
 
   params(:common) do
@@ -44,7 +45,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict m_id: u.m_id
-      output whitelist: %i(id hostname template_id dns_resolver_id node_id backup_enabled)
+      output whitelist: %i(id hostname os_template_id dns_resolver_id node_id backup_enabled)
       allow
     end
 
@@ -55,7 +56,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
             id: 150,
             user_id: 1,
             hostname: 'thehostname',
-            template_id: 1,
+            os_template_id: 1,
             info: 'My very important VPS',
             dns_resolver_id: 1,
             node_id: 1,
@@ -74,7 +75,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         ret << {
           id: vps.id,
           hostname: vps.hostname,
-          template_id: vps.os_template.id,
+          os_template_id: vps.os_template.id,
           info: vps.vps_info,
           dns_resolver_id: 1,
           node_id: vps.node.id,
@@ -103,7 +104,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(hostname template_id dns_resolver_id)
+      input whitelist: %i(hostname os_template_id dns_resolver_id)
       allow
     end
 
@@ -112,7 +113,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         vps: {
           user_id: 1,
           hostname: 'my-vps',
-          template_id: 1,
+          os_template_id: 1,
           info: '',
           dns_resolver_id: 1,
           node_id: 1,
@@ -192,7 +193,7 @@ END
     authorize do |u|
       allow if u.role == :admin
       restrict m_id: u.m_id
-      input whitelist: %i(hostname template_id dns_resolver_id)
+      input whitelist: %i(hostname os_template_id dns_resolver_id)
       allow
     end
 
@@ -319,7 +320,7 @@ END
     def exec
       vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
 
-      if vps.update(os_template: ::OsTemplate.find_by!(templ_id: params[:vps][:template_id], templ_enabled: true))
+      if vps.update(os_template: ::OsTemplate.find_by!(templ_id: params[:vps][:os_template_id], templ_enabled: true))
         vps.reinstall
         ok
       else
