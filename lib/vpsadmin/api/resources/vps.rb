@@ -242,7 +242,7 @@ END
     end
 
     def exec
-      ::Vps.find(params[:vps_id]).start
+      ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).start
       ok
     end
   end
@@ -259,7 +259,7 @@ END
     end
 
     def exec
-      ::Vps.find(params[:vps_id]).restart
+      ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).restart
       ok
     end
   end
@@ -276,7 +276,7 @@ END
     end
 
     def exec
-      ::Vps.find(params[:vps_id]).stop
+      ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).stop
       ok
     end
   end

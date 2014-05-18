@@ -35,8 +35,6 @@ class Vps < ActiveRecord::Base
     self.vps_backup_exclude = ''
     self.vps_config = ''
 
-    p attributes
-
     if save
       set_config_chain(VpsConfig.default_config_chain(node.location))
 
