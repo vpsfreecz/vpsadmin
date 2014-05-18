@@ -34,4 +34,19 @@ class Node < ActiveRecord::Base
   def fqdn
     "#{name}.#{location.fqdn}"
   end
+
+  def self.pick_node_by_location_type(loc_type)
+    self.joins('
+      LEFT JOIN vps ON vps.vps_server = servers.server_id
+      LEFT JOIN vps_status st ON st.vps_id = vps.vps_id
+      INNER JOIN locations l ON server_location = location_id
+    ').where('
+      (st.vps_up = 1 OR st.vps_up IS NULL)
+      AND max_vps > 0
+      AND server_maintenance = 0
+      AND location_type = ?
+    ', loc_type).group('server_id')
+    .order('COUNT(st.vps_up) / max_vps ASC')
+    .take
+  end
 end

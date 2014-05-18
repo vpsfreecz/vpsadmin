@@ -137,13 +137,30 @@ END
     def exec
       vps_params = params[:vps]
 
-      if current_user.role != :admin
-        vps_params[:user_id] = current_user.m_id
+      unless current_user.role == :admin
+        unless current_user.can_use_playground?
+          error('playground disabled or VPS already exists')
+        end
+
+        vps_params.update({
+            user_id: current_user.m_id,
+            vps_server: ::Node.pick_node_by_location_type('playground').id,
+            vps_expiration: Time.new.to_i +
+                            SysConfig.get('playground_vps_lifetime')* 24 * 60 * 60
+        })
       end
 
       vps = ::Vps.new(to_db_names(vps_params))
 
       if vps.create
+        unless current_user.role == :admin
+          vps.add_ip(::IpAddress.pick_addr!(vps.node.location, 4))
+
+          if vps.node.location.has_ipv6
+            vps.add_ip(::IpAddress.pick_addr!(vps.node.location, 6))
+          end
+        end
+
         ok({vps_id: vps.id})
 
       else
@@ -454,7 +471,7 @@ END
         vps = ::Vps.find(params[:vps_id])
 
         if !params[:ip_address][:id] || params[:ip_address][:id] == 0
-          ip = ::IpAddress.where(ip_v: params[:ip_address][:version], location: vps.node.location).where('vps_id IS NULL OR vps_id = 0').order(:ip_id).take!
+          ip = ::IpAddress.pick_addr!(vps.node.location, params[:ip_address][:version])
         else
           ip = ::IpAddress.find_by!(ip_id: params[:ip_address][:id], location: vps.node.location)
         end

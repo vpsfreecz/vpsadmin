@@ -79,6 +79,20 @@ class User < ActiveRecord::Base
     VpsAdmin::API::CryptoProvider.matches?(m_pass, *credentials)
   end
 
+  def can_use_playground?
+    return false if !m_playground_enable || !SysConfig.get('playground_enabled')
+
+    cnt = Vps.joins('
+      INNER JOIN servers ON vps_server = server_id
+		  INNER JOIN locations ON location_id = server_location
+    ').where(
+        'm_id = ? AND location_type = ? AND vps_deleted IS NULL',
+        m_id, 'playground'
+    ).count
+
+    cnt > 0 ? false : true
+  end
+
   def self.authenticate(username, password)
     u = User.find_by(m_nick: username)
 

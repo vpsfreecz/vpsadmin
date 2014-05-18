@@ -35,6 +35,8 @@ class Vps < ActiveRecord::Base
     self.vps_backup_exclude = ''
     self.vps_config = ''
 
+    self.dns_resolver_id ||= DnsResolver.pick_suitable_resolver_for_vps(self).id
+
     if save
       set_config_chain(VpsConfig.default_config_chain(node.location))
 

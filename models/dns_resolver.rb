@@ -8,4 +8,11 @@ class DnsResolver < ActiveRecord::Base
   validates :dns_ip, :dns_label, presence: true
 
   alias_attribute :addr, :dns_ip
+
+  def self.pick_suitable_resolver_for_vps(vps)
+    self.where(
+      'dns_location = ? OR dns_is_universal = 1',
+      vps.node.location.id
+    ).order(:dns_is_universal).take
+  end
 end

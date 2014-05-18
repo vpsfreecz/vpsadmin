@@ -8,6 +8,7 @@ class Location < ActiveRecord::Base
   has_paper_trail
 
   alias_attribute :label, :location_label
+  alias_attribute :has_ipv6, :location_has_ipv6
 
   validates :location_label, :location_has_ipv6, :location_vps_onboot,
             :environment_id, :domain, presence: true

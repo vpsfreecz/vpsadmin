@@ -11,4 +11,10 @@ class IpAddress < ActiveRecord::Base
   def free?
     vps_id.nil? || vps_id == 0
   end
+
+  def self.pick_addr!(location, v)
+    self.where(ip_v: v, location: location)
+      .where('vps_id IS NULL OR vps_id = 0')
+      .order(:ip_id).take!
+  end
 end
