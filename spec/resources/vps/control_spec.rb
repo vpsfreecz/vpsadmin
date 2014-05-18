@@ -8,13 +8,13 @@ require 'spec_helper'
       login('user01', 1234)
 
       it "#{action}s own VPS" do
-        api :post, "/v1/vpses/#{User.find_by!(m_nick: 'user01').vpses.all.take.id}/#{action}"
+        api :post, "/v1/vpses/#{User.find_by!(m_nick: 'user01').vpses.take.id}/#{action}"
 
         expect(api_response).to be_ok
       end
 
       it "does not #{action} somebody else's VPS" do
-        api :post, "/v1/vpses/#{User.find_by!(m_nick: 'user02').vpses.all.take.id}/#{action}"
+        api :post, "/v1/vpses/#{User.find_by!(m_nick: 'user02').vpses.take.id}/#{action}"
 
         expect(api_response).to be_failed
       end

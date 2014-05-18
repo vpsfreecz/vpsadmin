@@ -130,7 +130,7 @@ class Vps < ActiveRecord::Base
   private
   def generate_password
     chars = ('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a
-    (0..20).map { chars.sample }.join
+    (0..19).map { chars.sample }.join
   end
 
   def hostname_changed
