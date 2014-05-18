@@ -28,6 +28,8 @@ class User < ActiveRecord::Base
       message: '%{value} is not a valid user state'
   }
 
+  default_scope { where.not(m_state: 'deleted') }
+
   ROLES = {
       1 => 'Poor user',
       2 => 'User',
@@ -36,6 +38,16 @@ class User < ActiveRecord::Base
       90 => 'Super admin',
       99 => 'God',
   }
+
+  def lazy_delete(lazy)
+    if lazy
+      self.m_deleted = Time.new.to_i
+      self.m_state = 'deleted'
+      save!
+    else
+      destroy
+    end
+  end
 
   def role
     if m_level >= 90

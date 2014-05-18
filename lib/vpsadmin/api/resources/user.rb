@@ -63,6 +63,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def exec
+      puts "------------_>\n\n"
+      p params[:user]
+      puts "<-----------\n\n"
       user = ::User.new(to_db_names(params[:user]))
 
       if user.save

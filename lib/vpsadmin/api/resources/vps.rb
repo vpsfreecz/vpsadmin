@@ -13,15 +13,23 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
   params(:common) do
     foreign_key :user_id, label: 'User', desc: 'VPS owner', db_name: :m_id
-    string :hostname, desc: 'VPS hostname', db_name: :vps_hostname
+    string :hostname, desc: 'VPS hostname', db_name: :vps_hostname,
+           required: true
     use :template
     string :info, label: 'Info', desc: 'VPS description', db_name: :vps_info
-    foreign_key :dns_resolver_id, label: 'DNS resolver', desc: 'DNS resolver the VPS will use'
-    integer :node_id, label: 'Node', desc: 'Node VPS will run on', db_name: :vps_server
-    bool :onboot, label: 'On boot', desc: 'Start VPS on node boot?', db_name: :vps_onboot
-    bool :onstartall, label: 'On start all', desc: 'Start VPS on start all action?', db_name: :vps_onstartall
-    bool :backup_enabled, label: 'Enable backups', desc: 'Toggle VPS backups', db_name: :vps_backup_enabled
-    string :config, label: 'Config', desc: 'Custom configuration options', db_name: :vps_config
+    foreign_key :dns_resolver_id, label: 'DNS resolver',
+                desc: 'DNS resolver the VPS will use'
+    integer :node_id, label: 'Node', desc: 'Node VPS will run on',
+            db_name: :vps_server
+    bool :onboot, label: 'On boot', desc: 'Start VPS on node boot?',
+         db_name: :vps_onboot, default: true
+    bool :onstartall, label: 'On start all',
+         desc: 'Start VPS on start all action?', db_name: :vps_onstartall,
+         default: true
+    bool :backup_enabled, label: 'Enable backups', desc: 'Toggle VPS backups',
+         db_name: :vps_backup_enabled, default: true
+    string :config, label: 'Config', desc: 'Custom configuration options',
+           db_name: :vps_config, default: ''
   end
 
   class Index < HaveAPI::Actions::Default::Index
@@ -200,7 +208,26 @@ END
   end
 
   class Delete < HaveAPI::Actions::Default::Delete
+    desc 'Delete VPS'
 
+    input do
+      bool :lazy, label: 'Lazy delete', desc: 'Only mark VPS as deleted',
+           default: true
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+      restrict m_id: u.m_id
+      input whitelist: []
+      allow
+    end
+
+    def exec
+      ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).lazy_delete(
+          current_user.role == :admin ? params[:vps][:lazy] : true
+      )
+      ok
+    end
   end
 
   class Start < HaveAPI::Action

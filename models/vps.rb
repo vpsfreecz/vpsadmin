@@ -11,7 +11,7 @@ class Vps < ActiveRecord::Base
 
   has_many :vps_has_config, -> { order '`order`' }
   has_many :vps_configs, through: :vps_has_config
-  has_many :vps_mounts
+  has_many :vps_mounts, dependent: :delete_all
 
   has_paper_trail
 
@@ -26,12 +26,16 @@ class Vps < ActiveRecord::Base
   }
   validate :foreign_keys_exist
 
+  default_scope { where(vps_deleted: nil) }
+
   after_update :hostname_changed, if: :vps_hostname_changed?
 
   def create
     self.vps_backup_export = 0
     self.vps_backup_exclude = ''
     self.vps_config = ''
+
+    p attributes
 
     if save
       set_config_chain(VpsConfig.default_config_chain(node.location))
@@ -45,6 +49,23 @@ class Vps < ActiveRecord::Base
     else
       false
     end
+  end
+
+  def lazy_delete(lazy)
+    if lazy
+      self.vps_deleted = Time.new.to_i
+      save!
+      stop
+    else
+      destroy
+    end
+  end
+
+  def destroy
+    delete_mounts
+    delete_ips
+    Transactions::Vps::Destroy.fire(self)
+    super
   end
 
   def start
@@ -140,5 +161,9 @@ class Vps < ActiveRecord::Base
 
       mnt.save!
     end
+  end
+
+  def delete_mounts
+    self.vps_mounts.delete(self.vps_mounts.all)
   end
 end
