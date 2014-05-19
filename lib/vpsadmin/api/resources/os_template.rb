@@ -45,6 +45,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
       request({})
       response({
          os_templates: [{
+             id: 26,
              name: 'scientific-6-x86_64',
              label: 'Scientific Linux 6',
              info: 'Some important notes',
