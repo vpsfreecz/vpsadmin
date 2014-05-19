@@ -27,7 +27,7 @@ class cluster_node {
 		
 		switch ($row["server_type"]) {
 			case "node":
-				$this->role = $db->findByColumnOnce("node_node", "node_id", $row["server_id"]);
+				$this->role = $row;
 				break;
 				
 			case "storage":
@@ -81,15 +81,11 @@ class cluster_node {
 		
 		switch ($data["server_type"]) {
 			case "node":
-				$sql = "INSERT INTO node_node SET
-				        node_id = ".$db->check($this->s["server_id"]).",
+				$sql = "UPDATE servers SET
 				        max_vps = '".$db->check($data["max_vps"])."',
 				        ve_private = '".$db->check($data["ve_private"])."',
 				        fstype = '".$db->check($data["fstype"])."'
-				        ON DUPLICATE KEY UPDATE
-				        max_vps = '".$db->check($data["max_vps"])."',
-				        ve_private = '".$db->check($data["ve_private"])."',
-				        fstype = '".$db->check($data["fstype"])."'";
+				        WHERE server_id = ".$this->s["server_id"];
 				$db->query($sql);
 				break;
 			
@@ -342,14 +338,13 @@ class cluster {
       * @param $info - Note for admins
       * @return descriptor of SQL result
       */
-    function set_template($id = NULL, $name, $label, $info = "", $special = "", $enabled = 1, $supported = 1, $order = 1) {
+    function set_template($id = NULL, $name, $label, $info = "", $enabled = 1, $supported = 1, $order = 1) {
 	global $db;
 	if ($id != NULL)
 	    $sql = 'UPDATE cfg_templates
 			SET templ_name = "'.$db->check($name).'",
 			    templ_label = "'.$db->check($label).'",
 			    templ_info = "'.$db->check($info).'",
-			    special = "'.$db->check($special).'",
 			    templ_enabled = "'.$db->check($enabled).'",
 			    templ_supported = "'.$db->check($supported).'",
 			    templ_order = "'.$db->check($order).'"
@@ -359,7 +354,6 @@ class cluster {
 			SET templ_name = "'.$db->check($name).'",
 			    templ_label = "'.$db->check($label).'",
 			    templ_info = "'.$db->check($info).'",
-			    special = "'.$db->check($special).'",
 			    templ_enabled = "'.$db->check($enabled).'",
 			    templ_supported = "'.$db->check($supported).'",
 			    templ_order = "'.$db->check($order).'"';
@@ -476,36 +470,25 @@ class cluster {
 		return $row;
 	return false;
     }
-    function set_location($id = NULL, $label, $type, $has_ipv6 = false, $onboot, $has_ospf, $has_rdiff,
-    						$rd_hist, $rd_sshfs, $rd_archfs, $tpl_sync_path, $remote_console_server) {
+    function set_location($id = NULL, $label, $type, $has_ipv6 = false, $onboot, $remote_console_server, $domain) {
 	global $db;
 	if ($id != NULL)
 	    $sql = 'UPDATE locations
 			SET location_label = "'.$db->check($label).'",
 			    location_type = "'.$db->check($type).'",
 			    location_has_ipv6 = "'.$db->check($has_ipv6).'",
-			    location_has_ospf = "'.$db->check($has_ospf).'",
-			    location_has_rdiff_backup = "'.$db->check($has_rdiff).'",
-			    location_rdiff_history = "'.$db->check($rd_hist).'",
-			    location_rdiff_mount_sshfs = "'.$db->check($rd_sshfs).'",
-			    location_rdiff_mount_archfs = "'.$db->check($rd_archfs).'",
-			    location_tpl_sync_path = "'.$db->check($tpl_sync_path).'",
 			    location_remote_console_server = "'.$db->check($remote_console_server).'",
-			    location_vps_onboot = "'.$db->check($onboot).'"
+			    location_vps_onboot = "'.$db->check($onboot).'",
+			    domain = "'.$db->check($domain).'"
 			WHERE location_id = "'.$db->check($id).'"';
 	else
 	    $sql = 'INSERT INTO locations
 			SET location_label = "'.$db->check($label).'",
 			    location_type = "'.$db->check($type).'",
 			    location_has_ipv6 = "'.$db->check($has_ipv6).'",
-			    location_has_ospf = "'.$db->check($has_ospf).'",
-			    location_has_rdiff_backup = "'.$db->check($has_rdiff).'",
-			    location_rdiff_history = "'.$db->check($rd_hist).'",
-			    location_rdiff_mount_sshfs = "'.$db->check($rd_sshfs).'",
-			    location_rdiff_mount_archfs = "'.$db->check($rd_archfs).'",
-			    location_tpl_sync_path = "'.$db->check($tpl_sync_path).'",
 			    location_remote_console_server = "'.$db->check($remote_console_server).'",
-			    location_vps_onboot = "'.$db->check($onboot).'"';
+			    location_vps_onboot = "'.$db->check($onboot).'",
+			    domain = "'.$db->check($domain).'"';
 	return ($db->query($sql));
     }
     function list_locations($ipv6_only = false) {
@@ -579,7 +562,7 @@ class cluster {
 	    $sql .= ' WHERE dns_location="'.$db->check($location_id).'" OR dns_is_universal=1';
 	if ($result = $db->query($sql)) {
 	    while ($row = $db->fetch_array($result)) {
-		$ret[$row["dns_ip"]] = $row["dns_label"];
+		$ret[$row["dns_id"]] = $row["dns_label"];
 	    }
 	return $ret;
 	}
@@ -612,7 +595,7 @@ class cluster {
 	$sql = 'SELECT * FROM cfg_dns WHERE (dns_location="'.$db->check($location).'") OR (dns_is_universal = 1) ORDER BY dns_is_universal LIMIT 1';
 	if ($result = $db->query($sql))
 	    if ($row = $db->fetch_array($result))
-		return $row["dns_ip"];
+		return $row["dns_id"];
 	    else die (_("Please define some DNS servers in Manage cluster."));
 	else die (_("Please define some DNS servers in Manage cluster."));
     }

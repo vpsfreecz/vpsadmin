@@ -154,7 +154,7 @@ function mount_edit_form($target, $m, $default = false) {
 	if ($_SESSION["is_admin"]) {
 		$xtpl->form_add_input(_("Mount options").':', 'text', '50', 'm_opts', $_POST["m_opts"] ? $_POST["m_opts"] : $m["mount_opts"], '');
 		$xtpl->form_add_input(_("Umount options").':', 'text', '50', 'u_opts', $_POST["u_opts"] ? $_POST["u_opts"] : $m["umount_opts"], '');
-		$xtpl->form_add_select(_("Type").':', 'type', $STORAGE_MOUNT_TYPES, $_POST["type"] ? $_POST["type"] : $m["type"]);
+		$xtpl->form_add_select(_("Type").':', 'type', $STORAGE_MOUNT_TYPES, $_POST["type"] ? $_POST["type"] : $m["mount_type"]);
 	}
 	$xtpl->form_add_input(_("Pre-mount command").':', 'text', '50', 'cmd_premount', $_POST["cmd_premount"] ? $_POST["cmd_premount"] : $m["cmd_premount"], _("Command that is executed within VPS context <strong>before</strong> mount"));
 	$xtpl->form_add_input(_("Post-mount command").':', 'text', '50', 'cmd_postmount', $_POST["cmd_postmount"] ? $_POST["cmd_postmount"] : $m["cmd_postmount"], _("Command that is executed within VPS context <strong>after</strong> mount"));

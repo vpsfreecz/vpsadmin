@@ -188,7 +188,6 @@ function pick_playground_server() {
 	        FROM servers s
 	        LEFT JOIN vps v ON v.vps_server = s.server_id
 	        LEFT JOIN vps_status st ON v.vps_id = st.vps_id
-	        INNER JOIN node_node n ON n.node_id = s.server_id
 	        INNER JOIN locations l ON server_location = l.location_id
 	        WHERE
 	          (st.vps_up = 1 OR st.vps_up IS NULL)
@@ -216,7 +215,6 @@ function pick_free_node($location) {
 	        FROM servers s
 	        LEFT JOIN vps v ON v.vps_server = s.server_id
 	        LEFT JOIN vps_status st ON v.vps_id = st.vps_id
-	        INNER JOIN node_node n ON n.node_id = s.server_id
 	        WHERE
 	          (st.vps_up = 1 OR st.vps_up IS NULL)
 	          AND server_location = ".$db->check($location)."

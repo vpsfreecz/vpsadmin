@@ -123,21 +123,14 @@ switch($_REQUEST["action"]) {
 		$xtpl->form_add_input(_("Label").':', 'text', '30', 'location_label', '', _("Location name"));
 		$xtpl->form_add_select(_("Type").':', 'type', $location_types, '', '');
 		$xtpl->form_add_checkbox(_("Has this location IPv6 support?").':', 'has_ipv6', '1', false, '');
-		$xtpl->form_add_checkbox(_("Does it use OSPF?").':', 'has_ospf', '1', '0', _("Or another kind of dynamic routing"));
 		$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', '1', '');
-		$xtpl->form_add_checkbox(_("Does use Rdiff-backup?").':', 'has_rdiff_backup', '1', '', _("<b>Note:</b> check only if available across all nodes in this location"));
-		$xtpl->form_add_input(_("How many backups to store").':', 'text', '3', 	'rdiff_history',		'', _("Number"));
-		$xtpl->form_add_input(_("Local node SSHFS mountpath").':', 'text', '30', 	'rdiff_mount_sshfs',	'', _("Path, use {vps_id}"));
-		$xtpl->form_add_input(_("Local node ArchFS mountpath").':', 'text', '30',	'rdiff_mount_archfs',	'', _("Path, use {vps_id}"));
-		$xtpl->form_add_input(_("Template sync path").':', 'text', '30',	'tpl_sync_path',	'', _("Used with rsync"));
 		$xtpl->form_add_input(_("Remote console server").':', 'text', '30',	'remote_console_server',	'', _("URL"));
+		$xtpl->form_add_input(_("Domain").':', 'text', '30',	'domain',	$item["domain"], '');
 		$xtpl->form_out(_("Save changes"));
 		break;
 	case "location_new_save":
 		$cluster->set_location(NULL, $_REQUEST["location_label"], $_REQUEST["type"], $_REQUEST["has_ipv6"],
-							$_REQUEST["onboot"], $_REQUEST["has_ospf"], $_REQUEST["has_rdiff_backup"],
-							$_REQUEST["rdiff_history"], $_REQUEST["rdiff_mount_sshfs"],
-							$_REQUEST["rdiff_mount_archfs"], $_REQUEST["tpl_sync_path"], $_REQUEST["remote_console_server"]);
+							$_REQUEST["onboot"], $_REQUEST["remote_console_server"], $_REQUEST["domain"]);
 		$xtpl->perex(_("Changes saved"), _("Location added."));
 		$list_locations = true;
 		break;
@@ -150,14 +143,9 @@ switch($_REQUEST["action"]) {
 			$xtpl->form_add_input(_("Label").':', 'text', '30', 'location_label', $item["location_label"], _("Location name"));
 			$xtpl->form_add_select(_("Type").':', 'type', $location_types, $item["location_type"], '');
 			$xtpl->form_add_checkbox(_("Has this location IPv6 support?").':', 'has_ipv6', '1', $item["location_has_ipv6"], '');
-			$xtpl->form_add_checkbox(_("Does it use OSPF?").':', 'has_ospf', '1', $item["location_has_ospf"], _("Or another kind of dynamic routing"));
 			$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', $item["location_vps_onboot"], '');
-			$xtpl->form_add_checkbox(_("Does use Rdiff-backup?").':', 'has_rdiff_backup', '1', $item["location_has_rdiff_backup"], _("<b>Note:</b> check only if available across all nodes in this location"));
-			$xtpl->form_add_input(_("How many backups to store").':', 'text', '30', 	'rdiff_history',		$item["location_rdiff_history"], _("Number"));
-			$xtpl->form_add_input(_("Local node SSHFS mountpath").':', 'text', '30', 	'rdiff_mount_sshfs',	$item["location_rdiff_mount_sshfs"], _("Path, use {vps_id}"));
-			$xtpl->form_add_input(_("Local node ArchFS mountpath").':', 'text', '30',	'rdiff_mount_archfs',	$item["location_rdiff_mount_archfs"], _("Path, use {vps_id}"));
-			$xtpl->form_add_input(_("Template sync path").':', 'text', '30',	'tpl_sync_path',	$item["location_tpl_sync_path"], _("Used with rsync"));
 			$xtpl->form_add_input(_("Remote console server").':', 'text', '30',	'remote_console_server',	$item["location_remote_console_server"], _("URL"));
+			$xtpl->form_add_input(_("Domain").':', 'text', '30',	'domain',	$item["domain"], '');
 			$xtpl->form_out(_("Save changes"));
 		} else {
 			$list_ramlimits = true;
@@ -166,9 +154,7 @@ switch($_REQUEST["action"]) {
 	case "location_edit_save":
 		if ($item = $cluster->get_location_by_id($_REQUEST["id"])) {
 			$cluster->set_location($_REQUEST["id"], $_REQUEST["location_label"], $_REQUEST["type"], $_REQUEST["has_ipv6"],
-							$_REQUEST["onboot"], $_REQUEST["has_ospf"], $_REQUEST["has_rdiff_backup"],
-							$_REQUEST["rdiff_history"], $_REQUEST["rdiff_mount_sshfs"],
-							$_REQUEST["rdiff_mount_archfs"], $_REQUEST["tpl_sync_path"], $_REQUEST["remote_console_server"]);
+							$_REQUEST["onboot"], $_REQUEST["remote_console_server"], $_REQUEST["domain"]);
 			$xtpl->perex(_("Changes saved"), _("Location label saved."));
 			$list_locations = true;
 		} else {
@@ -237,7 +223,6 @@ switch($_REQUEST["action"]) {
 			$xtpl->form_add_input(_("Filename").':', 'text', '40', 'templ_name', $template["templ_name"], _("filename without .tar.gz"));
 			$xtpl->form_add_input(_("Label").':', 'text', '30', 'templ_label', $template["templ_label"], _("User friendly label"));
 			$xtpl->form_add_textarea(_("Info").':', 28, 4, 'templ_info', $template["templ_info"], _("Note for administrators"));
-			$xtpl->form_add_input(_("Special").':', 'text', '40', 'special', $template["special"], _("Special template features"));
 			$xtpl->form_add_checkbox(_("Enabled").':', 'templ_enabled', 1, $template["templ_enabled"]);
 			$xtpl->form_add_checkbox(_("Supported").':', 'templ_supported', 1, $template["templ_supported"]);
 			$xtpl->form_add_input(_("Order").':', 'text', '30', 'templ_order', $template["templ_order"]);
@@ -249,7 +234,7 @@ switch($_REQUEST["action"]) {
 	case "templates_edit_save":
 		if ($template = $cluster->get_template_by_id($_REQUEST["id"])) {
 			if (ereg('^[a-zA-Z0-9_\.\-]{1,63}$',$_REQUEST["templ_name"])) {
-			$cluster->set_template($_REQUEST["id"], $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["special"], $_REQUEST["templ_enabled"], $_REQUEST["templ_supported"], $_REQUEST["templ_order"]);
+			$cluster->set_template($_REQUEST["id"], $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["templ_enabled"], $_REQUEST["templ_supported"], $_REQUEST["templ_order"]);
 			$xtpl->perex(_("Changes saved"), _("Changes you've made to template were saved."));
 			$list_templates = true;
 			} else $list_templates = true;
@@ -265,7 +250,6 @@ switch($_REQUEST["action"]) {
 	$xtpl->form_add_input(_("Filename").':', 'text', '40', 'templ_name', '', _("filename without .tar.gz"));
 	$xtpl->form_add_input(_("Label").':', 'text', '30', 'templ_label', '', _("User friendly label"));
 	$xtpl->form_add_textarea(_("Info").':', 28, 4, 'templ_info', '', _("Note for administrators"));
-	$xtpl->form_add_input(_("Special").':', 'text', '40', 'special', '', _("Special template features"));
 	$xtpl->form_add_checkbox(_("Enabled").':', 'templ_enabled', 1, 1);
 	$xtpl->form_add_checkbox(_("Supported").':', 'templ_supported', 1, 1);
 	$xtpl->form_add_input(_("Order").':', 'text', '30', 'templ_order', "1");
@@ -277,7 +261,7 @@ switch($_REQUEST["action"]) {
 	break;
 	case "template_register_save":
 		if (ereg('^[a-zA-Z0-9_\.\-]{1,63}$',$_REQUEST["templ_name"])) {
-			$cluster->set_template(NULL, $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["special"], $_REQUEST["templ_enabled"], $_REQUEST["templ_supported"], $_REQUEST["templ_order"]);
+			$cluster->set_template(NULL, $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["templ_enabled"], $_REQUEST["templ_supported"], $_REQUEST["templ_order"]);
 			$xtpl->perex(_("Changes saved"), _("Template successfully registered."));
 			$list_templates = true;
 		} else {
@@ -493,7 +477,7 @@ switch($_REQUEST["action"]) {
 						$xtpl->form_add_input(_("Label").':', 'text', '30', 'storage_label', $root["label"]);
 						$xtpl->form_add_input(_("Root dataset").':', 'text', '30', 'storage_root_dataset', $root["root_dataset"]);
 						$xtpl->form_add_input(_("Root path").':', 'text', '30', 'storage_root_path', $root["root_path"]);
-						$xtpl->form_add_select(_("Storage type").':', 'storage_type', $STORAGE_TYPES, $root["type"]);
+						$xtpl->form_add_select(_("Storage type").':', 'storage_type', $STORAGE_TYPES, $root["storage_layout"]);
 						$xtpl->form_add_checkbox(_("User export").':', 'storage_user_export', '1', $root["user_export"], _("Can user manage exports?"));
 						$xtpl->form_add_select(_("User mount").':', 'storage_user_mount', $STORAGE_MOUNT_MODES, $root["user_mount"]);
 						$xtpl->table_td(_("Quota").':');
@@ -1967,46 +1951,36 @@ if ($list_locations) {
 	$xtpl->table_add_category(_("Location label"));
 	$xtpl->table_add_category(_("Servers"));
 	$xtpl->table_add_category(_("IPv6"));
-	$xtpl->table_add_category(_("OSPF"));
-	$xtpl->table_add_category(_("RDIFF"));
 	$xtpl->table_add_category(_("On Boot"));
+	$xtpl->table_add_category(_("Domain"));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 	$list = $cluster->get_locations();
 	if ($list)
 	foreach($list as $item) {
-	$servers = 0;
-	$servers = $cluster->get_server_count_in_location($item["location_id"]);
-	$xtpl->table_td($item["location_id"]);
-	$xtpl->table_td($item["location_label"]);
-	$xtpl->table_td($servers, false, true);
-	if ($item["location_has_ipv6"]) {
-		$xtpl->table_td('<img src="template/icons/transact_ok.png" />');
-	} else {
-		$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
-	}
-	if ($item["location_has_ospf"]) {
-		$xtpl->table_td('<img src="template/icons/transact_ok.png" />');
-	} else {
-		$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
-	}
-	if ($item["location_has_rdiff_backup"]) {
-		$xtpl->table_td('<img src="template/icons/transact_ok.png" />');
-	} else {
-		$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
-	}
-	if ($item["location_vps_onboot"]) {
-		$xtpl->table_td('<img src="template/icons/transact_ok.png" />');
-	} else {
-		$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
-	}
-	$xtpl->table_td('<a href="?page=cluster&action=location_edit&id='.$item["location_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-	if ($servers > 0) {
-		$xtpl->table_td('<img src="template/icons/delete_grey.png" title="'._("Delete - N/A, item is in use").'">');
-	} else {
-		$xtpl->table_td('<a href="?page=cluster&action=location_delete&id='.$item["location_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
-	}
-	$xtpl->table_tr();
+		$servers = 0;
+		$servers = $cluster->get_server_count_in_location($item["location_id"]);
+		$xtpl->table_td($item["location_id"]);
+		$xtpl->table_td($item["location_label"]);
+		$xtpl->table_td($servers, false, true);
+		if ($item["location_has_ipv6"]) {
+			$xtpl->table_td('<img src="template/icons/transact_ok.png" />');
+		} else {
+			$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
+		}
+		if ($item["location_vps_onboot"]) {
+			$xtpl->table_td('<img src="template/icons/transact_ok.png" />');
+		} else {
+			$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
+		}
+		$xtpl->table_td($item['domain']);
+		$xtpl->table_td('<a href="?page=cluster&action=location_edit&id='.$item["location_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		if ($servers > 0) {
+			$xtpl->table_td('<img src="template/icons/delete_grey.png" title="'._("Delete - N/A, item is in use").'">');
+		} else {
+			$xtpl->table_td('<a href="?page=cluster&action=location_delete&id='.$item["location_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		}
+		$xtpl->table_tr();
 	}
 	$xtpl->table_out();
 	$xtpl->sbar_add(_("New location"), '?page=cluster&action=location_new');
@@ -2319,7 +2293,7 @@ if ($mass_management) {
 	        INNER JOIN locations l ON s.server_location = l.location_id
 	        INNER JOIN members m ON v.m_id = m.m_id
 	        INNER JOIN cfg_templates t ON v.vps_template = t.templ_id
-	        INNER JOIN cfg_dns dns ON v.vps_nameserver = dns.dns_ip
+	        INNER JOIN cfg_dns dns ON v.dns_resolver_id = dns.dns_id
 	        ".(count($conditions) > 0 ? "WHERE " . implode(" AND ", $conds) : "")."
 	        GROUP BY v.vps_id
 	        ORDER BY v.vps_id ASC";
