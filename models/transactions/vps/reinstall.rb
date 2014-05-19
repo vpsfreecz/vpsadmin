@@ -11,7 +11,7 @@ module Transactions::Vps
           hostname: vps.hostname,
           template: vps.os_template.name,
           onboot: vps.node.location.location_vps_onboot,
-          nameserver: vps.dns_resolver.addr,
+          nameserver: vps.dns_resolver.addr.split(','),
           ip_addrs: vps.ip_addresses.all.map { |ip| ip.addr }
       }
     end

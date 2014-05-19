@@ -6,9 +6,7 @@ module Transactions::Vps
       Transaction.chain(dep) do
         append(Reinstall, args: vps)
         append(ApplyConfig, args: vps)
-        # TODO
-        # - mounts
-        # - DNS resolver
+        append(Mounts, args: [vps, false])
       end
     end
   end
