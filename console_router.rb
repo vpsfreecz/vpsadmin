@@ -4,6 +4,7 @@ $: << File.dirname(__FILE__) unless $:.include? File.dirname(__FILE__)
 
 require 'lib/config'
 require 'lib/db'
+require 'lib/utils/common'
 
 require 'socket'
 require 'optparse'

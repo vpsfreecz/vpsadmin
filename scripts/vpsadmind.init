@@ -19,7 +19,7 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-VPSADMINCTL="vpsadminctl"
+VPSADMINDCTL="vpsadmindctl"
 VPSADMIND="/opt/vpsadmind/vpsadmind.rb"
 PIDFILE="/var/run/vpsadmind.pid"
 LOGDIR="/var/log"
@@ -40,7 +40,7 @@ run() {
 }
 
 is_running() {
-    run $VPSADMINCTL status
+    run $VPSADMINDCTL status
 
     if [ "$?" == "0" ] ; then
         return 0
@@ -58,7 +58,7 @@ wait_for_stopped() {
     step=5
 
     while true ; do
-        run $VPSADMINCTL status
+        run $VPSADMINDCTL status
 
         if [ "$?" == "1" ] ; then
             cleanup
@@ -130,9 +130,9 @@ stop() {
     fi
 
     if [ "$STOP_TIMEOUT" == "no" ] ; then
-        run $VPSADMINCTL stop -f
+        run $VPSADMINDCTL stop -f
     else
-        run $VPSADMINCTL stop
+        run $VPSADMINDCTL stop
     fi
 
     wait_for_stopped
@@ -146,7 +146,7 @@ stop() {
 }
 
 status() {
-	STATUS="`$VPSADMINCTL status`"
+	STATUS="`$VPSADMINDCTL status`"
 	
 	if [ "$?" == 0 ] ; then
 		echo "$STATUS"
