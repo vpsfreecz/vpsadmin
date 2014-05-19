@@ -186,17 +186,12 @@ END
     authorize do |u|
       allow if u.role == :admin
       restrict m_id: u.m_id
+      output whitelist: %i(id hostname os_template_id dns_resolver_id node_id backup_enabled)
       allow
     end
 
     def exec
-      vps = Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
-
-      {
-          vps_id: vps.vps_id,
-          hostname: vps.hostname,
-          distribution: 15615
-      }
+      to_param_names(Vps.find_by!(with_restricted(vps_id: params[:vps_id])).attributes, :output)
     end
   end
 
