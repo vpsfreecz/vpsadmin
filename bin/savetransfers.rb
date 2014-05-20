@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
-$: << File.dirname(__FILE__) unless $:.include? File.dirname(__FILE__)
+path = File.join(File.dirname(__FILE__), '..')
+$: << path unless $:.include?(path)
 
 require 'lib/config'
 require 'lib/db'
