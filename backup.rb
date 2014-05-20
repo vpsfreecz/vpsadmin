@@ -44,16 +44,15 @@ servers = {}
 vpses = {}
 
 rs = db.query("SELECT vps_id, vps_backup_exclude, server_id, server_name, r.node_id AS backuper_server_id,
-                      e.dataset, e.path, r.root_dataset, r.root_path, n.fstype, server_ip4
+                      e.dataset, e.path, r.root_dataset, r.root_path, s.fstype, server_ip4
               FROM vps
-              INNER JOIN servers ON server_id = vps_server
-              INNER JOIN node_node n ON vps_server = n.node_id
+              INNER JOIN servers s ON server_id = vps_server
               INNER JOIN locations ON location_id = server_location
               INNER JOIN storage_export e ON e.id = vps_backup_export
               INNER JOIN storage_root r ON r.id = e.root_id
               INNER JOIN members m ON vps.m_id = m.m_id
               WHERE
-                n.fstype IN ('ext4', 'zfs_compat') AND
+                s.fstype IN ('ext4', 'zfs_compat') AND
                 vps_deleted IS NULL AND m.m_state = 'active' AND
                 vps_backup_enabled = 1 AND (SELECT t_id FROM transactions WHERE t_type = 5006 AND t_done = 0 AND t_vps = vps_id) IS NULL
               ORDER BY RAND()")
@@ -115,16 +114,15 @@ until vpses.empty?
 end
 
 # Backup ZFS nodes
-rs = db.query("SELECT vps_id, n.node_id, server_ip4, server_name, r.node_id AS backuper_server_id, e.dataset, e.path, r.root_dataset, r.root_path
+rs = db.query("SELECT vps_id, s.server_id AS node_id, server_ip4, server_name, r.node_id AS backuper_server_id, e.dataset, e.path, r.root_dataset, r.root_path
               FROM vps v
-              INNER JOIN servers ON server_id = vps_server
-              INNER JOIN node_node n ON vps_server = n.node_id
+              INNER JOIN servers s ON server_id = vps_server
               INNER JOIN locations ON location_id = server_location
               INNER JOIN storage_export e ON e.id = vps_backup_export
               INNER JOIN storage_root r ON r.id = e.root_id
               INNER JOIN members m ON v.m_id = m.m_id
               WHERE
-                n.fstype = 'zfs' AND
+                s.fstype = 'zfs' AND
                 vps_deleted IS NULL AND m.m_state = 'active' AND
                 vps_backup_enabled = 1 AND (SELECT t_id FROM transactions WHERE t_type = 5006 AND t_done = 0 AND t_vps = vps_id) IS NULL
               ORDER BY v.vps_id")
