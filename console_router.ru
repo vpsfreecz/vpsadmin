@@ -1,4 +1,4 @@
 require 'sinatra'
-require 'console_router'
+require_relative 'console_router'
 
 run Sinatra::Application
