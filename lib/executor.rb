@@ -133,8 +133,8 @@ class Executor
     if opts.instance_of?(Hash)
       opts.each do |k, v|
         k = k.to_s
-        v.each do |s|
-          options << "#{k.start_with?("-") ? "" : "--"}#{k} #{s}"
+        array_or_string_each(v) do |s|
+          options << "#{k.start_with?('-') ? '' : '--'}#{k} #{s}"
         end
       end
     else
@@ -205,6 +205,14 @@ class Executor
   def set_step(str)
     attrs do
       @step = str
+    end
+  end
+
+  def array_or_string_each(obj)
+    if obj.is_a?(Array)
+      obj.each { |v| yield v }
+    else
+      yield obj
     end
   end
 end
