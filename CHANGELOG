@@ -1,3 +1,6 @@
+* Tue Jun 3 2014 - version 1.21.1
+- Transactions: fix input/output formatting, handle HTMl entities
+
 * Mon May 19 2014 - version 1.21.0
 - Prepare database for the API
 - This is probably the last release that does not require the API
@@ -31,7 +34,7 @@
 - NAS export add: improve path validation
 - Pages networking and adminvps: show index for admins, do not list
 
-* Sun March 23 2014 - version 1.16.0
+* Sun Mar 23 2014 - version 1.16.0
 - Remove deprecated mail log
 - General settings: add base URL
 - Fix & update DB scheme
