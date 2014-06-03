@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'mysql'
+require 'lib/utils/common'
 
 class Db
   def initialize(db = nil)
