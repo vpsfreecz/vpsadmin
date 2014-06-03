@@ -1,3 +1,6 @@
+* Tue Jun 3 2014 - version 1.21.1
+- Improve compatibility with ruby2, bugfixes
+
 * Mon May 19 2014 - version 1.21.0
 - Compatibility with the API
 - Fix zfs_compat to zfs_compat migration
