@@ -28,8 +28,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List locations'
 
-    output(:locations) do
-      list_of_objects
+    output(:list) do
       use :all
     end
 

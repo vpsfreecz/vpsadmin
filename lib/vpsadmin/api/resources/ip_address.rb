@@ -28,12 +28,11 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List IP addresses'
 
-    input(:ip_addresses) do
+    input(:list) do
       use :filters
     end
 
-    output(:ip_addresses) do
-      list_of_objects
+    output(:list) do
       use :all
     end
 

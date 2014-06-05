@@ -36,8 +36,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List VPS'
 
-    output(:vpses) do
-      list_of_objects
+    output(:list) do
       use :id
       use :common
     end
@@ -98,7 +97,6 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     output do
-      object
       integer :vps_id, label: 'VPS id', desc: 'ID of created VPS'
     end
 
@@ -173,7 +171,7 @@ END
     desc 'Show VPS properties'
 
     output do
-      object
+      use :id
       use :common
     end
 
@@ -349,9 +347,7 @@ END
     class Index < HaveAPI::Actions::Default::Index
       desc 'List VPS configs'
 
-      output(:configs) do
-        list_of_objects
-
+      output(:list) do
         integer :config_id, label: 'Config ID'
         string :name, label: 'Config name', desc: 'Used internally'
         string :label, label: 'Config label', desc: 'Nice name for user'
@@ -381,9 +377,7 @@ END
     class Update < HaveAPI::Actions::Default::Update
       desc 'Update VPS configs'
 
-      input(:configs) do
-        list_of_objects
-
+      input do
         integer :config_id, label: 'Config ID', db_name: :id
       end
 
@@ -412,12 +406,11 @@ END
     class Index < HaveAPI::Actions::Default::Index
       desc 'List VPS IP addresses'
 
-      input(:ip_addresses) do
+      input(namespace: :ip_addresses) do
         integer :version, label: 'IP version', desc: '4 or 6', db_name: :ip_v
       end
 
-      output(:ip_addresses) do
-        list_of_objects
+      output(:list) do
         use :common
       end
 

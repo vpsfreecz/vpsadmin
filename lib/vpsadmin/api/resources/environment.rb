@@ -20,8 +20,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List environments'
 
-    output(:environments) do
-      list_of_objects
+    output(:list) do
       use :all
     end
 

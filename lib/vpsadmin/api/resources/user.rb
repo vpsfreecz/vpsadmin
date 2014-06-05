@@ -26,8 +26,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List users'
 
-    output(:users) do
-      list_of_objects
+    output(:list) do
       use :common
       use :dates
     end

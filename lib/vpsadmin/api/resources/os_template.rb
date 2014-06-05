@@ -29,8 +29,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List OS templates'
 
-    output(:os_templates) do
-      list_of_objects
+    output(:list) do
       use :all
     end
 

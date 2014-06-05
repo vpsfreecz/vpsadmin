@@ -26,8 +26,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List nodes'
 
-    output(:nodes) do
-      list_of_objects
+    output(:list) do
       use :all
     end
 
