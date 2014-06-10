@@ -4,12 +4,17 @@ module VpsAdmin
   HaveAPI.set_module_name(VpsAdmin::API::Resources)
 
   module API
+    module Authentication
+
+    end
+
     def self.default
       api = HaveAPI::Server.new
-      authenticate(api)
-
       api.use_version(:all)
       api.set_default_version(1)
+
+      authenticate(api)
+
       api.mount('/')
 
       api
@@ -20,23 +25,12 @@ module VpsAdmin
     end
 
     def self.authenticate(api=nil)
-      auth = Proc.new do |request|
-        user = nil
-
-        auth = Rack::Auth::Basic::Request.new(request.env)
-        if auth.provided? && auth.basic? && auth.credentials
-          user = User.authenticate(*auth.credentials)
-        end
-
-        User.current = user
-
-        user
-      end
+      chain = [Authentication::Basic, Authentication::Token]
 
       if api
-        api.authenticate(&auth)
+        api.auth_chain << chain
       else
-        auth
+        chain
       end
     end
   end
