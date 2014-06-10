@@ -8,20 +8,22 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   end
 
   params(:template) do
-    foreign_key :os_template_id, label: 'Template', desc: 'id of OS template',
-                db_name: :vps_template
+    resource VpsAdmin::API::Resources::OsTemplate, label: 'OS template',
+             value_params: ->{ @vps.vps_template }
   end
 
   params(:common) do
-    foreign_key :user_id, label: 'User', desc: 'VPS owner', db_name: :m_id
+    resource VpsAdmin::API::Resources::User, label: 'User', desc: 'VPS owner',
+             value_label: :login, value_params: ->{ @vps.m_id }
     string :hostname, desc: 'VPS hostname', db_name: :vps_hostname,
            required: true
     use :template
     string :info, label: 'Info', desc: 'VPS description', db_name: :vps_info
-    foreign_key :dns_resolver_id, label: 'DNS resolver',
-                desc: 'DNS resolver the VPS will use'
-    integer :node_id, label: 'Node', desc: 'Node VPS will run on',
-            db_name: :vps_server
+    resource VpsAdmin::API::Resources::DnsResolver, label: 'DNS resolver',
+             desc: 'DNS resolver the VPS will use',
+             value_params: ->{ @vps.dns_resolver_id }
+    resource VpsAdmin::API::Resources::Node, label: 'Node', desc: 'Node VPS will run on',
+             value_label: :name, value_params: ->{ @vps.vps_server }
     bool :onboot, label: 'On boot', desc: 'Start VPS on node boot?',
          db_name: :vps_onboot, default: true
     bool :onstartall, label: 'On start all',
@@ -44,7 +46,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict m_id: u.m_id
-      output whitelist: %i(id hostname os_template_id dns_resolver_id node_id backup_enabled)
+      output whitelist: %i(id hostname os_template dns_resolver node backup_enabled)
       allow
     end
 
@@ -53,12 +55,23 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       response({vpses: [
         {
             id: 150,
-            user_id: 1,
+            user: {
+                id: 1,
+                name: 'somebody'
+            },
             hostname: 'thehostname',
-            os_template_id: 1,
+            os_template: {
+                id: 1,
+                label: 'Scientific Linux 6'
+            },
             info: 'My very important VPS',
-            dns_resolver_id: 1,
-            node_id: 1,
+            dns_resolver: {
+                id: 1,
+            },
+            node: {
+                id: 1,
+                name: 'node1'
+            },
             onboot: true,
             onstartall: true,
             backup_enabled: true,
@@ -71,18 +84,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       ret = []
 
       Vps.where(with_restricted).each do |vps|
-        ret << {
-          id: vps.id,
-          hostname: vps.hostname,
-          os_template_id: vps.os_template.id,
-          info: vps.vps_info,
-          dns_resolver_id: 1,
-          node_id: vps.node.id,
-          onboot: vps.vps_onboot,
-          onstartall: vps.vps_onstartall,
-          backup_enabled: vps.vps_backup_enabled,
-          config: vps.vps_config,
-        }
+        ret << to_param_names(all_attrs(vps), :output)
       end
 
       ret
@@ -92,7 +94,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   class Create < HaveAPI::Actions::Default::Create
     desc 'Create VPS'
 
-    input(:vps) do
+    input do
       use :common
     end
 
@@ -102,19 +104,19 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(hostname os_template_id dns_resolver_id)
+      input whitelist: %i(hostname os_template dns_resolver)
       allow
     end
 
     example do
       request({
         vps: {
-          user_id: 1,
+          user: 1,
           hostname: 'my-vps',
-          os_template_id: 1,
+          os_template: 1,
           info: '',
-          dns_resolver_id: 1,
-          node_id: 1,
+          dns_resolver: 1,
+          node: 1,
           onboot: true,
           onstartall: true,
           backup_enabled: true,
@@ -141,8 +143,8 @@ END
         end
 
         vps_params.update({
-            user_id: current_user.m_id,
-            vps_server: ::Node.pick_node_by_location_type('playground').id,
+            user: current_user,
+            node: ::Node.pick_node_by_location_type('playground'),
             vps_expiration: Time.new.to_i +
                             SysConfig.get('playground_vps_lifetime')* 24 * 60 * 60
         })
@@ -184,12 +186,16 @@ END
     authorize do |u|
       allow if u.role == :admin
       restrict m_id: u.m_id
-      output whitelist: %i(id hostname os_template_id dns_resolver_id node_id backup_enabled)
+      output whitelist: %i(id hostname os_template dns_resolver node backup_enabled)
       allow
     end
 
+    def prepare
+      @vps = Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+    end
+
     def exec
-      to_param_names(Vps.find_by!(with_restricted(vps_id: params[:vps_id])).attributes, :output)
+      to_param_names(all_attrs(@vps), :output)
     end
   end
 
@@ -203,7 +209,7 @@ END
     authorize do |u|
       allow if u.role == :admin
       restrict m_id: u.m_id
-      input whitelist: %i(hostname os_template_id dns_resolver_id)
+      input whitelist: %i(hostname os_template dns_resolver)
       allow
     end
 
@@ -329,8 +335,11 @@ END
 
     def exec
       vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      tpl = params[:vps][:os_template]
 
-      if vps.update(os_template: ::OsTemplate.find_by!(templ_id: params[:vps][:os_template_id], templ_enabled: true))
+      error('selected os template is disabled') unless tpl.enabled?
+
+      if vps.update(os_template: tpl)
         vps.reinstall
         ok
       else
@@ -491,7 +500,7 @@ END
       route ''
       http_method :delete
 
-      input(:ip_addresses) do
+      input(namespace: :ip_addresses) do
         integer :version, label: 'IP version',
                 desc: '4 or 6, delete addresses of selected version', db_name: :ip_v
       end

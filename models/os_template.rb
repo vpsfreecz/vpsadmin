@@ -9,4 +9,8 @@ class OsTemplate < ActiveRecord::Base
 
   alias_attribute :label, :templ_label
   alias_attribute :name, :templ_name
+
+  def enabled?
+    templ_enabled
+  end
 end

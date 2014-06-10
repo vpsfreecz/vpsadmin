@@ -16,7 +16,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
          db_name: :location_vps_onboot
     string :remote_console_server, label: 'Remote console server', desc: 'URL to HTTP remote console server',
            db_name: :location_remote_console_server
-    foreign_key :environment_id, label: 'Environment ID', desc: 'Environment ID'
+    resource VpsAdmin::API::Resources::Environment, label: 'Environment', desc: 'Environment'
     string :domain, label: 'Domain', desc: 'Location domain, subdomain at environment domain'
   end
 
@@ -44,7 +44,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
             has_ipv6: true,
             vps_onboot: true,
             remote_console_server: 'https://console.vpsadmin.mydomain.com',
-            environment_id: 1,
+            environment: 1,
             domain: 'prg',
             created_at: '2014-05-04 16:59:52 +0200',
             updated_at: '2014-05-04 16:59:52 +0200'
@@ -85,7 +85,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
             has_ipv6: true,
             vps_onboot: true,
             remote_console_server: '',
-            environment_id: 1,
+            environment: 1,
             domain: 'brq'
         }
       })
@@ -128,7 +128,10 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
           has_ipv6: true,
           vps_onboot: true,
           remote_console_server: '',
-          environment_id: 1,
+          environment: {
+              id: 1,
+              label: 'Production'
+          },
           domain: 'brq'
         }
       })
@@ -157,7 +160,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
             has_ipv6: true,
             vps_onboot: true,
             remote_console_server: '',
-            environment_id: 1,
+            environment: 1,
             domain: 'ova'
         }
       })

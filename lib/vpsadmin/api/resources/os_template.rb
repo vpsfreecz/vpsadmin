@@ -65,4 +65,18 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
       ret
     end
   end
+
+  class Show < HaveAPI::Actions::Default::Show
+    output do
+      use :all
+    end
+
+    def prepare
+      @os_template = ::OsTemplate.find(params[:os_template_id])
+    end
+
+    def exec
+      to_params_names(all_attrs(@os_template), :output)
+    end
+  end
 end

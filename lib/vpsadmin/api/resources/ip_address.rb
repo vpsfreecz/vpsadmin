@@ -8,11 +8,10 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
   end
 
   params(:filters) do
-    foreign_key :vps_id, label: 'VPS ID', desc: 'VPS this IP is assigned to, might be null'
+    resource VpsAdmin::API::Resources::VPS, label: 'VPS', desc: 'VPS this IP is assigned to, might be null'
     integer :version, label: 'IP version', desc: '4 or 6', db_name: :ip_v
-    foreign_key :location_id, label: 'Location ID',
-              desc: 'Location this IP address is available in',
-              db_name: :ip_location
+    resource VpsAdmin::API::Resources::Location, label: 'Location',
+              desc: 'Location this IP address is available in'
   end
 
   params(:common) do
@@ -50,9 +49,15 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
         ip_addresses: [
             {
                 id: 10,
-                vps_id: 101,
+                vps: {
+                    id: 101,
+                    hostname: 'myvps'
+                },
                 version: 4,
-                location_id: 1,
+                location: {
+                    id: 1,
+                    label: 'The Location'
+                },
                 addr: '192.168.0.50'
             }
         ]

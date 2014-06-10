@@ -7,6 +7,8 @@ require 'json'
 require 'haveapi/spec/helpers'
 require_relative '../lib/vpsadmin'
 
+ENV['RACK_ENV'] = 'test'
+
 # Connect to database
 environment = 'test'
 configuration = YAML::load(File.open('config/database.yml'))
@@ -27,7 +29,7 @@ fixtures.each do |fixture|
 end
 
 HaveAPI.set_module_name(VpsAdmin::API::Resources)
-HaveAPI.set_default_authenticate(&VpsAdmin::API.authenticate)
+HaveAPI.set_default_authenticate(VpsAdmin::API.authenticate)
 
 # Configure specs
 RSpec.configure do |config|

@@ -10,7 +10,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
   params(:common) do
     string :name, label: 'Name', desc: 'Node name', db_name: :server_name
     string :type, label: 'Role', desc: 'node, storage or mailer', db_name: :server_type
-    foreign_key :location_id, label: 'Location ID', desc: 'Location node is placed in', db_name: :server_location
+    resource VpsAdmin::API::Resources::Location, label: 'Location', desc: 'Location node is placed in'
     string :availstat, label: 'Availability stats', desc: 'HTML code with availability graphs',
            db_name: :server_availstat
     string :ip_addr, label: 'IPv4 address', desc: 'Node\'s IP address', db_name: :server_ip4
@@ -41,7 +41,10 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
           id: 1,
           name: 'node1',
           type: 'node',
-          location_id: 1,
+          location: {
+              id: 1,
+              label: 'The Location'
+          },
           availstat: '',
           ip_addr: '192.168.0.10',
           maintenance: false
@@ -80,7 +83,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
         node: {
           name: 'node2',
           type: 'node',
-          location_id: 1,
+          location: 1,
           availstat: '',
           ip_addr: '192.168.0.11',
           maintenance: false
@@ -122,7 +125,10 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
           id: 2,
           name: 'node2',
           type: 'node',
-          location_id: 1,
+          location: {
+              id: 1,
+              label: 'The Location'
+          },
           availstat: '',
           ip_addr: '192.168.0.11',
           maintenance: false
@@ -151,7 +157,10 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
         node: {
           name: 'node2',
           type: 'storage',
-          location_id: 1,
+          location: {
+              id: 1,
+              label: 'The Location'
+          },
           availstat: '',
           ip_addr: '192.168.0.11',
           maintenance: false

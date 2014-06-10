@@ -7,8 +7,8 @@ describe 'Vps.create' do
     it 'does not create a VPS' do
       post '/v1/vpses', {vps: {
           hostname: 'justatest',
-          os_template_id: OsTemplate.take!.id,
-          dns_resolver_id: DnsResolver.take!.id
+          os_template: OsTemplate.take!.id,
+          dns_resolver: DnsResolver.take!.id
       }}
 
       expect(last_response.status).to eq(401)
@@ -29,11 +29,11 @@ describe 'Vps.create' do
 
       it 'creates a VPS' do
         api :post, '/v1/vpses', {vps: {
-            user_id: User.take!.id,
+            user: User.take!.id,
             hostname: 'justatest',
-            os_template_id: OsTemplate.take!.id,
-            dns_resolver_id: DnsResolver.take!.id,
-            node_id: Node.take!.id,
+            os_template: OsTemplate.take!.id,
+            dns_resolver: DnsResolver.take!.id,
+            node: Node.take!.id,
         }}
 
         expect(api_response).to be_ok
@@ -41,11 +41,11 @@ describe 'Vps.create' do
 
       it 'does not create VPS for non-existing user' do
         api :post, '/v1/vpses', {vps: {
-            user_id: 9999,
+            user: 9999,
             hostname: 'justatest',
-            os_template_id: OsTemplate.take!.id,
-            dns_resolver_id: DnsResolver.take!.id,
-            node_id: Node.take!.id,
+            os_template: OsTemplate.take!.id,
+            dns_resolver: DnsResolver.take!.id,
+            node: Node.take!.id,
         }}
 
         expect(api_response).to be_failed
@@ -53,11 +53,11 @@ describe 'Vps.create' do
 
       it 'does not create VPS for non-existing node' do
         api :post, '/v1/vpses', {vps: {
-            user_id: User.take!.id,
+            user: User.take!.id,
             hostname: 'justatest',
-            os_template_id: OsTemplate.take!.id,
-            dns_resolver_id: DnsResolver.take!.id,
-            node_id: 9999,
+            os_template: OsTemplate.take!.id,
+            dns_resolver: DnsResolver.take!.id,
+            node: 9999,
         }}
 
         expect(api_response).to be_failed
@@ -65,11 +65,11 @@ describe 'Vps.create' do
 
       it 'does not create VPS for non-existing OS template' do
         api :post, '/v1/vpses', {vps: {
-            user_id: User.take!.id,
+            user: User.take!.id,
             hostname: 'justatest',
-            os_template_id: 9999,
-            dns_resolver_id: DnsResolver.take!.id,
-            node_id: Node.take!.id,
+            os_template: 9999,
+            dns_resolver: DnsResolver.take!.id,
+            node: Node.take!.id,
         }}
 
         expect(api_response).to be_failed
@@ -77,11 +77,11 @@ describe 'Vps.create' do
 
       it 'does not create VPS for non-existing DNS resolver' do
         api :post, '/v1/vpses', {vps: {
-            user_id: User.take!.id,
+            user: User.take!.id,
             hostname: 'justatest',
-            os_template_id: OsTemplate.take!.id,
-            dns_resolver_id: 9999,
-            node_id: Node.take!.id,
+            os_template: OsTemplate.take!.id,
+            dns_resolver: 9999,
+            node: Node.take!.id,
         }}
 
         expect(api_response).to be_failed
