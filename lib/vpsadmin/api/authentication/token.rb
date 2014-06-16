@@ -2,7 +2,13 @@ module VpsAdmin::API::Authentication
   class Token < HaveAPI::Authentication::Token::Provider
     protected
     def save_token(user, token, validity)
-      ::ApiToken.create(user: user, token: token, valid_to: Time.new + validity).valid_to
+      valid = ::ApiToken.create(
+          user: user,
+          token: token,
+          valid_to: (validity > 0 ? Time.now + validity : nil)
+      ).valid_to
+
+      valid && valid.strftime('%FT%T%z')
     end
 
     def revoke_token(user, token)
@@ -15,7 +21,7 @@ module VpsAdmin::API::Authentication
     end
 
     def find_user_by_token(token)
-      t = ::ApiToken.find_by(token: token)
+      t = ::ApiToken.where('token = ? AND (valid_to IS NULL OR valid_to >= ?)', token, Time.now).take
 
       if t
         ::ApiToken.increment_counter(:use_count, t.id)
