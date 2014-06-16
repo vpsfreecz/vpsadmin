@@ -1,11 +1,12 @@
 module VpsAdmin::API::Authentication
   class Token < HaveAPI::Authentication::Token::Provider
     protected
-    def save_token(user, token, validity)
+    def save_token(request, user, token, validity)
       valid = ::ApiToken.create(
           user: user,
           token: token,
-          valid_to: (validity > 0 ? Time.now + validity : nil)
+          valid_to: (validity > 0 ? Time.now + validity : nil),
+          label: request.user_agent
       ).valid_to
 
       valid && valid.strftime('%FT%T%z')
