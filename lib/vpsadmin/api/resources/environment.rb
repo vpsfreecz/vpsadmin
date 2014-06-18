@@ -46,7 +46,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     def exec
       ret = []
 
-      ::Environment.all.each do |env|
+      ::Environment.all.limit(params[:environment][:limit]).offset(params[:environment][:offset]).each do |env|
         ret << env.attributes
       end
 

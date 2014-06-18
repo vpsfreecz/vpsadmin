@@ -8,7 +8,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
   end
 
   params(:filters) do
-    resource VpsAdmin::API::Resources::VPS, label: 'VPS', desc: 'VPS this IP is assigned to, might be null'
+    resource VpsAdmin::API::Resources::VPS, label: 'VPS', desc: 'VPS this IP is assigned to, might be null',
+             value_label: :hostname
     integer :version, label: 'IP version', desc: '4 or 6', db_name: :ip_v
     resource VpsAdmin::API::Resources::Location, label: 'Location',
               desc: 'Location this IP address is available in'
@@ -27,7 +28,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List IP addresses'
 
-    input(:list) do
+    input do
       use :filters
     end
 
@@ -68,8 +69,18 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     def exec
       ret = []
 
-      ::IpAddress.where(to_db_names(params[:ip_addresses])).each do |ip|
-        ret << to_param_names(ip.attributes)
+      ips = ::IpAddress
+
+      %i(vps version location).each do |filter|
+        next unless params[:ip_address][filter]
+
+        ips = ips.where(
+            filter => params[:ip_address][filter],
+        )
+      end
+
+      ips.limit(params[:ip_address][:limit]).offset(params[:ip_address][:offset]).each do |ip|
+        ret << to_param_names(all_attrs(ip))
       end
 
       ret

@@ -55,7 +55,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     def exec
       ret = []
 
-      ::Location.all.each do |loc|
+      ::Location.all.limit(params[:location][:limit]).offset(params[:location][:offset]).each do |loc|
         ret << to_param_names(loc.attributes, :output)
       end
 

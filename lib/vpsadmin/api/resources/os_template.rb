@@ -58,7 +58,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     def exec
       ret = []
 
-      ::OsTemplate.where(with_restricted).each do |tpl|
+      ::OsTemplate.where(with_restricted).limit(params[:os_template][:limit]).offset(params[:os_template][:offset]).each do |tpl|
         ret << to_param_names(tpl.attributes, :output)
       end
 

@@ -83,7 +83,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     def exec
       ret = []
 
-      Vps.where(with_restricted).each do |vps|
+      Vps.where(with_restricted).limit(params[:vps][:limit]).offset(params[:vps][:offset]).each do |vps|
         ret << to_param_names(all_attrs(vps), :output)
       end
 
@@ -371,7 +371,7 @@ END
       def exec
         ret = []
 
-        ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).vps_configs.all.each do |c|
+        ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).vps_configs.all.limit(params[:config][:limit]).offset(params[:config][:offset]).each do |c|
           ret << {
               config_id: c.id,
               name: c.name,
@@ -415,7 +415,7 @@ END
     class Index < HaveAPI::Actions::Default::Index
       desc 'List VPS IP addresses'
 
-      input(namespace: :ip_addresses) do
+      input do
         integer :version, label: 'IP version', desc: '4 or 6', db_name: :ip_v
       end
 
@@ -432,7 +432,17 @@ END
       def exec
         ret = []
 
-        ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).ip_addresses.where(to_db_names(params[:ip_addresses])).each do |ip|
+        ips = ::Vps.find_by!(
+            with_restricted(vps_id: params[:vps_id])
+        ).ip_addresses
+
+        if params[:ip_address][:version]
+          ips = ips.where(
+              ip_v: params[:ip_address][:version]
+          )
+        end
+
+        ips.limit(params[:ip_address][:limit]).offset(params[:ip_address][:offset]).each do |ip|
           ret << {
               id: ip.ip_id,
               addr: ip.ip_addr,

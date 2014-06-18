@@ -55,7 +55,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     def exec
       ret = []
 
-      ::Node.all.each do |node|
+      ::Node.all.limit(params[:node][:limit]).offset(params[:node][:offset]).each do |node|
         ret << to_param_names(node.attributes, :output)
       end
 

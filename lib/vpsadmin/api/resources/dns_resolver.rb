@@ -51,7 +51,7 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
     def exec
       ret = []
 
-      ::DnsResolver.all.each do |dns|
+      ::DnsResolver.all.limit(params[:dns_resolver][:limit]).offset(params[:dns_resolver][:offset]).each do |dns|
         ret << to_param_names(all_attrs(dns), :output)
       end
 

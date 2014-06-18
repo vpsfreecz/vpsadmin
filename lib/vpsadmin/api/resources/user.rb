@@ -52,7 +52,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     def exec
       ret = []
 
-      ::User.all.each do |u|
+      ::User.all.limit(params[:user][:limit]).offset(params[:user][:offset]).each do |u|
         ret << to_param_names(u.attributes, :output)
       end
 
