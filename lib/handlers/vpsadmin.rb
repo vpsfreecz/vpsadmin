@@ -160,13 +160,13 @@ class VpsAdmin < Executor
 
       name = get_hostname
 
-      db.prepared("INSERT INTO servers SET
+      db.prepared('INSERT INTO servers SET
 			            server_id = ?, server_name = ?, server_type = ?, server_location = ?,
 			            server_ip4 = ?
 			            ON DUPLICATE KEY UPDATE
 			            server_name = ?, server_type = ?, server_location = ?,
 			            server_ip4 = ?
-			            ",
+			            ',
                   # insert
                   node_id, name, @params[:role], loc, @params[:addr],
                   # update
@@ -174,20 +174,17 @@ class VpsAdmin < Executor
       )
       node_id = db.insert_id
 
-      if @params[:role] == "node"
-        db.prepared("INSERT INTO node_node SET
-				            node_id = ?, max_vps = ?, ve_private = ?, fstype = ?
-				            ON DUPLICATE KEY UPDATE
+      if @params[:role] == 'node'
+        db.prepared('UPDATE servers SET
 				            max_vps = ?, ve_private = ?, fstype = ?
-				            ",
-                    # insert
-                    node_id, @params[:maxvps], @params[:ve_private], @params[:fstype],
-                    # update
-                    @params[:maxvps], @params[:ve_private], @params[:fstype]
+                    WHERE server_id = ?
+				            ',
+                    @params[:maxvps], @params[:ve_private], @params[:fstype],
+                    node_id
         )
       end
 
-      log "Node registered in database:"
+      log 'Node registered in database:'
       log "\tid = #{node_id}"
       log "\tname = #{name}"
       log "\trole = #{@params[:role]}"
@@ -195,7 +192,7 @@ class VpsAdmin < Executor
       log "\taddr = #{@params[:addr]}"
 
       case @params[:role]
-        when "node"
+        when 'node'
           log "\tmaxvps = #{@params[:maxvps]}"
           log "\tve_private = #{@params[:ve_private]}"
           log "\tfstype = #{@params[:fstype]}"
@@ -204,11 +201,11 @@ class VpsAdmin < Executor
       refresh
     end
 
-    log "Updating public keys"
+    log 'Updating public keys'
 
     get_pubkeys.each do |t, k|
-      db.prepared("INSERT INTO node_pubkey (node_id, `type`, `key`) VALUES (?, ?, ?)
-			             ON DUPLICATE KEY UPDATE `key` = ?",
+      db.prepared('INSERT INTO node_pubkey (node_id, `type`, `key`) VALUES (?, ?, ?)
+			             ON DUPLICATE KEY UPDATE `key` = ?',
                   node_id, t, k, k)
     end
 
