@@ -126,11 +126,7 @@ class VPS < Executor
         vzctl(:set, @veid, {
             :feature => ["nfsd:on", "nfs:on", "ppp:on"],
             :capability => "net_admin:on",
-            :iptables => ['ip_conntrack', 'ip_conntrack_ftp', 'ip_conntrack_irc', 'ip_nat_ftp',
-                          'ip_nat_irc', 'ip_tables', 'ipt_LOG', 'ipt_REDIRECT', 'ipt_REJECT',
-                          'ipt_TCPMSS', 'ipt_TOS', 'ipt_conntrack', 'ipt_helper', 'ipt_length',
-                          'ipt_limit', 'ipt_multiport', 'ipt_state', 'ipt_tcpmss', 'ipt_tos',
-                          'ipt_ttl', 'iptable_filter', 'iptable_mangle', 'iptable_nat'],
+            :netfilter => "full",
             :numiptent => "1000",
             :devices => ["c:10:200:rw", "c:10:229:rw", "c:108:0:rw"],
         }, true)
