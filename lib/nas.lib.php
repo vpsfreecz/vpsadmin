@@ -166,7 +166,7 @@ function nas_export_add($member, $root, $dataset, $path, $quota, $user_editable,
 	
 	if($default == "no" && $member_prefix)
 		foreach($n->storage_roots as $r) {
-			if ($r["id"] == $root && $r["type"] == "per_member") {
+			if ($r["id"] == $root && $r["storage_layout"] == "per_member") {
 				$dataset = $member."/".$dataset;
 				$path = $member."/".$path;
 				break;
