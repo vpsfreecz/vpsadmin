@@ -1,4 +1,8 @@
-* Tue Jun 3 2014 - version 1.21.1
+* Thu Jul 03 2014 - version 1.21.2
+- Fix enabling iptables for VPS (use vzctl --netfilter instead
+  of obsoleted --iptables)
+
+* Tue Jun 03 2014 - version 1.21.1
 - Improve compatibility with ruby2, bugfixes
 
 * Mon May 19 2014 - version 1.21.0
