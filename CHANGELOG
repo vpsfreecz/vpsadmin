@@ -1,3 +1,8 @@
+* Thu Jul 03 2014 - version 1.21.2
+- Fix creating default exports when creating members using requests for approval
+- Fix prefix addition for user created exports
+- Fix resetting features enabled flag after VPS reinstall
+
 * Tue Jun 3 2014 - version 1.21.1
 - Transactions: fix input/output formatting, handle HTMl entities
 

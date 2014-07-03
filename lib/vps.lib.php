@@ -189,8 +189,7 @@ class vps_load {
 		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_REINSTALL_VE, $params);
 		$this->applyconfigs();
 		$this->mount_regen();
-		$sql = 'UPDATE vps SET  vps_features_enabled=0,
-					vps_specials_installed = ""
+		$sql = 'UPDATE vps SET  vps_features_enabled=0
 					WHERE vps_id='.$db->check($this->veid);
 		$result = $db->query($sql);
     		$this->nameserver($cluster->get_first_suitable_dns($cluster->get_location_of_server($this->ve["vps_server"])));

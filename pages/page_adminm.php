@@ -317,6 +317,8 @@ function request_approve() {
 			$m = member_load();
 			$m_id = $m->create_new($data);
 			
+			nas_create_default_exports("member", $m->m);
+			
 			if($mail || $_POST["m_create_vps"]) { // create vps
 				$server = null;
 				
