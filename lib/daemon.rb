@@ -4,6 +4,7 @@ require 'lib/command'
 require 'lib/console'
 require 'lib/remote'
 require 'lib/transaction'
+require 'lib/scheduler'
 
 require 'rubygems'
 require 'eventmachine'
@@ -234,7 +235,7 @@ module VpsAdmind
       end
 
       if $CFG.get(:storage, :update_status)
-        Storage.new(0).update_status
+        Dataset.new(0).update_status
       end
 
       my.close
@@ -252,6 +253,8 @@ module VpsAdmind
     end
 
     def start_em(console, remote)
+      return if !console && !remote && !$CFG.get(:scheduler, :enabled)
+
       @export_console = console
 
       RemoteControl.load_handlers if remote
@@ -262,6 +265,8 @@ module VpsAdmind
           EventMachine.start_unix_domain_server($CFG.get(:remote, :socket), RemoteControl, self) if remote
         end
       end
+
+      Scheduler.run(self) if $CFG.get(:scheduler, :enabled)
     end
 
     def workers

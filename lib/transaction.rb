@@ -8,6 +8,8 @@ class Transaction
       :backup_regular => 5006,
       :backup_snapshot => 5011,
       :rotate_snapshots => 5101,
+      :dataset_snapshot => 5204,
+      :dataset_transfer => 5205,
       :send_mail => 9001,
   }
 
@@ -44,9 +46,11 @@ class Transaction
       5011 => "Snapshot",
       5021 => "Trash backups",
       5101 => "Rotate snapshots",
-      5201 => "Export +",
-      5202 => "Export *",
-      5203 => "Export -",
+      5201 => "Dataset +",
+      5202 => "Dataset *",
+      5203 => "Dataset -",
+      5204 => 'Snapshot',
+      5205 => 'Transfer',
       5301 => "Mounts",
       5302 => "Mount",
       5303 => "Umount",

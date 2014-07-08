@@ -7,7 +7,7 @@ require 'lib/handlers/clone'
 require 'lib/handlers/migration'
 require 'lib/handlers/firewall'
 require 'lib/handlers/mailer'
-require 'lib/handlers/storage'
+require 'lib/handlers/dataset'
 require 'lib/handlers/backuper'
 require 'lib/handlers/dummy'
 

@@ -29,7 +29,7 @@ IMPLICIT_CONFIG = {
         :track_transfers => true,
         :root => "/opt/vpsadmind",
         :init => true,
-        :fstype => :ext4, # loaded from db
+        :fstype => :zfs, # loaded from db
         :type => nil, # loaded from db
         :handlers => {
             "VpsAdmin" => {
@@ -77,10 +77,12 @@ IMPLICIT_CONFIG = {
                 4022 => "migrate_part2",
                 4031 => "cleanup",
             },
-            "Storage" => {
-                5201 => "create_export",
-                5202 => "update_export",
-                5203 => "delete_export",
+            'Dataset' => {
+                5201 => 'create',
+                5202 => 'set',
+                5203 => 'destroy',
+                5204 => 'snapshot',
+                5205 => 'transfer',
             },
             "Backuper" => {
                 5001 => "restore_prepare",
@@ -206,6 +208,12 @@ IMPLICIT_CONFIG = {
     :mailer => {
         :smtp_server => "localhost",
         :smtp_port => 25,
+    },
+
+    :scheduler => {
+        :enabled => false,
+        :socket => '/var/run/vpsadmind-scheduler.sock',
+        :crontab => '/etc/cron.d/vpsadmind-scheduler',
     },
 
     :console => {
