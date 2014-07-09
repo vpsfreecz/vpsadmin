@@ -140,6 +140,19 @@ class AddStorage < ActiveRecord::Migration
       t.boolean    :confirmed,      null: false, default: false
     end
 
+    create_table :branches do |t|
+      t.references :dataset_in_pool, null: false
+      t.datetime   :name,            null: false
+      t.boolean    :head,            null: false, default: false
+      t.boolean    :confirmed,       null: false, default: false
+    end
+
+    create_table :snapshot_in_pool_in_branches do |t|
+      t.references :snapshot_in_pool, null: false
+      t.references :branch,           null: false
+      t.boolean    :confirmed,        null: false, default: false
+    end
+
     create_table :mounts do |t|
       t.references :vps,            null: false
       t.string     :src,            null: true,  limit: 500
@@ -391,6 +404,8 @@ class AddStorage < ActiveRecord::Migration
     drop_table :dataset_in_pools
     drop_table :snapshots
     drop_table :snapshot_in_pools
+    drop_table :branches
+    drop_table :snapshot_in_pool_in_branches
     drop_table :mounts
     drop_table :mirrors
     drop_table :repeatable_tasks

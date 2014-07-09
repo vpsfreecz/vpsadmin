@@ -21,6 +21,13 @@ ActiveRecord::Schema.define(version: 20140619170545) do
     t.integer  "use_count",             default: 0, null: false
   end
 
+  create_table "branches", force: true do |t|
+    t.integer  "dataset_in_pool_id",                 null: false
+    t.datetime "name",                               null: false
+    t.boolean  "head",               default: false, null: false
+    t.boolean  "confirmed",          default: false, null: false
+  end
+
   create_table "cfg_dns", primary_key: "dns_id", force: true do |t|
     t.string  "dns_ip",           limit: 63,                 null: false
     t.string  "dns_label",        limit: 63,                 null: false
@@ -255,6 +262,12 @@ ActiveRecord::Schema.define(version: 20140619170545) do
     t.boolean "daemon",                      null: false
     t.string  "vpsadmin_version", limit: 63
     t.string  "kernel",           limit: 50, null: false
+  end
+
+  create_table "snapshot_in_pool_in_branches", force: true do |t|
+    t.integer "snapshot_in_pool_id",                 null: false
+    t.integer "branch_id",                           null: false
+    t.boolean "confirmed",           default: false, null: false
   end
 
   create_table "snapshot_in_pools", force: true do |t|
