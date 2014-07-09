@@ -23,7 +23,8 @@ ActiveRecord::Schema.define(version: 20140619170545) do
 
   create_table "branches", force: true do |t|
     t.integer  "dataset_in_pool_id",                 null: false
-    t.datetime "name",                               null: false
+    t.string   "name",                               null: false
+    t.datetime "created_at",                         null: false
     t.boolean  "head",               default: false, null: false
     t.boolean  "confirmed",          default: false, null: false
   end
@@ -317,6 +318,15 @@ ActiveRecord::Schema.define(version: 20140619170545) do
 
   create_table "tmp_sysconfig", primary_key: "cfg_name", force: true do |t|
     t.text "cfg_value"
+  end
+
+  create_table "transaction_confirmations", force: true do |t|
+    t.integer "transaction_id",                 null: false
+    t.string  "class_name",                     null: false
+    t.string  "table_name",                     null: false
+    t.integer "row_id",                         null: false
+    t.integer "confirm",                        null: false
+    t.boolean "done",           default: false, null: false
   end
 
   create_table "transaction_groups", force: true do |t|

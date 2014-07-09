@@ -142,7 +142,8 @@ class AddStorage < ActiveRecord::Migration
 
     create_table :branches do |t|
       t.references :dataset_in_pool, null: false
-      t.datetime   :name,            null: false
+      t.string     :name,            null: false
+      t.datetime   :created_at,      null: false
       t.boolean    :head,            null: false, default: false
       t.boolean    :confirmed,       null: false, default: false
     end
@@ -151,6 +152,19 @@ class AddStorage < ActiveRecord::Migration
       t.references :snapshot_in_pool, null: false
       t.references :branch,           null: false
       t.boolean    :confirmed,        null: false, default: false
+    end
+
+    create_table :transaction_confirmations do |t|
+      t.references :transaction,    null: false
+      t.string     :class_name,     null: false, limit: 255
+      t.string     :table_name,     null: false, limit: 255
+      t.integer    :row_id,         null: false
+
+      # enum
+      #  0 - create (success - confirm, failure - delete)
+      #  1 - delete (success - delete, failure - revert to confirm)
+      t.integer    :confirm,        null: false
+      t.boolean    :done,           null: false, default: false
     end
 
     create_table :mounts do |t|
@@ -406,6 +420,7 @@ class AddStorage < ActiveRecord::Migration
     drop_table :snapshot_in_pools
     drop_table :branches
     drop_table :snapshot_in_pool_in_branches
+    drop_table :transaction_confirmations
     drop_table :mounts
     drop_table :mirrors
     drop_table :repeatable_tasks
