@@ -8,6 +8,7 @@ class Transaction
       :backup_regular => 5006,
       :backup_snapshot => 5011,
       :rotate_snapshots => 5101,
+      :dataset_create => 5201,
       :dataset_snapshot => 5204,
       :dataset_transfer => 5205,
       :send_mail => 9001,
@@ -74,21 +75,54 @@ class Transaction
     end
   end
 
-  def queue(p)
-    param = p[:param].to_json
-    param = '{}' if param == 'null'
+  def prepare(p)
+    queue(p, false)
+  end
+
+  def queue(p, confirmed = true)
+    param = encode_param(p[:param])
 
     @db.prepared('INSERT INTO transactions (`t_time`, `t_m_id`, `t_server`, `t_vps`, `t_type`,
                                             `t_depends_on`, `t_urgent`, `t_priority`, `t_param`,
                                             `t_done`, `t_success`)
-		             VALUES (UNIX_TIMESTAMP(NOW()), ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)',
+		             VALUES (UNIX_TIMESTAMP(NOW()), ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)',
                  p[:m_id], p[:node], p[:vps], p[:type].class == Symbol ? @@types[p[:type]] : p[:type],
-                 p[:depends], p[:urgent] || 0, p[:priority] || 0, param)
+                 p[:depends], p[:urgent] || 0, p[:priority] || 0, param, confirmed ? 0 : 2)
 
     @db.insert_id
   end
 
+  def confirm(id, param=nil)
+    args = []
+    args << encode_param(param) if param
+    args << id
+
+    @db.prepared("UPDATE transactions SET t_done = 0 #{param ? ', t_param = ?' : ''} WHERE t_id = ? AND t_done = 2", *args)
+  end
+
+  def confirm_create(*args)
+    add_confirmable(0, *args)
+  end
+
+  def confirm_destroy(*args)
+    add_confirmable(1, *args)
+  end
+
   def Transaction.label(type)
     @@labels[type]
+  end
+
+  protected
+  def add_confirmable(type, t_id, klass, table, id)
+    @db.prepared(
+        'INSERT INTO transaction_confirmations (transaction_id, class_name, table_name, row_id, confirm, done)
+        VALUES (?, ?, ?, ?, ?, 0)',
+        t_id, klass, table, id, type
+    )
+  end
+
+  def encode_param(p)
+    ret = p.to_json
+    ret == 'null' ? '{}' : ret
   end
 end

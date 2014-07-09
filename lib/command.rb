@@ -81,16 +81,41 @@ class Command
   end
 
   def save(db)
+    success = @status != :failed
+    st = db.prepared_st('SELECT table_name, row_id, confirm FROM transaction_confirmations WHERE transaction_id = ? AND done = 0', @trans['t_id'])
+
+    st.each do |row|
+      case row[2].to_i
+        when 0 # create
+          if success
+            db.query("UPDATE #{row[0]} SET confirmed = 1 WHERE id = #{row[1]}")
+          else
+            db.query("DELETE FROM #{row[0]} WHERE id = #{row[1]}")
+          end
+
+        when 1 # destroy
+          if success
+            db.query("DELETE FROM #{row[0]} WHERE id = #{row[1]}")
+          else
+            db.query("UPDATE #{row[0]} SET confirmed = 1 WHERE id = #{row[1]}")
+          end
+      end
+    end
+
+    st.close
+
+    db.prepared('UPDATE transaction_confirmations SET done = 1 WHERE transaction_id = ? AND done = 0', @trans['t_id'])
+
     db.prepared(
-        "UPDATE transactions SET t_done=1, t_success=?, t_output=?, t_real_start=?, t_end=? WHERE t_id=?",
-        {:failed => 0, :ok => 1, :warning => 2}[@status], (@executor ? @output.merge(@executor.output) : @output).to_json, @time_start, @time_end, @trans["t_id"]
+        'UPDATE transactions SET t_done=1, t_success=?, t_output=?, t_real_start=?, t_end=? WHERE t_id=?',
+        {:failed => 0, :ok => 1, :warning => 2}[@status], (@executor ? @output.merge(@executor.output) : @output).to_json, @time_start, @time_end, @trans['t_id']
     )
 
     @executor.post_save(db) if @executor
   end
 
   def dependency_failed(db)
-    @output[:error] = "Dependency failed"
+    @output[:error] = 'Dependency failed'
     @status = :failed
     save(db)
   end
@@ -120,15 +145,15 @@ class Command
 
         fallback['transactions'].each do |t|
           @output[:fallback][:transactions] << transaction.queue({
-                                                                     :m_id => t['t_m_id'],
-                                                                     :node => t['t_server'],
-                                                                     :vps => t['t_vps'],
-                                                                     :type => t['t_type'],
-                                                                     :depends => t['t_depends_on'],
-                                                                     :urgent => t['t_urgent'],
-                                                                     :priority => t['t_priority'],
-                                                                     :param => t['t_params'],
-                                                                 })
+               :m_id => t['t_m_id'],
+               :node => t['t_server'],
+               :vps => t['t_vps'],
+               :type => t['t_type'],
+               :depends => t['t_depends_on'],
+               :urgent => t['t_urgent'],
+               :priority => t['t_priority'],
+               :param => t['t_params'],
+           })
         end
       end
     rescue => err

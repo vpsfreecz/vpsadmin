@@ -2,7 +2,7 @@ class Dataset < Executor
   include ZfsUtils
 
   def create
-    zfs(:create, '-p', @params['name'])
+    zfs(:create, '-p', "#{@params['pool_fs']}/#{@params['name']}")
   end
 
   def set
@@ -20,11 +20,9 @@ class Dataset < Executor
     zfs(:snapshot, nil, "#{@params['pool']}/#{@params['dataset_name']}@#{snap}")
 
     db = Db.new
-
-    db.prepared('UPDATE snapshots SET name = ?, confirmed = 1 WHERE id = ?', snap, @params['snapshot_id'])
-    db.prepared('UPDATE snapshot_in_pools SET confirmed = 1 WHERE id = ?', @params['snapshot_in_pool_id'])
-
+    db.prepared('UPDATE snapshots SET name = ? WHERE id = ?', snap, @params['snapshot_id'])
     db.close
+
     ok
   end
 
@@ -41,18 +39,15 @@ class Dataset < Executor
     do_transfer(snap1) if @params['initial']
     do_transfer(snap1, snap2) if snap2
 
-    db = Db.new
-
-    ids = @params['snapshots'].map { |s| s[3] }.join(',')
-    db.query("UPDATE snapshot_in_pools SET confirmed = 1 WHERE id IN (#{ids})")
-
-    db.close
-
     ok
   end
 
   def rollback
 
+  end
+
+  def clone
+    zfs(:clone, nil, "#{}")
   end
 
   def update_status
@@ -105,9 +100,9 @@ class Dataset < Executor
   end
 
   def confirmed_snapshot_name(db, snap)
-    return snap[1] if snap[2]
+    return snap[:name] if snap[:confirmed]
 
-    st = db.prepared_st('SELECT name FROM snapshots WHERE id = ?', snap[0])
+    st = db.prepared_st('SELECT name FROM snapshots WHERE id = ?', snap[:id])
     ret = st.fetch
     st.close
 

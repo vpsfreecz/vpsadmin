@@ -8,6 +8,7 @@ module Tasks
         src_pool.node_id AS src_node_id, dst_pool.node_id AS dst_node_id,
         src_node.server_ip4 AS src_node_addr,
         src_pool.filesystem AS src_pool_fs, dst_pool.filesystem AS dst_pool_fs,
+        src_pool.role AS src_pool_role, dst_pool.role AS dst_pool_role,
         vps.vps_id
       FROM #{task['table_name']} a
       LEFT JOIN pools p ON p.id = a.pool_id
@@ -47,7 +48,7 @@ module Tasks
       snap_in_pool_id = @db.insert_id
 
       t = Transaction.new(@db)
-      t.queue({
+      t_id = t.prepare({
           node: @src_node_id,
           vps: @vps_id,
           type: :dataset_snapshot,
@@ -58,12 +59,17 @@ module Tasks
               snapshot_in_pool_id: snap_in_pool_id
           }
       })
+
+      t.confirm_create(t_id, 'Snapshot', 'snapshots', snap_id)
+      t.confirm_create(t_id, 'SnapshotInPool', 'snapshot_in_pools', snap_in_pool_id)
+      t.confirm(t_id)
     end
 
     def transfer
       log "execute dataset_action#transfer #{@src_dataset_in_pool_id}"
 
       t = Transaction.new(@db)
+      branch_id = branch_name = nil
 
       # select the last snapshot from the destination
       st = @db.prepared_st(
@@ -102,33 +108,93 @@ module Tasks
 
         all_snapshots = []
 
-        st.each { |row| all_snapshots << row }
+        st.each do |row|
+          all_snapshots << {
+              id: row[0],
+              name: row[1],
+              confirmed: row[2]
+          }
+        end
+
+        t_id = nil
+
+        # if branched
+        #   create branch unless it exists
+        #   mark branch as head
+        #   put all snapshots inside it
+        if dst_branched?
+          st = @db.prepared_st('SELECT name FROM branches WHERE dataset_in_pool_id = ? LIMIT 1', @dst_dataset_in_pool_id)
+
+          if st.num_rows > 0
+            branch_name = st.fetch[0]
+
+          else
+            branch_name = Time.new.strftime('%Y-%m-%dT%H:%M:%S')
+
+            @db.prepared(
+                'INSERT INTO branches (dataset_in_pool_id, name, created_at, head, confirmed)
+                VALUES (?, ?, NOW(), 1, 0)',
+                @dst_dataset_in_pool_id, branch_name
+            )
+
+            branch_id = @db.insert_id
+
+            t_id = t.prepare({
+                                 node: @dst_node_id,
+                                 vps: @vps_id,
+                                 type: :dataset_create,
+                                 param: {
+                                     pool_fs: @dst_pool_fs,
+                                     name: "#{@src_ds_name}/#{branch_name}"
+                                 }
+                             })
+
+            t.confirm_create(t_id, 'Branch', 'branches', branch_id)
+            t.confirm(t_id)
+          end
+        end
+
+        t_id = t.prepare({
+             node: @dst_node_id,
+             vps: @vps_id,
+             type: :dataset_transfer,
+             depends: t_id,
+             param: {
+                 src_node_addr: @src_node_addr,
+                 src_pool_fs: @src_pool_fs,
+                 dst_pool_fs: @dst_pool_fs,
+                 dataset_name: @src_ds_name,
+                 snapshots: all_snapshots,
+                 initial: true,
+                 branch: branch_name
+             }
+         })
 
         all_snapshots.each do |snap|
           @db.prepared(
               'INSERT INTO snapshot_in_pools (snapshot_id, dataset_in_pool_id, confirmed)
               VALUES (?, ?, 0)',
-              snap[0], @dst_dataset_in_pool_id
+              snap[:id], @dst_dataset_in_pool_id
           )
 
-          snap << @db.insert_id
+          sip_id = @db.insert_id
+
+          t.confirm_create(t_id, 'SnapshotInPool', 'snapshot_in_pools', sip_id)
+
+          if dst_branched?
+            @db.prepared(
+                'INSERT INTO snapshot_in_pool_in_branches (snapshot_in_pool_id, branch_id, confirmed)
+                VALUES (?, ?, 0)',
+                sip_id, branch_id
+            )
+
+            t.confirm_create(t_id, 'SnapshotInPoolInBranches', 'snapshot_in_pool_in_branches', @db.insert_id)
+          end
         end
 
-        st.close
+        t.confirm(t_id)
 
-        t.queue({
-            node: @dst_node_id,
-            vps: @vps_id,
-            type: :dataset_transfer,
-            param: {
-                src_node_addr: @src_node_addr,
-                src_pool_fs: @src_pool_fs,
-                dst_pool_fs: @dst_pool_fs,
-                dataset_name: @src_ds_name,
-                snapshots: all_snapshots,
-                initial: true
-            }
-        })
+        st.close
 
       else # there are snapshots on the destination
         dst_last_snap = st.fetch
@@ -136,7 +202,24 @@ module Tasks
         transfered_snaps = []
         st.close
 
-        # select last snapshot from source
+        # if branched
+        #   select last snapshot from head branch
+        if dst_branched?
+          st = @db.prepared_st(
+              'SELECT s.id, s.name, s.confirmed
+              FROM snapshot_in_pool_in_branches sipb
+              INNER JOIN snapshots_in_pool sip ON sip.id = sipb.snapshot_in_pool
+              INNER JOIN snapshots s ON s.id = sip.snapshot_id
+              WHERE sipb.head = 1 AND sipb.dataset_in_pool_id = ?
+              ORDER BY s.snapshot_id DESC
+              LIMIT 1',
+              @dst_dataset_in_pool_id
+          )
+          dst_last_snap = st.fetch
+          st.close
+        end
+
+        # select all snapshots from source in reverse order
         st = @db.prepared_st(
             'SELECT s.id, s.name, s.confirmed
             FROM snapshot_in_pools sip
@@ -149,12 +232,22 @@ module Tasks
         st.each do |snap|
           src_last_snap ||= snap
 
-          transfered_snaps.insert(0, snap)
+          transfered_snaps.insert(0, {
+              id: snap[0],
+              name: snap[1],
+              confirmed: snap[2]
+          })
 
           if dst_last_snap[0] == snap[0] # found the common snapshot
             # incremental send from snap[1] to src_last_snap[1]
             # if they are the same, it is the last snapshot on source and nothing has to be sent
             unless snap[0] == src_last_snap[0]
+              t_id = t.prepare({
+                  node: @dst_node_id,
+                  vps: @vps_id,
+                  type: :dataset_transfer
+              })
+
               transfered_snaps.map! do |s|
                 @db.prepared(
                     'INSERT INTO snapshot_in_pools (snapshot_id, dataset_in_pool_id, confirmed)
@@ -162,20 +255,29 @@ module Tasks
                     s[0], @dst_dataset_in_pool_id
                 )
 
-                s << @db.insert_id
+                sip_id = @db.insert_id
+
+                t.confirm_create(t_id, 'SnapshotInPool', 'snapshot_in_pools', sip_id)
+
+                # if branched
+                #  insert into branch as well
+                if dst_branched?
+                  @db.prepared(
+                      'INSERT INTO snapshot_in_pool_in_branches (snapshot_in_pool_id, branch_id, confirmed)
+                      VALUES (?, ?, 0)',
+                      sip_id, branch_id
+                  )
+
+                  t.confirm_create(t_id, 'SnapshotInPoolInBranches', 'snapshot_in_pool_in_branches', @db.insert_id)
+                end
               end
 
-              t.queue({
-                  node: @dst_node_id,
-                  vps: @vps_id,
-                  type: :dataset_transfer,
-                  param: {
-                      src_node_addr: @src_node_addr,
-                      src_pool_fs: @src_pool_fs,
-                      dst_pool_fs: @dst_pool_fs,
-                      dataset_name: @src_ds_name,
-                      snapshots: transfered_snaps
-                  }
+              t.confirm(t_id, {
+                  src_node_addr: @src_node_addr,
+                  src_pool_fs: @src_pool_fs,
+                  dst_pool_fs: @dst_pool_fs,
+                  dataset_name: @src_ds_name,
+                  snapshots: transfered_snaps
               })
 
               return
@@ -189,6 +291,11 @@ module Tasks
 
     def rollback
       # FIXME
+    end
+
+    protected
+    def dst_branched?
+      @dst_pool_role.to_i == 2
     end
   end
 end
