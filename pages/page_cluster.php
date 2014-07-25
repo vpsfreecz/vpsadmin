@@ -1435,6 +1435,9 @@ switch($_REQUEST["action"]) {
 				$t = _("Mass remount");
 				$xtpl->form_add_select(_("Remount mounts from").':', 'source_nodes[]', $cluster->list_servers_with_type("storage"), '', '', true, '5');
 				break;
+			case "mount_regen":
+				$t = _("Mass mount regeneration");
+				break;
 			default:
 				break;
 		}
@@ -1636,6 +1639,13 @@ switch($_REQUEST["action"]) {
 						$m = nas_get_mount_by_id($row["id"]);
 						$vps->remount($m);
 					}
+				}
+				break;
+			case "mount_regen":
+				foreach ($vpses as $veid) {
+					$vps = vps_load($veid);
+					if ($vps->exists)
+						$vps->mount_regen();
 				}
 				break;
 			default:
@@ -2339,6 +2349,7 @@ if ($mass_management) {
 			"backup_lock" => _("Set backup lock"),
 			"backup" => _("Backup"),
 			"remount" => _("Remount"),
+			"mount_regen" => _("Regenerate mounts"),
 		), '', '', false, '5', '8'
 	);
 	
