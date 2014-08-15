@@ -161,10 +161,10 @@ class AddStorage < ActiveRecord::Migration
       t.integer    :row_id,         null: false
 
       # enum
-      #  0 - create (success - confirm, failure - delete)
-      #  1 - delete (success - delete, failure - revert to confirm)
+      #  0 - create (success - confirm, failure - destroy)
+      #  1 - destroy (success - destroy, failure - revert to confirm)
       t.integer    :confirm,        null: false
-      t.boolean    :done,           null: false, default: false
+      t.integer    :done,           null: false, default: 0
     end
 
     create_table :mounts do |t|
