@@ -7,6 +7,9 @@ class IpAddress < ActiveRecord::Base
   has_paper_trail
 
   alias_attribute :addr, :ip_addr
+  alias_attribute :version, :ip_v
+
+  after_update :shaper_changed, if: :shaper_changed?
 
   def free?
     vps_id.nil? || vps_id == 0
@@ -16,5 +19,14 @@ class IpAddress < ActiveRecord::Base
     self.where(ip_v: v, location: location)
       .where('vps_id IS NULL OR vps_id = 0')
       .order(:ip_id).take!
+  end
+
+  protected
+  def shaper_changed?
+    max_tx_changed? || max_rx_changed?
+  end
+
+  def shaper_changed
+    Transactions::Vps::ShaperChange.fire(self) if vps_id > 0
   end
 end

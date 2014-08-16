@@ -8,7 +8,11 @@ module Transactions::Vps
       self.t_server = vps.vps_server
 
       {
-          ipdel: ip.addr
+          addr: ip.addr,
+          version: ip.version,
+          shaper: {
+              class_id: ip.class_id
+          }
       }
     end
   end
