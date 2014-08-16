@@ -304,7 +304,7 @@ class vps_load {
 			nas_delete_mounts_for_vps($this->veid);
 
 			if ($result = $db->query($sql)) {
-				if ($this->delete_all_ips()) {
+				if ($this->delete_all_ips(true)) {
 					$this->exists = false;
 					add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_DESTROY_VE);
 					return true;
