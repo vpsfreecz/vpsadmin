@@ -490,7 +490,18 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			
 			$this->ve["vps_server"] = $target_server->s["server_id"];
 			$this->applyconfigs($migration_id);
+			
+			$ips = $this->iplist();
+			
+			foreach($ips as $ip) {
+				$migration_id = $this->shaper_set($ip, $migration_id);
+			}
+			
 			$this->ve["vps_server"] = $source_server->s["server_id"];
+			
+			foreach($ips as $ip) {
+				$migration_id = $this->shaper_unset($ip, $migration_id);
+			}
 			
 			if ($source_server->role["fstype"] != $target_server->role["fstype"])
 			{
@@ -1201,6 +1212,38 @@ function ipadd($ip, $type = 4, $dep = NULL) {
   
   function is_manipulable() {
 	return $_SESSION["is_admin"] || !$this->ve["server_maintenance"];
+  }
+  
+  function shaper_set($ip, $dep = null) {
+	global $db;
+	
+	$params = array(
+		'addr' => $ip['ip_addr'],
+		'version' => $ip['ip_v'],
+		'shaper' => array(
+			'class_id' => $ip['class_id'],
+			'max_tx' => $ip['max_tx'],
+			'max_rx' => $ip['max_rx']
+		)
+	);
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_SHAPER_SET, $params, null, $dep);
+	return $db->insertId();
+  }
+  
+  function shaper_unset($ip, $dep = null) {
+	global $db;
+	
+	$params = array(
+		'addr' => $ip['ip_addr'],
+		'version' => $ip['ip_v'],
+		'shaper' => array(
+			'class_id' => $ip['class_id']
+		)
+	);
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_SHAPER_UNSET, $params, null, $dep);
+	return $db->insertId();
   }
 }
 ?>
