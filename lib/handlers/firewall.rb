@@ -68,8 +68,10 @@ class Firewall < Executor
   end
 
   def reg_ips
-    @params['ip_addrs'].each do |ip|
-      reg_ip(ip['addr'], ip['ver'])
+    Firewall.mutex.synchronize do
+      @params['ip_addrs'].each do |ip|
+        reg_ip(ip['addr'], ip['ver'])
+      end
     end
 
     ok
