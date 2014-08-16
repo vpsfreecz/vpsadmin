@@ -9,7 +9,7 @@ require 'rubygems'
 require 'eventmachine'
 
 module VpsAdmind
-  VERSION = '1.21.2'
+  VERSION = '1.22.0'
   DB_VERSION = 15
 
   EXIT_OK = 0
@@ -46,6 +46,9 @@ module VpsAdmind
 
       @fw = Firewall.new
       @fw.init(@db)
+
+      @shaper = Shaper.new(0)
+      @shaper.init(@db)
     end
 
     def start

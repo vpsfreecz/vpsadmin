@@ -105,6 +105,18 @@ class VPS < Executor
     vzctl(:set, @veid, @params, true)
   end
 
+  def ip_add
+    Shaper.new(@veid, @params).shape_set
+
+    vzctl(:set, @veid, {ipadd: @params['addr']}, true)
+  end
+
+  def ip_del
+    Shaper.new(@veid, @params).shape_unset
+
+    vzctl(:set, @veid, {ipdel: @params['addr']}, true)
+  end
+
   def passwd
     vzctl(:set, @veid, {:userpasswd => "#{@params["user"]}:#{@params["password"]}"})
     @passwd = true
