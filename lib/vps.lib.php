@@ -362,7 +362,15 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			WHERE ip_id = "'.$db->check($ipadr["ip_id"]).'"';
 		$db->query($sql);
 		if ($db->affected_rows() > 0) {
-		    $command = array('ipadd' => $ip);
+		    $command = array(
+				'addr' => $ip,
+				'version' => $ipadr['ip_v'],
+				'shaper' => array(
+					'class_id' => $ipadr['class_id'],
+					'max_tx' => $ipadr['max_tx'],
+					'max_rx' => $ipadr['max_rx']
+				)
+			);
 		    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_IPADD, $command, NULL, $dep);
 		    return $db->insertId();
 		} else
@@ -384,14 +392,20 @@ function ipadd($ip, $type = 4, $dep = NULL) {
   function ipdel($ip, $dep = NULL) {
 	global $db;
 	if ($this->exists) {
-	  $sql = 'UPDATE vps_ip SET vps_id = 0 WHERE ip_addr="'.$db->check($ip).'"';
-	  if ($result = $db->query($sql)) {
-	  	$command = array('ipdel' => $ip);
-		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_IPDEL, $command, NULL, $dep);
-		return $db->insertId();
-	  	}
-	  else
-	  	return NULL;
+		$ipadr = ip_exists_in_table($ip);
+		$sql = 'UPDATE vps_ip SET vps_id = 0 WHERE ip_addr="'.$db->check($ip).'"';
+		if ($result = $db->query($sql)) {
+			$command = array(
+				'addr' => $ip,
+				'version' => $ipadr['version'],
+				'shaper' => array(
+					'class_id' => $ipadr['class_id']
+				)
+			);
+			add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_IPDEL, $command, NULL, $dep);
+			return $db->insertId();
+		} else
+			return NULL;
 	}
   }
 
