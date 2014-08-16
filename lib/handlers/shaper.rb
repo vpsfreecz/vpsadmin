@@ -1,48 +1,70 @@
 class Shaper < Executor
+  @@mutex = ::Mutex.new
+
   def init(db)
-    dev = $CFG.get(:vpsadmin, :netdev)
-    tx = $CFG.get(:vpsadmin, :max_tx)
-    rx = $CFG.get(:vpsadmin, :max_rx)
+    @@mutex.synchronize do
+      dev = $CFG.get(:vpsadmin, :netdev)
+      tx = $CFG.get(:vpsadmin, :max_tx)
+      rx = $CFG.get(:vpsadmin, :max_rx)
 
-    tc("qdisc add dev #{dev} root handle 1: htb", [2])
-    tc('qdisc add dev venet0 root handle 1: htb', [2])
+      tc("qdisc add dev #{dev} root handle 1: htb", [2])
+      tc('qdisc add dev venet0 root handle 1: htb', [2])
 
-    tc("class add dev venet0 parent 1: classid 1:1 htb rate #{rx}bps ceil #{rx}bps burst 1M", [2])
-    tc("class add dev #{dev} parent 1: classid 1:1 htb rate #{tx}bps ceil #{tx}bps burst 1M", [2])
+      tc("class add dev venet0 parent 1: classid 1:1 htb rate #{rx}bps ceil #{rx}bps burst 1M", [2])
+      tc("class add dev #{dev} parent 1: classid 1:1 htb rate #{tx}bps ceil #{tx}bps burst 1M", [2])
 
-    all_ips(db) do |ip|
-      shape_ip(ip['ip_addr'], ip['ip_v'].to_i, ip['class_id'], ip['max_tx'], ip['max_rx'], dev)
+      all_ips(db) do |ip|
+        shape_ip(ip['ip_addr'], ip['ip_v'].to_i, ip['class_id'], ip['max_tx'], ip['max_rx'], dev)
+      end
+    end
+  end
+
+  def flush
+    @@mutex.synchronize do
+      dev = $CFG.get(:vpsadmin, :netdev)
+
+      tc("qdisc del dev #{dev} root handle 1:", [2])
+      tc('qdisc del dev venet0 root handle 1:', [2])
     end
   end
 
   def shape_set
-    shape_ip(
-        @params['addr'],
-        @params['version'],
-        @params['shaper']['class_id'],
-        @params['shaper']['max_tx'],
-        @params['shaper']['max_rx']
-    )
+    @@mutex.synchronize do
+      shape_ip(
+          @params['addr'],
+          @params['version'],
+          @params['shaper']['class_id'],
+          @params['shaper']['max_tx'],
+          @params['shaper']['max_rx']
+      )
+    end
+
     ok
   end
 
   def shape_change
-    change_shaper(
-        @params['addr'],
-        @params['version'],
-        @params['shaper']['class_id'],
-        @params['shaper']['max_tx'],
-        @params['shaper']['max_rx']
-    )
+    @@mutex.synchronize do
+      change_shaper(
+          @params['addr'],
+          @params['version'],
+          @params['shaper']['class_id'],
+          @params['shaper']['max_tx'],
+          @params['shaper']['max_rx']
+      )
+    end
+
     ok
   end
 
   def shape_unset
-    free_ip(
-        @params['addr'],
-        @params['version'],
-        @params['shaper']['class_id']
-    )
+    @@mutex.synchronize do
+      free_ip(
+          @params['addr'],
+          @params['version'],
+          @params['shaper']['class_id']
+      )
+    end
+
     ok
   end
 
