@@ -1,2 +1,3 @@
 source :rubygems
-gem "json"
+gem 'json'
+gem 'remote-pry'

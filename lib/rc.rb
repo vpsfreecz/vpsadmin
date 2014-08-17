@@ -1,4 +1,5 @@
 require 'pp'
+require 'pry-remote'
 require 'lib/vpsadmind'
 require 'lib/utils'
 require 'lib/version'
@@ -33,6 +34,7 @@ module VpsAdmindCtl
 			begin
 				@vpsadmind.open
 				@vpsadmind.cmd(cmd.cmd, params)
+        cmd.post_send
 				@reply = @vpsadmind.reply
 			rescue
         warn "Error occured: #{$!}"

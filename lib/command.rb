@@ -31,6 +31,10 @@ class Command
 
   end
 
+  def post_send
+
+  end
+
   def process
 
   end
