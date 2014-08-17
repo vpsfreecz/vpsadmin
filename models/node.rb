@@ -27,6 +27,8 @@ class Node < ActiveRecord::Base
       message: 'not a valid IPv4 address'
   }
 
+  after_update :shaper_changed, if: :shaper_changed?
+
   def location_domain
     "#{name}.#{location.domain}"
   end
@@ -48,5 +50,14 @@ class Node < ActiveRecord::Base
     ', loc_type).group('server_id')
     .order('COUNT(st.vps_up) / max_vps ASC')
     .take
+  end
+
+  protected
+  def shaper_changed?
+    max_tx_changed? || max_rx_changed?
+  end
+
+  def shaper_changed
+    Transactions::Vps::ShaperRootChange.fire(self) unless net_interface.nil?
   end
 end

@@ -10,12 +10,16 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
   params(:common) do
     string :name, label: 'Name', desc: 'Node name', db_name: :server_name
     string :type, label: 'Role', desc: 'node, storage or mailer', db_name: :server_type
-    resource VpsAdmin::API::Resources::Location, label: 'Location', desc: 'Location node is placed in'
+    resource VpsAdmin::API::Resources::Location, label: 'Location',
+             desc: 'Location node is placed in', value_params: ->{ @node.server_location }
     string :availstat, label: 'Availability stats', desc: 'HTML code with availability graphs',
            db_name: :server_availstat
     string :ip_addr, label: 'IPv4 address', desc: 'Node\'s IP address', db_name: :server_ip4
     bool :maintenance, label: 'Maintenance mode', desc: 'Toggle maintenance mode for this node',
          db_name: :server_maintenance
+    string :net_interface, label: 'Network interface', desc: 'Outgoing network interface'
+    integer :max_tx, label: 'Max tx', desc: 'Maximum output throughput'
+    integer :max_rx, label: 'Max tx', desc: 'Maximum input throughput'
   end
 
   params(:all) do
@@ -136,8 +140,12 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       })
     end
 
+    def prepare
+      @node = ::Node.find(params[:node_id])
+    end
+
     def exec
-      to_param_names(::Node.find(params[:node_id]).attributes)
+      to_param_names(all_attrs(@node))
     end
   end
 
@@ -172,8 +180,10 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     def exec
       node = ::Node.find(params[:node_id])
 
+      pp params
+
       if node.update(to_db_names(params[:node]))
-        ok({})
+        ok
       else
         error('update failed', to_param_names(node.errors.to_hash, :input))
       end

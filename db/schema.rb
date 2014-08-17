@@ -161,8 +161,8 @@ ActiveRecord::Schema.define(version: 20140815161745) do
     t.string  "ve_private",                     default: "/vz/private/%veid%", null: false
     t.string  "fstype",             limit: 10,  default: "zfs",                null: false
     t.string  "net_interface",      limit: 50
-    t.integer "max_tx",                         default: 235929600,            null: false
-    t.integer "max_rx",                         default: 235929600,            null: false
+    t.integer "max_tx",             limit: 8,   default: 235929600,            null: false
+    t.integer "max_rx",             limit: 8,   default: 235929600,            null: false
   end
 
   add_index "servers", ["server_location"], name: "server_location", using: :btree
@@ -317,8 +317,8 @@ ActiveRecord::Schema.define(version: 20140815161745) do
     t.integer "ip_v",                   default: 4,        null: false
     t.integer "ip_location",                               null: false
     t.string  "ip_addr",     limit: 40,                    null: false
-    t.integer "max_tx",                 default: 39321600, null: false
-    t.integer "max_rx",                 default: 39321600, null: false
+    t.integer "max_tx",      limit: 8,  default: 39321600, null: false
+    t.integer "max_rx",      limit: 8,  default: 39321600, null: false
     t.integer "class_id",                                  null: false
   end
 
