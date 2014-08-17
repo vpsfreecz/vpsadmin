@@ -241,6 +241,7 @@ IMPLICIT_CONFIG = {
                 "set",
                 "pause",
                 "resume",
+                "pry",
             ]
         }
     }

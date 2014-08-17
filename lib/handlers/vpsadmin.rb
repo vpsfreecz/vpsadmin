@@ -1,5 +1,6 @@
 require 'lib/executor'
 require 'lib/daemon'
+require 'pry-remote'
 
 class VpsAdmin < Executor
   def reload
@@ -408,6 +409,11 @@ class VpsAdmin < Executor
 
   def resume
     @daemon.resume
+    ok
+  end
+
+  def pry
+    binding.remote_pry
     ok
   end
 

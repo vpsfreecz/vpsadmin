@@ -5,3 +5,4 @@ gem "mysql"
 gem "eventmachine"
 gem "thin"
 gem "sinatra"
+gem 'remote-pry'
