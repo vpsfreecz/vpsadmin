@@ -322,6 +322,8 @@ class vps_load {
 		
 		foreach($ips as $ip)
 			$this->ipdel($ip["ip_addr"]);
+			
+		return true;
 		
 	} else
 		return $db->query('UPDATE vps_ip SET vps_id = 0 WHERE vps_id='.$db->check($this->veid));
