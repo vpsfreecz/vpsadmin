@@ -112,16 +112,79 @@ class VpsAdmin < Executor
     {:ret => :ok, :output => {:killed => cnt, :msgs => msgs}}
   end
 
-  def reinit
-    log "Reinitialization requested"
-    r = nil
+  def init
+    ret = {}
+    db = nil
 
-    Firewall.mutex.synchronize do
-      fw = Firewall.new
-      r = fw.reinit
+    @params[:resources].each do |r|
+      case r
+        when 'fw'
+          log 'Initializing firewall'
+          Firewall.mutex.synchronize do
+            fw = Firewall.new
+            ret[:fw] = fw.init(db ||= Db.new)
+          end
+
+        when 'shaper'
+          log 'Initializing shaper'
+          sh = Shaper.new(0)
+          sh.init(db ||= Db.new)
+          ret[:shaper] = true
+      end
     end
 
-    ok.update({:output => r})
+    db && db.close
+    ok.update({output: ret})
+  end
+
+  def flush
+    ret = {}
+    db = nil
+
+    @params[:resources].each do |r|
+      case r
+        when 'fw'
+          log 'Flushing firewall'
+          Firewall.mutex.synchronize do
+            fw = Firewall.new
+            ret[:fw] = fw.flush(db ||= Db.new)
+          end
+
+        when 'shaper'
+          log 'Flushing shaper'
+          sh = Shaper.new(0)
+          sh.flush
+          ret[:shaper] = true
+      end
+    end
+
+    db && db.close
+    ok.update({output: ret})
+  end
+
+  def reinit
+    ret = {}
+    db = nil
+
+    @params[:resources].each do |r|
+      case r
+        when 'fw'
+          log 'Reinitializing firewall'
+          Firewall.mutex.synchronize do
+            fw = Firewall.new
+            ret[:fw] = fw.reinit(db ||= Db.new)
+          end
+
+        when 'shaper'
+          log 'Reinitializing shaper'
+          sh = Shaper.new(0)
+          sh.reinit(db ||= Db.new)
+          ret[:shaper] = true
+      end
+    end
+
+    db && db.close
+    ok.update({output: ret})
   end
 
   def refresh

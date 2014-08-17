@@ -232,6 +232,8 @@ IMPLICIT_CONFIG = {
                 "stop",
                 "update",
                 "kill",
+                "init",
+                "flush",
                 "reinit",
                 "refresh",
                 "install",

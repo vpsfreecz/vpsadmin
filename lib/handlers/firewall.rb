@@ -42,14 +42,33 @@ class Firewall < Executor
     res
   end
 
-  def reinit
-    db = Db.new
+  def flush(db = nil)
+    created = false
+
+    unless db
+      db = Db.new
+      created = true
+    end
+
+    update_traffic(db)
+    cleanup
+
+    db.close if created
+  end
+
+  def reinit(db = nil)
+    created = false
+
+    unless db
+      db = Db.new
+      created = true
+    end
 
     update_traffic(db)
     cleanup
     r = init(db)
 
-    db.close
+    db.close if created
     r
   end
 
