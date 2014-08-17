@@ -36,6 +36,31 @@ Print version and exit.
 Show help and exit.
 
 .SH COMMANDS
+
+
+\fBflush\fR <\fIresource\fR>
+.RS
+Flush resources. \fIresource\fR may be one of \fBfw\fR, \fBshaper\fR or \fBall\fR.
+
+\fBResources\fR
+.RS
+.TP
+\fBfw\fR
+Flush accounting rules from iptables. Note that the \fBvpsAdmind\fR will
+crash in a few seconds if traffic accounting is enabled and the iptables
+rules are not present.
+
+.TP
+\fBshaper\fR
+Flush shaping rules from kernel by \fBtc\fR.
+
+.RE
+
+.PP
+\fBvpsadmindctl\fR blocks until the flushing is finished.
+.RE
+
+
 \fBget\fR <\fIsubcommand\fR> [\fB-Hl\fR]
 .RS
 Access vpsAdmind's resources and properties. When used with option \fB-p\fR,
@@ -66,6 +91,27 @@ Suppress header row
 \fB-l\fR, \fB--limit\fR \fIn\fR
 Limit numer of listed queued transactions to \fIn\fR. Defaults to 50.
 
+.RE
+
+
+\fBinit\fR <\fIresource\fR>
+.RS
+Initialize resources. \fIresource\fR may be one of \fBfw\fR, \fBshaper\fR or \fBall\fR.
+
+\fBResources\fR
+.RS
+.TP
+\fBfw\fR
+Add iptables rules for traffic accounting.
+
+.TP
+\fBshaper\fR
+Add shaping rules to kernel with \fBtc\fR.
+
+.RE
+
+.PP
+\fBvpsadmindctl\fR blocks until the initialization is finished.
 .RE
 
 
@@ -215,8 +261,10 @@ datasets. Traffic accounting is not updated.
 
 \fBreinit\fR
 .RS
-Drops all iptable rules and chains concerning traffic accounting, then create
-them again.
+Reinitialize resources. \fIresource\fR may be one of \fBfw\fR, \fBshaper\fR or \fBall\fR.
+The reinitialization is atomic operation.
+.PP
+See \fBvpsadmindctl init\fR and \fBvpsadmindctl flush\fR for more information.
 .PP
 \fBvpsadmindctl\fR blocks until reinit is finished.
 .RE

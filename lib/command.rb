@@ -125,7 +125,12 @@ class Command
     def label
       "#{cmd} #{args}"
     end
+
+    def inherited(subclass)
+      subclass.args(@args)
+    end
   end
 end
 
+Dir[File.dirname(__FILE__) + '/command_templates/*.rb'].each {|file| require file }
 Dir[File.dirname(__FILE__) + '/commands/*.rb'].each {|file| require file }

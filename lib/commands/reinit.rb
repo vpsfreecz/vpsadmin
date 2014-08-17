@@ -1,12 +1,9 @@
 module Commands
-  class Reinit < Command
-    description 'Reinitialize firewall chains and rules'
-
+  class Reinit < CommandTemplates::ResourceControl
+    description 'Reinitialize resource'
     def process
       puts 'Reinitialized'
-      @res.each do |k, v|
-        puts "#{v} rules for IPv#{k}"
-      end
+      super
     end
   end
 end
