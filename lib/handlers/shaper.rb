@@ -3,28 +3,29 @@ class Shaper < Executor
 
   def init(db)
     @@mutex.synchronize do
-      dev = $CFG.get(:vpsadmin, :netdev)
-      tx = $CFG.get(:vpsadmin, :max_tx)
-      rx = $CFG.get(:vpsadmin, :max_rx)
-
-      tc("qdisc add dev #{dev} root handle 1: htb", [2])
-      tc('qdisc add dev venet0 root handle 1: htb', [2])
-
-      tc("class add dev venet0 parent 1: classid 1:1 htb rate #{rx}bps ceil #{rx}bps burst 1M", [2])
-      tc("class add dev #{dev} parent 1: classid 1:1 htb rate #{tx}bps ceil #{tx}bps burst 1M", [2])
-
-      all_ips(db) do |ip|
-        shape_ip(ip['ip_addr'], ip['ip_v'].to_i, ip['class_id'], ip['max_tx'], ip['max_rx'], dev)
-      end
+      safe_init(db)
     end
   end
 
   def flush
     @@mutex.synchronize do
-      dev = $CFG.get(:vpsadmin, :netdev)
+      safe_flush
+    end
+  end
 
-      tc("qdisc del dev #{dev} root handle 1:", [2])
-      tc('qdisc del dev venet0 root handle 1:', [2])
+  def reinit(db)
+    @@mutex.synchronize do
+      safe_flush
+      safe_init(db)
+    end
+  end
+
+  def root_change
+    @@mutex.synchronize do
+      shape_root(
+          @params['max_tx'],
+          @params['max_rx']
+      )
     end
   end
 
@@ -69,6 +70,42 @@ class Shaper < Executor
   end
 
   protected
+  def safe_init(db)
+    dev = $CFG.get(:vpsadmin, :netdev)
+    tx = $CFG.get(:vpsadmin, :max_tx)
+    rx = $CFG.get(:vpsadmin, :max_rx)
+
+    return if dev.nil?
+
+    tc("qdisc add dev #{dev} root handle 1: htb", [2])
+    tc('qdisc add dev venet0 root handle 1: htb', [2])
+
+    tc("class add dev venet0 parent 1: classid 1:1 htb rate #{rx}bps ceil #{rx}bps burst 1M", [2])
+    tc("class add dev #{dev} parent 1: classid 1:1 htb rate #{tx}bps ceil #{tx}bps burst 1M", [2])
+
+    all_ips(db) do |ip|
+      shape_ip(ip['ip_addr'], ip['ip_v'].to_i, ip['class_id'], ip['max_tx'], ip['max_rx'], dev)
+    end
+  end
+
+  def safe_flush
+    dev = $CFG.get(:vpsadmin, :netdev)
+
+    tc("qdisc del dev #{dev} root handle 1:", [2])
+    tc('qdisc del dev venet0 root handle 1:', [2])
+  end
+
+  def shape_root(tx, rx)
+    dev = $CFG.get(:vpsadmin, :netdev)
+
+    ret_in = tc("class change dev venet0 parent 1: classid 1:1 htb rate #{rx}bps ceil #{rx}bps burst 1M", [2])
+    ret_out = tc("class change dev #{dev} parent 1: classid 1:1 htb rate #{tx}bps ceil #{tx}bps burst 1M", [2])
+
+    if ret_in[:exitstatus] == 2 || ret_out[:exitstatus] == 2
+      safe_init(Db.new)
+    end
+  end
+
   def shape_ip(addr, v, class_id, tx, rx, dev = nil)
     dev ||= $CFG.get(:vpsadmin, :netdev)
 

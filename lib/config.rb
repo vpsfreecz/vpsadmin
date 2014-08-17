@@ -73,6 +73,7 @@ IMPLICIT_CONFIG = {
                 2009 => 'shape_change',
                 2010 => 'shape_set',
                 2011 => 'shape_unset',
+                2012 => 'root_change',
             },
             "Clone" => {
                 3004 => "local_clone",
