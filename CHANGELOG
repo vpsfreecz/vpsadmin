@@ -1,3 +1,8 @@
+* Mon Aug 18 2014 - version 1.22.0
+- Shaper
+- Revival of lazily deleted user accounts
+- DB upgrade depends on vpsAdmin API
+
 * Thu Jul 03 2014 - version 1.21.2
 - Fix creating default exports when creating members using requests for approval
 - Fix prefix addition for user created exports

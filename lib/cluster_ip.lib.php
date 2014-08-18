@@ -117,14 +117,16 @@ abstract class Cluster_ip {
 	$err = true;
 	
 	foreach ($raw_ips as $ip_addr) {
-		if (!$this->check_syntax($ip_addr))
+		if (!$this->check_syntax($ip_addr)) {
 			$out[] = _("Bad format") . ": '$ip_addr'";
-		else if (ip_exists_in_table($ip_addr))
+			$err = true;
+			
+		} else if (ip_exists_in_table($ip_addr)) {
 			$out[] = "IP '$ip_addr' is already in database";
-		else {
-			$out[] = _("Added IP") . " $ip_addr";
-			$insert[] = "({$this->type}, ".$this->db->check($location_id).", 0, '{$ip_addr}')";
-			$cleaned[] = array("ver" => $this->type, "addr" => $ip_addr);
+			$err = true;
+			
+		} else {
+			$insert[] = $ip_addr;
 			$err = false;
 		}
 	}
@@ -137,15 +139,66 @@ abstract class Cluster_ip {
 	if(!count($insert))
 		return;
 		
-	$sql = "INSERT INTO vps_ip (ip_v, ip_location, vps_id, ip_addr) VALUES " . implode(",", $insert);
-	
-	if ($this->db->query($sql)) {
-		$params = array("ip_addrs" => $cleaned);
-	    add_transaction_locationwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_IP_REGISTER, $params, $location_id);
-	    $this->xtpl->perex(_("Operation successful"), implode("<br/>", $out));
-	} else {
-	    $this->xtpl->perex(_("Operation not successful"), _("Insert into database failed."));
+	foreach($insert as $ip) {
+		if($this->register_ip($location_id, $ip)) {
+			$out[] = _("Added IP") . " $ip";
+			$cleaned[] = array("ver" => $this->type, "addr" => $ip);
+			$err = false;
+			
+		} else {
+			$out[] = _("Failed to register IP") . " $ip";
+			$err = true;
+		}
 	}
+	
+	if(count($cleaned) > 0) {
+		$params = array("ip_addrs" => $cleaned);
+		add_transaction_locationwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_IP_REGISTER, $params, $location_id);
+	}
+	
+	if ($err) {
+		$this->xtpl->perex(_("Operation not completely successful"), implode("<br/>", $out));
+	
+	} else {
+		$this->xtpl->perex(_("Operation successful"), implode("<br/>", $out));
+	}
+  }
+  
+  function first_available_class_id() {
+	global $db;
+	
+	$rs = $db->query("SELECT ip1.class_id+1 AS first_id
+		        FROM vps_ip ip1
+		        LEFT JOIN vps_ip ip2 ON ip2.class_id = ip1.class_id + 1
+		        WHERE ip2.class_id IS NULL
+		        ORDER BY ip1.class_id
+		        LIMIT 1");
+	
+	if($row = $db->fetch_array($rs)) {
+		return $row['first_id'];
+	}
+	
+	return false;
+  }
+  
+  function register_ip($loc, $ip, $tries = 3) {
+	global $db;
+	
+	for($i = 0; $i < $tries; $i++) {
+		$id = $this->first_available_class_id();
+		
+		$sql = "INSERT INTO vps_ip (ip_v, ip_location, vps_id, ip_addr, class_id)
+		        VALUES ({$this->type}, ".$db->check($loc).", 0, '".$db->check($ip)."', $id)";
+		
+		if(!$db->query($sql)) {
+			echo $db->error();
+			continue;
+		}
+		
+		return true;
+	}
+	
+	return false;
   }
 
    //abstract public function check_syntax($ip_addr);

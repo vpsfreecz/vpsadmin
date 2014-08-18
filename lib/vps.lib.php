@@ -304,7 +304,7 @@ class vps_load {
 			nas_delete_mounts_for_vps($this->veid);
 
 			if ($result = $db->query($sql)) {
-				if ($this->delete_all_ips()) {
+				if ($this->delete_all_ips(true)) {
 					$this->exists = false;
 					add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_DESTROY_VE);
 					return true;
@@ -322,6 +322,8 @@ class vps_load {
 		
 		foreach($ips as $ip)
 			$this->ipdel($ip["ip_addr"]);
+			
+		return true;
 		
 	} else
 		return $db->query('UPDATE vps_ip SET vps_id = 0 WHERE vps_id='.$db->check($this->veid));
@@ -362,7 +364,15 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			WHERE ip_id = "'.$db->check($ipadr["ip_id"]).'"';
 		$db->query($sql);
 		if ($db->affected_rows() > 0) {
-		    $command = array('ipadd' => $ip);
+		    $command = array(
+				'addr' => $ip,
+				'version' => $ipadr['ip_v'],
+				'shaper' => array(
+					'class_id' => $ipadr['class_id'],
+					'max_tx' => $ipadr['max_tx'],
+					'max_rx' => $ipadr['max_rx']
+				)
+			);
 		    add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_IPADD, $command, NULL, $dep);
 		    return $db->insertId();
 		} else
@@ -384,14 +394,20 @@ function ipadd($ip, $type = 4, $dep = NULL) {
   function ipdel($ip, $dep = NULL) {
 	global $db;
 	if ($this->exists) {
-	  $sql = 'UPDATE vps_ip SET vps_id = 0 WHERE ip_addr="'.$db->check($ip).'"';
-	  if ($result = $db->query($sql)) {
-	  	$command = array('ipdel' => $ip);
-		add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_IPDEL, $command, NULL, $dep);
-		return $db->insertId();
-	  	}
-	  else
-	  	return NULL;
+		$ipadr = ip_exists_in_table($ip);
+		$sql = 'UPDATE vps_ip SET vps_id = 0 WHERE ip_addr="'.$db->check($ip).'"';
+		if ($result = $db->query($sql)) {
+			$command = array(
+				'addr' => $ip,
+				'version' => $ipadr['version'],
+				'shaper' => array(
+					'class_id' => $ipadr['class_id']
+				)
+			);
+			add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_IPDEL, $command, NULL, $dep);
+			return $db->insertId();
+		} else
+			return NULL;
 	}
   }
 
@@ -476,7 +492,18 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			
 			$this->ve["vps_server"] = $target_server->s["server_id"];
 			$this->applyconfigs($migration_id);
+			
+			$ips = $this->iplist();
+			
+			foreach($ips as $ip) {
+				$migration_id = $this->shaper_set($ip, $migration_id);
+			}
+			
 			$this->ve["vps_server"] = $source_server->s["server_id"];
+			
+			foreach($ips as $ip) {
+				$migration_id = $this->shaper_unset($ip, $migration_id);
+			}
 			
 			if ($source_server->role["fstype"] != $target_server->role["fstype"])
 			{
@@ -1187,6 +1214,38 @@ function ipadd($ip, $type = 4, $dep = NULL) {
   
   function is_manipulable() {
 	return $_SESSION["is_admin"] || !$this->ve["server_maintenance"];
+  }
+  
+  function shaper_set($ip, $dep = null) {
+	global $db;
+	
+	$params = array(
+		'addr' => $ip['ip_addr'],
+		'version' => $ip['ip_v'],
+		'shaper' => array(
+			'class_id' => $ip['class_id'],
+			'max_tx' => $ip['max_tx'],
+			'max_rx' => $ip['max_rx']
+		)
+	);
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_SHAPER_SET, $params, null, $dep);
+	return $db->insertId();
+  }
+  
+  function shaper_unset($ip, $dep = null) {
+	global $db;
+	
+	$params = array(
+		'addr' => $ip['ip_addr'],
+		'version' => $ip['ip_v'],
+		'shaper' => array(
+			'class_id' => $ip['class_id']
+		)
+	);
+	
+	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_EXEC_SHAPER_UNSET, $params, null, $dep);
+	return $db->insertId();
   }
 }
 ?>

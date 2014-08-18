@@ -20,6 +20,10 @@ define ('T_EXEC_DNS', 2005);
 define ('T_EXEC_IPADD', 2006);
 define ('T_EXEC_IPDEL', 2007);
 define ('T_EXEC_APPLYCONFIG', 2008);
+define ('T_EXEC_SHAPER_CHANGE', 2009);
+define ('T_EXEC_SHAPER_SET', 2010);
+define ('T_EXEC_SHAPER_UNSET', 2011);
+define ('T_EXEC_SHAPER_ROOT', 2012);
 define ('T_CREATE_VE', 3001);
 define ('T_DESTROY_VE', 3002);
 define ('T_REINSTALL_VE', 3003);
@@ -245,6 +249,18 @@ function transaction_label ($t_type) {
 	case T_EXEC_OTHER:
 	    $action_label = 'exec';
 	    break;
+	case T_EXEC_SHAPER_CHANGE:
+		$action_label = 'Shaper *';
+		break;
+	case T_EXEC_SHAPER_SET:
+		$action_label = 'Shaper +';
+		break;
+	case T_EXEC_SHAPER_UNSET:
+		$action_label = 'Shaper -';
+		break;
+	case T_EXEC_SHAPER_ROOT:
+		$action_label = 'Shaper root';
+		break;
 	case T_CREATE_VE:
 	    $action_label = 'New';
 	    break;
