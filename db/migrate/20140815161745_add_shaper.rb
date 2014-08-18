@@ -24,5 +24,7 @@ class AddShaper < ActiveRecord::Migration
         end
       end
     end
+
+    add_index :vps_ip, :class_id, unique: true
   end
 end

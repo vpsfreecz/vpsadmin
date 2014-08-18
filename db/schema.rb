@@ -322,6 +322,7 @@ ActiveRecord::Schema.define(version: 20140815161745) do
     t.integer "class_id",                                  null: false
   end
 
+  add_index "vps_ip", ["class_id"], name: "index_vps_ip_on_class_id", unique: true, using: :btree
   add_index "vps_ip", ["vps_id"], name: "vps_id", using: :btree
 
   create_table "vps_mount", force: true do |t|
