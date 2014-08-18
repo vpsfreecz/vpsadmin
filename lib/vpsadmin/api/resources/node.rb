@@ -60,7 +60,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       ret = []
 
       ::Node.all.limit(params[:node][:limit]).offset(params[:node][:offset]).each do |node|
-        ret << to_param_names(node.attributes, :output)
+        ret << to_param_names(all_attrs(node), :output)
       end
 
       ret
