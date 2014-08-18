@@ -9,6 +9,7 @@ require 'lib/handlers/firewall'
 require 'lib/handlers/mailer'
 require 'lib/handlers/dataset'
 require 'lib/handlers/backuper'
+require 'lib/handlers/shaper'
 require 'lib/handlers/dummy'
 
 require 'rubygems'

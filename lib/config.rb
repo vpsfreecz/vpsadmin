@@ -18,7 +18,9 @@ IMPLICIT_CONFIG = {
         :server_id => nil,
         :domain => "vpsfree.cz",
         :node_addr => nil, # loaded from db
-        :netdev => "eth0",
+        :netdev => "eth0", # loaded from db
+        :max_tx => nil, # loaded from db
+        :max_rx => nil, # loaded from db
         :threads => 6,
         :urgent_threads => 6,
         :check_interval => 1,
@@ -53,8 +55,8 @@ IMPLICIT_CONFIG = {
                 2003 => "set_params",
                 2004 => "set_params",
                 2005 => "set_params",
-                2006 => "set_params",
-                2007 => "set_params",
+                2006 => "ip_add",
+                2007 => "ip_del",
                 2008 => "applyconfig",
                 3001 => "create",
                 3002 => "destroy",
@@ -66,6 +68,12 @@ IMPLICIT_CONFIG = {
                 5303 => "nas_umount",
                 5304 => "nas_remount",
                 8001 => "features",
+            },
+            "Shaper" => {
+                2009 => 'shape_change',
+                2010 => 'shape_set',
+                2011 => 'shape_unset',
+                2012 => 'root_change',
             },
             "Clone" => {
                 3004 => "local_clone",
@@ -138,6 +146,7 @@ IMPLICIT_CONFIG = {
         :hostname => "hostname",
         :ssh_keygen => "ssh-keygen",
         :exportfs => "exportfs",
+        :tc => 'tc',
     },
 
     :vps => {
@@ -231,6 +240,8 @@ IMPLICIT_CONFIG = {
                 "stop",
                 "update",
                 "kill",
+                "init",
+                "flush",
                 "reinit",
                 "refresh",
                 "install",
@@ -238,6 +249,7 @@ IMPLICIT_CONFIG = {
                 "set",
                 "pause",
                 "resume",
+                "pry",
             ]
         }
     }
@@ -273,7 +285,7 @@ class AppConfig
   def load_db_settings
     db = Db.new(@cfg[:db])
 
-    st = db.prepared_st("SELECT server_type, server_ip4 FROM servers WHERE server_id = ?", @cfg[:vpsadmin][:server_id])
+    st = db.prepared_st("SELECT server_type, server_ip4, net_interface, max_tx, max_rx FROM servers WHERE server_id = ?", @cfg[:vpsadmin][:server_id])
     rs = st.fetch
 
     unless rs
@@ -283,6 +295,9 @@ class AppConfig
 
     @cfg[:vpsadmin][:type] = rs[0].to_sym
     @cfg[:vpsadmin][:node_addr] = rs[1]
+    @cfg[:vpsadmin][:netdev] = rs[2]
+    @cfg[:vpsadmin][:max_tx] = rs[3]
+    @cfg[:vpsadmin][:max_rx] = rs[4]
 
     case @cfg[:vpsadmin][:type]
       when :node
