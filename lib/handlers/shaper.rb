@@ -109,7 +109,7 @@ class Shaper < Executor
   def shape_ip(addr, v, class_id, tx, rx, dev = nil)
     dev ||= $CFG.get(:vpsadmin, :netdev)
 
-    return if v == 6 || dev.nil? || tx == 0 || rx == 0 # it ain't perfect
+    return if dev.nil? || tx == 0 || rx == 0 # it ain't perfect
 
     tc("class add dev venet0 parent 1:1 classid 1:#{class_id} htb rate #{rx}bps ceil #{rx}bps burst 300k", [2])
     tc("class add dev #{dev} parent 1:1 classid 1:#{class_id} htb rate #{tx}bps ceil #{tx}bps burst 300k", [2])
@@ -123,7 +123,7 @@ class Shaper < Executor
   def change_shaper(addr, v, class_id, tx, rx)
     dev ||= $CFG.get(:vpsadmin, :netdev)
 
-    return if v == 6 || dev.nil?
+    return if dev.nil?
 
     if tx == 0 || rx == 0
       free_ip(addr, v, class_id)
@@ -140,16 +140,16 @@ class Shaper < Executor
   end
 
   def add_filters(addr, v, class_id, dev)
-    return if v == 6
+    prot = v == 6 ? 'ip6' : 'ip'
 
-    tc("filter add dev venet0 parent 1: protocol ip prio 16 u32 match ip dst #{addr} flowid 1:#{class_id}", [2])
-    tc("filter add dev #{dev} parent 1: protocol ip prio 16 u32 match ip src #{addr} flowid 1:#{class_id}", [2])
+    tc("filter add dev venet0 parent 1: protocol ip prio 16 u32 match #{prot} dst #{addr} flowid 1:#{class_id}", [2])
+    tc("filter add dev #{dev} parent 1: protocol ip prio 16 u32 match #{prot} src #{addr} flowid 1:#{class_id}", [2])
   end
 
   def free_ip(addr, v, class_id)
     dev = $CFG.get(:vpsadmin, :netdev)
 
-    return if v == 6 || dev.nil?
+    return if dev.nil?
 
     tc("qdisc del dev #{dev} parent 1:#{class_id} handle #{class_id}:", [2])
     tc("qdisc del dev venet0 parent 1:#{class_id} handle #{class_id}:", [2])
