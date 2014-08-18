@@ -198,7 +198,7 @@ function print_editm($member) {
 	
 	$xtpl->form_out($_SESSION["is_admin"] ? _("Save") : _("Request change"));
 	
-	if ($_SESSION["is_admin"] && $cluster_cfg->get("payments_enabled")) {
+	if ($_SESSION["is_admin"] && $cluster_cfg->get("payments_enabled") && !$member->deleted) {
 		if ($member->m["m_state"] == "active") {
 			$xtpl->table_title(_("Suspend account"));
 			$xtpl->table_add_category('&nbsp;');
@@ -223,6 +223,18 @@ function print_editm($member) {
 	}
 	
 	if ($_SESSION["is_admin"]) {
+		if($member->deleted) {
+			$xtpl->table_title(_("Account is scheduled for deletion"));
+			$xtpl->table_add_category('&nbsp;');
+			$xtpl->table_add_category('&nbsp;');
+			$xtpl->form_create('?page=adminm&section=members&action=revive&id='.$_GET["id"], 'post');
+			$xtpl->table_td(_('Reason').':');
+			$xtpl->table_td($member->m["m_suspend_reason"]);
+			$xtpl->table_tr();
+			$xtpl->form_out(_("Revive"));
+			
+		}
+		
 		print_deletem($member);
 		
 		$xtpl->sbar_add("<br><img src=\"template/icons/m_switch.png\"  title=". _("Switch context") ." /> Switch context", "?page=login&action=switch_context&m_id={$member->m["m_id"]}&next=".urlencode($_SERVER["REQUEST_URI"]));
@@ -722,10 +734,11 @@ if ($_SESSION["logged_in"]) {
 				if ($_POST["notify"])
 					$member->notify_suspend($_POST["reason"]);
 				
-				$xtpl->perex(_("Account suspended"),
+				notify_user(_("Account suspended"),
 					$_POST["stop_all_vpses"] ? _("All member's VPSes were stopped.")
 					: _("All member's VPSes kept running.")
 				);
+				redirect('?page=adminm&section=members&action=edit&id='.$member->mid);
 			}
 			break;
 		case 'restore':
@@ -740,7 +753,18 @@ if ($_SESSION["logged_in"]) {
 				if ($_POST["notify"])
 					$member->notify_restore();
 				
-				$xtpl->perex(_("Account restored"), _("Member can now use his VPSes."));
+				notify_user(_("Account restored"), _("Member can now use his VPSes."));
+				redirect('?page=adminm&section=members&action=edit&id='.$member->mid);
+			}
+			break;
+		case 'revive':
+			$member = member_load($_GET["id"]);
+			
+			if ($_SESSION["is_admin"] && $member->deleted) {
+				$member->revive();
+				
+				notify_user(_("Account revived"), _("The account is now suspended."));
+				redirect('?page=adminm&section=members&action=edit&id='.$member->mid);
 			}
 			break;
 		case 'payset':

@@ -319,6 +319,12 @@ class member_load {
 	$db->query("UPDATE members SET m_state = 'active', m_suspend_reason = '' WHERE m_id = ".$db->check($this->m["m_id"]));
   }
   
+  function revive() {
+	global $db;
+	
+	$db->query("UPDATE members SET m_state = 'suspended', m_deleted = NULL WHERE m_id = ".$db->check($this->m["m_id"]));
+  }
+  
   function notify_suspend($reason) {
 	global $db, $cluster_cfg;
 
