@@ -1,0 +1,13 @@
+vpsAdmin is a system for management of virtual servers based on OpenVZ.
+
+# Architecture
+ - [[Overview]]
+ - Components
+   - Public API
+   - vpsAdmind API
+   - vpsAdmind
+   - vpsadmindctl
+   - web interface
+
+# Subsystems
+ - [[Networking]]
