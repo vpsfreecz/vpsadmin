@@ -399,7 +399,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 		if ($result = $db->query($sql)) {
 			$command = array(
 				'addr' => $ip,
-				'version' => $ipadr['version'],
+				'version' => $ipadr['ip_v'],
 				'shaper' => array(
 					'class_id' => $ipadr['class_id']
 				)

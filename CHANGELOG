@@ -1,3 +1,6 @@
+* Wed Aug 30 2014 - version 1.22.1
+- VPS IP deletion: fix transaction param version
+
 * Mon Aug 18 2014 - version 1.22.0
 - Shaper
 - Revival of lazily deleted user accounts
