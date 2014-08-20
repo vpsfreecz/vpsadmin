@@ -366,7 +366,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 		if ($db->affected_rows() > 0) {
 		    $command = array(
 				'addr' => $ip,
-				'version' => $ipadr['ip_v'],
+				'version' => (int)$ipadr['ip_v'],
 				'shaper' => array(
 					'class_id' => $ipadr['class_id'],
 					'max_tx' => $ipadr['max_tx'],
@@ -399,7 +399,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 		if ($result = $db->query($sql)) {
 			$command = array(
 				'addr' => $ip,
-				'version' => $ipadr['ip_v'],
+				'version' => (int)$ipadr['ip_v'],
 				'shaper' => array(
 					'class_id' => $ipadr['class_id']
 				)
@@ -1221,7 +1221,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 	
 	$params = array(
 		'addr' => $ip['ip_addr'],
-		'version' => $ip['ip_v'],
+		'version' => (int)$ip['ip_v'],
 		'shaper' => array(
 			'class_id' => $ip['class_id'],
 			'max_tx' => $ip['max_tx'],
@@ -1238,7 +1238,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 	
 	$params = array(
 		'addr' => $ip['ip_addr'],
-		'version' => $ip['ip_v'],
+		'version' => (int)$ip['ip_v'],
 		'shaper' => array(
 			'class_id' => $ip['class_id']
 		)
