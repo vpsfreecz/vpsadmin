@@ -163,7 +163,7 @@ class Shaper < Executor
 
     # since all filters were deleted, set them up again
     all_ips(Db.new) do |ip|
-      add_filters(ip['ip_addr'], ip['ip_v'], ip['class_id'], dev)
+      add_filters(ip['ip_addr'], ip['ip_v'].to_i, ip['class_id'], dev)
     end
   end
 
