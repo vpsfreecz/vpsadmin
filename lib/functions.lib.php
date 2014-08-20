@@ -82,7 +82,7 @@ function validate_ip_address($ip_addr) {
 
 function ip_exists_in_table($ip_addr) {
 	global $db;
-	$sql = 'SELECT ip_id,ip_addr,vps_id,class_id,max_tx,max_rx FROM vps_ip WHERE ip_addr = "'.$db->check($ip_addr).'"';
+	$sql = 'SELECT ip_id,ip_addr,ip_v,vps_id,class_id,max_tx,max_rx FROM vps_ip WHERE ip_addr = "'.$db->check($ip_addr).'"';
 	if ($result = $db->query($sql))
 		if ($row = $db->fetch_array($result))
 			return $row;
