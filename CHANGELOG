@@ -1,3 +1,8 @@
+* Wed Aug 30 2014 - version 1.22.1
+- Remote control:
+  - do not crash in bug at status, report occurence to log and continue
+  - do not crash when pry connection gets interrupted
+
 * Mon Aug 18 2014 - version 1.22.0
 - Shaper
 - New remote commands init, flush, reinit and pry
