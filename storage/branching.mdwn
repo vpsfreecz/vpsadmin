@@ -4,7 +4,7 @@ branches.
 There is always at least one branch. Branch name is a snapshot name that
 the branch was created from.
 
-Branch names have a prefix _root_ and a suffix to index datasets of the same
+Branch names have a prefix _branch_ and a suffix to index datasets of the same
 name that might be created when restoring from one dataset more than once.
 
 vpsAdmin remembers which branch is the head. New snapshots are always sent
@@ -17,22 +17,22 @@ Suppose there is a pool with root dataset ``storage/backup`` and dataset
 The backups would look like:
 
  - storage/backup/101
-   - root-2014-01-01--00:00:00.0
+   - branch-2014-01-01--00:00:00.0
      - @2014-01-01--00:00:00
 	 - @2014-01-02--00:00:00
 	 - @2014-01-03--00:00:00
 	 
-Notice the prefix _root_ and suffix _.0_.
+Notice the prefix _branch_ and suffix _.0_.
 
 An example with nested datasets:
 
  - storage/backup/101
-   - root-2014-01-01--00:00:00.0
+   - branch-2014-01-01--00:00:00.0
      - @2014-01-01--00:00:00
 	 - @2014-01-02--00:00:00
 	 - @2014-01-03--00:00:00
    - nested-dataset
-     - root-2014-01-01--00:00:00.0
+     - branch-2014-01-01--00:00:00.0
        - @2014-01-01--00:00:00
   	   - @2014-01-02--00:00:00
   	   - @2014-01-03--00:00:00
@@ -43,12 +43,13 @@ only one brach, as there was no rollback yet.
 ## Rollback
 Rollback is why branches are needed. When rolling back, the snapshot to rollback
 to is cloned into a new dataset. The clone is then promoted and dataset head
-is set to the clone.
+is set to the clone. On the other hand, if the target snapshot is on top
+of a branch, it is rollbacked on the hypervisor only.
 
 Let's assume there are five backups of VPS #101:
 
  - storage/backup/101
-   - root-2014-01-01--01:00:00.0
+   - branch-2014-01-01--01:00:00.0
      - @2014-01-01--01:00:00
 	 - @2014-01-02--01:00:00
 	 - @2014-01-03--01:00:00
@@ -56,8 +57,8 @@ Let's assume there are five backups of VPS #101:
 	 - @2014-01-05--01:00:00
 
 Now the user wants to rollback to 2014-01-03--01:00:00. Snapshot
-``storage/backup/101/root-2014-01-01--01:00:00.0@@2014-01-03--01:00:00``
-is cloned to ``storage/backup/101/root-2014-01-03--01:00:00.0`` and promoted.
+``storage/backup/101/branch-2014-01-01--01:00:00.0@@2014-01-03--01:00:00``
+is cloned to ``storage/backup/101/branch-2014-01-03--01:00:00.0`` and promoted.
 The promotion causes the datasets older or equal to the one rollbacking to
 to move to the clone.
 
@@ -70,28 +71,28 @@ be transfered before the rollback.
 The branches then look like this:
 
  - storage/vpsfree.cz/backup/101
-   - root-2014-01-01--01:00:00.0
+   - branch-2014-01-01--01:00:00.0
 	 - @2014-01-04--01:00:00
 	 - @2014-01-05--01:00:00
-   - root-2014-01-03-01:00:00.0
+   - branch-2014-01-03-01:00:00.0
      - @2014-01-01--01:00:00
 	 - @2014-01-02--01:00:00
 	 - @2014-01-03--01:00:00
 	 
 Note that because of the clone there is a dependency between dataset
-``storage/backup/101/root-2014-01-01--01:00:00.0`` and snapshot
-``storage/backup/101/root-2014-01-03-01:00:00.0@2014-01-03--01:00:00``.
+``storage/backup/101/branch-2014-01-01--01:00:00.0`` and snapshot
+``storage/backup/101/branch-2014-01-03-01:00:00.0@2014-01-03--01:00:00``.
 The snapshot cannot be deleted first. It has to be kept until the dependent
 dataset is destroyed.
 
-The dataset head is set to ``root-2014-01-03-01:00:00.0``. New snapshots are
+The dataset head is set to ``branch-2014-01-03-01:00:00.0``. New snapshots are
 sent there:
 
  - storage/vpsfree.cz/backup/101
-   - root-2014-01-01--01:00:00.0
+   - branch-2014-01-01--01:00:00branch-.0
 	 - @2014-01-04--01:00:00
 	 - @2014-01-05--01:00:00
-   - root-2014-01-03-01:00:00.0
+   - branch-2014-01-03-01:00:00.0
      - @2014-01-01--01:00:00
 	 - @2014-01-02--01:00:00
 	 - @2014-01-03--01:00:00
@@ -105,13 +106,13 @@ When there are multiple branches, there are dependencies between them.
 vpsAdmin remembers that and must first destroy the dependants, then the
 _parents_.
 
- 1. destroy @2014-01-01--01:00:00
- 2. destroy @2014-01-02--01:00:00
- 3. skip @2014-01-03--01:00:00
- 4. destroy @2014-01-04--01:00:00
- 5. destroy @2014-01-05--01:00:00
-    - branch root-2014-01-01--01:00:00.0 is empty, destroy it
-    - @2014-01-03--01:00:00 has no dependants, destroy it
- 6. destroy @2014-01-06--01:00:00
+ 1. destroy ``@2014-01-01--01:00:00``
+ 2. destroy ``@2014-01-02--01:00:00``
+ 3. skip ``@2014-01-03--01:00:00``
+ 4. destroy ``@2014-01-04--01:00:00``
+ 5. destroy ``@2014-01-05--01:00:00``
+    - branch ``branch-2014-01-01--01:00:00.0`` is empty, destroy it
+    - ``@2014-01-03--01:00:00`` has no dependants, destroy it
+ 6. destroy ``@2014-01-06--01:00:00``
  7. and so on...
  

@@ -63,3 +63,13 @@ every day to a backup server. The storage uses vpsAdmin's task scheduler for tha
 
 ## Failure resistance
 The storage uses transaction confirmations.
+
+# Usage
+Create a pool on a hypervisor node:
+
+	$ vpsadminctl pool create -- --node 1 --name vz --filesystem vz/private
+	
+Create a pool on a backup server for VPS backups:
+
+	$ vpsadminctl pool create -- --node 5 --name backups --filesystem storage/backup/vps
+
