@@ -7,17 +7,24 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     id :id, label: 'ID', desc: 'IP address ID', db_name: :ip_id
   end
 
+  params(:shaper) do
+    integer :max_tx, label: 'Max tx', desc: 'Maximum output throughput'
+    integer :max_rx, label: 'Max rx', desc: 'Maximum input throughput'
+  end
+
   params(:filters) do
     resource VpsAdmin::API::Resources::VPS, label: 'VPS', desc: 'VPS this IP is assigned to, might be null',
              value_label: :hostname
     integer :version, label: 'IP version', desc: '4 or 6', db_name: :ip_v
     resource VpsAdmin::API::Resources::Location, label: 'Location',
               desc: 'Location this IP address is available in'
+    use :shaper
   end
 
   params(:common) do
     use :filters
     string :addr, label: 'Address', desc: 'Address itself', db_name: :ip_addr
+    integer :class_id, label: 'Class id', desc: 'Class id for shaper'
   end
 
   params(:all) do
@@ -71,7 +78,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
       ips = ::IpAddress
 
-      %i(vps version location).each do |filter|
+      %i(vps version location max_tx max_rx).each do |filter|
         next unless params[:ip_address][filter]
 
         ips = ips.where(
@@ -84,6 +91,23 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       end
 
       ret
+    end
+  end
+
+  class Update < HaveAPI::Actions::Default::Update
+    desc 'Update IP address'
+
+    input do
+      use :shaper
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def exec
+      ip = ::IpAddress.find(params[:ip_address_id])
+      ip.update(params[:ip_address]) ? ok : error('update failed', ip.errors.to_hash)
     end
   end
 end
