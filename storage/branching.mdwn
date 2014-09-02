@@ -33,9 +33,9 @@ An example with nested datasets:
 	 - @2014-01-03--00:00:00
    - nested-dataset
      - branch-2014-01-01--00:00:00.0
-       - @2014-01-01--00:00:00
-  	   - @2014-01-02--00:00:00
-  	   - @2014-01-03--00:00:00
+         - @2014-01-01--00:00:00
+         - @2014-01-02--00:00:00
+         - @2014-01-03--00:00:00
 
 In the examples above, there are three daily backups and both datasets have
 only one brach, as there was no rollback yet.
