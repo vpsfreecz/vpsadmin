@@ -89,7 +89,7 @@ The dataset head is set to ``branch-2014-01-03-01:00:00.0``. New snapshots are
 sent there:
 
  - storage/vpsfree.cz/backup/101
-   - branch-2014-01-01--01:00:00branch-.0
+   - branch-2014-01-01--01:00:00.0
 	 - @2014-01-04--01:00:00
 	 - @2014-01-05--01:00:00
    - branch-2014-01-03-01:00:00.0
