@@ -15,6 +15,10 @@ module VpsAdmin
 
       authenticate(api)
 
+      api.register_hook(:post_authenticated) do |u|
+        ::PaperTrail.whodunnit = u
+      end
+
       api.mount('/')
 
       api
