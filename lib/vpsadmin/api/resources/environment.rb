@@ -20,7 +20,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List environments'
 
-    output(:list) do
+    output(:object_list) do
       use :all
     end
 
@@ -44,13 +44,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     end
 
     def exec
-      ret = []
-
-      ::Environment.all.limit(params[:environment][:limit]).offset(params[:environment][:offset]).each do |env|
-        ret << env.attributes
-      end
-
-      ret
+      ::Environment.all.limit(params[:environment][:limit]).offset(params[:environment][:offset])
     end
   end
 
@@ -62,7 +56,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     end
 
     output do
-      use :id
+      use :all
     end
 
     authorize do |u|
@@ -87,7 +81,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
       env = ::Environment.new(params[:environment])
 
       if env.save
-        ok({id: env.id})
+        ok(env)
       else
         error('save failed', to_param_names(env.errors.to_hash, :input))
       end

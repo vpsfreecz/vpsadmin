@@ -15,8 +15,7 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
          desc: 'Universal resolver is independent on location',
          db_name: :dns_is_universal
     resource VpsAdmin::API::Resources::Location, label: 'Location',
-             desc: 'Location this resolver can be used on',
-             value_params: ->{ @dns_resolver.dns_location }
+             desc: 'Location this resolver can be used on'
   end
 
   params(:all) do
@@ -27,7 +26,7 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List DNS resolvers'
 
-    output(:list) do
+    output(:object_list) do
       use :all
     end
 
@@ -49,13 +48,7 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
     end
 
     def exec
-      ret = []
-
-      ::DnsResolver.all.limit(params[:dns_resolver][:limit]).offset(params[:dns_resolver][:offset]).each do |dns|
-        ret << to_param_names(all_attrs(dns), :output)
-      end
-
-      ret
+      ::DnsResolver.all.limit(params[:dns_resolver][:limit]).offset(params[:dns_resolver][:offset])
     end
   end
 
@@ -75,7 +68,7 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
     end
 
     def exec
-      to_param_names(all_attrs(@dns_resolver))
+      @dns_resolver
     end
   end
 end

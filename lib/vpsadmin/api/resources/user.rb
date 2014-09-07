@@ -40,7 +40,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List users'
 
-    output(:list) do
+    output(:object_list) do
       use :common
       use :dates
     end
@@ -50,13 +50,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def exec
-      ret = []
-
-      ::User.all.limit(params[:user][:limit]).offset(params[:user][:offset]).each do |u|
-        ret << to_param_names(u.attributes, :output)
-      end
-
-      ret
+      ::User.all.limit(params[:user][:limit]).offset(params[:user][:offset])
     end
   end
 
@@ -68,7 +62,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     output do
-      id :id, label: 'User id'
+      use :all
     end
 
     authorize do |u|
@@ -79,7 +73,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       user = ::User.new(to_db_names(params[:user]))
 
       if user.save
-        ok({id: user.id})
+        ok(user)
       else
         error('save failed', to_param_names(user.errors.to_hash, :input))
       end
@@ -100,7 +94,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def exec
-      to_param_names(all_attrs(@user), :output)
+      @user
     end
   end
 end

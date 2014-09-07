@@ -29,7 +29,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List OS templates'
 
-    output(:list) do
+    output(:object_list) do
       use :all
     end
 
@@ -56,13 +56,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     end
 
     def exec
-      ret = []
-
-      ::OsTemplate.where(with_restricted).limit(params[:os_template][:limit]).offset(params[:os_template][:offset]).each do |tpl|
-        ret << to_param_names(tpl.attributes, :output)
-      end
-
-      ret
+      ::OsTemplate.where(with_restricted).limit(params[:os_template][:limit]).offset(params[:os_template][:offset])
     end
   end
 
@@ -71,12 +65,19 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
       use :all
     end
 
+    authorize do |u|
+      allow if u.role == :admin
+      restrict templ_enabled: true
+      output whitelist: %i(label info supported)
+      allow
+    end
+
     def prepare
-      @os_template = ::OsTemplate.find(params[:os_template_id])
+      @os_template = ::OsTemplate.find_by!(with_restricted(templ_id: params[:os_template_id]))
     end
 
     def exec
-      to_params_names(all_attrs(@os_template), :output)
+      @os_template
     end
   end
 end

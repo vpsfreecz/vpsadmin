@@ -8,22 +8,20 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   end
 
   params(:template) do
-    resource VpsAdmin::API::Resources::OsTemplate, label: 'OS template',
-             value_params: ->{ @vps.vps_template }
+    resource VpsAdmin::API::Resources::OsTemplate, label: 'OS template'
   end
 
   params(:common) do
     resource VpsAdmin::API::Resources::User, label: 'User', desc: 'VPS owner',
-             value_label: :login, value_params: ->{ @vps.m_id }
+             value_label: :login
     string :hostname, desc: 'VPS hostname', db_name: :vps_hostname,
            required: true
     use :template
     string :info, label: 'Info', desc: 'VPS description', db_name: :vps_info
     resource VpsAdmin::API::Resources::DnsResolver, label: 'DNS resolver',
-             desc: 'DNS resolver the VPS will use',
-             value_params: ->{ @vps.dns_resolver_id }
+             desc: 'DNS resolver the VPS will use'
     resource VpsAdmin::API::Resources::Node, label: 'Node', desc: 'Node VPS will run on',
-             value_label: :name, value_params: ->{ @vps.vps_server }
+             value_label: :name
     bool :onboot, label: 'On boot', desc: 'Start VPS on node boot?',
          db_name: :vps_onboot, default: true
     bool :onstartall, label: 'On start all',
@@ -38,7 +36,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List VPS'
 
-    output(:list) do
+    output(:object_list) do
       use :id
       use :common
     end
@@ -81,13 +79,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      ret = []
-
-      Vps.where(with_restricted).limit(params[:vps][:limit]).offset(params[:vps][:offset]).each do |vps|
-        ret << to_param_names(all_attrs(vps), :output)
-      end
-
-      ret
+      Vps.where(with_restricted).limit(params[:vps][:limit]).offset(params[:vps][:offset])
     end
   end
 
@@ -99,7 +91,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     output do
-      integer :vps_id, label: 'VPS id', desc: 'ID of created VPS'
+      use :all
     end
 
     authorize do |u|
@@ -161,7 +153,7 @@ END
           end
         end
 
-        ok({vps_id: vps.id})
+        ok(vps)
 
       else
         error('save failed', to_param_names(vps.errors.to_hash, :input))
@@ -195,7 +187,7 @@ END
     end
 
     def exec
-      to_param_names(all_attrs(@vps), :output)
+      @vps
     end
   end
 
@@ -356,7 +348,7 @@ END
     class Index < HaveAPI::Actions::Default::Index
       desc 'List VPS configs'
 
-      output(:list) do
+      output(:object_list) do
         integer :config_id, label: 'Config ID'
         string :name, label: 'Config name', desc: 'Used internally'
         string :label, label: 'Config label', desc: 'Nice name for user'
@@ -369,17 +361,7 @@ END
       end
 
       def exec
-        ret = []
-
-        ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).vps_configs.all.limit(params[:config][:limit]).offset(params[:config][:offset]).each do |c|
-          ret << {
-              config_id: c.id,
-              name: c.name,
-              label: c.label
-          }
-        end
-
-        ret
+        ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).vps_configs.all.limit(params[:config][:limit]).offset(params[:config][:offset])
       end
     end
 
@@ -419,7 +401,7 @@ END
         integer :version, label: 'IP version', desc: '4 or 6', db_name: :ip_v
       end
 
-      output(:list) do
+      output(:object_list) do
         use :common
       end
 
@@ -430,8 +412,6 @@ END
       end
 
       def exec
-        ret = []
-
         ips = ::Vps.find_by!(
             with_restricted(vps_id: params[:vps_id])
         ).ip_addresses
@@ -442,15 +422,7 @@ END
           )
         end
 
-        ips.limit(params[:ip_address][:limit]).offset(params[:ip_address][:offset]).each do |ip|
-          ret << {
-              id: ip.ip_id,
-              addr: ip.ip_addr,
-              version: ip.ip_v,
-          }
-        end
-
-        ret
+        ips.limit(params[:ip_address][:limit]).offset(params[:ip_address][:offset])
       end
     end
 
@@ -467,7 +439,7 @@ END
       end
 
       output do
-        use :common
+        use :all
       end
 
       authorize do |u|
@@ -485,7 +457,7 @@ END
 
         if ip.free?
           vps.add_ip(ip)
-          ok
+          ok(ip)
         else
           error('IP address is already in use')
         end

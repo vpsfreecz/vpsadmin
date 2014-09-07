@@ -28,7 +28,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List locations'
 
-    output(:list) do
+    output(:object_list) do
       use :all
     end
 
@@ -53,13 +53,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     def exec
-      ret = []
-
-      ::Location.all.limit(params[:location][:limit]).offset(params[:location][:offset]).each do |loc|
-        ret << to_param_names(loc.attributes, :output)
-      end
-
-      ret
+      ::Location.all.limit(params[:location][:limit]).offset(params[:location][:offset])
     end
   end
 
@@ -71,7 +65,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     output do
-      use :id
+      use :all
     end
 
     authorize do |u|
@@ -101,7 +95,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       loc.location_type = 'production' # FIXME: remove
 
       if loc.save
-        ok({id: loc.location_id})
+        ok(loc)
       else
         error('save failed', to_param_names(loc.errors.to_hash, :input))
       end
@@ -138,7 +132,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     def exec
-      to_param_names(::Location.find(params[:location_id]).attributes, :output)
+      ::Location.find(params[:location_id])
     end
   end
 
@@ -171,7 +165,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       loc = ::Location.find(params[:location_id])
 
       if loc.update(to_db_names(params[:location]))
-        ok({})
+        ok
       else
         error('update failed', to_param_names(loc.errors.to_hash))
       end

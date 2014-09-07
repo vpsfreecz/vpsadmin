@@ -39,7 +39,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       use :filters
     end
 
-    output(:list) do
+    output(:object_list) do
       use :all
     end
 
@@ -74,8 +74,6 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     end
 
     def exec
-      ret = []
-
       ips = ::IpAddress
 
       %i(vps version location max_tx max_rx).each do |filter|
@@ -86,11 +84,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
         )
       end
 
-      ips.limit(params[:ip_address][:limit]).offset(params[:ip_address][:offset]).each do |ip|
-        ret << to_param_names(all_attrs(ip))
-      end
-
-      ret
+      ips.limit(params[:ip_address][:limit]).offset(params[:ip_address][:offset])
     end
   end
 

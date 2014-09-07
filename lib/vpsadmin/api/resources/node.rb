@@ -11,7 +11,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     string :name, label: 'Name', desc: 'Node name', db_name: :server_name
     string :type, label: 'Role', desc: 'node, storage or mailer', db_name: :server_type
     resource VpsAdmin::API::Resources::Location, label: 'Location',
-             desc: 'Location node is placed in', value_params: ->{ @node.server_location }
+             desc: 'Location node is placed in'
     string :availstat, label: 'Availability stats', desc: 'HTML code with availability graphs',
            db_name: :server_availstat
     string :ip_addr, label: 'IPv4 address', desc: 'Node\'s IP address', db_name: :server_ip4
@@ -30,7 +30,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List nodes'
 
-    output(:list) do
+    output(:object_list) do
       use :all
     end
 
@@ -57,13 +57,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     def exec
-      ret = []
-
-      ::Node.all.limit(params[:node][:limit]).offset(params[:node][:offset]).each do |node|
-        ret << to_param_names(all_attrs(node), :output)
-      end
-
-      ret
+      ::Node.all.limit(params[:node][:limit]).offset(params[:node][:offset])
     end
   end
 
@@ -75,7 +69,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     output do
-      use :id
+      use :all
     end
 
     authorize do |u|
@@ -104,7 +98,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       node = ::Node.new(to_db_names(params[:node]))
 
       if node.save
-        ok({id: node.server_id})
+        ok(node)
       else
         error('save failed', to_param_names(node.errors.to_hash, :input))
       end
@@ -145,7 +139,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     def exec
-      to_param_names(all_attrs(@node))
+      @node
     end
   end
 
@@ -179,8 +173,6 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     def exec
       node = ::Node.find(params[:node_id])
-
-      pp params
 
       if node.update(to_db_names(params[:node]))
         ok
