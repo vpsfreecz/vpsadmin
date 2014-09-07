@@ -11,7 +11,8 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140815161745) do
+ActiveRecord::Schema.define(version: 20140902143845) do
+
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
     t.string   "token",     limit: 100,             null: false
@@ -21,11 +22,12 @@ ActiveRecord::Schema.define(version: 20140815161745) do
   end
 
   create_table "branches", force: true do |t|
-    t.integer  "dataset_in_pool_id",                 null: false
-    t.string   "name",                               null: false
-    t.datetime "created_at",                         null: false
-    t.boolean  "head",               default: false, null: false
-    t.boolean  "confirmed",          default: false, null: false
+    t.integer  "dataset_in_pool_id",                      null: false
+    t.string   "name",                                    null: false
+    t.datetime "created_at",                              null: false
+    t.boolean  "head",                    default: false, null: false
+    t.integer  "src_snapshot_in_pool_id"
+    t.boolean  "confirmed",               default: false, null: false
   end
 
   create_table "cfg_dns", primary_key: "dns_id", force: true do |t|
@@ -269,6 +271,7 @@ ActiveRecord::Schema.define(version: 20140815161745) do
 
   create_table "snapshot_in_pool_in_branches", force: true do |t|
     t.integer "snapshot_in_pool_id",                 null: false
+    t.integer "reference_count",     default: 0,     null: false
     t.integer "branch_id",                           null: false
     t.boolean "confirmed",           default: false, null: false
   end
@@ -323,12 +326,13 @@ ActiveRecord::Schema.define(version: 20140815161745) do
   end
 
   create_table "transaction_confirmations", force: true do |t|
-    t.integer "transaction_id",                 null: false
-    t.string  "class_name",                     null: false
-    t.string  "table_name",                     null: false
-    t.integer "row_id",                         null: false
-    t.integer "confirm",                        null: false
-    t.boolean "done",           default: false, null: false
+    t.integer "transaction_id",             null: false
+    t.string  "class_name",                 null: false
+    t.string  "table_name",                 null: false
+    t.integer "row_id",                     null: false
+    t.string  "attr_changes"
+    t.integer "confirm_type",               null: false
+    t.integer "done",           default: 0, null: false
   end
 
   create_table "transaction_groups", force: true do |t|

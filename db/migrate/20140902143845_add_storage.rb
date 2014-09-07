@@ -145,11 +145,14 @@ class AddStorage < ActiveRecord::Migration
       t.string     :name,            null: false
       t.datetime   :created_at,      null: false
       t.boolean    :head,            null: false, default: false
+      # id of a snapshot in pool this branch is cloned from
+      t.integer    :src_snapshot_in_pool_id, null: true
       t.boolean    :confirmed,       null: false, default: false
     end
 
     create_table :snapshot_in_pool_in_branches do |t|
       t.references :snapshot_in_pool, null: false
+      t.integer    :reference_count,  null: false, default: 0
       t.references :branch,           null: false
       t.boolean    :confirmed,        null: false, default: false
     end
@@ -159,11 +162,13 @@ class AddStorage < ActiveRecord::Migration
       t.string     :class_name,     null: false, limit: 255
       t.string     :table_name,     null: false, limit: 255
       t.integer    :row_id,         null: false
+      t.string     :attr_changes,   null: true
 
       # enum
       #  0 - create (success - confirm, failure - destroy)
-      #  1 - destroy (success - destroy, failure - revert to confirm)
-      t.integer    :confirm,        null: false
+      #  1 - edit (success - edit, failure - ignore)
+      #  2 - destroy (success - destroy, failure - revert to confirm)
+      t.integer    :confirm_type,   null: false
       t.integer    :done,           null: false, default: 0
     end
 
