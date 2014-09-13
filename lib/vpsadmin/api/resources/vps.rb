@@ -33,6 +33,11 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
            db_name: :vps_config, default: ''
   end
 
+  params(:all) do
+    use :id
+    use :common
+  end
+
   class Index < HaveAPI::Actions::Default::Index
     desc 'List VPS'
 
@@ -100,7 +105,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       allow
     end
 
-    example do
+    example 'Create vps' do
       request({
         vps: {
           user: 1,
@@ -117,7 +122,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       })
       response({
         vps: {
-            vps_id: 150
+            id: 150
         }
       })
       comment <<END

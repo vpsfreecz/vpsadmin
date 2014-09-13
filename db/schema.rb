@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140902143845) do
+ActiveRecord::Schema.define(version: 20140913164605) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -19,6 +19,8 @@ ActiveRecord::Schema.define(version: 20140902143845) do
     t.datetime "valid_to"
     t.string   "label"
     t.integer  "use_count",             default: 0, null: false
+    t.integer  "lifetime",                          null: false
+    t.integer  "interval"
   end
 
   create_table "branches", force: true do |t|
