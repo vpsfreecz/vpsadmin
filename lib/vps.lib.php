@@ -930,6 +930,7 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			$clone->add_default_configs("default_config_chain");
 			break;
 		case 1:
+		case 2:
 			$db->query("INSERT INTO vps_has_config (vps_id, config_id, `order`) SELECT '".$db->check($clone->veid)."' AS vps_id, config_id, `order` FROM vps_has_config WHERE vps_id = '".$db->check($this->veid)."'");
 			
 			if ($clone->ve["vps_config"])
@@ -937,9 +938,9 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			else
 				$clone->applyconfigs();
 			break;
-		case 2:
-			$clone->add_default_configs("playground_default_config_chain");
-			break;
+// 		case 2:
+// 			$clone->add_default_configs("playground_default_config_chain");
+// 			break;
 	}
 	
 	// Clone mounts - exports are the same, except backup, that must be created
