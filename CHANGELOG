@@ -1,3 +1,7 @@
+* Tue Sep 23 2014 - version 1.22.2
+- Playground: fix VPS clone with disk bigger then is assigned to playground
+- Allow VPS swap only by admins
+
 * Wed Aug 30 2014 - version 1.22.1
 - VPS IP deletion: fix transaction param version
 
