@@ -68,14 +68,13 @@ function get_user_vps_list($exclude = array()) {
 function get_vps_swap_list($vps) {
 	global $db;
 	
-	if($_SESSION["is_admin"])
-		return get_user_vps_list(array($vps->veid));
+	$m_id = $_SESSION["is_admin"] ? $vps->ve["m_id"] : $_SESSION["member"]["m_id"];
 	
 	$sql = "SELECT vps_id, vps_hostname FROM vps v
 	        INNER JOIN servers s ON v.vps_server = s.server_id
 		    INNER JOIN locations l ON s.server_location = l.location_id
 		    WHERE
-		      m_id = ".$db->check($_SESSION["member"]["m_id"])."
+		      m_id = ".$db->check($m_id)."
 		      AND
 		      v.vps_deleted IS NULL
 		      AND

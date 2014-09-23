@@ -496,7 +496,7 @@ switch ($_GET["action"]) {
 			break;
 		case 'swap':
 			if(isset($_GET["veid"]) && isset($_POST["swap_vps"]) && ($vps = vps_load($_GET["veid"])) && ($with = vps_load($_POST["swap_vps"]))) {
-				if(!$vps->exists || !$with->exists || $vps->veid == $with->veid || (!$_SESSION["is_admin"] && $vps->is_playground()))
+				if(!$vps->exists || !$with->exists || $vps->veid == $with->veid || !$_SESSION["is_admin"])
 					break;
 				
 				$allowed = get_vps_swap_list($vps);
@@ -1057,7 +1057,8 @@ if (isset($show_info) && $show_info) {
 		}
 		
 	// Swap
-	if ($_SESSION["is_admin"] || !$vps->is_playground()) {
+	// if ($_SESSION["is_admin"] || !$vps->is_playground()) {
+	if ($_SESSION["is_admin"]) {
 		$xtpl->form_create('?page=adminvps&action=swap&veid='.$vps->veid, 'post');
 		
 		$xtpl->table_add_category(_("Swap VPS"));
@@ -1080,6 +1081,14 @@ if (isset($show_info) && $show_info) {
 		$xtpl->form_add_checkbox(_("Swap DNS servers").':', 'dns', '1', true);
 		
 		$xtpl->form_out(_("Go >>"));
+	} else {
+		$xtpl->table_add_category(_("Swap VPS"));
+		$xtpl->table_td(_('Temporarily unavailable. '.
+						'Please contact <a href="mailto:podpora@vpsfree.cz">podpora@vpsfree.cz</a>'.
+						' to swap your VPS. Don\'t forget to mention VPS IDs. '.
+						'We apologize for the inconvenience.'));
+		$xtpl->table_tr();
+		$xtpl->table_out();
 	}
 		
 	// Backuper
