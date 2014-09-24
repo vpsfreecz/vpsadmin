@@ -80,6 +80,46 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
   end
 
+  class Current < HaveAPI::Action
+    desc 'Get user that is authenticated during this request'
+
+    output do
+      use :all
+    end
+
+    authorize do
+      allow
+    end
+
+    def prepare
+      current_user
+    end
+
+    def exec
+      current_user
+    end
+  end
+
+  class Touch < HaveAPI::Action
+    desc 'Update last activity'
+    route ':user_id/touch'
+
+    authorize do |u|
+      allow if u.role == :admin
+      restrict m_id: u.id
+      allow
+    end
+
+    def prepare
+      @user = User.find_by(with_restricted)
+    end
+
+    def exec
+      @user.m_last_activity = Time.new.to_i
+      @user.save
+    end
+  end
+
   class Show < HaveAPI::Actions::Default::Show
     output do
       use :all
