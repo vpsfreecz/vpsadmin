@@ -44,14 +44,14 @@ function print_newvps() {
 function print_editvps($vps) {
 }
 
-function vps_run_redirect_path($vps) {
+function vps_run_redirect_path($veid) {
 	$current_url = "http".(isset($_SERVER["HTTPS"]) ? "s" : "")."://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
 	
 	if($_SERVER["HTTP_REFERER"] && $_SERVER["HTTP_REFERER"] != $current_url)
 		return $_SERVER["HTTP_REFERER"];
 	
 	elseif($_GET["action"] == "info")
-		return '?page=adminvps&action=info&veid='.$vps->veid;
+		return '?page=adminvps&action=info&veid='.$veid;
 	
 	else
 		return '?page=adminvps';
@@ -64,20 +64,18 @@ $member_of_session = member_load($_SESSION["member"]["m_id"]);
 $_GET["run"] = isset($_GET["run"]) ? $_GET["run"] : false;
 
 if ($_GET["run"] == 'stop') {
-	$vps = vps_load($_GET["veid"]);
-	$vps->stop();
+	$api->vps->stop($_GET["veid"]);
 	
 	notify_user(_("Stop VPS")." {$_GET["veid"]} "._("planned"));
-	redirect(vps_run_redirect_path($vps));
+	redirect(vps_run_redirect_path($_GET["veid"]));
 }
 
 if ($_GET["run"] == 'start') {
 	if ($member_of_session->m["m_state"] == "active" || (!$cluster_cfg->get("payments_enabled"))) {
-		$vps = vps_load($_GET["veid"]);
-		$vps->start();
+		$api->vps->start($_GET["veid"]);
 		
 		notify_user(_("Start of")." {$_GET["veid"]} "._("planned"));
-		redirect(vps_run_redirect_path($vps));
+		redirect(vps_run_redirect_path($_GET["veid"]));
 		
 	} else
 		$xtpl->perex(_("Account suspended"), _("You are not allowed to make \"start\" operation.<br />Your account is suspended because of:") . ' ' . $member_of_session->m["m_suspend_reason"]);
@@ -85,11 +83,10 @@ if ($_GET["run"] == 'start') {
 
 if ($_GET["run"] == 'restart') {
 	if ($member_of_session->m["m_state"] == "active" || (!$cluster_cfg->get("payments_enabled"))) {
-		$vps = vps_load($_GET["veid"]);
-		$vps->restart();
+		$api->vps->restart($_GET["veid"]);
 		
 		notify_user(_("Restart of")." {$_GET["veid"]} "._("planned"), '');
-		redirect(vps_run_redirect_path($vps));
+		redirect(vps_run_redirect_path($_GET["veid"]));
 		
 	} else
 		$xtpl->perex(_("Account suspended"), _("You are not allowed to make \"restart\" operation.<br />Your account is suspended because of:") . ' ' . $member_of_session->m["m_suspend_reason"]);

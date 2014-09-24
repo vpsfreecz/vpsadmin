@@ -23,53 +23,64 @@
 if ($_GET["action"] == 'login') {
 	$access_url = $_SESSION["access_url"];
 	
-	if (($_REQUEST["passwd"] != '') && ($_REQUEST["username"])) {
-
-		$sql = 'SELECT * FROM members WHERE m_pass = "'
-				 . $db->check( md5($_REQUEST["username"] . $_REQUEST["passwd"]) )
-				 . '" AND m_nick = "' . $db->check($_REQUEST["username"]) . '" AND m_state != "deleted"';
-
-		if ($result = $db->query($sql)) {
-
-			if ($member = $db->fetch_array($result)) {
-
+	if ($_POST["passwd"] && $_POST["username"]) {
+		try {
+			$api->authenticate('token', array(
+				'username' => $_POST['username'],
+				'password' => $_POST['passwd'],
+				'lifetime' => 'renewable_auto',
+				'interval' => USER_LOGIN_INTERVAL
+			));
+			
+			$m = $api->user->current();
+			
 			session_destroy();
 			session_start();
-
-			$_SESSION["logged_in"] = true;
-			$_SESSION["member"] = $member;
-			$_SESSION["is_user"] =       ($member["m_level"] >= PRIV_USER) ?       true : false;
-			$_SESSION["is_poweruser"] =  ($member["m_level"] >= PRIV_POWERUSER) ?  true : false;
-			$_SESSION["is_admin"] =      ($member["m_level"] >= PRIV_ADMIN) ?      true : false;
-			$_SESSION["is_superadmin"] = ($member["m_level"] >= PRIV_SUPERADMIN) ? true : false;
-
-			$xtpl->perex(_("Welcome, ").$member["m_nick"],
-					_("Login successful <br /> Your privilege level: ")
-					. $cfg_privlevel[$member["m_level"]]);
 			
-			$_member = member_load($member["m_id"]);
-			$_member->touch_activity();
+			$_SESSION["member"]["m_id"] = $m->id;
+			$member = member_load($m->id);
+			
+			$_SESSION["logged_in"] = true;
+			$_SESSION["auth_token"] = $api->getAuthenticationProvider()->getToken();
+			$_SESSION["member"] = $member->m;
+			$_SESSION["is_user"] =       ($m->level >= PRIV_USER) ?       true : false;
+			$_SESSION["is_poweruser"] =  ($m->level >= PRIV_POWERUSER) ?  true : false;
+			$_SESSION["is_admin"] =      ($m->level >= PRIV_ADMIN) ?      true : false;
+			$_SESSION["is_superadmin"] = ($m->level >= PRIV_SUPERADMIN) ? true : false;
+			
+			$xtpl->perex(_("Welcome, ").$member->m["m_nick"],
+					_("Login successful <br /> Your privilege level: ")
+					. $cfg_privlevel[$m->level]);
+			
+			$api->user->touch($m->id);
 			
 			if($access_url
 				&& strpos($access_url, "?page=login&action=login") === false
-				&& strpos($access_url, "?page=jumpto") === false)
+				&& strpos($access_url, "?page=jumpto") === false) {
+				
 				redirect($access_url);
 				
-			elseif ($_SESSION["is_admin"])
+			} elseif ($_SESSION["is_admin"]) {
 				redirect('?page=cluster');
 				
-			else
+			} else {
 				redirect('?page=');
-
-			} else $xtpl->perex(_("Error"), _("Wrong username or password"));
-		} else $xtpl->perex(_("Error"), _("Wrong username or password"));
+			}
+			
+		} catch (\HaveAPI\AuthenticationFailed $e) {
+			$xtpl->perex(_("Error"), _("Wrong username or password"));
+		}
+		
 	} else $xtpl->perex(_("Error"), _("Wrong username or password"));
 }
 
 if ($_GET["action"] == 'logout') {
 
 	$_SESSION["logged_in"] = false;
+	$_SESSION["auth_token"] = NULL;
 	unset($_SESSION["member"]);
+	
+	$api->logout();
 
 	$xtpl->perex(_("Goodbye"), _("Logout successful"));
 

@@ -51,7 +51,8 @@ include WWW_ROOT.'config_cfg.php';
 
 if ($_SESSION["logged_in"]) {
 	$_member = member_load($_SESSION["member"]["m_id"]);
-	if (!$_member->has_not_expired_activity()) {
+	if ($_SESSION["transactbox_expiration"] < time()) {
+		unset($_SESSION);
 		session_destroy();
 		$_GET["page"] = "";
 	}

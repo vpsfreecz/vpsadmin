@@ -25,6 +25,7 @@ define ("CRON_MODE", false);
 define ("DEBUG", false);
 
 // Include libraries
+include WWW_ROOT.'vendor/haveapi-client-php/haveapi.php';
 include WWW_ROOT.'lib/version.lib.php';
 include WWW_ROOT.'lib/xtemplate.lib.php';
 include WWW_ROOT.'lib/db.lib.php';
@@ -52,6 +53,12 @@ include WWW_ROOT.'config_cfg.php';
 // connect to database
 $db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_SOCK, true);
 
+$api = new \HaveAPI\Client(API_URL, API_VERSION, "vpsadmin-www v".VERSION);
+$api->registerDescriptionChangeFunc('api_description_changed');
+
+if($_SESSION["api_description"]) {
+	$api->setDescription($_SESSION["api_description"]);
+}
 
 // Create a template class
 $xtpl = new XTemplate(WWW_ROOT.'template/template.html');
@@ -69,14 +76,20 @@ $xtpl->assign("L_ACTION", _("Action"));
 
 
 if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
-    $_member = member_load($_SESSION["member"]["m_id"]);
-    if ($_member->has_not_expired_activity()) {
-		$_member->touch_activity();
+	$api->authenticate('token', array('token' => $_SESSION['auth_token']), false);
+	
+	$_member = member_load($_SESSION["member"]["m_id"]);
+	
+	try {
+		$api->user->touch($_SESSION["member"]["m_id"]);
+		$_SESSION["transactbox_expiration"] = time() + USER_LOGIN_INTERVAL;
 		$xtpl->assign('AJAX_SCRIPT', ajax_getHTML('ajax.php?page=transactbox', 'transactions', 1000));
-    } else {
-	session_destroy();
-	$_GET["page"] = "";
-    }
+		
+	} catch (\HaveAPI\AuthenticationFailed $e) {
+		unset($_SESSION);
+		session_destroy();
+		$_GET["page"] = "";
+	}
 }
 
 $Cluster_ipv4 = new Cluster_ipv4($xtpl, $db);

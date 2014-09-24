@@ -6,7 +6,8 @@
     Web-admin interface for OpenVZ (see http://openvz.org)
     Copyright (C) 2008-2011 Pavel Snajdr, snajpa@snajpa.net
 */
-define ('MEMBER_SESSION_TIMEOUT_SECS', 1800);
+
+define('USER_LOGIN_INTERVAL', 20 * 60);
 
 /**
   * Get array of all members in DB
@@ -215,22 +216,6 @@ class member_load {
         return true;
       else return false;
     } else return false;
-  }
-
-  /**
-    * Save member's last activity time
-    */
-  function touch_activity() {
-      global $db;
-      $sql = 'UPDATE members SET m_last_activity = '.time().' WHERE m_id = '.$db->check($this->m["m_id"]);
-      $db->query($sql);
-  }
-  /**
-    * Test if member has expired in activity
-    * @return true is has, false if has not
-    */
-  function has_not_expired_activity() {
-      return (time() < (MEMBER_SESSION_TIMEOUT_SECS + $this->m["m_last_activity"]));
   }
 
   function get_vps_count() {
