@@ -19,7 +19,7 @@ module Transactions::Storage
       {
           src_node_addr: src.pool.node.addr,
           src_pool_fs: src.pool.filesystem,
-          dst_pool_fst: dst.pool.filesystem,
+          dst_pool_fs: dst.pool.filesystem,
           dataset_name: src.dataset.full_name,
           snapshots: tmp,
           initial: initial,
