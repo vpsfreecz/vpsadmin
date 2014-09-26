@@ -1,0 +1,118 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "This file is @generated automatically"
+    ],
+    "hash": "62db57f224ff37ff82073d4a404f58f7",
+    "packages": [
+        {
+            "name": "haveapi/client",
+            "version": "dev-devel",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/vpsfreecz/haveapi-client-php.git",
+                "reference": "694f041759da8d87379a46384537c5fd62c387ca"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/694f041759da8d87379a46384537c5fd62c387ca",
+                "reference": "694f041759da8d87379a46384537c5fd62c387ca",
+                "shasum": ""
+            },
+            "require": {
+                "nategood/httpful": "~0.2.17",
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "HaveAPI\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jakub Skokan",
+                    "email": "jakub.skokan@vpsfree.cz"
+                }
+            ],
+            "description": "A client for HaveAPI based APIs",
+            "homepage": "https://github.com/vpsfreecz/haveapi-client-php",
+            "support": {
+                "source": "https://github.com/vpsfreecz/haveapi-client-php/tree/devel",
+                "issues": "https://github.com/vpsfreecz/haveapi-client-php/issues"
+            },
+            "time": "2014-09-26 09:14:46"
+        },
+        {
+            "name": "nategood/httpful",
+            "version": "0.2.17",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/nategood/httpful.git",
+                "reference": "7beda470b57250f60ce1b0179c5551620c3e43e6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/nategood/httpful/zipball/7beda470b57250f60ce1b0179c5551620c3e43e6",
+                "reference": "7beda470b57250f60ce1b0179c5551620c3e43e6",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "php": ">=5.3"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "Httpful": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nate Good",
+                    "email": "me@nategood.com",
+                    "homepage": "http://nategood.com"
+                }
+            ],
+            "description": "A Readable, Chainable, REST friendly, PHP HTTP Client",
+            "homepage": "http://github.com/nategood/httpful",
+            "keywords": [
+                "api",
+                "curl",
+                "http",
+                "requests",
+                "rest",
+                "restful"
+            ],
+            "time": "2014-08-24 21:57:36"
+        }
+    ],
+    "packages-dev": [
+
+    ],
+    "aliases": [
+
+    ],
+    "minimum-stability": "stable",
+    "stability-flags": {
+        "haveapi/client": 20
+    },
+    "prefer-stable": false,
+    "platform": [
+
+    ],
+    "platform-dev": [
+
+    ]
+}

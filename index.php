@@ -25,7 +25,7 @@ define ("CRON_MODE", false);
 define ("DEBUG", false);
 
 // Include libraries
-include WWW_ROOT.'vendor/haveapi-client-php/haveapi.php';
+include WWW_ROOT.'vendor/autoload.php';
 include WWW_ROOT.'lib/version.lib.php';
 include WWW_ROOT.'lib/xtemplate.lib.php';
 include WWW_ROOT.'lib/db.lib.php';
