@@ -292,7 +292,7 @@ END
     route ':%{resource}_id/passwd'
     http_method :post
 
-    output do
+    output(:hash) do
       string :password, label: 'Password', desc: 'Auto-generated password'
     end
 

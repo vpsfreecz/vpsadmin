@@ -113,7 +113,7 @@ class Vps < ActiveRecord::Base
   def passwd
     pass = generate_password
 
-    Transactions::Vps::Passwd.fire(self, pass)
+    TransactionChains::VpsPasswd.fire(self, pass)
 
     pass
   end
