@@ -11,7 +11,7 @@ class Dataset < Executor
   end
 
   def destroy
-    zfs(:destroy, @params['recursive'] ? '-r' : nil, @params['path'])
+    zfs(:destroy, @params['recursive'] ? '-r' : nil, "#{@params['pool_fs']}/#{@params['name']}")
   end
 
   def snapshot

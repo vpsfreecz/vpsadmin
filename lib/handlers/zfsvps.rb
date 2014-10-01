@@ -10,16 +10,8 @@ class ZfsVPS < VPS
     end
   end
 
-  def create
-    zfs(:create, nil, ve_private_ds)
-
-    super
-  end
-
   def destroy
     syscmd("#{$CFG.get(:bin, :rmdir)} #{ve_root}")
-
-    zfs(:destroy, "-r", ve_private_ds)
 
     Dir.glob("#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.{mount,umount,conf}").each do |cfg|
       syscmd("#{$CFG.get(:bin, :mv)} #{cfg} #{cfg}.destroyed")
