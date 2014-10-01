@@ -17,32 +17,26 @@ class VPS < Executor
   def start
     @update = true
 
-    acquire_lock_unless(zfs?) do
-      try_harder do
-        vzctl(:start, @veid, {}, false, [32,])
-        vzctl(:set, @veid, {:onboot => "yes"}, true)
-      end
+    try_harder do
+      vzctl(:start, @veid, {}, false, [32,])
+      vzctl(:set, @veid, {:onboot => "yes"}, true)
     end
   end
 
   def stop(params = {})
     @update = true
 
-    acquire_lock_unless(zfs?) do
-      try_harder do
-        vzctl(:stop, @veid, {}, false, params[:force] ? [5, 66] : [])
-        vzctl(:set, @veid, {:onboot => "no"}, true)
-      end
+    try_harder do
+      vzctl(:stop, @veid, {}, false, params[:force] ? [5, 66] : [])
+      vzctl(:set, @veid, {:onboot => "no"}, true)
     end
   end
 
   def restart
     @update = true
 
-    acquire_lock_unless(zfs?) do
-      vzctl(:restart, @veid)
-      vzctl(:set, @veid, {:onboot => "yes"}, true)
-    end
+    vzctl(:restart, @veid)
+    vzctl(:set, @veid, {:onboot => "yes"}, true)
   end
 
   def create
@@ -91,13 +85,11 @@ class VPS < Executor
   end
 
   def reinstall
-    acquire_lock do
-      honor_state do
-        stop
-        destroy
-        create
-        vzctl(:set, @veid, {:ipadd => @params["ip_addrs"]}, true) if @params["ip_addrs"].count > 0
-      end
+    honor_state do
+      stop
+      syscmd("#{$CFG.get(:bin, :rm)} -rf #{ve_private}")
+      create
+      # vzctl(:set, @veid, {:ipadd => @params["ip_addrs"]}, true) if @params["ip_addrs"].count > 0
     end
   end
 
