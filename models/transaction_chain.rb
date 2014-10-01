@@ -1,0 +1,111 @@
+# Transaction chain is a container for multiple transactions.
+# Every transaction chain inherits this class. Chains must implement
+# method TransactionChain#link_chain.
+# All transaction must be in a chain. Transaction without a chain does not
+# have a meaning.
+class TransactionChain < ActiveRecord::Base
+  has_many :transactions
+  belongs_to :user
+
+  enum state: %i(staged queued done failed)
+
+  attr_reader :acquired_locks
+  attr_accessor :last_id, :dst_chain, :named, :locks
+
+  # Create new transaction chain. This method has to be used, do not
+  # create instances of TransactionChain yourself.
+  # All arguments are passed to TransactionChain#link_chain.
+  def self.fire(*args)
+    TransactionChain.transaction do
+      chain = new
+      chain.name = self.to_s.demodulize.underscore
+      chain.state = :staged
+      chain.size = 0
+      chain.user = User.current
+      chain.save
+
+      # link_chain will raise ResourceLocked if it is unable to acquire
+      # a lock. It will cause the transaction to be roll backed
+      # and the exception will be propagated.
+      chain.link_chain(*args)
+
+      chain.state = :queued
+      chain.save
+    end
+  end
+
+  # Include this chain in +chain+. All remaining arguments are passed
+  # to #link_chain.
+  # Method #link_chain is called in the same way as in ::fire,
+  # except that all transactions are appended to +chain+,
+  # not to instance of self.
+  # This method should not be called directly, but via #use_chain.
+  def self.use_in(chain, *args)
+    c = new
+    c.last_id = chain.last_id
+    c.dst_chain = chain.dst_chain
+    c.named = chain.named
+    c.locks = chain.locks
+    c.link_chain(*args)
+    c
+  end
+
+  def initialize(*args)
+    super(*args)
+
+    @locks = []
+    @named = {}
+    @dst_chain = self
+  end
+
+  # All chains must implement this method.
+  def link_chain(*args)
+    raise NotImplementedError
+  end
+
+  # Helper method for acquiring resource locks. TransactionChain remembers
+  # what locks it has, therefore it is safe to lock one resource more than
+  # once, which happens when including other chains with ::use_in.
+  def lock(obj, *args)
+    return if @locks.detect { |l| l.locks?(obj) }
+
+    @locks << obj.acquire_lock(self, *args)
+  end
+
+  # Append transaction of +klass+ with +opts+ to the end of the chain.
+  # If +name+ is set, it is used as an anchor which other
+  # transaction in chain might hang onto.
+  # +args+ and +block+ are forwarded to target transaction.
+  # Use the block to configure transaction confirmations, see
+  # Transaction::Confirmable.
+  def append(klass, name: nil, args: [], &block)
+    do_append(@last_id, name, klass, args, block)
+  end
+
+  # This method will be deprecated in the near future.
+  # Append transaction of +klass+ with +opts+ to previosly created anchor
+  # +dep_name+ instead of the end of the chain.
+  # If +name+ is set, it is used as an anchor which other
+  # transaction in chain might hang onto.
+  # +args+ and +block+ are forwarded to target transaction.
+  def append_to(dep_name, klass, name: nil, args: [], &block)
+    do_append(@named[dep_name], name, klass, args, block)
+  end
+
+  # Call this method from TransactionChain#link_chain to include
+  # +chain+. +args+ are passed to the chain as in ::fire.
+  def use_chain(chain, *args)
+    c = chain.use_in(self, *args)
+    @last_id = c.last_id
+  end
+
+  private
+  def do_append(dep, name, klass, args, block)
+    args = [args] unless args.is_a?(Array)
+
+    @dst_chain.size += 1
+    @last_id = klass.fire_chained(@dst_chain, dep, *args, &block)
+    @named[name] = @last_id if name
+    @last_id
+  end
+end

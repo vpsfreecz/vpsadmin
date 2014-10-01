@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140913164605) do
+ActiveRecord::Schema.define(version: 20140927161625) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -21,15 +21,6 @@ ActiveRecord::Schema.define(version: 20140913164605) do
     t.integer  "use_count",             default: 0, null: false
     t.integer  "lifetime",                          null: false
     t.integer  "interval"
-  end
-
-  create_table "branches", force: true do |t|
-    t.integer  "dataset_in_pool_id",                      null: false
-    t.string   "name",                                    null: false
-    t.datetime "created_at",                              null: false
-    t.boolean  "head",                    default: false, null: false
-    t.integer  "src_snapshot_in_pool_id"
-    t.boolean  "confirmed",               default: false, null: false
   end
 
   create_table "cfg_dns", primary_key: "dns_id", force: true do |t|
@@ -52,42 +43,6 @@ ActiveRecord::Schema.define(version: 20140913164605) do
     t.string "name",   limit: 50, null: false
     t.string "label",  limit: 50, null: false
     t.text   "config",            null: false
-  end
-
-  create_table "dataset_actions", force: true do |t|
-    t.integer "pool_id"
-    t.integer "src_dataset_in_pool_id"
-    t.integer "dst_dataset_in_pool_id"
-    t.integer "snapshot_id"
-    t.boolean "recursive",              default: false, null: false
-    t.integer "dependency_id"
-    t.integer "last_transaction_id"
-    t.integer "action",                                 null: false
-  end
-
-  create_table "dataset_in_pools", force: true do |t|
-    t.integer "dataset_id",                                   null: false
-    t.integer "pool_id",                                      null: false
-    t.string  "label",            limit: 100
-    t.integer "used",             limit: 8,   default: 0,     null: false
-    t.integer "avail",            limit: 8,   default: 0,     null: false
-    t.integer "min_snapshots",                default: 14,    null: false
-    t.integer "max_snapshots",                default: 20,    null: false
-    t.integer "snapshot_max_age",             default: 14,    null: false
-    t.string  "share_options",    limit: 500
-    t.boolean "compression"
-    t.boolean "confirmed",                    default: false, null: false
-  end
-
-  create_table "datasets", force: true do |t|
-    t.string  "name",          limit: 500,             null: false
-    t.integer "parent_id"
-    t.integer "user_id"
-    t.boolean "user_editable",                         null: false
-    t.boolean "user_create",                           null: false
-    t.integer "quota",         limit: 8,   default: 0, null: false
-    t.string  "share_options", limit: 500
-    t.boolean "compression"
   end
 
   create_table "environments", force: true do |t|
@@ -191,58 +146,21 @@ ActiveRecord::Schema.define(version: 20140913164605) do
     t.integer "change_to",   limit: 8, null: false
   end
 
-  create_table "mirrors", force: true do |t|
-    t.integer "src_pool_id"
-    t.integer "dst_pool_id"
-    t.integer "src_dataset_in_pool_id"
-    t.integer "dst_dataset_in_pool_id"
-    t.boolean "recursive",              default: false, null: false
-    t.integer "interval",               default: 60,    null: false
-  end
-
-  create_table "mounts", force: true do |t|
-    t.integer "vps_id",                         null: false
-    t.string  "src",                limit: 500
-    t.string  "dst",                limit: 500, null: false
-    t.string  "mount_opts",                     null: false
-    t.string  "umount_opts",                    null: false
-    t.string  "mount_type",         limit: 10,  null: false
-    t.integer "dataset_in_pool_id"
-    t.string  "mode",               limit: 2,   null: false
-    t.string  "cmd_premount",       limit: 500, null: false
-    t.string  "cmd_postmount",      limit: 500, null: false
-    t.string  "cmd_preumount",      limit: 500, null: false
-    t.string  "cmd_postumount",     limit: 500, null: false
-  end
-
   create_table "node_pubkey", id: false, force: true do |t|
     t.integer "node_id",           null: false
     t.string  "type",    limit: 3, null: false
     t.text    "key",               null: false
   end
 
-  create_table "pools", force: true do |t|
-    t.integer "node_id",                               null: false
-    t.string  "label",         limit: 500,             null: false
-    t.string  "filesystem",    limit: 500,             null: false
-    t.integer "role",                                  null: false
-    t.integer "quota",         limit: 8,   default: 0, null: false
-    t.integer "used",          limit: 8,   default: 0, null: false
-    t.integer "avail",         limit: 8,   default: 0, null: false
-    t.string  "share_options", limit: 500,             null: false
-    t.boolean "compression",                           null: false
+  create_table "resource_locks", force: true do |t|
+    t.string   "resource",             limit: 100, null: false
+    t.integer  "row_id",                           null: false
+    t.integer  "transaction_chain_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
-  create_table "repeatable_tasks", force: true do |t|
-    t.string  "class_name",   null: false
-    t.string  "table_name",   null: false
-    t.integer "object_id",    null: false
-    t.string  "minute",       null: false
-    t.string  "hour",         null: false
-    t.string  "day_of_month", null: false
-    t.string  "month",        null: false
-    t.string  "day_of_week",  null: false
-  end
+  add_index "resource_locks", ["resource", "row_id"], name: "index_resource_locks_on_resource_and_row_id", unique: true, using: :btree
 
   create_table "servers", primary_key: "server_id", force: true do |t|
     t.string  "server_name",        limit: 64,                                 null: false
@@ -264,32 +182,11 @@ ActiveRecord::Schema.define(version: 20140913164605) do
   create_table "servers_status", primary_key: "server_id", force: true do |t|
     t.integer "timestamp",                   null: false
     t.integer "ram_free_mb"
-    t.float   "disk_vz_free_gb"
-    t.float   "cpu_load"
+    t.float   "disk_vz_free_gb",  limit: 24
+    t.float   "cpu_load",         limit: 24
     t.boolean "daemon",                      null: false
     t.string  "vpsadmin_version", limit: 63
     t.string  "kernel",           limit: 50, null: false
-  end
-
-  create_table "snapshot_in_pool_in_branches", force: true do |t|
-    t.integer "snapshot_in_pool_id",                 null: false
-    t.integer "reference_count",     default: 0,     null: false
-    t.integer "branch_id",                           null: false
-    t.boolean "confirmed",           default: false, null: false
-  end
-
-  create_table "snapshot_in_pools", force: true do |t|
-    t.integer "snapshot_id",                        null: false
-    t.integer "dataset_in_pool_id",                 null: false
-    t.boolean "confirmed",          default: false, null: false
-  end
-
-  create_table "snapshots", force: true do |t|
-    t.string   "name",                       null: false
-    t.integer  "dataset_id",                 null: false
-    t.boolean  "confirmed",  default: false, null: false
-    t.datetime "created_at"
-    t.datetime "updated_at"
   end
 
   create_table "storage_export", force: true do |t|
@@ -327,11 +224,21 @@ ActiveRecord::Schema.define(version: 20140913164605) do
     t.text "cfg_value"
   end
 
+  create_table "transaction_chains", force: true do |t|
+    t.string   "name",       limit: 30,             null: false
+    t.integer  "state",                             null: false
+    t.integer  "size",                              null: false
+    t.integer  "progress",              default: 0, null: false
+    t.integer  "user_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
   create_table "transaction_confirmations", force: true do |t|
     t.integer "transaction_id",             null: false
     t.string  "class_name",                 null: false
     t.string  "table_name",                 null: false
-    t.integer "row_id",                     null: false
+    t.string  "row_pks",                    null: false
     t.string  "attr_changes"
     t.integer "confirm_type",               null: false
     t.integer "done",           default: 0, null: false
@@ -351,15 +258,16 @@ ActiveRecord::Schema.define(version: 20140913164605) do
     t.integer "t_m_id"
     t.integer "t_server"
     t.integer "t_vps"
-    t.integer "t_type",                       null: false
+    t.integer "t_type",                               null: false
     t.integer "t_depends_on"
     t.text    "t_fallback"
-    t.boolean "t_urgent",     default: false, null: false
-    t.integer "t_priority",   default: 0,     null: false
-    t.integer "t_success",                    null: false
-    t.boolean "t_done",                       null: false
+    t.boolean "t_urgent",             default: false, null: false
+    t.integer "t_priority",           default: 0,     null: false
+    t.integer "t_success",                            null: false
+    t.boolean "t_done",                               null: false
     t.text    "t_param"
     t.text    "t_output"
+    t.integer "transaction_chain_id",                 null: false
   end
 
   add_index "transactions", ["t_server"], name: "t_server", using: :btree
@@ -410,10 +318,9 @@ ActiveRecord::Schema.define(version: 20140913164605) do
     t.boolean "vps_backup_enabled",                    default: true,  null: false
     t.boolean "vps_features_enabled",                  default: false, null: false
     t.integer "vps_backup_export",                                     null: false
-    t.integer "vps_backup_lock",      limit: 1,        default: 0,     null: false
     t.text    "vps_backup_exclude",                                    null: false
     t.text    "vps_config",                                            null: false
-    t.integer "dataset_in_pool_id",                                    null: false
+    t.boolean "confirmed",                             default: false, null: false
   end
 
   add_index "vps", ["m_id"], name: "m_id", using: :btree
@@ -433,9 +340,10 @@ ActiveRecord::Schema.define(version: 20140913164605) do
   end
 
   create_table "vps_has_config", id: false, force: true do |t|
-    t.integer "vps_id",    null: false
-    t.integer "config_id", null: false
-    t.integer "order",     null: false
+    t.integer "vps_id",                    null: false
+    t.integer "config_id",                 null: false
+    t.integer "order",                     null: false
+    t.boolean "confirmed", default: false, null: false
   end
 
   create_table "vps_ip", primary_key: "ip_id", force: true do |t|

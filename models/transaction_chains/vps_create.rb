@@ -1,0 +1,40 @@
+module TransactionChains
+  class VpsCreate < ::TransactionChain
+    def link_chain(vps, add_ips)
+      lock(vps)
+
+      append(Transactions::Vps::Create, args: vps) do
+        create(vps)
+      end
+
+      use_chain(VpsApplyConfig, vps, VpsConfig.default_config_chain(vps.node.location))
+
+      if add_ips
+        ips = []
+        versions = [4]
+        versions << 6 if vps.node.location.has_ipv6
+
+        versions.each do |v|
+          begin
+            ::IpAddress.transaction do
+              ip = ::IpAddress.pick_addr!(vps.node.location, v)
+              lock(ip)
+
+              ips << ip
+            end
+
+          rescue ActiveRecord::RecordNotFound
+            next # FIXME: notify admins, report some kind of an error?
+          end
+        end
+
+        use_chain(VpsAddIp, vps, ips)
+      end
+
+      # mapping, last_id = StorageExport.create_default_exports(self, depend: last_id)
+      # create_default_mounts(mapping)
+      #
+      # Transactions::Vps::Mounts.fire_chained(last_id, self, false)
+    end
+  end
+end

@@ -13,8 +13,8 @@ class Vps < ActiveRecord::Base
   has_many :vps_configs, through: :vps_has_config
   has_many :vps_mounts, dependent: :delete_all
 
-  belongs_to :dataset_in_pool
-  has_many :mounts
+  # belongs_to :dataset_in_pool
+  # has_many :mounts
 
   has_paper_trail
 
@@ -33,7 +33,9 @@ class Vps < ActiveRecord::Base
 
   after_update :hostname_changed, if: :vps_hostname_changed?
 
-  def create
+  include Lockable
+
+  def create(add_ips)
     self.vps_backup_export = 0
     self.vps_backup_exclude = ''
     self.vps_config = ''
@@ -41,14 +43,8 @@ class Vps < ActiveRecord::Base
     self.dns_resolver_id ||= DnsResolver.pick_suitable_resolver_for_vps(self).id
 
     if save
-      set_config_chain(VpsConfig.default_config_chain(node.location))
+      TransactionChains::VpsCreate.fire(self, add_ips)
 
-      last_id = Transactions::Vps::New.fire(self)
-
-      mapping, last_id = StorageExport.create_default_exports(self, depend: last_id)
-      create_default_mounts(mapping)
-
-      Transactions::Vps::Mounts.fire_chained(last_id, self, false)
     else
       false
     end
@@ -72,19 +68,19 @@ class Vps < ActiveRecord::Base
   end
 
   def start
-    Transactions::Vps::Start.fire(self)
+    TransactionChains::VpsStart.fire(self)
   end
 
   def restart
-    Transactions::Vps::Restart.fire(self)
+    TransactionChains::VpsRestart.fire(self)
   end
 
   def stop
-    Transactions::Vps::Stop.fire(self)
+    TransactionChains::VpsStop.fire(self)
   end
 
   def applyconfig
-    Transactions::Vps::ApplyConfig.fire(self)
+    # Transactions::Vps::ApplyConfig.fire(self)
   end
 
   def set_config_chain(chain)

@@ -1,9 +1,10 @@
 source 'https://rubygems.org'
 
 gem 'haveapi'
-gem 'activerecord'
+gem 'activerecord', '~> 4.1.6'
 gem 'paper_trail'
 gem 'require_all'
 gem 'mysql'
 gem 'rake'
 gem 'rspec'
+gem 'composite_primary_keys', '~> 7.0.10'

@@ -157,21 +157,6 @@ class AddStorage < ActiveRecord::Migration
       t.boolean    :confirmed,        null: false, default: false
     end
 
-    create_table :transaction_confirmations do |t|
-      t.references :transaction,    null: false
-      t.string     :class_name,     null: false, limit: 255
-      t.string     :table_name,     null: false, limit: 255
-      t.integer    :row_id,         null: false
-      t.string     :attr_changes,   null: true
-
-      # enum
-      #  0 - create (success - confirm, failure - destroy)
-      #  1 - edit (success - edit, failure - ignore)
-      #  2 - destroy (success - destroy, failure - revert to confirm)
-      t.integer    :confirm_type,   null: false
-      t.integer    :done,           null: false, default: 0
-    end
-
     create_table :mounts do |t|
       t.references :vps,            null: false
       t.string     :src,            null: true,  limit: 500
@@ -425,7 +410,6 @@ class AddStorage < ActiveRecord::Migration
     drop_table :snapshot_in_pools
     drop_table :branches
     drop_table :snapshot_in_pool_in_branches
-    drop_table :transaction_confirmations
     drop_table :mounts
     drop_table :mirrors
     drop_table :repeatable_tasks

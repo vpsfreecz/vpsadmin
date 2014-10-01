@@ -1,6 +1,6 @@
 module Transactions::Vps
   class ReinstallChain < ::Transaction
-    t_chain true
+    # t_chain true
 
     def link_chain(dep, vps)
       Transaction.chain(dep) do

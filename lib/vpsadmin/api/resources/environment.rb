@@ -78,7 +78,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     end
 
     def exec
-      env = ::Environment.new(params[:environment])
+      env = ::Environment.new(input)
 
       if env.save
         ok(env)

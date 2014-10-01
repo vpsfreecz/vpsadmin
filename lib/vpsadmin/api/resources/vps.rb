@@ -149,15 +149,7 @@ END
 
       vps = ::Vps.new(to_db_names(vps_params))
 
-      if vps.create
-        unless current_user.role == :admin
-          vps.add_ip(::IpAddress.pick_addr!(vps.node.location, 4))
-
-          if vps.node.location.has_ipv6
-            vps.add_ip(::IpAddress.pick_addr!(vps.node.location, 6))
-          end
-        end
-
+      if vps.create(current_user.role == :admin)
         ok(vps)
 
       else
