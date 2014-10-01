@@ -13,8 +13,8 @@ class Vps < ActiveRecord::Base
   has_many :vps_configs, through: :vps_has_config
   has_many :vps_mounts, dependent: :delete_all
 
-  # belongs_to :dataset_in_pool
-  # has_many :mounts
+  belongs_to :dataset_in_pool
+  has_many :mounts
 
   has_paper_trail
 
@@ -44,7 +44,6 @@ class Vps < ActiveRecord::Base
 
     if save
       TransactionChains::VpsCreate.fire(self, add_ips)
-
     else
       false
     end

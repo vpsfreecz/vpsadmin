@@ -3,6 +3,27 @@ module TransactionChains
     def link_chain(vps, add_ips)
       lock(vps)
 
+      pool = vps.node.pools.where(role: :hypervisor).take!
+
+      ds = Dataset.create(
+          name: vps.id.to_s,
+          user: vps.user,
+          user_editable: false,
+          user_create: true
+      )
+
+      vps.dataset_in_pool = DatasetInPool.create(
+          dataset: ds,
+          pool: pool
+      )
+
+      lock(vps.dataset_in_pool)
+
+      append(Transactions::Storage::CreateDataset, args: vps.dataset_in_pool) do
+        create(ds)
+        create(vps.dataset_in_pool)
+      end
+
       append(Transactions::Vps::Create, args: vps) do
         create(vps)
       end
@@ -30,6 +51,12 @@ module TransactionChains
 
         use_chain(VpsAddIp, vps, ips)
       end
+
+      if vps.vps_onboot
+        use_chain(TransactionChains::VpsStart, vps)
+      end
+
+      vps.save!
 
       # mapping, last_id = StorageExport.create_default_exports(self, depend: last_id)
       # create_default_mounts(mapping)

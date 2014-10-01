@@ -89,6 +89,8 @@ class AddStorage < ActiveRecord::Migration
       # from parent dataset or pool.
       t.string     :share_options,  null: true,  limit: 500
       t.boolean    :compression,    null: true
+
+      t.boolean    :confirmed,      null: false, default: false
     end
 
     change_column :datasets, :quota, 'bigint unsigned'
@@ -223,7 +225,7 @@ class AddStorage < ActiveRecord::Migration
       t.integer    :action,         null: false
     end
 
-    add_column :vps, :dataset_in_pool_id, :integer, null: false
+    add_column :vps, :dataset_in_pool_id, :integer, null: true
 
     # Create pools for all hypervisors
     Node.where(server_type: 'node').each do |node|
@@ -306,7 +308,8 @@ class AddStorage < ActiveRecord::Migration
             user_id: export.member_id,
             user_editable: ds ? export.user_editable : false,
             user_create: export.user_editable,
-            quota: export.quota
+            quota: export.quota,
+            confirmed: true
         )
 
         ds_in_pool = DatasetInPool.create(

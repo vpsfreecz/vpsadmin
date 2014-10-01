@@ -5,6 +5,8 @@ class DatasetInPool < ActiveRecord::Base
   has_many :branches
   has_many :mounts
 
+  include Lockable
+
   def snapshot
     snap = Time.new.strftime('%Y-%m-%dT%H:%M:%S')
 
