@@ -174,21 +174,15 @@ switch ($_GET["action"]) {
 			$show_info=true;
 			break;
 		case 'passwd':
-			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-
-			if (strlen($_POST["user"]) >= 2 && strlen($_POST["user"]) <= 32 && 
-				preg_match("/^[a-z_][a-zA-Z0-9_-]+$/", $_POST["user"]))
-			{
-				$_SESSION["vps_password"] = $vps->passwd($_POST["user"]);
-				
-				notify_user(
-					_("Change of user's password").' '.$_POST["user"].' '.strtolower(_("planned")),
-					_("New password is: ")."<b>".$_SESSION["vps_password"]."</b>"
-				);
-				redirect('?page=adminvps&action=info&veid='.$vps->veid);
-			} else {
-				$xtpl->perex(_("Error"), _("Wrong username"));
-			}
+			$ret = $api->vps->passwd($_GET["veid"]);
+			
+			$_SESSION["vps_password"] = $ret['password'];
+			
+			notify_user(
+				_("Change of root password planned"),
+				_("New password is: ")."<b>".$_SESSION["vps_password"]."</b>"
+			);
+			redirect('?page=adminvps&action=info&veid='.$_GET["veid"]);
 
 			$show_info=true;
 			break;
@@ -748,7 +742,10 @@ if (isset($show_info) && $show_info) {
 
 	// Password changer
 		$xtpl->form_create('?page=adminvps&action=passwd&veid='.$vps->veid, 'post');
-		$xtpl->form_add_input(_("Unix username").':', 'text', '30', 'user', 'root', '');
+		
+		$xtpl->table_td(_("Username").':');
+		$xtpl->table_td('root');
+		$xtpl->table_tr();
 		
 		$xtpl->table_td(_("Password").':');
 		
