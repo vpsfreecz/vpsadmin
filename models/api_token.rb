@@ -7,6 +7,6 @@ class ApiToken < ActiveRecord::Base
   enum lifetime: %i(fixed renewable_manual renewable_auto permanent)
 
   def renew
-    valid_to = Time.now + interval
+    self.valid_to = Time.now + interval
   end
 end
