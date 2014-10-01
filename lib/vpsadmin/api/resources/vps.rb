@@ -324,16 +324,11 @@ END
 
     def exec
       vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
-      tpl = params[:vps][:os_template]
+      tpl = input[:os_template] || vps.os_template
 
       error('selected os template is disabled') unless tpl.enabled?
 
-      if vps.update(os_template: tpl)
-        vps.reinstall
-        ok
-      else
-        error('reinstall failed', to_param_names(vps.errors.to_hash, :input))
-      end
+      vps.reinstall(tpl)
     end
   end
 

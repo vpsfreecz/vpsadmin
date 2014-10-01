@@ -118,8 +118,8 @@ class Vps < ActiveRecord::Base
     pass
   end
 
-  def reinstall
-    Transactions::Vps::ReinstallChain.fire(self)
+  def reinstall(template)
+    TransactionChains::VpsReinstall.fire(self, template)
   end
 
   private
