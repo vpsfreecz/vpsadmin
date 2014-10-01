@@ -24,6 +24,7 @@ class AddTransactionChains < ActiveRecord::Migration
       #  2 - destroy (success - destroy, failure - revert to confirm)
       t.integer    :confirm_type,   null: false
       t.integer    :done,           null: false, default: 0
+      t.timestamps
     end
 
     create_table :resource_locks do |t|

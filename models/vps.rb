@@ -59,11 +59,12 @@ class Vps < ActiveRecord::Base
     end
   end
 
-  def destroy
-    delete_mounts
-    delete_ips
-    Transactions::Vps::Destroy.fire(self)
-    super
+  def destroy(override = false)
+    if override
+      super
+    else
+      TransactionChains::VpsDestroy.fire(self)
+    end
   end
 
   def start
@@ -92,15 +93,11 @@ class Vps < ActiveRecord::Base
   end
 
   def add_ip(ip)
-    ip_addresses << ip
-
-    Transactions::Vps::IpAdd.fire(self, ip)
+    TransactionChains::VpsIpAdd.fire(self, [ip])
   end
 
   def delete_ip(ip)
-    ip_addresses.delete(ip)
-
-    Transactions::Vps::IpDel.fire(self, ip)
+    TransactionChains::VpsIpDel.fire(self, [ip])
   end
 
   def delete_ips(v=nil)
@@ -110,9 +107,7 @@ class Vps < ActiveRecord::Base
       ips = ip_addresses.all
     end
 
-    ips.each do |ip|
-      delete_ip(ip)
-    end
+    TransactionChains::VpsIpDel.fire(self, ips)
   end
 
   def passwd

@@ -69,7 +69,7 @@ class TransactionChain < ActiveRecord::Base
   def lock(obj, *args)
     return if @locks.detect { |l| l.locks?(obj) }
 
-    @locks << obj.acquire_lock(self, *args)
+    @locks << obj.acquire_lock(@dst_chain, *args)
   end
 
   # Append transaction of +klass+ with +opts+ to the end of the chain.
