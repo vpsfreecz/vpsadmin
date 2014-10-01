@@ -85,7 +85,7 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
 		$_SESSION["transactbox_expiration"] = time() + USER_LOGIN_INTERVAL;
 		$xtpl->assign('AJAX_SCRIPT', ajax_getHTML('ajax.php?page=transactbox', 'transactions', 1000));
 		
-	} catch (\HaveAPI\AuthenticationFailed $e) {
+	} catch (\HaveAPI\Client\Exception\AuthenticationFailed $e) {
 		unset($_SESSION);
 		session_destroy();
 		$_GET["page"] = "";

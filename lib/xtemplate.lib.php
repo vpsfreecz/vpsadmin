@@ -538,6 +538,28 @@ class XTemplate {
 		$this->parse('main.perex');
 	}
 	/**
+	  * Format errors to a perex.
+	  * @param string $title
+	  * @param \HaveAPI\Client\Response $response
+	  */
+	function perex_format_errors($title, $response) {
+		$body = _('Error message: '). $response->getMessage();
+		$errors = $response->getErrors();
+		
+		$body .= '<br>';
+		
+		if(count($errors)) {
+			$body .= '<ul>';
+			
+			foreach($errors as $param => $err)
+				$body .= '<li>'.$param.': '.$err.'</li>';
+			
+			$body .= '</ul>';
+		}
+		
+		$xtpl->perex($title, $body);
+	}
+	/**
 	  * Add link to sidebar
 	  * @param $title - link title
 	  * @param $link - link URL

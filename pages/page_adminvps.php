@@ -106,68 +106,37 @@ switch ($_GET["action"]) {
 			print_newvps();
 			break;
 		case 'new2':
-			if ((ereg('^[a-zA-Z0-9\.\-]{1,255}$',$_REQUEST["vps_hostname"])
-			    && $_GET["create"]
-			    && ($_SESSION["is_admin"] || $playground_mode)))
-					{
-					$tpl = template_by_id($_REQUEST["vps_template"]);
-					
-					if (!$tpl["templ_enabled"]) {
-						$xtpl->perex(_("Error"), _("Template not enabled, it cannot be used, you bloody hacker."));
-						break;
-					}
-					
-					if ($playground_mode)
-						$server = server_by_id(pick_playground_server());
-					else
-						$server = server_by_id($_REQUEST["vps_server"]);
-					
-					if(!$server) {
-						$xtpl->perex(_("Error"), _("Selected serve does not exist."));
-						break;
-					}
-					
-					if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-					if (!$vps->exists) {
-						$perex = $vps->create_new($server["server_id"],
-													$_REQUEST["vps_template"],
-													$_REQUEST["vps_hostname"],
-													$playground_mode ? $_SESSION["member"]["m_id"] : $_REQUEST["m_id"],
-													$playground_mode ? '' : $_REQUEST["vps_info"]);
-						
-						$mapping = nas_create_default_exports("vps", $vps->ve);
-						nas_create_default_mounts($vps->ve, $mapping);
-						
-						if ($playground_mode) {
-							$vps->add_default_configs("playground_default_config_chain");
-							$vps->add_first_available_ip($server["server_location"], 4);
-							$vps->add_first_available_ip($server["server_location"], 6);
-							$vps->set_backuper($cluster_cfg->get("playground_backup"), NULL, "", true);
-							$vps->set_expiration(time() + $cluster_cfg->get("playground_vps_lifetime") * 24 * 60 * 60);
-						} else {
-							$vps->add_default_configs("default_config_chain");
-						}
-
-						$veid = $vps->veid;
-
-						if ($_REQUEST["boot_after_create"] || $playground_mode) {
-							$vps->start();
-							notify_user(_("VPS create ").' '.$vps->veid, _("VPS will be created and booted afterwards."));
-						} else {
-							notify_user(_("VPS create ").' '.$vps->veid, _("VPS will be created. You can start it manually."));
-						}
-
-						redirect('?page=adminvps&action=info&veid='.$vps->veid);
-					}
-					else {
-						$xtpl->perex(_("Error"), _("VPS already exists"));
-						$list_vps=true;
-						}
-					}
-			else  {
-				$xtpl->perex(_("Error"), _("Wrong hostname name"));
-				print_newvps();
+			if ($_GET["create"] && ($_SESSION["is_admin"] || $playground_mode)) {
+				$params = array(
+					'hostname' => $_POST['vps_hostname'],
+					'os_template' => $_POST['vps_template'],
+					'info' => $playground_mode ? '' : $_POST['vps_info']
+				);
+				
+				if($_SESSION["is_admin"]) {
+					$params['user'] = $_POST['m_id'];
+					$params['node'] = $_POST['vps_server'];
+					$params['onboot'] = $_POST['boot_after_create'];
 				}
+				
+				try {
+					$vps = $api->vps->create($params);
+					
+					if ($params['onboot'] || $playground_mode) {
+						notify_user(_("VPS create ").' '.$vps->veid, _("VPS will be created and booted afterwards."));
+						
+					} else {
+						notify_user(_("VPS create ").' '.$vps->veid, _("VPS will be created. You can start it manually."));
+					}
+
+					redirect('?page=adminvps&action=info&veid='.$vps->id);
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors($e->getResponse());
+					
+					print_newvps();
+				}
+			}
 			break;
 		case 'delete':
 			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
@@ -186,30 +155,10 @@ switch ($_GET["action"]) {
 			$xtpl->form_out(_("Delete"));
 			break;
 		case 'delete2':
-			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
+			$api->vps->destroy($_GET["veid"], array('lazy' => $_POST["lazy_delete"] ? true : false));
 			
-			$lazy = $_POST["lazy_delete"] ? true : false;
-			$can_delete = false;
-				
-			if ($playground_enabled && $_SESSION["member"]["m_id"] == $vps->ve["m_id"]) {
-				foreach ($playground_servers as $pg)
-					if ($pg["server_id"] == $vps->ve["server_id"]) {
-						$can_delete = true;
-						$lazy = true;
-						break;
-					}
-			}
-			
-			if ($_SESSION["is_admin"] || $can_delete) {
-				if(!$lazy && $vps->ve["vps_backup_export"]) {
-					nas_export_delete($vps->ve["vps_backup_export"]);
-					$vps->delete_all_backups();
-				}
-				
-				$vps->destroy($lazy, $can_delete);
-				notify_user(_("Delete VPS").' #'.$vps->veid, _("Deletion of VPS")." {$_GET["veid"]} ".strtolower(_("planned")));
-				redirect('?page=adminvps');
-			}
+			notify_user(_("Delete VPS").' #'.$_GET["veid"], _("Deletion of VPS")." {$_GET["veid"]} ".strtolower(_("planned")));
+			redirect('?page=adminvps');
 			break;
 		case 'revive':
 			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
