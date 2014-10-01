@@ -83,36 +83,67 @@ class Command
 
   def save(db)
     success = @status != :failed
-    st = db.prepared_st('SELECT table_name, row_id, confirm FROM transaction_confirmations WHERE transaction_id = ? AND done = 0', @trans['t_id'])
 
-    st.each do |row|
-      case row[2].to_i
-        when 0 # create
-          if success
-            db.query("UPDATE #{row[0]} SET confirmed = 1 WHERE id = #{row[1]}")
-          else
-            db.query("DELETE FROM #{row[0]} WHERE id = #{row[1]}")
-          end
+    db.transaction do |t|
+      st = t.prepared_st('SELECT table_name, row_pks, attr_changes, confirm_type FROM transaction_confirmations WHERE transaction_id = ? AND done = 0', @trans['t_id'])
 
-        when 1 # destroy
-          if success
-            db.query("DELETE FROM #{row[0]} WHERE id = #{row[1]}")
-          else
-            db.query("UPDATE #{row[0]} SET confirmed = 1 WHERE id = #{row[1]}")
-          end
+      st.each do |row|
+        pk = pk_cond(YAML.load(row[1]))
+
+        case row[3].to_i
+          when 0 # create
+            if success
+              t.query("UPDATE #{row[0]} SET confirmed = 1 WHERE #{pk}")
+            else
+              t.query("DELETE FROM #{row[0]} WHERE #{pk}")
+            end
+
+          when 1 # edit
+            if success
+              attrs = YAML.load(row[2])
+              update = attrs.collect { |k, v| "`#{k}` = #{sql_val(v)}" }.join(',')
+
+              t.query("UPDATE #{row[0]} SET #{update} WHERE #{pk}")
+            end
+
+          when 2 # destroy
+            if success
+              t.query("DELETE FROM #{row[0]} WHERE #{pk}")
+            else
+              t.query("UPDATE #{row[0]} SET confirmed = 1 WHERE #{pk}")
+            end
+        end
       end
+
+      st.close
+
+      t.prepared('UPDATE transaction_confirmations SET done = 1 WHERE transaction_id = ? AND done = 0', @trans['t_id'])
+
+      db.prepared(
+          'UPDATE transactions SET t_done=1, t_success=?, t_output=?, t_real_start=?, t_end=? WHERE t_id=?',
+          {:failed => 0, :ok => 1, :warning => 2}[@status], (@executor ? @output.merge(@executor.output) : @output).to_json, @time_start, @time_end, @trans['t_id']
+      )
+
+      st = t.prepared_st('SELECT COUNT(*)
+                    FROM transaction_chains c
+                    INNER JOIN transactions t ON c.id = t.transaction_chain_id
+                    WHERE id = ? AND t_done = 0', @trans['transaction_chain_id'])
+
+      cnt = st.fetch[0].to_i
+      st.close
+
+      if cnt == 0
+        # mark chain as finished
+        t.prepared('UPDATE transaction_chains SET `state` = 2, `progress` = `progress` + 1 WHERE id = ?', @trans['transaction_chain_id'])
+
+        # release all locks
+        t.prepared('DELETE FROM resource_locks WHERE transaction_chain_id = ?', @trans['transaction_chain_id'])
+      else
+        t.prepared('UPDATE transaction_chains SET `progress` = `progress` + 1 WHERE id = ?', @trans['transaction_chain_id'])
+      end
+
+      @executor.post_save(db) if @executor
     end
-
-    st.close
-
-    db.prepared('UPDATE transaction_confirmations SET done = 1 WHERE transaction_id = ? AND done = 0', @trans['t_id'])
-
-    db.prepared(
-        'UPDATE transactions SET t_done=1, t_success=?, t_output=?, t_real_start=?, t_end=? WHERE t_id=?',
-        {:failed => 0, :ok => 1, :warning => 2}[@status], (@executor ? @output.merge(@executor.output) : @output).to_json, @time_start, @time_end, @trans['t_id']
-    )
-
-    @executor.post_save(db) if @executor
   end
 
   def dependency_failed(db)
@@ -207,5 +238,14 @@ class Command
         log "Cmd ##{cmd} => #{klass}.#{method}"
       end
     end
+  end
+
+  private
+  def pk_cond(pks)
+    pks.map { |k, v| "`#{k}` = #{sql_val(v)}" }.join(' AND ')
+  end
+
+  def sql_val(v)
+    v.is_a?(Integer) ? v : "'#{v}'"
   end
 end
