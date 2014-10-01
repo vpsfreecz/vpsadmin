@@ -335,26 +335,19 @@ switch ($_GET["action"]) {
 			} else $list_vps=true;
 			break;
 		case 'reinstall':
-			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-			$tpl = template_by_id($_REQUEST["vps_template"]);
-			
-			if (!$tpl) {
-				$xtpl->perex(_("Template does not exist!"));
-				$show_info=true;
-			} else if (!$tpl["templ_enabled"]) {
-				$xtpl->perex(_("Template not enabled, it cannot be used!"), _("You will have to use different template."));
-				$show_info=true;
-			} else if ($_REQUEST["reinstallsure"] && $_REQUEST["vps_template"]) {
-				$xtpl->perex(_("Are you sure you want to reinstall VPS").' '.$_GET["veid"].'?', '<a href="?page=adminvps">'.strtoupper(_("No")).'</a> | <a href="?page=adminvps&action=reinstall2&veid='.$_GET["veid"].'">'.strtoupper(_("Yes")).'</a>');
-				$vps->change_distro_before_reinstall($_REQUEST["vps_template"]);
+			if ($_REQUEST["reinstallsure"] && $_REQUEST["vps_template"]) {
+				$xtpl->perex(
+					_("Are you sure you want to reinstall VPS").' '.$_GET["veid"].'?',
+					'<a href="?page=adminvps">'.strtoupper(_("No")).'</a> | <a href="?page=adminvps&action=reinstall2&veid='.$_GET["veid"].'&vps_template='.$_POST["vps_template"].'">'.strtoupper(_("Yes")).'</a>'
+				);
 			}
 			else $list_vps=true;
 			break;
 		case 'reinstall2':
-			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
+			$api->vps->reinstall($_GET["veid"], array('os_template' => $_GET["vps_template"]));
 			
-			notify_user(_("Reinstallation of VPS")." {$_GET["veid"]} ".strtolower(_("planned")).'<br />'._("You will have to reset your <b>root</b> password"), $vps->reinstall());
-			redirect('?page=adminvps&action=info&veid='.$vps->veid);
+			notify_user(_("Reinstallation of VPS")." {$_GET["veid"]} ".strtolower(_("planned")), _("You will have to reset your <b>root</b> password."));
+			redirect('?page=adminvps&action=info&veid='.$_GET["veid"]);
 			break;
 		case 'enablefeatures':
 			if (isset($_REQUEST["veid"]) && isset($_REQUEST["enable"]) && $_REQUEST["enable"]) {
