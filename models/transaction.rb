@@ -93,10 +93,22 @@ class Transaction < ActiveRecord::Base
       add_confirmable(:destroy_type, *args)
     end
 
-    # Edit hash of attributes +attrs+ of an object +obj+.
-    def edit(obj, attrs)
-      add_confirmable(:edit_type, obj, attrs)
+    # Confirm already changed attributes.
+    # +attrs+ is a hash of original attributes of +obj+.
+    # Attributes are first changed in the model and when
+    # the transaction succeeds, no action is taken. If
+    # it fails, than the original value is restored.
+    def edit_before(obj, attrs)
+      add_confirmable(:edit_before_type, obj, attrs)
     end
+
+    # Edit hash of attributes +attrs+ of an object +obj+.
+    # The model is updated only after the transaction succeeds.
+    def edit_after(obj, attrs)
+      add_confirmable(:edit_after_type, obj, attrs)
+    end
+
+    alias_method :edit, :edit_after
 
     protected
     def add_confirmable(type, obj, attrs = nil)

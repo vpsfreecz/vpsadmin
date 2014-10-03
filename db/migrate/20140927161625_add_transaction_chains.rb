@@ -20,8 +20,9 @@ class AddTransactionChains < ActiveRecord::Migration
 
       # enum
       #  0 - create (success - confirm, failure - destroy)
-      #  1 - edit (success - edit, failure - ignore)
-      #  2 - destroy (success - destroy, failure - revert to confirm)
+      #  1 - edit before (success - ignore, failure - revert)
+      #  2 - edit after (success - edit, failure - ignore)
+      #  3 - destroy (success - destroy, failure - revert to confirm)
       t.integer    :confirm_type,   null: false
       t.integer    :done,           null: false, default: 0
       t.timestamps
