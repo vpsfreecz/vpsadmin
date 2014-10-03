@@ -132,7 +132,7 @@ switch ($_GET["action"]) {
 					redirect('?page=adminvps&action=info&veid='.$vps->id);
 					
 				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-					$xtpl->perex_format_errors($e->getResponse());
+					$xtpl->perex_format_errors(_('VPS creation failed'), $e->getResponse());
 					
 					print_newvps();
 				}
@@ -174,28 +174,32 @@ switch ($_GET["action"]) {
 			$show_info=true;
 			break;
 		case 'passwd':
-			$ret = $api->vps->passwd($_GET["veid"]);
-			
-			$_SESSION["vps_password"] = $ret['password'];
-			
-			notify_user(
-				_("Change of root password planned"),
-				_("New password is: ")."<b>".$_SESSION["vps_password"]."</b>"
-			);
-			redirect('?page=adminvps&action=info&veid='.$_GET["veid"]);
-
-			$show_info=true;
+			try {
+				$ret = $api->vps->passwd($_GET["veid"]);
+				
+				$_SESSION["vps_password"] = $ret['password'];
+				
+				notify_user(
+					_("Change of root password planned"),
+					_("New password is: ")."<b>".$_SESSION["vps_password"]."</b>"
+				);
+				redirect('?page=adminvps&action=info&veid='.$_GET["veid"]);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Change of the password failed'), $e->getResponse());
+				$show_info=true;
+			}
 			break;
 		case 'hostname':
-			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-			if ($vps->exists) {
-				if (ereg('^[a-zA-Z0-9\.\-]{1,255}$',$_REQUEST["hostname"])) {
-					notify_user(_("Hostname change planned"), $vps->set_hostname($_REQUEST["hostname"]));
-					redirect('?page=adminvps&action=info&veid='.$vps->veid);
-				} else {
-					$xtpl->perex(_("Error"), _("Wrong hostname name"));
-					$show_info=true;
-				}
+			try {
+				$api->vps->update($_GET['veid'], array('hostname' => $_POST['hostname']));
+				
+				notify_user(_("Hostname change planned"), '');
+				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Change of the hostname failed'), $e->getResponse());
+				$show_info=true;
 			}
 			break;
 		case 'configs':
@@ -294,15 +298,16 @@ switch ($_GET["action"]) {
 			$show_info=true;
 			break;
 		case 'nameserver':
-			if ((isset($_REQUEST["nameserver"])) && isset($_REQUEST["veid"])) {
-				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
+			try {
+				$api->vps->update($_GET['veid'], array('dns_resolver' => $_POST['nameserver']));
 				
-				notify_user(_("DNS change planned"), $vps->nameserver($_REQUEST["nameserver"]));
-				redirect('?page=adminvps&action=info&veid='.$vps->veid);
-			} else {
-				$xtpl->perex(_("Error"), '');
+				notify_user(_("DNS change planned"), '');
+				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('DNS resolver change failed'), $e->getResponse());
+				$show_info=true;
 			}
-			$show_info=true;
 			break;
 		case 'offlinemigrate':
 			if ($_SESSION["is_admin"] && isset($_REQUEST["veid"])) {
