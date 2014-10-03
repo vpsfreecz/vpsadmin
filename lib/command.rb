@@ -98,7 +98,15 @@ class Command
               t.query("DELETE FROM #{row[0]} WHERE #{pk}")
             end
 
-          when 1 # edit
+          when 1 # edit before
+            unless success
+              attrs = YAML.load(row[2])
+              update = attrs.collect { |k, v| "`#{k}` = #{sql_val(v)}" }.join(',')
+
+              t.query("UPDATE #{row[0]} SET #{update} WHERE #{pk}")
+            end
+
+          when 2 # edit after
             if success
               attrs = YAML.load(row[2])
               update = attrs.collect { |k, v| "`#{k}` = #{sql_val(v)}" }.join(',')
@@ -106,7 +114,7 @@ class Command
               t.query("UPDATE #{row[0]} SET #{update} WHERE #{pk}")
             end
 
-          when 2 # destroy
+          when 3 # destroy
             if success
               t.query("DELETE FROM #{row[0]} WHERE #{pk}")
             else
