@@ -74,99 +74,105 @@ $xtpl->assign("L_TRANSACTION_LOG", _("Transaction log"));
 $xtpl->assign("L_LAST10", _("last 10"));
 $xtpl->assign("L_ACTION", _("Action"));
 
-
-if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
-	$api->authenticate('token', array('token' => $_SESSION['auth_token']), false);
-	
-	$_member = member_load($_SESSION["member"]["m_id"]);
-	
-	try {
-		$api->user->touch($_SESSION["member"]["m_id"]);
-		$_SESSION["transactbox_expiration"] = time() + USER_LOGIN_INTERVAL;
-		$xtpl->assign('AJAX_SCRIPT', ajax_getHTML('ajax.php?page=transactbox', 'transactions', 1000));
+try {
+	if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
+		$api->authenticate('token', array('token' => $_SESSION['auth_token']), false);
 		
-	} catch (\HaveAPI\Client\Exception\AuthenticationFailed $e) {
-		unset($_SESSION);
-		session_destroy();
-		$_GET["page"] = "";
+		$_member = member_load($_SESSION["member"]["m_id"]);
+		
+		try {
+			$api->user->touch($_SESSION["member"]["m_id"]);
+			$_SESSION["transactbox_expiration"] = time() + USER_LOGIN_INTERVAL;
+			$xtpl->assign('AJAX_SCRIPT', ajax_getHTML('ajax.php?page=transactbox', 'transactions', 1000));
+			
+		} catch (\HaveAPI\Client\Exception\AuthenticationFailed $e) {
+			unset($_SESSION);
+			session_destroy();
+			$_GET["page"] = "";
+		}
 	}
-}
 
-$Cluster_ipv4 = new Cluster_ipv4($xtpl, $db);
-$Cluster_ipv6 = new Cluster_ipv6($xtpl, $db);
+	$Cluster_ipv4 = new Cluster_ipv4($xtpl, $db);
+	$Cluster_ipv6 = new Cluster_ipv6($xtpl, $db);
 
-$_GET["page"] = isset($_GET["page"]) ? $_GET["page"] : false;
+	$_GET["page"] = isset($_GET["page"]) ? $_GET["page"] : false;
 
-$db_ver = $cluster_cfg->get("db_version");
-$db_check = $db_ver == DB_VERSION;
-$xtpl->assign('DB_VERSION', $db_ver);
+	$db_ver = $cluster_cfg->get("db_version");
+	$db_check = $db_ver == DB_VERSION;
+	$xtpl->assign('DB_VERSION', $db_ver);
 
-if(!$db_check)
-	$cluster_cfg->set("maintenance_mode", true);
+	if(!$db_check)
+		$cluster_cfg->set("maintenance_mode", true);
 
-if (($_GET["page"] != "login") &&
-				($_GET["page"] != "lang") &&
-				($_GET["page"] != "about") &&
-				(!$_SESSION["is_admin"]) &&
-				$cluster_cfg->get("maintenance_mode"))
-	{
-		$request_page = "";
-		include WWW_ROOT.'pages/page_index.php';
-		$xtpl->perex(_("Maintenance mode"), _("vpsAdmin is currently in maintenance mode, any actions are disabled. <br />
-										This is usually used during outage to prevent data corruption.<br />
-										Please be patient."));
-} else {
-	show_notification();
-	
-	switch ($_GET["page"]) {
-		case 'adminvps':
-			include WWW_ROOT.'pages/page_adminvps.php';
-			break;
-		case 'about':
-			include WWW_ROOT.'pages/page_about.php';
-			break;
-		case 'login':
-			include WWW_ROOT.'pages/page_login.php';
-			break;
-		case 'adminm':
-			include WWW_ROOT.'pages/page_adminm.php';
-			break;
-		case 'transactions':
-			include WWW_ROOT.'pages/page_transactions.php';
-			break;
-		case 'networking':
-			include WWW_ROOT.'pages/page_networking.php';
-			break;
-		case 'cluster':
-			include WWW_ROOT.'pages/page_cluster.php';
-			break;
-		case 'log':
-			include WWW_ROOT.'pages/page_log.php';
-			break;
-		case 'backup':
-			include WWW_ROOT.'pages/page_backup.php';
-			break;
-		case 'nas':
-			include WWW_ROOT.'pages/page_nas.php';
-			break;
-		case 'gencfg':
-			include WWW_ROOT.'pages/page_gencfg.php';
-			break;
-		case 'lang';
-			$lang->change($_GET['newlang']);
-			break;
-		case 'console':
-			include WWW_ROOT.'pages/page_console.php';
-			break;
-		case 'jumpto':
-			include WWW_ROOT.'pages/page_jumpto.php';
-			break;
-		default:
+	if (($_GET["page"] != "login") &&
+					($_GET["page"] != "lang") &&
+					($_GET["page"] != "about") &&
+					(!$_SESSION["is_admin"]) &&
+					$cluster_cfg->get("maintenance_mode"))
+		{
+			$request_page = "";
 			include WWW_ROOT.'pages/page_index.php';
+			$xtpl->perex(_("Maintenance mode"), _("vpsAdmin is currently in maintenance mode, any actions are disabled. <br />
+											This is usually used during outage to prevent data corruption.<br />
+											Please be patient."));
+	} else {
+		show_notification();
+		
+		switch ($_GET["page"]) {
+			case 'adminvps':
+				include WWW_ROOT.'pages/page_adminvps.php';
+				break;
+			case 'about':
+				include WWW_ROOT.'pages/page_about.php';
+				break;
+			case 'login':
+				include WWW_ROOT.'pages/page_login.php';
+				break;
+			case 'adminm':
+				include WWW_ROOT.'pages/page_adminm.php';
+				break;
+			case 'transactions':
+				include WWW_ROOT.'pages/page_transactions.php';
+				break;
+			case 'networking':
+				include WWW_ROOT.'pages/page_networking.php';
+				break;
+			case 'cluster':
+				include WWW_ROOT.'pages/page_cluster.php';
+				break;
+			case 'log':
+				include WWW_ROOT.'pages/page_log.php';
+				break;
+			case 'backup':
+				include WWW_ROOT.'pages/page_backup.php';
+				break;
+			case 'nas':
+				include WWW_ROOT.'pages/page_nas.php';
+				break;
+			case 'gencfg':
+				include WWW_ROOT.'pages/page_gencfg.php';
+				break;
+			case 'lang';
+				$lang->change($_GET['newlang']);
+				break;
+			case 'console':
+				include WWW_ROOT.'pages/page_console.php';
+				break;
+			case 'jumpto':
+				include WWW_ROOT.'pages/page_jumpto.php';
+				break;
+			default:
+				include WWW_ROOT.'pages/page_index.php';
+		}
+		$request_page = $_GET["page"];
 	}
-	$request_page = $_GET["page"];
+	
+} catch (\Httpful\Exception\ConnectionErrorException $e) {
+	$xtpl->perex(_('Error occured'), _('Unable to connect to the API server. Please contact the support.'));
+	
+} catch (\HaveAPI\Client\Exception\Base $e) {
+	$xtpl->perex(_('Error occured'), _('An unhandled error occured in communication with the API. Please contact the support.'));
 }
-
 
 
 if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {

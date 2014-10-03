@@ -552,12 +552,12 @@ class XTemplate {
 			$body .= '<ul>';
 			
 			foreach($errors as $param => $err)
-				$body .= '<li>'.$param.': '.$err.'</li>';
+				$body .= '<li>'.$param.': '.implode(', ', $err).'</li>';
 			
 			$body .= '</ul>';
 		}
 		
-		$xtpl->perex($title, $body);
+		$this->perex($title, $body);
 	}
 	/**
 	  * Add link to sidebar
