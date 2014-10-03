@@ -29,6 +29,8 @@ class TransactionChain < ActiveRecord::Base
       # and the exception will be propagated.
       chain.link_chain(*args)
 
+      raise ActiveRecord::Rollback if empty?
+
       chain.state = :queued
       chain.save
     end
@@ -97,6 +99,10 @@ class TransactionChain < ActiveRecord::Base
   def use_chain(chain, *args)
     c = chain.use_in(self, *args)
     @last_id = c.last_id
+  end
+
+  def empty?
+    @size == 0
   end
 
   private
