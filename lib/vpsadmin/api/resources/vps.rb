@@ -193,6 +193,7 @@ END
 
     input do
       use :common
+      patch :hostname, required: false
     end
 
     authorize do |u|
@@ -205,7 +206,7 @@ END
     def exec
       vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
 
-      if vps.update(to_db_names(params[:vps]))
+      if vps.update(to_db_names(input))
         ok
       else
         error('update failed', to_param_names(vps.errors.to_hash, :input))

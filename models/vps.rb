@@ -31,8 +31,6 @@ class Vps < ActiveRecord::Base
 
   default_scope { where(vps_deleted: nil) }
 
-  after_update :hostname_changed, if: :vps_hostname_changed?
-
   include Lockable
 
   def create(add_ips)
@@ -65,6 +63,32 @@ class Vps < ActiveRecord::Base
     else
       TransactionChains::VpsDestroy.fire(self)
     end
+  end
+
+  # Filter attributes that must be changed by a transaction.
+  def update(attributes)
+    assign_attributes(attributes)
+    return false unless valid?
+
+    to_change = {}
+
+    %w(vps_hostname vps_template dns_resolver_id).each do |attr|
+      if changed.include?(attr)
+        if attr.ends_with?('_id')
+          to_change[attr] = send(attr[0..-4])
+        else
+          to_change[attr] = send(attr)
+        end
+
+        send("#{attr}=", changed_attributes[attr])
+      end
+    end
+
+    unless to_change.empty?
+      TransactionChains::VpsUpdate.fire(self, to_change)
+    end
+
+    (changed? && save) || true
   end
 
   def start
@@ -126,10 +150,6 @@ class Vps < ActiveRecord::Base
   def generate_password
     chars = ('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a
     (0..19).map { chars.sample }.join
-  end
-
-  def hostname_changed
-    Transactions::Vps::Hostname.fire(self)
   end
 
   def foreign_keys_exist
