@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+
+require 'socket'
+
+unless ARGV.count == 2
+  warn "Usage: #{$0} <socket> <task_id>"
+  exit(false)
+end
+
+Socket.unix(ARGV[0]) do |sock|
+  sock.send(ARGV[1], 0)
+end

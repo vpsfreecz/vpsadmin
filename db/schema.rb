@@ -237,7 +237,7 @@ ActiveRecord::Schema.define(version: 20140927161700) do
   create_table "repeatable_tasks", force: true do |t|
     t.string  "class_name",   null: false
     t.string  "table_name",   null: false
-    t.integer "object_id",    null: false
+    t.integer "row_id",       null: false
     t.string  "minute",       null: false
     t.string  "hour",         null: false
     t.string  "day_of_month", null: false

@@ -1,5 +1,5 @@
 # Raised when attempting the lock an already locked resource.
-class ResourceLocked < Exception
+class ResourceLocked < StandardError
 
 end
 

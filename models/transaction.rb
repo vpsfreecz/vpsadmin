@@ -65,7 +65,7 @@ class Transaction < ActiveRecord::Base
   def set_init_values
     self.t_time = Time.new.to_i
     self.t_success = 0
-    self.t_m_id = User.current.m_id
+    self.t_m_id = User.current && User.current.m_id
   end
 
   # Must be implemented in subclasses.

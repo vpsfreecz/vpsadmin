@@ -5,6 +5,8 @@ require 'paper_trail'
 require 'pp'
 require 'haveapi'
 
+Thread.abort_on_exception = true
+
 module VpsAdmin
   module API
     module Resources
@@ -17,6 +19,7 @@ module VpsAdmin
   end
 end
 
+require_relative 'vpsadmin/scheduler'
 require_relative 'vpsadmin/api/crypto_provider'
 require_rel '../models'
 require_relative 'vpsadmin/api'

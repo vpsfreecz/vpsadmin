@@ -191,7 +191,7 @@ class AddStorage < ActiveRecord::Migration
     create_table :repeatable_tasks do |t|
       t.string     :class_name,     null: false, limit: 255
       t.string     :table_name,     null: false, limit: 255
-      t.integer    :object_id,      null: false
+      t.integer    :row_id,         null: false
 
       # Scheduling
       t.string    :minute,          null: false, limit: 255
@@ -370,7 +370,7 @@ class AddStorage < ActiveRecord::Migration
       RepeatableTask.create(
         class_name: snapshot.class.to_s.demodulize,
         table_name: snapshot.class.table_name,
-        object_id: snapshot.id,
+        row_id: snapshot.id,
         minute: '00',
         hour: '01',
         day_of_month: '*',
@@ -387,7 +387,7 @@ class AddStorage < ActiveRecord::Migration
       RepeatableTask.create(
           class_name: backup.class.to_s.demodulize,
           table_name: backup.class.table_name,
-          object_id: backup.id,
+          row_id: backup.id,
           minute: '30',
           hour: '01',
           day_of_month: '*',
