@@ -219,12 +219,6 @@ IMPLICIT_CONFIG = {
         :smtp_port => 25,
     },
 
-    :scheduler => {
-        :enabled => false,
-        :socket => '/var/run/vpsadmind-scheduler.sock',
-        :crontab => '/etc/cron.d/vpsadmind-scheduler',
-    },
-
     :console => {
         :host => "localhost",
         :port => 8081,
