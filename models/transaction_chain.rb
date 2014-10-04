@@ -29,7 +29,7 @@ class TransactionChain < ActiveRecord::Base
       # and the exception will be propagated.
       chain.link_chain(*args)
 
-      raise ActiveRecord::Rollback if empty?
+      raise ActiveRecord::Rollback if chain.empty?
 
       chain.state = :queued
       chain.save

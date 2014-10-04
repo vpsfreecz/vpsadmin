@@ -409,13 +409,13 @@ END
             with_restricted(vps_id: params[:vps_id])
         ).ip_addresses
 
-        if params[:ip_address][:version]
+        if input[:version]
           ips = ips.where(
-              ip_v: params[:ip_address][:version]
+              ip_v: input[:version]
           )
         end
 
-        ips.limit(params[:ip_address][:limit]).offset(params[:ip_address][:offset])
+        ips.limit(input[:limit]).offset(input[:offset])
       end
     end
 
@@ -423,12 +423,11 @@ END
       desc 'Assign IP address to VPS'
 
       input do
-        id :id, label: 'IP address ID',
-           desc: 'If ID is 0, first free IP address of given version is assigned',
-           db_name: :ip_id
+        resource VpsAdmin::API::Resources::IpAddress, label: 'IP address',
+            desc: 'If the address is not provided, first free IP address of given version is assigned instead'
         integer :version, label: 'IP version',
-                desc: '4 or 6, provide only if id is 0', db_name: :ip_v,
-                required: true
+                desc: 'provide only if IP address is not selected', db_name: :ip_v,
+                choices: [4, 6]
       end
 
       output do
@@ -442,18 +441,27 @@ END
       def exec
         vps = ::Vps.find(params[:vps_id])
 
-        if !params[:ip_address][:id] || params[:ip_address][:id] == 0
-          ip = ::IpAddress.pick_addr!(vps.node.location, params[:ip_address][:version])
+        if input[:ip_address]
+          begin
+            vps.add_ip(ip = input[:ip_address])
+
+          rescue VpsAdmin::API::Exceptions::IpAddressInUse
+            error('IP address is already in use')
+          end
+
+        elsif input[:version].nil?
+          error('provide either an IP address or IP version')
+
         else
-          ip = ::IpAddress.find_by!(ip_id: params[:ip_address][:id], location: vps.node.location)
+          begin
+            ip = vps.add_free_ip(input[:version])
+
+          rescue ActiveRecord::RecordNotFound
+            error('no free IP address is available')
+          end
         end
 
-        if ip.free?
-          vps.add_ip(ip)
-          ok(ip)
-        else
-          error('IP address is already in use')
-        end
+        ok(ip)
       end
     end
 
@@ -466,7 +474,10 @@ END
 
       def exec
         vps = ::Vps.find(params[:vps_id])
-        vps.delete_ip(vps.ip_addresses.find(params[:ip_address_id]))
+        vps.delete_ip(vps.ip_addresses.find_by!(
+            ip_id: params[:ip_address_id],
+            vps_id: vps.id)
+        )
       end
     end
 

@@ -116,22 +116,51 @@ class Vps < ActiveRecord::Base
     end
   end
 
-  def add_ip(ip)
-    TransactionChains::VpsIpAdd.fire(self, [ip])
+  # Unless +safe+ is true, the IP address +ip+ is fetched from the database
+  # again in a transaction, to ensure that it has not been given
+  # to any other VPS. Set +safe+ to true if +ip+ was fetched in a transaction.
+  def add_ip(ip, safe = false)
+    ::IpAddress.transaction do
+      ip = ::IpAddress.find(ip.id) unless safe
+
+      raise VpsAdmin::API::Exceptions::IpAddressInUse unless ip.free?
+
+      TransactionChains::VpsAddIp.fire(self, [ip])
+    end
   end
 
-  def delete_ip(ip)
-    TransactionChains::VpsIpDel.fire(self, [ip])
+  def add_free_ip(v)
+    ::IpAddress.transaction do
+      ip = ::IpAddress.pick_addr!(node.location, v)
+      add_ip(ip, true)
+    end
+
+    ip
+  end
+
+  # See #add_ip for more information about +safe+.
+  def delete_ip(ip, safe = false)
+    ::IpAddress.transaction do
+      ip = ::IpAddress.find(ip.id) unless safe
+
+      unless ip.vps_id == self.id
+        raise VpsAdmin::API::Exceptions::IpAddressNotAssigned
+      end
+
+      TransactionChains::VpsDelIp.fire(self, [ip])
+    end
   end
 
   def delete_ips(v=nil)
-    if v
-      ips = ip_addresses.where(ip_v: v)
-    else
-      ips = ip_addresses.all
-    end
+    ::IpAddress.transaction do
+      if v
+        ips = ip_addresses.where(ip_v: v)
+      else
+        ips = ip_addresses.all
+      end
 
-    TransactionChains::VpsIpDel.fire(self, ips)
+      TransactionChains::VpsDelIp.fire(self, ips)
+    end
   end
 
   def passwd

@@ -22,7 +22,7 @@ class IpAddress < ActiveRecord::Base
     self.select('vps_ip.*')
       .joins("LEFT JOIN resource_locks rl ON rl.resource = 'IpAddress' AND rl.row_id = vps_ip.ip_id")
       .where(ip_v: v, location: location)
-      .where('vps_id IS NULL OR vps_id = 0')
+      .where('vps_id IS NULL')
       .where('rl.id IS NULL')
       .order(:ip_id).take!
   end

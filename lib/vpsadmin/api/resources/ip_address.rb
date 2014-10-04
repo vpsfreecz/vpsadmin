@@ -77,14 +77,34 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       ips = ::IpAddress
 
       %i(vps version location max_tx max_rx).each do |filter|
-        next unless params[:ip_address][filter]
+        next unless input.has_key?(filter)
 
         ips = ips.where(
-            filter => params[:ip_address][filter],
+            filter => input[filter],
         )
       end
 
       ips.limit(params[:ip_address][:limit]).offset(params[:ip_address][:offset])
+    end
+  end
+
+  class Show < HaveAPI::Actions::Default::Show
+    desc 'Show IP address'
+
+    output do
+      use :all
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def prepare
+      @ip = ::IpAddress.find(params[:ip_address_id])
+    end
+
+    def exec
+      @ip
     end
   end
 
