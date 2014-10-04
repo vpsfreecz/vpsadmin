@@ -459,7 +459,7 @@ class XTemplate {
 	  * @param $logged - is user logged in?
 	  * @param $user_name - if so, what is is nick?
 	  */
-	function logbox ($logged = false, $user_name = 'none', $is_admin=false, $maint_mode = false, $db_upgrade = false) {
+	function logbox ($logged = false, $user_name = 'none', $is_admin=false, $maint_mode = false) {
 		if ($logged) {
 			if ($is_admin) {
 				$this->assign("L_MEMBER", _("Member"));
@@ -468,11 +468,6 @@ class XTemplate {
 				$this->assign("V_VPS", $_SESSION["jumpto"]["vps"]);
 				$this->assign("L_JUMP", _("Jump"));
 				$this->parse("main.loggedbox.jumpto");
-				
-				if($db_upgrade) {
-					$this->assign("L_DB_UPGRADE",_("Database needs to be upgraded!"));
-					$this->parse("main.db_upgrade");
-				}
 				
 				if ($maint_mode) {
 					$this->assign("L_MAINTENANCE_MODE_ON",_("Maintenance mode status: ON"));

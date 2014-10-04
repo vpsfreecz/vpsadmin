@@ -800,12 +800,8 @@ switch($_REQUEST["action"]) {
 		break;
 	case "maintenance_toggle":
 		if ($cluster_cfg->get("maintenance_mode")) {
-			if(!db_check_version()) {
-				$xtpl->perex(_("Unable to turn off maintenance mode"), _("Database needs to be upgraded first."));
-			} else {
-				$cluster_cfg->set("maintenance_mode", false);
-				$xtpl->perex(_("Maintenance mode status: OFF"), '');
-			}
+			$cluster_cfg->set("maintenance_mode", false);
+			$xtpl->perex(_("Maintenance mode status: OFF"), '');
 		} else {
 			$cluster_cfg->set("maintenance_mode", true);
 			$xtpl->perex(_("Maintenance mode status: ON"), '');
@@ -1245,38 +1241,6 @@ switch($_REQUEST["action"]) {
 		$xtpl->perex(_("Help box deleted"), _("Help box successfully deleted."));
 		
 		break;
-	case 'db_upgrade':
-		$db_ver = $cluster_cfg->get("db_version");
-		$xtpl->title2(_("Upgrade database scheme from v"). $db_ver .' '._("to").' v'.DB_VERSION);
-		
-		$xtpl->form_create('?page=cluster&action=db_upgrade_do', 'post');
-		$xtpl->table_td('');
-		$xtpl->form_add_textarea_pure(90, 40, 'sqlcode', db_build_upgrade_code($db_ver, DB_VERSION));
-		$xtpl->table_tr();
-		$xtpl->form_out(_("Upgrade"));
-		
-		$xtpl->sbar_add(_("Back"), '?page=cluster');
-		
-		break;
-	case 'db_upgrade_do':
-		$error = "";
-		
-		if(db_do_upgrade(DB_VERSION, $_POST["sqlcode"], $error)) {
-			notify_user(_("Database upgraded"), _("Database scheme was successfully upgraded to ")."v".DB_VERSION);
-			redirect('?page=cluster');
-		} else {
-			$xtpl->perex(_("Upgrade failed"), _("Please check the SQL code for errors.")."<br><br>".$error."<br><br>"._("Changes were rolled back."));
-			
-			$xtpl->form_create('?page=cluster&action=db_upgrade_do', 'post');
-			$xtpl->table_td('');
-			$xtpl->form_add_textarea_pure(90, 40, 'sqlcode', $_POST["sqlcode"]);
-			$xtpl->table_tr();
-			$xtpl->form_out(_("Upgrade"));
-		}
-		
-		$xtpl->sbar_add(_("Back"), '?page=cluster');
-		
-		break;
 	case 'mass_management':
 		if ($_SESSION["is_admin"])
 			$mass_management = true;
@@ -1670,9 +1634,6 @@ if ($list_mails) {
 	$xtpl->sbar_add(_("Approval requests"), '?page=cluster&action=approval_requests');
 }
 if ($list_nodes) {
-	if(!db_check_version())
-		$xtpl->sbar_add(strtoupper(_("Upgrade database")), '?page=cluster&action=db_upgrade');
-	
 	$xtpl->sbar_add(_("General settings"), '?page=cluster&action=general_settings');
 	$xtpl->sbar_add(_("Register new node"), '?page=cluster&action=newnode');
 	$xtpl->sbar_add(_("Manage VPS templates"), '?page=cluster&action=templates');
