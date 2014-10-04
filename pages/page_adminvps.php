@@ -161,12 +161,15 @@ switch ($_GET["action"]) {
 			redirect('?page=adminvps');
 			break;
 		case 'revive':
-			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-			
-			if($_SESSION["is_admin"]) {
-				$vps->revive();
+			try {
+				$api->vps->revive($_GET['veid']);
+				
 				notify_user(_("Revival"), _("VPS was revived."));
-				redirect('?page=adminvps&action=info&veid='.$vps->veid);
+				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Unable to revive VPS'), $e->getResponse());
+				$show_info=true;
 			}
 			
 			break;
