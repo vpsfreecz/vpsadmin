@@ -333,6 +333,22 @@ END
     end
   end
 
+  class Revive < HaveAPI::Action
+    desc 'Revive a lazily deleted VPS'
+    route ':%{resource}_id/revive'
+    http_method :post
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def exec
+      vps = ::Vps.unscoped.where(vps_id: params[:vps_id]).where.not(vps_deleted: nil).take!
+      vps.revive
+      vps.save!
+    end
+  end
+
   class Config < HaveAPI::Resource
     version 1
     route ':vps_id/configs'

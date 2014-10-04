@@ -107,13 +107,8 @@ class Vps < ActiveRecord::Base
     # Transactions::Vps::ApplyConfig.fire(self)
   end
 
-  def set_config_chain(chain)
-    i = 0
-
-    chain.each do |c|
-      VpsHasConfig.new(vps_id: veid, config_id: c, order: i).save
-      i += 1
-    end
+  def revive
+    self.vps_deleted = nil
   end
 
   # Unless +safe+ is true, the IP address +ip+ is fetched from the database
