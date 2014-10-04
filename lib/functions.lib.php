@@ -59,14 +59,18 @@ function get_ip_by_id($ip_id) {
 	    return $db->fetch_array($result);
 }
 function get_free_ip_list ($v = 4, $location=false) {
-	global $db;
-	$sql = 'SELECT * FROM vps_ip WHERE vps_id = 0 AND ip_v = "'.$db->check($v).'"';
-	if ($location)
-	    $sql .=  ' AND ip_location = "'.$db->check($location).'"';
+	global $api;
+	
 	$ret = array();
-	if ($result = $db->query($sql))
-		while ($row = $db->fetch_array($result))
-			$ret[$row["ip_addr"]] = $row["ip_addr"];
+	$filters = array('version' => $v, 'vps' => null);
+	
+	if($location)
+		$filters['location'] = $location;
+	
+	foreach($api->ip_address->list($filters) as $ip) {
+		$ret[$ip->id] = $ip->addr;
+	}
+	
 	return $ret;
 }
 

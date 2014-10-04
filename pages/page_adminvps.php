@@ -274,31 +274,38 @@ switch ($_GET["action"]) {
 			}
 			break;
 		case 'addip':
-			if (isset($_REQUEST["veid"]) && $_SESSION["is_admin"]) {
-				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-					if (ip_is_free($_REQUEST["ip_recycle"]))
-						notify_user(_("Addition of IP planned")." {$_REQUEST["ip"]}", $vps->ipadd($_POST["ip_recycle"]));
-					elseif (ip_is_free($_REQUEST["ip6_recycle"]))
-						notify_user(_("Addition of IP planned")." {$_REQUEST["ip"]}", $vps->ipadd($_POST["ip6_recycle"]));
-					else
-						notify_user(_("Error"), 'Contact your administrator');
+			try {
+				if($_POST['ip_recycle']) {
+					$api->vps($_GET['veid'])->ip_address->create(array('ip_address' => $_POST['ip_recycle']));
+					notify_user(_("Addition of IP address planned"), '');
 					
-					redirect('?page=adminvps&action=info&veid='.$vps->veid);
-			} else {
-				$xtpl->perex(_("Error"), 'Contact your administrator');
+				} else if($_POST['ip6_recycle']) {
+					$api->vps($_GET['veid'])->ip_address->create(array('ip_address' => $_POST['ip6_recycle']));
+					notify_user(_("Addition of IP address planned"), '');
+					
+				} else {
+					notify_user(_("Error"), 'Contact your administrator');
+				}
+				
+				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Failed to add IP address'), $e->getResponse());
+				$show_info=true;
 			}
-			$show_info=true;
 			break;
 		case 'delip':
-			if ((validate_ip_address($_REQUEST["ip"])) && isset($_REQUEST["veid"]) && $_SESSION["is_admin"]) {
-				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
+			try {
+				$api->vps($_GET['veid'])->ip_address($_GET['ip'])->delete();
 				
-				notify_user(_("Deletion of IP planned")." {$_REQUEST["ip"]}", $vps->ipdel($_REQUEST["ip"]));
-				redirect('?page=adminvps&action=info&veid='.$vps->veid);
-			} else {
-				$xtpl->perex(_("Error"), 'Contact your administrator');
+				notify_user(_("Deletion of IP address planned"), '');
+				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Failed to remove IP address'), $e->getResponse());
+				$show_info=true;
 			}
-			$show_info=true;
+			
 			break;
 		case 'nameserver':
 			try {
@@ -773,38 +780,50 @@ if (isset($show_info) && $show_info) {
 	// IP addresses
 		if ($_SESSION["is_admin"]) {
 			$xtpl->form_create('?page=adminvps&action=addip&veid='.$vps->veid, 'post');
-			if ($iplist = $vps->iplist())
-				foreach ($iplist as $ip) {
-					if ($ip["ip_v"] == 4)
-						$xtpl->table_td(_("IPv4"));
-					else $xtpl->table_td(_("IPv6"));
-					$xtpl->table_td($ip["ip_addr"]);
-					$xtpl->table_td('<a href="?page=adminvps&action=delip&ip='.$ip["ip_addr"].'&veid='.$vps->veid.'">('._("Remove").')</a>');
-					$xtpl->table_tr();
-					}
-			$tmp["0"] = '-------';
-			$vps_location = $db->findByColumnOnce("locations", "location_id", $cluster->get_location_of_server($vps->ve["vps_server"]));
-			$free_4 = array_merge($tmp, get_free_ip_list(4, $vps->get_location()));
-			if ($vps_location["location_has_ipv6"])
-				$free_6 = array_merge($tmp, get_free_ip_list(6, $vps->get_location()));
-			$xtpl->form_add_select(_("Add IPv4 address").':', 'ip_recycle', $free_4, $vps->ve["m_id"]);
-			if ($vps_location["location_has_ipv6"])
-				$xtpl->form_add_select(_("Add IPv6 address").':', 'ip6_recycle', $free_6, $vps->ve["m_id"]);
+			
+			foreach ($api->vps($vps->veid)->ip_address->list() as $ip) {
+				if ($ip->version == 4)
+					$xtpl->table_td(_("IPv4"));
+				else
+					$xtpl->table_td(_("IPv6"));
+				
+				$xtpl->table_td($ip->addr);
+				$xtpl->table_td('<a href="?page=adminvps&action=delip&ip='.$ip->id.'&veid='.$vps->veid.'">('._("Remove").')</a>');
 				$xtpl->table_tr();
+			}
+			
+			$tmp[] = '-------';
+			$vps_location = $db->findByColumnOnce("locations", "location_id", $cluster->get_location_of_server($vps->ve["vps_server"]));
+			$free_4 = $tmp + get_free_ip_list(4, $vps->get_location());
+			
+			if ($vps_location["location_has_ipv6"])
+				$free_6 = $tmp + get_free_ip_list(6, $vps->get_location());
+				
+			$xtpl->form_add_select(_("Add IPv4 address").':', 'ip_recycle', $free_4);
+			
+			if ($vps_location["location_has_ipv6"])
+				$xtpl->form_add_select(_("Add IPv6 address").':', 'ip6_recycle', $free_6);
+				
+			$xtpl->table_tr();
 			$xtpl->table_add_category(_("Add IP address"));
 			$xtpl->table_add_category('&nbsp;');
-				$xtpl->form_out(_("Go >>"));
+			
+			$xtpl->form_out(_("Go >>"));
+			
 		} else {
 			$xtpl->table_add_category(_("Add IP address"));
 			$xtpl->table_add_category(_("(Please contact administrator for change)"));
-			if ($iplist = $vps->iplist())
-				foreach ($iplist as $ip) {
-					if ($ip["ip_v"] == 4)
-						$xtpl->table_td(_("IPv4"));
-					else $xtpl->table_td(_("IPv6"));
-					$xtpl->table_td($ip["ip_addr"]);
-					$xtpl->table_tr();
-					}
+			
+			foreach ($api->vps($vps->veid)->ip_address->list() as $ip) {
+				if ($ip->version == 4)
+					$xtpl->table_td(_("IPv4"));
+				else
+					$xtpl->table_td(_("IPv6"));
+				
+				$xtpl->table_td($ip->addr);
+				$xtpl->table_tr();
+			}
+			
 			$xtpl->table_out();
 		}
 
