@@ -254,6 +254,12 @@ class Command
   end
 
   def sql_val(v)
-    v.is_a?(Integer) ? v : "'#{v}'"
+    if v.is_a?(Integer)
+      v
+    elsif v.nil?
+      'NULL'
+    else
+      "'#{v}'"
+    end
   end
 end
