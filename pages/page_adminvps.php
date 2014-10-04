@@ -248,15 +248,18 @@ switch ($_GET["action"]) {
 			
 			break;
 		case 'chown':
-			if (($_REQUEST["m_id"] > 0) && isset($_REQUEST["veid"]) && $_SESSION["is_admin"]) {
-				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				
-				if ($vps->vchown($_REQUEST["m_id"])) {
-					notify_user(_("Owner change"), '' .strtolower(_("planned")));
-					redirect('?page=adminvps&action=info&veid='.$vps->veid);
-				} else $xtpl->perex(_("Error"), '');
-				
-			} else $xtpl->perex(_("Error"), '');
+			if($_POST['m_id']) {
+				try {
+					$api->vps->update($_GET['veid'], array('user' => $_POST['m_id']));
+					
+					notify_user(_("Owner changed"), '');
+					redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Change of the owner failed'), $e->getResponse());
+					$show_info=true;
+				}
+			}
 			
 			$show_info=true;
 			break;
