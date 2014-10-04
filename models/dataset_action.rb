@@ -4,7 +4,7 @@ class DatasetAction < ActiveRecord::Base
   belongs_to :dst_dataset_in_pool, class_name: 'DatasetInPool'
   belongs_to :last_transaction, class_name: 'Transaction'
 
-  enum action: %i(snapshot transfer rollback)
+  enum action: %i(snapshot transfer rollback backup)
 
   def execute
     case action.to_sym
@@ -16,6 +16,9 @@ class DatasetAction < ActiveRecord::Base
 
       when :rollback
         src_dataset_in_pool.rollback
+
+      when :backup
+        src_dataset_in_pool.backup(dst_dataset_in_pool)
     end
   end
 end

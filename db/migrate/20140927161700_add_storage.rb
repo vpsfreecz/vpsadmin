@@ -360,35 +360,18 @@ class AddStorage < ActiveRecord::Migration
       end
 
       # Schedule backups
-      # Make snapshots at 01:00 every day
-      # Transfer snapshots to backuper at 01:30 every day
-      snapshot = DatasetAction.create(
-          src_dataset_in_pool_id: vps.dataset_in_pool_id,
-          action: 0
-      )
-
-      RepeatableTask.create(
-        class_name: snapshot.class.to_s.demodulize,
-        table_name: snapshot.class.table_name,
-        row_id: snapshot.id,
-        minute: '00',
-        hour: '01',
-        day_of_month: '*',
-        month: '*',
-        day_of_week: '*'
-      )
-
+      # Make snapshots at 01:00 every day, then transfer them
       backup = DatasetAction.create(
           src_dataset_in_pool_id: vps.dataset_in_pool_id,
           dst_dataset_in_pool_id: ds_in_pool.id,
-          action: 1
+          action: 3 # :backup
       )
 
       RepeatableTask.create(
           class_name: backup.class.to_s.demodulize,
           table_name: backup.class.table_name,
           row_id: backup.id,
-          minute: '30',
+          minute: '00',
           hour: '01',
           day_of_month: '*',
           month: '*',
@@ -447,6 +430,6 @@ end
 # Create a subdataset in NAS, nas is a label
 # $ vpsfreectl dataset create -- --name nas/aintthatnice
 # $ > 1569
-# $ vpsfreectl mount create -- --dataset 1568 --vps 101 --destination /var/lib/mysql
+# $ vpsfreectl mount create -- --dataset 1568 --vps 101 --mountpoint /var/lib/mysql
 
-# $ vpsfreectl dataset
+# $ vpsfreectl dataset task 1568 -- --backup yes
