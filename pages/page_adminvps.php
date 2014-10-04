@@ -362,10 +362,16 @@ switch ($_GET["action"]) {
 			else $list_vps=true;
 			break;
 		case 'reinstall2':
-			$api->vps->reinstall($_GET["veid"], array('os_template' => $_GET["vps_template"]));
-			
-			notify_user(_("Reinstallation of VPS")." {$_GET["veid"]} ".strtolower(_("planned")), _("You will have to reset your <b>root</b> password."));
-			redirect('?page=adminvps&action=info&veid='.$_GET["veid"]);
+			try {
+				$api->vps->reinstall($_GET["veid"], array('os_template' => $_GET["vps_template"]));
+				
+				notify_user(_("Reinstallation of VPS")." {$_GET["veid"]} ".strtolower(_("planned")), _("You will have to reset your <b>root</b> password."));
+				redirect('?page=adminvps&action=info&veid='.$_GET["veid"]);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Reinstall failed'), $e->getResponse());
+				$show_info=true;
+			}
 			break;
 		case 'enablefeatures':
 			if (isset($_REQUEST["veid"]) && isset($_REQUEST["enable"]) && $_REQUEST["enable"]) {
