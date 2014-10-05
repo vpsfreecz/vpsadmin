@@ -17,7 +17,7 @@ class DatasetInPool < ActiveRecord::Base
   end
 
   def rollback(snap)
-
+    TransactionChains::DatasetRollback.fire(self, snap)
   end
 
   def backup(dst)

@@ -145,15 +145,16 @@ class AddStorage < ActiveRecord::Migration
     create_table :branches do |t|
       t.references :dataset_in_pool, null: false
       t.string     :name,            null: false
+      t.integer    :index,           null: false, default: 0
       t.datetime   :created_at,      null: false
       t.boolean    :head,            null: false, default: false
-      # id of a snapshot in pool this branch is cloned from
-      t.integer    :src_snapshot_in_pool_id, null: true
       t.boolean    :confirmed,       null: false, default: false
     end
 
     create_table :snapshot_in_pool_in_branches do |t|
       t.references :snapshot_in_pool, null: false
+      # a zfs-parent snapshot, dependency created by zfs clone & promote
+      t.integer    :snapshot_in_pool_in_branch_id, null: true
       t.integer    :reference_count,  null: false, default: 0
       t.references :branch,           null: false
       t.boolean    :confirmed,        null: false, default: false
@@ -378,7 +379,7 @@ class AddStorage < ActiveRecord::Migration
           day_of_week: '*'
       )
     end
-
+    # FIXME: update vps_ip.vps_id = null where = 0
     # FIXME: put this in another, irreversable migration
     # drop_table :storage_root
     # drop_table :storage_export
