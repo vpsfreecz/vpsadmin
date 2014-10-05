@@ -463,6 +463,9 @@ END
 
           rescue VpsAdmin::API::Exceptions::IpAddressInUse
             error('IP address is already in use')
+
+          rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation
+            error('IP address is from the wrong location')
           end
 
         elsif input[:version].nil?
