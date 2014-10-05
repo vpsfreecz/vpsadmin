@@ -118,6 +118,10 @@ class Vps < ActiveRecord::Base
     ::IpAddress.transaction do
       ip = ::IpAddress.find(ip.id) unless safe
 
+      unless ip.ip_location == node.server_location
+        raise VpsAdmin::API::Exceptions::IpAddressInvalidLocation
+      end
+
       raise VpsAdmin::API::Exceptions::IpAddressInUse unless ip.free?
 
       TransactionChains::VpsAddIp.fire(self, [ip])

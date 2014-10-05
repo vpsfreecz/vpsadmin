@@ -6,4 +6,8 @@ module VpsAdmin::API::Exceptions
   class IpAddressNotAssigned < ::StandardError
 
   end
+
+  class IpAddressInvalidLocation < ::StandardError
+
+  end
 end
