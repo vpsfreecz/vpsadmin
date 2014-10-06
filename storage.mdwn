@@ -34,7 +34,7 @@ The storage is fully transaction-based. Four basic operations are defined:
 
  - Snapshot
  - Transfer
- - Rollback
+ - [[Rollback]]
  - Rotate
 
 ### Snapshot
@@ -50,7 +50,7 @@ in pool (of the same dataset).
 The transfer itself is realized through ``zfs send/recv`` via SSH.
 
 ### Rollback
-Rollback restores data from a snapshot that may be stored locally or remotely
+[[Rollback]] restores data from a snapshot that may be stored locally or remotely
 on a pool with _backup_ role.
 
 ### Rotate
