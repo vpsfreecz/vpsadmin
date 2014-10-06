@@ -8,7 +8,7 @@ module Transactions::Storage
 
       {
           pool: snapshot_in_pool.dataset_in_pool.pool.filesystem,
-          dataset_name: snapshot_in_pool.dataset_in_pool.dataset.name, # FIXME: full name
+          dataset_name: snapshot_in_pool.dataset_in_pool.dataset.full_name,
           snapshot_id: snapshot_in_pool.snapshot_id
       }
     end

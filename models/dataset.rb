@@ -1,9 +1,13 @@
 class Dataset < ActiveRecord::Base
-  belongs_to :dataset, foreign_key: :parent_id
+  belongs_to :parent_dataset, class_name: 'Dataset', foreign_key: :parent_id
   belongs_to :user
   has_many :dataset_in_pools
 
   def full_name
-    name # FIXME
+    if parent_id
+      "#{parent_dataset.full_name}/#{name}"
+    else
+      name
+    end
   end
 end

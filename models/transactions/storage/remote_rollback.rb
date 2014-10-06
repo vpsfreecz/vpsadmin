@@ -11,7 +11,7 @@ module Transactions::Storage
           primary_pool_fs: dataset_in_pool.pool.filesystem,
           backup_pool_fs: snapshot_in_pool.dataset_in_pool.pool.filesystem,
           branch: snapshot_in_pool.dataset_in_pool.branches.find_by!(head: true).full_name,
-          dataset_name: dataset_in_pool.dataset.name,
+          dataset_name: dataset_in_pool.dataset.full_name,
           snapshot: snapshot_in_pool.snapshot.name
       }
     end
