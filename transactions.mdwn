@@ -32,11 +32,9 @@ to ensure that the transactions are not held in the queue for long.
 # Locks
 Very often, transactions manipulate system resources, and if two transactions
 were to manipulate the same resource at the same time, things might go downhill.
-
 Therefore, transactions have a locking system, using which they must first acquire
 access to a specific resource and only then may work with it. When done, the lock
-is released and another transaction may acquire it.
-
+is released and another transaction chain may acquire it.
 Any object can be locked, e.g. a VPS, a pool, a dataset.
 
 A lock can be obtained by a transaction chain, not by a single transaction.
