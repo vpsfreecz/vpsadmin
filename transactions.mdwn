@@ -1,0 +1,70 @@
+Transactions allows execution of actions on nodes, e.g. VPS creation, start/stop/restart.
+They are used always when a change in the database needs to be reflected on nodes.
+
+Some actions are more complicated and require a sequence of multiple transactions, that may be executed
+on different nodes. Such transactions are linked in a transaction chain, where each transaction
+depends on its predecessor.
+
+# Scheduler
+Transactions are stored in the database. They are enqueued by [[vpsAdmin-api]] and executed by [[vpsAdmind]].
+The two components communicate on a peer-to-peer basis. Enqueued transactions are immediately sent 
+to the appropriate [[vpsAdmind]], which then sends the results back.
+
+## Queues (not implemented)
+Transactions are divided into queues. Queues are being processed parallelly. Each queue has
+the following properties:
+
+ - maximum number of common transactions that are executed parallelly
+ - maximum number of opened transaction chains that may continue parallelly
+ - maximum number of urgent transactions that may be executed parallelly
+
+Common transaction are executed only if ``urgent + opened + common < max_common``.
+
+## Parallelism
+Transactions are executed simultaneously to the configured maximum number, except:
+
+ - transactions for one VPS are serialized (even across multiple queues)
+
+## Chains
+Transaction chains that are being executed have higher priority in the scheduler, in order
+to ensure that the transactions are not held in the queue for long.
+
+# Locks
+Very often, transactions manipulate system resources, and if two transactions
+were to manipulate the same resource at the same time, things might go downhill.
+
+Therefore, transactions have a locking system, using which they must first acquire
+access to a specific resource and only then may work with it. When done, the lock
+is released and another transaction may acquire it.
+
+Any object can be locked, e.g. a VPS, a pool, a dataset.
+
+A lock can be obtained by a transaction chain, not by a single transaction.
+IAll transactions in the chain have access to the resource
+and it is released after the last transaction in the chain is finished.
+
+If a chain cannot get the lock right away, it is rollbacked and error is reported
+to the user. This will change in the future, when queueing will be implemented.
+
+# Priorities
+Transactions have assigned priority, which takes effect in the order of execution of a queue.
+Transactions with higher priority are executed first.
+
+If a transaction is marked as urgent, it is executed immediately (when conforms to maximum number
+of urgent transactions being executed simultaneously).
+
+# Confirmations
+Transaction confirmations remember when a transaction manifests changes in the database, like
+row add/remove/edit. It is very important to keep the database contents in sync with the situation on nodes.
+
+## Confirm creation
+Rows are saved into the database, but are marked as not confirmed. When the transaction succeeds,
+rows are confirmed, else they are removed.
+
+## Confirm edit
+There are two variants of edit - *edit before* and *edit after*. For *edit before*, rows
+are changed beforehand and the transaction either confirms or reverts the change.
+For *edit after*, changes are planned and made only when the transaction succeeds.
+
+## Confirm delete
+Marks rows for deletion and deletes them when transaction succeeds.
