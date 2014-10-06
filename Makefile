@@ -6,7 +6,7 @@ endif
 
 SRC=$(shell pwd)
 DST=html
-DEPLOY_TO=aither@rhea.havefun.cz:/home/aither/public_html/vpsadmin-doc/
+DEPLOY_TO=root@projects.vpsfree.cz:/var/www/virtual/projects.vpsfree.cz/vpsadmin-doc/
 COMMAND=${IKIWIKI} -v --wikiname vpsAdmin --plugin=goodstuff --plugin=theme \
 	--set theme=actiontabs --exclude=${DST} --exclude=Makefile --rcs git ${SRC} ${DST}
 

@@ -1,6 +1,8 @@
 vpsAdmin documentation
 ======================
 
+Read at https://projects.vpsfree.cz/vpsadmin-doc
+
 Build requirements:
 
  - [ikiwiki](http://ikiwiki.info/)
