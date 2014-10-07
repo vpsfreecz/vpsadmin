@@ -23,7 +23,7 @@ Now rollback `vz/private/101` to the snapshot from the backup. The snapshot is s
 to the new dataset `vz/private/101.rollback`.
 
 	# on primary/hypervisor
-	$ zfs create vz/private/101
+	$ zfs create vz/private/101.rollback
 	
 	# on the backup
 	$ zfs send storage/vpsfree.cz/backup/101@2014-01-01 | ssh root@primary zfs recv vz/private/101.rollback
