@@ -6,9 +6,18 @@ module Transactions::Storage
     def params(dataset_in_pool)
       self.t_server = dataset_in_pool.pool.node_id
 
+      children = []
+
+      Dataset.joins(:dataset_in_pools)
+        .where(parent_dataset: dataset_in_pool.dataset)
+        .where(dataset_in_pools: {pool: dataset_in_pool.pool}).each do |ds|
+        children << ds.name
+      end
+
       {
           pool_fs: dataset_in_pool.pool.filesystem,
-          dataset_name: dataset_in_pool.dataset.full_name
+          dataset_name: dataset_in_pool.dataset.full_name,
+          child_datasets: children
       }
     end
   end
