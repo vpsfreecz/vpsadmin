@@ -1,11 +1,15 @@
 module VpsAdmin::API::Authentication
   class Token < HaveAPI::Authentication::Token::Provider
     protected
+    def generate_token
+      ::ApiToken.generate
+    end
+
     def save_token(request, user, token, lifetime, interval)
       valid = ::ApiToken.create(
           user: user,
           token: token,
-          valid_to: (lifetime < 3 ? Time.now + interval : nil),
+          valid_to: (lifetime != 'permanent' ? Time.now + interval : nil),
           lifetime: lifetime,
           interval: interval,
           label: request.user_agent
