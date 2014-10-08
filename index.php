@@ -53,7 +53,7 @@ include WWW_ROOT.'config_cfg.php';
 // connect to database
 $db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_SOCK, true);
 
-$api = new \HaveAPI\Client(API_URL, API_VERSION, "vpsadmin-www v".VERSION);
+$api = new \HaveAPI\Client(API_URL, API_VERSION, client_identity());
 $api->registerDescriptionChangeFunc('api_description_changed');
 
 if($_SESSION["api_description"]) {
@@ -81,7 +81,9 @@ try {
 		$_member = member_load($_SESSION["member"]["m_id"]);
 		
 		try {
-			$api->user->touch($_SESSION["member"]["m_id"]);
+			if(!$_SESSION["context_switch"])
+				$api->user->touch($_SESSION["member"]["m_id"]);
+			
 			$_SESSION["transactbox_expiration"] = time() + USER_LOGIN_INTERVAL;
 			$xtpl->assign('AJAX_SCRIPT', ajax_getHTML('ajax.php?page=transactbox', 'transactions', 1000));
 			

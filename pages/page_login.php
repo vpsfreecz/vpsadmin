@@ -96,36 +96,50 @@ if ($_SESSION["is_admin"] && ($_GET["action"] == 'drop_admin')) {
 	redirect($_GET["next"]);
 }
 
-if ($_SESSION["is_admin"] && ($_GET["action"] == 'switch_context') && isset($_GET["m_id"])) {
+if ($_SESSION["is_admin"] && ($_GET["action"] == 'switch_context') && isset($_GET["m_id"]) && !$_SESSION["context_switch"]) {
 
 	$sql = 'SELECT * FROM members WHERE m_id="' . $db->check($_GET["m_id"]) . '"';
 	$admin = $_SESSION;
 
 	if ($result = $db->query($sql)) {
-
 		if ($member = $db->fetch_array($result)) {
-
-			session_destroy(); // toms
-			session_start(); // toms
-
-			$_SESSION["logged_in"] = true;
-			$_SESSION["member"] = $member;
-			$_SESSION["is_user"] =       ($member["m_level"] >= PRIV_USER) ?       true : false;
-			$_SESSION["is_poweruser"] =  ($member["m_level"] >= PRIV_POWERUSER) ?  true : false;
-			$_SESSION["is_admin"] =      ($member["m_level"] >= PRIV_ADMIN) ?      true : false;
-			$_SESSION["is_superadmin"] = ($member["m_level"] >= PRIV_SUPERADMIN) ? true : false;
 			
-			$_SESSION["context_switch"] = true;
-			$_SESSION["original_admin"] = $admin;
+			try {
+				// Get a token for target user
+				$token = $api->auth_token->create(array(
+					'user' => $member['m_id'],
+					'label' => client_identity().'(context switch)',
+					'lifetime' => 'renewable_auto',
+					'interval' => USER_LOGIN_INTERVAL
+				));
+				
+				// Do this to reload description from the API
+				$api->authenticate('token', array('token' => $token->token));
+				
+				session_destroy();
+				session_start();
 
-			$xtpl->perex(_("Change to ").$member["m_nick"],
-					_(" successful <br /> Your privilege level: ")
-					. $cfg_privlevel[$member["m_level"]]);
+				$_SESSION["logged_in"] = true;
+				$_SESSION["auth_token"] = $token->token;
+				$_SESSION["borrowed_token"] = true;
+				$_SESSION["member"] = $member;
+				$_SESSION["is_user"] =       ($member["m_level"] >= PRIV_USER) ?       true : false;
+				$_SESSION["is_poweruser"] =  ($member["m_level"] >= PRIV_POWERUSER) ?  true : false;
+				$_SESSION["is_admin"] =      ($member["m_level"] >= PRIV_ADMIN) ?      true : false;
+				$_SESSION["is_superadmin"] = ($member["m_level"] >= PRIV_SUPERADMIN) ? true : false;
+				
+				$_SESSION["context_switch"] = true;
+				$_SESSION["original_admin"] = $admin;
 
-			$_member = member_load($member["m_id"]);
-			$_member->touch_activity();
-			
-			redirect($_GET["next"]);
+				$xtpl->perex(_("Change to ").$member["m_nick"],
+						_(" successful <br /> Your privilege level: ")
+						. $cfg_privlevel[$member["m_level"]]);
+				
+				redirect($_GET["next"]);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Failed to switch context'), $e->getResponse());
+			}
 
 		} else $xtpl->perex(_("Error"), _("Wrong username or password"));
 	} else $xtpl->perex(_("Error"), _("Wrong username or password"));
@@ -133,6 +147,16 @@ if ($_SESSION["is_admin"] && ($_GET["action"] == 'switch_context') && isset($_GE
 
 if ($_GET["action"] == "regain_admin" && $_SESSION["context_switch"]) {
 	$admin = $_SESSION["original_admin"];
+	
+	if($_SESSION["borrowed_token"]) {
+		try {
+			$api->logout();
+			$api->authenticate('token', array('token' => $admin['auth_token']));
+			
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			notify_user(_('Failed to destroy borrowed token'), $e->getResponse());
+		}
+	}
 	
 	session_destroy();
 	session_start();

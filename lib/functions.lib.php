@@ -322,6 +322,10 @@ function format_data_rate($n, $suffix) {
 	return round($n, 2)."&nbsp;$suffix";
 }
 
+function client_identity() {
+	return  "vpsadmin-www v".VERSION;
+}
+
 function api_description_changed($api) {
 	$_SESSION["api_description"] = $api->getDescription();
 }
