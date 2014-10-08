@@ -123,10 +123,10 @@ switch ($_GET["action"]) {
 					$vps = $api->vps->create($params);
 					
 					if ($params['onboot'] || $playground_mode) {
-						notify_user(_("VPS create ").' '.$vps->veid, _("VPS will be created and booted afterwards."));
+						notify_user(_("VPS create ").' '.$vps->id, _("VPS will be created and booted afterwards."));
 						
 					} else {
-						notify_user(_("VPS create ").' '.$vps->veid, _("VPS will be created. You can start it manually."));
+						notify_user(_("VPS create ").' '.$vps->id, _("VPS will be created. You can start it manually."));
 					}
 
 					redirect('?page=adminvps&action=info&veid='.$vps->id);

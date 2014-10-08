@@ -239,6 +239,8 @@ function print_editm($member) {
 		
 		$xtpl->sbar_add("<br><img src=\"template/icons/m_switch.png\"  title=". _("Switch context") ." /> Switch context", "?page=login&action=switch_context&m_id={$member->m["m_id"]}&next=".urlencode($_SERVER["REQUEST_URI"]));
 	}
+	
+	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Authentication tokens").'" />'._('Authentication tokens'), "?page=adminm&section=members&action=auth_tokens&id={$member->m["m_id"]}");
 }
 
 function print_deletem($member) {
@@ -283,6 +285,91 @@ function validate_username($username) {
 	}
 	
 	return true;
+}
+
+function list_auth_tokens() {
+	global $api, $xtpl;
+	
+	$xtpl->table_title(_("Authentication tokens"));
+	$xtpl->table_add_category(_('Token'));
+	$xtpl->table_add_category(_('Valid to'));
+	$xtpl->table_add_category(_('Label'));
+	$xtpl->table_add_category(_('Use count'));
+	$xtpl->table_add_category(_('Lifetime'));
+	$xtpl->table_add_category(_('Interval'));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+	
+	$token = array();
+	
+	if($_SESSION['is_admin']) {
+		$tokens = $api->auth_token->list(array('user' => $_GET['id']));
+	} else {
+		$tokens = $api->auth_token->list();
+	}
+	
+	foreach($tokens as $t) {
+		$xtpl->table_td(substr($t->token, 0, 8).'…');
+		
+		if($t->lifetime == 'permanent')
+			$xtpl->table_td(_('Forever'), '#66FF66');
+		else
+			$xtpl->table_td($t->valid_to, strtotime($t->valid_to) > time() ? '#66FF66' : '#B22222');
+			
+		$xtpl->table_td($t->label);
+		$xtpl->table_td($t->use_count."&times;");
+		$xtpl->table_td($t->lifetime);
+		$xtpl->table_td($t->interval._(' seconds'));
+		
+		$xtpl->table_td('<a href="?page=adminm&section=members&action=auth_token_edit&id='.$_GET['id'].'&token_id='.$t->id.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
+		$xtpl->table_td('<a href="?page=adminm&section=members&action=auth_token_del&id='.$_GET['id'].'&token_id='.$t->id.'"><img src="template/icons/m_delete.png"  title="'. _("Delete") .'" /></a>');
+		
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_out();
+	
+	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&section=members&action=edit&id={$_GET['id']}");
+}
+
+function edit_auth_token($id) {
+	global $api, $xtpl;
+	
+	$t = $api->auth_token->find($id);
+	
+	$xtpl->table_title(_('Edit authentication token').' #'.$id);
+	$xtpl->form_create('?page=adminm&section=members&action=auth_token_edit&id='.$_GET['id'].'&token_id='.$id, 'post');
+	
+	$xtpl->table_td(_('Token').':');
+	$xtpl->table_td($t->token);
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_('Valid to').':');
+	
+	if($t->lifetime == 'permanent')
+		$xtpl->table_td(_('Forever'), '#66FF66');
+	else
+		$xtpl->table_td($t->valid_to, strtotime($t->valid_to) > time() ? '#66FF66' : '#B22222');
+		
+	$xtpl->table_tr();
+	
+	$xtpl->form_add_input(_("Label").':', 'text', '30', 'label', $t->label);
+	
+	$xtpl->table_td(_('Use count').':');
+	$xtpl->table_td($t->use_count.'&times;');
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_('Lifetime').':');
+	$xtpl->table_td($t->lifetime);
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_('Interval').':');
+	$xtpl->table_td($t->interval._(' seconds'));
+	$xtpl->table_tr();
+	
+	$xtpl->form_out(_('Save'));
+	
+	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to authentication tokens").'" />'._('Back to authentication tokens'), "?page=adminm&section=members&action=auth_tokens&id={$_GET['id']}");
 }
 
 function request_approve() {
@@ -959,6 +1046,44 @@ if ($_SESSION["logged_in"]) {
 
 			$xtpl->table_out();
 			break;
+		
+		case 'auth_tokens':
+			list_auth_tokens();
+			break;
+			
+		case 'auth_token_edit':
+			if(isset($_POST['label'])) {
+				try {
+					$api->auth_token->update($_GET['token_id'], array('label' => $_POST['label']));
+					
+					notify_user(_('Authentication token updated'), '');
+					redirect('?page=adminm&section=members&action=auth_tokens&id='.$_GET['id'].'&token_id='.$_GET['token_id']);
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Failed to edit authentication token'), $e->getResponse());
+					edit_auth_token($_GET['token_id']);
+				}
+				
+			} else {
+				edit_auth_token($_GET['token_id']);
+			}
+			
+			break;
+		
+		case 'auth_token_del':
+			try {
+				$api->auth_token->delete($_GET['token_id']);
+					
+				notify_user(_('Authentication token deleted'), '');
+				redirect('?page=adminm&section=members&action=auth_tokens&id='.$_GET['id'].'&token_id='.$_GET['token_id']);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Failed to delete authentication token'), $e->getResponse());
+					edit_auth_token($_GET['token_id']);
+				}
+			
+			break;
+		
 		case 'approval_requests':
 			if(!$_SESSION["is_admin"])
 				break;
