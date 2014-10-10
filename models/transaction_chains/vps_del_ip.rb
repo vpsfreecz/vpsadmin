@@ -1,5 +1,7 @@
 module TransactionChains
   class VpsDelIp < ::TransactionChain
+    label 'Delete IP address'
+
     def link_chain(vps, ips)
       ips.each do |ip|
         lock(ip)

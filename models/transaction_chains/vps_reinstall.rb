@@ -1,5 +1,7 @@
 module TransactionChains
   class VpsReinstall < ::TransactionChain
+    label 'Reinstall VPS'
+
     def link_chain(vps, template)
       lock(vps.dataset_in_pool)
       lock(vps)

@@ -1,5 +1,7 @@
 module TransactionChains
   class VpsPasswd < ::TransactionChain
+    label 'Password change'
+
     def link_chain(vps, passwd)
       lock(vps)
 

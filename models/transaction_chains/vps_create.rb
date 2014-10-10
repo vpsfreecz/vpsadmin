@@ -1,5 +1,7 @@
 module TransactionChains
   class VpsCreate < ::TransactionChain
+    label 'Create VPS'
+
     def link_chain(vps, add_ips)
       lock(vps)
 

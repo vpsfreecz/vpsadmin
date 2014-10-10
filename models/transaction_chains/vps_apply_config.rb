@@ -1,5 +1,7 @@
 module TransactionChains
   class VpsApplyConfig < ::TransactionChain
+    label 'Change VPS configuration'
+
     # +new_configs+ is a list of config IDs.
     def link_chain(vps, new_configs)
       lock(vps)

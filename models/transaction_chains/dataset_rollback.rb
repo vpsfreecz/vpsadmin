@@ -1,6 +1,8 @@
 module TransactionChains
   # This chain supports only rollback on a hypervisor or primary pools.
   class DatasetRollback < ::TransactionChain
+    label 'Rollback dataset'
+
     def link_chain(dataset_in_pool, snapshot)
       # One of the four scenarios will occur:
       # 1) Snapshot is the last snapshot on the hypervisor

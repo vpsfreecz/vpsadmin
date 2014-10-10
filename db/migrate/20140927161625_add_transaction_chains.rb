@@ -2,6 +2,7 @@ class AddTransactionChains < ActiveRecord::Migration
   def change
     create_table :transaction_chains do |t|
       t.string     :name,           null: false, limit: 30
+      t.string     :type,           null: false, limit: 100
       t.integer    :state,          null: false
       t.integer    :size,           null: false
       t.integer    :progress,       null: false, default: 0

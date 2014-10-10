@@ -1,5 +1,7 @@
 module TransactionChains
   class DatasetTransfer < ::TransactionChain
+    label 'Transfer snapshots'
+
     def link_chain(src_dataset_in_pool, dst_dataset_in_pool)
       # FIXME: in theory, the transfer does not have to lock whole datasets.
       # It may be enough to lock only transfered snapshots. It would mean

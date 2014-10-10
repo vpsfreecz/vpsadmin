@@ -1,5 +1,7 @@
 module TransactionChains
   class VpsDestroy < ::TransactionChain
+    label 'Destroy VPS'
+
     def link_chain(vps)
       lock(vps.dataset_in_pool)
       lock(vps)

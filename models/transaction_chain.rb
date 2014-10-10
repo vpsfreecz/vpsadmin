@@ -18,7 +18,7 @@ class TransactionChain < ActiveRecord::Base
   def self.fire(*args)
     TransactionChain.transaction do
       chain = new
-      chain.name = self.to_s.demodulize.underscore
+      chain.name = chain_name
       chain.state = :staged
       chain.size = 0
       chain.user = User.current
@@ -36,6 +36,12 @@ class TransactionChain < ActiveRecord::Base
     end
   end
 
+  # The chain name is a class name in lowercase with added
+  # underscores.
+  def self.chain_name
+    self.to_s.demodulize.underscore
+  end
+
   # Include this chain in +chain+. All remaining arguments are passed
   # to #link_chain.
   # Method #link_chain is called in the same way as in ::fire,
@@ -50,6 +56,15 @@ class TransactionChain < ActiveRecord::Base
     c.locks = chain.locks
     c.link_chain(*args)
     c
+  end
+
+  # Set a human-friendly label for the chain.
+  def self.label(v = nil)
+    if v
+      @label = v
+    else
+      @label
+    end
   end
 
   def initialize(*args)
@@ -103,6 +118,10 @@ class TransactionChain < ActiveRecord::Base
 
   def empty?
     @size == 0
+  end
+
+  def label
+    Kernel.const_get(type).label
   end
 
   private

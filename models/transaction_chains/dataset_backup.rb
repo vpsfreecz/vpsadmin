@@ -1,6 +1,8 @@
 module TransactionChains
   # Encapsulates both DatasetSnapshot and DatasetTransfer.
   class DatasetBackup < ::TransactionChain
+    label 'Backup dataset'
+
     def link_chain(src_dataset_in_pool, dst_dataset_in_pool)
       lock(src_dataset_in_pool)
       lock(dst_dataset_in_pool)

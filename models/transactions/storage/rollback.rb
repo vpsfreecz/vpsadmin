@@ -1,5 +1,5 @@
 module Transactions::Storage
-  # Do a local zfs rollback. Destroyes all datasets newer than
+  # Do a local zfs rollback. Destroys all datasets newer than
   # the one roll backing to.
   class Rollback < ::Transaction
     t_name :storage_rollback
