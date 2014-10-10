@@ -221,6 +221,7 @@ if ($help) {
 $lang->lang_switcher();
 
 $xtpl->assign('PAGE_TITLE', $cluster_cfg->get("page_title"));
+$xtpl->assign('API_SPENT_TIME', round($api->getSpentTime(), 6));
 
 if (defined('TRACKING_CODE')) {
   $xtpl->assign('TRACKING_CODE', TRACKING_CODE);
