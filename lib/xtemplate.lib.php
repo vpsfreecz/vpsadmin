@@ -858,39 +858,49 @@ class XTemplate {
 		$this->form_out_raw($id);
 	}
 	/**
-	  * Add transaction line to rightside shortlog
-	  * @param $t_id - transaction ID
-	  * @param $t_server - server_id, where was transaction run
-	  * @param $t_vps - vps_id, which was transaction for
-	  * @param $t_class - background color class (CSS)
+	  * Add transaction chain row to rightside shortlog
+	  * @param $chain - transaction chain from the API
 	  */
-	function transaction($t_id, $t_server, $t_vps, $t_label, $t_class = "pending") {
-		$this->assign('T_ID', $t_id);
-		$this->assign('T_SERVER', $t_server);
-		$this->assign('T_VPS', $t_vps);
-		$this->assign('T_LABEL', $t_label);
-		$this->assign('T_CLASS', $t_class);
-		switch ($t_class) {
-		    case "pending":
-			$this->assign('T_ICO', '<img src="template/icons/transact_pending.gif"> ');
-			break;
-		    case "ok":
-			$this->assign('T_ICO', '<img src="template/icons/transact_ok.png"> ');
-			break;
-			case "warning":
-			$this->assign('T_ICO', '<img src="template/icons/warning.png"> ');
-			break;
+	function transaction_chain($chain) {
+		$this->assign('T_ID', $chain->id);
+		$this->assign('T_LABEL', $chain->label);
+		$this->assign('T_CLASS', $chain->state);
+		$this->assign('T_PROGRESS', round((100.0 / $chain->size) * $chain->progress). '&nbsp;%');
+		
+		switch ($chain->state) {
+			case 'staged':
+			case 'queued':
+				$this->assign('T_ICO', '<img src="template/icons/transact_pending.gif"> ');
+				break;
+				
+		    case "done":
+				$this->assign('T_ICO', '<img src="template/icons/transact_ok.png"> ');
+				break;
+				
+			case 'failed':
+				$this->assign('T_ICO', '<img src="template/icons/transact_fail.png"> ');
+				break;
+				
+// 			case "warning":
+// 				$this->assign('T_ICO', '<img src="template/icons/warning.png"> ');
+// 				break;
+				
 		    default:
-			$this->assign('T_ICO', '<img src="template/icons/transact_fail.png"> ');
-			break;
+				$this->assign('T_ICO', '<img src="template/icons/transact_fail.png"> ');
+				break;
 		}
-		$this->parse('main.transactions.item');
+		$this->parse('main.transaction_chains.item');
 	}
 	/**
 	  * Parse out rightside transact shortlog
 	  */
-	function transactions_out() {
-		$this->parse('main.transactions');
+	function transaction_chains_out() {
+		$this->assign("L_TRANSACTION_LOG", _("Transaction log"));
+		$this->assign("L_LAST10", _("last 10"));
+		$this->assign("L_ACTION", _("Action"));
+		$this->assign("L_PROGRESS", _("Progress"));
+		
+		$this->parse('main.transaction_chains');
 	}
 	/**
 	  * @param $title - helpbox title

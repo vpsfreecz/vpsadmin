@@ -174,35 +174,16 @@ function do_transaction_by_id($t_id) {
     else return false;
 }
 
-function list_transactions() {
-    global $xtpl;
-    global $db;
-    if ($_SESSION["is_admin"])
-	$sql = 'SELECT * FROM transactions
-		LEFT JOIN members
-		ON transactions.t_m_id = members.m_id
-		LEFT JOIN servers
-		ON transactions.t_server = servers.server_id
-		ORDER BY transactions.t_id DESC LIMIT 10';
-    else
-	$sql = 'SELECT * FROM transactions
-		LEFT JOIN members
-		ON transactions.t_m_id = members.m_id
-		LEFT JOIN servers
-		ON transactions.t_server = servers.server_id
-		WHERE members.m_id = "'.$db->check($_SESSION["member"]["m_id"]).'"
-		ORDER BY transactions.t_id DESC LIMIT 10';
-    if ($result = $db->query($sql))
-	while ($t = $db->fetch_array($result)) {
-	    if ($t['t_done'] == 0) $status = 'pending';
-	    else if (($t['t_done'] == 1) && ($t['t_success'] == 0)) $status = 'error';
-	    else if (($t['t_done'] == 1) && ($t['t_success'] == 1)) $status = 'ok';
-	    else if (($t['t_done'] == 1) && ($t['t_success'] == 2)) $status = 'warning';
-	    
-	    $xtpl->transaction($t['t_id'],($t["server_name"] == "") ? "---" : $t["server_name"],
-				    ($t["t_vps"] == 0) ? "---" : $t["t_vps"], transaction_label($t['t_type']), $status);
+function list_transaction_chains() {
+	global $api, $xtpl;
+	
+	$chains = $api->transaction_chain->list(array('limit' => 10));
+	
+	foreach($chains as $chain) {
+		$xtpl->transaction_chain($chain);
 	}
-    $xtpl->transactions_out();
+	
+	$xtpl->transaction_chains_out();
 }
 
 function transaction_label ($t_type) {

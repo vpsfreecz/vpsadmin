@@ -148,9 +148,9 @@ ul.ul-style01 ul li {padding-left:12px; background:url("../design/ul-style01.gif
 #transactions  th {background:#5EAFFF; color:#FFF;}
 #transactions  th, td {border:1px solid #B2DAFF;}
 #transactions  tr.bg td {background:#A1C9AA;}
-#transactions  tr.ok, tr.ok {background:#AAFFAA;}
-#transactions  tr.pending, tr.pending {background:#FFF8DC;}
-#transactions  tr.error, tr.error {background:#FF5555;}
+#transactions  tr.ok, tr.ok, tr.done {background:#AAFFAA;}
+#transactions  tr.pending, tr.pending, tr.staged, tr.queued {background:#FFF8DC;}
+#transactions  tr.error, tr.error, tr.failed {background:#FF5555;}
 #transactions  tr.warning, tr.warning {background:#FFBE30;}
 
 div#l_form {float: right; padding-bottom: 5px;}

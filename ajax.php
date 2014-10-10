@@ -27,6 +27,7 @@ header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
 header("Expires: Sat, 11 Jan 1991 06:30:00 GMT"); // Date in the past
 
 // Include libraries
+include WWW_ROOT.'vendor/autoload.php';
 include WWW_ROOT.'lib/version.lib.php';
 include WWW_ROOT.'lib/xtemplate.lib.php';
 include WWW_ROOT.'lib/db.lib.php';
@@ -41,8 +42,14 @@ include WWW_ROOT.'lib/gettext_stream.lib.php';
 include WWW_ROOT.'lib/gettext_inc.lib.php';
 include WWW_ROOT.'lib/gettext_lang.lib.php';
 
-$db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_SOCK, true);
+$api = new \HaveAPI\Client(API_URL, API_VERSION, client_identity());
+$api->registerDescriptionChangeFunc('api_description_changed');
 
+if($_SESSION["api_description"]) {
+	$api->setDescription($_SESSION["api_description"]);
+}
+
+$db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_SOCK, true);
 
 
 // Create a template class
@@ -50,25 +57,34 @@ $db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_SOCK, true);
 include WWW_ROOT.'config_cfg.php';
 
 if ($_SESSION["logged_in"]) {
-	$_member = member_load($_SESSION["member"]["m_id"]);
-	if ($_SESSION["transactbox_expiration"] < time()) {
-		unset($_SESSION);
-		session_destroy();
-		$_GET["page"] = "";
-	}
+	try {
+		$api->authenticate('token', array('token' => $_SESSION['auth_token']), false);
+		
+		if ($_SESSION["transactbox_expiration"] < time()) {
+			unset($_SESSION);
+			session_destroy();
+			$_GET["page"] = "";
+		}
 
-	switch ($_GET["page"]) {
-		case 'transactbox':
-			$xtpl = new XTemplate(WWW_ROOT.'template/ajax_get_transactbox.html');
-			include WWW_ROOT.'pages/ajax_get_transactbox.php';
-			$xtpl->parse('main');
-			$xtpl->out('main');
-			break;
-		case 'vps':
-			include WWW_ROOT.'pages/ajax_vps.php';
-			break;
-		default:
-			header("HTTP/1.0 404 Not Found");
+		switch ($_GET["page"]) {
+			case 'transactbox':
+				$xtpl = new XTemplate(WWW_ROOT.'template/ajax_get_transactbox.html');
+				include WWW_ROOT.'pages/ajax_get_transactbox.php';
+				$xtpl->parse('main');
+				$xtpl->out('main');
+				break;
+			case 'vps':
+				include WWW_ROOT.'pages/ajax_vps.php';
+				break;
+			default:
+				header("HTTP/1.0 404 Not Found");
+		}
+		
+	} catch (\HaveAPI\Client\Exception\Base $e) {
+		echo "Connection to the API lost.";
+		
+	} catch (\Httpful\Exception\ConnectionErrorException $e) {
+		echo "The API is not responding.";
 	}
 } else {
 	header("HTTP/1.0 404 Not Found");

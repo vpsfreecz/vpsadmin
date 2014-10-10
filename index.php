@@ -70,10 +70,6 @@ $xtpl->assign("L_PASSWORD", _("Password"));
 $xtpl->assign("L_LOGIN", _("Login"));
 $xtpl->assign("L_LOGOUT", _("Logout"));
 
-$xtpl->assign("L_TRANSACTION_LOG", _("Transaction log"));
-$xtpl->assign("L_LAST10", _("last 10"));
-$xtpl->assign("L_ACTION", _("Action"));
-
 try {
 	if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
 		$api->authenticate('token', array('token' => $_SESSION['auth_token']), false);
@@ -193,7 +189,7 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
 		$xtpl->menu_add(_("Transaction log"),'?page=transactions', ($_GET["page"] == 'transactions'), true);
     }
 
-    list_transactions();
+    list_transaction_chains();
 } else {
     $xtpl->menu_add(_("Status"),'?page=', ($_GET["page"] == ''));
     $xtpl->menu_add(_("About vpsAdmin"),'?page=about', ($_GET["page"] == 'about'), true);

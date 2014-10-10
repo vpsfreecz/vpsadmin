@@ -20,10 +20,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-$xtpl->assign("L_TRANSACTION_LOG", _("Transaction log"));
-$xtpl->assign("L_LAST10", _("last 10"));
-$xtpl->assign("L_ACTION", _("Action"));
-
-list_transactions();
+list_transaction_chains();
 
 ?>

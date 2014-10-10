@@ -205,29 +205,27 @@
 	   {HELPBOX_CONTENT}
 		<!-- END: helpbox -->
 
-	    <!-- BEGIN: transactions -->
+	    <!-- BEGIN: transaction_chains -->
             <div id="transactions">
 	    <h3>{L_TRANSACTION_LOG} [{L_LAST10}]</h3>
 		<table>
 		    <tr>
 			<th>#ID</th>
-			<th>HW</th>
-			<th>VPS</th>
 			<th>{L_ACTION}</th>
+			<th>{L_PROGRESS}</th>
 			<th></th>
 		    </tr>
 		<!-- BEGIN: item -->
 		    <tr onmouseover="this.className='bg'" onmouseout="this.className='{T_CLASS}'" class="{T_CLASS}">
 			<td><a href="?page=transactions&filter=yes&details=1&id={T_ID}">{T_ID}</a></td>
-			<td>{T_SERVER}</td>
-			<td>{T_VPS}</td>
 			<td>{T_LABEL}</td>
+			<td align="right">{T_PROGRESS}</td>
 			<td>{T_ICO}</td>
 		    </tr>
 		<!-- END: item -->
 		</table>
 	    </div>
-	    <!-- END: transactions -->
+	    <!-- END: transaction_chains -->
 <!-- BEGIN: adminbox -->
 {ADMINBOX_CONTENT}
 <!-- END: adminbox -->
