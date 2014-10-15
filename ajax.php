@@ -67,12 +67,6 @@ if ($_SESSION["logged_in"]) {
 		}
 
 		switch ($_GET["page"]) {
-			case 'transactbox':
-				$xtpl = new XTemplate(WWW_ROOT.'template/ajax_get_transactbox.html');
-				include WWW_ROOT.'pages/ajax_get_transactbox.php';
-				$xtpl->parse('main');
-				$xtpl->out('main');
-				break;
 			case 'vps':
 				include WWW_ROOT.'pages/ajax_vps.php';
 				break;

@@ -866,6 +866,7 @@ class XTemplate {
 		$this->assign('T_LABEL', $chain->label);
 		$this->assign('T_CLASS', $chain->state);
 		$this->assign('T_PROGRESS', round((100.0 / $chain->size) * $chain->progress). '&nbsp;%');
+		$this->assign('T_PROGRESS_VAL', $chain->progress);
 		
 		switch ($chain->state) {
 			case 'staged':

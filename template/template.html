@@ -37,6 +37,8 @@
     {SCRIPT}
     <script type="text/javascript" src="js/jquery-1.8.3.min.js"></script>
     <script type="text/javascript" src="js/jquery.tablednd.js"></script>
+    <script type="text/javascript" src="js/haveapi-client.js"></script>
+    <script type="text/javascript" src="config.js.php"></script>
     {AJAX_SCRIPT}
 </head>
 
@@ -216,7 +218,12 @@
 			<th></th>
 		    </tr>
 		<!-- BEGIN: item -->
-		    <tr onmouseover="this.className='bg'" onmouseout="this.className='{T_CLASS}'" class="{T_CLASS}">
+		    <tr
+				onmouseover="this.className='bg'"
+				onmouseout="this.className='{T_CLASS}'"
+				class="{T_CLASS}"
+				data-transaction-chain-id="{T_ID}"
+				data-transaction-chain-progress="{T_PROGRESS_VAL}">
 			<td><a href="?page=transactions&filter=yes&details=1&id={T_ID}">{T_ID}</a></td>
 			<td>{T_LABEL}</td>
 			<td align="right">{T_PROGRESS}</td>

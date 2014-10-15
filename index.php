@@ -81,7 +81,7 @@ try {
 				$api->user->touch($_SESSION["member"]["m_id"]);
 			
 			$_SESSION["transactbox_expiration"] = time() + USER_LOGIN_INTERVAL;
-			$xtpl->assign('AJAX_SCRIPT', ajax_getHTML('ajax.php?page=transactbox', 'transactions', 1000));
+// 			$xtpl->assign('AJAX_SCRIPT', ajax_getHTML('ajax.php?page=transactbox', 'transactions', 1000));
 			
 		} catch (\HaveAPI\Client\Exception\AuthenticationFailed $e) {
 			unset($_SESSION);
