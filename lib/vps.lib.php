@@ -552,9 +552,12 @@ function ipadd($ip, $type = 4, $dep = NULL) {
   function vchown($m_id) {
 	global $db;
 	if ($this->exists && $_SESSION["is_admin"]) {
-	  $sql = 'UPDATE vps SET m_id = '.$db->check($m_id).' WHERE vps_id = '.$db->check($this->veid);
+	  $sql = "UPDATE vps v
+	          INNER JOIN storage_export e ON v.vps_backup_export = e.id
+	          SET v.m_id = ".$db->check($m_id).", e.member_id = ".$db->check($m_id)."
+	          WHERE vps_id = ".$db->check($this->veid);
 	  $db->query($sql);
-	  if ($db->affected_rows() == 1) {
+	  if ($db->affected_rows() == 2) {
 		$this->ve["m_id"] = $m_id;
 		return true;
 	  } else return false;
