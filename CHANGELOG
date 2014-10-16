@@ -1,3 +1,6 @@
+* Thu Oct 16 2014 - version 1.22.3
+- VPS chown: change also the owner of backup export
+
 * Tue Sep 23 2014 - version 1.22.2
 - Playground: fix VPS clone with disk bigger then is assigned to playground
 - Allow VPS swap only by admins
