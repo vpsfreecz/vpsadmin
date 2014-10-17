@@ -188,8 +188,16 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
 		$xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));
 		$xtpl->menu_add(_("Transaction log"),'?page=transactions', ($_GET["page"] == 'transactions'), true);
     }
-
-    list_transaction_chains();
+	
+	try {
+		list_transaction_chains();
+		
+	} catch (\HaveAPI\Client\Exception\AuthenticationFailed $e) {
+		unset($_SESSION);
+		session_destroy();
+		$_GET["page"] = "";
+	}
+	
 } else {
     $xtpl->menu_add(_("Status"),'?page=', ($_GET["page"] == ''));
     $xtpl->menu_add(_("About vpsAdmin"),'?page=about', ($_GET["page"] == 'about'), true);
