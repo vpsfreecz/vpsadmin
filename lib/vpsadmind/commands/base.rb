@@ -6,7 +6,9 @@ module VpsAdmind::Commands
 
     attr_accessor :output
 
-    def initialize(params)
+    def initialize(cmd, params)
+      @command = cmd
+
       params.each do |k,v|
         instance_variable_set(:"@#{k}", v)
       end

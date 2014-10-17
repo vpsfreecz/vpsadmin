@@ -102,9 +102,8 @@ module VpsAdmind
       vzctl(:set, @veid, {ipdel: addr}, true)
     end
 
-    def passwd
-      vzctl(:set, @veid, {:userpasswd => "#{@params["user"]}:#{@params["password"]}"})
-      @passwd = true
+    def passwd(user, password)
+      vzctl(:set, @veid, {:userpasswd => "#{user}:#{password}"})
     end
 
     def applyconfig(configs)

@@ -46,7 +46,7 @@ module VpsAdmind
 
       param[:vps_id] = @trans['t_vps'].to_i
 
-      @cmd = Kernel.const_get("VpsAdmind::Commands::#{klass}").new(param)
+      @cmd = Kernel.const_get("VpsAdmind::Commands::#{klass}").new(self, param)
 
       @m_attr.synchronize { @time_start = Time.new.to_i }
 
