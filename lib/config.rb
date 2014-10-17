@@ -91,6 +91,12 @@ IMPLICIT_CONFIG = {
                 5203 => 'destroy',
                 5204 => 'snapshot',
                 5205 => 'transfer',
+                5206 => 'create_branch',
+                5207 => 'destroy_branch',
+                5208 => 'rollback',
+                5209 => 'prepare_rollback',
+                5210 => 'remote_rollback',
+                5211 => 'apply_rollback'
             },
             "Backuper" => {
                 5001 => "restore_prepare",
@@ -108,6 +114,13 @@ IMPLICIT_CONFIG = {
             },
             "Mailer" => {
                 9001 => "send",
+            }
+        },
+        :commands => {
+            'Vps' => {
+                1001 => 'Start',
+                1002 => 'Stop',
+                1003 => 'Restart',
             }
         }
     },

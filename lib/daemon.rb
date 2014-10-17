@@ -1,15 +1,27 @@
+require 'rubygems'
+require 'require_all'
+require 'eventmachine'
+require 'json'
+
+module VpsAdmind
+end
+
 require 'lib/db'
 require 'lib/worker'
 require 'lib/command'
 require 'lib/console'
 require 'lib/remote'
 require 'lib/transaction'
-
-require 'rubygems'
-require 'eventmachine'
+require 'lib/utils'
+require 'lib/node'
+require 'lib/firewall'
+require 'lib/shaper'
+require 'lib/vps'
+require_rel 'commands/base'
+require_rel 'commands'
 
 module VpsAdmind
-  VERSION = '1.22.0'
+  VERSION = '2.0.0-dev'
   DB_VERSION = 15
 
   EXIT_OK = 0
@@ -35,7 +47,7 @@ module VpsAdmind
       @cmd_counter = 0
       @threads = {}
 
-      Command.load_handlers()
+      Command.load_commands
     end
 
     def init
@@ -47,7 +59,7 @@ module VpsAdmind
       @fw = Firewall.new
       @fw.init(@db)
 
-      @shaper = Shaper.new(0)
+      @shaper = Shaper.new
       @shaper.init(@db)
     end
 
@@ -203,7 +215,7 @@ module VpsAdmind
     end
 
     def update_status(kernel = nil)
-      node = Node.new(0)
+      node = Node.new
       system_load = node.load[5]
       server_id = $CFG.get(:vpsadmin, :server_id)
 
@@ -231,7 +243,7 @@ module VpsAdmind
         rs = my.query("SELECT vps_id FROM vps WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}")
 
         rs.each_hash do |vps|
-          ct = VPS.new(vps["vps_id"])
+          ct = Vps.new(vps["vps_id"])
           ct.update_status(my)
         end
       end

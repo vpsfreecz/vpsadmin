@@ -1,5 +1,5 @@
 # Utilities for zfs
-module ZfsUtils
+module Utils::Zfs
   # Shortcut for #syscmd
   def zfs(cmd, opts, component, valid_rcs = [])
     syscmd("#{$CFG.get(:bin, :zfs)} #{cmd.to_s} #{opts} #{component}", valid_rcs)
