@@ -5,6 +5,7 @@ require 'fileutils'
 class Vps
   include Utils::System
   include Utils::Vz
+  include Utils::Zfs
 
   def initialize(veid)
     @veid = veid
@@ -29,15 +30,15 @@ class Vps
     vzctl(:set, @veid, {:onboot => "yes"}, true)
   end
 
-  def create
+  def create(template, hostname, nameserver)
     vzctl(:create, @veid, {
-        :ostemplate => @params["template"],
-        :hostname => @params["hostname"],
+        :ostemplate => template,
+        :hostname => hostname,
         :private => ve_private,
     })
     vzctl(:set, @veid, {
         :applyconfig => "basic",
-        :nameserver => @params["nameserver"],
+        :nameserver => nameserver,
     }, true)
   end
 
@@ -47,8 +48,6 @@ class Vps
     Dir.glob("#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.{mount,umount,conf}").each do |cfg|
       syscmd("#{$CFG.get(:bin, :mv)} #{cfg} #{cfg}.destroyed")
     end
-
-    ok
   end
 
   def suspend
@@ -90,28 +89,27 @@ class Vps
     vzctl(:set, @veid, @params, true)
   end
 
-  def ip_add
-    Shaper.new(@veid, @params).shape_set
+  def ip_add(addr, v, shaper)
+    Shaper.new.shape_set(addr, v, shaper)
 
-    vzctl(:set, @veid, {ipadd: @params['addr']}, true)
+    vzctl(:set, @veid, {ipadd: addr}, true)
   end
 
-  def ip_del
-    Shaper.new(@veid, @params).shape_unset
+  def ip_del(addr, v, shaper)
+    Shaper.new.shape_unset(addr, v, shaper)
 
-    vzctl(:set, @veid, {ipdel: @params['addr']}, true)
+    vzctl(:set, @veid, {ipdel: addr}, true)
   end
 
   def passwd
     vzctl(:set, @veid, {:userpasswd => "#{@params["user"]}:#{@params["password"]}"})
     @passwd = true
-    ok
   end
 
-  def applyconfig
+  def applyconfig(configs)
     n = Node.new
 
-    @params["configs"].each do |cfg|
+    configs.each do |cfg|
       vzctl(:set, @veid, {:applyconfig => cfg, :setmode => "restart"}, true)
 
       path = n.conf_path("original-#{cfg}")
@@ -288,7 +286,7 @@ class Vps
   end
 
   def ve_private
-    $CFG.get(:vz, :ve_private).gsub(/%\{veid\}/, @veid)
+    $CFG.get(:vz, :ve_private).gsub(/%\{veid\}/, @veid.to_s)
   end
 
   def ve_root
@@ -296,7 +294,7 @@ class Vps
   end
 
   def dumpfile
-    $CFG.get(:vps, :migration, :dumpfile).gsub(/%\{veid\}/, @veid)
+    $CFG.get(:vps, :migration, :dumpfile).gsub(/%\{veid\}/, @veid.to_s)
   end
 
   def runscript(script)
@@ -324,7 +322,9 @@ class Vps
     elsif !before[:running] && after[:running]
       stop
     end
+  end
 
-    ok
+  def ve_private_ds
+    "#{$CFG.get(:vps, :zfs, :root_dataset)}/#{@veid}"
   end
 end
