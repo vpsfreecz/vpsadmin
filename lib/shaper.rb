@@ -22,53 +22,47 @@ class Shaper
     end
   end
 
-  def root_change
+  def root_change(max_tx, max_rx)
     @@mutex.synchronize do
       shape_root(
-          @params['max_tx'],
-          @params['max_rx']
+          max_tx,
+          max_rx
       )
     end
   end
 
-  def shape_set
+  def shape_set(addr, version, shaper)
     @@mutex.synchronize do
       shape_ip(
-          @params['addr'],
-          @params['version'],
-          @params['shaper']['class_id'],
-          @params['shaper']['max_tx'],
-          @params['shaper']['max_rx']
+          addr,
+          version,
+          shaper['class_id'],
+          shaper['max_tx'],
+          shaper['max_rx']
       )
     end
-
-    ok
   end
 
-  def shape_change
+  def shape_change(addr, version, shaper)
     @@mutex.synchronize do
       change_shaper(
-          @params['addr'],
-          @params['version'],
-          @params['shaper']['class_id'],
-          @params['shaper']['max_tx'],
-          @params['shaper']['max_rx']
+          addr,
+          version,
+          shaper['class_id'],
+          shaper['max_tx'],
+          shaper['max_rx']
       )
     end
-
-    ok
   end
 
-  def shape_unset
+  def shape_unset(addr, version, shaper)
     @@mutex.synchronize do
       free_ip(
-          @params['addr'],
-          @params['version'],
-          @params['shaper']['class_id']
+          addr,
+          version,
+          shaper['class_id'],
       )
     end
-
-    ok
   end
 
   protected
