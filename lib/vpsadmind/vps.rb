@@ -86,8 +86,8 @@ module VpsAdmind
       end
     end
 
-    def set_params
-      vzctl(:set, @veid, @params, true)
+    def set_params(params)
+      vzctl(:set, @veid, params, true)
     end
 
     def ip_add(addr, v, shaper)
