@@ -56,10 +56,10 @@ class Command
         @status = ret[:ret]
 
         if @status == nil
-          bad_value(cmd)
+          bad_value(klass)
         end
       rescue
-        bad_value(cmd)
+        bad_value(klass)
       end
     rescue CommandFailed => err
       @status = :failed
@@ -81,8 +81,8 @@ class Command
     @time_end = Time.new.to_i
   end
 
-  def bad_value(cmd)
-    raise CommandFailed.new("process handler return value", 1, "#{cmd[:class]}.#{cmd[:method]} did not return expected value")
+  def bad_value(klass)
+    raise CommandFailed.new("process handler return value", 1, "#{klass} did not return expected value")
   end
 
   def save(db)
