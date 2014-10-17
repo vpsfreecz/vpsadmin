@@ -1,7 +1,7 @@
 module VpsAdmind::Commands
   class Base
     def self.handle(type)
-      Command.register(self.to_s, type)
+      VpsAdmind::Command.register(self.to_s, type)
     end
 
     attr_accessor :output

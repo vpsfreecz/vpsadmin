@@ -3,14 +3,9 @@
 path = File.join(File.dirname(__FILE__), '..')
 $: << path unless $:.include?(path)
 
-require 'lib/config'
-require 'lib/db'
-require 'lib/transaction'
+require 'lib/vpsadmind'
 
 require 'optparse'
-
-require 'rubygems'
-require 'json'
 
 options = {
     :config => '/etc/vpsadmin/vpsadmind.yml',

@@ -1,26 +1,3 @@
-require 'rubygems'
-require 'require_all'
-require 'eventmachine'
-require 'json'
-
-module VpsAdmind
-end
-
-require 'lib/db'
-require 'lib/worker'
-require 'lib/command'
-require 'lib/console'
-require 'lib/remote'
-require 'lib/transaction'
-require 'lib/utils'
-require 'lib/node'
-require 'lib/firewall'
-require 'lib/shaper'
-require 'lib/vps'
-require 'lib/dataset'
-require_rel 'commands/base'
-require_rel 'commands'
-
 module VpsAdmind
   VERSION = '2.0.0-dev'
   DB_VERSION = 15

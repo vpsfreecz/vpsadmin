@@ -2,9 +2,7 @@
 
 $: << File.dirname(__FILE__) unless $:.include? File.dirname(__FILE__)
 
-require 'lib/config'
-require 'lib/daemon'
-require 'lib/utils/common'
+require 'lib/vpsadmind'
 
 require 'optparse'
 
@@ -64,14 +62,14 @@ OptionParser.new do |opts|
 end.parse!
 
 if options[:check]
-  c = AppConfig.new(options[:config])
+  c = VpsAdmind::AppConfig.new(options[:config])
   puts "Config seems ok" if c.load
   exit
 end
 
 executable = File.expand_path($0)
 
-$CFG = AppConfig.new(options[:config])
+$CFG = VpsAdmind::AppConfig.new(options[:config])
 
 unless $CFG.load(false)
   exit(false)

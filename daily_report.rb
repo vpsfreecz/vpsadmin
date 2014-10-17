@@ -2,9 +2,7 @@
 
 $: << File.dirname(__FILE__) unless $:.include? File.dirname(__FILE__)
 
-require 'lib/config'
-require 'lib/db'
-require 'lib/transaction'
+require 'lib/vpsadmind'
 
 require 'optparse'
 require 'erb'
@@ -30,7 +28,7 @@ OptionParser.new do |opts|
   end
 end.parse!
 
-$CFG = AppConfig.new(options[:config])
+$CFG = VpsAdmind::AppConfig.new(options[:config])
 
 unless $CFG.load
   exit(false)
@@ -150,7 +148,7 @@ rescue NoMethodError
   exit(false)
 end
 
-t = Transaction.new($db)
+t = VpsAdmind::Transaction.new($db)
 t.queue({
             :node => node,
             :vps => nil,
