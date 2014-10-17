@@ -30,4 +30,8 @@ class Node
   def kernel
     syscmd("#{$CFG.get(:bin, :uname)} -r")[:output].strip
   end
+
+  def conf_path(name = nil)
+    "#{$CFG.get(:vz, :vz_conf)}/conf/ve-#{name}.conf-sample"
+  end
 end
