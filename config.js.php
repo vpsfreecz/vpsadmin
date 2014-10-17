@@ -3,6 +3,7 @@ session_start();
 
 include '/etc/vpsadmin/config.php';
 include WWW_ROOT.'lib/version.lib.php';
+include WWW_ROOT.'lib/members.lib.php';
 
 header('Content-Type: text/javascript');
 
@@ -15,6 +16,7 @@ root.vpsAdmin = {
 		version: "<?php echo API_VERSION ?>"
 	},
 	authToken: "<?php echo $_SESSION['auth_token'] ?>",
+	sessionLength: <?php echo USER_LOGIN_INTERVAL ?>,
 	description: <?php echo json_encode($_SESSION['api_description']) ?>
 };
 
@@ -132,21 +134,66 @@ function updateChains(api) {
 		}
 		
 		//return;
-		setTimeout(function() {
+		chainTimeout = setTimeout(function() {
 			updateChains(api);
 		}, 1000);
 	});
 }
 
+function countDownTimer(time, step, timeout) {
+	var lastTime = new Date().getTime();
+	var end = lastTime + time;
+	
+	var update = function() {
+		lastTime = new Date().getTime();
+		
+		if (lastTime >= end) {
+			timeout();
+			
+		} else {
+			step( Math.floor((end - lastTime) / 1000) );
+			
+			var next = new Date();
+			next.setMilliseconds(0);
+			next.setSeconds( next.getSeconds() + 1 );
+			
+			setTimeout(update, (next.getTime() - lastTime));
+		}
+	};
+	
+	setTimeout(update, 1000);
+}
+
+function twoDigit(n) {
+	return n < 10 ? '0'+n : n;
+}
+
+function sessionCountdown(t) {
+	document.getElementById('session-countdown').innerHTML = twoDigit(Math.floor(t / 60)) + ':' + twoDigit(Math.floor(t % 60));
+}
+
+var chainTimeout;
 var api = new HaveAPI.Client(root.vpsAdmin.api.url, {version: root.vpsAdmin.api.version});
 api.useDescription(root.vpsAdmin.description);
 api.authenticate('token', {token: root.vpsAdmin.authToken}, function(api) {
 	
-	setTimeout(function() {
+	chainTimeout = setTimeout(function() {
 		updateChains(api);
 	}, 1000);
 	
 }, false);
+
+$(document).ready(function() {
+	sessionCountdown(vpsAdmin.sessionLength);
+	
+	countDownTimer(vpsAdmin.sessionLength * 1000, sessionCountdown, function() {
+		clearTimeout(chainTimeout);
+		api.logout(function() {
+			document.location = '?page=';
+		});
+	});
+	
+});
 
 })(window);
 <?php } ?>

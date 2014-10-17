@@ -532,6 +532,8 @@ token.prototype = new base();
  * @param {HaveAPI.Client~doneCallback} callback
  */
 token.prototype.setup = function(callback) {
+	this.resource = new root.HaveAPI.Client.Resource(this.client, 'token', this.description.resources.token, []);
+	
 	if (this.opts.hasOwnProperty('token')) {
 		this.token = this.opts.token;
 		this.configured = true;
@@ -549,8 +551,6 @@ token.prototype.setup = function(callback) {
  * @param {HaveAPI.Client~doneCallback} callback
  */
 token.prototype.requestToken = function(callback) {
-	this.resource = new root.HaveAPI.Client.Resource(this.client, 'token', this.description.resources.token, []);
-	
 	var params = {
 		login: this.opts.username,
 		password: this.opts.password,
