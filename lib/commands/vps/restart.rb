@@ -1,5 +1,7 @@
 module VpsAdmind
   class Commands::Vps::Restart < Commands::Base
+    handle 1003
+
     def exec
       def exec
         @vps = Vps.new(@vps_id)

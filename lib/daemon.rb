@@ -46,8 +46,6 @@ module VpsAdmind
       @export_console = false
       @cmd_counter = 0
       @threads = {}
-
-      Command.load_commands
     end
 
     def init

@@ -243,13 +243,9 @@ class Command
     @m_attr.synchronize { @time_start }
   end
 
-  def Command.load_commands
-    $CFG.get(:vpsadmin, :commands).each do |mod, cmds|
-      cmds.each do |cmd, klass|
-        @@handlers[cmd] = "#{mod}::#{klass}"
-        log "Cmd ##{cmd} => #{@@handlers[cmd]}"
-      end
-    end
+  def Command.register(klass, type)
+    @@handlers[type] = klass
+    log "Cmd ##{type} => #{klass}"
   end
 
   private

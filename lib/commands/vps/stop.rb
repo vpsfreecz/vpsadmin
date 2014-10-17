@@ -1,5 +1,7 @@
 module VpsAdmind
   class Commands::Vps::Stop < Commands::Base
+    handle 1002
+
     def exec
       @vps = Vps.new(@vps_id)
       @vps.stop

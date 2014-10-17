@@ -115,13 +115,6 @@ IMPLICIT_CONFIG = {
             "Mailer" => {
                 9001 => "send",
             }
-        },
-        :commands => {
-            'Vps' => {
-                1001 => 'Start',
-                1002 => 'Stop',
-                1003 => 'Restart',
-            }
         }
     },
 
