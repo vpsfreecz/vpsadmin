@@ -17,6 +17,7 @@ require 'lib/node'
 require 'lib/firewall'
 require 'lib/shaper'
 require 'lib/vps'
+require 'lib/dataset'
 require_rel 'commands/base'
 require_rel 'commands'
 
