@@ -1,5 +1,5 @@
 module VpsAdmind
-  class Commands::Vps::DnsResolver < Commands::Base
+  class Commands::Vps::Passwd < Commands::Base
     handle 2002
 
     def exec
