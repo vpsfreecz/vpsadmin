@@ -51,11 +51,7 @@ module VpsAdmind::Commands
     end
   end
 
-  module Vps
-
-  end
-
-  module Dataset
-
-  end
+  module Vps     ; end
+  module Dataset ; end
+  module Shaper  ; end
 end
