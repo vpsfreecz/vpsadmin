@@ -1,9 +1,10 @@
 require 'pp'
-require 'pry-remote'
 require 'lib/vpsadmindctl/vpsadmind'
 require 'lib/vpsadmindctl/utils'
 require 'lib/vpsadmindctl/version'
 require 'lib/vpsadmindctl/command'
+
+require 'pry-remote' if RUBY_VERSION >= '2.0'
 
 module VpsAdmindCtl
 	class RemoteControl
