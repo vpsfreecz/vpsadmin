@@ -1,5 +1,5 @@
-module Commands
-  class Reinit < CommandTemplates::ResourceControl
+module VpsAdmindCtl::Commands
+  class Reinit < VpsAdmindCtl::CommandTemplates::ResourceControl
     description 'Reinitialize resource'
     def process
       puts 'Reinitialized'

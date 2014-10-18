@@ -1,5 +1,5 @@
-module Commands
-  class Stop < Command
+module VpsAdmindCtl::Commands
+  class Stop < VpsAdmindCtl::Command
     description 'Safely stop vpsAdmind'
 
     def options(opts, args)

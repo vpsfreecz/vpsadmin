@@ -1,5 +1,5 @@
-module Commands
-  class Restart < Command
+module VpsAdmindCtl::Commands
+  class Restart < VpsAdmindCtl::Command
     description 'Safely restart vpsAdmind'
 
     def options(opts, args)

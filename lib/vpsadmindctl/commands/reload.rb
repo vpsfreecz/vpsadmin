@@ -1,5 +1,5 @@
-module Commands
-  class Reload < Command
+module VpsAdmindCtl::Commands
+  class Reload < VpsAdmindCtl::Command
     description "Reload vpsAdmind's configuration"
 
     def process

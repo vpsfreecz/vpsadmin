@@ -1,5 +1,5 @@
-module Commands
-  class Init < CommandTemplates::ResourceControl
+module VpsAdmindCtl::Commands
+  class Init < VpsAdmindCtl::CommandTemplates::ResourceControl
     description 'Initialize resource'
 
     def process

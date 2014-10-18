@@ -1,5 +1,5 @@
-module Commands
-  class Pause < Command
+module VpsAdmindCtl::Commands
+  class Pause < VpsAdmindCtl::Command
     args '[ID]'
     description 'Pause execution of queued transactions'
 

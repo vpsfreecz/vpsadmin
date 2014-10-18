@@ -1,9 +1,9 @@
 require 'pp'
 require 'pry-remote'
-require 'lib/vpsadmind'
-require 'lib/utils'
-require 'lib/version'
-require 'lib/command'
+require 'lib/vpsadmindctl/vpsadmind'
+require 'lib/vpsadmindctl/utils'
+require 'lib/vpsadmindctl/version'
+require 'lib/vpsadmindctl/command'
 
 module VpsAdmindCtl
 	class RemoteControl

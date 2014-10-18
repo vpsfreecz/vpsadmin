@@ -1,5 +1,5 @@
-module Commands
-  class Get < Command
+module VpsAdmindCtl::Commands
+  class Get < VpsAdmindCtl::Command
     args '<command>'
     description 'Get vpsAdmind resources and properties'
 

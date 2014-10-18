@@ -1,5 +1,5 @@
-module Commands
-  class Kill < Command
+module VpsAdmindCtl::Commands
+  class Kill < VpsAdmindCtl::Command
     args '[ID|TYPE]...'
     description 'Kill transaction(s) that are being processed'
 

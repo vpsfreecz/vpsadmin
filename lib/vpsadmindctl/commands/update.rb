@@ -1,5 +1,5 @@
-module Commands
-  class Update < Command
+module VpsAdmindCtl::Commands
+  class Update < VpsAdmindCtl::Command
     description 'Safely stop vpsAdmind, then update by git pull and start again'
 
     def options(opts, args)

@@ -1,5 +1,5 @@
-module Commands
-  class Pry < Command
+module VpsAdmindCtl::Commands
+  class Pry < VpsAdmindCtl::Command
     description 'Open remote console'
 
     def post_send

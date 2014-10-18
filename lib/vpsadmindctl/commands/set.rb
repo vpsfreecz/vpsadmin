@@ -1,5 +1,5 @@
-module Commands
-  class Set < Command
+module VpsAdmindCtl::Commands
+  class Set < VpsAdmindCtl::Command
     args '<command>'
     description 'Set vpsAdmind resources and properties'
 

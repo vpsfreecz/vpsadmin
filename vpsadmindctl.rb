@@ -5,7 +5,7 @@ require 'pathname'
 $: << File.dirname(Pathname.new(__FILE__).realpath) unless $:.include? File.dirname(__FILE__)
 
 require 'optparse'
-require 'lib/rc'
+require 'lib/vpsadmindctl/rc'
 
 options = {
 	:parsable => false,
@@ -21,7 +21,7 @@ Usage: vpsadmindctl <command> [global options] [command options]
 Commands:
 END_BANNER
 
-  Command.all do |c|
+  VpsAdmindCtl::Command.all do |c|
     opts.banner += sprintf("%-20s %s\n", c.label, c.description)
   end
 
@@ -32,7 +32,7 @@ For specific options type: vpsadmindctl <command> --help
 END_BANNER
 
   unless ARGV[0].nil?
-    klass = Command.get(ARGV[0])
+    klass = VpsAdmindCtl::Command.get(ARGV[0])
 
     if klass
       command = klass.new

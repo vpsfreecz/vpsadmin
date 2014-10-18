@@ -1,5 +1,5 @@
-module CommandTemplates
-  class ResourceControl < Command
+module VpsAdmindCtl::CommandTemplates
+  class ResourceControl < VpsAdmindCtl::Command
     args 'all|fw|shaper'
 
     def validate

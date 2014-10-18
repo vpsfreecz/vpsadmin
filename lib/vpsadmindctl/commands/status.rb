@@ -1,5 +1,5 @@
-module Commands
-  class Status < Command
+module VpsAdmindCtl::Commands
+  class Status < VpsAdmindCtl::Command
     description "Show vpsAdmind's status"
     
     def options(opts, args)
