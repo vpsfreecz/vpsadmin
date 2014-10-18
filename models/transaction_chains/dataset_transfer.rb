@@ -98,7 +98,7 @@ module TransactionChains
         transfer_snapshots = []
 
         # select all snapshots from source in reverse order
-        src_dataset_in_pool.snapshot_in_pools.joins(:snapshots).order('snapshot_id DESC').each do |snap|
+        src_dataset_in_pool.snapshot_in_pools.joins(:snapshot).order('snapshot_id DESC').each do |snap|
           src_last_snapshot ||= snap
           transfer_snapshots.insert(0, snap)
 
