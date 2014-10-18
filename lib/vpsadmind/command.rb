@@ -18,6 +18,8 @@ module VpsAdmind
   end
 
   class Command
+    include Utils::Compat
+
     attr_reader :trans
 
     @@handlers = {}
@@ -261,12 +263,6 @@ module VpsAdmind
         'NULL'
       else
         "'#{v}'"
-      end
-    end
-
-    def class_from_name(name)
-      name.split('::').inject(Object) do |mod, part|
-        mod.const_get(part)
       end
     end
   end
