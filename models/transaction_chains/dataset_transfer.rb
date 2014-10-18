@@ -29,6 +29,7 @@ module TransactionChains
         # destination is branched
         if dst_dataset_in_pool.pool.role == 'backup'
           # create branch unless it exists
+          # create branch unless it exists
           # mark branch as head
           # put all snapshots inside it
 
@@ -41,10 +42,10 @@ module TransactionChains
                 head: true,
                 confirmed: false
             )
-          end
 
-          append(Transactions::Storage::BranchDataset, args: branch) do
-            create(branch)
+            append(Transactions::Storage::BranchDataset, args: branch) do
+              create(branch)
+            end
           end
         end
 
