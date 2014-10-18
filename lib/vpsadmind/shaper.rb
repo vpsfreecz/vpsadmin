@@ -61,7 +61,7 @@ module VpsAdmind
         free_ip(
             addr,
             version,
-            shaper['class_id'],
+            shaper['class_id']
         )
       end
     end

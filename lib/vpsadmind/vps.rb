@@ -93,13 +93,13 @@ module VpsAdmind
     def ip_add(addr, v, shaper)
       Shaper.new.shape_set(addr, v, shaper)
 
-      vzctl(:set, @veid, {ipadd: addr}, true)
+      vzctl(:set, @veid, {:ipadd => addr}, true)
     end
 
     def ip_del(addr, v, shaper)
       Shaper.new.shape_unset(addr, v, shaper)
 
-      vzctl(:set, @veid, {ipdel: addr}, true)
+      vzctl(:set, @veid, {:ipdel => addr}, true)
     end
 
     def passwd(user, password)
