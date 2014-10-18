@@ -10,7 +10,7 @@ module Transactions::Storage
 
       snapshots.each do |snap|
         tmp << {
-            id: snap.id,
+            id: snap.snapshot.id,
             name: snap.snapshot.name,
             confirmed: snap.snapshot.confirmed
         }
