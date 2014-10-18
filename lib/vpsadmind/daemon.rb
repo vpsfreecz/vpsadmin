@@ -225,7 +225,7 @@ module VpsAdmind
       end
 
       if $CFG.get(:storage, :update_status)
-        Dataset.new(0).update_status
+        Dataset.new.update_status
       end
 
       my.close
