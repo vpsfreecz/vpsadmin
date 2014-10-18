@@ -230,26 +230,6 @@ module VpsAdmind
 
       :remote => {
           :socket => "/var/run/vpsadmind.sock",
-          :handlers => {
-              "VpsAdmin" => [
-                  "reload",
-                  "restart",
-                  "status",
-                  "stop",
-                  "update",
-                  "kill",
-                  "init",
-                  "flush",
-                  "reinit",
-                  "refresh",
-                  "install",
-                  "get",
-                  "set",
-                  "pause",
-                  "resume",
-                  "pry",
-              ]
-          }
       }
   }
 

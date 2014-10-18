@@ -247,8 +247,6 @@ module VpsAdmind
 
       @export_console = console
 
-      RemoteControl.load_handlers if remote
-
       @em_thread = Thread.new do
         EventMachine.run do
           EventMachine.start_server($CFG.get(:console, :host), $CFG.get(:console, :port), VzServer) if console
