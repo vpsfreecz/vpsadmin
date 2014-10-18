@@ -7,7 +7,7 @@ module Transactions::Storage
       self.t_server = snapshot_in_pool.dataset_in_pool.pool.node_id
 
       {
-          pool: snapshot_in_pool.dataset_in_pool.pool.filesystem,
+          pool_fs: snapshot_in_pool.dataset_in_pool.pool.filesystem,
           dataset_name: snapshot_in_pool.dataset_in_pool.dataset.full_name,
           snapshot_id: snapshot_in_pool.snapshot_id
       }
