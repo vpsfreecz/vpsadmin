@@ -16,16 +16,10 @@ module VpsAdmind
       zfs(:destroy, recursive ? '-r' : nil, "#{pool_fs}/#{name}")
     end
 
-    def snapshot
+    def snapshot(pool_fs, dataset_name)
       snap = Time.new.strftime('%Y-%m-%dT%H:%M:%S')
-
-      zfs(:snapshot, nil, "#{@params['pool']}/#{@params['dataset_name']}@#{snap}")
-
-      db = Db.new
-      db.prepared('UPDATE snapshots SET name = ? WHERE id = ?', snap, @params['snapshot_id'])
-      db.close
-
-      ok
+      zfs(:snapshot, nil, "#{pool_fs}/#{dataset_name}@#{snap}")
+      snap
     end
 
     # Transfer snapshots from src to dst node.
