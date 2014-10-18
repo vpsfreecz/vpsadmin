@@ -22,22 +22,6 @@ module VpsAdmind
       snap
     end
 
-    # Transfer snapshots from src to dst node.
-    # Called on the destination node.
-    def transfer
-      db = Db.new
-
-      snap1 = confirmed_snapshot_name(db, @params['snapshots'].first)
-      snap2 = @params['snapshots'].count > 1 ? confirmed_snapshot_name(db, @params['snapshots'].last) : nil
-
-      db.close
-
-      do_transfer(snap1) if @params['initial']
-      do_transfer(snap1, snap2) if snap2
-
-      ok
-    end
-
     def rollback
 
     end
@@ -80,29 +64,6 @@ module VpsAdmind
             used, avail, ds['id'].to_i
         )
       end
-    end
-
-    protected
-    def do_transfer(snap1, snap2 = nil)
-      recv = "zfs recv -F #{@params['dst_pool_fs']}/#{@params['dataset_name']}"
-
-      if snap2
-        send = "zfs send -I #{@params['src_pool_fs']}/#{@params['dst_pool_fs']}@#{snap1} #{@params['src_pool_fs']}/#{@params['dataset_name']}@#{snap2}"
-      else
-        send = "zfs send #{@params['src_pool_fs']}/#{@params['dst_pool_fs']}@#{snap1}"
-      end
-
-      syscmd("ssh #{@params['src_node_addr']} #{send} | #{recv}")
-    end
-
-    def confirmed_snapshot_name(db, snap)
-      return snap[:name] if snap[:confirmed]
-
-      st = db.prepared_st('SELECT name FROM snapshots WHERE id = ?', snap[:id])
-      ret = st.fetch
-      st.close
-
-      ret[0]
     end
   end
 end
