@@ -12,8 +12,8 @@ END
     end
 
     def validate
-      raise ValidationError.new('missing resource') if @args.size < 2
-      raise ValidationError.new('missing arguments') if @args.size < 3
+      raise VpsAdmindCtl::ValidationError.new('missing resource') if @args.size < 2
+      raise VpsAdmindCtl::ValidationError.new('missing arguments') if @args.size < 3
     end
 
     def prepare

@@ -23,14 +23,14 @@ module VpsAdmindCtl::Commands
         
       elsif @opts[:type]
         if ARGV.size < 2
-          raise ValidationError.new('missing transaction type(s)')
+          raise VpsAdmindCtl::ValidationError.new('missing transaction type(s)')
         end
 
         {:types => ARGV[1..-1]}
         
       else
         if ARGV.size < 2
-          raise ValidationError.new('missing transaction id(s)')
+          raise VpsAdmindCtl::ValidationError.new('missing transaction id(s)')
         end
 
         {:transactions => ARGV[1..-1]}

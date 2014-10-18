@@ -5,10 +5,10 @@ module VpsAdmindCtl::Commands
 
     def validate
       if @args.size > 2
-        raise ValidationError.new('too many arguments')
+        raise VpsAdmindCtl::ValidationError.new('too many arguments')
 
       elsif specific?
-        raise ValidationError.new('invalid transaction id') unless @args[1] =~ /^\d+$/
+        raise VpsAdmindCtl::ValidationError.new('invalid transaction id') unless @args[1] =~ /^\d+$/
       end
     end
 

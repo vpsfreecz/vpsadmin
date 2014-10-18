@@ -27,7 +27,7 @@ END
 
     def validate
       if ARGV.size < 2
-        raise ValidationError.new('missing resource')
+        raise VpsAdmindCtl::ValidationError.new('missing resource')
       end
 
       {:resource => @args[1], :limit => @opts[:limit]}
