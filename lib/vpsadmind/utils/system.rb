@@ -1,19 +1,5 @@
 module VpsAdmind
   module Utils::System
-    def attrs
-      return yield unless @m_attr
-
-      @m_attr.synchronize do
-        yield
-      end
-    end
-
-    def set_step(str)
-      attrs do
-        @step = str
-      end
-    end
-
     def try_harder(attempts = 3)
       @output ||= {}
       @output[:attempts] = []
@@ -54,22 +40,19 @@ module VpsAdmind
     end
 
     def syscmd(cmd, valid_rcs = [])
-      set_step(cmd) if self.respond_to?(:set_step)
+      current_cmd = Thread.current[:command]
+      current_cmd.step = cmd if current_cmd
 
       out = ""
       log "Exec #{cmd}"
 
       IO.popen("exec #{cmd} 2>&1") do |io|
-        attrs do
-          @subtask = io.pid
-        end
+        current_cmd.subtask = io.pid if current_cmd
 
         out = io.read
       end
 
-      attrs do
-        @subtask = nil
-      end
+      current_cmd.subtask = nil if current_cmd
 
       if $?.exitstatus != 0 and not valid_rcs.include?($?.exitstatus)
         raise CommandFailed.new(cmd, $?.exitstatus, out)

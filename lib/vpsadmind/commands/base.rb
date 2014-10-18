@@ -15,6 +15,8 @@ module VpsAdmind::Commands
 
       @m_attr = Mutex.new
       @output = {}
+
+      Thread.current[:command] = self
     end
 
     def exec
@@ -39,13 +41,35 @@ module VpsAdmind::Commands
       end
     end
 
+    def step=(str)
+      attrs do
+        @step = str
+      end
+    end
+
     def subtask
       attrs do
         @subtask
       end
     end
 
+    def subtask=(pid)
+      attrs do
+        @subtask = pid
+      end
+    end
+
     protected
+    def attrs
+      ret = nil
+
+      @m_attr.synchronize do
+        ret = yield
+      end
+
+      ret
+    end
+
     def ok
       {:ret => :ok}
     end
