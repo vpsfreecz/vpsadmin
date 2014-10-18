@@ -1,6 +1,7 @@
 module VpsAdmind
   class Node
     include Utils::System
+    include Utils::Zfs
 
     def init
       sharenfs = $CFG.get(:vps, :zfs, :sharenfs)
