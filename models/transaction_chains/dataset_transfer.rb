@@ -19,7 +19,7 @@ module TransactionChains
         # - first send the first snapshot from src to dst
         # - then send all snapshots incrementally, if there are any
 
-        transfer_snapshots = src_dataset_in_pool.snapshot_in_pools.all.join(:snapshots).order('id ASC')
+        transfer_snapshots = src_dataset_in_pool.snapshot_in_pools.all.joins(:snapshot).order('id ASC')
 
         if transfer_snapshots.empty?
           # no snapshots to transfer
@@ -27,7 +27,7 @@ module TransactionChains
         end
 
         # destination is branched
-        if dst_dataset_in_pool.pool.role == :backup
+        if dst_dataset_in_pool.pool.role == 'backup'
           # create branch unless it exists
           # mark branch as head
           # put all snapshots inside it
@@ -43,7 +43,7 @@ module TransactionChains
             )
           end
 
-          append(Transactions::Storage::CreateDataset, args: branch) do
+          append(Transactions::Storage::BranchDataset, args: branch) do
             create(branch)
           end
         end
@@ -65,7 +65,7 @@ module TransactionChains
 
             create(sip)
 
-            if dst.pool.role == :backup
+            if dst_dataset_in_pool.pool.role == 'backup'
               create(SnapshotInPoolInBranch.create(
                    snapshot_in_pool: sip,
                    branch: branch,
@@ -78,7 +78,7 @@ module TransactionChains
       else
         # there are snapshots on the destination
 
-        if dst_dataset_in_pool.pool.role == :backup
+        if dst_dataset_in_pool.pool.role == 'backup'
           branch = Branch.find_by!(dataset_in_pool: dst_dataset_in_pool, head: true)
 
           # select last snapshot from head branch
@@ -121,7 +121,7 @@ module TransactionChains
 
                   create(sip)
 
-                  if dst_dataset_in_pool.pool.role == :backup
+                  if dst_dataset_in_pool.pool.role == 'backup'
                     create(SnapshotInPoolInBranch.create(
                          snapshot_in_pool: sip,
                          branch: branch,
