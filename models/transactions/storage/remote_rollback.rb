@@ -4,7 +4,7 @@ module Transactions::Storage
     t_type 5210
 
     def params(dataset_in_pool, snapshot_in_pool)
-      self.t_server = snapshot_in_pool.pool.node_id
+      self.t_server = snapshot_in_pool.dataset_in_pool.pool.node_id
 
       {
           primary_node_addr: dataset_in_pool.pool.node.addr,
