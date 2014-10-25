@@ -1,5 +1,5 @@
 module TransactionChains
-  class VpsDestroy < ::TransactionChain
+  class Vps::Destroy < ::TransactionChain
     label 'Destroy VPS'
 
     def link_chain(vps)
@@ -7,10 +7,10 @@ module TransactionChains
       lock(vps)
 
       # Stop VPS
-      use_chain(TransactionChains::VpsStop, vps)
+      use_chain(TransactionChains::Vps::Stop, vps)
 
       # Remove IP addresses
-      use_chain(TransactionChains::VpsDelIp, vps, vps.ip_addresses.all)
+      use_chain(TransactionChains::Vps::DelIp, vps, vps.ip_addresses.all)
 
       # Remove mounts
       # FIXME: implement mounts removal

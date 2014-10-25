@@ -1,5 +1,5 @@
 module TransactionChains
-  class VpsStart < ::TransactionChain
+  class Vps::Start < ::TransactionChain
     label 'Start VPS'
 
     def link_chain(vps)

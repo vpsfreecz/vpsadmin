@@ -1,5 +1,5 @@
 module TransactionChains
-  class VpsRestore < DatasetRollback
+  class Vps::Restore < DatasetRollback
     label 'Restore VPS'
 
     def link_chain(vps, snapshot)
@@ -8,11 +8,11 @@ module TransactionChains
     end
 
     def pre_local_rollback
-      use_chain(VpsStop, @vps)
+      use_chain(Vps::Stop, @vps)
     end
 
     def post_local_rollback
-      use_chain(VpsStart, @vps)
+      use_chain(Vps::Start, @vps)
     end
   end
 end

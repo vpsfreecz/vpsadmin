@@ -41,7 +41,7 @@ class Vps < ActiveRecord::Base
     self.dns_resolver_id ||= DnsResolver.pick_suitable_resolver_for_vps(self).id
 
     if save
-      TransactionChains::VpsCreate.fire(self, add_ips)
+      TransactionChains::Vps::Create.fire(self, add_ips)
     else
       false
     end
@@ -61,7 +61,7 @@ class Vps < ActiveRecord::Base
     if override
       super
     else
-      TransactionChains::VpsDestroy.fire(self)
+      TransactionChains::Vps::Destroy.fire(self)
     end
   end
 
@@ -85,22 +85,22 @@ class Vps < ActiveRecord::Base
     end
 
     unless to_change.empty?
-      TransactionChains::VpsUpdate.fire(self, to_change)
+      TransactionChains::Vps::Update.fire(self, to_change)
     end
 
     (changed? && save) || true
   end
 
   def start
-    TransactionChains::VpsStart.fire(self)
+    TransactionChains::Vps::Start.fire(self)
   end
 
   def restart
-    TransactionChains::VpsRestart.fire(self)
+    TransactionChains::Vps::Restart.fire(self)
   end
 
   def stop
-    TransactionChains::VpsStop.fire(self)
+    TransactionChains::Vps::Stop.fire(self)
   end
 
   def applyconfig
@@ -124,7 +124,7 @@ class Vps < ActiveRecord::Base
 
       raise VpsAdmin::API::Exceptions::IpAddressInUse unless ip.free?
 
-      TransactionChains::VpsAddIp.fire(self, [ip])
+      TransactionChains::Vps::AddIp.fire(self, [ip])
     end
   end
 
@@ -146,7 +146,7 @@ class Vps < ActiveRecord::Base
         raise VpsAdmin::API::Exceptions::IpAddressNotAssigned
       end
 
-      TransactionChains::VpsDelIp.fire(self, [ip])
+      TransactionChains::Vps::DelIp.fire(self, [ip])
     end
   end
 
@@ -158,24 +158,24 @@ class Vps < ActiveRecord::Base
         ips = ip_addresses.all
       end
 
-      TransactionChains::VpsDelIp.fire(self, ips)
+      TransactionChains::Vps::DelIp.fire(self, ips)
     end
   end
 
   def passwd
     pass = generate_password
 
-    TransactionChains::VpsPasswd.fire(self, pass)
+    TransactionChains::Vps::Passwd.fire(self, pass)
 
     pass
   end
 
   def reinstall(template)
-    TransactionChains::VpsReinstall.fire(self, template)
+    TransactionChains::Vps::Reinstall.fire(self, template)
   end
 
   def restore(snapshot)
-    TransactionChains::VpsRestore.fire(self, snapshot)
+    TransactionChains::Vps::Restore.fire(self, snapshot)
   end
 
   private

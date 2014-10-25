@@ -1,5 +1,5 @@
 module TransactionChains
-  class VpsRestart < ::TransactionChain
+  class Vps::Restart < ::TransactionChain
     label 'Restart VPS'
 
     def link_chain(vps)

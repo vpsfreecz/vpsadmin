@@ -134,3 +134,7 @@ class TransactionChain < ActiveRecord::Base
     @last_id
   end
 end
+
+module TransactionChains
+  module Vps ; end
+end

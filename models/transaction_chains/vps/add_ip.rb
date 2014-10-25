@@ -1,5 +1,5 @@
 module TransactionChains
-  class VpsAddIp < ::TransactionChain
+  class Vps::AddIp < ::TransactionChain
     label 'Add IP address'
 
     def link_chain(vps, ips)

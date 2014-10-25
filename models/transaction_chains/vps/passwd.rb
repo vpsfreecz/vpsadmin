@@ -1,5 +1,5 @@
 module TransactionChains
-  class VpsPasswd < ::TransactionChain
+  class Vps::Passwd < ::TransactionChain
     label 'Password change'
 
     def link_chain(vps, passwd)

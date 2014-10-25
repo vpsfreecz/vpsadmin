@@ -1,5 +1,5 @@
 module TransactionChains
-  class VpsUpdate < ::TransactionChain
+  class Vps::Update < ::TransactionChain
     label 'Modify VPS'
 
     def link_chain(vps, attrs)

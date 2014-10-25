@@ -1,5 +1,5 @@
 module TransactionChains
-  class VpsCreate < ::TransactionChain
+  class Vps::Create < ::TransactionChain
     label 'Create VPS'
 
     def link_chain(vps, add_ips)
@@ -30,7 +30,7 @@ module TransactionChains
         create(vps)
       end
 
-      use_chain(VpsApplyConfig, vps, VpsConfig.default_config_chain(vps.node.location))
+      use_chain(Vps::ApplyConfig, vps, VpsConfig.default_config_chain(vps.node.location))
 
       if add_ips
         ips = []
@@ -51,11 +51,11 @@ module TransactionChains
           end
         end
 
-        use_chain(VpsAddIp, vps, ips)
+        use_chain(Vps::AddIp, vps, ips)
       end
 
       if vps.vps_onboot
-        use_chain(TransactionChains::VpsStart, vps)
+        use_chain(TransactionChains::Vps::Start, vps)
       end
 
       vps.save!

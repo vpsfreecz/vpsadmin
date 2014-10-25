@@ -1,5 +1,5 @@
 module TransactionChains
-  class VpsDelIp < ::TransactionChain
+  class Vps::DelIp < ::TransactionChain
     label 'Delete IP address'
 
     def link_chain(vps, ips)

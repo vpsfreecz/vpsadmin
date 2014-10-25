@@ -1,5 +1,5 @@
 module TransactionChains
-  class VpsStop < ::TransactionChain
+  class Vps::Stop < ::TransactionChain
     label 'Stop VPS'
 
     def link_chain(vps)

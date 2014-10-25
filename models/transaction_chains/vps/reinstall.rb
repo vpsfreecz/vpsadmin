@@ -1,5 +1,5 @@
 module TransactionChains
-  class VpsReinstall < ::TransactionChain
+  class Vps::Reinstall < ::TransactionChain
     label 'Reinstall VPS'
 
     def link_chain(vps, template)
