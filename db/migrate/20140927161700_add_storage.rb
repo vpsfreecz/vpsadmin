@@ -121,6 +121,7 @@ class AddStorage < ActiveRecord::Migration
 
     change_column :dataset_in_pools, :used, 'bigint unsigned'
     change_column :dataset_in_pools, :avail, 'bigint unsigned'
+    add_index :dataset_in_pools, [:dataset_id, :pool_id], unique: true
 
     create_table :snapshots do |t|
       t.string     :name,           null: false
@@ -142,6 +143,8 @@ class AddStorage < ActiveRecord::Migration
       t.boolean    :confirmed,      null: false, default: false
     end
 
+    add_index :snapshot_in_pools, [:snapshot_id, :dataset_in_pool_id], unique: true
+
     create_table :branches do |t|
       t.references :dataset_in_pool, null: false
       t.string     :name,            null: false
@@ -159,6 +162,9 @@ class AddStorage < ActiveRecord::Migration
       t.references :branch,           null: false
       t.boolean    :confirmed,        null: false, default: false
     end
+
+    add_index :snapshot_in_pool_in_branches, [:snapshot_in_pool_id, :branch_id],
+              unique: true, name: 'unique_snapshot_in_pool_in_branches'
 
     create_table :mounts do |t|
       t.references :vps,            null: false

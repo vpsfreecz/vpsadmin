@@ -79,6 +79,8 @@ ActiveRecord::Schema.define(version: 20140927161700) do
     t.boolean "confirmed",                    default: false, null: false
   end
 
+  add_index "dataset_in_pools", ["dataset_id", "pool_id"], name: "index_dataset_in_pools_on_dataset_id_and_pool_id", unique: true, using: :btree
+
   create_table "datasets", force: true do |t|
     t.string  "name",          limit: 500,                 null: false
     t.integer "parent_id"
@@ -290,11 +292,15 @@ ActiveRecord::Schema.define(version: 20140927161700) do
     t.boolean "confirmed",                     default: false, null: false
   end
 
+  add_index "snapshot_in_pool_in_branches", ["snapshot_in_pool_id", "branch_id"], name: "unique_snapshot_in_pool_in_branches", unique: true, using: :btree
+
   create_table "snapshot_in_pools", force: true do |t|
     t.integer "snapshot_id",                        null: false
     t.integer "dataset_in_pool_id",                 null: false
     t.boolean "confirmed",          default: false, null: false
   end
+
+  add_index "snapshot_in_pools", ["snapshot_id", "dataset_in_pool_id"], name: "index_snapshot_in_pools_on_snapshot_id_and_dataset_in_pool_id", unique: true, using: :btree
 
   create_table "snapshots", force: true do |t|
     t.string   "name",                       null: false
