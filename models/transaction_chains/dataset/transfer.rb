@@ -113,7 +113,8 @@ module TransactionChains
                        transfer_snapshots,
                        branch
               ]) do
-                transfer_snapshots.each do |s|
+                # Skip the first snapshot - it is already present on the destination
+                transfer_snapshots[1..-1].each do |s|
                   sip = SnapshotInPool.create(
                       snapshot_id: s.snapshot_id,
                       dataset_in_pool: dst_dataset_in_pool,
