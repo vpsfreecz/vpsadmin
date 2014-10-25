@@ -570,5 +570,26 @@ END
           .dataset_in_pool.dataset.snapshots.find(params[:snapshot_id])
       end
     end
+
+    class Rollback < HaveAPI::Action
+      desc 'Rollback to a snapshot'
+      route ':%{resource}_id/rollback'
+      http_method :post
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def exec
+        vps = Vps.includes(dataset_in_pool: [:dataset])
+          .find_by!(with_restricted(vps_id: params[:vps_id]))
+
+        snap = vps.dataset_in_pool.dataset.snapshots.find(params[:snapshot_id])
+
+        vps.restore(snap)
+      end
+    end
   end
 end

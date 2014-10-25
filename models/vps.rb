@@ -174,6 +174,10 @@ class Vps < ActiveRecord::Base
     TransactionChains::VpsReinstall.fire(self, template)
   end
 
+  def restore(snapshot)
+    TransactionChains::VpsRestore.fire(self, snapshot)
+  end
+
   private
   def generate_password
     chars = ('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a
