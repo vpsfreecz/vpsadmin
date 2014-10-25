@@ -519,4 +519,56 @@ END
       end
     end
   end
+
+  class Snapshot < HaveAPI::Resource
+    version 1
+    route ':vps_id/snapshots'
+    model ::Snapshot
+    desc 'VPS snapshots'
+
+    params(:all) do
+      id :id
+      datetime :created_at # FIXME: this is not correct creation time
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      desc 'List snapshots'
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def exec
+        Vps.includes(dataset_in_pool: [:dataset])
+          .find_by!(with_restricted(vps_id: params[:vps_id]))
+          .dataset_in_pool.dataset.snapshots.order('created_at')
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      desc 'Show snapshot'
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def exec
+        Vps.includes(dataset_in_pool: [:dataset])
+          .find_by!(with_restricted(vps_id: params[:vps_id]))
+          .dataset_in_pool.dataset.snapshots.find(params[:snapshot_id])
+      end
+    end
+  end
 end
