@@ -23,7 +23,7 @@ module Transactions::Storage
           dataset_name: src.dataset.full_name,
           snapshots: tmp,
           initial: initial,
-          branch: branch && branch.name
+          branch: branch && branch.full_name
       }
     end
   end
