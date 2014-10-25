@@ -23,7 +23,9 @@ module TransactionChains
 
       # Scenario 1)
       if primary_last_snap.snapshot_id == snapshot.id
+        pre_local_rollback
         append(Transactions::Storage::Rollback, args: [dataset_in_pool, primary_last_snap])
+        post_local_rollback
         return
       end
 
@@ -38,6 +40,8 @@ module TransactionChains
           use_chain(TransactionChains::DatasetTransfer, dataset_in_pool, dst)
         end
 
+        pre_local_rollback
+
         append(Transactions::Storage::Rollback, args: [dataset_in_pool, snapshot_on_primary]) do
           # Delete newer snapshots then the one roll backing to from primary, as they are
           # destroyed by zfs rollback
@@ -45,6 +49,8 @@ module TransactionChains
             destroy(s)
           end
         end
+
+        post_local_rollback
 
         branch_backup(dataset_in_pool, snapshot)
 
@@ -63,12 +69,17 @@ module TransactionChains
 
       append(Transactions::Storage::PrepareRollback, args: dataset_in_pool)
       append(Transactions::Storage::RemoteRollback, args: [dataset_in_pool, backup_snap])
+
+      pre_local_rollback
+
       append(Transactions::Storage::ApplyRollback, args: [dataset_in_pool]) do
         # Delete all snapshots from primary except the one that is being restored
         dataset_in_pool.snapshot_in_pools.all.each do |s|
           destroy(s) unless s.snapshot_id == backup_snap.snapshot_id
         end
       end
+
+      post_local_rollback
 
       branch_backup(dataset_in_pool, snapshot)
     end
@@ -111,6 +122,16 @@ module TransactionChains
           edit(snap_in_branch, reference_count: snap_in_branch.reference_count + i)
         end
       end
+    end
+
+    # Called before the dataset is rollbacked on primary or hypervisor.
+    def pre_local_rollback
+
+    end
+
+    # Called after the dataset is rollbacked on primary or hypervisor.
+    def post_local_rollback
+
     end
   end
 end
