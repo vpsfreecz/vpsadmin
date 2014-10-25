@@ -571,6 +571,25 @@ END
       end
     end
 
+    class Create < HaveAPI::Actions::Default::Create
+      desc 'Create snapshot'
+
+      # FIXME: return snapshot id
+      # output do
+      #   use :all
+      # end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        Vps.includes(:dataset_in_pool)
+          .find_by!(with_restricted(vps_id: params[:vps_id]))
+          .dataset_in_pool.snapshot
+      end
+    end
+
     class Rollback < HaveAPI::Action
       desc 'Rollback to a snapshot'
       route ':%{resource}_id/rollback'
