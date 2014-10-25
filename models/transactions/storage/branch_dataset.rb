@@ -13,8 +13,8 @@ module Transactions::Storage
       }
 
       if src_snapshot_in_branch
-        ret[:from_branch_name] = src_snapshot_in_branch.branch.full_name,
-        ret[:from_snapshot] = src_snapshot_in_branch.snapshot.name
+        ret[:from_branch_name] = src_snapshot_in_branch.branch.full_name
+        ret[:from_snapshot] = src_snapshot_in_branch.snapshot_in_pool.snapshot.name
       end
 
       ret
