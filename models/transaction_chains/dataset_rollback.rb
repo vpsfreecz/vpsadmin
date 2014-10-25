@@ -30,13 +30,13 @@ module TransactionChains
       end
 
       # Find the snapshot_in_pool on pool with hypervisor or primary role
-      snapshot_on_primary = snapshot.snapshot_in_pools.joins(:dataset_in_pool, :pool)
-        .where('pool.role IN (?, ?)', ::Pool.roles[:hypervisor], ::Pool.roles[:primary]).take
+      snapshot_on_primary = snapshot.snapshot_in_pools.joins(dataset_in_pool: [:pool])
+        .where('pools.role IN (?, ?)', ::Pool.roles[:hypervisor], ::Pool.roles[:primary]).take
 
       # Scenario 2) or 3)
       if snapshot_on_primary
         # Transfer the snapshots to all backup dataset in pools if they aren't backed up yet
-        dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where('pool.role = ?', ::Pool.roles[:backup]).each do |dst|
+        dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where('pools.role = ?', ::Pool.roles[:backup]).each do |dst|
           use_chain(TransactionChains::DatasetTransfer, dataset_in_pool, dst)
         end
 
@@ -60,12 +60,12 @@ module TransactionChains
       # Scenario 4) - snapshot is available only in a backup
 
       # Backup all snapshots
-      dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where('pool.role = ?', ::Pool.roles[:backup]).each do |dst|
+      dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where('pools.role = ?', ::Pool.roles[:backup]).each do |dst|
         use_chain(TransactionChains::DatasetTransfer, dataset_in_pool, dst)
       end
 
-      backup_snap = snapshot.snapshot_in_pools.joins(:dataset_in_pool, :pool)
-        .where('pool.role = ?', ::Pool.roles[:backup]).take!
+      backup_snap = snapshot.snapshot_in_pools.joins(dataset_in_pool: [:pool])
+        .where('pools.role = ?', ::Pool.roles[:backup]).take!
 
       append(Transactions::Storage::PrepareRollback, args: dataset_in_pool)
       append(Transactions::Storage::RemoteRollback, args: [dataset_in_pool, backup_snap])
@@ -85,17 +85,19 @@ module TransactionChains
     end
 
     def branch_backup(dataset_in_pool, snapshot)
-      dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where('pool.role = ?', ::Pool.roles[:backup]).each do |ds|
+      dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where('pools.role = ?', ::Pool.roles[:backup]).each do |ds|
         lock(ds)
 
         old = ds.branches.find_by!(head: true)
         snap_in_pool = snapshot.snapshot_in_pools.where(dataset_in_pool: ds).take!
         snap_in_branch = snap_in_pool.snapshot_in_pool_in_branches.find_by!(branch: old)
 
+        last_index = ds.branches.where(name: snapshot.name).maximum('index')
+
         head = ::Branch.create(
             dataset_in_pool: ds,
             name: snapshot.name,
-            index: ds.branches.where(name: snapshot.name).maximum('index') + 1,
+            index: last_index ? last_index + 1 : 0,
             head: true,
             confirmed: false
         )
