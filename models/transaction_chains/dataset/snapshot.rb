@@ -1,5 +1,5 @@
 module TransactionChains
-  class DatasetSnapshot < ::TransactionChain
+  class Dataset::Snapshot < ::TransactionChain
     label 'Snapshot dataset'
 
     def link_chain(dataset_in_pool)

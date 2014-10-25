@@ -1,5 +1,5 @@
 module TransactionChains
-  class DatasetTransfer < ::TransactionChain
+  class Dataset::Transfer < ::TransactionChain
     label 'Transfer snapshots'
 
     def link_chain(src_dataset_in_pool, dst_dataset_in_pool)

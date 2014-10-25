@@ -8,19 +8,19 @@ class DatasetInPool < ActiveRecord::Base
   include Lockable
 
   def snapshot
-    TransactionChains::DatasetSnapshot.fire(self)
+    TransactionChains::Dataset::Snapshot.fire(self)
   end
 
   # +dst+ is destination DatasetInPool.
   def transfer(dst)
-    TransactionChains::DatasetTransfer.fire(self, dst)
+    TransactionChains::Dataset::Transfer.fire(self, dst)
   end
 
   def rollback(snap)
-    TransactionChains::DatasetRollback.fire(self, snap)
+    TransactionChains::Dataset::Rollback.fire(self, snap)
   end
 
   def backup(dst)
-    TransactionChains::DatasetBackup.fire(self, dst)
+    TransactionChains::Dataset::Backup.fire(self, dst)
   end
 end
