@@ -42,5 +42,15 @@ class AddTransactionChains < ActiveRecord::Migration
 
     add_column :vps, :confirmed, :boolean, null: false, default: false
     add_column :vps_has_config, :confirmed, :boolean, null: false, default: false
+
+    reversible do |dir|
+      dir.up do
+        Transaction.connection.execute('ALTER TABLE transactions ENGINE = innodb')
+      end
+
+      dir.down do
+        Transaction.connection.execute('ALTER TABLE transactions ENGINE = myisam')
+      end
+    end
   end
 end
