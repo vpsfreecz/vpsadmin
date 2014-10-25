@@ -17,7 +17,6 @@ module VpsAdmind
 
     def initialize
       @db = Db.new
-      @last_change = 0
       @workers = {}
       @m_workers = Mutex.new
       @start_time = Time.new
@@ -76,14 +75,7 @@ module VpsAdmind
               end
             end
 
-            rs = @db.query("SELECT UNIX_TIMESTAMP(UPDATE_TIME) AS time FROM `information_schema`.`tables` WHERE `TABLE_SCHEMA` = 'vpsadmin' AND `TABLE_NAME` = 'transactions'")
-            time = rs.fetch_row.first.to_i
-
-            if time > @last_change
-              do_commands
-
-              @last_change = time
-            end
+            do_commands
           end
         end
 
@@ -315,7 +307,6 @@ module VpsAdmind
       @m_workers.synchronize do
         @@run = true
         @pause = nil
-        @last_change = 0
       end
     end
 
