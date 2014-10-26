@@ -15,8 +15,7 @@ module TransactionChains
 
       if dataset_in_pool.pool.role == 'backup'
 
-        SnapshotInPoolInBranch.joins(snapshot_in_pool: [:snapshot], branch: [:dataset_in_pool])
-          .select('snapshot_in_pool_in_branches.*, snapshot_in_pools.*, branches.*, dataset_in_pools.*')
+        SnapshotInPoolInBranch.includes(snapshot_in_pool: [:snapshot], branch: [:dataset_in_pool])
           .where(branches: {dataset_in_pool_id: dataset_in_pool.id}).order('snapshots.id').each do |s|
 
           next if s.reference_count > 0
@@ -47,7 +46,6 @@ module TransactionChains
               unless backup.snapshot_in_pools.find_by(snapshot_id: s.snapshot_id)
                 # This snapshot is not backed up in dataset_in_pool +backup+.
                 # It cannot be destroyed as it would break the history flow.
-                puts "\n\n\n\nNOT BACKED UP\n\n\n\n"
                 return
               end
 
@@ -58,7 +56,6 @@ module TransactionChains
                 # This snapshot is backed up in dataset_in_pool +backup+ but
                 # it is the last snapshot there.
                 # It cannot be destroyed as it would break the history flow.
-                puts "\n\n\n\nWOULD BREAK\n\n\n\n"
                 return
               end
 
