@@ -108,7 +108,7 @@ class AddStorage < ActiveRecord::Migration
 
       t.integer    :min_snapshots,  null: false, default: 14
       t.integer    :max_snapshots,  null: false, default: 20
-      t.integer    :snapshot_max_age, null: false, default: 14
+      t.integer    :snapshot_max_age, null: false, default: 14 * 24 * 60 * 60 # seconds
 
       # if the following attributes are not set, they are inherited
       # from dataset.
@@ -262,6 +262,9 @@ class AddStorage < ActiveRecord::Migration
             dataset_id: ds.id,
             pool_id: pool.id,
             label: vps.id,
+            min_snapshots: 1,
+            max_snapshots: 1,
+            snapshot_max_age: 1*24*60*60,
             confirmed: true
         )
 
