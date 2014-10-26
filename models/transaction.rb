@@ -74,6 +74,18 @@ class Transaction < ActiveRecord::Base
     raise NotImplementedError
   end
 
+  def created_at
+    Time.new(t_time)
+  end
+
+  def started_at
+    Time.new(t_real_start)
+  end
+
+  def finished_at
+    Time.new(t_end)
+  end
+
   # Configure transaction confirmations - objects in the database
   # that are created/edited/destroyed by the transaction.
   # The actions will be confirmed only when the transaction
