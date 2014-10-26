@@ -9,4 +9,6 @@ class VpsHasConfig < ActiveRecord::Base
 
   validates :vps_id, :config_id, :order, presence: true,
             numericality: {only_integer: true}
+
+  include Confirmable
 end

@@ -10,13 +10,13 @@ module TransactionChains
       s = Snapshot.create(
           name: "#{snap} (unconfirmed)",
           dataset_id: dataset_in_pool.dataset_id,
-          confirmed: false
+          confirmed: Snapshot.confirmed(:confirm_create)
       )
 
       sip = SnapshotInPool.create(
           snapshot: s,
           dataset_in_pool: dataset_in_pool,
-          confirmed: false
+          confirmed: SnapshotInPool.confirmed(:confirm_create)
       )
 
       append(Transactions::Storage::CreateSnapshot, args: sip) do

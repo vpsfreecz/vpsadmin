@@ -40,7 +40,7 @@ module TransactionChains
                 dataset_in_pool: dst_dataset_in_pool,
                 name: Time.new.strftime('%Y-%m-%dT%H:%M:%S'),
                 head: true,
-                confirmed: false
+                confirmed: Branch.confirmed(:confirm_create)
             )
 
             append(Transactions::Storage::BranchDataset, args: branch) do
@@ -61,7 +61,7 @@ module TransactionChains
             sip = SnapshotInPool.create(
                 snapshot_id: snap.snapshot_id,
                 dataset_in_pool: dst_dataset_in_pool,
-                confirmed: false
+                confirmed: SnapshotInPool.confirmed(:confirm_create)
             )
 
             create(sip)
@@ -70,7 +70,7 @@ module TransactionChains
               create(SnapshotInPoolInBranch.create(
                    snapshot_in_pool: sip,
                    branch: branch,
-                   confirmed: false
+                   confirmed: SnapshotInPoolInBranch.confirmed(:confirm_create)
               ))
             end
           end
@@ -119,7 +119,7 @@ module TransactionChains
                   sip = SnapshotInPool.create(
                       snapshot_id: s.snapshot_id,
                       dataset_in_pool: dst_dataset_in_pool,
-                      confirmed: false
+                      confirmed: SnapshotInPool.confirmed(:confirm_create)
                   )
 
                   create(sip)
@@ -128,7 +128,7 @@ module TransactionChains
                     create(SnapshotInPoolInBranch.create(
                          snapshot_in_pool: sip,
                          branch: branch,
-                         confirmed: false
+                         confirmed: SnapshotInPoolInBranch.confirmed(:confirm_create)
                     ))
                   end
                 end

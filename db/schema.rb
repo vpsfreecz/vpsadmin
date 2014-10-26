@@ -29,7 +29,7 @@ ActiveRecord::Schema.define(version: 20140927161700) do
     t.integer  "index",              default: 0,     null: false
     t.datetime "created_at",                         null: false
     t.boolean  "head",               default: false, null: false
-    t.boolean  "confirmed",          default: false, null: false
+    t.integer  "confirmed",          default: 0,     null: false
   end
 
   create_table "cfg_dns", primary_key: "dns_id", force: true do |t|
@@ -66,17 +66,17 @@ ActiveRecord::Schema.define(version: 20140927161700) do
   end
 
   create_table "dataset_in_pools", force: true do |t|
-    t.integer "dataset_id",                                   null: false
-    t.integer "pool_id",                                      null: false
+    t.integer "dataset_id",                                     null: false
+    t.integer "pool_id",                                        null: false
     t.string  "label",            limit: 100
-    t.integer "used",             limit: 8,   default: 0,     null: false
-    t.integer "avail",            limit: 8,   default: 0,     null: false
-    t.integer "min_snapshots",                default: 14,    null: false
-    t.integer "max_snapshots",                default: 20,    null: false
-    t.integer "snapshot_max_age",             default: 14,    null: false
+    t.integer "used",             limit: 8,   default: 0,       null: false
+    t.integer "avail",            limit: 8,   default: 0,       null: false
+    t.integer "min_snapshots",                default: 14,      null: false
+    t.integer "max_snapshots",                default: 20,      null: false
+    t.integer "snapshot_max_age",             default: 1209600, null: false
     t.string  "share_options",    limit: 500
     t.boolean "compression"
-    t.boolean "confirmed",                    default: false, null: false
+    t.integer "confirmed",                    default: 0,       null: false
   end
 
   add_index "dataset_in_pools", ["dataset_id", "pool_id"], name: "index_dataset_in_pools_on_dataset_id_and_pool_id", unique: true, using: :btree
@@ -285,27 +285,27 @@ ActiveRecord::Schema.define(version: 20140927161700) do
   end
 
   create_table "snapshot_in_pool_in_branches", force: true do |t|
-    t.integer "snapshot_in_pool_id",                           null: false
+    t.integer "snapshot_in_pool_id",                       null: false
     t.integer "snapshot_in_pool_in_branch_id"
-    t.integer "reference_count",               default: 0,     null: false
-    t.integer "branch_id",                                     null: false
-    t.boolean "confirmed",                     default: false, null: false
+    t.integer "reference_count",               default: 0, null: false
+    t.integer "branch_id",                                 null: false
+    t.integer "confirmed",                     default: 0, null: false
   end
 
   add_index "snapshot_in_pool_in_branches", ["snapshot_in_pool_id", "branch_id"], name: "unique_snapshot_in_pool_in_branches", unique: true, using: :btree
 
   create_table "snapshot_in_pools", force: true do |t|
-    t.integer "snapshot_id",                        null: false
-    t.integer "dataset_in_pool_id",                 null: false
-    t.boolean "confirmed",          default: false, null: false
+    t.integer "snapshot_id",                    null: false
+    t.integer "dataset_in_pool_id",             null: false
+    t.integer "confirmed",          default: 0, null: false
   end
 
   add_index "snapshot_in_pools", ["snapshot_id", "dataset_in_pool_id"], name: "index_snapshot_in_pools_on_snapshot_id_and_dataset_in_pool_id", unique: true, using: :btree
 
   create_table "snapshots", force: true do |t|
-    t.string   "name",                       null: false
-    t.integer  "dataset_id",                 null: false
-    t.boolean  "confirmed",  default: false, null: false
+    t.string   "name",                   null: false
+    t.integer  "dataset_id",             null: false
+    t.integer  "confirmed",  default: 0, null: false
     t.datetime "created_at"
     t.datetime "updated_at"
   end
@@ -444,7 +444,7 @@ ActiveRecord::Schema.define(version: 20140927161700) do
     t.integer "vps_backup_export",                                     null: false
     t.text    "vps_backup_exclude",                                    null: false
     t.text    "vps_config",                                            null: false
-    t.boolean "confirmed",                             default: false, null: false
+    t.integer "confirmed",                             default: 0,     null: false
     t.integer "dataset_in_pool_id"
   end
 
@@ -465,10 +465,10 @@ ActiveRecord::Schema.define(version: 20140927161700) do
   end
 
   create_table "vps_has_config", id: false, force: true do |t|
-    t.integer "vps_id",                    null: false
-    t.integer "config_id",                 null: false
-    t.integer "order",                     null: false
-    t.boolean "confirmed", default: false, null: false
+    t.integer "vps_id",                null: false
+    t.integer "config_id",             null: false
+    t.integer "order",                 null: false
+    t.integer "confirmed", default: 0, null: false
   end
 
   create_table "vps_ip", primary_key: "ip_id", force: true do |t|

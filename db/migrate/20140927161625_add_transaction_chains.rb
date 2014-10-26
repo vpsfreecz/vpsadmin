@@ -40,8 +40,8 @@ class AddTransactionChains < ActiveRecord::Migration
 
     remove_column :vps, :vps_backup_lock, :boolean, null: false, default: false
 
-    add_column :vps, :confirmed, :boolean, null: false, default: false
-    add_column :vps_has_config, :confirmed, :boolean, null: false, default: false
+    add_column :vps, :confirmed, :integer, null: false, default: 0
+    add_column :vps_has_config, :confirmed, :integer, null: false, default: false
 
     reversible do |dir|
       dir.up do

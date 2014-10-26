@@ -86,8 +86,8 @@ module TransactionChains
 
     def destroy_snapshot(s)
       if s.is_a?(SnapshotInPoolInBranch)
-        s.update(confirmed: false)
-        s.snapshot_in_pool.update(confirmed: false)
+        s.update(confirmed: SnapshotInPoolInBranch.confirmed(:confirm_create))
+        s.snapshot_in_pool.update(confirmed: Snapshot.confirmed(:confirm_create))
         cleanup = cleanup_snapshot?(s.snapshot_in_pool)
 
         append(Transactions::Storage::DestroySnapshot, args: [s.snapshot_in_pool, s.branch]) do
@@ -100,12 +100,12 @@ module TransactionChains
           end
         end
 
-        if s.branch.snapshot_in_pool_in_branches.where(confirmed: true).count == 0
+        if s.branch.snapshot_in_pool_in_branches.where(confirmed: SnapshotInPoolInBranch.confirmed(:confirmed)).count == 0
           append(Transactions::Storage::DestroyBranch, args: s.branch)
         end
 
       else # SnapshotInPool
-        s.update(confirmed: false)
+        s.update(confirmed: SnapshotInPool.confirmed(:confirm_destroy))
         cleanup = cleanup_snapshot?(s)
 
         append(Transactions::Storage::DestroySnapshot, args: s) do

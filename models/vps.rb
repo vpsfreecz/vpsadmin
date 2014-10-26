@@ -32,6 +32,7 @@ class Vps < ActiveRecord::Base
   default_scope { where(vps_deleted: nil) }
 
   include Lockable
+  include Confirmable
 
   def create(add_ips)
     self.vps_backup_export = 0

@@ -82,7 +82,7 @@ module TransactionChains
         create(SnapshotInPool.create(
           dataset_in_pool: dataset_in_pool,
           snapshot: snapshot,
-          confirmed: false
+          confirmed: SnapshotInPool.confirmed(:confirm_create)
         ))
       end
 
@@ -106,7 +106,7 @@ module TransactionChains
             name: snapshot.name,
             index: last_index ? last_index + 1 : 0,
             head: true,
-            confirmed: false
+            confirmed: Branch.confirmed(:confirm_create)
         )
 
         append(Transactions::Storage::BranchDataset, args: [head, snap_in_branch]) do

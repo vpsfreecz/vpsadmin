@@ -4,6 +4,8 @@ class Dataset < ActiveRecord::Base
   has_many :dataset_in_pools
   has_many :snapshots
 
+  include Confirmable
+
   def full_name
     if parent_id
       "#{parent_dataset.full_name}/#{name}"

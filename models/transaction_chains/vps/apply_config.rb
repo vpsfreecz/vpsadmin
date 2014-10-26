@@ -1,5 +1,5 @@
 module TransactionChains
-  class Vps::ApplyConfig < ::TransactionChain
+  class VpsApplyConfig < ::TransactionChain
     label 'Change VPS configuration'
 
     # +new_configs+ is a list of config IDs.
@@ -12,13 +12,13 @@ module TransactionChains
           destroy cfg
         end
 
-        VpsHasConfig.where(vps_id: vps.veid).update_all(confirmed: false)
+        VpsHasConfig.where(vps_id: vps.veid).update_all(confirmed: VpsHasConfig.confirmed(:confirm_create))
 
         # Create new configs
         i = 0
 
         new_configs.each do |c|
-          create VpsHasConfig.create(vps_id: vps.veid, config_id: c, order: i, confirmed: false)
+          create VpsHasConfig.create(vps_id: vps.veid, config_id: c, order: i, confirmed: VpsHasConfig.confirmed(:confirm_create))
           i += 1
         end
       end

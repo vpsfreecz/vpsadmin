@@ -90,7 +90,7 @@ class AddStorage < ActiveRecord::Migration
       t.string     :share_options,  null: true,  limit: 500
       t.boolean    :compression,    null: true
 
-      t.boolean    :confirmed,      null: false, default: false
+      t.boolean    :confirmed,      null: false, default: 0
     end
 
     change_column :datasets, :quota, 'bigint unsigned'
@@ -116,7 +116,7 @@ class AddStorage < ActiveRecord::Migration
       t.boolean    :compression,    null: true
 
       # dataset is marked as confirmed when vpsadmind creates it
-      t.boolean    :confirmed,      null: false, default: false
+      t.integer    :confirmed,      null: false, default: 0
     end
 
     change_column :dataset_in_pools, :used, 'bigint unsigned'
@@ -128,7 +128,7 @@ class AddStorage < ActiveRecord::Migration
       t.references :dataset,        null: false
 
       # snapshot is marked as confirmed when vpsadmind creates it
-      t.boolean    :confirmed,      null: false, default: false
+      t.integer    :confirmed,      null: false, default: 0
 
       t.timestamps
     end
@@ -140,7 +140,7 @@ class AddStorage < ActiveRecord::Migration
       t.references :dataset_in_pool, null: false
 
       # snapshot is marked as confirmed when vpsadmind creates it
-      t.boolean    :confirmed,      null: false, default: false
+      t.integer    :confirmed,      null: false, default: 0
     end
 
     add_index :snapshot_in_pools, [:snapshot_id, :dataset_in_pool_id], unique: true
@@ -151,7 +151,7 @@ class AddStorage < ActiveRecord::Migration
       t.integer    :index,           null: false, default: 0
       t.datetime   :created_at,      null: false
       t.boolean    :head,            null: false, default: false
-      t.boolean    :confirmed,       null: false, default: false
+      t.integer    :confirmed,       null: false, default: 0
     end
 
     create_table :snapshot_in_pool_in_branches do |t|
@@ -160,7 +160,7 @@ class AddStorage < ActiveRecord::Migration
       t.integer    :snapshot_in_pool_in_branch_id, null: true
       t.integer    :reference_count,  null: false, default: 0
       t.references :branch,           null: false
-      t.boolean    :confirmed,        null: false, default: false
+      t.integer    :confirmed,        null: false, default: 0
     end
 
     add_index :snapshot_in_pool_in_branches, [:snapshot_in_pool_id, :branch_id],
@@ -265,7 +265,7 @@ class AddStorage < ActiveRecord::Migration
             min_snapshots: 1,
             max_snapshots: 1,
             snapshot_max_age: 1*24*60*60,
-            confirmed: true
+            confirmed: 1
         )
 
         vps.update(dataset_in_pool_id: ds_in_pool.id)
@@ -319,7 +319,7 @@ class AddStorage < ActiveRecord::Migration
             user_editable: ds ? export.user_editable : false,
             user_create: export.user_editable,
             quota: export.quota,
-            confirmed: true
+            confirmed: 1
         )
 
         ds_in_pool = DatasetInPool.create(
@@ -328,7 +328,7 @@ class AddStorage < ActiveRecord::Migration
           label: ds ? nil : 'nas',
           used: export.used,
           avail: export.avail,
-          confirmed: true
+          confirmed: 1
         )
       end
 
@@ -357,7 +357,7 @@ class AddStorage < ActiveRecord::Migration
       ds_in_pool = DatasetInPool.create(
           dataset_id: vps.dataset_in_pool_id,
           pool_id: pool_id,
-          confirmed: true
+          confirmed: 1
       )
 
       # Mounts

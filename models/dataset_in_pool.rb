@@ -6,6 +6,7 @@ class DatasetInPool < ActiveRecord::Base
   has_many :mounts
 
   include Lockable
+  include Confirmable
 
   def snapshot
     TransactionChains::Dataset::Snapshot.fire(self)
