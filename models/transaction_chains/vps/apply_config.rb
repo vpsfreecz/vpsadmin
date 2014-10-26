@@ -1,5 +1,5 @@
 module TransactionChains
-  class VpsApplyConfig < ::TransactionChain
+  class Vps::ApplyConfig < ::TransactionChain
     label 'Change VPS configuration'
 
     # +new_configs+ is a list of config IDs.
