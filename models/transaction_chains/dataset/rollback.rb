@@ -73,10 +73,17 @@ module TransactionChains
       pre_local_rollback
 
       append(Transactions::Storage::ApplyRollback, args: [dataset_in_pool]) do
-        # Delete all snapshots from primary except the one that is being restored
+        # Delete all snapshots from primary
         dataset_in_pool.snapshot_in_pools.all.each do |s|
-          destroy(s) unless s.snapshot_id == backup_snap.snapshot_id
+          destroy(s)
         end
+
+        # Create the snapshot that is being restored
+        create(SnapshotInPool.create(
+          dataset_in_pool: dataset_in_pool,
+          snapshot: snapshot,
+          confirmed: false
+        ))
       end
 
       post_local_rollback
