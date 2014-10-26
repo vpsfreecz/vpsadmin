@@ -84,8 +84,8 @@ module TransactionChains
 
           # select last snapshot from head branch
           dst_last_snapshot = branch.snapshot_in_pool_in_branches
-          .joins(:snapshot_in_pool)
-          .order('snapshot_id DESC').take!.snapshot_in_pool
+            .joins(:snapshot_in_pool)
+            .order('snapshot_id DESC').take!.snapshot_in_pool
 
           # dst_last_snapshot = SnapshotInPool
           #   .select('snapshot_in_pools.*')
@@ -98,7 +98,8 @@ module TransactionChains
         transfer_snapshots = []
 
         # select all snapshots from source in reverse order
-        src_dataset_in_pool.snapshot_in_pools.joins(:snapshot).order('snapshot_id DESC').each do |snap|
+        src_dataset_in_pool.snapshot_in_pools.joins(:snapshot)
+          .select('snapshot_in_pools.*, snapshots.*').order('snapshot_id DESC').each do |snap|
           src_last_snapshot ||= snap
           transfer_snapshots.insert(0, snap)
 
@@ -135,6 +136,9 @@ module TransactionChains
 
               return
             end
+
+            puts "nothing to transfer"
+            return
           end
         end
 
