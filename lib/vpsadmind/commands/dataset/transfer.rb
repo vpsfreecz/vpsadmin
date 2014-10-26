@@ -36,7 +36,7 @@ module VpsAdmind
     end
 
     def confirmed_snapshot_name(db, snap)
-      return snap['name'] if snap['confirmed']
+      return snap['name'] if snap['confirmed'] == 1
 
       st = db.prepared_st('SELECT name FROM snapshots WHERE id = ?', snap['id'])
       ret = st.fetch
