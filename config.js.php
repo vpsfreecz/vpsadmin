@@ -54,7 +54,7 @@ function createChainRow(chain) {
 	
 	tr.append($("<td>").text( chain.id ));
 	tr.append($("<td>").text( chain.label ));
-	tr.append($("<td>").attr('align', 'right').text( chain.progress + ' %' ));
+	tr.append($("<td>").attr('align', 'right').text( Math.round((100.0 / chain.size) * chain.progress) + ' %' ));
 	tr.append($("<td>").append( chainIcon(chain.state) ));
 	
 	tr.hide();
@@ -85,7 +85,7 @@ function checkChanges(chains, from) {
 			this.setAttribute('data-transaction-chain-progress', chain.progress);
 			$(this).removeClass().addClass(chain.state);
 			
-			$(this).find("td:nth-child(3)").text( ((100.0 / chains.itemAt(i).size) * chain.progress) + ' %' );
+			$(this).find("td:nth-child(3)").text( Math.round((100.0 / chain.size) * chain.progress) + ' %' );
 			$(this).find("td:nth-child(4) img").replaceWith( chainIcon(chain.state) );
 		}
 		
