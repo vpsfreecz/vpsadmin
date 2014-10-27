@@ -75,8 +75,9 @@ module VpsAdmind::Commands
     end
   end
 
-  module Branch  ; end
-  module Vps     ; end
-  module Dataset ; end
-  module Shaper  ; end
+  module DatasetTree ; end
+  module Branch      ; end
+  module Vps         ; end
+  module Dataset     ; end
+  module Shaper      ; end
 end

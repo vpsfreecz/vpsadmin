@@ -23,7 +23,7 @@ module VpsAdmind
     # Supports only transfer from primary/hypervisor pools to backup pool.
     # Not the other way around.
     def do_transfer(snap1, snap2 = nil)
-      ds_name = @branch ? "#{@dataset_name}/#{@branch}" : @dataset_name
+      ds_name = @branch ? "#{@dataset_name}/#{@tree}/#{@branch}" : @dataset_name
       recv = "zfs recv -F #{@dst_pool_fs}/#{ds_name}"
 
       if snap2

@@ -6,7 +6,7 @@ module VpsAdmind
 
     def exec
       recv = "zfs recv -F #{@primary_pool_fs}/#{@dataset_name}.rollback"
-      send = "zfs send #{@backup_pool_fs}/#{@dataset_name}/#{@branch}@#{@snapshot}"
+      send = "zfs send #{@backup_pool_fs}/#{@dataset_name}/#{@tree}/#{@branch}@#{@snapshot}"
 
       syscmd("#{send} | ssh #{@primary_node_addr} #{recv}")
     end

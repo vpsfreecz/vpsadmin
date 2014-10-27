@@ -7,7 +7,7 @@ module VpsAdmind
 
     def exec
       if @branch
-        zfs(:destroy, nil, "#{@pool_fs}/#{@dataset_name}/#{@branch}@#{@snapshot}")
+        zfs(:destroy, nil, "#{@pool_fs}/#{@dataset_name}/#{@tree}/#{@branch}@#{@snapshot}")
 
       else
         zfs(:destroy, nil, "#{@pool_fs}/#{@dataset_name}@#{@snapshot}")
