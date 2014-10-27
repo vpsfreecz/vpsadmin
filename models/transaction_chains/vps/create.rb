@@ -7,7 +7,7 @@ module TransactionChains
 
       pool = vps.node.pools.where(role: :hypervisor).take!
 
-      ds = Dataset.create(
+      ds = ::Dataset.create(
           name: vps.id.to_s,
           user: vps.user,
           user_editable: false,
