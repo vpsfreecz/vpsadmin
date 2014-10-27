@@ -26,7 +26,7 @@ to the new dataset `vz/private/101.rollback`.
 	$ zfs create vz/private/101.rollback
 	
 	# on the backup
-	$ zfs send storage/vpsfree.cz/backup/101@2014-01-01 | ssh root@primary zfs recv vz/private/101.rollback
+	$ zfs send storage/vpsfree.cz/backup/101/tree.0/branch-2014-01-01@2014-01-01 | ssh root@primary zfs recv vz/private/101.rollback
 
 When the transfer is finished, all subdatasets are moved to it.
 
