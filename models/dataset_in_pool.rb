@@ -7,6 +7,9 @@ class DatasetInPool < ActiveRecord::Base
 
   include Lockable
   include Confirmable
+  include VpsAdmin::API::Hookable
+
+  has_hook :create
 
   def snapshot
     TransactionChains::Dataset::Snapshot.fire(self)
