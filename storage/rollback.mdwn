@@ -7,7 +7,7 @@ with [[branching]] of backups.
 
 # Remote rollback
 The situation is more complicated when the target snapshot is not available locally, but only in a backup.
-vpsAdmin transfers the snapshot to a new dataset and than switches it with the original one. It gets
+vpsAdmin transfers the snapshot to a new dataset and then switches it with the original one. It gets
 even more complicated with subdatasets, which must be preserved and not be affected by the rollback at all.
 Therefore, all subdatasets are moved to the new dataset as well. The moving of datasets is implemented
 using ``zfs rename``.
