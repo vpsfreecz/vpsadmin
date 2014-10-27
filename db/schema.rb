@@ -24,12 +24,13 @@ ActiveRecord::Schema.define(version: 20140927161700) do
   end
 
   create_table "branches", force: true do |t|
-    t.integer  "dataset_in_pool_id",                 null: false
-    t.string   "name",                               null: false
-    t.integer  "index",              default: 0,     null: false
-    t.datetime "created_at",                         null: false
-    t.boolean  "head",               default: false, null: false
-    t.integer  "confirmed",          default: 0,     null: false
+    t.integer  "dataset_tree_id",                 null: false
+    t.string   "name",                            null: false
+    t.integer  "index",           default: 0,     null: false
+    t.boolean  "head",            default: false, null: false
+    t.integer  "confirmed",       default: 0,     null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
   create_table "cfg_dns", primary_key: "dns_id", force: true do |t|
@@ -80,6 +81,15 @@ ActiveRecord::Schema.define(version: 20140927161700) do
   end
 
   add_index "dataset_in_pools", ["dataset_id", "pool_id"], name: "index_dataset_in_pools_on_dataset_id_and_pool_id", unique: true, using: :btree
+
+  create_table "dataset_trees", force: true do |t|
+    t.integer  "dataset_in_pool_id",                 null: false
+    t.integer  "index",              default: 0,     null: false
+    t.boolean  "head",               default: false, null: false
+    t.integer  "confirmed",          default: 0,     null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
 
   create_table "datasets", force: true do |t|
     t.string  "name",          limit: 500,                 null: false

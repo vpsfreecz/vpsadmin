@@ -145,13 +145,21 @@ class AddStorage < ActiveRecord::Migration
 
     add_index :snapshot_in_pools, [:snapshot_id, :dataset_in_pool_id], unique: true
 
-    create_table :branches do |t|
+    create_table :dataset_trees do |t|
       t.references :dataset_in_pool, null: false
-      t.string     :name,            null: false
       t.integer    :index,           null: false, default: 0
-      t.datetime   :created_at,      null: false
       t.boolean    :head,            null: false, default: false
       t.integer    :confirmed,       null: false, default: 0
+      t.timestamps
+    end
+
+    create_table :branches do |t|
+      t.references :dataset_tree,    null: false
+      t.string     :name,            null: false
+      t.integer    :index,           null: false, default: 0
+      t.boolean    :head,            null: false, default: false
+      t.integer    :confirmed,       null: false, default: 0
+      t.timestamps
     end
 
     create_table :snapshot_in_pool_in_branches do |t|
@@ -404,6 +412,7 @@ class AddStorage < ActiveRecord::Migration
     drop_table :dataset_in_pools
     drop_table :snapshots
     drop_table :snapshot_in_pools
+    drop_table :dataset_trees
     drop_table :branches
     drop_table :snapshot_in_pool_in_branches
     drop_table :mounts

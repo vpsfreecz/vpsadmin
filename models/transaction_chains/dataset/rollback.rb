@@ -91,18 +91,20 @@ module TransactionChains
       branch_backup(dataset_in_pool, snapshot)
     end
 
+    # FIXME: handle rollback from a different tree
     def branch_backup(dataset_in_pool, snapshot)
       dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where('pools.role = ?', ::Pool.roles[:backup]).each do |ds|
         lock(ds)
 
-        old = ds.branches.find_by!(head: true)
+        tree = ds.dataset_trees.find_by!(head: true)
+        old = tree.branches.find_by!(head: true)
         snap_in_pool = snapshot.snapshot_in_pools.where(dataset_in_pool: ds).take!
         snap_in_branch = snap_in_pool.snapshot_in_pool_in_branches.find_by!(branch: old)
 
         last_index = ds.branches.where(name: snapshot.name).maximum('index')
 
         head = ::Branch.create(
-            dataset_in_pool: ds,
+            dataset_tree: tree,
             name: snapshot.name,
             index: last_index ? last_index + 1 : 0,
             head: true,

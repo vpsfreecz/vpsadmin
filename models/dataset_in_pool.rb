@@ -2,7 +2,7 @@ class DatasetInPool < ActiveRecord::Base
   belongs_to :dataset
   belongs_to :pool
   has_many :snapshot_in_pools
-  has_many :branches
+  has_many :dataset_trees
   has_many :mounts
 
   include Lockable

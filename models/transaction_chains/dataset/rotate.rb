@@ -15,8 +15,8 @@ module TransactionChains
 
       if dataset_in_pool.pool.role == 'backup'
 
-        SnapshotInPoolInBranch.includes(snapshot_in_pool: [:snapshot], branch: [:dataset_in_pool])
-          .where(branches: {dataset_in_pool_id: dataset_in_pool.id}).order('snapshots.id').each do |s|
+        SnapshotInPoolInBranch.includes(snapshot_in_pool: [:snapshot], branch: [{dataset_tree: :dataset_in_pool}])
+          .where(dataset_trees: {dataset_in_pool_id: dataset_in_pool.id}).order('snapshots.id').each do |s|
 
           next if s.reference_count > 0
 
@@ -97,8 +97,17 @@ module TransactionChains
           end
         end
 
+        # Destroy the branch if it is empty.
+        # Empty branch may still contain SnapshotInPoolInBranch rows, but they
+        # are all marked for confirm_destroy.
         if s.branch.snapshot_in_pool_in_branches.where.not(confirmed: SnapshotInPoolInBranch.confirmed(:confirm_destroy)).count == 0
           append(Transactions::Storage::DestroyBranch, args: s.branch)
+        end
+
+        # Destroy the tree if it is empty, checking for child branches
+        # with the same condition as above.
+        if s.branch.dataset_tree.branches.where.not(confirmed: Branch.confirmed(:confirm_destroy)).count == 0
+          append(Transactions::Storage::DestroyTree, args: s.branch.dataset_tree)
         end
 
       else # SnapshotInPool

@@ -10,6 +10,7 @@ module TransactionChains
       lock(src_dataset_in_pool)
       lock(dst_dataset_in_pool)
 
+      tree = nil
       branch = nil
       dst_last_snapshot = dst_dataset_in_pool.snapshot_in_pools.all.order('snapshot_id DESC').take
 
@@ -28,16 +29,28 @@ module TransactionChains
 
         # destination is branched
         if dst_dataset_in_pool.pool.role == 'backup'
-          # create branch unless it exists
-          # create branch unless it exists
-          # mark branch as head
+          # create tree and branch unless it exists
+          # create tree and branch unless it exists
+          # mark tree and branch as head
           # put all snapshots inside it
 
-          branch = Branch.find_by(dataset_in_pool: dst_dataset_in_pool, head: true)
+          tree = DatasetTree.find_by(dataset_in_pool: dst_dataset_in_pool, head: true)
+
+          unless tree
+            tree = DatasetTree.create(
+                dataset_in_pool: dst_dataset_in_pool,
+                head: true,
+                confirmed: DatasetTree.confirmed(:confirm_create)
+            )
+
+            append(Transactions::Storage::CreateTree, args: tree)
+          end
+
+          branch = Branch.find_by(dataset_tree: tree, head: true)
 
           unless branch
             branch = Branch.create(
-                dataset_in_pool: dst_dataset_in_pool,
+                dataset_tree: tree,
                 name: Time.new.strftime('%Y-%m-%dT%H:%M:%S'),
                 head: true,
                 confirmed: Branch.confirmed(:confirm_create)
@@ -80,7 +93,8 @@ module TransactionChains
         # there are snapshots on the destination
 
         if dst_dataset_in_pool.pool.role == 'backup'
-          branch = Branch.find_by!(dataset_in_pool: dst_dataset_in_pool, head: true)
+          tree = DatasetTree.find_by!(dataset_in_pool: dst_dataset_in_pool, head: true)
+          branch = Branch.find_by!(dataset_tree: tree, head: true)
 
           # select last snapshot from head branch
           dst_last_snapshot = branch.snapshot_in_pool_in_branches
@@ -142,7 +156,7 @@ module TransactionChains
           end
         end
 
-        # FIXME report err
+        # FIXME report err, create new tree
         warn "history does not match, cannot make a transfer"
 
       end

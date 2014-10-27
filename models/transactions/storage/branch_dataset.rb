@@ -4,11 +4,12 @@ module Transactions::Storage
     t_type 5206
 
     def params(branch, src_snapshot_in_branch = nil)
-      self.t_server = branch.dataset_in_pool.pool.node_id
+      self.t_server = branch.dataset_tree.dataset_in_pool.pool.node_id
 
       ret = {
-          pool_fs: branch.dataset_in_pool.pool.filesystem,
-          dataset_name: branch.dataset_in_pool.dataset.full_name,
+          pool_fs: branch.dataset_tree.dataset_in_pool.pool.filesystem,
+          dataset_name: branch.dataset_tree.dataset_in_pool.dataset.full_name,
+          tree: branch.dataset_tree.full_name,
           new_branch_name: branch.full_name,
       }
 

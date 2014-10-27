@@ -4,11 +4,12 @@ module Transactions::Storage
     t_type 5207
 
     def params(branch)
-      self.t_server = branch.dataset_in_pool.pool.node_id
+      self.t_server = branch.dataset_tree.dataset_in_pool.pool.node_id
 
       {
-          pool_fs: branch.dataset_in_pool.pool.filesystem,
+          pool_fs: branch.dataset_tree.dataset_in_pool.pool.filesystem,
           dataset_name: branch.dataset_in_pool.dataset.full_name,
+          tree: branch.dataset_tree.full_name,
           branch: branch.full_name
       }
     end

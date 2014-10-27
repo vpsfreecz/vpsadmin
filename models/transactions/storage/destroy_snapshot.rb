@@ -13,6 +13,7 @@ module Transactions::Storage
       }
 
       if branch
+        ret[:tree] = branch.dataset_tree.full_name
         ret[:branch] = branch.full_name
       end
 
