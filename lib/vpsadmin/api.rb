@@ -39,3 +39,6 @@ module VpsAdmin
     end
   end
 end
+
+path = File.join(File.dirname(__FILE__), '..', '..', 'config', 'hooks.rb')
+require_relative path if File.exists?(path)
