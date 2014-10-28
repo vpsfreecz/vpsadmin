@@ -80,7 +80,8 @@ module VpsAdmind
     def reinstall(*args)
       honor_state do
         stop
-        syscmd("#{$CFG.get(:bin, :rm)} -rf #{ve_private}")
+        zfs(:destroy, '-r', ve_private_ds)
+        zfs(:create, nil, ve_private_ds)
         create(*args)
         # vzctl(:set, @veid, {:ipadd => @params["ip_addrs"]}, true) if @params["ip_addrs"].count > 0
       end
