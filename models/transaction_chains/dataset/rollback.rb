@@ -91,7 +91,6 @@ module TransactionChains
       branch_backup(dataset_in_pool, snapshot)
     end
 
-    # FIXME: do not branch if the snapshot is the last snapshot in the branch
     def branch_backup(dataset_in_pool, snapshot)
       dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where('pools.role = ?', ::Pool.roles[:backup]).each do |ds|
         lock(ds)
@@ -101,38 +100,50 @@ module TransactionChains
           .where.not(confirmed: SnapshotInPoolInBranch.confirmed(:confirm_destroy)).take!
         snap_tree = snap_in_branch.branch.dataset_tree
         head_tree = ds.dataset_trees.find_by!(head: true)
-        old = snap_in_branch.branch
+        old_branch = snap_in_branch.branch
 
-        last_index = ds.branches.where(name: snapshot.name).maximum('index')
+        last_snap = old_branch.snapshot_in_pool_in_branches
+          .joins(snapshot_in_pool: [:snapshot])
+          .order('snapshots.id DESC').take!
 
-        head = ::Branch.create(
-            dataset_tree: snap_tree,
-            name: snapshot.name,
-            index: last_index ? last_index + 1 : 0,
-            head: true,
-            confirmed: Branch.confirmed(:confirm_create)
-        )
+        # If the last snapshot in the branch is the same as the one rollbacking to,
+        # it is pointless to create a new branch.
+        # However, as it is, this method is never called when rollbacking to the last
+        # snapshot, because the last snapshot has to be kept on primary/hypervisor
+        # for history flow purposes, so it is just rollback there.
+        # It might be an issue later, if we decide to use zfs bookmarks.
+        if last_snap.id != snap_in_branch.id
+          last_index = snap_tree.branches.where(name: snapshot.name).maximum('index')
 
-        append(Transactions::Storage::BranchDataset, args: [head, snap_in_branch]) do
-          # Remove old head
-          edit(old, head: false)
+          head = ::Branch.create(
+              dataset_tree: snap_tree,
+              name: snapshot.name,
+              index: last_index ? last_index + 1 : 0,
+              head: true,
+              confirmed: Branch.confirmed(:confirm_create)
+          )
 
-          create(head)
+          append(Transactions::Storage::BranchDataset, args: [head, snap_in_branch]) do
+            # Remove old head
+            edit(old_branch, head: false)
 
-          # Move older or equal SnapshotInPoolInBranches from old head to the new branch
-          old.snapshot_in_pool_in_branches.where('snapshot_in_pool_id <= ?', snap_in_pool.id).each do |s|
-            edit(s, branch_id: head.id)
+            create(head)
+
+            # Move older or equal SnapshotInPoolInBranches from old head to the new branch
+            old_branch.snapshot_in_pool_in_branches.where('snapshot_in_pool_id <= ?', snap_in_pool.id).each do |s|
+              edit(s, branch_id: head.id)
+            end
+
+            i = 0
+
+            old_branch.snapshot_in_pool_in_branches.where('snapshot_in_pool_id > ?', snap_in_pool.id).each do |s|
+              edit(s, snapshot_in_pool_in_branch_id: snap_in_branch.id)
+              i += 1
+            end
+
+            # Update reference count - number of objects that are dependant on snap_in_branch
+            edit(snap_in_branch, reference_count: snap_in_branch.reference_count + i)
           end
-
-          i = 0
-
-          old.snapshot_in_pool_in_branches.where('snapshot_in_pool_id > ?', snap_in_pool.id).each do |s|
-            edit(s, snapshot_in_pool_in_branch_id: snap_in_branch.id)
-            i += 1
-          end
-
-          # Update reference count - number of objects that are dependant on snap_in_branch
-          edit(snap_in_branch, reference_count: snap_in_branch.reference_count + i)
         end
 
         if snap_tree.id != head_tree.id
