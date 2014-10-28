@@ -155,11 +155,7 @@ class Transaction < ActiveRecord::Base
 end
 
 module Transactions
-  module Vps
-
-  end
-
-  module Storage
-
-  end
+  module Vps      ; end
+  module Storage  ; end
+  module Utils    ; end
 end
