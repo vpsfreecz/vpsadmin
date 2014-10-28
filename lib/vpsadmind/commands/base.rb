@@ -80,4 +80,5 @@ module VpsAdmind::Commands
   module Vps         ; end
   module Dataset     ; end
   module Shaper      ; end
+  module Utils       ; end
 end
