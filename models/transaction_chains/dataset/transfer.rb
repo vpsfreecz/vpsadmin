@@ -15,7 +15,7 @@ module TransactionChains
       dst_last_snapshot = dst_dataset_in_pool.snapshot_in_pools.all.order('snapshot_id DESC').take
 
       # no snapshots on the destination
-      if dst_last_snapshot.nil?
+      if dst_last_snapshot.nil? || (dst_dataset_in_pool.pool.role == 'backup' && !snapshots_in_tree?(dst_dataset_in_pool))
         # send everything
         # - first send the first snapshot from src to dst
         # - then send all snapshots incrementally, if there are any
@@ -34,32 +34,8 @@ module TransactionChains
           # mark tree and branch as head
           # put all snapshots inside it
 
-          tree = DatasetTree.find_by(dataset_in_pool: dst_dataset_in_pool, head: true)
-
-          unless tree
-            tree = DatasetTree.create(
-                dataset_in_pool: dst_dataset_in_pool,
-                head: true,
-                confirmed: DatasetTree.confirmed(:confirm_create)
-            )
-
-            append(Transactions::Storage::CreateTree, args: tree)
-          end
-
-          branch = Branch.find_by(dataset_tree: tree, head: true)
-
-          unless branch
-            branch = Branch.create(
-                dataset_tree: tree,
-                name: Time.new.strftime('%Y-%m-%dT%H:%M:%S'),
-                head: true,
-                confirmed: Branch.confirmed(:confirm_create)
-            )
-
-            append(Transactions::Storage::BranchDataset, args: branch) do
-              create(branch)
-            end
-          end
+          tree = get_or_create_tree(dst_dataset_in_pool)
+          branch = get_or_create_branch(tree)
         end
 
         append(Transactions::Storage::Transfer,
@@ -93,8 +69,8 @@ module TransactionChains
         # there are snapshots on the destination
 
         if dst_dataset_in_pool.pool.role == 'backup'
-          tree = DatasetTree.find_by!(dataset_in_pool: dst_dataset_in_pool, head: true)
-          branch = Branch.find_by!(dataset_tree: tree, head: true)
+          tree = get_or_create_tree(dst_dataset_in_pool)
+          branch = get_or_create_branch(tree)
 
           # select last snapshot from head branch
           dst_last_snapshot = branch.snapshot_in_pool_in_branches
@@ -160,6 +136,53 @@ module TransactionChains
         warn "history does not match, cannot make a transfer"
 
       end
+    end
+
+    def snapshots_in_tree?(dataset_in_pool)
+      tree = dataset_in_pool.dataset_trees.where(head: true).take
+
+      return false unless tree
+
+      SnapshotInPoolInBranch.joins(branch: [:dataset_tree])
+        .where(branches: {dataset_tree_id: tree.id}).count > 0
+    end
+
+    def get_or_create_tree(dataset_in_pool)
+      tree = DatasetTree.find_by(dataset_in_pool: dataset_in_pool, head: true)
+
+      unless tree
+        last_index = dataset_in_pool.dataset_trees.all.maximum('index')
+
+        tree = DatasetTree.create(
+            dataset_in_pool: dataset_in_pool,
+            index: last_index ? last_index + 1 : 0,
+            head: true,
+            confirmed: DatasetTree.confirmed(:confirm_create)
+        )
+
+        append(Transactions::Storage::CreateTree, args: tree)
+      end
+
+      tree
+    end
+
+    def get_or_create_branch(tree)
+      branch = Branch.find_by(dataset_tree: tree, head: true)
+
+      unless branch
+        branch = Branch.create(
+            dataset_tree: tree,
+            name: Time.new.strftime('%Y-%m-%dT%H:%M:%S'),
+            head: true,
+            confirmed: Branch.confirmed(:confirm_create)
+        )
+
+        append(Transactions::Storage::BranchDataset, args: branch) do
+          create(branch)
+        end
+      end
+
+      branch
     end
   end
 end
