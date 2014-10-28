@@ -91,20 +91,22 @@ module TransactionChains
       branch_backup(dataset_in_pool, snapshot)
     end
 
-    # FIXME: handle rollback from a different tree
+    # FIXME: do not branch if the snapshot is the last snapshot in the branch
     def branch_backup(dataset_in_pool, snapshot)
       dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where('pools.role = ?', ::Pool.roles[:backup]).each do |ds|
         lock(ds)
 
-        tree = ds.dataset_trees.find_by!(head: true)
-        old = tree.branches.find_by!(head: true)
         snap_in_pool = snapshot.snapshot_in_pools.where(dataset_in_pool: ds).take!
-        snap_in_branch = snap_in_pool.snapshot_in_pool_in_branches.find_by!(branch: old)
+        snap_in_branch = snap_in_pool.snapshot_in_pool_in_branches
+          .where.not(confirmed: SnapshotInPoolInBranch.confirmed(:confirm_destroy)).take!
+        snap_tree = snap_in_branch.branch.dataset_tree
+        head_tree = ds.dataset_trees.find_by!(head: true)
+        old = snap_in_branch.branch
 
         last_index = ds.branches.where(name: snapshot.name).maximum('index')
 
         head = ::Branch.create(
-            dataset_tree: tree,
+            dataset_tree: snap_tree,
             name: snapshot.name,
             index: last_index ? last_index + 1 : 0,
             head: true,
@@ -131,6 +133,13 @@ module TransactionChains
 
           # Update reference count - number of objects that are dependant on snap_in_branch
           edit(snap_in_branch, reference_count: snap_in_branch.reference_count + i)
+        end
+
+        if snap_tree.id != head_tree.id
+          append(Transactions::Utils::NoOp, args: ds.pool.node_id) do
+            edit(head_tree, head: false)
+            edit(snap_tree, head: true)
+          end
         end
       end
     end
