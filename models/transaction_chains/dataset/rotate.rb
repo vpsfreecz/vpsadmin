@@ -101,6 +101,7 @@ module TransactionChains
         # Empty branch may still contain SnapshotInPoolInBranch rows, but they
         # are all marked for confirm_destroy.
         if s.branch.snapshot_in_pool_in_branches.where.not(confirmed: SnapshotInPoolInBranch.confirmed(:confirm_destroy)).count == 0
+          s.branch.update(confirmed: Branch.confirmed(:confirm_destroy))
           append(Transactions::Storage::DestroyBranch, args: s.branch)
         end
 
