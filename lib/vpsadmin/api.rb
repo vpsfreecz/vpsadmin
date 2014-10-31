@@ -15,9 +15,33 @@ module VpsAdmin
 
       authenticate(api)
 
-      api.connect_hook(:post_authenticated) do |u|
+      api.connect_hook(:post_authenticated) do |ret, u|
         ::PaperTrail.whodunnit = u
+        ret
       end
+
+      e = HaveAPI::Extensions::ActionExceptions
+
+      e.rescue(::ActiveRecord::RecordNotFound) do |ret, exception|
+        ret[:status] = false
+
+        if /find ([^\s]+)[^=]+=(\d+)/ =~ exception.message
+          ret[:message] = "object #{$~[1]} = #{$~[2]} not found"
+        else
+          ret[:message] = "object not found: #{exception.to_s}"
+        end
+
+        ret
+      end
+
+      e.rescue(::ResourceLocked) do |ret, exception|
+        ret[:http_status] = 423 # locked
+        ret[:status] = false
+        ret[:message] = 'Resource is locked. Try again later.'
+        ret
+      end
+
+      api.extensions << e
 
       api.mount('/')
 
