@@ -8,7 +8,7 @@ module Transactions::Storage
 
       {
           pool_fs: branch.dataset_tree.dataset_in_pool.pool.filesystem,
-          dataset_name: branch.dataset_in_pool.dataset.full_name,
+          dataset_name: branch.dataset_tree.dataset_in_pool.dataset.full_name,
           tree: branch.dataset_tree.full_name,
           branch: branch.full_name
       }
