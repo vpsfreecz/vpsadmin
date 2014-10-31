@@ -820,22 +820,6 @@ switch($_REQUEST["action"]) {
 		$xtpl->perex(_("Payments settings saved"), '');
 		$list_nodes = true;
 		break;
-	case "api_settings":
-		$xtpl->title2("Manage API Settings");
-		$xtpl->table_add_category('');
-		$xtpl->table_add_category('');
-		$xtpl->form_create('?page=cluster&action=api_settings_save', 'post');
-		$xtpl->form_add_checkbox(_("API enabled").':', 'api_enabled', '1', $cluster_cfg->get("api_enabled"), $hint = '');
-		$xtpl->form_add_input(_("API key").':', 'text', '40', 'api_key', $cluster_cfg->get("api_key"), '');
-		$xtpl->form_out(_("Save changes"));
-		$xtpl->sbar_add(_("Back"), '?page=cluster');
-		break;
-	case "api_settings_save":
-		$cluster_cfg->set("api_enabled", $_REQUEST["api_enabled"]);
-		$cluster_cfg->set("api_key", $_REQUEST["api_key"]);
-		$xtpl->perex(_("API settings saved"), '');
-		$list_nodes = true;
-		break;
 	case "playground_settings":
 		$xtpl->sbar_add(_("Back"), '?page=cluster');
 		$playground_settings=true;
@@ -989,7 +973,6 @@ if ($list_nodes) {
 	$xtpl->sbar_add(_("Manage locations"), '?page=cluster&action=locations');
 	$xtpl->sbar_add(_("Manage Mailer"), '?page=cluster&action=mailer');
 	$xtpl->sbar_add(_("Manage Payments"), '?page=cluster&action=payments_settings');
-	$xtpl->sbar_add(_("Manage API"), '?page=cluster&action=api_settings');
 	$xtpl->sbar_add(_("Manage playground"), '?page=cluster&action=playground_settings');
 	$xtpl->sbar_add(_("Notice board & log"), '?page=cluster&action=noticeboard');
 	$xtpl->sbar_add(_("Help boxes"), '?page=cluster&action=helpboxes');
