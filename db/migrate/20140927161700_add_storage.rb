@@ -236,8 +236,15 @@ class AddStorage < ActiveRecord::Migration
       # snapshot: create a snapshot
       # transfer: transfer snapshots from src to dst
       # rollback: rollback to snapshot
+      # backup
+      # group_snapshot
       #           (may have to be fetched from the backup of src snapshot)
       t.integer    :action,         null: false
+    end
+
+    create_table :group_snapshots do |t|
+      t.references :dataset_action
+      t.references :dataset_in_pool
     end
 
     add_column :vps, :dataset_in_pool_id, :integer, null: true
