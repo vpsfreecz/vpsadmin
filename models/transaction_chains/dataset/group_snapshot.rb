@@ -1,5 +1,5 @@
 module TransactionChains
-  class Dataset::Snapshot < ::TransactionChain
+  class Dataset::GroupSnapshot < ::TransactionChain
     label 'Snapshot dataset'
 
     def link_chain(dataset_in_pools)
@@ -24,7 +24,7 @@ module TransactionChains
         snapshots << sip
       end
 
-      append(Transactions::Storage::CreateSnapshots, args: snapshots) do
+      append(Transactions::Storage::CreateSnapshots, args: [snapshots]) do
         snapshots.each do |sip|
           create(sip.snapshot)
           create(sip)
