@@ -204,6 +204,7 @@ class AddStorage < ActiveRecord::Migration
     end
 
     create_table :repeatable_tasks do |t|
+      t.string     :label,          null: true,  limit: 100
       t.string     :class_name,     null: false, limit: 255
       t.string     :table_name,     null: false, limit: 255
       t.integer    :row_id,         null: false
