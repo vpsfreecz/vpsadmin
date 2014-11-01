@@ -33,6 +33,6 @@ class DatasetAction < ActiveRecord::Base
       dips << s.dataset_in_pool
     end
 
-    TransactionChains::Dataset::GroupSnapshot.fire(dips)
+    TransactionChains::Dataset::GroupSnapshot.fire(dips) unless dips.count == 0
   end
 end
