@@ -17,7 +17,7 @@ module Transactions::Storage
       end
 
       {
-          snapshots: snapshot
+          snapshots: snapshots
       }
     end
   end
