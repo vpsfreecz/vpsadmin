@@ -110,6 +110,11 @@ ActiveRecord::Schema.define(version: 20140927161700) do
     t.datetime "updated_at"
   end
 
+  create_table "group_snapshots", force: true do |t|
+    t.integer "dataset_action_id"
+    t.integer "dataset_in_pool_id"
+  end
+
   create_table "helpbox", force: true do |t|
     t.string "page",    limit: 50, null: false
     t.string "action",  limit: 50, null: false
@@ -247,14 +252,15 @@ ActiveRecord::Schema.define(version: 20140927161700) do
   end
 
   create_table "repeatable_tasks", force: true do |t|
-    t.string  "class_name",   null: false
-    t.string  "table_name",   null: false
-    t.integer "row_id",       null: false
-    t.string  "minute",       null: false
-    t.string  "hour",         null: false
-    t.string  "day_of_month", null: false
-    t.string  "month",        null: false
-    t.string  "day_of_week",  null: false
+    t.string  "label",        limit: 100
+    t.string  "class_name",               null: false
+    t.string  "table_name",               null: false
+    t.integer "row_id",                   null: false
+    t.string  "minute",                   null: false
+    t.string  "hour",                     null: false
+    t.string  "day_of_month",             null: false
+    t.string  "month",                    null: false
+    t.string  "day_of_week",              null: false
   end
 
   create_table "resource_locks", force: true do |t|

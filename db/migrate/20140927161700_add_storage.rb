@@ -45,6 +45,10 @@ class AddStorage < ActiveRecord::Migration
   end
 
   class DatasetAction < ActiveRecord::Base
+    has_many :group_snapshots
+  end
+
+  class GroupSnapshot < ActiveRecord::Base
 
   end
 
@@ -250,6 +254,8 @@ class AddStorage < ActiveRecord::Migration
 
     add_column :vps, :dataset_in_pool_id, :integer, null: true
 
+    group_snapshots_per_pool = {}
+
     # Create pools for all hypervisors
     Node.where(server_type: 'node').each do |node|
       pool = Pool.create({
@@ -260,6 +266,11 @@ class AddStorage < ActiveRecord::Migration
           share_options: '',
           compression: true
       })
+
+      group_snapshots_per_pool[ pool.id ] = DatasetAction.create(
+          pool_id: pool.id,
+          action: 4 # group_snapshot
+      )
 
       # Create a dataset for every VPS
       Vps.where(vps_server: node.id).each do |vps|
@@ -285,6 +296,9 @@ class AddStorage < ActiveRecord::Migration
         )
 
         vps.update(dataset_in_pool_id: ds_in_pool.id)
+
+        # Add to group snapshots
+        group_snapshots_per_pool[pool.id].group_snapshots << GroupSnapshot.new(dataset_in_pool_id: ds_in_pool.id)
       end
     end
 
@@ -303,7 +317,27 @@ class AddStorage < ActiveRecord::Migration
           compression: true
       )
 
+      group_snapshots_per_pool[ r.id ] = DatasetAction.create(
+          pool_id: r.id,
+          action: 4 # group_snapshot
+      )
+
       pool_mapping[root.id] = r.id
+    end
+
+    # Create repeatable tasks for all group snapshots
+    group_snapshots_per_pool.each do |k, v|
+      RepeatableTask.create(
+          label: "group_snapshot of pool #{k}",
+          class_name: v.class.to_s.demodulize,
+          table_name: v.class.table_name,
+          row_id: v.id,
+          minute: '00',
+          hour: '01',
+          day_of_month: '*',
+          month: '*',
+          day_of_week: '*'
+      )
     end
 
     # Add already existing datasets (NAS, exports)
@@ -385,8 +419,7 @@ class AddStorage < ActiveRecord::Migration
       # FIXME: create mount even if none exist?
       end
 
-      # Schedule backups
-      # Make snapshots at 01:00 every day, then transfer them
+      # Transfer snapshots at 01:30 every day
       backup = DatasetAction.create(
           src_dataset_in_pool_id: vps.dataset_in_pool_id,
           dst_dataset_in_pool_id: ds_in_pool.id,
@@ -397,7 +430,7 @@ class AddStorage < ActiveRecord::Migration
           class_name: backup.class.to_s.demodulize,
           table_name: backup.class.table_name,
           row_id: backup.id,
-          minute: '00',
+          minute: '30',
           hour: '01',
           day_of_month: '*',
           month: '*',
@@ -427,6 +460,7 @@ class AddStorage < ActiveRecord::Migration
     drop_table :mirrors
     drop_table :repeatable_tasks
     drop_table :dataset_actions
+    drop_table :group_snapshots
 
     remove_column :vps, :dataset_in_pool_id
   end
