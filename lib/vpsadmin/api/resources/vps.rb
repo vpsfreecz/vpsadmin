@@ -391,7 +391,7 @@ END
       end
 
       def exec
-        query.limit(input[:limit]).offset(input[:offset])
+        query.order('`order`').limit(input[:limit]).offset(input[:offset])
       end
     end
 
