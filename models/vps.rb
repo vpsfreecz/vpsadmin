@@ -33,6 +33,9 @@ class Vps < ActiveRecord::Base
 
   include Lockable
   include Confirmable
+  include VpsAdmin::API::Hookable
+
+  has_hook :create
 
   def create(add_ips)
     self.vps_backup_export = 0
