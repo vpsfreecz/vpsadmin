@@ -83,8 +83,16 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       ]})
     end
 
+    def query
+      Vps.where(with_restricted)
+    end
+
+    def count
+      query.count
+    end
+
     def exec
-      Vps.where(with_restricted).limit(params[:vps][:limit]).offset(params[:vps][:offset])
+      query.limit(params[:vps][:limit]).offset(params[:vps][:offset])
     end
   end
 
