@@ -414,31 +414,6 @@ switch ($_GET["action"]) {
 			}
 			$show_info=true;
 			break;
-		case "special_setup_ispcp":
-			if (isset($_REQUEST["veid"]) && isset($_REQUEST["setup_hostname"]) &&
-			  isset($_REQUEST["setup_mail"]) &&
-			  isset($_REQUEST["setup_username"]) && isset($_REQUEST["setup_vhost"]) &&
-			  isset($_REQUEST["passwd"]) && ($_REQUEST["passwd"] == $_REQUEST["passwd2"]) &&
-			  (strlen($_REQUEST["passwd"]) >= 5) && isset($_REQUEST["ip_addr"]) &&
-			  preg_match("/[0-9]/", $_REQUEST["passwd"]) && preg_match("/[a-zA-Z]/", $_REQUEST["passwd"])) {
-			    if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-			    if ($_REQUEST["awstats"]) {
-				$params = ' -s ';
-			    }
-			    $params .= ' '.$_REQUEST["ip_addr"];
-			    $params .= ' '.$_REQUEST["setup_hostname"];
-			    $params .= ' '.$_REQUEST["setup_vhost"];
-    			    $params .= ' '.$_REQUEST["setup_mail"];
-    			    $params .= ' '.$_REQUEST["passwd"];
-    			    $params .= ' -a '.$_REQUEST["setup_username"];
-    			    $vps->restart();
-			    $vps->special_setup_ispcp($params);
-			    $xtpl->perex(_("Transaction added"), _(" "));
-			} else {
-			    $xtpl->perex(_("Invalid data"), _("Please fill the form correctly."));
-			}
-			$show_info=true;
-			break;
 		case 'clone':
 			if (isset($_REQUEST["veid"])  && ($_SESSION["is_admin"] || $playground_mode)) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
@@ -763,29 +738,6 @@ if (isset($show_info) && $show_info) {
 		}
 		
 	} else {
-	
-		// set up ispcp
-		if (preg_match("/ispcp/", $templ["special"]) && !preg_match("/ispcp/", $vps->ve["vps_specials_installed"])) {
-		$ips = array();
-		if ($iplist = $vps->iplist(4)){
-			foreach ($iplist as $ip) {
-			$ips[$ip["ip_addr"]] = $ip["ip_addr"];
-			}
-		}
-		$ve_owner = member_load($vps->ve["m_id"]);
-		$xtpl->form_create('?page=adminvps&action=special_setup_ispcp&veid='.$vps->veid, 'post');
-		$xtpl->form_add_select(_("Use IPv4 address").':', 'ip_addr', $ips, '');
-		$xtpl->form_add_input(_("Hostname FQDN").':', 'text', '30', 'setup_hostname', $_REQUEST["setup_hostname"], 'Important for mail to work correctly<br>eg. mail.mydomain.com');
-		$xtpl->form_add_input(_("Admin panel FQDN").':', 'text', '30', 'setup_vhost', $_REQUEST["setup_vhost"], 'From where will be accessed the admin panel<br>eg. admin.mydomain.com');
-		$xtpl->form_add_input(_("Admin e-mail").':', 'text', '30', 'setup_mail', $ve_owner->m["m_mail"], 'Where will ispCP send notices');
-		$xtpl->form_add_input(_("Admin username").':', 'text', '30', 'setup_username', 'admin', '');
-		$xtpl->form_add_input(_("Admin safe password").':', 'password', '30', 'passwd', '', '<br>Must contain characters as well as at least one number.', -5);
-		$xtpl->form_add_input(_("Admin password again").':', 'password', '30', 'passwd2', '', '');
-		$xtpl->form_add_checkbox(_("Install AWStats").':', 'awstats', '1', $_REQUEST["awstats"], $hint = '');
-		$xtpl->table_add_category(_("Set up ispCP Omega"));
-		$xtpl->table_add_category(' ');
-		$xtpl->form_out(_("Go >>"));
-		}
 
 	// Password changer
 		$xtpl->form_create('?page=adminvps&action=passwd&veid='.$vps->veid, 'post');

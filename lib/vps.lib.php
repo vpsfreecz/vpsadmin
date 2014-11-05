@@ -691,15 +691,6 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 			add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_ENABLE_FEATURES);
 	  }
   }
-  function special_setup_ispcp($params) {
-    global $db;
-    $this->ve["vps_specials_installed"] .= 'ispcp ';
-    $sql = 'UPDATE vps SET vps_specials_installed = "'.$this->ve["vps_specials_installed"].'" WHERE vps_id = '.$db->check($this->veid);
-    $db->query($sql);
-    if ($db->affected_rows() == 1) {
-	add_transaction($_SESSION["member"]["m_id"], $this->ve["vps_server"], $this->veid, T_SPECIAL_ISPCP, $params);
-    }
-  }
 
   function backuper_change_notify() {
 	global $db, $cluster_cfg;
