@@ -12,12 +12,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/vpsfreecz/haveapi-client-php.git",
-                "reference": "5c68545e9df674556545b87d4fe0661e843e963c"
+                "reference": "2710b5b92348240445862af17421cb6316896b62"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/5c68545e9df674556545b87d4fe0661e843e963c",
-                "reference": "5c68545e9df674556545b87d4fe0661e843e963c",
+                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/2710b5b92348240445862af17421cb6316896b62",
+                "reference": "2710b5b92348240445862af17421cb6316896b62",
                 "shasum": ""
             },
             "require": {
@@ -45,7 +45,7 @@
                 "source": "https://github.com/vpsfreecz/haveapi-client-php/tree/devel",
                 "issues": "https://github.com/vpsfreecz/haveapi-client-php/issues"
             },
-            "time": "2014-10-10 17:35:23"
+            "time": "2014-11-05 15:27:01"
         },
         {
             "name": "nategood/httpful",

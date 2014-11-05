@@ -213,6 +213,8 @@ switch ($_GET["action"]) {
 					$cfgs = array();
 					$i = 0;
 					
+					echo var_dump($_POST['configs_order']);
+					
 					foreach($raw_order as $item) {
 						$item = explode('=', $item);
 						
@@ -225,7 +227,35 @@ switch ($_GET["action"]) {
 							$cfgs[] = $order[1];
 						}
 					}
-					$vps->update_configs($_POST["configs"] ? $_POST["configs"] : array(), $cfgs, $_POST['add_config']);
+					
+					$params = array();
+					
+					if ($cfgs) {
+						// configs were changed with javascript dnd
+						foreach ($cfgs as $cfg) {
+							if (!$cfg)
+								continue;
+							
+							$params[] = array('vps_config' => $cfg);
+						}
+						
+					} else {
+						foreach ($_POST['configs'] as $cfg) {
+							if (!$cfg)
+								continue;
+							
+							$params[] = array('vps_config' => $cfg);
+						}
+						
+						foreach ($_POST['add_config'] as $cfg) {
+							if (!$cfg)
+								continue;
+							
+							$params[] = array('vps_config' => $cfg);
+						}
+					}
+					
+					$api->vps($_GET['veid'])->config->replace($params);
 					
 					if($_POST["reason"])
 						$vps->configs_change_notify($_POST["reason"]);
@@ -891,27 +921,36 @@ if (isset($show_info) && $show_info) {
 			});
 		</script>');
 		
-		$vps_configs = $vps->get_configs();
-		$configs = list_configs();
+		$vps_configs = $api->vps($vps->veid)->config->list();
+		$all_configs = $api->vps_config->list();
+		$config_choices = array();
+		
+		foreach ($all_configs as $cfg) {
+			$config_choices[$cfg->id] = $cfg->label;
+		}
+		
+		$config_choices_empty = array(0 => '---') + $config_choices;
 		
 		if ($_SESSION["is_admin"])
 			$xtpl->form_create('?page=adminvps&action=configs&veid='.$vps->veid, 'post');
+		
 		$xtpl->table_add_category(_('Configs'));
 		
 		if ($_SESSION["is_admin"])
 			$xtpl->table_add_category('');
 		
-		foreach($vps_configs as $id => $label) {
+		foreach($vps_configs as $cfg) {
 			if ($_SESSION["is_admin"]) {
-				$xtpl->form_add_select_pure('configs[]', $configs, $id);
+				$xtpl->form_add_select_pure('configs[]', $config_choices, $cfg->vps_config->id);
 				$xtpl->table_td('<a href="javascript:" class="delete-config">'._('delete').'</a>');
-			} else $xtpl->table_td($label);
-			$xtpl->table_tr(false, false, false, "order_$id");
+			} else $xtpl->table_td($cfg->vps_config->label);
+			
+			$xtpl->table_tr(false, false, false, "order_".$cfg->vps_config->id);
 		}
 		
 		if ($_SESSION["is_admin"]) {
 			$xtpl->table_td('<input type="hidden" name="configs_order" id="configs_order" value="">' .  _('Add').':');
-			$xtpl->form_add_select_pure('add_config[]', $configs_select);
+			$xtpl->form_add_select_pure('add_config[]', $config_choices_empty);
 			$xtpl->table_tr(false, false, false, 'add_config');
 // 			$xtpl->form_add_checkbox(_("Notify owner").':', 'notify_owner', '1', true);
 			$xtpl->table_td(_("Reason").':');
