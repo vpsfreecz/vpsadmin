@@ -8,17 +8,27 @@ module TransactionChains
 
       append(Transactions::Vps::ApplyConfig, args: vps) do
         # First remove old configs
-        vps.vps_configs.all.each do |cfg|
-          destroy cfg
+        VpsHasConfig.where(
+            vps_id: vps.veid,
+            confirmed: VpsHasConfig.confirmed(:confirmed)).each do |cfg|
+          destroy(cfg)
         end
 
-        VpsHasConfig.where(vps_id: vps.veid).update_all(confirmed: VpsHasConfig.confirmed(:confirm_create))
+        VpsHasConfig
+          .where(vps_id: vps.veid,
+                 confirmed: VpsHasConfig.confirmed(:confirmed))
+          .update_all(confirmed: VpsHasConfig.confirmed(:confirm_destroy))
 
         # Create new configs
         i = 0
 
         new_configs.each do |c|
-          create VpsHasConfig.create(vps_id: vps.veid, config_id: c, order: i, confirmed: VpsHasConfig.confirmed(:confirm_create))
+          create(VpsHasConfig.create(
+              vps_id: vps.veid,
+              config_id: c,
+              order: i,
+              confirmed: VpsHasConfig.confirmed(:confirm_create)
+          ))
           i += 1
         end
       end

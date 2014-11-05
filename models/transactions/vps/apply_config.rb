@@ -9,8 +9,12 @@ module Transactions::Vps
 
       ret = {configs: []}
 
-      vps.vps_configs.all.each do |c|
-        ret[:configs] << c.name
+      VpsHasConfig
+        .includes(:vps_config)
+        .where(vps_id: vps.veid,
+               confirmed: [VpsHasConfig.confirmed(:confirm_create), VpsHasConfig.confirmed(:confirmed)])
+        .order('`order` ASC').each do |c|
+        ret[:configs] << c.vps_config.name
       end
 
       ret[:configs] << "vps-#{vps.veid}" unless vps.vps_config.empty?

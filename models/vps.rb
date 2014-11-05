@@ -107,8 +107,8 @@ class Vps < ActiveRecord::Base
     TransactionChains::Vps::Stop.fire(self)
   end
 
-  def applyconfig
-    # Transactions::Vps::ApplyConfig.fire(self)
+  def applyconfig(configs)
+    TransactionChains::Vps::ApplyConfig.fire(self, configs)
   end
 
   def revive

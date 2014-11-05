@@ -78,7 +78,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
             onboot: true,
             onstartall: true,
             backup_enabled: true,
-            config: '',
+            vps_config: '',
         }
       ]})
     end
@@ -125,7 +125,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
           onboot: true,
           onstartall: true,
           backup_enabled: true,
-          config: ''
+          vps_config: ''
         }
       })
       response({
@@ -361,14 +361,17 @@ END
     version 1
     route ':vps_id/configs'
     desc 'Manage VPS configs'
+    model ::VpsHasConfig
+
+    params(:all) do
+      resource VpsAdmin::API::Resources::VpsConfig, label: 'VPS config'
+    end
 
     class Index < HaveAPI::Actions::Default::Index
       desc 'List VPS configs'
 
       output(:object_list) do
-        integer :config_id, label: 'Config ID'
-        string :name, label: 'Config name', desc: 'Used internally'
-        string :label, label: 'Config label', desc: 'Nice name for user'
+        use :all
       end
 
       authorize do |u|
@@ -377,16 +380,28 @@ END
         allow
       end
 
+      def query
+        @vps ||= ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+
+        ::VpsHasConfig.where(vps: @vps)
+      end
+
+      def count
+        query.count
+      end
+
       def exec
-        ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).vps_configs.all.limit(params[:config][:limit]).offset(params[:config][:offset])
+        query.limit(input[:limit]).offset(input[:offset])
       end
     end
 
-    class Update < HaveAPI::Actions::Default::Update
-      desc 'Update VPS configs'
+    class Replace < HaveAPI::Actions::Default::Update
+      desc 'Replace VPS configs'
+      route 'replace'
+      http_method :post
 
-      input do
-        integer :config_id, label: 'Config ID', db_name: :id
+      input(:object_list) do
+        use :all
       end
 
       authorize do |u|
@@ -394,7 +409,7 @@ END
       end
 
       def exec
-        configs = ::VpsConfig.find(to_db_names(params[:configs]))
+        ::Vps.find(params[:vps_id]).applyconfig(input.map { |cfg| cfg[:vps_config].id })
       end
     end
   end
