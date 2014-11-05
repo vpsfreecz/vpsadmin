@@ -22,4 +22,20 @@ class VpsConfig < ActiveRecord::Base
       v.to_i
     end
   end
+
+  def create!
+    TransactionChains::VpsConfig::Create.fire(self)
+  end
+
+  def update!(attrs)
+    assign_attributes(attrs)
+    fail ActiveRecord::RecordInvalid unless valid?
+    TransactionChains::VpsConfig::Create.fire(self)
+    save!
+  end
+
+  def destroy
+    TransactionChains::VpsConfig::Delete.fire(self)
+    super
+  end
 end
