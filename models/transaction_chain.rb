@@ -16,6 +16,8 @@ class TransactionChain < ActiveRecord::Base
   # create instances of TransactionChain yourself.
   # All arguments are passed to TransactionChain#link_chain.
   def self.fire(*args)
+    ret = nil
+
     TransactionChain.transaction do
       chain = new
       chain.name = chain_name
@@ -27,13 +29,15 @@ class TransactionChain < ActiveRecord::Base
       # link_chain will raise ResourceLocked if it is unable to acquire
       # a lock. It will cause the transaction to be roll backed
       # and the exception will be propagated.
-      chain.link_chain(*args)
+      ret = chain.link_chain(*args)
 
       raise ActiveRecord::Rollback if chain.empty?
 
       chain.state = :queued
       chain.save
     end
+
+    ret
   end
 
   # The chain name is a class name in lowercase with added
@@ -54,8 +58,8 @@ class TransactionChain < ActiveRecord::Base
     c.dst_chain = chain.dst_chain
     c.named = chain.named
     c.locks = chain.locks
-    c.link_chain(*args)
-    c
+    ret = c.link_chain(*args)
+    [c, ret]
   end
 
   # Set a human-friendly label for the chain.
@@ -112,8 +116,9 @@ class TransactionChain < ActiveRecord::Base
   # Call this method from TransactionChain#link_chain to include
   # +chain+. +args+ are passed to the chain as in ::fire.
   def use_chain(chain, *args)
-    c = chain.use_in(self, *args)
+    c, ret = chain.use_in(self, *args)
     @last_id = c.last_id
+    ret
   end
 
   def empty?
