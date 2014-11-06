@@ -398,11 +398,18 @@ switch($_REQUEST["action"]) {
 		$xtpl->perex(_("Regeneration scheduled"), _("Regeneration of all configs on all nodes scheduled."));
 		break;
 	case "node_toggle_maintenance":
-		$node = new cluster_node($_GET["node_id"]);
-		$node->toggle_maintenance();
+		try {
+			$node = $api->node->find($_GET["node_id"]);
+			$node->set_maintenance(array('lock' => $_GET['lock']));
+			
+			notify_user($node->name.': '._('maintenance').' '.($_GET['lock'] ? _('ON') : _('OFF')));
+			redirect('?page=cluster');
+			
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors($node->name.': '._('maintenance').' FAILED to set', $e->getResponse());
+			
+		}
 		
-		notify_user($node->s["server_name"].': '._('maintenance').' '.($node->is_under_maintenance() ? _('ON') : _('OFF')));
-		redirect('?page=cluster');
 		break;
 	case "newnode":
 		$xtpl->title2(_("Register new server into cluster"));
@@ -1023,6 +1030,7 @@ if ($list_nodes) {
 	
 	$xtpl->table_out();
 	
+	
 	$xtpl->table_title(_("Node list"));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('#');
@@ -1040,96 +1048,60 @@ if ($list_nodes) {
 	$xtpl->table_add_category('<img title="'._("Toggle maintenance on node.").'" alt="'._("Toggle maintenance on node.").'" src="template/icons/maintenance_mode.png">');
 	$xtpl->table_add_category(' ');
 	
-	$rs = $db->query("SELECT server_id FROM locations l INNER JOIN servers s ON l.location_id = s.server_location ORDER BY l.location_id, s.server_id");
-	
-	while($row = $db->fetch_array($rs)) {
-		$node = new cluster_node($row["server_id"]);
-		
-		// Availability
-		$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$node->s["server_id"].'"';
-			
-		if ($result = $db->query($sql))
-			$status = $db->fetch_array($result);
-		
+	foreach ($api->node->overview_list() as $node) {
+		// Availability icon
 		$icons = "";
+		$maintenance_toggle = $node->maintenance_lock == 'lock' ? 0 : 1;
 		
-		if ($cluster_cfg->get("lock_cron_".$node->s["server_id"]))	{
-			$icons .= '<img title="'._("The server is currently processing").'" src="template/icons/warning.png"/>';
-		} elseif ((time()-$status["timestamp"]) > 150) {
+		if ((time() - strtotime($node->last_report)) > 150) {
 			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
+		
 		} else {
 			$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
 		}
 		
-		$icons = '<a href="?page=cluster&action=node_toggle_maintenance&node_id='.$node->s["server_id"].'">'.$icons.'</a>';
+		$icons = '<a href="?page=cluster&action=node_toggle_maintenance&node_id='.$node->id.'&lock='.$maintenance_toggle.'">'.$icons.'</a>';
 		
 		$xtpl->table_td($icons, false, true);
-		$xtpl->table_td($node->s["server_id"]);
 		
-		// Name, IP, load
-		$xtpl->table_td($node->s["server_name"]);
-		$xtpl->table_td($node->s["server_ip4"]);
-		$xtpl->table_td($status["cpu_load"], false, true);
+		// Node ID, Name, IP, load
+		$xtpl->table_td($node->id);
+		$xtpl->table_td($node->name);
+		$xtpl->table_td($node->ip_addr);
+		$xtpl->table_td($node->loadavg, false, true);
 		
-		// Running
-		$sql = 'SELECT COUNT(*) AS count FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1 AND vps_server = '.$db->check($node->s["server_id"]);
-			
-		if ($result = $db->query($sql))
-			$running_count = $db->fetch_array($result);
+		// Up, down, del, sum
+		$xtpl->table_td($node->vps_running, false, true);
+		$xtpl->table_td($node->vps_stopped, false, true);
+		$xtpl->table_td($node->vps_deleted, false, true);
+		$xtpl->table_td($node->vps_total, false, true);
 		
-		$xtpl->table_td($running_count["count"], false, true);
+		// Free, max
+		$xtpl->table_td($node->vps_free, false, true);
+		$xtpl->table_td($node->vps_max, false, true);
 		
-		// Stopped
-		$sql = "SELECT COUNT(*) AS count FROM vps v
-				LEFT JOIN vps_status s ON v.vps_id = s.vps_id
-				INNER JOIN members m ON m.m_id = v.m_id
-				WHERE m_state = 'active' AND vps_up = 0 AND vps_deleted IS NULL AND vps_server = ".$db->check($node->s["server_id"]);
+		// Daemon version
+		$xtpl->table_td($node->version);
 		
-		if ($result = $db->query($sql))
-			$stopped_count = $db->fetch_array($result);
-			
-		$xtpl->table_td($stopped_count["count"], false, true);
-		
-		// Deleted
-		$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_deleted IS NOT NULL AND vps_deleted > 0 AND vps_server = '.$db->check($node->s["server_id"]);
-		
-		if ($result = $db->query($sql))
-			$deleted_count = $db->fetch_array($result);
-			
-		$xtpl->table_td($deleted_count["count"], false, true);
-		
-		// Total
-		$sql = 'SELECT COUNT(*) AS count FROM vps WHERE vps_server='.$db->check($node->s["server_id"]);
-		
-		if ($result = $db->query($sql))
-			$vps_count = $db->fetch_array($result);
-		
-		$xtpl->table_td($vps_count["count"], false, true);
-		
-		// Free
-		$xtpl->table_td($node->role["max_vps"] - $running_count["count"], false, true);
-		
-		// Max
-		$xtpl->table_td($node->role["max_vps"], false, true);
-		
-		// vpsAdmind
-		$xtpl->table_td($status["vpsadmin_version"]);
-		
-		if(preg_match("/\d+stab.+/", $status['kernel'], $matches))
+		// Kernel
+		if(preg_match("/\d+stab.+/",$node->kernel, $matches))
 			$xtpl->table_td($matches[0]);
 		else
-			$xtpl->table_td($status["kernel"]);
+			$xtpl->table_td($node->kernel);
 		
 		$m_icon_on = '<img alt="'._('Turn maintenance OFF.').'" src="template/icons/maintenance_mode.png">';
 		$m_icon_off = '<img alt="'._('Turn maintenance ON.').'" src="template/icons/transact_ok.png">';
-		$xtpl->table_td('<a href="?page=cluster&action=node_toggle_maintenance&node_id='.$node->s["server_id"].'">'.($node->s["server_maintenance"] ? $m_icon_on : $m_icon_off).'</a>');
-		$xtpl->table_td('<a href="?page=cluster&action=node_edit&node_id='.$node->s["server_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		$xtpl->table_td('<a href="?page=cluster&action=node_toggle_maintenance&node_id='.$node->id.'&lock='.$maintenance_toggle.'">'.(!$maintenance_toggle ? $m_icon_on : $m_icon_off).'</a>');
+		$xtpl->table_td('<a href="?page=cluster&action=node_edit&node_id='.$node->id.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		
 		
 		$xtpl->table_tr();
 	}
 	
 	$xtpl->table_out('cluster_node_list');
+	
 }
+
 if ($list_templates) {
 	$xtpl->title2(_("Templates list"));
 	$xtpl->table_add_category(_("ID"));
