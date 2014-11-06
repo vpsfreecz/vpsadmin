@@ -15,8 +15,6 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     string :availstat, label: 'Availability stats', desc: 'HTML code with availability graphs',
            db_name: :server_availstat
     string :ip_addr, label: 'IPv4 address', desc: 'Node\'s IP address', db_name: :server_ip4
-    bool :maintenance, label: 'Maintenance mode', desc: 'Toggle maintenance mode for this node',
-         db_name: :server_maintenance
     string :net_interface, label: 'Network interface', desc: 'Outgoing network interface'
     integer :max_tx, label: 'Max tx', desc: 'Maximum output throughput'
     integer :max_rx, label: 'Max tx', desc: 'Maximum input throughput'
@@ -102,6 +100,37 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       else
         error('save failed', to_param_names(node.errors.to_hash, :input))
       end
+    end
+  end
+
+  class OverviewList < HaveAPI::Action
+    desc 'List all nodes with some additional information'
+    route 'overview_list'
+    http_method :get
+
+    output(:object_list) do
+      use :all
+      datetime :last_report, label: 'Last report'
+      float :loadavg, label: 'Load'
+      integer :vps_running, label: 'Running VPS', desc: 'Number of running VPSes'
+      integer :vps_stopped, label: 'Stopped VPS', desc: 'Number of stopped VPSes'
+      integer :vps_deleted, label: 'Deleted VPS', desc: 'Number of lazily deleted VPSes'
+      integer :vps_total, label: 'Total VPS', desc: 'Total number of VPSes'
+      integer :vps_free, label: 'Free VPS slots', desc: 'Number of free VPS slots'
+      integer :vps_max, label: 'Max VPS slots', desc: 'Number of running VPSes'
+      string :version, label: 'Version', desc: 'vpsAdmind version', db_name: :daemon_version
+      string :kernel, label: 'Kernel', desc: 'Kernel version', db_name: :kernel_version
+    end
+
+    output(&VpsAdmin::API::Maintainable::Action.output_params)
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def exec
+      ::Node.includes(:node_status).joins(:location).all
+        .order('environment_id, locations.location_id, server_id')
     end
   end
 

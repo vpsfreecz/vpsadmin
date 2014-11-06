@@ -59,6 +59,43 @@ class Node < ActiveRecord::Base
     .take
   end
 
+  def last_report
+    node_status && Time.at(node_status.timestamp)
+  end
+
+  def loadavg
+    node_status && node_status.cpu_load
+  end
+
+  def vps_running
+    vpses.joins(:vps_status).where(vps_status: {vps_up: true}).count
+  end
+
+  def vps_stopped
+    vpses.joins(:vps_status).where(vps_status: {vps_up: false}).count
+  end
+
+  def vps_deleted
+    vpses.unscoped.where.not(vps_deleted: nil).count
+  end
+
+  def vps_total
+    return @vps_total if @vps_total
+    @vps_total = vpses.count
+  end
+
+  def vps_free
+    max_vps - vps_total
+  end
+
+  def daemon_version
+    node_status && node_status.vpsadmin_version
+  end
+
+  def kernel_version
+    node_status && node_status.kernel
+  end
+
   protected
   def shaper_changed?
     max_tx_changed? || max_rx_changed?
