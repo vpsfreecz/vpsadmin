@@ -18,11 +18,7 @@ module VpsAdmin::API
       end
 
       def self.included(resource)
-        params = Proc.new do
-          string :maintenance_lock, label: 'Maintenance lock',
-                 choices: %i(no lock master_lock),
-                 db_name: :maintenance_lock?
-        end
+        params = output_params
 
         resource::Index.output(&params)
         resource::Show.output(&params)
@@ -74,6 +70,14 @@ module VpsAdmin::API
         end
 
         HaveAPI::Action.send(:include, InstanceMethods)
+      end
+
+      def self.output_params
+        Proc.new do
+          string :maintenance_lock, label: 'Maintenance lock',
+                 choices: %i(no lock master_lock),
+                 db_name: :maintenance_lock?
+        end
       end
     end
 
