@@ -7,7 +7,7 @@ class DatasetInPool < ActiveRecord::Base
 
   include Lockable
   include Confirmable
-  include VpsAdmin::API::Hookable
+  include HaveAPI::Hookable
 
   has_hook :create
 
