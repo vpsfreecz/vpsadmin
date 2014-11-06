@@ -198,4 +198,6 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       ::Node.find(params[:node_id]).destroy
     end
   end
+
+  include VpsAdmin::API::Maintainable::Action
 end

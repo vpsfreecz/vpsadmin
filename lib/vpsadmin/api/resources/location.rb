@@ -188,4 +188,6 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       ::Location.find(params[:location_id]).destroy
     end
   end
+
+  include VpsAdmin::API::Maintainable::Action
 end

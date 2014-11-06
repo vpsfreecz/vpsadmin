@@ -8,6 +8,15 @@ class Environment < ActiveRecord::Base
     message: 'invalid format'
   }
 
+  include HaveAPI::Hookable
+
+  has_hook :create
+
+  include VpsAdmin::API::Maintainable::Model
+  maintenance_parent do
+    SysConfig.get('maintenance_mode')
+  end
+
   def fqdn
     domain
   end

@@ -164,4 +164,5 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     end
   end
 
+  include VpsAdmin::API::Maintainable::Action
 end
