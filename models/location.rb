@@ -26,6 +26,9 @@ class Location < ActiveRecord::Base
       message: 'invalid format'
   }
 
+  include VpsAdmin::API::Maintainable::Model
+  maintenance_parent :environment
+
   def fqdn
     "#{domain}.#{environment.fqdn}"
   end

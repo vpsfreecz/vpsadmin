@@ -30,6 +30,9 @@ class Node < ActiveRecord::Base
 
   after_update :shaper_changed, if: :shaper_changed?
 
+  include VpsAdmin::API::Maintainable::Model
+  maintenance_parent :location
+
   def location_domain
     "#{name}.#{location.domain}"
   end

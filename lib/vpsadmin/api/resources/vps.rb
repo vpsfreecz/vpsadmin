@@ -140,6 +140,7 @@ END
     end
 
     def exec
+      # FIXME: maintenance check
       vps_params = params[:vps]
 
       unless current_user.role == :admin
@@ -192,6 +193,7 @@ END
     end
 
     def exec
+      maintenance_check!(@vps)
       @vps
     end
   end
@@ -213,6 +215,7 @@ END
 
     def exec
       vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      maintenance_check!(vps)
 
       if vps.update(to_db_names(input))
         ok
@@ -238,7 +241,10 @@ END
     end
 
     def exec
-      ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).lazy_delete(
+      vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      maintenance_check!(vps)
+
+      vps.lazy_delete(
           current_user.role == :admin ? params[:vps][:lazy] : true
       )
       ok
@@ -257,7 +263,9 @@ END
     end
 
     def exec
-      ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).start
+      vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      maintenance_check!(vps)
+      vps.start
       ok
     end
   end
@@ -274,7 +282,10 @@ END
     end
 
     def exec
-      ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).restart
+      vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      maintenance_check!(vps)
+
+      vps.restart
       ok
     end
   end
@@ -291,7 +302,10 @@ END
     end
 
     def exec
-      ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).stop
+      vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      maintenance_check!(vps)
+
+      vps.stop
       ok
     end
   end
@@ -312,7 +326,10 @@ END
     end
 
     def exec
-      {password: ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).passwd}
+      vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      maintenance_check!(vps)
+
+      {password: vps.passwd}
     end
   end
 
@@ -333,6 +350,8 @@ END
 
     def exec
       vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      maintenance_check!(vps)
+
       tpl = input[:os_template] || vps.os_template
 
       error('selected os template is disabled') unless tpl.enabled?
@@ -352,10 +371,14 @@ END
 
     def exec
       vps = ::Vps.unscoped.where(vps_id: params[:vps_id]).where.not(vps_deleted: nil).take!
+      maintenance_check!(vps)
+
       vps.revive
       vps.save!
     end
   end
+
+  include VpsAdmin::API::Maintainable::Action
 
   class Config < HaveAPI::Resource
     version 1
@@ -409,7 +432,10 @@ END
       end
 
       def exec
-        ::Vps.find(params[:vps_id]).applyconfig(input.map { |cfg| cfg[:vps_config].id })
+        vps = ::Vps.find(params[:vps_id])
+        maintenance_check!(vps)
+
+        vps.applyconfig(input.map { |cfg| cfg[:vps_config].id })
       end
     end
   end
@@ -479,6 +505,7 @@ END
 
       def exec
         vps = ::Vps.find(params[:vps_id])
+        maintenance_check!(vps)
 
         if input[:ip_address]
           begin
@@ -516,6 +543,8 @@ END
 
       def exec
         vps = ::Vps.find(params[:vps_id])
+        maintenance_check!(vps)
+
         vps.delete_ip(vps.ip_addresses.find_by!(
             ip_id: params[:ip_address_id],
             vps_id: vps.id)
@@ -538,7 +567,10 @@ END
       end
 
       def exec
-        ::Vps.find(params[:vps_id]).delete_ips((params[:ip_addresses] || {})[:version])
+        vps = ::Vps.find(params[:vps_id])
+        maintenance_check!(vps)
+
+        vps.delete_ips((params[:ip_addresses] || {})[:version])
       end
     end
   end
@@ -607,9 +639,12 @@ END
       end
 
       def exec
-        Vps.includes(:dataset_in_pool)
+        vps = Vps.includes(:dataset_in_pool)
           .find_by!(with_restricted(vps_id: params[:vps_id]))
-          .dataset_in_pool.snapshot
+        maintenance_check!(vps)
+
+
+        vps.dataset_in_pool.snapshot
       end
     end
 
@@ -627,6 +662,7 @@ END
       def exec
         vps = Vps.includes(dataset_in_pool: [:dataset])
           .find_by!(with_restricted(vps_id: params[:vps_id]))
+        maintenance_check!(vps)
 
         snap = vps.dataset_in_pool.dataset.snapshots.find(params[:snapshot_id])
 
