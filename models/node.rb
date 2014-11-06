@@ -8,10 +8,13 @@ class Node < ActiveRecord::Base
   has_many :storage_roots
   has_many :pools
   has_many :vps_mounts, foreign_key: :server_id
+  has_one :node_status, foreign_key: :server_id
+
   has_paper_trail
 
   alias_attribute :name, :server_name
   alias_attribute :addr, :server_ip4
+  alias_attribute :vps_max, :max_vps
 
   validates :server_name, :server_type, :server_location, :server_ip4, presence: true
   validates :server_location, numericality: {only_integer: true}
