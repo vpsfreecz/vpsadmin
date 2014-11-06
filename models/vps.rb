@@ -16,6 +16,8 @@ class Vps < ActiveRecord::Base
   belongs_to :dataset_in_pool
   has_many :mounts
 
+  has_one :vps_status
+
   has_paper_trail
 
   alias_attribute :veid, :vps_id
