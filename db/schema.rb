@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20141105130158) do
+ActiveRecord::Schema.define(version: 20141105175157) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -147,6 +147,18 @@ ActiveRecord::Schema.define(version: 20141105130158) do
 
   add_index "mailer", ["member_id"], name: "member_id", using: :btree
 
+  create_table "maintenance_locks", force: true do |t|
+    t.string   "class_name", limit: 100,                null: false
+    t.integer  "row_id",                                null: false
+    t.integer  "user_id"
+    t.string   "reason",                                null: false
+    t.boolean  "active",                 default: true, null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "maintenance_locks", ["class_name", "row_id"], name: "index_maintenance_locks_on_class_name_and_row_id", using: :btree
+
   create_table "members", primary_key: "m_id", force: true do |t|
     t.text     "m_info"
     t.integer  "m_created"
@@ -274,18 +286,17 @@ ActiveRecord::Schema.define(version: 20141105130158) do
   add_index "resource_locks", ["resource", "row_id"], name: "index_resource_locks_on_resource_and_row_id", unique: true, using: :btree
 
   create_table "servers", primary_key: "server_id", force: true do |t|
-    t.string  "server_name",        limit: 64,                                 null: false
-    t.string  "server_type",        limit: 7,                                  null: false
-    t.integer "server_location",                                               null: false
+    t.string  "server_name",      limit: 64,                                 null: false
+    t.string  "server_type",      limit: 7,                                  null: false
+    t.integer "server_location",                                             null: false
     t.text    "server_availstat"
-    t.string  "server_ip4",         limit: 127,                                null: false
-    t.boolean "server_maintenance",             default: false,                null: false
-    t.integer "max_vps",                                                       null: false
-    t.string  "ve_private",                     default: "/vz/private/%veid%", null: false
-    t.string  "fstype",             limit: 10,  default: "zfs",                null: false
-    t.string  "net_interface",      limit: 50
-    t.integer "max_tx",             limit: 8,   default: 235929600,            null: false
-    t.integer "max_rx",             limit: 8,   default: 235929600,            null: false
+    t.string  "server_ip4",       limit: 127,                                null: false
+    t.integer "max_vps",                                                     null: false
+    t.string  "ve_private",                   default: "/vz/private/%veid%", null: false
+    t.string  "fstype",           limit: 10,  default: "zfs",                null: false
+    t.string  "net_interface",    limit: 50
+    t.integer "max_tx",           limit: 8,   default: 235929600,            null: false
+    t.integer "max_rx",           limit: 8,   default: 235929600,            null: false
   end
 
   add_index "servers", ["server_location"], name: "server_location", using: :btree

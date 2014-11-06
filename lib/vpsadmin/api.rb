@@ -41,6 +41,12 @@ module VpsAdmin
         ret
       end
 
+      e.rescue(VpsAdmin::API::Maintainable::ResourceUnderMaintenance) do |ret, exception|
+        ret[:status] = false
+        ret[:message] = "Resource is under maintenance: #{exception.message}"
+        ret
+      end
+
       api.extensions << e
 
       api.mount('/')
