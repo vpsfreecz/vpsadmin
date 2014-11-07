@@ -98,7 +98,7 @@ ul.ul-style01 ul li {padding-left:12px; background:url("../design/ul-style01.gif
         #slogan {margin:0;float:left;}
     	
         #search {position:absolute; top:30px; right:0;width:600px;}
-        #search #search-input {width:170px; padding:4px; font:normal 100%/1.2 "arial",sans-serif;}
+        #search #search-input, #search .search-input {width:170px; padding:4px; font:normal 100%/1.2 "arial",sans-serif;}
         #search #search-submit {padding:3px 5px; font:bold 100%/1.2 "arial",sans-serif;}
         
         #jumpto {float:left;width:200px;position:relative;top:-15px;left:100px;}
