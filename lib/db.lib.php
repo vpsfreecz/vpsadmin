@@ -278,6 +278,11 @@ class sql_db {
 			$out = false;
 	} else {
 	    $out = $this->db->query($sql);
+	    if($this->db->errno) {
+			echo $sql."\n:<br>\n";
+			echo $this->db->error."\n<br><br>\n";
+			$out = false;
+		}
 	}
 
 	return $out;
