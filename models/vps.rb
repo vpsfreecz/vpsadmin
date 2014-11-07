@@ -187,6 +187,22 @@ class Vps < ActiveRecord::Base
     TransactionChains::Vps::Restore.fire(self, snapshot)
   end
 
+  def running
+    vps_status && vps_status.vps_up
+  end
+
+  def process_count
+    vps_status && vps_status.vps_nproc
+  end
+
+  def used_memory
+    vps_status && vps_status.vps_vm_used_mb
+  end
+
+  def used_disk
+    vps_status && vps_status.vps_disk_used_mb
+  end
+
   private
   def generate_password
     chars = ('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a

@@ -33,6 +33,13 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
            db_name: :vps_config, default: ''
   end
 
+  params(:status) do
+    bool :running, label: 'Running'
+    integer :process_count, label: 'Process count'
+    integer :used_memory, label: 'Used memory', desc: 'in MB'
+    integer :used_disk, label: 'Used disk', desc: 'in MB'
+  end
+
   params(:all) do
     use :id
     use :common
@@ -44,6 +51,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     output(:object_list) do
       use :id
       use :common
+      use :status
     end
 
     authorize do |u|
@@ -92,7 +100,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      query.limit(params[:vps][:limit]).offset(params[:vps][:offset])
+      query.includes(:vps_status).limit(params[:vps][:limit]).offset(params[:vps][:offset])
     end
   end
 
