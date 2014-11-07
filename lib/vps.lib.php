@@ -65,7 +65,7 @@ function get_user_vps_list($exclude = array()) {
 	return $ret;
 }
 
-function get_vps_swap_list($vps) {
+function get_vps_swap_list($vps) { // DEPRECATED
 	global $db;
 	
 	$m_id = $_SESSION["is_admin"] ? $vps->ve["m_id"] : $_SESSION["member"]["m_id"];
@@ -77,8 +77,6 @@ function get_vps_swap_list($vps) {
 		      m_id = ".$db->check($m_id)."
 		      AND
 		      v.vps_deleted IS NULL
-		      AND
-		      s.server_maintenance = 0
 		      AND
 		      l.location_type = '".( $vps->is_playground() ? 'production' : 'playground' )."'";
 	
