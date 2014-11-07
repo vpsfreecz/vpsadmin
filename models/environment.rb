@@ -14,7 +14,11 @@ class Environment < ActiveRecord::Base
 
   include VpsAdmin::API::Maintainable::Model
   maintenance_parent do
-    SysConfig.get('maintenance_mode')
+    MaintenanceLock.find_by(
+        class_name: 'Cluster',
+        row_id: nil,
+        active: true
+    )
   end
 
   def fqdn
