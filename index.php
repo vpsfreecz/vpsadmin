@@ -70,6 +70,8 @@ $xtpl->assign("L_PASSWORD", _("Password"));
 $xtpl->assign("L_LOGIN", _("Login"));
 $xtpl->assign("L_LOGOUT", _("Logout"));
 
+$api_cluster = null;
+
 try {
 	if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
 		$api->authenticate('token', array('token' => $_SESSION['auth_token']), false);
@@ -77,6 +79,8 @@ try {
 		$_member = member_load($_SESSION["member"]["m_id"]);
 		
 		try {
+			$api_cluster = $api->cluster->show();
+			
 			if(!$_SESSION["context_switch"])
 				$api->user->touch($_SESSION["member"]["m_id"]);
 			
@@ -99,7 +103,7 @@ try {
 					($_GET["page"] != "lang") &&
 					($_GET["page"] != "about") &&
 					(!$_SESSION["is_admin"]) &&
-					$cluster_cfg->get("maintenance_mode"))
+					$api_cluster->maintenance_lock)
 		{
 			$request_page = "";
 			include WWW_ROOT.'pages/page_index.php';
@@ -210,7 +214,7 @@ $xtpl->logbox(
 	isset($_SESSION["logged_in"]) ? $_SESSION["logged_in"] : false,
 	isset($_SESSION["member"]) ? $_SESSION["member"]["m_nick"] : false,
 	isset($_SESSION["is_admin"]) ? $_SESSION["is_admin"] : false,
-	$cluster_cfg->get("maintenance_mode")
+	$api_cluster ? $api_cluster->maintenance_lock : false
 );
 
 $xtpl->adminbox($cluster_cfg->get("adminbox_content"));

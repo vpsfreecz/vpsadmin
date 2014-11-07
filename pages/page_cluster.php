@@ -8,6 +8,41 @@
 */
 if ($_SESSION["is_admin"]) {
 
+function maintenance_lock_by_type() {
+	global $api;
+	
+	$r = null;
+	$label = '';
+	
+	switch ($_GET['type']) {
+		case 'cluster':
+			$r = $api->cluster;
+			$label = _('Cluster');
+			break;
+			
+		case 'environment':
+			$label = _('Environment').' '.$api->environment->find($_GET['obj_id'])->label;
+			break;
+		
+		case 'location':
+			$label = _('Location').' '.$api->location->find($_GET['obj_id'])->label;
+			break;
+			
+		case 'node':
+			$label = _('Node').' '.$api->node->find($_GET['obj_id'])->name;
+			break;
+		
+		case 'vps':
+			$label = 'VPS #'.$_GET['obj_id'];
+			break;
+		
+		default:
+			break;
+	}
+	
+	return array('resource' => $r, 'label' => $label);
+}
+
 $xtpl->title(_("Manage Cluster"));
 $list_nodes = false;
 $list_templates = false;
@@ -397,20 +432,7 @@ switch($_REQUEST["action"]) {
 		
 		$xtpl->perex(_("Regeneration scheduled"), _("Regeneration of all configs on all nodes scheduled."));
 		break;
-	case "node_toggle_maintenance":
-		try {
-			$node = $api->node->find($_GET["node_id"]);
-			$node->set_maintenance(array('lock' => $_GET['lock']));
-			
-			notify_user($node->name.': '._('maintenance').' '.($_GET['lock'] ? _('ON') : _('OFF')));
-			redirect('?page=cluster');
-			
-		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-			$xtpl->perex_format_errors($node->name.': '._('maintenance').' FAILED to set', $e->getResponse());
-			
-		}
-		
-		break;
+	
 	case "newnode":
 		$xtpl->title2(_("Register new server into cluster"));
 		$xtpl->table_add_category('');
@@ -803,16 +825,53 @@ switch($_REQUEST["action"]) {
 			}
 		}
 		break;
-	case "maintenance_toggle":
-		if ($cluster_cfg->get("maintenance_mode")) {
-			$cluster_cfg->set("maintenance_mode", false);
-			$xtpl->perex(_("Maintenance mode status: OFF"), '');
-		} else {
-			$cluster_cfg->set("maintenance_mode", true);
-			$xtpl->perex(_("Maintenance mode status: ON"), '');
-		}
-		$list_nodes = true;
+	case "maintenance_lock":
+		$xtpl->title("Maintenance lock");
+		
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		
+		$xtpl->form_create('?page=cluster&action=set_maintenance_lock&lock=1&type='.$_GET['type'].'&obj_id='.$_GET['obj_id'], 'post');
+		
+		$ret = maintenance_lock_by_type();
+		
+		$xtpl->table_td(_('Set on').':');
+		$xtpl->table_td($ret['label']);
+		$xtpl->table_tr();
+		
+		$xtpl->form_add_input(_("Reason").':', 'text', '30', 'reason', '', _('optional'));
+		
+		$xtpl->form_out(_("Lock"));
 		break;
+		
+	case "set_maintenance_lock":
+		if (isset($_GET['type'])) {
+			$ret = maintenance_lock_by_type();
+			
+			$r = $ret['resource'];
+			$label = $ret['label'];
+			
+			if (!$r)
+				$r = $api->{$_GET['type']}($_GET['obj_id']);
+			
+			try {
+				$params = array('lock' => $_GET['lock'] ? true : false);
+				
+				if ($_GET['lock'])
+					$params['reason'] = $_POST['reason'];
+				
+				$r->set_maintenance($params);
+				
+				notify_user($label.': '._('maintenance').' '.($_GET['lock'] ? _('ON') : _('OFF')));
+				redirect('?page=cluster');
+			
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors($label.': '._('maintenance').' FAILED to set', $e->getResponse());
+			}
+			
+		}
+		break;
+		
 	case "payments_settings":
 		$xtpl->title2("Manage Payment Settings");
 		$xtpl->table_add_category('');
@@ -1060,7 +1119,7 @@ if ($list_nodes) {
 			$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
 		}
 		
-		$icons = '<a href="?page=cluster&action=node_toggle_maintenance&node_id='.$node->id.'&lock='.$maintenance_toggle.'">'.$icons.'</a>';
+		$icons = '<a href="?page=cluster&action='.($maintenance_toggle ? 'maintenance_lock' : 'set_maintenance_lock').'&type=node&obj_id='.$node->id.'&lock='.$maintenance_toggle.'">'.$icons.'</a>';
 		
 		$xtpl->table_td($icons, false, true);
 		
@@ -1091,7 +1150,7 @@ if ($list_nodes) {
 		
 		$m_icon_on = '<img alt="'._('Turn maintenance OFF.').'" src="template/icons/maintenance_mode.png">';
 		$m_icon_off = '<img alt="'._('Turn maintenance ON.').'" src="template/icons/transact_ok.png">';
-		$xtpl->table_td('<a href="?page=cluster&action=node_toggle_maintenance&node_id='.$node->id.'&lock='.$maintenance_toggle.'">'.(!$maintenance_toggle ? $m_icon_on : $m_icon_off).'</a>');
+		$xtpl->table_td('<a href="?page=cluster&action='.($maintenance_toggle ? 'maintenance_lock' : 'set_maintenance_lock').'&type=node&obj_id='.$node->id.'&lock='.$maintenance_toggle.'">'.(!$maintenance_toggle ? $m_icon_on : $m_icon_off).'</a>');
 		$xtpl->table_td('<a href="?page=cluster&action=node_edit&node_id='.$node->id.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 		
 		
