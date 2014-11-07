@@ -812,19 +812,6 @@ switch($_REQUEST["action"]) {
 		
 		$list_mails = true;
 		break;
-	case "freelock":
-		$xtpl->perex(_("Are you sure to delete this lock?"), '<a href="?page=">'.strtoupper(_("No")).'</a> | <a href="?page=cluster&action=freelock2&lock=backuper&id='.$_GET["id"].'">'.strtoupper(_("Yes")).'</a>');
-		$list_nodes = true;
-		break;
-	case "freelock2":
-		if (($_GET["lock"] == "backuper") && isset($_GET["id"])) {
-			if ($cluster_cfg->get("lock_cron_backup_".$_GET["id"])) {
-				$cluster_cfg->set("lock_cron_backup_".$_GET["id"], false);
-				$xtpl->perex(_("Lock has been deleted"), '');
-				$xtpl->delayed_redirect('?page=', 350);
-			}
-		}
-		break;
 	case "maintenance_lock":
 		$xtpl->title("Maintenance lock");
 		

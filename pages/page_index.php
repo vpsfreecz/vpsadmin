@@ -135,12 +135,6 @@ while ($srv = $db->fetch_array($rslt)) {
 	if($node->is_under_maintenance()) {
 		$icons .= '<img title="'._("The server is currently under maintenance.").'" src="template/icons/maintenance_mode.png">';
 		
-	} elseif ($cluster_cfg->get("lock_cron_".$srv["server_id"])) {
-
-		$icons .= '<img title="'._("The server is currently processing")
-					 . ', last update: ' . $last_update
-					 . '" src="template/icons/warning.png"/>';
-
 	} elseif ((time()-$status["timestamp"]) > 150) {
 
 		$icons .= '<img title="'._("The server is not responding")
@@ -161,19 +155,6 @@ while ($srv = $db->fetch_array($rslt)) {
 					 . '" src="template/icons/server_online.png"/>';
 
 	}
-
-		if ($cluster_cfg->get("lock_cron_backup_".$srv["server_id"])) {
-			if ($_SESSION["is_admin"]) {
-				$icons .= ' <a href="?page=cluster&action=freelock&lock=backuper&id='
-							 . $srv["server_id"]
-							 . '"><img title="'
-							 . _("The server is performing a backup; click to free this lock (WARNING: can corrupt backups!)")
-							 . '" src="template/icons/backup_progress.png"/></a>';
-			} else {
-				$icons .= ' <img title="'._("The server is performing a backup")
-							 . '" src="template/icons/backup_progress.png"/>';
-			}
-		}
 
 		$xtpl->table_td($icons);
 	
