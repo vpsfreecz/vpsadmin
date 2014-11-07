@@ -20,12 +20,12 @@ module VpsAdmin::API
       def self.included(resource)
         params = output_params
 
-        resource::Index.output(&params)
-        resource::Show.output(&params)
+        resource.const_defined?(:Index) && resource::Index.output(&params)
+        resource.const_defined?(:Show) && resource::Show.output(&params)
 
         resource.define_action(:SetMaintenance) do
           desc 'Set maintenance lock'
-          route ':%{resource}_id/maintenance'
+          route ->(r){ r.singular ? 'set_maintenance' : ':%{resource}_id/set_maintenance' }
           http_method :post
 
           input(:hash) do
