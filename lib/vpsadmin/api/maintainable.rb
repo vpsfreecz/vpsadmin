@@ -78,6 +78,7 @@ module VpsAdmin::API
           string :maintenance_lock, label: 'Maintenance lock',
                  choices: %i(no lock master_lock),
                  db_name: :maintenance_lock?
+          string :maintenance_lock_reason, label: 'Maintenance reason'
         end
       end
     end
@@ -135,6 +136,12 @@ module VpsAdmin::API
           return :master_lock if lock === true
 
           lock.class_name == self.class.to_s ? :lock : :master_lock
+        end
+
+        def maintenance_lock_reason
+          lock = maintenance_lock
+
+          (lock && lock.reason) || ''
         end
       end
 
