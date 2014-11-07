@@ -108,8 +108,9 @@ try {
 			$request_page = "";
 			include WWW_ROOT.'pages/page_index.php';
 			$xtpl->perex(_("Maintenance mode"), _("vpsAdmin is currently in maintenance mode, any actions are disabled. <br />
-											This is usually used during outage to prevent data corruption.<br />
-											Please be patient."));
+											This is usually used during outage to prevent data corruption.<br />")
+											."<br>".($api_cluster->maintenance_lock_reason ? _('Reason').': '.$api_cluster->maintenance_lock_reason.'<br><br>' : '')
+											._("Please be patient."));
 	} else {
 		show_notification();
 		
