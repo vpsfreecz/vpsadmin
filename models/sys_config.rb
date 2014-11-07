@@ -3,7 +3,7 @@ class SysConfig < ActiveRecord::Base
 
   serialize :cfg_value, JSON
 
-  validates :cfg_name, :cfg_value, presence: true
+  validates :cfg_name, presence: true
 
   alias_attribute :name, :cfg_name
   alias_attribute :value, :cfg_value
@@ -14,12 +14,14 @@ class SysConfig < ActiveRecord::Base
   end
 
   def self.set(k, v)
-    obj = find_by(cfg_name: k)
+    SysConfig.transaction do
+      obj = find_by(cfg_name: k)
 
-    if obj
-      obj.update(cfg_value: v)
-    else
-      new(cfg_name: k.to_s, cfg_value: v).save!
+      if obj
+        obj.update!(cfg_value: v)
+      else
+        new(cfg_name: k.to_s, cfg_value: v).save!
+      end
     end
   end
 end
