@@ -39,12 +39,13 @@ module VpsAdmin::API
 
           def exec
             m = self.class.model
-            obj = m.find(params[:"#{self.class.resource.to_s.demodulize.underscore}_id"])
+            res = self.class.resource
+            obj = res.singular ? nil : m.find(params[:"#{res.to_s.demodulize.underscore}_id"])
 
             if input[:lock]
               lock = MaintenanceLock.new(
-                  class_name: m.to_s,
-                  row_id: obj.id,
+                  class_name: (m && m.to_s) || res.to_s.demodulize.classify,
+                  row_id: obj && obj.id,
                   reason: input[:reason],
                   user: current_user
               )
@@ -57,8 +58,8 @@ module VpsAdmin::API
 
             else
               lock = MaintenanceLock.find_by!(
-                  class_name: m.to_s,
-                  row_id: obj.id,
+                  class_name: (m && m.to_s) || res.to_s.demodulize.classify,
+                  row_id: obj && obj.id,
                   active: true
               )
               lock.unlock!

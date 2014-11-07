@@ -149,7 +149,7 @@ ActiveRecord::Schema.define(version: 20141105175157) do
 
   create_table "maintenance_locks", force: true do |t|
     t.string   "class_name", limit: 100,                null: false
-    t.integer  "row_id",                                null: false
+    t.integer  "row_id"
     t.integer  "user_id"
     t.string   "reason",                                null: false
     t.boolean  "active",                 default: true, null: false

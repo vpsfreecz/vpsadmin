@@ -4,7 +4,7 @@ class MaintenanceMode < ActiveRecord::Migration
 
     create_table :maintenance_locks do |t|
       t.string       :class_name,     null: false, limit: 100
-      t.integer      :row_id,         null: false
+      t.integer      :row_id,         null: true
       t.references   :user,           null: true
       t.string       :reason,         null: false, limit: 255
       t.boolean      :active,         null: false, default: true
