@@ -726,13 +726,25 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_tr();
 	}
 	
+	if (!$vps->maintenance_lock != 'no') {
+		$xtpl->table_td(_('Maintenance lock').':');
+		$xtpl->table_td($vps->maintenance_lock == 'lock' ? _('direct') : _('global lock'));
+		$xtpl->table_tr();
+		
+		$xtpl->table_td(_('Maintenance reason').':');
+		$xtpl->table_td($vps->maintenance_lock_reason);
+		$xtpl->table_tr();
+	}
+	
 	$xtpl->table_out();
 	
-	if(!$deprecated_vps->is_manipulable()) {
+	if(!$_SESSION['is_admin'] && !$vps->maintenance_lock != 'no') {
 		$xtpl->perex(
 			_("VPS is under maintenance"),
 			_("All actions for this VPS are forbidden for the time being. This is usually used during outage to prevent data corruption.").
-			"<br><br>"._("Please be patient.")
+			"<br><br>"
+			.($vps->maintenance_lock_reason ? _('Reason').': '.$vps->maintenance_lock_reason.'<br><br>' : '')
+			._("Please be patient.")
 		);
 	
 	} elseif($deprecated_vps->deleted) {
