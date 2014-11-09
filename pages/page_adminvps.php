@@ -543,6 +543,7 @@ if (isset($list_vps) && $list_vps) {
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
 	
 	$vpses = $api->vps->list(array('meta' => array('count' => true, 'includes' => 'user,node')));
 	
@@ -574,12 +575,27 @@ if (isset($list_vps) && $list_vps) {
 					}
 			}
 			
+			$m_icon_on = '<img alt="'._('Turn maintenance OFF.').'" src="template/icons/maintenance_mode.png">';
+			$m_icon_off = '<img alt="'._('Turn maintenance ON.').'" src="template/icons/transact_ok.png">';
+			
+			switch ($vps->maintenance_lock) {
+				case 'no':
+					$xtpl->table_td('<a href="?page=cluster&action=maintenance_lock&type=vps&obj_id='.$vps->id.'&lock=1">'.$m_icon_off.'</a>');
+					break;
+				case 'lock':
+					$xtpl->table_td('<a href="?page=cluster&action=set_maintenance_lock&type=vps&obj_id='.$vps->id.'&lock=0">'.$m_icon_on.'</a>');
+					break;
+				case 'master_lock':
+					$xtpl->table_td($m_icon_on);
+			}
+			
 			if ($_SESSION["is_admin"] || $can_delete){
 				$xtpl->table_td((!$vps->running) ? '<a href="?page=adminvps&action=delete&veid='.$vps->id.'"><img src="template/icons/vps_delete.png"  title="'._("Delete").'"/></a>' : '<img src="template/icons/vps_delete_grey.png"  title="'._("Unable to delete").'"/>');
 			} else {
 				$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'._("Cannot delete").'"/>');
 			}
 		} else {
+			$xtpl->table_td('');
 			$xtpl->table_td('');
 			$xtpl->table_td('');
 			$xtpl->table_td('');
