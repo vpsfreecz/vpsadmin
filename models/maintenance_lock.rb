@@ -30,12 +30,14 @@ class MaintenanceLock < ActiveRecord::Base
     return unless children
 
     children.each do |child|
+      parent.method(child).call.where(maintenance_lock: maintain_lock(:no)).each do |obj|
         obj.update!(
             maintenance_lock: maintain_lock(:master_lock),
             maintenance_lock_reason: self.reason
         )
 
         lock_children(obj)
+      end
     end
   end
 
