@@ -10,8 +10,9 @@ class Location < ActiveRecord::Base
   alias_attribute :label, :location_label
   alias_attribute :has_ipv6, :location_has_ipv6
 
-  validates :location_label, :location_has_ipv6, :location_vps_onboot,
+  validates :location_label, :location_vps_onboot,
             :environment_id, :domain, presence: true
+  validates :location_has_ipv6, inclusion: { in: [true, false] }
   validates :environment_id, numericality: {only_integer: true}
   validates :location_type, inclusion: {
       in: %w(production playground),
