@@ -543,7 +543,6 @@ if (isset($list_vps) && $list_vps) {
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
 	
 	$vpses = $api->vps->list(array('meta' => array('count' => true, 'includes' => 'user,node')));
 	
@@ -563,7 +562,9 @@ if (isset($list_vps) && $list_vps) {
 		if($_SESSION['is_admin'] || $vps->maintenance_lock == 'no') {
 			$xtpl->table_td(($vps->running) ? '<a href="?page=adminvps&run=restart&veid='.$vps->id.'"><img src="template/icons/vps_restart.png" title="'._("Restart").'"/></a>' : '<img src="template/icons/vps_restart_grey.png"  title="'._("Unable to restart").'" />');
 			$xtpl->table_td(($vps->running) ? '<a href="?page=adminvps&run=stop&veid='.$vps->id.'"><img src="template/icons/vps_stop.png"  title="'._("Stop").'"/></a>' : '<a href="?page=adminvps&run=start&veid='.$vps->id.'"><img src="template/icons/vps_start.png"  title="'._("Start").'"/></a>');
-			$xtpl->table_td('<a href="?page=console&veid='.$vps->id.'"><img src="template/icons/console.png"  title="'._("Remote Console").'"/></a>');
+			
+			if (!$_SESSION['is_admin'])
+				$xtpl->table_td('<a href="?page=console&veid='.$vps->id.'"><img src="template/icons/console.png"  title="'._("Remote Console").'"/></a>');
 			
 			$can_delete = false;
 			
@@ -575,18 +576,20 @@ if (isset($list_vps) && $list_vps) {
 					}
 			}
 			
-			$m_icon_on = '<img alt="'._('Turn maintenance OFF.').'" src="template/icons/maintenance_mode.png">';
-			$m_icon_off = '<img alt="'._('Turn maintenance ON.').'" src="template/icons/transact_ok.png">';
-			
-			switch ($vps->maintenance_lock) {
-				case 'no':
-					$xtpl->table_td('<a href="?page=cluster&action=maintenance_lock&type=vps&obj_id='.$vps->id.'&lock=1">'.$m_icon_off.'</a>');
-					break;
-				case 'lock':
-					$xtpl->table_td('<a href="?page=cluster&action=set_maintenance_lock&type=vps&obj_id='.$vps->id.'&lock=0">'.$m_icon_on.'</a>');
-					break;
-				case 'master_lock':
-					$xtpl->table_td($m_icon_on);
+			if ($_SESSION['is_admin']) {
+				$m_icon_on = '<img alt="'._('Turn maintenance OFF.').'" src="template/icons/maintenance_mode.png">';
+				$m_icon_off = '<img alt="'._('Turn maintenance ON.').'" src="template/icons/transact_ok.png">';
+				
+				switch ($vps->maintenance_lock) {
+					case 'no':
+						$xtpl->table_td('<a href="?page=cluster&action=maintenance_lock&type=vps&obj_id='.$vps->id.'&lock=1">'.$m_icon_off.'</a>');
+						break;
+					case 'lock':
+						$xtpl->table_td('<a href="?page=cluster&action=set_maintenance_lock&type=vps&obj_id='.$vps->id.'&lock=0">'.$m_icon_on.'</a>');
+						break;
+					case 'master_lock':
+						$xtpl->table_td($m_icon_on);
+				}
 			}
 			
 			if ($_SESSION["is_admin"] || $can_delete){
@@ -595,7 +598,6 @@ if (isset($list_vps) && $list_vps) {
 				$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'._("Cannot delete").'"/>');
 			}
 		} else {
-			$xtpl->table_td('');
 			$xtpl->table_td('');
 			$xtpl->table_td('');
 			$xtpl->table_td('');
@@ -891,17 +893,19 @@ if (isset($show_info) && $show_info) {
 		</script>');
 		
 		$vps_configs = $api->vps($vps->id)->config->list();
-		$all_configs = $api->vps_config->list();
-		$config_choices = array();
 		
-		foreach ($all_configs as $cfg) {
-			$config_choices[$cfg->id] = $cfg->label;
-		}
-		
-		$config_choices_empty = array(0 => '---') + $config_choices;
-		
-		if ($_SESSION["is_admin"])
+		if ($_SESSION["is_admin"]) {
+			$all_configs = $api->vps_config->list();
+			$config_choices = array();
+			
+			foreach ($all_configs as $cfg) {
+				$config_choices[$cfg->id] = $cfg->label;
+			}
+			
+			$config_choices_empty = array(0 => '---') + $config_choices;
+			
 			$xtpl->form_create('?page=adminvps&action=configs&veid='.$vps->id, 'post');
+		}
 		
 		$xtpl->table_add_category(_('Configs'));
 		
