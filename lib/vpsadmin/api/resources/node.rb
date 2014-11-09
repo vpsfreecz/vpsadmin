@@ -143,6 +143,8 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
+      restrict whitelist: %i(id name)
+      allow
     end
 
     example do

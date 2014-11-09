@@ -57,7 +57,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict m_id: u.m_id
-      output whitelist: %i(id hostname os_template dns_resolver node backup_enabled)
+      output whitelist: %i(id hostname os_template dns_resolver node backup_enabled
+                            maintenance_lock maintenance_lock_reason)
       allow
     end
 
@@ -192,7 +193,8 @@ END
     authorize do |u|
       allow if u.role == :admin
       restrict m_id: u.m_id
-      output whitelist: %i(id hostname os_template dns_resolver node backup_enabled)
+      output whitelist: %i(id hostname os_template dns_resolver node
+                          backup_enabled maintenance_lock maintenance_lock_reason)
       allow
     end
 
@@ -201,7 +203,6 @@ END
     end
 
     def exec
-      maintenance_check!(@vps)
       @vps
     end
   end

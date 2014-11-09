@@ -75,6 +75,8 @@ class VpsAdmin::API::Resources::VpsConfig < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
+      restrict whitelist: %i(label)
+      allow
     end
 
     def exec
