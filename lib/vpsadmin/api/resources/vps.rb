@@ -100,7 +100,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      query.includes(:vps_status).limit(params[:vps][:limit]).offset(params[:vps][:offset])
+      with_includes(query).includes(:vps_status).limit(params[:vps][:limit]).offset(params[:vps][:offset])
     end
   end
 
@@ -197,7 +197,7 @@ END
     end
 
     def prepare
-      @vps = Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      @vps = with_includes.find_by!(with_restricted(vps_id: params[:vps_id]))
     end
 
     def exec
