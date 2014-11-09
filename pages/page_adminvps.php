@@ -725,7 +725,7 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_tr();
 	}
 	
-	if (!$vps->maintenance_lock != 'no') {
+	if ($vps->maintenance_lock != 'no') {
 		$xtpl->table_td(_('Maintenance lock').':');
 		$xtpl->table_td($vps->maintenance_lock == 'lock' ? _('direct') : _('global lock'));
 		$xtpl->table_tr();
