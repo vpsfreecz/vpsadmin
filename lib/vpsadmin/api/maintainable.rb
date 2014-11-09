@@ -50,7 +50,7 @@ module VpsAdmin::API
                   user: current_user
               )
 
-              if lock.lock!
+              if lock.lock!(obj)
                 ok
               else
                 error('already locked')
@@ -62,10 +62,12 @@ module VpsAdmin::API
                   row_id: obj && obj.id,
                   active: true
               )
-              lock.unlock!
+              lock.unlock!(obj)
             end
 
-          rescue ActiveRecord::RecordInvalid
+          rescue ActiveRecord::RecordInvalid => e
+            puts e.message
+            puts e.backtrace
             error('lock failed', lock.errors.to_hash)
           end
         end
@@ -80,6 +82,7 @@ module VpsAdmin::API
                  db_name: :maintenance_lock?
           string :maintenance_lock_reason, label: 'Maintenance reason'
         end
+        # Proc.new {}
       end
     end
 
@@ -99,15 +102,24 @@ module VpsAdmin::API
             @maintenance_parent
           end
         end
+
+        # Set maintenances children. Should be names of AR associations.
+        def maintenance_children(*args)
+          if args.empty?
+            @maintenance_children
+          else
+            @maintenance_children = args
+          end
+        end
       end
 
       module InstanceMethods
         # Return MaintenanceLock object or boolean.
-        def maintenance_lock(force = false)
+        def find_maintenance_lock(force = false)
           return @maintenance_lock_cache if !@maintenance_lock_cache.nil? && !force
           cls = self.class
 
-          lock = MaintenanceLock.find_by(
+          lock = ::MaintenanceLock.find_by(
               class_name: cls.to_s,
               row_id: self.id,
               active: true
@@ -120,28 +132,17 @@ module VpsAdmin::API
           parent = cls.maintenance_parent
           fail 'maintenance_parent not set' unless parent
 
-          if parent.is_a?(Proc)
+          if parent.is_a?(::Proc)
             @maintenance_lock_cache = parent.call
 
           else
-            @maintenance_lock_cache = self.send(cls.maintenance_parent).maintenance_lock
+            @maintenance_lock_cache = self.send(cls.maintenance_parent).find_maintenance_lock
           end
         end
 
         # :no, :lock, :master_lock
         def maintenance_lock?
-          lock = maintenance_lock
-
-          return :no unless lock
-          return :master_lock if lock === true
-
-          lock.class_name == self.class.to_s ? :lock : :master_lock
-        end
-
-        def maintenance_lock_reason
-          lock = maintenance_lock
-
-          (lock && lock.reason) || ''
+          ::MaintenanceLock.maintain_lock(maintenance_lock)
         end
       end
 

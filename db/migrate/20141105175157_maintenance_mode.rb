@@ -12,5 +12,17 @@ class MaintenanceMode < ActiveRecord::Migration
     end
 
     add_index :maintenance_locks, %i(class_name row_id)
+
+    add_column :environments, :maintenance_lock, :integer, null: false, default: 0
+    add_column :environments, :maintenance_lock_reason, :string, null: true, limit: 255
+
+    add_column :locations,    :maintenance_lock, :integer, null: false, default: 0
+    add_column :locations,    :maintenance_lock_reason, :string, null: true, limit: 255
+
+    add_column :servers,      :maintenance_lock, :integer, null: false, default: 0
+    add_column :servers,      :maintenance_lock_reason, :string, null: true, limit: 255
+
+    add_column :vps,          :maintenance_lock, :integer, null: false, default: 0
+    add_column :vps,          :maintenance_lock_reason, :string, null: true, limit: 255
   end
 end

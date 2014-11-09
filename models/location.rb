@@ -28,7 +28,9 @@ class Location < ActiveRecord::Base
   }
 
   include VpsAdmin::API::Maintainable::Model
+
   maintenance_parent :environment
+  maintenance_children :nodes
 
   def fqdn
     "#{domain}.#{environment.fqdn}"

@@ -13,6 +13,7 @@ class Environment < ActiveRecord::Base
   has_hook :create
 
   include VpsAdmin::API::Maintainable::Model
+
   maintenance_parent do
     MaintenanceLock.find_by(
         class_name: 'Cluster',
@@ -20,6 +21,8 @@ class Environment < ActiveRecord::Base
         active: true
     )
   end
+
+  maintenance_children :locations
 
   def fqdn
     domain

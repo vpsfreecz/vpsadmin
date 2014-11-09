@@ -104,10 +104,12 @@ ActiveRecord::Schema.define(version: 20141105175157) do
   end
 
   create_table "environments", force: true do |t|
-    t.string   "label",      limit: 100, null: false
-    t.string   "domain",     limit: 100, null: false
+    t.string   "label",                   limit: 100,             null: false
+    t.string   "domain",                  limit: 100,             null: false
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "maintenance_lock",                    default: 0, null: false
+    t.string   "maintenance_lock_reason"
   end
 
   create_table "group_snapshots", force: true do |t|
@@ -131,6 +133,8 @@ ActiveRecord::Schema.define(version: 20141105175157) do
     t.string   "domain",                         limit: 100,                        null: false
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "maintenance_lock",                           default: 0,            null: false
+    t.string   "maintenance_lock_reason"
   end
 
   create_table "log", force: true do |t|
@@ -286,17 +290,19 @@ ActiveRecord::Schema.define(version: 20141105175157) do
   add_index "resource_locks", ["resource", "row_id"], name: "index_resource_locks_on_resource_and_row_id", unique: true, using: :btree
 
   create_table "servers", primary_key: "server_id", force: true do |t|
-    t.string  "server_name",      limit: 64,                                 null: false
-    t.string  "server_type",      limit: 7,                                  null: false
-    t.integer "server_location",                                             null: false
+    t.string  "server_name",             limit: 64,                                 null: false
+    t.string  "server_type",             limit: 7,                                  null: false
+    t.integer "server_location",                                                    null: false
     t.text    "server_availstat"
-    t.string  "server_ip4",       limit: 127,                                null: false
-    t.integer "max_vps",                                                     null: false
-    t.string  "ve_private",                   default: "/vz/private/%veid%", null: false
-    t.string  "fstype",           limit: 10,  default: "zfs",                null: false
-    t.string  "net_interface",    limit: 50
-    t.integer "max_tx",           limit: 8,   default: 235929600,            null: false
-    t.integer "max_rx",           limit: 8,   default: 235929600,            null: false
+    t.string  "server_ip4",              limit: 127,                                null: false
+    t.integer "max_vps",                                                            null: false
+    t.string  "ve_private",                          default: "/vz/private/%veid%", null: false
+    t.string  "fstype",                  limit: 10,  default: "zfs",                null: false
+    t.string  "net_interface",           limit: 50
+    t.integer "max_tx",                  limit: 8,   default: 235929600,            null: false
+    t.integer "max_rx",                  limit: 8,   default: 235929600,            null: false
+    t.integer "maintenance_lock",                    default: 0,                    null: false
+    t.string  "maintenance_lock_reason"
   end
 
   add_index "servers", ["server_location"], name: "server_location", using: :btree
@@ -458,21 +464,23 @@ ActiveRecord::Schema.define(version: 20141105175157) do
     t.integer "vps_created"
     t.integer "vps_expiration"
     t.integer "vps_deleted"
-    t.integer "m_id",                                                  null: false
-    t.string  "vps_hostname",                          default: "vps"
-    t.integer "vps_template",                          default: 1,     null: false
-    t.text    "vps_info",             limit: 16777215
+    t.integer "m_id",                                                     null: false
+    t.string  "vps_hostname",                             default: "vps"
+    t.integer "vps_template",                             default: 1,     null: false
+    t.text    "vps_info",                limit: 16777215
     t.integer "dns_resolver_id"
-    t.integer "vps_server",                                            null: false
-    t.boolean "vps_onboot",                            default: true,  null: false
-    t.boolean "vps_onstartall",                        default: true,  null: false
-    t.boolean "vps_backup_enabled",                    default: true,  null: false
-    t.boolean "vps_features_enabled",                  default: false, null: false
-    t.integer "vps_backup_export",                                     null: false
-    t.text    "vps_backup_exclude",                                    null: false
-    t.text    "vps_config",                                            null: false
-    t.integer "confirmed",                             default: 0,     null: false
+    t.integer "vps_server",                                               null: false
+    t.boolean "vps_onboot",                               default: true,  null: false
+    t.boolean "vps_onstartall",                           default: true,  null: false
+    t.boolean "vps_backup_enabled",                       default: true,  null: false
+    t.boolean "vps_features_enabled",                     default: false, null: false
+    t.integer "vps_backup_export",                                        null: false
+    t.text    "vps_backup_exclude",                                       null: false
+    t.text    "vps_config",                                               null: false
+    t.integer "confirmed",                                default: 0,     null: false
     t.integer "dataset_in_pool_id"
+    t.integer "maintenance_lock",                         default: 0,     null: false
+    t.string  "maintenance_lock_reason"
   end
 
   add_index "vps", ["m_id"], name: "m_id", using: :btree
