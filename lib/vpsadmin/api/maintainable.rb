@@ -12,8 +12,7 @@ module VpsAdmin::API
           return true if current_user.role == :admin
           return false unless obj.respond_to?(:maintenance_lock)
 
-          lock = obj.maintenance_lock
-          raise ResourceUnderMaintenance, (lock === true ? '' : lock.reason) if lock
+          raise ResourceUnderMaintenance, obj.maintenance_lock_reason if obj.maintenance_lock != :no
         end
       end
 
