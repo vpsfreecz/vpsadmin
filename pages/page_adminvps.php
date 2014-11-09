@@ -544,7 +544,7 @@ if (isset($list_vps) && $list_vps) {
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 	
-	$vpses = $api->vps->list(array('meta' => array('count' => true)));
+	$vpses = $api->vps->list(array('meta' => array('count' => true, 'includes' => 'user,node')));
 	
 	foreach ($vpses as $vps) {
 		
