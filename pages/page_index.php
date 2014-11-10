@@ -27,6 +27,7 @@ if ($_SESSION["is_admin"]) {
 } else {
   $xtpl->table_add_category(_("Event Log"));
 }
+
 $xtpl->table_add_category('');
 
 $noticeboard = $cluster_cfg->get("noticeboard");
@@ -35,44 +36,30 @@ if ($noticeboard) {
 	$xtpl->table_td(nl2br($noticeboard), false, false, 2);
 	$xtpl->table_tr();
 }
+
 while($log = $db->find("log", NULL, "timestamp DESC", "5")) {
 	$xtpl->table_td('['.strftime("%Y-%m-%d %H:%M", $log["timestamp"]).']');
 	$xtpl->table_td($log["msg"]);
 	$xtpl->table_tr();
 }
+
 $xtpl->table_td('<a href="?page=log">'._("View all").'</a>', false, false, '2');
 $xtpl->table_tr();
 $xtpl->table_out("notice_board");
 
+
 $xtpl->table_title(_("Cluster statistics"));
 
 $xtpl->table_add_category('Members total');
-
 $xtpl->table_add_category('VPS total');
-
 $xtpl->table_add_category('IPv4 left');
 
-$members = 0;
-	$sql = "SELECT COUNT(m_id) as count FROM members WHERE m_state = 'active'";
-	$result = $db->query($sql);
-  if ($res = $db->fetch_array($result))
-    $members = $res['count'];
+$stats = $api->cluster->public_stats();
 
-$xtpl->table_td($members, false, true);
-
-
-	$servers = 0;
-	$sql = 'SELECT COUNT(*) AS count FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1';
-	$result = $db->query($sql);
-  if ($res = $db->fetch_array($result))
-    $servers = $res['count'];
-
-$xtpl->table_td($servers, false, true);
-
-	$ip4 = count((array)get_free_ip_list(4));
-$xtpl->table_td($ip4, false, true);
+$xtpl->table_td($stats->user_count, false, true);
+$xtpl->table_td($stats->vps_count, false, true);
+$xtpl->table_td($stats->ipv4_left, false, true);
 $xtpl->table_tr();
-
 
 $xtpl->table_out();
 
