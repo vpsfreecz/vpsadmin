@@ -33,8 +33,27 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
 
   end
 
-  class PublicStatus < HaveAPI::Action
+  class PublicStats < HaveAPI::Action
+    desc 'Public statistics information'
+    auth false
 
+    output do
+      integer :user_count, label: 'Number of users'
+      integer :vps_count, label: 'Number of VPSes'
+      integer :ipv4_left, label: 'Number of free IPv4 addresses'
+    end
+
+    authorize do
+      allow
+    end
+
+    def exec
+      {
+          user_count: ::User.all.count,
+          vps_count: ::Vps.all.count,
+          ipv4_left: ::IpAddress.where(vps: nil, version: 4).count
+      }
+    end
   end
 
   class FullOverview < HaveAPI::Action
