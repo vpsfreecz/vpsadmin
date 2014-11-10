@@ -63,16 +63,18 @@ $xtpl->table_tr();
 
 $xtpl->table_out();
 
-		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
+// Node status
 
-		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_tr();
+$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
+$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
+$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
+$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
+
+$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
+$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
+$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
+$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
+$xtpl->table_tr();
 
 $sql = 'SELECT * FROM servers ORDER BY server_location,server_id';
 $rslt = $db->query($sql);
@@ -80,85 +82,70 @@ $rslt = $db->query($sql);
 $position = 1;
 $last_location = 0;
 
-while ($srv = $db->fetch_array($rslt)) {
-	$node = new cluster_node($srv["server_id"]);
-	
+$nodes = $api->node->public_status();
+
+foreach ($nodes as $node) {
 	if (
 			($last_location != 0) &&
-			($last_location != $srv["server_location"])
-		 ) {
-
+			($last_location != $node->location_id)
+		) {
+		
 		 if ($position == 2) {
 			$xtpl->table_td('', false, false, 5);
 		}
-
+		
 		$xtpl->table_tr(true);
 		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
-
+		
 		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_tr(true);
-
-
+		
+		
 		$position = 1;
 	}
-
-	$last_location = $srv["server_location"];
 	
-	$sql = 'SELECT * FROM servers_status WHERE server_id ="'.$srv["server_id"].'"';
-
-	if ($result = $db->query($sql))
-	    $status = $db->fetch_array($result);
+	$last_location = $node->location_id;
 	
 	$icons = "";
-
-	$last_update = date('Y-m-d H:i:s', $status["timestamp"]).' ('.date('i:s', (time()-$status["timestamp"])).')';
 	
-	if($node->is_under_maintenance()) {
-		$icons .= '<img title="'._("The server is currently under maintenance.").'" src="template/icons/maintenance_mode.png">';
+	$last_report = strtotime($node->last_report);
+	$last_update = date('Y-m-d H:i:s', $last_report).' ('.date('i:s', (time() - $last_report)).' ago)';
+	
+	if($node->maintenance_lock != 'no') {
+		$icons .= '<img title="'._("The server is currently under maintenance").': '.htmlspecialchars($node->maintenance_reason).'" src="template/icons/maintenance_mode.png">';
 		
-	} elseif ((time()-$status["timestamp"]) > 150) {
-
+	} elseif ((time() - $last_report) > 150) {
+		
 		$icons .= '<img title="'._("The server is not responding")
 					 . ', last update: ' . $last_update
 					 . '" src="template/icons/error.png"/>';
-
-	} elseif ($status['daemon'] > 0) {
-
-		$icons .= '<img title="'._("vpsAdmin on this server is not responding")
-					 . ', last update: ' . $last_update
-					 . '" src="template/icons/server_daemon_offline.png" alt="'
-					 . _("vpsAdmin is down").'" />';
-
+		
 	} else {
-
+	
 		$icons .= '<img title="'._("The server is online")
 					 . ', last update: ' . $last_update
 					 . '" src="template/icons/server_online.png"/>';
-
+	
 	}
-
-		$xtpl->table_td($icons);
 	
-	$xtpl->table_td($srv["server_name"]);
-
-	$vps_on = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1 AND vps_server = ".$db->check($node->s["server_id"])));
-	$vpses = $node->s["server_type"] == "node" ? $vps_on["cnt"] : "-";
+	$xtpl->table_td($icons);
 	
-	$xtpl->table_td($vpses, false, true);
-	$xtpl->table_td($node->s["server_type"] == "node" ? ($node->role["max_vps"] - $vpses) : "-", false, true);
-
-		$position++;
-		if ($position == 3) {
-			$position = 1;
-			$xtpl->table_tr(true);
-		}
-
+	$xtpl->table_td($node->name);
+	$xtpl->table_td($node->vps_count, false, true);
+	$xtpl->table_td($node->vps_free, false, true);
+	
+	$position++;
+	if ($position == 3) {
+		$position = 1;
+		$xtpl->table_tr(true);
+	}
+	
 }
 
 if($position == 2) { // last row has only one node
