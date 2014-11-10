@@ -1033,45 +1033,24 @@ if ($list_nodes) {
 	
 	$xtpl->table_title(_("Summary"));
 	
-	$nodes_on = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM (
-                                               SELECT s.server_id
-                                               FROM servers s INNER JOIN servers_status t ON s.server_id = t.server_id
-                                               WHERE (UNIX_TIMESTAMP() - t.timestamp) <= 150
-                                               GROUP BY s.server_id
-                                             ) tmp"));
-	
-	$nodes_all = $db->fetch_array($db->query("SELECT COUNT(server_id) AS cnt FROM servers"));
+	$stats = $api->cluster->full_stats();
 	
 	$xtpl->table_td(_("Nodes").':');
-	$xtpl->table_td($nodes_on["cnt"] .' '._("online").' / '. $nodes_all["cnt"] .' '._("total"), $nodes_on["cnt"] < $nodes_all["cnt"] ? '#FFA500' : '#66FF66');
+	$xtpl->table_td($stats["nodes_online"] .' '._("online").' / '. $stats["node_count"] .' '._("total"), $stats["nodes_online"] < $stats["node_count"] ? '#FFA500' : '#66FF66');
 	$xtpl->table_tr();
 	
-	$vps_on = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id WHERE vps_up = 1"));
-	$vps_stopped = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps v INNER JOIN vps_status s ON v.vps_id = s.vps_id INNER JOIN members m ON m.m_id = v.m_id WHERE vps_up = 0 AND vps_deleted IS NULL AND m_state = 'active'"));
-	$vps_suspended = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps v INNER JOIN members m ON v.m_id = m.m_id WHERE m_state = 'suspended'"));
-	$vps_deleted = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps WHERE vps_deleted IS NOT NULL AND vps_deleted > 0"));
-	$vps_all = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM vps"));
-	
 	$xtpl->table_td(_("VPS").':');
-	$xtpl->table_td($vps_on["cnt"] .' '._("running").' / '. $vps_stopped["cnt"] .' '._("stopped").' / '. $vps_suspended["cnt"] .' '._("suspended").' / '.
+	$xtpl->table_td($stats["vps_running"] .' '._("running").' / '. $stats["vps_stopped"] .' '._("stopped").' / '. $stats["vps_suspended"] .' '._("suspended").' / '.
 					$vps_deleted["cnt"] .' '._("deleted").' / '. $vps_all["cnt"] .' '._("total"));
 	$xtpl->table_tr();
 	
-	$m_active = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM members WHERE m_state = 'active'"));
-	$m_suspended = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM members WHERE m_state = 'suspended'"));
-	$m_total = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM members"));;
-	$m_deleted = $db->fetch_array($db->query("SELECT COUNT(*) AS cnt FROM members WHERE m_state = 'deleted'"));;
-	
 	$xtpl->table_td(_("Members").':');
-	$xtpl->table_td($m_active["cnt"] .' '._("active").' / '. $m_suspended["cnt"] .' '._("suspended")
-	                .' / '. $m_deleted["cnt"] .' '._("deleted").' / '. $m_total["cnt"] .' '._("total"));
+	$xtpl->table_td($stats["user_active"] .' '._("active").' / '. $stats["user_suspended"] .' '._("suspended")
+	                .' / '. $stats["user_deleted"] .' '._("deleted").' / '. $stats["user_count"] .' '._("total"));
 	$xtpl->table_tr();
 	
-	$free = count((array)get_free_ip_list(4));
-	$all = count((array)get_all_ip_list(4));
-	
 	$xtpl->table_td(_("IPv4 addresses").':');
-	$xtpl->table_td($all - $free .' '._("used").' / '. $all .' '._("total"));
+	$xtpl->table_td($stats["ipv4_used"] .' '._("used").' / '. $stats["ipv4_count"] .' '._("total"));
 	$xtpl->table_tr();
 	
 	$xtpl->table_out();
