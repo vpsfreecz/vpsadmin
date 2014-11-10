@@ -61,8 +61,16 @@ class Node < ActiveRecord::Base
     .take
   end
 
+  def status
+    (node_status && ((Time.new.to_i - node_status.timestamp) <= 150)) || false
+  end
+
   def last_report
     node_status && Time.at(node_status.timestamp)
+  end
+
+  def domain_name
+    "#{name}.#{location.domain}"
   end
 
   def loadavg

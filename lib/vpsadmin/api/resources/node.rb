@@ -134,6 +134,32 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
   end
 
+  class PublicStatus < HaveAPI::Action
+    desc 'Public node status'
+    auth false
+
+    output(:object_list) do
+      bool :status, label: 'Status'
+      string :name, label: 'Node name', db_name: :domain_name
+      resource VpsAdmin::API::Resources::Location, label: 'Location',
+               desc: 'Location node is placed in'
+      datetime :last_report, label: 'Last report'
+      integer :vps_count, label: 'VPS count', db_name: :vps_running
+      integer :vps_free, label: 'Free VPS slots'
+    end
+
+    output(&VpsAdmin::API::Maintainable::Action.output_params)
+
+    authorize do
+      allow
+    end
+
+    def exec
+      ::Node.includes(:location, :node_status).joins(:location).all
+        .order('environment_id, locations.location_id, servers.server_id')
+    end
+  end
+
   class Show < HaveAPI::Actions::Default::Show
     desc 'Show node'
 

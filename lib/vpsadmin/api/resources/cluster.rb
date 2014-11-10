@@ -29,10 +29,6 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
     end
   end
 
-  class PublicOverview < HaveAPI::Action
-
-  end
-
   class PublicStats < HaveAPI::Action
     desc 'Public statistics information'
     auth false
@@ -54,10 +50,6 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
           ipv4_left: ::IpAddress.where(vps: nil, version: 4).count
       }
     end
-  end
-
-  class FullOverview < HaveAPI::Action
-
   end
 
   include VpsAdmin::API::Maintainable::Action
