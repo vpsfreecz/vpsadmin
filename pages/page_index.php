@@ -118,7 +118,7 @@ foreach ($nodes as $node) {
 	$last_update = date('Y-m-d H:i:s', $last_report).' ('.date('i:s', (time() - $last_report)).' ago)';
 	
 	if($node->maintenance_lock != 'no') {
-		$icons .= '<img title="'._("The server is currently under maintenance").': '.htmlspecialchars($node->maintenance_reason).'" src="template/icons/maintenance_mode.png">';
+		$icons .= '<img title="'._("The server is currently under maintenance").': '.htmlspecialchars($node->maintenance_lock_reason).'" src="template/icons/maintenance_mode.png">';
 		
 	} elseif ((time() - $last_report) > 150) {
 		
