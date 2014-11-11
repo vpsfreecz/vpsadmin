@@ -268,15 +268,17 @@ switch ($_GET["action"]) {
 			break;
 			
 		case 'custom_config':
-			if ($_SESSION["is_admin"] && isset($_POST["custom_config"])) {
-				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				if ($vps->exists) {
-					$vps->update_custom_config($_POST["custom_config"]);
-					redirect('?page=adminvps&action=info&veid='.$vps->veid);
+			if ($_SESSION['is_admin']) {
+				try {
+					$api->vps->update($_GET['veid'], array('config' => $_POST['custom_config']));
+					
+					notify_user(_("Config changed"), '');
+					redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Change of the config failed'), $e->getResponse());
+					$show_info=true;
 				}
-			} else {
-				$xtpl->perex(_("Error"), 'Error, contact your administrator');
-				$show_info=true;
 			}
 			
 			break;
