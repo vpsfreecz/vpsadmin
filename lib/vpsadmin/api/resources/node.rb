@@ -28,6 +28,11 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List nodes'
 
+    input do
+      resource VpsAdmin::API::Resources::Location, label: 'Location',
+               desc: 'Location node is placed in'
+    end
+
     output(:object_list) do
       use :all
     end
@@ -54,8 +59,18 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       })
     end
 
+    def query
+      q = ::Node
+      q = q.where(location: input[:location]) if input[:location]
+      q
+    end
+
+    def count
+      query.count
+    end
+
     def exec
-      ::Node.all.limit(params[:node][:limit]).offset(params[:node][:offset])
+      with_includes(query).limit(params[:node][:limit]).offset(params[:node][:offset])
     end
   end
 
