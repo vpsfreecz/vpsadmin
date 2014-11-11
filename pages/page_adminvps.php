@@ -139,9 +139,8 @@ switch ($_GET["action"]) {
 			}
 			break;
 		case 'delete':
-			if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-			
 			$xtpl->perex(_("Are you sure you want to delete VPS number").' '.$_GET["veid"].'?', '');
+			
 			$xtpl->table_title(_("Delete VPS"));
 			$xtpl->table_td(_("Hostname").':');
 			$xtpl->table_td($vps->ve["vps_hostname"]);
@@ -154,12 +153,14 @@ switch ($_GET["action"]) {
 			}
 			$xtpl->form_out(_("Delete"));
 			break;
+			
 		case 'delete2':
 			$api->vps->destroy($_GET["veid"], array('lazy' => $_POST["lazy_delete"] ? true : false));
 			
 			notify_user(_("Delete VPS").' #'.$_GET["veid"], _("Deletion of VPS")." {$_GET["veid"]} ".strtolower(_("planned")));
 			redirect('?page=adminvps');
 			break;
+			
 		case 'revive':
 			try {
 				$api->vps->revive($_GET['veid']);
