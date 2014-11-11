@@ -330,4 +330,27 @@ function api_description_changed($api) {
 	$_SESSION["api_description"] = $api->getDescription();
 }
 
+function maintenance_lock_icon($type, $obj) {
+	$m_icon_on = '<img alt="'._('Turn maintenance OFF.').'" src="template/icons/maintenance_mode.png">';
+	$m_icon_off = '<img alt="'._('Turn maintenance ON.').'" src="template/icons/transact_ok.png">';
+	
+	switch ($obj->maintenance_lock) {
+		case 'no':
+			return '<a href="?page=cluster&action=maintenance_lock&type='.$type.'&obj_id='.$obj->id.'&lock=1">'
+			       .$m_icon_off
+			       .'</a>';
+		
+		case 'lock':
+			return '<a href="?page=cluster&action=set_maintenance_lock&type='.$type.'&obj_id='.$obj->id.'&lock=0"
+			           title="'._('Maintenance lock reason').': '.htmlspecialchars($obj->maintenance_lock_reason).'">'
+			        .$m_icon_on
+			        .'</a>';
+		
+		case 'master_lock':
+			return '<img alt="'._('Under maintenance.').'"
+			             title="'._('Under maintenance').': '.htmlspecialchars($obj->maintenance_lock_reason).'"
+			             src="template/icons/maintenance_mode.png">';
+	}
+}
+
 ?>

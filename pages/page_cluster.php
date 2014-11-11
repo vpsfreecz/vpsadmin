@@ -1114,9 +1114,7 @@ if ($list_nodes) {
 		else
 			$xtpl->table_td($node->kernel);
 		
-		$m_icon_on = '<img alt="'._('Turn maintenance OFF.').'" src="template/icons/maintenance_mode.png">';
-		$m_icon_off = '<img alt="'._('Turn maintenance ON.').'" src="template/icons/transact_ok.png">';
-		$xtpl->table_td('<a href="?page=cluster&action='.($maintenance_toggle ? 'maintenance_lock' : 'set_maintenance_lock').'&type=node&obj_id='.$node->id.'&lock='.$maintenance_toggle.'">'.(!$maintenance_toggle ? $m_icon_on : $m_icon_off).'</a>');
+		$xtpl->table_td(maintenance_lock_icon('node', $node));
 		$xtpl->table_td('<a href="?page=cluster&action=node_edit&node_id='.$node->id.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 		
 		
