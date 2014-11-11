@@ -256,20 +256,15 @@ class member_load {
   function start_all_vpses() {
 	global $db;
 	
-	while($row = $db->findByColumn("vps", "m_id", $this->m["m_id"])) {
-		$vps = new vps_load($row["vps_id"]);
-		$vps->info();
-		
-		if (!$vps->ve["vps_up"])
-			$vps->start();
+	foreach ($api->vps->list(array('user' => $this->m['m_id'])) as $vps) {
+		$vps->start();
 	}
   }
   
   function stop_all_vpses() {
 	global $db;
 	
-	while($row = $db->findByColumn("vps", "m_id", $this->m["m_id"])) {
-		$vps = new vps_load($row["vps_id"]);
+	foreach ($api->vps->list(array('user' => $this->m['m_id'])) as $vps) {
 		$vps->stop();
 	}
   }
@@ -278,10 +273,8 @@ class member_load {
 	global $db;
 	
 	if($this->exists || $this->deleted) {
-		while($row = $db->findByColumn("vps", "m_id", $this->m["m_id"])) {
-			$vps = new vps_load($row["vps_id"]);
-			$vps->stop();
-			$vps->destroy($lazy);
+		foreach ($api->vps->list(array('user' => $this->m['m_id'])) as $vps) {
+			$vps->delete(array('lazy' => true));
 		}
 	}
   }
