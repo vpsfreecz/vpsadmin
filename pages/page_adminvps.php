@@ -208,66 +208,65 @@ switch ($_GET["action"]) {
 			break;
 		case 'configs':
 			if ($_SESSION["is_admin"] && isset($_REQUEST["veid"]) && (isset($_POST["configs"]) || isset($_POST["add_config"]))) {
-				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				if ($vps->exists) {
-					$raw_order = explode('&', $_POST['configs_order']);
-					$cfgs = array();
-					$i = 0;
+				$raw_order = explode('&', $_POST['configs_order']);
+				$cfgs = array();
+				$i = 0;
+				
+				echo var_dump($_POST['configs_order']);
+				
+				foreach($raw_order as $item) {
+					$item = explode('=', $item);
 					
-					echo var_dump($_POST['configs_order']);
-					
-					foreach($raw_order as $item) {
-						$item = explode('=', $item);
-						
-						if (!$item[1])
-							continue;
-						elseif (!strncmp($item[1], "add_config", strlen("add_config")))
-							$cfgs[] = $_POST['add_config'][$i++];
-						else {
-							$order = explode('_', $item[1]);
-							$cfgs[] = $order[1];
-						}
+					if (!$item[1])
+						continue;
+					elseif (!strncmp($item[1], "add_config", strlen("add_config")))
+						$cfgs[] = $_POST['add_config'][$i++];
+					else {
+						$order = explode('_', $item[1]);
+						$cfgs[] = $order[1];
 					}
-					
-					$params = array();
-					
-					if ($cfgs) {
-						// configs were changed with javascript dnd
-						foreach ($cfgs as $cfg) {
-							if (!$cfg)
-								continue;
-							
-							$params[] = array('vps_config' => $cfg);
-						}
-						
-					} else {
-						foreach ($_POST['configs'] as $cfg) {
-							if (!$cfg)
-								continue;
-							
-							$params[] = array('vps_config' => $cfg);
-						}
-						
-						foreach ($_POST['add_config'] as $cfg) {
-							if (!$cfg)
-								continue;
-							
-							$params[] = array('vps_config' => $cfg);
-						}
-					}
-					
-					$api->vps($_GET['veid'])->config->replace($params);
-					
-					if($_POST["reason"])
-						$vps->configs_change_notify($_POST["reason"]);
-					
-					redirect('?page=adminvps&action=info&veid='.$vps->veid);
 				}
+				
+				$params = array();
+				
+				if ($cfgs) {
+					// configs were changed with javascript dnd
+					foreach ($cfgs as $cfg) {
+						if (!$cfg)
+							continue;
+						
+						$params[] = array('vps_config' => $cfg);
+					}
+					
+				} else {
+					foreach ($_POST['configs'] as $cfg) {
+						if (!$cfg)
+							continue;
+						
+						$params[] = array('vps_config' => $cfg);
+					}
+					
+					foreach ($_POST['add_config'] as $cfg) {
+						if (!$cfg)
+							continue;
+						
+						$params[] = array('vps_config' => $cfg);
+					}
+				}
+				
+				$api->vps($_GET['veid'])->config->replace($params);
+				
+				if($_POST["reason"])
+					$vps->configs_change_notify($_POST["reason"]);
+				
+				redirect('?page=adminvps&action=info&veid='.$vps->veid);
+				
 			} else {
 				$xtpl->perex(_("Error"), 'Error, contact your administrator');
 				$show_info=true;
 			}
 			break;
+			
 		case 'custom_config':
 			if ($_SESSION["is_admin"] && isset($_POST["custom_config"])) {
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
