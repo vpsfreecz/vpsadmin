@@ -48,6 +48,11 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List VPS'
 
+    input do
+      resource VpsAdmin::API::Resources::User, label: 'User', desc: 'VPS owner',
+               value_label: :login
+    end
+
     output(:object_list) do
       use :id
       use :common
@@ -93,7 +98,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def query
-      Vps.where(with_restricted)
+      q = Vps.where(with_restricted)
+      q = q.where(m_id: input[:user].id) if input[:user]
+      q
     end
 
     def count
