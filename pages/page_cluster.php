@@ -1098,7 +1098,7 @@ if ($list_nodes) {
 	
 	$xtpl->table_td(_("VPS").':');
 	$xtpl->table_td($stats["vps_running"] .' '._("running").' / '. $stats["vps_stopped"] .' '._("stopped").' / '. $stats["vps_suspended"] .' '._("suspended").' / '.
-					$vps_deleted["cnt"] .' '._("deleted").' / '. $vps_all["cnt"] .' '._("total"));
+					$stats["vps_deleted"] .' '._("deleted").' / '. $stats["vps_count"] .' '._("total"));
 	$xtpl->table_tr();
 	
 	$xtpl->table_td(_("Members").':');
