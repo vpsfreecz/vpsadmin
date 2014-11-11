@@ -46,6 +46,8 @@ class MaintenanceLock < ActiveRecord::Base
       self.active = false
       save!
 
+      obj ||= ::Object.const_get(self.class_name).new
+
       # Unlock all children objects that are otherwise
       # not locked.
       master_lock = obj.find_maintenance_lock
@@ -56,7 +58,7 @@ class MaintenanceLock < ActiveRecord::Base
             maintenance_lock_reason: master_lock.reason
         ) if obj && obj.respond_to?(:update!)
 
-        master_lock.lock_children(obj || Object.const_get(self.class_name).new)
+        master_lock.lock_children(obj)
 
       else
         obj.update!(

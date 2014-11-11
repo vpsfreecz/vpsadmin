@@ -120,7 +120,7 @@ module VpsAdmin::API
 
           lock = ::MaintenanceLock.find_by(
               class_name: cls.to_s,
-              row_id: self.id,
+              row_id: is_a?(ActiveRecord::Base) ? self.id : nil,
               active: true
           )
 
@@ -129,7 +129,7 @@ module VpsAdmin::API
           return lock if lock
 
           parent = cls.maintenance_parent
-          fail 'maintenance_parent not set' unless parent
+          return false unless parent
 
           if parent.is_a?(::Proc)
             @maintenance_lock_cache = parent.call
