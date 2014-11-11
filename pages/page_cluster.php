@@ -1303,6 +1303,7 @@ if ($list_locations) {
 	$xtpl->table_add_category(_("IPv6"));
 	$xtpl->table_add_category(_("On Boot"));
 	$xtpl->table_add_category(_("Domain"));
+	$xtpl->table_add_category('<img title="'._("Toggle maintenance on node.").'" alt="'._("Toggle maintenance on node.").'" src="template/icons/maintenance_mode.png">');
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 	
@@ -1327,6 +1328,7 @@ if ($list_locations) {
 			$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
 		}
 		$xtpl->table_td($loc->domain);
+		$xtpl->table_td(maintenance_lock_icon('location', $loc));
 		$xtpl->table_td('<a href="?page=cluster&action=location_edit&id='.$loc->id.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 		
 		if ($nodes->getTotalCount() > 0) {
