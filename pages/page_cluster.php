@@ -136,64 +136,121 @@ switch($_REQUEST["action"]) {
 		}
 		$list_locations = true;
 		break;
+		
 	case "locations":
 		$list_locations = true;
 		break;
+		
 	case "location_delete":
-		if ($item = $cluster->get_location_by_id($_REQUEST["id"])) {
-			if ($cluster->get_server_count_in_location($item["location_id"]) <= 0) {
-			$cluster->delete_location($_REQUEST["id"]);
-			$xtpl->perex(_("Item deleted"), _("Location deleted."));
-			}
+		try {
+			$api->location->delete($_GET['id']);
+			
+			notify_user(_("Location deleted"), '');
+			redirect('?page=cluster&action=locations');
+			
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Location deletion failed'), $e->getResponse());
 		}
+		
 		$list_locations = true;
 		break;
+		
 	case "location_new":
 		$xtpl->title2(_("New cluster location"));
+		
 		$xtpl->table_add_category('');
 		$xtpl->table_add_category('');
+		
+		$envs = $api->environment->list();
+		$env_choices = array();
+		
+		foreach ($envs as $env)
+			$env_choices[ $env->id ] = $env->label;
+		
 		$xtpl->form_create('?page=cluster&action=location_new_save', 'post');
 		$xtpl->form_add_input(_("Label").':', 'text', '30', 'location_label', '', _("Location name"));
+		$xtpl->form_add_select(_("Environment").':', 'env', $env_choices, '', '');
 		$xtpl->form_add_select(_("Type").':', 'type', $location_types, '', '');
 		$xtpl->form_add_checkbox(_("Has this location IPv6 support?").':', 'has_ipv6', '1', false, '');
 		$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', '1', '');
 		$xtpl->form_add_input(_("Remote console server").':', 'text', '30',	'remote_console_server',	'', _("URL"));
 		$xtpl->form_add_input(_("Domain").':', 'text', '30',	'domain',	$item["domain"], '');
 		$xtpl->form_out(_("Save changes"));
+		
 		break;
+		
 	case "location_new_save":
-		$cluster->set_location(NULL, $_REQUEST["location_label"], $_REQUEST["type"], $_REQUEST["has_ipv6"],
-							$_REQUEST["onboot"], $_REQUEST["remote_console_server"], $_REQUEST["domain"]);
-		$xtpl->perex(_("Changes saved"), _("Location added."));
-		$list_locations = true;
+		try {
+			$api->location->create(array(
+				'label' => $_POST['location_label'],
+				'environment' => $_POST['env'],
+				'type' => $_POST['type'],
+				'has_ipv6' => (bool)$_POST['has_ipv6'],
+				'vps_onboot' => (bool)$_POST['onboot'],
+				'remote_console_server' => $_POST['remote_console_server'],
+				'domain' => $_POST['domain']
+			));
+			
+			notify_user(_("Location created"), '');
+			redirect('?page=cluster&action=locations');
+			
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Location creation failed'), $e->getResponse());
+		}
+		
 		break;
+		
 	case "location_edit":
-		if ($item = $cluster->get_location_by_id($_REQUEST["id"])) {
+		try {
+			$loc = $api->location->find($_GET['id']);
+			
+			$envs = $api->environment->list();
+			$env_choices = array();
+			
+			foreach ($envs as $env)
+				$env_choices[ $env->id ] = $env->label;
+			
 			$xtpl->title2(_("Edit location"));
 			$xtpl->table_add_category('');
 			$xtpl->table_add_category('');
-			$xtpl->form_create('?page=cluster&action=location_edit_save&id='.$_REQUEST["id"], 'post');
-			$xtpl->form_add_input(_("Label").':', 'text', '30', 'location_label', $item["location_label"], _("Location name"));
-			$xtpl->form_add_select(_("Type").':', 'type', $location_types, $item["location_type"], '');
-			$xtpl->form_add_checkbox(_("Has this location IPv6 support?").':', 'has_ipv6', '1', $item["location_has_ipv6"], '');
-			$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', $item["location_vps_onboot"], '');
-			$xtpl->form_add_input(_("Remote console server").':', 'text', '30',	'remote_console_server',	$item["location_remote_console_server"], _("URL"));
-			$xtpl->form_add_input(_("Domain").':', 'text', '30',	'domain',	$item["domain"], '');
+			$xtpl->form_create('?page=cluster&action=location_edit_save&id='.$loc->id, 'post');
+			$xtpl->form_add_input(_("Label").':', 'text', '30', 'location_label', $loc->label, _("Location name"));
+			$xtpl->form_add_select(_("Environment").':', 'env', $env_choices, $loc->environment_id, '');
+			$xtpl->form_add_select(_("Type").':', 'type', $location_types, $loc->type, '');
+			$xtpl->form_add_checkbox(_("Has this location IPv6 support?").':', 'has_ipv6', '1', $loc->has_ipv6, '');
+			$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', $loc->vps_onboot, '');
+			$xtpl->form_add_input(_("Remote console server").':', 'text', '30',	'remote_console_server', $loc->_remote_console_server, _("URL"));
+			$xtpl->form_add_input(_("Domain").':', 'text', '30',	'domain',	$loc->domain, '');
+			
 			$xtpl->form_out(_("Save changes"));
-		} else {
-			$list_ramlimits = true;
+			
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Location find failed'), $e->getResponse());
 		}
+		
 		break;
+		
 	case "location_edit_save":
-		if ($item = $cluster->get_location_by_id($_REQUEST["id"])) {
-			$cluster->set_location($_REQUEST["id"], $_REQUEST["location_label"], $_REQUEST["type"], $_REQUEST["has_ipv6"],
-							$_REQUEST["onboot"], $_REQUEST["remote_console_server"], $_REQUEST["domain"]);
-			$xtpl->perex(_("Changes saved"), _("Location label saved."));
-			$list_locations = true;
-		} else {
-			$list_locations = true;
+		try {
+			$api->location->update($_GET['id'], array(
+				'label' => $_POST['location_label'],
+				'environment' => $_POST['env'],
+				'type' => $_POST['type'],
+				'has_ipv6' => (bool)$_POST['has_ipv6'],
+				'vps_onboot' => (bool)$_POST['onboot'],
+				'remote_console_server' => $_POST['remote_console_server'],
+				'domain' => $_POST['domain']
+			));
+			
+			notify_user(_("Changes saved"), _("Location label saved."));
+			redirect('?page=cluster&action=locations');
+			
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Location update failed'), $e->getResponse());
 		}
+		
 		break;
+		
 	case "ipv4addr":
 		$Cluster_ipv4->table_used_out(_("Used IP addresses"), true);
 		$Cluster_ipv4->table_unused_out(_("Unused IP addresses"), true);
@@ -1239,6 +1296,7 @@ if ($list_configs) {
 
 if ($list_locations) {
 	$xtpl->title2(_("Cluster locations list"));
+	
 	$xtpl->table_add_category(_("ID"));
 	$xtpl->table_add_category(_("Location label"));
 	$xtpl->table_add_category(_("Servers"));
@@ -1247,31 +1305,36 @@ if ($list_locations) {
 	$xtpl->table_add_category(_("Domain"));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
-	$list = $cluster->get_locations();
-	if ($list)
-	foreach($list as $item) {
-		$servers = 0;
-		$servers = $cluster->get_server_count_in_location($item["location_id"]);
-		$xtpl->table_td($item["location_id"]);
-		$xtpl->table_td($item["location_label"]);
-		$xtpl->table_td($servers, false, true);
-		if ($item["location_has_ipv6"]) {
+	
+	$locations = $api->location->list();
+	
+	foreach($locations as $loc) {
+		$nodes = $api->node->list(array('location' => $loc->id, 'limit' => 0, 'meta' => array('count' => true)));
+		
+		$xtpl->table_td($loc->id);
+		$xtpl->table_td($loc->label);
+		$xtpl->table_td($nodes->getTotalCount(), false, true);
+		
+		if ($loc->has_ipv6) {
 			$xtpl->table_td('<img src="template/icons/transact_ok.png" />');
 		} else {
 			$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
 		}
-		if ($item["location_vps_onboot"]) {
+		
+		if ($loc->vps_onboot) {
 			$xtpl->table_td('<img src="template/icons/transact_ok.png" />');
 		} else {
 			$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
 		}
-		$xtpl->table_td($item['domain']);
-		$xtpl->table_td('<a href="?page=cluster&action=location_edit&id='.$item["location_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-		if ($servers > 0) {
+		$xtpl->table_td($loc->domain);
+		$xtpl->table_td('<a href="?page=cluster&action=location_edit&id='.$loc->id.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		
+		if ($nodes->getTotalCount() > 0) {
 			$xtpl->table_td('<img src="template/icons/delete_grey.png" title="'._("Delete - N/A, item is in use").'">');
 		} else {
-			$xtpl->table_td('<a href="?page=cluster&action=location_delete&id='.$item["location_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+			$xtpl->table_td('<a href="?page=cluster&action=location_delete&id='.$loc->id.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
 		}
+		
 		$xtpl->table_tr();
 	}
 	$xtpl->table_out();
