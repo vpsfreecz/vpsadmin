@@ -1296,6 +1296,7 @@ if ($list_locations) {
 	
 	$xtpl->table_add_category(_("ID"));
 	$xtpl->table_add_category(_("Location label"));
+	$xtpl->table_add_category(_("Environment"));
 	$xtpl->table_add_category(_("Servers"));
 	$xtpl->table_add_category(_("IPv6"));
 	$xtpl->table_add_category(_("On Boot"));
@@ -1304,13 +1305,18 @@ if ($list_locations) {
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 	
-	$locations = $api->location->list();
+	$locations = $api->location->list(array('meta' => array('includes' => 'environment')));
 	
 	foreach($locations as $loc) {
-		$nodes = $api->node->list(array('location' => $loc->id, 'limit' => 0, 'meta' => array('count' => true)));
+		$nodes = $api->node->list(array(
+			'location' => $loc->id,
+			'limit' => 0,
+			'meta' => array('count' => true))
+		);
 		
 		$xtpl->table_td($loc->id);
 		$xtpl->table_td($loc->label);
+		$xtpl->table_td($loc->environment->label);
 		$xtpl->table_td($nodes->getTotalCount(), false, true);
 		
 		if ($loc->has_ipv6) {
