@@ -27,12 +27,18 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List locations'
 
+    input do
+      resource VpsAdmin::API::Resources::Environment, label: 'Environment', desc: 'Environment'
+    end
+
     output(:object_list) do
       use :all
     end
 
     authorize do |u|
       allow if u.role == :admin
+      output whitelist: %i(id label)
+      allow
     end
 
     example do
@@ -51,8 +57,18 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       })
     end
 
+    def query
+      q = ::Location
+      q = q.where(environment: input[:environment]) if input[:environment]
+      q
+    end
+
+    def count
+      query.count
+    end
+
     def exec
-      ::Location.all.limit(params[:location][:limit]).offset(params[:location][:offset])
+      with_includes(query).limit(params[:location][:limit]).offset(params[:location][:offset])
     end
   end
 
