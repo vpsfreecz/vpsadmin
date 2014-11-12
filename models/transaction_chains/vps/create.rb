@@ -30,7 +30,7 @@ module TransactionChains
         create(vps)
       end
 
-      use_chain(Vps::ApplyConfig, vps, VpsConfig.default_config_chain(vps.node.location))
+      use_chain(Vps::ApplyConfig, vps, vps.node.location.environment.vps_configs.pluck(:id))
 
       if add_ips
         ips = []

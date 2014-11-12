@@ -3,6 +3,8 @@ class VpsConfig < ActiveRecord::Base
 
   has_many :vps_has_config, foreign_key: :config_id
   has_many :vpses, through: :vps_has_config
+  has_many :environment_config_chains
+  has_many :environments, through: :environment_config_chains
 
   has_paper_trail
 

@@ -1,5 +1,10 @@
 class Environment < ActiveRecord::Base
   has_many :locations
+  has_many :environment_config_chains
+  has_many :vps_configs, ->{
+    order('environment_config_chains.cfg_order ASC')
+  }, through: :environment_config_chains
+
   has_paper_trail
 
   validates :label, :domain, presence: true
@@ -35,6 +40,24 @@ class Environment < ActiveRecord::Base
       end
 
       sum
+    end
+  end
+
+  def set_config_chain(configs)
+    self.class.transaction do
+      # Delete current chain
+      vps_configs.delete_all
+
+      # Create new one
+      i = 0
+
+      configs.each do |cfg|
+        environment_config_chains << EnvironmentConfigChain.new(
+          vps_config: cfg,
+          cfg_order: i
+        )
+        i += 1
+      end
     end
   end
 end

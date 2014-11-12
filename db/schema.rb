@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20141105175157) do
+ActiveRecord::Schema.define(version: 20141112075438) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -103,13 +103,24 @@ ActiveRecord::Schema.define(version: 20141105175157) do
     t.boolean "confirmed",                 default: false, null: false
   end
 
+  create_table "environment_config_chains", force: true do |t|
+    t.integer "environment_id", null: false
+    t.integer "vps_config_id",  null: false
+    t.integer "cfg_order",      null: false
+  end
+
+  add_index "environment_config_chains", ["environment_id", "vps_config_id"], name: "environment_config_chains_unique", unique: true, using: :btree
+
   create_table "environments", force: true do |t|
-    t.string   "label",                   limit: 100,             null: false
-    t.string   "domain",                  limit: 100,             null: false
+    t.string   "label",                   limit: 100,                 null: false
+    t.string   "domain",                  limit: 100,                 null: false
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "maintenance_lock",                    default: 0, null: false
+    t.integer  "maintenance_lock",                    default: 0,     null: false
     t.string   "maintenance_lock_reason"
+    t.boolean  "can_create_vps",                      default: false, null: false
+    t.boolean  "can_destroy_vps",                     default: false, null: false
+    t.integer  "vps_lifetime",                        default: 0,     null: false
   end
 
   create_table "group_snapshots", force: true do |t|

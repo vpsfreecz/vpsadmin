@@ -10,6 +10,10 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
   params(:common) do
     string :label, desc: 'Environment label'
     string :domain, desc: 'Environment FQDN, should be subject\'s root domain'
+    bool :can_create_vps, label: 'Can create a VPS', default: false
+    bool :can_destroy_vps, label: 'Can destroy a VPS', default: false
+    integer :vps_lifetime, label: 'Default VPS lifetime',
+            desc: 'in seconds, 0 is unlimited', default: 0
   end
 
   params(:all) do
@@ -165,4 +169,62 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
   end
 
   include VpsAdmin::API::Maintainable::Action
+
+  class ConfigChain < HaveAPI::Resource
+    version 1
+    route ':environment_id/config_chains'
+    desc 'Manage implicit VPS config chains'
+    model ::EnvironmentConfigChain
+
+    params(:all) do
+      resource VpsAdmin::API::Resources::VpsConfig, label: 'VPS config'
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      desc 'List environment VPS config chain'
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def query
+        ::EnvironmentConfigChain.where(
+            environment: ::Environment.find(params[:environment_id])
+        ).order('cfg_order')
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        with_includes(query).limit(input[:limit]).offset(input[:offset])
+      end
+    end
+
+    class Replace < HaveAPI::Action
+      desc 'Set complete config chain'
+      http_method :post
+
+      input(:object_list) do
+        use :all
+        patch :vps_config, required: true
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        ::Environment.find(params[:environment_id]).set_config_chain(
+            input.map { |v| v[:vps_config] }
+        )
+        ok
+      end
+    end
+  end
 end
