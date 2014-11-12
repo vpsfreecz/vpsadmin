@@ -135,7 +135,130 @@ switch($_REQUEST["action"]) {
 		}
 		$list_locations = true;
 		break;
+	
+	case 'environments':
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
 		
+		$xtpl->title2(_("Environments"));
+		
+		$xtpl->table_add_category('#');
+		$xtpl->table_add_category(_('Label'));
+		$xtpl->table_add_category(_('Domain'));
+		$xtpl->table_add_category(_('Create a VPS'));
+		$xtpl->table_add_category(_('Destroy a VPS'));
+		$xtpl->table_add_category('<img title="'._("Toggle maintenance on environment.").'" alt="'._("Toggle maintenance on environment.").'" src="template/icons/maintenance_mode.png">');
+		$xtpl->table_add_category('');
+		
+		$envs = $api->environment->list();
+		
+		foreach ($envs as $env) {
+			$xtpl->table_td($env->id);
+			$xtpl->table_td($env->label);
+			$xtpl->table_td($env->domain);
+			$xtpl->table_td(boolean_icon($env->can_create_vps));
+			$xtpl->table_td(boolean_icon($env->can_destroy_vps));
+			$xtpl->table_td(maintenance_lock_icon('environment', $env));
+			$xtpl->table_td('<a href="?page=cluster&action=env_edit&id='.$env->id.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+			
+			$xtpl->table_tr();
+		}
+		
+		$xtpl->table_out();
+		
+		break;
+	
+	case 'env_edit':
+		$xtpl->sbar_add(_("Back"), '?page=cluster&action=environments');
+		$env_settings = true;
+		break;
+	
+	case 'env_chain_save':
+		$xtpl->sbar_add(_("Back"), '?page=cluster&action=environments');
+		
+		if (isset($_POST["configs"]) || isset($_POST["add_config"])) {
+			$raw_order = explode('&', $_POST['configs_order']);
+			$cfgs = array();
+			$i = 0;
+			
+			foreach($raw_order as $item) {
+				$item = explode('=', $item);
+				
+				if (!$item[1])
+					continue;
+				elseif (!strncmp($item[1], "add_config", strlen("add_config")))
+					$cfgs[] = $_POST['add_config'][$i++];
+				else {
+					$order = explode('_', $item[1]);
+					$cfgs[] = $order[1];
+				}
+			}
+			
+			$params = array();
+			
+			if ($cfgs) {
+				// configs were changed with javascript dnd
+				foreach ($cfgs as $cfg) {
+					if (!$cfg)
+						continue;
+					
+					$params[] = array('vps_config' => $cfg);
+				}
+				
+			} else {
+				foreach ($_POST['configs'] as $cfg) {
+					if (!$cfg)
+						continue;
+					
+					$params[] = array('vps_config' => $cfg);
+				}
+				
+				foreach ($_POST['add_config'] as $cfg) {
+					if (!$cfg)
+						continue;
+					
+					$params[] = array('vps_config' => $cfg);
+				}
+			}
+			
+			try {
+				$api->environment($_GET['id'])->config_chain->replace($params);
+				
+				notify_user(_('Environment config chain set'), '');
+				redirect('?page=cluster&action=env_edit&id='.$_GET['id']);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailde $e) {
+				$xtpl->perex_format_errors(_('Change of environment config chain failed'), $e->getResponse());
+			}
+			
+			
+		} else {
+			$xtpl->perex(_("Error"), 'Error, contact your administrator');
+			$list_configs=true;
+		}
+		
+		break;
+	
+	case 'env_save':
+		if (isset($_POST['label'])) {
+			try {
+				$api->environment->update($_GET['id'], array(
+					'label' => $_POST['label'],
+					'domain' => $_POST['domain'],
+					'can_create_vps' => (bool)$_POST['can_create_vps'],
+					'can_destroy_vps' => (bool)$_POST['can_destroy_vps'],
+					'vps_lifetime' => $_POST['vps_lifetime'],
+					'max_vps_count' => $_POST['max_vps_count'],
+				));
+				
+				notify_user(_("Environment updated"), '');
+				redirect('?page=cluster&action=environments');
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Environment update failed'), $e->getResponse());
+			}
+		}
+		break;
+	
 	case "locations":
 		$list_locations = true;
 		break;
@@ -451,35 +574,6 @@ switch($_REQUEST["action"]) {
 			$xtpl->perex(_("Changes saved"), _("Config successfully saved."));
 		}
 		$list_configs = true;
-		break;
-	case "configs_default_save":
-		$xtpl->sbar_add(_("Back"), '?page=cluster');
-		
-		if (isset($_POST["configs"]) || isset($_POST["add_config"])) {
-			$raw_order = explode('&', $_POST['configs_order']);
-			$cfgs = array();
-			$i = 0;
-			
-			foreach($raw_order as $item) {
-				$item = explode('=', $item);
-				
-				if (!$item[1])
-					continue;
-				elseif (!strncmp($item[1], "add_config", strlen("add_config")))
-					$cfgs[] = $_POST['add_config'][$i++];
-				else {
-					$order = explode('_', $item[1]);
-					$cfgs[] = $order[1];
-				}
-			}
-			$cluster->save_default_configs($_POST["configs"] ? $_POST["configs"] : array(), $cfgs, $_POST["add_config"], "default_config_chain");
-			
-			$list_configs=true;
-		} else {
-			$xtpl->perex(_("Error"), 'Error, contact your administrator');
-			$list_configs=true;
-		}
-		
 		break;
 	case "configs_regen":
 		$cluster->regenerate_all_configs();
@@ -927,48 +1021,6 @@ switch($_REQUEST["action"]) {
 		$xtpl->perex(_("Payments settings saved"), '');
 		$list_nodes = true;
 		break;
-	case "playground_settings":
-		$xtpl->sbar_add(_("Back"), '?page=cluster');
-		$playground_settings=true;
-		break;
-	case "playground_settings_save":
-		$xtpl->perex(_("Playground settings saved"), '');
-		
-		$cluster_cfg->set("playground_enabled", (bool)$_POST["enabled"]);
-		$cluster_cfg->set("playground_backup", (bool)$_POST["backup"]);
-		$cluster_cfg->set("playground_vps_lifetime", (int)$_POST["lifetime"]);
-		
-		$playground_settings = true;
-		break;
-	case "playground_configs_default_save":
-		$xtpl->sbar_add(_("Back"), '?page=cluster');
-		
-		if (isset($_POST["configs"]) || isset($_POST["add_config"])) {
-			$raw_order = explode('&', $_POST['configs_order']);
-			$cfgs = array();
-			$i = 0;
-			
-			foreach($raw_order as $item) {
-				$item = explode('=', $item);
-				
-				if (!$item[1])
-					continue;
-				elseif (!strncmp($item[1], "add_config", strlen("add_config")))
-					$cfgs[] = $_POST['add_config'][$i++];
-				else {
-					$order = explode('_', $item[1]);
-					$cfgs[] = $order[1];
-				}
-			}
-			$cluster->save_default_configs($_POST["configs"] ? $_POST["configs"] : array(), $cfgs, $_POST["add_config"], "playground_default_config_chain");
-			
-			$playground_settings=true;
-		} else {
-			$xtpl->perex(_("Error"), 'Error, contact your administrator');
-			$playground_settings=true;
-		}
-		
-		break;
 	case "noticeboard":
 		$noticeboard = true;
 		break;
@@ -1077,10 +1129,10 @@ if ($list_nodes) {
 	$xtpl->sbar_add(_("Manage IPv4 address list"), '?page=cluster&action=ipv4addr');
 	$xtpl->sbar_add(_("Manage IPv6 address list"), '?page=cluster&action=ipv6addr');
 	$xtpl->sbar_add(_("Manage DNS servers"), '?page=cluster&action=dns');
+	$xtpl->sbar_add(_("Manage environments"), '?page=cluster&action=environments');
 	$xtpl->sbar_add(_("Manage locations"), '?page=cluster&action=locations');
 	$xtpl->sbar_add(_("Manage Mailer"), '?page=cluster&action=mailer');
 	$xtpl->sbar_add(_("Manage Payments"), '?page=cluster&action=payments_settings');
-	$xtpl->sbar_add(_("Manage playground"), '?page=cluster&action=playground_settings');
 	$xtpl->sbar_add(_("Notice board & log"), '?page=cluster&action=noticeboard');
 	$xtpl->sbar_add(_("Help boxes"), '?page=cluster&action=helpboxes');
 	$xtpl->sbar_add(_("Edit vpsAdmin textfields"), '?page=cluster&action=fields');
@@ -1238,57 +1290,6 @@ if ($list_configs) {
 	}
 	
 	$xtpl->table_out();
-	
-	$configs_select = list_configs(true);
-	$options = "";
-	
-	foreach($configs_select as $id => $label)
-		$options .= '<option value="'.$id.'">'.$label.'</option>';
-	
-	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
-	<script type="text/javascript">
-		function dnd() {
-			$("#configs").tableDnD({
-				onDrop: function(table, row) {
-					$("#configs_order").val($.tableDnD.serialize());
-				}
-			});
-		}
-		
-		$(document).ready(function() {
-			var add_config_id = 1;
-			
-			dnd();
-			
-			$("#add_row").click(function (){
-				$(\'<tr id="add_config_\' + add_config_id++ + \'"><td>'._('Add').':</td><td><select name="add_config[]">'.$options.'</select></td></tr>\').fadeIn("slow").insertBefore("#configs tr:nth-last-child(1)");
-				dnd();
-			});
-			
-			$(".delete-config").click(function (){
-				$(this).closest("tr").remove();
-			});
-		});
-    </script>');
-	
-	$chain = $cluster_cfg->get("default_config_chain");
-	$configs = list_configs();
-	
-	$xtpl->form_create('?page=cluster&action=configs_default_save', 'post');
-	$xtpl->table_title(_("Default config chain"));
-	$xtpl->table_add_category(_('Config'));
-	$xtpl->table_add_category('');
-	
-	foreach($chain as $cfg) {
-		$xtpl->form_add_select_pure('configs[]', $configs, $cfg);
-		$xtpl->table_td('<a href="javascript:" class="delete-config">'._('delete').'</a>');
-		$xtpl->table_tr(false, false, false, "order_$cfg");
-	}
-	
-	$xtpl->table_td('<input type="hidden" name="configs_order" id="configs_order" value="">' .  _('Add').':');
-	$xtpl->form_add_select_pure('add_config[]', $configs_select);
-	$xtpl->table_tr(false, false, false, 'add_config');
-	$xtpl->form_out(_("Save changes"), 'configs', '<a href="javascript:" id="add_row">+</a>');
 }
 
 if ($list_locations) {
@@ -1377,21 +1378,30 @@ if ($list_dns) {
 	$xtpl->sbar_add(_("New DNS Server"), '?page=cluster&action=dns_new');
 }
 
-if ($playground_settings) {
-	$xtpl->title2("Manage Playground Settings");
+if ($env_settings) {
+	$env = $api->environment->find($_GET['id']);
 	
-	$xtpl->table_add_category(_('Playground'));
+	$xtpl->title2(_("Manage environment").' '.$env->label);
+	
+	$xtpl->table_add_category($env->label);
 	$xtpl->table_add_category('');
-	$xtpl->form_create('?page=cluster&action=playground_settings_save', 'post');
-	$xtpl->form_add_checkbox(_('Enabled').':', 'enabled', '1', $cluster_cfg->get("playground_enabled"), _('Allow members to create playground VPS'));
-	$xtpl->form_add_checkbox(_('Backup').':', 'backup', '1', $cluster_cfg->get("playground_backup"), _('Should be newly created VPS backed up?'));
-	$xtpl->form_add_input(_("Default VPS lifetime").':', 'text', '5', 'lifetime', $cluster_cfg->get("playground_vps_lifetime"), _("days"));
+	
+	$xtpl->form_create('?page=cluster&action=env_save&id='.$env->id, 'post');
+	
+	$xtpl->form_add_input(_("Label").':', 'text', '30', 'label', $env->label);
+	$xtpl->form_add_input(_("Domain").':', 'text', '30', 'domain', $env->domain);
+	$xtpl->form_add_checkbox(_('Create a VPS').':', 'can_create_vps', '1', $env->can_create_vps, _('Allow users to create a VPS'));
+	$xtpl->form_add_checkbox(_('Destroy a VPS').':', 'can_destroy_vps', '1', $env->can_destroy_vps, _('Allow users to destroy a VPS'));
+	$xtpl->form_add_input(_("VPS lifetime").':', 'text', '30', 'vps_lifetime', $env->vps_lifetime, _("seconds"));
+	$xtpl->form_add_input(_("Max VPS count").':', 'text', '5', 'max_vps_count', $env->max_vps_count, _("Maximum number of VPSes user can have"));
+	
 	$xtpl->form_out(_('Save'));
 	
-	$configs_select = list_configs(true);
+	$all_configs = resource_list_to_options($api->vps_config->list());
 	$options = "";
+	$with_empty = array(0 => '---') + $all_configs;
 	
-	foreach($configs_select as $id => $label)
+	foreach($with_empty as $id => $label)
 		$options .= '<option value="'.$id.'">'.$label.'</option>';
 	
 	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
@@ -1402,7 +1412,7 @@ if ($playground_settings) {
 					$("#configs_order").val($.tableDnD.serialize());
 				}
 			});
-		}
+		}i
 		
 		$(document).ready(function() {
 			var add_config_id = 1;
@@ -1420,22 +1430,21 @@ if ($playground_settings) {
 		});
     </script>');
 	
-	$chain = $cluster_cfg->get("playground_default_config_chain");
-	$configs = list_configs();
+	$chain = $env->config_chain->list();
 	
-	$xtpl->form_create('?page=cluster&action=playground_configs_default_save', 'post');
-	$xtpl->table_title(_("Playground config chain"));
+	$xtpl->form_create('?page=cluster&action=env_chain_save&id='.$env->id, 'post');
+	$xtpl->table_title($env->label.' '._("config chain"));
 	$xtpl->table_add_category(_('Config'));
 	$xtpl->table_add_category('');
 	
 	foreach($chain as $cfg) {
-		$xtpl->form_add_select_pure('configs[]', $configs, $cfg);
+		$xtpl->form_add_select_pure('configs[]', $all_configs, $cfg->vps_config_id);
 		$xtpl->table_td('<a href="javascript:" class="delete-config">'._('delete').'</a>');
-		$xtpl->table_tr(false, false, false, "order_$cfg");
+		$xtpl->table_tr(false, false, false, "order_{$cfg->vps_config_id}");
 	}
 	
 	$xtpl->table_td('<input type="hidden" name="configs_order" id="configs_order" value="">' .  _('Add').':');
-	$xtpl->form_add_select_pure('add_config[]', $configs_select);
+	$xtpl->form_add_select_pure('add_config[]', $with_empty);
 	$xtpl->table_tr(false, false, false, 'add_config');
 	$xtpl->form_out(_("Save changes"), 'configs', '<a href="javascript:" id="add_row">+</a>');
 }

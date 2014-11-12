@@ -322,4 +322,12 @@ function resource_list_to_options($list, $id = 'id', $label = 'label') {
 	return $ret;
 }
 
+function boolean_icon($val) {
+	if ($val) {
+		return '<img src="template/icons/transact_ok.png" />';
+	} else {
+		return '<img src="template/icons/transact_fail.png" />';
+	}
+}
+
 ?>
