@@ -156,19 +156,6 @@ function list_servers($without_id = false, $roles = NULL) {
     return $ret;
 }
 
-function list_playground_servers($without_id = false) {
-    global $db;
-	if ($without_id)
-		$sql = "SELECT server_id, server_name FROM servers INNER JOIN locations ON server_location = location_id WHERE server_id != '".$db->check($without_id)."' AND location_type = 'playground' ORDER BY server_location,server_id";
-	else
-		$sql = "SELECT server_id, server_name FROM servers INNER JOIN locations ON server_location = location_id WHERE location_type = 'playground' ORDER BY server_location,server_id";
-
-    if ($result = $db->query($sql))
-	while ($row = $db->fetch_array($result))
-	    $ret[$row["server_id"]] = $row["server_name"];
-    return $ret;
-}
-
 function list_dns_resolvers() {
 	global $cluster;
 	
@@ -181,33 +168,6 @@ function list_dns_resolvers() {
 	}
 	
 	return $ret;
-}
-
-function pick_playground_server() {
-	global $db;
-	
-	$servers = list_servers(false, array("node"));
-	
-	$sql = "SELECT server_id
-	        FROM servers s
-	        LEFT JOIN vps v ON v.vps_server = s.server_id
-	        LEFT JOIN vps_status st ON v.vps_id = st.vps_id
-	        INNER JOIN locations l ON server_location = l.location_id
-	        WHERE
-	          (st.vps_up = 1 OR st.vps_up IS NULL)
-	          AND max_vps > 0
-	          AND server_maintenance = 0
-	          AND location_type = 'playground'
-	        GROUP BY server_id
-	        ORDER BY COUNT(st.vps_up) / max_vps ASC
-            LIMIT 1
-	        ";
-	
-	$rs = $db->query($sql);
-	
-	if($row = $db->fetch_array($rs)) {
-		return $row["server_id"];
-	} else return false;
 }
 
 function pick_free_node($location) {
@@ -351,6 +311,15 @@ function maintenance_lock_icon($type, $obj) {
 			             title="'._('Under maintenance').': '.htmlspecialchars($obj->maintenance_lock_reason).'"
 			             src="template/icons/maintenance_mode.png">';
 	}
+}
+
+function resource_list_to_options($list, $id = 'id', $label = 'label') {
+	$ret = array();
+	
+	foreach ($list as $item)
+		$ret[ $item->{$id} ] = $item->{$label};
+	
+	return $ret;
 }
 
 ?>

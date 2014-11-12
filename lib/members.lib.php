@@ -233,26 +233,6 @@ class member_load {
     return isset($this->m["m_created"]) && ((time() - $this->m["m_created"]) <= 3600*24*7);
   }
   
-  function can_use_playground() {
-	global $db;
-	
-	if (!$this->exists || !$this->m["m_playground_enable"] || $this->m["m_state"] != "active")
-		return false;
-	
-	$sql = "SELECT COUNT(vps_id) AS count
-		FROM vps
-		INNER JOIN servers ON vps_server = server_id
-		INNER JOIN locations ON location_id = server_location
-		WHERE m_id = ".$db->check($this->m["m_id"])." AND location_type = 'playground' AND vps_deleted IS NULL";
-	if ($result = $db->query($sql)) {
-		if ($row = $db->fetch_array($result)) {
-			return $row["count"] < 1;
-		}
-	}
-	
-	return false;
-  }
-  
   function start_all_vpses() {
 	global $db;
 	

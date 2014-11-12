@@ -48,7 +48,6 @@ $list_nodes = false;
 $list_templates = false;
 
 $server_types = array("node" => "Node", "storage" => "Storage", "mailer" => "Mailer");
-$location_types = array("production" => "Production", "playground" => "Playground");
 
 switch($_REQUEST["action"]) {
 	case "general_settings":
@@ -170,7 +169,6 @@ switch($_REQUEST["action"]) {
 		$xtpl->form_create('?page=cluster&action=location_new_save', 'post');
 		$xtpl->form_add_input(_("Label").':', 'text', '30', 'location_label', '', _("Location name"));
 		$xtpl->form_add_select(_("Environment").':', 'env', $env_choices, '', '');
-		$xtpl->form_add_select(_("Type").':', 'type', $location_types, '', '');
 		$xtpl->form_add_checkbox(_("Has this location IPv6 support?").':', 'has_ipv6', '1', false, '');
 		$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', '1', '');
 		$xtpl->form_add_input(_("Remote console server").':', 'text', '30',	'remote_console_server',	'', _("URL"));
@@ -216,7 +214,6 @@ switch($_REQUEST["action"]) {
 			$xtpl->form_create('?page=cluster&action=location_edit_save&id='.$loc->id, 'post');
 			$xtpl->form_add_input(_("Label").':', 'text', '30', 'location_label', $loc->label, _("Location name"));
 			$xtpl->form_add_select(_("Environment").':', 'env', $env_choices, $loc->environment_id, '');
-			$xtpl->form_add_select(_("Type").':', 'type', $location_types, $loc->type, '');
 			$xtpl->form_add_checkbox(_("Has this location IPv6 support?").':', 'has_ipv6', '1', $loc->has_ipv6, '');
 			$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', $loc->vps_onboot, '');
 			$xtpl->form_add_input(_("Remote console server").':', 'text', '30',	'remote_console_server', $loc->_remote_console_server, _("URL"));

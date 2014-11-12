@@ -1196,14 +1196,6 @@ function ipadd($ip, $type = 4, $dep = NULL) {
 	$db->query("UPDATE vps SET vps_expiration = ".$db->check($timestamp ? (int)$timestamp : "NULL")." WHERE vps_id = ".$db->check($this->veid));
   }
   
-  function is_playground() {
-	global $db;
-	
-	$l = $db->findByColumnOnce("locations", "location_id", $this->ve["server_location"]);
-	
-	return $l["location_type"] == "playground";
-  }
-  
   function is_manipulable() {
 	return $_SESSION["is_admin"] || !$this->ve["server_maintenance"];
   }

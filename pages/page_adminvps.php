@@ -19,25 +19,66 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-function print_newvps() {
-	global $xtpl, $cluster;
-	$xtpl->title(_("Create VPS"));
+function print_newvps_page1() {
+	global $xtpl, $api;
+	
+	$xtpl->title(_("Create VPS: Select an environment"));
+	
+	$xtpl->table_add_category('&nbsp;');
+	$xtpl->table_add_category('&nbsp;');
+	$xtpl->table_add_category('&nbsp;');
+	
 	$xtpl->form_create('?page=adminvps&section=vps&action=new2&create=1', 'post');
+
+	$xtpl->form_add_select(_("Environment").':', 'environment_id', resource_list_to_options($api->environment->list()), '',  '');
+	
+	$xtpl->form_out(_("Next"));
+}
+
+function print_newvps_page2($env) {
+	global $xtpl, $api;
+	
+	$xtpl->title(_("Create VPS: Select a location"));
+	
+	$xtpl->table_add_category('&nbsp;');
+	$xtpl->table_add_category('&nbsp;');
+	$xtpl->table_add_category('&nbsp;');
+	
+	$xtpl->form_create('?page=adminvps&section=vps&action=new3&create=1&env_id='.$env, 'post');
+
+	$choices = resource_list_to_options($api->location->list(array('environment' => $env)));
+	$empty = array(0 => '--- select automatically ---');
+	
+	$xtpl->form_add_select(_("Location").':', 'location_id', $empty + $choices, '',  '');
+	
+	$xtpl->form_out(_("Next"));
+}
+
+function print_newvps_page3($env, $loc) {
+	global $xtpl, $api;
+	
+	$xtpl->title(_("Create VPS"));
+	
+	$xtpl->table_add_category('&nbsp;');
+	$xtpl->table_add_category('&nbsp;');
+	$xtpl->table_add_category('&nbsp;');
+	
+	$xtpl->form_create('?page=adminvps&section=vps&action=new4&create=1&env_id='.$env.'&loc_id='.$loc, 'post');
 	$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'vps_hostname', '', _("A-z, a-z"), 255);
+	
 	if ($_SESSION["is_admin"]) {
-		$xtpl->form_add_select(_("HW server").':', 'vps_server', list_servers(false, array("node")), '2', '');
-		$xtpl->form_add_select(_("Owner").':', 'm_id', members_list(), '', '');
+		$xtpl->form_add_select(_("HW server").':', 'vps_server', resource_list_to_options($api->node->list(), 'id', 'name'), '', '');
+		$xtpl->form_add_select(_("Owner").':', 'm_id', resource_list_to_options($api->user->list(), 'id', 'login'), $_SESSION['member']['m_id'], '');
 	}
-	$xtpl->form_add_select(_("Distribution").':', 'vps_template', list_templates(false), '',  '');
+	
+	$xtpl->form_add_select(_("Distribution").':', 'vps_template', resource_list_to_options($api->os_template->list()), '',  '');
 	
 	if ($_SESSION["is_admin"]) {
 		//$xtpl->form_add_select(_("IPv4").':', 'ipv4', get_all_ip_list(4), '1', '');
 		$xtpl->form_add_checkbox(_("Boot on create").':', 'boot_after_create', '1', true, $hint = '');
 		$xtpl->form_add_textarea(_("Extra information about VPS").':', 28, 4, 'vps_info', '', '');
 	}
-	$xtpl->table_add_category('&nbsp;');
-	$xtpl->table_add_category('&nbsp;');
-	$xtpl->table_add_category('&nbsp;');
+	
 	$xtpl->form_out(_("Create"));
 }
 
@@ -92,37 +133,49 @@ if ($_GET["run"] == 'restart') {
 		$xtpl->perex(_("Account suspended"), _("You are not allowed to make \"restart\" operation.<br />Your account is suspended because of:") . ' ' . $member_of_session->m["m_suspend_reason"]);
 }
 
-$playground_servers = $cluster->list_playground_servers();
-$playground_enabled = $cluster_cfg->get("playground_enabled") && !$_SESSION["is_admin"];
-$playground_mode = !$_SESSION["is_admin"] && $playground_enabled && count($playground_servers) > 0 && $member_of_session->can_use_playground();
-
 $_GET["action"] = isset($_GET["action"]) ? $_GET["action"] : false;
 
 switch ($_GET["action"]) {
 		case 'list':
 			$list_vps = true;
 			break;
+			
 		case 'new':
-			print_newvps();
+			print_newvps_page1();
 			break;
+			
 		case 'new2':
-			if ($_GET["create"] && ($_SESSION["is_admin"] || $playground_mode)) {
+			print_newvps_page2($_POST['environment_id']);
+			break;
+		
+		case 'new3':
+			print_newvps_page3($_GET['env_id'], $_POST['location_id']);
+			break;
+			
+		case 'new4':
+			if ($_GET["create"]) {
 				$params = array(
 					'hostname' => $_POST['vps_hostname'],
 					'os_template' => $_POST['vps_template'],
-					'info' => $playground_mode ? '' : $_POST['vps_info']
+					'info' => $_SESSION['is_admin'] ? '' : $_POST['vps_info']
 				);
 				
 				if($_SESSION["is_admin"]) {
 					$params['user'] = $_POST['m_id'];
 					$params['node'] = $_POST['vps_server'];
 					$params['onboot'] = $_POST['boot_after_create'];
+					
+				} else {
+					if ($_GET['loc_id'])
+						$params['location'] = (int)$_GET['loc_id'];
+					else
+						$params['environment'] = (int)$_GET['env_id'];
 				}
 				
 				try {
 					$vps = $api->vps->create($params);
 					
-					if ($params['onboot'] || $playground_mode) {
+					if ($params['onboot'] || !$_SESSION['is_admin']) {
 						notify_user(_("VPS create ").' '.$vps->id, _("VPS will be created and booted afterwards."));
 						
 					} else {
@@ -134,10 +187,11 @@ switch ($_GET["action"]) {
 				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 					$xtpl->perex_format_errors(_('VPS creation failed'), $e->getResponse());
 					
-					print_newvps();
+					print_newvps_page3($_GET['env_id'], $_GET['loc_id']);
 				}
 			}
 			break;
+			
 		case 'delete':
 			$xtpl->perex(_("Are you sure you want to delete VPS number").' '.$_GET["veid"].'?', '');
 			
@@ -524,7 +578,7 @@ switch ($_GET["action"]) {
 if ($show_index) {
 	$xtpl->perex('',
 		'<h3><a href="?page=adminvps&action=list">List VPSes</a></h3>'.
-		'<h3><a href="?page=adminvps&action=new">New VPS</a></h3>'
+		'<h3><a href="?page=adminvps&action=new3">New VPS</a></h3>'
 	);
 }
 
@@ -568,15 +622,7 @@ if (isset($list_vps) && $list_vps) {
 			if (!$_SESSION['is_admin'])
 				$xtpl->table_td('<a href="?page=console&veid='.$vps->id.'"><img src="template/icons/console.png"  title="'._("Remote Console").'"/></a>');
 			
-			$can_delete = false;
-			
-			if ($playground_enabled && $_SESSION["member"]["m_id"] == $vps->user_id) {
-				foreach ($playground_servers as $pg)
-					if ($pg["server_id"] == $vps->node_id) {
-						$can_delete = true;
-						break;
-					}
-			}
+			$can_delete = false; // FIXME
 			
 			if ($_SESSION['is_admin'])
 				$xtpl->table_td(maintenance_lock_icon('vps', $vps));
@@ -610,17 +656,15 @@ if (isset($list_vps) && $list_vps) {
 		$xtpl->table_add_category(_("Total number of VPS").':');
 		$xtpl->table_add_category($vpses->getTotalCount());
 		$xtpl->table_out();
-	}
-
-	if ($playground_mode) {
-		$new_title = _("New playground VPS");
-		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'.$new_title.'" /> '.$new_title, '?page=adminvps&section=vps&action=new');
+		
+	} else {
+		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new');
 	}
 }
 
 if($_SESSION["is_admin"] && ($list_vps || $show_index)) {
 	if ($_SESSION["is_admin"]) {
-		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new');
+		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new3');
 		$xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List VPSes").'" /> '._("List VPSes"), '?page=adminvps&action=list');
 		$xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List IP addresses").'" /> '._("List IP addresses"), '?page=adminvps&action=alliplist');
 	}
@@ -1031,6 +1075,7 @@ if (isset($show_info) && $show_info) {
 		
 	// Swap
 	// if ($_SESSION["is_admin"] || !$vps->is_playground()) {
+	/*
 	if ($_SESSION["is_admin"]) {
 		$xtpl->form_create('?page=adminvps&action=swap&veid='.$vps->id, 'post');
 		
@@ -1063,6 +1108,7 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_tr();
 		$xtpl->table_out();
 	}
+	*/
 		
 	// Backuper
 		$xtpl->form_create('?page=adminvps&action=setbackuper&veid='.$vps->id, 'post');
