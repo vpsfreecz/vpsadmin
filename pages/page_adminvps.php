@@ -256,8 +256,7 @@ switch ($_GET["action"]) {
 				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
 				
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				$xtpl->perex_format_errors(_('Change of the hostname failed'), $e->getResponse());
-				$show_info=true;
+				 {}$show_info=true;
 			}
 			break;
 		case 'configs':
@@ -265,8 +264,6 @@ switch ($_GET["action"]) {
 				$raw_order = explode('&', $_POST['configs_order']);
 				$cfgs = array();
 				$i = 0;
-				
-				echo var_dump($_POST['configs_order']);
 				
 				foreach($raw_order as $item) {
 					$item = explode('=', $item);
