@@ -14,6 +14,8 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     bool :can_destroy_vps, label: 'Can destroy a VPS', default: false
     integer :vps_lifetime, label: 'Default VPS lifetime',
             desc: 'in seconds, 0 is unlimited', default: 0
+    integer :max_vps_count, label: 'Maximum number of VPS per user',
+            desc: '0 is unlimited', default: 1
   end
 
   params(:all) do
@@ -117,7 +119,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     end
 
     def exec
-      ::Environment.find(params[:environment_id]).attributes
+      ::Environment.find(params[:environment_id])
     end
   end
 

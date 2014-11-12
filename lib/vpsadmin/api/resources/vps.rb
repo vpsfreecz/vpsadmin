@@ -116,6 +116,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     desc 'Create VPS'
 
     input do
+      resource VpsAdmin::API::Resources::Environment, label: 'Environment',
+               desc: 'Environment in which to create the VPS, for non-admins'
+      resource VpsAdmin::API::Resources::Location, label: 'Location',
+               desc: 'Location in which to create the VPS, for non-admins'
       use :common
     end
 
@@ -125,7 +129,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(hostname os_template dns_resolver)
+      input whitelist: %i(environment location hostname os_template dns_resolver)
       allow
     end
 
@@ -156,23 +160,46 @@ END
     end
 
     def exec
-      # FIXME: maintenance check
-      vps_params = params[:vps]
+      if current_user.role == :admin
+        input[:user] ||= current_user
 
-      unless current_user.role == :admin
-        unless current_user.can_use_playground?
-          error('playground disabled or VPS already exists')
+      else
+        if input[:environment].nil? && input[:location].nil?
+          error('provide either an environment or a location')
         end
 
-        vps_params.update({
+        if input[:location]
+          node = ::Node.pick_by_location(input[:location])
+
+        else
+          node = ::Node.pick_by_env(input[:environment])
+        end
+
+        input.delete(:location)
+        input.delete(:environment)
+
+        unless node
+          error('no free node is available in selected environment/location')
+        end
+
+        env = node.location.environment
+
+        if !current_user.env_config(env, :can_create_vps)
+          error('insufficient permission to create a VPS in this environment')
+
+        elsif current_user.vps_in_env(env) >= current_user.env_config(env, :max_vps_count)
+          error('cannot create more VPSes in this environment')
+        end
+
+        input.update({
             user: current_user,
-            node: ::Node.pick_node_by_location_type('playground'),
-            vps_expiration: Time.new.to_i +
-                            SysConfig.get('playground_vps_lifetime')* 24 * 60 * 60
+            node: node
         })
       end
 
-      vps = ::Vps.new(to_db_names(vps_params))
+      maintenance_check!(input[:node])
+
+      vps = ::Vps.new(to_db_names(input))
 
       if vps.create(current_user.role == :admin)
         ok(vps)

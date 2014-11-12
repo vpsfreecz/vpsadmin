@@ -111,6 +111,17 @@ ActiveRecord::Schema.define(version: 20141112075438) do
 
   add_index "environment_config_chains", ["environment_id", "vps_config_id"], name: "environment_config_chains_unique", unique: true, using: :btree
 
+  create_table "environment_user_configs", force: true do |t|
+    t.integer "environment_id"
+    t.integer "user_id"
+    t.boolean "can_create_vps",  default: false, null: false
+    t.boolean "can_destroy_vps", default: false, null: false
+    t.boolean "vps_lifetime",    default: false, null: false
+    t.integer "max_vps_count",   default: 1,     null: false
+  end
+
+  add_index "environment_user_configs", ["environment_id", "user_id"], name: "environment_user_configs_unique", unique: true, using: :btree
+
   create_table "environments", force: true do |t|
     t.string   "label",                   limit: 100,                 null: false
     t.string   "domain",                  limit: 100,                 null: false
@@ -121,6 +132,7 @@ ActiveRecord::Schema.define(version: 20141112075438) do
     t.boolean  "can_create_vps",                      default: false, null: false
     t.boolean  "can_destroy_vps",                     default: false, null: false
     t.integer  "vps_lifetime",                        default: 0,     null: false
+    t.integer  "max_vps_count",                       default: 1,     null: false
   end
 
   create_table "group_snapshots", force: true do |t|
@@ -135,16 +147,15 @@ ActiveRecord::Schema.define(version: 20141112075438) do
   end
 
   create_table "locations", primary_key: "location_id", force: true do |t|
-    t.string   "location_label",                 limit: 63,                         null: false
-    t.string   "location_type",                  limit: 10,  default: "production", null: false
-    t.boolean  "location_has_ipv6",                                                 null: false
-    t.boolean  "location_vps_onboot",                        default: true,         null: false
-    t.string   "location_remote_console_server",                                    null: false
+    t.string   "location_label",                 limit: 63,                 null: false
+    t.boolean  "location_has_ipv6",                                         null: false
+    t.boolean  "location_vps_onboot",                        default: true, null: false
+    t.string   "location_remote_console_server",                            null: false
     t.integer  "environment_id"
-    t.string   "domain",                         limit: 100,                        null: false
+    t.string   "domain",                         limit: 100,                null: false
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "maintenance_lock",                           default: 0,            null: false
+    t.integer  "maintenance_lock",                           default: 0,    null: false
     t.string   "maintenance_lock_reason"
   end
 

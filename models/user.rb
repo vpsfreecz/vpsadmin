@@ -5,6 +5,8 @@ class User < ActiveRecord::Base
   has_many :vpses, :foreign_key => :m_id
   has_many :transactions, foreign_key: :t_m_id
   has_many :storage_exports, foreign_key: :member_id
+  has_many :environment_user_configs
+  has_many :environments, through: :environment_user_configs
 
   before_validation :set_no_password
 
@@ -79,18 +81,19 @@ class User < ActiveRecord::Base
     VpsAdmin::API::CryptoProvider.matches?(m_pass, *credentials)
   end
 
-  def can_use_playground?
-    return false if !m_playground_enable || !SysConfig.get('playground_enabled')
+  def env_config(env, name)
+    return @user_env_cfg.method(name).call if @user_env_cfg
 
-    cnt = Vps.joins('
-      INNER JOIN servers ON vps_server = server_id
-		  INNER JOIN locations ON location_id = server_location
-    ').where(
-        'm_id = ? AND location_type = ? AND vps_deleted IS NULL',
-        m_id, 'playground'
+    @user_env_cfg = environment_user_configs.find_by(environment: env)
+    return @user_env_cfg.method(name).call if @user_env_cfg
+
+    env.method(name).call
+  end
+
+  def vps_in_env(env)
+    vpses.joins(node: [:location]).where(
+        locations: {environment_id: env.id}
     ).count
-
-    cnt > 0 ? false : true
   end
 
   def self.authenticate(username, password)

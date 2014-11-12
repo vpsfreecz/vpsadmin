@@ -4,6 +4,8 @@ class Environment < ActiveRecord::Base
   has_many :vps_configs, ->{
     order('environment_config_chains.cfg_order ASC')
   }, through: :environment_config_chains
+  has_many :environment_user_configs
+  has_many :users, through: :environment_user_configs
 
   has_paper_trail
 

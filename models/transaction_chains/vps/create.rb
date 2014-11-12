@@ -3,6 +3,7 @@ module TransactionChains
     label 'Create VPS'
 
     def link_chain(vps, add_ips)
+      vps.save!
       lock(vps)
 
       pool = vps.node.pools.where(role: :hypervisor).take!

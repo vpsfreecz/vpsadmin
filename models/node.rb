@@ -46,19 +46,34 @@ class Node < ActiveRecord::Base
     "#{name}.#{location.fqdn}"
   end
 
-  def self.pick_node_by_location_type(loc_type)
+  def self.pick_by_env(env)
     self.joins('
-      LEFT JOIN vps ON vps.vps_server = servers.server_id
-      LEFT JOIN vps_status st ON st.vps_id = vps.vps_id
-      INNER JOIN locations l ON server_location = location_id
-    ').where('
-      (st.vps_up = 1 OR st.vps_up IS NULL)
-      AND max_vps > 0
-      AND server_maintenance = 0
-      AND location_type = ?
-    ', loc_type).group('server_id')
-    .order('COUNT(st.vps_up) / max_vps ASC')
-    .take
+          LEFT JOIN vps ON vps.vps_server = servers.server_id
+          LEFT JOIN vps_status st ON st.vps_id = vps.vps_id
+          INNER JOIN locations l ON server_location = location_id
+        ').where('
+          (st.vps_up = 1 OR st.vps_up IS NULL)
+          AND servers.max_vps > 0
+          AND servers.maintenance_lock = 0
+          AND l.environment_id = ?
+        ', env.id).group('servers.server_id')
+      .order('COUNT(st.vps_up) / max_vps ASC')
+      .take
+  end
+
+  def self.pick_by_location(loc)
+    self.joins('
+        LEFT JOIN vps ON vps.vps_server = servers.server_id
+        LEFT JOIN vps_status st ON st.vps_id = vps.vps_id
+        INNER JOIN locations l ON server_location = location_id
+      ').where('
+        (st.vps_up = 1 OR st.vps_up IS NULL)
+        AND servers.max_vps > 0
+        AND servers.maintenance_lock = 0
+        AND location_id = ?
+      ', loc.id).group('server_id')
+      .order('COUNT(st.vps_up) / max_vps ASC')
+      .take
   end
 
   def status

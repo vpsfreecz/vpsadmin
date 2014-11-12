@@ -43,13 +43,20 @@ class Vps < ActiveRecord::Base
   maintenance_parent :node
 
   def create(add_ips)
-    self.vps_backup_export = 0
-    self.vps_backup_exclude = ''
+    self.vps_backup_export = 0 # FIXME
+    self.vps_backup_exclude = '' # FIXME
     self.vps_config = ''
+
+    lifetime = self.user.env_config(
+        node.location.environment,
+        :vps_lifetime
+    )
+
+    self.vps_expiration = Time.new.to_i + lifetime if lifetime != 0
 
     self.dns_resolver_id ||= DnsResolver.pick_suitable_resolver_for_vps(self).id
 
-    if save
+    if valid?
       TransactionChains::Vps::Create.fire(self, add_ips)
     else
       false
