@@ -36,7 +36,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict templ_enabled: true
-      output whitelist: %i(label info supported)
+      output whitelist: %i(id label info supported)
       allow
     end
 
@@ -68,7 +68,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict templ_enabled: true
-      output whitelist: %i(label info supported)
+      output whitelist: %i(id label info supported)
       allow
     end
 

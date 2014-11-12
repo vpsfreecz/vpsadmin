@@ -41,8 +41,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     desc 'List users'
 
     output(:object_list) do
-      use :common
-      use :dates
+      use :all
     end
 
     authorize do |u|
