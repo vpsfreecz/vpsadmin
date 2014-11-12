@@ -478,33 +478,6 @@ switch($_REQUEST["action"]) {
 			$list_templates = true;
 		}
 		break;
-	case "templates_copy_over_nodes":
-		if ($template = $cluster->get_template_by_id($_REQUEST["id"])) {
-			$xtpl->title2(_("Copy template over cluster nodes"));
-			$xtpl->table_add_category('');
-			$xtpl->table_add_category('');
-			$xtpl->form_create('?page=cluster&action=templates_copy_over_nodes2&id='.$_REQUEST["id"], 'post');
-			$xtpl->form_add_select(_("Source node").':', 'source_node', $cluster->list_servers(), '', '');
-			$xtpl->form_out(_("Copy template"));
-			$xtpl->helpbox(_("Help"), _("This procedure takes template file from source server and copies it using 'scp'
-						over all nodes of cluster. This may take large amount of I/O resources,
-						therefore it is recommended to use it only when cluster is not under full load.
-						"));
-		} else {
-			$list_templates = true;
-		}
-		break;
-	case "templates_copy_over_nodes2":
-		if ($template = $cluster->get_template_by_id($_REQUEST["id"])) {
-			if ($source_node = new cluster_node($_GET["source_node"])) {
-			$cluster->copy_template_to_all_nodes($_REQUEST["id"], $_REQUEST["source_node"]);
-			$xtpl->perex(_("Template copy added to transactions log"), $template["templ_name"]);
-			$list_templates = true;
-			}
-		} else {
-			$list_templates = true;
-		}
-		break;
 	case "templates_delete":
 		if ($template = $cluster->get_template_by_id($_REQUEST["id"])) {
 			$xtpl->perex(_("Are you sure to delete template").' '.$template["templ_name"].'?',
@@ -1242,7 +1215,6 @@ if ($list_templates) {
 	$xtpl->table_add_category(_("#"));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
 	$templates = $cluster->get_templates();
 	foreach($templates as $template) {
 	$usage = 0;
@@ -1255,7 +1227,6 @@ if ($list_templates) {
 	$xtpl->table_td('<img src="template/icons/transact_'.($template["templ_supported"] ? "ok" : "fail").'.png" alt="'.($template["templ_supported"] ? _('Yes') : _('No')).'">');
 	$xtpl->table_td($template["templ_order"]);
 	$xtpl->table_td('<a href="?page=cluster&action=templates_edit&id='.$template["templ_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-	$xtpl->table_td('<a href="?page=cluster&action=templates_copy_over_nodes&id='.$template["templ_id"].'"><img src="template/icons/copy_template.png" title="'._("Copy over nodes").'"></a>');
 	if ($usage > 0)
 		$xtpl->table_td('<img src="template/icons/delete_grey.png" title="'._("Delete - N/A, template is in use").'">');
 	else
