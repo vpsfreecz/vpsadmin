@@ -651,6 +651,13 @@ END
 
     class Show < HaveAPI::Actions::Default::Show
       desc 'Show snapshot'
+      resolve ->(s){
+        [
+            Vps.joins(dataset_in_pool: [dataset: [:snapshots]])
+               .where(snapshots: {id: s.id}).take!.id,
+            s.id
+        ]
+      }
 
       output do
         use :all
@@ -710,6 +717,7 @@ END
         snap = vps.dataset_in_pool.dataset.snapshots.find(params[:snapshot_id])
 
         vps.restore(snap)
+        ok
       end
     end
   end
