@@ -2,6 +2,7 @@ module TransactionChains
   class Vps::Reinstall < ::TransactionChain
     label 'Reinstall VPS'
 
+    # FIXME: reinstall destroys snapshots that may not have been backed up!
     def link_chain(vps, template)
       lock(vps.dataset_in_pool)
       lock(vps)
@@ -30,27 +31,29 @@ module TransactionChains
       # FIXME: regenerate mounts
     end
 
-    def destroy_child_datasets(dataset, top = true)
+    def destroy_child_datasets(dataset)
       ret = {datasets: [], snapshots: []}
 
-      qs = ::DatasetInPool
-        .joins(:dataset, :pool)
-        .where(pools: {role: Pool.roles[:hypervisor]})
-
-      if top
-        qs = qs.where(datasets: {id: dataset.id})
-      else
-        qs = qs.where(datasets: {parent_id: dataset.id})
+      ::Dataset.descendants_of(dataset).each do |descendant|
+        inner_destroy_child_datasets(descendant, ret)
       end
+
+      inner_destroy_child_datasets(dataset, ret, true)
+
+      ret
+    end
+
+    def inner_destroy_child_datasets(dataset, ret, top = false)
+      qs = ::DatasetInPool
+        .joins(:pool)
+        .where(
+            pools: {role: Pool.roles[:hypervisor]},
+            dataset: dataset
+        )
 
       qs.each do |dip|
 
         lock(dip)
-
-        children = destroy_child_datasets(dip.dataset, false)
-
-        ret[:datasets].concat(children[:datasets])
-        ret[:snapshots].concat(children[:snapshots])
 
         # Keep the top-level dataset
         ret[:datasets] << dip unless top
@@ -60,36 +63,34 @@ module TransactionChains
         end
 
       end
-
-      ret
     end
 
     def reset_backups(dataset, top = true)
       ret = []
 
+      ::Dataset.descendants_of(dataset).each do |descendant|
+        reset_history_in(descendant, ret)
+      end
+
+      reset_history_in(dataset, ret) if top
+
+      ret
+    end
+
+    def reset_history_in(dataset, ret)
       qs = ::DatasetTree
         .joins(dataset_in_pool: [:dataset, :pool])
         .where(
             pools: {role: Pool.roles[:backup]},
-            head: true
-       )
-
-      if top
-        qs = qs.where(datasets: {id: dataset.id})
-      else
-        qs = qs.where(datasets: {parent_id: dataset.id})
-      end
+            head: true,
+            datasets: {id: dataset.id}
+        )
 
       qs.each do |tree|
-
         lock(tree.dataset_in_pool)
 
-        ret.concat(reset_backups(tree.dataset_in_pool.dataset, false))
         ret << tree
-
       end
-
-      ret
     end
   end
 end

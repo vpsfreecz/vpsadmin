@@ -15,6 +15,7 @@ class AddStorage < ActiveRecord::Migration
   end
 
   class Dataset < ActiveRecord::Base
+    has_ancestry cache_depth: true
   end
 
   class DatasetInPool < ActiveRecord::Base
@@ -82,7 +83,6 @@ class AddStorage < ActiveRecord::Migration
     # that particular connection is made in dataset_in_pools.
     create_table :datasets do |t|
       t.string     :name,           null: false, limit: 500
-      t.integer    :parent_id,      null: true
       t.references :user,           null: true
       t.boolean    :user_editable,  null: false
       t.boolean    :user_create,    null: false
@@ -94,10 +94,14 @@ class AddStorage < ActiveRecord::Migration
       t.string     :share_options,  null: true,  limit: 500
       t.boolean    :compression,    null: true
 
+      t.string     :ancestry,       null: true,  limit: 255
+      t.integer    :ancestry_depth, null: false, default: 0
+
       t.boolean    :confirmed,      null: false, default: 0
     end
 
     change_column :datasets, :quota, 'bigint unsigned'
+    add_index :datasets, :ancestry
 
     # Dataset may exist on multiple nodes in different roles
     create_table :dataset_in_pools do |t|
@@ -276,7 +280,6 @@ class AddStorage < ActiveRecord::Migration
       Vps.where(vps_server: node.id).each do |vps|
         ds = Dataset.create(
             name: vps.id,
-            parent_id: nil,
             user_id: vps.m_id,
             user_editable: false,
             user_create: true,
@@ -349,7 +352,10 @@ class AddStorage < ActiveRecord::Migration
       parts = export.dataset.split('/')
 
       parts.each do |name|
-        ds = Dataset.find_by(name: name, parent_id: ds ? ds.id : nil)
+        # FIXME
+        # This is wrong. The dataset must be found in appropriate pool,
+        # it cannot be just any random dataset with the same name.
+        ds = (ds ? Dataset.children_of(ds) : Dataset.roots).find_by(name: name)
 
         if ds
           last_ds = ds
@@ -359,12 +365,10 @@ class AddStorage < ActiveRecord::Migration
         end
       end
 
-      ds = last_ds
-
       parts[index..-1].each do |name|
         ds = Dataset.create(
             name: name,
-            parent_id: ds ? ds.id : nil,
+            parent: ds,
             user_id: export.member_id,
             user_editable: ds ? export.user_editable : false,
             user_create: export.user_editable,
@@ -383,9 +387,9 @@ class AddStorage < ActiveRecord::Migration
       end
 
       # Mounts of this export
-      export.vps_mounts.all.each do |m|
-        migrate_mount(m, ds_in_pool.id)
-      end
+      # export.vps_mounts.all.each do |m|
+      #   migrate_mount(m, ds_in_pool.id)
+      # end
     end
 
     # Create backup datasets for VPS
@@ -405,7 +409,7 @@ class AddStorage < ActiveRecord::Migration
       end
 
       ds_in_pool = DatasetInPool.create(
-          dataset_id: vps.dataset_in_pool_id,
+          dataset_id: vps.dataset_in_pool.dataset_id,
           pool_id: pool_id,
           confirmed: 1
       )

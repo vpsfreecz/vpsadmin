@@ -4,6 +4,7 @@ require 'composite_primary_keys'
 require 'paper_trail'
 require 'pp'
 require 'haveapi'
+require 'ancestry'
 
 Thread.abort_on_exception = true
 

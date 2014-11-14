@@ -8,9 +8,9 @@ module Transactions::Storage
 
       children = []
 
-      Dataset.joins(:dataset_in_pools)
-        .where(parent_dataset: dataset_in_pool.dataset)
-        .where(dataset_in_pools: {pool: dataset_in_pool.pool}).each do |ds|
+      Dataset.children_of(dataset_in_pool.dataset)
+        .joins(:dataset_in_pools)
+        .where(dataset_in_pools: {pool: dataset_in_pool.pool}) do |ds|
         children << ds.name
       end
 
