@@ -15,7 +15,7 @@ class DatasetInPool < ActiveRecord::Base
 
   def check_mountpoint
     if mountpoint.present?
-      if mountpoint !~ /\A[a-zA-Z0-9_\-\/\.]+\z/ || mountpoint =~ /\.\./
+      if mountpoint !~ /\A[a-zA-Z0-9_\-\/\.]{3,500}\z/ || mountpoint =~ /\.\./
         errors.add(:mountpoint, 'invalid format')
       end
     end

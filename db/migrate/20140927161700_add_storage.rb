@@ -16,6 +16,21 @@ class AddStorage < ActiveRecord::Migration
 
   class Dataset < ActiveRecord::Base
     has_ancestry cache_depth: true
+
+    before_save :cache_full_name
+
+    def resolve_full_name
+      if parent_id
+        "#{parent.resolve_full_name}/#{name}"
+      else
+        name
+      end
+    end
+
+    protected
+    def cache_full_name
+      self.full_name = resolve_full_name
+    end
   end
 
   class DatasetInPool < ActiveRecord::Base
@@ -82,7 +97,8 @@ class AddStorage < ActiveRecord::Migration
     # Notice that there is no connection to a pool dataset is in,
     # that particular connection is made in dataset_in_pools.
     create_table :datasets do |t|
-      t.string     :name,           null: false, limit: 500
+      t.string     :name,           null: false, limit: 255
+      t.string     :full_name,      null: false, limit: 1000
       t.references :user,           null: true
       t.boolean    :user_editable,  null: false
       t.boolean    :user_create,    null: false

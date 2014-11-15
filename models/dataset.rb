@@ -6,17 +6,24 @@ class Dataset < ActiveRecord::Base
   has_ancestry cache_depth: true
 
   validates :name, format: {
-      with: /\A[a-zA-Z0-9][a-zA-Z0-9_\-:\.]{0,499}\z/,
+      with: /\A[a-zA-Z0-9][a-zA-Z0-9_\-:\.]{0,254}\z/,
       message: "'%{value}' is not a valid dataset name"
   }
 
+  before_save :cache_full_name
+
   include Confirmable
 
-  def full_name
+  def resolve_full_name
     if parent_id
-      "#{parent.full_name}/#{name}"
+      "#{parent.resolve_full_name}/#{name}"
     else
       name
     end
+  end
+
+  protected
+  def cache_full_name
+    self.full_name = resolve_full_name
   end
 end
