@@ -630,6 +630,7 @@ END
 
     params(:common) do
       string :name, label: 'Name', db_name: :full_name
+      string :mountpoint, label: 'Mountpoint', db_name: :hypervisor_mountpoint
       resource VpsAdmin::API::Resources::VPS::Dataset, label: 'Parent',
                name: :parent, value_label: :name
     end

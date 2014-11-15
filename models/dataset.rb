@@ -22,6 +22,18 @@ class Dataset < ActiveRecord::Base
     end
   end
 
+  def hypervisor_mountpoint
+    mountpoint = dataset_in_pools
+      .joins(:pool)
+      .where(pools: {role: Pool.roles[:hypervisor]}).pluck(:mountpoint).first
+
+    # FIXME: This is not nice at all. Dataset should make NO ASSUMPTIONS
+    # as to the VPS root prefix.
+    mountpoint.sub!(/\/vz\/root\/\d+/, '') if mountpoint
+
+    mountpoint
+  end
+
   protected
   def cache_full_name
     self.full_name = resolve_full_name
