@@ -210,11 +210,26 @@ class Vps < ActiveRecord::Base
     vps_status && vps_status.vps_disk_used_mb
   end
 
+  # All datasets in path except the last have the default
+  # mountpoint. +mountpoint+ is relevant only for the last
+  # dataset in path.
   def create_subdataset(path, mountpoint)
+    mountpoints = []
+
+    last_mountpoint = prefix_mountpoint(nil, nil, nil)
+
+    path[0..-2].each do |part|
+      last_mountpoint = prefix_mountpoint(last_mountpoint, part, nil)
+
+      mountpoints << last_mountpoint
+    end
+
+    mountpoints << prefix_mountpoint(last_mountpoint, path.last, mountpoint)
+
     TransactionChains::Dataset::Create.fire(
         dataset_in_pool,
         path,
-        prefix_mountpoint(path, mountpoint)
+        mountpoints
     )
   end
 
@@ -252,11 +267,16 @@ class Vps < ActiveRecord::Base
     self.vps_mounts.delete(self.vps_mounts.all)
   end
 
-  def prefix_mountpoint(path, mountpoint)
-    unless mountpoint
-      mountpoint = File.join('/', * path.map { |ds| ds.name })
-    end
+  def prefix_mountpoint(parent, part, mountpoint)
+    root = ['/', 'vz', 'root', veid.to_s]
 
-    File.join('/', 'vz', 'root', veid.to_s, mountpoint)
+    return File.join(*root) unless part
+
+    if mountpoint
+      File.join(*root, mountpoint)
+
+    elsif parent
+      File.join(parent, part.name)
+    end
   end
 end
