@@ -120,6 +120,7 @@ class AddStorage < ActiveRecord::Migration
 
       # if the following attributes are not set, they are inherited
       # from dataset.
+      t.string     :mountpoint,     null: true,  limit: 500
       t.string     :share_options,  null: true,  limit: 500
       t.boolean    :compression,    null: true
 

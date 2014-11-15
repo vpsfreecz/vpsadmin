@@ -618,6 +618,153 @@ END
     end
   end
 
+  class Dataset < HaveAPI::Resource
+    version 1
+    route ':vps_id/datasets'
+    model ::Dataset
+    desc 'VPS datasets'
+
+    params(:id) do
+      id :id
+    end
+
+    params(:common) do
+      string :name, label: 'Name', db_name: :full_name
+      resource VpsAdmin::API::Resources::VPS::Dataset, label: 'Parent',
+               name: :parent, value_label: :name
+    end
+
+    params(:all) do
+      use :id
+      use :common
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      desc 'List VPS datasets'
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def exec
+        ret = []
+        vps = ::Vps.includes(dataset_in_pool: [:dataset]).find(params[:vps_id])
+
+        ret << vps.dataset_in_pool.dataset
+
+        ::Dataset.descendants_of(vps.dataset_in_pool.dataset).each do |ds|
+          ret << ds
+        end
+
+        ret
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      desc 'Show a dataset'
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def exec
+        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps.dataset_in_pool.dataset.descendants.find(params[:dataset_id])
+      end
+    end
+
+    class Create < HaveAPI::Actions::Default::Create
+      desc 'Create a subdataset'
+
+      input do
+        string :name, label: 'Name'
+        string :mountpoint, label: 'Mountpoint'
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def exec
+        vps = ::Vps.includes(dataset_in_pool: [:dataset]).find(params[:vps_id])
+
+        unless vps.dataset_in_pool.dataset.user_create
+          error('insufficient permission to create a dataset')
+        end
+
+        vps.create_subdataset(
+            parse_ds_name(input[:name], vps.dataset_in_pool.dataset),
+            input[:mountpoint]
+        )
+      end
+
+      def parse_ds_name(path, parent)
+        parts = path.strip.split('/')
+        tmp = parent
+        index = 0
+        ret = []
+
+        parts.each do |part|
+          ds = tmp.children.find_by(name: part)
+
+          if ds
+            tmp = ds
+            index += 1
+            next
+
+          else
+            break
+          end
+        end
+
+        if index == parts.count
+          error("dataset '#{path}' already exists")
+        end
+
+        parts[index..-1].each do |part|
+          ds = ::Dataset.new(
+              name: part,
+              user: current_user,
+              user_editable: true,
+              user_create: true,
+              confirmed: ::Dataset.confirmed(:confirm_create)
+          )
+
+          ret << ds
+
+          if tmp
+            ds.parent = tmp
+            tmp = nil
+          end
+
+          unless ds.valid?
+            error('create failed', ds.errors.to_hash)
+          end
+        end
+
+        ret
+      end
+    end
+  end
+
   class Snapshot < HaveAPI::Resource
     version 1
     route ':vps_id/snapshots'

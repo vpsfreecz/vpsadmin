@@ -5,6 +5,11 @@ class Dataset < ActiveRecord::Base
 
   has_ancestry cache_depth: true
 
+  validates :name, format: {
+      with: /\A[a-zA-Z0-9][a-zA-Z0-9_\-:\.]{0,499}\z/,
+      message: "'%{value}' is not a valid dataset name"
+  }
+
   include Confirmable
 
   def full_name

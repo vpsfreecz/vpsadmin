@@ -210,6 +210,14 @@ class Vps < ActiveRecord::Base
     vps_status && vps_status.vps_disk_used_mb
   end
 
+  def create_subdataset(path, mountpoint)
+    TransactionChains::Dataset::Create.fire(
+        dataset_in_pool,
+        path,
+        prefix_mountpoint(path, mountpoint)
+    )
+  end
+
   private
   def generate_password
     chars = ('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a
@@ -242,5 +250,13 @@ class Vps < ActiveRecord::Base
 
   def delete_mounts
     self.vps_mounts.delete(self.vps_mounts.all)
+  end
+
+  def prefix_mountpoint(path, mountpoint)
+    unless mountpoint
+      mountpoint = File.join('/', * path.map { |ds| ds.name })
+    end
+
+    File.join('/', 'vz', 'root', veid.to_s, mountpoint)
   end
 end

@@ -75,6 +75,7 @@ ActiveRecord::Schema.define(version: 20141112075438) do
     t.integer "min_snapshots",                default: 14,      null: false
     t.integer "max_snapshots",                default: 20,      null: false
     t.integer "snapshot_max_age",             default: 1209600, null: false
+    t.string  "mountpoint",       limit: 500
     t.string  "share_options",    limit: 500
     t.boolean "compression"
     t.integer "confirmed",                    default: 0,       null: false
