@@ -38,6 +38,8 @@ module TransactionChains
           use_chain(TransactionChains::Dataset::Set, dip, {mountpoint: mountpoints[i]})
         end
 
+        dip.call_class_hooks_for(:create, self, args: [dip])
+
         i += 1
       end
 
