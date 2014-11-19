@@ -32,6 +32,9 @@ vpsAdmin uses this role for NAS, but it can really be anything.
 ## Operations
 The storage is fully transaction-based. Following operations are defined:
 
+ - [[Create]]
+ - [[Destroy]]
+ - [[Set]]
  - [[Snapshot]]
  - [[Transfer]]
  - [[Rollback]]

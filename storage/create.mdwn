@@ -1,0 +1,4 @@
+When creating a dataset, it is possible, that dataset with the same name already
+existed and its backup dataset still exists (but is marked for destroyal).
+In such a case, the newly created dataset is reconnected with the already existing
+backup and the expiration date is removed. 
