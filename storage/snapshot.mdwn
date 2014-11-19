@@ -1,0 +1,4 @@
+A simple transaction that creates a snapshot of a dataset in pool. The only
+catch is that the snapshot name being a date of its creation, the name
+is first guessed and the transaction then returns the real name.
+That is because the time of an enqueue can differ from the execution time.

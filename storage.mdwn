@@ -30,32 +30,12 @@ Primary layout is used when the data's primary location is on this pool.
 vpsAdmin uses this role for NAS, but it can really be anything.
 
 ## Operations
-The storage is fully transaction-based. Four basic operations are defined:
+The storage is fully transaction-based. Following operations are defined:
 
- - Snapshot
- - Transfer
+ - [[Snapshot]]
+ - [[Transfer]]
  - [[Rollback]]
- - Rotate
-
-### Snapshot
-A simple transaction that creates a snapshot of a dataset in pool. The only
-catch is that the snapshot name being a date of its creation, the name
-is first guessed and the transaction then returns the real name.
-That is because the time of an enqueue can differ from the execution time.
-
-### Transfer
-Transfer one or more snapshots from one dataset in pool to another dataset
-in pool (of the same dataset).
-
-The transfer itself is realized through ``zfs send/recv`` via SSH.
-
-### Rollback
-[[Rollback]] restores data from a snapshot that may be stored locally or remotely
-on a pool with _backup_ role.
-
-### Rotate
-Dataset in pool has some limits as to how many snapshots should be kept.
-Rotate removes those old snapshots.
+ - [[Rotate]]
 
 ## Repeatable tasks
 Very often it is needed to run operations regularily, e.g. snapshot and transfer
