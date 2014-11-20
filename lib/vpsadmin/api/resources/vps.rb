@@ -659,7 +659,7 @@ END
 
         ret << vps.dataset_in_pool.dataset
 
-        ::Dataset.descendants_of(vps.dataset_in_pool.dataset).each do |ds|
+        ::Dataset.descendants_of(vps.dataset_in_pool.dataset).order('full_name').each do |ds|
           ret << ds
         end
 
@@ -712,56 +712,15 @@ END
         end
 
         vps.create_subdataset(
-            parse_ds_name(input[:name], vps.dataset_in_pool.dataset),
+            input[:name].strip,
             input[:mountpoint]
         )
-      end
 
-      def parse_ds_name(path, parent)
-        parts = path.strip.split('/')
-        tmp = parent
-        index = 0
-        ret = []
+      rescue VpsAdmin::API::Exceptions::DatasetAlreadyExists => e
+        error(e.message)
 
-        parts.each do |part|
-          ds = tmp.children.find_by(name: part)
-
-          if ds
-            tmp = ds
-            index += 1
-            next
-
-          else
-            break
-          end
-        end
-
-        if index == parts.count
-          error("dataset '#{path}' already exists")
-        end
-
-        parts[index..-1].each do |part|
-          ds = ::Dataset.new(
-              name: part,
-              user: current_user,
-              user_editable: true,
-              user_create: true,
-              confirmed: ::Dataset.confirmed(:confirm_create)
-          )
-
-          ret << ds
-
-          if tmp
-            ds.parent = tmp
-            tmp = nil
-          end
-
-          unless ds.valid?
-            error('create failed', ds.errors.to_hash)
-          end
-        end
-
-        ret
+      rescue ActiveRecord::RecordInvalid => e
+        error('create failed', e.record.errors.to_hash)
       end
     end
   end

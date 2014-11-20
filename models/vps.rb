@@ -214,21 +214,22 @@ class Vps < ActiveRecord::Base
   # mountpoint. +mountpoint+ is relevant only for the last
   # dataset in path.
   def create_subdataset(path, mountpoint)
+    parts = dataset_create_path(path)
     mountpoints = []
 
     last_mountpoint = prefix_mountpoint(nil, nil, nil)
 
-    path[0..-2].each do |part|
+    parts[0..-2].each do |part|
       last_mountpoint = prefix_mountpoint(last_mountpoint, part, nil)
 
       mountpoints << last_mountpoint
     end
 
-    mountpoints << prefix_mountpoint(last_mountpoint, path.last, mountpoint)
+    mountpoints << prefix_mountpoint(last_mountpoint, parts.last, mountpoint)
 
     TransactionChains::Dataset::Create.fire(
         dataset_in_pool,
-        path,
+        parts,
         mountpoints
     )
   end
@@ -278,5 +279,52 @@ class Vps < ActiveRecord::Base
     elsif parent
       File.join(parent, part.name)
     end
+  end
+
+  def dataset_create_path(path)
+    parts = path.split('/')
+    tmp = dataset_in_pool.dataset
+    index = 0
+    ret = []
+
+    parts.each do |part|
+      ds = tmp.children.find_by(name: part)
+
+      if ds
+        tmp = ds
+        index += 1
+        next
+
+      else
+        break
+      end
+    end
+
+    if index == parts.count
+      raise VpsAdmin::API::Exceptions::DatasetAlreadyExists.new(tmp, path)
+    end
+
+    parts[index..-1].each do |part|
+      ds = ::Dataset.new(
+          name: part,
+          user: User.current,
+          user_editable: true,
+          user_create: true,
+          confirmed: ::Dataset.confirmed(:confirm_create)
+      )
+
+      ret << ds
+
+      if tmp
+        ds.parent = tmp
+        tmp = nil
+      end
+
+      unless ds.valid?
+        raise ActiveRecord::RecordInvalid, ds
+      end
+    end
+
+    ret
   end
 end
