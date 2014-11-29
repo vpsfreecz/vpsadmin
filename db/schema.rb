@@ -93,17 +93,18 @@ ActiveRecord::Schema.define(version: 20141112075438) do
   end
 
   create_table "datasets", force: true do |t|
-    t.string  "name",                                        null: false
-    t.string  "full_name",      limit: 1000,                 null: false
-    t.integer "user_id"
-    t.boolean "user_editable",                               null: false
-    t.boolean "user_create",                                 null: false
-    t.integer "quota",          limit: 8,    default: 0,     null: false
-    t.string  "share_options",  limit: 500
-    t.boolean "compression"
-    t.string  "ancestry"
-    t.integer "ancestry_depth",              default: 0,     null: false
-    t.boolean "confirmed",                   default: false, null: false
+    t.string   "name",                                        null: false
+    t.string   "full_name",      limit: 1000,                 null: false
+    t.integer  "user_id"
+    t.boolean  "user_editable",                               null: false
+    t.boolean  "user_create",                                 null: false
+    t.integer  "quota",          limit: 8,    default: 0,     null: false
+    t.string   "share_options",  limit: 500
+    t.boolean  "compression"
+    t.string   "ancestry"
+    t.integer  "ancestry_depth",              default: 0,     null: false
+    t.datetime "expiration"
+    t.boolean  "confirmed",                   default: false, null: false
   end
 
   add_index "datasets", ["ancestry"], name: "index_datasets_on_ancestry", using: :btree

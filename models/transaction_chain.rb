@@ -141,7 +141,8 @@ class TransactionChain < ActiveRecord::Base
 end
 
 module TransactionChains
-  module Vps         ; end
-  module VpsConfig   ; end
-  module Dataset     ; end
+  module Vps           ; end
+  module VpsConfig     ; end
+  module Dataset       ; end
+  module DatasetInPool ; end
 end

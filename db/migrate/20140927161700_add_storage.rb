@@ -113,6 +113,8 @@ class AddStorage < ActiveRecord::Migration
       t.string     :ancestry,       null: true,  limit: 255
       t.integer    :ancestry_depth, null: false, default: 0
 
+      t.datetime   :expiration,     null: true
+
       t.boolean    :confirmed,      null: false, default: 0
     end
 

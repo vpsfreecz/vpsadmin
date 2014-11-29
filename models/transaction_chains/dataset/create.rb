@@ -13,12 +13,13 @@ module TransactionChains
         if part.new_record?
           part.parent ||= parent
           part.save!
-          parent = part
 
         else
-          parent = part
-          next
+          part.expiration = nil
+          part.save!
         end
+
+        parent = part
 
         dip = ::DatasetInPool.create(
             dataset: part,

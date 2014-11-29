@@ -42,6 +42,8 @@ class Vps < ActiveRecord::Base
   include VpsAdmin::API::Maintainable::Model
   maintenance_parent :node
 
+  PathInfo = Struct.new(:dataset, :exists)
+
   def create(add_ips)
     self.vps_backup_export = 0 # FIXME
     self.vps_backup_exclude = '' # FIXME
@@ -213,11 +215,21 @@ class Vps < ActiveRecord::Base
   # All datasets in path except the last have the default
   # mountpoint. +mountpoint+ is relevant only for the last
   # dataset in path.
+  # FIXME: subdatasets must be mounted via vzctl action scripts,
+  #        zfs set canmount=noauto and add to veid.(u)mount.
   def create_subdataset(path, mountpoint)
-    parts = dataset_create_path(path)
+    last, parts = dataset_create_path(path)
+
+    if last
+      dip = last.dataset_in_pools.joins(:pool).where(pools: {role: Pool.roles[:hypervisor]}).take
+      mnt = dip.mountpoint if dip
+    else
+      mnt = nil
+    end
+
     mountpoints = []
 
-    last_mountpoint = prefix_mountpoint(nil, nil, nil)
+    last_mountpoint = prefix_mountpoint(mnt, nil, nil)
 
     parts[0..-2].each do |part|
       last_mountpoint = prefix_mountpoint(last_mountpoint, part, nil)
@@ -231,6 +243,13 @@ class Vps < ActiveRecord::Base
         dataset_in_pool,
         parts,
         mountpoints
+    )
+  end
+
+  def destroy_subdataset(dataset)
+    TransactionChains::DatasetInPool::Destroy.fire(
+        dataset.dataset_in_pools.joins(:pool).where(pools: {role: ::Pool.roles[:hypervisor]}).take!,
+        true
     )
   end
 
@@ -271,6 +290,7 @@ class Vps < ActiveRecord::Base
   def prefix_mountpoint(parent, part, mountpoint)
     root = ['/', 'vz', 'root', veid.to_s]
 
+    return File.join(parent) if parent && !part
     return File.join(*root) unless part
 
     if mountpoint
@@ -284,47 +304,85 @@ class Vps < ActiveRecord::Base
   def dataset_create_path(path)
     parts = path.split('/')
     tmp = dataset_in_pool.dataset
-    index = 0
     ret = []
+    last = nil
+
+    if parts.empty?
+      ds = Dataset.new
+      ds.valid?
+      raise ::ActiveRecord::RecordInvalid, ds
+    end
 
     parts.each do |part|
-      ds = tmp.children.find_by(name: part)
+      # As long as tmp is not nil, we're iterating over existing datasets.
+      if tmp
+        ds = tmp.children.find_by(name: part)
 
-      if ds
-        tmp = ds
-        index += 1
-        next
+        if ds
+          # Add the dataset to ret if it is NOT present on pool with hypervisor role.
+          # It means that the dataset was destroyed and is presumably only in backup.
+          if ds.dataset_in_pools.joins(:pool).where(pools: {role: Pool.roles[:hypervisor]}).pluck(:id).empty?
+            ret << ds
+          else
+            last = ds
+          end
+
+          tmp = ds
+
+        else
+          ret << dataset_create_append_new(part, tmp)
+          tmp = nil
+        end
 
       else
-        break
+        ret << dataset_create_append_new(part, nil)
       end
     end
 
-    if index == parts.count
-      raise VpsAdmin::API::Exceptions::DatasetAlreadyExists.new(tmp, path)
+    if ret.empty?
+      raise VpsAdmin::API::Exceptions::DatasetAlreadyExists.new(tmp, parts.join('/'))
     end
 
-    parts[index..-1].each do |part|
-      ds = ::Dataset.new(
-          name: part,
-          user: User.current,
-          user_editable: true,
-          user_create: true,
-          confirmed: ::Dataset.confirmed(:confirm_create)
-      )
+    [last, ret]
+  end
 
-      ret << ds
+  def dataset_create_append_new(part, parent)
+    new_ds = ::Dataset.new(
+        name: part,
+        user: User.current,
+        user_editable: true,
+        user_create: true,
+        confirmed: ::Dataset.confirmed(:confirm_create)
+    )
 
-      if tmp
-        ds.parent = tmp
-        tmp = nil
-      end
+    new_ds.parent = parent if parent
 
-      unless ds.valid?
-        raise ActiveRecord::RecordInvalid, ds
+    raise ::ActiveRecord::RecordInvalid, new_ds unless new_ds.valid?
+
+    new_ds
+  end
+
+  def dataset_to_destroy(path)
+    parts = path.split('/')
+    parent = dataset_in_pool.dataset
+    dip = nil
+
+    parts.each do |part|
+      ds = parent.children.find_by(name: part)
+
+      if ds
+        parent = ds
+        dip = ds.dataset_in_pools.joins(:pool).where(pools: {role: Pool.roles[:hypervisor]}).take
+
+        unless dip
+          raise VpsAdmin::API::Exceptions::DatasetDoesNotExist, path
+        end
+
+      else
+        raise VpsAdmin::API::Exceptions::DatasetDoesNotExist, path
       end
     end
 
-    ret
+    dip
   end
 end

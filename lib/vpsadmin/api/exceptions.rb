@@ -20,4 +20,13 @@ module VpsAdmin::API::Exceptions
       super("dataset '#{path}' already exists")
     end
   end
+
+  class DatasetDoesNotExist < ::StandardError
+    attr_reader :path
+
+    def initialize(path)
+      @path = path
+      super("dataset '#{path}' does not exist")
+    end
+  end
 end

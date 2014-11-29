@@ -715,12 +715,42 @@ END
             input[:name].strip,
             input[:mountpoint]
         )
+        ok
 
       rescue VpsAdmin::API::Exceptions::DatasetAlreadyExists => e
         error(e.message)
 
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
+      end
+    end
+
+    class Delete < HaveAPI::Actions::Default::Delete
+      desc 'Destroy a dataset with all its subdatasets and snapshots'
+
+      input do
+        string :name, label: 'Name'
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def exec
+        vps = ::Vps.includes(dataset_in_pool: [:dataset]).find(params[:vps_id])
+
+        # FIXME
+        #unless vps.dataset_in_pool.dataset.user_destroy
+        #  error('insufficient permission to destroy a dataset')
+        #end
+
+        vps.destroy_subdataset(::Dataset.find(params[:dataset_id]))
+        ok
+
+      rescue VpsAdmin::API::Exceptions::DatasetDoesNotExist => e
+        error(e.message)
       end
     end
   end
