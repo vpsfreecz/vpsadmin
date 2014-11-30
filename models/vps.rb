@@ -200,6 +200,8 @@ class Vps < ActiveRecord::Base
     vps_status && vps_status.vps_up
   end
 
+  alias_method :running?, :running
+
   def process_count
     vps_status && vps_status.vps_nproc
   end
