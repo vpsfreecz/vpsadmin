@@ -21,13 +21,7 @@ module TransactionChains
       end
 
       # Destroy underlying dataset
-      # FIXME: what about child datasets?
-      append(Transactions::Storage::DestroyDataset, args: vps.dataset_in_pool) do
-        destroy(vps.dataset_in_pool)
-        destroy(vps.dataset_in_pool.dataset)
-      end
-
-      # FIXME: destroy all remaining dataset_in_pools of the VPS dataset
+      use_chain(DatasetInPool::Destroy, vps.dataset_in_pool, true)
     end
   end
 end
