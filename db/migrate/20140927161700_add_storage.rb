@@ -102,6 +102,7 @@ class AddStorage < ActiveRecord::Migration
       t.references :user,           null: true
       t.boolean    :user_editable,  null: false
       t.boolean    :user_create,    null: false
+      t.boolean    :user_destroy,   null: false
 
       t.integer    :quota,          null: false, default: 0
 
@@ -302,6 +303,7 @@ class AddStorage < ActiveRecord::Migration
             user_id: vps.m_id,
             user_editable: false,
             user_create: true,
+            user_destroy: false,
             quota: 0,
             share_options: '',
             compression: false
@@ -391,6 +393,7 @@ class AddStorage < ActiveRecord::Migration
             user_id: export.member_id,
             user_editable: ds ? export.user_editable : false,
             user_create: export.user_editable,
+            user_destroy: false,
             quota: export.quota,
             confirmed: 1
         )

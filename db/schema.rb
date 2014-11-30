@@ -98,6 +98,7 @@ ActiveRecord::Schema.define(version: 20141112075438) do
     t.integer  "user_id"
     t.boolean  "user_editable",                               null: false
     t.boolean  "user_create",                                 null: false
+    t.boolean  "user_destroy",                                null: false
     t.integer  "quota",          limit: 8,    default: 0,     null: false
     t.string   "share_options",  limit: 500
     t.boolean  "compression"

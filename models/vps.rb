@@ -350,6 +350,7 @@ class Vps < ActiveRecord::Base
         user: User.current,
         user_editable: true,
         user_create: true,
+        user_destroy: true,
         confirmed: ::Dataset.confirmed(:confirm_create)
     )
 
