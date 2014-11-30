@@ -33,6 +33,8 @@ module VpsAdmind
             runscript('postmount', mnt['postmount'])
         end
       end
+
+      ok
     end
   end
 end
