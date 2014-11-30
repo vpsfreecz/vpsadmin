@@ -1,7 +1,7 @@
 module Transactions::Vps
-  class Mounts < ::Transaction
-    t_name :vps_mounts
-    t_type 5301
+  class Mount < ::Transaction
+    t_name :vps_mount
+    t_type 5302
 
     def params(vps, mounts)
       self.t_vps = vps.vps_id
@@ -13,8 +13,12 @@ module Transactions::Vps
         if mnt.is_a?(::Mount)
           # FIXME
 
-        elsif mnt.is_a?(::Hash)
-          res << mnt
+        elsif mnt.is_a?(::DatasetInPool)
+          res << {
+              type: :zfs,
+              pool_fs: mnt.pool.filesystem,
+              dataset: mnt.dataset.full_name
+          }
 
         else
           fail 'invalid mount type'

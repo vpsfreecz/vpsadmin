@@ -2,9 +2,10 @@ module TransactionChains
   class Dataset::Create < ::TransactionChain
     label 'Create dataset'
 
-    def link_chain(dataset_in_pool, path, mountpoints = [])
+    def link_chain(dataset_in_pool, path, opts = [])
       lock(dataset_in_pool)
 
+      ret = []
       parent = dataset_in_pool.dataset
 
       i = 0
@@ -24,19 +25,16 @@ module TransactionChains
         dip = ::DatasetInPool.create(
             dataset: part,
             pool: dataset_in_pool.pool,
-            mountpoint: mountpoints[i],
+            mountpoint: opts[i] && opts[i][:mountpoint],
             confirmed: ::DatasetInPool.confirmed(:confirm_create)
         )
+        ret << dip
 
         lock(dip)
 
-        append(Transactions::Storage::CreateDataset, args: dip) do
+        append(Transactions::Storage::CreateDataset, args: [dip, opts[i]]) do
           create(part)
           create(dip)
-        end
-
-        if mountpoints[i]
-          use_chain(TransactionChains::Dataset::Set, dip, {mountpoint: mountpoints[i]})
         end
 
         dip.call_class_hooks_for(:create, self, args: [dip])
@@ -44,7 +42,7 @@ module TransactionChains
         i += 1
       end
 
-      parent
+      ret
     end
   end
 end

@@ -215,8 +215,6 @@ class Vps < ActiveRecord::Base
   # All datasets in path except the last have the default
   # mountpoint. +mountpoint+ is relevant only for the last
   # dataset in path.
-  # FIXME: subdatasets must be mounted via vzctl action scripts,
-  #        zfs set canmount=noauto and add to veid.(u)mount.
   def create_subdataset(path, mountpoint)
     last, parts = dataset_create_path(path)
 
@@ -239,8 +237,8 @@ class Vps < ActiveRecord::Base
 
     mountpoints << prefix_mountpoint(last_mountpoint, parts.last, mountpoint)
 
-    TransactionChains::Dataset::Create.fire(
-        dataset_in_pool,
+    TransactionChains::Vps::SubdatasetCreate.fire(
+        self,
         parts,
         mountpoints
     )
