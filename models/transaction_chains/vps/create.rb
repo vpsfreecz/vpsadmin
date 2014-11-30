@@ -12,13 +12,16 @@ module TransactionChains
           name: vps.id.to_s,
           user: vps.user,
           user_editable: false,
-          user_create: true
+          user_create: true,
+          user_destroy: false
       )
 
-      vps.dataset_in_pool = DatasetInPool.create(
+      vps.dataset_in_pool = ::DatasetInPool.create(
           dataset: ds,
           pool: pool
       )
+
+      # FIXME: fire creation hook
 
       lock(vps.dataset_in_pool)
 
