@@ -741,12 +741,17 @@ END
       def exec
         vps = ::Vps.includes(dataset_in_pool: [:dataset]).find(params[:vps_id])
 
-        # FIXME
-        #unless vps.dataset_in_pool.dataset.user_destroy
-        #  error('insufficient permission to destroy a dataset')
-        #end
+        if current_user.role != :admin && !vps.dataset_in_pool.dataset.user_destroy
+          error('insufficient permission to destroy this dataset')
+        end
 
-        vps.destroy_subdataset(::Dataset.find(params[:dataset_id]))
+        ds = vps.dataset_in_pool.dataset.descendants.find(params[:dataset_id])
+
+        if current_user.role != :admin && ds.user != current_user
+          error('permission denied')
+        end
+
+        vps.destroy_subdataset(ds)
         ok
 
       rescue VpsAdmin::API::Exceptions::DatasetDoesNotExist => e
