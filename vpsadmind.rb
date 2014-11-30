@@ -146,11 +146,6 @@ end
 
 $CFG.load_db_settings
 
-Signal.trap('HUP') do
-  log 'Reloading config'
-  $CFG.reload
-end
-
 log 'vpsAdmind starting'
 
 Thread.abort_on_exception = true
