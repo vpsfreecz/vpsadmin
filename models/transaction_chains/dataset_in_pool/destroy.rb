@@ -11,13 +11,13 @@ module TransactionChains
   class DatasetInPool::Destroy < ::TransactionChain
     label 'Destroy dataset in pool'
 
-    def link_chain(dataset_in_pool, recursive = false)
+    def link_chain(dataset_in_pool, recursive = false, top = true)
       lock(dataset_in_pool)
 
       if recursive
         @pool_id = dataset_in_pool.pool.id
         dataset_in_pool.dataset.subtree.arrange.each do |k, v|
-          destroy_recursive(k, v)
+          destroy_recursive(k, v, top)
         end
 
       else
@@ -27,18 +27,18 @@ module TransactionChains
 
     # Destroy datasets in pool recursively. Datasets are destroyed
     # from the bottom ("youngest children") to the top ("oldest parents").
-    def destroy_recursive(dataset, children)
+    def destroy_recursive(dataset, children, top)
       # First destroy children
       children.each do |k, v|
         if v.is_a?(::Dataset)
           dip = v.dataset_in_pools.where(pool_id: @pool_id).take
 
           if dip
-            destroy_dataset(dip)
+            destroy_dataset(dip, true)
           end
 
         else
-          destroy_recursive(k, v)
+          destroy_recursive(k, v, true)
         end
       end
 
@@ -46,12 +46,12 @@ module TransactionChains
       dip = dataset.dataset_in_pools.where(pool_id: @pool_id).take
 
       if dip
-        destroy_dataset(dip)
+        destroy_dataset(dip, top)
       end
 
     end
 
-    def destroy_dataset(dataset_in_pool)
+    def destroy_dataset(dataset_in_pool, destroy_top)
       append(Transactions::Storage::DestroyDataset, args: dataset_in_pool) do
         # Destroy snapshots, trees, branches, snapshot in pool in branches
         case dataset_in_pool.pool.role
@@ -96,20 +96,22 @@ module TransactionChains
         end
 
         # Destroy dataset in pool
-        destroy(dataset_in_pool)
-        dataset_in_pool.update(confirmed: ::DatasetInPool.confirmed(:confirm_destroy))
+        if destroy_top
+          destroy(dataset_in_pool)
+          dataset_in_pool.update(confirmed: ::DatasetInPool.confirmed(:confirm_destroy))
 
-        # Check if ::Dataset should be destroyed or marked for destroyal
-        if dataset_in_pool.dataset.dataset_in_pools.where.not(confirmed: ::DatasetInPool.confirmed(:confirm_destroy)).count == 0
-          destroy(dataset_in_pool.dataset)
+          # Check if ::Dataset should be destroyed or marked for destroyal
+          if dataset_in_pool.dataset.dataset_in_pools.where.not(confirmed: ::DatasetInPool.confirmed(:confirm_destroy)).count == 0
+            destroy(dataset_in_pool.dataset)
 
-        elsif dataset_in_pool.dataset.dataset_in_pools
-                  .joins(:pool)
-                  .where(confirmed: ::DatasetInPool.confirmed(:confirmed))
-                  .where.not(pools: {role: Pool.roles[:backup]}).count == 0
+          elsif dataset_in_pool.dataset.dataset_in_pools
+                    .joins(:pool)
+                    .where(confirmed: ::DatasetInPool.confirmed(:confirmed))
+                    .where.not(pools: {role: Pool.roles[:backup]}).count == 0
 
-          # Is now only in backup pools
-          edit(dataset_in_pool.dataset, expiration: Time.now.utc + 30*24*60*60)
+            # Is now only in backup pools
+            edit(dataset_in_pool.dataset, expiration: Time.now.utc + 30*24*60*60)
+          end
         end
       end
     end
