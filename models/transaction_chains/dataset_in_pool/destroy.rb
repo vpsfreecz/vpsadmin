@@ -54,16 +54,34 @@ module TransactionChains
     def destroy_dataset(dataset_in_pool)
       append(Transactions::Storage::DestroyDataset, args: dataset_in_pool) do
         # Destroy snapshots, trees, branches, snapshot in pool in branches
-        dataset_in_pool.dataset_trees.each do |tree|
-          tree.branches.each do |branch|
-            branch.snapshot_in_pool_in_branches.each do |sipib|
-              destroy(sipib)
+        case dataset_in_pool.pool.role
+          when 'primary', 'hypervisor'
+            # Detach dataset tree heads in all backups
+            dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where(
+                pools: {role: ::Pool.roles[:backup]}
+            ).each do |backup|
+
+              backup.dataset_trees.all.each do |tree|
+                edit(tree, head: false)
+              end
+
             end
 
-            destroy(branch)
-          end
+          when 'backup'
+            dataset_in_pool.dataset_trees.each do |tree|
+              tree.branches.each do |branch|
+                branch.snapshot_in_pool_in_branches.each do |sipib|
+                  destroy(sipib)
+                end
 
-          destroy(tree)
+                destroy(branch)
+              end
+
+              destroy(tree)
+            end
+
+          else
+            fail "unknown pool role '#{dataset_in_pool.pool.role}'"
         end
 
         dataset_in_pool.snapshot_in_pools.update_all(confirmed: ::SnapshotInPool.confirmed(:confirm_destroy))
