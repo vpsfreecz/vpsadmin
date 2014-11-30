@@ -2,8 +2,17 @@ module VpsAdmind
   class Commands::Dataset::Create < Commands::Base
     handle 5201
 
+    include Utils::System
+    include Utils::Zfs
+
     def exec
-      Dataset.new.create(@pool_fs, @name)
+      if @options
+        opts = @options.map { |k, v| "-o #{k}=\"#{v}\""  }.join(' ')
+      else
+        opts = ''
+      end
+
+      zfs(:create, "-p #{opts}", "#{@pool_fs}/#{@name}")
     end
   end
 end

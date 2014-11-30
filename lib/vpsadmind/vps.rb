@@ -190,29 +190,6 @@ module VpsAdmind
       end
     end
 
-    def nas_mounts
-      action_script("mount")
-      action_script("umount")
-    end
-
-    def nas_mount
-      dst = "#{ve_root}/#{@params["dst"]}"
-
-      unless File.exists?(dst)
-        begin
-          FileUtils.mkpath(dst)
-
-            # it means, that the folder is mounted but was removed on the other end
-        rescue Errno::EEXIST => e
-          syscmd("#{$CFG.get(:bin, :umount)} -f #{dst}")
-        end
-      end
-
-      runscript("premount")
-      syscmd("#{$CFG.get(:bin, :mount)} #{@params["mount_opts"]} -o #{@params["mode"]} #{@params["src"]} #{dst}")
-      runscript("postmount")
-    end
-
     def nas_umount(valid_rcs = [])
       runscript("preumount")
       syscmd("#{$CFG.get(:bin, :umount)} #{@params["umount_opts"]} #{ve_root}/#{@params["dst"]}", valid_rcs)
@@ -222,19 +199,6 @@ module VpsAdmind
     def nas_remount
       nas_umount([1])
       nas_mount
-    end
-
-    def action_script(action)
-      path = "#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.#{action}"
-      existed = File.exists?(path)
-
-      File.open(path, "w") do |f|
-        f.write(ERB.new(File.new("templates/ve_#{action}.erb").read, 0).result(binding))
-      end
-
-      syscmd("#{$CFG.get(:bin, :chmod)} +x #{path}") unless existed
-
-      ok
     end
 
     def load_file(file)
@@ -296,16 +260,6 @@ module VpsAdmind
 
     def dumpfile
       $CFG.get(:vps, :migration, :dumpfile).gsub(/%\{veid\}/, @veid.to_s)
-    end
-
-    def runscript(script)
-      return ok unless @params[script].length > 0
-
-      f = Tempfile.new("vpsadmind_#{script}")
-      f.write("#!/bin/sh\n#{@params[script]}")
-      f.close
-
-      vzctl(:runscript, @veid, f.path)
     end
 
     def status

@@ -2,11 +2,16 @@
 . /etc/vz/vz.conf
 . ${VE_CONFFILE}
 
-<% @params["mounts"].each do |mnt| %>
-  SRC="<%= mnt["src"] %>"
-  DST="<%= mnt["dst"] %>"
-  if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
-  mount <%= mnt["mount_opts"] %> -o <%= mnt["mode"] %> ${SRC} ${VE_ROOT}${DST}
+<% @mounts.each do |mnt| %>
+  <% if mnt['type'] == 'zfs' %>
+    zfs mount <%= "#{mnt['pool_fs']}/#{mnt['dataset']}" %>
+
+  <% else %>
+    SRC="<%= mnt['src'] %>"
+    DST="<%= mnt['dst'] %>"
+    if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
+    mount <%= mnt['mount_opts'] %> -o <%= mnt['mode'] %> ${SRC} ${VE_ROOT}${DST}
+  <% end %>
 <% end %>
 
 exit 0

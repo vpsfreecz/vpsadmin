@@ -3,10 +3,6 @@ module VpsAdmind
     include Utils::System
     include Utils::Zfs
 
-    def create(pool_fs, name)
-      zfs(:create, '-p', "#{pool_fs}/#{name}")
-    end
-
     def set
       zfs(:set, "sharenfs=\"#{@params['share_options']}\"", @params['name']) if @params['share_options']
       zfs(:set, "quota=#{@params['quota'].to_i == 0 ? 'none' : @params['quota']}", @params['name'])

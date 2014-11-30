@@ -2,10 +2,15 @@
 . /etc/vz/vz.conf
 . ${VE_CONFFILE}
 
-<% @params["mounts"].each do |mnt| %>
-  SRC="<%= mnt["src"] %>"
-  DST="<%= mnt["dst"] %>"
-  if grep ${VE_ROOT}${DST} /proc/mounts; then umount <%= mnt["umount_opts"] %> ${VE_ROOT}${DST}; fi
+<% @mounts.reverse.each do |mnt| %>
+  <% if mnt['type'] == 'zfs' %>
+    zfs umount -f <%= "#{mnt['pool_fs']}/#{mnt['dataset']}" %>
+
+  <% else %>
+    SRC="<%= mnt['src'] %>"
+    DST="<%= mnt['dst'] %>"
+    if grep ${VE_ROOT}${DST} /proc/mounts; then umount <%= mnt['umount_opts'] %> ${VE_ROOT}${DST}; fi
+  <% end %>
 <% end %>
 
 exit 0
