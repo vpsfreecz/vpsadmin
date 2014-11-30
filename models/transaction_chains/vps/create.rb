@@ -21,14 +21,14 @@ module TransactionChains
           pool: pool
       )
 
-      # FIXME: fire creation hook
-
       lock(vps.dataset_in_pool)
 
       append(Transactions::Storage::CreateDataset, args: vps.dataset_in_pool) do
         create(ds)
         create(vps.dataset_in_pool)
       end
+
+      vps.dataset_in_pool.call_class_hooks_for(:create, self, args: [vps.dataset_in_pool])
 
       append(Transactions::Vps::Create, args: vps) do
         create(vps)
