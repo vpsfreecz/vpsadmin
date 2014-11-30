@@ -245,9 +245,9 @@ class Vps < ActiveRecord::Base
   end
 
   def destroy_subdataset(dataset)
-    TransactionChains::DatasetInPool::Destroy.fire(
-        dataset.dataset_in_pools.joins(:pool).where(pools: {role: ::Pool.roles[:hypervisor]}).take!,
-        true
+    TransactionChains::Vps::SubdatasetDestroy.fire(
+        self,
+        dataset.dataset_in_pools.joins(:pool).where(pools: {role: ::Pool.roles[:hypervisor]}).take!
     )
   end
 

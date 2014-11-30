@@ -73,7 +73,12 @@ module TransactionChains
     end
 
     def mountpoint_of(ds)
-      return false unless ds.dataset_in_pools.where(pool_id: @vps.dataset_in_pool.pool_id).any?
+      unless ds.dataset_in_pools
+                .where(pool_id: @vps.dataset_in_pool.pool_id)
+                .where.not(confirmed: ::DatasetInPool.confirmed(:confirm_destroy)).any?
+
+        return false
+      end
 
       {
           type: :zfs,

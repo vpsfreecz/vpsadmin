@@ -1,6 +1,5 @@
 module TransactionChains
-  # Create /etc/vz/conf/$veid.(u)mount scripts.
-  # Contains mounts of storage datasets (NAS) and VPS subdatasets.
+  # Mount local or remote datasets without VPS restart.
   class Vps::Mount < ::TransactionChain
     label 'Mount'
 
