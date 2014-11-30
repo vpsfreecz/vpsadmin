@@ -31,26 +31,6 @@ module VpsAdmind
       vzctl(:set, @veid, {:onboot => "yes"}, true)
     end
 
-    def create(template, hostname, nameserver)
-      vzctl(:create, @veid, {
-          :ostemplate => template,
-          :hostname => hostname,
-          :private => ve_private,
-      })
-      vzctl(:set, @veid, {
-          :applyconfig => "basic",
-          :nameserver => nameserver,
-      }, true)
-    end
-
-    def destroy
-      syscmd("#{$CFG.get(:bin, :rmdir)} #{ve_root}")
-
-      Dir.glob("#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.{mount,umount,conf}").each do |cfg|
-        syscmd("#{$CFG.get(:bin, :mv)} #{cfg} #{cfg}.destroyed")
-      end
-    end
-
     def suspend
       acquire_lock do
         unless File.exists?("#{ve_private}/sbin/iptables-save")
@@ -74,16 +54,6 @@ module VpsAdmind
         vzctl(:resume, @veid, {:dumpfile => dumpfile})
 
         File.delete("#{ve_private}/sbin/iptables-restore") if del
-      end
-    end
-
-    def reinstall(*args)
-      honor_state do
-        stop
-        zfs(:destroy, '-r', ve_private_ds)
-        zfs(:create, nil, ve_private_ds)
-        create(*args)
-        # vzctl(:set, @veid, {:ipadd => @params["ip_addrs"]}, true) if @params["ip_addrs"].count > 0
       end
     end
 

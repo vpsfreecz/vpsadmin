@@ -2,9 +2,23 @@ module VpsAdmind
   class Commands::Vps::Create < Commands::Base
     handle 3001
 
+    include Utils::System
+    include Utils::Vz
+    include Utils::Vps
+    include Utils::Zfs
+
     def exec
-      Vps.new(@vps_id).create(@template, @hostname, @nameserver)
       # FIXME: what about onboot param?
+
+      vzctl(:create, @vps_id, {
+          :ostemplate => @template,
+          :hostname => @hostname,
+          :private => ve_private,
+      })
+      vzctl(:set, @vps_id, {
+          :applyconfig => 'basic',
+          :nameserver => @nameserver
+      }, true)
     end
   end
 end

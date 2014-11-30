@@ -27,6 +27,10 @@ module VpsAdmind
       "#{$CFG.get(:vz, :vz_root)}/root/#{@vps_id}"
     end
 
+    def ve_private
+      $CFG.get(:vz, :ve_private).gsub(/%\{veid\}/, @vps_id.to_s)
+    end
+
     def status
       stat = vzctl(:status, @vps_id)[:output].split(" ")[2..-1]
       {
