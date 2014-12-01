@@ -29,8 +29,12 @@ class DatasetAction < ActiveRecord::Base
   def do_group_snapshots
     dips = []
 
-    group_snapshots.all.each do |s|
-      dips << s.dataset_in_pool
+    group_snapshots.includes(:dataset_in_pool).all.each do |s|
+      dip = s.dataset_in_pool
+
+      next unless dip # FIXME: when dataset in pools are deleted, they must be deleted from group snapshot as well!
+
+      dips << dip
     end
 
     TransactionChains::Dataset::GroupSnapshot.fire(dips) unless dips.count == 0
