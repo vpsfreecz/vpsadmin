@@ -31,7 +31,7 @@ class TransactionChain < ActiveRecord::Base
       # and the exception will be propagated.
       ret = chain.link_chain(*args)
 
-      raise ActiveRecord::Rollback if chain.empty?
+      fail 'empty' if chain.empty?
 
       chain.state = :queued
       chain.save
@@ -122,7 +122,7 @@ class TransactionChain < ActiveRecord::Base
   end
 
   def empty?
-    @size == 0
+    size == 0
   end
 
   def label
