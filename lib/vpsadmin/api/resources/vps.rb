@@ -766,6 +766,11 @@ END
     model ::Snapshot
     desc 'VPS snapshots'
 
+    params(:ds) do
+      resource VpsAdmin::API::Resources::VPS::Dataset, label: 'Dataset',
+               value_label: :full_name
+    end
+
     params(:all) do
       id :id
       datetime :created_at # FIXME: this is not correct creation time
@@ -773,6 +778,10 @@ END
 
     class Index < HaveAPI::Actions::Default::Index
       desc 'List snapshots'
+
+      input do
+        use :ds
+      end
 
       output(:object_list) do
         use :all
@@ -785,9 +794,22 @@ END
       end
 
       def exec
-        Vps.includes(dataset_in_pool: [:dataset])
+        vps = Vps.includes(dataset_in_pool: [:dataset])
           .find_by!(with_restricted(vps_id: params[:vps_id]))
-          .dataset_in_pool.dataset.snapshots.order('created_at')
+
+        if input[:dataset]
+          unless vps.dataset_in_pool.dataset.descendant_ids.include?(input[:dataset].id)
+            error('selected dataset does not belong to the VPS subtree')
+          end
+
+          # Fail if the dataset is not present on VPS pool
+          input[:dataset].dataset_in_pools.where(pool_id: vps.dataset_in_pool.pool_id).take!
+
+          input[:dataset].snapshots.order('created_at')
+
+        else
+          vps.dataset_in_pool.dataset.snapshots.order('created_at')
+        end
       end
     end
 
@@ -826,6 +848,10 @@ END
       #   use :all
       # end
 
+      input do
+        use :ds
+      end
+
       authorize do |u|
         allow if u.role == :admin
       end
@@ -835,8 +861,17 @@ END
           .find_by!(with_restricted(vps_id: params[:vps_id]))
         maintenance_check!(vps)
 
+        if input[:dataset]
+          unless vps.dataset_in_pool.dataset.descendant_ids.include?(input[:dataset].id)
+            error('selected dataset does not belong to the VPS subtree')
+          end
 
-        vps.dataset_in_pool.snapshot
+          # Fail if the dataset is not present on VPS pool
+          input[:dataset].dataset_in_pools.where(pool_id: vps.dataset_in_pool.pool_id).take!.snapshot
+
+        else
+          vps.dataset_in_pool.snapshot
+        end
       end
     end
 
@@ -856,7 +891,12 @@ END
           .find_by!(with_restricted(vps_id: params[:vps_id]))
         maintenance_check!(vps)
 
-        snap = vps.dataset_in_pool.dataset.snapshots.find(params[:snapshot_id])
+        snap = ::Snapshot.find(params[:snapshot_id])
+        vps_ds = vps.dataset_in_pool.dataset
+
+        if vps_ds.id != snap.dataset_id && !vps_ds.descendant_ids.include?(snap.dataset_id)
+          error('selected snapshot does not belong to any dataset in the VPS subtree')
+        end
 
         vps.restore(snap)
         ok

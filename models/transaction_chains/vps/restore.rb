@@ -4,7 +4,10 @@ module TransactionChains
 
     def link_chain(vps, snapshot)
       @vps = vps
-      super(vps.dataset_in_pool, snapshot)
+
+      dip = snapshot.dataset.dataset_in_pools.where(pool_id: vps.dataset_in_pool.pool_id).take!
+
+      super(dip, snapshot)
     end
 
     def pre_local_rollback
