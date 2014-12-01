@@ -18,6 +18,8 @@ module VpsAdmind
 
       # Mova the rollbacked one in its place
       zfs(:rename, nil, "#{origin}.rollback #{origin}")
+      zfs(:inherit, 'canmount', origin)
+      zfs(:mount, nil, origin)
     end
   end
 end
