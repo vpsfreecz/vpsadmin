@@ -22,85 +22,50 @@ function sec2hms ($sec, $padHours = false) {
 if ($_SESSION["logged_in"]) {
 	$xtpl->title(_("Manage Backups"));
 	$list_backups = false;
+	
 	switch ($_GET["action"]) {
-		case "cleanup":
-			if ($_SESSION["is_admin"]) {
-				if (!($vps = $db->findByColumnOnce("vps", "vps_id", $_GET["vps_id"]))) {
-					$db->query("DELETE FROM vps_backups WHERE vps_id = '{$_GET["vps_id"]}'");
-				}
+		case 'snapshot':
+			try {
+				$api->vps($_GET['vps_id'])->snapshot->create();
+				
+				notify_user(_('Snapshot creation scheduled.'), _('Snapshot will be taken momentarily.'));
+				redirect('?page=backup');
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Snapshot failed'), $e->getResponse());
 			}
-			unset ($_GET["vps_id"]);
-			$list_backups = true;
-			break;
-		case "cleanup_all":
-			if ($_SESSION["is_admin"]) {
-				$deleted = array();
-				while ($backup = $db->find("vps_backups")) {
-					if (!($vps = $db->findByColumnOnce("vps", "vps_id", $backup["vps_id"]))) {
-						$deleted[] = $backup["vps_id"];
-						$db->query("DELETE FROM vps_backups WHERE vps_id = '{$backup["vps_id"]}'");
-					}
-				}
+		
+		case 'restore':
+			try {
+				$snap = $api->vps($_GET['vps_id'])->snapshot->find($_POST['restore_snapshot']);
+				
+				$xtpl->perex(
+					_("Are you sure you want to restore VPS").' '.$_GET["vps_id"].' from '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)).'?',
+					'<a href="?page=backup">'.strtoupper(_("No")).'</a> | <a href="?page=backup&action=restore2&vps_id='.$_GET["vps_id"].'&restore_snapshot='.$snap->id.'">'.strtoupper(_("Yes")).'</a>'
+				);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('VPS or snapshot not found'), $e->getResponse());
 			}
-			$perex = implode($deleted, "\n<br />");
-			$xtpl->perex("Backups cleaned-up", $perex);
+			
 			break;
-		case "restore":
-			$vps = vps_load($_GET["vps_id"]);
-			
-			/* Permissions are checked in vps.lib.php */
-			
-			if ($_REQUEST["backup_first"])
-				$last_t = get_last_transaction(T_BACKUP_SCHEDULE, $vps->veid);
-			
-			if(!$_POST["restore_timestamp"]) {
-				$xtpl->perex(
-					_("No backup selected"),
-					_("You must select which backup do you want to be restored.")
-				);
-			} else if (is_transaction_in_queue(T_BACKUP_RESTORE_PREPARE, $vps->veid)
-				|| is_transaction_in_queue(T_BACKUP_RESTORE_RESTORE, $vps->veid)
-				|| is_transaction_in_queue(T_BACKUP_RESTORE_FINISH, $vps->veid))
-				$xtpl->perex(
-					_("Restore already in queue"),
-					_("Restoration request for this VPS is already in queue, you must wait until it is done.")
-				);
-			else if ($_REQUEST["backup_first"] && $last_t["t_time"] > (time() - 24*60*60))
-				$xtpl->perex(
-					_("Backup before restore not allowed"),
-					_("You can use backup before restore function only once per day.")
-				);
-			else
-				$xtpl->perex(
-					_("Are you sure you want to restore VPS").' '.$_GET["vps_id"].' from '.strftime("%Y-%m-%d %H:%M", $_POST["restore_timestamp"]).'?',
-					'<a href="?page=backup">'.strtoupper(_("No")).'</a> | <a href="?page=backup&action=restore2&vps_id='.$_GET["vps_id"].'&timestamp='.$_POST["restore_timestamp"].'&backup_first='.$_POST["backup_first"].'">'.strtoupper(_("Yes")).'</a>'
-				);
-			break;
+		
 		case 'restore2':
-			$vps = vps_load($_GET["vps_id"]);
-			
-			if(!$_GET["timestamp"]) {
-				$xtpl->perex(
-					_("No backup selected"),
-					_("You must select which backup do you want to be restored.")
+			try {
+				$snap = $api->vps($_GET['vps_id'])->snapshot->find($_GET['restore_snapshot']);
+				$snap->rollback();
+				
+				notify_user(
+					_('VPS restoration scheduled.'),
+					_("Restoration of VPS")." {$_GET["vps_id"]} from ".strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at))." ".strtolower(_("planned"))
 				);
-			} else if (is_transaction_in_queue(T_BACKUP_RESTORE_PREPARE, $vps->veid)
-				|| is_transaction_in_queue(T_BACKUP_RESTORE_RESTORE, $vps->veid)
-				|| is_transaction_in_queue(T_BACKUP_RESTORE_FINISH, $vps->veid))
-				$xtpl->perex(
-					_("Restore already in queue"),
-					_("Restoration request for this VPS is already in queue, you must wait until it is done.")
-				);
-			else if ($_REQUEST["backup_first"] && $last_t["t_time"] > (time() - 24*60*60))
-				$xtpl->perex(
-					_("Backup before restore not allowed"),
-					_("You can use backup before restore function only once per day.")
-				);
-			else {
-				$xtpl->perex(_("Restoration of VPS")." {$_GET["vps_id"]} from ".strftime("%Y-%m-%d %H:%M", $_GET["timestamp"])." ".strtolower(_("planned")), '');
-				$vps->restore($_GET["timestamp"], $_GET["backup_first"]);
+				redirect('?page=backup');
+				
+			}  catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('VPS restoration failed'), $e->getResponse());
 			}
 			break;
+/*
 		case 'download':
 			$vps = vps_load($_GET["vps_id"]);
 			
@@ -122,115 +87,43 @@ if ($_SESSION["logged_in"]) {
 			);
 			$vps->download_backup($_GET["timestamp"]);
 			break;
+*/
 		default:
 			$list_backups = true;
 	}
 	
 	if($list_backups) {
-		$loaded_vps = array();
+		$vpses = $api->vps->list();
 		
-		if ($_SESSION["is_admin"]) {
-
-			$xtpl->sbar_add(_("<b>DANGEROUS:</b> clean-up all deleted"), '?page=backup&action=cleanup_all');
+		foreach ($vpses as $vps) {
 			
-			$listCond[] = "1";
-			if (isset($_GET["vps_id"])) {
-				$listCond[] = "vps_id = {$db->check($_GET["vps_id"])}";
-			}
-			if (isset($_GET["m_id"])) {
-				while ($vps = $db->findByColumn("vps", "m_id", $_GET["m_id"])) {
-					$vpses[] = "(vps_id = {$vps["vps_id"]})";
-					$loaded_vps[$vps["vps_id"]] = $vps;
-				}
-				$listCond[] = implode(" OR ", $vpses);
-			}
-		} else {
-			$vpses = array();
-			while ($vps = $db->findByColumn("vps", "m_id", $_SESSION["member"]["m_id"])) {
-				$vpses[] = "(vps_id = {$vps["vps_id"]})";
-				$loaded_vps[$vps["vps_id"]] = $vps;
-			}
-			$listCond[] = implode(" OR ", $vpses);
-		}
-		
-		$lastId = 0;
-		
-		while ($backup = $db->find("vps_backups", $listCond, "vps_id, timestamp")) {
-			if (isset($loaded_vps[$backup["vps_id"]]))
-				$vps = $loaded_vps[$backup["vps_id"]];
-			else
-				$vps = $db->findByColumnOnce("vps", "vps_id", $backup["vps_id"]);
+			$xtpl->table_title(_('VPS ').'#'.$vps->id);
+			$xtpl->table_add_category(_('Date and time'));
+			$xtpl->table_add_category(_('Approximate size'));
+			$xtpl->table_add_category(_('Restore'));
+			$xtpl->table_add_category(_('Download'));
+			$xtpl->table_add_category(_('Mount'));
 			
-			if($lastId != $backup["vps_id"]) {
-				if($lastId > 0) {
-					$last_t = get_last_transaction(T_BACKUP_SCHEDULE, $lastId);
-					
-					$xtpl->table_td(_("Current VPS state"));
-					$xtpl->table_td('-');
-					$xtpl->table_td('-');
-					$xtpl->table_td('[<a href="?page=backup&action=download&vps_id='.$lastId.'&timestamp=current">'._("Download").'</a>]');
-					$xtpl->table_tr();
-					
-					if ($last_t["t_time"] > (time() - 24*60*60)) {
-						$xtpl->table_td(_("Make a full backup before restore?"));
-						$xtpl->table_td(_("Allowed only once per day"));
-						$xtpl->table_tr();
-					} else
-						$xtpl->form_add_checkbox(_("Make a full backup before restore?"), "backup_first", "1", false);
-					$xtpl->form_out(_("Restore"));
-				}
-					
-				if ($_SESSION["is_admin"]) {
-					$m = $db->findByColumnOnce("members", "m_id", $vps["m_id"]);
-					$xtpl->table_title("VPS {$backup["vps_id"]} [{$vps["vps_hostname"]}, {$m["m_id"]} {$m["m_nick"]}]");
-				} else
-					$xtpl->table_title("VPS {$backup["vps_id"]} [{$vps["vps_hostname"]}]");
-				
-				$xtpl->table_add_category(_('Date and time'));
-				$xtpl->table_add_category(_('Approximate size'));
-				$xtpl->table_add_category(_('Restore'));
-				$xtpl->table_add_category(_('Download'));
-				
-				$xtpl->form_create('?page=backup&action=restore&vps_id='.$backup["vps_id"].'', 'post');
-				
-				$lastId = $backup["vps_id"];
-			}
+			$xtpl->form_create('?page=backup&action=restore&vps_id='.$vps->id.'', 'post');
 			
-			$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $backup["timestamp"]));
-			$xtpl->table_td(nas_size_to_humanreadable($backup["size"]));
-			$xtpl->form_add_radio_pure("restore_timestamp", $backup["timestamp"]);
-			$xtpl->table_td('[<a href="?page=backup&action=download&vps_id='.$backup["vps_id"].'&timestamp='.$backup["timestamp"].'">'._("Download").'</a>]');
-			$xtpl->table_tr();
-		}
-		
-		if ($lastId) {
-			$last_t = get_last_transaction(T_BACKUP_SCHEDULE, $lastId);
+			$snapshots = $vps->snapshot->list();
 			
-			$xtpl->table_td(_("Current VPS state"));
-			$xtpl->table_td('-');
-			$xtpl->table_td('-');
-			$xtpl->table_td('[<a href="?page=backup&action=download&vps_id='.$lastId.'&timestamp=current">'._("Download").'</a>]');
-			$xtpl->table_tr();
-			
-			if ($last_t["t_time"] > (time() - 24*60*60)) {
-				$xtpl->table_td(_("Make a full backup before restore?"));
-				$xtpl->table_td(_("Allowed only once per day"));
+			foreach ($snapshots as $snap) {
+				$xtpl->table_td(strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)));
+				$xtpl->table_td('0');
+				$xtpl->form_add_radio_pure("restore_snapshot", $snap->id);
+				$xtpl->table_td('[<a href="?page=backup&action=download&vps_id='.$vps->id.'&snapshot='.$snap->id.'">'._("Download").'</a>]');
+				$xtpl->table_td('[<a href="?page=backup&action=mount&vps_id='.$vps->id.'&snapshot='.$snap->id.'">'._("Mount").'</a>]');
 				$xtpl->table_tr();
-			} else
-				$xtpl->form_add_checkbox(_("Make a full backup before restore?"), "backup_first", "1", false);
-			$xtpl->form_out(_("Restore"));
-		} else
-			$xtpl->title2(_("No backups found."));
-		
-		if ($_SESSION["is_admin"]) {
-			$xtpl->sbar_out(_("Manage backups"));
+			}
+			
+			$xtpl->table_td('<a href="?page=backup&action=snapshot&vps_id='.$vps->id.'">'._('Make a snapshot NOW').'</a>');
+			$xtpl->table_td($xtpl->html_submit(_("Restore"), "restore"));
+			$xtpl->table_tr();
+			
+			$xtpl->form_out_raw();
+			
 		}
 	}
 
 } else $xtpl->perex(_("Access forbidden"), _("You have to log in to be able to access vpsAdmin's functions"));
-
-/*
-
-
-*/
-?>
