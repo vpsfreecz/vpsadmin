@@ -543,6 +543,72 @@ switch ($_GET["action"]) {
 			}
 			
 			break;
+		
+		case 'dataset_new':
+			vps_dataset_add_form();
+			break;
+		
+		case 'dataset_new_save':
+			if(isset($_POST['name'])) {
+				try {
+					$params = array(
+						'name' => $_POST['name']
+					);
+					
+					if ($_POST['mountpoint']) 
+						$params['mountpoint'] = $_POST['mountpoint'];
+					
+					$api->vps($_GET['veid'])->dataset->create($params);
+					
+					notify_user(_('Dataset created'),
+						_('Dataset was successfully created. It will be available when the transaction finishes.'));
+					redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Dataset creation failed'), $e->getResponse());
+					vps_dataset_add_form();
+				}
+			}
+			
+			break;
+		
+		case 'dataset_edit':
+			break;
+		
+		case 'dataset_edit_save':
+			break;
+		
+		case 'dataset_destroy':
+			try {
+				$ds = $api->vps($_GET['veid'])->dataset->find($_GET['id']);
+				
+				$xtpl->perex(_('Do you really want to delete dataset').' '.$ds->name.'?',
+					_('This action is irreversible. All associated subdatasets will be deleted as well.')
+					.'<br><a href="?page=adminvps&action=dataset_destroy_confirm&veid='.$_GET['veid'].'&id='.$ds->id.'">'.strtoupper('yes').'</a>'
+					.' | <a href="?page=adminvps&action=info&veid='.$_GET['veid'].'">'._('no').'</a>'
+				);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('This dataset does not even exists!'), $e->getResponse());
+				$show_info=true;
+			}
+			
+			break;
+		
+		case 'dataset_destroy_confirm':
+			try {
+				$api->vps($_GET['veid'])->dataset->delete($_GET['id']);
+				
+				notify_user(_('Dataset deleted'), _('Dataset was successfully deleted.'));
+				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Failed to destroy dataset'), $e->getResponse());
+				$show_info=true;
+			}
+			
+			break;
+		
 		default:
 			if(!$_SESSION["is_admin"] || $_GET["m_nick"])
 				$list_vps=true;
@@ -1085,6 +1151,38 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_out();
 	}
 	*/
+	
+	// Datasets
+	$xtpl->table_add_category(_('Dataset'));
+	$xtpl->table_add_category(_('Mountpoint'));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+	
+	$datasets = $api->vps($_GET['veid'])->dataset->list();
+	
+	foreach ($datasets as $ds) {
+		if (!$ds->mountpoint)
+			continue;
+		
+		$xtpl->table_td($ds->name);
+		$xtpl->table_td($ds->mountpoint);
+		
+		$xtpl->table_td('<a href="?page=adminvps&action=dataset_edit&veid='.$_GET['veid'].'&id='.$ds->id.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		$xtpl->table_td('<a href="?page=adminvps&action=dataset_destroy&veid='.$_GET['veid'].'&id='.$ds->id.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_td(
+		'<a href="?page=adminvps&action=dataset_new&veid='.$_GET['veid'].'">'._('Create a new dataset').'</a>',
+		false,
+		true, // right
+		4 // colspan
+	);
+	$xtpl->table_tr();
+	
+	$xtpl->table_out();
+	
 	}
 }
 
