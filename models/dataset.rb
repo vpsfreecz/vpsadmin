@@ -9,10 +9,19 @@ class Dataset < ActiveRecord::Base
       with: /\A[a-zA-Z0-9][a-zA-Z0-9_\-:\.]{0,254}\z/,
       message: "'%{value}' is not a valid dataset name"
   }
+  validate :check_name
 
   before_save :cache_full_name
 
   include Confirmable
+
+  def check_name
+    if name.present?
+      if name =~ /\.\./
+        errors.add(:mountpoint, "'..' not allowed in dataset name")
+      end
+    end
+  end
 
   def resolve_full_name
     if parent_id
