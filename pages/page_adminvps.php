@@ -543,27 +543,6 @@ switch ($_GET["action"]) {
 			}
 			
 			break;
-		case 'setbackuper':
-			if (isset($_REQUEST["veid"]) && isset($_POST["backup_exclude"])) {
-				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				notify_user(
-					_("Backuper status changed"),
-					$vps->set_backuper(
-						$_SESSION["is_admin"] ? ($_POST["backup_enabled"] ? true : false) : NULL,
-						$_SESSION["is_admin"] ? $_POST["backup_export"] : NULL,
-						$_POST["backup_exclude"]
-					)
-				);
-				
-				if ($_SESSION["is_admin"] && $_REQUEST["notify_owner"])
-					$vps->backuper_change_notify();
-				
-				redirect('?page=adminvps&action=info&veid='.$vps->veid);
-			} else {
-				$xtpl->perex(_("Error"), '');
-			}
-			$show_info=true;
-			break;
 		default:
 			if(!$_SESSION["is_admin"] || $_GET["m_nick"])
 				$list_vps=true;
@@ -1106,18 +1085,6 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_out();
 	}
 	*/
-		
-	// Backuper
-		$xtpl->form_create('?page=adminvps&action=setbackuper&veid='.$vps->id, 'post');
-		if ($_SESSION["is_admin"]) {
-			$xtpl->form_add_checkbox(_("Backup enabled").':', 'backup_enabled', '1', $deprecated_vps->ve["vps_backup_enabled"]);
-			$xtpl->form_add_select(_("Export").':', 'backup_export', get_nas_export_list(false), $deprecated_vps->ve["vps_backup_export"]);
-			$xtpl->form_add_checkbox(_("Notify owner").':', 'notify_owner', '1', true);
-		}
-		$xtpl->form_add_textarea(_("Exclude files").':', 60, 10, "backup_exclude", $deprecated_vps->ve["vps_backup_exclude"], _("One path per line"));
-		$xtpl->table_add_category(_("Backuper"));
-		$xtpl->table_add_category('&nbsp;');
-		$xtpl->form_out(_("Go >>"));
 	}
 }
 
