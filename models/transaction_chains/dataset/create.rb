@@ -22,7 +22,7 @@ module TransactionChains
 
         parent = part
 
-        dip = ::DatasetInPool.create(
+        dip = ::DatasetInPool.create!(
             dataset: part,
             pool: dataset_in_pool.pool,
             mountpoint: opts[i] && opts[i][:mountpoint],
