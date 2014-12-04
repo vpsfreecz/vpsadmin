@@ -819,9 +819,10 @@ END
     class Show < HaveAPI::Actions::Default::Show
       desc 'Show snapshot'
       resolve ->(s){
+        dip = s.dataset.root.dataset_in_pools.joins(:pool).where(pools: {role: ::Pool.roles[:hypervisor]}).take!
+
         [
-            Vps.joins(dataset_in_pool: [dataset: [:snapshots]])
-               .where(snapshots: {id: s.id}).take!.id,
+            Vps.where(dataset_in_pool: dip).take!.id,
             s.id
         ]
       }
@@ -836,10 +837,31 @@ END
         allow
       end
 
+      def prepare
+        vps = Vps.includes(dataset_in_pool: [:dataset])
+                  .find_by!(with_restricted(vps_id: params[:vps_id]))
+
+        begin
+          @snapshot = vps.dataset_in_pool.dataset.snapshots.find(params[:snapshot_id])
+
+        rescue ActiveRecord::RecordNotFound
+          # snapshot is not a snapshot of VPS top-level dataset, search
+          # in its subtree
+          snap = ::Snapshot.includes(:dataset).find(params[:snapshot_id])
+
+          unless vps.dataset_in_pool.dataset.descendant_ids.include?(snap.dataset_id)
+            error('selected snapshot does not belong to the VPS subtree')
+          end
+
+          # Fail if the dataset is not present on VPS pool
+          snap.dataset.dataset_in_pools.where(pool_id: vps.dataset_in_pool.pool_id).take!
+
+          @snapshot = snap
+        end
+      end
+
       def exec
-        Vps.includes(dataset_in_pool: [:dataset])
-          .find_by!(with_restricted(vps_id: params[:vps_id]))
-          .dataset_in_pool.dataset.snapshots.find(params[:snapshot_id])
+        @snapshot
       end
     end
 
