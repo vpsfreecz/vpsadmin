@@ -707,8 +707,11 @@ END
       def exec
         vps = ::Vps.includes(dataset_in_pool: [:dataset]).find(params[:vps_id])
 
-        unless vps.dataset_in_pool.dataset.user_create
+        if !vps.dataset_in_pool.dataset.user_create
           error('insufficient permission to create a dataset')
+
+        elsif input[:mountpoint] && input[:mountpoint].empty?
+          error('invalid mountpoint: cannot be empty')
         end
 
         vps.create_subdataset(

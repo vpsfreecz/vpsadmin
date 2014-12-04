@@ -6,6 +6,7 @@ class DatasetInPool < ActiveRecord::Base
   has_many :mounts
 
   validate :check_mountpoint
+  validates :mountpoint, uniqueness: true, if: ->(dip){ dip.mountpoint.present? && !dip.mountpoint.empty? }
 
   include Lockable
   include Confirmable
