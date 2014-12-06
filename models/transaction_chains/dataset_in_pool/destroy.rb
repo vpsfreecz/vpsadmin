@@ -99,15 +99,15 @@ module TransactionChains
         if destroy_top
           # Remove associated DatasetAction and RepeatableTask
           GroupSnapshot.where(dataset_in_pool: dataset_in_pool).each do |group|
-            destroy(group)
+            just_destroy(group)
           end
 
           DatasetAction.where(
               'src_dataset_in_pool_id = ? OR dst_dataset_in_pool_id = ?',
               dataset_in_pool.id, dataset_in_pool.id).each do |act|
-            destroy(act)
+            just_destroy(act)
 
-            destroy(RepeatableTask.find_for!(act))
+            just_destroy(RepeatableTask.find_for!(act))
           end
 
           destroy(dataset_in_pool)
