@@ -421,6 +421,35 @@ END
     end
   end
 
+  class Migrate < HaveAPI::Action
+    desc 'Migrate VPS to another node'
+    route ':%{resource}_id/migrate'
+    http_method :post
+
+    input do
+      resource VpsAdmin::API::Resources::Node, label: 'Node', value_label: :name,
+               required: true
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def exec
+      vps = ::Vps.includes(dataset_in_pool: [:dataset]).find(params[:vps_id])
+
+      if vps.node == input[:node]
+        error('the VPS already is on this very node')
+
+      elsif input[:node].server_type != 'node'
+        error('target node is not a hypervisor')
+      end
+
+      vps.migrate(input[:node])
+      ok
+    end
+  end
+
   include VpsAdmin::API::Maintainable::Action
 
   class Config < HaveAPI::Resource

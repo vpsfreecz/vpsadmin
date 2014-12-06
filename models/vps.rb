@@ -253,6 +253,10 @@ class Vps < ActiveRecord::Base
     )
   end
 
+  def migrate(node)
+    TransactionChains::Vps::Migrate.fire(self, node)
+  end
+
   private
   def generate_password
     chars = ('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a

@@ -4,6 +4,11 @@ class DatasetInPool < ActiveRecord::Base
   has_many :snapshot_in_pools
   has_many :dataset_trees
   has_many :mounts
+  has_many :src_dataset_actions, class_name: 'DatasetAction',
+           foreign_key: :src_dataset_in_pool_id
+  has_many :dst_dataset_actions, class_name: 'DatasetAction',
+           foreign_key: :dst_dataset_in_pool_id
+  has_many :group_snapshots
 
   validate :check_mountpoint
   validates :mountpoint, uniqueness: true, if: ->(dip){ dip.mountpoint.present? && !dip.mountpoint.empty? }

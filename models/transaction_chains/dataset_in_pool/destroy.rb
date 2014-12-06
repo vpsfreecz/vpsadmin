@@ -11,8 +11,10 @@ module TransactionChains
   class DatasetInPool::Destroy < ::TransactionChain
     label 'Destroy dataset in pool'
 
-    def link_chain(dataset_in_pool, recursive = false, top = true)
+    def link_chain(dataset_in_pool, recursive = false, top = true, tasks = true)
       lock(dataset_in_pool)
+
+      @tasks = tasks
 
       if recursive
         @pool_id = dataset_in_pool.pool.id
@@ -97,17 +99,19 @@ module TransactionChains
 
         # Destroy dataset in pool
         if destroy_top
-          # Remove associated DatasetAction and RepeatableTask
-          GroupSnapshot.where(dataset_in_pool: dataset_in_pool).each do |group|
-            just_destroy(group)
-          end
+          if @tasks
+            # Remove associated DatasetAction and RepeatableTask
+            GroupSnapshot.where(dataset_in_pool: dataset_in_pool).each do |group|
+              just_destroy(group)
+            end
 
-          DatasetAction.where(
-              'src_dataset_in_pool_id = ? OR dst_dataset_in_pool_id = ?',
-              dataset_in_pool.id, dataset_in_pool.id).each do |act|
-            just_destroy(act)
+            DatasetAction.where(
+                'src_dataset_in_pool_id = ? OR dst_dataset_in_pool_id = ?',
+                dataset_in_pool.id, dataset_in_pool.id).each do |act|
+              just_destroy(act)
 
-            just_destroy(RepeatableTask.find_for!(act))
+              just_destroy(RepeatableTask.find_for!(act))
+            end
           end
 
           destroy(dataset_in_pool)
