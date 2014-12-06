@@ -128,14 +128,19 @@ module VpsAdmind
                 t.query("UPDATE #{row[0]} SET confirmed = 1 WHERE #{pk}")
               end
 
-            when 4 # decrement
+            when 4 # just destroy
+              if success
+                t.query("DELETE FROM #{row[0]} WHERE #{pk}")
+              end
+
+            when 5 # decrement
               if success
                 attr = YAML.load(row[2])
 
                 t.query("UPDATE #{row[0]} SET #{attr} = #{attr} - 1 WHERE #{pk}")
               end
 
-            when 5 # increment
+            when 6 # increment
               if success
                 attr = YAML.load(row[2])
 
