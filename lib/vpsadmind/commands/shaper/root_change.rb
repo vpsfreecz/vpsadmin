@@ -4,6 +4,7 @@ module VpsAdmind
 
     def exec
       Shaper.new.root_change(@max_tx, @max_rx)
+      ok
     end
   end
 end

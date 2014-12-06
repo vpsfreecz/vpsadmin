@@ -4,6 +4,7 @@ module VpsAdmind
 
     def exec
       Shaper.new.shape_change(@addr, @version, @shaper)
+      ok
     end
   end
 end
