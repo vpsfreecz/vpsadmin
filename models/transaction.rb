@@ -105,6 +105,12 @@ class Transaction < ActiveRecord::Base
       add_confirmable(:destroy_type, *args)
     end
 
+    # Just destroy the row. The object does not have attribute
+    # +confirmed+
+    def just_destroy(*args)
+      add_confirmable(:just_destroy_type, *args)
+    end
+
     # Confirm already changed attributes.
     # +attrs+ is a hash of original attributes of +obj+.
     # Attributes are first changed in the model and when
