@@ -5,7 +5,6 @@ module TransactionChains
 
     # FIXME:
     #   - use fallbacks
-    #   - urgent transactions
     def link_chain(vps, dst_node)
       lock(vps)
 
@@ -58,15 +57,15 @@ module TransactionChains
         src, dst = pair
 
         # Seconds transfer is done when the VPS is stopped
-        use_chain(Dataset::Snapshot, args: src)
-        use_chain(Dataset::Transfer, args: [src, dst])
+        use_chain(Dataset::Snapshot, args: src, urgent: true)
+        use_chain(Dataset::Transfer, args: [src, dst], urgent: true)
       end
 
       # Restore VPS state
-      use_chain(Vps::Start, args: dst_vps) if running
+      use_chain(Vps::Start, args: dst_vps, urgent: true) if running
 
       # Move the dataset in pool to the new pool in the database
-      append(Transactions::Utils::NoOp, args: dst_node.id) do
+      append(Transactions::Utils::NoOp, args: dst_node.id, urgent: true) do
         edit(vps, dataset_in_pool_id: datasets.first[1].id)
         edit(vps, vps_server: dst_node.id)
 
@@ -90,10 +89,10 @@ module TransactionChains
 
       # Setup shapers
       # Remote shaper on source node
-      use_chain(Vps::ShaperUnset, args: vps)
+      use_chain(Vps::ShaperUnset, args: vps, urgent: true)
 
       # Set shaper on destination node
-      use_chain(Vps::ShaperSet, args: dst_vps)
+      use_chain(Vps::ShaperSet, args: dst_vps, urgent: true)
 
       # Destroy old dataset in pool
       # Do not delete repeatable tasks - they are re-used for new datasets
