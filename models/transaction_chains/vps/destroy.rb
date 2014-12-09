@@ -7,10 +7,10 @@ module TransactionChains
       lock(vps)
 
       # Stop VPS
-      use_chain(TransactionChains::Vps::Stop, vps)
+      use_chain(TransactionChains::Vps::Stop, args: vps)
 
       # Remove IP addresses
-      use_chain(TransactionChains::Vps::DelIp, vps, vps.ip_addresses.all)
+      use_chain(TransactionChains::Vps::DelIp, args: [vps, vps.ip_addresses.all])
 
       # Remove mounts
       # FIXME: implement mounts removal
@@ -21,7 +21,7 @@ module TransactionChains
       end
 
       # Destroy underlying dataset
-      use_chain(DatasetInPool::Destroy, vps.dataset_in_pool, true)
+      use_chain(DatasetInPool::Destroy, args: [vps.dataset_in_pool, true])
     end
   end
 end

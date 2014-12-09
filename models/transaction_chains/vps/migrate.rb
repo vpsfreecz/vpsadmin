@@ -47,23 +47,23 @@ module TransactionChains
         # The two step transfer is done even if the VPS seems to be stopped.
         # It does not have to be the case.
         # First transfer is done when the VPS is running.
-        use_chain(Dataset::Snapshot, src)
-        use_chain(Dataset::Transfer, src, dst)
+        use_chain(Dataset::Snapshot, args: src)
+        use_chain(Dataset::Transfer, args: [src, dst])
       end
 
       # Stop the VPS
-      use_chain(Vps::Stop, vps)
+      use_chain(Vps::Stop, args: vps)
 
       datasets.each do |pair|
         src, dst = pair
 
         # Seconds transfer is done when the VPS is stopped
-        use_chain(Dataset::Snapshot, src)
-        use_chain(Dataset::Transfer, src, dst)
+        use_chain(Dataset::Snapshot, args: src)
+        use_chain(Dataset::Transfer, args: [src, dst])
       end
 
       # Restore VPS state
-      use_chain(Vps::Start, dst_vps) if running
+      use_chain(Vps::Start, args: dst_vps) if running
 
       # Move the dataset in pool to the new pool in the database
       append(Transactions::Utils::NoOp, args: dst_node.id) do
@@ -90,14 +90,14 @@ module TransactionChains
 
       # Setup shapers
       # Remote shaper on source node
-      use_chain(Vps::ShaperUnset, vps)
+      use_chain(Vps::ShaperUnset, args: vps)
 
       # Set shaper on destination node
-      use_chain(Vps::ShaperSet, dst_vps)
+      use_chain(Vps::ShaperSet, args: dst_vps)
 
       # Destroy old dataset in pool
       # Do not delete repeatable tasks - they are re-used for new datasets
-      use_chain(DatasetInPool::Destroy, src_dip, true, true, false)
+      use_chain(DatasetInPool::Destroy, args: [src_dip, true, true, false])
 
       # Destroy old root
       append(Transactions::Vps::Destroy, args: vps)

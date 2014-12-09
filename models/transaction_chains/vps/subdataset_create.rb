@@ -12,9 +12,9 @@ module TransactionChains
         }
       end
 
-      new_datasets = use_chain(Dataset::Create, vps.dataset_in_pool, datasets, opts)
-      use_chain(Vps::Mounts, vps)
-      use_chain(Vps::Mount, vps, new_datasets)
+      new_datasets = use_chain(Dataset::Create, args: [vps.dataset_in_pool, datasets, opts])
+      use_chain(Vps::Mounts, args: vps)
+      use_chain(Vps::Mount, args: [vps, new_datasets])
     end
   end
 end

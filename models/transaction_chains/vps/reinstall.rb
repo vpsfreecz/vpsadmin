@@ -11,11 +11,11 @@ module TransactionChains
 
       # Send the stop nevertheless, vpsAdmin information about VPS
       # status may not be up-to-date.
-      use_chain(Vps::Stop, vps)
+      use_chain(Vps::Stop, args: vps)
 
       # Destroy underlying dataset with all its descendants,
       # but do not delete the top-level dataset from database.
-      use_chain(DatasetInPool::Destroy, vps.dataset_in_pool, true, false)
+      use_chain(DatasetInPool::Destroy, args: [vps.dataset_in_pool, true, false])
 
       # Destroy VPS configs, mounts, root
       append(Transactions::Vps::Destroy, args: vps)
@@ -29,14 +29,14 @@ module TransactionChains
       end
 
       append(Transactions::Vps::ApplyConfig, args: vps)
-      use_chain(Vps::Mounts, vps)
+      use_chain(Vps::Mounts, args: vps)
 
       vps.ip_addresses.all.each do |ip|
         append(Transactions::Vps::IpAdd, args: [vps, ip])
       end
 
       if running
-        use_chain(Vps::Start, vps)
+        use_chain(Vps::Start, args: vps)
       end
     end
   end

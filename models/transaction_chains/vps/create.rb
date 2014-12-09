@@ -34,7 +34,7 @@ module TransactionChains
         create(vps)
       end
 
-      use_chain(Vps::ApplyConfig, vps, vps.node.location.environment.vps_configs.pluck(:id))
+      use_chain(Vps::ApplyConfig, args: [vps, vps.node.location.environment.vps_configs.pluck(:id)])
 
       if add_ips
         ips = []
@@ -55,11 +55,11 @@ module TransactionChains
           end
         end
 
-        use_chain(Vps::AddIp, vps, ips)
+        use_chain(Vps::AddIp, args: [vps, ips])
       end
 
       if vps.vps_onboot
-        use_chain(TransactionChains::Vps::Start, vps)
+        use_chain(TransactionChains::Vps::Start, args: vps)
       end
 
       vps.save!

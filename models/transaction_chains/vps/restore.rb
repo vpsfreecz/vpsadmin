@@ -11,11 +11,11 @@ module TransactionChains
     end
 
     def pre_local_rollback
-      use_chain(Vps::Stop, @vps)
+      use_chain(Vps::Stop, args: @vps)
     end
 
     def post_local_rollback
-      use_chain(Vps::Start, @vps)
+      use_chain(Vps::Start, args: @vps)
     end
   end
 end
