@@ -3,8 +3,8 @@ module VpsAdmindCtl::CommandTemplates
     args 'all|fw|shaper'
 
     def validate
-      raise ValidationError.new('missing resource') if @args.size < 2
-      raise ValidationError.new('not a valid resource') unless %w(all fw shaper).include?(@args[1])
+      raise VpsAdmindCtl::ValidationError.new('missing resource') if @args.size < 2
+      raise VpsAdmindCtl::ValidationError.new('not a valid resource') unless %w(all fw shaper).include?(@args[1])
 
       {:resources => @args[1] == 'all' ? [:fw, :shaper] : [@args[1]]}
     end
