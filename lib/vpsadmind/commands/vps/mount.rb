@@ -1,11 +1,7 @@
 module VpsAdmind
   class Commands::Vps::Mount < Commands::Base
     handle 5302
-
-    include Utils::System
-    include Utils::Vz
-    include Utils::Zfs
-    include Utils::Vps
+    needs :system, :vz, :vps, :zfs
 
     def exec
       return ok unless status[:running]

@@ -1,11 +1,7 @@
 module VpsAdmind
   class Commands::Vps::Create < Commands::Base
     handle 3001
-
-    include Utils::System
-    include Utils::Vz
-    include Utils::Vps
-    include Utils::Zfs
+    needs :system, :vz, :vps, :zfs
 
     def exec
       # FIXME: what about onboot param?

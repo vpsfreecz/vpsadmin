@@ -1,10 +1,7 @@
 module VpsAdmind
   class Commands::Vps::Mounts < Commands::Base
     handle 5301
-
-    include Utils::System
-    include Utils::Zfs
-    include Utils::Vps
+    needs :system, :vps, :zfs
 
     def exec
       action_script('mount')
