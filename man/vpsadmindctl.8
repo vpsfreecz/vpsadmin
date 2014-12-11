@@ -317,12 +317,6 @@ Resume transaction execution after it has been paused by \fBvpsadmindctl pause\f
 \fBresume\fR can also be used to cancel scheduled \fBstop\fR, \fBrestart\fR or
 \fBupdate\fR.
 .PP
-One useful side-effect of \fBresume\fR is that it forces \fBvpsAdmind\fR to check queue
-for new transactions, no matter of database last change. In some rare cases,
-\fBvpsAdmind\fR may seem to be stuck because it is ignoring queued transactions.
-\fBresume\fR can be used to put \fBvpsAdmind\fR in motion again, until the
-actual bug is resolved.
-.PP
 \fBresume\fR returns immediately.
 .RE
 
