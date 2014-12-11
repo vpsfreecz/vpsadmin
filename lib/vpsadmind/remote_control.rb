@@ -1,6 +1,7 @@
 module VpsAdmind
   class RemoteControl < EventMachine::Connection
     extend Utils::Compat
+    extend Utils::Log
 
     @@handlers = {}
 

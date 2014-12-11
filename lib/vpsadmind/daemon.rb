@@ -9,6 +9,8 @@ module VpsAdmind
   EXIT_UPDATE = 200
 
   class Daemon
+    include Utils::Log
+
     attr_reader :start_time, :export_console
 
     @@run = true

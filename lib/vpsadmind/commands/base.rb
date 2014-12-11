@@ -6,6 +6,8 @@ module VpsAdmind::Commands
 
     include VpsAdmind::Utils::Command
 
+    needs :log
+
     attr_accessor :output
 
     def initialize(cmd, params)

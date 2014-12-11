@@ -3,6 +3,7 @@ module VpsAdmind::Utils
     module ClassMethods
       # Mapping of module names.
       MODULES = {
+          :log => :Log,
           :system => :System,
           :vz => :Vz,
           :zfs => :Zfs,

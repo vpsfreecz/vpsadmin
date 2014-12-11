@@ -1,5 +1,7 @@
 module VpsAdmind
   class Db
+    include Utils::Log
+
     def initialize(db = nil)
       db ||= $CFG.get(:db)
 

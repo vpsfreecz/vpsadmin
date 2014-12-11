@@ -9,6 +9,8 @@ require 'optparse'
 require 'rubygems'
 require 'daemons'
 
+include VpsAdmind::Utils::Log
+
 options = {
     :config => "/etc/vpsadmin/vpsadmind.yml",
     :daemonize => false,

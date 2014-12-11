@@ -19,6 +19,8 @@ module VpsAdmind
 
   class Command
     include Utils::Compat
+    include Utils::Log
+    extend Utils::Log
 
     attr_reader :trans
 

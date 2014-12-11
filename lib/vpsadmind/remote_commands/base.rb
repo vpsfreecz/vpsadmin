@@ -7,6 +7,8 @@ module VpsAdmind
 
       include VpsAdmind::Utils::Command
 
+      needs :log
+
       def initialize(params, daemon)
         @daemon = daemon
 
