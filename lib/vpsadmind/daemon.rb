@@ -92,7 +92,7 @@ module VpsAdmind
       db.query("SELECT * FROM (
 								(SELECT *, 1 AS depencency_success FROM transactions
 								WHERE t_done = 0 AND t_server = #{$CFG.get(:vpsadmin, :server_id)} AND t_depends_on IS NULL
-								GROUP BY t_vps, t_priority, t_id)
+								GROUP BY transaction_chain_id, t_priority, t_id)
 
 								UNION ALL
 
@@ -103,11 +103,11 @@ module VpsAdmind
 								t.t_done = 0
 								AND d.t_done = 1
 								AND t.t_server = #{$CFG.get(:vpsadmin, :server_id)}
-								GROUP BY t_vps, t_priority, t_id)
+								GROUP BY transaction_chain_id, t_priority, t_id)
 
 								ORDER BY t_priority DESC, t_id ASC
 							) tmp
-							GROUP BY t_vps, t_priority
+							GROUP BY transaction_chain_id, t_priority
               ORDER BY t_priority DESC, t_id ASC
               LIMIT #{limit}")
     end
