@@ -5,6 +5,8 @@ module VpsAdmind
         VpsAdmind::RemoteControl.register(self.to_s, name)
       end
 
+      include VpsAdmind::Utils::Command
+
       def initialize(params, daemon)
         @daemon = daemon
 
