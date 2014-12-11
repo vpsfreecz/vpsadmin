@@ -4,6 +4,7 @@ require 'eventmachine'
 require 'json'
 require 'yaml'
 require 'mysql'
+require 'pry-remote'
 
 module VpsAdmind
 
