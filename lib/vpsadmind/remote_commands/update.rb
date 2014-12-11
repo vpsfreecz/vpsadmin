@@ -1,6 +1,7 @@
 module VpsAdmind::RemoteCommands
   class Update < Base
     handle :update
+    needs :worker
 
     def exec
       VpsAdmind::Daemon.safe_exit(VpsAdmind::EXIT_UPDATE)

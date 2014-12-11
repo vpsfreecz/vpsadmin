@@ -1,6 +1,7 @@
 module VpsAdmind::RemoteCommands
   class Stop < Base
     handle :stop
+    needs :worker
 
     def exec
       VpsAdmind::Daemon.safe_exit(VpsAdmind::EXIT_STOP)
