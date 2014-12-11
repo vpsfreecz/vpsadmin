@@ -142,7 +142,7 @@ module VpsAdmind
     def run_threads
       run_thread_unless_runs(:status) do
         loop do
-          log 'Update status'
+          log(:info, :regular, 'Update status')
 
           update_status
 
@@ -152,7 +152,7 @@ module VpsAdmind
 
       run_thread_unless_runs(:resources) do
         loop do
-          log 'Update resources'
+          log(:info, :regular, 'Update resources')
 
           update_resources
 
@@ -162,7 +162,7 @@ module VpsAdmind
 
       run_thread_unless_runs(:transfers) do
         loop do
-          log 'Update transfers'
+          log(:info, :regular, 'Update transfers')
 
           update_transfers
 

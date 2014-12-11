@@ -44,7 +44,7 @@ module VpsAdmind
       current_cmd.step = cmd if current_cmd
 
       out = ""
-      log "Exec #{cmd}"
+      log(:work, current_cmd || @command, cmd)
 
       IO.popen("exec #{cmd} 2>&1") do |io|
         current_cmd.subtask = io.pid if current_cmd

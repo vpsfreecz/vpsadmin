@@ -1,13 +1,13 @@
 module VpsAdmind
   class RemoteControl < EventMachine::Connection
     extend Utils::Compat
-    extend Utils::Log
+    include Utils::Log
 
     @@handlers = {}
 
     def self.register(klass, name)
       @@handlers[name] = class_from_name(klass)
-      log "Remote cmd #{name} => #{klass}"
+      log(:info, :init, "Remote cmd #{name} => #{klass}")
     end
 
     def initialize(daemon)

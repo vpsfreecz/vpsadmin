@@ -148,7 +148,7 @@ end
 
 $CFG.load_db_settings
 
-log 'vpsAdmind starting'
+log(:info, :init, 'vpsAdmind starting')
 
 Thread.abort_on_exception = true
 vpsAdmind = VpsAdmind::Daemon.new()
