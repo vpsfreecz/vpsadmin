@@ -11,7 +11,7 @@ module VpsAdmind::RemoteCommands
           queue = []
 
           @daemon.workers do |workers|
-            db = Db.new
+            db = VpsAdmind::Db.new
 
             @daemon.select_commands(db, @limit).each_hash do |row|
               t_id = row['t_id'].to_i
