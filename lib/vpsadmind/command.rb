@@ -234,16 +234,10 @@ module VpsAdmind
       @trans['transaction_chain_id']
     end
 
+    alias_method :worker_id, :chain_id
+
     def id
       @trans["t_id"]
-    end
-
-    def worker_id
-      if @trans.has_key?("t_vps")
-        @trans["t_vps"].to_i
-      else
-        0
-      end
     end
 
     def type
