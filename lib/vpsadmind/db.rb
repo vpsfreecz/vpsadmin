@@ -35,8 +35,9 @@ module VpsAdmind
         @my.query('BEGIN')
         yield(DbTransaction.new(@my))
         @my.query('COMMIT')
+
       rescue => err
-        puts 'MySQL transactions failed, rolling back'
+        log log(:critical, :sql, 'MySQL transactions failed, rolling back')
         p err.inspect
         p err.traceback
         @my.query('ROLLBACK')
@@ -59,23 +60,24 @@ module VpsAdmind
       loop do
         db[:hosts].each do |host|
           begin
-            log "Trying to connect to #{host}" if problem
+            log(:info, :sql, "Trying to connect to #{host}") if problem
             @my = Mysql.init
             @my.ssl_set if db[:ssl]
             @my.options(Mysql::OPT_CONNECT_TIMEOUT, db[:connect_timeout])
             @my.options(Mysql::OPT_READ_TIMEOUT, db[:read_timeout])
             @my.options(Mysql::OPT_WRITE_TIMEOUT, db[:write_timeout])
             @my.connect(host, db[:user], db[:pass], db[:name])
-            log "Connected to #{host}" if problem
+            log(:info, :sql, "Connected to #{host}") if problem
             return
+
           rescue Mysql::Error => err
             problem = true
-            log "MySQL error ##{err.errno}: #{err.error}"
-            log 'Trying another host'
+            log(:warn, :sql, "MySQL error ##{err.errno}: #{err.error}")
+            log(:info, :sql, 'Trying another host')
           end
 
           interval = $CFG.get(:db, :retry_interval)
-          log "All hosts failed, next try in #{interval} seconds"
+          log(:warn, :sql, "All hosts failed, next try in #{interval} seconds")
           sleep(interval)
         end
       end
@@ -85,7 +87,7 @@ module VpsAdmind
       begin
         yield
       rescue Mysql::Error => err
-        log "MySQL error ##{err.errno}: #{err.error}"
+        log(:critical, :sql, "MySQL error ##{err.errno}: #{err.error}")
         close if @my
         sleep($CFG.get(:db, :retry_interval))
         connect($CFG.get(:db))
@@ -103,7 +105,7 @@ module VpsAdmind
       begin
         yield
       rescue Mysql::Error => err
-        puts "MySQL error ##{err.errno}: #{err.error}"
+        log(:critical, :sql, "MySQL error ##{err.errno}: #{err.error}")
         raise err
       end
     end
