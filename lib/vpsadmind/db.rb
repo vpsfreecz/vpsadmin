@@ -44,6 +44,12 @@ module VpsAdmind
       end
     end
 
+    def union
+      u = Union.new(@my)
+      yield(u)
+      u
+    end
+
     def close
       @my.close
     end
@@ -107,6 +113,25 @@ module VpsAdmind
       rescue Mysql::Error => err
         log(:critical, :sql, "MySQL error ##{err.errno}: #{err.error}")
         raise err
+      end
+    end
+  end
+
+  class Union
+    def initialize(my)
+      @my = my
+      @results = []
+    end
+
+    def query(*args)
+      @results << @my.query(*args)
+    end
+
+    def each_hash
+      @results.each do |r|
+        r.each_hash do |row|
+          yield(row)
+        end
       end
     end
   end
