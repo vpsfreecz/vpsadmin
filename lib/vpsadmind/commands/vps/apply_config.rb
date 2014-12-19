@@ -1,7 +1,7 @@
 module VpsAdmind
   class Commands::Vps::ApplyConfig < Commands::Base
     handle 2008
-    needs :system, :vz
+    needs :system, :vz, :zfs
 
     def exec
       n = Node.new
@@ -27,7 +27,7 @@ module VpsAdmind
           end
 
           if quota
-            zfs(:set, "refquota=#{quota}", ve_private_ds)
+            zfs(:set, "refquota=#{quota}", "#{@pool_fs}/#{@dataset_name}")
           end
         end
       end
