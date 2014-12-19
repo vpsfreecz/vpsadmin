@@ -6,5 +6,10 @@ module VpsAdmind
       Shaper.new.shape_set(@addr, @version, @shaper)
       ok
     end
+
+    def rollback
+      Shaper.new.shape_unset(@addr, @version, @shaper)
+      ok
+    end
   end
 end
