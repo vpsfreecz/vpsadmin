@@ -110,9 +110,15 @@ module VpsAdmind
             end
 
           else # Reverse chain direction
-            if reversible?
+            # Is it the last transaction to rollback?
+            if chain_finished?
+              run_confirmations(t)
+              close_chain(t)
+
+            elsif reversible?
               rollback_chain(t)
               fail_followers(t)
+
             else
               fail_followers(t)
               close_chain(t)
