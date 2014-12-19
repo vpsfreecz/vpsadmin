@@ -310,7 +310,7 @@ switch ($_GET["action"]) {
 				if($_POST["reason"])
 					$vps->configs_change_notify($_POST["reason"]);
 				
-				redirect('?page=adminvps&action=info&veid='.$vps->veid);
+				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
 				
 			} else {
 				$xtpl->perex(_("Error"), 'Error, contact your administrator');
@@ -760,7 +760,7 @@ if (isset($show_info) && $show_info) {
 	
 	if($deprecated_vps->is_manipulable()) {
 		$xtpl->table_td(
-			(($vps->ve["vps_up"]) ?
+			(($deprecated_vps->ve["vps_up"]) ?
 				_("running").' (<a href="?page=adminvps&action=info&run=restart&veid='.$vps->id.'">'._("restart").'</a>, <a href="?page=adminvps&action=info&run=stop&veid='.$vps->id.'">'._("stop").'</a>'
 				: 
 				_("stopped").' (<a href="?page=adminvps&action=info&run=start&veid='.$vps->id.'">'._("start").'</a>') .
