@@ -4,7 +4,6 @@ module VpsAdmind
 
     def exec
       @vps = Vps.new(@vps_id)
-      fail 'fuckyou'
       @vps.start
     end
 
