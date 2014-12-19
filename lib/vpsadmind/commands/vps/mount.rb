@@ -24,13 +24,20 @@ module VpsAdmind
               end
             end
 
-            runscript('premount', mnt['premount'])
+            runscript('premount', mnt['premount']) if @runscripts.nil? || @runscripts
             syscmd("#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o #{mnt['mode']} #{mnt['src']} #{dst}")
-            runscript('postmount', mnt['postmount'])
+            runscript('postmount', mnt['postmount']) if @runscripts.nil? || @runscripts
         end
       end
 
       ok
+    end
+
+    def rollback
+      call_cmd(Commands::Vps::Umount, {
+          :mounts => @mounts.reverse,
+          :runscripts => false
+      })
     end
   end
 end
