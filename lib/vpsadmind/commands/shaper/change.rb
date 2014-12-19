@@ -6,5 +6,10 @@ module VpsAdmind
       Shaper.new.shape_change(@addr, @version, @shaper)
       ok
     end
+
+    def rollback
+      Shaper.new.shape_change(@addr, @version, @shaper_original)
+      ok
+    end
   end
 end
