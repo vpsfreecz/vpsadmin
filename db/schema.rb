@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20141112075438) do
+ActiveRecord::Schema.define(version: 20141212180955) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -454,6 +454,7 @@ ActiveRecord::Schema.define(version: 20141112075438) do
     t.text    "t_param"
     t.text    "t_output"
     t.integer "transaction_chain_id",                 null: false
+    t.integer "reversible",           default: 1,     null: false
   end
 
   add_index "transactions", ["t_server"], name: "t_server", using: :btree

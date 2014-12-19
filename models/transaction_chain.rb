@@ -7,7 +7,7 @@ class TransactionChain < ActiveRecord::Base
   has_many :transactions
   belongs_to :user
 
-  enum state: %i(staged queued done failed)
+  enum state: %i(staged queued done rollbacking failed)
 
   attr_reader :acquired_locks
   attr_accessor :last_id, :dst_chain, :named, :locks, :urgent

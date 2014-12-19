@@ -33,6 +33,14 @@ class Transaction < ActiveRecord::Base
         @t_type
       end
     end
+
+    def irreversible
+      @reversible = false
+    end
+
+    def reversible?
+      @reversible.nil? ? true : @reversible
+    end
   end
 
   # Called from TransactionChain when appending transaction.
@@ -46,6 +54,7 @@ class Transaction < ActiveRecord::Base
     t.t_depends_on = dep
     t.t_type = t.class.t_type if t.class.t_type
     t.t_urgent = urgent
+    t.reversible = reversible?
 
     if block
       t.t_done = :staged
