@@ -9,5 +9,9 @@ module VpsAdmind
     def exec
       syscmd("#{$CFG.get(:bin, :mkdir)} #{ve_root}")
     end
+
+    def rollback
+      syscmd("#{$CFG.get(:bin, :rmdir)} #{ve_root}")
+    end
   end
 end
