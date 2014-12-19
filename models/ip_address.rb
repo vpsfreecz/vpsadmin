@@ -9,8 +9,6 @@ class IpAddress < ActiveRecord::Base
   alias_attribute :addr, :ip_addr
   alias_attribute :version, :ip_v
 
-  after_update :shaper_changed, if: :shaper_changed?
-
   include Lockable
 
   def free?
@@ -27,12 +25,17 @@ class IpAddress < ActiveRecord::Base
       .order(:ip_id).take!
   end
 
-  protected
-  def shaper_changed?
-    max_tx_changed? || max_rx_changed?
-  end
-
-  def shaper_changed
-    Transactions::Vps::ShaperChange.fire(self) if vps_id > 0
+  def set_shaper(tx, rx)
+    if vps_id > 0
+      TransactionChains::Vps::ShaperChange.fire(
+          self,
+          tx || self.max_tx,
+          rx || self.max_rx
+      )
+    else
+      self.max_tx = tx
+      self.max_rx = rx
+      save!
+    end
   end
 end

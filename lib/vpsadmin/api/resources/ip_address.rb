@@ -121,7 +121,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     def exec
       ip = ::IpAddress.find(params[:ip_address_id])
-      ip.update(params[:ip_address]) ? ok : error('update failed', ip.errors.to_hash)
+      ip.set_shaper(input[:max_tx], input[:max_rx])
     end
   end
 end
