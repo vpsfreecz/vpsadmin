@@ -8,5 +8,9 @@ module VpsAdmind
     def exec
       zfs(:create, '-o canmount=noauto', "#{@pool_fs}/#{@dataset_name}.rollback")
     end
+
+    def rollback
+      zfs(:destroy, nil, "#{@pool_fs}/#{@dataset_name}.rollback")
+    end
   end
 end
