@@ -19,6 +19,17 @@ module VpsAdmind
       ok
     end
 
+    def rollback
+      db = Db.new
+      ds_name = @branch ? "#{@dataset_name}/#{@tree}/#{@branch}" : @dataset_name
+
+      @snapshots.reverse_each do |s|
+        zfs(:destroy, nil, "#{@dst_pool_fs}/#{ds_name}@#{confirmed_snapshot_name(db, s)}", [1])
+      end
+
+      ok
+    end
+
     protected
     # Supports only transfer from primary/hypervisor pools to backup pool.
     # Not the other way around.
@@ -36,13 +47,11 @@ module VpsAdmind
     end
 
     def confirmed_snapshot_name(db, snap)
-      return snap['name'] if snap['confirmed'] == 1
-
-      st = db.prepared_st('SELECT name FROM snapshots WHERE id = ?', snap['id'])
-      ret = st.fetch
-      st.close
-
-      ret[0]
+      if snap['confirmed'] == 1
+        snap['name']
+      else
+        get_confirmed_snapshot_name(db, snap['id'])
+      end
     end
   end
 end
