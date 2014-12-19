@@ -59,5 +59,13 @@ module VpsAdmind
           ds
       )[:output])
     end
+
+    def get_confirmed_snapshot_name(db, snap_id)
+      st = db.prepared_st('SELECT name FROM snapshots WHERE id = ?', snap_id)
+      ret = st.fetch
+      st.close
+
+      ret[0]
+    end
   end
 end
