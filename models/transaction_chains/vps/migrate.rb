@@ -3,8 +3,7 @@ module TransactionChains
   class Vps::Migrate < ::TransactionChain
     label 'Migrate'
 
-    # FIXME:
-    #   - use fallbacks
+    # FIXME: rollback should consist of urgent transactions
     def link_chain(vps, dst_node)
       lock(vps)
 
@@ -27,7 +26,8 @@ module TransactionChains
       append(Transactions::Vps::CopyConfigs, args: [vps, dst_node])
       append(Transactions::Vps::CreateRoot, args: [vps, dst_node])
 
-      # FIXME: run applyconfig to set disk quota
+      # Set zfs refquota properly
+      append(Transactions::Vps::ApplyConfig, args: vps)
 
       datasets = []
 
