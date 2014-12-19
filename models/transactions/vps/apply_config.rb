@@ -7,7 +7,11 @@ module Transactions::Vps
       self.t_vps = vps.vps_id
       self.t_server = vps.vps_server
 
-      ret = {configs: []}
+      ret = {
+          configs: [],
+          pool_fs: vps.dataset_in_pool.pool.filesystem,
+          dataset_name: vps.dataset_in_pool.dataset.full_name
+      }
 
       VpsHasConfig
         .includes(:vps_config)
