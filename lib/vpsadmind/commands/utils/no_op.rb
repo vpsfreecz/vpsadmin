@@ -5,5 +5,9 @@ module VpsAdmind
     def exec
       ok
     end
+
+    def rollback
+      ok
+    end
   end
 end
