@@ -7,5 +7,9 @@ module VpsAdmind
       action_script('mount')
       action_script('umount')
     end
+
+    def rollback
+      ok
+    end
   end
 end
