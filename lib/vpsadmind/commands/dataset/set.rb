@@ -11,5 +11,9 @@ module VpsAdmind
       end
       ok
     end
+
+    def rollback
+      ok # FIXME
+    end
   end
 end
