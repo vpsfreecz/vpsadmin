@@ -93,9 +93,11 @@ class Vps < ActiveRecord::Base
     %w(vps_hostname vps_template dns_resolver_id).each do |attr|
       if changed.include?(attr)
         if attr.ends_with?('_id')
-          to_change[attr] = send(attr[0..-4])
+          to_change[attr] = send("#{attr}_change").map do |id|
+            Object.const_get(attr[0..-4].classify).find(id)
+          end
         else
-          to_change[attr] = send(attr)
+          to_change[attr] = send("#{attr}_change")
         end
 
         send("#{attr}=", changed_attributes[attr])
