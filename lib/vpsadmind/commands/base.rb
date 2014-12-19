@@ -86,6 +86,11 @@ module VpsAdmind::Commands
     def ok
       {:ret => :ok}
     end
+
+    # Call command +cmd+ with +opts+.
+    def call_cmd(cmd, opts)
+      cmd.new(@command, opts).exec
+    end
   end
 
   module DatasetTree ; end
