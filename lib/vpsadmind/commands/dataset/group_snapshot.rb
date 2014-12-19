@@ -15,6 +15,14 @@ module VpsAdmind
       )
     end
 
+    def rollback
+      @snapshots.each do |s|
+        zfs(:destroy, nil, "#{s['pool_fs']}/#{s['dataset_name']}@#{@name}", [1])
+      end
+
+      ok
+    end
+
     def post_save(db)
       @snapshots.each do |snap|
         db.prepared('UPDATE snapshots SET name = ? WHERE id = ?', @name, snap['snapshot_id'])
