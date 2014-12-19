@@ -89,27 +89,63 @@ module VpsAdmind
     def select_commands(db, limit = nil)
       limit ||= $CFG.get(:vpsadmin, :threads)
 
-      db.query("SELECT * FROM (
-								(SELECT *, 1 AS depencency_success FROM transactions
-								WHERE t_done = 0 AND t_server = #{$CFG.get(:vpsadmin, :server_id)} AND t_depends_on IS NULL
-								GROUP BY transaction_chain_id, t_priority, t_id)
+      db.union do |u|
+        # Transactions for execution
+        u.query("SELECT * FROM (
+                  (SELECT t1.*, 1 AS depencency_success,
+                          ch1.state AS chain_state, ch1.progress AS chain_progress,
+                          ch1.size AS chain_size
+                  FROM transactions t1
+                  INNER JOIN transaction_chains ch1 ON ch1.id = t1.transaction_chain_id
+                  WHERE
+                      t_done = 0 AND t_server = #{$CFG.get(:vpsadmin, :server_id)}
+                      AND ch1.state = 1
+                      AND t_depends_on IS NULL
+                  GROUP BY transaction_chain_id, t_priority, t_id)
 
-								UNION ALL
+                  UNION ALL
 
-								(SELECT t.*, d.t_success AS dependency_success
-								FROM transactions t
-								INNER JOIN transactions d ON t.t_depends_on = d.t_id
-								WHERE
-								t.t_done = 0
-								AND d.t_done = 1
-								AND t.t_server = #{$CFG.get(:vpsadmin, :server_id)}
-								GROUP BY transaction_chain_id, t_priority, t_id)
+                  (SELECT t2.*, d.t_success AS dependency_success,
+                          ch2.state AS chain_state, ch2.progress AS chain_progress,
+                          ch2.size AS chain_size
+                  FROM transactions t2
+                  INNER JOIN transactions d ON t2.t_depends_on = d.t_id
+                  INNER JOIN transaction_chains ch2 ON ch2.id = t2.transaction_chain_id
+                  WHERE
+                      t2.t_done = 0
+                      AND d.t_done = 1
+                      AND t2.t_server = #{$CFG.get(:vpsadmin, :server_id)}
+                      AND ch2.state = 1
+                      GROUP BY transaction_chain_id, t_priority, t_id)
 
-								ORDER BY t_priority DESC, t_id ASC
-							) tmp
-							GROUP BY transaction_chain_id, t_priority
-              ORDER BY t_priority DESC, t_id ASC
-              LIMIT #{limit}")
+                  ORDER BY t_priority DESC, t_id ASC
+                ) tmp
+                GROUP BY transaction_chain_id, t_priority
+                ORDER BY t_priority DESC, t_id ASC
+                LIMIT #{limit}")
+
+        # Transactions for rollback.
+        # It is the same query, only transactions are in reverse order.
+        u.query("SELECT * FROM (
+                  (SELECT d.*,
+                          ch2.state AS chain_state, ch2.progress AS chain_progress,
+                          ch2.size AS chain_size
+                  FROM transactions t2
+                  INNER JOIN transactions d ON t2.t_depends_on = d.t_id
+                  INNER JOIN transaction_chains ch2 ON ch2.id = t2.transaction_chain_id
+                  WHERE
+                      t2.t_done = 2
+                      AND d.t_success IN (1,2)
+                      AND d.t_done = 1
+                      AND d.t_server = #{$CFG.get(:vpsadmin, :server_id)}
+                      AND ch2.state = 3)
+
+                  ORDER BY t_priority DESC, t_id DESC
+                ) tmp
+                GROUP BY transaction_chain_id, t_priority
+                ORDER BY t_priority DESC, t_id DESC
+                LIMIT #{limit}")
+      end
     end
 
     def do_commands
@@ -117,11 +153,6 @@ module VpsAdmind
 
       rs.each_hash do |row|
         c = Command.new(row)
-
-        unless row["depencency_success"].to_i > 0
-          c.dependency_failed(@db)
-          next
-        end
 
         do_command(c)
       end

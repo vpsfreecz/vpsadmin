@@ -11,6 +11,7 @@ module VpsAdmind::Commands
     attr_accessor :output
 
     def initialize(cmd, params)
+      @anchors = []
       @command = cmd
 
       params.each do |k,v|
@@ -64,6 +65,14 @@ module VpsAdmind::Commands
     end
 
     protected
+    def anchor(name)
+      @anchors << name
+    end
+
+    def used_anchors
+      @anchors.reverse_each { |a| yield(a) }
+    end
+
     def attrs
       ret = nil
 

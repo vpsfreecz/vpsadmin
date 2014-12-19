@@ -26,6 +26,12 @@ module VpsAdmind
     @@handlers = {}
 
     def initialize(trans)
+      @chain = {
+          :id => trans['transaction_chain_id'].to_i,
+          :state => trans['chain_state'].to_i,
+          :progress => trans['chain_progress'].to_i,
+          :size => trans['chain_size'].to_i
+      }
       @trans = trans
       @output = {}
       @status = :failed
@@ -36,14 +42,15 @@ module VpsAdmind
       klass = handler
 
       unless klass
-        @output[:error] = "Unsupported command"
+        @output[:error] = 'Unsupported command'
         return false
       end
 
       begin
-        param = JSON.parse(@trans["t_param"])
+        param = JSON.parse(@trans['t_param'])
+
       rescue
-        @output[:error] = "Bad param syntax"
+        @output[:error] = 'Bad param syntax'
         return false
       end
 
@@ -53,138 +60,208 @@ module VpsAdmind
 
       @m_attr.synchronize { @time_start = Time.new.to_i }
 
-      begin
-        ret = @cmd.exec
+      if original_chain_direction == :execute
+        safe_call(klass, :exec)
 
-        begin
-          @status = ret[:ret]
+      else
+        if reversible?
+          safe_call(klass, :rollback)
 
-          if @status == nil
-            bad_value(klass)
-          end
-        rescue
-          bad_value(klass)
+        else
+          @status = :failed
         end
-      rescue CommandFailed => err
-        @status = :failed
-        @output[:cmd] = err.cmd
-        @output[:exitstatus] = err.rc
-        @output[:error] = err.output
-      rescue CommandNotImplemented
-        @status = :failed
-        @output[:error] = "Command not implemented"
-      rescue => err
-        @status = :failed
-        @output[:error] = err.inspect
-        @output[:backtrace] = err.backtrace
-        p @output
       end
-
-      fallback if @status == :failed
 
       @time_end = Time.new.to_i
     end
 
     def bad_value(klass)
-      raise CommandFailed.new("process handler return value", 1, "#{klass} did not return expected value")
+      raise CommandFailed.new('process handler return value', 1, "#{klass} did not return expected value")
     end
 
     def save(db)
-      success = @status != :failed
-
       db.transaction do |t|
-        st = t.prepared_st('SELECT table_name, row_pks, attr_changes, confirm_type FROM transaction_confirmations WHERE transaction_id = ? AND done = 0', @trans['t_id'])
+        save_transaction(t)
 
-        st.each do |row|
-          pk = pk_cond(YAML.load(row[1]))
+        if @status == :ok && !@rollbacked
+          # Chain is finished, close up
+          if chain_finished?
+            run_confirmations(t)
+            close_chain(t)
 
-          case row[3].to_i
-            when 0 # create
-              if success
-                t.query("UPDATE #{row[0]} SET confirmed = 1 WHERE #{pk}")
-              else
-                t.query("DELETE FROM #{row[0]} WHERE #{pk}")
-              end
+          else # There are more transaction in this chain
+            continue_chain(t)
+          end
 
-            when 1 # edit before
-              unless success
-                attrs = YAML.load(row[2])
-                update = attrs.collect { |k, v| "`#{k}` = #{sql_val(v)}" }.join(',')
+        elsif @status == :failed || @rollbacked
+          # Fail if already rollbacking
+          if original_chain_direction == :rollback && !@rollbacked
+            log(:critical, :chain, 'Transaction rollback failed, admin intervention is necessary')
+            # FIXME: do something
 
-                t.query("UPDATE #{row[0]} SET #{update} WHERE #{pk}")
-              end
+            # Is it the last transaction to rollback?
+            if chain_finished?
+              run_confirmations(t)
+              close_chain(t)
 
-            when 2 # edit after
-              if success
-                attrs = YAML.load(row[2])
-                update = attrs.collect { |k, v| "`#{k}` = #{sql_val(v)}" }.join(',')
+            else
+              fail_all(t)
+              close_chain(t)
+            end
 
-                t.query("UPDATE #{row[0]} SET #{update} WHERE #{pk}")
-              end
-
-            when 3 # destroy
-              if success
-                t.query("DELETE FROM #{row[0]} WHERE #{pk}")
-              else
-                t.query("UPDATE #{row[0]} SET confirmed = 1 WHERE #{pk}")
-              end
-
-            when 4 # just destroy
-              if success
-                t.query("DELETE FROM #{row[0]} WHERE #{pk}")
-              end
-
-            when 5 # decrement
-              if success
-                attr = YAML.load(row[2])
-
-                t.query("UPDATE #{row[0]} SET #{attr} = #{attr} - 1 WHERE #{pk}")
-              end
-
-            when 6 # increment
-              if success
-                attr = YAML.load(row[2])
-
-                t.query("UPDATE #{row[0]} SET #{attr} = #{attr} + 1 WHERE #{pk}")
-              end
+          else # Reverse chain direction
+            if reversible?
+              rollback_chain(t)
+              fail_followers(t)
+            else
+              fail_followers(t)
+              close_chain(t)
+            end
           end
         end
-
-        st.close
-
-        t.prepared('UPDATE transaction_confirmations SET done = 1 WHERE transaction_id = ? AND done = 0', @trans['t_id'])
-
-        db.prepared(
-            'UPDATE transactions SET t_done=1, t_success=?, t_output=?, t_real_start=?, t_end=? WHERE t_id=?',
-            {:failed => 0, :ok => 1, :warning => 2}[@status], (@cmd ? @output.merge(@cmd.output) : @output).to_json, @time_start, @time_end, @trans['t_id']
-        )
-
-        st = t.prepared_st('SELECT COUNT(*)
-                      FROM transaction_chains c
-                      INNER JOIN transactions t ON c.id = t.transaction_chain_id
-                      WHERE id = ? AND t_done = 0', @trans['transaction_chain_id'])
-
-        cnt = st.fetch[0].to_i
-        st.close
-
-        if cnt == 0
-          # mark chain as finished
-          t.prepared('UPDATE transaction_chains SET `state` = 2, `progress` = `progress` + 1 WHERE id = ?', @trans['transaction_chain_id'])
-
-          # release all locks
-          t.prepared('DELETE FROM resource_locks WHERE transaction_chain_id = ?', @trans['transaction_chain_id'])
-        else
-          t.prepared('UPDATE transaction_chains SET `progress` = `progress` + 1 WHERE id = ?', @trans['transaction_chain_id'])
-        end
-
-        @cmd.post_save(db) if @cmd
       end
     end
 
-    def dependency_failed(db)
-      @output[:error] = 'Dependency failed'
-      @status = :failed
-      save(db)
+    def save_transaction(db)
+      log(:debug, self, 'Saving transaction')
+      @cmd.post_save(db) if @cmd && current_chain_direction == :execute
+
+      if current_chain_direction == :execute
+        done = 1
+      else
+        done = 2 # rollbacked
+      end
+
+      db.prepared(
+          'UPDATE transactions SET t_done=?, t_success=?, t_output=?, t_real_start=?, t_end=? WHERE t_id=?',
+          done, {:failed => 0, :ok => 1, :warning => 2}[@status], (@cmd ? @output.merge(@cmd.output) : @output).to_json, @time_start, @time_end, @trans['t_id']
+      )
+    end
+
+    def run_confirmations(t)
+      dir = current_chain_direction
+      log(:debug, self, 'Running transaction confirmations')
+
+      st = t.prepared_st('SELECT table_name, row_pks, attr_changes, confirm_type, t.t_success
+                          FROM transactions t
+                          INNER JOIN transaction_confirmations c ON t.t_id = c.transaction_id
+                          WHERE
+                              t.transaction_chain_id = ?
+                              AND done = 0',
+                         chain_id)
+
+      st.each do |row|
+        success = row[4].to_i > 0
+        pk = pk_cond(YAML.load(row[1]))
+
+        case row[3].to_i
+          when 0 # create
+            if success && dir == :execute
+              t.query("UPDATE #{row[0]} SET confirmed = 1 WHERE #{pk}")
+            else
+              t.query("DELETE FROM #{row[0]} WHERE #{pk}")
+            end
+
+          when 1 # edit before
+            if !success || dir == :rollback
+              attrs = YAML.load(row[2])
+              update = attrs.collect { |k, v| "`#{k}` = #{sql_val(v)}" }.join(',')
+
+              t.query("UPDATE #{row[0]} SET #{update} WHERE #{pk}")
+            end
+
+          when 2 # edit after
+            if success && dir == :execute
+              attrs = YAML.load(row[2])
+              update = attrs.collect { |k, v| "`#{k}` = #{sql_val(v)}" }.join(',')
+
+              t.query("UPDATE #{row[0]} SET #{update} WHERE #{pk}")
+            end
+
+          when 3 # destroy
+            if success && dir == :execute
+              t.query("DELETE FROM #{row[0]} WHERE #{pk}")
+            else
+              t.query("UPDATE #{row[0]} SET confirmed = 1 WHERE #{pk}")
+            end
+
+          when 4 # just destroy
+            if success && dir == :execute
+              t.query("DELETE FROM #{row[0]} WHERE #{pk}")
+            end
+
+          when 5 # decrement
+            if success && dir == :execute
+              attr = YAML.load(row[2])
+
+              t.query("UPDATE #{row[0]} SET #{attr} = #{attr} - 1 WHERE #{pk}")
+            end
+
+          when 6 # increment
+            if success && dir == :execute
+              attr = YAML.load(row[2])
+
+              t.query("UPDATE #{row[0]} SET #{attr} = #{attr} + 1 WHERE #{pk}")
+            end
+        end
+      end
+
+      st.close
+
+      t.prepared('UPDATE transaction_confirmations c
+                  INNER JOIN transactions t ON t.t_id = c.transaction_id
+                  SET c.done = 1
+                  WHERE t.transaction_chain_id = ? AND c.done = 0',
+                 @chain[:id])
+    end
+
+    def continue_chain(db)
+      log(:debug, self, 'Continue chain')
+      db.prepared("UPDATE transaction_chains
+                   SET `progress` = `progress` #{current_chain_direction == :execute ? '+' : '-'} 1
+                   WHERE id = ?", chain_id)
+    end
+
+    def rollback_chain(db)
+      log(:debug, self, 'Rollback chain')
+      db.prepared('UPDATE transaction_chains
+                   SET `state` = 3
+                   WHERE id = ?', chain_id)
+    end
+
+    def close_chain(db)
+      log(:debug, self, 'Close chain')
+      # mark chain as finished
+      db.prepared('UPDATE transaction_chains
+                   SET `state` = ?, `progress` = `progress` + 1
+                   WHERE id = ?', current_chain_direction == :execute ? 2 : 4, chain_id)
+
+      # release all locks
+      db.prepared('DELETE FROM resource_locks WHERE transaction_chain_id = ?', chain_id)
+    end
+
+    def fail_followers(db)
+      log(:debug, self, 'Fail followers')
+      db.prepared('UPDATE transactions
+                   SET t_done = 1, t_success = 0, t_output = ?
+                   WHERE
+                       transaction_chain_id = ?
+                       AND t_id > ?',
+                  {:error => 'Dependency failed'}.to_json,
+                  chain_id,
+                  id
+      )
+    end
+
+    def fail_all(db)
+      log(:debug, self, 'Fail all')
+      db.prepared('UPDATE transactions
+                   SET t_done = 1, t_success = 0, t_output = ?
+                   WHERE
+                       transaction_chain_id = ?',
+                  {:error => 'Chain failed'}.to_json,
+                  chain_id
+      )
     end
 
     def killed(hard)
@@ -193,45 +270,11 @@ module VpsAdmind
       if hard
         @output[:error] = 'Killed'
         @status = :failed
-
-        fallback
-      end
-    end
-
-    def fallback
-      @output[:fallback] = {}
-
-      begin
-        fallback = JSON.parse(@trans['t_fallback'])
-
-        unless fallback.empty?
-          log "Transaction #{@trans['t_id']} failed, falling back"
-
-          transaction = Transaction.new
-          @output[:fallback][:transactions] = []
-
-          fallback['transactions'].each do |t|
-            @output[:fallback][:transactions] << transaction.queue({
-                 :m_id => t['t_m_id'],
-                 :node => t['t_server'],
-                 :vps => t['t_vps'],
-                 :type => t['t_type'],
-                 :depends => t['t_depends_on'],
-                 :urgent => t['t_urgent'],
-                 :priority => t['t_priority'],
-                 :param => t['t_params'],
-             })
-          end
-        end
-      rescue => err
-        @output[:fallback][:msg] = 'Fallback failed'
-        @output[:fallback][:error] = err.inspect
-        @output[:fallback][:backtrace] = err.backtrace
       end
     end
 
     def chain_id
-      @trans['transaction_chain_id']
+      @chain[:id]
     end
 
     alias_method :worker_id, :chain_id
@@ -264,12 +307,89 @@ module VpsAdmind
       @m_attr.synchronize { @time_start }
     end
 
+    def current_chain_direction
+      if @rollbacked
+        :rollback
+      else
+        original_chain_direction
+      end
+    end
+
+    def original_chain_direction
+      if @chain[:state] == 3 || @rollbacked
+        :rollback
+      else
+        :execute
+      end
+    end
+
     def Command.register(klass, type)
       @@handlers[type] = klass
       log(:info, :init, "Cmd ##{type} => #{klass}")
     end
 
     private
+    def safe_call(klass, m)
+      begin
+        ret = @cmd.send(m)
+
+        begin
+          @status = ret[:ret]
+
+          if @status == nil
+            bad_value(klass)
+          end
+
+        rescue
+          bad_value(klass)
+        end
+
+      rescue CommandFailed => err
+        @status = :failed
+        @output[:cmd] = err.cmd
+        @output[:exitstatus] = err.rc
+        @output[:error] = err.output
+
+        # FIXME: if rollback fails, original error is overwritten!
+        if m == :exec
+          log(:debug, self, 'Transaction failed, running rollback')
+          @rollbacked = true
+          safe_call(klass, :rollback)
+        end
+
+      rescue CommandNotImplemented
+        @status = :failed
+        @output[:error] = 'Command not implemented'
+
+      rescue => err
+        @status = :failed
+        @output[:error] = err.inspect
+        @output[:backtrace] = err.backtrace
+        p @output
+
+        # FIXME: if rollback fails, original error is overwritten!
+        if m == :exec
+          log(:debug, self, 'Transaction failed, running rollback')
+          @rollbacked = true
+          safe_call(klass, :rollback)
+        end
+      end
+    end
+
+    def chain_finished?
+      if current_chain_direction == :execute
+        @chain[:size] == @chain[:progress] + 1
+      else
+        # Must check <= 0, because chain might contain a single transaction,
+        # and when that fails, the result is -1.
+        @chain[:progress] - 1 <= 0
+      end
+    end
+
+    def reversible?
+      @trans['reversible'].to_i == 1
+    end
+
     def pk_cond(pks)
       pks.map { |k, v| "`#{k}` = #{sql_val(v)}" }.join(' AND ')
     end
