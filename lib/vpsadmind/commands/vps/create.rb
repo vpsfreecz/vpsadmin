@@ -16,5 +16,12 @@ module VpsAdmind
           :nameserver => @nameserver
       }, true)
     end
+
+    def rollback
+      call_cmd(Commands::Vps::Destroy, {:vps_id => @vps_id})
+      # Note: the private/ itself is not deleted. Dataset destroyal
+      # should follow this transaction.
+      ok
+    end
   end
 end
