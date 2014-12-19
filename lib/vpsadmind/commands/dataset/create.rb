@@ -14,5 +14,9 @@ module VpsAdmind
 
       zfs(:create, "-p #{opts}", "#{@pool_fs}/#{@name}")
     end
+
+    def rollback
+      zfs(:destroy, nil, "#{@pool_fs}/#{@name}")
+    end
   end
 end
