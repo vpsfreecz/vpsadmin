@@ -7,6 +7,10 @@ module VpsAdmind
       @vps.restart
     end
 
+    def rollback
+      ok
+    end
+
     def post_save(db)
       @vps.update_status(db)
     end
