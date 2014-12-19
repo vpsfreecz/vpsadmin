@@ -38,6 +38,8 @@ class Node < ActiveRecord::Base
   maintenance_parent :location
   maintenance_children :vpses
 
+  include Lockable
+
   def location_domain
     "#{name}.#{location.domain}"
   end
@@ -127,6 +129,6 @@ class Node < ActiveRecord::Base
   end
 
   def shaper_changed
-    Transactions::Vps::ShaperRootChange.fire(self) unless net_interface.nil?
+    TransactionChains::Node::ShaperRootChange.fire(self) unless net_interface.nil?
   end
 end
