@@ -4,6 +4,7 @@ module Transactions::Storage
   class Rollback < ::Transaction
     t_name :storage_rollback
     t_type 5208
+    irreversible
 
     def params(dataset_in_pool, snapshot_in_pool)
       self.t_server = dataset_in_pool.pool.node_id

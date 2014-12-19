@@ -2,6 +2,7 @@ module Transactions::Storage
   class DestroySnapshot < ::Transaction
     t_name :storage_destroy_snapshot
     t_type 5212
+    irreversible
 
     def params(snapshot_in_pool, branch = nil)
       self.t_server = snapshot_in_pool.dataset_in_pool.pool.node_id

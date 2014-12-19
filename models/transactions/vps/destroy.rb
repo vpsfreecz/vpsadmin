@@ -2,6 +2,7 @@ module Transactions::Vps
   class Destroy < ::Transaction
     t_name :vps_destroy
     t_type 3002
+    irreversible
 
     def params(vps)
       self.t_vps = vps.vps_id

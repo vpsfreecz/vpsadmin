@@ -2,6 +2,7 @@ module Transactions::Storage
   class DestroyBranch < ::Transaction
     t_name :storage_destroy_branch
     t_type 5207
+    irreversible
 
     def params(branch)
       self.t_server = branch.dataset_tree.dataset_in_pool.pool.node_id
