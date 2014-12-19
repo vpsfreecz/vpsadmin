@@ -6,7 +6,16 @@ module VpsAdmind
     include Utils::Zfs
 
     def exec
-      zfs(:create, nil, "#{@pool_fs}/#{@dataset_name}/#{@tree}")
+      zfs(:create, nil, tree_name)
+    end
+
+    def rollback
+      zfs(:destroy, nil, tree_name)
+    end
+
+    protected
+    def tree_name
+      "#{@pool_fs}/#{@dataset_name}/#{@tree}"
     end
   end
 end
