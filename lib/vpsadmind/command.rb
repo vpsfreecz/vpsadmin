@@ -30,7 +30,8 @@ module VpsAdmind
           :id => trans['transaction_chain_id'].to_i,
           :state => trans['chain_state'].to_i,
           :progress => trans['chain_progress'].to_i,
-          :size => trans['chain_size'].to_i
+          :size => trans['chain_size'].to_i,
+          :urgent_rollback => trans['chain_urgent_rollback'].to_i == 1
       }
       @trans = trans
       @output = {}
@@ -294,7 +295,7 @@ module VpsAdmind
     end
 
     def urgent?
-      @trans['t_urgent'].to_i == 1
+      @trans['t_urgent'].to_i == 1 || (original_chain_direction == :execute && @chain[:urgent_rollback])
     end
 
     def handler

@@ -129,7 +129,7 @@ module VpsAdmind
         u.query("SELECT * FROM (
                   (SELECT d.*,
                           ch2.state AS chain_state, ch2.progress AS chain_progress,
-                          ch2.size AS chain_size
+                          ch2.size AS chain_size, ch2.urgent_rollback AS chain_urgent_rollback
                   FROM transactions t2
                   INNER JOIN transactions d ON t2.t_depends_on = d.t_id
                   INNER JOIN transaction_chains ch2 ON ch2.id = t2.transaction_chain_id
