@@ -41,16 +41,21 @@ class VpsAdmin < Executor
 
     @daemon.workers do |workers|
       workers.each do |wid, w|
-        h = w.cmd.handler
+        begin
+          h = w.cmd.handler
 
-        res_workers[wid] = {
-            :id => w.cmd.id,
-            :type => w.cmd.trans['t_type'].to_i,
-            :handler => "#{h[:class]}.#{h[:method]}",
-            :step => w.cmd.step,
-            :pid => w.cmd.subtask,
-            :start => w.cmd.time_start,
-        }
+          res_workers[wid] = {
+              :id => w.cmd.id,
+              :type => w.cmd.trans['t_type'].to_i,
+              :handler => "#{h[:class]}.#{h[:method]}",
+              :step => w.cmd.step,
+              :pid => w.cmd.subtask,
+              :start => w.cmd.time_start,
+          }
+        rescue NoMethodError
+          log 'vpsadmindctl status: WOULD CRASH'
+          pp @daemon
+        end
       end
     end
 
@@ -413,7 +418,12 @@ class VpsAdmin < Executor
   end
 
   def pry
-    binding.remote_pry
+    begin
+      binding.remote_pry
+    rescue DRb::DRbConnError
+
+    end
+
     ok
   end
 
