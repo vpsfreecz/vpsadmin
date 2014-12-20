@@ -239,9 +239,11 @@ module VpsAdmind
     def close_chain(db)
       log(:debug, self, 'Close chain')
       # mark chain as finished
-      db.prepared('UPDATE transaction_chains
-                   SET `state` = ?, `progress` = `progress` + 1
-                   WHERE id = ?', current_chain_direction == :execute ? 2 : 4, chain_id)
+      db.prepared("UPDATE transaction_chains
+                   SET
+                     `state` = ?,
+                     `progress` = #{current_chain_direction == :execute ? '`progress` + 1' : '0'}
+                   WHERE id = ?", current_chain_direction == :execute ? 2 : 4, chain_id)
 
       # release all locks
       db.prepared('DELETE FROM resource_locks WHERE transaction_chain_id = ?', chain_id)
