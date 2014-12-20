@@ -26,21 +26,28 @@ module TransactionChains
       append(Transactions::Vps::CopyConfigs, args: [vps, dst_node])
       append(Transactions::Vps::CreateRoot, args: [vps, dst_node])
 
-      # Set zfs refquota properly
-      append(Transactions::Vps::ApplyConfig, args: vps)
-
       datasets = []
 
       vps.dataset_in_pool.dataset.subtree.arrange.each do |k, v|
         datasets.concat(recursive_serialize(k, v))
       end
 
+      # Create datasets
       datasets.each do |pair|
         src, dst = pair
 
         append(Transactions::Storage::CreateDataset, args: dst) do
           create(dst)
         end
+      end
+
+      # Set zfs refquota properly
+      # FIXME: should be set for all datasets
+      append(Transactions::Vps::ApplyConfig, args: dst_vps)
+
+      # Transfer datasets
+      datasets.each do |pair|
+        src, dst = pair
 
         # Transfer private area. All subdatasets are transfered as well.
         # The two step transfer is done even if the VPS seems to be stopped.
