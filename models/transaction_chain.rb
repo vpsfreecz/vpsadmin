@@ -24,6 +24,7 @@ class TransactionChain < ActiveRecord::Base
       chain.state = :staged
       chain.size = 0
       chain.user = User.current
+      chain.urgent_rollback = urgent_rollback? || false
       chain.save
 
       # link_chain will raise ResourceLocked if it is unable to acquire
@@ -73,6 +74,16 @@ class TransactionChain < ActiveRecord::Base
     else
       @label
     end
+  end
+
+  # If set, when doing a rollback of this chain, all transactions
+  # will be considered as urgent.
+  def self.urgent_rollback(urgent = true)
+    @urgent_rollback = urgent
+  end
+
+  def self.urgent_rollback?
+    @urgent_rollback
   end
 
   def initialize(*args)

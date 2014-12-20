@@ -408,14 +408,15 @@ ActiveRecord::Schema.define(version: 20141212180955) do
   end
 
   create_table "transaction_chains", force: true do |t|
-    t.string   "name",       limit: 30,              null: false
-    t.string   "type",       limit: 100,             null: false
-    t.integer  "state",                              null: false
-    t.integer  "size",                               null: false
-    t.integer  "progress",               default: 0, null: false
+    t.string   "name",            limit: 30,              null: false
+    t.string   "type",            limit: 100,             null: false
+    t.integer  "state",                                   null: false
+    t.integer  "size",                                    null: false
+    t.integer  "progress",                    default: 0, null: false
     t.integer  "user_id"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "urgent_rollback",             default: 0, null: false
   end
 
   create_table "transaction_confirmations", force: true do |t|
