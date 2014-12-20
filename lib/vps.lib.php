@@ -90,6 +90,26 @@ function get_vps_swap_list($vps) { // DEPRECATED
 	return $ret;
 }
 
+function vps_migration_nodes($vps) {
+	global $api;
+	
+	$ret = array();
+	$nodes = $api->node->list();
+	$loc = $vps->node->location_id;
+	
+	foreach ($nodes as $n) {
+		if ($n->type != 'node' || $n->id == $vps->node_id)
+			continue;
+		
+		if ($n->location_id != $loc)
+			$ret[ $n->id ] = $n->name .' '. _('WARNING: All IPs will be removed from VPS!');
+		else
+			$ret[ $n->id ] = $n->name;
+	}
+	
+	return $ret;
+}
+
 function vps_load ($veid = false) {
 	$vps = new vps_load($veid);
 	return $vps;

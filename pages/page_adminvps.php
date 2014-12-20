@@ -405,28 +405,38 @@ switch ($_GET["action"]) {
 				$show_info=true;
 			}
 			break;
+		
 		case 'offlinemigrate':
-			if ($_SESSION["is_admin"] && isset($_REQUEST["veid"])) {
-				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
+			if ($_SESSION["is_admin"] && isset($_GET["veid"])) {
+				try {
+					$api->vps($_GET['veid'])->migrate(array('node' => $_POST['target_id']));
+					
+					notify_user(_("Offline migration planned"), '');
+					redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Offline migration failed'), $e->getResponse());
+					$show_info=true;
+				}
 				
-				notify_user(_("Offline migration planned"), $vps->offline_migrate($_REQUEST["target_id"], $_POST["stop"]));
-				redirect('?page=adminvps&action=info&veid='.$vps->veid);
 			} else {
 				$xtpl->perex(_("Error"), '');
 			}
+			
 			$show_info=true;
 			break;
-		case 'onlinemigrate':
-			if ($_SESSION["is_admin"] && isset($_REQUEST["veid"])) {
-				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				
-				notify_user(_("Online Migration added to transaction log"), $vps->online_migrate($_REQUEST["target_id"]));
-				redirect('?page=adminvps&action=info&veid='.$vps->veid);
-			} else {
-				$xtpl->perex(_("Error"), '');
-			}
-			$show_info=true;
-			break;
+			
+// 		case 'onlinemigrate':
+// 			if ($_SESSION["is_admin"] && isset($_REQUEST["veid"])) {
+// 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
+// 				
+// 				notify_user(_("Online Migration added to transaction log"), $vps->online_migrate($_REQUEST["target_id"]));
+// 				redirect('?page=adminvps&action=info&veid='.$vps->veid);
+// 			} else {
+// 				$xtpl->perex(_("Error"), '');
+// 			}
+// 			$show_info=true;
+// 			break;
 		case 'alliplist':
 			if ($_SESSION["is_admin"]) {
 				$xtpl->title(_("List of IP addresses").' '._("[Admin mode]"));
@@ -1077,24 +1087,24 @@ if (isset($show_info) && $show_info) {
 			$xtpl->form_out(_("Go >>"));
 		}
 
-	//Offline migration
+	// Offline migration
 		if ($_SESSION["is_admin"]) {
 			$xtpl->form_create('?page=adminvps&action=offlinemigrate&veid='.$vps->id, 'post');
-			$xtpl->form_add_select(_("Target server").':', 'target_id', $cluster->list_servers($vps->node_id, $vps->node->location_id, true), '');
-			$xtpl->form_add_checkbox(_("Stop before migration").':', 'stop', '1', false);
+			$xtpl->form_add_select(_("Target server").':', 'target_id', vps_migration_nodes($vps), '');
+// 			$xtpl->form_add_checkbox(_("Stop before migration").':', 'stop', '1', false);
 			$xtpl->table_add_category(_("Offline VPS Migration"));
 			$xtpl->table_add_category('&nbsp;');
 			$xtpl->form_out(_("Go >>"));
 		}
 	
 	// Online migration
-		if (ENABLE_ONLINE_MIGRATION && $_SESSION["is_admin"]) {
-			$xtpl->form_create('?page=adminvps&action=onlinemigrate&veid='.$vps->id, 'post');
-			$xtpl->form_add_select(_("Target server").':', 'target_id', $cluster->list_servers($vps->node_id, $vps->node->location_id), '');
-			$xtpl->table_add_category(_("Online VPS Migration"));
-			$xtpl->table_add_category('&nbsp;');
-			$xtpl->form_out(_("Go >>"));
-		}
+// 		if (ENABLE_ONLINE_MIGRATION && $_SESSION["is_admin"]) {
+// 			$xtpl->form_create('?page=adminvps&action=onlinemigrate&veid='.$vps->id, 'post');
+// 			$xtpl->form_add_select(_("Target server").':', 'target_id', $cluster->list_servers($vps->node_id, $vps->node->location_id), '');
+// 			$xtpl->table_add_category(_("Online VPS Migration"));
+// 			$xtpl->table_add_category('&nbsp;');
+// 			$xtpl->form_out(_("Go >>"));
+// 		}
 	// Clone
 		if ($_SESSION["is_admin"] || $playground_mode) {
 			$xtpl->form_create('?page=adminvps&action=clone&veid='.$vps->id, 'post');
