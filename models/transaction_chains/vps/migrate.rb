@@ -2,8 +2,8 @@ module TransactionChains
   # Migrate VPS to another node.
   class Vps::Migrate < ::TransactionChain
     label 'Migrate'
+    urgent_rollback
 
-    # FIXME: rollback should consist of urgent transactions
     def link_chain(vps, dst_node)
       lock(vps)
 
