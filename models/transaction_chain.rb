@@ -166,6 +166,7 @@ module TransactionChains
   module Node          ; end
   module Vps           ; end
   module VpsConfig     ; end
+  module Pool          ; end
   module Dataset       ; end
   module DatasetInPool ; end
 end

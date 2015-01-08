@@ -291,6 +291,8 @@ class AddStorage < ActiveRecord::Migration
           compression: true
       })
 
+      TransactionChains::Pool::Create.fire(pool)
+
       group_snapshots_per_pool[ pool.id ] = DatasetAction.create(
           pool_id: pool.id,
           action: 4 # group_snapshot
@@ -340,6 +342,8 @@ class AddStorage < ActiveRecord::Migration
           share_options: root.share_options,
           compression: true
       )
+
+      TransactionChains::Pool::Create.fire(r)
 
       group_snapshots_per_pool[ r.id ] = DatasetAction.create(
           pool_id: r.id,
