@@ -4,7 +4,10 @@ require 'eventmachine'
 require 'json'
 require 'yaml'
 require 'mysql'
-require 'pry-remote'
+
+if RUBY_VERSION >= '2.0'
+  require 'pry-remote'
+end
 
 module VpsAdmind
 
