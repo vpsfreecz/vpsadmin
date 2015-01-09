@@ -34,10 +34,18 @@ module VpsAdmin::API::Resources
         allow
       end
 
+      def query
+        ::Dataset.where(with_restricted)
+      end
+
+      def count
+        query.count
+      end
+
       def exec
         ret = []
 
-        ::Dataset.where(with_restricted).order('full_name').each do |ds|
+        query.order('full_name').each do |ds|
           ret << ds
         end
 
@@ -58,8 +66,12 @@ module VpsAdmin::API::Resources
         allow
       end
 
+      def prepare
+        @ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+      end
+
       def exec
-        ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+        @ds
       end
     end
 
@@ -167,10 +179,18 @@ module VpsAdmin::API::Resources
           allow
         end
 
-        def exec
+        def query
           ::Snapshot.joins(:dataset).where(
               with_restricted(dataset_id: params[:dataset_id])
-          ).order('created_at')
+          )
+        end
+
+        def count
+          query.count
+        end
+
+        def exec
+          query.order('created_at')
         end
       end
 
