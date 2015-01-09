@@ -45,7 +45,7 @@ module VpsAdmin::API::Resources
       def exec
         ret = []
 
-        query.order('full_name').each do |ds|
+        query.order('full_name').limit(input[:limit]).offset(input[:offset]).each do |ds|
           ret << ds
         end
 
@@ -190,7 +190,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          query.order('created_at')
+          query.order('created_at').limit(input[:limit]).offset(input[:offset])
         end
       end
 
