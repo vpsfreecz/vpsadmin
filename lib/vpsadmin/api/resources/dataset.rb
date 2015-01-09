@@ -88,6 +88,9 @@ module VpsAdmin::API::Resources
         if current_user.role != :admin && input[:dataset] && input[:dataset].user != current_user
           error('insufficient permission to create a dataset')
 
+        elsif current_user.role != :admin && input[:dataset] && !input[:dataset].user_create
+          error('access denied')
+
         elsif input[:mountpoint] && input[:mountpoint].empty?
           error('invalid mountpoint: cannot be empty')
         end
