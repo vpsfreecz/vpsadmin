@@ -142,11 +142,6 @@ module VpsAdmin::API::Resources
       model ::Snapshot
       desc 'Manage dataset snapshots'
 
-      params(:ds) do
-        resource Dataset, label: 'Dataset',
-                 value_label: :full_name
-      end
-
       params(:all) do
         id :id
         datetime :created_at # FIXME: this is not correct creation time
@@ -199,6 +194,25 @@ module VpsAdmin::API::Resources
 
         def exec
           @snapshot
+        end
+      end
+
+      class Create < HaveAPI::Actions::Default::Create
+        desc 'Create snapshot'
+
+        output do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict user_id: u.id
+          allow
+        end
+
+        def exec
+          ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+          ds.snapshot
         end
       end
     end

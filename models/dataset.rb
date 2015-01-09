@@ -105,6 +105,10 @@ class Dataset < ActiveRecord::Base
     dataset_in_pools.joins(:pool).where.not(pools: {role: Pool.roles[:backup]}).take!
   end
 
+  def snapshot
+    primary_dataset_in_pool!.snapshot
+  end
+
   protected
   def cache_full_name
     self.full_name = resolve_full_name

@@ -23,6 +23,8 @@ module TransactionChains
         create(s)
         create(sip)
       end
+
+      s
     end
   end
 end

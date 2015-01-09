@@ -663,41 +663,6 @@ END
       datetime :created_at # FIXME: this is not correct creation time
     end
 
-    class Create < HaveAPI::Actions::Default::Create
-      desc 'Create snapshot'
-
-      # FIXME: return snapshot id
-      # output do
-      #   use :all
-      # end
-
-      input do
-        use :ds
-      end
-
-      authorize do |u|
-        allow if u.role == :admin
-      end
-
-      def exec
-        vps = Vps.includes(:dataset_in_pool)
-          .find_by!(with_restricted(vps_id: params[:vps_id]))
-        maintenance_check!(vps)
-
-        if input[:dataset]
-          unless vps.dataset_in_pool.dataset.descendant_ids.include?(input[:dataset].id)
-            error('selected dataset does not belong to the VPS subtree')
-          end
-
-          # Fail if the dataset is not present on VPS pool
-          input[:dataset].dataset_in_pools.where(pool_id: vps.dataset_in_pool.pool_id).take!.snapshot
-
-        else
-          vps.dataset_in_pool.snapshot
-        end
-      end
-    end
-
     class Rollback < HaveAPI::Action
       desc 'Rollback to a snapshot'
       route ':%{resource}_id/rollback'
