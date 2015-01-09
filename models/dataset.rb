@@ -109,6 +109,18 @@ class Dataset < ActiveRecord::Base
     primary_dataset_in_pool!.snapshot
   end
 
+  def rollback_snapshot(s)
+    dip = primary_dataset_in_pool!
+
+    if dip.pool.role == 'hypervisor'
+      vps = Vps.find_by!(dataset_in_pool: dip.dataset.root.primary_dataset_in_pool!)
+      vps.restore(s)
+
+    else
+      fail 'not implemented'
+    end
+  end
+
   protected
   def cache_full_name
     self.full_name = resolve_full_name

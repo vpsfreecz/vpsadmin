@@ -218,6 +218,28 @@ module VpsAdmin::API::Resources
           ds.snapshot
         end
       end
+
+      class Rollback < HaveAPI::Action
+        desc 'Rollback to a snapshot'
+        route ':%{resource}_id/rollback'
+        http_method :post
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict datasets: {user_id: u.id}
+          allow
+        end
+
+        def exec
+          snap = ::Snapshot.includes(:dataset).joins(:dataset).find_by!(with_restricted(
+              dataset_id: params[:dataset_id],
+              id: params[:snapshot_id]
+          ))
+
+          snap.dataset.rollback_snapshot(snap)
+          ok
+        end
+      end
     end
   end
 end

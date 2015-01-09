@@ -646,49 +646,4 @@ END
       end
     end
   end
-
-  class Snapshot < HaveAPI::Resource
-    version 1
-    route ':vps_id/snapshots'
-    model ::Snapshot
-    desc 'VPS snapshots'
-
-    params(:ds) do
-      # resource VpsAdmin::API::Resources::VPS::Dataset, label: 'Dataset',
-      #          value_label: :full_name
-    end
-
-    params(:all) do
-      id :id
-      datetime :created_at # FIXME: this is not correct creation time
-    end
-
-    class Rollback < HaveAPI::Action
-      desc 'Rollback to a snapshot'
-      route ':%{resource}_id/rollback'
-      http_method :post
-
-      authorize do |u|
-        allow if u.role == :admin
-        restrict m_id: u.id
-        allow
-      end
-
-      def exec
-        vps = Vps.includes(dataset_in_pool: [:dataset])
-          .find_by!(with_restricted(vps_id: params[:vps_id]))
-        maintenance_check!(vps)
-
-        snap = ::Snapshot.find(params[:snapshot_id])
-        vps_ds = vps.dataset_in_pool.dataset
-
-        if vps_ds.id != snap.dataset_id && !vps_ds.descendant_ids.include?(snap.dataset_id)
-          error('selected snapshot does not belong to any dataset in the VPS subtree')
-        end
-
-        vps.restore(snap)
-        ok
-      end
-    end
-  end
 end
