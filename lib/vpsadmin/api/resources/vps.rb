@@ -647,63 +647,6 @@ END
     end
   end
 
-  class Dataset < HaveAPI::Resource
-    version 1
-    route ':vps_id/datasets'
-    model ::Dataset
-    desc 'VPS datasets'
-
-    params(:id) do
-      id :id
-    end
-
-    params(:common) do
-      string :name, label: 'Name', db_name: :full_name
-      string :mountpoint, label: 'Mountpoint', db_name: :hypervisor_mountpoint
-      resource VpsAdmin::API::Resources::VPS::Dataset, label: 'Parent',
-               name: :parent, value_label: :name
-    end
-
-    params(:all) do
-      use :id
-      use :common
-    end
-
-    class Delete < HaveAPI::Actions::Default::Delete
-      desc 'Destroy a dataset with all its subdatasets and snapshots'
-
-      input do
-        string :name, label: 'Name'
-      end
-
-      authorize do |u|
-        allow if u.role == :admin
-        restrict m_id: u.id
-        allow
-      end
-
-      def exec
-        vps = ::Vps.includes(dataset_in_pool: [:dataset]).find(params[:vps_id])
-
-        if current_user.role != :admin && !vps.dataset_in_pool.dataset.user_destroy
-          error('insufficient permission to destroy this dataset')
-        end
-
-        ds = vps.dataset_in_pool.dataset.descendants.find(params[:dataset_id])
-
-        if current_user.role != :admin && ds.user != current_user
-          error('permission denied')
-        end
-
-        vps.destroy_subdataset(ds)
-        ok
-
-      rescue VpsAdmin::API::Exceptions::DatasetDoesNotExist => e
-        error(e.message)
-      end
-    end
-  end
-
   class Snapshot < HaveAPI::Resource
     version 1
     route ':vps_id/snapshots'
@@ -711,8 +654,8 @@ END
     desc 'VPS snapshots'
 
     params(:ds) do
-      resource VpsAdmin::API::Resources::VPS::Dataset, label: 'Dataset',
-               value_label: :full_name
+      # resource VpsAdmin::API::Resources::VPS::Dataset, label: 'Dataset',
+      #          value_label: :full_name
     end
 
     params(:all) do

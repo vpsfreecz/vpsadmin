@@ -59,6 +59,18 @@ class Dataset < ActiveRecord::Base
     end
   end
 
+  def destroy
+    dip = primary_dataset_in_pool!
+
+    if dip.pool.role == 'hypervisor'
+      vps = Vps.find_by!(dataset_in_pool: dip.dataset.root.primary_dataset_in_pool!)
+      vps.destroy_subdataset(dip)
+
+    else
+      fail 'not implemented'
+    end
+  end
+
   def check_name
     if name.present?
       if name =~ /\.\./

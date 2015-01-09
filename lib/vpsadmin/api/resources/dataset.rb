@@ -112,6 +112,30 @@ module VpsAdmin::API::Resources
       end
     end
 
+    class Delete < HaveAPI::Actions::Default::Delete
+      desc 'Destroy a dataset with all its subdatasets and snapshots'
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict user_id: u.id
+        allow
+      end
+
+      def exec
+        ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+
+        if current_user.role != :admin && !ds.user_destroy
+          error('insufficient permission to destroy this dataset')
+        end
+
+        ds.destroy
+        ok
+
+      rescue VpsAdmin::API::Exceptions::DatasetDoesNotExist => e
+        error(e.message)
+      end
+    end
+
     class Snapshot < HaveAPI::Resource
       version 1
       route ':dataset_id/snapshots'
