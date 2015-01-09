@@ -1,4 +1,8 @@
 module VpsAdmin::API::Exceptions
+  class AccessDenied < ::StandardError
+
+  end
+
   class IpAddressInUse < ::StandardError
 
   end
@@ -27,6 +31,15 @@ module VpsAdmin::API::Exceptions
     def initialize(path)
       @path = path
       super("dataset '#{path}' does not exist")
+    end
+  end
+
+  class DatasetLabelDoesNotExist < ::StandardError
+    attr_reader :label
+
+    def initialize(label)
+      @label = label
+      super("dataset label '#{label}' does not exist")
     end
   end
 end

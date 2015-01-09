@@ -219,9 +219,7 @@ class Vps < ActiveRecord::Base
   # All datasets in path except the last have the default
   # mountpoint. +mountpoint+ is relevant only for the last
   # dataset in path.
-  def create_subdataset(path, mountpoint)
-    last, parts = dataset_create_path(path)
-
+  def create_subdataset(last, path, mountpoint)
     if last
       dip = last.dataset_in_pools.joins(:pool).where(pools: {role: Pool.roles[:hypervisor]}).take
       mnt = dip.mountpoint if dip
@@ -233,17 +231,17 @@ class Vps < ActiveRecord::Base
 
     last_mountpoint = prefix_mountpoint(mnt, nil, nil)
 
-    parts[0..-2].each do |part|
+    path[0..-2].each do |part|
       last_mountpoint = prefix_mountpoint(last_mountpoint, part, nil)
 
       mountpoints << last_mountpoint
     end
 
-    mountpoints << prefix_mountpoint(last_mountpoint, parts.last, mountpoint)
+    mountpoints << prefix_mountpoint(last_mountpoint, path.last, mountpoint)
 
     TransactionChains::Vps::SubdatasetCreate.fire(
         self,
-        parts,
+        path,
         mountpoints
     )
   end
@@ -305,68 +303,6 @@ class Vps < ActiveRecord::Base
     elsif parent
       File.join(parent, part.name)
     end
-  end
-
-  def dataset_create_path(path)
-    parts = path.split('/')
-    tmp = dataset_in_pool.dataset
-    ret = []
-    last = nil
-
-    if parts.empty?
-      ds = Dataset.new
-      ds.valid?
-      raise ::ActiveRecord::RecordInvalid, ds
-    end
-
-    parts.each do |part|
-      # As long as tmp is not nil, we're iterating over existing datasets.
-      if tmp
-        ds = tmp.children.find_by(name: part)
-
-        if ds
-          # Add the dataset to ret if it is NOT present on pool with hypervisor role.
-          # It means that the dataset was destroyed and is presumably only in backup.
-          if ds.dataset_in_pools.joins(:pool).where(pools: {role: Pool.roles[:hypervisor]}).pluck(:id).empty?
-            ret << ds
-          else
-            last = ds
-          end
-
-          tmp = ds
-
-        else
-          ret << dataset_create_append_new(part, tmp)
-          tmp = nil
-        end
-
-      else
-        ret << dataset_create_append_new(part, nil)
-      end
-    end
-
-    if ret.empty?
-      raise VpsAdmin::API::Exceptions::DatasetAlreadyExists.new(tmp, parts.join('/'))
-    end
-
-    [last, ret]
-  end
-
-  def dataset_create_append_new(part, parent)
-    new_ds = ::Dataset.new(
-        name: part,
-        user: User.current,
-        user_editable: true,
-        user_create: true,
-        user_destroy: true,
-        confirmed: ::Dataset.confirmed(:confirm_create)
-    )
-
-    new_ds.parent = parent if parent
-
-    raise ::ActiveRecord::RecordInvalid, new_ds unless new_ds.valid?
-
-    new_ds
   end
 
   def dataset_to_destroy(path)
