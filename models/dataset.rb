@@ -14,6 +14,7 @@ class Dataset < ActiveRecord::Base
   before_save :cache_full_name
 
   include Confirmable
+  include VpsAdmin::API::Maintainable::Check
 
   def self.create_new(name, mountpoint, parent_ds)
     parts = name.split('/')
@@ -51,6 +52,8 @@ class Dataset < ActiveRecord::Base
     # VPS subdatasets are more complicated and need special handling
     if top_dip.pool.role == 'hypervisor'
       vps = Vps.find_by!(dataset_in_pool: top_dip.dataset.root.primary_dataset_in_pool!)
+      maintenance_check!(vps)
+
       vps.create_subdataset(last, path, mountpoint)
 
     # Primary
@@ -64,6 +67,8 @@ class Dataset < ActiveRecord::Base
 
     if dip.pool.role == 'hypervisor'
       vps = Vps.find_by!(dataset_in_pool: dip.dataset.root.primary_dataset_in_pool!)
+      maintenance_check!(vps)
+
       vps.destroy_subdataset(dip)
 
     else
@@ -106,7 +111,14 @@ class Dataset < ActiveRecord::Base
   end
 
   def snapshot
-    primary_dataset_in_pool!.snapshot
+    dip = primary_dataset_in_pool!
+
+    if dip.pool.role == 'hypervisor'
+      vps = Vps.find_by!(dataset_in_pool: dip.dataset.root.primary_dataset_in_pool!)
+      maintenance_check!(vps)
+    end
+
+    dip.snapshot
   end
 
   def rollback_snapshot(s)
@@ -114,6 +126,8 @@ class Dataset < ActiveRecord::Base
 
     if dip.pool.role == 'hypervisor'
       vps = Vps.find_by!(dataset_in_pool: dip.dataset.root.primary_dataset_in_pool!)
+      maintenance_check!(vps)
+
       vps.restore(s)
 
     else
