@@ -4,8 +4,13 @@ module VpsAdmind
     needs :system, :vps, :zfs
 
     def exec
-      syscmd("#{$CFG.get(:bin, :cp)} -p \"#{original_path(:mount)}\" \"#{backup_path(:mount)}\"")
-      syscmd("#{$CFG.get(:bin, :cp)} -p \"#{original_path(:umount)}\" \"#{backup_path(:umount)}\"")
+      if File.exists?(original_path(:mount))
+        syscmd("#{$CFG.get(:bin, :cp)} -p \"#{original_path(:mount)}\" \"#{backup_path(:mount)}\"")
+      end
+
+      if File.exists?(original_path(:umount))
+        syscmd("#{$CFG.get(:bin, :cp)} -p \"#{original_path(:umount)}\" \"#{backup_path(:umount)}\"")
+      end
 
       action_script('mount')
       action_script('umount')
