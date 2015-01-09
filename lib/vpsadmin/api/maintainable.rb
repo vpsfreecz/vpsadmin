@@ -9,7 +9,10 @@ module VpsAdmin::API
     module Action
       module InstanceMethods
         def maintenance_check!(obj)
-          return true if current_user.role == :admin
+          if (respond_to?(:current_user) && current_user.role == :admin) || User.current.role == :admin
+            return true
+          end
+
           return false unless obj.respond_to?(:maintenance_lock)
 
           if obj.maintenance_lock != MaintenanceLock.maintain_lock(:no)
@@ -150,6 +153,14 @@ module VpsAdmin::API
       def self.included(model)
         model.send(:extend, ClassMethods)
         model.send(:include, InstanceMethods)
+      end
+    end
+
+    # Include in any class in which maintenance_check! must be called.
+    module Check
+      def self.included(klass)
+        klass.send(:extend, Action::InstanceMethods)
+        klass.send(:include, Action::InstanceMethods)
       end
     end
   end
