@@ -18,7 +18,8 @@ module TransactionChains
 
       vps.dataset_in_pool = ::DatasetInPool.create(
           dataset: ds,
-          pool: pool
+          pool: pool,
+          label: vps.id.to_s
       )
 
       lock(vps.dataset_in_pool)
