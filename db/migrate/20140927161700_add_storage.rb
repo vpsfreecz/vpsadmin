@@ -166,6 +166,8 @@ class AddStorage < ActiveRecord::Migration
     create_table :snapshot_in_pools do |t|
       t.references :snapshot,       null: false
       t.references :dataset_in_pool, null: false
+      t.integer    :reference_count,  null: false, default: 0
+      t.references :mount,          null: true
 
       # snapshot is marked as confirmed when vpsadmind creates it
       t.integer    :confirmed,      null: false, default: 0
@@ -194,7 +196,6 @@ class AddStorage < ActiveRecord::Migration
       t.references :snapshot_in_pool, null: false
       # a zfs-parent snapshot, dependency created by zfs clone & promote
       t.integer    :snapshot_in_pool_in_branch_id, null: true
-      t.integer    :reference_count,  null: false, default: 0
       t.references :branch,           null: false
       t.integer    :confirmed,        null: false, default: 0
     end
@@ -209,16 +210,21 @@ class AddStorage < ActiveRecord::Migration
       t.string     :mount_opts,     null: false, limit: 255
       t.string     :umount_opts,    null: false, limit: 255
       t.string     :mount_type,     null: false, limit: 10
+      t.boolean    :user_editable,  null: false, default: true
+
       t.references :dataset_in_pool, null: true
+      t.references :snapshot_in_pool, null: true
 
       # ro, rw
       t.string     :mode,           null: false, limit: 2
 
       # Commands executed in the VPS context
-      t.string     :cmd_premount,   null: false, limit: 500
-      t.string     :cmd_postmount,  null: false, limit: 500
-      t.string     :cmd_preumount,  null: false, limit: 500
-      t.string     :cmd_postumount, null: false, limit: 500
+      t.string     :cmd_premount,   null: true,  limit: 500
+      t.string     :cmd_postmount,  null: true,  limit: 500
+      t.string     :cmd_preumount,  null: true,  limit: 500
+      t.string     :cmd_postumount, null: true,  limit: 500
+
+      t.integer    :confirmed,      null: false, default: 0
     end
 
     # Setup mirrors, will not be implemented yet though.
@@ -291,7 +297,9 @@ class AddStorage < ActiveRecord::Migration
           compression: true
       })
 
-      TransactionChains::Pool::Create.fire(pool)
+      # FIXME: cannot call here, necessary DB changes for chains
+      # to work are in later migrations...
+      # TransactionChains::Pool::Create.fire(pool)
 
       group_snapshots_per_pool[ pool.id ] = DatasetAction.create(
           pool_id: pool.id,
@@ -343,7 +351,8 @@ class AddStorage < ActiveRecord::Migration
           compression: true
       )
 
-      TransactionChains::Pool::Create.fire(r)
+      # FIXME
+      # TransactionChains::Pool::Create.fire(r)
 
       group_snapshots_per_pool[ r.id ] = DatasetAction.create(
           pool_id: r.id,

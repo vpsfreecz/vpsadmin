@@ -646,4 +646,120 @@ END
       end
     end
   end
+
+  class Mount < HaveAPI::Resource
+    version 1
+    route ':vps_id/mounts'
+    model ::Mount
+    desc 'Manage mounts'
+
+    params(:all) do
+      id :id
+      resource VpsAdmin::API::Resources::VPS, label: 'VPS', value_label: :hostname
+      resource VpsAdmin::API::Resources::Dataset, label: 'Dataset', value_label: :full_name
+      resource VpsAdmin::API::Resources::Dataset::Snapshot, label: 'Snapshot', value_label: :created_at
+      string :mountpoint, label: 'Mountpoint', db_name: :dst
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      desc 'List mounts'
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict vps: {m_id: u.id}
+        allow
+      end
+
+      def query
+        ::Mount.joins(:vps).where(with_restricted(vps_id: params[:vps_id]))
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        query.limit(input[:limit]).offset(input[:offset])
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      desc 'Show mount'
+      resolve ->(m){ [m.vps_id, m.id] }
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict vps: {m_id: u.id}
+        allow
+      end
+
+      def prepare
+        @mount = ::Mount.joins(:vps).find_by!(with_restricted(
+                                                  vps_id: params[:vps_id],
+                                                  id: params[:mount_id])
+        )
+      end
+
+      def exec
+        @mount
+      end
+    end
+
+    class Create < HaveAPI::Actions::Default::Create
+      desc 'Mount remote dataset or snapshot to directory in VPS'
+
+      input do
+        resource VpsAdmin::API::Resources::Dataset, label: 'Dataset'
+        resource VpsAdmin::API::Resources::Dataset::Snapshot, label: 'Snapshot'
+        string :mountpoint, label: 'Mountpoint'
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def exec
+        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        maintenance_check!(vps)
+
+        if !input[:dataset] && !input[:snapshot]
+          error('specify either a dataset or a snapshot')
+        end
+
+        if input[:dataset]
+          fail 'not implemented'
+
+          ds = input[:dataset]
+
+        else
+          ds = input[:snapshot].dataset
+        end
+
+        if ds.user != current_user
+          error('insufficient permission to mount selected snapshot')
+        end
+
+        if input[:dataset]
+          fail 'not implemented'
+
+        else
+          vps.mount_snapshot(input[:snapshot], input[:mountpoint])
+        end
+      end
+    end
+  end
 end

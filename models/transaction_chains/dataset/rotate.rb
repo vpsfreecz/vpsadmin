@@ -18,7 +18,7 @@ module TransactionChains
         SnapshotInPoolInBranch.includes(snapshot_in_pool: [:snapshot], branch: [{dataset_tree: :dataset_in_pool}])
           .where(dataset_trees: {dataset_in_pool_id: dataset_in_pool.id}).order('snapshots.id').each do |s|
 
-          next if s.reference_count > 0
+          next if s.snapshot_in_pool.reference_count > 0
 
           if destroy?(s.snapshot_in_pool)
             @deleted += 1
@@ -35,7 +35,10 @@ module TransactionChains
 
         dataset_in_pool.snapshot_in_pools.includes(:snapshot).all.order('snapshots.id').each do |s|
 
-          if destroy?(s)
+          if s.reference_count > 0
+            next
+
+          elsif destroy?(s)
             # Check if it is backed up.
             # Check if destroying it won't break the history.
             dataset_in_pool.dataset.dataset_in_pools
@@ -93,7 +96,7 @@ module TransactionChains
           destroy(s.snapshot_in_pool.snapshot) if cleanup
 
           if s.snapshot_in_pool_in_branch
-            decrement(s.snapshot_in_pool_in_branch, :reference_count)
+            decrement(s.snapshot_in_pool, :reference_count)
           end
         end
 

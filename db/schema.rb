@@ -264,18 +264,21 @@ ActiveRecord::Schema.define(version: 20141212180955) do
   end
 
   create_table "mounts", force: true do |t|
-    t.integer "vps_id",                         null: false
-    t.string  "src",                limit: 500
-    t.string  "dst",                limit: 500, null: false
-    t.string  "mount_opts",                     null: false
-    t.string  "umount_opts",                    null: false
-    t.string  "mount_type",         limit: 10,  null: false
+    t.integer "vps_id",                                         null: false
+    t.string  "src",                 limit: 500
+    t.string  "dst",                 limit: 500,                null: false
+    t.string  "mount_opts",                                     null: false
+    t.string  "umount_opts",                                    null: false
+    t.string  "mount_type",          limit: 10,                 null: false
+    t.boolean "user_editable",                   default: true, null: false
     t.integer "dataset_in_pool_id"
-    t.string  "mode",               limit: 2,   null: false
-    t.string  "cmd_premount",       limit: 500, null: false
-    t.string  "cmd_postmount",      limit: 500, null: false
-    t.string  "cmd_preumount",      limit: 500, null: false
-    t.string  "cmd_postumount",     limit: 500, null: false
+    t.integer "snapshot_in_pool_id"
+    t.string  "mode",                limit: 2,                  null: false
+    t.string  "cmd_premount",        limit: 500
+    t.string  "cmd_postmount",       limit: 500
+    t.string  "cmd_preumount",       limit: 500
+    t.string  "cmd_postumount",      limit: 500
+    t.integer "confirmed",                       default: 0,    null: false
   end
 
   create_table "node_pubkey", id: false, force: true do |t|
@@ -349,7 +352,6 @@ ActiveRecord::Schema.define(version: 20141212180955) do
   create_table "snapshot_in_pool_in_branches", force: true do |t|
     t.integer "snapshot_in_pool_id",                       null: false
     t.integer "snapshot_in_pool_in_branch_id"
-    t.integer "reference_count",               default: 0, null: false
     t.integer "branch_id",                                 null: false
     t.integer "confirmed",                     default: 0, null: false
   end
@@ -359,6 +361,8 @@ ActiveRecord::Schema.define(version: 20141212180955) do
   create_table "snapshot_in_pools", force: true do |t|
     t.integer "snapshot_id",                    null: false
     t.integer "dataset_in_pool_id",             null: false
+    t.integer "reference_count",    default: 0, null: false
+    t.integer "mount_id"
     t.integer "confirmed",          default: 0, null: false
   end
 
