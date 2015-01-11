@@ -6,6 +6,15 @@
   <% if mnt['type'] == 'zfs' %>
     zfs mount <%= "#{mnt['pool_fs']}/#{mnt['dataset']}" %>
 
+  <% elsif mnt['type'] == 'snapshot_local' %>
+    SRC="/<%= pool_mounted_snapshot(mnt['pool_fs'], mnt['snapshot_id']) %>"
+    DST="<%= mnt['dst'] %>"
+    if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
+    mount --bind -o ro ${SRC} ${VE_ROOT}${DST}
+
+  <% elsif mnt['type'] == 'snapshot_remote' %>
+    # FIXME: snapshot_remote
+
   <% else %>
     SRC="<%= mnt['src'] %>"
     DST="<%= mnt['dst'] %>"
