@@ -8,7 +8,8 @@ module VpsAdmind::Utils
           :vz => :Vz,
           :zfs => :Zfs,
           :vps => :Vps,
-          :worker => :Worker
+          :worker => :Worker,
+          :pool => :Pool
       }
 
       # Includes module from VpsAdmind::Utils using mapping

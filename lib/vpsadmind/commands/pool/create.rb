@@ -1,7 +1,7 @@
 module VpsAdmind
   class Commands::Pool::Create < Commands::Base
     handle 5250
-    use :system, :zfs, :pool
+    needs :system, :zfs, :pool
 
     def exec
       zfs(:create, '-p', @pool_fs)
