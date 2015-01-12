@@ -19,7 +19,7 @@ module TransactionChains
       mounts.shift
 
       # Remote mounts
-      vps.mounts.all.each do |m|
+      vps.mounts.where.not(confirmed: ::Mount.confirmed(:confirm_destroy)).each do |m|
         mounts << m
       end
 
