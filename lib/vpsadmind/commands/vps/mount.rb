@@ -1,7 +1,7 @@
 module VpsAdmind
   class Commands::Vps::Mount < Commands::Base
     handle 5302
-    needs :system, :vz, :vps, :zfs
+    needs :system, :vz, :vps, :zfs, :pool
 
     def exec
       return ok unless status[:running]
@@ -10,6 +10,13 @@ module VpsAdmind
         case mnt['type']
           when 'zfs'
             zfs(:mount, nil, "#{mnt['pool_fs']}/#{mnt['dataset']}")
+
+          when 'snapshot_local'
+            dst = "#{ve_root}/#{mnt['dst']}"
+
+            syscmd("#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o #{mnt['mode']} /#{pool_mounted_snapshot(mnt['pool_fs'], mnt['snapshot_id'])} #{dst}")
+
+          when 'snapshot_remote'
 
           else
             dst = "#{ve_root}/#{mnt['dst']}"
