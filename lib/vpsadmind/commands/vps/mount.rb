@@ -24,9 +24,9 @@ module VpsAdmind
               end
             end
 
-            runscript('premount', mnt['premount']) if @runscripts.nil? || @runscripts
+            runscript('premount', mnt['premount']) if mnt['runscripts']
             syscmd("#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o #{mnt['mode']} #{mnt['src']} #{dst}")
-            runscript('postmount', mnt['postmount']) if @runscripts.nil? || @runscripts
+            runscript('postmount', mnt['postmount']) if mnt['runscripts']
         end
       end
 

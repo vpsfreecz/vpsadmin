@@ -13,9 +13,9 @@ module VpsAdmind
             zfs(:umount, '-f', "#{mnt['pool_fs']}/#{mnt['dataset']}", [1])
 
           else
-            runscript('preumount', mnt['preumount']) if @runscripts.nil? || @runscripts
+            runscript('preumount', mnt['preumount']) if mnt['runscripts']
             syscmd("#{$CFG.get(:bin, :umount)} #{mnt['umount_opts']} #{ve_root}/#{mnt['dst']}")
-            runscript('postumount', mnt['postumount']) if @runscripts.nil? || @runscripts
+            runscript('postumount', mnt['postumount']) if mnt['runscripts']
         end
       end
 
@@ -24,6 +24,7 @@ module VpsAdmind
 
     def rollback
       call_cmd(Commands::Vps::Mount, {
+          :vps_id => @vps_id,
           :mounts => @mounts.reverse,
           :runscripts => false
       })
