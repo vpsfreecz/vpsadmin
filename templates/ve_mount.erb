@@ -10,7 +10,7 @@
     SRC="/<%= pool_mounted_snapshot(mnt['pool_fs'], mnt['snapshot_id']) %>"
     DST="<%= mnt['dst'] %>"
     if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
-    mount --bind -o ro ${SRC} ${VE_ROOT}${DST}
+    mount <%= mnt['mount_opts'] %> -o <%= mnt['mode'] %> ${SRC} ${VE_ROOT}${DST}
 
   <% elsif mnt['type'] == 'snapshot_remote' %>
     # FIXME: snapshot_remote

@@ -8,7 +8,7 @@
 
   <% elsif mnt['type'] == 'snapshot_local' %>
       DST="<%= mnt['dst'] %>"
-      if grep ${VE_ROOT}${DST} /proc/mounts; then umount -f ${VE_ROOT}${DST}; fi
+      if grep ${VE_ROOT}${DST} /proc/mounts; then umount <%= mnt['umount_opts'] %> ${VE_ROOT}${DST}; fi
 
   <% elsif mnt['type'] == 'snapshot_remote' %>
       # FIXME: snapshot_remote
