@@ -656,8 +656,10 @@ END
     params(:all) do
       id :id
       resource VpsAdmin::API::Resources::VPS, label: 'VPS', value_label: :hostname
-      resource VpsAdmin::API::Resources::Dataset, label: 'Dataset', value_label: :full_name
-      resource VpsAdmin::API::Resources::Dataset::Snapshot, label: 'Snapshot', value_label: :created_at
+      resource VpsAdmin::API::Resources::Dataset, label: 'Dataset',
+               value_label: :full_name, db_name: :dataset
+      resource VpsAdmin::API::Resources::Dataset::Snapshot, label: 'Snapshot',
+               value_label: :created_at, db_name: :snapshot
       string :mountpoint, label: 'Mountpoint', db_name: :dst
     end
 
