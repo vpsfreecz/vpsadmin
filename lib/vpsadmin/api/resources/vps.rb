@@ -759,6 +759,9 @@ END
         else
           vps.mount_snapshot(input[:snapshot], input[:mountpoint])
         end
+
+      rescue VpsAdmin::API::Exceptions::SnapshotAlreadyMounted => e
+        error(e.message)
       end
     end
 

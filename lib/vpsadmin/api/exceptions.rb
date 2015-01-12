@@ -42,4 +42,13 @@ module VpsAdmin::API::Exceptions
       super("dataset label '#{label}' does not exist")
     end
   end
+
+  class SnapshotAlreadyMounted < ::StandardError
+    attr_reader :snapshot
+
+    def initialize(snapshot)
+      @snapshot = snapshot
+      super("snapshot '#{snapshot.dataset_in_pool.dataset.full_name}@#{snapshot.snapshot.name}' is already mounted to VPS #{snapshot.mount.vps_id} at #{snapshot.mount.dst}")
+    end
+  end
 end

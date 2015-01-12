@@ -46,6 +46,10 @@ module TransactionChains
         fail 'snapshot is nowhere to be found!'
       end
 
+      if clone_from.mount_id
+        raise VpsAdmin::API::Exceptions::SnapshotAlreadyMounted, clone_from
+      end
+
       mnt.snapshot_in_pool = clone_from
       mnt.save!
 
