@@ -761,5 +761,25 @@ END
         end
       end
     end
+
+    class Delete < HaveAPI::Actions::Default::Delete
+      desc 'Delete mount from VPS'
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def exec
+        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        maintenance_check!(vps)
+
+        mnt = ::Mount.find_by!(vps: vps, id: params[:mount_id])
+        vps.umount(mnt)
+
+        ok
+      end
+    end
   end
 end

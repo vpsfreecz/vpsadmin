@@ -261,6 +261,10 @@ class Vps < ActiveRecord::Base
     TransactionChains::Vps::MountSnapshot.fire(self, snapshot, dst)
   end
 
+  def umount(mnt)
+    TransactionChains::Vps::UmountSnapshot.fire(self, mnt)
+  end
+
   private
   def generate_password
     chars = ('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a
