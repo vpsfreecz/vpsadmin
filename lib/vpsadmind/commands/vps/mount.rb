@@ -14,7 +14,7 @@ module VpsAdmind
           when 'snapshot_local'
             dst = "#{ve_root}/#{mnt['dst']}"
 
-            syscmd("#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o #{mnt['mode']} /#{pool_mounted_snapshot(mnt['pool_fs'], mnt['snapshot_id'])} #{dst}")
+            syscmd("#{$CFG.get(:bin, :mount)} -t zfs #{mnt['pool_fs']}/#{mnt['dataset_name']}@#{mnt['snapshot']} #{dst}")
 
           when 'snapshot_remote'
 
