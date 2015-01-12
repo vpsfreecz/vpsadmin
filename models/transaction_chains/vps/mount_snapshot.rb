@@ -13,18 +13,20 @@ module TransactionChains
       mnt = ::Mount.new(
           vps: vps,
           dst: dst,
+          mount_opts: '',
           umount_opts: '-f',
           mount_type: 'nfs',
           mode: 'ro',
           user_editable: false,
           confirmed: ::Mount.confirmed(:confirm_create)
       )
+      remote = false
 
       # Snapshot is present locally on hypervisor
       if hypervisor && hypervisor.dataset_in_pool.pool.node_id = vps.vps_server
         clone_from = hypervisor
-        mnt.mount_opts = '--bind'
-        mnt.mount_type = 'bind'
+        mnt.mount_type = 'zfs'
+        mnt.mount_opts = '-t zfs'
 
       # Snapshot is on primary and NOT in backup.
       # TODO: transfer and mount from backup?
@@ -35,11 +37,13 @@ module TransactionChains
         # end
 
         clone_from = primary
+        remote = true
         # FIXME: mount_opts
 
       # Snapshot is in backup only, mount remotely
       elsif backup
         clone_from = backup
+        remote = true
         # FIXME: mount_opts
 
       else
@@ -53,14 +57,24 @@ module TransactionChains
       mnt.snapshot_in_pool = clone_from
       mnt.save!
 
-      append(Transactions::Storage::CloneSnapshot, args: clone_from) do
-        create(mnt)
-        increment(clone_from, :reference_count)
-        edit(clone_from, mount_id: mnt.id)
+      if remote
+        append(Transactions::Storage::CloneSnapshot, args: clone_from) do
+          create(mnt)
+          increment(clone_from, :reference_count)
+          edit(clone_from, mount_id: mnt.id)
+        end
       end
 
       use_chain(Vps::Mounts, args: vps)
       use_chain(Vps::Mount, args: [vps, [mnt]]) if vps.running
+
+      unless remote
+        append(Transactions::Utils::NoOp, args: vps.vps_server) do
+          create(mnt)
+          increment(clone_from, :reference_count)
+          edit(clone_from, mount_id: mnt.id)
+        end
+      end
 
       mnt
     end

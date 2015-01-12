@@ -22,6 +22,7 @@ module Transactions::Utils
 
           m.update({
               pool_fs: mnt.snapshot_in_pool.dataset_in_pool.pool.filesystem,
+              dataset_name: mnt.snapshot_in_pool.dataset_in_pool.dataset.full_name,
               snapshot_id: mnt.snapshot_in_pool_id,
               snapshot: mnt.snapshot_in_pool.snapshot.name,
               dst: mnt.dst,
