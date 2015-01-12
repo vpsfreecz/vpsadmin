@@ -232,7 +232,7 @@ module VpsAdmind
     def rollback_chain(db)
       log(:debug, self, 'Rollback chain')
       db.prepared('UPDATE transaction_chains
-                   SET `state` = 3
+                   SET `state` = 3, `progress` = `progress` - 1
                    WHERE id = ?', chain_id)
     end
 
@@ -386,12 +386,16 @@ module VpsAdmind
     end
 
     def chain_finished?
+      log(:debug, self, 'chain_finished?')
+      p current_chain_direction
+      p @chain[:progress]
+
       if current_chain_direction == :execute
         @chain[:size] == @chain[:progress] + 1
       else
         # Must check <= 0, because chain might contain a single transaction,
         # and when that fails, the result is -1.
-        @chain[:progress] - 1 <= 0
+        @chain[:progress] <= 0
       end
     end
 
