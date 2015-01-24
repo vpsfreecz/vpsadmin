@@ -3,10 +3,7 @@
 . ${VE_CONFFILE}
 
 <% @mounts.reverse.each do |mnt| %>
-  <% if mnt['type'] == 'zfs' %>
-    zfs umount -f <%= "#{mnt['pool_fs']}/#{mnt['dataset']}" %>
-
-  <% elsif mnt['type'] == 'snapshot_local' %>
+  <% if mnt['type'] == 'snapshot_local' %>
       DST="<%= mnt['dst'] %>"
       if grep ${VE_ROOT}${DST} /proc/mounts; then umount <%= mnt['umount_opts'] %> ${VE_ROOT}${DST}; fi
 

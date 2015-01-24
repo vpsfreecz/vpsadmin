@@ -3,10 +3,7 @@
 . ${VE_CONFFILE}
 
 <% @mounts.each do |mnt| %>
-  <% if mnt['type'] == 'zfs' %>
-    zfs mount <%= "#{mnt['pool_fs']}/#{mnt['dataset']}" %>
-
-  <% elsif mnt['type'] == 'snapshot_local' %>
+  <% if mnt['type'] == 'snapshot_local' %>
     SRC="<%= "#{mnt['pool_fs']}/#{mnt['dataset_name']}@#{mnt['snapshot']}" %>"
     DST="<%= mnt['dst'] %>"
     if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi

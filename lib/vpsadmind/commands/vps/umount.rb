@@ -8,10 +8,6 @@ module VpsAdmind
 
       @mounts.each do |mnt|
         case mnt['type']
-          when 'zfs'
-            # Accept return code 1 - not mounted
-            zfs(:umount, '-f', "#{mnt['pool_fs']}/#{mnt['dataset']}", [1])
-
           else
             runscript('preumount', mnt['preumount']) if mnt['runscripts']
             syscmd("#{$CFG.get(:bin, :umount)} #{mnt['umount_opts']} #{ve_root}/#{mnt['dst']}")

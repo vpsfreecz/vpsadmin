@@ -8,9 +8,6 @@ module VpsAdmind
 
       @mounts.each do |mnt|
         case mnt['type']
-          when 'zfs'
-            zfs(:mount, nil, "#{mnt['pool_fs']}/#{mnt['dataset']}")
-
           when 'snapshot_local'
             dst = "#{ve_root}/#{mnt['dst']}"
 
