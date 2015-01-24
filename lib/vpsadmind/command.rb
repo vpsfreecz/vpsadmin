@@ -113,6 +113,8 @@ module VpsAdmind
           else # Reverse chain direction
             # Is it the last transaction to rollback?
             if chain_finished?
+              fail_followers(t) if @rollbacked
+
               run_confirmations(t)
               close_chain(t)
 
