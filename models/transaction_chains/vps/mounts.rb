@@ -10,10 +10,7 @@ module TransactionChains
       @vps = vps
       mounts = []
 
-      # Remove the first dataset, it is the top-level dataset with VPS private area
-      mounts.shift
-
-      # Remote mounts
+      # Local/remote mounts
       vps.mounts.where.not(confirmed: ::Mount.confirmed(:confirm_destroy)).each do |m|
         mounts << m
       end
