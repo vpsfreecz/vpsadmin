@@ -13,6 +13,13 @@ module VpsAdmind
       end
 
       zfs(:create, "-p #{opts}", "#{@pool_fs}/#{@name}")
+
+      if @create_private
+        mnt = zfs(:get, '-ovalue -H mountpoint', "#{@pool_fs}/#{@name}")[:output].strip
+        syscmd("#{$CFG.get(:bin, :mkdir)} \"#{mnt}/private\"")
+      end
+
+      ok
     end
 
     def rollback
