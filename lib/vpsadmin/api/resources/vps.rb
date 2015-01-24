@@ -655,11 +655,10 @@ END
 
     params(:all) do
       id :id
-      resource VpsAdmin::API::Resources::VPS, label: 'VPS', value_label: :hostname
       resource VpsAdmin::API::Resources::Dataset, label: 'Dataset',
-               value_label: :full_name, db_name: :dataset
+               value_label: :name
       resource VpsAdmin::API::Resources::Dataset::Snapshot, label: 'Snapshot',
-               value_label: :created_at, db_name: :snapshot
+               value_label: :created_at
       string :mountpoint, label: 'Mountpoint', db_name: :dst
     end
 
@@ -722,6 +721,7 @@ END
         resource VpsAdmin::API::Resources::Dataset, label: 'Dataset'
         resource VpsAdmin::API::Resources::Dataset::Snapshot, label: 'Snapshot'
         string :mountpoint, label: 'Mountpoint'
+        string :mode, label: 'Mode', choices: %i(ro rw), default: :rw, fill: true
       end
 
       output do
@@ -743,8 +743,6 @@ END
         end
 
         if input[:dataset]
-          fail 'not implemented'
-
           ds = input[:dataset]
 
         else
@@ -756,7 +754,7 @@ END
         end
 
         if input[:dataset]
-          fail 'not implemented'
+          vps.mount_dataset(input[:dataset], input[:mountpoint], input[:mode])
 
         else
           vps.mount_snapshot(input[:snapshot], input[:mountpoint])

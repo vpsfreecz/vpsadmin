@@ -6,10 +6,30 @@ module Transactions::Utils
 
         # Mount of dataset in pool
         if mnt.dataset_in_pool_id
-          fail 'not implemented'
 
-          # Mount of snapshot in pool
+          # Mount it locally
+          if mnt.dataset_in_pool.pool.node_id == mnt.vps.vps_server
+            m[:type] = :dataset_local
+
+          # Mount via NFS
+          else
+            m[:type] = :dataset_remote
+            m[:src_node_addr] = mnt.dataset_in_pool.pool.node.addr
+          end
+
+          m.update({
+              pool_fs: mnt.dataset_in_pool.pool.filesystem,
+              dataset_name: mnt.dataset_in_pool.dataset.full_name,
+              dst: mnt.dst,
+              mount_opts: mnt.mount_opts,
+              umount_opts: mnt.umount_opts,
+              mode: mnt.mode,
+              runscripts: false
+          })
+
+        # Mount of snapshot in pool
         elsif mnt.snapshot_in_pool_id
+
           # Mount it locally
           if mnt.snapshot_in_pool.dataset_in_pool.pool.node_id == mnt.vps.vps_server
             m[:type] = :snapshot_local
