@@ -388,10 +388,6 @@ module VpsAdmind
     end
 
     def chain_finished?
-      log(:debug, self, 'chain_finished?')
-      p current_chain_direction
-      p @chain[:progress]
-
       if current_chain_direction == :execute
         @chain[:size] == @chain[:progress] + 1
       else
