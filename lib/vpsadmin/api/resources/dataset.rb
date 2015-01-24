@@ -80,8 +80,6 @@ module VpsAdmin::API::Resources
 
       input do
         string :name, label: 'Name', required: true
-        string :mountpoint, label: 'Mountpoint',
-               desc: 'Applies only for VPS subdatasets'
         resource Dataset, label: 'Parent dataset',
                  value_label: :full_name
       end
@@ -102,14 +100,10 @@ module VpsAdmin::API::Resources
 
         elsif current_user.role != :admin && input[:dataset] && !input[:dataset].user_create
           error('access denied')
-
-        elsif input[:mountpoint] && input[:mountpoint].empty?
-          error('invalid mountpoint: cannot be empty')
         end
 
         ::Dataset.create_new(
             input[:name].strip,
-            input[:mountpoint] && input[:mountpoint].strip,
             input[:dataset]
         )
 

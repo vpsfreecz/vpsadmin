@@ -219,30 +219,10 @@ class Vps < ActiveRecord::Base
   # All datasets in path except the last have the default
   # mountpoint. +mountpoint+ is relevant only for the last
   # dataset in path.
-  def create_subdataset(last, path, mountpoint)
-    if last
-      dip = last.dataset_in_pools.joins(:pool).where(pools: {role: Pool.roles[:hypervisor]}).take
-      mnt = dip.mountpoint if dip
-    else
-      mnt = nil
-    end
-
-    mountpoints = []
-
-    last_mountpoint = prefix_mountpoint(mnt, nil, nil)
-
-    path[0..-2].each do |part|
-      last_mountpoint = prefix_mountpoint(last_mountpoint, part, nil)
-
-      mountpoints << last_mountpoint
-    end
-
-    mountpoints << prefix_mountpoint(last_mountpoint, path.last, mountpoint)
-
+  def create_subdataset(path)
     TransactionChains::Vps::SubdatasetCreate.fire(
         self,
-        path,
-        mountpoints
+        path
     )
   end
 
@@ -300,13 +280,13 @@ class Vps < ActiveRecord::Base
   end
 
   def prefix_mountpoint(parent, part, mountpoint)
-    root = ['/', 'vz', 'root', veid.to_s]
+    root = '/'
 
     return File.join(parent) if parent && !part
-    return File.join(*root) unless part
+    return root unless part
 
     if mountpoint
-      File.join(*root, mountpoint)
+      File.join(root, mountpoint)
 
     elsif parent
       File.join(parent, part.name)
