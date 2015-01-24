@@ -3,7 +3,19 @@
 . ${VE_CONFFILE}
 
 <% @mounts.each do |mnt| %>
-  <% if mnt['type'] == 'snapshot_local' %>
+  <% if mnt['type'] == 'dataset_local' %>
+    SRC="<%= "#{mnt['pool_fs']}/#{mnt['dataset_name']}/private" %>"
+    DST="<%= mnt['dst'] %>"
+    if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
+    mount <%= mnt['mount_opts'] %> ${SRC} ${VE_ROOT}${DST}
+
+  <% elsif mnt['type'] == 'dataset_remote' %>
+    SRC="<%= mnt['src_node_addr'] %>:/<%= "#{mnt['pool_fs']}/#{mnt['dataset_name']}/private" %>"
+    DST="<%= mnt['dst'] %>"
+    if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
+    mount <%= mnt['mount_opts'] %> ${SRC} ${VE_ROOT}${DST}
+
+  <% elsif mnt['type'] == 'snapshot_local' %>
     SRC="<%= "#{mnt['pool_fs']}/#{mnt['dataset_name']}@#{mnt['snapshot']}" %>"
     DST="<%= mnt['dst'] %>"
     if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
@@ -13,10 +25,7 @@
     # FIXME: snapshot_remote
 
   <% else %>
-    SRC="<%= mnt['src'] %>"
-    DST="<%= mnt['dst'] %>"
-    if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
-    mount <%= mnt['mount_opts'] %> -o <%= mnt['mode'] %> ${SRC} ${VE_ROOT}${DST}
+    # Unknown mount type '<%= mnt['type'] %>
   <% end %>
 <% end %>
 

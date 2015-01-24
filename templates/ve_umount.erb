@@ -3,17 +3,19 @@
 . ${VE_CONFFILE}
 
 <% @mounts.reverse.each do |mnt| %>
-  <% if mnt['type'] == 'snapshot_local' %>
-      DST="<%= mnt['dst'] %>"
-      if grep ${VE_ROOT}${DST} /proc/mounts; then umount <%= mnt['umount_opts'] %> ${VE_ROOT}${DST}; fi
-
-  <% elsif mnt['type'] == 'snapshot_remote' %>
-      # FIXME: snapshot_remote
-
-  <% else %>
-    SRC="<%= mnt['src'] %>"
+  <% if mnt['type'] == 'dataset_local' || mnt['tyoe'] == 'dataset_remote' %>
     DST="<%= mnt['dst'] %>"
     if grep ${VE_ROOT}${DST} /proc/mounts; then umount <%= mnt['umount_opts'] %> ${VE_ROOT}${DST}; fi
+
+    <% elsif mnt['type'] == 'snapshot_local' %>
+    DST="<%= mnt['dst'] %>"
+    if grep ${VE_ROOT}${DST} /proc/mounts; then umount <%= mnt['umount_opts'] %> ${VE_ROOT}${DST}; fi
+
+  <% elsif mnt['type'] == 'snapshot_remote' %>
+    # FIXME: snapshot_remote
+
+  <% else %>
+    # Unknown mount type '<%= mnt['type'] %>
   <% end %>
 <% end %>
 

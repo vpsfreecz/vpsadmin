@@ -7,12 +7,9 @@ module VpsAdmind
       return ok unless status[:running]
 
       @mounts.each do |mnt|
-        case mnt['type']
-          else
-            runscript('preumount', mnt['preumount']) if mnt['runscripts']
-            syscmd("#{$CFG.get(:bin, :umount)} #{mnt['umount_opts']} #{ve_root}/#{mnt['dst']}")
-            runscript('postumount', mnt['postumount']) if mnt['runscripts']
-        end
+        runscript('preumount', mnt['preumount']) if mnt['runscripts']
+        syscmd("#{$CFG.get(:bin, :umount)} #{mnt['umount_opts']} #{ve_root}/#{mnt['dst']}")
+        runscript('postumount', mnt['postumount']) if mnt['runscripts']
       end
 
       ok
