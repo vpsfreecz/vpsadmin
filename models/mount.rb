@@ -4,7 +4,6 @@ class Mount < ActiveRecord::Base
   belongs_to :snapshot_in_pool
 
   validate :check_mountpoint
-  validates :dst, uniqueness: true
 
   include Confirmable
   include Lockable
@@ -12,6 +11,10 @@ class Mount < ActiveRecord::Base
   def check_mountpoint
     if dst !~ /\A[a-zA-Z0-9_\-\/\.]{3,500}\z/ || dst =~ /\.\./ || dst =~ /\/\//
       errors.add(:dst, 'invalid format')
+    end
+
+    if self.class.where(vps: vps, dst: dst).exists?
+      errors.add(:dst, 'this mountpoint already exists')
     end
   end
 
