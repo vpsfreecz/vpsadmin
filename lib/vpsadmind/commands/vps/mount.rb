@@ -21,6 +21,7 @@ module VpsAdmind
             syscmd("#{$CFG.get(:bin, :mount)} -t zfs #{mnt['pool_fs']}/#{mnt['dataset_name']}@#{mnt['snapshot']} #{dst}")
 
           when 'snapshot_remote'
+            syscmd("#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} #{mnt['src_node_addr']}:/#{pool_mounted_snapshot(@pool_fs, @snapshot_id)} #{dst}")
 
           else
             runscript('premount', mnt['premount']) if mnt['runscripts']
