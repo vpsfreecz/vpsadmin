@@ -229,7 +229,12 @@ class Vps < ActiveRecord::Base
   end
 
   def umount(mnt)
-    TransactionChains::Vps::UmountSnapshot.fire(self, mnt)
+    if mnt.dataset_in_pool_id
+      TransactionChains::Vps::UmountDataset.fire(self, mnt)
+
+    else
+      TransactionChains::Vps::UmountSnapshot.fire(self, mnt)
+    end
   end
 
   private
