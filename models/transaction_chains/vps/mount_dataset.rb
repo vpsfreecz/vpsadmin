@@ -37,6 +37,10 @@ module TransactionChains
       use_chain(Vps::Mounts, args: vps)
       use_chain(Vps::Mount, args: [vps, [mnt]]) if vps.running
 
+      append(Transactions::Utils::NoOp, args: vps.vps_server) do
+        create(mnt)
+      end
+
       mnt
     end
   end
