@@ -15,42 +15,96 @@ module TransactionChains
       lock(dataset_in_pool)
 
       @tasks = tasks
+      @datasets = []
 
       if recursive
         @pool_id = dataset_in_pool.pool.id
         dataset_in_pool.dataset.subtree.arrange.each do |k, v|
-          destroy_recursive(k, v, top)
+          destroy_recursive(k, v)
         end
 
       else
         fail 'not implemented'
       end
+
+      # Acquire dataset locks
+      @datasets.each { |dip| lock(dip) }
+
+      # Datasets have to be umounted first
+      affected_vpses = {}
+
+      @datasets.each do |dip|
+        affected_vpses.merge!(mounts_to_umount(dip)) do |_, oldval, newval|
+          oldval << newval
+        end
+      end
+
+      # Update mount action scripts
+      affected_vpses.each_key do |vps|
+        use_chain(TransactionChains::Vps::Mounts, args: vps)
+      end
+
+      # Umount
+      affected_vpses.each do |vps, mounts|
+        append(Transactions::Vps::Umount, args: [vps, mounts]) do
+          mounts.each do |mnt|
+            destroy(mnt)
+          end
+        end
+      end
+
+      # Destroy the first dataset
+      destroy_dataset(@datasets.shift, top)
+
+      # Destroy all remaining datasets
+      @datasets.each do |dip|
+        destroy_dataset(dip, true)
+      end
     end
 
     # Destroy datasets in pool recursively. Datasets are destroyed
     # from the bottom ("youngest children") to the top ("oldest parents").
-    def destroy_recursive(dataset, children, top)
+    def destroy_recursive(dataset, children)
       # First destroy children
       children.each do |k, v|
         if v.is_a?(::Dataset)
           dip = v.dataset_in_pools.where(pool_id: @pool_id).take
 
           if dip
-            destroy_dataset(dip, true)
+            @datasets << dip
           end
 
         else
-          destroy_recursive(k, v, true)
+          destroy_recursive(k, v)
         end
       end
 
       # Destroy parent dataset
       dip = dataset.dataset_in_pools.where(pool_id: @pool_id).take
+      @datasets << dip if dip
+    end
 
-      if dip
-        destroy_dataset(dip, top)
+    def mounts_to_umount(dataset_in_pool)
+      ret = {}
+
+      dataset_in_pool.mounts.all.each do |mnt|
+        lock(mnt.vps)
+        lock(mnt)
+
+        mnt.update!(confirmed: ::Mount.confirmed(:confirm_destroy))
+
+        ret[mnt.vps] ||= []
+        ret[mnt.vps] << mnt
       end
 
+      dataset_in_pool.snapshot_in_pools.includes(mount: [:vps]).where.not(mount: nil).each do |snap|
+        lock(snap.mount)
+
+        ret[snap.mount.vps] ||= []
+        ret[snap.mount.vps] << snap.mount
+      end
+
+      ret
     end
 
     def destroy_dataset(dataset_in_pool, destroy_top)

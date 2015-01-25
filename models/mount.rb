@@ -4,6 +4,7 @@ class Mount < ActiveRecord::Base
   belongs_to :snapshot_in_pool
 
   include Confirmable
+  include Lockable
 
   def dataset
     dataset_in_pool_id && dataset_in_pool.dataset
