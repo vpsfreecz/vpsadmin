@@ -16,7 +16,7 @@ class Dataset < ActiveRecord::Base
   include Confirmable
   include VpsAdmin::API::Maintainable::Check
 
-  def self.create_new(name, parent_ds)
+  def self.create_new(name, parent_ds, automount)
     parts = name.split('/')
 
     if parts.empty?
@@ -53,13 +53,13 @@ class Dataset < ActiveRecord::Base
     if top_dip.pool.role == 'hypervisor'
       vps = Vps.find_by!(dataset_in_pool: top_dip.dataset.root.primary_dataset_in_pool!)
       maintenance_check!(vps)
-
-      TransactionChains::Dataset::Create.fire(vps.dataset_in_pool, path)
-
-    # Primary
-    else
-      TransactionChains::Dataset::Create.fire(top_dip, path)
     end
+
+    TransactionChains::Dataset::Create.fire(
+        (last && last.primary_dataset_in_pool!) || top_dip,
+        path,
+        automount
+    )
   end
 
   def destroy

@@ -83,6 +83,9 @@ module VpsAdmin::API::Resources
         string :name, label: 'Name', required: true
         resource Dataset, label: 'Parent dataset',
                  value_label: :full_name
+        bool :automount, label: 'Automount',
+             desc: 'Automatically mount newly created datasets under all its parents',
+             default: false, fill: true
       end
 
       output do
@@ -105,7 +108,8 @@ module VpsAdmin::API::Resources
 
         ::Dataset.create_new(
             input[:name].strip,
-            input[:dataset]
+            input[:dataset],
+            input[:automount]
         )
 
       rescue VpsAdmin::API::Exceptions::AccessDenied
