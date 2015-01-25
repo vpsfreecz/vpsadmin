@@ -34,7 +34,9 @@ module VpsAdmin::API::Resources
       end
 
       def query
-        ::Dataset.where(with_restricted)
+        ::Dataset.joins(dataset_in_pools: [:pool]).where(with_restricted).where(
+            pools: {role: [::Pool.roles[:hypervisor], ::Pool.roles[:primary]]}
+        )
       end
 
       def count
