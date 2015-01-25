@@ -13,7 +13,9 @@ class Mount < ActiveRecord::Base
       errors.add(:dst, 'invalid format')
     end
 
-    if self.class.where(vps: vps, dst: dst).exists?
+    cnt = self.class.where(vps: vps, dst: dst).count
+
+    if (new_record? && cnt > 0) || (!new_record? && cnt > 1)
       errors.add(:dst, 'this mountpoint already exists')
     end
   end
