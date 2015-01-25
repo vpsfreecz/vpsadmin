@@ -11,7 +11,6 @@ module VpsAdmin::API::Resources
     params(:common) do
       string :name, label: 'Name', db_name: :full_name
       # string :label, label: 'Label'
-      string :mountpoint, label: 'Mountpoint', db_name: :hypervisor_mountpoint
       resource Dataset, label: 'Parent',
                name: :parent, value_label: :name
     end
