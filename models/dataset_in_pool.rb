@@ -10,22 +10,11 @@ class DatasetInPool < ActiveRecord::Base
            foreign_key: :dst_dataset_in_pool_id
   has_many :group_snapshots
 
-  validate :check_mountpoint
-  validates :mountpoint, uniqueness: true, if: ->(dip){ dip.mountpoint.present? && !dip.mountpoint.empty? }
-
   include Lockable
   include Confirmable
   include HaveAPI::Hookable
 
   has_hook :create
-
-  def check_mountpoint
-    if mountpoint.present?
-      if mountpoint !~ /\A[a-zA-Z0-9_\-\/\.]{3,500}\z/ || mountpoint =~ /\.\./ || mountpoint =~ /\/\//
-        errors.add(:mountpoint, 'invalid format')
-      end
-    end
-  end
 
   def snapshot
     TransactionChains::Dataset::Snapshot.fire(self)

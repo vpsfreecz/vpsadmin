@@ -762,6 +762,9 @@ END
 
       rescue VpsAdmin::API::Exceptions::SnapshotAlreadyMounted => e
         error(e.message)
+
+      rescue ActiveRecord::RecordInvalid => e
+        error('create failed', e.record.errors.to_hash)
       end
     end
 
