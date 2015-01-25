@@ -4,7 +4,7 @@
 
 <% @mounts.each do |mnt| %>
   <% if mnt['type'] == 'dataset_local' %>
-    SRC="<%= "#{mnt['pool_fs']}/#{mnt['dataset_name']}/private" %>"
+    SRC="/<%= "#{mnt['pool_fs']}/#{mnt['dataset_name']}/private" %>"
     DST="<%= mnt['dst'] %>"
     if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
     mount <%= mnt['mount_opts'] %> ${SRC} ${VE_ROOT}${DST}
