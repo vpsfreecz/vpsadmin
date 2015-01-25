@@ -11,7 +11,9 @@ module TransactionChains
       mounts = []
 
       # Local/remote mounts
-      vps.mounts.where.not(confirmed: ::Mount.confirmed(:confirm_destroy)).each do |m|
+      vps.mounts.where.not(
+          confirmed: ::Mount.confirmed(:confirm_destroy)
+      ).order('dst ASC').each do |m|
         mounts << m
       end
 
