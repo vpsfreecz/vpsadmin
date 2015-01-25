@@ -216,23 +216,6 @@ class Vps < ActiveRecord::Base
     vps_status && vps_status.vps_disk_used_mb
   end
 
-  # All datasets in path except the last have the default
-  # mountpoint. +mountpoint+ is relevant only for the last
-  # dataset in path.
-  def create_subdataset(path)
-    TransactionChains::Vps::SubdatasetCreate.fire(
-        self,
-        path
-    )
-  end
-
-  def destroy_subdataset(dataset_in_pool)
-    TransactionChains::Vps::SubdatasetDestroy.fire(
-        self,
-        dataset_in_pool
-    )
-  end
-
   def migrate(node)
     TransactionChains::Vps::Migrate.fire(self, node)
   end

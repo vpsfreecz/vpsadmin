@@ -54,11 +54,11 @@ class Dataset < ActiveRecord::Base
       vps = Vps.find_by!(dataset_in_pool: top_dip.dataset.root.primary_dataset_in_pool!)
       maintenance_check!(vps)
 
-      vps.create_subdataset(path)
+      TransactionChains::Dataset::Create.fire(vps.dataset_in_pool, path)
 
     # Primary
     else
-      fail 'not implemented'
+      TransactionChains::Dataset::Create.fire(top_dip, path)
     end
   end
 
@@ -68,12 +68,9 @@ class Dataset < ActiveRecord::Base
     if dip.pool.role == 'hypervisor'
       vps = Vps.find_by!(dataset_in_pool: dip.dataset.root.primary_dataset_in_pool!)
       maintenance_check!(vps)
-
-      vps.destroy_subdataset(dip)
-
-    else
-      fail 'not implemented'
     end
+
+    TransactionChains::DatasetInPool::Destroy.fire(dip, true)
   end
 
   def check_name
