@@ -16,28 +16,17 @@ module TransactionChains
       # because that's not certain information.
       use_chain(Vps::Umount, args: [vps, [mount]])
 
-      unless remote
-        append(Transactions::Utils::NoOp, args: vps.vps_server) do
-          destroy(mount)
-          decrement(mount.snapshot_in_pool, :reference_count)
-          edit(mount.snapshot_in_pool, mount_id: nil)
-        end
+      cleanup = Proc.new do
+        destroy(mount)
+        decrement(mount.snapshot_in_pool, :reference_count)
+        edit(mount.snapshot_in_pool, mount_id: nil)
       end
 
-      if mount.dataset_in_pool_id
-        fail 'not implemented'
-
-      elsif mount.snapshot_in_pool_id
-        if remote
-          append(Transactions::Storage::RemoveClone, args: mount.snapshot_in_pool) do
-            destroy(mount)
-            decrement(mount.snapshot_in_pool, :reference_count)
-            edit(mount.snapshot_in_pool, mount_id: nil)
-          end
-        end
+      if remote
+        append(Transactions::Storage::RemoveClone, args: mount.snapshot_in_pool, &cleanup)
 
       else
-        fail 'not implemented'
+        append(Transactions::Utils::NoOp, args: vps.vps_server, &cleanup)
       end
     end
   end
