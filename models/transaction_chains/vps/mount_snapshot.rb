@@ -29,22 +29,15 @@ module TransactionChains
         mnt.mount_opts = '-t zfs'
 
       # Snapshot is on primary and NOT in backup.
-      # TODO: transfer and mount from backup?
       elsif primary && !backup
-        # Transfer to all backup pools
-        # snapshot.dataset.dataset_in_pools.joins(:pool).where(pool: {role: ::Pool.roles[:backup]}).each do |backup_dip|
-        #   use_chain(Dataset::Transfer, args: [primary.dataset_in_pool, backup_dip])
-        # end
 
         clone_from = primary
         remote = true
-        # FIXME: mount_opts
 
       # Snapshot is in backup only, mount remotely
       elsif backup
         clone_from = backup
         remote = true
-        # FIXME: mount_opts
 
       else
         fail 'snapshot is nowhere to be found!'
@@ -52,6 +45,11 @@ module TransactionChains
 
       if clone_from.mount_id
         raise VpsAdmin::API::Exceptions::SnapshotAlreadyMounted, clone_from
+      end
+
+      if remote
+        mnt.mount_opts = '-overs=3'
+        mnt.mount_type = 'nfs'
       end
 
       mnt.snapshot_in_pool = clone_from
