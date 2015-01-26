@@ -163,10 +163,13 @@ class TransactionChain < ActiveRecord::Base
 end
 
 module TransactionChains
-  module Node          ; end
-  module Vps           ; end
-  module VpsConfig     ; end
-  module Pool          ; end
-  module Dataset       ; end
-  module DatasetInPool ; end
+  module Node           ; end
+  module Vps            ; end
+  module VpsConfig      ; end
+  module Pool           ; end
+  module Dataset        ; end
+  module DatasetInPool  ; end
+  module SnapshotInPool ; end
+  module DatasetTree    ; end
+  module Branch         ; end
 end

@@ -3,6 +3,7 @@ class DatasetTree < ActiveRecord::Base
   has_many :branches
 
   include Confirmable
+  include Lockable
 
   def full_name
     "tree.#{index}"

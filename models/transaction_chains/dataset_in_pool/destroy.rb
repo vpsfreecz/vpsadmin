@@ -108,46 +108,28 @@ module TransactionChains
     end
 
     def destroy_dataset(dataset_in_pool, destroy_top)
-      append(Transactions::Storage::DestroyDataset, args: dataset_in_pool) do
-        # Destroy snapshots, trees, branches, snapshot in pool in branches
-        case dataset_in_pool.pool.role
-          when 'primary', 'hypervisor'
-            # Detach dataset tree heads in all backups
-            dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where(
-                pools: {role: ::Pool.roles[:backup]}
-            ).each do |backup|
-
-              backup.dataset_trees.all.each do |tree|
-                edit(tree, head: false)
-              end
-
-            end
-
-          when 'backup'
-            dataset_in_pool.dataset_trees.each do |tree|
-              tree.branches.each do |branch|
-                branch.snapshot_in_pool_in_branches.each do |sipib|
-                  destroy(sipib)
-                end
-
-                destroy(branch)
-              end
-
-              destroy(tree)
-            end
-
-          else
-            fail "unknown pool role '#{dataset_in_pool.pool.role}'"
+      if dataset_in_pool.pool.role == 'backup'
+        dataset_in_pool.dataset_trees.each do |tree|
+          use_chain(DatasetTree::Destroy, args: tree)
         end
 
-        dataset_in_pool.snapshot_in_pools.update_all(confirmed: ::SnapshotInPool.confirmed(:confirm_destroy))
+      else
+        dataset_in_pool.snapshot_in_pools.order('id, reference_count').each do |snap|
+          use_chain(SnapshotInPool::Destroy, args: snap)
+        end
+      end
 
-        dataset_in_pool.snapshot_in_pools.each do |snap|
-          destroy(snap)
+      append(Transactions::Storage::DestroyDataset, args: dataset_in_pool) do
+        # Destroy snapshots, trees, branches, snapshot in pool in branches
+        if %w(primary hypervisor).include?(dataset_in_pool.pool.role)
+          # Detach dataset tree heads in all backups
+          dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where(
+              pools: {role: ::Pool.roles[:backup]}
+          ).each do |backup|
 
-          # Check if ::Snapshot should be destroyed as well
-          if snap.snapshot.snapshot_in_pools.where.not(confirmed: ::SnapshotInPool.confirmed(:confirm_destroy)).count == 0
-            destroy(snap.snapshot)
+            backup.dataset_trees.all.each do |tree|
+              edit(tree, head: false)
+            end
           end
         end
 
