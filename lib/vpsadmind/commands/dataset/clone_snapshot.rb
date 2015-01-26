@@ -7,12 +7,21 @@ module VpsAdmind
       zfs(
           :clone,
           nil,
-          "#{@pool_fs}/#{@dataset_name}@#{@snapshot} #{pool_mounted_snapshot(@pool_fs, @snapshot_id)}"
+          "#{ds} #{pool_mounted_snapshot(@pool_fs, @snapshot_id)}"
       )
     end
 
     def rollback
       zfs(:destroy, nil, pool_mounted_snapshot(@pool_fs, @snapshot_id), [1])
+    end
+
+    protected
+    def ds
+      if @branch
+        "#{@pool_fs}/#{@dataset_name}/#{@dataset_tree}/#{@branch}@#{@snapshot}"
+      else
+        "#{@pool_fs}/#{@dataset_name}@#{@snapshot}"
+      end
     end
   end
 end
