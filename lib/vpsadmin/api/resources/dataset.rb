@@ -356,6 +356,25 @@ module VpsAdmin::API::Resources
           snap.download
         end
       end
+
+      class Delete < HaveAPI::Actions::Default::Delete
+        desc 'Delete download link'
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict datasets: {user_id: u.id}
+          allow
+        end
+
+        def exec
+          dl = ::SnapshotDownload.joins(snapshot: [:dataset]).find_by!(with_restricted(
+              datasets: {id: params[:dataset_id]},
+              id: params[:download_id]
+          ))
+          dl.destroy
+          ok
+        end
+      end
     end
   end
 end
