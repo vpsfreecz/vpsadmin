@@ -289,7 +289,9 @@ module VpsAdmin::API::Resources
         end
 
         def query
-          ::SnapshotDownload.joins(snapshot: [:dataset]).where(with_restricted)
+          ::SnapshotDownload.joins(snapshot: [:dataset]).where(with_restricted(
+              datasets: {id: params[:dataset_id]}
+          ))
         end
 
         def count
