@@ -3,7 +3,7 @@ module VpsAdmind
     handle 5203
 
     def exec
-      Dataset.new.destroy(@pool_fs, @name, true)
+      Dataset.new.destroy(@pool_fs, @name, false)
     end
   end
 end
