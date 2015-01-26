@@ -51,6 +51,21 @@ module Transactions::Utils
               mode: mnt.mode,
               runscripts: false
           })
+
+          if mnt.snapshot_in_pool.dataset_in_pool.pool.role == 'backup'
+            sipib = mnt.snapshot_in_pool.snapshot_in_pool_in_branches.includes(
+                branch: [:dataset_tree]
+            ).joins(
+                branch: [:dataset_tree]
+            ).where(
+                dataset_trees: {dataset_in_pool: mnt.snapshot_in_pool.dataset_in_pool},
+            ).take!
+
+            m.update({
+                dataset_tree: sipib.branch.dataset_tree.full_name,
+                branch: sipib.branch.full_name
+            })
+          end
         end
 
         m
