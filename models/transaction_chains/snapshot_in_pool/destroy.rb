@@ -12,10 +12,12 @@ module TransactionChains
         s.snapshot_in_pool.update(confirmed: ::SnapshotInPool.confirmed(:confirm_destroy))
         cleanup = cleanup_snapshot?(s.snapshot_in_pool)
 
+        destroy_snapshot(s.snapshot_in_pool.snapshot) if cleanup
+
         append(Transactions::Storage::DestroySnapshot, args: [s.snapshot_in_pool, s.branch]) do
           destroy(s)
           destroy(s.snapshot_in_pool)
-          destroy(s.snapshot_in_pool.snapshot) if cleanup
+          destroy(s.snapshot_in_pool) if cleanup
 
           if s.snapshot_in_pool_in_branch
             decrement(s.snapshot_in_pool, :reference_count)
@@ -40,6 +42,8 @@ module TransactionChains
         s.update(confirmed: ::SnapshotInPool.confirmed(:confirm_destroy))
         cleanup = cleanup_snapshot?(s)
 
+        destroy_snapshot(s) if cleanup
+
         append(Transactions::Storage::DestroySnapshot, args: s) do
           destroy(s)
           destroy(s.snapshot) if cleanup
@@ -52,6 +56,15 @@ module TransactionChains
       Snapshot.joins(:snapshot_in_pools)
           .where(snapshots: {id: snapshot_in_pool.snapshot_id})
           .where.not(snapshot_in_pools: {confirmed: ::SnapshotInPool.confirmed(:confirm_destroy)}).count == 0
+    end
+
+    def destroy_snapshot(sip)
+      # Make download link orphans
+      append(Transactions::Utils::NoOp, args: sip.dataset_in_pool.pool.node_id) do
+        ::SnapshotDownload.where(snapshot: sip.snapshot).each do |dl|
+          edit(dl, snapshot_id: nil)
+        end
+      end
     end
   end
 end

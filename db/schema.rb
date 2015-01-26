@@ -350,7 +350,7 @@ ActiveRecord::Schema.define(version: 20150126080724) do
   end
 
   create_table "snapshot_downloads", force: true do |t|
-    t.integer  "snapshot_id",                         null: false
+    t.integer  "snapshot_id"
     t.integer  "pool_id",                             null: false
     t.string   "secret_key",  limit: 100,             null: false
     t.string   "file_name",                           null: false

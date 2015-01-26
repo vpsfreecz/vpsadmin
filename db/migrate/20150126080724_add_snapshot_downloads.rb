@@ -1,7 +1,7 @@
 class AddSnapshotDownloads < ActiveRecord::Migration
   def change
     create_table :snapshot_downloads do |t|
-      t.references   :snapshot,      null: false
+      t.references   :snapshot,      null: true
       t.references   :pool,          null: false
       t.string       :secret_key,    null: false, limit: 100
       t.string       :file_name,     null: false, limit: 255
