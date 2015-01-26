@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20141212180955) do
+ActiveRecord::Schema.define(version: 20150126080724) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -349,6 +349,18 @@ ActiveRecord::Schema.define(version: 20141212180955) do
     t.string  "kernel",           limit: 50, null: false
   end
 
+  create_table "snapshot_downloads", force: true do |t|
+    t.integer  "snapshot_id",                         null: false
+    t.integer  "pool_id",                             null: false
+    t.string   "secret_key",  limit: 100,             null: false
+    t.string   "file_name",                           null: false
+    t.integer  "confirmed",               default: 0, null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "snapshot_downloads", ["secret_key"], name: "index_snapshot_downloads_on_secret_key", unique: true, using: :btree
+
   create_table "snapshot_in_pool_in_branches", force: true do |t|
     t.integer "snapshot_in_pool_id",                       null: false
     t.integer "snapshot_in_pool_in_branch_id"
@@ -369,11 +381,12 @@ ActiveRecord::Schema.define(version: 20141212180955) do
   add_index "snapshot_in_pools", ["snapshot_id", "dataset_in_pool_id"], name: "index_snapshot_in_pools_on_snapshot_id_and_dataset_in_pool_id", unique: true, using: :btree
 
   create_table "snapshots", force: true do |t|
-    t.string   "name",                   null: false
-    t.integer  "dataset_id",             null: false
-    t.integer  "confirmed",  default: 0, null: false
+    t.string   "name",                             null: false
+    t.integer  "dataset_id",                       null: false
+    t.integer  "confirmed",            default: 0, null: false
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "snapshot_download_id"
   end
 
   create_table "storage_export", force: true do |t|

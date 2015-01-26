@@ -5,4 +5,5 @@ class SnapshotInPool < ActiveRecord::Base
   has_many :snapshot_in_pool_in_branches
 
   include Confirmable
+  include Lockable
 end
