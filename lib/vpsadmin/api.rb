@@ -1,5 +1,3 @@
-require_rel 'api/'
-
 module VpsAdmin
   HaveAPI.set_module_name(VpsAdmin::API::Resources)
 
@@ -67,8 +65,10 @@ module VpsAdmin
         chain
       end
     end
+
+    def self.load_configurable(name)
+      path = File.join(File.dirname(__FILE__), '..', '..', 'config', "#{name}.rb")
+      require_relative path if File.exists?(path)
+    end
   end
 end
-
-path = File.join(File.dirname(__FILE__), '..', '..', 'config', 'hooks.rb')
-require_relative path if File.exists?(path)

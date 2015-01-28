@@ -51,4 +51,8 @@ module VpsAdmin::API::Exceptions
       super("snapshot '#{snapshot.dataset_in_pool.dataset.full_name}@#{snapshot.snapshot.name}' is already mounted to VPS #{snapshot.mount.vps_id} at #{snapshot.mount.dst}")
     end
   end
+
+  class PropertyInvalid < ::StandardError
+
+  end
 end

@@ -3,6 +3,7 @@ class DatasetInPool < ActiveRecord::Base
   belongs_to :pool
   has_many :snapshot_in_pools
   has_many :dataset_trees
+  has_many :dataset_properties
   has_many :mounts
   has_many :src_dataset_actions, class_name: 'DatasetAction',
            foreign_key: :src_dataset_in_pool_id

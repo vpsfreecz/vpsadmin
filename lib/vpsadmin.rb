@@ -23,5 +23,15 @@ end
 require_relative 'vpsadmin/scheduler'
 require_relative 'vpsadmin/api/crypto_provider'
 require_relative 'vpsadmin/api/maintainable'
+require_relative 'vpsadmin/api/dataset_properties'
+require_rel 'vpsadmin/*.rb'
+require_rel 'vpsadmin/api/*.rb'
+require_rel 'vpsadmin/api/authentication'
+
+VpsAdmin::API::load_configurable(:dataset_properties)
+
 require_rel '../models'
-require_relative 'vpsadmin/api'
+
+VpsAdmin::API::load_configurable(:hooks)
+
+require_rel 'vpsadmin/api/resources'

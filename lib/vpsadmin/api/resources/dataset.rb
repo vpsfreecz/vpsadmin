@@ -15,9 +15,14 @@ module VpsAdmin::API::Resources
                name: :parent, value_label: :name
     end
 
+    params(:properties) do
+      VpsAdmin::API::DatasetProperties.to_params(self)
+    end
+1
     params(:all) do
       use :id
       use :common
+      use :properties
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -46,7 +51,7 @@ module VpsAdmin::API::Resources
       def exec
         ret = []
 
-        query.order('full_name').limit(input[:limit]).offset(input[:offset]).each do |ds|
+        query.includes(:dataset_properties).order('full_name').limit(input[:limit]).offset(input[:offset]).each do |ds|
           ret << ds
         end
 
@@ -123,6 +128,32 @@ module VpsAdmin::API::Resources
 
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
+      end
+    end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Update a dataset'
+
+      input do
+        use :properties
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict user_id: u.id
+        allow
+      end
+
+      def exec
+        ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+
+        properties = VpsAdmin::API::DatasetProperties.validate_params(input)
+        ds.update_properties(properties)
+
+        ok
+
+      rescue VpsAdmin::API::Exceptions::PropertyInvalid => e
+        error("property invalid: #{e.message}")
       end
     end
 

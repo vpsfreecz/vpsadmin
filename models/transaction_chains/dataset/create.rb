@@ -7,6 +7,7 @@ module TransactionChains
 
       ret = []
       parent = dataset_in_pool.dataset
+      parent_properties = {}
 
       find_parent_mounts(dataset_in_pool) if automount
 
@@ -34,9 +35,12 @@ module TransactionChains
 
         lock(dip)
 
+        parent_properties = ::DatasetProperty.inherit_properties!(dip, parent_properties)
+
         append(Transactions::Storage::CreateDataset, args: [dip, opts[i]]) do
           create(part)
           create(dip)
+          parent_properties.each_value { |p| create(p) }
         end
 
         dip.call_class_hooks_for(:create, self, args: [dip])

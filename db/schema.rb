@@ -83,6 +83,20 @@ ActiveRecord::Schema.define(version: 20150126080724) do
 
   add_index "dataset_in_pools", ["dataset_id", "pool_id"], name: "index_dataset_in_pools_on_dataset_id_and_pool_id", unique: true, using: :btree
 
+  create_table "dataset_properties", force: true do |t|
+    t.integer  "pool_id"
+    t.integer  "dataset_id"
+    t.integer  "dataset_in_pool_id"
+    t.string   "ancestry"
+    t.integer  "ancestry_depth",                default: 0,    null: false
+    t.string   "name",               limit: 30,                null: false
+    t.string   "value"
+    t.boolean  "inherited",                     default: true, null: false
+    t.integer  "confirmed",                     default: 0,    null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
   create_table "dataset_trees", force: true do |t|
     t.integer  "dataset_in_pool_id",                 null: false
     t.integer  "index",              default: 0,     null: false

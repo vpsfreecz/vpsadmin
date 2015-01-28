@@ -15,6 +15,9 @@ class AddStorage < ActiveRecord::Migration
   end
 
   class Dataset < ActiveRecord::Base
+    has_many :dataset_in_pools
+    has_many :dataset_properties
+
     has_ancestry cache_depth: true
 
     before_save :cache_full_name
@@ -35,6 +38,50 @@ class AddStorage < ActiveRecord::Migration
 
   class DatasetInPool < ActiveRecord::Base
     has_many :vpses
+    belongs_to :dataset
+    has_many :dataset_properties
+  end
+
+  class DatasetProperty < ActiveRecord::Base
+    belongs_to :pool
+    belongs_to :dataset_in_pool
+    belongs_to :dataset
+
+    has_ancestry cache_depth: true
+
+    serialize :value
+
+    def self.inherit_properties!(dataset_in_pool, parents = {})
+      ret = {}
+      root = false
+
+      if parents.empty?
+        self.joins(:dataset_in_pool).where(
+            dataset: dataset_in_pool.dataset.parent,
+            dataset_in_pools: {pool_id: dataset_in_pool.pool_id}
+        ).each do |p|
+          parents[p.name.to_sym] = p
+        end
+      end
+
+      if parents.empty?
+        root = true
+      end
+
+      VpsAdmin::API::DatasetProperties::Registrator.properties.each do |name, p|
+        ret[name] = self.create!(
+            dataset_in_pool: dataset_in_pool,
+            dataset: dataset_in_pool.dataset,
+            parent: parents[name],
+            name: name,
+            value: root ? (p.meta[:default]) : (p.inheritable? ? parents[name].value : nil),
+            inherited: root ? false : p.inheritable?,
+            confirmed: 1
+        )
+      end
+
+      ret
+    end
   end
 
   class Mount < ActiveRecord::Base
@@ -157,6 +204,22 @@ class AddStorage < ActiveRecord::Migration
 
       # snapshot is marked as confirmed when vpsadmind creates it
       t.integer    :confirmed,      null: false, default: 0
+
+      t.timestamps
+    end
+
+    create_table :dataset_properties do |t|
+      t.references :pool,            null: true
+      t.references :dataset,         null: true
+      t.references :dataset_in_pool, null: true
+
+      t.string     :ancestry,        null: true,  limit: 255
+      t.integer    :ancestry_depth,  null: false, default: 0
+
+      t.string     :name,            null: false, limit: 30
+      t.string     :value,           null: true,  limit: 255
+      t.boolean    :inherited,       null: false, default: true
+      t.integer    :confirmed,       null: false, default: 0
 
       t.timestamps
     end
@@ -285,6 +348,14 @@ class AddStorage < ActiveRecord::Migration
     add_column :vps, :dataset_in_pool_id, :integer, null: true
 
     group_snapshots_per_pool = {}
+    properties = {
+        atime: false,
+        compression: true,
+        recordsize: 128*1024,
+        refquota: 0,
+        relatime: false,
+        sync: :standard
+    }
 
     # Create pools for all hypervisors
     Node.where(server_type: 'node').each do |node|
@@ -296,6 +367,17 @@ class AddStorage < ActiveRecord::Migration
           share_options: '',
           compression: true
       })
+
+      pool_properties = {}
+
+      properties.each do |k, v|
+        pool_properties[k] = DatasetProperty.create(
+            pool: pool,
+            name: k,
+            value: v,
+            inherited: false
+        )
+      end
 
       # FIXME: cannot call here, necessary DB changes for chains
       # to work are in later migrations...
@@ -329,6 +411,17 @@ class AddStorage < ActiveRecord::Migration
             confirmed: 1
         )
 
+        properties.each do |k, v|
+          DatasetProperty.create(
+              dataset: ds,
+              dataset_in_pool: ds_in_pool,
+              name: k,
+              value: v,
+              inherited: true,
+              parent: pool_properties[k]
+          )
+        end
+
         vps.update(dataset_in_pool_id: ds_in_pool.id)
 
         # Add to group snapshots
@@ -337,6 +430,7 @@ class AddStorage < ActiveRecord::Migration
     end
 
     pool_mapping = {}
+    nas_pool_properties = {}
 
     # Add already existing pools (NAS+backups)
     StorageRoot.all.each do |root|
@@ -350,6 +444,17 @@ class AddStorage < ActiveRecord::Migration
           share_options: root.share_options,
           compression: true
       )
+
+      nas_pool_properties[r.id] = {}
+
+      properties.each do |k, v|
+        nas_pool_properties[r.id][k] = DatasetProperty.create(
+            pool: r,
+            name: k,
+            value: v,
+            inherited: false
+        )
+      end
 
       # FIXME
       # TransactionChains::Pool::Create.fire(r)
@@ -384,6 +489,7 @@ class AddStorage < ActiveRecord::Migration
       ds = nil
       index = 0
       parts = export.dataset.split('/')
+      parent_properties = {}
 
       parts.each do |name|
         # FIXME
@@ -419,6 +525,8 @@ class AddStorage < ActiveRecord::Migration
           avail: export.avail,
           confirmed: 1
         )
+
+        parent_properties = DatasetProperty.inherit_properties!(ds_in_pool, parent_properties)
       end
 
       # Mounts of this export
@@ -492,6 +600,7 @@ class AddStorage < ActiveRecord::Migration
     drop_table :dataset_in_pools
     drop_table :snapshots
     drop_table :snapshot_in_pools
+    drop_table :dataset_properties
     drop_table :dataset_trees
     drop_table :branches
     drop_table :snapshot_in_pool_in_branches

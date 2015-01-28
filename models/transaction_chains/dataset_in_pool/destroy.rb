@@ -150,6 +150,13 @@ module TransactionChains
             end
           end
 
+          dataset_in_pool.dataset_properties.update_all(
+              confirmed: ::DatasetProperty.confirmed(:confirm_destroy)
+          )
+          dataset_in_pool.dataset_properties.each do |p|
+            destroy(p)
+          end
+
           destroy(dataset_in_pool)
           dataset_in_pool.update(confirmed: ::DatasetInPool.confirmed(:confirm_destroy))
 

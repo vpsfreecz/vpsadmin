@@ -2,6 +2,7 @@ class Dataset < ActiveRecord::Base
   belongs_to :user
   has_many :dataset_in_pools
   has_many :snapshots
+  has_many :dataset_properties
 
   has_ancestry cache_depth: true
 
@@ -15,6 +16,7 @@ class Dataset < ActiveRecord::Base
 
   include Confirmable
   include VpsAdmin::API::Maintainable::Check
+  include VpsAdmin::API::DatasetProperties::Model
 
   def self.create_new(name, parent_ds, automount)
     parts = name.split('/')
@@ -93,6 +95,10 @@ class Dataset < ActiveRecord::Base
   # or +primary+ role.
   def primary_dataset_in_pool!
     dataset_in_pools.joins(:pool).where.not(pools: {role: Pool.roles[:backup]}).take!
+  end
+
+  def update_properties(properties)
+    TransactionChains::Dataset::Set.fire(self.primary_dataset_in_pool!, properties)
   end
 
   def snapshot
