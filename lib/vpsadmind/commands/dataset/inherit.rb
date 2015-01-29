@@ -15,7 +15,7 @@ module VpsAdmind
       call_cmd(Commands::Dataset::Set, {
           :pool_fs => @pool_fs,
           :name => @name,
-          :properties => @properties
+          :properties => @properties.merge(@properties) { |_, v| [nil, v] }
       })
     end
   end
