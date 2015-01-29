@@ -6,12 +6,20 @@ module TransactionChains
       lock(dataset_in_pool)
 
       chain = self
+      props = {}
 
-      append(Transactions::Storage::SetDataset, args: [dataset_in_pool, properties]) do
+      dataset_in_pool.dataset_properties.where(name: properties.keys).each do |p|
+        props[p.name.to_sym] = [
+            p,
+            properties[p.name.to_sym]
+        ]
+      end
 
-        dataset_in_pool.dataset_properties.where(name: properties.keys).each do |p|
-          chain.edit_children(self, p, YAML.dump(properties[p.name.to_sym]))
-          edit(p, inherited: false)
+      append(Transactions::Storage::SetDataset, args: [dataset_in_pool, props]) do
+
+        props.each_value do |p|
+          chain.edit_children(self, p[0], YAML.dump(p[1]))
+          edit(p[0], inherited: false)
         end
 
       end

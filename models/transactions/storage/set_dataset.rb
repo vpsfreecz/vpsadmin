@@ -9,7 +9,7 @@ module Transactions::Storage
       {
           pool_fs: dataset_in_pool.pool.filesystem,
           name: dataset_in_pool.dataset.full_name,
-          properties: changes
+          properties: changes.merge(changes) { |_, v| [v[0].value, v[1]] }
       }
     end
   end
