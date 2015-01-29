@@ -74,7 +74,7 @@ class AddStorage < ActiveRecord::Migration
             dataset: dataset_in_pool.dataset,
             parent: parents[name],
             name: name,
-            value: root ? (p.meta[:default]) : (p.inheritable? ? parents[name].value : nil),
+            value: root ? (p.meta[:default]) : (p.inheritable? ? parents[name].value : p.meta[:default]),
             inherited: root ? false : p.inheritable?,
             confirmed: 1
         )

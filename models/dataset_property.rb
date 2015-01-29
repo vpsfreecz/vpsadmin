@@ -41,7 +41,7 @@ class DatasetProperty < ActiveRecord::Base
           dataset: dataset_in_pool.dataset,
           parent: parents[name],
           name: name,
-          value: p.inheritable? ? parents[name].value : nil,
+          value: p.inheritable? ? parents[name].value : p.meta[:default],
           inherited: p.inheritable?,
           confirmed: confirmed(:confirm_create)
       )
