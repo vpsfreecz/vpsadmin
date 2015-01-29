@@ -101,6 +101,10 @@ class Dataset < ActiveRecord::Base
     TransactionChains::Dataset::Set.fire(self.primary_dataset_in_pool!, properties)
   end
 
+  def inherit_properties(properties)
+    TransactionChains::Dataset::Inherit.fire(self.primary_dataset_in_pool!, properties)
+  end
+
   def snapshot
     dip = primary_dataset_in_pool!
 

@@ -112,5 +112,13 @@ module VpsAdmin::API
 
       ret
     end
+
+    def self.exists?(name)
+      Registrator.properties.has_key?(name)
+    end
+
+    def self.property(name)
+      Registrator.properties[name]
+    end
   end
 end

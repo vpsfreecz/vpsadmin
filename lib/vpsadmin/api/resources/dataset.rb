@@ -181,6 +181,62 @@ module VpsAdmin::API::Resources
       end
     end
 
+    class Inherit < HaveAPI::Action
+      desc 'Inherit dataset property'
+      route ':%{resource}_id/inherit'
+      http_method :post
+
+      input do
+        string :property, label: 'Property',
+               desc: 'Name of property to inherit from parent, multiple properties may be separated by a comma',
+               required: true
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict user_id: u.id
+        allow
+      end
+
+      def exec
+        ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+
+        if current_user.role != :admin && !ds.user_editable
+          error('insufficient permission to inherit this property')
+        end
+
+        not_exists = []
+        not_inheritable = []
+        props = []
+
+        input[:property].split(',').each do |p|
+          s = p.to_sym
+
+          if VpsAdmin::API::DatasetProperties.exists?(s)
+            if VpsAdmin::API::DatasetProperties.property(s).inheritable?
+              props << s
+
+            else
+              not_inheritable << s
+            end
+
+          else
+            not_exists << s
+          end
+        end
+
+        if !not_exists.empty?
+          error("property does not exist: #{not_exists.join(',')}")
+
+        elsif !not_inheritable.empty?
+          error("property is not inheritable: #{not_inheritable.join(',')}")
+        end
+
+        ds.inherit_properties(props)
+        ok
+      end
+    end
+
     class Snapshot < HaveAPI::Resource
       version 1
       route ':dataset_id/snapshots'
