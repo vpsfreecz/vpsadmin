@@ -76,9 +76,13 @@ module TransactionChains
         edit(vps, dataset_in_pool_id: datasets.first[1].id)
         edit(vps, vps_server: dst_node.id)
 
-        # Handle dataset actions and group snapshots
+        # Handle dataset properties, actions and group snapshots
         datasets.each do |pair|
           src, dst = pair
+
+          src.dataset_properties.all.each do |p|
+            edit(p, dataset_in_pool_id: dst.id)
+          end
 
           src.group_snapshots.all.each do |gs|
             edit(gs, dataset_in_pool_id: dst.id)

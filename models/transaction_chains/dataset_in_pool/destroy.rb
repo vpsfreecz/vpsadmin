@@ -136,6 +136,13 @@ module TransactionChains
         # Destroy dataset in pool
         if destroy_top
           if @tasks
+            dataset_in_pool.dataset_properties.update_all(
+                confirmed: ::DatasetProperty.confirmed(:confirm_destroy)
+            )
+            dataset_in_pool.dataset_properties.each do |p|
+              destroy(p)
+            end
+
             # Remove associated DatasetAction and RepeatableTask
             GroupSnapshot.where(dataset_in_pool: dataset_in_pool).each do |group|
               just_destroy(group)
@@ -148,13 +155,6 @@ module TransactionChains
 
               just_destroy(RepeatableTask.find_for!(act))
             end
-          end
-
-          dataset_in_pool.dataset_properties.update_all(
-              confirmed: ::DatasetProperty.confirmed(:confirm_destroy)
-          )
-          dataset_in_pool.dataset_properties.each do |p|
-            destroy(p)
           end
 
           destroy(dataset_in_pool)
