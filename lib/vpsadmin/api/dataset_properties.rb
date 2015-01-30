@@ -20,7 +20,7 @@ module VpsAdmin::API
 
     # Represents a single dataset property.
     class Property
-      SETTABLES = %i(type inheritable)
+      SETTABLES = %i(type inheritable editable)
       META = %i(label desc default choices)
 
       SETTABLES.each do |s|
@@ -58,6 +58,12 @@ module VpsAdmin::API
       # It is inheritable by default.
       def inheritable?
         @inheritable.nil? || @inheritable === true
+      end
+
+      # Returns true if the property is editable.
+      # It is editable by default.
+      def editable?
+        @editable.nil? || @editable === true
       end
 
       def valid?(value)
