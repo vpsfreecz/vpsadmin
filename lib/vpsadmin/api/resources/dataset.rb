@@ -22,7 +22,7 @@ module VpsAdmin::API::Resources
     params(:editable_properties) do
       VpsAdmin::API::DatasetProperties.to_params(self, :rw)
     end
-1
+
     params(:all) do
       use :id
       use :common
