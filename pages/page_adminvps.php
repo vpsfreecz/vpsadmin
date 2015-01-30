@@ -562,13 +562,12 @@ switch ($_GET["action"]) {
 			if(isset($_POST['name'])) {
 				try {
 					$params = array(
-						'name' => $_POST['name']
+						'name' => $_POST['name'],
+						'automount' => $_POST['automount'] ? true : false,
+						'dataset' => $api->vps($_GET['veid'])->show()->dataset_id
 					);
 					
-					if ($_POST['mountpoint']) 
-						$params['mountpoint'] = $_POST['mountpoint'];
-					
-					$api->vps($_GET['veid'])->dataset->create($params);
+					$api->dataset->create($params);
 					
 					notify_user(_('Dataset created'),
 						_('Dataset was successfully created. It will be available when the transaction finishes.'));
@@ -1164,18 +1163,13 @@ if (isset($show_info) && $show_info) {
 	
 	// Datasets
 	$xtpl->table_add_category(_('Dataset'));
-	$xtpl->table_add_category(_('Mountpoint'));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 	
-	$datasets = $api->vps($_GET['veid'])->dataset->list();
+	$datasets = $api->dataset->list(array('dataset' => $vps->dataset_id));
 	
 	foreach ($datasets as $ds) {
-		if (!$ds->mountpoint)
-			continue;
-		
 		$xtpl->table_td($ds->name);
-		$xtpl->table_td($ds->mountpoint);
 		
 		$xtpl->table_td('<a href="?page=adminvps&action=dataset_edit&veid='.$_GET['veid'].'&id='.$ds->id.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 		$xtpl->table_td('<a href="?page=adminvps&action=dataset_destroy&veid='.$_GET['veid'].'&id='.$ds->id.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
@@ -1187,7 +1181,7 @@ if (isset($show_info) && $show_info) {
 		'<a href="?page=adminvps&action=dataset_new&veid='.$_GET['veid'].'">'._('Create a new dataset').'</a>',
 		false,
 		true, // right
-		4 // colspan
+		3 // colspan
 	);
 	$xtpl->table_tr();
 	
