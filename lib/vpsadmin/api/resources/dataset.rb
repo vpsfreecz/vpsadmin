@@ -13,6 +13,8 @@ module VpsAdmin::API::Resources
       # string :label, label: 'Label'
       resource Dataset, label: 'Parent',
                name: :parent, value_label: :name
+      resource User, label: 'User', value_label: :login,
+          desc: 'Dataset owner'
     end
 
     params(:all_properties) do
