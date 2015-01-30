@@ -36,6 +36,8 @@ module VpsAdmin::API::Resources
 
       input do
         resource VpsAdmin::API::Resources::Dataset, label: 'Subtree'
+        string :role, label: 'Role', desc: 'Show only datasets of certain role',
+            choices: ::Pool.roles.keys
       end
 
       output(:object_list) do
@@ -49,10 +51,16 @@ module VpsAdmin::API::Resources
       end
 
       def query
-        q = with_includes.joins(dataset_in_pools: [:pool]).where(with_restricted).where(
-            pools: {role: [::Pool.roles[:hypervisor], ::Pool.roles[:primary]]}
-        )
+        q = with_includes.joins(dataset_in_pools: [:pool]).where(with_restricted)
         q = q.subtree_of(input[:dataset]) if input[:dataset]
+
+        if input[:role]
+          q = q.where(pools: {role: ::Pool.roles[input[:role].to_sym]})
+
+        else
+          q = q.where(pools: {role: [::Pool.roles[:hypervisor], ::Pool.roles[:primary]]})
+        end
+
         q
       end
 
