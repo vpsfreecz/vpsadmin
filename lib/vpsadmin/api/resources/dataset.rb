@@ -15,14 +15,18 @@ module VpsAdmin::API::Resources
                name: :parent, value_label: :name
     end
 
-    params(:properties) do
-      VpsAdmin::API::DatasetProperties.to_params(self)
+    params(:all_properties) do
+      VpsAdmin::API::DatasetProperties.to_params(self, :all)
+    end
+
+    params(:editable_properties) do
+      VpsAdmin::API::DatasetProperties.to_params(self, :rw)
     end
 1
     params(:all) do
       use :id
       use :common
-      use :properties
+      use :all_properties
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -135,7 +139,7 @@ module VpsAdmin::API::Resources
       desc 'Update a dataset'
 
       input do
-        use :properties
+        use :editable_properties
       end
 
       authorize do |u|
@@ -213,7 +217,7 @@ module VpsAdmin::API::Resources
           s = p.to_sym
 
           if VpsAdmin::API::DatasetProperties.exists?(s)
-            if VpsAdmin::API::DatasetProperties.property(s).inheritable?
+            if VpsAdmin::API::DatasetProperties.property(s).inheritable? && VpsAdmin::API::DatasetProperties.property(s).editable?
               props << s
 
             else
