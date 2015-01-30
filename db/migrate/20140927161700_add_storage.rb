@@ -128,16 +128,7 @@ class AddStorage < ActiveRecord::Migration
       # primary: the origin of the datasets in the pool is here, general purpose (for NAS)
       # backup: datasets in the pool are backups, branching is used
       t.integer    :role,           null: false
-
-      t.integer    :quota,          null: false, default: 0
-      t.integer    :used,           null: false, default: 0
-      t.integer    :avail,          null: false, default: 0
-      t.boolean    :compression,    null: false
     end
-
-    change_column :pools, :quota, 'bigint unsigned'
-    change_column :pools, :used, 'bigint unsigned'
-    change_column :pools, :avail, 'bigint unsigned'
 
     # Represents a dataset, datasets may be nested.
     # Notice that there is no connection to a pool dataset is in,
@@ -150,12 +141,6 @@ class AddStorage < ActiveRecord::Migration
       t.boolean    :user_create,    null: false
       t.boolean    :user_destroy,   null: false
 
-      t.integer    :quota,          null: false, default: 0
-
-      # if the following attributes are not set, they are inherited
-      # from parent dataset or pool.
-      t.boolean    :compression,    null: true
-
       t.string     :ancestry,       null: true,  limit: 255
       t.integer    :ancestry_depth, null: false, default: 0
 
@@ -164,7 +149,6 @@ class AddStorage < ActiveRecord::Migration
       t.boolean    :confirmed,      null: false, default: 0
     end
 
-    change_column :datasets, :quota, 'bigint unsigned'
     add_index :datasets, :ancestry
 
     # Dataset may exist on multiple nodes in different roles
@@ -182,17 +166,12 @@ class AddStorage < ActiveRecord::Migration
       t.integer    :max_snapshots,  null: false, default: 20
       t.integer    :snapshot_max_age, null: false, default: 14 * 24 * 60 * 60 # seconds
 
-      # if the following attributes are not set, they are inherited
-      # from dataset.
       t.string     :mountpoint,     null: true,  limit: 500
-      t.boolean    :compression,    null: true
 
       # dataset is marked as confirmed when vpsadmind creates it
       t.integer    :confirmed,      null: false, default: 0
     end
 
-    change_column :dataset_in_pools, :used, 'bigint unsigned'
-    change_column :dataset_in_pools, :avail, 'bigint unsigned'
     add_index :dataset_in_pools, [:dataset_id, :pool_id], unique: true
 
     create_table :snapshots do |t|
@@ -353,7 +332,6 @@ class AddStorage < ActiveRecord::Migration
           label: "#{node.server_name}: vz/private",
           filesystem: 'vz/private',
           role: 0, # :hypervisor
-          compression: true
       })
 
       pool_properties = {}
@@ -383,9 +361,7 @@ class AddStorage < ActiveRecord::Migration
             user_id: vps.m_id,
             user_editable: false,
             user_create: true,
-            user_destroy: false,
-            quota: 0,
-            compression: false
+            user_destroy: false
         )
 
         ds_in_pool = DatasetInPool.create(
@@ -427,8 +403,7 @@ class AddStorage < ActiveRecord::Migration
           node_id: root.node_id,
           label: root.label,
           filesystem: root.root_dataset,
-          role: ex && ex.data_type == 'backup' ? 2 : 1,
-          compression: true
+          role: ex && ex.data_type == 'backup' ? 2 : 1
       )
 
       nas_pool_properties[r.id] = {}
@@ -492,6 +467,7 @@ class AddStorage < ActiveRecord::Migration
       end
 
       parts[index..-1].each do |name|
+        # FIXME: set quota property
         ds = Dataset.create(
             name: name,
             parent: ds,
@@ -499,7 +475,6 @@ class AddStorage < ActiveRecord::Migration
             user_editable: ds ? export.user_editable : false,
             user_create: export.user_editable,
             user_destroy: false,
-            quota: export.quota,
             confirmed: 1
         )
 
@@ -507,8 +482,6 @@ class AddStorage < ActiveRecord::Migration
           dataset_id: ds.id,
           pool_id: pool_mapping[ export.root_id ],
           label: ds ? nil : 'nas',
-          used: export.used,
-          avail: export.avail,
           confirmed: 1
         )
 

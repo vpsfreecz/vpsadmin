@@ -53,4 +53,20 @@ VpsAdmin::API::DatasetProperties.register do
     desc 'Controls NFS sharing'
     default ''
   end
+
+  property :used do
+    type :integer
+    label 'Used space'
+    desc 'Amount of space used by dataset'
+    default 0
+    editable false
+  end
+
+  property :avail do
+    type :integer
+    label 'Available space'
+    desc 'Amount of space left in dataset'
+    default 0
+    editable false
+  end
 end
