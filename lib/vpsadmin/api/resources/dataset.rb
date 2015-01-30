@@ -85,7 +85,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+        @ds = with_includes.find_by!(with_restricted(id: params[:dataset_id]))
       end
 
       def exec
