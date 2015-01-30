@@ -16,22 +16,7 @@ module VpsAdmind
     protected
     def change_properties(i)
       @properties.each do |k, v|
-        zfs(:set, "#{k}=\"#{translate(v[i])}\"", "#{@pool_fs}/#{@name}")
-      end
-    end
-
-    def translate(v)
-      if v === true
-        'on'
-
-      elsif v === false
-        'off'
-
-      elsif v.nil?
-        'none'
-
-      else
-        v
+        zfs(:set, "#{k}=\"#{translate_property(v[i])}\"", "#{@pool_fs}/#{@name}")
       end
     end
   end

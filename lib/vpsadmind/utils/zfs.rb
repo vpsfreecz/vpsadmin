@@ -67,5 +67,20 @@ module VpsAdmind
 
       ret[0]
     end
+
+    def translate_property(v)
+      if v === true
+        'on'
+
+      elsif v === false
+        'off'
+
+      elsif v.nil?
+        'none'
+
+      else
+        v
+      end
+    end
   end
 end
