@@ -18,7 +18,7 @@ class Dataset < ActiveRecord::Base
   include VpsAdmin::API::Maintainable::Check
   include VpsAdmin::API::DatasetProperties::Model
 
-  def self.create_new(name, parent_ds, automount)
+  def self.create_new(name, parent_ds, automount, properties)
     parts = name.split('/')
 
     if parts.empty?
@@ -60,7 +60,8 @@ class Dataset < ActiveRecord::Base
     TransactionChains::Dataset::Create.fire(
         (last && last.primary_dataset_in_pool!) || top_dip,
         path,
-        automount
+        automount,
+        properties
     )
   end
 

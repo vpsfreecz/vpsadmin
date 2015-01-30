@@ -111,6 +111,7 @@ module VpsAdmin::API::Resources
         bool :automount, label: 'Automount',
              desc: 'Automatically mount newly created datasets under all its parents',
              default: false, fill: true
+        use :editable_properties
       end
 
       output do
@@ -131,11 +132,17 @@ module VpsAdmin::API::Resources
           error('access denied')
         end
 
+        properties = VpsAdmin::API::DatasetProperties.validate_params(input)
+
         ::Dataset.create_new(
             input[:name].strip,
             input[:dataset],
-            input[:automount]
+            input[:automount],
+            properties
         )
+
+      rescue VpsAdmin::API::Exceptions::PropertyInvalid => e
+        error("property invalid: #{e.message}")
 
       rescue VpsAdmin::API::Exceptions::AccessDenied
         error('insufficient permission to create a dataset')

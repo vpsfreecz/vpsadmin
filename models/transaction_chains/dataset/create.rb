@@ -2,57 +2,61 @@ module TransactionChains
   class Dataset::Create < ::TransactionChain
     label 'Create dataset'
 
-    def link_chain(dataset_in_pool, path, automount, opts = [])
+    def link_chain(dataset_in_pool, path, automount, properties)
       lock(dataset_in_pool)
 
       ret = []
-      parent = dataset_in_pool.dataset
-      parent_properties = {}
+      @dataset_in_pool = dataset_in_pool
+      @parent = dataset_in_pool.dataset
+      @parent_properties = {}
+      @automount = automount
 
       find_parent_mounts(dataset_in_pool) if automount
 
-      i = 0
-
-      path.each do |part|
-        if part.new_record?
-          part.parent ||= parent
-          part.save!
-
-        else
-          part.expiration = nil
-          part.save!
-        end
-
-        parent = part
-
-        dip = ::DatasetInPool.create!(
-            dataset: part,
-            pool: dataset_in_pool.pool,
-            mountpoint: opts[i] && opts[i][:mountpoint],
-            confirmed: ::DatasetInPool.confirmed(:confirm_create)
-        )
-        ret << dip
-
-        lock(dip)
-
-        parent_properties = ::DatasetProperty.inherit_properties!(dip, parent_properties)
-
-        append(Transactions::Storage::CreateDataset, args: [dip, opts[i]]) do
-          create(part)
-          create(dip)
-          parent_properties.each_value { |p| create(p) }
-        end
-
-        dip.call_class_hooks_for(:create, self, args: [dip])
-
-        create_mounts(dip) if automount
-
-        i += 1
+      path[0..-2].each do |part|
+        ret << create_dataset(part)
       end
+
+      ret << create_dataset(path.last, properties)
 
       generate_mounts if automount
 
       ret
+    end
+
+    def create_dataset(part, properties = {})
+      if part.new_record?
+        part.parent ||= @parent
+        part.save!
+
+      else
+        part.expiration = nil
+        part.save!
+      end
+
+      @parent = part
+
+      dip = ::DatasetInPool.create!(
+          dataset: part,
+          pool: @dataset_in_pool.pool,
+          confirmed: ::DatasetInPool.confirmed(:confirm_create)
+      )
+
+      lock(dip)
+
+      @parent_properties = tmp = ::DatasetProperty.inherit_properties!(dip, @parent_properties, properties)
+
+      append(Transactions::Storage::CreateDataset, args: [dip, properties]) do
+        create(part)
+        create(dip)
+        tmp.each_value { |p| create(p) }
+      end
+
+      dip.call_class_hooks_for(:create, self, args: [dip])
+
+      create_mounts(dip) if @automount
+
+      dip
     end
 
     def find_parent_mounts(dataset_in_pool)

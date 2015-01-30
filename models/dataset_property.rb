@@ -15,7 +15,10 @@ class DatasetProperty < ActiveRecord::Base
   #
   # +parents+ may be a hash of the same structure. It is a list of properties
   # to inherit from. If empty, parent properties are fetched from the database.
-  def self.inherit_properties!(dataset_in_pool, parents = {})
+  #
+  # +properties+ is a hash with the same structure, but contains properties
+  # that are supposed to be set to this dataset (override parent).
+  def self.inherit_properties!(dataset_in_pool, parents = {}, properties = {})
     ret = {}
 
     # Fetch parents if not provided
@@ -36,15 +39,25 @@ class DatasetProperty < ActiveRecord::Base
     end
 
     VpsAdmin::API::DatasetProperties::Registrator.properties.each do |name, p|
-      ret[name] = self.create!(
+      property = self.new(
           dataset_in_pool: dataset_in_pool,
           dataset: dataset_in_pool.dataset,
           parent: parents[name],
           name: name,
-          value: p.inheritable? ? parents[name].value : p.meta[:default],
-          inherited: p.inheritable?,
           confirmed: confirmed(:confirm_create)
       )
+
+      if properties.has_key?(name)
+        property.value = properties[name]
+        property.inherited = false
+
+      else
+        property.value = p.inheritable? ? parents[name].value : p.meta[:default]
+        property.inherited = p.inheritable?
+      end
+
+      property.save!
+      ret[name] = property
     end
 
     ret
