@@ -98,8 +98,9 @@ module VpsAdmin::API
     # Add params to the API representing all registered properties.
     # +api+ is an instance of HaveAPI::Params (self in Action::input
     # or Action::output).
-    def self.to_params(api)
-      Registrator.properties.each_value do |p|
+    # For param +mode+ see self.properties.
+    def self.to_params(api, mode)
+      properties(mode).each_value do |p|
         p.to_param(api)
       end
     end
@@ -125,6 +126,28 @@ module VpsAdmin::API
 
     def self.property(name)
       Registrator.properties[name]
+    end
+
+    # Return properties for +mode+.
+    # +mode+ can be one of:
+    # [:ro] read only properties
+    # [:rw] editable properties
+    # [:all] all properties
+    def self.properties(mode)
+      ret = {}
+
+      case mode
+        when :ro
+          Registrator.properties.each { |k,v| ret[k] = v unless v.editable? }
+
+        when :rw
+          Registrator.properties.each { |k,v| ret[k] = v if v.editable? }
+
+        else
+          ret = Registrator.properties
+      end
+
+      ret
     end
   end
 end
