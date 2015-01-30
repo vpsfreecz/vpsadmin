@@ -132,7 +132,6 @@ class AddStorage < ActiveRecord::Migration
       t.integer    :quota,          null: false, default: 0
       t.integer    :used,           null: false, default: 0
       t.integer    :avail,          null: false, default: 0
-      t.string     :share_options,  null: false, limit: 500
       t.boolean    :compression,    null: false
     end
 
@@ -155,7 +154,6 @@ class AddStorage < ActiveRecord::Migration
 
       # if the following attributes are not set, they are inherited
       # from parent dataset or pool.
-      t.string     :share_options,  null: true,  limit: 500
       t.boolean    :compression,    null: true
 
       t.string     :ancestry,       null: true,  limit: 255
@@ -187,7 +185,6 @@ class AddStorage < ActiveRecord::Migration
       # if the following attributes are not set, they are inherited
       # from dataset.
       t.string     :mountpoint,     null: true,  limit: 500
-      t.string     :share_options,  null: true,  limit: 500
       t.boolean    :compression,    null: true
 
       # dataset is marked as confirmed when vpsadmind creates it
@@ -348,14 +345,6 @@ class AddStorage < ActiveRecord::Migration
     add_column :vps, :dataset_in_pool_id, :integer, null: true
 
     group_snapshots_per_pool = {}
-    properties = {
-        atime: false,
-        compression: true,
-        recordsize: 128*1024,
-        refquota: 0,
-        relatime: false,
-        sync: :standard
-    }
 
     # Create pools for all hypervisors
     Node.where(server_type: 'node').each do |node|
@@ -364,17 +353,16 @@ class AddStorage < ActiveRecord::Migration
           label: "#{node.server_name}: vz/private",
           filesystem: 'vz/private',
           role: 0, # :hypervisor
-          share_options: '',
           compression: true
       })
 
       pool_properties = {}
 
-      properties.each do |k, v|
+      VpsAdmin::API::DatasetProperties::Registrator.properties.each do |k, v|
         pool_properties[k] = DatasetProperty.create(
             pool: pool,
             name: k,
-            value: v,
+            value: v.meta[:default],
             inherited: false
         )
       end
@@ -397,7 +385,6 @@ class AddStorage < ActiveRecord::Migration
             user_create: true,
             user_destroy: false,
             quota: 0,
-            share_options: '',
             compression: false
         )
 
@@ -411,12 +398,12 @@ class AddStorage < ActiveRecord::Migration
             confirmed: 1
         )
 
-        properties.each do |k, v|
+        VpsAdmin::API::DatasetProperties::Registrator.properties.each do |k, v|
           DatasetProperty.create(
               dataset: ds,
               dataset_in_pool: ds_in_pool,
               name: k,
-              value: v,
+              value: v.meta[:default],
               inherited: true,
               parent: pool_properties[k]
           )
@@ -441,17 +428,16 @@ class AddStorage < ActiveRecord::Migration
           label: root.label,
           filesystem: root.root_dataset,
           role: ex && ex.data_type == 'backup' ? 2 : 1,
-          share_options: root.share_options,
           compression: true
       )
 
       nas_pool_properties[r.id] = {}
 
-      properties.each do |k, v|
+      VpsAdmin::API::DatasetProperties::Registrator.properties.each do |k, v|
         nas_pool_properties[r.id][k] = DatasetProperty.create(
             pool: r,
             name: k,
-            value: v,
+            value: v.meta[:default],
             inherited: false
         )
       end

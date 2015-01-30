@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150126080724) do
+ActiveRecord::Schema.define(version: 20140927161700) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -76,7 +76,6 @@ ActiveRecord::Schema.define(version: 20150126080724) do
     t.integer "max_snapshots",                default: 20,      null: false
     t.integer "snapshot_max_age",             default: 1209600, null: false
     t.string  "mountpoint",       limit: 500
-    t.string  "share_options",    limit: 500
     t.boolean "compression"
     t.integer "confirmed",                    default: 0,       null: false
   end
@@ -114,7 +113,6 @@ ActiveRecord::Schema.define(version: 20150126080724) do
     t.boolean  "user_create",                                 null: false
     t.boolean  "user_destroy",                                null: false
     t.integer  "quota",          limit: 8,    default: 0,     null: false
-    t.string   "share_options",  limit: 500
     t.boolean  "compression"
     t.string   "ancestry"
     t.integer  "ancestry_depth",              default: 0,     null: false
@@ -124,36 +122,11 @@ ActiveRecord::Schema.define(version: 20150126080724) do
 
   add_index "datasets", ["ancestry"], name: "index_datasets_on_ancestry", using: :btree
 
-  create_table "environment_config_chains", force: true do |t|
-    t.integer "environment_id", null: false
-    t.integer "vps_config_id",  null: false
-    t.integer "cfg_order",      null: false
-  end
-
-  add_index "environment_config_chains", ["environment_id", "vps_config_id"], name: "environment_config_chains_unique", unique: true, using: :btree
-
-  create_table "environment_user_configs", force: true do |t|
-    t.integer "environment_id"
-    t.integer "user_id"
-    t.boolean "can_create_vps",  default: false, null: false
-    t.boolean "can_destroy_vps", default: false, null: false
-    t.boolean "vps_lifetime",    default: false, null: false
-    t.integer "max_vps_count",   default: 1,     null: false
-  end
-
-  add_index "environment_user_configs", ["environment_id", "user_id"], name: "environment_user_configs_unique", unique: true, using: :btree
-
   create_table "environments", force: true do |t|
-    t.string   "label",                   limit: 100,                 null: false
-    t.string   "domain",                  limit: 100,                 null: false
+    t.string   "label",      limit: 100, null: false
+    t.string   "domain",     limit: 100, null: false
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "maintenance_lock",                    default: 0,     null: false
-    t.string   "maintenance_lock_reason"
-    t.boolean  "can_create_vps",                      default: false, null: false
-    t.boolean  "can_destroy_vps",                     default: false, null: false
-    t.integer  "vps_lifetime",                        default: 0,     null: false
-    t.integer  "max_vps_count",                       default: 1,     null: false
   end
 
   create_table "group_snapshots", force: true do |t|
@@ -176,8 +149,7 @@ ActiveRecord::Schema.define(version: 20150126080724) do
     t.string   "domain",                         limit: 100,                null: false
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "maintenance_lock",                           default: 0,    null: false
-    t.string   "maintenance_lock_reason"
+    t.string   "location_type",                  limit: 10,                 null: false
   end
 
   create_table "log", force: true do |t|
@@ -193,18 +165,6 @@ ActiveRecord::Schema.define(version: 20150126080724) do
   end
 
   add_index "mailer", ["member_id"], name: "member_id", using: :btree
-
-  create_table "maintenance_locks", force: true do |t|
-    t.string   "class_name", limit: 100,                null: false
-    t.integer  "row_id"
-    t.integer  "user_id"
-    t.string   "reason",                                null: false
-    t.boolean  "active",                 default: true, null: false
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
-  add_index "maintenance_locks", ["class_name", "row_id"], name: "index_maintenance_locks_on_class_name_and_row_id", using: :btree
 
   create_table "members", primary_key: "m_id", force: true do |t|
     t.text     "m_info"
@@ -302,15 +262,14 @@ ActiveRecord::Schema.define(version: 20150126080724) do
   end
 
   create_table "pools", force: true do |t|
-    t.integer "node_id",                               null: false
-    t.string  "label",         limit: 500,             null: false
-    t.string  "filesystem",    limit: 500,             null: false
-    t.integer "role",                                  null: false
-    t.integer "quota",         limit: 8,   default: 0, null: false
-    t.integer "used",          limit: 8,   default: 0, null: false
-    t.integer "avail",         limit: 8,   default: 0, null: false
-    t.string  "share_options", limit: 500,             null: false
-    t.boolean "compression",                           null: false
+    t.integer "node_id",                             null: false
+    t.string  "label",       limit: 500,             null: false
+    t.string  "filesystem",  limit: 500,             null: false
+    t.integer "role",                                null: false
+    t.integer "quota",       limit: 8,   default: 0, null: false
+    t.integer "used",        limit: 8,   default: 0, null: false
+    t.integer "avail",       limit: 8,   default: 0, null: false
+    t.boolean "compression",                         null: false
   end
 
   create_table "repeatable_tasks", force: true do |t|
@@ -336,19 +295,18 @@ ActiveRecord::Schema.define(version: 20150126080724) do
   add_index "resource_locks", ["resource", "row_id"], name: "index_resource_locks_on_resource_and_row_id", unique: true, using: :btree
 
   create_table "servers", primary_key: "server_id", force: true do |t|
-    t.string  "server_name",             limit: 64,                                 null: false
-    t.string  "server_type",             limit: 7,                                  null: false
-    t.integer "server_location",                                                    null: false
+    t.string  "server_name",        limit: 64,                                 null: false
+    t.string  "server_type",        limit: 7,                                  null: false
+    t.integer "server_location",                                               null: false
     t.text    "server_availstat"
-    t.string  "server_ip4",              limit: 127,                                null: false
-    t.integer "max_vps",                                                            null: false
-    t.string  "ve_private",                          default: "/vz/private/%veid%", null: false
-    t.string  "fstype",                  limit: 10,  default: "zfs",                null: false
-    t.string  "net_interface",           limit: 50
-    t.integer "max_tx",                  limit: 8,   default: 235929600,            null: false
-    t.integer "max_rx",                  limit: 8,   default: 235929600,            null: false
-    t.integer "maintenance_lock",                    default: 0,                    null: false
-    t.string  "maintenance_lock_reason"
+    t.string  "server_ip4",         limit: 127,                                null: false
+    t.integer "max_vps",                                                       null: false
+    t.string  "ve_private",                     default: "/vz/private/%veid%", null: false
+    t.string  "fstype",             limit: 10,  default: "zfs",                null: false
+    t.string  "net_interface",      limit: 50
+    t.integer "max_tx",             limit: 8,   default: 235929600,            null: false
+    t.integer "max_rx",             limit: 8,   default: 235929600,            null: false
+    t.boolean "server_maintenance",             default: false
   end
 
   add_index "servers", ["server_location"], name: "server_location", using: :btree
@@ -362,18 +320,6 @@ ActiveRecord::Schema.define(version: 20150126080724) do
     t.string  "vpsadmin_version", limit: 63
     t.string  "kernel",           limit: 50, null: false
   end
-
-  create_table "snapshot_downloads", force: true do |t|
-    t.integer  "snapshot_id"
-    t.integer  "pool_id",                             null: false
-    t.string   "secret_key",  limit: 100,             null: false
-    t.string   "file_name",                           null: false
-    t.integer  "confirmed",               default: 0, null: false
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
-  add_index "snapshot_downloads", ["secret_key"], name: "index_snapshot_downloads_on_secret_key", unique: true, using: :btree
 
   create_table "snapshot_in_pool_in_branches", force: true do |t|
     t.integer "snapshot_in_pool_id",                       null: false
@@ -395,12 +341,11 @@ ActiveRecord::Schema.define(version: 20150126080724) do
   add_index "snapshot_in_pools", ["snapshot_id", "dataset_in_pool_id"], name: "index_snapshot_in_pools_on_snapshot_id_and_dataset_in_pool_id", unique: true, using: :btree
 
   create_table "snapshots", force: true do |t|
-    t.string   "name",                             null: false
-    t.integer  "dataset_id",                       null: false
-    t.integer  "confirmed",            default: 0, null: false
+    t.string   "name",                   null: false
+    t.integer  "dataset_id",             null: false
+    t.integer  "confirmed",  default: 0, null: false
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "snapshot_download_id"
   end
 
   create_table "storage_export", force: true do |t|
@@ -439,15 +384,14 @@ ActiveRecord::Schema.define(version: 20150126080724) do
   end
 
   create_table "transaction_chains", force: true do |t|
-    t.string   "name",            limit: 30,              null: false
-    t.string   "type",            limit: 100,             null: false
-    t.integer  "state",                                   null: false
-    t.integer  "size",                                    null: false
-    t.integer  "progress",                    default: 0, null: false
+    t.string   "name",       limit: 30,              null: false
+    t.string   "type",       limit: 100,             null: false
+    t.integer  "state",                              null: false
+    t.integer  "size",                               null: false
+    t.integer  "progress",               default: 0, null: false
     t.integer  "user_id"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "urgent_rollback",             default: 0, null: false
   end
 
   create_table "transaction_confirmations", force: true do |t|
@@ -486,7 +430,6 @@ ActiveRecord::Schema.define(version: 20150126080724) do
     t.text    "t_param"
     t.text    "t_output"
     t.integer "transaction_chain_id",                 null: false
-    t.integer "reversible",           default: 1,     null: false
   end
 
   add_index "transactions", ["t_server"], name: "t_server", using: :btree
@@ -526,23 +469,21 @@ ActiveRecord::Schema.define(version: 20150126080724) do
     t.integer "vps_created"
     t.integer "vps_expiration"
     t.integer "vps_deleted"
-    t.integer "m_id",                                                     null: false
-    t.string  "vps_hostname",                             default: "vps"
-    t.integer "vps_template",                             default: 1,     null: false
-    t.text    "vps_info",                limit: 16777215
+    t.integer "m_id",                                                  null: false
+    t.string  "vps_hostname",                          default: "vps"
+    t.integer "vps_template",                          default: 1,     null: false
+    t.text    "vps_info",             limit: 16777215
     t.integer "dns_resolver_id"
-    t.integer "vps_server",                                               null: false
-    t.boolean "vps_onboot",                               default: true,  null: false
-    t.boolean "vps_onstartall",                           default: true,  null: false
-    t.boolean "vps_backup_enabled",                       default: true,  null: false
-    t.boolean "vps_features_enabled",                     default: false, null: false
-    t.integer "vps_backup_export",                                        null: false
-    t.text    "vps_backup_exclude",                                       null: false
-    t.text    "vps_config",                                               null: false
-    t.integer "confirmed",                                default: 0,     null: false
+    t.integer "vps_server",                                            null: false
+    t.boolean "vps_onboot",                            default: true,  null: false
+    t.boolean "vps_onstartall",                        default: true,  null: false
+    t.boolean "vps_backup_enabled",                    default: true,  null: false
+    t.boolean "vps_features_enabled",                  default: false, null: false
+    t.integer "vps_backup_export",                                     null: false
+    t.text    "vps_backup_exclude",                                    null: false
+    t.text    "vps_config",                                            null: false
+    t.integer "confirmed",                             default: 0,     null: false
     t.integer "dataset_in_pool_id"
-    t.integer "maintenance_lock",                         default: 0,     null: false
-    t.string  "maintenance_lock_reason"
   end
 
   add_index "vps", ["m_id"], name: "m_id", using: :btree
@@ -561,14 +502,12 @@ ActiveRecord::Schema.define(version: 20150126080724) do
     t.datetime "expiration",            null: false
   end
 
-  create_table "vps_has_config", force: true do |t|
+  create_table "vps_has_config", id: false, force: true do |t|
     t.integer "vps_id",    null: false
     t.integer "config_id", null: false
     t.integer "order",     null: false
     t.integer "confirmed", null: false
   end
-
-  add_index "vps_has_config", ["vps_id", "config_id", "confirmed"], name: "index_vps_has_config_on_vps_id_and_config_id_and_confirmed", unique: true, using: :btree
 
   create_table "vps_ip", primary_key: "ip_id", force: true do |t|
     t.integer "vps_id"
