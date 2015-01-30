@@ -33,6 +33,11 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
            db_name: :vps_config, default: ''
   end
 
+  params(:dataset) do
+    resource VpsAdmin::API::Resources::Dataset, label: 'Dataset',
+             desc: 'Dataset the VPS resides in', value_label: :name
+  end
+
   params(:status) do
     bool :running, label: 'Running'
     integer :process_count, label: 'Process count'
@@ -43,6 +48,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   params(:all) do
     use :id
     use :common
+    use :dataset
+    use :status
   end
 
   class Index < HaveAPI::Actions::Default::Index
@@ -54,9 +61,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     output(:object_list) do
-      use :id
-      use :common
-      use :status
+      use :all
     end
 
     authorize do |u|
@@ -108,7 +113,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      with_includes(query).includes(:vps_status).limit(params[:vps][:limit]).offset(params[:vps][:offset])
+      with_includes(query).includes(
+          :vps_status,
+          dataset_in_pool: [:dataset]
+      ).limit(params[:vps][:limit]).offset(params[:vps][:offset])
     end
   end
 
@@ -214,8 +222,7 @@ END
     desc 'Show VPS properties'
 
     output do
-      use :id
-      use :common
+      use :all
     end
 
     # example do

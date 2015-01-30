@@ -198,6 +198,10 @@ class Vps < ActiveRecord::Base
     TransactionChains::Vps::Restore.fire(self, snapshot)
   end
 
+  def dataset
+    dataset_in_pool.dataset
+  end
+
   def running
     vps_status && vps_status.vps_up
   end
