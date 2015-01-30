@@ -49,7 +49,7 @@ module VpsAdmin::API::Resources
       end
 
       def query
-        q = ::Dataset.joins(dataset_in_pools: [:pool]).where(with_restricted).where(
+        q = with_includes.joins(dataset_in_pools: [:pool]).where(with_restricted).where(
             pools: {role: [::Pool.roles[:hypervisor], ::Pool.roles[:primary]]}
         )
         q = q.subtree_of(input[:dataset]) if input[:dataset]
