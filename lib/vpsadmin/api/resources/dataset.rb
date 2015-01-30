@@ -32,6 +32,10 @@ module VpsAdmin::API::Resources
     class Index < HaveAPI::Actions::Default::Index
       desc 'List datasets'
 
+      input do
+        resource VpsAdmin::API::Resources::Dataset, label: 'Subtree'
+      end
+
       output(:object_list) do
         use :all
       end
@@ -43,9 +47,11 @@ module VpsAdmin::API::Resources
       end
 
       def query
-        ::Dataset.joins(dataset_in_pools: [:pool]).where(with_restricted).where(
+        q = ::Dataset.joins(dataset_in_pools: [:pool]).where(with_restricted).where(
             pools: {role: [::Pool.roles[:hypervisor], ::Pool.roles[:primary]]}
         )
+        q = q.subtree_of(input[:dataset]) if input[:dataset]
+        q
       end
 
       def count
