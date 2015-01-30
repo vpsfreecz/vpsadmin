@@ -46,4 +46,11 @@ VpsAdmin::API::DatasetProperties.register do
     default 'standard'
     choices %w(standard disabled)
   end
+
+  property :sharenfs do
+    type :string
+    label 'NFS share'
+    desc 'Controls NFS sharing'
+    default ''
+  end
 end
