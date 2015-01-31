@@ -52,7 +52,8 @@ class Dataset < ActiveRecord::Base
     end
 
     parent_dip = (last && last.primary_dataset_in_pool!) || top_dip
-    refquota_dip = check_refquota_ds(
+    refquota_dip = top_dip.dataset.send(
+        :check_refquota_ds,
         top_dip.pool,
         parent_dip,
         path,
@@ -227,8 +228,8 @@ class Dataset < ActiveRecord::Base
   def check_refquota_ds(pool, parent_dip, path, refquota_ds, refquota)
     # Refquota enforcement
     if pool.refquota_check
-      if refquota.nil? || refquota <= 0
-        raise VpsAdmin::API::Exceptions::PropertyInvalid, 'refquota must be set and greater than zero'
+      if refquota.nil? || refquota < 100*1024*1024
+        raise VpsAdmin::API::Exceptions::PropertyInvalid, 'refquota must be set and greater than 100 MiB'
       end
 
       if refquota_ds
