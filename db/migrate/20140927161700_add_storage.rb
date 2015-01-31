@@ -128,6 +128,10 @@ class AddStorage < ActiveRecord::Migration
       # primary: the origin of the datasets in the pool is here, general purpose (for NAS)
       # backup: datasets in the pool are backups, branching is used
       t.integer    :role,           null: false
+
+      # When set, refquotas in all descendant datasets are checked
+      # if they fit into the parent quota every time they're changed.
+      t.boolean    :refquota_check, null: false, default: false
     end
 
     # Represents a dataset, datasets may be nested.
@@ -332,6 +336,7 @@ class AddStorage < ActiveRecord::Migration
           label: "#{node.server_name}: vz/private",
           filesystem: 'vz/private',
           role: 0, # :hypervisor
+          refquota_check: true
       })
 
       pool_properties = {}
@@ -379,7 +384,7 @@ class AddStorage < ActiveRecord::Migration
               dataset: ds,
               dataset_in_pool: ds_in_pool,
               name: k,
-              value: v.meta[:default],
+              value: k == :refquota ? 60*1024*1024*1024 : v.meta[:default],
               inherited: true,
               parent: pool_properties[k]
           )

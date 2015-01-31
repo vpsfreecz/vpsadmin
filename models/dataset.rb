@@ -18,7 +18,7 @@ class Dataset < ActiveRecord::Base
   include VpsAdmin::API::Maintainable::Check
   include VpsAdmin::API::DatasetProperties::Model
 
-  def self.create_new(name, parent_ds, automount, properties)
+  def self.create_new(name, parent_ds, automount, properties, refquota_ds)
     parts = name.split('/')
 
     if parts.empty?
@@ -51,6 +51,40 @@ class Dataset < ActiveRecord::Base
       last, path = top_dip.dataset.send(:create_path, top_dip, parts[1..-1])
     end
 
+    parent_dip = (last && last.primary_dataset_in_pool!) || top_dip
+    refquota_dip = nil
+
+    # Refquota enforcement
+    if top_dip.pool.refquota_check
+      if properties[:refquota].nil? || properties[:refquota] <= 0
+        raise VpsAdmin::API::Exceptions::PropertyInvalid, 'refquota must be set and greater than zero'
+      end
+
+      if refquota_ds
+        if refquota_ds.root_id != top_dip.dataset.root_id
+          raise VpsAdmin::API::Exceptions::InvalidRefquotaDataset, 'dataset is not from the same tree'
+        end
+
+        refquota_dip = refquota_ds.primary_dataset_in_pool!
+
+      else
+        refquota_dip = parent_dip
+
+        unless refquota_dip
+          raise VpsAdmin::API::Exceptions::InvalidRefquotaDataset, 'refquota dataset must be specified in this case'
+        end
+      end
+
+      i = 0
+      path.each do |p|
+        i += 1 if p.new_record?
+
+        if i > 1
+          raise VpsAdmin::API::Exceptions::DatasetNestingForbidden, 'Cannot create more than one dataset at a time'
+        end
+      end
+    end
+
     # VPS subdatasets are more complicated and need special handling
     if top_dip.pool.role == 'hypervisor'
       vps = Vps.find_by!(dataset_in_pool: top_dip.dataset.root.primary_dataset_in_pool!)
@@ -61,7 +95,8 @@ class Dataset < ActiveRecord::Base
         (last && last.primary_dataset_in_pool!) || top_dip,
         path,
         automount,
-        properties
+        properties,
+        refquota_dip
     )
   end
 

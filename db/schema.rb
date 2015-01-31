@@ -297,10 +297,11 @@ ActiveRecord::Schema.define(version: 20150126080724) do
   end
 
   create_table "pools", force: true do |t|
-    t.integer "node_id",                null: false
-    t.string  "label",      limit: 500, null: false
-    t.string  "filesystem", limit: 500, null: false
-    t.integer "role",                   null: false
+    t.integer "node_id",                                    null: false
+    t.string  "label",          limit: 500,                 null: false
+    t.string  "filesystem",     limit: 500,                 null: false
+    t.integer "role",                                       null: false
+    t.boolean "refquota_check",             default: false, null: false
   end
 
   create_table "repeatable_tasks", force: true do |t|

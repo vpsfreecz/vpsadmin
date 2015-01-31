@@ -112,6 +112,8 @@ module VpsAdmin::API::Resources
              desc: 'Automatically mount newly created datasets under all its parents',
              default: false, fill: true
         use :editable_properties
+        resource Dataset, name: :refquota_dataset, label: 'Reference quota dataset',
+            desc: 'Dataset with which to trade refquota'
       end
 
       output do
@@ -138,7 +140,8 @@ module VpsAdmin::API::Resources
             input[:name].strip,
             input[:dataset],
             input[:automount],
-            properties
+            properties,
+            input[:refquota_dataset]
         )
 
       rescue VpsAdmin::API::Exceptions::PropertyInvalid => e
@@ -147,10 +150,11 @@ module VpsAdmin::API::Resources
       rescue VpsAdmin::API::Exceptions::AccessDenied
         error('insufficient permission to create a dataset')
 
-      rescue VpsAdmin::API::Exceptions::DatasetLabelDoesNotExist => e
-        error(e.message)
-
-      rescue VpsAdmin::API::Exceptions::DatasetAlreadyExists => e
+      rescue VpsAdmin::API::Exceptions::DatasetLabelDoesNotExist,
+             VpsAdmin::API::Exceptions::DatasetAlreadyExists,
+             VpsAdmin::API::Exceptions::DatasetNestingForbidden,
+             VpsAdmin::API::Exceptions::InvalidRefquotaDataset,
+             VpsAdmin::API::Exceptions::RefquotaCheckFailed => e
         error(e.message)
 
       rescue ActiveRecord::RecordInvalid => e

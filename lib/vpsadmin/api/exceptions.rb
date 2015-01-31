@@ -55,4 +55,16 @@ module VpsAdmin::API::Exceptions
   class PropertyInvalid < ::StandardError
 
   end
+
+  class InvalidRefquotaDataset < ::StandardError
+
+  end
+
+  class DatasetNestingForbidden < ::StandardError
+
+  end
+
+  class RefquotaCheckFailed < ::StandardError
+
+  end
 end
