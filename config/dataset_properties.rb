@@ -30,6 +30,10 @@ VpsAdmin::API::DatasetProperties.register do
     desc 'Limits  the amount of space a dataset can consume'
     default 0
     inheritable false
+
+    validate do |raw|
+      raw >= 0
+    end
   end
 
   property :relatime do
