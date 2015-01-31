@@ -52,38 +52,13 @@ class Dataset < ActiveRecord::Base
     end
 
     parent_dip = (last && last.primary_dataset_in_pool!) || top_dip
-    refquota_dip = nil
-
-    # Refquota enforcement
-    if top_dip.pool.refquota_check
-      if properties[:refquota].nil? || properties[:refquota] <= 0
-        raise VpsAdmin::API::Exceptions::PropertyInvalid, 'refquota must be set and greater than zero'
-      end
-
-      if refquota_ds
-        if refquota_ds.root_id != top_dip.dataset.root_id
-          raise VpsAdmin::API::Exceptions::InvalidRefquotaDataset, 'dataset is not from the same tree'
-        end
-
-        refquota_dip = refquota_ds.primary_dataset_in_pool!
-
-      else
-        refquota_dip = parent_dip
-
-        unless refquota_dip
-          raise VpsAdmin::API::Exceptions::InvalidRefquotaDataset, 'refquota dataset must be specified in this case'
-        end
-      end
-
-      i = 0
-      path.each do |p|
-        i += 1 if p.new_record?
-
-        if i > 1
-          raise VpsAdmin::API::Exceptions::DatasetNestingForbidden, 'Cannot create more than one dataset at a time'
-        end
-      end
-    end
+    refquota_dip = check_refquota_ds(
+        top_dip.pool,
+        parent_dip,
+        path,
+        refquota_ds,
+        properties[:refquota]
+    )
 
     # VPS subdatasets are more complicated and need special handling
     if top_dip.pool.role == 'hypervisor'
@@ -133,8 +108,20 @@ class Dataset < ActiveRecord::Base
     dataset_in_pools.joins(:pool).where.not(pools: {role: Pool.roles[:backup]}).take!
   end
 
-  def update_properties(properties)
-    TransactionChains::Dataset::Set.fire(self.primary_dataset_in_pool!, properties)
+  def update_properties(properties, refquota_ds)
+    dip = primary_dataset_in_pool!
+
+    TransactionChains::Dataset::Set.fire(
+        self.primary_dataset_in_pool!,
+        properties,
+        check_refquota_ds(
+            dip.pool,
+            parent.primary_dataset_in_pool!,
+            [],
+            refquota_ds,
+            properties[:refquota]
+        )
+    )
   end
 
   def inherit_properties(properties)
@@ -235,5 +222,43 @@ class Dataset < ActiveRecord::Base
     raise ::ActiveRecord::RecordInvalid, new_ds unless new_ds.valid?
 
     new_ds
+  end
+
+  def check_refquota_ds(pool, parent_dip, path, refquota_ds, refquota)
+    # Refquota enforcement
+    if pool.refquota_check
+      if refquota.nil? || refquota <= 0
+        raise VpsAdmin::API::Exceptions::PropertyInvalid, 'refquota must be set and greater than zero'
+      end
+
+      if refquota_ds
+        if refquota_ds.root_id != parent_dip.dataset.root_id
+          raise VpsAdmin::API::Exceptions::InvalidRefquotaDataset, 'dataset is not from the same tree'
+        end
+
+        refquota_dip = refquota_ds.primary_dataset_in_pool!
+
+      else
+        refquota_dip = parent_dip
+
+        unless refquota_dip
+          raise VpsAdmin::API::Exceptions::InvalidRefquotaDataset, 'refquota dataset must be specified in this case'
+        end
+      end
+
+      i = 0
+      path.each do |p|
+        i += 1 if p.new_record?
+
+        if i > 1
+          raise VpsAdmin::API::Exceptions::DatasetNestingForbidden, 'Cannot create more than one dataset at a time'
+        end
+      end
+
+      refquota_dip
+
+    else
+      nil
+    end
   end
 end

@@ -2,7 +2,7 @@ module TransactionChains
   class Dataset::Set < ::TransactionChain
     label 'Set dataset properties'
 
-    def link_chain(dataset_in_pool, properties)
+    def link_chain(dataset_in_pool, properties, refquota_dip)
       lock(dataset_in_pool)
 
       chain = self
@@ -13,6 +13,10 @@ module TransactionChains
             p,
             properties[p.name.to_sym]
         ]
+      end
+
+      if refquota_dip && props[:refquota] && dataset_in_pool.pool.refquota_check
+        use_chain(Dataset::RefquotaSet, args: [refquota_dip, dataset_in_pool, properties[:refquota]])
       end
 
       append(Transactions::Storage::SetDataset, args: [dataset_in_pool, props]) do

@@ -4,7 +4,8 @@ module TransactionChains
 
     def link_chain(refquota_dip, dip, refquota, creation = false)
       parent_refquota = refquota_dip.property_refquota
-      old_refquota = parent_refquota.value
+      old_parent_refquota = parent_refquota.value
+      old_dip_refquota = dip.refquota
 
       # Dataset is being created right now, just subtract the refquota
       # from refquota_dip and run checks.
@@ -18,6 +19,7 @@ module TransactionChains
       else
         diff = dip.refquota - refquota
 
+        # Change refquotas and run checks
         parent_refquota.value += diff
         zero_check(parent_refquota)
         parent_refquota.save!
@@ -34,10 +36,13 @@ module TransactionChains
         end
       end
 
+      # Revert the quotas to original values, even if checks were a success.
+      # They are changed again by transaction confirmations.
       new_refquota = parent_refquota.value
-      parent_refquota.value = old_refquota
-      parent_refquota.save!
+      parent_refquota.update!(value: old_parent_refquota)
+      dip.refquota = old_dip_refquota
 
+      # Transaction that changes parent's refquota
       append(Transactions::Storage::SetDataset,
              args: [refquota_dip, {refquota: [parent_refquota, new_refquota]}]) do
         edit(parent_refquota, value: YAML.dump(new_refquota))
@@ -47,7 +52,7 @@ module TransactionChains
     protected
     def zero_check(p)
       if p.value <= 0
-        raise VpsAdmin::API::Exceptions::RefquotaCheckFailed, "refquota limit exceeded for #{p.dataset.full_name}"
+        raise VpsAdmin::API::Exceptions::RefquotaCheckFailed, "refquota is too large for #{p.dataset.full_name}"
       end
     end
 

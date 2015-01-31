@@ -167,6 +167,8 @@ module VpsAdmin::API::Resources
 
       input do
         use :editable_properties
+        resource Dataset, name: :refquota_dataset, label: 'Reference quota dataset',
+                 desc: 'Dataset with which to trade refquota'
       end
 
       authorize do |u|
@@ -179,12 +181,16 @@ module VpsAdmin::API::Resources
         ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
 
         properties = VpsAdmin::API::DatasetProperties.validate_params(input)
-        ds.update_properties(properties)
+        ds.update_properties(properties, input[:refquota_dataset])
 
         ok
 
       rescue VpsAdmin::API::Exceptions::PropertyInvalid => e
         error("property invalid: #{e.message}")
+
+      rescue VpsAdmin::API::Exceptions::InvalidRefquotaDataset,
+             VpsAdmin::API::Exceptions::RefquotaCheckFailed => e
+        error(e.message)
       end
     end
 
