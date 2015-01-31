@@ -85,6 +85,25 @@ module VpsAdmin::API
 
             nil
           end
+
+          model.send(:define_method, "property_#{name}") do
+            self.dataset_properties.each do |p|
+              return p if p.name.to_sym == name
+            end
+
+            nil
+          end
+
+          model.send(:define_method, "#{name}=") do |v|
+            self.dataset_properties.each do |p|
+              if p.name.to_sym == name
+                p.update!(value: v)
+                return v
+              end
+            end
+
+            nil
+          end
         end
       end
     end
