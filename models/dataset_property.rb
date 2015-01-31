@@ -62,4 +62,8 @@ class DatasetProperty < ActiveRecord::Base
 
     ret
   end
+
+  def inheritable?
+    VpsAdmin::API::DatasetProperties.property(name.to_sym).inheritable?
+  end
 end

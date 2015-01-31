@@ -26,11 +26,13 @@ module TransactionChains
     end
 
     def edit_children(confirm, parent, v)
-      parent.children.each do |child|
-        next unless child.inherited
+      if parent.inheritable?
+        parent.children.each do |child|
+          next unless child.inherited
 
-        edit_children(confirm, child, v)
-        confirm.edit(child, value: v)
+          edit_children(confirm, child, v)
+          confirm.edit(child, value: v)
+        end
       end
 
       confirm.edit(parent, value: v)
