@@ -19,11 +19,20 @@ module TransactionChains
 
       ret << create_dataset(path.last, properties)
 
-      if properties[:refquota]
+      use_prop = nil
+
+      if properties[:refquota] && dataset_in_pool.pool.refquota_check
+        use_prop = :refquota
+
+      elsif properties[:quota] && ret.last.dataset.parent_id.nil?
+        use_prop = :quota
+      end
+
+      if use_prop
         use = ret.last.allocate_resource!(
             dataset_in_pool.pool.node.environment,
             :diskspace,
-            properties[:refquota],
+            properties[use_prop],
             user: dataset_in_pool.dataset.user
         )
 
