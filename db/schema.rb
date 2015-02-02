@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150126080724) do
+ActiveRecord::Schema.define(version: 20150131162852) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -48,6 +48,25 @@ ActiveRecord::Schema.define(version: 20150126080724) do
     t.integer "templ_supported", limit: 1,  default: 1, null: false
     t.integer "templ_order",     limit: 1,  default: 1, null: false
   end
+
+  create_table "cluster_resource_uses", force: true do |t|
+    t.integer "user_cluster_resource_id",             null: false
+    t.string  "class_name",                           null: false
+    t.string  "table_name",                           null: false
+    t.integer "row_id",                               null: false
+    t.integer "value",                                null: false
+    t.integer "confirmed",                default: 0, null: false
+  end
+
+  create_table "cluster_resources", force: true do |t|
+    t.string  "name",     limit: 100, null: false
+    t.string  "label",    limit: 100, null: false
+    t.integer "min",                  null: false
+    t.integer "max",                  null: false
+    t.integer "stepsize",             null: false
+  end
+
+  add_index "cluster_resources", ["name"], name: "index_cluster_resources_on_name", unique: true, using: :btree
 
   create_table "config", force: true do |t|
     t.string "name",   limit: 50, null: false
@@ -167,7 +186,6 @@ ActiveRecord::Schema.define(version: 20150126080724) do
     t.boolean  "location_has_ipv6",                                         null: false
     t.boolean  "location_vps_onboot",                        default: true, null: false
     t.string   "location_remote_console_server",                            null: false
-    t.integer  "environment_id"
     t.string   "domain",                         limit: 100,                null: false
     t.datetime "created_at"
     t.datetime "updated_at"
@@ -340,6 +358,7 @@ ActiveRecord::Schema.define(version: 20150126080724) do
     t.integer "max_rx",                  limit: 8,   default: 235929600,            null: false
     t.integer "maintenance_lock",                    default: 0,                    null: false
     t.string  "maintenance_lock_reason"
+    t.integer "environment_id",                                                     null: false
   end
 
   add_index "servers", ["server_location"], name: "server_location", using: :btree
@@ -501,6 +520,15 @@ ActiveRecord::Schema.define(version: 20150126080724) do
     t.integer  "tr_bytes_out",   limit: 8,   default: 0, null: false
     t.datetime "tr_date",                                null: false
   end
+
+  create_table "user_cluster_resources", force: true do |t|
+    t.integer "user_id"
+    t.integer "environment_id",      null: false
+    t.integer "cluster_resource_id", null: false
+    t.integer "value",               null: false
+  end
+
+  add_index "user_cluster_resources", ["user_id", "environment_id", "cluster_resource_id"], name: "user_cluster_resource_unique", unique: true, using: :btree
 
   create_table "versions", force: true do |t|
     t.string   "item_type",  null: false

@@ -67,4 +67,12 @@ module VpsAdmin::API::Exceptions
   class RefquotaCheckFailed < ::StandardError
 
   end
+
+  class UserResourceMissing < ::StandardError
+
+  end
+
+  class UserResourceAllocationError < ::StandardError
+
+  end
 end

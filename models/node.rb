@@ -2,6 +2,7 @@ class Node < ActiveRecord::Base
   self.table_name = 'servers'
   self.primary_key = 'server_id'
 
+  belongs_to :environment
   belongs_to :location, :foreign_key => :server_location
   has_many :vpses, :foreign_key => :vps_server
   has_many :transactions, foreign_key: :t_server
