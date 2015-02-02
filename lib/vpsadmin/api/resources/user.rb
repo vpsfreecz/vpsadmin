@@ -136,4 +136,128 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       @user
     end
   end
+
+  class ClusterResource < HaveAPI::Resource
+    desc "Manage user's cluster resources"
+    version 1
+    model ::UserClusterResource
+    route ':user_id/cluster_resources'
+
+    params(:common) do
+      resource VpsAdmin::API::Resources::Environment
+      resource VpsAdmin::API::Resources::ClusterResource
+      integer :value
+    end
+
+    params(:all) do
+      id :id
+      use :common
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      desc 'List user cluster resources'
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |u|
+        allow
+      end
+
+      def query
+        if current_user.role != :admin && current_user.id != params[:user_id]
+          error("I don't like the smell of this")
+        end
+
+        ::UserClusterResource.where(user_id: params[:user_id])
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        with_includes(query).offset(input[:offset]).limit(input[:limit])
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      desc 'Show user cluster resource'
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow
+      end
+
+      def prepare
+        if current_user.role != :admin && current_user.id != params[:user_id]
+          error("I don't like the smell of this")
+        end
+
+        @r = ::UserClusterResource.where(
+            user_id: params[:user_id],
+            id: params[:cluster_resource_id]
+        )
+      end
+
+      def exec
+        @r
+      end
+    end
+
+    class Create < HaveAPI::Actions::Default::Create
+      desc 'Create a cluster resource for user'
+
+      input do
+        use :common
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        ::UserClusterResource.create!(input.update({
+            user: ::User.find(params[:user_id]),
+        }))
+
+      rescue ActiveRecord::RecordInvalid => e
+        error('create failed', e.record.errors.to_hash)
+      end
+    end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Update a cluster resource'
+
+      input do
+        use :common
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        ::UserClusterResource.find_by!(
+            user_id: params[:user_id],
+            id: params[:cluster_resource_id]
+        ).update!(input)
+
+      rescue ActiveRecord::RecordInvalid => e
+        error('update failed', e.record.errors.to_hash)
+      end
+    end
+  end
 end
