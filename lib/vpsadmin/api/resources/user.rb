@@ -149,9 +149,15 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       integer :value
     end
 
+    params(:status) do
+      integer :used, label: 'Used', desc: 'Number of used resource units'
+      integer :free, label: 'Free', desc: 'Number of free resource units '
+    end
+
     params(:all) do
       id :id
       use :common
+      use :status
     end
 
     class Index < HaveAPI::Actions::Default::Index
