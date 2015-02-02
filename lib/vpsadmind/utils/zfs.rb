@@ -68,7 +68,7 @@ module VpsAdmind
       ret[0]
     end
 
-    def translate_property(v)
+    def translate_property(k, v)
       if v === true
         'on'
 
@@ -79,7 +79,12 @@ module VpsAdmind
         'none'
 
       else
-        v
+        if %w(quota refquota).include?(k)
+          "#{v}M"
+
+        else
+          v
+        end
       end
     end
   end

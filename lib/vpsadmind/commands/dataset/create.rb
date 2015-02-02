@@ -7,7 +7,7 @@ module VpsAdmind
 
     def exec
       if @options
-        opts = @options.map { |k, v| "-o #{k}=\"#{translate_property(v)}\""  }.join(' ')
+        opts = @options.map { |k, v| "-o #{k}=\"#{translate_property(k, v)}\""  }.join(' ')
       else
         opts = ''
       end
