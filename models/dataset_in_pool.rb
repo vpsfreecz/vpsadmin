@@ -15,6 +15,7 @@ class DatasetInPool < ActiveRecord::Base
   include Confirmable
   include HaveAPI::Hookable
   include VpsAdmin::API::DatasetProperties::Model
+  include VpsAdmin::API::ClusterResources
 
   has_hook :create
 

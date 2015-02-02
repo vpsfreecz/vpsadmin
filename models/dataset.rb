@@ -18,7 +18,7 @@ class Dataset < ActiveRecord::Base
   include VpsAdmin::API::Maintainable::Check
   include VpsAdmin::API::DatasetProperties::Model
 
-  def self.create_new(name, parent_ds, automount, properties, refquota_ds)
+  def self.create_new(name, parent_ds, automount, properties)
     parts = name.split('/')
 
     if parts.empty?
@@ -52,12 +52,10 @@ class Dataset < ActiveRecord::Base
     end
 
     parent_dip = (last && last.primary_dataset_in_pool!) || top_dip
-    refquota_dip = top_dip.dataset.send(
-        :check_refquota_ds,
-        top_dip.pool,
-        parent_dip,
+    top_dip.dataset.send(
+        :check_refquota,
+        top_dip,
         path,
-        refquota_ds,
         properties[:refquota]
     )
 
@@ -68,11 +66,10 @@ class Dataset < ActiveRecord::Base
     end
 
     TransactionChains::Dataset::Create.fire(
-        (last && last.primary_dataset_in_pool!) || top_dip,
+        parent_dip,
         path,
         automount,
-        properties,
-        refquota_dip
+        properties
     )
   end
 
@@ -109,19 +106,18 @@ class Dataset < ActiveRecord::Base
     dataset_in_pools.joins(:pool).where.not(pools: {role: Pool.roles[:backup]}).take!
   end
 
-  def update_properties(properties, refquota_ds)
+  def update_properties(properties)
     dip = primary_dataset_in_pool!
 
+    check_refquota(
+        dip,
+        [],
+        properties[:refquota]
+    )
+
     TransactionChains::Dataset::Set.fire(
-        self.primary_dataset_in_pool!,
-        properties,
-        check_refquota_ds(
-            dip.pool,
-            parent.primary_dataset_in_pool!,
-            [],
-            refquota_ds,
-            properties[:refquota]
-        )
+        dip,
+        properties
     )
   end
 
@@ -225,26 +221,11 @@ class Dataset < ActiveRecord::Base
     new_ds
   end
 
-  def check_refquota_ds(pool, parent_dip, path, refquota_ds, refquota)
+  def check_refquota(dip, path, refquota)
     # Refquota enforcement
-    if pool.refquota_check
-      if refquota.nil? || refquota < 100*1024*1024
-        raise VpsAdmin::API::Exceptions::PropertyInvalid, 'refquota must be set and greater than 100 MiB'
-      end
-
-      if refquota_ds
-        if refquota_ds.root_id != parent_dip.dataset.root_id
-          raise VpsAdmin::API::Exceptions::InvalidRefquotaDataset, 'dataset is not from the same tree'
-        end
-
-        refquota_dip = refquota_ds.primary_dataset_in_pool!
-
-      else
-        refquota_dip = parent_dip
-
-        unless refquota_dip
-          raise VpsAdmin::API::Exceptions::InvalidRefquotaDataset, 'refquota dataset must be specified in this case'
-        end
+    if dip.pool.refquota_check
+      if refquota.nil?
+        raise VpsAdmin::API::Exceptions::PropertyInvalid, 'refquota must be set'
       end
 
       i = 0
@@ -255,11 +236,6 @@ class Dataset < ActiveRecord::Base
           raise VpsAdmin::API::Exceptions::DatasetNestingForbidden, 'Cannot create more than one dataset at a time'
         end
       end
-
-      refquota_dip
-
-    else
-      nil
     end
   end
 end

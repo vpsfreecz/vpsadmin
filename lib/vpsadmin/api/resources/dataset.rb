@@ -112,8 +112,6 @@ module VpsAdmin::API::Resources
              desc: 'Automatically mount newly created datasets under all its parents',
              default: false, fill: true
         use :editable_properties
-        resource Dataset, name: :refquota_dataset, label: 'Reference quota dataset',
-            desc: 'Dataset with which to trade refquota'
       end
 
       output do
@@ -140,8 +138,7 @@ module VpsAdmin::API::Resources
             input[:name].strip,
             input[:dataset],
             input[:automount],
-            properties,
-            input[:refquota_dataset]
+            properties
         )
 
       rescue VpsAdmin::API::Exceptions::PropertyInvalid => e
@@ -167,8 +164,6 @@ module VpsAdmin::API::Resources
 
       input do
         use :editable_properties
-        resource Dataset, name: :refquota_dataset, label: 'Reference quota dataset',
-                 desc: 'Dataset with which to trade refquota'
       end
 
       authorize do |u|
@@ -181,7 +176,7 @@ module VpsAdmin::API::Resources
         ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
 
         properties = VpsAdmin::API::DatasetProperties.validate_params(input)
-        ds.update_properties(properties, input[:refquota_dataset])
+        ds.update_properties(properties)
 
         ok
 
@@ -191,6 +186,9 @@ module VpsAdmin::API::Resources
       rescue VpsAdmin::API::Exceptions::InvalidRefquotaDataset,
              VpsAdmin::API::Exceptions::RefquotaCheckFailed => e
         error(e.message)
+
+      rescue ActiveRecord::RecordInvalid => e
+        error('update failed', e.record.errors.to_hash)
       end
     end
 

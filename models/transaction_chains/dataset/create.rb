@@ -2,7 +2,7 @@ module TransactionChains
   class Dataset::Create < ::TransactionChain
     label 'Create dataset'
 
-    def link_chain(dataset_in_pool, path, automount, properties, refquota_dip)
+    def link_chain(dataset_in_pool, path, automount, properties)
       lock(dataset_in_pool)
 
       ret = []
@@ -19,8 +19,17 @@ module TransactionChains
 
       ret << create_dataset(path.last, properties)
 
-      if refquota_dip
-        use_chain(Dataset::RefquotaSet, args: [refquota_dip, ret.last, properties[:refquota], true])
+      if properties[:refquota]
+        use = ret.last.allocate_resource!(
+            dataset_in_pool.pool.node.environment,
+            :diskspace,
+            properties[:refquota],
+            user: dataset_in_pool.dataset.user
+        )
+
+        append(Transactions::Utils::NoOp, args: dataset_in_pool.pool.node_id) do
+          create(use)
+        end
       end
 
       generate_mounts if automount
