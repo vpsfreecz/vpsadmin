@@ -30,11 +30,5 @@ module TransactionChains
 
       ips.size
     end
-
-    def free_from_vps(r, vps)
-      ips = vps.ip_addresses.where(ip_v: r.name == 'ipv4' ? 4 : 6)
-
-      use_chain(Vps::DelIp, args: [vps, ips])
-    end
   end
 end
