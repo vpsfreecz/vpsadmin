@@ -1,5 +1,5 @@
 class Environment < ActiveRecord::Base
-  has_many :locations
+  has_many :nodes
   has_many :environment_config_chains
   has_many :vps_configs, ->{
     order('environment_config_chains.cfg_order ASC')

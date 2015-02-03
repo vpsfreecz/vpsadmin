@@ -53,12 +53,11 @@ class Node < ActiveRecord::Base
     self.joins('
           LEFT JOIN vps ON vps.vps_server = servers.server_id
           LEFT JOIN vps_status st ON st.vps_id = vps.vps_id
-          INNER JOIN locations l ON server_location = location_id
         ').where('
           (st.vps_up = 1 OR st.vps_up IS NULL)
           AND servers.max_vps > 0
           AND servers.maintenance_lock = 0
-          AND l.environment_id = ?
+          AND servers.environment_id = ?
         ', env.id).group('servers.server_id')
       .order('COUNT(st.vps_up) / max_vps ASC')
       .take
