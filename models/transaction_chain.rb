@@ -53,7 +53,7 @@ class TransactionChain < ActiveRecord::Base
   # except that all transactions are appended to +chain+,
   # not to instance of self.
   # This method should not be called directly, but via #use_chain.
-  def self.use_in(chain, args: [], urgent: false)
+  def self.use_in(chain, args: [], urgent: false, method: :link_chain)
     c = new
 
     c.last_id = chain.last_id
@@ -62,7 +62,7 @@ class TransactionChain < ActiveRecord::Base
     c.locks = chain.locks
     c.urgent = urgent
 
-    ret = c.link_chain(*args)
+    ret = c.send(method, *args)
 
     [c, ret]
   end
@@ -131,11 +131,12 @@ class TransactionChain < ActiveRecord::Base
 
   # Call this method from TransactionChain#link_chain to include
   # +chain+. +args+ are passed to the chain as in ::fire.
-  def use_chain(chain, args: [], urgent: false)
+  def use_chain(chain, args: [], urgent: false, method: :link_chain)
     c, ret = chain.use_in(
         self,
         args: args.is_a?(Array) ? args : [args],
-        urgent: urgent
+        urgent: urgent,
+        method: method
     )
     @last_id = c.last_id
     ret
@@ -166,6 +167,7 @@ module TransactionChains
   module Node           ; end
   module Vps            ; end
   module VpsConfig      ; end
+  module Ip             ; end
   module Pool           ; end
   module Dataset        ; end
   module DatasetInPool  ; end
