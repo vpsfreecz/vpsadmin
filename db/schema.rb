@@ -59,11 +59,14 @@ ActiveRecord::Schema.define(version: 20150131162852) do
   end
 
   create_table "cluster_resources", force: true do |t|
-    t.string  "name",     limit: 100, null: false
-    t.string  "label",    limit: 100, null: false
-    t.integer "min",                  null: false
-    t.integer "max",                  null: false
-    t.integer "stepsize",             null: false
+    t.string  "name",           limit: 100, null: false
+    t.string  "label",          limit: 100, null: false
+    t.integer "min",                        null: false
+    t.integer "max",                        null: false
+    t.integer "stepsize",                   null: false
+    t.integer "resource_type",              null: false
+    t.string  "allocate_chain"
+    t.string  "free_chain"
   end
 
   add_index "cluster_resources", ["name"], name: "index_cluster_resources_on_name", unique: true, using: :btree
@@ -137,6 +140,13 @@ ActiveRecord::Schema.define(version: 20150131162852) do
   end
 
   add_index "datasets", ["ancestry"], name: "index_datasets_on_ancestry", using: :btree
+
+  create_table "default_object_cluster_resources", force: true do |t|
+    t.integer "environment_id",      null: false
+    t.integer "cluster_resource_id", null: false
+    t.string  "class_name",          null: false
+    t.integer "value",               null: false
+  end
 
   create_table "environment_config_chains", force: true do |t|
     t.integer "environment_id", null: false

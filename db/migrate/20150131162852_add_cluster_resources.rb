@@ -1,6 +1,6 @@
 class AddClusterResources < ActiveRecord::Migration
   class ClusterResource < ActiveRecord::Base
-
+    enum resource_type: %i(numeric object)
   end
 
   def change
@@ -13,6 +13,9 @@ class AddClusterResources < ActiveRecord::Migration
       t.integer      :min,                  null: false
       t.integer      :max,                  null: false
       t.integer      :stepsize,             null: false
+      t.integer      :resource_type,        null: false
+      t.string       :allocate_chain,       null: true
+      t.string       :free_chain,           null: true
     end
 
     add_index :cluster_resources, :name, unique: true
@@ -38,6 +41,13 @@ class AddClusterResources < ActiveRecord::Migration
       t.integer      :confirmed,            null: false, default: 0
     end
 
+    create_table :default_object_cluster_resources do |t|
+      t.references   :environment,          null: false
+      t.references   :cluster_resource,     null: false
+      t.string       :class_name,           null: false, limit: 255
+      t.integer      :value,                null: false
+    end
+
     reversible do |dir|
       dir.up do
         ClusterResource.create!(
@@ -45,7 +55,8 @@ class AddClusterResources < ActiveRecord::Migration
             label: 'Memory',
             min: 1*1024, # 1 GB
             max: 12*1024, # 12 GB
-            stepsize: 1*1024 # 1 GB
+            stepsize: 1*1024, # 1 GB
+            resource_type: :numeric
         )
 
         ClusterResource.create!(
@@ -53,7 +64,8 @@ class AddClusterResources < ActiveRecord::Migration
             label: 'Swap',
             min: 1*1024, # 1 GB
             max: 12*1024, # 12 GB
-            stepsize: 1*1024 # 1 GB
+            stepsize: 1*1024, # 1 GB
+            resource_type: :numeric
         )
 
         ClusterResource.create!(
@@ -61,7 +73,8 @@ class AddClusterResources < ActiveRecord::Migration
             label: 'CPU',
             min: 1,
             max: 8,
-            stepsize: 1
+            stepsize: 1,
+            resource_type: :numeric
         )
 
         ClusterResource.create!(
@@ -69,23 +82,30 @@ class AddClusterResources < ActiveRecord::Migration
             label: 'Disk space',
             min: 10*1024, # 10 GB
             max: 2000*1024, # 2 TB
-            stepsize: 10*1024 # 10 GB
+            stepsize: 10*1024, # 10 GB
+            resource_type: :numeric
         )
 
         ClusterResource.create!(
             name: :ipv4,
             label: 'IPv4 address',
-            min: 1,
+            min: 0,
             max: 4,
-            stepsize: 1
+            stepsize: 1,
+            resource_type: :object,
+            allocate_chain: 'Ip::Allocate',
+            free_chain: 'Ip::Free'
         )
 
         ClusterResource.create!(
             name: :ipv6,
             label: 'IPv6 address',
-            min: 1,
+            min: 0,
             max: 32,
-            stepsize: 1
+            stepsize: 1,
+            resource_type: :object,
+            allocate_chain: 'Ip::Allocate',
+            free_chain: 'Ip::Free'
         )
       end
     end
