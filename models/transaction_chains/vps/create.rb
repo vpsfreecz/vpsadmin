@@ -6,6 +6,15 @@ module TransactionChains
       vps.save!
       lock(vps)
 
+      # FIXME: diskspace must be allocated by dataset, not a VPS!
+      resources = vps.allocate_resources(
+          vps.node.environment,
+          required: %i(cpu memory diskspace),
+          optional: [],
+          user: vps.user,
+          chain: self
+      )
+
       pool = vps.node.pools.where(role: :hypervisor).take!
 
       ds = ::Dataset.create(
@@ -33,30 +42,28 @@ module TransactionChains
 
       append(Transactions::Vps::Create, args: vps) do
         create(vps)
+        resources.each { |r| create(r) }
       end
 
-      use_chain(Vps::ApplyConfig, args: [vps, vps.node.location.environment.vps_configs.pluck(:id)])
+      use_chain(Vps::ApplyConfig, args: [vps, vps.node.environment.vps_configs.pluck(:id)])
 
       if add_ips
-        ips = []
-        versions = [4]
-        versions << 6 if vps.node.location.has_ipv6
+        versions = [:ipv4]
+        versions << :ipv6 if vps.node.location.has_ipv6
 
-        versions.each do |v|
-          begin
-            ::IpAddress.transaction do
-              ip = ::IpAddress.pick_addr!(vps.node.location, v)
-              lock(ip)
+        resources = vps.allocate_resources(
+            vps.node.environment,
+            required: [],
+            optional: versions,
+            user: vps.user,
+            chain: self
+        )
 
-              ips << ip
-            end
-
-          rescue ActiveRecord::RecordNotFound
-            next # FIXME: notify admins, report some kind of an error?
+        if resources.size > 0
+          append(Transactions::Utils::NoOp, args: vps.vps_server) do
+            resources.each { |r| create(r) }
           end
         end
-
-        use_chain(Vps::AddIp, args: [vps, ips])
       end
 
       if vps.vps_onboot

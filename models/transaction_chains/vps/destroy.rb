@@ -9,8 +9,8 @@ module TransactionChains
       # Stop VPS
       use_chain(TransactionChains::Vps::Stop, args: vps)
 
-      # Remove IP addresses
-      use_chain(TransactionChains::Vps::DelIp, args: [vps, vps.ip_addresses.all])
+      # Free resources
+      resources = vps.free_resources(vps.node.environment, user: vps.user, chain: self)
 
       # Remove mounts
       # FIXME: implement mounts removal
@@ -18,6 +18,7 @@ module TransactionChains
       # Destroy VPS
       append(Transactions::Vps::Destroy, args: vps) do
         destroy(vps)
+        resources.each { |r| destroy(r) }
       end
 
       # Destroy underlying dataset

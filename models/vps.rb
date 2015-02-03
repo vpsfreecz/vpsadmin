@@ -42,6 +42,10 @@ class Vps < ActiveRecord::Base
   include VpsAdmin::API::Maintainable::Model
   maintenance_parent :node
 
+  include VpsAdmin::API::ClusterResources
+  cluster_resources required: %i(cpu memory diskspace),
+                    optional: %i(ipv4 ipv6 swap)
+
   PathInfo = Struct.new(:dataset, :exists)
 
   def create(add_ips)
@@ -50,7 +54,7 @@ class Vps < ActiveRecord::Base
     self.vps_config = ''
 
     lifetime = self.user.env_config(
-        node.location.environment,
+        node.environment,
         :vps_lifetime
     )
 

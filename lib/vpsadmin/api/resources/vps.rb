@@ -190,7 +190,7 @@ END
           error('no free node is available in selected environment/location')
         end
 
-        env = node.location.environment
+        env = node.environment
 
         if !current_user.env_config(env, :can_create_vps)
           error('insufficient permission to create a VPS in this environment')
