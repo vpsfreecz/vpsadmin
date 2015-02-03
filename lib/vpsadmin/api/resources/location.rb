@@ -15,7 +15,6 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
          db_name: :location_vps_onboot
     string :remote_console_server, label: 'Remote console server', desc: 'URL to HTTP remote console server',
            db_name: :location_remote_console_server
-    resource VpsAdmin::API::Resources::Environment, label: 'Environment', desc: 'Environment'
     string :domain, label: 'Domain', desc: 'Location domain, subdomain at environment domain'
   end
 
@@ -26,10 +25,6 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
   class Index < HaveAPI::Actions::Default::Index
     desc 'List locations'
-
-    input do
-      resource VpsAdmin::API::Resources::Environment, label: 'Environment', desc: 'Environment'
-    end
 
     output(:object_list) do
       use :all
@@ -49,7 +44,6 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
             has_ipv6: true,
             vps_onboot: true,
             remote_console_server: 'https://console.vpsadmin.mydomain.com',
-            environment: 1,
             domain: 'prg',
             created_at: '2014-05-04 16:59:52 +0200',
             updated_at: '2014-05-04 16:59:52 +0200'
@@ -58,9 +52,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     def query
-      q = ::Location
-      q = q.where(environment: input[:environment]) if input[:environment]
-      q
+      ::Location
     end
 
     def count
@@ -94,7 +86,6 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
             has_ipv6: true,
             vps_onboot: true,
             remote_console_server: '',
-            environment: 1,
             domain: 'brq'
         }
       })
@@ -138,10 +129,6 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
           has_ipv6: true,
           vps_onboot: true,
           remote_console_server: '',
-          environment: {
-              id: 1,
-              label: 'Production'
-          },
           domain: 'brq'
         }
       })
