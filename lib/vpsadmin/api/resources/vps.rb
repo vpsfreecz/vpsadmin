@@ -129,6 +129,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       resource VpsAdmin::API::Resources::Location, label: 'Location',
                desc: 'Location in which to create the VPS, for non-admins'
       use :common
+      VpsAdmin::API::ClusterResources.to_params(::Vps, self)
     end
 
     output do
@@ -137,7 +138,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(environment location hostname os_template dns_resolver)
+      input whitelist: %i(environment location hostname os_template
+                          dns_resolver cpu memory diskspace ipv4 ipv6)
       allow
     end
 
@@ -208,6 +210,7 @@ END
       maintenance_check!(input[:node])
 
       vps = ::Vps.new(to_db_names(input))
+      vps.set_cluster_resources(input)
 
       if vps.create(current_user.role == :admin)
         ok(vps)
