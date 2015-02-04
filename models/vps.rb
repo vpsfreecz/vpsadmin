@@ -44,7 +44,8 @@ class Vps < ActiveRecord::Base
 
   include VpsAdmin::API::ClusterResources
   cluster_resources required: %i(cpu memory diskspace),
-                    optional: %i(ipv4 ipv6 swap)
+                    optional: %i(ipv4 ipv6 swap),
+                    environment: ->(){ node.environment }
 
   PathInfo = Struct.new(:dataset, :exists)
 
