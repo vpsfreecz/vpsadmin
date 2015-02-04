@@ -2,16 +2,17 @@ module TransactionChains
   class Dataset::Create < ::TransactionChain
     label 'Create dataset'
 
-    def link_chain(dataset_in_pool, path, automount, properties)
-      lock(dataset_in_pool)
+    def link_chain(pool, dataset_in_pool, path, automount, properties, user = nil)
+      lock(dataset_in_pool) if dataset_in_pool
 
       ret = []
+      @pool = pool
       @dataset_in_pool = dataset_in_pool
-      @parent = dataset_in_pool.dataset
+      @parent = dataset_in_pool && dataset_in_pool.dataset
       @parent_properties = {}
-      @automount = automount
+      @automount = dataset_in_pool && automount
 
-      find_parent_mounts(dataset_in_pool) if automount
+      find_parent_mounts(dataset_in_pool) if @automount
 
       path[0..-2].each do |part|
         ret << create_dataset(part)
@@ -21,7 +22,7 @@ module TransactionChains
 
       use_prop = nil
 
-      if properties[:refquota] && dataset_in_pool.pool.refquota_check
+      if properties[:refquota] && pool.refquota_check
         use_prop = :refquota
 
       elsif properties[:quota] && ret.last.dataset.parent_id.nil?
@@ -30,18 +31,17 @@ module TransactionChains
 
       if use_prop
         use = ret.last.allocate_resource!(
-            dataset_in_pool.pool.node.environment,
             :diskspace,
             properties[use_prop],
-            user: dataset_in_pool.dataset.user
+            user: user || dataset_in_pool.dataset.user
         )
 
-        append(Transactions::Utils::NoOp, args: dataset_in_pool.pool.node_id) do
+        append(Transactions::Utils::NoOp, args: pool.node_id) do
           create(use)
         end
       end
 
-      generate_mounts if automount
+      generate_mounts if @automount
 
       ret
     end
@@ -60,7 +60,7 @@ module TransactionChains
 
       dip = ::DatasetInPool.create!(
           dataset: part,
-          pool: @dataset_in_pool.pool,
+          pool: @pool,
           confirmed: ::DatasetInPool.confirmed(:confirm_create)
       )
 

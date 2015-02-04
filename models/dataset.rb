@@ -66,6 +66,7 @@ class Dataset < ActiveRecord::Base
     end
 
     TransactionChains::Dataset::Create.fire(
+        parent_dip.pool,
         parent_dip,
         path,
         automount,

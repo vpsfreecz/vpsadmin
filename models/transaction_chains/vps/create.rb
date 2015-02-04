@@ -6,10 +6,8 @@ module TransactionChains
       vps.save!
       lock(vps)
 
-      # FIXME: diskspace must be allocated by dataset, not a VPS!
       resources = vps.allocate_resources(
-          vps.node.environment,
-          required: %i(cpu memory diskspace),
+          required: %i(cpu memory),
           optional: [],
           user: vps.user,
           chain: self
@@ -17,26 +15,27 @@ module TransactionChains
 
       pool = vps.node.pools.where(role: :hypervisor).take!
 
-      ds = ::Dataset.create(
+      ds = ::Dataset.new(
           name: vps.id.to_s,
           user: vps.user,
           user_editable: false,
           user_create: true,
-          user_destroy: false
+          user_destroy: false,
+          confirmed: ::Dataset.confirmed(:confirm_create)
       )
 
-      vps.dataset_in_pool = ::DatasetInPool.create(
-          dataset: ds,
-          pool: pool,
-          label: vps.id.to_s
-      )
+      dip = use_chain(Dataset::Create, args: [
+          pool,
+          nil,
+          [ds],
+          false,
+          {refquota: vps.diskspace},
+          vps.user
+      ]).last
+
+      vps.dataset_in_pool = dip
 
       lock(vps.dataset_in_pool)
-
-      append(Transactions::Storage::CreateDataset, args: vps.dataset_in_pool) do
-        create(ds)
-        create(vps.dataset_in_pool)
-      end
 
       vps.dataset_in_pool.call_class_hooks_for(:create, self, args: [vps.dataset_in_pool])
 
