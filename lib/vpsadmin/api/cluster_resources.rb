@@ -5,19 +5,28 @@ module VpsAdmin::API
         resources.each do |r|
 
           ensure_method(klass, r) do
-            resource = ::ClusterResource.find_by!(name: r)
+            if @cluster_resources && @cluster_resources[r]
+              @cluster_resources[r]
 
-            if klass.respond_to?(:confirmed) && self.confirmed.to_sym == :confirm_create
-              resource.default_object_cluster_resources.find_by!(
+            elsif klass.respond_to?(:confirmed) && self.confirmed.to_sym == :confirm_create
+              ::DefaultObjectClusterResource.joins(:cluster_resource).find_by!(
+                  cluster_resources: {
+                      name: r
+                  },
                   environment: Private.environment(self),
                   class_name: self.class.name
               ).value
 
             else
-              use = Private.find_resource_use(self, resource)
+              use = Private.find_resource_use(self, r)
 
               use ? use.value : 0
             end
+          end
+
+          ensure_method(klass, :"#{r}=") do |v|
+            @cluster_resources ||= {}
+            @cluster_resources[r] = v
           end
 
         end
@@ -28,10 +37,14 @@ module VpsAdmin::API
       end
 
       def self.find_resource_use(obj, resource)
-        ::ClusterResourceUse.joins(:user_cluster_resource).find_by(
+        ::ClusterResourceUse.joins(
+            user_cluster_resource: [:cluster_resource]
+        ).find_by(
             user_cluster_resources: {
                 environment_id: environment(obj).id,
-                cluster_resource_id: resource.id
+            },
+            cluster_resources: {
+                name: resource
             },
             class_name: obj.class.name,
             table_name: obj.class.table_name,
@@ -223,7 +236,7 @@ module VpsAdmin::API
         resource_obj = (use && use.user_cluster_resource.cluster_resource) \
                         || ::ClusterResource.find_by!(name: resource)
 
-        use ||= Private.find_resource_use!(self, resource_obj)
+        use ||= Private.find_resource_use!(self, resource)
 
         if resource_obj.resource_type.to_sym == :object
           chain.use_chain(
