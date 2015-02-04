@@ -10,7 +10,7 @@ module TransactionChains
       use_chain(TransactionChains::Vps::Stop, args: vps)
 
       # Free resources
-      resources = vps.free_resources(vps.node.environment, user: vps.user, chain: self)
+      resources = vps.free_resources(chain: self)
 
       # Remove mounts
       # FIXME: implement mounts removal
