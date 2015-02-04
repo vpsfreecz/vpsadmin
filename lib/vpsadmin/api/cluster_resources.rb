@@ -1,15 +1,72 @@
 module VpsAdmin::API
   module ClusterResources
+    module Private
+      def self.define_access_methods(klass, resources)
+        resources.each do |r|
+
+          ensure_method(klass, r) do
+            resource = ::ClusterResource.find_by!(name: r)
+
+            if klass.respond_to?(:confirmed) && self.confirmed.to_sym == :confirm_create
+              resource.default_object_cluster_resources.find_by!(
+                  environment: Private.environment(self),
+                  class_name: self.class.name
+              ).value
+
+            else
+              use = Private.find_resource_use(self, resource)
+
+              use ? use.value : 0
+            end
+          end
+
+        end
+      end
+
+      def self.ensure_method(klass, name, &block)
+        klass.send(:define_method, name, &block) unless klass.method_defined?(name)
+      end
+
+      def self.find_resource_use(obj, resource)
+        ::ClusterResourceUse.joins(:user_cluster_resource).find_by(
+            user_cluster_resources: {
+                environment_id: environment(obj).id,
+                cluster_resource_id: resource.id
+            },
+            class_name: obj.class.name,
+            table_name: obj.class.table_name,
+            row_id: obj.id,
+        )
+      end
+
+      def self.find_resource_use!(*args)
+        ret = find_resource_use(*args)
+
+        raise ActiveRecord::RecordNotFound unless ret
+
+        ret
+      end
+
+      def self.environment(obj)
+        obj.instance_exec(&obj.class.cluster_resources[:environment])
+      end
+    end
+
     module ClassMethods
-      def cluster_resources(required: [], optional: [])
+      def cluster_resources(required: [], optional: [], environment: nil)
         @cluster_resources ||= {}
         @cluster_resources[:required] ||= []
         @cluster_resources[:optional] ||= []
+        @cluster_resources[:environment] ||= environment
 
         if required.size > 0 || optional.size > 0
-          @cluster_resources[:required] << required
-          @cluster_resources[:optional] << optional
+          @cluster_resources[:required].concat(required)
+          @cluster_resources[:optional].concat(optional)
 
+          Private.define_access_methods(
+              self,
+              @cluster_resources[:required] + @cluster_resources[:optional]
+          )
         else
           @cluster_resources
         end
@@ -17,7 +74,7 @@ module VpsAdmin::API
     end
 
     module InstanceMethods
-      def allocate_resources(env, required: nil, optional: nil, user: nil,
+      def allocate_resources(_ = nil, required: nil, optional: nil, user: nil,
                               confirmed: nil, chain: nil, values: {})
         user ||= ::User.current
 
@@ -32,12 +89,12 @@ module VpsAdmin::API
         end
 
         required.each do |r|
-          ret << allocate_resource!(env, r, values[r], user: user, confirmed: confirmed,
+          ret << allocate_resource!(r, values[r], user: user, confirmed: confirmed,
                              chain: chain)
         end
 
         optional.each do |r|
-          use = allocate_resource(env, r, values[r], user: user, confirmed: confirmed,
+          use = allocate_resource(r, values[r], user: user, confirmed: confirmed,
                                   chain: chain)
 
           ret << use if use.valid?
@@ -46,8 +103,7 @@ module VpsAdmin::API
         ret
       end
 
-      def free_resources(env, user: nil, destroy: false, chain: nil)
-        user ||= ::User.current
+      def free_resources(destroy: false, chain: nil)
         ret = []
 
         ::ClusterResourceUse.includes(
@@ -57,13 +113,11 @@ module VpsAdmin::API
             table_name: self.class.table_name,
             row_id: self.id,
             user_cluster_resources: {
-                environment_id: env.id
+                environment_id: Private.environment(self).id
             }
         ).each do |use|
           ret << free_resource!(
-              env,
               use.user_cluster_resource.cluster_resource.name.to_sym,
-              user: user,
               destroy: destroy,
               chain: chain,
               use: use
@@ -73,10 +127,11 @@ module VpsAdmin::API
         ret
       end
 
-      def allocate_resource(env, resource, value, user: nil, confirmed: nil,
+      def allocate_resource(resource, value, user: nil, confirmed: nil,
                             chain: nil)
         user ||= ::User.current
         confirmed ||= ::ClusterResourceUse.confirmed(:confirm_create)
+        env = Private.environment(self)
 
         resource_obj = ::ClusterResource.find_by!(name: resource)
         user_resource = ::UserClusterResource.find_by(
@@ -163,22 +218,12 @@ module VpsAdmin::API
         end
       end
 
-      def free_resource!(env, resource, user: nil, destroy: false, chain: nil,
+      def free_resource!(resource, destroy: false, chain: nil,
                           use: nil)
-        user ||= ::User.current
         resource_obj = (use && use.user_cluster_resource.cluster_resource) \
                         || ::ClusterResource.find_by!(name: resource)
 
-        use ||= ::ClusterResourceUse.joins(:user_cluster_resource).find_by!(
-            user_cluster_resources: {
-                user: user,
-                environment: env,
-                cluster_resource: resource_obj
-            },
-            class_name: self.class.name,
-            table_name: self.class.table_name,
-            row_id: self.id,
-        )
+        use ||= Private.find_resource_use!(self, resource_obj)
 
         if resource_obj.resource_type.to_sym == :object
           chain.use_chain(
