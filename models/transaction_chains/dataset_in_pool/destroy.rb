@@ -119,6 +119,9 @@ module TransactionChains
         end
       end
 
+      chain = self
+      tasks = @tasks
+
       append(Transactions::Storage::DestroyDataset, args: dataset_in_pool) do
         # Destroy snapshots, trees, branches, snapshot in pool in branches
         if %w(primary hypervisor).include?(dataset_in_pool.pool.role)
@@ -135,7 +138,11 @@ module TransactionChains
 
         # Destroy dataset in pool
         if destroy_top
-          if @tasks
+          if tasks
+            dataset_in_pool.free_resources(chain: chain).each do |r|
+              destroy(r)
+            end
+
             dataset_in_pool.dataset_properties.update_all(
                 confirmed: ::DatasetProperty.confirmed(:confirm_destroy)
             )
