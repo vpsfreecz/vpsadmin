@@ -21,7 +21,7 @@ class ClusterResourceUse < ActiveRecord::Base
     if total > user_cluster_resource.value
       errors.add(
           :value,
-          "cannot allocate more resource than is available (#{user_cluster_resource.value - used} left)"
+          "cannot allocate more #{user_cluster_resource.cluster_resource.name} than is available (#{user_cluster_resource.value - used} left)"
       )
     end
 
