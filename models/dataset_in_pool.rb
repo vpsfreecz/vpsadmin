@@ -17,6 +17,9 @@ class DatasetInPool < ActiveRecord::Base
   include VpsAdmin::API::DatasetProperties::Model
   include VpsAdmin::API::ClusterResources
 
+  cluster_resources required: %i(diskspace),
+                    environment: ->(){ pool.node.environment }
+
   has_hook :create
 
   def snapshot
