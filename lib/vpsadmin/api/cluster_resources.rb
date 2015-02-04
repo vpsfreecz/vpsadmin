@@ -30,6 +30,14 @@ module VpsAdmin::API
           end
 
         end
+
+        ensure_method(klass, :set_cluster_resources) do |resources|
+          available = self.class.cluster_resources[:required] + self.class.cluster_resources[:optional]
+
+          available.each do |r|
+            method(:"#{r}=").call(resources[r]) if resources.has_key?(r)
+          end
+        end
       end
 
       def self.ensure_method(klass, name, &block)
@@ -102,13 +110,23 @@ module VpsAdmin::API
         end
 
         required.each do |r|
-          ret << allocate_resource!(r, values[r], user: user, confirmed: confirmed,
-                             chain: chain)
+          ret << allocate_resource!(
+              r,
+              values[r] || method(r).call,
+              user: user,
+              confirmed: confirmed,
+              chain: chain
+          )
         end
 
         optional.each do |r|
-          use = allocate_resource(r, values[r], user: user, confirmed: confirmed,
-                                  chain: chain)
+          use = allocate_resource(
+              r,
+              values[r] || method(r).call,
+              user: user,
+              confirmed: confirmed,
+              chain: chain
+          )
 
           ret << use if use.valid?
         end
@@ -156,13 +174,6 @@ module VpsAdmin::API
         unless user_resource
           raise Exceptions::UserResourceMissing,
                 "user #{user.login} does not have resource #{resource}"
-        end
-
-        unless value
-          value = resource_obj.default_object_cluster_resources.find_by!(
-              environment: env,
-              class_name: self.class.name
-          ).value
         end
 
         use = ::ClusterResourceUse.create(
@@ -259,6 +270,18 @@ module VpsAdmin::API
     def self.included(model)
       model.send(:extend, ClassMethods)
       model.send(:include, InstanceMethods)
+    end
+
+    def self.to_params(klass, api, resources: nil)
+      resources ||= klass.cluster_resources[:required] + klass.cluster_resources[:optional]
+
+      ::ClusterResource.where(name: resources).each do |r|
+        api.integer(
+            r.name.to_sym,
+            label: r.label,
+            desc: "Minimally #{r.min}, maximally #{r.max}, step size is #{r.stepsize}"
+        )
+      end
     end
   end
 end
