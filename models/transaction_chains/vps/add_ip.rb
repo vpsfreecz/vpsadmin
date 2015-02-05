@@ -10,6 +10,7 @@ module TransactionChains
 
         append(Transactions::Vps::IpAdd, args: [vps, ip]) do
           edit(ip, vps_id: vps.veid)
+          edit(ip, user_id: vps.user_id) unless ip.user_id
         end
       end
 

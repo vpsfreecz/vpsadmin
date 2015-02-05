@@ -153,7 +153,7 @@ class Vps < ActiveRecord::Base
 
   def add_free_ip(v)
     ::IpAddress.transaction do
-      ip = ::IpAddress.pick_addr!(node.location, v)
+      ip = ::IpAddress.pick_addr!(user, node.location, v)
       add_ip(ip, true)
     end
 
