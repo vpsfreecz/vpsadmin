@@ -62,7 +62,7 @@ class AddClusterResources < ActiveRecord::Migration
         ClusterResource.create!(
             name: :swap,
             label: 'Swap',
-            min: 1*1024, # 1 GB
+            min: 0, # 1 GB
             max: 12*1024, # 12 GB
             stepsize: 1*1024, # 1 GB
             resource_type: :numeric
