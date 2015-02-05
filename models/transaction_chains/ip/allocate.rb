@@ -26,7 +26,11 @@ module TransactionChains
         break if ips.size == n
       end
 
-      use_chain(Vps::AddIp, args: [vps, ips])
+      ips.each do |ip|
+        append(Transactions::Vps::IpAdd, args: [vps, ip]) do
+          edit(ip, vps_id: vps.veid)
+        end
+      end
 
       ips.size
     end
