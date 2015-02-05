@@ -32,6 +32,10 @@ class User < ActiveRecord::Base
 
   default_scope { where.not(m_state: 'deleted') }
 
+  include HaveAPI::Hookable
+
+  has_hook :create
+
   ROLES = {
       1 => 'Poor user',
       2 => 'User',
@@ -40,6 +44,10 @@ class User < ActiveRecord::Base
       90 => 'Super admin',
       99 => 'God',
   }
+
+  def create
+    TransactionChains::User::Create.fire(self)
+  end
 
   def lazy_delete(lazy)
     if lazy

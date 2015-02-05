@@ -69,13 +69,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def exec
-      user = ::User.new(to_db_names(params[:user]))
+      user = ::User.new(to_db_names(input))
+      user.create
 
-      if user.save
-        ok(user)
-      else
-        error('save failed', to_param_names(user.errors.to_hash, :input))
-      end
+    rescue ActiveRecord::RecordInvalid
+      error('create failed', to_param_names(user.errors.to_hash, :input))
     end
   end
 

@@ -174,4 +174,5 @@ module TransactionChains
   module SnapshotInPool ; end
   module DatasetTree    ; end
   module Branch         ; end
+  module User           ; end
 end
