@@ -68,6 +68,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     def query
       q = ::Node
       q = q.where(location: input[:location]) if input[:location]
+      q = q.where(environment: input[:environment]) if input[:environment]
       q
     end
 
