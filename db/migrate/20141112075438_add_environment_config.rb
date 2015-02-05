@@ -17,11 +17,11 @@ class AddEnvironmentConfig < ActiveRecord::Migration
     remove_column :locations, :location_type, "enum('production', 'playground')", null: false
 
     create_table :environment_user_configs do |t|
-      t.references :environment
-      t.references :user
+      t.references :environment,      null: false
+      t.references :user,             null: false
       t.boolean    :can_create_vps,   null: false, default: false
       t.boolean    :can_destroy_vps,  null: false, default: false
-      t.boolean    :vps_lifetime,     null: false, default: 0
+      t.integer    :vps_lifetime,     null: false, default: 0
       t.integer    :max_vps_count,    null: false, default: 1
     end
 
