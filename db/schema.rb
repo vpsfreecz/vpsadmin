@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150131162852) do
+ActiveRecord::Schema.define(version: 20150205145349) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -607,6 +607,7 @@ ActiveRecord::Schema.define(version: 20150131162852) do
     t.integer "max_tx",      limit: 8,  default: 39321600, null: false
     t.integer "max_rx",      limit: 8,  default: 39321600, null: false
     t.integer "class_id",                                  null: false
+    t.integer "user_id"
   end
 
   add_index "vps_ip", ["class_id"], name: "index_vps_ip_on_class_id", unique: true, using: :btree

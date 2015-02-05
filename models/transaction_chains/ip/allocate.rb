@@ -9,7 +9,7 @@ module TransactionChains
       loop do
         begin
           ::IpAddress.transaction do
-            ip = ::IpAddress.pick_addr!(vps.node.location, v)
+            ip = ::IpAddress.pick_addr!(vps.user, vps.node.location, v)
             lock(ip)
 
             ips << ip
@@ -29,6 +29,7 @@ module TransactionChains
       ips.each do |ip|
         append(Transactions::Vps::IpAdd, args: [vps, ip]) do
           edit(ip, vps_id: vps.veid)
+          edit(ip, user_id: vps.user_id) unless ip.user_id
         end
       end
 

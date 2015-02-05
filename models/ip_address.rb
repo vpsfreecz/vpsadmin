@@ -4,6 +4,7 @@ class IpAddress < ActiveRecord::Base
 
   belongs_to :location, :foreign_key => :ip_location
   belongs_to :vps, :foreign_key => :vps_id
+  belongs_to :user
   has_paper_trail
 
   alias_attribute :addr, :ip_addr
@@ -16,13 +17,14 @@ class IpAddress < ActiveRecord::Base
   end
 
   # Return first free and unlocked IP address version +v+ from +location+.
-  def self.pick_addr!(location, v)
+  def self.pick_addr!(user, location, v)
     self.select('vps_ip.*')
       .joins("LEFT JOIN resource_locks rl ON rl.resource = 'IpAddress' AND rl.row_id = vps_ip.ip_id")
       .where(ip_v: v, location: location)
       .where('vps_id IS NULL')
+      .where('(vps_ip.user_id = ? OR vps_ip.user_id IS NULL)', user.id)
       .where('rl.id IS NULL')
-      .order(:ip_id).take!
+      .order('vps_ip.user_id DESC, ip_id').take!
   end
 
   def set_shaper(tx, rx)
