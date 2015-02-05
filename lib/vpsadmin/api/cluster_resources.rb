@@ -202,7 +202,7 @@ module VpsAdmin::API
 
         return use unless use.valid?
 
-        if resource_obj.resource_type.to_sym == :object
+        if resource_obj.resource_type.to_sym == :object && chain
           res = chain.use_chain(
               TransactionChains.const_get(resource_obj.allocate_chain),
               args: [resource_obj, self, value],
@@ -226,10 +226,11 @@ module VpsAdmin::API
         end
       end
 
-      def reallocate_resource!(resource, value, user: nil, save: false)
+      def reallocate_resource!(resource, value, user: nil, save: false, confirmed: nil,
+                               chain: nil)
         user ||= ::User.current
 
-        use = ::ClusterResourceUse.joins(:user_cluster_resource).find_by!(
+        use = ::ClusterResourceUse.joins(:user_cluster_resource).find_by(
             user_cluster_resources: {
                 user_id: user.id,
                 environment_id: Private.environment(self).id,
@@ -239,6 +240,16 @@ module VpsAdmin::API
             table_name: self.class.table_name,
             row_id: self.id,
         )
+
+        unless use
+          return allocate_resource!(
+              resource,
+              value,
+              user: user,
+              confirmed: confirmed,
+              chain: chain
+          )
+        end
 
         use.value = value
 
