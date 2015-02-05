@@ -32,7 +32,15 @@ class TransactionChain < ActiveRecord::Base
       # and the exception will be propagated.
       ret = chain.link_chain(*args)
 
-      fail 'empty' if chain.empty?
+      if chain.empty?
+        if chain.class.allow_empty?
+          chain.destroy
+          return ret
+
+        else
+          fail 'empty'
+        end
+      end
 
       chain.state = :queued
       chain.save
@@ -84,6 +92,14 @@ class TransactionChain < ActiveRecord::Base
 
   def self.urgent_rollback?
     @urgent_rollback
+  end
+
+  def self.allow_empty(allow = true)
+    @allow_empty = allow
+  end
+
+  def self.allow_empty?
+    @allow_empty
   end
 
   def initialize(*args)
