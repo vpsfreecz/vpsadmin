@@ -12,6 +12,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     string :type, label: 'Role', desc: 'node, storage or mailer', db_name: :server_type
     resource VpsAdmin::API::Resources::Location, label: 'Location',
              desc: 'Location node is placed in'
+    resource VpsAdmin::API::Resources::Environment, label: 'Environment'
     string :availstat, label: 'Availability stats', desc: 'HTML code with availability graphs',
            db_name: :server_availstat
     string :ip_addr, label: 'IPv4 address', desc: 'Node\'s IP address', db_name: :server_ip4
@@ -31,6 +32,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     input do
       resource VpsAdmin::API::Resources::Location, label: 'Location',
                desc: 'Location node is placed in'
+      resource VpsAdmin::API::Resources::Environment, label: 'Environment'
     end
 
     output(:object_list) do
@@ -51,6 +53,10 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
           location: {
               id: 1,
               label: 'The Location'
+          },
+          environment: {
+              id: 1,
+              label: 'Production'
           },
           availstat: '',
           ip_addr: '192.168.0.10',
@@ -95,6 +101,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
           name: 'node2',
           type: 'node',
           location: 1,
+          environment: 1,
           availstat: '',
           ip_addr: '192.168.0.11',
           maintenance: false
@@ -199,6 +206,10 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
               id: 1,
               label: 'The Location'
           },
+          environment: {
+              id: 1,
+              label: 'Production'
+          },
           availstat: '',
           ip_addr: '192.168.0.11',
           maintenance: false
@@ -231,10 +242,8 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
         node: {
           name: 'node2',
           type: 'storage',
-          location: {
-              id: 1,
-              label: 'The Location'
-          },
+          location: 1,
+          environment: 1,
           availstat: '',
           ip_addr: '192.168.0.11',
           maintenance: false
