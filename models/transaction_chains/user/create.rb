@@ -3,6 +3,7 @@ module TransactionChains
   # for user creation.
   class User::Create < ::TransactionChain
     label 'Create user'
+    allow_empty
 
     def link_chain(user)
       user.save!
