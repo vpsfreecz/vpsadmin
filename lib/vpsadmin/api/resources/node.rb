@@ -76,7 +76,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     def exec
-      with_includes(query).limit(params[:node][:limit]).offset(params[:node][:offset])
+      with_includes(query).limit(input[:limit]).offset(input[:offset])
     end
   end
 
@@ -115,7 +115,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     def exec
-      node = ::Node.new(to_db_names(params[:node]))
+      node = ::Node.new(to_db_names(input))
 
       if node.save
         ok(node)
@@ -255,7 +255,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     def exec
       node = ::Node.find(params[:node_id])
 
-      if node.update(to_db_names(params[:node]))
+      if node.update(to_db_names(input))
         ok
       else
         error('update failed', to_param_names(node.errors.to_hash, :input))
