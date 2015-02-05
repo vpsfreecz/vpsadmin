@@ -30,14 +30,10 @@ module VpsAdmin::API
           end
 
         end
+      end
 
-        ensure_method(klass, :set_cluster_resources) do |resources|
-          available = self.class.cluster_resources[:required] + self.class.cluster_resources[:optional]
-
-          available.each do |r|
-            method(:"#{r}=").call(resources[r]) if resources.has_key?(r)
-          end
-        end
+      def self.registered_resources(obj)
+        obj.class.cluster_resources[:required] + obj.class.cluster_resources[:optional]
       end
 
       def self.ensure_method(klass, name, &block)
@@ -158,6 +154,25 @@ module VpsAdmin::API
         ret
       end
 
+      def reallocate_resources(resources, user)
+        ret = []
+        available = Private.registered_resources(self)
+
+        available.each do |r|
+          ret << reallocate_resource!(r, resources[r], user: user) if resources.has_key?(r)
+        end
+
+        ret
+      end
+
+      def set_cluster_resources(resources)
+        available = Private.registered_resources(self)
+
+        available.each do |r|
+          method(:"#{r}=").call(resources[r]) if resources.has_key?(r)
+        end
+      end
+
       def allocate_resource(resource, value, user: nil, confirmed: nil,
                             chain: nil)
         user ||= ::User.current
@@ -215,13 +230,13 @@ module VpsAdmin::API
         end
       end
 
-      def reallocate_resource!(env, resource, value, user: nil, save: false)
+      def reallocate_resource!(resource, value, user: nil, save: false)
         user ||= ::User.current
 
         use = ::ClusterResourceUse.joins(:user_cluster_resource).find_by!(
             user_cluster_resources: {
                 user_id: user.id,
-                environment_id: env.id,
+                environment_id: Private.environment(self).id,
                 cluster_resource_id: ::ClusterResource.find_by!(name: resource).id
             },
             class_name: self.class.name,
