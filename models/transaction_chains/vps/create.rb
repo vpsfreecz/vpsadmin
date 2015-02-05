@@ -6,8 +6,8 @@ module TransactionChains
       vps.save!
       lock(vps)
 
-      resources = vps.allocate_resources(
-          required: %i(cpu memory),
+      vps_resources = vps.allocate_resources(
+          required: %i(cpu memory swap),
           optional: [],
           user: vps.user,
           chain: self
@@ -41,7 +41,6 @@ module TransactionChains
 
       append(Transactions::Vps::Create, args: vps) do
         create(vps)
-        resources.each { |r| create(r) }
       end
 
       use_chain(Vps::ApplyConfig, args: [vps, vps.node.environment.vps_configs.pluck(:id)])
@@ -50,7 +49,7 @@ module TransactionChains
         versions = [:ipv4]
         versions << :ipv6 if vps.node.location.has_ipv6
 
-        resources = vps.allocate_resources(
+        ip_resources = vps.allocate_resources(
             vps.node.environment,
             required: [],
             optional: versions,
@@ -58,12 +57,14 @@ module TransactionChains
             chain: self
         )
 
-        if resources.size > 0
+        if ip_resources.size > 0
           append(Transactions::Utils::NoOp, args: vps.vps_server) do
-            resources.each { |r| create(r) }
+            ip_resources.each { |r| create(r) }
           end
         end
       end
+
+      use_chain(Vps::SetResources, args: [vps, vps_resources])
 
       if vps.vps_onboot
         use_chain(TransactionChains::Vps::Start, args: vps)
