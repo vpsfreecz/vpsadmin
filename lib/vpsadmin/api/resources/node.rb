@@ -85,6 +85,11 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     input do
       use :common
+      patch :name, required: true
+      patch :type, required: true
+      patch :location, required: true
+      patch :environment, required: true
+      patch :ip_addr, required: true
     end
 
     output do
