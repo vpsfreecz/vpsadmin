@@ -257,12 +257,13 @@ END
     input do
       use :common
       patch :hostname, required: false
+      VpsAdmin::API::ClusterResources.to_params(::Vps, self, resources: %i(cpu memory swap))
     end
 
     authorize do |u|
       allow if u.role == :admin
       restrict m_id: u.m_id
-      input whitelist: %i(hostname os_template dns_resolver)
+      input whitelist: %i(hostname os_template dns_resolver cpu memory swap)
       allow
     end
 

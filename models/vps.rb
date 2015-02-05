@@ -109,9 +109,7 @@ class Vps < ActiveRecord::Base
       end
     end
 
-    unless to_change.empty?
-      TransactionChains::Vps::Update.fire(self, to_change)
-    end
+    TransactionChains::Vps::Update.fire(self, to_change, attributes)
 
     (changed? && save) || true
   end

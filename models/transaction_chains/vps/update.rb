@@ -2,7 +2,7 @@ module TransactionChains
   class Vps::Update < ::TransactionChain
     label 'Modify VPS'
 
-    def link_chain(vps, attrs)
+    def link_chain(vps, attrs, resources)
       lock(vps)
 
       attrs.each do |k, v|
@@ -21,6 +21,8 @@ module TransactionChains
             end
         end
       end
+
+      use_chain(Vps::SetResources, args: [vps, vps.reallocate_resources(resources, vps.user)])
     end
   end
 end
