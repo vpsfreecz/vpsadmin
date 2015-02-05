@@ -19,7 +19,6 @@ module TransactionChains
 
       if props[:refquota] && dataset_in_pool.pool.refquota_check
         use = dataset_in_pool.reallocate_resource!(
-            dataset_in_pool.pool.node.environment,
             :diskspace,
             properties[:refquota],
             user: dataset_in_pool.dataset.user
@@ -28,7 +27,6 @@ module TransactionChains
       # Quota is checked only for top-level dataset
       elsif props[:quota] && dataset_in_pool.dataset.parent_id.nil?
         use = dataset_in_pool.reallocate_resource!(
-            dataset_in_pool.pool.node.environment,
             :diskspace,
             properties[:quota],
             user: dataset_in_pool.dataset.user
