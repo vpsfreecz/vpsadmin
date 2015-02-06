@@ -28,10 +28,11 @@ require_rel 'vpsadmin/*.rb'
 require_rel 'vpsadmin/api/*.rb'
 require_rel 'vpsadmin/api/authentication'
 
-VpsAdmin::API::load_configurable(:dataset_properties)
+VpsAdmin::API.load_configurable(:dataset_properties)
 
 require_rel '../models'
 
-VpsAdmin::API::load_configurable(:hooks)
+VpsAdmin::API.load_configurable(:hooks)
+VpsAdmin::API.load_configurable(:dataset_plans)
 
 require_rel 'vpsadmin/api/resources'

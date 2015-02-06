@@ -6,7 +6,13 @@ module VpsAdmin
 
     end
 
+    def self.initialize
+      DatasetPlans.initialize
+    end
+
     def self.default
+      initialize
+
       api = HaveAPI::Server.new
       api.use_version(:all)
       api.set_default_version(1)
