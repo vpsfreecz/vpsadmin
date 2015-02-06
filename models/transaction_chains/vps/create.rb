@@ -41,6 +41,11 @@ module TransactionChains
 
       append(Transactions::Vps::Create, args: vps) do
         create(vps)
+
+        # Create features
+        ::VpsFeature::FEATURES.each_key do |name|
+          just_create(::VpsFeature.create!(vps: vps, name: name, enabled: false))
+        end
       end
 
       use_chain(Vps::ApplyConfig, args: [vps, vps.node.environment.vps_configs.pluck(:id)])
