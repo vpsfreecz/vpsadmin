@@ -26,6 +26,11 @@ module TransactionChains
       # Create VPS
       append(Transactions::Vps::Create, args: vps) do
         edit(vps, vps_template: template.id)
+
+        # Reset features
+        vps.vps_features.each do |f|
+          edit(f, enabled: 0)
+        end
       end
 
       append(Transactions::Vps::ApplyConfig, args: vps)
