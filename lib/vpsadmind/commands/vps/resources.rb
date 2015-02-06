@@ -23,13 +23,13 @@ module VpsAdmind
     def translate_value(name, value)
       case name
         when 'cpu'
-          {cpus: value, cpulimit: value*100}
+          {:cpus => value, :cpulimit => value*100}
 
         when 'memory'
-          {ram: "#{value}M"}
+          {:ram => "#{value}M"}
 
         when 'swap'
-          {swap: "#{value}M"}
+          {:swap => "#{value}M"}
       end
     end
   end
