@@ -110,6 +110,11 @@ class Transaction < ActiveRecord::Base
       add_confirmable(:create_type, *args)
     end
 
+    # Create an object which does not have attribute +confirmed+.
+    def just_create(*args)
+      add_confirmable(:just_create_type, *args)
+    end
+
     # Destroy an object. Pass the object as an argument.
     def destroy(*args)
       add_confirmable(:destroy_type, *args)
