@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150205145349) do
+ActiveRecord::Schema.define(version: 20150206154652) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -575,7 +575,6 @@ ActiveRecord::Schema.define(version: 20150205145349) do
     t.boolean "vps_onboot",                               default: true,  null: false
     t.boolean "vps_onstartall",                           default: true,  null: false
     t.boolean "vps_backup_enabled",                       default: true,  null: false
-    t.boolean "vps_features_enabled",                     default: false, null: false
     t.integer "vps_backup_export",                                        null: false
     t.text    "vps_backup_exclude",                                       null: false
     t.text    "vps_config",                                               null: false
@@ -600,6 +599,15 @@ ActiveRecord::Schema.define(version: 20150205145349) do
     t.string   "key",        limit: 64, null: false
     t.datetime "expiration",            null: false
   end
+
+  create_table "vps_features", force: true do |t|
+    t.integer  "vps_id",     null: false
+    t.string   "name",       null: false
+    t.boolean  "enabled",    null: false
+    t.datetime "updated_at"
+  end
+
+  add_index "vps_features", ["vps_id", "name"], name: "index_vps_features_on_vps_id_and_name", unique: true, using: :btree
 
   create_table "vps_has_config", force: true do |t|
     t.integer "vps_id",    null: false
