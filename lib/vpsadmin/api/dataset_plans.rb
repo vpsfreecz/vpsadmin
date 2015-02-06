@@ -18,21 +18,16 @@ module VpsAdmin::API
       end
 
       def add_group_snapshot(dip, min, hour, day, month, dow)
-        ::DatasetInPoolPlan.create!(
-            dataset_plan: @plan,
-            dataset_in_pool: dip
-        )
-
         action = ::DatasetAction.joins(:dataset_plan).where(
             pool_id: dip.pool_id,
-            action: :group_snapshot,
+            action: ::DatasetAction.actions[:group_snapshot],
             dataset_plan: @plan
         ).take
 
         unless action
           action = ::DatasetAction.create!(
               pool_id: dip.pool_id,
-              action: :group_snapshot,
+              action: ::DatasetAction.actions[:group_snapshot],
               dataset_plan: @plan
           )
 
@@ -54,24 +49,18 @@ module VpsAdmin::API
       end
 
       def del_group_snapshot(dip, *_)
-        ::DatasetInPoolPlan.find_by!(
-            dataset_plan: @plan,
+        ::GroupSnapshot.joins(:dataset_action).where(
+            dataset_actions: {
+                pool_id: dip.pool_id,
+                action: ::DatasetAction.actions[:group_snapshot],
+                dataset_plan_id: @plan.id
+            },
             dataset_in_pool: dip
-        ).destroy!
-
-        ::DatasetAction.where(
-            pool_id: dip.pool_id,
-            dataset_plan: @plan
-        ).each do |a|
-
-          ::RepeatableTask.find_for!(a).destroy!
-          a.destroy!
-
-        end
+        ).take!.destroy!
       end
 
       def add_backup(dip, min, hour, day, month, dow)
-        plan = ::DatasetInPoolPlan.create!(
+        plan = ::DatasetInPoolPlan.find_by!(
             dataset_plan: @plan,
             dataset_in_pool: dip
         )
@@ -79,7 +68,8 @@ module VpsAdmin::API
         action = ::DatasetAction.create!(
             src_dataset_in_pool: dip,
             dst_dataset_in_pool: dip.dataset.dataset_in_pools.joins(:pool).where(pools: {role: ::Pool.roles[:backup]}).take!,
-            dataset_in_pool_plan: plan
+            dataset_in_pool_plan: plan,
+            action: ::DatasetAction.actions[:backup],
         )
 
         ::RepeatableTask.create!(
@@ -100,12 +90,13 @@ module VpsAdmin::API
             dataset_in_pool: dip
         )
 
-        ::DatasetAction.where(dataset_in_pool_plan: plan).each do |a|
+        ::DatasetAction.where(
+            dataset_in_pool_plan: plan,
+            action: ::DatasetAction.actions[:backup]
+        ).each do |a|
           ::RepeatableTask.find_for!(a).destroy!
           a.destroy!
         end
-
-        plan.destroy!
       end
     end
 
@@ -149,11 +140,29 @@ module VpsAdmin::API
       end
 
       def register(dip)
-        BlockEnv.new(:add, dataset_plan).instance_exec(dip, &@block)
+        plan = nil
+
+        ::DatasetInPoolPlan.transaction do
+          plan = ::DatasetInPoolPlan.create!(
+              dataset_plan: dataset_plan,
+              dataset_in_pool: dip
+          )
+
+          BlockEnv.new(:add, dataset_plan).instance_exec(dip, &@block)
+        end
+
+        plan
       end
 
       def unregister(dip)
-        BlockEnv.new(:del, dataset_plan).instance_exec(dip, &@block)
+        ::DatasetInPoolPlan.transaction do
+          BlockEnv.new(:del, dataset_plan).instance_exec(dip, &@block)
+
+          ::DatasetInPoolPlan.find_by!(
+              dataset_plan: dataset_plan,
+              dataset_in_pool: dip
+          ).destroy!
+        end
       end
 
       def dataset_plan
