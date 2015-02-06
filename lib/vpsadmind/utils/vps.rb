@@ -39,5 +39,18 @@ module VpsAdmind
           :running => stat[2] == 'running'
       }
     end
+
+    def honor_state
+      before = status
+      yield
+      after = status
+
+      if before[:running] && !after[:running]
+        call_cmd(Commands::Vps::Start, {:vps_id => @vps_id})
+
+      elsif !before[:running] && after[:running]
+        call_cmd(Commands::Vps::Stop, {:vps_id => @vps_id})
+      end
+    end
   end
 end
