@@ -171,7 +171,12 @@ module VpsAdmind
               t.query("DELETE FROM #{row[0]} WHERE #{pk}")
             end
 
-          when 1 # edit before
+          when 1 # just create
+            if !success || dir != :execute
+              t.query("DELETE FROM #{row[0]} WHERE #{pk}")
+            end
+
+          when 2 # edit before
             if !success || dir == :rollback
               attrs = YAML.load(row[2])
               update = attrs.collect { |k, v| "`#{k}` = #{sql_val(v)}" }.join(',')
@@ -179,7 +184,7 @@ module VpsAdmind
               t.query("UPDATE #{row[0]} SET #{update} WHERE #{pk}")
             end
 
-          when 2 # edit after
+          when 3 # edit after
             if success && dir == :execute
               attrs = YAML.load(row[2])
               update = attrs.collect { |k, v| "`#{k}` = #{sql_val(v)}" }.join(',')
@@ -187,26 +192,26 @@ module VpsAdmind
               t.query("UPDATE #{row[0]} SET #{update} WHERE #{pk}")
             end
 
-          when 3 # destroy
+          when 4 # destroy
             if success && dir == :execute
               t.query("DELETE FROM #{row[0]} WHERE #{pk}")
             else
               t.query("UPDATE #{row[0]} SET confirmed = 1 WHERE #{pk}")
             end
 
-          when 4 # just destroy
+          when 5 # just destroy
             if success && dir == :execute
               t.query("DELETE FROM #{row[0]} WHERE #{pk}")
             end
 
-          when 5 # decrement
+          when 6 # decrement
             if success && dir == :execute
               attr = YAML.load(row[2])
 
               t.query("UPDATE #{row[0]} SET #{attr} = #{attr} - 1 WHERE #{pk}")
             end
 
-          when 6 # increment
+          when 7 # increment
             if success && dir == :execute
               attr = YAML.load(row[2])
 
