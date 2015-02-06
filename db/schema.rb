@@ -82,11 +82,18 @@ ActiveRecord::Schema.define(version: 20150205145349) do
     t.integer "src_dataset_in_pool_id"
     t.integer "dst_dataset_in_pool_id"
     t.integer "snapshot_id"
-    t.boolean "recursive",              default: false, null: false
-    t.integer "dependency_id"
-    t.integer "last_transaction_id"
-    t.integer "action",                                 null: false
+    t.boolean "recursive",               default: false, null: false
+    t.integer "dataset_plan_id"
+    t.integer "dataset_in_pool_plan_id"
+    t.integer "action",                                  null: false
   end
+
+  create_table "dataset_in_pool_plans", force: true do |t|
+    t.integer "dataset_plan_id",    null: false
+    t.integer "dataset_in_pool_id", null: false
+  end
+
+  add_index "dataset_in_pool_plans", ["dataset_plan_id", "dataset_in_pool_id"], name: "dataset_in_pool_plans_unique", unique: true, using: :btree
 
   create_table "dataset_in_pools", force: true do |t|
     t.integer "dataset_id",                                     null: false
@@ -102,6 +109,10 @@ ActiveRecord::Schema.define(version: 20150205145349) do
   end
 
   add_index "dataset_in_pools", ["dataset_id", "pool_id"], name: "index_dataset_in_pools_on_dataset_id_and_pool_id", unique: true, using: :btree
+
+  create_table "dataset_plans", force: true do |t|
+    t.string "name", null: false
+  end
 
   create_table "dataset_properties", force: true do |t|
     t.integer  "pool_id"
@@ -157,11 +168,11 @@ ActiveRecord::Schema.define(version: 20150205145349) do
   add_index "environment_config_chains", ["environment_id", "vps_config_id"], name: "environment_config_chains_unique", unique: true, using: :btree
 
   create_table "environment_user_configs", force: true do |t|
-    t.integer "environment_id"
-    t.integer "user_id"
+    t.integer "environment_id",                  null: false
+    t.integer "user_id",                         null: false
     t.boolean "can_create_vps",  default: false, null: false
     t.boolean "can_destroy_vps", default: false, null: false
-    t.boolean "vps_lifetime",    default: false, null: false
+    t.integer "vps_lifetime",    default: 0,     null: false
     t.integer "max_vps_count",   default: 1,     null: false
   end
 

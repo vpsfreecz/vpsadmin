@@ -103,6 +103,14 @@ class AddStorage < ActiveRecord::Migration
     belongs_to :storage_export
   end
 
+  class DatasetPlan < ActiveRecord::Base
+
+  end
+
+  class DatasetInPoolPlan < ActiveRecord::Base
+
+  end
+
   class RepeatableTask < ActiveRecord::Base
 
   end
@@ -280,6 +288,18 @@ class AddStorage < ActiveRecord::Migration
       t.integer    :interval,       null: false, default: 60 # in seconds
     end
 
+    create_table :dataset_plans do |t|
+      t.string     :name,            null: false
+    end
+
+    create_table :dataset_in_pool_plans do |t|
+      t.references :dataset_plan,    null: false
+      t.references :dataset_in_pool, null: false
+    end
+
+    add_index :dataset_in_pool_plans, [:dataset_plan_id, :dataset_in_pool_id],
+              unique: true, name: :dataset_in_pool_plans_unique
+
     create_table :repeatable_tasks do |t|
       t.string     :label,          null: true,  limit: 100
       t.string     :class_name,     null: false, limit: 255
@@ -307,8 +327,8 @@ class AddStorage < ActiveRecord::Migration
       t.integer    :dst_dataset_in_pool_id, null: true
       t.references :snapshot,       null: true # for rollback
       t.boolean    :recursive,      null: false, default: false
-      t.integer    :dependency_id,  null: true # action will depend on previous action
-      t.integer    :last_transaction_id, null: true
+      t.references :dataset_plan,   null: true
+      t.references :dataset_in_pool_plan, null: true
 
       # Enum action
       # snapshot: create a snapshot
@@ -326,6 +346,9 @@ class AddStorage < ActiveRecord::Migration
     end
 
     add_column :vps, :dataset_in_pool_id, :integer, null: true
+
+    # Create dataset plans
+    backup_plan = DatasetPlan.create!(name: :daily_backup)
 
     group_snapshots_per_pool = {}
 
@@ -356,7 +379,8 @@ class AddStorage < ActiveRecord::Migration
 
       group_snapshots_per_pool[ pool.id ] = DatasetAction.create(
           pool_id: pool.id,
-          action: 4 # group_snapshot
+          action: 4, # group_snapshot
+          dataset_plan_id: backup_plan.id
       )
 
       # Create a dataset for every VPS
@@ -424,11 +448,6 @@ class AddStorage < ActiveRecord::Migration
 
       # FIXME
       # TransactionChains::Pool::Create.fire(r)
-
-      group_snapshots_per_pool[ r.id ] = DatasetAction.create(
-          pool_id: r.id,
-          action: 4 # group_snapshot
-      )
 
       pool_mapping[root.id] = r.id
     end
@@ -530,18 +549,24 @@ class AddStorage < ActiveRecord::Migration
       # FIXME: create mount even if none exist?
       end
 
+      dip_plan = DatasetInPoolPlan.create!(
+          dataset_plan_id: backup_plan.id,
+          dataset_in_pool_id: vps.dataset_in_pool_id
+      )
+
       # Transfer snapshots at 01:30 every day
       backup = DatasetAction.create(
           src_dataset_in_pool_id: vps.dataset_in_pool_id,
           dst_dataset_in_pool_id: ds_in_pool.id,
-          action: 3 # :backup
+          action: 3, # :backup
+          dataset_in_pool_plan_id: dip_plan.id
       )
 
       RepeatableTask.create(
           class_name: backup.class.to_s.demodulize,
           table_name: backup.class.table_name,
           row_id: backup.id,
-          minute: '30',
+          minute: '05',
           hour: '01',
           day_of_month: '*',
           month: '*',
@@ -570,6 +595,8 @@ class AddStorage < ActiveRecord::Migration
     drop_table :snapshot_in_pool_in_branches
     drop_table :mounts
     drop_table :mirrors
+    drop_table :dataset_plans
+    drop_table :dataset_in_pool_plans
     drop_table :repeatable_tasks
     drop_table :dataset_actions
     drop_table :group_snapshots

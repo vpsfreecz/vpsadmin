@@ -2,7 +2,7 @@ class DatasetAction < ActiveRecord::Base
   belongs_to :pool
   belongs_to :src_dataset_in_pool, class_name: 'DatasetInPool'
   belongs_to :dst_dataset_in_pool, class_name: 'DatasetInPool'
-  belongs_to :last_transaction, class_name: 'Transaction'
+  belongs_to :dataset_plan
   has_many :group_snapshots
 
   enum action: %i(snapshot transfer rollback backup group_snapshot)
