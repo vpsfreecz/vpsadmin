@@ -523,6 +523,100 @@ END
     end
   end
 
+  class Feature < HaveAPI::Resource
+    version 1
+    model ::VpsFeature
+    route ':vps_id/features'
+    desc 'Toggle VPS features'
+
+    params(:toggle) do
+      bool :enabled
+    end
+
+    params(:common) do
+      string :name
+      string :label
+      use :toggle
+    end
+
+    params(:all) do
+      id :id
+      use :common
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      desc 'List VPS features'
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def query
+        ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).vps_features
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        query
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      desc 'Show VPS feature'
+      resolve ->(f){ [f.vps_id, f.id] }
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def prepare
+        @feature = ::Vps.find_by!(
+            with_restricted(vps_id: params[:vps_id])
+        ).vps_features.find(params[:feature_id])
+      end
+
+      def exec
+        @feature
+      end
+    end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Toggle VPS feature'
+
+      input do
+        use :toggle
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def exec
+        vps = ::Vps.find_by!(
+            with_restricted(vps_id: params[:vps_id])
+        )
+        vps.set_feature(vps.vps_features.find(params[:feature_id]), input[:enabled])
+      end
+    end
+  end
+
   class IpAddress < HaveAPI::Resource
     version 1
     model ::IpAddress

@@ -245,6 +245,14 @@ class Vps < ActiveRecord::Base
     end
   end
 
+  def set_feature(feature, enabled)
+    set_features({feature.name.to_sym => enabled})
+  end
+
+  def set_features(features)
+    TransactionChains::Vps::Features.fire(self, features)
+  end
+
   private
   def generate_password
     chars = ('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a
