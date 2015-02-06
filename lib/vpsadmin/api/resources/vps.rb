@@ -615,6 +615,31 @@ END
         vps.set_feature(vps.vps_features.find(params[:feature_id]), input[:enabled])
       end
     end
+
+    class UpdateAll < HaveAPI::Action
+      desc 'Set all features at once'
+      http_method :post
+      route 'update_all'
+
+      input do
+        ::VpsFeature::FEATURES.each do |name, label|
+          bool name, label: label
+        end
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def exec
+        vps = ::Vps.find_by!(
+            with_restricted(vps_id: params[:vps_id])
+        )
+        vps.set_features(input)
+      end
+    end
   end
 
   class IpAddress < HaveAPI::Resource
