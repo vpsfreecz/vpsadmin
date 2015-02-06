@@ -383,6 +383,111 @@ module VpsAdmin::API::Resources
       end
     end
 
+    class Plan < HaveAPI::Resource
+      version 1
+      route ':dataset_id/plans'
+      model ::DatasetInPoolPlan
+      desc 'Manage dataset plans'
+
+      params(:common) do
+        resource VpsAdmin::API::Resources::DatasetPlan, required: true
+      end
+
+      params(:all) do
+        id :id
+        use :common
+      end
+
+      class Index < HaveAPI::Actions::Default::Index
+        output(:object_list) do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict user: u
+          allow
+        end
+
+        def query
+          ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+          ds.primary_dataset_in_pool!.dataset_in_pool_plans
+        end
+
+        def count
+          query.count
+        end
+
+        def exec
+          with_includes(query).offset(input[:offset]).limit(input[:limit])
+        end
+      end
+
+      class Show < HaveAPI::Actions::Default::Show
+        desc 'Show dataset plan'
+        resolve ->(p){ [p.dataset_in_pool.dataset_id, p.id] }
+
+        output do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict user: u
+          allow
+        end
+
+        def prepare
+          ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+          @plan = ds.primary_dataset_in_pool!.dataset_in_pool_plans.find_by!(params[:plan_id])
+        end
+
+        def exec
+          @plan
+        end
+      end
+
+      class Create < HaveAPI::Actions::Default::Create
+        desc 'Assign new dataset plan'
+
+        input do
+          use :common
+        end
+
+        output do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict user: u
+          allow
+        end
+
+        def exec
+          s = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+          s.primary_dataset_in_pool!.add_plan(input[:dataset_plan])
+        end
+      end
+
+      class Delete < HaveAPI::Actions::Default::Delete
+        desc 'Remove dataset plan'
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict user: u
+          allow
+        end
+
+        def exec
+          ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+          dip =  ds.primary_dataset_in_pool!
+          dip.del_plan(dip.dataset_in_pool_plans.find(params[:plan_id]))
+          ok
+        end
+      end
+    end
+
     class Download < HaveAPI::Resource
       version 1
       route ':dataset_id/downloads'
