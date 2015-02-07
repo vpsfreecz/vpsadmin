@@ -24,10 +24,22 @@ VpsAdmin::API::DatasetProperties.register do
     end
   end
 
-  property :refquota do
+  property :quota do
     type :integer
     label 'Quota'
-    desc 'Limits  the amount of space a dataset can consume'
+    desc 'Limits the amount of space a dataset and all its descendants can consume'
+    default 0
+    inheritable false
+
+    validate do |raw|
+      raw >= 0
+    end
+  end
+
+  property :refquota do
+    type :integer
+    label 'Reference quota'
+    desc 'Limits the amount of space a dataset can consume'
     default 0
     inheritable false
 
