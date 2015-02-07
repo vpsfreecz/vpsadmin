@@ -42,7 +42,9 @@ include WWW_ROOT.'lib/log.lib.php';
 include WWW_ROOT.'lib/helpbox.lib.php';
 include WWW_ROOT.'lib/nas.lib.php';
 
+include WWW_ROOT.'forms/dataset.forms.php';
 include WWW_ROOT.'forms/nas.forms.php';
+include WWW_ROOT.'forms/vps.forms.php';
 
 include WWW_ROOT.'lib/gettext_stream.lib.php';
 include WWW_ROOT.'lib/gettext_inc.lib.php';
@@ -138,6 +140,9 @@ try {
 				break;
 			case 'log':
 				include WWW_ROOT.'pages/page_log.php';
+				break;
+			case 'dataset':
+				include WWW_ROOT.'pages/page_dataset.php';
 				break;
 			case 'backup':
 				include WWW_ROOT.'pages/page_backup.php';

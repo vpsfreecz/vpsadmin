@@ -1,32 +1,5 @@
 <?php
 
-function is_mount_dst_valid($dst) {
-	$dst = trim($dst);
-	
-	if(!preg_match("/^[a-zA-Z0-9\_\-\/\.]+$/", $dst) || preg_match("/\.\./", $dst))
-		return false;
-	
-	if (strpos($dst, "/") !== 0)
-		$dst = "/" . $dst;
-	
-	return $dst;
-}
-
-function is_ds_valid($p) {
-	$p = trim($p);
-	
-	if(preg_match("/^\//", $p))
-		return false;
-	
-	if(!preg_match("/^[a-zA-Z0-9\/\-\:\.\_]+$/", $p))
-		return false;
-	
-	if(preg_match("/\/\//", $p))
-		return false;
-	
-	return $p;
-}
-
 function export_add_form($target, $default = false) {
 	global $xtpl, $NAS_QUOTA_UNITS, $NAS_EXPORT_TYPES;
 	
