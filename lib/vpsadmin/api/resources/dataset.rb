@@ -47,6 +47,8 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
+        input blacklist: %i(sharenfs)
+        output blacklist: %i(sharenfs)
         allow
       end
 
@@ -89,6 +91,8 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
+        input blacklist: %i(sharenfs)
+        output blacklist: %i(sharenfs)
         allow
       end
 
@@ -121,6 +125,8 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
+        input blacklist: %i(sharenfs)
+        output blacklist: %i(sharenfs)
         allow
       end
 
@@ -169,6 +175,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
+        input blacklist: %i(sharenfs)
         allow
       end
 
