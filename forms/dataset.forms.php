@@ -243,7 +243,7 @@ function mount_list($vps_id) {
 		$xtpl->table_td($m->dataset->name);
 		$xtpl->table_td($m->snapshot_id ? $m->snapshot->created_at : '---');
 		$xtpl->table_td($m->mountpoint);
-		$xtpl->table_td('<a href="?page=dataset&action=mount_destroy&id='.$m->id.'&return='.$return.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		$xtpl->table_td('<a href="?page=dataset&action=mount_destroy&vps='.$vps_id.'&id='.$m->id.'&return='.$return.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
 		$xtpl->table_tr();
 	}
 	

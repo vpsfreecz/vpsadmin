@@ -132,6 +132,42 @@ if ($_SESSION['logged_in']) {
 			}
 			break;
 		
+		case 'mount_destroy':
+			if (isset($_POST['confirm']) && $_POST['confirm']) {
+				try {
+					$api->vps($_GET['vps'])->mount($_GET['id'])->delete();
+					
+					notify_user(_('Mount removed'), _('The mount was successfully removed.'));
+					redirect($_POST['return'] ? $_POST['return'] : '?page=');
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Failed to remove mount'), $e->getResponse());
+				}
+				
+			} else {
+				try {
+					$vps = $api->vps->find($_GET['vps']);
+					$m = $vps->mount->find($_GET['id']);
+					
+					$xtpl->table_title(_('Confirm the removal of mount from VPS').' #'.$vps->id._(' at ').$m->mountpoint);
+					$xtpl->form_create('?page=dataset&action=mount_destroy&vps='.$vps->id.'&id='.$m->id, 'post');
+					
+					$xtpl->table_td(_("Confirm") . ' ' .
+						'<input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">'
+					);
+					$xtpl->form_add_checkbox_pure('confirm', '1', false);
+					$xtpl->table_td(_('The dataset will be unmounted. The data itself is not touched.'));
+					$xtpl->table_tr();
+					
+					$xtpl->form_out(_('Remove mount'));
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Mount removal failed'), $e->getResponse());
+				}
+			}
+			
+			break;
+		
 		default:
 			
 	}
