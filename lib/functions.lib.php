@@ -20,6 +20,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+$DATA_SIZE_UNITS = array("k" => "KiB", "m" => "MiB", "g" => "GiB", "t" => "TiB");
+
 function members_list () {
 	global $db;
 	if ($_SESSION["is_admin"]) {
@@ -351,6 +353,30 @@ function api_param_to_form_pure($name, $desc, $v = null) {
 		default:
 			continue;
 	}
+}
+
+function data_size_unitize($val) {
+	$units = array("t" => 19, "g" => 9, "m" => 0);
+	
+	if (!$val)
+		return array(0, "g");
+	
+	foreach ($units as $u => $ex) {
+		if ($val >= (2 << $ex))
+			return array($val / (2 << $ex), $u);
+	}
+	
+	return array($val, "m");
+}
+
+function data_size_to_humanreadable($val) {
+	global $DATA_SIZE_UNITS;
+	
+	if (!$val)
+		return _("none");
+	
+	$res = data_size_unitize($val);
+	return round($res[0], 2) . " " . $DATA_SIZE_UNITS[$res[1]];
 }
 
 ?>

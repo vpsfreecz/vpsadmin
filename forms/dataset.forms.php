@@ -29,20 +29,6 @@ function is_ds_valid($p) {
 	return $p;
 }
 
-function dataset_quota_unitize($val) {
-	$units = array("t" => 19, "g" => 9, "m" => 0);
-	
-	if (!$val)
-		return array(0, "g");
-	
-	foreach ($units as $u => $ex) {
-		if ($val >= (2 << $ex))
-			return array($val / (2 << $ex), $u);
-	}
-	
-	return array($val, "m");
-}
-
 function dataset_list($role, $parent) {
 	global $xtpl, $api;
 	
@@ -74,7 +60,7 @@ function dataset_list($role, $parent) {
 				continue;
 			
 			$xtpl->table_td(
-				$desc->type == 'Integer' ? nas_size_to_humanreadable($ds->{$name}) : $ds->{$name}
+				$desc->type == 'Integer' ? data_size_to_humanreadable($ds->{$name}) : $ds->{$name}
 			);
 		}
 		
@@ -132,7 +118,7 @@ function dataset_create_form() {
 	
 	// Quota
 	$quota = $params->{$quota_name};
-	$v = dataset_quota_unitize($_POST[$quota_name] ? $_POST[$quota_name] : $quota->default);
+	$v = data_size_unitize($_POST[$quota_name] ? $_POST[$quota_name] : $quota->default);
 	
 	$xtpl->table_td(
 		$quota->label . ' ' .
@@ -176,7 +162,7 @@ function dataset_edit_form() {
 	$quota = $params->{$quota_name};
 	
 	if (!$_POST[$quota_name])
-		$v = dataset_quota_unitize($ds->{$quota_name});
+		$v = data_size_unitize($ds->{$quota_name});
 	
 	$xtpl->table_td(
 		$quota->label . ' ' .
