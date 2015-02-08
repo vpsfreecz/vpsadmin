@@ -379,4 +379,10 @@ function data_size_to_humanreadable($val) {
 	return round($res[0], 2) . " " . $DATA_SIZE_UNITS[$res[1]];
 }
 
+function get_val($name, $default = '') {
+	if (isset($_GET[$name]))
+		return $_GET[$name];
+	return $default;
+}
+
 ?>

@@ -29,13 +29,16 @@ function is_ds_valid($p) {
 	return $p;
 }
 
-function dataset_list($role, $parent) {
+function dataset_list($role, $parent = null, $user = null, $dataset = null, $limit = null, $offset = null) {
 	global $xtpl, $api;
 	
 	$params = $api->dataset->list->getParameters('output');
 	$ignore = array('id', 'name', 'parent', 'user');
 	$include = array('quota', 'refquota', 'used', 'avail');
 	$colspan = 4 + count($include);
+	
+	if (isset($_SESSION['is_admin']))
+		$xtpl->table_add_category('#');
 	
 	$xtpl->table_add_category(_('Dataset'));
 	
@@ -50,9 +53,31 @@ function dataset_list($role, $parent) {
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 	
-	$datasets = $api->dataset->list(array('dataset' => $parent));
+	$listParams = array(
+		'role' => $role,
+		'dataset' => $parent
+	);
+	
+	if ($user)
+		$listParams['user'] = $user;
+	
+	if ($dataset)
+		$listParams['dataset'] = $dataset;
+	
+	if ($limit)
+		$listParams['limit'] = $limit;
+	
+	if ($offset)
+		$listParams['offset'] = $offset;
+	
+	$datasets = $api->dataset->list($listParams);
 	
 	foreach ($datasets as $ds) {
+		if (isset($_SESSION['is_admin']))
+			$xtpl->table_td(
+				'<a href="?page=nas&action=list&dataset='.$ds->id.'">'.$ds->id.'</a>'
+			);
+		
 		$xtpl->table_td($ds->name);
 		
 		foreach ($params as $name => $desc) {
