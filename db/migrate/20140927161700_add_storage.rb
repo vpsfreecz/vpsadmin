@@ -408,7 +408,7 @@ class AddStorage < ActiveRecord::Migration
               dataset: ds,
               dataset_in_pool: ds_in_pool,
               name: k,
-              value: k == :refquota ? 60*1024*1024*1024 : v.meta[:default],
+              value: k == :refquota ? 60*1024 : v.meta[:default],
               inherited: true,
               parent: pool_properties[k]
           )
