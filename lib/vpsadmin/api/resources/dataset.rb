@@ -35,6 +35,8 @@ module VpsAdmin::API::Resources
       desc 'List datasets'
 
       input do
+        resource User, label: 'User', value_label: :login,
+                 desc: 'Dataset owner'
         resource VpsAdmin::API::Resources::Dataset, label: 'Subtree'
         string :role, label: 'Role', desc: 'Show only datasets of certain role',
             choices: ::Pool.roles.keys
@@ -47,7 +49,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
-        input blacklist: %i(sharenfs)
+        input blacklist: %i(user)
         output blacklist: %i(sharenfs)
         allow
       end
@@ -62,6 +64,8 @@ module VpsAdmin::API::Resources
         else
           q = q.where(pools: {role: [::Pool.roles[:hypervisor], ::Pool.roles[:primary]]})
         end
+
+        q = q.where(user: input[:user]) if input[:user]
 
         q
       end
