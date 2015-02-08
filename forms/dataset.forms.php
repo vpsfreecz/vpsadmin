@@ -30,7 +30,7 @@ function is_ds_valid($p) {
 }
 
 function dataset_quota_unitize($val) {
-	$units = array("t" => 39, "g" => 29, "m" => 19, "k" => 9);
+	$units = array("t" => 19, "g" => 9, "m" => 0);
 	
 	if (!$val)
 		return array(0, "g");
