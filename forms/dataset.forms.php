@@ -35,7 +35,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 	$params = $api->dataset->list->getParameters('output');
 	$ignore = array('id', 'name', 'parent', 'user');
 	$include = array('quota', 'refquota', 'used', 'avail');
-	$colspan = 4 + count($include);
+	$colspan = 5 + count($include);
 	
 	if (isset($_SESSION['is_admin']))
 		$xtpl->table_add_category('#');
@@ -49,6 +49,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 		$xtpl->table_add_category($desc->label);
 	}
 	
+	$xtpl->table_add_category(_('Mount'));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
@@ -71,6 +72,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 		$listParams['offset'] = $offset;
 	
 	$datasets = $api->dataset->list($listParams);
+	$return = urlencode($_SERVER['REQUEST_URI']);
 	
 	foreach ($datasets as $ds) {
 		if (isset($_SESSION['is_admin']))
@@ -89,8 +91,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 			);
 		}
 		
-		$return = urlencode($_SERVER['REQUEST_URI']);
-		
+		$xtpl->table_td('<a href="?page=dataset&action=mount&dataset='.$ds->id.'&vps='.$_GET['veid'].'&return='.$return.'">'._('Mount').'</a>');
 		$xtpl->table_td('<a href="?page=dataset&action=new&role='.$role.'&parent='.$ds->id.'&return='.$return.'"><img src="template/icons/vps_add.png" title="'._("Create a subdataset").'"></a>');
 		$xtpl->table_td('<a href="?page=dataset&action=edit&role='.$role.'&id='.$ds->id.'&return='.$return.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 		$xtpl->table_td('<a href="?page=dataset&action=destroy&id='.$ds->id.'&return='.$return.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
@@ -99,7 +100,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 	}
 	
 	$xtpl->table_td(
-		'<a href="?page=dataset&action=new&role='.$role.'&parent='.$parent.'&return='.urlencode($_SERVER['REQUEST_URI']).'">'._('Create a new dataset').'</a>',
+		'<a href="?page=dataset&action=new&role='.$role.'&parent='.$parent.'&return='.$return.'">'._('Create a new dataset').'</a>',
 		false,
 		true, // right
 		$colspan // colspan
@@ -222,3 +223,34 @@ function dataset_edit_form() {
 	$xtpl->form_out(_('Save'));
 }
 
+function mount_list($vps_id) {
+	global $xtpl, $api;
+	
+	$xtpl->table_title(_('Mounts'));
+	
+	$xtpl->table_add_category(_('Dataset'));
+	$xtpl->table_add_category(_('Snapshot'));
+	$xtpl->table_add_category(_('Mountpoint'));
+	$xtpl->table_add_category('');
+	
+	$mounts = $api->vps($vps_id)->mount->list();
+	$return = urlencode($_SERVER['REQUEST_URI']);
+	
+	foreach ($mounts as $m) {
+		$xtpl->table_td($m->dataset->name);
+		$xtpl->table_td($m->snapshot_id ? $m->snapshot->created_at : '---');
+		$xtpl->table_td($m->mountpoint);
+		$xtpl->table_td('<a href="?page=dataset&action=mount_destroy&id='.$m->id.'&return='.$return.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_td(
+		'<a href="?page=dataset&action=mount&vps='.$vps_id.'&return='.$return.'">'._('Create a new mount').'</a>',
+		false,
+		true, // right
+		4 // colspan
+	);
+	$xtpl->table_tr();
+	
+	$xtpl->table_out();
+}

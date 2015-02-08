@@ -1100,6 +1100,9 @@ if (isset($show_info) && $show_info) {
 	// Datasets
 	dataset_list('hypervisor', $vps->dataset_id);
 	
+	// Mounts
+	mount_list($vps->id);
+	
 	}
 }
 
