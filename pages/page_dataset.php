@@ -8,13 +8,13 @@ if ($_SESSION['logged_in']) {
 			if (isset($_POST['name'])) {
 				$params = array(
 					'name' => $_POST['name'],
-					'dataset' => $_POST['dataset'],
+					'dataset' => $_POST['dataset'] ? $_POST['dataset'] : $_GET['parent'],
 					'automount' => $_POST['automount'] ? true : false
 				);
 				
 				foreach ($quotas as $quota) {
 					if (isset($_POST[$quota]))
-						$params[$quota] = $_POST[$quota] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]);
+						$params[$quota] = $_POST[$quota] * (2 << $DATASET_UNITS_TR[$_POST["quota_unit"]]);
 				}
 				
 				foreach ($DATASET_PROPERTIES as $p) {
@@ -45,7 +45,7 @@ if ($_SESSION['logged_in']) {
 				
 				foreach ($quotas as $quota) {
 					if (isset($_POST[$quota]))
-						$params[$quota] = $_POST[$quota] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]);
+						$params[$quota] = $_POST[$quota] * (2 << $DATASET_UNITS_TR[$_POST["quota_unit"]]);
 				}
 				
 				foreach ($DATASET_PROPERTIES as $p) {
@@ -106,6 +106,14 @@ if ($_SESSION['logged_in']) {
 				}
 				
 				break;
+		
+		case 'mount':
+			if (isset($_POST[''])) {
+				
+				
+			} else {
+				mount_create_form();
+			}
 		
 		default:
 			

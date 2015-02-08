@@ -1,6 +1,7 @@
 <?php
 
 $DATASET_PROPERTIES = array('compression', 'recordsize', 'atime', 'relatime', 'sync');
+$DATASET_UNITS_TR = array("m" => 0, "g" => 9, "t" => 19);
 
 function is_mount_dst_valid($dst) {
 	$dst = trim($dst);
@@ -150,14 +151,16 @@ function dataset_create_form() {
 	
 	// Quota
 	$quota = $params->{$quota_name};
-	$v = data_size_unitize($_POST[$quota_name] ? $_POST[$quota_name] : $quota->default);
+	
+	if (!$_POST[$quota_name])
+		$v = data_size_unitize($_POST[$quota_name] ? $_POST[$quota_name] : $quota->default);
 	
 	$xtpl->table_td(
 		$quota->label . ' ' .
 		'<input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">'
 	);
-	$xtpl->form_add_input_pure('text', '30', $quota_name, $v[0], $quota->description);
-	$xtpl->form_add_select_pure('quota_unit', array("m" => "MiB", "g" => "GiB", "t" => "TiB"), $v[1]);
+	$xtpl->form_add_input_pure('text', '30', $quota_name, $_POST[$quota_name] ? $_POST[$quota_name] : $v[0], $quota->description);
+	$xtpl->form_add_select_pure('quota_unit', array("m" => "MiB", "g" => "GiB", "t" => "TiB"), $_POST[$quota_name] ? $_POST['quota_unit'] : $v[1]);
 	$xtpl->table_tr();
 	
 	// Remaining dataset properties
