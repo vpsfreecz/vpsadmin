@@ -330,17 +330,20 @@ function boolean_icon($val) {
 	}
 }
 
-function api_param_to_form_pure($name, $desc) {
+function api_param_to_form_pure($name, $desc, $v = null) {
 	global $xtpl;
+	
+	if (!$v)
+		$v = $desc->default;
 	
 	switch ($desc->type) {
 		case 'String':
 		case 'Integer':
-			$xtpl->form_add_input_pure('text', '30', $name, $_POST[$name] ? $_POST[$name] : $desc->default);
+			$xtpl->form_add_input_pure('text', '30', $name, $_POST[$name] ? $_POST[$name] : $v);
 			break;
 		
 		case 'Boolean':
-			$xtpl->form_add_checkbox_pure($name, '1', $_POST[$name] ? $_POST[$name] : $desc->default);
+			$xtpl->form_add_checkbox_pure($name, '1', $_POST[$name] ? $_POST[$name] : $v);
 			break;
 		
 		case 'Resource':
