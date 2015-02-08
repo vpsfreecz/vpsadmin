@@ -71,7 +71,42 @@ switch ($_GET['action']) {
 		break;
 	
 	case 'destroy':
-		break;
+			if (isset($_POST['confirm']) && $_POST['confirm']) {
+				try {
+					$api->dataset($_GET['id'])->delete();
+					
+					notify_user(_('Dataset destroyed'), _('Dataset was successfully destroyed.'));
+					redirect($_POST['return'] ? $_POST['return'] : '?page=');
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Failed to destroy dataset'), $e->getResponse());
+					$show_info=true;
+				}
+				
+			} else {
+				try {
+					$ds = $api->dataset->find($_GET['id']);
+					
+					$xtpl->table_title(_('Confirm the destroyal of dataset').' '.$ds->name);
+					$xtpl->form_create('?page=dataset&action=destroy&id='.$ds->id, 'post');
+					
+					$xtpl->table_td(_("Confirm") . ' ' .
+						'<input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">'
+					);
+					$xtpl->form_add_checkbox_pure('confirm', '1', false);
+					$xtpl->table_td(_('The dataset will be destroyed along with all its descendants.
+					                   <strong>This action is irreversible!</strong>'));
+					$xtpl->table_tr();
+					
+					$xtpl->form_out(_('Destroy dataset'));
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Dataset cannot be found'), $e->getResponse());
+					$show_info=true;
+				}
+			}
+			
+			break;
 	
 	default:
 		
