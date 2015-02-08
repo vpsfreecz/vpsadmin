@@ -115,7 +115,13 @@ function dataset_create_form() {
 	$params = $api->dataset->create->getParameters('input');
 	$quota_name = $_GET['role'] == 'hypervisor' ? 'refquota' : 'quota';
 	
-	$xtpl->table_title(_('Create a new dataset'));
+	if ($_GET['parent']) {
+		$ds = $api->dataset->find($_GET['parent']);
+		$xtpl->table_title(_('Create a new subdataset in').' '.$ds->name);
+		
+	} else
+		$xtpl->table_title(_('Create a new dataset'));
+	
 	$xtpl->form_create('?page=dataset&action=new&role='.$_GET['role'].'&parent='.$_GET['parent'], 'post');
 	
 	if ($_GET['parent']) {
