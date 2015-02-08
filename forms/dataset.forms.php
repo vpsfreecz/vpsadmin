@@ -257,3 +257,44 @@ function mount_list($vps_id) {
 	
 	$xtpl->table_out();
 }
+
+function mount_create_form() {
+	global $xtpl, $api;
+	
+	$xtpl->table_title(_('Mount dataset'));
+	$xtpl->form_create('?page=dataset&action=mount&vps='.$_GET['vps'].'&dataset='.$_GET['dataset'], 'post');
+	
+	$params = $api->vps->mount->create->getParameters('input');
+	
+	if (!$_GET['vps']) {
+		$xtpl->form_add_select(_('Mount to VPS'), 'vps', resource_list_to_options($api->vps->list(), 'id', 'hostname'), $_POST['vps']);
+		
+	} else {
+		$vps = $api->vps->find($_GET['vps']);
+		
+		$xtpl->table_td(_('Mount to VPS'));
+		$xtpl->table_td($vps->id . ' <input type="hidden" name="vps" value="'.$vps->id.'">');
+		$xtpl->table_tr();
+	}
+	
+	if (!$_GET['dataset']) {
+		$xtpl->form_add_select(_('Mount dataset'), 'dataset', resource_list_to_options($api->dataset->list(), 'id', 'name'), $_POST['dataset']);
+		
+	} else {
+		$ds = $api->dataset->find($_GET['dataset']);
+		
+		$xtpl->table_td(_('Mount dataset'));
+		$xtpl->table_td($ds->name . ' <input type="hidden" name="dataset" value="'.$ds->id.'">');
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_td($params->mountpoint->label . ' <input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">');
+	api_param_to_form_pure('mountpoint', $params->mountpoint, '');
+	$xtpl->table_tr();
+	
+	$xtpl->table_td($params->mode->label);
+	api_param_to_form_pure('mode', $params->mode);
+	$xtpl->table_tr();
+	
+	$xtpl->form_out(_('Save'));
+}

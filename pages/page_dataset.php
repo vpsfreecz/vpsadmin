@@ -108,12 +108,29 @@ if ($_SESSION['logged_in']) {
 			break;
 		
 		case 'mount':
-			if (isset($_POST[''])) {
-				
+			if (isset($_POST['mountpoint'])) {
+				try {
+					$params = array(
+						'dataset' => $_POST['dataset'],
+						'mountpoint' => $_POST['mountpoint'],
+						'mode' => $_POST['mode']
+					);
+					
+					$api->vps($_POST['vps'])->mount->create($params);
+					
+					notify_user(_('Mount created'), _('The mount was successfully created.'));
+					redirect($_POST['return'] ? $_POST['return'] : '?page=');
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Failed create a mount'), $e->getResponse());
+					
+					mount_create_form();
+				}
 				
 			} else {
 				mount_create_form();
 			}
+			break;
 		
 		default:
 			
