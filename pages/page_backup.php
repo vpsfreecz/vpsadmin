@@ -26,16 +26,26 @@ function getval($name, $default = '') {
 }
 
 if ($_SESSION["logged_in"]) {
-	$xtpl->title(_("Manage Backups"));
-	$list_backups = false;
+	$vps_backups = false;
+	$nas_backups = false;
 	
 	switch ($_GET["action"]) {
+		case 'vps':
+			$xtpl->title(_("VPS Backups"));
+			$vps_backups = true;
+			break;
+		
+		case 'nas':
+			$xtpl->title(_("NAS Backups"));
+			$nas_backups = true;
+			break;
+		
 		case 'snapshot':
 			try {
-				$api->vps($_GET['vps_id'])->snapshot->create();
+				$api->dataset($_GET['dataset'])->snapshot->create();
 				
 				notify_user(_('Snapshot creation scheduled.'), _('Snapshot will be taken momentarily.'));
-				redirect('?page=backup');
+				redirect($_GET['return'] ? $_GET['return'] : '?page=');
 				
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 				$xtpl->perex_format_errors(_('Snapshot failed'), $e->getResponse());
@@ -105,17 +115,24 @@ if ($_SESSION["logged_in"]) {
 			break;
 */
 		default:
-			$list_backups = true;
+			$xtpl->perex('',
+				'<h3><a href="?page=backup&action=vps">VPS backups</a></h3>'.
+				'<h3><a href="?page=backup&action=nas">NAS backups</a></h3>'
+			);
 	}
 	
-	if($list_backups) {
+	$xtpl->sbar_add(_("VPS backups"), '?page=backup&action=vps');
+	$xtpl->sbar_add(_("NAS backups"), '?page=backup&action=nas');
+	$xtpl->sbar_out(_('Backups'));
+	
+	if($vps_backups) {
 		if ($_SESSION['is_admin']) {
 			$xtpl->table_title(_('Filters'));
 			$xtpl->form_create('', 'get');
 			
 			$xtpl->table_td(_("Limit").':'.
 				'<input type="hidden" name="page" value="backup">'.
-				'<input type="hidden" name="type" value="vps">'.
+				'<input type="hidden" name="action" value="vps">'.
 				'<input type="hidden" name="list" value="1">'
 			);
 			$xtpl->form_add_input_pure('text', '40', 'limit', getval('limit', '25'), '');
@@ -126,6 +143,7 @@ if ($_SESSION["logged_in"]) {
 			$xtpl->form_add_input(_("VPS ID").':', 'text', '40', 'vps', getval('vps'), '');
 	// 		$xtpl->form_add_input(_("Node ID").':', 'text', '40', 'node', getval('node'), '');
 			$xtpl->form_add_checkbox(_("Include subdatasets").':', 'subdatasets', '1', getval('subdatasets', '0'));
+			$xtpl->form_add_checkbox(_("Ignore datasets without snapshots").':', 'noempty', '1', getval('noempty', '0'));
 			
 			$xtpl->form_out(_('Show'));
 			
@@ -149,72 +167,52 @@ if ($_SESSION["logged_in"]) {
 			
 		} else {
 			$vpses = $api->vps->list();
+			$datasets = $api->dataset->list();
 		}
 		
+		$return_url = urlencode($_SERVER['REQUEST_URI']);
+		
 		foreach ($vpses as $vps) {
+			$params = array('dataset' => $vps->dataset_id);
 			
-			$xtpl->table_title(_('VPS ').'#'.$vps->id.' '._('root dataset'));
-			$xtpl->table_add_category(_('Date and time'));
-			$xtpl->table_add_category(_('Approximate size'));
-			$xtpl->table_add_category(_('Restore'));
-			$xtpl->table_add_category(_('Download'));
-			$xtpl->table_add_category(_('Mount'));
+			if (!$_GET['subdatasets'])
+				$params['limit'] = 1;
 			
-			$xtpl->form_create('?page=backup&action=restore&vps_id='.$vps->id.'', 'post');
+			$datasets = $api->dataset->list($params);
 			
-			$snapshots = $vps->snapshot->list();
-			
-			foreach ($snapshots as $snap) {
-				$xtpl->table_td(strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)));
-				$xtpl->table_td('0');
-				$xtpl->form_add_radio_pure("restore_snapshot", $snap->id);
-				$xtpl->table_td('[<a href="?page=backup&action=download&vps_id='.$vps->id.'&snapshot='.$snap->id.'">'._("Download").'</a>]');
-				$xtpl->table_td('[<a href="?page=backup&action=mount&vps_id='.$vps->id.'&snapshot='.$snap->id.'">'._("Mount").'</a>]');
-				$xtpl->table_tr();
-			}
-			
-			$xtpl->table_td('<a href="?page=backup&action=snapshot&vps_id='.$vps->id.'">'._('Make a snapshot NOW').'</a>');
-			$xtpl->table_td($xtpl->html_submit(_("Restore"), "restore"));
-			$xtpl->table_tr();
-			
-			$xtpl->form_out_raw();
-			
-			if (isset($_GET['subdatasets']) || !$_SESSION['is_admin']) {
-				$datasets = $vps->dataset->list();
+			foreach ($datasets as $ds) {
+				$snapshots = $ds->snapshot->list();
 				
-				foreach ($datasets as $ds) {
-					if (!$ds->mountpoint)
-						continue;
-					
-					$xtpl->table_title(_('VPS ').'#'.$vps->id.': '.$ds->name);
-					$xtpl->table_add_category(_('Dataset'));
-					$xtpl->table_add_category(_('Approximate size'));
-					$xtpl->table_add_category(_('Restore'));
-					$xtpl->table_add_category(_('Download'));
-					$xtpl->table_add_category(_('Mount'));
-					
-					$xtpl->form_create('?page=backup&action=restore&vps_id='.$vps->id.'&dataset='.$ds->id, 'post');
-					
-					$ds_snapshots = $vps->snapshot->list(array('dataset' => $ds->id));
-					
-					foreach ($ds_snapshots as $snap) {
-						$xtpl->table_td(strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)));
-						$xtpl->table_td('0');
-						$xtpl->form_add_radio_pure("restore_snapshot", $snap->id);
-						$xtpl->table_td('[<a href="?page=backup&action=download&vps_id='.$vps->id.'&snapshot='.$snap->id.'">'._("Download").'</a>]');
-						$xtpl->table_td('[<a href="?page=backup&action=mount&vps_id='.$vps->id.'&snapshot='.$snap->id.'">'._("Mount").'</a>]');
-						
-						$xtpl->table_tr();
-					}
-					
-					$xtpl->table_td('<a href="?page=backup&action=snapshot&vps_id='.$vps->id.'&dataset='.$ds->id.'">'._('Make a snapshot NOW').'</a>');
-					$xtpl->table_td($xtpl->html_submit(_("Restore"), "restore"));
+				if (!$snapshots->count() && $_GET['noempty'])
+					continue;
+				
+				$xtpl->table_title(
+					$ds->id == $vps->dataset_id ? _('VPS').' #'.$vps->id : $ds->name
+				);
+				
+				$xtpl->table_add_category(_('Date and time'));
+				$xtpl->table_add_category(_('Approximate size'));
+				$xtpl->table_add_category(_('Restore'));
+				$xtpl->table_add_category(_('Download'));
+				$xtpl->table_add_category(_('Mount'));
+				
+				$xtpl->form_create('?page=backup&action=restore&dataset='.$ds->id.'&vps_id='.$vps->id, 'post');
+				
+				foreach ($snapshots as $snap) {
+					$xtpl->table_td(strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)));
+					$xtpl->table_td('0');
+					$xtpl->form_add_radio_pure("restore_snapshot", $snap->id);
+					$xtpl->table_td('[<a href="?page=backup&action=download&vps_id='.$vps->id.'&snapshot='.$snap->id.'">'._("Download").'</a>]');
+					$xtpl->table_td('[<a href="?page=backup&action=mount&vps_id='.$vps->id.'&snapshot='.$snap->id.'">'._("Mount").'</a>]');
 					$xtpl->table_tr();
-					
-					$xtpl->form_out_raw();
 				}
+				
+				$xtpl->table_td('<a href="?page=backup&action=snapshot&dataset='.$ds->id.'&return='.$return_url.'">'._('Make a snapshot NOW').'</a>', false, false, '2');
+				$xtpl->table_td($xtpl->html_submit(_("Restore"), "restore"));
+				$xtpl->table_tr();
+				
+				$xtpl->form_out_raw();
 			}
-			
 		}
 	}
 
