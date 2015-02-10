@@ -52,44 +52,62 @@ if ($_SESSION["logged_in"]) {
 			}
 		
 		case 'restore':
-			try {
-				$snap = $api->vps($_GET['vps_id'])->snapshot->find($_POST['restore_snapshot']);
-				
-				$msg = '';
-				
-				if (isset($_GET['dataset'])) {
-					$ds = $api->vps($_GET['vps_id'])->dataset->find($_GET['dataset']);
-					$msg = _("Are you sure you want to restore dataset").' '.$ds->name.' '._('from VPS').' #'.$_GET["vps_id"].' from '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)).'?';
+			if (isset($_POST['confirm']) && $_POST['confirm']) {
+				try {
+					$ds = $api->dataset->find($_GET['dataset']);
+					$snap = $ds->snapshot->find($_POST['restore_snapshot']);
+					$snap->rollback();
 					
-				} else {
-					$msg = _("Are you sure you want to restore VPS").' #'.$_GET["vps_id"].' root dataset from '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)).'?';
+					notify_user(
+						_('Restoration scheduled.'),
+						_("Restoration of dataset").' '.$ds->name.' '._('from').' '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)).' '._("planned")
+					);
+					redirect($_POST['return'] ? $_POST['return'] : '?page=backup');
+					
+				}  catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Dataset restoration failed'), $e->getResponse());
 				}
 				
-				$xtpl->perex(
-					$msg,
-					'<a href="?page=backup">'.strtoupper(_("No")).'</a> | <a href="?page=backup&action=restore2&vps_id='.$_GET["vps_id"].'&restore_snapshot='.$snap->id.'&dataset='.$_GET['dataset'].'">'.strtoupper(_("Yes")).'</a>'
-				);
-				
-			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				$xtpl->perex_format_errors(_('VPS or snapshot not found'), $e->getResponse());
+			} else {
+				try {
+					$ds = $api->dataset->find($_GET['dataset']);
+					$snap = $ds->snapshot->find($_POST['restore_snapshot']);
+					
+					$msg = '';
+					
+					if (isset($_GET['vps_id'])) {
+						$vps = $api->vps->find($_GET['vps_id']);
+						
+						if ($ds->id == $vps->dataset_id)
+							$msg = _("Restore VPS").' #'.$_GET["vps_id"].' root dataset from '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)).'?';
+						else
+							$msg = _("Restore dataset").' '.$ds->name.' '._('from VPS').' #'.$vps->id.' from '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)).'?';
+						
+					} else {
+						$msg = _("Restore dataset").' '.$ds->name.' '._('from').' '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)).'?';
+					}
+					
+					$xtpl->table_title(_('Confirm the restoration of dataset').' '.$ds->name);
+					$xtpl->form_create('?page=backup&action=restore&dataset='.$ds->id.'&vps_id='.$_GET['vps_id'], 'post');
+					
+					$xtpl->table_td("<strong>$msg</strong>", false, false, '3');
+					$xtpl->table_tr();
+					
+					$xtpl->table_td(_("Confirm") . ' ' .
+						'<input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">'
+						. '<input type="hidden" name="restore_snapshot" value="'.$_POST['restore_snapshot'].'">'
+					);
+					$xtpl->form_add_checkbox_pure('confirm', '1', false);
+					$xtpl->table_td(_('The dataset will be restored and all data that has not been snapshoted will be lost.'));
+					$xtpl->table_tr();
+					
+					$xtpl->form_out(_('Restore dataset'));
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Dataset or snapshot not found'), $e->getResponse());
+				}
 			}
 			
-			break;
-		
-		case 'restore2':
-			try {
-				$snap = $api->vps($_GET['vps_id'])->snapshot->find($_GET['restore_snapshot']);
-				$snap->rollback();
-				
-				notify_user(
-					_('Restoration scheduled.'),
-					_("Restoration")." from ".strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at))." ".strtolower(_("planned"))
-				);
-				redirect('?page=backup');
-				
-			}  catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				$xtpl->perex_format_errors(_('VPS restoration failed'), $e->getResponse());
-			}
 			break;
 /*
 		case 'download':
@@ -196,7 +214,7 @@ if ($_SESSION["logged_in"]) {
 				$xtpl->table_add_category(_('Download'));
 				$xtpl->table_add_category(_('Mount'));
 				
-				$xtpl->form_create('?page=backup&action=restore&dataset='.$ds->id.'&vps_id='.$vps->id, 'post');
+				$xtpl->form_create('?page=backup&action=restore&dataset='.$ds->id.'&vps_id='.$vps->id.'&return='.$return_url, 'post');
 				
 				foreach ($snapshots as $snap) {
 					$xtpl->table_td(strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)));
