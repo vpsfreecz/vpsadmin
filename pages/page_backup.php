@@ -109,29 +109,51 @@ if ($_SESSION["logged_in"]) {
 			}
 			
 			break;
-/*
+		
 		case 'download':
-			$vps = vps_load($_GET["vps_id"]);
+			if (isset($_POST['confirm']) && $_POST['confirm']) {
+				try {
+					$ds = $api->dataset->find($_GET['dataset']);
+					$snap = $ds->snapshot->find($_GET['snapshot']);
+					
+					$ds->download->create(array('snapshot' => $snap->id));
+					
+					notify_user(
+						  _("Download of snapshot of").' '.$ds->name.' '. _('from').' '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at))." "._("planned")
+						, _("Preparing the archive may take several hours. You will receive email with download link when it is done.")
+					);
+					redirect($_POST['return'] ? $_POST['return'] : '?page=backup');
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Download failed'), $e->getResponse());
+				}
+				
+			} else {
+				try {
+					$ds = $api->dataset->find($_GET['dataset']);
+					$snap = $ds->snapshot->find($_GET['snapshot']);
+					
+					$xtpl->table_title(_('Confirm the downlaod of snapshot of dataset').' '.$ds->name);
+					$xtpl->form_create('?page=backup&action=download&dataset='.$ds->id.'&snapshot='.$snap->id, 'post');
+					
+					$xtpl->table_td('<strong>'._('Please confirm the download of snapshot of dataset').' '.$ds->name.' '._('from').' '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)).'</strong>', false, false, '2');
+					$xtpl->table_tr();
+					
+					$xtpl->table_td(_("Confirm") . ' ' .
+						'<input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">'
+					);
+					$xtpl->form_add_checkbox_pure('confirm', '1', false);
+					$xtpl->table_tr();
+					
+					$xtpl->form_out(_('Download snapshot'));
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Dataset or snapshot not found'), $e->getResponse());
+				}
+			}
 			
-			$xtpl->perex(
-				($_GET["timestamp"] == "current") ?
-					_("Are you sure you want to download current state of VPS?")
-					: _("Are you sure you want to download VPS").' '.$_GET["vps_id"].' from '.strftime("%Y-%m-%d %H:%M", $_GET["timestamp"]).'?'
-				, '<a href="?page=backup">'.strtoupper(_("No")).'</a> | <a href="?page=backup&action=download2&vps_id='.$_GET["vps_id"].'&timestamp='.$_GET["timestamp"].'">'.strtoupper(_("Yes")).'</a>'
-			);
 			break;
-		case 'download2':
-			$vps = vps_load($_GET["vps_id"]);
-			
-			$xtpl->perex(
-				($_GET["timestamp"] == "current") ?
-					_("Download current state of VPS planned")
-					: _("Download of backup from ").strftime("%Y-%m-%d %H:%M", $_GET["timestamp"])." ".strtolower(_("planned"))
-				, _("Preparing the archive may take several hours. You will receive email with download link when it is done.")
-			);
-			$vps->download_backup($_GET["timestamp"]);
-			break;
-*/
+		
 		default:
 			$xtpl->perex('',
 				'<h3><a href="?page=backup&action=vps">VPS backups</a></h3>'.
@@ -220,7 +242,7 @@ if ($_SESSION["logged_in"]) {
 					$xtpl->table_td(strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)));
 					$xtpl->table_td('0');
 					$xtpl->form_add_radio_pure("restore_snapshot", $snap->id);
-					$xtpl->table_td('[<a href="?page=backup&action=download&vps_id='.$vps->id.'&snapshot='.$snap->id.'">'._("Download").'</a>]');
+					$xtpl->table_td('[<a href="?page=backup&action=download&dataset='.$ds->id.'&snapshot='.$snap->id.'&return='.$return_url.'">'._("Download").'</a>]');
 					$xtpl->table_td('[<a href="?page=backup&action=mount&vps_id='.$vps->id.'&snapshot='.$snap->id.'">'._("Mount").'</a>]');
 					$xtpl->table_tr();
 				}
