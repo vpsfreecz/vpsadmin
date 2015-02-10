@@ -19,7 +19,7 @@ module TransactionChains
       lock(dataset_in_pool)
 
       # Fetch the last snapshot on the +dataset_in_pool+
-      primary_last_snap = SnapshotInPool.where(dataset_in_pool: dataset_in_pool).order('snapshot_id DESC').take
+      primary_last_snap = ::SnapshotInPool.where(dataset_in_pool: dataset_in_pool).order('snapshot_id DESC').take
 
       # Scenario 1)
       if primary_last_snap.snapshot_id == snapshot.id
@@ -79,10 +79,10 @@ module TransactionChains
         end
 
         # Create the snapshot that is being restored
-        create(SnapshotInPool.create(
+        create(::SnapshotInPool.create(
           dataset_in_pool: dataset_in_pool,
           snapshot: snapshot,
-          confirmed: SnapshotInPool.confirmed(:confirm_create)
+          confirmed: ::SnapshotInPool.confirmed(:confirm_create)
         ))
       end
 
@@ -97,7 +97,7 @@ module TransactionChains
 
         snap_in_pool = snapshot.snapshot_in_pools.where(dataset_in_pool: ds).take!
         snap_in_branch = snap_in_pool.snapshot_in_pool_in_branches
-          .where.not(confirmed: SnapshotInPoolInBranch.confirmed(:confirm_destroy)).take!
+          .where.not(confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy)).take!
         snap_tree = snap_in_branch.branch.dataset_tree
         head_tree = ds.dataset_trees.find_by!(head: true)
         old_branch = snap_in_branch.branch
