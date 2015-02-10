@@ -133,7 +133,7 @@ if ($_SESSION["logged_in"]) {
 					$ds = $api->dataset->find($_GET['dataset']);
 					$snap = $ds->snapshot->find($_GET['snapshot']);
 					
-					$xtpl->table_title(_('Confirm the downlaod of snapshot of dataset').' '.$ds->name);
+					$xtpl->table_title(_('Confirm the download of snapshot of dataset').' '.$ds->name);
 					$xtpl->form_create('?page=backup&action=download&dataset='.$ds->id.'&snapshot='.$snap->id, 'post');
 					
 					$xtpl->table_td('<strong>'._('Please confirm the download of snapshot of dataset').' '.$ds->name.' '._('from').' '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)).'</strong>', false, false, '2');
