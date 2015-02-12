@@ -9,4 +9,9 @@ class Snapshot < ActiveRecord::Base
   def download
     TransactionChains::Dataset::Download.fire(self)
   end
+
+  def mount
+    sip = snapshot_in_pools.where.not(mount: nil).take
+    sip && sip.mount
+  end
 end
