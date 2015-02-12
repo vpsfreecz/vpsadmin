@@ -51,11 +51,11 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        query.offset(input[:offset]).limit(input[:limit])
+        with_includes(query).offset(input[:offset]).limit(input[:limit])
       end
     end
 
-    class Show < HaveAPI::Actions::Default::Index
+    class Show < HaveAPI::Actions::Default::Show
       output do
         use :all
       end
