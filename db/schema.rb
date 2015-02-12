@@ -395,6 +395,7 @@ ActiveRecord::Schema.define(version: 20150206154652) do
   end
 
   create_table "snapshot_downloads", force: true do |t|
+    t.integer  "user_id",                             null: false
     t.integer  "snapshot_id"
     t.integer  "pool_id",                             null: false
     t.string   "secret_key",  limit: 100,             null: false

@@ -1,4 +1,5 @@
 class SnapshotDownload < ActiveRecord::Base
+  belongs_to :user
   belongs_to :snapshot
   belongs_to :pool
 

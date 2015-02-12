@@ -11,6 +11,7 @@ module TransactionChains
       lock(sip.dataset_in_pool)
 
       dl = ::SnapshotDownload.new(
+          user: ::User.current,
           snapshot: snapshot,
           pool: sip.dataset_in_pool.pool,
           secret_key: generate_key,
