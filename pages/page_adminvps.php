@@ -679,7 +679,6 @@ if (isset($show_info) && $show_info) {
 	$deprecated_vps = vps_load($veid);
 	$vps = $api->vps->find($veid);
 	
-	$deprecated_vps->info();
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->table_add_category('&nbsp;');
 	
@@ -713,34 +712,34 @@ if (isset($show_info) && $show_info) {
 	
 	$xtpl->table_td(_("Status").':');
 	
-	if($deprecated_vps->is_manipulable()) {
+	if($vps->maintenance_lock == 'no') {
 		$xtpl->table_td(
-			(($deprecated_vps->ve["vps_up"]) ?
+			(($vps->running) ?
 				_("running").' (<a href="?page=adminvps&action=info&run=restart&veid='.$vps->id.'">'._("restart").'</a>, <a href="?page=adminvps&action=info&run=stop&veid='.$vps->id.'">'._("stop").'</a>'
 				: 
 				_("stopped").' (<a href="?page=adminvps&action=info&run=start&veid='.$vps->id.'">'._("start").'</a>') .
 				', <a href="?page=console&veid='.$vps->id.'">'._("open remote console").'</a>)'
 		);
 	} else {
-		$xtpl->table_td($deprecated_vps->ve["vps_up"] ? _("running") : _("stopped"));
+		$xtpl->table_td($vps->running ? _("running") : _("stopped"));
 	}
 	
 	$xtpl->table_tr();
 	
 	$xtpl->table_td(_("Processes").':');
-	$xtpl->table_td($deprecated_vps->ve["vps_nproc"]);
+	$xtpl->table_td($vps->process_count);
 	$xtpl->table_tr();
 	
 	$xtpl->table_td(_("Hostname").':');
-	$xtpl->table_td($deprecated_vps->ve["vps_hostname"]);
+	$xtpl->table_td($vps->hostname);
 	$xtpl->table_tr();
 	
 	$xtpl->table_td(_("RAM").':');
-	$xtpl->table_td(sprintf('%4d MB',$deprecated_vps->ve["vps_vm_used_mb"]));
+	$xtpl->table_td(sprintf('%4d MB', $vps->used_memory));
 	$xtpl->table_tr();
 	
 	$xtpl->table_td(_("HDD").':');
-	$xtpl->table_td(sprintf('%.2f GB',round($deprecated_vps->ve["vps_disk_used_mb"]/1024,2)));
+	$xtpl->table_td(sprintf('%.2f GB',round($vps->used_disk / 1024, 2)));
 	$xtpl->table_tr();
 	
 	$xtpl->table_td(_("Distribution").':');
