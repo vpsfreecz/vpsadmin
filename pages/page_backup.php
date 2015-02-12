@@ -154,6 +154,28 @@ if ($_SESSION["logged_in"]) {
 			
 			break;
 		
+		case 'mount':
+			if (isset($_POST['vps'])) {
+				try {
+					$api->vps($_POST['vps'])->mount->create(array(
+						'snapshot' => $_GET['snapshot'],
+						'mountpoint' => $_POST['mountpoint']
+					));
+					
+					notify_user(_('Snapshot mount in progress'), _('The snapshot will be mounted momentarily.'));
+					redirect($_POST['return'] ? $_POST['return'] : '?page=backup');
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Snapshot mount failed'), $e->getResponse());
+					mount_snapshot_form();
+				}
+				
+			} else {
+				mount_snapshot_form();
+			}
+			
+			break;
+		
 		default:
 			$xtpl->perex('',
 				'<h3><a href="?page=backup&action=vps">VPS backups</a></h3>'.
@@ -221,7 +243,7 @@ if ($_SESSION["logged_in"]) {
 			$datasets = $api->dataset->list($params);
 			
 			foreach ($datasets as $ds) {
-				$snapshots = $ds->snapshot->list();
+				$snapshots = $ds->snapshot->list(array('meta' => array('includes' => 'mount')));
 				
 				if (!$snapshots->count() && $_GET['noempty'])
 					continue;
@@ -243,7 +265,12 @@ if ($_SESSION["logged_in"]) {
 					$xtpl->table_td('0');
 					$xtpl->form_add_radio_pure("restore_snapshot", $snap->id);
 					$xtpl->table_td('[<a href="?page=backup&action=download&dataset='.$ds->id.'&snapshot='.$snap->id.'&return='.$return_url.'">'._("Download").'</a>]');
-					$xtpl->table_td('[<a href="?page=backup&action=mount&vps_id='.$vps->id.'&snapshot='.$snap->id.'">'._("Mount").'</a>]');
+					
+					if ($snap->mount_id)
+						$xtpl->table_td(_('mounted to').' <a href="?page=adminvps&action=info&veid='.$snap->mount->vps_id.'">#'.$snap->mount->vps_id.'</a>');
+					else
+						$xtpl->table_td('[<a href="?page=backup&action=mount&vps_id='.$vps->id.'&dataset='.$ds->id.'&snapshot='.$snap->id.'&return='.$return_url.'">'._("Mount").'</a>]');
+					
 					$xtpl->table_tr();
 				}
 				

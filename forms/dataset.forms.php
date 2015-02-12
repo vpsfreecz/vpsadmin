@@ -298,3 +298,27 @@ function mount_create_form() {
 	
 	$xtpl->form_out(_('Save'));
 }
+
+function mount_snapshot_form() {
+	global $xtpl, $api;
+	
+	$ds = $api->dataset->find($_GET['dataset']);
+	$snap = $ds->snapshot->find($_GET['snapshot']);
+	
+	$xtpl->table_title(_('Mount snapshot'));
+	$xtpl->form_create('?page=backup&action=mount&vps_id='.$_GET['vps'].'&dataset='.$_GET['dataset'].'&snapshot='.$_GET['snapshot'], 'post');
+	
+	$params = $api->vps->mount->create->getParameters('input');
+	
+	$xtpl->form_add_select(_('Mount to VPS'), 'vps', resource_list_to_options($api->vps->list(), 'id', 'hostname'), $_POST['vps'] ? $_POST['vps'] : $_GET['vps_id']);
+	
+	$xtpl->table_td(_('Mount snapshot'));
+	$xtpl->table_td($ds->name.' @ '.$snap->created_at);
+	$xtpl->table_tr();
+	
+	$xtpl->table_td($params->mountpoint->label . ' <input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">');
+	api_param_to_form_pure('mountpoint', $params->mountpoint, '');
+	$xtpl->table_tr();
+	
+	$xtpl->form_out(_('Save'));
+}
