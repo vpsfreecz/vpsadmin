@@ -40,6 +40,7 @@ module VpsAdmin::API::Resources
         resource VpsAdmin::API::Resources::Dataset, label: 'Subtree'
         string :role, label: 'Role', desc: 'Show only datasets of certain role',
             choices: ::Pool.roles.keys
+        integer :to_depth, label: 'To depth', desc: 'Show only datasets to certain depth'
       end
 
       output(:object_list) do
@@ -66,6 +67,7 @@ module VpsAdmin::API::Resources
         end
 
         q = q.where(user: input[:user]) if input[:user]
+        q = q.to_depth(input[:to_depth]) if input[:to_depth]
 
         q
       end
