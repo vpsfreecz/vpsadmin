@@ -466,16 +466,26 @@ switch ($_GET["action"]) {
 				$show_info=true;
 			}
 			break;
-		case 'enablefeatures':
-			if (isset($_REQUEST["veid"]) && isset($_REQUEST["enable"]) && $_REQUEST["enable"]) {
-				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				
-				notify_user(_("Enable devices"), $vps->enable_features());
-				redirect('?page=adminvps&action=info&veid='.$vps->veid);
-			} else {
-				$xtpl->perex(_("Error"), '');
+		case 'features':
+			if (isset($_GET["veid"]) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+				try {
+					$resource = $api->vps($_GET['veid'])->feature;
+					$features = $resource->list();
+					$params = array();
+					
+					foreach ($features as $f)
+						$params[$f->name] = isset($_POST[$f->name]);
+					
+					$resource->update_all($params);
+					
+					notify_user(_("Features set"), _('Features will be set momentarily.'));
+					redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Feature set failed'), $e->getResponse());
+					$show_info=true;
+				}
 			}
-			$show_info=true;
 			break;
 		case 'clone':
 			if (isset($_REQUEST["veid"])  && ($_SESSION["is_admin"] || $playground_mode)) {
@@ -964,43 +974,22 @@ if (isset($show_info) && $show_info) {
 		}
 
 	// Enable devices/capabilities
-		$xtpl->form_create('?page=adminvps&action=enablefeatures&veid='.$vps->id, 'post');
-		if (!$deprecated_vps->ve["vps_features_enabled"]) {
-			$xtpl->table_td(_("Enable TUN/TAP"));
-			$xtpl->table_td(_("disabled"));
-			$xtpl->table_tr();
-			$xtpl->table_td(_("Enable iptables"));
-			$xtpl->table_td(_("disabled"));
-			$xtpl->table_tr();
-			$xtpl->table_td(_("Enable FUSE"));
-			$xtpl->table_td(_("disabled"));
-			$xtpl->table_tr();
-			$xtpl->table_td(_("NFS server + client"));
-			$xtpl->table_td(_("disabled"));
-			$xtpl->table_tr();
-			$xtpl->table_td(_("PPP"));
-			$xtpl->table_td(_("disabled"));
-			$xtpl->table_tr();
-			$xtpl->form_add_checkbox(_("Enable all").':', 'enable', '1', false);
-		} else {
-			$xtpl->table_td(_("Enable TUN/TAP"));
-			$xtpl->table_td(_("enabled"));
-			$xtpl->table_tr();
-			$xtpl->table_td(_("Enable iptables"));
-			$xtpl->table_td(_("enabled"));
-			$xtpl->table_tr();
-			$xtpl->table_td(_("Enable FUSE"));
-			$xtpl->table_td(_("enabled"));
-			$xtpl->table_tr();
-			$xtpl->table_td(_("NFS server + client"));
-			$xtpl->table_td(_("enabled"));
-			$xtpl->table_tr();
-			$xtpl->table_td(_("PPP"));
-			$xtpl->table_td(_("enabled"));
+		$xtpl->form_create('?page=adminvps&action=features&veid='.$vps->id, 'post');
+		
+		$xtpl->table_add_category(_("Features"));
+		$xtpl->table_add_category('');
+		
+		$features = $vps->feature->list();
+		
+		foreach ($features as $f) {
+			$xtpl->table_td($f->label);
+			$xtpl->form_add_checkbox_pure($f->name, '1', $f->enabled ? '1' : '0');
 			$xtpl->table_tr();
 		}
-		$xtpl->table_add_category(_("Enable features"));
-		$xtpl->table_add_category('&nbsp;');
+		
+		$xtpl->table_td(_('VPS is restarted when features are changed.'), false, false, '2');
+		$xtpl->table_tr();
+		
 		$xtpl->form_out(_("Go >>"));
 
 	// Owner change
