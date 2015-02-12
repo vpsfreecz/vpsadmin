@@ -240,7 +240,8 @@ function print_editm($member) {
 		$xtpl->sbar_add("<br><img src=\"template/icons/m_switch.png\"  title=". _("Switch context") ." /> Switch context", "?page=login&action=switch_context&m_id={$member->m["m_id"]}&next=".urlencode($_SERVER["REQUEST_URI"]));
 	}
 	
-	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Authentication tokens").'" />'._('Authentication tokens'), "?page=adminm&section=members&action=auth_tokens&id={$member->m["m_id"]}");
+		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Authentication tokens").'" />'._('Authentication tokens'), "?page=adminm&section=members&action=auth_tokens&id={$member->m["m_id"]}");
+		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Cluster resources").'" />'._('Cluster resources'), "?page=adminm&section=members&action=cluster_resources&id={$member->m["m_id"]}");
 }
 
 function print_deletem($member) {
@@ -370,6 +371,45 @@ function edit_auth_token($id) {
 	$xtpl->form_out(_('Save'));
 	
 	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to authentication tokens").'" />'._('Back to authentication tokens'), "?page=adminm&section=members&action=auth_tokens&id={$_GET['id']}");
+}
+
+function list_cluster_resources() {
+	global $xtpl, $api;
+	
+	$xtpl->table_title(_('Cluster resources'));
+	
+	$xtpl->table_add_category(_('Environment'));
+	$xtpl->table_add_category(_('Resource'));
+	$xtpl->table_add_category(_('Value'));
+	$xtpl->table_add_category(_('Step size'));
+	$xtpl->table_add_category(_('Used'));
+	$xtpl->table_add_category(_('Free'));
+	
+	$resources = $api->user($_GET['id'])->cluster_resource->list(array('meta' => array('includes' => 'environment,cluster_resource')));
+	$by_env = array();
+	
+	foreach ($resources as $r) {
+		if (!isset($by_env[$r->environment_id]))
+			$by_env[$r->environment_id] = array();
+		
+		$by_env[$r->environment_id][] = $r;
+	}
+	
+	foreach ($by_env as $res) {
+		foreach ($res as $r) {
+			$xtpl->table_td($r->environment->label);
+			$xtpl->table_td($r->cluster_resource->label);
+			$xtpl->table_td($r->value);
+			$xtpl->table_td($r->cluster_resource->stepsize);
+			$xtpl->table_td($r->used);
+			$xtpl->table_td($r->free);
+			$xtpl->table_tr();
+		}
+	}
+	
+	$xtpl->table_out();
+	
+	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&section=members&action=edit&id={$_GET['id']}");
 }
 
 function request_approve() {
@@ -1082,6 +1122,10 @@ if ($_SESSION["logged_in"]) {
 					edit_auth_token($_GET['token_id']);
 				}
 			
+			break;
+			
+		case 'cluster_resources':
+			list_cluster_resources();
 			break;
 		
 		case 'approval_requests':
