@@ -116,7 +116,7 @@ if ($_SESSION["logged_in"]) {
 					$ds = $api->dataset->find($_GET['dataset']);
 					$snap = $ds->snapshot->find($_GET['snapshot']);
 					
-					$ds->download->create(array('snapshot' => $snap->id));
+					$api->snapshot_download->create(array('snapshot' => $snap->id));
 					
 					notify_user(
 						  _("Download of snapshot of").' '.$ds->name.' '. _('from').' '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at))." "._("planned")
