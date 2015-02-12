@@ -93,17 +93,17 @@ module VpsAdmin::API
     # Include this module in model to enable maintenance lock support.
     module Model
       module ClassMethods
-        # Set maintenance parent. When a lock for current object
+        # Set maintenance parents. When a lock for current object
         # is not found, its parent is checked.
-        def maintenance_parent(klass = nil, &block)
-          if klass
-            @maintenance_parent = klass
+        def maintenance_parents(*args, &block)
+          if args.size > 0
+            @maintenance_parents = args
 
           elsif block
-            @maintenance_parent = block
+            @maintenance_parents = block
 
           else
-            @maintenance_parent
+            @maintenance_parents
           end
         end
 
@@ -133,14 +133,20 @@ module VpsAdmin::API
 
           return lock if lock
 
-          parent = cls.maintenance_parent
+          parent = cls.maintenance_parents
           return false unless parent
 
           if parent.is_a?(::Proc)
             @maintenance_lock_cache = parent.call
 
           else
-            @maintenance_lock_cache = self.send(cls.maintenance_parent).find_maintenance_lock
+            cls.maintenance_parents.each do |p|
+              parent_obj = self.send(p)
+              @maintenance_lock_cache = parent_obj.find_maintenance_lock if parent_obj
+              return @maintenance_lock_cache if @maintenance_lock_cache
+            end
+
+            @maintenance_lock_cache
           end
         end
 
