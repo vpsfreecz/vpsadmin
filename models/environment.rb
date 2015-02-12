@@ -29,7 +29,7 @@ class Environment < ActiveRecord::Base
     )
   end
 
-  maintenance_children :locations
+  maintenance_children :nodes
 
   def fqdn
     domain

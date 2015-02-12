@@ -10,9 +10,8 @@ class Location < ActiveRecord::Base
   alias_attribute :has_ipv6, :location_has_ipv6
 
   validates :location_label, :location_vps_onboot,
-            :environment_id, :domain, presence: true
+            :domain, presence: true
   validates :location_has_ipv6, inclusion: { in: [true, false] }
-  validates :environment_id, numericality: {only_integer: true}
   validates :domain, format: {
       with: /[[0-9a-zA-Z\-\.]{3,255}]/,
       message: 'invalid format'
@@ -24,7 +23,14 @@ class Location < ActiveRecord::Base
 
   include VpsAdmin::API::Maintainable::Model
 
-  maintenance_parent :environment
+  maintenance_parent do
+    MaintenanceLock.find_by(
+        class_name: 'Cluster',
+        row_id: nil,
+        active: true
+    )
+  end
+
   maintenance_children :nodes
 
   def fqdn
