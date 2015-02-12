@@ -226,6 +226,51 @@ function dataset_edit_form() {
 	$xtpl->form_out(_('Save'));
 }
 
+function dataset_snapshot_list($datasets, $vps = null) {
+	global $xtpl, $api;
+	
+	$return_url = urlencode($_SERVER['REQUEST_URI']);
+	
+	foreach ($datasets as $ds) {
+		$snapshots = $ds->snapshot->list(array('meta' => array('includes' => 'mount')));
+		
+		if (!$snapshots->count() && $_GET['noempty'])
+			continue;
+		
+		$xtpl->table_title(
+			$ds->id == ($vps && $vps->dataset_id) ? _('VPS').' #'.$vps->id : $ds->name
+		);
+		
+		$xtpl->table_add_category(_('Date and time'));
+		$xtpl->table_add_category(_('Approximate size'));
+		$xtpl->table_add_category(_('Restore'));
+		$xtpl->table_add_category(_('Download'));
+		$xtpl->table_add_category(_('Mount'));
+		
+		$xtpl->form_create('?page=backup&action=restore&dataset='.$ds->id.'&vps_id='.($vps ? $vps->id : '').'&return='.$return_url, 'post');
+		
+		foreach ($snapshots as $snap) {
+			$xtpl->table_td(strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)));
+			$xtpl->table_td('0');
+			$xtpl->form_add_radio_pure("restore_snapshot", $snap->id);
+			$xtpl->table_td('[<a href="?page=backup&action=download&dataset='.$ds->id.'&snapshot='.$snap->id.'&return='.$return_url.'">'._("Download").'</a>]');
+			
+			if ($snap->mount_id)
+				$xtpl->table_td(_('mounted to').' <a href="?page=adminvps&action=info&veid='.$snap->mount->vps_id.'">#'.$snap->mount->vps_id.'</a>');
+			else
+				$xtpl->table_td('[<a href="?page=backup&action=mount&vps_id='.$vps->id.'&dataset='.$ds->id.'&snapshot='.$snap->id.'&return='.$return_url.'">'._("Mount").'</a>]');
+			
+			$xtpl->table_tr();
+		}
+		
+		$xtpl->table_td('<a href="?page=backup&action=snapshot&dataset='.$ds->id.'&return='.$return_url.'">'._('Make a snapshot NOW').'</a>', false, false, '2');
+		$xtpl->table_td($xtpl->html_submit(_("Restore"), "restore"));
+		$xtpl->table_tr();
+		
+		$xtpl->form_out_raw();
+	}
+}
+
 function mount_list($vps_id) {
 	global $xtpl, $api;
 	

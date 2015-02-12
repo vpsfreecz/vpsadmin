@@ -232,8 +232,6 @@ if ($_SESSION["logged_in"]) {
 			$datasets = $api->dataset->list();
 		}
 		
-		$return_url = urlencode($_SERVER['REQUEST_URI']);
-		
 		foreach ($vpses as $vps) {
 			$params = array('dataset' => $vps->dataset_id);
 			
@@ -242,45 +240,54 @@ if ($_SESSION["logged_in"]) {
 			
 			$datasets = $api->dataset->list($params);
 			
-			foreach ($datasets as $ds) {
-				$snapshots = $ds->snapshot->list(array('meta' => array('includes' => 'mount')));
-				
-				if (!$snapshots->count() && $_GET['noempty'])
-					continue;
-				
-				$xtpl->table_title(
-					$ds->id == $vps->dataset_id ? _('VPS').' #'.$vps->id : $ds->name
+			dataset_snapshot_list($datasets, $vps);
+		}
+	}
+	
+	if ($nas_backups) {
+		$datasets = array();
+		
+		if ($_SESSION['is_admin']) {
+			$xtpl->table_title(_('Filters'));
+			$xtpl->form_create('', 'get');
+			
+			$xtpl->table_td(_("Limit").':'.
+				'<input type="hidden" name="page" value="backup">'.
+				'<input type="hidden" name="action" value="nas">'.
+				'<input type="hidden" name="list" value="1">'
+			);
+			$xtpl->form_add_input_pure('text', '40', 'limit', getval('limit', '25'), '');
+			$xtpl->table_tr();
+			
+			$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', getval('offset', '0'), '');
+			$xtpl->form_add_input(_("Member ID").':', 'text', '40', 'user', getval('user'), '');
+	// 		$xtpl->form_add_input(_("Node ID").':', 'text', '40', 'node', getval('node'), '');
+			$xtpl->form_add_checkbox(_("Include subdatasets").':', 'subdatasets', '1', getval('subdatasets', '0'));
+			$xtpl->form_add_checkbox(_("Ignore datasets without snapshots").':', 'noempty', '1', getval('noempty', '0'));
+			
+			$xtpl->form_out(_('Show'));
+			
+			if ($_GET['list']) {
+				$params = array(
+					'limit' => getval('limit', 25),
+					'offset' => getval('offset', 0),
+					'role' => 'primary'
 				);
 				
-				$xtpl->table_add_category(_('Date and time'));
-				$xtpl->table_add_category(_('Approximate size'));
-				$xtpl->table_add_category(_('Restore'));
-				$xtpl->table_add_category(_('Download'));
-				$xtpl->table_add_category(_('Mount'));
+				if (!$_GET['subdatasets'])
+					$params['to_depth'] = 0;
 				
-				$xtpl->form_create('?page=backup&action=restore&dataset='.$ds->id.'&vps_id='.$vps->id.'&return='.$return_url, 'post');
+				if (isset($_GET['user']) && $_GET['user'] !== '')
+					$params['user'] = $_GET['user'];
 				
-				foreach ($snapshots as $snap) {
-					$xtpl->table_td(strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)));
-					$xtpl->table_td('0');
-					$xtpl->form_add_radio_pure("restore_snapshot", $snap->id);
-					$xtpl->table_td('[<a href="?page=backup&action=download&dataset='.$ds->id.'&snapshot='.$snap->id.'&return='.$return_url.'">'._("Download").'</a>]');
-					
-					if ($snap->mount_id)
-						$xtpl->table_td(_('mounted to').' <a href="?page=adminvps&action=info&veid='.$snap->mount->vps_id.'">#'.$snap->mount->vps_id.'</a>');
-					else
-						$xtpl->table_td('[<a href="?page=backup&action=mount&vps_id='.$vps->id.'&dataset='.$ds->id.'&snapshot='.$snap->id.'&return='.$return_url.'">'._("Mount").'</a>]');
-					
-					$xtpl->table_tr();
-				}
-				
-				$xtpl->table_td('<a href="?page=backup&action=snapshot&dataset='.$ds->id.'&return='.$return_url.'">'._('Make a snapshot NOW').'</a>', false, false, '2');
-				$xtpl->table_td($xtpl->html_submit(_("Restore"), "restore"));
-				$xtpl->table_tr();
-				
-				$xtpl->form_out_raw();
+				$datasets = $api->dataset->list($params);
 			}
+			
+		} else {
+			$datasets = $api->dataset->list(array('role' => 'primary'));
 		}
+		
+		dataset_snapshot_list($datasets);
 	}
 
 } else $xtpl->perex(_("Access forbidden"), _("You have to log in to be able to access vpsAdmin's functions"));
