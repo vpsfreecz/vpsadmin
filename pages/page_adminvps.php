@@ -677,7 +677,7 @@ if (isset($show_info) && $show_info) {
 		$xtpl->title(_("VPS details").' '._("[User mode]"));
 	
 	$deprecated_vps = vps_load($veid);
-	$vps = $api->vps->find($veid);
+	$vps = $api->vps->find($veid, array('meta' => array('includes' => 'node__location,node__environment,user,os_template')));
 	
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->table_add_category('&nbsp;');
@@ -692,6 +692,10 @@ if (isset($show_info) && $show_info) {
 	
 	$xtpl->table_td(_("Location").':');
 	$xtpl->table_td($vps->node->location->label);
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("Environment").':');
+	$xtpl->table_td($vps->node->environment->label);
 	$xtpl->table_tr();
 	
 	$xtpl->table_td(_("Owner").':');
