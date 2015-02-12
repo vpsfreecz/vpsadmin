@@ -293,6 +293,7 @@ module VpsAdmin::API::Resources
 
       params(:all) do
         id :id
+        resource Dataset, value_label: :name
         datetime :created_at # FIXME: this is not correct creation time
         resource VPS::Mount, value_label: :mountpoint
       end
