@@ -40,6 +40,11 @@ if ($_SESSION["logged_in"]) {
 			$nas_backups = true;
 			break;
 		
+		case 'downloads':
+			$xtpl->title(_('Downloads'));
+			$list_downloads = true;
+			break;
+		
 		case 'snapshot':
 			try {
 				$api->dataset($_GET['dataset'])->snapshot->create();
@@ -176,15 +181,46 @@ if ($_SESSION["logged_in"]) {
 			
 			break;
 		
+		case 'download_destroy':
+			if (isset($_POST['confirm']) && $_POST['confirm']) {
+				try {
+					$api->snapshot_download($_GET['id'])->delete();
+					
+					notify_user(_('Download link destroyed'), _('Download link was successfully destroyed.'));
+					redirect('?page=backup&action=downloads');
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Failed to destroy download link'), $e->getResponse());
+				}
+				
+			} else {
+				try {
+					$dl = $api->snapshot_download->find($_GET['id']);
+					
+					$xtpl->table_title(_('Confirm the destroyal of snapshow download').' '.$dl->snapshot->created_at);
+					$xtpl->form_create('?page=backup&action=download_destroy&id='.$dl->id, 'post');
+					
+					$xtpl->form_add_checkbox(_("Confirm"), 'confirm', '1', false);
+					
+					$xtpl->form_out(_('Destroy download link'));
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Download link cannot be found'), $e->getResponse());
+				}
+			}
+			break;
+		
 		default:
 			$xtpl->perex('',
 				'<h3><a href="?page=backup&action=vps">VPS backups</a></h3>'.
-				'<h3><a href="?page=backup&action=nas">NAS backups</a></h3>'
+				'<h3><a href="?page=backup&action=nas">NAS backups</a></h3>'.
+				'<h3><a href="?page=backup&action=downloads">Downloads</a></h3>'
 			);
 	}
 	
 	$xtpl->sbar_add(_("VPS backups"), '?page=backup&action=vps');
 	$xtpl->sbar_add(_("NAS backups"), '?page=backup&action=nas');
+	$xtpl->sbar_add(_("Downloads"), '?page=backup&action=downloads');
 	$xtpl->sbar_out(_('Backups'));
 	
 	if($vps_backups) {
@@ -288,6 +324,25 @@ if ($_SESSION["logged_in"]) {
 		}
 		
 		dataset_snapshot_list($datasets);
+	}
+	
+	if ($list_downloads) {
+		$downloads = $api->snapshot_download->list(array('meta' => array('includes' => 'snapshot__dataset')));
+		
+		$xtpl->table_add_category(_('Dataset'));
+		$xtpl->table_add_category(_('Snapshot'));
+		$xtpl->table_add_category(_('Download'));
+		$xtpl->table_add_category('');
+		
+		foreach ($downloads as $dl) {
+			$xtpl->table_td($dl->snapshot->dataset->name);
+			$xtpl->table_td($dl->snapshot->created_at);
+			$xtpl->table_td('<a href="#FIXME">'._('Download').'</a>');
+			$xtpl->table_td('<a href="?page=backup&action=download_destroy&id='.$dl->id.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+			$xtpl->table_tr();
+		}
+		
+		$xtpl->table_out();
 	}
 
 } else $xtpl->perex(_("Access forbidden"), _("You have to log in to be able to access vpsAdmin's functions"));
