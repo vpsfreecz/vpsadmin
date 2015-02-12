@@ -785,6 +785,7 @@ END
 
     params(:all) do
       id :id
+      resource VpsAdmin::API::Resources::VPS, value_label: :hostname
       resource VpsAdmin::API::Resources::Dataset, label: 'Dataset',
                value_label: :name
       resource VpsAdmin::API::Resources::Dataset::Snapshot, label: 'Snapshot',
