@@ -37,7 +37,9 @@ module VpsAdmin::API::Resources
       end
 
       def query
-        q = ::SnapshotDownload.where(with_restricted)
+        q = ::SnapshotDownload.where(with_restricted).where.not(
+            confirmed: ::SnapshotDownload.confirmed(:confirm_destroy)
+        )
 
         if input[:dataset]
           q = q..joins(snapshot: [:dataset]).where(datasets: {id: input[:dataset].id})
