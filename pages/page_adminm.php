@@ -378,13 +378,6 @@ function list_cluster_resources() {
 	
 	$xtpl->table_title(_('Cluster resources'));
 	
-	$xtpl->table_add_category(_('Environment'));
-	$xtpl->table_add_category(_('Resource'));
-	$xtpl->table_add_category(_('Value'));
-	$xtpl->table_add_category(_('Step size'));
-	$xtpl->table_add_category(_('Used'));
-	$xtpl->table_add_category(_('Free'));
-	
 	$resources = $api->user($_GET['id'])->cluster_resource->list(array('meta' => array('includes' => 'environment,cluster_resource')));
 	$by_env = array();
 	
@@ -396,6 +389,14 @@ function list_cluster_resources() {
 	}
 	
 	foreach ($by_env as $res) {
+		$xtpl->table_td(_('Environment'), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("Resource"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("Value"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("Step size"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("Used"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_tr(true);
+		
 		foreach ($res as $r) {
 			$xtpl->table_td($r->environment->label);
 			$xtpl->table_td($r->cluster_resource->label);
