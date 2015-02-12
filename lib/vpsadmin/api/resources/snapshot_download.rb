@@ -17,6 +17,8 @@ module VpsAdmin::API::Resources
       id :id
       resource User, value_label: :login
       use :input
+      bool :ready, desc: 'True if the archive is complete and ready for download',
+          db_name: :confirmed?
     end
 
     class Index < HaveAPI::Actions::Default::Index
