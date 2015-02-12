@@ -746,16 +746,6 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_td($vps->os_template->label);
 	$xtpl->table_tr();
 	
-	$xtpl->table_td(_("Backuper").':');
-	$xtpl->table_td(($deprecated_vps->ve["vps_backup_enabled"] ? _("enabled") : _("disabled")));
-	$xtpl->table_tr();
-	
-	if ($_SESSION["is_admin"]) {
-		$xtpl->table_td(_("Backup lock").':');
-		$xtpl->table_td($deprecated_vps->ve["vps_backup_lock"] ? _("locked") : _("unlocked"));
-		$xtpl->table_tr();
-	}
-	
 	if ($vps->maintenance_lock != 'no') {
 		$xtpl->table_td(_('Maintenance lock').':');
 		$xtpl->table_td($vps->maintenance_lock == 'lock' ? _('direct') : _('global lock'));
