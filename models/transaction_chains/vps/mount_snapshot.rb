@@ -52,6 +52,7 @@ module TransactionChains
         mnt.mount_type = 'nfs'
       end
 
+      mnt.dataset_in_pool = clone_from.dataset_in_pool
       mnt.snapshot_in_pool = clone_from
       mnt.save!
 

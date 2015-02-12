@@ -5,7 +5,7 @@ module Transactions::Utils
         m = {}
 
         # Mount of dataset in pool
-        if mnt.dataset_in_pool_id
+        if mnt.dataset_in_pool_id && !mnt.snapshot_in_pool_id
 
           # Mount it locally
           if mnt.dataset_in_pool.pool.node_id == mnt.vps.vps_server
