@@ -41,7 +41,7 @@ class Vps < ActiveRecord::Base
   has_hook :create
 
   include VpsAdmin::API::Maintainable::Model
-  maintenance_parent :node
+  maintenance_parents :node
 
   include VpsAdmin::API::ClusterResources
   cluster_resources required: %i(cpu memory diskspace),

@@ -36,7 +36,7 @@ class Node < ActiveRecord::Base
 
   include VpsAdmin::API::Maintainable::Model
 
-  maintenance_parent :location
+  maintenance_parents :location, :environment
   maintenance_children :vpses
 
   include Lockable

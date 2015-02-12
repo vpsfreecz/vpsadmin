@@ -23,7 +23,7 @@ class Location < ActiveRecord::Base
 
   include VpsAdmin::API::Maintainable::Model
 
-  maintenance_parent do
+  maintenance_parents do
     MaintenanceLock.find_by(
         class_name: 'Cluster',
         row_id: nil,
