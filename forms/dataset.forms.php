@@ -250,6 +250,9 @@ function dataset_edit_form() {
 	$xtpl->table_tr();
 	
 	$xtpl->form_out(_('Add'));
+	
+	$xtpl->sbar_add(_("Back"), $_GET['return'] ? $_GET['return'] : $_POST['return']);
+	$xtpl->sbar_out(_('Dataset'));
 }
 
 function dataset_snapshot_list($datasets, $vps = null) {
