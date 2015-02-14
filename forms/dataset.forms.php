@@ -109,6 +109,8 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 	$xtpl->table_tr();
 	
 	$xtpl->table_out();
+	
+	$xtpl->sbar_add(_('Create dataset'), '?page=dataset&action=new&role='.$role.'&parent='.$parent.'&return='.urlencode($_SERVER['REQUEST_URI']));
 }
 
 function dataset_create_form() {

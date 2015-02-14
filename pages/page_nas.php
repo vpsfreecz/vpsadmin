@@ -1,7 +1,5 @@
 <?php
 if ($_SESSION["logged_in"] && (NAS_PUBLIC || $_SESSION["is_admin"])) {
-	$xtpl->sbar_out(_("Manage NAS"));
-	
 	if ($_SESSION['is_admin']) {
 		// Filter form & query
 		$xtpl->table_title(_('Filters'));
@@ -34,6 +32,8 @@ if ($_SESSION["logged_in"] && (NAS_PUBLIC || $_SESSION["is_admin"])) {
 	} else {
 		dataset_list('primary');
 	}
+	
+	$xtpl->sbar_out(_("Manage NAS"));
 	
 } else {
 	$xtpl->perex(_("Access forbidden"), _("You have to log in to be able to access vpsAdmin's functions"));
