@@ -337,6 +337,8 @@ function mount_list($vps_id) {
 	$xtpl->table_tr();
 	
 	$xtpl->table_out();
+	
+	$xtpl->sbar_add(_('Create mount'), '?page=dataset&action=mount&vps='.$vps_id.'&return='.$return);
 }
 
 function mount_create_form() {
