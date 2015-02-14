@@ -9,6 +9,7 @@ class VpsAdmin::API::Resources::DatasetPlan < HaveAPI::Resource
 
   params(:common) do
     string :label
+    string :description
   end
 
   params(:all) do

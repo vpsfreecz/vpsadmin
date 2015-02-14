@@ -2,9 +2,9 @@ module VpsAdmin::API
   module DatasetPlans
     # Register and store of properties.
     module Registrator
-      def self.plan(name, label: nil, &block)
+      def self.plan(name, label: nil, desc: nil, &block)
         @plans ||= {}
-        @plans[name] = Plan.new(name, label, &block)
+        @plans[name] = Plan.new(name, label, desc, &block)
       end
 
       def self.plans
@@ -123,11 +123,12 @@ module VpsAdmin::API
         end
       end
 
-      attr_reader :name, :label
+      attr_reader :name, :label, :desc
 
-      def initialize(name, label, &block)
+      def initialize(name, label, desc, &block)
         @name = name
         @label = label
+        @desc = desc
         @block = block
       end
 

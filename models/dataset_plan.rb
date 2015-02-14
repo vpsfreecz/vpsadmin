@@ -5,4 +5,8 @@ class DatasetPlan < ActiveRecord::Base
   def label
     VpsAdmin::API::DatasetPlans.plans[name.to_sym].label
   end
+
+  def description
+    VpsAdmin::API::DatasetPlans.plans[name.to_sym].desc
+  end
 end
