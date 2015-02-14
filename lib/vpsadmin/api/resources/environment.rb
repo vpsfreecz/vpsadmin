@@ -284,6 +284,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
     class Show < HaveAPI::Actions::Default::Show
       desc 'Show dataset plan'
+      resolve ->(p){ [p.environment_id, p.id] }
 
       output do
         use :all
