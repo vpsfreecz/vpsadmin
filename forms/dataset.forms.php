@@ -224,6 +224,32 @@ function dataset_edit_form() {
 	}
 	
 	$xtpl->form_out(_('Save'));
+	
+	$xtpl->table_title(_('Backup plans'));
+	
+	$plans = $ds->plan->list();
+	
+	$xtpl->form_create('?page=dataset&action=plan_add&role='.$_GET['role'].'&id='.$ds->id, 'post');
+	$xtpl->table_add_category(_('Label'));
+	$xtpl->table_add_category(_('Description'));
+	$xtpl->table_add_category('');
+	
+	foreach ($plans as $plan) {
+		$xtpl->table_td($plan->environment_dataset_plan->label);
+		$xtpl->table_td($plan->environment_dataset_plan->dataset_plan->description);
+		$xtpl->table_td('<a href="?page=dataset&action=plan_delete&id='.$ds->id.'&plan='.$plan->id.'&return='.urlencode($_GET['return'] ? $_GET['return'] : $_POST['return']).'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_td(
+		_('Add backup plan').':'. ' ' .
+		'<input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">'
+	);
+	$xtpl->form_add_select_pure('environment_dataset_plan', resource_list_to_options($ds->environment->dataset_plan->list()));
+	$xtpl->table_td('');
+	$xtpl->table_tr();
+	
+	$xtpl->form_out(_('Add'));
 }
 
 function dataset_snapshot_list($datasets, $vps = null) {

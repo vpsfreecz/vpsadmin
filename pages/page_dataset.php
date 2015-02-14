@@ -168,6 +168,36 @@ if ($_SESSION['logged_in']) {
 			
 			break;
 		
+		case 'plan_add':
+			try {
+				$api->dataset($_GET['id'])->plan->create(array(
+					'environment_dataset_plan' => $_POST['environment_dataset_plan']
+				));
+				
+				notify_user(_('Backup plan added.'), _('The dataset was successfully added to the backup plan.'));
+				redirect('?page=dataset&action=edit&role='.$_GET['role'].'&id='.$_GET['id'].'&return='.urlencode($_POST['return']));
+				
+			}  catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Addition to backup plan failed'), $e->getResponse());
+				dataset_edit_form();
+			}
+			
+			break;
+		
+		case 'plan_delete':
+			try {
+				$api->dataset($_GET['id'])->plan->delete($_GET['plan']);
+				
+				notify_user(_('Backup plan removed.'), _('The dataset was successfully removed from the backup plan.'));
+				redirect('?page=dataset&action=edit&role='.$_GET['role'].'&id='.$_GET['id'].'&return='.urlencode($_GET['return']));
+				
+			}  catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Backup plan removal failed'), $e->getResponse());
+				dataset_edit_form();
+			}
+			
+			break;
+		
 		default:
 			
 	}
