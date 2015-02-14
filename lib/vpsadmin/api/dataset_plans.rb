@@ -14,21 +14,21 @@ module VpsAdmin::API
 
     class Executor
       def initialize(plan)
-        @plan = plan
+        @env_plan = plan
       end
 
       def add_group_snapshot(dip, min, hour, day, month, dow)
         action = ::DatasetAction.joins(:dataset_plan).where(
             pool_id: dip.pool_id,
             action: ::DatasetAction.actions[:group_snapshot],
-            dataset_plan: @plan
+            dataset_plan: @env_plan.dataset_plan
         ).take
 
         unless action
           action = ::DatasetAction.create!(
               pool_id: dip.pool_id,
               action: ::DatasetAction.actions[:group_snapshot],
-              dataset_plan: @plan
+              dataset_plan: @env_plan.dataset_plan
           )
 
           ::RepeatableTask.create!(
@@ -53,7 +53,7 @@ module VpsAdmin::API
             dataset_actions: {
                 pool_id: dip.pool_id,
                 action: ::DatasetAction.actions[:group_snapshot],
-                dataset_plan_id: @plan.id
+                dataset_plan_id: @env_plan.dataset_plan_id
             },
             dataset_in_pool: dip
         ).take!.destroy!
@@ -61,7 +61,7 @@ module VpsAdmin::API
 
       def add_backup(dip, min, hour, day, month, dow)
         plan = ::DatasetInPoolPlan.find_by!(
-            dataset_plan: @plan,
+            environment_dataset_plan: @env_plan,
             dataset_in_pool: dip
         )
 
@@ -86,7 +86,7 @@ module VpsAdmin::API
 
       def del_backup(dip, *_)
         plan = ::DatasetInPoolPlan.find_by!(
-            dataset_plan: @plan,
+            environment_dataset_plan: @env_plan,
             dataset_in_pool: dip
         )
 

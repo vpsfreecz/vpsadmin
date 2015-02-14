@@ -41,13 +41,13 @@ class DatasetInPool < ActiveRecord::Base
   end
 
   def add_plan(plan, confirm = true)
-    p = VpsAdmin::API::DatasetPlans.plans[plan.name.to_sym].register(self)
+    p = VpsAdmin::API::DatasetPlans.plans[plan.dataset_plan.name.to_sym].register(self)
     VpsAdmin::API::DatasetPlans.confirm if confirm
     p
   end
 
   def del_plan(dip_plan, confirm = true)
-    VpsAdmin::API::DatasetPlans.plans[dip_plan.dataset_plan.name.to_sym].unregister(self)
+    VpsAdmin::API::DatasetPlans.plans[dip_plan.environment_dataset_plan.dataset_plan.name.to_sym].unregister(self)
     VpsAdmin::API::DatasetPlans.confirm if confirm
   end
 end
