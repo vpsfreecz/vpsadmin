@@ -180,6 +180,9 @@ function dataset_create_form() {
 	}
 	
 	$xtpl->form_out(_('Save'));
+	
+	$xtpl->sbar_add(_("Back"), $_GET['return'] ? $_GET['return'] : $_POST['return']);
+	$xtpl->sbar_out(_('Dataset'));
 }
 
 function dataset_edit_form() {
