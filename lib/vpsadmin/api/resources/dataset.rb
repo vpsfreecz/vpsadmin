@@ -15,6 +15,8 @@ module VpsAdmin::API::Resources
                name: :parent, value_label: :name
       resource User, label: 'User', value_label: :login,
           desc: 'Dataset owner'
+      resource Environment, label: 'Environment',
+               desc: 'The environment in which the dataset is'
     end
 
     params(:all_properties) do
@@ -79,7 +81,10 @@ module VpsAdmin::API::Resources
       def exec
         ret = []
 
-        query.includes(:dataset_properties).order('full_name').limit(input[:limit]).offset(input[:offset]).each do |ds|
+        query.includes(
+            :dataset_properties,
+            dataset_in_pools: [pool: [node: [:environment]]]
+        ).order('full_name').limit(input[:limit]).offset(input[:offset]).each do |ds|
           ret << ds
         end
 

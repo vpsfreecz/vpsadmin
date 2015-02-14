@@ -101,6 +101,14 @@ class Dataset < ActiveRecord::Base
     end
   end
 
+  def environment
+    dataset_in_pools.each do |dip|
+      return dip.pool.node.environment if dip.pool.role != 'backup'
+    end
+
+    nil
+  end
+
   # Returns DatasetInPool of +self+ on pools with +hypervisor+
   # or +primary+ role.
   def primary_dataset_in_pool!
