@@ -374,6 +374,9 @@ function mount_create_form() {
 	$xtpl->table_tr();
 	
 	$xtpl->form_out(_('Save'));
+	
+	$xtpl->sbar_add(_("Back"), $_GET['return'] ? $_GET['return'] : $_POST['return']);
+	$xtpl->sbar_out(_('Mount'));
 }
 
 function mount_snapshot_form() {
@@ -398,4 +401,7 @@ function mount_snapshot_form() {
 	$xtpl->table_tr();
 	
 	$xtpl->form_out(_('Save'));
+	
+	$xtpl->sbar_add(_("Back"), $_GET['return'] ? $_GET['return'] : $_POST['return']);
+	$xtpl->sbar_out(_('Mount'));
 }
