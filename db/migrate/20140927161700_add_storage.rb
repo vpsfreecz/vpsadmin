@@ -1,7 +1,15 @@
 class AddStorage < ActiveRecord::Migration
+  class Environment < ActiveRecord::Base
+  end
+
+  class Location < ActiveRecord::Base
+  end
+
   class Node < ActiveRecord::Base
     self.table_name = 'servers'
     self.primary_key = 'server_id'
+
+    belongs_to :location, :foreign_key => :server_location
   end
 
   class Vps < ActiveRecord::Base
@@ -9,6 +17,7 @@ class AddStorage < ActiveRecord::Migration
     self.primary_key = 'vps_id'
 
     belongs_to :dataset_in_pool
+    belongs_to :node, :foreign_key => :vps_server
   end
 
   class Pool < ActiveRecord::Base
@@ -105,6 +114,9 @@ class AddStorage < ActiveRecord::Migration
 
   class DatasetPlan < ActiveRecord::Base
 
+  end
+
+  class EnvironmentDatasetPlan < ActiveRecord::Base
   end
 
   class DatasetInPoolPlan < ActiveRecord::Base
@@ -292,12 +304,19 @@ class AddStorage < ActiveRecord::Migration
       t.string     :name,            null: false
     end
 
-    create_table :dataset_in_pool_plans do |t|
+    create_table :environment_dataset_plans do |t|
+      t.references :environment,     null: false
       t.references :dataset_plan,    null: false
+      t.boolean    :user_add,        null: false
+      t.boolean    :user_remove,     null: false
+    end
+
+    create_table :dataset_in_pool_plans do |t|
+      t.references :environment_dataset_plan,    null: false
       t.references :dataset_in_pool, null: false
     end
 
-    add_index :dataset_in_pool_plans, [:dataset_plan_id, :dataset_in_pool_id],
+    add_index :dataset_in_pool_plans, [:environment_dataset_plan_id, :dataset_in_pool_id],
               unique: true, name: :dataset_in_pool_plans_unique
 
     create_table :repeatable_tasks do |t|
@@ -347,8 +366,21 @@ class AddStorage < ActiveRecord::Migration
 
     add_column :vps, :dataset_in_pool_id, :integer, null: true
 
+    # Setup environments
+    Environment.all.delete_all
+    production_env = Environment.create!(
+        label: 'Production',
+        domain: 'vpsfree.cz'
+    )
+
     # Create dataset plans
     backup_plan = DatasetPlan.create!(name: :daily_backup)
+    env_backup_plan = EnvironmentDatasetPlan.create!(
+        dataset_plan_id: backup_plan.id,
+        environment_id: production_env.id,
+        user_add: true,
+        user_remove: true
+    )
 
     group_snapshots_per_pool = {}
 
@@ -520,6 +552,7 @@ class AddStorage < ActiveRecord::Migration
 
     # Create backup datasets for VPS
     Vps.all.each do |vps|
+      next if vps.node.location.location_type != 'production'
       ex = StorageExport.find_by(id: vps.vps_backup_export)
 
       pool_id = nil
@@ -550,7 +583,7 @@ class AddStorage < ActiveRecord::Migration
       end
 
       dip_plan = DatasetInPoolPlan.create!(
-          dataset_plan_id: backup_plan.id,
+          environment_dataset_plan_id: env_backup_plan.id,
           dataset_in_pool_id: vps.dataset_in_pool_id
       )
 
@@ -596,6 +629,7 @@ class AddStorage < ActiveRecord::Migration
     drop_table :mounts
     drop_table :mirrors
     drop_table :dataset_plans
+    drop_table :environment_dataset_plans
     drop_table :dataset_in_pool_plans
     drop_table :repeatable_tasks
     drop_table :dataset_actions

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150206154652) do
+ActiveRecord::Schema.define(version: 20150213171524) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -89,11 +89,11 @@ ActiveRecord::Schema.define(version: 20150206154652) do
   end
 
   create_table "dataset_in_pool_plans", force: true do |t|
-    t.integer "dataset_plan_id",    null: false
-    t.integer "dataset_in_pool_id", null: false
+    t.integer "environment_dataset_plan_id", null: false
+    t.integer "dataset_in_pool_id",          null: false
   end
 
-  add_index "dataset_in_pool_plans", ["dataset_plan_id", "dataset_in_pool_id"], name: "dataset_in_pool_plans_unique", unique: true, using: :btree
+  add_index "dataset_in_pool_plans", ["environment_dataset_plan_id", "dataset_in_pool_id"], name: "dataset_in_pool_plans_unique", unique: true, using: :btree
 
   create_table "dataset_in_pools", force: true do |t|
     t.integer "dataset_id",                                     null: false
@@ -166,6 +166,13 @@ ActiveRecord::Schema.define(version: 20150206154652) do
   end
 
   add_index "environment_config_chains", ["environment_id", "vps_config_id"], name: "environment_config_chains_unique", unique: true, using: :btree
+
+  create_table "environment_dataset_plans", force: true do |t|
+    t.integer "environment_id",  null: false
+    t.integer "dataset_plan_id", null: false
+    t.boolean "user_add",        null: false
+    t.boolean "user_remove",     null: false
+  end
 
   create_table "environment_user_configs", force: true do |t|
     t.integer "environment_id",                  null: false

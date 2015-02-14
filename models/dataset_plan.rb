@@ -1,5 +1,5 @@
 class DatasetPlan < ActiveRecord::Base
-  has_many :dataset_in_pool_plans
+  has_many :environment_dataset_plans
   has_many :dataset_actions
 
   def label
