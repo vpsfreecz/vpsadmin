@@ -231,4 +231,71 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
       end
     end
   end
+
+  class DatasetPlan < HaveAPI::Resource
+    version 1
+    route ':environment_id/dataset_plans'
+    desc 'Manage environment dataset plans'
+    model ::EnvironmentDatasetPlan
+
+    params(:id) do
+      integer :id, label: 'ID'
+    end
+
+    params(:common) do
+      string :label
+      resource VpsAdmin::API::Resources::DatasetPlan, value_label: :label
+      bool :user_add, label: 'User add',
+           desc: 'If true, the user can add this plan to a dataset'
+      bool :user_remove, label: 'User remove',
+           desc: 'If true, the user can remove this plan from a dataset'
+    end
+
+    params(:all) do
+      use :id
+      use :common
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      desc 'List dataset plans'
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict user_add: true
+        allow
+      end
+
+      def query
+        ::EnvironmentDatasetPlan.where(with_restricted)
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        with_includes(query).limit(input[:limit]).offset(input[:offset])
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      desc 'Show dataset plan'
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow
+      end
+
+      def exec
+        ::EnvironmentDatasetPlan.find(params[:dataset_plan_id])
+      end
+    end
+  end
 end
