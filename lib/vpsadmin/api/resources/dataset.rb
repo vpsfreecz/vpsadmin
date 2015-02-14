@@ -406,7 +406,7 @@ module VpsAdmin::API::Resources
 
       params(:common) do
         resource VpsAdmin::API::Resources::Environment::DatasetPlan,
-                 db_name: :environment_dataset_plan,
+                 name: :environment_dataset_plan,
                  required: true
       end
 
@@ -436,7 +436,9 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          with_includes(query).includes(environment_dataset_plan: [:dataset_plan]).offset(input[:offset]).limit(input[:limit])
+          with_includes(query).includes(
+              environment_dataset_plan: [:dataset_plan]
+          ).offset(input[:offset]).limit(input[:limit])
         end
       end
 
@@ -483,7 +485,7 @@ module VpsAdmin::API::Resources
 
         def exec
           s = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
-          s.primary_dataset_in_pool!.add_plan(input[:dataset_plan])
+          s.primary_dataset_in_pool!.add_plan(input[:environment_dataset_plan])
         end
       end
 
