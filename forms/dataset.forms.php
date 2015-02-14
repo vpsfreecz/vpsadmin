@@ -38,6 +38,8 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 	$include = array('quota', 'refquota', 'used', 'avail');
 	$colspan = 5 + count($include);
 	
+	$xtpl->table_title(_('Datasets'));
+	
 	if (isset($_SESSION['is_admin']))
 		$xtpl->table_add_category('#');
 	
