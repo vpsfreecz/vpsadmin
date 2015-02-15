@@ -490,6 +490,11 @@ module VpsAdmin::API::Resources
 
         def exec
           s = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+
+          unless input[:environment_dataset_plan].user_add
+            error('Insufficient permission')
+          end
+
           s.primary_dataset_in_pool!.add_plan(input[:environment_dataset_plan])
         end
       end
@@ -506,7 +511,14 @@ module VpsAdmin::API::Resources
         def exec
           ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
           dip =  ds.primary_dataset_in_pool!
-          dip.del_plan(dip.dataset_in_pool_plans.find(params[:plan_id]))
+
+          dip_plan = dip.dataset_in_pool_plans.find(params[:plan_id])
+
+          unless dip_plan.environment_dataset_plan.user_remove
+            error('Insufficient permission')
+          end
+
+          dip.del_plan(dip_plan)
           ok
         end
       end
