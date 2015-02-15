@@ -91,28 +91,7 @@ class Vps < ActiveRecord::Base
 
   # Filter attributes that must be changed by a transaction.
   def update(attributes)
-    assign_attributes(attributes)
-    return false unless valid?
-
-    to_change = {}
-
-    %w(vps_hostname vps_template dns_resolver_id).each do |attr|
-      if changed.include?(attr)
-        if attr.ends_with?('_id')
-          to_change[attr] = send("#{attr}_change").map do |id|
-            Object.const_get(attr[0..-4].classify).find(id)
-          end
-        else
-          to_change[attr] = send("#{attr}_change")
-        end
-
-        send("#{attr}=", changed_attributes[attr])
-      end
-    end
-
-    TransactionChains::Vps::Update.fire(self, to_change, attributes)
-
-    (changed? && save) || true
+    TransactionChains::Vps::Update.fire(self, attributes)
   end
 
   def start

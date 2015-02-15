@@ -271,11 +271,24 @@ END
       vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
       maintenance_check!(vps)
 
-      if vps.update(to_db_names(input))
-        ok
-      else
-        error('update failed', to_param_names(vps.errors.to_hash, :input))
+      if input.empty?
+        error('provide at least one attribute to update')
       end
+
+      if input[:user]
+        resources = ::Vps.cluster_resources[:required] + ::Vps.cluster_resources[:optional]
+
+        resources.each do |r|
+          if input.has_key?(r)
+            error('resources cannot be changed when changing VPS owner')
+          end
+        end
+      end
+
+      vps.update(to_db_names(input))
+
+    rescue ActiveRecord::RecordInvalid => e
+      error('update failed', e.record == vps ? to_param_names(vps.errors.to_hash, :input) : e.record.errors.to_hash)
     end
   end
 
