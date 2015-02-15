@@ -34,6 +34,7 @@ class TransactionChain < ActiveRecord::Base
 
       if chain.empty?
         if chain.class.allow_empty?
+          chain.release_locks
           chain.destroy
           return ret
 
@@ -123,6 +124,11 @@ class TransactionChain < ActiveRecord::Base
     return if @locks.detect { |l| l.locks?(obj) }
 
     @locks << obj.acquire_lock(@dst_chain, *args)
+  end
+
+  # Release all locks acquired by this and all nested chains.
+  def release_locks
+    @locks.each { |l| l.release }
   end
 
   # Append transaction of +klass+ with +opts+ to the end of the chain.
