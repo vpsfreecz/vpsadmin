@@ -9,7 +9,7 @@ class ClusterResourceUse < ActiveRecord::Base
   def check_allocation
     used = self.class.where(user_cluster_resource: user_cluster_resource).sum(:value)
 
-    if self.new_record?
+    if self.new_record? || !self.value_changed?
       total = used + self.value
     else
       total = used - self.value_was + self.value
