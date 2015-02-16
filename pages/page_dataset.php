@@ -6,6 +6,8 @@ if ($_SESSION['logged_in']) {
 	switch ($_GET['action']) {
 		case 'new':
 			if (isset($_POST['name'])) {
+				csrf_check();
+				
 				$params = array(
 					'name' => $_POST['name'],
 					'dataset' => $_POST['dataset'] ? $_POST['dataset'] : $_GET['parent'],
@@ -40,6 +42,8 @@ if ($_SESSION['logged_in']) {
 		
 		case 'edit':
 			if (isset($_POST['return'])) {
+				csrf_check();
+				
 				$ds = $api->dataset->find($_GET['id']);
 				$params = array();
 				
@@ -71,6 +75,8 @@ if ($_SESSION['logged_in']) {
 		
 		case 'destroy':
 			if (isset($_POST['confirm']) && $_POST['confirm']) {
+				csrf_check();
+				
 				try {
 					$api->dataset($_GET['id'])->delete();
 					
@@ -109,6 +115,8 @@ if ($_SESSION['logged_in']) {
 		
 		case 'mount':
 			if (isset($_POST['mountpoint'])) {
+				csrf_check();
+				
 				try {
 					$params = array(
 						'dataset' => $_POST['dataset'],
@@ -134,6 +142,8 @@ if ($_SESSION['logged_in']) {
 		
 		case 'mount_destroy':
 			if (isset($_POST['confirm']) && $_POST['confirm']) {
+				csrf_check();
+				
 				try {
 					$api->vps($_GET['vps'])->mount($_GET['id'])->delete();
 					
@@ -169,6 +179,8 @@ if ($_SESSION['logged_in']) {
 			break;
 		
 		case 'plan_add':
+			csrf_check();
+			
 			try {
 				$api->dataset($_GET['id'])->plan->create(array(
 					'environment_dataset_plan' => $_POST['environment_dataset_plan']
@@ -185,6 +197,8 @@ if ($_SESSION['logged_in']) {
 			break;
 		
 		case 'plan_delete':
+			csrf_check();
+			
 			try {
 				$api->dataset($_GET['id'])->plan->delete($_GET['plan']);
 				

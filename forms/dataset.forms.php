@@ -244,7 +244,7 @@ function dataset_edit_form() {
 	foreach ($plans as $plan) {
 		$xtpl->table_td($plan->environment_dataset_plan->label);
 		$xtpl->table_td($plan->environment_dataset_plan->dataset_plan->description);
-		$xtpl->table_td('<a href="?page=dataset&action=plan_delete&id='.$ds->id.'&plan='.$plan->id.'&return='.urlencode($_GET['return'] ? $_GET['return'] : $_POST['return']).'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		$xtpl->table_td('<a href="?page=dataset&action=plan_delete&id='.$ds->id.'&plan='.$plan->id.'&return='.urlencode($_GET['return'] ? $_GET['return'] : $_POST['return']).'&t='.csrf_token().'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
 		$xtpl->table_tr();
 	}
 	
@@ -299,7 +299,7 @@ function dataset_snapshot_list($datasets, $vps = null) {
 			$xtpl->table_tr();
 		}
 		
-		$xtpl->table_td('<a href="?page=backup&action=snapshot&dataset='.$ds->id.'&return='.$return_url.'">'._('Make a snapshot NOW').'</a>', false, false, '2');
+		$xtpl->table_td('<a href="?page=backup&action=snapshot&dataset='.$ds->id.'&return='.$return_url.'&t='.csrf_token().'">'._('Make a snapshot NOW').'</a>', false, false, '2');
 		$xtpl->table_td($xtpl->html_submit(_("Restore"), "restore"));
 		$xtpl->table_tr();
 		
