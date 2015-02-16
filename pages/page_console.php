@@ -1,6 +1,7 @@
 <?php
 
 if ($_SESSION["logged_in"]) {
+	csrf_check();
 	$vps = vps_load($_GET["veid"]);
 	
 	if($vps->exists) {
@@ -12,7 +13,7 @@ if ($_SESSION["logged_in"]) {
 			$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
 <script type="text/javascript">
 function ajax_vps(cmd) {
-	$.get("ajax.php?page=vps&action=" + cmd + "&veid='.$vps->veid.'");
+	$.get("ajax.php?page=vps&action=" + cmd + "&veid='.$vps->veid'&t='.csrf_token().'");
 }
 </script>
 ');
