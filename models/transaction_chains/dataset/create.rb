@@ -2,7 +2,7 @@ module TransactionChains
   class Dataset::Create < ::TransactionChain
     label 'Create dataset'
 
-    def link_chain(pool, dataset_in_pool, path, automount, properties, user = nil)
+    def link_chain(pool, dataset_in_pool, path, automount, properties, user = nil, label = nil)
       lock(dataset_in_pool) if dataset_in_pool
 
       ret = []
@@ -18,7 +18,7 @@ module TransactionChains
         ret << create_dataset(part)
       end
 
-      ret << create_dataset(path.last, properties)
+      ret << create_dataset(path.last, properties, label)
 
       use_prop = nil
 
@@ -46,7 +46,7 @@ module TransactionChains
       ret
     end
 
-    def create_dataset(part, properties = {})
+    def create_dataset(part, properties = {}, label = nil)
       if part.new_record?
         part.parent ||= @parent
         part.save!
@@ -61,6 +61,7 @@ module TransactionChains
       dip = ::DatasetInPool.create!(
           dataset: part,
           pool: @pool,
+          label: label,
           confirmed: ::DatasetInPool.confirmed(:confirm_create)
       )
 

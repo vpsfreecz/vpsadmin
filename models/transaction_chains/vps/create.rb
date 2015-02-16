@@ -30,7 +30,8 @@ module TransactionChains
           [ds],
           false,
           {refquota: vps.diskspace},
-          vps.user
+          vps.user,
+          "vps#{vps.id}"
       ]).last
 
       vps.dataset_in_pool = dip

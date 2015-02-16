@@ -428,7 +428,7 @@ class AddStorage < ActiveRecord::Migration
         ds_in_pool = DatasetInPool.create(
             dataset_id: ds.id,
             pool_id: pool.id,
-            label: vps.id,
+            label: "vps#{vps.id}",
             min_snapshots: 1,
             max_snapshots: 1,
             snapshot_max_age: 1*24*60*60,
