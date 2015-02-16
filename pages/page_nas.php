@@ -3,7 +3,7 @@ if ($_SESSION["logged_in"] && (NAS_PUBLIC || $_SESSION["is_admin"])) {
 	if ($_SESSION['is_admin']) {
 		// Filter form & query
 		$xtpl->table_title(_('Filters'));
-		$xtpl->form_create('', 'get');
+		$xtpl->form_create('', 'get', 'nas-filter', false);
 		
 		$xtpl->table_td(_("Limit").':'.
 			'<input type="hidden" name="page" value="nas">'.
