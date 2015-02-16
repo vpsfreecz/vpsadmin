@@ -11,10 +11,10 @@ module TransactionChains
 
       db_changes = {vps => {}}
 
-      attrs.each do |k, v|
-        case k
-          when :user
-            db_changes[vps][:m_id] = v.id
+      vps.changed.each do |attr|
+        case attr
+          when 'm_id'
+            db_changes[vps][:m_id] = vps.m_id
 
             # VPS and all related objects must be given to the target user:
             #   - dataset and all subdatasets
@@ -28,47 +28,47 @@ module TransactionChains
             # Chown datasets
             vps.dataset_in_pool.dataset.subtree.each do |ds|
               datasets << ds
-              db_changes[ds] = {user_id: v.id}
+              db_changes[ds] = {user_id: vps.m_id}
             end
 
             # Check mounts
             check_vps_mounts(vps, datasets)
-            datasets.each { |ds| check_ds_mounts(vps, ds, v.id) }
+            datasets.each { |ds| check_ds_mounts(vps, ds, vps.m_id) }
 
             # Transfer cluster resources
-            db_changes.update(vps.transfer_resources!(v))
+            db_changes.update(vps.transfer_resources!(vps.user))
 
             # Chown IP addresses
             vps.ip_addresses.each do |ip|
-              db_changes[ip] = {user_id: v.id}
+              db_changes[ip] = {user_id: vps.m_id}
             end
 
-          when :vps_hostname
+          when 'vps_hostname'
             append(Transactions::Vps::Hostname, args: [vps, vps.hostname_was, vps.hostname]) do
-              edit(vps, k => v)
+              edit(vps, attr => vps.hostname)
             end
 
-          when :vps_template
+          when 'vps_template'
             # FIXME
 
-          when :dns_resolver_id
-            append(Transactions::Vps::DnsResolver, args: [vps, *find_obj(vps, k)]) do
-              edit(vps, k => v)
+          when 'dns_resolver_id'
+            append(Transactions::Vps::DnsResolver, args: [vps, *find_obj(vps, attr)]) do
+              edit(vps, attr => vps.dns_resolver_id)
             end
 
-          when :config
+          when 'config'
             # FIXME
 
-          when :vps_onboot
-          when :info, :onstartall
-            db_changes[vps][k] = v
+          when 'vps_onboot'
+          when 'info', 'onstartall'
+            db_changes[vps][attr] = vps.send(attr)
         end
       end
 
       # Note: this will not work correctly when chowning the VPS, that's
       # why it is forbidden in controller.
       resources = vps.reallocate_resources(attrs, vps.user)
-      use_chain(Vps::SetResources, args: [vps, resources]) unless resource.empty?
+      use_chain(Vps::SetResources, args: [vps, resources]) unless resources.empty?
 
       if empty?
         # Save changes immediately
@@ -84,8 +84,6 @@ module TransactionChains
           end
         end
       end
-
-      # fail 'notyet'
 
       vps
     end
