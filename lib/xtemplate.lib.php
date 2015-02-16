@@ -658,8 +658,11 @@ class XTemplate {
 	  * @param $method - GET or POST
 	  * @param $name - form name
 	  */
-	function form_create($action = '?page=', $method = 'post', $name = 'generic_form') {
+	function form_create($action = '?page=', $method = 'post', $name = 'generic_form', $csrf = true) {
 		$this->assign('TABLE_FORM_BEGIN','<form action="'.$action.'" method="'.$method.'" name="'.$name.'" AUTOCOMPLETE=OFF>');
+		
+		if ($csrf)
+			$this->form_csrf();
 	}
 	/**
 	  * Add input to form
