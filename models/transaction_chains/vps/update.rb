@@ -39,7 +39,7 @@ module TransactionChains
             db_changes.update(vps.transfer_resources!(vps.user))
 
             # Chown IP addresses
-            vps.ip_addresses.each do |ip|
+            vps.ip_addresses.where.not(user_id: nil).each do |ip|
               db_changes[ip] = {user_id: vps.m_id}
             end
 

@@ -316,6 +316,7 @@ module VpsAdmin::API
           fail 'target resource does not exist' unless t
 
           use.user_cluster_resource = t
+          use.resource_transfer = true
           raise ::ActiveRecord::RecordInvalid, use unless use.valid?
 
           ret[use] = {user_cluster_resource_id: t.id}

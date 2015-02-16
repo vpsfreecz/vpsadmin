@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150213171524) do
+ActiveRecord::Schema.define(version: 20150206154652) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -196,6 +196,7 @@ ActiveRecord::Schema.define(version: 20150213171524) do
     t.boolean  "can_destroy_vps",                     default: false, null: false
     t.integer  "vps_lifetime",                        default: 0,     null: false
     t.integer  "max_vps_count",                       default: 1,     null: false
+    t.boolean  "user_ip_ownership",                                   null: false
   end
 
   create_table "group_snapshots", force: true do |t|

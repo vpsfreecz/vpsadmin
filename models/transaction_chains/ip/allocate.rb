@@ -29,7 +29,7 @@ module TransactionChains
       ips.each do |ip|
         append(Transactions::Vps::IpAdd, args: [vps, ip]) do
           edit(ip, vps_id: vps.veid)
-          edit(ip, user_id: vps.user_id) unless ip.user_id
+          edit(ip, user_id: vps.user_id) if !ip.user_id && vps.node.environment.user_ip_ownership
         end
       end
 
