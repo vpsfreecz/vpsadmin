@@ -64,6 +64,7 @@ function print_newvps_page3($env, $loc) {
 	$xtpl->table_add_category('&nbsp;');
 	
 	$xtpl->form_create('?page=adminvps&section=vps&action=new4&create=1&env_id='.$env.'&loc_id='.$loc, 'post');
+	$xtpl->form_csrf();
 	$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'vps_hostname', '', _("A-z, a-z"), 255);
 	
 	if ($_SESSION["is_admin"]) {
@@ -105,6 +106,7 @@ $member_of_session = member_load($_SESSION["member"]["m_id"]);
 $_GET["run"] = isset($_GET["run"]) ? $_GET["run"] : false;
 
 if ($_GET["run"] == 'stop') {
+	csrf_check();
 	$api->vps->stop($_GET["veid"]);
 	
 	notify_user(_("Stop VPS")." {$_GET["veid"]} "._("planned"));
@@ -113,6 +115,7 @@ if ($_GET["run"] == 'stop') {
 
 if ($_GET["run"] == 'start') {
 	if ($member_of_session->m["m_state"] == "active" || (!$cluster_cfg->get("payments_enabled"))) {
+		csrf_check();
 		$api->vps->start($_GET["veid"]);
 		
 		notify_user(_("Start of")." {$_GET["veid"]} "._("planned"));
@@ -124,6 +127,7 @@ if ($_GET["run"] == 'start') {
 
 if ($_GET["run"] == 'restart') {
 	if ($member_of_session->m["m_state"] == "active" || (!$cluster_cfg->get("payments_enabled"))) {
+		csrf_check();
 		$api->vps->restart($_GET["veid"]);
 		
 		notify_user(_("Restart of")." {$_GET["veid"]} "._("planned"), '');
@@ -154,6 +158,8 @@ switch ($_GET["action"]) {
 			
 		case 'new4':
 			if ($_GET["create"]) {
+				csrf_check();
+				
 				$params = array(
 					'hostname' => $_POST['vps_hostname'],
 					'os_template' => $_POST['vps_template'],
@@ -200,6 +206,7 @@ switch ($_GET["action"]) {
 			$xtpl->table_td($vps->ve["vps_hostname"]);
 			$xtpl->table_tr();
 			$xtpl->form_create('?page=adminvps&section=vps&action=delete2&veid='.$_GET["veid"], 'post');
+			$xtpl->form_csrf();
 			
 			if($_SESSION["is_admin"]) {
 				$xtpl->form_add_checkbox(_("Lazy delete").':', 'lazy_delete', '1', true,
@@ -209,6 +216,7 @@ switch ($_GET["action"]) {
 			break;
 			
 		case 'delete2':
+			csrf_check();
 			$api->vps->destroy($_GET["veid"], array('lazy' => $_POST["lazy_delete"] ? true : false));
 			
 			notify_user(_("Delete VPS").' #'.$_GET["veid"], _("Deletion of VPS")." {$_GET["veid"]} ".strtolower(_("planned")));
@@ -217,6 +225,7 @@ switch ($_GET["action"]) {
 			
 		case 'revive':
 			try {
+				csrf_check();
 				$api->vps->revive($_GET['veid']);
 				
 				notify_user(_("Revival"), _("VPS was revived."));
@@ -233,6 +242,7 @@ switch ($_GET["action"]) {
 			break;
 		case 'passwd':
 			try {
+				csrf_check();
 				$ret = $api->vps->passwd($_GET["veid"]);
 				
 				$_SESSION["vps_password"] = $ret['password'];
@@ -250,6 +260,7 @@ switch ($_GET["action"]) {
 			break;
 		case 'hostname':
 			try {
+				csrf_check();
 				$api->vps->update($_GET['veid'], array('hostname' => $_POST['hostname']));
 				
 				notify_user(_("Hostname change planned"), '');
@@ -261,6 +272,7 @@ switch ($_GET["action"]) {
 			break;
 		case 'configs':
 			if ($_SESSION["is_admin"] && isset($_REQUEST["veid"]) && (isset($_POST["configs"]) || isset($_POST["add_config"]))) {
+				csrf_check();
 				$raw_order = explode('&', $_POST['configs_order']);
 				$cfgs = array();
 				$i = 0;
@@ -320,6 +332,8 @@ switch ($_GET["action"]) {
 			
 		case 'custom_config':
 			if ($_SESSION['is_admin']) {
+				csrf_check();
+				
 				try {
 					$api->vps->update($_GET['veid'], array('config' => $_POST['custom_config']));
 					
@@ -336,6 +350,7 @@ switch ($_GET["action"]) {
 		case 'chown':
 			if($_POST['m_id']) {
 				try {
+					csrf_check();
 					$api->vps->update($_GET['veid'], array('user' => $_POST['m_id']));
 					
 					notify_user(_("Owner changed"), '');
@@ -351,6 +366,7 @@ switch ($_GET["action"]) {
 			break;
 		case 'expiration':
 			if ($_SESSION["is_admin"] && $_POST["date"]) {
+				csrf_check();
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 				if ($vps->exists) {
 					$vps->set_expiration($_POST["no_expiration"] ? 0 : strtotime($_POST["date"]));
@@ -361,6 +377,8 @@ switch ($_GET["action"]) {
 			break;
 		case 'addip':
 			try {
+				csrf_check();
+				
 				if($_POST['ip_recycle']) {
 					$api->vps($_GET['veid'])->ip_address->create(array('ip_address' => $_POST['ip_recycle']));
 					notify_user(_("Addition of IP address planned"), '');
@@ -382,6 +400,7 @@ switch ($_GET["action"]) {
 			break;
 		case 'delip':
 			try {
+				csrf_check();
 				$api->vps($_GET['veid'])->ip_address($_GET['ip'])->delete();
 				
 				notify_user(_("Deletion of IP address planned"), '');
@@ -395,6 +414,7 @@ switch ($_GET["action"]) {
 			break;
 		case 'nameserver':
 			try {
+				csrf_check();
 				$api->vps->update($_GET['veid'], array('dns_resolver' => $_POST['nameserver']));
 				
 				notify_user(_("DNS change planned"), '');
@@ -408,6 +428,8 @@ switch ($_GET["action"]) {
 		
 		case 'offlinemigrate':
 			if ($_SESSION["is_admin"] && isset($_GET["veid"])) {
+				csrf_check();
+				
 				try {
 					$api->vps($_GET['veid'])->migrate(array('node' => $_POST['target_id']));
 					
@@ -449,13 +471,14 @@ switch ($_GET["action"]) {
 			if ($_REQUEST["reinstallsure"] && $_REQUEST["vps_template"]) {
 				$xtpl->perex(
 					_("Are you sure you want to reinstall VPS").' '.$_GET["veid"].'?',
-					'<a href="?page=adminvps">'.strtoupper(_("No")).'</a> | <a href="?page=adminvps&action=reinstall2&veid='.$_GET["veid"].'&vps_template='.$_POST["vps_template"].'">'.strtoupper(_("Yes")).'</a>'
+					'<a href="?page=adminvps">'.strtoupper(_("No")).'</a> | <a href="?page=adminvps&action=reinstall2&veid='.$_GET["veid"].'&vps_template='.$_POST["vps_template"].'&t='.csrf_token().'">'.strtoupper(_("Yes")).'</a>'
 				);
 			}
 			else $list_vps=true;
 			break;
 		case 'reinstall2':
 			try {
+				csrf_check();
 				$api->vps->reinstall($_GET["veid"], array('os_template' => $_GET["vps_template"]));
 				
 				notify_user(_("Reinstallation of VPS")." {$_GET["veid"]} ".strtolower(_("planned")), _("You will have to reset your <b>root</b> password."));
@@ -468,6 +491,7 @@ switch ($_GET["action"]) {
 			break;
 		case 'features':
 			if (isset($_GET["veid"]) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+				csrf_check();
 				try {
 					$resource = $api->vps($_GET['veid'])->feature;
 					$features = $resource->list();
@@ -489,6 +513,7 @@ switch ($_GET["action"]) {
 			break;
 		case 'clone':
 			if (isset($_REQUEST["veid"])  && ($_SESSION["is_admin"] || $playground_mode)) {
+				csrf_check();
 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 				
 				if ($playground_mode) {
@@ -531,6 +556,8 @@ switch ($_GET["action"]) {
 			break;
 		case 'swap':
 			if(isset($_GET["veid"]) && isset($_POST["swap_vps"]) && ($vps = vps_load($_GET["veid"])) && ($with = vps_load($_POST["swap_vps"]))) {
+				csrf_check();
+				
 				if(!$vps->exists || !$with->exists || $vps->veid == $with->veid || !$_SESSION["is_admin"])
 					break;
 				
@@ -613,11 +640,11 @@ if (isset($list_vps) && $list_vps) {
 		else $xtpl->table_td('---', false, true);
 		
 		if($_SESSION['is_admin'] || $vps->maintenance_lock == 'no') {
-			$xtpl->table_td(($vps->running) ? '<a href="?page=adminvps&run=restart&veid='.$vps->id.'"><img src="template/icons/vps_restart.png" title="'._("Restart").'"/></a>' : '<img src="template/icons/vps_restart_grey.png"  title="'._("Unable to restart").'" />');
-			$xtpl->table_td(($vps->running) ? '<a href="?page=adminvps&run=stop&veid='.$vps->id.'"><img src="template/icons/vps_stop.png"  title="'._("Stop").'"/></a>' : '<a href="?page=adminvps&run=start&veid='.$vps->id.'"><img src="template/icons/vps_start.png"  title="'._("Start").'"/></a>');
+			$xtpl->table_td(($vps->running) ? '<a href="?page=adminvps&run=restart&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_restart.png" title="'._("Restart").'"/></a>' : '<img src="template/icons/vps_restart_grey.png"  title="'._("Unable to restart").'" />');
+			$xtpl->table_td(($vps->running) ? '<a href="?page=adminvps&run=stop&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_stop.png"  title="'._("Stop").'"/></a>' : '<a href="?page=adminvps&run=start&veid='.$vps->id.'"><img src="template/icons/vps_start.png"  title="'._("Start").'"/></a>');
 			
 			if (!$_SESSION['is_admin'])
-				$xtpl->table_td('<a href="?page=console&veid='.$vps->id.'"><img src="template/icons/console.png"  title="'._("Remote Console").'"/></a>');
+				$xtpl->table_td('<a href="?page=console&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/console.png"  title="'._("Remote Console").'"/></a>');
 			
 			$can_delete = false; // FIXME
 			
@@ -719,10 +746,10 @@ if (isset($show_info) && $show_info) {
 	if($vps->maintenance_lock == 'no') {
 		$xtpl->table_td(
 			(($vps->running) ?
-				_("running").' (<a href="?page=adminvps&action=info&run=restart&veid='.$vps->id.'">'._("restart").'</a>, <a href="?page=adminvps&action=info&run=stop&veid='.$vps->id.'">'._("stop").'</a>'
+				_("running").' (<a href="?page=adminvps&action=info&run=restart&veid='.$vps->id.'&t='.csrf_token().'">'._("restart").'</a>, <a href="?page=adminvps&action=info&run=stop&veid='.$vps->id.'&t='.csrf_token().'">'._("stop").'</a>'
 				: 
-				_("stopped").' (<a href="?page=adminvps&action=info&run=start&veid='.$vps->id.'">'._("start").'</a>') .
-				', <a href="?page=console&veid='.$vps->id.'">'._("open remote console").'</a>)'
+				_("stopped").' (<a href="?page=adminvps&action=info&run=start&veid='.$vps->id.'&t='.csrf_token().'">'._("start").'</a>') .
+				', <a href="?page=console&veid='.$vps->id.'&t='.csrf_token().'">'._("open remote console").'</a>)'
 		);
 	} else {
 		$xtpl->table_td($vps->running ? _("running") : _("stopped"));
@@ -822,7 +849,7 @@ if (isset($show_info) && $show_info) {
 					$xtpl->table_td(_("IPv6"));
 				
 				$xtpl->table_td($ip->addr);
-				$xtpl->table_td('<a href="?page=adminvps&action=delip&ip='.$ip->id.'&veid='.$vps->id.'">('._("Remove").')</a>');
+				$xtpl->table_td('<a href="?page=adminvps&action=delip&ip='.$ip->id.'&veid='.$vps->id.'&t='.csrf_token().'">('._("Remove").')</a>');
 				$xtpl->table_tr();
 			}
 			
