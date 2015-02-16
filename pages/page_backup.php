@@ -46,6 +46,8 @@ if ($_SESSION["logged_in"]) {
 			break;
 		
 		case 'snapshot':
+			csrf_check();
+			
 			try {
 				$api->dataset($_GET['dataset'])->snapshot->create();
 				
@@ -58,6 +60,8 @@ if ($_SESSION["logged_in"]) {
 		
 		case 'restore':
 			if (isset($_POST['confirm']) && $_POST['confirm']) {
+				csrf_check();
+				
 				try {
 					$ds = $api->dataset->find($_GET['dataset']);
 					$snap = $ds->snapshot->find($_POST['restore_snapshot']);
@@ -117,6 +121,8 @@ if ($_SESSION["logged_in"]) {
 		
 		case 'download':
 			if (isset($_POST['confirm']) && $_POST['confirm']) {
+				csrf_check();
+				
 				try {
 					$ds = $api->dataset->find($_GET['dataset']);
 					$snap = $ds->snapshot->find($_GET['snapshot']);
@@ -161,6 +167,8 @@ if ($_SESSION["logged_in"]) {
 		
 		case 'mount':
 			if (isset($_POST['vps'])) {
+				csrf_check();
+				
 				try {
 					$api->vps($_POST['vps'])->mount->create(array(
 						'snapshot' => $_GET['snapshot'],
@@ -183,6 +191,8 @@ if ($_SESSION["logged_in"]) {
 		
 		case 'download_destroy':
 			if (isset($_POST['confirm']) && $_POST['confirm']) {
+				csrf_check();
+				
 				try {
 					$api->snapshot_download($_GET['id'])->delete();
 					
@@ -226,7 +236,7 @@ if ($_SESSION["logged_in"]) {
 	if($vps_backups) {
 		if ($_SESSION['is_admin']) {
 			$xtpl->table_title(_('Filters'));
-			$xtpl->form_create('', 'get');
+			$xtpl->form_create('', 'get', 'backup-filter', false);
 			
 			$xtpl->table_td(_("Limit").':'.
 				'<input type="hidden" name="page" value="backup">'.
@@ -285,7 +295,7 @@ if ($_SESSION["logged_in"]) {
 		
 		if ($_SESSION['is_admin']) {
 			$xtpl->table_title(_('Filters'));
-			$xtpl->form_create('', 'get');
+			$xtpl->form_create('', 'get', 'backup-filter', false);
 			
 			$xtpl->table_td(_("Limit").':'.
 				'<input type="hidden" name="page" value="backup">'.
