@@ -48,6 +48,8 @@ if ($_GET["action"] == 'login') {
 			$_SESSION["is_admin"] =      ($m->level >= PRIV_ADMIN) ?      true : false;
 			$_SESSION["is_superadmin"] = ($m->level >= PRIV_SUPERADMIN) ? true : false;
 			
+			csrf_init();
+			
 			$xtpl->perex(_("Welcome, ").$member->m["m_nick"],
 					_("Login successful <br /> Your privilege level: ")
 					. $cfg_privlevel[$m->level]);

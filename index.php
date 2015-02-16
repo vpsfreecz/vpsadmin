@@ -40,7 +40,7 @@ include WWW_ROOT.'lib/ajax.lib.php';
 include WWW_ROOT.'lib/mail.lib.php';
 include WWW_ROOT.'lib/log.lib.php';
 include WWW_ROOT.'lib/helpbox.lib.php';
-include WWW_ROOT.'lib/nas.lib.php';
+include WWW_ROOT.'lib/security.lib.php';
 
 include WWW_ROOT.'forms/dataset.forms.php';
 include WWW_ROOT.'forms/nas.forms.php';
@@ -173,6 +173,8 @@ try {
 	
 } catch (\HaveAPI\Client\Exception\Base $e) {
 	$xtpl->perex(_('Error occured'), _('An unhandled error occured in communication with the API. Please contact the support.'));
+} catch (\CsrfTokenInvalid $e) {
+	$xtpl->perex(_('Token invalid'), _('Your security token is either invalid or expired. Please try to repeat the action, you will be given a new, valid token.'));
 }
 
 

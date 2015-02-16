@@ -834,6 +834,10 @@ class XTemplate {
 		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' />');
 	}
 	
+	function form_csrf($name = 'common') {
+		$this->assign('FORM_CSRF_TOKEN', '<input type="hidden" name="csrf_token" value="'.csrf_token($name).'">');
+	}
+	
 	function html_submit($value, $name = null) {
 		return '<input type="submit" name="'.$name.'" value="'.$value.'" class="button" />';
 	}
