@@ -12,7 +12,7 @@ module TransactionChains
         s.snapshot_in_pool.update(confirmed: ::SnapshotInPool.confirmed(:confirm_destroy))
         cleanup = cleanup_snapshot?(s.snapshot_in_pool)
 
-        destroy_snapshot(s.snapshot_in_pool.snapshot) if cleanup
+        destroy_snapshot(s.snapshot_in_pool) if cleanup
 
         append(Transactions::Storage::DestroySnapshot, args: [s.snapshot_in_pool, s.branch]) do
           destroy(s)
@@ -34,7 +34,7 @@ module TransactionChains
 
         # Destroy the tree if it is empty, checking for child branches
         # with the same condition as above.
-        if s.branch.dataset_tree.branches.where.not(confirmed: Branch.confirmed(:confirm_destroy)).count == 0
+        if s.branch.dataset_tree.branches.where.not(confirmed: ::Branch.confirmed(:confirm_destroy)).count == 0
           append(Transactions::Storage::DestroyTree, args: s.branch.dataset_tree)
         end
 
