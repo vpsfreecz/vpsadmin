@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150206154652) do
+ActiveRecord::Schema.define(version: 20150218142131) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -350,6 +350,15 @@ ActiveRecord::Schema.define(version: 20150206154652) do
     t.integer "role",                                       null: false
     t.boolean "refquota_check",             default: false, null: false
   end
+
+  create_table "port_reservations", force: true do |t|
+    t.integer "node_id",                          null: false
+    t.string  "addr",                 limit: 100
+    t.integer "port",                             null: false
+    t.integer "transaction_chain_id"
+  end
+
+  add_index "port_reservations", ["node_id", "port"], name: "port_reservation_uniqueness", unique: true, using: :btree
 
   create_table "repeatable_tasks", force: true do |t|
     t.string  "label",        limit: 100

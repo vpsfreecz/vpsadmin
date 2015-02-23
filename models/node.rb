@@ -9,6 +9,7 @@ class Node < ActiveRecord::Base
   has_many :storage_roots
   has_many :pools
   has_many :vps_mounts, foreign_key: :server_id
+  has_many :port_reservations
   has_one :node_status, foreign_key: :server_id
 
   has_paper_trail
