@@ -49,6 +49,7 @@ module TransactionChains
                 src_dataset_in_pool,
                 dst_dataset_in_pool,
                 transfer_snapshots,
+                nil,
                 branch,
                 true
             ]
@@ -91,6 +92,7 @@ module TransactionChains
                   src_dataset_in_pool,
                   dst_dataset_in_pool,
                   transfer_snapshots,
+                  nil,
                   branch
               ])
 

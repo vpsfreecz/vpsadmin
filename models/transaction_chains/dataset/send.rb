@@ -2,36 +2,36 @@ module TransactionChains
   class Dataset::Send < ::TransactionChain
     label 'Send snapshots'
 
-    def link_chain(port, src, dst, snapshots, branch, initial = false)
+    def link_chain(port, src, dst, snapshots, src_branch, dst_branch, initial = false, ds_suffix = nil)
       if initial
         append(
             Transactions::Storage::Recv,
-            args: [port, dst, [snapshots.first], branch]
+            args: [port, dst, [snapshots.first], dst_branch, ds_suffix]
         )
         append(
             Transactions::Storage::Send,
-            args: [port, src, [snapshots.first], branch]
+            args: [port, src, [snapshots.first], src_branch]
         )
         append(
             Transactions::Storage::RecvCheck,
-            args: [dst, [snapshots.first], branch],
-            &confirm_block([snapshots.first], dst, branch)
+            args: [dst, [snapshots.first], dst_branch, ds_suffix],
+            &confirm_block([snapshots.first], dst, dst_branch)
         )
       end
 
       if (initial && snapshots.size > 1) || !initial
         append(
             Transactions::Storage::Recv,
-            args: [port, dst, snapshots, branch]
+            args: [port, dst, snapshots, dst_branch, ds_suffix]
         )
         append(
             Transactions::Storage::Send,
-            args: [port, src, snapshots, branch]
+            args: [port, src, snapshots, src_branch]
         )
         append(
             Transactions::Storage::RecvCheck,
-            args: [dst, snapshots, branch],
-            &confirm_block(snapshots[1..-1], dst, branch)
+            args: [dst, snapshots, dst_branch, ds_suffix],
+            &confirm_block(snapshots[1..-1], dst, dst_branch)
         )
       end
     end
