@@ -254,6 +254,9 @@ module VpsAdmind
 
       # release all locks
       db.prepared('DELETE FROM resource_locks WHERE transaction_chain_id = ?', chain_id)
+
+      # release ports
+      db.prepared('UPDATE port_reservations SET transaction_chain_id = NULL, addr = NULL WHERE transaction_chain_id = ?', chain_id)
     end
 
     def fail_followers(db)
