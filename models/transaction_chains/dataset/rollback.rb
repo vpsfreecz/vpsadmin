@@ -67,23 +67,35 @@ module TransactionChains
       backup_snap = snapshot.snapshot_in_pools.joins(dataset_in_pool: [:pool])
         .where('pools.role = ?', ::Pool.roles[:backup]).take!
 
+      snap_in_branch = backup_snap.snapshot_in_pool_in_branches
+                           .where.not(confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy)).take!
+
+
+      port = ::PortReservation.reserve(
+          dataset_in_pool.pool.node,
+          dataset_in_pool.pool.node.addr,
+          self.id ? self : dst_chain
+      )
+
       append(Transactions::Storage::PrepareRollback, args: dataset_in_pool)
-      append(Transactions::Storage::RemoteRollback, args: [dataset_in_pool, backup_snap])
+      use_chain(Dataset::Send, args: [
+          port,
+          backup_snap.dataset_in_pool,
+          dataset_in_pool,
+          [backup_snap],
+          snap_in_branch.branch,
+          nil,
+          true,
+          :rollback
+      ])
 
       pre_local_rollback
 
       append(Transactions::Storage::ApplyRollback, args: [dataset_in_pool]) do
         # Delete all snapshots from primary
         dataset_in_pool.snapshot_in_pools.all.each do |s|
-          destroy(s)
+          destroy(s) if s.snapshot_id != backup_snap.snapshot_id
         end
-
-        # Create the snapshot that is being restored
-        create(::SnapshotInPool.create(
-          dataset_in_pool: dataset_in_pool,
-          snapshot: snapshot,
-          confirmed: ::SnapshotInPool.confirmed(:confirm_create)
-        ))
       end
 
       post_local_rollback
@@ -120,7 +132,7 @@ module TransactionChains
               name: snapshot.name,
               index: last_index ? last_index + 1 : 0,
               head: true,
-              confirmed: Branch.confirmed(:confirm_create)
+              confirmed: ::Branch.confirmed(:confirm_create)
           )
 
           append(Transactions::Storage::BranchDataset, args: [head, snap_in_branch]) do
