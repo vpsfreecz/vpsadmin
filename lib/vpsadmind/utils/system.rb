@@ -60,5 +60,93 @@ module VpsAdmind
 
       {:ret => :ok, :output => out, :exitstatus => $?.exitstatus}
     end
+
+    def pipeline_r(*cmds)
+      current_cmd = Thread.current[:command]
+      current_cmd.step = cmds.to_s if current_cmd
+      log(:work, current_cmd || @command, cmds.to_s)
+
+      if RUBY_VERSION >= '1.9'
+        last_stdout, threads = Open3.pipeline_r(*cmds)
+        out = last_stdout.read
+        last_stdout.close
+        ret = nil
+
+        threads.each do |t|
+          ret = t.value.exitstatus
+          raise CommandFailed.new(cmds.to_s, ret, out) if ret != 0
+        end
+
+        {:ret => :ok, :output => out, :exitstatus => ret}
+
+      else
+        # Ruby < 1.9 does not have Open3.pipeline_r, so it has to
+        # be implemented here...
+        children = []
+
+        # First process - no stdin, save stdout
+        stdout_r, stdout_w = IO.pipe
+
+        child = Process.fork do
+          puts cmds.first
+
+          stdout_r.close
+
+          STDOUT.reopen(stdout_w)
+          STDERR.reopen(stdout_w)
+          Process.exec(cmds.first)
+        end
+
+        stdout_w.close
+
+        children << child
+
+        # Middle processes - previous stdout to stdin
+        cmds[1..-2].each do |cmd|
+          p_r, p_w = IO.pipe
+
+          child = Process.fork do
+            p_r.close
+
+            STDIN.reopen(stdout_r)
+            STDOUT.reopen(p_w)
+            STDERR.reopen(p_w)
+            Process.exec(cmd)
+          end
+
+          p_w.close
+
+          children << child
+          stdout_r = p_r
+        end
+
+        # Last process - previous stdout to stdin, return stdout
+        last_stdout, p_w = IO.pipe
+
+        child = Process.fork do
+          last_stdout.close
+
+          STDIN.reopen(stdout_r)
+          STDOUT.reopen(p_w)
+          STDERR.reopen(p_w)
+          Process.exec(cmds.last)
+        end
+
+        p_w.close
+
+        children << child
+
+        out = last_stdout.read
+        last_status = nil
+
+        children.each do |pid|
+          _, last_status = Process.wait2(pid)
+
+          raise CommandFailed.new(cmds.to_s, last_status, out) if last_status != 0
+        end
+
+        {:ret => :ok, :output => out, :exitstatus => last_status}
+      end
+    end
   end
 end
