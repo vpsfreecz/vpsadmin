@@ -7,7 +7,7 @@ module VpsAdmind
         opts.each do |k, v|
           k = k.to_s
           array_or_string_each(v) do |s|
-            options << "#{k.start_with?('-') ? '' : '--'}#{k} #{s.empty? ? '""' : s}"
+            options << "#{k.start_with?('-') ? '' : '--'}#{k} #{s.is_a?(::Array) && s.empty? ? '""' : s}"
           end
         end
       else
