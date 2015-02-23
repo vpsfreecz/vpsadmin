@@ -117,6 +117,8 @@ module VpsAdmind
           p_w.close
 
           children << child
+
+          stdout_r.close
           stdout_r = p_r
         end
 
@@ -132,6 +134,7 @@ module VpsAdmind
           Process.exec(cmds.last)
         end
 
+        stdout_r.close
         p_w.close
 
         children << child
