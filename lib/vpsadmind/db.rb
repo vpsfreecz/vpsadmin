@@ -45,7 +45,7 @@ module VpsAdmind
     end
 
     def union
-      u = Union.new(@my)
+      u = Union.new(self)
       yield(u)
       u
     end
@@ -118,13 +118,13 @@ module VpsAdmind
   end
 
   class Union
-    def initialize(my)
-      @my = my
+    def initialize(db)
+      @db = db
       @results = []
     end
 
     def query(*args)
-      @results << @my.query(*args)
+      @results << @db.query(*args)
     end
 
     def each_hash
