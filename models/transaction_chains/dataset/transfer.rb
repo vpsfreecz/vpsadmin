@@ -14,6 +14,12 @@ module TransactionChains
       branch = nil
       dst_last_snapshot = dst_dataset_in_pool.snapshot_in_pools.all.order('snapshot_id DESC').take
 
+      port = ::PortReservation.reserve(
+          dst_dataset_in_pool.pool.node,
+          dst_dataset_in_pool.pool.node.addr,
+          self.id ? self : dst_chain
+      )
+
       # no snapshots on the destination
       if dst_last_snapshot.nil? || (dst_dataset_in_pool.pool.role == 'backup' && !snapshots_in_tree?(dst_dataset_in_pool))
         # send everything
@@ -38,32 +44,15 @@ module TransactionChains
           branch = get_or_create_branch(tree)
         end
 
-        append(Transactions::Storage::Transfer,
-               args: [
-                 src_dataset_in_pool,
-                 dst_dataset_in_pool,
-                 transfer_snapshots,
-                 branch,
-                 true
-               ]) do
-          transfer_snapshots.each do |snap|
-            sip = SnapshotInPool.create(
-                snapshot_id: snap.snapshot_id,
-                dataset_in_pool: dst_dataset_in_pool,
-                confirmed: SnapshotInPool.confirmed(:confirm_create)
-            )
-
-            create(sip)
-
-            if dst_dataset_in_pool.pool.role == 'backup'
-              create(SnapshotInPoolInBranch.create(
-                   snapshot_in_pool: sip,
-                   branch: branch,
-                   confirmed: SnapshotInPoolInBranch.confirmed(:confirm_create)
-              ))
-            end
-          end
-        end
+        use_chain(Dataset::Send, args: [
+                port,
+                src_dataset_in_pool,
+                dst_dataset_in_pool,
+                transfer_snapshots,
+                branch,
+                true
+            ]
+        )
 
       else
         # there are snapshots on the destination
@@ -97,32 +86,13 @@ module TransactionChains
             # incremental send from snap to src_last_snap
             # if they are the same, it is the last snapshot on source and nothing has to be sent
             unless src_last_snapshot.snapshot_id == snap.snapshot_id
-              append(Transactions::Storage::Transfer,
-                     args: [
-                       src_dataset_in_pool,
-                       dst_dataset_in_pool,
-                       transfer_snapshots,
-                       branch
-              ]) do
-                # Skip the first snapshot - it is already present on the destination
-                transfer_snapshots[1..-1].each do |s|
-                  sip = SnapshotInPool.create(
-                      snapshot_id: s.snapshot_id,
-                      dataset_in_pool: dst_dataset_in_pool,
-                      confirmed: SnapshotInPool.confirmed(:confirm_create)
-                  )
-
-                  create(sip)
-
-                  if dst_dataset_in_pool.pool.role == 'backup'
-                    create(SnapshotInPoolInBranch.create(
-                         snapshot_in_pool: sip,
-                         branch: branch,
-                         confirmed: SnapshotInPoolInBranch.confirmed(:confirm_create)
-                    ))
-                  end
-                end
-              end
+              use_chain(Dataset::Send, args: [
+                  port,
+                  src_dataset_in_pool,
+                  dst_dataset_in_pool,
+                  transfer_snapshots,
+                  branch
+              ])
 
               return
             end
@@ -143,21 +113,21 @@ module TransactionChains
 
       return false unless tree
 
-      SnapshotInPoolInBranch.joins(branch: [:dataset_tree])
+      ::SnapshotInPoolInBranch.joins(branch: [:dataset_tree])
         .where(branches: {dataset_tree_id: tree.id}).count > 0
     end
 
     def get_or_create_tree(dataset_in_pool)
-      tree = DatasetTree.find_by(dataset_in_pool: dataset_in_pool, head: true)
+      tree = ::DatasetTree.find_by(dataset_in_pool: dataset_in_pool, head: true)
 
       unless tree
         last_index = dataset_in_pool.dataset_trees.all.maximum('index')
 
-        tree = DatasetTree.create(
+        tree = ::DatasetTree.create(
             dataset_in_pool: dataset_in_pool,
             index: last_index ? last_index + 1 : 0,
             head: true,
-            confirmed: DatasetTree.confirmed(:confirm_create)
+            confirmed: ::DatasetTree.confirmed(:confirm_create)
         )
 
         append(Transactions::Storage::CreateTree, args: tree)
@@ -167,14 +137,14 @@ module TransactionChains
     end
 
     def get_or_create_branch(tree)
-      branch = Branch.find_by(dataset_tree: tree, head: true)
+      branch = ::Branch.find_by(dataset_tree: tree, head: true)
 
       unless branch
-        branch = Branch.create(
+        branch = ::Branch.create(
             dataset_tree: tree,
             name: Time.new.strftime('%Y-%m-%dT%H:%M:%S'),
             head: true,
-            confirmed: Branch.confirmed(:confirm_create)
+            confirmed: ::Branch.confirmed(:confirm_create)
         )
 
         append(Transactions::Storage::BranchDataset, args: branch) do
