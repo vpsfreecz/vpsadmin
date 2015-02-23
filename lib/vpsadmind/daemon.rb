@@ -17,7 +17,12 @@ module VpsAdmind
     @@exitstatus = EXIT_OK
     @@mutex = Mutex.new
 
+    class << self
+      attr_accessor :instance
+    end
+
     def initialize
+      self.class.instance = self
       @db = Db.new
       @workers = {}
       @m_workers = Mutex.new
@@ -25,6 +30,8 @@ module VpsAdmind
       @export_console = false
       @cmd_counter = 0
       @threads = {}
+      @blockers_mutex = Mutex.new
+      @chain_blockers = {}
     end
 
     def init
@@ -163,6 +170,11 @@ module VpsAdmind
 
       threads = $CFG.get(:vpsadmin, :threads)
       urgent = $CFG.get(:vpsadmin, :urgent_threads)
+
+      if chain_blocked?(cmd.chain_id)
+        log(:debug, cmd, 'Transaction is blocked - waiting for child process to finish')
+        return
+      end
 
       if !@workers.has_key?(wid) && (@workers.size < threads || (cmd.urgent? && @workers.size < (threads+urgent)))
         @cmd_counter += 1
@@ -355,11 +367,42 @@ module VpsAdmind
       @@exitstatus
     end
 
+    def chain_blocked?(chain_id)
+      @blockers_mutex.synchronize do
+        @chain_blockers.has_key?(chain_id)
+      end
+    end
+
+    def block_chain(chain_id, pid)
+      @blockers_mutex.synchronize do
+        @chain_blockers[chain_id] ||= []
+        @chain_blockers[chain_id] << pid
+
+        Thread.new do
+          log(:debug, :daemon, "Chain #{chain_id} is waiting for subprocess #{pid} to finish")
+          Process.wait(pid)
+          subprocess_finished(chain_id, pid)
+        end
+      end
+    end
+
+    def subprocess_finished(chain_id, pid)
+      @blockers_mutex.synchronize do
+        log(:debug, :daemon, "Subprocess #{pid} of chain #{chain_id} finished")
+        @chain_blockers[chain_id].delete(pid)
+        @chain_blockers.delete(chain_id) if @chain_blockers[chain_id].empty?
+      end
+    end
+
     def Daemon.safe_exit(status)
       @@mutex.synchronize do
         @@run = false
         @@exitstatus = status
       end
+    end
+
+    def self.register_subprocess(chain_id, pid)
+      instance.block_chain(chain_id, pid)
     end
   end
 end
