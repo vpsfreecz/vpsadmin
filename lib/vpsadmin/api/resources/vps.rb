@@ -474,6 +474,75 @@ END
     end
   end
 
+  class Clone < HaveAPI::Action
+    desc 'Clone VPS'
+    route ':%{resource}_id/clone'
+    http_method :post
+
+    input do
+      resource VpsAdmin::API::Resources::Environment, desc: 'Clone to environment'
+      resource VpsAdmin::API::Resources::Location, desc: 'Clone to location'
+      resource VpsAdmin::API::Resources::Node, desc: 'Clone to node'
+      resource VpsAdmin::API::Resources::User, desc: 'The owner of the cloned VPS'
+      resource VpsAdmin::API::Resources::VPS, desc: 'Clone into an existing VPS'
+      bool :subdatasets, default: true, fill: true
+      bool :configs, default: true, fill: true
+      bool :resources, default: true, fill: true
+      bool :features, default: true, fill: true
+      string :hostname
+      bool :stop, default: true, fill: true
+    end
+
+    output do
+      use :all
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+      restrict m_id: u.id
+      input blacklist: %i(node user configs)
+      allow
+    end
+
+    def exec
+      vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      maintenance_check!(vps)
+
+      if current_user.role == :admin
+        input[:user] ||= current_user
+
+      else
+        input[:user] = current_user
+      end
+
+      error('cannot clone into itself') if input[:vps] == vps
+
+      if input[:vps]
+        node = input[:vps].node
+
+      elsif input[:node]
+        node = input[:node]
+
+      else
+        if input[:environment].nil?
+          error('specify environment with location, node or vps')
+        end
+
+        node = ::Node.pick_by_env(input[:environment], input[:location])
+      end
+
+      input[:hostname] ||= "#{vps.hostname}-#{vps.id}-clone"
+
+      attrs = {}
+
+      %i(vps user subdatasets configs resources features hostname stop).each do |attr|
+        attrs[attr] = input[attr]
+      end
+
+      vps.clone(node, attrs)
+    end
+  end
+
   include VpsAdmin::API::Maintainable::Action
 
   class Config < HaveAPI::Resource

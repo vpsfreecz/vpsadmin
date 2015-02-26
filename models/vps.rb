@@ -207,6 +207,10 @@ class Vps < ActiveRecord::Base
     TransactionChains::Vps::Migrate.fire(self, node)
   end
 
+  def clone(node, attrs)
+    TransactionChains::Vps::Clone.fire(self, node, attrs)
+  end
+
   def mount_dataset(dataset, dst, mode)
     TransactionChains::Vps::MountDataset.fire(self, dataset, dst, mode)
   end
