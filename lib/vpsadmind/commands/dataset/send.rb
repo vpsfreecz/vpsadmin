@@ -26,7 +26,7 @@ module VpsAdmind
       ds_name = @branch ? "#{@dataset_name}/#{@tree}/#{@branch}" : @dataset_name
 
       if snap2
-        send = "zfs send -I #{@src_pool_fs}/#{ds_name}@#{snap1} #{@src_pool_fs}/#{@dataset_name}@#{snap2}"
+        send = "zfs send -I #{@src_pool_fs}/#{ds_name}@#{snap1} #{@src_pool_fs}/#{ds_name}@#{snap2}"
       else
         send = "zfs send #{@src_pool_fs}/#{ds_name}@#{snap1}"
       end
