@@ -22,21 +22,7 @@ class DatasetProperty < ActiveRecord::Base
     ret = {}
 
     # Fetch parents if not provided
-    if parents.empty?
-      self.joins(:dataset_in_pool).where(
-          dataset: dataset_in_pool.dataset.parent,
-          dataset_in_pools: {pool_id: dataset_in_pool.pool_id}
-      ).each do |p|
-        parents[p.name.to_sym] = p
-      end
-    end
-
-    # It's a top level dataset, fetch properties from the pool
-    if parents.empty?
-      self.where(pool: dataset_in_pool.pool).each do |p|
-        parents[p.name.to_sym] = p
-      end
-    end
+    parents = find_parents(dataset_in_pool) if parents.empty?
 
     VpsAdmin::API::DatasetProperties::Registrator.properties.each do |name, p|
       property = self.new(
@@ -61,6 +47,45 @@ class DatasetProperty < ActiveRecord::Base
     end
 
     ret
+  end
+
+  def self.clone_properties!(from, to)
+    ret = {}
+    parents = find_parents(to)
+
+    self.where(dataset_in_pool: from).each do |p|
+      ret[p.name.to_sym] = self.create!(
+          dataset_in_pool: to,
+          dataset: to.dataset,
+          parent: parents[p.name.to_sym],
+          name: p.name,
+          value: p.value,
+          inherited: p.inherited,
+          confirmed: confirmed(:confirm_create)
+      )
+    end
+
+    ret
+  end
+
+  def self.find_parents(dataset_in_pool)
+    parents = {}
+
+    self.joins(:dataset_in_pool).where(
+        dataset: dataset_in_pool.dataset.parent,
+        dataset_in_pools: {pool_id: dataset_in_pool.pool_id}
+    ).each do |p|
+      parents[p.name.to_sym] = p
+    end
+
+    # It's a top level dataset, fetch properties from the pool
+    if parents.empty?
+      self.where(pool: dataset_in_pool.pool).each do |p|
+        parents[p.name.to_sym] = p
+      end
+    end
+
+    parents
   end
 
   def inheritable?
