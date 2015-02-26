@@ -80,7 +80,11 @@ module VpsAdmind
 
       else
         if %w(quota refquota).include?(k)
-          "#{v}M"
+          if v == 0
+            'none'
+          else
+            "#{v}M"
+          end
 
         else
           v
