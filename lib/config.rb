@@ -149,14 +149,14 @@ IMPLICIT_CONFIG = {
 
     :vps => {
         :clone => {
-            :rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}",
+            :rsync => "%{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after %{src} %{dst}",
         },
         :zfs => {
             :root_dataset => "vz/private",
             :sharenfs => nil,
         },
         :migration => {
-            :rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}",
+            :rsync => "%{rsync} -rlptgoDHX --numeric-ids --inplace --delete-after %{src} %{dst}",
             :dumpfile => "/vz/dump/Dump.%{veid}",
         },
     },
