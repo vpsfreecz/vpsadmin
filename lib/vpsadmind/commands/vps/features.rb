@@ -17,11 +17,11 @@ module VpsAdmind
         vzctl(:stop, @vps_id)
         
         opts = {
-            :feature => [''],
-            :capability => [''],
+            :feature => [],
+            :capability => [],
             :netfilter => 'stateless',
             :numiptent => '1000',
-            :devices => ['']
+            :devices => []
         }
 
         if @features['iptables'][key]
