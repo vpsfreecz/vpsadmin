@@ -23,12 +23,12 @@ module VpsAdmind
       vzctl(:runscript, @vps_id, f.path)
     end
 
-    def ve_root
-      "#{$CFG.get(:vz, :vz_root)}/root/#{@vps_id}"
+    def ve_root(vps_id = nil)
+      "#{$CFG.get(:vz, :vz_root)}/root/#{vps_id || @vps_id}"
     end
 
-    def ve_private
-      $CFG.get(:vz, :ve_private).gsub(/%\{veid\}/, @vps_id.to_s)
+    def ve_private(vps_id = nil)
+      $CFG.get(:vz, :ve_private).gsub(/%\{veid\}/, (vps_id || @vps_id).to_s)
     end
 
     def status
