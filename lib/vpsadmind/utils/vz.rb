@@ -7,7 +7,7 @@ module VpsAdmind
         opts.each do |k, v|
           k = k.to_s
           array_or_string_each(v) do |s|
-            options << "#{k.start_with?('-') ? '' : '--'}#{k} #{s.is_a?(::Array) && s.empty? ? '""' : s}"
+            options << "#{k.start_with?('-') ? '' : '--'}#{k} #{s.nil? ? '""' : s}"
           end
         end
       else
@@ -19,7 +19,12 @@ module VpsAdmind
 
     def array_or_string_each(obj)
       if obj.is_a?(Array)
-        obj.each { |v| yield v }
+        if obj.empty?
+          yield nil
+
+        else
+          obj.each { |v| yield v }
+        end
       else
         yield obj
       end
