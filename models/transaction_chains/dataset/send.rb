@@ -4,35 +4,53 @@ module TransactionChains
 
     def link_chain(port, src, dst, snapshots, src_branch, dst_branch, initial = false, ds_suffix = nil)
       if initial
-        append(
-            Transactions::Storage::Recv,
-            args: [port, dst, [snapshots.first], dst_branch, ds_suffix]
-        )
-        append(
-            Transactions::Storage::Send,
-            args: [port, src, [snapshots.first], src_branch]
-        )
-        append(
-            Transactions::Storage::RecvCheck,
-            args: [dst, [snapshots.first], dst_branch, ds_suffix],
-            &confirm_block([snapshots.first], dst, dst_branch)
-        )
+        if src.pool == dst.pool
+          append(
+              Transactions::Storage::LocalSend,
+              args: [src, dst, [snapshots.first], src_branch, dst_branch],
+              &confirm_block([snapshots.first], dst, dst_branch)
+          )
+
+        else
+          append(
+              Transactions::Storage::Recv,
+              args: [port, dst, [snapshots.first], dst_branch, ds_suffix]
+          )
+          append(
+              Transactions::Storage::Send,
+              args: [port, src, [snapshots.first], src_branch]
+          )
+          append(
+              Transactions::Storage::RecvCheck,
+              args: [dst, [snapshots.first], dst_branch, ds_suffix],
+              &confirm_block([snapshots.first], dst, dst_branch)
+          )
+        end
       end
 
       if (initial && snapshots.size > 1) || !initial
-        append(
-            Transactions::Storage::Recv,
-            args: [port, dst, snapshots, dst_branch, ds_suffix]
-        )
-        append(
-            Transactions::Storage::Send,
-            args: [port, src, snapshots, src_branch]
-        )
-        append(
-            Transactions::Storage::RecvCheck,
-            args: [dst, snapshots, dst_branch, ds_suffix],
-            &confirm_block(snapshots[1..-1], dst, dst_branch)
-        )
+        if src.pool == dst.pool
+          append(
+              Transactions::Storage::LocalSend,
+              args: [src, dst, snapshots, src_branch, dst_branch],
+              &confirm_block(snapshots[1..-1], dst, dst_branch)
+          )
+
+        else
+          append(
+              Transactions::Storage::Recv,
+              args: [port, dst, snapshots, dst_branch, ds_suffix]
+          )
+          append(
+              Transactions::Storage::Send,
+              args: [port, src, snapshots, src_branch]
+          )
+          append(
+              Transactions::Storage::RecvCheck,
+              args: [dst, snapshots, dst_branch, ds_suffix],
+              &confirm_block(snapshots[1..-1], dst, dst_branch)
+          )
+        end
       end
     end
 
