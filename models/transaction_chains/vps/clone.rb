@@ -28,6 +28,7 @@ module TransactionChains
 
       src_features = {}
       dst_features = {}
+      vps_resources = nil
 
       if attrs[:features]
         vps.vps_features.all.each do |f|
@@ -110,8 +111,6 @@ module TransactionChains
 
       dst_vps.save!
 
-      use_chain(Vps::SetResources, args: [dst_vps, vps_resources]) if vps_resources
-
       # Configs
       if attrs[:configs]
         use_chain(Vps::ApplyConfig, args: [dst_vps, vps.vps_configs.pluck(:id)])
@@ -119,6 +118,9 @@ module TransactionChains
       else
         use_chain(Vps::ApplyConfig, args: [dst_vps, vps.node.environment.vps_configs.pluck(:id)])
       end
+
+      # Resources
+      use_chain(Vps::SetResources, args: [dst_vps, vps_resources]) if vps_resources
 
       # Transfer data
       datasets = serialize_datasets(dst_vps.dataset_in_pool)
