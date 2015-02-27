@@ -110,7 +110,7 @@ module TransactionChains
 
       dst_vps.save!
 
-      use_chain(Vps::SetResources, args: [vps, vps_resources]) if vps_resources
+      use_chain(Vps::SetResources, args: [dst_vps, vps_resources]) if vps_resources
 
       # Configs
       if attrs[:configs]
