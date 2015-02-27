@@ -78,9 +78,9 @@ module TransactionChains
 
       else
         # Changes are part of the transaction chain
-        append(Transactions::Utils::NoOp, vps.vps_server) do
+        append(Transactions::Utils::NoOp, args: vps.vps_server) do
           db_changes.each do |obj, changes|
-            edit(obj, changes)
+            edit(obj, changes) unless changes.empty?
           end
         end
       end
