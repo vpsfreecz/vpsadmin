@@ -16,7 +16,7 @@ module VpsAdmind
         end
 
         if @vps_id != @dst_vps
-            vzctl(:set, @dst_vps, {:root => ve_root(@dst_vps), :private => ve_private(@dst_vps)})
+            vzctl(:set, @dst_vps, {:root => ve_root(@dst_vps), :private => ve_private(@dst_vps)}, true)
         end
 
       else
