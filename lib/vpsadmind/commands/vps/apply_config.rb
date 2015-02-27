@@ -4,32 +4,10 @@ module VpsAdmind
     needs :system, :vz, :zfs
 
     def exec
-      n = Node.new
-
       syscmd("#{$CFG.get(:bin, :cp)} -p \"#{cfg_path}\" \"#{cfg_backup_path}\"")
 
       @configs.each do |cfg|
         vzctl(:set, @vps_id, {:applyconfig => cfg, :setmode => 'restart'}, true)
-
-        path = n.conf_path("original-#{cfg}")
-
-        if File.exists?(path)
-          content = File.new(path).read
-
-          m = nil
-          quota = nil
-
-          if (m = content.match(/^DISKSPACE\=\"\d+\:(\d+)\"/))
-            quota = m[1].to_i * 1024 # vzctl saves diskspace in kB
-
-          elsif (m = content.match(/^DISKSPACE\=\"\d+[GMK]\:(\d+[GMK])\"/))
-            quota = m[1]
-          end
-
-          if quota
-            zfs(:set, "refquota=#{quota}", "#{@pool_fs}/#{@dataset_name}")
-          end
-        end
       end
       ok
     end
