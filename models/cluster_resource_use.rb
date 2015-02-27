@@ -9,7 +9,11 @@ class ClusterResourceUse < ActiveRecord::Base
 
   protected
   def check_allocation
-    used = self.class.where(user_cluster_resource: user_cluster_resource).sum(:value)
+    used = self.class.where(
+        user_cluster_resource: user_cluster_resource
+    ).where.not(
+        confirmed: self.class.confirmed(:confirm_destroy)
+    ).sum(:value)
 
     if self.new_record? || resource_transfer
       total = used + self.value
