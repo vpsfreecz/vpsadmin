@@ -99,7 +99,7 @@ module TransactionChains
         lock(dst_vps.dataset_in_pool)
 
         append(Transactions::Vps::CreateRoot, args: [dst_vps, node])
-        append(Transactions::Vps::CopyConfigs, args: [vps, node, dst_vps]) do
+        append(Transactions::Vps::CreateConfig, args: [dst_vps]) do
           create(dst_vps)
 
           dst_features.each_value do |f|
@@ -113,7 +113,12 @@ module TransactionChains
       use_chain(Vps::SetResources, args: [vps, vps_resources]) if vps_resources
 
       # Configs
-      # FIXME: clone config chain
+      if attrs[:configs]
+        use_chain(Vps::ApplyConfig, args: [dst_vps, vps.vps_configs.pluck(:id)])
+
+      else
+        use_chain(Vps::ApplyConfig, args: [dst_vps, vps.node.environment.vps_configs.pluck(:id)])
+      end
 
       # Transfer data
       datasets = serialize_datasets(dst_vps.dataset_in_pool)
