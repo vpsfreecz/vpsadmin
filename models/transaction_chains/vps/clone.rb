@@ -36,8 +36,22 @@ module TransactionChains
       end
 
       if attrs[:vps] # clone into
-        # FIXME
         dst_vps = attrs[:vps]
+
+        # Destroy all current datasets
+        use_chain(DatasetInPool::Destroy, args: [dst_vps.dataset_in_pool, true])
+
+        # Reallocate resources
+        if attrs[:resources]
+          vps_resources = dst_vps.reallocate_resources({
+              memory: vps.memory,
+              swap: vps.swap,
+              cpu: vps.cpu
+          }, dst_vps.user)
+        end
+
+        dst_vps.dataset_in_pool = vps_dataset(vps, dst_vps)
+        lock(dst_vps.dataset_in_pool)
 
       else # clone to a new VPS
         dst_vps = ::Vps.new(
@@ -81,35 +95,8 @@ module TransactionChains
             } : {}
         )
 
-        ds = ::Dataset.new(
-            name: dst_vps.id.to_s,
-            user: dst_vps.user,
-            user_editable: false,
-            user_create: true,
-            user_destroy: false,
-            confirmed: ::Dataset.confirmed(:confirm_create)
-        )
-
-        # A hash containing all not-inherited properties, which must
-        # be set on the cloned dataset as well.
-        root_properties = {}
-
-        vps.dataset_in_pool.dataset_properties.each do |p|
-          root_properties[p.name.to_sym] = p.value unless p.inherited
-        end
-
-        dip = use_chain(Dataset::Create, args: [
-            @dst_pool,
-            nil,
-            [ds],
-            false,
-            root_properties,
-            dst_vps.user,
-            "vps#{dst_vps.id}"
-        ]).last
-
-        dst_vps.dataset_in_pool = dip
-        lock(dip)
+        dst_vps.dataset_in_pool = vps_dataset(vps, dst_vps)
+        lock(dst_vps.dataset_in_pool)
 
         append(Transactions::Vps::CreateRoot, args: [dst_vps, node])
         append(Transactions::Vps::CopyConfigs, args: [vps, node, dst_vps]) do
@@ -123,9 +110,11 @@ module TransactionChains
 
       dst_vps.save!
 
-      use_chain(Vps::SetResources, args: [vps, vps_resources])
+      use_chain(Vps::SetResources, args: [vps, vps_resources]) if vps_resources
 
       # Configs
+      # FIXME: clone config chain
+
       # Transfer data
       datasets = serialize_datasets(dst_vps.dataset_in_pool)
       datasets.insert(0, [vps.dataset_in_pool, dst_vps.dataset_in_pool])
@@ -204,7 +193,7 @@ module TransactionChains
       end
 
       # IP addresses
-      clone_ip_addresses(vps, dst_vps)
+      clone_ip_addresses(vps, dst_vps) unless attrs[:vps]
 
       # Mounts
       clone_mounts(vps, dst_vps, datasets)
@@ -229,6 +218,36 @@ module TransactionChains
       else
         ::DnsResolver.pick_suitable_resolver_for_vps(dst_vps)
       end
+    end
+
+    # Create a new dataset for target VPS.
+    def vps_dataset(vps, dst_vps)
+      ds = ::Dataset.new(
+          name: dst_vps.id.to_s,
+          user: dst_vps.user,
+          user_editable: false,
+          user_create: true,
+          user_destroy: false,
+          confirmed: ::Dataset.confirmed(:confirm_create)
+      )
+
+      # A hash containing all not-inherited properties, which must
+      # be set on the cloned dataset as well.
+      root_properties = {}
+
+      vps.dataset_in_pool.dataset_properties.each do |p|
+        root_properties[p.name.to_sym] = p.value unless p.inherited
+      end
+
+      use_chain(Dataset::Create, args: [
+          @dst_pool,
+          nil,
+          [ds],
+          false,
+          root_properties,
+          dst_vps.user,
+          "vps#{dst_vps.id}"
+      ]).last
     end
 
     def serialize_datasets(dataset_in_pool)
