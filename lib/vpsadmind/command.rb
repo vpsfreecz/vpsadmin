@@ -373,9 +373,14 @@ module VpsAdmind
 
         # FIXME: if rollback fails, original error is overwritten!
         if m == :exec
-          log(:debug, self, 'Transaction failed, running rollback')
-          @rollbacked = true
-          safe_call(klass, :rollback)
+          if reversible?
+            log(:debug, self, 'Transaction failed, running rollback')
+            @rollbacked = true
+            safe_call(klass, :rollback)
+
+          else
+            log(:debug, self, 'Transaction failed and is irreversible')
+          end
         end
 
       rescue CommandNotImplemented
@@ -390,9 +395,14 @@ module VpsAdmind
 
         # FIXME: if rollback fails, original error is overwritten!
         if m == :exec
-          log(:debug, self, 'Transaction failed, running rollback')
-          @rollbacked = true
-          safe_call(klass, :rollback)
+          if reversible?
+            log(:debug, self, 'Transaction failed, running rollback')
+            @rollbacked = true
+            safe_call(klass, :rollback)
+
+          else
+            log(:debug, self, 'Transaction failed and is irreversible')
+          end
         end
       end
     end
