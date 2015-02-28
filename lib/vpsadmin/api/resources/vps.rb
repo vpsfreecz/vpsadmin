@@ -520,6 +520,10 @@ END
       if input[:vps]
         node = input[:vps].node
 
+        if current_user.role != :admin && vps.user != input[:vps].user
+          error('insufficient permission to clone into this VPS')
+        end
+
       elsif input[:node]
         node = input[:node]
 
@@ -529,6 +533,10 @@ END
         end
 
         node = ::Node.pick_by_env(input[:environment], input[:location])
+      end
+
+      if current_user.role != :admin && !current_user.env_config(node.environment, :can_create_vps)
+        error('insufficient permission to create a VPS in this environment')
       end
 
       input[:hostname] ||= "#{vps.hostname}-#{vps.id}-clone"
