@@ -39,6 +39,8 @@ module TransactionChains
       if attrs[:vps] # clone into
         dst_vps = attrs[:vps]
 
+        use_chain(Vps::Stop, args: dst_vps)
+
         # Destroy all current datasets
         use_chain(DatasetInPool::Destroy, args: [dst_vps.dataset_in_pool, true])
 
@@ -51,8 +53,13 @@ module TransactionChains
           }, dst_vps.user)
         end
 
+        original_dst_vps_dip = dst_vps.dataset_in_pool
         dst_vps.dataset_in_pool = vps_dataset(vps, dst_vps)
         lock(dst_vps.dataset_in_pool)
+
+        append(Transactions::Utils::NoOp, args: dst_vps.vps_server) do
+          edit(dst_vps, dataset_in_pool_id: dst_vps.dataset_in_pool.id)
+        end
 
       else # clone to a new VPS
         dst_vps = ::Vps.new(
@@ -210,6 +217,13 @@ module TransactionChains
 
       if vps.running
         use_chain(TransactionChains::Vps::Start, args: dst_vps)
+      end
+
+      if attrs[:vps]
+        # Reset dst vps dataset in pool to its original value.
+        # It will be updated to the new one by transaction, if it
+        # succeeds.
+        dst_vps.update!(dataset_in_pool: original_dst_vps_dip)
       end
 
       dst_vps
