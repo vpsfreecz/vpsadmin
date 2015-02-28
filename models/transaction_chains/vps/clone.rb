@@ -129,6 +129,9 @@ module TransactionChains
       # Hostname
       append(Transactions::Vps::Hostname, args: [dst_vps, vps.hostname, attrs[:hostname]])
 
+      # DNS resolver
+      append(Transactions::Vps::DnsResolver, args: [dst_vps, vps.dns_resolver, dst_vps.dns_resolver])
+
       # Resources
       use_chain(Vps::SetResources, args: [dst_vps, vps_resources]) if vps_resources
 
