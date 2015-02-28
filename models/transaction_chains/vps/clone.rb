@@ -136,7 +136,13 @@ module TransactionChains
       use_chain(Vps::SetResources, args: [dst_vps, vps_resources]) if vps_resources
 
       # Transfer data
-      datasets = serialize_datasets(dst_vps.dataset_in_pool)
+      if attrs[:subdatasets]
+        datasets = serialize_datasets(vps.dataset_in_pool, dst_vps.dataset_in_pool)
+
+      else
+        datasets = []
+      end
+
       datasets.insert(0, [vps.dataset_in_pool, dst_vps.dataset_in_pool])
 
       # Create all datasets and make initial transfer
@@ -153,6 +159,7 @@ module TransactionChains
           properties = ::DatasetProperty.clone_properties!(src, dst)
 
           append(Transactions::Storage::CreateDataset, args: dst) do
+            create(dst.dataset)
             create(dst)
             create(use)
 
@@ -277,17 +284,17 @@ module TransactionChains
       ]).last
     end
 
-    def serialize_datasets(dataset_in_pool)
+    def serialize_datasets(dataset_in_pool, dst_dataset_in_pool)
       ret = []
 
       dataset_in_pool.dataset.descendants.arrange.each do |k, v|
-        ret.concat(recursive_serialize(k, v))
+        ret.concat(recursive_serialize(k, v, dst_dataset_in_pool.dataset))
       end
 
       ret
     end
 
-    def recursive_serialize(dataset, children)
+    def recursive_serialize(dataset, children, parent)
       ret = []
 
       # First parents
@@ -297,9 +304,21 @@ module TransactionChains
 
       lock(dip)
 
+      ds = ::Dataset.create!(
+          parent: parent,
+          name: dip.dataset.name,
+          user: dip.dataset.user,
+          user_editable: dip.dataset.user_editable,
+          user_create: dip.dataset.user_create,
+          user_destroy: dip.dataset.user_destroy,
+          confirmed: ::Dataset.confirmed(:confirm_create)
+      )
+
+      parent = ds
+
       dst = ::DatasetInPool.create!(
           pool: @dst_pool,
-          dataset_id: dip.dataset_id
+          dataset: ds
       )
 
       lock(dst)
@@ -314,9 +333,19 @@ module TransactionChains
 
           lock(dip)
 
+          ds = ::Dataset.create!(
+              parent: parent,
+              name: dip.dataset.name,
+              user: dip.dataset.user,
+              user_editable: dip.dataset.user_editable,
+              user_create: dip.dataset.user_create,
+              user_destroy: dip.dataset.user_destroy,
+              confirmed: ::Dataset.confirmed(:confirm_create)
+          )
+
           dst = ::DatasetInPool.create!(
               pool: @dst_pool,
-              dataset_id: dip.dataset_id
+              dataset_id: ds
           )
 
           lock(dst)
@@ -324,7 +353,7 @@ module TransactionChains
           ret << [dip, dst]
 
         else
-          ret.concat(recursive_serialize(k, v))
+          ret.concat(recursive_serialize(k, v, parent))
         end
       end
 
