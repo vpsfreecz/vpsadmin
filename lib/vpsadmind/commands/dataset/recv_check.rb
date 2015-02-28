@@ -5,7 +5,16 @@ module VpsAdmind
 
     def exec
       ds_name = @branch ? "#{@dataset_name}/#{@tree}/#{@branch}" : @dataset_name
-      zfs(:get, '-H -ovalue name', "#{@dst_pool_fs}/#{ds_name}@#{@snapshot}")
+
+      if @snapshot['confirmed'] == 1
+        snapshot = @snapshot['name']
+      else
+        db = Db.new
+        snapshot = get_confirmed_snapshot_name(db, @snapshot['id'])
+        db.close
+      end
+
+      zfs(:get, '-H -ovalue name', "#{@dst_pool_fs}/#{ds_name}@#{snapshot}")
     end
 
     def rollback
