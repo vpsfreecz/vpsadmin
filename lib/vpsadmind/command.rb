@@ -107,6 +107,7 @@ module VpsAdmind
 
             else
               fail_all(t)
+              run_confirmations(t)
               close_chain(t)
             end
 
@@ -124,6 +125,7 @@ module VpsAdmind
 
             else
               fail_followers(t)
+              run_confirmations(t)
               close_chain(t)
             end
           end
