@@ -126,6 +126,9 @@ module TransactionChains
         use_chain(Vps::ApplyConfig, args: [dst_vps, vps.node.environment.vps_configs.pluck(:id)])
       end
 
+      # Hostname
+      append(Transactions::Vps::Hostname, args: [dst_vps, vps.hostname, attrs[:hostname]])
+
       # Resources
       use_chain(Vps::SetResources, args: [dst_vps, vps_resources]) if vps_resources
 
