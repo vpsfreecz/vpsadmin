@@ -16,6 +16,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
             desc: 'in seconds, 0 is unlimited', default: 0
     integer :max_vps_count, label: 'Maximum number of VPS per user',
             desc: '0 is unlimited', default: 1
+    bool :user_ip_ownership, label: 'User owns IP addresses', default: true
   end
 
   params(:all) do
