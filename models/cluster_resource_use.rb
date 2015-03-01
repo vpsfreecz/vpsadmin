@@ -7,6 +7,14 @@ class ClusterResourceUse < ActiveRecord::Base
 
   attr_accessor :resource_transfer
 
+  def self.for_obj(obj)
+    self.where(
+        class_name: obj.class.name,
+        table_name: obj.table_name,
+        row_id: obj.id
+    )
+  end
+
   protected
   def check_allocation
     used = self.class.where(
