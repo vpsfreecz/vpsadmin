@@ -22,6 +22,15 @@ module TransactionChains
 
       lock(src_dip)
 
+      # Transfer resources if the destination node is in a different
+      # environment.
+      if vps.node.environment_id != dst_node.environment_id
+        resources_changes = vps.transfer_resources_to_env!(vps.user, dst_node.environment)
+
+      else
+        resources_changes = nil
+      end
+
       # Copy configs, create /vz/root/$veid
       append(Transactions::Vps::CopyConfigs, args: [vps, dst_node])
       append(Transactions::Vps::CreateRoot, args: [vps, dst_node])
@@ -79,6 +88,13 @@ module TransactionChains
       append(Transactions::Utils::NoOp, args: dst_node.id, urgent: true) do
         edit(vps, dataset_in_pool_id: datasets.first[1].id)
         edit(vps, vps_server: dst_node.id)
+
+        # Transfer resources
+        if resources_changes
+          resources_changes.each do |use, changes|
+            edit(use, changes)
+          end
+        end
 
         # Handle dataset properties, actions and group snapshots
         datasets.each do |pair|
