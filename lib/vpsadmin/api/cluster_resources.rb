@@ -327,6 +327,44 @@ module VpsAdmin::API
       end
     end
 
+    def transfer_resources_to_env!(user, dst_env)
+      ret = {}
+      src_env = Private.environment(self)
+      target_resources = {}
+
+      ::UserClusterResource.includes(:cluster_resource).where(
+          environment: dst_env,
+          user: user
+      ).each do |r|
+        target_resources[r.cluster_resource.name.to_sym] = r
+      end
+
+      ::ClusterResourceUse.includes(
+          user_cluster_resource: [:cluster_resource]
+      ).joins(:user_cluster_resource).where(
+          class_name: self.class.name,
+          table_name: self.class.table_name,
+          row_id: self.id,
+          user_cluster_resources: {
+              environment_id: src_env.id
+          }
+      ).each do |use|
+
+        t = target_resources[use.user_cluster_resource.cluster_resource.name.to_sym]
+
+        fail 'target resource does not exist' unless t
+
+        use.user_cluster_resource = t
+        use.resource_transfer = true
+        raise ::ActiveRecord::RecordInvalid, use unless use.valid?
+
+        ret[use] = {user_cluster_resource_id: t.id}
+
+      end
+
+      ret
+    end
+
     def self.included(model)
       model.send(:extend, ClassMethods)
       model.send(:include, InstanceMethods)
