@@ -26,9 +26,6 @@ module TransactionChains
       # environment.
       if vps.node.environment_id != dst_node.environment_id
         resources_changes = vps.transfer_resources_to_env!(vps.user, dst_node.environment)
-
-      else
-        resources_changes = nil
       end
 
       # Copy configs, create /vz/root/$veid
@@ -44,6 +41,20 @@ module TransactionChains
       # Create datasets
       datasets.each do |pair|
         src, dst = pair
+
+        # Transfer resources
+        resources_changes ||= {}
+
+        if vps.node.environment_id != dst_node.environment_id
+          changes = src.transfer_resources_to_env!(vps.user, dst_node.environment)
+          changes[changes.keys.first][:row_id] = dst.id
+
+        else
+          changes = {::ClusterResourceUse.for_obj(src) => {row_id: dst.id}}
+        end
+
+
+        resources_changes.update(changes)
 
         append(Transactions::Storage::CreateDataset, args: dst) do
           create(dst)
@@ -90,10 +101,8 @@ module TransactionChains
         edit(vps, vps_server: dst_node.id)
 
         # Transfer resources
-        if resources_changes
-          resources_changes.each do |use, changes|
-            edit(use, changes)
-          end
+        resources_changes.each do |use, changes|
+          edit(use, changes) unless changes.empty?
         end
 
         # Handle dataset properties, actions and group snapshots
