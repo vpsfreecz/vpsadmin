@@ -39,11 +39,15 @@ module TransactionChains
         append(Transactions::Storage::CreateDataset, args: dst) do
           create(dst)
         end
-      end
 
-      # Set zfs refquota properly
-      # FIXME: should be set for all datasets
-      append(Transactions::Vps::ApplyConfig, args: dst_vps)
+        props = {}
+
+        src.dataset_properties.where(inherited: false).each do |p|
+          props[p.name.to_sym] = [p, p.value]
+        end
+
+        append(Transactions::Storage::SetDataset, args: [dst, props]) unless props.empty?
+      end
 
       # Transfer datasets
       datasets.each do |pair|
@@ -105,7 +109,7 @@ module TransactionChains
       # Set shaper on destination node
       use_chain(Vps::ShaperSet, args: dst_vps, urgent: true)
 
-      # Destroy old dataset in pool
+      # Destroy old dataset in pools
       # Do not delete repeatable tasks - they are re-used for new datasets
       use_chain(DatasetInPool::Destroy, args: [src_dip, true, true, false])
 
