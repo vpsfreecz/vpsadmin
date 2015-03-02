@@ -486,6 +486,7 @@ END
       resource VpsAdmin::API::Resources::User, desc: 'The owner of the cloned VPS'
       resource VpsAdmin::API::Resources::VPS, desc: 'Clone into an existing VPS'
       bool :subdatasets, default: true, fill: true
+      bool :dataset_plans, default: true, fill: true
       bool :configs, default: true, fill: true
       bool :resources, default: true, fill: true
       bool :features, default: true, fill: true
@@ -542,13 +543,7 @@ END
 
       input[:hostname] ||= "#{vps.hostname}-#{vps.id}-clone"
 
-      attrs = {}
-
-      %i(vps user subdatasets configs resources features hostname stop keep_snapshots).each do |attr|
-        attrs[attr] = input[attr]
-      end
-
-      vps.clone(node, attrs)
+      vps.clone(node, input)
     end
   end
 

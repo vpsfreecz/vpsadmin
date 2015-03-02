@@ -54,7 +54,7 @@ module TransactionChains
         end
 
         original_dst_vps_dip = dst_vps.dataset_in_pool
-        dst_vps.dataset_in_pool = vps_dataset(vps, dst_vps)
+        dst_vps.dataset_in_pool = vps_dataset(vps, dst_vps, attrs[:dataset_plans])
         lock(dst_vps.dataset_in_pool)
 
         append(Transactions::Utils::NoOp, args: dst_vps.vps_server) do
@@ -103,7 +103,7 @@ module TransactionChains
             } : {}
         )
 
-        dst_vps.dataset_in_pool = vps_dataset(vps, dst_vps)
+        dst_vps.dataset_in_pool = vps_dataset(vps, dst_vps, attrs[:dataset_plans])
         lock(dst_vps.dataset_in_pool)
 
         append(Transactions::Vps::CreateRoot, args: [dst_vps, node])
@@ -172,6 +172,24 @@ module TransactionChains
 
           # Invoke dataset create hook
           dst.call_class_hooks_for(:create, self, args: [dst])
+
+          # Clone dataset plans
+          if attrs[:dataset_plans]
+            append(Transactions::Utils::NoOp, args: dst_vps.vps_server) do
+              src.dataset_in_pool_plans.includes(
+                  environment_dataset_plan: [:dataset_plan]
+              ).each do |dip_plan|
+                plan = dip_plan.environment_dataset_plan.dataset_plan.name.to_sym
+
+                begin
+                  VpsAdmin::API::DatasetPlans.plans[plan].register(dst, confirmation: self)
+
+                rescue VpsAdmin::API::Exceptions::DatasetPlanNotInEnvironment
+                  next
+                end
+              end
+            end
+          end
         end
 
         clone_snapshots << use_chain(Dataset::Snapshot, args: src)
@@ -257,6 +275,12 @@ module TransactionChains
         dst_vps.update!(dataset_in_pool: original_dst_vps_dip)
       end
 
+      # Regenerate cron tasks.
+      # Note that if the clone fails, the tasks may be removed from
+      # the database, but they will stay in the crontab file until
+      # it is regenerated.
+      VpsAdmin::API::DatasetPlans.confirm if attrs[:dataset_plans]
+
       dst_vps
     end
 
@@ -273,7 +297,7 @@ module TransactionChains
     end
 
     # Create a new dataset for target VPS.
-    def vps_dataset(vps, dst_vps)
+    def vps_dataset(vps, dst_vps, clone_plans)
       ds = ::Dataset.new(
           name: dst_vps.id.to_s,
           user: dst_vps.user,
@@ -291,7 +315,7 @@ module TransactionChains
         root_properties[p.name.to_sym] = p.value unless p.inherited
       end
 
-      use_chain(Dataset::Create, args: [
+      dip = use_chain(Dataset::Create, args: [
           @dst_pool,
           nil,
           [ds],
@@ -300,6 +324,32 @@ module TransactionChains
           dst_vps.user,
           "vps#{dst_vps.id}"
       ]).last
+
+      # Clone dataset plans
+      if clone_plans
+        plans = []
+
+        vps.dataset_in_pool.dataset_in_pool_plans.includes(
+            environment_dataset_plan: [:dataset_plan]
+        ).each do |dip_plan|
+          plans << dip_plan.environment_dataset_plan.dataset_plan.name.to_sym
+        end
+
+        unless plans.empty?
+          append(Transactions::Utils::NoOp, args: dst_vps.vps_server) do
+            plans.each do |p|
+              begin
+                VpsAdmin::API::DatasetPlans.plans[p].register(dip, confirmation: self)
+
+              rescue VpsAdmin::API::Exceptions::DatasetPlanNotInEnvironment
+                next
+              end
+            end
+          end
+        end
+      end
+
+      dip
     end
 
     def serialize_datasets(dataset_in_pool, dst_dataset_in_pool)
