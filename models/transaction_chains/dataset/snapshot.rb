@@ -24,7 +24,7 @@ module TransactionChains
         create(sip)
       end
 
-      s
+      sip
     end
   end
 end

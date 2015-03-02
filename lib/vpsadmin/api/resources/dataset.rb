@@ -376,7 +376,7 @@ module VpsAdmin::API::Resources
 
         def exec
           ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
-          ds.snapshot
+          ds.snapshot.snapshot
         end
       end
 
