@@ -52,6 +52,17 @@ module VpsAdmin::API::Exceptions
     end
   end
 
+  class DatasetPlanNotInEnvironment < ::StandardError
+    attr_reader :dataset_plan, :environment
+
+    def initialize(plan, env)
+      @dataset_plan = plan
+      @environment = env
+
+      super("Dataset plan #{plan} is not available in environment #{env.label}")
+    end
+  end
+
   class PropertyInvalid < ::StandardError
 
   end

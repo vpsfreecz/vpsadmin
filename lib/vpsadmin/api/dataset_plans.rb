@@ -195,6 +195,12 @@ module VpsAdmin::API
             environment: dip.pool.node.environment,
             dataset_plan: dataset_plan
         )
+
+      rescue ::ActiveRecord::RecordNotFound
+        raise Exceptions::DatasetPlanNotInEnvironment.new(
+            dataset_plan,
+            dip.pool.node.environment
+        )
       end
     end
 
