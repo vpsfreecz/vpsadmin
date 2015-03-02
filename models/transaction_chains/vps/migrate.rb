@@ -69,6 +69,9 @@ module TransactionChains
         append(Transactions::Storage::SetDataset, args: [dst, props]) unless props.empty?
       end
 
+      # Unmount VPS datasets & snapshots in other VPSes
+      vps_mounts = umount_all_mounts(vps)
+
       # Transfer datasets
       migration_snapshots = []
 
@@ -97,13 +100,16 @@ module TransactionChains
       # Restore VPS state
       use_chain(Vps::Start, args: dst_vps, urgent: true) if running
 
+      # Remount and regenerate mount scripts
+      remount_all_mounts(vps_mounts, datasets)
+
       # Remove migration snapshots
       migration_snapshots.each do |sip|
         dst_sip = sip.snapshot.snapshot_in_pools.joins(:dataset_in_pool).where(
             dataset_in_pools: {pool_id: @dst_pool.id}
         ).take!
 
-        use_chain(SnapshotInPool::Destroy, args: dst_sip)
+        use_chain(SnapshotInPool::Destroy, args: dst_sip, urgent: true)
       end
 
       # Move the dataset in pool to the new pool in the database
@@ -197,6 +203,92 @@ module TransactionChains
       end
 
       ret
+    end
+
+    # Find all mounts of datasets and snapshots of +vps+ in all other
+    # vpses.
+    # Returns a hash of vps => mounts.
+    def umount_all_mounts(vps)
+      mounts = {}
+
+      # Fetch ids of all descendant datasets in pool
+      dataset_in_pools = vps.dataset_in_pool.dataset.subtree.joins(
+          :dataset_in_pools
+      ).where(
+          dataset_in_pools: {pool_id: vps.dataset_in_pool.pool_id}
+      ).pluck('dataset_in_pools.id')
+
+      # Fetch all snapshot in pools of above datasets
+      snapshot_in_pools = ::SnapshotInPool.where(dataset_in_pool_id: dataset_in_pools).pluck(:id)
+
+      ::Mount.includes(
+          :snapshot_in_pool, dataset_in_pool: [:dataset, :pool]
+      ).where.not(vps: vps).where(
+          '(dataset_in_pool_id IN (?) OR snapshot_in_pool_id IN (?))',
+          dataset_in_pools, snapshot_in_pools
+      ).order('dst DESC').each do |mnt|
+        mounts[mnt.vps] ||= []
+        mounts[mnt.vps] << mnt
+      end
+
+      mounts.each do |v, vps_mounts|
+        append(Transactions::Vps::Umount, args: [v, vps_mounts])
+      end
+
+      mounts
+    end
+
+    # Regenerate action scripts for all VPSes that have mounts of datasets
+    # in +dst_vps+.
+    # +vps_mounts+ is a has of vps => mounts.
+    def remount_all_mounts(vps_mounts, datasets)
+      ds_map = {}
+
+      datasets.each do |pair|
+        # ds_map[ src ] = dst
+        ds_map[pair[0]] = pair[1]
+      end
+
+      vps_mounts.reverse_each do |vps, mnts|
+        db_changes = {}
+
+        mnts.each do |mnt|
+          # Temporarily update dataset in pools of all mounts, so that they
+          # are generated with correct information.
+          orig_dip = mnt.dataset_in_pool
+
+          db_changes[mnt] = {
+              dataset_in_pool_id: mnt.dataset_in_pool_id,
+              snapshot_in_pool_id: mnt.snapshot_in_pool_id,
+              mount_type: mnt.mount_type,
+              mount_opts: mnt.mount_opts
+          }
+
+          mnt.dataset_in_pool = ds_map[orig_dip]
+
+          if mnt.snapshot_in_pool_id
+            mnt.snapshot_in_pool = ds_map[orig_dip].snapshot_in_pools.where(snapshot_id: mnt.snapshot_in_pool.snapshot_id).take!
+          end
+
+          # The mount type may have changed from local to remote or the other way around
+          if vps.vps_server == ds_map[orig_dip].pool.node_id
+              mnt.mount_type = 'bind'
+              mnt.mount_opts = '--bind'
+          else
+              mnt.mount_type = 'nfs'
+              mnt.mount_opts = '-overs=3'
+          end
+
+          mnt.save!
+        end
+
+        use_chain(Vps::Mounts, args: [vps, mnts], urgent: true)
+        append(Transactions::Vps::Mount, args: [vps, mnts], urgent: true) do
+          db_changes.each do |mnt, changes|
+            edit_before(mnt, changes)
+          end
+        end
+      end
     end
   end
 end
