@@ -22,8 +22,8 @@ module VpsAdmind
       end
     end
 
-    def scp(what, where, opts = nil)
-      syscmd("#{$CFG.get(:bin, :scp)} #{opts} #{what} #{where}")
+    def scp(what, where, opts = nil, valid_rcs=[])
+      syscmd("#{$CFG.get(:bin, :scp)} #{opts} #{what} #{where}", valid_rcs)
     end
 
     def rsync(cfg, vars, rcs = [23, 24])
