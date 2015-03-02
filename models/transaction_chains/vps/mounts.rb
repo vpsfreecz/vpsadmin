@@ -4,17 +4,20 @@ module TransactionChains
   class Vps::Mounts < ::TransactionChain
     label 'Mounts'
 
-    def link_chain(vps)
+    def link_chain(vps, mounts = nil)
       lock(vps)
 
       @vps = vps
-      mounts = []
 
-      # Local/remote mounts
-      vps.mounts.where.not(
-          confirmed: ::Mount.confirmed(:confirm_destroy)
-      ).order('dst ASC').each do |m|
-        mounts << m
+      unless mounts
+        mounts = []
+
+        # Local/remote mounts
+        vps.mounts.where.not(
+            confirmed: ::Mount.confirmed(:confirm_destroy)
+        ).order('dst ASC').each do |m|
+          mounts << m
+        end
       end
 
       append(Transactions::Vps::Mounts, args: [vps, mounts])
