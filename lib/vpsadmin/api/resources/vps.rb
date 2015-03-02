@@ -491,6 +491,7 @@ END
       bool :features, default: true, fill: true
       string :hostname
       bool :stop, default: true, fill: true
+      bool :keep_snapshots, default: false, fill: true
     end
 
     output do
@@ -543,7 +544,7 @@ END
 
       attrs = {}
 
-      %i(vps user subdatasets configs resources features hostname stop).each do |attr|
+      %i(vps user subdatasets configs resources features hostname stop keep_snapshots).each do |attr|
         attrs[attr] = input[attr]
       end
 

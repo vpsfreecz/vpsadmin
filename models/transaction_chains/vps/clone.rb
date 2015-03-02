@@ -146,6 +146,8 @@ module TransactionChains
       datasets.insert(0, [vps.dataset_in_pool, dst_vps.dataset_in_pool])
 
       # Create all datasets and make initial transfer
+      clone_snapshots = []
+
       datasets.each do |pair|
         src, dst = pair
 
@@ -172,7 +174,7 @@ module TransactionChains
           dst.call_class_hooks_for(:create, self, args: [dst])
         end
 
-        use_chain(Dataset::Snapshot, args: src)
+        clone_snapshots << use_chain(Dataset::Snapshot, args: src)
         use_chain(Dataset::Transfer, args: [src, dst])
       end
 
@@ -183,7 +185,7 @@ module TransactionChains
         datasets.each do |pair|
           src, dst = pair
 
-          use_chain(Dataset::Snapshot, args: src)
+          clone_snapshots << use_chain(Dataset::Snapshot, args: src)
           use_chain(Dataset::Transfer, args: [src, dst])
         end
 
@@ -220,6 +222,19 @@ module TransactionChains
       # to the time when it was actually created.
       append(Transactions::Storage::CloneSnapshotName, args: [dst_vps.dataset_in_pool.pool.node, snapshot_name_fixes]) do
         new_snapshots.each { |s| create(s) }
+      end
+
+      unless attrs[:keep_snapshots]
+        # Remove clone snapshots
+        clone_snapshots.each do |src_sip|
+          dst_sip = ::SnapshotInPool.joins(:dataset_in_pool).where(
+              snapshot_id: snapshot_name_fixes[ src_sip.snapshot_id ][1],
+              dataset_in_pools: {pool_id: @dst_pool.id}
+          ).take!
+
+          use_chain(SnapshotInPool::Destroy, args: src_sip)
+          use_chain(SnapshotInPool::Destroy, args: dst_sip)
+        end
       end
 
       # IP addresses
