@@ -13,8 +13,9 @@ module VpsAdmin::API
     end
 
     class Executor
-      def initialize(plan)
+      def initialize(plan, confirmation)
         @env_plan = plan
+        @confirm = confirmation
       end
 
       def add_group_snapshot(dip, min, hour, day, month, dow)
@@ -31,7 +32,9 @@ module VpsAdmin::API
               dataset_plan: @env_plan.dataset_plan
           )
 
-          ::RepeatableTask.create!(
+          confirm(:just_create, action)
+
+          task = ::RepeatableTask.create!(
               class_name: action.class.name,
               table_name: action.class.table_name,
               row_id: action.id,
@@ -41,11 +44,16 @@ module VpsAdmin::API
               month: month,
               day_of_week: dow
           )
+
+          confirm(:just_create, task)
         end
 
-        action.group_snapshots << ::GroupSnapshot.new(
-            dataset_in_pool: dip
+        grp = ::GroupSnapshot.create!(
+            dataset_in_pool: dip,
+            dataset_action: action
         )
+
+        confirm(:just_create, grp)
       end
 
       def del_group_snapshot(dip, *_)
@@ -72,7 +80,9 @@ module VpsAdmin::API
             action: ::DatasetAction.actions[:backup],
         )
 
-        ::RepeatableTask.create!(
+        confirm(:just_create, action)
+
+        task = ::RepeatableTask.create!(
             class_name: action.class.name,
             table_name: action.class.table_name,
             row_id: action.id,
@@ -82,6 +92,8 @@ module VpsAdmin::API
             month: month,
             day_of_week: dow
         )
+
+        confirm(:just_create, task)
       end
 
       def del_backup(dip, *_)
@@ -98,14 +110,20 @@ module VpsAdmin::API
           a.destroy!
         end
       end
+
+      def confirm(type, *args)
+        return unless @confirm
+        @confirm.send(type, *args)
+      end
     end
 
     # Represents a single dataset plan.
     class Plan
       class BlockEnv
-        def initialize(direction, plan)
+        def initialize(direction, plan, confirmation = nil)
           @direction = direction
           @plan = plan
+          @confirmation = confirmation
         end
 
         def group_snapshot(dip, *args)
@@ -118,7 +136,7 @@ module VpsAdmin::API
 
         protected
         def task(name, *args)
-          @exec ||= Executor.new(@plan)
+          @exec ||= Executor.new(@plan, @confirmation)
           @exec.method("#{@direction}_#{name}").call(*args)
         end
       end
@@ -140,7 +158,7 @@ module VpsAdmin::API
         end
       end
 
-      def register(dip)
+      def register(dip, confirmation: nil)
         plan = nil
 
         ::DatasetInPoolPlan.transaction do
@@ -149,15 +167,17 @@ module VpsAdmin::API
               dataset_in_pool: dip
           )
 
-          BlockEnv.new(:add, env_dataset_plan(dip)).instance_exec(dip, &@block)
+          confirmation.just_create(plan) if confirmation
+
+          BlockEnv.new(:add, env_dataset_plan(dip), confirmation).instance_exec(dip, &@block)
         end
 
         plan
       end
 
-      def unregister(dip)
+      def unregister(dip, confirmation: nil)
         ::DatasetInPoolPlan.transaction do
-          BlockEnv.new(:del, env_dataset_plan(dip)).instance_exec(dip, &@block)
+          BlockEnv.new(:del, env_dataset_plan(dip), confirmation).instance_exec(dip, &@block)
 
           ::DatasetInPoolPlan.find_by!(
               environment_dataset_plan: env_dataset_plan(dip),
