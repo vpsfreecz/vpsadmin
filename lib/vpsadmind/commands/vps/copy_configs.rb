@@ -24,7 +24,7 @@ module VpsAdmind
           # Accept return code 1 - file not found
           scp(
               "#{@src_node_addr}:#{$CFG.get(:vz, :vz_conf)}/conf/#{@vps_id}.#{suffix}", "#{$CFG.get(:vz, :vz_conf)}/conf/#{@dst_vps}.#{suffix}",
-              [suffix != :conf ? 1 : 0]
+              nil, [suffix != :conf ? 1 : 0]
           )
         end
       end
