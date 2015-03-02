@@ -167,6 +167,9 @@ module TransactionChains
               create(p)
             end
           end
+
+          # Invoke dataset create hook
+          dst.call_class_hooks_for(:create, self, args: [dst])
         end
 
         use_chain(Dataset::Snapshot, args: src)
