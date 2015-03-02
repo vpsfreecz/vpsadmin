@@ -70,6 +70,8 @@ module TransactionChains
       end
 
       # Transfer datasets
+      migration_snapshots = []
+
       datasets.each do |pair|
         src, dst = pair
 
@@ -77,7 +79,7 @@ module TransactionChains
         # The two step transfer is done even if the VPS seems to be stopped.
         # It does not have to be the case.
         # First transfer is done when the VPS is running.
-        use_chain(Dataset::Snapshot, args: src)
+        migration_snapshots << use_chain(Dataset::Snapshot, args: src)
         use_chain(Dataset::Transfer, args: [src, dst])
       end
 
@@ -88,12 +90,21 @@ module TransactionChains
         src, dst = pair
 
         # Seconds transfer is done when the VPS is stopped
-        use_chain(Dataset::Snapshot, args: src, urgent: true)
+        migration_snapshots << use_chain(Dataset::Snapshot, args: src, urgent: true)
         use_chain(Dataset::Transfer, args: [src, dst], urgent: true)
       end
 
       # Restore VPS state
       use_chain(Vps::Start, args: dst_vps, urgent: true) if running
+
+      # Remove migration snapshots
+      migration_snapshots.each do |sip|
+        dst_sip = sip.snapshot.snapshot_in_pools.joins(:dataset_in_pool).where(
+            dataset_in_pools: {pool_id: @dst_pool.id}
+        ).take!
+
+        use_chain(SnapshotInPool::Destroy, args: dst_sip)
+      end
 
       # Move the dataset in pool to the new pool in the database
       append(Transactions::Utils::NoOp, args: dst_node.id, urgent: true) do
