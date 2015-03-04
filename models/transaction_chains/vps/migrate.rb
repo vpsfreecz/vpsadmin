@@ -219,7 +219,17 @@ module TransactionChains
       ).pluck('dataset_in_pools.id')
 
       # Fetch all snapshot in pools of above datasets
-      snapshot_in_pools = ::SnapshotInPool.where(dataset_in_pool_id: dataset_in_pools).pluck(:id)
+      snapshot_in_pools = []
+
+      ::SnapshotInPool.where(dataset_in_pool_id: dataset_in_pools).each do |sip|
+        snapshot_in_pools << sip.id
+
+        if sip.reference_count > 1
+          # This shouldn't be possible, as every snapshot can be mounted
+          # just once.
+          fail "snapshot (s=#{sip.snapshot_id},sip=#{sip.id}) has too high a reference count"
+        end
+      end
 
       ::Mount.includes(
           :snapshot_in_pool, dataset_in_pool: [:dataset, :pool]
@@ -233,6 +243,14 @@ module TransactionChains
 
       mounts.each do |v, vps_mounts|
         append(Transactions::Vps::Umount, args: [v, vps_mounts])
+
+        vps_mounts.each do |mnt|
+          # The snapshot is mounted remotely via a clone.
+          # The clone must be removed on the source node and recreated on destination.
+          if mnt.snapshot_in_pool_id && mnt.snapshot_in_pool.dataset_in_pool.pool.node_id != v.vps_server
+            append(Transactions::Storage::RemoveClone, args: mnt.snapshot_in_pool)
+          end
+        end
       end
 
       mounts
@@ -249,13 +267,24 @@ module TransactionChains
         ds_map[pair[0]] = pair[1]
       end
 
-      vps_mounts.reverse_each do |vps, mnts|
+      vps_mounts.each do |vps, mnts|
         db_changes = {}
+        dereference = []
 
         mnts.each do |mnt|
           # Temporarily update dataset in pools of all mounts, so that they
           # are generated with correct information.
           orig_dip = mnt.dataset_in_pool
+
+          if mnt.snapshot_in_pool_id && mnt.snapshot_in_pool.dataset_in_pool.pool.node_id != vps.vps_server
+            remote = true
+
+          elsif mnt.dataset_in_pool.pool.node_id != vps.vps_server
+            remote = true
+
+          else
+            remote = false
+          end
 
           db_changes[mnt] = {
               dataset_in_pool_id: mnt.dataset_in_pool_id,
@@ -267,25 +296,46 @@ module TransactionChains
           mnt.dataset_in_pool = ds_map[orig_dip]
 
           if mnt.snapshot_in_pool_id
+            db_changes[mnt.snapshot_in_pool] = {
+                mount_id: mnt.snapshot_in_pool.mount_id
+            }
+            mnt.snapshot_in_pool.update!(mount: nil)
+
             mnt.snapshot_in_pool = ds_map[orig_dip].snapshot_in_pools.where(snapshot_id: mnt.snapshot_in_pool.snapshot_id).take!
           end
 
           # The mount type may have changed from local to remote or the other way around
           if vps.vps_server == ds_map[orig_dip].pool.node_id
-              mnt.mount_type = 'bind'
-              mnt.mount_opts = '--bind'
+              mnt.mount_type = mnt.snapshot_in_pool_id ? 'zfs' : 'bind'
+              mnt.mount_opts = mnt.snapshot_in_pool_id ? '-t zfs' : '--bind'
           else
               mnt.mount_type = 'nfs'
               mnt.mount_opts = '-overs=3'
           end
 
           mnt.save!
+
+          # It is a remote mount and the snapshot clone must be recreated.
+          if mnt.snapshot_in_pool_id && mnt.snapshot_in_pool.dataset_in_pool.pool.node_id != vps.vps_server
+            append(Transactions::Storage::CloneSnapshot, args: mnt.snapshot_in_pool) do
+              increment(mnt.snapshot_in_pool, :reference_count) unless remote
+            end
+
+          # The mount WAS remote but now is local. The cloned snapshot is already gone,
+          # all that has to be done now is decrement reference count.
+          elsif mnt.snapshot_in_pool_id && remote
+            dereference << mnt.snapshot_in_pool
+          end
         end
 
-        use_chain(Vps::Mounts, args: [vps, mnts], urgent: true)
-        append(Transactions::Vps::Mount, args: [vps, mnts], urgent: true) do
+        use_chain(Vps::Mounts, args: vps, urgent: true)
+        append(Transactions::Vps::Mount, args: [vps, mnts.reverse], urgent: true) do
           db_changes.each do |mnt, changes|
             edit_before(mnt, changes)
+          end
+
+          dereference.each do |sip|
+            decrement(sip, :reference_count)
           end
         end
       end
