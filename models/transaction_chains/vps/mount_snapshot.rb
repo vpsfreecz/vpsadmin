@@ -23,10 +23,15 @@ module TransactionChains
       remote = false
 
       # Snapshot is present locally on hypervisor
-      if hypervisor && hypervisor.dataset_in_pool.pool.node_id = vps.vps_server
+      if hypervisor && hypervisor.dataset_in_pool.pool.node_id == vps.vps_server
         clone_from = hypervisor
         mnt.mount_type = 'zfs'
         mnt.mount_opts = '-t zfs'
+
+      # Snapshot is present on hypervisor and NOT in backup
+      elsif hypervisor && !backup
+        clone_from = hypervisor
+        remote = true
 
       # Snapshot is on primary and NOT in backup.
       elsif primary && !backup
