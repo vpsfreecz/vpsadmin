@@ -22,7 +22,7 @@
     mount <%= mnt['mount_opts'] %> ${SRC} ${VE_ROOT}${DST}
 
   <% elsif mnt['type'] == 'snapshot_remote' %>
-    SRC="<%= "#{mnt['src_node_addr']}:/#{pool_mounted_snapshot(mnt['pool_fs'], mnt['snapshot_id'])} #{mnt['dst']}" %>"
+    SRC="<%= "#{mnt['src_node_addr']}:/#{pool_mounted_snapshot(mnt['pool_fs'], mnt['snapshot_id'])}" %>"
     DST="<%= mnt['dst'] %>"
     if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
     mount <%= mnt['mount_opts'] %> ${SRC} ${VE_ROOT}${DST}
