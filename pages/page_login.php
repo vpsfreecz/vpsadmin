@@ -25,6 +25,9 @@ if ($_GET["action"] == 'login') {
 	
 	if ($_POST["passwd"] && $_POST["username"]) {
 		try {
+			session_destroy();
+			session_start();
+			
 			$api->authenticate('token', array(
 				'username' => $_POST['username'],
 				'password' => $_POST['passwd'],
@@ -33,9 +36,6 @@ if ($_GET["action"] == 'login') {
 			));
 			
 			$m = $api->user->current();
-			
-			session_destroy();
-			session_start();
 			
 			$_SESSION["member"]["m_id"] = $m->id;
 			$member = member_load($m->id);
