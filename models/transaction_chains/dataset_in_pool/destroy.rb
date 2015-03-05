@@ -35,7 +35,7 @@ module TransactionChains
 
       @datasets.each do |dip|
         affected_vpses.merge!(mounts_to_umount(dip)) do |_, oldval, newval|
-          oldval << newval
+          oldval.concat(newval)
         end
       end
 
