@@ -410,6 +410,10 @@ function client_params_to_api($action, $from = null) {
 					$v = true;
 					break;
 				
+				case 'Resource':
+					if (!$from[$name])
+						continue;
+				
 				default:
 					$v = $from[ $name ];
 			}
