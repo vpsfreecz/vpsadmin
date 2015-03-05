@@ -315,8 +315,11 @@ function maintenance_lock_icon($type, $obj) {
 	}
 }
 
-function resource_list_to_options($list, $id = 'id', $label = 'label') {
+function resource_list_to_options($list, $id = 'id', $label = 'label', $empty = true) {
 	$ret = array();
+	
+	if ($empty)
+		$ret[0] = '---';
 	
 	foreach ($list as $item)
 		$ret[ $item->{$id} ] = $item->{$label};
@@ -381,6 +384,35 @@ function api_params_to_form($action, $direction) {
 	foreach ($params as $name => $desc) {
 		api_param_to_form($name, $desc);
 	}
+}
+
+function client_params_to_api($action, $from = null) {
+	if (!$from)
+		$from = $_POST;
+	
+	$params = $action->getParameters('input');
+	$ret = array();
+	
+	foreach ($params as $name => $desc) {
+		if (isset($from[ $name ])) {
+			switch ($desc->type) {
+				case 'Integer':
+					$v = (int) $from[$name];
+					break;
+				
+				case 'Boolean':
+					$v = true;
+					break;
+				
+				default:
+					$v = $from[ $name ];
+			}
+			
+			$ret[ $name ] = $v;
+		}
+	}
+	
+	return $ret;
 }
 
 function data_size_unitize($val) {
