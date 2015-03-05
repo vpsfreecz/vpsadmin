@@ -333,25 +333,53 @@ function boolean_icon($val) {
 }
 
 function api_param_to_form_pure($name, $desc, $v = null) {
-	global $xtpl;
+	global $xtpl, $api;
 	
 	if (!$v)
-		$v = $desc->default;
+		$v = $desc->default === '_nil' ? null : $desc->default;
+	
+	if ($_POST[$name])
+		$v = $_POST[$name];
 	
 	switch ($desc->type) {
 		case 'String':
 		case 'Integer':
-			$xtpl->form_add_input_pure('text', '30', $name, $_POST[$name] ? $_POST[$name] : $v);
+			$xtpl->form_add_input_pure('text', '30', $name, $v);
 			break;
 		
 		case 'Boolean':
-			$xtpl->form_add_checkbox_pure($name, '1', $_POST[$name] ? $_POST[$name] : $v);
+			$xtpl->form_add_checkbox_pure($name, '1', $v);
 			break;
 		
 		case 'Resource':
-			$xtpl->form_add_select_pure();
+			$xtpl->form_add_select_pure(
+				$name,
+				resource_list_to_options($api[ implode('.', $desc->resource) ]->index(), $desc->value_id, $desc->value_label),
+				$v
+			);
+		
 		default:
 			continue;
+	}
+}
+
+function api_param_to_form($name, $desc, $v = null) {
+	global $xtpl;
+	
+	$xtpl->table_td($desc->label.':');
+	api_param_to_form_pure($name, $desc, $v);
+	
+	if ($desc->description)
+		$xtpl->table_td($desc->description);
+	
+	$xtpl->table_tr();
+}
+
+function api_params_to_form($action, $direction) {
+	$params = $action->getParameters($direction);
+	
+	foreach ($params as $name => $desc) {
+		api_param_to_form($name, $desc);
 	}
 }
 
