@@ -274,7 +274,7 @@ function dataset_snapshot_list($datasets, $vps = null) {
 			continue;
 		
 		$xtpl->table_title(
-			$ds->id == ($vps && $vps->dataset_id) ? _('VPS').' #'.$vps->id : $ds->name
+			$vps && $ds->id == $vps->dataset_id ? _('VPS').' #'.$vps->id : $ds->name
 		);
 		
 		$xtpl->table_add_category(_('Date and time'));
