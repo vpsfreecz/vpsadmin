@@ -512,43 +512,20 @@ switch ($_GET["action"]) {
 			}
 			break;
 		case 'clone':
-			if (isset($_REQUEST["veid"])  && ($_SESSION["is_admin"] || $playground_mode)) {
+			if (isset($_POST['hostname'])) {
 				csrf_check();
-				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
 				
-				if ($playground_mode) {
-					$server = server_by_id(pick_playground_server());
-				} else {
-					$server = server_by_id($_POST["target_server_id"]);
-				}
-				
-				if(!$server) {
-					$xtpl->perex(_("Error"), _("Selected server does not exist."));
-					break;
-				}
-				
-				$pg_backup = $cluster_cfg->get("playground_backup");
-				
-				$cloned = $vps->clone_vps($playground_mode ? $vps->ve["m_id"] : $_POST["target_owner_id"],
-								$server["server_id"],
-								$_POST["hostname"],
-								$playground_mode ? 2 : $_POST["configs"],
-								$playground_mode ? 1 : $_POST["features"],
-								$playground_mode ? $pg_backup : $_POST["backuper"]
-				);
-				
-				if ($playground_mode) {
-					$cloned->add_first_available_ip($server["server_location"], 4);
-					$cloned->add_first_available_ip($server["server_location"], 6);
+				try {
+					$cloned = $api->vps($_GET['veid'])->clone(client_params_to_api($api->vps->clone));
 					
-					if (!$pg_backup)
-						$cloned->set_backuper($pg_backup, NULL, "", true);
+					notify_user(_("Clone in progress"), '');
+					redirect('?page=adminvps&action=info&veid='.$cloned->id);
 					
-					$cloned->set_expiration(time() + $cluster_cfg->get("playground_vps_lifetime") * 24 * 60 * 60);
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Clone failed'), $e->getResponse());
+					$show_info=true;
 				}
 				
-				notify_user(_("Clone in progress"), '');
-				redirect('?page=adminvps&action=info&veid='.$cloned->veid);
 			} else
 				 $xtpl->perex(_("Invalid data"), _("Please fill the form correctly."));
 			
@@ -1053,18 +1030,11 @@ if (isset($show_info) && $show_info) {
 		if ($_SESSION["is_admin"] || $playground_mode) {
 			$xtpl->form_create('?page=adminvps&action=clone&veid='.$vps->id, 'post');
 			
-			if ($_SESSION["is_admin"]) {
-				$xtpl->form_add_select(_("Target owner").':', 'target_owner_id', members_list(), $vps->user_id);
-				$xtpl->form_add_select(_("Target server").':', 'target_server_id', $cluster->list_servers(), $vps->node_id);
-			}
-			$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'hostname', $vps->hostname . "-{$vps->id}-clone");
+			api_params_to_form($vps->clone, 'input', array('vps' => function($vps) {
+				return '#'.$vps->id.' '.$vps->hostname;
+			}));
 			
-			if ($_SESSION["is_admin"]) {
-				$xtpl->form_add_checkbox(_("Clone configs").':', 'configs', '1', true);
-				$xtpl->form_add_checkbox(_("Clone features").':', 'features', '1', true);
-				$xtpl->form_add_checkbox(_("Clone backuper").':', 'backuper', '1', true);
-			}
-			$xtpl->table_add_category($playground_mode ? _("Clone to playground") : _("Clone"));
+			$xtpl->table_add_category(_("Clone"));
 			$xtpl->table_add_category('&nbsp;');
 			$xtpl->form_out(_("Go >>"));
 		}
