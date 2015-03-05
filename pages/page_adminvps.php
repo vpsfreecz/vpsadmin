@@ -1027,17 +1027,15 @@ if (isset($show_info) && $show_info) {
 // 			$xtpl->form_out(_("Go >>"));
 // 		}
 	// Clone
-		if ($_SESSION["is_admin"] || $playground_mode) {
-			$xtpl->form_create('?page=adminvps&action=clone&veid='.$vps->id, 'post');
-			
-			api_params_to_form($vps->clone, 'input', array('vps' => function($vps) {
-				return '#'.$vps->id.' '.$vps->hostname;
-			}));
-			
-			$xtpl->table_add_category(_("Clone"));
-			$xtpl->table_add_category('&nbsp;');
-			$xtpl->form_out(_("Go >>"));
-		}
+		$xtpl->form_create('?page=adminvps&action=clone&veid='.$vps->id, 'post');
+		
+		api_params_to_form($vps->clone, 'input', array('vps' => function($vps) {
+			return '#'.$vps->id.' '.$vps->hostname;
+		}));
+		
+		$xtpl->table_add_category(_("Clone"));
+		$xtpl->table_add_category('&nbsp;');
+		$xtpl->form_out(_("Go >>"));
 		
 	// Swap
 	// if ($_SESSION["is_admin"] || !$vps->is_playground()) {
