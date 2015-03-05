@@ -766,7 +766,7 @@ if (isset($show_info) && $show_info) {
 	
 	$xtpl->table_out();
 	
-	if(!$_SESSION['is_admin'] && !$vps->maintenance_lock != 'no') {
+	if(!$_SESSION['is_admin'] && $vps->maintenance_lock != 'no') {
 		$xtpl->perex(
 			_("VPS is under maintenance"),
 			_("All actions for this VPS are forbidden for the time being. This is usually used during outage to prevent data corruption.").
@@ -784,7 +784,7 @@ if (isset($show_info) && $show_info) {
 		}
 		
 	} else {
-
+	
 	// Password changer
 		$xtpl->form_create('?page=adminvps&action=passwd&veid='.$vps->id, 'post');
 		
