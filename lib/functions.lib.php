@@ -315,14 +315,14 @@ function maintenance_lock_icon($type, $obj) {
 	}
 }
 
-function resource_list_to_options($list, $id = 'id', $label = 'label', $empty = true) {
+function resource_list_to_options($list, $id = 'id', $label = 'label', $empty = true, $label_callback = null) {
 	$ret = array();
 	
 	if ($empty)
 		$ret[0] = '---';
 	
 	foreach ($list as $item)
-		$ret[ $item->{$id} ] = $item->{$label};
+		$ret[ $item->{$id} ] = $label_callback ? $label_callback($item) : $item->{$label};
 	
 	return $ret;
 }
@@ -335,7 +335,7 @@ function boolean_icon($val) {
 	}
 }
 
-function api_param_to_form_pure($name, $desc, $v = null) {
+function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null) {
 	global $xtpl, $api;
 	
 	if (!$v)
@@ -357,7 +357,13 @@ function api_param_to_form_pure($name, $desc, $v = null) {
 		case 'Resource':
 			$xtpl->form_add_select_pure(
 				$name,
-				resource_list_to_options($api[ implode('.', $desc->resource) ]->index(), $desc->value_id, $desc->value_label),
+				resource_list_to_options(
+					$api[ implode('.', $desc->resource) ]->index(),
+					$desc->value_id,
+					$desc->value_label,
+					true,
+					$label_callback
+				),
 				$v
 			);
 		
@@ -366,11 +372,11 @@ function api_param_to_form_pure($name, $desc, $v = null) {
 	}
 }
 
-function api_param_to_form($name, $desc, $v = null) {
+function api_param_to_form($name, $desc, $v = null, $label_callback = null) {
 	global $xtpl;
 	
 	$xtpl->table_td($desc->label.':');
-	api_param_to_form_pure($name, $desc, $v);
+	api_param_to_form_pure($name, $desc, $v, $label_callback);
 	
 	if ($desc->description)
 		$xtpl->table_td($desc->description);
@@ -378,11 +384,11 @@ function api_param_to_form($name, $desc, $v = null) {
 	$xtpl->table_tr();
 }
 
-function api_params_to_form($action, $direction) {
+function api_params_to_form($action, $direction, $label_callbacks = null) {
 	$params = $action->getParameters($direction);
 	
 	foreach ($params as $name => $desc) {
-		api_param_to_form($name, $desc);
+		api_param_to_form($name, $desc, null, $label_callbacks ? $label_callbacks[$name] : null);
 	}
 }
 
