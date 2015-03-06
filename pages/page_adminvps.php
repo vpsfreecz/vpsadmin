@@ -345,8 +345,36 @@ switch ($_GET["action"]) {
 					$show_info=true;
 				}
 			}
+			break;
+		
+		case 'resources':
+			if (isset($_POST['memory'])) {
+				csrf_check();
+				
+				try {
+					$vps_resources = array('memory', 'cpu', 'swap');
+					$params = array();
+					
+					foreach ($vps_resources as $r) {
+						$params[ $r ] = $_POST[$r];
+					}
+					
+					$api->vps($_GET['veid'])->update($params);
+					
+					notify_user(_("Resources changed"), '');
+					redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Resource change failed'), $e->getResponse());
+					$show_info=true;
+				}
+			} else {
+				$xtpl->perex(_("Error"), 'Error, contact your administrator');
+				$show_info=true;
+			}
 			
 			break;
+			
 		case 'chown':
 			if($_POST['m_id']) {
 				try {
@@ -976,7 +1004,39 @@ if (isset($show_info) && $show_info) {
 			$xtpl->form_add_textarea(_("Config").':', 60, 10, 'custom_config', $vps->config, _('Applied last'));
 			$xtpl->form_out(_("Go >>"));
 		}
-
+	
+	// Resources
+	$xtpl->form_create('?page=adminvps&action=resources&veid='.$vps->id, 'post');
+	$xtpl->table_add_category(_("Resources"));
+	$xtpl->table_add_category('');
+	
+	$params = $api->vps->update->getParameters('input');
+	$vps_resources = array('memory', 'cpu', 'swap');
+	$user_resources = $vps->user->cluster_resource->list(array('meta' => array('includes' => 'environment,cluster_resource')));
+	$resource_map = array();
+	
+	foreach ($user_resources as $r) {
+		$resource_map[ $r->cluster_resource->name ] = $r;
+	}
+	
+	foreach ($vps_resources as $name) {
+		$p = $params->{$name};
+		$r = $resource_map[$name];
+		
+		$xtpl->table_td($p->label);
+		$xtpl->form_add_number_pure(
+			$name,
+			$vps->{$name},
+			$r->cluster_resource->min,
+			min($vps->{$name} + $r->free, $r->cluster_resource->max),
+			$r->cluster_resource->stepsize,
+			'MiB'
+		);
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->form_out(_("Go >>"));
+	
 	// Enable devices/capabilities
 		$xtpl->form_create('?page=adminvps&action=features&veid='.$vps->id, 'post');
 		
