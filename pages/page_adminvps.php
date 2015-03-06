@@ -877,7 +877,14 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_add_category(_("Hostname list"));
 		$xtpl->table_add_category('&nbsp;');
 		$xtpl->form_out(_("Go >>"));
-
+	
+	// Datasets
+	dataset_list('hypervisor', $vps->dataset_id);
+	
+	// Mounts
+	mount_list($vps->id);
+	
+		
 	// Reinstall
 		$xtpl->form_create('?page=adminvps&action=reinstall&veid='.$vps->id, 'post');
 		$xtpl->form_add_checkbox(_("Reinstall distribution").':', 'reinstallsure', '1', false, $hint = _("Install base system again"));
@@ -1073,12 +1080,6 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_out();
 	}
 	*/
-	
-	// Datasets
-	dataset_list('hypervisor', $vps->dataset_id);
-	
-	// Mounts
-	mount_list($vps->id);
 	
 	}
 }
