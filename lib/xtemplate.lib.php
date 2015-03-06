@@ -720,6 +720,10 @@ class XTemplate {
 		return 'input'.$uid;
 	}
 	
+	function form_add_number_pure($name, $value, $min = 0, $max = 999999, $step = 1, $unit = '') {
+		$this->table_td('<input type="number" name="'.$name.'" value="'.$value.'" min="'.$min.'" max="'.$max.'" step="'.$step.'">&nbsp;'.$unit);
+	}
+	
 	/**
 	  * Add select (combobox) to form
 	  * @param $label - label of textarea
