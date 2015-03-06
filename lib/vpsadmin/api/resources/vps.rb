@@ -45,10 +45,15 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     integer :used_disk, label: 'Used disk', desc: 'in MB'
   end
 
+  params(:resources) do
+    VpsAdmin::API::ClusterResources.to_params(::Vps, self, resources: %i(memory swap cpu))
+  end
+
   params(:all) do
     use :id
     use :common
     use :dataset
+    use :resources
     use :status
   end
 
@@ -68,7 +73,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       allow if u.role == :admin
       restrict m_id: u.m_id
       output whitelist: %i(id hostname os_template dns_resolver node dataset
-                          backup_enabled maintenance_lock maintenance_lock_reason)
+                          memory swap cpu backup_enabled maintenance_lock
+                          maintenance_lock_reason)
       allow
     end
 
@@ -141,7 +147,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       input whitelist: %i(environment location hostname os_template
                           dns_resolver cpu memory diskspace ipv4 ipv6)
       output whitelist: %i(id hostname os_template dns_resolver node dataset
-                          backup_enabled maintenance_lock maintenance_lock_reason)
+                          memory swap cpu backup_enabled maintenance_lock
+                          maintenance_lock_reason)
       allow
     end
 
@@ -240,7 +247,8 @@ END
       allow if u.role == :admin
       restrict m_id: u.m_id
       output whitelist: %i(id hostname os_template dns_resolver node dataset
-                          backup_enabled maintenance_lock maintenance_lock_reason)
+                          memory swap cpu backup_enabled maintenance_lock
+                          maintenance_lock_reason)
       allow
     end
 
@@ -506,7 +514,8 @@ END
       restrict m_id: u.id
       input blacklist: %i(node user configs)
       output whitelist: %i(id hostname os_template dns_resolver node dataset
-                          backup_enabled maintenance_lock maintenance_lock_reason)
+                          memory swap cpu backup_enabled maintenance_lock
+                          maintenance_lock_reason)
       allow
     end
 
