@@ -157,7 +157,7 @@ function print_editm($member) {
 	
 	if ($_SESSION["is_admin"]) {
 		$xtpl->table_td(_("VPS count").':');
-		$xtpl->table_td("<a href='?page=adminvps&m_nick=".$member->m["m_nick"]."'>".$member->get_vps_count()."</a>");
+		$xtpl->table_td("<a href='?page=adminvps&action=list&user=".$member->m["m_id"]."'>".$member->get_vps_count()."</a>");
 		$xtpl->table_tr();
 	}
 
@@ -1500,7 +1500,7 @@ if ($_SESSION["logged_in"]) {
 				
 				$xtpl->table_td($m->mid);
 				$xtpl->table_td($m->m["m_nick"]);
-				$xtpl->table_td("<a href='?page=adminvps&m_nick=".$m->m["m_nick"]."'>[ ".$m->get_vps_count()." ]</a>");
+				$xtpl->table_td("<a href='?page=adminvps&action=list&user=".$m->m["m_id"]."'>[ ".$m->get_vps_count()." ]</a>");
 				$xtpl->table_td($m->m["m_name"]);
 				$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $m->m["m_deleted"]));
 				$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$m->mid.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
@@ -1569,7 +1569,7 @@ if ($_SESSION["logged_in"]) {
 
 					$vps_count = $member->get_vps_count();
 
-					$xtpl->table_td("<a href='?page=adminvps&m_nick=".$member->m["m_nick"]."'>[ ".$vps_count." ]</a>");
+					$xtpl->table_td("<a href='?page=adminvps&action=list&user=".$member->m["m_id"]."'>[ ".$vps_count." ]</a>");
 
 					if ($cluster_cfg->get("payments_enabled")) {
 						$xtpl->table_td($member->m["m_monthly_payment"]);
