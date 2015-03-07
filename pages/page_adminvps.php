@@ -597,101 +597,141 @@ switch ($_GET["action"]) {
 			break;
 		
 		default:
-			if(!$_SESSION["is_admin"] || $_GET["m_nick"])
-				$list_vps=true;
-			else
-				$show_index = true;
+			$list_vps=true;
 			break;
 	}
 
-if ($show_index) {
-	$xtpl->perex('',
-		'<h3><a href="?page=adminvps&action=list">List VPSes</a></h3>'.
-		'<h3><a href="?page=adminvps&action=new3">New VPS</a></h3>'
-	);
-}
-
-if (isset($list_vps) && $list_vps) {
+if ($list_vps) {
 	if ($_SESSION["is_admin"])
 		$xtpl->title(_("VPS list").' '._("[Admin mode]"));
 	else
 		$xtpl->title(_("VPS list").' '._("[User mode]"));
 	
-	$xtpl->table_add_category('ID');
-	$xtpl->table_add_category('HW');
-	$xtpl->table_add_category(_("OWNER"));
-	$xtpl->table_add_category(_("#PROC"));
-	$xtpl->table_add_category(_("HOSTNAME"));
-	$xtpl->table_add_category(_("USED RAM"));
-	$xtpl->table_add_category(_("USED HDD"));
-	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
-	
-	$vpses = $api->vps->list(array('meta' => array('count' => true, 'includes' => 'user,node')));
-	
-	foreach ($vpses as $vps) {
+	if ($_SESSION['is_admin']) {
+		$xtpl->table_title(_('Filters'));
+		$xtpl->form_create('', 'get', 'vps-filter', false);
 		
-		$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->id.'">'.$vps->id.'</a>');
-		$xtpl->table_td('<a href="?page=adminvps&server_name='.$vps->node->name.'">'. $vps->node->name . '</a>');
-		$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$vps->user_id.'">'.$vps->user->login.'</a>');
-		$xtpl->table_td($vps->process_count, false, true);
-		$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->id.'"><img src="template/icons/vps_edit.png"  title="'._("Edit").'"/> '.$vps->hostname.'</a>');
-		$xtpl->table_td(sprintf('%4d MB',$vps->used_memory), false, true);
+		$xtpl->table_td(_("Limit").':'.
+			'<input type="hidden" name="page" value="adminvps">'.
+			'<input type="hidden" name="action" value="list">'
+		);
+		$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
+		$xtpl->table_tr();
 		
-		if ($vps->used_disk > 0)
-			$xtpl->table_td(sprintf('%.2f GB',round($vps->used_disk/1024, 2)), false, true);
-		else $xtpl->table_td('---', false, true);
+		$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
+		$xtpl->form_add_input(_("User ID").':', 'text', '40', 'user', get_val('user'));
+		$xtpl->form_add_select(_("Node").':', 'node', 
+			resource_list_to_options($api->node->list(), 'id', 'name'), get_val('node'));
+		$xtpl->form_add_select(_("Location").':', 'location',
+			resource_list_to_options($api->location->list()), get_val('location'));
+		$xtpl->form_add_select(_("Environment").':', 'environment',
+			resource_list_to_options($api->environment->list()), get_val('environment'));
 		
-		if($_SESSION['is_admin'] || $vps->maintenance_lock == 'no') {
-			$xtpl->table_td(($vps->running) ? '<a href="?page=adminvps&run=restart&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_restart.png" title="'._("Restart").'"/></a>' : '<img src="template/icons/vps_restart_grey.png"  title="'._("Unable to restart").'" />');
-			$xtpl->table_td(($vps->running) ? '<a href="?page=adminvps&run=stop&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_stop.png"  title="'._("Stop").'"/></a>' : '<a href="?page=adminvps&run=start&veid='.$vps->id.'"><img src="template/icons/vps_start.png"  title="'._("Start").'"/></a>');
-			
-			if (!$_SESSION['is_admin'])
-				$xtpl->table_td('<a href="?page=console&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/console.png"  title="'._("Remote Console").'"/></a>');
-			
-			$can_delete = false; // FIXME
-			
-			if ($_SESSION['is_admin'])
-				$xtpl->table_td(maintenance_lock_icon('vps', $vps));
-			
-			if ($_SESSION["is_admin"] || $can_delete){
-				$xtpl->table_td((!$vps->running) ? '<a href="?page=adminvps&action=delete&veid='.$vps->id.'"><img src="template/icons/vps_delete.png"  title="'._("Delete").'"/></a>' : '<img src="template/icons/vps_delete_grey.png"  title="'._("Unable to delete").'"/>');
-			} else {
-				$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'._("Cannot delete").'"/>');
-			}
-		} else {
-			$xtpl->table_td('');
-			$xtpl->table_td('');
-			$xtpl->table_td('');
-			$xtpl->table_td('');
-		}
-		
-		$color = '#FFCCCC';
-		
-// 		if($vps->ve["vps_deleted"]) // FIXME
-// 			$color = '#A6A6A6';
-		if($vps->running)
-			$color = false;
-		
-		$xtpl->table_tr($color);
-		
+		$xtpl->form_out(_('Show'));
 	}
 	
-	$xtpl->table_out();
-
-	if ($_SESSION["is_admin"]) {
-		$xtpl->table_add_category(_("Total number of VPS").':');
-		$xtpl->table_add_category($vpses->getTotalCount());
-		$xtpl->table_out();
+	if (!$_SESSION['is_admin'] || $_GET['action'] == 'list') {
+		$xtpl->table_add_category('ID');
+		$xtpl->table_add_category('HW');
+		$xtpl->table_add_category(_("OWNER"));
+		$xtpl->table_add_category(_("#PROC"));
+		$xtpl->table_add_category(_("HOSTNAME"));
+		$xtpl->table_add_category(_("USED RAM"));
+		$xtpl->table_add_category(_("USED HDD"));
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
 		
-	} else {
+		if ($_SESSION['is_admin']) {
+			$params = array(
+				'limit' => get_val('limit', 25),
+				'offset' => get_val('offset', 0),
+				'meta' => array('count' => true, 'includes' => 'user,node')
+			);
+			
+			if ($_GET['user'])
+				$params['user'] = $_GET['user'];
+			
+			if ($_GET['node'])
+				$params['node'] = $_GET['node'];
+			
+			if ($_GET['location'])
+				$params['location'] = $_GET['location'];
+			
+			if ($_GET['environment'])
+				$params['environment'] = $_GET['environment'];
+			
+			$vpses = $api->vps->list($params);
+			
+		} else {
+			$vpses = $api->vps->list(array('meta' => array('count' => true, 'includes' => 'user,node')));
+		}
+		
+		foreach ($vpses as $vps) {
+			
+			$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->id.'">'.$vps->id.'</a>');
+			$xtpl->table_td('<a href="?page=adminvps&server_name='.$vps->node->name.'">'. $vps->node->name . '</a>');
+			$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$vps->user_id.'">'.$vps->user->login.'</a>');
+			$xtpl->table_td($vps->process_count, false, true);
+			$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->id.'"><img src="template/icons/vps_edit.png"  title="'._("Edit").'"/> '.$vps->hostname.'</a>');
+			$xtpl->table_td(sprintf('%4d MB',$vps->used_memory), false, true);
+			
+			if ($vps->used_disk > 0)
+				$xtpl->table_td(sprintf('%.2f GB',round($vps->used_disk/1024, 2)), false, true);
+			else $xtpl->table_td('---', false, true);
+			
+			if($_SESSION['is_admin'] || $vps->maintenance_lock == 'no') {
+				$xtpl->table_td(($vps->running) ? '<a href="?page=adminvps&run=restart&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_restart.png" title="'._("Restart").'"/></a>' : '<img src="template/icons/vps_restart_grey.png"  title="'._("Unable to restart").'" />');
+				$xtpl->table_td(($vps->running) ? '<a href="?page=adminvps&run=stop&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_stop.png"  title="'._("Stop").'"/></a>' : '<a href="?page=adminvps&run=start&veid='.$vps->id.'"><img src="template/icons/vps_start.png"  title="'._("Start").'"/></a>');
+				
+				if (!$_SESSION['is_admin'])
+					$xtpl->table_td('<a href="?page=console&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/console.png"  title="'._("Remote Console").'"/></a>');
+				
+				$can_delete = false; // FIXME
+				
+				if ($_SESSION['is_admin'])
+					$xtpl->table_td(maintenance_lock_icon('vps', $vps));
+				
+				if ($_SESSION["is_admin"] || $can_delete){
+					$xtpl->table_td((!$vps->running) ? '<a href="?page=adminvps&action=delete&veid='.$vps->id.'"><img src="template/icons/vps_delete.png"  title="'._("Delete").'"/></a>' : '<img src="template/icons/vps_delete_grey.png"  title="'._("Unable to delete").'"/>');
+				} else {
+					$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'._("Cannot delete").'"/>');
+				}
+			} else {
+				$xtpl->table_td('');
+				$xtpl->table_td('');
+				$xtpl->table_td('');
+				$xtpl->table_td('');
+			}
+			
+			$color = '#FFCCCC';
+			
+	// 		if($vps->ve["vps_deleted"]) // FIXME
+	// 			$color = '#A6A6A6';
+			if($vps->running)
+				$color = false;
+			
+			$xtpl->table_tr($color);
+			
+		}
+		
+		$xtpl->table_out();
+
+		if ($_SESSION["is_admin"]) {
+			$xtpl->table_add_category(_("Total number of VPS").':');
+			$xtpl->table_add_category($vpses->getTotalCount());
+			$xtpl->table_out();
+			
+		}
+	}
+	
+	if (!$_SESSION['is_admin']) {
 		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new');
 	}
 }
 
-if($_SESSION["is_admin"] && ($list_vps || $show_index)) {
+if($_SESSION["is_admin"] && $list_vps) {
 	if ($_SESSION["is_admin"]) {
 		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new3');
 		$xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List VPSes").'" /> '._("List VPSes"), '?page=adminvps&action=list');
