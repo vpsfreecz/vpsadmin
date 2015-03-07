@@ -198,17 +198,17 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def prepare
-        if current_user.role != :admin && current_user.id != params[:user_id]
-          error("I don't like the smell of this")
-        end
-
-        @r = ::UserClusterResource.where(
+        @r = with_includes.find_by!(
             user_id: params[:user_id],
             id: params[:cluster_resource_id]
         )
       end
 
       def exec
+        if current_user.role != :admin && current_user.id != params[:user_id]
+          error("I don't like the smell of this")
+        end
+
         @r
       end
     end
