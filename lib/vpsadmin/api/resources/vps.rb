@@ -61,8 +61,12 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     desc 'List VPS'
 
     input do
-      resource VpsAdmin::API::Resources::User, label: 'User', desc: 'VPS owner',
+      resource VpsAdmin::API::Resources::User, label: 'User', desc: 'Filter by owner',
                value_label: :login
+      resource VpsAdmin::API::Resources::Node, label: 'Node', desc: 'Filter by node',
+          value_label: :name
+      resource VpsAdmin::API::Resources::Location, label: 'Location', desc: 'Filter by location'
+      resource VpsAdmin::API::Resources::Environment, label: 'Environment', desc: 'Filter by environment'
     end
 
     output(:object_list) do
@@ -111,6 +115,19 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     def query
       q = Vps.where(with_restricted)
       q = q.where(m_id: input[:user].id) if input[:user]
+
+      if input[:node]
+        q = q.where(vps_server: input[:node].id)
+      end
+
+      if input[:location]
+        q = q.joins(:node).where(servers: {server_location: input[:location].id})
+      end
+
+      if input[:environment]
+        q = q.joins(:node).where(servers: {environment_id: input[:environment].id})
+      end
+
       q
     end
 
