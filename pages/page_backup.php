@@ -347,8 +347,8 @@ if ($_SESSION["logged_in"]) {
 		foreach ($downloads as $dl) {
 			$xtpl->table_td($dl->snapshot->dataset->name);
 			$xtpl->table_td($dl->snapshot->created_at);
-			$xtpl->table_td('<a href="#FIXME">'._('Download').'</a>');
-			$xtpl->table_td('<a href="?page=backup&action=download_destroy&id='.$dl->id.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+			$xtpl->table_td($dl->ready ? '<a href="'.$dl->url.'">'._('Download').'</a>' : _('in progress'));
+			$xtpl->table_td($dl->ready ? '<a href="?page=backup&action=download_destroy&id='.$dl->id.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>' : '');
 			$xtpl->table_tr();
 		}
 		
