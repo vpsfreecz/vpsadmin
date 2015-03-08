@@ -17,6 +17,7 @@ module VpsAdmin::API::Resources
       id :id
       resource User, value_label: :login
       use :input
+      string :url, desc: 'URL at which the archive can be downloaded'
       bool :ready, desc: 'True if the archive is complete and ready for download',
           db_name: :confirmed?
     end
