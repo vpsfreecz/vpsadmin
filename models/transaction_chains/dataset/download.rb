@@ -37,6 +37,13 @@ module TransactionChains
         edit(snapshot, snapshot_download_id: dl.id)
       end
 
+      mail(:snapshot_download_ready, {
+          user: ::User.current,
+          vars: {
+              dl: dl
+          }
+      })
+
       dl
     end
 
