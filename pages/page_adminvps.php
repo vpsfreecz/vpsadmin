@@ -65,19 +65,45 @@ function print_newvps_page3($env, $loc) {
 	
 	$xtpl->form_create('?page=adminvps&section=vps&action=new4&create=1&env_id='.$env.'&loc_id='.$loc, 'post');
 	$xtpl->form_csrf();
-	$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'vps_hostname', '', _("A-z, a-z"), 255);
+	$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'vps_hostname', $_POST['vps_hostname'], _("A-z, a-z"), 255);
 	
 	if ($_SESSION["is_admin"]) {
-		$xtpl->form_add_select(_("HW server").':', 'vps_server', resource_list_to_options($api->node->list(), 'id', 'name'), '', '');
+		$xtpl->form_add_select(_("HW server").':', 'vps_server', resource_list_to_options($api->node->list(), 'id', 'name'), $_POST['vps_server'], '');
 		$xtpl->form_add_select(_("Owner").':', 'm_id', resource_list_to_options($api->user->list(), 'id', 'login'), $_SESSION['member']['m_id'], '');
 	}
 	
-	$xtpl->form_add_select(_("Distribution").':', 'vps_template', resource_list_to_options($api->os_template->list()), '',  '');
+	$xtpl->form_add_select(_("Distribution").':', 'vps_template', resource_list_to_options($api->os_template->list()), $_POST['vps_template'],  '');
+	
+	$params = $api->vps->create->getParameters('input');
+	$vps_resources = array('memory' => 4096, 'cpu' => 8, 'diskspace' => 60*1024, 'ipv4' => 1, 'ipv6' => 1);
+	
+	$user_resources = $api->user->current()->cluster_resource->list(array('meta' => array('includes' => 'environment,cluster_resource')));
+	$resource_map = array();
+	
+	foreach ($user_resources as $r) {
+		$resource_map[ $r->cluster_resource->name ] = $r;
+	}
+	
+	foreach ($vps_resources as $name => $default) {
+		$p = $params->{$name};
+		$r = $resource_map[$name];
+		
+		$xtpl->table_td($p->label.':');
+		$xtpl->form_add_number_pure(
+			$name,
+			$_POST[$name] ? $_POST[$name] : min($default, $r->free),
+			$r->cluster_resource->min,
+			min($r->free, $r->cluster_resource->max),
+			$r->cluster_resource->stepsize,
+			unit_for_cluster_resource($name)
+		);
+		$xtpl->table_tr();
+	}
 	
 	if ($_SESSION["is_admin"]) {
 		//$xtpl->form_add_select(_("IPv4").':', 'ipv4', get_all_ip_list(4), '1', '');
-		$xtpl->form_add_checkbox(_("Boot on create").':', 'boot_after_create', '1', true, $hint = '');
-		$xtpl->form_add_textarea(_("Extra information about VPS").':', 28, 4, 'vps_info', '', '');
+		$xtpl->form_add_checkbox(_("Boot on create").':', 'boot_after_create', '1', (isset($_POST['vps_hostname']) && !isset($_POST['boot_after_create'])) ? false : true, $hint = '');
+		$xtpl->form_add_textarea(_("Extra information about VPS").':', 28, 4, 'vps_info', $_POST['vps_info'], '');
 	}
 	
 	$xtpl->form_out(_("Create"));
@@ -163,7 +189,12 @@ switch ($_GET["action"]) {
 				$params = array(
 					'hostname' => $_POST['vps_hostname'],
 					'os_template' => $_POST['vps_template'],
-					'info' => $_SESSION['is_admin'] ? '' : $_POST['vps_info']
+					'info' => $_SESSION['is_admin'] ? '' : $_POST['vps_info'],
+					'memory' => $_POST['memory'],
+					'cpu' => $_POST['cpu'],
+					'diskspace' => $_POST['diskspace'],
+					'ipv4' => $_POST['ipv4'],
+					'ipv6' => $_POST['ipv6']
 				);
 				
 				if($_SESSION["is_admin"]) {

@@ -425,6 +425,20 @@ function client_params_to_api($action, $from = null) {
 	return $ret;
 }
 
+function unit_for_cluster_resource($name) {
+	switch ($name) {
+		case 'cpu':
+			return _('cores');
+		
+		case 'ipv4':
+		case 'ipv6':
+			return _('addresses');
+		
+		default:
+			return 'MiB';
+	}
+}
+
 function data_size_unitize($val) {
 	$units = array("t" => 19, "g" => 9, "m" => 0);
 	

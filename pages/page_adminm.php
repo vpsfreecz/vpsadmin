@@ -421,20 +421,6 @@ function list_cluster_resources() {
 	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&section=members&action=edit&id={$_GET['id']}");
 }
 
-function unit_for_cluster_resource($name) {
-	switch ($name) {
-		case 'cpu':
-			return _('cores');
-		
-		case 'ipv4':
-		case 'ipv6':
-			return _('addresses');
-		
-		default:
-			return 'MiB';
-	}
-}
-
 function cluster_resource_edit_form() {
 	global $xtpl, $api;
 	
