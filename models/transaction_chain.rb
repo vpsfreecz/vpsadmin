@@ -164,6 +164,13 @@ class TransactionChain < ActiveRecord::Base
     ret
   end
 
+  def mail(*args)
+    m = ::MailTemplate.send_mail!(*args)
+    append(Transactions::Mail::Send, args: m)
+    m.update!(transaction_id: @last_id)
+    m
+  end
+
   def empty?
     size == 0
   end
