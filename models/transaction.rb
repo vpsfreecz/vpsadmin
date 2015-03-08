@@ -186,4 +186,5 @@ module Transactions
   module Storage      ; end
   module Utils        ; end
   module Hypervisor   ; end
+  module Mail         ; end
 end
