@@ -84,7 +84,7 @@ module VpsAdmind
       db.transaction do |t|
         save_transaction(t)
 
-        if @status == :ok && !@rollbacked
+        if (@status == :ok && !@rollbacked) || keep_going?
           # Chain is finished, close up
           if chain_finished?
             run_confirmations(t)
@@ -373,7 +373,10 @@ module VpsAdmind
 
         # FIXME: if rollback fails, original error is overwritten!
         if m == :exec
-          if reversible?
+          if keep_going?
+            log(:debug, self, 'Transaction failed but keep going on')
+
+          elsif reversible?
             log(:debug, self, 'Transaction failed, running rollback')
             @rollbacked = true
             safe_call(klass, :rollback)
@@ -395,7 +398,10 @@ module VpsAdmind
 
         # FIXME: if rollback fails, original error is overwritten!
         if m == :exec
-          if reversible?
+          if keep_going?
+            log(:debug, self, 'Transaction failed but keep going on')
+
+          elsif reversible?
             log(:debug, self, 'Transaction failed, running rollback')
             @rollbacked = true
             safe_call(klass, :rollback)
@@ -419,6 +425,10 @@ module VpsAdmind
 
     def reversible?
       @trans['reversible'].to_i == 1
+    end
+
+    def keep_going?
+      @trans['reversible'].to_i == 2
     end
 
     def pk_cond(pks)
