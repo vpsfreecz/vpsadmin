@@ -4,8 +4,8 @@ module Transactions::Mail
     t_type 9001
     keep_going
 
-    def params(mail)
-      self.t_server = 1 # FIXME
+    def params(node, mail)
+      self.t_server = node.id
 
       {
           to: mail.to,

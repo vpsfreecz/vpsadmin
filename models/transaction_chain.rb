@@ -10,7 +10,7 @@ class TransactionChain < ActiveRecord::Base
   enum state: %i(staged queued done rollbacking failed)
 
   attr_reader :acquired_locks
-  attr_accessor :last_id, :dst_chain, :named, :locks, :urgent
+  attr_accessor :last_id, :dst_chain, :named, :locks, :urgent, :mail_server
 
   # Create new transaction chain. This method has to be used, do not
   # create instances of TransactionChain yourself.
@@ -166,7 +166,7 @@ class TransactionChain < ActiveRecord::Base
 
   def mail(*args)
     m = ::MailTemplate.send_mail!(*args)
-    append(Transactions::Mail::Send, args: m)
+    append(Transactions::Mail::Send, args: [find_mail_server, m])
     m.update!(transaction_id: @last_id)
     m
   end
@@ -189,6 +189,14 @@ class TransactionChain < ActiveRecord::Base
     @last_id = klass.fire_chained(@dst_chain, dep, urgent, *args, &block)
     @named[name] = @last_id if name
     @last_id
+  end
+
+  def find_mail_server
+    chain = dst_chain || self
+    return chain.mail_server if chain.mail_server
+
+    chain.mail_server = ::Node.find_by(server_type: 'mailer')
+    chain.mail_server ||= ::Node.order('server_id').take!
   end
 end
 
