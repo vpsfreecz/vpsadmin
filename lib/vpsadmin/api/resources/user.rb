@@ -170,7 +170,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def query
-        if current_user.role != :admin && current_user.id != params[:user_id]
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
           error("I don't like the smell of this")
         end
 
@@ -205,7 +205,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        if current_user.role != :admin && current_user.id != params[:user_id]
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
           error("I don't like the smell of this")
         end
 
