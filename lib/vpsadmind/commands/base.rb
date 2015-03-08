@@ -100,4 +100,5 @@ module VpsAdmind::Commands
   module Dataset     ; end
   module Shaper      ; end
   module Utils       ; end
+  module Mail        ; end
 end

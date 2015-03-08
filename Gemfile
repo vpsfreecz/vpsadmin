@@ -7,3 +7,4 @@ gem "thin"
 gem "sinatra"
 gem 'pry-remote'
 gem 'require_all'
+gem 'mail'
