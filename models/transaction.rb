@@ -14,6 +14,7 @@ class Transaction < ActiveRecord::Base
   has_many :transaction_confirmations
 
   enum t_done: %i(waiting done staged)
+  enum reversible: %i(not_reversible is_reversible keep_going)
 
   before_save :set_init_values
 
@@ -35,11 +36,15 @@ class Transaction < ActiveRecord::Base
     end
 
     def irreversible
-      @reversible = false
+      @reversible = :is_reversible
     end
 
     def reversible?
-      @reversible.nil? ? true : @reversible
+      @reversible.nil? ? true : @reversible == :is_reversible
+    end
+
+    def keep_going
+      @reversible = :keep_going
     end
   end
 
@@ -54,7 +59,7 @@ class Transaction < ActiveRecord::Base
     t.t_depends_on = dep
     t.t_type = t.class.t_type if t.class.t_type
     t.t_urgent = urgent
-    t.reversible = reversible?
+    t.reversible = @reversible.nil? ? :is_reversible : @reversible
 
     if block
       t.t_done = :staged
