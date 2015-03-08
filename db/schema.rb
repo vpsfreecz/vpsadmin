@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150218142131) do
+ActiveRecord::Schema.define(version: 20150307174728) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -226,6 +226,55 @@ ActiveRecord::Schema.define(version: 20150218142131) do
     t.integer "timestamp", null: false
     t.text    "msg",       null: false
   end
+
+  create_table "mail_logs", force: true do |t|
+    t.integer  "user_id"
+    t.string   "to",               limit: 500, null: false
+    t.string   "cc",               limit: 500, null: false
+    t.string   "bcc",              limit: 500, null: false
+    t.string   "from",                         null: false
+    t.string   "reply_to"
+    t.string   "return_path"
+    t.string   "message_id"
+    t.string   "in_reply_to"
+    t.string   "references"
+    t.string   "subject",                      null: false
+    t.text     "text_plain"
+    t.text     "text_html"
+    t.integer  "mail_template_id"
+    t.integer  "transaction_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "mail_recipients", force: true do |t|
+    t.string "label", limit: 100, null: false
+    t.string "to",    limit: 500, null: false
+    t.string "cc",    limit: 500
+    t.string "bcc",   limit: 500
+  end
+
+  create_table "mail_template_recipients", force: true do |t|
+    t.integer "mail_template_id",  null: false
+    t.integer "mail_recipient_id", null: false
+  end
+
+  add_index "mail_template_recipients", ["mail_template_id", "mail_recipient_id"], name: "mail_template_recipients_unique", unique: true, using: :btree
+
+  create_table "mail_templates", force: true do |t|
+    t.string   "name",        limit: 100, null: false
+    t.string   "label",       limit: 100, null: false
+    t.string   "from",                    null: false
+    t.string   "reply_to"
+    t.string   "return_path"
+    t.string   "subject",                 null: false
+    t.text     "text_plain"
+    t.text     "text_html"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "mail_templates", ["name"], name: "index_mail_templates_on_name", unique: true, using: :btree
 
   create_table "mailer", force: true do |t|
     t.integer "sentTime",  null: false
