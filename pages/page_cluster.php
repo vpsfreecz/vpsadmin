@@ -854,7 +854,7 @@ switch($_REQUEST["action"]) {
 				redirect('?page=cluster&action=mail_templates');
 				
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				$xtpl->perex_format_errors(_('Download failed'), $e->getResponse());
+				$xtpl->perex_format_errors(_('Mail template deletion failed'), $e->getResponse());
 			}
 			
 		} else {
