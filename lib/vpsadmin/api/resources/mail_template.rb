@@ -11,8 +11,8 @@ module VpsAdmin::API::Resources
       string :reply_to
       string :return_path
       string :subject
-      string :text_plain
-      string :text_html
+      text :text_plain
+      text :text_html
     end
 
     params(:all) do
