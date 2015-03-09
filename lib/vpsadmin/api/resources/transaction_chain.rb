@@ -67,9 +67,11 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
   class Transaction < HaveAPI::Resource
     version 1
     desc 'Access transactions linked in a chain'
+    route ':transaction_chain_id/transactions'
     model ::Transaction
 
     params(:all) do
+      id :id
       resource VpsAdmin::API::Resources::Node, label: 'Node', value_label: :name
       resource VpsAdmin::API::Resources::User, label: 'User', value_label: :login
       integer :type, db_name: :t_type
@@ -77,7 +79,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
       bool :urgent, db_name: :t_urgent
       integer :priority, db_name: :t_priority
       integer :success, db_name: :t_success
-      integer :done, db_name: :t_done
+      string :done, db_name: :t_done, choices: ::Transaction.t_dones.values
       string :input, db_name: :t_param
       string :output, db_name: :t_output
       datetime :created_at
@@ -88,7 +90,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
     class Index < HaveAPI::Actions::Default::Index
       desc 'List transactions'
 
-      output do
+      output(:object_list) do
         use :all
       end
 
@@ -99,9 +101,16 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
         allow
       end
 
-      def exec
+      def query
         ::Transaction.where(with_restricted(transaction_chain_id: params[:transaction_chain_id]))
-          .limit(input[:limit]).offset(input[:offset]).order('t_id DESC')
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        with_includes(query).limit(input[:limit]).offset(input[:offset]).order('t_id DESC')
       end
     end
 
@@ -124,7 +133,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
         @trans = ::Transaction.find_by!(
             with_restricted(
                 transaction_chain_id: params[:transaction_chain_id],
-                id: params[:transaction_id]
+                t_id: params[:transaction_id]
             )
         )
       end
