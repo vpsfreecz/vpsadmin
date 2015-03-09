@@ -8,9 +8,9 @@ class Transaction < ActiveRecord::Base
   self.primary_key = 't_id'
 
   belongs_to :transaction_chain
-  references :user, foreign_key: :t_m_id
-  references :node, foreign_key: :t_server
-  references :vps, foreignKey: :t_vps
+  belongs_to :user, foreign_key: :t_m_id
+  belongs_to :node, foreign_key: :t_server
+  belongs_to :vps, foreign_key: :t_vps
   has_many :transaction_confirmations
 
   enum t_done: %i(waiting done staged)
