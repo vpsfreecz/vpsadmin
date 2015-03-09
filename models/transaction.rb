@@ -94,11 +94,11 @@ class Transaction < ActiveRecord::Base
   end
 
   def started_at
-    Time.new(t_real_start)
+    Time.new(t_real_start) if t_real_start
   end
 
   def finished_at
-    Time.new(t_end)
+    Time.new(t_end) if t_end
   end
 
   # Configure transaction confirmations - objects in the database
