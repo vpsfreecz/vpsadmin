@@ -350,6 +350,10 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 			$xtpl->form_add_input_pure('text', '30', $name, $v);
 			break;
 		
+		case 'Text':
+			$xtpl->form_add_textarea_pure(80, 10, $name, $v);
+			break;
+		
 		case 'Boolean':
 			$xtpl->form_add_checkbox_pure($name, '1', $v);
 			break;
