@@ -28,8 +28,16 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
       allow
     end
 
+    def query
+      ::TransactionChain.where(with_restricted)
+    end
+
+    def count
+      query.count
+    end
+
     def exec
-      ::TransactionChain.where(with_restricted).limit(input[:limit]).offset(input[:offset]).order('created_at DESC')
+      with_includes(query).limit(input[:limit]).offset(input[:offset]).order('created_at DESC')
     end
   end
 
