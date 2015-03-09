@@ -87,7 +87,7 @@ module VpsAdmin::API::Resources
       end
     end
 
-    class Update < HaveAPI::Actions::Default::Create
+    class Update < HaveAPI::Actions::Default::Update
       desc 'Update a mail recipient'
 
       input do
