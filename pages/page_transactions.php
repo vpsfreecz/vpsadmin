@@ -86,7 +86,7 @@ function list_chains() {
 		$xtpl->table_td($chain->label);
 		$xtpl->table_td($chain->state);
 		$xtpl->table_td($chain->size);
-		$xtpl->table_td($chain->progress .' ('.($chain->progress / $chain->size * 100).' %)');
+		$xtpl->table_td($chain->progress .' ('.round($chain->progress / $chain->size * 100, 0).' %)');
 		$xtpl->table_tr(false, chain_class($chain));
 	}
 
@@ -137,7 +137,7 @@ function chain_transactions($chain_id) {
 	$xtpl->table_tr();
 	
 	$xtpl->table_td(_('Progress'));
-	$xtpl->table_td($chain->progress .' ('.($chain->progress / $chain->size * 100).' %)');
+	$xtpl->table_td($chain->progress .' ('.round($chain->progress / $chain->size * 100, 0).' %)');
 	$xtpl->table_tr();
 	
 	$xtpl->table_td(_('User'));
@@ -244,7 +244,7 @@ function chain_transactions($chain_id) {
 
 if ($_SESSION["logged_in"]) {
 
-if (isset($_GET['chain'])) {
+if ($_GET['chain']) {
 	chain_transactions($_GET['chain']);
 
 } else {
