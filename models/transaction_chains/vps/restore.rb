@@ -3,6 +3,9 @@ module TransactionChains
     label 'Restore VPS'
 
     def link_chain(vps, snapshot)
+      lock(vps)
+      set_concerns(:affect, [vps.class.name, vps.id])
+
       @vps = vps
 
       dip = snapshot.dataset.dataset_in_pools.where(pool_id: vps.dataset_in_pool.pool_id).take!

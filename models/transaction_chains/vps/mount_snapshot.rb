@@ -7,6 +7,7 @@ module TransactionChains
     # or remotely to +vps+ at +dst+.
     def link_chain(vps, snapshot, dst)
       lock(vps)
+      set_concerns(:affect, [vps.class.name, vps.id])
 
       hypervisor, primary, backup = snap_in_pools(snapshot)
       clone_from = nil

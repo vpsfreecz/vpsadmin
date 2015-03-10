@@ -6,6 +6,7 @@ module TransactionChains
 
     def link_chain(vps, dst_node)
       lock(vps)
+      set_concerns(:affect, [vps.class.name, vps.id])
 
       dst_vps = ::Vps.find(vps.id)
       dst_vps.node = dst_node

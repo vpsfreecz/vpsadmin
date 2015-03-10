@@ -1,6 +1,6 @@
 module TransactionChains
   class Vps::Create < ::TransactionChain
-    label 'Create VPS'
+    label 'Create'
 
     def link_chain(vps, add_ips)
       vps.save!
@@ -77,6 +77,8 @@ module TransactionChains
       end
 
       vps.save!
+
+      set_concerns(:affect, [vps.class.name, vps.id])
 
       # mapping, last_id = StorageExport.create_default_exports(self, depend: last_id)
       # create_default_mounts(mapping)

@@ -4,6 +4,7 @@ module TransactionChains
 
     def link_chain(vps, resources)
       lock(vps)
+      set_concerns(:affect, [vps.class.name, vps.id])
 
       append(Transactions::Vps::Resources, args: [vps, resources]) do
         resources.each do |r|

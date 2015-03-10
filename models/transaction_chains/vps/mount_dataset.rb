@@ -5,6 +5,7 @@ module TransactionChains
 
     def link_chain(vps, dataset, dst, mode)
       lock(vps)
+      set_concerns(:affect, [vps.class.name, vps.id])
 
       dip = dataset.dataset_in_pools.joins(:pool).where(
           pools: {role: [::Pool.roles[:hypervisor], ::Pool.roles[:primary]]}

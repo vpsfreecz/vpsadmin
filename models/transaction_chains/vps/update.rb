@@ -1,10 +1,11 @@
 module TransactionChains
   class Vps::Update < ::TransactionChain
-    label 'Modify VPS'
+    label 'Modify'
     allow_empty
 
     def link_chain(vps, attrs)
       lock(vps)
+      set_concerns(:affect, [vps.class.name, vps.id])
 
       vps.assign_attributes(attrs)
       raise ActiveRecord::RecordInvalid, vps unless vps.valid?

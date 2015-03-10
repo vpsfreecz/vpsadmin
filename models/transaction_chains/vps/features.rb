@@ -1,9 +1,10 @@
 module TransactionChains
   class Vps::Features < ::TransactionChain
-    label 'VPS features'
+    label 'Features'
 
     def link_chain(vps, features)
       lock(vps)
+      set_concerns(:affect, [vps.class.name, vps.id])
 
       append(Transactions::Vps::Features, args: [vps, features]) do
         vps.vps_features.each do |f|

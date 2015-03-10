@@ -5,6 +5,7 @@ module TransactionChains
     # +new_configs+ is a list of config IDs.
     def link_chain(vps, new_configs)
       lock(vps)
+      set_concerns(:affect, [vps.class.name, vps.id])
 
       append(Transactions::Vps::ApplyConfig, args: vps) do
         # First remove old configs

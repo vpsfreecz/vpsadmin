@@ -1,8 +1,11 @@
 module TransactionChains
   class Vps::AddIp < ::TransactionChain
-    label 'Add IP address'
+    label 'IP+'
 
     def link_chain(vps, ips)
+      lock(vps)
+      set_concerns(:affect, [vps.class.name, vps.id])
+
       use = vps.reallocate_resource!(:ipv4, vps.ipv4 + ips.size, user: vps.user)
 
       ips.each do |ip|

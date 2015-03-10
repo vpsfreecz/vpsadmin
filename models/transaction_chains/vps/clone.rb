@@ -1,7 +1,7 @@
 module TransactionChains
   # Clone VPS to new or another VPS.
   class Vps::Clone < ::TransactionChain
-    label 'Clone VPS'
+    label 'Clone'
 
     def link_chain(vps, node, attrs)
       lock(vps)
@@ -20,8 +20,6 @@ module TransactionChains
       # - Destroy all datasets
       # - Reallocate resources if attrs[resources]
       # - Continue the process as above, except creating vz root
-
-      # FIXME: dataset plans
 
       @src_pool = vps.dataset_in_pool.pool
       @dst_pool = node.pools.where(role: :hypervisor).take!
@@ -117,6 +115,8 @@ module TransactionChains
       end
 
       dst_vps.save!
+
+      set_concerns(:transform, [vps.class.name, vps.id], [vps.class.name, dst_vps.id])
 
       # Configs
       if attrs[:configs]

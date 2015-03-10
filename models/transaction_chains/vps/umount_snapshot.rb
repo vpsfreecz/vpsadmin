@@ -5,6 +5,7 @@ module TransactionChains
 
     def link_chain(vps, mount)
       lock(vps)
+      set_concerns(:affect, [vps.class.name, vps.id])
 
       mount.confirmed = ::Mount.confirmed(:confirm_destroy)
       mount.save!
