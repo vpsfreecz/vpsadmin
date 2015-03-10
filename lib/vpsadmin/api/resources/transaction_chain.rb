@@ -92,7 +92,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
       bool :urgent, db_name: :t_urgent
       integer :priority, db_name: :t_priority
       integer :success, db_name: :t_success
-      string :done, db_name: :t_done, choices: ::Transaction.t_dones.values
+      string :done, db_name: :t_done, choices: ::Transaction.t_dones.keys
       string :input, db_name: :t_param
       string :output, db_name: :t_output
       datetime :created_at
@@ -102,6 +102,13 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
 
     class Index < HaveAPI::Actions::Default::Index
       desc 'List transactions'
+
+      input do
+        resource VpsAdmin::API::Resources::Node, label: 'Node', value_label: :name
+        integer :type, db_name: :t_type
+        integer :success, db_name: :t_success
+        string :done, db_name: :t_done, choices: ::Transaction.t_dones.keys
+      end
 
       output(:object_list) do
         use :all
@@ -115,7 +122,14 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
       end
 
       def query
-        ::Transaction.where(with_restricted(transaction_chain_id: params[:transaction_chain_id]))
+        q = ::Transaction.where(with_restricted(transaction_chain_id: params[:transaction_chain_id]))
+
+        q = q.where(node: input[:node]) if input[:node]
+        q = q.where(t_type: input[:type]) if input[:type]
+        q = q.where(t_success: input[:success]) if input[:success]
+        q = q.where(t_done: ::Transaction.t_dones[input[:done]]) if input[:done]
+
+        q
       end
 
       def count
