@@ -241,6 +241,10 @@ function format_duration($interval) {
 		return sprintf("%02d:%02d:%02d", $h, $m, $s);
 }
 
+function tolocaltz($datetime, $format = "Y-m-d H:i:s") {
+	return date($format, strtotime($datetime));
+}
+
 function random_string($len) {
 	$str = "";
 	$chars = array_merge(range(0, 9), range('a', 'z'), range('A', 'Z'));
