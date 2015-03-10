@@ -30,6 +30,7 @@ class Transaction < ActiveRecord::Base
     def t_type(t=nil)
       if t
         @t_type = t
+        ::Transaction.register_type(t, self)
       else
         @t_type
       end
@@ -45,6 +46,15 @@ class Transaction < ActiveRecord::Base
 
     def keep_going
       @reversible = :keep_going
+    end
+
+    def register_type(t, klass)
+      @types ||= {}
+      @types[t] = klass
+    end
+
+    def for_type(t)
+      @types[t]
     end
   end
 
@@ -87,6 +97,10 @@ class Transaction < ActiveRecord::Base
   # Returns hash of parameters for single transaction.
   def params(*args)
     raise NotImplementedError
+  end
+
+  def name
+    self.class.for_type(t_type).to_s.demodulize
   end
 
   def created_at
