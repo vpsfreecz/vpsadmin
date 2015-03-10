@@ -153,7 +153,9 @@ class TransactionChain < ActiveRecord::Base
 
   # Call this method from TransactionChain#link_chain to include
   # +chain+. +args+ are passed to the chain as in ::fire.
-  def use_chain(chain, args: [], urgent: false, method: :link_chain)
+  def use_chain(chain, args: [], urgent: nil, method: :link_chain)
+    urgent ||= self.urgent
+
     c, ret = chain.use_in(
         self,
         args: args.is_a?(Array) ? args : [args],
