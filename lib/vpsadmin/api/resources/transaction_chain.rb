@@ -7,7 +7,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
     id :id, label: 'Chain ID'
     string :name, label: 'Name', desc: 'For internal use only'
     string :label, label: 'Label', desc: 'Human-friendly name'
-    string :state, label: 'State', choices: ::TransactionChain.states.values
+    string :state, label: 'State', choices: ::TransactionChain.states.keys
     integer :size, label: 'Size', desc: 'Number of transactions in the chain'
     integer :progress, label: 'Progress', desc: 'How many transactions are finished'
     resource VpsAdmin::API::Resources::User, label: 'User', value_label: :login
@@ -16,6 +16,12 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
 
   class Index < HaveAPI::Actions::Default::Index
     desc 'List transaction chains'
+
+    input do
+      string :name, label: 'Name', desc: 'For internal use only'
+      string :state, label: 'State', choices: ::TransactionChain.states.keys
+      resource VpsAdmin::API::Resources::User, label: 'User', value_label: :login
+    end
 
     output(:object_list) do
       use :all
@@ -29,7 +35,13 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
     end
 
     def query
-      ::TransactionChain.where(with_restricted)
+      q = ::TransactionChain.where(with_restricted)
+
+      q = q.where(name: input[:name]) if input[:name]
+      q = q.where(state: ::TransactionChain.states[input[:state]]) if input[:state]
+      q = q.where(user: input[:user]) if input[:user]
+
+      q
     end
 
     def count
