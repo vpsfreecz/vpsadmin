@@ -41,6 +41,7 @@ function list_chains() {
 	$xtpl->table_tr();
 
 	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
+	$xtpl->form_add_input(_("Exact ID").':', 'text', '40', 'chain', get_val('chain'));
 	$xtpl->form_add_input(_("User ID").':', 'text', '40', 'user', get_val('user'));
 	$xtpl->form_add_input(_("State").':', 'text', '40', 'state', get_val('state'), 'queued, done, rollbacking, failed');
 	$xtpl->form_add_input(_("Name").':', 'text', '40', 'name', get_val('name'));
