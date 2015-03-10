@@ -477,4 +477,45 @@ function get_val($name, $default = '') {
 	return $default;
 }
 
+function transaction_concern_class($klass) {
+	$tr = array(
+		'Vps' => 'VPS'
+	);
+	
+	if (array_key_exists($klass, $tr))
+		return $tr[$klass];
+	
+	return $klass;
+}
+
+function transaction_concern_link($klass, $row_id) {
+	switch ($klass) {
+		case 'Vps':
+			return '<a href="?page=adminvps&action=info&veid='.$row_id.'">'.$row_id.'</a>';
+		
+		default:
+			return "$row_id";
+	}
+}
+
+function transaction_chain_concerns($chain, $limit = 10) {
+	if (!$chain->concerns)
+		return '---';
+	
+	switch ($chain->concerns->type) {
+		case 'affect':
+			$o = $chain->concerns->objects[0];
+			return transaction_concern_class($o[0]).' '.transaction_concern_link($o[0], $o[1]);
+			
+		case 'transform':
+			$src = $chain->concerns->objects[0];
+			$dst = $chain->concerns->objects[1];
+			
+			return transaction_concern_class($src[0]).' '.transaction_concern_link($src[0], $src[1]).' -> '.transaction_concern_link($dst[0], $dst[1]);
+		
+		default:
+			return _('Unknown');
+	}
+}
+
 ?>

@@ -128,6 +128,10 @@ function chain_transactions($chain_id) {
 	$xtpl->table_td($chain->name);
 	$xtpl->table_tr();
 	
+	$xtpl->table_td(_('Concerns'));
+	$xtpl->table_td(transaction_chain_concerns($chain));
+	$xtpl->table_tr();
+	
 	$xtpl->table_td(_('State'));
 	$xtpl->table_td($chain->state);
 	$xtpl->table_tr();

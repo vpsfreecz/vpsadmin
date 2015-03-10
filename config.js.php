@@ -46,6 +46,46 @@ function chainIcon(state) {
 	return img.attr('src', 'template/icons/' + src);
 }
 
+function chainConcernLink(obj) {
+	switch (obj[0]) {
+		case 'Vps':
+			return '<a href="?page=adminvps&action=info&veid='+ obj[1] +'">'+ obj[1] +'</a>';
+		
+		default:
+			return obj[1];
+	}
+}
+
+function chainConcernClass(obj) {
+	var klassMap = {
+		Vps: 'VPS'
+	};
+	
+	if (klassMap[obj[0]])
+		return klassMap[obj[0]];
+	
+	return obj[0];
+}
+
+function chainConcerns(chain) {
+	if (!chain.concerns)
+		return '---';
+	
+	switch (chain.concerns.type) {
+		case 'affect':
+			return chainConcernClass(chain.concerns.objects[0]) + ' ' + chainConcernLink(chain.concerns.objects[0]);
+			
+		case 'transform':
+			src = chain.concerns.objects[0];
+			dst = chain.concerns.objects[1];
+			
+			return chainConcernClass(src) + ' ' + chainConcernLink(src) + ' -> ' + chainConcernLink(dst);
+			
+		default:
+			return 'Unknown';
+	}
+}
+
 function createChainRow(chain) {
 	var tr = $("<tr>")
 		.attr('data-transaction-chain-id', chain.id)
@@ -53,6 +93,7 @@ function createChainRow(chain) {
 		.addClass(chain.state);
 	
 	tr.append($("<td>").html( "<a href=\"?page=transactions&chain="+ chain.id +"\">"+ chain.id +"</a>" ));
+	tr.append($("<td>").html(chainConcerns(chain)));
 	tr.append($("<td>").text( chain.label ));
 	tr.append($("<td>").attr('align', 'right').text( Math.round((100.0 / chain.size) * chain.progress) + ' %' ));
 	tr.append($("<td>").append( chainIcon(chain.state) ));
@@ -88,8 +129,8 @@ function checkChanges(chains, from) {
 			this.setAttribute('data-transaction-chain-progress', chain.progress);
 			$(this).removeClass().addClass(chain.state);
 			
-			$(this).find("td:nth-child(3)").text( Math.round((100.0 / chain.size) * chain.progress) + ' %' );
-			$(this).find("td:nth-child(4) img").replaceWith( chainIcon(chain.state) );
+			$(this).find("td:nth-child(4)").text( Math.round((100.0 / chain.size) * chain.progress) + ' %' );
+			$(this).find("td:nth-child(5) img").replaceWith( chainIcon(chain.state) );
 		}
 		
 		i += 1;

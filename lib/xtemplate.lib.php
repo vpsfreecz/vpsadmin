@@ -874,6 +874,7 @@ class XTemplate {
 	  */
 	function transaction_chain($chain) {
 		$this->assign('T_ID', $chain->id);
+		$this->assign('T_CONCERNS', transaction_chain_concerns($chain));
 		$this->assign('T_LABEL', $chain->label);
 		$this->assign('T_CLASS', $chain->state);
 		$this->assign('T_PROGRESS', round((100.0 / $chain->size) * $chain->progress). '&nbsp;%');
@@ -909,6 +910,7 @@ class XTemplate {
 	function transaction_chains_out() {
 		$this->assign("L_TRANSACTION_LOG", _("Transaction log"));
 		$this->assign("L_LAST10", _("last 10"));
+		$this->assign("L_WHAT", _("What"));
 		$this->assign("L_ACTION", _("Action"));
 		$this->assign("L_PROGRESS", _("Progress"));
 		
