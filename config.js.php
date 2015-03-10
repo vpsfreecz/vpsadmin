@@ -52,7 +52,7 @@ function createChainRow(chain) {
 		.attr('data-transaction-chain-progress', chain.progress)
 		.addClass(chain.state);
 	
-	tr.append($("<td>").text( chain.id ));
+	tr.append($("<td>").html( "<a href=\"?page=transactions&chain="+ chain.id +"\">"+ chain.id +"</a>" ));
 	tr.append($("<td>").text( chain.label ));
 	tr.append($("<td>").attr('align', 'right').text( Math.round((100.0 / chain.size) * chain.progress) + ' %' ));
 	tr.append($("<td>").append( chainIcon(chain.state) ));
@@ -69,7 +69,10 @@ function addChains(chains, num) {
 		var row = createChainRow(chains.itemAt(i));
 		
 		table.find("th").parent().after(row);
-		row.fadeIn("slow");
+		row.fadeIn({
+			duration: "slow",
+			start: function(){ this.style.display = 'table-row'; }
+		});
 	}
 }
 
@@ -136,7 +139,7 @@ function updateChains(api) {
 		//return;
 		chainTimeout = setTimeout(function() {
 			updateChains(api);
-		}, 1000);
+		}, 3000);
 	});
 }
 
