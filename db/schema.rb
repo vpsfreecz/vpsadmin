@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150307174728) do
+ActiveRecord::Schema.define(version: 20150309175827) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -546,6 +546,7 @@ ActiveRecord::Schema.define(version: 20150307174728) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer  "urgent_rollback",             default: 0, null: false
+    t.string   "concerns"
   end
 
   create_table "transaction_confirmations", force: true do |t|
@@ -580,7 +581,7 @@ ActiveRecord::Schema.define(version: 20150307174728) do
     t.boolean "t_urgent",             default: false, null: false
     t.integer "t_priority",           default: 0,     null: false
     t.integer "t_success",                            null: false
-    t.boolean "t_done",                               null: false
+    t.integer "t_done",                               null: false
     t.text    "t_param"
     t.text    "t_output"
     t.integer "transaction_chain_id",                 null: false

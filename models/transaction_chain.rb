@@ -8,6 +8,7 @@ class TransactionChain < ActiveRecord::Base
   belongs_to :user
 
   enum state: %i(staged queued done rollbacking failed)
+  serialize :concerns
 
   attr_reader :acquired_locks
   attr_accessor :last_id, :dst_chain, :named, :locks, :urgent, :mail_server
@@ -171,6 +172,21 @@ class TransactionChain < ActiveRecord::Base
     append(Transactions::Mail::Send, args: [find_mail_server, m])
     m.update!(transaction_id: @last_id)
     m
+  end
+
+  # Set chain concerns.
+  # +type+ can be one of:
+  # [affect]     the chain affects these objects
+  # [transform]  the chain transforms the first object into another
+  #
+  # +objects+ is an array of concerned objects. Every object is represented
+  # by an array, where the first item is class name, the second is object id.
+  # For example: type=transform, objects=[[Vps, 101], [Vps, 102]]
+  def set_concerns(type, *objects)
+    self.concerns = {
+        type: type,
+        objects: objects
+    }
   end
 
   def empty?

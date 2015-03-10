@@ -12,6 +12,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
     integer :progress, label: 'Progress', desc: 'How many transactions are finished'
     resource VpsAdmin::API::Resources::User, label: 'User', value_label: :login
     datetime :created_at, label: 'Creation date'
+    custom :concerns
   end
 
   class Index < HaveAPI::Actions::Default::Index
