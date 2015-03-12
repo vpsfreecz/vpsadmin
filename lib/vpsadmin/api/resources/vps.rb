@@ -285,6 +285,8 @@ END
       use :common
       patch :hostname, required: false
       VpsAdmin::API::ClusterResources.to_params(::Vps, self, resources: %i(cpu memory swap))
+      string :change_reason, label: 'Change reason',
+             desc: 'If filled, it is send to VPS owner in an email'
     end
 
     authorize do |u|
