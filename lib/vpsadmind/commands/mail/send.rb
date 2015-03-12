@@ -17,18 +17,27 @@ module VpsAdmind
 
       m.subject = @subject
 
-      if @text_plain
+      if has_type?(:plain) && has_type?(:html)
         p = Mail::Part.new
         p.content_type 'text/plain; charset=UTF-8'
         p.body = @text_plain
         m.text_part = p
-      end
 
-      if @text_html
         p = Mail::Part.new
         p.content_type 'text/html; charset=UTF-8'
         p.body = @text_html
         m.html_part = p
+
+      elsif has_type?(:plain)
+        m.content_type 'text/plain; charset=UTF-8'
+        m.body = @text_plain
+
+      elsif has_type?(:html)
+        m.content_type 'text/html; charset=UTF-8'
+        m.body = @text_html
+
+      else
+        fail 'Message body missing'
       end
 
       m.header['X-Mailer'] = 'vpsAdmin'
@@ -57,6 +66,12 @@ module VpsAdmind
 
     def rollback
       ok
+    end
+
+    protected
+    def has_type?(t)
+      v = instance_variable_get("@text_#{t}")
+      v && !v.empty?
     end
   end
 end
