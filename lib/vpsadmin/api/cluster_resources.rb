@@ -154,7 +154,7 @@ module VpsAdmin::API
         ret
       end
 
-      def reallocate_resources(resources, user, override: nil, lock_type: nil)
+      def reallocate_resources(resources, user, chain: nil, override: nil, lock_type: nil)
         ret = []
         available = Private.registered_resources(self)
 
@@ -163,6 +163,7 @@ module VpsAdmin::API
               r,
               resources[r],
               user: user,
+              chain: chain,
               override: override,
               lock_type: lock_type
           ) if resources.has_key?(r)
@@ -196,6 +197,8 @@ module VpsAdmin::API
           raise Exceptions::UserResourceMissing,
                 "user #{user.login} does not have resource #{resource}"
         end
+
+        chain.lock(user_resource) if chain
 
         use = ::ClusterResourceUse.create(
             user_cluster_resource: user_resource,
@@ -257,6 +260,8 @@ module VpsAdmin::API
           )
         end
 
+        chain.lock(use.user_cluster_resource) if chain
+
         use.value = value
         use.admin_override = override
         use.admin_lock_type = lock_type unless lock_type.nil?
@@ -278,6 +283,7 @@ module VpsAdmin::API
                         || ::ClusterResource.find_by!(name: resource)
 
         use ||= Private.find_resource_use!(self, resource)
+        chain.lock(use.user_cluster_resource) if chain
 
         if resource_obj.resource_type.to_sym == :object
           chain.use_chain(

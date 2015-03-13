@@ -1,4 +1,6 @@
 class UserClusterResource < ActiveRecord::Base
+  include Lockable
+
   belongs_to :user
   belongs_to :environment
   belongs_to :cluster_resource

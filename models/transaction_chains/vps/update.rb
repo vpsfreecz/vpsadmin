@@ -78,6 +78,7 @@ module TransactionChains
       resources = vps.reallocate_resources(
           attrs,
           vps.user,
+          chain: self,
           override: opts[:admin_override],
           lock_type: opts[:admin_lock_type]
       )
