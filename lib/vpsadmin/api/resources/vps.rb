@@ -287,6 +287,10 @@ END
       VpsAdmin::API::ClusterResources.to_params(::Vps, self, resources: %i(cpu memory swap))
       string :change_reason, label: 'Change reason',
              desc: 'If filled, it is send to VPS owner in an email'
+      bool :admin_override, label: 'Admin override',
+           desc: 'Make it possible to assign more resource than the user actually has'
+      string :admin_lock_type, label: 'Admin lock type', choices: %i(no_lock absolute not_less not_more),
+          desc: 'How is the admin lock enforced'
     end
 
     authorize do |u|

@@ -1,11 +1,13 @@
 class ClusterResourceUse < ActiveRecord::Base
+  include Confirmable
+
   belongs_to :user_cluster_resource
+
+  enum admin_lock_type: %i(no_lock absolute not_less not_more)
 
   validate :check_allocation
 
-  include Confirmable
-
-  attr_accessor :resource_transfer
+  attr_accessor :resource_transfer, :admin_override, :attr_changes
 
   def self.for_obj(obj)
     self.where(
@@ -17,6 +19,14 @@ class ClusterResourceUse < ActiveRecord::Base
 
   protected
   def check_allocation
+    self.attr_changes ||= {value: self.value}
+
+    if ::User.current.role == :admin
+      self.admin_limit = admin_lock_type == 'no_lock' ? nil : self.value
+      attr_changes[:admin_limit] = self.admin_limit
+      attr_changes[:admin_lock_type] = self.class.admin_lock_types[self.admin_lock_type]
+    end
+
     used = self.class.where(
         user_cluster_resource: user_cluster_resource
     ).where.not(
@@ -32,7 +42,7 @@ class ClusterResourceUse < ActiveRecord::Base
     min = user_cluster_resource.cluster_resource.min
     max = user_cluster_resource.cluster_resource.max
 
-    if total > user_cluster_resource.value
+    if !admin_override && total > user_cluster_resource.value
       errors.add(
           :value,
           "cannot allocate more #{user_cluster_resource.cluster_resource.name} than is available (#{user_cluster_resource.value - used} left)"
@@ -51,6 +61,21 @@ class ClusterResourceUse < ActiveRecord::Base
           :value,
           "is not a multiple of step size (#{user_cluster_resource.cluster_resource.stepsize})"
       )
+    end
+
+    if self.admin_limit
+      case self.admin_lock_type
+        when 'absolute'
+          errors.add(:value, "cannot allocate other than #{admin_limit}") if admin_limit != value
+
+        when 'not_less'
+          errors.add(:value, "cannot allocate less than #{admin_limit}") if value < admin_limit
+
+        when 'not_more'
+          errors.add(:value, "cannot allocate more than #{admin_limit}") if value > admin_limit
+        else
+
+      end
     end
   end
 end

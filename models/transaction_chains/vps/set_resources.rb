@@ -9,7 +9,7 @@ module TransactionChains
       append(Transactions::Vps::Resources, args: [vps, resources]) do
         resources.each do |r|
           if r.confirmed == :confirmed
-            edit(r, value: r.value)
+            edit(r, r.attr_changes)
 
           else
             create(r)

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150309175827) do
+ActiveRecord::Schema.define(version: 20150312171845) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -56,6 +56,8 @@ ActiveRecord::Schema.define(version: 20150309175827) do
     t.integer "row_id",                               null: false
     t.integer "value",                                null: false
     t.integer "confirmed",                default: 0, null: false
+    t.integer "admin_lock_type",          default: 0, null: false
+    t.integer "admin_limit"
   end
 
   create_table "cluster_resources", force: true do |t|

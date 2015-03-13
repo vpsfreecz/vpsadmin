@@ -7,8 +7,12 @@ module TransactionChains
       lock(vps)
       set_concerns(:affect, [vps.class.name, vps.id])
 
-      change_reason = attrs[:change_reason]
-      attrs.delete(:change_reason)
+      opts = {}
+
+      %i(change_reason admin_override admin_lock_type).each do |opt|
+        opts[opt] = attrs[opt]
+        attrs.delete(opt)
+      end
 
       vps.assign_attributes(attrs)
       raise ActiveRecord::RecordInvalid, vps unless vps.valid?
@@ -71,7 +75,13 @@ module TransactionChains
 
       # Note: this will not work correctly when chowning the VPS, that's
       # why it is forbidden in controller.
-      resources = vps.reallocate_resources(attrs, vps.user)
+      resources = vps.reallocate_resources(
+          attrs,
+          vps.user,
+          override: opts[:admin_override],
+          lock_type: opts[:admin_lock_type]
+      )
+
       unless resources.empty?
         use_chain(Vps::SetResources, args: [vps, resources])
         mail(:vps_resources_change, {
@@ -79,9 +89,9 @@ module TransactionChains
             vars: {
                 vps: vps,
                 admin: ::User.current,
-                reason: change_reason
+                reason: opts[:change_reason]
             }
-        }) if change_reason
+        }) if opts[:change_reason]
       end
 
 

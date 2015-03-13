@@ -154,12 +154,18 @@ module VpsAdmin::API
         ret
       end
 
-      def reallocate_resources(resources, user)
+      def reallocate_resources(resources, user, override: nil, lock_type: nil)
         ret = []
         available = Private.registered_resources(self)
 
         available.each do |r|
-          ret << reallocate_resource!(r, resources[r], user: user) if resources.has_key?(r)
+          ret << reallocate_resource!(
+              r,
+              resources[r],
+              user: user,
+              override: override,
+              lock_type: lock_type
+          ) if resources.has_key?(r)
         end
 
         ret
@@ -227,7 +233,7 @@ module VpsAdmin::API
       end
 
       def reallocate_resource!(resource, value, user: nil, save: false, confirmed: nil,
-                               chain: nil)
+                               chain: nil, override: nil, lock_type: nil)
         user ||= ::User.current
 
         use = ::ClusterResourceUse.joins(:user_cluster_resource).find_by(
@@ -252,6 +258,8 @@ module VpsAdmin::API
         end
 
         use.value = value
+        use.admin_override = override
+        use.admin_lock_type = lock_type unless lock_type.nil?
 
         if save
           use.save!
