@@ -8,6 +8,7 @@ if ($_SESSION['logged_in']) {
 			if (isset($_POST['name'])) {
 				csrf_check();
 				
+				$input_params = $api->dataset->create->getParameters('input');
 				$params = array(
 					'name' => $_POST['name'],
 					'dataset' => $_POST['dataset'] ? $_POST['dataset'] : $_GET['parent'],
@@ -20,8 +21,12 @@ if ($_SESSION['logged_in']) {
 				}
 				
 				foreach ($DATASET_PROPERTIES as $p) {
-					if ($_POST['override_'.$p])
-						$params[$p] = $_POST[$p];
+					if ($_POST['override_'.$p]) {
+						if ($input_params->{$p}->choices)
+							$params[$p] = $input_params->{$p}->choices[ (int) $_POST[$p] ];
+						else
+							$params[$p] = $_POST[$p];
+					}
 				}
 				
 				try {
@@ -45,6 +50,7 @@ if ($_SESSION['logged_in']) {
 				csrf_check();
 				
 				$ds = $api->dataset->find($_GET['id']);
+				$input_params = $api->dataset->update->getParameters('input');
 				$params = array();
 				
 				foreach ($quotas as $quota) {
@@ -53,8 +59,12 @@ if ($_SESSION['logged_in']) {
 				}
 				
 				foreach ($DATASET_PROPERTIES as $p) {
-					if ($_POST['override_'.$p])
-						$params[$p] = $_POST[$p];
+					if ($_POST['override_'.$p]) {
+						if ($input_params->{$p}->choices)
+							$params[$p] = $input_params->{$p}->choices[ (int) $_POST[$p] ];
+						else
+							$params[$p] = $_POST[$p];
+					}
 				}
 				
 				try {
