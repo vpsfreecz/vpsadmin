@@ -351,7 +351,10 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 	switch ($desc->type) {
 		case 'String':
 		case 'Integer':
-			$xtpl->form_add_input_pure('text', '30', $name, $v);
+			if ($desc->choices)
+				$xtpl->form_add_select_pure($name, $desc->choices, $v);
+			else
+				$xtpl->form_add_input_pure('text', '30', $name, $v);
 			break;
 		
 		case 'Text':
