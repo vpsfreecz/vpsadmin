@@ -1110,7 +1110,9 @@ if (isset($show_info) && $show_info) {
 			$name,
 			$vps->{$name},
 			$r->cluster_resource->min,
-			min($vps->{$name} + $r->free, $r->cluster_resource->max),
+			$_SESSION['is_admin'] ?
+				$r->cluster_resource->max :
+				min($vps->{$name} + $r->free, $r->cluster_resource->max),
 			$r->cluster_resource->stepsize,
 			'MiB'
 		);
