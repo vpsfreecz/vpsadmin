@@ -383,11 +383,22 @@ switch ($_GET["action"]) {
 				csrf_check();
 				
 				try {
+					$update_params = $api->vps->update->getParameters('input');
 					$vps_resources = array('memory', 'cpu', 'swap');
 					$params = array();
 					
 					foreach ($vps_resources as $r) {
 						$params[ $r ] = $_POST[$r];
+					}
+					
+					if ($_SESSION['is_admin']) {
+						if ($_POST['change_reason'])
+							$params['change_reason'] = $_POST['change_reason'];
+						
+						if ($_POST['admin_override'])
+							$params['admin_override'] = $_POST['admin_override'];
+						
+						$params['admin_lock_type'] = $update_params->admin_lock_type->choices[ (int) $_POST['admin_lock_type'] ];
 					}
 					
 					$api->vps($_GET['veid'])->update($params);
@@ -1104,6 +1115,12 @@ if (isset($show_info) && $show_info) {
 			'MiB'
 		);
 		$xtpl->table_tr();
+	}
+	
+	if ($_SESSION['is_admin']) {
+		api_param_to_form('change_reason', $params->change_reason);
+		api_param_to_form('admin_override', $params->admin_override);
+		api_param_to_form('admin_lock_type', $params->admin_lock_type);
 	}
 	
 	$xtpl->form_out(_("Go >>"));
