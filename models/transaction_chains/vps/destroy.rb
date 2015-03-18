@@ -5,7 +5,7 @@ module TransactionChains
     def link_chain(vps)
       lock(vps.dataset_in_pool)
       lock(vps)
-      set_concerns(:affect, [vps.class.name, vps.id])
+      concerns(:affect, [vps.class.name, vps.id])
 
       # Stop VPS
       use_chain(TransactionChains::Vps::Stop, args: vps)

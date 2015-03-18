@@ -3,7 +3,7 @@ module TransactionChains
     label 'Set shaper'
 
     def link_chain(vps, ips = nil)
-      set_concerns(:affect, [vps.class.name, vps.id])
+      concerns(:affect, [vps.class.name, vps.id])
 
       (ips || vps.ip_addresses.all).each do |ip|
         lock(ip)

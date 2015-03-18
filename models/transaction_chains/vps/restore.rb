@@ -4,7 +4,7 @@ module TransactionChains
 
     def link_chain(vps, snapshot)
       lock(vps)
-      set_concerns(:affect, [vps.class.name, vps.id])
+      concerns(:affect, [vps.class.name, vps.id])
 
       @vps = vps
 

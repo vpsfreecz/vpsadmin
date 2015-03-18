@@ -4,7 +4,7 @@ module TransactionChains
 
     def link_chain(vps, passwd)
       lock(vps)
-      set_concerns(:affect, [vps.class.name, vps.id])
+      concerns(:affect, [vps.class.name, vps.id])
 
       append(Transactions::Vps::Passwd, args: [vps, passwd])
     end

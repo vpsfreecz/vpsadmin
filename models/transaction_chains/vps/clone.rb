@@ -116,7 +116,7 @@ module TransactionChains
 
       dst_vps.save!
 
-      set_concerns(:transform, [vps.class.name, vps.id], [vps.class.name, dst_vps.id])
+      concerns(:transform, [vps.class.name, vps.id], [vps.class.name, dst_vps.id])
 
       # Configs
       if attrs[:configs]

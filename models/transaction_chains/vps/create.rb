@@ -78,7 +78,7 @@ module TransactionChains
 
       vps.save!
 
-      set_concerns(:affect, [vps.class.name, vps.id])
+      concerns(:affect, [vps.class.name, vps.id])
 
       # mapping, last_id = StorageExport.create_default_exports(self, depend: last_id)
       # create_default_mounts(mapping)

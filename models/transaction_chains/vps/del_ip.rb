@@ -4,7 +4,7 @@ module TransactionChains
 
     def link_chain(vps, ips, resource_obj = nil)
       lock(vps)
-      set_concerns(:affect, [vps.class.name, vps.id])
+      concerns(:affect, [vps.class.name, vps.id])
 
       resource_obj ||= vps
 
