@@ -2,11 +2,19 @@ module TransactionChains
   class Vps::DelIp < ::TransactionChain
     label 'IP-'
 
-    def link_chain(vps, ips)
+    def link_chain(vps, ips, resource_obj = nil)
       lock(vps)
       set_concerns(:affect, [vps.class.name, vps.id])
 
-      use = vps.reallocate_resource!(:ipv4, vps.ipv4 - ips.size, user: vps.user)
+      resource_obj ||= vps
+
+      uses = []
+
+      {ipv4: 4, ipv6: 6}.each do |r, v|
+        cnt = ips.count { |ip| ip.ip_v == v }
+
+        uses << resource_obj.reallocate_resource!(r, resource_obj.send(r) - cnt, user: vps.user)
+      end
 
       ips.each do |ip|
         lock(ip)
@@ -17,7 +25,9 @@ module TransactionChains
       end
 
       append(Transactions::Utils::NoOp, args: vps.vps_server) do
-        edit(use, value: use.value)
+        uses.each do |use|
+          edit(use, value: use.value)
+        end
       end
     end
   end
