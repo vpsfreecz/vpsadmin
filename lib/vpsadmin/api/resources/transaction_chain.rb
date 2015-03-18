@@ -22,6 +22,8 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
       string :name, label: 'Name', desc: 'For internal use only'
       string :state, label: 'State', choices: ::TransactionChain.states.keys
       resource VpsAdmin::API::Resources::User, label: 'User', value_label: :login
+      string :class_name, label: 'Class name', desc: 'Search by concerned class name'
+      integer :row_id, label: 'Row id', desc: 'Search by concerned row id'
     end
 
     output(:object_list) do
@@ -41,6 +43,12 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
       q = q.where(name: input[:name]) if input[:name]
       q = q.where(state: ::TransactionChain.states[input[:state]]) if input[:state]
       q = q.where(user: input[:user]) if input[:user]
+      q = q.joins(:transaction_chain_concerns).where(
+          transaction_chain_concerns: {class_name: input[:class_name]}
+      ) if input[:class_name]
+      q = q.joins(:transaction_chain_concerns).where(
+          transaction_chain_concerns: {row_id: input[:row_id]}
+      ) if input[:row_id]
 
       q
     end
@@ -54,7 +62,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
           .includes(:transaction_chain_concerns)
           .limit(input[:limit])
           .offset(input[:offset])
-          .order('created_at DESC')
+          .order('transaction_chains.created_at DESC')
     end
   end
 
