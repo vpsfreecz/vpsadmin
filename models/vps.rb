@@ -203,8 +203,8 @@ class Vps < ActiveRecord::Base
     vps_status && vps_status.vps_disk_used_mb
   end
 
-  def migrate(node)
-    TransactionChains::Vps::Migrate.fire(self, node)
+  def migrate(node, replace_ips)
+    TransactionChains::Vps::Migrate.fire(self, node, replace_ips)
   end
 
   def clone(node, attrs)

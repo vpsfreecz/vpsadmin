@@ -4,7 +4,7 @@ module TransactionChains
     label 'Migrate'
     urgent_rollback
 
-    def link_chain(vps, dst_node)
+    def link_chain(vps, dst_node, replace_ips)
       lock(vps)
       set_concerns(:affect, [vps.class.name, vps.id])
 
@@ -98,6 +98,43 @@ module TransactionChains
         use_chain(Dataset::Transfer, args: [src, dst], urgent: true)
       end
 
+      dst_ip_addresses = vps.ip_addresses
+
+      # Migration to different location - remove or replace
+      # IP addresses
+      if vps.node.location != dst_vps.node.location
+        # Add the same number of IP addresses from the target location
+        if replace_ips
+          dst_ip_addresses = []
+
+          vps.ip_addresses.each do |ip|
+            replacement = ::IpAddress.pick_addr!(dst_vps.user, dst_vps.node.location, ip.ip_v)
+
+            append(Transactions::Vps::IpDel, args: [dst_vps, ip]) do
+              edit(ip, vps_id: nil)
+            end
+
+            append(Transactions::Vps::IpAdd, args: [dst_vps, replacement]) do
+              edit(replacement, vps_id: dst_vps.veid)
+
+              if !replacement.user_id && dst_vps.node.environment.user_ip_ownership
+                edit(replacement, user_id: dst_vps.user_id)
+              end
+            end
+
+            dst_ip_addresses << replacement
+          end
+
+        else
+          # Remove all IP addresses
+          dst_ip_addresses = []
+          ips = []
+
+          vps.ip_addresses.each { |ip| ips << ip }
+          use_chain(Vps::DelIp, args: [dst_vps, ips, vps])
+        end
+      end
+
       # Restore VPS state
       use_chain(Vps::Start, args: dst_vps, urgent: true) if running
 
@@ -150,7 +187,7 @@ module TransactionChains
       use_chain(Vps::ShaperUnset, args: vps, urgent: true)
 
       # Set shaper on destination node
-      use_chain(Vps::ShaperSet, args: dst_vps, urgent: true)
+      use_chain(Vps::ShaperSet, args: [dst_vps, dst_ip_addresses], urgent: true)
 
       # Destroy old dataset in pools
       # Do not delete repeatable tasks - they are re-used for new datasets

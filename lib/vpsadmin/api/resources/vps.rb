@@ -486,6 +486,8 @@ END
     input do
       resource VpsAdmin::API::Resources::Node, label: 'Node', value_label: :name,
                required: true
+      bool :replace_ip_addresses, label: 'Replace IP addresses',
+          desc: 'When migrating to another location, current IP addresses are replaced by addresses from the new location'
     end
 
     authorize do |u|
@@ -502,7 +504,7 @@ END
         error('target node is not a hypervisor')
       end
 
-      vps.migrate(input[:node])
+      vps.migrate(input[:node], input[:replace_ip_addresses])
       ok
     end
   end
