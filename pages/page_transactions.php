@@ -45,6 +45,8 @@ function list_chains() {
 	$xtpl->form_add_input(_("User ID").':', 'text', '40', 'user', get_val('user'));
 	$xtpl->form_add_input(_("State").':', 'text', '40', 'state', get_val('state'), 'queued, done, rollbacking, failed');
 	$xtpl->form_add_input(_("Name").':', 'text', '40', 'name', get_val('name'));
+	$xtpl->form_add_input(_("Class name").':', 'text', '40', 'class_name', get_val('class_name'));
+	$xtpl->form_add_input(_("Object id").':', 'text', '40', 'row_id', get_val('row_id'));
 
 	$xtpl->form_out(_('Show'));
 
@@ -62,6 +64,12 @@ function list_chains() {
 	
 	if ($_GET['name'])
 		$params['name'] = $_GET['name'];
+	
+	if ($_GET['class_name'])
+		$params['class_name'] = $_GET['class_name'];
+	
+	if ($_GET['row_id'])
+		$params['row_id'] = $_GET['row_id'];
 
 	$chains = $api->transaction_chain->list($params);
 	
