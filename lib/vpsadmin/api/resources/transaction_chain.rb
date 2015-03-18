@@ -12,7 +12,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
     integer :progress, label: 'Progress', desc: 'How many transactions are finished'
     resource VpsAdmin::API::Resources::User, label: 'User', value_label: :login
     datetime :created_at, label: 'Creation date'
-    custom :concerns
+    custom :concerns, db_name: :format_concerns
   end
 
   class Index < HaveAPI::Actions::Default::Index
@@ -50,7 +50,11 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
     end
 
     def exec
-      with_includes(query).limit(input[:limit]).offset(input[:offset]).order('created_at DESC')
+      with_includes(query)
+          .includes(:transaction_chain_concerns)
+          .limit(input[:limit])
+          .offset(input[:offset])
+          .order('created_at DESC')
     end
   end
 

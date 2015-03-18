@@ -5,10 +5,11 @@
 # have a meaning.
 class TransactionChain < ActiveRecord::Base
   has_many :transactions
+  has_many :transaction_chain_concerns
   belongs_to :user
 
   enum state: %i(staged queued done rollbacking failed)
-  serialize :concerns
+  enum concern_type: %i(chain_affect chain_transform)
 
   attr_reader :acquired_locks
   attr_accessor :last_id, :dst_chain, :named, :locks, :urgent, :mail_server
@@ -182,11 +183,30 @@ class TransactionChain < ActiveRecord::Base
   # +objects+ is an array of concerned objects. Every object is represented
   # by an array, where the first item is class name, the second is object id.
   # For example: type=transform, objects=[[Vps, 101], [Vps, 102]]
-  def set_concerns(type, *objects)
-    self.concerns = {
-        type: type,
-        objects: objects
-    }
+  def concerns(type, *objects)
+    # Do not set concerns if this chain is just being used
+    # in another one.
+    return if dst_chain != self
+
+    self.concern_type = "chain_#{type}"
+
+    objects.each do |obj|
+      TransactionChainConcern.create!(
+          transaction_chain: self,
+          class_name: obj[0],
+          row_id: obj[1]
+      )
+    end
+  end
+
+  def format_concerns
+    ret = {type: concern_type[6..-1], objects: []}
+
+    transaction_chain_concerns.each do |c|
+      ret[:objects] << [c.class_name, c.row_id]
+    end
+
+    ret
   end
 
   def empty?

@@ -538,6 +538,12 @@ ActiveRecord::Schema.define(version: 20150312171845) do
     t.text "cfg_value"
   end
 
+  create_table "transaction_chain_concerns", force: true do |t|
+    t.integer "transaction_chain_id", null: false
+    t.string  "class_name",           null: false
+    t.integer "row_id",               null: false
+  end
+
   create_table "transaction_chains", force: true do |t|
     t.string   "name",            limit: 30,              null: false
     t.string   "type",            limit: 100,             null: false
@@ -548,7 +554,7 @@ ActiveRecord::Schema.define(version: 20150312171845) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer  "urgent_rollback",             default: 0, null: false
-    t.string   "concerns"
+    t.integer  "concern_type",                default: 0, null: false
   end
 
   create_table "transaction_confirmations", force: true do |t|
