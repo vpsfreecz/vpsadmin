@@ -5,7 +5,10 @@ module VpsAdmind
     needs :system, :vz, :vps
 
     def exec
+      # Create a new empty config
       File.open(ve_conf, 'w').close
+
+      # Set VE root and private
       vzctl(:set, @vps_id, {:root => ve_root, :private => ve_private}, true)
     end
 
