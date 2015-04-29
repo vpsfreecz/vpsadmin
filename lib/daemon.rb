@@ -123,10 +123,10 @@ module VpsAdmind
 								AND t.t_server = #{$CFG.get(:vpsadmin, :server_id)}
 								GROUP BY t_vps, t_priority, t_id)
 
-								ORDER BY t_priority DESC, t_id ASC
+								ORDER BY t_urgent DESC, t_priority DESC, t_id ASC
 							) tmp
 							GROUP BY t_vps, t_priority
-              ORDER BY t_priority DESC, t_id ASC
+              ORDER BY t_urgent DESC, t_priority DESC, t_id ASC
               LIMIT #{limit}")
     end
 
