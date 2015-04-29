@@ -136,7 +136,7 @@ class VPS < Executor
       honor_state do
         stop
         vzctl(:set, @veid, {
-            :feature => ["nfsd:on", "nfs:on", "ppp:on"],
+            :feature => ["nfsd:on", "nfs:on", "ppp:on", "bridge:on"],
             :capability => "net_admin:on",
             :netfilter => "full",
             :numiptent => "1000",
