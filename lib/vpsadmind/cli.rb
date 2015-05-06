@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 
-$: << File.dirname(__FILE__) unless $:.include? File.dirname(__FILE__)
+require 'pathname'
+
+$: << File.dirname(Pathname.new(__FILE__).realpath + '../../')
 
 require 'lib/vpsadmind'
 
