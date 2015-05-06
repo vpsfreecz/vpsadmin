@@ -23,6 +23,8 @@ module VpsAdmind::RemoteCommands
 
                 queue << {
                     :id => t_id,
+                    :chain => row['transaction_chain_id'],
+                    :state => row['chain_state'],
                     :type => row['t_type'].to_i,
                     :time => row['t_time'].to_i,
                     :m_id => row['t_m_id'].to_i,
