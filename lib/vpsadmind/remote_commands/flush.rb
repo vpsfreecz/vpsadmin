@@ -17,7 +17,7 @@ module VpsAdmind::RemoteCommands
 
           when 'shaper'
             log(:info, :remote, 'Flushing shaper')
-            sh = VpsAdmind::Shaper.new(0)
+            sh = VpsAdmind::Shaper.new
             sh.flush
             ret[:shaper] = true
         end

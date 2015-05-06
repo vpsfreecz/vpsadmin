@@ -17,7 +17,7 @@ module VpsAdmind::RemoteCommands
 
           when 'shaper'
             log(:info, :remote, 'Initializing shaper')
-            sh = VpsAdmind::Shaper.new(0)
+            sh = VpsAdmind::Shaper.new
             sh.init(db ||= VpsAdmind::Db.new)
             ret[:shaper] = true
         end
