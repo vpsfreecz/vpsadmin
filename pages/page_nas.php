@@ -159,7 +159,7 @@ if ($_SESSION["logged_in"] && (NAS_PUBLIC || $_SESSION["is_admin"])) {
 				$e = nas_get_export_by_id($_POST["export_id"]);
 				$vps = new vps_load($_POST["vps_id"]);
 				
-				if(is_mount_dst_valid($_POST["dst"]) === false) {
+				if(($dst = is_mount_dst_valid($_POST["dst"])) === false) {
 					$xtpl->perex(_("Destination contains forbidden characters"), '');
 					mount_add_form($mount_export_add_target, $mount_custom_add_target);
 				} elseif (nas_can_user_add_mount($e, $vps))
@@ -169,7 +169,7 @@ if ($_SESSION["logged_in"] && (NAS_PUBLIC || $_SESSION["is_admin"])) {
 						$_POST["access_mode"],
 						0,
 						"",
-						$_POST["dst"],
+						$dst,
 						$_SESSION["is_admin"] ? $_POST["m_opts"] : NULL,
 						$_SESSION["is_admin"] ? $_POST["u_opts"] : NULL,
 						"nfs",
@@ -190,7 +190,7 @@ if ($_SESSION["logged_in"] && (NAS_PUBLIC || $_SESSION["is_admin"])) {
 				$e = nas_get_export_by_id($_POST["export_id"]);
 				$vps = new vps_load($_POST["vps_id"]);
 				
-				if(is_mount_dst_valid($_POST["dst"]) === false) {
+				if(($dst = is_mount_dst_valid($_POST["dst"])) === false) {
 					$xtpl->perex(_("Destination contains forbidden characters"), '');
 					mount_add_form($mount_export_add_target, $mount_custom_add_target);
 				} elseif (nas_can_user_add_mount($e, $vps))
@@ -200,7 +200,7 @@ if ($_SESSION["logged_in"] && (NAS_PUBLIC || $_SESSION["is_admin"])) {
 						$_POST["access_mode"],
 						$_POST["source_node_id"],
 						$_POST["src"],
-						$_POST["dst"],
+						$dst,
 						$_POST["m_opts"],
 						$_POST["u_opts"],
 						$_POST["type"],
