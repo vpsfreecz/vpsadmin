@@ -1,4 +1,9 @@
+require 'pathname'
+$: << File.dirname(Pathname.new(__FILE__).realpath + '../../')
+
+require 'optparse'
 require 'rubygems'
+require 'daemons'
 require 'require_all'
 require 'eventmachine'
 require 'json'
