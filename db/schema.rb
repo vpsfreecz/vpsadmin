@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150312171845) do
+ActiveRecord::Schema.define(version: 20150528110508) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -302,7 +302,6 @@ ActiveRecord::Schema.define(version: 20150312171845) do
   create_table "members", primary_key: "m_id", force: true do |t|
     t.text     "m_info"
     t.integer  "m_created"
-    t.integer  "m_deleted"
     t.integer  "m_level",                                            null: false
     t.string   "m_nick",              limit: 63,                     null: false
     t.string   "m_name"
@@ -315,8 +314,6 @@ ActiveRecord::Schema.define(version: 20150312171845) do
     t.integer  "m_monthly_payment",               default: 300,      null: false
     t.boolean  "m_mailer_enable",                 default: true,     null: false
     t.boolean  "m_playground_enable",             default: true,     null: false
-    t.string   "m_state",             limit: 9,   default: "active", null: false
-    t.string   "m_suspend_reason",    limit: 100
     t.integer  "login_count",                     default: 0,        null: false
     t.integer  "failed_login_count",              default: 0,        null: false
     t.datetime "last_request_at"
@@ -326,6 +323,9 @@ ActiveRecord::Schema.define(version: 20150312171845) do
     t.string   "last_login_ip"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "m_suspend_reason",    limit: 100
+    t.string   "m_state",                         default: "active", null: false
+    t.integer  "m_deleted"
   end
 
   create_table "members_changes", primary_key: "m_id", force: true do |t|
@@ -392,6 +392,17 @@ ActiveRecord::Schema.define(version: 20150312171845) do
     t.integer "node_id",           null: false
     t.string  "type",    limit: 3, null: false
     t.text    "key",               null: false
+  end
+
+  create_table "object_states", force: true do |t|
+    t.string   "class_name",      null: false
+    t.integer  "row_id",          null: false
+    t.integer  "state",           null: false
+    t.integer  "user_id"
+    t.string   "reason"
+    t.datetime "expiration_date"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
   create_table "pools", force: true do |t|
@@ -640,8 +651,6 @@ ActiveRecord::Schema.define(version: 20150312171845) do
 
   create_table "vps", primary_key: "vps_id", force: true do |t|
     t.integer "vps_created"
-    t.integer "vps_expiration"
-    t.integer "vps_deleted"
     t.integer "m_id",                                                     null: false
     t.string  "vps_hostname",                             default: "vps"
     t.integer "vps_template",                             default: 1,     null: false
@@ -658,6 +667,8 @@ ActiveRecord::Schema.define(version: 20150312171845) do
     t.integer "dataset_in_pool_id"
     t.integer "maintenance_lock",                         default: 0,     null: false
     t.string  "maintenance_lock_reason"
+    t.integer "vps_deleted"
+    t.integer "vps_expiration"
   end
 
   add_index "vps", ["m_id"], name: "m_id", using: :btree

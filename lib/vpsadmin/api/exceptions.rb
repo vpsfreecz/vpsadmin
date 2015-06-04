@@ -86,4 +86,12 @@ module VpsAdmin::API::Exceptions
   class UserResourceAllocationError < ::StandardError
 
   end
+
+  class CannotLeaveState < ::StandardError
+
+  end
+
+  class TooManyParameters < ::StandardError
+
+  end
 end

@@ -250,4 +250,5 @@ module TransactionChains
   module DatasetTree    ; end
   module Branch         ; end
   module User           ; end
+  module Lifetimes      ; end
 end
