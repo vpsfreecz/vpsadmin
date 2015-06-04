@@ -69,16 +69,6 @@ class User < ActiveRecord::Base
     TransactionChains::User::Create.fire(self)
   end
 
-  def lazy_delete(lazy)
-    if lazy
-      self.m_deleted = Time.new.to_i
-      self.m_state = 'deleted'
-      save!
-    else
-      destroy
-    end
-  end
-
   def destroy(override = false)
     if override
       super
