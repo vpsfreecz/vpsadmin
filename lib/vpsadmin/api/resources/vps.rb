@@ -113,7 +113,16 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def query
-      q = Vps.where(with_restricted)
+      q = if input[:object_state]
+        Vps.unscoped.where(
+            object_state: Vps.object_states[input[:object_state]]
+        )
+
+      else
+        Vps
+      end
+
+      q = q.where(with_restricted)
       q = q.where(m_id: input[:user].id) if input[:user]
 
       if input[:node]
