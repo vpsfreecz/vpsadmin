@@ -140,7 +140,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def prepare
-      @user = ::User.find(params[:user_id])
+      @user = ::User.existing.find(params[:user_id])
     end
 
     def exec

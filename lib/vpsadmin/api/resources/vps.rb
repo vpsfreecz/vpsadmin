@@ -279,7 +279,9 @@ END
     end
 
     def prepare
-      @vps = with_includes.find_by!(with_restricted(vps_id: params[:vps_id]))
+      @vps = with_includes(::Vps.existing).find_by!(with_restricted(
+          vps_id: params[:vps_id])
+      )
     end
 
     def exec
@@ -310,7 +312,7 @@ END
     end
 
     def exec
-      vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      vps = ::Vps.existing.find_by!(with_restricted(vps_id: params[:vps_id]))
       maintenance_check!(vps)
 
       if input.empty?
@@ -352,7 +354,7 @@ END
     end
 
     def exec
-      vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      vps = ::Vps.existing.find_by!(with_restricted(vps_id: params[:vps_id]))
       maintenance_check!(vps)
 
       # FIXME: check if object_state is filled for non-admins

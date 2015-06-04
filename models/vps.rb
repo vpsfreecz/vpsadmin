@@ -69,6 +69,16 @@ class Vps < ActiveRecord::Base
               ])
   }
 
+  scope :existing, -> {
+    unscoped {
+      where(object_state: [
+                object_states[:active],
+                object_states[:suspended],
+                object_states[:soft_delete]
+            ])
+    }
+  }
+
   PathInfo = Struct.new(:dataset, :exists)
 
   def create(add_ips)
