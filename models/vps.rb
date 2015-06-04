@@ -92,16 +92,6 @@ class Vps < ActiveRecord::Base
     end
   end
 
-  def lazy_delete(lazy)
-    if lazy
-      self.vps_deleted = Time.new.to_i
-      save!
-      stop
-    else
-      destroy
-    end
-  end
-
   def destroy(override = false)
     if override
       super
@@ -129,10 +119,6 @@ class Vps < ActiveRecord::Base
 
   def applyconfig(configs)
     TransactionChains::Vps::ApplyConfig.fire(self, configs)
-  end
-
-  def revive
-    self.vps_deleted = nil
   end
 
   # Unless +safe+ is true, the IP address +ip+ is fetched from the database

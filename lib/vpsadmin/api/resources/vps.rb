@@ -470,24 +470,6 @@ END
     end
   end
 
-  class Revive < HaveAPI::Action
-    desc 'Revive a lazily deleted VPS'
-    route ':%{resource}_id/revive'
-    http_method :post
-
-    authorize do |u|
-      allow if u.role == :admin
-    end
-
-    def exec
-      vps = ::Vps.unscoped.where(vps_id: params[:vps_id]).where.not(vps_deleted: nil).take!
-      maintenance_check!(vps)
-
-      vps.revive
-      vps.save!
-    end
-  end
-
   class Migrate < HaveAPI::Action
     desc 'Migrate VPS to another node'
     route ':%{resource}_id/migrate'
