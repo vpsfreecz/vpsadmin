@@ -32,8 +32,6 @@ class Vps < ActiveRecord::Base
   }
   validate :foreign_keys_exist
 
-  default_scope { where(vps_deleted: nil) }
-
   include Lockable
   include Confirmable
   include HaveAPI::Hookable
@@ -47,6 +45,29 @@ class Vps < ActiveRecord::Base
   cluster_resources required: %i(cpu memory diskspace),
                     optional: %i(ipv4 ipv6 swap),
                     environment: ->(){ node.environment }
+
+  include VpsAdmin::API::Lifetimes::Model
+  set_object_states suspended: {
+                        enter: TransactionChains::Vps::Block,
+                        leave: TransactionChains::Vps::Unblock
+                    },
+                    soft_delete: {
+                        enter: TransactionChains::Vps::SoftDelete,
+                        leave: TransactionChains::Vps::Revive
+                    },
+                    hard_delete: {
+                        enter: TransactionChains::Vps::Destroy
+                    },
+                    deleted: {
+                        enter: TransactionChains::Lifetimes::NotImplemented
+                    }
+
+  default_scope {
+    where.not(object_state: [
+                  object_states[:soft_delete],
+                  object_states[:hard_delete]
+              ])
+  }
 
   PathInfo = Struct.new(:dataset, :exists)
 

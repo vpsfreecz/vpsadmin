@@ -308,6 +308,8 @@ END
         error('provide at least one attribute to update')
       end
 
+      update_object_state!(vps) if input[:object_state]
+
       if input[:user]
         resources = ::Vps.cluster_resources[:required] + ::Vps.cluster_resources[:optional]
 
@@ -344,10 +346,9 @@ END
       vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
       maintenance_check!(vps)
 
-      vps.lazy_delete(
-          current_user.role == :admin ? params[:vps][:lazy] : true
-      )
-      ok
+      # FIXME: check if object_state is filled for non-admins
+
+      update_object_state!(vps)
     end
   end
 
@@ -586,6 +587,7 @@ END
   end
 
   include VpsAdmin::API::Maintainable::Action
+  include VpsAdmin::API::Lifetimes::Resource
 
   class Config < HaveAPI::Resource
     version 1

@@ -2,12 +2,12 @@ module TransactionChains
   class Vps::Destroy < ::TransactionChain
     label 'Destroy'
 
-    def link_chain(vps)
+    def link_chain(vps, target, state, log)
       lock(vps.dataset_in_pool)
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
-      # Stop VPS
+      # Stop VPS - should definitely be already stopped
       use_chain(TransactionChains::Vps::Stop, args: vps)
 
       # Free resources
@@ -18,8 +18,8 @@ module TransactionChains
 
       # Destroy VPS
       append(Transactions::Vps::Destroy, args: vps) do
-        destroy(vps)
         resources.each { |r| destroy(r) }
+        edit(vps, dataset_in_pool_id: nil)
       end
 
       # Destroy underlying dataset
