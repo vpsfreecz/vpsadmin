@@ -21,14 +21,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
          default: true
     bool :playground_enabled, label: 'Enabled playground', db_name: :m_playground_enable,
          default: true
-    string :state, label: 'State', desc: 'active, suspended or deleted', db_name: :m_state,
-           default: 'active'
-    string :suspend_reason, label: 'Suspend reason', db_name: :m_suspend_reason
   end
 
   params(:dates) do
     datetime :created_at, label: 'Created at', db_name: :m_created
-    datetime :deleted_at, label: 'Deleted at', db_name: :m_deleted
   end
 
   params(:all) do
