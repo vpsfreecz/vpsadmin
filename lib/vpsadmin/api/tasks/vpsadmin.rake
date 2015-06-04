@@ -1,0 +1,3 @@
+namespace :vpsadmin do
+  
+end
