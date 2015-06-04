@@ -114,7 +114,7 @@ class Node < ActiveRecord::Base
   end
 
   def vps_deleted
-    vpses.unscoped.where.not(vps_deleted: nil).count
+    vpses.unscoped.where(object_state: ::Vps.object_states['soft_delete']).count
   end
 
   def vps_total
