@@ -48,8 +48,25 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       allow if u.role == :admin
     end
 
+    def query
+      q = if input[:object_state]
+        ::User.unscoped.where(
+            object_state: ::User.object_states[input[:object_state]]
+        )
+
+      else
+        ::User.all
+      end
+
+      q
+    end
+
+    def count
+      query.count
+    end
+
     def exec
-      ::User.all.limit(params[:user][:limit]).offset(params[:user][:offset])
+      query.limit(params[:user][:limit]).offset(params[:user][:offset])
     end
   end
 
