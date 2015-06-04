@@ -85,6 +85,10 @@ class Node < ActiveRecord::Base
       .take
   end
 
+  def self.first_available
+    return self.joins(:node_status).order('servers_status.timestamp DESC').take!
+  end
+
   def status
     (node_status && ((Time.new.to_i - node_status.timestamp) <= 150)) || false
   end
