@@ -1,3 +1,4 @@
 #!/usr/bin/env ruby
 
-require_relative '../lib/vpsadmindctl/cli'
+require 'pathname'
+require File.join(File.dirname(Pathname.new(__FILE__).realpath), '..', 'lib/vpsadmindctl/cli')
