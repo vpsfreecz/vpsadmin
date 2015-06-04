@@ -7,6 +7,9 @@ class User < ActiveRecord::Base
   has_many :storage_exports, foreign_key: :member_id
   has_many :environment_user_configs
   has_many :environments, through: :environment_user_configs
+  has_many :datasets
+  has_many :user_cluster_resources
+  has_many :snapshot_downloads
 
   before_validation :set_no_password
 
@@ -25,16 +28,33 @@ class User < ActiveRecord::Base
       with: /[a-zA-Z\.\-]{3,63}/,
       message: 'not a valid login'
   }, uniqueness: true
-  validates :m_state, inclusion: {
-      in: %w(active suspended deleted),
-      message: '%{value} is not a valid user state'
-  }
-
-  default_scope { where.not(m_state: 'deleted') }
 
   include HaveAPI::Hookable
 
   has_hook :create
+
+  include VpsAdmin::API::Lifetimes::Model
+  set_object_states suspended: {
+                        enter: TransactionChains::User::Suspend,
+                        leave: TransactionChains::User::Resume
+                    },
+                    soft_delete: {
+                        enter: TransactionChains::User::SoftDelete,
+                        leave: TransactionChains::User::Revive
+                    },
+                    hard_delete: {
+                        enter: TransactionChains::User::HardDelete
+                    },
+                    deleted: {
+                        enter: TransactionChains::Lifetimes::NotImplemented
+                    }
+
+  default_scope {
+    where.not(object_state: [
+                  object_states[:soft_delete],
+                  object_states[:hard_delete]
+              ])
+  }
 
   ROLES = {
       1 => 'Poor user',
@@ -56,6 +76,14 @@ class User < ActiveRecord::Base
       save!
     else
       destroy
+    end
+  end
+
+  def destroy(override = false)
+    if override
+      super
+    else
+      TransactionChains::User::Destroy.fire(self)
     end
   end
 

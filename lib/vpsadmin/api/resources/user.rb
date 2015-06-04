@@ -264,4 +264,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
     end
   end
+
+  include VpsAdmin::API::Lifetimes::Resource
 end
