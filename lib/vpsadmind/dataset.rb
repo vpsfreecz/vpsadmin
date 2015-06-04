@@ -1,5 +1,6 @@
 module VpsAdmind
   class Dataset
+    include Utils::Log
     include Utils::System
     include Utils::Zfs
 

@@ -1,5 +1,6 @@
 module VpsAdmind
   class Firewall
+    include Utils::Log
     include Utils::System
 
     CHAIN = 'accounting'

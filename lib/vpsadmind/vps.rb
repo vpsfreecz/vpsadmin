@@ -4,6 +4,7 @@ require 'fileutils'
 
 module VpsAdmind
   class Vps
+    include Utils::Log
     include Utils::System
     include Utils::Vz
     include Utils::Zfs

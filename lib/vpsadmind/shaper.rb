@@ -1,5 +1,6 @@
 module VpsAdmind
   class Shaper
+    include Utils::Log
     include Utils::System
 
     @@mutex = ::Mutex.new
