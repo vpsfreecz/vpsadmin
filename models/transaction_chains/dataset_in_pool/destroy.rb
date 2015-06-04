@@ -19,7 +19,9 @@ module TransactionChains
 
       if recursive
         @pool_id = dataset_in_pool.pool.id
-        dataset_in_pool.dataset.subtree.arrange.each do |k, v|
+        dataset_in_pool.dataset.subtree.where.not(
+            confirmed: ::Dataset.confirmed(:confirm_destroy)
+        ).arrange.each do |k, v|
           destroy_recursive(k, v)
         end
 
@@ -177,7 +179,11 @@ module TransactionChains
                     .where.not(pools: {role: ::Pool.roles[:backup]}).count == 0
 
             # Is now only in backup pools
-            edit(dataset_in_pool.dataset, expiration: Time.now.utc + 30*24*60*60)
+            just_create(dataset_in_pool.dataset.set_expiration(
+                Time.now.utc + 30*24*60*60),
+                reason: 'Dataset on the primary pool was deleted.'
+            )
+            edit(dataset_in_pool.dataset, expiration_date: dataset_in_pool.dataset.expiration_date)
           end
         end
       end

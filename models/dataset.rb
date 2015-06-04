@@ -18,6 +18,12 @@ class Dataset < ActiveRecord::Base
   include VpsAdmin::API::Maintainable::Check
   include VpsAdmin::API::DatasetProperties::Model
 
+  include VpsAdmin::API::Lifetimes::Model
+  set_object_states states: %i(active deleted),
+                    deleted: {
+                        enter: TransactionChains::Dataset::Destroy
+                    }
+
   def self.create_new(name, parent_ds, automount, properties)
     parts = name.split('/')
 
