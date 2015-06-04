@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150528110508) do
+ActiveRecord::Schema.define(version: 20150528111113) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -140,16 +140,18 @@ ActiveRecord::Schema.define(version: 20150528110508) do
   end
 
   create_table "datasets", force: true do |t|
-    t.string   "name",                                        null: false
-    t.string   "full_name",      limit: 1000,                 null: false
+    t.string   "name",                                         null: false
+    t.string   "full_name",       limit: 1000,                 null: false
     t.integer  "user_id"
-    t.boolean  "user_editable",                               null: false
-    t.boolean  "user_create",                                 null: false
-    t.boolean  "user_destroy",                                null: false
+    t.boolean  "user_editable",                                null: false
+    t.boolean  "user_create",                                  null: false
+    t.boolean  "user_destroy",                                 null: false
     t.string   "ancestry"
-    t.integer  "ancestry_depth",              default: 0,     null: false
+    t.integer  "ancestry_depth",               default: 0,     null: false
     t.datetime "expiration"
-    t.boolean  "confirmed",                   default: false, null: false
+    t.boolean  "confirmed",                    default: false, null: false
+    t.integer  "object_state",                                 null: false
+    t.datetime "expiration_date"
   end
 
   add_index "datasets", ["ancestry"], name: "index_datasets_on_ancestry", using: :btree
@@ -302,20 +304,20 @@ ActiveRecord::Schema.define(version: 20150528110508) do
   create_table "members", primary_key: "m_id", force: true do |t|
     t.text     "m_info"
     t.integer  "m_created"
-    t.integer  "m_level",                                            null: false
-    t.string   "m_nick",              limit: 63,                     null: false
+    t.integer  "m_level",                                        null: false
+    t.string   "m_nick",              limit: 63,                 null: false
     t.string   "m_name"
-    t.string   "m_pass",                                             null: false
+    t.string   "m_pass",                                         null: false
     t.string   "m_mail",              limit: 127
     t.text     "m_address"
     t.string   "m_lang",              limit: 16
     t.string   "m_paid_until",        limit: 32
     t.integer  "m_last_activity"
-    t.integer  "m_monthly_payment",               default: 300,      null: false
-    t.boolean  "m_mailer_enable",                 default: true,     null: false
-    t.boolean  "m_playground_enable",             default: true,     null: false
-    t.integer  "login_count",                     default: 0,        null: false
-    t.integer  "failed_login_count",              default: 0,        null: false
+    t.integer  "m_monthly_payment",               default: 300,  null: false
+    t.boolean  "m_mailer_enable",                 default: true, null: false
+    t.boolean  "m_playground_enable",             default: true, null: false
+    t.integer  "login_count",                     default: 0,    null: false
+    t.integer  "failed_login_count",              default: 0,    null: false
     t.datetime "last_request_at"
     t.datetime "current_login_at"
     t.datetime "last_login_at"
@@ -323,9 +325,8 @@ ActiveRecord::Schema.define(version: 20150528110508) do
     t.string   "last_login_ip"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.string   "m_suspend_reason",    limit: 100
-    t.string   "m_state",                         default: "active", null: false
-    t.integer  "m_deleted"
+    t.integer  "object_state",                                   null: false
+    t.datetime "expiration_date"
   end
 
   create_table "members_changes", primary_key: "m_id", force: true do |t|
@@ -474,14 +475,16 @@ ActiveRecord::Schema.define(version: 20150528110508) do
   end
 
   create_table "snapshot_downloads", force: true do |t|
-    t.integer  "user_id",                             null: false
+    t.integer  "user_id",                                 null: false
     t.integer  "snapshot_id"
-    t.integer  "pool_id",                             null: false
-    t.string   "secret_key",  limit: 100,             null: false
-    t.string   "file_name",                           null: false
-    t.integer  "confirmed",               default: 0, null: false
+    t.integer  "pool_id",                                 null: false
+    t.string   "secret_key",      limit: 100,             null: false
+    t.string   "file_name",                               null: false
+    t.integer  "confirmed",                   default: 0, null: false
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "object_state",                            null: false
+    t.datetime "expiration_date"
   end
 
   add_index "snapshot_downloads", ["secret_key"], name: "index_snapshot_downloads_on_secret_key", unique: true, using: :btree
@@ -650,25 +653,25 @@ ActiveRecord::Schema.define(version: 20150528110508) do
   add_index "versions", ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id", using: :btree
 
   create_table "vps", primary_key: "vps_id", force: true do |t|
-    t.integer "vps_created"
-    t.integer "m_id",                                                     null: false
-    t.string  "vps_hostname",                             default: "vps"
-    t.integer "vps_template",                             default: 1,     null: false
-    t.text    "vps_info",                limit: 16777215
-    t.integer "dns_resolver_id"
-    t.integer "vps_server",                                               null: false
-    t.boolean "vps_onboot",                               default: true,  null: false
-    t.boolean "vps_onstartall",                           default: true,  null: false
-    t.boolean "vps_backup_enabled",                       default: true,  null: false
-    t.integer "vps_backup_export",                                        null: false
-    t.text    "vps_backup_exclude",                                       null: false
-    t.text    "vps_config",                                               null: false
-    t.integer "confirmed",                                default: 0,     null: false
-    t.integer "dataset_in_pool_id"
-    t.integer "maintenance_lock",                         default: 0,     null: false
-    t.string  "maintenance_lock_reason"
-    t.integer "vps_deleted"
-    t.integer "vps_expiration"
+    t.integer  "vps_created"
+    t.integer  "m_id",                                                     null: false
+    t.string   "vps_hostname",                             default: "vps"
+    t.integer  "vps_template",                             default: 1,     null: false
+    t.text     "vps_info",                limit: 16777215
+    t.integer  "dns_resolver_id"
+    t.integer  "vps_server",                                               null: false
+    t.boolean  "vps_onboot",                               default: true,  null: false
+    t.boolean  "vps_onstartall",                           default: true,  null: false
+    t.boolean  "vps_backup_enabled",                       default: true,  null: false
+    t.integer  "vps_backup_export",                                        null: false
+    t.text     "vps_backup_exclude",                                       null: false
+    t.text     "vps_config",                                               null: false
+    t.integer  "confirmed",                                default: 0,     null: false
+    t.integer  "dataset_in_pool_id"
+    t.integer  "maintenance_lock",                         default: 0,     null: false
+    t.string   "maintenance_lock_reason"
+    t.integer  "object_state",                                             null: false
+    t.datetime "expiration_date"
   end
 
   add_index "vps", ["m_id"], name: "m_id", using: :btree
