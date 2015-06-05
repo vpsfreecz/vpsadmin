@@ -65,110 +65,96 @@ function print_newm() {
 	');
 }
 
-function print_editm($member) {
-	global $xtpl, $cfg_privlevel, $cluster_cfg;
+function print_editm($u) {
+	global $xtpl, $cfg_privlevel, $cluster_cfg, $api;
 
 	$xtpl->title(_("Manage members"));
 	
 	$xtpl->table_add_category(_("Member"));
 	$xtpl->table_add_category('&nbsp;');
-	$xtpl->form_create('?page=adminm&section=members&action=edit_member&id='.$_GET["id"], 'post');
-
-	if ($member->m["m_created"]) {
-	    $xtpl->table_td("Created".':');
-	    $xtpl->table_td(strftime("%Y-%m-%d %H:%M", $member->m["m_created"]));
-	    $xtpl->table_tr();
-	}
+	$xtpl->form_create('?page=adminm&section=members&action=edit_member&id='.$u->id, 'post');
+	
+	$xtpl->table_td("Created".':');
+	$xtpl->table_td(strftime("%Y-%m-%d %H:%M", strtotime($u->created_at)));
+	$xtpl->table_tr();
 
 	if ($_SESSION["is_admin"]) {
 		$xtpl->table_add_category('&nbsp;');
 		
-		$xtpl->form_add_input(_("Nickname").':', 'text', '30', 'm_nick', $member->m["m_nick"], _("A-Z, a-z, dot, dash"), 63);
-		$xtpl->form_add_select(_("Privileges").':', 'm_level', $cfg_privlevel, $member->m["m_level"],  '');
+		$xtpl->form_add_input(_("Nickname").':', 'text', '30', 'm_nick', $u->nick, _("A-Z, a-z, dot, dash"), 63);
+		$xtpl->form_add_select(_("Privileges").':', 'm_level', $cfg_privlevel, $u->level,  '');
 		
 	} else {
 		$xtpl->table_td(_("Nickname").':');
-		$xtpl->table_td($member->m["m_nick"]);
+		$xtpl->table_td($u->login);
 		$xtpl->table_tr();
 
 		$xtpl->table_td(_("Privileges").':');
-		$xtpl->table_td($cfg_privlevel[$member->m["m_level"]]);
+		$xtpl->table_td($cfg_privlevel[$u->level]);
 		$xtpl->table_tr();
 	}
 	
 	if ($cluster_cfg->get("payments_enabled")) {
 		$xtpl->table_td(_("Paid until").':');
 
-		$paid = $member->has_paid_now();
-
+		$paid = time() > strtotime($u->paid_until);
+		$t =  strtotime($u->paid_until);
+		$paid_until = date('Y-m-d', $t);
+		
 		if ($_SESSION["is_admin"]) {
-
-			if ($paid == (-1)) {
-
-				$xtpl->table_td('<a href="?page=adminm&section=members&action=payset&id='
-								. $member->mid
-								. '">' . _("info. missing") . '</a>', '#FF8C00');
-
-			} elseif ($paid == 0) {
-
-				$xtpl->table_td('<a href="?page=adminm&section=members&action=payset&id='
-								. $member->mid
-								. '"><b>' . _("not paid!") . '</b></a>', '#B22222');
-			} else {
-
-				$paid_until = date('Y-m-d', $member->m["m_paid_until"]);
-
-				if (($member->m["m_paid_until"] - time()) >= 604800) {
+			if ($paid) {
+				if (($t - time()) >= 604800) {
 						$xtpl->table_td('<a href="?page=adminm&section=members&action=payset&id='
-										. $member->mid
+										. $u->id
 										. '">' . _("->") . ' ' . $paid_until . '</a>', '#66FF66');
 				} else {
 						$xtpl->table_td('<a href="?page=adminm&section=members&action=payset&id='
-										. $member->mid
+										. $u->id
 										. '">' . _("->") . ' ' . $paid_until . '</a>', '#FFA500');
 				}
-			}
-		} else {
-
-			if ($paid == (-1)) {
-
-				$xtpl->table_td(_("info. missing"), '#FF8C00');
-
-			} elseif ($paid == 0) {
-
-				$xtpl->table_td('<b>'._("not paid!").'</b>', '#B22222');
-
+				
 			} else {
-
-				$paid_until = date('Y-m-d', $member->m["m_paid_until"]);
-
-				if (($member->m["m_paid_until"] - time()) >= 604800) {
-
+				$xtpl->table_td('<a href="?page=adminm&section=members&action=payset&id='
+								. $u->id
+								. '"><b>' . _("not paid!") . '</b></a>', '#B22222');
+			}
+			
+		} else {
+			if ($paid) {
+				if (($t - time()) >= 604800) {
 					$xtpl->table_td(_("->").' '.$paid_until, '#66FF66');
-
+					
 				} else {
-
 					$xtpl->table_td(_("->").' '.$paid_until, '#FFA500');
 				}
+				
+			} else {
+				$xtpl->table_td('<b>'._("not paid!").'</b>', '#B22222');
 			}
 		}
 	}
 	$xtpl->table_tr();
 	
 	if ($_SESSION["is_admin"]) {
+		$vps_count = $api->vps->list(array(
+			'user' => $u->id,
+			'limit' => 0,
+			'meta' => array('count' => true)
+		))->getTotalCount();
+		
 		$xtpl->table_td(_("VPS count").':');
-		$xtpl->table_td("<a href='?page=adminvps&action=list&user=".$member->m["m_id"]."'>".$member->get_vps_count()."</a>");
+		$xtpl->table_td("<a href='?page=adminvps&action=list&user=".$u->id."'>".$vps_count."</a>");
 		$xtpl->table_tr();
 	}
-
+	
 	if ($cluster_cfg->get("mailer_enabled")) {
-		$xtpl->form_add_checkbox(_("Enable mail notifications from vpsAdmin").':', 'm_mailer_enable', '1', $member->m["m_mailer_enable"], $hint = '');
+		$xtpl->form_add_checkbox(_("Enable mail notifications from vpsAdmin").':', 'm_mailer_enable', '1', $u->mailer_enabled, $hint = '');
 	}
-
+	
 	if ($_SESSION["is_admin"]) {
-	    $xtpl->form_add_input(_("Monthly payment").':', 'text', '30', 'm_monthly_payment', $member->m["m_monthly_payment"], ' ');
-	    $xtpl->form_add_checkbox(_("Enable playground VPS").':', 'm_playground_enable', '1', $member->m["m_playground_enable"], $hint = '');
-	    $xtpl->form_add_textarea(_("Info").':', 28, 4, 'm_info', $member->m["m_info"], _("Note for administrators"));
+		$xtpl->form_add_input(_("Monthly payment").':', 'text', '30', 'm_monthly_payment', $u->monthly_payment, ' ');
+		$xtpl->form_add_checkbox(_("Enable playground VPS").':', 'm_playground_enable', '1', $u->playground_enabled, $hint = '');
+		$xtpl->form_add_textarea(_("Info").':', 28, 4, 'm_info', $u->info, _("Note for administrators"));
 	}
 	
 	$xtpl->form_out(_("Save"));
@@ -176,7 +162,7 @@ function print_editm($member) {
 	$xtpl->table_add_category(_("Change password"));
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->table_add_category('&nbsp;');
-	$xtpl->form_create('?page=adminm&section=members&action=passwd&id='.$_GET["id"], 'post');
+	$xtpl->form_create('?page=adminm&section=members&action=passwd&id='.$u->id, 'post');
 	$xtpl->form_add_input(_("Password").':', 'password', '30', 'm_pass', '', '', -5);
 	$xtpl->form_add_input(_("Repeat password").':', 'password', '30', 'm_pass2', '', '', -5);
 	$xtpl->form_out(_("Save"));
@@ -184,10 +170,10 @@ function print_editm($member) {
 	$xtpl->table_add_category(_("Personal information"));
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->table_add_category('&nbsp;');
-	$xtpl->form_create('?page=adminm&section=members&action=edit_personal&id='.$_GET["id"], 'post');
-	$xtpl->form_add_input(_("Full name").':', 'text', '30', 'm_name', $_POST["m_name"] ? $_POST["m_name"] : $member->m["m_name"], _("A-Z, a-z, with diacritic"), 255);
-	$xtpl->form_add_input(_("E-mail").':', 'text', '30', 'm_mail', $_POST["m_mail"] ? $_POST["m_mail"] : $member->m["m_mail"], ' ');
-	$xtpl->form_add_input(_("Postal address").':', 'text', '30', 'm_address', $_POST["m_address"] ? $_POST["m_address"] : $member->m["m_address"], ' ');
+	$xtpl->form_create('?page=adminm&section=members&action=edit_personal&id='.$u->id, 'post');
+	$xtpl->form_add_input(_("Full name").':', 'text', '30', 'm_name', $_POST["m_name"] ? $_POST["m_name"] : $u->full_name, _("A-Z, a-z, with diacritic"), 255);
+	$xtpl->form_add_input(_("E-mail").':', 'text', '30', 'm_mail', $_POST["m_mail"] ? $_POST["m_mail"] : $u->email, ' ');
+	$xtpl->form_add_input(_("Postal address").':', 'text', '30', 'm_address', $_POST["m_address"] ? $_POST["m_address"] : $u->address, ' ');
 
 	if(!$_SESSION["is_admin"]) {
 		$xtpl->form_add_input(_("Reason for change").':', 'text', '50', 'reason');
@@ -198,50 +184,14 @@ function print_editm($member) {
 	
 	$xtpl->form_out($_SESSION["is_admin"] ? _("Save") : _("Request change"));
 	
-	if ($_SESSION["is_admin"] && $cluster_cfg->get("payments_enabled") && !$member->deleted) {
-		if ($member->m["m_state"] == "active") {
-			$xtpl->table_title(_("Suspend account"));
-			$xtpl->table_add_category('&nbsp;');
-			$xtpl->table_add_category('&nbsp;');
-			$xtpl->form_create('?page=adminm&section=members&action=suspend&id='.$_GET["id"], 'post');
-			$xtpl->form_add_input(_("Reason").':', 'text', '30', 'reason');
-			$xtpl->form_add_checkbox(_("Stop all VPSes").':', 'stop_all_vpses', '1', true);
-			$xtpl->form_add_checkbox(_("Notify member").':', 'notify', '1', true);
-			$xtpl->form_out(_("Suspend"));
-		} else {
-			$xtpl->table_title(_("Account is suspended"));
-			$xtpl->table_add_category('&nbsp;');
-			$xtpl->table_add_category('&nbsp;');
-			$xtpl->form_create('?page=adminm&section=members&action=restore&id='.$_GET["id"], 'post');
-			$xtpl->table_td(_('Reason').':');
-			$xtpl->table_td($member->m["m_suspend_reason"]);
-			$xtpl->table_tr();
-			$xtpl->form_add_checkbox(_("Start all VPSes").':', 'start_all_vpses', '1', true);
-			$xtpl->form_add_checkbox(_("Notify member").':', 'notify', '1', true);
-			$xtpl->form_out(_("Restore"));
-		}
-	}
-	
 	if ($_SESSION["is_admin"]) {
-		if($member->deleted) {
-			$xtpl->table_title(_("Account is scheduled for deletion"));
-			$xtpl->table_add_category('&nbsp;');
-			$xtpl->table_add_category('&nbsp;');
-			$xtpl->form_create('?page=adminm&section=members&action=revive&id='.$_GET["id"], 'post');
-			$xtpl->table_td(_('Reason').':');
-			$xtpl->table_td($member->m["m_suspend_reason"]);
-			$xtpl->table_tr();
-			$xtpl->form_out(_("Revive"));
-			
-		}
+		lifetimes_set_state_form('user', $u->id);
 		
-		print_deletem($member);
-		
-		$xtpl->sbar_add("<br><img src=\"template/icons/m_switch.png\"  title=". _("Switch context") ." /> Switch context", "?page=login&action=switch_context&m_id={$member->m["m_id"]}&next=".urlencode($_SERVER["REQUEST_URI"]));
+		$xtpl->sbar_add("<br><img src=\"template/icons/m_switch.png\"  title=". _("Switch context") ." /> Switch context", "?page=login&action=switch_context&m_id={$u->id}&next=".urlencode($_SERVER["REQUEST_URI"]));
 	}
 	
-		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Authentication tokens").'" />'._('Authentication tokens'), "?page=adminm&section=members&action=auth_tokens&id={$member->m["m_id"]}");
-		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Cluster resources").'" />'._('Cluster resources'), "?page=adminm&section=members&action=cluster_resources&id={$member->m["m_id"]}");
+	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Authentication tokens").'" />'._('Authentication tokens'), "?page=adminm&section=members&action=auth_tokens&id={$u->id}");
+	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Cluster resources").'" />'._('Cluster resources'), "?page=adminm&section=members&action=cluster_resources&id={$u->id}");
 }
 
 function print_deletem($member) {
@@ -1021,9 +971,7 @@ if ($_SESSION["logged_in"]) {
 			}
 			break;
 		case 'edit':
-			$member = member_load($_GET["id"]);
-			if ($member)
-				print_editm($member);
+			print_editm($_SESSION['is_admin'] ? $api->user->find($_GET["id"]) : $api->user->current());
 			break;
 		case 'edit_member':
 			$m = member_load($_GET["id"]);
@@ -1048,17 +996,18 @@ if ($_SESSION["logged_in"]) {
 			
 			break;
 		case 'passwd':
-			$m = member_load($_GET["id"]);
+			$u = $api->user->find($_GET["id"]);
 			
 			if ($_POST["m_pass"] != $_POST["m_pass2"]) {
 				$xtpl->perex(_("Invalid entry").': '._("Password"), _("The two passwords do not match."));
-				print_editm($m);
+				print_editm($u);
 				
 			} elseif (strlen($_POST["m_pass"]) < 5) {
 				$xtpl->perex(_("Invalid entry").': '._("Password"), _("Password must be at least 5 characters long."));
-				print_editm($m);
+				print_editm($u);
 				
 			} else {
+				$m = member_load($_GET['id']);
 				$m->m["m_pass"] = md5($m->m["m_nick"].$_POST["m_pass"]);
 				$m->save_changes();
 				
@@ -1068,6 +1017,7 @@ if ($_SESSION["logged_in"]) {
 			
 			break;
 		case 'edit_personal':
+			$u = $api->user->find($_GET["id"]);
 			$m = member_load($_GET["id"]);
 			
 			if($_SESSION["is_admin"]) {
@@ -1085,7 +1035,7 @@ if ($_SESSION["logged_in"]) {
 				
 			} elseif(!$_POST["reason"]) {
 				$xtpl->perex(_("Reason is required"), _("Please fill in reason for change."));
-				print_editm($m);
+				print_editm($u);
 				
 			} else {
 				$db->query("INSERT INTO members_changes SET
