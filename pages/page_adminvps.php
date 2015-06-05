@@ -1160,7 +1160,9 @@ if (isset($show_info) && $show_info) {
 	// Owner change
 		if ($_SESSION["is_admin"]) {
 			$xtpl->form_create('?page=adminvps&action=chown&veid='.$vps->id, 'post');
-			$xtpl->form_add_select(_("Owner").':', 'm_id', members_list(), $vps->user_id);
+			$xtpl->form_add_select(_("Owner").':', 'm_id',
+				resource_list_to_options($api->user->list(), 'id', 'login', false),
+				$vps->user_id);
 			$xtpl->table_add_category(_("Change owner"));
 			$xtpl->table_add_category('&nbsp;');
 			$xtpl->form_out(_("Go >>"));
