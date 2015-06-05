@@ -394,11 +394,24 @@ module VpsAdmin::API
                   'cannot update any parameters when changing object state'
           end
 
-          obj.set_object_state(
-              input[:object_state].to_sym,
-              reason: input[:change_reason],
-              expiration: input[:expiration_date]
-          )
+          if !input[:object_state] || obj.object_state == input[:object_state]
+            if input[:expiration_date]
+              obj.set_expiration(
+                  input[:expiration_date],
+                  reason: input[:change_reason]
+              )
+
+            else
+              error("object_state already is '#{obj.object_state}'")
+            end
+
+          else
+            obj.set_object_state(
+                input[:object_state].to_sym,
+                reason: input[:change_reason],
+                expiration: input[:expiration_date]
+            )
+          end
 
           obj
         end
