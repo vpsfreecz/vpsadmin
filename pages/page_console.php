@@ -13,7 +13,7 @@ if ($_SESSION["logged_in"]) {
 			$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
 <script type="text/javascript">
 function ajax_vps(cmd) {
-	$.get("ajax.php?page=vps&action=" + cmd + "&veid='.$vps->veid'&t='.csrf_token().'");
+	$.get("ajax.php?page=vps&action=" + cmd + "&veid='.$vps->veid.'&t='.csrf_token().'");
 }
 </script>
 ');
