@@ -824,15 +824,13 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$vps->user_id.'">'.$vps->user->login.'</a>');
 	$xtpl->table_tr();
 	
-	if($deprecated_vps->ve["vps_expiration"]) {
-		$xtpl->table_td(_("Expiration").':');
-		$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $deprecated_vps->ve["vps_expiration"]));
-		$xtpl->table_tr();
-	}
+	$xtpl->table_td(_("State").':');
+	$xtpl->table_td($vps->object_state);
+	$xtpl->table_tr();
 	
-	if($deprecated_vps->deleted) {
-		$xtpl->table_td(_("Deleted").':');
-		$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $deprecated_vps->ve["vps_deleted"]));
+	if ($vps->expiration_date) {
+		$xtpl->table_td(_("Expiration").':');
+		$xtpl->table_td($vps->expiration_date);
 		$xtpl->table_tr();
 	}
 	
@@ -884,7 +882,7 @@ if (isset($show_info) && $show_info) {
 	
 	$xtpl->table_out();
 	
-	if(!$_SESSION['is_admin'] && $vps->maintenance_lock != 'no') {
+	if (!$_SESSION['is_admin'] && $vps->maintenance_lock != 'no') {
 		$xtpl->perex(
 			_("VPS is under maintenance"),
 			_("All actions for this VPS are forbidden for the time being. This is usually used during outage to prevent data corruption.").
@@ -893,13 +891,18 @@ if (isset($show_info) && $show_info) {
 			._("Please be patient.")
 		);
 	
-	} elseif($deprecated_vps->deleted) {
+	} elseif ($vps->object_state == 'soft_delete') {
 		if ($_SESSION["is_admin"]) {
-			$xtpl->form_create('?page=adminvps&action=revive&veid='.$vps->id, 'post');
-			$xtpl->table_add_category(_("Revive"));
-			$xtpl->table_add_category('&nbsp;');
-			$xtpl->form_out(_("Go >>"));
+			lifetimes_set_state_form('vps', $vps->id);
+			
+		} else {
+			$xtpl->perex(_('VPS is scheduled for deletion.'),
+				_('This VPS is inaccessible and will be deleted when expiration date passes or some other event occurs. '.
+				'Contact support if you want to revive it.'));
 		}
+		
+	} elseif ($vps->object_state == 'hard_delete') {
+		$xtpl->perex(_('VPS is deleted.'), _('This VPS is deleted and cannot be revived.'));
 		
 	} else {
 	
@@ -1162,15 +1165,10 @@ if (isset($show_info) && $show_info) {
 			$xtpl->table_add_category('&nbsp;');
 			$xtpl->form_out(_("Go >>"));
 		}
-
-	// Expiration
-		if ($_SESSION["is_admin"]) {
-			$xtpl->form_create('?page=adminvps&action=expiration&veid='.$vps->id, 'post');
-			$xtpl->form_add_input(_("Date and time").':', 'text', '30', 'date', strftime("%Y-%m-%d %H:%M"));
-			$xtpl->form_add_checkbox(_("No expiration").':', 'no_expiration', '1', false);
-			$xtpl->table_add_category(_("Set expiration"));
-			$xtpl->table_add_category('&nbsp;');
-			$xtpl->form_out(_("Go >>"));
+		
+	// State change
+		if ($_SESSION['is_admin']) {
+			lifetimes_set_state_form('vps', $vps->id);
 		}
 
 	// Offline migration
