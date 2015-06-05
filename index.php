@@ -43,7 +43,6 @@ include WWW_ROOT.'lib/helpbox.lib.php';
 include WWW_ROOT.'lib/security.lib.php';
 
 include WWW_ROOT.'forms/dataset.forms.php';
-include WWW_ROOT.'forms/nas.forms.php';
 include WWW_ROOT.'forms/vps.forms.php';
 include WWW_ROOT.'forms/lifetimes.forms.php';
 
