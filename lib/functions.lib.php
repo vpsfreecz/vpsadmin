@@ -365,6 +365,10 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 			$xtpl->form_add_checkbox_pure($name, '1', $v);
 			break;
 		
+		case 'Datetime':
+			$xtpl->form_add_input_pure('text', '30', $name, $v);
+			break;
+		
 		case 'Resource':
 			$xtpl->form_add_select_pure(
 				$name,
