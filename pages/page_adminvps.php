@@ -801,6 +801,9 @@ if (isset($show_info) && $show_info) {
 	$deprecated_vps = vps_load($veid);
 	$vps = $api->vps->find($veid, array('meta' => array('includes' => 'node__location,node__environment,user,os_template')));
 	
+	if ($_SESSION['is_admin'])
+		$xtpl->sbar_add(_('State log'), '?page=lifetimes&action=changelog&resource=vps&id='.$vps->id.'&return='. urlencode($_SERVER['REQUEST_URI']));
+	
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->table_add_category('&nbsp;');
 	
@@ -1238,7 +1241,6 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_out();
 	}
 	*/
-	
 	}
 }
 
