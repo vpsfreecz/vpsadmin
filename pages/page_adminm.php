@@ -696,6 +696,224 @@ function request_ignore() {
 	redirect('?page=adminm&section=members&action=approval_requests');
 }
 
+function list_members() {
+	global $xtpl, $api, $cluster_cfg;
+	
+	if ($_SESSION["is_admin"]) {
+		$xtpl->title(_("Manage members [Admin mode]"));
+		
+		$xtpl->table_title(_('Filters'));
+		$xtpl->form_create('', 'get', 'user-filter', false);
+		
+		$xtpl->table_td(_("Limit").':'.
+			'<input type="hidden" name="page" value="adminm">'.
+			'<input type="hidden" name="action" value="list">'
+		);
+		$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
+		$xtpl->table_tr();
+		
+		$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
+		
+		$p = $api->vps->index->getParameters('input')->object_state;
+		
+		api_param_to_form('object_state', $p,
+			$p->choices[ $_GET['object_state'] ]);
+		
+		$xtpl->form_out(_('Show'));
+	
+	} else {
+		$xtpl->title(_("Manage members"));
+	}
+	
+	if (!$_SESSION['is_admin'] || $_GET['action'] == 'list') {
+		$xtpl->table_add_category('ID');
+		$xtpl->table_add_category(_("NICKNAME"));
+		$xtpl->table_add_category(_("VPS"));
+		
+		if ($cluster_cfg->get("payments_enabled")) {
+			$xtpl->table_add_category(_("$"));
+		}
+		
+		$xtpl->table_add_category(_("FULL NAME"));
+		$xtpl->table_add_category(_("LAST ACTIVITY"));
+		
+		if ($cluster_cfg->get("payments_enabled")) {
+			$xtpl->table_add_category(_("PAYMENT"));
+		}
+		
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		
+		if ($_SESSION['is_admin']) {
+			$params = array(
+				'limit' => get_val('limit', 25),
+				'offset' => get_val('offset', 0),
+				'meta' => array('count' => true)
+			);
+			
+			if ($_GET['object_state'])
+				$params['object_state'] = $api->user->index->getParameters('input')->object_state->choices[(int) $_GET['object_state']];
+			
+			$users = $api->user->list($params);
+			
+		} else {
+			$users = array($api->user->current());
+		}
+		
+		$listed_members = 0;
+		$total_income = 0;
+		$this_month_income = 0;
+		$t_now = time();
+		$t_year = date('Y', $t_now);
+		$t_month = date('m', $t_now);
+		$t_this_month = mktime (0, 0, 0, $t_month, 1, $t_year);
+		$t_next_month_tmp = mktime (0, 0, 0, $t_month, 1, $t_year) + 2678400;
+		$t_next_month_year = date('Y', $t_next_month_tmp);
+		$t_next_month_month = date('m', $t_next_month_tmp);
+		$t_next_month = mktime (0, 0, 0, $t_next_month_month, 1, $t_next_month_year);
+		
+		foreach ($users as $u) {
+			$paid_until = strtotime($u->paid_until);
+			$last_activity = strtotime($u->last_activity);
+			
+			$xtpl->table_td($u->id);
+			
+			if (($_SESSION["is_admin"]) && ($u->id != $_SESSION["member"]["m_id"])) {
+				$xtpl->table_td(
+					'<a href="?page=login&action=switch_context&m_id='.$u->id.'&next='.urlencode($_SERVER["REQUEST_URI"]).'">'.
+					'<img src="template/icons/m_switch.png" title="'._("Switch context").'"></a>"'.
+					$u->login
+				);
+				
+			} else {
+				$xtpl->table_td($u->login);
+			}
+			
+			$vps_count = $api->vps->list(array(
+				'user' => $u->id,
+				'limit' => 0,
+				'meta' => array('count' => true)
+			))->getTotalCount();
+			
+			$xtpl->table_td('<a href="?page=adminvps&action=list&user='.$u->id.'">[ '.$vps_count.' ]</a>');
+			
+			if ($cluster_cfg->get("payments_enabled"))
+				$xtpl->table_td($u->monthly_payment);
+	
+			if (($paid_until >= $t_this_month) && ($paid_until < $t_next_month)) {
+				$this_month_income += $u->monthly_payment;
+			}
+			
+			$total_income += $u->monthly_payment;
+			
+			$xtpl->table_td($u->full_name);
+			
+			$paid = $paid_until > time();
+			
+			if ($last_activity) {
+				if (($last_activity + 2592000) < time()) {
+					// Month
+					$xtpl->table_td(date('Y-m-d H:i:s', $last_activity), '#FFF');
+					
+				} elseif (($last_activity + 604800) < time()) {
+					// Week
+					$xtpl->table_td(date('Y-m-d H:i:s', $last_activity), '#99FF66');
+					
+				} elseif (($last_activity + 86400) < time()) {
+					// Day
+					$xtpl->table_td(date('Y-m-d H:i:s', $last_activity), '#66FF33');
+				} else {
+					// Less
+					$xtpl->table_td(date('Y-m-d H:i:s', $last_activity), '#33CC00');
+				}
+				
+			} else {
+				$xtpl->table_td("---", '#FFF');
+			}
+			
+			if ($cluster_cfg->get("payments_enabled")) {
+				if ($paid_until)
+					$paid_until_str = date('Y-m-d', $paid_until);
+				else
+					$paid_until_str = "Never been paid";
+				
+				if ($_SESSION["is_admin"]) {
+					if ($paid) {
+						if (($member->m["m_paid_until"] - time()) >= 604800) {
+								$xtpl->table_td('<a href="?page=adminm&section=members&action=payset&id='.$u->id.'">'._("->").' '.$paid_until_str.'</a>', '#66FF66');
+						} else {
+								$xtpl->table_td('<a href="?page=adminm&section=members&action=payset&id='.$u->id.'">'._("->").' '.$paid_until_str.'</a>', '#FFA500');
+						}
+						
+					} else {
+						$table_td = '<b><a href="?page=adminm&section=members&action=payset&id='.$u->id.'" title="'.$paid_until_str.'">'.
+							_("not paid!").
+							'</a></b>';
+						
+						if ($u->paid_until) {
+							$table_td .= ' '.ceil(($paid_until - time()) / 86400).'d';
+						}
+						
+						$xtpl->table_td($table_td, '#B22222');
+					}
+					
+				} else {
+					if ($paid) {
+						if (($member->m["m_paid_until"] - time()) >= 604800) {
+							$xtpl->table_td(_("->").' '.$paid_until_str, '#66FF66');
+							
+						} else {
+							$xtpl->table_td(_("->").' '.$paid_until_str, '#FFA500');
+						}
+						
+					} else {
+						$xtpl->table_td('<b>'._("not paid!").' (->'.$paid_until_str.')</b>', '#B22222');
+					}
+				}
+			}
+			
+			$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$u->id.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
+			
+			if ($_SESSION["is_admin"]) {
+				$xtpl->table_td('<a href="?page=adminm&section=members&action=delete&id='.$u->id.'"><img src="template/icons/m_delete.png"  title="'. _("Delete") .'" /></a>');
+				
+			} else {
+				$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'. _("Cannot delete yourself") .'" />');
+			}
+			
+			if ($_SESSION["is_admin"] && ($u->info != '')) {
+				$xtpl->table_td('<img src="template/icons/info.png" title="'.$u->info.'"');
+			}
+			
+			if ($u->level >= PRIV_SUPERADMIN) {
+				$xtpl->table_tr('#22FF22');
+			} elseif ($u->level >= PRIV_ADMIN) {
+				$xtpl->table_tr('#66FF66');
+			} elseif ($u->level >= PRIV_POWERUSER) {
+				$xtpl->table_tr('#BBFFBB');
+			} elseif ($u->object_state != "active") {
+				$xtpl->table_tr('#A6A6A6');
+			} else {
+				$xtpl->table_tr();
+			}
+			
+			$listed_members++;
+		}
+		
+		$xtpl->table_out();
+		
+		if ($_SESSION["is_admin"] && $cluster_cfg->get("payments_enabled")) {
+			$xtpl->table_add_category(_("Members in total").':');
+			$xtpl->table_add_category($listed_members);
+			$xtpl->table_add_category(_("Estimated monthly income").':');
+			$xtpl->table_add_category($total_income);
+			$xtpl->table_add_category(_("Estimated this month").':');
+			$xtpl->table_add_category($this_month_income);
+			$xtpl->table_out();
+		}
+	}
+}
+
 if ($_SESSION["logged_in"]) {
 
 	if ($_SESSION["is_admin"]) {
@@ -1499,204 +1717,7 @@ if ($_SESSION["logged_in"]) {
 			break;
 		
 		default:
-			if ($_SESSION["is_admin"]) {
-
-				$xtpl->title(_("Manage members [Admin mode]"));
-
-			} else {
-
-				$xtpl->title(_("Manage members"));
-			}
-
-			$xtpl->table_add_category('ID');
-			$xtpl->table_add_category(_("NICKNAME"));
-			$xtpl->table_add_category(_("VPS"));
-			if ($cluster_cfg->get("payments_enabled")) {
-				$xtpl->table_add_category(_("$"));
-			}
-			$xtpl->table_add_category(_("FULL NAME"));
-			$xtpl->table_add_category(_("LAST ACTIVITY"));
-			if ($cluster_cfg->get("payments_enabled")) {
-				$xtpl->table_add_category(_("PAYMENT"));
-			}
-			$xtpl->table_add_category('');
-			$xtpl->table_add_category('');
-
-			$listed_members = 0;
-			$total_income = 0;
-			$this_month_income = 0;
-			$t_now = time();
-			$t_year = date('Y', $t_now);
-			$t_month = date('m', $t_now);
-
-			$t_this_month = mktime (0, 0, 0, $t_month, 1, $t_year);
-
-			$t_next_month_tmp = mktime (0, 0, 0, $t_month, 1, $t_year) + 2678400;
-
-			$t_next_month_year = date('Y', $t_next_month_tmp);
-			$t_next_month_month = date('m', $t_next_month_tmp);
-
-			$t_next_month = mktime (0, 0, 0, $t_next_month_month, 1, $t_next_month_year);
-
-			if ($members = get_members_array()) {
-
-				foreach ($members as $member) {
-
-					$xtpl->table_td($member->m["m_id"]);
-
-					if (($_SESSION["is_admin"]) && ($member->m["m_id"] != $_SESSION["member"]["m_id"])) {
-
-						$xtpl->table_td("<a href='?page=login&action=switch_context&m_id={$member->m["m_id"]}&next=".urlencode($_SERVER["REQUEST_URI"])."'><img src=\"template/icons/m_switch.png\"  title=". _("Switch context") ." /></a>".
-						$member->m["m_nick"]);
-
-					} else {
-						$xtpl->table_td($member->m["m_nick"]);
-					}
-
-					$vps_count = $member->get_vps_count();
-
-					$xtpl->table_td("<a href='?page=adminvps&action=list&user=".$member->m["m_id"]."'>[ ".$vps_count." ]</a>");
-
-					if ($cluster_cfg->get("payments_enabled")) {
-						$xtpl->table_td($member->m["m_monthly_payment"]);
-					}
-
-					if (($member->m["m_paid_until"] >= $t_this_month) && ($member->m["m_paid_until"] < $t_next_month)) {
-						$this_month_income += $member->m["m_monthly_payment"];
-					}
-
-					$total_income += $member->m["m_monthly_payment"];
-
-					$xtpl->table_td($member->m["m_name"]);
-
-					$paid = $member->has_paid_now();
-
-					if ($member->m["m_last_activity"]) {
-						if (($member->m["m_last_activity"]+2592000) < time()) {
-
-							// Month
-							$xtpl->table_td(date('Y-m-d H:i:s', $member->m["m_last_activity"]), '#FFF');
-
-						} elseif (($member->m["m_last_activity"]+604800) < time()) {
-
-							// Week
-							$xtpl->table_td(date('Y-m-d H:i:s', $member->m["m_last_activity"]), '#99FF66');
-
-						} elseif (($member->m["m_last_activity"]+86400) < time()) {
-
-							// Day
-							$xtpl->table_td(date('Y-m-d H:i:s', $member->m["m_last_activity"]), '#66FF33');
-
-						} else {
-
-							// Less
-							$xtpl->table_td(date('Y-m-d H:i:s', $member->m["m_last_activity"]), '#33CC00');
-
-						}
-
-					} else {
-					    $xtpl->table_td("---", '#FFF');
-					}
-
-					if ($cluster_cfg->get("payments_enabled")) {
-
-						if ($member->m["m_paid_until"]) {
-								$paid_until = date('Y-m-d', $member->m["m_paid_until"]);
-						} else {
-							$paid_until = "Never been paid";
-						}
-
-						if ($_SESSION["is_admin"]) {
-
-							if ($paid == (-1)) {
-								$xtpl->table_td('<a href="?page=adminm&section=members&action=payset&id='.$member->mid.'">'._("info. missing").'</a>', '#FF8C00');
-
-							} elseif ($paid == 0) {
-								$table_td = '<b><a href="?page=adminm&section=members&action=payset&id='.$member->mid.'" title="'.$paid_until.'">'.
-										_("not paid!").
-										'</a></b>';
-
-								if ($member->m["m_paid_until"]) {
-										$table_td .= ' '.ceil(($member->m["m_paid_until"] - time())/86400).'d';
-								}
-
-								$xtpl->table_td($table_td, '#B22222');
-
-							} else {
-
-								if (($member->m["m_paid_until"] - time()) >= 604800) {
-										$xtpl->table_td('<a href="?page=adminm&section=members&action=payset&id='.$member->mid.'">'._("->").' '.$paid_until.'</a>', '#66FF66');
-								} else {
-										$xtpl->table_td('<a href="?page=adminm&section=members&action=payset&id='.$member->mid.'">'._("->").' '.$paid_until.'</a>', '#FFA500');
-								}
-							}
-						} else {
-
-							if ($paid == (-1)) {
-								$xtpl->table_td(_("info. missing"), '#FF8C00');
-
-							} elseif ($paid == 0) {
-								$xtpl->table_td('<b>'._("not paid!").' (->'.$paid_until.')</b>', '#B22222');
-
-							} else {
-
-								if (($member->m["m_paid_until"] - time()) >= 604800) {
-										$xtpl->table_td(_("->").' '.$paid_until, '#66FF66');
-
-								} else {
-										$xtpl->table_td(_("->").' '.$paid_until, '#FFA500');
-								}
-							}
-						}
-					}
-
-					$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$member->mid.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
-
-					if ($_SESSION["is_admin"]) {
-
-// 						if ($vps_count > 0) {
-// 							$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'. _("Cannot delete, has VPSes") .'" />');
-// 
-// 						} else {
-							$xtpl->table_td('<a href="?page=adminm&section=members&action=delete&id='.$member->mid.'"><img src="template/icons/m_delete.png"  title="'. _("Delete") .'" /></a>');
-// 						}
-
-					} else {
-						$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'. _("Cannot delete yourself") .'" />');
-					}
-
-					if ($_SESSION["is_admin"] && ($member->m["m_info"]!='')) {
-						$xtpl->table_td('<img src="template/icons/info.png" title="'.$member->m["m_info"].'"');
-					}
-
-					if ($member->m["m_level"] >= PRIV_SUPERADMIN) {
-						$xtpl->table_tr('#22FF22');
-					} elseif ($member->m["m_level"] >= PRIV_ADMIN) {
-						$xtpl->table_tr('#66FF66');
-					} elseif ($member->m["m_level"] >= PRIV_POWERUSER) {
-						$xtpl->table_tr('#BBFFBB');
-					} elseif ($member->m["m_state"] != "active") {
-						$xtpl->table_tr('#A6A6A6');
-					} else {
-						$xtpl->table_tr();
-					}
-
-					$listed_members++;
-				}
-			}
-
-			$xtpl->table_out();
-
-			if ($_SESSION["is_admin"] && $cluster_cfg->get("payments_enabled")) {
-
-				$xtpl->table_add_category(_("Members in total").':');
-				$xtpl->table_add_category($listed_members);
-				$xtpl->table_add_category(_("Estimated monthly income").':');
-				$xtpl->table_add_category($total_income);
-				$xtpl->table_add_category(_("Estimated this month").':');
-				$xtpl->table_add_category($this_month_income);
-				$xtpl->table_out();
-			}
+			list_members();
 			break;
 	}
 	
