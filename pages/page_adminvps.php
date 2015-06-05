@@ -669,6 +669,11 @@ if ($list_vps) {
 		$xtpl->form_add_select(_("Environment").':', 'environment',
 			resource_list_to_options($api->environment->list()), get_val('environment'));
 		
+		$p = $api->vps->index->getParameters('input')->object_state;
+		
+		api_param_to_form('object_state', $p,
+			$p->choices[ $_GET['object_state'] ]);
+		
 		$xtpl->form_out(_('Show'));
 	}
 	
@@ -703,6 +708,9 @@ if ($list_vps) {
 			
 			if ($_GET['environment'])
 				$params['environment'] = $_GET['environment'];
+			
+			if ($_GET['object_state'])
+				$params['object_state'] = $api->vps->index->getParameters('input')->object_state->choices[(int) $_GET['object_state']];
 			
 			$vpses = $api->vps->list($params);
 			
