@@ -45,6 +45,7 @@ include WWW_ROOT.'lib/security.lib.php';
 include WWW_ROOT.'forms/dataset.forms.php';
 include WWW_ROOT.'forms/nas.forms.php';
 include WWW_ROOT.'forms/vps.forms.php';
+include WWW_ROOT.'forms/lifetimes.forms.php';
 
 include WWW_ROOT.'lib/gettext_stream.lib.php';
 include WWW_ROOT.'lib/gettext_inc.lib.php';
@@ -161,6 +162,9 @@ try {
 				break;
 			case 'jumpto':
 				include WWW_ROOT.'pages/page_jumpto.php';
+				break;
+			case 'lifetimes':
+				include WWW_ROOT.'pages/page_lifetimes.php';
 				break;
 			default:
 				include WWW_ROOT.'pages/page_index.php';
