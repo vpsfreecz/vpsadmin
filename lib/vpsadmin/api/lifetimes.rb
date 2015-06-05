@@ -384,6 +384,10 @@ module VpsAdmin::API
       end
 
       def self.action_methods(action)
+        action.send(:define_method, :change_object_state?) do
+          input[:object_state] || input[:expiration_date]
+        end
+
         action.send(:define_method, :update_object_state) do |obj|
           unless (input.keys - %i(object_state change_reason expiration_date)).empty?
             raise VpsAdmin::API::Exceptions::TooManyParameters,
