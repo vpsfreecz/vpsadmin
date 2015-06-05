@@ -924,7 +924,6 @@ if ($_SESSION["logged_in"]) {
 		if ($cluster_cfg->get("payments_enabled")) {
 			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments history").'" /> '._("Display history of payments"), '?page=adminm&section=members&action=payments_history');
 		}
-		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Deleted members").'" /> '._("Deleted members"), '?page=adminm&section=members&action=show_deleted');
 	}
 
 	switch ($_GET["action"]) {
@@ -1682,37 +1681,6 @@ if ($_SESSION["logged_in"]) {
 			
 			elseif(isset($_POST["ignore"]) || $_GET["rule"] == "ignore")
 				request_ignore();
-			
-			break;
-		
-		case 'show_deleted':
-			if(!$_SESSION["is_admin"])
-				break;
-			
-			$xtpl->table_add_category('ID');
-			$xtpl->table_add_category(_("NICKNAME"));
-			$xtpl->table_add_category(_("VPS"));
-			$xtpl->table_add_category(_("FULL NAME"));
-			$xtpl->table_add_category(_("DELETED"));
-			$xtpl->table_add_category('');
-			$xtpl->table_add_category('');
-			
-			$rs = $db->query("SELECT m_id FROM members WHERE m_state = 'deleted'");
-			
-			while($row = $db->fetch_array($rs)) {
-				$m = new member_load($row["m_id"]);
-				
-				$xtpl->table_td($m->mid);
-				$xtpl->table_td($m->m["m_nick"]);
-				$xtpl->table_td("<a href='?page=adminvps&action=list&user=".$m->m["m_id"]."'>[ ".$m->get_vps_count()." ]</a>");
-				$xtpl->table_td($m->m["m_name"]);
-				$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $m->m["m_deleted"]));
-				$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$m->mid.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
-				$xtpl->table_td('<a href="?page=adminm&section=members&action=delete&id='.$m->mid.'"><img src="template/icons/m_delete.png"  title="'. _("Delete") .'" /></a>');
-				$xtpl->table_tr();
-			}
-			
-			$xtpl->table_out();
 			
 			break;
 		
