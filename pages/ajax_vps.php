@@ -1,9 +1,8 @@
 <?php
 
-$vps = vps_load($_GET["veid"]);
-$member_of_session = member_load($_SESSION["member"]["m_id"]);
+$vps = $api->vps->find($_GET["veid"], array('meta' => array('includes' => 'user')));
 
-if(!$vps->exists || (!$member_of_session->m["m_state"] == "active" && $cluster_cfg->get("payments_enabled")))
+if ($vps->object_state != 'active' || $vps->user->object_state != 'active')
 	exit;
 
 switch ($_GET["action"]) {
