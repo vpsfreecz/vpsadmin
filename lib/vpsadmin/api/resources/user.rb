@@ -17,6 +17,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     string :info, label: 'Info', db_name: :m_info
     integer :monthly_payment, label: 'Monthly payment', db_name: :m_monthly_payment,
             default: 300
+    datetime :paid_until, label: 'Paid until'
+    datetime :last_activity, label: 'Last activity'
     bool :mailer_enabled, label: 'Enabled mailer', db_name: :m_mailer_enable,
          default: true
     bool :playground_enabled, label: 'Enabled playground', db_name: :m_playground_enable,

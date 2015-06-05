@@ -113,6 +113,16 @@ class User < ActiveRecord::Base
     m_last_activity ? Time.at(m_last_activity) : 'never'
   end
 
+  def paid_until
+    i = m_paid_until.to_i
+    i > 0 ? Time.at(i) : nil
+  end
+
+  def last_activity
+    i = m_last_activity.to_i
+    i > 0 ? Time.at(i) : nil
+  end
+
   def valid_password?(*credentials)
     VpsAdmin::API::CryptoProvider.matches?(m_pass, *credentials)
   end
