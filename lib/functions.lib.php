@@ -22,20 +22,6 @@
 
 $DATA_SIZE_UNITS = array("k" => "KiB", "m" => "MiB", "g" => "GiB", "t" => "TiB");
 
-function members_list () {
-	global $db;
-	if ($_SESSION["is_admin"]) {
-		$sql = "SELECT * FROM members WHERE m_state != 'deleted' ORDER BY m_nick ASC";
-		if ($result = $db->query($sql))
-			while ($m = $db->fetch_array($result)) {
-			$out[$m["m_id"]] = $m["m_nick"];
-			}
-		else $out = false;
-		return $out;
-	}
-	else return array($_SESSION["member"]["m_id"] => $_SESSION["member"]["m_nick"]);
-}
-
 function get_all_ip_list ($v = 4) {
 	global $db;
 	$sql = "SELECT * FROM vps_ip WHERE ip_v = {$db->check($v)}";
