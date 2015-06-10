@@ -6,7 +6,8 @@ class VpsFeature < ActiveRecord::Base
       tun: 'TUN/TAP',
       fuse: 'FUSE',
       nfs: 'NFS',
-      ppp: 'PPP'
+      ppp: 'PPP',
+      bridge: 'Bridge'
   }
 
   validates :name, inclusion: {

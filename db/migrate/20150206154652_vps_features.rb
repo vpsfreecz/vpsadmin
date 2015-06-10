@@ -9,7 +9,7 @@ class VpsFeatures < ActiveRecord::Migration
   class VpsFeature < ActiveRecord::Base
     belongs_to :vps
 
-    FEATURES = %i(iptables tun fuse nfs ppp)
+    FEATURES = %i(iptables tun fuse nfs ppp bridge)
   end
 
   def change
