@@ -159,6 +159,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
   class Update < HaveAPI::Actions::Default::Update
     input do
       use :changeable
+      string :password, label: 'Password',
+             desc: 'The password must be at least 8 characters long'
     end
 
     output do
@@ -180,6 +182,14 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       if input[:paid_until]
         u.m_paid_until = input.delete(:paid_until).to_i.to_s
+      end
+
+      if input[:password]
+        error('update failed',
+              password: ['password must be at least 8 characters long']
+        ) if input[:password].length < 8
+
+        u.m_pass = VpsAdmin::API::CryptoProvider.encrypt(u.login, input.delete(:password))
       end
 
       u.update!(to_db_names(input))
