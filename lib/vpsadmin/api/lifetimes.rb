@@ -159,7 +159,7 @@ module VpsAdmin::API
           end
 
           def exec
-            query.limit(input[:limit]).offset(input[:offset]).order('created_at')
+            with_includes(query).limit(input[:limit]).offset(input[:offset]).order('created_at')
           end
         end
 
@@ -177,7 +177,7 @@ module VpsAdmin::API
           end
 
           def prepare
-            @state = ::ObjectState.where(
+            @state = with_includes.where(
                 class_name: self.class::PARENT_RESOURCE.model.name,
                 row_id: params[self.class::PARENT_OBJECT_ID],
                 id: params[:state_log_id]
