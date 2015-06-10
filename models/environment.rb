@@ -7,6 +7,7 @@ class Environment < ActiveRecord::Base
   has_many :environment_user_configs
   has_many :users, through: :environment_user_configs
   has_many :environment_dataset_plans
+  has_many :default_object_cluster_resources
 
   has_paper_trail
 

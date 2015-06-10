@@ -7,8 +7,12 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     id :id, label: 'User ID', db_name: :m_id
   end
 
-  params(:common) do
+  params(:writable) do
     string :login, label: 'Login', db_name: :m_nick
+    use :changeable
+  end
+
+  params(:changeable) do
     string :full_name, label: 'Full name', desc: 'First and last name',
            db_name: :m_name
     string :email, label: 'E-mail', db_name: :m_mail
@@ -18,11 +22,15 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     integer :monthly_payment, label: 'Monthly payment', db_name: :m_monthly_payment,
             default: 300
     datetime :paid_until, label: 'Paid until'
-    datetime :last_activity, label: 'Last activity'
     bool :mailer_enabled, label: 'Enabled mailer', db_name: :m_mailer_enable,
          default: true
     bool :playground_enabled, label: 'Enabled playground', db_name: :m_playground_enable,
          default: true
+  end
+
+  params(:common) do
+    use :writable
+    datetime :last_activity, label: 'Last activity'
   end
 
   params(:dates) do
@@ -55,8 +63,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       else
         ::User.all
       end
-
-      q
     end
 
     def count
@@ -72,7 +78,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     desc 'Create new user'
 
     input do
-      use :common
+      use :writable
     end
 
     output do

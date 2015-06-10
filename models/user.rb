@@ -29,6 +29,7 @@ class User < ActiveRecord::Base
       message: 'not a valid login'
   }, uniqueness: true
 
+  include Lockable
   include HaveAPI::Hookable
 
   has_hook :create
