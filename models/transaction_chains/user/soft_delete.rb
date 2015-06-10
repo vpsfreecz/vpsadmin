@@ -11,7 +11,7 @@ module TransactionChains
           }
       })
 
-      user.vps.where(object_state: %i(active suspended)).each do |vps|
+      user.vpses.where(object_state: %i(active suspended)).each do |vps|
         vps.set_object_state(:soft_delete, reason: 'User was soft deleted',
                              chain: self)
       end
