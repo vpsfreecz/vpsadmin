@@ -156,6 +156,48 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
   end
 
+  class Update < HaveAPI::Actions::Default::Update
+    input do
+      use :changeable
+    end
+
+    output do
+      use :all
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def exec
+      u = ::User.existing.find(params[:user_id])
+
+      if input.empty?
+        error('provide at least one attribute to update')
+      end
+
+      update_object_state!(u) if change_object_state?
+
+      if input[:paid_until]
+        u.m_paid_until = input.delete(:paid_until).to_i.to_s
+      end
+
+      u.update!(to_db_names(input))
+      u
+    end
+  end
+
+  class Delete < HaveAPI::Actions::Default::Delete
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def exec
+      u = ::User.existing.find(params[:user_id])
+      update_object_state!(u)
+    end
+  end
+
   class ClusterResource < HaveAPI::Resource
     desc "Manage user's cluster resources"
     version 1
