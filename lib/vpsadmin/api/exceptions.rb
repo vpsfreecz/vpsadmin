@@ -94,4 +94,10 @@ module VpsAdmin::API::Exceptions
   class TooManyParameters < ::StandardError
 
   end
+
+  class MailTemplateDoesNotExist < ::StandardError
+    def initialize(name)
+      super("Mail template '#{name}' does not exist")
+    end
+  end
 end

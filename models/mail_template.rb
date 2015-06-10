@@ -15,7 +15,8 @@ class MailTemplate < ActiveRecord::Base
   end
 
   def self.send_mail!(name, opts = {})
-    tpl = MailTemplate.find_by!(name: name)
+    tpl = MailTemplate.find_by(name: name)
+    raise VpsAdmin::API::Exceptions::MailTemplateDoesNotExist, name unless tpl
     tpl.resolve(opts[:vars]) if opts[:vars]
 
     mail = MailLog.new(
