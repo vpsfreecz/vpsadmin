@@ -1,6 +1,7 @@
 module TransactionChains
   class Lifetimes::Wrapper < ::TransactionChain
     label 'State change'
+    allow_empty
 
     def link_chain(obj, target, states, enter, chains, log)
       concerns(:affect, [obj.class.name, obj.id])
@@ -13,7 +14,6 @@ module TransactionChains
         default = true
 
         if chains[s] && chains[s][dir]
-          puts "\nCALLING chain #{chains[s][dir]}\n"
           default = use_chain(chains[s][dir], args: [
               obj,
               s == last,
@@ -44,8 +44,6 @@ module TransactionChains
           end
         end
       end
-
-      fail 'fancy rollback'
     end
   end
 end
