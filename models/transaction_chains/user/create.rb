@@ -3,9 +3,10 @@ module TransactionChains
     label 'Create user'
     allow_empty
 
-    def link_chain(user)
+    def link_chain(user, create_vps, node, tpl)
       user.save!
       lock(user)
+      concerns(:affect, [user.class.name, user.id])
 
       objects = [user]
 
@@ -35,8 +36,23 @@ module TransactionChains
 
       user.call_class_hooks_for(:create, self, args: [user])
 
+      if create_vps
+        vps = ::Vps.new(
+            user: user,
+            node: node,
+            os_template: tpl,
+            hostname: 'vps',
+            vps_backup_export: 0,
+            vps_backup_exclude: '',
+            vps_config: ''
+        )
+        vps.dns_resolver = DnsResolver.pick_suitable_resolver_for_vps(vps)
+
+        use_chain(Vps::Create, args: [vps, true])
+      end
+
       unless empty?
-        append(Transaction::Utils::NoOp, args: ::Node.first_available.id) do
+        append(Transactions::Utils::NoOp, args: ::Node.first_available.id) do
           objects.each { |o| just_create(o) }
         end
       end

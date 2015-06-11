@@ -9,6 +9,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   params(:writable) do
     string :login, label: 'Login', db_name: :m_nick
+    string :password, label: 'Password',
+           desc: 'The password must be at least 8 characters long'
     use :changeable
   end
 
@@ -26,6 +28,17 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
          default: true
     bool :playground_enabled, label: 'Enabled playground', db_name: :m_playground_enable,
          default: true
+  end
+
+  params(:vps) do
+    bool :vps, label: 'Create a VPS'
+    resource VpsAdmin::API::Resources::Node, label: 'Node', desc: 'Node VPS will run on',
+             value_label: :name
+    resource VpsAdmin::API::Resources::Environment, label: 'Environment',
+             desc: 'Environment in which to create the VPS'
+    resource VpsAdmin::API::Resources::Location, label: 'Location',
+             desc: 'Location in which to create the VPS'
+    resource VpsAdmin::API::Resources::OsTemplate, label: 'OS template'
   end
 
   params(:common) do
@@ -55,7 +68,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def query
-      q = if input[:object_state]
+      if input[:object_state]
         ::User.unscoped.where(
             object_state: ::User.object_states[input[:object_state]]
         )
@@ -79,6 +92,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     input do
       use :writable
+      use :vps
     end
 
     output do
@@ -90,8 +104,37 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def exec
-      user = ::User.new(to_db_names(input))
-      user.create
+      vps_params = %i(vps node environment location os_template)
+
+      user = ::User.new(to_db_names(input.select { |k,_| !vps_params.include?(k) }))
+
+      if input[:vps]
+        if input[:os_template].nil?
+          error('provide an OS template')
+        end
+
+        if input[:environment].nil? && input[:location].nil? && input[:node].nil?
+          error('provide either an environment, a location or a node')
+        end
+
+        if input[:node]
+          node = input[:node]
+
+        elsif input[:location]
+          node = ::Node.pick_by_location(input[:location])
+
+        else
+          node = ::Node.pick_by_env(input[:environment])
+        end
+
+        unless node
+          error('no free node is available in selected environment/location')
+        end
+
+        input[:node] = node
+      end
+
+      user.create(input[:vps], input[:node], input[:os_template])
 
     rescue ActiveRecord::RecordInvalid
       error('create failed', to_param_names(user.errors.to_hash, :input))
@@ -159,8 +202,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
   class Update < HaveAPI::Actions::Default::Update
     input do
       use :changeable
-      string :password, label: 'Password',
-             desc: 'The password must be at least 8 characters long'
     end
 
     output do

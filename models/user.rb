@@ -51,18 +51,14 @@ class User < ActiveRecord::Base
                     }
 
   default_scope {
-    where.not(object_state: [
-                  object_states[:soft_delete],
-                  object_states[:hard_delete]
-              ])
+    where.not(object_state: object_states[:hard_delete])
   }
 
   scope :existing, -> {
     unscoped {
       where(object_state: [
                 object_states[:active],
-                object_states[:suspended],
-                object_states[:soft_delete]
+                object_states[:suspended]
             ])
     }
   }
@@ -76,8 +72,8 @@ class User < ActiveRecord::Base
       99 => 'God',
   }
 
-  def create
-    TransactionChains::User::Create.fire(self)
+  def create(vps, node, tpl)
+    TransactionChains::User::Create.fire(self, vps, node, tpl)
   end
 
   def destroy(override = false)
