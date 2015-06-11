@@ -9,12 +9,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   params(:writable) do
     string :login, label: 'Login', db_name: :m_nick
-    string :password, label: 'Password',
-           desc: 'The password must be at least 8 characters long'
-    use :changeable
-  end
-
-  params(:changeable) do
     string :full_name, label: 'Full name', desc: 'First and last name',
            db_name: :m_name
     string :email, label: 'E-mail', db_name: :m_mail
@@ -28,6 +22,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
          default: true
     bool :playground_enabled, label: 'Enabled playground', db_name: :m_playground_enable,
          default: true
+  end
+
+  params(:password) do
+    string :password, label: 'Password',
+           desc: 'The password must be at least 8 characters long'
   end
 
   params(:vps) do
@@ -92,6 +91,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     input do
       use :writable
+      use :password
       use :vps
     end
 
@@ -203,7 +203,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   class Update < HaveAPI::Actions::Default::Update
     input do
-      use :changeable
+      use :writable
+      use :password
     end
 
     output do
@@ -212,10 +213,13 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
+      input whitelist: %i(password mailer_enabled)
+      restrict m_id: u.id
+      allow
     end
 
     def exec
-      u = ::User.including_deleted.find(params[:user_id])
+      u = ::User.including_deleted.find_by!(with_restricted(m_id: params[:user_id]))
 
       if input.empty?
         error('provide at least one attribute to update')
