@@ -195,29 +195,27 @@ function print_editm($u) {
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Cluster resources").'" />'._('Cluster resources'), "?page=adminm&section=members&action=cluster_resources&id={$u->id}");
 }
 
-function print_deletem($member) {
-	global $db, $xtpl;
+function print_deletem($u) {
+	global $db, $xtpl, $api;
 	
 	$xtpl->table_title(_("Delete member"));
 	$xtpl->table_td(_("Full name").':');
-	$xtpl->table_td($member->m["m_name"]);
+	$xtpl->table_td($u->full_name);
 	$xtpl->table_tr();
-	$xtpl->form_create('?page=adminm&section=members&action=delete2&id='.$_GET["id"], 'post');
+	$xtpl->form_create('?page=adminm&section=members&action=delete2&id='.$u->id, 'post');
 	$xtpl->table_td(_("VPSes to be deleted").':');
 	
 	$vpses = '';
 	
-	while ($vps = $db->findByColumn("vps", "m_id", $member->m["m_id"]))
-		$vpses .= '<a href="?page=adminvps&action=info&veid='.$vps["vps_id"].'">#'.$vps["vps_id"].' - '.$vps["vps_hostname"].'</a><br>';
+	foreach ($api->vps->list(array('user' => $u->id)) as $vps)
+		$vpses .= '<a href="?page=adminvps&action=info&veid='.$vps->id.'">#'.$vps->id.' - '.$vps->hostname.'</a><br>';
 	
 	$xtpl->table_td($vpses);
 	$xtpl->table_tr();
 	
-	if($member->m["m_state"] != "deleted")
-		$xtpl->form_add_checkbox(_("Lazy delete").':', 'lazy_delete', '1', true,
-			_("Do not delete member and his VPSes immediately, but after passing of predefined time."));
+	$desc = $api->user->delete->getParameters('input')->object_state;
+	api_param_to_form('object_state', $desc);
 	
-	$xtpl->form_add_checkbox(_("Notify member").':', 'notify', '1', true);
 	$xtpl->form_out(_("Delete"));
 }
 
@@ -897,47 +895,41 @@ if ($_SESSION["logged_in"]) {
 			}
 			break;
 		case 'delete':
-			if ($_SESSION["is_admin"] && ($m = member_load($_GET["id"]))) {
+			if ($_SESSION["is_admin"] && ($u = $api->user->find($_GET["id"]))) {
 
 				$xtpl->perex(_("Are you sure, you want to delete")
-								.' '.$m->m["m_nick"].'?','');
-				print_deletem($m);
+								.' '.$u->login.'?','');
+				print_deletem($u);
 
 			}
 			break;
 		case 'delete2':
-			if ($_SESSION["is_admin"] && ($m = member_load($_GET["id"]))) {
+			if ($_SESSION["is_admin"] && ($u = $api->user->find($_GET["id"]))) {
 				$xtpl->perex(_("Are you sure, you want to delete")
-						.' '.$m->m["m_nick"].'?',
-						'<a href="?page=adminm&section=members">'
+						.' '.$u->login.'?',
+						'<a href="?page=adminm">'
 						. strtoupper(_("No"))
-						. '</a> | <a href="?page=adminm&section=members&action=delete3&id='.$_GET["id"].'&notify='.$_REQUEST["notify"].'&lazy='.$_REQUEST["lazy_delete"].'">'
+						. '</a> | <a href="?page=adminm&section=members&action=delete3&id='.$u->id.'&&state='.$_REQUEST["object_state"].'">'
 						. strtoupper(_("Yes")).'</a>');
 				}
 			break;
 		case 'delete3':
-			if ($_SESSION["is_admin"]) {
-
-				if ($m = member_load($_GET["id"]))
+			if ($_SESSION["is_admin"] && ($u = $api->user->find($_GET["id"]))) {
+				try {
+					$choices = $api->user->delete->getParameters('input')->object_state->choices;
+					$state = $choices[(int) $_GET['object_state']];
 					
-					$lazy = $_GET["lazy"] ? true : false;
+					$u->delete(array(
+						'object_state' => $state
+					));
 					
-					$m->delete_all_vpses($lazy);
+					notify_user(_("User deleted"), _('The user was successfully deleted.'));
+					redirect('?page=adminm', 350);
 					
-					if ($m->destroy($lazy)) {
-						if ($_GET["notify"])
-							$m->notify_delete($lazy);
-						
-						$xtpl->perex(_("Member deleted"), _("Continue").' <a href="?page=adminm&section=members">'.strtolower(_("Here")).'</a>');
-						$xtpl->delayed_redirect('?page=adminm', 350);
-
-					} else {
-
-						$xtpl->perex(_("Error"),
-										_("Continue")
-										. ' <a href="?page=adminm&section=members">'
-										. strtolower(_("Here")).'</a>');
-					}
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('User deletion failed'), $e->getResponse());
+					print_newm();
+				}
 			}
 			break;
 		case 'edit':
