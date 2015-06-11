@@ -221,24 +221,6 @@ function print_deletem($member) {
 	$xtpl->form_out(_("Delete"));
 }
 
-function validate_username($username) {
-	global $db, $xtpl;
-	
-	if(!ereg('^[a-zA-Z0-9\.\-]{1,63}$', $username)) {
-		$xtpl->perex(_("Invalid entry").': '._("Nickname"),'');
-		return false;
-	}
-	
-	if($user = $db->findByColumnOnce("members", "m_nick", $username)) {
-		$xtpl->perex(
-			_("Error").': '._("User already exists"),
-			_("See").' <a href="?page=adminm&section=members&action=edit&id='.$user["m_id"].'">'.($user["m_name"] ? $user["m_name"] : $user["m_nick"]).'</a>');
-		return false;
-	}
-	
-	return true;
-}
-
 function list_auth_tokens() {
 	global $api, $xtpl;
 	
@@ -885,45 +867,32 @@ if ($_SESSION["logged_in"]) {
 			break;
 		case 'new2':
 			if ($_SESSION["is_admin"]) {
-				$ereg_ok = false;
-				if (validate_username($_REQUEST["m_nick"])) {
-					if (ereg('^[0-9]{1,4}$',$_REQUEST["m_level"])) {
-						if (($_REQUEST["m_pass"] == $_REQUEST["m_pass2"]) && (strlen($_REQUEST["m_pass"]) >= 5)) {
-							if (is_string($_REQUEST["m_mail"])) {
-
-								$ereg_ok = true;
-								$m = member_load();
-
-								if (!$m->exists) {
-
-									if ($m->create_new($_REQUEST)) {
-										nas_create_default_exports("member", $m->m);
-										
-										$xtpl->perex(_("Member added"),
-														_("Continue")
-														. ' <a href="?page=adminm&section=members">'.strtolower(_("Here")).'</a>');
-
-									} else $xtpl->perex(_("Error"),
-													_("Continue")
-													. ' <a href="?page=adminm&section=members">'.strtolower(_("Here")).'</a>');
-
-								} else $xtpl->perex(_("Error").': '
-												. _("User already exists"), _("Continue")
-												. ' <a href="?page=adminm&section=members">'.strtolower(_("Here")).'</a>');
-
-							} else $xtpl->perex(_("Invalid entry").': '._("E-mail"),'');
-						} else $xtpl->perex(_("Invalid entry").': '._("Password"),'');
-					} else $xtpl->perex(_("Invalid entry").': '._("Privileges"),'');
-				}
-
-				if (!$ereg_ok) {
-
+				if ($_POST['m_pass'] != $_POST['m_pass2']) {
+					$xtpl->perex(_("Passwords don't match"), _('The two passwords differ.'));
 					print_newm();
-
-				} else {
-
-						$xtpl->delayed_redirect('?page=adminm', 350);
-
+					break;
+				}
+				
+				try {
+					$user = $api->user->create(array(
+						'login' => $_POST['m_nick'],
+						'password' => $_POST['m_pass'],
+						'full_name' => $_POST['m_name'],
+						'email' => $_POST['m_mail'],
+						'address' => $_POST['m_address'],
+						'level' => $_POST['m_level'],
+						'info' => $_POST['m_info'],
+						'monthly_payment' => $_POST['m_monthly_payment'],
+						'mailer_enabled' => $_POST['m_mailer_enable'],
+						'playground_enabled' => $_POST['m_playground_enable']
+					));
+					
+					notify_user(_('User created'), _('The user was successfully created.'));
+					redirect('?page=adminm&action=edit&id='.$user->id);
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('User creation failed'), $e->getResponse());
+					print_newm();
 				}
 			}
 			break;
