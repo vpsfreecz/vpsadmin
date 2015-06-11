@@ -81,7 +81,7 @@ function print_editm($u) {
 	if ($_SESSION["is_admin"]) {
 		$xtpl->table_add_category('&nbsp;');
 		
-		$xtpl->form_add_input(_("Nickname").':', 'text', '30', 'm_nick', $u->nick, _("A-Z, a-z, dot, dash"), 63);
+		$xtpl->form_add_input(_("Nickname").':', 'text', '30', 'm_nick', $u->login, _("A-Z, a-z, dot, dash"), 63);
 		$xtpl->form_add_select(_("Privileges").':', 'm_level', $cfg_privlevel, $u->level,  '');
 		
 	} else {
