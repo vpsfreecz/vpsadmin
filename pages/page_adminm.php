@@ -77,6 +77,16 @@ function print_editm($u) {
 	$xtpl->table_td("Created".':');
 	$xtpl->table_td(strftime("%Y-%m-%d %H:%M", strtotime($u->created_at)));
 	$xtpl->table_tr();
+	
+	$xtpl->table_td("State".':');
+	$xtpl->table_td($u->object_state);
+	$xtpl->table_tr();
+	
+	if ($u->expiration_date) {
+		$xtpl->table_td("Expiration".':');
+		$xtpl->table_td($u->expiration_date);
+		$xtpl->table_tr();
+	}
 
 	if ($_SESSION["is_admin"]) {
 		$xtpl->table_add_category('&nbsp;');
