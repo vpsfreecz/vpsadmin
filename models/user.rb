@@ -16,6 +16,8 @@ class User < ActiveRecord::Base
   alias_attribute :login, :m_nick
   alias_attribute :role, :m_level
 
+  attr_reader :password_plain
+
   has_paper_trail ignore: [
       :m_last_activity,
   ]
@@ -25,7 +27,7 @@ class User < ActiveRecord::Base
       only_integer: true
   }
   validates :m_nick, format: {
-      with: /[a-zA-Z\.\-]{3,63}/,
+      with: /\A[a-zA-Z0-9\.\-]{3,63}\z/,
       message: 'not a valid login'
   }, uniqueness: true
 
@@ -132,6 +134,11 @@ class User < ActiveRecord::Base
 
   def valid_password?(*credentials)
     VpsAdmin::API::CryptoProvider.matches?(m_pass, *credentials)
+  end
+
+  def set_password(plaintext)
+    @password_plain = plaintext
+    self.m_pass = VpsAdmin::API::CryptoProvider.encrypt(login, plaintext)
   end
 
   def env_config(env, name)

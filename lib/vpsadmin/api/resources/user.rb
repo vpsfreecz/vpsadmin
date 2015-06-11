@@ -106,7 +106,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     def exec
       vps_params = %i(vps node environment location os_template)
 
+      passwd = input.delete(:password)
       user = ::User.new(to_db_names(input.select { |k,_| !vps_params.include?(k) }))
+      user.set_password(passwd) if passwd
 
       if input[:vps]
         if input[:os_template].nil?
@@ -230,7 +232,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
               password: ['password must be at least 8 characters long']
         ) if input[:password].length < 8
 
-        u.m_pass = VpsAdmin::API::CryptoProvider.encrypt(u.login, input.delete(:password))
+        u.set_password(input.delete(:password))
       end
 
       u.update!(to_db_names(input))
