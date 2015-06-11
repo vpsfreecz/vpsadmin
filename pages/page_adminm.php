@@ -1048,53 +1048,6 @@ if ($_SESSION["logged_in"]) {
 			}
 			
 			break;
-		case 'suspend':
-			$member = member_load($_GET["id"]);
-			
-			if ($_SESSION["is_admin"] && $member->exists) {
-				$member->suspend($_POST["reason"]);
-				
-				if ($_POST["stop_all_vpses"])
-					$member->stop_all_vpses();
-				
-				$member->set_info( $member->m["m_info"]."\n".strftime("%d.%m.%Y")." - "._("suspended")." - ".$_POST["reason"] );
-				
-				if ($_POST["notify"])
-					$member->notify_suspend($_POST["reason"]);
-				
-				notify_user(_("Account suspended"),
-					$_POST["stop_all_vpses"] ? _("All member's VPSes were stopped.")
-					: _("All member's VPSes kept running.")
-				);
-				redirect('?page=adminm&section=members&action=edit&id='.$member->mid);
-			}
-			break;
-		case 'restore':
-			$member = member_load($_GET["id"]);
-			
-			if ($_SESSION["is_admin"] && $member->exists) {
-				$member->restore();
-				
-				if ($_POST["start_all_vpses"])
-					$member->start_all_vpses();
-				
-				if ($_POST["notify"])
-					$member->notify_restore();
-				
-				notify_user(_("Account restored"), _("Member can now use his VPSes."));
-				redirect('?page=adminm&section=members&action=edit&id='.$member->mid);
-			}
-			break;
-		case 'revive':
-			$member = member_load($_GET["id"]);
-			
-			if ($_SESSION["is_admin"] && $member->deleted) {
-				$member->revive();
-				
-				notify_user(_("Account revived"), _("The account is now suspended."));
-				redirect('?page=adminm&section=members&action=edit&id='.$member->mid);
-			}
-			break;
 		case 'payset':
 			if (($member = new member_load($_GET["id"])) && $_SESSION["is_admin"]) {
 
