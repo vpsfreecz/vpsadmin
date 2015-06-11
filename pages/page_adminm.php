@@ -732,7 +732,7 @@ function list_members() {
 			if (($_SESSION["is_admin"]) && ($u->id != $_SESSION["member"]["m_id"])) {
 				$xtpl->table_td(
 					'<a href="?page=login&action=switch_context&m_id='.$u->id.'&next='.urlencode($_SERVER["REQUEST_URI"]).'">'.
-					'<img src="template/icons/m_switch.png" title="'._("Switch context").'"></a>"'.
+					'<img src="template/icons/m_switch.png" title="'._("Switch context").'"></a>'.
 					$u->login
 				);
 				
