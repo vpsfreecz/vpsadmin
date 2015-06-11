@@ -17,7 +17,7 @@ function print_newm() {
 	$xtpl->form_add_input(_("Nickname").':', 'text', '30', 'm_nick', $_POST["m_nick"], _("A-Z, a-z, dot, dash"), 63);
 	$xtpl->form_add_select(_("Privileges").':', 'm_level', $cfg_privlevel, $_POST["m_level"] ? $_POST["m_level"] : '2',  ' ');
 
-	$m_pass_uid  = $xtpl->form_add_input(_("Password").':', 'password', '30', 'm_pass', '', '', -5);
+	$m_pass_uid  = $xtpl->form_add_input(_("Password").':', 'password', '30', 'm_pass', '', '', -8);
 	$m_pass2_uid = $xtpl->form_add_input(_("Repeat password").':', 'password', '30', 'm_pass2', '', ' ');
 
 	$xtpl->form_add_input('', 'button', '', 'g_pass', _("Generate password"), '', '', 'onClick="javascript:formSubmit()"');
@@ -163,8 +163,8 @@ function print_editm($u) {
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->form_create('?page=adminm&section=members&action=passwd&id='.$u->id, 'post');
-	$xtpl->form_add_input(_("Password").':', 'password', '30', 'm_pass', '', '', -5);
-	$xtpl->form_add_input(_("Repeat password").':', 'password', '30', 'm_pass2', '', '', -5);
+	$xtpl->form_add_input(_("Password").':', 'password', '30', 'm_pass', '', '', -8);
+	$xtpl->form_add_input(_("Repeat password").':', 'password', '30', 'm_pass2', '', '', -8);
 	$xtpl->form_out(_("Save"));
 	
 	$xtpl->table_add_category(_("Personal information"));
