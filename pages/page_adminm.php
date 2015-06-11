@@ -944,25 +944,28 @@ if ($_SESSION["logged_in"]) {
 			print_editm($_SESSION['is_admin'] ? $api->user->find($_GET["id"]) : $api->user->current());
 			break;
 		case 'edit_member':
-			$m = member_load($_GET["id"]);
-			
-			if($_SESSION["is_admin"]) {
-				$m->m["m_nick"] = $_POST["m_nick"];
-				$m->m["m_level"] = $_POST["m_level"];
-				$m->m["m_info"] = $_POST["m_info"];
-				$m->m["m_monthly_payment"] = $_POST["m_monthly_payment"];
-				$m->m["m_playground_enable"] = $_POST["m_playground_enable"];
-			}
-			
-			$m->m["m_mailer_enable"] = $_POST["m_mailer_enable"];
-			
-			if ($m->save_changes())
-				notify_user(_("Changes saved"), '');
+			try {
+				$params = array(
+					'mailer_enabled' => $_POST['m_mailer_enable']
+				);
 				
-			else
-				notify_user(_("No change"), '');
-			
-			redirect('?page=adminm&section=members&action=edit&id='.$m->m["m_id"]);
+				if ($_SESSION['is_admin']) {
+					$params['login'] = $_POST['m_nick'];
+					$params['level'] = $_POST['m_level'];
+					$params['info'] = $_POST['m_info'];
+					$params['monthly_payment'] = $_POST['m_monthly_payment'];
+					$params['playground_enabled'] = $_POST['m_playground_enable'];
+				}
+				
+				$user = $api->user($_GET['id'])->update($params);
+				
+				notify_user(_('User updated'), _('The user was successfully updated.'));
+				redirect('?page=adminm&action=edit&id='.$user->id);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('User update failed'), $e->getResponse());
+				print_editm($api->user->find($_GET['id']));
+			}
 			
 			break;
 		case 'passwd':
@@ -972,36 +975,42 @@ if ($_SESSION["logged_in"]) {
 				$xtpl->perex(_("Invalid entry").': '._("Password"), _("The two passwords do not match."));
 				print_editm($u);
 				
-			} elseif (strlen($_POST["m_pass"]) < 5) {
-				$xtpl->perex(_("Invalid entry").': '._("Password"), _("Password must be at least 5 characters long."));
-				print_editm($u);
-				
 			} else {
-				$m = member_load($_GET['id']);
-				$m->m["m_pass"] = md5($m->m["m_nick"].$_POST["m_pass"]);
-				$m->save_changes();
-				
-				notify_user(_("Password set"), _("The password was successfully changed."));
-				redirect('?page=adminm&section=members&action=edit&id='.$m->m["m_id"]);
+				try {
+					$u->update(array('password' => $_POST['m_pass']));
+					
+					notify_user(_("Password set"), _("The password was successfully changed."));
+					redirect('?page=adminm&action=edit&id='.$u->id);
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Password change failed'), $e->getResponse());
+					print_editm($u);
+				}
 			}
 			
 			break;
 		case 'edit_personal':
 			$u = $api->user->find($_GET["id"]);
-			$m = member_load($_GET["id"]);
 			
 			if($_SESSION["is_admin"]) {
 				$m->m["m_name"] = $_POST["m_name"];
 				$m->m["m_mail"] = $_POST["m_mail"];
 				$m->m["m_address"] = $_POST["m_address"];
 				
-				if ($m->save_changes())
-					notify_user(_("Changes saved"), _("Continue").' <a href="?page=adminm&section=members">'.strtolower(_("Here")).'</a>');
-				
-				else
-					notify_user(_("No change"), '');
-				
-				redirect('?page=adminm&section=members&action=edit&id='.$m->m["m_id"]);
+				try {
+					$u->update(array(
+						'full_name' => $_POST['m_name'],
+						'email' => $_POST['m_mail'],
+						'address' => $_POST['m_address']
+					));
+					
+					notify_user(_("Changes saved"), _('User personal information were updated.'));
+					redirect('?page=adminm&action=edit&id='.$u->id);
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('User update failed'), $e->getResponse());
+					print_editm($u);
+				}
 				
 			} elseif(!$_POST["reason"]) {
 				$xtpl->perex(_("Reason is required"), _("Please fill in reason for change."));
