@@ -15,6 +15,7 @@ class Dataset < ActiveRecord::Base
   before_save :cache_full_name
 
   include Confirmable
+  include Lockable
   include VpsAdmin::API::Maintainable::Check
   include VpsAdmin::API::DatasetProperties::Model
 

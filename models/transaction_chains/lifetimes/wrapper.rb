@@ -5,6 +5,7 @@ module TransactionChains
 
     def link_chain(obj, target, states, enter, chains, log)
       concerns(:affect, [obj.class.name, obj.id])
+      lock(obj)
 
       log.save!
       dir = enter ? :enter : :leave
