@@ -3,8 +3,10 @@ module TransactionChains
     label 'Create'
 
     def link_chain(vps, add_ips)
+      lock(vps.user)
       vps.save!
       lock(vps)
+      concerns(:affect, [vps.class.name, vps.id])
 
       vps_resources = vps.allocate_resources(
           required: %i(cpu memory swap),
