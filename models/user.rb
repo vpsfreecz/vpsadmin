@@ -63,6 +63,16 @@ class User < ActiveRecord::Base
     }
   }
 
+  scope :including_deleted, -> {
+    unscoped {
+      where(object_state: [
+                object_states[:active],
+                object_states[:suspended],
+                object_states[:soft_delete]
+            ])
+    }
+  }
+
   ROLES = {
       1 => 'Poor user',
       2 => 'User',

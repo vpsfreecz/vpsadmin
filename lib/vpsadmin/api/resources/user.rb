@@ -74,7 +74,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         )
 
       else
-        ::User.all
+        ::User.existing.all
       end
     end
 
@@ -191,7 +191,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def prepare
-      @user = ::User.existing.find(params[:user_id])
+      @user = ::User.find(params[:user_id])
     end
 
     def exec
@@ -213,7 +213,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def exec
-      u = ::User.existing.find(params[:user_id])
+      u = ::User.including_deleted.find(params[:user_id])
 
       if input.empty?
         error('provide at least one attribute to update')
@@ -244,7 +244,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def exec
-      u = ::User.existing.find(params[:user_id])
+      u = ::User.including_deleted.find(params[:user_id])
       update_object_state!(u)
     end
   end

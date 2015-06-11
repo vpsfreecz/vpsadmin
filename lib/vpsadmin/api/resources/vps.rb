@@ -119,7 +119,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         )
 
       else
-        Vps
+        Vps.existing
       end
 
       q = q.where(with_restricted)
@@ -279,7 +279,7 @@ END
     end
 
     def prepare
-      @vps = with_includes(::Vps.existing).find_by!(with_restricted(
+      @vps = with_includes(::Vps.including_deleted).find_by!(with_restricted(
           vps_id: params[:vps_id])
       )
     end
@@ -312,14 +312,14 @@ END
     end
 
     def exec
-      vps = ::Vps.existing.find_by!(with_restricted(vps_id: params[:vps_id]))
+      vps = ::Vps.including_deleted.find_by!(with_restricted(vps_id: params[:vps_id]))
       maintenance_check!(vps)
 
       if input.empty?
         error('provide at least one attribute to update')
       end
 
-      update_object_state!(vps) if input[:object_state]
+      update_object_state!(vps) if change_object_state?
 
       if input[:user]
         resources = ::Vps.cluster_resources[:required] + ::Vps.cluster_resources[:optional]
@@ -354,7 +354,7 @@ END
     end
 
     def exec
-      vps = ::Vps.existing.find_by!(with_restricted(vps_id: params[:vps_id]))
+      vps = ::Vps.including_deleted.find_by!(with_restricted(vps_id: params[:vps_id]))
       maintenance_check!(vps)
 
       # FIXME: check if object_state is filled for non-admins

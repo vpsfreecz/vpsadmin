@@ -73,6 +73,15 @@ class Vps < ActiveRecord::Base
     unscoped {
       where(object_state: [
                 object_states[:active],
+                object_states[:suspended]
+            ])
+    }
+  }
+
+  scope :including_deleted, -> {
+    unscoped {
+      where(object_state: [
+                object_states[:active],
                 object_states[:suspended],
                 object_states[:soft_delete]
             ])
