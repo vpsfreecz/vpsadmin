@@ -1,24 +1,34 @@
 <?php
 function send_mail($to, $subject, $msg, $cc = array(), $bcc = array(), $html = false, $dep = NULL,
                    $message_id = NULL, $in_reply_to = NULL, $references = array()) {
-	global $cluster, $cluster_cfg;
-	$mailers = $cluster->list_servers_with_type("mailer");
-	$ids = array_keys($mailers);
+	global $cluster_cfg;
 	
-	add_transaction($_SESSION["member"]["m_id"], $ids[0], 0, T_MAIL_SEND, array(
-		"from_name" => $cluster_cfg->get("mailer_from_name"),
-		"from_mail" => $cluster_cfg->get("mailer_from_mail"),
-		"to" => $to,
-		"subject" => $subject,
-		"msg" => $msg,
-		"cc" => $cc,
-		"bcc" => $bcc,
-		"html" => $html,
-		"msg_id" => $message_id,
-		"in_reply_to" => $in_reply_to,
-		"references" => $references,
-		"date" => date("r"),
-	), NULL, $dep);
+	$from_name = $cluster_cfg->get("mailer_from_name");
+	$from_mail = $cluster_cfg->get("mailer_from_mail");
+	
+	$headers = "From: $from_name <$from_mail>\r\nDate: ".date("r")."\r\n";
+	
+	if ($cc)
+		$headers .= "CC: ".implode(", ", $cc)."\r\n";
+	
+	if ($bcc)
+		$headers .= "BCC: ".implode(", ", $bcc)."\r\n";
+	
+	if ($message_id)
+		$headers .= "Message-ID: $message_id\r\n";
+	
+	if ($in_reply_to)
+		$headers .= "In-Reply-To: $in_reply_to\r\n";
+	
+	if ($references)
+		$headers .= "References: ".implode(", ", $references)."\r\n";
+	
+	mail(
+		$to,
+		$subject,
+		$msg,
+		$headers
+	);
 }
 
 function request_change_mail_all($request, $state, $mail) {
