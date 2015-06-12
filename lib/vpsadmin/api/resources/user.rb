@@ -386,4 +386,5 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
   end
 
   include VpsAdmin::API::Lifetimes::Resource
+  add_lifetime_params(Current, :output, :lifetime_expiration)
 end
