@@ -54,6 +54,7 @@ class Node < ActiveRecord::Base
     q = self.joins('
           LEFT JOIN vps ON vps.vps_server = servers.server_id
           LEFT JOIN vps_status st ON st.vps_id = vps.vps_id
+          INNER JOIN locations ON locations.location_id = servers.server_location
         ').where('
           (st.vps_up = 1 OR st.vps_up IS NULL)
           AND servers.max_vps > 0
