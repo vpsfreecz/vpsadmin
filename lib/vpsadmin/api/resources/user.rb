@@ -122,11 +122,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         if input[:node]
           node = input[:node]
 
-        elsif input[:location]
-          node = ::Node.pick_by_location(input[:location])
+        elsif input[:environment]
+          node = ::Node.pick_by_env(input[:environment], input[:location])
 
         else
-          node = ::Node.pick_by_env(input[:environment])
+          node = ::Node.pick_by_location(input[:location])
         end
 
         unless node

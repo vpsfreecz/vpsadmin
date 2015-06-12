@@ -210,14 +210,14 @@ END
 
       else
         if input[:environment].nil? && input[:location].nil?
-          error('provide either an environment or a location')
+          error('provide either an environment, a location or both')
         end
 
-        if input[:location]
-          node = ::Node.pick_by_location(input[:location])
+        if input[:environment]
+          node = ::Node.pick_by_env(input[:environment], input[:location])
 
         else
-          node = ::Node.pick_by_env(input[:environment])
+          node = ::Node.pick_by_location(input[:location])
         end
 
         input.delete(:location)
