@@ -168,13 +168,15 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     route ':user_id/touch'
 
     authorize do |u|
-      allow if u.role == :admin
-      restrict m_id: u.id
       allow
     end
 
     def prepare
-      @user = User.find_by(with_restricted)
+      if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error('access denied')
+      end
+
+      @user = User.find(params[:user_id])
     end
 
     def exec
@@ -189,10 +191,14 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     authorize do |u|
-      allow if u.role == :admin
+      allow
     end
 
     def prepare
+      if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error('access denied')
+      end
+
       @user = ::User.find(params[:user_id])
     end
 
@@ -214,12 +220,15 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       input whitelist: %i(password mailer_enabled)
-      restrict m_id: u.id
       allow
     end
 
     def exec
-      u = ::User.including_deleted.find_by!(with_restricted(m_id: params[:user_id]))
+      if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error('access denied')
+      end
+
+      u = ::User.including_deleted.find_by!(m_id: params[:user_id])
 
       if input.empty?
         error('provide at least one attribute to update')
