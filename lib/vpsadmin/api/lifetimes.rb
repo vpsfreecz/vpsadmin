@@ -115,7 +115,20 @@ module VpsAdmin::API
     # It will also return immediately after the state has been changed
     # by calling HaveAPI::Action.ok().
     module Resource
+      module ClassMethods
+        # Add lifetime parameters to +action+. +direction can be
+        # +:input+ or +:output+. +params+ is for now one of
+        # +:lifetime_state+, +:lifetime_expiration+ and +:lifetime_all+.
+        def add_lifetime_params(action, direction, params)
+          action.method(direction).call do
+            use params
+          end
+        end
+      end
+
       def self.included(r)
+        r.send(:extend, ClassMethods)
+
         # Create a resource for browsing object state log
         parent_object_id = "#{r.to_s.demodulize.underscore}_id"
 
