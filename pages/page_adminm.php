@@ -409,7 +409,7 @@ function cluster_resource_edit_form() {
 }
 
 function request_approve() {
-	global $db;
+	global $db, $api;
 	
 	if(!$_SESSION["is_admin"])
 		return;
@@ -438,53 +438,44 @@ function request_approve() {
 	
 	switch($row["m_type"]) {
 		case "add":
-			if(!validate_username($data["m_nick"])) {
-				notify_user(_("User with this login already exists."), '');
-				redirect('?page=adminm&section=members&action=request_details&id='.$row["m_id"]);
-			}
-		
-			$data["m_level"] = PRIV_USER;
-			$data["m_playground_enable"] = true;
-			$data["m_mailer_enable"] = true;
-			$data["m_info"] = "";
-			$data["m_pass"] = random_string(10);
-			
-			$m = member_load();
-			$m_id = $m->create_new($data);
-			
-			nas_create_default_exports("member", $m->m);
+			$params = array(
+				'login' => $data['m_nick'],
+				'full_name' => $data['m_name'],
+				'email' => $data['m_mail'],
+				'address' => $data['m_address'],
+				'level' => PRIV_USER,
+				'playground_enabled' => true,
+				'mailer_enabled' => true,
+				'info' => "",
+				'password' => random_string(10)
+			);
 			
 			if($mail || $_POST["m_create_vps"]) { // create vps
-				$server = null;
+				$params['vps'] = true;
+				$params['os_template'] = $data['m_distribution'];
 				
-				if($_POST["m_node"])
-					$server = server_by_id($_POST["m_node"]);
-				else
-					$server = server_by_id(pick_free_node($data["m_location"]));
+				if ($_POST['m_node'])
+					$params['node'] = $_POST['m_node'];
 				
-				$vps = vps_load();
-				$vps->create_new($server["server_id"], $data["m_distribution"], "vps", $m_id, "");
+				$params['location'] = $data['m_location'];
+				$params['environment'] = ENV_VPS_PRODUCTION_ID;
+			}
+			
+			try {
+				$api->user->create($params);
 				
-				$mapping = nas_create_default_exports("vps", $vps->ve);
-				nas_create_default_mounts($vps->ve, $mapping);
-				
-				$vps->add_default_configs("default_config_chain");
-				
-				if(!isset($_POST["m_assign_ips"]) || $_POST["m_assign_ips"]) {
-					$vps->add_first_available_ip($server["server_location"], 4);
-					$vps->add_first_available_ip($server["server_location"], 6);
-				}
-				
-				$vps->start();
+			}  catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				notify_user(_('Request approval failed'), _('An error occurred. I won\'t tell you which though.'));
+				redirect('?page=adminm&section=members&action=request_details&id='.$row["m_id"]);
 			}
 			break;
 		
 		case "change":
-			$db->query("UPDATE members SET
-							m_name = '".$db->check($row["m_name"])."',
-							m_mail = '".$db->check($row["m_mail"])."',
-							m_address = '".$db->check($row["m_address"])."'
-						WHERE m_id = ".$db->check($row["m_applicant"]));
+			$api->user($row['m_applicant'])->update(array(
+				'full_name' => $row['m_name'],
+				'email' => $row['m_mail'],
+				'address' => $row['m_address']
+			));
 			
 			// mail user about the approval
 			request_change_mail_member($row, "approved", $row["m_mail"]);
@@ -995,10 +986,6 @@ if ($_SESSION["logged_in"]) {
 			$u = $api->user->find($_GET["id"]);
 			
 			if($_SESSION["is_admin"]) {
-				$m->m["m_name"] = $_POST["m_name"];
-				$m->m["m_mail"] = $_POST["m_mail"];
-				$m->m["m_address"] = $_POST["m_address"];
-				
 				try {
 					$u->update(array(
 						'full_name' => $_POST['m_name'],
@@ -1023,7 +1010,7 @@ if ($_SESSION["logged_in"]) {
 				            m_created = ".time().",
 				            m_type = 'change',
 				            m_state = 'awaiting',
-				            m_applicant = ".$db->check($m->m["m_id"]).",
+				            m_applicant = ".$db->check($u->id).",
 				            m_name = '".$db->check($_POST["m_name"])."',
 				            m_mail = '".$db->check($_POST["m_mail"])."',
 				            m_address = '".$db->check($_POST["m_address"])."',
@@ -1046,7 +1033,7 @@ if ($_SESSION["logged_in"]) {
 				request_mail_last_update($row);
 				
 				notify_user(_("Request was scheduled for approval"), _("Please wait for administrator to approve or deny your request."));
-				redirect('?page=adminm&section=members&action=edit&id='.$m->m["m_id"]);
+				redirect('?page=adminm&section=members&action=edit&id='.$u->id);
 			}
 			
 			break;
@@ -1486,10 +1473,6 @@ if ($_SESSION["logged_in"]) {
 					$empty = array("" => _("pick automatically"));
 					$nodes = list_servers(false, array('node'));
 					$xtpl->form_add_select(_("Node").':', 'm_node', $empty + $nodes);
-					
-					$xtpl->form_add_checkbox(_("Assign IP addresses").':', 'm_assign_ips', '1', true);
-					$xtpl->form_add_select(_("IPv4").':', 'ipv4', array_merge($empty, get_free_ip_list(4, $row["m_location"])), '', _("listing IPs from application location only"));
-					$xtpl->form_add_select(_("IPv6").':', 'ipv6', array_merge($empty, get_free_ip_list(6, $row["m_location"])), '', _("listing IPs from application location only"));
 					
 					$xtpl->form_add_input(_("Admin response").':', 'text', '30', 'm_admin_response', $row["m_admin_response"]);
 					
