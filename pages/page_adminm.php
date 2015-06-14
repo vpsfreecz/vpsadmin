@@ -1103,103 +1103,126 @@ if ($_SESSION["logged_in"]) {
 			
 			break;
 		case 'payset':
-			if (($member = new member_load($_GET["id"])) && $_SESSION["is_admin"]) {
-
-				$xtpl->title(_("Edit payments"));
-
-				$xtpl->form_create('?page=adminm&section=members&action=payset2&id='.$_GET["id"], 'post');
-
-				$xtpl->table_td(_("Paid until").':');
-
-				if ($member->m["m_paid_until"] > 0) {
-					$lastpaidto = date('Y-m-d', $member->m["m_paid_until"]);
-				} else {
-					$lastpaidto = _("Never been paid");
-				}
-
-				$xtpl->table_td($lastpaidto);
-				$xtpl->table_tr();
-
-				$xtpl->table_td(_("Nickname").':');
-				$xtpl->table_td($member->m["m_nick"]);
-				$xtpl->table_tr();
-
-				$xtpl->table_td(_("Monthly payment").':');
-				$xtpl->table_td($member->m["m_monthly_payment"]);
-				$xtpl->table_tr();
-
-				$xtpl->form_add_input(_("Newly paid until").':', 'text', '30', 'paid_until', '', 'Y-m-d, eg. 2009-05-01');
-				$xtpl->form_add_input(_("Months to add").':', 'text', '30', 'months_to_add', '', ' ');
-
-				$xtpl->table_add_category('');
-				$xtpl->table_add_category('');
-
-				$xtpl->form_out(_("Save"));
-
-				$xtpl->table_add_category("ID");
-				$xtpl->table_add_category("MEMBER");
-				$xtpl->table_add_category("CHANGED");
-				$xtpl->table_add_category("FROM");
-				$xtpl->table_add_category("TO");
-
-				while ($hist = $db->find("members_payments", "m_id = {$member->m["m_id"]}", "id DESC", 30)) {
-					$acct_m = $db->findByColumnOnce("members", "m_id", $hist["acct_m_id"]);
-
-					$xtpl->table_td($hist["id"]);
-					$xtpl->table_td($acct_m["m_nick"]);
-					$xtpl->table_td(date('Y-m-d H:i', $hist["timestamp"]));
-					$xtpl->table_td(date('Y-m-d', $hist["change_from"]));
-					$xtpl->table_td(date('Y-m-d', $hist["change_to"]));
-
-					$xtpl->table_tr();
-				}
-
-				$xtpl->table_out();
-
+			if (!$_SESSION['is_admin'])
+				break;
+			
+			try {
+				$u = $api->user->find($_GET['id']);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('User not found'), $e->getResponse());
+				break;
 			}
+			
+			$paidUntil = strtotime($u->paid_until);
+			
+			$xtpl->title(_("Edit payments"));
+			$xtpl->form_create('?page=adminm&section=members&action=payset2&id='.$u->id, 'post');
+			
+			$xtpl->table_td(_("Paid until").':');
+			
+			if ($paidUntil) {
+				$lastPaidTo = date('Y-m-d', $paidUntil);
+				
+			} else {
+				$lastPaidTo = _("Never been paid");
+			}
+			
+			$xtpl->table_td($lastPaidTo);
+			$xtpl->table_tr();
+			
+			$xtpl->table_td(_("Login").':');
+			$xtpl->table_td($u->login);
+			$xtpl->table_tr();
+			
+			$xtpl->table_td(_("Monthly payment").':');
+			$xtpl->table_td($u->monthly_payment);
+			$xtpl->table_tr();
+			
+			$xtpl->form_add_input(_("Newly paid until").':', 'text', '30', 'paid_until', '', 'Y-m-d, eg. 2009-05-01');
+			$xtpl->form_add_input(_("Months to add").':', 'text', '30', 'months_to_add', '', ' ');
+			
+			$xtpl->table_add_category('');
+			$xtpl->table_add_category('');
+			
+			$xtpl->form_out(_("Save"));
+			
+			$xtpl->table_add_category("ID");
+			$xtpl->table_add_category("MEMBER");
+			$xtpl->table_add_category("CHANGED");
+			$xtpl->table_add_category("FROM");
+			$xtpl->table_add_category("TO");
+			
+			while ($hist = $db->find("members_payments", "m_id = {$u->id}", "id DESC", 30)) {
+				$acct_m = $db->findByColumnOnce("members", "m_id", $hist["acct_m_id"]);
+				
+				$xtpl->table_td($hist["id"]);
+				$xtpl->table_td($acct_m["m_nick"]);
+				$xtpl->table_td(date('Y-m-d H:i', $hist["timestamp"]));
+				$xtpl->table_td(date('Y-m-d', $hist["change_from"]));
+				$xtpl->table_td(date('Y-m-d', $hist["change_to"]));
+				
+				$xtpl->table_tr();
+			}
+			
+			$xtpl->table_out();
+			
 			break;
 		case 'payset2':
-			if (($member = member_load($_GET["id"])) && $_SESSION["is_admin"]) {
-
-				$log["m_id"] = $member->m["m_id"];
-				$log["acct_m_id"] = $_SESSION["member"]["m_id"];
-				$log["timestamp"] = time();
-				$log["change_from"] = $member->m["m_paid_until"];
-
-				if ($_REQUEST["paid_until"]) {
-
-					$member->set_paid_until($_REQUEST["paid_until"]);
-
-					$xtpl->perex(_("Payment successfully set"), _("Continue")
-									. ' <a href="?page=adminm&section=members">'.strtolower(_("Here")).'</a>');
-
-				} elseif ($_REQUEST["months_to_add"] && $member->m["m_paid_until"]) {
-
-					$member->set_paid_add_months($_REQUEST["months_to_add"]);
-
-					$xtpl->perex(_("Payment successfully set"), _("Continue")
-								. ' <a href="?page=adminm&section=members">'.strtolower(_("Here")).'</a>');
-
-				} else {
-					$xtpl->perex(_("Error"), _("Continue")
-											. ' <a href="?page=adminm&section=members">'.strtolower(_("Here")).'</a>');
-				}
-
-				$log["change_to"] = $member->m["m_paid_until"];
-
-				$sql = 'INSERT INTO members_payments
-												SET m_id = "'. $db->check($log["m_id"]) .'",
-														acct_m_id 	= "'. $db->check($log["acct_m_id"]) .'",
-														timestamp		= "'. $db->check($log["timestamp"]) .'",
-														change_from = "'. $db->check($log["change_from"]) .'",
-														change_to 	= "'. $db->check($log["change_to"]) .'"';
-				$db->query($sql);
-
-				$xtpl->delayed_redirect('?page=adminm', 350);
-
+			if (!$_SESSION['is_admin'])
+				break;
+			
+			try {
+				$u = $api->user->find($_GET['id']);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('User not found'), $e->getResponse());
+				break;
 			}
+			
+			$log["m_id"] = $u->id;
+			$log["acct_m_id"] = $_SESSION["member"]["m_id"];
+			$log["timestamp"] = time();
+			$log["change_from"] = strtotime($u->paid_until);
+			
+			try {
+				if ($_POST["paid_until"]) {
+					$t = strtotime($_POST['paid_until']);
+					$log["change_to"] = $t;
+					
+					$u->update(array('paid_until' => date('c', $t)));
+				
+				} elseif ($_POST["months_to_add"] && $u->paid_until) {
+					$t = strtotime($u->paid_until);
+					$t = strtotime('+'.$_POST['months_to_add'].' month', $t);
+					$log["change_to"] = $t;
+					
+					$u->update(array('paid_until' => date('c', $t)));
+					
+				} else {
+					notify_user(_("Payment not set"), _('Provide a new date or months to add.'));
+					redirect('?page=adminm&action=payset&id='.$u->id);
+				}
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Failed to add payment'), $e->getResponse());
+				break;
+			}
+			
+			$sql = "INSERT INTO members_payments
+			        SET m_id    = '". $db->check($log["m_id"]) ."',
+			        acct_m_id   = '". $db->check($log["acct_m_id"]) ."',
+			        timestamp   = '". $db->check($log["timestamp"]) ."',
+			        change_from = '". $db->check($log["change_from"]) ."',
+			        change_to   = '". $db->check($log["change_to"]) ."'";
+			
+			$db->query($sql);
+			
+			notify_user(_("Payment successfully set"), '');
+			redirect('?page=adminm&action=payset&id='.$u->id);
+			
 			break;
-
+		
 		case 'export_mails':
 			if ($_SESSION["is_admin"]) {
 				$xtpl->table_add_category('');
