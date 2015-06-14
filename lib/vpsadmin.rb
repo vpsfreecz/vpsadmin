@@ -21,7 +21,7 @@ module VpsAdmin
 end
 
 require_relative 'vpsadmin/scheduler'
-require_relative 'vpsadmin/api/crypto_provider'
+require_relative 'vpsadmin/api/crypto_providers'
 require_relative 'vpsadmin/api/maintainable'
 require_relative 'vpsadmin/api/dataset_properties'
 require_rel 'vpsadmin/*.rb'

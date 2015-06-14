@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150528111113) do
+ActiveRecord::Schema.define(version: 20150614074218) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -327,6 +327,7 @@ ActiveRecord::Schema.define(version: 20150528111113) do
     t.datetime "updated_at"
     t.integer  "object_state",                                   null: false
     t.datetime "expiration_date"
+    t.integer  "password_version",                default: 1,    null: false
   end
 
   create_table "members_changes", primary_key: "m_id", force: true do |t|

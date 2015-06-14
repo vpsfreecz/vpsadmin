@@ -11,6 +11,8 @@ class User < ActiveRecord::Base
   has_many :user_cluster_resources
   has_many :snapshot_downloads
 
+  enum password_version: VpsAdmin::API::CryptoProviders::PROVIDERS
+
   before_validation :set_no_password
 
   alias_attribute :login, :m_nick
@@ -132,13 +134,13 @@ class User < ActiveRecord::Base
     i > 0 ? Time.at(i) : nil
   end
 
-  def valid_password?(*credentials)
-    VpsAdmin::API::CryptoProvider.matches?(m_pass, *credentials)
-  end
-
   def set_password(plaintext)
     @password_plain = plaintext
-    self.m_pass = VpsAdmin::API::CryptoProvider.encrypt(login, plaintext)
+
+    VpsAdmin::API::CryptoProviders.current do |name, provider|
+      self.password_version = name
+      self.m_pass = provider.encrypt(login, plaintext)
+    end
   end
 
   def env_config(env, name)
@@ -158,10 +160,22 @@ class User < ActiveRecord::Base
 
   def self.authenticate(username, password)
     u = User.find_by(m_nick: username)
+    return unless u
 
-    if u
-      u if u.valid_password?(username, password)
+    c = VpsAdmin::API::CryptoProviders
+
+    return unless c.provider(u.password_version).matches?(u.m_pass, u.login, password)
+
+    if c.update?(u.password_version)
+      c.current do |name, provider|
+        u.update!(
+            password_version: name,
+            m_pass: provider.encrypt(u.login, password)
+        )
+      end
     end
+
+    u
   end
 
   def self.current
