@@ -511,4 +511,17 @@ function transaction_chain_concerns($chain, $limit = 10) {
 	}
 }
 
+function get_all_users() {
+	global $api;
+	
+	$cnt = $api->user->list(array(
+		'limit' => 0,
+		'meta' => array('count' => true)
+	))->getTotalCount();
+	
+	return $api->user->list(array(
+		'limit' => $cnt + 10
+	));
+}
+
 ?>
