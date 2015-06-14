@@ -1243,51 +1243,54 @@ if ($_SESSION["logged_in"]) {
 			
 			$whereCond = array();
 			$whereCond[] = 1;
-
+			
 			if ($_REQUEST["acct_m_id"] != "") {
 				$whereCond[] = 'acct_m_id = "'.$db->check($_REQUEST["acct_m_id"]).'"';
 			}
+			
 			if ($_REQUEST["m_id"] != "") {
 				$whereCond[] = 'm_id = "'.$db->check($_REQUEST["m_id"]).'"';
 			}
+			
 			if ($_REQUEST["limit"] != "") {
 				$limit = $_REQUEST["limit"];
 			} else {
 				$limit = 50;
 			}
-
+			
 			$xtpl->form_create('?page=adminm&filter=yes&action=payments_history', 'post');
 			$xtpl->form_add_input(_("Limit").':', 'text', '40', 'limit', $limit, '');
 			$xtpl->form_add_input(_("Changed by member ID").':', 'text', '40', 'acct_m_id', $_REQUEST["acct_m_id"], '');
 			$xtpl->form_add_input(_("Changed to member ID").':', 'text', '40', 'm_id', $_REQUEST["m_id"], '');
 			$xtpl->form_out(_("Show"));
-
+			
 			$xtpl->table_add_category("ID");
 			$xtpl->table_add_category("CHANGED BY");
 			$xtpl->table_add_category("CHANGED TO");
 			$xtpl->table_add_category("CHANGED");
 			$xtpl->table_add_category("FROM");
-      $xtpl->table_add_category("TO");
-      $xtpl->table_add_category("MONTHS");
-
+			$xtpl->table_add_category("TO");
+			$xtpl->table_add_category("MONTHS");
+			
 			while ($hist = $db->find("members_payments", $whereCond, "id DESC", $limit)) {
 				$acct_m = $db->findByColumnOnce("members", "m_id", $hist["acct_m_id"]);
 				$m = $db->findByColumnOnce("members", "m_id", $hist["m_id"]);
-
+				
 				$xtpl->table_td($hist["id"]);
 				$xtpl->table_td($acct_m["m_id"].' '.$acct_m["m_nick"]);
 				$xtpl->table_td($m["m_id"].' '.$m["m_nick"]);
 				$xtpl->table_td(date('Y-m-d H:i', $hist["timestamp"]));
 				$xtpl->table_td(date('<- Y-m-d', $hist["change_from"]));
 				$xtpl->table_td(date('-> Y-m-d', $hist["change_to"]));
+				
 				if ($hist["change_from"]) {
-          $xtpl->table_td(round(($hist["change_to"]-$hist["change_from"])/2629800), false, true);
-        } else {
-          $xtpl->table_td('---', false, true);
-        }
+					$xtpl->table_td(round(($hist["change_to"]-$hist["change_from"])/2629800), false, true);
+				} else {
+					$xtpl->table_td('---', false, true);
+				}
 				$xtpl->table_tr();
 			}
-
+			
 			$xtpl->table_out();
 			break;
 			
