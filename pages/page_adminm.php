@@ -846,6 +846,90 @@ function list_members() {
 	}
 }
 
+function payments_overview() {
+	global $xtpl, $api;
+	
+	$xtpl->table_title(_('Payments overview'));
+	
+	$cnt = $api->user->list(array(
+		'limit' => 0,
+		'meta' => array('count' => true)
+	))->getTotalCount();
+	
+	$users = $api->user->list(array(
+		'limit' => $cnt
+	));
+	
+	$totalIncome = 0;
+	$thisMonthIncome = 0;
+	$paidCnt = 0;
+	$unpaidCnt = 0;
+	$expiringCnt = 0;
+	$payments = array();
+	
+	$thisMonth = mktime(0, 0, 0, date('n'), 1, date('Y'));
+	$nextMonth = strtotime('+1 month', $thisMonth);
+	$now = time();
+	
+	foreach ($users as $u) {
+		$totalIncome += $u->monthly_payment;
+		
+		$paidUntil = strtotime($u->paid_until);
+		
+		if (!$paidUntil || ($paidUntil >= $thisMonth && $paidUntil < $nextMonth))
+			$thisMonthIncome += $u->monthly_payment;
+		
+		if ($paidUntil < $now)
+			$unpaidCnt++;
+		elseif ($paidUntil - 7*24*60*60 < $now)
+			$expiringCnt++;
+		else 
+			$paidCnt++;
+		
+		if (array_key_exists($u->monthly_payment, $payments))
+			$payments[$u->monthly_payment]++;
+		else
+			$payments[$u->monthly_payment] = 1;
+	}
+	
+	$xtpl->table_td(_('Total monthly income').':');
+	$xtpl->table_td(number_format($totalIncome));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("Estimated this month's income").':');
+	$xtpl->table_td(number_format($thisMonthIncome));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_('Paid user count').':');
+	$xtpl->table_td(number_format($paidCnt));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_('Users nearing expiration').':');
+	$xtpl->table_td(number_format($expiringCnt));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_('Unpaid user count').':');
+	$xtpl->table_td(number_format($unpaidCnt));
+	$xtpl->table_tr();
+	
+	$xtpl->table_out();
+	
+	
+	$xtpl->table_title(_('Monthly payments'));
+	$xtpl->table_add_category(_('Amount'));
+	$xtpl->table_add_category(_('Count'));
+	
+	asort($payments);
+	
+	foreach (array_reverse($payments, true) as $amount => $count) {
+		$xtpl->table_td(number_format($amount));
+		$xtpl->table_td(number_format($count)."&times;");
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_out();
+}
+
 if ($_SESSION["logged_in"]) {
 
 	if ($_SESSION["is_admin"]) {
@@ -855,6 +939,7 @@ if ($_SESSION["logged_in"]) {
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Export e-mails of non-payers").'" /> '._("Export e-mails of non-payers"), '?page=adminm&section=members&action=export_notpaid_mails');
 		if ($cluster_cfg->get("payments_enabled")) {
 			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments history").'" /> '._("Display history of payments"), '?page=adminm&section=members&action=payments_history');
+			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments overview").'" /> '._("Payments overview"), '?page=adminm&section=members&action=payments_overview');
 		}
 	}
 
@@ -1228,6 +1313,11 @@ if ($_SESSION["logged_in"]) {
 			}
 
 			$xtpl->table_out();
+			break;
+			
+		case 'payments_overview':
+			if ($_SESSION['is_admin'])
+				payments_overview();
 			break;
 		
 		case 'auth_tokens':
