@@ -645,6 +645,15 @@ function list_members() {
 		$xtpl->table_tr();
 		
 		$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
+		$xtpl->form_add_input(_("Login").':', 'text', '40', 'login', get_val('login', ''), '');
+		$xtpl->form_add_input(_("Full name").':', 'text', '40', 'full_name', get_val('full_name', ''), '');
+		$xtpl->form_add_input(_("E-mail").':', 'text', '40', 'email', get_val('email', ''), '');
+		$xtpl->form_add_input(_("Address").':', 'text', '40', 'address', get_val('address', ''), '');
+		$xtpl->form_add_input(_("Access level").':', 'text', '40', 'level', get_val('level', ''), '');
+		$xtpl->form_add_input(_("Info").':', 'text', '40', 'info', get_val('info', ''), '');
+		$xtpl->form_add_input(_("Monthly payment").':', 'text', '40', 'monthly_payment', get_val('monthly_payment', ''), '');
+		$xtpl->form_add_checkbox(_("Mailer enabled").':', 'mailer_enabled', 1, get_val('mailer_enabled', ''));
+		$xtpl->form_add_checkbox(_("Playground enabled").':', 'playground_enabled', 1, get_val('playground_enabled', ''));
 		
 		$p = $api->vps->index->getParameters('input')->object_state;
 		
@@ -682,6 +691,14 @@ function list_members() {
 				'offset' => get_val('offset', 0),
 				'meta' => array('count' => true)
 			);
+			
+			$filters = array('login', 'full_name', 'email', 'address', 'level', 'info', 'monthly_payment',
+			                 'mailer_enabled', 'playground_enabled');
+			
+			foreach ($filters as $f) {
+				if ($_GET[$f])
+					$params[$f] = $_GET[$f];
+			}
 			
 			if ($_GET['object_state'])
 				$params['object_state'] = $api->user->index->getParameters('input')->object_state->choices[(int) $_GET['object_state']];
