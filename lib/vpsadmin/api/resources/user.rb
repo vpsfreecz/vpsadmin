@@ -58,6 +58,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List users'
 
+    input do
+      use :writable, exclude: %i(paid_until)
+    end
+
     output(:object_list) do
       use :all
     end
@@ -67,7 +71,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def query
-      if input[:object_state]
+      q = if input[:object_state]
         ::User.unscoped.where(
             object_state: ::User.object_states[input[:object_state]]
         )
@@ -75,6 +79,20 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       else
         ::User.existing.all
       end
+
+      in_params = self.class.input
+
+      %i(login full_name email address info).each do |p|
+        next unless input[p]
+        q = q.where("#{in_params[p].db_name} LIKE ? COLLATE utf8_unicode_ci", "#{input[p]}")
+      end
+
+      %i(level monthly_payment mailer_enabled playground_enabled).each do |p|
+        next unless input[p]
+        q = q.where(in_params[p].db_name => input[p])
+      end
+
+      q
     end
 
     def count
