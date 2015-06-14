@@ -692,18 +692,6 @@ function list_members() {
 			$users = array($api->user->current());
 		}
 		
-		$listed_members = 0;
-		$total_income = 0;
-		$this_month_income = 0;
-		$t_now = time();
-		$t_year = date('Y', $t_now);
-		$t_month = date('m', $t_now);
-		$t_this_month = mktime (0, 0, 0, $t_month, 1, $t_year);
-		$t_next_month_tmp = mktime (0, 0, 0, $t_month, 1, $t_year) + 2678400;
-		$t_next_month_year = date('Y', $t_next_month_tmp);
-		$t_next_month_month = date('m', $t_next_month_tmp);
-		$t_next_month = mktime (0, 0, 0, $t_next_month_month, 1, $t_next_month_year);
-		
 		foreach ($users as $u) {
 			$paid_until = strtotime($u->paid_until);
 			$last_activity = strtotime($u->last_activity);
@@ -731,12 +719,6 @@ function list_members() {
 			
 			if ($cluster_cfg->get("payments_enabled"))
 				$xtpl->table_td($u->monthly_payment);
-	
-			if (($paid_until >= $t_this_month) && ($paid_until < $t_next_month)) {
-				$this_month_income += $u->monthly_payment;
-			}
-			
-			$total_income += $u->monthly_payment;
 			
 			$xtpl->table_td($u->full_name);
 			
@@ -828,21 +810,9 @@ function list_members() {
 			} else {
 				$xtpl->table_tr();
 			}
-			
-			$listed_members++;
 		}
 		
 		$xtpl->table_out();
-		
-		if ($_SESSION["is_admin"] && $cluster_cfg->get("payments_enabled")) {
-			$xtpl->table_add_category(_("Members in total").':');
-			$xtpl->table_add_category($listed_members);
-			$xtpl->table_add_category(_("Estimated monthly income").':');
-			$xtpl->table_add_category($total_income);
-			$xtpl->table_add_category(_("Estimated this month").':');
-			$xtpl->table_add_category($this_month_income);
-			$xtpl->table_out();
-		}
 	}
 }
 
