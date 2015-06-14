@@ -1238,6 +1238,9 @@ if ($_SESSION["logged_in"]) {
 			}
 			break;
 		case 'payments_history':
+			if (!$_SESSION['is_admin'])
+				break;
+			
 			$whereCond = array();
 			$whereCond[] = 1;
 
