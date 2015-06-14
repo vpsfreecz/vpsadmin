@@ -838,14 +838,7 @@ function payments_overview() {
 	
 	$xtpl->table_title(_('Payments overview'));
 	
-	$cnt = $api->user->list(array(
-		'limit' => 0,
-		'meta' => array('count' => true)
-	))->getTotalCount();
-	
-	$users = $api->user->list(array(
-		'limit' => $cnt
-	));
+	$users = get_all_users();
 	
 	$totalIncome = 0;
 	$thisMonthIncome = 0;
@@ -1209,45 +1202,38 @@ if ($_SESSION["logged_in"]) {
 
 		case 'export_mails':
 			if ($_SESSION["is_admin"]) {
-
 				$xtpl->table_add_category('');
-
+				
 				$mails = array();
-
-				if ($members = get_members_array()) {
-
-					foreach ($members as $member) {
-							$mails[$member->m["m_mail"]] = $member->m["m_mail"];
-					}
+				
+				foreach (get_all_users() as $u) {
+					$mails[$u->email] = $u->email;
 				}
-
+				
 				$xtpl->table_td(implode(', ', $mails));
 				$xtpl->table_tr();
-
+				
 				$xtpl->table_out();
 			}
 			break;
+			
 		case 'export_notpaid_mails':
 			if ($_SESSION["is_admin"]) {
-
 				$xtpl->table_add_category('');
-
+				
 				$mails = array();
-
-				if ($members = get_members_array()) {
-
-					foreach ($members as $member) {
-
-						if ($member->has_paid_now() < 1) {
-							$mails[$member->m["m_mail"]] = $member->m["m_mail"];
-						}
-
-					}
+				$now = time();
+				
+				foreach (get_all_users() as $u) {
+					$paid = strtotime($u->paid_until);
+					
+					if (!$paid || $paid < $now)
+						$mails[$u->email] = $u->email;
 				}
-
+				
 				$xtpl->table_td(implode(', ', $mails));
 				$xtpl->table_tr();
-
+				
 				$xtpl->table_out();
 			}
 			break;
