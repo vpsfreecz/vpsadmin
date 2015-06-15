@@ -48,6 +48,9 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
+      input whitelist: %i(location version)
+      output blacklist: %i(class_id)
+      allow
     end
 
     example do
@@ -76,7 +79,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       comment 'List IP addresses assigned to VPS with ID 101.'
     end
 
-    def exec
+    def query
       ips = ::IpAddress
 
       %i(vps version location user max_tx max_rx).each do |filter|
@@ -87,7 +90,21 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
         )
       end
 
-      ips.limit(params[:ip_address][:limit]).offset(params[:ip_address][:offset])
+      if current_user.role != :admin
+        ips = ips.where(
+            'user_id = ? OR user_id IS NULL', current_user.id
+        ).where(vps_id: nil).order('user_id DESC, ip_id ASC')
+      end
+
+      ips
+    end
+
+    def count
+      query.count
+    end
+
+    def exec
+      query.limit(input[:limit]).offset(input[:offset])
     end
   end
 
@@ -99,11 +116,18 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     end
 
     authorize do |u|
-      allow if u.role == :admin
+      allow
     end
 
     def prepare
-      @ip = ::IpAddress.find(params[:ip_address_id])
+      if current_user.role == :admin
+        @ip = ::IpAddress.find(params[:ip_address_id])
+      else
+        @ip = ::IpAddress.where(
+            'user_id = ? OR user_id IS NULL',
+            current_user.id
+        ).where(ip_id: params[:ip_address_id]).take!
+      end
     end
 
     def exec
