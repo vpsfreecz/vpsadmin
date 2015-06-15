@@ -48,7 +48,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(location version)
+      input whitelist: %i(location version limit offset)
       output blacklist: %i(class_id)
       allow
     end
