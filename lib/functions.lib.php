@@ -46,17 +46,35 @@ function get_ip_by_id($ip_id) {
 	if ($result = $db->query($sql))
 	    return $db->fetch_array($result);
 }
-function get_free_ip_list ($v = 4, $location=false) {
+function get_free_ip_list ($v = 4, $vps) {
 	global $api;
 	
 	$ret = array();
-	$filters = array('version' => $v, 'vps' => null);
+	$filters = array(
+		'version' => $v,
+		'vps' => null,
+		'location' => $vps->node->location_id
+	);
 	
-	if($location)
-		$filters['location'] = $location;
+	if (!$_SESSION['is_admin']) {
+		// Limit the number of shown IP addresses by a number
+		// of user's IP addresses left.
+		
+		$resources = $vps->user->cluster_resource->list(array(
+			'environment' => $vps->node->environment_id,
+			'meta' => array('includes' => 'cluster_resource')
+		));
+		
+		foreach ($resources as $r) {
+			if ($r->cluster_resource->name == "ipv$v") {
+				$filters['limit'] = $r->free;
+				break;
+			}
+		}
+	}
 	
 	foreach($api->ip_address->list($filters) as $ip) {
-		$ret[$ip->id] = $ip->addr;
+		$ret[$ip->id] = $ip->addr . ($ip->user_id == $vps->user_id ? ' (owned)' : '');
 	}
 	
 	return $ret;
