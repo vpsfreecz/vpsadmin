@@ -317,10 +317,12 @@ function edit_auth_token($id) {
 function list_cluster_resources() {
 	global $xtpl, $api;
 	
-	$xtpl->table_title(_('Cluster resources'));
+	$xtpl->title(_('User').' <a href="?page=adminm&action=edit&id='.$_GET['id'].'">#'.$_GET['id'].'</a>: '._('Cluster resources'));
 	
 	$resources = $api->user($_GET['id'])->cluster_resource->list(array('meta' => array('includes' => 'environment,cluster_resource')));
 	$by_env = array();
+	
+	$convert = array('memory', 'swap', 'diskspace');
 	
 	foreach ($resources as $r) {
 		if (!isset($by_env[$r->environment_id]))
@@ -330,34 +332,41 @@ function list_cluster_resources() {
 	}
 	
 	foreach ($by_env as $res) {
-		$xtpl->table_td(_('Environment'), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("Resource"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("Value"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("Step size"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("Used"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_title($res[0]->environment->label);
+		
+		$xtpl->table_add_category(_("Resource"));
+		$xtpl->table_add_category(_("Value"));
+		$xtpl->table_add_category(_("Step size"));
+		$xtpl->table_add_category(_("Used"));
+		$xtpl->table_add_category(_("Free"));
 		
 		if ($_SESSION['is_admin'])
-			$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
-		
-		$xtpl->table_tr(true);
+			$xtpl->table_add_category('');
 		
 		foreach ($res as $r) {
-			$xtpl->table_td($r->environment->label);
 			$xtpl->table_td($r->cluster_resource->label);
-			$xtpl->table_td($r->value);
-			$xtpl->table_td($r->cluster_resource->stepsize);
-			$xtpl->table_td($r->used);
-			$xtpl->table_td($r->free);
+			
+			if (in_array($r->cluster_resource->name, $convert)) {
+				$xtpl->table_td(data_size_to_humanreadable($r->value));
+				$xtpl->table_td(data_size_to_humanreadable($r->cluster_resource->stepsize));
+				$xtpl->table_td(data_size_to_humanreadable($r->used));
+				$xtpl->table_td(data_size_to_humanreadable($r->free));
+				
+			} else {
+				$xtpl->table_td($r->value);
+				$xtpl->table_td($r->cluster_resource->stepsize);
+				$xtpl->table_td($r->used);
+				$xtpl->table_td($r->free);
+			}
 			
 			if ($_SESSION['is_admin'])
 				$xtpl->table_td('<a href="?page=adminm&section=members&action=cluster_resource_edit&id='.$_GET['id'].'&resource='.$r->id.'"><img src="template/icons/m_edit.png"  title="'._("Edit").'"></a>');
 			
 			$xtpl->table_tr();
 		}
+		
+		$xtpl->table_out();
 	}
-	
-	$xtpl->table_out();
 	
 	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&section=members&action=edit&id={$_GET['id']}");
 }
