@@ -151,7 +151,13 @@ class Vps < ActiveRecord::Base
         raise VpsAdmin::API::Exceptions::IpAddressInvalidLocation
       end
 
-      raise VpsAdmin::API::Exceptions::IpAddressInUse if !ip.free? || (ip.user_id && ip.user_id != self.user_id)
+      if !ip.free? || (ip.user_id && ip.user_id != self.user_id)
+        raise VpsAdmin::API::Exceptions::IpAddressInUse
+      end
+
+      if !ip.user_id && ::IpAddress.where(user: self.user, vps: nil).exists?
+        raise VpsAdmin::API::Exceptions::IpAddressNotOwned
+      end
 
       TransactionChains::Vps::AddIp.fire(self, [ip])
     end

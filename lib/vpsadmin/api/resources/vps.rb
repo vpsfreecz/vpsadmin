@@ -842,6 +842,9 @@ END
 
           rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation
             error('IP address is from the wrong location')
+
+          rescue VpsAdmin::API::Exceptions::IpAddressNotOwned
+            error('Use an IP address you already own first')
           end
 
         elsif input[:version].nil?

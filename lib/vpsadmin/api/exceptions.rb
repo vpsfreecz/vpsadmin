@@ -15,6 +15,10 @@ module VpsAdmin::API::Exceptions
 
   end
 
+  class IpAddressNotOwned < ::StandardError
+    
+  end
+
   class DatasetAlreadyExists < ::StandardError
     attr_reader :dataset, :path
 
