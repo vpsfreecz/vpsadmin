@@ -100,4 +100,13 @@ module VpsAdmin::API::Exceptions
       super("Mail template '#{name}' does not exist")
     end
   end
+
+  class ClusterResourceAllocationError < ::StandardError
+    attr_reader :resource_use
+
+    def initialize(record)
+      @resource_use = record
+      super("#{record.errors.to_hash[:value].join(';')}")
+    end
+  end
 end

@@ -231,7 +231,7 @@ module VpsAdmin::API
           ret
 
         else
-          raise ::ActiveRecord::RecordInvalid, ret
+          raise Exceptions::ClusterResourceAllocationError, ret
         end
       end
 
@@ -270,7 +270,7 @@ module VpsAdmin::API
           use.save!
 
         elsif !use.valid?
-          raise ::ActiveRecord::RecordInvalid, use
+          raise Exceptions::ClusterResourceAllocationError, use
 
         else
           use
@@ -331,7 +331,7 @@ module VpsAdmin::API
 
           use.user_cluster_resource = t
           use.resource_transfer = true
-          raise ::ActiveRecord::RecordInvalid, use unless use.valid?
+          raise Exceptions::ClusterResourceAllocationError, use unless use.valid?
 
           ret[use] = {user_cluster_resource_id: t.id}
 
@@ -369,7 +369,7 @@ module VpsAdmin::API
 
           use.user_cluster_resource = t
           use.resource_transfer = true
-          raise ::ActiveRecord::RecordInvalid, use unless use.valid?
+          raise Exceptions::ClusterResourceAllocationError, use unless use.valid?
 
           ret[use] = {user_cluster_resource_id: t.id}
 
