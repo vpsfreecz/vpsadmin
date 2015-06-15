@@ -57,7 +57,12 @@ module TransactionChains
             end
 
           when 'vps_template'
-            # FIXME
+            append(Transactions::Vps::OsTemplate, args: [
+                  vps,
+                  ::OsTemplate.find(vps.vps_template_was),
+                  vps.os_template]) do
+              edit(vps, attr => vps.vps_template)
+            end
 
           when 'dns_resolver_id'
             append(Transactions::Vps::DnsResolver, args: [vps, *find_obj(vps, attr)]) do
