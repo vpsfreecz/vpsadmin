@@ -25,6 +25,8 @@ module TransactionChains
       append(Transactions::Storage::CreateDataset, args: vps.dataset_in_pool)
 
       # Create VPS
+      vps.os_template = template
+
       append(Transactions::Vps::Create, args: vps) do
         edit(vps, vps_template: template.id)
 
