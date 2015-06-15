@@ -538,13 +538,28 @@ switch ($_GET["action"]) {
 			} else $list_vps=true;
 			break;
 		case 'reinstall':
-			if ($_REQUEST["reinstallsure"] && $_REQUEST["vps_template"]) {
+			csrf_check();
+			
+			if ($_POST['reinstall_action'] === '1') {
+				try {
+					$api->vps($_GET['veid'])->update(array(
+						'os_template' => $_POST['vps_template']
+					));
+					
+					notify_user(_("Distribution information updated"), '');
+					redirect('?page=adminvps&action=info&veid='.$_GET["veid"]);
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Failed to update distribution'), $e->getResponse());
+					$show_info=true;
+				}
+				
+			} elseif ($_POST['reinstall_action'] === '2') {
 				$xtpl->perex(
 					_("Are you sure you want to reinstall VPS").' '.$_GET["veid"].'?',
 					'<a href="?page=adminvps">'.strtoupper(_("No")).'</a> | <a href="?page=adminvps&action=reinstall2&veid='.$_GET["veid"].'&vps_template='.$_POST["vps_template"].'&t='.csrf_token().'">'.strtoupper(_("Yes")).'</a>'
 				);
 			}
-			else $list_vps=true;
 			break;
 		case 'reinstall2':
 			try {
@@ -986,11 +1001,14 @@ if (isset($show_info) && $show_info) {
 	mount_list($vps->id);
 	
 		
-	// Reinstall
-		$xtpl->table_title(_('Reinstall'));
+	// Distribution
+		$xtpl->table_title(_('Distribution'));
 		$xtpl->form_create('?page=adminvps&action=reinstall&veid='.$vps->id, 'post');
-		$xtpl->form_add_checkbox(_("Reinstall distribution").':', 'reinstallsure', '1', false, $hint = _("Install base system again"));
 		$xtpl->form_add_select(_("Distribution").':', 'vps_template', list_templates(), $vps->os_template_id,  '');
+		$xtpl->form_add_radio(_("Update information").':', 'reinstall_action', '1', true, $hint = _("Use if you have upgraded your system"));
+		$xtpl->table_tr();
+		$xtpl->form_add_radio(_("Reinstall").':', 'reinstall_action', '2', false, $hint = _("Install base system again"));
+		$xtpl->table_tr();
 		$xtpl->form_out(_("Go >>"));
 
 	// Configs
