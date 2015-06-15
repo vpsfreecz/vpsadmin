@@ -18,6 +18,9 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     integer :version, label: 'IP version', desc: '4 or 6', db_name: :ip_v
     resource VpsAdmin::API::Resources::Location, label: 'Location',
               desc: 'Location this IP address is available in'
+    resource VpsAdmin::API::Resources::User, label: 'User', desc: 'Filter by owner',
+             value_label: :login
+
     use :shaper
   end
 
@@ -76,7 +79,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     def exec
       ips = ::IpAddress
 
-      %i(vps version location max_tx max_rx).each do |filter|
+      %i(vps version location user max_tx max_rx).each do |filter|
         next unless input.has_key?(filter)
 
         ips = ips.where(
