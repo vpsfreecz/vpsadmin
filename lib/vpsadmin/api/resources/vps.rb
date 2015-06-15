@@ -817,15 +817,17 @@ END
       end
 
       output do
-        use :all
+        use :common
       end
 
       authorize do |u|
         allow if u.role == :admin
+        restrict m_id: u.id
+        allow
       end
 
       def exec
-        vps = ::Vps.find(params[:vps_id])
+        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
         maintenance_check!(vps)
 
         if input[:ip_address]
@@ -860,10 +862,12 @@ END
 
       authorize do |u|
         allow if u.role == :admin
+        restrict m_id: u.id
+        allow
       end
 
       def exec
-        vps = ::Vps.find(params[:vps_id])
+        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
         maintenance_check!(vps)
 
         vps.delete_ip(vps.ip_addresses.find_by!(
@@ -885,10 +889,12 @@ END
 
       authorize do |u|
         allow if u.role == :admin
+        restrict m_id: u.id
+        allow
       end
 
       def exec
-        vps = ::Vps.find(params[:vps_id])
+        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
         maintenance_check!(vps)
 
         vps.delete_ips((params[:ip_addresses] || {})[:version])
