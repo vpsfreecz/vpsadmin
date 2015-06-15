@@ -793,19 +793,18 @@ if (isset($show_info) && $show_info) {
 	if (!isset($veid))
 		$veid = $_GET["veid"];
 	
-	if ($_SESSION["is_admin"])
-		$xtpl->title(_("VPS details").' '._("[Admin mode]"));
-	else
-		$xtpl->title(_("VPS details").' '._("[User mode]"));
-	
-	$deprecated_vps = vps_load($veid);
 	$vps = $api->vps->find($veid, array('meta' => array('includes' => 'node__location,node__environment,user,os_template')));
+	
+	$title = 'VPS <a href="?page=adminvps&action=info&veid='.$veid.'">#'.$veid.'</a> '._("details");
+	
+	if ($_SESSION["is_admin"])
+		$xtpl->title($title.' '._("[Admin mode]"));
+	else
+		$xtpl->title($title.' '._("[User mode]"));
+	
 	
 	if ($_SESSION['is_admin'])
 		$xtpl->sbar_add(_('State log'), '?page=lifetimes&action=changelog&resource=vps&id='.$vps->id.'&return='. urlencode($_SERVER['REQUEST_URI']));
-	
-	$xtpl->table_add_category('&nbsp;');
-	$xtpl->table_add_category('&nbsp;');
 	
 	$xtpl->table_td('ID:');
 	$xtpl->table_td($vps->id);
@@ -910,6 +909,7 @@ if (isset($show_info) && $show_info) {
 	} else {
 	
 	// Password changer
+		$xtpl->table_title(_("Set root's password (in the VPS, not in the vpsAdmin)"));
 		$xtpl->form_create('?page=adminvps&action=passwd&veid='.$vps->id, 'post');
 		
 		$xtpl->table_td(_("Username").':');
@@ -928,18 +928,16 @@ if (isset($show_info) && $show_info) {
 		
 		if (!$_SESSION["is_admin"]) {
 			$xtpl->table_td('');
-			$xtpl->table_td('<b> Warning </b>: Password is randomly generated and shown <b>only once</b>. <br />
-							This password changer is here only to enable first access to SSH of VPS. <br />
-							You can change it <br />
-							with <b>passwd</b> command once you\'ve logged onto SSH.');
+			$xtpl->table_td('<b>Warning</b>: The password is randomly generated.<br>
+							This password changer is here only to enable the first access to SSH.<br>
+							You can change it with <em>passwd</em> command once you\'ve logged onto SSH.');
 			$xtpl->table_tr();
 		}
 		
-		$xtpl->table_add_category(_("Set password"));
-		$xtpl->table_add_category(_("(in your VPS, not in vpsAdmin!)"));
 		$xtpl->form_out(_("Go >>"));
 
 	// IP addresses
+		$xtpl->table_title(_('IP addresses'));
 		$xtpl->form_create('?page=adminvps&action=addip&veid='.$vps->id, 'post');
 		
 		foreach ($api->vps($vps->id)->ip_address->list() as $ip) {
@@ -965,24 +963,20 @@ if (isset($show_info) && $show_info) {
 			$xtpl->form_add_select(_("Add IPv6 address").':', 'ip6_recycle', $free_6, '', _('Add one IP address at a time'));
 			
 		$xtpl->table_tr();
-		$xtpl->table_add_category(_("Add IP address"));
-		$xtpl->table_add_category('&nbsp;');
 		
 		$xtpl->form_out(_("Go >>"));
 		
 
 	// DNS Server
+		$xtpl->table_title(_('DNS resolver (/etc/resolv.conf)'));
 		$xtpl->form_create('?page=adminvps&action=nameserver&veid='.$vps->id, 'post');
 		$xtpl->form_add_select(_("DNS servers address").':', 'nameserver', $cluster->list_dns_servers($vps->node->location_id), $vps->dns_resolver_id,  '');
-		$xtpl->table_add_category(_("DNS server"));
-		$xtpl->table_add_category('&nbsp;');
 		$xtpl->form_out(_("Go >>"));
 
 	// Hostname change
+		$xtpl->table_title(_('Hostname'));
 		$xtpl->form_create('?page=adminvps&action=hostname&veid='.$vps->id, 'post');
 		$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'hostname', $vps->hostname, _("A-z, a-z"), 255);
-		$xtpl->table_add_category(_("Hostname list"));
-		$xtpl->table_add_category('&nbsp;');
 		$xtpl->form_out(_("Go >>"));
 	
 	// Datasets
@@ -993,14 +987,15 @@ if (isset($show_info) && $show_info) {
 	
 		
 	// Reinstall
+		$xtpl->table_title(_('Reinstall'));
 		$xtpl->form_create('?page=adminvps&action=reinstall&veid='.$vps->id, 'post');
 		$xtpl->form_add_checkbox(_("Reinstall distribution").':', 'reinstallsure', '1', false, $hint = _("Install base system again"));
 		$xtpl->form_add_select(_("Distribution").':', 'vps_template', list_templates(), $vps->os_template_id,  '');
-		$xtpl->table_add_category(_("Reinstall"));
-		$xtpl->table_add_category('&nbsp;');
 		$xtpl->form_out(_("Go >>"));
 
 	// Configs
+		$xtpl->table_title(_('Configs'));
+		
 		$configs_select = list_configs(true);
 		$options = "";
 		
@@ -1023,7 +1018,7 @@ if (isset($show_info) && $show_info) {
 				dnd();
 				
 				$("#add_row").click(function (){
-					$(\'<tr id="add_config_\' + add_config_id++ + \'"><td>'._('Add').':</td><td><select name="add_config[]">'.$options.'</select></td></tr>\').fadeIn("slow").insertBefore("#configs tr:nth-last-child(3)");
+					$(\'<tr id="add_config_\' + add_config_id++ + \'"><td>'._('Add').':</td><td><select name="add_config[]">'.$options.'</select></td></tr>\').fadeIn("slow").insertBefore("#configs tr:nth-last-child(2)");
 					dnd();
 				});
 				
@@ -1047,11 +1042,6 @@ if (isset($show_info) && $show_info) {
 			
 			$xtpl->form_create('?page=adminvps&action=configs&veid='.$vps->id, 'post');
 		}
-		
-		$xtpl->table_add_category(_('Configs'));
-		
-		if ($_SESSION["is_admin"])
-			$xtpl->table_add_category('');
 		
 		foreach($vps_configs as $cfg) {
 			if ($_SESSION["is_admin"]) {
@@ -1077,17 +1067,15 @@ if (isset($show_info) && $show_info) {
 		
 	// Custom config
 		if ($_SESSION["is_admin"]) {
+			$xtpl->table_title(_('Custom config'));
 			$xtpl->form_create('?page=adminvps&action=custom_config&veid='.$vps->id, 'post');
-			$xtpl->table_add_category(_("Custom config"));
-			$xtpl->table_add_category('');
 			$xtpl->form_add_textarea(_("Config").':', 60, 10, 'custom_config', $vps->config, _('Applied last'));
 			$xtpl->form_out(_("Go >>"));
 		}
 	
 	// Resources
+	$xtpl->table_title(_('Resources'));
 	$xtpl->form_create('?page=adminvps&action=resources&veid='.$vps->id, 'post');
-	$xtpl->table_add_category(_("Resources"));
-	$xtpl->table_add_category('');
 	
 	$params = $api->vps->update->getParameters('input');
 	$vps_resources = array('memory', 'cpu', 'swap');
@@ -1125,10 +1113,8 @@ if (isset($show_info) && $show_info) {
 	$xtpl->form_out(_("Go >>"));
 	
 	// Enable devices/capabilities
+		$xtpl->table_title(_('Features'));
 		$xtpl->form_create('?page=adminvps&action=features&veid='.$vps->id, 'post');
-		
-		$xtpl->table_add_category(_("Features"));
-		$xtpl->table_add_category('');
 		
 		$features = $vps->feature->list();
 		
@@ -1145,12 +1131,11 @@ if (isset($show_info) && $show_info) {
 
 	// Owner change
 		if ($_SESSION["is_admin"]) {
+			$xtpl->table_title(_('VPS owner'));
 			$xtpl->form_create('?page=adminvps&action=chown&veid='.$vps->id, 'post');
 			$xtpl->form_add_select(_("Owner").':', 'm_id',
 				resource_list_to_options($api->user->list(), 'id', 'login', false),
 				$vps->user_id);
-			$xtpl->table_add_category(_("Change owner"));
-			$xtpl->table_add_category('&nbsp;');
 			$xtpl->form_out(_("Go >>"));
 		}
 		
@@ -1161,11 +1146,10 @@ if (isset($show_info) && $show_info) {
 
 	// Offline migration
 		if ($_SESSION["is_admin"]) {
+			$xtpl->table_title(_('Offline migration'));
 			$xtpl->form_create('?page=adminvps&action=offlinemigrate&veid='.$vps->id, 'post');
 			$xtpl->form_add_select(_("Target server").':', 'target_id', vps_migration_nodes($vps), '');
 // 			$xtpl->form_add_checkbox(_("Stop before migration").':', 'stop', '1', false);
-			$xtpl->table_add_category(_("Offline VPS Migration"));
-			$xtpl->table_add_category('&nbsp;');
 			$xtpl->form_out(_("Go >>"));
 		}
 	
@@ -1178,14 +1162,13 @@ if (isset($show_info) && $show_info) {
 // 			$xtpl->form_out(_("Go >>"));
 // 		}
 	// Clone
+		$xtpl->table_title(_('Clone VPS'));
 		$xtpl->form_create('?page=adminvps&action=clone&veid='.$vps->id, 'post');
 		
 		api_params_to_form($vps->clone, 'input', array('vps' => function($vps) {
 			return '#'.$vps->id.' '.$vps->hostname;
 		}));
 		
-		$xtpl->table_add_category(_("Clone"));
-		$xtpl->table_add_category('&nbsp;');
 		$xtpl->form_out(_("Go >>"));
 		
 	// Swap

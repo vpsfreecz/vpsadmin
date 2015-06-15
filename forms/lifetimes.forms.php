@@ -5,9 +5,8 @@ function lifetimes_set_state_form($resource, $id) {
 	
 	$return = $_GET['return'] ? $_GET['return'] : urlencode($_SERVER['REQUEST_URI']);
 	
+	$xtpl->table_title(_('Object state'));
 	$xtpl->form_create('?page=lifetimes&action=set_state&resource='.$resource.'&id='.$id.'&return='.$return, 'post');
-	$xtpl->table_add_category(_("Set object state"));
-	$xtpl->table_add_category('&nbsp;');
 	
 	$p = $api[$resource]->update->getParameters('input');
 	
