@@ -151,13 +151,15 @@ class Vps < ActiveRecord::Base
         raise VpsAdmin::API::Exceptions::IpAddressInvalidLocation
       end
 
-      raise VpsAdmin::API::Exceptions::IpAddressInUse if !ip.free? || (ip.user_id && ip.user_id != vps.user_id)
+      raise VpsAdmin::API::Exceptions::IpAddressInUse if !ip.free? || (ip.user_id && ip.user_id != self.user_id)
 
       TransactionChains::Vps::AddIp.fire(self, [ip])
     end
   end
 
   def add_free_ip(v)
+    ip = nil
+
     ::IpAddress.transaction do
       ip = ::IpAddress.pick_addr!(user, node.location, v)
       add_ip(ip, true)
@@ -187,7 +189,10 @@ class Vps < ActiveRecord::Base
         ips = ip_addresses.all
       end
 
-      TransactionChains::Vps::DelIp.fire(self, ips)
+      arr = []
+      ips.each { |ip| arr << ip }
+
+      TransactionChains::Vps::DelIp.fire(self, arr)
     end
   end
 
