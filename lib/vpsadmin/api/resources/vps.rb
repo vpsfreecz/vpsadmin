@@ -76,9 +76,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict m_id: u.m_id
-      output whitelist: %i(id hostname os_template dns_resolver node dataset
+      output whitelist: %i(id user hostname os_template dns_resolver node dataset
                           memory swap cpu backup_enabled maintenance_lock
-                          maintenance_lock_reason)
+                          maintenance_lock_reason object_state expiration_date
+                          running process_count used_memory used_disk)
       allow
     end
 
@@ -172,9 +173,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       allow if u.role == :admin
       input whitelist: %i(environment location hostname os_template
                           dns_resolver cpu memory diskspace ipv4 ipv6)
-      output whitelist: %i(id hostname os_template dns_resolver node dataset
+      output whitelist: %i(id user hostname os_template dns_resolver node dataset
                           memory swap cpu backup_enabled maintenance_lock
-                          maintenance_lock_reason)
+                          maintenance_lock_reason object_state expiration_date
+                          running process_count used_memory used_disk)
       allow
     end
 
@@ -272,9 +274,10 @@ END
     authorize do |u|
       allow if u.role == :admin
       restrict m_id: u.m_id
-      output whitelist: %i(id hostname os_template dns_resolver node dataset
+      output whitelist: %i(id user hostname os_template dns_resolver node dataset
                           memory swap cpu backup_enabled maintenance_lock
-                          maintenance_lock_reason)
+                          maintenance_lock_reason object_state expiration_date
+                          running process_count used_memory used_disk)
       allow
     end
 
