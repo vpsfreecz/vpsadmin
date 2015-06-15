@@ -288,8 +288,12 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     model ::UserClusterResource
     route ':user_id/cluster_resources'
 
-    params(:common) do
+    params(:filters) do
       resource VpsAdmin::API::Resources::Environment
+    end
+
+    params(:common) do
+      use :filters
       resource VpsAdmin::API::Resources::ClusterResource
       integer :value
     end
@@ -308,6 +312,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     class Index < HaveAPI::Actions::Default::Index
       desc 'List user cluster resources'
 
+      input do
+        use :filters
+      end
+
       output(:object_list) do
         use :all
       end
@@ -321,7 +329,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
           error("I don't like the smell of this")
         end
 
-        ::UserClusterResource.where(user_id: params[:user_id])
+        q = ::UserClusterResource.where(user_id: params[:user_id])
+        q = q.where(environment: input[:environment]) if input[:environment]
+        q
       end
 
       def count
