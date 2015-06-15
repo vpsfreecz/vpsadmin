@@ -51,6 +51,12 @@ module VpsAdmin
         ret
       end
 
+      e.rescue(VpsAdmin::API::Exceptions::ClusterResourceAllocationError) do |ret, exception|
+        ret[:status] = false
+        ret[:message] = "Resource allocation error: #{exception.message}"
+        ret
+      end
+
       api.extensions << e
 
       api.mount('/')
