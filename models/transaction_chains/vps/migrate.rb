@@ -182,11 +182,13 @@ module TransactionChains
         end
       end
 
-      # Setup shapers
-      # Remote shaper on source node
+      # Setup firewall and shapers
+      # Unregister from firewall and remove shaper on source node
+      use_chain(Vps::FirewallUnregister, args: vps, urgent: true)
       use_chain(Vps::ShaperUnset, args: vps, urgent: true)
 
-      # Set shaper on destination node
+      # Register to firewall and set shaper on destination node
+      use_chain(Vps::FirewallRegister, args: [dst_vps, dst_ip_addresses], urgent: true)
       use_chain(Vps::ShaperSet, args: [dst_vps, dst_ip_addresses], urgent: true)
 
       # Destroy old dataset in pools

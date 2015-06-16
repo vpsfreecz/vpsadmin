@@ -197,6 +197,7 @@ end
 module Transactions
   module Vps          ; end
   module Shaper       ; end
+  module Firewall     ; end
   module Storage      ; end
   module Utils        ; end
   module Hypervisor   ; end
