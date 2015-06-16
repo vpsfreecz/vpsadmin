@@ -529,14 +529,6 @@ switch ($_GET["action"]) {
 // 			}
 // 			$show_info=true;
 // 			break;
-		case 'alliplist':
-			if ($_SESSION["is_admin"]) {
-				$xtpl->title(_("List of IP addresses").' '._("[Admin mode]"));
-				$Cluster_ipv4->table_used_out();
-				$Cluster_ipv6->table_used_out();
-				$xtpl->sbar_add(_("Back"), '?page=adminvps');
-			} else $list_vps=true;
-			break;
 		case 'reinstall':
 			csrf_check();
 			
@@ -800,7 +792,6 @@ if($_SESSION["is_admin"] && $list_vps) {
 	if ($_SESSION["is_admin"]) {
 		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new3');
 		$xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List VPSes").'" /> '._("List VPSes"), '?page=adminvps&action=list');
-		$xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List IP addresses").'" /> '._("List IP addresses"), '?page=adminvps&action=alliplist');
 	}
 }
 
