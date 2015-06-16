@@ -135,6 +135,9 @@ module VpsAdmind
           )
         end
       end
+
+    rescue CommandFailed => err
+      log(:critical, :firewall, "Failed to update traffic accounting: #{err.output}")
     end
 
     def reset_traffic_counter
