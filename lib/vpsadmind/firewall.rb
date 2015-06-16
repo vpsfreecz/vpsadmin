@@ -23,7 +23,11 @@ module VpsAdmind
         iptables(v, {:Z => CHAIN})
         iptables(v, {:A => 'FORWARD', :j => CHAIN})
 
-        rs = db.query("SELECT ip_addr, ip_v FROM vps_ip, servers WHERE server_id = #{$CFG.get(:vpsadmin, :server_id)} AND ip_v = #{v} AND ip_location = server_location")
+        rs = db.query("SELECT ip_addr
+                      FROM vps_ip, vps
+                      WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}
+                      AND vps_ip.vps_id = vps.vps_id
+                      AND ip_v = #{v}")
         rs.each_hash do |ip|
           reg_ip(ip['ip_addr'], v)
         end
@@ -74,8 +78,8 @@ module VpsAdmind
 
     def unreg_ip(addr, v)
       PROTOCOLS.each do |p|
-        iptables(v, ['-Z', CHAIN, '-s', addr, '-p', p.to_s, '-j', 'ACCEPT'])
-        iptables(v, ['-Z', CHAIN, '-d', addr, '-p', p.to_s, '-j', 'ACCEPT'])
+        iptables(v, ['-D', CHAIN, '-s', addr, '-p', p.to_s, '-j', 'ACCEPT'])
+        iptables(v, ['-D', CHAIN, '-d', addr, '-p', p.to_s, '-j', 'ACCEPT'])
       end
     end
 
