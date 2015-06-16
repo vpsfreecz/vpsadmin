@@ -7,10 +7,44 @@ class IpAddress < ActiveRecord::Base
   belongs_to :user
   has_paper_trail
 
+  validates :ip_v, inclusion: {
+      in: [4, 6],
+      message: '%{value} is not a valid IP version'
+  }
+  validate :check_address
+  validates :ip_addr, uniqueness: true
+
   alias_attribute :addr, :ip_addr
   alias_attribute :version, :ip_v
 
   include Lockable
+
+  def self.register(addr, params)
+    ip = nil
+
+    self.transaction do
+      class_id = self.select('ip1.class_id+1 AS first_id')
+          .from('vps_ip ip1')
+          .joins('LEFT JOIN vps_ip ip2 ON ip2.class_id = ip1.class_id + 1')
+          .where('ip2.class_id IS NULL')
+          .order('ip1.class_id')
+          .take!
+
+      ip = self.new(
+          ip_addr: addr.to_s,
+          ip_v: addr.ipv4? ? 4 : 6,
+          location: params[:location],
+          class_id: class_id.first_id,
+          user: params[:user]
+      )
+
+      ip.max_tx = params[:max_tx] if params[:max_tx]
+      ip.max_rx = params[:max_rx] if params[:max_rx]
+      ip.save!
+    end
+
+    ip
+  end
 
   def free?
     vps_id.nil? || vps_id == 0
@@ -39,5 +73,19 @@ class IpAddress < ActiveRecord::Base
       self.max_rx = rx
       save!
     end
+  end
+
+  def check_address
+    a = ::IPAddress.parse(ip_addr)
+
+    if (a.ipv4? && ip_v != 4) || (a.ipv6? && ip_v != 6)
+      errors.add(:ip_addr, 'IP version does not match the address')
+
+    elsif a.network? && a.prefix != (a.ipv4? ? 32 : 128)
+      errors.add(:ip_addr, 'not a host address')
+    end
+
+  rescue ArgumentError => e
+    errors.add(:ip_addr, e.message)
   end
 end

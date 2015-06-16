@@ -18,7 +18,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     integer :version, label: 'IP version', desc: '4 or 6', db_name: :ip_v
     resource VpsAdmin::API::Resources::Location, label: 'Location',
               desc: 'Location this IP address is available in'
-    resource VpsAdmin::API::Resources::User, label: 'User', desc: 'Filter by owner',
+    resource VpsAdmin::API::Resources::User, label: 'User',
              value_label: :login
 
     use :shaper
@@ -40,6 +40,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     input do
       use :filters
+      patch :user, desc: 'Filter by owner'
     end
 
     output(:object_list) do
@@ -132,6 +133,36 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     def exec
       @ip
+    end
+  end
+
+  class Create < HaveAPI::Actions::Default::Create
+    desc 'Add an IP address'
+
+    input do
+      use :common, exclude: %i(vps class_id version)
+      patch :addr, required: true
+      patch :location, required: true
+    end
+
+    output do
+      use :all
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def exec
+      addr = ::IPAddress.parse(input[:addr]) # gem
+
+      ::IpAddress.register(addr, input) # model
+
+    rescue ArgumentError => e
+      error(e.message, {addr: ['not a valid IP address']})
+
+    rescue ::ActiveRecord::RecordInvalid => e
+      error('create failed', e.record.errors.to_hash)
     end
   end
 

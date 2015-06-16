@@ -5,6 +5,7 @@ require 'paper_trail'
 require 'pp'
 require 'haveapi'
 require 'ancestry'
+require 'ipaddress'
 
 Thread.abort_on_exception = true
 
