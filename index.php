@@ -35,13 +35,13 @@ include WWW_ROOT.'lib/vps.lib.php';
 include WWW_ROOT.'lib/members.lib.php';
 include WWW_ROOT.'lib/networking.lib.php';
 include WWW_ROOT.'lib/cluster.lib.php';
-include WWW_ROOT.'lib/cluster_ip.lib.php';
 include WWW_ROOT.'lib/ajax.lib.php';
 include WWW_ROOT.'lib/mail.lib.php';
 include WWW_ROOT.'lib/log.lib.php';
 include WWW_ROOT.'lib/helpbox.lib.php';
 include WWW_ROOT.'lib/security.lib.php';
 
+include WWW_ROOT.'forms/cluster.forms.php';
 include WWW_ROOT.'forms/dataset.forms.php';
 include WWW_ROOT.'forms/vps.forms.php';
 include WWW_ROOT.'forms/lifetimes.forms.php';
@@ -95,9 +95,6 @@ try {
 			$_GET["page"] = "";
 		}
 	}
-
-	$Cluster_ipv4 = new Cluster_ipv4($xtpl, $db);
-	$Cluster_ipv6 = new Cluster_ipv6($xtpl, $db);
 
 	$_GET["page"] = isset($_GET["page"]) ? $_GET["page"] : false;
 

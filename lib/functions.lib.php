@@ -80,16 +80,6 @@ function get_free_ip_list ($v = 4, $vps) {
 	return $ret;
 }
 
-function validate_ip_address($ip_addr) {
-	global $Cluster_ipv4, $Cluster_ipv6;
-	if ($Cluster_ipv4->check_syntax($ip_addr))
-		return 4;
-	elseif ($Cluster_ipv6->check_syntax($ip_addr))
-		return 6;
-	else
-		return false;
-}
-
 function ip_exists_in_table($ip_addr) {
 	global $db;
 	$sql = 'SELECT ip_id,ip_addr,ip_v,vps_id,class_id,max_tx,max_rx FROM vps_ip WHERE ip_addr = "'.$db->check($ip_addr).'"';
@@ -97,17 +87,6 @@ function ip_exists_in_table($ip_addr) {
 		if ($row = $db->fetch_array($result))
 			return $row;
 		else return false;
-	else return false;
-}
-
-function ip_is_free($ip_addr) {
-	if (validate_ip_address($ip_addr))
-		$ip_try = ip_exists_in_table($ip_addr);
-	else return false;
-	if (!$ip_try)
-		return true;
-	if ($ip_try["vps_id"] == 0)
-		return true;
 	else return false;
 }
 
@@ -540,6 +519,14 @@ function get_all_users() {
 	return $api->user->list(array(
 		'limit' => $cnt + 10
 	));
+}
+
+function vps_label ($vps) {
+	return '#'.$vps->id.' '.$vps->hostname;
+}
+
+function user_label ($user) {
+	return '#'.$user->id.' '.$user->login;
 }
 
 ?>

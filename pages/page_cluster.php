@@ -427,56 +427,78 @@ switch($_REQUEST["action"]) {
 		
 		break;
 		
-	case "ipv4addr":
-		$Cluster_ipv4->table_used_out(_("Used IP addresses"), true);
-		$Cluster_ipv4->table_unused_out(_("Unused IP addresses"), true);
+	case "ip_addresses":
+		ip_adress_list();
 		$xtpl->sbar_add(_("Back"), '?page=cluster');
-		$xtpl->sbar_add(_("Add IPv4"), '?page=cluster&action=ipaddr_add&v=4');
+		$xtpl->sbar_add(_("Add IP addresses"), '?page=cluster&action=ipaddr_add');
 		break;
-	case "ipv6addr":
-		$Cluster_ipv6->table_used_out(_("Used IP addresses"), true);
-		$Cluster_ipv6->table_unused_out(_("Unused IP addresses"), true);
-		$xtpl->sbar_add(_("Back"), '?page=cluster');
-		$xtpl->sbar_add(_("Add IPv6"), '?page=cluster&action=ipaddr_add&v=6');
-		break;
-	case "ipaddr_delete":
-		if (!isset($_REQUEST['vps_id']))
-			$_REQUEST['vps_id'] = -1;
-		if ($_REQUEST['v']==4)
-			$res = $Cluster_ipv4->delete($_REQUEST['ip_id']*1, $_REQUEST['vps_id']*1);
-		elseif ($_REQUEST['v']==6)
-			$res = $Cluster_ipv6->delete($_REQUEST['ip_id']*1, $_REQUEST['vps_id']*1);
-		if ($res==null)
-			$xtpl->perex(_("Operation not succesful"), _("An error has occured, while you were trying to delete IP"));
-		else
-			$xtpl->perex(_("Operation succesful"), _("IP address has been successfully deleted."));
-		break;
-	case "ipaddr_remove":
-		if (isset($_REQUEST['vps_id']) && isset($_REQUEST['ip_id'])) {
-			if ($_REQUEST['v']==4)
-			$Cluster_ipv4->remove_from_vps($_REQUEST['ip_id']*1, $_REQUEST['vps_id']*1);
-			elseif ($_REQUEST['v']==6)
-			$Cluster_ipv6->remove_from_vps($_REQUEST['ip_id']*1, $_REQUEST['vps_id']*1);
-		}
-		break;
+	
 	case "ipaddr_add":
-		if ($_REQUEST['v']==4)
-			$Cluster_ipv4->table_add_1();
-		elseif ($_REQUEST['v']==6)
-			$Cluster_ipv6->table_add_1();
+		ip_add_form();
 		break;
+	
 	case "ipaddr_add2":
-		if (isset($_REQUEST['m_ip']) && isset($_REQUEST["m_location"])) {
-			if ($_REQUEST['v']==4)
-			$Cluster_ipv4->table_add_2($_REQUEST['m_ip'], $_REQUEST['m_location']);
-			elseif ($_REQUEST['v']==6)
-			$Cluster_ipv6->table_add_2($_REQUEST['m_ip'], $_REQUEST['m_location']);
-		if ($_REQUEST['v']==4)
-			$Cluster_ipv4->table_add_1($_REQUEST['m_ip'], $_REQUEST['m_location']);
-		elseif ($_REQUEST['v']==6)
-			$Cluster_ipv6->table_add_1($_REQUEST['m_ip'], $_REQUEST['m_location']);
+		if (!$_POST['ip_addresses'])
+			return;
+		
+		$addrs = preg_split("/(\r\n|\n|\r)/", trim($_POST['ip_addresses']));
+		$res = array();
+		$params = array(
+			'addr' => $t,
+			'location' => $_POST['location'],
+		);
+		
+		if ($_POST['user'])
+			$params['user'] = $_POST['user'];
+		
+		$failed = false;
+		
+		foreach ($addrs as $a) {
+			$t = trim($a);
+			
+			if (!$t)
+				continue;
+			
+			if ($failed) {
+				$res[$t] = false;
+				continue;
+			}
+			
+			$params['addr'] = $t;
+			
+			try {
+				$api->ip_address->create($params);
+				$res[$t] = true;
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('IP addition failed'), $e->getResponse());
+				$res[$t] = false;
+				$failed = true;
+			}
 		}
+		
+		$str = '';
+		
+		if ($failed) {
+			foreach ($res as $addr => $status) {
+				if (!$status)
+					$str .= "$addr\n";
+			}
+			
+			ip_add_form($str);
+			
+		} else {
+			foreach ($res as $addr => $status) {
+				if ($status)
+					$str .= "Added $addr<br>\n";
+			}
+			
+			notify_user(_('IP addresses added'), $str);
+			redirect('?page=cluster&action=ip_addresses');
+		}
+		
 		break;
+		
 	case "templates":
 		$list_templates = true;
 		break;
@@ -824,7 +846,7 @@ switch($_REQUEST["action"]) {
 				$params = array();
 				
 				foreach ($input_params as $name => $desc) {
-					if ($_POST[$name])
+					if (isset($_POST[$name]))
 						$params[$name] = $_POST[$name];
 				}
 				
@@ -1114,8 +1136,7 @@ if ($list_nodes) {
 	$xtpl->sbar_add(_("Register new node"), '?page=cluster&action=newnode');
 	$xtpl->sbar_add(_("Manage VPS templates"), '?page=cluster&action=templates');
 	$xtpl->sbar_add(_("Manage configs"), '?page=cluster&action=configs');
-	$xtpl->sbar_add(_("Manage IPv4 address list"), '?page=cluster&action=ipv4addr');
-	$xtpl->sbar_add(_("Manage IPv6 address list"), '?page=cluster&action=ipv6addr');
+	$xtpl->sbar_add(_("Manage IP addresses"), '?page=cluster&action=ip_addresses');
 	$xtpl->sbar_add(_("Manage DNS servers"), '?page=cluster&action=dns');
 	$xtpl->sbar_add(_("Manage environments"), '?page=cluster&action=environments');
 	$xtpl->sbar_add(_("Manage locations"), '?page=cluster&action=locations');
@@ -1292,7 +1313,7 @@ if ($list_locations) {
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 	
-	$locations = $api->location->list(array('meta' => array('includes' => 'environment')));
+	$locations = $api->location->list();
 	
 	foreach($locations as $loc) {
 		$nodes = $api->node->list(array(
