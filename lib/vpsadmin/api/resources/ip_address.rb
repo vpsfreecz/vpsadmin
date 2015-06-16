@@ -83,7 +83,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     def query
       ips = ::IpAddress
 
-      %i(vps version location user max_tx max_rx).each do |filter|
+      %i(vps user version location user max_tx max_rx).each do |filter|
         next unless input.has_key?(filter)
 
         ips = ips.where(
@@ -105,7 +105,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     end
 
     def exec
-      query.limit(input[:limit]).offset(input[:offset])
+      query.order('ip_id').limit(input[:limit]).offset(input[:offset])
     end
   end
 
