@@ -13,6 +13,7 @@ class Vps < ActiveRecord::Base
   has_many :vps_configs, through: :vps_has_config
   has_many :vps_mounts, dependent: :delete_all
   has_many :vps_features
+  has_many :vps_consoles
 
   belongs_to :dataset_in_pool
   has_many :mounts

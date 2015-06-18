@@ -1050,4 +1050,82 @@ END
       end
     end
   end
+
+  class ConsoleToken < HaveAPI::Resource
+    version 1
+    route ':vps_id/console_token'
+    singular true
+    model ::VpsConsole
+    desc 'Remote console tokens'
+
+    params(:all) do
+      string :token, label: 'Token',
+             desc: 'Authentication token'
+      datetime :expiration, label: 'Expiration date',
+          desc: 'A date after which the token becomes invalid'
+    end
+
+    class Create < HaveAPI::Actions::Default::Create
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def exec
+        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        maintenance_check!(vps)
+
+        t = ::VpsConsole.find_for(vps, current_user)
+
+        if t
+          t
+
+        else
+          ::VpsConsole.create_for!(vps, current_user)
+        end
+
+      rescue ::ActiveRecord::RecordInvalid => e
+        error('failed to create a token', e.record.errors.to_hash)
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def exec
+        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        maintenance_check!(vps)
+
+        ::VpsConsole.find_for!(vps, current_user)
+      end
+    end
+
+    class Delete < HaveAPI::Actions::Default::Delete
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def exec
+        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        maintenance_check!(vps)
+
+        ::VpsConsole.find_for!(vps, current_user).update!(token: nil)
+      end
+    end
+  end
 end
