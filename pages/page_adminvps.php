@@ -278,11 +278,14 @@ switch ($_GET["action"]) {
 					'type' => $_POST['password_type'] == 'simple' ? 'simple' : 'secure'
 				));
 				
-				$_SESSION["vps_password"] = $ret['password'];
+				if (!$_SESSION['vps_password'])
+					$_SESSION['vps_password'] = array();
+				
+				$_SESSION["vps_password"][(int) $_GET['veid']] = $ret['password'];
 				
 				notify_user(
 					_("Change of root password planned"),
-					_("New password is: ")."<b>".$_SESSION["vps_password"]."</b>"
+					_("New password is: ")."<b>".$ret['password']."</b>"
 				);
 				redirect('?page=adminvps&action=info&veid='.$_GET["veid"]);
 				
@@ -926,8 +929,8 @@ if (isset($show_info) && $show_info) {
 		
 		$xtpl->table_td(_("Password").':');
 		
-		if($_SESSION["vps_password"]) {
-			$xtpl->table_td("<b>".$_SESSION["vps_password"]."</b>");
+		if($_SESSION['vps_password'][$vps->id]) {
+			$xtpl->table_td("<b>".$_SESSION['vps_password'][$vps->id]."</b>");
 			
 		} else
 			$xtpl->table_td(_("will be generated"));
