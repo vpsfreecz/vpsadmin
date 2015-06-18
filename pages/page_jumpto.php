@@ -20,7 +20,11 @@ if ($_SESSION["logged_in"] && $_SESSION["is_admin"]) {
 			                  UNION ALL
 			                  SELECT m_id FROM members WHERE m_name = '".$db->check($_POST["member"])."'
 			                  UNION ALL
-			                  SELECT m_id FROM members WHERE m_mail = '".$db->check($_POST["member"])."'");
+			                  SELECT m_id FROM members WHERE m_mail = '".$db->check($_POST["member"])."'
+			                  UNION ALL
+			                  SELECT user_id AS m_id FROM vps_ip WHERE ip_addr = '".$db->check($_POST["member"])."' AND user_id IS NOT NULL
+			                  UNION ALL
+			                  SELECT v.m_id FROM vps_ip i INNER JOIN vps v ON i.vps_id = v.vps_id WHERE ip_addr = '".$db->check($_POST["member"])."'");
 			
 			if($rs && ($row = $db->fetch_array($rs)))
 				$u = $row["m_id"];
