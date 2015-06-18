@@ -1,30 +1,68 @@
 <?php
 
-if ($_SESSION["logged_in"]) {
-	csrf_check();
-	$vps = vps_load($_GET["veid"]);
+function get_console_server($vps) {
+	global $db;
 	
-	if($vps->exists) {
-		if ($session = $vps->create_console_session()) {
-			$xtpl->perex(_('Remote Console for VPS #' . $vps->veid),'
-				<iframe src="'. $vps->get_console_server() .'/console/'.$vps->veid.'?session='.$session.'" width="100%" height="500px" border="1"></iframe>
-			');
-			
-			$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
+	$sql = "SELECT location_remote_console_server FROM locations WHERE location_id = '".$db->check($vps->node->location_id)."'";
+	
+	if ($result = $db->query($sql)) {
+		if ($row = $db->fetch_array($result)) {
+			return $row["location_remote_console_server"];
+		}
+	}
+	
+	return NULL;
+}
+
+function setup_console() {
+	global $xtpl, $api;
+	
+	try {
+		$vps = $api->vps->find($_GET['veid'], array(
+			'meta' => array('includes', 'node')
+		));
+	
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		$xtpl->perex_format_errors(_('VPS not found'), $e->getResponse());
+		return;
+	}
+	
+	try {
+		$t = $vps->console_token->create();
+	
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		$xtpl->perex_format_errors(_('Unable to acquire console token'), $e->getResponse());
+		return;
+	}
+	
+	$server = get_console_server($vps);
+	
+	if (!$server) {
+		$xtpl->perex(_('No console server available'), _('There is no console server for this location.'));
+		return;
+	}
+	
+	$xtpl->perex(_('Remote Console for VPS').' <a href="?page=adminvps&action=info&veid='.$vps->id.'">#'.$vps->id.'</a>',
+		'<iframe src="'.$server.'/console/'.$vps->id.'?session='.$t->token.'" width="100%" height="500px" border="1"></iframe>'
+	);
+	
+	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
 <script type="text/javascript">
 function ajax_vps(cmd) {
-	$.get("ajax.php?page=vps&action=" + cmd + "&veid='.$vps->veid.'&t='.csrf_token().'");
+	$.get("ajax.php?page=vps&action=" + cmd + "&veid='.$vps->id.'&t='.csrf_token().'");
 }
 </script>
 ');
-			$xtpl->sbar_add('<img src="template/icons/vps_start.png"  title="'._("Start").'" /> ' . _("Start"), "javascript:ajax_vps('start');");
-			$xtpl->sbar_add('<img src="template/icons/vps_stop.png"  title="'._("Stop").'" /> ' . _("Stop"), "javascript:ajax_vps('stop');");
-			$xtpl->sbar_add('<img src="template/icons/vps_restart.png"  title="'._("Restart").'" /> ' . _("Restart"), "javascript:ajax_vps('restart');");
-			$xtpl->sbar_out(_("Manage VPS"));
-		} else $xtpl->perex(_("Failed to create session"), '');
-	} else {
-		$xtpl->perex(_("Access forbidden"), _("You have no access to this VPS."));
-	}
+	$xtpl->sbar_add('<img src="template/icons/vps_start.png"  title="'._("Start").'" /> ' . _("Start"), "javascript:ajax_vps('start');");
+	$xtpl->sbar_add('<img src="template/icons/vps_stop.png"  title="'._("Stop").'" /> ' . _("Stop"), "javascript:ajax_vps('stop');");
+	$xtpl->sbar_add('<img src="template/icons/vps_restart.png"  title="'._("Restart").'" /> ' . _("Restart"), "javascript:ajax_vps('restart');");
+	$xtpl->sbar_out(_("Manage VPS"));
+}
+
+if ($_SESSION["logged_in"]) {
+	csrf_check();
+	setup_console();
+	
 } else {
 	$xtpl->perex(_("Access forbidden"), _("You have to log in to be able to access vpsAdmin's functions"));
 }
