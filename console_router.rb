@@ -16,15 +16,16 @@ module VpsAdmind
   class Console < EventMachine::Connection
     attr_accessor :buf, :last_access
 
-    def initialize(veid, router)
+    def initialize(veid, session, router)
       @veid = veid
+      @session = session
       @router = router
       @buf = ""
       update_access
     end
 
     def post_init
-      send_data("#{@veid}")
+      send_data(@session)
     end
 
     def receive_data(data)
@@ -48,7 +49,7 @@ module VpsAdmind
     end
 
     def get_console(veid, session)
-      check_connection(veid)
+      check_connection(veid, session)
 
       buf = @connections[veid].buf
       s_id = -1
@@ -71,7 +72,7 @@ module VpsAdmind
     end
 
     def send_cmd(veid, session, cmd)
-      check_connection(veid)
+      check_connection(veid, session)
 
       s_id = -1
 
@@ -87,7 +88,7 @@ module VpsAdmind
       @connections[veid].send_data(cmd)
     end
 
-    def check_connection(veid)
+    def check_connection(veid, session)
       unless @timer
         EventMachine.add_periodic_timer(60) do
           @connections.each do |veid, console|
@@ -112,7 +113,7 @@ module VpsAdmind
       unless @connections.include?(veid)
         st = @db.prepared_st("SELECT server_ip4 FROM servers INNER JOIN vps ON vps_server = server_id WHERE vps_id = ?", veid)
 
-        @connections[veid] = EventMachine.connect(st.fetch[0], 8081, Console, veid, self)
+        @connections[veid] = EventMachine.connect(st.fetch[0], 8081, Console, veid, session, self)
 
         st.close
       end

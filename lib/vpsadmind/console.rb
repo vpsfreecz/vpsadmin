@@ -59,7 +59,26 @@ module VpsAdmind
       unless @veid
         begin
           lines = data.split
-          @veid = lines[0].strip.to_i
+          token = lines[0].strip
+
+          db = Db.new
+          st = db.prepared_st(
+              'SELECT vps_id FROM vps_console WHERE token = ? AND expiration > ?',
+              token,
+              Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
+          )
+
+          if st.num_rows == 1
+            @veid = st.fetch[0].to_i
+
+          else
+            db.close
+            send_data("Invalid token\r\n")
+            close_connection_after_writing
+            return
+          end
+
+          db.close
 
           VzConsole.consoles do |c|
             if c.include?(@veid)
