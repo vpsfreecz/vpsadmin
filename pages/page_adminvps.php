@@ -127,40 +127,51 @@ function vps_run_redirect_path($veid) {
 
 if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
 
-$member_of_session = member_load($_SESSION["member"]["m_id"]);
-
 $_GET["run"] = isset($_GET["run"]) ? $_GET["run"] : false;
 
 if ($_GET["run"] == 'stop') {
 	csrf_check();
-	$api->vps->stop($_GET["veid"]);
 	
-	notify_user(_("Stop VPS")." {$_GET["veid"]} "._("planned"));
-	redirect(vps_run_redirect_path($_GET["veid"]));
+	try {
+		$api->vps->stop($_GET["veid"]);
+		
+		notify_user(_("Stop VPS")." {$_GET["veid"]} "._("planned"));
+		redirect(vps_run_redirect_path($_GET["veid"]));
+		
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		$xtpl->perex_format_errors(_('Unable to stop'), $e->getResponse());
+		$show_info = true;
+	}
 }
 
 if ($_GET["run"] == 'start') {
-	if ($member_of_session->m["m_state"] == "active" || (!$cluster_cfg->get("payments_enabled"))) {
-		csrf_check();
+	csrf_check();
+	
+	try {
 		$api->vps->start($_GET["veid"]);
 		
 		notify_user(_("Start of")." {$_GET["veid"]} "._("planned"));
 		redirect(vps_run_redirect_path($_GET["veid"]));
 		
-	} else
-		$xtpl->perex(_("Account suspended"), _("You are not allowed to make \"start\" operation.<br />Your account is suspended because of:") . ' ' . $member_of_session->m["m_suspend_reason"]);
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		$xtpl->perex_format_errors(_('Unable to start'), $e->getResponse());
+		$show_info = true;
+	}
 }
 
 if ($_GET["run"] == 'restart') {
-	if ($member_of_session->m["m_state"] == "active" || (!$cluster_cfg->get("payments_enabled"))) {
-		csrf_check();
+	csrf_check();
+	
+	try {
 		$api->vps->restart($_GET["veid"]);
 		
 		notify_user(_("Restart of")." {$_GET["veid"]} "._("planned"), '');
 		redirect(vps_run_redirect_path($_GET["veid"]));
 		
-	} else
-		$xtpl->perex(_("Account suspended"), _("You are not allowed to make \"restart\" operation.<br />Your account is suspended because of:") . ' ' . $member_of_session->m["m_suspend_reason"]);
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		$xtpl->perex_format_errors(_('Unable to restart'), $e->getResponse());
+		$show_info = true;
+	}
 }
 
 $_GET["action"] = isset($_GET["action"]) ? $_GET["action"] : false;
