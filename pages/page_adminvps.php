@@ -274,7 +274,9 @@ switch ($_GET["action"]) {
 		case 'passwd':
 			try {
 				csrf_check();
-				$ret = $api->vps->passwd($_GET["veid"]);
+				$ret = $api->vps->passwd($_GET["veid"], array(
+					'type' => $_POST['password_type'] == 'simple' ? 'simple' : 'secure'
+				));
 				
 				$_SESSION["vps_password"] = $ret['password'];
 				
@@ -939,6 +941,12 @@ if (isset($show_info) && $show_info) {
 							You can change it with <em>passwd</em> command once you\'ve logged onto SSH.');
 			$xtpl->table_tr();
 		}
+		
+		$xtpl->form_add_radio(_("Secure password").':', 'password_type', 'secure', true, _('20 characters long, consists of: a-z, A-Z, 0-9'));
+		$xtpl->table_tr();
+		
+		$xtpl->form_add_radio(_("Simple password").':', 'password_type', 'simple', false, _('8 characters long, consists of: a-z, 2-9'));
+		$xtpl->table_tr();
 		
 		$xtpl->form_out(_("Go >>"));
 
