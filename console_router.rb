@@ -141,10 +141,16 @@ module VpsAdmind
         end
       end
 
-      st = @db.prepared_st("SELECT UNIX_TIMESTAMP(expiration) FROM vps_console WHERE vps_id = ? AND `key` = ? AND expiration > NOW()", veid, session)
+      st = @db.prepared_st(
+          'SELECT UNIX_TIMESTAMP(expiration) FROM vps_console WHERE vps_id = ? AND token = ? AND expiration > ?',
+          veid,
+          session,
+          Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
+      )
+
       if st.num_rows == 1
         @sessions[veid] ||= []
-        @sessions[veid] << {:session => session, :expiration => st.fetch[0].to_i, :last_access => Time.new.to_i, :buf => ""}
+        @sessions[veid] << {:session => session, :expiration => st.fetch[0].to_i, :last_access => Time.now.utc.to_i, :buf => ""}
         st.close
         return true
       end
