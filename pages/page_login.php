@@ -38,11 +38,13 @@ if ($_GET["action"] == 'login') {
 			$m = $api->user->current();
 			
 			$_SESSION["member"]["m_id"] = $m->id;
-			$member = member_load($m->id);
 			
 			$_SESSION["logged_in"] = true;
 			$_SESSION["auth_token"] = $api->getAuthenticationProvider()->getToken();
-			$_SESSION["member"] = $member->m;
+			$_SESSION["member"] = array(
+				'm_id' => $m->id,
+				'm_nick' => $m->login
+			);
 			$_SESSION["is_user"] =       ($m->level >= PRIV_USER) ?       true : false;
 			$_SESSION["is_poweruser"] =  ($m->level >= PRIV_POWERUSER) ?  true : false;
 			$_SESSION["is_admin"] =      ($m->level >= PRIV_ADMIN) ?      true : false;
