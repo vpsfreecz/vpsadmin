@@ -823,11 +823,12 @@ class XTemplate {
 	  * @param $name - $_RESULT[name]
 	  * @param $value - value if checked
 	  * @param $checked - if it is checked by default
+	  * @param $text - text shown next to the radio button
 	  * @param $hint - helping hint
 	  */
-	function form_add_radio($label = 'popisek', $name = 'input_fromgen', $value = '', $checked=false, $hint = '') {
+	function form_add_radio($label = 'popisek', $name = 'input_fromgen', $value = '', $checked=false, $text = '', $hint = '') {
 		$this->table_td($label);
-		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' />');
+		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' /> '.$text);
 		if ($hint != '') $this->table_td($hint);
 	}
 	
@@ -836,9 +837,10 @@ class XTemplate {
 	  * @param $name - $_RESULT[name]
 	  * @param $value - value if checked
 	  * @param $checked - if it is checked by default
+	  * @param $text - text shown next to the radio button
 	  */
-	function form_add_radio_pure($name = 'input_fromgen', $value = '', $checked=false) {
-		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' />');
+	function form_add_radio_pure($name = 'input_fromgen', $value = '', $checked=false, $text = '') {
+		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' /> '.$text);
 	}
 	
 	function form_csrf($name = 'common') {
