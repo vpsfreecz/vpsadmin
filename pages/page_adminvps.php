@@ -439,17 +439,6 @@ switch ($_GET["action"]) {
 			
 			$show_info=true;
 			break;
-		case 'expiration':
-			if ($_SESSION["is_admin"] && $_POST["date"]) {
-				csrf_check();
-				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-				if ($vps->exists) {
-					$vps->set_expiration($_POST["no_expiration"] ? 0 : strtotime($_POST["date"]));
-					notify_user(_("Expiration set"), $_POST["no_expiration"] ? _("Expiration disabled") : _("Expiration set to").' '.$_POST["date"]);
-					redirect('?page=adminvps&action=info&veid='.$vps->veid);
-				}
-			}
-			break;
 		case 'addip':
 			try {
 				csrf_check();
@@ -522,18 +511,7 @@ switch ($_GET["action"]) {
 			
 			$show_info=true;
 			break;
-			
-// 		case 'onlinemigrate':
-// 			if ($_SESSION["is_admin"] && isset($_REQUEST["veid"])) {
-// 				if (!$vps->exists) $vps = vps_load($_REQUEST["veid"]);
-// 				
-// 				notify_user(_("Online Migration added to transaction log"), $vps->online_migrate($_REQUEST["target_id"]));
-// 				redirect('?page=adminvps&action=info&veid='.$vps->veid);
-// 			} else {
-// 				$xtpl->perex(_("Error"), '');
-// 			}
-// 			$show_info=true;
-// 			break;
+		
 		case 'reinstall':
 			csrf_check();
 			
@@ -612,42 +590,6 @@ switch ($_GET["action"]) {
 				 $xtpl->perex(_("Invalid data"), _("Please fill the form correctly."));
 			
 			$show_info=true;
-			break;
-		case 'swap':
-			if(isset($_GET["veid"]) && isset($_POST["swap_vps"]) && ($vps = vps_load($_GET["veid"])) && ($with = vps_load($_POST["swap_vps"]))) {
-				csrf_check();
-				
-				if(!$vps->exists || !$with->exists || $vps->veid == $with->veid || !$_SESSION["is_admin"])
-					break;
-				
-				$allowed = get_vps_swap_list($vps);
-				$ok = false;
-				
-				foreach($allowed as $id => $v) {
-					if($id == $with->veid) {
-						$ok = true;
-						break;
-					}
-				}
-				
-				if(!$ok)
-					break;
-				
-				$vps->swap(
-					$with,
-					$_SESSION["is_admin"] ? $_POST["owner"] : 0,
-					$_POST["hostname"],
-					$_SESSION["is_admin"] ? $_POST["ips"] : 1,
-					$_SESSION["is_admin"] ? $_POST["configs"] : 1,
-					$_SESSION["is_admin"] ? $_POST["expiration"] : 1,
-					$_SESSION["is_admin"] ? $_POST["backups"] : 1,
-					$_POST["dns"]
-				);
-				
-				notify_user(_("Swap in progress"), '');
-				redirect('?page=adminvps&action=info&veid='.$vps->veid);
-			}
-			
 			break;
 		
 		default:
@@ -1173,14 +1115,6 @@ if (isset($show_info) && $show_info) {
 			$xtpl->form_out(_("Go >>"));
 		}
 	
-	// Online migration
-// 		if (ENABLE_ONLINE_MIGRATION && $_SESSION["is_admin"]) {
-// 			$xtpl->form_create('?page=adminvps&action=onlinemigrate&veid='.$vps->id, 'post');
-// 			$xtpl->form_add_select(_("Target server").':', 'target_id', $cluster->list_servers($vps->node_id, $vps->node->location_id), '');
-// 			$xtpl->table_add_category(_("Online VPS Migration"));
-// 			$xtpl->table_add_category('&nbsp;');
-// 			$xtpl->form_out(_("Go >>"));
-// 		}
 	// Clone
 		$xtpl->table_title(_('Clone VPS'));
 		$xtpl->form_create('?page=adminvps&action=clone&veid='.$vps->id, 'post');
@@ -1190,43 +1124,6 @@ if (isset($show_info) && $show_info) {
 		}));
 		
 		$xtpl->form_out(_("Go >>"));
-		
-	// Swap
-	// if ($_SESSION["is_admin"] || !$vps->is_playground()) {
-	/*
-	if ($_SESSION["is_admin"]) {
-		$xtpl->form_create('?page=adminvps&action=swap&veid='.$vps->id, 'post');
-		
-		$xtpl->table_add_category(_("Swap VPS"));
-		$xtpl->table_add_category('&nbsp;');
-		
-		$xtpl->form_add_select(_("Swap with").':', 'swap_vps', get_vps_swap_list($deprecated_vps));
-		
-		if($_SESSION["is_admin"])
-			$xtpl->form_add_checkbox(_("Swap owner").':', 'owner', '1', true);
-			
-		$xtpl->form_add_checkbox(_("Swap hostname").':', 'hostname', '1', true);
-		
-		if($_SESSION["is_admin"]) {
-			$xtpl->form_add_checkbox(_("Swap IP addresses").':', 'ips', '1', true);
-			$xtpl->form_add_checkbox(_("Swap configs").':', 'configs', '1', true);
-			$xtpl->form_add_checkbox(_("Swap expirations").':', 'expiration', '1', true);
-			$xtpl->form_add_checkbox(_("Swap backup settings").':', 'backups', '1', true);
-		}
-		
-		$xtpl->form_add_checkbox(_("Swap DNS servers").':', 'dns', '1', true);
-		
-		$xtpl->form_out(_("Go >>"));
-	} else {
-		$xtpl->table_add_category(_("Swap VPS"));
-		$xtpl->table_td(_('Temporarily unavailable. '.
-						'Please contact <a href="mailto:podpora@vpsfree.cz">podpora@vpsfree.cz</a>'.
-						' to swap your VPS. Don\'t forget to mention VPS IDs. '.
-						'We apologize for the inconvenience.'));
-		$xtpl->table_tr();
-		$xtpl->table_out();
-	}
-	*/
 	}
 }
 
