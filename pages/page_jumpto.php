@@ -5,13 +5,15 @@ if ($_SESSION["logged_in"] && $_SESSION["is_admin"]) {
 	$_SESSION["jumpto"] = array();
 	
 	if ($_POST["member"]) {
-		$m = null;
+		$u = null;
 		
 		if(is_numeric($_POST["member"])) {
-			$member = new member_load($_POST["member"]);
-			
-			if($member->exists || $member->deleted)
-				$m = $member->m["m_id"];
+			try {
+				$u = $api->user->find($_POST['member'])->id;
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				// nothing
+			}
 		
 		} else {
 			$rs = $db->query("SELECT m_id FROM members WHERE m_nick = '".$db->check($_POST["member"])."'
@@ -21,24 +23,26 @@ if ($_SESSION["logged_in"] && $_SESSION["is_admin"]) {
 			                  SELECT m_id FROM members WHERE m_mail = '".$db->check($_POST["member"])."'");
 			
 			if($rs && ($row = $db->fetch_array($rs)))
-				$m = $row["m_id"];
+				$u = $row["m_id"];
 		}
 		
 		$_SESSION["jumpto"]["member"] = $_POST["member"];
 		
-		if($m)
-			redirect("?page=adminm&section=members&action=edit&id=".$m);
+		if($u)
+			redirect("?page=adminm&section=members&action=edit&id=".$u);
 		else
-			$xtpl->perex(_("Member not found"), _("Sorry bro."));
+			$xtpl->perex(_("User not found"), _("Sorry bro."));
 		
 	} elseif ($_POST["vps"]) {
 		$v = null;
 		
 		if(is_numeric($_POST["vps"])) {
-			$vps = new vps_load($_POST["vps"]);
-			
-			if($vps->exists || $vps->deleted)
-				$v = $vps->veid;
+			try {
+				$v = $api->vps->find($_POST["vps"])->id;
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				// nothing
+			}
 			
 		} else {
 			$rs = $db->query("SELECT vps_id FROM vps_ip WHERE vps_id != 0 AND ip_addr = '".$db->check($_POST["vps"])."'
