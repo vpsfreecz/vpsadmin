@@ -430,6 +430,11 @@ END
     route ':%{resource}_id/passwd'
     http_method :post
 
+    input(:hash) do
+      string :type, label: 'Type', choices: %i(secure simple), default: :secure,
+             fill: true
+    end
+
     output(:hash) do
       string :password, label: 'Password', desc: 'Auto-generated password'
     end
@@ -444,7 +449,7 @@ END
       vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
       maintenance_check!(vps)
 
-      {password: vps.passwd}
+      {password: vps.passwd(input[:type].to_sym)}
     end
   end
 

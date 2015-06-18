@@ -203,8 +203,8 @@ class Vps < ActiveRecord::Base
     end
   end
 
-  def passwd
-    pass = generate_password
+  def passwd(t)
+    pass = generate_password(t)
 
     TransactionChains::Vps::Passwd.fire(self, pass)
 
@@ -275,9 +275,14 @@ class Vps < ActiveRecord::Base
   end
 
   private
-  def generate_password
-    chars = ('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a
-    (0..19).map { chars.sample }.join
+  def generate_password(t)
+    if t == :secure
+      chars = ('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a
+      (0..19).map { chars.sample }.join
+    else
+      chars = ('a'..'z').to_a + (2..9).to_a
+      (0..7).map { chars.sample }.join
+    end
   end
 
   def foreign_keys_exist
