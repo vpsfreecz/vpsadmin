@@ -912,9 +912,9 @@ class XTemplate {
 	function transaction_chains_out() {
 		$this->assign("L_TRANSACTION_LOG", _("Transaction log"));
 		$this->assign("L_LAST10", _("last 10"));
-		$this->assign("L_WHAT", _("What"));
+		$this->assign("L_WHAT", _("Object"));
 		$this->assign("L_ACTION", _("Action"));
-		$this->assign("L_PROGRESS", _("Progress"));
+		$this->assign("L_PROGRESS", _("%"));
 		
 		$this->parse('main.transaction_chains');
 	}
