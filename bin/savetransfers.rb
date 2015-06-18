@@ -1,9 +1,7 @@
 #!/usr/bin/env ruby
 
-path = File.join(File.dirname(__FILE__), '..')
-$: << path unless $:.include?(path)
-
-require 'lib/vpsadmind'
+require 'pathname'
+require File.join(File.dirname(Pathname.new(__FILE__).realpath), '..', 'lib/vpsadmind')
 
 require 'optparse'
 
@@ -27,13 +25,13 @@ OptionParser.new do |opts|
   end
 end.parse!
 
-$CFG = AppConfig.new(options[:config])
+$CFG = VpsAdmind::AppConfig.new(options[:config])
 
 unless $CFG.load
   exit(false)
 end
 
-db = Db.new
+db = VpsAdmind::Db.new
 
 db.transaction do |t|
   t.query("
