@@ -147,9 +147,6 @@ try {
 			case 'nas':
 				include WWW_ROOT.'pages/page_nas.php';
 				break;
-			case 'gencfg':
-				include WWW_ROOT.'pages/page_gencfg.php';
-				break;
 			case 'lang';
 				$lang->change($_GET['newlang']);
 				break;
