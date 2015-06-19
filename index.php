@@ -78,8 +78,6 @@ try {
 	if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
 		$api->authenticate('token', array('token' => $_SESSION['auth_token']), false);
 		
-		$_member = member_load($_SESSION["member"]["m_id"]);
-		
 		try {
 			$api_cluster = $api->cluster->show();
 			
