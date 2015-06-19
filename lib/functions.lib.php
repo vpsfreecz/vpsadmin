@@ -22,30 +22,7 @@
 
 $DATA_SIZE_UNITS = array("k" => "KiB", "m" => "MiB", "g" => "GiB", "t" => "TiB");
 
-function get_all_ip_list ($v = 4) {
-	global $db;
-	$sql = "SELECT * FROM vps_ip WHERE ip_v = {$db->check($v)}";
-	$ret = array();
-	if ($result = $db->query($sql))
-		while ($row = $db->fetch_array($result))
-			$ret[$row['ip_id']] = $row['ip_addr'];
-	return $ret;
-}
-function get_all_ip_list_array () {
-	global $db;
-	$sql = "SELECT * FROM vps_ip";
-	$ret = array();
-	if ($result = $db->query($sql))
-		while ($row = $db->fetch_array($result))
-			$ret[] = $row;
-	return $ret;
-}
-function get_ip_by_id($ip_id) {
-	global $db;
-	$sql = "SELECT * FROM vps_ip WHERE ip_id=".$db->check($ip_id);
-	if ($result = $db->query($sql))
-	    return $db->fetch_array($result);
-}
+
 function get_free_ip_list ($v = 4, $vps) {
 	global $api;
 	
@@ -78,16 +55,6 @@ function get_free_ip_list ($v = 4, $vps) {
 	}
 	
 	return $ret;
-}
-
-function ip_exists_in_table($ip_addr) {
-	global $db;
-	$sql = 'SELECT ip_id,ip_addr,ip_v,vps_id,class_id,max_tx,max_rx FROM vps_ip WHERE ip_addr = "'.$db->check($ip_addr).'"';
-	if ($result = $db->query($sql))
-		if ($row = $db->fetch_array($result))
-			return $row;
-		else return false;
-	else return false;
 }
 
 function list_configs($empty = false) {
@@ -139,46 +106,6 @@ function list_servers($without_id = false, $roles = NULL) {
 	while ($row = $db->fetch_array($result))
 	    $ret[$row["server_id"]] = $row["server_name"];
     return $ret;
-}
-
-function list_dns_resolvers() {
-	global $cluster;
-	
-	$resolvers = $cluster->get_dns_servers();
-	$ret = array();
-	
-	foreach($resolvers as $resolver) {
-		$loc = $cluster->get_location_by_id($resolver["dns_location"]);
-		$ret[ $resolver["dns_id"] ] = $resolver["dns_label"] . " (".($resolver["dns_is_universal"] ? _("everywhere") : $loc["location_label"]).")";
-	}
-	
-	return $ret;
-}
-
-function pick_free_node($location) {
-	global $db;
-	
-	$servers = list_servers(false, array("node"));
-	
-	$sql = "SELECT server_id
-	        FROM servers s
-	        LEFT JOIN vps v ON v.vps_server = s.server_id
-	        LEFT JOIN vps_status st ON v.vps_id = st.vps_id
-	        WHERE
-	          (st.vps_up = 1 OR st.vps_up IS NULL)
-	          AND server_location = ".$db->check($location)."
-	          AND max_vps > 0
-	          AND server_maintenance = 0
-	        GROUP BY server_id
-	        ORDER BY COUNT(st.vps_up) / max_vps ASC
-            LIMIT 1
-	        ";
-	
-	$rs = $db->query($sql);
-	
-	if($row = $db->fetch_array($rs)) {
-		return $row["server_id"];
-	} else return false;
 }
 
 function server_by_id ($id) {
