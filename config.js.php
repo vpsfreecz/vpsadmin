@@ -217,7 +217,7 @@ function sessionCountdown(t) {
 }
 
 var chainTimeout;
-var api = new HaveAPI.Client(root.vpsAdmin.api.url, {version: root.vpsAdmin.api.version});
+var api = root.apiClient = new HaveAPI.Client(root.vpsAdmin.api.url, {version: root.vpsAdmin.api.version});
 api.useDescription(root.vpsAdmin.description);
 api.authenticate('token', {token: root.vpsAdmin.authToken}, function(api) {
 	

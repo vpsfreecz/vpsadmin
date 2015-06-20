@@ -48,14 +48,19 @@ function setup_console() {
 	
 	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
 <script type="text/javascript">
-function ajax_vps(cmd) {
-	$.get("ajax.php?page=vps&action=" + cmd + "&veid='.$vps->id.'&t='.csrf_token().'");
+function vps_do(cmd) {
+	apiClient.after("authenticated", function() {
+		apiClient.vps[cmd]('.$vps->id.', function(c, reply) {
+			if (!reply.isOk())
+				alert(cmd + " failed: " + reply.apiResponse().message());
+		});
+	});
 }
 </script>
 ');
-	$xtpl->sbar_add('<img src="template/icons/vps_start.png"  title="'._("Start").'" /> ' . _("Start"), "javascript:ajax_vps('start');");
-	$xtpl->sbar_add('<img src="template/icons/vps_stop.png"  title="'._("Stop").'" /> ' . _("Stop"), "javascript:ajax_vps('stop');");
-	$xtpl->sbar_add('<img src="template/icons/vps_restart.png"  title="'._("Restart").'" /> ' . _("Restart"), "javascript:ajax_vps('restart');");
+	$xtpl->sbar_add('<img src="template/icons/vps_start.png"  title="'._("Start").'" /> ' . _("Start"), "javascript:vps_do('start');");
+	$xtpl->sbar_add('<img src="template/icons/vps_stop.png"  title="'._("Stop").'" /> ' . _("Stop"), "javascript:vps_do('stop');");
+	$xtpl->sbar_add('<img src="template/icons/vps_restart.png"  title="'._("Restart").'" /> ' . _("Restart"), "javascript:vps_do('restart');");
 	$xtpl->sbar_out(_("Manage VPS"));
 }
 
