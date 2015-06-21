@@ -242,6 +242,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     authorize do |u|
+      input blacklist: %i(type location environment)
       allow if u.role == :admin
     end
 
@@ -271,22 +272,22 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
   end
 
-  class Delete < HaveAPI::Actions::Default::Delete
-    desc 'Delete node'
-
-    authorize do |u|
-      allow if u.role == :admin
-    end
-
-    example do
-      request({})
-      response({})
-    end
-
-    def exec
-      ::Node.find(params[:node_id]).destroy
-    end
-  end
+  # class Delete < HaveAPI::Actions::Default::Delete
+  #   desc 'Delete node'
+  #
+  #   authorize do |u|
+  #     allow if u.role == :admin
+  #   end
+  #
+  #   example do
+  #     request({})
+  #     response({})
+  #   end
+  #
+  #   def exec
+  #     ::Node.find(params[:node_id]).destroy
+  #   end
+  # end
 
   include VpsAdmin::API::Maintainable::Action
 end

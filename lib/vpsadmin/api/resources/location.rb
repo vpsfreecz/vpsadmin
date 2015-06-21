@@ -175,22 +175,22 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
   end
 
-  class Delete < HaveAPI::Actions::Default::Delete
-    desc 'Delete location'
-
-    authorize do |u|
-      allow if u.role == :admin
-    end
-
-    example do
-      request({})
-      response({})
-    end
-
-    def exec
-      ::Location.find(params[:location_id]).destroy
-    end
-  end
+  # class Delete < HaveAPI::Actions::Default::Delete
+  #   desc 'Delete location'
+  #
+  #   authorize do |u|
+  #     allow if u.role == :admin
+  #   end
+  #
+  #   example do
+  #     request({})
+  #     response({})
+  #   end
+  #
+  #   def exec
+  #     ::Location.find(params[:location_id]).destroy
+  #   end
+  # end
 
   include VpsAdmin::API::Maintainable::Action
 end

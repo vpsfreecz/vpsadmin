@@ -104,15 +104,15 @@ class VpsAdmin::API::Resources::VpsConfig < HaveAPI::Resource
     end
   end
 
-  class Delete < HaveAPI::Actions::Default::Delete
-    desc 'Delete VPS config'
-
-    authorize do |u|
-      allow if u.role == :admin
-    end
-
-    def exec
-      ::VpsConfig.find(params[:vps_config_id]).destroy
-    end
-  end
+  # class Delete < HaveAPI::Actions::Default::Delete
+  #   desc 'Delete VPS config'
+  #
+  #   authorize do |u|
+  #     allow if u.role == :admin
+  #   end
+  #
+  #   def exec
+  #     ::VpsConfig.find(params[:vps_config_id]).destroy
+  #   end
+  # end
 end
