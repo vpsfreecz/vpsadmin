@@ -339,15 +339,8 @@ switch($_REQUEST["action"]) {
 		$xtpl->table_add_category('');
 		$xtpl->table_add_category('');
 		
-		$envs = $api->environment->list();
-		$env_choices = array();
-		
-		foreach ($envs as $env)
-			$env_choices[ $env->id ] = $env->label;
-		
 		$xtpl->form_create('?page=cluster&action=location_new_save', 'post');
 		$xtpl->form_add_input(_("Label").':', 'text', '30', 'location_label', '', _("Location name"));
-		$xtpl->form_add_select(_("Environment").':', 'env', $env_choices, '', '');
 		$xtpl->form_add_checkbox(_("Has this location IPv6 support?").':', 'has_ipv6', '1', false, '');
 		$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', '1', '');
 		$xtpl->form_add_input(_("Remote console server").':', 'text', '30',	'remote_console_server',	'', _("URL"));
@@ -360,7 +353,6 @@ switch($_REQUEST["action"]) {
 		try {
 			$api->location->create(array(
 				'label' => $_POST['location_label'],
-				'environment' => $_POST['env'],
 				'type' => $_POST['type'],
 				'has_ipv6' => (bool)$_POST['has_ipv6'],
 				'vps_onboot' => (bool)$_POST['onboot'],
@@ -381,18 +373,11 @@ switch($_REQUEST["action"]) {
 		try {
 			$loc = $api->location->find($_GET['id']);
 			
-			$envs = $api->environment->list();
-			$env_choices = array();
-			
-			foreach ($envs as $env)
-				$env_choices[ $env->id ] = $env->label;
-			
 			$xtpl->title2(_("Edit location"));
 			$xtpl->table_add_category('');
 			$xtpl->table_add_category('');
 			$xtpl->form_create('?page=cluster&action=location_edit_save&id='.$loc->id, 'post');
 			$xtpl->form_add_input(_("Label").':', 'text', '30', 'location_label', $loc->label, _("Location name"));
-			$xtpl->form_add_select(_("Environment").':', 'env', $env_choices, $loc->environment_id, '');
 			$xtpl->form_add_checkbox(_("Has this location IPv6 support?").':', 'has_ipv6', '1', $loc->has_ipv6, '');
 			$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', $loc->vps_onboot, '');
 			$xtpl->form_add_input(_("Remote console server").':', 'text', '30',	'remote_console_server', $loc->_remote_console_server, _("URL"));
@@ -410,7 +395,6 @@ switch($_REQUEST["action"]) {
 		try {
 			$api->location->update($_GET['id'], array(
 				'label' => $_POST['location_label'],
-				'environment' => $_POST['env'],
 				'type' => $_POST['type'],
 				'has_ipv6' => (bool)$_POST['has_ipv6'],
 				'vps_onboot' => (bool)$_POST['onboot'],
@@ -1304,7 +1288,6 @@ if ($list_locations) {
 	
 	$xtpl->table_add_category(_("ID"));
 	$xtpl->table_add_category(_("Location label"));
-	$xtpl->table_add_category(_("Environment"));
 	$xtpl->table_add_category(_("Servers"));
 	$xtpl->table_add_category(_("IPv6"));
 	$xtpl->table_add_category(_("On Boot"));
@@ -1324,7 +1307,6 @@ if ($list_locations) {
 		
 		$xtpl->table_td($loc->id);
 		$xtpl->table_td($loc->label);
-		$xtpl->table_td($loc->environment->label);
 		$xtpl->table_td($nodes->getTotalCount(), false, true);
 		
 		if ($loc->has_ipv6) {
