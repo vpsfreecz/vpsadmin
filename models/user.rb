@@ -159,7 +159,7 @@ class User < ActiveRecord::Base
   end
 
   def self.authenticate(username, password)
-    u = User.find_by(m_nick: username)
+    u = User.existing.find_by(m_nick: username)
     return unless u
 
     c = VpsAdmin::API::CryptoProviders
