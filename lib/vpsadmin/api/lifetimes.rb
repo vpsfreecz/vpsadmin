@@ -124,6 +124,11 @@ module VpsAdmin::API
             use params
           end
         end
+
+        # Define lifetime methods in +actions+.
+        def add_lifetime_methods(actions)
+          actions.each { |a| Private.action_methods(a) }
+        end
       end
 
       def self.included(r)
