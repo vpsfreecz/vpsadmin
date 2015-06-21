@@ -319,19 +319,19 @@ switch($_REQUEST["action"]) {
 		$list_locations = true;
 		break;
 		
-	case "location_delete":
-		try {
-			$api->location->delete($_GET['id']);
-			
-			notify_user(_("Location deleted"), '');
-			redirect('?page=cluster&action=locations');
-			
-		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-			$xtpl->perex_format_errors(_('Location deletion failed'), $e->getResponse());
-		}
-		
-		$list_locations = true;
-		break;
+// 	case "location_delete":
+// 		try {
+// 			$api->location->delete($_GET['id']);
+// 			
+// 			notify_user(_("Location deleted"), '');
+// 			redirect('?page=cluster&action=locations');
+// 			
+// 		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+// 			$xtpl->perex_format_errors(_('Location deletion failed'), $e->getResponse());
+// 		}
+// 		
+// 		$list_locations = true;
+// 		break;
 		
 	case "location_new":
 		$xtpl->title2(_("New cluster location"));
@@ -1294,7 +1294,7 @@ if ($list_locations) {
 	$xtpl->table_add_category(_("Domain"));
 	$xtpl->table_add_category('<img title="'._("Toggle maintenance on node.").'" alt="'._("Toggle maintenance on node.").'" src="template/icons/maintenance_mode.png">');
 	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
+// 	$xtpl->table_add_category('');
 	
 	$locations = $api->location->list();
 	
@@ -1324,11 +1324,11 @@ if ($list_locations) {
 		$xtpl->table_td(maintenance_lock_icon('location', $loc));
 		$xtpl->table_td('<a href="?page=cluster&action=location_edit&id='.$loc->id.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 		
-		if ($nodes->getTotalCount() > 0) {
-			$xtpl->table_td('<img src="template/icons/delete_grey.png" title="'._("Delete - N/A, item is in use").'">');
-		} else {
-			$xtpl->table_td('<a href="?page=cluster&action=location_delete&id='.$loc->id.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
-		}
+// 		if ($nodes->getTotalCount() > 0) {
+// 			$xtpl->table_td('<img src="template/icons/delete_grey.png" title="'._("Delete - N/A, item is in use").'">');
+// 		} else {
+// 			$xtpl->table_td('<a href="?page=cluster&action=location_delete&id='.$loc->id.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+// 		}
 		
 		$xtpl->table_tr();
 	}
