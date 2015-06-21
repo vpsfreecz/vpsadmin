@@ -153,9 +153,7 @@ class User < ActiveRecord::Base
   end
 
   def vps_in_env(env)
-    vpses.joins(node: [:location]).where(
-        locations: {environment_id: env.id}
-    ).count
+    vpses.joins(:node).where(environment_id: env.id).count
   end
 
   def self.authenticate(username, password)
