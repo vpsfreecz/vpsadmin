@@ -437,6 +437,27 @@ module VpsAdmin::API
             error(e.message)
           end
         end
+
+        action.send(:define_method, :object_state_check!) do |*objs|
+          return if current_user.role == :admin
+
+          reason = nil
+
+          objs.each do |obj|
+            if obj.object_state != 'active'
+              reason = obj.current_state.reason
+              break
+            end
+          end
+
+          return unless reason
+
+          if reason.length > 0
+            error("Access forbidden: #{reason}")
+          else
+            error('Access forbidden: your account is suspended')
+          end
+        end
       end
 
       class ModelCallback
