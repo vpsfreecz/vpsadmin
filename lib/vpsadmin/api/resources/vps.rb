@@ -380,6 +380,8 @@ END
     def exec
       vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
       maintenance_check!(vps)
+      object_state_check!(vps, vps.user)
+
       vps.start
       ok
     end
@@ -399,6 +401,7 @@ END
     def exec
       vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
       maintenance_check!(vps)
+      object_state_check!(vps, vps.user)
 
       vps.restart
       ok
@@ -419,6 +422,7 @@ END
     def exec
       vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
       maintenance_check!(vps)
+      object_state_check!(vps, vps.user)
 
       vps.stop
       ok
@@ -589,6 +593,7 @@ END
 
   include VpsAdmin::API::Maintainable::Action
   include VpsAdmin::API::Lifetimes::Resource
+  add_lifetime_methods([Start, Stop, Restart])
 
   class Config < HaveAPI::Resource
     version 1
