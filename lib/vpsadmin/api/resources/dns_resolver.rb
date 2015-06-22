@@ -71,4 +71,34 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
       @dns_resolver
     end
   end
+
+  class Create < HaveAPI::Actions::Default::Create
+    desc 'Create a DNS resolver'
+
+    input do
+      use :common
+      patch :ip_addr, required: true
+      patch :label, required: true
+      patch :is_universal, required: true
+    end
+
+    output do
+      use :all
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def exec
+      if (!input[:is_universal] && !input[:location]) || (input[:is_universal] && input[:location])
+        error('DNS resolver may either be universal or belong to a location')
+      end
+
+      ::DnsResolver.create!(to_db_names(input))
+
+    rescue ActiveRecord::RecordInvalid => e
+      error('create failed', to_param_names(e.record.errors.to_hash, :input))
+    end
+  end
 end
