@@ -13,4 +13,8 @@ class OsTemplate < ActiveRecord::Base
   def enabled?
     templ_enabled
   end
+
+  def in_use?
+    ::Vps.including_deleted.exists?(os_template: self)
+  end
 end

@@ -111,4 +111,18 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
       error('create failed', to_param_names(e.record.errors.to_hash))
     end
   end
+
+  class Delete < HaveAPI::Actions::Default::Delete
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def exec
+      t = ::OsTemplate.find(params[:os_template_id])
+
+      error('The OS template is in use') if t.in_use?
+      t.destroy
+      ok
+    end
+  end
 end
