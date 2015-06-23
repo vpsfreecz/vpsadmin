@@ -26,6 +26,11 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List locations'
 
+    input do
+      resource VpsAdmin::API::Resources::Environment,
+               desc: 'Filter locations having nodes in an environment'
+    end
+
     output(:object_list) do
       use :all
     end
@@ -52,7 +57,15 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     def query
-      ::Location
+      q = ::Location
+
+      if input[:environment]
+        q = q.joins(:nodes).where(
+            servers: {environment_id: input[:environment].id}
+        ).group('locations.location_id')
+      end
+
+      q
     end
 
     def count
@@ -60,7 +73,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     def exec
-      with_includes(query).limit(params[:location][:limit]).offset(params[:location][:offset])
+      with_includes(query).limit(input[:limit]).offset(input[:offset])
     end
   end
 
