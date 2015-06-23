@@ -190,30 +190,27 @@ function countDownTimer(time, step, timeout) {
 	
 	var update = function() {
 		lastTime = new Date().getTime();
+		var remaining = Math.floor((end - lastTime) / 1000);
 		
-		if (lastTime >= end) {
+		if (lastTime >= end || remaining === 0) {
 			timeout();
 			
 		} else {
-			step( Math.floor((end - lastTime) / 1000) );
+			step(remaining);
 			
 			var next = new Date();
 			next.setMilliseconds(0);
-			next.setSeconds( next.getSeconds() + 1 );
+			next.setSeconds( next.getSeconds() + 60 );
 			
 			setTimeout(update, (next.getTime() - lastTime));
 		}
 	};
 	
-	setTimeout(update, 1000);
-}
-
-function twoDigit(n) {
-	return n < 10 ? '0'+n : n;
+	setTimeout(update, 60 * 1000);
 }
 
 function sessionCountdown(t) {
-	document.getElementById('session-countdown').innerHTML = twoDigit(Math.floor(t / 60)) + ':' + twoDigit(Math.floor(t % 60));
+	document.getElementById('session-countdown').innerHTML = Math.floor(t / 60) + '&nbsp;min';
 }
 
 var chainTimeout;
