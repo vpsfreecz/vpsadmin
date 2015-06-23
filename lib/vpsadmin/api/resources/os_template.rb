@@ -112,6 +112,27 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     end
   end
 
+  class Update < HaveAPI::Actions::Default::Update
+    input do
+      use :common, exclude: %i(name)
+    end
+
+    output do
+      use :all
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def exec
+      ::OsTemplate.find(params[:os_template_id]).update!(to_db_names(input))
+
+    rescue ActiveRecord::RecordInvalid => e
+      error('update failed', to_param_names(e.record.errors.to_hash))
+    end
+  end
+
   class Delete < HaveAPI::Actions::Default::Delete
     authorize do |u|
       allow if u.role == :admin
