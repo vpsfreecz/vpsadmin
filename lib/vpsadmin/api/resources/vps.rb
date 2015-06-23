@@ -67,6 +67,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
           value_label: :name
       resource VpsAdmin::API::Resources::Location, label: 'Location', desc: 'Filter by location'
       resource VpsAdmin::API::Resources::Environment, label: 'Environment', desc: 'Filter by environment'
+      use :template
     end
 
     output(:object_list) do
@@ -136,6 +137,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       if input[:environment]
         q = q.joins(:node).where(servers: {environment_id: input[:environment].id})
+      end
+
+      if input[:os_template]
+        q = q.where(os_template: input[:os_template])
       end
 
       q
