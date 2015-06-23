@@ -141,9 +141,11 @@ switch($_REQUEST["action"]) {
 		}
 		$list_nodes = true;
 		break;
+		
 	case "dns":
 		$list_dns = true;
 		break;
+		
 	case "dns_new":
 		$xtpl->title2(_("New DNS Server"));
 		$xtpl->table_add_category('');
@@ -152,44 +154,79 @@ switch($_REQUEST["action"]) {
 		$xtpl->form_add_input(_("IP Address").':', 'text', '30', 'dns_ip', '', '');
 		$xtpl->form_add_input(_("Label").':', 'text', '30', 'dns_label', '', _("DNS Label"));
 		$xtpl->form_add_checkbox(_("Is this DNS location independent?").':', 'dns_is_universal', '1', false, '');
-		$xtpl->form_add_select(_("Location").':', 'dns_location', $cluster->list_locations(), '',  '');
+		$xtpl->form_add_select(_("Location").':', 'dns_location',
+			resource_list_to_options($api->dns_resolver->list()), '',  '');
 		$xtpl->form_out(_("Save changes"));
 		break;
+		
 	case "dns_new_save":
-		$cluster->set_dns_server(NULL, $_REQUEST["dns_ip"], $_REQUEST["dns_label"], $_REQUEST["dns_is_universal"], $_REQUEST["dns_location"]);
-		$xtpl->perex(_("Changes saved"), _("DNS server added."));
-		$list_dns = true;
+		try {
+			$api->dns_resolver->create(array(
+				'ip_addr' => $_POST['dns_ip'],
+				'is_universal' => $_POST['dns_is_universal'],
+				'location' => $_POST['dns_location']
+			));
+			
+			notify_user(_("Changes saved"), _("DNS server added."));
+			redirect('?page=cluster&action=dns');
+			
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Failed to create a DNS resolver'), $e->getResponse());
+		}
 		break;
+		
 	case "dns_edit":
-		if ($item = $cluster->get_dns_server_by_id($_REQUEST["id"])) {
-			$xtpl->title2(_("Edit DNS Server"));
-			$xtpl->table_add_category('');
-			$xtpl->table_add_category('');
-			$xtpl->form_create('?page=cluster&action=dns_edit_save&id='.$_REQUEST["id"], 'post');
-			$xtpl->form_add_input(_("IP Address").':', 'text', '30', 'dns_ip', $item["dns_ip"], '');
-			$xtpl->form_add_input(_("Label").':', 'text', '30', 'dns_label', $item["dns_label"], _("DNS Label"));
-			$xtpl->form_add_checkbox(_("Is this DNS location independent?").':', 'dns_is_universal', '1', $item["dns_is_universal"], '');
-			$xtpl->form_add_select(_("Location").':', 'dns_location', $cluster->list_locations(), $item["dns_location"],  '');
-			$xtpl->form_out(_("Save changes"));
-		} else {
-			$list_dns = true;
-		}
+		$ns = $api->dns_resolver->find($_GET['id']);
+		
+		$xtpl->title2(_("Edit DNS Server"));
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category('');
+		$xtpl->form_create('?page=cluster&action=dns_edit_save&id='.$ns->id, 'post');
+		$xtpl->form_add_input(_("IP Address").':', 'text', '30', 'dns_ip', $ns->ip_addr, '');
+		$xtpl->form_add_input(_("Label").':', 'text', '30', 'dns_label', $ns->label, _("DNS Label"));
+		$xtpl->form_add_checkbox(_("Is this DNS location independent?").':', 'dns_is_universal', '1', $ns->is_universal, '');
+		$xtpl->form_add_select(_("Location").':', 'dns_location',
+			resource_list_to_options($api->dns_resolver->list()), $ns->location_id, '');
+		$xtpl->form_out(_("Save changes"));
+		
 		break;
+		
 	case "dns_edit_save":
-		if ($item = $cluster->get_dns_server_by_id($_REQUEST["id"])) {
-			$cluster->set_dns_server($_REQUEST["id"], $_REQUEST["dns_ip"], $_REQUEST["dns_label"], $_REQUEST["dns_is_universal"], $_REQUEST["dns_location"]);
-			$xtpl->perex(_("Changes saved"), _("DNS server saved."));
-			$list_dns = true;
-		} else {
-			$list_dns = true;
+		csrf_check();
+		
+		try {
+			$api->dns_resolver->update($_GET['id'], array(
+				'ip_addr' => $_POST['dns_ip'],
+				'is_universal' => $_POST['dns_is_universal'],
+				'location' => $_POST['dns_location']
+			));
+			
+			notify_user(_("Changes saved"), _("DNS server updated."));
+			redirect('?page=cluster&action=dns');
+			
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Failed to update a DNS resolver'), $e->getResponse());
 		}
 		break;
+	
 	case "dns_delete":
-		if ($item = $cluster->get_dns_server_by_id($_REQUEST["id"])) {
-			$cluster->delete_dns_server($_REQUEST["id"]);
-			$xtpl->perex(_("Item deleted"), _("DNS Server deleted."));
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			csrf_check();
+			
+			try {
+				$api->dns_resolver->delete($_GET['id'], array('force' => isset($_POST['force'])));
+				
+				notify_user(_("Changes saved"), _("DNS server deleted."));
+				redirect('?page=cluster&action=dns');
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Failed to delete a DNS resolver'), $e->getResponse());
+				dns_delete_form();
+			}
+			
+		} else {
+			dns_delete_form();
 		}
-		$list_locations = true;
 		break;
 	
 	case 'environments':
@@ -1344,24 +1381,20 @@ if ($list_dns) {
 	$xtpl->table_add_category(_("Location"));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
-	$list = $cluster->get_dns_servers();
-	if ($list)
-	foreach($list as $item) {
-	$xtpl->table_td($item["dns_id"]);
-	$xtpl->table_td($item["dns_ip"]);
-	$xtpl->table_td($item["dns_label"]);
-	$location = $cluster->get_location_by_id($item["dns_location"]);
-	if ($item["dns_is_universal"]) {
-		$xtpl->table_td('<img src="template/icons/transact_ok.png" />');
-		$xtpl->table_td('---');
-	}
-	else {
-		$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
-		$xtpl->table_td($location["location_label"]);
-	}
-	$xtpl->table_td('<a href="?page=cluster&action=dns_edit&id='.$item["dns_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-	$xtpl->table_td('<a href="?page=cluster&action=dns_delete&id='.$item["dns_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
-	$xtpl->table_tr();
+	
+	$nameservers = $api->dns_resolver->list(array(
+		'meta' => array('includes' => 'location')
+	));
+	
+	foreach($nameservers as $ns) {
+		$xtpl->table_td($ns->id);
+		$xtpl->table_td($ns->ip_addr);
+		$xtpl->table_td($ns->label);
+		$xtpl->table_td(boolean_icon($ns->is_universal));
+		$xtpl->table_td($ns->is_universal ? '---' : $ns->location->label);
+		$xtpl->table_td('<a href="?page=cluster&action=dns_edit&id='.$ns->id.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		$xtpl->table_td('<a href="?page=cluster&action=dns_delete&id='.$ns->id.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		$xtpl->table_tr();
 	}
 	$xtpl->table_out();
 	$xtpl->sbar_add(_("New DNS Server"), '?page=cluster&action=dns_new');
