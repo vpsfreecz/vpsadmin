@@ -317,6 +317,18 @@ function api_params_to_form($action, $direction, $label_callbacks = null) {
 	}
 }
 
+function api_create_form($resource) {
+	api_params_to_form($resource->create, 'input');
+}
+
+function api_update_form($obj) {
+	$params = $obj->update->getParameters('input');
+	
+	foreach ($params as $name => $desc) {
+		api_param_to_form($name, $desc, post_val($name, $obj->{$name}), $label_callbacks ? $label_callbacks[$name] : null);
+	}
+}
+
 function client_params_to_api($action, $from = null) {
 	if (!$from)
 		$from = $_POST;
@@ -391,6 +403,12 @@ function data_size_to_humanreadable($val) {
 function get_val($name, $default = '') {
 	if (isset($_GET[$name]))
 		return $_GET[$name];
+	return $default;
+}
+
+function post_val($name, $default = '') {
+	if (isset($_POST[$name]))
+		return $_POST[$name];
 	return $default;
 }
 
