@@ -1120,8 +1120,7 @@ if (isset($show_info) && $show_info) {
 		if ($_SESSION["is_admin"]) {
 			$xtpl->table_title(_('Offline migration'));
 			$xtpl->form_create('?page=adminvps&action=offlinemigrate&veid='.$vps->id, 'post');
-			$xtpl->form_add_select(_("Target server").':', 'target_id', vps_migration_nodes($vps), '');
-// 			$xtpl->form_add_checkbox(_("Stop before migration").':', 'stop', '1', false);
+			api_params_to_form($vps->migrate, 'input');
 			$xtpl->form_out(_("Go >>"));
 		}
 	
