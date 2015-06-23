@@ -523,84 +523,88 @@ switch($_REQUEST["action"]) {
 	case "templates":
 		$list_templates = true;
 		break;
+	
 	case "templates_edit":
-		if ($template = $cluster->get_template_by_id($_REQUEST["id"])) {
-			$xtpl->title2(_("Edit template"));
-			$xtpl->table_add_category('');
-			$xtpl->table_add_category('');
-			$xtpl->form_create('?page=cluster&action=templates_edit_save&id='.$_REQUEST["id"], 'post');
-			$xtpl->form_add_input(_("Filename").':', 'text', '40', 'templ_name', $template["templ_name"], _("filename without .tar.gz"));
-			$xtpl->form_add_input(_("Label").':', 'text', '30', 'templ_label', $template["templ_label"], _("User friendly label"));
-			$xtpl->form_add_textarea(_("Info").':', 28, 4, 'templ_info', $template["templ_info"], _("Note for administrators"));
-			$xtpl->form_add_checkbox(_("Enabled").':', 'templ_enabled', 1, $template["templ_enabled"]);
-			$xtpl->form_add_checkbox(_("Supported").':', 'templ_supported', 1, $template["templ_supported"]);
-			$xtpl->form_add_input(_("Order").':', 'text', '30', 'templ_order', $template["templ_order"]);
-			$xtpl->form_out(_("Save changes"));
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			csrf_check();
+			
+			try {
+				$api->os_template->update($_GET['id'], array(
+					'name' => $_POST['name'],
+					'label' => $_POST['label'],
+					'info' => $_POST['info'],
+					'enabled' => isset($_POST['enabled']),
+					'supported' => isset($_POST['supported']),
+					'order' => $_POST['order']
+				));
+				
+				notify_user(_("Changes saved"), _("Changes you've made to the template were saved."));
+				redirect('?page=cluster&action=templates');
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
+				os_template_edit_form();
+			}
+			
 		} else {
-			$list_templates = true;
+			os_template_edit_form();
 		}
+		
 		break;
-	case "templates_edit_save":
-		if ($template = $cluster->get_template_by_id($_REQUEST["id"])) {
-			if (ereg('^[a-zA-Z0-9_\.\-]{1,63}$',$_REQUEST["templ_name"])) {
-			$cluster->set_template($_REQUEST["id"], $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["templ_enabled"], $_REQUEST["templ_supported"], $_REQUEST["templ_order"]);
-			$xtpl->perex(_("Changes saved"), _("Changes you've made to template were saved."));
-			$list_templates = true;
-			} else $list_templates = true;
-		} else {
-			$list_templates = true;
-		}
-		break;
+	
 	case "template_register":
-	$xtpl->title2(_("Register new template"));
-	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
-	$xtpl->form_create('?page=cluster&action=template_register_save', 'post');
-	$xtpl->form_add_input(_("Filename").':', 'text', '40', 'templ_name', '', _("filename without .tar.gz"));
-	$xtpl->form_add_input(_("Label").':', 'text', '30', 'templ_label', '', _("User friendly label"));
-	$xtpl->form_add_textarea(_("Info").':', 28, 4, 'templ_info', '', _("Note for administrators"));
-	$xtpl->form_add_checkbox(_("Enabled").':', 'templ_enabled', 1, 1);
-	$xtpl->form_add_checkbox(_("Supported").':', 'templ_supported', 1, 1);
-	$xtpl->form_add_input(_("Order").':', 'text', '30', 'templ_order', "1");
-	$xtpl->form_out(_("Save changes"));
-	$xtpl->helpbox(_("Help"), _("This procedure only <b>registers template</b> into the system database.
-					 You need copy the template to proper path onto one of servers
-					 and then proceed \"Copy template over nodes\" function.
-					"));
-	break;
-	case "template_register_save":
-		if (ereg('^[a-zA-Z0-9_\.\-]{1,63}$',$_REQUEST["templ_name"])) {
-			$cluster->set_template(NULL, $_REQUEST["templ_name"], $_REQUEST["templ_label"], $_REQUEST["templ_info"], $_REQUEST["templ_enabled"], $_REQUEST["templ_supported"], $_REQUEST["templ_order"]);
-			$xtpl->perex(_("Changes saved"), _("Template successfully registered."));
-			$list_templates = true;
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			csrf_check();
+			
+			try {
+				$api->os_template->create(array(
+					'name' => $_POST['name'],
+					'label' => $_POST['label'],
+					'info' => $_POST['info'],
+					'enabled' => isset($_POST['enabled']),
+					'supported' => isset($_POST['supported']),
+					'order' => $_POST['order']
+				));
+				
+				notify_user(_("OS template registered"), _("The OS template was successfully registered."));
+				redirect('?page=cluster&action=templates');
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Create failed'), $e->getResponse());
+				os_template_add_form();
+			}
+			
 		} else {
-			$list_templates = true;
+			os_template_add_form();
 		}
 		break;
+	
 	case "templates_delete":
-		if ($template = $cluster->get_template_by_id($_REQUEST["id"])) {
-			$xtpl->perex(_("Are you sure to delete template").' '.$template["templ_name"].'?',
-				'<a href="?page=cluster&action=templates">'._("No").'</a> | '.
-				'<a href="?page=cluster&action=templates_delete2&id='.$template["templ_id"].'">'._("Yes").'</a>');
-		}
-		break;
-	case "templates_delete2":
-		if ($template = $cluster->get_template_by_id($_REQUEST["id"])) {
-			$usage = $cluster->get_template_usage($template["templ_id"]);
-			if ($usage <= 0) {
-			$nodes_instances = $cluster->list_servers_class();
-			foreach ($nodes_instances as $node) {
-				$params = array();
-				$params["templ_id"] = $_REQUEST["id"];
-				add_transaction($_SESSION["member"]["m_id"], $node->s["server_id"], 0, T_CLUSTER_TEMPLATE_DELETE, $params);
+		if ($_POST['confirm']) {
+			csrf_check();
+			
+			try {
+				$api->os_template->delete($_GET['id']);
+				
+				notify_user(_("OS template deleted"), _("The OS template was successfully deleted."));
+				redirect('?page=cluster&action=templates');
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Delete failed'), $e->getResponse());
 			}
-			} else {
-			$list_templates = true;
-			}
+			
 		} else {
-			$list_templates = true;
+			$t = $api->os_template->find($_GET['id']);
+			
+			$xtpl->table_title(_('Confirm deletion of OS template').' '.$t->label);
+			$xtpl->form_create('?page=cluster&action=templates_delete&id='.$t->id, 'post');
+			$xtpl->form_add_checkbox(_('Confirm').':', 'confirm', '1', false);
+			$xtpl->form_out(_("Delete"));
+			
+			$xtpl->sbar_add(_("Back"), '?page=cluster&action=templates');
 		}
 		break;
+	
 	case "configs":
 		$xtpl->sbar_add(_("Back"), '?page=cluster');
 		$list_configs = true;
@@ -1155,7 +1159,7 @@ if ($list_mails) {
 if ($list_nodes) {
 	$xtpl->sbar_add(_("General settings"), '?page=cluster&action=general_settings');
 	$xtpl->sbar_add(_("Register new node"), '?page=cluster&action=newnode');
-	$xtpl->sbar_add(_("Manage VPS templates"), '?page=cluster&action=templates');
+	$xtpl->sbar_add(_("Manage OS templates"), '?page=cluster&action=templates');
 	$xtpl->sbar_add(_("Manage configs"), '?page=cluster&action=configs');
 	$xtpl->sbar_add(_("Manage IP addresses"), '?page=cluster&action=ip_addresses');
 	$xtpl->sbar_add(_("Manage DNS servers"), '?page=cluster&action=dns');
@@ -1263,7 +1267,6 @@ if ($list_nodes) {
 
 if ($list_templates) {
 	$xtpl->title2(_("Templates list"));
-	$xtpl->table_add_category(_("ID"));
 	$xtpl->table_add_category(_("Filename"));
 	$xtpl->table_add_category(_("Label"));
 	$xtpl->table_add_category(_("Uses"));
@@ -1272,30 +1275,35 @@ if ($list_templates) {
 	$xtpl->table_add_category(_("#"));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
-	$templates = $cluster->get_templates();
-	foreach($templates as $template) {
-	$usage = 0;
-	$usage = $cluster->get_template_usage($template["templ_id"]);
-	$xtpl->table_td($template["templ_id"], false, true);
-	$xtpl->table_td($template["templ_name"].'.tar.gz');
-	$xtpl->table_td($template["templ_label"]);
-	$xtpl->table_td($usage);
-	$xtpl->table_td('<img src="template/icons/transact_'.($template["templ_enabled"] ? "ok" : "fail").'.png" alt="'.($template["templ_enabled"] ? _('Enabled') : _('Disabled')).'">');
-	$xtpl->table_td('<img src="template/icons/transact_'.($template["templ_supported"] ? "ok" : "fail").'.png" alt="'.($template["templ_supported"] ? _('Yes') : _('No')).'">');
-	$xtpl->table_td($template["templ_order"]);
-	$xtpl->table_td('<a href="?page=cluster&action=templates_edit&id='.$template["templ_id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-	if ($usage > 0)
-		$xtpl->table_td('<img src="template/icons/delete_grey.png" title="'._("Delete - N/A, template is in use").'">');
-	else
-		$xtpl->table_td('<a href="?page=cluster&action=templates_delete&id='.$template["templ_id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
-	if ($template["templ_info"]) $xtpl->table_td('<img src="template/icons/info.png" title="'._("Info").'"');
-	$xtpl->table_tr();
+	
+	$templates = $api->os_template->list();
+	
+	foreach($templates as $t) {
+		$usage = $api->vps->list(array(
+			'os_template' => $t->id,
+			'limit' => 0,
+			'meta' => array('count' => true)
+		))->getTotalCount();
+		
+		$xtpl->table_td($t->name);
+		$xtpl->table_td($t->label);
+		$xtpl->table_td($usage);
+		$xtpl->table_td(boolean_icon($t->enabled));
+		$xtpl->table_td(boolean_icon($t->supported));
+		$xtpl->table_td($t->order);
+		$xtpl->table_td('<a href="?page=cluster&action=templates_edit&id='.$t->id.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		
+		if ($usage > 0)
+			$xtpl->table_td('<img src="template/icons/delete_grey.png" title="'._("Delete - N/A, template is in use").'">');
+		else
+			$xtpl->table_td('<a href="?page=cluster&action=templates_delete&id='.$t->id.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		
+		$xtpl->table_tr();
 	}
 	$xtpl->table_out();
+	
+	$xtpl->sbar_add(_("Back"), '?page=cluster');
 	$xtpl->sbar_add(_("Register new template"), '?page=cluster&action=template_register');
-	$xtpl->helpbox(_("Help"), _("This is simple cluster template management.
-				To add new template, save it to one node, then click 'Register new template' and finally copy it over all nodes.
-				"));
 }
 
 if ($list_configs) {
