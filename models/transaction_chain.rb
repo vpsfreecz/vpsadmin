@@ -251,4 +251,5 @@ module TransactionChains
   module Branch         ; end
   module User           ; end
   module Lifetimes      ; end
+  module DnsResolver    ; end
 end

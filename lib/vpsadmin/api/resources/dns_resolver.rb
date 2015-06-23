@@ -91,14 +91,32 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
     end
 
     def exec
-      if (!input[:is_universal] && !input[:location]) || (input[:is_universal] && input[:location])
-        error('DNS resolver may either be universal or belong to a location')
-      end
-
       ::DnsResolver.create!(to_db_names(input))
 
     rescue ActiveRecord::RecordInvalid => e
       error('create failed', to_param_names(e.record.errors.to_hash, :input))
+    end
+  end
+
+  class Update < HaveAPI::Actions::Default::Update
+    input do
+      use :common
+    end
+
+    output do
+      use :all
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def exec
+      ns = ::DnsResolver.find(params[:dns_resolver_id])
+      ns.update(to_db_names(input))
+
+    rescue ActiveRecord::RecordInvalid => e
+      error('update failed', to_param_names(e.record.errors.to_hash, :input))
     end
   end
 end
