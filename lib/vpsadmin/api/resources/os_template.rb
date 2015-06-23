@@ -88,4 +88,27 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
       @os_template
     end
   end
+
+  class Create < HaveAPI::Actions::Default::Create
+    input do
+      use :common
+      patch :name, required: true
+      patch :label, required: true
+    end
+
+    output do
+      use :all
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def exec
+      ::OsTemplate.create!(to_db_names(input))
+
+    rescue ActiveRecord::RecordInvalid => e
+      error('create failed', to_param_names(e.record.errors.to_hash))
+    end
+  end
 end
