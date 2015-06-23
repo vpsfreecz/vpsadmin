@@ -19,94 +19,6 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-function print_newvps_page1() {
-	global $xtpl, $api;
-	
-	$xtpl->title(_("Create VPS: Select an environment"));
-	
-	$xtpl->table_add_category('&nbsp;');
-	$xtpl->table_add_category('&nbsp;');
-	$xtpl->table_add_category('&nbsp;');
-	
-	$xtpl->form_create('?page=adminvps&section=vps&action=new2&create=1', 'post');
-
-	$xtpl->form_add_select(_("Environment").':', 'environment_id', resource_list_to_options($api->environment->list()), '',  '');
-	
-	$xtpl->form_out(_("Next"));
-}
-
-function print_newvps_page2($env) {
-	global $xtpl, $api;
-	
-	$xtpl->title(_("Create VPS: Select a location"));
-	
-	$xtpl->table_add_category('&nbsp;');
-	$xtpl->table_add_category('&nbsp;');
-	$xtpl->table_add_category('&nbsp;');
-	
-	$xtpl->form_create('?page=adminvps&section=vps&action=new3&create=1&env_id='.$env, 'post');
-
-	$choices = resource_list_to_options($api->location->list(array('environment' => $env)));
-	$empty = array(0 => '--- select automatically ---');
-	
-	$xtpl->form_add_select(_("Location").':', 'location_id', $empty + $choices, '',  '');
-	
-	$xtpl->form_out(_("Next"));
-}
-
-function print_newvps_page3($env, $loc) {
-	global $xtpl, $api;
-	
-	$xtpl->title(_("Create VPS"));
-	
-	$xtpl->table_add_category('&nbsp;');
-	$xtpl->table_add_category('&nbsp;');
-	$xtpl->table_add_category('&nbsp;');
-	
-	$xtpl->form_create('?page=adminvps&section=vps&action=new4&create=1&env_id='.$env.'&loc_id='.$loc, 'post');
-	$xtpl->form_csrf();
-	$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'vps_hostname', $_POST['vps_hostname'], _("A-z, a-z"), 255);
-	
-	if ($_SESSION["is_admin"]) {
-		$xtpl->form_add_select(_("HW server").':', 'vps_server', resource_list_to_options($api->node->list(), 'id', 'name'), $_POST['vps_server'], '');
-		$xtpl->form_add_select(_("Owner").':', 'm_id', resource_list_to_options($api->user->list(), 'id', 'login'), $_SESSION['member']['m_id'], '');
-	}
-	
-	$xtpl->form_add_select(_("Distribution").':', 'vps_template', resource_list_to_options($api->os_template->list()), $_POST['vps_template'],  '');
-	
-	$params = $api->vps->create->getParameters('input');
-	$vps_resources = array('memory' => 4096, 'cpu' => 8, 'diskspace' => 60*1024, 'ipv4' => 1, 'ipv6' => 1);
-	
-	$user_resources = $api->user->current()->cluster_resource->list(array('meta' => array('includes' => 'environment,cluster_resource')));
-	$resource_map = array();
-	
-	foreach ($user_resources as $r) {
-		$resource_map[ $r->cluster_resource->name ] = $r;
-	}
-	
-	foreach ($vps_resources as $name => $default) {
-		$p = $params->{$name};
-		$r = $resource_map[$name];
-		
-		$xtpl->table_td($p->label.':');
-		$xtpl->form_add_number_pure(
-			$name,
-			$_POST[$name] ? $_POST[$name] : min($default, $r->free),
-			$r->cluster_resource->min,
-			min($r->free, $r->cluster_resource->max),
-			$r->cluster_resource->stepsize,
-			unit_for_cluster_resource($name)
-		);
-		$xtpl->table_tr();
-	}
-	
-	if ($_SESSION["is_admin"]) {
-		$xtpl->form_add_checkbox(_("Boot on create").':', 'boot_after_create', '1', (isset($_POST['vps_hostname']) && !isset($_POST['boot_after_create'])) ? false : true, $hint = '');
-		$xtpl->form_add_textarea(_("Extra information about VPS").':', 28, 4, 'vps_info', $_POST['vps_info'], '');
-	}
-	
-	$xtpl->form_out(_("Create"));
-}
 
 function print_editvps($vps) {
 }
@@ -185,57 +97,60 @@ switch ($_GET["action"]) {
 			break;
 			
 		case 'new2':
-			print_newvps_page2($_POST['environment_id']);
+			print_newvps_page2($_GET['environment']);
 			break;
 		
 		case 'new3':
-			print_newvps_page3($_GET['env_id'], $_POST['location_id']);
+			print_newvps_page3($_GET['environment'], $_GET['location']);
 			break;
 			
 		case 'new4':
-			if ($_GET["create"]) {
-				csrf_check();
+			if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+				print_newvps_page3($_GET['environment'], $_GET['location']);
+				break;
+			}
+			
+			csrf_check();
+			
+			$params = array(
+				'hostname' => $_POST['vps_hostname'],
+				'os_template' => $_POST['vps_template'],
+				'info' => $_SESSION['is_admin'] ? '' : $_POST['vps_info'],
+				'memory' => $_POST['memory'],
+				'cpu' => $_POST['cpu'],
+				'diskspace' => $_POST['diskspace'],
+				'ipv4' => $_POST['ipv4'],
+				'ipv6' => $_POST['ipv6']
+			);
+			
+			if($_SESSION["is_admin"]) {
+				$params['user'] = $_POST['m_id'];
+				$params['node'] = $_POST['vps_server'];
+				$params['onboot'] = $_POST['boot_after_create'];
 				
-				$params = array(
-					'hostname' => $_POST['vps_hostname'],
-					'os_template' => $_POST['vps_template'],
-					'info' => $_SESSION['is_admin'] ? '' : $_POST['vps_info'],
-					'memory' => $_POST['memory'],
-					'cpu' => $_POST['cpu'],
-					'diskspace' => $_POST['diskspace'],
-					'ipv4' => $_POST['ipv4'],
-					'ipv6' => $_POST['ipv6']
-				);
+			} else {
+				if ($_GET['location'])
+					$params['location'] = (int)$_GET['location'];
+				else
+					$params['environment'] = (int)$_GET['environment'];
+			}
+			
+			try {
+				$vps = $api->vps->create($params);
 				
-				if($_SESSION["is_admin"]) {
-					$params['user'] = $_POST['m_id'];
-					$params['node'] = $_POST['vps_server'];
-					$params['onboot'] = $_POST['boot_after_create'];
+				if ($params['onboot'] || !$_SESSION['is_admin']) {
+					notify_user(_("VPS create ").' '.$vps->id, _("VPS will be created and booted afterwards."));
 					
 				} else {
-					if ($_GET['loc_id'])
-						$params['location'] = (int)$_GET['loc_id'];
-					else
-						$params['environment'] = (int)$_GET['env_id'];
+					notify_user(_("VPS create ").' '.$vps->id, _("VPS will be created. You can start it manually."));
 				}
-				
-				try {
-					$vps = $api->vps->create($params);
-					
-					if ($params['onboot'] || !$_SESSION['is_admin']) {
-						notify_user(_("VPS create ").' '.$vps->id, _("VPS will be created and booted afterwards."));
-						
-					} else {
-						notify_user(_("VPS create ").' '.$vps->id, _("VPS will be created. You can start it manually."));
-					}
 
-					redirect('?page=adminvps&action=info&veid='.$vps->id);
-					
-				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-					$xtpl->perex_format_errors(_('VPS creation failed'), $e->getResponse());
-					
-					print_newvps_page3($_GET['env_id'], $_GET['loc_id']);
-				}
+				redirect('?page=adminvps&action=info&veid='.$vps->id);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('VPS creation failed'), $e->getResponse());
+				
+				print_newvps_page3($_GET['environment'], $_GET['location']);
 			}
 			break;
 			
