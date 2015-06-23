@@ -1,9 +1,10 @@
 module TransactionChains
   class Dataset::Snapshot < ::TransactionChain
-    label 'Snapshot dataset'
+    label 'Snapshot'
 
     def link_chain(dataset_in_pool)
       lock(dataset_in_pool)
+      concerns(:affect, [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id])
 
       snap = Time.new.strftime('%Y-%m-%dT%H:%M:%S')
 

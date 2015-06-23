@@ -1,6 +1,6 @@
 module TransactionChains
   class Vps::ShaperUnset < ::TransactionChain
-    label 'Unset shaper'
+    label 'Shaper-'
 
     def link_chain(vps)
       concerns(:affect, [vps.class.name, vps.id])

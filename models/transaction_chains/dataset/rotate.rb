@@ -1,9 +1,10 @@
 module TransactionChains
   class Dataset::Rotate < ::TransactionChain
-    label 'Rotate dataset snapshots'
+    label 'Rotate'
 
     def link_chain(dataset_in_pool)
       lock(dataset_in_pool)
+      concerns(:affect, [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id])
 
       @deleted = 0
       @min = dataset_in_pool.min_snapshots

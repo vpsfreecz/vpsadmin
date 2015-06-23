@@ -1,6 +1,6 @@
 module TransactionChains
   class Vps::ShaperSet < ::TransactionChain
-    label 'Set shaper'
+    label 'Shaper+'
 
     def link_chain(vps, ips = nil)
       concerns(:affect, [vps.class.name, vps.id])

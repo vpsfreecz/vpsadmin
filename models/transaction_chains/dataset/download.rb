@@ -1,6 +1,6 @@
 module TransactionChains
   class Dataset::Download < ::TransactionChain
-    label 'Download snapshot'
+    label 'Download'
 
     def link_chain(snapshot)
       primary, backup = snap_in_pools(snapshot)
@@ -9,6 +9,7 @@ module TransactionChains
 
       lock(sip)
       lock(sip.dataset_in_pool)
+      concerns(:affect, [snapshot.class.name, snapshot.id])
 
       dl = ::SnapshotDownload.new(
           user: ::User.current,

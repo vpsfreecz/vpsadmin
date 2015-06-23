@@ -1,6 +1,6 @@
 module TransactionChains
   class User::SoftDelete < ::TransactionChain
-    label 'Soft delete user'
+    label 'Soft delete'
 
     def link_chain(user, target, state, log)
       mail(:user_soft_delete, {

@@ -1,6 +1,6 @@
 module TransactionChains
   class Vps::Restore < Dataset::Rollback
-    label 'Restore VPS'
+    label 'Restore'
 
     def link_chain(vps, snapshot)
       lock(vps)

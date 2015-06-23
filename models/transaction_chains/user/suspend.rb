@@ -1,6 +1,6 @@
 module TransactionChains
   class User::Suspend < ::TransactionChain
-    label 'Suspend user'
+    label 'Suspend'
 
     def link_chain(user, target, state, log)
       mail(:user_suspend, {

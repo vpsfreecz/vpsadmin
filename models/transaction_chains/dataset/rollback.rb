@@ -1,7 +1,7 @@
 module TransactionChains
   # This chain supports only rollback on a hypervisor or primary pools.
   class Dataset::Rollback < ::TransactionChain
-    label 'Rollback dataset'
+    label 'Rollback'
 
     def link_chain(dataset_in_pool, snapshot)
       # One of the four scenarios will occur:
@@ -17,6 +17,7 @@ module TransactionChains
       #       replace the dataset on hypervisor, branch backup
 
       lock(dataset_in_pool)
+      concerns(:affect, [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id])
 
       # Fetch the last snapshot on the +dataset_in_pool+
       primary_last_snap = ::SnapshotInPool.where(dataset_in_pool: dataset_in_pool).order('snapshot_id DESC').take

@@ -1,6 +1,6 @@
 module TransactionChains
   class User::Revive < ::TransactionChain
-    label 'Revive user'
+    label 'Revive'
 
     def link_chain(user, target, state, log)
       mail(:user_revive, {

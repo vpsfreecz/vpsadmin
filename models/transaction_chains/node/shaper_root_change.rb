@@ -1,6 +1,6 @@
 module TransactionChains
   class Node::ShaperRootChange < ::TransactionChain
-    label 'Change shaper'
+    label 'Sshaper*'
 
     def link_chain(node)
       lock(node)

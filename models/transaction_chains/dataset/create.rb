@@ -1,9 +1,10 @@
 module TransactionChains
   class Dataset::Create < ::TransactionChain
-    label 'Create dataset'
+    label 'Create'
 
     def link_chain(pool, dataset_in_pool, path, automount, properties, user = nil, label = nil)
       lock(dataset_in_pool) if dataset_in_pool
+      concerns(:affect, [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id]) if dataset_in_pool
 
       ret = []
       @pool = pool

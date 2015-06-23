@@ -1,9 +1,10 @@
 module TransactionChains
   class Dataset::Set < ::TransactionChain
-    label 'Set dataset properties'
+    label 'Set properties'
 
     def link_chain(dataset_in_pool, properties)
       lock(dataset_in_pool)
+      concerns(:affect, [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id])
 
       chain = self
       props = {}

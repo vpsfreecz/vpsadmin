@@ -1,6 +1,6 @@
 module TransactionChains
   class Vps::SetResources < ::TransactionChain
-    label 'Set VPS resources'
+    label 'Resources'
 
     def link_chain(vps, resources)
       lock(vps)

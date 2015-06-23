@@ -3,6 +3,8 @@ module TransactionChains
     label 'Delete config'
 
     def link_chain(cfg)
+      concerns(:affect, [cfg.class.name, cfg.id])
+
       ::Node.where(server_type: 'node').each do |n|
         append(Transactions::Hypervisor::DeleteConfig, args: [n, cfg])
       end

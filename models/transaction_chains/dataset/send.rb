@@ -1,6 +1,6 @@
 module TransactionChains
   class Dataset::Send < ::TransactionChain
-    label 'Send snapshots'
+    label 'Send'
 
     def link_chain(port, src, dst, snapshots, src_branch, dst_branch, initial = false, ds_suffix = nil)
       if initial

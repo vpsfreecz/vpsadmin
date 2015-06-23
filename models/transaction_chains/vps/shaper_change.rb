@@ -1,6 +1,6 @@
 module TransactionChains
   class Vps::ShaperChange < ::TransactionChain
-    label 'Change shaper'
+    label 'Shaper*'
 
     def link_chain(ip, tx, rx)
       lock(ip.vps)

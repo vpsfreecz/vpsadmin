@@ -1,6 +1,6 @@
 module TransactionChains
   class Pool::Create < ::TransactionChain
-    label 'Create pool'
+    label 'Create'
 
     def link_chain(pool)
       lock(pool)

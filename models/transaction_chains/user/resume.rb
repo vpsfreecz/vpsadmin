@@ -1,6 +1,6 @@
 module TransactionChains
   class User::Resume < ::TransactionChain
-    label 'Resume user'
+    label 'Resume'
 
     def link_chain(user, target, state, log)
       mail(:user_resume, {
