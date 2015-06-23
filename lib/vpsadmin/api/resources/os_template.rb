@@ -55,8 +55,16 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
      })
     end
 
+    def query
+      ::OsTemplate.where(with_restricted)
+    end
+
+    def count
+      query.count
+    end
+
     def exec
-      ::OsTemplate.where(with_restricted).limit(params[:os_template][:limit]).offset(params[:os_template][:offset])
+      query.limit(input[:limit]).offset(input[:offset])
     end
   end
 
