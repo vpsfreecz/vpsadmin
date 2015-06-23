@@ -119,4 +119,28 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
       error('update failed', to_param_names(e.record.errors.to_hash, :input))
     end
   end
+
+  class Delete < HaveAPI::Actions::Default::Delete
+    input do
+      bool :force, label: 'Force deletion',
+           desc: 'Delete the DNS resolver even it is in use. Affected VPSes get a new DNS resolver.'
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def exec
+      ns = ::DnsResolver.find(params[:dns_resolver_id])
+
+      if !input[:force] && ns.in_use?
+        error('The DNS resolver is in use. Use force=true to override.')
+      end
+
+      ns.delete
+
+    rescue ActiveRecord::RecordInvalid => e
+      error('update failed', to_param_names(e.record.errors.to_hash, :input))
+    end
+  end
 end

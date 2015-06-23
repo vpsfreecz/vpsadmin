@@ -23,6 +23,14 @@ class DnsResolver < ActiveRecord::Base
     TransactionChains::DnsResolver::Update.fire(self, attrs)
   end
 
+  def delete
+    TransactionChains::DnsResolver::Destroy.fire(self)
+  end
+
+  def in_use?
+    ::Vps.including_deleted.exists?(dns_resolver: self)
+  end
+
   def universal_or_location
     if (dns_is_universal && dns_location) || (!dns_is_universal && !dns_location)
       errors.add(:dns_is_universal, 'must be either universal or location specific')
