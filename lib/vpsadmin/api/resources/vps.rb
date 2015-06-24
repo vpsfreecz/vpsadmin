@@ -532,13 +532,16 @@ END
       resource VpsAdmin::API::Resources::User, desc: 'The owner of the cloned VPS', value_label: :login
       resource VpsAdmin::API::Resources::VPS, desc: 'Clone into an existing VPS', value_label: :hostname
       bool :subdatasets, default: true, fill: true
-      bool :dataset_plans, default: true, fill: true
+      bool :dataset_plans, default: true, fill: true, label: 'Dataset plans'
       bool :configs, default: true, fill: true
-      bool :resources, default: true, fill: true
+      bool :resources, default: true, fill: true,
+           desc: 'Clone resources such as memory and CPU'
       bool :features, default: true, fill: true
       string :hostname
-      bool :stop, default: true, fill: true
-      bool :keep_snapshots, default: false, fill: true
+      bool :stop, default: true, fill: true,
+           desc: 'Do a consistent clone - original VPS is stopped before making a snapshot'
+      bool :keep_snapshots, default: false, fill: true, label: 'Keep snapshots',
+          desc: 'Keep snapshots created during the cloning process'
     end
 
     output do
