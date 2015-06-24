@@ -589,6 +589,8 @@ END
         node = ::Node.pick_by_env(input[:environment], input[:location])
       end
 
+      error('no node available in this environment') unless node
+
       if current_user.role != :admin && !current_user.env_config(node.environment, :can_create_vps)
         error('insufficient permission to create a VPS in this environment')
       end
