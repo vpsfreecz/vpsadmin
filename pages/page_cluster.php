@@ -239,6 +239,8 @@ switch($_REQUEST["action"]) {
 		$xtpl->table_add_category(_('Domain'));
 		$xtpl->table_add_category(_('Create a VPS'));
 		$xtpl->table_add_category(_('Destroy a VPS'));
+		$xtpl->table_add_category(_('VPS count'));
+		$xtpl->table_add_category(_('IP ownership'));
 		$xtpl->table_add_category('<img title="'._("Toggle maintenance on environment.").'" alt="'._("Toggle maintenance on environment.").'" src="template/icons/maintenance_mode.png">');
 		$xtpl->table_add_category('');
 		
@@ -250,6 +252,8 @@ switch($_REQUEST["action"]) {
 			$xtpl->table_td($env->domain);
 			$xtpl->table_td(boolean_icon($env->can_create_vps));
 			$xtpl->table_td(boolean_icon($env->can_destroy_vps));
+			$xtpl->table_td($env->max_vps_count, false, true);
+			$xtpl->table_td(boolean_icon($env->user_ip_ownership));
 			$xtpl->table_td(maintenance_lock_icon('environment', $env));
 			$xtpl->table_td('<a href="?page=cluster&action=env_edit&id='.$env->id.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 			
@@ -337,10 +341,11 @@ switch($_REQUEST["action"]) {
 				$api->environment->update($_GET['id'], array(
 					'label' => $_POST['label'],
 					'domain' => $_POST['domain'],
-					'can_create_vps' => (bool)$_POST['can_create_vps'],
-					'can_destroy_vps' => (bool)$_POST['can_destroy_vps'],
+					'can_create_vps' => isset($_POST['can_create_vps']),
+					'can_destroy_vps' => isset($_POST['can_destroy_vps']),
 					'vps_lifetime' => $_POST['vps_lifetime'],
 					'max_vps_count' => $_POST['max_vps_count'],
+					'user_ip_ownership' => isset($_POST['user_ip_ownership'])
 				));
 				
 				notify_user(_("Environment updated"), '');
@@ -1417,14 +1422,7 @@ if ($env_settings) {
 	$xtpl->table_add_category('');
 	
 	$xtpl->form_create('?page=cluster&action=env_save&id='.$env->id, 'post');
-	
-	$xtpl->form_add_input(_("Label").':', 'text', '30', 'label', $env->label);
-	$xtpl->form_add_input(_("Domain").':', 'text', '30', 'domain', $env->domain);
-	$xtpl->form_add_checkbox(_('Create a VPS').':', 'can_create_vps', '1', $env->can_create_vps, _('Allow users to create a VPS'));
-	$xtpl->form_add_checkbox(_('Destroy a VPS').':', 'can_destroy_vps', '1', $env->can_destroy_vps, _('Allow users to destroy a VPS'));
-	$xtpl->form_add_input(_("VPS lifetime").':', 'text', '30', 'vps_lifetime', $env->vps_lifetime, _("seconds"));
-	$xtpl->form_add_input(_("Max VPS count").':', 'text', '5', 'max_vps_count', $env->max_vps_count, _("Maximum number of VPSes user can have"));
-	
+	api_update_form($env);
 	$xtpl->form_out(_('Save'));
 	
 	$all_configs = resource_list_to_options($api->vps_config->list());
