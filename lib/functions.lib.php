@@ -252,10 +252,10 @@ function boolean_icon($val) {
 function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null) {
 	global $xtpl, $api;
 	
-	if (!$v)
+	if ($v === null)
 		$v = $desc->default === '_nil' ? null : $desc->default;
 	
-	if ($_POST[$name])
+	if (isset($_POST[$name]))
 		$v = $_POST[$name];
 	
 	switch ($desc->type) {
