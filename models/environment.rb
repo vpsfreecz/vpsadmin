@@ -33,6 +33,23 @@ class Environment < ActiveRecord::Base
 
   maintenance_children :nodes
 
+  def update!(attrs)
+    assign_attributes(attrs)
+
+    self.class.transaction do
+      self.environment_user_configs.where(default: true).update_all(
+          can_create_vps: can_create_vps,
+          can_destroy_vps: can_destroy_vps,
+          vps_lifetime: vps_lifetime,
+          max_vps_count: max_vps_count
+      )
+
+      save!
+    end
+
+    self
+  end
+
   def fqdn
     domain
   end

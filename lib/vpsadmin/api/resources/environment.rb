@@ -135,6 +135,10 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
       use :common
     end
 
+    output do
+      use :all
+    end
+
     authorize do |u|
       allow if u.role == :admin
     end
@@ -148,13 +152,10 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     end
 
     def exec
-      env = ::Environment.find(params[:environment_id])
-
-      if env.update(params[:environment])
-        ok({})
-      else
-        error('update failed', env.errors.to_hash)
-      end
+      ::Environment.find(params[:environment_id]).update!(input)
+        
+    rescue ActiveRecord::RecordInvalid => e
+      error('update failed', e.record.errors.to_hash)
     end
   end
 

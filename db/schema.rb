@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150618124817) do
+ActiveRecord::Schema.define(version: 20150625145437) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -185,6 +185,7 @@ ActiveRecord::Schema.define(version: 20150618124817) do
     t.boolean "can_destroy_vps", default: false, null: false
     t.integer "vps_lifetime",    default: 0,     null: false
     t.integer "max_vps_count",   default: 1,     null: false
+    t.boolean "default",         default: true,  null: false
   end
 
   add_index "environment_user_configs", ["environment_id", "user_id"], name: "environment_user_configs_unique", unique: true, using: :btree
