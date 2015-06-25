@@ -203,6 +203,7 @@ function print_editm($u) {
 	
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Authentication tokens").'" />'._('Authentication tokens'), "?page=adminm&section=members&action=auth_tokens&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Cluster resources").'" />'._('Cluster resources'), "?page=adminm&section=members&action=cluster_resources&id={$u->id}");
+	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Environment configs").'" />'._('Environment configs'), "?page=adminm&section=members&action=env_cfg&id={$u->id}");
 }
 
 function print_deletem($u) {
@@ -1391,6 +1392,40 @@ if ($_SESSION["logged_in"]) {
 				
 			} else {
 				cluster_resource_edit_form();
+			}
+			
+			break;
+		
+		case 'env_cfg':
+			environment_configs($_GET['id']);
+			break;
+		
+		case 'env_cfg_edit':
+			if (!$_SESSION['is_admin'])
+				break;
+			
+			if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+				csrf_check();
+				
+				try {
+					$api->user($_GET['id'])->environment_config($_GET['cfg'])->update(array(
+						'can_create_vps' => isset($_POST['can_create_vps']),
+						'can_destroy_vps' => isset($_POST['can_destroy_vps']),
+						'vps_lifetime' => $_POST['vps_lifetime'],
+						'max_vps_count' => $_POST['max_vps_count'],
+						'default' => isset($_POST['default'])
+					));
+					
+					notify_user(_('Changes saved'), _('Environment configs was successfully updated.'));
+					redirect('?page=adminm&action=env_cfg&id='.$_GET['id']);
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
+					env_cfg_edit_form($_GET['id'], $_GET['cfg']);
+				}
+				
+			} else {
+				env_cfg_edit_form($_GET['id'], $_GET['cfg']);
 			}
 			
 			break;
