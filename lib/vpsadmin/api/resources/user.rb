@@ -282,6 +282,124 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
   end
 
+  class EnvironmentConfig < HaveAPI::Resource
+    desc 'User settings per environment'
+    version 1
+    model ::EnvironmentUserConfig
+    route ':user_id/environment_configs'
+
+    params(:all) do
+      id :id, label: 'ID'
+      use :common
+    end
+
+    params(:common) do
+      resource VpsAdmin::API::Resources::Environment
+      bool :can_create_vps, label: 'Can create a VPS', default: false
+      bool :can_destroy_vps, label: 'Can destroy a VPS', default: false
+      integer :vps_lifetime, label: 'Default VPS lifetime',
+              desc: 'in seconds, 0 is unlimited', default: 0
+      integer :max_vps_count, label: 'Maximum number of VPS per user',
+              desc: '0 is unlimited', default: 1
+      bool :default, label: 'Default',
+           desc: 'If true, the user config is inherited from the environment config',
+           default: true
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      desc 'List settings per environment'
+
+      input do
+        use :common, include: %i(environment)
+      end
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        output blacklist: %i(default)
+        allow
+      end
+
+      def query
+        if current_user.role != :admin && params[:user_id].to_i != current_user.id
+          error('access denied')
+        end
+
+        q = ::EnvironmentUserConfig.where(user_id: params[:user_id])
+
+        if input[:environment]
+          q = q.where(environment: input[:environment])
+        end
+
+        q
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        with_includes(query).limit(input[:limit]).offset(input[:offset])
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      desc 'Show settings in an environment'
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        output blacklist: %i(default)
+        allow
+      end
+
+      def prepare
+        if current_user.role != :admin && params[:user_id].to_i != current_user.id
+          error('access denied')
+        end
+
+        @cfg = ::EnvironmentUserConfig.where(
+            user_id: params[:user_id],
+            id: params[:environment_config_id]
+        ).take!
+      end
+
+      def exec
+        @cfg
+      end
+    end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Change settings in an environment'
+
+      input do
+        use :common, exclude: %i(environment)
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        error('provide at least one parameter to update') if input.empty?
+
+        ::EnvironmentUserConfig.find_by!(
+            user_id: params[:user_id],
+            id: params[:environment_config_id]
+        ).update!(input)
+
+      rescue ActiveRecord::RecordInvalid => e
+        error('update failed', e.record.errors.to_hash)
+      end
+    end
+  end
+
   class ClusterResource < HaveAPI::Resource
     desc "Manage user's cluster resources"
     version 1
