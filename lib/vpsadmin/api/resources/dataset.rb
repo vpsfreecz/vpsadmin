@@ -376,6 +376,13 @@ module VpsAdmin::API::Resources
 
         def exec
           ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+          
+          max_snapshots = ds.primary_dataset_in_pool!.max_snapshots
+
+          if ds.snapshots.count >= max_snapshots
+            error("cannot make more than #{max_snapshots} snapshots")
+          end
+
           ds.snapshot.snapshot
         end
       end
