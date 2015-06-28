@@ -57,6 +57,7 @@ if ($_SESSION["logged_in"]) {
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 				$xtpl->perex_format_errors(_('Snapshot failed'), $e->getResponse());
 			}
+			break;
 		
 		case 'restore':
 			if (isset($_POST['confirm']) && $_POST['confirm']) {
