@@ -89,8 +89,12 @@ function list_chains() {
 		$xtpl->table_td('<a href="?page=transactions&chain='.$chain->id.'">'.$chain->id.'</a>');
 		$xtpl->table_td($chain->created_at);
 		
-		if ($_SESSION['is_admin'])
-			$xtpl->table_td('<a href="?page=adminm&action=edit&id='.$chain->user_id.'">'.$chain->user->login.'</a>');
+		if ($_SESSION['is_admin']) {
+			if ($chain->user_id)
+				$xtpl->table_td('<a href="?page=adminm&action=edit&id='.$chain->user_id.'">'.$chain->user->login.'</a>');
+			else
+				$xtpl->table_td('---');
+		}
 		
 		$xtpl->table_td($chain->label);
 		$xtpl->table_td(transaction_chain_concerns($chain));
@@ -155,7 +159,7 @@ function chain_transactions($chain_id) {
 	$xtpl->table_tr();
 	
 	$xtpl->table_td(_('User'));
-	$xtpl->table_td('<a href="?page=adminm&action=edit&id='.$chain->user_id.'">'.$chain->user->login.'</a>');
+	$xtpl->table_td($chain->user_id ? ('<a href="?page=adminm&action=edit&id='.$chain->user_id.'">'.$chain->user->login.'</a>') : '---');
 	$xtpl->table_tr();
 	
 	$xtpl->table_td(_('Created at'));
@@ -234,7 +238,7 @@ function chain_transactions($chain_id) {
 		$xtpl->table_td(tolocaltz($t->created_at));
 		$xtpl->table_td(format_duration(($finished_at ? $finished_at - $created_at : 0)));
 		$xtpl->table_td(format_duration($finished_at - $started_at));
-		$xtpl->table_td('<a href="?page=adminm&action=edit&id='.$t->user_id.'">'.$t->user->login.'</a>');
+		$xtpl->table_td($t->user_id ? ('<a href="?page=adminm&action=edit&id='.$t->user_id.'">'.$t->user->login.'</a>') : '---');
 		$xtpl->table_td($t->node->name);
 		$xtpl->table_td($t->name.' ('.$t->type.')');
 		$xtpl->table_td(($t->urgent ? '<img src="template/icons/warning.png" alt="'._('Urgent').'" title="'._('Urgent').'"> ' : '') . $t->priority);
