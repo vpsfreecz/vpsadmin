@@ -17,8 +17,8 @@ module TransactionChains
         if chains[s] && chains[s][dir]
           default = use_chain(chains[s][dir], args: [
               obj,
-              s == last,
               last,
+              states.last,
               log
           ])
         end
