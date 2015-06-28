@@ -315,7 +315,7 @@ module VpsAdmin::API
 
         # Move the object to next state (up or down - direction leave or enter).
         # Accepts the same keyword arguments as #set_object_state.
-        def progress_object_state(direction = :enter, *args)
+        def progress_object_state(direction, *args)
           states = Private.states(self.class)
           i = states.index(object_state.to_sym)
           target = states[ direction == :enter ? i + 1 : i - 1 ]

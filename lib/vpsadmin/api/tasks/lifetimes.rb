@@ -1,12 +1,108 @@
 module VpsAdmin::API::Tasks
-  class Lifetimes < Base
+  class Lifetime < Base
+    # Move expired objects to the next state.
+    #
+    # Accepts the following environment variables:
+    # [OBJECTS]: A list of object names to inform about, separated by a comma. 
+    #            To inform about all objects, use special name 'all'.
+    # [STATES]:  A list of states that an object must be in to be included.
+    #            If not specified, all states are included.
+    # [GRACE]:   A number of seconds added to the expiration date, effectively
+    #            postponing the expiration date.
+    # [NEW_EXPIRATION]: Objects progressing to another state have expiration
+    #                   set to current time + +NEW_EXPIRATION+ number of
+    #                   seconds.
+    # [REASON]:  Provide custom reason that will be saved in every object's
+    #            state log.
     def progress
-      VpsAdmin::API::Lifetimes.models.each do |m|
-        puts "Model #{m}"
+      required_env(%w(OBJECTS))
 
-        m.where('expiration_date < NOW()').each do |obj|
-          obj.progress_object_state(reason: 'Expiration date has passed.')
+      time = Time.now.utc
+      time -= ENV['GRACE'].to_i if ENV['GRACE']
+
+      expiration = if ENV['NEW_EXPIRATION']
+                     Time.now.utc + ENV['NEW_EXPIRATION'].to_i
+                   else
+                     nil
+                   end
+      
+      puts "Progressing objects having expiration date older than #{time}"
+      states = get_states
+
+      get_objects.each do |obj|
+        puts "Model #{obj}"
+
+        q = obj.where('expiration_date < ?', time)
+        q = q.where(object_state: states) if states
+
+        q.each do |obj|
+          obj.progress_object_state(
+              :enter,
+              reason: ENV['REASON'] || 'The expiration date has passed.',
+              expiration: expiration
+          )
         end
+      end
+    end
+
+    # Mail users regarging expiring objects.
+    #
+    # Accepts the following environment variables:
+    # [OBJECTS]: A list of object names to inform about, separated by a comma. 
+    #            To inform about all objects, use special name 'all'.
+    # [STATES]:  A list of states that an object must be in to be included.
+    #            If not specified, all states are included.
+    # [DAYS]:    Inform only about objects that will reach expiration in +DAYS+
+    #            number of days.
+    def mail_expiration
+      required_env(%w(OBJECTS DAYS))
+
+      classes = get_objects
+      days = ENV['DAYS'].to_i
+      states = get_states
+      time = Time.now.utc + days * 24 * 60 * 60
+
+      classes.each do |cls|
+        q = cls.where('expiration_date < ?', time)
+        q = q.where(object_state: states) if states
+
+        TransactionChains::Lifetimes::ExpirationWarning.fire(cls, q)
+      end
+    end
+
+    protected
+    def required_env(vars)
+      vars.each do |env|
+        next if ENV[env] && ENV[env].length > 0
+
+        fail "Missing required environment variable #{env}"
+      end
+    end
+
+    def get_objects
+      return VpsAdmin::API::Lifetimes.models if ENV['OBJECTS'] == 'all'
+
+      classes = []
+
+      ENV['OBJECTS'].split(',').each do |obj|
+        cls = Object.const_get(obj)
+
+        fail warn "Unable to find a class for '#{obj}'" unless obj
+        
+        classes << cls
+      end
+
+      classes
+    end
+
+    def get_states
+      return unless ENV['STATES']
+
+      ENV['STATES'].split(',').map do |v|
+        i = VpsAdmin::API::Lifetimes::STATES.index(v.to_sym)
+        next(i) if i
+
+        fail "Invalid object state '#{v}'"
       end
     end
   end
