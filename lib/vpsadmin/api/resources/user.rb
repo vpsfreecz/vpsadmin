@@ -255,7 +255,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       update_object_state!(u) if change_object_state?
 
       if input[:paid_until]
-        u.m_paid_until = input.delete(:paid_until).to_i.to_s
+        t = input.delete(:paid_until).to_i.
+        u.m_paid_until = t.to_s
+        u.expiration_date = Time.at(t)
       end
 
       if input[:password]
