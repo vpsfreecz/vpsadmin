@@ -73,6 +73,7 @@ module VpsAdmind
             @my.options(Mysql::OPT_READ_TIMEOUT, db[:read_timeout])
             @my.options(Mysql::OPT_WRITE_TIMEOUT, db[:write_timeout])
             @my.connect(host, db[:user], db[:pass], db[:name])
+            query('SET NAMES UTF8')
             log(:info, :sql, "Connected to #{host}") if problem
             return
 
