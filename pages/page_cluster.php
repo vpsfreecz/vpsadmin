@@ -91,7 +91,7 @@ function mail_template_edit() {
 	$xtpl->form_create('?page=cluster&action=mail_template_edit&id='.$t->id, 'post');
 	
 	foreach ($params as $name => $desc) {
-		api_param_to_form($name, $desc, $t->{$name});
+		api_param_to_form($name, $desc, htmlspecialchars($t->{$name}));
 	}
 	
 	$xtpl->form_out(_('Save changes'));
