@@ -765,9 +765,40 @@ class XTemplate {
 		$code .= ('</select>');
 		$this->table_td($code);
 	}
-	
+
+
+	function form_add_datetime_pure($name, $value = null, $local = null, $min = null, $max = null, $step = null) {
+		$input = '<input type="datetime'.($local ? '-local' : '').'" name="'.$name.'"';
+
+		if ($value)
+			$input .= 'value="'.($local ? tolocaltz($value, 'Y-m-dTH:i:s') : $value).'" ';
+
+		if ($min)
+			$input .= 'min="'.$min.'" ';
+
+		if ($max)
+			$input .= 'max="'.$max.'" ';
+
+		if ($step)
+			$input .= 'step="'.$step.'" ';
+		
+		$input .= '>';
+
+		$this->table_td($input);	
+	}
+
+
+	function form_add_datetime($label, $name, $value = null, $local = null, $hint = null, $min = null, $max = null, $step = null) {
+		$this->table_td($label);
+		form_add_datetime_pure($name, $value, $local, $min, $max, $step);
+
+		if ($hint)
+			$this->table_td($hint);
+
+		$this->table_tr();
+	}
+
 	/**
-	  * Add textarea to form
 	  * @param $label - label of textarea
 	  * @param $cols - number of columns
 	  * @param $rows - number of rows
