@@ -252,4 +252,5 @@ module TransactionChains
   module User           ; end
   module Lifetimes      ; end
   module DnsResolver    ; end
+  module Mail           ; end
 end
