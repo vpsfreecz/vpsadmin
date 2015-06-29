@@ -12,7 +12,7 @@ if ($_SESSION['logged_in'] && $_SESSION['is_admin']) {
 				);
 				
 				if ($_POST['expiration_date'])
-					$params['expiration_date'] = $_POST['expiration_date'];
+					$params['expiration_date'] = date('c', strtotime($_POST['expiration_date']));
 				
 				if ($_POST['change_reason'])
 					$params['change_reason'] = $_POST['change_reason'];
