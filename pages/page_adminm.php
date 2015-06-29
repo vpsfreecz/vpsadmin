@@ -75,7 +75,7 @@ function print_editm($u) {
 	$xtpl->form_create('?page=adminm&section=members&action=edit_member&id='.$u->id, 'post');
 	
 	$xtpl->table_td("Created".':');
-	$xtpl->table_td(strftime("%Y-%m-%d %H:%M", strtotime($u->created_at)));
+	$xtpl->table_td(tolocaltz($u->created_at));
 	$xtpl->table_tr();
 	
 	$xtpl->table_td("State".':');
@@ -84,7 +84,7 @@ function print_editm($u) {
 	
 	if ($u->expiration_date) {
 		$xtpl->table_td("Expiration".':');
-		$xtpl->table_td($u->expiration_date);
+		$xtpl->table_td(tolocaltz($u->expiration_date));
 		$xtpl->table_tr();
 	}
 

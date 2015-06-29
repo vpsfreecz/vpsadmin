@@ -87,7 +87,7 @@ function list_chains() {
 
 	foreach ($chains as $chain) {
 		$xtpl->table_td('<a href="?page=transactions&chain='.$chain->id.'">'.$chain->id.'</a>');
-		$xtpl->table_td($chain->created_at);
+		$xtpl->table_td(tolocaltz($chain->created_at));
 		
 		if ($_SESSION['is_admin']) {
 			if ($chain->user_id)
