@@ -200,6 +200,7 @@ module VpsAdmin::API::Resources
 
         input do
           use :common
+          patch :mail_recipient, required: true
         end
 
         output do
