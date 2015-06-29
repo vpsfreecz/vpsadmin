@@ -117,6 +117,8 @@ class sql_db {
   $this->sock = $sock;
   if ($this->db->connect_errno)
 		die ('Unable to connect to the database. Error: '.$this->db->errno.' '.$this->db->error);
+	
+	$this->query('SET NAMES UTF8');
 
 	return true;
     }
