@@ -152,7 +152,14 @@ function format_duration($interval) {
 }
 
 function tolocaltz($datetime, $format = "Y-m-d H:i:s") {
-	return date($format, strtotime($datetime));
+	$t = new DateTime($datetime);
+	$t->setTimezone(new DateTimeZone(date_default_timezone_get()));
+	return $t->format($format);
+}
+
+function toutc($datetime) {
+	$t = new DateTime($datetime);
+	return $t->setTimezone(new DateTimeZone('UTC'));
 }
 
 function random_string($len) {
@@ -257,7 +264,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 	
 	if (isset($_POST[$name]))
 		$v = $_POST[$name];
-	
+		
 	switch ($desc->type) {
 		case 'String':
 		case 'Integer':
@@ -276,7 +283,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 			break;
 		
 		case 'Datetime':
-			$xtpl->form_add_input_pure('text', '30', $name, $v);
+			$xtpl->form_add_datetime_pure($name, $v, false);
 			break;
 		
 		case 'Resource':
