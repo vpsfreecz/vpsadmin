@@ -234,9 +234,9 @@ module VpsAdmind
 
       my = Db.new
       my.prepared('INSERT INTO servers_status
-                  SET server_id = ?, timestamp = UNIX_TIMESTAMP(NOW()), cpu_load = ?, daemon = ?, vpsadmin_version = ?
+                  SET server_id = ?, created_at = NOW(), cpu_load = ?, daemon = ?, vpsadmin_version = ?
                   ON DUPLICATE KEY UPDATE
-                  timestamp = UNIX_TIMESTAMP(NOW()), cpu_load = ?, daemon = ?, vpsadmin_version = ?',
+                  created_at = NOW(), cpu_load = ?, daemon = ?, vpsadmin_version = ?',
                   server_id,
                   system_load, 0, VpsAdmind::VERSION,
                   system_load, 0, VpsAdmind::VERSION

@@ -26,7 +26,7 @@ module VpsAdmind::RemoteCommands
                     :chain => row['transaction_chain_id'],
                     :state => row['chain_state'],
                     :type => row['t_type'].to_i,
-                    :time => row['t_time'].to_i,
+                    :time => Time.parse(row['created_at'] + ' UTC').localtime.to_i,
                     :m_id => row['t_m_id'].to_i,
                     :vps_id => row['t_vps'].to_i,
                     :depends_on => row['t_depends_on'].to_i,

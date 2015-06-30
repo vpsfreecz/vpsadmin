@@ -16,7 +16,7 @@ module VpsAdmind::RemoteCommands
               :handler => "#{h.split('::')[-2..-1].join('::')}",
               :step => w.cmd.step,
               :pid => w.cmd.subtask,
-              :start => w.cmd.time_start,
+              :start => w.cmd.time_start.localtime.to_i,
           }
         end
       end

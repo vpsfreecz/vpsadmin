@@ -173,13 +173,13 @@ module VpsAdmind
       end
 
       db.prepared(
-          "INSERT INTO vps_status (vps_id, timestamp, vps_up, vps_nproc,
+          "INSERT INTO vps_status (vps_id, created_at, vps_up, vps_nproc,
         vps_vm_used_mb, vps_disk_used_mb, vps_admin_ver) VALUES
         (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE
-        timestamp = ?, vps_up = ?, vps_nproc = ?, vps_vm_used_mb = ?,
+        created_at = ?, vps_up = ?, vps_nproc = ?, vps_vm_used_mb = ?,
         vps_disk_used_mb = ?, vps_admin_ver = ?",
-          @veid.to_i, Time.now.to_i, up, nproc, mem, disk, VpsAdmind::VERSION,
-          Time.now.to_i, up, nproc, mem, disk, VpsAdmind::VERSION
+          @veid.to_i, Time.now.utc.strftime('%Y-%m-%d %H-%M-%S'), up, nproc, mem, disk, VpsAdmind::VERSION,
+          Time.now.utc.strftime('%Y-%m-%d %H-%M-%S'), up, nproc, mem, disk, VpsAdmind::VERSION
       )
     end
 

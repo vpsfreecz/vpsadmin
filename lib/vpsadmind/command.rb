@@ -59,7 +59,7 @@ module VpsAdmind
 
       @cmd = class_from_name(klass).new(self, param)
 
-      @m_attr.synchronize { @time_start = Time.new.to_i }
+      @m_attr.synchronize { @time_start = Time.now.utc }
 
       if original_chain_direction == :execute
         safe_call(klass, :exec)
@@ -73,7 +73,7 @@ module VpsAdmind
         end
       end
 
-      @time_end = Time.new.to_i
+      @time_end = Time.new.utc
     end
 
     def bad_value(klass)
@@ -144,8 +144,12 @@ module VpsAdmind
       end
 
       db.prepared(
-          'UPDATE transactions SET t_done=?, t_success=?, t_output=?, t_real_start=?, t_end=? WHERE t_id=?',
-          done, {:failed => 0, :ok => 1, :warning => 2}[@status], (@cmd ? @output.merge(@cmd.output) : @output).to_json, @time_start, @time_end, @trans['t_id']
+          'UPDATE transactions SET t_done=?, t_success=?, t_output=?, started_at=?, finished_at=? WHERE t_id=?',
+          done, {:failed => 0, :ok => 1, :warning => 2}[@status],
+          (@cmd ? @output.merge(@cmd.output) : @output).to_json,
+          @time_start.strftime('%Y-%m-%d %H-%M-%S'),
+          @time_end.strftime('%Y-%m-%d %H-%M-%S'),
+          @trans['t_id']
       )
     end
 
