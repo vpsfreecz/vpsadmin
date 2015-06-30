@@ -721,7 +721,7 @@ function list_members() {
 		
 		foreach ($users as $u) {
 			$paid_until = strtotime($u->paid_until);
-			$last_activity = strtotime($u->last_activity);
+			$last_activity = strtotime($u->last_activity_at);
 			
 			$xtpl->table_td($u->id);
 			
@@ -780,7 +780,7 @@ function list_members() {
 				
 				if ($_SESSION["is_admin"]) {
 					if ($paid) {
-						if (($member->m["m_paid_until"] - time()) >= 604800) {
+						if (($paid_until - time()) >= 604800) {
 								$xtpl->table_td('<a href="?page=adminm&section=members&action=payset&id='.$u->id.'">'._("->").' '.$paid_until_str.'</a>', '#66FF66');
 						} else {
 								$xtpl->table_td('<a href="?page=adminm&section=members&action=payset&id='.$u->id.'">'._("->").' '.$paid_until_str.'</a>', '#FFA500');
@@ -800,7 +800,7 @@ function list_members() {
 					
 				} else {
 					if ($paid) {
-						if (($member->m["m_paid_until"] - time()) >= 604800) {
+						if (($paid_until - time()) >= 604800) {
 							$xtpl->table_td(_("->").' '.$paid_until_str, '#66FF66');
 							
 						} else {
