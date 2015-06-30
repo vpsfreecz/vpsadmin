@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150625145437) do
+ActiveRecord::Schema.define(version: 20150630072821) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -304,7 +304,6 @@ ActiveRecord::Schema.define(version: 20150625145437) do
 
   create_table "members", primary_key: "m_id", force: true do |t|
     t.text     "m_info"
-    t.integer  "m_created"
     t.integer  "m_level",                                        null: false
     t.string   "m_nick",              limit: 63,                 null: false
     t.string   "m_name"
@@ -312,8 +311,6 @@ ActiveRecord::Schema.define(version: 20150625145437) do
     t.string   "m_mail",              limit: 127
     t.text     "m_address"
     t.string   "m_lang",              limit: 16
-    t.string   "m_paid_until",        limit: 32
-    t.integer  "m_last_activity"
     t.integer  "m_monthly_payment",               default: 300,  null: false
     t.boolean  "m_mailer_enable",                 default: true, null: false
     t.boolean  "m_playground_enable",             default: true, null: false
@@ -329,6 +326,8 @@ ActiveRecord::Schema.define(version: 20150625145437) do
     t.integer  "object_state",                                   null: false
     t.datetime "expiration_date"
     t.integer  "password_version",                default: 1,    null: false
+    t.datetime "paid_until"
+    t.datetime "last_activity_at"
   end
 
   create_table "members_changes", primary_key: "m_id", force: true do |t|
@@ -467,13 +466,13 @@ ActiveRecord::Schema.define(version: 20150625145437) do
   add_index "servers", ["server_location"], name: "server_location", using: :btree
 
   create_table "servers_status", primary_key: "server_id", force: true do |t|
-    t.integer "timestamp",                   null: false
-    t.integer "ram_free_mb"
-    t.float   "disk_vz_free_gb",  limit: 24
-    t.float   "cpu_load",         limit: 24
-    t.boolean "daemon",                      null: false
-    t.string  "vpsadmin_version", limit: 63
-    t.string  "kernel",           limit: 50, null: false
+    t.integer  "ram_free_mb"
+    t.float    "disk_vz_free_gb",  limit: 24
+    t.float    "cpu_load",         limit: 24
+    t.boolean  "daemon",                      null: false
+    t.string   "vpsadmin_version", limit: 63
+    t.string   "kernel",           limit: 50, null: false
+    t.datetime "created_at",                  null: false
   end
 
   create_table "snapshot_downloads", force: true do |t|
@@ -592,24 +591,24 @@ ActiveRecord::Schema.define(version: 20150625145437) do
   end
 
   create_table "transactions", primary_key: "t_id", force: true do |t|
-    t.integer "t_group"
-    t.integer "t_time"
-    t.integer "t_real_start"
-    t.integer "t_end"
-    t.integer "t_m_id"
-    t.integer "t_server"
-    t.integer "t_vps"
-    t.integer "t_type",                               null: false
-    t.integer "t_depends_on"
-    t.text    "t_fallback"
-    t.boolean "t_urgent",             default: false, null: false
-    t.integer "t_priority",           default: 0,     null: false
-    t.integer "t_success",                            null: false
-    t.integer "t_done",                               null: false
-    t.text    "t_param"
-    t.text    "t_output"
-    t.integer "transaction_chain_id",                 null: false
-    t.integer "reversible",           default: 1,     null: false
+    t.integer  "t_group"
+    t.integer  "t_m_id"
+    t.integer  "t_server"
+    t.integer  "t_vps"
+    t.integer  "t_type",                               null: false
+    t.integer  "t_depends_on"
+    t.text     "t_fallback"
+    t.boolean  "t_urgent",             default: false, null: false
+    t.integer  "t_priority",           default: 0,     null: false
+    t.integer  "t_success",                            null: false
+    t.integer  "t_done",                               null: false
+    t.text     "t_param"
+    t.text     "t_output"
+    t.integer  "transaction_chain_id",                 null: false
+    t.integer  "reversible",           default: 1,     null: false
+    t.datetime "created_at"
+    t.datetime "started_at"
+    t.datetime "finished_at"
   end
 
   add_index "transactions", ["t_server"], name: "t_server", using: :btree
@@ -655,7 +654,6 @@ ActiveRecord::Schema.define(version: 20150625145437) do
   add_index "versions", ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id", using: :btree
 
   create_table "vps", primary_key: "vps_id", force: true do |t|
-    t.integer  "vps_created"
     t.integer  "m_id",                                                     null: false
     t.string   "vps_hostname",                             default: "vps"
     t.integer  "vps_template",                             default: 1,     null: false
@@ -674,6 +672,8 @@ ActiveRecord::Schema.define(version: 20150625145437) do
     t.string   "maintenance_lock_reason"
     t.integer  "object_state",                                             null: false
     t.datetime "expiration_date"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
   add_index "vps", ["m_id"], name: "m_id", using: :btree
@@ -747,13 +747,13 @@ ActiveRecord::Schema.define(version: 20150625145437) do
   end
 
   create_table "vps_status", force: true do |t|
-    t.integer "vps_id",                                          null: false
-    t.integer "timestamp",                                       null: false
-    t.boolean "vps_up"
-    t.integer "vps_nproc"
-    t.integer "vps_vm_used_mb"
-    t.integer "vps_disk_used_mb"
-    t.string  "vps_admin_ver",    limit: 63, default: "not set"
+    t.integer  "vps_id",                                          null: false
+    t.boolean  "vps_up"
+    t.integer  "vps_nproc"
+    t.integer  "vps_vm_used_mb"
+    t.integer  "vps_disk_used_mb"
+    t.string   "vps_admin_ver",    limit: 63, default: "not set"
+    t.datetime "created_at",                                      null: false
   end
 
   add_index "vps_status", ["vps_id"], name: "vps_id", using: :btree

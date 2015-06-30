@@ -21,7 +21,7 @@ class User < ActiveRecord::Base
   attr_reader :password_plain
 
   has_paper_trail ignore: [
-      :m_last_activity,
+      :last_activity_at,
   ]
 
   validates :m_level, :m_nick, :m_pass, presence: true
@@ -121,17 +121,7 @@ class User < ActiveRecord::Base
   end
 
   def last_request_at
-    m_last_activity ? Time.at(m_last_activity) : 'never'
-  end
-
-  def paid_until
-    i = m_paid_until.to_i
-    i > 0 ? Time.at(i) : nil
-  end
-
-  def last_activity
-    i = m_last_activity.to_i
-    i > 0 ? Time.at(i) : nil
+    last_activity_at ? last_activity_at : 'never'
   end
 
   def set_password(plaintext)

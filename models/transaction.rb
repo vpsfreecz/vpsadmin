@@ -88,7 +88,6 @@ class Transaction < ActiveRecord::Base
 
   # Set default values for start time, success, done and user id.
   def set_init_values
-    self.t_time = Time.new.to_i
     self.t_success = 0
     self.t_m_id = User.current && User.current.m_id
   end
@@ -101,18 +100,6 @@ class Transaction < ActiveRecord::Base
 
   def name
     self.class.for_type(t_type).to_s.demodulize
-  end
-
-  def created_at
-    Time.at(t_time)
-  end
-
-  def started_at
-    Time.at(t_real_start) if t_real_start
-  end
-
-  def finished_at
-    Time.at(t_end) if t_end
   end
 
   # Configure transaction confirmations - objects in the database

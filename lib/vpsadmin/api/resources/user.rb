@@ -42,11 +42,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   params(:common) do
     use :writable
-    datetime :last_activity, label: 'Last activity'
+    datetime :last_activity_at, label: 'Last activity'
   end
 
   params(:dates) do
-    datetime :created_at, label: 'Created at', db_name: :m_created
+    datetime :created_at, label: 'Created at'
   end
 
   params(:all) do
@@ -198,7 +198,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def exec
-      @user.m_last_activity = Time.new.to_i
+      @user.last_activity_at = Time.now
       @user.save
     end
   end
@@ -255,9 +255,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       update_object_state!(u) if change_object_state?
 
       if input[:paid_until]
-        t = input.delete(:paid_until).to_i.
-        u.m_paid_until = t.to_s
-        u.expiration_date = Time.at(t)
+        t = input.delete(:paid_until)
+        u.paid_until = t
+        u.expiration_date = t
       end
 
       if input[:password]

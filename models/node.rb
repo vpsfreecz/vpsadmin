@@ -87,15 +87,15 @@ class Node < ActiveRecord::Base
   end
 
   def self.first_available
-    return self.joins(:node_status).order('servers_status.timestamp DESC').take!
+    return self.joins(:node_status).order('servers_status.created_at DESC').take!
   end
 
   def status
-    (node_status && ((Time.new.to_i - node_status.timestamp) <= 150)) || false
+    (node_status && ((Time.now.utc.to_i - node_status.created_at.to_i) <= 150)) || false
   end
 
   def last_report
-    node_status && Time.at(node_status.timestamp)
+    node_status && node_status.created_at
   end
 
   def domain_name
