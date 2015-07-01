@@ -44,7 +44,7 @@ module TransactionChains
 
               vps: {
                   new: ::Vps.existing.where(
-                      'DATE_ADD(FROM_UNIXTIME(vps_created), INTERVAL 1 DAY) >= ?', t
+                      'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
                   ).order('m_id'),
 
                   deleted: ::Vps.unscoped.where(
