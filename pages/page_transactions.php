@@ -224,6 +224,7 @@ function chain_transactions($chain_id) {
 	$xtpl->table_add_category("REAL");
 	$xtpl->table_add_category("USER");
 	$xtpl->table_add_category("NODE");
+	$xtpl->table_add_category("VPS");
 	$xtpl->table_add_category("TYPE");
 	$xtpl->table_add_category("PRIO");
 	$xtpl->table_add_category("DONE?");
@@ -240,6 +241,7 @@ function chain_transactions($chain_id) {
 		$xtpl->table_td(format_duration($finished_at - $started_at));
 		$xtpl->table_td($t->user_id ? ('<a href="?page=adminm&action=edit&id='.$t->user_id.'">'.$t->user->login.'</a>') : '---');
 		$xtpl->table_td($t->node->name);
+		$xtpl->table_td($t->vps_id ? '<a href="?page=adminvps7action=edit&veid='.$t->vps_id.'">'.$t->vps_id.'</a>' : '---');
 		$xtpl->table_td($t->name.' ('.$t->type.')');
 		$xtpl->table_td(($t->urgent ? '<img src="template/icons/warning.png" alt="'._('Urgent').'" title="'._('Urgent').'"> ' : '') . $t->priority);
 		$xtpl->table_td($t->done);
