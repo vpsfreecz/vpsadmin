@@ -130,7 +130,7 @@ module VpsAdmin::API
         ret
       end
 
-      def free_resources(destroy: false, chain: nil)
+      def free_resources(destroy: false, chain: nil, free_objects: true)
         ret = []
 
         ::ClusterResourceUse.includes(
@@ -147,7 +147,8 @@ module VpsAdmin::API
               use.user_cluster_resource.cluster_resource.name.to_sym,
               destroy: destroy,
               chain: chain,
-              use: use
+              use: use,
+              free_object: free_objects
           )
         end
 
@@ -278,14 +279,14 @@ module VpsAdmin::API
       end
 
       def free_resource!(resource, destroy: false, chain: nil,
-                          use: nil)
+                          use: nil, free_object: true)
         resource_obj = (use && use.user_cluster_resource.cluster_resource) \
                         || ::ClusterResource.find_by!(name: resource)
 
         use ||= Private.find_resource_use!(self, resource)
         chain.lock(use.user_cluster_resource) if chain
 
-        if resource_obj.resource_type.to_sym == :object
+        if resource_obj.resource_type.to_sym == :object && free_object
           chain.use_chain(
               TransactionChains.const_get(resource_obj.free_chain),
               args: [resource_obj, self],
