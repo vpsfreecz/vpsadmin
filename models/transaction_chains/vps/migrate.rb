@@ -4,6 +4,9 @@ module TransactionChains
     label 'Migrate'
     urgent_rollback
 
+    has_hook :pre_start
+    has_hook :post_start
+
     def link_chain(vps, dst_node, replace_ips)
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
@@ -136,7 +139,9 @@ module TransactionChains
       end
 
       # Restore VPS state
+      call_hooks_for(:pre_start, self, args: [dst_vps, running])
       use_chain(Vps::Start, args: dst_vps, urgent: true) if running
+      call_hooks_for(:post_start, self, args: [dst_vps, running])
 
       # Remount and regenerate mount scripts
       remount_all_mounts(vps_mounts, datasets)
@@ -298,7 +303,7 @@ module TransactionChains
 
     # Regenerate action scripts for all VPSes that have mounts of datasets
     # in +dst_vps+.
-    # +vps_mounts+ is a has of vps => mounts.
+    # +vps_mounts+ is a hash of vps => mounts.
     def remount_all_mounts(vps_mounts, datasets)
       ds_map = {}
 
