@@ -340,7 +340,7 @@ module VpsAdmin::API
         ret
       end
 
-      def transfer_resources_to_env!(user, dst_env)
+      def transfer_resources_to_env!(user, dst_env, resources = nil)
         ret = {}
         src_env = Private.environment(self)
         target_resources = {}
@@ -362,12 +362,13 @@ module VpsAdmin::API
                 environment_id: src_env.id
             }
         ).each do |use|
-
-          t = target_resources[use.user_cluster_resource.cluster_resource.name.to_sym]
+          name = use.user_cluster_resource.cluster_resource.name.to_sym
+          t = target_resources[name]
 
           fail 'target resource does not exist' unless t
 
           use.user_cluster_resource = t
+          use.value = resources[name] if resources && resources[name]
           use.resource_transfer = true
           raise Exceptions::ClusterResourceAllocationError, use unless use.valid?
 
