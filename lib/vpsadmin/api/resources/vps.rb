@@ -595,9 +595,14 @@ END
         error('insufficient permission to create a VPS in this environment')
       end
 
-      input[:hostname] ||= "#{vps.hostname}-#{vps.id}-clone"
+      if input[:hostname].nil? || input[:hostname].strip.length == 0
+        input[:hostname] = "#{vps.hostname}-#{vps.id}-clone"
+      end
 
       vps.clone(node, input)
+
+    rescue ActiveRecord::RecordInvalid => e
+      error('clone failed', to_param_names(e.record.errors.to_hash))
     end
   end
 
