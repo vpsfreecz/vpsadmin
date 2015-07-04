@@ -7,7 +7,7 @@ module TransactionChains
     has_hook :pre_start
     has_hook :post_start
 
-    def link_chain(vps, dst_node, replace_ips)
+    def link_chain(vps, dst_node, replace_ips, resources = nil)
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
@@ -29,7 +29,11 @@ module TransactionChains
       # Transfer resources if the destination node is in a different
       # environment.
       if vps.node.environment_id != dst_node.environment_id
-        resources_changes = vps.transfer_resources_to_env!(vps.user, dst_node.environment)
+        resources_changes = vps.transfer_resources_to_env!(
+            vps.user,
+            dst_node.environment,
+            resources: resources
+        )
       end
 
       # Copy configs, create /vz/root/$veid
