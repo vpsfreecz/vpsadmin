@@ -2,6 +2,7 @@ module Transactions::Firewall
   class UnregIp < ::Transaction
     t_name :firewall_unreg_ip
     t_type 2015
+    keep_going
 
     def params(ip, vps)
       self.t_vps = ip.vps_id
