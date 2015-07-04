@@ -420,7 +420,10 @@ switch ($_GET["action"]) {
 				csrf_check();
 				
 				try {
-					$api->vps($_GET['veid'])->migrate(array('node' => $_POST['target_id']));
+					$api->vps($_GET['veid'])->migrate(array(
+						'node' => $_POST['node'],
+						'replace_ip_addresses' => isset($_POST['replace_ip_addresses'])
+					));
 					
 					notify_user(_("Offline migration planned"), '');
 					redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
