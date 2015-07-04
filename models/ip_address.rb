@@ -23,18 +23,25 @@ class IpAddress < ActiveRecord::Base
     ip = nil
 
     self.transaction do
-      class_id = self.select('ip1.class_id+1 AS first_id')
-          .from('vps_ip ip1')
-          .joins('LEFT JOIN vps_ip ip2 ON ip2.class_id = ip1.class_id + 1')
-          .where('ip2.class_id IS NULL')
-          .order('ip1.class_id')
-          .take!
+      class_id = nil
+
+      begin
+        class_id = self.select('ip1.class_id+1 AS first_id')
+            .from('vps_ip ip1')
+            .joins('LEFT JOIN vps_ip ip2 ON ip2.class_id = ip1.class_id + 1')
+            .where('ip2.class_id IS NULL')
+            .order('ip1.class_id')
+            .take!.first_id
+
+      rescue ActiveRecord::RecordNotFound
+        class_id = 1
+      end
 
       ip = self.new(
           ip_addr: addr.to_s,
           ip_v: addr.ipv4? ? 4 : 6,
           location: params[:location],
-          class_id: class_id.first_id,
+          class_id: class_id,
           user: params[:user]
       )
 
