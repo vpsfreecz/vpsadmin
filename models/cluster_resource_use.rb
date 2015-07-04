@@ -12,7 +12,7 @@ class ClusterResourceUse < ActiveRecord::Base
   def self.for_obj(obj)
     self.where(
         class_name: obj.class.name,
-        table_name: obj.table_name,
+        table_name: obj.class.table_name,
         row_id: obj.id
     )
   end
