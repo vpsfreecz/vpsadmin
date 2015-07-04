@@ -14,6 +14,8 @@ class TransactionChain < ActiveRecord::Base
   attr_reader :acquired_locks
   attr_accessor :last_id, :dst_chain, :named, :locks, :urgent, :mail_server
 
+  include HaveAPI::Hookable
+
   # Create new transaction chain. This method has to be used, do not
   # create instances of TransactionChain yourself.
   # All arguments are passed to TransactionChain#link_chain.
@@ -64,7 +66,8 @@ class TransactionChain < ActiveRecord::Base
   # except that all transactions are appended to +chain+,
   # not to instance of self.
   # This method should not be called directly, but via #use_chain.
-  def self.use_in(chain, args: [], urgent: false, method: :link_chain)
+  def self.use_in(chain, args: [], urgent: false, method: :link_chain,
+                  hooks: {})
     c = new
 
     c.last_id = chain.last_id
@@ -72,6 +75,10 @@ class TransactionChain < ActiveRecord::Base
     c.named = chain.named
     c.locks = chain.locks
     c.urgent = urgent
+
+    hooks.each do |k, v|
+      c.connect_hook(k, &v)
+    end
 
     ret = c.send(method, *args)
 
@@ -155,14 +162,15 @@ class TransactionChain < ActiveRecord::Base
 
   # Call this method from TransactionChain#link_chain to include
   # +chain+. +args+ are passed to the chain as in ::fire.
-  def use_chain(chain, args: [], urgent: nil, method: :link_chain)
+  def use_chain(chain, args: [], urgent: nil, method: :link_chain, hooks: {})
     urgent ||= self.urgent
 
     c, ret = chain.use_in(
         self,
         args: args.is_a?(Array) ? args : [args],
         urgent: urgent,
-        method: method
+        method: method,
+        hooks: {}
     )
     @last_id = c.last_id
     ret
