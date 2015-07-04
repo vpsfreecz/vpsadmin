@@ -203,11 +203,11 @@ module TransactionChains
         datasets.each do |pair|
           src, dst = pair
 
-          clone_snapshots << use_chain(Dataset::Snapshot, args: src)
-          use_chain(Dataset::Transfer, args: [src, dst])
+          clone_snapshots << use_chain(Dataset::Snapshot, args: src, urgent: true)
+          use_chain(Dataset::Transfer, args: [src, dst], urgent: true)
         end
 
-        use_chain(Vps::Start, args: vps) if vps.running
+        use_chain(Vps::Start, args: vps, urgent: true) if vps.running
       end
 
       # Fix snapshots
