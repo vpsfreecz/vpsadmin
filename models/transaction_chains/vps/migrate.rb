@@ -117,11 +117,11 @@ module TransactionChains
           vps.ip_addresses.each do |ip|
             replacement = ::IpAddress.pick_addr!(dst_vps.user, dst_vps.node.location, ip.ip_v)
 
-            append(Transactions::Vps::IpDel, args: [dst_vps, ip]) do
+            append(Transactions::Vps::IpDel, args: [dst_vps, ip], urgent: true) do
               edit(ip, vps_id: nil)
             end
 
-            append(Transactions::Vps::IpAdd, args: [dst_vps, replacement]) do
+            append(Transactions::Vps::IpAdd, args: [dst_vps, replacement], urgent: true) do
               edit(replacement, vps_id: dst_vps.veid)
 
               if !replacement.user_id && dst_vps.node.environment.user_ip_ownership
@@ -138,7 +138,7 @@ module TransactionChains
           ips = []
 
           vps.ip_addresses.each { |ip| ips << ip }
-          use_chain(Vps::DelIp, args: [dst_vps, ips, vps])
+          use_chain(Vps::DelIp, args: [dst_vps, ips, vps], urgent: true)
         end
       end
 
