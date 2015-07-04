@@ -591,8 +591,14 @@ END
 
       error('no node available in this environment') unless node
 
-      if current_user.role != :admin && !current_user.env_config(node.environment, :can_create_vps)
+      env = node.environment
+
+      if current_user.role != :admin && !current_user.env_config(env, :can_create_vps)
         error('insufficient permission to create a VPS in this environment')
+
+      elsif !input[:vps] && \
+            current_user.vps_in_env(env) >= current_user.env_config(env, :max_vps_count)
+          error('cannot create more VPSes in this environment')
       end
 
       if input[:hostname].nil? || input[:hostname].strip.length == 0
