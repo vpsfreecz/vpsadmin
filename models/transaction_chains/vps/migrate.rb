@@ -54,15 +54,17 @@ module TransactionChains
         resources_changes ||= {}
 
         if vps.node.environment_id != dst_node.environment_id
+          # This code expects that the datasets have a just one cluster resource,
+          # which is diskspace.
           changes = src.transfer_resources_to_env!(vps.user, dst_node.environment)
           changes[changes.keys.first][:row_id] = dst.id
+          resources_changes.update(changes)
 
         else
-          changes = {::ClusterResourceUse.for_obj(src) => {row_id: dst.id}}
+          ::ClusterResourceUse.for_obj(src).each do |use|
+            resources_changes[use] = {row_id: dst.id}
+          end
         end
-
-
-        resources_changes.update(changes)
 
         append(Transactions::Storage::CreateDataset, args: dst) do
           create(dst)
@@ -117,7 +119,7 @@ module TransactionChains
           vps.ip_addresses.each do |ip|
             replacement = ::IpAddress.pick_addr!(dst_vps.user, dst_vps.node.location, ip.ip_v)
 
-            append(Transactions::Vps::IpDel, args: [dst_vps, ip], urgent: true) do
+            append(Transactions::Vps::IpDel, args: [dst_vps, ip, false], urgent: true) do
               edit(ip, vps_id: nil)
             end
 
@@ -138,7 +140,7 @@ module TransactionChains
           ips = []
 
           vps.ip_addresses.each { |ip| ips << ip }
-          use_chain(Vps::DelIp, args: [dst_vps, ips, vps], urgent: true)
+          use_chain(Vps::DelIp, args: [dst_vps, ips, vps, false], urgent: true)
         end
       end
 
@@ -191,14 +193,18 @@ module TransactionChains
         end
       end
 
-      # Setup firewall and shapers
+      # Setup firewall and shapers 
       # Unregister from firewall and remove shaper on source node
       use_chain(Vps::FirewallUnregister, args: vps, urgent: true)
       use_chain(Vps::ShaperUnset, args: vps, urgent: true)
 
-      # Register to firewall and set shaper on destination node
-      use_chain(Vps::FirewallRegister, args: [dst_vps, dst_ip_addresses], urgent: true)
-      use_chain(Vps::ShaperSet, args: [dst_vps, dst_ip_addresses], urgent: true)
+      # Is is needed to register IP in fw and shaper when changing location,
+      # as IPs are removed or replaced sooner.
+      if vps.node.location == dst_vps.node.location
+        # Register to firewall and set shaper on destination node
+        use_chain(Vps::FirewallRegister, args: [dst_vps, dst_ip_addresses], urgent: true)
+        use_chain(Vps::ShaperSet, args: [dst_vps, dst_ip_addresses], urgent: true)
+      end
 
       # Destroy old dataset in pools
       # Do not delete repeatable tasks - they are re-used for new datasets
