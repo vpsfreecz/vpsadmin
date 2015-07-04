@@ -2,7 +2,7 @@ module TransactionChains
   class Vps::DelIp < ::TransactionChain
     label 'IP-'
 
-    def link_chain(vps, ips, resource_obj = nil)
+    def link_chain(vps, ips, resource_obj = nil, unregister = true)
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
@@ -19,7 +19,7 @@ module TransactionChains
       ips.each do |ip|
         lock(ip)
 
-        append(Transactions::Vps::IpDel, args: [vps, ip]) do
+        append(Transactions::Vps::IpDel, args: [vps, ip, unregister]) do
           edit(ip, vps_id: nil)
         end
       end

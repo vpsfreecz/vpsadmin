@@ -2,7 +2,7 @@ module TransactionChains
   class Vps::AddIp < ::TransactionChain
     label 'IP+'
 
-    def link_chain(vps, ips)
+    def link_chain(vps, ips, register = true)
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
@@ -17,7 +17,7 @@ module TransactionChains
       ips.each do |ip|
         lock(ip)
 
-        append(Transactions::Vps::IpAdd, args: [vps, ip]) do
+        append(Transactions::Vps::IpAdd, args: [vps, ip, register]) do
           edit(ip, vps_id: vps.veid)
           edit(ip, user_id: vps.user_id)  if !ip.user_id && vps.node.environment.user_ip_ownership
         end
