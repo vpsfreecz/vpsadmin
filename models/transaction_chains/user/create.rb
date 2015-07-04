@@ -57,6 +57,13 @@ module TransactionChains
         end
       end
 
+      mail(:user_create, {
+          user: user,
+          vars: {
+              user: user
+          }
+      })
+
       user
     end
   end
