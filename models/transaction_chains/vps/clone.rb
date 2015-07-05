@@ -24,13 +24,13 @@ module TransactionChains
       @src_pool = vps.dataset_in_pool.pool
       @dst_pool = node.pools.where(role: :hypervisor).take!
 
-      src_features = {}
       dst_features = {}
       vps_resources = nil
+      confirm_features = []
 
       if attrs[:features]
         vps.vps_features.all.each do |f|
-          src_features[f.name.to_sym] = f
+          dst_features[f.name.to_sym] = f.enabled
         end
       end
 
@@ -78,10 +78,10 @@ module TransactionChains
         lock(dst_vps)
 
         ::VpsFeature::FEATURES.each_key do |name|
-          ::VpsFeature.create!(
+          confirm_features << ::VpsFeature.create!(
               vps: dst_vps,
               name: name,
-              enabled: attrs[:features] ? src_features[name] : false
+              enabled: attrs[:features] ? dst_features[name] : false
           )
         end
 
@@ -108,7 +108,7 @@ module TransactionChains
         append(Transactions::Vps::CreateConfig, args: [dst_vps]) do
           create(dst_vps)
 
-          dst_features.each_value do |f|
+          confirm_features.each do |f|
             just_create(f)
           end
         end
@@ -262,7 +262,13 @@ module TransactionChains
       clone_mounts(vps, dst_vps, datasets)
 
       # Features
-      append(Transactions::Vps::Features, args: [dst_vps, dst_features])
+      append(Transactions::Vps::Features, args: [dst_vps, dst_features]) do
+        if attrs[:vps]
+          dst_vps.vps_features.each do |f|
+            edit(f, enabled: dst_features[f.name.to_sym] ? 1 : 0)
+          end
+        end
+      end
 
       if vps.running
         use_chain(TransactionChains::Vps::Start, args: dst_vps)
@@ -280,7 +286,7 @@ module TransactionChains
       # the database, but they will stay in the crontab file until
       # it is regenerated.
       VpsAdmin::API::DatasetPlans.confirm if attrs[:dataset_plans]
-
+      
       dst_vps
     end
 
