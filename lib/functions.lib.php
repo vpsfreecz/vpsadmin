@@ -356,16 +356,16 @@ function client_params_to_api($action, $from = null) {
 				
 				case 'Resource':
 					if (!$from[$name])
-						continue;
+						continue 2;
 				
 				default:
 					$v = $from[ $name ];
 			}
-			
+
 			$ret[ $name ] = $v;
 		}
 	}
-	
+		
 	return $ret;
 }
 
