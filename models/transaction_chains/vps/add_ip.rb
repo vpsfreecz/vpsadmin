@@ -2,16 +2,18 @@ module TransactionChains
   class Vps::AddIp < ::TransactionChain
     label 'IP+'
 
-    def link_chain(vps, ips, register = true)
+    def link_chain(vps, ips, register = true, reallocate = true)
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
       uses = []
 
-      {ipv4: 4, ipv6: 6}.each do |r, v|
-        cnt = ips.count { |ip| ip.ip_v == v }
+      if reallocate
+        {ipv4: 4, ipv6: 6}.each do |r, v|
+          cnt = ips.count { |ip| ip.ip_v == v }
 
-        uses << vps.reallocate_resource!(r, vps.send(r) + cnt, user: vps.user)
+          uses << vps.reallocate_resource!(r, vps.send(r) + cnt, user: vps.user)
+        end
       end
 
       ips.each do |ip|
@@ -27,7 +29,7 @@ module TransactionChains
         uses.each do |use|
           edit(use, value: use.value)
         end
-      end
+      end unless uses.empty?
     end
   end
 end
