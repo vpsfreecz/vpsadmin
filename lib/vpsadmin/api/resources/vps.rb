@@ -1083,7 +1083,7 @@ END
           ds = input[:snapshot].dataset
         end
 
-        if ds.user != current_user
+        if current_user.role != :admin && ds.user != current_user
           error('insufficient permission to mount selected snapshot')
         end
 
