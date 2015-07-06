@@ -519,6 +519,43 @@ switch ($_GET["action"]) {
 			
 			$show_info=true;
 			break;
+
+		case 'swap_preview':
+			try {
+				$params = array('meta' => array('includes' => 'node'));
+
+				vps_swap_preview_form(
+					$api->vps->find($_GET['veid'], $params),
+					$api->vps->find($_GET['vps'], $params),
+					$_GET
+				);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Swap preview failed'), $e->getResponse());
+				$show_info = true;
+			}
+			break;
+
+		case 'swap':
+			if (isset($_POST['cancel']))
+				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+
+			csrf_check();
+
+			try {
+				$api->vps($_GET['veid'])->swap_with(
+					client_params_to_api($api->vps->swap_with)
+				);
+
+				notify_user(_('Swap in progress'), '');
+				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Swap failed'), $e->getResponse());
+				$show_info = true;
+			}
+
+			break;
 		
 		default:
 			$list_vps=true;
@@ -1051,6 +1088,20 @@ if (isset($show_info) && $show_info) {
 		}));
 		
 		$xtpl->form_out(_("Go >>"));
+	
+	// Swap
+		$xtpl->table_title(_('Swap VPS'));
+		$xtpl->form_create('?page=adminvps&action=swap_preview&veid='.$vps->id, 'get', 'vps-swap', false);
+		
+		api_params_to_form($vps->swap_with, 'input', array('vps' => function($vps) {
+			return '#'.$vps->id.' '.$vps->hostname;
+		}));
+		
+		$xtpl->form_out(_("Continue"), null,
+			'<input type="hidden" name="page" value="adminvps">'.
+			'<input type="hidden" name="action" value="swap_preview">'.
+			'<input type="hidden" name="veid" value="'.$vps->id.'">'
+		);
 	}
 }
 
