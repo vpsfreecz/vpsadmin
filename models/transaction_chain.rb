@@ -170,7 +170,7 @@ class TransactionChain < ActiveRecord::Base
         args: args.is_a?(Array) ? args : [args],
         urgent: urgent,
         method: method,
-        hooks: {}
+        hooks: hooks
     )
     @last_id = c.last_id
     ret
