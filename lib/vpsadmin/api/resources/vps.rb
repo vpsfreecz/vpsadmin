@@ -612,6 +612,47 @@ END
     end
   end
 
+  class SwapWith < HaveAPI::Action
+    desc 'Swap VPS with another'
+    route ':%{resource}_id/swap_with'
+    http_method :post
+
+    input do
+      resource VpsAdmin::API::Resources::VPS, desc: 'Swap with this VPS',
+          required: true
+      bool :resources,
+        desc: 'Swap resources (CPU, memory and swap, not disk space)'
+      bool :configs, desc: 'Swap configuration chains'
+      bool :hostname, desc: 'Swap hostname'
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+      restrict m_id: u.id
+      input blacklist: %i(configs)
+      allow
+    end
+
+    def exec
+      vps = ::Vps.includes(:node).find_by!(
+          with_restricted(vps_id: params[:vps_id])
+      )
+      maintenance_check!(vps)
+
+      if vps.user != input[:vps].user
+        error('access denied')
+
+      elsif vps.node.server_location == input[:vps].node.server_location
+        error("swap within one location is not supported")
+      end
+
+      input[:configs] = true if current_user.role != :admin
+
+      vps.swap_with(input[:vps], input)
+      ok
+    end
+  end
+
   include VpsAdmin::API::Maintainable::Action
   include VpsAdmin::API::Lifetimes::Resource
   add_lifetime_methods([Start, Stop, Restart])

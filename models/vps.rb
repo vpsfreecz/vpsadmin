@@ -248,6 +248,10 @@ class Vps < ActiveRecord::Base
   def clone(node, attrs)
     TransactionChains::Vps::Clone.fire(self, node, attrs)
   end
+  
+  def swap_with(secondary_vps, attrs)
+    TransactionChains::Vps::Swap.fire(self, secondary_vps, attrs)
+  end
 
   def mount_dataset(dataset, dst, mode)
     TransactionChains::Vps::MountDataset.fire(self, dataset, dst, mode)
