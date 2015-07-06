@@ -131,7 +131,7 @@ switch ($_GET["action"]) {
 			} else {
 				if ($_GET['location'])
 					$params['location'] = (int)$_GET['location'];
-				else
+				if ($_GET['environment'])
 					$params['environment'] = (int)$_GET['environment'];
 			}
 			
