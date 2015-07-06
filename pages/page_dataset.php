@@ -128,10 +128,11 @@ if ($_SESSION['logged_in']) {
 				csrf_check();
 				
 				try {
+					$input_params = $api->vps->mount->create->getParameters('input');
 					$params = array(
 						'dataset' => $_POST['dataset'],
 						'mountpoint' => $_POST['mountpoint'],
-						'mode' => $_POST['mode']
+						'mode' => $input_params->mode->choices[ (int) $_POST['mode']]
 					);
 					
 					$api->vps($_POST['vps'])->mount->create($params);
