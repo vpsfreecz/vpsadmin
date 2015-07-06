@@ -7,7 +7,8 @@ module TransactionChains
     has_hook :pre_start
     has_hook :post_start
 
-    def link_chain(vps, dst_node, replace_ips, resources = nil)
+    def link_chain(vps, dst_node, replace_ips, resources = nil,
+                   handle_ips = true, reallocate_ips = true)
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
@@ -111,7 +112,7 @@ module TransactionChains
 
       # Migration to different location - remove or replace
       # IP addresses
-      if vps.node.location != dst_vps.node.location
+      if vps.node.location != dst_vps.node.location && handle_ips
         # Add the same number of IP addresses from the target location
         if replace_ips
           dst_ip_addresses = []
@@ -140,7 +141,8 @@ module TransactionChains
           ips = []
 
           vps.ip_addresses.each { |ip| ips << ip }
-          use_chain(Vps::DelIp, args: [dst_vps, ips, vps, false], urgent: true)
+          use_chain(Vps::DelIp, args: [dst_vps, ips, vps, false, reallocate_ips],
+                    urgent: true)
         end
       end
 
@@ -195,8 +197,10 @@ module TransactionChains
 
       # Setup firewall and shapers 
       # Unregister from firewall and remove shaper on source node
-      use_chain(Vps::FirewallUnregister, args: vps, urgent: true)
-      use_chain(Vps::ShaperUnset, args: vps, urgent: true)
+      if handle_ips
+        use_chain(Vps::FirewallUnregister, args: vps, urgent: true)
+        use_chain(Vps::ShaperUnset, args: vps, urgent: true)
+      end
 
       # Is is needed to register IP in fw and shaper when changing location,
       # as IPs are removed or replaced sooner.
