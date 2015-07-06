@@ -181,6 +181,22 @@ module VpsAdmin::API
         end
       end
 
+      def get_cluster_resources(resources = nil)
+        q = ::ClusterResourceUse.includes(
+            user_cluster_resource: [:cluster_resource]
+        ).joins(user_cluster_resource: [:cluster_resource]).where(
+            class_name: self.class.name,
+            table_name: self.class.table_name,
+            row_id: self.id,
+            user_cluster_resources: {
+                environment_id: Private.environment(self).id
+            }
+        )
+
+        q = q.where(cluster_resources: {name: resources}) if resources
+        q
+      end
+
       def allocate_resource(resource, value, user: nil, confirmed: nil,
                             chain: nil)
         user ||= ::User.current
@@ -374,6 +390,7 @@ module VpsAdmin::API
           raise Exceptions::ClusterResourceAllocationError, use unless use.valid?
 
           ret[use] = {user_cluster_resource_id: t.id}
+          ret[use][:value] = use.value if resources && resources[name]
 
         end
 
