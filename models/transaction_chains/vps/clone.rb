@@ -475,13 +475,13 @@ module TransactionChains
           # once, for now...
           next
         end
-
+        
         dst_m = ::Mount.new(
             vps: dst_vps,
             dataset_in_pool: nil,
             dst: m.dst,
-            mounts_opts: m.mount_opts,
-            umounts_opts: m.umount_opts,
+            mount_opts: m.mount_opts,
+            umount_opts: m.umount_opts,
             mount_type: m.mount_type,
             user_editable: m.user_editable,
             mode: m.mode,
@@ -498,13 +498,14 @@ module TransactionChains
           end
         end
 
-        mounts << dst_m.save!
+        dst_m.save!
+        mounts << dst_m
       end
 
       use_chain(Vps::Mounts, args: dst_vps)
 
       if mounts.size > 0
-        append(Transactions::Vps::NoOp, args: dst_vps.vps_server) do
+        append(Transactions::Utils::NoOp, args: dst_vps.vps_server) do
           mounts.each { |m| create(m) }
         end
       end
