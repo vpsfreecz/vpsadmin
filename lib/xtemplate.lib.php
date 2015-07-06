@@ -661,8 +661,7 @@ class XTemplate {
 	function form_create($action = '?page=', $method = 'post', $name = 'generic_form', $csrf = true) {
 		$this->assign('TABLE_FORM_BEGIN','<form action="'.$action.'" method="'.$method.'" name="'.$name.'" AUTOCOMPLETE=OFF>');
 		
-		if ($csrf)
-			$this->form_csrf();
+		$this->form_csrf('common', $csrf);
 	}
 	/**
 	  * Add input to form
@@ -874,8 +873,11 @@ class XTemplate {
 		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' /> '.$text);
 	}
 	
-	function form_csrf($name = 'common') {
-		$this->assign('FORM_CSRF_TOKEN', '<input type="hidden" name="csrf_token" value="'.csrf_token($name).'">');
+	function form_csrf($name = 'common', $present = true) {
+		if ($present)
+			$this->assign('FORM_CSRF_TOKEN', '<input type="hidden" name="csrf_token" value="'.csrf_token($name).'">');
+		else
+			$this->assign('FORM_CSRF_TOKEN', '');
 	}
 	
 	function html_submit($value, $name = null) {
