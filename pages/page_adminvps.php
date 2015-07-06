@@ -1006,7 +1006,10 @@ if (isset($show_info) && $show_info) {
 	
 	$params = $api->vps->update->getParameters('input');
 	$vps_resources = array('memory', 'cpu', 'swap');
-	$user_resources = $vps->user->cluster_resource->list(array('meta' => array('includes' => 'environment,cluster_resource')));
+	$user_resources = $vps->user->cluster_resource->list(array(
+		'environment' => $vps->node->environment_id,
+		'meta' => array('includes' => 'environment,cluster_resource'))
+	);
 	$resource_map = array();
 	
 	foreach ($user_resources as $r) {
