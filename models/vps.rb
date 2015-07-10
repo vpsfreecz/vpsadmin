@@ -278,6 +278,23 @@ class Vps < ActiveRecord::Base
     TransactionChains::Vps::Features.fire(self, features)
   end
 
+  def has_mount_of?(vps)
+    dataset_in_pools = vps.dataset_in_pool.dataset.subtree.joins(
+        :dataset_in_pools
+    ).where(
+        dataset_in_pools: {pool_id: vps.dataset_in_pool.pool_id}
+    ).pluck('dataset_in_pools.id')
+
+    snapshot_in_pools = ::SnapshotInPool.where(
+        dataset_in_pool_id: dataset_in_pools
+    ).pluck('id')
+
+    ::Mount.where(
+        'vps_id = ? AND (dataset_in_pool_id IN (?) OR snapshot_in_pool_id IN (?))',
+        self.id, dataset_in_pools, snapshot_in_pools
+    ).exists?
+  end
+
   private
   def generate_password(t)
     if t == :secure

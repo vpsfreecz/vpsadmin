@@ -644,6 +644,9 @@ END
 
       elsif vps.node.server_location == input[:vps].node.server_location
         error("swap within one location is not supported")
+
+      elsif vps.has_mount_of?(input[:vps]) || input[:vps].has_mount_of?(vps)
+        error("swapping VPSes with mounts of each other is not supported")
       end
 
       input[:configs] = true if current_user.role != :admin
