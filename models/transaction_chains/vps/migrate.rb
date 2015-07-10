@@ -33,7 +33,7 @@ module TransactionChains
         resources_changes = vps.transfer_resources_to_env!(
             vps.user,
             dst_node.environment,
-            resources: resources
+            resources
         )
       end
 
@@ -81,7 +81,8 @@ module TransactionChains
       end
 
       # Unmount VPS datasets & snapshots in other VPSes
-      vps_mounts = umount_all_mounts(vps)
+      mounts = MountMigrator.new(self, vps, dst_vps)
+      mounts.umount_others
 
       # Transfer datasets
       migration_snapshots = []
@@ -146,13 +147,17 @@ module TransactionChains
         end
       end
 
+      # Regenerate mount scripts of the migrated VPS
+      mounts.datasets = datasets
+      mounts.remount_mine
+
       # Restore VPS state
       call_hooks_for(:pre_start, self, args: [dst_vps, running])
       use_chain(Vps::Start, args: dst_vps, urgent: true) if running
       call_hooks_for(:post_start, self, args: [dst_vps, running])
 
-      # Remount and regenerate mount scripts
-      remount_all_mounts(vps_mounts, datasets)
+      # Remount and regenerate mount scripts of mounts in other VPSes
+      mounts.remount_others
 
       # Remove migration snapshots
       migration_snapshots.each do |sip|
@@ -264,139 +269,335 @@ module TransactionChains
       ret
     end
 
-    # Find all mounts of datasets and snapshots of +vps+ in all other
-    # vpses.
-    # Returns a hash of vps => mounts.
-    def umount_all_mounts(vps)
-      mounts = {}
+    # Handle my mounts of datasets and snapshots of other VPSes
+    #   local -> local - no change needed
+    #   local -> remote - change mount, create clone for snapshot if needed
+    #   remote -> remote - regenerate mounts to handle different IPs, move
+    #                      snapshot clone to new destination
+    #   remote -> local - change mount, remove clone of snapshot if needed
+    # Handle mounts of my datasets and snapshots in other VPSes
+    #   is the same
+    class MountMigrator
+      def initialize(chain, src_vps, dst_vps)
+        @chain = chain
+        @src_vps = src_vps
+        @dst_vps = dst_vps
+        @my_mounts = []
+        @others_mounts = {}
 
-      # Fetch ids of all descendant datasets in pool
-      dataset_in_pools = vps.dataset_in_pool.dataset.subtree.joins(
-          :dataset_in_pools
-      ).where(
-          dataset_in_pools: {pool_id: vps.dataset_in_pool.pool_id}
-      ).pluck('dataset_in_pools.id')
+        sort_mounts
+      end
 
-      # Fetch all snapshot in pools of above datasets
-      snapshot_in_pools = []
+      def datasets=(datasets)
+        # Map of source datasets to destination datasets
+        @ds_map = {}
 
-      ::SnapshotInPool.where(dataset_in_pool_id: dataset_in_pools).each do |sip|
-        snapshot_in_pools << sip.id
-
-        if sip.reference_count > 1
-          # This shouldn't be possible, as every snapshot can be mounted
-          # just once.
-          fail "snapshot (s=#{sip.snapshot_id},sip=#{sip.id}) has too high a reference count"
+        datasets.each do |pair|
+          # @ds_map[ src ] = dst
+          @ds_map[pair[0]] = pair[1]
         end
       end
 
-      ::Mount.includes(
-          :snapshot_in_pool, dataset_in_pool: [:dataset, :pool]
-      ).where.not(vps: vps).where(
-          '(dataset_in_pool_id IN (?) OR snapshot_in_pool_id IN (?))',
-          dataset_in_pools, snapshot_in_pools
-      ).order('dst DESC').each do |mnt|
-        mounts[mnt.vps] ||= []
-        mounts[mnt.vps] << mnt
+      def umount_others
+        @others_mounts.each do |v, vps_mounts|
+          @chain.append(Transactions::Vps::Umount, args: [v, vps_mounts])
+        end
       end
 
-      mounts.each do |v, vps_mounts|
-        append(Transactions::Vps::Umount, args: [v, vps_mounts])
+      def remount_mine
+        obj_changes = {}
 
-        vps_mounts.each do |mnt|
-          # The snapshot is mounted remotely via a clone.
-          # The clone must be removed on the source node and recreated on destination.
-          if mnt.snapshot_in_pool_id && mnt.snapshot_in_pool.dataset_in_pool.pool.node_id != v.vps_server
-            append(Transactions::Storage::RemoveClone, args: mnt.snapshot_in_pool)
+        @my_mounts.each do |m|
+          obj_changes.update(
+              migrate_mine_mount(m)
+          )
+        end
+        
+        @chain.use_chain(Vps::Mounts, args: @dst_vps, urgent: true)
+
+        unless obj_changes.empty?
+          @chain.append(Transactions::Utils::NoOp, args: @dst_vps.vps_server,
+                        urgent: true) do
+            obj_changes.each do |obj, changes|
+              edit_before(obj, changes)
+            end
           end
         end
       end
 
-      mounts
-    end
+      def remount_others
+        @others_mounts.each do |vps, mounts|
+          obj_changes = {}
 
-    # Regenerate action scripts for all VPSes that have mounts of datasets
-    # in +dst_vps+.
-    # +vps_mounts+ is a hash of vps => mounts.
-    def remount_all_mounts(vps_mounts, datasets)
-      ds_map = {}
+          mounts.each do |m|
+            obj_changes.update(
+                migrate_others_mount(m)
+            )
+          end
 
-      datasets.each do |pair|
-        # ds_map[ src ] = dst
-        ds_map[pair[0]] = pair[1]
+          @chain.use_chain(Vps::Mounts, args: vps, urgent: true)
+
+          @chain.append(
+              Transactions::Vps::Mount,
+              args: [vps, mounts.reverse], urgent: true
+          ) do
+            obj_changes.each do |obj, changes|
+              edit_before(obj, changes)
+            end
+          end
+        end
       end
 
-      vps_mounts.each do |vps, mnts|
-        db_changes = {}
-        dereference = []
+      private
+      def sort_mounts
+        # Fetch ids of all descendant datasets in pool
+        dataset_in_pools = @src_vps.dataset_in_pool.dataset.subtree.joins(
+            :dataset_in_pools
+        ).where(
+            dataset_in_pools: {pool_id: @src_vps.dataset_in_pool.pool_id}
+        ).pluck('dataset_in_pools.id')
 
-        mnts.each do |mnt|
-          # Temporarily update dataset in pools of all mounts, so that they
-          # are generated with correct information.
-          orig_dip = mnt.dataset_in_pool
+        # Fetch all snapshot in pools of above datasets
+        snapshot_in_pools = []
 
-          if mnt.snapshot_in_pool_id && mnt.snapshot_in_pool.dataset_in_pool.pool.node_id != vps.vps_server
-            remote = true
+        ::SnapshotInPool.where(dataset_in_pool_id: dataset_in_pools).each do |sip|
+          snapshot_in_pools << sip.id
 
-          elsif mnt.dataset_in_pool.pool.node_id != vps.vps_server
-            remote = true
+          if sip.reference_count > 1
+            # This shouldn't be possible, as every snapshot can be mounted
+            # just once.
+            fail "snapshot (s=#{sip.snapshot_id},sip=#{sip.id}) has too high a reference count"
+          end
+        end
+
+        ::Mount.includes(
+            :vps, :snapshot_in_pool, dataset_in_pool: [:dataset, pool: [:node]]
+        ).where(
+            'vps_id = ? OR (dataset_in_pool_id IN (?) OR snapshot_in_pool_id IN (?))',
+            @src_vps.id, dataset_in_pools, snapshot_in_pools
+        ).order('dst DESC').each do |mnt|
+          if mnt.vps_id == @src_vps.id
+            @my_mounts << mnt
 
           else
-            remote = false
+            @others_mounts[mnt.vps] ||= []
+            @others_mounts[mnt.vps] << mnt
+          end
+        end
+      end
+
+      # Migrate a mount that is mounted in the migrated VPS (therefore mine)
+      # and the mounted dataset or snapshot can be of the migrated VPS or from
+      # elsewhere.
+      def migrate_mine_mount(mnt)
+        dst_dip = @ds_map[mnt.dataset_in_pool]
+
+        is_subdataset = \
+          mnt.dataset_in_pool.pool.node_id == @src_vps.vps_server && \
+          mnt.vps.dataset_in_pool.dataset.subtree_ids.include?(
+              mnt.dataset_in_pool.dataset.id
+          )
+        
+        is_local = @src_vps.vps_server == mnt.dataset_in_pool.pool.node_id
+        is_remote = !is_local
+
+        if is_subdataset
+          become_local = @dst_vps.vps_server == dst_dip.pool.node_id
+        else
+          become_local = @dst_vps.vps_server == mnt.dataset_in_pool.pool.node_id
+        end
+
+        become_remote = !become_local
+
+        is_snapshot = !mnt.snapshot_in_pool.nil?
+        new_snapshot = if is_snapshot && is_subdataset
+                         ::SnapshotInPool.where(
+                             snapshot_id: mnt.snapshot_in_pool.snapshot_id,
+                             dataset_in_pool: dst_dip
+                         ).take!
+                       else
+                         nil
+                       end
+
+        original = {
+            dataset_in_pool_id: mnt.dataset_in_pool_id,
+            snapshot_in_pool_id: mnt.snapshot_in_pool_id,
+            mount_type: mnt.mount_type,
+            mount_opts: mnt.mount_opts
+        }
+
+        changes = {}
+
+        # Local -> remote:
+        #   - change mount type
+        #   - clone snapshot if needed
+        if is_local && become_remote
+          mnt.mount_type = 'nfs'
+          mnt.mount_opts = '-overs=3'
+
+          if is_snapshot
+            @chain.append(
+                Transactions::Storage::CloneSnapshot,
+                args: mnt.snapshot_in_pool, urgent: true
+            ) do
+              increment(mnt.snapshot_in_pool, :reference_count)
+            end
           end
 
-          db_changes[mnt] = {
-              dataset_in_pool_id: mnt.dataset_in_pool_id,
-              snapshot_in_pool_id: mnt.snapshot_in_pool_id,
-              mount_type: mnt.mount_type,
-              mount_opts: mnt.mount_opts
-          }
+        # Remote -> local:
+        #   - change mount type
+        #   - remote snapshot clone if needed
+        elsif is_remote && become_local
+          mnt.mount_type = 'bind'
+          mnt.mount_opts = '--bind'
 
-          mnt.dataset_in_pool = ds_map[orig_dip]
+          if is_snapshot
+            @chain.append(
+                Transactions::Storage::RemoveClone,
+                args: mnt.snapshot_in_pool, urgent: true
+            ) do
+              decrement(mnt.snapshot_in_pool, :reference_count)
+            end
+          end
 
-          if mnt.snapshot_in_pool_id
-            db_changes[mnt.snapshot_in_pool] = {
+        # Remote -> remote:
+        elsif is_remote && become_remote
+
+        # Local -> local:
+        #   - nothing to do
+        elsif is_local && become_local
+
+        end
+
+        if is_subdataset
+          mnt.dataset_in_pool = dst_dip
+
+          if is_snapshot
+            # Remove the mount link from snapshot_in_pool, because it would
+            # delete mount, when the snapshot gets deleted in
+            # DatasetInPool::Destroy.
+            changes[mnt.snapshot_in_pool] = {
                 mount_id: mnt.snapshot_in_pool.mount_id
             }
             mnt.snapshot_in_pool.update!(mount: nil)
 
-            mnt.snapshot_in_pool = ds_map[orig_dip].snapshot_in_pools.where(snapshot_id: mnt.snapshot_in_pool.snapshot_id).take!
+            changes[new_snapshot] = {mount_id: nil}
+            new_snapshot.update!(mount: mnt)
+            
+            mnt.snapshot_in_pool = new_snapshot 
           end
+        end
 
-          # The mount type may have changed from local to remote or the other way around
-          if vps.vps_server == ds_map[orig_dip].pool.node_id
-              mnt.mount_type = mnt.snapshot_in_pool_id ? 'zfs' : 'bind'
-              mnt.mount_opts = mnt.snapshot_in_pool_id ? '-t zfs' : '--bind'
-          else
-              mnt.mount_type = 'nfs'
-              mnt.mount_opts = '-overs=3'
-          end
+        mnt.save!
 
-          mnt.save!
+        changes[mnt] = original
+        changes
+      end
 
-          # It is a remote mount and the snapshot clone must be recreated.
-          if mnt.snapshot_in_pool_id && mnt.snapshot_in_pool.dataset_in_pool.pool.node_id != vps.vps_server
-            append(Transactions::Storage::CloneSnapshot, args: mnt.snapshot_in_pool) do
-              increment(mnt.snapshot_in_pool, :reference_count) unless remote
+      # Migrate a mount that is mounted in another VPS (not the one being
+      # migrated). The mounted dataset or snapshot belongs to the migrated VPS.
+      def migrate_others_mount(mnt)
+        dst_dip = @ds_map[mnt.dataset_in_pool]
+
+        is_local = @src_vps.vps_server == mnt.vps.vps_server
+        is_remote = !is_local
+
+        become_local = @dst_vps.vps_server == mnt.vps.vps_server
+        become_remote = !become_local
+
+        is_snapshot = !mnt.snapshot_in_pool.nil?
+        new_snapshot = if is_snapshot
+                         ::SnapshotInPool.where(
+                             snapshot_id: mnt.snapshot_in_pool.snapshot_id,
+                             dataset_in_pool: dst_dip
+                         ).take!
+                       else
+                         nil
+                       end
+
+        original = {
+            dataset_in_pool_id: mnt.dataset_in_pool_id,
+            snapshot_in_pool_id: mnt.snapshot_in_pool_id,
+            mount_type: mnt.mount_type,
+            mount_opts: mnt.mount_opts
+        }
+
+        changes = {}
+
+        # Local -> remote:
+        #   - change mount type
+        #   - clone snapshot if needed
+        if is_local && become_remote
+          mnt.mount_type = 'nfs'
+          mnt.mount_opts = '-overs=3'
+
+          if is_snapshot
+            @chain.append(
+                Transactions::Storage::CloneSnapshot,
+                args: new_snapshot, urgent: true
+            ) do
+              increment(new_snapshot, :reference_count)
             end
-
-          # The mount WAS remote but now is local. The cloned snapshot is already gone,
-          # all that has to be done now is decrement reference count.
-          elsif mnt.snapshot_in_pool_id && remote
-            dereference << mnt.snapshot_in_pool
           end
+
+        # Remote -> local:
+        #   - change mount type
+        #   - remote snapshot clone if needed
+        elsif is_remote && become_local
+          mnt.mount_type = 'bind'
+          mnt.mount_opts = '--bind'
+
+          if is_snapshot
+            @chain.append(
+                Transactions::Storage::RemoveClone,
+                args: mnt.snapshot_in_pool, urgent: true
+            ) do
+              decrement(mnt.snapshot_in_pool, :reference_count)
+            end
+          end
+
+        # Remote -> remote:
+        #   - update node IP address, remove snapshot on src and create on dst
+        #     node
+        elsif is_remote && become_remote
+          if is_snapshot
+            @chain.append(
+                Transactions::Storage::RemoveClone,
+                args: mnt.snapshot_in_pool, urgent: true
+            )
+            @chain.append(
+                Transactions::Storage::CloneSnapshot,
+                args: new_snapshot, urgent: true
+            )
+          end
+
+        # Local -> local:
+        #   - nothing to do
+        elsif is_local && become_local
+
         end
 
-        use_chain(Vps::Mounts, args: vps, urgent: true)
-        append(Transactions::Vps::Mount, args: [vps, mnts.reverse], urgent: true) do
-          db_changes.each do |mnt, changes|
-            edit_before(mnt, changes)
-          end
+        mnt.dataset_in_pool = dst_dip
 
-          dereference.each do |sip|
-            decrement(sip, :reference_count)
-          end
+        if is_snapshot
+          # Remove the mount link from snapshot_in_pool, because it would
+          # delete mount, when the snapshot gets deleted in
+          # DatasetInPool::Destroy.
+          changes[mnt.snapshot_in_pool] = {
+              mount_id: mnt.snapshot_in_pool.mount_id
+          }
+          mnt.snapshot_in_pool.update!(mount: nil)
+
+          changes[new_snapshot] = {mount_id: nil}
+          new_snapshot.update!(mount: mnt)
+          
+          mnt.snapshot_in_pool = new_snapshot 
         end
+
+        mnt.save!
+
+        changes[mnt] = original
+        changes
       end
     end
   end
