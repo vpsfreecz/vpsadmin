@@ -2,7 +2,7 @@ module TransactionChains
   class Vps::Create < ::TransactionChain
     label 'Create'
 
-    def link_chain(vps, add_ips)
+    def link_chain(vps)
       lock(vps.user)
       vps.save!
       lock(vps)
@@ -54,22 +54,20 @@ module TransactionChains
 
       use_chain(Vps::ApplyConfig, args: [vps, vps.node.environment.vps_configs.pluck(:id)])
 
-      if add_ips
-        versions = [:ipv4]
-        versions << :ipv6 if vps.node.location.has_ipv6
+      versions = [:ipv4]
+      versions << :ipv6 if vps.node.location.has_ipv6
 
-        ip_resources = vps.allocate_resources(
-            vps.node.environment,
-            required: [],
-            optional: versions,
-            user: vps.user,
-            chain: self
-        )
+      ip_resources = vps.allocate_resources(
+          vps.node.environment,
+          required: [],
+          optional: versions,
+          user: vps.user,
+          chain: self
+      )
 
-        if ip_resources.size > 0
-          append(Transactions::Utils::NoOp, args: vps.vps_server) do
-            ip_resources.each { |r| create(r) }
-          end
+      if ip_resources.size > 0
+        append(Transactions::Utils::NoOp, args: vps.vps_server) do
+          ip_resources.each { |r| create(r) }
         end
       end
 

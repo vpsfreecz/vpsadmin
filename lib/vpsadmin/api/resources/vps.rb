@@ -254,7 +254,7 @@ END
       vps = ::Vps.new(to_db_names(input))
       vps.set_cluster_resources(input)
 
-      if vps.create(current_user.role == :admin)
+      if vps.create
         ok(vps)
 
       else

@@ -91,7 +91,7 @@ class Vps < ActiveRecord::Base
 
   PathInfo = Struct.new(:dataset, :exists)
 
-  def create(add_ips)
+  def create
     self.vps_backup_export = 0 # FIXME
     self.vps_backup_exclude = '' # FIXME
     self.vps_config = ''
@@ -106,7 +106,7 @@ class Vps < ActiveRecord::Base
     self.dns_resolver_id ||= DnsResolver.pick_suitable_resolver_for_vps(self).id
 
     if valid?
-      TransactionChains::Vps::Create.fire(self, add_ips)
+      TransactionChains::Vps::Create.fire(self)
     else
       false
     end
@@ -156,7 +156,11 @@ class Vps < ActiveRecord::Base
         raise VpsAdmin::API::Exceptions::IpAddressInUse
       end
 
-      if !ip.user_id && ::IpAddress.where(user: self.user, vps: nil).exists?
+      if !ip.user_id && ::IpAddress.where(
+            user: self.user,
+            vps: nil,
+            ip_location: node.server_location
+      ).exists?
         raise VpsAdmin::API::Exceptions::IpAddressNotOwned
       end
 
