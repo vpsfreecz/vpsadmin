@@ -101,7 +101,7 @@ class Vps < ActiveRecord::Base
         :vps_lifetime
     )
 
-    self.vps_expiration = Time.new.to_i + lifetime if lifetime != 0
+    self.expiration_date = Time.now + lifetime if lifetime != 0
 
     self.dns_resolver_id ||= DnsResolver.pick_suitable_resolver_for_vps(self).id
 
