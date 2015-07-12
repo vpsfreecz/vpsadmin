@@ -1,0 +1,64 @@
+# Object states
+
+An object (e.g. a user or a VPS) can be in one of the following states:
+
+ - active
+ - suspended
+ - soft deleted
+ - hard deleted
+ - deleted
+
+Every object can have an expiration date set. When that date passes, the object
+advances to the next state.
+
+## Active
+
+The object exists and is available to its owner for use.
+
+## Suspended
+
+When an object is suspended, user interaction with that object (or the
+user himself) is blocked.
+
+## Soft deleted
+
+An object is still present on the servers, but it disappears from resource lists
+in the API. Admins can still see the object by performing special API call,
+which lists objects of some type in this state.
+
+The object can be easily revived, because it is still present in storage.
+
+The object stays in this state for a configured period of time, after which
+it advances to the following state.
+
+## Hard deleted
+
+The object is no longer present on storage. It has been deleted and it exists
+only in the database for record keeping.
+
+No object can ever be revived from this state.
+
+The object stays in this state also for a configured period of time, which is
+much longer, usually several years. After that time the object and all its
+dependencies continue to the next state.
+
+## Deleted
+
+The object no longer exists. No trace of it can be found in the database,
+except from some external log or non-relational storage.
+
+# API
+
+vpsAdmin defines the following modules:
+
+ - VpsAdmin::API::Lifetimes::Resource - for use in controllers
+ - VpsAdmin::API::Lifetimes::Model - for use in models
+
+## State change log
+
+The model module logs all changes of object's state. It logs who has changed it,
+why and when.
+
+The resource module defines child resource in the API, which may be used to
+browse the log. The log of an object is deleted when the object is deleted from
+the database.
