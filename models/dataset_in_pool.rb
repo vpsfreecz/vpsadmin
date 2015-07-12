@@ -50,4 +50,41 @@ class DatasetInPool < ActiveRecord::Base
     VpsAdmin::API::DatasetPlans.plans[dip_plan.environment_dataset_plan.dataset_plan.name.to_sym].unregister(self)
     VpsAdmin::API::DatasetPlans.confirm if confirm
   end
+
+  def subdatasets_in_pool
+    ret = []
+
+    dataset.subtree.arrange.each do |k, v|
+      ret.concat(recursive_serialize(k, v))
+    end
+
+    ret
+  end
+
+  protected
+  def recursive_serialize(dataset, children)
+    ret = []
+
+    # First parents
+    dip = dataset.dataset_in_pools.where(pool: pool).take
+
+    return ret unless dip
+
+    ret << dip
+
+    # Then children
+    children.each do |k, v|
+      if v.is_a?(::Dataset)
+        dip = v.dataset_in_pools.where(pool: pool).take
+        next unless dip
+
+        ret << dip
+
+      else
+        ret.concat(recursive_serialize(k, v))
+      end
+    end
+
+    ret
+  end
 end
