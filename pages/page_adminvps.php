@@ -155,11 +155,13 @@ switch ($_GET["action"]) {
 			break;
 			
 		case 'delete':
-			$xtpl->perex(_("Are you sure you want to delete VPS number").' '.$_GET["veid"].'?', '');
+			$vps = $api->vps->find($_GET['veid']);
+
+			$xtpl->perex(_("Are you sure you want to delete VPS number").' '.$vps->id.'?', '');
 			
 			$xtpl->table_title(_("Delete VPS"));
 			$xtpl->table_td(_("Hostname").':');
-			$xtpl->table_td($vps->ve["vps_hostname"]);
+			$xtpl->table_td($vps->hostname);
 			$xtpl->table_tr();
 			$xtpl->form_create('?page=adminvps&section=vps&action=delete2&veid='.$_GET["veid"], 'post');
 			$xtpl->form_csrf();
@@ -608,6 +610,14 @@ if ($list_vps) {
 		$xtpl->table_add_category('');
 		$xtpl->table_add_category('');
 		$xtpl->table_add_category('');
+
+		if (!$_SESSION['is_admin']) {
+			$envs_destroy = array();
+
+			foreach ($api->user($_SESSION['member']['m_id'])->environment_config->list() as $env) {
+				$envs_destroy[$env->environment_id] = $env->can_destroy_vps;
+			}
+		}
 		
 		if ($_SESSION['is_admin']) {
 			$params = array(
@@ -657,12 +667,10 @@ if ($list_vps) {
 				if (!$_SESSION['is_admin'])
 					$xtpl->table_td('<a href="?page=console&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/console.png"  title="'._("Remote Console").'"/></a>');
 				
-				$can_delete = false; // FIXME
-				
 				if ($_SESSION['is_admin'])
 					$xtpl->table_td(maintenance_lock_icon('vps', $vps));
 				
-				if ($_SESSION["is_admin"] || $can_delete){
+				if ($_SESSION["is_admin"] || $envs_destroy[$vps->node->environment_id]){
 					$xtpl->table_td((!$vps->running) ? '<a href="?page=adminvps&action=delete&veid='.$vps->id.'"><img src="template/icons/vps_delete.png"  title="'._("Delete").'"/></a>' : '<img src="template/icons/vps_delete_grey.png"  title="'._("Unable to delete").'"/>');
 				} else {
 					$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'._("Cannot delete").'"/>');
