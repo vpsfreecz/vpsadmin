@@ -500,7 +500,10 @@ class AddStorage < ActiveRecord::Migration
     end
 
     # Add already existing datasets (NAS, exports)
-    StorageExport.where(data_type: 'data', default: 'no').each do |export|
+    StorageExport.where(
+        data_type: 'data',
+        default: 'no'
+    ).order('dataset ASC').each do |export|
       ds_in_pool = nil
       last_ds = nil
       ds = nil
@@ -509,35 +512,45 @@ class AddStorage < ActiveRecord::Migration
       parent_properties = {}
 
       parts.each do |name|
-        # FIXME
-        # This is wrong. The dataset must be found in appropriate pool,
-        # it cannot be just any random dataset with the same name.
-        ds = (ds ? Dataset.children_of(ds) : Dataset.roots).find_by(name: name)
+        # Find all datasets with matching name, then see if any of them are
+        # on the correct pool. 
+        q = (ds ? Dataset.children_of(ds) : Dataset.roots).where(
+            name: name,
+            user_id: export.member_id
+        )
+        ds = nil
 
-        if ds
-          last_ds = ds
-          index += 1
-        else
-          break
+        break if q.empty?
+        
+        q.each do |dataset|
+          if dataset.dataset_in_pools.exists?(
+                pool_id: pool_mapping[ export.root_id ]
+             )
+            last_ds = dataset
+            index += 1
+            break
+          end
         end
+
+        break unless ds
       end
 
       parts[index..-1].each do |name|
         # FIXME: set quota property
-        ds = Dataset.create(
+        new_ds = Dataset.create(
             name: name,
-            parent: ds,
+            parent: last_ds,
             user_id: export.member_id,
-            user_editable: ds ? export.user_editable : false,
+            user_editable: last_ds ? export.user_editable : false,
             user_create: export.user_editable,
             user_destroy: false,
             confirmed: 1
         )
 
         ds_in_pool = DatasetInPool.create(
-          dataset_id: ds.id,
+          dataset_id: new_ds.id,
           pool_id: pool_mapping[ export.root_id ],
-          label: ds ? nil : 'nas',
+          label: new_ds ? nil : 'nas',
           confirmed: 1
         )
 
@@ -552,7 +565,6 @@ class AddStorage < ActiveRecord::Migration
 
     # Create backup datasets for VPS
     Vps.all.each do |vps|
-      next if vps.node.location.location_type != 'production'
       ex = StorageExport.find_by(id: vps.vps_backup_export)
 
       pool_id = nil
@@ -578,8 +590,6 @@ class AddStorage < ActiveRecord::Migration
         ex.vps_mounts.all.each do |m|
           migrate_mount(m, ds_in_pool.id)
         end
-
-      # FIXME: create mount even if none exist?
       end
 
       dip_plan = DatasetInPoolPlan.create!(
