@@ -9,6 +9,9 @@ class Dataset < ActiveRecord::Base
   validates :name, format: {
       with: /\A[a-zA-Z0-9][a-zA-Z0-9_\-:\.]{0,254}\z/,
       message: "'%{value}' is not a valid dataset name"
+  }, exclusion: {
+      in: %w(private vpsadmin),
+      message: "'%{value}' is a reserved name"
   }
   validate :check_name
 
