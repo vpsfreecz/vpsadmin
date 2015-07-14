@@ -21,10 +21,10 @@ class Mount < ActiveRecord::Base
   end
 
   def dataset
-    dataset_in_pool_id && dataset_in_pool.dataset
+    dataset_in_pool && dataset_in_pool.dataset
   end
 
   def snapshot
-    snapshot_in_pool_id && snapshot_in_pool.snapshot
+    snapshot_in_pool && snapshot_in_pool.snapshot
   end
 end
