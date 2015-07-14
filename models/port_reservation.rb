@@ -12,6 +12,8 @@ class PortReservation < ActiveRecord::Base
         next
       end
     end
+
+    fail 'no port available'
   end
 
   def free
