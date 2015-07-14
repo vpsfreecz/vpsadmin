@@ -60,7 +60,7 @@ class AddStorage < ActiveRecord::Migration
 
     serialize :value
 
-    def self.inherit_properties!(dataset_in_pool, parents = {})
+    def self.inherit_properties!(dataset_in_pool, parents = {}, values = {})
       ret = {}
       root = false
 
@@ -78,15 +78,24 @@ class AddStorage < ActiveRecord::Migration
       end
 
       VpsAdmin::API::DatasetProperties::Registrator.properties.each do |name, p|
-        ret[name] = self.create!(
+        property = self.new(
             dataset_in_pool: dataset_in_pool,
             dataset: dataset_in_pool.dataset,
             parent: parents[name],
             name: name,
-            value: root ? (p.meta[:default]) : (p.inheritable? ? parents[name].value : p.meta[:default]),
-            inherited: root ? false : p.inheritable?,
             confirmed: 1
         )
+
+        if values[name]
+          property.value = values[name]
+          property.inherited = false
+        else
+          property.value = root ? (p.meta[:default]) : (p.inheritable? ? parents[name].value : p.meta[:default])
+          property.inherited = root ? false : p.inheritable?
+        end
+
+        property.save!
+        ret[name] = property
       end
 
       ret
@@ -536,7 +545,6 @@ class AddStorage < ActiveRecord::Migration
       end
 
       parts[index..-1].each do |name|
-        # FIXME: set quota property
         new_ds = Dataset.create!(
             name: name,
             parent: last_ds,
@@ -554,7 +562,11 @@ class AddStorage < ActiveRecord::Migration
           confirmed: 1
         )
 
-        parent_properties = DatasetProperty.inherit_properties!(ds_in_pool, parent_properties)
+        parent_properties = DatasetProperty.inherit_properties!(
+            ds_in_pool,
+            parent_properties,
+            export.quota > 0 ? {quota: export.quota / 1024 / 1024} : {}
+        )
       end
 
       # Mounts of this export
