@@ -386,7 +386,7 @@ class AddStorage < ActiveRecord::Migration
 
     # Create pools for all hypervisors
     Node.where(server_type: 'node').each do |node|
-      pool = Pool.create({
+      pool = Pool.create!({
           node_id: node.id,
           label: "#{node.server_name}: vz/private",
           filesystem: 'vz/private',
@@ -397,7 +397,7 @@ class AddStorage < ActiveRecord::Migration
       pool_properties = {}
 
       VpsAdmin::API::DatasetProperties::Registrator.properties.each do |k, v|
-        pool_properties[k] = DatasetProperty.create(
+        pool_properties[k] = DatasetProperty.create!(
             pool: pool,
             name: k,
             value: v.meta[:default],
@@ -409,7 +409,7 @@ class AddStorage < ActiveRecord::Migration
       # to work are in later migrations...
       # TransactionChains::Pool::Create.fire(pool)
 
-      group_snapshots_per_pool[ pool.id ] = DatasetAction.create(
+      group_snapshots_per_pool[ pool.id ] = DatasetAction.create!(
           pool_id: pool.id,
           action: 4, # group_snapshot
           dataset_plan_id: backup_plan.id
@@ -417,7 +417,7 @@ class AddStorage < ActiveRecord::Migration
 
       # Create a dataset for every VPS
       Vps.where(vps_server: node.id).each do |vps|
-        ds = Dataset.create(
+        ds = Dataset.create!(
             name: vps.id,
             user_id: vps.m_id,
             user_editable: false,
@@ -425,7 +425,7 @@ class AddStorage < ActiveRecord::Migration
             user_destroy: false
         )
 
-        ds_in_pool = DatasetInPool.create(
+        ds_in_pool = DatasetInPool.create!(
             dataset_id: ds.id,
             pool_id: pool.id,
             label: "vps#{vps.id}",
@@ -436,7 +436,7 @@ class AddStorage < ActiveRecord::Migration
         )
 
         VpsAdmin::API::DatasetProperties::Registrator.properties.each do |k, v|
-          DatasetProperty.create(
+          DatasetProperty.create!(
               dataset: ds,
               dataset_in_pool: ds_in_pool,
               name: k,
@@ -446,7 +446,7 @@ class AddStorage < ActiveRecord::Migration
           )
         end
 
-        vps.update(dataset_in_pool_id: ds_in_pool.id)
+        vps.update!(dataset_in_pool_id: ds_in_pool.id)
 
         # Add to group snapshots
         group_snapshots_per_pool[pool.id].group_snapshots << GroupSnapshot.new(dataset_in_pool_id: ds_in_pool.id)
@@ -460,7 +460,7 @@ class AddStorage < ActiveRecord::Migration
     StorageRoot.all.each do |root|
       ex = StorageExport.find_by(root_id: root.id)
 
-      r = Pool.create(
+      r = Pool.create!(
           node_id: root.node_id,
           label: root.label,
           filesystem: root.root_dataset,
@@ -470,7 +470,7 @@ class AddStorage < ActiveRecord::Migration
       nas_pool_properties[r.id] = {}
 
       VpsAdmin::API::DatasetProperties::Registrator.properties.each do |k, v|
-        nas_pool_properties[r.id][k] = DatasetProperty.create(
+        nas_pool_properties[r.id][k] = DatasetProperty.create!(
             pool: r,
             name: k,
             value: v.meta[:default],
@@ -486,7 +486,7 @@ class AddStorage < ActiveRecord::Migration
 
     # Create repeatable tasks for all group snapshots
     group_snapshots_per_pool.each do |k, v|
-      RepeatableTask.create(
+      RepeatableTask.create!(
           label: "group_snapshot of pool #{k}",
           class_name: v.class.to_s.demodulize,
           table_name: v.class.table_name,
@@ -537,7 +537,7 @@ class AddStorage < ActiveRecord::Migration
 
       parts[index..-1].each do |name|
         # FIXME: set quota property
-        new_ds = Dataset.create(
+        new_ds = Dataset.create!(
             name: name,
             parent: last_ds,
             user_id: export.member_id,
@@ -547,7 +547,7 @@ class AddStorage < ActiveRecord::Migration
             confirmed: 1
         )
 
-        ds_in_pool = DatasetInPool.create(
+        ds_in_pool = DatasetInPool.create!(
           dataset_id: new_ds.id,
           pool_id: pool_mapping[ export.root_id ],
           label: new_ds ? nil : 'nas',
@@ -579,7 +579,7 @@ class AddStorage < ActiveRecord::Migration
         pool_id = p.id
       end
 
-      ds_in_pool = DatasetInPool.create(
+      ds_in_pool = DatasetInPool.create!(
           dataset_id: vps.dataset_in_pool.dataset_id,
           pool_id: pool_id,
           confirmed: 1
@@ -598,14 +598,14 @@ class AddStorage < ActiveRecord::Migration
       )
 
       # Transfer snapshots at 01:30 every day
-      backup = DatasetAction.create(
+      backup = DatasetAction.create!(
           src_dataset_in_pool_id: vps.dataset_in_pool_id,
           dst_dataset_in_pool_id: ds_in_pool.id,
           action: 3, # :backup
           dataset_in_pool_plan_id: dip_plan.id
       )
 
-      RepeatableTask.create(
+      RepeatableTask.create!(
           class_name: backup.class.to_s.demodulize,
           table_name: backup.class.table_name,
           row_id: backup.id,
@@ -650,7 +650,7 @@ class AddStorage < ActiveRecord::Migration
 
   private
   def migrate_mount(m, ds_in_pool_id)
-    Mount.create(
+    Mount.create!(
         vps_id: m.vps_id,
         src: m.src,
         dst: m.dst,
