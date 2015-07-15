@@ -18,6 +18,7 @@ class AddStorage < ActiveRecord::Migration
 
     belongs_to :dataset_in_pool
     belongs_to :node, :foreign_key => :vps_server
+    has_many :vps_mounts
   end
 
   class Pool < ActiveRecord::Base
@@ -464,6 +465,7 @@ class AddStorage < ActiveRecord::Migration
 
     pool_mapping = {}
     nas_pool_properties = {}
+    dataset_mapping = {}
 
     # Add already existing pools (NAS+backups)
     StorageRoot.all.each do |root|
@@ -562,6 +564,8 @@ class AddStorage < ActiveRecord::Migration
           confirmed: 1
         )
 
+        dataset_mapping[ export.id ] = ds_in_pool
+
         parent_properties = DatasetProperty.inherit_properties!(
             ds_in_pool,
             parent_properties,
@@ -597,10 +601,17 @@ class AddStorage < ActiveRecord::Migration
           confirmed: 1
       )
 
+      dataset_mapping[ ex.id ] = ds_in_pool if ex
+
       # Mounts
-      if ex
-        ex.vps_mounts.all.each do |m|
-          migrate_mount(m, ds_in_pool.id)
+      vps.vps_mounts.all.each do |m|
+        dst = dataset_mapping[ m.storage_export_id ]
+
+        if dst
+          migrate_mount(m, dst.id)
+        else
+          warn "unable to migrate mount #{m.id}: storage export does not exist"
+          warn ex ? "ex is set" : "ex is not set"
         end
       end
 
