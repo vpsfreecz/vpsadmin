@@ -92,8 +92,6 @@ class Vps < ActiveRecord::Base
   PathInfo = Struct.new(:dataset, :exists)
 
   def create
-    self.vps_backup_export = 0 # FIXME
-    self.vps_backup_exclude = '' # FIXME
     self.vps_config = ''
 
     lifetime = self.user.env_config(

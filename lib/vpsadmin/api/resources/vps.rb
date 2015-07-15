@@ -27,8 +27,6 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     bool :onstartall, label: 'On start all',
          desc: 'Start VPS on start all action?', db_name: :vps_onstartall,
          default: true
-    bool :backup_enabled, label: 'Enable backups', desc: 'Toggle VPS backups',
-         db_name: :vps_backup_enabled, default: true
     string :config, label: 'Config', desc: 'Custom configuration options',
            db_name: :vps_config, default: ''
   end

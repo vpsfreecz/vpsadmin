@@ -42,8 +42,6 @@ module TransactionChains
             node: node,
             os_template: tpl,
             hostname: 'vps',
-            vps_backup_export: 0,
-            vps_backup_exclude: '',
             vps_config: ''
         )
         vps.dns_resolver = DnsResolver.pick_suitable_resolver_for_vps(vps)

@@ -69,9 +69,7 @@ module TransactionChains
             vps_onboot: vps.vps_onboot,
             vps_onstartall: vps.vps_onstartall,
             vps_config: attrs[:configs] ? vps.vps_config : '',
-            confirmed: ::Vps.confirmed(:confirm_create),
-            vps_backup_export: 0, # FIXME: remove this shit
-            vps_backup_exclude: '' # FIXME: remove this shit
+            confirmed: ::Vps.confirmed(:confirm_create)
         )
         dst_vps.dns_resolver = dns_resolver(vps, dst_vps)
         dst_vps.save!
