@@ -639,36 +639,17 @@ class AddStorage < ActiveRecord::Migration
           day_of_week: '*'
       )
     end
-    # FIXME: update vps_ip.vps_id = null where = 0
-    # FIXME: put this in another, irreversable migration
-    # drop_table :storage_root
-    # drop_table :storage_export
-    # drop_table :vps_mount
-    # remove_column :vps, :vps_backup_enabled # rly?
-    # remove_column :vps, :vps_backup_export
-    # remove_column :vps, :vps_backup_exclude
+    
+    drop_table :storage_root
+    drop_table :storage_export
+    drop_table :vps_mount
+    remove_column :vps, :vps_backup_enabled
+    remove_column :vps, :vps_backup_export
+    remove_column :vps, :vps_backup_exclude
   end
 
   def down
-    drop_table :pools
-    drop_table :datasets
-    drop_table :dataset_in_pools
-    drop_table :snapshots
-    drop_table :snapshot_in_pools
-    drop_table :dataset_properties
-    drop_table :dataset_trees
-    drop_table :branches
-    drop_table :snapshot_in_pool_in_branches
-    drop_table :mounts
-    drop_table :mirrors
-    drop_table :dataset_plans
-    drop_table :environment_dataset_plans
-    drop_table :dataset_in_pool_plans
-    drop_table :repeatable_tasks
-    drop_table :dataset_actions
-    drop_table :group_snapshots
-
-    remove_column :vps, :dataset_in_pool_id
+    raise ActiveRecord::IrreversibleMigration
   end
 
   private

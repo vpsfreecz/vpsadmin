@@ -518,33 +518,6 @@ ActiveRecord::Schema.define(version: 20150630072821) do
     t.integer  "snapshot_download_id"
   end
 
-  create_table "storage_export", force: true do |t|
-    t.integer "member_id",                                null: false
-    t.integer "root_id",                                  null: false
-    t.string  "dataset",       limit: 500,                null: false
-    t.string  "path",          limit: 500,                null: false
-    t.integer "quota",         limit: 8,                  null: false
-    t.integer "used",          limit: 8,   default: 0,    null: false
-    t.integer "avail",         limit: 8,   default: 0,    null: false
-    t.integer "user_editable", limit: 1,   default: 0,    null: false
-    t.string  "default",       limit: 6,   default: "no", null: false
-    t.string  "data_type",     limit: 6,                  null: false
-  end
-
-  create_table "storage_root", force: true do |t|
-    t.integer "node_id",                                     null: false
-    t.string  "label",                                       null: false
-    t.string  "root_dataset",   limit: 500,                  null: false
-    t.string  "root_path",      limit: 500,                  null: false
-    t.string  "storage_layout", limit: 10,                   null: false
-    t.integer "user_export",    limit: 1,   default: 0,      null: false
-    t.string  "user_mount",     limit: 4,   default: "none", null: false
-    t.integer "quota",          limit: 8,                    null: false
-    t.integer "used",           limit: 8,   default: 0,      null: false
-    t.integer "avail",          limit: 8,   default: 0,      null: false
-    t.string  "share_options",  limit: 500,                  null: false
-  end
-
   create_table "sysconfig", primary_key: "cfg_name", force: true do |t|
     t.text "cfg_value"
   end
@@ -662,9 +635,6 @@ ActiveRecord::Schema.define(version: 20150630072821) do
     t.integer  "vps_server",                                               null: false
     t.boolean  "vps_onboot",                               default: true,  null: false
     t.boolean  "vps_onstartall",                           default: true,  null: false
-    t.boolean  "vps_backup_enabled",                       default: true,  null: false
-    t.integer  "vps_backup_export",                                        null: false
-    t.text     "vps_backup_exclude",                                       null: false
     t.text     "vps_config",                                               null: false
     t.integer  "confirmed",                                default: 0,     null: false
     t.integer  "dataset_in_pool_id"
@@ -728,23 +698,6 @@ ActiveRecord::Schema.define(version: 20150630072821) do
 
   add_index "vps_ip", ["class_id"], name: "index_vps_ip_on_class_id", unique: true, using: :btree
   add_index "vps_ip", ["vps_id"], name: "vps_id", using: :btree
-
-  create_table "vps_mount", force: true do |t|
-    t.integer "vps_id",                                    null: false
-    t.string  "src",               limit: 500,             null: false
-    t.string  "dst",               limit: 500,             null: false
-    t.string  "mount_opts",                                null: false
-    t.string  "umount_opts",                               null: false
-    t.string  "mount_type",        limit: 4,               null: false
-    t.integer "server_id"
-    t.integer "storage_export_id"
-    t.string  "mode",              limit: 2,               null: false
-    t.string  "cmd_premount",      limit: 500,             null: false
-    t.string  "cmd_postmount",     limit: 500,             null: false
-    t.string  "cmd_preumount",     limit: 500,             null: false
-    t.string  "cmd_postumount",    limit: 500,             null: false
-    t.integer "default",           limit: 1,   default: 0, null: false
-  end
 
   create_table "vps_status", force: true do |t|
     t.integer  "vps_id",                                          null: false
