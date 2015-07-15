@@ -28,7 +28,7 @@ class Vps < ActiveRecord::Base
 
   validates :m_id, :vps_server, :vps_template, presence: true, numericality: {only_integer: true}
   validates :vps_hostname, presence: true, format: {
-      with: /[a-zA-Z\-_\.0-9]{0,255}/,
+      with: /\A[a-zA-Z\-_\.0-9]{0,255}\z/,
       message: 'bad format'
   }
   validate :foreign_keys_exist
