@@ -8,7 +8,9 @@ SRC=$(shell pwd)
 DST=html
 DEPLOY_TO=root@projects.vpsfree.cz:/var/www/virtual/projects.vpsfree.cz/vpsadmin-doc/
 COMMAND=${IKIWIKI} -v --wikiname vpsAdmin --plugin=goodstuff --plugin=theme \
-	--set theme=actiontabs --exclude=${DST} --exclude=Makefile --rcs git ${SRC} ${DST}
+	--plugin=format --plugin=highlight --set theme=actiontabs \
+	--set tohighlight=".rb" \
+	--exclude=${DST} --exclude=Makefile --rcs git ${SRC} ${DST}
 
 .PHONY: build
 .PHONY: mkdir
