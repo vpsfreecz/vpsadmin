@@ -16,3 +16,6 @@ vpsAdmin is a system for management of virtual servers based on OpenVZ.
 
 # Concepts
  - [[Object lifetimes]]
+
+# Release notes and upgrade information
+ - [[Releases/v2.0]]
