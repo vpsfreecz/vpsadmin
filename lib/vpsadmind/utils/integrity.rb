@@ -27,8 +27,8 @@ module VpsAdmind::Utils
              created_at)
           VALUES (?, ?, ?, ?, ?)',
           check_id, class_name,
-          parent['ancestry'] || parent['integrity_object_id'].to_s,
-          parent['ancestry'] ? parent['ancestry'].split('/').count : 1,
+          parent && (parent['ancestry'] || parent['integrity_object_id'].to_s),
+          parent ? (parent['ancestry'] ? parent['ancestry'].split('/').count : 1) : 0,
           Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
       )
       db.insert_id
