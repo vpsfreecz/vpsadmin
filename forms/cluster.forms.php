@@ -151,3 +151,305 @@ function os_template_add_form() {
 	
 	$xtpl->sbar_add(_("Back"), '?page=cluster&action=templates');
 }
+
+function integrity_check_list() {
+	global $xtpl, $api;
+
+	$xtpl->sbar_add(_("Back"), '?page=cluster');
+	$xtpl->sbar_add(_("Checks"), '?page=cluster&action=integrity_check');
+	$xtpl->sbar_add(_("Objects"), '?page=cluster&action=integrity_objects');
+	$xtpl->sbar_add(_("Facts"), '?page=cluster&action=integrity_facts');
+
+	$xtpl->title2(_('Integrity checks'));
+
+	$xtpl->table_title(_('Filters'));
+	$xtpl->form_create('', 'get', 'check-filter', false);
+		
+	$xtpl->table_td(_("Limit").':'.
+		'<input type="hidden" name="page" value="cluster">'.
+		'<input type="hidden" name="action" value="integrity_check">'.
+		'<input type="hidden" name="list" value="1">'
+	);
+	$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
+	$xtpl->table_tr();
+	
+	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
+
+
+	$statuses = $api->integrity_check->list->getParameters('input')->status->choices;
+	$empty = array('' => _('---'));
+		
+	$xtpl->form_add_select(
+	 	_('Status').':',
+		'status',
+		$empty + $statuses,
+		$_GET['status']
+	);
+		
+	$xtpl->form_out(_('Show'));
+
+	if (!$_GET['list'])
+		return;
+
+	$xtpl->table_add_category(_('Date'));
+	$xtpl->table_add_category(_('Status'));
+	$xtpl->table_add_category(_('Objects'));
+	$xtpl->table_add_category(_('Integral objects'));
+	$xtpl->table_add_category(_('Broken objects'));
+	$xtpl->table_add_category(_('Facts'));
+	$xtpl->table_add_category(_('True facts'));
+	$xtpl->table_add_category(_('False facts'));
+
+	$params = array(
+		'limit' => get_val('limit', 25),
+		'offset' => get_val('offset', 0)
+	);
+
+	if (isset($_GET['status']) && $_GET['status'] !== '')
+		$params['status'] = $statuses[ $_GET['status'] ];
+
+	$checks = $api->integrity_check->list($params);
+
+	foreach ($checks as $c) {
+		$xtpl->table_td(tolocaltz($c->created_at));
+		$xtpl->table_td($c->status);
+		$xtpl->table_td(
+			'<a href="?page=cluster&action=integrity_objects&list=1&integrity_check='.$c->id.'">'.$c->checked_objects.'</a>',
+			false, true
+		);
+		$xtpl->table_td(
+			'<a href="?page=cluster&action=integrity_objects&list=1&integrity_check='.$c->id.'&status=1">'.$c->integral_objects.'</a>',
+			false, true
+		);
+		$xtpl->table_td(
+			'<a href="?page=cluster&action=integrity_objects&list=1&integrity_check='.$c->id.'&status=2">'.$c->broken_objects.'</a>',
+			false, true
+		);
+		$xtpl->table_td(
+			'<a href="?page=cluster&action=integrity_facts&list=1&integrity_check='.$c->id.'">'.$c->checked_facts.'</a>',
+			false, true
+		);
+		$xtpl->table_td(
+			'<a href="?page=cluster&action=integrity_facts&list=1&integrity_check='.$c->id.'&status=1">'.$c->true_facts.'</a>',
+			false, true
+		);
+		$xtpl->table_td(
+			'<a href="?page=cluster&action=integrity_facts&list=1&integrity_check='.$c->id.'&status=0">'.$c->false_facts.'</a>',
+			false, true
+		);
+
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_out();
+}
+
+function integrity_object_list() {
+	global $xtpl, $api;
+
+	$xtpl->sbar_add(_("Back"), $_SERVER['HTTP_REFERER']);
+	$xtpl->sbar_add(_("Checks"), '?page=cluster&action=integrity_check');
+	$xtpl->sbar_add(_("Objects"), '?page=cluster&action=integrity_objects');
+	$xtpl->sbar_add(_("Facts"), '?page=cluster&action=integrity_facts');
+
+	$xtpl->title2(_('Integrity objects'));
+
+	$xtpl->table_title(_('Filters'));
+	$xtpl->form_create('', 'get', 'check-filter', false);
+		
+	$xtpl->table_td(_("Limit").':'.
+		'<input type="hidden" name="page" value="cluster">'.
+		'<input type="hidden" name="action" value="integrity_objects">'.
+		'<input type="hidden" name="list" value="1">'
+	);
+	$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
+	$xtpl->table_tr();
+	
+	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
+
+	$check_param = $api->integrity_object->list->getParameters('input')->integrity_check;
+	api_param_to_form(
+		'integrity_check',
+		$check_param,
+		$_GET['integrity_check']
+	);
+
+	$xtpl->form_add_input(_("Class name").':', 'text', '30', 'class_name', get_val('class_name', ''), '');
+	$xtpl->form_add_input(_("Row ID").':', 'text', '30', 'row_id', get_val('row_id', ''), '');
+
+	$statuses = $api->integrity_object->list->getParameters('input')->status->choices;
+	$empty = array('' => _('---'));
+		
+	$xtpl->form_add_select(
+	 	_('Status').':',
+		'status',
+		$empty + $statuses,
+		$_GET['status']
+	);
+		
+	$xtpl->form_out(_('Show'));
+
+	if (!$_GET['list'])
+		return;
+
+	$xtpl->table_add_category(_('Check'));
+	$xtpl->table_add_category(_('Class name'));
+	$xtpl->table_add_category(_('ID'));
+	$xtpl->table_add_category(_('Status'));
+	$xtpl->table_add_category(_('Facts'));
+	$xtpl->table_add_category(_('True facts'));
+	$xtpl->table_add_category(_('False facts'));
+
+	$params = array(
+		'limit' => get_val('limit', 25),
+		'offset' => get_val('offset', 0)
+	);
+
+	if ($_GET['integrity_check'])
+		$params['integrity_check'] = $_GET['integrity_check'];
+	
+	if ($_GET['class_name'])
+		$params['class_name'] = $_GET['class_name'];
+
+	if ($_GET['row_id'])
+		$params['row_id'] = $_GET['row_id'];
+	
+	if (isset($_GET['status']) && $_GET['status'] !== '')
+		$params['status'] = $statuses[ $_GET['status'] ];
+
+	$objects = $api->integrity_object->list($params);
+
+	foreach ($objects as $o) {
+		$xtpl->table_td(
+			'<a href="?page=cluster&action=integrity_check&id='.$o->integrity_check_id.'">'.tolocaltz($o->integrity_check->created_at).'</a>'
+		);
+		$xtpl->table_td($o->class_name);
+		$xtpl->table_td($o->id);
+		$xtpl->table_td(boolean_icon($o->status === 'integral'));
+		$xtpl->table_td(
+			'<a href="?page=cluster&action=integrity_facts&list=1&integrity_object='.$o->id.'">'.$o->checked_facts.'</a>',
+			false, true
+		);
+		$xtpl->table_td(
+			'<a href="?page=cluster&action=integrity_facts&list=1&integrity_object='.$o->id.'&status=1">'.$o->true_facts.'</a>',
+			false, true
+		);
+		$xtpl->table_td(
+			'<a href="?page=cluster&action=integrity_facts&list=1&integrity_object='.$o->id.'&status=0">'.$o->false_facts.'</a>',
+			false, true
+		);
+
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_out();
+}
+
+function integrity_fact_list() {
+	global $xtpl, $api;
+
+	$xtpl->sbar_add(_("Back"), $_SERVER['HTTP_REFERER']);
+	$xtpl->sbar_add(_("Checks"), '?page=cluster&action=integrity_check');
+	$xtpl->sbar_add(_("Objects"), '?page=cluster&action=integrity_objects');
+	$xtpl->sbar_add(_("Facts"), '?page=cluster&action=integrity_facts');
+
+	$xtpl->title2(_('Integrity facts'));
+
+	$xtpl->table_title(_('Filters'));
+	$xtpl->form_create('', 'get', 'check-filter', false);
+		
+	$xtpl->table_td(_("Limit").':'.
+		'<input type="hidden" name="page" value="cluster">'.
+		'<input type="hidden" name="action" value="integrity_facts">'.
+		'<input type="hidden" name="list" value="1">'
+	);
+	$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
+	$xtpl->table_tr();
+	
+	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
+
+	$input = $api->integrity_fact->list->getParameters('input');
+	api_param_to_form(
+		'integrity_check',
+		$input->integrity_check,
+		$_GET['integrity_check']
+	);
+	
+	$xtpl->form_add_input(_("Class name").':', 'text', '30', 'class_name', get_val('class_name', ''), '');
+	$xtpl->form_add_input(_('Object ID').':', 'text', '30', 'integrity_object', $_GET['integrity_object']);
+
+	$statuses = $input->status->choices;
+	$empty = array('' => _('---'));
+		
+	$xtpl->form_add_select(
+	 	_('Status').':',
+		'status',
+		$empty + $statuses,
+		$_GET['status']
+	);
+
+	$severities = $input->severity->choices;
+	$xtpl->form_add_select(
+	 	_('Severity').':',
+		'severity',
+		$empty + $severities,
+		$_GET['severity']
+	);
+		
+	$xtpl->form_out(_('Show'));
+
+	if (!$_GET['list'])
+		return;
+
+	$xtpl->table_add_category(_('Object'));
+	$xtpl->table_add_category(_('Name'));
+	$xtpl->table_add_category(_('Status'));
+	$xtpl->table_add_category(_('Severity'));
+
+	$params = array(
+		'limit' => get_val('limit', 25),
+		'offset' => get_val('offset', 0),
+		'meta' => array('includes' => 'integrity_object')
+	);
+
+	if ($_GET['integrity_check'])
+		$params['integrity_check'] = $_GET['integrity_check'];
+	
+	if ($_GET['class_name'])
+		$params['class_name'] = $_GET['class_name'];
+
+	if ($_GET['integrity_object'])
+		$params['integrity_object'] = $_GET['integrity_object'];
+
+	if (isset($_GET['status']) && $_GET['status'] !== '')
+		$params['status'] = $statuses[ $_GET['status'] ];
+	
+	if (isset($_GET['severity']) && $_GET['severity'] !== '')
+		$params['severity'] = $severities[ $_GET['severity'] ];
+
+	$facts = $api->integrity_fact->list($params);
+
+	foreach ($facts as $f) {
+		$xtpl->table_td(
+			'<a href="?page=cluster&action=integrity_objects&list=1&integrity_check='.$f->integrity_object->integrity_check_id.'&class_name='.$f->integrity_object->class_name.'&row_id='.$f->integrity_object->row_id.'">'.($f->integrity_object->class_name.' #'.$f->integrity_object->row_id).'</a>'
+		);
+		$xtpl->table_td($f->name);
+		$xtpl->table_td(boolean_icon($f->status === 'true'));
+		$xtpl->table_td($f->severity);
+
+		$xtpl->table_tr();
+
+		$xtpl->table_td(
+			'<strong>'._('Expected value').":</strong>\n<br>".
+			'<pre>'.htmlspecialchars($f->expected_value)."</pre>\n".
+			'<strong>'._('Actual value').":</strong>\n<br>".
+			'<pre>'.htmlspecialchars($f->expected_value)."</pre>\n".
+			'<strong>'._('Message').":</strong>\n<br>".
+			'<pre>'.$f->message."</pre>\n",
+			false, false, '4'
+		);
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_out();
+}
