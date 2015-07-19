@@ -20,7 +20,7 @@
 . /etc/rc.d/init.d/functions
 
 VPSADMINDCTL="vpsadmindctl"
-VPSADMIND="/opt/vpsadmind/vpsadmind.rb"
+VPSADMIND="/opt/vpsadmind/bin/vpsadmind"
 PIDFILE="/var/run/vpsadmind.pid"
 LOGDIR="/var/log"
 CONFIG="/etc/vpsadmin/vpsadmind.yml"
