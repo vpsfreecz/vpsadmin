@@ -7,6 +7,7 @@ module VpsAdmin::API::Resources
     params(:input) do
       resource Node
       bool :storage
+      bool :vps
     end
 
     params(:all) do

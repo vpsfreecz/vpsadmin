@@ -13,6 +13,11 @@ module TransactionChains
           when :storage
             append(Transactions::IntegrityCheck::Storage, args: [check, node])
 
+          when :vps
+            if node.server_type == 'node'
+              append(Transactions::IntegrityCheck::Vps, args: [check, node])
+            end
+
           else
             fail "unsupported module #{m}"
         end

@@ -2,12 +2,12 @@ module Transactions::IntegrityCheck
   class Storage < ::Transaction
     t_name :integrity_storage
     t_type 6005
+    
+    include Utils
 
     def params(check, node)
       @integrity_check = check
       self.t_server = node.id
-
-      pools = []
 
       {
           pools: serialize_query(node.pools, nil, :add_pool),
@@ -149,29 +149,6 @@ module Transactions::IntegrityCheck
           reference_count: snap.reference_count
           # clones of snapshots are handle on the pool level
       }
-    end
-
-    def serialize_query(q, parent, method)
-      ret = []
-            
-      q.each do |obj|
-        integrity_obj = register_object!(obj, parent)
-        tmp = send(method, obj, integrity_obj)
-        tmp[:integrity_object_id] = integrity_obj.id
-        tmp[:ancestry] = integrity_obj.ancestry
-        ret << tmp
-      end
-
-      ret
-    end
-
-    def register_object!(obj, parent = nil)
-      ::IntegrityObject.create!(
-          integrity_check: @integrity_check,
-          class_name: obj.class.name,
-          row_id: obj.id,
-          parent: parent
-      )
     end
   end
 end
