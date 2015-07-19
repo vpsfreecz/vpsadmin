@@ -217,6 +217,12 @@ class TransactionChain < ActiveRecord::Base
     ret
   end
 
+  # Returns true if the chain is being used (included) by another chain
+  # using method self.use_chain.
+  def included?
+    @dst_chain != self
+  end
+
   def empty?
     size == 0
   end
