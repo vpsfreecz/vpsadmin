@@ -232,7 +232,8 @@ ActiveRecord::Schema.define(version: 20150717065916) do
   create_table "integrity_facts", force: true do |t|
     t.integer  "integrity_object_id",                          null: false
     t.string   "name",                limit: 30,               null: false
-    t.string   "value",                                        null: false
+    t.string   "expected_value",                               null: false
+    t.string   "actual_value",                                 null: false
     t.integer  "status",                           default: 0, null: false
     t.integer  "severity",                         default: 1, null: false
     t.string   "message",             limit: 1000

@@ -26,7 +26,8 @@ class AddIntegrityCheck < ActiveRecord::Migration
     create_table :integrity_facts do |t|
       t.references  :integrity_object,   null: false
       t.string      :name,               null: false, limit: 30
-      t.string      :value,              null: false, limit: 255
+      t.string      :expected_value,     null: false, limit: 255
+      t.string      :actual_value,       null: false, limit: 255
       t.integer     :status,             null: false, default: 0
       t.integer     :severity,           null: false, default: 1
       t.string      :message,            null: true,  limit: 1000
