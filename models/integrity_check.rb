@@ -11,7 +11,7 @@ class IntegrityCheck < ActiveRecord::Base
     if opts[:node]
       TransactionChains::IntegrityCheck::Node.fire(nil, opts[:node], modules)
     else
-      TransactionChains::IntegrityCheck::Cluster.fire(modules)
+      TransactionChains::IntegrityCheck::Cluster.fire(opts, modules)
     end
   end
 end

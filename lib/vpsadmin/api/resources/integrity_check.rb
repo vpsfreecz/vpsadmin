@@ -8,6 +8,7 @@ module VpsAdmin::API::Resources
       resource Node
       bool :storage
       bool :vps
+      bool :skip_maintenance
     end
 
     params(:all) do
