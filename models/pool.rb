@@ -3,6 +3,7 @@ class Pool < ActiveRecord::Base
   has_many :dataset_in_pools
   has_many :dataset_properties
   has_many :dataset_actions
+  has_many :snapshot_downloads
 
   enum role: %i(hypervisor primary backup)
 end

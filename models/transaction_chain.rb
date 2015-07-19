@@ -267,4 +267,5 @@ module TransactionChains
   module Lifetimes      ; end
   module DnsResolver    ; end
   module Mail           ; end
+  module IntegrityCheck ; end
 end

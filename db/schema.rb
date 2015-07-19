@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150715150147) do
+ActiveRecord::Schema.define(version: 20150717065916) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -213,6 +213,41 @@ ActiveRecord::Schema.define(version: 20150715150147) do
     t.string "page",    limit: 50, null: false
     t.string "action",  limit: 50, null: false
     t.text   "content",            null: false
+  end
+
+  create_table "integrity_checks", force: true do |t|
+    t.integer  "user_id"
+    t.integer  "status",           default: 0, null: false
+    t.integer  "checked_objects",  default: 0, null: false
+    t.integer  "integral_objects", default: 0, null: false
+    t.integer  "broken_objects",   default: 0, null: false
+    t.integer  "checked_facts",    default: 0, null: false
+    t.integer  "true_facts",       default: 0, null: false
+    t.integer  "false_facts",      default: 0, null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.datetime "finished_at"
+  end
+
+  create_table "integrity_facts", force: true do |t|
+    t.integer  "integrity_object_id",                          null: false
+    t.string   "name",                limit: 30,               null: false
+    t.string   "value",                                        null: false
+    t.integer  "status",                           default: 0, null: false
+    t.integer  "severity",                         default: 1, null: false
+    t.string   "message",             limit: 1000
+    t.datetime "created_at"
+  end
+
+  create_table "integrity_objects", force: true do |t|
+    t.integer  "integrity_check_id",                         null: false
+    t.string   "class_name",         limit: 100,             null: false
+    t.integer  "row_id"
+    t.string   "ancestry"
+    t.integer  "ancestry_depth",                 default: 0, null: false
+    t.integer  "status",                         default: 0, null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
   create_table "locations", primary_key: "location_id", force: true do |t|
@@ -568,17 +603,17 @@ ActiveRecord::Schema.define(version: 20150715150147) do
     t.integer  "t_m_id"
     t.integer  "t_server"
     t.integer  "t_vps"
-    t.integer  "t_type",                               null: false
+    t.integer  "t_type",                                                  null: false
     t.integer  "t_depends_on"
     t.text     "t_fallback"
-    t.boolean  "t_urgent",             default: false, null: false
-    t.integer  "t_priority",           default: 0,     null: false
-    t.integer  "t_success",                            null: false
-    t.integer  "t_done",                               null: false
-    t.text     "t_param"
+    t.boolean  "t_urgent",                                default: false, null: false
+    t.integer  "t_priority",                              default: 0,     null: false
+    t.integer  "t_success",                                               null: false
+    t.integer  "t_done",                                                  null: false
+    t.text     "t_param",              limit: 2147483647
     t.text     "t_output"
-    t.integer  "transaction_chain_id",                 null: false
-    t.integer  "reversible",           default: 1,     null: false
+    t.integer  "transaction_chain_id",                                    null: false
+    t.integer  "reversible",                              default: 1,     null: false
     t.datetime "created_at"
     t.datetime "started_at"
     t.datetime "finished_at"
