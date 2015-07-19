@@ -20,6 +20,9 @@ class AddIntegrityCheck < ActiveRecord::Migration
       t.string      :ancestry,           null: true,  limit: 255
       t.integer     :ancestry_depth,     null: false, default: 0
       t.integer     :status,             null: false, default: 0
+      t.integer     :checked_facts,      null: false, default: 0
+      t.integer     :true_facts,         null: false, default: 0
+      t.integer     :false_facts,        null: false, default: 0
       t.timestamps
     end
 

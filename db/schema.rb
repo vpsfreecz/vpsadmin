@@ -247,6 +247,9 @@ ActiveRecord::Schema.define(version: 20150717065916) do
     t.string   "ancestry"
     t.integer  "ancestry_depth",                 default: 0, null: false
     t.integer  "status",                         default: 0, null: false
+    t.integer  "checked_facts",                  default: 0, null: false
+    t.integer  "true_facts",                     default: 0, null: false
+    t.integer  "false_facts",                    default: 0, null: false
     t.datetime "created_at"
     t.datetime "updated_at"
   end
