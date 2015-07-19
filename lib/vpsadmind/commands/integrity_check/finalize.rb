@@ -16,6 +16,21 @@ module VpsAdmind
                  WHERE f.integrity_object_id = o.id AND severity > 0) > 0,
                  2, 1
                ),
+               checked_facts = (
+                 SELECT COUNT(*)
+                 FROM integrity_facts
+                 WHERE integrity_object_id = o.id
+               ),
+               true_facts = (
+                 SELECT COUNT(*)
+                 FROM integrity_facts
+                 WHERE integrity_object_id = o.id AND status = 1
+               ),
+               false_facts = (
+                 SELECT COUNT(*)
+                 FROM integrity_facts
+                 WHERE integrity_object_id = o.id AND status = 0
+               ),
                updated_at = ?
              WHERE integrity_check_id = ?',
              time, @integrity_check_id
