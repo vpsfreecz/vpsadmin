@@ -10,8 +10,8 @@ module VpsAdmin::API::Resources
       string :name
       custom :expected_value
       custom :actual_value
-      string :status, choices: ::IntegrityFact.statuses
-      string :severity, choices: ::IntegrityFact.severities
+      string :status, choices: ::IntegrityFact.statuses.keys
+      string :severity, choices: ::IntegrityFact.severities.keys
       string :message
       datetime :created_at
     end
@@ -20,7 +20,7 @@ module VpsAdmin::API::Resources
       desc 'List checked facts'
 
       input do
-        resource IntegrityCheck
+        resource IntegrityCheck, value_label: :created_at
         string :class_name
         use :all, include: %i(integrity_object name status severity)
       end

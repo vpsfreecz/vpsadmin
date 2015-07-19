@@ -13,7 +13,7 @@ module VpsAdmin::API::Resources
 
     params(:all) do
       id :id
-      string :status, choices: ::IntegrityCheck.statuses
+      string :status, choices: ::IntegrityCheck.statuses.keys
       resource User, value_label: :login
       integer :checked_objects
       integer :integral_objects
