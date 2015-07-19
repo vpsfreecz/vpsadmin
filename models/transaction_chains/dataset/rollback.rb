@@ -128,7 +128,7 @@ module TransactionChains
         if last_snap.id != snap_in_branch.id
           last_index = snap_tree.branches.where(name: snapshot.name).maximum('index')
 
-          head = ::Branch.create(
+          head = ::Branch.create!(
               dataset_tree: snap_tree,
               name: snapshot.name,
               index: last_index ? last_index + 1 : 0,

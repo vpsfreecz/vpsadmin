@@ -125,7 +125,7 @@ module TransactionChains
       unless tree
         last_index = dataset_in_pool.dataset_trees.all.maximum('index')
 
-        tree = ::DatasetTree.create(
+        tree = ::DatasetTree.create!(
             dataset_in_pool: dataset_in_pool,
             index: last_index ? last_index + 1 : 0,
             head: true,
@@ -142,7 +142,7 @@ module TransactionChains
       branch = ::Branch.find_by(dataset_tree: tree, head: true)
 
       unless branch
-        branch = ::Branch.create(
+        branch = ::Branch.create!(
             dataset_tree: tree,
             name: Time.new.strftime('%Y-%m-%dT%H:%M:%S'),
             head: true,
