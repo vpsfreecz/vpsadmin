@@ -7,12 +7,13 @@ module VpsAdmind::Utils
 
       db.prepared(
           'INSERT INTO integrity_facts
-            (integrity_object_id, name, value, status, severity, message,
-            created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (integrity_object_id, name, expected_value, actual_value, status,
+            severity, message, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
           object.is_a?(Integer) ? object : object['integrity_object_id'],
           name,
           YAML.dump(value),
+          YAML.dump(real_value),
           status ? 1 : 0,
           severity_i,
           status ? nil : msg,
