@@ -11,6 +11,7 @@ module VpsAdmind::Utils
           :worker => :Worker,
           :pool => :Pool,
           :subprocess => :Subprocess,
+          :integrity => :Integrity,
       }
 
       # Includes module from VpsAdmind::Utils using mapping
