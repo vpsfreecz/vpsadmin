@@ -5,12 +5,8 @@ class IntegrityCheck < ActiveRecord::Base
   def self.schedule(opts)
     modules = []
 
-    if opts[:storage]
-      modules << :storage
-
-    elsif opts[:vps]
-      modules << :vps
-    end
+    modules << :storage if opts[:storage] 
+    modules << :vps if opts[:vps]
 
     if opts[:node]
       TransactionChains::IntegrityCheck::Node.fire(nil, opts[:node], modules)
