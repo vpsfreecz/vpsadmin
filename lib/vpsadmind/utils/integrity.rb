@@ -24,10 +24,10 @@ module VpsAdmind::Utils
     def create_integrity_object(db, check_id, parent, class_name)
       db.prepared(
           'INSERT INTO integrity_objects
-            (integrity_check_id, class_name, ancestry, ancestry_depth,
+            (integrity_check_id, node_id, class_name, ancestry, ancestry_depth,
              created_at)
-          VALUES (?, ?, ?, ?, ?)',
-          check_id, class_name,
+          VALUES (?, ?, ?, ?, ?, ?)',
+          check_id, $CFG.get(:vpsadmin, :server_id), class_name,
           parent && (parent['ancestry'] || parent['integrity_object_id'].to_s),
           parent ? (parent['ancestry'] ? parent['ancestry'].split('/').count : 1) : 0,
           Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
