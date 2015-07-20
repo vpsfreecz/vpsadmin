@@ -350,22 +350,27 @@ switch ($_GET["action"]) {
 			break;
 			
 		case 'chown':
-			if($_POST['m_id']) {
-				try {
-					csrf_check();
-					$api->vps->update($_GET['veid'], array('user' => $_POST['m_id']));
-					
-					notify_user(_("Owner changed"), '');
-					redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
-					
-				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-					$xtpl->perex_format_errors(_('Change of the owner failed'), $e->getResponse());
-					$show_info=true;
-				}
+			$vps = $api->vps->find($_GET['veid']);
+
+			if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+				vps_owner_form($vps);
+				break;
+			}
+
+			try {
+				csrf_check();
+				$api->vps->update($_GET['veid'], array('user' => $_POST['m_id']));
+				
+				notify_user(_("Owner changed"), '');
+				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Change of the owner failed'), $e->getResponse());
+				vps_owner_form($vps);
 			}
 			
-			$show_info=true;
 			break;
+
 		case 'addip':
 			try {
 				csrf_check();
@@ -418,28 +423,29 @@ switch ($_GET["action"]) {
 			break;
 		
 		case 'offlinemigrate':
-			if ($_SESSION["is_admin"] && isset($_GET["veid"])) {
-				csrf_check();
-				
-				try {
-					$api->vps($_GET['veid'])->migrate(array(
-						'node' => $_POST['node'],
-						'replace_ip_addresses' => isset($_POST['replace_ip_addresses'])
-					));
-					
-					notify_user(_("Offline migration planned"), '');
-					redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
-					
-				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-					$xtpl->perex_format_errors(_('Offline migration failed'), $e->getResponse());
-					$show_info=true;
-				}
-				
-			} else {
-				$xtpl->perex(_("Error"), '');
-			}
+			$vps = $api->vps->find($_GET['veid']);
 			
-			$show_info=true;
+			if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+				vps_migrate_form($vps);
+				break;
+			}
+
+			csrf_check();
+			
+			try {
+				$vps->migrate(array(
+					'node' => $_POST['node'],
+					'replace_ip_addresses' => isset($_POST['replace_ip_addresses'])
+				));
+				
+				notify_user(_("Offline migration planned"), '');
+				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Offline migration failed'), $e->getResponse());
+				vps_migrate_form($vps);
+			}
+				
 			break;
 		
 		case 'reinstall':
@@ -502,27 +508,31 @@ switch ($_GET["action"]) {
 			}
 			break;
 		case 'clone':
+			$vps = $api->vps->find($_GET['veid']);
+
 			if (isset($_POST['hostname'])) {
 				csrf_check();
 				
 				try {
-					$cloned = $api->vps($_GET['veid'])->clone(client_params_to_api($api->vps->clone));
+					$cloned = $vps->clone(client_params_to_api($api->vps->clone));
 					
 					notify_user(_("Clone in progress"), '');
 					redirect('?page=adminvps&action=info&veid='.$cloned->id);
 					
 				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 					$xtpl->perex_format_errors(_('Clone failed'), $e->getResponse());
-					$show_info=true;
+					vps_clone_form($vps);
 				}
 				
-			} else
-				 $xtpl->perex(_("Invalid data"), _("Please fill the form correctly."));
+			} else {
+				vps_clone_form($vps);
+			}
 			
-			$show_info=true;
 			break;
 
 		case 'swap_preview':
+			$vps = $api->vps->find($_GET['veid']);
+			
 			try {
 				$params = array('meta' => array('includes' => 'node'));
 
@@ -534,18 +544,25 @@ switch ($_GET["action"]) {
 
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 				$xtpl->perex_format_errors(_('Swap preview failed'), $e->getResponse());
-				$show_info = true;
+				vps_swap_form($vps);
 			}
 			break;
 
 		case 'swap':
+			$vps = $api->vps->find($_GET['veid']);
+			
+			if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+				vps_swap_form($vps);
+				break;
+			}
+
 			if (isset($_POST['cancel']))
 				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
 
 			csrf_check();
 
 			try {
-				$api->vps($_GET['veid'])->swap_with(
+				$vps->swap_with(
 					client_params_to_api($api->vps->swap_with)
 				);
 
@@ -554,7 +571,7 @@ switch ($_GET["action"]) {
 				
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 				$xtpl->perex_format_errors(_('Swap failed'), $e->getResponse());
-				$show_info = true;
+				vps_swap_form($vps);
 			}
 
 			break;
@@ -721,13 +738,7 @@ if (isset($show_info) && $show_info) {
 	
 	$vps = $api->vps->find($veid, array('meta' => array('includes' => 'node__location,node__environment,user,os_template')));
 	
-	$title = 'VPS <a href="?page=adminvps&action=info&veid='.$veid.'">#'.$veid.'</a> '._("details");
-	
-	if ($_SESSION["is_admin"])
-		$xtpl->title($title.' '._("[Admin mode]"));
-	else
-		$xtpl->title($title.' '._("[User mode]"));
-	
+	vps_details_suite($vps);
 	
 	if ($_SESSION['is_admin'])
 		$xtpl->sbar_add(_('State log'), '?page=lifetimes&action=changelog&resource=vps&id='.$vps->id.'&return='. urlencode($_SERVER['REQUEST_URI']));
@@ -1066,53 +1077,11 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_tr();
 		
 		$xtpl->form_out(_("Go >>"));
-
-	// Owner change
-		if ($_SESSION["is_admin"]) {
-			$xtpl->table_title(_('VPS owner'));
-			$xtpl->form_create('?page=adminvps&action=chown&veid='.$vps->id, 'post');
-			$xtpl->form_add_select(_("Owner").':', 'm_id',
-				resource_list_to_options($api->user->list(), 'id', 'login', false),
-				$vps->user_id);
-			$xtpl->form_out(_("Go >>"));
-		}
 		
 	// State change
 		if ($_SESSION['is_admin']) {
 			lifetimes_set_state_form('vps', $vps->id);
 		}
-
-	// Offline migration
-		if ($_SESSION["is_admin"]) {
-			$xtpl->table_title(_('Offline migration'));
-			$xtpl->form_create('?page=adminvps&action=offlinemigrate&veid='.$vps->id, 'post');
-			api_params_to_form($vps->migrate, 'input');
-			$xtpl->form_out(_("Go >>"));
-		}
-	
-	// Clone
-		$xtpl->table_title(_('Clone VPS'));
-		$xtpl->form_create('?page=adminvps&action=clone&veid='.$vps->id, 'post');
-		
-		api_params_to_form($vps->clone, 'input', array('vps' => function($vps) {
-			return '#'.$vps->id.' '.$vps->hostname;
-		}));
-		
-		$xtpl->form_out(_("Go >>"));
-	
-	// Swap
-		$xtpl->table_title(_('Swap VPS'));
-		$xtpl->form_create('?page=adminvps&action=swap_preview&veid='.$vps->id, 'get', 'vps-swap', false);
-		
-		api_params_to_form($vps->swap_with, 'input', array('vps' => function($vps) {
-			return '#'.$vps->id.' '.$vps->hostname;
-		}));
-		
-		$xtpl->form_out(_("Continue"), null,
-			'<input type="hidden" name="page" value="adminvps">'.
-			'<input type="hidden" name="action" value="swap_preview">'.
-			'<input type="hidden" name="veid" value="'.$vps->id.'">'
-		);
 	}
 }
 

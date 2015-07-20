@@ -121,6 +121,95 @@ function print_newvps_page3($env_id, $loc_id) {
 		$xtpl->sbar_add(_('Back'), '?page=adminvps&action=new2&environment='.$env_id.'&location='.$loc_id);
 }
 
+function vps_details_title($vps) {
+	global $xtpl;
+	
+	$title = 'VPS <a href="?page=adminvps&action=info&veid='.$vps->id.'">#'.$vps->id.'</a> '._("details");
+
+	if ($_SESSION["is_admin"])
+		$xtpl->title($title.' '._("[Admin mode]"));
+	else
+		$xtpl->title($title.' '._("[User mode]"));
+}
+
+function vps_details_submenu($vps) {
+	global $xtpl;
+
+	if ($_GET['action'] != 'info')
+		$xtpl->sbar_add(_('Back to details'), '?page=adminvps&action=info&veid='.$vps->id);
+
+	if ($_SESSION['is_admin']) {
+		$xtpl->sbar_add(_('Migrate VPS'), '?page=adminvps&action=offlinemigrate&veid='.$vps->id);
+		$xtpl->sbar_add(_('Change owner'), '?page=adminvps&action=chown&veid='.$vps->id);
+	}
+
+	$xtpl->sbar_add(_('Clone VPS'), '?page=adminvps&action=clone&veid='.$vps->id);
+	$xtpl->sbar_add(_('Swap VPS'), '?page=adminvps&action=swap&veid='.$vps->id);
+}
+
+function vps_details_suite($vps) {
+	vps_details_title($vps);
+	vps_details_submenu($vps);
+}
+
+function vps_owner_form($vps) {
+	global $xtpl, $api;
+
+	$xtpl->table_title(_('VPS owner'));
+	$xtpl->form_create('?page=adminvps&action=chown&veid='.$vps->id, 'post');
+	$xtpl->form_add_select(_("Owner").':', 'm_id',
+		resource_list_to_options($api->user->list(), 'id', 'login', false),
+		$vps->user_id);
+	$xtpl->form_out(_("Go >>"));
+
+	vps_details_suite($vps);
+}
+
+function vps_migrate_form($vps) {
+	global $xtpl;
+
+	$xtpl->table_title(_('Offline migration'));
+	$xtpl->form_create('?page=adminvps&action=offlinemigrate&veid='.$vps->id, 'post');
+	api_params_to_form($vps->migrate, 'input');
+	$xtpl->form_out(_("Go >>"));
+	
+	vps_details_suite($vps);
+}
+
+function vps_clone_form($vps) {
+	global $xtpl;
+
+	$xtpl->table_title(_('Clone VPS'));
+	$xtpl->form_create('?page=adminvps&action=clone&veid='.$vps->id, 'post');
+	
+	api_params_to_form($vps->clone, 'input', array('vps' => function($vps) {
+		return '#'.$vps->id.' '.$vps->hostname;
+	}));
+	
+	$xtpl->form_out(_("Go >>"));
+	
+	vps_details_suite($vps);
+}
+
+function vps_swap_form($vps) {
+	global $xtpl;
+
+	$xtpl->table_title(_('Swap VPS'));
+	$xtpl->form_create('?page=adminvps&action=swap_preview&veid='.$vps->id, 'get', 'vps-swap', false);
+	
+	api_params_to_form($vps->swap_with, 'input', array('vps' => function($vps) {
+		return '#'.$vps->id.' '.$vps->hostname;
+	}));
+	
+	$xtpl->form_out(_("Continue"), null,
+		'<input type="hidden" name="page" value="adminvps">'.
+		'<input type="hidden" name="action" value="swap_preview">'.
+		'<input type="hidden" name="veid" value="'.$vps->id.'">'
+	);
+	
+	vps_details_suite($vps);
+}
+
 function format_swap_preview($vps, $hostname, $resources, $ips, $node) {
 	$ips_tmp = array();
 	
