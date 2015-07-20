@@ -17,7 +17,8 @@ module TransactionChains
             user: user,
             vars: {
                 object: obj,
-                state: obj.current_state
+                state: obj.current_state,
+                klass.name.underscore => obj
             }
         })
       end
