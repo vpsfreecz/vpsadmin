@@ -208,7 +208,12 @@ function integrity_check_list() {
 	if (isset($_GET['status']) && $_GET['status'] !== '')
 		$params['status'] = $statuses[ $_GET['status'] ];
 
-	$checks = $api->integrity_check->list($params);
+	if ($_GET['id'])
+		$checks = array(
+			$api->integrity_check->find($_GET['id'])
+		);
+	else
+		$checks = $api->integrity_check->list($params);
 
 	foreach ($checks as $c) {
 		$xtpl->table_td(tolocaltz($c->created_at));
@@ -333,7 +338,7 @@ function integrity_object_list() {
 
 	foreach ($objects as $o) {
 		$xtpl->table_td(
-			'<a href="?page=cluster&action=integrity_check&id='.$o->integrity_check_id.'">'.tolocaltz($o->integrity_check->created_at).'</a>'
+			'<a href="?page=cluster&action=integrity_check&list=1&id='.$o->integrity_check_id.'">'.tolocaltz($o->integrity_check->created_at).'</a>'
 		);
 		$xtpl->table_td(
 			'<a href="?page=cluster&action=integrity_objects&node='.$o->node_id.'">'.$o->node->name.'</a>'
