@@ -181,20 +181,6 @@ switch ($_GET["action"]) {
 			redirect('?page=adminvps');
 			break;
 			
-		case 'revive':
-			try {
-				csrf_check();
-				$api->vps->revive($_GET['veid']);
-				
-				notify_user(_("Revival"), _("VPS was revived."));
-				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
-				
-			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				$xtpl->perex_format_errors(_('Unable to revive VPS'), $e->getResponse());
-				$show_info=true;
-			}
-			
-			break;
 		case 'info':
 			$show_info=true;
 			break;
