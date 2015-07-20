@@ -23,7 +23,7 @@
 $DATA_SIZE_UNITS = array("k" => "KiB", "m" => "MiB", "g" => "GiB", "t" => "TiB");
 
 
-function get_free_ip_list ($v = 4, $vps) {
+function get_free_ip_list ($v = 4, $vps, $limit = null) {
 	global $api;
 	
 	$ret = array();
@@ -33,7 +33,11 @@ function get_free_ip_list ($v = 4, $vps) {
 		'location' => $vps->node->location_id
 	);
 	
-	if (!$_SESSION['is_admin']) {
+	if ($_SESSION['is_admin']) {
+		if ($limit)
+			$filters['limit'] = $limit;
+
+	} else {
 		// Limit the number of shown IP addresses by a number
 		// of user's IP addresses left.
 		
