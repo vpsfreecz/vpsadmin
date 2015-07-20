@@ -274,6 +274,13 @@ function integrity_object_list() {
 		$_GET['integrity_check']
 	);
 
+	$xtpl->form_add_select(
+		_('Node').':',
+		'node',
+		resource_list_to_options($api->node->list(), 'id', 'name', true),
+		$_GET['node']
+	);
+
 	$xtpl->form_add_input(_("Class name").':', 'text', '30', 'class_name', get_val('class_name', ''), '');
 	$xtpl->form_add_input(_("Row ID").':', 'text', '30', 'row_id', get_val('row_id', ''), '');
 
@@ -293,6 +300,7 @@ function integrity_object_list() {
 		return;
 
 	$xtpl->table_add_category(_('Check'));
+	$xtpl->table_add_category(_('Node'));
 	$xtpl->table_add_category(_('Class name'));
 	$xtpl->table_add_category(_('ID'));
 	$xtpl->table_add_category(_('Status'));
@@ -302,11 +310,15 @@ function integrity_object_list() {
 
 	$params = array(
 		'limit' => get_val('limit', 25),
-		'offset' => get_val('offset', 0)
+		'offset' => get_val('offset', 0),
+		'meta' => array('includes' => 'node')
 	);
 
 	if ($_GET['integrity_check'])
 		$params['integrity_check'] = $_GET['integrity_check'];
+	
+	if ($_GET['node'])
+		$params['node'] = $_GET['node'];
 	
 	if ($_GET['class_name'])
 		$params['class_name'] = $_GET['class_name'];
@@ -322,6 +334,9 @@ function integrity_object_list() {
 	foreach ($objects as $o) {
 		$xtpl->table_td(
 			'<a href="?page=cluster&action=integrity_check&id='.$o->integrity_check_id.'">'.tolocaltz($o->integrity_check->created_at).'</a>'
+		);
+		$xtpl->table_td(
+			'<a href="?page=cluster&action=integrity_objects&node='.$o->node_id.'">'.$o->node->name.'</a>'
 		);
 		$xtpl->table_td($o->class_name);
 		$xtpl->table_td($o->id);
@@ -375,6 +390,13 @@ function integrity_fact_list() {
 		$_GET['integrity_check']
 	);
 	
+	$xtpl->form_add_select(
+		_('Node').':',
+		'node',
+		resource_list_to_options($api->node->list(), 'id', 'name', true),
+		$_GET['node']
+	);
+
 	$xtpl->form_add_input(_("Class name").':', 'text', '30', 'class_name', get_val('class_name', ''), '');
 	$xtpl->form_add_input(_('Object ID').':', 'text', '30', 'integrity_object', $_GET['integrity_object']);
 
@@ -401,6 +423,7 @@ function integrity_fact_list() {
 	if (!$_GET['list'])
 		return;
 
+	$xtpl->table_add_category(_('Node'));
 	$xtpl->table_add_category(_('Object'));
 	$xtpl->table_add_category(_('Name'));
 	$xtpl->table_add_category(_('Status'));
@@ -409,11 +432,14 @@ function integrity_fact_list() {
 	$params = array(
 		'limit' => get_val('limit', 25),
 		'offset' => get_val('offset', 0),
-		'meta' => array('includes' => 'integrity_object')
+		'meta' => array('includes' => 'integrity_object__node')
 	);
 
 	if ($_GET['integrity_check'])
 		$params['integrity_check'] = $_GET['integrity_check'];
+	
+	if ($_GET['node'])
+		$params['node'] = $_GET['node'];
 	
 	if ($_GET['class_name'])
 		$params['class_name'] = $_GET['class_name'];
@@ -431,6 +457,9 @@ function integrity_fact_list() {
 
 	foreach ($facts as $f) {
 		$xtpl->table_td(
+			'<a href="?page=cluster&action=integrity_facts&node='.$f->integrity_object->node_id.'">'.$f->integrity_object->node->name.'</a>'
+		);
+		$xtpl->table_td(
 			'<a href="?page=cluster&action=integrity_objects&list=1&integrity_check='.$f->integrity_object->integrity_check_id.'&class_name='.$f->integrity_object->class_name.'&row_id='.$f->integrity_object->row_id.'">'.($f->integrity_object->class_name.' #'.$f->integrity_object->row_id).'</a>'
 		);
 		$xtpl->table_td($f->name);
@@ -443,7 +472,7 @@ function integrity_fact_list() {
 			'<strong>'._('Expected value').":</strong>\n<br>".
 			'<pre>'.htmlspecialchars($f->expected_value)."</pre>\n".
 			'<strong>'._('Actual value').":</strong>\n<br>".
-			'<pre>'.htmlspecialchars($f->expected_value)."</pre>\n".
+			'<pre>'.htmlspecialchars($f->actual_value)."</pre>\n".
 			'<strong>'._('Message').":</strong>\n<br>".
 			'<pre>'.$f->message."</pre>\n",
 			false, false, '4'
