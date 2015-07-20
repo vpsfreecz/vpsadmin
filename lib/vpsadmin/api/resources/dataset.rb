@@ -224,6 +224,9 @@ module VpsAdmin::API::Resources
 
         if current_user.role != :admin && !ds.user_destroy
           error('insufficient permission to destroy this dataset')
+
+        elsif ::Vps.exists?(dataset_in_pool: ds.primary_dataset_in_pool!)
+          error('unable to delete, this dataset serves as a root FS for a VPS')
         end
 
         ds.destroy
