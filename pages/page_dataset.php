@@ -21,9 +21,11 @@ if ($_SESSION['logged_in']) {
 				}
 				
 				foreach ($DATASET_PROPERTIES as $p) {
-					if ($_POST['override_'.$p]) {
+					if (!$_POST['inherit_'.$p]) {
 						if ($input_params->{$p}->choices)
 							$params[$p] = $input_params->{$p}->choices[ (int) $_POST[$p] ];
+						elseif (in_array($p, array('compression', 'atime', 'relatime')))
+							$params[$p] = isset($_POST[$p]);
 						else
 							$params[$p] = $_POST[$p];
 					}
@@ -59,9 +61,11 @@ if ($_SESSION['logged_in']) {
 				}
 				
 				foreach ($DATASET_PROPERTIES as $p) {
-					if ($_POST['override_'.$p]) {
+					if (!$_POST['inherit_'.$p]) {
 						if ($input_params->{$p}->choices)
 							$params[$p] = $input_params->{$p}->choices[ (int) $_POST[$p] ];
+						elseif (in_array($p, array('compression', 'atime', 'relatime')))
+							$params[$p] = isset($_POST[$p]);
 						else
 							$params[$p] = $_POST[$p];
 					}

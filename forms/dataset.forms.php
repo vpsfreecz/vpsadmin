@@ -170,13 +170,13 @@ function dataset_create_form() {
 	// Remaining dataset properties
 	foreach ($DATASET_PROPERTIES as $name) {
 		if ($name != 'quota' && $name != 'refquota')
-			$override = $params->{$name}->label . '<br>'
-			.'<input type="checkbox" name="override_'.$name.'" value="1"> '
-			._('Override');
+			$inherit = $params->{$name}->label . '<br>'
+			.'<input type="checkbox" name="inherit_'.$name.'" value="1" checked> '
+			._('Inherit');
 		else
-			$override = $params->{$name}->label;
+			$inherit = $params->{$name}->label;
 		
-		$xtpl->table_td($override);
+		$xtpl->table_td($inherit);
 		api_param_to_form_pure($name, $params->{$name});
 		$xtpl->table_td($params->{$name}->description);
 		
@@ -217,13 +217,13 @@ function dataset_edit_form() {
 	// Remaining dataset properties
 	foreach ($DATASET_PROPERTIES as $name) {
 		if ($name != 'quota' && $name != 'refquota')
-			$override = $params->{$name}->label . '<br>'
-			.'<input type="checkbox" name="override_'.$name.'" value="1" '.($ds->{$name} == $params->{$name}->default ? '' : 'checked').'> '
-			._('Override');
+			$inherit = $params->{$name}->label . '<br>'
+			.'<input type="checkbox" name="inherit_'.$name.'" value="1" '.($ds->{$name} == $params->{$name}->default ? 'checked' : 'disabled').'> '
+			._('Inherit');
 		else
-			$override = $params->{$name}->label;
+			$inherit = $params->{$name}->label;
 		
-		$xtpl->table_td($override);
+		$xtpl->table_td($inherit);
 		api_param_to_form_pure($name, $params->{$name}, $ds->{$name});
 		$xtpl->table_td($params->{$name}->description);
 		
