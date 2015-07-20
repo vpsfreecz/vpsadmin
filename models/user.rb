@@ -146,13 +146,31 @@ class User < ActiveRecord::Base
     vpses.joins(:node).where(servers: {environment_id: env.id}).count
   end
 
-  def self.authenticate(username, password)
+
+  def resume_login(request)
+    self.update!(last_request_at: Time.now)
+
+    User.current = self
+  end
+
+  def self.authenticate(request, username, password)
     u = User.existing.find_by(m_nick: username)
     return unless u
 
     c = VpsAdmin::API::CryptoProviders
 
-    return unless c.provider(u.password_version).matches?(u.m_pass, u.login, password)
+    if !c.provider(u.password_version).matches?(u.m_pass, u.login, password)
+      self.increment_counter(:failed_login_count, u.id)
+      return
+    end
+
+    self.increment_counter(:login_count, u.id)
+    u.update!(
+        last_login_at: u.current_login_at,
+        current_login_at: Time.now,
+        last_login_ip: u.current_login_ip,
+        current_login_ip: request.ip
+    )
 
     if c.update?(u.password_version)
       c.current do |name, provider|
@@ -164,6 +182,10 @@ class User < ActiveRecord::Base
     end
 
     u
+  end
+
+  def self.login(*args)
+    self.current = authenticate(*args)
   end
 
   def self.current

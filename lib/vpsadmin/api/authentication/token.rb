@@ -18,12 +18,12 @@ module VpsAdmin::API::Authentication
       valid && valid.strftime('%FT%T%z')
     end
 
-    def revoke_token(user, token)
+    def revoke_token(request, user, token)
       t = ::ApiToken.find_by(user: user, token: token)
       t && t.destroy
     end
 
-    def renew_token(user, token)
+    def renew_token(request, user, token)
       t = ::ApiToken.find_by(user: user, token: token)
 
       if t.lifetime.start_with('renewable')
@@ -33,11 +33,11 @@ module VpsAdmin::API::Authentication
       end
     end
 
-    def find_user_by_credentials(username, password)
-      ::User.authenticate(username, password)
+    def find_user_by_credentials(request, username, password)
+      ::User.authenticate(request, username, password)
     end
 
-    def find_user_by_token(token)
+    def find_user_by_token(request, token)
       t = ::ApiToken.where('token = ? AND ((lifetime = 3 AND valid_to IS NULL) OR valid_to >= ?)', token, Time.now).take
 
       if t
@@ -48,7 +48,7 @@ module VpsAdmin::API::Authentication
           t.save
         end
 
-        User.current = t.user
+        t.user.resume_login(request)
       end
     end
   end
