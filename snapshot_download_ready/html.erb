@@ -1,0 +1,15 @@
+<html>
+<body>
+<p>Ahoj <%= @dl.user.login %>,</p>
+
+<p>odkaz na stažení zálohy <%= "#{@dl.snapshot.dataset.name}@#{@dl.snapshot.name}" %></p>
+
+<p><a href="<%= @dl.url %>"><%= @dl.url %></a></p>
+
+<p>S dotazy se můžes obrátit na podpora@vpsfree.cz.</p>
+
+<p>S pozdravem</p>
+
+<p>vpsAdmin @ vpsFree.cz</p>
+</body>
+</html>

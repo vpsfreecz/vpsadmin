@@ -1,0 +1,41 @@
+Ahoj <%= @user.login %>,
+
+toto je automatická zpráva z vpsAdminu, ovládacího panelu sdružení­ vpsFree.cz. Jde o první mail, který od nás dostáváš jako náš člen, tak ho prosím dočti do konce :)
+
+Ve vpsAdminu můžeš ovládat svoje VPS, NAS, playground, kontrolovat platbu a další.
+
+Než se ale poprvé přihlásíš na VPS, vezmi prosím na vědomí, že tvůj VPS je dostupný z veřejného Internetu, bude se na něj od prvního momentu existence zkoušet připojit spousta botů, kteří skenují Internet a hledají zranitelné stroje. Proto je důležité bezpečnost nepodceňovat, opravdu se to děje, není to paranoia, naopak, množství reálně prolomených VPS u nás roste díky zanedbání úplných základů - používat silná hesla, mít vždy aktuální stabilní vydání software, nepřenášet hesla nešifrovaně a další běžně doporučované praktiky nejsou zbytečnostmi, ale právě ony odfiltrují naprostou většinu těchto rizik.
+
+URL: https://vpsadmin.vpsfree.cz/
+Login: <%= @user.login %>
+Heslo: <%= @user.password_plain %>
+(Pozor, oboje je citlivá na malá/velká pí­smena).
+
+Potom si prosí­m prosím pročti základní­ informace pro nového člena, najdeš tam různorodé, ale zato relevantní informace, pokud s námi právě začínáš a ještě se rozkoukáváš:
+
+https://kb.vpsfree.cz/informace/novacci
+
+Alespoň letmo proběhni seznam článků na KB, můžeš tam objevit zajímavé tipy, jak využít všechny vlastnosti naší infrastruktury, co nabízíme:
+
+http://kb.vpsfree.cz/
+
+A v neposlední řadě si najdi pár vteřin a zaregistruj se taky na následujících mailing listech:
+
+outage-list = používáme pro ohlašování výpadků
+news-list = tady píšeme novinky ve vpsFree.cz
+community-list = list pro obecnou diskuzi
+
+Přihlásit k jejich odběru se můžeš tady:
+http://lists.vpsfree.cz
+
+Například outage-list je dobré nepodcenit, když chceš mít přehled o výpadcích jak plánovaných, tak neplánovaných.
+
+News-list je poměrně nevyužívaný, jelikož většinou o věcech spíš diskutujeme na community-listu a do news-listu jdou jenom kopie oznamovacích mailů.
+
+Většina diskuze se potom odehrává na community-listu, jde o několik jednotek, maximálně desítek mailů měsíčně.
+
+Kdyby se vynořil problém, piš na podpora@vpsfree.cz
+
+S pozdravem,
+
+vpsAdmin @ vpsFree.cz

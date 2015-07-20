@@ -1,0 +1,356 @@
+<%
+
+def url(page, params = nil)
+  @base_url + "?page=" + page + (params ? "&#{params}" : "")
+end
+
+def time(t)
+  return '---' unless t
+  t = Time.at(t) unless t.is_a?(::Time)
+  t.strftime("%Y-%m-%d %H:%M:%S")
+end
+
+def duration(interval)
+  d = interval / 86400
+  h = interval / 3600 % 24
+  m = interval / 60 % 60
+  s = interval % 60
+
+  if d > 0
+    "%d days, %02d:%02d:%02d" % [d, h, m, s]
+  else
+    "%02d:%02d:%02d" % [h, m, s]
+  end
+end
+
+def balance(a, b)
+  ret = a - b
+  sign = ""
+
+  if ret > 0
+    sign = "+"
+  elsif ret < 0
+    sign = ''
+  end
+
+  "#{sign}#{ret}"
+end
+
+%>
+<html>
+<head>
+  <style>
+    h1, h2, h3, h4, h5, h6 {
+      margin: 15px 0 10px 0;
+    }
+
+    p, table, ul, ol, dl, fieldset {
+      margin: 15px 0;
+    }
+
+    table {
+      border-collapse: collapse;
+      border-spacing: 0;
+      font-size: 100%;
+    }
+
+    th {
+      text-align: center;
+      font-weight: bold;
+    }
+
+    th, td {
+      padding: 3px 7px;
+    }
+
+    dt {
+      font-weight: bold;
+    }
+
+    dd {
+      margin-left: 30px;
+    }
+
+    table th {
+      background: #5EAFFF;
+      color: #FFF;
+    }
+
+    table th, table td {
+      border: 1px solid #B2DAFF;
+    }
+
+    tr.error {
+      background: #FF5555;
+    }
+
+    tr.warning {
+      background: #FFBE30;
+    }
+  </style>
+</head>
+<body>
+<h1>Daily report</h1>
+<dl>
+  <dt>From:</dt>
+  <dd><%= @date[:start].localtime.strftime("%Y-%m-%d %H:%M") %></dd>
+
+  <dt>To:</dt>
+  <dd><%= @date[:end].localtime.strftime("%Y-%m-%d %H:%M") %></dd>
+</dl>
+
+<h2>Users</h2>
+<dl>
+  <dt>New:</dt>
+  <dd><%= new_users = @users[:new].count %></dd>
+
+  <dt>Deleted:</dt>
+  <dd><%= deleted_users = @users[:deleted].count %></dd>
+
+  <dt>Suspended:</dt>
+  <dd><%= suspended_users = @users[:suspended].count %></dd>
+
+  <dt>Balance:</dt>
+  <dd><%= balance(new_users, deleted_users) %></dd>
+</dl>
+
+<% if new_users > 0 %>
+  <h3>New users</h3>
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>LOGIN</th>
+      <th>VPS</th>
+      <th>FULL NAME</th>
+      <th>EMAIL</th>
+      <th>CREATED</th>
+    </tr>
+    <% @users[:new].each do |u| %>
+      <tr>
+        <td><a href="<%= url("adminm", "action=edit&id=#{u.id}") %>"><%= u.id %></a></td>
+        <td><%= u.login %></td>
+        <td><a href="<%= url("adminvps", "user=#{u.id}") %>"><%= u.vpses.count %></a></td>
+        <td><%= u.m_name %></td>
+        <td><a href="mailto:<%= u.m_mail %>"><%= u.m_mail %></a></td>
+        <td><%= time(u.created_at) %></td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>
+
+<% if deleted_users > 0 %>
+  <h3>Deleted users</h3>
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>LOGIN</th>
+      <th>VPS</th>
+      <th>FULL NAME</th>
+      <th>EMAIL</th>
+      <th>DELETED</th>
+    </tr>
+    <% @users[:deleted].each do |u| %>
+      <tr>
+        <td><a href="<%= url("adminm", "action=edit&id=#{u.id}") %>"><%= u.id %></a></td>
+        <td><%= u.login %></td>
+        <td><a href="<%= url("adminvps", "m_nick=#{u.login}") %>"><%= u.vpses.count %></a></td>
+        <td><%= u.m_name %></td>
+        <td><a href="mailto:<%= u.m_mail %>"><%= u.m_mail %></a></td>
+        <td><%= time(u.current_state.created_at) %></td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>
+
+<% if suspended_users > 0 %>
+  <h3>Suspended users</h3>
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>LOGIN</th>
+      <th>VPS</th>
+      <th>FULL NAME</th>
+      <th>EMAIL</th>
+      <th>DELETED</th>
+    </tr>
+    <% @users[:suspended].each do |u| %>
+      <tr>
+        <td><a href="<%= url("adminm", "action=edit&id=#{u.id}") %>"><%= u.id %></a></td>
+        <td><%= u.login %></td>
+        <td><a href="<%= url("adminvps", "m_nick=#{u.login}") %>"><%= u.vpses.count %></a></td>
+        <td><%= u.m_name %></td>
+        <td><a href="mailto:<%= u.m_mail %>"><%= u.m_mail %></a></td>
+        <td><%= time(u.current_state.created_at) %></td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>
+
+<h2>VPSes</h2>
+<dl>
+  <dt>New:</dt>
+  <dd><%= new_vpses = @vps[:new].count %></dd>
+  
+  <dt>Deleted:</dt>
+  <dd><%= deleted_vpses = @vps[:deleted].count %></dd>
+
+
+  <dt>Suspended:</dt>
+  <dd><%= suspended_vpses = @vps[:suspended].count %></dd>
+</dl>
+
+<% if new_vpses > 0 %>
+  <h3>New VPSes</h3>
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>HOSTNAME</th>
+      <th>USER</th>
+      <th>NODE</th>
+      <th>CPU</th>
+      <th>MEMORY</th>
+      <th>TIME</th>
+    </tr>
+    <% @vps[:new].includes(:user, :node).each do |vps| %>
+      <tr>
+        <td><a href="<%= url("adminvps", "action=edit&veid=#{vps.id}") %>"><%= vps.id %></a></td>
+        <td><%= vps.hostname %></td>
+	<td><a href="<%= url("adminm", "action=edit&id=#{vps.m_id}") %>"><%= vps.user.login %></a></td>
+	<td><%= vps.vps_server %> <%= vps.node.name %></td>
+	<td><%= vps.cpu %> cores</td>
+	<td><%= vps.memory / 1024 %> GiB</td>
+	<td><%= time(vps.vps_created) %>
+      </tr>
+    <% end %>
+  </table>
+<% end %>
+
+<% if deleted_vpses > 0 %>
+  <h3>Deleted VPSes</h3>
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>HOSTNAME</th>
+      <th>USER</th>
+      <th>NODE</th>
+      <th>CPU</th>
+      <th>MEMORY</th>
+      <th>TIME</th>
+    </tr>
+    <% @vps[:deleted].includes(:user, :node).each do |vps| %>
+      <tr>
+        <td><a href="<%= url("adminvps", "action=edit&veid=#{vps.id}") %>"><%= vps.id %></a></td>
+        <td><%= vps.hostname %></td>
+	<td><a href="<%= url("adminm", "action=edit&id=#{vps.m_id}") %>"><%= vps.user.login %></a></td>
+	<td><%= vps.vps_server %> <%= vps.node.name %></td>
+	<td><%= vps.cpu %> cores</td>
+	<td><%= vps.memory / 1024 %> GiB</td>
+	<td><%= time(vps.vps_created) %>
+      </tr>
+    <% end %>
+  </table>
+<% end %>
+
+
+<% if suspended_vpses > 0 %>
+  <h3>Suspended VPSes</h3>
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>HOSTNAME</th>
+      <th>USER</th>
+      <th>NODE</th>
+      <th>CPU</th>
+      <th>MEMORY</th>
+      <th>TIME</th>
+    </tr>
+    <% @vps[:suspended].includes(:user, :node).each do |vps| %>
+      <tr>
+        <td><a href="<%= url("adminvps", "action=edit&veid=#{vps.id}") %>"><%= vps.id %></a></td>
+        <td><%= vps.hostname %></td>
+	<td><a href="<%= url("adminm", "action=edit&id=#{vps.m_id}") %>"><%= vps.user.login %></a></td>
+	<td><%= vps.vps_server %> <%= vps.node.name %></td>
+	<td><%= vps.cpu %>&nbsp;cores</td>
+	<td><%= vps.memory / 1024 %>&nbsp;GiB</td>
+	<td><%= time(vps.vps_created) %>
+      </tr>
+    <% end %>
+  </table>
+<% end %>
+
+<h2>Transaction chains</h2>
+<dl>
+  <dt>Total:</dt>
+  <dd><%= @chains[:total].count %></dd>
+
+  <dt>Done:</dt>
+  <dd><%= @chains[:done].count %></dd>
+
+  <dt>Failed:<dt>
+  <dd><%= @chains[:failed].count %></dd>
+</dl>
+
+<h2>Transactions</h2>
+<dl>
+  <dt>Total:</dt>
+  <dd><%= @transactions[:total].count %></dd>
+
+  <dt>Done:</dt>
+  <dd><%= @transactions[:done].count %></dd>
+
+  <dt>Pending:</dt>
+  <dd><%= @transactions[:pending].count %></dd>
+
+  <dt>Successful:</dt>
+  <dd><%= @transactions[:successful].count %></dd>
+
+  <dt>Warning:</dt>
+  <dd><%= @transactions[:warning].count %></dd>
+
+  <dt>Rollbacked</dt>
+  <dd><%= @transactions[:rollbacked].count %></dd>
+
+  <dt>Failed:</dt>
+  <dd><%= trans_failed = @transactions[:failed].count %></dd>
+</dl>
+
+<% if trans_failed > 0 %>
+  <h3>Failed transactions</h3>
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>QUEUED</th>
+      <th>TIME</th>
+      <th>REAL</th>
+      <th>MEMBER</th>
+      <th>SERVER</th>
+      <th>VPS</th>
+      <th>TYPE</th>
+      <th>DONE?</th>
+      <th>OK?</th>
+    </tr>
+    <% @transactions[:failed].includes(:user, :node).each do |t| %>
+      <tr class="<%= t.t_success == 0 ? "error" : "warning" %>">
+        <td><a href="<%= url("transactions", "chain=#{t.transaction_chain_id}&transaction=#{t.id}") %>"><%= t.id %></a></td>
+        <td><%= time(t.t_time) %></td>
+        <td><%= duration(t.t_end ? t.t_end - t.t_time : 0) %></td>
+        <td><%= duration(t.t_end - t.t_real_start) %></td>
+        <td>
+          <a href="<%= url("adminm", "action=edit&id=#{t.m_id}") %>"><%= t.m_id ? "#{t.m_id} #{t.user.login}" : '---' %></a>
+        </td>
+        <td><a href="<%= url("cluster") %>"><%= t.t_server %> <%= t.node.name %></a></td>
+        <td>
+          <% if t.t_vps.nil? %>-
+          <% else %>
+            <a href="<%= url("adminvps", "&action=info&veid=#{t.t_vps}") %>"><%= t.t_vps %></a>
+          <% end %></td>
+        <td><%= t.t_type %></a> <%= t.name %></td>
+        <td><%= t.t_done %></td>
+        <td><%= t.t_success %></td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>
+</body>
+</html>
+

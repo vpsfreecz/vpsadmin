@@ -1,0 +1,26 @@
+Ahoj <%= @user.login %>,
+
+toto je automatická připomínka platby členského příspěvku.
+<% t = @user.m_paid_until ? Time.at(@user.m_paid_until.to_i) : nil %>
+Zaplaceno máš do: <%= t ? t.strftime('%Y-%m-%d') : '---' %>
+
+Variabilní symbol: <%= @user.id %>
+
+Částka: <%= @user.m_monthly_payment %> Kč nebo <%= @user.m_monthly_payment  / 25 %> € na měsíc
+
+Preferujeme platby minimálně na 3 měsíce dopředu.
+
+Číslo účtu: 2200041594/2010 (ČR) nebo 2200041594/8330 (SR)
+
+Příchod platby lze zkontrolovat zde:
+https://www.fio.cz/scgi-bin/hermes/dz-transparent.cgi?ID_ucet=2200041594
+
+Neuhradíš-li členský příspěvek do <%= @user.expiration_date + 14 * 24 * 60 * 60 %>, Tvé členství bude pozastaveno a následně ukončeno.
+
+Pokud potřebuješ probrat detaily ohledně této platby, jednoduše použij funkci "Odpovědět (RE:)", odpověď se pošle na podporu.
+
+Zasílání těchto e-mailů lze vypnout ve vpsAdminu v nastavení profilu, položka "vpsAdmin mailer".
+
+S pozdravem
+
+vpsAdmin @ vpsFree.cz

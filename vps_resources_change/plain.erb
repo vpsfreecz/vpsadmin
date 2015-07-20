@@ -1,0 +1,16 @@
+Ahoj <%= @vps.user.login %>,
+
+došlo ke změně konfigurace VPS <%= @vps.id %>.
+
+Aktuální limity:
+    CPU: <%= @vps.cpu * 100 %> %
+  Paměť: <%= @vps.memory %> MB
+   Swap: <%= @vps.swap %> MB
+
+Důvod změny: <%= @reason %>
+
+Změnu provedl: <%= @admin.full_name %>
+
+S pozdravem
+
+vpsAdmin @ vpsFree.cz
