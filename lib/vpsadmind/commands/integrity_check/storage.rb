@@ -492,9 +492,9 @@ module VpsAdmind
     end
 
     def clean_value(k, v)
+      return nil if %w(- none).include?(v)
       return v.to_i / 1024 / 1024 if %w(quota refquota).include?(k)
       return v.split(',') if k == 'clones'
-      return nil if %w(- none).include?(v)
       return v.to_i if /\A\d+\z/ =~ v
       return true if v == 'on'
       return false if v == 'off'
