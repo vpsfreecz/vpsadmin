@@ -21,6 +21,7 @@ module VpsAdmin::API::Resources
 
       input do
         resource IntegrityCheck, value_label: :created_at
+        resource Node, value_label: :name
         string :class_name
         use :all, include: %i(integrity_object name status severity)
       end
@@ -42,6 +43,12 @@ module VpsAdmin::API::Resources
           )
         end
         
+        if input[:node]
+          q = q.joins(:integrity_object).where(
+              integrity_objects: {node_id: input[:node].id}
+          )
+        end
+
         if input[:class_name]
           q = q.joins(:integrity_object).where(
               integrity_objects: {class_name: input[:class_name]}

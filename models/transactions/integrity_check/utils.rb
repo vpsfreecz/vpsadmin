@@ -17,6 +17,7 @@ module Transactions::IntegrityCheck
     def register_object!(obj, parent = nil)
       ::IntegrityObject.create!(
           integrity_check: @integrity_check,
+          node_id: self.t_server,
           class_name: obj.class.name,
           row_id: obj.id,
           parent: parent

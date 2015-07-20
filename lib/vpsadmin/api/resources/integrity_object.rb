@@ -7,6 +7,7 @@ module VpsAdmin::API::Resources
     params(:all) do
       id :id
       resource IntegrityCheck, value_label: :created_at
+      resource Node, value_label: :name
       string :class_name
       integer :row_id
       resource IntegrityObject, name: :parent, value_label: :class_name
@@ -22,7 +23,7 @@ module VpsAdmin::API::Resources
       desc 'List integrity objects'
 
       input do
-        use :all, include: %i(integrity_check class_name row_id parent status)
+        use :all, include: %i(integrity_check node class_name row_id parent status)
       end
 
       output(:object_list) do
@@ -36,6 +37,7 @@ module VpsAdmin::API::Resources
       def query
         q = ::IntegrityObject.all
         q = q.where(integrity_check: input[:integrity_check]) if input[:integrity_check]
+        q = q.where(node: input[:node]) if input[:node]
         q = q.where(class_name: input[:class_name]) if input[:class_name]
         q = q.where(row_id: input[:row_id]) if input.has_key?(:row_id)
         q = q.where(integrity_object: input[:parent]) if input[:parent]

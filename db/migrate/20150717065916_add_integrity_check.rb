@@ -15,6 +15,7 @@ class AddIntegrityCheck < ActiveRecord::Migration
 
     create_table :integrity_objects do |t|
       t.references  :integrity_check,    null: false
+      t.references  :node,               null: false
       t.string      :class_name,         null: false, limit: 100
       t.integer     :row_id,             null: true
       t.string      :ancestry,           null: true,  limit: 255

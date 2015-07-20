@@ -242,6 +242,7 @@ ActiveRecord::Schema.define(version: 20150717065916) do
 
   create_table "integrity_objects", force: true do |t|
     t.integer  "integrity_check_id",                         null: false
+    t.integer  "node_id",                                    null: false
     t.string   "class_name",         limit: 100,             null: false
     t.integer  "row_id"
     t.string   "ancestry"
