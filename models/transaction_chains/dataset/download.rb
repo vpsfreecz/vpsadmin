@@ -17,6 +17,7 @@ module TransactionChains
           pool: sip.dataset_in_pool.pool,
           secret_key: generate_key,
           file_name: "#{sip.dataset_in_pool.dataset.full_name.gsub(/\//, '_')}__#{snapshot.name.gsub(/:/, '-')}.tar.gz",
+          expiration_date: Time.now + 7 * 24 * 60 * 60,
           confirmed: ::SnapshotDownload.confirmed(:confirm_create)
       )
 
