@@ -40,8 +40,6 @@ module TransactionChains
 
       lock(vps.dataset_in_pool)
 
-      vps.dataset_in_pool.call_class_hooks_for(:create, self, args: [vps.dataset_in_pool])
-
       append(Transactions::Vps::Create, args: vps) do
         create(vps)
         just_create(vps.current_state)
