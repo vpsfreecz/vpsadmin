@@ -209,6 +209,12 @@ This table contains the default amount of resources assigned to new objects.
 For every environment, it has to contain defaults for `class_name` `Vps` and
 `User` with all cluster resources.
 
+### Table `members`
+Optionally, set `expiration_date` to `paid_until`:
+
+[[!format sql """
+UPDATE members SET expiration_date = paid_until;
+"""]]
 
 It is now possible to start the new API server. Be careful about the scheduler,
 as it might do unwanted actions (start a backup of VPSes for instance), before
