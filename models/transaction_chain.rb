@@ -12,7 +12,8 @@ class TransactionChain < ActiveRecord::Base
   enum concern_type: %i(chain_affect chain_transform)
 
   attr_reader :acquired_locks
-  attr_accessor :last_id, :dst_chain, :named, :locks, :urgent, :mail_server
+  attr_accessor :last_id, :last_node_id, :dst_chain, :named, :locks, :urgent,
+                :mail_server
 
   include HaveAPI::Hookable
 
@@ -71,6 +72,7 @@ class TransactionChain < ActiveRecord::Base
     c = new
 
     c.last_id = chain.last_id
+    c.last_node_id = chain.last_node_id
     c.dst_chain = chain.dst_chain
     c.named = chain.named
     c.locks = chain.locks
@@ -173,6 +175,7 @@ class TransactionChain < ActiveRecord::Base
         hooks: hooks
     )
     @last_id = c.last_id
+    @last_node_id = c.last_node_id
     ret
   end
 
@@ -231,6 +234,17 @@ class TransactionChain < ActiveRecord::Base
     Kernel.const_get(type).label
   end
 
+  # Return the node ID of last transaction. Find first available server if no
+  # transactions have been appended yet.
+  def find_node_id
+    if @last_node_id
+      @last_node_id
+
+    else
+      @last_node_id = ::Node.first_available.id
+    end
+  end
+
   private
   def do_append(dep, name, klass, args, urgent, block)
     args = [args] unless args.is_a?(Array)
@@ -238,7 +252,9 @@ class TransactionChain < ActiveRecord::Base
     urgent ||= self.urgent
 
     @dst_chain.size += 1
-    @last_id = klass.fire_chained(@dst_chain, dep, urgent, *args, &block)
+    t = klass.fire_chained(@dst_chain, dep, urgent, *args, &block)
+    @last_node_id = t.t_server
+    @last_id = t.id
     @named[name] = @last_id if name
     @last_id
   end

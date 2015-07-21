@@ -83,7 +83,7 @@ class Transaction < ActiveRecord::Base
     t.t_done = :waiting
 
     t.save!
-    t.t_id
+    t
   end
 
   # Set default values for start time, success, done and user id.
