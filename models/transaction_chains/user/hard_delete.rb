@@ -19,7 +19,7 @@ module TransactionChains
         use_chain(Dataset::RemoveDownload, args: dl)
       end
 
-      append(Transactions::Utils::NoOp, args: ::Node.first_available.id) do
+      append(Transactions::Utils::NoOp, args: find_node_id) do
         # Free all IP addresses
         ::IpAddress.where(user: user).each do |ip|
           edit(ip, user_id: nil)

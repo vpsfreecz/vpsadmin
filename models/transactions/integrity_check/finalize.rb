@@ -4,7 +4,7 @@ module Transactions::IntegrityCheck
     t_type 6001
 
     def params(check)
-      self.t_server = ::Node.first_available.id
+      self.t_server = transaction_chain.find_node_id
       
       {integrity_check_id: check.id}
     end

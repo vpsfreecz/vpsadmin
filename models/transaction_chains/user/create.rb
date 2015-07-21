@@ -50,7 +50,7 @@ module TransactionChains
       end
 
       unless empty?
-        append(Transactions::Utils::NoOp, args: ::Node.first_available.id) do
+        append(Transactions::Utils::NoOp, args: find_node_id) do
           objects.each { |o| just_create(o) }
         end
       end

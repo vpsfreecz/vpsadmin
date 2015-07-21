@@ -21,7 +21,7 @@ module TransactionChains
         ns.destroy!
 
       else
-        append(Transactions::Utils::NoOp, args: ::Node.first_available.id) do
+        append(Transactions::Utils::NoOp, args: find_node_id) do
           just_destroy(ns)
         end
       end

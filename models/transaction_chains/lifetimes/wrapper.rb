@@ -31,7 +31,7 @@ module TransactionChains
             )
 
           else
-            append(Transactions::Utils::NoOp, args: ::Node.first_available.id) do
+            append(Transactions::Utils::NoOp, args: find_node_id) do
               if default.nil? || default != false
                 edit(
                     obj,

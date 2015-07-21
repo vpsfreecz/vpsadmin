@@ -56,7 +56,7 @@ module TransactionChains
         ns.save!
 
       else
-        append(Transactions::Utils::NoOp, args: ::Node.first_available.id) do
+        append(Transactions::Utils::NoOp, args: find_node_id) do
           edit(ns, db_changes)
         end
       end
