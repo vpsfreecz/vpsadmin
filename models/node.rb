@@ -66,13 +66,30 @@ class Node < ActiveRecord::Base
       q = q.where('locations.location_id = ?', location.id)
     end
 
-    q.group('servers.server_id')
+    n = q.group('servers.server_id')
      .order('COUNT(st.vps_up) / max_vps ASC')
      .take
+
+    return n if n
+    
+    q = self.joins(
+        'LEFT JOIN vps ON vps.vps_server = servers.server_id'
+    ).where(
+        'max_vps > 0'
+    ).where(
+        maintenance_lock: 0,
+        environment: env
+    )
+
+    if location
+      q = q.where('server_location = ?', location.id)
+    end
+
+    q.group('servers.server_id').order('COUNT(vps_id) / max_vps ASC').take
   end
 
   def self.pick_by_location(loc)
-    self.joins('
+    n = self.joins('
         LEFT JOIN vps ON vps.vps_server = servers.server_id
         LEFT JOIN vps_status st ON st.vps_id = vps.vps_id
         INNER JOIN locations l ON server_location = location_id
@@ -84,6 +101,17 @@ class Node < ActiveRecord::Base
       ', loc.id).group('server_id')
       .order('COUNT(st.vps_up) / max_vps ASC')
       .take
+
+    return n if n
+
+    self.joins(
+        'LEFT JOIN vps ON vps.vps_server = servers.server_id'
+    ).where(
+        'max_vps > 0'
+    ).where(
+        maintenance_lock: 0,
+        server_location: loc.id
+    ).group('servers.server_id').order('COUNT(vps_id) / max_vps ASC').take
   end
 
   def self.first_available
