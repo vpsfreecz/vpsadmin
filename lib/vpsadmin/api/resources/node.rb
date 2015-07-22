@@ -9,6 +9,8 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
   params(:common) do
     string :name, label: 'Name', desc: 'Node name', db_name: :server_name
+    string :domain_name, label: 'Domain name',
+      desc: 'Node name including location domain'
     string :type, label: 'Role', desc: 'node, storage or mailer', db_name: :server_type
     resource VpsAdmin::API::Resources::Location, label: 'Location',
              desc: 'Location node is placed in'
@@ -159,8 +161,8 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     def exec
-      ::Node.includes(:node_status).joins(:location).all
-        .order('environment_id, locations.location_id, server_id')
+      with_includes.includes(:node_status).joins(:location).all
+        .order('environment_id, locations.location_id, servers.server_id')
     end
   end
 
