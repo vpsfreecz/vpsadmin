@@ -282,7 +282,7 @@ if ($_SESSION["logged_in"]) {
 		foreach ($vpses as $vps) {
 			$params = array('dataset' => $vps->dataset_id);
 			
-			if (!$_GET['subdatasets'])
+			if ($_SESSION['is_admin'] && !$_GET['subdatasets'])
 				$params['limit'] = 1;
 			
 			$datasets = $api->dataset->list($params);
