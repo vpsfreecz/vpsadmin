@@ -21,6 +21,8 @@ module VpsAdmin::API::Resources
       string :url, desc: 'URL at which the archive can be downloaded'
       bool :ready, desc: 'True if the archive is complete and ready for download',
           db_name: :confirmed?
+      datetime :expiration_date, label: 'Expiration date',
+        desc: 'The archive is deleted when expiration date passes'
     end
 
     class Index < HaveAPI::Actions::Default::Index
