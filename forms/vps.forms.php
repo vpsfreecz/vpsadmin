@@ -73,7 +73,7 @@ function print_newvps_page3($env_id, $loc_id) {
 	$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'vps_hostname', $_POST['vps_hostname'], _("A-z, a-z"), 255);
 	
 	if ($_SESSION["is_admin"]) {
-		$xtpl->form_add_select(_("Node").':', 'vps_server', resource_list_to_options($api->node->list(), 'id', 'name'), $_POST['vps_server'], '');
+		$xtpl->form_add_select(_("Node").':', 'vps_server', resource_list_to_options($api->node->list(), 'id', 'domain_name'), $_POST['vps_server'], '');
 		$xtpl->form_add_select(_("Owner").':', 'm_id', resource_list_to_options($api->user->list(), 'id', 'login'), $_SESSION['member']['m_id'], '');
 	}
 	
@@ -182,9 +182,14 @@ function vps_clone_form($vps) {
 	$xtpl->table_title(_('Clone VPS'));
 	$xtpl->form_create('?page=adminvps&action=clone&veid='.$vps->id, 'post');
 	
-	api_params_to_form($vps->clone, 'input', array('vps' => function($vps) {
-		return '#'.$vps->id.' '.$vps->hostname;
-	}));
+	api_params_to_form($vps->clone, 'input', array(
+		'vps' => function($vps) {
+			return '#'.$vps->id.' '.$vps->hostname;
+		},
+		'node' => function($node) {
+			return $node->domain_name;
+		}
+	));
 	
 	$xtpl->form_out(_("Go >>"));
 	

@@ -587,7 +587,7 @@ if ($list_vps) {
 		$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
 		$xtpl->form_add_input(_("User ID").':', 'text', '40', 'user', get_val('user'));
 		$xtpl->form_add_select(_("Node").':', 'node', 
-			resource_list_to_options($api->node->list(), 'id', 'name'), get_val('node'));
+			resource_list_to_options($api->node->list(), 'id', 'domain_name'), get_val('node'));
 		$xtpl->form_add_select(_("Location").':', 'location',
 			resource_list_to_options($api->location->list()), get_val('location'));
 		$xtpl->form_add_select(_("Environment").':', 'environment',
@@ -653,7 +653,7 @@ if ($list_vps) {
 		foreach ($vpses as $vps) {
 			
 			$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->id.'">'.$vps->id.'</a>');
-			$xtpl->table_td('<a href="?page=adminvps&server_name='.$vps->node->name.'">'. $vps->node->name . '</a>');
+			$xtpl->table_td('<a href="?page=adminvps&action=list&node='.$vps->node_id.'">'. $vps->node->domain_name . '</a>');
 			$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$vps->user_id.'">'.$vps->user->login.'</a>');
 			$xtpl->table_td($vps->process_count, false, true);
 			$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->id.'"><img src="template/icons/vps_edit.png"  title="'._("Edit").'"/> '.$vps->hostname.'</a>');
@@ -733,8 +733,8 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_td($vps->id);
 	$xtpl->table_tr();
 	
-	$xtpl->table_td(_("Server").':');
-	$xtpl->table_td($vps->node->name);
+	$xtpl->table_td(_("Node").':');
+	$xtpl->table_td($vps->node->domain_name);
 	$xtpl->table_tr();
 	
 	$xtpl->table_td(_("Location").':');

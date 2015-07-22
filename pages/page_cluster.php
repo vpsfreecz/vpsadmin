@@ -1250,7 +1250,7 @@ if ($list_nodes) {
 		
 		// Node ID, Name, IP, load
 		$xtpl->table_td($node->id);
-		$xtpl->table_td($node->name);
+		$xtpl->table_td($node->domain_name);
 		$xtpl->table_td($node->ip_addr);
 		$xtpl->table_td($node->loadavg, false, true);
 		
