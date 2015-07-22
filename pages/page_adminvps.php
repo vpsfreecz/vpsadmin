@@ -795,6 +795,10 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_td($vps->os_template->label);
 	$xtpl->table_tr();
 	
+	$xtpl->table_td(_("State").':');
+	$xtpl->table_td($vps->object_state);
+	$xtpl->table_tr();
+	
 	if ($vps->maintenance_lock != 'no') {
 		$xtpl->table_td(_('Maintenance lock').':');
 		$xtpl->table_td($vps->maintenance_lock == 'lock' ? _('direct') : _('global lock'));
