@@ -125,6 +125,11 @@ class Dataset < ActiveRecord::Base
     dataset_in_pools.joins(:pool).where.not(pools: {role: Pool.roles[:backup]}).take!
   end
 
+  # Return the maximum number of snapshots of all dataset in pools
+  def max_snapshots
+    dataset_in_pools.maximum(:max_snapshots)
+  end
+
   def update_properties(properties)
     dip = primary_dataset_in_pool!
 
