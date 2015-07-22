@@ -117,7 +117,7 @@ class User < ActiveRecord::Base
   end
 
   def full_name
-    m_name.empty? ? m_nick : m_name
+    m_name.nil? || m_name.empty? ? m_nick : m_name
   end
 
   def last_request_at
