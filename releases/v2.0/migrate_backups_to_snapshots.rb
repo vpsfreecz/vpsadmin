@@ -15,7 +15,10 @@ Vps.transaction do
     q = VpsBackup.where(vps: vps).order('`timestamp`')
     next if q.empty?
 
-    oldest_backup = q.take!
+    oldest_backup = q.take
+
+    next if oldest_backup.nil?
+
     t = Time.at(oldest_backup.timestamp)
 
     # Find backup dataset in pool
