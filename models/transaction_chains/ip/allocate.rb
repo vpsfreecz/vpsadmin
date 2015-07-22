@@ -3,6 +3,8 @@ module TransactionChains
     label 'Allocate IP to object'
 
     def allocate_to_vps(r, vps, n)
+      return n if n == 0
+
       ips = []
       v = r.name == 'ipv4' ? 4 : 6
 
