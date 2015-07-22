@@ -21,7 +21,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     resource VpsAdmin::API::Resources::DnsResolver, label: 'DNS resolver',
              desc: 'DNS resolver the VPS will use'
     resource VpsAdmin::API::Resources::Node, label: 'Node', desc: 'Node VPS will run on',
-             value_label: :name
+             value_label: :domain_name
     bool :onboot, label: 'On boot', desc: 'Start VPS on node boot?',
          db_name: :vps_onboot, default: true
     bool :onstartall, label: 'On start all',
@@ -62,7 +62,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       resource VpsAdmin::API::Resources::User, label: 'User', desc: 'Filter by owner',
                value_label: :login
       resource VpsAdmin::API::Resources::Node, label: 'Node', desc: 'Filter by node',
-          value_label: :name
+          value_label: :domain_name
       resource VpsAdmin::API::Resources::Location, label: 'Location', desc: 'Filter by location'
       resource VpsAdmin::API::Resources::Environment, label: 'Environment', desc: 'Filter by environment'
       use :template
@@ -493,7 +493,8 @@ END
     http_method :post
 
     input do
-      resource VpsAdmin::API::Resources::Node, label: 'Node', value_label: :name,
+      resource VpsAdmin::API::Resources::Node, label: 'Node',
+        value_label: :domain_name,
                required: true
       bool :replace_ip_addresses, label: 'Replace IP addresses',
           desc: 'When migrating to another location, current IP addresses are replaced by addresses from the new location'
