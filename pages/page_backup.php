@@ -343,6 +343,7 @@ if ($_SESSION["logged_in"]) {
 		$xtpl->table_add_category(_('Dataset'));
 		$xtpl->table_add_category(_('Snapshot'));
 		$xtpl->table_add_category(_('File name'));
+		$xtpl->table_add_category(_('Expiration'));
 		$xtpl->table_add_category(_('Download'));
 		$xtpl->table_add_category('');
 		
@@ -350,6 +351,7 @@ if ($_SESSION["logged_in"]) {
 			$xtpl->table_td($dl->snapshot_id ? $dl->snapshot->dataset->name : '---');
 			$xtpl->table_td($dl->snapshot_id ? $dl->snapshot->created_at : '---');
 			$xtpl->table_td($dl->file_name);
+			$xtpl->table_td(tolocaltz($dl->expiration_date, 'Y-m-d'));
 			$xtpl->table_td($dl->ready ? '<a href="'.$dl->url.'">'._('Download').'</a>' : _('in progress'));
 			$xtpl->table_td($dl->ready ? '<a href="?page=backup&action=download_destroy&id='.$dl->id.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>' : '');
 			$xtpl->table_tr();
