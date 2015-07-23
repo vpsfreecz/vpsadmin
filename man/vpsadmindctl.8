@@ -38,6 +38,35 @@ Show help and exit.
 .SH COMMANDS
 
 
+\fBchain\fR <\fIid\fR> <\fIsubcommand\fR> [\fB-Hl\fR]
+.RS
+Browse transaction confirmations of chain \fIid\fR and run them.
+
+\fBSubcommands\fR
+.RS
+.TP
+\fBconfirmations\fR [\fItransaction_id\fR...]
+List transaction confirmations.
+
+.TP
+\fBconfirm\fR [\fItransaction_id\fR...]
+Run transaction confirmations.
+
+.RS
+.TP
+\fB--direction <\fIdirection\fR>\fR
+Set direction in which the confirmations should be run.
+\fIdirection\fR can be \fBexecute\fR or \fBrollback\fR.
+
+.TP
+\fB--[no]-success\fR
+Decide whether the confirmations should be run as if the transaction succeeded or not.
+.RE
+.RE
+
+.RE
+
+
 \fBflush\fR <\fIresource\fR>
 .RS
 Flush resources. \fIresource\fR may be one of \fBfw\fR, \fBshaper\fR or \fBall\fR.
@@ -46,9 +75,7 @@ Flush resources. \fIresource\fR may be one of \fBfw\fR, \fBshaper\fR or \fBall\f
 .RS
 .TP
 \fBfw\fR
-Flush accounting rules from iptables. Note that the \fBvpsAdmind\fR will
-crash in a few seconds if traffic accounting is enabled and the iptables
-rules are not present.
+Flush accounting rules from iptables.
 
 .TP
 \fBshaper\fR
