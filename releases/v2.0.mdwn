@@ -20,6 +20,7 @@ v2.0 features:
  - more versatile maintenance mode,
  - reworked VPS cloning and swapping,
  - configuration of individual VPS features,
+ - integrity checks,
  - enhanced security and more.
 
 # Upgrade instructions
@@ -525,13 +526,22 @@ database.
 Run [[migrate_backups_to_snapshots.rb]] on the node hosting vpsAdmin-api.
 
 ## Finalize migrations
-Run the last migration:
+Run the remaining migrations:
 
 	# cd /opt/vpsadminapi
 	# rake db:migrate
 
 ## Run system integrity check
-FIXME
+Integrity check is a new feature of v2.0 that compares the contents of the
+database with the real data on servers. It checks that all datasets, snapshots
+and VPSes exists and much more. All discrepancies are reported so that the
+administrator can fix them and see if the cluster is in a proper state.
+
+The integrity check can be started by any API client, e.g.:
+
+	$ vpsadminctl -u http://vpsadmin.your.domain integrity_check new
+
+The results can them be browsed in the web or any other client.
 
 ## Cron jobs
 
