@@ -9,7 +9,7 @@ DST=html
 DEPLOY_TO=root@projects.vpsfree.cz:/var/www/virtual/projects.vpsfree.cz/vpsadmin-doc/
 COMMAND=${IKIWIKI} -v --wikiname vpsAdmin --plugin=goodstuff --plugin=theme \
 	--plugin=format --plugin=highlight --set theme=actiontabs \
-	--set tohighlight=".rb" \
+	--set tohighlight=".rb .sh" \
 	--exclude=${DST} --exclude=Makefile --rcs git ${SRC} ${DST}
 
 .PHONY: build
