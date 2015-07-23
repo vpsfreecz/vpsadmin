@@ -36,11 +36,16 @@ module VpsAdmind
         yield(DbTransaction.new(@my))
         @my.query('COMMIT')
 
-      rescue => err
-        log log(:critical, :sql, 'MySQL transactions failed, rolling back')
-        p err.inspect
-        p err.traceback
+      rescue RequestRollback
+        log(:info, :sql, 'Rollback requested')
         @my.query('ROLLBACK')
+
+      rescue => err
+        log(:critical, :sql, 'MySQL transactions failed, rolling back')
+        p err.inspect
+        p err.traceback if err.respond_to?(:traceback)
+        @my.query('ROLLBACK')
+        raise err
       end
     end
 
@@ -116,6 +121,10 @@ module VpsAdmind
         raise err
       end
     end
+
+    def rollback
+      raise RequestRollback
+    end
   end
 
   class Union
@@ -135,5 +144,9 @@ module VpsAdmind
         end
       end
     end
+  end
+
+  class RequestRollback < StandardError
+
   end
 end
