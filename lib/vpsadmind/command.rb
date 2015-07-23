@@ -154,85 +154,8 @@ module VpsAdmind
     end
 
     def run_confirmations(t)
-      dir = current_chain_direction
-      log(:debug, self, 'Running transaction confirmations')
-
-      st = t.prepared_st('SELECT table_name, row_pks, attr_changes, confirm_type, t.t_success
-                          FROM transactions t
-                          INNER JOIN transaction_confirmations c ON t.t_id = c.transaction_id
-                          WHERE
-                              t.transaction_chain_id = ?
-                              AND done = 0',
-                         chain_id)
-
-      st.each do |row|
-        success = row[4].to_i > 0
-        pk = pk_cond(YAML.load(row[1]))
-
-        case row[3].to_i
-          when 0 # create
-            if success && dir == :execute
-              t.query("UPDATE #{row[0]} SET confirmed = 1 WHERE #{pk}")
-            else
-              t.query("DELETE FROM #{row[0]} WHERE #{pk}")
-            end
-
-          when 1 # just create
-            if !success || dir != :execute
-              t.query("DELETE FROM #{row[0]} WHERE #{pk}")
-            end
-
-          when 2 # edit before
-            if !success || dir == :rollback
-              attrs = YAML.load(row[2])
-              update = attrs.collect { |k, v| "`#{k}` = #{sql_val(v)}" }.join(',')
-
-              t.query("UPDATE #{row[0]} SET #{update} WHERE #{pk}")
-            end
-
-          when 3 # edit after
-            if success && dir == :execute
-              attrs = YAML.load(row[2])
-              update = attrs.collect { |k, v| "`#{k}` = #{sql_val(v)}" }.join(',')
-
-              t.query("UPDATE #{row[0]} SET #{update} WHERE #{pk}")
-            end
-
-          when 4 # destroy
-            if success && dir == :execute
-              t.query("DELETE FROM #{row[0]} WHERE #{pk}")
-            else
-              t.query("UPDATE #{row[0]} SET confirmed = 1 WHERE #{pk}")
-            end
-
-          when 5 # just destroy
-            if success && dir == :execute
-              t.query("DELETE FROM #{row[0]} WHERE #{pk}")
-            end
-
-          when 6 # decrement
-            if success && dir == :execute
-              attr = YAML.load(row[2])
-
-              t.query("UPDATE #{row[0]} SET #{attr} = #{attr} - 1 WHERE #{pk}")
-            end
-
-          when 7 # increment
-            if success && dir == :execute
-              attr = YAML.load(row[2])
-
-              t.query("UPDATE #{row[0]} SET #{attr} = #{attr} + 1 WHERE #{pk}")
-            end
-        end
-      end
-
-      st.close
-
-      t.prepared('UPDATE transaction_confirmations c
-                  INNER JOIN transactions t ON t.t_id = c.transaction_id
-                  SET c.done = 1
-                  WHERE t.transaction_chain_id = ? AND c.done = 0',
-                 @chain[:id])
+      c = Confirmations.new(chain_id)
+      c.run(t, current_chain_direction)
     end
 
     def continue_chain(db)
@@ -433,20 +356,6 @@ module VpsAdmind
 
     def keep_going?
       @trans['reversible'].to_i == 2
-    end
-
-    def pk_cond(pks)
-      pks.map { |k, v| "`#{k}` = #{sql_val(v)}" }.join(' AND ')
-    end
-
-    def sql_val(v)
-      if v.is_a?(Integer)
-        v
-      elsif v.nil?
-        'NULL'
-      else
-        "'#{v}'"
-      end
     end
   end
 end
