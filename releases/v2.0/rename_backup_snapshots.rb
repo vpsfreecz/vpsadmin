@@ -1,71 +1,72 @@
-#!/bin/bash
-# Usage: $0 <POOL>
-# Removes prefix 'backup-' from snapshot names.
+#!/usr/bin/env ruby
+Dir.chdir('/opt/vpsadminapi')
+$:.insert(0, '/opt/haveapi/lib')
+require '/opt/vpsadminapi/lib/vpsadmin'
 
-ZFS=/sbin/zfs
+# ID of backup pool on which the backups are stored
+BACKUP_POOL = 14
 
-function zfs {
-    $ZFS $*
+class VpsBackup < ActiveRecord::Base
+  belongs_to :vps
+end
 
-    if [ "$?" != 0 ]; then
-        >&2 echo -e "\e[31mZFS-ERROR\e[0m";
-        exit 1
-    fi
-}
+Vps.transaction do
+  Vps.includes(dataset_in_pool: [:dataset]).all.each do |vps|
+    q = VpsBackup.where(vps: vps).order('`timestamp`')
+    next if q.empty?
 
-TARGET="$1"
+    oldest_backup = q.take
 
-OLD_REGEX="\@backup\-[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}\:[0-9]{2}\:[0-9]{2}"
-NEW_REGEX="\@[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}\:[0-9]{2}\:[0-9]{2}"
+    next if oldest_backup.nil?
 
-DATASET=`zfs list -r -Ho name $TARGET`
-if [ "$?" != 0 ]
-then
-    exit 1
-fi
+    t = Time.at(oldest_backup.timestamp)
 
-for ds in $DATASET
-do
-    if [ "$ds" == "$TARGET" ]
-    then
-        continue
-    fi
+    # Find backup dataset in pool
+    backup_dip = vps.dataset_in_pool.dataset.dataset_in_pools.where(
+        pool_id: BACKUP_POOL
+    ).take!
 
-    echo -e "\e[34m[$ds] --->\e[0m"
+    # Create dataset tree
+    tree = DatasetTree.create!(
+        dataset_in_pool: backup_dip,
+        head: false,
+        confirmed: DatasetTree.confirmed(:confirmed),
+        created_at: t
+    )
 
-    LIST_DATASET_SNAPSHOTS=`zfs list -r -t snapshot -Ho name $ds`
-    if [ "$?" != 0 ]
-    then
-        exit 1
-    fi
+    # Create a branch
+    branch = Branch.create!(
+        dataset_tree: tree,
+        name: "branch-#{t.strftime('%Y-%m-%dT%H:%M:%S')}",
+        head: false,
+        confirmed: Branch.confirmed(:confirmed),
+        created_at: t
+    )
 
-    if [ "$LIST_DATASET_SNAPSHOTS" == "" ]
-    then
-        echo -e "\e[34m[$ds]\e[0m \e[33mnot found snapshots\e[0m"
-        echo -e "\e[34m[$ds] <---\n\e[0m"
+    q.each do |backup|
+      t = Time.at(backup.timestamp)
+      t_str = t.strftime('%Y-%m-%dT%H:%M:%S')
 
-        continue
-    fi
+      # Create snapshot in pool and snapshot in branch for all backups
+      s = Snapshot.create!(
+          dataset: vps.dataset_in_pool.dataset,
+          name: t_str,
+          confirmed: Snapshot.confirmed(:confirmed),
+          created_at: t
+      )
 
-    for snap in $LIST_DATASET_SNAPSHOTS
-    do
-        if ! [ $snap =~ $NEW_REGEX ]
-        then
-            if ! [ $snap =~ $OLD_REGEX ]
-            then
-                echo -e "\e[34m[$ds]\e[0m \e[31mbad snapshot name\e[0m"
-                echo -e "\e[34m[$ds]\e[0m \e[31m$snap\e[0m"
-                exit 1
-            fi
+      sip = SnapshotInPool.create!(
+          snapshot: s,
+          dataset_in_pool: backup_dip,
+          confirmed: SnapshotInPool.confirmed(:confirmed)
+      )
 
-            echo -e "\e[34m[$ds]\e[0m \e[36mRENAME SNAPSHOT -> $snap\e[0m"
-            NEW=$(echo $snap | sed "s/backup-//g")
-            zfs rename $snap $NEW
-            echo -e "\e[34m[$ds]\e[0m \e[32mRENAME SNAPSHOT -> OK\e[0m"
-        fi
-    done
-
-    echo -e "\e[34m[$ds]\e[0m \e[32mall snapshot's name are OK\e[0m"
-    echo -e "\e[34m[$ds] <---\n\e[0m"
-done
+      SnapshotInPoolInBranch.create!(
+          snapshot_in_pool: sip,
+          branch: branch,
+          confirmed: SnapshotInPoolInBranch.confirmed(:confirmed)
+      )
+    end
+  end
+end
 

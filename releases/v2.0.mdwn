@@ -295,12 +295,14 @@ will be regenerated later.
 
 #### Backups
 The datasets must be rearranged to fit the new [[/Storage/Branching]] system.
-Run the following script on every pool containing VPS backups.
+First, rename snapshots to new format using [[rename_backup_snapshots.sh]].
 
-	FIXME: embed script
+Next, use [[rearrange_backup_datasets.sh]]
 
-Next, rename snapshots according to the new layout using
-[[rename_backup_snapshots.rb]].
+These scripts must be run on every pool containing VPS backups.
+
+When the pools fit the new layout, old backup snapshot in the database must be
+migrated to the new scheme using [[rename_backup_snapshots.rb]].
 
 #### NAS
 All datasets must have a top-level folder `private/` which contains all data.
@@ -356,10 +358,9 @@ end
 puts "#{rs.num_rows} mounts, #{succeeded} umounted"
 """]]
 
-
-Run the following script on every pool with user datasets.
-
-	FIXME: embed script
+Now the data in NAS datasets can me migrated.
+Run [[migrate_nas_step1.sh]] and [[migrate_nas_step2.sh]]on every pool with user
+datasets.
 
 When the script finishes, regenerate mount scripts of all affected VPSes and
 remount the previously unmounted mounts. The following script is supposed to be
