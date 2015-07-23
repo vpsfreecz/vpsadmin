@@ -58,12 +58,84 @@ module VpsAdmind::RemoteCommands
                 :transactions => c.force_run(t, @transactions, @direction.to_sym, @success)
             }
           end
+
+        when 'release'
+          db.transaction do |t|
+            @release.each do |r|
+              case r
+                when 'locks'
+                  out[:locks] = release_locks(t)
+
+                when 'ports'
+                  out[:ports] = release_ports(t)
+              end
+            end
+          end
           
       end
       
       db.close
       
       ok.update({:output => out})
+    end
+
+    def release_locks(t)
+      ret = []
+
+      st = t.prepared_st(
+          'SELECT resource, row_id, created_at
+          FROM resource_locks
+          WHERE transaction_chain_id = ?',
+          @chain
+      )
+
+      st.each do |lock|
+        ret << {
+            :resource => lock[0],
+            :row_id => lock[1],
+            :created_at => lock[2]
+        }
+      end
+
+      st.close
+
+      t.prepared('DELETE FROM resource_locks WHERE transaction_chain_id = ?', @chain)
+
+      ret
+    end
+
+    def release_ports(t)
+      ret = []
+
+      st = t.prepared_st(
+          'SELECT s.server_name, l.domain, r.node_id, r.addr, r.port
+          FROM port_reservations r
+          INNER JOIN servers s ON s.server_id = r.node_id
+          INNER JOIN locations l ON l.location_id = s.server_location
+          WHERE transaction_chain_id = ?',
+          @chain
+      )
+
+      st.each do |lock|
+        ret << {
+            :node_name => lock[0],
+            :node_id => lock[2],
+            :location_domain => lock[1],
+            :addr => lock[3],
+            :port => lock[4]
+        }
+      end
+
+      st.close
+
+      t.prepared(
+          'UPDATE port_reservations
+          SET transaction_chain_id = NULL, addr = NULL
+          WHERE transaction_chain_id = ?', 
+          @chain
+      )
+
+      ret
     end
   end
 end
