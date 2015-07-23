@@ -100,16 +100,7 @@ module VpsAdmind
             log(:critical, :chain, 'Transaction rollback failed, admin intervention is necessary')
             # FIXME: do something
 
-            # Is it the last transaction to rollback?
-            if chain_finished?
-              run_confirmations(t)
-              close_chain(t)
-
-            else
-              fail_all(t)
-              run_confirmations(t)
-              close_chain(t)
-            end
+            close_chain(t, true)
 
           else # Reverse chain direction
             # Is it the last transaction to rollback?
@@ -172,20 +163,31 @@ module VpsAdmind
                    WHERE id = ?', chain_id)
     end
 
-    def close_chain(db)
+    def close_chain(db, fatal = false)
       log(:debug, self, 'Close chain')
+
+      state = if fatal
+                5
+              elsif current_chain_direction == :execute
+                2
+              else
+                4
+              end
+
       # mark chain as finished
       db.prepared("UPDATE transaction_chains
                    SET
                      `state` = ?,
                      `progress` = #{current_chain_direction == :execute ? '`progress` + 1' : '0'}
-                   WHERE id = ?", current_chain_direction == :execute ? 2 : 4, chain_id)
+                   WHERE id = ?", state, chain_id)
 
       # release all locks
-      db.prepared('DELETE FROM resource_locks WHERE transaction_chain_id = ?', chain_id)
+      unless fatal
+        db.prepared('DELETE FROM resource_locks WHERE transaction_chain_id = ?', chain_id)
 
-      # release ports
-      db.prepared('UPDATE port_reservations SET transaction_chain_id = NULL, addr = NULL WHERE transaction_chain_id = ?', chain_id)
+        # release ports
+        db.prepared('UPDATE port_reservations SET transaction_chain_id = NULL, addr = NULL WHERE transaction_chain_id = ?', chain_id)
+      end
     end
 
     def fail_followers(db)
