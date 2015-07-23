@@ -8,7 +8,7 @@ class TransactionChain < ActiveRecord::Base
   has_many :transaction_chain_concerns
   belongs_to :user
 
-  enum state: %i(staged queued done rollbacking failed)
+  enum state: %i(staged queued done rollbacking failed fatal)
   enum concern_type: %i(chain_affect chain_transform)
 
   attr_reader :acquired_locks
