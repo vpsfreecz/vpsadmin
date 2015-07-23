@@ -38,7 +38,7 @@ Show help and exit.
 .SH COMMANDS
 
 
-\fBchain\fR <\fIid\fR> <\fIsubcommand\fR> [\fB-Hl\fR]
+\fBchain\fR <\fIid\fR> <\fIsubcommand\fR>
 .RS
 Browse transaction confirmations of chain \fIid\fR and run them.
 
@@ -62,6 +62,10 @@ Set direction in which the confirmations should be run.
 \fB--[no]-success\fR
 Decide whether the confirmations should be run as if the transaction succeeded or not.
 .RE
+
+.TP
+\fBrelease\fR [\fBlocks\fR|\fBports\fR]
+Release resource locks, reserved ports or both.
 .RE
 
 .RE

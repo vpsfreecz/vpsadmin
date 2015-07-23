@@ -13,6 +13,7 @@ module VpsAdmindCtl::Commands
 Subcommands:
 confirmations [TRANSACTION]...  List transaction confirmations
 confirm [TRANSACTION]...        Run transaction confirmations
+release [locks|ports]           Release acquired locks and reserved ports
 END
     
       if args[1] == 'confirm'
@@ -35,7 +36,7 @@ END
         raise VpsAdmindCtl::ValidationError, "invalid chain id '#{@args[1]}'"
       end
 
-      unless %w(confirmations confirm).include?(@args[2])
+      unless %w(confirmations confirm release).include?(@args[2])
         raise VpsAdmindCtl::ValidationError, "invalid subcommand '#{@args[2]}'"
       end
 
@@ -45,11 +46,21 @@ END
           :transactions => @args.size > 3 ? @args[3..-1].map { |v| v.to_i } : nil
       }
 
-      if @args[2] == 'confirm'
-        ret.update({
-            :direction => @opts[:direction],
-            :success => @opts[:success]
-        })
+      case @args[2]
+        when 'confirm'
+          ret.update({
+              :direction => @opts[:direction],
+              :success => @opts[:success]
+          })
+
+        when 'release'
+          if @args[3] && !%w(locks ports).include?(@args[3])
+            raise VpsAdmindctl::ValidationError, "invalid resource '#{@args[3]}'"
+          end
+
+          ret.update({
+              :release => @args[3].nil? ? %w(locks ports) : [@args[3]]
+          })
       end
 
       ret
@@ -62,6 +73,10 @@ END
 
         when 'confirm'
           list_confirmations(@res[:transactions])
+
+        when 'release'
+          list_locks(@res[:locks]) if @res[:locks]
+          list_ports(@res[:ports]) if @res[:ports]
 
       end
     end
@@ -91,6 +106,33 @@ END
       return '' unless hash
       return hash if hash.is_a?(::String)
       hash.inject([]) { |s, v| s << v.join('=')  }.join(',')
+    end
+
+    def list_locks(locks)
+      puts "RESOURCE LOCKS"
+      puts sprintf('%-30s %-10s %-20s', 'RESOURCE', 'ROW_ID', 'LOCKED_AT')
+
+      locks.each do |l|
+        puts sprintf('%-30s %-10d %-20s', l[:resource], l[:row_id], l[:created_at])
+      end
+
+      puts "Released #{locks.count} locks"
+    end
+
+    def list_ports(ports)
+      puts "RESERVED PORTS"
+      puts sprintf('%-20s %-20s %-10s', 'NODE', 'ADDR', 'PORT')
+
+      ports.each do |p|
+        puts sprintf(
+            '%-20s %-20s %-10d',
+            "#{p[:node_name]}.#{p[:location_domain]}",
+            p[:addr],
+            p[:port]
+        )
+      end
+
+      puts "Released #{ports.count} ports"
     end
   end
 end
