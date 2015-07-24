@@ -1038,7 +1038,7 @@ if (isset($show_info) && $show_info) {
 				$r->cluster_resource->max :
 				min($vps->{$name} + $r->free, $r->cluster_resource->max),
 			$r->cluster_resource->stepsize,
-			'MiB'
+			unit_for_cluster_resource($name)
 		);
 		$xtpl->table_tr();
 	}
