@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150717065916) do
+ActiveRecord::Schema.define(version: 20150728160553) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -487,20 +487,20 @@ ActiveRecord::Schema.define(version: 20150717065916) do
   add_index "resource_locks", ["resource", "row_id"], name: "index_resource_locks_on_resource_and_row_id", unique: true, using: :btree
 
   create_table "servers", primary_key: "server_id", force: true do |t|
-    t.string  "server_name",             limit: 64,                                 null: false
-    t.string  "server_type",             limit: 7,                                  null: false
-    t.integer "server_location",                                                    null: false
+    t.string  "server_name",             limit: 64,                                          null: false
+    t.string  "server_type",             limit: 7,                                           null: false
+    t.integer "server_location",                                                             null: false
     t.text    "server_availstat"
-    t.string  "server_ip4",              limit: 127,                                null: false
-    t.integer "max_vps",                                                            null: false
-    t.string  "ve_private",                          default: "/vz/private/%veid%", null: false
-    t.string  "fstype",                  limit: 10,  default: "zfs",                null: false
+    t.string  "server_ip4",              limit: 127,                                         null: false
+    t.integer "max_vps"
+    t.string  "ve_private",                          default: "/vz/private/%{veid}/private"
+    t.string  "fstype",                  limit: 10,  default: "zfs",                         null: false
     t.string  "net_interface",           limit: 50
-    t.integer "max_tx",                  limit: 8,   default: 235929600,            null: false
-    t.integer "max_rx",                  limit: 8,   default: 235929600,            null: false
-    t.integer "maintenance_lock",                    default: 0,                    null: false
+    t.integer "max_tx",                  limit: 8,   default: 235929600,                     null: false
+    t.integer "max_rx",                  limit: 8,   default: 235929600,                     null: false
+    t.integer "maintenance_lock",                    default: 0,                             null: false
     t.string  "maintenance_lock_reason"
-    t.integer "environment_id",                                                     null: false
+    t.integer "environment_id",                                                              null: false
   end
 
   add_index "servers", ["server_location"], name: "server_location", using: :btree
