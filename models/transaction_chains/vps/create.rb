@@ -78,11 +78,6 @@ module TransactionChains
       vps.save!
 
       concerns(:affect, [vps.class.name, vps.id])
-
-      # mapping, last_id = StorageExport.create_default_exports(self, depend: last_id)
-      # create_default_mounts(mapping)
-      #
-      # Transactions::Vps::Mounts.fire_chained(last_id, self, false)
     end
   end
 end

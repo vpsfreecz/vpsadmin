@@ -315,27 +315,6 @@ class Vps < ActiveRecord::Base
     DnsResolver.find(dns_resolver_id)
   end
 
-  def create_default_mounts(mapping)
-    VpsMount.default_mounts.each do |m|
-      mnt = VpsMount.new(m.attributes)
-      mnt.id = nil
-      mnt.default = false
-      mnt.vps = self if mnt.vps_id == 0 || mnt.vps_id.nil?
-
-      unless m.storage_export_id.nil? || m.storage_export_id == 0
-        export = StorageExport.find(m.storage_export_id)
-
-        mnt.storage_export_id = mapping[export.id] if export.default != 'no'
-      end
-
-      mnt.save!
-    end
-  end
-
-  def delete_mounts
-    self.vps_mounts.delete(self.vps_mounts.all)
-  end
-
   def prefix_mountpoint(parent, part, mountpoint)
     root = '/'
 
