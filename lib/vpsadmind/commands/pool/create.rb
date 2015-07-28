@@ -4,12 +4,20 @@ module VpsAdmind
     needs :system, :zfs, :pool
 
     def exec
-      zfs(:create, '-p', @pool_fs)
-      zfs(:create, '-p', "#{@pool_fs}/#{pool_work_root}")
+      if @options
+        opts = @options.map { |k, v| "-o #{k}=\"#{translate_property(k, v)}\""  }.join(' ')
+      else
+        opts = ''
+      end
+      
+      zfs(:create, opts, @pool_fs)
+      zfs(:create, nil, "#{@pool_fs}/#{pool_work_root}")
 
       pool_working_dirs.each do |s|
-        zfs(:create, '-p', "#{@pool_fs}/#{path_to_pool_working_dir(s)}")
+        zfs(:create, nil, "#{@pool_fs}/#{path_to_pool_working_dir(s)}")
       end
+
+      ok
     end
 
     def rollback
