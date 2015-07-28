@@ -1,6 +1,8 @@
 class EnvironmentUserConfig < ActiveRecord::Base
   belongs_to :environment
   belongs_to :user
+  
+  has_paper_trail
 
   def update!(attrs)
     if attrs[:default]

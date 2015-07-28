@@ -20,7 +20,7 @@ class Vps < ActiveRecord::Base
 
   has_one :vps_status
 
-  has_paper_trail
+  has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
 
   alias_attribute :veid, :vps_id
   alias_attribute :hostname, :vps_hostname

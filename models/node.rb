@@ -12,7 +12,7 @@ class Node < ActiveRecord::Base
   has_many :port_reservations
   has_one :node_status, foreign_key: :server_id
 
-  has_paper_trail
+  has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
 
   alias_attribute :name, :server_name
   alias_attribute :addr, :server_ip4

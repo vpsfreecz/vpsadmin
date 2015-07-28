@@ -4,7 +4,7 @@ class Location < ActiveRecord::Base
   has_many :nodes, :foreign_key => :server_location
   has_many :ip_addresses, :foreign_key => :ip_location
   has_many :dns_resolvers, foreign_key: :dns_location
-  has_paper_trail
+  has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
 
   alias_attribute :label, :location_label
   alias_attribute :has_ipv6, :location_has_ipv6

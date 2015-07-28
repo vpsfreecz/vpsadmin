@@ -4,6 +4,7 @@ class DatasetProperty < ActiveRecord::Base
   belongs_to :dataset
 
   has_ancestry cache_depth: true
+  has_paper_trail
 
   serialize :value
 

@@ -20,9 +20,9 @@ class User < ActiveRecord::Base
 
   attr_reader :password_plain
 
-  has_paper_trail ignore: [
-      :last_activity_at,
-  ]
+  has_paper_trail only: %i(m_nick m_level m_name m_mail m_address
+                           m_monthly_payment m_mailer_enable object_state
+                           expiration_date paid_until)
 
   validates :m_level, :m_nick, :m_pass, presence: true
   validates :m_level, numericality: {

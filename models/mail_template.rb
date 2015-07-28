@@ -1,6 +1,8 @@
 class MailTemplate < ActiveRecord::Base
   has_many :mail_template_recipients
   has_many :mail_recipients, through: :mail_template_recipients
+  
+  has_paper_trail
 
   class TemplateBuilder
     def initialize(vars)
