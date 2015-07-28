@@ -1,6 +1,17 @@
 class MaintenanceLock < ActiveRecord::Base
   belongs_to :user
 
+  # Return a new MaintenanceLock instance that may be used to lock
+  # +obj+.
+  def self.lock_for(obj, user: nil, reason: 'Reason not specified')
+    new(
+        class_name: obj.class.to_s,
+        row_id: obj.id,
+        reason: reason,
+        user: user || ::User.current
+    )
+  end
+
   def lock!(obj)
     self.class.transaction do
       tmp = self.class.find_by(

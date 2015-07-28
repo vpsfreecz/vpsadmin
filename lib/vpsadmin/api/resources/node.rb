@@ -21,6 +21,10 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     string :net_interface, label: 'Network interface', desc: 'Outgoing network interface'
     integer :max_tx, label: 'Max tx', desc: 'Maximum output throughput'
     integer :max_rx, label: 'Max tx', desc: 'Maximum input throughput'
+
+    # Hypervisor-specific params
+    integer :max_vps
+    string :ve_private
   end
 
   params(:all) do
@@ -86,15 +90,18 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
   end
 
   class Create < HaveAPI::Actions::Default::Create
-    desc 'Create new node'
+    desc 'Create a new node'
 
     input do
-      use :common
+      use :common, include: %i(name type location environment ip_addr
+                               net_interface max_tx max_rx)
       patch :name, required: true
       patch :type, required: true
       patch :location, required: true
       patch :environment, required: true
       patch :ip_addr, required: true
+      patch :net_interface, required: true
+      bool :maintenance, desc: 'Put the node into maintenance mode'
     end
 
     output do
@@ -105,33 +112,11 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       allow if u.role == :admin
     end
 
-    example do
-      request({
-        node: {
-          name: 'node2',
-          type: 'node',
-          location: 1,
-          environment: 1,
-          availstat: '',
-          ip_addr: '192.168.0.11',
-          maintenance: false
-        }
-      })
-      response({
-        node: {
-          id: 2
-        }
-      })
-    end
-
     def exec
-      node = ::Node.new(to_db_names(input))
-
-      if node.save
-        ok(node)
-      else
-        error('save failed', to_param_names(node.errors.to_hash, :input))
-      end
+      ::Node.register!(to_db_names(input))
+    
+    rescue ActiveRecord::RecordInvalid => e
+      error('save failed', to_param_names(e.record.errors.to_hash, :input))
     end
   end
 

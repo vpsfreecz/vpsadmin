@@ -32,6 +32,11 @@ class Node < ActiveRecord::Base
       with: /\A\d+\.\d+\.\d+\.\d+\Z/,
       message: 'not a valid IPv4 address'
   }
+  validates :max_vps, presence: true, numericality: {
+      only_integer: true,
+      greater_than: 0
+  }, if: :hypervisor?
+  validates :ve_private, presence: true, if: :hypervisor?
 
   after_update :shaper_changed, if: :shaper_changed?
 
@@ -41,6 +46,15 @@ class Node < ActiveRecord::Base
   maintenance_children :vpses
 
   include Lockable
+
+  def self.register!(attrs)
+    opts = {
+        maintenance: attrs.delete(:maintenance)
+    }
+    n = new(attrs)
+
+    TransactionChains::Node::Register.fire(n, opts)
+  end
 
   def location_domain
     "#{name}.#{location.domain}"
@@ -152,7 +166,7 @@ class Node < ActiveRecord::Base
   end
 
   def vps_free
-    max_vps - vps_total
+    max_vps && (max_vps - vps_total)
   end
 
   def daemon_version
@@ -161,6 +175,10 @@ class Node < ActiveRecord::Base
 
   def kernel_version
     node_status && node_status.kernel
+  end
+
+  def hypervisor?
+    server_type == 'node'
   end
 
   protected
