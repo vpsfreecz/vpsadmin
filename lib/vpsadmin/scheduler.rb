@@ -136,7 +136,10 @@ module VpsAdmin
           @actions.clear
 
           RepeatableTask.all.order(:id).each do |t|
-            @actions[t.id] = Kernel.const_get(t.class_name).find(t.row_id)
+            @actions[t.id] = {
+                class_name: t.class_name,
+                row_id: t.row_id
+            }
 
             crontab.write(
                 "#{t.minute} #{t.hour} #{t.day_of_month} #{t.month} #{t.day_of_week} " +
@@ -159,7 +162,8 @@ module VpsAdmin
 
         @action_mutex.synchronize do
           ActiveRecord::Base.connection_pool.with_connection do
-            task = @actions[id]
+            act = @actions[id]
+            task = Object.const_get(act[:class_name]).find(act[:row_id])
             next unless task
 
             begin
