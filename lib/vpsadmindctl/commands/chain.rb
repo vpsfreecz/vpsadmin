@@ -5,8 +5,8 @@ module VpsAdmindCtl::Commands
 
     def options(opts, args)
       @opts = {
-          direction: :execute,
-          success: true
+          :direction => :execute,
+          :success => true
       }
 
       opts.separator <<END
@@ -20,8 +20,8 @@ END
         opts.on('--direction DIR', %w(execute rollback), 'Direction (execute or rollback)') do |d|
           @opts[:direction] = d
         end
-
-        opts.on('--[no]-success', 'Success') do |s|
+        
+        opts.on('--[no-]success', 'Success') do |s|
           @opts[:success] = s
         end
       end
@@ -95,7 +95,7 @@ END
             c[:done] ? 1 : 0,
             c[:class_name],
             format_hash(c[:row_pks]),
-            format_hash(c[:attr_changes]),
+            format_hash(c[:attr_changes])
           )
         end
         puts '-' * 80
