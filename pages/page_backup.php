@@ -85,7 +85,7 @@ if ($_SESSION["logged_in"]) {
 					
 					$msg = '';
 					
-					if (isset($_GET['vps_id'])) {
+					if ($_GET['vps_id']) {
 						$vps = $api->vps->find($_GET['vps_id']);
 						
 						if ($ds->id == $vps->dataset_id)
