@@ -438,6 +438,9 @@ module VpsAdmin::API::Resources
 
           snap.dataset.rollback_snapshot(snap)
           ok
+
+        rescue VpsAdmin::API::Exceptions::SnapshotInUse => e
+          error(e.message)
         end
       end
     end

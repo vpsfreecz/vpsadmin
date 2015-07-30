@@ -170,7 +170,7 @@ class Dataset < ActiveRecord::Base
       vps.restore(s)
 
     else
-      fail 'not implemented'
+      TransactionChains::Dataset::Rollback.fire(dip, s)
     end
   end
 

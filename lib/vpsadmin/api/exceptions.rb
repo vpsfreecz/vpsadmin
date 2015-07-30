@@ -56,6 +56,15 @@ module VpsAdmin::API::Exceptions
     end
   end
 
+  class SnapshotInUse < ::StandardError
+    attr_reader :snapshot
+
+    def initialize(snapshot)
+      @snapshot = snapshot
+      super("snapshot '#{snapshot.dataset_in_pool.dataset.full_name}@#{snapshot.snapshot.name}' is in use")
+    end
+  end
+
   class DatasetPlanNotInEnvironment < ::StandardError
     attr_reader :dataset_plan, :environment
 

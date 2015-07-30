@@ -5,6 +5,8 @@ module TransactionChains
 
     def link_chain(dataset_in_pool, snapshot)
       # One of the four scenarios will occur:
+      # 0) Snapshot does not have backups
+      #    -> simply rollback, delete newer snapshots (check if it's possible)
       # 1) Snapshot is the last snapshot on the hypervisor
       #    -> just rollback
       # 2) Snapshot is on the hypervisor but not on any backup
@@ -19,8 +21,46 @@ module TransactionChains
       lock(dataset_in_pool)
       concerns(:affect, [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id])
 
+      # Scenario 0)
+      if dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where(
+             pools: {role: ::Pool.roles[:backup]}
+         ).count == 0
+        
+        sip = snapshot.snapshot_in_pools.where(dataset_in_pool: dataset_in_pool).take
+        fail 'nothing to rollback, integrity error' unless sip
+        
+        pre_local_rollback
+
+        append(Transactions::Storage::Rollback, args: [
+            dataset_in_pool,
+            sip
+        ]) do
+          dataset_in_pool.snapshot_in_pools.where(
+              'id > ?', sip.id
+          ).order('id').each do |s|
+            if s.reference_count > 0
+              raise VpsAdmin::API::Exceptions::SnapshotInUse, s
+            end
+
+            s.update!(confirmed: ::SnapshotInPool.confirmed(:confirm_destroy))
+            s.snapshot.update!(confirmed: ::Snapshot.confirmed(:confirm_destroy))
+
+            destroy(s)
+            destroy(s.snapshot)
+          end
+        end
+
+        post_local_rollback
+
+        return
+      end
+
       # Fetch the last snapshot on the +dataset_in_pool+
       primary_last_snap = ::SnapshotInPool.where(dataset_in_pool: dataset_in_pool).order('snapshot_id DESC').take
+
+      # Find the snapshot_in_pool on pool with hypervisor or primary role
+      snapshot_on_primary = snapshot.snapshot_in_pools.joins(dataset_in_pool: [:pool])
+        .where('pools.role IN (?, ?)', ::Pool.roles[:hypervisor], ::Pool.roles[:primary]).take
 
       # Scenario 1)
       if primary_last_snap.snapshot_id == snapshot.id
@@ -29,10 +69,6 @@ module TransactionChains
         post_local_rollback
         return
       end
-
-      # Find the snapshot_in_pool on pool with hypervisor or primary role
-      snapshot_on_primary = snapshot.snapshot_in_pools.joins(dataset_in_pool: [:pool])
-        .where('pools.role IN (?, ?)', ::Pool.roles[:hypervisor], ::Pool.roles[:primary]).take
 
       # Scenario 2) or 3)
       if snapshot_on_primary
