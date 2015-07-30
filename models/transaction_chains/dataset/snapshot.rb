@@ -11,7 +11,7 @@ module TransactionChains
       s = ::Snapshot.create(
           name: "#{snap} (unconfirmed)",
           dataset_id: dataset_in_pool.dataset_id,
-          confirmed: Snapshot.confirmed(:confirm_create)
+          confirmed: ::Snapshot.confirmed(:confirm_create)
       )
 
       sip = ::SnapshotInPool.create(
