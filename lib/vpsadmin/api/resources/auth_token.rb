@@ -146,7 +146,8 @@ class VpsAdmin::API::Resources::AuthToken < HaveAPI::Resource
     end
 
     def exec
-      ::ApiToken.find_by!(with_restricted(id: params[:auth_token_id])).destroy
+      t = ::ApiToken.find_by!(with_restricted(id: params[:auth_token_id]))
+      ::UserSession.close!(request, t.user, token: t)
       ok
     end
   end

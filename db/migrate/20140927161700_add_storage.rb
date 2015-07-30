@@ -87,7 +87,7 @@ class AddStorage < ActiveRecord::Migration
             confirmed: 1
         )
 
-        if values[name]
+        if values.has_key?(name)
           property.value = values[name]
           property.inherited = false
         else

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150728160553) do
+ActiveRecord::Schema.define(version: 20150730133630) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                           null: false
@@ -583,6 +583,7 @@ ActiveRecord::Schema.define(version: 20150728160553) do
     t.datetime "updated_at"
     t.integer  "urgent_rollback",             default: 0, null: false
     t.integer  "concern_type",                default: 0, null: false
+    t.integer  "user_session"
   end
 
   create_table "transaction_confirmations", force: true do |t|
@@ -654,6 +655,27 @@ ActiveRecord::Schema.define(version: 20150728160553) do
   end
 
   add_index "user_cluster_resources", ["user_id", "environment_id", "cluster_resource_id"], name: "user_cluster_resource_unique", unique: true, using: :btree
+
+  create_table "user_session_agents", force: true do |t|
+    t.text     "agent",                 null: false
+    t.string   "agent_hash", limit: 40, null: false
+    t.datetime "created_at",            null: false
+  end
+
+  add_index "user_session_agents", ["agent_hash"], name: "user_session_agents_hash", unique: true, using: :btree
+
+  create_table "user_sessions", force: true do |t|
+    t.integer  "user_id",                           null: false
+    t.string   "auth_type",             limit: 30,  null: false
+    t.string   "ip_addr",               limit: 46,  null: false
+    t.integer  "user_session_agent_id"
+    t.string   "client_version",                    null: false
+    t.integer  "api_token_id"
+    t.string   "api_token_str",         limit: 100
+    t.datetime "created_at",                        null: false
+    t.datetime "last_request_at"
+    t.datetime "closed_at"
+  end
 
   create_table "versions", force: true do |t|
     t.string   "item_type",  null: false

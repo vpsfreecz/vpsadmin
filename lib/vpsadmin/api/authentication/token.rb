@@ -5,22 +5,24 @@ module VpsAdmin::API::Authentication
       ::ApiToken.generate
     end
 
-    def save_token(request, user, token, lifetime, interval)
-      valid = ::ApiToken.create(
-          user: user,
+    def save_token(request, user_session, token, lifetime, interval)
+      t = ::ApiToken.create!(
+          user: user_session.user,
           token: token,
           valid_to: (lifetime != 'permanent' ? Time.now + interval : nil),
           lifetime: lifetime,
           interval: interval,
           label: request.user_agent
-      ).valid_to
+      )
 
-      valid && valid.strftime('%FT%T%z')
+      ::UserSession.current.start!(t)
+
+      t.valid_to && t.valid_to.strftime('%FT%T%z')
     end
 
     def revoke_token(request, user, token)
       t = ::ApiToken.find_by(user: user, token: token)
-      t && t.destroy
+      t && ::UserSession.close!(request, user, token: t)
     end
 
     def renew_token(request, user, token)
@@ -28,13 +30,13 @@ module VpsAdmin::API::Authentication
 
       if t.lifetime.start_with('renewable')
         t.renew
-        t.save
+        t.save!
         t.valid_to
       end
     end
 
     def find_user_by_credentials(request, username, password)
-      ::User.authenticate(request, username, password)
+      ::UserSession.authenticate!(request, username, password)
     end
 
     def find_user_by_token(request, token)
@@ -45,10 +47,10 @@ module VpsAdmin::API::Authentication
 
         if t.lifetime == 'renewable_auto'
           t.renew
-          t.save
+          t.save!
         end
-
-        t.user.resume_login(request)
+        
+        ::UserSession.resume!(request, t.user, token: t)
       end
     end
   end

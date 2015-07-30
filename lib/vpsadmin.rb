@@ -6,6 +6,7 @@ require 'pp'
 require 'haveapi'
 require 'ancestry'
 require 'ipaddress'
+require 'digest/sha1'
 
 Thread.abort_on_exception = true
 

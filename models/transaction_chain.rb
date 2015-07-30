@@ -7,6 +7,7 @@ class TransactionChain < ActiveRecord::Base
   has_many :transactions
   has_many :transaction_chain_concerns
   belongs_to :user
+  belongs_to :user_session
 
   enum state: %i(staged queued done rollbacking failed fatal)
   enum concern_type: %i(chain_affect chain_transform)
@@ -29,6 +30,7 @@ class TransactionChain < ActiveRecord::Base
       chain.state = :staged
       chain.size = 0
       chain.user = User.current
+      chain.user_session = ::UserSession.current
       chain.urgent_rollback = urgent_rollback? || false
       chain.save
 
