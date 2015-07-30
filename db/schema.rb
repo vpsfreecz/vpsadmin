@@ -11,16 +11,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150730133630) do
+ActiveRecord::Schema.define(version: 20150730152316) do
 
   create_table "api_tokens", force: true do |t|
-    t.integer  "user_id",                           null: false
-    t.string   "token",     limit: 100,             null: false
+    t.integer  "user_id",                            null: false
+    t.string   "token",      limit: 100,             null: false
     t.datetime "valid_to"
     t.string   "label"
-    t.integer  "use_count",             default: 0, null: false
-    t.integer  "lifetime",                          null: false
+    t.integer  "use_count",              default: 0, null: false
+    t.integer  "lifetime",                           null: false
     t.integer  "interval"
+    t.datetime "created_at"
   end
 
   create_table "branches", force: true do |t|

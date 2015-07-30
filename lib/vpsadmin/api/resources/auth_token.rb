@@ -32,6 +32,7 @@ class VpsAdmin::API::Resources::AuthToken < HaveAPI::Resource
     use :create
     integer :use_count, label: 'Use count',
             desc: 'How many times was the token used to authenticate the user'
+    datetime :created_at
   end
 
   params(:all) do
