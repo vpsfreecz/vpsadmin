@@ -276,6 +276,7 @@ module TransactionChains
   module Pool           ; end
   module Dataset        ; end
   module DatasetInPool  ; end
+  module Snapshot       ; end
   module SnapshotInPool ; end
   module DatasetTree    ; end
   module Branch         ; end

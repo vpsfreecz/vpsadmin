@@ -5,6 +5,10 @@ class Snapshot < ActiveRecord::Base
   belongs_to :snapshot_download
 
   include Confirmable
+  
+  def destroy
+    TransactionChains::Snapshot::Destroy.fire(self)
+  end
 
   def download
     TransactionChains::Dataset::Download.fire(self)

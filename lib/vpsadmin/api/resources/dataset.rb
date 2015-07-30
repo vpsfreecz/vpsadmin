@@ -390,6 +390,35 @@ module VpsAdmin::API::Resources
         end
       end
 
+      class Delete < HaveAPI::Actions::Default::Delete
+        desc 'Destroy a snapshot'
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict datasets: {user_id: u.id}
+          allow
+        end
+
+        def exec
+          snap = ::Snapshot.includes(:dataset).joins(:dataset).find_by!(with_restricted(
+              dataset_id: params[:dataset_id],
+              id: params[:snapshot_id]
+          ))
+          
+          if snap.snapshot_in_pools.exists?('reference_count > 0')
+            error('this snapshot cannot be destroyed as others are depending on it')
+
+          elsif snap.dataset.dataset_in_pools.joins(:pool).where(
+                    pools: {role: ::Pool.roles[:backup]}
+                ).count > 0
+            error('cannot destroy snapshot with backups')
+          end
+
+          snap.destroy
+          ok
+        end
+      end
+
       class Rollback < HaveAPI::Action
         desc 'Rollback to a snapshot'
         route ':%{resource}_id/rollback'
