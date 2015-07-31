@@ -406,10 +406,15 @@ Upgrade by:
 	# cd /where/is/vpsadmin
 	# git pull
 
+Install [composer](https://getcomposer.org) and then use it to install dependencies:
+
+	# php composer.phar install
+
 Changes:
 
  - Add to `/etc/vpsadmin/config.php`:
 
+	`API_URL` - HTTP URL to the API server
 	`ENV_VPS_PRODUCTION_ID` - the ID of the production environment in which
 	                          VPSes are created by default
 
