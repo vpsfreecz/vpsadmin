@@ -31,9 +31,10 @@ module VpsAdmin::API::Tasks
 
       get_objects.each do |obj|
         puts "Model #{obj}"
-
+        
         q = obj.where('expiration_date < ?', time)
         q = q.where(object_state: states) if states
+        q = q.order('full_name DESC') if obj.name == 'Dataset'
 
         q.each do |obj|
           obj.progress_object_state(
