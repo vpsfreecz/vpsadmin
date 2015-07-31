@@ -22,6 +22,6 @@ class AddUserSessions < ActiveRecord::Migration
       t.datetime    :closed_at,          null: true
     end
 
-    add_column :transaction_chains, :user_session, :integer, null: true
+    add_column :transaction_chains, :user_session_id, :integer, null: true
   end
 end

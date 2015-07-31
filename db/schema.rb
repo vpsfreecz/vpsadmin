@@ -584,7 +584,7 @@ ActiveRecord::Schema.define(version: 20150730152316) do
     t.datetime "updated_at"
     t.integer  "urgent_rollback",             default: 0, null: false
     t.integer  "concern_type",                default: 0, null: false
-    t.integer  "user_session"
+    t.integer  "user_session_id"
   end
 
   create_table "transaction_confirmations", force: true do |t|
