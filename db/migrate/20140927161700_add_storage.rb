@@ -547,20 +547,20 @@ class AddStorage < ActiveRecord::Migration
       end
 
       parts[index..-1].each do |name|
-        new_ds = Dataset.create!(
+        last_ds = Dataset.create!(
             name: name,
             parent: last_ds,
             user_id: export.member_id,
             user_editable: last_ds ? export.user_editable : false,
             user_create: export.user_editable,
-            user_destroy: false,
+            user_destroy: export.user_editable,
             confirmed: 1
         )
 
         ds_in_pool = DatasetInPool.create!(
-          dataset_id: new_ds.id,
+          dataset_id: last_ds.id,
           pool_id: pool_mapping[ export.root_id ],
-          label: new_ds ? nil : 'nas',
+          label: last_ds.parent ? nil : 'nas',
           confirmed: 1
         )
 
