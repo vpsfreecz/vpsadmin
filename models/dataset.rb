@@ -100,6 +100,13 @@ class Dataset < ActiveRecord::Base
       if name =~ /\.\./
         errors.add(:mountpoint, "'..' not allowed in dataset name")
       end
+
+      %w(branch- tree.).each do |prefix|
+        if name.start_with?(prefix)
+          errors.add(:name, "cannot start with prefix '#{prefix}'")
+          break
+        end
+      end
     end
   end
 
