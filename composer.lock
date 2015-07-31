@@ -1,23 +1,23 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "62db57f224ff37ff82073d4a404f58f7",
+    "hash": "3137c8adbdeeb134375d4ad682e9dc07",
     "packages": [
         {
             "name": "haveapi/client",
-            "version": "dev-devel",
+            "version": "0.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/vpsfreecz/haveapi-client-php.git",
-                "reference": "18bb1b16afe0e4e5f991be5791810ee7114ad536"
+                "reference": "ab09b50e73da94bab7e8d7f308a07dc7b165b3a9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/18bb1b16afe0e4e5f991be5791810ee7114ad536",
-                "reference": "18bb1b16afe0e4e5f991be5791810ee7114ad536",
+                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/ab09b50e73da94bab7e8d7f308a07dc7b165b3a9",
+                "reference": "ab09b50e73da94bab7e8d7f308a07dc7b165b3a9",
                 "shasum": ""
             },
             "require": {
@@ -30,6 +30,7 @@
                     "HaveAPI\\": "src/"
                 }
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -41,24 +42,20 @@
             ],
             "description": "A client for HaveAPI based APIs",
             "homepage": "https://github.com/vpsfreecz/haveapi-client-php",
-            "support": {
-                "source": "https://github.com/vpsfreecz/haveapi-client-php/tree/devel",
-                "issues": "https://github.com/vpsfreecz/haveapi-client-php/issues"
-            },
-            "time": "2014-11-09 09:55:25"
+            "time": "2015-07-24 13:58:36"
         },
         {
             "name": "nategood/httpful",
-            "version": "0.2.17",
+            "version": "0.2.19",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nategood/httpful.git",
-                "reference": "7beda470b57250f60ce1b0179c5551620c3e43e6"
+                "reference": "bd73f89d34d8f879c54ac46eb94b0f7be1d00820"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nategood/httpful/zipball/7beda470b57250f60ce1b0179c5551620c3e43e6",
-                "reference": "7beda470b57250f60ce1b0179c5551620c3e43e6",
+                "url": "https://api.github.com/repos/nategood/httpful/zipball/bd73f89d34d8f879c54ac46eb94b0f7be1d00820",
+                "reference": "bd73f89d34d8f879c54ac46eb94b0f7be1d00820",
                 "shasum": ""
             },
             "require": {
@@ -95,24 +92,15 @@
                 "rest",
                 "restful"
             ],
-            "time": "2014-08-24 21:57:36"
+            "time": "2015-03-08 15:22:23"
         }
     ],
-    "packages-dev": [
-
-    ],
-    "aliases": [
-
-    ],
+    "packages-dev": [],
+    "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "haveapi/client": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
-    "platform": [
-
-    ],
-    "platform-dev": [
-
-    ]
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": []
 }

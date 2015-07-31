@@ -1,11 +1,5 @@
 {
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/vpsfreecz/haveapi-client-php"
-        }
-    ],
     "require": {
-        "haveapi/client": "dev-devel"
+        "haveapi/client": "0.3.*"
     }
 }
