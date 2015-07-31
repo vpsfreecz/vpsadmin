@@ -53,14 +53,24 @@ class UseObjectLifetimes < ActiveRecord::Migration
               user_id: nil,
               reason: u.m_suspend_reason
           ) if u.m_state != 'active'
+
+          u.update!(
+              object_state: {
+                  'active' => 0,
+                  'suspended' => 1,
+                  'deleted' => 2
+              }[u.m_state] || 0
+          )
         end
 
         Vps.all.each do |vps|
+          expiration = vps.vps_expiration ? Time.at(vps.vps_expiration.to_i) : nil
+
           ObjectState.create!(
               class_name: 'Vps',
               row_id: vps.id,
               state: 0,
-              expiration_date: vps.vps_expiration ? Time.at(vps.vps_expiration.to_i) : nil,
+              expiration_date: expiration,
               user_id: nil,
               created_at: Time.at(vps.vps_created.to_i)
           )
@@ -73,6 +83,11 @@ class UseObjectLifetimes < ActiveRecord::Migration
               user_id: nil,
               created_at: Time.at(vps.vps_deleted.to_i)
           ) if vps.vps_deleted
+
+          vps.update!(
+              object_state: vps.vps_deleted ? 2 : 0,
+              expiration_date: expiration
+          )
         end
 
         Dataset.all.each do |ds|
