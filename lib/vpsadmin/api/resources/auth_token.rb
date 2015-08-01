@@ -88,10 +88,22 @@ class VpsAdmin::API::Resources::AuthToken < HaveAPI::Resource
       t = ::ApiToken.custom(input)
 
       if t.save
+        ::UserSession.create!(
+            user: t.user,
+            auth_type: 'token',
+            ip_addr: request.ip,
+            user_session_agent: ::UserSessionAgent.find_or_create!(request.user_agent),
+            client_version: request.user_agent,
+            api_token_id: t.id,
+            api_token_str: t.token
+        )
         ok(t)
       else
         error('save failed', t.errors.to_hash)
       end
+
+    rescue ActiveRecord::RecordInvalid
+      error('failed to create a session')
     end
   end
 
