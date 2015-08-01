@@ -274,7 +274,9 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
       end
 
       def query
-        ::EnvironmentDatasetPlan.where(with_restricted)
+        ::EnvironmentDatasetPlan.where(with_restricted(
+            environment_id: params[:environment_id]
+        ))
       end
 
       def count
@@ -299,7 +301,10 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
       end
 
       def exec
-        ::EnvironmentDatasetPlan.find(params[:dataset_plan_id])
+        ::EnvironmentDatasetPlan.find_by!(
+            environment_id: params[:environment_id],
+            dataset_plan_id: params[:dataset_plan_id]
+        )
       end
     end
   end
