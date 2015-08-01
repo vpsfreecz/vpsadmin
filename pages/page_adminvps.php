@@ -887,12 +887,12 @@ if (isset($show_info) && $show_info) {
 		$tmp[] = '-------';
 		$free_4 = $tmp + get_free_ip_list(4, $vps, 25);
 		
-		if ($vps_location["location_has_ipv6"])
+		if ($vps->node->location->has_ipv6)
 			$free_6 = $tmp + get_free_ip_list(6, $vps, 25);
 			
 		$xtpl->form_add_select(_("Add IPv4 address").':', 'ip_recycle', $free_4, '', _('Add one IP address at a time'));
 		
-		if ($vps->location->has_ipv6)
+		if ($vps->node->location->has_ipv6)
 			$xtpl->form_add_select(_("Add IPv6 address").':', 'ip6_recycle', $free_6, '', _('Add one IP address at a time'));
 			
 		$xtpl->table_tr();
