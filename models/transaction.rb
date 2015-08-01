@@ -62,13 +62,14 @@ class Transaction < ActiveRecord::Base
   # Transaction is to be in +chain+, +dep+ is the id of the previous transaction
   # in the chain.
   # When given a block, it is called in the context of Confirmable.
-  def self.fire_chained(chain, dep, urgent, *args, &block)
+  def self.fire_chained(chain, dep, urgent, prio, *args, &block)
     t = new
 
     t.transaction_chain = chain
     t.t_depends_on = dep
     t.t_type = t.class.t_type if t.class.t_type
     t.t_urgent = urgent
+    t.t_priority = prio || 0
     t.reversible = @reversible.nil? ? :is_reversible : @reversible
 
     if block

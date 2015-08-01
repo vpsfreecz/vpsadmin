@@ -14,7 +14,7 @@ class TransactionChain < ActiveRecord::Base
 
   attr_reader :acquired_locks
   attr_accessor :last_id, :last_node_id, :dst_chain, :named, :locks, :urgent,
-                :mail_server
+                :prio, :mail_server
 
   include HaveAPI::Hookable
 
@@ -69,7 +69,7 @@ class TransactionChain < ActiveRecord::Base
   # except that all transactions are appended to +chain+,
   # not to instance of self.
   # This method should not be called directly, but via #use_chain.
-  def self.use_in(chain, args: [], urgent: false, method: :link_chain,
+  def self.use_in(chain, args: [], urgent: false, prio: 0, method: :link_chain,
                   hooks: {})
     c = new
 
@@ -79,6 +79,7 @@ class TransactionChain < ActiveRecord::Base
     c.named = chain.named
     c.locks = chain.locks
     c.urgent = urgent
+    c.prio = prio
 
     hooks.each do |k, v|
       c.connect_hook(k, &v)
@@ -123,6 +124,7 @@ class TransactionChain < ActiveRecord::Base
     @named = {}
     @dst_chain = self
     @urgent = false
+    @prio = 0
   end
 
   # All chains must implement this method.
@@ -150,8 +152,8 @@ class TransactionChain < ActiveRecord::Base
   # +args+ and +block+ are forwarded to target transaction.
   # Use the block to configure transaction confirmations, see
   # Transaction::Confirmable.
-  def append(klass, name: nil, args: [], urgent: nil, &block)
-    do_append(@last_id, name, klass, args, urgent, block)
+  def append(klass, name: nil, args: [], urgent: nil, prio: nil, &block)
+    do_append(@last_id, name, klass, args, urgent, prio, block)
   end
 
   # This method will be deprecated in the near future.
@@ -160,19 +162,21 @@ class TransactionChain < ActiveRecord::Base
   # If +name+ is set, it is used as an anchor which other
   # transaction in chain might hang onto.
   # +args+ and +block+ are forwarded to target transaction.
-  def append_to(dep_name, klass, name: nil, args: [], urgent: nil, &block)
-    do_append(@named[dep_name], name, klass, args, urgent, block)
+  def append_to(dep_name, klass, name: nil, args: [], urgent: nil, prio: nil, &block)
+    do_append(@named[dep_name], name, klass, args, urgent, prio, block)
   end
 
   # Call this method from TransactionChain#link_chain to include
   # +chain+. +args+ are passed to the chain as in ::fire.
-  def use_chain(chain, args: [], urgent: nil, method: :link_chain, hooks: {})
+  def use_chain(chain, args: [], urgent: nil, prio: nil, method: :link_chain, hooks: {})
     urgent ||= self.urgent
+    prio ||= self.prio
 
     c, ret = chain.use_in(
         self,
         args: args.is_a?(Array) ? args : [args],
         urgent: urgent,
+        prio: prio,
         method: method,
         hooks: hooks
     )
@@ -248,13 +252,14 @@ class TransactionChain < ActiveRecord::Base
   end
 
   private
-  def do_append(dep, name, klass, args, urgent, block)
+  def do_append(dep, name, klass, args, urgent, prio, block)
     args = [args] unless args.is_a?(Array)
 
     urgent ||= self.urgent
+    prio || self.prio
 
     @dst_chain.size += 1
-    t = klass.fire_chained(@dst_chain, dep, urgent, *args, &block)
+    t = klass.fire_chained(@dst_chain, dep, urgent, prio, *args, &block)
     @last_node_id = t.t_server
     @last_id = t.id
     @named[name] = @last_id if name
