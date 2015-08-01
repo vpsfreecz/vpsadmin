@@ -1236,8 +1236,11 @@ if ($list_nodes) {
 		// Availability icon
 		$icons = "";
 		$maintenance_toggle = $node->maintenance_lock == 'lock' ? 0 : 1;
+	
+		$t = new DateTime($node->last_report);
+		$t->setTimezone(new DateTimeZone(date_default_timezone_get()));
 		
-		if ((time() - strtotime($node->last_report)) > 150) {
+		if ((time() - $t->getTimestamp()) > 150) {
 			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
 		
 		} else {
