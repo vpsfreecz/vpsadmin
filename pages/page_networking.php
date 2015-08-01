@@ -64,10 +64,8 @@ if ($show_list) {
 		$xtpl->form_add_select(_("Month").':', 'month', month_list(), date("n"));
 	
 	if ($_SESSION['is_admin']) {
-		$xtpl->form_add_select(_("User").':', 'user',
-			resource_list_to_options($api->user->list(), 'id', 'login', true, user_label), get_val('user'));
-		$xtpl->form_add_select(_("VPS").':', 'vps',
-			resource_list_to_options($api->vps->list(), 'id', 'hostname', true, vps_label), get_val('vps'));
+		$xtpl->form_add_input(_("User").':', 'text', '30', 'user', get_val('user'));
+		$xtpl->form_add_input(_("VPS").':', 'text', '30', 'vps', get_val('vps'));
 		$xtpl->form_add_select(_("Node").':', 'node', 
 			resource_list_to_options($api->node->list(), 'id', 'name'), get_val('node'));
 		$xtpl->form_add_select(_("Location").':', 'location',
