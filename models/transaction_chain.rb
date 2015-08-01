@@ -256,7 +256,7 @@ class TransactionChain < ActiveRecord::Base
     args = [args] unless args.is_a?(Array)
 
     urgent ||= self.urgent
-    prio || self.prio
+    prio ||= self.prio
 
     @dst_chain.size += 1
     t = klass.fire_chained(@dst_chain, dep, urgent, prio, *args, &block)
