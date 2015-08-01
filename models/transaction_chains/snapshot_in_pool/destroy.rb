@@ -53,7 +53,7 @@ module TransactionChains
 
     protected
     def cleanup_snapshot?(snapshot_in_pool)
-      Snapshot.joins(:snapshot_in_pools)
+      ::Snapshot.joins(:snapshot_in_pools)
           .where(snapshots: {id: snapshot_in_pool.snapshot_id})
           .where.not(snapshot_in_pools: {confirmed: ::SnapshotInPool.confirmed(:confirm_destroy)}).count == 0
     end
