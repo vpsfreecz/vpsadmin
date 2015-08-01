@@ -278,12 +278,6 @@ module TransactionChains
         # succeeds.
         dst_vps.update!(dataset_in_pool: original_dst_vps_dip)
       end
-
-      # Regenerate cron tasks.
-      # Note that if the clone fails, the tasks may be removed from
-      # the database, but they will stay in the crontab file until
-      # it is regenerated.
-      VpsAdmin::API::DatasetPlans.confirm if attrs[:dataset_plans]
       
       dst_vps
     end

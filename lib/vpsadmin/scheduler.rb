@@ -71,9 +71,9 @@ module VpsAdmin
         work
       end
 
-      # EventMachine event loop is not started by vpsAdmin. It relies
-      # on Thin which starts the event loop later.
-      EventMachine.next_tick do
+      # The scheduler cannot be used in conjunction with thin as both start
+      # their own event machine loop.
+      EventMachine.run do
         @em_server = EventMachine.start_unix_domain_server(SOCKET, Server, self)
       end
     end

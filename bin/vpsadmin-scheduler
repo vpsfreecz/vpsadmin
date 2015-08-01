@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+
+Dir.chdir('/opt/vpsadminapi')
+require_relative '../lib/vpsadmin'
+
+VpsAdmin::Scheduler.start
+
+loop do
+  sleep(3*60*60)
+  VpsAdmin::Scheduler.regenerate
+end
+

@@ -40,15 +40,12 @@ class DatasetInPool < ActiveRecord::Base
     TransactionChains::Dataset::Backup.fire(self, dst)
   end
 
-  def add_plan(plan, confirm = true)
-    p = VpsAdmin::API::DatasetPlans.plans[plan.dataset_plan.name.to_sym].register(self)
-    VpsAdmin::API::DatasetPlans.confirm if confirm
-    p
+  def add_plan(plan)
+    VpsAdmin::API::DatasetPlans.plans[plan.dataset_plan.name.to_sym].register(self)
   end
 
-  def del_plan(dip_plan, confirm = true)
+  def del_plan(dip_plan)
     VpsAdmin::API::DatasetPlans.plans[dip_plan.environment_dataset_plan.dataset_plan.name.to_sym].unregister(self)
-    VpsAdmin::API::DatasetPlans.confirm if confirm
   end
 
   def subdatasets_in_pool
