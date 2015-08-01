@@ -132,7 +132,9 @@ module TransactionChains
             confirmed: ::DatasetTree.confirmed(:confirm_create)
         )
 
-        append(Transactions::Storage::CreateTree, args: tree)
+        append(Transactions::Storage::CreateTree, args: tree) do
+          create(tree)
+        end
       end
 
       tree
