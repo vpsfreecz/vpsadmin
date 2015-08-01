@@ -95,7 +95,8 @@ class VpsAdmin::API::Resources::AuthToken < HaveAPI::Resource
             user_session_agent: ::UserSessionAgent.find_or_create!(request.user_agent),
             client_version: request.user_agent,
             api_token_id: t.id,
-            api_token_str: t.token
+            api_token_str: t.token,
+            admin_id: current_user.id
         )
         ok(t)
       else

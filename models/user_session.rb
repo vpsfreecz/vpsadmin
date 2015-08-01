@@ -1,5 +1,6 @@
 class UserSession < ActiveRecord::Base
-  belongs_to :user
+  belongs_to :user, class_name: 'User', foreign_key: :user_id
+  belongs_to :admin, class_name: 'User', foreign_key: :admin_id
   belongs_to :user_session_agent
   belongs_to :api_token
   has_many :transaction_chains

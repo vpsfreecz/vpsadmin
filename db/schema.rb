@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150730152316) do
+ActiveRecord::Schema.define(version: 20150801090150) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -676,6 +676,7 @@ ActiveRecord::Schema.define(version: 20150730152316) do
     t.datetime "created_at",                        null: false
     t.datetime "last_request_at"
     t.datetime "closed_at"
+    t.integer  "admin_id"
   end
 
   create_table "versions", force: true do |t|
