@@ -9,16 +9,16 @@ module TransactionChains
       dataset_in_pools.each do |dip|
         lock(dip)
 
-        s = Snapshot.create(
+        s = ::Snapshot.create!(
             name: "#{snap} (unconfirmed)",
             dataset_id: dip.dataset_id,
-            confirmed: Snapshot.confirmed(:confirm_create)
+            confirmed: ::Snapshot.confirmed(:confirm_create)
         )
 
-        sip = SnapshotInPool.create(
+        sip = ::SnapshotInPool.create!(
             snapshot: s,
             dataset_in_pool: dip,
-            confirmed: SnapshotInPool.confirmed(:confirm_create)
+            confirmed: ::SnapshotInPool.confirmed(:confirm_create)
         )
 
         snapshots << sip
