@@ -30,7 +30,7 @@ module TransactionChains
         mnt.mount_opts = '--bind'
 
       else
-        mnt.mount_opts = '-overs=3'
+        mnt.mount_opts = '-n -t nfs -overs=3'
       end
 
       mnt.save!

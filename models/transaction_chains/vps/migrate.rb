@@ -433,7 +433,7 @@ module TransactionChains
         #   - clone snapshot if needed
         if is_local && become_remote
           mnt.mount_type = 'nfs'
-          mnt.mount_opts = '-overs=3'
+          mnt.mount_opts = '-n -t nfs -overs=3'
 
           if is_snapshot
             @chain.append(
@@ -529,7 +529,7 @@ module TransactionChains
         #   - clone snapshot if needed
         if is_local && become_remote
           mnt.mount_type = 'nfs'
-          mnt.mount_opts = '-overs=3'
+          mnt.mount_opts = '-n -t nfs -overs=3'
 
           if is_snapshot
             @chain.append(
