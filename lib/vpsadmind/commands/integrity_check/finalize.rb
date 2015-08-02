@@ -96,5 +96,9 @@ module VpsAdmind
       db.close
       ok
     end
+    
+    def rollback
+      ok
+    end
   end
 end

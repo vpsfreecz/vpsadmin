@@ -37,6 +37,10 @@ module VpsAdmind
       db.close
       ok
     end
+    
+    def rollback
+      ok
+    end
 
     protected
     def check_vps(vps)

@@ -18,6 +18,10 @@ module VpsAdmind
       ok
     end
 
+    def rollback
+      ok
+    end
+
     protected
     def check_pool(pool)
       @pool = pool
