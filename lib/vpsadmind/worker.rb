@@ -21,7 +21,7 @@ module VpsAdmind
     def kill(set_status = true)
       @killing = true
 
-      @thread.kill!
+      @thread.kill
       @cmd.killed(set_status)
 
       sub = @cmd.subtask

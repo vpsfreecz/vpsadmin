@@ -24,7 +24,6 @@ module VpsAdmind
     def initialize
       self.class.instance = self
       @db = Db.new
-      @workers = {}
       @m_workers = Mutex.new
       @start_time = Time.new
       @export_console = false
@@ -32,6 +31,7 @@ module VpsAdmind
       @threads = {}
       @blockers_mutex = Mutex.new
       @chain_blockers = {}
+      @queues = Queues.new
     end
 
     def init
@@ -57,26 +57,28 @@ module VpsAdmind
 
         catch (:next) do
           @m_workers.synchronize do
-            @workers.delete_if do |wid, w|
-              unless w.working?
-                c = w.cmd
-                c.save(@db)
+            @queues.each_value do |queue|
+              queue.delete_if do |wid, w|
+                unless w.working?
+                  c = w.cmd
+                  c.save(@db)
 
-                if @pause && w.cmd.id.to_i === @pause
-                  pause!(true)
+                  if @pause && w.cmd.id.to_i === @pause
+                    pause!(true)
+                  end
+
+                  next true
                 end
 
-                next true
+                false
               end
-
-              false
             end
-
-            throw :next if @workers.size >= ($CFG.get(:vpsadmin, :threads) + $CFG.get(:vpsadmin, :urgent_threads))
+            
+            throw :next if @queues.full?
 
             @@mutex.synchronize do
               unless @@run
-                if !@pause && @workers.empty?
+                if !@pause && @queues.empty?
                   exit(@@exitstatus)
                 end
 
@@ -94,7 +96,7 @@ module VpsAdmind
     end
 
     def select_commands(db, limit = nil)
-      limit ||= $CFG.get(:vpsadmin, :threads)
+      limit ||= @queues.total_limit
 
       db.union do |u|
         # Transactions for execution
@@ -176,9 +178,8 @@ module VpsAdmind
         return
       end
 
-      if !@workers.has_key?(wid) && (@workers.size < threads || (cmd.urgent? && @workers.size < (threads+urgent)))
+      if @queues.execute(cmd)
         @cmd_counter += 1
-        @workers[wid] = Worker.new(cmd)
       end
     end
 
@@ -292,9 +293,9 @@ module VpsAdmind
       end
     end
 
-    def workers
+    def queues
       @m_workers.synchronize do
-        yield(@workers)
+        yield(@queues)
       end
     end
 

@@ -3,14 +3,16 @@ module VpsAdmind::Utils
     def walk_workers
       killed = 0
 
-      @daemon.workers do |workers|
-        workers.each do |wid, w|
-          ret = yield(w)
+      @daemon.queues do |queues|
+        queues.each_value do |queue|
+          queue.each do |wid, w|
+            ret = yield(w)
 
-          if ret
-            log "Killing transaction #{w.cmd.id}"
-            w.kill(ret != :silent)
-            killed += 1
+            if ret
+              log "Killing transaction #{w.cmd.id}"
+              w.kill(ret != :silent)
+              killed += 1
+            end
           end
         end
       end
@@ -19,7 +21,11 @@ module VpsAdmind::Utils
     end
 
     def drop_workers
-      @daemon.workers { |w| w.clear }
+      @daemon.queues do |queues|
+        queues.each_value do |queue|
+          queue.clear
+        end
+      end
     end
   end
 end

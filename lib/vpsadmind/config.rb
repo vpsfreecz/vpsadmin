@@ -19,7 +19,32 @@ module VpsAdmind
           :netdev => "eth0", # loaded from db
           :max_tx => nil, # loaded from db
           :max_rx => nil, # loaded from db
-          :threads => 6,
+          :queues => {
+              "general" => {
+                  :threads => 6,
+                  :urgent => 6,
+              },
+              "storage" => {
+                  :threads => 2,
+                  :urgent => 2,
+              },
+              "network" => {
+                  :threads => 1,
+                  :urgent => 0,
+              },
+              "vps" => {
+                  :threads => 4,
+                  :urgent => 4,
+              },
+              "zfs_send" => {
+                  :threads => 1,
+                  :urgent => 0,
+              },
+              "mail" => {
+                  :threads => 2,
+                  :urgent => 2,
+              }
+          },
           :urgent_threads => 6,
           :check_interval => 1,
           :status_interval => 30,

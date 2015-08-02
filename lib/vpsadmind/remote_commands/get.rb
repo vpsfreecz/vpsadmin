@@ -10,16 +10,14 @@ module VpsAdmind::RemoteCommands
         when 'queue'
           queue = []
 
-          @daemon.workers do |workers|
+          @daemon.queues do |queues|
             db = VpsAdmind::Db.new
 
             @daemon.select_commands(db, @limit).each_hash do |row|
               t_id = row['t_id'].to_i
 
               catch (:next) do
-                workers.each do |wid, w|
-                  throw :next if w.cmd.id.to_i == t_id
-                end
+                throw :next if queues.has_transaction?(t_id)
 
                 queue << {
                     :id => t_id,

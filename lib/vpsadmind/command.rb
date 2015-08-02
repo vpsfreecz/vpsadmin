@@ -215,8 +215,6 @@ module VpsAdmind
     end
 
     def killed(hard)
-      @cmd.killed
-
       if hard
         @output[:error] = 'Killed'
         @status = :failed
@@ -237,6 +235,10 @@ module VpsAdmind
       @trans["t_type"]
     end
 
+    def queue
+      @trans["queue"]
+    end
+
     def urgent?
       @trans['t_urgent'].to_i == 1 || (original_chain_direction == :execute && @chain[:urgent_rollback])
     end
@@ -246,11 +248,11 @@ module VpsAdmind
     end
 
     def step
-      @cmd.step
+      @cmd && @cmd.step
     end
 
     def subtask
-      @cmd.subtask
+      @cmd && @cmd.subtask
     end
 
     def time_start

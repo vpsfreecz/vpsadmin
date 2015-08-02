@@ -22,7 +22,7 @@ module VpsAdmind::RemoteCommands
         end
 
       else
-        @transaction.each do |t|
+        @transactions.each do |t|
           killed = walk_workers { |w| w.cmd.id == t }
 
           if killed == 0
