@@ -2,6 +2,7 @@ module Transactions::Storage
   class CreateSnapshot < ::Transaction
     t_name :storage_create_snapshot
     t_type 5204
+    queue :storage
 
     def params(snapshot_in_pool)
       self.t_server = snapshot_in_pool.dataset_in_pool.pool.node_id

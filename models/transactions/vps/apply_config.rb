@@ -2,6 +2,7 @@ module Transactions::Vps
   class ApplyConfig < ::Transaction
     t_name :vps_apply_config
     t_type 2008
+    queue :vps
 
     def params(vps)
       self.t_vps = vps.vps_id

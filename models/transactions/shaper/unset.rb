@@ -2,6 +2,7 @@ module Transactions::Shaper
   class Unset < ::Transaction
     t_name :shaper_unset
     t_type 2011
+    queue :network
 
     def params(ip, vps)
       self.t_vps = ip.vps_id

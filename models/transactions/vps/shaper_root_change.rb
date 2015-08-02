@@ -2,6 +2,7 @@ module Transactions::Vps
   class ShaperRootChange < ::Transaction
     t_name :vps_shaper_root_change
     t_type 2012
+    queue :network
 
     def params(node)
       self.t_vps = nil

@@ -2,6 +2,7 @@ module Transactions::Storage
   class RecvCheck < ::Transaction
     t_name :storage_recv_check
     t_type 5222
+    queue :storage
 
     def params(dst, snapshots, branch = nil, ds_suffix = nil)
       self.t_server = dst.pool.node_id

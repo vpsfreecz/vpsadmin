@@ -2,6 +2,7 @@ module Transactions::Vps
   class Create < ::Transaction
     t_name :vps_create
     t_type 3001
+    queue :vps
 
     def params(vps)
       self.t_vps = vps.vps_id

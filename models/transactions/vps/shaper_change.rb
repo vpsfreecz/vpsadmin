@@ -2,6 +2,7 @@ module Transactions::Vps
   class ShaperChange < ::Transaction
     t_name :vps_shaper_change
     t_type 2009
+    queue :network
 
     def params(ip, tx, rx)
       self.t_vps = ip.vps_id

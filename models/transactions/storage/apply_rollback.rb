@@ -2,6 +2,7 @@ module Transactions::Storage
   class ApplyRollback < ::Transaction
     t_name :storage_apply_rollback
     t_type 5211
+    queue :storage
     irreversible
 
     def params(dataset_in_pool)

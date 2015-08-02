@@ -2,6 +2,7 @@ module Transactions::Storage
   class RemoveClone < ::Transaction
     t_name :storage_remove_clone
     t_type 5218
+    queue :storage
 
     def params(snapshot_in_pool)
       self.t_server = snapshot_in_pool.dataset_in_pool.pool.node_id

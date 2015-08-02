@@ -2,6 +2,7 @@ module Transactions::Vps
   class Stop < ::Transaction
     t_name :vps_stop
     t_type 1002
+    queue :vps
 
     def params(vps)
       self.t_vps = vps.vps_id

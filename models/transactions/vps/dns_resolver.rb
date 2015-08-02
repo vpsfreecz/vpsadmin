@@ -2,6 +2,7 @@ module Transactions::Vps
   class DnsResolver < ::Transaction
     t_name :vps_dns_resolver
     t_type 2005
+    queue :vps
 
     def params(vps, orig, resolver)
       self.t_vps = vps.vps_id

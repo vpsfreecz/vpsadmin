@@ -2,6 +2,7 @@ module Transactions::Storage
   class PrepareRollback < ::Transaction
     t_name :storage_prepare_rollback
     t_type 5209
+    queue :storage
 
     def params(dataset_in_pool)
       self.t_server = dataset_in_pool.pool.node_id

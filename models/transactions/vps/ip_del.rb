@@ -2,6 +2,7 @@ module Transactions::Vps
   class IpDel < ::Transaction
     t_name :vps_ip_del
     t_type 2007
+    queue :network
 
     def params(vps, ip, unregister = true)
       self.t_vps = vps.vps_id

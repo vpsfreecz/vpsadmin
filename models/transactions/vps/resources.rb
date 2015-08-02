@@ -2,6 +2,7 @@ module Transactions::Vps
   class Resources < ::Transaction
     t_name :vps_resources
     t_type 2003
+    queue :vps
 
     def params(vps, resources)
       self.t_vps = vps.vps_id

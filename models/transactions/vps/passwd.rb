@@ -2,6 +2,7 @@ module Transactions::Vps
   class Passwd < ::Transaction
     t_name :vps_passwd
     t_type 2002
+    queue :vps
 
     def params(vps, passwd)
       self.t_vps = vps.vps_id

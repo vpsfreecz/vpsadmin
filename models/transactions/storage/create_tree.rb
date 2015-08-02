@@ -2,6 +2,7 @@ module Transactions::Storage
   class CreateTree < ::Transaction
     t_name :storage_create_dataset_tree
     t_type 5213
+    queue :storage
 
     def params(tree)
       self.t_server = tree.dataset_in_pool.pool.node_id

@@ -2,6 +2,7 @@ module Transactions::Vps
   class IpAdd < ::Transaction
     t_name :vps_ip_add
     t_type 2006
+    queue :network
 
     def params(vps, ip, register = true)
       self.t_vps = vps.vps_id

@@ -2,6 +2,7 @@ module Transactions::Mail
   class Send < ::Transaction
     t_name :mail_send
     t_type 9001
+    queue :mail
     keep_going
 
     def params(node, mail)

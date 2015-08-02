@@ -2,6 +2,7 @@ module Transactions::Shaper
   class Set < ::Transaction
     t_name :shaper_set
     t_type 2010
+    queue :network
 
     def params(ip, vps)
       self.t_vps = ip.vps_id

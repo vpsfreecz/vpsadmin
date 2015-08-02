@@ -2,6 +2,7 @@ module Transactions::Vps
   class Features < ::Transaction
     t_name :vps_features
     t_type 8001
+    queue :vps
 
     def params(vps, features)
       self.t_vps = vps.vps_id

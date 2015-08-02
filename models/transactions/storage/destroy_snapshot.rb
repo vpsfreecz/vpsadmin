@@ -2,6 +2,7 @@ module Transactions::Storage
   class DestroySnapshot < ::Transaction
     t_name :storage_destroy_snapshot
     t_type 5212
+    queue :storage
     irreversible
 
     def params(snapshot_in_pool, branch = nil)

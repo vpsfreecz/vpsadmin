@@ -2,6 +2,7 @@ module Transactions::Firewall
   class RegIp < ::Transaction
     t_name :firewall_reg_ip
     t_type 2014
+    queue :network
 
     def params(ip, vps)
       self.t_vps = ip.vps_id

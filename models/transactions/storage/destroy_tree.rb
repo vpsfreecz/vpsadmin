@@ -2,6 +2,7 @@ module Transactions::Storage
   class DestroyTree < ::Transaction
     t_name :storage_destroy_dataset_tree
     t_type 5214
+    queue :storage
     irreversible
 
     def params(tree)

@@ -2,6 +2,7 @@ module Transactions::Vps
   class Restart < ::Transaction
     t_name :vps_restart
     t_type 1003
+    queue :vps
 
     def params(vps)
       self.t_vps = vps.vps_id

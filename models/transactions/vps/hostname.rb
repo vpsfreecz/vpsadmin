@@ -2,6 +2,7 @@ module Transactions::Vps
   class Hostname < ::Transaction
     t_name :vps_hostname
     t_type 2004
+    queue :vps
 
     def params(vps, orig, hostname)
       self.t_vps = vps.vps_id
