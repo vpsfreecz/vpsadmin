@@ -3,10 +3,11 @@
 Dir.chdir('/opt/vpsadminapi')
 require_relative '../lib/vpsadmin'
 
-VpsAdmin::Scheduler.start
-
-loop do
-  sleep(3*60*60)
-  VpsAdmin::Scheduler.regenerate
+EventMachine.run do
+  VpsAdmin::Scheduler.start
+  
+  EventMachine.add_periodic_timer(3*60*60) do
+    VpsAdmin::Scheduler.regenerate
+  end
 end
 
