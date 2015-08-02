@@ -18,6 +18,10 @@ class Transaction < ActiveRecord::Base
 
   before_save :set_init_values
 
+  validates :queue, inclusion: {
+      in: %w(general storage network vps zfs_send mail)
+  }
+
   class << self
     def t_name(name=nil)
       if name
@@ -33,6 +37,14 @@ class Transaction < ActiveRecord::Base
         ::Transaction.register_type(t, self)
       else
         @t_type
+      end
+    end
+
+    def queue(q=nil)
+      if q
+        @queue = q
+      else
+        @queue
       end
     end
 
@@ -68,6 +80,7 @@ class Transaction < ActiveRecord::Base
     t.transaction_chain = chain
     t.t_depends_on = dep
     t.t_type = t.class.t_type if t.class.t_type
+    t.queue = (t.class.queue || 'general').to_s
     t.t_urgent = urgent
     t.t_priority = prio || 0
     t.reversible = @reversible.nil? ? :is_reversible : @reversible

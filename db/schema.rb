@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150801211753) do
+ActiveRecord::Schema.define(version: 20150802162711) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -610,20 +610,21 @@ ActiveRecord::Schema.define(version: 20150801211753) do
     t.integer  "t_m_id"
     t.integer  "t_server"
     t.integer  "t_vps"
-    t.integer  "t_type",                                                  null: false
+    t.integer  "t_type",                                                      null: false
     t.integer  "t_depends_on"
     t.text     "t_fallback"
-    t.boolean  "t_urgent",                                default: false, null: false
-    t.integer  "t_priority",                              default: 0,     null: false
-    t.integer  "t_success",                                               null: false
-    t.integer  "t_done",                                  default: 0,     null: false
+    t.boolean  "t_urgent",                                default: false,     null: false
+    t.integer  "t_priority",                              default: 0,         null: false
+    t.integer  "t_success",                                                   null: false
+    t.integer  "t_done",                                  default: 0,         null: false
     t.text     "t_param",              limit: 2147483647
     t.text     "t_output"
-    t.integer  "transaction_chain_id",                                    null: false
-    t.integer  "reversible",                              default: 1,     null: false
+    t.integer  "transaction_chain_id",                                        null: false
+    t.integer  "reversible",                              default: 1,         null: false
     t.datetime "created_at"
     t.datetime "started_at"
     t.datetime "finished_at"
+    t.string   "queue",                limit: 30,         default: "general", null: false
   end
 
   add_index "transactions", ["t_server"], name: "t_server", using: :btree
