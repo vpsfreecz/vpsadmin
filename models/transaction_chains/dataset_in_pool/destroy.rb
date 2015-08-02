@@ -55,13 +55,15 @@ module TransactionChains
         end
       end
 
-      # Destroy the first dataset
-      destroy_dataset(@datasets.shift, top)
+      top_level = @datasets.pop
 
-      # Destroy all remaining datasets
+      # Destroy all subdatasets
       @datasets.each do |dip|
         destroy_dataset(dip, true)
       end
+      
+      # Destroy the top-level dataset (which is last in the list)
+      destroy_dataset(top_level, top)
     end
 
     # Destroy datasets in pool recursively. Datasets are destroyed
