@@ -7,7 +7,13 @@ module TransactionChains
       snapshots = []
 
       dataset_in_pools.each do |dip|
-        lock(dip)
+        begin
+          lock(dip)
+
+        rescue ResourceLocked
+          warn "dataset #{dip.id} is locked, skipping"
+          next
+        end
 
         s = ::Snapshot.create!(
             name: "#{snap} (unconfirmed)",
