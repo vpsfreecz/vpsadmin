@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150801090150) do
+ActiveRecord::Schema.define(version: 20150801211753) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -616,7 +616,7 @@ ActiveRecord::Schema.define(version: 20150801090150) do
     t.boolean  "t_urgent",                                default: false, null: false
     t.integer  "t_priority",                              default: 0,     null: false
     t.integer  "t_success",                                               null: false
-    t.integer  "t_done",                                                  null: false
+    t.integer  "t_done",                                  default: 0,     null: false
     t.text     "t_param",              limit: 2147483647
     t.text     "t_output"
     t.integer  "transaction_chain_id",                                    null: false
