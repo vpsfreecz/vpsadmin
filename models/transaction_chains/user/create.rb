@@ -46,7 +46,7 @@ module TransactionChains
         )
         vps.dns_resolver = ::DnsResolver.pick_suitable_resolver_for_vps(vps)
 
-        use_chain(Vps::Create, args: [vps, true])
+        use_chain(Vps::Create, args: vps)
       end
 
       unless empty?
