@@ -29,7 +29,7 @@ class User < ActiveRecord::Base
       only_integer: true
   }
   validates :m_nick, format: {
-      with: /\A[a-zA-Z0-9\.\-]{3,63}\z/,
+      with: /\A[a-zA-Z0-9\.\-]{2,63}\z/,
       message: 'not a valid login'
   }, uniqueness: true
 
