@@ -89,7 +89,7 @@ if ($show_list) {
 	$traffic_per_vps = array();
 	$traffic_total_ordered = array();
 	
-	$sql = 'SELECT v.vps_id, vps_hostname, m_nick, ip_addr
+	$sql = 'SELECT v.vps_id, vps_hostname, m.m_id, m_nick, ip_addr
 	        FROM vps v
 	        INNER JOIN vps_ip ip ON v.vps_id = ip.vps_id
 	        INNER JOIN members m ON v.m_id = m.m_id
