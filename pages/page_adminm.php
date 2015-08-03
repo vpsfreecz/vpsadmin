@@ -107,8 +107,11 @@ function print_editm($u) {
 	if ($cluster_cfg->get("payments_enabled")) {
 		$xtpl->table_td(_("Paid until").':');
 
-		$paid = time() > strtotime($u->paid_until);
-		$t =  strtotime($u->paid_until);
+		$dt = new DateTime($u->paid_until);
+		$dt->setTimezone(new DateTimezone(date_default_timezone_get()));
+
+		$paid = time() > strtotime($dt->getTimestamp());
+		$t =  strtotime($dt->getTimestamp());
 		$paid_until = date('Y-m-d', $t);
 		
 		if ($_SESSION["is_admin"]) {
