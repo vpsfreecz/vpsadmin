@@ -270,6 +270,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       u.update!(to_db_names(input))
       u
+
+    rescue ActiveRecord::RecordInvalid => e
+      error('update failed', to_parma_names(e.record.errors.to_hash, :input))
     end
   end
 
