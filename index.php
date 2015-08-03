@@ -44,6 +44,7 @@ include WWW_ROOT.'lib/security.lib.php';
 include WWW_ROOT.'forms/cluster.forms.php';
 include WWW_ROOT.'forms/dataset.forms.php';
 include WWW_ROOT.'forms/vps.forms.php';
+include WWW_ROOT.'forms/users.forms.php';
 include WWW_ROOT.'forms/lifetimes.forms.php';
 
 include WWW_ROOT.'lib/gettext_stream.lib.php';
