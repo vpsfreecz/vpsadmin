@@ -60,8 +60,8 @@ if ($show_list) {
 	$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
 	$xtpl->table_tr();
 	
-	$xtpl->form_add_select(_("Year").':', 'year', year_list(), date("Y"));
-		$xtpl->form_add_select(_("Month").':', 'month', month_list(), date("n"));
+	$xtpl->form_add_select(_("Year").':', 'year', year_list(), get_val('year', date("Y")));
+	$xtpl->form_add_select(_("Month").':', 'month', month_list(), get_val('month', date("n")));
 	
 	if ($_SESSION['is_admin']) {
 		$xtpl->form_add_input(_("User").':', 'text', '30', 'user', get_val('user'));
