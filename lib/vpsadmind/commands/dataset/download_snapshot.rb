@@ -16,6 +16,7 @@ module VpsAdmind
     def rollback
       syscmd("#{$CFG.get(:bin, :rm)} -f \"#{file_path}\"") if File.exists?(file_path)
       syscmd("#{$CFG.get(:bin, :rmdir)} \"#{secret_dir_path}\"") if File.exists?(secret_dir_path)
+      ok
     end
 
     protected
