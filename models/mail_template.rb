@@ -36,7 +36,7 @@ class MailTemplate < ActiveRecord::Base
     recipients[:to] << opts[:user].m_mail if opts[:user]
 
     tpl.mail_recipients.each do |recp|
-      recipients[:to].concat(recp.to.split(','))
+      recipients[:to].concat(recp.to.split(',')) if recp.to
       recipients[:cc].concat(recp.cc.split(',')) if recp.cc
       recipients[:bcc].concat(recp.bcc.split(',')) if recp.bcc
     end

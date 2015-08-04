@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150802162711) do
+ActiveRecord::Schema.define(version: 20150804201125) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -295,7 +295,7 @@ ActiveRecord::Schema.define(version: 20150802162711) do
 
   create_table "mail_recipients", force: true do |t|
     t.string "label", limit: 100, null: false
-    t.string "to",    limit: 500, null: false
+    t.string "to",    limit: 500
     t.string "cc",    limit: 500
     t.string "bcc",   limit: 500
   end
