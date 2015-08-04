@@ -1,7 +1,7 @@
 Ahoj <%= @user.login %>,
 
 toto je automatická připomínka platby členského příspěvku.
-<% t = @user.m_paid_until ? Time.at(@user.m_paid_until.to_i) : nil %>
+<% t = @user.paid_until %>
 Zaplaceno máš do: <%= t ? t.strftime('%Y-%m-%d') : '---' %>
 
 Variabilní symbol: <%= @user.id %>
@@ -20,7 +20,7 @@ QR kód pro platbu na 3 měsíce dopředu (vždy ověř správnost údajů):
 - ČR: https://api.paylibo.com/paylibo/generator/czech/image?compress=false&size=440&accountNumber=2200041594&bankCode=2010&amount=<%= three_months_payment %>&currency=CZK&vs=<%= @user.id %>
 - SR: https://api.paylibo.com/paylibo/generator/czech/image?compress=false&size=440&accountNumber=2200041594&bankCode=8330&amount=<%= three_months_payment / 25 %>&currency=EUR&vs=<%= @user.id %>
 
-Neuhradíš-li členský příspěvek do <%= @user.expiration_date + 14 * 24 * 60 * 60 %>, Tvé členství bude pozastaveno a následně ukončeno.
+Neuhradíš-li členský příspěvek do <%= (@user.expiration_date + 14 * 24 * 60 * 60).strftime('%Y-%m-%d') %>, Tvé členství bude pozastaveno a následně ukončeno.
 
 Pokud potřebuješ probrat detaily ohledně této platby, jednoduše použij funkci "Odpovědět (RE:)", odpověď se pošle na podporu.
 
