@@ -94,7 +94,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     input do
       use :common, include: %i(name type location environment ip_addr
-                               net_interface max_tx max_rx)
+                               net_interface max_tx max_rx max_vps ve_private)
       patch :name, required: true
       patch :type, required: true
       patch :location, required: true
