@@ -16,7 +16,7 @@ Příchod platby lze zkontrolovat zde:
 https://www.fio.cz/scgi-bin/hermes/dz-transparent.cgi?ID_ucet=2200041594
 
 <% three_months_payment = @user.m_monthly_payment * 3 %>
-QR kód (3 měsíce dopředu):
+QR kód pro platbu na 3 měsíce dopředu (vždy ověř správnost údajů):
 - ČR: https://api.paylibo.com/paylibo/generator/czech/image?compress=false&size=440&accountNumber=2200041594&bankCode=2010&amount=<%= three_months_payment %>&currency=CZK&vs=<%= @user.id %>
 - SR: https://api.paylibo.com/paylibo/generator/czech/image?compress=false&size=440&accountNumber=2200041594&bankCode=8330&amount=<%= three_months_payment / 25 %>&currency=EUR&vs=<%= @user.id %>
 
