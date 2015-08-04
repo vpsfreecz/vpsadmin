@@ -4,13 +4,16 @@ module VpsAdmind
     needs :system, :pool
 
     def exec
+      ds = "#{@pool_fs}/#{@dataset_name}"
+      ds += "/#{@tree}/#{@branch}" if @tree
+
       # On ZoL, snapshots in .zfs are mounted using automounts, so for tar
       # to work properly, it must be accessed before, so that it is already mounted
       # when tar is launched.
-      Dir.entries("/#{@pool_fs}/#{@dataset_name}/.zfs/snapshot/#{@snapshot}")
+      Dir.entries("/#{ds}/.zfs/snapshot/#{@snapshot}")
 
       syscmd("#{$CFG.get(:bin, :mkdir)} \"#{secret_dir_path}\"")
-      syscmd("#{$CFG.get(:bin, :tar)} -czf \"#{file_path}\" -C \"/#{@pool_fs}/#{@dataset_name}/.zfs/snapshot\" \"#{@snapshot}\"")
+      syscmd("#{$CFG.get(:bin, :tar)} -czf \"#{file_path}\" -C \"/#{ds}/.zfs/snapshot\" \"#{@snapshot}\"")
     end
 
     def rollback
