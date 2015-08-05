@@ -61,7 +61,7 @@ class Node < ActiveRecord::Base
   end
 
   def fqdn
-    "#{name}.#{location.fqdn}"
+    "#{name}.#{location.domain}.#{environment.domain}"
   end
 
   def self.pick_by_env(env, location = nil)
