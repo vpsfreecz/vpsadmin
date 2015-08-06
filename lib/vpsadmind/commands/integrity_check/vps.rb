@@ -6,9 +6,8 @@ module VpsAdmind
     def exec
       db = Db.new
 
-      @real_vpses = load_vpses
-
       db.transaction do |t|
+        @real_vpses = load_vpses
         @t = t
 
         @vpses.each do |vps|

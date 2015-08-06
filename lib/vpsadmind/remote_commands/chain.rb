@@ -36,9 +36,10 @@ module VpsAdmind::RemoteCommands
         when 'confirm'
           db.transaction do |t|
             c = VpsAdmind::Confirmations.new(@chain)
+            transactions = @transactions
 
-            unless @transactions
-              @transactions = []
+            unless transactions
+              transactions = []
 
               st = db.prepared_st(
                   'SELECT t_id FROM transactions
@@ -48,14 +49,14 @@ module VpsAdmind::RemoteCommands
               )
 
               st.each do |row|
-                @transactions << row[0]
+                transactions << row[0]
               end
 
               st.close
             end
 
             out = {
-                :transactions => c.force_run(t, @transactions, @direction.to_sym, @success)
+                :transactions => c.force_run(t, transactions, @direction.to_sym, @success)
             }
           end
 
