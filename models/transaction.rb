@@ -49,7 +49,7 @@ class Transaction < ActiveRecord::Base
     end
 
     def irreversible
-      @reversible = :is_reversible
+      @reversible = :not_reversible
     end
 
     def reversible?
