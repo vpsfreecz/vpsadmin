@@ -2,13 +2,16 @@ module TransactionChains
   class Vps::Reinstall < ::TransactionChain
     label 'Reinstall'
 
-    # FIXME: reinstall destroys snapshots that may not have been backed up!
     def link_chain(vps, template)
       lock(vps.dataset_in_pool)
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
       running = vps.running?
+
+      # Transfer all snapshots to backup
+      @pool = vps.dataset_in_pool.pool
+      backup_datasets(vps)
 
       # Send the stop nevertheless, vpsAdmin information about VPS
       # status may not be up-to-date.
@@ -46,6 +49,52 @@ module TransactionChains
       if running
         use_chain(Vps::Start, args: vps)
       end
+    end
+
+    def backup_datasets(vps)
+      datasets = []
+
+      vps.dataset_in_pool.dataset.subtree.arrange.each do |k, v|
+        datasets.concat(recursive_serialize(k, v))
+      end
+
+      # Transfer all datasets to all backups
+      datasets.each do |dip|
+        dip.dataset.dataset_in_pools.joins(:pool).where(
+            'pools.role = ?', ::Pool.roles[:backup]
+        ).each do |dst|
+          use_chain(TransactionChains::Dataset::Transfer, args: [dip, dst])
+        end
+      end
+    end
+    
+    def recursive_serialize(dataset, children)
+      ret = []
+
+      # First parents
+      dip = dataset.dataset_in_pools.where(pool: @pool).take
+
+      return ret unless dip
+
+      lock(dip)
+
+      ret << dip
+
+      # Then children
+      children.each do |k, v|
+        if v.is_a?(::Dataset)
+          dip = v.dataset_in_pools.where(pool: @pool).take
+          next unless dip
+
+          lock(dip)
+          ret << dip
+
+        else
+          ret.concat(recursive_serialize(k, v))
+        end
+      end
+
+      ret
     end
   end
 end
