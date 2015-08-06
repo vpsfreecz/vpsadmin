@@ -30,8 +30,14 @@ module VpsAdmind
       @my.insert_id
     end
 
-    def transaction
+    def transaction(kwargs = {})
+      restart = kwargs.has_key?(:restart) ? kwargs[:restart] : true
+      wait = kwargs[:wait]
+      tries = kwargs[:tries] || 5
+      counter = 0
+
       begin
+        log(:info, :sql, "Retrying transaction, attempt ##{counter}") if counter > 0
         @my.query('BEGIN')
         yield(DbTransaction.new(@my))
         @my.query('COMMIT')
@@ -39,6 +45,32 @@ module VpsAdmind
       rescue RequestRollback
         log(:info, :sql, 'Rollback requested')
         @my.query('ROLLBACK')
+
+      rescue Mysql::Error => err
+        @my.query('ROLLBACK')
+
+        case err.errno
+        when 1213
+          log(:warn, :sql, 'Deadlock found')
+
+          if restart
+            counter += 1
+
+            if counter <= tries
+              log(:warn, :sql, "Restarting transaction in #{wait} seconds")
+              sleep(wait || rand(10))
+              retry
+
+            else
+              log(:critical, :sql, 'All attempts to restart the transaction failed')
+            end
+          end
+        end
+
+        log(:critical, :sql, 'MySQL transactions failed due to database error, rolling back')
+        p err.inspect
+        p err.traceback if err.respond_to?(:traceback)
+        raise err
 
       rescue => err
         log(:critical, :sql, 'MySQL transactions failed, rolling back')
