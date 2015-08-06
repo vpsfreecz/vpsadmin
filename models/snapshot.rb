@@ -5,6 +5,7 @@ class Snapshot < ActiveRecord::Base
   belongs_to :snapshot_download
 
   include Confirmable
+  include Lockable
   
   def destroy
     TransactionChains::Snapshot::Destroy.fire(self)
