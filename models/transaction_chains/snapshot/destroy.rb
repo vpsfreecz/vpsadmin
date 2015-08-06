@@ -1,5 +1,5 @@
 module TransactionChains
-  class SnapshotInPool::Destroy < ::TransactionChain
+  class Snapshot::Destroy < ::TransactionChain
     label 'Destroy'
 
     def link_chain(snap)
