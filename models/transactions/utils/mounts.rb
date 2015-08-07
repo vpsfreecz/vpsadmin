@@ -58,7 +58,7 @@ module Transactions::Utils
             ).joins(
                 branch: [:dataset_tree]
             ).where(
-                dataset_trees: {dataset_in_pool: mnt.snapshot_in_pool.dataset_in_pool},
+                dataset_trees: {dataset_in_pool_id: mnt.snapshot_in_pool.dataset_in_pool.id},
             ).take!
 
             m.update({
