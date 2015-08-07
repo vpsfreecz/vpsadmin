@@ -8,8 +8,8 @@ module TransactionChains
       if s.is_a?(::SnapshotInPoolInBranch)
         lock(s.snapshot_in_pool)
 
-        s.update(confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy))
-        s.snapshot_in_pool.update(confirmed: ::SnapshotInPool.confirmed(:confirm_destroy))
+        s.update!(confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy))
+        s.snapshot_in_pool.update!(confirmed: ::SnapshotInPool.confirmed(:confirm_destroy))
         cleanup = cleanup_snapshot?(s.snapshot_in_pool)
 
         destroy_snapshot(s.snapshot_in_pool) if cleanup
@@ -17,7 +17,7 @@ module TransactionChains
         append(Transactions::Storage::DestroySnapshot, args: [s.snapshot_in_pool, s.branch]) do
           destroy(s)
           destroy(s.snapshot_in_pool)
-          destroy(s.snapshot_in_pool) if cleanup
+          destroy(s.snapshot_in_pool.snapshot) if cleanup
 
           if s.snapshot_in_pool_in_branch
             decrement(s.snapshot_in_pool, :reference_count)
@@ -28,7 +28,7 @@ module TransactionChains
         # Empty branch may still contain SnapshotInPoolInBranch rows, but they
         # are all marked for confirm_destroy.
         if s.branch.snapshot_in_pool_in_branches.where.not(confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy)).count == 0
-          s.branch.update(confirmed: ::Branch.confirmed(:confirm_destroy))
+          s.branch.update!(confirmed: ::Branch.confirmed(:confirm_destroy))
           append(Transactions::Storage::DestroyBranch, args: s.branch)
         end
 
@@ -39,7 +39,7 @@ module TransactionChains
         end
 
       else # SnapshotInPool
-        s.update(confirmed: ::SnapshotInPool.confirmed(:confirm_destroy))
+        s.update!(confirmed: ::SnapshotInPool.confirmed(:confirm_destroy))
         cleanup = cleanup_snapshot?(s)
 
         destroy_snapshot(s) if cleanup
