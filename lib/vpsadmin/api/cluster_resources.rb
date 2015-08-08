@@ -299,7 +299,14 @@ module VpsAdmin::API
         resource_obj = (use && use.user_cluster_resource.cluster_resource) \
                         || ::ClusterResource.find_by!(name: resource)
 
-        use ||= Private.find_resource_use!(self, resource)
+        begin
+          use ||= Private.find_resource_use!(self, resource)
+
+        rescue ActiveRecord::RecordNotFound
+          # The resource is NOT allocated, no action is needed
+          return
+        end
+
         chain.lock(use.user_cluster_resource) if chain
 
         if resource_obj.resource_type.to_sym == :object && free_object
