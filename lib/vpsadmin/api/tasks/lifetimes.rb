@@ -14,6 +14,8 @@ module VpsAdmin::API::Tasks
     #                   seconds.
     # [REASON]:  Provide custom reason that will be saved in every object's
     #            state log.
+    # [EXECUTE]: The states are progressed only if EXECUTE is 'yes'. If not,
+    #            the task just prints what would happen.
     def progress
       required_env(%w(OBJECTS))
 
@@ -36,12 +38,16 @@ module VpsAdmin::API::Tasks
         q = q.where(object_state: states) if states
         q = q.order('full_name DESC') if obj.name == 'Dataset'
 
-        q.each do |obj|
-          obj.progress_object_state(
-              :enter,
-              reason: ENV['REASON'] || 'The expiration date has passed.',
-              expiration: expiration
-          )
+        q.each do |instance|
+          puts "  id=#{instance.send(obj.primary_key)}"
+
+          if ENV['EXECUTE'] == 'yes'
+            instance.progress_object_state(
+                :enter,
+                reason: ENV['REASON'] || 'The expiration date has passed.',
+                expiration: expiration
+            )
+          end
         end
       end
     end
