@@ -66,7 +66,7 @@ if ($_SESSION['logged_in'] && $_SESSION['is_admin']) {
 			$xtpl->table_out();
 			
 			$xtpl->sbar_add(_('Back'), $_GET['return']);
-			$xtpl->sbar_out();
+			$xtpl->sbar_out(_('Manage VPS'));
 			
 			break;
 	}
