@@ -25,7 +25,10 @@ module TransactionChains
       append(Transactions::Vps::Destroy, args: vps)
 
       # Create the dataset again
-      append(Transactions::Storage::CreateDataset, args: vps.dataset_in_pool)
+      append(Transactions::Storage::CreateDataset, args: [
+          vps.dataset_in_pool,
+          vps.dataset_in_pool.refquota ? {refquota: vps.dataset_in_pool.refquota} : nil
+      ])
 
       # Create VPS
       vps.os_template = template
@@ -41,6 +44,11 @@ module TransactionChains
 
       append(Transactions::Vps::ApplyConfig, args: vps)
       use_chain(Vps::Mounts, args: vps)
+
+      append(Transactions::Vps::Resources, args: [
+          vps,
+          vps.get_cluster_resources(%i(memory swap cpu))
+      ])
 
       vps.ip_addresses.all.each do |ip|
         append(Transactions::Vps::IpAdd, args: [vps, ip])
