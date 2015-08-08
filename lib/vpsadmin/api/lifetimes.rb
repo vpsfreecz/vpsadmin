@@ -285,11 +285,15 @@ module VpsAdmin::API
           @state_changes ||= {}
 
           states.each do |k, v|
-            if k == :states
-              @states = v
+            case k
+              when :states
+                @states = v
+              
+              when :environment
+                @env = v
 
-            else
-              @state_changes[k] = v
+              else
+                @state_changes[k] = v
             end
           end
 
@@ -310,7 +314,14 @@ module VpsAdmin::API
             fail "#{self.class.to_s} does not have state '#{state}'"
           end
 
-          Private.change_state(self, state, chain, reason || '', user || ::User.current, expiration)
+          Private.change_state(
+              self,
+              state,
+              chain,
+              reason,
+              user || ::User.current,
+              expiration
+          )
         end
 
         # Move the object to next state (up or down - direction leave or enter).
@@ -377,6 +388,17 @@ module VpsAdmin::API
         o.instance_variable_get('@state_changes')
       end
 
+      def self.environment(instance)
+        p = instance.class.instance_variable_get('@env')
+        
+        if p
+          instance.instance_exec(&p)
+
+        elsif instance.respond_to?(:environment)
+          instance.environment
+        end
+      end
+
       def self.change_state(obj, target, chain, reason, user, expiration)
         states = states(obj.class)
         t_i = states.index(target)
@@ -388,6 +410,25 @@ module VpsAdmin::API
           raise Exceptions::CannotLeaveState,
                 "cannot leave state '#{obj.object_state}'"
         end
+          
+        if (reason.nil? || reason.empty?) && expiration.nil?
+          # Find default reason and expiration for object's environment
+          env = Private.environment(obj)
+
+          default = ::DefaultLifetimeValue.find_by(
+              environment: env,
+              class_name: obj.class.to_s,
+              direction: ::DefaultLifetimeValue.directions[enter ? :enter : :leave],
+              state: ::DefaultLifetimeValue.states[target]
+          )
+
+          if default
+            reason = default.reason
+            expiration = Time.now + default.add_expiration
+          end
+        end
+        
+        reason ||= ''
 
         log = ::ObjectState.new_log(obj, target, reason, user, expiration)
 

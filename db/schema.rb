@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150804201125) do
+ActiveRecord::Schema.define(version: 20150807152819) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -156,6 +156,15 @@ ActiveRecord::Schema.define(version: 20150804201125) do
   end
 
   add_index "datasets", ["ancestry"], name: "index_datasets_on_ancestry", using: :btree
+
+  create_table "default_lifetime_values", force: true do |t|
+    t.integer "environment_id"
+    t.string  "class_name",     limit: 50, null: false
+    t.integer "direction",                 null: false
+    t.integer "state",                     null: false
+    t.integer "add_expiration"
+    t.string  "reason",                    null: false
+  end
 
   create_table "default_object_cluster_resources", force: true do |t|
     t.integer "environment_id",      null: false

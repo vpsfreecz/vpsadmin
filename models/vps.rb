@@ -61,7 +61,8 @@ class Vps < ActiveRecord::Base
                     },
                     deleted: {
                         enter: TransactionChains::Lifetimes::NotImplemented
-                    }
+                    },
+                    environment: ->(){ node.environment }
 
   default_scope {
     where.not(object_state: [
