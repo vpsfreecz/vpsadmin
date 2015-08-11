@@ -1205,8 +1205,8 @@ if ($_SESSION["logged_in"]) {
 					
 					$u->update(array('paid_until' => date('c', $t)));
 				
-				} elseif ($_POST["months_to_add"] && $u->paid_until) {
-					$t = strtotime($u->paid_until);
+				} elseif ($_POST["months_to_add"]) {
+					$t = strtotime($u->paid_until ? $u->paid_until : $u->created_at);
 					$t = strtotime('+'.$_POST['months_to_add'].' month', $t);
 					$log["change_to"] = $t;
 					
