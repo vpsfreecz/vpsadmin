@@ -57,8 +57,9 @@ module VpsAdmind
             counter += 1
 
             if counter <= tries
+              wait ||= rand(10)
               log(:warn, :sql, "Restarting transaction in #{wait} seconds")
-              sleep(wait || rand(10))
+              sleep(wait)
               retry
 
             else
