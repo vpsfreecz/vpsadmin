@@ -233,14 +233,15 @@ module VpsAdmind
       system_load = node.load[5]
       server_id = $CFG.get(:vpsadmin, :server_id)
 
+      t = Time.now.utc.strftime('%Y-%m-%d %H-%M-%S')
       my = Db.new
       my.prepared('INSERT INTO servers_status
-                  SET server_id = ?, created_at = NOW(), cpu_load = ?, daemon = ?, vpsadmin_version = ?
+                  SET server_id = ?, created_at = ?, cpu_load = ?, daemon = ?, vpsadmin_version = ?
                   ON DUPLICATE KEY UPDATE
-                  created_at = NOW(), cpu_load = ?, daemon = ?, vpsadmin_version = ?',
+                  created_at = ?, cpu_load = ?, daemon = ?, vpsadmin_version = ?',
                   server_id,
-                  system_load, 0, VpsAdmind::VERSION,
-                  system_load, 0, VpsAdmind::VERSION
+                  t, system_load, 0, VpsAdmind::VERSION,
+                  t, system_load, 0, VpsAdmind::VERSION
       )
 
       unless kernel.nil?
