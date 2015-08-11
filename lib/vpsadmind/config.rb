@@ -7,9 +7,9 @@ module VpsAdmind
           :name => nil,
           :retry_interval => 30,
           :ssl => false,
-          :connect_timeout => 5,
-          :read_timeout => 5,
-          :write_timeout => 5,
+          :connect_timeout => 15,
+          :read_timeout => 15,
+          :write_timeout => 15,
       },
 
       :vpsadmin => {
