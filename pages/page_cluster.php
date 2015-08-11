@@ -162,8 +162,9 @@ switch($_REQUEST["action"]) {
 	case "dns_new_save":
 		try {
 			$api->dns_resolver->create(array(
+				'label' => $_POST['dns_label'],
 				'ip_addr' => $_POST['dns_ip'],
-				'is_universal' => $_POST['dns_is_universal'],
+				'is_universal' => isset($_POST['dns_is_universal']),
 				'location' => $_POST['dns_location']
 			));
 			
