@@ -21,10 +21,21 @@ function environment_configs($user_id) {
 	}
 	
 	foreach ($cfgs as $c) {
+		$vps_count = $api->vps->list(array(
+			'limit' => 0,
+			'environment' => $c->environment_id,
+			'user' => $user_id,
+			'meta' => array('count' => true)
+		));
+
 		$xtpl->table_td($c->environment->label);
 		$xtpl->table_td(boolean_icon($c->can_create_vps));
 		$xtpl->table_td(boolean_icon($c->can_destroy_vps));
-		$xtpl->table_td($c->max_vps_count, false, true);
+		$xtpl->table_td(
+			$vps_count->getTotalCount() .' / '. $c->max_vps_count,
+			false,
+			true
+		);
 		$xtpl->table_td($c->vps_lifetime, false, true);
 		
 		if ($_SESSION['is_admin']) {
