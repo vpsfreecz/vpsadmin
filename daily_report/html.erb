@@ -216,10 +216,10 @@ end
         <td><a href="<%= url("adminvps", "action=edit&veid=#{vps.id}") %>"><%= vps.id %></a></td>
         <td><%= vps.hostname %></td>
 	<td><a href="<%= url("adminm", "action=edit&id=#{vps.m_id}") %>"><%= vps.user.login %></a></td>
-	<td><%= vps.vps_server %> <%= vps.node.name %></td>
+	<td><%= vps.vps_server %> <%= vps.node.domain_name %></td>
 	<td><%= vps.cpu %> cores</td>
 	<td><%= vps.memory / 1024 %> GiB</td>
-	<td><%= time(vps.vps_created) %>
+	<td><%= vps.created_at %>
       </tr>
     <% end %>
   </table>
@@ -242,10 +242,10 @@ end
         <td><a href="<%= url("adminvps", "action=edit&veid=#{vps.id}") %>"><%= vps.id %></a></td>
         <td><%= vps.hostname %></td>
 	<td><a href="<%= url("adminm", "action=edit&id=#{vps.m_id}") %>"><%= vps.user.login %></a></td>
-	<td><%= vps.vps_server %> <%= vps.node.name %></td>
+	<td><%= vps.vps_server %> <%= vps.node.domain_name %></td>
 	<td><%= vps.cpu %> cores</td>
 	<td><%= vps.memory / 1024 %> GiB</td>
-	<td><%= time(vps.vps_created) %>
+	<td><%= vps.created_at %>
       </tr>
     <% end %>
   </table>
@@ -269,10 +269,10 @@ end
         <td><a href="<%= url("adminvps", "action=edit&veid=#{vps.id}") %>"><%= vps.id %></a></td>
         <td><%= vps.hostname %></td>
 	<td><a href="<%= url("adminm", "action=edit&id=#{vps.m_id}") %>"><%= vps.user.login %></a></td>
-	<td><%= vps.vps_server %> <%= vps.node.name %></td>
+	<td><%= vps.vps_server %> <%= vps.node.domain_name %></td>
 	<td><%= vps.cpu %>&nbsp;cores</td>
 	<td><%= vps.memory / 1024 %>&nbsp;GiB</td>
-	<td><%= time(vps.vps_created) %>
+	<td><%= vps.created_at %>
       </tr>
     <% end %>
   </table>
@@ -332,13 +332,13 @@ end
     <% @transactions[:failed].includes(:user, :node).each do |t| %>
       <tr class="<%= t.t_success == 0 ? "error" : "warning" %>">
         <td><a href="<%= url("transactions", "chain=#{t.transaction_chain_id}&transaction=#{t.id}") %>"><%= t.id %></a></td>
-        <td><%= time(t.t_time) %></td>
-        <td><%= duration(t.t_end ? t.t_end - t.t_time : 0) %></td>
-        <td><%= duration(t.t_end - t.t_real_start) %></td>
+        <td><%= t.created_at %></td>
+        <td><%= duration(t.finished_at ? (t.finished_at - t.created_at).to_i : 0) %></td>
+        <td><%= duration(t.finished_at ? (t.finished_at - t.started_at).to_i : 0) %></td>
         <td>
-          <a href="<%= url("adminm", "action=edit&id=#{t.m_id}") %>"><%= t.m_id ? "#{t.m_id} #{t.user.login}" : '---' %></a>
+          <a href="<%= url("adminm", "action=edit&id=#{t.t_m_id}") %>"><%= t.t_m_id ? "#{t.t_m_id} #{t.user.login}" : '---' %></a>
         </td>
-        <td><a href="<%= url("cluster") %>"><%= t.t_server %> <%= t.node.name %></a></td>
+        <td><a href="<%= url("cluster") %>"><%= t.t_server %> <%= t.node.domain_name %></a></td>
         <td>
           <% if t.t_vps.nil? %>-
           <% else %>
