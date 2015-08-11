@@ -89,7 +89,7 @@ ul.ul-style01 ul li {padding-left:12px; background:url("../design/ul-style01.gif
 
 .main {position:relative; width:1150px; margin:0 auto; text-align:left;}
 
-	#header {padding:10px 0; overflow:hidden}
+	#header {min-width:1150px; padding:10px 0; overflow:hidden}
 
         #logo {margin:0; margin-bottom:3px; font:normal 260%/1.2 "arial",sans-serif; letter-spacing:-1px;}
         #logo span {font-weight:bold;}
@@ -105,7 +105,7 @@ ul.ul-style01 ul li {padding-left:12px; background:url("../design/ul-style01.gif
         #jumpto table{margin:0;border:none;}
         #jumpto td{border:none;}
 
-    #nav {clear:both; background:url("../design/nav.gif") 0 0 repeat-x;}
+    #nav {min-width:1150px; clear:both; background:url("../design/nav.gif") 0 0 repeat-x;}
     #nav ul {margin:0; padding:0; list-style:none;}
     #nav li {display:inline; margin:0; padding:0;}
     #nav li a {display:block; float:left; padding:10px 20px; text-decoration:underline; font-weight:bold;}
