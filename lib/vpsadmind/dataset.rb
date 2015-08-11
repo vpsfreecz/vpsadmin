@@ -50,15 +50,24 @@ module VpsAdmind
 
           case p[0]
             when 'used' then
-              used = p[1]
+              used = p[1].to_i
             when 'available' then
-              avail = p[1]
+              avail = p[1].to_i
           end
         end
 
         db.prepared(
-            'UPDATE dataset_in_pools SET used = ?, avail = ? WHERE id = ?',
-            used, avail, ds['id'].to_i
+            "UPDATE dataset_properties
+            SET value = ?
+            WHERE dataset_in_pool_id = ? AND name = 'used'",
+            YAML.dump(used), ds['id'].to_i
+        )
+        
+        db.prepared(
+            "UPDATE dataset_properties
+            SET value = ?
+            WHERE dataset_in_pool_id = ? AND name = 'avail'",
+            YAML.dump(avail), ds['id'].to_i
         )
       end
     end
