@@ -749,6 +749,10 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$vps->user_id.'">'.$vps->user->login.'</a>');
 	$xtpl->table_tr();
 	
+	$xtpl->table_td(_('Created at').':');
+	$xtpl->table_td(tolocaltz($vps->created_at));
+	$xtpl->table_tr();
+	
 	$xtpl->table_td(_("State").':');
 	$xtpl->table_td($vps->object_state);
 	$xtpl->table_tr();
