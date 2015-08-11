@@ -36,7 +36,7 @@ function environment_configs($user_id) {
 			false,
 			true
 		);
-		$xtpl->table_td($c->vps_lifetime, false, true);
+		$xtpl->table_td(format_duration($c->vps_lifetime), false, true);
 		
 		if ($_SESSION['is_admin']) {
 			$xtpl->table_td(boolean_icon($c->default));
