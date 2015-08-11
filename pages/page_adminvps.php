@@ -822,7 +822,7 @@ if (isset($show_info) && $show_info) {
 	
 	} elseif ($vps->object_state == 'soft_delete') {
 		if ($_SESSION["is_admin"]) {
-			lifetimes_set_state_form('vps', $vps->id);
+			lifetimes_set_state_form('vps', $vps->id, $vps);
 			
 		} else {
 			$xtpl->perex(_('VPS is scheduled for deletion.'),
@@ -1070,7 +1070,7 @@ if (isset($show_info) && $show_info) {
 		
 	// State change
 		if ($_SESSION['is_admin']) {
-			lifetimes_set_state_form('vps', $vps->id);
+			lifetimes_set_state_form('vps', $vps->id, $vps);
 		}
 	}
 }

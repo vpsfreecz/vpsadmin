@@ -198,7 +198,7 @@ function print_editm($u) {
 	$xtpl->form_out($_SESSION["is_admin"] ? _("Save") : _("Request change"));
 	
 	if ($_SESSION["is_admin"]) {
-		lifetimes_set_state_form('user', $u->id);
+		lifetimes_set_state_form('user', $u->id, $u);
 		
 		$xtpl->sbar_add("<br><img src=\"template/icons/m_switch.png\"  title=". _("Switch context") ." /> Switch context", "?page=login&action=switch_context&m_id={$u->id}&next=".urlencode($_SERVER["REQUEST_URI"]));
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("State log").'" />'._('State log'), '?page=lifetimes&action=changelog&resource=user&id='.$u->id.'&return='. urlencode($_SERVER['REQUEST_URI']));
