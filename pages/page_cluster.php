@@ -155,7 +155,7 @@ switch($_REQUEST["action"]) {
 		$xtpl->form_add_input(_("Label").':', 'text', '30', 'dns_label', '', _("DNS Label"));
 		$xtpl->form_add_checkbox(_("Is this DNS location independent?").':', 'dns_is_universal', '1', false, '');
 		$xtpl->form_add_select(_("Location").':', 'dns_location',
-			resource_list_to_options($api->dns_resolver->list()), '',  '');
+			resource_list_to_options($api->location->list()), '',  '');
 		$xtpl->form_out(_("Save changes"));
 		break;
 		
