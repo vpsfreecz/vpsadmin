@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150807152819) do
+ActiveRecord::Schema.define(version: 20150811075054) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -284,18 +284,18 @@ ActiveRecord::Schema.define(version: 20150807152819) do
 
   create_table "mail_logs", force: true do |t|
     t.integer  "user_id"
-    t.string   "to",               limit: 500, null: false
-    t.string   "cc",               limit: 500, null: false
-    t.string   "bcc",              limit: 500, null: false
-    t.string   "from",                         null: false
+    t.string   "to",               limit: 500,        null: false
+    t.string   "cc",               limit: 500,        null: false
+    t.string   "bcc",              limit: 500,        null: false
+    t.string   "from",                                null: false
     t.string   "reply_to"
     t.string   "return_path"
     t.string   "message_id"
     t.string   "in_reply_to"
     t.string   "references"
-    t.string   "subject",                      null: false
-    t.text     "text_plain"
-    t.text     "text_html"
+    t.string   "subject",                             null: false
+    t.text     "text_plain",       limit: 2147483647
+    t.text     "text_html",        limit: 2147483647
     t.integer  "mail_template_id"
     t.integer  "transaction_id"
     t.datetime "created_at"
