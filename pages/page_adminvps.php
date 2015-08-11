@@ -759,7 +759,7 @@ if (isset($show_info) && $show_info) {
 	
 	if ($vps->expiration_date) {
 		$xtpl->table_td(_("Expiration").':');
-		$xtpl->table_td($vps->expiration_date);
+		$xtpl->table_td(tolocaltz($vps->expiration_date));
 		$xtpl->table_tr();
 	}
 	
