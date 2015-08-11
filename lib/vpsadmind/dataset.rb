@@ -50,9 +50,9 @@ module VpsAdmind
 
           case p[0]
             when 'used' then
-              used = p[1].to_i
+              used = p[1].to_i / 1024 / 1024
             when 'available' then
-              avail = p[1].to_i
+              avail = p[1].to_i / 1024 / 1024
           end
         end
 
