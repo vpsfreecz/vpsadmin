@@ -30,7 +30,7 @@ module VpsAdmind
     def update_status
       db = Db.new
       rs = db.query(
-          "SELECT p.filesystem, ds.name, dip.id
+          "SELECT p.filesystem, ds.full_name, dip.id
           FROM pools p
           INNER JOIN dataset_in_pools dip ON dip.pool_id = p.id
           INNER JOIN datasets ds ON ds.id = dip.dataset_id
@@ -41,7 +41,7 @@ module VpsAdmind
       rs.each_hash do |ds|
         used = avail = 0
 
-        get = zfs(:get, '-H -p -o property,value used,available', "#{ds['filesystem']}/#{ds['name']}", [1,])
+        get = zfs(:get, '-H -p -o property,value used,available', "#{ds['filesystem']}/#{ds['full_name']}", [1,])
 
         next if get[:exitstatus] == 1
 
