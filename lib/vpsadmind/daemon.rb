@@ -233,7 +233,7 @@ module VpsAdmind
       system_load = node.load[5]
       server_id = $CFG.get(:vpsadmin, :server_id)
 
-      t = Time.now.utc.strftime('%Y-%m-%d %H-%M-%S')
+      t = Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
       my = Db.new
       my.prepared('INSERT INTO servers_status
                   SET server_id = ?, created_at = ?, cpu_load = ?, daemon = ?, vpsadmin_version = ?

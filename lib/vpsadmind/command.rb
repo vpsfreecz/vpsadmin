@@ -138,8 +138,8 @@ module VpsAdmind
           'UPDATE transactions SET t_done=?, t_success=?, t_output=?, started_at=?, finished_at=? WHERE t_id=?',
           done, {:failed => 0, :ok => 1, :warning => 2}[@status],
           (@cmd ? @output.merge(@cmd.output) : @output).to_json,
-          @time_start && @time_start.strftime('%Y-%m-%d %H-%M-%S'),
-          @time_end && @time_end.strftime('%Y-%m-%d %H-%M-%S'),
+          @time_start && @time_start.strftime('%Y-%m-%d %H:%M:%S'),
+          @time_end && @time_end.strftime('%Y-%m-%d %H:%M:%S'),
           @trans['t_id']
       )
     end

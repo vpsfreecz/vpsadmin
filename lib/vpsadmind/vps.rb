@@ -182,8 +182,8 @@ module VpsAdmind
         (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE
         created_at = ?, vps_up = ?, vps_nproc = ?, vps_vm_used_mb = ?,
         vps_disk_used_mb = ?, vps_admin_ver = ?",
-          @veid.to_i, Time.now.utc.strftime('%Y-%m-%d %H-%M-%S'), up, nproc, mem, disk, VpsAdmind::VERSION,
-          Time.now.utc.strftime('%Y-%m-%d %H-%M-%S'), up, nproc, mem, disk, VpsAdmind::VERSION
+          @veid.to_i, Time.now.utc.strftime('%Y-%m-%d %H:%M:%S'), up, nproc, mem, disk, VpsAdmind::VERSION,
+          Time.now.utc.strftime('%Y-%m-%d %H:%M:%S'), up, nproc, mem, disk, VpsAdmind::VERSION
       )
     end
 
