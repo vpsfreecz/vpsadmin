@@ -4,7 +4,7 @@ VPS #<%= @vps.id %> bylo vypnuto a pozastaveno.
 
 Důvod změny: <%= @state.reason %>
 
-VPS pozastavil: <%= @state.user.full_name %>
+<% if @state.user %>VPS pozastavil: <%= @state.user.full_name %><% end %>
 
 S pozdravem
 
