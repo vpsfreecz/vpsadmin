@@ -1,5 +1,6 @@
 class ApiToken < ActiveRecord::Base
   belongs_to :user
+  has_many :user_sessions
 
   validates :user_id, :token, presence: true
   validates :token, length: {is: 100}
