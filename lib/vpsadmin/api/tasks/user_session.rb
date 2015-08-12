@@ -23,7 +23,7 @@ module VpsAdmin::API::Tasks
             )
           end
           
-          t.destroy!
+          t.destroy! if ENV['EXECUTE'] == 'yes'
         end
       end
     end
