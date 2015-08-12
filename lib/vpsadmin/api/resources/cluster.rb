@@ -78,7 +78,8 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
     def exec
       {
           nodes_online: ::Node.joins(:node_status).where(
-              '(UNIX_TIMESTAMP() - UNIX_TIMESTAMP(servers_status.created_at)) <= 150'
+              "TIMEDIFF(?, servers_status.created_at) <= CAST('00:01:30' AS TIME)",
+              Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
           ).count,
           node_count: ::Node.all.count,
           vps_running: ::Vps.joins(:vps_status).where(vps_status: {vps_up: true}).count,
