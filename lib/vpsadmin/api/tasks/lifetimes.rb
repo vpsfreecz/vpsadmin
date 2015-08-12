@@ -44,7 +44,7 @@ module VpsAdmin::API::Tasks
           if ENV['EXECUTE'] == 'yes'
             instance.progress_object_state(
                 :enter,
-                reason: ENV['REASON'] || 'The expiration date has passed.',
+                reason: ENV['REASON'],
                 expiration: expiration
             )
           end
