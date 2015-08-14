@@ -7,7 +7,9 @@ module Transactions::Vps
       self.t_vps = vps.vps_id
       self.t_server = vps.vps_server
 
-      {}
+      {
+          os_template: vps.os_template.name
+      }
     end
   end
 end
