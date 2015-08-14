@@ -187,7 +187,7 @@ switch($_REQUEST["action"]) {
 		$xtpl->form_add_input(_("Label").':', 'text', '30', 'dns_label', $ns->label, _("DNS Label"));
 		$xtpl->form_add_checkbox(_("Is this DNS location independent?").':', 'dns_is_universal', '1', $ns->is_universal, '');
 		$xtpl->form_add_select(_("Location").':', 'dns_location',
-			resource_list_to_options($api->dns_resolver->list()), $ns->location_id, '');
+			resource_list_to_options($api->location->list()), $ns->location_id, '');
 		$xtpl->form_out(_("Save changes"));
 		
 		break;
@@ -197,8 +197,9 @@ switch($_REQUEST["action"]) {
 		
 		try {
 			$api->dns_resolver->update($_GET['id'], array(
+				'label' => $_POST['dns_label'],
 				'ip_addr' => $_POST['dns_ip'],
-				'is_universal' => $_POST['dns_is_universal'],
+				'is_universal' => isset($_POST['dns_is_universal']),
 				'location' => $_POST['dns_location']
 			));
 			
