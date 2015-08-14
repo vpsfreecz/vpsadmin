@@ -12,14 +12,18 @@ module TransactionChains
 
       chain = self
 
-      ips = [
-          vps.free_resource!(:ipv4, chain: self),
-          vps.free_resource!(:ipv6, chain: self)
-      ].compact
+      # Free IP addresses only if this is the target state, because hard_delete
+      # (Vps::Destroy) will free all resources anyway.
+      if target
+        ips = [
+            vps.free_resource!(:ipv4, chain: self),
+            vps.free_resource!(:ipv6, chain: self)
+        ].compact
+      end
       
       append(Transactions::Utils::NoOp, args: vps.vps_server) do
         # Free IP addresses
-        ips.each { |ip| destroy(ip) }
+        ips.each { |ip| destroy(ip) } if target
 
         # Mark all resources as confirm_destroy to 'free' them, until
         # they are really freed by hard_delete.
