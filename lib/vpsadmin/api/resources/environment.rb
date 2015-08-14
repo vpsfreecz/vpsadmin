@@ -303,7 +303,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
       def exec
         ::EnvironmentDatasetPlan.find_by!(
             environment_id: params[:environment_id],
-            dataset_plan_id: params[:dataset_plan_id]
+            id: params[:dataset_plan_id]
         )
       end
     end
