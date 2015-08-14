@@ -177,12 +177,28 @@ module TransactionChains
               src.dataset_in_pool_plans.includes(
                   environment_dataset_plan: [:dataset_plan]
               ).each do |dip_plan|
-                plan = dip_plan.environment_dataset_plan.dataset_plan.name.to_sym
+                plan = dip_plan.environment_dataset_plan.dataset_plan
+                
+                # Do not add the plan in the target environment is for admins only
+                begin
+                  next unless ::EnvironmentDatasetPlan.find_by!(
+                      dataset_plan: plan,
+                      environment: dst.pool.node.environment
+                  ).user_add
+
+                rescue ActiveRecord::RecordNotFound
+                  next  # the plan is not present in the target environment
+                end
 
                 begin
-                  VpsAdmin::API::DatasetPlans.plans[plan].register(dst, confirmation: self)
+                  VpsAdmin::API::DatasetPlans.plans[plan.name.to_sym].register(
+                      dst,
+                      confirmation: self
+                  )
 
                 rescue VpsAdmin::API::Exceptions::DatasetPlanNotInEnvironment
+                  # This exception should never be raised, as the not-existing plan
+                  # in the target environment is caught by the rescue above.
                   next
                 end
               end
@@ -330,16 +346,34 @@ module TransactionChains
         vps.dataset_in_pool.dataset_in_pool_plans.includes(
             environment_dataset_plan: [:dataset_plan]
         ).each do |dip_plan|
-          plans << dip_plan.environment_dataset_plan.dataset_plan.name.to_sym
+          plans << dip_plan
         end
 
         unless plans.empty?
           append(Transactions::Utils::NoOp, args: dst_vps.vps_server) do
-            plans.each do |p|
+            plans.each do |dip_plan|
+              plan = dip_plan.environment_dataset_plan.dataset_plan
+              
+              # Do not add the plan in the target environment is for admins only
               begin
-                VpsAdmin::API::DatasetPlans.plans[p].register(dip, confirmation: self)
+                next unless ::EnvironmentDatasetPlan.find_by!(
+                    dataset_plan: plan,
+                    environment: dip.pool.node.environment
+                ).user_add
+
+              rescue ActiveRecord::RecordNotFound
+                next  # the plan is not present in the target environment
+              end
+
+              begin
+                VpsAdmin::API::DatasetPlans.plans[plan.name.to_sym].register(
+                    dip,
+                    confirmation: self
+                )
 
               rescue VpsAdmin::API::Exceptions::DatasetPlanNotInEnvironment
+                # This exception should never be raised, as the not-existing plan
+                # in the target environment is caught by the rescue above.
                 next
               end
             end
