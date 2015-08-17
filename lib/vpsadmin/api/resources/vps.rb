@@ -530,7 +530,7 @@ END
       resource VpsAdmin::API::Resources::Location, desc: 'Clone to location'
       resource VpsAdmin::API::Resources::Node, desc: 'Clone to node', value_label: :name
       resource VpsAdmin::API::Resources::User, desc: 'The owner of the cloned VPS', value_label: :login
-      resource VpsAdmin::API::Resources::VPS, desc: 'Clone into an existing VPS', value_label: :hostname
+      #resource VpsAdmin::API::Resources::VPS, desc: 'Clone into an existing VPS', value_label: :hostname
       bool :subdatasets, default: true, fill: true
       bool :dataset_plans, default: true, fill: true, label: 'Dataset plans'
       bool :configs, default: true, fill: true
