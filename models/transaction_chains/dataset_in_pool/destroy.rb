@@ -173,6 +173,9 @@ module TransactionChains
 
           # Check if ::Dataset should be destroyed or marked for destroyal
           if dataset_in_pool.dataset.dataset_in_pools.where.not(confirmed: ::DatasetInPool.confirmed(:confirm_destroy)).count == 0
+            dataset_in_pool.dataset.update!(
+                confirmed: ::Dataset.confirmed(:confirm_destroy)
+            )
             destroy(dataset_in_pool.dataset)
 
           elsif dataset_in_pool.dataset.dataset_in_pools
