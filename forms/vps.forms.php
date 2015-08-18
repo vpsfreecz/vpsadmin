@@ -101,7 +101,9 @@ function print_newvps_page3($env_id, $loc_id) {
 			$name,
 			$_POST[$name] ? $_POST[$name] : min($default, $r->free),
 			$r->cluster_resource->min,
-			min($r->free, $r->cluster_resource->max),
+			$_SESSION['is_admin']
+				? $r->cluster_resource->max
+				: min($r->free, $r->cluster_resource->max),
 			$r->cluster_resource->stepsize,
 			unit_for_cluster_resource($name)
 		);
@@ -230,7 +232,7 @@ function format_swap_preview($vps, $hostname, $resources, $ips, $node) {
 		<dt>Hostname:</dt>
 		<dd>$hostname</dd>
 		<dt>Node:</dt>
-		<dd>{$node->name}</dd>
+		<dd>{$node->domain_name}</dd>
 		<dt>CPU:</dt>
 		<dd>{$resources->cpu}</dd>
 		<dt>Memory:</dt>

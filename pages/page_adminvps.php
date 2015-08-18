@@ -101,7 +101,12 @@ switch ($_GET["action"]) {
 			break;
 		
 		case 'new3':
-			print_newvps_page3($_GET['environment'], $_GET['location']);
+			print_newvps_page3(
+				$_SESSION['is_admin']
+					? ENV_VPS_PRODUCTION_ID
+					: $_GET['environment'],
+				$_GET['location']
+			);
 			break;
 			
 		case 'new4':
