@@ -73,4 +73,8 @@ class UserSession < ActiveRecord::Base
         auth_type: 'token'
     )
   end
+
+  def user_agent
+    user_session_agent.agent
+  end
 end
