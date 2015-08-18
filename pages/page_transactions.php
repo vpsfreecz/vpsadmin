@@ -43,6 +43,7 @@ function list_chains() {
 	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
 	$xtpl->form_add_input(_("Exact ID").':', 'text', '40', 'chain', get_val('chain'));
 	$xtpl->form_add_input(_("User ID").':', 'text', '40', 'user', get_val('user'));
+	$xtpl->form_add_input(_("User session ID").':', 'text', '40', 'user_session', get_val('user_session'));
 	$xtpl->form_add_input(_("State").':', 'text', '40', 'state', get_val('state'), 'queued, done, rollbacking, failed');
 	$xtpl->form_add_input(_("Name").':', 'text', '40', 'name', get_val('name'));
 	$xtpl->form_add_input(_("Class name").':', 'text', '40', 'class_name', get_val('class_name'));
@@ -58,6 +59,9 @@ function list_chains() {
 
 	if ($_GET['user'])
 		$params['user'] = $_GET['user'];
+	
+	if ($_GET['user_session'])
+		$params['user_session'] = $_GET['user_session'];
 	
 	if ($_GET['state'])
 		$params['state'] = $_GET['state'];

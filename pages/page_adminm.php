@@ -205,6 +205,7 @@ function print_editm($u) {
 	}
 	
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Authentication tokens").'" />'._('Authentication tokens'), "?page=adminm&section=members&action=auth_tokens&id={$u->id}");
+	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Session log").'" />'._('Session log'), "?page=adminm&action=user_sessions&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Cluster resources").'" />'._('Cluster resources'), "?page=adminm&section=members&action=cluster_resources&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Environment configs").'" />'._('Environment configs'), "?page=adminm&section=members&action=env_cfg&id={$u->id}");
 }
@@ -1370,6 +1371,10 @@ if ($_SESSION["logged_in"]) {
 					edit_auth_token($_GET['token_id']);
 				}
 			
+			break;
+
+		case 'user_sessions':
+			list_user_sessions($_GET['id']);
 			break;
 			
 		case 'cluster_resources':
