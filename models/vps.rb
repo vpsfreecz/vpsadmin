@@ -65,10 +65,7 @@ class Vps < ActiveRecord::Base
                     environment: ->(){ node.environment }
 
   default_scope {
-    where.not(object_state: [
-                  object_states[:soft_delete],
-                  object_states[:hard_delete]
-              ])
+    where.not(object_state: object_states[:hard_delete])
   }
 
   scope :existing, -> {

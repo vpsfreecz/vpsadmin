@@ -60,10 +60,7 @@ class User < ActiveRecord::Base
 
   scope :existing, -> {
     unscoped {
-      where(object_state: [
-                object_states[:active],
-                object_states[:suspended]
-            ])
+      where(object_state: object_states[:active])
     }
   }
 
