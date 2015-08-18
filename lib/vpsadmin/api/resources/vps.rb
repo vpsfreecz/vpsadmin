@@ -36,6 +36,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
              desc: 'Dataset the VPS resides in', value_label: :name
   end
 
+  params(:read_only) do
+    datetime :created_at, label: 'Created at'
+  end
+
   params(:status) do
     bool :running, label: 'Running'
     integer :process_count, label: 'Process count'
@@ -51,6 +55,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     use :id
     use :common
     use :dataset
+    use :read_only
     use :resources
     use :status
   end
