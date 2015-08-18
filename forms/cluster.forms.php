@@ -21,14 +21,10 @@ function ip_adress_list($title) {
 		6 => '6'
 	);
 	
-	$empty = array(0 => _('---'), 'unassigned' => 'unassigned');
-	$users = $empty + resource_list_to_options($api->user->list(), 'id', 'login', false, user_label);
-	$vpses = $empty + resource_list_to_options($api->vps->list(), 'id', 'hostname', false, vps_label);
-	
 	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
 	$xtpl->form_add_select(_("Version").':', 'v', $versions, get_val('v', 0));
-	$xtpl->form_add_select(_("User").':', 'user', $users, get_val('user'));
-	$xtpl->form_add_select(_("VPS").':', 'vps', $vpses, get_val('vps'));
+	$xtpl->form_add_input(_("User ID").':', 'text', '40', 'user', get_val('user'), _("'unassigned' to list free addresses"));
+	$xtpl->form_add_input(_("VPS").':', 'text', '40', 'vps', get_val('vps'), _("'unassigned' to list free addresses"));
 	$xtpl->form_add_select(_("Location").':', 'location',
 		resource_list_to_options($api->location->list()), get_val('location'));
 	
