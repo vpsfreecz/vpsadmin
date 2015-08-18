@@ -22,6 +22,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
       string :name, label: 'Name', desc: 'For internal use only'
       string :state, label: 'State', choices: ::TransactionChain.states.keys
       resource VpsAdmin::API::Resources::User, label: 'User', value_label: :login
+      resource VpsAdmin::API::Resources::UserSession, label: 'User session'
       string :class_name, label: 'Class name', desc: 'Search by concerned class name'
       integer :row_id, label: 'Row id', desc: 'Search by concerned row id'
     end
@@ -33,6 +34,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict user: u
+      input blacklist: %i(user)
       output blacklist: %i(user)
       allow
     end
@@ -43,6 +45,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
       q = q.where(name: input[:name]) if input[:name]
       q = q.where(state: ::TransactionChain.states[input[:state]]) if input[:state]
       q = q.where(user: input[:user]) if input[:user]
+      q = q.where(user_session: input[:user_session]) if input[:user_session]
       q = q.joins(:transaction_chain_concerns).where(
           transaction_chain_concerns: {class_name: input[:class_name]}
       ) if input[:class_name]
