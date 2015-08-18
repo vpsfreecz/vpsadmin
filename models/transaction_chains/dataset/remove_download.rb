@@ -1,6 +1,6 @@
 module TransactionChains
   class Dataset::RemoveDownload < ::TransactionChain
-    label 'Download-'
+    label 'Remove'
 
     def link_chain(dl, *args)
       lock(dl)
