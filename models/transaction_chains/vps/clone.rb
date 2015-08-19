@@ -126,8 +126,16 @@ module TransactionChains
           )
 
           properties = ::DatasetProperty.clone_properties!(src, dst)
+          props_to_set = {}
 
-          append(Transactions::Storage::CreateDataset, args: dst) do
+          properties.each_value do |p|
+            next if p.inherited
+            props_to_set[p.name.to_sym] = p.value
+          end
+
+          append(Transactions::Storage::CreateDataset, args: [
+              dst, props_to_set
+          ]) do
             create(dst.dataset)
             create(dst)
             create(use)
