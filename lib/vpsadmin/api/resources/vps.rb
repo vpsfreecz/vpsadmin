@@ -344,6 +344,7 @@ END
       end
 
       vps.update(to_db_names(input))
+      ok
 
     rescue ActiveRecord::RecordInvalid => e
       error('update failed', e.record == vps ? to_param_names(vps.errors.to_hash, :input) : e.record.errors.to_hash)
@@ -372,6 +373,7 @@ END
       # FIXME: check if object_state is filled for non-admins
 
       update_object_state!(vps)
+      ok
     end
   end
 
@@ -490,6 +492,7 @@ END
       error('selected os template is disabled') unless tpl.enabled?
 
       vps.reinstall(tpl)
+      ok
     end
   end
 
