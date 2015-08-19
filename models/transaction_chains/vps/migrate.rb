@@ -200,6 +200,11 @@ module TransactionChains
         end
       end
 
+      # Call DatasetInPool.migrated hook
+      datasets.each do |src, dst|
+        src.call_hooks_for(:migrated, self, args: [src, dst])
+      end
+
       # Setup firewall and shapers 
       # Unregister from firewall and remove shaper on source node
       if handle_ips
