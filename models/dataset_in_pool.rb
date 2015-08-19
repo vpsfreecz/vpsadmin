@@ -22,6 +22,7 @@ class DatasetInPool < ActiveRecord::Base
                     environment: ->(){ pool.node.environment }
 
   has_hook :create
+  has_hook :migrated
 
   def snapshot
     TransactionChains::Dataset::Snapshot.fire(self)
