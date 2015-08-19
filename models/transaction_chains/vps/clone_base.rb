@@ -62,7 +62,7 @@ module TransactionChains
       end
 
       unless plans.empty?
-        append(Transactions::Utils::NoOp, args: dst_vps.vps_server) do
+        append(Transactions::Utils::NoOp, args: find_node_id) do
           plans.each do |dip_plan|
             plan = dip_plan.environment_dataset_plan.dataset_plan
             
