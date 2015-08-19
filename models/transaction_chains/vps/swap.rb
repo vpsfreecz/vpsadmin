@@ -234,11 +234,26 @@ module TransactionChains
           }
       )
       
-      if faked_resources.count > 0
-        append(Transactions::Utils::NoOp, args: find_node_id) do
+      append(Transactions::Utils::NoOp, args: find_node_id) do
+        if faked_resources.count > 0
           faked_resources.each do |use|
             edit(use, confirmed: ::ClusterResourceUse.confirmed(:confirmed))
           end
+        end
+
+        # Expirations
+        if opts[:expirations]
+          fmt = '%Y-%m-%d %H:%M:%S'
+          edit(
+              new_primary_vps,
+              expiration_date: primary_vps.expiration_date && \
+                               primary_vps.expiration_date.utc.strftime(fmt)
+          )
+          edit(
+              new_secondary_vps,
+              expiration_date: secondary_vps.expiration_date && \
+                               secondary_vps.expiration_date.utc.strftime(fmt)
+          )
         end
       end
 

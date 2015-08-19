@@ -634,12 +634,13 @@ END
         desc: 'Swap resources (CPU, memory and swap, not disk space)'
       bool :configs, desc: 'Swap configuration chains'
       bool :hostname, desc: 'Swap hostname'
+      bool :expirations, desc: 'Swap expirations'
     end
 
     authorize do |u|
       allow if u.role == :admin
       restrict m_id: u.id
-      input blacklist: %i(configs)
+      input blacklist: %i(configs expirations)
       allow
     end
 
@@ -659,7 +660,10 @@ END
         error("swapping VPSes with mounts of each other is not supported")
       end
 
-      input[:configs] = true if current_user.role != :admin
+      if current_user.role != :admin
+        input[:configs] = true
+        input[:expirations] = true
+      end
 
       vps.swap_with(input[:vps], input)
       ok
