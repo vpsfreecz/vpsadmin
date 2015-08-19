@@ -1,11 +1,16 @@
 module TransactionChains
   # Encapsulates both Dataset::Snapshot and Dataset::Transfer.
   class Dataset::Backup < ::TransactionChain
-    label 'Backup dataset'
+    label 'Backup'
 
     def link_chain(src_dataset_in_pool, dst_dataset_in_pool)
       lock(src_dataset_in_pool)
       lock(dst_dataset_in_pool)
+
+      concerns(:affect, [
+          src_dataset_in_pool.dataset.class.name,
+          src_dataset_in_pool.dataset_id
+      ])
 
       # The transfer transaction MUST retrieve the snapshot name before
       # execution (on vpsAdmind), because it may be different!
