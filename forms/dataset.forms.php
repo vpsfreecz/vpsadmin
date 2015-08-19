@@ -350,7 +350,12 @@ function mount_create_form() {
 	$params = $api->vps->mount->create->getParameters('input');
 	
 	if (!$_GET['vps']) {
-		$xtpl->form_add_select(_('Mount to VPS'), 'vps', resource_list_to_options($api->vps->list(), 'id', 'hostname'), $_POST['vps']);
+		$xtpl->form_add_select(_('Mount to VPS'), 'vps', resource_list_to_options(
+			$api->vps->list(),
+			'id',
+			'hostname', true,
+			function($vps) { return '#'.$vps->id.' '.$vps->hostname; }
+		), $_POST['vps']);
 		
 	} else {
 		$vps = $api->vps->find($_GET['vps']);
