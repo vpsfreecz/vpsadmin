@@ -49,6 +49,14 @@ module TransactionChains
           confirmed: ::Vps.confirmed(:confirm_create)
       )
       dst_vps.dns_resolver = dns_resolver(vps, dst_vps)
+      
+      lifetime = dst_vps.user.env_config(
+          dst_vps.node.environment,
+          :vps_lifetime
+      )
+
+      dst_vps.expiration_date = Time.now + lifetime if lifetime != 0
+      
       dst_vps.save!
       lock(dst_vps)
 
