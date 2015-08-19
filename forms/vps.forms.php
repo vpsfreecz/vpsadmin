@@ -217,7 +217,7 @@ function vps_swap_form($vps) {
 	vps_details_suite($vps);
 }
 
-function format_swap_preview($vps, $hostname, $resources, $ips, $node) {
+function format_swap_preview($vps, $hostname, $resources, $ips, $node, $expiration) {
 	$ips_tmp = array();
 	
 	foreach ($ips as $ip) {
@@ -225,12 +225,17 @@ function format_swap_preview($vps, $hostname, $resources, $ips, $node) {
 	}
 
 	$ips = implode(",<br>\n", $ips_tmp);
+	$expiration_date = $expiration->expiration_date
+		? tolocaltz($expiration->expiration_date)
+		: '---';
 
 	$s = <<<EOT
 	<h3>VPS <a href="?page=adminvps&action=info&veid={$vps->id}">{$vps->id}</a></h3>
 	<dl>
 		<dt>Hostname:</dt>
 		<dd>$hostname</dd>
+		<dt>Expiration:</dt>
+		<dd>{$expiration_date}</dd>
 		<dt>Node:</dt>
 		<dd>{$node->domain_name}</dd>
 		<dt>CPU:</dt>
@@ -258,13 +263,17 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 	$primary_ips = $primary->ip_address->list();
 	$secondary_ips = $secondary->ip_address->list();
 
+	if (!$_SESSION['is_admin'])
+		$opts['expirations'] = true;
+
 	$xtpl->table_td(
 		format_swap_preview(
 			$primary,
 			$primary->hostname,
 			$primary,
 			$primary_ips,
-			$primary->node
+			$primary->node,
+			$primary
 		)
 	);
 	
@@ -276,7 +285,8 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 			$opts['hostname'] ? $primary->hostname : $secondary->hostname,
 			$opts['resources'] ? $primary : $secondary,
 			$primary_ips,
-			$primary->node
+			$primary->node,
+			$opts['expirations'] ? $primary : $secondary
 		)
 	);
 
@@ -288,7 +298,8 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 			$secondary->hostname,
 			$secondary,
 			$secondary_ips,
-			$secondary->node
+			$secondary->node,
+			$secondary
 		)
 	);
 
@@ -298,7 +309,8 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 			$opts['hostname'] ? $secondary->hostname : $primary->hostname,
 			$opts['resources'] ? $secondary : $primary,
 			$secondary_ips,
-			$secondary->node
+			$secondary->node,
+			$opts['expirations'] ? $secondary : $primary
 		)
 	);
 
@@ -311,6 +323,7 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 		($opts['hostname'] ? '<input type="hidden" name="hostname" value="1">' : '').
 		($opts['resources'] ? '<input type="hidden" name="resources" value="1">' : '').
 		($opts['configs'] ? '<input type="hidden" name="configs" value="1">' : '').
+		($opts['expirations'] ? '<input type="hidden" name="expirations" value="1">' : '').
 		$xtpl->html_submit(_('Go >>'), 'go'),
 		false, false, '2'
 	);
