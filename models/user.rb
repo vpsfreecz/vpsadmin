@@ -140,7 +140,13 @@ class User < ActiveRecord::Base
   end
 
   def vps_in_env(env)
-    vpses.joins(:node).where(servers: {environment_id: env.id}).count
+    vpses.joins(:node).where(
+        servers: {environment_id: env.id},
+        vps: {object_state: [
+            ::Vps.object_states[:active],
+            ::Vps.object_states[:suspended]
+        ]}
+    ).count
   end
 
 
