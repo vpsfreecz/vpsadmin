@@ -115,8 +115,6 @@ module TransactionChains
       datasets.insert(0, [vps.dataset_in_pool, dst_vps.dataset_in_pool])
 
       # Create all datasets
-      clone_snapshots = []
-
       datasets.each do |src, dst|
         if src != vps.dataset_in_pool
           use = dst.allocate_resource!(
@@ -151,9 +149,6 @@ module TransactionChains
           # Clone dataset plans
           clone_dataset_plans(src, dst) if attrs[:dataset_plans]
         end
-
-        clone_snapshots << use_chain(Dataset::Snapshot, args: src)
-        use_chain(Dataset::Transfer, args: [src, dst])
       end
 
       # Initial transfer
@@ -163,7 +158,7 @@ module TransactionChains
       if attrs[:stop]
         use_chain(Vps::Stop, args: vps)
 
-        clone_snapshots.concat(transfer_datasets(datasets, urgent: true))
+        transfer_datasets(datasets, urgent: true)
       
         use_chain(Vps::Start, args: vps, urgent: true) if vps.running
       end
