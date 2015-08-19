@@ -82,9 +82,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       restrict m_id: u.m_id
       input blacklist: %i(user)
       output whitelist: %i(id user hostname os_template dns_resolver node dataset
-                          memory swap cpu backup_enabled maintenance_lock
-                          maintenance_lock_reason object_state expiration_date
-                          running process_count used_memory used_disk)
+                          created_at memory swap cpu backup_enabled
+                          maintenance_lock maintenance_lock_reason object_state
+                          expiration_date running process_count used_memory
+                          used_disk)
       allow
     end
 
@@ -284,9 +285,10 @@ END
       allow if u.role == :admin
       restrict m_id: u.m_id
       output whitelist: %i(id user hostname os_template dns_resolver node dataset
-                          memory swap cpu backup_enabled maintenance_lock
-                          maintenance_lock_reason object_state expiration_date
-                          running process_count used_memory used_disk)
+                          created_at memory swap cpu backup_enabled
+                          maintenance_lock maintenance_lock_reason object_state
+                          expiration_date running process_count used_memory
+                          used_disk)
       allow
     end
 
@@ -561,8 +563,8 @@ END
       restrict m_id: u.id
       input blacklist: %i(node user configs)
       output whitelist: %i(id hostname os_template dns_resolver node dataset
-                          memory swap cpu backup_enabled maintenance_lock
-                          maintenance_lock_reason)
+                          created_at memory swap cpu backup_enabled
+                          maintenance_lock maintenance_lock_reason)
       allow
     end
 
