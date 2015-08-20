@@ -9,10 +9,14 @@ module TransactionChains
   # expiration is set. If dataset is in no pools at all, it is
   # deleted immediately.
   class DatasetInPool::Destroy < ::TransactionChain
-    label 'Destroy dataset in pool'
+    label 'Destroy'
 
     def link_chain(dataset_in_pool, recursive = false, top = true, tasks = true)
       lock(dataset_in_pool)
+      concerns(:affect, [
+          dataset_in_pool.dataset.class.name,
+          dataset_in_pool.dataset_id
+      ])
 
       @tasks = tasks
       @datasets = []
