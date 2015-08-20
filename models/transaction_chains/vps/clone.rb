@@ -260,7 +260,8 @@ module TransactionChains
 
       dst = ::DatasetInPool.create!(
           pool: @dst_pool,
-          dataset: ds
+          dataset: ds,
+          label: dip.label
       )
 
       lock(dst)
@@ -287,7 +288,8 @@ module TransactionChains
 
           dst = ::DatasetInPool.create!(
               pool: @dst_pool,
-              dataset_id: ds
+              dataset_id: ds,
+              label: dip.label
           )
 
           lock(dst)
