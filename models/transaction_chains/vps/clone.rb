@@ -261,7 +261,10 @@ module TransactionChains
       dst = ::DatasetInPool.create!(
           pool: @dst_pool,
           dataset: ds,
-          label: dip.label
+          label: dip.label,
+          min_snapshots: dip.min_snapshots,
+          max_snapshots: dip.max_snapshots,
+          snapshot_max_age: dip.snapshot_max_age
       )
 
       lock(dst)
@@ -289,7 +292,10 @@ module TransactionChains
           dst = ::DatasetInPool.create!(
               pool: @dst_pool,
               dataset_id: ds,
-              label: dip.label
+              label: dip.label,
+              min_snapshots: dip.min_snapshots,
+              max_snapshots: dip.max_snapshots,
+              snapshot_max_age: dip.snapshot_max_age
           )
 
           lock(dst)
