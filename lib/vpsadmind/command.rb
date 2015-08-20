@@ -168,7 +168,7 @@ module VpsAdmind
 
       state = if fatal
                 5
-              elsif current_chain_direction == :execute
+              elsif current_chain_direction == :execute && @status != :failed
                 2
               else
                 4
