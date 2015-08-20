@@ -117,11 +117,11 @@ if ($_SESSION["is_admin"] && ($_GET["action"] == 'switch_context') && isset($_GE
 					'interval' => USER_LOGIN_INTERVAL
 				));
 				
-				// Do this to reload description from the API
-				$api->authenticate('token', array('token' => $token->token));
-				
 				session_destroy();
 				session_start();
+				
+				// Do this to reload description from the API
+				$api->authenticate('token', array('token' => $token->token));
 
 				$_SESSION["logged_in"] = true;
 				$_SESSION["auth_token"] = $token->token;
@@ -134,8 +134,6 @@ if ($_SESSION["is_admin"] && ($_GET["action"] == 'switch_context') && isset($_GE
 				
 				$_SESSION["context_switch"] = true;
 				$_SESSION["original_admin"] = $admin;
-
-				unset($_SESSION["api_description"]);
 
 				$xtpl->perex(_("Change to ").$member["m_nick"],
 						_(" successful <br /> Your privilege level: ")
