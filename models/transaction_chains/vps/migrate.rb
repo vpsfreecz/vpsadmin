@@ -169,6 +169,8 @@ module TransactionChains
       end
 
       # Move the dataset in pool to the new pool in the database
+      chain = self
+      
       append(Transactions::Utils::NoOp, args: dst_node.id, urgent: true) do
         edit(vps, dataset_in_pool_id: datasets.first[1].id)
         edit(vps, vps_server: dst_node.id)
@@ -178,25 +180,13 @@ module TransactionChains
           edit(use, changes) unless changes.empty?
         end
 
-        # Handle dataset properties, actions and group snapshots
-        datasets.each do |pair|
-          src, dst = pair
-
+        # Handle dataset properties
+        datasets.each do |src, dst|
           src.dataset_properties.all.each do |p|
             edit(p, dataset_in_pool_id: dst.id)
           end
 
-          src.group_snapshots.all.each do |gs|
-            edit(gs, dataset_in_pool_id: dst.id)
-          end
-
-          src.src_dataset_actions.all.each do |da|
-            edit(da, src_dataset_in_pool_id: dst.id)
-          end
-
-          src.dst_dataset_actions.all.each do |da|
-            edit(da, dst_dataset_in_pool_id: dst.id)
-          end
+          chain.migrate_dataset_plans(src, dst, self)
         end
       end
 
@@ -274,6 +264,52 @@ module TransactionChains
       end
 
       ret
+    end
+
+    def migrate_dataset_plans(src_dip, dst_dip, confirmable)
+      plans = []
+
+      src_dip.dataset_in_pool_plans.includes(
+          environment_dataset_plan: [:dataset_plan]
+      ).each do |dip_plan|
+        plans << dip_plan
+      end
+
+      return if plans.empty?
+
+      plans.each do |dip_plan|
+        plan = dip_plan.environment_dataset_plan.dataset_plan
+        name = plan.name.to_sym
+
+        # Remove src dip from the plan
+        VpsAdmin::API::DatasetPlans.plans[name].unregister(
+            src_dip,
+            confirmation: confirmable
+        )
+        
+        # Do not add the plan in the target environment if it is for admins only
+        begin
+          next unless ::EnvironmentDatasetPlan.find_by!(
+              dataset_plan: plan,
+              environment: dst_dip.pool.node.environment
+          ).user_add
+
+        rescue ActiveRecord::RecordNotFound
+          next  # the plan is not present in the target environment
+        end
+
+        begin
+          VpsAdmin::API::DatasetPlans.plans[name].register(
+              dst_dip,
+              confirmation: confirmable
+          )
+
+        rescue VpsAdmin::API::Exceptions::DatasetPlanNotInEnvironment
+          # This exception should never be raised, as the not-existing plan
+          # in the target environment is caught by the rescue above.
+          next
+        end
+      end
     end
 
     # Handle my mounts of datasets and snapshots of other VPSes
