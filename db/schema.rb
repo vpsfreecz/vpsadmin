@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150811075054) do
+ActiveRecord::Schema.define(version: 20150820174810) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -141,17 +141,17 @@ ActiveRecord::Schema.define(version: 20150811075054) do
   end
 
   create_table "datasets", force: true do |t|
-    t.string   "name",                                         null: false
-    t.string   "full_name",       limit: 1000,                 null: false
+    t.string   "name",                                     null: false
+    t.string   "full_name",       limit: 1000,             null: false
     t.integer  "user_id"
-    t.boolean  "user_editable",                                null: false
-    t.boolean  "user_create",                                  null: false
-    t.boolean  "user_destroy",                                 null: false
+    t.boolean  "user_editable",                            null: false
+    t.boolean  "user_create",                              null: false
+    t.boolean  "user_destroy",                             null: false
     t.string   "ancestry"
-    t.integer  "ancestry_depth",               default: 0,     null: false
+    t.integer  "ancestry_depth",               default: 0, null: false
     t.datetime "expiration"
-    t.boolean  "confirmed",                    default: false, null: false
-    t.integer  "object_state",                                 null: false
+    t.integer  "confirmed",                    default: 0, null: false
+    t.integer  "object_state",                             null: false
     t.datetime "expiration_date"
   end
 
