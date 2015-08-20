@@ -4,7 +4,8 @@ module TransactionChains
     allow_empty
 
     def link_chain
-      t = Time.now.utc
+      now = Time.now.utc
+      t = now.strftime('%Y-%m-%d %H:%M:%S')
 
       chains = ::TransactionChain.where(
           'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
@@ -18,8 +19,8 @@ module TransactionChains
               base_url: ::SysConfig.get('general_base_url'),
               
               date: {
-                  start: (t - 24*60*60),
-                  end: t
+                  start: (now - 24*60*60),
+                  end: now
               },
 
               users: {
