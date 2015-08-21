@@ -24,6 +24,10 @@ module VpsAdmind
             :devices => []
         }
 
+        if @features['bridge'][key]
+          opts[:feature] << 'bridge:on'
+        end
+
         if @features['iptables'][key]
           opts[:netfilter] = 'full'
         end
