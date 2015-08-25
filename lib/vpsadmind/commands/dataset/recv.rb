@@ -23,20 +23,32 @@ module VpsAdmind
     end
 
     def rollback
-      db = Db.new
-      ds_name = @branch ? "#{@dataset_name}/#{@tree}/#{@branch}" : @dataset_name
-
-      @snapshots.reverse_each do |s|
-        zfs(:destroy, nil, "#{@dst_pool_fs}/#{ds_name}@#{confirmed_snapshot_name(db, s)}", [1])
-      end
-
-      # Kill nc - just connect and close
+      # Kill nc - just connect and close.
+      # This will not stop an ongoing transfer.
       begin
         s = TCPSocket.new(@addr, @port)
         s.close
 
       rescue Errno::ECONNREFUSED
 
+      end
+
+      # Remove received snapshots
+      db = Db.new
+      ds_name = @branch ? "#{@dataset_name}/#{@tree}/#{@branch}" : @dataset_name
+      
+      # If there are more than 1 snapshots, it means that it is incremental transfer.
+      # The first snapshot MUST NOT be deleted as it would break history flow.
+      # The first snapshot is not a part of the transfer anyway, it is already present
+      # and is just a common point in history.
+      snaps = if @snapshots.size > 1
+                @snapshots[1..-1]
+              else
+                @snapshots
+              end
+
+      snaps.reverse_each do |s|
+        zfs(:destroy, nil, "#{@dst_pool_fs}/#{ds_name}@#{confirmed_snapshot_name(db, s)}", [1])
       end
 
       ok
