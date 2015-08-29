@@ -40,13 +40,18 @@ module VpsAdmin::API::Tasks
 
         q.each do |instance|
           puts "  id=#{instance.send(obj.primary_key)}"
+          next if ENV['EXECUTE'] != 'yes'
 
-          if ENV['EXECUTE'] == 'yes'
+          begin
             instance.progress_object_state(
                 :enter,
                 reason: ENV['REASON'],
                 expiration: expiration
             )
+
+          rescue ResourceLocked
+            puts "    resource locked"
+            next
           end
         end
       end
