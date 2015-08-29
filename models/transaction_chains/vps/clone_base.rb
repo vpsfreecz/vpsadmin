@@ -109,7 +109,7 @@ module TransactionChains
         
         dst_m = ::Mount.new(
             vps: dst_vps,
-            dataset_in_pool: nil,
+            dataset_in_pool: m.dataset_in_pool,
             dst: m.dst,
             mount_opts: m.mount_opts,
             umount_opts: m.umount_opts,
@@ -119,15 +119,15 @@ module TransactionChains
             confirmed: ::Mount.confirmed(:confirm_create)
         )
 
-        # Check if it is a mount of cloned dataset
-        datasets.each do |pair|
-          src, dst = pair
-
+        # Check if it is a mount of a cloned dataset.
+        datasets.each do |src, dst|
           if m.dataset_in_pool_id == src.id
             dst_m.dataset_in_pool = dst
             break
           end
         end
+        # If it is not mount of a cloned dataset, than the +dst_m.dataset_in_pool+
+        # may remain the same.
 
         dst_m.save!
         mounts << dst_m
