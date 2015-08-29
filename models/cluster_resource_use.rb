@@ -21,7 +21,7 @@ class ClusterResourceUse < ActiveRecord::Base
   def check_allocation
     self.attr_changes ||= {value: self.value}
 
-    if ::User.current.role == :admin
+    if ::User.current && ::User.current.role == :admin
       self.admin_limit = admin_lock_type == 'no_lock' ? nil : self.value
       attr_changes[:admin_limit] = self.admin_limit
       attr_changes[:admin_lock_type] = self.class.admin_lock_types[self.admin_lock_type]
