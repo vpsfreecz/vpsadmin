@@ -43,6 +43,11 @@ module VpsAdmind::RemoteCommands
         end
       end
 
+      subtasks = nil
+      @daemon.chain_blockers do |blockers|
+        subtasks = blockers || {}
+      end
+
       st = db.prepared_st('SELECT COUNT(t_id) AS cnt FROM transactions WHERE t_server = ? AND t_done = 0', $CFG.get(:vpsadmin, :server_id))
       q_size = st.fetch()[0]
       st.close
@@ -57,6 +62,7 @@ module VpsAdmind::RemoteCommands
            :queues => res_queues,
            :export_console => @daemon.export_console,
            :consoles => consoles,
+           :subprocesses => subtasks,
            :start_time => @daemon.start_time.to_i,
            :queue_size => q_size - queue_size,
        }

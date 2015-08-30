@@ -388,6 +388,12 @@ module VpsAdmind
       end
     end
 
+    def chain_blockers
+      @blockers_mutex.synchronize do
+        yield(@chain_blockers)
+      end
+    end
+
     def subprocess_finished(chain_id, pid)
       @blockers_mutex.synchronize do
         log(:debug, :daemon, "Subprocess #{pid} of chain #{chain_id} finished")
