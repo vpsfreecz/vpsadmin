@@ -1,7 +1,7 @@
 module VpsAdmind::RemoteCommands
   class Restart < Base
     handle :restart
-    needs :worker
+    needs :worker, :subprocess
 
     def exec
       VpsAdmind::Daemon.safe_exit(VpsAdmind::EXIT_RESTART)
@@ -9,6 +9,7 @@ module VpsAdmind::RemoteCommands
       if @force
         walk_workers { |w| :silent }
         drop_workers
+        killall_subprocesses
       end
 
       ok
