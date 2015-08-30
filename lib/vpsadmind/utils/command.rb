@@ -12,6 +12,7 @@ module VpsAdmind::Utils
           :pool => :Pool,
           :subprocess => :Subprocess,
           :integrity => :Integrity,
+          :hypervisor => :Hypervisor,
       }
 
       # Includes module from VpsAdmind::Utils using mapping

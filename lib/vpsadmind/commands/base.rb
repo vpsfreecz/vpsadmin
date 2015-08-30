@@ -93,6 +93,7 @@ module VpsAdmind::Commands
     end
   end
 
+  module Hypervisor     ; end
   module Pool           ; end
   module DatasetTree    ; end
   module Branch         ; end
