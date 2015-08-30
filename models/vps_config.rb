@@ -10,6 +10,8 @@ class VpsConfig < ActiveRecord::Base
 
   validates :name, :label, :config, presence: true
 
+  include Lockable
+
   def create!
     TransactionChains::VpsConfig::Create.fire(self)
   end
@@ -17,12 +19,10 @@ class VpsConfig < ActiveRecord::Base
   def update!(attrs)
     assign_attributes(attrs)
     fail ActiveRecord::RecordInvalid unless valid?
-    TransactionChains::VpsConfig::Create.fire(self)
-    save!
+    TransactionChains::VpsConfig::Update.fire(self)
   end
 
   def destroy
     TransactionChains::VpsConfig::Delete.fire(self)
-    super
   end
 end
