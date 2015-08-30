@@ -5,7 +5,7 @@ module VpsAdmind
       @queues = {}
       
       %w(general storage network vps zfs_send mail).each do |q|
-        @queues[q] = {}
+        @queues[q.to_sym] = {}
       end
     end
 

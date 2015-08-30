@@ -236,7 +236,7 @@ module VpsAdmind
     end
 
     def queue
-      @trans["queue"]
+      @trans["queue"].to_sym
     end
 
     def urgent?

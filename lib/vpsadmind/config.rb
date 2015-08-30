@@ -20,32 +20,32 @@ module VpsAdmind
           :max_tx => nil, # loaded from db
           :max_rx => nil, # loaded from db
           :queues => {
-              "general" => {
+              :general => {
                   :threads => 6,
                   :urgent => 6,
                   :start_delay => 0
               },
-              "storage" => {
+              :storage => {
                   :threads => 2,
                   :urgent => 2,
                   :start_delay => 0
               },
-              "network" => {
+              :network => {
                   :threads => 1,
                   :urgent => 0,
                   :start_delay => 0
               },
-              "vps" => {
+              :vps => {
                   :threads => 4,
                   :urgent => 4,
                   :start_delay => 0
               },
-              "zfs_send" => {
+              :zfs_send => {
                   :threads => 1,
                   :urgent => 0,
                   :start_delay => 4*60*60
               },
-              "mail" => {
+              :mail => {
                   :threads => 2,
                   :urgent => 2,
                   :start_delay => 0
