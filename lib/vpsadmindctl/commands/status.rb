@@ -85,11 +85,12 @@ module VpsAdmindCtl::Commands
 
         @res[:queues].each do |name, queue|
           puts sprintf(
-              "    %10s  %d / %d (+%d)",
+              "    %10s  %d / %d (+%d) %s",
               name,
               queue[:workers].size,
               queue[:threads],
-              queue[:urgent]
+              queue[:urgent],
+              !queue[:started] ? "opens in #{format_duration((@res[:start_time] + queue[:start_delay]) - Time.now.to_i)}" : ''
           )
         end
       end
