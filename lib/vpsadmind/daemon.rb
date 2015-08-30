@@ -78,9 +78,7 @@ module VpsAdmind
 
             @@mutex.synchronize do
               unless @@run
-                if !@pause && @queues.empty?
-                  exit(@@exitstatus)
-                end
+                exit(@@exitstatus) if can_stop?
 
                 throw :next
               end
@@ -363,6 +361,12 @@ module VpsAdmind
 
     def paused?
       @pause
+    end
+
+    def can_stop?
+      @blockers_mutex.synchronize do
+        !@pause && @queues.empty? && @chain_blockers.empty?
+      end
     end
 
     def exitstatus
