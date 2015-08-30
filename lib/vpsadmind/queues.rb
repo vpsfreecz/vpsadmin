@@ -1,6 +1,7 @@
 module VpsAdmind
   class Queues
-    def initialize
+    def initialize(daemon)
+      @daemon = daemon
       @queues = {}
       
       %w(general storage network vps zfs_send mail).each do |q|
@@ -21,7 +22,7 @@ module VpsAdmind
     end
 
     def execute(cmd)
-      if busy?(cmd.chain_id) || !free_slot?(cmd)
+      if busy?(cmd.chain_id) || !free_slot?(cmd) || !started?(cmd.queue)
         return false
       end
 
@@ -59,6 +60,11 @@ module VpsAdmind
       end
 
       false
+    end
+
+    def started?(queue)
+      d = $CFG.get(:vpsadmin, :queues, queue, :start_delay)
+      (@daemon.start_time + d) < Time.now
     end
 
     def has_transaction?(t_id)

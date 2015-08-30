@@ -23,26 +23,32 @@ module VpsAdmind
               "general" => {
                   :threads => 6,
                   :urgent => 6,
+                  :start_delay => 0
               },
               "storage" => {
                   :threads => 2,
                   :urgent => 2,
+                  :start_delay => 0
               },
               "network" => {
                   :threads => 1,
                   :urgent => 0,
+                  :start_delay => 0
               },
               "vps" => {
                   :threads => 4,
                   :urgent => 4,
+                  :start_delay => 0
               },
               "zfs_send" => {
                   :threads => 1,
                   :urgent => 0,
+                  :start_delay => 4*60*60
               },
               "mail" => {
                   :threads => 2,
                   :urgent => 2,
+                  :start_delay => 0
               }
           },
           :urgent_threads => 6,

@@ -31,7 +31,7 @@ module VpsAdmind
       @threads = {}
       @blockers_mutex = Mutex.new
       @chain_blockers = {}
-      @queues = Queues.new
+      @queues = Queues.new(self)
     end
 
     def init

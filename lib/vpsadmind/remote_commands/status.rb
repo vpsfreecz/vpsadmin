@@ -14,6 +14,8 @@ module VpsAdmind::RemoteCommands
           q = {
               :threads => $CFG.get(:vpsadmin, :queues, name, :threads),
               :urgent => $CFG.get(:vpsadmin, :queues, name, :urgent),
+              :start_delay => $CFG.get(:vpsadmin, :queues, name, :start_delay),
+              :started => queues.started?(name),
               :workers => {}
           }
 
