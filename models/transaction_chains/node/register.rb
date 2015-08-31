@@ -36,6 +36,17 @@ module TransactionChains
           append(Transactions::Hypervisor::CreateConfig, args: [node, cfg])
         end
       end
+
+      if node.server_type != 'mailer'
+        # Save SSH public key to database
+        append(Transactions::Node::StorePublicKeys, args: node)
+        
+        # Regenerate ~/.ssh/known_hosts on all nodes in the cluster
+        use_chain(Cluster::GenerateKnownHosts)
+
+        # Deploy private key
+        append(Transactions::Node::DeploySshKey, args: node)
+      end
     end
   end
 end

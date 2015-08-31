@@ -276,6 +276,7 @@ class TransactionChain < ActiveRecord::Base
 end
 
 module TransactionChains
+  module Cluster        ; end
   module Node           ; end
   module Vps            ; end
   module VpsConfig      ; end
