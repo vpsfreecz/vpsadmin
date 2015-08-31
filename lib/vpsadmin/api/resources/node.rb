@@ -93,8 +93,8 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     desc 'Create a new node'
 
     input do
-      use :common, include: %i(name type location environment ip_addr
-                               net_interface max_tx max_rx max_vps ve_private)
+      use :all, include: %i(id name type location environment ip_addr
+                            net_interface max_tx max_rx max_vps ve_private)
       patch :name, required: true
       patch :type, required: true
       patch :location, required: true
