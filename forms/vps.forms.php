@@ -226,18 +226,18 @@ function format_swap_preview($vps, $hostname, $resources, $ips, $node, $expirati
 
 	$ips = implode(",<br>\n", $ips_tmp);
 	$expiration_date = $expiration->expiration_date
-		? tolocaltz($expiration->expiration_date)
+		? tolocaltz($expiration->expiration_date, 'Y-m-d')
 		: '---';
+	
+	$vps_link = vps_link($vps);
 
 	$s = <<<EOT
-	<h3>VPS <a href="?page=adminvps&action=info&veid={$vps->id}">{$vps->id}</a></h3>
+	<h3>VPS {$vps_link}</h3>
 	<dl>
 		<dt>Hostname:</dt>
 		<dd>$hostname</dd>
 		<dt>Expiration:</dt>
 		<dd>{$expiration_date}</dd>
-		<dt>Node:</dt>
-		<dd>{$node->domain_name}</dd>
 		<dt>CPU:</dt>
 		<dd>{$resources->cpu}</dd>
 		<dt>Memory:</dt>
@@ -251,11 +251,28 @@ EOT;
 	return $s;
 }
 
+function format_swap_node_cell($node, $primary = false) {
+	$outage_len = $primary ? _('minimal') : _('up to several hours');
+
+	$s = <<<EOT
+	<h3>{$node->domain_name}</h3>
+	<dl>
+		<dt>Environment:</dt>
+		<dd>{$node->environment->label}</dd>
+		<dt>Outage duration:</dt>
+		<dd>{$outage_len}</dd>
+	</dl>
+EOT;
+	
+	return $s;
+}
+
 function vps_swap_preview_form($primary, $secondary, $opts) {
 	global $xtpl, $api;
 	
-	$xtpl->table_title(_("Swap VPS {$primary->id} with {$secondary->id}"));
+	$xtpl->table_title(_("Swap VPS ".vps_link($primary)." with ".vps_link($secondary)));
 	$xtpl->form_create('?page=adminvps&action=swap&veid='.$primary->id, 'post');
+	$xtpl->table_add_category(_('Node'));
 	$xtpl->table_add_category(_('Now'));
 	$xtpl->table_add_category("&rarr;");
 	$xtpl->table_add_category(_('After swap'));
@@ -265,6 +282,8 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 
 	if (!$_SESSION['is_admin'])
 		$opts['expirations'] = true;
+
+	$xtpl->table_td(format_swap_node_cell($primary->node, true));
 
 	$xtpl->table_td(
 		format_swap_preview(
@@ -277,7 +296,10 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 		)
 	);
 	
-	$xtpl->table_td("&rarr;", false, false, '1', '2');
+	$xtpl->table_td(
+		'<img src="template/icons/draw-arrow-forward.png" alt="will become">',
+		false, false, '1', '1', 'middle'
+	);
 
 	$xtpl->table_td(	
 		format_swap_preview(
@@ -292,6 +314,8 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 
 	$xtpl->table_tr();
 
+	$xtpl->table_td(format_swap_node_cell($secondary->node));
+
 	$xtpl->table_td(
 		format_swap_preview(
 			$secondary,
@@ -301,6 +325,11 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 			$secondary->node,
 			$secondary
 		)
+	);
+	
+	$xtpl->table_td(
+		'<img src="template/icons/draw-arrow-forward.png" alt="will become">',
+		false, false, '1', '1', 'middle'
 	);
 
 	$xtpl->table_td(
@@ -315,7 +344,8 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 	);
 
 	$xtpl->table_tr(false, 'notoddrow');
-
+	
+	$xtpl->table_td('');
 	$xtpl->table_td($xtpl->html_submit(_('Cancel'), 'cancel'));
 	$xtpl->table_td('');
 	$xtpl->table_td(
@@ -330,6 +360,6 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 
 	$xtpl->table_tr();
 
-	$xtpl->form_out_raw();
+	$xtpl->form_out_raw('vps_swap_preview');
 }
 

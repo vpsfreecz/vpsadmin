@@ -485,4 +485,8 @@ function user_label ($user) {
 	return '#'.$user->id.' '.$user->login;
 }
 
+function vps_link($vps) {
+	return '<a href="?page=adminvps&action=info&veid='.$vps->id.'">#'.$vps->id.'</a>';
+}
+
 ?>

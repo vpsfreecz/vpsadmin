@@ -590,10 +590,11 @@ class XTemplate {
 	  * @param $td_back_color - HTML background color
 	  * @param $toright - Right side text align
 	  */
-	function table_td ($content, $td_back_color=false, $toright = false, $colspan = '1', $rowspan = '1') {
+	function table_td ($content, $td_back_color=false, $toright = false, $colspan = '1', $rowspan = '1', $valign = null) {
 		$tdstyle = 'style="';
 		if ($td_back_color) $tdstyle .= 'background:'.$td_back_color.';';
 		if ($toright) $tdstyle .= 'text-align:right;';
+		if ($valign) $tdstyle .= "vertical-align: $valign;";
 		$tdstyle .='" colspan="'.$colspan.'" rowspan="'.$rowspan.'"';
 		$this->assign('TDSTYLE',$tdstyle);
 		$this->assign('TABLE_TD',$content);
