@@ -9,7 +9,7 @@ module TransactionChains
       dl.update!(confirmed: ::SnapshotDownload.confirmed(:confirm_destroy))
 
       append(Transactions::Storage::RemoveDownload, args: dl) do
-        edit(dl.snapshot, snapshot_download_id: nil)
+        edit(dl.snapshot, snapshot_download_id: nil) if dl.snapshot
         destroy(dl)
       end
     end
