@@ -16,8 +16,12 @@ module TransactionChains
 
       if dataset_in_pool.pool.role == 'backup'
 
-        SnapshotInPoolInBranch.includes(snapshot_in_pool: [:snapshot], branch: [{dataset_tree: :dataset_in_pool}])
-          .where(dataset_trees: {dataset_in_pool_id: dataset_in_pool.id}).order('snapshots.id').each do |s|
+        ::SnapshotInPoolInBranch.includes(
+            snapshot_in_pool: [:snapshot],
+            branch: [{dataset_tree: :dataset_in_pool}]
+        ).where(
+            dataset_trees: {dataset_in_pool_id: dataset_in_pool.id}
+        ).order('snapshots.id').each do |s|
 
           next if s.snapshot_in_pool.reference_count > 0
 
