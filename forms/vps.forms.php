@@ -13,7 +13,10 @@ function print_newvps_page1() {
 		'<input type="hidden" name="action" value="new2">'
 	);
 	$xtpl->form_add_select_pure('environment',
-		resource_list_to_options($api->environment->list(), 'id',  'label', false),
+		resource_list_to_options(
+			$api->environment->list(array('has_hypervisor' => true))
+			, 'id',  'label', false
+		),
 		$_GET['environment']);
 	$xtpl->table_tr();
 	
