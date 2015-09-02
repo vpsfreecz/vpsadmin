@@ -52,8 +52,16 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
        })
     end
 
+    def query
+      ::Environment.all
+    end
+
+    def count
+      query.count
+    end
+
     def exec
-      ::Environment.all.limit(params[:environment][:limit]).offset(params[:environment][:offset])
+      query.limit(input[:limit]).offset(input[:offset])
     end
   end
 
