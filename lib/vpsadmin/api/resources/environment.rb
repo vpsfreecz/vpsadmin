@@ -27,6 +27,13 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List environments'
 
+    input do
+      bool :has_hypervisor, label: 'Has hypervisor',
+        desc: 'List only environments having at least one hypervisor'
+      bool :has_storage, label: 'Has storage',
+        desc: 'List only environments having at least one storage'
+    end
+
     output(:object_list) do
       use :all
     end
@@ -53,7 +60,38 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     end
 
     def query
-      ::Environment.all
+      q = ::Environment.all
+
+      has = []
+      not_has = []
+
+      if input[:has_hypervisor]
+        has << 'node'
+
+      elsif input[:has_hypervisor] === false
+        not_has << 'node'
+      end
+      
+      if input[:has_storage]
+        has << 'storage'
+
+      elsif input[:has_storage] === false
+        not_has << 'storage'
+      end
+
+      if has.size > 0
+        q = q.joins(:nodes).where(
+            servers: {server_type: has}
+        ).group('environments.id')
+      end
+
+      if not_has.size > 0
+        q = q.joins(:nodes).where.not(
+            servers: {server_type: not_has}
+        ).group('environments.id')
+      end
+
+      q
     end
 
     def count
