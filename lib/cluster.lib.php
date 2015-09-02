@@ -363,54 +363,6 @@ class cluster {
 	    }
 	}
     }
-    function save_config($id, $name, $label, $config, $reapply = false) {
-		global $db;
-		
-		$params = array("name" => $name, "config" => $config);
-		
-		if($id != NULL) {
-			$sql = "UPDATE `config` SET name = '".$db->check($name)."',
-			        label = '".$db->check($label)."',
-			        `config` = '".$db->check($config)."'
-			        WHERE id = '".$db->check($id)."'";
-			$c = $db->findByColumnOnce("config", "id", $id);
-			
-			if ($c["name"] != $name)
-				$params["old_name"] = $c["name"];
-		} else
-			$sql = "INSERT INTO `config` SET name = '".$db->check($name)."',
-			        label = '".$db->check($label)."',
-			        `config` = '".$db->check($config)."'";
-		
-		$db->query($sql);
-		
-		$servers = list_servers(false, array('node'));
-		
-		foreach ($servers as $sid => $name) {
-			add_transaction($_SESSION["member"]["m_id"], $sid, 0, T_CLUSTER_CONFIG_CREATE, $params);
-			$dep = $db->insertId();
-			
-			if ($reapply) {
-				$rs = $db->query("SELECT v.vps_id FROM vps v INNER JOIN vps_has_config c ON v.vps_id = c.vps_id WHERE c.config_id = ".$db->check($id)." AND vps_server = ".$db->check($sid));
-				
-				while ($row = $db->fetch_array($rs)) {
-					$vps = vps_load($row["vps_id"]);
-					$vps->applyconfigs($dep);
-				}
-			}
-		}
-    }
-    
-    function delete_config($id) {
-		global $db;
-		
-		if($cfg = $db->findByColumnOnce("config", "id", $id)) {
-			$db->query('DELETE FROM vps_has_config WHERE config_id = "'.$db->check($id).'"');
-			$db->query('DELETE FROM `config` WHERE id = "'.$db->check($id).'"');
-			
-			add_transaction_clusterwide($_SESSION["member"]["m_id"], 0, T_CLUSTER_CONFIG_DELETE, array("name" => $cfg["name"]));
-		}
-    }
     
     function regenerate_all_configs() {
 		global $db;

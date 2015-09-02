@@ -629,12 +629,24 @@ switch($_REQUEST["action"]) {
 		break;
 	case "config_new_save":
 		$xtpl->sbar_add(_("Back"), '?page=cluster');
-		if (isset($_POST["config"])) {
-			$cluster->save_config(NULL, $_POST["name"], $_POST["label"], $_POST["config"]);
-			$xtpl->perex(_("Changes saved"), _("Config successfully saved."));
+
+		try {
+			$api->vps_config->new(array(
+				'name' => $_POST['name'],
+				'label' => $_POST['label'],
+				'config' => $_POST['config']
+			));
+
+			notify_user(_('Config saved'), '');
+			redirect('?page=cluster&action=configs');
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Save failed'), $e->getResponse());
 		}
+		
 		$list_configs = true;
 		break;
+
 	case "config_edit":
 		if ($cfg = $db->findByColumnOnce("config", "id", $_GET["config"])) {
 			$xtpl->title2(_("Edit config"));
@@ -644,18 +656,28 @@ switch($_REQUEST["action"]) {
 			$xtpl->form_add_input(_('Name').':', 'text', '30', 'name', $cfg["name"]);
 			$xtpl->form_add_input(_('Label').':', 'text', '30', 'label', $cfg["label"]);
 			$xtpl->form_add_textarea(_('Config').':', '60', '30', 'config', $cfg["config"]);
-			$xtpl->form_add_checkbox(_("Reconfigure all affected VPSes").':', 'reapply', '1', '0');
 			$xtpl->form_out(_('Save'));
 		}
 		
 		$xtpl->sbar_add(_("Back"), '?page=cluster&action=configs');
 		
 		break;
+
 	case "config_edit_save":
-		if (isset($_POST["config"])) {
-			$cluster->save_config($_GET["config"], $_POST["name"], $_POST["label"], $_POST["config"], $_POST["reapply"]);
-			$xtpl->perex(_("Changes saved"), _("Config successfully saved."));
+		try {
+			$api->vps_config($_GET['config'])->update(array(
+				'name' => $_POST['name'],
+				'label' => $_POST['label'],
+				'config' => $_POST['config']
+			));
+
+			notify_user(_('Config updated'), '');
+			redirect('?page=cluster&action=configs');
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
 		}
+
 		$list_configs = true;
 		break;
 	case "configs_regen":
