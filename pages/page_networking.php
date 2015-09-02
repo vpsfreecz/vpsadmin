@@ -64,6 +64,7 @@ if ($show_list) {
 	$xtpl->form_add_select(_("Month").':', 'month', month_list(), get_val('month', date("n")));
 	
 	if ($_SESSION['is_admin']) {
+		$xtpl->form_add_input(_("IP address").':', 'text', '30', 'ip_addr', get_val('ip_addr'));
 		$xtpl->form_add_input(_("User").':', 'text', '30', 'user', get_val('user'));
 		$xtpl->form_add_input(_("VPS").':', 'text', '30', 'vps', get_val('vps'));
 		$xtpl->form_add_select(_("Node").':', 'node', 
@@ -97,7 +98,10 @@ if ($show_list) {
 	
 	if ($_SESSION['is_admin']) {
 		$conds = array();
-		
+
+		if ($_GET['ip_addr'])
+			$conds['ip.ip_addr'] = trim($_GET['ip_addr']);
+
 		if ($_GET['user'])
 			$conds['v.m_id'] =  $_GET['user'];
 		
@@ -121,7 +125,7 @@ if ($show_list) {
 			$tmp = array();
 			
 			foreach ($conds as $c => $v) {
-				$tmp[] = "($c = ".((int)$db->check($v)).")";
+				$tmp[] = "($c = '".($db->check($v))."')";
 			}
 			
 			$sql .= implode(' AND ', $tmp);
