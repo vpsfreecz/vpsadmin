@@ -678,27 +678,40 @@ class XTemplate {
 	  * @return uid;
 	  */
 	function form_add_input($label = 'popisek', $type = 'text', $size = '30', $name = 'input_fromgen', $value = '', $hint = '', $nchar = 0, $extra = '') {
-    $uid = uniqid();
+		$uid = uniqid();
 
 		$this->table_td($label);
 
-    $maxlength = '';
+		$maxlength = '';
 
-    if ($nchar!=0) {
-      $code  = moo_inputremaining("input".$uid, "inputh".$uid, $nchar, $uid); // see ajax.lib.php
-      if ($nchar>0) {
-        $output = sprintf(_("<span id='inputh%s'>%d</span> chars remaining; "), $uid, $nchar-strlen($value));
-        $maxlength = 'maxlength="'.$nchar.'"';
-      }
-      else
-        $output = sprintf(_("<span id='inputh%s'>%d</span> chars needed; "), $uid, (int)(($nchar-strlen($value))*(-1)));
-      $hint = $code.$output.$hint;
-    }
+		if ($nchar != 0) {
+			$code  = moo_inputremaining("input".$uid, "inputh".$uid, $nchar, $uid); // see ajax.lib.php
+			if ($nchar > 0) {
+				$output = sprintf(
+					_("<span id='inputh%s'>%d</span> chars remaining"),
+					$uid,
+					$nchar-strlen($value)
+				);
 
-    $this->table_td('<input type="'.$type.'" size="'.$size.'" name="'.$name.'" id="input'. $uid .'" value="'.$value.'" '.$maxlength.' '.$extra.' />');
+				$maxlength = 'maxlength="'.$nchar.'"';
+
+			} else {
+				$output = sprintf(
+					_("<span id='inputh%s'>%d</span> chars needed"),
+					$uid,
+					(int)(($nchar-strlen($value))*(-1))
+				);
+			}
+
+			$hint = $code . $output . ($hint ? "; $hint" : '');
+		}
+
+		$this->table_td(
+			'<input type="'.$type.'" size="'.$size.'" name="'.$name.'" id="input'. $uid .'" value="'.$value.'" '.$maxlength.' '.$extra.' />'
+		);
 
 		if ($hint != '')
-      		$this->table_td( $hint );
+			$this->table_td($hint);
 
 		$this->table_tr();
 

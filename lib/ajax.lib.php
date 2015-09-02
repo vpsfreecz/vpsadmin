@@ -65,7 +65,8 @@ function moo_inputremaining($input, $output, $chars, $uid)
 	$out .= '
 	$(document).ready(function (){
 		$("#'.$input.'").keyup(function (o){
-			$("#'.$output.'").text( '.abs($chars).' - $(this).val().length );
+			var n = '.abs($chars).' - $(this).val().length;
+			$("#'.$output.'").text( n < 0 ? 0 : n );
 		});
 	});
 	';
