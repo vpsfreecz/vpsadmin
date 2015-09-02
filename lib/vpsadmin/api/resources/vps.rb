@@ -182,7 +182,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       input whitelist: %i(environment location hostname os_template
-                          dns_resolver cpu memory diskspace ipv4 ipv6)
+                          dns_resolver cpu memory swap diskspace ipv4 ipv6)
       output whitelist: %i(id user hostname os_template dns_resolver node dataset
                           memory swap cpu backup_enabled maintenance_lock
                           maintenance_lock_reason object_state expiration_date
