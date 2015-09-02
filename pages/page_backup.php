@@ -338,8 +338,13 @@ if ($_SESSION["logged_in"]) {
 	}
 	
 	if ($list_downloads) {
-		$downloads = $api->snapshot_download->list(array('meta' => array('includes' => 'snapshot__dataset')));
-		
+		$downloads = $api->snapshot_download->list(array(
+			'meta' => array('includes' => 'snapshot__dataset,user'))
+		);
+
+		if ($_SESSION['is_admin'])
+			$xtpl->table_add_category(_('User'));
+
 		$xtpl->table_add_category(_('Dataset'));
 		$xtpl->table_add_category(_('Snapshot'));
 		$xtpl->table_add_category(_('File name'));
@@ -348,6 +353,9 @@ if ($_SESSION["logged_in"]) {
 		$xtpl->table_add_category('');
 		
 		foreach ($downloads as $dl) {
+			if ($_SESSION['is_admin'])
+				$xtpl->table_td('<a href="?page=adminm&action=edit&id='.$dl->user_id.'">'.$dl->user->login.'</a>');
+				
 			$xtpl->table_td($dl->snapshot_id ? $dl->snapshot->dataset->name : '---');
 			$xtpl->table_td($dl->snapshot_id ? $dl->snapshot->created_at : '---');
 			$xtpl->table_td($dl->file_name);
