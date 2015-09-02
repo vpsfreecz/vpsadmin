@@ -80,7 +80,14 @@ function print_newvps_page3($env_id, $loc_id) {
 	$xtpl->form_add_select(_("OS template").':', 'vps_template', resource_list_to_options($api->os_template->list()), $_POST['vps_template'],  '');
 	
 	$params = $api->vps->create->getParameters('input');
-	$vps_resources = array('memory' => 4096, 'cpu' => 8, 'diskspace' => 60*1024, 'ipv4' => 1, 'ipv6' => 1);
+	$vps_resources = array(
+		'memory' => 4096,
+		'cpu' => 8,
+		'swap' => 0,
+		'diskspace' => 60*1024,
+		'ipv4' => 1,
+		'ipv6' => 1
+	);
 	
 	$user_resources = $api->user->current()->cluster_resource->list(array(
 		'environment' => $env_id,
@@ -95,6 +102,9 @@ function print_newvps_page3($env_id, $loc_id) {
 	foreach ($vps_resources as $name => $default) {
 		$p = $params->{$name};
 		$r = $resource_map[$name];
+		
+		if (!$_SESSION['is_admin'] && $r->value === 0)
+			continue;
 		
 		$xtpl->table_td($p->label.':');
 		$xtpl->form_add_number_pure(

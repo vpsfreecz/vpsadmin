@@ -1037,6 +1037,9 @@ if (isset($show_info) && $show_info) {
 	foreach ($vps_resources as $name) {
 		$p = $params->{$name};
 		$r = $resource_map[$name];
+
+		if (!$_SESSION['is_admin'] && $r->value === 0)
+			continue;
 		
 		$xtpl->table_td($p->label);
 		$xtpl->form_add_number_pure(
