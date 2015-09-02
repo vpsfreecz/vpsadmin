@@ -181,12 +181,16 @@ module VpsAdmin::API::Resources
 
       input do
         use :editable_properties
+        bool :admin_override, label: 'Admin override',
+             desc: 'Make it possible to assign more resource than the user actually has'
+        string :admin_lock_type, label: 'Admin lock type', choices: %i(no_lock absolute not_less not_more),
+            desc: 'How is the admin lock enforced'
       end
 
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
-        input blacklist: %i(sharenfs)
+        input blacklist: %i(sharenfs admin_override admin_lock_type)
         allow
       end
 
@@ -194,7 +198,7 @@ module VpsAdmin::API::Resources
         ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
 
         properties = VpsAdmin::API::DatasetProperties.validate_params(input)
-        ds.update_properties(properties)
+        ds.update_properties(properties, input)
 
         ok
 

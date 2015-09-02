@@ -2,7 +2,7 @@ module TransactionChains
   class Dataset::Set < ::TransactionChain
     label 'Set properties'
 
-    def link_chain(dataset_in_pool, properties)
+    def link_chain(dataset_in_pool, properties, opts)
       lock(dataset_in_pool)
       concerns(:affect, [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id])
 
@@ -22,7 +22,9 @@ module TransactionChains
         use = dataset_in_pool.reallocate_resource!(
             :diskspace,
             properties[:refquota],
-            user: dataset_in_pool.dataset.user
+            user: dataset_in_pool.dataset.user,
+            override: opts[:admin_override],
+            lock_type: opts[:admin_lock_type]
         )
 
       # Quota is checked only for top-level dataset
@@ -30,7 +32,9 @@ module TransactionChains
         use = dataset_in_pool.reallocate_resource!(
             :diskspace,
             properties[:quota],
-            user: dataset_in_pool.dataset.user
+            user: dataset_in_pool.dataset.user,
+            override: opts[:admin_override],
+            lock_type: opts[:admin_lock_type]
         )
       end
 

@@ -137,7 +137,7 @@ class Dataset < ActiveRecord::Base
     dataset_in_pools.maximum(:max_snapshots)
   end
 
-  def update_properties(properties)
+  def update_properties(properties, opts)
     dip = primary_dataset_in_pool!
 
     check_refquota(
@@ -148,7 +148,8 @@ class Dataset < ActiveRecord::Base
 
     TransactionChains::Dataset::Set.fire(
         dip,
-        properties
+        properties,
+        opts
     )
   end
 
