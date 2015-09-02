@@ -214,6 +214,11 @@ function dataset_edit_form() {
 	$xtpl->form_add_select_pure('quota_unit', array("m" => "MiB", "g" => "GiB", "t" => "TiB"), $_POST[$quota_name] ? $_POST['quota_unit'] : $v[1]);
 	$xtpl->table_tr();
 	
+	if ($_SESSION['is_admin']) {
+		api_param_to_form('admin_override', $params->admin_override);
+		api_param_to_form('admin_lock_type', $params->admin_lock_type);
+	}
+	
 	// Remaining dataset properties
 	foreach ($DATASET_PROPERTIES as $name) {
 		if ($name != 'quota' && $name != 'refquota')

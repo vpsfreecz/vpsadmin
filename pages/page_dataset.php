@@ -54,6 +54,11 @@ if ($_SESSION['logged_in']) {
 				$ds = $api->dataset->find($_GET['id']);
 				$input_params = $api->dataset->update->getParameters('input');
 				$params = array();
+
+				if ($_SESSION['is_admin']) {
+					$params['admin_override'] = isset($_POST['admin_override']);
+					$params['admin_lock_type'] = $input_params->admin_lock_type->choices[ (int) $_POST['admin_lock_type'] ];
+				}
 				
 				foreach ($quotas as $quota) {
 					if (isset($_POST[$quota]))
