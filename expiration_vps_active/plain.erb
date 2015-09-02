@@ -2,8 +2,9 @@ Ahoj <%= @vps.user.login %>,
 
 blíží se expirace VPS #<%= @vps.id %> <%= @vps.hostname %>.
 
-Prostředí:      <%= @vps.node.environment.label %>
-Datum expirace: <%= @vps.expiration_date.strftime('%Y-%m-%d') %>
+Prostředí:       <%= @vps.node.environment.label %>
+Datum vytvoření: <%= @vps.created_at.strftime('%Y-%m-%d') %>
+Datum expirace:  <%= @vps.expiration_date.strftime('%Y-%m-%d') %>
 <% if @vps.node.environment.label == 'Playground' %>
 Pokud chceš prodloužit životnost playground VPS, nebo máš jiný dotaz,
 můžeš se obrátit na podpora@vpsfree.cz
