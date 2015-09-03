@@ -17,7 +17,8 @@ class UserClusterResource < ActiveRecord::Base
             cluster_resource_id: cluster_resource_id
         },
         cluster_resource_uses: {
-            confirmed: ::ClusterResourceUse.confirmed(:confirmed)
+            confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+            enabled: true
         }
     ).sum(:value)
   end

@@ -28,7 +28,8 @@ class ClusterResourceUse < ActiveRecord::Base
     end
 
     used = self.class.where(
-        user_cluster_resource: user_cluster_resource
+        user_cluster_resource: user_cluster_resource,
+        enabled: true
     ).where.not(
         confirmed: self.class.confirmed(:confirm_destroy)
     ).sum(:value)
