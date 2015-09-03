@@ -367,6 +367,16 @@ function client_params_to_api($action, $from = null) {
 			}
 
 			$ret[ $name ] = $v;
+
+		} else {
+			switch ($desc->type) {
+				case 'Boolean':
+					$ret[ $name ] = false;
+					break;
+
+				default:
+					break;
+			}
 		}
 	}
 		
