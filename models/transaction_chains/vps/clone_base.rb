@@ -116,7 +116,8 @@ module TransactionChains
             mount_type: m.mount_type,
             user_editable: m.user_editable,
             mode: m.mode,
-            confirmed: ::Mount.confirmed(:confirm_create)
+            confirmed: ::Mount.confirmed(:confirm_create),
+            expiration_date: m.expiration_date
         )
 
         # Check if it is a mount of a cloned dataset.

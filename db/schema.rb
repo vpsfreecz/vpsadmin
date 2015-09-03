@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150903081103) do
+ActiveRecord::Schema.define(version: 20150903120108) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -424,21 +424,25 @@ ActiveRecord::Schema.define(version: 20150903081103) do
   end
 
   create_table "mounts", force: true do |t|
-    t.integer "vps_id",                                         null: false
-    t.string  "src",                 limit: 500
-    t.string  "dst",                 limit: 500,                null: false
-    t.string  "mount_opts",                                     null: false
-    t.string  "umount_opts",                                    null: false
-    t.string  "mount_type",          limit: 10,                 null: false
-    t.boolean "user_editable",                   default: true, null: false
-    t.integer "dataset_in_pool_id"
-    t.integer "snapshot_in_pool_id"
-    t.string  "mode",                limit: 2,                  null: false
-    t.string  "cmd_premount",        limit: 500
-    t.string  "cmd_postmount",       limit: 500
-    t.string  "cmd_preumount",       limit: 500
-    t.string  "cmd_postumount",      limit: 500
-    t.integer "confirmed",                       default: 0,    null: false
+    t.integer  "vps_id",                                         null: false
+    t.string   "src",                 limit: 500
+    t.string   "dst",                 limit: 500,                null: false
+    t.string   "mount_opts",                                     null: false
+    t.string   "umount_opts",                                    null: false
+    t.string   "mount_type",          limit: 10,                 null: false
+    t.boolean  "user_editable",                   default: true, null: false
+    t.integer  "dataset_in_pool_id"
+    t.integer  "snapshot_in_pool_id"
+    t.string   "mode",                limit: 2,                  null: false
+    t.string   "cmd_premount",        limit: 500
+    t.string   "cmd_postmount",       limit: 500
+    t.string   "cmd_preumount",       limit: 500
+    t.string   "cmd_postumount",      limit: 500
+    t.integer  "confirmed",                       default: 0,    null: false
+    t.integer  "object_state",                                   null: false
+    t.datetime "expiration_date"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
   create_table "node_pubkey", id: false, force: true do |t|

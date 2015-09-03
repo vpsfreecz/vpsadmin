@@ -1011,6 +1011,8 @@ END
       resource VpsAdmin::API::Resources::Dataset::Snapshot, label: 'Snapshot',
                value_label: :created_at
       string :mountpoint, label: 'Mountpoint', db_name: :dst
+      datetime :expiration_date, label: 'Expiration date',
+        desc: 'The mount is deleted when expiration date passes'
     end
 
     class Index < HaveAPI::Actions::Default::Index

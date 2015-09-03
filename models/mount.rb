@@ -8,6 +8,12 @@ class Mount < ActiveRecord::Base
   include Confirmable
   include Lockable
 
+  include VpsAdmin::API::Lifetimes::Model
+  set_object_states states: %i(active deleted),
+                    deleted: {
+                        enter: TransactionChains::Vps::DestroyMount
+                    }
+
   def check_mountpoint
     if dst !~ /\A[a-zA-Z0-9_\-\/\.]{3,500}\z/ || dst =~ /\.\./ || dst =~ /\/\//
       errors.add(:dst, 'invalid format')

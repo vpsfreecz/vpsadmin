@@ -19,7 +19,8 @@ module TransactionChains
           mount_type: 'nfs',
           mode: 'ro',
           user_editable: false,
-          confirmed: ::Mount.confirmed(:confirm_create)
+          confirmed: ::Mount.confirmed(:confirm_create),
+          expiration_date: Time.now + 3 * 24 * 60 * 60
       )
       remote = false
 
