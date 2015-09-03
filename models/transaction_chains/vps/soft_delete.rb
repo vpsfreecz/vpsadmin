@@ -25,9 +25,8 @@ module TransactionChains
         # Free IP addresses
         ips.each { |ip| destroy(ip) } if target
 
-        # Mark all resources as confirm_destroy to 'free' them, until
-        # they are really freed by hard_delete.
-        # Revive should mark them back as confirmed.
+        # Mark all resources as disabled until they are really freed by
+        # hard_delete. Revive should mark them back as enabled.
         objs = [vps, vps.dataset_in_pool]
         objs.concat(vps.dataset_in_pool.subdatasets_in_pool)
 
@@ -36,7 +35,7 @@ module TransactionChains
 
           ::ClusterResourceUse.for_obj(obj).each do |use|
             chain.lock(use.user_cluster_resource)
-            edit(use, confirmed: ::ClusterResourceUse.confirmed(:confirm_destroy))
+            edit(use, enabled: 0)
           end
         end
       end

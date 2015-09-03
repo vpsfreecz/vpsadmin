@@ -20,13 +20,10 @@ module TransactionChains
           ::ClusterResourceUse.for_obj(obj).each do |use|
             chain.lock(use.user_cluster_resource)
 
-            use.update!(confirmed: ::ClusterResourceUse.confirmed(:confirmed))
-            raise Exceptions::ClusterResourceAllocationError, use unless use.valid?
+            use.update!(enabled: true)
+            raise VpsAdmin::API::Exceptions::ClusterResourceAllocationError, use unless use.valid?
 
-            edit_before(
-                use,
-                confirmed: ::ClusterResourceUse.confirmed(:confirm_destroy)
-            )
+            edit_before(use, enabled: 0)
           end
         end
       end
