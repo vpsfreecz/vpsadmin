@@ -45,8 +45,18 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
 
     def exec
       {
-          user_count: ::User.all.count,
-          vps_count: ::Vps.all.count,
+          user_count: ::User.unscoped.where(
+              object_state: [
+                  ::User.object_states[:active],
+                  ::User.object_states[:suspended],
+              ]
+          ).count,
+          vps_count: ::Vps.unscoped.where(
+              object_state: [
+                  ::Vps.object_states[:active],
+                  ::Vps.object_states[:suspended],
+              ]
+          ).count,
           ipv4_left: ::IpAddress.where(vps: nil, version: 4).count
       }
     end
