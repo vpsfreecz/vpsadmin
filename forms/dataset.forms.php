@@ -406,7 +406,12 @@ function mount_snapshot_form() {
 	
 	$params = $api->vps->mount->create->getParameters('input');
 	
-	$xtpl->form_add_select(_('Mount to VPS'), 'vps', resource_list_to_options($api->vps->list(), 'id', 'hostname'), $_POST['vps'] ? $_POST['vps'] : $_GET['vps_id']);
+	$xtpl->form_add_select(
+		_('Mount to VPS'),
+		'vps',
+		resource_list_to_options($api->vps->list(), 'id', 'hostname', true, vps_label),
+		$_POST['vps'] ? $_POST['vps'] : $_GET['vps_id']
+	);
 	
 	$xtpl->table_td(_('Mount snapshot'));
 	$xtpl->table_td($ds->name.' @ '.$snap->created_at);
