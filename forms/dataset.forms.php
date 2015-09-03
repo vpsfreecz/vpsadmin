@@ -320,6 +320,7 @@ function mount_list($vps_id) {
 	$xtpl->table_add_category(_('Dataset'));
 	$xtpl->table_add_category(_('Snapshot'));
 	$xtpl->table_add_category(_('Mountpoint'));
+	$xtpl->table_add_category(_('Expiration'));
 	$xtpl->table_add_category('');
 	
 	$mounts = $api->vps($vps_id)->mount->list();
@@ -329,6 +330,7 @@ function mount_list($vps_id) {
 		$xtpl->table_td($m->dataset->name);
 		$xtpl->table_td($m->snapshot_id ? $m->snapshot->created_at : '---');
 		$xtpl->table_td($m->mountpoint);
+		$xtpl->table_td($m->expiration_date ? tolocaltz($m->expiration_date, 'Y-m-d H:i') : '---');
 		$xtpl->table_td('<a href="?page=dataset&action=mount_destroy&vps='.$vps_id.'&id='.$m->id.'&return='.$return.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
 		$xtpl->table_tr();
 	}
