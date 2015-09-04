@@ -11,7 +11,8 @@ module Transactions::Storage
           dataset_name: snapshot_in_pool.dataset_in_pool.dataset.full_name,
           snapshot: snapshot_in_pool.snapshot.name,
           secret_key: dl.secret_key,
-          file_name: dl.file_name
+          file_name: dl.file_name,
+          download_id: dl.id
       }
 
       if snapshot_in_pool.dataset_in_pool.pool.role == 'backup'
