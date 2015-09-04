@@ -14,7 +14,8 @@ module VpsAdmind::RemoteCommands
                       confirm_type, done, id
                FROM transaction_confirmations c
                INNER JOIN transactions t ON t.t_id = c.transaction_id
-               WHERE t.transaction_chain_id = ?', @chain
+               WHERE t.transaction_chain_id = ?
+               ORDER BY t.t_id', @chain
           )
 
           st.each do |row|
