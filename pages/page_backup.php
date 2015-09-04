@@ -358,7 +358,7 @@ if ($_SESSION["logged_in"]) {
 				$xtpl->table_td('<a href="?page=adminm&action=edit&id='.$dl->user_id.'">'.$dl->user->login.'</a>');
 				
 			$xtpl->table_td($dl->snapshot_id ? $dl->snapshot->dataset->name : '---');
-			$xtpl->table_td($dl->snapshot_id ? $dl->snapshot->created_at : '---');
+			$xtpl->table_td($dl->snapshot_id ? tolocaltz($dl->snapshot->created_at, 'Y-m-d H:i') : '---');
 			$xtpl->table_td($dl->file_name);
 			$xtpl->table_td($dl->size ? (round($dl->size / 1024, 2) . "&nbsp;GiB") : '---');
 			$xtpl->table_td(tolocaltz($dl->expiration_date, 'Y-m-d'));
