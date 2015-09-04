@@ -537,7 +537,7 @@ module VpsAdmin::API::Resources
         def exec
           s = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
 
-          unless input[:environment_dataset_plan].user_add
+          if !input[:environment_dataset_plan].user_add && current_user.role != :admin
             error('Insufficient permission')
           end
 
