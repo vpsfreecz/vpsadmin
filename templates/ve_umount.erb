@@ -3,7 +3,7 @@
 . ${VE_CONFFILE}
 
 <% @mounts.reverse.each do |mnt| %>
-  <% if mnt['type'] == 'dataset_local' || mnt['tyoe'] == 'dataset_remote' %>
+  <% if mnt['type'] == 'dataset_local' || mnt['type'] == 'dataset_remote' %>
     DST="<%= mnt['dst'] %>"
     if grep ${VE_ROOT}${DST} /proc/mounts; then umount <%= mnt['umount_opts'] %> ${VE_ROOT}${DST}; fi
 
