@@ -26,50 +26,5 @@ module VpsAdmind
     def clone
       zfs(:clone, nil, "#{}")
     end
-
-    def update_status
-      db = Db.new
-      rs = db.query(
-          "SELECT p.filesystem, ds.full_name, dip.id
-          FROM pools p
-          INNER JOIN dataset_in_pools dip ON dip.pool_id = p.id
-          INNER JOIN datasets ds ON ds.id = dip.dataset_id
-          WHERE p.node_id = #{$CFG.get(:vpsadmin, :server_id)}
-          "
-      )
-
-      rs.each_hash do |ds|
-        used = avail = 0
-
-        get = zfs(:get, '-H -p -o property,value used,available', "#{ds['filesystem']}/#{ds['full_name']}", [1,])
-
-        next if get[:exitstatus] == 1
-
-        get[:output].split("\n").each do |prop|
-          p = prop.split
-
-          case p[0]
-            when 'used' then
-              used = p[1].to_i / 1024 / 1024
-            when 'available' then
-              avail = p[1].to_i / 1024 / 1024
-          end
-        end
-
-        db.prepared(
-            "UPDATE dataset_properties
-            SET value = ?
-            WHERE dataset_in_pool_id = ? AND name = 'used'",
-            YAML.dump(used), ds['id'].to_i
-        )
-        
-        db.prepared(
-            "UPDATE dataset_properties
-            SET value = ?
-            WHERE dataset_in_pool_id = ? AND name = 'avail'",
-            YAML.dump(avail), ds['id'].to_i
-        )
-      end
-    end
   end
 end

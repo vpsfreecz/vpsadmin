@@ -14,6 +14,16 @@ module VpsAdmind
 
       syscmd("#{$CFG.get(:bin, :mkdir)} \"#{secret_dir_path}\"")
       syscmd("#{$CFG.get(:bin, :tar)} -czf \"#{file_path}\" -C \"/#{ds}/.zfs/snapshot\" \"#{@snapshot}\"")
+
+      @size = File.size(file_path)
+      ok
+    end
+
+    def post_save(db)
+      db.prepared(
+          'UPDATE snapshot_downloads SET size = ? WHERE id = ?',
+          @size / 1024 / 1024, @download_id
+      )
     end
 
     def rollback
