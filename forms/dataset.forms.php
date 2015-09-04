@@ -283,7 +283,6 @@ function dataset_snapshot_list($datasets, $vps = null) {
 		);
 		
 		$xtpl->table_add_category(_('Date and time'));
-		$xtpl->table_add_category(_('Approximate size'));
 		$xtpl->table_add_category(_('Restore'));
 		$xtpl->table_add_category(_('Download'));
 		$xtpl->table_add_category(_('Mount'));
@@ -292,7 +291,6 @@ function dataset_snapshot_list($datasets, $vps = null) {
 		
 		foreach ($snapshots as $snap) {
 			$xtpl->table_td(strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)));
-			$xtpl->table_td('0');
 			$xtpl->form_add_radio_pure("restore_snapshot", $snap->id);
 			$xtpl->table_td('[<a href="?page=backup&action=download&dataset='.$ds->id.'&snapshot='.$snap->id.'&return='.$return_url.'">'._("Download").'</a>]');
 			
