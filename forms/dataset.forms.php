@@ -35,7 +35,13 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 	
 	$params = $api->dataset->list->getParameters('output');
 	$ignore = array('id', 'name', 'parent', 'user');
-	$include = array('quota', 'refquota', 'used', 'avail');
+	$include = array('used', 'referenced', 'avail');
+
+	if ($role == 'primary')
+		$include[] = 'quota';
+	else
+		$include[] = 'refquota';
+
 	$colspan = 5 + count($include);
 	
 	$xtpl->table_title(_('Datasets'));
