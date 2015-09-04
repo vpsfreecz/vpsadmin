@@ -77,6 +77,14 @@ VpsAdmin::API::DatasetProperties.register do
     default 0
     editable false
   end
+  
+  property :referenced do
+    type :integer
+    label 'Referenced space'
+    desc 'Amount of space that is accessible to this dataset'
+    default 0
+    editable false
+  end
 
   property :avail do
     type :integer
