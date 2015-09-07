@@ -90,7 +90,12 @@ module TransactionChains
       # Find all mounts of parent dataset
       parent_dip = dataset_in_pool.dataset.dataset_in_pools.where(pool: dataset_in_pool.pool).take!
 
-      parent_dip.mounts.includes(:vps).all.each do |mnt|
+      parent_dip.mounts.includes(:vps).joins(:vps).where(
+          vps: {object_state: [
+              ::Vps.object_states[:active],
+              ::Vps.object_states[:suspended]
+          ]}
+      ).each do |mnt|
         @vps_mounts[mnt.vps] ||= []
         @vps_mounts[mnt.vps] << mnt
       end
