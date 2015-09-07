@@ -17,7 +17,7 @@ module VpsAdmind
         vzctl(:stop, @vps_id)
         
         opts = {
-            :feature => [],
+            :features => [],
             :capability => [],
             :netfilter => 'stateless',
             :numiptent => '1000',
@@ -25,7 +25,9 @@ module VpsAdmind
         }
 
         if @features['bridge'][key]
-          opts[:feature] << 'bridge:on'
+          opts[:features] << 'bridge:on'
+        else
+          opts[:features] << 'bridge:off'
         end
 
         if @features['iptables'][key]
@@ -33,21 +35,31 @@ module VpsAdmind
         end
 
         if @features['nfs'][key]
-          opts[:feature] << 'nfsd:on' << 'nfs:on'
+          opts[:features] << 'nfsd:on' << 'nfs:on'
+        else
+          opts[:features] << 'nfsd:off' << 'nfs:off'
         end
 
         if @features['tun'][key]
           opts[:capability] << 'net_admin:on'
           opts[:devices] << 'c:10:200:rw'
+        else
+          opts[:capability] << 'net_admin:off'
+          opts[:devices] << 'c:10:200:none'
         end
 
         if @features['fuse'][key]
           opts[:devices] << 'c:10:229:rw'
+        else
+          opts[:devices] << 'c:10:229:none'
         end
 
         if @features['ppp'][key]
-          opts[:feature] << 'ppp:on'
+          opts[:features] << 'ppp:on'
           opts[:devices] << 'c:108:0:rw'
+        else
+          opts[:features] << 'ppp:off'
+          opts[:devices] << 'c:108:0:none'
         end
 
         vzctl(:set, @vps_id, opts, true)
