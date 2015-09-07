@@ -120,6 +120,7 @@ module TransactionChains
 
           vps.ip_addresses.each do |ip|
             replacement = ::IpAddress.pick_addr!(dst_vps.user, dst_vps.node.location, ip.ip_v)
+            lock(replacement)
 
             append(Transactions::Vps::IpDel, args: [dst_vps, ip, false], urgent: true) do
               edit(ip, vps_id: nil)
