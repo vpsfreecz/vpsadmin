@@ -650,6 +650,7 @@ END
           with_restricted(vps_id: params[:vps_id])
       )
       maintenance_check!(vps)
+      maintenance_check!(input[:vps])
 
       if vps.user != input[:vps].user
         error('access denied')
