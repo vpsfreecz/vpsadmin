@@ -8,7 +8,15 @@ module VpsAdmind
 
       @mounts.each do |mnt|
         runscript('preumount', mnt['preumount']) if mnt['runscripts']
-        syscmd("#{$CFG.get(:bin, :umount)} #{mnt['umount_opts']} #{ve_root}/#{mnt['dst']}", [1])
+        dst = "#{ve_root}/#{mnt['dst']}"
+
+        begin
+          syscmd("#{$CFG.get(:bin, :umount)} #{mnt['umount_opts']} #{dst}")
+
+        rescue CommandFailed => e
+          raise e if e.rc != 1 || /^umount: #{dst}: not mounted$/ !~ e.output
+        end
+
         runscript('postumount', mnt['postumount']) if mnt['runscripts']
       end
 
