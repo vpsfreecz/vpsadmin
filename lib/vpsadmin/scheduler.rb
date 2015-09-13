@@ -71,7 +71,7 @@ module VpsAdmin
         work
       end
 
-      # Event machine loop must be started outside this class.
+      # Event machine loop must be started outside this class
       EventMachine.next_tick do
         @em_server = EventMachine.start_unix_domain_server(SOCKET, Server, self)
       end
@@ -162,8 +162,18 @@ module VpsAdmin
         @action_mutex.synchronize do
           ActiveRecord::Base.connection_pool.with_connection do
             act = @actions[id]
-            task = Object.const_get(act[:class_name]).find(act[:row_id])
-            next unless task
+            unless act
+              warn "Task ##{id} not found"
+              next
+            end
+
+            cls = Object.const_get(act[:class_name])
+            task = cls.find_by(cls.primary_key => act[:row_id])
+            
+            unless task
+              warn "Action #{act[:class_name]} = #{act[:row_id]} not found"
+              next
+            end
 
             begin
               task.execute
