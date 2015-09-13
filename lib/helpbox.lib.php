@@ -6,8 +6,25 @@ function get_helpbox($page = null, $action = null) {
 	if (!$page) $page = $_GET["page"];
 	if (!$action) $action = $_GET["action"];
 	
-	$rs = $db->query("SELECT id, content FROM helpbox WHERE page='".$db->check($page)."' AND action='".$db->check($action)."' LIMIT 1");
-	return $db->fetch_array($rs);
+	$rs = $db->query(
+		"SELECT content
+		FROM helpbox
+		WHERE
+		  (page='".$db->check($page)."'
+		    AND (action='".$db->check($action)."' OR action='*')
+	          )
+		  OR
+		  (page='*'
+		    AND (action='".$db->check($action)."' OR action='*')
+	          )"
+	);
+
+	$ret = '';
+	
+	while ($row = $db->fetch_array($rs))
+		$ret .= $row['content'].'<br>';
+	
+	return $ret;
 }
 
 function helpbox_add($page, $action, $content) {
