@@ -1018,7 +1018,7 @@ if ($_SESSION["logged_in"]) {
 		case 'edit_member':
 			try {
 				$params = array(
-					'mailer_enabled' => $_POST['m_mailer_enable']
+					'mailer_enabled' => isset($_POST['m_mailer_enable'])
 				);
 				
 				if ($_SESSION['is_admin']) {
@@ -1026,7 +1026,7 @@ if ($_SESSION["logged_in"]) {
 					$params['level'] = $_POST['m_level'];
 					$params['info'] = $_POST['m_info'];
 					$params['monthly_payment'] = $_POST['m_monthly_payment'];
-					$params['playground_enabled'] = $_POST['m_playground_enable'];
+					$params['playground_enabled'] = isset($_POST['m_playground_enable']);
 				}
 				
 				$user = $api->user($_GET['id'])->update($params);
