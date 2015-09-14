@@ -120,11 +120,16 @@ module VpsAdmind
                 WHERE
                   #{col} = #{obj[:object_id]}
                   AND
-                  name = '#{p}'
+                  name = '#{translate_property(p)}'
             ")
           end
         end
       end
+    end
+
+    def translate_property(p)
+      return 'avail' if p == :available
+      p
     end
   end
 end
