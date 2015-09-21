@@ -2,30 +2,85 @@
 . /etc/vz/vz.conf
 . ${VE_CONFFILE}
 
+WAIT_BASE=10
+WAIT_ADD=5
+WAIT_MAX=60
+WAIT_RAND=10
+WAIT_RAND_ADD=10
+WAIT_RAND_MAX=240
+
+function ensure_fail() {
+	local cmd="$*"
+
+	$cmd
+
+	if [ "$?" != "0" ] ; then
+		echo "  mount failed"
+		exit 1
+	fi
+
+	return 0
+}
+
+function ensure_retry() {
+	local cmd="$*"
+	local wait=$WAIT_BASE
+	local rand=$WAIT_RAND
+
+	$cmd
+	
+	while [ "$?" != "0" ] ; do
+	        cur_wait=$(( ($RANDOM % $rand) + $wait ))
+	        echo -n "  mount failed, will retry in $cur_wait seconds... "
+	        sleep $cur_wait
+		echo "retrying"
+
+		wait=$(($wait + $WAIT_ADD))
+
+		if [ $wait -gt $WAIT_MAX ] ; then
+			wait=$WAIT_MAX
+		fi
+
+		rand=$(($rand + $WAIT_RAND_ADD))
+
+		if [ $rand -gt $WAIT_RAND_MAX ] ; then
+			rand=$WAIT_RAND_MAX
+		fi
+
+	        $cmd
+	done
+
+	return 0
+}
+
 <% @mounts.each do |mnt| %>
   <% if mnt['type'] == 'dataset_local' %>
     SRC="/<%= "#{mnt['pool_fs']}/#{mnt['dataset_name']}/private" %>"
     DST="<%= mnt['dst'] %>"
     if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
-    mount <%= mnt['mount_opts'] %> ${SRC} ${VE_ROOT}${DST}
+    echo "Mounting $SRC to $DST"
+    ensure_fail mount <%= mnt['mount_opts'] %> ${SRC} ${VE_ROOT}${DST}
 
   <% elsif mnt['type'] == 'dataset_remote' %>
     SRC="<%= mnt['src_node_addr'] %>:/<%= "#{mnt['pool_fs']}/#{mnt['dataset_name']}/private" %>"
     DST="<%= mnt['dst'] %>"
     if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
-    mount <%= mnt['mount_opts'] %> ${SRC} ${VE_ROOT}${DST}
+    echo "Mounting $SRC to $DST"
+    ensure_retry mount <%= mnt['mount_opts'] %> ${SRC} ${VE_ROOT}${DST}
 
   <% elsif mnt['type'] == 'snapshot_local' %>
     SRC="<%= "#{mnt['pool_fs']}/#{mnt['dataset_name']}@#{mnt['snapshot']}" %>"
     DST="<%= mnt['dst'] %>"
     if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
-    mount <%= mnt['mount_opts'] %> ${SRC} ${VE_ROOT}${DST}
+    echo "Mounting $SRC to $DST"
+    ensure_fail mount <%= mnt['mount_opts'] %> ${SRC} ${VE_ROOT}${DST}
 
   <% elsif mnt['type'] == 'snapshot_remote' %>
     SRC="<%= "#{mnt['src_node_addr']}:/#{pool_mounted_snapshot(mnt['pool_fs'], mnt['snapshot_id'])}" %>"
     DST="<%= mnt['dst'] %>"
     if [ ! -e ${VE_ROOT}${DST} ]; then mkdir -p ${VE_ROOT}${DST}; fi
-    mount <%= mnt['mount_opts'] %> ${SRC} ${VE_ROOT}${DST}
+    echo "Mounting $SRC to $DST"
+    ensure_retry mount <%= mnt['mount_opts'] %> ${SRC} ${VE_ROOT}${DST}
 
   <% else %>
     # Unknown mount type '<%= mnt['type'] %>
