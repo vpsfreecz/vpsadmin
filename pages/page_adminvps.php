@@ -311,7 +311,8 @@ switch ($_GET["action"]) {
 					$params = array();
 					
 					foreach ($vps_resources as $r) {
-						$params[ $r ] = $_POST[$r];
+						if (isset($_POST[$r]))
+							$params[ $r ] = $_POST[$r];
 					}
 					
 					if ($_SESSION['is_admin']) {
