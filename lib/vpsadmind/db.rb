@@ -35,6 +35,7 @@ module VpsAdmind
       wait = kwargs[:wait]
       tries = kwargs[:tries] || 10
       counter = 0
+      try_restart = true
 
       begin
         log(:info, :sql, "Retrying transaction, attempt ##{counter}") if counter > 0
@@ -44,27 +45,36 @@ module VpsAdmind
 
       rescue RequestRollback
         log(:info, :sql, 'Rollback requested')
-        @my.query('ROLLBACK')
+        query('ROLLBACK')
 
       rescue Mysql::Error => err
-        @my.query('ROLLBACK')
+        query('ROLLBACK')
 
         case err.errno
         when 1213
           log(:warn, :sql, 'Deadlock found')
 
-          if restart
-            counter += 1
+        when 2006
+          log(:warn, :sql, 'Lost connection to MySQL server during query')
 
-            if counter <= tries
-              w = wait || (counter * 5 + rand(15))
-              log(:warn, :sql, "Restarting transaction in #{w} seconds")
-              sleep(w)
-              retry
+        when 2013
+          log(:warn, :sql, 'MySQL server has gone away')
 
-            else
-              log(:critical, :sql, 'All attempts to restart the transaction failed')
-            end
+        else
+          try_restart = false
+        end
+        
+        if restart && try_restart
+          counter += 1
+
+          if counter <= tries
+            w = wait || (counter * 5 + rand(15))
+            log(:warn, :sql, "Restarting transaction in #{w} seconds")
+            sleep(w)
+            retry
+
+          else
+            log(:critical, :sql, 'All attempts to restart the transaction failed')
           end
         end
 
@@ -77,7 +87,7 @@ module VpsAdmind
         log(:critical, :sql, 'MySQL transactions failed, rolling back')
         p err.inspect
         p err.traceback if err.respond_to?(:traceback)
-        @my.query('ROLLBACK')
+        query('ROLLBACK')
         raise err
       end
     end
