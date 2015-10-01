@@ -7,7 +7,7 @@ module VpsAdmind
 
     def self.register(klass, name)
       @@handlers[name] = class_from_name(klass)
-      log(:info, :init, "Remote cmd #{name} => #{klass}")
+      log(:info, :init, "Remote cmd #{name} => #{klass}") unless VpsAdmind::STANDALONE
     end
 
     def initialize(daemon)

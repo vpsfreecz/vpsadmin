@@ -16,7 +16,7 @@ if RUBY_VERSION >= '2.0'
 end
 
 module VpsAdmind
-
+  STANDALONE = false unless const_defined?(:STANDALONE)
 end
 
 require_rel 'vpsadmind/utils.rb'

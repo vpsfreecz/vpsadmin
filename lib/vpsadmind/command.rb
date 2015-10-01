@@ -277,7 +277,7 @@ module VpsAdmind
 
     def Command.register(klass, type)
       @@handlers[type] = klass
-      log(:info, :init, "Cmd ##{type} => #{klass}")
+      log(:info, :init, "Cmd ##{type} => #{klass}") unless VpsAdmind::STANDALONE
     end
 
     private
