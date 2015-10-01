@@ -1,19 +1,14 @@
-#!/bin/bash
-. /etc/vz/vz.conf
-. ${VE_CONFFILE}
+#!/usr/bin/env ruby
+require '/opt/vpsadmind/lib/vpsadmind/standalone'
 
-<% @mounts.reverse.each do |mnt| %>
-  <% if mnt['type'] == 'dataset_local' || mnt['type'] == 'dataset_remote' %>
-    DST="<%= mnt['dst'] %>"
-    if grep ${VE_ROOT}${DST} /proc/mounts; then umount <%= mnt['umount_opts'] %> ${VE_ROOT}${DST}; fi
+VEID = <%= @vps_id %>
+MOUNTS = [
+<%= @mounts.map do |mnt|
+    PP.pp(mnt, '').strip
+end.join(",\n") %>
+]
 
-  <% elsif mnt['type'] == 'snapshot_local' || mnt['type'] == 'snapshot_remote' %>
-    DST="<%= mnt['dst'] %>"
-    if grep ${VE_ROOT}${DST} /proc/mounts; then umount <%= mnt['umount_opts'] %> ${VE_ROOT}${DST}; fi
+puts "Executing #{$0}"
+VpsAdmind::Mounter.umount_all(VEID, MOUNTS)
 
-  <% else %>
-    # Unknown mount type '<%= mnt['type'] %>
-  <% end %>
-<% end %>
-
-exit 0
+exit(0)

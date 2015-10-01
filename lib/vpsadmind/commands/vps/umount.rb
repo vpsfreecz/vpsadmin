@@ -5,25 +5,9 @@ module VpsAdmind
 
     def exec
       return ok unless status[:running]
-
-      @mounts.each do |mnt|
-        runscript('preumount', mnt['preumount']) if mnt['runscripts']
-        dst = "#{ve_root}/#{mnt['dst']}"
-
-        begin
-          syscmd("#{$CFG.get(:bin, :umount)} #{mnt['umount_opts']} #{dst}")
-
-        rescue CommandFailed => e
-          if e.rc != 1 || /^umount: #{dst}: not mounted$/ !~ e.output
-            @skip_rollback = /^umount2: Device or resource busy$/ =~ e.output
-
-            raise e
-          end
-        end
-
-        runscript('postumount', mnt['postumount']) if mnt['runscripts']
-      end
-
+      
+      # FIXME: handle @skip_rollback
+      Mounter.umount_all(@vps_id, @mounts)
       ok
     end
 
