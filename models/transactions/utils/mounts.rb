@@ -2,7 +2,9 @@ module Transactions::Utils
   module Mounts
     def mount_params(mnt)
       if mnt.is_a?(::Mount)
-        m = {}
+        m = {
+            id: mnt.id
+        }
 
         # Mount of dataset in pool
         if mnt.dataset_in_pool_id && !mnt.snapshot_in_pool_id
