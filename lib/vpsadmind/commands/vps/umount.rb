@@ -6,23 +6,25 @@ module VpsAdmind
     def exec
       return ok unless status[:running]
       
-      # FIXME: handle @skip_rollback
-      Mounter.umount_all(@vps_id, @mounts)
+      mounter = Mounter.new(@vps_id)
+      @umounted_mounts = []
+
+      @mounts.each do |m|
+        mounter.umount(m)
+        @umounted_mounts << m
+      end
+
       ok
     end
 
     def rollback
-      if @skip_rollback
-        log(:debug, self, 'Skipping rollback of Vps::Umount')
-        ok
+      mounts = @umounted_mounts || @mounts
 
-      else
-        call_cmd(Commands::Vps::Mount, {
-            :vps_id => @vps_id,
-            :mounts => @mounts.reverse,
-            :runscripts => false
-        })
-      end
+      call_cmd(Commands::Vps::Mount, {
+          :vps_id => @vps_id,
+          :mounts => mounts.reverse,
+          :runscripts => false
+      })
     end
   end
 end

@@ -85,23 +85,7 @@ module VpsAdmind
       dst, cmd = umount_cmd(opts)
 
       runscript('preumount', opts['preumount']) if opts['runscripts']
-      
-      begin
-        syscmd(cmd)
-
-      rescue CommandFailed => e
-        if e.rc != 1 || /not mounted/ !~ e.output
-          if /^umount2: Device or resource busy$/ =~ e.output
-            # FIXME: somehow pass @skip_rollback to the transaction handler
-            # the @skip_rollback was wrong although. We must distinguish separate
-            # mounts, we cannot skip rollback of all of them. skip_rollback because
-            # some mounts may already be mounted, but some not!
-          end
-
-          raise e
-        end
-      end
-      
+      syscmd(cmd)
       runscript('postumount', opts['postumount']) if opts['runscripts']
     end
     
