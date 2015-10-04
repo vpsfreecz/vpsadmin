@@ -3,6 +3,8 @@ module VpsAdmind
     handle 1002
 
     def exec
+      VpsAdmind::DelayedMounter.unregister_vps(@vps_id)
+
       @vps = Vps.new(@vps_id)
       @vps.stop
     end

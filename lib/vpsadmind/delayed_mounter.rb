@@ -11,6 +11,14 @@ module VpsAdmind
       def mount(*args)
         instance.register_mount(*args)
       end
+      
+      def unregister_vps(*args)
+        instance.unregister_vps(*args)
+      end
+      
+      def unregister_vps_mount(*args)
+        instance.unregister_vps_mount(*args)
+      end
     end
 
     def initialize
@@ -56,6 +64,27 @@ module VpsAdmind
         else
           @mounts[vps_id] << opts
           log(:info, :delayed_mounter, "Registered mount for VPS #{vps_id}: #{opts['dst']}")
+        end
+      end
+    end
+      
+    def unregister_vps(vps_id)
+      synchronize { @mounts.delete(vps_id) }
+      log(:info, :delayed_mounter, "Unregistered VPS #{vps_id}")
+    end
+
+    def unregister_vps_mount(vps_id, mnt_id)
+      synchronize do
+        next unless @mounts[vps_id]
+        i = @mounts[vps_id].index { |m| m['id'] == mnt_id }
+
+        if i
+          mnt = @mounts[vps_id].delete_at(i)
+          log(
+              :info,
+              :delayed_mounter,
+              "Unregistered mount #{mnt['dst']} of VPS #{vps_id}"
+          )
         end
       end
     end

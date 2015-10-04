@@ -3,8 +3,11 @@ module VpsAdmind
     handle 1003
 
     def exec
+      VpsAdmind::DelayedMounter.unregister_vps(@vps_id)
+      
       @vps = Vps.new(@vps_id)
       @vps.restart
+      ok
     end
 
     def rollback
