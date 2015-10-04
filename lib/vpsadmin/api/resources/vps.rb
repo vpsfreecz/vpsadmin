@@ -1013,6 +1013,9 @@ END
       resource VpsAdmin::API::Resources::Dataset::Snapshot, label: 'Snapshot',
                value_label: :created_at
       string :mountpoint, label: 'Mountpoint', db_name: :dst
+      string :mode, label: 'Mode', choices: %i(ro rw), default: :rw, fill: true
+      string :on_start_fail, label: 'On start failure',
+             choices: ::Mount.on_start_fails.keys
       datetime :expiration_date, label: 'Expiration date',
         desc: 'The mount is deleted when expiration date passes'
     end
@@ -1073,10 +1076,7 @@ END
       desc 'Mount remote dataset or snapshot to directory in VPS'
 
       input do
-        resource VpsAdmin::API::Resources::Dataset, label: 'Dataset'
-        resource VpsAdmin::API::Resources::Dataset::Snapshot, label: 'Snapshot'
-        string :mountpoint, label: 'Mountpoint'
-        string :mode, label: 'Mode', choices: %i(ro rw), default: :rw, fill: true
+        use :all, include: %i(dataset snapshot mountpoint mode on_start_fail)
       end
 
       output do

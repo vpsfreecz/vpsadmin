@@ -14,6 +14,8 @@ class Mount < ActiveRecord::Base
                         enter: TransactionChains::Vps::DestroyMount
                     }
 
+  enum on_start_fail: %i(skip mount_later fail_start wait_for_mount)
+
   def check_mountpoint
     if dst !~ /\A[a-zA-Z0-9_\-\/\.]{3,500}\z/ || dst =~ /\.\./ || dst =~ /\/\//
       errors.add(:dst, 'invalid format')

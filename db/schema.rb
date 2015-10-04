@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150904152438) do
+ActiveRecord::Schema.define(version: 20151002090440) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -443,6 +443,7 @@ ActiveRecord::Schema.define(version: 20150904152438) do
     t.datetime "expiration_date"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "on_start_fail",                   default: 1,    null: false
   end
 
   create_table "node_pubkey", id: false, force: true do |t|

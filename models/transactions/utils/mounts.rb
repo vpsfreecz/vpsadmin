@@ -3,7 +3,8 @@ module Transactions::Utils
     def mount_params(mnt)
       if mnt.is_a?(::Mount)
         m = {
-            id: mnt.id
+            id: mnt.id,
+            on_start_fail: mnt.on_start_fail
         }
 
         # Mount of dataset in pool
