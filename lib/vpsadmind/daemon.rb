@@ -32,6 +32,7 @@ module VpsAdmind
       @blockers_mutex = Mutex.new
       @chain_blockers = {}
       @queues = Queues.new(self)
+      @delayed_mounter = DelayedMounter.new # FIXME: call stop?
     end
 
     def init
@@ -45,6 +46,8 @@ module VpsAdmind
 
       @shaper = Shaper.new
       @shaper.init(@db)
+      
+      @delayed_mounter.start
     end
 
     def start
