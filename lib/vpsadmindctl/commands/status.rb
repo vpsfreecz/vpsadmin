@@ -13,6 +13,10 @@ module VpsAdmindCtl::Commands
         @opts[:consoles] = true
       end
       
+      opts.on('-m', '--mounts', 'List delayed mounts') do
+        @opts[:mounts] = true
+      end
+      
       opts.on('-t', '--subtasks', 'List subtasks') do
         @opts[:subtasks] = true
       end
@@ -74,12 +78,34 @@ module VpsAdmindCtl::Commands
         end
       end
 
-      unless @opts[:workers] || @opts[:consoles] || @opts[:subtasks]
+      if @opts[:mounts]
+        puts sprintf('%-5s %-6s %-16s %-18.16s %s', 'VEID', 'ID', 'TYPE', 'TIME', 'DST')
+
+        @res[:delayed_mounts].sort do |a, b|
+          a[0].to_s.to_i <=> b[0].to_s.to_i
+        end.each do |vps_id, mounts|
+
+          mounts.each do |m|
+            puts sprintf(
+                '%-5s %-6s %-16s %-18.16s %s',
+                vps_id,
+                m[:id],
+                m[:type],
+                format_duration(Time.new.to_i - m[:registered_at]),
+                m[:dst]
+            )
+          end
+
+        end
+      end
+
+      unless @opts[:workers] || @opts[:consoles] || @opts[:subtasks] || @opts[:mounts]
         puts "   Version: #{@vpsadmind.version}"
         puts "     State: #{state}"
         puts "    Uptime: #{format_duration(Time.new.to_i - @res[:start_time])}"
         puts "  Consoles: #{@res[:export_console] ? @res[:consoles].size : 'disabled'}"
         puts "  Subtasks: #{@res[:subprocesses].inject(0) { |sum, v| sum + v[1].size }}"
+        puts "    Mounts: #{@res[:delayed_mounts].inject(0) { |sum, v| sum + v[1].size }}"
         puts "Queue size: #{@res[:queue_size]}"
         puts "    Queues:"
 
