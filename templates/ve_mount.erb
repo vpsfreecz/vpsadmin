@@ -1,4 +1,7 @@
 #!/usr/bin/env ruby
+
+ENV['CONFIG'] = "<%= $CFG.file %>"
+
 require '/opt/vpsadmind/lib/vpsadmind/standalone'
 
 VEID = <%= @vps_id %>

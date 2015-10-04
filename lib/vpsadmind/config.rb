@@ -265,6 +265,8 @@ module VpsAdmind
   }
 
   class AppConfig
+    attr_reader :file
+
     def initialize(file)
       @file = file
       @mutex = Mutex.new
