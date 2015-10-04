@@ -48,8 +48,11 @@ module VpsAdmind
     end
 
     def register_mount(vps_id, opts)
-      opts['mounted'] = false
-      opts['dst_slash'] = File.join(opts['dst'], '/')
+      opts.update({
+          'mounted' => false,
+          'dst_slash' => File.join(opts['dst'], '/'),
+          'registered_at' => Time.now.to_i
+      })
 
       synchronize do
         @mounts[vps_id] ||= []

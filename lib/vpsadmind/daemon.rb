@@ -11,7 +11,7 @@ module VpsAdmind
   class Daemon
     include Utils::Log
 
-    attr_reader :start_time, :export_console
+    attr_reader :start_time, :export_console, :delayed_mounter
 
     @@run = true
     @@exitstatus = EXIT_OK
