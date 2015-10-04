@@ -6,7 +6,7 @@ require '/opt/vpsadmind/lib/vpsadmind/standalone'
 
 VEID = <%= @vps_id %>
 MOUNTS = [
-<%= @mounts.map do |mnt|
+<%= @mounts.reverse.map do |mnt|
     PP.pp(mnt, '').strip
 end.join(",\n") %>
 ]
