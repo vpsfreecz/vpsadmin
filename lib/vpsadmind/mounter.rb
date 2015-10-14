@@ -29,16 +29,16 @@ module VpsAdmind
 
       cmd = case mnt['type']
         when 'dataset_local'
-          "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} /#{mnt['pool_fs']}/#{mnt['dataset_name']}/private #{dst}"
+          "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} /#{mnt['pool_fs']}/#{mnt['dataset_name']}/private #{dst}"
 
         when 'dataset_remote'
-          "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} #{mnt['src_node_addr']}:/#{mnt['pool_fs']}/#{mnt['dataset_name']}/private #{dst}"
+          "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} #{mnt['src_node_addr']}:/#{mnt['pool_fs']}/#{mnt['dataset_name']}/private #{dst}"
 
         when 'snapshot_local'
           "#{$CFG.get(:bin, :mount)} -t zfs #{mnt['pool_fs']}/#{mnt['dataset_name']}@#{mnt['snapshot']} #{dst}"
 
         when 'snapshot_remote'
-          "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} #{mnt['src_node_addr']}:/#{pool_mounted_snapshot(mnt['pool_fs'], mnt['snapshot_id'])}/private #{dst}"
+          "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} #{mnt['src_node_addr']}:/#{pool_mounted_snapshot(mnt['pool_fs'], mnt['snapshot_id'])}/private #{dst}"
 
         else
           fail "unknown mount type '#{mnt['type']}'"
