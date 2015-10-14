@@ -35,4 +35,8 @@ class Mount < ActiveRecord::Base
   def snapshot
     snapshot_in_pool && snapshot_in_pool.snapshot
   end
+
+  def update_chain(attrs)
+    TransactionChains::Vps::UpdateMount.fire(self, attrs)
+  end
 end

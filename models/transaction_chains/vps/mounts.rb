@@ -14,7 +14,10 @@ module TransactionChains
         mounts = []
 
         # Local/remote mounts
-        vps.mounts.where.not(
+        vps.mounts.where(
+            enabled: true,
+            master_enabled: true
+        ).where.not(
             confirmed: ::Mount.confirmed(:confirm_destroy)
         ).order('dst ASC').each do |m|
           mounts << m

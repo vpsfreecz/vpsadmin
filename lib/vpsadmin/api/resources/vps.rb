@@ -1018,6 +1018,8 @@ END
              choices: ::Mount.on_start_fails.keys
       datetime :expiration_date, label: 'Expiration date',
         desc: 'The mount is deleted when expiration date passes'
+      bool :enabled, label: 'Enabled'
+      bool :master_enabled, label: 'Master enabled'
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -1120,6 +1122,34 @@ END
 
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
+      end
+    end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Update a mount'
+
+      input do
+        use :all, include: %i(on_start_fail enabled master_enabled)
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        input blacklist: %i(master_enabled)
+        allow
+      end
+
+      def exec
+        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        maintenance_check!(vps)
+
+        mnt = ::Mount.find_by!(vps: vps, id: params[:mount_id])
+        mnt.update_chain(input)
+        mnt
       end
     end
 
