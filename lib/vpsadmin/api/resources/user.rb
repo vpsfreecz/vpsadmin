@@ -247,7 +247,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       u = ::User.including_deleted.find_by!(m_id: params[:user_id])
-
+      
       if input.empty?
         error('provide at least one attribute to update')
       end
@@ -272,7 +272,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       u
 
     rescue ActiveRecord::RecordInvalid => e
-      error('update failed', to_parma_names(e.record.errors.to_hash, :input))
+      error('update failed', to_param_names(e.record.errors.to_hash, :input))
     end
   end
 
