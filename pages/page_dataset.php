@@ -141,7 +141,8 @@ if ($_SESSION['logged_in']) {
 					$params = array(
 						'dataset' => $_POST['dataset'],
 						'mountpoint' => $_POST['mountpoint'],
-						'mode' => $input_params->mode->choices[ (int) $_POST['mode']]
+						'mode' => $input_params->mode->choices[ (int) $_POST['mode']],
+						'on_start_fail' => $input_params->on_start_fail->choices[ (int) $_POST['on_start_fail']]
 					);
 					
 					$api->vps($_POST['vps'])->mount->create($params);

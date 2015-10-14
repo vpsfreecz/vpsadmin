@@ -324,6 +324,7 @@ function mount_list($vps_id) {
 	$xtpl->table_add_category(_('Dataset'));
 	$xtpl->table_add_category(_('Snapshot'));
 	$xtpl->table_add_category(_('Mountpoint'));
+	$xtpl->table_add_category(_('On mount fail'));
 	$xtpl->table_add_category(_('Expiration'));
 	$xtpl->table_add_category('');
 	
@@ -334,6 +335,7 @@ function mount_list($vps_id) {
 		$xtpl->table_td($m->dataset->name);
 		$xtpl->table_td($m->snapshot_id ? tolocaltz($m->snapshot->created_at, 'Y-m-d H:i'): '---');
 		$xtpl->table_td($m->mountpoint);
+		$xtpl->table_td($m->on_start_fail);
 		$xtpl->table_td($m->expiration_date ? tolocaltz($m->expiration_date, 'Y-m-d H:i') : '---');
 		$xtpl->table_td('<a href="?page=dataset&action=mount_destroy&vps='.$vps_id.'&id='.$m->id.'&return='.$return.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
 		$xtpl->table_tr();
@@ -343,7 +345,7 @@ function mount_list($vps_id) {
 		'<a href="?page=dataset&action=mount&vps='.$vps_id.'&return='.$return.'">'._('Create a new mount').'</a>',
 		false,
 		true, // right
-		4 // colspan
+		6 // colspan
 	);
 	$xtpl->table_tr();
 	
@@ -393,6 +395,10 @@ function mount_create_form() {
 	
 	$xtpl->table_td($params->mode->label);
 	api_param_to_form_pure('mode', $params->mode);
+	$xtpl->table_tr();
+	
+	$xtpl->table_td($params->on_start_fail->label);
+	api_param_to_form_pure('on_start_fail', $params->on_start_fail);
 	$xtpl->table_tr();
 	
 	$xtpl->form_out(_('Save'));
