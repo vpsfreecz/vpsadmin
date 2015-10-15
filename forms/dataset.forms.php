@@ -337,7 +337,8 @@ function mount_list($vps_id) {
 		$xtpl->table_td($m->dataset->name);
 		$xtpl->table_td($m->snapshot_id ? tolocaltz($m->snapshot->created_at, 'Y-m-d H:i'): '---');
 		$xtpl->table_td($m->mountpoint);
-		$xtpl->table_td($m->on_start_fail);
+
+		$xtpl->table_td(translate_mount_on_start_fail($m->on_start_fail));
 
 		$state = '';
 
@@ -448,7 +449,7 @@ function mount_create_form() {
 	$xtpl->table_tr();
 	
 	$xtpl->table_td($params->on_start_fail->label);
-	api_param_to_form_pure('on_start_fail', $params->on_start_fail);
+	api_param_to_form_pure('on_start_fail', $params->on_start_fail, null, translate_mount_on_start_fail);
 	$xtpl->table_tr();
 	
 	$xtpl->form_out(_('Save'));
@@ -487,4 +488,15 @@ function mount_snapshot_form() {
 	
 	$xtpl->sbar_add(_("Back"), $_GET['return'] ? $_GET['return'] : $_POST['return']);
 	$xtpl->sbar_out(_('Mount'));
+}
+
+function translate_mount_on_start_fail($v) {
+	$start_fail_choices = array(
+		'skip' => _('Skip'),
+		'mount_later' => _('Mount later'),
+		'fail_start' => _('Fail VPS start'),
+		'wait_for_mount' => _('Wait until mounted')
+	);
+
+	return $start_fail_choices[$v];
 }
