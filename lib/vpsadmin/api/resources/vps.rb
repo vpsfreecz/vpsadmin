@@ -1020,6 +1020,8 @@ END
         desc: 'The mount is deleted when expiration date passes'
       bool :enabled, label: 'Enabled'
       bool :master_enabled, label: 'Master enabled'
+      string :current_state, label: 'Current state',
+             choices: ::Mount.current_states.keys
     end
 
     class Index < HaveAPI::Actions::Default::Index

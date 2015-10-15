@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20151004115901) do
+ActiveRecord::Schema.define(version: 20151015085656) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -446,6 +446,7 @@ ActiveRecord::Schema.define(version: 20151004115901) do
     t.integer  "on_start_fail",                   default: 1,    null: false
     t.boolean  "enabled",                         default: true, null: false
     t.boolean  "master_enabled",                  default: true, null: false
+    t.integer  "current_state",                                  null: false
   end
 
   create_table "node_pubkey", id: false, force: true do |t|

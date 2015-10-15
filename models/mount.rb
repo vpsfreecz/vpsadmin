@@ -15,6 +15,7 @@ class Mount < ActiveRecord::Base
                     }
 
   enum on_start_fail: %i(skip mount_later fail_start wait_for_mount)
+  enum current_state: %i(created mounted unmounted skipped delayed waiting)
 
   def check_mountpoint
     if dst !~ /\A[a-zA-Z0-9_\-\/\.]{3,500}\z/ || dst =~ /\.\./ || dst =~ /\/\//
