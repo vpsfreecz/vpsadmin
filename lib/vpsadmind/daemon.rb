@@ -32,6 +32,7 @@ module VpsAdmind
       @blockers_mutex = Mutex.new
       @chain_blockers = {}
       @queues = Queues.new(self)
+      @mount_reporter = MountReporter.new
       @delayed_mounter = DelayedMounter.new # FIXME: call stop?
       @remote_control = RemoteControl.new(self) if remote
     end
@@ -48,6 +49,7 @@ module VpsAdmind
       @shaper = Shaper.new
       @shaper.init(@db)
       
+      @mount_reporter.start
       @delayed_mounter.start
       @remote_control.start
     end

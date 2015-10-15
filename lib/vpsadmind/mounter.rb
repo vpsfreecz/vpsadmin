@@ -84,21 +84,28 @@ module VpsAdmind
           log(:info, :mounter, 'Already mounted')
 
         else
-          raise e if oneshot
+          if oneshot
+            report_state(opts, :unmounted)
+            raise e
+          end
   
           case opts['on_start_fail']
             when 'skip'
               fail_mount(opts)
+              report_state(opts, :skipped)
               return
 
             when 'mount_later'
+              # state is set by mount_later
               mount_later(opts)
               fail_mount(opts)
                
             when 'fail_start'
+              report_state(opts, :unmounted)
               raise e
 
             when 'wait_for_mount'
+              report_state(opts, :waiting) if counter == 0
               counter += 1
               wait = random_wait(counter)
               
@@ -111,6 +118,8 @@ module VpsAdmind
           end 
         end
       end
+
+      report_state(opts, :mounted)
 
       runscript('postmount', opts['postmount']) if opts['runscripts']
     end
@@ -131,6 +140,8 @@ module VpsAdmind
       rescue CommandFailed => e
         raise e if e.rc != 1 || /not mounted/ !~ e.output
       end
+
+      report_state(opts, :unmounted)
 
       runscript('postumount', opts['postumount']) if opts['runscripts']
     end
@@ -160,6 +171,19 @@ module VpsAdmind
       
       else
         DelayedMounter.mount(@vps_id, opts)
+      end
+    end
+
+    def report_state(opts, state)
+      if VpsAdmind::STANDALONE
+        RemoteClient.send($CFG.get(:remote, :socket), :mount_state, {
+            :vps_id => @vps_id,
+            :mount_id => opts['id'],
+            :state => state
+        })
+        
+      else
+        MountReporter.report(@vps_id, opts['id'], state)
       end
     end
 
