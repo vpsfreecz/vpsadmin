@@ -164,7 +164,7 @@ module VpsAdmind
       log(:info, :mounter, 'Delaying mount')
 
       if VpsAdmind::STANDALONE
-        RemoteClient.send($CFG.get(:remote, :socket), :delayed_mount, {
+        RemoteClient.send_or_not($CFG.get(:remote, :socket), :delayed_mount, {
             :vps_id => @vps_id,
             :mount => opts
         })
@@ -176,7 +176,7 @@ module VpsAdmind
 
     def report_state(opts, state)
       if VpsAdmind::STANDALONE
-        RemoteClient.send($CFG.get(:remote, :socket), :mount_state, {
+        RemoteClient.send_or_not($CFG.get(:remote, :socket), :mount_state, {
             :vps_id => @vps_id,
             :mount_id => opts['id'],
             :state => state

@@ -7,6 +7,13 @@ module VpsAdmind
         i.cmd(cmd, params)
         i.reply
       end
+
+      def send_or_not(*args)
+        send(*args)
+
+      rescue
+        # nothing to do
+      end
     end
 
     def initialize(sock)
