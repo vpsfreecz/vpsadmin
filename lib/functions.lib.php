@@ -272,10 +272,25 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 	switch ($desc->type) {
 		case 'String':
 		case 'Integer':
-			if ($desc->choices)
-				$xtpl->form_add_select_pure($name, $desc->choices, array_search($v, $desc->choices));
-			else
+			if ($desc->choices) {
+				$choices = array();
+				
+				if ($label_callback) {
+					foreach ($desc->choices as $k => $v)
+						$choices[$k] = $label_callback($v);
+
+				} else
+					$choices = $desc->choices;
+
+				$xtpl->form_add_select_pure(
+					$name,
+					$choices,
+					array_search($v, $desc->choices)
+				);
+
+			} else {
 				$xtpl->form_add_input_pure('text', '30', $name, $v);
+			}
 			break;
 		
 		case 'Text':
