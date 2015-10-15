@@ -29,7 +29,7 @@ module VpsAdmind
         @props.each do |name, prop|
           case prop.source
             when :local, :none
-              @cmd.zfs(:set, "#{name}=\"#{prop.value}\"", ds)
+              @cmd.zfs(:set, "#{name}=\"#{translate_value(name, prop.value)}\"", ds)
 
             when :default, :inherited
               next if INHERIT_EXCEPTIONS.include?(name)
@@ -40,6 +40,11 @@ module VpsAdmind
           end
         end
         true
+      end
+
+      def translate_value(k, v)
+        return 'none' if [:quota, :refquota].include?(k) && v.to_i == 0
+        v
       end
     end
 
