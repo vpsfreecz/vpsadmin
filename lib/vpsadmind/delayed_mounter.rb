@@ -37,7 +37,7 @@ module VpsAdmind
 
           synchronize { try_mounts }
 
-         sleep(3*60)
+          sleep(3*60)
         end
       end
     end
