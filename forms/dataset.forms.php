@@ -325,7 +325,9 @@ function mount_list($vps_id) {
 	$xtpl->table_add_category(_('Snapshot'));
 	$xtpl->table_add_category(_('Mountpoint'));
 	$xtpl->table_add_category(_('On mount fail'));
+	$xtpl->table_add_category(_('State'));
 	$xtpl->table_add_category(_('Expiration'));
+	$xtpl->table_add_category(_('Action'));
 	$xtpl->table_add_category('');
 	
 	$mounts = $api->vps($vps_id)->mount->list();
@@ -336,16 +338,64 @@ function mount_list($vps_id) {
 		$xtpl->table_td($m->snapshot_id ? tolocaltz($m->snapshot->created_at, 'Y-m-d H:i'): '---');
 		$xtpl->table_td($m->mountpoint);
 		$xtpl->table_td($m->on_start_fail);
+
+		$state = '';
+
+		switch ($m->current_state) {
+			case 'created':
+				$state = _('About to be mounted');
+				break;
+
+			case 'mounted':
+				$state = _('Mounted');
+				break;
+
+			case 'unmounted':
+				$state = _('Unmounted');
+				break;
+
+			case 'skipped':
+				$state = _('Skipped');
+				break;
+
+			case 'delayed':
+				$state = _('Trying to mount');
+				break;
+
+			case 'waiting':
+				$state = _('Waiting for mount');
+				break;
+
+			default:
+				$state = $m->current_state;
+		}
+
+		$xtpl->table_td($state);
+
 		$xtpl->table_td($m->expiration_date ? tolocaltz($m->expiration_date, 'Y-m-d H:i') : '---');
+		$xtpl->table_td(
+			'<a href="?page=dataset&action=mount_toggle&vps='.$vps_id.'&id='.$m->id.'&do='.($m->enabled ? 0 : 1).'&return='.$return.'&t='.csrf_token().'">'.
+			($m->enabled ? _('Disable') : _('Enable')).
+			'</a>'
+		);
 		$xtpl->table_td('<a href="?page=dataset&action=mount_destroy&vps='.$vps_id.'&id='.$m->id.'&return='.$return.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
-		$xtpl->table_tr();
+
+		$color = false;
+
+		if (!$m->enabled || !$m->master_enabled)
+			$color = '#A6A6A6';
+
+		elseif ($m->current_state != 'created' && $m->current_state != 'mounted')
+			$color = '#FFCCCC';
+
+		$xtpl->table_tr($color);
 	}
 	
 	$xtpl->table_td(
 		'<a href="?page=dataset&action=mount&vps='.$vps_id.'&return='.$return.'">'._('Create a new mount').'</a>',
 		false,
 		true, // right
-		6 // colspan
+		8 // colspan
 	);
 	$xtpl->table_tr();
 	

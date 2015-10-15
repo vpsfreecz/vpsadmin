@@ -198,6 +198,22 @@ if ($_SESSION['logged_in']) {
 			}
 			
 			break;
+
+		case 'mount_toggle':
+			csrf_check();
+
+			try {
+				$api->vps($_GET['vps'])->mount($_GET['id'])->update(array(
+					'enabled' => $_GET['do']
+				));
+
+				notify_user(_('Mount').' '.($_GET['do'] ? _('enabled') : _('disabled')), '');
+				redirect($_GET['return'] ? $_GET['return'] : '?page=');
+			
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Mount toggle failed'), $e->getResponse());
+			}
+			break;
 		
 		case 'plan_add':
 			csrf_check();
