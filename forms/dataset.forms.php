@@ -374,11 +374,17 @@ function mount_list($vps_id) {
 		$xtpl->table_td($state);
 
 		$xtpl->table_td($m->expiration_date ? tolocaltz($m->expiration_date, 'Y-m-d H:i') : '---');
-		$xtpl->table_td(
-			'<a href="?page=dataset&action=mount_toggle&vps='.$vps_id.'&id='.$m->id.'&do='.($m->enabled ? 0 : 1).'&return='.$return.'&t='.csrf_token().'">'.
-			($m->enabled ? _('Disable') : _('Enable')).
-			'</a>'
-		);
+		if ($m->master_enabled) {
+			$xtpl->table_td(
+				'<a href="?page=dataset&action=mount_toggle&vps='.$vps_id.'&id='.$m->id.'&do='.($m->enabled ? 0 : 1).'&return='.$return.'&t='.csrf_token().'">'.
+				($m->enabled ? _('Disable') : _('Enable')).
+				'</a>'
+			);
+
+		} else {
+			$xtpl->table_td(_('Disabled by admin'));
+		}
+
 		$xtpl->table_td('<a href="?page=dataset&action=mount_destroy&vps='.$vps_id.'&id='.$m->id.'&return='.$return.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
 
 		$color = false;
