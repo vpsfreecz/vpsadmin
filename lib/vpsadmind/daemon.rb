@@ -21,7 +21,7 @@ module VpsAdmind
       attr_accessor :instance
     end
 
-    def initialize
+    def initialize(remote)
       self.class.instance = self
       @db = Db.new
       @m_workers = Mutex.new
@@ -33,6 +33,7 @@ module VpsAdmind
       @chain_blockers = {}
       @queues = Queues.new(self)
       @delayed_mounter = DelayedMounter.new # FIXME: call stop?
+      @remote_control = RemoteControl.new(self) if remote
     end
 
     def init
@@ -48,6 +49,7 @@ module VpsAdmind
       @shaper.init(@db)
       
       @delayed_mounter.start
+      @remote_control.start
     end
 
     def start
@@ -280,15 +282,14 @@ module VpsAdmind
       end
     end
 
-    def start_em(console, remote)
-      return if !console && !remote && !$CFG.get(:scheduler, :enabled)
+    def start_em(console)
+      return if !console
 
       @export_console = console
 
       @em_thread = Thread.new do
         EventMachine.run do
           EventMachine.start_server($CFG.get(:console, :host), $CFG.get(:console, :port), VzServer) if console
-          EventMachine.start_unix_domain_server($CFG.get(:remote, :socket), RemoteControl, self) if remote
         end
       end
     end
