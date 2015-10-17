@@ -17,7 +17,6 @@ module VpsAdmind
     def rollback
       call_cmd(Commands::Vps::Umount, {
           :mounts => @mounts.reverse,
-          :runscripts => false,
           :vps_id => @vps_id
       })
     end

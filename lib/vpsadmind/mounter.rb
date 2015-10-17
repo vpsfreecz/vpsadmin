@@ -74,8 +74,6 @@ module VpsAdmind
 
       create_dst(dst)
       
-      runscript('premount', opts['premount']) if opts['runscripts']
-
       begin
         syscmd(cmd)
 
@@ -120,8 +118,6 @@ module VpsAdmind
       end
 
       report_state(opts, :mounted)
-
-      runscript('postmount', opts['postmount']) if opts['runscripts']
     end
 
     def umount_cmd(mnt)
@@ -132,7 +128,6 @@ module VpsAdmind
     def umount(opts)
       dst, cmd = umount_cmd(opts)
 
-      runscript('preumount', opts['preumount']) if opts['runscripts']
 
       begin
         syscmd(cmd)
@@ -142,8 +137,6 @@ module VpsAdmind
       end
 
       report_state(opts, :unmounted)
-
-      runscript('postumount', opts['postumount']) if opts['runscripts']
     end
     
     protected

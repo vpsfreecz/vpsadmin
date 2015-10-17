@@ -24,8 +24,7 @@ module VpsAdmind
 
       call_cmd(Commands::Vps::Mount, {
           :vps_id => @vps_id,
-          :mounts => mounts.reverse,
-          :runscripts => false
+          :mounts => mounts.reverse
       })
     end
   end
