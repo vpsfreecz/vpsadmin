@@ -18,6 +18,8 @@ class Mount < ActiveRecord::Base
   enum current_state: %i(created mounted unmounted skipped delayed waiting)
 
   def check_mountpoint
+    dst.chop! while dst.end_with?('/')
+
     if dst !~ /\A[a-zA-Z0-9_\-\/\.]{3,500}\z/ || dst =~ /\.\./ || dst =~ /\/\//
       errors.add(:dst, 'invalid format')
     end
