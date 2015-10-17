@@ -455,7 +455,13 @@ function mount_create_form() {
 	$xtpl->table_tr();
 	
 	$xtpl->table_td($params->on_start_fail->label);
-	api_param_to_form_pure('on_start_fail', $params->on_start_fail, null, translate_mount_on_start_fail);
+	api_param_to_form_pure(
+		'on_start_fail',
+		$params->on_start_fail,
+		post_val('on_start_fail', 'mount_later'),
+		translate_mount_on_start_fail
+	);
+	$xtpl->table_td($params->on_start_fail->description);
 	$xtpl->table_tr();
 	
 	$xtpl->form_out(_('Save'));
