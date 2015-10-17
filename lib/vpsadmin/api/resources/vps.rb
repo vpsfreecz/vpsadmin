@@ -1014,8 +1014,9 @@ END
                value_label: :created_at
       string :mountpoint, label: 'Mountpoint', db_name: :dst
       string :mode, label: 'Mode', choices: %i(ro rw), default: :rw, fill: true
-      string :on_start_fail, label: 'On start failure',
-             choices: ::Mount.on_start_fails.keys
+      string :on_start_fail, label: 'On mount failure',
+             choices: ::Mount.on_start_fails.keys,
+             desc: 'What happens when the mount fails during VPS start'
       datetime :expiration_date, label: 'Expiration date',
         desc: 'The mount is deleted when expiration date passes'
       bool :enabled, label: 'Enabled'
