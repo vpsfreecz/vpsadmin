@@ -446,7 +446,7 @@ ActiveRecord::Schema.define(version: 20151015085656) do
     t.integer  "on_start_fail",                   default: 1,    null: false
     t.boolean  "enabled",                         default: true, null: false
     t.boolean  "master_enabled",                  default: true, null: false
-    t.integer  "current_state",                                  null: false
+    t.integer  "current_state",                   default: 0,    null: false
   end
 
   create_table "node_pubkey", id: false, force: true do |t|
