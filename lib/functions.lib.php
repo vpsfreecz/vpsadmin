@@ -276,8 +276,8 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 				$choices = array();
 				
 				if ($label_callback) {
-					foreach ($desc->choices as $k => $v)
-						$choices[$k] = $label_callback($v);
+					foreach ($desc->choices as $k => $val)
+						$choices[$k] = $label_callback($val);
 
 				} else
 					$choices = $desc->choices;
