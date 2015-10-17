@@ -189,7 +189,7 @@ post '/console/feed/:veid' do |veid|
 
   if r.check_session(v, params[:session])
     r.send_cmd(v, params[:session], params[:keys]) if params[:keys]
-    {:data => r.get_console(v, params[:session]), :session => params[:session]}.to_json
+    {:data => r.get_console(v, params[:session]).force_encoding('utf-8'), :session => params[:session]}.to_json
   else
     {:data => "Access denied, invalid session", :session => nil}.to_json
   end
