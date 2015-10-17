@@ -14,7 +14,16 @@ module TransactionChains
       resources = vps.free_resources(chain: self)
 
       # Remove mounts
-      # FIXME: implement mounts removal
+      vps.mounts.each do |mnt|
+        if mnt.snapshot_in_pool_id
+          use_chain(Vps::UmountSnapshot, args: [vps, mnt, false])
+
+        else
+          use_chain(Vps::UmountDataset, args: [vps, mnt, false])
+        end
+      end
+
+      use_chain(Vps::Mounts, args: vps) if vps.mounts.any?
 
       # Destroy VPS
       append(Transactions::Vps::Destroy, args: vps) do
