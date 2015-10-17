@@ -62,89 +62,6 @@ module VpsAdmind
           :init => true,
           :fstype => :zfs, # loaded from db
           :type => nil, # loaded from db
-          :handlers => {
-              "VpsAdmin" => {
-                  101 => "stop",
-                  102 => "restart",
-                  103 => "update",
-              },
-              "Node" => {
-                  3 => "reboot",
-                  4 => "sync_templates",
-                  5 => "gen_known_hosts",
-                  7301 => "create_config",
-                  7302 => "delete_config",
-              },
-              "VPS" => {
-                  1001 => "start",
-                  1002 => "stop",
-                  1003 => "restart",
-                  1101 => "suspend",
-                  2002 => "passwd",
-                  2003 => "set_params",
-                  2004 => "set_params",
-                  2005 => "set_params",
-                  2006 => "ip_add",
-                  2007 => "ip_del",
-                  2008 => "applyconfig",
-                  3001 => "create",
-                  3002 => "destroy",
-                  3003 => "reinstall",
-                  4002 => "migrate_online",
-                  5101 => "rotate_snapshots",
-                  5301 => "nas_mounts",
-                  5302 => "nas_mount",
-                  5303 => "nas_umount",
-                  5304 => "nas_remount",
-                  8001 => "features",
-              },
-              "Shaper" => {
-                  2009 => 'shape_change',
-                  2010 => 'shape_set',
-                  2011 => 'shape_unset',
-                  2012 => 'root_change',
-              },
-              "Clone" => {
-                  3004 => "local_clone",
-                  3005 => "remote_clone",
-              },
-              "Migration" => {
-                  4011 => "prepare",
-                  4021 => "migrate_part1",
-                  4022 => "migrate_part2",
-                  4031 => "cleanup",
-              },
-              'Dataset' => {
-                  5201 => 'create',
-                  5202 => 'set',
-                  5203 => 'destroy',
-                  5204 => 'snapshot',
-                  5205 => 'transfer',
-                  5206 => 'create_branch',
-                  5207 => 'destroy_branch',
-                  5208 => 'rollback',
-                  5209 => 'prepare_rollback',
-                  5210 => 'remote_rollback',
-                  5211 => 'apply_rollback'
-              },
-              "Backuper" => {
-                  5001 => "restore_prepare",
-                  5002 => "restore_restore",
-                  5003 => "restore_finish",
-                  5004 => "download",
-                  5005 => "backup",
-                  5006 => "backup",
-                  5007 => "exports",
-                  5011 => "backup_snapshot",
-                  5021 => "replace_backups",
-              },
-              "Firewall" => {
-                  7201 => "reg_ips",
-              },
-              "Mailer" => {
-                  9001 => "send",
-              }
-          }
       },
 
       :vz => {
@@ -185,15 +102,11 @@ module VpsAdmind
       },
 
       :vps => {
-          :clone => {
-              :rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}",
-          },
           :zfs => {
               :root_dataset => "vz/private",
               :sharenfs => nil,
           },
           :migration => {
-              :rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after %{src} %{dst}",
               :dumpfile => "/vz/dump/Dump.%{veid}",
           },
       },
@@ -207,46 +120,7 @@ module VpsAdmind
       },
 
       :storage => {
-          :method => "Zfs",
           :update_status => true,
-      },
-
-      :backuper => {
-          :method => "RdiffBackup",
-          :lock_interval => 30,
-          :mountpoint => "/mnt",
-          :tmp_restore => "/storage/vpsfree.cz/restore",
-          :backups_mnt_dir => "/mnt",
-          :restore_target => "/mnt/%{node}/%{veid}.restoring",
-          :restore_src => "/vz/private/%{veid}.restoring",
-          :download => "/storage/vpsfree.cz/download",
-          :zfs => {
-              :rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after --exclude .zfs/ --exclude-from %{exclude} %{src} %{dst}",
-              :trash => {
-                  :dataset => "storage/vpsfree.cz/trash",
-              },
-          },
-          :store => {
-              :min_backups => 14,
-              :max_backups => 20,
-              :max_age => 14,
-          },
-          :restore => {
-              :zfs => {
-                  :head_rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after --exclude .zfs/ %{src} %{dst}",
-                  :dataset => "storage/vpsfree.cz/restore",
-              },
-              :exttozfs => {
-                  :rsync => "%{rsync} -rlptgoDH --numeric-ids --inplace --delete-after --exclude .zfs/ %{src} %{dst}",
-              }
-          },
-          :exports => {
-              :enabled => true,
-              :delimiter => "### vpsAdmin ###",
-              :options => "",
-              :path => "/etc/exports",
-              :reexport => "exportfs -r"
-          },
       },
 
       :mailer => {
