@@ -19,11 +19,16 @@ module TransactionChains
       # Destroy VPS
       append(Transactions::Vps::Destroy, args: vps) do
         resources.each { |r| destroy(r) }
-        edit(vps, dataset_in_pool_id: nil)
       end
 
       # Destroy underlying dataset
       use_chain(DatasetInPool::Destroy, args: [vps.dataset_in_pool, true])
+
+      # The dataset_in_pool_id must be unset after the dataset is actually
+      # deleted, as it may fail.
+      append(Transactions::Utils::NoOp, args: find_node_id) do
+        edit(vps, dataset_in_pool_id: nil)
+      end
     end
   end
 end
