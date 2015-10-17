@@ -767,7 +767,9 @@ ActiveRecord::Schema.define(version: 20151017155120) do
     t.datetime "updated_at"
   end
 
+  add_index "vps", ["m_id"], name: "index_vps_on_m_id", using: :btree
   add_index "vps", ["m_id"], name: "m_id", using: :btree
+  add_index "vps", ["vps_server"], name: "index_vps_on_vps_server", using: :btree
 
   create_table "vps_console", force: true do |t|
     t.integer  "vps_id",                 null: false

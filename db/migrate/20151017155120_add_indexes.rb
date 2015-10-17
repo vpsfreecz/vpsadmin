@@ -24,6 +24,8 @@ class AddIndexes < ActiveRecord::Migration
     add_index :snapshot_in_pools, :dataset_in_pool_id
     add_index :snapshot_in_pool_in_branches, :snapshot_in_pool_id
     add_index :mounts, :vps_id
+    add_index :vps, :m_id
+    add_index :vps, :vps_server
     add_index :vps_features, :vps_id
     add_index :vps_has_config, :vps_id
     add_index :vps_ip, :vps_id
