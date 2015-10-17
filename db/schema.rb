@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20151017130111) do
+ActiveRecord::Schema.define(version: 20151017155120) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -33,6 +33,8 @@ ActiveRecord::Schema.define(version: 20151017130111) do
     t.datetime "created_at"
     t.datetime "updated_at"
   end
+
+  add_index "branches", ["dataset_tree_id"], name: "index_branches_on_dataset_tree_id", using: :btree
 
   create_table "cfg_dns", primary_key: "dns_id", force: true do |t|
     t.string  "dns_ip",           limit: 63,                 null: false
@@ -61,6 +63,9 @@ ActiveRecord::Schema.define(version: 20151017130111) do
     t.integer "admin_limit"
     t.boolean "enabled",                  default: true, null: false
   end
+
+  add_index "cluster_resource_uses", ["class_name", "table_name", "row_id"], name: "cluster_resouce_use_name_search", using: :btree
+  add_index "cluster_resource_uses", ["user_cluster_resource_id"], name: "index_cluster_resource_uses_on_user_cluster_resource_id", using: :btree
 
   create_table "cluster_resources", force: true do |t|
     t.string  "name",           limit: 100, null: false
@@ -113,6 +118,7 @@ ActiveRecord::Schema.define(version: 20151017130111) do
   end
 
   add_index "dataset_in_pools", ["dataset_id", "pool_id"], name: "index_dataset_in_pools_on_dataset_id_and_pool_id", unique: true, using: :btree
+  add_index "dataset_in_pools", ["dataset_id"], name: "index_dataset_in_pools_on_dataset_id", using: :btree
 
   create_table "dataset_plans", force: true do |t|
     t.string "name", null: false
@@ -132,6 +138,8 @@ ActiveRecord::Schema.define(version: 20151017130111) do
     t.datetime "updated_at"
   end
 
+  add_index "dataset_properties", ["dataset_id"], name: "index_dataset_properties_on_dataset_id", using: :btree
+
   create_table "dataset_trees", force: true do |t|
     t.integer  "dataset_in_pool_id",                 null: false
     t.integer  "index",              default: 0,     null: false
@@ -140,6 +148,8 @@ ActiveRecord::Schema.define(version: 20151017130111) do
     t.datetime "created_at"
     t.datetime "updated_at"
   end
+
+  add_index "dataset_trees", ["dataset_in_pool_id"], name: "index_dataset_trees_on_dataset_in_pool_id", using: :btree
 
   create_table "datasets", force: true do |t|
     t.string   "name",                                     null: false
@@ -157,6 +167,7 @@ ActiveRecord::Schema.define(version: 20151017130111) do
   end
 
   add_index "datasets", ["ancestry"], name: "index_datasets_on_ancestry", using: :btree
+  add_index "datasets", ["user_id"], name: "index_datasets_on_user_id", using: :btree
 
   create_table "default_lifetime_values", force: true do |t|
     t.integer "environment_id"
@@ -303,6 +314,8 @@ ActiveRecord::Schema.define(version: 20151017130111) do
     t.datetime "updated_at"
   end
 
+  add_index "mail_logs", ["user_id"], name: "index_mail_logs_on_user_id", using: :btree
+
   create_table "mail_recipients", force: true do |t|
     t.string "label", limit: 100, null: false
     t.string "to",    limit: 500
@@ -445,6 +458,8 @@ ActiveRecord::Schema.define(version: 20151017130111) do
     t.integer  "current_state",                   default: 0,    null: false
   end
 
+  add_index "mounts", ["vps_id"], name: "index_mounts_on_vps_id", using: :btree
+
   create_table "node_pubkey", id: false, force: true do |t|
     t.integer "node_id",           null: false
     t.string  "type",    limit: 3, null: false
@@ -462,6 +477,8 @@ ActiveRecord::Schema.define(version: 20151017130111) do
     t.datetime "updated_at"
   end
 
+  add_index "object_states", ["class_name", "row_id"], name: "index_object_states_on_class_name_and_row_id", using: :btree
+
   create_table "pools", force: true do |t|
     t.integer "node_id",                                    null: false
     t.string  "label",          limit: 500,                 null: false
@@ -478,6 +495,8 @@ ActiveRecord::Schema.define(version: 20151017130111) do
   end
 
   add_index "port_reservations", ["node_id", "port"], name: "port_reservation_uniqueness", unique: true, using: :btree
+  add_index "port_reservations", ["node_id"], name: "index_port_reservations_on_node_id", using: :btree
+  add_index "port_reservations", ["transaction_chain_id"], name: "index_port_reservations_on_transaction_chain_id", using: :btree
 
   create_table "repeatable_tasks", force: true do |t|
     t.string  "label",        limit: 100
@@ -554,6 +573,7 @@ ActiveRecord::Schema.define(version: 20151017130111) do
   end
 
   add_index "snapshot_in_pool_in_branches", ["snapshot_in_pool_id", "branch_id"], name: "unique_snapshot_in_pool_in_branches", unique: true, using: :btree
+  add_index "snapshot_in_pool_in_branches", ["snapshot_in_pool_id"], name: "index_snapshot_in_pool_in_branches_on_snapshot_in_pool_id", using: :btree
 
   create_table "snapshot_in_pools", force: true do |t|
     t.integer "snapshot_id",                    null: false
@@ -563,7 +583,9 @@ ActiveRecord::Schema.define(version: 20151017130111) do
     t.integer "confirmed",          default: 0, null: false
   end
 
+  add_index "snapshot_in_pools", ["dataset_in_pool_id"], name: "index_snapshot_in_pools_on_dataset_in_pool_id", using: :btree
   add_index "snapshot_in_pools", ["snapshot_id", "dataset_in_pool_id"], name: "index_snapshot_in_pools_on_snapshot_id_and_dataset_in_pool_id", unique: true, using: :btree
+  add_index "snapshot_in_pools", ["snapshot_id"], name: "index_snapshot_in_pools_on_snapshot_id", using: :btree
 
   create_table "snapshots", force: true do |t|
     t.string   "name",                             null: false
@@ -573,6 +595,8 @@ ActiveRecord::Schema.define(version: 20151017130111) do
     t.datetime "updated_at"
     t.integer  "snapshot_download_id"
   end
+
+  add_index "snapshots", ["dataset_id"], name: "index_snapshots_on_dataset_id", using: :btree
 
   create_table "sysconfig", primary_key: "cfg_name", force: true do |t|
     t.text "cfg_value"
@@ -588,6 +612,8 @@ ActiveRecord::Schema.define(version: 20151017130111) do
     t.integer "row_id",               null: false
   end
 
+  add_index "transaction_chain_concerns", ["transaction_chain_id"], name: "index_transaction_chain_concerns_on_transaction_chain_id", using: :btree
+
   create_table "transaction_chains", force: true do |t|
     t.string   "name",            limit: 30,              null: false
     t.string   "type",            limit: 100,             null: false
@@ -602,6 +628,9 @@ ActiveRecord::Schema.define(version: 20151017130111) do
     t.integer  "user_session_id"
   end
 
+  add_index "transaction_chains", ["user_id"], name: "index_transaction_chains_on_user_id", using: :btree
+  add_index "transaction_chains", ["user_session_id"], name: "index_transaction_chains_on_user_session_id", using: :btree
+
   create_table "transaction_confirmations", force: true do |t|
     t.integer  "transaction_id",             null: false
     t.string   "class_name",                 null: false
@@ -613,6 +642,8 @@ ActiveRecord::Schema.define(version: 20151017130111) do
     t.datetime "created_at"
     t.datetime "updated_at"
   end
+
+  add_index "transaction_confirmations", ["transaction_id"], name: "index_transaction_confirmations_on_transaction_id", using: :btree
 
   create_table "transaction_groups", force: true do |t|
     t.boolean "is_clusterwide",  default: false
@@ -642,7 +673,9 @@ ActiveRecord::Schema.define(version: 20151017130111) do
     t.string   "queue",                limit: 30,         default: "general", null: false
   end
 
+  add_index "transactions", ["t_depends_on"], name: "index_transactions_on_t_depends_on", using: :btree
   add_index "transactions", ["t_server"], name: "t_server", using: :btree
+  add_index "transactions", ["transaction_chain_id"], name: "index_transactions_on_transaction_chain_id", using: :btree
 
   create_table "transfered", id: false, force: true do |t|
     t.string   "tr_ip",          limit: 127,             null: false
@@ -653,6 +686,9 @@ ActiveRecord::Schema.define(version: 20151017130111) do
     t.integer  "tr_bytes_out",   limit: 8,   default: 0, null: false
     t.datetime "tr_date",                                null: false
   end
+
+  add_index "transfered", ["tr_ip", "tr_date"], name: "index_transfered_on_tr_ip_and_tr_date", using: :btree
+  add_index "transfered", ["tr_ip"], name: "index_transfered_on_tr_ip", using: :btree
 
   create_table "transfered_recent", id: false, force: true do |t|
     t.string   "tr_ip",          limit: 127,             null: false
@@ -671,7 +707,10 @@ ActiveRecord::Schema.define(version: 20151017130111) do
     t.integer "value",               null: false
   end
 
+  add_index "user_cluster_resources", ["cluster_resource_id"], name: "index_user_cluster_resources_on_cluster_resource_id", using: :btree
+  add_index "user_cluster_resources", ["environment_id"], name: "index_user_cluster_resources_on_environment_id", using: :btree
   add_index "user_cluster_resources", ["user_id", "environment_id", "cluster_resource_id"], name: "user_cluster_resource_unique", unique: true, using: :btree
+  add_index "user_cluster_resources", ["user_id"], name: "index_user_cluster_resources_on_user_id", using: :btree
 
   create_table "user_session_agents", force: true do |t|
     t.text     "agent",                 null: false
@@ -694,6 +733,8 @@ ActiveRecord::Schema.define(version: 20151017130111) do
     t.datetime "closed_at"
     t.integer  "admin_id"
   end
+
+  add_index "user_sessions", ["user_id"], name: "index_user_sessions_on_user_id", using: :btree
 
   create_table "versions", force: true do |t|
     t.string   "item_type",  null: false
@@ -747,6 +788,7 @@ ActiveRecord::Schema.define(version: 20151017130111) do
   end
 
   add_index "vps_features", ["vps_id", "name"], name: "index_vps_features_on_vps_id_and_name", unique: true, using: :btree
+  add_index "vps_features", ["vps_id"], name: "index_vps_features_on_vps_id", using: :btree
 
   create_table "vps_has_config", force: true do |t|
     t.integer "vps_id",    null: false
@@ -756,6 +798,7 @@ ActiveRecord::Schema.define(version: 20151017130111) do
   end
 
   add_index "vps_has_config", ["vps_id", "config_id", "confirmed"], name: "index_vps_has_config_on_vps_id_and_config_id_and_confirmed", unique: true, using: :btree
+  add_index "vps_has_config", ["vps_id"], name: "index_vps_has_config_on_vps_id", using: :btree
 
   create_table "vps_ip", primary_key: "ip_id", force: true do |t|
     t.integer "vps_id"
@@ -769,6 +812,9 @@ ActiveRecord::Schema.define(version: 20151017130111) do
   end
 
   add_index "vps_ip", ["class_id"], name: "index_vps_ip_on_class_id", unique: true, using: :btree
+  add_index "vps_ip", ["ip_location"], name: "index_vps_ip_on_ip_location", using: :btree
+  add_index "vps_ip", ["user_id"], name: "index_vps_ip_on_user_id", using: :btree
+  add_index "vps_ip", ["vps_id"], name: "index_vps_ip_on_vps_id", using: :btree
   add_index "vps_ip", ["vps_id"], name: "vps_id", using: :btree
 
   create_table "vps_status", force: true do |t|
