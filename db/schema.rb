@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20151015085656) do
+ActiveRecord::Schema.define(version: 20151017130111) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -434,10 +434,6 @@ ActiveRecord::Schema.define(version: 20151015085656) do
     t.integer  "dataset_in_pool_id"
     t.integer  "snapshot_in_pool_id"
     t.string   "mode",                limit: 2,                  null: false
-    t.string   "cmd_premount",        limit: 500
-    t.string   "cmd_postmount",       limit: 500
-    t.string   "cmd_preumount",       limit: 500
-    t.string   "cmd_postumount",      limit: 500
     t.integer  "confirmed",                       default: 0,    null: false
     t.integer  "object_state",                                   null: false
     t.datetime "expiration_date"

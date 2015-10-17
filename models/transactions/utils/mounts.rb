@@ -26,8 +26,7 @@ module Transactions::Utils
               dst: mnt.dst,
               mount_opts: mnt.mount_opts,
               umount_opts: mnt.umount_opts,
-              mode: mnt.mode,
-              runscripts: false
+              mode: mnt.mode
           })
 
         # Mount of snapshot in pool
@@ -51,8 +50,7 @@ module Transactions::Utils
               dst: mnt.dst,
               mount_opts: mnt.mount_opts,
               umount_opts: mnt.umount_opts,
-              mode: mnt.mode,
-              runscripts: false
+              mode: mnt.mode
           })
 
           if mnt.snapshot_in_pool.dataset_in_pool.pool.role == 'backup'
