@@ -362,7 +362,7 @@ ShellInABox.prototype.about = function () {
     alert("Shell In A Box version " + "2.10 (revision 239)" +
         "\nCopyright 2008-2010 by Markus Gutschke\n" +
         "For more information check http://shellinabox.com" +
-        "\n\nModified by Jakub Skokan <aither@havefun.cz> for purposes of vpsFree.cz" +
+        "\n\nModified by Jakub Skokan <jakub.skokan@vpsfree.cz> for purposes of vpsFree.cz" +
         (typeof serverSupportsSSL != 'undefined' && serverSupportsSSL ?
             "\n\n" +
                 "This product includes software developed by the OpenSSL Project\n" +
