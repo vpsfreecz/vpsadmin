@@ -4,37 +4,51 @@ module VpsAdmind
     needs :system, :vps, :zfs, :pool
 
     def exec
-      if File.exists?(original_path(:mount))
-        syscmd("#{$CFG.get(:bin, :cp)} -p \"#{original_path(:mount)}\" \"#{backup_path(:mount)}\"")
-      end
-
-      if File.exists?(original_path(:umount))
-        syscmd("#{$CFG.get(:bin, :cp)} -p \"#{original_path(:umount)}\" \"#{backup_path(:umount)}\"")
+      files.each do |path|
+        next unless File.exists?(path)
+        
+        syscmd("#{$CFG.get(:bin, :cp)} -p \"#{path}\" \"#{backup_path(path)}\"")
       end
 
       action_script('mount')
       action_script('umount')
+
+      File.open(mounts_path, 'w') do |f|
+        f.puts("MOUNTS = #{PP.pp(@mounts, '').strip}")
+      end
+
+      ok
     end
 
     def rollback
-      if File.exists?(backup_path(:mount))
-        syscmd("#{$CFG.get(:bin, :cp)} -p \"#{backup_path(:mount)}\" \"#{original_path(:mount)}\"")
-      end
+      files.each do |path|
+        next unless File.exists?(backup_path(path))
 
-      if File.exists?(backup_path(:umount))
-        syscmd("#{$CFG.get(:bin, :cp)} -p \"#{backup_path(:umount)}\" \"#{original_path(:umount)}\"")
+        syscmd("#{$CFG.get(:bin, :cp)} -p \"#{backup_path(path)}\" \"#{path}\"")
       end
 
       ok
     end
 
     protected
+    def files
+      [
+          original_path(:mount),
+          original_path(:umount),
+          mounts_path
+      ]
+    end
+
     def original_path(type)
       "#{$CFG.get(:vz, :vz_conf)}/conf/#{@vps_id}.#{type}"
     end
 
-    def backup_path(type)
-      "#{original_path(type)}.backup"
+    def backup_path(path)
+      "#{path}.backup"
+    end
+
+    def mounts_path
+      File.join($CFG.get(:vpsadmin, :mounts_dir), "#{@vps_id}.mounts")
     end
   end
 end

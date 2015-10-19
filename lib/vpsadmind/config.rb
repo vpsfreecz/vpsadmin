@@ -62,6 +62,7 @@ module VpsAdmind
           :init => true,
           :fstype => :zfs, # loaded from db
           :type => nil, # loaded from db
+          :mounts_dir => '/var/vpsadmin/mounts'
       },
 
       :vz => {

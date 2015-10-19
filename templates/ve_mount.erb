@@ -1,15 +1,9 @@
 #!/usr/bin/env ruby
-
 ENV['CONFIG'] = "<%= $CFG.file %>"
-
 require '/opt/vpsadmind/lib/vpsadmind/standalone'
 
 VEID = <%= @vps_id %>
-MOUNTS = [
-<%= @mounts.map do |mnt|
-    PP.pp(mnt, '').strip
-end.join(",\n") %>
-]
+load '<%= File.join($CFG.get(:vpsadmin, :mounts_dir), "#{@vps_id}.mounts") %>'
 
 puts "Executing #{$0}"
 VpsAdmind::Mounter.mount_all(VEID, MOUNTS, false)
