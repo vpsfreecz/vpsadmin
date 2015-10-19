@@ -33,7 +33,7 @@ module VpsAdmind
     def transaction(kwargs = {})
       restart = kwargs.has_key?(:restart) ? kwargs[:restart] : true
       wait = kwargs[:wait]
-      tries = kwargs[:tries] || 10
+      tries = kwargs[:tries]
       counter = 0
       try_restart = true
 
@@ -67,8 +67,9 @@ module VpsAdmind
         if restart && try_restart
           counter += 1
 
-          if counter <= tries
+          if tries.nil? || tries == 0 || counter <= tries
             w = wait || (counter * 5 + rand(15))
+            w = 10 * 60 if w > 10 * 60
             log(:warn, :sql, "Restarting transaction in #{w} seconds")
             sleep(w)
             retry
