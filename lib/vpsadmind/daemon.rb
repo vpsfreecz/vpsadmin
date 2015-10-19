@@ -43,15 +43,15 @@ module VpsAdmind
       node = Node.new
       node.init
 
+      @mount_reporter.start
+      @delayed_mounter.start
+      @remote_control.start
+      
       @fw = Firewall.new
       @fw.init(@db)
 
       @shaper = Shaper.new
       @shaper.init(@db)
-      
-      @mount_reporter.start
-      @delayed_mounter.start
-      @remote_control.start
     end
 
     def start
