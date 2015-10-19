@@ -32,6 +32,8 @@ module VpsAdmind
 
     def start
       @thread = Thread.new do
+        load_delayed_mounts
+
         loop do
           break if @stop
 
@@ -138,6 +140,48 @@ module VpsAdmind
         done = mounts.empty?
         log(:info, :delayed_mounter, "All mounts of VPS #{vps_id} are mounted") if done
         done
+      end
+    end
+
+    def load_delayed_mounts
+      vps_mounts = {}
+      db = Db.new
+
+      st = db.prepared_st(
+          "SELECT m.vps_id, m.id
+          FROM mounts m
+          INNER JOIN vps ON vps.vps_id = m.vps_id
+          WHERE vps_server = ? AND m.current_state = 4",
+          $CFG.get(:vpsadmin, :server_id)
+      )
+
+      st.each do |row|
+        vps_mounts[ row[0] ] ||= []
+        vps_mounts[ row[0] ] << row[1]
+      end
+
+      st.close
+      db.close
+
+      return if vps_mounts.empty?
+
+      log(:info, :delayed_mounter, "Loading delayed mounts from the database")
+
+      vps_mounts.each do |vps, mounts|
+        load File.join($CFG.get(:vpsadmin, :mounts_dir), "#{vps}.mounts")
+      
+        mounts.each do |mnt|
+          opts = MOUNTS.detect { |m| m['id'] == mnt }
+
+          if opts
+            register_mount(vps, opts)
+
+          else
+            log(:warn, :delayed_mounter, "Mount #{mnt} not found")
+          end
+        end
+        
+        ::Object.send(:remove_const, :MOUNTS)
       end
     end
 
