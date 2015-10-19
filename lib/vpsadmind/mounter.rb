@@ -83,10 +83,7 @@ module VpsAdmind
           log(:info, :mounter, 'Already mounted')
 
         else
-          if oneshot
-            report_state(opts, :unmounted)
-            raise e
-          end
+          raise e if oneshot
   
           case opts['on_start_fail']
             when 'skip'

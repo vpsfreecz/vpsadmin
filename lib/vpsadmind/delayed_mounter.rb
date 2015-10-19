@@ -67,6 +67,7 @@ module VpsAdmind
         else
           @mounts[vps_id] << opts
           log(:info, :delayed_mounter, "Registered mount for VPS #{vps_id}: #{opts['dst']}")
+          MountReporter.report(vps_id, opts['id'], :delayed)
         end
       end
     end
