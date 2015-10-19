@@ -76,6 +76,7 @@ module VpsAdmind
       
       begin
         syscmd(cmd)
+        report_state(opts, :mounted)
 
       rescue CommandFailed => e
         if /is busy or already mounted/ =~ e.output
@@ -116,8 +117,6 @@ module VpsAdmind
           end 
         end
       end
-
-      report_state(opts, :mounted)
     end
 
     def umount_cmd(mnt)
