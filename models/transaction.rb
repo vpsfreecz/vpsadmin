@@ -183,12 +183,30 @@ class Transaction < ActiveRecord::Base
         pks[pk] = obj.id
       end
 
+      tr_attrs = nil
+      
+      if attrs
+        tr_attrs = {}
+
+        attrs.each do |k, v|
+          if v === true
+            tr_attrs[k] = 1
+
+          elsif v === false
+            tr_attrs[k] = 0
+
+          else
+            tr_attrs[k] = v
+          end
+        end
+      end
+
       ::TransactionConfirmation.create(
           parent_transaction: @transaction,
           class_name: obj.class.name,
           table_name: obj.class.table_name,
           row_pks: pks,
-          attr_changes: attrs,
+          attr_changes: tr_attrs,
           confirm_type: type
       )
     end
