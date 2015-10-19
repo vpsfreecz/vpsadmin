@@ -110,6 +110,8 @@ module VpsAdmind
 
       def send_data(data)
         @sock.send(data.to_json + "\n", 0)
+
+      rescue Errno::EPIPE
       end
     end
   end
