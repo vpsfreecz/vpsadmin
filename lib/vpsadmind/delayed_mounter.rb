@@ -168,8 +168,26 @@ module VpsAdmind
       log(:info, :delayed_mounter, "Loading delayed mounts from the database")
 
       vps_mounts.each do |vps, mounts|
-        load File.join($CFG.get(:vpsadmin, :mounts_dir), "#{vps}.mounts")
-      
+        mounts_file = File.join($CFG.get(:vpsadmin, :mounts_dir), "#{vps}.mounts")
+
+        unless File.exists?(mounts_file)
+          log(:warn, :delayed_mounter, "'#{mounts_file}' does not exist")
+          next
+        end
+
+        begin
+          load mounts_file
+
+        rescue Exception => e
+          log(:critical, :delayed_mounter, "Failed to load '#{mounts_file}': #{e.message}")
+          next
+        end
+
+        unless ::Object.const_defined?(:MOUNTS)
+          log(:critical, :delayed_mounter, "Const MOUNTS not defined in '#{mounts_file}'")
+          next
+        end
+
         mounts.each do |mnt|
           opts = MOUNTS.detect { |m| m['id'] == mnt }
 
