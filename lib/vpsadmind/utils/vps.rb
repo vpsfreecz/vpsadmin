@@ -1,14 +1,13 @@
 module VpsAdmind
   module Utils::Vps
     def action_script(action)
-      path = "#{$CFG.get(:vz, :vz_conf)}/conf/#{@vps_id}.#{action}"
-      existed = File.exists?(path)
+      path = "#{$CFG.get(:vz, :vz_conf)}/conf/#{@vps_id}.#{action}.new"
 
       File.open(path, 'w') do |f|
         f.write(ERB.new(File.new("templates/ve_#{action}.erb").read, 0).result(binding))
       end
 
-      syscmd("#{$CFG.get(:bin, :chmod)} +x #{path}") unless existed
+      syscmd("#{$CFG.get(:bin, :chmod)} +x #{path}")
 
       ok
     end

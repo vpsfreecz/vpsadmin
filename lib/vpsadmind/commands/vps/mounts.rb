@@ -8,23 +8,28 @@ module VpsAdmind
         next unless File.exists?(path)
         
         syscmd("#{$CFG.get(:bin, :cp)} -p \"#{path}\" \"#{backup_path(path)}\"")
+        File.unlink(path)
       end
 
       action_script('mount')
       action_script('umount')
 
-      File.open(mounts_path, 'w') do |f|
+      File.open("#{mounts_path}.new", 'w') do |f|
         f.puts("MOUNTS = #{PP.pp(@mounts, '').strip}")
       end
+
+      File.rename("#{mounts_path}.new", mounts_path)
+      File.rename("#{original_path(:mount)}.new", original_path(:mount))
+      File.rename("#{original_path(:umount)}.new", original_path(:umount))
 
       ok
     end
 
     def rollback
-      files.each do |path|
+      files.reverse.each do |path|
         next unless File.exists?(backup_path(path))
 
-        syscmd("#{$CFG.get(:bin, :cp)} -p \"#{backup_path(path)}\" \"#{path}\"")
+        File.rename(backup_path(path), path)
       end
 
       ok
