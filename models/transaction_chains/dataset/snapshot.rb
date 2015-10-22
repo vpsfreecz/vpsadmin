@@ -8,13 +8,13 @@ module TransactionChains
 
       snap = Time.new.strftime('%Y-%m-%dT%H:%M:%S')
 
-      s = ::Snapshot.create(
+      s = ::Snapshot.create!(
           name: "#{snap} (unconfirmed)",
           dataset_id: dataset_in_pool.dataset_id,
           confirmed: ::Snapshot.confirmed(:confirm_create)
       )
 
-      sip = ::SnapshotInPool.create(
+      sip = ::SnapshotInPool.create!(
           snapshot: s,
           dataset_in_pool: dataset_in_pool,
           confirmed: ::SnapshotInPool.confirmed(:confirm_create)
