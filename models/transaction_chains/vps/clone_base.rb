@@ -124,8 +124,12 @@ module TransactionChains
             user_editable: m.user_editable,
             mode: m.mode,
             confirmed: ::Mount.confirmed(:confirm_create),
-            expiration_date: m.expiration_date
+            expiration_date: m.expiration_date,
+            enabled: m.enabled,
+            master_enabled: m.master_enabled
         )
+
+        dst_m.current_state = :unmounted unless m.enabled?
 
         # Check if it is a mount of a cloned dataset.
         datasets.each do |src, dst|
