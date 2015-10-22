@@ -185,7 +185,7 @@ class Transaction < ActiveRecord::Base
 
       tr_attrs = nil
       
-      if attrs
+      if attrs && attrs.is_a?(::Hash)
         tr_attrs = {}
 
         attrs.each do |k, v|
@@ -199,6 +199,9 @@ class Transaction < ActiveRecord::Base
             tr_attrs[k] = v
           end
         end
+
+      else
+        tr_attrs = attrs
       end
 
       ::TransactionConfirmation.create(
