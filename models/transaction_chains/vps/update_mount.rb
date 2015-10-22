@@ -27,6 +27,9 @@ module TransactionChains
             when :enabled, :master_enabled
               edit_before(mount, k => (v.first ? 1 : 0))
 
+            when :on_start_fail
+              edit_before(mount, k => ::Mount.on_start_fails[v.first])
+
             else
               fail "unsupported attribute '#{k}'"
           end
