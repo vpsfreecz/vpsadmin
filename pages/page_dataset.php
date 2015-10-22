@@ -199,6 +199,27 @@ if ($_SESSION['logged_in']) {
 			
 			break;
 
+		case 'mount_edit':
+			if (isset($_POST['on_start_fail'])) {
+				try {
+					$input_params = $api->vps->mount->create->getParameters('input');
+					$api->vps($_GET['vps'])->mount($_GET['id'])->update(array(
+						'on_start_fail' => $input_params->on_start_fail->choices[ (int) $_POST['on_start_fail']]
+					));
+
+					notify_user(_('Changes saved'), '');
+					redirect($_POST['return'] ? $_POST['return'] : '?page=');
+						
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Mount edit failed'), $e->getResponse());
+				}
+
+			} else {
+				mount_edit_form($_GET['vps'], $_GET['id']);
+			}
+
+			break;
+
 		case 'mount_toggle':
 			csrf_check();
 

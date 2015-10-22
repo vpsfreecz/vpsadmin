@@ -329,6 +329,7 @@ function mount_list($vps_id) {
 	$xtpl->table_add_category(_('Expiration'));
 	$xtpl->table_add_category(_('Action'));
 	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
 	
 	$mounts = $api->vps($vps_id)->mount->list();
 	$return = urlencode($_SERVER['REQUEST_URI']);
@@ -385,6 +386,7 @@ function mount_list($vps_id) {
 			$xtpl->table_td(_('Disabled by admin'));
 		}
 
+		$xtpl->table_td('<a href="?page=dataset&action=mount_edit&vps='.$vps_id.'&id='.$m->id.'&return='.$return.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 		$xtpl->table_td('<a href="?page=dataset&action=mount_destroy&vps='.$vps_id.'&id='.$m->id.'&return='.$return.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
 
 		$color = false;
@@ -402,7 +404,7 @@ function mount_list($vps_id) {
 		'<a href="?page=dataset&action=mount&vps='.$vps_id.'&return='.$return.'">'._('Create a new mount').'</a>',
 		false,
 		true, // right
-		8 // colspan
+		9 // colspan
 	);
 	$xtpl->table_tr();
 	
@@ -459,6 +461,34 @@ function mount_create_form() {
 		'on_start_fail',
 		$params->on_start_fail,
 		post_val('on_start_fail', 'mount_later'),
+		translate_mount_on_start_fail
+	);
+	$xtpl->table_td($params->on_start_fail->description);
+	$xtpl->table_tr();
+	
+	$xtpl->form_out(_('Save'));
+	
+	$xtpl->sbar_add(_("Back"), $_GET['return'] ? $_GET['return'] : $_POST['return']);
+	$xtpl->sbar_out(_('Mount'));
+}
+
+function mount_edit_form($vps_id, $mnt_id) {
+	global $xtpl, $api;
+
+	$vps = $api->vps->find($vps_id);
+	$m = $vps->mount->find($mnt_id);
+	$params = $api->vps->mount->create->getParameters('input');
+	
+	$xtpl->table_title(_('Edit mount of VPS').' '.vps_link($vps).' at '.$m->mountpoint);
+	
+	$xtpl->form_create('?page=dataset&action=mount_edit&vps='.$vps_id.'&id='.$mnt_id, 'post');
+
+	$xtpl->table_td($params->on_start_fail->label . ' <input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">');
+	
+	api_param_to_form_pure(
+		'on_start_fail',
+		$params->on_start_fail,
+		post_val('on_start_fail', $m->on_start_fail),
 		translate_mount_on_start_fail
 	);
 	$xtpl->table_td($params->on_start_fail->description);
