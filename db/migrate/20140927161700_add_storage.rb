@@ -411,7 +411,8 @@ class AddStorage < ActiveRecord::Migration
             pool: pool,
             name: k,
             value: v.meta[:default],
-            inherited: false
+            inherited: false,
+            confirmed: 1
         )
       end
 
@@ -452,7 +453,8 @@ class AddStorage < ActiveRecord::Migration
               name: k,
               value: k == :refquota ? 60*1024 : v.meta[:default],
               inherited: v.inheritable?,
-              parent: pool_properties[k]
+              parent: pool_properties[k],
+              confirmed: 1
           )
         end
 
@@ -485,7 +487,8 @@ class AddStorage < ActiveRecord::Migration
             pool: r,
             name: k,
             value: v.meta[:default],
-            inherited: false
+            inherited: false,
+            confirmed: 1
         )
       end
 
