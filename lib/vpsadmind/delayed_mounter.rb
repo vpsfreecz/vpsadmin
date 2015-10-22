@@ -19,6 +19,10 @@ module VpsAdmind
       def unregister_vps_mount(*args)
         instance.unregister_vps_mount(*args)
       end
+
+      def change_mount(*args)
+        instance.change_mount(*args)
+      end
     end
 
     def initialize
@@ -90,6 +94,32 @@ module VpsAdmind
               :info,
               :delayed_mounter,
               "Unregistered mount #{mnt['dst']} of VPS #{vps_id}"
+          )
+        end
+      end
+    end
+
+    def change_mount(vps_id, mnt)
+      synchronize do
+        next unless @mounts[vps_id]
+        
+        i = @mounts[vps_id].index { |m| m['id'] == mnt['id'] }
+        next unless i
+
+        case mnt['on_start_fail']
+        when 'mount_later', 'fail_start', 'wait_for_mount'
+          log(:debug, :delayed_mounter, "Keep mount #{mnt['dst']} of VPS #{vps_id}")
+
+        when 'skip'
+          log(:info, :delayed_mounter, "Skipping mount #{mnt['dst']} of VPS #{vps_id}")
+          @mounts[vps_id].delete_at(i)
+          MountReporter.report(vps_id, mnt['id'], :unmounted)
+
+        else
+          log(
+              :critical,
+              :delayed_mounter,
+              "unsupported on_start_fail type '#{mnt['on_start_fail']}' for mount #{mnt['id']}"
           )
         end
       end
