@@ -440,6 +440,31 @@ module VpsAdmin::API::Resources
               id: params[:snapshot_id]
           ))
 
+          # Check if any snapshots on primary pool are mounted
+          mnt = snap.dataset.snapshots.select(
+              'snapshots.id, snapshots.name, mounts.id AS mnt_id, mounts.vps_id,'+
+              'mounts.dst'
+          ).joins(
+              snapshot_in_pools: [
+                  {dataset_in_pool: [:pool]},
+                  :mounts
+              ]
+          ).where(
+              pools: {
+                  role: [
+                      ::Pool.roles[:primary],
+                      ::Pool.roles[:hypervisor]
+                  ]
+              }
+          ).take
+
+          if mnt
+            error(
+                "Please delete mount of snapshot #{snap.dataset.full_name}@#{mnt.name} "+
+                "from VPS #{mnt.vps_id} at '#{mnt.dst}' (mount id #{mnt.mnt_id})"
+            )
+          end
+
           snap.dataset.rollback_snapshot(snap)
           ok
 
