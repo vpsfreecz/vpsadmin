@@ -31,6 +31,10 @@ class Mount < ActiveRecord::Base
     end
   end
 
+  def enabled?
+    enabled && master_enabled
+  end
+
   def dataset
     dataset_in_pool && dataset_in_pool.dataset
   end
