@@ -5,7 +5,7 @@ module TransactionChains
 
     # Clones snapshot to pool working dataset and mounts it locally
     # or remotely to +vps+ at +dst+.
-    def link_chain(vps, snapshot, dst)
+    def link_chain(vps, snapshot, dst, opts)
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
@@ -22,6 +22,9 @@ module TransactionChains
           confirmed: ::Mount.confirmed(:confirm_create),
           expiration_date: Time.now + 3 * 24 * 60 * 60
       )
+      
+      mnt.on_start_fail = opts[:on_start_fail] if opts[:on_start_fail]
+      
       remote = false
 
       # Snapshot is present locally on hypervisor

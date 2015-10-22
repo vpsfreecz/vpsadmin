@@ -1114,10 +1114,10 @@ END
         end
 
         if input[:dataset]
-          vps.mount_dataset(input[:dataset], input[:mountpoint], input[:mode])
+          vps.mount_dataset(input[:dataset], input[:mountpoint], input)
 
         else
-          vps.mount_snapshot(input[:snapshot], input[:mountpoint])
+          vps.mount_snapshot(input[:snapshot], input[:mountpoint], input)
         end
 
       rescue VpsAdmin::API::Exceptions::SnapshotAlreadyMounted => e

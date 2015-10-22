@@ -3,7 +3,7 @@ module TransactionChains
   class Vps::MountDataset < ::TransactionChain
     label 'Mount dataset'
 
-    def link_chain(vps, dataset, dst, mode)
+    def link_chain(vps, dataset, dst, opts)
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
@@ -19,11 +19,13 @@ module TransactionChains
           mount_opts: '',
           umount_opts: '-f',
           mount_type: 'nfs',
-          mode: mode,
+          mode: opts[:mode],
           user_editable: false,
           dataset_in_pool: dip,
           confirmed: ::Mount.confirmed(:confirm_create)
       )
+
+      mnt.on_start_fail = opts[:on_start_fail] if opts[:on_start_fail]
 
       if dip.pool.node_id == vps.vps_server
         mnt.mount_type = 'bind'

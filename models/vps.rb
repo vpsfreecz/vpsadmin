@@ -253,12 +253,12 @@ class Vps < ActiveRecord::Base
     TransactionChains::Vps::Swap.fire(self, secondary_vps, attrs)
   end
 
-  def mount_dataset(dataset, dst, mode)
-    TransactionChains::Vps::MountDataset.fire(self, dataset, dst, mode)
+  def mount_dataset(dataset, dst, opts)
+    TransactionChains::Vps::MountDataset.fire(self, dataset, dst, opts)
   end
 
-  def mount_snapshot(snapshot, dst)
-    TransactionChains::Vps::MountSnapshot.fire(self, snapshot, dst)
+  def mount_snapshot(snapshot, dst, opts)
+    TransactionChains::Vps::MountSnapshot.fire(self, snapshot, dst, opts)
   end
 
   def umount(mnt)
