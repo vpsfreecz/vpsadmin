@@ -4,6 +4,8 @@ module VpsAdmind
     needs :system, :vps, :zfs, :pool
 
     def exec
+      @mounts.each { |m| DelayedMounter.change_mount(@vps_id, m) }
+
       files.each do |path|
         next unless File.exists?(path)
         
