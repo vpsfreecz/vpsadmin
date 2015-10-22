@@ -37,21 +37,25 @@ module VpsAdmind
       @remote_control = RemoteControl.new(self) if remote
     end
 
-    def init
-      update_status(true)
+    def init(do_init)
+      if do_init
+        update_status(true)
 
-      node = Node.new
-      node.init
+        node = Node.new
+        node.init
+      end
 
       @mount_reporter.start
       @delayed_mounter.start
-      @remote_control.start
-      
-      @fw = Firewall.new
-      @fw.init(@db)
+      @remote_control && @remote_control.start
+     
+      if do_init
+        @fw = Firewall.new
+        @fw.init(@db)
 
-      @shaper = Shaper.new
-      @shaper.init(@db)
+        @shaper = Shaper.new
+        @shaper.init(@db)
+      end
     end
 
     def start
