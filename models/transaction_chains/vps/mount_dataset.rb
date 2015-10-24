@@ -38,7 +38,7 @@ module TransactionChains
       mnt.save!
 
       use_chain(Vps::Mounts, args: vps)
-      use_chain(Vps::Mount, args: [vps, [mnt]]) if vps.running
+      use_chain(Vps::Mount, args: [vps, [mnt]])
 
       append(Transactions::Utils::NoOp, args: vps.vps_server) do
         create(mnt)

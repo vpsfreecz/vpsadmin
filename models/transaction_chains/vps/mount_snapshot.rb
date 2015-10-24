@@ -75,7 +75,7 @@ module TransactionChains
       end
 
       use_chain(Vps::Mounts, args: vps)
-      use_chain(Vps::Mount, args: [vps, [mnt]]) if vps.running
+      use_chain(Vps::Mount, args: [vps, [mnt]])
 
       unless remote
         append(Transactions::Utils::NoOp, args: vps.vps_server) do
