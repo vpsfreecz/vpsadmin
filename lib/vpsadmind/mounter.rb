@@ -124,12 +124,13 @@ module VpsAdmind
     def umount(opts)
       dst, cmd = umount_cmd(opts)
 
+      if File.exists?(dst)
+        begin
+          syscmd(cmd)
 
-      begin
-        syscmd(cmd)
-
-      rescue CommandFailed => e
-        raise e if e.rc != 1 || /not mounted/ !~ e.output
+        rescue CommandFailed => e
+          raise e if e.rc != 1 || /not mounted/ !~ e.output
+        end
       end
 
       report_state(opts, :unmounted)
