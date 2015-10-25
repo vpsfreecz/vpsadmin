@@ -70,8 +70,12 @@ module TransactionChains
         secondary_configs = secondary_vps.vps_configs.all.pluck(:id)
       end
 
+      swappable_resources = %i(memory cpu swap)
+
+      primary_resources_obj = primary_vps.get_cluster_resources(swappable_resources)
+      secondary_resources_obj = secondary_vps.get_cluster_resources(swappable_resources)
+
       if opts[:resources]
-        swappable_resources = %i(memory cpu swap)
         primary_resources = {}
         secondary_resources = {}
 
@@ -80,8 +84,8 @@ module TransactionChains
           secondary_resources[r] = secondary_vps.send(r)
         end
 
-        new_primary_resources_obj = secondary_vps.get_cluster_resources(swappable_resources)
-        new_secondary_resources_obj = primary_vps.get_cluster_resources(swappable_resources)
+        new_primary_resources_obj = secondary_resources_obj
+        new_secondary_resources_obj = primary_resources_obj
       end
 
       # Migrate secondary VPS to primary node.
@@ -144,6 +148,12 @@ module TransactionChains
                   use_chain(Vps::SetResources, args: [
                       new_primary_vps, resources
                   ], urgent: true)
+
+                else  # Resources are not swapped, re-set the original ones
+                  append(Transactions::Vps::Resources, args: [
+                      new_primary_vps,
+                      secondary_resources_obj
+                  ])
                 end
 
                 if opts[:hostname]
@@ -214,6 +224,12 @@ module TransactionChains
                   use_chain(Vps::SetResources, args: [
                       new_secondary_vps, resources
                   ], urgent: true)
+                
+                else  # Resources are not swapped, re-set the original ones
+                  append(Transactions::Vps::Resources, args: [
+                      new_secondary_vps,
+                      primary_resources_obj
+                  ])
                 end
 
                 if opts[:hostname]
