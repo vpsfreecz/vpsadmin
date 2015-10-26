@@ -28,10 +28,17 @@ module TransactionChains
                       'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
                   ).order('m_id'),
 
-                  deleted: ::User.unscoped.where(
+                  soft_deleted: ::User.unscoped.where(
                       object_state: ::User.object_states[:soft_delete]
                   ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND members.m_id = s.row_id")
                   .where('s.state = ?', ::User.object_states[:soft_delete])
+                  .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                  .order('members.m_id'),
+                  
+                  hard_deleted: ::User.unscoped.where(
+                      object_state: ::User.object_states[:soft_delete]
+                  ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND members.m_id = s.row_id")
+                  .where('s.state = ?', ::User.object_states[:hard_delete])
                   .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
                   .order('members.m_id'),
 
@@ -48,8 +55,15 @@ module TransactionChains
                       'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
                   ).order('m_id'),
 
-                  deleted: ::Vps.unscoped.where(
+                  soft_deleted: ::Vps.unscoped.where(
                       object_state: ::Vps.object_states[:soft_delete]
+                  ).joins("INNER JOIN object_states s ON s.class_name = 'Vps' AND vps.vps_id = s.row_id")
+                  .where('s.state = ?', ::Vps.object_states[:soft_delete])
+                  .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                  .order('vps.vps_id'),
+
+                  hard_deleted: ::Vps.unscoped.where(
+                      object_state: ::Vps.object_states[:hard_delete]
                   ).joins("INNER JOIN object_states s ON s.class_name = 'Vps' AND vps.vps_id = s.row_id")
                   .where('s.state = ?', ::Vps.object_states[:soft_delete])
                   .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
