@@ -64,6 +64,68 @@ def chain_concerns(c)
   fail "unsupported concert type '#{concerns[:type]}'"
 end
 
+def list_users(users, col)
+  ret = <<END
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>LOGIN</th>
+      <th>VPS</th>
+      <th>FULL NAME</th>
+      <th>EMAIL</th>
+      <th>#{col}</th>
+    </tr>
+END
+
+  users.each do |u|
+    ret += <<END
+      <tr>
+	<td><a href="#{url("adminm", "action=edit&id=#{u.id}")}">#{u.id}</a></td>
+	<td>#{u.login}</td>
+	<td><a href="#{url("adminvps", "user=#{u.id}")}">#{u.vpses.count}</a></td>
+	<td>#{u.m_name}</td>
+	<td><a href="mailto:#{u.m_mail}">#{u.m_mail}</a></td>
+	<td>#{time(u.current_state.created_at.localtime.strftime('%Y-%m-%d %H:%M:%S'))}</td>
+     </tr>
+END
+  end
+
+  ret += "</table>\n"
+  ret
+end
+
+def list_vpses(vpses, col)
+  ret = <<END
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>HOSTNAME</th>
+      <th>USER</th>
+      <th>NODE</th>
+      <th>CPU</th>
+      <th>MEMORY</th>
+      <th>#{col}</th>
+    </tr>
+END
+
+  vpses.includes(:user, :node).each do |vps|
+    ret += <<END
+      <tr>
+	<td><a href="#{url("adminvps", "action=edit&veid=#{vps.id}")}">#{vps.id}</a></td>
+	<td>#{vps.hostname}</td>
+	<td><a href="#{url("adminm", "action=edit&id=#{vps.m_id}")}">#{vps.user.login}</a></td>
+	<td>#{vps.vps_server} #{vps.node.domain_name}</td>
+	<td>#{vps.cpu} cores</td>
+	<td>#{vps.memory / 1024} GiB</td>
+	<td>#{vps.current_state.created_at.localtime.strftime('%Y-%m-%d %H:%M:%S')}</td>
+      </tr>
+END
+   end
+
+  ret += "</table>\n"
+  ret
+end
+
 %>
 <html>
 <head>
@@ -80,6 +142,10 @@ end
       border-collapse: collapse;
       border-spacing: 0;
       font-size: 100%;
+    }
+
+    table.overview td {
+      text-align: right;
     }
 
     th {
@@ -127,226 +193,113 @@ end
   <dd><%= @date[:end].localtime.strftime("%Y-%m-%d %H:%M") %></dd>
 </dl>
 
-<h2>Users</h2>
-<dl>
-  <dt>New:</dt>
-  <dd><%= new_users = @users[:new].count %></dd>
-
-  <dt>Deleted:</dt>
-  <dd><%= deleted_users = @users[:deleted].count %></dd>
-
-  <dt>Suspended:</dt>
-  <dd><%= suspended_users = @users[:suspended].count %></dd>
-
-  <dt>Balance:</dt>
-  <dd><%= balance(new_users, deleted_users) %></dd>
-</dl>
+<h2>Overview</h2>
+<table class="overview">
+  <tr>
+    <th></th>
+    <th>NEW</th>
+    <th>SUSPENDED</th>
+    <th>SOFT DELETED</th>
+    <th>HARD DELETED</th>
+    <th>BALANCE</th>
+  </tr>
+  <tr>
+    <td>Users</td>
+    <td><%= new_users = @users[:new].count %></td>
+    <td><%= suspended_users = @users[:suspended].count %></td>
+    <td><%= soft_deleted_users = @users[:soft_deleted].count %></td>
+    <td><%= hard_deleted_users = @users[:hard_deleted].count %></td>
+    <td><%= balance(new_users, soft_deleted_users) %></td>
+  </tr>
+  <tr>
+    <td>VPS</td>
+    <td><%= new_vpses = @vps[:new].count %></td>
+    <td><%= suspended_vpses = @vps[:suspended].count %></td>
+    <td><%= soft_deleted_vpses = @vps[:soft_deleted].count %></td>
+    <td><%= hard_deleted_vpses = @vps[:hard_deleted].count %></td>
+    <td><%= balance(new_vpses, soft_deleted_vpses) %></td>
+  </tr>
+</table>
 
 <% if new_users > 0 %>
   <h3>New users</h3>
-  <table>
-    <tr>
-      <th>ID</th>
-      <th>LOGIN</th>
-      <th>VPS</th>
-      <th>FULL NAME</th>
-      <th>EMAIL</th>
-      <th>CREATED</th>
-    </tr>
-    <% @users[:new].each do |u| %>
-      <tr>
-        <td><a href="<%= url("adminm", "action=edit&id=#{u.id}") %>"><%= u.id %></a></td>
-        <td><%= u.login %></td>
-        <td><a href="<%= url("adminvps", "user=#{u.id}") %>"><%= u.vpses.count %></a></td>
-        <td><%= u.m_name %></td>
-        <td><a href="mailto:<%= u.m_mail %>"><%= u.m_mail %></a></td>
-        <td><%= time(u.created_at) %></td>
-      </tr>
-    <% end %>
-  </table>
-<% end %>
-
-<% if deleted_users > 0 %>
-  <h3>Deleted users</h3>
-  <table>
-    <tr>
-      <th>ID</th>
-      <th>LOGIN</th>
-      <th>VPS</th>
-      <th>FULL NAME</th>
-      <th>EMAIL</th>
-      <th>DELETED</th>
-    </tr>
-    <% @users[:deleted].each do |u| %>
-      <tr>
-        <td><a href="<%= url("adminm", "action=edit&id=#{u.id}") %>"><%= u.id %></a></td>
-        <td><%= u.login %></td>
-        <td><a href="<%= url("adminvps", "m_nick=#{u.login}") %>"><%= u.vpses.count %></a></td>
-        <td><%= u.m_name %></td>
-        <td><a href="mailto:<%= u.m_mail %>"><%= u.m_mail %></a></td>
-        <td><%= time(u.current_state.created_at) %></td>
-      </tr>
-    <% end %>
-  </table>
+  <%= list_users(@users[:new], 'CREATED AT') %>
 <% end %>
 
 <% if suspended_users > 0 %>
   <h3>Suspended users</h3>
-  <table>
-    <tr>
-      <th>ID</th>
-      <th>LOGIN</th>
-      <th>VPS</th>
-      <th>FULL NAME</th>
-      <th>EMAIL</th>
-      <th>DELETED</th>
-    </tr>
-    <% @users[:suspended].each do |u| %>
-      <tr>
-        <td><a href="<%= url("adminm", "action=edit&id=#{u.id}") %>"><%= u.id %></a></td>
-        <td><%= u.login %></td>
-        <td><a href="<%= url("adminvps", "m_nick=#{u.login}") %>"><%= u.vpses.count %></a></td>
-        <td><%= u.m_name %></td>
-        <td><a href="mailto:<%= u.m_mail %>"><%= u.m_mail %></a></td>
-        <td><%= time(u.current_state.created_at) %></td>
-      </tr>
-    <% end %>
-  </table>
+  <%= list_users(@users[:suspended], 'SUSPENDED AT') %>
 <% end %>
 
-<h2>VPSes</h2>
-<dl>
-  <dt>New:</dt>
-  <dd><%= new_vpses = @vps[:new].count %></dd>
-  
-  <dt>Deleted:</dt>
-  <dd><%= deleted_vpses = @vps[:deleted].count %></dd>
+<% if soft_deleted_users > 0 %>
+  <h3>Soft deleted users</h3>
+  <%= list_users(@users[:soft_deleted], 'DELETED AT') %>
+<% end %>
 
-
-  <dt>Suspended:</dt>
-  <dd><%= suspended_vpses = @vps[:suspended].count %></dd>
-</dl>
+<% if soft_deleted_users > 0 %>
+  <h3>Hard deleted users</h3>
+  <%= list_users(@users[:hard_deleted], 'DESTROYED AT') %>
+<% end %>
 
 <% if new_vpses > 0 %>
   <h3>New VPSes</h3>
-  <table>
-    <tr>
-      <th>ID</th>
-      <th>HOSTNAME</th>
-      <th>USER</th>
-      <th>NODE</th>
-      <th>CPU</th>
-      <th>MEMORY</th>
-      <th>TIME</th>
-    </tr>
-    <% @vps[:new].includes(:user, :node).each do |vps| %>
-      <tr>
-        <td><a href="<%= url("adminvps", "action=edit&veid=#{vps.id}") %>"><%= vps.id %></a></td>
-        <td><%= vps.hostname %></td>
-	<td><a href="<%= url("adminm", "action=edit&id=#{vps.m_id}") %>"><%= vps.user.login %></a></td>
-	<td><%= vps.vps_server %> <%= vps.node.domain_name %></td>
-	<td><%= vps.cpu %> cores</td>
-	<td><%= vps.memory / 1024 %> GiB</td>
-	<td><%= vps.created_at %>
-      </tr>
-    <% end %>
-  </table>
+  <%= list_vpses(@vps[:new], 'CREATED AT') %>
 <% end %>
-
-<% if deleted_vpses > 0 %>
-  <h3>Deleted VPSes</h3>
-  <table>
-    <tr>
-      <th>ID</th>
-      <th>HOSTNAME</th>
-      <th>USER</th>
-      <th>NODE</th>
-      <th>CPU</th>
-      <th>MEMORY</th>
-      <th>TIME</th>
-    </tr>
-    <% @vps[:deleted].includes(:user, :node).each do |vps| %>
-      <tr>
-        <td><a href="<%= url("adminvps", "action=edit&veid=#{vps.id}") %>"><%= vps.id %></a></td>
-        <td><%= vps.hostname %></td>
-	<td><a href="<%= url("adminm", "action=edit&id=#{vps.m_id}") %>"><%= vps.user.login %></a></td>
-	<td><%= vps.vps_server %> <%= vps.node.domain_name %></td>
-	<td><%= vps.cpu %> cores</td>
-	<td><%= vps.memory / 1024 %> GiB</td>
-	<td><%= vps.created_at %>
-      </tr>
-    <% end %>
-  </table>
-<% end %>
-
 
 <% if suspended_vpses > 0 %>
   <h3>Suspended VPSes</h3>
-  <table>
-    <tr>
-      <th>ID</th>
-      <th>HOSTNAME</th>
-      <th>USER</th>
-      <th>NODE</th>
-      <th>CPU</th>
-      <th>MEMORY</th>
-      <th>TIME</th>
-    </tr>
-    <% @vps[:suspended].includes(:user, :node).each do |vps| %>
-      <tr>
-        <td><a href="<%= url("adminvps", "action=edit&veid=#{vps.id}") %>"><%= vps.id %></a></td>
-        <td><%= vps.hostname %></td>
-	<td><a href="<%= url("adminm", "action=edit&id=#{vps.m_id}") %>"><%= vps.user.login %></a></td>
-	<td><%= vps.vps_server %> <%= vps.node.domain_name %></td>
-	<td><%= vps.cpu %>&nbsp;cores</td>
-	<td><%= vps.memory / 1024 %>&nbsp;GiB</td>
-	<td><%= vps.created_at %>
-      </tr>
-    <% end %>
-  </table>
+  <%= list_vpses(@vps[:new], 'SUSPENDED AT') %>
+<% end %>
+
+<% if soft_deleted_vpses > 0 %>
+  <h3>Soft deleted VPSes</h3>
+  <%= list_vpses(@vps[:new], 'DELETED AT') %>
+<% end %>
+
+<% if hard_deleted_vpses > 0 %>
+  <h3>Hard deleted VPSes</h3>
+  <%= list_vpses(@vps[:new], 'DESTROYED AT') %>
 <% end %>
 
 <h2>Transaction chains</h2>
-<dl>
-  <dt>Total:</dt>
-  <dd><%= @chains[:total].count %></dd>
-
-  <dt>Done:</dt>
-  <dd><%= @chains[:done].count %></dd>
-
-  <dt>Failed:<dt>
-  <dd><%= failed_chains = @chains[:failed].count %></dd>
-  
-  <dt>Fatal:<dt>
-  <dd><%= fatal_chains = @chains[:fatal].count %></dd>
-
-  <dt>Resolved:<dt>
-  <dd><%= @chains[:resolved].count %></dd>
-</dl>
+<table class="overview">
+  <tr>
+    <th>TOTAL</th>
+    <th>DONE</th>
+    <th>FAILED</th>
+    <th>FATAL</th>
+    <th>RESOLVED</th>
+  </tr>
+  <tr>
+    <td><%= @chains[:total].count %></td>
+    <td><%= @chains[:done].count %></td>
+    <td><%= failed_chains = @chains[:failed].count %></td>
+    <td><%= fatal_chains = @chains[:fatal].count %></td>
+    <td><%= @chains[:resolved].count %></td>
+  <tr>
+</table>
 
 <h2>Transactions</h2>
-<dl>
-  <dt>Total:</dt>
-  <dd><%= @transactions[:total].count %></dd>
-
-  <dt>Done:</dt>
-  <dd><%= @transactions[:done].count %></dd>
-
-  <dt>Pending:</dt>
-  <dd><%= @transactions[:pending].count %></dd>
-
-  <dt>Successful:</dt>
-  <dd><%= @transactions[:successful].count %></dd>
-
-  <dt>Warning:</dt>
-  <dd><%= @transactions[:warning].count %></dd>
-
-  <dt>Rollbacked</dt>
-  <dd><%= @transactions[:rollbacked].count %></dd>
-
-  <dt>Failed:</dt>
-  <dd><%= @transactions[:failed].count %></dd>
-</dl>
+<table class="overview">
+  <tr>
+    <th>TOTAL</th>
+    <th>DONE</th>
+    <th>QUEUED</th>
+    <th>SUCCESS</th>
+    <th>WARN</th>
+    <th>ROLLBACK</th>
+    <th>FAILED</th>
+  </tr>
+  <tr>
+    <td><%= @transactions[:total].count %></td>
+    <td><%= @transactions[:done].count %></td>
+    <td><%= @transactions[:pending].count %></td>
+    <td><%= @transactions[:successful].count %></td>
+    <td><%= @transactions[:warning].count %></td>
+    <td><%= @transactions[:rollbacked].count %></td>
+    <td><%= @transactions[:failed].count %></td>
+  </tr>
+</table>
 
 <% if failed_chains > 0 || fatal_chains > 0 %>
   <h3>Failed transaction chains</h3>
@@ -364,7 +317,7 @@ end
     <% @chains[:all_failed].includes(:user, :transaction_chain_concerns).each do |c| %>
       <tr class="error">
         <td><a href="<%= url("transactions", "chain=#{c.id}") %>"><%= c.id %></a></td>
-        <td><%= c.created_at.strftime('%Y-%m-%d %H:%M:%S') %></td>
+        <td><%= c.created_at.localtime.strftime('%Y-%m-%d %H:%M:%S') %></td>
         <td>
 	  <% if c.user_id %>
 	    <a href="<%= url("adminm", "action=edit&id=#{c.user_id}") %>"><%= "#{c.user_id} #{c.user.login}" %></a>
