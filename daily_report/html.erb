@@ -36,6 +36,34 @@ def balance(a, b)
   "#{sign}#{ret}"
 end
 
+def concern_class(o)
+  case o[0]
+  when 'Vps'
+    "VPS <a href=\"#{url('adminvps', "action=info&veid=#{o[1]}")}\">#{o[1]}</a>"
+
+  when 'User'
+    "#{o[0]} <a href=\"#{url('adminm', "action=edit&id=#{o[1]}")}\">#{o[1]}</a>"
+  
+  else
+    "#{o[0]} #{o[1]}"
+  end
+end
+
+def chain_concerns(c)
+  concerns = c.format_concerns
+  return '---' if concerns[:objects].empty?
+
+  case concerns[:type]
+  when 'affect'
+    return concern_class(concerns[:objects][0])
+
+  when 'transforms'
+    return "#{concern_class(concerns[:objects][0])} -> #{concern_class(concerns[:objects][1])}"
+  end
+
+  fail "unsupported concert type '#{concerns[:type]}'"
+end
+
 %>
 <html>
 <head>
@@ -287,10 +315,10 @@ end
   <dd><%= @chains[:done].count %></dd>
 
   <dt>Failed:<dt>
-  <dd><%= @chains[:failed].count %></dd>
+  <dd><%= failed_chains = @chains[:failed].count %></dd>
   
   <dt>Fatal:<dt>
-  <dd><%= @chains[:fatal].count %></dd>
+  <dd><%= fatal_chains = @chains[:fatal].count %></dd>
 
   <dt>Resolved:<dt>
   <dd><%= @chains[:resolved].count %></dd>
@@ -317,42 +345,38 @@ end
   <dd><%= @transactions[:rollbacked].count %></dd>
 
   <dt>Failed:</dt>
-  <dd><%= trans_failed = @transactions[:failed].count %></dd>
+  <dd><%= @transactions[:failed].count %></dd>
 </dl>
 
-<% if trans_failed > 0 %>
-  <h3>Failed transactions</h3>
+<% if failed_chains > 0 || fatal_chains > 0 %>
+  <h3>Failed transaction chains</h3>
   <table>
     <tr>
       <th>ID</th>
-      <th>QUEUED</th>
-      <th>TIME</th>
-      <th>REAL</th>
-      <th>MEMBER</th>
-      <th>SERVER</th>
-      <th>VPS</th>
-      <th>TYPE</th>
-      <th>DONE?</th>
-      <th>OK?</th>
+      <th>DATE</th>
+      <th>USER</th>
+      <th>LABEL</th>
+      <th>OBJECT</th>
+      <th>STATE</th>
+      <th>SIZE</th>
+      <th>PROGRESS</th>
     </tr>
-    <% @transactions[:failed].includes(:user, :node).each do |t| %>
-      <tr class="<%= t.t_success == 0 ? "error" : "warning" %>">
-        <td><a href="<%= url("transactions", "chain=#{t.transaction_chain_id}&transaction=#{t.id}") %>"><%= t.id %></a></td>
-        <td><%= t.created_at %></td>
-        <td><%= duration(t.finished_at ? (t.finished_at - t.created_at).to_i : 0) %></td>
-        <td><%= duration(t.finished_at ? (t.finished_at - t.started_at).to_i : 0) %></td>
+    <% @chains[:all_failed].includes(:user, :transaction_chain_concerns).each do |c| %>
+      <tr class="error">
+        <td><a href="<%= url("transactions", "chain=#{c.id}") %>"><%= c.id %></a></td>
+        <td><%= c.created_at.strftime('%Y-%m-%d %H:%M:%S') %></td>
         <td>
-          <a href="<%= url("adminm", "action=edit&id=#{t.t_m_id}") %>"><%= t.t_m_id ? "#{t.t_m_id} #{t.user.login}" : '---' %></a>
+	  <% if c.user_id %>
+	    <a href="<%= url("adminm", "action=edit&id=#{c.user_id}") %>"><%= "#{c.user_id} #{c.user.login}" %></a>
+	  <% else %>
+            ---
+	  <% end %>
         </td>
-        <td><a href="<%= url("cluster") %>"><%= t.t_server %> <%= t.node.domain_name %></a></td>
-        <td>
-          <% if t.t_vps.nil? %>-
-          <% else %>
-            <a href="<%= url("adminvps", "&action=info&veid=#{t.t_vps}") %>"><%= t.t_vps %></a>
-          <% end %></td>
-        <td><%= t.t_type %></a> <%= t.name %></td>
-        <td><%= t.t_done %></td>
-        <td><%= t.t_success %></td>
+	<td><%= c.label %></td>
+	<td><%= chain_concerns(c) %></td>
+        <td><%= c.state %></td>
+        <td><%= c.size %></td>
+        <td><%= c.progress %></td>
       </tr>
     <% end %>
   </table>
