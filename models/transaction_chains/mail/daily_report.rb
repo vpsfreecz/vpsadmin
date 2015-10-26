@@ -69,7 +69,8 @@ module TransactionChains
                   done: chains.where(state: ::TransactionChain.states[:done]),
                   failed: chains.where(state: ::TransactionChain.states[:failed]),
                   fatal: chains.where(state: ::TransactionChain.states[:fatal]),
-                  resolved: chains.where(state: ::TransactionChain.states[:resolved])
+                  resolved: chains.where(state: ::TransactionChain.states[:resolved]),
+                  all_failed: chains.where('state >= ?', ::TransactionChain.states[:failed])
               },
 
               transactions: {
