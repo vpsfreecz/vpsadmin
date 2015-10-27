@@ -57,7 +57,7 @@ def chain_concerns(c)
   when 'affect'
     return concern_class(concerns[:objects][0])
 
-  when 'transforms'
+  when 'transform'
     return "#{concern_class(concerns[:objects][0])} -> #{concern_class(concerns[:objects][1])}"
   end
 
@@ -85,7 +85,7 @@ END
 	<td><a href="#{url("adminvps", "user=#{u.id}")}">#{u.vpses.count}</a></td>
 	<td>#{u.m_name}</td>
 	<td><a href="mailto:#{u.m_mail}">#{u.m_mail}</a></td>
-	<td>#{time(u.current_state.created_at.localtime.strftime('%Y-%m-%d %H:%M:%S'))}</td>
+	<td>#{u.current_state.created_at.localtime.strftime('%Y-%m-%d %H:%M:%S')}</td>
      </tr>
 END
   end
