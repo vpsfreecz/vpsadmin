@@ -157,7 +157,7 @@ class User < ActiveRecord::Base
   end
 
   def self.authenticate(request, username, password)
-    u = User.existing.find_by(m_nick: username)
+    u = User.existing.find_by('m_nick = ? COLLATE utf8_bin', username)
     return unless u
 
     c = VpsAdmin::API::CryptoProviders
