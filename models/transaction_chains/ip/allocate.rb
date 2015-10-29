@@ -29,10 +29,16 @@ module TransactionChains
       end
 
       ips.each do |ip|
+        ownership = !ip.user_id && vps.node.environment.user_ip_ownership
+
         append(Transactions::Vps::IpAdd, args: [vps, ip]) do
-          edit(ip, vps_id: vps.veid)
-          edit(ip, user_id: vps.user_id) if !ip.user_id && vps.node.environment.user_ip_ownership
+          edit_before(ip, vps_id: ip.vps_id)
+          edit_before(ip, user_id: ip.user_id) if ownership
         end
+        
+        ip.vps_id = vps.id
+        ip.user_id = vps.m_id if ownership
+        ip.save!
       end
 
       ips.size
