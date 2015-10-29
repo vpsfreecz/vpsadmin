@@ -48,7 +48,6 @@ module TransactionChains
           vps_config: attrs[:configs] ? vps.vps_config : '',
           confirmed: ::Vps.confirmed(:confirm_create)
       )
-      dst_vps.dns_resolver = dns_resolver(vps, dst_vps)
       
       lifetime = dst_vps.user.env_config(
           dst_vps.node.environment,
@@ -105,9 +104,6 @@ module TransactionChains
 
       # Hostname
       clone_hostname(vps, dst_vps, attrs)
-
-      # DNS resolver
-      clone_dns_resolver(vps, dst_vps)
 
       # Resources
       use_chain(Vps::SetResources, args: [dst_vps, vps_resources]) if vps_resources
@@ -179,6 +175,10 @@ module TransactionChains
 
       # IP addresses
       clone_ip_addresses(vps, dst_vps) unless attrs[:vps]
+      
+      # DNS resolver
+      dst_vps.dns_resolver = dns_resolver(vps, dst_vps)
+      clone_dns_resolver(vps, dst_vps)
 
       # Mounts
       clone_mounts(vps, dst_vps, datasets)
@@ -195,6 +195,7 @@ module TransactionChains
       # Start the new VPS
       use_chain(TransactionChains::Vps::Start, args: dst_vps) if vps.running
       
+      dst_vps.save!
       dst_vps
     end
 

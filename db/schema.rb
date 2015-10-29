@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20151029155746) do
+ActiveRecord::Schema.define(version: 20151029160857) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -41,6 +41,7 @@ ActiveRecord::Schema.define(version: 20151029155746) do
     t.string  "dns_label",        limit: 63,                 null: false
     t.boolean "dns_is_universal",            default: false
     t.integer "dns_location"
+    t.integer "ip_version",                  default: 4
   end
 
   create_table "cfg_templates", primary_key: "templ_id", force: true do |t|

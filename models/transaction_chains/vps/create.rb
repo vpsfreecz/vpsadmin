@@ -69,6 +69,14 @@ module TransactionChains
         end
       end
 
+      vps.dns_resolver ||= ::DnsResolver.pick_suitable_resolver_for_vps(vps)
+
+      append(Transactions::Vps::DnsResolver, args: [
+          vps,
+          vps.dns_resolver,
+          vps.dns_resolver
+      ])
+
       use_chain(Vps::SetResources, args: [vps, vps_resources])
 
       if vps.vps_onboot

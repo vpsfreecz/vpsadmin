@@ -99,8 +99,6 @@ class Vps < ActiveRecord::Base
 
     self.expiration_date = Time.now + lifetime if lifetime != 0
 
-    self.dns_resolver_id ||= DnsResolver.pick_suitable_resolver_for_vps(self).id
-
     if valid?
       TransactionChains::Vps::Create.fire(self)
     else
@@ -310,7 +308,6 @@ class Vps < ActiveRecord::Base
     User.find(user_id)
     Node.find(vps_server)
     OsTemplate.find(vps_template)
-    DnsResolver.find(dns_resolver_id)
   end
 
   def prefix_mountpoint(parent, part, mountpoint)
