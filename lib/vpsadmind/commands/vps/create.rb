@@ -12,8 +12,7 @@ module VpsAdmind
           :private => ve_private,
       })
       vzctl(:set, @vps_id, {
-          :applyconfig => 'basic',
-          :nameserver => @nameserver
+          :applyconfig => 'basic'
       }, true)
     end
 
