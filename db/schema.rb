@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20151017155120) do
+ActiveRecord::Schema.define(version: 20151029155746) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -636,7 +636,7 @@ ActiveRecord::Schema.define(version: 20151017155120) do
     t.string   "class_name",                 null: false
     t.string   "table_name",                 null: false
     t.string   "row_pks",                    null: false
-    t.string   "attr_changes"
+    t.text     "attr_changes"
     t.integer  "confirm_type",               null: false
     t.integer  "done",           default: 0, null: false
     t.datetime "created_at"
