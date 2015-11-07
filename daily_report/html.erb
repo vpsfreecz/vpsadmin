@@ -249,6 +249,41 @@ end
   </tr>
 </table>
 
+<table class="overview">
+  <tr>
+    <th>STORAGE</th>
+    <th>NEW</th>
+    <th>TOTAL</th>
+    <th>HYPERVISOR</th>
+    <th>PRIMARY</th>
+    <th>BACKUP</th>
+  </tr>
+  <tr>
+    <td>Datasets</td>
+    <td>-</td>
+    <td><%= @datasets[:all].count %></td>
+    <td><%= @datasets[:hypervisor].count.size %></td>
+    <td><%= @datasets[:primary].count.size %></td>
+    <td><%= @datasets[:backup].count.size %></td>
+  </tr>
+  <tr>
+    <td>Snapshots</td>
+    <td><%= @snapshots[:new].count %></td>
+    <td><%= @snapshots[:all].count %></td>
+    <td><%= @snapshots[:hypervisor].count.size %></td>
+    <td><%= @snapshots[:primary].count.size %></td>
+    <td><%= @snapshots[:backup].count.size %></td>
+  </tr>
+  <tr>
+    <td>Downloads</td>
+    <td><%= @downloads[:new].count %></td>
+    <td><%= @downloads[:all].count %></td>
+    <td><%= @downloads[:hypervisor].count %></td>
+    <td><%= @downloads[:primary].count %></td>
+    <td><%= @downloads[:backup].count %></td>
+  </tr>
+</table>
+
 <% if new_users > 0 %>
   <h3>New users</h3>
   <%= list_users(@users[:new], 'CREATED AT') %>
