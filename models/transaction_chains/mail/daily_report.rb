@@ -122,6 +122,49 @@ module TransactionChains
                   
               },
 
+              datasets: {
+                  all: ::Dataset.all,
+                  primary: ::Dataset.joins(dataset_in_pools: [:pool]).where(
+                      pools: {role: ::Pool.roles[:primary]}
+                  ).group('datasets.id'),
+                  hypervisor: ::Dataset.joins(dataset_in_pools: [:pool]).where(
+                      pools: {role: ::Pool.roles[:hypervisor]}
+                  ).group('datasets.id'),
+                  backup: ::Dataset.joins(dataset_in_pools: [:pool]).where(
+                      pools: {role: ::Pool.roles[:backup]}
+                  ).group('datasets.id')
+              },
+              
+              snapshots: {
+                  all: ::Snapshot.all,
+                  new: ::Snapshot.where('DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t),
+                  primary: ::Snapshot.joins(dataset: [{dataset_in_pools: [:pool]}]).where(
+                      pools: {role: ::Pool.roles[:primary]}
+                  ).group('snapshots.id'),
+                  hypervisor: ::Snapshot.joins(dataset: [{dataset_in_pools: [:pool]}]).where(
+                      pools: {role: ::Pool.roles[:hypervisor]}
+                  ).group('snapshots.id'),
+                  backup: ::Snapshot.joins(dataset: [{dataset_in_pools: [:pool]}]).where(
+                      pools: {role: ::Pool.roles[:backup]}
+                  ).group('snapshots.id'),
+              },
+
+              downloads: {
+                  all: ::SnapshotDownload.all,
+                  new: ::SnapshotDownload.where(
+                      'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
+                  ),
+                  primary: ::SnapshotDownload.joins(:pool).where(
+                      pools: {role: ::Pool.roles[:primary]}
+                  ),
+                  hypervisor: ::SnapshotDownload.joins(:pool).where(
+                      pools: {role: ::Pool.roles[:hypervisor]}
+                  ),
+                  backup: ::SnapshotDownload.joins(:pool).where(
+                      pools: {role: ::Pool.roles[:backup]}
+                  ),
+              },
+
               chains: {
                   total: chains,
                   done: chains.where(state: ::TransactionChain.states[:done]),
