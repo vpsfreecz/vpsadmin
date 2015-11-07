@@ -24,57 +24,101 @@ module TransactionChains
               },
 
               users: {
-                  new: ::User.existing.where(
-                      'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
-                  ).order('m_id'),
+                  new: {
+                      changed: ::User.existing.where(
+                          'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
+                      ).order('m_id')
+                  },
 
-                  soft_deleted: ::User.unscoped.where(
-                      object_state: ::User.object_states[:soft_delete]
-                  ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND members.m_id = s.row_id")
-                  .where('s.state = ?', ::User.object_states[:soft_delete])
-                  .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-                  .order('members.m_id'),
+                  active: {
+                      all: ::User.unscoped.where(object_state: ::User.object_states[:active]),
+                      changed: ::User.unscoped.where(
+                          object_state: ::User.object_states[:active]
+                      ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND members.m_id = s.row_id")
+                      .where('s.state = ?', ::User.object_states[:active])
+                      .where('s.created_at != members.created_at')
+                      .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                      .order('members.m_id')
+                  },
+
+                  soft_deleted: {
+                      all: ::User.unscoped.where(object_state: ::User.object_states[:soft_delete]),
+                      changed: ::User.unscoped.where(
+                          object_state: ::User.object_states[:soft_delete]
+                      ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND members.m_id = s.row_id")
+                      .where('s.state = ?', ::User.object_states[:soft_delete])
+                      .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                      .order('members.m_id')
+                  },
                   
-                  hard_deleted: ::User.unscoped.where(
-                      object_state: ::User.object_states[:soft_delete]
-                  ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND members.m_id = s.row_id")
-                  .where('s.state = ?', ::User.object_states[:hard_delete])
-                  .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-                  .order('members.m_id'),
+                  hard_deleted: {
+                      all: ::User.unscoped.where(object_state: ::User.object_states[:hard_delete]),
+                      changed: ::User.unscoped.where(
+                          object_state: ::User.object_states[:soft_delete]
+                      ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND members.m_id = s.row_id")
+                      .where('s.state = ?', ::User.object_states[:hard_delete])
+                      .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                      .order('members.m_id')
+                  },
 
-                  suspended: ::User.unscoped.where(
-                      object_state: ::User.object_states[:suspended]
-                  ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND members.m_id = s.row_id")
-                  .where('s.state = ?', ::User.object_states[:suspended])
-                  .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-                  .order('members.m_id')
+                  suspended: {
+                      all: ::User.unscoped.where(object_state: ::User.object_states[:suspended]),
+                      changed: ::User.unscoped.where(
+                          object_state: ::User.object_states[:suspended]
+                      ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND members.m_id = s.row_id")
+                      .where('s.state = ?', ::User.object_states[:suspended])
+                      .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                      .order('members.m_id')
+                  }
               },
 
               vps: {
-                  new: ::Vps.existing.where(
-                      'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
-                  ).order('m_id'),
+                  new: {
+                      changed: ::Vps.existing.where(
+                          'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
+                      ).order('m_id')
+                  },
 
-                  soft_deleted: ::Vps.unscoped.where(
-                      object_state: ::Vps.object_states[:soft_delete]
-                  ).joins("INNER JOIN object_states s ON s.class_name = 'Vps' AND vps.vps_id = s.row_id")
-                  .where('s.state = ?', ::Vps.object_states[:soft_delete])
-                  .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-                  .order('vps.vps_id'),
+                  active: {
+                      all: ::Vps.unscoped.where(object_state: ::Vps.object_states[:active]),
+                      changed: ::Vps.unscoped.where(
+                          object_state: ::Vps.object_states[:active]
+                      ).joins("INNER JOIN object_states s ON s.class_name = 'Vps' AND vps.vps_id = s.row_id")
+                      .where('s.state = ?', ::Vps.object_states[:active])
+                      .where('s.created_at != vps.created_at')
+                      .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                      .order('vps.vps_id')
+                  },
 
-                  hard_deleted: ::Vps.unscoped.where(
-                      object_state: ::Vps.object_states[:hard_delete]
-                  ).joins("INNER JOIN object_states s ON s.class_name = 'Vps' AND vps.vps_id = s.row_id")
-                  .where('s.state = ?', ::Vps.object_states[:soft_delete])
-                  .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-                  .order('vps.vps_id'),
+                  soft_deleted: {
+                      all: ::Vps.unscoped.where(object_state: ::Vps.object_states[:soft_delete]),
+                      changed: ::Vps.unscoped.where(
+                          object_state: ::Vps.object_states[:soft_delete]
+                      ).joins("INNER JOIN object_states s ON s.class_name = 'Vps' AND vps.vps_id = s.row_id")
+                      .where('s.state = ?', ::Vps.object_states[:soft_delete])
+                      .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                      .order('vps.vps_id')
+                  },
 
-                  suspended: ::Vps.unscoped.where(
-                      object_state: ::Vps.object_states[:suspended]
-                  ).joins("INNER JOIN object_states s ON s.class_name = 'Vps' AND vps.vps_id = s.row_id")
-                  .where('s.state = ?', ::Vps.object_states[:suspended])
-                  .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-                  .order('vps.vps_id')
+                  hard_deleted: {
+                      all: ::Vps.unscoped.where(object_state: ::Vps.object_states[:hard_delete]),
+                      changed: ::Vps.unscoped.where(
+                          object_state: ::Vps.object_states[:hard_delete]
+                      ).joins("INNER JOIN object_states s ON s.class_name = 'Vps' AND vps.vps_id = s.row_id")
+                      .where('s.state = ?', ::Vps.object_states[:soft_delete])
+                      .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                      .order('vps.vps_id')
+                  },
+
+                  suspended: {
+                      all: ::Vps.unscoped.where(object_state: ::Vps.object_states[:suspended]),
+                      changed: ::Vps.unscoped.where(
+                          object_state: ::Vps.object_states[:suspended]
+                      ).joins("INNER JOIN object_states s ON s.class_name = 'Vps' AND vps.vps_id = s.row_id")
+                      .where('s.state = ?', ::Vps.object_states[:suspended])
+                      .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                      .order('vps.vps_id')
+                  }
                   
               },
 
