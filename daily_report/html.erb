@@ -248,17 +248,17 @@ end
 
 <% if suspended_vpses > 0 %>
   <h3>Suspended VPSes</h3>
-  <%= list_vpses(@vps[:new], 'SUSPENDED AT') %>
+  <%= list_vpses(@vps[:suspended], 'SUSPENDED AT') %>
 <% end %>
 
 <% if soft_deleted_vpses > 0 %>
   <h3>Soft deleted VPSes</h3>
-  <%= list_vpses(@vps[:new], 'DELETED AT') %>
+  <%= list_vpses(@vps[:soft_deleted], 'DELETED AT') %>
 <% end %>
 
 <% if hard_deleted_vpses > 0 %>
   <h3>Hard deleted VPSes</h3>
-  <%= list_vpses(@vps[:new], 'DESTROYED AT') %>
+  <%= list_vpses(@vps[:hard_deleted], 'DESTROYED AT') %>
 <% end %>
 
 <h2>Transaction chains</h2>
