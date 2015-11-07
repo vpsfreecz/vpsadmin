@@ -77,7 +77,7 @@ def list_users(users, col)
     </tr>
 END
 
-  users.each do |u|
+  users[:changed].each do |u|
     ret += <<END
       <tr>
 	<td><a href="#{url("adminm", "action=edit&id=#{u.id}")}">#{u.id}</a></td>
@@ -108,7 +108,7 @@ def list_vpses(vpses, col)
     </tr>
 END
 
-  vpses.includes(:user, :node).each do |vps|
+  vpses[:changed].includes(:user, :node).each do |vps|
     ret += <<END
       <tr>
 	<td><a href="#{url("adminvps", "action=edit&veid=#{vps.id}")}">#{vps.id}</a></td>
@@ -157,6 +157,10 @@ end
       padding: 3px 7px;
     }
 
+    td.title {
+      font-weight: bold;
+    }
+
     dt {
       font-weight: bold;
     }
@@ -197,26 +201,50 @@ end
 <table class="overview">
   <tr>
     <th></th>
+    <th></th>
     <th>NEW</th>
+    <th>ACTIVE</th>
     <th>SUSPENDED</th>
     <th>SOFT DELETED</th>
     <th>HARD DELETED</th>
     <th>BALANCE</th>
   </tr>
   <tr>
-    <td>Users</td>
-    <td><%= new_users = @users[:new].count %></td>
-    <td><%= suspended_users = @users[:suspended].count %></td>
-    <td><%= soft_deleted_users = @users[:soft_deleted].count %></td>
-    <td><%= hard_deleted_users = @users[:hard_deleted].count %></td>
+    <td rowspan="2" class="title">Users</td>
+    <td>Total</td>
+    <td>-</td>
+    <td><%= @users[:active][:all].count %></td>
+    <td><%= @users[:suspended][:all].count %></td>
+    <td><%= @users[:soft_deleted][:all].count %></td>
+    <td><%= @users[:hard_deleted][:all].count %></td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td>Changed</td>
+    <td><%= new_users = @users[:new][:changed].count %></td>
+    <td><%= active_users = @users[:active][:changed].count %></td>
+    <td><%= suspended_users = @users[:suspended][:changed].count %></td>
+    <td><%= soft_deleted_users = @users[:soft_deleted][:changed].count %></td>
+    <td><%= hard_deleted_users = @users[:hard_deleted][:changed].count %></td>
     <td><%= balance(new_users, soft_deleted_users) %></td>
   </tr>
   <tr>
-    <td>VPS</td>
-    <td><%= new_vpses = @vps[:new].count %></td>
-    <td><%= suspended_vpses = @vps[:suspended].count %></td>
-    <td><%= soft_deleted_vpses = @vps[:soft_deleted].count %></td>
-    <td><%= hard_deleted_vpses = @vps[:hard_deleted].count %></td>
+    <td rowspan="2" class="title">VPS</td>
+    <td>Total</td>
+    <td>-</td>
+    <td><%= @vps[:active][:all].count %></td>
+    <td><%= @vps[:suspended][:all].count %></td>
+    <td><%= @vps[:soft_deleted][:all].count %></td>
+    <td><%= @vps[:hard_deleted][:all].count %></td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td>Changed</td>
+    <td><%= new_vpses = @vps[:new][:changed].count %></td>
+    <td><%= active_vpses = @vps[:active][:changed].count %></td>
+    <td><%= suspended_vpses = @vps[:suspended][:changed].count %></td>
+    <td><%= soft_deleted_vpses = @vps[:soft_deleted][:changed].count %></td>
+    <td><%= hard_deleted_vpses = @vps[:hard_deleted][:changed].count %></td>
     <td><%= balance(new_vpses, soft_deleted_vpses) %></td>
   </tr>
 </table>
@@ -224,6 +252,11 @@ end
 <% if new_users > 0 %>
   <h3>New users</h3>
   <%= list_users(@users[:new], 'CREATED AT') %>
+<% end %>
+
+<% if active_users > 0 %>
+  <h3>Active users</h3>
+  <%= list_users(@users[:active], 'SUSPENDED AT') %>
 <% end %>
 
 <% if suspended_users > 0 %>
@@ -244,6 +277,11 @@ end
 <% if new_vpses > 0 %>
   <h3>New VPSes</h3>
   <%= list_vpses(@vps[:new], 'CREATED AT') %>
+<% end %>
+
+<% if active_vpses > 0 %>
+  <h3>Active VPSes</h3>
+  <%= list_vpses(@vps[:active], 'CREATED AT') %>
 <% end %>
 
 <% if suspended_vpses > 0 %>
