@@ -61,6 +61,12 @@ module VpsAdmind
           opts[:features] << 'ppp:off'
           opts[:devices] << 'c:108:0:none'
         end
+        
+        if @features['kvm'][key]
+          opts[:devices] << 'c:10:232:rw'
+        else
+          opts[:devices] << 'c:10:232:none'
+        end
 
         vzctl(:set, @vps_id, opts, true)
 
@@ -80,6 +86,10 @@ module VpsAdmind
         if @features['ppp'][key]
           vzctl(:exec, @vps_id, 'mknod /dev/ppp c 108 0', false, [8,])
           vzctl(:exec, @vps_id, 'chmod 600 /dev/ppp')
+        end
+        
+        if @features['kvm'][key]
+          vzctl(:exec, @vps_id, 'mknod /dev/kvm c 10 232', false, [8,])
         end
       end
 
