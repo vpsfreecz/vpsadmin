@@ -7,7 +7,8 @@ class VpsFeature < ActiveRecord::Base
       fuse: 'FUSE',
       nfs: 'NFS',
       ppp: 'PPP',
-      bridge: 'Bridge'
+      bridge: 'Bridge',
+      kvm: 'KVM',
   }
 
   validates :name, inclusion: {
