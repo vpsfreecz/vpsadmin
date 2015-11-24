@@ -83,8 +83,8 @@ function list_chains() {
 	if ($_SESSION['is_admin'])
 		$xtpl->table_add_category(_('User'));
 	
-	$xtpl->table_add_category(_('Label'));
 	$xtpl->table_add_category(_('Object'));
+	$xtpl->table_add_category(_('Action'));
 	$xtpl->table_add_category(_('State'));
 	$xtpl->table_add_category(_('Size'));
 	$xtpl->table_add_category(_('Progress'));
@@ -100,8 +100,8 @@ function list_chains() {
 				$xtpl->table_td('---');
 		}
 		
-		$xtpl->table_td($chain->label);
 		$xtpl->table_td(transaction_chain_concerns($chain));
+		$xtpl->table_td($chain->label);
 		$xtpl->table_td($chain->state);
 		$xtpl->table_td($chain->size);
 		$xtpl->table_td($chain->progress .' ('.round($chain->progress / $chain->size * 100, 0).' %)');
