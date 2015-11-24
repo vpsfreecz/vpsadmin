@@ -46,7 +46,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 	
 	$xtpl->table_title(_('Datasets'));
 	
-	if (isset($_SESSION['is_admin']))
+	if ($_SESSION['is_admin'])
 		$xtpl->table_add_category('#');
 	
 	$xtpl->table_add_category(_('Dataset'));
@@ -84,7 +84,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 	$return = urlencode($_SERVER['REQUEST_URI']);
 	
 	foreach ($datasets as $ds) {
-		if (isset($_SESSION['is_admin']))
+		if ($_SESSION['is_admin'])
 			$xtpl->table_td(
 				'<a href="?page=nas&action=list&dataset='.$ds->id.'">'.$ds->id.'</a>'
 			);
