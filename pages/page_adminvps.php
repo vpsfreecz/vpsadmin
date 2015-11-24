@@ -51,7 +51,9 @@ if ($_GET["run"] == 'stop') {
 		
 	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 		$xtpl->perex_format_errors(_('Unable to stop'), $e->getResponse());
-		$show_info = true;
+
+		if ($_GET['action'] == 'info')
+			$show_info = true;
 	}
 }
 
@@ -66,7 +68,9 @@ if ($_GET["run"] == 'start') {
 		
 	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 		$xtpl->perex_format_errors(_('Unable to start'), $e->getResponse());
-		$show_info = true;
+		
+		if ($_GET['action'] == 'info')
+			$show_info = true;
 	}
 }
 
@@ -81,7 +85,9 @@ if ($_GET["run"] == 'restart') {
 		
 	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 		$xtpl->perex_format_errors(_('Unable to restart'), $e->getResponse());
-		$show_info = true;
+		
+		if ($_GET['action'] == 'info')
+			$show_info = true;
 	}
 }
 
@@ -569,7 +575,7 @@ switch ($_GET["action"]) {
 			break;
 		
 		default:
-			$list_vps=true;
+			$list_vps = true;
 			break;
 	}
 
