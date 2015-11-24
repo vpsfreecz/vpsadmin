@@ -54,7 +54,7 @@ module TransactionChains
                   hard_deleted: {
                       all: ::User.unscoped.where(object_state: ::User.object_states[:hard_delete]),
                       changed: ::User.unscoped.where(
-                          object_state: ::User.object_states[:soft_delete]
+                          object_state: ::User.object_states[:hard_delete]
                       ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND members.m_id = s.row_id")
                       .where('s.state = ?', ::User.object_states[:hard_delete])
                       .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
@@ -105,7 +105,7 @@ module TransactionChains
                       changed: ::Vps.unscoped.where(
                           object_state: ::Vps.object_states[:hard_delete]
                       ).joins("INNER JOIN object_states s ON s.class_name = 'Vps' AND vps.vps_id = s.row_id")
-                      .where('s.state = ?', ::Vps.object_states[:soft_delete])
+                      .where('s.state = ?', ::Vps.object_states[:hard_delete])
                       .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
                       .order('vps.vps_id')
                   },
