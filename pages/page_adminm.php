@@ -1154,7 +1154,14 @@ if ($_SESSION["logged_in"]) {
 			$xtpl->table_tr();
 			
 			$xtpl->form_add_input(_("Newly paid until").':', 'text', '30', 'paid_until', '', 'Y-m-d, eg. 2009-05-01');
-			$xtpl->form_add_input(_("Months to add").':', 'text', '30', 'months_to_add', '', ' ');
+
+			$xtpl->table_td(_("Months to add").':');
+			$xtpl->form_add_input_pure('text', '30', 'months_to_add', '');
+			$xtpl->form_add_select_pure('add_from', array(
+				'from_last_paid' => _('From last paid date'),
+				'from_now' => _('From now')
+			));
+			$xtpl->table_tr();
 			
 			$xtpl->table_add_category('');
 			$xtpl->table_add_category('');
@@ -1207,8 +1214,13 @@ if ($_SESSION["logged_in"]) {
 					$u->update(array('paid_until' => date('c', $t)));
 				
 				} elseif ($_POST["months_to_add"]) {
-					$t = strtotime($u->paid_until ? $u->paid_until : $u->created_at);
-					$t = strtotime('+'.$_POST['months_to_add'].' month', $t);
+					if ($_POST['add_from'] == 'from_now')
+						$from = time();
+
+					else
+						$from = strtotime($u->paid_until ? $u->paid_until : $u->created_at);
+
+					$t = strtotime('+'.$_POST['months_to_add'].' month', $from);
 					$log["change_to"] = $t;
 					
 					$u->update(array('paid_until' => date('c', $t)));
