@@ -464,6 +464,9 @@ function transaction_concern_link($klass, $row_id) {
 		case 'Vps':
 			return '<a href="?page=adminvps&action=info&veid='.$row_id.'">'.$row_id.'</a>';
 		
+		case 'User':
+			return '<a href="?page=adminm&action=edit&id='.$row_id.'">'.$row_id.'</a>';
+		
 		default:
 			return "$row_id";
 	}

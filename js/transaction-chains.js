@@ -29,6 +29,9 @@
 		switch (obj[0]) {
 			case 'Vps':
 				return '<a href="?page=adminvps&action=info&veid='+ obj[1] +'">'+ obj[1] +'</a>';
+
+			case 'User':
+				return '<a href="?page=adminm&action=edit&id='+ obj[1] +'">'+ obj[1] +'</a>';
 			
 			default:
 				return obj[1];
