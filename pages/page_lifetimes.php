@@ -51,7 +51,7 @@ if ($_SESSION['logged_in'] && $_SESSION['is_admin']) {
 				$xtpl->table_td($s->expiration ? tolocaltz($s->expiration) : '---');
 				
 				if ($s->user_id)
-					$xtpl->table_td('<a href="?page=members&action=edit&id='.$s->user->id.'">'.$s->user->login.'</a>');
+					$xtpl->table_td('<a href="?page=adminm&action=edit&id='.$s->user->id.'">'.$s->user->login.'</a>');
 				else
 					$xtpl->table_td('---');
 				
