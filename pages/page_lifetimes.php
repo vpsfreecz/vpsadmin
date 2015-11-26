@@ -46,9 +46,9 @@ if ($_SESSION['logged_in'] && $_SESSION['is_admin']) {
 			$xtpl->table_add_category(_('Admin'));
 			
 			foreach ($states as $s) {
-				$xtpl->table_td($s->changed_at);
+				$xtpl->table_td(tolocaltz($s->changed_at));
 				$xtpl->table_td($s->state);
-				$xtpl->table_td($s->expiration);
+				$xtpl->table_td($s->expiration ? tolocaltz($s->expiration) : '---');
 				
 				if ($s->user_id)
 					$xtpl->table_td('<a href="?page=members&action=edit&id='.$s->user->id.'">'.$s->user->login.'</a>');
