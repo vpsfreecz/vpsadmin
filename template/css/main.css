@@ -147,6 +147,7 @@ ul.ul-style01 ul li {padding-left:12px; background:url("../design/ul-style01.gif
 #transactions th, td {padding:3px 7px;}
 #transactions  th {background:#5EAFFF; color:#FFF;}
 #transactions  th, td {border:1px solid #B2DAFF;}
+#transactions  tr:hover {background:#A1C9AA;}
 #transactions  tr.bg td {background:#A1C9AA;}
 #transactions  tr.ok, tr.ok, tr.done {background:#AAFFAA;}
 #transactions  tr.pending, tr.pending, tr.staged, tr.queued {background:#FFF8DC;}
