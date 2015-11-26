@@ -124,6 +124,8 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 function dataset_create_form() {
 	global $xtpl, $api, $DATASET_PROPERTIES;
 	
+	include_dataset_scripts();
+	
 	$params = $api->dataset->create->getParameters('input');
 	$quota_name = $_GET['role'] == 'hypervisor' ? 'refquota' : 'quota';
 	
@@ -186,10 +188,10 @@ function dataset_create_form() {
 		api_param_to_form_pure($name, $params->{$name});
 		$xtpl->table_td($params->{$name}->description);
 		
-		$xtpl->table_tr();
+		$xtpl->table_tr(false, 'advanced-property');
 	}
 	
-	$xtpl->form_out(_('Save'));
+	$xtpl->form_out(_('Save'), null, '<span class="advanced-property-toggle"></span>');
 	
 	$xtpl->sbar_add(_("Back"), $_GET['return'] ? $_GET['return'] : $_POST['return']);
 	$xtpl->sbar_out(_('Dataset'));
@@ -197,6 +199,8 @@ function dataset_create_form() {
 
 function dataset_edit_form() {
 	global $xtpl, $api, $DATASET_PROPERTIES;
+	
+	include_dataset_scripts();
 	
 	$ds = $api->dataset->find($_GET['id']);
 	
@@ -238,10 +242,10 @@ function dataset_edit_form() {
 		api_param_to_form_pure($name, $params->{$name}, $ds->{$name});
 		$xtpl->table_td($params->{$name}->description);
 		
-		$xtpl->table_tr();
+		$xtpl->table_tr(false, 'advanced-property');
 	}
 	
-	$xtpl->form_out(_('Save'));
+	$xtpl->form_out(_('Save'), null, '<span class="advanced-property-toggle"></span>');
 	
 	$xtpl->table_title(_('Backup plans'));
 	
@@ -541,4 +545,14 @@ function translate_mount_on_start_fail($v) {
 	);
 
 	return $start_fail_choices[$v];
+}
+
+function include_dataset_scripts() {
+	global $xtpl;
+
+	$xtpl->assign(
+		'AJAX_SCRIPT',
+		$xtpl->vars['AJAX_SCRIPT'] .
+		'<script type="text/javascript" src="js/dataset.js"></script>'
+	);
 }
