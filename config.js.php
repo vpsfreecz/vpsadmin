@@ -17,7 +17,8 @@ root.vpsAdmin = {
 	},
 	authToken: "<?php echo $_SESSION['auth_token'] ?>",
 	sessionLength: <?php echo USER_LOGIN_INTERVAL ?>,
-	description: <?php echo json_encode($_SESSION['api_description']) ?>
+	description: <?php echo json_encode($_SESSION['api_description']) ?>,
+	sessionManagement: <?php echo $_SESSION['is_admin'] ? 'true' : 'false' ?>
 };
 
 var chainTimeout;
