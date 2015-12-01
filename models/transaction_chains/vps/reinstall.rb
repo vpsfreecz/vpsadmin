@@ -41,7 +41,7 @@ module TransactionChains
           edit(f, enabled: 0)
         end
       end
-
+      
       append(Transactions::Vps::ApplyConfig, args: vps)
       use_chain(Vps::Mounts, args: vps)
 
@@ -53,6 +53,12 @@ module TransactionChains
       vps.ip_addresses.all.each do |ip|
         append(Transactions::Vps::IpAdd, args: [vps, ip])
       end
+      
+      append(Transactions::Vps::DnsResolver, args: [
+          vps,
+          vps.dns_resolver,
+          vps.dns_resolver
+      ])
 
       if running
         use_chain(Vps::Start, args: vps)
