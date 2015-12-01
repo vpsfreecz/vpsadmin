@@ -140,6 +140,10 @@ module TransactionChains
 
             backup.dataset_trees.all.each do |tree|
               edit(tree, head: false)
+
+              tree.branches.where(head: true).each do |b|
+                edit(b, head: false)
+              end
             end
           end
         end
