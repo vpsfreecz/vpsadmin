@@ -57,14 +57,20 @@ module VpsAdmin::API
       end
 
       def del_group_snapshot(dip, *_)
-        ::GroupSnapshot.joins(:dataset_action).where(
+        gsnap = ::GroupSnapshot.joins(:dataset_action).where(
             dataset_actions: {
                 pool_id: dip.pool_id,
                 action: ::DatasetAction.actions[:group_snapshot],
                 dataset_plan_id: @env_plan.dataset_plan_id
             },
             dataset_in_pool: dip
-        ).take!.destroy!
+        ).take!
+        
+        if confirm?
+          confirm(:just_destroy, gsnap)
+        else
+          gsnap.destroy!
+        end
       end
 
       def add_backup(dip, min, hour, day, month, dow)
@@ -106,14 +112,26 @@ module VpsAdmin::API
             dataset_in_pool_plan: plan,
             action: ::DatasetAction.actions[:backup]
         ).each do |a|
-          ::RepeatableTask.find_for!(a).destroy!
-          a.destroy!
+          task = ::RepeatableTask.find_for!(a)
+
+          if confirm?
+            confirm(:just_destroy, task)
+            confirm(:just_destroy, a)
+
+          else
+            task.destroy!
+            a.destroy!
+          end
         end
       end
 
       def confirm(type, *args)
         return unless @confirm
         @confirm.send(type, *args)
+      end
+
+      def confirm?
+        @confirm ? true : false
       end
     end
 
