@@ -149,6 +149,7 @@ module TransactionChains
           .where.not(confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy)).take!
         snap_tree = snap_in_branch.branch.dataset_tree
         head_tree = ds.dataset_trees.find_by!(head: true)
+        old_head = head_tree.branches.find_by(head: true)
         old_branch = snap_in_branch.branch
 
         last_snap = old_branch.snapshot_in_pool_in_branches
@@ -174,11 +175,11 @@ module TransactionChains
 
           append(Transactions::Storage::BranchDataset, args: [head, snap_in_branch]) do
             # Remove old head
-            edit(old_branch, head: false)
+            edit(old_head, head: false) if old_head
 
             create(head)
 
-            # Move older or equal SnapshotInPoolInBranches from old head to the new branch
+            # Move older or equal SnapshotInPoolInBranches from old branch to the new branch
             old_branch.snapshot_in_pool_in_branches.where('snapshot_in_pool_id <= ?', snap_in_pool.id).each do |s|
               edit(s, branch_id: head.id)
             end
