@@ -11,7 +11,7 @@ module TransactionChains
   class DatasetInPool::Destroy < ::TransactionChain
     label 'Destroy'
 
-    def link_chain(dataset_in_pool, recursive = false, top = true, tasks = true)
+    def link_chain(dataset_in_pool, recursive = false, top = true, tasks = true, detach_backups = true)
       lock(dataset_in_pool)
       concerns(:affect, [
           dataset_in_pool.dataset.class.name,
@@ -19,6 +19,7 @@ module TransactionChains
       ])
 
       @tasks = tasks
+      @detach_backups = detach_backups
       @datasets = []
 
       if recursive
@@ -129,10 +130,11 @@ module TransactionChains
 
       chain = self
       tasks = @tasks
+      detach_backups = @detach_backups
 
       append(Transactions::Storage::DestroyDataset, args: dataset_in_pool) do
         # Destroy snapshots, trees, branches, snapshot in pool in branches
-        if %w(primary hypervisor).include?(dataset_in_pool.pool.role)
+        if detach_backups && %w(primary hypervisor).include?(dataset_in_pool.pool.role)
           # Detach dataset tree heads in all backups
           dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where(
               pools: {role: ::Pool.roles[:backup]}
