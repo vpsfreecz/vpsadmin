@@ -59,8 +59,8 @@ module TransactionChains
 
               # Is it the last snapshot of this dataset_in_pool? -> break
               last = backup.snapshot_in_pools.all.order('snapshot_id DESC').take
-
-              if last && last.id == s.id
+              
+              if last && last.snapshot_id == s.snapshot_id
                 # This snapshot is backed up in dataset_in_pool +backup+ but
                 # it is the last snapshot there.
                 # It cannot be destroyed as it would break the history flow.
