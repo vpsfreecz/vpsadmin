@@ -162,7 +162,18 @@ module TransactionChains
         # snapshot, because the last snapshot has to be kept on primary/hypervisor
         # for history flow purposes, so it is just rollback there.
         # It might be an issue later, if we decide to use zfs bookmarks.
-        if last_snap.id != snap_in_branch.id
+        if last_snap.id == snap_in_branch.id
+          unless snap_in_branch.branch.head
+            append(Transactions::Utils::NoOp, args: find_node_id) do
+              # Remove old head
+              edit(old_head, head: false) if old_head
+             
+              # Attach new head
+              edit(snap_in_branch.branch, head: true)
+            end
+          end
+
+        else
           last_index = snap_tree.branches.where(name: snapshot.name).maximum('index')
 
           head = ::Branch.create!(
