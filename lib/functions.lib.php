@@ -417,7 +417,10 @@ function data_size_unitize($val) {
 	
 	if (!$val)
 		return array(0, "g");
-	
+
+	elseif ($val < 1024)
+		return array($val, "m");
+
 	foreach ($units as $u => $ex) {
 		if ($val >= (2 << $ex))
 			return array($val / (2 << $ex), $u);
