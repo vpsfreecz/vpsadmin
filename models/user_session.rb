@@ -13,8 +13,8 @@ class UserSession < ActiveRecord::Base
         user: user,
         auth_type: token ? 'token' : 'basic',
         ip_addr: request.ip,
-        user_session_agent: ::UserSessionAgent.find_or_create!(request.user_agent),
-        client_version: request.user_agent,
+        user_session_agent: ::UserSessionAgent.find_or_create!(request.user_agent || ''),
+        client_version: request.user_agent || '',
         api_token_id: token && token.id,
         api_token_str: token && token.token
     )
