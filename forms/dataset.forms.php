@@ -287,10 +287,11 @@ function dataset_snapshot_list($datasets, $vps = null) {
 		
 		if (!$snapshots->count() && $_GET['noempty'])
 			continue;
-		
-		$xtpl->table_title(
-			$vps && $ds->id == $vps->dataset_id ? _('VPS').' #'.$vps->id : $ds->name
-		);
+
+		if ($vps && $ds->id == $vps->dataset_id)
+			$xtpl->table_title(_('VPS').' #'.$vps->id.' '.$vps->hostname);
+		else
+			$xtpl->table_title($ds->name);
 		
 		$xtpl->table_add_category(_('Date and time'));
 		$xtpl->table_add_category(_('Restore'));
