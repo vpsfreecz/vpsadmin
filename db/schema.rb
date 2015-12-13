@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20151124085559) do
+ActiveRecord::Schema.define(version: 20151213173722) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -140,6 +140,9 @@ ActiveRecord::Schema.define(version: 20151124085559) do
   end
 
   add_index "dataset_properties", ["dataset_id"], name: "index_dataset_properties_on_dataset_id", using: :btree
+  add_index "dataset_properties", ["dataset_in_pool_id", "name"], name: "index_dataset_properties_on_dataset_in_pool_id_and_name", using: :btree
+  add_index "dataset_properties", ["dataset_in_pool_id"], name: "index_dataset_properties_on_dataset_in_pool_id", using: :btree
+  add_index "dataset_properties", ["pool_id"], name: "index_dataset_properties_on_pool_id", using: :btree
 
   create_table "dataset_trees", force: true do |t|
     t.integer  "dataset_in_pool_id",                 null: false
@@ -678,6 +681,7 @@ ActiveRecord::Schema.define(version: 20151124085559) do
   add_index "transactions", ["t_depends_on"], name: "index_transactions_on_t_depends_on", using: :btree
   add_index "transactions", ["t_done"], name: "index_transactions_on_t_done", using: :btree
   add_index "transactions", ["t_server"], name: "t_server", using: :btree
+  add_index "transactions", ["t_success"], name: "index_transactions_on_t_success", using: :btree
   add_index "transactions", ["transaction_chain_id"], name: "index_transactions_on_transaction_chain_id", using: :btree
 
   create_table "transfered", id: false, force: true do |t|
