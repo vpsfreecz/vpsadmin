@@ -231,9 +231,14 @@ Set all VPSes as confirmed:
 UPDATE vps SET confirmed = 1;
 """]]
 
-It is now possible to start the new API server. Be careful about the scheduler,
-as it might do unwanted actions (start a backup of VPSes for instance), before
-daemons are ready for it.
+It is now possible to start the new API server. How is the API server started
+is up to the administrator. It may be started e.g. using rackup or thin:
+
+	# cd /opt/vpsadminapi
+	# thin --address 127.0.0.1 --port 9292 --environment production start &> /var/log/vpsadminapi.log
+
+This will start a single threaded HTTP server. Errors will be logged to
+`/var/log/vpsadminapi.log`.
 
 ## Upgrading nodes
 The following commands must be run on all nodes.
