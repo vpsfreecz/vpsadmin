@@ -37,7 +37,7 @@ Vps.transaction do
     # Create a branch
     branch = Branch.create!(
         dataset_tree: tree,
-        name: "branch-#{t.strftime('%Y-%m-%dT%H:%M:%S')}",
+        name: t.strftime('%Y-%m-%dT%H:%M:%S'),
         head: false,
         confirmed: Branch.confirmed(:confirmed),
         created_at: t
