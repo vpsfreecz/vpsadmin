@@ -20,6 +20,7 @@ v2.0 features:
  - more versatile maintenance mode,
  - reworked VPS cloning and swapping,
  - configuration of individual VPS features,
+ - KVM in VPS,
  - integrity checks,
  - enhanced security and more.
 
@@ -202,6 +203,12 @@ All nodes must belong to an environment. Hypervisors can be in the same or
 in as many environments as is needed. Storage nodes should be in a different
 environment from hypervisors, so that the disk space cannot be interchanged.
 
+Node name should not contain a location domain, as it is part of the location:
+
+[[!format sql """
+UPDATE servers SET server_name = SUBSTRING_INDEX(server_name, '.', 1);
+"""]]
+
 ### Table `sysconfig`
  - Set key `snapshot_download_base_url`
 
@@ -215,6 +222,13 @@ Optionally, set `expiration_date` to `paid_until`:
 
 [[!format sql """
 UPDATE members SET expiration_date = paid_until;
+"""]]
+
+### Table `vps`
+Set all VPSes as confirmed:
+
+[[!format sql """
+UPDATE vps SET confirmed = 1;
 """]]
 
 It is now possible to start the new API server. Be careful about the scheduler,
@@ -245,6 +259,10 @@ rules for active IP addresses. Run
 	# vpsadmindctl reinit fw
 
 to flush all rules and add only needed ones.
+
+Create directory `/var/vpsadmin/mounts`:
+
+	# mkdir -p /var/vpsadmin/mounts
 
 FIXME: revise /etc/vpsadmin/vpsadmind.yml
 
@@ -390,7 +408,7 @@ module TransactionChains
           ])
           append(Transactions::Vps::Mount, args: [
               vps, vps.mounts.all.order('dst')
-          ])
+          ]) if vps.running?
         end
       end
     end
@@ -507,7 +525,7 @@ User.transaction do
           default: true
       )
 
-      if PLAYGROUND_ENABLE.include?(env.id)
+      if PLAYGROUND_ENABLE.include?(env.id) && user.m_playground_enable
         cfg.can_create_vps = false
         cfg.default = false
       end
@@ -597,4 +615,14 @@ Advance states of all other objects:
 
 Daily report is sent by task `vpsadmin:mail_daily_report`.
 
+## Known issues
+ - NAS migration script does not take hidden files into account, they must be
+   migrated manually
+ - Users cannot create subdatasets on NAS, as they haven't been given the needed
+   permission. Should it be needed, fix with something like:
+
+[[!format sql """
+UPDATE `datasets` SET user_create = 1
+WHERE full_name = CAST(user_id AS CHAR(10)) COLLATE utf8_czech_ci
+"""]]
 
