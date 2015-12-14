@@ -1,7 +1,8 @@
 module VpsAdmin::DownloadMounter
   class Cli
     def self.run
-      Cli.new
+      c = Cli.new
+      exit(c.parse ? true : false)
     end
 
     def initialize
@@ -9,7 +10,19 @@ module VpsAdmin::DownloadMounter
           auth: 'token',
           lifetime: 'renewable_auto',
       }
-      usage = "Usage: #{$0} [options] <api> <mountpoint>"
+    end
+
+    def parse
+      usage = <<END
+Usage: #{$0} [options] <api> <mountpoint> <action>"
+
+Actions:
+    auth                             Authenticate and exit
+    mount                            Check and mount all download datasets
+    umount                           Check and unmount all download datasets
+
+Options:
+END
 
       opt_parser = OptionParser.new do |opts|
         opts.banner = usage
@@ -57,7 +70,7 @@ module VpsAdmin::DownloadMounter
 
       opt_parser.parse!
 
-      if ARGV.size < 2
+      if ARGV.size < 3
         puts opt_parser
         exit(1)
       end
@@ -69,12 +82,29 @@ module VpsAdmin::DownloadMounter
       
       authenticate
       
-      @api.pool.list(meta: {includes: 'node__environment'}).each do |pool|
-        puts "Pool #{pool.filesystem} of #{pool.node.domain_name}"
+      case ARGV[2]
+      when 'auth'
+        u = @api.user.current
+        puts "Authenticated as #{u.login} (level #{u.level})"
 
-        m = VpsAdmin::DownloadMounter::Mounter.new(@opts, ARGV[1], pool)
-        m.mount
-        puts "\n"
+        begin
+          @api.pool.list(limit: 0)
+          puts "Sufficient permissions for download mount management"
+          true
+
+        rescue HaveAPI::Client::ActionFailed => e
+          puts "Insufficient permissions for download mount management"
+          false
+        end
+
+      when 'mount'
+        each_pool_mounter { |m| m.mount }
+
+      when 'umount', 'unmount'
+        each_pool_mounter { |m| m.umount }
+
+      else
+        fail "unsupported action '#{ARGV[2]}'"
       end
     end
     
@@ -123,6 +153,16 @@ module VpsAdmin::DownloadMounter
       end.to_s
 
       [@opts[:user], @opts[:password]]
+    end
+
+    def each_pool_mounter
+      @api.pool.list(meta: {includes: 'node__environment'}).each do |pool|
+        puts "Pool #{pool.filesystem} of #{pool.node.domain_name}"
+
+        yield(VpsAdmin::DownloadMounter::Mounter.new(@opts, ARGV[1], pool))
+
+        puts "\n"
+      end
     end
   end
 end
