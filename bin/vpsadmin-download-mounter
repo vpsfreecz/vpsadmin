@@ -1,0 +1,153 @@
+#!/usr/bin/env ruby
+
+require 'haveapi/client'
+require 'pathname'
+require 'fileutils'
+require 'optparse'
+require 'highline/import'
+require_relative '../lib/vpsadmin/download_mounter'
+
+options = {
+    auth: 'token',
+    lifetime: 'renewable_auto',
+}
+usage = "Usage: #{$0} [options] <api> <mountpoint>"
+
+opt_parser = OptionParser.new do |opts|
+  opts.banner = usage
+
+  opts.on('-d', '--dry-run', 'Dry run') do
+    options[:dry_run] = true
+  end
+  
+  opts.on('-a', '--auth AUTH', %w(basic token), 'Basic or token authentication') do |a|
+    options[:auth] = a
+  end
+
+  opts.on('-u', '--user USER', 'Username') do |u|
+    options[:user] = u
+  end
+  
+  opts.on('-p', '--password PASSWORD', 'Password') do |p|
+    options[:password] = p
+  end
+  
+  opts.on('-t', '--token TOKEN', 'Token') do |t|
+    options[:token] = t
+  end
+  
+  opts.on('-i', '--token-lifetime LIFETIME',
+          %w(renewable_manual renewable_auto fixed permanent), 'Token lifetime') do |l|
+    options[:lifetime] = l
+  end
+
+  opts.on('-s', '--save-token [FILE]', 'Save token to FILE') do |f|
+    options[:save] = f || 'auth.token'
+    options[:auth] = 'token'
+  end
+  
+  opts.on('-l', '--load-token [FILE]', 'Load token from FILE') do |f|
+    options[:load] = f || 'auth.token'
+    options[:auth] = 'token'
+  end
+
+  opts.on('-h', '--help', 'Show this help') do
+    puts opts
+    exit
+  end
+end
+
+opt_parser.parse!
+
+if ARGV.size < 2
+  puts opt_parser
+  exit(1)
+end
+
+def get_credentials(options)
+  options[:user] ||= ask('Username: ') { |q| q.default = nil }.to_s
+  
+  options[:password] ||= ask('Password: ') do |q|
+    q.default = nil
+    q.echo = false
+  end.to_s
+
+  [options[:user], options[:password]]
+end
+
+def ensure_mount(options, mountpoint, pool)
+  full_mnt = File.join(
+      mountpoint,
+      pool.node.domain_name + '.' + pool.node.environment.domain,
+      pool.filesystem.split('/').last
+  )
+
+  # FIXME: this assumes that the pool is mounted to /<pool_name>
+  src = "#{pool.node.ip_addr}:/#{pool.filesystem}/vpsadmin/download"
+
+  if Dir.exists?(full_mnt)
+    puts "  mountpoint found"
+
+  else
+    puts "  creating mountpoint"
+    FileUtils.mkpath(full_mnt) unless options[:dry_run]
+  end
+
+  p = Pathname.new(full_mnt)
+
+  if p.mountpoint?
+    puts "  is mounted"
+
+  else
+    cmd = "mount -t nfs -overs=3 #{src} #{full_mnt}"
+    puts "  #{cmd}"
+    `#{cmd}` unless options[:dry_run]
+  end
+end
+
+api = HaveAPI::Client::Client.new(
+    ARGV[0],
+    identity: "vpsadmin-download-mounter v#{VpsAdmin::DownloadMounter::VERSION}"
+)
+
+if options[:auth] == 'basic'
+  u, p = get_credentials(options)
+  api.authenticate(:basic, user: u, password: p)
+  
+elsif options[:auth] == 'token'
+  token = options[:token]
+
+  unless token
+    if options[:load]
+      api.authenticate(:token, token: File.new(options[:load]).read.strip)
+
+    else
+      u, p = get_credentials(options)
+      api.authenticate(:token, user: u, password: p, lifetime: options[:lifetime])
+
+      if options[:save]
+        # FIXME: this is a workaround until the client has an API that exposes
+        # the token.
+        token = api.instance_variable_get('@api') \
+                .instance_variable_get('@auth') \
+                .instance_variable_get('@token')
+        
+        f = File.new(options[:save], 'w')
+        f.write(token)
+        f.close
+      end
+    end
+
+  end
+
+else
+  fail "unsupported auth"
+end
+
+api.pool.list(meta: {includes: 'node__environment'}).each do |pool|
+  puts "Pool #{pool.filesystem} of #{pool.node.domain_name}"
+
+  ensure_mount(options, ARGV[1], pool)
+  puts "\n"
+end
+
