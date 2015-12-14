@@ -626,8 +626,8 @@ Advance states of all other objects:
 Daily report is sent by task `vpsadmin:mail_daily_report`.
 
 ## Known issues
- - NAS migration script does not take hidden files into account, they must be
-   migrated manually
+ - NAS migration script does not take hidden files located in dataset root into
+   account, they must be migrated manually
  - Users cannot create subdatasets on NAS, as they haven't been given the needed
    permission. Should it be needed, fix with something like:
 
