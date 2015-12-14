@@ -60,17 +60,20 @@ module VpsAdmind
 
         while m = @sock.recv(1024)
           buf = buf + m
-          break if !m.empty? || m[-1].chr == "\n"
+          break if m.empty? || m.end_with?("\n")
         end
 
         parse(buf)
+
+      rescue Errno::ECONNRESET
+        # pass
       end
 
       def parse(data)
         begin
           req = JSON.parse(data, :symbolize_names => true)
 
-        rescue TypeError
+        rescue TypeError, JSON::ParserError
           return error("Syntax error")
         end
 
