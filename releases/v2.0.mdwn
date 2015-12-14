@@ -571,6 +571,11 @@ The integrity check can be started by any API client, e.g.:
 
 The results can them be browsed in the web or any other client.
 
+## Scheduler
+The scheduler is located in `/opt/vpsadminapi/bin/vpsadmin-scheduler`. It is up
+to the administrator to start it. The scheduler is used to execute repeatable
+tasks, such as daily backups. It depends on cron.
+
 ## Cron jobs
 
  - `/opt/vpsadmind/backup.rb` is replaced by a scheduler, that is a part of the API
