@@ -411,7 +411,7 @@ function cluster_resource_edit_form() {
 		'value',
 		$r->value,
 		0,
-		$r->cluster_resource->stepsize * 1000,
+		10 * 1024 * 1024,
 		$r->cluster_resource->stepsize,
 		unit_for_cluster_resource($r->cluster_resource->name)
 	);
