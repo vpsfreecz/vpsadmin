@@ -637,6 +637,7 @@ of all pools to a single mountpoint via NFS. You then make this mountpoint
 accessible via web browser at `snapshot_download_base_url`, which is defined in
 sysconfig.
 
+<a name="known-issues"></a>
 ## Known issues
  - NAS migration script does not take hidden files located in dataset root into
    account, they must be migrated manually
