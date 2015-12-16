@@ -625,6 +625,18 @@ Advance states of all other objects:
 
 Daily report is sent by task `vpsadmin:mail_daily_report`.
 
+## Archive downloads
+Downloads are now a part of the system, meaning created downloads are stored
+in the database and are manageable using the API. The system is designed so that
+archives are stored in each pool in subdataset `vpsadmin/download`. It is up to
+the administrator to make these datasets accessible via web server.
+
+[[vpsadmin-download-mounter|https://github.com/vpsfreecz/vpsadmin-download-mounter]]
+can be used to automate this procedure. Basically it mounts `download` datasets
+of all pools to a single mountpoint via NFS. You then make this mountpoint
+accessible via web browser at `snapshot_download_base_url`, which is defined in
+sysconfig.
+
 ## Known issues
  - NAS migration script does not take hidden files located in dataset root into
    account, they must be migrated manually
