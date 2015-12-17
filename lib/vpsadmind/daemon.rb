@@ -1,7 +1,6 @@
 module VpsAdmind
-  VERSION = '2.0.0-dev'
   DB_VERSION = 15
-
+  
   EXIT_OK = 0
   EXIT_ERR = 1
   EXIT_STOP = 100
