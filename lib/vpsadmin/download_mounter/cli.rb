@@ -14,7 +14,7 @@ module VpsAdmin::DownloadMounter
 
     def parse
       usage = <<END
-Usage: #{$0} [options] <api> <mountpoint> <action>"
+Usage: #{$0} [options] <api> <mountpoint> <action>
 
 Actions:
     auth                             Authenticate and exit
