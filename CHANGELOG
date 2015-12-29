@@ -1,3 +1,6 @@
+* Tue Dec 29 2015 - version 2.0.0
+- Major rewrite, see release notes
+
 * Wed Apr 29 2015 - version 1.22.2
 - Fix shaper filter addition for IPv6
 - Preserve ACLs and extended attributes on VPS migration and clone
