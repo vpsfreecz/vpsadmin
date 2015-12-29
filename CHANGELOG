@@ -1,3 +1,6 @@
+* Tue Dec 29 2015 - version 2.0.0
+- Major rewrite, see release notes
+
 * Mon Aug 18 2014 - version 1.22.0
 - Commands init, flush, reinit and pry
 
