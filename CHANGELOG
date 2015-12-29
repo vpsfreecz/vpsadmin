@@ -1,3 +1,6 @@
+* Tue Dec 29 2015 - version 2.0.0
+- Major rewrite, see release notes
+
 * Thu May 07 2015 - version 1.22.5
 - Always prefix NAS or backup mountpoint with a slash
 
