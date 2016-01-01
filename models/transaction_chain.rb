@@ -152,6 +152,7 @@ class TransactionChain < ActiveRecord::Base
   # +args+ and +block+ are forwarded to target transaction.
   # Use the block to configure transaction confirmations, see
   # Transaction::Confirmable.
+  # Deprecated in favor of #append_t.
   def append(klass, name: nil, args: [], urgent: nil, prio: nil, &block)
     do_append(@last_id, name, klass, args, urgent, prio, block)
   end
@@ -164,6 +165,13 @@ class TransactionChain < ActiveRecord::Base
   # +args+ and +block+ are forwarded to target transaction.
   def append_to(dep_name, klass, name: nil, args: [], urgent: nil, prio: nil, &block)
     do_append(@named[dep_name], name, klass, args, urgent, prio, block)
+  end
+
+  # Will replace #append in the future. #append_t does not execute the block
+  # in Confirmable instance context, but uses the original context in which
+  # the block was defined - +self+ does not change meaning.
+  def append_t(klass, name: nil, args: [], urgent: nil, prio: nil, &block)
+    do_append(@last_id, name, klass, args, urgent, prio, block, true)
   end
 
   # Call this method from TransactionChain#link_chain to include
@@ -252,14 +260,14 @@ class TransactionChain < ActiveRecord::Base
   end
 
   private
-  def do_append(dep, name, klass, args, urgent, prio, block)
+  def do_append(dep, name, klass, args, urgent, prio, block, retain_context = false)
     args = [args] unless args.is_a?(Array)
 
     urgent ||= self.urgent
     prio ||= self.prio
 
     @dst_chain.size += 1
-    t = klass.fire_chained(@dst_chain, dep, urgent, prio, *args, &block)
+    t = klass.fire_chained(@dst_chain, dep, urgent, prio, retain_context, *args, &block)
     @last_node_id = t.t_server
     @last_id = t.id
     @named[name] = @last_id if name

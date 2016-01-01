@@ -74,7 +74,7 @@ class Transaction < ActiveRecord::Base
   # Transaction is to be in +chain+, +dep+ is the id of the previous transaction
   # in the chain.
   # When given a block, it is called in the context of Confirmable.
-  def self.fire_chained(chain, dep, urgent, prio, *args, &block)
+  def self.fire_chained(chain, dep, urgent, prio, retain_context, *args, &block)
     t = new
 
     t.transaction_chain = chain
@@ -90,7 +90,13 @@ class Transaction < ActiveRecord::Base
       t.save!
 
       c = Confirmable.new(t)
-      c.instance_exec(t, &block)
+
+      if retain_context
+        block.call(c)
+
+      else
+        c.instance_exec(t, &block)
+      end
     end
 
     t.t_param = (t.params(*args) || {}).to_json
