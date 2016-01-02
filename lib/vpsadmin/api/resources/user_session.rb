@@ -1,6 +1,5 @@
 module VpsAdmin::API::Resources
   class UserSession < HaveAPI::Resource
-    version 1
     model ::UserSession
     desc 'Browse user sessions'
 

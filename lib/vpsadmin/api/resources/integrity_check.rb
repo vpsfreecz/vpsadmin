@@ -1,6 +1,5 @@
 module VpsAdmin::API::Resources
   class IntegrityCheck < HaveAPI::Resource
-    version 1
     desc 'Schedule integrity checks and view results'
     model ::IntegrityCheck
 

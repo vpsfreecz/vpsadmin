@@ -1,5 +1,4 @@
 class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
-  version 1
   model ::OsTemplate
   desc 'Manage OS templates'
 

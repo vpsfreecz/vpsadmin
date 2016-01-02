@@ -1,5 +1,4 @@
 class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
-  version 1
   model ::TransactionChain
   desc 'Access transaction chains'
 
@@ -93,7 +92,6 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
   end
 
   class Transaction < HaveAPI::Resource
-    version 1
     desc 'Access transactions linked in a chain'
     route ':transaction_chain_id/transactions'
     model ::Transaction

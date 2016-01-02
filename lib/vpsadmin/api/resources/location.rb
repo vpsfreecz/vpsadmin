@@ -1,5 +1,4 @@
 class VpsAdmin::API::Resources::Location < HaveAPI::Resource
-  version 1
   model ::Location
   desc 'Manage locations'
 

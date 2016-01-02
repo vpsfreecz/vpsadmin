@@ -1,7 +1,6 @@
 module VpsAdmin::API::Resources
   class Dataset < HaveAPI::Resource
     desc 'Manage datasets'
-    version 1
     model ::Dataset
 
     params(:id) do
@@ -298,7 +297,6 @@ module VpsAdmin::API::Resources
     end
 
     class Snapshot < HaveAPI::Resource
-      version 1
       route ':dataset_id/snapshots'
       model ::Snapshot
       desc 'Manage dataset snapshots'
@@ -475,7 +473,6 @@ module VpsAdmin::API::Resources
     end
 
     class Plan < HaveAPI::Resource
-      version 1
       route ':dataset_id/plans'
       model ::DatasetInPoolPlan
       desc 'Manage dataset plans'

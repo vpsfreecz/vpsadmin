@@ -1,5 +1,4 @@
 class VpsAdmin::API::Resources::DatasetPlan < HaveAPI::Resource
-  version 1
   model ::DatasetPlan
   desc 'See dataset plans'
 

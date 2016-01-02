@@ -1,6 +1,5 @@
 module VpsAdmin::API::Resources
   class IntegrityObject < HaveAPI::Resource
-    version 1
     desc 'View objects whose integrity is checked'
     model ::IntegrityObject
 

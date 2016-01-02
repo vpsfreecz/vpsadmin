@@ -1,6 +1,5 @@
 module VpsAdmin::API::Resources
   class MailTemplate < HaveAPI::Resource
-    version 1
     model ::MailTemplate
     desc 'Manage mail templates'
 
@@ -134,7 +133,6 @@ module VpsAdmin::API::Resources
     end
 
     class Recipient < HaveAPI::Resource
-      version 1
       model ::MailTemplateRecipient
       route ':mail_template_id/recipients'
       desc 'Manage mail recipients'

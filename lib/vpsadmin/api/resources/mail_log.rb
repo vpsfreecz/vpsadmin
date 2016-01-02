@@ -1,6 +1,5 @@
 module VpsAdmin::API::Resources
   class MailLog < HaveAPI::Resource
-    version 1
     model ::MailLog
     desc 'Browse sent mails'
 

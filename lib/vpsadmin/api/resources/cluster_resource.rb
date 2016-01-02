@@ -1,7 +1,6 @@
 module VpsAdmin::API::Resources
   class ClusterResource < HaveAPI::Resource
     desc 'Manage environment resources'
-    version 1
     model ::ClusterResource
 
     params(:common) do

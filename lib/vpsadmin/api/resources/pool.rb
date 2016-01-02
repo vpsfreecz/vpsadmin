@@ -1,6 +1,5 @@
 module VpsAdmin::API::Resources
   class Pool < HaveAPI::Resource
-    version 1
     model ::Pool
     desc 'Manage storage pools'
 

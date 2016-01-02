@@ -1,5 +1,4 @@
 class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
-  version 1
   model ::IpAddress
   desc 'Manage IP addresses'
 

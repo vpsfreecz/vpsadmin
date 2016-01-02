@@ -1,6 +1,5 @@
 module VpsAdmin::API::Resources
   class MailRecipient < HaveAPI::Resource
-    version 1
     model ::MailRecipient
     desc 'Manage mail recipients'
 

@@ -1,5 +1,4 @@
 class VpsAdmin::API::Resources::AuthToken < HaveAPI::Resource
-  version 1
   model ::ApiToken
   desc 'Manage authentication tokens'
 

@@ -1,5 +1,4 @@
 class VpsAdmin::API::Resources::Node < HaveAPI::Resource
-  version 1
   model ::Node
   desc 'Manage nodes'
 

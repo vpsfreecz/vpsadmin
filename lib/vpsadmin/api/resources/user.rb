@@ -1,5 +1,4 @@
 class VpsAdmin::API::Resources::User < HaveAPI::Resource
-  version 1
   model ::User
   desc 'Manage users'
 
@@ -289,7 +288,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   class EnvironmentConfig < HaveAPI::Resource
     desc 'User settings per environment'
-    version 1
     model ::EnvironmentUserConfig
     route ':user_id/environment_configs'
 
@@ -407,7 +405,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   class ClusterResource < HaveAPI::Resource
     desc "Manage user's cluster resources"
-    version 1
     model ::UserClusterResource
     route ':user_id/cluster_resources'
 

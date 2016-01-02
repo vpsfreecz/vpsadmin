@@ -1,5 +1,4 @@
 class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
-  version 1
   model ::DnsResolver
   desc 'Manage DNS resolvers'
 

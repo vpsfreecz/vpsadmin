@@ -1,6 +1,5 @@
 module VpsAdmin::API::Resources
   class SnapshotDownload < HaveAPI::Resource
-    version 1
     model ::SnapshotDownload
     desc 'Manage download links of dataset snapshots'
 

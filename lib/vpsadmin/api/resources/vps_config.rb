@@ -1,5 +1,4 @@
 class VpsAdmin::API::Resources::VpsConfig < HaveAPI::Resource
-  version 1
   model ::VpsConfig
   desc 'Manage VPS configs'
 

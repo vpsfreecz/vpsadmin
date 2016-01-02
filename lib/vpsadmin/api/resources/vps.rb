@@ -1,5 +1,4 @@
 class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
-  version 1
   model ::Vps
   desc 'Manage VPS'
 
@@ -677,7 +676,6 @@ END
   add_lifetime_methods([Start, Stop, Restart])
 
   class Config < HaveAPI::Resource
-    version 1
     route ':vps_id/configs'
     desc 'Manage VPS configs'
     model ::VpsHasConfig
@@ -737,7 +735,6 @@ END
   end
 
   class Feature < HaveAPI::Resource
-    version 1
     model ::VpsFeature
     route ':vps_id/features'
     desc 'Toggle VPS features'
@@ -856,7 +853,6 @@ END
   end
 
   class IpAddress < HaveAPI::Resource
-    version 1
     model ::IpAddress
     route ':vps_id/ip_addresses'
     desc 'Manage VPS IP addresses'
@@ -1000,7 +996,6 @@ END
   end
 
   class Mount < HaveAPI::Resource
-    version 1
     route ':vps_id/mounts'
     model ::Mount
     desc 'Manage mounts'
@@ -1178,7 +1173,6 @@ END
   end
 
   class ConsoleToken < HaveAPI::Resource
-    version 1
     route ':vps_id/console_token'
     singular true
     model ::VpsConsole

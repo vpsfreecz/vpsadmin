@@ -1,6 +1,5 @@
 module VpsAdmin::API::Resources
   class IntegrityFact < HaveAPI::Resource
-    version 1
     desc 'View checked facts of integrity objects'
     model ::IntegrityFact
 
