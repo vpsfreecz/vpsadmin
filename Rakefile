@@ -1,11 +1,13 @@
 require 'active_record'
 require 'sinatra/activerecord/rake'
+require 'rdoc/task'
 require './lib/vpsadmin'
 require './lib/vpsadmin/api/tasks'
+require 'haveapi/tasks/hooks'
 
-require 'rspec/core'
-require 'rspec/core/rake_task'
+RDoc::Task.new do |rdoc|
+  rdoc.rdoc_files.include('doc', 'lib', 'models')
+  rdoc.options << '--line-numbers' << '--page-dir=doc'
 
-RSpec::Core::RakeTask.new(:spec) do |spec|
-  spec.pattern = FileList['spec/**/*_spec.rb']
+  document_hooks(rdoc)
 end
