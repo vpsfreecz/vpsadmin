@@ -36,7 +36,12 @@ class User < ActiveRecord::Base
   include Lockable
   include HaveAPI::Hookable
 
-  has_hook :create
+  has_hook :create,
+      desc: 'Called when a new User is being created',
+      context: 'TransactionChains::User::Create instance',
+      args: {
+          user: 'User instance'
+      }
 
   include VpsAdmin::API::Lifetimes::Model
   set_object_states suspended: {

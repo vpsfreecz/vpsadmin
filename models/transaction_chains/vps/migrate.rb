@@ -4,8 +4,20 @@ module TransactionChains
     label 'Migrate'
     urgent_rollback
 
-    has_hook :pre_start
-    has_hook :post_start
+    has_hook :pre_start,
+        desc: 'Called before the VPS is started on the new node',
+        context: 'TransactionChains::Vps::Migrate instance',
+        args: {
+            vps: 'destination Vps',
+            running: 'true if the VPS was running before the migration'
+        }
+    has_hook :post_start,
+        desc: 'Called after the VPS was started on the new node',
+        context: 'TransactionChains::Vps::Migrate instance',
+        args: {
+            vps: 'destination Vps',
+            running: 'true if the VPS was running before the migration'
+        }
 
     def link_chain(vps, dst_node, replace_ips, resources = nil,
                    handle_ips = true, reallocate_ips = true)

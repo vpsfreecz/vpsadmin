@@ -21,8 +21,19 @@ class DatasetInPool < ActiveRecord::Base
   cluster_resources required: %i(diskspace),
                     environment: ->(){ pool.node.environment }
 
-  has_hook :create
-  has_hook :migrated
+  has_hook :create,
+      desc: 'Called when a new DatasetInPool is being created',
+      context: 'TransactionChains::Dataset::Create instance',
+      args: {
+          dataset_in_pool: 'instance of DatasetInPool'
+      }
+  has_hook :migrated,
+      desc: 'Called when a DatasetInPool is being migrated with a VPS',
+      context: 'TransactionChains::Vps::Migrate instance',
+      args: {
+          src_dataset_in_pool: 'source DatasetInPool',
+          dst_dataset_in_pool: 'target DatasetInPool',
+      }
 
   def snapshot
     TransactionChains::Dataset::Snapshot.fire(self)
