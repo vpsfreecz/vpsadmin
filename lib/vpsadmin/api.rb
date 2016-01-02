@@ -1,5 +1,6 @@
 module VpsAdmin
-  HaveAPI.set_module_name(VpsAdmin::API::Resources)
+  HaveAPI.module_name = VpsAdmin::API::Resources
+  HaveAPI.implicit_version = 1
 
   module API
     module Authentication
@@ -15,7 +16,7 @@ module VpsAdmin
 
       api = HaveAPI::Server.new
       api.use_version(:all)
-      api.set_default_version(1)
+      api.default_version = 1
 
       authenticate(api)
 
@@ -54,6 +55,7 @@ module VpsAdmin
       e.rescue(VpsAdmin::API::Exceptions::ClusterResourceAllocationError) do |ret, exception|
         ret[:status] = false
         ret[:message] = "Resource allocation error: #{exception.message}"
+
         ret
       end
 
