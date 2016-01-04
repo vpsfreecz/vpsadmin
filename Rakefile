@@ -1,13 +1,12 @@
 require 'active_record'
 require 'sinatra/activerecord/rake'
-require 'rdoc/task'
+require 'yard'
 require './lib/vpsadmin'
 require './lib/vpsadmin/api/tasks'
 require 'haveapi/tasks/hooks'
 
-RDoc::Task.new do |rdoc|
-  rdoc.rdoc_files.include('doc', 'lib', 'models')
-  rdoc.options << '--line-numbers' << '--page-dir=doc'
-
-  document_hooks(rdoc)
+YARD::Rake::YardocTask.new do |t|
+  t.files   = ['lib/**/*.rb', 'models/**/*.rb']
+  t.options = ['--protected', '--output-dir=html_doc', '--files=doc/*.md']
+  t.before = document_hooks
 end
