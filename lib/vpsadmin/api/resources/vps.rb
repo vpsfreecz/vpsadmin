@@ -902,8 +902,7 @@ END
         resource VpsAdmin::API::Resources::IpAddress, label: 'IP address',
             desc: 'If the address is not provided, first free IP address of given version is assigned instead'
         integer :version, label: 'IP version',
-                desc: 'provide only if IP address is not selected', db_name: :ip_v,
-                choices: [4, 6]
+                desc: 'provide only if IP address is not selected', db_name: :ip_v
       end
 
       output do
