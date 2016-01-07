@@ -7,17 +7,17 @@ class IpAddress < ActiveRecord::Base
   belongs_to :user
   has_paper_trail
 
+  alias_attribute :addr, :ip_addr
+  alias_attribute :version, :ip_v
+
+  include Lockable
+
   validates :ip_v, inclusion: {
       in: [4, 6],
       message: '%{value} is not a valid IP version'
   }
   validate :check_address
   validates :ip_addr, uniqueness: true
-
-  alias_attribute :addr, :ip_addr
-  alias_attribute :version, :ip_v
-
-  include Lockable
 
   def self.register(addr, params)
     ip = nil

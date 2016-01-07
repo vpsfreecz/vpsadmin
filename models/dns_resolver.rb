@@ -5,12 +5,12 @@ class DnsResolver < ActiveRecord::Base
   belongs_to :location, foreign_key: :dns_location
   has_many :vpses
 
-  validates :dns_ip, :dns_label, presence: true
-  validate :universal_or_location
-
   alias_attribute :addr, :dns_ip
 
   include Lockable
+
+  validates :dns_ip, :dns_label, presence: true
+  validate :universal_or_location
 
   def self.pick_suitable_resolver_for_vps(vps, except: [])
     first_ip = vps.ip_addresses.group(:ip_v).order(:ip_v).take

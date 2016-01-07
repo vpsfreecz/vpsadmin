@@ -26,13 +26,6 @@ class Vps < ActiveRecord::Base
   alias_attribute :hostname, :vps_hostname
   alias_attribute :user_id, :m_id
 
-  validates :m_id, :vps_server, :vps_template, presence: true, numericality: {only_integer: true}
-  validates :vps_hostname, presence: true, format: {
-      with: /\A[a-zA-Z\-_\.0-9]{0,255}\z/,
-      message: 'bad format'
-  }
-  validate :foreign_keys_exist
-
   include Lockable
   include Confirmable
   include HaveAPI::Hookable
@@ -63,6 +56,13 @@ class Vps < ActiveRecord::Base
                         enter: TransactionChains::Lifetimes::NotImplemented
                     },
                     environment: ->(){ node.environment }
+
+  validates :m_id, :vps_server, :vps_template, presence: true, numericality: {only_integer: true}
+  validates :vps_hostname, presence: true, format: {
+      with: /\A[a-zA-Z\-_\.0-9]{0,255}\z/,
+      message: 'bad format'
+  }
+  validate :foreign_keys_exist
 
   default_scope {
     where.not(object_state: object_states[:hard_delete])

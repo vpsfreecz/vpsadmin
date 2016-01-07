@@ -6,15 +6,6 @@ class Dataset < ActiveRecord::Base
 
   has_ancestry cache_depth: true
 
-  validates :name, format: {
-      with: /\A[a-zA-Z0-9][a-zA-Z0-9_\-:\.]{0,254}\z/,
-      message: "'%{value}' is not a valid dataset name"
-  }, exclusion: {
-      in: %w(private vpsadmin),
-      message: "'%{value}' is a reserved name"
-  }
-  validate :check_name
-
   before_save :cache_full_name
 
   include Confirmable
@@ -27,6 +18,15 @@ class Dataset < ActiveRecord::Base
                     deleted: {
                         enter: TransactionChains::Dataset::Destroy
                     }
+
+  validates :name, format: {
+      with: /\A[a-zA-Z0-9][a-zA-Z0-9_\-:\.]{0,254}\z/,
+      message: "'%{value}' is not a valid dataset name"
+  }, exclusion: {
+      in: %w(private vpsadmin),
+      message: "'%{value}' is a reserved name"
+  }
+  validate :check_name
 
   def self.create_new(name, parent_ds, automount, properties)
     parts = name.split('/')
