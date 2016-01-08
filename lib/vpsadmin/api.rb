@@ -1,6 +1,6 @@
 module VpsAdmin
   HaveAPI.module_name = VpsAdmin::API::Resources
-  HaveAPI.implicit_version = 1
+  HaveAPI.implicit_version = '1.0'
 
   module API
     module Authentication
@@ -16,7 +16,6 @@ module VpsAdmin
 
       api = HaveAPI::Server.new
       api.use_version(:all)
-      api.default_version = 1
 
       authenticate(api)
 
