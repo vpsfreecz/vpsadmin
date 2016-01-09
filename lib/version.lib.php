@@ -9,5 +9,5 @@ define("VERSION", '2.0.0');
 define("DEMO_MODE", false);
 
 define("DB_VERSION", 15);
-define("API_VERSION", 1);
+define("API_VERSION", '1.0');
 ?>
