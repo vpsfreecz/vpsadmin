@@ -19,8 +19,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     datetime :paid_until, label: 'Paid until'
     bool :mailer_enabled, label: 'Enabled mailer', db_name: :m_mailer_enable,
          default: true
-    bool :playground_enabled, label: 'Enabled playground', db_name: :m_playground_enable,
-         default: true
   end
 
   params(:password) do
@@ -86,7 +84,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         q = q.where("#{in_params[p].db_name} LIKE ? COLLATE utf8_unicode_ci", "#{input[p]}")
       end
 
-      %i(level monthly_payment mailer_enabled playground_enabled).each do |p|
+      %i(level monthly_payment mailer_enabled).each do |p|
         next unless input[p]
         q = q.where(in_params[p].db_name => input[p])
       end

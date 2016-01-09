@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20151213173722) do
+ActiveRecord::Schema.define(version: 20160109160611) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -372,18 +372,17 @@ ActiveRecord::Schema.define(version: 20151213173722) do
 
   create_table "members", primary_key: "m_id", force: true do |t|
     t.text     "m_info"
-    t.integer  "m_level",                                        null: false
-    t.string   "m_nick",              limit: 63,                 null: false
+    t.integer  "m_level",                                       null: false
+    t.string   "m_nick",             limit: 63,                 null: false
     t.string   "m_name"
-    t.string   "m_pass",                                         null: false
-    t.string   "m_mail",              limit: 127
+    t.string   "m_pass",                                        null: false
+    t.string   "m_mail",             limit: 127
     t.text     "m_address"
-    t.string   "m_lang",              limit: 16
-    t.integer  "m_monthly_payment",               default: 300,  null: false
-    t.boolean  "m_mailer_enable",                 default: true, null: false
-    t.boolean  "m_playground_enable",             default: true, null: false
-    t.integer  "login_count",                     default: 0,    null: false
-    t.integer  "failed_login_count",              default: 0,    null: false
+    t.string   "m_lang",             limit: 16
+    t.integer  "m_monthly_payment",              default: 300,  null: false
+    t.boolean  "m_mailer_enable",                default: true, null: false
+    t.integer  "login_count",                    default: 0,    null: false
+    t.integer  "failed_login_count",             default: 0,    null: false
     t.datetime "last_request_at"
     t.datetime "current_login_at"
     t.datetime "last_login_at"
@@ -391,9 +390,9 @@ ActiveRecord::Schema.define(version: 20151213173722) do
     t.string   "last_login_ip"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "object_state",                                   null: false
+    t.integer  "object_state",                                  null: false
     t.datetime "expiration_date"
-    t.integer  "password_version",                default: 1,    null: false
+    t.integer  "password_version",               default: 1,    null: false
     t.datetime "paid_until"
     t.datetime "last_activity_at"
   end
