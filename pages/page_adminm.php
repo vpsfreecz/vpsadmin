@@ -33,7 +33,6 @@ function print_newm() {
 		$xtpl->form_add_checkbox(_("Enable vpsAdmin mailer").':', 'm_mailer_enable', '1', $_POST["m_nick"] ? $_POST["m_mailer_enable"] : true, $hint = '');
 	}
 	
-	$xtpl->form_add_checkbox(_("Enable playground VPS").':', 'm_playground_enable', '1', $_POST["m_nick"] ? $_POST["m_playground_enable"] : true, $hint = '');
 	$xtpl->form_add_textarea(_("Info").':', 28, 4, 'm_info', $_POST["m_info"], _("Note for administrators"));
 	$xtpl->form_out(_("Add"));
 
@@ -166,7 +165,6 @@ function print_editm($u) {
 	
 	if ($_SESSION["is_admin"]) {
 		$xtpl->form_add_input(_("Monthly payment").':', 'text', '30', 'm_monthly_payment', $u->monthly_payment, ' ');
-		$xtpl->form_add_checkbox(_("Enable playground VPS").':', 'm_playground_enable', '1', $u->playground_enabled, $hint = '');
 		$xtpl->form_add_textarea(_("Info").':', 28, 4, 'm_info', $u->info, _("Note for administrators"));
 	}
 	
@@ -458,7 +456,6 @@ function request_approve() {
 				'email' => $data['m_mail'],
 				'address' => $data['m_address'],
 				'level' => PRIV_USER,
-				'playground_enabled' => true,
 				'mailer_enabled' => true,
 				'info' => "",
 				'password' => random_string(10)
@@ -667,7 +664,6 @@ function list_members() {
 		$xtpl->form_add_input(_("Info").':', 'text', '40', 'info', get_val('info', ''), '');
 		$xtpl->form_add_input(_("Monthly payment").':', 'text', '40', 'monthly_payment', get_val('monthly_payment', ''), '');
 		$xtpl->form_add_checkbox(_("Mailer enabled").':', 'mailer_enabled', 1, get_val('mailer_enabled', ''));
-		$xtpl->form_add_checkbox(_("Playground enabled").':', 'playground_enabled', 1, get_val('playground_enabled', ''));
 		
 		$p = $api->vps->index->getParameters('input')->object_state;
 		
@@ -707,7 +703,7 @@ function list_members() {
 			);
 			
 			$filters = array('login', 'full_name', 'email', 'address', 'level', 'info', 'monthly_payment',
-			                 'mailer_enabled', 'playground_enabled');
+			                 'mailer_enabled');
 			
 			foreach ($filters as $f) {
 				if ($_GET[$f])
@@ -961,8 +957,7 @@ if ($_SESSION["logged_in"]) {
 						'level' => $_POST['m_level'],
 						'info' => $_POST['m_info'],
 						'monthly_payment' => $_POST['m_monthly_payment'],
-						'mailer_enabled' => $_POST['m_mailer_enable'],
-						'playground_enabled' => $_POST['m_playground_enable']
+						'mailer_enabled' => $_POST['m_mailer_enable']
 					));
 					
 					notify_user(_('User created'), _('The user was successfully created.'));
@@ -1026,7 +1021,6 @@ if ($_SESSION["logged_in"]) {
 					$params['level'] = $_POST['m_level'];
 					$params['info'] = $_POST['m_info'];
 					$params['monthly_payment'] = $_POST['m_monthly_payment'];
-					$params['playground_enabled'] = isset($_POST['m_playground_enable']);
 				}
 				
 				$user = $api->user($_GET['id'])->update($params);
