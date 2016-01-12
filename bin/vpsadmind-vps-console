@@ -1,0 +1,83 @@
+#!/usr/bin/env ruby
+require 'pty'
+require 'base64'
+
+vzctl, veid = ARGV
+
+master, slave = PTY.open
+read, write = IO.pipe
+
+`stty -F #{slave.path} raw -echo -icanon -isig`
+
+current_w = 80
+current_h = 25
+
+pid = spawn("#{vzctl} console #{veid}", in: read, out: slave, err: slave)
+read.close
+slave.close
+
+def detach(io)
+  io.write(13.chr)
+  io.write(27.chr)
+  io.write(".")
+end
+
+def read_nonblock(io)
+  io.read_nonblock(4096)
+
+rescue IO::WaitReadable
+  ''
+
+rescue Errno::EIO
+  nil
+end
+
+catch :stop do
+  loop do
+    rs, _ = IO.select([$stdin, master])
+    
+    rs.each do |r|
+      case r
+      when $stdin
+        buf = read_nonblock($stdin)
+        break if buf.nil?
+
+        buf.split("\n").each do |msg|
+          cmd = msg.split(' ')
+
+          case cmd[0]
+          when 'W'
+            write.write(Base64.decode64(cmd[1]))
+
+          when 'S'
+            w, h = cmd[1..2].map { |v| v.to_i }
+
+            if w != current_w || h != current_h
+              current_w = w
+              current_h = h
+
+              `stty -F #{slave.path} rows #{h} cols #{w}`
+              Process.kill('WINCH', pid)
+            end
+
+          when 'Q'
+            detach(write)
+            throw(:stop)
+          end
+        end
+
+      when master
+        buf = read_nonblock(master)
+        break if buf.nil?
+
+        $stdout.write(buf)
+        $stdout.flush
+      end
+    end
+  end
+end
+
+write.close
+master.close
+
+Process.wait(pid)

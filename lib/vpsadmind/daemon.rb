@@ -294,7 +294,13 @@ module VpsAdmind
 
       @em_thread = Thread.new do
         EventMachine.run do
-          EventMachine.start_server($CFG.get(:console, :host), $CFG.get(:console, :port), VzServer) if console
+          if console
+            EventMachine.start_server(
+                $CFG.get(:console, :host),
+                $CFG.get(:console, :port),
+                Console::Server
+            )
+          end
         end
       end
     end

@@ -21,6 +21,7 @@ end
 
 require_rel 'vpsadmind/utils.rb'
 require_rel 'vpsadmind/*.rb'
+require_rel 'vpsadmind/console'
 require_rel 'vpsadmind/commands/base'
 require_rel 'vpsadmind/commands'
 require_rel 'vpsadmind/remote_commands/base'

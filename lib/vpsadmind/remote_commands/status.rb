@@ -39,7 +39,7 @@ module VpsAdmind::RemoteCommands
       end
 
       consoles = {}
-      VpsAdmind::VzConsole.consoles do |c|
+      VpsAdmind::Console::Wrapper.consoles do |c|
         c.each do |veid, console|
           consoles[veid] = console.usage
         end
