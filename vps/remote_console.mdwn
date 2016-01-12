@@ -4,7 +4,7 @@ actor User as user2
 actor User as user3
 actor User as user4
 
-artifact "vpsfreectl console" as vpsfreectl
+artifact "vpsadminctl console" as vpsadminctl
 artifact "Web console" as webconsole
 
 cloud Internet as internet
@@ -30,11 +30,11 @@ artifact "vzctl console" as console4
 
 user1 <--> webconsole
 user2 <--> webconsole
-user3 <--> vpsfreectl
-user4 <--> vpsfreectl
+user3 <--> vpsadminctl
+user4 <--> vpsadminctl
 
 webconsole <--> internet
-vpsfreectl<--> internet
+vpsadminctl<--> internet
 
 internet <--> router
 
@@ -58,8 +58,7 @@ There are two frontends as of now:
 
  - Web console embedded in vpsAdmin-webui, built on top of the client-side of
    ShellInABox
- - Console in CLI of vpsfree-client (will be moved into vpsadmin-client in the
-   future)
+ - Console in CLI of vpsadmin-client
 
 # Console router
 Console router is a standalone executable but it's a part of vpsAdmind project.
