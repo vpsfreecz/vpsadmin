@@ -1,6 +1,4 @@
 module VpsAdmind
-  DB_VERSION = 15
-  
   EXIT_OK = 0
   EXIT_ERR = 1
   EXIT_STOP = 100
@@ -58,8 +56,6 @@ module VpsAdmind
     end
 
     def start
-      check_db_version
-
       loop do
         sleep($CFG.get(:vpsadmin, :check_interval))
 
@@ -308,40 +304,6 @@ module VpsAdmind
     def queues
       @m_workers.synchronize do
         yield(@queues)
-      end
-    end
-
-    def check_db_version
-      informed = false
-
-      loop do
-        @@mutex.synchronize do
-          exit(@@exitstatus) unless @@run
-        end
-
-        rs = @db.query("SELECT cfg_value FROM sysconfig WHERE cfg_name = 'db_version'")
-        raw_ver = rs.fetch_row.first
-
-        if raw_ver == '"install"'
-          log "Setting database version #{DB_VERSION}"
-          @db.prepared("UPDATE sysconfig SET cfg_value=? WHERE cfg_name = 'db_version'", DB_VERSION)
-          return
-        end
-
-        ver = raw_ver.to_i
-
-        if VpsAdmind::DB_VERSION != ver
-          unless informed
-            log "Database version does not match: required #{VpsAdmind::DB_VERSION}, current #{ver}"
-            $stdout.flush
-
-            informed = true
-          end
-
-          sleep(10)
-        else
-          return
-        end
       end
     end
 
