@@ -13,7 +13,7 @@ Build with:
 
 	$ make
 
-By default, the wiki is created in ``html/``. Changed this with:
+By default, the wiki is created in ``html/``. Change this with:
 
 	$ make DST=/where/you/want/it
 
