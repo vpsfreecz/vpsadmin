@@ -125,11 +125,7 @@ END
             @api.authenticate(:token, user: u, password: p, lifetime: @opts[:lifetime])
 
             if @opts[:save]
-              # FIXME: this is a workaround until the client has an API that exposes
-              # the token.
-              token = @api.instance_variable_get('@api') \
-                      .instance_variable_get('@auth') \
-                      .instance_variable_get('@token')
+              token = @api.auth.token
               
               f = File.new(@opts[:save], 'w')
               f.write(token)
