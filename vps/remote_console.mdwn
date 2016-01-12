@@ -1,0 +1,144 @@
+[[!uml src="""
+actor User as user1
+actor User as user2
+actor User as user3
+actor User as user4
+
+artifact "vpsfreectl console" as vpsfreectl
+artifact "Web console" as webconsole
+
+cloud Internet as internet
+
+database "Console router" as router
+
+node node1 {
+  node vpsadmind as vpsadmind1
+}
+node node2 {
+  node vpsadmind as vpsadmind2
+}
+
+artifact "console wrapper" as wrapper1
+artifact "console wrapper" as wrapper2
+artifact "console wrapper" as wrapper3
+artifact "console wrapper" as wrapper4
+
+artifact "vzctl console" as console1
+artifact "vzctl console" as console2
+artifact "vzctl console" as console3
+artifact "vzctl console" as console4
+
+user1 <--> webconsole
+user2 <--> webconsole
+user3 <--> vpsfreectl
+user4 <--> vpsfreectl
+
+webconsole <--> internet
+vpsfreectl<--> internet
+
+internet <--> router
+
+router <--> vpsadmind1
+router <--> vpsadmind2
+
+vpsadmind1 <--> wrapper1
+vpsadmind1 <--> wrapper2
+
+vpsadmind2 <--> wrapper3
+vpsadmind2 <--> wrapper4
+
+wrapper1 <--> console1
+wrapper2 <--> console2
+wrapper3 <--> console3
+wrapper4 <--> console4
+"""]]
+
+# Frontend
+There are two frontends as of now:
+
+ - Web console embedded in vpsAdmin-webui, built on top of the client-side of
+   ShellInABox
+ - Console in CLI of vpsfree-client (will be moved into vpsadmin-client in the
+   future)
+
+# Console router
+Console router is a standalone executable but it's a part of vpsAdmind project.
+Its purpose is to route requests from clients to appropriate vpsadmind and
+relay its reply to corresponding clients. Its interface for clients is using
+HTTP.
+
+The console router actually serves the page with web console as well. It is at
+`/console/:veid` using `GET` method. It requires the `session` query parameter.
+The page fetches additional JS libraries from the router and then continues
+with the requests described below.
+
+## Request from a client
+The request must use HTTP method POST at `/console/:veid/feed`, content type
+`application/x-www-form-urlenconded`. Accepted parameters in the request body
+are:
+
+ - `session` - token used for authentication purposes
+ - `keys` - raw data to be sent to the console, optional
+ - `width`, `height` - the size of client's terminal, optional
+
+The session token must be obtained through the vpsAdmin API
+(`Vps.ConsoleToken.Create`).
+
+## Reply to a client
+The reply is formatted in JSON with the following structure:
+
+	{
+		"data": string; data outputted by the console encoded in base64,
+		"session": true/false
+	}
+
+If the `session` is false, it means that the client can no longer access this
+console. This happens after a period of inactivity.
+
+# vpsAdmind backend
+Console router sends messages to vpsAdmind via JSON over TCP. Each JSON
+message must be separated with a new line. It is not a request/response
+protocol, both peers might send data simultaneously. vpsAdmind does not
+reply with JSON, it sends raw data from the console directly.
+
+## Message from the console router
+
+	{
+		"keys": string; data encoded in base64; optional,
+		"width": integer; width of the terminal; optional,
+		"height": integer; height of the terminal; optional
+	}
+
+`width` and `height` must be sent together.
+
+## Reply to the concole router
+Raw data from the console, not encoded.
+
+## Console wrapper
+In order for the terminal resizing to work correctly, `vzctl console` must be
+run in a pty. vpsAdmind therefore runs the console wrapper, which creates
+a pty and runs `vzctl console` in it. The wrapper then sets the pty size and
+notifies `vzctl console` using `SIGWINCH` about the change.
+
+vpsAdmind communicates with the wrapper using a simple line-based text protocol
+on wrapper's stdin, where as the wrapper prints raw data from the console
+on stdout.
+
+### Wrapper command protocol
+Every message is in the form of `<C> <ARG>\n`, where `<C>` is a single character
+identifying the command and `<ARG>` is an optional argument specific to that
+command.
+
+Commands:
+
+ - `W <data>` - write `data` to the console, `data` is encoded in base64
+ - `S <width> <height>` - change size of the pty and notify vzctl console
+ - `Q` - detach `vzctl console` by sending `\r ESC .` sequence
+
+## Known issues
+Even with the console wrapper, resizing with `vzctl console` from upstream
+does not work. It is because `vzctl` checks terminal size on `fd 0`, which
+represents stdin. However, the wrapper's pipe is connected to the stdin, so that
+it may send data to it, which makes the check fail. For this reason, vpsAdmin
+requires a patched version of `vzctl` which checks the terminal size on `fd 1` -
+stdout.
