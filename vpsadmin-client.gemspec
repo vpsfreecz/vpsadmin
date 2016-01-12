@@ -1,11 +1,11 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'vpsadminctl/version'
+require 'vpsadmin/client/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = 'vpsadminctl'
-  spec.version       = Vpsadminctl::VERSION
+  spec.name          = 'vpsadmin-client'
+  spec.version       = VpsAdmin::Client::VERSION
   spec.authors       = ['Jakub Skokan']
   spec.email         = ['jakub.skokan@vpsfree.cz']
   spec.summary       =
@@ -20,4 +20,6 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency 'bundler', '~> 1.6'
   spec.add_development_dependency 'rake'
+
+  spec.add_dependency 'haveapi-client', '~> 0.4.0'
 end

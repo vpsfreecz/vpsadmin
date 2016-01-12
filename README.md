@@ -1,4 +1,4 @@
-# Vpsadminctl
+# vpsAdmin client
 
 TODO: Write a gem description
 
@@ -6,7 +6,7 @@ TODO: Write a gem description
 
 Add this line to your application's Gemfile:
 
-    gem 'vpsadminctl'
+    gem 'vpsadmin-client'
 
 And then execute:
 
@@ -14,7 +14,7 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install vpsadminctl
+    $ gem install vpsadmin-client
 
 ## Usage
 

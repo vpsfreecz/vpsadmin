@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
+require 'vpsadmin/cli'
 
-require 'vpsadminctl/cli'
-
-Vpsadminctl::Cli.run
+VpsAdmin::CLI::Cli.run
