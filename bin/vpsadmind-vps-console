@@ -32,6 +32,12 @@ rescue Errno::EIO
   nil
 end
 
+# Surpress first two lines:
+#   Attached to CT 198 (ESC . to detach)
+#   Unable to get term attr: Invalid argument
+master.readline
+master.readline
+
 catch :stop do
   loop do
     rs, _ = IO.select([$stdin, master])
