@@ -6,6 +6,8 @@ Read at https://projects.vpsfree.cz/vpsadmin-doc
 Build requirements:
 
  - [ikiwiki](http://ikiwiki.info/)
+ - [ikiwiki-uml](https://github.com/robtaylor/ikiwiki-uml)
+ - graphviz
 
 Build with:
 
