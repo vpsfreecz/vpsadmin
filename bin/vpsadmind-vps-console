@@ -46,7 +46,7 @@ catch :stop do
       case r
       when $stdin
         buf = read_nonblock($stdin)
-        break if buf.nil?
+        throw(:stop) if buf.nil?
 
         buf.split("\n").each do |msg|
           cmd = msg.split(' ')
@@ -74,7 +74,7 @@ catch :stop do
 
       when master
         buf = read_nonblock(master)
-        break if buf.nil?
+        throw(:stop) if buf.nil?
 
         $stdout.write(buf)
         $stdout.flush
