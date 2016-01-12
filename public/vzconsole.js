@@ -194,14 +194,13 @@ ShellInABox.prototype.onReadyStateChange = function (request) {
             this.connected = true;
             var response = eval('(' + request.responseText + ')');
             if (response.data) {
-                this.vt100(response.data);
+                this.vt100(atob(response.data));
             }
 
-            if (!response.session ||
-                this.session && this.session != response.session) {
+            if (!response.session) {
                 this.sessionClosed();
+
             } else {
-                this.session = response.session;
                 this.sendRequest(request);
             }
         } else if (request.status == 0) {
