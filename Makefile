@@ -10,6 +10,8 @@ DEPLOY_TO=root@projects.vpsfree.cz:/var/www/virtual/projects.vpsfree.cz/vpsadmin
 COMMAND=${IKIWIKI} -v --wikiname vpsAdmin --plugin=goodstuff --plugin=theme \
 	--plugin=format --plugin=highlight --set theme=actiontabs \
 	--set tohighlight=".rb .sh" \
+	--libdir ~/.ikiwiki \
+	--plugin plantuml \
 	--exclude=${DST} --exclude=Makefile --rcs git ${SRC} ${DST}
 
 .PHONY: build
