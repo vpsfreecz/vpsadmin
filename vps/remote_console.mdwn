@@ -61,7 +61,6 @@ There are two frontends as of now:
  - Console in CLI of vpsadmin-client
 
 # Console router
-Console router is a standalone executable but it's a part of vpsAdmind project.
 Its purpose is to route requests from clients to appropriate vpsadmind and
 relay its reply to corresponding clients. Its interface for clients is using
 HTTP.
