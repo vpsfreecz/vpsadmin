@@ -4,7 +4,11 @@ module TransactionChains
 
     def link_chain(user, target, state, log)
       # Destroy all VPSes
-      user.vpses.where(object_state: %i(active suspended soft_delete)).each do |vps|
+      user.vpses.where(object_state: [
+          ::Vps.object_states[:active],
+          ::Vps.object_states[:suspended],
+          ::Vps.object_states[:soft_delete],
+      ]).each do |vps|
         vps.set_object_state(:hard_delete, reason: 'User was hard deleted',
                              chain: self)
       end
