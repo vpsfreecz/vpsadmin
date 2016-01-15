@@ -15,7 +15,9 @@ module TransactionChains
 
       # Destroy all datasets
       user.datasets.where(expiration: nil).order('full_name DESC').each do |ds|
-        use_chain(DatasetInPool::Destroy, args: [ds.primary_dataset_in_pool!, true])
+        dip = ds.primary_dataset_in_pool!
+        next if dip.pool.role == 'hypervisor'  # VPS datasets are already deleted
+        use_chain(DatasetInPool::Destroy, args: [dip, true])
       end
 
       # Destroy snapshot downloads
