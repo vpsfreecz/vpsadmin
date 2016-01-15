@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+require_relative '../lib/vpsadmin/console_router'
+
+VpsAdmin::ConsoleRouter::Server.run!
