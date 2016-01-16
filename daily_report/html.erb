@@ -109,11 +109,12 @@ def list_vpses(vpses, col)
 END
 
   vpses[:changed].includes(:user, :node).each do |vps|
+	user = ::User.unscoped.find(vps.m_id)
     ret += <<END
       <tr>
 	<td><a href="#{url("adminvps", "action=edit&veid=#{vps.id}")}">#{vps.id}</a></td>
 	<td>#{vps.hostname}</td>
-	<td><a href="#{url("adminm", "action=edit&id=#{vps.m_id}")}">#{vps.user.login}</a></td>
+	<td><a href="#{url("adminm", "action=edit&id=#{vps.m_id}")}">#{user.login}</a></td>
 	<td>#{vps.vps_server} #{vps.node.domain_name}</td>
 	<td>#{vps.cpu} cores</td>
 	<td>#{vps.memory / 1024} GiB</td>
