@@ -305,7 +305,7 @@ end
   <%= list_users(@users[:soft_deleted], 'DELETED AT') %>
 <% end %>
 
-<% if soft_deleted_users > 0 %>
+<% if hard_deleted_users > 0 %>
   <h3>Hard deleted users</h3>
   <%= list_users(@users[:hard_deleted], 'DESTROYED AT') %>
 <% end %>
