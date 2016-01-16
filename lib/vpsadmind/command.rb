@@ -126,7 +126,10 @@ module VpsAdmind
 
     def save_transaction(db)
       log(:debug, self, 'Saving transaction')
-      @cmd.post_save(db) if @cmd && current_chain_direction == :execute
+
+      if @cmd && current_chain_direction == :execute && @status != :failed
+        @cmd.post_save(db)
+      end
 
       if current_chain_direction == :execute
         done = 1
