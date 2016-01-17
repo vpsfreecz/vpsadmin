@@ -14,10 +14,29 @@ module TransactionChains
       end
 
       # Destroy all datasets
-      user.datasets.where(expiration: nil).order('full_name DESC').each do |ds|
-        dip = ds.primary_dataset_in_pool!
-        next if dip.pool.role == 'hypervisor'  # VPS datasets are already deleted
-        use_chain(DatasetInPool::Destroy, args: [dip, true])
+      user.datasets.all.order('full_name DESC').each do |ds|
+        begin
+          dip = ds.primary_dataset_in_pool!
+
+          if dip.pool.role == 'hypervisor'
+            # VPS datasets are already deleted but from hypervisor pools only,
+            # we have to take care about backups.
+            ds.dataset_in_pools.joins(:pool).where(
+                pools: {role: ::Pool.roles[:backup]}
+            ).each do |backup|
+              use_chain(DatasetInPool::Destroy, args: [backup, true])
+            end
+            
+          else # primary pool, delete right away with all backups
+            ds.set_object_state(:deleted, chain: self)
+          end
+
+        rescue ActiveRecord::RecordNotFound
+          # The dataset is not present on any primary/hypervisor pool as it has
+          # been already deleted and exists only in backup.
+          
+          ds.set_object_state(:deleted, chain: self)
+        end
       end
 
       # Destroy snapshot downloads
