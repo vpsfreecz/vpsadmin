@@ -61,6 +61,7 @@ There are two frontends as of now:
  - Console in CLI of vpsadmin-client
 
 # Console router
+
 Its purpose is to route requests from clients to appropriate vpsadmind and
 relay its reply to corresponding clients. Its interface for clients is using
 HTTP.
@@ -132,6 +133,150 @@ Commands:
  - `W <data>` - write `data` to the console, `data` is encoded in base64
  - `S <width> <height>` - change size of the pty and notify vzctl console
  - `Q` - detach `vzctl console` by sending `\r ESC .` sequence
+
+## Operation
+
+### Console router opens connection to vpsAdmind which in turn opens VPS console
+[[!uml src="""
+
+participant Client as client
+participant "Console router" as router
+participant "vpsAdmind" as vpsadmind
+participant "Console wrapper" as wrapper
+participant "vzctl console" as vzctl
+
+client -> router      : HTTP POST: keys=&width=80&height=25&session=secret
+activate client
+activate router
+
+router ->> vpsadmind  : connect()
+router --> client     : JSON: {data: '', session: true}
+deactivate router
+
+vpsadmind ->> router  : post_init()
+activate router
+router ->> vpsadmind  : JSON: {session: 'secret', width: 80, height: 25}
+activate vpsadmind
+
+deactivate router
+deactivate client
+
+vpsadmind ->> router  : Welcome to vpsFree.cz Remote Console\n
+activate router
+router -> router      : store in buffer
+deactivate router
+
+vpsadmind -> wrapper  : exec()
+activate wrapper
+wrapper -> wrapper    : openpty()
+wrapper -> vzctl      : open in pty
+deactivate wrapper
+vpsadmind ->> wrapper : W base64('\r')
+activate wrapper
+wrapper ->> vzctl     : \r
+deactivate wrapper
+vpsadmind ->> wrapper : S 80 25
+deactivate vpsadmind
+activate wrapper
+wrapper -> wrapper    : stty cols 80 rows 25
+wrapper ->> vzctl     : SIGWINCH
+vzctl -> vzctl        : ioctl(stdout, TIOCGWINSZ)
+deactivate wrapper
+
+vzctl ->> wrapper     : login prompt
+activate wrapper
+wrapper ->> vpsadmind : login prompt
+deactivate wrapper
+
+activate vpsadmind
+vpsadmind ->> router  : login prompt
+activate router
+router -> router      : store in buffer
+deactivate router
+deactivate vpsadmind
+
+client -> router      : HTTP POST: {keys=&width=80&height=25&session=secret}
+activate client
+activate router
+
+router --> client     : JSON: {data: base64('Welcome to vpsFree.cz Remote Console\n\\nlogin prompt'), session: true}
+deactivate router
+deactivate client
+
+"""]]
+<hr>
+
+### Send data and receive the output
+[[!uml src="""
+
+participant Client as client
+participant "Console router" as router
+participant "vpsAdmind" as vpsadmind
+participant "Console wrapper" as wrapper
+participant "vzctl console" as vzctl
+
+client -> router      : HTTP POST: keys=whoami\r&width=80&height=25&session=secret
+activate client
+activate router
+
+router ->> vpsadmind  : JSON: {keys: base64('whoami\r'), width: 80, height: 25}
+router --> client     : JSON: {data: '', session: true}
+
+deactivate router
+deactivate client
+
+vpsadmind ->> wrapper : W base64('whoami\r')
+wrapper ->> vzctl     : whoami\r
+vzctl ->> wrapper     : root\\n
+activate wrapper
+wrapper ->> vpsadmind : root\\n
+deactivate wrapper
+
+activate vpsadmind
+vpsadmind ->> router  : root\\n
+deactivate vpsadmind
+activate router
+router -> router      : store in buffer
+deactivate router
+
+client -> router      : HTTP POST: {keys=&width=80&height=25&session=secret}
+activate client
+activate router
+
+router --> client     : JSON: {data: base64('root\\n'), session: true}
+deactivate router
+deactivate client
+
+"""]]
+<hr>
+
+### Terminal size changes
+[[!uml src="""
+
+participant Client as client
+participant "Console router" as router
+participant "vpsAdmind" as vpsadmind
+participant "Console wrapper" as wrapper
+participant "vzctl console" as vzctl
+
+client -> router      : HTTP POST: keys=&width=80&height=50&session=secret
+activate client
+activate router
+
+router ->> vpsadmind  : JSON: {keys: '', width: 80, height: 50}
+router --> client     : JSON: {data: '', session: true}
+
+deactivate router
+deactivate client
+
+vpsadmind ->> wrapper : S 80 50
+activate wrapper
+wrapper -> wrapper    : stty cols 80 rows 50
+wrapper ->> vzctl     : SIGWINCH
+vzctl -> vzctl        : ioctl(stdout, TIOCGWINSZ)
+deactivate wrapper
+
+"""]]
 
 ## Known issues
 Even with the console wrapper, resizing with `vzctl console` from upstream
