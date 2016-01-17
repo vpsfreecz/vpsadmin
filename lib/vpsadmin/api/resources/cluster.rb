@@ -56,7 +56,7 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
                   ::Vps.object_states[:suspended],
               ]
           ).count,
-          ipv4_left: ::IpAddress.where(vps: nil, version: 4).count
+          ipv4_left: ::IpAddress.where(user: nil, vps: nil, version: 4).count
       }
     end
   end
