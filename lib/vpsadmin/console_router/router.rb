@@ -3,7 +3,6 @@ module VpsAdmin::ConsoleRouter
     def initialize
       @connections = {}
       @sessions = {}
-      @db = VpsAdmind::Db.new
     end
 
     def get_console(veid, session)
@@ -68,16 +67,26 @@ module VpsAdmin::ConsoleRouter
     def check_connection(veid, params)
       unless @timer
         EventMachine.add_periodic_timer(60) do
+          t = Time.now
+          t_i = t.to_i
+
+          if @last_db_access && @db
+            if @last_db_access + 30 < t
+              puts "Disconnecting from db"
+              @db.close
+              @db = nil
+            end
+          end
+
           @connections.each do |veid, console|
-            if (console.last_access.to_i + 60) < Time.new.to_i
+            if (console.last_access.to_i + 60) < t_i
               console.close_connection
             end
           end
 
           @sessions.delete_if do |veid, sessions|
             sessions.delete_if do |s|
-              t = Time.now.utc.to_i
-              s[:expiration] < t && (s[:last_access] + 300) < t
+              s[:expiration] < t_i && (s[:last_access] + 300) < t_i
             end
 
             sessions.empty?
@@ -88,7 +97,7 @@ module VpsAdmin::ConsoleRouter
       end
 
       unless @connections.include?(veid)
-        st = @db.prepared_st(
+        st = db.prepared_st(
             'SELECT server_ip4
             FROM servers
             INNER JOIN vps ON vps_server = server_id
@@ -131,7 +140,7 @@ module VpsAdmin::ConsoleRouter
         end
       end
 
-      st = @db.prepared_st(
+      st = db.prepared_st(
           'SELECT UNIX_TIMESTAMP(expiration)
           FROM vps_console
           WHERE vps_id = ? AND token = ? AND expiration > ?',
@@ -154,6 +163,12 @@ module VpsAdmin::ConsoleRouter
 
       st.close
       false
+    end
+
+    def db
+      @last_db_access = Time.now
+      return @db if @db
+      @db = VpsAdmind::Db.new
     end
   end
 end
