@@ -15,14 +15,24 @@ module VpsAdmin::CLI::Commands
       attr_accessor :buffer
 
       def initialize
+        @private_buffer = ''
         @buffer = ''
-        @end_seq = ["\e", "."]
+        @end_seq = ["\r", "\e", "."]
         @end_i = 0
       end
 
+      # Data is checked on the presence of the end sequence. The first character
+      # in the sequence (ENTER) can be read multiple times in a row and it is
+      # to be forwarded.
+      #
+      # When the second character in the end sequence is read, it is not forwarded,
+      # but stored in a private buffer. If the sequence is later broken, the private
+      # buffer is forwarded and reset.
+      #
+      # If the whole end sequence is read, EM event loop is stopped.
       def receive_data(data)
         data.each_char do |char|
-          if data == @end_seq[ @end_i ]
+          if char == @end_seq[ @end_i ]
             if @end_i == @end_seq.size-1
               EM.stop
               return
@@ -30,12 +40,27 @@ module VpsAdmin::CLI::Commands
 
             @end_i += 1
 
+            if @end_i == 1
+              @buffer += char
+
+            else
+              @private_buffer += char
+            end
+
+          elsif char == @end_seq.first
+            @buffer += char
+
           else
             @end_i = 0
+
+            unless @private_buffer.empty?
+              @buffer += @private_buffer
+              @private_buffer.clear
+            end
+
+            @buffer += char
           end
         end
-
-        @buffer += data
       end
     end
 
@@ -67,7 +92,7 @@ module VpsAdmin::CLI::Commands
       @token = t.token
 
       puts "Connecting to remote console..."
-      puts "Press ESC . to exit"
+      puts "Press ENTER ESC . to exit"
       puts
 
       raw_mode do
