@@ -5,6 +5,11 @@ module VpsAdmin::ConsoleRouter
       @sessions = {}
     end
 
+    def api_url
+      rs = db.query("SELECT cfg_value FROM sysconfig WHERE cfg_name = 'api_url'")
+      JSON.parse("{ \"v\": #{rs.fetch_row.first} }", symbolize_names: true)[:v]
+    end
+
     def get_console(veid, session)
       check_connection(veid, session)
 

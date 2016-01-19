@@ -103,10 +103,12 @@ function extend(subClass, baseClass) {
     subClass.prototype.superClass = baseClass.prototype;
 };
 
-function ShellInABox(veid, session, container) {
+function ShellInABox(api_url, veid, auth_token, session, container) {
+    this.api_url = api_url;
     this.veid = veid;
     this.url = "/console/feed/" + this.veid
     this.nextUrl = this.url;
+    this.auth_token = auth_token;
     this.session = session;
     this.pendingKeys = '';
     this.keysInFlight = false;
@@ -139,25 +141,30 @@ ShellInABox.prototype.sessionClosed = function () {
 };
 
 ShellInABox.prototype.reconnect = function () {
+	var that = this;
     this.showReconnect(false);
-    if (!this.session) {
-        if (document.location.hash != '') {
-            // A shellinaboxd daemon launched from a CGI only allows a single
-            // session. In order to reconnect, we must reload the frame definition
-            // and obtain a new port number. As this is a different origin, we
-            // need to get enclosing page to help us.
-            parent.location = this.nextUrl;
-        } else {
-            if (this.url != this.nextUrl) {
-                document.location.replace(this.nextUrl);
-            } else {
-                this.pendingKeys = '';
-                this.keysInFlight = false;
-                this.reset(true);
-                this.sendRequest();
-            }
-        }
-    }
+    
+	if (this.session)
+		return false;
+
+	var restart = function () {
+		that.api.vps(that.veid).console_token.create(function (c, token) {
+			that.session = token.token;
+			that.pendingKeys = '';
+			that.keysInFlight = false;
+			that.reset(true);
+			that.sendRequest();
+		});
+	};
+
+	if (this.api === undefined) {
+		this.api = new HaveAPI.Client(this.api_url, {version: '1.0'});
+		this.api.authenticate('token', {
+			token: that.auth_token
+		}, restart);
+
+	} else restart();
+
     return false;
 };
 

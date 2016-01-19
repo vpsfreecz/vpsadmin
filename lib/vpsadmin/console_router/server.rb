@@ -13,7 +13,12 @@ module VpsAdmin::ConsoleRouter
       v = veid.to_i
 
       if settings.router.check_session(v, params[:session])
-        erb :console, :locals => {:veid => v, :session => params[:session]}
+        erb :console, :locals => {
+            :api_url => settings.router.api_url,
+            :veid => v,
+            :auth_token => params[:token],
+            :session => params[:session]
+        }
       else
         "Access denied, invalid session"
       end
