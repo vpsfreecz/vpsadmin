@@ -21,16 +21,18 @@ module VpsAdmin::CLI::Commands
       end
 
       def receive_data(data)
-        if data == @end_seq[ @end_i ]
-          if @end_i == @end_seq.size-1
-            EM.stop
-            return
+        data.each_char do |char|
+          if data == @end_seq[ @end_i ]
+            if @end_i == @end_seq.size-1
+              EM.stop
+              return
+            end
+
+            @end_i += 1
+
+          else
+            @end_i = 0
           end
-
-          @end_i += 1
-
-        else
-          @end_i = 0
         end
 
         @buffer += data
