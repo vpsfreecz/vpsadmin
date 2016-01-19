@@ -43,7 +43,7 @@ function setup_console() {
 	}
 	
 	$xtpl->perex(_('Remote Console for VPS').' <a href="?page=adminvps&action=info&veid='.$vps->id.'">#'.$vps->id.'</a>',
-		'<iframe src="'.$server.'/console/'.$vps->id.'?session='.$t->token.'" width="100%" height="500px" border="1" id="vpsadmin-console-frame"></iframe>
+		'<iframe src="'.$server.'/console/'.$vps->id.'?token='.$_SESSION['auth_token'].'&session='.$t->token.'" width="100%" height="500px" border="1" id="vpsadmin-console-frame"></iframe>
 <script type="text/javascript">
 var _theframe = document.getElementById("vpsadmin-console-frame");
 _theframe.contentWindow.location.href = _theframe.src;
