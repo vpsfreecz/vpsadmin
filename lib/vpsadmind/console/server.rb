@@ -88,6 +88,7 @@ module VpsAdmind
           @console.register(self)
 
         else
+          log(:info, :console, "Attaching console of ##{@veid}")
           @console = EventMachine.popen(
               File.join(
                   File.dirname(__FILE__),

@@ -2,6 +2,8 @@ require 'monitor'
 
 module VpsAdmind
   class Console::Wrapper < EventMachine::Connection
+    include Utils::Log
+
     attr_accessor :usage
 
     @@consoles = {}
@@ -28,7 +30,11 @@ module VpsAdmind
     end
 
     def unbind
-      puts "console detached with exit status: #{get_status.exitstatus}"
+      log(
+          :info,
+          :console,
+          "Detached console of ##{@veid} with exit status: #{get_status.exitstatus}"
+      )
 
       @listeners.each do |l|
         l.console_detached
