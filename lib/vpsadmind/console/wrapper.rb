@@ -29,6 +29,14 @@ module VpsAdmind
 
     def unbind
       puts "console detached with exit status: #{get_status.exitstatus}"
+
+      @listeners.each do |l|
+        l.console_detached
+      end
+
+      @@mutex.synchronize do
+        @@consoles.delete(@veid)
+      end
     end
 
     def register(c)

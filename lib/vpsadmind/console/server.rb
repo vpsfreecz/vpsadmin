@@ -20,7 +20,7 @@ module VpsAdmind
       detach if !@detached && @console
     end
 
-    def detach
+    def detach_console
       @detached = true
 
       @console.usage -= 1
@@ -31,6 +31,12 @@ module VpsAdmind
           c.delete(@veid)
         end
       end
+    end
+
+    def console_detached
+      @detached = true
+      send_data("The console has been detached.\r\n")
+      close_connection_after_writing
     end
 
     protected
