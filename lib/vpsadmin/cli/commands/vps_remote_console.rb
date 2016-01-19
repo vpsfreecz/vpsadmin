@@ -59,13 +59,11 @@ module VpsAdmin::CLI::Commands
       vps = @api.vps.show(vps_id, meta: { includes: 'node__location' })
       puts "  VPS is on #{vps.node.domain_name}, located in #{vps.node.location.label}."
       puts "Console router URL is #{vps.node.location.remote_console_server}"
+      puts "Obtaining authentication token..."
 
-      write "Obtaining authentication token..."
-
-      t = vps.console_token(vps_id).create
+      t = vps.console_token.create
       @token = t.token
 
-      puts "  token expires at #{Time.iso8601(t.expiration).localtime}"
       puts "Connecting to remote console..."
       puts "Press ESC . to exit"
       puts
