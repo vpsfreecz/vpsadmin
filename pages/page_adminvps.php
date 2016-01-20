@@ -221,7 +221,15 @@ switch ($_GET["action"]) {
 		case 'hostname':
 			try {
 				csrf_check();
-				$api->vps->update($_GET['veid'], array('hostname' => $_POST['hostname']));
+				
+				$params = array();
+
+				if ($_POST['manage_hostname'] == 'manual')
+					$params['manage_hostname'] = false;
+				else
+					$params['hostname'] = $_POST['hostname'];
+
+				$api->vps->update($_GET['veid'], $params);
 				
 				notify_user(_("Hostname change planned"), '');
 				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
@@ -925,7 +933,17 @@ if (isset($show_info) && $show_info) {
 	// Hostname change
 		$xtpl->table_title(_('Hostname'));
 		$xtpl->form_create('?page=adminvps&action=hostname&veid='.$vps->id, 'post');
-		$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'hostname', $vps->hostname, _("A-z, a-z"), 255);
+		
+		$xtpl->form_add_radio_pure('manage_hostname', 'managed', $vps->manage_hostname);
+		$xtpl->table_td(_('Manage hostname by vpsAdmin').':');
+		$xtpl->form_add_input_pure('text', '30', 'hostname', $vps->hostname, _("A-z, a-z"), 255);
+		$xtpl->table_tr();
+
+		$xtpl->form_add_radio_pure('manage_hostname', 'manual', !$vps->manage_hostname);
+		$xtpl->table_td(_('Manage hostname manually'));
+		$xtpl->table_tr();
+
+
 		$xtpl->form_out(_("Go >>"));
 	
 	// Datasets
