@@ -13,8 +13,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   params(:common) do
     resource VpsAdmin::API::Resources::User, label: 'User', desc: 'VPS owner',
              value_label: :login
-    string :hostname, desc: 'VPS hostname', db_name: :vps_hostname,
-           required: true
+    string :hostname, desc: 'VPS hostname', db_name: :vps_hostname
     use :template
     string :info, label: 'Info', desc: 'VPS description', db_name: :vps_info
     resource VpsAdmin::API::Resources::DnsResolver, label: 'DNS resolver',
@@ -172,6 +171,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
                desc: 'Location in which to create the VPS, for non-admins'
       use :common
       VpsAdmin::API::ClusterResources.to_params(::Vps, self)
+
+      patch :hostname, required: true
     end
 
     output do
@@ -307,7 +308,6 @@ END
 
     input do
       use :common
-      patch :hostname, required: false
       VpsAdmin::API::ClusterResources.to_params(::Vps, self, resources: %i(cpu memory swap))
       string :change_reason, label: 'Change reason',
              desc: 'If filled, it is send to VPS owner in an email'
