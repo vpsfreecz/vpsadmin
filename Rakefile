@@ -3,7 +3,7 @@ require 'sinatra/activerecord/rake'
 require 'yard'
 require './lib/vpsadmin'
 require './lib/vpsadmin/api/tasks'
-require 'haveapi/tasks/hooks'
+require 'haveapi/tasks/yard'
 
 YARD::Rake::YardocTask.new do |t|
   t.files   = ['lib/**/*.rb', 'models/**/*.rb']
