@@ -103,7 +103,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
       integer :type, db_name: :t_type
       string :name
       resource VpsAdmin::API::Resources::VPS, label: 'VPS', value_label: :hostname
-      resource Transaction, name: :depends_on, label: 'Depends on'
+      resource Transaction, name: :depends_on, label: 'Depends on', value_label: :name
       bool :urgent, db_name: :t_urgent
       integer :priority, db_name: :t_priority
       integer :success, db_name: :t_success
