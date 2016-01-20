@@ -262,7 +262,9 @@ module VpsAdmind
         rs = my.query(
             "SELECT vps_id, manage_hostname
             FROM vps
-            WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}"
+            WHERE
+              vps_server = #{$CFG.get(:vpsadmin, :server_id)}
+              AND object_state < 3"
         )
 
         rs.each_hash do |vps|
