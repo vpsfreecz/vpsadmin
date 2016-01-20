@@ -156,7 +156,7 @@ module TransactionChains
                   ])
                 end
 
-                if opts[:hostname]
+                if opts[:hostname] && new_primary_vps.manage_hostname
                   append(Transactions::Vps::Hostname,
                       args: [
                           new_primary_vps,
@@ -232,7 +232,7 @@ module TransactionChains
                   ])
                 end
 
-                if opts[:hostname]
+                if opts[:hostname] && new_secondary_vps.manage_hostname
                   append(Transactions::Vps::Hostname,
                       args: [
                           new_secondary_vps,
