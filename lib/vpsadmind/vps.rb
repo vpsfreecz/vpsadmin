@@ -88,11 +88,12 @@ module VpsAdmind
       vzctl(:exec, @veid, "cat #{file}")
     end
 
-    def update_status(db)
+    def update_status(db, read_hostname = false)
       up = 0
       nproc = 0
       mem = 0
       disk = 0
+      hostname = ''
 
       begin
         IO.popen("#{$CFG.get(:vz, :vzlist)} --no-header #{@veid}") do |io|
@@ -105,6 +106,11 @@ module VpsAdmind
 
           disk_str = vzctl(:exec, @veid, "#{$CFG.get(:bin, :df)} -k /")[:output]
           disk = disk_str.split("\n")[1].split(" ")[2].to_i / 1024
+
+          if read_hostname
+            hostname = vzctl(:exec, @veid, 'hostname')[:output].strip
+            hostname = '<unable to read>' if hostname.empty?
+          end
         end
       rescue
 
@@ -119,6 +125,15 @@ module VpsAdmind
           @veid.to_i, Time.now.utc.strftime('%Y-%m-%d %H:%M:%S'), up, nproc, mem, disk, VpsAdmind::VERSION,
           Time.now.utc.strftime('%Y-%m-%d %H:%M:%S'), up, nproc, mem, disk, VpsAdmind::VERSION
       )
+
+      if read_hostname
+        db.prepared(
+            'UPDATE vps
+            SET vps_hostname = ?
+            WHERE vps_id = ?',
+            hostname, @veid.to_i
+        )
+      end
     end
 
     def script_mount

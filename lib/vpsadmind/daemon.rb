@@ -259,11 +259,15 @@ module VpsAdmind
       my = Db.new
 
       if $CFG.get(:vpsadmin, :update_vps_status)
-        rs = my.query("SELECT vps_id FROM vps WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}")
+        rs = my.query(
+            "SELECT vps_id, manage_hostname
+            FROM vps
+            WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}"
+        )
 
         rs.each_hash do |vps|
           ct = Vps.new(vps["vps_id"])
-          ct.update_status(my)
+          ct.update_status(my, vps["manage_hostname"].to_i == 0)
         end
       end
 
