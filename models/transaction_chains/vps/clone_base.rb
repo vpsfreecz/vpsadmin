@@ -25,6 +25,8 @@ module TransactionChains
     end
 
     def clone_hostname(vps, dst_vps, attrs)
+      return unless vps.manage_hostname
+      
       append(Transactions::Vps::Hostname, args: [
           dst_vps,
           vps.hostname,

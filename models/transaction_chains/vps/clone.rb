@@ -40,6 +40,7 @@ module TransactionChains
       dst_vps = ::Vps.new(
           m_id: attrs[:user].id,
           vps_hostname: attrs[:hostname],
+          manage_hostname: vps.manage_hostname,
           vps_template: vps.vps_template,
           vps_info: "Cloned from #{vps.id}. Original info:\n#{vps.vps_info}",
           vps_server: node.id,
