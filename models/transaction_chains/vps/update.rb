@@ -53,7 +53,14 @@ module TransactionChains
 
           when 'vps_hostname'
             append(Transactions::Vps::Hostname, args: [vps, vps.hostname_was, vps.hostname]) do
-              edit(vps, attr => vps.hostname)
+              edit(vps, {attr => vps.hostname, 'manage_hostname' => true})
+            end
+
+          when 'manage_hostname'
+            unless vps.manage_hostname
+              append(Transactions::Vps::UnmanageHostname, args: vps) do
+                edit(vps, attr => vps.manage_hostname)
+              end
             end
 
           when 'vps_template'

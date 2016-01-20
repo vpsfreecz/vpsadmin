@@ -14,6 +14,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     resource VpsAdmin::API::Resources::User, label: 'User', desc: 'VPS owner',
              value_label: :login
     string :hostname, desc: 'VPS hostname', db_name: :vps_hostname
+    bool :manage_hostname, label: 'Manage hostname',
+          desc: 'Determines whether vpsAdmin sets VPS hostname or not'
     use :template
     string :info, label: 'Info', desc: 'VPS description', db_name: :vps_info
     resource VpsAdmin::API::Resources::DnsResolver, label: 'DNS resolver',
@@ -79,11 +81,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       allow if u.role == :admin
       restrict m_id: u.m_id
       input blacklist: %i(user)
-      output whitelist: %i(id user hostname os_template dns_resolver node dataset
-                          created_at memory swap cpu backup_enabled
-                          maintenance_lock maintenance_lock_reason object_state
-                          expiration_date running process_count used_memory
-                          used_disk)
+      output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
+                          node dataset memory swap cpu backup_enabled maintenance_lock
+                          maintenance_lock_reason object_state expiration_date
+                          running process_count used_memory used_disk)
       allow
     end
 
@@ -169,7 +170,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
                desc: 'Environment in which to create the VPS, for non-admins'
       resource VpsAdmin::API::Resources::Location, label: 'Location',
                desc: 'Location in which to create the VPS, for non-admins'
-      use :common
+      use :common, exclude: %i(manage_hostname)
       VpsAdmin::API::ClusterResources.to_params(::Vps, self)
 
       patch :hostname, required: true
@@ -183,8 +184,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       allow if u.role == :admin
       input whitelist: %i(environment location hostname os_template
                           dns_resolver cpu memory swap diskspace ipv4 ipv6)
-      output whitelist: %i(id user hostname os_template dns_resolver node dataset
-                          memory swap cpu backup_enabled maintenance_lock
+      output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
+                          node dataset memory swap cpu backup_enabled maintenance_lock
                           maintenance_lock_reason object_state expiration_date
                           running process_count used_memory used_disk)
       allow
@@ -284,11 +285,10 @@ END
     authorize do |u|
       allow if u.role == :admin
       restrict m_id: u.m_id
-      output whitelist: %i(id user hostname os_template dns_resolver node dataset
-                          created_at memory swap cpu backup_enabled
-                          maintenance_lock maintenance_lock_reason object_state
-                          expiration_date running process_count used_memory
-                          used_disk)
+      output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
+                          node dataset memory swap cpu backup_enabled maintenance_lock
+                          maintenance_lock_reason object_state expiration_date
+                          running process_count used_memory used_disk)
       allow
     end
 
@@ -342,6 +342,14 @@ END
             error('resources cannot be changed when changing VPS owner')
           end
         end
+      end
+
+      if input[:manage_hostname] === false && input[:hostname]
+        input.delete(:hostname)
+
+      elsif input[:manage_hostname] === true && \
+            (input[:hostname].nil? || input[:hostname].empty?)
+        error('update failed', hostname: ['must be present'])
       end
 
       vps.update(to_db_names(input))
@@ -561,9 +569,10 @@ END
       allow if u.role == :admin
       restrict m_id: u.id
       input blacklist: %i(node user configs)
-      output whitelist: %i(id hostname os_template dns_resolver node dataset
-                          created_at memory swap cpu backup_enabled
-                          maintenance_lock maintenance_lock_reason)
+      output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
+                          node dataset memory swap cpu backup_enabled maintenance_lock
+                          maintenance_lock_reason object_state expiration_date
+                          running process_count used_memory used_disk)
       allow
     end
 

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160109160611) do
+ActiveRecord::Schema.define(version: 20160120075845) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -771,6 +771,7 @@ ActiveRecord::Schema.define(version: 20160109160611) do
     t.datetime "expiration_date"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.boolean  "manage_hostname",                          default: true,  null: false
   end
 
   add_index "vps", ["m_id"], name: "index_vps_on_m_id", using: :btree
