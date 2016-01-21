@@ -83,14 +83,31 @@ module VpsAdmin::CLI::Commands
       vps_id = args.first.to_i
 
       write "Locating VPS.."
-      vps = @api.vps.show(vps_id, meta: { includes: 'node__location' })
+      begin
+        vps = @api.vps.show(vps_id, meta: { includes: 'node__location' })
+
+      rescue HaveAPI::Client::ActionFailed => e
+        puts "  error"
+        puts e.message
+        exit(false)
+      end
+
       puts "  VPS is on #{vps.node.domain_name}, located in #{vps.node.location.label}."
       puts "Console router URL is #{vps.node.location.remote_console_server}"
-      puts "Obtaining authentication token..."
+      write "Obtaining authentication token..."
 
-      t = vps.console_token.create
+      begin
+        t = vps.console_token.create
+
+      rescue HaveAPI::Client::ActionFailed => e
+        puts "  error"
+        puts e.message
+        exit(false)
+      end
+
       @token = t.token
 
+      puts
       puts "Connecting to remote console..."
       puts "Press ENTER ESC . to exit"
       puts
