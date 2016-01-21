@@ -1,0 +1,27 @@
+--- src/enter.c.orig	2016-01-21 15:26:00.105249067 +0100
++++ src/enter.c	2016-01-21 15:58:56.396766097 +0100
+@@ -103,13 +103,13 @@
+ {
+ 	struct termios tios;
+ 
+-	if (tcgetattr(0, &tios) == -1) {
++	if (tcgetattr(1, &tios) == -1) {
+ 		logger(-1, errno, "Unable to get term attr");
+ 		return;
+ 	}
+ 	memcpy(&s_tios, &tios, sizeof(struct termios));
+ 	cfmakeraw(&tios);
+-	if (tcsetattr(0, TCSADRAIN, &tios) == -1)
++	if (tcsetattr(1, TCSADRAIN, &tios) == -1)
+ 		logger(-1, errno, "Unable to set raw mode");
+ }
+ 
+@@ -412,7 +412,7 @@
+ {
+ 	struct winsize ws;
+ 
+-	if (ioctl(0, TIOCGWINSZ, &ws))
++	if (ioctl(1, TIOCGWINSZ, &ws))
+ 		warn("Unable to get window size");
+ 	else {
+ 		if (sig == 0) {	/* just attached */

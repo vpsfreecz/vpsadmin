@@ -283,7 +283,7 @@ deactivate wrapper
    does not work. It is because `vzctl` checks terminal size on `fd 0`, which
    represents stdin. However, the wrapper's pipe is connected to the stdin, so that
    it may send data to it, which makes the check fail. For this reason, vpsAdmin
-   requires a patched version of `vzctl` which checks the terminal size on `fd 1` -
+   requires a [[patched|vzctl-console.patch]] version of `vzctl` which checks the terminal size on `fd 1` -
    stdout.
 
  - Some applications use `$TERM` environment variable to decide which functionality
