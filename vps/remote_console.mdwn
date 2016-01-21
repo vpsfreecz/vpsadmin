@@ -67,7 +67,11 @@ relay its reply to corresponding clients. Its interface for clients is using
 HTTP.
 
 The console router actually serves the page with web console as well. It is at
-`/console/:veid` using `GET` method. It requires the `session` query parameter.
+`GET /console/:veid` It requires two query parameters:
+
+ - `token` - authentication token for the API (used for reconnect)
+ - `session` - token for access to the console
+
 The page fetches additional JS libraries from the router and then continues
 with the requests described below.
 
