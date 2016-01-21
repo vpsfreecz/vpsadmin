@@ -101,18 +101,22 @@ module VpsAdmind
           up = status[2] == "running" ? 1 : 0
           nproc = status[1].to_i
 
-          mem_str = load_file("/proc/meminfo")[:output]
-          mem = (mem_str.match(/^MemTotal\:\s+(\d+) kB$/)[1].to_i - mem_str.match(/^MemFree\:\s+(\d+) kB$/)[1].to_i) / 1024
+          if up == 1
+            mem_str = load_file("/proc/meminfo")[:output]
+            mem = (mem_str.match(/^MemTotal\:\s+(\d+) kB$/)[1].to_i - mem_str.match(/^MemFree\:\s+(\d+) kB$/)[1].to_i) / 1024
 
-          disk_str = vzctl(:exec, @veid, "#{$CFG.get(:bin, :df)} -k /")[:output]
-          disk = disk_str.split("\n")[1].split(" ")[2].to_i / 1024
+            disk_str = vzctl(:exec, @veid, "#{$CFG.get(:bin, :df)} -k /")[:output]
+            disk = disk_str.split("\n")[1].split(" ")[2].to_i / 1024
 
-          if read_hostname
-            hostname = vzctl(:exec, @veid, 'hostname')[:output].strip
-            hostname = '<unable to read>' if hostname.empty?
+            if read_hostname
+              hostname = vzctl(:exec, @veid, 'hostname')[:output].strip
+              hostname = '<unable to read>' if hostname.empty?
+            end
           end
         end
-      rescue
+      rescue => e
+        puts "yes, rescued"
+        p e
 
       end
 
