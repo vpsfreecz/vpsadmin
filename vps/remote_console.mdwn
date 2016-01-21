@@ -151,6 +151,7 @@ activate router
 
 router ->> vpsadmind  : connect()
 router --> client     : JSON: {data: '', session: true}
+deactivate client
 deactivate router
 
 vpsadmind ->> router  : post_init()
@@ -159,7 +160,6 @@ router ->> vpsadmind  : JSON: {session: 'secret', width: 80, height: 25}
 activate vpsadmind
 
 deactivate router
-deactivate client
 
 vpsadmind ->> router  : Welcome to vpsFree.cz Remote Console\n
 activate router
@@ -279,9 +279,15 @@ deactivate wrapper
 """]]
 
 ## Known issues
-Even with the console wrapper, resizing with `vzctl console` from upstream
-does not work. It is because `vzctl` checks terminal size on `fd 0`, which
-represents stdin. However, the wrapper's pipe is connected to the stdin, so that
-it may send data to it, which makes the check fail. For this reason, vpsAdmin
-requires a patched version of `vzctl` which checks the terminal size on `fd 1` -
-stdout.
+ - Even with the console wrapper, resizing with `vzctl console` from upstream
+   does not work. It is because `vzctl` checks terminal size on `fd 0`, which
+   represents stdin. However, the wrapper's pipe is connected to the stdin, so that
+   it may send data to it, which makes the check fail. For this reason, vpsAdmin
+   requires a patched version of `vzctl` which checks the terminal size on `fd 1` -
+   stdout.
+
+ - Some applications use `$TERM` environment variable to decide which functionality
+   will be available. It is not possible for the console to relay the `$TERM`
+   variable from the client to the server. The `$TERM` must be set by the user
+   if he wishes, or applications may provide ways to force some behaviour even
+   if `$TERM` is not set.
