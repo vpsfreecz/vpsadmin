@@ -17,7 +17,7 @@ module VpsAdmind
     end
 
     def unbind
-      detach if !@detached && @console
+      detach_console if !@detached && @console
     end
 
     def detach_console
