@@ -455,7 +455,7 @@ END
     http_method :post
 
     input(:hash) do
-      string :type, label: 'Type', choices: %i(secure simple), default: :secure,
+      string :type, label: 'Type', choices: %w(secure simple), default: 'secure',
              fill: true
     end
 
@@ -1016,7 +1016,7 @@ END
       resource VpsAdmin::API::Resources::Dataset::Snapshot, label: 'Snapshot',
                value_label: :created_at
       string :mountpoint, label: 'Mountpoint', db_name: :dst
-      string :mode, label: 'Mode', choices: %i(ro rw), default: :rw, fill: true
+      string :mode, label: 'Mode', choices: %w(ro rw), default: 'rw', fill: true
       string :on_start_fail, label: 'On mount failure',
              choices: ::Mount.on_start_fails.keys,
              desc: 'What happens when the mount fails during VPS start'
