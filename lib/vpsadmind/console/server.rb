@@ -1,6 +1,5 @@
 require 'rubygems'
 require 'eventmachine'
-require 'pry'
 
 module VpsAdmind  
   class Console::Server < EventMachine::Connection
