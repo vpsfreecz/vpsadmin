@@ -1,3 +1,13 @@
+* Sat Jan 23 2016 - version 2.1.0
+- VPS console:
+  - run vzctl console in a pty
+  - support terminal resizing
+  - logging
+- VPS status:
+  - read hostname if necessary
+  - exclude VPS in state hard_delete
+- Removed console router
+
 * Tue Dec 29 2015 - version 2.0.0
 - Major rewrite, see release notes
 
