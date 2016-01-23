@@ -1,3 +1,8 @@
+* Sat Jan 23 2016 - version 2.1.0
+- Remove playground setting for users
+- Use API 1.0
+- Rebase on top of HaveAPI v0.4
+
 * Tue Dec 29 2015 - version 2.0.0
 - Major rewrite, see release notes
 
