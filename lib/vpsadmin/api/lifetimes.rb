@@ -454,7 +454,7 @@ module VpsAdmin::API
           end
 
           if !input[:object_state] || obj.object_state == input[:object_state]
-            if input[:expiration_date]
+            if input[:expiration_date] || obj.expiration_date != input[:expiration_date]
               obj.set_expiration(
                   input[:expiration_date],
                   reason: input[:change_reason]
