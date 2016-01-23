@@ -1,0 +1,5 @@
+* Sat Jan 23 2015 - version 2.1.0
+- Change protocols for communication with clients and vpsAdmind
+- Support console rezising
+- Implement reconnect button in web console
+- Disconnect from the database after a period of inactivity
