@@ -668,7 +668,7 @@ function list_members() {
 		$p = $api->vps->index->getParameters('input')->object_state;
 		
 		api_param_to_form('object_state', $p,
-			$p->choices[ $_GET['object_state'] ]);
+			$p->validators->include->values[ $_GET['object_state'] ]);
 		
 		$xtpl->form_out(_('Show'));
 	
@@ -710,8 +710,13 @@ function list_members() {
 					$params[$f] = $_GET[$f];
 			}
 			
-			if ($_GET['object_state'])
-				$params['object_state'] = $api->user->index->getParameters('input')->object_state->choices[(int) $_GET['object_state']];
+			if ($_GET['object_state']) {
+				$params['object_state'] = $api->user->index->getParameters('input')
+					->object_state
+					->validators
+					->include
+					->values[(int) $_GET['object_state']];
+			}
 			
 			$users = $api->user->list($params);
 			
@@ -991,7 +996,11 @@ if ($_SESSION["logged_in"]) {
 		case 'delete3':
 			if ($_SESSION["is_admin"] && ($u = $api->user->find($_GET["id"]))) {
 				try {
-					$choices = $api->user->delete->getParameters('input')->object_state->choices;
+					$choices = $api->user->delete->getParameters('input')
+						->object_state
+						->validators
+						->include
+						->values;
 					$state = $choices[(int) $_GET['object_state']];
 					
 					$u->delete(array(

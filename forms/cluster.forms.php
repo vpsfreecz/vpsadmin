@@ -172,7 +172,11 @@ function integrity_check_list() {
 	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
 
 
-	$statuses = $api->integrity_check->list->getParameters('input')->status->choices;
+	$statuses = $api->integrity_check->list->getParameters('input')
+		->status
+		->validators
+		->include
+		->values;
 	$empty = array('' => _('---'));
 		
 	$xtpl->form_add_select(
@@ -285,7 +289,11 @@ function integrity_object_list() {
 	$xtpl->form_add_input(_("Class name").':', 'text', '30', 'class_name', get_val('class_name', ''), '');
 	$xtpl->form_add_input(_("Row ID").':', 'text', '30', 'row_id', get_val('row_id', ''), '');
 
-	$statuses = $api->integrity_object->list->getParameters('input')->status->choices;
+	$statuses = $api->integrity_object->list->getParameters('input')
+		->status
+		->validators
+		->include
+		->values;
 	$empty = array('' => _('---'));
 		
 	$xtpl->form_add_select(
@@ -401,7 +409,7 @@ function integrity_fact_list() {
 	$xtpl->form_add_input(_("Class name").':', 'text', '30', 'class_name', get_val('class_name', ''), '');
 	$xtpl->form_add_input(_('Object ID').':', 'text', '30', 'integrity_object', $_GET['integrity_object']);
 
-	$statuses = $input->status->choices;
+	$statuses = $input->status->validators->include->values;
 	$empty = array('' => _('---'));
 		
 	$xtpl->form_add_select(
@@ -411,7 +419,7 @@ function integrity_fact_list() {
 		$_GET['status']
 	);
 
-	$severities = $input->severity->choices;
+	$severities = $input->severity->validators->include->values;
 	$xtpl->form_add_select(
 	 	_('Severity').':',
 		'severity',

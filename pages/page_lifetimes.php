@@ -5,7 +5,11 @@ if ($_SESSION['logged_in'] && $_SESSION['is_admin']) {
 	switch ($_GET['action']) {
 		case 'set_state':
 			try {
-				$choices = $api[$_GET['resource']]->update->getParameters('input')->object_state->choices;
+				$choices = $api[$_GET['resource']]->update->getParameters('input')
+					->object_state
+					->validators
+					->include
+					->values;
 				$state = $choices[(int) $_POST['object_state']];
 				$params = array(
 					'object_state' => $state
