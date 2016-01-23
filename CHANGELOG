@@ -1,2 +1,13 @@
+* Sat Jan 12 2016 - version 2.1.0
+- TransactionChain.append_t to replace TransactionChain.append
+- API version 1.0
+- Rebased on top of HaveAPI v0.4
+- Support for yardoc
+- Model validators below includes (fixes validator duplicity)
+- Proper dependencies in gemfile
+- Removed attribute User.m_playround_enabled
+- Manual management of VPS hostname
+- Lifetimes allow to unset expiration date
+
 * Tue Dec 29 2015 - version 2.0.0
 - Major rewrite, see release notes
