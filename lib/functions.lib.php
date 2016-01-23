@@ -272,20 +272,21 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 	switch ($desc->type) {
 		case 'String':
 		case 'Integer':
-			if ($desc->choices) {
+			if ($desc->validators && $desc->validators->include) {
+				$desc_choices = $desc->validators->include->values;
 				$choices = array();
 				
 				if ($label_callback) {
-					foreach ($desc->choices as $k => $val)
+					foreach ($desc_choices as $k => $val)
 						$choices[$k] = $label_callback($val);
 
 				} else
-					$choices = $desc->choices;
+					$choices = $desc_choices;
 
 				$xtpl->form_add_select_pure(
 					$name,
 					$choices,
-					array_search($v, $desc->choices)
+					array_search($v, $desc_choices)
 				);
 
 			} else {
@@ -326,7 +327,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 function api_param_to_form($name, $desc, $v = null, $label_callback = null) {
 	global $xtpl;
 	
-	$xtpl->table_td($desc->label.':');
+	$xtpl->table_td(($desc->label ? $desc->label : $name).':');
 	api_param_to_form_pure($name, $desc, $v, $label_callback);
 	
 	if ($desc->description)
