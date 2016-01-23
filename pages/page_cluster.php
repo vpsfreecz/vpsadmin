@@ -1264,7 +1264,7 @@ if ($list_nodes) {
 		$t = new DateTime($node->last_report);
 		$t->setTimezone(new DateTimeZone(date_default_timezone_get()));
 		
-		if ((time() - $t->getTimestamp()) > 150) {
+		if (!$node->last_report || (time() - $t->getTimestamp()) > 150) {
 			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
 		
 		} else {
