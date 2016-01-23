@@ -1,2 +1,7 @@
+* Sat Jan 23 2016 - version 2.1.0
+- Renamed to vpsadmin-client
+- Rebased on HaveAPI v0.4
+- Remote VPS console
+
 * Tue Dec 29 2015 - version 2.0.0
 - No changes
