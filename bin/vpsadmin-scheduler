@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-Dir.chdir('/opt/vpsadminapi')
+Dir.chdir('/opt/vpsadmin-api')
 require_relative '../lib/vpsadmin'
 
 EventMachine.run do
