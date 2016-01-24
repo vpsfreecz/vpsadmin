@@ -261,7 +261,7 @@ module VpsAdmin::API
             use :lifetime_all
             patch :object_state,
                   choices: states,
-                  default: states.first,
+                  default: states.first.to_s,
                   fill: true
           end
 
