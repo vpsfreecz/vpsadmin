@@ -365,7 +365,7 @@ END
 
     input do
       bool :lazy, label: 'Lazy delete', desc: 'Only mark VPS as deleted',
-           default: true
+           default: true, fill: true
     end
 
     authorize do |u|
@@ -378,10 +378,18 @@ END
     def exec
       vps = ::Vps.including_deleted.find_by!(with_restricted(vps_id: params[:vps_id]))
       maintenance_check!(vps)
+      
+      if current_user.role == :admin
+        state = input[:lazy] ? :soft_delete : :hard_delete
 
-      # FIXME: check if object_state is filled for non-admins
+      else
+        state = :soft_delete
+      end
 
-      update_object_state!(vps)
+      vps.set_object_state(
+          state,
+          reason: 'Deletion requested'
+      )
       ok
     end
   end
