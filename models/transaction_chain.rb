@@ -153,8 +153,15 @@ class TransactionChain < ActiveRecord::Base
   # Use the block to configure transaction confirmations, see
   # Transaction::Confirmable.
   # Deprecated in favor of #append_t.
-  def append(klass, name: nil, args: [], urgent: nil, prio: nil, &block)
-    do_append(@last_id, name, klass, args, urgent, prio, block)
+  #
+  # @param klass [Transaction] transaction subclass
+  # @param opts [hash] options
+  # @option opts [Array] args
+  # @option opts [Boolean] urgent
+  # @option opts [Integer] prio
+  # @option opts [Symbol] name
+  def append(klass, opts = {}, &block)
+    do_append(@last_id, klass, opts, block)
   end
 
   # This method will be deprecated in the near future.
@@ -163,15 +170,31 @@ class TransactionChain < ActiveRecord::Base
   # If +name+ is set, it is used as an anchor which other
   # transaction in chain might hang onto.
   # +args+ and +block+ are forwarded to target transaction.
-  def append_to(dep_name, klass, name: nil, args: [], urgent: nil, prio: nil, &block)
-    do_append(@named[dep_name], name, klass, args, urgent, prio, block)
+  #
+  # @param dep_name [Symbol] name of transaction to depend on
+  # @param klass [Transaction] transaction subclass
+  # @param opts [hash] options
+  # @option opts [Array] args
+  # @option opts [Boolean] urgent
+  # @option opts [Integer] prio
+  # @option opts [Symbol] name
+  # @see TransactionChain#append_t
+  def append_to(dep_name, klass, opts = {}, &block)
+    do_append(@named[dep_name], klass, opts, block)
   end
 
   # Will replace #append in the future. #append_t does not execute the block
   # in Confirmable instance context, but uses the original context in which
   # the block was defined - +self+ does not change meaning.
-  def append_t(klass, name: nil, args: [], urgent: nil, prio: nil, &block)
-    do_append(@last_id, name, klass, args, urgent, prio, block, true)
+  #
+  # @param klass [Transaction] transaction subclass
+  # @param opts [hash] options
+  # @option opts [Array] args
+  # @option opts [Boolean] urgent
+  # @option opts [Integer] prio
+  # @option opts [Symbol] name
+  def append_t(klass, opts = {}, &block)
+    do_append(@last_id, klass, opts, block, true)
   end
 
   # Call this method from TransactionChain#link_chain to include
@@ -260,17 +283,27 @@ class TransactionChain < ActiveRecord::Base
   end
 
   private
-  def do_append(dep, name, klass, args, urgent, prio, block, retain_context = false)
-    args = [args] unless args.is_a?(Array)
-
-    urgent ||= self.urgent
-    prio ||= self.prio
+  # @param dep
+  # @param klass
+  # @param opts [Hash]
+  # @option opts [Array] args
+  # @option opts [Boolean] urgent
+  # @option opts [Integer] prio
+  # @option opts [Symbol] name
+  # @param retain_context [Boolean]
+  def do_append(dep, klass, opts, block, retain_context = false)
+    t_opts = {
+        args: opts[:args].is_a?(Array) ? opts[:args] : [ opts[:args] ],
+        urgent: opts[:urgent].nil? ? self.urgent : opts[:urgent],
+        prio: opts[:prio] || self.prio,
+        retain_context: retain_context,
+    }
 
     @dst_chain.size += 1
-    t = klass.fire_chained(@dst_chain, dep, urgent, prio, retain_context, *args, &block)
+    t = klass.fire_chained(@dst_chain, dep, t_opts, &block)
     @last_node_id = t.t_server
     @last_id = t.id
-    @named[name] = @last_id if name
+    @named[ opts[:name] ] = @last_id if opts[:name]
     @last_id
   end
 

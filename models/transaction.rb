@@ -74,15 +74,23 @@ class Transaction < ActiveRecord::Base
   # Transaction is to be in +chain+, +dep+ is the id of the previous transaction
   # in the chain.
   # When given a block, it is called in the context of Confirmable.
-  def self.fire_chained(chain, dep, urgent, prio, retain_context, *args, &block)
+  #
+  # @param chain [TransactionChain]
+  # @param dep [Integer] id of transaction to depend on
+  # @param opts [Hash] additional options
+  # @option opts [Array] args
+  # @option opts [Boolean] urgent
+  # @option opts [Integer] prio
+  # @option opts [Boolean] retain_context
+  def self.fire_chained(chain, dep, opts, &block)
     t = new
 
     t.transaction_chain = chain
     t.t_depends_on = dep
     t.t_type = t.class.t_type if t.class.t_type
     t.queue = (t.class.queue || 'general').to_s
-    t.t_urgent = urgent
-    t.t_priority = prio || 0
+    t.t_urgent = opts[:urgent]
+    t.t_priority = opts[:prio] || 0
     t.reversible = @reversible.nil? ? :is_reversible : @reversible
 
     if block
@@ -91,7 +99,7 @@ class Transaction < ActiveRecord::Base
 
       c = Confirmable.new(t)
 
-      if retain_context
+      if opts[:retain_context]
         block.call(c)
 
       else
@@ -99,7 +107,7 @@ class Transaction < ActiveRecord::Base
       end
     end
 
-    t.t_param = (t.params(*args) || {}).to_json
+    t.t_param = (t.params(* (opts[:args] || [])) || {}).to_json
     t.t_done = :waiting
 
     t.save!
