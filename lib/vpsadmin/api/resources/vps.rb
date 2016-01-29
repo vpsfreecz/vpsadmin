@@ -320,7 +320,8 @@ END
     authorize do |u|
       allow if u.role == :admin
       restrict m_id: u.m_id
-      input whitelist: %i(hostname os_template dns_resolver cpu memory swap)
+      input whitelist: %i(hostname manage_hostname os_template dns_resolver cpu
+                          memory swap)
       allow
     end
 
