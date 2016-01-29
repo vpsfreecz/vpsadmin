@@ -69,8 +69,21 @@ class TransactionChain < ActiveRecord::Base
   # except that all transactions are appended to +chain+,
   # not to instance of self.
   # This method should not be called directly, but via #use_chain.
-  def self.use_in(chain, args: [], urgent: false, prio: 0, method: :link_chain,
-                  hooks: {})
+  #
+  # @param chain
+  # @param opts [Hash]
+  # @option opts [Array] args ([])
+  # @option opts [Boolean] urgent (false)
+  # @option opts [Integer] prio (0)
+  # @option opts [Symbol] method (:link_chain)
+  # @option opts [Hash] hooks ({})
+  def self.use_in(chain, opts = {})
+    opts[:args] ||= []
+    opts[:urgent] = false if opts[:urgent].nil?
+    opts[:prio] ||= 0
+    opts[:method] ||= :link_chain
+    opts[:hooks] ||= {}
+
     c = new
 
     c.last_id = chain.last_id
@@ -78,14 +91,14 @@ class TransactionChain < ActiveRecord::Base
     c.dst_chain = chain.dst_chain
     c.named = chain.named
     c.locks = chain.locks
-    c.urgent = urgent
-    c.prio = prio
+    c.urgent = opts[:urgent]
+    c.prio = opts[:prio]
 
-    hooks.each do |k, v|
+    opts[:hooks].each do |k, v|
       c.connect_hook(k, &v)
     end
 
-    ret = c.send(method, *args)
+    ret = c.send(opts[:method], *opts[:args])
 
     [c, ret]
   end
@@ -202,18 +215,26 @@ class TransactionChain < ActiveRecord::Base
 
   # Call this method from TransactionChain#link_chain to include
   # +chain+. +args+ are passed to the chain as in ::fire.
-  def use_chain(chain, args: [], urgent: nil, prio: nil, method: :link_chain, hooks: {})
-    urgent ||= self.urgent
-    prio ||= self.prio
+  #
+  # @param chain
+  # @param opts [Hash]
+  # @option opts [Array] args
+  # @option opts [Boolean] urgent
+  # @option opts [Integer] prio
+  # @option opts [Symbol] method
+  # @option opts [Hash] hooks
+  def use_chain(chain, opts = {})
+    args = opts[:args] || []
+    urgent = opts[:urgent].nil? ? self.urgent : opts[:urgent]
+    prio = opts[:prio] || self.prio
 
-    c, ret = chain.use_in(
-        self,
+    c, ret = chain.use_in(self, {
         args: args.is_a?(Array) ? args : [args],
         urgent: urgent,
         prio: prio,
-        method: method,
-        hooks: hooks
-    )
+        method: opts[:method],
+        hooks: opts[:hooks],
+    })
     @last_id = c.last_id
     @last_node_id = c.last_node_id
     ret
