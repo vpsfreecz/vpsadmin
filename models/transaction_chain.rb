@@ -14,7 +14,7 @@ class TransactionChain < ActiveRecord::Base
 
   attr_reader :acquired_locks
   attr_accessor :last_id, :last_node_id, :dst_chain, :named, :locks, :urgent,
-                :prio, :mail_server
+                :prio, :reversible, :mail_server
 
   include HaveAPI::Hookable
 
@@ -75,6 +75,7 @@ class TransactionChain < ActiveRecord::Base
   # @option opts [Array] args ([])
   # @option opts [Boolean] urgent (false)
   # @option opts [Integer] prio (0)
+  # @option opts [Symbol] reversible one of :is_reversible, :not_reversible, :keep_going
   # @option opts [Symbol] method (:link_chain)
   # @option opts [Hash] hooks ({})
   def self.use_in(chain, opts = {})
@@ -93,6 +94,7 @@ class TransactionChain < ActiveRecord::Base
     c.locks = chain.locks
     c.urgent = opts[:urgent]
     c.prio = opts[:prio]
+    c.reversible = opts[:reversible]
 
     opts[:hooks].each do |k, v|
       c.connect_hook(k, &v)
@@ -221,6 +223,7 @@ class TransactionChain < ActiveRecord::Base
   # @option opts [Array] args
   # @option opts [Boolean] urgent
   # @option opts [Integer] prio
+  # @option opts [Symbol] reversible one of :is_reversible, :not_reversible, :keep_going
   # @option opts [Symbol] method
   # @option opts [Hash] hooks
   def use_chain(chain, opts = {})
@@ -232,6 +235,7 @@ class TransactionChain < ActiveRecord::Base
         args: args.is_a?(Array) ? args : [args],
         urgent: urgent,
         prio: prio,
+        reversible: opts[:reversible],
         method: opts[:method],
         hooks: opts[:hooks],
     })
@@ -321,7 +325,7 @@ class TransactionChain < ActiveRecord::Base
         args: opts[:args].is_a?(Array) ? opts[:args] : [ opts[:args] ],
         urgent: opts[:urgent].nil? ? self.urgent : opts[:urgent],
         prio: opts[:prio] || self.prio,
-        reversible: opts[:reversible],
+        reversible: opts[:reversible] || self.reversible,
         retain_context: retain_context,
     }
 
