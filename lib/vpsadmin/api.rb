@@ -1,6 +1,6 @@
 module VpsAdmin
   HaveAPI.module_name = VpsAdmin::API::Resources
-  HaveAPI.implicit_version = '1.0'
+  HaveAPI.implicit_version = '2.0'
 
   module API
     module Authentication
