@@ -61,7 +61,9 @@ module TransactionChains
       ])
 
       if running
-        use_chain(Vps::Start, args: vps)
+        # Set reversible to :keep_going, because we cannot be certain that
+        # the template is correct.
+        use_chain(Vps::Start, args: vps, reversible: :keep_going)
       end
     end
 
