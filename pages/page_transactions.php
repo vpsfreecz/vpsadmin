@@ -197,12 +197,15 @@ function chain_transactions($chain_id) {
 	
 	if ($_GET['transaction']) {
 		$transactions = array();
-		$transactions[] = $chain->transaction->find($_GET['transaction'], array('meta' => $meta));
+		$transactions[] = $api->transaction->find($_GET['transaction'], array(
+			'meta' => $meta
+		));
 		
 	} else {
 		$params = array(
 			'limit' => get_val('limit', '100'),
 			'offset' => get_val('offset', '0'),
+			'transaction_chain' => $chain->id,
 			'meta' => $meta
 		);
 		
@@ -218,7 +221,7 @@ function chain_transactions($chain_id) {
 		if ($_GET['success'])
 			$params['success'] = $_GET['success'];
 		
-		$transactions = $chain->transaction->list($params);
+		$transactions = $api->transaction->list($params);
 	}
 	
 	$xtpl->table_title(_('Chained transactions'));

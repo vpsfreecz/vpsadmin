@@ -8,5 +8,5 @@
 define("VERSION", '2.1.0');
 define("DEMO_MODE", false);
 
-define("API_VERSION", '1.0');
+define("API_VERSION", '2.0');
 ?>
