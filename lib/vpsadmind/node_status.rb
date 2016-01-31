@@ -4,7 +4,7 @@ module VpsAdmind
       @cpus = SystemProbes::Cpus.new.count
     end
 
-    def update
+    def update(db = nil)
       node_id = $CFG.get(:vpsadmin, :server_id)
       time = Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
       nproc = SystemProbes::ProcessCounter.new.count
@@ -18,7 +18,7 @@ module VpsAdmind
         arc = SystemProbes::Arc.new
       end
 
-      my = Db.new
+      my = db || Db.new
       my.transaction do |t|
         sql = "INSERT INTO node_statuses
                SET node_id = #{node_id},
@@ -59,7 +59,7 @@ module VpsAdmind
         )
       end
 
-      my.close
+      my.close unless db
     end
 
     protected

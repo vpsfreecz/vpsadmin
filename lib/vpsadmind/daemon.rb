@@ -200,13 +200,30 @@ module VpsAdmind
         end
       end
 
-      run_thread_unless_runs(:resources) do
+      run_thread_unless_runs(:vps_status) do
         loop do
-          log(:info, :regular, 'Update resources')
+          if $CFG.get(:vpsadmin, :update_vps_status)
+            log(:info, :regular, 'Update VPS resources')
+            my = Db.new
+            @vps_status.update(my)
+            my.close
+          end
 
-          update_resources
+          sleep($CFG.get(:vpsadmin, :vps_status_interval))
+        end
+      end
 
-          sleep($CFG.get(:vpsadmin, :resources_interval))
+      run_thread_unless_runs(:storage_status) do
+        loop do
+          if $CFG.get(:storage, :update_status)
+            log(:info, :regular, 'Update storage resources')
+
+            my = Db.new
+            StorageStatus.update(my) 
+            my.close
+          end
+
+          sleep($CFG.get(:vpsadmin, :storage_status_interval))
         end
       end
 
@@ -230,18 +247,17 @@ module VpsAdmind
     end
 
     def update_all
-      @node_status.update
-      update_resources
-    end
-
-    def update_resources
       my = Db.new
 
+      @node_status.update(my)
+      
       if $CFG.get(:vpsadmin, :update_vps_status)
         @vps_status.update(my)
       end
 
-      StorageStatus.update(my) if $CFG.get(:storage, :update_status)
+      if $CFG.get(:storage, :update_status)
+        StorageStatus.update(my)
+      end
 
       my.close
     end
