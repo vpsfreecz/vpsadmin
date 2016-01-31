@@ -17,6 +17,8 @@ end
 
 module VpsAdmind
   STANDALONE = false unless const_defined?(:STANDALONE)
+
+  module SystemProbe ; end
 end
 
 require_rel 'vpsadmind/utils.rb'
@@ -26,3 +28,4 @@ require_rel 'vpsadmind/commands/base'
 require_rel 'vpsadmind/commands'
 require_rel 'vpsadmind/remote_commands/base'
 require_rel 'vpsadmind/remote_commands/'
+require_rel 'vpsadmind/system_probes'
