@@ -41,8 +41,10 @@ module VpsAdmind
         if db_vps[:running]
           db_vps[:loadavg] = vps[:laverage][1]
 
-          if db_vps[:read_hostname] 
-            db_vps[:hostname] = vzctl(:exec, vps[:veid], 'hostname')[:output].strip
+          if db_vps[:read_hostname]
+            run_or_skip(db_vps) do
+              db_vps[:hostname] = vzctl(:exec, vps[:veid], 'hostname')[:output].strip
+            end
           end
         end
       end
@@ -50,25 +52,31 @@ module VpsAdmind
       # Initial run to make sure that all libraries are loaded in memory and
       # consequent calls will be as fast as possible.
       db_vpses.each do |vps_id, vps|
-        next if !vps[:exists] || !vps[:running]
+        next if !vps[:exists] || !vps[:running] || vps[:skip]
         
-        vzctl(:exec, vps_id, 'cat /proc/stat > /dev/null')
+        run_or_skip(vps) do
+          vzctl(:exec, vps_id, 'cat /proc/stat > /dev/null')
+        end
       end
 
       # First CPU measurement
       db_vpses.each do |vps_id, vps|
-        next if !vps[:exists] || !vps[:running]
+        next if !vps[:exists] || !vps[:running] || vps[:skip]
 
-        vps[:cpu].measure_once(vzctl(:exec, vps_id, 'cat /proc/stat')[:output])
+        run_or_skip(vps) do
+          vps[:cpu].measure_once(vzctl(:exec, vps_id, 'cat /proc/stat')[:output])
+        end
       end
 
       sleep(0.2)
 
       # Final CPU measurement
       db_vpses.each do |vps_id, vps|
-        next if !vps[:exists] || !vps[:running]
+        next if !vps[:exists] || !vps[:running] || vps[:skip]
 
-        vps[:cpu].measure_once(vzctl(:exec, vps_id, 'cat /proc/stat')[:output])
+        run_or_skip(vps) do
+          vps[:cpu].measure_once(vzctl(:exec, vps_id, 'cat /proc/stat')[:output])
+        end
       end
 
       # Save results to db
@@ -85,7 +93,7 @@ module VpsAdmind
             total_swap = #{vps[:total_swap]},
             used_diskspace = #{vps[:disk]},"
             
-        if vps[:running]
+        if vps[:running] && !vps[:skip]
           cpu = vps[:cpu].to_percent
 
           sql += "
@@ -109,7 +117,7 @@ module VpsAdmind
        
         db.query(sql)
 
-        if vps[:hostname]
+        if vps[:hostname] && !vps[:skip]
           db.prepared(
               'UPDATE vps SET vps_status_id = ?, vps_hostname = ? WHERE vps_id = ?',
               db.insert_id, vps[:hostname], vps_id
@@ -153,6 +161,14 @@ module VpsAdmind
         syscmd(cmd)[:output],
         :symbolize_names => true
       )
+    end
+
+    def run_or_skip(vps)
+      yield
+
+    rescue CommandFailed => e
+      log(:warn, :vps, e.message)
+      vps[:skip] = true
     end
   end
 end
