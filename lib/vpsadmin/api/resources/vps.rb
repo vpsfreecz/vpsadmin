@@ -41,10 +41,22 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   end
 
   params(:status) do
-    bool :running, label: 'Running'
+    bool :is_running, label: 'Running'
+    integer :uptime, label: 'Uptime'
+    float :loadavg
     integer :process_count, label: 'Process count'
+    float :cpu_user
+    float :cpu_nice
+    float :cpu_system
+    float :cpu_idle
+    float :cpu_iowait
+    float :cpu_irq
+    float :cpu_softirq
+    float :cpu_guest
+    float :loadavg
     integer :used_memory, label: 'Used memory', desc: 'in MB'
-    integer :used_disk, label: 'Used disk', desc: 'in MB'
+    integer :used_swap, label: 'Used swap', desc: 'in MB'
+    integer :used_diskspace, label: 'Used disk', desc: 'in MB'
   end
 
   params(:resources) do

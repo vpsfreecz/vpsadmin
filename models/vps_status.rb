@@ -1,4 +1,3 @@
 class VpsStatus < ActiveRecord::Base
-  self.table_name = 'vps_status'
-
+  belongs_to :vps
 end

@@ -10,7 +10,8 @@ class Node < ActiveRecord::Base
   has_many :pools
   has_many :vps_mounts, foreign_key: :server_id
   has_many :port_reservations
-  has_one :node_status, foreign_key: :server_id
+  has_many :node_statuses
+  belongs_to :node_status
 
   has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
 
@@ -144,16 +145,12 @@ class Node < ActiveRecord::Base
     "#{name}.#{location.domain}"
   end
 
-  def loadavg
-    node_status && node_status.cpu_load
-  end
-
   def vps_running
-    vpses.joins(:vps_status).where(vps_status: {vps_up: true}).count
+    vpses.joins(:vps_status).where(vps_statuses: {is_running: true}).count
   end
 
   def vps_stopped
-    vpses.joins(:vps_status).where(vps_status: {vps_up: false}).count
+    vpses.joins(:vps_status).where(vps_statuses: {is_running: false}).count
   end
 
   def vps_deleted
@@ -171,9 +168,18 @@ class Node < ActiveRecord::Base
   def vps_free
     max_vps && (max_vps - vps_total)
   end
+  
+  %i(uptime process_count cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
+     cpu_irq cpu_softirq cpu_guest loadavg used_memory used_swap arc_c_max arc_c
+     arc_size arc_hitpercent kernel vpsadmind_version
+  ).each do |attr|
+    define_method(attr) do
+      node_status && node_status.send(attr)
+    end
+  end
 
   def daemon_version
-    node_status && node_status.vpsadmin_version
+    node_status && node_status.vpsadmind_version
   end
 
   def kernel_version

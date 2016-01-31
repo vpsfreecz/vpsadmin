@@ -18,7 +18,8 @@ class Vps < ActiveRecord::Base
   belongs_to :dataset_in_pool
   has_many :mounts
 
-  has_one :vps_status
+  has_many :vps_statuses
+  belongs_to :vps_status
 
   has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
 
@@ -221,23 +222,15 @@ class Vps < ActiveRecord::Base
     dataset_in_pool.dataset
   end
 
-  def running
-    vps_status && vps_status.vps_up
+  %i(is_running uptime process_count cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
+     cpu_irq cpu_softirq cpu_guest loadavg used_memory used_swap used_diskspace
+  ).each do |attr|
+    define_method(attr) do
+      vps_status && vps_status.send(attr)
+    end
   end
-
-  alias_method :running?, :running
-
-  def process_count
-    vps_status && vps_status.vps_nproc
-  end
-
-  def used_memory
-    vps_status && vps_status.vps_vm_used_mb
-  end
-
-  def used_disk
-    vps_status && vps_status.vps_disk_used_mb
-  end
+  
+  alias_method :is_running?, :is_running
 
   def migrate(node, replace_ips)
     TransactionChains::Vps::Migrate.fire(self, node, replace_ips)

@@ -87,12 +87,16 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
     def exec
       {
           nodes_online: ::Node.joins(:node_status).where(
-              "TIMEDIFF(?, servers_status.created_at) <= CAST('00:02:30' AS TIME)",
+              "TIMEDIFF(?, node_statuses.created_at) <= CAST('00:02:30' AS TIME)",
               Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
           ).count,
           node_count: ::Node.all.count,
-          vps_running: ::Vps.joins(:vps_status).where(vps_status: {vps_up: true}).count,
-          vps_stopped: ::Vps.joins(:vps_status).where(vps_status: {vps_up: false}).count,
+          vps_running: ::Vps.joins(:vps_status).where(
+              vps_statuses: {is_running: true}
+          ).count,
+          vps_stopped: ::Vps.joins(:vps_status).where(
+              vps_statuses: {is_running: false}
+          ).count,
           vps_suspended: ::Vps.joins(:user).where(
               'members.object_state = ? OR vps.object_state = ?',
               ::User.object_states['suspended'], ::Vps.object_states['suspended']

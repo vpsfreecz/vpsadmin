@@ -21,14 +21,42 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     integer :max_tx, label: 'Max tx', desc: 'Maximum output throughput'
     integer :max_rx, label: 'Max tx', desc: 'Maximum input throughput'
 
+    integer :cpus
+    integer :total_memory
+    integer :total_swap
+
     # Hypervisor-specific params
     integer :max_vps
     string :ve_private
   end
 
+  params(:status) do
+    integer :uptime, label: 'Uptime'
+    float :loadavg
+    integer :process_count, label: 'Process count'
+    float :cpu_user
+    float :cpu_nice
+    float :cpu_system
+    float :cpu_idle
+    float :cpu_iowait
+    float :cpu_irq
+    float :cpu_softirq
+    float :cpu_guest
+    float :loadavg
+    integer :used_memory, label: 'Used memory', desc: 'in MB'
+    integer :used_swap, label: 'Used swap', desc: 'in MB'
+    integer :arc_c_max
+    integer :arc_c
+    integer :arc_size
+    integer :arc_hitpercent
+    string :version, db_name: :vpsadmind_version
+    string :kernel
+  end
+
   params(:all) do
     use :id
     use :common
+    use :status
   end
 
   class Index < HaveAPI::Actions::Default::Index
@@ -127,15 +155,12 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     output(:object_list) do
       use :all
       datetime :last_report, label: 'Last report'
-      float :loadavg, label: 'Load'
       integer :vps_running, label: 'Running VPS', desc: 'Number of running VPSes'
       integer :vps_stopped, label: 'Stopped VPS', desc: 'Number of stopped VPSes'
       integer :vps_deleted, label: 'Deleted VPS', desc: 'Number of lazily deleted VPSes'
       integer :vps_total, label: 'Total VPS', desc: 'Total number of VPSes'
       integer :vps_free, label: 'Free VPS slots', desc: 'Number of free VPS slots'
       integer :vps_max, label: 'Max VPS slots', desc: 'Number of running VPSes'
-      string :version, label: 'Version', desc: 'vpsAdmind version', db_name: :daemon_version
-      string :kernel, label: 'Kernel', desc: 'Kernel version', db_name: :kernel_version
     end
 
     output(&VpsAdmin::API::Maintainable::Action.output_params)

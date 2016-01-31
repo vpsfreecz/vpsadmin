@@ -1,3 +1,5 @@
+- Continuous tracking of node and VPS resources
+
 * Sat Jan 12 2016 - version 2.1.0
 - TransactionChain.append_t to replace TransactionChain.append
 - API version 1.0
