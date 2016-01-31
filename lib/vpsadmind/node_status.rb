@@ -45,7 +45,7 @@ module VpsAdmind
                 arc_hitpercent = #{arc.hit_percent},"
         end
 
-        sql += "loadavg = #{loadavg[1]},
+        sql += "loadavg = #{loadavg[5]},
                 vpsadmind_version = '#{VpsAdmind::VERSION}',
                 kernel = '#{kernel}',
                 created_at = '#{time}'"
