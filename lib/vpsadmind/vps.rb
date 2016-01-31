@@ -88,58 +88,6 @@ module VpsAdmind
       vzctl(:exec, @veid, "cat #{file}")
     end
 
-    def update_status(db, read_hostname = false)
-      up = 0
-      nproc = 0
-      mem = 0
-      disk = 0
-      hostname = ''
-
-      begin
-        IO.popen("#{$CFG.get(:vz, :vzlist)} --no-header #{@veid}") do |io|
-          status = io.read.split(" ")
-          up = status[2] == "running" ? 1 : 0
-          nproc = status[1].to_i
-
-          if up == 1
-            mem_str = load_file("/proc/meminfo")[:output]
-            mem = (mem_str.match(/^MemTotal\:\s+(\d+) kB$/)[1].to_i - mem_str.match(/^MemFree\:\s+(\d+) kB$/)[1].to_i) / 1024
-
-            disk_str = vzctl(:exec, @veid, "#{$CFG.get(:bin, :df)} -k /")[:output]
-            disk = disk_str.split("\n")[1].split(" ")[2].to_i / 1024
-
-            if read_hostname
-              hostname = vzctl(:exec, @veid, 'hostname')[:output].strip
-              hostname = '<unable to read>' if hostname.empty?
-            end
-          end
-        end
-      rescue => e
-        puts "yes, rescued"
-        p e
-
-      end
-
-      db.prepared(
-          "INSERT INTO vps_status (vps_id, created_at, vps_up, vps_nproc,
-        vps_vm_used_mb, vps_disk_used_mb, vps_admin_ver) VALUES
-        (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE
-        created_at = ?, vps_up = ?, vps_nproc = ?, vps_vm_used_mb = ?,
-        vps_disk_used_mb = ?, vps_admin_ver = ?",
-          @veid.to_i, Time.now.utc.strftime('%Y-%m-%d %H:%M:%S'), up, nproc, mem, disk, VpsAdmind::VERSION,
-          Time.now.utc.strftime('%Y-%m-%d %H:%M:%S'), up, nproc, mem, disk, VpsAdmind::VERSION
-      )
-
-      if read_hostname
-        db.prepared(
-            'UPDATE vps
-            SET vps_hostname = ?
-            WHERE vps_id = ?',
-            hostname, @veid.to_i
-        )
-      end
-    end
-
     def script_mount
       "#{$CFG.get(:vz, :vz_conf)}/conf/#{@veid}.mount"
     end

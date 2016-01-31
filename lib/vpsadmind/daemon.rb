@@ -33,6 +33,7 @@ module VpsAdmind
       @delayed_mounter = DelayedMounter.new # FIXME: call stop?
       @remote_control = RemoteControl.new(self) if remote
       @node_status = NodeStatus.new
+      @vps_status = VpsStatus.new
     end
 
     def init(do_init)
@@ -237,18 +238,7 @@ module VpsAdmind
       my = Db.new
 
       if $CFG.get(:vpsadmin, :update_vps_status)
-        rs = my.query(
-            "SELECT vps_id, manage_hostname
-            FROM vps
-            WHERE
-              vps_server = #{$CFG.get(:vpsadmin, :server_id)}
-              AND object_state < 3"
-        )
-
-        rs.each_hash do |vps|
-          ct = Vps.new(vps["vps_id"])
-          ct.update_status(my, vps["manage_hostname"].to_i == 0)
-        end
+        @vps_status.update(my)
       end
 
       StorageStatus.update(my) if $CFG.get(:storage, :update_status)

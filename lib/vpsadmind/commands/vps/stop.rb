@@ -15,7 +15,7 @@ module VpsAdmind
     end
 
     def post_save(db)
-      @vps.update_status(db)
+      VpsStatus.new([@vps_id]).update(db)
     end
   end
 end
