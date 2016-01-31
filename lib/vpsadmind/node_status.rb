@@ -23,7 +23,7 @@ module VpsAdmind
         sql = "INSERT INTO node_statuses
                SET node_id = #{node_id},
                  uptime = #{uptime},
-                 nproc = #{nproc},"
+                 process_count = #{nproc},"
 
         if linux?
           sql += "cpus = #{@cpus},
