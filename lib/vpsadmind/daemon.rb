@@ -32,11 +32,12 @@ module VpsAdmind
       @mount_reporter = MountReporter.new
       @delayed_mounter = DelayedMounter.new # FIXME: call stop?
       @remote_control = RemoteControl.new(self) if remote
+      @node_status = NodeStatus.new
     end
 
     def init(do_init)
       if do_init
-        update_status(true)
+        @node_status.update
 
         node = Node.new
         node.init
@@ -192,7 +193,7 @@ module VpsAdmind
         loop do
           log(:info, :regular, 'Update status')
 
-          update_status
+          @node_status.update
 
           sleep($CFG.get(:vpsadmin, :status_interval))
         end
@@ -228,31 +229,8 @@ module VpsAdmind
     end
 
     def update_all
-      update_status(true)
+      @node_status.update
       update_resources
-    end
-
-    def update_status(kernel = nil)
-      node = Node.new
-      system_load = node.load[5]
-      server_id = $CFG.get(:vpsadmin, :server_id)
-
-      t = Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
-      my = Db.new
-      my.prepared('INSERT INTO servers_status
-                  SET server_id = ?, created_at = ?, cpu_load = ?, daemon = ?, vpsadmin_version = ?
-                  ON DUPLICATE KEY UPDATE
-                  created_at = ?, cpu_load = ?, daemon = ?, vpsadmin_version = ?',
-                  server_id,
-                  t, system_load, 0, VpsAdmind::VERSION,
-                  t, system_load, 0, VpsAdmind::VERSION
-      )
-
-      unless kernel.nil?
-        my.prepared('UPDATE servers_status SET kernel = ? WHERE server_id = ?', node.kernel, server_id)
-      end
-
-      my.close
     end
 
     def update_resources
