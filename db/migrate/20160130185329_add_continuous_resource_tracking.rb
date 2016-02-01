@@ -1,4 +1,4 @@
-class ContinuosResourceTracking < ActiveRecord::Migration
+class AddContinuousResourceTracking < ActiveRecord::Migration
   def up
     create_table :vps_statuses do |t|
       t.references   :vps,               null: false
