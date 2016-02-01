@@ -76,6 +76,7 @@ module VpsAdmind
 
         sql = "INSERT INTO vps_statuses SET
             vps_id = #{vps_id},
+            status = #{vps[:skip] ? 0 : 1},
             is_running = #{vps[:running] ? 1 : 0},
             cpus = #{vps[:cpus]},
             total_memory = #{vps[:total_memory]},
