@@ -1,4 +1,183 @@
 <?php
+function cluster_header() {
+	global $xtpl, $api;
+
+	$xtpl->sbar_add(_("VPS overview"), '?page=cluster&action=vps');
+	$xtpl->sbar_add(_("General settings"), '?page=cluster&action=general_settings');
+	$xtpl->sbar_add(_("Register new node"), '?page=cluster&action=newnode');
+	$xtpl->sbar_add(_("Manage OS templates"), '?page=cluster&action=templates');
+	$xtpl->sbar_add(_("Manage configs"), '?page=cluster&action=configs');
+	$xtpl->sbar_add(_("Manage IP addresses"), '?page=cluster&action=ip_addresses');
+	$xtpl->sbar_add(_("Manage DNS servers"), '?page=cluster&action=dns');
+	$xtpl->sbar_add(_("Manage environments"), '?page=cluster&action=environments');
+	$xtpl->sbar_add(_("Manage locations"), '?page=cluster&action=locations');
+	$xtpl->sbar_add(_("Mail templates"), '?page=cluster&action=mail_templates');
+	$xtpl->sbar_add(_("Integrity check"), '?page=cluster&action=integrity_check');
+	$xtpl->sbar_add(_("Manage Payments"), '?page=cluster&action=payments_settings');
+	$xtpl->sbar_add(_("Notice board & log"), '?page=cluster&action=noticeboard');
+	$xtpl->sbar_add(_("Help boxes"), '?page=cluster&action=helpboxes');
+	$xtpl->sbar_add(_("Edit vpsAdmin textfields"), '?page=cluster&action=fields');
+	
+	$xtpl->table_title(_("Summary"));
+	
+	$stats = $api->cluster->full_stats();
+	
+	$xtpl->table_td(_("Nodes").':');
+	$xtpl->table_td($stats["nodes_online"] .' '._("online").' / '. $stats["node_count"] .' '._("total"), $stats["nodes_online"] < $stats["node_count"] ? '#FFA500' : '#66FF66');
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("VPS").':');
+	$xtpl->table_td($stats["vps_running"] .' '._("running").' / '. $stats["vps_stopped"] .' '._("stopped").' / '. $stats["vps_suspended"] .' '._("suspended").' / '.
+					$stats["vps_deleted"] .' '._("deleted").' / '. $stats["vps_count"] .' '._("total"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("Members").':');
+	$xtpl->table_td($stats["user_active"] .' '._("active").' / '. $stats["user_suspended"] .' '._("suspended")
+	                .' / '. $stats["user_deleted"] .' '._("deleted").' / '. $stats["user_count"] .' '._("total"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("IPv4 addresses").':');
+	$xtpl->table_td($stats["ipv4_used"] .' '._("used").' / '. $stats["ipv4_count"] .' '._("total"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_out();
+}
+
+function node_overview() {
+	global $xtpl, $api;
+	
+	$xtpl->table_title(_("Node list"));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('#');
+	$xtpl->table_add_category(_("Name"));
+	$xtpl->table_add_category(_("VPS"));
+	$xtpl->table_add_category(_("Up"));
+	$xtpl->table_add_category(_("Load"));
+	$xtpl->table_add_category(_("%iowait"));
+	$xtpl->table_add_category(_("%idle"));
+	$xtpl->table_add_category(_("Free mem"));
+	$xtpl->table_add_category(_("ARC"));
+	$xtpl->table_add_category(_("%hit"));
+	$xtpl->table_add_category(_("Version"));
+	$xtpl->table_add_category(_("Kernel"));
+	$xtpl->table_add_category('<img title="'._("Toggle maintenance on node.").'" alt="'._("Toggle maintenance on node.").'" src="template/icons/maintenance_mode.png">');
+	
+	foreach ($api->node->overview_list() as $node) {
+		// Availability icon
+		$icons = "";
+		$maintenance_toggle = $node->maintenance_lock == 'lock' ? 0 : 1;
+	
+		$t = new DateTime($node->last_report);
+		$t->setTimezone(new DateTimeZone(date_default_timezone_get()));
+		
+		if (!$node->last_report || (time() - $t->getTimestamp()) > 150) {
+			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
+		
+		} else {
+			$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
+		}
+		
+		$icons = '<a href="?page=cluster&action='.($maintenance_toggle ? 'maintenance_lock' : 'set_maintenance_lock').'&type=node&obj_id='.$node->id.'&lock='.$maintenance_toggle.'">'.$icons.'</a>';
+		
+		$xtpl->table_td($icons, false, true);
+		
+		// Node ID, Name, IP, load
+		$xtpl->table_td($node->id);
+		$xtpl->table_td($node->domain_name);
+		$xtpl->table_td($node->vps_running, false, true);
+		$xtpl->table_td(sprintf('%.1f', $node->uptime / 60.0 / 60 / 24), false, true);
+		$xtpl->table_td($node->loadavg, false, true);
+
+		// CPU
+		$xtpl->table_td(sprintf('%.2f', $node->cpu_iowait), false, true);
+		$xtpl->table_td(sprintf('%.2f', $node->cpu_idle), false, true);
+
+		// Memory
+		$xtpl->table_td(
+			sprintf('%.2f', ($node->total_memory - $node->used_memory) / 1024),
+			false, true
+		);
+
+		// ARC
+		$xtpl->table_td(sprintf('%.2f', $node->arc_size / 1024.0), false, true);
+		$xtpl->table_td(sprintf('%.2f', $node->arc_hitpercent), false, true);
+
+		// Daemon version
+		$xtpl->table_td($node->version, false, true);
+		
+		// Kernel
+		if(preg_match("/\d+stab.+/",$node->kernel, $matches))
+			$xtpl->table_td($matches[0]);
+		else
+			$xtpl->table_td($node->kernel);
+		
+		$xtpl->table_td(maintenance_lock_icon('node', $node));
+		
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_out('cluster_node_list');
+
+
+}
+
+function node_vps_overview() {
+	global $xtpl, $api;
+
+	$xtpl->table_title(_("Node list"));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('#');
+	$xtpl->table_add_category(_("Name"));
+	$xtpl->table_add_category(_("Up"));
+	$xtpl->table_add_category(_("Down"));
+	$xtpl->table_add_category(_("Del"));
+	$xtpl->table_add_category(_("Sum"));
+	$xtpl->table_add_category(_("Free"));
+	$xtpl->table_add_category(_("Max"));
+	$xtpl->table_add_category(' ');
+	
+	foreach ($api->node->overview_list() as $node) {
+		// Availability icon
+		$icons = "";
+		$maintenance_toggle = $node->maintenance_lock == 'lock' ? 0 : 1;
+	
+		$t = new DateTime($node->last_report);
+		$t->setTimezone(new DateTimeZone(date_default_timezone_get()));
+		
+		if (!$node->last_report || (time() - $t->getTimestamp()) > 150) {
+			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
+		
+		} else {
+			$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
+		}
+		
+		$icons = '<a href="?page=cluster&action='.($maintenance_toggle ? 'maintenance_lock' : 'set_maintenance_lock').'&type=node&obj_id='.$node->id.'&lock='.$maintenance_toggle.'">'.$icons.'</a>';
+		
+		$xtpl->table_td($icons, false, true);
+		
+		// Node ID, Name, IP, load
+		$xtpl->table_td($node->id);
+		$xtpl->table_td($node->domain_name);
+		
+		// Up, down, del, sum
+		$xtpl->table_td($node->vps_running, false, true);
+		$xtpl->table_td($node->vps_stopped, false, true);
+		$xtpl->table_td($node->vps_deleted, false, true);
+		$xtpl->table_td($node->vps_total, false, true);
+		
+		// Free, max
+		$xtpl->table_td($node->vps_free, false, true);
+		$xtpl->table_td($node->vps_max, false, true);
+		
+		$xtpl->table_td('<a href="?page=cluster&action=node_edit&node_id='.$node->id.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		
+		
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_out('cluster_node_list');
+}
+
 
 function ip_adress_list($title) {
 	global $xtpl, $api;
