@@ -14,7 +14,7 @@ do <%= (@user.expiration_date + 14 * 24 * 60 * 60).strftime('%Y-%m-%d') %>, Tvé
 Číslo účtu: 2200041594/2010 (ČR) nebo 2200041594/8330 (SR)
 
 Příchod platby lze zkontrolovat zde:
-https://www.fio.cz/scgi-bin/hermes/dz-transparent.cgi?ID_ucet=2200041594
+https://www.fio.cz/ib2/transparent?a=2200041594
 
 <% three_months_payment = @user.m_monthly_payment * 3 %>
 QR kód pro platbu na 3 měsíce dopředu (vždy ověř správnost údajů):
