@@ -1333,7 +1333,7 @@ END
 
       def query
         vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
-        q = vps.vps_statuses.where(with_restricted)
+        q = vps.vps_statuses
         q = q.where('created_at >= ?', input[:from]) if input[:from]
         q = q.where('created_at <= ?', input[:to]) if input[:to]
         q = q.where(status: input[:status]) if input[:status]
