@@ -56,7 +56,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     float :loadavg
     integer :used_memory, label: 'Used memory', desc: 'in MB'
     integer :used_swap, label: 'Used swap', desc: 'in MB'
-    integer :used_diskspace, label: 'Used disk', desc: 'in MB'
+    integer :used_diskspace, label: 'Used disk space', desc: 'in MB'
   end
 
   params(:resources) do
@@ -139,6 +139,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       else
         Vps.existing
       end
+
+      q = with_includes(q).includes(dataset_in_pool: [:dataset_properties])
 
       q = q.where(with_restricted)
       q = q.where(m_id: input[:user].id) if input[:user]
@@ -305,7 +307,9 @@ END
     end
 
     def prepare
-      @vps = with_includes(::Vps.including_deleted).find_by!(with_restricted(
+      @vps = with_includes(::Vps.including_deleted).includes(
+          dataset_in_pool: [:dataset_properties]
+      ).find_by!(with_restricted(
           vps_id: params[:vps_id])
       )
     end

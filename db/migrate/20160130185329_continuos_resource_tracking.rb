@@ -19,7 +19,6 @@ class ContinuosResourceTracking < ActiveRecord::Migration
       t.integer      :used_memory,       null: true
       t.integer      :total_swap,        null: true
       t.integer      :used_swap,         null: true
-      t.integer      :used_diskspace,    null: true
       t.datetime     :created_at,        null: true
     end
 

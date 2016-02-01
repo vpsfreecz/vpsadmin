@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160130185329) do
+ActiveRecord::Schema.define(version: 20160201072025) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -143,6 +143,12 @@ ActiveRecord::Schema.define(version: 20160130185329) do
   add_index "dataset_properties", ["dataset_in_pool_id", "name"], name: "index_dataset_properties_on_dataset_in_pool_id_and_name", using: :btree
   add_index "dataset_properties", ["dataset_in_pool_id"], name: "index_dataset_properties_on_dataset_in_pool_id", using: :btree
   add_index "dataset_properties", ["pool_id"], name: "index_dataset_properties_on_pool_id", using: :btree
+
+  create_table "dataset_property_histories", force: true do |t|
+    t.integer  "dataset_property_id", null: false
+    t.integer  "value",               null: false
+    t.datetime "created_at",          null: false
+  end
 
   create_table "dataset_trees", force: true do |t|
     t.integer  "dataset_in_pool_id",                 null: false
@@ -849,25 +855,24 @@ ActiveRecord::Schema.define(version: 20160130185329) do
   add_index "vps_ip", ["vps_id"], name: "vps_id", using: :btree
 
   create_table "vps_statuses", force: true do |t|
-    t.integer  "vps_id",                    null: false
-    t.boolean  "is_running",                null: false
+    t.integer  "vps_id",                   null: false
+    t.boolean  "is_running",               null: false
     t.integer  "uptime"
     t.integer  "process_count"
-    t.integer  "cpus",                      null: false
-    t.float    "cpu_user",       limit: 24
-    t.float    "cpu_nice",       limit: 24
-    t.float    "cpu_system",     limit: 24
-    t.float    "cpu_idle",       limit: 24
-    t.float    "cpu_iowait",     limit: 24
-    t.float    "cpu_irq",        limit: 24
-    t.float    "cpu_softirq",    limit: 24
-    t.float    "cpu_guest",      limit: 24
-    t.float    "loadavg",        limit: 24
+    t.integer  "cpus",                     null: false
+    t.float    "cpu_user",      limit: 24
+    t.float    "cpu_nice",      limit: 24
+    t.float    "cpu_system",    limit: 24
+    t.float    "cpu_idle",      limit: 24
+    t.float    "cpu_iowait",    limit: 24
+    t.float    "cpu_irq",       limit: 24
+    t.float    "cpu_softirq",   limit: 24
+    t.float    "cpu_guest",     limit: 24
+    t.float    "loadavg",       limit: 24
     t.integer  "total_memory"
     t.integer  "used_memory"
     t.integer  "total_swap"
     t.integer  "used_swap"
-    t.integer  "used_diskspace"
     t.datetime "created_at"
   end
 
