@@ -88,7 +88,6 @@ module VpsAdmind
             vps_id = #{vps_id},
             status = #{vps[:skip] ? 0 : 1},
             is_running = #{vps[:running] ? 1 : 0},
-            cpus = #{vps[:cpus]},
             total_memory = #{vps[:total_memory]},
             total_swap = #{vps[:total_swap]},"
             
@@ -101,6 +100,7 @@ module VpsAdmind
             process_count = #{vps[:nproc]},
             used_memory = #{vps[:used_memory]},
             used_swap = #{vps[:used_swap]},
+            cpus = #{vps[:cpus]},
             cpu_user = #{cpu[:user]},
             cpu_nice = #{cpu[:nice]},
             cpu_system = #{cpu[:system]},
