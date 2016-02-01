@@ -161,6 +161,10 @@ module TransactionChains
                 confirmed: ::DatasetProperty.confirmed(:confirm_destroy)
             )
             dataset_in_pool.dataset_properties.each do |p|
+              # Note: there are too many records to delete them using transaction confirmations.
+              # Dataset property history is deleted whether the chain is successful or not.
+              p.dataset_property_histories.delete_all
+
               destroy(p)
             end
 

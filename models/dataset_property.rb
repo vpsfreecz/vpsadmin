@@ -2,6 +2,7 @@ class DatasetProperty < ActiveRecord::Base
   belongs_to :pool
   belongs_to :dataset_in_pool
   belongs_to :dataset
+  has_many :dataset_property_histories
 
   has_ancestry cache_depth: true
   has_paper_trail
