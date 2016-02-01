@@ -591,5 +591,80 @@ module VpsAdmin::API::Resources
         end
       end
     end
+
+    class PropertyHistory < HaveAPI::Resource
+      desc 'View property history'
+      route ':dataset_id/property_history'
+      model ::DatasetPropertyHistory
+
+      params(:all) do
+        string :name
+        integer :value
+        datetime :created_at
+      end
+
+      class Index < HaveAPI::Actions::Default::Index
+        input do
+          datetime :from
+          datetime :to
+          string :name
+        end
+
+        output(:object_list) do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict user: u
+          allow
+        end
+
+        def query
+          ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+          props = ds.dataset_properties
+          props = props.where(name: input[:name]) if input[:name]
+
+          q = ::DatasetPropertyHistory.includes(:dataset_property).where(
+              dataset_property_id: props.pluck(:id)
+          )
+          q = q.where('created_at >= ?', input[:from]) if input[:from]
+          q = q.where('created_at <= ?', input[:to]) if input[:to]
+          q
+        end
+
+        def count
+          query.count
+        end
+
+        def exec
+          query.order('created_at DESC').offset(input[:offset]).limit(input[:limit])
+        end
+      end
+
+      class Show < HaveAPI::Actions::Default::Show
+        output do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict user: u
+          allow
+        end
+
+        def exec
+          ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+          ::DatasetPropertyHistory.includes(
+              :dataset_property
+          ).joins(
+              :dataset_property
+          ).find_by!(
+              dataset_properties: {dataset_id: ds.id},
+              id: params[:property_history_id]
+          )
+        end
+      end
+    end
   end
 end
