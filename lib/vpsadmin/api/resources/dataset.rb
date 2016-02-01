@@ -608,6 +608,8 @@ module VpsAdmin::API::Resources
           datetime :from
           datetime :to
           string :name
+
+          patch :limit, fill: true
         end
 
         output(:object_list) do
