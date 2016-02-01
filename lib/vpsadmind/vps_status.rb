@@ -42,6 +42,10 @@ module VpsAdmind
             run_or_skip(db_vps) do
               db_vps[:hostname] = vzctl(:exec, vps[:veid], 'hostname')[:output].strip
             end
+
+            if !db_vps[:hostname] || db_vps[:hostname].empty?
+              db_vps[:hostname] = 'unable to read'
+            end
           end
         end
       end
@@ -101,7 +105,7 @@ module VpsAdmind
        
         db.query(sql)
 
-        if vps[:hostname] && !vps[:skip]
+        if vps[:hostname]
           db.prepared(
               'UPDATE vps SET vps_status_id = ?, vps_hostname = ? WHERE vps_id = ?',
               db.insert_id, vps[:hostname], vps_id
