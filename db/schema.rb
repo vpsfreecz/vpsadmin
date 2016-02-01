@@ -856,6 +856,7 @@ ActiveRecord::Schema.define(version: 20160201072025) do
 
   create_table "vps_statuses", force: true do |t|
     t.integer  "vps_id",                   null: false
+    t.boolean  "status",                   null: false
     t.boolean  "is_running",               null: false
     t.integer  "uptime"
     t.integer  "process_count"

@@ -2,6 +2,7 @@ class ContinuosResourceTracking < ActiveRecord::Migration
   def up
     create_table :vps_statuses do |t|
       t.references   :vps,               null: false
+      t.boolean      :status,            null: false
       t.boolean      :is_running,        null: false
       t.integer      :uptime,            null: true
       t.integer      :process_count,     null: true
