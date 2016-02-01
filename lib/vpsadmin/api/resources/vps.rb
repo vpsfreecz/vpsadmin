@@ -1344,7 +1344,7 @@ END
       end
 
       def exec
-        query.offset(input[:offset]).limit(input[:limit])
+        query.order('created_at DESC').offset(input[:offset]).limit(input[:limit])
       end
     end
 
