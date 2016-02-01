@@ -38,6 +38,11 @@ module TransactionChains
       append(Transactions::Utils::NoOp, args: find_node_id) do
         edit(vps, dataset_in_pool_id: nil)
       end
+
+      # Note: there are too many records to delete them using transaction confirmations.
+      # All VPS statuses are deleted whether the chain is successful or not.
+      vps.update!(vps_status: nil)
+      vps.vps_statuses.delete_all
     end
   end
 end
