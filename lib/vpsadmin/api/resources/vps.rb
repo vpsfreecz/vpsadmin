@@ -1281,4 +1281,88 @@ END
       end
     end
   end
+
+  class Status < HaveAPI::Resource
+    desc 'View VPS statuses in time'
+    route ':vps_id/statuses'
+    model ::VpsStatus
+
+    params(:all) do
+      id :id
+      bool :status
+      bool :is_running, label: 'Running'
+      integer :uptime, label: 'Uptime'
+      float :loadavg
+      integer :process_count, label: 'Process count'
+      integer :cpus
+      float :cpu_user
+      float :cpu_nice
+      float :cpu_system
+      float :cpu_idle
+      float :cpu_iowait
+      float :cpu_irq
+      float :cpu_softirq
+      float :cpu_guest
+      float :loadavg
+      integer :total_memory
+      integer :used_memory, label: 'Used memory', desc: 'in MB'
+      integer :total_swap
+      integer :used_swap, label: 'Used swap', desc: 'in MB'
+      datetime :created_at
+    end
+  
+    class Index < HaveAPI::Actions::Default::Index
+      input do
+        datetime :from
+        datetime :to
+        bool :status
+        bool :is_running
+      end
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def query
+        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        q = vps.vps_statuses.where(with_restricted)
+        q = q.where('created_at >= ?', input[:from]) if input[:from]
+        q = q.where('created_at <= ?', input[:to]) if input[:to]
+        q = q.where(status: input[:status]) if input[:status]
+        q = q.where(is_running: input[:is_running]) if input[:is_running]
+        q
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        query.offset(input[:offset]).limit(input[:limit])
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      output do
+        use :all
+      end
+      
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def exec
+        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps.vps_statuses.find(params[:status_id])
+      end
+    end
+  end
 end
