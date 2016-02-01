@@ -34,9 +34,6 @@ module VpsAdmind
             :used_swap => vps[:swappages][:held] / 1024 * 4,
             :cpu => SystemProbes::CpuUsage.new,
         })
-
-        disk_str = syscmd("#{$CFG.get(:bin, :df)} -k #{ve_private(vps[:veid])}")[:output]
-        db_vps[:disk] = disk_str.split("\n")[1].split(" ")[2].to_i / 1024
        
         if db_vps[:running]
           db_vps[:loadavg] = vps[:laverage][1]
@@ -78,8 +75,7 @@ module VpsAdmind
             is_running = #{vps[:running] ? 1 : 0},
             cpus = #{vps[:cpus]},
             total_memory = #{vps[:total_memory]},
-            total_swap = #{vps[:total_swap]},
-            used_diskspace = #{vps[:disk]},"
+            total_swap = #{vps[:total_swap]},"
             
         if vps[:running] && !vps[:skip]
           cpu = vps[:cpu].to_percent
