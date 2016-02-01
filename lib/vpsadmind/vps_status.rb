@@ -49,32 +49,20 @@ module VpsAdmind
         end
       end
 
-      # Initial run to make sure that all libraries are loaded in memory and
-      # consequent calls will be as fast as possible.
       db_vpses.each do |vps_id, vps|
         next if !vps[:exists] || !vps[:running] || vps[:skip]
         
         run_or_skip(vps) do
+          # Initial run to make sure that all libraries are loaded in memory and
+          # consequent calls will be as fast as possible.
           vzctl(:exec, vps_id, 'cat /proc/stat > /dev/null')
-        end
-      end
 
-      # First CPU measurement
-      db_vpses.each do |vps_id, vps|
-        next if !vps[:exists] || !vps[:running] || vps[:skip]
-
-        run_or_skip(vps) do
+          # First measurement
           vps[:cpu].measure_once(vzctl(:exec, vps_id, 'cat /proc/stat')[:output])
-        end
-      end
 
-      sleep(0.2)
-
-      # Final CPU measurement
-      db_vpses.each do |vps_id, vps|
-        next if !vps[:exists] || !vps[:running] || vps[:skip]
-
-        run_or_skip(vps) do
+          sleep(0.2)
+        
+          # Final measurement
           vps[:cpu].measure_once(vzctl(:exec, vps_id, 'cat /proc/stat')[:output])
         end
       end
