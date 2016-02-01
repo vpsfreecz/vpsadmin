@@ -39,16 +39,25 @@ module VpsAdmind
       @pools.each do |pool_id, pool|
         # Fetch datasets
         @db.query("
-            SELECT d.full_name, dips.id
+            SELECT d.full_name, dips.id, props.name AS p_name, props.id AS p_id
             FROM dataset_in_pools dips
             INNER JOIN datasets d ON d.id = dips.dataset_id
+            INNER JOIN dataset_properties props ON props.dataset_in_pool_id = dips.id
             WHERE dips.pool_id = #{pool_id}
         ").each_hash do |row|
-          pool[:objects] << {
-              :type => :filesystem,
-              :name => row['full_name'],
-              :object_id => row['id'].to_i
-          }
+          row_id = row['id'].to_i
+
+          if obj = pool[:objects].detect { |o| o[:object_id] == row_id }
+            obj[:properties][ row['p_name'] ] = row['p_id'].to_i
+
+          else
+            pool[:objects] << {
+                :type => :filesystem,
+                :name => row['full_name'],
+                :object_id => row['id'].to_i,
+                :properties => { row['p_name'] => row['p_id'].to_i }
+            }
+          end
         end
 
         # FIXME: Fetch snapshots - not yet
@@ -107,12 +116,15 @@ module VpsAdmind
     end
 
     def update
+      tracked = %w(used referenced avail)
+
       @pools.each_value do |pool|
         pool[:objects].each do |obj|
           PROPERTIES.each do |p|
             next unless obj[p]
 
             col = obj[:type] == :filesystem ? 'dataset_in_pool_id' : 'snapshot_in_pool_id'
+            prop = translate_property(p).to_s
 
             @db.query("
                 UPDATE dataset_properties
@@ -120,8 +132,16 @@ module VpsAdmind
                 WHERE
                   #{col} = #{obj[:object_id]}
                   AND
-                  name = '#{translate_property(p)}'
+                  name = '#{prop}'
             ")
+
+            if tracked.include?(prop)
+              @db.prepared(
+                  "INSERT INTO dataset_property_histories SET
+                  dataset_property_id = ?, value = ?, created_at = ?",
+                  obj[:properties][prop], obj[p], Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
+              )
+            end
           end
         end
       end
