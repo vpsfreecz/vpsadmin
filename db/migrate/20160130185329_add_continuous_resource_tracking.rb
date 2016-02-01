@@ -6,7 +6,7 @@ class AddContinuousResourceTracking < ActiveRecord::Migration
       t.boolean      :is_running,        null: false
       t.integer      :uptime,            null: true
       t.integer      :process_count,     null: true
-      t.integer      :cpus,              null: false
+      t.integer      :cpus,              null: true
       t.float        :cpu_user,          null: true
       t.float        :cpu_nice,          null: true
       t.float        :cpu_system,        null: true

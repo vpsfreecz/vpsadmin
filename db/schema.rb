@@ -860,7 +860,7 @@ ActiveRecord::Schema.define(version: 20160201072025) do
     t.boolean  "is_running",               null: false
     t.integer  "uptime"
     t.integer  "process_count"
-    t.integer  "cpus",                     null: false
+    t.integer  "cpus"
     t.float    "cpu_user",      limit: 24
     t.float    "cpu_nice",      limit: 24
     t.float    "cpu_system",    limit: 24
