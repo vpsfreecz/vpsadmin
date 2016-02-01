@@ -692,8 +692,8 @@ if ($list_vps) {
 			else $xtpl->table_td('---', false, true);
 			
 			if($_SESSION['is_admin'] || $vps->maintenance_lock == 'no') {
-				$xtpl->table_td(($vps->running) ? '<a href="?page=adminvps&run=restart&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_restart.png" title="'._("Restart").'"/></a>' : '<img src="template/icons/vps_restart_grey.png"  title="'._("Unable to restart").'" />');
-				$xtpl->table_td(($vps->running) ? '<a href="?page=adminvps&run=stop&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_stop.png"  title="'._("Stop").'"/></a>' : '<a href="?page=adminvps&run=start&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_start.png"  title="'._("Start").'"/></a>');
+				$xtpl->table_td(($vps->is_running) ? '<a href="?page=adminvps&run=restart&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_restart.png" title="'._("Restart").'"/></a>' : '<img src="template/icons/vps_restart_grey.png"  title="'._("Unable to restart").'" />');
+				$xtpl->table_td(($vps->is_running) ? '<a href="?page=adminvps&run=stop&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_stop.png"  title="'._("Stop").'"/></a>' : '<a href="?page=adminvps&run=start&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_start.png"  title="'._("Start").'"/></a>');
 				
 				if (!$_SESSION['is_admin'])
 					$xtpl->table_td('<a href="?page=console&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/console.png"  title="'._("Remote Console").'"/></a>');
@@ -702,7 +702,7 @@ if ($list_vps) {
 					$xtpl->table_td(maintenance_lock_icon('vps', $vps));
 				
 				if ($_SESSION["is_admin"] || $envs_destroy[$vps->node->environment_id]){
-					$xtpl->table_td((!$vps->running) ? '<a href="?page=adminvps&action=delete&veid='.$vps->id.'"><img src="template/icons/vps_delete.png"  title="'._("Delete").'"/></a>' : '<img src="template/icons/vps_delete_grey.png"  title="'._("Unable to delete").'"/>');
+					$xtpl->table_td((!$vps->is_running) ? '<a href="?page=adminvps&action=delete&veid='.$vps->id.'"><img src="template/icons/vps_delete.png"  title="'._("Delete").'"/></a>' : '<img src="template/icons/vps_delete_grey.png"  title="'._("Unable to delete").'"/>');
 				} else {
 					$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'._("Cannot delete").'"/>');
 				}
@@ -717,7 +717,7 @@ if ($list_vps) {
 			
 	// 		if($vps->ve["vps_deleted"]) // FIXME
 	// 			$color = '#A6A6A6';
-			if($vps->running)
+			if($vps->is_running)
 				$color = false;
 			
 			$xtpl->table_tr($color);
@@ -791,44 +791,58 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_tr();
 	}
 	
+	$xtpl->table_td(_("Distribution").':');
+	$xtpl->table_td($vps->os_template->label);
+	$xtpl->table_tr();
+	
 	$xtpl->table_td(_("Status").':');
 	
 	if($vps->maintenance_lock == 'no') {
 		$xtpl->table_td(
-			(($vps->running) ?
+			(($vps->is_running) ?
 				_("running").' (<a href="?page=adminvps&action=info&run=restart&veid='.$vps->id.'&t='.csrf_token().'">'._("restart").'</a>, <a href="?page=adminvps&action=info&run=stop&veid='.$vps->id.'&t='.csrf_token().'">'._("stop").'</a>'
 				: 
 				_("stopped").' (<a href="?page=adminvps&action=info&run=start&veid='.$vps->id.'&t='.csrf_token().'">'._("start").'</a>') .
 				', <a href="?page=console&veid='.$vps->id.'&t='.csrf_token().'">'._("open remote console").'</a>)'
 		);
 	} else {
-		$xtpl->table_td($vps->running ? _("running") : _("stopped"));
+		$xtpl->table_td($vps->is_running ? _("running") : _("stopped"));
 	}
 	
-	$xtpl->table_tr();
-	
-	$xtpl->table_td(_("Processes").':');
-	$xtpl->table_td($vps->process_count);
 	$xtpl->table_tr();
 	
 	$xtpl->table_td(_("Hostname").':');
 	$xtpl->table_td($vps->hostname);
 	$xtpl->table_tr();
+
+	$xtpl->table_td(_("Uptime").':');
+	$xtpl->table_td($vps->is_running ? format_duration($vps->uptime) : '-');
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("Load average").':');
+	$xtpl->table_td($vps->is_running ? $vps->loadavg : '-');
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("Processes").':');
+	$xtpl->table_td($vps->is_running ? $vps->process_count : '-');
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("CPU").':');
+	$xtpl->table_td($vps->is_running ? sprintf('%.2f %%', 100.0 - $vps->cpu_idle) : '-');
+	$xtpl->table_tr();
 	
 	$xtpl->table_td(_("RAM").':');
-	$xtpl->table_td(sprintf('%4d MB', $vps->used_memory));
+	$xtpl->table_td($vps->is_running ? sprintf('%4d MB', $vps->used_memory) : '-');
 	$xtpl->table_tr();
+
+	if ($vps->used_swap) {
+		$xtpl->table_td(_("Swap").':');
+		$xtpl->table_td(sprintf('%4d MB', $vps->used_swap));
+		$xtpl->table_tr();
+	}
 	
 	$xtpl->table_td(_("HDD").':');
-	$xtpl->table_td(sprintf('%.2f GB',round($vps->used_disk / 1024, 2)));
-	$xtpl->table_tr();
-	
-	$xtpl->table_td(_("Distribution").':');
-	$xtpl->table_td($vps->os_template->label);
-	$xtpl->table_tr();
-	
-	$xtpl->table_td(_("State").':');
-	$xtpl->table_td($vps->object_state);
+	$xtpl->table_td(sprintf('%.2f GB',round($vps->used_diskspace / 1024, 2)));
 	$xtpl->table_tr();
 	
 	if ($vps->maintenance_lock != 'no') {
