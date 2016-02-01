@@ -14,7 +14,9 @@ module VpsAdmind
 
       fetch_vpses(db).each_hash do |row|
         db_vpses[ row['vps_id'].to_i ] = {
-            :read_hostname => row['manage_hostname'].to_i == 0
+            :read_hostname => row['manage_hostname'].to_i == 0,
+            :last_status_id => row['status_id'] && row['status_id'].to_i,
+            :last_is_running => row['is_running'].to_i == 1
         }
       end
 
@@ -74,6 +76,14 @@ module VpsAdmind
        
         t = Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
 
+        if !vps[:running] && vps[:last_status_id] && !vps[:last_is_running]
+          db.prepared(
+              'UPDATE vps_statuses SET updated_at = ? WHERE id = ?',
+              t, vps[:last_status_id]
+          )
+          next
+        end
+
         sql = "INSERT INTO vps_statuses SET
             vps_id = #{vps_id},
             status = #{vps[:skip] ? 0 : 1},
@@ -124,14 +134,15 @@ module VpsAdmind
     protected
     def fetch_vpses(db)
       sql = "
-          SELECT vps_id, manage_hostname
+          SELECT vps.vps_id, vps.manage_hostname, st.id AS status_id, st.is_running
           FROM vps
+          LEFT JOIN vps_statuses st ON st.id = vps.vps_status_id
           WHERE
             vps_server = #{$CFG.get(:vpsadmin, :server_id)}
             AND object_state < 3"
 
       if @vps_ids
-        sql += " AND vps_id IN (#{@vps_ids.join(',')})"
+        sql += " AND vps.vps_id IN (#{@vps_ids.join(',')})"
       end
       
       db.query(sql)
