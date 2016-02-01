@@ -20,7 +20,7 @@ class AddContinuousResourceTracking < ActiveRecord::Migration
       t.integer      :used_memory,       null: true
       t.integer      :total_swap,        null: true
       t.integer      :used_swap,         null: true
-      t.datetime     :created_at,        null: true
+      t.timestamps
     end
 
     add_column :vps, :vps_status_id, :integer, null: true

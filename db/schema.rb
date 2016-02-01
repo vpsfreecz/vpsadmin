@@ -875,6 +875,7 @@ ActiveRecord::Schema.define(version: 20160201072025) do
     t.integer  "total_swap"
     t.integer  "used_swap"
     t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
 end
