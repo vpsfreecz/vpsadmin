@@ -301,4 +301,87 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
   # end
 
   include VpsAdmin::API::Maintainable::Action
+  
+  class Status < HaveAPI::Resource
+    desc 'View node statuses in time'
+    route ':node_id/statuses'
+    model ::NodeStatus
+
+    params(:all) do
+      id :id
+      bool :status
+      integer :uptime, label: 'Uptime'
+      float :loadavg
+      integer :process_count, label: 'Process count'
+      integer :cpus
+      float :cpu_user
+      float :cpu_nice
+      float :cpu_system
+      float :cpu_idle
+      float :cpu_iowait
+      float :cpu_irq
+      float :cpu_softirq
+      float :cpu_guest
+      float :loadavg
+      integer :total_memory
+      integer :used_memory, label: 'Used memory', desc: 'in MB'
+      integer :total_swap
+      integer :used_swap, label: 'Used swap', desc: 'in MB'
+      integer :arc_c_max
+      integer :arc_c
+      integer :arc_size
+      float :arc_hitpercent
+      string :version, db_name: :vpsadmind_version
+      string :kernel
+      datetime :created_at
+    end
+  
+    class Index < HaveAPI::Actions::Default::Index
+      input do
+        datetime :from
+        datetime :to
+
+        patch :limit, fill: true
+      end
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def query
+        node = ::Node.find(params[:node_id])
+        q = node.node_statuses
+        q = q.where('created_at >= ?', input[:from]) if input[:from]
+        q = q.where('created_at <= ?', input[:to]) if input[:to]
+        q
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        query.order('created_at DESC').offset(input[:offset]).limit(input[:limit])
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      output do
+        use :all
+      end
+      
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        node = ::Node.find(params[:node_id])
+        node.node_statuses.find(params[:status_id])
+      end
+    end
+  end
 end
