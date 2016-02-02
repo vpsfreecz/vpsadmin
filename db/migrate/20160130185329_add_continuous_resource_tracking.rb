@@ -14,7 +14,6 @@ class AddContinuousResourceTracking < ActiveRecord::Migration
       t.float        :cpu_iowait,        null: true
       t.float        :cpu_irq,           null: true
       t.float        :cpu_softirq,       null: true
-      t.float        :cpu_guest,         null: true
       t.float        :loadavg,           null: true
       t.integer      :total_memory,      null: true
       t.integer      :used_memory,       null: true

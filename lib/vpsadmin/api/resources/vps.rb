@@ -52,7 +52,6 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     float :cpu_iowait
     float :cpu_irq
     float :cpu_softirq
-    float :cpu_guest
     float :loadavg
     integer :used_memory, label: 'Used memory', desc: 'in MB'
     integer :used_swap, label: 'Used swap', desc: 'in MB'
@@ -1302,7 +1301,6 @@ END
       float :cpu_iowait
       float :cpu_irq
       float :cpu_softirq
-      float :cpu_guest
       float :loadavg
       integer :total_memory
       integer :used_memory, label: 'Used memory', desc: 'in MB'

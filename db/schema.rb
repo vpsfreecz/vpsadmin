@@ -868,7 +868,6 @@ ActiveRecord::Schema.define(version: 20160201072025) do
     t.float    "cpu_iowait",    limit: 24
     t.float    "cpu_irq",       limit: 24
     t.float    "cpu_softirq",   limit: 24
-    t.float    "cpu_guest",     limit: 24
     t.float    "loadavg",       limit: 24
     t.integer  "total_memory"
     t.integer  "used_memory"

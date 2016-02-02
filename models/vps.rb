@@ -223,7 +223,7 @@ class Vps < ActiveRecord::Base
   end
 
   %i(is_running uptime process_count cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-     cpu_irq cpu_softirq cpu_guest loadavg used_memory used_swap
+     cpu_irq cpu_softirq loadavg used_memory used_swap
   ).each do |attr|
     define_method(attr) do
       vps_status && vps_status.send(attr)
