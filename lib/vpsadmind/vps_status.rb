@@ -108,7 +108,6 @@ module VpsAdmind
             cpu_iowait = #{cpu[:iowait]},
             cpu_irq = #{cpu[:irq]},
             cpu_softirq = #{cpu[:softirq]},
-            cpu_guest = #{cpu[:guest]},
           "
         end
 
