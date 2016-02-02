@@ -51,7 +51,7 @@ module VpsAdmind::SystemProbes
       ret = {}
 
       data.each do |k, v|
-        ret[k] = v / sum * 100
+        ret[k] = (v / sum * 100).round(2)
       end
 
       ret
