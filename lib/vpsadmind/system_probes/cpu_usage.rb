@@ -31,7 +31,9 @@ module VpsAdmind::SystemProbes
         f.close
       end
 
-      values = str.split
+      # The input string may contain multiple lines. We're interested only in the
+      # first line.
+      values = str.split("\n").first.split
       data = {}
 
       FIELDS.each_index do |i|
