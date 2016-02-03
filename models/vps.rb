@@ -237,7 +237,9 @@ class Vps < ActiveRecord::Base
   end
 
   def migrate(node, replace_ips)
-    TransactionChains::Vps::Migrate.fire(self, node, replace_ips)
+    TransactionChains::Vps::Migrate.fire(self, node, {
+        replace_ips: replace_ips
+    })
   end
 
   def clone(node, attrs)

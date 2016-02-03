@@ -19,8 +19,17 @@ module TransactionChains
             running: 'true if the VPS was running before the migration'
         }
 
-    def link_chain(vps, dst_node, replace_ips, resources = nil,
-                   handle_ips = true, reallocate_ips = true)
+    # @params opts [Hash]
+    # @option opts [Boolean] replace_ips (false)
+    # @option opts [Hash] resources (nil)
+    # @option opts [Boolean] handle_ips (true)
+    # @option opts [Boolean] reallocate_ips (true)
+    def link_chain(vps, dst_node, opts = {})
+      replace_ips = opts[:replace_ips].nil? ? false : opts[:replace_ips]
+      resources = opts[:resources]
+      handle_ips = opts[:handle_ips].nil? ? true : opts[:handle_ips]
+      reallocate_ips = opts[:reallocate_ips].nil? ? true : opts[:reallocate_ips]
+
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 

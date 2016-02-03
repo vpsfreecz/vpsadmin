@@ -95,10 +95,12 @@ module TransactionChains
           args: [
               secondary_vps,
               primary_vps.node,
-              false,
-              opts[:resources] ? primary_resources : nil,
-              true,  # handle IPs
-              false  # do not reallocate
+              {
+                  replace_ips: false,
+                  resources: opts[:resources] ? primary_resources : nil,
+                  handle_ips: true,
+                  reallocate_ips: false,
+              }
           ],
           hooks: {
               pre_start: ->(ret, _, _) do 
@@ -182,10 +184,12 @@ module TransactionChains
           args: [
               primary_vps,
               secondary_vps.node,
-              false,
-              opts[:resources] ? secondary_resources : nil,
-              false,  # do not handle IPs
-              false  # do not reallocate IPs
+              {
+                  replace_ips: false,
+                  resources: opts[:resources] ? secondary_resources : nil,
+                  handle_ips: false,
+                  reallocate_ips: false,
+              }
           ],
           hooks: {
               pre_start: ->(ret, _, _) do
