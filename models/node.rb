@@ -65,7 +65,7 @@ class Node < ActiveRecord::Base
     "#{name}.#{location.domain}.#{environment.domain}"
   end
 
-  def self.pick_by_env(env, location = nil)
+  def self.pick_by_env(env, location = nil, except = nil)
     q = self.joins('
           LEFT JOIN vps ON vps.vps_server = servers.server_id
           LEFT JOIN vps_status st ON st.vps_id = vps.vps_id
@@ -80,6 +80,8 @@ class Node < ActiveRecord::Base
     if location
       q = q.where('locations.location_id = ?', location.id)
     end
+
+    q = q.where('servers.server_id != ?', except.id) if except
 
     n = q.group('servers.server_id')
      .order('COUNT(st.vps_up) / max_vps ASC')
@@ -99,6 +101,8 @@ class Node < ActiveRecord::Base
     if location
       q = q.where('server_location = ?', location.id)
     end
+    
+    q = q.where('servers.server_id != ?', except.id) if except
 
     q.group('servers.server_id').order('COUNT(vps_id) / max_vps ASC').take
   end

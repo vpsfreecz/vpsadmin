@@ -628,7 +628,7 @@ END
           error('specify environment with location, node or vps')
         end
 
-        node = ::Node.pick_by_env(input[:environment], input[:location])
+        node = ::Node.pick_by_env(input[:environment], input[:location], vps.node)
       end
 
       error('no node available in this environment') unless node
