@@ -13,8 +13,8 @@ class TransactionChain < ActiveRecord::Base
   enum concern_type: %i(chain_affect chain_transform)
 
   attr_reader :acquired_locks
-  attr_accessor :last_id, :last_node_id, :dst_chain, :named, :locks, :urgent,
-                :prio, :reversible, :mail_server
+  attr_accessor :last_id, :last_node_id, :dst_chain, :named, :global_locks,
+                :locks, :urgent, :prio, :reversible, :mail_server
 
   include HaveAPI::Hookable
 
@@ -22,6 +22,14 @@ class TransactionChain < ActiveRecord::Base
   # create instances of TransactionChain yourself.
   # All arguments are passed to TransactionChain#link_chain.
   def self.fire(*args)
+    fire2(args: args)
+  end
+
+  # Same as TransactionChain.fire, except that arguments are passed
+  # as a hash option +args+. This allows to also pass a list of global locks.
+  # @param args [Array]
+  # @param locks [Array] list of global locks
+  def self.fire2(args: [], locks: [])
     ret = nil
 
     TransactionChain.transaction do
@@ -29,10 +37,12 @@ class TransactionChain < ActiveRecord::Base
       chain.name = chain_name
       chain.state = :staged
       chain.size = 0
-      chain.user = User.current
+      chain.user = ::User.current
       chain.user_session = ::UserSession.current
       chain.urgent_rollback = urgent_rollback? || false
       chain.save
+
+      chain.global_locks = locks
 
       # link_chain will raise ResourceLocked if it is unable to acquire
       # a lock. It will cause the transaction to be roll backed
@@ -91,6 +101,7 @@ class TransactionChain < ActiveRecord::Base
     c.last_node_id = chain.last_node_id
     c.dst_chain = chain.dst_chain
     c.named = chain.named
+    c.global_locks = chain.global_locks
     c.locks = chain.locks
     c.urgent = opts[:urgent]
     c.prio = opts[:prio]
@@ -151,6 +162,7 @@ class TransactionChain < ActiveRecord::Base
   # what locks it has, therefore it is safe to lock one resource more than
   # once, which happens when including other chains with ::use_in.
   def lock(obj, *args)
+    return if @global_locks.detect { |l| l.locks?(obj) }
     return if @locks.detect { |l| l.locks?(obj) }
 
     @locks << obj.acquire_lock(@dst_chain, *args)
