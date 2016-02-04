@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160201072025) do
+ActiveRecord::Schema.define(version: 20160203074500) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -547,13 +547,15 @@ ActiveRecord::Schema.define(version: 20160201072025) do
   end
 
   create_table "resource_locks", force: true do |t|
-    t.string   "resource",             limit: 100, null: false
-    t.integer  "row_id",                           null: false
-    t.integer  "transaction_chain_id"
+    t.string   "resource",       limit: 100, null: false
+    t.integer  "row_id",                     null: false
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "locked_by_id"
+    t.string   "locked_by_type"
   end
 
+  add_index "resource_locks", ["locked_by_id", "locked_by_type"], name: "index_resource_locks_on_locked_by_id_and_locked_by_type", using: :btree
   add_index "resource_locks", ["resource", "row_id"], name: "index_resource_locks_on_resource_and_row_id", unique: true, using: :btree
 
   create_table "servers", primary_key: "server_id", force: true do |t|

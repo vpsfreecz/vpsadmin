@@ -13,14 +13,14 @@ module Lockable
   #
   # When given a block, it is executed after the resource is locked
   # and the lock is released when the block finishes.
-  def acquire_lock(chain = nil, block: false, timeout: 300, &code_block)
+  def acquire_lock(lock_by = nil, block: false, timeout: 300, &code_block)
     start = Time.now
 
     begin
-      lock = ResourceLock.create(
+      lock = ResourceLock.create!(
         resource: lock_resource_name,
         row_id: self.id,
-        transaction_chain: chain
+        locked_by: lock_by,
       )
 
       if code_block
@@ -44,20 +44,20 @@ module Lockable
   end
 
   # Assign already acquired lock to +chain+.
-  def assign_lock(chain)
+  def assign_lock(obj)
     ResourceLock.find_by(
         resource: lock_resource_name,
         row_id: self.id,
-        transaction_chain: nil
-    ).assign_to(chain)
+        locked_by: nil,
+    ).assign_to(obj)
   end
 
   # Release lock owned by +chain+.
-  def release_lock(chain = nil)
+  def release_lock(locked_by = nil)
     ResourceLock.find_by(
         resource: lock_resource_name,
         row_id: self.id,
-        transaction_chain: chain
+        locked_by: locked_by,
     ).release
   end
 
@@ -66,7 +66,6 @@ module Lockable
     !ResourceLock.find_by(
         resource: lock_resource_name,
         row_id: self.id,
-        transaction_chain: chain
     ).nil?
   end
 

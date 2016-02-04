@@ -4,10 +4,11 @@
 # module Lockable.
 class ResourceLock < ActiveRecord::Base
   belongs_to :transaction_chain
+  belongs_to :locked_by, polymorphic: true
 
   # Assign the lock to +chain+.
-  def assign_to(chain)
-    update(transaction_chain: chain)
+  def assign_to(obj)
+    update(locked_by: obj)
   end
 
   # Remove the lock.
