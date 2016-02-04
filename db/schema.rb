@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160203074500) do
+ActiveRecord::Schema.define(version: 20160203074916) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -436,6 +436,18 @@ ActiveRecord::Schema.define(version: 20160203074500) do
     t.integer "change_to",   limit: 8, null: false
   end
 
+  create_table "migration_plans", force: true do |t|
+    t.integer  "state",         default: 0,    null: false
+    t.boolean  "stop_on_error", default: true, null: false
+    t.boolean  "send_mail",     default: true, null: false
+    t.integer  "user_id"
+    t.integer  "node_id"
+    t.integer  "concurrency",                  null: false
+    t.string   "reason"
+    t.datetime "created_at"
+    t.datetime "finished_at"
+  end
+
   create_table "mirrors", force: true do |t|
     t.integer "src_pool_id"
     t.integer "dst_pool_id"
@@ -855,6 +867,18 @@ ActiveRecord::Schema.define(version: 20160203074500) do
   add_index "vps_ip", ["user_id"], name: "index_vps_ip_on_user_id", using: :btree
   add_index "vps_ip", ["vps_id"], name: "index_vps_ip_on_vps_id", using: :btree
   add_index "vps_ip", ["vps_id"], name: "vps_id", using: :btree
+
+  create_table "vps_migrations", force: true do |t|
+    t.integer  "vps_id",                           null: false
+    t.integer  "migration_plan_id",                null: false
+    t.integer  "state",                default: 0, null: false
+    t.integer  "transaction_chain_id"
+    t.integer  "src_node_id",                      null: false
+    t.integer  "dst_node_id",                      null: false
+    t.datetime "created_at"
+    t.datetime "started_at"
+    t.datetime "finished_at"
+  end
 
   create_table "vps_statuses", force: true do |t|
     t.integer  "vps_id",                   null: false

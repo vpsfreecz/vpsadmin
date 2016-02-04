@@ -300,6 +300,50 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
   #   end
   # end
 
+  class Evacuate < HaveAPI::Action
+    desc 'Evacuate node'
+    route ':%{resource}_id/evacuate'
+    http_method :post
+
+    input do
+      resource VpsAdmin::API::Resources::Node, name: :dst_node,
+          label: 'Target node', required: true
+      bool :stop_on_error, label: 'Stop on error', default: true,
+          fill: true
+      bool :skip_locked, default: true, fill: true
+      integer :concurrency, desc: 'How many migrations run concurrently', default: 1, fill: true
+      string :reason
+    end
+
+    output(:hash) do
+      id :migration_plan_id
+      integer :skipped_vps
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def exec
+      n = ::Node.find(params[:node_id])
+      dst = input[:dst_node]
+
+      if n.server_location != dst.server_location
+        error('the destination node is in a different location')
+
+      elsif n.environment_id != dst.environment_id
+        error('the destination node is in a different environment')
+      end
+
+      plan = n.evacuate(input)
+
+      {
+          migration_plan_id: plan.id,
+          skipped_vps: plan.skipped_vps,
+      }
+    end
+  end
+
   include VpsAdmin::API::Maintainable::Action
   
   class Status < HaveAPI::Resource

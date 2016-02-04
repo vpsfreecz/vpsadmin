@@ -26,4 +26,14 @@ namespace :vpsadmin do
     puts 'Mail daily report'
     VpsAdmin::API::Tasks.run(:mail, :daily_report)
   end
+
+  namespace :vps do
+    namespace :migration do
+      desc 'Execute VPS migration plans'
+      task :run_plans do
+        puts 'Execute VPS migration plans'
+        VpsAdmin::API::Tasks.run(:vps_migration, :run_plans)
+      end
+    end
+  end
 end

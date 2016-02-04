@@ -194,6 +194,82 @@ class Node < ActiveRecord::Base
     server_type == 'node'
   end
 
+  # @param opts [Hash]
+  # @option opts [::Node] dst_node
+  # @option opts [Integer] concurrency
+  # @option opts [Boolean] stop_on_error
+  # @option opts [Boolean] skip_locked
+  # @option opts [String] reason
+  def evacuate(opts)
+    plan = nil
+    concurrency = opts[:concurrency] || 1
+
+    ActiveRecord::Base.transaction do
+      plan = ::MigrationPlan.create!(
+          stop_on_error: opts[:stop_on_error].nil? ? false : opts[:stop_on_error],
+          user: ::User.current,
+          node: opts[:dst_node],
+          concurrency: concurrency,
+          reason: opts[:reason],
+      )
+
+      # Lock evacuated node by the MigrationPlan
+      self.acquire_lock(plan)
+
+      migrations = []
+      locks = []
+
+      ::Vps.where(
+          node: self
+      ).order('object_state, vps_id').each do |vps|
+        begin
+          locks << vps.acquire_lock(plan)
+
+        rescue ResourceLocked => e
+          if opts[:skip_locked]
+            plan.skipped_vps += 1
+            next
+          end
+
+          raise e
+        end
+
+        migrations << ::VpsMigration.create!(
+            vps: vps,
+            migration_plan: plan,
+            src_node: self,
+            dst_node: opts[:dst_node],
+        )
+      end
+
+      i = 0
+      migrations.each do |m|
+        begin
+          chain = TransactionChains::Vps::Migrate.fire2(
+              args: [m.vps, m.dst_node],
+              locks: locks,
+          )
+         
+          m.update!(
+              state: ::VpsMigration.states[:running],
+              started_at: Time.now,
+              transaction_chain: chain,
+          )
+
+          i += 1
+          break if i >= concurrency
+
+        rescue ResourceLocked
+          next
+        end
+      end
+
+      plan.update!(state: ::MigrationPlan.states[:running])
+    end
+    
+    plan
+  end
+
   protected
   def shaper_changed?
     max_tx_changed? || max_rx_changed?
