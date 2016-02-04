@@ -134,7 +134,7 @@ class Node < ActiveRecord::Base
   end
 
   def self.first_available
-    return self.joins(:node_status).order('servers_status.created_at DESC').take!
+    return self.joins(:node_status).order('node_statuses.created_at DESC').take!
   end
 
   def status
