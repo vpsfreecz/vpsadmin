@@ -32,7 +32,7 @@ class TransactionChain < ActiveRecord::Base
   def self.fire2(args: [], locks: [])
     ret = nil
 
-    TransactionChain.transaction do
+    TransactionChain.transaction(requires_new: true) do
       chain = new
       chain.name = chain_name
       chain.state = :staged
