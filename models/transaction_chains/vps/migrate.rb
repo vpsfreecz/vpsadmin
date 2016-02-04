@@ -241,6 +241,7 @@ module TransactionChains
       append(Transactions::Vps::Destroy, args: vps)
 
       # fail 'ohnoes'
+      self
     end
 
     def recursive_serialize(dataset, children)
