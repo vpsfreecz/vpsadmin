@@ -231,6 +231,7 @@ class Vps < ActiveRecord::Base
   end
   
   alias_method :is_running?, :is_running
+  alias_method :running?, :is_running
 
   def used_diskspace
     dataset_in_pool.referenced
