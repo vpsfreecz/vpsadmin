@@ -310,14 +310,12 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
           label: 'Target node', required: true
       bool :stop_on_error, label: 'Stop on error', default: true,
           fill: true
-      bool :skip_locked, default: true, fill: true
       integer :concurrency, desc: 'How many migrations run concurrently', default: 1, fill: true
       string :reason
     end
 
     output(:hash) do
       id :migration_plan_id
-      integer :skipped_vps
     end
 
     authorize do |u|
@@ -337,10 +335,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
       plan = n.evacuate(input)
 
-      {
-          migration_plan_id: plan.id,
-          skipped_vps: plan.skipped_vps,
-      }
+      {migration_plan_id: plan.id}
     end
   end
 

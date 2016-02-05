@@ -6,5 +6,5 @@ class VpsMigration < ActiveRecord::Base
   belongs_to :dst_node, class_name: 'Node'
   belongs_to :user
 
-  enum state: %i(queued running done error)
+  enum state: %i(queued running cancelled done error)
 end

@@ -6,13 +6,6 @@ class MigrationPlan < ActiveRecord::Base
 
   enum state: %i(staged running cancelling cancelled done error)
 
-  attr_accessor :skipped_vps
-
-  def initialize(*args)
-    @skipped_vps = 0
-    super(*args)
-  end
-
   # @params state [Symbol]
   def finish!(state)
     update!(

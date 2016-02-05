@@ -198,7 +198,6 @@ class Node < ActiveRecord::Base
   # @option opts [::Node] dst_node
   # @option opts [Integer] concurrency
   # @option opts [Boolean] stop_on_error
-  # @option opts [Boolean] skip_locked
   # @option opts [String] reason
   def evacuate(opts)
     plan = nil
@@ -222,18 +221,6 @@ class Node < ActiveRecord::Base
       ::Vps.where(
           node: self
       ).order('object_state, vps_id').each do |vps|
-        begin
-          locks << vps.acquire_lock(plan)
-
-        rescue ResourceLocked => e
-          if opts[:skip_locked]
-            plan.skipped_vps += 1
-            next
-          end
-
-          raise e
-        end
-
         migrations << ::VpsMigration.create!(
             vps: vps,
             migration_plan: plan,

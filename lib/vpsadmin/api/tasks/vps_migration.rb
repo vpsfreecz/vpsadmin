@@ -1,5 +1,7 @@
 module VpsAdmin::API::Tasks
   class VpsMigration < Base
+    class SkipMigration < StandardError ; end
+
     # Run VPS migration plans
     def run_plans
       ActiveRecord::Base.transaction { do_run_plans }
@@ -91,6 +93,12 @@ module VpsAdmin::API::Tasks
           state: ::VpsMigration.states[:queued],
       ).order('created_at').each do |m|
 
+        unless m.vps
+          m.update!(state: ::VpsMigration.states[:cancelled])
+          puts "    VPS ##{m.vps_id} no longer exists"
+          next
+        end
+
         begin
           puts "   VPS ##{m.vps.id} from #{m.vps.node.domain_name} to #{m.dst_node.domain_name} "
           migrate_vps(m, locks)
@@ -100,12 +108,23 @@ module VpsAdmin::API::Tasks
 
         rescue ResourceLocked
           puts "      resource locked"
+
+        rescue SkipMigration => e
+          m.update!(state: ::VpsMigration.states[:cancelled])
+          puts "      #{e.message}"
         end
 
       end
     end
 
     def migrate_vps(m, locks)
+      if m.vps.vps_server != m.src_node_id
+        raise SkipMigration, 'the VPS has been migrated elsewhere in the meantime'
+
+      elsif m.vps.object_state == 'hard_delete'
+        raise SkipMigration, 'the VPS has been hard_deleted in the meantime'
+      end
+
       chain = TransactionChains::Vps::Migrate.fire2(
           args: [m.vps, m.dst_node],
           locks: locks,
