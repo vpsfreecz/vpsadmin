@@ -226,6 +226,20 @@ module VpsAdmind
       if hard
         @output[:error] = 'Killed'
         @status = :failed
+        
+        if @current_method == :exec
+          if keep_going?
+            log(:debug, self, 'Transaction failed but keep going on')
+
+          elsif reversible?
+            log(:debug, self, 'Transaction failed, running rollback')
+            @rollbacked = true
+            safe_call(@current_klass, :rollback)
+
+          else
+            log(:debug, self, 'Transaction failed and is irreversible')
+          end
+        end
       end
     end
 
@@ -290,6 +304,9 @@ module VpsAdmind
 
     private
     def safe_call(klass, m)
+      @current_klass = klass
+      @current_method = m
+
       begin
         ret = @cmd.send(m)
 
