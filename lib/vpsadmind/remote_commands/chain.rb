@@ -85,9 +85,9 @@ module VpsAdmind::RemoteCommands
       ret = []
 
       st = t.prepared_st(
-          'SELECT resource, row_id, created_at
+          "SELECT resource, row_id, created_at
           FROM resource_locks
-          WHERE transaction_chain_id = ?',
+          WHERE locked_by_type = 'TransactionChain' AND locked_by_id = ?",
           @chain
       )
 
@@ -101,7 +101,7 @@ module VpsAdmind::RemoteCommands
 
       st.close
 
-      t.prepared('DELETE FROM resource_locks WHERE transaction_chain_id = ?', @chain)
+      t.prepared("DELETE FROM resource_locks WHERE locked_by_type = 'TransactionChain' AND locked_by_id = ?", @chain)
 
       ret
     end
