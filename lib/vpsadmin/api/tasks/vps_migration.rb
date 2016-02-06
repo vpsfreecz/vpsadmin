@@ -13,6 +13,7 @@ module VpsAdmin::API::Tasks
           state: [
               ::MigrationPlan.states[:running],
               ::MigrationPlan.states[:cancelling],
+              ::MigrationPlan.states[:failing],
           ]
       ).each do |plan|
         puts "Plan ##{plan.id} #{plan.state}"
@@ -43,7 +44,7 @@ module VpsAdmin::API::Tasks
 
           if plan.stop_on_error
             puts "  Cancelling migration plan due to an error"
-            plan.finish!(error)
+            plan.fail!
           end
 
         else
@@ -67,12 +68,12 @@ module VpsAdmin::API::Tasks
         # No running migrations, nothing in the queue -> finished
         if queued == 0
           puts "  Migration plan is finished"
-          plan.finish!(plan.state == 'running' ? :done : :cancelled)
+          plan.finish!
           return
         end
       end
 
-      return if plan.state == 'cancelling'
+      return if plan.state != 'running'
 
       # Start new migrations if any
       schedule_n = plan.concurrency - running
