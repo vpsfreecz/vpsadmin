@@ -516,6 +516,42 @@ switch ($_GET["action"]) {
 				}
 			}
 			break;
+
+		case 'outage_windows':
+			csrf_check();
+
+			try {
+				$outage = $api->vps($_GET['veid'])->outage_window;
+
+				if ($_POST['unified']) {
+					$outage->update_all(array(
+						'is_open' => true,
+						'opens_at' => $_POST['unified_opens_at'] * 60,
+						'closes_at' => $_POST['unified_closes_at'] * 60,
+					));
+
+				} else {
+					for ($i = 0 ; $i < 7; $i++) {
+						$outage->update($i, array(
+							'is_open' => array_search("$i", $_POST['is_open']) !== false,
+							'opens_at' => $_POST['opens_at'][$i] * 60,
+							'closes_at' => $_POST['closes_at'][$i] * 60,
+						));
+					}
+				}
+
+				notify_user(_("Outage windows set"), '');
+				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(
+					_('Outage window configuration failed'),
+					$e->getResponse()
+				);
+				$show_info=true;
+			}
+			break;
+
 		case 'clone':
 			$vps = $api->vps->find($_GET['veid']);
 
@@ -1126,6 +1162,55 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_tr();
 		
 		$xtpl->form_out(_("Go >>"));
+	
+	// Outage windows
+		$xtpl->table_title(_('Outage windows'));
+		$xtpl->table_add_category('');
+		$xtpl->table_add_category(_('Day'));
+		$xtpl->table_add_category(_('From'));
+		$xtpl->table_add_category(_('To'));
+		$xtpl->form_create('?page=adminvps&action=outage_windows&veid='.$vps->id, 'post');
+
+		$windows = $vps->outage_window->list();
+		$days = array('Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat');
+		$hours = array();
+
+		for ($i = 0; $i < 25; $i++)
+			$hours[] = sprintf("%02d:00", $i);
+
+		$hours[ count($hours) - 1 ] = '23:59';
+
+		$unified = true;
+		$last = $windows->first();
+
+		foreach ($windows as $w) {
+			if ($last->is_open != $w->is_open || $last->opens_at != $w->opens_at ||
+				$last->closes_at != $w->closes_at) {
+				$unified = false;
+				break;
+			}
+		}
+
+		$xtpl->form_add_radio_pure('unified', '1', $unified);
+		$xtpl->table_td(_('Same outage window every day'));
+		$xtpl->form_add_select_pure('unified_opens_at', $hours, $windows->first()->opens_at / 60);
+		$xtpl->form_add_select_pure('unified_closes_at', $hours, $windows->first()->closes_at / 60);
+		$xtpl->table_tr();
+
+		$xtpl->form_add_radio_pure('unified', '0', !$unified);
+		$xtpl->table_td(_('Configure outage windows per day'), false, false, '3');
+		$xtpl->table_tr();
+
+		foreach ($windows as $w) {
+			$xtpl->table_td('');
+			$xtpl->form_add_checkbox_pure('is_open[]', $w->weekday, $w->is_open, $days[ $w->weekday ]);
+			$xtpl->form_add_select_pure('opens_at[]', $hours, $w->opens_at / 60);
+			$xtpl->form_add_select_pure('closes_at[]', $hours, $w->closes_at / 60);
+			$xtpl->table_tr();
+		}
+
+		$xtpl->form_out(_("Go >>"));
+
 		
 	// State change
 		if ($_SESSION['is_admin']) {

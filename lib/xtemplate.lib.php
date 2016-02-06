@@ -857,8 +857,8 @@ class XTemplate {
 	  * @param $value - value if checked
 	  * @param $checked - if it is checked by default
 	  */
-	function form_add_checkbox_pure($name = 'input_fromgen', $value = '', $checked=false) {
-		$this->table_td('<input type="checkbox" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' />');
+	function form_add_checkbox_pure($name = 'input_fromgen', $value = '', $checked=false, $text = '') {
+		$this->table_td('<input type="checkbox" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' /> '.$text);
 	}
 	
 	/**
