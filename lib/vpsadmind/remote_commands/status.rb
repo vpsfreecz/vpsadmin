@@ -12,10 +12,10 @@ module VpsAdmind::RemoteCommands
 
         queues.each do |name, queue|
           q = {
-              :threads => $CFG.get(:vpsadmin, :queues, name, :threads),
-              :urgent => $CFG.get(:vpsadmin, :queues, name, :urgent),
-              :start_delay => $CFG.get(:vpsadmin, :queues, name, :start_delay),
-              :started => queues.started?(name),
+              :threads => queue.size,
+              :urgent => queue.urgent_size,
+              :start_delay => queue.start_delay,
+              :started => queue.started?,
               :workers => {}
           }
 

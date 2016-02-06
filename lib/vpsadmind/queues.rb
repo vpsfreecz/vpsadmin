@@ -5,7 +5,7 @@ module VpsAdmind
       @queues = {}
       
       %w(general storage network vps zfs_send mail outage).each do |q|
-        @queues[q.to_sym] = {}
+        @queues[q.to_sym] = TransactionQueue.new(q.to_sym, @daemon.start_time)
       end
     end
 
@@ -22,11 +22,8 @@ module VpsAdmind
     end
 
     def execute(cmd)
-      if busy?(cmd.chain_id) || !free_slot?(cmd) || !started?(cmd.queue)
-        return false
-      end
-
-      @queues[cmd.queue][cmd.chain_id] = Worker.new(cmd)
+      return false if busy?(cmd.chain_id)
+      @queues[ cmd.queue ].execute(cmd)
     end
 
     def empty?
@@ -38,59 +35,39 @@ module VpsAdmind
     end
 
     def full?
-      $CFG.get(:vpsadmin, :queues) do |queues|
-        queues.each do |name, q|
-          return false if @queues[name].size < (q[:threads] + q[:urgent])
-        end
+      @queues.each_value do |q|
+        return false unless q.full?
       end
 
       true
     end
 
     def free_slot?(cmd)
-      $CFG.get(:vpsadmin, :queues, cmd.queue) do |q|
-        size = @queues[cmd.queue].size
-        return size < q[:threads] || (cmd.urgent? && size < (q[:threads] + q[:urgent]))
-      end
+      @queues[ cmd.queue ].free_slot?(cmd)
     end
 
-    def busy?(chain)
+    def busy?(chain_id)
       @queues.each_value do |q|
-        return true if q.has_key?(chain)
+        return true if q.busy?(chain_id)
       end
 
       false
     end
 
-    def started?(queue)
-      d = $CFG.get(:vpsadmin, :queues, queue, :start_delay)
-      (@daemon.start_time + d) < Time.now
-    end
-
     def has_transaction?(t_id)
       @queues.each_value do |q|
-        q.each do |wid, w|
-          return true if w.cmd.id.to_i == t_id
-        end
+        return true if q.has_transaction?(t_id)
       end
 
       false
     end
 
     def worker_count
-      @queues.inject(0) { |sum, q| sum + q[1].size }
+      @queues.inject(0) { |sum, q| sum + q[1].used }
     end
 
     def total_limit
-      sum = 0
-
-      $CFG.get(:vpsadmin, :queues) do |queues|
-        queues.each_value do |q|
-          sum += q[:threads] + q[:urgent]
-        end
-      end
-
-      sum
+      @queues.values.inject(0) { |sum, q| sum + q.total_size }
     end
   end
 end
