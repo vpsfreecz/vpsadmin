@@ -16,6 +16,7 @@ class AddMigrationPlans < ActiveRecord::Migration
       t.references  :vps,               null: false
       t.references  :migration_plan,    null: false
       t.integer     :state,             null: false, default: 0
+      t.boolean     :outage_window,     null: false, default: true
       t.references  :transaction_chain, null: true
       t.references  :src_node,          null: false
       t.references  :dst_node,          null: false

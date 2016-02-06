@@ -869,12 +869,13 @@ ActiveRecord::Schema.define(version: 20160204152946) do
   add_index "vps_ip", ["vps_id"], name: "vps_id", using: :btree
 
   create_table "vps_migrations", force: true do |t|
-    t.integer  "vps_id",                           null: false
-    t.integer  "migration_plan_id",                null: false
-    t.integer  "state",                default: 0, null: false
+    t.integer  "vps_id",                              null: false
+    t.integer  "migration_plan_id",                   null: false
+    t.integer  "state",                default: 0,    null: false
+    t.boolean  "outage_window",        default: true, null: false
     t.integer  "transaction_chain_id"
-    t.integer  "src_node_id",                      null: false
-    t.integer  "dst_node_id",                      null: false
+    t.integer  "src_node_id",                         null: false
+    t.integer  "dst_node_id",                         null: false
     t.datetime "created_at"
     t.datetime "started_at"
     t.datetime "finished_at"

@@ -197,11 +197,13 @@ class Node < ActiveRecord::Base
   # @param opts [Hash]
   # @option opts [::Node] dst_node
   # @option opts [Integer] concurrency
-  # @option opts [Boolean] stop_on_error
+  # @option opts [Boolean] stop_on_error (false)
+  # @option opts [Boolean] outage_window (true)
   # @option opts [String] reason
   def evacuate(opts)
     plan = nil
     concurrency = opts[:concurrency] || 1
+    outage_window = opts[:outage_window].nil? ? true : opts[:outage_window]
 
     ActiveRecord::Base.transaction do
       plan = ::MigrationPlan.create!(
@@ -224,6 +226,7 @@ class Node < ActiveRecord::Base
         migrations << ::VpsMigration.create!(
             vps: vps,
             migration_plan: plan,
+            outage_window: outage_window,
             src_node: self,
             dst_node: opts[:dst_node],
         )
@@ -233,7 +236,7 @@ class Node < ActiveRecord::Base
       migrations.each do |m|
         begin
           chain = TransactionChains::Vps::Migrate.fire2(
-              args: [m.vps, m.dst_node],
+              args: [m.vps, m.dst_node, {outage_window: m.outage_window}],
               locks: locks,
           )
          
