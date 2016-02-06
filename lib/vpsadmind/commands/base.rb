@@ -105,4 +105,5 @@ module VpsAdmind::Commands
   module Utils          ; end
   module Mail           ; end
   module IntegrityCheck ; end
+  module OutageWindow   ; end
 end

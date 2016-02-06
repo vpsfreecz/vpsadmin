@@ -49,7 +49,12 @@ module VpsAdmind
                   :threads => 2,
                   :urgent => 2,
                   :start_delay => 0
-              }
+              },
+              :outage => {
+                  :threads => 24,
+                  :urgent => 0,
+                  :start_delay => 0,
+              },
           },
           :urgent_threads => 6,
           :check_interval => 1,

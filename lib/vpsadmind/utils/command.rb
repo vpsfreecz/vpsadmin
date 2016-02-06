@@ -13,6 +13,7 @@ module VpsAdmind::Utils
           :subprocess => :Subprocess,
           :integrity => :Integrity,
           :hypervisor => :Hypervisor,
+          :outage_window => :OutageWindow,
       }
 
       # Includes module from VpsAdmind::Utils using mapping

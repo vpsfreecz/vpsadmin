@@ -204,6 +204,7 @@ module VpsAdmind
         loop do
           if $CFG.get(:vpsadmin, :update_vps_status)
             log(:info, :regular, 'Update VPS resources')
+
             my = Db.new
             @vps_status.update(my)
             my.close

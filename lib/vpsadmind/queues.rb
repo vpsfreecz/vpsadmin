@@ -4,7 +4,7 @@ module VpsAdmind
       @daemon = daemon
       @queues = {}
       
-      %w(general storage network vps zfs_send mail).each do |q|
+      %w(general storage network vps zfs_send mail outage).each do |q|
         @queues[q.to_sym] = {}
       end
     end
