@@ -14,6 +14,7 @@ class Vps < ActiveRecord::Base
   has_many :vps_mounts, dependent: :delete_all
   has_many :vps_features
   has_many :vps_consoles
+  has_many :vps_outage_windows
 
   belongs_to :dataset_in_pool
   has_many :mounts

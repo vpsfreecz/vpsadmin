@@ -1203,6 +1203,156 @@ END
       end
     end
   end
+  
+  class OutageWindow < HaveAPI::Resource
+    route ':vps_id/outage_windows'
+    model ::VpsOutageWindow
+    desc 'Manage VPS outage windows'
+   
+    params(:editable) do
+      bool :is_open
+      integer :opens_at
+      integer :closes_at
+    end
+
+    params(:all) do
+      integer :weekday
+      use :editable
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      desc 'List outage windows'
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def query
+        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps.vps_outage_windows
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        query.order('weekday').offset(input[:offset]).limit(input[:limit])
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      desc 'Show outage window'
+      resolve ->(w) { [w.vps_id, w.id] }
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def prepare
+        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        @window = vps.vps_outage_windows.find_by!(weekday: params[:outage_window_id])
+      end
+      
+      def exec
+        @window
+      end
+    end
+    
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Resize outage window'
+
+      input do
+        use :editable
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def exec
+        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        window = vps.vps_outage_windows.find_by!(weekday: params[:outage_window_id])
+
+        if input.empty?
+          error('provide parameters to change')
+        end
+
+        if input.has_key?(:is_open) && !input[:is_open]
+          input[:opens_at] = nil
+          input[:closes_at] = nil
+        end
+
+        window.update!(input)
+        window
+
+      rescue ActiveRecord::RecordInvalid => e
+        error('update failed', e.record.errors.to_hash)
+      end
+    end
+
+    class UpdateAll < HaveAPI::Action
+      desc 'Update outage windows for all week days at once'
+      http_method :put
+      route ''
+
+      input do
+        use :editable
+      end
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict m_id: u.id
+        allow
+      end
+
+      def exec
+        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+
+        if input.empty?
+          error('provide parameters to change')
+        end
+
+        if input.has_key?(:is_open) && !input[:is_open]
+          input[:opens_at] = nil
+          input[:closes_at] = nil
+        end
+
+        ::Vps.transaction do
+          vps.vps_outage_windows.each do |w|
+            w.update!(input)
+          end
+        end
+
+        vps.vps_outage_windows.order('weekday')
+
+      rescue ActiveRecord::RecordInvalid => e
+        error('update failed', e.record.errors.to_hash)
+      end
+    end
+  end
 
   class ConsoleToken < HaveAPI::Resource
     route ':vps_id/console_token'

@@ -30,6 +30,7 @@ module TransactionChains
       dst_features = {}
       vps_resources = nil
       confirm_features = []
+      confirm_windows = []
 
       if attrs[:features]
         vps.vps_features.all.each do |f|
@@ -68,6 +69,18 @@ module TransactionChains
         )
       end
 
+      # Outage windows
+      # FIXME: user could choose if he wants to clone it
+      vps.vps_outage_windows.each do |w|
+        confirm_windows << VpsOutageWindow.create!(
+            vps: vps,
+            weekday: w.weekday,
+            is_open: w.is_open,
+            opens_at: w.opens_at,
+            closes_at: w.closes_at,
+        )
+      end
+
       # FIXME: do not fail when there are insufficient resources.
       # It is ok when the available resource is higher than minimum.
       # Perhaps make it a boolean attribute determining if resources
@@ -93,6 +106,10 @@ module TransactionChains
 
         confirm_features.each do |f|
           just_create(f)
+        end
+       
+        confirm_windows.each do |w|
+          just_create(w)
         end
       end
 

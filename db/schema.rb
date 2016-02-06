@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160203074916) do
+ActiveRecord::Schema.define(version: 20160204152946) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -879,6 +879,16 @@ ActiveRecord::Schema.define(version: 20160203074916) do
     t.datetime "started_at"
     t.datetime "finished_at"
   end
+
+  create_table "vps_outage_windows", force: true do |t|
+    t.integer "vps_id",    null: false
+    t.integer "weekday",   null: false
+    t.boolean "is_open",   null: false
+    t.integer "opens_at"
+    t.integer "closes_at"
+  end
+
+  add_index "vps_outage_windows", ["vps_id", "weekday"], name: "index_vps_outage_windows_on_vps_id_and_weekday", unique: true, using: :btree
 
   create_table "vps_statuses", force: true do |t|
     t.integer  "vps_id",                   null: false

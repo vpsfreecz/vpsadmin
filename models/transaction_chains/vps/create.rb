@@ -48,6 +48,17 @@ module TransactionChains
         ::VpsFeature::FEATURES.each_key do |name|
           just_create(::VpsFeature.create!(vps: vps, name: name, enabled: false))
         end
+
+        # Outage windows
+        7.times do |i|
+          just_create(VpsOutageWindow.create!(
+              vps: vps,
+              weekday: i,
+              is_open: true,
+              opens_at: 60,
+              closes_at: 5*60,
+          ))
+        end
       end
 
       use_chain(Vps::ApplyConfig, args: [vps, vps.node.environment.vps_configs.pluck(:id)])

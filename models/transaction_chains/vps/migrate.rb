@@ -24,11 +24,13 @@ module TransactionChains
     # @option opts [Hash] resources (nil)
     # @option opts [Boolean] handle_ips (true)
     # @option opts [Boolean] reallocate_ips (true)
+    # @option opts [Boolean] outage_window (true)
     def link_chain(vps, dst_node, opts = {})
       replace_ips = opts[:replace_ips].nil? ? false : opts[:replace_ips]
       resources = opts[:resources]
       handle_ips = opts[:handle_ips].nil? ? true : opts[:handle_ips]
       reallocate_ips = opts[:reallocate_ips].nil? ? true : opts[:reallocate_ips]
+      outage_window = opts[:outage_window].nil? ? true : opts[:outage_window]
 
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
@@ -112,11 +114,31 @@ module TransactionChains
         src, dst = pair
 
         # Transfer private area. All subdatasets are transfered as well.
-        # The two step transfer is done even if the VPS seems to be stopped.
-        # It does not have to be the case.
+        # The two (or three) step transfer is done even if the VPS seems to be stopped.
+        # It does not have to be the case, vpsAdmin can have outdated information.
         # First transfer is done when the VPS is running.
         migration_snapshots << use_chain(Dataset::Snapshot, args: src)
         use_chain(Dataset::Transfer, args: [src, dst])
+      end
+
+      if outage_window
+        # Wait for the outage window to open
+        append(Transactions::OutageWindow::Wait, args: [vps, 15])
+
+        # Reserve migration slot
+        # Check InOrFail 15
+
+        # Second transfer while inside the outage window. The VPS is still running.
+        datasets.each do |pair|
+          src, dst = pair
+
+          migration_snapshots << use_chain(Dataset::Snapshot, args: src)
+          use_chain(Dataset::Transfer, args: [src, dst])
+        end
+
+        # Check if we're still inside the outage window. We're in if the window
+        # closes in not less than 5 minutes. Fail if not.
+        append(Transactions::OutageWindow::InOrFail, args: [vps, 5])
       end
 
       # Stop the VPS
@@ -125,7 +147,7 @@ module TransactionChains
       datasets.each do |pair|
         src, dst = pair
 
-        # Seconds transfer is done when the VPS is stopped
+        # The final transfer is done when the VPS is stopped
         migration_snapshots << use_chain(Dataset::Snapshot, args: src, urgent: true)
         use_chain(Dataset::Transfer, args: [src, dst], urgent: true)
       end
@@ -180,6 +202,8 @@ module TransactionChains
 
       # Remount and regenerate mount scripts of mounts in other VPSes
       mounts.remount_others
+
+      # Release migration slot
 
       # Remove migration snapshots
       migration_snapshots.each do |sip|
