@@ -4,7 +4,7 @@ module VpsAdmind
       @daemon = daemon
       @queues = {}
       
-      %w(general storage network vps zfs_send mail outage).each do |q|
+      %w(general storage network vps zfs_send mail outage queue).each do |q|
         @queues[q.to_sym] = TransactionQueue.new(q.to_sym, @daemon.start_time)
       end
     end
@@ -24,6 +24,14 @@ module VpsAdmind
     def execute(cmd)
       return false if busy?(cmd.chain_id)
       @queues[ cmd.queue ].execute(cmd)
+    end
+
+    def reserve(queues, cmd)
+      queues = [queues] unless queues.is_a?(::Array)
+
+      queues.each do |q|
+        @queues[q].reserve(cmd)
+      end
     end
 
     def empty?

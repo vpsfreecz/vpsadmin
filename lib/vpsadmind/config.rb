@@ -55,6 +55,11 @@ module VpsAdmind
                   :urgent => 0,
                   :start_delay => 0,
               },
+              :queue => {
+                  :threads => 8,
+                  :urgent => 0,
+                  :start_delay => 0,
+              },
           },
           :urgent_threads => 6,
           :check_interval => 1,

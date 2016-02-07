@@ -1,9 +1,27 @@
 module VpsAdmind
   class TransactionQueue
+    class Semaphore
+      def initialize(size)
+        @q = ::Queue.new
+        size.times { @q << nil }
+      end
+
+      def up
+        @q << nil
+      end
+
+      def down
+        @q.pop
+      end
+    end
+
     def initialize(name, start_time)
       @name = name
       @start_time = start_time
       @workers = {}
+      @mon = Monitor.new
+      @sem = Semaphore.new(size)
+      @reserved = []
     end
 
     def execute(cmd)
@@ -11,7 +29,20 @@ module VpsAdmind
         return false
       end
 
+      @sem.down unless has_reservation?(cmd.chain_id)
       @workers[cmd.chain_id] = Worker.new(cmd)
+    end
+
+    def reserve(chain_id)
+      @sem.down
+      @mon.synchronize { @reserved << chain_id }
+    end
+
+    def release(chain_id)
+      @mon.synchronize do
+        return unless @reserved.delete(chain_id)
+        @sem.up
+      end
     end
 
     def empty?
@@ -24,11 +55,26 @@ module VpsAdmind
     end
 
     def free_slot?(cmd)
-      used < size || (cmd.urgent? && size < total_size)
+      if has_reservation?(cmd.chain_id)
+        s = real_size + 1
+
+      else
+        s = real_size
+      end
+      
+      used < s || (cmd.urgent? && s < total_size)
     end
 
     def busy?(chain_id)
       @workers.has_key?(chain_id)
+    end
+
+    def has_reservation?(chain_id)
+      @mon.synchronize { @reserved.include?(chain_id) }
+    end
+
+    def reservations
+      @mon.synchronize { @reserved.clone }
     end
 
     def started?
@@ -51,6 +97,14 @@ module VpsAdmind
       cfg(:threads)
     end
 
+    def reserved_size
+      @mon.synchronize { @reserved.size }
+    end
+
+    def real_size
+      size - reserved_size
+    end
+
     def urgent_size
       cfg(:urgent)
     end
@@ -68,7 +122,11 @@ module VpsAdmind
     end
 
     def delete_if(&block)
-      @workers.delete_if(&block)
+      @workers.delete_if do |wid, w|
+        ret = block.call(wid, w)
+        @sem.up if ret && !has_reservation?(w.cmd.chain_id)
+        ret
+      end
     end
 
     protected

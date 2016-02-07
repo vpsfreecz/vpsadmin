@@ -106,4 +106,5 @@ module VpsAdmind::Commands
   module Mail           ; end
   module IntegrityCheck ; end
   module OutageWindow   ; end
+  module Queue          ; end
 end
