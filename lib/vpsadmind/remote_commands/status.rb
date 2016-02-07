@@ -16,7 +16,8 @@ module VpsAdmind::RemoteCommands
               :urgent => queue.urgent_size,
               :start_delay => queue.start_delay,
               :started => queue.started?,
-              :workers => {}
+              :workers => {},
+              :reservations => queue.reservations,
           }
 
           queue.each do |wid, w|
