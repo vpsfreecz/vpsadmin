@@ -34,6 +34,37 @@ module VpsAdmind
       end
     end
 
+    def prune_reservations(db)
+      chain_reservations = {}
+
+      @queues.each do |name, q|
+        q.reservations.each do |chain_id|
+          chain_reservations[chain_id] ||= []
+          chain_reservations[chain_id] << name
+        end
+      end
+
+      return 0 if chain_reservations.empty?
+
+      counter = 0
+
+      db.query(
+          "SELECT id
+          FROM transaction_chains
+          WHERE id IN (#{chain_reservations.keys.join(',')}) AND (state = 2 OR state >= 4)"
+      ).each_hash do |row|
+        chain_id = row['id'].to_i
+
+        chain_reservations[chain_id].each do |q_name|
+          if @queues[q_name].release(chain_id)
+            counter += 1
+          end
+        end
+      end
+
+      counter
+    end
+
     def empty?
       @queues.each_value do |q|
         return false unless q.empty?

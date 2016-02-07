@@ -190,6 +190,22 @@ module VpsAdmind
     end
 
     def run_threads
+      run_thread_unless_runs(:queues_prune) do
+        loop do
+          n = 0
+
+          @m_workers.synchronize do
+            db = Db.new
+            n = @queues.prune_reservations(db)
+            db.close
+          end
+
+          log(:info, :queues, "Released #{n} slot reservations") if n > 0
+
+          sleep($CFG.get(:vpsadmin, :queues_reservation_prune_interval))
+        end
+      end
+
       run_thread_unless_runs(:status) do
         loop do
           log(:info, :regular, 'Update status')

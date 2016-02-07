@@ -61,6 +61,7 @@ module VpsAdmind
                   :start_delay => 0,
               },
           },
+          :queues_reservation_prune_interval => 60,
           :urgent_threads => 6,
           :check_interval => 1,
           :status_interval => 30,

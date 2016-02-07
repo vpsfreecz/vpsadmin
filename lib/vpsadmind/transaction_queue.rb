@@ -36,12 +36,14 @@ module VpsAdmind
     def reserve(chain_id)
       @sem.down
       @mon.synchronize { @reserved << chain_id }
+      true
     end
 
     def release(chain_id)
       @mon.synchronize do
-        return unless @reserved.delete(chain_id)
+        return false unless @reserved.delete(chain_id)
         @sem.up
+        true
       end
     end
 
