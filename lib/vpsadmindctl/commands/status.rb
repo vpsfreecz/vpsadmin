@@ -17,6 +17,10 @@ module VpsAdmindCtl::Commands
         @opts[:mounts] = true
       end
       
+      opts.on('-r', '--reservations', 'List queue reservations') do
+        @opts[:reservations] = true
+      end
+
       opts.on('-t', '--subtasks', 'List subtasks') do
         @opts[:subtasks] = true
       end
@@ -61,6 +65,16 @@ module VpsAdmindCtl::Commands
         end
       end
 
+      if @opts[:reservations]
+        puts sprintf('%-12s %-10s', 'QUEUE', 'CHAIN')
+
+        @res[:queues].each do |name, queue|
+          queue[:reservations].each do |r|
+            puts sprintf("%-12s %-10d", name, r)
+          end
+        end
+      end
+
       if @opts[:subtasks]
         puts sprintf('%-10s %-10s %-20s %s', 'CHAIN', 'PID', 'STATE', 'NAME') if @opts[:header]
 
@@ -99,7 +113,8 @@ module VpsAdmindCtl::Commands
         end
       end
 
-      unless @opts[:workers] || @opts[:consoles] || @opts[:subtasks] || @opts[:mounts]
+      unless @opts[:workers] || @opts[:consoles] || @opts[:subtasks] \
+            || @opts[:mounts] || @opts[:reservations]
         puts "   Version: #{@vpsadmind.version}"
         puts "     State: #{state}"
         puts "    Uptime: #{format_duration(Time.new.to_i - @res[:start_time])}"
@@ -111,11 +126,12 @@ module VpsAdmindCtl::Commands
 
         @res[:queues].each do |name, queue|
           puts sprintf(
-              "    %10s  %d / %d (+%d) %s",
+              "    %10s  %d / %d (+%d%s) %s",
               name,
               queue[:workers].size,
               queue[:threads],
               queue[:urgent],
+              queue[:reservations].empty? ? '' : " *#{queue[:reservations].size}",
               !queue[:started] ? "opens in #{format_duration((@res[:start_time] + queue[:start_delay]) - Time.now.to_i)}" : ''
           )
         end
