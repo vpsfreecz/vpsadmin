@@ -110,6 +110,11 @@ module TransactionChains
       # Transfer datasets
       migration_snapshots = []
 
+      unless outage_window
+        # Reserve a slot in zfs_send queue
+        append(Transactions::Queue::Reserve, args: [vps.node, :zfs_send])
+      end
+
       datasets.each do |pair|
         src, dst = pair
 
@@ -124,9 +129,8 @@ module TransactionChains
       if outage_window
         # Wait for the outage window to open
         append(Transactions::OutageWindow::Wait, args: [vps, 15])
-
-        # Reserve migration slot
-        # Check InOrFail 15
+        append(Transactions::Queue::Reserve, args: [vps.node, :zfs_send])
+        append(Transactions::OutageWindow::InOrFail, args: [vps, 15])
 
         # Second transfer while inside the outage window. The VPS is still running.
         datasets.each do |pair|
@@ -203,7 +207,8 @@ module TransactionChains
       # Remount and regenerate mount scripts of mounts in other VPSes
       mounts.remount_others
 
-      # Release migration slot
+      # Release reserved spot in the queue
+      append(Transactions::Queue::Release, args: [vps.node, :zfs_send], urgent: true)
 
       # Remove migration snapshots
       migration_snapshots.each do |sip|
