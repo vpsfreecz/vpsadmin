@@ -19,7 +19,7 @@ class Transaction < ActiveRecord::Base
   before_save :set_init_values
 
   validates :queue, inclusion: {
-      in: %w(general storage network vps zfs_send mail outage)
+      in: %w(general storage network vps zfs_send mail outage queue)
   }
 
   class << self
@@ -242,4 +242,5 @@ module Transactions
   module Hypervisor   ; end
   module Mail         ; end
   module OutageWindow ; end
+  module Queue        ; end
 end
