@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160204152946) do
+ActiveRecord::Schema.define(version: 20160208123742) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -513,6 +513,18 @@ ActiveRecord::Schema.define(version: 20160204152946) do
     t.string   "kernel",            limit: 25, null: false
     t.datetime "created_at"
   end
+
+  create_table "object_histories", force: true do |t|
+    t.integer  "user_id"
+    t.integer  "user_session_id"
+    t.integer  "tracked_object_id",   null: false
+    t.string   "tracked_object_type", null: false
+    t.string   "event_type",          null: false
+    t.text     "event_data"
+    t.datetime "created_at",          null: false
+  end
+
+  add_index "object_histories", ["tracked_object_id", "tracked_object_type"], name: "object_histories_tracked_object", using: :btree
 
   create_table "object_states", force: true do |t|
     t.string   "class_name",      null: false
