@@ -122,6 +122,31 @@ module VpsAdmin::API::Resources
       end
     end
 
+    class Cancel < HaveAPI::Action
+      desc 'Cancel execution of a migration plan'
+      http_method :post
+      route ':%{resource}_id/cancel'
+      
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        plan = ::MigrationPlan.find(params[:migration_plan_id])
+
+        if plan.state != 'running'
+          error('This migration plan is not running')
+        end
+
+        plan.cancel!
+        plan
+      end
+    end
+
     class VpsMigration < HaveAPI::Resource
       desc 'VPS migrations'
       route ':migration_plan_id/vps_migrations'

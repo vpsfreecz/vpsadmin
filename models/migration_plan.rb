@@ -34,6 +34,10 @@ class MigrationPlan < ActiveRecord::Base
     end
   end
 
+  def cancel!
+    update!(state: self.class.states[:cancelling])
+  end
+  
   def fail!
     update!(state: self.class.states[:failing])
   end
