@@ -136,17 +136,17 @@ module TransactionChains
         datasets.each do |pair|
           src, dst = pair
 
-          migration_snapshots << use_chain(Dataset::Snapshot, args: src)
-          use_chain(Dataset::Transfer, args: [src, dst])
+          migration_snapshots << use_chain(Dataset::Snapshot, args: src, urgent: true)
+          use_chain(Dataset::Transfer, args: [src, dst], urgent: true)
         end
 
         # Check if we're still inside the outage window. We're in if the window
         # closes in not less than 5 minutes. Fail if not.
-        append(Transactions::OutageWindow::InOrFail, args: [vps, 5])
+        append(Transactions::OutageWindow::InOrFail, args: [vps, 5], urgent: true)
       end
 
       # Stop the VPS
-      use_chain(Vps::Stop, args: vps)
+      use_chain(Vps::Stop, args: vps, urgent: true)
 
       datasets.each do |pair|
         src, dst = pair
