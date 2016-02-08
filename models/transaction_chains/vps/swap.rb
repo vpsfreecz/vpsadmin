@@ -100,6 +100,8 @@ module TransactionChains
                   resources: opts[:resources] ? primary_resources : nil,
                   handle_ips: true,
                   reallocate_ips: false,
+                  outage_window: false,
+                  send_mail: false,
               }
           ],
           hooks: {
@@ -189,6 +191,8 @@ module TransactionChains
                   resources: opts[:resources] ? secondary_resources : nil,
                   handle_ips: false,
                   reallocate_ips: false,
+                  outage_window: false,
+                  send_mail: false,
               }
           ],
           hooks: {
