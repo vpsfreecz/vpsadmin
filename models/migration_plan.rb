@@ -13,7 +13,11 @@ class MigrationPlan < ActiveRecord::Base
       vps_migrations.order('created_at').each do |m|
         begin
           chain = TransactionChains::Vps::Migrate.fire2(
-              args: [m.vps, m.dst_node, {outage_window: m.outage_window}],
+              args: [m.vps, m.dst_node, {
+                  outage_window: m.outage_window,
+                  send_mail: send_mail,
+                  reason: reason,
+              }],
           )
          
           m.update!(
@@ -31,6 +35,10 @@ class MigrationPlan < ActiveRecord::Base
       end
 
       update!(state: self.class.states[:running])
+
+      if send_mail
+        TransactionChains::MigrationPlan::Mail.fire(self)
+      end
     end
   end
 
