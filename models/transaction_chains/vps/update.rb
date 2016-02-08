@@ -54,12 +54,17 @@ module TransactionChains
           when 'vps_hostname'
             append(Transactions::Vps::Hostname, args: [vps, vps.hostname_was, vps.hostname]) do
               edit(vps, {attr => vps.hostname, 'manage_hostname' => true})
+              just_create(vps.log(:hostname, {
+                  :manage_hostname => true,
+                  :hostname => vps.hostname
+              }))
             end
 
           when 'manage_hostname'
             unless vps.manage_hostname
               append(Transactions::Vps::UnmanageHostname, args: vps) do
                 edit(vps, attr => vps.manage_hostname)
+              just_create(vps.log(:hostname, {:manage_hostname => false}))
               end
             end
 
@@ -69,11 +74,21 @@ module TransactionChains
                   ::OsTemplate.find(vps.vps_template_was),
                   vps.os_template]) do
               edit(vps, attr => vps.vps_template)
+              just_create(vps.log(:os_template, {
+                  id: vps.vps_template,
+                  name: vps.os_template.name,
+                  label: vps.os_template.label,
+              }))
             end
 
           when 'dns_resolver_id'
             append(Transactions::Vps::DnsResolver, args: [vps, *find_obj(vps, attr)]) do
               edit(vps, attr => vps.dns_resolver_id)
+              just_create(vps.log(:dns_resolver, {
+                  id: vps.dns_resolver_id,
+                  addr: vps.dns_resolver.addr,
+                  label: vps.dns_resolver.dns_label,
+              }))
             end
 
           when 'config'
@@ -96,6 +111,16 @@ module TransactionChains
       )
 
       unless resources.empty?
+        append(Transactions::Utils::NoOp, args: find_node_id) do
+          data = {}
+
+          resources.each do |use|
+            data[ use.user_cluster_resource.cluster_resource.name ] = use.value
+          end
+
+          just_create(vps.log(:resources, data))
+        end
+
         use_chain(Vps::SetResources, args: [vps, resources])
         mail(:vps_resources_change, {
             user: vps.user,

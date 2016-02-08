@@ -22,6 +22,8 @@ class Vps < ActiveRecord::Base
   has_many :vps_statuses
   belongs_to :vps_status
 
+  has_many :object_histories, as: :tracked_object, dependent: :destroy
+
   has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
 
   alias_attribute :veid, :vps_id
@@ -58,6 +60,13 @@ class Vps < ActiveRecord::Base
                         enter: TransactionChains::Lifetimes::NotImplemented
                     },
                     environment: ->(){ node.environment }
+
+  include VpsAdmin::API::ObjectHistory::Model
+  log_events %i(
+      hostname os_template dns_resolver reinstall resources node ip_add ip_del
+      start stop restart passwd clone swap configs features mount umount
+      outage_windows outage_window restore
+  )
 
   validates :m_id, :vps_server, :vps_template, presence: true, numericality: {only_integer: true}
   validates :vps_hostname, presence: true, format: {

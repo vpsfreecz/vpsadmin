@@ -17,17 +17,18 @@ module TransactionChains
       # because that's not certain information.
       use_chain(Vps::Umount, args: [vps, [mount]])
 
-      cleanup = Proc.new do
-        destroy(mount)
-        decrement(mount.snapshot_in_pool, :reference_count)
-        edit(mount.snapshot_in_pool, mount_id: nil)
+      cleanup = Proc.new do |t|
+        t.destroy(mount)
+        t.decrement(mount.snapshot_in_pool, :reference_count)
+        t.edit(mount.snapshot_in_pool, mount_id: nil)
+        t.just_create(vps.log(:umount, {id: mount.id, dst: mount.dst})) unless included?
       end
 
       if remote
-        append(Transactions::Storage::RemoveClone, args: mount.snapshot_in_pool, &cleanup)
+        append_t(Transactions::Storage::RemoveClone, args: mount.snapshot_in_pool, &cleanup)
 
       else
-        append(Transactions::Utils::NoOp, args: vps.vps_server, &cleanup)
+        append_t(Transactions::Utils::NoOp, args: vps.vps_server, &cleanup)
       end
     end
   end

@@ -42,6 +42,17 @@ module TransactionChains
 
       append(Transactions::Utils::NoOp, args: vps.vps_server) do
         create(mnt)
+        just_create(vps.log(:mount, {
+            id: mnt.id,
+            type: :dataset,
+            src: {
+                id: mnt.dataset_in_pool.dataset_id,
+                name: mnt.dataset_in_pool.dataset.full_name
+            },
+            dst: mnt.dst,
+            mode: mnt.mode,
+            on_start_fail: mnt.on_start_fail,
+        }))
       end
 
       mnt

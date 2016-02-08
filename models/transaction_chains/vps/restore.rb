@@ -11,6 +11,10 @@ module TransactionChains
       dip = snapshot.dataset.dataset_in_pools.where(pool_id: vps.dataset_in_pool.pool_id).take!
 
       super(dip, snapshot)
+
+      append_t(Transactions::Utils::NoOp) do |t|
+        t.just_create(vps.log(:restore, {id: snapshot.id, name: snapshot.name}))
+      end
     end
 
     def pre_local_rollback

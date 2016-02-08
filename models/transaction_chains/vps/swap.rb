@@ -279,6 +279,9 @@ module TransactionChains
                                secondary_vps.expiration_date.utc.strftime(fmt)
           )
         end
+
+        just_create(new_primary_vps.log(:swap, new_secondary_vps.id))
+        just_create(new_secondary_vps.log(:swap, new_primary_vps.id))
       end
 
 #      fail 'all done!'

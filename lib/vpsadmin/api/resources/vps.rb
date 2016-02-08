@@ -1306,6 +1306,12 @@ END
         end
 
         window.update!(input)
+        vps.log(:outage_window, {
+            weekday: window.weekday,
+            is_open: window.is_open,
+            opens_at: window.opens_at,
+            closes_at: window.closes_at,
+        })
         window
 
       rescue ActiveRecord::RecordInvalid => e
@@ -1346,9 +1352,19 @@ END
         end
 
         ::Vps.transaction do
+          data = []
+
           vps.vps_outage_windows.each do |w|
             w.update!(input)
+            data << {
+                weekday: w.weekday,
+                is_open: w.is_open,
+                opens_at: w.opens_at,
+                closes_at: w.closes_at,
+            }
           end
+          
+          vps.log(:outage_windows, data)
         end
 
         vps.vps_outage_windows.order('weekday')

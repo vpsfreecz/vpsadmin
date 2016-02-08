@@ -15,8 +15,10 @@ module TransactionChains
       # because that's not certain information.
       use_chain(Vps::Umount, args: [vps, [mount]])
 
-      append(Transactions::Utils::NoOp, args: vps.vps_server) do
-        destroy(mount)
+      append_t(Transactions::Utils::NoOp, args: vps.vps_server) do |t|
+        t.destroy(mount)
+
+        t.just_create(vps.log(:umount, {id: mount.id, dst: mount.dst})) unless included?
       end
     end
   end

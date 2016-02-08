@@ -71,6 +71,17 @@ module TransactionChains
           create(mnt)
           increment(clone_from, :reference_count)
           edit(clone_from, mount_id: mnt.id)
+          just_create(vps.log(:mount, {
+              id: mnt.id,
+              type: :snapshot,
+              src: {
+                  id: mnt.snapshot_in_pool.snapshot_id,
+                  name: mnt.snapshot_in_pool.snapshot.name
+              },
+              dst: mnt.dst,
+              mode: mnt.mode,
+              on_start_fail: mnt.on_start_fail,
+          }))
         end
       end
 
@@ -82,6 +93,17 @@ module TransactionChains
           create(mnt)
           increment(clone_from, :reference_count)
           edit(clone_from, mount_id: mnt.id)
+          just_create(vps.log(:mount, {
+              id: mnt.id,
+              type: :snapshot,
+              src: {
+                  id: mnt.snapshot_in_pool.snapshot_id,
+                  name: mnt.snapshot_in_pool.snapshot.name
+              },
+              dst: mnt.dst,
+              mode: mnt.mode,
+              on_start_fail: mnt.on_start_fail,
+          }))
         end
       end
 

@@ -19,11 +19,14 @@ module TransactionChains
         end
       end
 
+      chain = self
+
       ips.each do |ip|
         lock(ip)
 
         append(Transactions::Vps::IpDel, args: [vps, ip, unregister]) do
           edit(ip, vps_id: nil)
+          just_create(vps.log(:ip_del, {id: ip.id, addr: ip.addr})) unless chain.included?
         end
       end
 

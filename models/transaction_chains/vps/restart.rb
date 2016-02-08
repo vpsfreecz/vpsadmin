@@ -6,7 +6,9 @@ module TransactionChains
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
-      append(Transactions::Vps::Restart, args: vps)
+      append_t(Transactions::Vps::Restart, args: vps) do |t|
+        t.just_create(vps.log(:restart)) unless included?
+      end
     end
   end
 end

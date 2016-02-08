@@ -254,6 +254,11 @@ module TransactionChains
 
           chain.migrate_dataset_plans(src, dst, self)
         end
+
+        just_create(vps.log(:node, {
+            src: {id: vps.vps_server, name: vps.node.domain_name},
+            dst: {id: dst_vps.vps_server, name: dst_vps.node.domain_name},
+        }))
       end
 
       # Call DatasetInPool.migrated hook

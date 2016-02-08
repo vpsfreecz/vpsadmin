@@ -7,12 +7,12 @@ module TransactionChains
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
-      append(Transactions::Vps::ApplyConfig, args: vps) do
+      append_t(Transactions::Vps::ApplyConfig, args: vps) do |t|
         # First remove old configs
         VpsHasConfig.where(
             vps_id: vps.veid,
             confirmed: VpsHasConfig.confirmed(:confirmed)).each do |cfg|
-          destroy(cfg)
+          t.destroy(cfg)
         end
 
         VpsHasConfig
@@ -22,16 +22,21 @@ module TransactionChains
 
         # Create new configs
         i = 0
+        data = []
 
         new_configs.each do |c|
-          create(VpsHasConfig.create(
+          t.create(VpsHasConfig.create(
               vps_id: vps.veid,
               config_id: c,
               order: i,
               confirmed: VpsHasConfig.confirmed(:confirm_create)
           ))
+
+          data << ::VpsConfig.find(c).name
           i += 1
         end
+
+        t.just_create(vps.log(:configs, data)) unless included?
       end
     end
   end

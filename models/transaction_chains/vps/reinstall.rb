@@ -40,6 +40,12 @@ module TransactionChains
         vps.vps_features.each do |f|
           edit(f, enabled: 0)
         end
+
+        just_create(vps.log(:reinstall, {
+            id: template.id,
+            name: template.name,
+            label: template.label,
+        }))
       end
       
       append(Transactions::Vps::ApplyConfig, args: vps)
