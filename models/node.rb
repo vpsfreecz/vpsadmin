@@ -204,6 +204,7 @@ class Node < ActiveRecord::Base
     plan = nil
     concurrency = opts[:concurrency] || 1
     outage_window = opts[:outage_window].nil? ? true : opts[:outage_window]
+    send_mail = opts[:send_mail].nil? ? true : opts[:send_mail]
 
     ActiveRecord::Base.transaction do
       plan = ::MigrationPlan.create!(
@@ -211,6 +212,7 @@ class Node < ActiveRecord::Base
           user: ::User.current,
           node: opts[:dst_node],
           concurrency: concurrency,
+          send_mail: send_mail,
           reason: opts[:reason],
       )
 
