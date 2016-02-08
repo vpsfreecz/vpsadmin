@@ -444,7 +444,10 @@ switch ($_GET["action"]) {
 			try {
 				$vps->migrate(array(
 					'node' => $_POST['node'],
-					'replace_ip_addresses' => isset($_POST['replace_ip_addresses'])
+					'replace_ip_addresses' => isset($_POST['replace_ip_addresses']),
+					'outage_window' => isset($_POST['outage_window']),
+					'send_mail' => isset($_POST['send_mail']),
+					'reason' => isset($_POST['reason']) ? $_POST['reason'] : null,
 				));
 				
 				notify_user(_("Offline migration planned"), '');
