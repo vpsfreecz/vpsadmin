@@ -540,6 +540,7 @@ END
                required: true
       bool :replace_ip_addresses, label: 'Replace IP addresses',
           desc: 'When migrating to another location, current IP addresses are replaced by addresses from the new location'
+      bool :outage_window, default: true
       bool :send_mail, default: true
       string :reason
     end

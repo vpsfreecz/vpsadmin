@@ -242,6 +242,7 @@ class Vps < ActiveRecord::Base
     chain_opts = {}
 
     chain_opts[:replace_ips] = opts[:replace_ip_addresses]
+    chain_opts[:outage_window] = opts[:outage_window]
     chain_opts[:send_mail] = opts[:send_mail]
     chain_opts[:reason] = opts[:reason]
 
