@@ -44,10 +44,20 @@ class MigrationPlan < ActiveRecord::Base
 
   def cancel!
     update!(state: self.class.states[:cancelling])
+    vps_migrations.where(
+        state: ::VpsMigration.states[:queued]
+    ).update_all(
+        state: ::VpsMigration.states[:cancelled]
+    )
   end
   
   def fail!
     update!(state: self.class.states[:failing])
+    vps_migrations.where(
+        state: ::VpsMigration.states[:queued]
+    ).update_all(
+        state: ::VpsMigration.states[:cancelled]
+    )
   end
 
   # @params state [Symbol]
