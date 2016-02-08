@@ -147,6 +147,25 @@ module VpsAdmin::API::Resources
       end
     end
 
+    class Delete < HaveAPI::Actions::Default::Delete
+      desc 'Delete staged migration plan'
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        plan = ::MigrationPlan.find(params[:migration_plan_id])
+
+        if plan.state != 'staged'
+          error('This migration plan is not in the staging phase anymore')
+        end
+
+        plan.destroy
+        ok
+      end
+    end
+
     class VpsMigration < HaveAPI::Resource
       desc 'VPS migrations'
       route ':migration_plan_id/vps_migrations'

@@ -1,7 +1,7 @@
 class MigrationPlan < ActiveRecord::Base
   belongs_to :user
   belongs_to :node
-  has_many :vps_migrations
+  has_many :vps_migrations, dependent: :destroy
   has_many :resource_locks, as: :locked_by, dependent: :destroy
 
   enum state: %i(staged running cancelling failing cancelled done error)
