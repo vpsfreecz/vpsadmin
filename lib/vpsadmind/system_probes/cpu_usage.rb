@@ -53,7 +53,12 @@ module VpsAdmind::SystemProbes
       ret = {}
 
       data.each do |k, v|
-        ret[k] = (v / sum * 100).round(2)
+        if RUBY_VERSION >= '2.0'
+          ret[k] = (v / sum * 100).round(2)
+
+        else
+          ret[k] = (v / sum * 100).round
+        end
       end
 
       ret
