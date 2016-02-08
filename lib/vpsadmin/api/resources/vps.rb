@@ -1290,6 +1290,7 @@ END
 
       def exec
         vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        maintenance_check!(vps)
         window = vps.vps_outage_windows.find_by!(weekday: params[:outage_window_id])
 
         if input.empty?
@@ -1330,6 +1331,7 @@ END
 
       def exec
         vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        maintenance_check!(vps)
 
         if input.empty?
           error('provide parameters to change')
