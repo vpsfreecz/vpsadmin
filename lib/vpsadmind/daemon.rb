@@ -38,7 +38,8 @@ module VpsAdmind
 
     def init(do_init)
       if do_init
-        @node_status.update
+        @node_status.init(@db)
+        @node_status.update(@db)
 
         node = Node.new
         node.init

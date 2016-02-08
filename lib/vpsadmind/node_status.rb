@@ -4,6 +4,20 @@ module VpsAdmind
       @cpus = SystemProbes::Cpus.new.count
     end
 
+    def init(db)
+      return unless linux?
+      
+      mem = SystemProbes::Memory.new
+      
+      db.prepared(
+          'UPDATE servers
+          SET cpus = ?, total_memory = ?, total_swap = ?
+          WHERE server_id = ?',
+          @cpus, mem.total / 1024, mem.swap_total / 1024,
+          $CFG.get(:vpsadmin, :server_id)
+      )
+    end
+
     def update(db = nil)
       node_id = $CFG.get(:vpsadmin, :server_id)
       time = Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
