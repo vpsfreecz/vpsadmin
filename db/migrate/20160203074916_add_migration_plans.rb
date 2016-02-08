@@ -24,5 +24,8 @@ class AddMigrationPlans < ActiveRecord::Migration
       t.datetime    :started_at,        null: true
       t.datetime    :finished_at,       null: true
     end
+
+    add_index :vps_migrations, [:migration_plan_id, :vps_id], unique: true,
+        name: :vps_migrations_unique
   end
 end

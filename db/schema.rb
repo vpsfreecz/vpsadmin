@@ -881,6 +881,8 @@ ActiveRecord::Schema.define(version: 20160204152946) do
     t.datetime "finished_at"
   end
 
+  add_index "vps_migrations", ["migration_plan_id", "vps_id"], name: "vps_migrations_unique", unique: true, using: :btree
+
   create_table "vps_outage_windows", force: true do |t|
     t.integer "vps_id",    null: false
     t.integer "weekday",   null: false

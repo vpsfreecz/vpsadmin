@@ -217,13 +217,10 @@ class Node < ActiveRecord::Base
       # Lock evacuated node by the MigrationPlan
       self.acquire_lock(plan)
 
-      migrations = []
-      locks = []
-
       ::Vps.where(
           node: self
       ).order('object_state, vps_id').each do |vps|
-        migrations << ::VpsMigration.create!(
+        plan.vps_migrations.create!(
             vps: vps,
             migration_plan: plan,
             outage_window: outage_window,
@@ -232,29 +229,7 @@ class Node < ActiveRecord::Base
         )
       end
 
-      i = 0
-      migrations.each do |m|
-        begin
-          chain = TransactionChains::Vps::Migrate.fire2(
-              args: [m.vps, m.dst_node, {outage_window: m.outage_window}],
-              locks: locks,
-          )
-         
-          m.update!(
-              state: ::VpsMigration.states[:running],
-              started_at: Time.now,
-              transaction_chain: chain,
-          )
-
-          i += 1
-          break if i >= concurrency
-
-        rescue ResourceLocked
-          next
-        end
-      end
-
-      plan.update!(state: ::MigrationPlan.states[:running])
+      plan.start!
     end
     
     plan

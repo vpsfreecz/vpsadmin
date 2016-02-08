@@ -6,6 +6,34 @@ class MigrationPlan < ActiveRecord::Base
 
   enum state: %i(staged running cancelling failing cancelled done error)
 
+  def start!
+    self.class.transaction(requires_new: true) do
+      i = 0
+
+      vps_migrations.order('created_at').each do |m|
+        begin
+          chain = TransactionChains::Vps::Migrate.fire2(
+              args: [m.vps, m.dst_node, {outage_window: m.outage_window}],
+          )
+         
+          m.update!(
+              state: ::VpsMigration.states[:running],
+              started_at: Time.now,
+              transaction_chain: chain,
+          )
+
+          i += 1
+          break if i >= concurrency
+
+        rescue ResourceLocked
+          next
+        end
+      end
+
+      update!(state: self.class.states[:running])
+    end
+  end
+
   def fail!
     update!(state: self.class.states[:failing])
   end
