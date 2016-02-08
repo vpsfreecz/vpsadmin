@@ -25,12 +25,15 @@ module TransactionChains
     # @option opts [Boolean] handle_ips (true)
     # @option opts [Boolean] reallocate_ips (true)
     # @option opts [Boolean] outage_window (true)
+    # @option opts [Boolean] send_mail (true)
+    # @option opts [String] reason (nil)
     def link_chain(vps, dst_node, opts = {})
       replace_ips = opts[:replace_ips].nil? ? false : opts[:replace_ips]
       resources = opts[:resources]
       handle_ips = opts[:handle_ips].nil? ? true : opts[:handle_ips]
       reallocate_ips = opts[:reallocate_ips].nil? ? true : opts[:reallocate_ips]
       outage_window = opts[:outage_window].nil? ? true : opts[:outage_window]
+      send_mail = opts[:send_mail].nil? ? true : opts[:send_mail]
 
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
@@ -40,6 +43,18 @@ module TransactionChains
 
       # Save VPS state
       running = vps.running?
+
+      # Mail notification
+      mail(:vps_migration_begun, {
+          user: vps.user,
+          vars: {
+              vps: vps,
+              src_node: vps.node,
+              dst_node: dst_vps.node,
+              outage_window: outage_window,
+              reason: opts[:reason],
+          }
+      }) if send_mail && vps.user.m_mailer_enable 
 
       # Create target dataset in pool.
       # No new dataset in pool is created in database, it is simply
@@ -268,6 +283,18 @@ module TransactionChains
 
       # Destroy old root
       append(Transactions::Vps::Destroy, args: vps)
+
+      # Mail notification
+      mail(:vps_migration_finished, {
+          user: vps.user,
+          vars: {
+              vps: vps,
+              src_node: vps.node,
+              dst_node: dst_vps.node,
+              outage_window: outage_window,
+              reason: opts[:reason],
+          }
+      }) if send_mail && vps.user.m_mailer_enable 
 
       # fail 'ohnoes'
       self

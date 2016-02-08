@@ -238,10 +238,14 @@ class Vps < ActiveRecord::Base
     dataset_in_pool.referenced
   end
 
-  def migrate(node, replace_ips)
-    TransactionChains::Vps::Migrate.fire(self, node, {
-        replace_ips: replace_ips
-    })
+  def migrate(node, opts = {})
+    chain_opts = {}
+
+    chain_opts[:replace_ips] = opts[:replace_ip_addresses]
+    chain_opts[:send_mail] = opts[:send_mail]
+    chain_opts[:reason] = opts[:reason]
+
+    TransactionChains::Vps::Migrate.fire(self, node, chain_opts)
   end
 
   def clone(node, attrs)
