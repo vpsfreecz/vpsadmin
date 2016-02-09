@@ -51,12 +51,15 @@ module VpsAdmind
                 cpu_iowait = #{cpu[:iowait]},
                 cpu_irq = #{cpu[:irq]},
                 cpu_softirq = #{cpu[:softirq]},
-                cpu_guest = #{cpu[:guest]},
                 total_memory = #{mem.total / 1024},
                 used_memory = #{mem.used / 1024},
                 total_swap = #{mem.swap_total / 1024},
                 used_swap = #{mem.swap_used / 1024},
                 kernel = '#{kernel}',"
+        end
+
+        if hypervisor? && cpu[:guest]
+          sql += "cpu_guest = #{cpu[:guest]},"
         end
 
         if linux? && hypervisor?
