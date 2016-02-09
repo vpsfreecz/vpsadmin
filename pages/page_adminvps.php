@@ -726,8 +726,8 @@ if ($list_vps) {
 			$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->id.'"><img src="template/icons/vps_edit.png"  title="'._("Edit").'"/> '.$vps->hostname.'</a>');
 			$xtpl->table_td(sprintf('%4d MB',$vps->used_memory), false, true);
 			
-			if ($vps->used_disk > 0)
-				$xtpl->table_td(sprintf('%.2f GB',round($vps->used_disk/1024, 2)), false, true);
+			if ($vps->used_diskspace > 0)
+				$xtpl->table_td(sprintf('%.2f GB',round($vps->used_diskspace/1024, 2)), false, true);
 			else $xtpl->table_td('---', false, true);
 			
 			if($_SESSION['is_admin'] || $vps->maintenance_lock == 'no') {
