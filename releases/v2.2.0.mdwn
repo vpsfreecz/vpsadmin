@@ -1,0 +1,88 @@
+# Release notes
+Version 2.2.0 is rebased onto HaveAPI v0.5. It significantly increases the
+amount of tracked data - resource usage of all nodes and VPSes in time. This
+data is later hoped to be used for automated balancing of vpsAdmin cluster.
+
+Another important improvement are VPS outage windows and mass migrations.
+Outage window is a user-configurable time in which maintenance, migration or
+any kind of outage can take place. Migrations can be made to wait until this
+window is open. VPS migrations can now be automated using migration plans, used
+e.g. by node evacuation procedure.
+
+## General
+ - Continuous resource tracking of all nodes and VPSes
+ - VPS outage windows
+ - Migration plans, node evacuation
+ - Logging of user actions
+
+## API resources
+ - Version set to 2.0
+ - `TransactionChain.Transaction` moved to `Transaction`
+ - Added more output parameters with resource usage to `Vps` and `Node`
+ - New resources `Vps.Status`, `Node.Status` and `Dataset.PropertyHistory`
+ - New resources `MigrationPlan` and `MigrationPlan.VpsMigration`
+ - New resource `Vps.OutageWindow`
+
+## API internals
+ - Migration plans, node evacuation
+ - New rake task `vpsadmin:vps:migration:run_plans`
+ - VPS outage windows
+ - Optionally notify users about VPS migrations via e-mail
+ - Tracking user's actions using `ObjectHistory`, used for `Vps`
+ - Resource locks are polymorphic - other objects than `TransactionChain` can
+   use them
+ - `Vps::Reinstall` and `Vps::Restore` continue even if VPS start fails
+ - `Vps::Clone` avoids local clone
+ - New method `TransactionChain.fire2` used to provide additional parameters
+ - New transaction chain `TransactionChains::MigrationPlan::Mail`
+ - New transactions
+   - `Transactions::OutageWindow::Wait` - wait for the outage window to open
+   - `Transactions::OutageWindow::InOrFail` - fail if not inside the outage window
+   - `Transactions::Queue::Reserve` - reserve a slot in a queue
+   - `Transactions::Queue::Release` - release a reserved slot in a queue
+
+## vpsAdmin-client
+ - New command `vps migrate_many`
+
+## vpsAdmind
+ - System probes to read more information about both nodes and VPSes:
+   - Memory
+   - CPU
+   - Disk space
+   - ARC
+   - Kernel version
+   - Load average
+   - Process counter
+   - Uptime
+   - Number of CPUs
+ - Use polymorphic resource locks
+ - Fixed rollback of transactions killed using the remote command
+ - New queues `outage` and `queue`
+ - Queue slot reservation mechanism
+
+## vpsAdmindctl
+ - Show transaction queue reservations
+
+# Upgrade instructions
+## vpsAdmin API
+Stop the API and the scheduler.
+
+	# cd /opt/vpsadmin-api
+	# git pull
+	# bundle install
+	# rake db:migrate
+
+Restart both the API and the scheduler.
+
+Set key `api_url` in sysconfig.
+
+## vpsAdmind
+On all nodes:
+
+	# vpsadmindctl update
+	# cd /opt/vpsadmindctl && git pull
+
+## vpsAdmin web UI
+
+	# git pull
+	# php composer.phar update
