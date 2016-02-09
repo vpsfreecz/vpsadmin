@@ -32,11 +32,12 @@ module VpsAdmin::API::Resources
         integer :type, db_name: :t_type
         integer :success, db_name: :t_success
         string :done, db_name: :t_done, choices: ::Transaction.t_dones.keys
+        
+        patch :limit, fill: true
       end
 
       output(:object_list) do
         use :all
-        patch :limit, fill: true
       end
 
       authorize do |u|

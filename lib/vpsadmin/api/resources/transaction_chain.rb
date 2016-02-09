@@ -24,11 +24,12 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
       resource VpsAdmin::API::Resources::UserSession, label: 'User session'
       string :class_name, label: 'Class name', desc: 'Search by concerned class name'
       integer :row_id, label: 'Row id', desc: 'Search by concerned row id'
+      
+      patch :limit, fill: true
     end
 
     output(:object_list) do
       use :all
-      patch :limit, fill: true
     end
 
     authorize do |u|
