@@ -1,5 +1,5 @@
 API="https://api.vpsfree.cz"
-VERSION=1
+VERSION=2.0
 USERNAME=
 PASSWORD=
 
