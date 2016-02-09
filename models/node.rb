@@ -68,10 +68,10 @@ class Node < ActiveRecord::Base
   def self.pick_by_env(env, location = nil, except = nil)
     q = self.joins('
           LEFT JOIN vps ON vps.vps_server = servers.server_id
-          LEFT JOIN vps_status st ON st.vps_id = vps.vps_id
+          LEFT JOIN vps_statuses st ON st.id = vps.vps_status_id
           INNER JOIN locations ON locations.location_id = servers.server_location
         ').where('
-          (st.vps_up = 1 OR st.vps_up IS NULL)
+          (st.is_running = 1 OR st.is_running IS NULL)
           AND servers.max_vps > 0
           AND servers.maintenance_lock = 0
           AND servers.environment_id = ?
@@ -84,7 +84,7 @@ class Node < ActiveRecord::Base
     q = q.where('servers.server_id != ?', except.id) if except
 
     n = q.group('servers.server_id')
-     .order('COUNT(st.vps_up) / max_vps ASC')
+     .order('COUNT(st.is_running) / max_vps ASC')
      .take
 
     return n if n
@@ -110,15 +110,15 @@ class Node < ActiveRecord::Base
   def self.pick_by_location(loc)
     n = self.joins('
         LEFT JOIN vps ON vps.vps_server = servers.server_id
-        LEFT JOIN vps_status st ON st.vps_id = vps.vps_id
+        LEFT JOIN vps_statuses st ON st.id = vps.vps_status_id
         INNER JOIN locations l ON server_location = location_id
       ').where('
-        (st.vps_up = 1 OR st.vps_up IS NULL)
+        (st.is_running = 1 OR st.is_running IS NULL)
         AND servers.max_vps > 0
         AND servers.maintenance_lock = 0
         AND location_id = ?
       ', loc.id).group('server_id')
-      .order('COUNT(st.vps_up) / max_vps ASC')
+      .order('COUNT(st.is_running) / max_vps ASC')
       .take
 
     return n if n
