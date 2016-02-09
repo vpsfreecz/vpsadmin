@@ -525,6 +525,8 @@ ActiveRecord::Schema.define(version: 20160208123742) do
   end
 
   add_index "object_histories", ["tracked_object_id", "tracked_object_type"], name: "object_histories_tracked_object", using: :btree
+  add_index "object_histories", ["user_id"], name: "index_object_histories_on_user_id", using: :btree
+  add_index "object_histories", ["user_session_id"], name: "index_object_histories_on_user_session_id", using: :btree
 
   create_table "object_states", force: true do |t|
     t.string   "class_name",      null: false

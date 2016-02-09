@@ -11,5 +11,7 @@ class AddObjectHistory < ActiveRecord::Migration
 
     add_index :object_histories, [:tracked_object_id, :tracked_object_type],
               name: :object_histories_tracked_object
+    add_index :object_histories, :user_id
+    add_index :object_histories, :user_session_id
   end
 end
