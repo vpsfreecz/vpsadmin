@@ -1,7 +1,7 @@
 module VpsAdmind
   class NodeStatus
     def initialize
-      @cpus = SystemProbes::Cpus.new.count
+      @cpus = SystemProbes::Cpus.new.count if linux?
     end
 
     def init(db)
