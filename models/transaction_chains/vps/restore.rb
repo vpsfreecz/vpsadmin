@@ -12,7 +12,7 @@ module TransactionChains
 
       super(dip, snapshot)
 
-      append_t(Transactions::Utils::NoOp) do |t|
+      append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
         t.just_create(vps.log(:restore, {id: snapshot.id, name: snapshot.name}))
       end
     end
