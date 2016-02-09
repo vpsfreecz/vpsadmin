@@ -73,7 +73,7 @@ module TransactionChains
       # FIXME: user could choose if he wants to clone it
       vps.vps_outage_windows.each do |w|
         w = VpsOutageWindow.new(
-            vps: vps,
+            vps: dst_vps,
             weekday: w.weekday,
             is_open: w.is_open,
             opens_at: w.opens_at,
