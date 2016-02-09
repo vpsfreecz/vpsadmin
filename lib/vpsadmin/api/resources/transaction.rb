@@ -36,6 +36,7 @@ module VpsAdmin::API::Resources
 
       output(:object_list) do
         use :all
+        patch :limit, fill: true
       end
 
       authorize do |u|
