@@ -51,13 +51,15 @@ module TransactionChains
 
         # Outage windows
         7.times do |i|
-          just_create(VpsOutageWindow.create!(
+          w = VpsOutageWindow.new(
               vps: vps,
               weekday: i,
               is_open: true,
               opens_at: 60,
               closes_at: 5*60,
-          ))
+          )
+          w.save!(validate: false)
+          just_create(w)
         end
       end
 

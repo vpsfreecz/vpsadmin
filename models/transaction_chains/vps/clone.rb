@@ -72,13 +72,15 @@ module TransactionChains
       # Outage windows
       # FIXME: user could choose if he wants to clone it
       vps.vps_outage_windows.each do |w|
-        confirm_windows << VpsOutageWindow.create!(
+        w = VpsOutageWindow.new(
             vps: vps,
             weekday: w.weekday,
             is_open: w.is_open,
             opens_at: w.opens_at,
             closes_at: w.closes_at,
         )
+        w.save!(validate: false)
+        confirm_windows << w
       end
 
       # FIXME: do not fail when there are insufficient resources.
