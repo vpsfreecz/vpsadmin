@@ -95,9 +95,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
                           node dataset memory swap cpu backup_enabled maintenance_lock
                           maintenance_lock_reason object_state expiration_date
-                          is_running process_count used_memory used_swap used_disk uptime
-                          loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq
-                          cpu_softirq)
+                          is_running process_count used_memory used_swap used_diskspace
+                          uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
+                          cpu_irq cpu_softirq)
       allow
     end
 
@@ -202,7 +202,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
                           node dataset memory swap cpu backup_enabled maintenance_lock
                           maintenance_lock_reason object_state expiration_date
-                          running process_count used_memory used_disk)
+                          is_running process_count used_memory used_swap used_diskspace
+                          uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
+                          cpu_irq cpu_softirq)
       allow
     end
 
@@ -303,9 +305,9 @@ END
       output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
                           node dataset memory swap cpu backup_enabled maintenance_lock
                           maintenance_lock_reason object_state expiration_date
-                          is_running process_count used_memory used_swap used_disk uptime
-                          loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq
-                          cpu_softirq)
+                          is_running process_count used_memory used_swap used_diskspace
+                          uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
+                          cpu_irq cpu_softirq)
       allow
     end
 
@@ -603,7 +605,9 @@ END
       output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
                           node dataset memory swap cpu backup_enabled maintenance_lock
                           maintenance_lock_reason object_state expiration_date
-                          running process_count used_memory used_disk)
+                          is_running process_count used_memory used_swap used_disk uptime
+                          loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq
+                          cpu_softirq)
       allow
     end
 
