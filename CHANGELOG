@@ -1,3 +1,9 @@
+- Set API version to 2.0
+- Show CPU, uptime and VPS load in VPS details
+- Configuration of VPS outage windows
+- Cluster overview features uptime, cpu %iowait, %idle, free memory and ARC
+  stats
+
 * Sat Jan 23 2016 - version 2.1.0
 - Remove playground setting for users
 - Use API 1.0
