@@ -184,7 +184,7 @@ module TransactionChains
 
         transfer_datasets(datasets, urgent: true)
       
-        use_chain(Vps::Start, args: vps, urgent: true) if vps.running
+        use_chain(Vps::Start, args: vps, urgent: true) if vps.running?
       end
 
       # Fix snapshots
@@ -213,7 +213,7 @@ module TransactionChains
       end
 
       # Start the new VPS
-      use_chain(TransactionChains::Vps::Start, args: dst_vps) if vps.running
+      use_chain(TransactionChains::Vps::Start, args: dst_vps) if vps.running?
       
       dst_vps.save!
       dst_vps
