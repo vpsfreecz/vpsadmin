@@ -29,6 +29,9 @@ module VpsAdmind
         kernel = SystemProbes::Kernel.new.version
         cpu = SystemProbes::CpuUsage.new.measure.to_percent
         mem = SystemProbes::Memory.new
+      end
+
+      if linux? && hypervisor?
         arc = SystemProbes::Arc.new
       end
 
@@ -53,11 +56,14 @@ module VpsAdmind
                 used_memory = #{mem.used / 1024},
                 total_swap = #{mem.swap_total / 1024},
                 used_swap = #{mem.swap_used / 1024},
-                arc_c_max = #{arc.c_max / 1024 / 1024},
+                kernel = '#{kernel}',"
+        end
+
+        if linux? && hypervisor?
+          sql += "arc_c_max = #{arc.c_max / 1024 / 1024},
                 arc_c = #{arc.c / 1024 / 1024},
                 arc_size = #{arc.size / 1024 / 1024},
-                arc_hitpercent = #{arc.hit_percent},
-                kernel = '#{kernel}',"
+                arc_hitpercent = #{arc.hit_percent},"
         end
 
         sql += "loadavg = #{loadavg[5]},
@@ -79,6 +85,10 @@ module VpsAdmind
     protected
     def linux?
       /solaris/ !~ RUBY_PLATFORM
+    end
+
+    def hypervisor?
+      $CFG.get(:vpsadmin, :type) == :node
     end
   end
 end
