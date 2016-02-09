@@ -24,9 +24,9 @@ module VpsAdmind
       nproc = SystemProbes::ProcessCounter.new.count
       uptime = SystemProbes::Uptime.new.uptime.round
       loadavg = SystemProbes::LoadAvg.new.avg
-      kernel = SystemProbes::Kernel.new.version
 
       if linux?
+        kernel = SystemProbes::Kernel.new.version
         cpu = SystemProbes::CpuUsage.new.measure.to_percent
         mem = SystemProbes::Memory.new
         arc = SystemProbes::Arc.new
@@ -56,12 +56,12 @@ module VpsAdmind
                 arc_c_max = #{arc.c_max / 1024 / 1024},
                 arc_c = #{arc.c / 1024 / 1024},
                 arc_size = #{arc.size / 1024 / 1024},
-                arc_hitpercent = #{arc.hit_percent},"
+                arc_hitpercent = #{arc.hit_percent},
+                kernel = '#{kernel}',"
         end
 
         sql += "loadavg = #{loadavg[5]},
                 vpsadmind_version = '#{VpsAdmind::VERSION}',
-                kernel = '#{kernel}',
                 created_at = '#{time}'"
 
         # When t.prepared is used, it raises TypeError: unsupported type: 1
