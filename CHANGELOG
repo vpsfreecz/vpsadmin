@@ -1,4 +1,26 @@
 - Continuous tracking of node and VPS resources
+- VPS outage windows
+- Migration plans, node evacuation
+- API version set to 2.0
+- `TransactionChain.Transaction` moved to `Transaction`
+- Added more output parameters with resource usage to `Vps` and `Node`
+- New resources `Vps.Status`, `Node.Status` and `Dataset.PropertyHistory`
+- New resources `MigrationPlan` and `MigrationPlan.VpsMigration`
+- New resource `Vps.OutageWindow`
+- New rake task `vpsadmin:vps:migration:run_plans`
+- Optionally notify users about VPS migrations via e-mail
+- Tracking user's actions using `ObjectHistory`, used for `Vps`
+- Resource locks are polymorphic - other objects than `TransactionChain` can
+  use them
+- `Vps::Reinstall` and `Vps::Restore` continue even if VPS start fails
+- `Vps::Clone` avoids local clone
+- New method `TransactionChain.fire2` used to provide additional parameters
+- New transaction chain `TransactionChains::MigrationPlan::Mail`
+- New transactions
+  - `Transactions::OutageWindow::Wait` - wait for the outage window to open
+  - `Transactions::OutageWindow::InOrFail` - fail if not inside the outage window
+  - `Transactions::Queue::Reserve` - reserve a slot in a queue
+  - `Transactions::Queue::Release` - release a reserved slot in a queue
 
 * Sat Jan 12 2016 - version 2.1.0
 - TransactionChain.append_t to replace TransactionChain.append
