@@ -1,5 +1,8 @@
 module VpsAdmind::SystemProbes
   class LoadAvg
+    include VpsAdmind::Utils::Log
+    include VpsAdmind::Utils::System
+
     attr_reader :avg
 
     def initialize(data = nil)
