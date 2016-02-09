@@ -1,3 +1,18 @@
+- System probes to read more information about both nodes and VPSes:
+  - Memory
+  - CPU
+  - Disk space
+  - ARC
+  - Kernel version
+  - Load average
+  - Process counter
+  - Uptime
+  - Number of CPUs
+- Use polymorphic resource locks
+- Fixed rollback of transactions killed using the remote command
+- New queues `outage` and `queue`
+- Queue slot reservation mechanism
+
 * Sat Jan 23 2016 - version 2.1.0
 - VPS console:
   - run vzctl console in a pty
