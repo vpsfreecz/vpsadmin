@@ -11,3 +11,4 @@ module VpsAdmin
 end
 
 require 'vpsadmin/cli/commands/vps_remote_console'
+require 'vpsadmin/cli/commands/vps_migrate_many'
