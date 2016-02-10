@@ -157,7 +157,7 @@ module VpsAdmind
       end
 
       JSON.parse(
-        syscmd(cmd)[:output],
+        syscmd2(cmd, {stderr: false})[:output],
         :symbolize_names => true
       )
     end
