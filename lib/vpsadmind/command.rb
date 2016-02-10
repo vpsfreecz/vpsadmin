@@ -278,7 +278,7 @@ module VpsAdmind
     end
 
     def time_start
-      @m_attr.synchronize { @time_start }
+      @m_attr.synchronize { @time_start.clone }
     end
 
     def current_chain_direction

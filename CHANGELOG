@@ -12,6 +12,7 @@
 - Fixed rollback of transactions killed using the remote command
 - New queues `outage` and `queue`
 - Queue slot reservation mechanism
+- Fixed issue that remote status changed transaction's start time
 
 * Sat Jan 23 2016 - version 2.1.0
 - VPS console:
