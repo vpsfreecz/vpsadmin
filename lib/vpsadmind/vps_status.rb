@@ -128,6 +128,9 @@ module VpsAdmind
           )
         end
       end
+
+    rescue CommandFailed => e
+      log(:fatal, :vps_status, e.message)
     end
 
     protected
@@ -160,6 +163,9 @@ module VpsAdmind
         syscmd2(cmd, {stderr: false})[:output],
         :symbolize_names => true
       )
+
+    rescue JSON::ParserError => e
+      raise CommandFailed.new(cmd, 0, e.message)
     end
 
     def run_or_skip(vps)
