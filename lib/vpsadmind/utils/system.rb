@@ -39,14 +39,30 @@ module VpsAdmind
       end
     end
 
+    # @param cmd [String]
+    # @param valid_rcs [Array]
+    # @return [Hash]
     def syscmd(cmd, valid_rcs = [])
+      syscmd2(cmd, {valid_rcs: valid_rcs})
+    end
+
+    # @param cmd [String]
+    # @param valid_rcs [Array]
+    # @param opts [Hash]
+    # @option opts [Array<Integer>] valid_rcs valid exit codes
+    # @option opts [Boolean] stderr include stderr in output?
+    # @return [Hash]
+    def syscmd2(cmd, opts = {})
+      valid_rcs = opts[:valid_rcs] || []
+      stderr = opts[:stderr].nil? ? true : opts[:stderr]
+
       current_cmd = Thread.current[:command]
       current_cmd.step = cmd if current_cmd
 
       out = ""
       log(:work, current_cmd || @command, cmd)
 
-      IO.popen("exec #{cmd} 2>&1") do |io|
+      IO.popen("exec #{cmd} #{stderr ? '2>&1' : '2> /dev/null'}") do |io|
         current_cmd.subtask = io.pid if current_cmd
 
         out = io.read
