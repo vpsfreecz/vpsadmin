@@ -43,7 +43,7 @@ module VpsAdmind
     # @param valid_rcs [Array]
     # @return [Hash]
     def syscmd(cmd, valid_rcs = [])
-      syscmd2(cmd, {valid_rcs: valid_rcs})
+      syscmd2(cmd, {:valid_rcs => valid_rcs})
     end
 
     # @param cmd [String]
