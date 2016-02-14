@@ -21,7 +21,7 @@ module VpsAdmin::API
           session = ::UserSession.current
 
           ::ObjectHistory.create!(
-              user: session.user,
+              user: session && session.user,
               user_session: session,
               tracked_object: self,
               event_type: type,
