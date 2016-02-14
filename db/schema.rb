@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160208123742) do
+ActiveRecord::Schema.define(version: 20160214135014) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -514,6 +514,8 @@ ActiveRecord::Schema.define(version: 20160208123742) do
     t.datetime "created_at"
   end
 
+  add_index "node_statuses", ["node_id"], name: "index_node_statuses_on_node_id", using: :btree
+
   create_table "object_histories", force: true do |t|
     t.integer  "user_id"
     t.integer  "user_session_id"
@@ -929,5 +931,7 @@ ActiveRecord::Schema.define(version: 20160208123742) do
     t.datetime "created_at"
     t.datetime "updated_at"
   end
+
+  add_index "vps_statuses", ["vps_id"], name: "index_vps_statuses_on_vps_id", using: :btree
 
 end
