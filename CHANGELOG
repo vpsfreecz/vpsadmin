@@ -21,6 +21,7 @@
   - `Transactions::OutageWindow::InOrFail` - fail if not inside the outage window
   - `Transactions::Queue::Reserve` - reserve a slot in a queue
   - `Transactions::Queue::Release` - release a reserved slot in a queue
+- New module `VpsAdmin::API::HashOptions`, included by `TransactionChain`
 
 * Sat Jan 12 2016 - version 2.1.0
 - TransactionChain.append_t to replace TransactionChain.append

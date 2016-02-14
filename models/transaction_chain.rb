@@ -17,6 +17,7 @@ class TransactionChain < ActiveRecord::Base
                 :locks, :urgent, :prio, :reversible, :mail_server
 
   include HaveAPI::Hookable
+  include VpsAdmin::API::HashOptions
 
   # Create new transaction chain. This method has to be used, do not
   # create instances of TransactionChain yourself.
