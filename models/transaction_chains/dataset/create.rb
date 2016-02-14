@@ -146,7 +146,7 @@ module TransactionChains
     def generate_mounts
       @new_mounts.each do |vps, mounts|
         use_chain(Vps::Mounts, args: vps)
-        use_chain(Vps::Mount, args: [vps, mounts]) if vps.running
+        use_chain(Vps::Mount, args: [vps, mounts]) if vps.running?
 
         append(Transactions::Utils::NoOp, args: vps.vps_server) do
           mounts.each { |m| create(m) }
