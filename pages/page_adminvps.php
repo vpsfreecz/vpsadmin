@@ -446,8 +446,9 @@ switch ($_GET["action"]) {
 					'node' => $_POST['node'],
 					'replace_ip_addresses' => isset($_POST['replace_ip_addresses']),
 					'outage_window' => isset($_POST['outage_window']),
+					'cleanup_data' => isset($_POST['cleanup_data']),
 					'send_mail' => isset($_POST['send_mail']),
-					'reason' => isset($_POST['reason']) ? $_POST['reason'] : null,
+					'reason' => $_POST['reason'] ? $_POST['reason'] : null,
 				));
 				
 				notify_user(_("Offline migration planned"), '');
