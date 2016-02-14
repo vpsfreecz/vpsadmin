@@ -10,7 +10,7 @@ class Node < ActiveRecord::Base
   has_many :pools
   has_many :vps_mounts, foreign_key: :server_id
   has_many :port_reservations
-  has_many :node_statuses
+  has_many :node_statuses, dependent: :destroy
   belongs_to :node_status
 
   has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)

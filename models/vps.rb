@@ -19,7 +19,7 @@ class Vps < ActiveRecord::Base
   belongs_to :dataset_in_pool
   has_many :mounts
 
-  has_many :vps_statuses
+  has_many :vps_statuses, dependent: :destroy
   belongs_to :vps_status
 
   has_many :object_histories, as: :tracked_object, dependent: :destroy
