@@ -199,11 +199,13 @@ class Node < ActiveRecord::Base
   # @option opts [Integer] concurrency
   # @option opts [Boolean] stop_on_error (false)
   # @option opts [Boolean] outage_window (true)
+  # @option opts [Boolean] cleanup_data (true)
   # @option opts [String] reason
   def evacuate(opts)
     plan = nil
     concurrency = opts[:concurrency] || 1
     outage_window = opts[:outage_window].nil? ? true : opts[:outage_window]
+    cleanup_data = opts[:cleanup_data].nil? ? true : opts[:cleanup_data]
     send_mail = opts[:send_mail].nil? ? true : opts[:send_mail]
 
     ActiveRecord::Base.transaction do
@@ -226,6 +228,7 @@ class Node < ActiveRecord::Base
             vps: vps,
             migration_plan: plan,
             outage_window: outage_window,
+            cleanup_data: cleanup_data,
             src_node: self,
             dst_node: opts[:dst_node],
         )
