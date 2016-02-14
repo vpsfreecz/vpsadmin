@@ -18,6 +18,7 @@ module TransactionChains
     # @option opts [Boolean] tasks (true) delete associated dataset actions
     #                                      and repeatable tasks
     # @option opts [Boolean] detach_backups (true) detach current branch and tree on backup pools
+    # @option opts [Boolean] destroy (true) destroy datasets using zfs destroy
     def link_chain(dataset_in_pool, opts = {})
       lock(dataset_in_pool)
       concerns(:affect, [
@@ -30,6 +31,7 @@ module TransactionChains
           top: true,
           tasks: true,
           detach_backups: true,
+          destroy: true,
       })
 
       @datasets = []
@@ -143,7 +145,7 @@ module TransactionChains
       chain = self
       opts = @opts
 
-      append(Transactions::Storage::DestroyDataset, args: dataset_in_pool) do
+      destroy_confirm = Proc.new do
         # Destroy snapshots, trees, branches, snapshot in pool in branches
         if opts[:detach_backups] && %w(primary hypervisor).include?(dataset_in_pool.pool.role)
           # Detach dataset tree heads in all backups
@@ -197,7 +199,9 @@ module TransactionChains
           dataset_in_pool.update(confirmed: ::DatasetInPool.confirmed(:confirm_destroy))
 
           # Check if ::Dataset should be destroyed or marked for destroyal
-          if dataset_in_pool.dataset.dataset_in_pools.where.not(confirmed: ::DatasetInPool.confirmed(:confirm_destroy)).count == 0
+          if dataset_in_pool.dataset.dataset_in_pools.where.not(
+                confirmed: ::DatasetInPool.confirmed(:confirm_destroy)
+             ).count == 0
             dataset_in_pool.dataset.update!(
                 confirmed: ::Dataset.confirmed(:confirm_destroy)
             )
@@ -215,9 +219,19 @@ module TransactionChains
                 Time.now.utc + 30*24*60*60),
                 reason: 'Dataset on the primary pool was deleted.'
             )
-            edit(dataset_in_pool.dataset, expiration_date: dataset_in_pool.dataset.expiration_date)
+            edit(
+                dataset_in_pool.dataset,
+                expiration_date: dataset_in_pool.dataset.expiration_date
+            )
           end
         end
+      end
+
+      if @opts[:destroy]
+        append(Transactions::Storage::DestroyDataset, args: dataset_in_pool, &destroy_confirm)
+
+      else
+        append(Transactions::Utils::NoOp, args: find_node_id, &destroy_confirm)
       end
     end
   end
