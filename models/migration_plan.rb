@@ -15,6 +15,7 @@ class MigrationPlan < ActiveRecord::Base
           chain = TransactionChains::Vps::Migrate.fire2(
               args: [m.vps, m.dst_node, {
                   outage_window: m.outage_window,
+                  cleanup_data: m.cleanup_data,
                   send_mail: send_mail,
                   reason: reason,
               }],

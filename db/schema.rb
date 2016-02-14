@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160214135014) do
+ActiveRecord::Schema.define(version: 20160214135501) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -895,6 +895,7 @@ ActiveRecord::Schema.define(version: 20160214135014) do
     t.datetime "created_at"
     t.datetime "started_at"
     t.datetime "finished_at"
+    t.boolean  "cleanup_data",         default: true
   end
 
   add_index "vps_migrations", ["migration_plan_id", "vps_id"], name: "vps_migrations_unique", unique: true, using: :btree

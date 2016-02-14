@@ -175,6 +175,7 @@ module VpsAdmin::API::Resources
         resource VpsAdmin::API::Resources::VPS, value_label: :hostname
         resource VpsAdmin::API::Resources::Node, name: :dst_node, value_label: :domain_name
         bool :outage_window, default: true, fill: true
+        bool :cleanup_data, default: true, fill: true
       end
 
       params(:all) do
@@ -274,6 +275,7 @@ module VpsAdmin::API::Resources
           plan.vps_migrations.create!(
               vps: input[:vps],
               outage_window: input[:outage_window],
+              cleanup_data: input[:cleanup_data],
               src_node: input[:vps].node,
               dst_node: input[:dst_node],
           )
