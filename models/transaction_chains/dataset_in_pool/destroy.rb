@@ -11,17 +11,6 @@ module TransactionChains
   class DatasetInPool::Destroy < ::TransactionChain
     label 'Destroy'
 
-    def set_opts(opts)
-      @opts = {}
-
-      @opts[:recursive] = opts[:recursive].nil? ? false : opts[:recursive]
-      @opts[:top] = opts[:top].nil? ? true : opts[:top]
-      @opts[:tasks] = opts[:tasks].nil? ? true : opts[:tasks]
-      @opts[:detach_backups] = opts[:detach_backups].nil? ? true : opts[:detach_backups]
-
-      @opts
-    end
-
     # @param dataset_in_pool [::DatasetInPool]
     # @param opts [Hash]
     # @option opts [Boolean] recursive (false)
@@ -36,7 +25,12 @@ module TransactionChains
           dataset_in_pool.dataset_id
       ])
 
-      set_opts(opts)
+      @opts = set_hash_opts(opts, {
+          recursive: false,
+          top: true,
+          tasks: true,
+          detach_backups: true,
+      })
 
       @datasets = []
 
