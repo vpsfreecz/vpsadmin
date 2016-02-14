@@ -31,7 +31,7 @@ module TransactionChains
       end
 
       # Destroy underlying dataset
-      use_chain(DatasetInPool::Destroy, args: [vps.dataset_in_pool, true])
+      use_chain(DatasetInPool::Destroy, args: [vps.dataset_in_pool, {recursive: true}])
 
       # The dataset_in_pool_id must be unset after the dataset is actually
       # deleted, as it may fail.

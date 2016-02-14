@@ -8,7 +8,7 @@ module TransactionChains
       ds.dataset_in_pools
           .where.not(confirmed: ::DatasetInPool.confirmed(:confirm_destroy))
           .each do |dip|
-        use_chain(DatasetInPool::Destroy, args: [dip, true])
+        use_chain(DatasetInPool::Destroy, args: [dip, {recursive: true}])
       end
     end
   end

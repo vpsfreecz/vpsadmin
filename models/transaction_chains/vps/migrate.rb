@@ -284,7 +284,12 @@ module TransactionChains
       # Destroy old dataset in pools
       # Do not detach backup trees and branches
       # Do not delete repeatable tasks - they are re-used for new datasets
-      use_chain(DatasetInPool::Destroy, args: [src_dip, true, true, false, false])
+      use_chain(DatasetInPool::Destroy, args: [src_dip, {
+          recursive: true,
+          top: true,
+          tasks: false,
+          detach_backups: false,
+      }])
 
       # Destroy old root
       append(Transactions::Vps::Destroy, args: vps)

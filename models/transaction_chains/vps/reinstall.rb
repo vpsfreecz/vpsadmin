@@ -19,7 +19,10 @@ module TransactionChains
 
       # Destroy underlying dataset with all its descendants,
       # but do not delete the top-level dataset from database.
-      use_chain(DatasetInPool::Destroy, args: [vps.dataset_in_pool, true, false])
+      use_chain(DatasetInPool::Destroy, args: [vps.dataset_in_pool, {
+          recursive: true,
+          top: false,
+      }])
 
       # Destroy VPS configs, mounts, root
       append(Transactions::Vps::Destroy, args: vps)

@@ -24,7 +24,7 @@ module TransactionChains
             ds.dataset_in_pools.joins(:pool).where(
                 pools: {role: ::Pool.roles[:backup]}
             ).each do |backup|
-              use_chain(DatasetInPool::Destroy, args: [backup, true])
+              use_chain(DatasetInPool::Destroy, args: [backup, {recursive: true}])
             end
             
           else # primary pool, delete right away with all backups

@@ -11,18 +11,36 @@ module TransactionChains
   class DatasetInPool::Destroy < ::TransactionChain
     label 'Destroy'
 
-    def link_chain(dataset_in_pool, recursive = false, top = true, tasks = true, detach_backups = true)
+    def set_opts(opts)
+      @opts = {}
+
+      @opts[:recursive] = opts[:recursive].nil? ? false : opts[:recursive]
+      @opts[:top] = opts[:top].nil? ? true : opts[:top]
+      @opts[:tasks] = opts[:tasks].nil? ? true : opts[:tasks]
+      @opts[:detach_backups] = opts[:detach_backups].nil? ? true : opts[:detach_backups]
+
+      @opts
+    end
+
+    # @param dataset_in_pool [::DatasetInPool]
+    # @param opts [Hash]
+    # @option opts [Boolean] recursive (false)
+    # @option opts [Boolean] top (true) delete the top-level dataset
+    # @option opts [Boolean] tasks (true) delete associated dataset actions
+    #                                      and repeatable tasks
+    # @option opts [Boolean] detach_backups (true) detach current branch and tree on backup pools
+    def link_chain(dataset_in_pool, opts = {})
       lock(dataset_in_pool)
       concerns(:affect, [
           dataset_in_pool.dataset.class.name,
           dataset_in_pool.dataset_id
       ])
 
-      @tasks = tasks
-      @detach_backups = detach_backups
+      set_opts(opts)
+
       @datasets = []
 
-      if recursive
+      if @opts[:recursive]
         @pool_id = dataset_in_pool.pool.id
         dataset_in_pool.dataset.subtree.where.not(
             confirmed: ::Dataset.confirmed(:confirm_destroy)
@@ -68,7 +86,7 @@ module TransactionChains
       end
       
       # Destroy the top-level dataset (which is last in the list)
-      destroy_dataset(top_level, top)
+      destroy_dataset(top_level, @opts[:top])
     end
 
     # Destroy datasets in pool recursively. Datasets are destroyed
@@ -129,12 +147,11 @@ module TransactionChains
       end
 
       chain = self
-      tasks = @tasks
-      detach_backups = @detach_backups
+      opts = @opts
 
       append(Transactions::Storage::DestroyDataset, args: dataset_in_pool) do
         # Destroy snapshots, trees, branches, snapshot in pool in branches
-        if detach_backups && %w(primary hypervisor).include?(dataset_in_pool.pool.role)
+        if opts[:detach_backups] && %w(primary hypervisor).include?(dataset_in_pool.pool.role)
           # Detach dataset tree heads in all backups
           dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where(
               pools: {role: ::Pool.roles[:backup]}
@@ -152,7 +169,7 @@ module TransactionChains
 
         # Destroy dataset in pool
         if destroy_top
-          if tasks
+          if opts[:tasks]
             dataset_in_pool.free_resources(chain: chain).each do |r|
               destroy(r)
             end

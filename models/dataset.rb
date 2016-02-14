@@ -92,7 +92,7 @@ class Dataset < ActiveRecord::Base
       maintenance_check!(vps)
     end
 
-    TransactionChains::DatasetInPool::Destroy.fire(dip, true)
+    TransactionChains::DatasetInPool::Destroy.fire(dip, {recursive: true})
   end
 
   def check_name
