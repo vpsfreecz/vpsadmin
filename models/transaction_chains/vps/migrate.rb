@@ -28,12 +28,15 @@ module TransactionChains
     # @option opts [Boolean] send_mail (true)
     # @option opts [String] reason (nil)
     def link_chain(vps, dst_node, opts = {})
-      replace_ips = opts[:replace_ips].nil? ? false : opts[:replace_ips]
-      resources = opts[:resources]
-      handle_ips = opts[:handle_ips].nil? ? true : opts[:handle_ips]
-      reallocate_ips = opts[:reallocate_ips].nil? ? true : opts[:reallocate_ips]
-      outage_window = opts[:outage_window].nil? ? true : opts[:outage_window]
-      send_mail = opts[:send_mail].nil? ? true : opts[:send_mail]
+      @opts = set_hash_opts(opts, {
+          replace_ips: false,
+          resources: nil,
+          handle_ips: true,
+          reallocate_ips: true,
+          outage_window: true,
+          send_mail: true,
+          reason: nil,
+      })
 
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
@@ -51,10 +54,10 @@ module TransactionChains
               vps: vps,
               src_node: vps.node,
               dst_node: dst_vps.node,
-              outage_window: outage_window,
+              outage_window: @opts[:outage_window],
               reason: opts[:reason],
           }
-      }) if send_mail && vps.user.m_mailer_enable 
+      }) if @opts[:send_mail] && vps.user.m_mailer_enable 
 
       # Create target dataset in pool.
       # No new dataset in pool is created in database, it is simply
@@ -71,7 +74,7 @@ module TransactionChains
         resources_changes = vps.transfer_resources_to_env!(
             vps.user,
             dst_node.environment,
-            resources
+            @opts[:resources]
         )
       end
 
@@ -125,7 +128,7 @@ module TransactionChains
       # Transfer datasets
       migration_snapshots = []
 
-      unless outage_window
+      unless @opts[:outage_window]
         # Reserve a slot in zfs_send queue
         append(Transactions::Queue::Reserve, args: [vps.node, :zfs_send])
       end
@@ -141,7 +144,7 @@ module TransactionChains
         use_chain(Dataset::Transfer, args: [src, dst])
       end
 
-      if outage_window
+      if @opts[:outage_window]
         # Wait for the outage window to open
         append(Transactions::OutageWindow::Wait, args: [vps, 15])
         append(Transactions::Queue::Reserve, args: [vps.node, :zfs_send])
@@ -175,9 +178,9 @@ module TransactionChains
 
       # Migration to different location - remove or replace
       # IP addresses
-      if vps.node.location != dst_vps.node.location && handle_ips
+      if vps.node.location != dst_vps.node.location && @opts[:handle_ips]
         # Add the same number of IP addresses from the target location
-        if replace_ips
+        if @opts[:replace_ips]
           dst_ip_addresses = []
 
           vps.ip_addresses.each do |ip|
@@ -205,7 +208,7 @@ module TransactionChains
           ips = []
 
           vps.ip_addresses.each { |ip| ips << ip }
-          use_chain(Vps::DelIp, args: [dst_vps, ips, vps, false, reallocate_ips],
+          use_chain(Vps::DelIp, args: [dst_vps, ips, vps, false, @opts[:reallocate_ips]],
                     urgent: true)
         end
       end
@@ -268,7 +271,7 @@ module TransactionChains
 
       # Setup firewall and shapers 
       # Unregister from firewall and remove shaper on source node
-      if handle_ips
+      if @opts[:handle_ips]
         use_chain(Vps::FirewallUnregister, args: vps, urgent: true)
         use_chain(Vps::ShaperUnset, args: vps, urgent: true)
       end
@@ -301,10 +304,10 @@ module TransactionChains
               vps: vps,
               src_node: vps.node,
               dst_node: dst_vps.node,
-              outage_window: outage_window,
+              outage_window: @opts[:outage_window],
               reason: opts[:reason],
           }
-      }) if send_mail && vps.user.m_mailer_enable 
+      }) if @opts[:send_mail] && vps.user.m_mailer_enable 
 
       # fail 'ohnoes'
       self
