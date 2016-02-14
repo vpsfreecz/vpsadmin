@@ -317,7 +317,7 @@ function dataset_snapshot_list($datasets, $vps = null) {
 		$xtpl->table_td($xtpl->html_submit(_("Restore"), "restore"));
 		$xtpl->table_tr();
 		
-		$xtpl->form_out_raw();
+		$xtpl->form_out_raw('ds-'.$ds->id);
 	}
 }
 

@@ -152,6 +152,8 @@ function vps_details_submenu($vps) {
 
 	if ($_GET['action'] != 'info')
 		$xtpl->sbar_add(_('Back to details'), '?page=adminvps&action=info&veid='.$vps->id);
+	
+	$xtpl->sbar_add(_('Backups'), '?page=backup&action=vps&list=1&vps='.$vps->id.'#ds-'.$vps->dataset_id);
 
 	if ($_SESSION['is_admin']) {
 		$xtpl->sbar_add(_('Migrate VPS'), '?page=adminvps&action=offlinemigrate&veid='.$vps->id);
