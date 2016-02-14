@@ -27,6 +27,7 @@ module TransactionChains
     # @option opts [Boolean] outage_window (true)
     # @option opts [Boolean] send_mail (true)
     # @option opts [String] reason (nil)
+    # @option opts [Boolean] cleanup_data (true) destroy datasets on the source node
     def link_chain(vps, dst_node, opts = {})
       @opts = set_hash_opts(opts, {
           replace_ips: false,
@@ -36,6 +37,7 @@ module TransactionChains
           outage_window: true,
           send_mail: true,
           reason: nil,
+          cleanup_data: true,
       })
 
       lock(vps)
@@ -292,6 +294,7 @@ module TransactionChains
           top: true,
           tasks: false,
           detach_backups: false,
+          destroy: @opts[:cleanup_data],
       }])
 
       # Destroy old root

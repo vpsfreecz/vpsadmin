@@ -254,6 +254,7 @@ class Vps < ActiveRecord::Base
     chain_opts[:outage_window] = opts[:outage_window]
     chain_opts[:send_mail] = opts[:send_mail]
     chain_opts[:reason] = opts[:reason]
+    chain_opts[:cleanup_data] = opts[:cleanup_data]
 
     TransactionChains::Vps::Migrate.fire(self, node, chain_opts)
   end
