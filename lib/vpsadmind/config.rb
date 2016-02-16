@@ -60,6 +60,11 @@ module VpsAdmind
                   :urgent => 2,
                   :start_delay => 0,
               },
+              :rollback => {
+                  :threads => 6,
+                  :urgent => 6,
+                  :start_delay => 0,
+              },
           },
           :queues_reservation_prune_interval => 60,
           :urgent_threads => 6,

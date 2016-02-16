@@ -1,11 +1,23 @@
 module VpsAdmind
   class Queues
+    QUEUES = [
+        :general,
+        :storage,
+        :network,
+        :vps,
+        :zfs_send,
+        :mail,
+        :outage,
+        :queue,
+        :rollback,
+    ]
+
     def initialize(daemon)
       @daemon = daemon
       @queues = {}
       
-      %w(general storage network vps zfs_send mail outage queue).each do |q|
-        @queues[q.to_sym] = TransactionQueue.new(q.to_sym, @daemon.start_time)
+      QUEUES.each do |q|
+        @queues[q] = TransactionQueue.new(q, @daemon.start_time)
       end
     end
 
@@ -23,7 +35,7 @@ module VpsAdmind
 
     def execute(cmd)
       return false if busy?(cmd.chain_id)
-      @queues[ cmd.queue ].execute(cmd)
+      @queues[ queue_for(cmd) ].execute(cmd)
     end
 
     def reserve(queues, cmd)
@@ -107,6 +119,16 @@ module VpsAdmind
 
     def total_limit
       @queues.values.inject(0) { |sum, q| sum + q.total_size }
+    end
+
+    protected
+    def queue_for(cmd)
+      if cmd.current_chain_direction == :rollback
+        :rollback
+
+      else
+        cmd.queue
+      end
     end
   end
 end
