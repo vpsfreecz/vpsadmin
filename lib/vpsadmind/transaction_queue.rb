@@ -131,6 +131,10 @@ module VpsAdmind
       end
     end
 
+    def clear!
+      @workers.clear
+    end
+
     protected
     def cfg(*args)
       $CFG.get(* [:vpsadmin, :queues, @name].concat(args))

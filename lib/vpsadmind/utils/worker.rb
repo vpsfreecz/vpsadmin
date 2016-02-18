@@ -23,7 +23,7 @@ module VpsAdmind::Utils
     def drop_workers
       @daemon.queues do |queues|
         queues.each_value do |queue|
-          queue.clear
+          queue.clear!
         end
       end
     end
