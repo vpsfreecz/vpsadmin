@@ -36,7 +36,13 @@ module VpsAdmind
             :used_swap => vps[:swappages][:held] / 1024 * 4,
             :cpu => SystemProbes::CpuUsage.new,
         })
-       
+
+        # If a VPS is stopped while the vzlist is run, it may say that status is
+        # 'running', but later that it has zero processes or no load avg.
+        if db_vps[:nproc] == 0 || vps[:laverage].nil? || db_vps[:uptime] == 0
+          db_vps[:running] = false
+        end
+
         if db_vps[:running]
           db_vps[:loadavg] = vps[:laverage][1]
 
