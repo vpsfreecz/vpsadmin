@@ -92,7 +92,7 @@ module VpsAdmin::API::Tasks
 
       plan.vps_migrations.where(
           state: ::VpsMigration.states[:queued],
-      ).order('created_at').each do |m|
+      ).order('created_at, id').each do |m|
 
         unless m.vps
           m.update!(state: ::VpsMigration.states[:cancelled])
