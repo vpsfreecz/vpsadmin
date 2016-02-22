@@ -35,7 +35,6 @@ class Node < ActiveRecord::Base
   }
   validates :max_vps, presence: true, numericality: {
       only_integer: true,
-      greater_than: 0
   }, if: :hypervisor?
   validates :ve_private, presence: true, if: :hypervisor?
 
