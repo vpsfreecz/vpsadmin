@@ -16,7 +16,14 @@ module VpsAdmind
         db_vpses[ row['vps_id'].to_i ] = {
             :read_hostname => row['manage_hostname'].to_i == 0,
             :last_status_id => row['status_id'] && row['status_id'].to_i,
-            :last_is_running => row['is_running'].to_i == 1
+            :last_is_running => row['is_running'].to_i == 1,
+            :status_time => row['created_at'] && Time.strptime(
+                row['created_at'] + ' UTC',
+                '%Y-%m-%d %H:%M:%S %Z'
+            ),
+            :last_cpus => row['cpus'] && row['cpus'].to_i,
+            :last_total_memory => row['total_memory'] && row['total_memory'].to_i,
+            :last_total_swap => row['total_swap'] && row['total_swap'].to_i,
         }
       end
 
@@ -36,6 +43,10 @@ module VpsAdmind
             :used_swap => vps[:swappages][:held] / 1024 * 4,
             :cpu => SystemProbes::CpuUsage.new,
         })
+
+        if vps[:physpages][:limit] == 9223372036854775807  # unlimited
+          db_vps[:total_memory] = 0
+        end
 
         # If a VPS is stopped while the vzlist is run, it may say that status is
         # 'running', but later that it has zero processes or no load avg.
@@ -82,55 +93,27 @@ module VpsAdmind
        
         t = Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
 
+        # The VPS is not running
         if !vps[:running] && vps[:last_status_id] && !vps[:last_is_running]
           db.prepared(
-              'UPDATE vps_statuses SET updated_at = ? WHERE id = ?',
-              t, vps[:last_status_id]
+              'UPDATE vps_current_statuses SET updated_at = ? WHERE vps_id = ?',
+              t, vps_id
           )
           next
         end
 
-        sql = "INSERT INTO vps_statuses SET
-            vps_id = #{vps_id},
-            status = #{vps[:skip] ? 0 : 1},
-            is_running = #{vps[:running] ? 1 : 0},
-            total_memory = #{vps[:total_memory]},
-            total_swap = #{vps[:total_swap]},"
-            
-        if vps[:running] && !vps[:skip]
-          cpu = vps[:cpu].to_percent
+        if state_changed?(vps) || status_expired?(vps)
+          log_status(db, t, vps_id)
+          reset_status(db, t, vps_id, vps)
 
-          sql += "
-            uptime = #{vps[:uptime]},
-            loadavg = #{vps[:loadavg]},
-            process_count = #{vps[:nproc]},
-            used_memory = #{vps[:used_memory]},
-            used_swap = #{vps[:used_swap]},
-            cpus = #{vps[:cpus]},
-            cpu_user = #{cpu[:user]},
-            cpu_nice = #{cpu[:nice]},
-            cpu_system = #{cpu[:system]},
-            cpu_idle = #{cpu[:idle]},
-            cpu_iowait = #{cpu[:iowait]},
-            cpu_irq = #{cpu[:irq]},
-            cpu_softirq = #{cpu[:softirq]},
-          "
+        else
+          update_status(db, t, vps_id, vps)
         end
-
-        sql += "created_at = '#{t}'"
-       
-        db.query(sql)
 
         if vps[:hostname]
           db.prepared(
-              'UPDATE vps SET vps_status_id = ?, vps_hostname = ? WHERE vps_id = ?',
-              db.insert_id, vps[:hostname], vps_id
-          )
-
-        else
-          db.prepared(
-              'UPDATE vps SET vps_status_id = ? WHERE vps_id = ?',
-              db.insert_id, vps_id
+              'UPDATE vps SET vps_hostname = ? WHERE vps_id = ?',
+              vps[:hostname], vps_id
           )
         end
       end
@@ -142,9 +125,10 @@ module VpsAdmind
     protected
     def fetch_vpses(db)
       sql = "
-          SELECT vps.vps_id, vps.manage_hostname, st.id AS status_id, st.is_running
+          SELECT vps.vps_id, vps.manage_hostname, st.id AS status_id, st.is_running,
+                 st.cpus, st.total_memory, st.total_swap, st.created_at
           FROM vps
-          LEFT JOIN vps_statuses st ON st.id = vps.vps_status_id
+          LEFT JOIN vps_current_statuses st ON st.vps_id = vps.vps_id
           WHERE
             vps_server = #{$CFG.get(:vpsadmin, :server_id)}
             AND object_state < 3"
@@ -180,6 +164,153 @@ module VpsAdmind
     rescue CommandFailed => e
       log(:warn, :vps, e.message)
       vps[:skip] = true
+    end
+
+    def state_changed?(vps)
+      vps[:running] != vps[:last_is_running] \
+        || vps[:cpus] != vps[:last_cpus] \
+        || vps[:total_memory] != vps[:last_total_memory] \
+        || vps[:total_swap] != vps[:last_total_swap]
+    end
+
+    def status_expired?(vps)
+      (vps[:status_time] + $CFG.get(:vpsadmin, :vps_status_log_interval)) < Time.now.utc
+    end
+
+    def log_status(db, t, vps_id)
+      db.query(
+          "INSERT INTO vps_statuses (
+            vps_id, status, is_running, uptime, cpus, total_memory, total_swap,
+            process_count, cpu_user, cpu_nice, cpu_system, cpu_idle, cpu_iowait,
+            cpu_irq, cpu_softirq, loadavg, used_memory, used_swap, created_at
+          )
+            
+          SELECT
+            vps_id, status, is_running, uptime, cpus, total_memory, total_swap,
+            sum_process_count / update_count,
+            sum_cpu_user / update_count,
+            sum_cpu_nice / update_count,
+            sum_cpu_system / update_count,
+            sum_cpu_idle / update_count,
+            sum_cpu_iowait / update_count,
+            sum_cpu_irq / update_count,
+            sum_cpu_softirq / update_count,
+            sum_loadavg / update_count,
+            sum_used_memory / update_count,
+            sum_used_swap / update_count,
+            '#{t}'
+          FROM vps_current_statuses WHERE vps_id = #{vps_id}"
+      )
+    end
+
+    def reset_status(db, t, vps_id, vps)
+      if vps[:last_status_id]
+        sql = "UPDATE vps_current_statuses SET "
+
+      else
+        sql = "INSERT INTO vps_current_statuses SET vps_id = #{vps_id},"
+      end
+
+      sql += "
+          status = #{vps[:skip] ? 0 : 1},
+          total_memory = #{vps[:total_memory]},
+          total_swap = #{vps[:total_swap]},
+          cpus = #{vps[:cpus]},
+          is_running = #{vps[:running] ? 1 : 0},
+          update_count = 1,"
+      
+      if vps[:running] && !vps[:skip]
+        cpu = vps[:cpu].to_percent
+
+        sql += "
+          uptime = #{vps[:uptime]},
+          loadavg = #{vps[:loadavg]},
+          process_count = #{vps[:nproc]},
+          used_memory = #{vps[:used_memory]},
+          used_swap = #{vps[:used_swap]},
+          cpu_user = #{cpu[:user]},
+          cpu_nice = #{cpu[:nice]},
+          cpu_system = #{cpu[:system]},
+          cpu_idle = #{cpu[:idle]},
+          cpu_iowait = #{cpu[:iowait]},
+          cpu_irq = #{cpu[:irq]},
+          cpu_softirq = #{cpu[:softirq]},"
+
+      else
+        sql += "
+          uptime = NULL, 
+          loadavg = NULL,
+          process_count = NULL,
+          used_memory = NULL,
+          used_swap = NULL,
+          cpu_user = NULL,
+          cpu_nice = NULL,
+          cpu_system = NULL,
+          cpu_idle = NULL,
+          cpu_iowait = NULL,
+          cpu_irq = NULL,
+          cpu_softirq = NULL,"
+      end
+        
+      sql += "
+          sum_loadavg = loadavg,
+          sum_process_count = process_count,
+          sum_used_memory = used_memory,
+          sum_used_swap = used_swap,
+          sum_cpu_user = cpu_user,
+          sum_cpu_nice = cpu_nice,
+          sum_cpu_system = cpu_system,
+          sum_cpu_idle = cpu_idle,
+          sum_cpu_iowait = cpu_iowait,
+          sum_cpu_irq = cpu_irq,
+          sum_cpu_softirq = cpu_softirq,"
+
+      sql += "created_at = '#{t}', updated_at = NULL "
+      sql += "WHERE vps_id = #{vps_id}" if vps[:last_status_id]
+
+      db.query(sql)
+    end
+
+    def update_status(db, t, vps_id, vps)
+      sql = "UPDATE vps_current_statuses SET status = #{vps[:skip] ? 0 : 1},"
+      
+      if vps[:running] && !vps[:skip]
+        cpu = vps[:cpu].to_percent
+
+        sql += "
+          uptime = #{vps[:uptime]},
+          loadavg = #{vps[:loadavg]},
+          process_count = #{vps[:nproc]},
+          used_memory = #{vps[:used_memory]},
+          used_swap = #{vps[:used_swap]},
+          cpu_user = #{cpu[:user]},
+          cpu_nice = #{cpu[:nice]},
+          cpu_system = #{cpu[:system]},
+          cpu_idle = #{cpu[:idle]},
+          cpu_iowait = #{cpu[:iowait]},
+          cpu_irq = #{cpu[:irq]},
+          cpu_softirq = #{cpu[:softirq]},
+
+          sum_loadavg = sum_loadavg + loadavg,
+          sum_process_count = sum_process_count + process_count,
+          sum_used_memory = sum_used_memory + used_memory,
+          sum_used_swap = sum_used_swap + used_swap,
+          sum_cpu_user = sum_cpu_user + cpu_user,
+          sum_cpu_nice = sum_cpu_nice + cpu_nice,
+          sum_cpu_system = sum_cpu_system + cpu_system,
+          sum_cpu_idle = sum_cpu_idle + cpu_idle,
+          sum_cpu_iowait = sum_cpu_iowait + cpu_iowait,
+          sum_cpu_irq = sum_cpu_irq + cpu_irq,
+          sum_cpu_softirq = sum_cpu_softirq + cpu_softirq,
+
+          update_count = update_count + 1,
+        "
+      end
+
+      sql += "updated_at = '#{t}' "
+      sql += "WHERE vps_id = #{vps_id}"
+
+      db.query(sql)
     end
   end
 end
