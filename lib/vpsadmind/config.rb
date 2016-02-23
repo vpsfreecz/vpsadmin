@@ -73,7 +73,7 @@ module VpsAdmind
           :status_log_interval => 900,
           :vps_status_interval => 120,
           :vps_status_log_interval => 3600,
-          :storage_status_interval => 300,
+          :storage_status_interval => 3600,
           :transfers_interval => 10,
           :update_vps_status => true,
           :track_transfers => true,
