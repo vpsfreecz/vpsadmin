@@ -20,7 +20,7 @@ class Vps < ActiveRecord::Base
   has_many :mounts
 
   has_many :vps_statuses, dependent: :destroy
-  belongs_to :vps_status
+  has_one :vps_current_status
 
   has_many :object_histories, as: :tracked_object, dependent: :destroy
 
@@ -236,7 +236,7 @@ class Vps < ActiveRecord::Base
      cpu_irq cpu_softirq loadavg used_memory used_swap
   ).each do |attr|
     define_method(attr) do
-      vps_status && vps_status.send(attr)
+      vps_current_status && vps_current_status.send(attr)
     end
   end
   

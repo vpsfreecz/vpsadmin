@@ -171,7 +171,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     def exec
       with_includes(query).includes(
-          :vps_status,
+          :vps_current_status,
           dataset_in_pool: [:dataset]
       ).limit(params[:vps][:limit]).offset(params[:vps][:offset])
     end

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160214135501) do
+ActiveRecord::Schema.define(version: 20160222135554) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -149,6 +149,8 @@ ActiveRecord::Schema.define(version: 20160214135501) do
     t.integer  "value",               null: false
     t.datetime "created_at",          null: false
   end
+
+  add_index "dataset_property_histories", ["dataset_property_id"], name: "index_dataset_property_histories_on_dataset_property_id", using: :btree
 
   create_table "dataset_trees", force: true do |t|
     t.integer  "dataset_in_pool_id",                 null: false
@@ -481,6 +483,53 @@ ActiveRecord::Schema.define(version: 20160214135501) do
 
   add_index "mounts", ["vps_id"], name: "index_mounts_on_vps_id", using: :btree
 
+  create_table "node_current_statuses", force: true do |t|
+    t.integer  "node_id",                       null: false
+    t.integer  "uptime"
+    t.integer  "cpus"
+    t.integer  "total_memory"
+    t.integer  "total_swap"
+    t.string   "vpsadmind_version",  limit: 25, null: false
+    t.string   "kernel",             limit: 25, null: false
+    t.integer  "update_count",                  null: false
+    t.integer  "process_count"
+    t.float    "cpu_user",           limit: 24
+    t.float    "cpu_nice",           limit: 24
+    t.float    "cpu_system",         limit: 24
+    t.float    "cpu_idle",           limit: 24
+    t.float    "cpu_iowait",         limit: 24
+    t.float    "cpu_irq",            limit: 24
+    t.float    "cpu_softirq",        limit: 24
+    t.float    "cpu_guest",          limit: 24
+    t.float    "loadavg",            limit: 24
+    t.integer  "used_memory"
+    t.integer  "used_swap"
+    t.integer  "arc_c_max"
+    t.integer  "arc_c"
+    t.integer  "arc_size"
+    t.float    "arc_hitpercent",     limit: 24
+    t.integer  "sum_process_count"
+    t.float    "sum_cpu_user",       limit: 24
+    t.float    "sum_cpu_nice",       limit: 24
+    t.float    "sum_cpu_system",     limit: 24
+    t.float    "sum_cpu_idle",       limit: 24
+    t.float    "sum_cpu_iowait",     limit: 24
+    t.float    "sum_cpu_irq",        limit: 24
+    t.float    "sum_cpu_softirq",    limit: 24
+    t.float    "sum_cpu_guest",      limit: 24
+    t.float    "sum_loadavg",        limit: 24
+    t.integer  "sum_used_memory"
+    t.integer  "sum_used_swap"
+    t.integer  "sum_arc_c_max"
+    t.integer  "sum_arc_c"
+    t.integer  "sum_arc_size"
+    t.float    "sum_arc_hitpercent", limit: 24
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "node_current_statuses", ["node_id"], name: "index_node_current_statuses_on_node_id", unique: true, using: :btree
+
   create_table "node_pubkey", id: false, force: true do |t|
     t.integer "node_id",           null: false
     t.string  "type",    limit: 3, null: false
@@ -601,7 +650,6 @@ ActiveRecord::Schema.define(version: 20160214135501) do
     t.integer "maintenance_lock",                    default: 0,                             null: false
     t.string  "maintenance_lock_reason"
     t.integer "environment_id",                                                              null: false
-    t.integer "node_status_id"
     t.integer "cpus",                                                                        null: false
     t.integer "total_memory",                                                                null: false
     t.integer "total_swap",                                                                  null: false
@@ -660,6 +708,11 @@ ActiveRecord::Schema.define(version: 20160214135501) do
 
   create_table "sysconfig", primary_key: "cfg_name", force: true do |t|
     t.text "cfg_value"
+  end
+
+  create_table "testik", force: true do |t|
+    t.integer "val",     null: false
+    t.integer "sum_val", null: false
   end
 
   create_table "tmp_sysconfig", primary_key: "cfg_name", force: true do |t|
@@ -829,7 +882,6 @@ ActiveRecord::Schema.define(version: 20160214135501) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.boolean  "manage_hostname",                          default: true,  null: false
-    t.integer  "vps_status_id"
   end
 
   add_index "vps", ["m_id"], name: "index_vps_on_m_id", using: :btree
@@ -846,6 +898,43 @@ ActiveRecord::Schema.define(version: 20160214135501) do
   end
 
   add_index "vps_console", ["token"], name: "index_vps_console_on_token", unique: true, using: :btree
+
+  create_table "vps_current_statuses", force: true do |t|
+    t.integer  "vps_id",                       null: false
+    t.boolean  "status",                       null: false
+    t.boolean  "is_running",                   null: false
+    t.integer  "uptime"
+    t.integer  "cpus"
+    t.integer  "total_memory"
+    t.integer  "total_swap"
+    t.integer  "update_count",                 null: false
+    t.integer  "process_count"
+    t.float    "cpu_user",          limit: 24
+    t.float    "cpu_nice",          limit: 24
+    t.float    "cpu_system",        limit: 24
+    t.float    "cpu_idle",          limit: 24
+    t.float    "cpu_iowait",        limit: 24
+    t.float    "cpu_irq",           limit: 24
+    t.float    "cpu_softirq",       limit: 24
+    t.float    "loadavg",           limit: 24
+    t.integer  "used_memory"
+    t.integer  "used_swap"
+    t.integer  "sum_process_count"
+    t.float    "sum_cpu_user",      limit: 24
+    t.float    "sum_cpu_nice",      limit: 24
+    t.float    "sum_cpu_system",    limit: 24
+    t.float    "sum_cpu_idle",      limit: 24
+    t.float    "sum_cpu_iowait",    limit: 24
+    t.float    "sum_cpu_irq",       limit: 24
+    t.float    "sum_cpu_softirq",   limit: 24
+    t.float    "sum_loadavg",       limit: 24
+    t.integer  "sum_used_memory"
+    t.integer  "sum_used_swap"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "vps_current_statuses", ["vps_id"], name: "index_vps_current_statuses_on_vps_id", unique: true, using: :btree
 
   create_table "vps_features", force: true do |t|
     t.integer  "vps_id",     null: false
@@ -930,7 +1019,6 @@ ActiveRecord::Schema.define(version: 20160214135501) do
     t.integer  "total_swap"
     t.integer  "used_swap"
     t.datetime "created_at"
-    t.datetime "updated_at"
   end
 
   add_index "vps_statuses", ["vps_id"], name: "index_vps_statuses_on_vps_id", using: :btree

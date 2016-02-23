@@ -11,7 +11,7 @@ class Node < ActiveRecord::Base
   has_many :vps_mounts, foreign_key: :server_id
   has_many :port_reservations
   has_many :node_statuses, dependent: :destroy
-  belongs_to :node_status
+  has_one :node_current_status
 
   has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
 
@@ -67,7 +67,7 @@ class Node < ActiveRecord::Base
   def self.pick_by_env(env, location = nil, except = nil)
     q = self.joins('
           LEFT JOIN vps ON vps.vps_server = servers.server_id
-          LEFT JOIN vps_statuses st ON st.id = vps.vps_status_id
+          LEFT JOIN vps_current_statuses st ON st.vps_id = vps.vps_id
           INNER JOIN locations ON locations.location_id = servers.server_location
         ').where('
           (st.is_running = 1 OR st.is_running IS NULL)
@@ -109,7 +109,7 @@ class Node < ActiveRecord::Base
   def self.pick_by_location(loc)
     n = self.joins('
         LEFT JOIN vps ON vps.vps_server = servers.server_id
-        LEFT JOIN vps_statuses st ON st.id = vps.vps_status_id
+        LEFT JOIN vps_current_statuses st ON st.vps_id = vps.vps_id
         INNER JOIN locations l ON server_location = location_id
       ').where('
         (st.is_running = 1 OR st.is_running IS NULL)
@@ -133,15 +133,20 @@ class Node < ActiveRecord::Base
   end
 
   def self.first_available
-    return self.joins(:node_status).order('node_statuses.created_at DESC').take!
+    return self.joins(:node_current_status)
+        .order('node_current_statuses.created_at DESC')
+        .take!
   end
 
   def status
-    (node_status && ((Time.now.utc.to_i - node_status.created_at.to_i) <= 150)) || false
+    (node_current_status && \
+     ((Time.now.utc.to_i - node_current_status.created_at.to_i) <= 150)
+    ) || false
   end
 
   def last_report
-    node_status && node_status.created_at
+    return unless node_current_status
+    node_current_status.updated_at || node_current_status.created_at
   end
 
   def domain_name
@@ -149,11 +154,15 @@ class Node < ActiveRecord::Base
   end
 
   def vps_running
-    vpses.joins(:vps_status).where(vps_statuses: {is_running: true}).count
+    vpses.joins(:vps_current_status).where(
+        vps_current_statuses: {is_running: true}
+    ).count
   end
 
   def vps_stopped
-    vpses.joins(:vps_status).where(vps_statuses: {is_running: false}).count
+    vpses.joins(:vps_current_status).where(
+        vps_current_statuses: {is_running: false}
+    ).count
   end
 
   def vps_deleted
@@ -177,16 +186,16 @@ class Node < ActiveRecord::Base
      arc_size arc_hitpercent kernel vpsadmind_version
   ).each do |attr|
     define_method(attr) do
-      node_status && node_status.send(attr)
+      node_current_status && node_current_status.send(attr)
     end
   end
 
   def daemon_version
-    node_status && node_status.vpsadmind_version
+    node_current_status && node_current_status.vpsadmind_version
   end
 
   def kernel_version
-    node_status && node_status.kernel
+    node_current_status && node_current_status.kernel
   end
 
   def hypervisor?
