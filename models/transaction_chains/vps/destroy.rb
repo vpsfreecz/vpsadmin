@@ -28,6 +28,7 @@ module TransactionChains
       # Destroy VPS
       append(Transactions::Vps::Destroy, args: vps) do
         resources.each { |r| destroy(r) }
+        destroy(vps.vps_current_status)
       end
 
       # Destroy underlying dataset
@@ -41,7 +42,6 @@ module TransactionChains
 
       # Note: there are too many records to delete them using transaction confirmations.
       # All VPS statuses are deleted whether the chain is successful or not.
-      vps.update!(vps_status: nil)
       vps.vps_statuses.delete_all
     end
   end
