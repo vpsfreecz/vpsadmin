@@ -92,6 +92,7 @@ function list_user_sessions($user_id) {
 	$xtpl->table_tr();
 	
 	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
+	$xtpl->form_add_input(_("Exact ID").':', 'text', '40', 'session_id', get_val('session_id', ''), '');
 	$xtpl->form_add_input(_("Authentication type").':', 'text', '40', 'auth_type', get_val('auth_type', ''), '');
 	$xtpl->form_add_input(_("IP Address").':', 'text', '40', 'ip_addr', get_val('ip_addr', ''), '');
 	$xtpl->form_add_input(_("User agent").':', 'text', '40', 'user_agent', get_val('user_agent', ''), '');
@@ -126,8 +127,11 @@ function list_user_sessions($user_id) {
 
 	if ($_SESSION['is_admin'])
 		$params['meta'] = array('includes' => 'admin');
-	
-	$sessions = $api->user_session->list($params);
+
+	if ($_GET['session_id'])
+		$sessions = array( $api->user_session->show($_GET['session_id']));
+	else
+		$sessions = $api->user_session->list($params);
 
 	$xtpl->table_add_category(_("Created at"));
 	$xtpl->table_add_category(_("Last request at"));
