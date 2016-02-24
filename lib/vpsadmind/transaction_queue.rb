@@ -10,10 +10,12 @@ module VpsAdmind
         @q << nil
       end
 
-      def down
-        @q.pop
+      def down(non_block = false)
+        @q.pop(non_block)
       end
     end
+
+    include Utils::Log
 
     def initialize(name, start_time)
       @name = name
@@ -29,7 +31,16 @@ module VpsAdmind
         return false
       end
 
-      @sem.down unless has_reservation?(cmd.chain_id)
+      unless has_reservation?(cmd.chain_id)
+        begin
+          @sem.down(true)
+
+        rescue ThreadError
+          log(:info, :queue, 'Prevented deadlock')
+          return false
+        end
+      end
+
       @workers[cmd.chain_id] = Worker.new(cmd)
     end
 
