@@ -114,6 +114,7 @@ class AverageContinuousResourceTracking < ActiveRecord::Migration
               AVG(cpu_idle), AVG(cpu_iowait), AVG(cpu_irq), AVG(cpu_softirq),
               AVG(loadavg), AVG(used_memory), AVG(used_swap), created_at
             FROM vps_statuses
+            WHERE status = 1
             GROUP BY vps_id, DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00')
             "
         )
