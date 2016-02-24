@@ -46,7 +46,7 @@ module VpsAdmin::API::Resources
         )
 
         if input[:dataset]
-          q = q..joins(snapshot: [:dataset]).where(datasets: {id: input[:dataset].id})
+          q = q.joins(snapshot: [:dataset]).where(datasets: {id: input[:dataset].id})
         end
 
         q
