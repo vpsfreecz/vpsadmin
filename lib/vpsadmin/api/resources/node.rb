@@ -187,6 +187,8 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       datetime :last_report, label: 'Last report'
       integer :vps_count, label: 'VPS count', db_name: :vps_running
       integer :vps_free, label: 'Free VPS slots'
+      string :kernel, label: 'Kernel'
+      float :cpu_idle, label: 'CPU idle'
     end
 
     output(&VpsAdmin::API::Maintainable::Action.output_params)
@@ -352,7 +354,6 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     params(:all) do
       id :id
-      bool :status
       integer :uptime, label: 'Uptime'
       float :loadavg
       integer :process_count, label: 'Process count'
