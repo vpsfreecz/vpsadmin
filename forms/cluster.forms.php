@@ -106,10 +106,7 @@ function node_overview() {
 		$xtpl->table_td($node->version, false, true);
 		
 		// Kernel
-		if(preg_match("/\d+stab.+/",$node->kernel, $matches))
-			$xtpl->table_td($matches[0]);
-		else
-			$xtpl->table_td($node->kernel);
+		$xtpl->table_td(kernel_version($node->version));
 		
 		$xtpl->table_td(maintenance_lock_icon('node', $node));
 		
