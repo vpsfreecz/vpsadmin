@@ -68,12 +68,14 @@ $xtpl->table_out();
 $xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
-$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
+$xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
+$xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
 
 $xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
-$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
+$xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
+$xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_tr();
 
 $sql = 'SELECT * FROM servers ORDER BY server_location,server_id';
@@ -98,12 +100,14 @@ foreach ($nodes as $node) {
 		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		
 		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("Free"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_tr(true);
 		
 		
@@ -138,7 +142,8 @@ foreach ($nodes as $node) {
 	
 	$xtpl->table_td($node->name);
 	$xtpl->table_td($node->vps_count, false, true);
-	$xtpl->table_td($node->vps_free, false, true);
+	$xtpl->table_td(sprintf('%.2f %%', 100.0 - $node->cpu_idle), false, true);
+	$xtpl->table_td(kernel_version($node->kernel), false, true);
 	
 	$position++;
 	if ($position == 3) {
