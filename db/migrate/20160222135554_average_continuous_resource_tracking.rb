@@ -46,7 +46,7 @@ class AverageContinuousResourceTracking < ActiveRecord::Migration
       t.integer      :total_memory,      null: true
       t.integer      :total_swap,        null: true
       t.string       :vpsadmind_version, null: false, limit: 25
-      t.string       :kernel,            null: false, limit: 25
+      t.string       :kernel,            null: false, limit: 30
       t.integer      :update_count,      null: false
       
       t.integer      :process_count,     null: true
@@ -95,6 +95,8 @@ class AverageContinuousResourceTracking < ActiveRecord::Migration
 
     reversible do |dir|
       dir.up do
+        change_column :node_statuses, :kernel, :string, null: false, limit: 30
+
         # Filter VPS statuses - keep hourly history
         ActiveRecord::Base.connection.execute(
             "CREATE TABLE vps_statuses_new LIKE vps_statuses"
@@ -171,6 +173,10 @@ class AverageContinuousResourceTracking < ActiveRecord::Migration
 
         drop_table :dataset_property_histories
         rename_table :dataset_property_histories_new, :dataset_property_histories
+      end
+
+      dir.down do
+        change_column :node_statuses, :kernel, :string, null: false, limit: 25
       end
     end
   end

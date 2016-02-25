@@ -490,7 +490,7 @@ ActiveRecord::Schema.define(version: 20160222135554) do
     t.integer  "total_memory"
     t.integer  "total_swap"
     t.string   "vpsadmind_version",  limit: 25, null: false
-    t.string   "kernel",             limit: 25, null: false
+    t.string   "kernel",             limit: 30, null: false
     t.integer  "update_count",                  null: false
     t.integer  "process_count"
     t.float    "cpu_user",           limit: 24
@@ -559,7 +559,7 @@ ActiveRecord::Schema.define(version: 20160222135554) do
     t.float    "arc_hitpercent",    limit: 24
     t.float    "loadavg",           limit: 24, null: false
     t.string   "vpsadmind_version", limit: 25, null: false
-    t.string   "kernel",            limit: 25, null: false
+    t.string   "kernel",            limit: 30, null: false
     t.datetime "created_at"
   end
 
