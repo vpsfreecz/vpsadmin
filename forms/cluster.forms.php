@@ -106,7 +106,7 @@ function node_overview() {
 		$xtpl->table_td($node->version, false, true);
 		
 		// Kernel
-		$xtpl->table_td(kernel_version($node->version));
+		$xtpl->table_td(kernel_version($node->kernel));
 		
 		$xtpl->table_td(maintenance_lock_icon('node', $node));
 		
