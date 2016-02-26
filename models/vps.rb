@@ -164,7 +164,8 @@ class Vps < ActiveRecord::Base
       if !ip.user_id && ::IpAddress.where(
             user: self.user,
             vps: nil,
-            ip_location: node.server_location
+            ip_location: node.server_location,
+            ip_v: ip.ip_v,
       ).exists?
         raise VpsAdmin::API::Exceptions::IpAddressNotOwned
       end
