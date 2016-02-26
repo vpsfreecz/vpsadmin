@@ -55,7 +55,16 @@ function get_free_ip_list ($v = 4, $vps, $limit = null) {
 	}
 	
 	foreach($api->ip_address->list($filters) as $ip) {
-		$ret[$ip->id] = $ip->addr . ($ip->user_id == $vps->user_id ? ' (owned)' : '');
+		$note = '';
+		
+		if ($ip->user_id) {
+			if ($ip->user_id == $vps->user_id)
+				$note = '(owned)';
+			else
+				$note = '(owned by '.$ip->user->login.')';
+		}
+
+		$ret[$ip->id] = $ip->addr . " $note";
 	}
 	
 	return $ret;
