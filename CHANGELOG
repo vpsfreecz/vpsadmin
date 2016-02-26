@@ -7,6 +7,8 @@
 - New resources `Vps.Status`, `Node.Status` and `Dataset.PropertyHistory`
 - New resources `MigrationPlan` and `MigrationPlan.VpsMigration`
 - New resource `Vps.OutageWindow`
+- New resource `ObjectHistory`
+- `Node.PublicStatus` has new parameters `kernel` and `cpu_idle`
 - New rake task `vpsadmin:vps:migration:run_plans`
 - Optionally notify users about VPS migrations via e-mail
 - Tracking user's actions using `ObjectHistory`, used for `Vps`
