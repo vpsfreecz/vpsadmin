@@ -142,7 +142,12 @@ foreach ($nodes as $node) {
 	
 	$xtpl->table_td($node->name);
 	$xtpl->table_td($node->vps_count, false, true);
-	$xtpl->table_td(sprintf('%.2f %%', 100.0 - $node->cpu_idle), false, true);
+
+	if ($node->cpu_idle === null)
+		$xtpl->table_td('---', false, true);
+	else
+		$xtpl->table_td(sprintf('%.2f %%', 100.0 - $node->cpu_idle), false, true);
+
 	$xtpl->table_td(kernel_version($node->kernel), false, true);
 	
 	$position++;
