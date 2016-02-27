@@ -12,6 +12,8 @@ class SnapshotDownload < ActiveRecord::Base
                         enter: TransactionChains::Dataset::RemoveDownload
                     }
 
+  enum format: %i(archive stream)
+
   def self.base_url
     return @base_url if @base_url
     @base_url = ::SysConfig.get('snapshot_download_base_url')

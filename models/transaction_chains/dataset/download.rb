@@ -2,7 +2,7 @@ module TransactionChains
   class Dataset::Download < ::TransactionChain
     label 'Download'
 
-    def link_chain(snapshot)
+    def link_chain(snapshot, format)
       primary, backup = snap_in_pools(snapshot)
       sip = backup || primary
       fail 'snapshot is nowhere to be found!' unless sip
@@ -16,7 +16,8 @@ module TransactionChains
           snapshot: snapshot,
           pool: sip.dataset_in_pool.pool,
           secret_key: generate_key,
-          file_name: "#{sip.dataset_in_pool.dataset.full_name.gsub(/\//, '_')}__#{snapshot.name.gsub(/:/, '-')}.tar.gz",
+          format: format,
+          file_name: filename(sip, format),
           expiration_date: Time.now + 7 * 24 * 60 * 60,
           confirmed: ::SnapshotDownload.confirmed(:confirm_create)
       )
@@ -34,7 +35,11 @@ module TransactionChains
         retry
       end
 
-      append(Transactions::Storage::DownloadSnapshot, args: [dl, sip]) do
+      append(
+          Transactions::Storage::DownloadSnapshot,
+          args: [dl, sip, format],
+          queue: format == :stream ? :zfs_send : nil,
+      ) do
         create(dl)
         edit(snapshot, snapshot_download_id: dl.id)
       end
@@ -67,6 +72,21 @@ module TransactionChains
       end
 
       [pr, bc]
+    end
+
+    def filename(sip, format)
+      base = "#{sip.dataset_in_pool.dataset.full_name.gsub(/\//, '_')}__#{sip.snapshot.name.gsub(/:/, '-')}"
+      
+      case format
+      when :archive
+        "#{base}.tar.gz"
+      
+      when :stream
+        "#{base}.dat.gz"
+
+      else
+        fail "unsupported format '#{format}'"
+      end
     end
 
     def generate_key

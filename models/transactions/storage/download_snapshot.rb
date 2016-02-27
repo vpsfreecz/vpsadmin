@@ -3,7 +3,7 @@ module Transactions::Storage
     t_name :storage_download_snapshot
     t_type 5004
 
-    def params(dl, snapshot_in_pool)
+    def params(dl, snapshot_in_pool, format)
       self.t_server = dl.pool.node_id
 
       ret = {
@@ -12,7 +12,8 @@ module Transactions::Storage
           snapshot: snapshot_in_pool.snapshot.name,
           secret_key: dl.secret_key,
           file_name: dl.file_name,
-          download_id: dl.id
+          format: format,
+          download_id: dl.id,
       }
 
       if snapshot_in_pool.dataset_in_pool.pool.role == 'backup'

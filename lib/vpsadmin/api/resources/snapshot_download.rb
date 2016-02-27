@@ -5,7 +5,9 @@ module VpsAdmin::API::Resources
 
     params(:input) do
       resource VpsAdmin::API::Resources::Dataset::Snapshot, label: 'Snapshot',
-               value_label: :created_at
+          value_label: :created_at, required: true
+      string :format, choices: ::SnapshotDownload.formats.keys, default: 'archive',
+          fill: true
     end
 
     params(:filters) do
@@ -107,7 +109,7 @@ module VpsAdmin::API::Resources
           error('this snapshot has already been made available for download')
         end
 
-        snap.download
+        snap.download(input[:format].to_sym)
       end
     end
 

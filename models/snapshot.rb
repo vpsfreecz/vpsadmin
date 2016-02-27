@@ -11,8 +11,8 @@ class Snapshot < ActiveRecord::Base
     TransactionChains::Snapshot::Destroy.fire(self)
   end
 
-  def download
-    TransactionChains::Dataset::Download.fire(self)
+  def download(format)
+    TransactionChains::Dataset::Download.fire(self, format)
   end
 
   def mount

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160222135554) do
+ActiveRecord::Schema.define(version: 20160224195110) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -669,6 +669,7 @@ ActiveRecord::Schema.define(version: 20160222135554) do
     t.integer  "object_state",                            null: false
     t.datetime "expiration_date"
     t.integer  "size"
+    t.integer  "format",                      default: 0, null: false
   end
 
   add_index "snapshot_downloads", ["secret_key"], name: "index_snapshot_downloads_on_secret_key", unique: true, using: :btree
