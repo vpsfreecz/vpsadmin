@@ -189,6 +189,7 @@ class TransactionChain < ActiveRecord::Base
   # @option opts [Integer] prio
   # @option opts [Symbol] name
   # @option opts [Symbol] reversible one of :is_reversible, :not_reversible, :keep_going
+  # @option opts [Symbol] queue
   def append(klass, opts = {}, &block)
     do_append(@last_id, klass, opts, block)
   end
@@ -208,6 +209,7 @@ class TransactionChain < ActiveRecord::Base
   # @option opts [Integer] prio
   # @option opts [Symbol] name
   # @option opts [Symbol] reversible one of :is_reversible, :not_reversible, :keep_going
+  # @option opts [Symbol] queue
   # @see TransactionChain#append_t
   def append_to(dep_name, klass, opts = {}, &block)
     do_append(@named[dep_name], klass, opts, block)
@@ -224,6 +226,7 @@ class TransactionChain < ActiveRecord::Base
   # @option opts [Integer] prio
   # @option opts [Symbol] name
   # @option opts [Symbol] reversible one of :is_reversible, :not_reversible, :keep_going
+  # @option opts [Symbol] queue
   def append_t(klass, opts = {}, &block)
     do_append(@last_id, klass, opts, block, true)
   end
@@ -332,6 +335,7 @@ class TransactionChain < ActiveRecord::Base
   # @option opts [Integer] prio
   # @option opts [Symbol] name
   # @option opts [Symbol] reversible one of :is_reversible, :not_reversible, :keep_going
+  # @option opts [Symbol] queue
   # @param retain_context [Boolean]
   def do_append(dep, klass, opts, block, retain_context = false)
     t_opts = {
@@ -339,6 +343,7 @@ class TransactionChain < ActiveRecord::Base
         urgent: opts[:urgent].nil? ? self.urgent : opts[:urgent],
         prio: opts[:prio] || self.prio,
         reversible: opts[:reversible] || self.reversible,
+        queue: opts[:queue],
         retain_context: retain_context,
     }
 

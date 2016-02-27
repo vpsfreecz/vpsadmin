@@ -83,13 +83,14 @@ class Transaction < ActiveRecord::Base
   # @option opts [Integer] prio
   # @option opts [Boolean] retain_context
   # @option opts [Symbol] reversible one of :is_reversible, :not_reversible, :keep_going
+  # @option opts [Symbol] queue
   def self.fire_chained(chain, dep, opts, &block)
     t = new
 
     t.transaction_chain = chain
     t.t_depends_on = dep
     t.t_type = t.class.t_type if t.class.t_type
-    t.queue = (t.class.queue || 'general').to_s
+    t.queue = (opts[:queue] || t.class.queue || 'general').to_s
     t.t_urgent = opts[:urgent]
     t.t_priority = opts[:prio] || 0
 
