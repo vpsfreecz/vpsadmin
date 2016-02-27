@@ -6,14 +6,10 @@ module VpsAdmind
     def exec
       ds = "#{@pool_fs}/#{@dataset_name}"
       ds += "/#{@tree}/#{@branch}" if @tree
-
-      # On ZoL, snapshots in .zfs are mounted using automounts, so for tar
-      # to work properly, it must be accessed before, so that it is already mounted
-      # when tar is launched.
-      Dir.entries("/#{ds}/.zfs/snapshot/#{@snapshot}")
-
+      
       syscmd("#{$CFG.get(:bin, :mkdir)} \"#{secret_dir_path}\"")
-      syscmd("#{$CFG.get(:bin, :tar)} -czf \"#{file_path}\" -C \"/#{ds}/.zfs/snapshot\" \"#{@snapshot}\"")
+      
+      method(@format).call(ds)
 
       @size = File.size(file_path)
       ok
@@ -33,8 +29,17 @@ module VpsAdmind
     end
 
     protected
-    def snapshot_path
+    def archive(ds)
+      # On ZoL, snapshots in .zfs are mounted using automounts, so for tar
+      # to work properly, it must be accessed before, so that it is already mounted
+      # when tar is launched.
+      Dir.entries("/#{ds}/.zfs/snapshot/#{@snapshot}")
 
+      syscmd("#{$CFG.get(:bin, :tar)} -czf \"#{file_path}\" -C \"/#{ds}/.zfs/snapshot\" \"#{@snapshot}\"")
+    end
+
+    def stream(ds)
+      syscmd("zfs send #{ds}@#{@snapshot} | gzip > #{file_path}")
     end
 
     def secret_dir_path
