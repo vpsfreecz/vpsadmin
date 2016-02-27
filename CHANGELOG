@@ -13,6 +13,8 @@
 - New queues `outage` and `queue`
 - Queue slot reservation mechanism
 - Fixed issue that remote status changed transaction's start time
+- `Vps::Stop` ensures that the VPS is unmounted
+- Storage status is updated hourly by default
 
 * Sat Jan 23 2016 - version 2.1.0
 - VPS console:
