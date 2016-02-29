@@ -3,6 +3,10 @@
 - Configuration of VPS outage windows
 - Cluster overview features uptime, cpu %iowait, %idle, free memory and ARC
   stats
+- Link to backups from VPS details
+- Fix diskspace information in VPS list
+- Browse object history
+- Show CPU usage and kernel version on index page
 
 * Sat Jan 23 2016 - version 2.1.0
 - Remove playground setting for users
