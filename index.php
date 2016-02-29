@@ -46,6 +46,7 @@ include WWW_ROOT.'forms/dataset.forms.php';
 include WWW_ROOT.'forms/vps.forms.php';
 include WWW_ROOT.'forms/users.forms.php';
 include WWW_ROOT.'forms/lifetimes.forms.php';
+include WWW_ROOT.'forms/object_history.forms.php';
 
 include WWW_ROOT.'lib/gettext_stream.lib.php';
 include WWW_ROOT.'lib/gettext_inc.lib.php';
@@ -157,6 +158,9 @@ try {
 				break;
 			case 'lifetimes':
 				include WWW_ROOT.'pages/page_lifetimes.php';
+				break;
+			case 'history':
+				include WWW_ROOT.'pages/page_history.php';
 				break;
 			default:
 				include WWW_ROOT.'pages/page_index.php';
