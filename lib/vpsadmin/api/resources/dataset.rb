@@ -16,6 +16,7 @@ module VpsAdmin::API::Resources
           desc: 'Dataset owner'
       resource Environment, label: 'Environment',
                desc: 'The environment in which the dataset is'
+      integer :current_history_id
     end
 
     params(:all_properties) do
@@ -305,6 +306,7 @@ module VpsAdmin::API::Resources
         id :id
         resource Dataset, value_label: :name
         datetime :created_at # FIXME: this is not correct creation time
+        integer :history_id
         resource VPS::Mount, value_label: :mountpoint
       end
 

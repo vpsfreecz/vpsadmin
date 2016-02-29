@@ -31,7 +31,10 @@ module TransactionChains
       append(Transactions::Storage::CreateDataset, args: [
           vps.dataset_in_pool,
           vps.dataset_in_pool.refquota ? {refquota: vps.dataset_in_pool.refquota} : nil
-      ])
+      ]) do
+        # FIXME: would be nicer to put this into confirmation of DatasetInPool::Destroy
+        increment(vps.dataset_in_pool.dataset, 'current_history_id')
+      end
 
       # Create VPS
       vps.os_template = template

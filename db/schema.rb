@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160224195110) do
+ActiveRecord::Schema.define(version: 20160229081009) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -164,18 +164,19 @@ ActiveRecord::Schema.define(version: 20160224195110) do
   add_index "dataset_trees", ["dataset_in_pool_id"], name: "index_dataset_trees_on_dataset_in_pool_id", using: :btree
 
   create_table "datasets", force: true do |t|
-    t.string   "name",                                     null: false
-    t.string   "full_name",       limit: 1000,             null: false
+    t.string   "name",                                        null: false
+    t.string   "full_name",          limit: 1000,             null: false
     t.integer  "user_id"
-    t.boolean  "user_editable",                            null: false
-    t.boolean  "user_create",                              null: false
-    t.boolean  "user_destroy",                             null: false
+    t.boolean  "user_editable",                               null: false
+    t.boolean  "user_create",                                 null: false
+    t.boolean  "user_destroy",                                null: false
     t.string   "ancestry"
-    t.integer  "ancestry_depth",               default: 0, null: false
+    t.integer  "ancestry_depth",                  default: 0, null: false
     t.datetime "expiration"
-    t.integer  "confirmed",                    default: 0, null: false
-    t.integer  "object_state",                             null: false
+    t.integer  "confirmed",                       default: 0, null: false
+    t.integer  "object_state",                                null: false
     t.datetime "expiration_date"
+    t.integer  "current_history_id",              default: 0, null: false
   end
 
   add_index "datasets", ["ancestry"], name: "index_datasets_on_ancestry", using: :btree
@@ -703,6 +704,7 @@ ActiveRecord::Schema.define(version: 20160224195110) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer  "snapshot_download_id"
+    t.integer  "history_id",           default: 0, null: false
   end
 
   add_index "snapshots", ["dataset_id"], name: "index_snapshots_on_dataset_id", using: :btree

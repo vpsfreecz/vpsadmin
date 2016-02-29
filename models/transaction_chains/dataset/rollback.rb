@@ -189,10 +189,14 @@ module TransactionChains
             edit(old_head, head: false) if old_head
 
             create(head)
+            
+            new_history_id = dataset_in_pool.dataset.current_history_id + 1
+            edit(dataset_in_pool.dataset, current_history_id: new_history_id)
 
             # Move older or equal SnapshotInPoolInBranches from old branch to the new branch
             old_branch.snapshot_in_pool_in_branches.where('snapshot_in_pool_id <= ?', snap_in_pool.id).each do |s|
               edit(s, branch_id: head.id)
+              edit(s.snapshot_in_pool.snapshot, history_id: new_history_id)
             end
 
             i = 0
