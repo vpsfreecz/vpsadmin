@@ -42,6 +42,10 @@ module VpsAdmind
       syscmd("zfs send #{ds}@#{@snapshot} | gzip > #{file_path}")
     end
 
+    def incremental_stream(ds)
+      syscmd("zfs send -I @#{@from_snapshot} #{ds}@#{@snapshot} | gzip > #{file_path}")
+    end
+
     def secret_dir_path
       "/#{@pool_fs}/#{path_to_pool_working_dir(:download)}/#{@secret_key}"
     end
