@@ -11,8 +11,13 @@ class Snapshot < ActiveRecord::Base
     TransactionChains::Snapshot::Destroy.fire(self)
   end
 
-  def download(format)
-    TransactionChains::Dataset::Download.fire(self, format)
+  def download(format, from_snapshot = nil)
+    if format == :incremental_stream
+      TransactionChains::Dataset::IncrementalDownload.fire(self, format, from_snapshot)
+
+    else
+      TransactionChains::Dataset::FullDownload.fire(self, format)
+    end
   end
 
   def mount

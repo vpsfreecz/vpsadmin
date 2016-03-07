@@ -1,26 +1,22 @@
 module TransactionChains
-  class Dataset::Download < ::TransactionChain
+  class Dataset::BaseDownload < ::TransactionChain
     label 'Download'
 
-    def link_chain(snapshot, format)
-      primary, backup = snap_in_pools(snapshot)
-      sip = backup || primary
-      fail 'snapshot is nowhere to be found!' unless sip
-
-      lock(sip)
-      lock(sip.dataset_in_pool)
+    def link_chain(snapshot, format, from_snapshot = nil)
       concerns(:affect, [snapshot.class.name, snapshot.id])
 
       dl = ::SnapshotDownload.new(
           user: ::User.current,
           snapshot: snapshot,
-          pool: sip.dataset_in_pool.pool,
+          from_snapshot: from_snapshot,
           secret_key: generate_key,
           format: format,
-          file_name: filename(sip, format),
+          file_name: filename(snapshot, format, from_snapshot),
           expiration_date: Time.now + 7 * 24 * 60 * 60,
           confirmed: ::SnapshotDownload.confirmed(:confirm_create)
       )
+
+      download(dl)
 
       tries = 0
 
@@ -37,7 +33,7 @@ module TransactionChains
 
       append(
           Transactions::Storage::DownloadSnapshot,
-          args: [dl, sip, format],
+          args: dl,
           queue: format == :stream ? :zfs_send : nil,
       ) do
         create(dl)
@@ -55,27 +51,13 @@ module TransactionChains
     end
 
     protected
-    def snap_in_pools(snapshot)
-      pr = bc = nil
-
-      snapshot.snapshot_in_pools
-          .includes(dataset_in_pool: [:pool])
-          .joins(dataset_in_pool: [:pool])
-          .all.group('pools.role').each do |sip|
-        case sip.dataset_in_pool.pool.role.to_sym
-          when :hypervisor, :primary
-            pr = sip
-
-          when :backup
-            bc = sip
-        end
-      end
-
-      [pr, bc]
+    def download(dl)
+      raise NotImplementedError
     end
 
-    def filename(sip, format)
-      base = "#{sip.dataset_in_pool.dataset.full_name.gsub(/\//, '_')}__#{sip.snapshot.name.gsub(/:/, '-')}"
+    def filename(snapshot, format, from_snapshot)
+      ds = snapshot.dataset.full_name.gsub(/\//, '_')
+      base = "#{ds}__#{snapshot.name.gsub(/:/, '-')}"
       
       case format
       when :archive
@@ -83,6 +65,9 @@ module TransactionChains
       
       when :stream
         "#{base}.dat.gz"
+
+      when :incremental_stream
+        "#{ds}__#{from_snapshot.name.gsub(/:/, '-')}__#{snapshot.name.gsub(/:/, '-')}.inc.dat.gz"
 
       else
         fail "unsupported format '#{format}'"

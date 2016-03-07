@@ -6,6 +6,8 @@ module VpsAdmin::API::Resources
     params(:input) do
       resource VpsAdmin::API::Resources::Dataset::Snapshot, label: 'Snapshot',
           value_label: :created_at, required: true
+      resource VpsAdmin::API::Resources::Dataset::Snapshot, name: :from_snapshot,
+          label: 'From snapshot', value_label: :created_at
       string :format, choices: ::SnapshotDownload.formats.keys, default: 'archive',
           fill: true
     end
@@ -109,7 +111,23 @@ module VpsAdmin::API::Resources
           error('this snapshot has already been made available for download')
         end
 
-        snap.download(input[:format].to_sym)
+        if input[:format] == 'incremental_stream'
+          error('from_snapshot is required') if !input[:from_snapshot]
+
+        elsif input[:from_snapshot]
+          error('from_snapshot is for incremental_stream format only')
+        end
+
+        if input[:from_snapshot]
+          if input[:snapshot].history_id != input[:from_snapshot].history_id
+            error('snapshot and snapshot2 must share the same history identifier')
+
+          elsif input[:from_snapshot].created_at > input[:snapshot].created_at
+            error('from_snapshot must precede snapshot')
+          end
+        end
+
+        snap.download(input[:format].to_sym, input[:from_snapshot])
       end
     end
 

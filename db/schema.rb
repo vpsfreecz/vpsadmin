@@ -659,18 +659,19 @@ ActiveRecord::Schema.define(version: 20160229081009) do
   add_index "servers", ["server_location"], name: "server_location", using: :btree
 
   create_table "snapshot_downloads", force: true do |t|
-    t.integer  "user_id",                                 null: false
+    t.integer  "user_id",                                  null: false
     t.integer  "snapshot_id"
-    t.integer  "pool_id",                                 null: false
-    t.string   "secret_key",      limit: 100,             null: false
-    t.string   "file_name",                               null: false
-    t.integer  "confirmed",                   default: 0, null: false
+    t.integer  "pool_id",                                  null: false
+    t.string   "secret_key",       limit: 100,             null: false
+    t.string   "file_name",                                null: false
+    t.integer  "confirmed",                    default: 0, null: false
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "object_state",                            null: false
+    t.integer  "object_state",                             null: false
     t.datetime "expiration_date"
     t.integer  "size"
-    t.integer  "format",                      default: 0, null: false
+    t.integer  "format",                       default: 0, null: false
+    t.integer  "from_snapshot_id"
   end
 
   add_index "snapshot_downloads", ["secret_key"], name: "index_snapshot_downloads_on_secret_key", unique: true, using: :btree
