@@ -2,16 +2,20 @@ module TransactionChains
   class Dataset::BaseDownload < ::TransactionChain
     label 'Download'
 
-    def link_chain(snapshot, format, from_snapshot = nil)
+    # @param opts [Hash]
+    # @option opts [Symbol] format
+    # @option opts [Snapshot] from_snapshot
+    # @option opts [Boolean] send_mail
+    def link_chain(snapshot, opts)
       concerns(:affect, [snapshot.class.name, snapshot.id])
 
       dl = ::SnapshotDownload.new(
           user: ::User.current,
           snapshot: snapshot,
-          from_snapshot: from_snapshot,
+          from_snapshot: opts[:from_snapshot],
           secret_key: generate_key,
-          format: format,
-          file_name: filename(snapshot, format, from_snapshot),
+          format: opts[:format],
+          file_name: filename(snapshot, opts[:format], opts[:from_snapshot]),
           expiration_date: Time.now + 7 * 24 * 60 * 60,
           confirmed: ::SnapshotDownload.confirmed(:confirm_create)
       )
@@ -34,7 +38,7 @@ module TransactionChains
       append(
           Transactions::Storage::DownloadSnapshot,
           args: dl,
-          queue: format == :stream ? :zfs_send : nil,
+          queue: opts[:format] == :stream ? :zfs_send : nil,
       ) do
         create(dl)
         edit(snapshot, snapshot_download_id: dl.id)
@@ -45,7 +49,7 @@ module TransactionChains
           vars: {
               dl: dl
           }
-      })
+      }) if opts[:send_mail]
 
       dl
     end

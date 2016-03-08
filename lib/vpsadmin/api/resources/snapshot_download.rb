@@ -90,6 +90,7 @@ module VpsAdmin::API::Resources
 
       input do
         use :input
+        bool :send_mail, default: true, fill: true
       end
 
       output do
@@ -127,7 +128,11 @@ module VpsAdmin::API::Resources
           end
         end
 
-        snap.download(input[:format].to_sym, input[:from_snapshot])
+        snap.download(
+            format: input[:format].to_sym,
+            from_snapshot: input[:from_snapshot],
+            send_mail: input[:send_mail],
+        )
       end
     end
 

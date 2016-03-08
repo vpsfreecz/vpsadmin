@@ -11,12 +11,16 @@ class Snapshot < ActiveRecord::Base
     TransactionChains::Snapshot::Destroy.fire(self)
   end
 
-  def download(format, from_snapshot = nil)
-    if format == :incremental_stream
-      TransactionChains::Dataset::IncrementalDownload.fire(self, format, from_snapshot)
+  # @param opts [Hash]
+  # @option opts [Symbol] format
+  # @option opts [Snapshot] from_snapshot
+  # @option opts [Boolean] send_mail
+  def download(opts)
+    if opts[:format] == :incremental_stream
+      TransactionChains::Dataset::IncrementalDownload.fire(self, opts)
 
     else
-      TransactionChains::Dataset::FullDownload.fire(self, format)
+      TransactionChains::Dataset::FullDownload.fire(self, opts)
     end
   end
 
