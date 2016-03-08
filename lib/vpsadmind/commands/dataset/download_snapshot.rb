@@ -1,3 +1,5 @@
+require 'digest'
+
 module VpsAdmind
   class Commands::Dataset::DownloadSnapshot < Commands::Base
     handle 5004
@@ -12,13 +14,14 @@ module VpsAdmind
       method(@format).call(ds)
 
       @size = File.size(file_path)
+      @sum = Digest::SHA256.file(file_path).hexdigest
       ok
     end
 
     def post_save(db)
       db.prepared(
-          'UPDATE snapshot_downloads SET size = ? WHERE id = ?',
-          @size / 1024 / 1024, @download_id
+          'UPDATE snapshot_downloads SET size = ?, sha256sum = ? WHERE id = ?',
+          @size / 1024 / 1024, @sum, @download_id
       )
     end
 
