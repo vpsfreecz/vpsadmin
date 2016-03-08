@@ -1,5 +1,5 @@
 module VpsAdmin::CLI::Commands
-  class SnapshotDownload < HaveAPI::CLI::Command
+  class SnapshotDownload < BaseDownload
     cmd :snapshot, :download
     args 'SNAPSHOT_ID'
     desc 'Download a snapshot as an archive or a stream'
@@ -36,10 +36,15 @@ module VpsAdmin::CLI::Commands
       opts = @opts.clone
       opts[:snapshot] = args.first.to_i
 
-      dl = @api.snapshot_download.create(opts)
+      dl, created = find_or_create_dl(opts)
 
-      warn "The download is being prepared..."
-      sleep(5)
+      if created
+        warn "The download is being prepared..."
+        sleep(5)
+
+      else
+        warn "Reusing existing SnapshotDownload (id=#{dl.id})"
+      end
       
       f = File.open(dl.file_name, 'w')
 

@@ -1,7 +1,7 @@
 require 'zlib'
 
 module VpsAdmin::CLI::Commands
-  class SnapshotSend < HaveAPI::CLI::Command
+  class SnapshotSend < BaseDownload
     cmd :snapshot, :send
     args 'SNAPSHOT_ID'
     desc 'Download a snapshot stream and write it on stdout'
@@ -35,10 +35,15 @@ module VpsAdmin::CLI::Commands
       opts[:snapshot] = args.first.to_i
       opts[:format] = opts[:from_snapshot] ? :incremental_stream : :stream
 
-      dl = @api.snapshot_download.create(opts)
+      dl, created = find_or_create_dl(opts)
 
-      warn "The download is being prepared..."
-      sleep(5)
+      if created
+        warn "The download is being prepared..."
+        sleep(5)
+
+      else
+        warn "Reusing existing SnapshotDownload (id=#{dl.id})"
+      end
 
       r, w = IO.pipe
 
