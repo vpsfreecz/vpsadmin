@@ -22,6 +22,10 @@ module VpsAdmin::CLI::Commands
         @opts[:delete_after] = d
       end
 
+      opts.on('-o', '--output FILE', 'Save the download to FILE') do |f|
+        @opts[:file] = f
+      end
+
       opts.on('-s', '--[no-]send-mail', 'Send mail after the file for download is completed') do |s|
         @opts[:send_mail] = s
       end
@@ -45,11 +49,21 @@ module VpsAdmin::CLI::Commands
       else
         warn "Reusing existing SnapshotDownload (id=#{dl.id})"
       end
-      
-      f = File.open(dl.file_name, 'w')
+     
+      if @opts[:file] == '-'
+        f = STDOUT
+
+      else 
+        f = File.open(@opts[:file] || dl.file_name, 'w')
+      end
 
       begin
-        VpsAdmin::CLI::StreamDownloader.download(@api, dl, f)
+        VpsAdmin::CLI::StreamDownloader.download(
+            @api,
+            dl,
+            f,
+            progress: f == STDOUT ? STDERR : STDOUT
+        )
 
       rescue VpsAdmin::CLI::DownloadError => e
         warn e.message
