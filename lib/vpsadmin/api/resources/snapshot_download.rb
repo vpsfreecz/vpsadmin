@@ -23,6 +23,7 @@ module VpsAdmin::API::Resources
       string :file_name, label: 'File name'
       string :url, desc: 'URL at which the archive can be downloaded'
       integer :size, desc: 'Size of the archive in MiB'
+      string :sha256sum, desc: 'Control checksum'
       bool :ready, desc: 'True if the archive is complete and ready for download',
           db_name: :confirmed?
       datetime :expiration_date, label: 'Expiration date',
