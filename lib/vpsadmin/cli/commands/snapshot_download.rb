@@ -22,7 +22,7 @@ module VpsAdmin::CLI::Commands
         @opts[:delete_after] = d
       end
 
-      opts.on('-f', '--force', 'Overwrite existing files if necessary') do |f|
+      opts.on('-F', '--force', 'Overwrite existing files if necessary') do |f|
         @opts[:force] = f
       end
 
