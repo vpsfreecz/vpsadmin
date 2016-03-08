@@ -7,11 +7,16 @@ module VpsAdmin::CLI
   class DownloadError < StandardError ; end
 
   class StreamDownloader
-    def self.download(api, dl, io, progress: STDOUT)
-      downloaded = 0
+    def self.download(api, dl, io, progress: STDOUT, position: 0)
+      downloaded = position
       uri = URI(dl.url)
       digest = Digest::SHA256.new
       dl_check = nil
+
+      if position > 0
+        io.seek(0)
+        digest << io.read(position)
+      end
 
       if progress
         pb = ProgressBar.create(
@@ -62,7 +67,7 @@ module VpsAdmin::CLI
                 # The file is not available yet, this is normal, the transaction
                 # may be queued and it can take some time before it is processed.
                 pb.pause
-                sleep 5
+                sleep(10)
                 next
               end
             end
