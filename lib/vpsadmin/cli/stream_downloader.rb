@@ -1,6 +1,7 @@
 require 'uri'
 require 'net/http'
 require 'ruby-progressbar'
+require 'digest'
 
 module VpsAdmin::CLI
   class DownloadError < StandardError ; end
@@ -9,6 +10,8 @@ module VpsAdmin::CLI
     def self.download(api, dl, io, progress: STDOUT)
       downloaded = 0
       uri = URI(dl.url)
+      digest = Digest::SHA256.new
+      dl_check = nil
 
       if progress
         pb = ProgressBar.create(
@@ -79,6 +82,7 @@ module VpsAdmin::CLI
                 pb.progress = pb.total
               end
 
+              digest.update(fragment)
               io.write(fragment)
             end
           end
@@ -94,6 +98,11 @@ module VpsAdmin::CLI
 
           sleep(15)
         end
+      end
+
+      # Verify the checksum
+      if digest.hexdigest != dl_check.sha256sum
+        raise DownloadError, 'The sha256sum does not match, retry the download'
       end
     end
   end
