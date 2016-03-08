@@ -18,6 +18,10 @@ module VpsAdmin::CLI::Commands
       opts.on('--[no-]outage-window', 'Migrate VPSes inside outage windows') do |w|
         @opts[:outage_window] = w
       end
+      
+      opts.on('--[no-]cleanup-data', 'Cleanup VPS dataset on the source node') do |c|
+        @opts[:cleanup_data] = c
+      end
 
       opts.on('--[no-]stop-on-error', 'Cancel the plan if a migration fails') do |s|
         @opts[:stop_on_error] = s
@@ -87,6 +91,7 @@ module VpsAdmin::CLI::Commands
               dst_node: @opts[:dst_node],
           }
           params[:outage_window] = @opts[:outage_window] unless @opts[:outage_window].nil?
+          params[:cleanup_data] = @opts[:cleanup_data] unless @opts[:cleanup_data].nil?
 
           plan.vps_migration.create(params)
         end
