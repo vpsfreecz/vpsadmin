@@ -1,3 +1,7 @@
+require 'uri'
+require 'net/http'
+require 'ruby-progressbar'
+
 module VpsAdmin::CLI
   class DownloadError < StandardError ; end
 

@@ -1,7 +1,3 @@
-require 'uri'
-require 'net/http'
-require 'ruby-progressbar'
-
 module VpsAdmin::CLI::Commands
   class SnapshotDownload < HaveAPI::CLI::Command
     cmd :snapshot, :download
