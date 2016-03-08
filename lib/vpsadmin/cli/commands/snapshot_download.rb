@@ -40,9 +40,17 @@ module VpsAdmin::CLI::Commands
     end
 
     def exec(args)
-      if args.size != 1
+      opts = @opts.clone
+
+      if args.size == 0 && STDIN.tty?
+        opts[:snapshot] = snapshot_chooser
+
+      elsif args.size != 1
         warn "Provide exactly one SNAPSHOT_ID as an argument"
         exit(false)
+
+      else
+        opts[:snapshot] = args.first.to_i
       end
      
       f = nil
@@ -99,9 +107,6 @@ module VpsAdmin::CLI::Commands
         end
       end
 
-      opts = @opts.clone
-      opts[:snapshot] = args.first.to_i
-
       dl, created = find_or_create_dl(opts)
 
       if created
@@ -130,6 +135,48 @@ module VpsAdmin::CLI::Commands
       end
 
       @api.snapshot_download.delete(dl.id) if @opts[:delete_after]
+    end
+
+    protected
+    def snapshot_chooser
+      user = @api.user.current
+      vpses = @api.vps.list(user: user.id)
+
+      ds_map = {}
+      vpses.each do |vps|
+        ds_map[vps.dataset_id] = vps
+      end
+
+      i = 1
+      snap_map = {}
+
+      @api.dataset.index(user: user.id).each do |ds|
+        snapshots = ds.snapshot.index
+        next if snapshots.empty?
+
+        if vps = ds_map[ds.id]
+          puts "VPS ##{vps.id}"
+
+        else
+          puts "Dataset #{ds.name}"
+        end
+
+        snapshots.each do |s|
+          snap_map[i] = s
+          puts "  (#{i}) @#{s.created_at}"
+          i += 1
+        end
+      end
+
+      loop do
+        STDOUT.write('Pick a snapshot for download: ')
+        STDOUT.flush
+
+        i = STDIN.readline.strip.to_i
+        next if i <= 0 || snap_map[i].nil?
+
+        return snap_map[i].id
+      end
     end
   end
 end 
