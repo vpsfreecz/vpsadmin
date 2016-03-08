@@ -14,6 +14,7 @@ module VpsAdmin::API::Resources
 
     params(:filters) do
       resource Dataset
+      resource Dataset::Snapshot
     end
 
     params(:all) do
@@ -53,6 +54,8 @@ module VpsAdmin::API::Resources
         if input[:dataset]
           q = q.joins(snapshot: [:dataset]).where(datasets: {id: input[:dataset].id})
         end
+
+        q = q.where(snapshot: input[:snapshot]) if input[:snapshot]
 
         q
       end
