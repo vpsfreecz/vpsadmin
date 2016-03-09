@@ -7,7 +7,11 @@ module VpsAdmin::CLI
   class DownloadError < StandardError ; end
 
   class StreamDownloader
-    def self.download(api, dl, io, progress: STDOUT, position: 0)
+    def self.download(*args)
+      new(*args)
+    end
+
+    def initialize(api, dl, io, progress: STDOUT, position: 0)
       downloaded = position
       uri = URI(dl.url)
       digest = Digest::SHA256.new
@@ -19,41 +23,36 @@ module VpsAdmin::CLI
       end
 
       if progress
-        pb = ProgressBar.create(
+        self.format = '%t: [%B] %r kB/s'
+
+        @pb = ProgressBar.create(
             total: nil,
-            format: '%t: |%B| %r kB/s',
+            format: @format,
             rate_scale: ->(rate) { (rate / 1024.0).round(2) },
             throttle_rate: 0.05,
             output: progress,
         )
-
-      else
-        pb = nil
       end
 
       Net::HTTP.start(uri.host) do |http|
         loop do
-          if pb
-            pb.format = '%t: [%B] %r kB/s'
-            pb.resume
-          end
-
           begin
             dl_check = api.snapshot_download.show(dl.id)
 
-            if pb && dl_check.ready
-              pb.progress = downloaded
+            if @pb && dl_check.ready
+              @pb.progress = downloaded
 
               total = dl_check.size * 1024 * 1024
-              pb.total = pb.progress > total ? pb.progress : total
+              @pb.total = @pb.progress > total ? @pb.progress : total
 
-              pb.format = '%E: [%B] %p%% %r kB/s'
+              self.format = '%E: [%B] %p%% %r kB/s'
+              @pb.format(@format)
             end
 
           rescue HaveAPI::Client::ActionFailed => e
             # The SnapshotDownload object no longer exists, the transaction
             # responsible for its creation must have failed.
-            pb.stop if pb
+            stop
             raise DownloadError, 'The download has failed due to transaction failure'
           end
 
@@ -61,7 +60,8 @@ module VpsAdmin::CLI
           headers['Range'] = "bytes=#{downloaded}-" if downloaded > 0
 
           http.request_get(uri.path, headers) do |res|
-            if res.code == 404
+            case res.code
+            when 404  # Not Found
               if downloaded > 0
                 # This means that the transaction used for preparing the download
                 # has failed, the file to download does not exist anymore, so fail.
@@ -70,10 +70,19 @@ module VpsAdmin::CLI
               else
                 # The file is not available yet, this is normal, the transaction
                 # may be queued and it can take some time before it is processed.
-                pb.pause
-                sleep(10)
+                pause(10)
                 next
               end
+
+            when 416  # Range Not Satisfiable
+              # The file is not ready yet - we ask for range that cannot be provided
+              # yet. This happens when we're resuming a download and the file on the
+              # server was deleted meanwhile. The file might not be exactly the same
+              # as the one before, sha256sum would most likely fail.
+              raise DownloadError, 'Range not satisfiable'
+
+            else
+              resume
             end
             
             res.read_body do |fragment|
@@ -81,14 +90,14 @@ module VpsAdmin::CLI
               downloaded += size
 
               begin
-                if pb && (pb.total.nil? || pb.progress < pb.total)
-                  pb.progress += size
+                if @pb && (@pb.total.nil? || @pb.progress < @pb.total)
+                  @pb.progress += size
                 end
 
               rescue ProgressBar::InvalidProgressError
                 # The total value is in MB, it is not precise, so the actual
                 # size may be a little bit bigger.
-                pb.progress = pb.total
+                @pb.progress = @pb.total
               end
 
               digest.update(fragment)
@@ -100,12 +109,7 @@ module VpsAdmin::CLI
           break if dl_check.ready
 
           # Give the server time to prepare additional data
-          if pb
-            pb.format('%t: [%B] waiting')
-            pb.pause
-          end
-
-          sleep(15)
+          pause(15)
         end
       end
 
@@ -113,6 +117,36 @@ module VpsAdmin::CLI
       if digest.hexdigest != dl_check.sha256sum
         raise DownloadError, 'The sha256sum does not match, retry the download'
       end
+    end
+
+    protected
+    def pause(secs)
+      if @pb && !@paused
+        @pb.pause 
+        @pb.format('%t: [%B] waiting')
+      end
+      
+      @paused = true
+
+      sleep(secs)
+    end
+
+    def resume
+      if @pb && @paused
+        @pb.format(@format)
+        @pb.resume
+      end
+
+      @paused = false
+    end
+
+    def stop
+      @pb.stop if @pb
+    end
+
+    def format=(fmt)
+      @format = fmt
+      @pb.format(@format) if @pb
     end
   end
 end
