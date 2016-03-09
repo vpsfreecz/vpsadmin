@@ -54,6 +54,7 @@ module VpsAdmin::CLI::Commands
       end
      
       f = nil
+      action = nil
       pos = 0
 
       if @opts[:file] == '-'
@@ -63,8 +64,6 @@ module VpsAdmin::CLI::Commands
         path = @opts[:file] || dl.file_name
 
         if File.exists?(path)
-          action = nil
-
           if @opts[:resume]
             action = :resume
 
@@ -107,9 +106,14 @@ module VpsAdmin::CLI::Commands
         end
       end
 
-      dl, created = find_or_create_dl(opts)
+      dl, created = find_or_create_dl(opts, action != :resume)
 
       if created
+        if action == :resume
+          warn "Unable to resume the download: the file has been delete from the server"
+          exit(false)
+        end
+
         warn "The download is being prepared..."
         sleep(5)
 
