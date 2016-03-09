@@ -34,7 +34,7 @@ module VpsAdmin::CLI
       Net::HTTP.start(uri.host) do |http|
         loop do
           if pb
-            pb.format = '%t: |%B| %r kB/s'
+            pb.format = '%t: [%B] %r kB/s'
             pb.resume
           end
 
@@ -47,7 +47,7 @@ module VpsAdmin::CLI
               total = dl_check.size * 1024 * 1024
               pb.total = pb.progress > total ? pb.progress : total
 
-              pb.format = '%E: |%B| %p%% %r kB/s'
+              pb.format = '%E: [%B] %p%% %r kB/s'
             end
 
           rescue HaveAPI::Client::ActionFailed => e
@@ -101,7 +101,7 @@ module VpsAdmin::CLI
 
           # Give the server time to prepare additional data
           if pb
-            pb.format('%t: |%B| waiting')
+            pb.format('%t: [%B] waiting')
             pb.pause
           end
 
