@@ -33,6 +33,11 @@ module VpsAdmin::CLI::Commands
 
       opts = @opts.clone
       opts[:snapshot] = args.first.to_i
+
+      do_exec(opts)
+    end
+
+    def do_exec(opts)
       opts[:format] = opts[:from_snapshot] ? :incremental_stream : :stream
 
       dl, created = find_or_create_dl(opts)
@@ -68,7 +73,7 @@ module VpsAdmin::CLI::Commands
       Process.wait(pid)
       exit($?.exitstatus) if $?.exitstatus != 0
 
-      @api.snapshot_download.delete(dl.id) if @opts[:delete_after]
+      @api.snapshot_download.delete(dl.id) if opts[:delete_after]
     end
   end
 end
