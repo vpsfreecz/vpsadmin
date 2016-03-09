@@ -43,7 +43,10 @@ module VpsAdmin::CLI
 
             if pb && dl_check.ready
               pb.progress = downloaded
-              pb.total = dl_check.size * 1024 * 1024
+
+              total = dl_check.size * 1024 * 1024
+              pb.total = pb.progress > total ? pb.progress : total
+
               pb.format = '%E: |%B| %p%% %r kB/s'
             end
 
