@@ -57,60 +57,18 @@ module VpsAdmin::CLI::Commands
         opts[:snapshot] = args.first.to_i
       end
      
-      f = nil
-      action = nil
+      f = action = nil
       pos = 0
 
       if @opts[:file] == '-'
         f = STDOUT
 
-      else
-        path = @opts[:file] || dl.file_name
-
-        if File.exists?(path)
-          if @opts[:resume]
-            action = :resume
-
-          elsif @opts[:force]
-            action = :overwrite
-
-          elsif STDIN.tty?
-            while action.nil?
-              STDERR.write("'#{path}' already exists. [A]bort, [r]esume or [o]verwrite? [a]: ")
-              STDERR.flush
-
-              action = {
-                  'r' => :resume,
-                  'o' => :overwrite,
-                  '' => false,
-              }[STDIN.readline.strip.downcase]
-            end
-
-          else
-            warn "File '#{path}' already exists"
-            exit(false)
-          end
-          
-          case action
-          when :resume
-            mode = 'a+'
-            pos = File.size(path)
-
-          when :overwrite
-            mode = 'w'
-
-          else
-            exit
-          end
-
-          f = File.open(path, mode)
-
-        else
-          f = File.open(path, 'w')
-        end
+      elsif @opts[:file]
+        f, action, pos = open_file(@opts[:file])
       end
 
       dl, created = find_or_create_dl(opts, action != :resume)
+      f, action, pos = open_file(dl.file_name) unless @opts[:file]
 
       if created
         if action == :resume
@@ -147,6 +105,54 @@ module VpsAdmin::CLI::Commands
     end
 
     protected
+    def open_file(path)
+      f = action = nil
+      pos = 0
+
+      if File.exists?(path)
+        if @opts[:resume]
+          action = :resume
+
+        elsif @opts[:force]
+          action = :overwrite
+
+        elsif STDIN.tty?
+          while action.nil?
+            STDERR.write("'#{path}' already exists. [A]bort, [r]esume or [o]verwrite? [a]: ")
+            STDERR.flush
+
+            action = {
+                'r' => :resume,
+                'o' => :overwrite,
+                '' => false,
+            }[STDIN.readline.strip.downcase]
+          end
+
+        else
+          warn "File '#{path}' already exists"
+          exit(false)
+        end
+        
+        case action
+        when :resume
+          mode = 'a+'
+          pos = File.size(path)
+
+        when :overwrite
+          mode = 'w'
+
+        else
+          exit
+        end
+
+        f = File.open(path, mode)
+      else
+        f = File.open(path, 'w')
+      end
+
+      [f, action, pos]
+    end
+
     def snapshot_chooser
       user = @api.user.current
       vpses = @api.vps.list(user: user.id)
