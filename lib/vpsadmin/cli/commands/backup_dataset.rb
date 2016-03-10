@@ -19,7 +19,7 @@ module VpsAdmin::CLI::Commands
           max_age: 30,
       }
 
-      opts.on('-p', '--pretend', 'Delete old snapshots') do
+      opts.on('-p', '--pretend', 'Print what would the program do') do
         @opts[:pretend] = true
       end
 
