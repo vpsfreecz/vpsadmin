@@ -45,9 +45,6 @@ module VpsAdmin::CLI::Commands
     end
 
     def exec(args)
-      if args.size != 2
-      end
-
       if args.size == 1 && /^\d+$/ !~ args[0]
         ds = dataset_chooser
         fs = args[0]
@@ -329,7 +326,7 @@ module VpsAdmin::CLI::Commands
       ret
     end
 
-    def dataset_chooser
+    def dataset_chooser(vps_only: false)
       user = @api.user.current
       vpses = @api.vps.list(user: user.id)
 
@@ -342,15 +339,15 @@ module VpsAdmin::CLI::Commands
       ds_map = {}
 
       @api.dataset.index(user: user.id).each do |ds|
-        ds_map[i] = ds
-
         if vps = vps_map[ds.id]
           puts "(#{i}) VPS ##{vps.id}"
 
         else
+          next if vps_only
           puts "(#{i}) Dataset #{ds.name}"
         end
 
+        ds_map[i] = ds
         i += 1
       end
 
