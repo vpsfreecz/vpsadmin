@@ -153,9 +153,7 @@ module VpsAdmin::CLI::Commands
       local_state = parse_tree(fs)
       
       # Order snapshots by date of creation
-      snapshots = local_state.values.inject([]) do |ret, snapshots|
-        ret.concat(snapshots)
-      end.sort do |a, b|
+      snapshots = local_state.values.flatten.sort do |a, b|
         a.creation <=> b.creation
       end
 
