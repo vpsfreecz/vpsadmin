@@ -46,8 +46,15 @@ module VpsAdmin::CLI::Commands
 
     def exec(args)
       if args.size == 1 && /^\d+$/ !~ args[0]
-        ds = dataset_chooser
         fs = args[0]
+        
+        ds_id = read_dataset_id(fs)
+        
+        if ds_id
+          ds = @api.dataset.show(ds_id)
+        else
+          ds = dataset_chooser
+        end
 
       elsif args.size != 2
         warn "Provide DATASET_ID and FILESYSTEM arguments"
@@ -58,7 +65,7 @@ module VpsAdmin::CLI::Commands
         fs = args[1]
       end
 
-      write_id = check_dataset_id!(ds, fs)
+      check_dataset_id!(ds, fs)
       snapshots = ds.snapshot.list
 
       local_state = parse_tree(fs)
@@ -142,7 +149,7 @@ module VpsAdmin::CLI::Commands
           end
         end
 
-        write_dataset_id!(ds, fs) if write_id
+        write_dataset_id!(ds, fs) unless written_dataset_id?
         transfer(local_state, for_transfer, ds.current_history_id, fs)
         rotate(fs) if @opts[:rotate]
       end
@@ -261,14 +268,21 @@ module VpsAdmin::CLI::Commands
       /^\d+$/ =~ name
     end
 
-    def check_dataset_id!(ds, fs)
+    def read_dataset_id(fs)
       ds_id = zfs(:get, '-H -ovalue cz.vpsfree.vpsadmin:dataset_id', fs).strip
-      return true if ds_id == '-'
+      return nil if ds_id == '-'
+      @dataset_id = ds_id.to_i
+    end
 
-      if ds_id.to_i != ds.id
-        warn "Dataset '#{fs}' is used to backup remote dataset with id '#{ds_id}', not '#{ds.id}'"
+    def check_dataset_id!(ds, fs)
+      if @dataset_id && @dataset_id != ds.id
+        warn "Dataset '#{fs}' is used to backup remote dataset with id '#{@dataset_id}', not '#{ds.id}'"
         exit(false)
       end
+    end
+
+    def written_dataset_id?
+      !@dataset_id.nil?
     end
 
     def write_dataset_id!(ds, fs)
