@@ -105,7 +105,7 @@ module VpsAdmin::CLI::Commands
               send_mail: false,
               delete_after: false,
           })
-        end
+        end || exit_msg('Receive failed')
       end
 
       if !no_local_snapshots || snapshots.size > 1
@@ -118,7 +118,7 @@ module VpsAdmin::CLI::Commands
               send_mail: false,
               delete_after: false,
           })
-        end
+        end || exit_msg('Receive failed')
       end
     end
 
@@ -222,6 +222,11 @@ module VpsAdmin::CLI::Commands
 
         return ds_map[i]
       end
+    end
+
+    def exit_msg(msg)
+      warn msg
+      exit(1)
     end
   end
 end
