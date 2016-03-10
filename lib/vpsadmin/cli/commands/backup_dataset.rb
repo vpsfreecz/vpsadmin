@@ -1,7 +1,7 @@
 module VpsAdmin::CLI::Commands
   class BackupDataset < BaseDownload
     cmd :backup, :dataset
-    args 'DATASET_ID FILESYSTEM'
+    args '[DATASET_ID] FILESYSTEM'
     desc 'Backup dataset locally'
 
     def options(opts)
@@ -10,13 +10,22 @@ module VpsAdmin::CLI::Commands
 
     def exec(args)
       if args.size != 2
-        warn "Provide DATASET_ID and FILESYSTEM arguments"
-        exit(false)
       end
 
-      ds = @api.dataset.show(args[0].to_i)
+      if args.size == 1 && /^\d+$/ !~ args[0]
+        ds = dataset_chooser
+        fs = args[0]
+
+      elsif args.size != 2
+        warn "Provide DATASET_ID and FILESYSTEM arguments"
+        exit(false)
+
+      else
+        ds = @api.dataset.show(args[0].to_i)
+        fs = args[1]
+      end
+
       snapshots = ds.snapshot.list
-      fs = args[1]
 
       local_state = parse_tree(fs)
 
@@ -177,6 +186,42 @@ module VpsAdmin::CLI::Commands
 
     def zfs(*args)
       `#{zfs_cmd(*args)}`
+    end
+
+    def dataset_chooser
+      user = @api.user.current
+      vpses = @api.vps.list(user: user.id)
+
+      vps_map = {}
+      vpses.each do |vps|
+        vps_map[vps.dataset_id] = vps
+      end
+
+      i = 1
+      ds_map = {}
+
+      @api.dataset.index(user: user.id).each do |ds|
+        ds_map[i] = ds
+
+        if vps = vps_map[ds.id]
+          puts "(#{i}) VPS ##{vps.id}"
+
+        else
+          puts "(#{i}) Dataset #{ds.name}"
+        end
+
+        i += 1
+      end
+
+      loop do
+        STDOUT.write('Pick a dataset to backup: ')
+        STDOUT.flush
+
+        i = STDIN.readline.strip.to_i
+        next if i <= 0 || ds_map[i].nil?
+
+        return ds_map[i]
+      end
     end
   end
 end
