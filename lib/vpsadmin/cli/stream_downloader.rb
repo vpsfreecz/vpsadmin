@@ -46,7 +46,6 @@ module VpsAdmin::CLI
               @pb.total = @pb.progress > total ? @pb.progress : total
 
               self.format = '%E: [%B] %p%% %r kB/s'
-              @pb.format(@format)
             end
 
           rescue HaveAPI::Client::ActionFailed => e
@@ -121,22 +120,14 @@ module VpsAdmin::CLI
 
     protected
     def pause(secs)
-      if @pb && !@paused
-        @pb.pause 
-        @pb.format('%t: [%B] waiting')
-      end
-      
+      @pb.format('%t: [%B] waiting') if @pb && !@paused
       @paused = true
 
       sleep(secs)
     end
 
     def resume
-      if @pb && @paused
-        @pb.format(@format)
-        @pb.resume
-      end
-
+      @pb.format(@format) if @pb && @paused
       @paused = false
     end
 
