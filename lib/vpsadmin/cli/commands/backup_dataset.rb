@@ -103,7 +103,7 @@ module VpsAdmin::CLI::Commands
           SnapshotSend.new({}, @api).do_exec({
               snapshot: snapshots.first.id,
               send_mail: false,
-              delete_after: false,
+              delete_after: true,
           })
         end || exit_msg('Receive failed')
       end
@@ -116,7 +116,7 @@ module VpsAdmin::CLI::Commands
               snapshot: snapshots.last.id,
               from_snapshot: snapshots.first.id,
               send_mail: false,
-              delete_after: false,
+              delete_after: true,
           })
         end || exit_msg('Receive failed')
       end
