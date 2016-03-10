@@ -264,7 +264,10 @@ module VpsAdmin::CLI::Commands
     end
 
     def zfs(*args)
-      `#{zfs_cmd(*args)}`
+      cmd = zfs_cmd(*args)
+      ret = `#{cmd}`
+      exit_msg("#{cmd} failed with exit code #{$?.exitstatus}") if $?.exitstatus != 0
+      ret
     end
 
     def dataset_chooser
