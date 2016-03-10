@@ -60,7 +60,7 @@ module VpsAdmin::CLI
           headers['Range'] = "bytes=#{downloaded}-" if downloaded > 0
 
           http.request_get(uri.path, headers) do |res|
-            case res.code
+            case res.code.to_i
             when 404  # Not Found
               if downloaded > 0
                 # This means that the transaction used for preparing the download
