@@ -83,6 +83,8 @@ module VpsAdmin::CLI::Commands
         warn "Reusing existing SnapshotDownload (id=#{dl.id})"
       end
 
+      warn "Downloading to #{f.path}"
+
       begin
         VpsAdmin::CLI::StreamDownloader.download(
             @api,
