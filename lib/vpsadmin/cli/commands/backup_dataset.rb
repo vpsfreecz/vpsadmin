@@ -61,6 +61,7 @@ module VpsAdmin::CLI::Commands
         fs = args[1]
       end
 
+      write_id = check_dataset_id!(ds, fs)
       snapshots = ds.snapshot.list
 
       local_state = parse_tree(fs)
@@ -132,6 +133,7 @@ module VpsAdmin::CLI::Commands
           end
         end
 
+        write_dataset_id!(ds, fs) if write_id
         transfer(local_state, for_transfer, ds.current_history_id, fs)
         rotate(fs) if @opts[:rotate]
       end
@@ -248,6 +250,20 @@ module VpsAdmin::CLI::Commands
 
     def dataset?(name)
       /^\d+$/ =~ name
+    end
+
+    def check_dataset_id!(ds, fs)
+      ds_id = zfs(:get, '-H -ovalue cz.vpsfree.vpsadmin:dataset_id', fs).strip
+      return true if ds_id == '-'
+
+      if ds_id.to_i != ds.id
+        warn "Dataset '#{fs}' is used to backup remote dataset with id '#{ds_id}', not '#{ds.id}'"
+        exit(false)
+      end
+    end
+
+    def write_dataset_id!(ds, fs)
+      zfs(:set, "cz.vpsfree.vpsadmin:dataset_id=#{ds.id}", fs)
     end
 
     # Run two processes like +block | cmd2+, where block's stdout is piped into
