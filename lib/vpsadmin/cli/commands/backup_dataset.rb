@@ -108,7 +108,7 @@ module VpsAdmin::CLI::Commands
            && latest_local_snapshot.name == snap.name
           found_latest = true
 
-        else
+        elsif latest_local_snapshot
           next unless found_latest
         end
 
