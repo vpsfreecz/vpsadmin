@@ -1,3 +1,5 @@
+require 'time'
+
 module VpsAdmin::CLI::Commands
   class BackupDataset < BaseDownload
     cmd :backup, :dataset
@@ -16,6 +18,10 @@ module VpsAdmin::CLI::Commands
           max_snapshots: 45,
           max_age: 30,
       }
+
+      opts.on('-p', '--pretend', 'Delete old snapshots') do
+        @opts[:pretend] = true
+      end
 
       opts.on('-r', '--[no-]rotate', 'Delete old snapshots') do |r|
         @opts[:rotate] = r
@@ -97,22 +103,34 @@ module VpsAdmin::CLI::Commands
       puts "Will download #{for_transfer.size} snapshots:"
       for_transfer.each { |s| puts "  @#{s.name}" }
       puts
-     
-      # Find the common snapshot between server and localhost, so that the transfer
-      # can be incremental.
-      shared_name = local_state[ds.current_history_id] && local_state[ds.current_history_id].last.name
-      shared = nil
+    
+      if @opts[:pretend]
+        pretend_state = local_state.clone
+        pretend_state[ds.current_history_id] ||= []
+        pretend_state[ds.current_history_id].concat(for_transfer.map do |s|
+          LocalSnapshot.new(s.name, ds.current_history_id, Time.iso8601(s.created_at).to_i)
+        end)
 
-      if shared_name
-        shared = remote_state[ds.current_history_id].detect { |s| s.name == shared_name }
+        rotate(fs, pretend: pretend_state) if @opts[:rotate]
 
-        if shared && !for_transfer.detect { |s| s.id == shared.id }
-          for_transfer.insert(0, shared)
+      else
+        # Find the common snapshot between server and localhost, so that the transfer
+        # can be incremental.
+        shared_name = local_state[ds.current_history_id] \
+                      && local_state[ds.current_history_id].last.name
+        shared = nil
+
+        if shared_name
+          shared = remote_state[ds.current_history_id].detect { |s| s.name == shared_name }
+
+          if shared && !for_transfer.detect { |s| s.id == shared.id }
+            for_transfer.insert(0, shared)
+          end
         end
-      end
 
-      transfer(local_state, for_transfer, ds.current_history_id, fs)
-      rotate(fs) if @opts[:rotate]
+        transfer(local_state, for_transfer, ds.current_history_id, fs)
+        rotate(fs) if @opts[:rotate]
+      end
     end
 
     protected
@@ -149,8 +167,9 @@ module VpsAdmin::CLI::Commands
       end
     end
 
-    def rotate(fs)
-      local_state = parse_tree(fs)
+    def rotate(fs, pretend: false)
+      puts "Rotating snapshots"
+      local_state = pretend ? pretend : parse_tree(fs)
       
       # Order snapshots by date of creation
       snapshots = local_state.values.flatten.sort do |a, b|
@@ -173,7 +192,7 @@ module VpsAdmin::CLI::Commands
         local_state[s.hist_id].delete(s)
 
         puts "Destroying #{ds}@#{s.name}"
-        zfs(:destroy, nil, "#{ds}@#{s.name}")
+        zfs(:destroy, nil, "#{ds}@#{s.name}", pretend: pretend)
       end
 
       local_state.each do |hist_id, snapshots|
@@ -182,7 +201,7 @@ module VpsAdmin::CLI::Commands
         ds = "#{fs}/#{hist_id}"
 
         puts "Destroying #{ds}"
-        zfs(:destroy, nil, ds)
+        zfs(:destroy, nil, ds, pretend: pretend)
       end
     end
 
@@ -263,8 +282,14 @@ module VpsAdmin::CLI::Commands
       "#{s} #{cmd} #{opts} #{fs}"
     end
 
-    def zfs(*args)
-      cmd = zfs_cmd(*args)
+    def zfs(cmd, opts, fs, pretend: false)
+      cmd = zfs_cmd(cmd, opts, fs)
+
+      if pretend
+        puts "> #{cmd}"
+        return
+      end
+
       ret = `#{cmd}`
       exit_msg("#{cmd} failed with exit code #{$?.exitstatus}") if $?.exitstatus != 0
       ret
