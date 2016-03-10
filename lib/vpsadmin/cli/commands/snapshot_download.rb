@@ -72,7 +72,7 @@ module VpsAdmin::CLI::Commands
 
       if created
         if action == :resume
-          warn "Unable to resume the download: the file has been delete from the server"
+          warn "Unable to resume the download: the file has been deleted from the server"
           exit(false)
         end
 
