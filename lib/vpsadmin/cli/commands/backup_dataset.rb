@@ -4,8 +4,34 @@ module VpsAdmin::CLI::Commands
     args '[DATASET_ID] FILESYSTEM'
     desc 'Backup dataset locally'
 
-    def options(opts)
+    LocalSnapshot = Struct.new(:name, :hist_id, :creation) do
+      def creation=(c)
+        self[:creation] = c.to_i
+      end
+    end
 
+    def options(opts)
+      @opts = {
+          min_snapshots: 30,
+          max_snapshots: 45,
+          max_age: 30,
+      }
+
+      opts.on('-r', '--[no-]rotate', 'Delete old snapshots') do |r|
+        @opts[:rotate] = r
+      end
+
+      opts.on('-m', '--min-snapshots N', 'Keep at least N snapshots (30)') do |m|
+        @opts[:min_snapshots] = m.to_i
+      end
+
+      opts.on('-M', '--max-snapshots N', 'Keep at most N snapshots (45)') do |m|
+        @opts[:max_snapshots] = m.to_i
+      end
+
+      opts.on('-a', '--max-age N', 'Delete snapshots older then N days (30)') do |m|
+        @opts[:max_age] = m.to_i
+      end
     end
 
     def exec(args)
@@ -55,7 +81,7 @@ module VpsAdmin::CLI::Commands
         found = false
 
         local_state.values.each do |snapshots|
-          found = snapshots.index(snap.name)
+          found = snapshots.detect { |s| s.name == snap.name }
           break if found
         end
 
@@ -74,7 +100,7 @@ module VpsAdmin::CLI::Commands
      
       # Find the common snapshot between server and localhost, so that the transfer
       # can be incremental.
-      shared_name = local_state[ds.current_history_id] && local_state[ds.current_history_id].last
+      shared_name = local_state[ds.current_history_id] && local_state[ds.current_history_id].last.name
       shared = nil
 
       if shared_name
@@ -86,6 +112,7 @@ module VpsAdmin::CLI::Commands
       end
 
       transfer(local_state, for_transfer, ds.current_history_id, fs)
+      rotate(fs) if @opts[:rotate]
     end
 
     protected
@@ -122,6 +149,45 @@ module VpsAdmin::CLI::Commands
       end
     end
 
+    def rotate(fs)
+      local_state = parse_tree(fs)
+      
+      # Order snapshots by date of creation
+      snapshots = local_state.values.inject([]) do |ret, snapshots|
+        ret.concat(snapshots)
+      end.sort do |a, b|
+        a.creation <=> b.creation
+      end
+
+      cnt = local_state.values.inject(0) { |sum, snapshots| sum + snapshots.count }
+      deleted = 0
+      oldest = Time.now.to_i - (@opts[:max_age] * 60 * 60 * 24)
+
+      snapshots.each do |s|
+        ds = "#{fs}/#{s.hist_id}"
+
+        if (cnt - deleted) <= @opts[:min_snapshots] \
+            || (s.creation > oldest && (cnt - deleted) <= @opts[:max_snapshots])
+          break
+        end
+
+        deleted += 1
+        local_state[s.hist_id].delete(s)
+
+        puts "Destroying #{ds}@#{s.name}"
+        zfs(:destroy, nil, "#{ds}@#{s.name}")
+      end
+
+      local_state.each do |hist_id, snapshots|
+        next unless snapshots.empty?
+        
+        ds = "#{fs}/#{hist_id}"
+
+        puts "Destroying #{ds}"
+        zfs(:destroy, nil, ds)
+      end
+    end
+
     def parse_tree(fs)
       ret = {}
 
@@ -133,10 +199,25 @@ module VpsAdmin::CLI::Commands
         ret[last_name.to_i] = [] if dataset?(last_name)
       end
       
-      zfs(:list, '-r -d2 -tsnapshot -H -oname', fs).split("\n").each do |line|
-        ds, snap = line.split('@')
-        name = ds.split('/').last
-        ret[name.to_i] << snap if dataset?(name)
+      zfs(
+          :get,
+          '-Hrp -d2 name,creation -tsnapshot -oname,property,value',
+          fs
+      ).split("\n").each do |line|
+        name, property, value = line.split
+        ds, snap_name = name.split('@')
+        ds_name = ds.split('/').last
+        next unless dataset?(ds_name)
+
+        hist_id = ds_name.to_i
+
+        if snap = ret[hist_id].detect { |s| s.name == snap_name }
+          snap.send("#{property}=", value)
+
+        else
+          snap = LocalSnapshot.new(snap_name, hist_id)
+          ret[hist_id] << snap
+        end
       end
 
       ret
