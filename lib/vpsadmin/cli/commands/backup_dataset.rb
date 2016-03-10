@@ -88,12 +88,24 @@ module VpsAdmin::CLI::Commands
 
       for_transfer = []
 
+      latest_local_snapshot = local_state[ds.current_history_id] \
+                              && local_state[ds.current_history_id].last
+      found_latest = false
+
       remote_state[ds.current_history_id].each do |snap|
         found = false
 
         local_state.values.each do |snapshots|
           found = snapshots.detect { |s| s.name == snap.name }
           break if found
+        end
+
+        if !found_latest && latest_local_snapshot \
+           && latest_local_snapshot.name == snap.name
+          found_latest = true
+
+        else
+          next unless found_latest
         end
 
         for_transfer << snap unless found
