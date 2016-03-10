@@ -11,7 +11,7 @@ module VpsAdmin::CLI
       new(*args)
     end
 
-    def initialize(api, dl, io, progress: STDOUT, position: 0)
+    def initialize(api, dl, io, progress: STDOUT, position: 0, max_rate: nil)
       downloaded = position
       uri = URI(dl.url)
       digest = Digest::SHA256.new
@@ -83,9 +83,14 @@ module VpsAdmin::CLI
             else
               resume
             end
-            
+           
+            t1 = Time.now
+            data_counter = 0
+
             res.read_body do |fragment|
               size = fragment.size
+
+              data_counter += size
               downloaded += size
 
               begin
@@ -100,6 +105,26 @@ module VpsAdmin::CLI
               end
 
               digest.update(fragment)
+
+              if max_rate && max_rate > 0
+                t2 = Time.now
+                diff = t2 - t1
+
+                if diff > 0.005
+                  # Current and expected rates in kB per interval +diff+
+                  current_rate = data_counter / 1024
+                  expected_rate = max_rate * diff
+
+                  if current_rate > expected_rate
+                    delay = diff / (expected_rate / (current_rate - expected_rate))
+                    sleep(delay)
+                  end
+
+                  data_counter = 0
+                  t1 = Time.now
+                end
+              end
+              
               io.write(fragment)
             end
           end

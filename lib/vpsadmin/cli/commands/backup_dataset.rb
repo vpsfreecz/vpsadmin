@@ -38,6 +38,10 @@ module VpsAdmin::CLI::Commands
       opts.on('-a', '--max-age N', 'Delete snapshots older then N days (30)') do |m|
         @opts[:max_age] = m.to_i
       end
+
+      opts.on('--max-rate N', 'Maximum download speed in kB/s') do |r|
+        @opts[:max_rate] = r.to_i
+      end
     end
 
     def exec(args)
@@ -149,6 +153,7 @@ module VpsAdmin::CLI::Commands
               snapshot: snapshots.first.id,
               send_mail: false,
               delete_after: true,
+              max_rate: @opts[:max_rate],
           })
         end || exit_msg('Receive failed')
       end
@@ -162,6 +167,7 @@ module VpsAdmin::CLI::Commands
               from_snapshot: snapshots.first.id,
               send_mail: false,
               delete_after: true,
+              max_rate: @opts[:max_rate],
           })
         end || exit_msg('Receive failed')
       end

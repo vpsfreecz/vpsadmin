@@ -37,6 +37,10 @@ module VpsAdmin::CLI::Commands
       opts.on('-s', '--[no-]send-mail', 'Send mail after the file for download is completed') do |s|
         @opts[:send_mail] = s
       end
+
+      opts.on('--max-rate N', 'Maximum download speed in kB/s') do |r|
+        @opts[:max_rate] = r.to_i
+      end
     end
 
     def exec(args)
@@ -128,6 +132,7 @@ module VpsAdmin::CLI::Commands
             f,
             progress: f == STDOUT ? STDERR : STDOUT,
             position: pos,
+            max_rate: @opts[:max_rate],
         )
 
       rescue VpsAdmin::CLI::DownloadError => e
