@@ -540,4 +540,27 @@ function kernel_version($v) {
 		return $v;
 }
 
+function colorize($array) {
+	$ret = array();
+
+	$from = 0x70;
+	$to = 0xff;
+	$cnt = count($array);
+	$step = (int) round(($to - $from) / pow($cnt, 1.0/3));
+	$i = 0;
+
+	for ($r = $from; $r < $to; $r += $step) {
+		for ($g = $from; $g < $to; $g += $step) {
+			for ($b = $from; $b < $to; $b += $step) {
+				if (count($ret) >= $cnt)
+					return $ret;
+
+				$ret[ $array[$i++] ] = dechex(($r << 16) + ($g << 8) + $b);
+			}
+		}
+	}
+
+	return $ret;
+}
+
 ?>

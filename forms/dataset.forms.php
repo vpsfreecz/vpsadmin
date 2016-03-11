@@ -293,14 +293,22 @@ function dataset_snapshot_list($datasets, $vps = null) {
 		else
 			$xtpl->table_title($ds->name);
 		
+		$xtpl->table_add_category('<span title="'._('History identifier').'">[H]</span>');
 		$xtpl->table_add_category(_('Date and time'));
 		$xtpl->table_add_category(_('Restore'));
 		$xtpl->table_add_category(_('Download'));
 		$xtpl->table_add_category(_('Mount'));
 		
 		$xtpl->form_create('?page=backup&action=restore&dataset='.$ds->id.'&vps_id='.($vps ? $vps->id : '').'&return='.$return_url, 'post');
-		
+
+		$histories = array();
 		foreach ($snapshots as $snap) {
+			$histories[] = $snap->history_id;
+		}
+		$colors = colorize(array_unique($histories));
+
+		foreach ($snapshots as $snap) {
+			$xtpl->table_td($snap->history_id, '#'.$colors[ $snap->history_id ], true);
 			$xtpl->table_td(strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)));
 			$xtpl->form_add_radio_pure("restore_snapshot", $snap->id);
 			$xtpl->table_td('[<a href="?page=backup&action=download&dataset='.$ds->id.'&snapshot='.$snap->id.'&return='.$return_url.'">'._("Download").'</a>]');
