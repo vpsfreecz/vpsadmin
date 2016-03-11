@@ -6,7 +6,7 @@ module TransactionChains
       lock(dataset_in_pool)
       concerns(:affect, [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id])
 
-      snap = Time.new.strftime('%Y-%m-%dT%H:%M:%S')
+      snap = Time.now.utc.strftime('%Y-%m-%dT%H:%M:%S')
 
       s = ::Snapshot.create!(
           name: "#{snap} (unconfirmed)",
