@@ -14,9 +14,10 @@ module VpsAdmind
     end
 
     def snapshot(pool_fs, dataset_name)
-      snap = Time.new.strftime('%Y-%m-%dT%H:%M:%S')
+      t = Time.now.utc
+      snap = t.strftime('%Y-%m-%dT%H:%M:%S')
       zfs(:snapshot, nil, "#{pool_fs}/#{dataset_name}@#{snap}")
-      snap
+      [snap, t]
     end
 
     def rollback

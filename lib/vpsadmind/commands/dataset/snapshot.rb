@@ -4,7 +4,7 @@ module VpsAdmind
     needs :system, :zfs
 
     def exec
-      @name = Dataset.new.snapshot(@pool_fs, @dataset_name)
+      @name, @created_at = Dataset.new.snapshot(@pool_fs, @dataset_name)
       ok
     end
 
@@ -14,7 +14,12 @@ module VpsAdmind
     end
 
     def post_save(db)
-      db.prepared('UPDATE snapshots SET name = ? WHERE id = ?', @name, @snapshot_id)
+      db.prepared(
+          'UPDATE snapshots SET name = ?, created_at = ? WHERE id = ?',
+          @name,
+          @created_at.strftime('%Y-%m-%d %H:%M:%S'),
+          @snapshot_id
+      )
     end
   end
 end
