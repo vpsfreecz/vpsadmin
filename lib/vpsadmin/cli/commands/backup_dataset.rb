@@ -27,20 +27,20 @@ module VpsAdmin::CLI::Commands
         @opts[:rotate] = r
       end
 
-      opts.on('-m', '--min-snapshots N', 'Keep at least N snapshots (30)') do |m|
-        @opts[:min_snapshots] = m.to_i
+      opts.on('-m', '--min-snapshots N', Integer, 'Keep at least N snapshots (30)') do |m|
+        @opts[:min_snapshots] = m
       end
 
-      opts.on('-M', '--max-snapshots N', 'Keep at most N snapshots (45)') do |m|
-        @opts[:max_snapshots] = m.to_i
+      opts.on('-M', '--max-snapshots N', Integer, 'Keep at most N snapshots (45)') do |m|
+        @opts[:max_snapshots] = m
       end
 
-      opts.on('-a', '--max-age N', 'Delete snapshots older then N days (30)') do |m|
-        @opts[:max_age] = m.to_i
+      opts.on('-a', '--max-age N', Integer, 'Delete snapshots older then N days (30)') do |m|
+        @opts[:max_age] = m
       end
 
-      opts.on('--max-rate N', 'Maximum download speed in kB/s') do |r|
-        @opts[:max_rate] = r.to_i
+      opts.on('--max-rate N', Integer, 'Maximum download speed in kB/s') do |r|
+        @opts[:max_rate] = r
       end
     end
 

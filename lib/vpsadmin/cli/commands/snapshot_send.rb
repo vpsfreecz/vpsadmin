@@ -12,8 +12,8 @@ module VpsAdmin::CLI::Commands
           send_mail: false,
       }
       
-      opts.on('-I', '--from-snapshot SNAPSHOT_ID', 'Download snapshot incrementally from SNAPSHOT_ID') do |s|
-        @opts[:from_snapshot] = s.to_i
+      opts.on('-I', '--from-snapshot SNAPSHOT_ID', Integer, 'Download snapshot incrementally from SNAPSHOT_ID') do |s|
+        @opts[:from_snapshot] = s
       end
 
       opts.on('-d', '--[no-]delete-after', 'Delete the file from the server after successful download') do |d|
@@ -24,8 +24,8 @@ module VpsAdmin::CLI::Commands
         @opts[:send_mail] = s
       end
 
-      opts.on('--max-rate N', 'Maximum download speed in kB/s') do |r|
-        @opts[:max_rate] = r.to_i
+      opts.on('--max-rate N', Integer, 'Maximum download speed in kB/s') do |r|
+        @opts[:max_rate] = r
       end
     end
 
