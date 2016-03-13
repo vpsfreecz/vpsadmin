@@ -42,6 +42,10 @@ module VpsAdmin::CLI::Commands
       opts.on('--max-rate N', Integer, 'Maximum download speed in kB/s') do |r|
         @opts[:max_rate] = r
       end
+      
+      opts.on('-q', '--quiet', 'Print only errors') do |q|
+        @opts[:quiet] = q
+      end
     end
 
     def exec(args)
@@ -86,7 +90,10 @@ module VpsAdmin::CLI::Commands
 
       if remote_state[ds.current_history_id].nil? \
          || remote_state[ds.current_history_id].empty?
-        puts "Nothing to transfer: no snapshots with history id #{ds.current_history_id}"
+        unless @opts[:quiet]
+          puts "Nothing to transfer: no snapshots with history id #{ds.current_history_id}"
+        end
+
         exit
       end
 
@@ -116,14 +123,19 @@ module VpsAdmin::CLI::Commands
       end
 
       if for_transfer.empty?
-        puts "Nothing to transfer: all snapshots with history id "+
-             "#{ds.current_history_id} are already present locally"
+        unless @opts[:quiet]
+          puts "Nothing to transfer: all snapshots with history id "+
+               "#{ds.current_history_id} are already present locally"
+        end
+
         exit
       end
 
-      puts "Will download #{for_transfer.size} snapshots:"
-      for_transfer.each { |s| puts "  @#{s.name}" }
-      puts
+      unless @opts[:quiet]
+        puts "Will download #{for_transfer.size} snapshots:"
+        for_transfer.each { |s| puts "  @#{s.name}" }
+        puts
+      end
     
       if @opts[:pretend]
         pretend_state = local_state.clone
@@ -165,20 +177,27 @@ module VpsAdmin::CLI::Commands
       end
       
       if no_local_snapshots
-        puts "Performing a full receive of @#{snapshots.first.name} to #{ds}"
+        unless @opts[:quiet]
+          puts "Performing a full receive of @#{snapshots.first.name} to #{ds}"
+        end
+
         run_piped(zfs_cmd(:recv, '-F', ds)) do
           SnapshotSend.new({}, @api).do_exec({
               snapshot: snapshots.first.id,
               send_mail: false,
               delete_after: true,
               max_rate: @opts[:max_rate],
+              quiet: @opts[:quiet],
           })
         end || exit_msg('Receive failed')
       end
 
       if !no_local_snapshots || snapshots.size > 1
-        puts "Performing an incremental receive of "+
-             "@#{snapshots.first.name} - @#{snapshots.last.name} to #{ds}"
+        unless @opts[:quiet]
+          puts "Performing an incremental receive of "+
+               "@#{snapshots.first.name} - @#{snapshots.last.name} to #{ds}"
+        end
+
         run_piped(zfs_cmd(:recv, '-F', ds)) do
           SnapshotSend.new({}, @api).do_exec({
               snapshot: snapshots.last.id,
@@ -186,13 +205,14 @@ module VpsAdmin::CLI::Commands
               send_mail: false,
               delete_after: true,
               max_rate: @opts[:max_rate],
+              quiet: @opts[:quiet],
           })
         end || exit_msg('Receive failed')
       end
     end
 
     def rotate(fs, pretend: false)
-      puts "Rotating snapshots"
+      puts "Rotating snapshots" unless @opts[:quiet]
       local_state = pretend ? pretend : parse_tree(fs)
       
       # Order snapshots by date of creation
@@ -215,7 +235,7 @@ module VpsAdmin::CLI::Commands
         deleted += 1
         local_state[s.hist_id].delete(s)
 
-        puts "Destroying #{ds}@#{s.name}"
+        puts "Destroying #{ds}@#{s.name}" unless @opts[:quiet]
         zfs(:destroy, nil, "#{ds}@#{s.name}", pretend: pretend)
       end
 
@@ -224,7 +244,7 @@ module VpsAdmin::CLI::Commands
         
         ds = "#{fs}/#{hist_id}"
 
-        puts "Destroying #{ds}"
+        puts "Destroying #{ds}" unless @opts[:quiet]
         zfs(:destroy, nil, ds, pretend: pretend)
       end
     end

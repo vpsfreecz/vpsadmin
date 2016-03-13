@@ -19,6 +19,10 @@ module VpsAdmin::CLI::Commands
       opts.on('-d', '--[no-]delete-after', 'Delete the file from the server after successful download') do |d|
         @opts[:delete_after] = d
       end
+      
+      opts.on('-q', '--quiet', 'Print only errors') do |q|
+        @opts[:quiet] = q
+      end
 
       opts.on('-s', '--[no-]send-mail', 'Send mail after the file for download is completed') do |s|
         @opts[:send_mail] = s
@@ -47,11 +51,11 @@ module VpsAdmin::CLI::Commands
       dl, created = find_or_create_dl(opts)
 
       if created
-        warn "The download is being prepared..."
+        warn "The download is being prepared..." unless opts[:quiet]
         sleep(5)
 
       else
-        warn "Reusing existing SnapshotDownload (id=#{dl.id})"
+        warn "Reusing existing SnapshotDownload (id=#{dl.id})" unless opts[:quiet]
       end
 
       r, w = IO.pipe
@@ -64,7 +68,7 @@ module VpsAdmin::CLI::Commands
               @api,
               dl,
               w,
-              progress: STDERR,
+              progress: !opts[:quiet] && STDERR,
               max_rate: opts[:max_rate],
           )
 

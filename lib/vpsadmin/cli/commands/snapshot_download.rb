@@ -30,6 +30,10 @@ module VpsAdmin::CLI::Commands
         @opts[:file] = f
       end
 
+      opts.on('-q', '--quiet', 'Print only errors') do |q|
+        @opts[:quiet] = q
+      end
+
       opts.on('-r', '--resume', 'Resume cancelled download') do |r|
         @opts[:resume] = r
       end
@@ -76,21 +80,21 @@ module VpsAdmin::CLI::Commands
           exit(false)
         end
 
-        warn "The download is being prepared..."
+        warn "The download is being prepared..." unless @opts[:quiet]
         sleep(5)
 
       else
         warn "Reusing existing SnapshotDownload (id=#{dl.id})"
       end
 
-      warn "Downloading to #{f.path}"
+      warn "Downloading to #{f.path}" unless @opts[:quiet]
 
       begin
         VpsAdmin::CLI::StreamDownloader.download(
             @api,
             dl,
             f,
-            progress: f == STDOUT ? STDERR : STDOUT,
+            progress: !@opts[:quiet] && (f == STDOUT ? STDERR : STDOUT),
             position: pos,
             max_rate: @opts[:max_rate],
         )
