@@ -128,7 +128,10 @@ if ($_SESSION["logged_in"]) {
 					$ds = $api->dataset->find($_GET['dataset']);
 					$snap = $ds->snapshot->find($_GET['snapshot']);
 					
-					$api->snapshot_download->create(array('snapshot' => $snap->id));
+					$api->snapshot_download->create(array(
+						'format' => $_POST['format'],
+						'snapshot' => $snap->id,
+					));
 					
 					notify_user(
 						  _("Download of snapshot of").' '.$ds->name.' '. _('from').' '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at))." "._("planned")
@@ -147,9 +150,15 @@ if ($_SESSION["logged_in"]) {
 					
 					$xtpl->table_title(_('Confirm the download of snapshot of dataset').' '.$ds->name);
 					$xtpl->form_create('?page=backup&action=download&dataset='.$ds->id.'&snapshot='.$snap->id, 'post');
-					
+
 					$xtpl->table_td('<strong>'._('Please confirm the download of snapshot of dataset').' '.$ds->name.' '._('from').' '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)).'</strong>', false, false, '2');
 					$xtpl->table_tr();
+
+					$formats = array(
+						'archive' => _('tar.gz archive'),
+						'stream' => _('ZFS data stream'),
+					);
+					$xtpl->form_add_select(_('Format').':', 'format', $formats, $_POST['format']);
 					
 					$xtpl->table_td(_("Confirm") . ' ' .
 						'<input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">'
