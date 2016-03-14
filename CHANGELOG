@@ -1,3 +1,4 @@
+* Fri Feb 26 2016 - version 2.2.0
 - Set API version to 2.0
 - Show CPU, uptime and VPS load in VPS details
 - Configuration of VPS outage windows
