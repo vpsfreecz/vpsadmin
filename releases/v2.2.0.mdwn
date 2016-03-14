@@ -9,6 +9,9 @@ any kind of outage can take place. Migrations can be made to wait until this
 window is open. VPS migrations can now be automated using migration plans, used
 e.g. by node evacuation procedure.
 
+This is the last version of vpsAdmind to explicitly support Ruby 1.8.7 and
+OpenIndiana/Solaris hosts.
+
 ## General
  - Continuous resource tracking of all nodes and VPSes
  - VPS outage windows
@@ -22,6 +25,8 @@ e.g. by node evacuation procedure.
  - New resources `Vps.Status`, `Node.Status` and `Dataset.PropertyHistory`
  - New resources `MigrationPlan` and `MigrationPlan.VpsMigration`
  - New resource `Vps.OutageWindow`
+ - New resource `ObjectHistory`
+ - `Node.PublicStatus` has new parameters `kernel` and `cpu_idle`
 
 ## API internals
  - Migration plans, node evacuation
