@@ -26,7 +26,6 @@ module VpsAdmindCtl::CommandTemplates
             puts 'Shaper  ...  ok'
         end
       end
-
     end
   end
 end

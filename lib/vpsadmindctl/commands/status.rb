@@ -43,16 +43,17 @@ module VpsAdmindCtl::Commands
 
         @res[:queues].each do |name, queue|
           queue[:workers].sort { |a, b| a[0].to_s.to_i <=> b[0].to_s.to_i }.each do |w|
-            puts sprintf('%-8s %-8d %-8d %-20.19s %-5d %-18.16s %-8s %s',
-                         name,
-                         w[0].to_s,
-                         w[1][:id],
-                         w[1][:handler],
-                         w[1][:type],
-                         w[1][:start] ? format_duration(Time.new.to_i - w[1][:start]) : '---',
-                         w[1][:pid],
-                         w[1][:step]
-                 )
+            puts sprintf(
+                '%-8s %-8d %-8d %-20.19s %-5d %-18.16s %-8s %s',
+                name,
+                w[0].to_s,
+                w[1][:id],
+                w[1][:handler],
+                w[1][:type],
+                w[1][:start] ? format_duration(Time.new.to_i - w[1][:start]) : '---',
+                w[1][:pid],
+                w[1][:step]
+            )
           end
         end
       end
