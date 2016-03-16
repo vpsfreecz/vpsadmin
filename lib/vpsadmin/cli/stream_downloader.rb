@@ -18,8 +18,16 @@ module VpsAdmin::CLI
       dl_check = nil
 
       if position > 0
+        read = 0
+        step = 64*1024
         io.seek(0)
-        digest << io.read(position)
+
+        while read < position
+          data = io.read((read + step) > position ? position - read : step)
+          read += data.size
+
+          digest << data
+        end
       end
 
       if progress
