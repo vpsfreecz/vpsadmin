@@ -274,8 +274,9 @@ END
               send_mail: false,
           })
 
-        rescue Errno::ECONNREFUSED => e
-          warn "Connection refused, retry in 60 seconds"
+        rescue Errno::ECONNREFUSED, Errno::ETIMEDOUT, Errno::EHOSTUNREACH => e
+          warn "Connection error: #{e.message}"
+          warn "Retry in 60 seconds"
           sleep(60)
           retry
         end
