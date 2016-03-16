@@ -14,7 +14,6 @@ module VpsAdmind
       method(@format).call(ds)
 
       @size = File.size(file_path)
-      @sum = Digest::SHA256.file(file_path).hexdigest
       ok
     end
 
@@ -38,15 +37,15 @@ module VpsAdmind
       # when tar is launched.
       Dir.entries("/#{ds}/.zfs/snapshot/#{@snapshot}")
 
-      syscmd("#{$CFG.get(:bin, :tar)} -czf \"#{file_path}\" -C \"/#{ds}/.zfs/snapshot\" \"#{@snapshot}\"")
+      pipe_cmd("tar -cz -C \"/#{ds}/.zfs/snapshot\" \"#{@snapshot}\"")
     end
 
     def stream(ds)
-      syscmd("zfs send #{ds}@#{@snapshot} | gzip > #{file_path}")
+      pipe_cmd("zfs send #{ds}@#{@snapshot} | gzip")
     end
 
     def incremental_stream(ds)
-      syscmd("zfs send -I @#{@from_snapshot} #{ds}@#{@snapshot} | gzip > #{file_path}")
+      pipe_cmd("zfs send -I @#{@from_snapshot} #{ds}@#{@snapshot} | gzip")
     end
 
     def secret_dir_path
@@ -55,6 +54,37 @@ module VpsAdmind
 
     def file_path
       "#{secret_dir_path}/#{@file_name}"
+    end
+
+    def pipe_cmd(cmd)
+      self.step = cmd
+
+      digest = Digest::SHA256.new
+      f = File.open(file_path, 'w')
+      r, w = IO.pipe
+
+      pid = Process.fork do
+        r.close
+        STDOUT.reopen(w)
+        Process.exec(cmd)
+      end
+
+      w.close
+
+      until r.eof?
+        data = r.read(131072)
+        digest << data
+        f.write(data)
+      end
+
+      f.close
+      @sum = digest.hexdigest
+
+      Process.wait(pid)
+
+      if $?.exitstatus != 0
+        raise CommandFailed.new(cmd, $?.exitstatus, '')
+      end
     end
   end
 end
