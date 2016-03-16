@@ -28,7 +28,7 @@ module VpsAdmin::CLI::Commands
         @opts[:send_mail] = s
       end
 
-      opts.on('--max-rate N', Integer, 'Maximum download speed in kB/s') do |r|
+      opts.on('-x', '--max-rate N', Integer, 'Maximum download speed in kB/s') do |r|
         exit_msg('--max-rate must be greater than zero') if r <= 0
         @opts[:max_rate] = r
       end
