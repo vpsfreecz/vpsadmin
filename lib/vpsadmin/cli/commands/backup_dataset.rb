@@ -17,6 +17,7 @@ module VpsAdmin::CLI::Commands
           min_snapshots: 30,
           max_snapshots: 45,
           max_age: 30,
+          attempts: 10,
       }
 
       opts.on('-p', '--pretend', 'Print what would the program do') do
@@ -53,6 +54,11 @@ module VpsAdmin::CLI::Commands
 
       opts.on('-s', '--safe-download', 'Download to a temp file (needs 2x disk space)') do |s|
         @opts[:safe] = s
+      end
+
+      opts.on('--retry-attemps N', Integer, 'Retry N times to recover from download error (10)') do |n|
+        exit_msg('--retry-attempts must be greater than zero') if n <= 0
+        @opts[:attempts] = n
       end
 
       opts.on('-i', '--init-snapshots N', Integer, 'Download max N snapshots initially') do |s|
@@ -261,6 +267,8 @@ END
       part, full = snapshot_tmp_file(snapshot, from_snapshot)
 
       if !File.exists?(full)
+        attempts = 0
+
         begin
           SnapshotDownload.new({}, @api).do_exec({
               snapshot: snapshot.id,
@@ -276,9 +284,18 @@ END
 
         rescue Errno::ECONNREFUSED, Errno::ETIMEDOUT, Errno::EHOSTUNREACH => e
           warn "Connection error: #{e.message}"
-          warn "Retry in 60 seconds"
-          sleep(60)
-          retry
+
+          attempts += 1
+
+          if attempts >= @opts[:attempts]
+            warn "Run out of attempts"
+            exit(false)
+
+          else
+            warn "Retry in 60 seconds"
+            sleep(60)
+            retry
+          end
         end
 
         File.rename(part, full)
