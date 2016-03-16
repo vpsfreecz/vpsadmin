@@ -59,8 +59,8 @@ module VpsAdmin::CLI
           headers['Range'] = "bytes=#{downloaded}-" if downloaded > 0
 
           http.request_get(uri.path, headers) do |res|
-            case res.code.to_i
-            when 404  # Not Found
+            case res.code
+            when '404'  # Not Found
               if downloaded > 0
                 # This means that the transaction used for preparing the download
                 # has failed, the file to download does not exist anymore, so fail.
@@ -73,15 +73,18 @@ module VpsAdmin::CLI
                 next
               end
 
-            when 416  # Range Not Satisfiable
+            when '416'  # Range Not Satisfiable
               # The file is not ready yet - we ask for range that cannot be provided
               # yet. This happens when we're resuming a download and the file on the
               # server was deleted meanwhile. The file might not be exactly the same
               # as the one before, sha256sum would most likely fail.
               raise DownloadError, 'Range not satisfiable'
 
-            else
+            when '200', '206'  # OK and Partial Content
               resume
+
+            else
+              raise DownloadError, "Unexpected HTTP status code '#{res.code}'"
             end
            
             t1 = Time.now
