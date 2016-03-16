@@ -48,19 +48,22 @@ module VpsAdmin::CLI::Commands
     end
 
     def exec(args)
-      opts = @opts.clone
-
       if args.size == 0 && STDIN.tty?
-        opts[:snapshot] = snapshot_chooser
+        @opts[:snapshot] = snapshot_chooser
 
       elsif args.size != 1
         warn "Provide exactly one SNAPSHOT_ID as an argument"
         exit(false)
 
       else
-        opts[:snapshot] = args.first.to_i
+        @opts[:snapshot] = args.first.to_i
       end
-     
+      
+      do_exec(@opts)
+    end
+
+    def do_exec(opts)
+      @opts = opts
       f = action = nil
       pos = 0
 
@@ -71,7 +74,7 @@ module VpsAdmin::CLI::Commands
         f, action, pos = open_file(@opts[:file])
       end
 
-      dl, created = find_or_create_dl(opts, action != :resume)
+      dl, created = find_or_create_dl(@opts, action != :resume)
       f, action, pos = open_file(dl.file_name) unless @opts[:file]
 
       if created

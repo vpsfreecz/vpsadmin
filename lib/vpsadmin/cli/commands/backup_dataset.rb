@@ -46,6 +46,10 @@ module VpsAdmin::CLI::Commands
       opts.on('-q', '--quiet', 'Print only errors') do |q|
         @opts[:quiet] = q
       end
+
+      opts.on('-s', '--safe-download', 'Download to a temp file (needs 2x disk space)') do |s|
+        @opts[:safe] = s
+      end
     end
 
     def exec(args)
@@ -170,6 +174,7 @@ END
         # Find the common snapshot between server and localhost, so that the transfer
         # can be incremental.
         shared_name = local_state[ds.current_history_id] \
+                      && !local_state[ds.current_history_id].empty? \
                       && local_state[ds.current_history_id].last.name
         shared = nil
 
@@ -201,15 +206,20 @@ END
           puts "Performing a full receive of @#{snapshots.first.name} to #{ds}"
         end
 
-        run_piped(zfs_cmd(:recv, '-F', ds)) do
-          SnapshotSend.new({}, @api).do_exec({
-              snapshot: snapshots.first.id,
-              send_mail: false,
-              delete_after: true,
-              max_rate: @opts[:max_rate],
-              quiet: @opts[:quiet],
-          })
-        end || exit_msg('Receive failed')
+        if @opts[:safe]
+          safe_download(ds, snapshots.first)
+
+        else
+          run_piped(zfs_cmd(:recv, '-F', ds)) do
+            SnapshotSend.new({}, @api).do_exec({
+                snapshot: snapshots.first.id,
+                send_mail: false,
+                delete_after: true,
+                max_rate: @opts[:max_rate],
+                quiet: @opts[:quiet],
+            })
+          end || exit_msg('Receive failed')
+        end
       end
 
       if !no_local_snapshots || snapshots.size > 1
@@ -218,17 +228,55 @@ END
                "@#{snapshots.first.name} - @#{snapshots.last.name} to #{ds}"
         end
 
-        run_piped(zfs_cmd(:recv, '-F', ds)) do
-          SnapshotSend.new({}, @api).do_exec({
-              snapshot: snapshots.last.id,
-              from_snapshot: snapshots.first.id,
-              send_mail: false,
-              delete_after: true,
+        if @opts[:safe]
+          safe_download(ds, snapshots.last, snapshots.first)
+
+        else
+          run_piped(zfs_cmd(:recv, '-F', ds)) do
+            SnapshotSend.new({}, @api).do_exec({
+                snapshot: snapshots.last.id,
+                from_snapshot: snapshots.first.id,
+                send_mail: false,
+                delete_after: true,
+                max_rate: @opts[:max_rate],
+                quiet: @opts[:quiet],
+            })
+          end || exit_msg('Receive failed')
+        end
+      end
+    end
+
+    def safe_download(ds, snapshot, from_snapshot = nil)
+      part, full = snapshot_tmp_file(snapshot, from_snapshot)
+
+      if !File.exists?(full)
+        begin
+          SnapshotDownload.new({}, @api).do_exec({
+              snapshot: snapshot.id,
+              from_snapshot: from_snapshot && from_snapshot.id,
+              format: from_snapshot ? :incremental_stream : :stream,
+              file: part,
               max_rate: @opts[:max_rate],
               quiet: @opts[:quiet],
+              resume: true,
+              delete_after: true,
+              send_mail: false,
           })
-        end || exit_msg('Receive failed')
+
+        rescue Errno::ECONNREFUSED => e
+          warn "Connection refused, retry in 60 seconds"
+          sleep(60)
+          retry
+        end
+
+        File.rename(part, full)
       end
+
+      run_piped(zfs_cmd(:recv, '-F', ds)) do
+        Process.exec("zcat #{full}")
+      end || exit_msg('Receive failed')
+
+      File.delete(full)
     end
 
     def rotate(fs, pretend: false)
@@ -414,6 +462,17 @@ END
 
         return ds_map[i]
       end
+    end
+
+    def snapshot_tmp_file(s, from_s = nil)
+      if from_s
+        base = ".snapshot_#{from_s.id}-#{s.id}.inc.dat.gz"
+
+      else
+        base = ".snapshot_#{s.id}.dat.gz"
+      end
+
+      ["#{base}.part", base]
     end
 
     def exit_msg(msg)
