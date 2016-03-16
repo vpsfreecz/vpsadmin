@@ -50,6 +50,10 @@ module VpsAdmin::CLI::Commands
       opts.on('-s', '--safe-download', 'Download to a temp file (needs 2x disk space)') do |s|
         @opts[:safe] = s
       end
+
+      opts.on('-i', '--init-snapshots N', Integer, 'Download max N snapshots initially') do |s|
+        @opts[:init_snapshots] = s
+      end
     end
 
     def exec(args)
@@ -103,6 +107,13 @@ module VpsAdmin::CLI::Commands
       latest_local_snapshot = local_state[ds.current_history_id] \
                               && local_state[ds.current_history_id].last
       found_latest = false
+
+      # This is the first run within this history id, no local snapshots are
+      # present
+      if !latest_local_snapshot && @opts[:init_snapshots]
+        remote_state[ds.current_history_id] = \
+          remote_state[ds.current_history_id].last(@opts[:init_snapshots])
+      end
 
       remote_state[ds.current_history_id].each do |snap|
         found = false
