@@ -136,11 +136,16 @@ Unable to transfer: the common snapshot has not been found
 This can happen when the latest local snapshot was deleted from the server,
 i.e. you have not backed up this dataset for quite some time.
 
-You can either destroy the whole current history id, which will destroy all
-local snapshots with that history id:
+You can either rename or destroy the whole current history id:
+
+  zfs rename #{fs}/#{ds.current_history_id} #{fs}/#{ds.current_history_id}.old
+
+or
 
   zfs list -r -t all #{fs}/#{ds.current_history_id}
   zfs destroy -r #{fs}/#{ds.current_history_id}
+
+which will destroy all snapshots with this history id.
 
 You can also destroy the local backup completely or backup to another dataset
 and start anew.
