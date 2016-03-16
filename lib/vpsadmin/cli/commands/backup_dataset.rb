@@ -94,10 +94,7 @@ module VpsAdmin::CLI::Commands
 
       if remote_state[ds.current_history_id].nil? \
          || remote_state[ds.current_history_id].empty?
-        unless @opts[:quiet]
-          puts "Nothing to transfer: no snapshots with history id #{ds.current_history_id}"
-        end
-
+        msg "Nothing to transfer: no snapshots with history id #{ds.current_history_id}"
         exit
       end
 
@@ -128,11 +125,8 @@ module VpsAdmin::CLI::Commands
 
       if for_transfer.empty?
         if found_latest
-          unless @opts[:quiet]
-            puts "Nothing to transfer: all snapshots with history id "+
-                  "#{ds.current_history_id} are already present locally"
-          end
-
+          msg "Nothing to transfer: all snapshots with history id "+
+              "#{ds.current_history_id} are already present locally"
           exit
 
         else
@@ -202,9 +196,7 @@ END
       end
       
       if no_local_snapshots
-        unless @opts[:quiet]
-          puts "Performing a full receive of @#{snapshots.first.name} to #{ds}"
-        end
+        msg "Performing a full receive of @#{snapshots.first.name} to #{ds}"
 
         if @opts[:safe]
           safe_download(ds, snapshots.first)
@@ -223,10 +215,8 @@ END
       end
 
       if !no_local_snapshots || snapshots.size > 1
-        unless @opts[:quiet]
-          puts "Performing an incremental receive of "+
-               "@#{snapshots.first.name} - @#{snapshots.last.name} to #{ds}"
-        end
+        msg "Performing an incremental receive of "+
+            "@#{snapshots.first.name} - @#{snapshots.last.name} to #{ds}"
 
         if @opts[:safe]
           safe_download(ds, snapshots.last, snapshots.first)
@@ -280,7 +270,7 @@ END
     end
 
     def rotate(fs, pretend: false)
-      puts "Rotating snapshots" unless @opts[:quiet]
+      msg "Rotating snapshots"
       local_state = pretend ? pretend : parse_tree(fs)
       
       # Order snapshots by date of creation
@@ -303,7 +293,7 @@ END
         deleted += 1
         local_state[s.hist_id].delete(s)
 
-        puts "Destroying #{ds}@#{s.name}" unless @opts[:quiet]
+        msg "Destroying #{ds}@#{s.name}"
         zfs(:destroy, nil, "#{ds}@#{s.name}", pretend: pretend)
       end
 
@@ -312,7 +302,7 @@ END
         
         ds = "#{fs}/#{hist_id}"
 
-        puts "Destroying #{ds}" unless @opts[:quiet]
+        msg "Destroying #{ds}"
         zfs(:destroy, nil, ds, pretend: pretend)
       end
     end

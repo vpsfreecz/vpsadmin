@@ -13,5 +13,13 @@ module VpsAdmin::CLI::Commands
         [nil, true]
       end
     end
+
+    def msg(str)
+      puts str unless @opts[:quiet]
+    end
+
+    def warn_msg(str)
+      warn str unless @opts[:quiet]
+    end
   end
 end

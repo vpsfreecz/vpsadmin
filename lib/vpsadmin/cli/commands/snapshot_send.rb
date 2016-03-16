@@ -46,16 +46,17 @@ module VpsAdmin::CLI::Commands
     end
 
     def do_exec(opts)
+      @opts = opts
       opts[:format] = opts[:from_snapshot] ? :incremental_stream : :stream
 
       dl, created = find_or_create_dl(opts)
 
       if created
-        warn "The download is being prepared..." unless opts[:quiet]
+        warn_msg "The download is being prepared..."
         sleep(5)
 
       else
-        warn "Reusing existing SnapshotDownload (id=#{dl.id})" unless opts[:quiet]
+        warn_msg "Reusing existing SnapshotDownload (id=#{dl.id})"
       end
 
       r, w = IO.pipe

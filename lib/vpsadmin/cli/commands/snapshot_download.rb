@@ -83,14 +83,14 @@ module VpsAdmin::CLI::Commands
           exit(false)
         end
 
-        warn "The download is being prepared..." unless @opts[:quiet]
+        msg "The download is being prepared..."
         sleep(5)
 
       else
         warn "Reusing existing SnapshotDownload (id=#{dl.id})"
       end
 
-      warn "Downloading to #{f.path}" unless @opts[:quiet]
+      msg "Downloading to #{f.path}"
 
       begin
         VpsAdmin::CLI::StreamDownloader.download(
