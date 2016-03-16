@@ -18,6 +18,7 @@ module VpsAdmin::CLI::Commands
           max_snapshots: 45,
           max_age: 30,
           attempts: 10,
+          checksum: true,
       }
 
       opts.on('-p', '--pretend', 'Print what would the program do') do
@@ -64,6 +65,10 @@ module VpsAdmin::CLI::Commands
       opts.on('-i', '--init-snapshots N', Integer, 'Download max N snapshots initially') do |s|
         exit_msg('--init-snapshots must be greater than zero') if s <= 0
         @opts[:init_snapshots] = s
+      end
+
+      opts.on('--[no-]checksum', 'Verify checksum of the downloaded data (enabled)') do |c|
+        @opts[:checksum] = c
       end
     end
 
@@ -235,6 +240,7 @@ END
                 send_mail: false,
                 delete_after: true,
                 max_rate: @opts[:max_rate],
+                checksum: @opts[:checksum],
                 quiet: @opts[:quiet],
             })
           end || exit_msg('Receive failed')
@@ -256,6 +262,7 @@ END
                 send_mail: false,
                 delete_after: true,
                 max_rate: @opts[:max_rate],
+                checksum: @opts[:checksum],
                 quiet: @opts[:quiet],
             })
           end || exit_msg('Receive failed')
@@ -276,6 +283,7 @@ END
               format: from_snapshot ? :incremental_stream : :stream,
               file: part,
               max_rate: @opts[:max_rate],
+              checksum: @opts[:checksum],
               quiet: @opts[:quiet],
               resume: true,
               delete_after: true,

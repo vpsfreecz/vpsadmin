@@ -8,6 +8,7 @@ module VpsAdmin::CLI::Commands
       @opts = {
           delete_after: true,
           send_mail: false,
+          checksum: true,
       }
 
       opts.on('-f', '--format FORMAT', 'archive, stream or incremental_stream') do |f|
@@ -45,6 +46,10 @@ module VpsAdmin::CLI::Commands
       opts.on('-x', '--max-rate N', Integer, 'Maximum download speed in kB/s') do |r|
         exit_msg('--max-rate must be greater than zero') if r <= 0
         @opts[:max_rate] = r
+      end
+
+      opts.on('--[no-]checksum', 'Verify checksum of the downloaded data (enabled)') do |c|
+        @opts[:checksum] = c
       end
     end
 
@@ -101,6 +106,7 @@ module VpsAdmin::CLI::Commands
             progress: !@opts[:quiet] && (f == STDOUT ? STDERR : STDOUT),
             position: pos,
             max_rate: @opts[:max_rate],
+            checksum: @opts[:checksum],
         )
 
       rescue VpsAdmin::CLI::DownloadError => e

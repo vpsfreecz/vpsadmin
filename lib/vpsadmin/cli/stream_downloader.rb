@@ -11,13 +11,14 @@ module VpsAdmin::CLI
       new(*args)
     end
 
-    def initialize(api, dl, io, progress: STDOUT, position: 0, max_rate: nil)
+    def initialize(api, dl, io, progress: STDOUT, position: 0, max_rate: nil,
+                  checksum: true)
       downloaded = position
       uri = URI(dl.url)
       digest = Digest::SHA256.new
       dl_check = nil
 
-      if position > 0
+      if position > 0 && checksum
         read = 0
         step = 64*1024
         io.seek(0)
@@ -115,7 +116,7 @@ module VpsAdmin::CLI
                 @pb.progress = @pb.total
               end
 
-              digest.update(fragment)
+              digest.update(fragment) if checksum
 
               if max_rate && max_rate > 0
                 t2 = Time.now
@@ -149,7 +150,7 @@ module VpsAdmin::CLI
       end
 
       # Verify the checksum
-      if digest.hexdigest != dl_check.sha256sum
+      if checksum && digest.hexdigest != dl_check.sha256sum
         raise DownloadError, 'The sha256sum does not match, retry the download'
       end
     end
