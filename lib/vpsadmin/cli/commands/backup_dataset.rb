@@ -28,18 +28,22 @@ module VpsAdmin::CLI::Commands
       end
 
       opts.on('-m', '--min-snapshots N', Integer, 'Keep at least N snapshots (30)') do |m|
+        exit_msg('--min-snapshots must be greater than zero') if m <= 0
         @opts[:min_snapshots] = m
       end
 
       opts.on('-M', '--max-snapshots N', Integer, 'Keep at most N snapshots (45)') do |m|
+        exit_msg('--max-snapshots must be greater than zero') if m <= 0
         @opts[:max_snapshots] = m
       end
 
       opts.on('-a', '--max-age N', Integer, 'Delete snapshots older then N days (30)') do |m|
+        exit_msg('--max-age must be greater than zero') if m <= 0
         @opts[:max_age] = m
       end
 
       opts.on('--max-rate N', Integer, 'Maximum download speed in kB/s') do |r|
+        exit_msg('--max-rate must be greater than zero') if r <= 0
         @opts[:max_rate] = r
       end
       
@@ -52,6 +56,7 @@ module VpsAdmin::CLI::Commands
       end
 
       opts.on('-i', '--init-snapshots N', Integer, 'Download max N snapshots initially') do |s|
+        exit_msg('--init-snapshots must be greater than zero') if s <= 0
         @opts[:init_snapshots] = s
       end
     end
