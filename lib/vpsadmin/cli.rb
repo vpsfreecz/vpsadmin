@@ -1,11 +1,15 @@
 require 'haveapi/cli'
+require 'vpsadmin/client/version'
 
 module VpsAdmin
   module CLI
     module Commands ; end
 
     class Cli < HaveAPI::CLI::Cli
-
+      def show_version
+        puts "#{VpsAdmin::Client::VERSION} based on haveapi-client "+
+             HaveAPI::Client::VERSION
+      end
     end
   end
 end
