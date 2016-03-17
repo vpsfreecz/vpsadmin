@@ -43,7 +43,9 @@ module VpsAdmin::CLI
         )
       end
 
-      Net::HTTP.start(uri.host) do |http|
+      args = [uri.host] + Array.new(5, nil) + [{use_ssl: uri.scheme == 'https'}]
+
+      Net::HTTP.start(*args) do |http|
         loop do
           begin
             dl_check = api.snapshot_download.show(dl.id)
