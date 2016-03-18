@@ -39,6 +39,7 @@ module VpsAdmin::CLI
             format: @format,
             rate_scale: ->(rate) { (rate / 1024.0).round(2) },
             throttle_rate: 0.2,
+            starting_at: downloaded,
             output: progress,
         )
       end
