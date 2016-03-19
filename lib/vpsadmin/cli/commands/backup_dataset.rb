@@ -14,6 +14,7 @@ module VpsAdmin::CLI::Commands
 
     def options(opts)
       @opts = {
+          rotate: true,
           min_snapshots: 30,
           max_snapshots: 45,
           max_age: 30,
@@ -26,7 +27,7 @@ module VpsAdmin::CLI::Commands
         @opts[:pretend] = true
       end
 
-      opts.on('-r', '--[no-]rotate', 'Delete old snapshots') do |r|
+      opts.on('-r', '--[no-]rotate', 'Delete old snapshots (enabled)') do |r|
         @opts[:rotate] = r
       end
 
