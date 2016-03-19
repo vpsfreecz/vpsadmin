@@ -86,11 +86,20 @@ module VpsAdmin::CLI
               end
 
             when '416'  # Range Not Satisfiable
-              # The file is not ready yet - we ask for range that cannot be provided
-              # yet. This happens when we're resuming a download and the file on the
-              # server was deleted meanwhile. The file might not be exactly the same
-              # as the one before, sha256sum would most likely fail.
-              raise DownloadError, 'Range not satisfiable'
+              if downloaded > position
+                # We have already managed to download something (at this run, if the trasfer
+                # was resumed) and the server cannot provide more data yet. This can be
+                # because the server is busy. Wait and retry.
+                pause(20)
+                next
+
+              else
+                # The file is not ready yet - we ask for range that cannot be provided
+                # This happens when we're resuming a download and the file on the
+                # server was deleted meanwhile. The file might not be exactly the same
+                # as the one before, sha256sum would most likely fail.
+                raise DownloadError, 'Range not satisfiable'
+              end
 
             when '200', '206'  # OK and Partial Content
               resume
