@@ -19,6 +19,16 @@ module VpsAdmin::CLI
       dl_check = nil
 
       if position > 0 && checksum
+        if progress
+          pb = ProgressBar.create(
+              title: 'Calculating checksum',
+              total: position,
+              format: '%E %t: [%B] %p%%',
+              throttle_rate: 0.2,
+              output: progress,
+          )
+        end
+
         read = 0
         step = 64*1024
         io.seek(0)
@@ -28,13 +38,17 @@ module VpsAdmin::CLI
           read += data.size
 
           digest << data
+          pb.progress = read if pb
         end
+
+        pb.finish if pb
       end
 
       if progress
         self.format = '%t: [%B] %r kB/s'
 
         @pb = ProgressBar.create(
+            title: 'Downloading',
             total: nil,
             format: @format,
             rate_scale: ->(rate) { (rate / 1024.0).round(2) },
