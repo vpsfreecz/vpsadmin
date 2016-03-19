@@ -73,7 +73,7 @@ module VpsAdmin::CLI::Commands
         @opts[:checksum] = c
       end
 
-      opts.on('-d', '--[no-]delete-after', 'Delete the file from the server after successful download') do |d|
+      opts.on('-d', '--[no-]delete-after', 'Delete the file from the server after successful download (enabled)') do |d|
         @opts[:delete_after] = d
       end
     end
