@@ -296,7 +296,10 @@ END
               send_mail: false,
           })
 
-        rescue Errno::ECONNREFUSED, Errno::ETIMEDOUT, Errno::EHOSTUNREACH => e
+        rescue Errno::ECONNREFUSED,
+               Errno::ETIMEDOUT,
+               Errno::EHOSTUNREACH,
+               Errno::ECONNRESET => e
           warn "Connection error: #{e.message}"
 
           attempts += 1
