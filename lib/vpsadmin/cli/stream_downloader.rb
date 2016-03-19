@@ -169,14 +169,18 @@ module VpsAdmin::CLI
 
     protected
     def pause(secs)
-      if @pb && !@paused
-        @pb.format('%t: [%B] waiting')
-        @pb.refresh(force: true)
-      end
-
       @paused = true
+      
+      if @pb
+        secs.times do |i|
+          @pb.format("%t: [%B] waiting #{secs - i}")
+          @pb.refresh(force: true)
+          sleep(1)
+        end
 
-      sleep(secs)
+      else
+        sleep(secs)
+      end
     end
 
     def resume
