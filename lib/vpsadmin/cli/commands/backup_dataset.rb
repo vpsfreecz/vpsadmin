@@ -19,6 +19,7 @@ module VpsAdmin::CLI::Commands
           max_age: 30,
           attempts: 10,
           checksum: true,
+          delete_after: true,
       }
 
       opts.on('-p', '--pretend', 'Print what would the program do') do
@@ -69,6 +70,10 @@ module VpsAdmin::CLI::Commands
 
       opts.on('--[no-]checksum', 'Verify checksum of the downloaded data (enabled)') do |c|
         @opts[:checksum] = c
+      end
+
+      opts.on('-d', '--[no-]delete-after', 'Delete the file from the server after successful download') do |d|
+        @opts[:delete_after] = d
       end
     end
 
@@ -238,7 +243,7 @@ END
             SnapshotSend.new({}, @api).do_exec({
                 snapshot: snapshots.first.id,
                 send_mail: false,
-                delete_after: true,
+                delete_after: @opts[:delete_after],
                 max_rate: @opts[:max_rate],
                 checksum: @opts[:checksum],
                 quiet: @opts[:quiet],
@@ -260,7 +265,7 @@ END
                 snapshot: snapshots.last.id,
                 from_snapshot: snapshots.first.id,
                 send_mail: false,
-                delete_after: true,
+                delete_after: @opts[:delete_after],
                 max_rate: @opts[:max_rate],
                 checksum: @opts[:checksum],
                 quiet: @opts[:quiet],
@@ -286,7 +291,7 @@ END
               checksum: @opts[:checksum],
               quiet: @opts[:quiet],
               resume: true,
-              delete_after: true,
+              delete_after: @opts[:delete_after],
               send_mail: false,
           })
 
