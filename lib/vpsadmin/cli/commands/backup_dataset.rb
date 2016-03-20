@@ -76,6 +76,10 @@ module VpsAdmin::CLI::Commands
       opts.on('-d', '--[no-]delete-after', 'Delete the file from the server after successful download (enabled)') do |d|
         @opts[:delete_after] = d
       end
+
+      opts.on('--no-snapshots-as-error', 'Consider no snapshots to download as an error') do
+        @opts[:no_snapshots_error] = true
+      end
     end
 
     def exec(args)
@@ -120,8 +124,10 @@ module VpsAdmin::CLI::Commands
 
       if remote_state[ds.current_history_id].nil? \
          || remote_state[ds.current_history_id].empty?
-        msg "Nothing to transfer: no snapshots with history id #{ds.current_history_id}"
-        exit
+        exit_msg(
+            "Nothing to transfer: no snapshots with history id #{ds.current_history_id}",
+            error: @opts[:no_snapshots_error]
+        )
       end
 
       for_transfer = []
@@ -158,9 +164,11 @@ module VpsAdmin::CLI::Commands
 
       if for_transfer.empty?
         if found_latest
-          msg "Nothing to transfer: all snapshots with history id "+
-              "#{ds.current_history_id} are already present locally"
-          exit
+          exit_msg(
+              "Nothing to transfer: all snapshots with history id "+
+              "#{ds.current_history_id} are already present locally",
+              error: @opts[:no_snapshots_error]
+          )
 
         else
           exit_msg(<<END
@@ -521,9 +529,15 @@ END
       ["#{base}.part", base]
     end
 
-    def exit_msg(msg)
-      warn msg
-      exit(1)
+    def exit_msg(str, error: true)
+      if error
+        warn str
+        exit(1)
+
+      else
+        msg str
+        exit(0)
+      end
     end
   end
 end
