@@ -126,7 +126,7 @@ module VpsAdmin::CLI::Commands
       f = action = nil
       pos = 0
 
-      if File.exists?(path)
+      if File.exists?(path) && File.size(path) > 0
         if @opts[:resume]
           action = :resume
 
