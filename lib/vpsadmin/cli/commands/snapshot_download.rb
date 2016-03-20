@@ -9,6 +9,7 @@ module VpsAdmin::CLI::Commands
           delete_after: true,
           send_mail: false,
           checksum: true,
+          format: 'archive',
       }
 
       opts.on('-f', '--format FORMAT', 'archive, stream or incremental_stream') do |f|
