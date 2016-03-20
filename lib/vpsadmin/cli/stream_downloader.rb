@@ -23,7 +23,8 @@ module VpsAdmin::CLI
           pb = ProgressBar.create(
               title: 'Calculating checksum',
               total: position,
-              format: '%E %t: [%B] %p%%',
+              format: '%E %t: [%B] %p%% %r MB/s',
+              rate_scale: ->(rate) { (rate / 1024.0 / 1024.0).round(2) },
               throttle_rate: 0.2,
               output: progress,
           )
