@@ -6,7 +6,8 @@ module VpsAdmind
     include Utils::Zfs
 
     def exec
-      @name = Time.new.strftime('%Y-%m-%dT%H:%M:%S')
+      @created_at = Time.now.utc
+      @name = @created_at.strftime('%Y-%m-%dT%H:%M:%S')
 
       zfs(
           :snapshot,
@@ -25,7 +26,12 @@ module VpsAdmind
 
     def post_save(db)
       @snapshots.each do |snap|
-        db.prepared('UPDATE snapshots SET name = ? WHERE id = ?', @name, snap['snapshot_id'])
+        db.prepared(
+            'UPDATE snapshots SET name = ?, created_at = ? WHERE id = ?',
+            @name,
+            @created_at,
+            snap['snapshot_id']
+        )
       end
     end
   end
