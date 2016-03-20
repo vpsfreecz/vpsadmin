@@ -54,6 +54,7 @@ module VpsAdmin::CLI
             rate_scale: ->(rate) { (rate / 1024.0).round(2) },
             throttle_rate: 0.2,
             starting_at: downloaded,
+            autofinish: false,
             output: progress,
         )
       end
@@ -71,7 +72,7 @@ module VpsAdmin::CLI
               total = dl_check.size * 1024 * 1024
               @pb.total = @pb.progress > total ? @pb.progress : total
 
-              self.format = '%E: [%B] %p%% %r kB/s'
+              self.format = '%E %t: [%B] %p%% %r kB/s'
             end
 
           rescue HaveAPI::Client::ActionFailed => e
@@ -162,7 +163,7 @@ module VpsAdmin::CLI
                   t1 = Time.now
                 end
               end
-              
+            
               io.write(fragment)
             end
           end
@@ -174,6 +175,8 @@ module VpsAdmin::CLI
           pause(15)
         end
       end
+
+      @pb.finish if @pb
 
       # Verify the checksum
       if checksum && digest.hexdigest != dl_check.sha256sum
