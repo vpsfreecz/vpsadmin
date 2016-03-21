@@ -1,3 +1,11 @@
+* Mon Mar 21 2016 - version 2.3.0
+- New commands for downloading snapshots:
+  - snapshot download
+  - snapshot send
+  - backup dataset
+  - backup vps
+- vps migrate_many has new option --[no-]cleanup-data
+
 * Fri Feb 26 2016 - version 2.2.0
 - New command vps migrate_many
 
