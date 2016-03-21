@@ -31,7 +31,7 @@ module VpsAdmin::CLI
         end
 
         read = 0
-        step = 64*1024
+        step = 1*1024*1024
         io.seek(0)
 
         while read < position
