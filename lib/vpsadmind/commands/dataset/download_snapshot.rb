@@ -3,14 +3,15 @@ require 'digest'
 module VpsAdmind
   class Commands::Dataset::DownloadSnapshot < Commands::Base
     handle 5004
-    needs :system, :pool
+    needs :system, :zfs, :pool
 
     def exec
       ds = "#{@pool_fs}/#{@dataset_name}"
       ds += "/#{@tree}/#{@branch}" if @tree
       
       syscmd("#{$CFG.get(:bin, :mkdir)} \"#{secret_dir_path}\"")
-      
+     
+      approx_size(ds)
       method(@format).call(ds)
 
       @size = File.size(file_path)
@@ -31,6 +32,40 @@ module VpsAdmind
     end
 
     protected
+    def approx_size(ds)
+      size = 0
+
+      if @from_snapshot
+        sum = 0
+        count = false
+
+        zfs(:get, '-rHp -d 1 -t snapshot -o name,value used', ds)[:output].split("\n").each do |s|
+          name, used = s.split
+          snap = name.split('@').last
+
+          if snap == @from_snapshot
+            count = true
+            next
+          end
+
+          sum += used.to_i if count
+          
+          break if snap == @snapshot
+        end
+
+        size = sum / 1024 / 1024
+
+      else
+        size = zfs(
+            :get, '-Hp -o value referenced', "#{ds}@#{@snapshot}"
+        )[:output].strip.to_i / 1024 / 1024
+      end
+
+      db = VpsAdmind::Db.new
+      db.prepared('UPDATE snapshot_downloads SET size = ? WHERE id = ?', size, @download_id)
+      db.close
+    end
+
     def archive(ds)
       # On ZoL, snapshots in .zfs are mounted using automounts, so for tar
       # to work properly, it must be accessed before, so that it is already mounted
