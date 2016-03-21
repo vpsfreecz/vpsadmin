@@ -39,6 +39,7 @@ The storage is fully transaction-based. Following operations are defined:
  - [[Transfer]]
  - [[Rollback]]
  - [[Rotate]]
+ - [[Download]]
 
 ## Repeatable tasks
 Very often it is needed to run operations regularily, e.g. snapshot and transfer

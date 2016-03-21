@@ -1,0 +1,96 @@
+vpsAdmin allows exporting of snapshots in the form of `tar.gz` archive or ZFS
+data stream.
+
+Exported snapshots are stored in a special dataset `vpsadmin/download` that is
+located in every pool. Every download is protected by a 100 characters long
+random string and only the owner of that download can access the string.
+vpsAdmin by default employs no other protection.
+
+`vpsadmin-download-mounter` can be used to mount the download directory of all
+pools under one directory. The administrator is responsible for running this
+program himself and must also provide a web server that serves the files. The
+URL to this server is set in sysconfig under key `snapshot_download_base_url`.
+
+    snapshot_download_base_url = "https://vpsadmin.vpsfree.cz/backup/"
+
+## Incremental streams
+Until a history flow is broken, snapshots can be downloaded incrementally, i.e.
+transfer only changed data from selected snapshots. History flow is broken by
+VPS reinstall or rollback. To pass this knowledge to clients, each snapshot
+has a history identifier (`Snapshot.history_id`). Snapshots with the same
+history identifier share the same history and can be downloaded incrementally.
+
+The identifier is an integer and when the breakage occurs, it is incremented by
+1. History identifier of affected snapshots may change. Furthermore, dataset
+has parameter `Dataset.current_history_id` which signifies which history
+identifier is currently in use. Knowing this, clients can determine what
+snapshots can be downloaded incrementally or fully.
+
+## Download preparation
+The file URL is known beforehand, but it may take a significant amount of time
+to actually generate the file, depending on the size of the downloaded snapshot.
+For this, the `SnapshotDownload` resource has boolean parameter `ready`. The
+file is complete when `ready` is `true`.
+
+The exact file size is known only after the file is ready. To give the client
+an idea about the approximate file size beforehand, it saves the size of ZFS
+snapshots. This size is not precise, because ZFS compresses data using lz4,
+where as download files use gzip. If ZFS compression is not used, then the size
+is even less approximate. Generally, it can be said that the approximate file
+size is always larger than the real one, because gzip has higher compression
+ratio.
+
+## Live download
+The client can start downloading the file even before it is completed, but the
+process is more complicated, because the web server will not wait for the whole
+file, as it has no way of knowing if and when it is complete. Instead, the web
+server will send as many bytes as the file contains at the time of the request.
+Clients can use this and download the file in parts using HTTP header `Range`.
+
+After downloading each part, the client should check the `SnapshotDownload`
+resource to see if the file is completed and learn its size and checksum.
+If the file or `SnapshotDownload` disappears (returns 404), it means that the
+transaction responsible for creating the download has failed, which is what
+the client has to do too.
+
+## vpsadminctl commands
+`vpsadminctl` features 4 commands used to download snapshots.
+
+### `snapshot download [<id>]`
+This command saves the snapshot in a file, unless `--output=-`, in which case
+it is written to stdout. The file is written out in a compressed form.
+
+If the `id` argument is not provided, the program will list all snapshots the
+user can download and let him choose.
+
+### `snapshot send <id>`
+This command is basically just a syntactic sugar for `snapshot download`, as
+they generally do the same. `snapshot send` is meant to resemble `zfs send`, so
+it writes to stdout only. The data stream is also decompressed to be able to
+pipe it to `zfs recv` directly.
+
+This command does not have an interactive form.
+
+### `backup dataset [<id>] <fs>`
+`backup dataset` can automatically backup a remote dataset locally, ZFS to ZFS.
+It utilizes the history identifiers and is able to efficiently download remote
+snapshots to dedicated local dataset. It is suited to be able to run
+autonomously and regularly by cron.
+
+The second argument `fs` contains a name of a dataset in which it will download
+the snapshots. This dataset is further divided into subdatasets named by the
+history idenfifier. Therefore, it can survive even VPS reinstall and rollback
+- it will simply download a full stream again.
+
+The first argument `id` is needed only on the first successful run. After that,
+the `id` is saved to `fs` as user property `cz.vpsfree.vpsadmin:dataset_id`.
+This property is also used to ensure that only one remote dataset is backed up
+in dataset `fs`.
+
+If the `id` is not provided on the first run, the program will list available
+datasets and ask the user to choose.
+
+### `backup vps [<id>] <fs>`
+This command is the same as `backup dataset`, only it takes `VPS id` as an
+argument instead of `dataset id`. In its interactive form, it also lists only
+datasets that are used as a root filesystem of a VPS.
