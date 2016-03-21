@@ -1,0 +1,56 @@
+# Release notes
+Version 2.3.0 focuses on improving snapshot downloading and off-site backups.
+It is now possible to download ZFS data streams directly, even incrementally.
+The CLI client supports snapshot downloads explicitly, in several variants.
+
+- `snapshot download [<id>] [-- [options]]` can download snapshot into a file
+- `snapshot send <id> [-- [options]]` is an imitation of `zfs send` and thus can
+  be used in the same way
+- `backup dataset [<id>] <filesystem> [-- [options]]` can autonomously download
+  remote snapshots and store them locally in a dataset
+- `backup vps [<id>] <filesystem> [-- [options]]` is an extension of the
+  previous command focused on backuping VPS
+
+All these commands begin the download immediately, they do not have to wait until
+the file on the server is complete. When downloading into a file, the program can
+be interrupted and resume the download later. All commands by default calculate
+the checksum and verify it, assuring that the downloaded data is correct.
+
+`backup` commands are designed to run periodically by cron. The program itself
+will decide whether it can download an incremental stream or whether it needs
+a full one.
+
+## General
+- Download snapshots as ZFS (incremental) data stream
+- Snapshot history identifier
+
+## API resources
+- `Dataset.Snapshot` has new output parameters `name` and `history_id`
+- `SnapshotDownload` has new parameters `format`, `sha256sum` and `send_mail`
+- `Dataset` has new parameter `current_history_id`
+
+## API internals
+- Save snapshot names in UTC
+- `TransactionChain#append`: add option queue
+- `TransactionChain.Index`: fix ambiguous column name in DB query
+
+## vpsAdmin web UI
+- Show history identifier in snapshot list
+- Select format of the downloaded snapshot
+
+## vpsAdmin-client
+- `vps migrate_many` has new option `--[no-]cleanup-data`
+- New commands
+  - `snapshot download`
+  - `snapshot send`
+  - `backup dataset`
+  - `backup vps`
+
+## vpsAdmind
+- Confirm attribute `created_at` after snapshot creation
+- Save snapshot name and time of creation in UTC
+- Ability to export ZFS (incremental) data streams
+- Compute and save checksum of files for download
+
+# Upgrade instructions
+Standard upgrade process.
