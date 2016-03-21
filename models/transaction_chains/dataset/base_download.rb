@@ -38,7 +38,7 @@ module TransactionChains
       append(
           Transactions::Storage::DownloadSnapshot,
           args: dl,
-          queue: opts[:format] == :stream ? :zfs_send : nil,
+          queue: opts[:format] == :archive ? nil : :zfs_send,
       ) do
         create(dl)
         edit(snapshot, snapshot_download_id: dl.id)
