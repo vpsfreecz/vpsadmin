@@ -67,13 +67,20 @@ module VpsAdmin::CLI
           begin
             dl_check = api.snapshot_download.show(dl.id)
 
-            if @pb && dl_check.ready
+            if @pb && (dl_check.ready || (dl_check.size && dl_check.size > 0))
               @pb.progress = downloaded
 
               total = dl_check.size * 1024 * 1024
               @pb.total = @pb.progress > total ? @pb.progress : total
+              @download_size = (dl_check.size / 1024.0).round(2)
 
-              self.format = '%E %t: [%B] %p%% %r kB/s'
+              if dl_check.ready
+                @download_ready = true
+                self.format = "%E %t #{@download_size} GB: [%B] %p%% %r kB/s"
+
+              else
+                self.format = "%E %t ~#{@download_size} GB: [%B] %p%% %r kB/s"
+              end
             end
 
           rescue HaveAPI::Client::ActionFailed => e
@@ -191,7 +198,18 @@ module VpsAdmin::CLI
       
       if @pb
         secs.times do |i|
-          @pb.format("%t: [%B] waiting #{secs - i}")
+          if @download_size
+            if @download_ready
+              @pb.format("%t #{@download_size} GB: [%B] waiting #{secs - i}")
+
+            else
+              @pb.format("%t ~#{@download_size} GB: [%B] waiting #{secs - i}")
+            end
+
+          else
+            @pb.format("%t: [%B] waiting #{secs - i}")
+          end
+
           @pb.refresh(force: true)
           sleep(1)
         end
