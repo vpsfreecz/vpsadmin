@@ -384,7 +384,7 @@ END
       
       zfs(
           :get,
-          '-Hrp -d2 name,creation -tsnapshot -oname,property,value',
+          '-Hrp -d2 -tsnapshot -oname,property,value name,creation',
           fs
       ).split("\n").each do |line|
         name, property, value = line.split
