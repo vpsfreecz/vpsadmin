@@ -120,6 +120,7 @@ function print_newvps_page3($env_id, $loc_id) {
 			$r->cluster_resource->stepsize,
 			unit_for_cluster_resource($name)
 		);
+		$xtpl->table_td(_('You have').' '.$r->free.' '.unit_for_cluster_resource($name).' '._('available'));
 		$xtpl->table_tr();
 	}
 	
@@ -127,6 +128,12 @@ function print_newvps_page3($env_id, $loc_id) {
 		$xtpl->form_add_checkbox(_("Boot on create").':', 'boot_after_create', '1', (isset($_POST['vps_hostname']) && !isset($_POST['boot_after_create'])) ? false : true, $hint = '');
 		$xtpl->form_add_textarea(_("Extra information about VPS").':', 28, 4, 'vps_info', $_POST['vps_info'], '');
 	}
+
+	$xtpl->table_td(
+		_('Contact support if you need more').' <a href="?page=adminm&action=cluster_resources&id='.$_SESSION['member']['m_id'].'">'._('resources.').'</a>',
+		false, false, '2'
+	);
+	$xtpl->table_tr();
 	
 	$xtpl->form_out(_("Create"));
 	
