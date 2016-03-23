@@ -1,3 +1,7 @@
+* Web Mar 23 2016 - version 2.3.1
+- Add option --[no-]sudo to command backup dataset
+- Fix ZFS call to work on both ZoL and BSD
+
 * Mon Mar 21 2016 - version 2.3.0
 - New commands for downloading snapshots:
   - snapshot download
