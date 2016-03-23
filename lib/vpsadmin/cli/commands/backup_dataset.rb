@@ -21,6 +21,7 @@ module VpsAdmin::CLI::Commands
           attempts: 10,
           checksum: true,
           delete_after: true,
+          sudo: true,
       }
 
       opts.on('-p', '--pretend', 'Print what would the program do') do
@@ -79,6 +80,10 @@ module VpsAdmin::CLI::Commands
 
       opts.on('--no-snapshots-as-error', 'Consider no snapshots to download as an error') do
         @opts[:no_snapshots_error] = true
+      end
+
+      opts.on('--[no-]sudo', 'Use sudo to run zfs if not run as root (enabled)') do |s|
+        @opts[:sudo] = s
       end
     end
 
@@ -464,7 +469,7 @@ END
 
     def zfs_cmd(cmd, opts, fs)
       s = ''
-      s += 'sudo ' if Process.euid != 0
+      s += 'sudo ' if @opts[:sudo] && Process.euid != 0
       s += 'zfs'
       "#{s} #{cmd} #{opts} #{fs}"
     end
