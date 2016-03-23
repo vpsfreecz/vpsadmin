@@ -363,12 +363,17 @@ if ($_SESSION["logged_in"]) {
 		$xtpl->table_add_category('');
 		
 		foreach ($downloads as $dl) {
+			if (strlen($dl->file_name) > 35)
+				$short_name = substr($dl->file_name, 0, 35) . '...';
+
+			else $short_name = $dl->file_name;
+
 			if ($_SESSION['is_admin'])
 				$xtpl->table_td('<a href="?page=adminm&action=edit&id='.$dl->user_id.'">'.$dl->user->login.'</a>');
 				
 			$xtpl->table_td($dl->snapshot_id ? $dl->snapshot->dataset->name : '---');
 			$xtpl->table_td($dl->snapshot_id ? tolocaltz($dl->snapshot->created_at, 'Y-m-d H:i') : '---');
-			$xtpl->table_td($dl->file_name);
+			$xtpl->table_td('<span title="'.$dl->file_name.'">'.$short_name.'</span>');
 			$xtpl->table_td($dl->size ? (round($dl->size / 1024, 2) . "&nbsp;GiB") : '---');
 			$xtpl->table_td(tolocaltz($dl->expiration_date, 'Y-m-d'));
 			$xtpl->table_td($dl->ready ? '<a href="'.$dl->url.'">'._('Download').'</a>' : _('in progress'));
