@@ -36,24 +36,24 @@ module VpsAdmind
       size = 0
 
       if @from_snapshot
-        sum = 0
-        count = false
+        rx = /^total estimated size is ([^$]+)$/
+        str = zfs(:send, "-nv -I @#{@from_snapshot}", "#{ds}@#{@snapshot}")[:output]
+        m = rx.match(str)
 
-        zfs(:get, '-rHp -d 1 -t snapshot -o name,value used', ds)[:output].split("\n").each do |s|
-          name, used = s.split
-          snap = name.split('@').last
+        fail 'unable to estimate size' if m.nil?
 
-          if snap == @from_snapshot
-            count = true
-            next
-          end
+        size = m[1].to_f
+        suffix = m[1].strip[-1]
+        units = %w(K M G T)
 
-          sum += used.to_i if count
-          
-          break if snap == @snapshot
+        if i = units.index(suffix)
+          (i+1).times { size *= 1024 }
+
+        else
+          fail "unsupported suffix '#{suffix}'"
         end
 
-        size = sum / 1024 / 1024
+        size = (size / 1024 / 1024).round
 
       else
         size = zfs(
