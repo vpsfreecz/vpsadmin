@@ -44,13 +44,16 @@ module VpsAdmind
 
         size = m[1].to_f
         suffix = m[1].strip[-1]
-        units = %w(K M G T)
 
-        if i = units.index(suffix)
-          (i+1).times { size *= 1024 }
+        if suffix !~ /^\d+$/
+          units = %w(K M G T)
 
-        else
-          fail "unsupported suffix '#{suffix}'"
+          if i = units.index(suffix)
+            (i+1).times { size *= 1024 }
+
+          else
+            fail "unsupported suffix '#{suffix}'"
+          end
         end
 
         size = (size / 1024 / 1024).round
