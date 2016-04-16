@@ -385,7 +385,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
         datetime :from
         datetime :to
 
-        patch :limit, fill: true
+        patch :limit, default: 25, fill: true
       end
 
       output(:object_list) do

@@ -612,7 +612,7 @@ module VpsAdmin::API::Resources
           datetime :to
           string :name
 
-          patch :limit, fill: true
+          patch :limit, default: 25, fill: true
         end
 
         output(:object_list) do

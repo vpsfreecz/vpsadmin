@@ -25,6 +25,7 @@ module VpsAdmin::API::Resources
       input do
         use :all, include: %i(user auth_type ip_addr user_agent client_version
                               auth_token_str admin)
+        patch :limit, default: 25, fill: true
       end
 
       output(:object_list) do

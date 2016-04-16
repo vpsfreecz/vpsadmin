@@ -25,7 +25,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
       string :class_name, label: 'Class name', desc: 'Search by concerned class name'
       integer :row_id, label: 'Row id', desc: 'Search by concerned row id'
       
-      patch :limit, fill: true
+      patch :limit, default: 25, fill: true
     end
 
     output(:object_list) do

@@ -33,7 +33,7 @@ module VpsAdmin::API::Resources
         integer :success, db_name: :t_success
         string :done, db_name: :t_done, choices: ::Transaction.t_dones.keys
         
-        patch :limit, fill: true
+        patch :limit, default: 25, fill: true
       end
 
       output(:object_list) do

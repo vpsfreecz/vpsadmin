@@ -1496,7 +1496,7 @@ END
         bool :status
         bool :is_running
 
-        patch :limit, fill: true
+        patch :limit, default: 25, fill: true
       end
 
       output(:object_list) do
