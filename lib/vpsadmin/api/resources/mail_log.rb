@@ -4,6 +4,7 @@ module VpsAdmin::API::Resources
     desc 'Browse sent mails'
 
     params(:all) do
+      id :id
       resource User, value_label: :login
       string :to
       string :cc
