@@ -601,6 +601,7 @@ module VpsAdmin::API::Resources
       model ::DatasetPropertyHistory
 
       params(:all) do
+        id :id
         string :name
         integer :value
         datetime :created_at
