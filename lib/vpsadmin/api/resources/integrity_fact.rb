@@ -23,6 +23,7 @@ module VpsAdmin::API::Resources
         resource Node, value_label: :name
         string :class_name
         use :all, include: %i(integrity_object name status severity)
+        patch :limit, default: 25, fill: true
       end
 
       output(:object_list) do

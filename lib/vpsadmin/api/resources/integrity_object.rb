@@ -23,6 +23,7 @@ module VpsAdmin::API::Resources
 
       input do
         use :all, include: %i(integrity_check node class_name row_id parent status)
+        patch :limit, default: 25, fill: true
       end
 
       output(:object_list) do

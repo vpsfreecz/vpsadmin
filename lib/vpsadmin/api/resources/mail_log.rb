@@ -25,6 +25,10 @@ module VpsAdmin::API::Resources
     class Index < HaveAPI::Actions::Default::Index
       desc 'List mails'
 
+      input do
+        patch :limit, default: 25, fill: true
+      end
+
       output(:object_list) do
         use :all
       end
