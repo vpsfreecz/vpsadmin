@@ -64,6 +64,8 @@ module VpsAdmind
         zfs(:mount, nil, "#{origin}/#{ds['relative_name']}")
       end
 
+      zfs(:share, '-a', '')
+
       ok
     end
   end
