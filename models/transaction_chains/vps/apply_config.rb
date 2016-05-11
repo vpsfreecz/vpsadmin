@@ -3,7 +3,7 @@ module TransactionChains
     label 'Apply config'
 
     # +new_configs+ is a list of config IDs.
-    def link_chain(vps, new_configs)
+    def link_chain(vps, new_configs, resources: false)
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
@@ -38,6 +38,11 @@ module TransactionChains
 
         t.just_create(vps.log(:configs, data)) unless included?
       end
+
+      append(Transactions::Vps::Resources, args: [
+          vps,
+          vps.get_cluster_resources(%i(cpu memory swap)),
+      ]) if resources
     end
   end
 end

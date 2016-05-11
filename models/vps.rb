@@ -143,7 +143,7 @@ class Vps < ActiveRecord::Base
   end
 
   def applyconfig(configs)
-    TransactionChains::Vps::ApplyConfig.fire(self, configs)
+    TransactionChains::Vps::ApplyConfig.fire(self, configs, resources: true)
   end
 
   # Unless +safe+ is true, the IP address +ip+ is fetched from the database
