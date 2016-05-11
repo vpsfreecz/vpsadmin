@@ -6,6 +6,7 @@
 - Provide SHA256 checksum of files for download
 - `SnapshotDownload.Create`: option to not send an e-mail
 - `TransactionChain#append`: add option queue
+- Lifetimes: fix default expiration setting
 
 * Fri Feb 26 - version 2.2.0
 - Continuous tracking of node and VPS resources

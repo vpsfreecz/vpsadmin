@@ -411,7 +411,7 @@ module VpsAdmin::API
                 "cannot leave state '#{obj.object_state}'"
         end
           
-        if (reason.nil? || reason.empty?) && expiration.nil?
+        if ((reason.nil? || reason.empty?) && expiration.nil?) || expiration === true
           # Find default reason and expiration for object's environment
           env = Private.environment(obj)
 
@@ -423,8 +423,13 @@ module VpsAdmin::API
           )
 
           if default
-            reason = default.reason
-            expiration = Time.now + default.add_expiration
+            if reason.nil? || reason.empty?
+              reason = default.reason
+            end
+
+            if expiration.nil? || expiration === true
+              expiration = Time.now + default.add_expiration
+            end
           end
         end
         

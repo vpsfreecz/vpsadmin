@@ -410,7 +410,8 @@ END
 
       vps.set_object_state(
           state,
-          reason: 'Deletion requested'
+          reason: 'Deletion requested',
+          expiration: true,
       )
       ok
     end
