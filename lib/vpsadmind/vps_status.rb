@@ -5,11 +5,17 @@ module VpsAdmind
     include Utils::Vz
     include Utils::Vps
 
+    @@mutex = Mutex.new
+
     def initialize(vps_ids = nil)
       @vps_ids = vps_ids
     end
 
     def update(db)
+      @@mutex.synchronize { safe_update(db) }
+    end
+
+    def safe_update(db)
       db_vpses = {}
 
       fetch_vpses(db).each_hash do |row|

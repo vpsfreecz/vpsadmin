@@ -1,3 +1,5 @@
+- VPS status: only one thread can update status at a time
+
 * Fri Feb 26 2016 - version 2.2.0
 - System probes to read more information about both nodes and VPSes:
   - Memory
