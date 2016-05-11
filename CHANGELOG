@@ -8,6 +8,7 @@
 - `TransactionChain#append`: add option queue
 - Lifetimes: fix default expiration setting
 - VPS applyconfig: ensure cluster resources are set
+- Vps.Update, Lifetimes: make reason a text
 
 * Fri Feb 26 - version 2.2.0
 - Continuous tracking of node and VPS resources

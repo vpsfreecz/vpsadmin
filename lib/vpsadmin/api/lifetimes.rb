@@ -150,7 +150,7 @@ module VpsAdmin::API
           datetime :changed_at, db_name: :created_at
           datetime :expiration, db_name: :expiration_date
           resource VpsAdmin::API::Resources::User, value_label: :login
-          string :reason
+          text :reason
         end
 
         log.define_action(:Index, superclass: HaveAPI::Actions::Default::Index) do
