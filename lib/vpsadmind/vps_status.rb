@@ -11,8 +11,15 @@ module VpsAdmind
       @vps_ids = vps_ids
     end
 
-    def update(db)
-      @@mutex.synchronize { safe_update(db) }
+    # If `db_in` is not provided, new connection to DB is opened and closed
+    # when the status is updated.
+    # @param db_in [VpsAdmind::Db]
+    def update(db_in = nil)
+      @@mutex.synchronize do
+        db = db_in || Db.new
+        safe_update(db)
+        db.close unless db_in
+      end
     end
 
     def safe_update(db)
