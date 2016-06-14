@@ -51,6 +51,7 @@ a full one.
 - Save snapshot name and time of creation in UTC
 - Ability to export ZFS (incremental) data streams
 - Compute and save checksum of files for download
+- Fix race condition in VPS status updating
 
 # Upgrade instructions
 Standard upgrade process.
