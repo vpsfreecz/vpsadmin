@@ -19,6 +19,7 @@ COMMAND=${IKIWIKI} -v --wikiname vpsAdmin --plugin=goodstuff --plugin=theme \
 .PHONY: refresh
 .PHONY: clean
 .PHONY: deploy
+.PHONY: deploy_only
 
 build: mkdir
 	${COMMAND} --rebuild
@@ -33,4 +34,7 @@ clean:
 	rm -rf .ikiwiki ${DST}
 
 deploy: refresh
+	rsync -av ${DST}/ ${DEPLOY_TO}
+
+deploy_only:
 	rsync -av ${DST}/ ${DEPLOY_TO}
