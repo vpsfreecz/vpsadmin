@@ -1,3 +1,9 @@
+* Tue Jun 14 2016 - version 2.3.0
+- VPS creation form: show available resources
+- Download list: shorten long file names
+- Default VPS diskspace is 120 GB
+- Add selenium tests for paysets
+
 * Fri Feb 26 2016 - version 2.2.0
 - Set API version to 2.0
 - Show CPU, uptime and VPS load in VPS details
