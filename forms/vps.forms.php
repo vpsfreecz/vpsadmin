@@ -87,7 +87,7 @@ function print_newvps_page3($env_id, $loc_id) {
 		'memory' => 4096,
 		'cpu' => 8,
 		'swap' => 0,
-		'diskspace' => 60*1024,
+		'diskspace' => 120*1024,
 		'ipv4' => 1,
 		'ipv6' => 1
 	);
