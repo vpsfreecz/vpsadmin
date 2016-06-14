@@ -1,3 +1,4 @@
+* Tue Jun 14 2016 - version 2.3.0
 - TransactionChain.Index: fix ambiguous column name in DB query
 - Dataset.Snapshot has new output parameter `name`
 - Save snapshot names in UTC
