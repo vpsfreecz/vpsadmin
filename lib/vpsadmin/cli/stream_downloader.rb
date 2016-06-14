@@ -68,10 +68,9 @@ module VpsAdmin::CLI
             dl_check = api.snapshot_download.show(dl.id)
 
             if @pb && (dl_check.ready || (dl_check.size && dl_check.size > 0))
-              @pb.progress = downloaded
-
               total = dl_check.size * 1024 * 1024
               @pb.total = @pb.progress > total ? @pb.progress : total
+
               @download_size = (dl_check.size / 1024.0).round(2)
 
               if dl_check.ready
