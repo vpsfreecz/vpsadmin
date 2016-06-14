@@ -1,4 +1,7 @@
-* Web Mar 23 2016 - version 2.3.1
+* Tue Jun 14 2016 - version 2.3.2
+- Don't set download progress on new request
+
+* Wed Mar 23 2016 - version 2.3.1
 - Add option --[no-]sudo to command backup dataset
 - Fix ZFS call to work on both ZoL and BSD
 
