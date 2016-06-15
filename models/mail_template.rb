@@ -1,35 +1,29 @@
 class MailTemplate < ActiveRecord::Base
+  has_many :mail_template_translations
   has_many :mail_template_recipients
   has_many :mail_recipients, through: :mail_template_recipients
-  
+
   has_paper_trail
-
-  class TemplateBuilder
-    def initialize(vars)
-      vars.each do |k, v|
-        instance_variable_set("@#{k}", v)
-      end
-    end
-
-    def build(tpl)
-      ERB.new(tpl).result(binding)
-    end
-  end
-
+  
   def self.send_mail!(name, opts = {})
     tpl = MailTemplate.find_by(name: name)
     raise VpsAdmin::API::Exceptions::MailTemplateDoesNotExist, name unless tpl
-    tpl.resolve(opts[:vars]) if opts[:vars]
+
+    lang = opts[:language] || opts[:user].language
+    tr = tpl.mail_template_translations.find_by(language: lang)
+    raise VpsAdmin::API::Exceptions::MailTemplateDoesNotExist, name unless tr
+
+    tr.resolve(opts[:vars]) if opts[:vars]
 
     mail = MailLog.new(
         user: opts[:user],
         mail_template: tpl,
-        from: opts[:from] || tpl.from,
-        reply_to: opts[:reply_to] || tpl.reply_to,
-        return_path: opts[:return_path] || tpl.return_path,
-        subject: tpl.subject,
-        text_plain: tpl.text_plain,
-        text_html: tpl.text_html,
+        from: opts[:from] || tr.from,
+        reply_to: opts[:reply_to] || tr.reply_to,
+        return_path: opts[:return_path] || tr.return_path,
+        subject: tr.subject,
+        text_plain: tr.text_plain,
+        text_html: tr.text_html,
     )
 
     recipients = {to: [], cc: [], bcc: []}
@@ -48,12 +42,5 @@ class MailTemplate < ActiveRecord::Base
 
     mail.save!
     mail
-  end
-
-  def resolve(vars)
-    b = TemplateBuilder.new(vars)
-    self.subject = b.build(self.subject)
-    self.text_plain = b.build(self.text_plain) if self.text_plain
-    self.text_html = b.build(self.text_html) if self.text_html
   end
 end

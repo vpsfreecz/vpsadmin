@@ -10,6 +10,7 @@ class User < ActiveRecord::Base
   has_many :datasets
   has_many :user_cluster_resources
   has_many :snapshot_downloads
+  belongs_to :language
 
   enum password_version: VpsAdmin::API::CryptoProviders::PROVIDERS
 

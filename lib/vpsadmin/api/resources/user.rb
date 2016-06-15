@@ -19,6 +19,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     datetime :paid_until, label: 'Paid until'
     bool :mailer_enabled, label: 'Enabled mailer', db_name: :m_mailer_enable,
          default: true
+    resource VpsAdmin::API::Resources::Language, label: 'Language of e-mails'
   end
 
   params(:password) do

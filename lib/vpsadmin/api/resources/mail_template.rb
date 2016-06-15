@@ -6,12 +6,6 @@ module VpsAdmin::API::Resources
     params(:common) do
       string :name, desc: 'Template identifier'
       string :label, desc: 'Human-friendly label'
-      string :from
-      string :reply_to
-      string :return_path
-      string :subject
-      text :text_plain
-      text :text_html
     end
 
     params(:all) do
@@ -238,6 +232,150 @@ module VpsAdmin::API::Resources
               mail_template_id: params[:mail_template_id],
               mail_recipient_id: params[:recipient_id]
           ).destroy
+          ok
+        end
+      end
+    end
+
+    class Translation < HaveAPI::Resource
+      model ::MailTemplateTranslation
+      route ':mail_template_id/translations'
+      desc 'Manage mail templates'
+
+      params(:common) do
+        resource Language
+        string :from
+        string :reply_to
+        string :return_path
+        string :subject
+        text :text_plain
+        text :text_html
+      end
+
+      params(:all) do
+        id :id
+        use :common
+        datetime :created_at
+        datetime :updated_at
+      end
+
+      class Index < HaveAPI::Actions::Default::Index
+        desc 'List mail template translations'
+
+        output(:object_list) do
+          use :all
+        end
+        
+        authorize do |u|
+          allow if u.role == :admin
+        end
+
+        def query
+          ::MailTemplateTranslation.where(mail_template_id: params[:mail_template_id])
+        end
+
+        def count
+          query.count
+        end
+
+        def exec
+          with_includes(query).offset(input[:offset]).limit(input[:limit])
+        end
+      end
+
+      class Show < HaveAPI::Actions::Default::Show
+        desc 'Show a mail template translation'
+
+        output do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+        end
+
+        def prepare
+          @tr = ::MailTemplateTranslation.find_by!(
+              id: params[:translation_id],
+              mail_template_id: params[:mail_template_id],
+          )
+        end
+
+        def exec
+          @tr
+        end
+      end
+    
+      class Create < HaveAPI::Actions::Default::Create
+        desc 'Create a mail template translation'
+
+        input do
+          use :common
+        end
+
+        output do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+        end
+
+        def exec
+          input.update(mail_template: ::MailTemplate.find(params[:mail_template_id]))
+          tr = ::MailTemplateTranslation.new(input)
+
+          if tr.save
+            ok(tr)
+
+          else
+            error('save failed', tr.errors.to_hash)
+          end
+        end
+      end
+
+      class Update < HaveAPI::Actions::Default::Update
+        desc 'Update a mail template translation'
+
+        input do
+          use :common
+        end
+
+        output do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+        end
+
+        def exec
+          tr = ::MailTemplateTranslation.find_by!(
+              id: params[:translation_id],
+              mail_template_id: params[:mail_template_id],
+          )
+
+          if tr.update(input)
+            ok(tr)
+
+          else
+            error('update failed', tr.errors.to_hash)
+          end
+        end
+      end
+
+      class Delete < HaveAPI::Actions::Default::Delete
+        desc 'Delete a mail template translation'
+
+        authorize do |u|
+          allow if u.role == :admin
+        end
+
+        def exec
+          ::MailTemplateTranslation.find_by!(
+              id: params[:translation_id],
+              mail_template_id: params[:mail_template_id],
+          ).destroy!
           ok
         end
       end
