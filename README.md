@@ -70,7 +70,7 @@ end
 
 ## Installation
 
-Installation is done by `make`. Optional variables:
+Installation is done by `rake`. Optional variables:
 
  - `API` - the URL of the API to upload templates to
  - `VERSION` - version of the API to use
@@ -81,5 +81,5 @@ The user name and password is prompted on stdin if it is not set.
 
 For example:
 
-	$ make API=https://api.vpsfree.cz USERNAME=admin
+	$ rake API=https://api.vpsfree.cz USERNAME=admin
 
