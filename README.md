@@ -13,8 +13,11 @@ installed (sent to the API).
 ## Usage
 
 Every template is in a directory. The directory name must match with the
-template name. The directory must contain file `meta.rb` and may contain files
-`plain.erb` for plain text version and `html.erb` for HTML version.
+template name. The directory must contain file `meta.rb`. Templates can be
+translated to multiple languages and be in plain text or HTML format.
+
+The template directory may contain files with name in format
+`<language>.<format>.erb`, e.g. `en.plain.erb` or `en.html.erb`.
 
 ## `meta.rb` format
 It is a standard Ruby file. There is one predefined method `template`. It has no
@@ -33,6 +36,35 @@ template do
   reply_to     'podpora@vpsfree.cz'
   return_path  'podpora@vpsfree.cz'
   subject      '[vpsFree.cz] Some Subject'
+end
+```
+
+It is possible to specify `from`, `reply_to`, `return_path` and `subject` per
+language, e.g.:
+
+```ruby
+template do
+  label        'Some Label'
+  # `from` is the same for all languages, so mention it only here
+  from         'vpsadmin@vpsfree.cz'
+
+  # The following options are overriden by options set for languages.
+  # We may set some defaults.
+  reply_to     'podpora@vpsfree.cz'
+  return_path  'podpora@vpsfree.cz'
+  subject      '[vpsFree.cz] Some Subject'
+
+  lang :en do
+    reply_to     'support@vpsfree.cz'
+    return_path  'support@vpsfree.cz'
+    subject      '[vpsFree.cz] Some Subject'
+  end
+  
+  lang :cs do
+    reply_to     'podpora@vpsfree.cz'
+    return_path  'podpora@vpsfree.cz'
+    subject      '[vpsFree.cz] Nejaky predmet'
+  end
 end
 ```
 
