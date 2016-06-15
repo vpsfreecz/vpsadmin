@@ -162,6 +162,12 @@ function print_editm($u) {
 	if ($cluster_cfg->get("mailer_enabled")) {
 		$xtpl->form_add_checkbox(_("Enable mail notifications from vpsAdmin").':', 'm_mailer_enable', '1', $u->mailer_enabled, $hint = '');
 	}
+
+	api_param_to_form(
+		'language',
+		$api->user->update->getParameters('input')->language,
+		$u->language_id
+	);
 	
 	if ($_SESSION["is_admin"]) {
 		$xtpl->form_add_input(_("Monthly payment").':', 'text', '30', 'm_monthly_payment', $u->monthly_payment, ' ');
@@ -1022,7 +1028,8 @@ if ($_SESSION["logged_in"]) {
 		case 'edit_member':
 			try {
 				$params = array(
-					'mailer_enabled' => isset($_POST['m_mailer_enable'])
+					'mailer_enabled' => isset($_POST['m_mailer_enable']),
+					'language' => $_POST['language'],
 				);
 				
 				if ($_SESSION['is_admin']) {
