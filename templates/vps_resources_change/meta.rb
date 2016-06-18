@@ -3,5 +3,12 @@ template do
   from         'vpsadmin@vpsfree.cz'
   reply_to     'podpora@vpsfree.cz'
   return_path  'podpora@vpsfree.cz'
-  subject      '[vpsFree.cz] Změna parametrů VPS <%= @vps.id %>'
+
+  lang :cs do
+    subject    '[vpsFree.cz] Změna parametrů VPS <%= @vps.id %>'
+  end
+
+  lang :en do
+    subject    '[vpsFree.cz] Change of limits for VPS <%= @vps.id %>'
+  end
 end

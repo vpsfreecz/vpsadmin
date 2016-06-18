@@ -3,5 +3,12 @@ template do
   from         'vpsadmin@vpsfree.cz'
   reply_to     'podpora@vpsfree.cz'
   return_path  'podpora@vpsfree.cz'
-  subject      '[vpsFree.cz] Ukončení členství <%= @user.login %>'
+
+  lang :cs do
+    subject    '[vpsFree.cz] Ukončení členství <%= @user.login %>'
+  end
+
+  lang :en do
+    subject    '[vpsFree.cz] Membership <%= @user.login %> terminated'
+  end
 end

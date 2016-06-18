@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>	
+<head>
+<meta charset="utf-8">
+</head>
+  
+<body>
+<p>
+Hi <%= @user.login %>,
+</p> 
+
+<p>
+this is an automated reminder for payment of the membership fee.
+</p>
+
+<table>
+    <tr>
+        <td>Sum:</td>
+        <td>
+            <%= @user.m_monthly_payment %> Kč
+            or
+            <%= @user.m_monthly_payment  / 25 %> € per month
+        </td>
+    </tr>
+    <tr>
+        <td>Variable symbol:</td>
+        <td><%= @user.id %></td>
+    </tr>
+    <tr>
+        <td>Expiration date:</td>
+        <% t = @user.paid_until %>
+        <td><%= t ? t.strftime('%Y-%m-%d') : '---' %></td>
+    </tr>
+</table>
+
+<p>
+Payments for at least 3 months ahead are preferred. Unless the membership fee
+is paid to <%= (@user.expiration_date + 14 * 24 * 60 * 60).strftime('%Y-%m-%d') %>, your membership will be suspended
+and later terminated.
+</p>
+
+<p>
+Bank account: <em>2200041594/2010</em> (ČR) or <em>SK15 8330 0000 0022 0004 1594</em> (SR)
+</p>
+
+<p>
+Payment arrival can be checked here:<br>
+<a href ="https://www.fio.cz/ib2/transparent?a=2200041594">https://www.fio.cz/ib2/transparent?a=2200041594</a>
+</p>
+
+<p>
+<% three_months_payment = @user.m_monthly_payment * 3 %>
+QR code for payment for 3 months (always verify that the information is correct):
+</p>
+
+<table cellspacing="27">
+    <tr>
+        <td>For the Czech Republic</td>
+        <td>For the Slovak Republic</td>
+    </tr>
+    <tr>
+        <td>
+            <img alt="CZ QR code"
+                src="https://api.paylibo.com/paylibo/generator/czech/image?compress=false&size=40&accountNumber=2200041594&bankCode=2010&amount=<%= three_months_payment %>&currency=CZK&vs=<%= @user.id %>"
+                width="170"
+                height="169">
+        </td>
+        <td>
+            <img alt="SK QR code"
+                src="https://api.paylibo.com/paylibo/generator/image?compress=false&size=40&iban=SK1583300000002200041594&amount=<%= three_months_payment / 25 %>&currency=EUR&vs=<%= @user.id %>"
+                width="170"
+                height="169">
+        </td>
+    </tr>
+</table>
+
+<p>
+Should you have any questions, please reply to this e-mail.
+</p>
+
+<p>
+Sending of these automated reminders can be disabled in vpsAdmin -> Edit profile,
+check box "vpsAdmin mailer".
+</p>
+
+<p>
+Best regards,<br>
+
+vpsAdmin @ vpsFree.cz 
+</p>
+
+</body>
+</html>

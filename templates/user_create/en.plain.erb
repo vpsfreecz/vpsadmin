@@ -1,0 +1,49 @@
+Hi <%= @user.login %>,
+
+this is an automated message from vpsAdmin, the administration system of vpsFree.cz.
+It's the first e-mail you receive as a member, so please read it carefully.
+
+You can manage VPS, NAS, playground, payments and many other things in vpsAdmin.
+
+However, before you login, please remember that your VPS is accessible from
+the public Internet. Many bots will try to connect to your VPS, guess passwords
+and exploit vulnerabilties of frequently used software. It is important to not
+underestimate the security: use strong passwords, update your software and do not
+transfer your password unencrypted.
+
+URL: https://vpsadmin.vpsfree.cz/
+Login: <%= @user.login %>
+Heslo: <%= @user.password_plain %>
+(Both login and password are case sensitive)
+
+Please read through the basic information for new members (only available in Czech
+at the moment, sorry):
+
+  https://kb.vpsfree.cz/informace/novacci
+
+Browse the topics discussed on our KB, you can find interesting tips and
+vpsFree-specific information.
+
+  http://kb.vpsfree.cz/
+
+We recommend that you subscribe to the following mailing lists:
+
+  outage-list    = here we report outages, definitely subscribe
+  news-list      = news related to vpsFree.cz, low traffic
+  community-list = general discussion, variable traffic
+
+Subscribe on the following link:
+
+  http://lists.vpsfree.cz
+
+Most importantly subscribe to the outage list, as there we announce both
+planned and unexpected outages.
+
+News-list is for announcements only, it is very low traffic, as the discussion
+takes place on the community list.
+
+Should you have any questions, please contact podpora@vpsfree.cz.
+
+Best regards,
+
+vpsAdmin @ vpsFree.cz

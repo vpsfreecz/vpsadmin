@@ -1,0 +1,16 @@
+Hi <%= @vps.user.login %>,
+
+migration of VPS #<%= @vps.id %> from <%= @src_node.domain_name %> to <%= @dst_node.domain_name %> has begun.
+<% if @outage_window %><% days = %i(Ne Po Út St Čt Pá So) %>
+The migration will be finished within the closest possible outage window:
+<% @vps.vps_outage_windows.where(is_open: true).order('weekday').each do |w| %>  - <%= days[w.weekday] %> from <%= sprintf('%02d:%02d', w.opens_at / 60, w.opens_at % 60) %> to <%= sprintf('%02d:%02d', w.closes_at / 60, w.closes_at % 60) %>
+<% end %><% end %>
+<% if @reason %>Reason: <%= @reason %><% end %>
+
+The VPS will have a short outage during the migration, as the VPS is stopped
+on the source node and started on the destination node. The VPS will see this
+as a system restart.
+
+Best regards,
+
+vpsAdmin @ vpsFree.cz

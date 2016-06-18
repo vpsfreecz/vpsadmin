@@ -3,5 +3,12 @@ template do
   from         'vpsadmin@vpsfree.cz'
   reply_to     'podpora@vpsfree.cz'
   return_path  'podpora@vpsfree.cz'
-  subject      '[vpsFree.cz] Platba členského příspěvku - <%= @object.login %>'
+
+  lang :cs do
+    subject    '[vpsFree.cz] Platba členského příspěvku - <%= @object.login %>'
+  end
+
+  lang :en do
+    subject    '[vpsFree.cz] Payment of membership fee - <%= @object.login %>'
+  end
 end

@@ -3,5 +3,12 @@ template do
   from         'vpsadmin@vpsfree.cz'
   reply_to     'podpora@vpsfree.cz'
   return_path  'podpora@vpsfree.cz'
-  subject      '[vpsFree.cz] Archiv je připraven ke stažení'
+
+  lang :cs do
+    subject    '[vpsFree.cz] Archiv je připraven ke stažení'
+  end
+  
+  lang :en do
+    subject    '[vpsFree.cz] Download is ready'
+  end
 end

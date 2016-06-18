@@ -1,0 +1,15 @@
+<html>
+<body>
+<p>Hi <%= @dl.user.login %>,</p>
+
+<p>link to download a backup of <%= "#{@dl.snapshot.dataset.name}@#{@dl.snapshot.name}" %></p>
+
+<p><a href="<%= @dl.url %>"><%= @dl.url %></a></p>
+
+<p>Should you have any questions, please contact podpora@vpsfree.cz.</p>
+
+<p>Best regards,</p>
+
+<p>vpsAdmin @ vpsFree.cz</p>
+</body>
+</html>
