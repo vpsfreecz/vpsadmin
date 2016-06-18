@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html>
-	
+<html>	
 <head>
 <meta charset="utf-8">
 </head>
@@ -15,15 +14,27 @@ toto je automatická připomínka platby členského příspěvku.
 </p>
 
 <table>
-<tr><td>Částka:</td><td><%= @user.m_monthly_payment %> Kč nebo <%= @user.m_monthly_payment  / 25 %> € na měsíc</td></tr>
-<tr><td>VS:</td><td><%= @user.id %></td></tr>
-<% t = @user.paid_until %>
-<tr><td>Zaplaceno do:</td><td><%= t ? t.strftime('%Y-%m-%d') : '---' %></td></tr>
+    <tr>
+        <td>Částka:</td>
+        <td>
+            <%= @user.m_monthly_payment %> Kč
+            nebo
+            <%= @user.m_monthly_payment  / 25 %> € na měsíc
+        </td>
+    </tr>
+    <tr>
+        <td>Variabilní symbol:</td>
+        <td><%= @user.id %></td>
+    </tr>
+    <tr>
+        <td>Zaplaceno do:</td>
+        <% t = @user.paid_until %>
+        <td><%= t ? t.strftime('%Y-%m-%d') : '---' %></td>
+    </tr>
 </table>
 
-
 <p>
-Preferujeme platby minimálně na 3 měsíce dopředu. Neuhradíš-li členský příspěvek <br>
+Preferujeme platby minimálně na 3 měsíce dopředu. Neuhradíš-li členský příspěvek
 do <strong><%= (@user.expiration_date + 14 * 24 * 60 * 60).strftime('%Y-%m-%d') %></strong>, Tvé členství bude pozastaveno a následně ukončeno.
 </p>
 
@@ -32,7 +43,7 @@ do <strong><%= (@user.expiration_date + 14 * 24 * 60 * 60).strftime('%Y-%m-%d') 
 </p>
 
 <p>
-Příchod platby lze zkontrolovat zde: <br>
+Příchod platby lze zkontrolovat zde:<br>
 <a href ="https://www.fio.cz/ib2/transparent?a=2200041594">https://www.fio.cz/ib2/transparent?a=2200041594</a>
 </p>
 
@@ -42,21 +53,37 @@ QR kód pro platbu na 3 měsíce dopředu (vždy ověř správnost údajů):
 </p>
 
 <table cellspacing="27">
-<tr><td>Pro Českou republiku</td><td>Pro Slovenskou republiku</td></tr>
-<tr><td><img alt ="ČR QR kod" src ="https://api.paylibo.com/paylibo/generator/czech/image?compress=false&size=40&accountNumber=2200041594&bankCode=2010&amount=<%= three_months_payment %>&currency=CZK&vs=<%= @user.id %>" width="170" height="169"> </td>
-<td><img alt ="SR QR kod" src ="https://api.paylibo.com/paylibo/generator/image?compress=false&size=40&iban=SK1583300000002200041594&amount=<%= three_months_payment / 25 %>&currency=EUR&vs=<%= @user.id %> " width="170" height="169"></td></tr>
+    <tr>
+        <td>Pro Českou republiku</td>
+        <td>Pro Slovenskou republiku</td>
+    </tr>
+    <tr>
+        <td>
+            <img alt="ČR QR kód"
+                src="https://api.paylibo.com/paylibo/generator/czech/image?compress=false&size=40&accountNumber=2200041594&bankCode=2010&amount=<%= three_months_payment %>&currency=CZK&vs=<%= @user.id %>"
+                width="170"
+                height="169">
+        </td>
+        <td>
+            <img alt="SR QR kód"
+                src="https://api.paylibo.com/paylibo/generator/image?compress=false&size=40&iban=SK1583300000002200041594&amount=<%= three_months_payment / 25 %>&currency=EUR&vs=<%= @user.id %>"
+                width="170"
+                height="169">
+        </td>
+    </tr>
 </table>
 
 
-
 <p>
-Pokud potřebuješ probrat detaily ohledně této platby, jednoduše použij funkci "Odpovědět (RE:)", odpověď se pošle na podporu.<br>
-
-Zasílání těchto e-mailů lze vypnout ve vpsAdminu v nastavení profilu, položka "vpsAdmin mailer". <br>
+Pokud potřebuješ probrat detaily ohledně této platby, jednoduše použij funkci "Odpovědět (RE:)", odpověď se pošle na podporu.
 </p>
 
 <p>
-S pozdravem <br>
+Zasílání těchto e-mailů lze vypnout ve vpsAdminu v nastavení profilu, položka "vpsAdmin mailer". 
+</p>
+
+<p>
+S pozdravem<br>
 
 vpsAdmin @ vpsFree.cz 
 </p>
