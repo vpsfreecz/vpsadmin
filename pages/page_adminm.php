@@ -463,6 +463,7 @@ function request_approve() {
 				'address' => $data['m_address'],
 				'level' => PRIV_USER,
 				'mailer_enabled' => true,
+				'language' => lang_id_by_code($data['m_language']),
 				'info' => "",
 				'password' => random_string(10)
 			);
@@ -1630,6 +1631,8 @@ if ($_SESSION["logged_in"]) {
 					$xtpl->table_td(_("Currency").':');
 					$xtpl->table_td($row["m_currency"]);
 					$xtpl->table_tr();
+					
+					$xtpl->form_add_input(_("Language").':', 'text', '30', 'm_language', $row['m_language']);
 					
 					$xtpl->form_add_checkbox(_("Create VPS").':', 'm_create_vps', '1', true);
 					

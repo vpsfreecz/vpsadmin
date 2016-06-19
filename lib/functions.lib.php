@@ -563,4 +563,18 @@ function colorize($array) {
 	return $ret;
 }
 
+function lang_id_by_code($code, $langs = null) {
+  global $api;
+
+  if (!$langs)
+	  $langs = $api->language->list();
+
+  foreach ($langs as $l) {
+	if ($l->code == $code)
+		return $l->id;
+  }
+
+  return false;
+}
+
 ?>
