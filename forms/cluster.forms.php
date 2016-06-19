@@ -11,7 +11,6 @@ function cluster_header() {
 	$xtpl->sbar_add(_("Manage DNS servers"), '?page=cluster&action=dns');
 	$xtpl->sbar_add(_("Manage environments"), '?page=cluster&action=environments');
 	$xtpl->sbar_add(_("Manage locations"), '?page=cluster&action=locations');
-	$xtpl->sbar_add(_("Mail templates"), '?page=cluster&action=mail_templates');
 	$xtpl->sbar_add(_("Integrity check"), '?page=cluster&action=integrity_check');
 	$xtpl->sbar_add(_("Manage Payments"), '?page=cluster&action=payments_settings');
 	$xtpl->sbar_add(_("Notice board & log"), '?page=cluster&action=noticeboard');

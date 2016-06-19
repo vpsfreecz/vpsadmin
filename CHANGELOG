@@ -1,3 +1,5 @@
+- Removed mail template management
+
 * Tue Jun 14 2016 - version 2.3.0
 - VPS creation form: show available resources
 - Download list: shorten long file names

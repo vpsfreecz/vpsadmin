@@ -43,62 +43,6 @@ function maintenance_lock_by_type() {
 	return array('resource' => $r, 'label' => $label);
 }
 
-function list_mail_templates() {
-	global $xtpl, $api;
-	
-	$tpls = $api->mail_template->list();
-	
-	$xtpl->table_title(_('Mail templates'));
-	$xtpl->table_add_category(_('Name'));
-	$xtpl->table_add_category(_('Label'));
-	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
-	
-	foreach ($tpls as $tpl) {
-		$xtpl->table_td($tpl->name);
-		$xtpl->table_td($tpl->label);
-		$xtpl->table_td('<a href="?page=cluster&action=mail_template_edit&id='.$tpl->id.'"><img src="template/icons/vps_edit.png"  title="'._("Edit").'"></a>');
-		$xtpl->table_td('<a href="?page=cluster&action=mail_template_destroy&id='.$tpl->id.'"><img src="template/icons/vps_delete.png"  title="'._("Delete").'"></a>');
-		$xtpl->table_tr();
-	}
-	
-	$xtpl->table_out();
-	
-	$xtpl->sbar_add(_('New mail template'), '?page=cluster&action=mail_template_new');
-	$xtpl->sbar_add(_('Back'), '?page=cluster');
-}
-
-function mail_template_new() {
-	global $xtpl, $api;
-	
-	$xtpl->table_title(_('Create a new mail template'));
-	$xtpl->form_create('?page=cluster&action=mail_template_new', 'post');
-	
-	api_params_to_form($api->mail_template->create, 'input');
-	
-	$xtpl->form_out(_('Save changes'));
-	
-	$xtpl->sbar_add(_('Back'), '?page=cluster&action=mail_templates');
-}
-
-function mail_template_edit() {
-	global $xtpl, $api;
-	
-	$t = $api->mail_template->show($_GET['id']);
-	$params = $api->mail_template->update->getParameters('input');
-	
-	$xtpl->table_title(_('Edit mail template').' '.'#'.$t->id);
-	$xtpl->form_create('?page=cluster&action=mail_template_edit&id='.$t->id, 'post');
-	
-	foreach ($params as $name => $desc) {
-		api_param_to_form($name, $desc, htmlspecialchars($t->{$name}));
-	}
-	
-	$xtpl->form_out(_('Save changes'));
-	
-	$xtpl->sbar_add(_('Back'), '?page=cluster&action=mail_templates');
-}
-
 $xtpl->title(_("Manage Cluster"));
 $list_nodes = false;
 $list_templates = false;
@@ -864,100 +808,6 @@ switch($_REQUEST["action"]) {
 		$list_nodes = true;
 		break;
 		
-	case "mail_templates":
-		list_mail_templates();
-		break;
-		
-	case "mail_template_new":
-		if (isset($_POST['name'])) {
-			csrf_check();
-			
-			try {
-				$input_params = $api->mail_template->create->getParameters('input');
-				$params = array();
-				
-				foreach ($input_params as $name => $desc) {
-					if ($_POST[$name])
-						$params[$name] = $_POST[$name];
-				}
-				
-				$api->mail_template->create($params);
-				
-				redirect('?page=cluster&action=mail_templates');
-				notify_user(_('Template created'), '');
-				
-			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				$xtpl->perex_format_errors(_('Mail template creation failed'), $e->getResponse());
-				mail_template_new();
-			}
-			
-		} else {
-			mail_template_new();
-		}
-		break;
-	
-	case "mail_template_edit":
-		if (isset($_POST['name'])) {
-			csrf_check();
-			
-			try {
-				$input_params = $api->mail_template->update->getParameters('input');
-				$params = array();
-				
-				foreach ($input_params as $name => $desc) {
-					if (isset($_POST[$name]))
-						$params[$name] = $_POST[$name];
-				}
-				
-				$api->mail_template($_GET['id'])->update($params);
-				
-				redirect('?page=cluster&action=mail_templates');
-				notify_user(_('Template updated'), '');
-				
-			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				$xtpl->perex_format_errors(_('Mail template update failed'), $e->getResponse());
-				mail_template_edit();
-			}
-			
-		} else {
-			mail_template_edit();
-		}
-		break;
-	
-	case 'mail_template_destroy':
-		if (isset($_POST['confirm']) && $_POST['confirm']) {
-			csrf_check();
-			
-			try {
-				$api->mail_template->delete($_GET['id']);
-				
-				notify_user(_('Mail template deleted'), '');
-				redirect('?page=cluster&action=mail_templates');
-				
-			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				$xtpl->perex_format_errors(_('Mail template deletion failed'), $e->getResponse());
-			}
-			
-		} else {
-			try {
-				$t = $api->mail_template->find($_GET['id']);
-				
-				$xtpl->table_title(_('Confirm the deletion of mail template').' '.$t->name);
-				$xtpl->form_create('?page=cluster&action=mail_template_destroy&id='.$t->id, 'post');
-				
-				$xtpl->table_td('<strong>'._('Please confirm the deletion of mail template').' '.$t->name, false, false, '2');
-				$xtpl->table_tr();
-				
-				$xtpl->form_add_checkbox(_('Confirm').':', 'confirm', '1', false);
-				
-				$xtpl->form_out(_('Delete mail template'));
-				
-			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				$xtpl->perex_format_errors(_('Mail template not found'), $e->getResponse());
-			}
-		}
-		break;
-		
 	case "daily_reports":
 		$xtpl->form_create('?page=cluster&action=daily_reports_save', 'post');
 		$xtpl->form_add_input(_("Send to").':', 'text', '40', 'sendto', $cluster_cfg->get("mailer_daily_report_sendto"));
@@ -1199,7 +1049,6 @@ if ($list_mails) {
 	$xtpl->form_add_input(_("Send mails from mail").':', 'text', '40', 'from_mail', $cluster_cfg->get("mailer_from_mail"));
 	$xtpl->form_out(_("Save"));
 	
-	$xtpl->sbar_add(_("Mail templates"), '?page=cluster&action=mail_templates');
 	$xtpl->sbar_add(_("Daily reports"), '?page=cluster&action=daily_reports');
 	$xtpl->sbar_add(_("Approval requests"), '?page=cluster&action=approval_requests');
 }
