@@ -1,6 +1,6 @@
 template do
   label        'Snapshot download ready'
-  from         'vpsadmin@vpsfree.cz'
+  from         'podpora@vpsfree.cz'
   reply_to     'podpora@vpsfree.cz'
   return_path  'podpora@vpsfree.cz'
 

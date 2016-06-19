@@ -1,6 +1,6 @@
 template do
   label        'VPS migration finished'
-  from         'vpsadmin@vpsfree.cz'
+  from         'podpora@vpsfree.cz'
   reply_to     'podpora@vpsfree.cz'
   return_path  'podpora@vpsfree.cz'
 

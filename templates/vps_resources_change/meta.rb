@@ -1,6 +1,6 @@
 template do
   label        'VPS resources changed'
-  from         'vpsadmin@vpsfree.cz'
+  from         'podpora@vpsfree.cz'
   reply_to     'podpora@vpsfree.cz'
   return_path  'podpora@vpsfree.cz'
 
