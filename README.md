@@ -1,8 +1,6 @@
-# vpsFree.cz specific mail templates for vpsAdmin
+# vpsAdmin Mail Templates
 
-This repository contains mail templates for vpsAdmin used at
-[vpsFree.cz](http://www.vpsfree.cz). After editing, the templates must be
-installed (sent to the API).
+Utility for installing mail templates from text files to the API.
 
 ## Requirements
 
@@ -11,12 +9,37 @@ installed (sent to the API).
 
 ## Usage
 
-Every template is in a directory. The directory name must match with the
-template name. The directory must contain file `meta.rb`. Templates can be
-translated to multiple languages and be in plain text or HTML format.
+    $ vpsadmin-mail-templates --help
+    Usage: vpsadmin-mail-templates [options] <api> <action>
 
-The template directory may contain files with name in format
+    Actions:
+        auth                             Authenticate and exit
+        install                          Upload templates to the API
+
+    Options:
+        -a, --auth AUTH                  Basic or token authentication
+        -u, --user USER                  Username
+        -p, --password PASSWORD          Password
+        -t, --token TOKEN                Token
+        -i, --token-lifetime LIFETIME    Token lifetime
+        -s, --save-token [FILE]          Save token to FILE
+        -l, --load-token [FILE]          Load token from FILE
+        -h, --help                       Show this help
+
+`vpsadmin-mail-templates` has to be run from the directory containing the
+templates.
+
+## Templates
+
+Every template is in a subdirectory whose name is the template name.
+The template directory must contain file `meta.rb`. Templates can be translated
+to multiple languages and be in plain text or HTML.
+
+The template directory may contain files with names in format
 `<language>.<format>.erb`, e.g. `en.plain.erb` or `en.html.erb`.
+
+For example usage, see
+[vpsfree-mail-templates](https://github.com/vpsfreecz/vpsfree-mail-templats).
 
 ## `meta.rb` format
 It is a standard Ruby file. There is one predefined method `template`. It has no
@@ -66,19 +89,3 @@ template do
   end
 end
 ```
-
-## Installation
-
-Installation is done by `rake`. Optional variables:
-
- - `API` - the URL of the API to upload templates to
- - `VERSION` - version of the API to use
- - `USERNAME`
- - `PASSWORD`
-
-The user name and password is prompted on stdin if it is not set.
-
-For example:
-
-	$ rake API=https://api.vpsfree.cz USERNAME=admin
-

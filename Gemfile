@@ -1,4 +1,3 @@
 source 'https://rubygems.org'
-gem 'rake'
-gem 'haveapi-client'
+gem 'haveapi-client', '~> 0.5.4'
 gem 'highline', '~> 1.6.21'

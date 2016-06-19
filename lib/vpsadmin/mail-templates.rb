@@ -1,13 +1,12 @@
-require 'haveapi/client'
-require 'highline/import'
-
 module VpsAdmin
     module MailTemplates ; end
 end
 
+require_relative 'mail-templates/cli'
 require_relative 'mail-templates/meta'
 require_relative 'mail-templates/template'
 require_relative 'mail-templates/translation'
+require_relative 'mail-templates/version'
 
 def template(&block)
   VpsAdmin::MailTemplates::Meta.load(block)
@@ -15,17 +14,8 @@ end
 
 module VpsAdmin
   module MailTemplates
-    def self.install(api, version, username = nil, password = nil)
+    def self.install(api)
       templates = find_templates
-      api = HaveAPI::Client::Client.new(api)
-
-      username ||= ask('Username: ') { |q| q.default = nil }.to_s
-      password ||= ask('Password: ') do |q|
-        q.default = nil
-        q.echo = false
-      end.to_s
-
-      api.authenticate(:basic, user: username, password: password)
 
       # Find existing templates
       languages = api.language.list
@@ -76,22 +66,13 @@ module VpsAdmin
       puts "Done"
     end
 
-    def self.root
-      File.realpath(
-          File.join(
-              File.dirname(__FILE__),
-              '..', '..'
-          )
-      )
-    end
-
     def self.find_templates
       ret = []
       
-      Dir.glob(File.join(root, 'templates', '*')).each do |tpl|
+      Dir.glob('*').each do |tpl|
         next unless Dir.exists?(tpl)
         
-        ret << Template.new(tpl)
+        ret << Template.new(File.join(Dir.pwd, tpl))
       end
       
       ret
