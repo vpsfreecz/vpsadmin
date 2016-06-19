@@ -15,21 +15,21 @@ toto je automatická připomínka platby členského příspěvku.
 
 <table>
     <tr>
-        <td>Částka:</td>
-        <td>
-            <%= @user.m_monthly_payment %> Kč
-            nebo
-            <%= @user.m_monthly_payment  / 25 %> € na měsíc
-        </td>
+        <td>Zaplaceno do:</td>
+        <% t = @user.paid_until %>
+        <td><%= t ? t.strftime('%Y-%m-%d') : '---' %></td>
     </tr>
     <tr>
         <td>Variabilní symbol:</td>
         <td><%= @user.id %></td>
     </tr>
     <tr>
-        <td>Zaplaceno do:</td>
-        <% t = @user.paid_until %>
-        <td><%= t ? t.strftime('%Y-%m-%d') : '---' %></td>
+        <td>Částka:</td>
+        <td>
+            <%= @user.m_monthly_payment %> Kč
+            nebo
+            <%= @user.m_monthly_payment  / 25 %> € na měsíc
+        </td>
     </tr>
 </table>
 

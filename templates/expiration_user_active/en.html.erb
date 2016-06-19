@@ -15,21 +15,21 @@ this is an automated reminder for payment of the membership fee.
 
 <table>
     <tr>
-        <td>Sum:</td>
-        <td>
-            <%= @user.m_monthly_payment %> Kč
-            or
-            <%= @user.m_monthly_payment  / 25 %> € per month
-        </td>
+        <td>Expiration date:</td>
+        <% t = @user.paid_until %>
+        <td><%= t ? t.strftime('%Y-%m-%d') : '---' %></td>
     </tr>
     <tr>
         <td>Variable symbol:</td>
         <td><%= @user.id %></td>
     </tr>
     <tr>
-        <td>Expiration date:</td>
-        <% t = @user.paid_until %>
-        <td><%= t ? t.strftime('%Y-%m-%d') : '---' %></td>
+        <td>Sum:</td>
+        <td>
+            <%= @user.m_monthly_payment %> Kč
+            or
+            <%= @user.m_monthly_payment  / 25 %> € per month
+        </td>
     </tr>
 </table>
 
