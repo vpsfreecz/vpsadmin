@@ -6,7 +6,6 @@ installed (sent to the API).
 
 ## Requirements
 
- - make
  - Ruby >= 2.0
  - gems specified in `Gemfile`
 
