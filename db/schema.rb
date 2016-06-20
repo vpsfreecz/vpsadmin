@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160308154537) do
+ActiveRecord::Schema.define(version: 20160614112222) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -290,6 +290,38 @@ ActiveRecord::Schema.define(version: 20160308154537) do
     t.datetime "updated_at"
   end
 
+  create_table "invoices", force: true do |t|
+    t.integer  "user_id",                                  null: false
+    t.string   "number",          limit: 30,               null: false
+    t.string   "name",            limit: 100,              null: false
+    t.string   "street",          limit: 100,              null: false
+    t.string   "city",            limit: 100,              null: false
+    t.string   "postal_code",     limit: 10,               null: false
+    t.string   "country",         limit: 100,              null: false
+    t.string   "registration_no", limit: 15,               null: false
+    t.string   "vat_no",          limit: 15
+    t.datetime "from_date",                                null: false
+    t.datetime "to_date",                                  null: false
+    t.datetime "issued_on",                                null: false
+    t.datetime "due_on",                                   null: false
+    t.integer  "due",                                      null: false
+    t.integer  "vs",                                       null: false
+    t.string   "currency",                                 null: false
+    t.integer  "total_amount",                             null: false
+    t.integer  "paid_amount",                  default: 0, null: false
+    t.string   "url",             limit: 1024,             null: false
+    t.text     "backend_data"
+  end
+
+  add_index "invoices", ["user_id"], name: "index_invoices_on_user_id", using: :btree
+
+  create_table "languages", force: true do |t|
+    t.string "code",  limit: 2,   null: false
+    t.string "label", limit: 100, null: false
+  end
+
+  add_index "languages", ["code"], name: "index_languages_on_code", unique: true, using: :btree
+
   create_table "locations", primary_key: "location_id", force: true do |t|
     t.string   "location_label",                 limit: 63,                 null: false
     t.boolean  "location_has_ipv6",                                         null: false
@@ -343,15 +375,24 @@ ActiveRecord::Schema.define(version: 20160308154537) do
 
   add_index "mail_template_recipients", ["mail_template_id", "mail_recipient_id"], name: "mail_template_recipients_unique", unique: true, using: :btree
 
-  create_table "mail_templates", force: true do |t|
-    t.string   "name",        limit: 100, null: false
-    t.string   "label",       limit: 100, null: false
-    t.string   "from",                    null: false
+  create_table "mail_template_translations", force: true do |t|
+    t.integer  "mail_template_id", null: false
+    t.integer  "language_id",      null: false
+    t.string   "from",             null: false
     t.string   "reply_to"
     t.string   "return_path"
-    t.string   "subject",                 null: false
+    t.string   "subject",          null: false
     t.text     "text_plain"
     t.text     "text_html"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "mail_template_translations", ["mail_template_id", "language_id"], name: "mail_template_translation_unique", unique: true, using: :btree
+
+  create_table "mail_templates", force: true do |t|
+    t.string   "name",       limit: 100, null: false
+    t.string   "label",      limit: 100, null: false
     t.datetime "created_at"
     t.datetime "updated_at"
   end
@@ -404,6 +445,7 @@ ActiveRecord::Schema.define(version: 20160308154537) do
     t.integer  "password_version",               default: 1,    null: false
     t.datetime "paid_until"
     t.datetime "last_activity_at"
+    t.integer  "language_id",                    default: 1
   end
 
   create_table "members_changes", primary_key: "m_id", force: true do |t|
@@ -820,6 +862,22 @@ ActiveRecord::Schema.define(version: 20160308154537) do
     t.integer  "tr_bytes_out",   limit: 8,   default: 0, null: false
     t.datetime "tr_date",                                null: false
   end
+
+  create_table "user_billing_settings", force: true do |t|
+    t.integer "user_id",                                    null: false
+    t.string  "name",            limit: 100,                null: false
+    t.string  "street",          limit: 100,                null: false
+    t.string  "city",            limit: 100,                null: false
+    t.string  "postal_code",     limit: 100,                null: false
+    t.string  "country",         limit: 100,                null: false
+    t.string  "registration_no", limit: 15,                 null: false
+    t.string  "vat_no",          limit: 15
+    t.string  "currency",        limit: 5,                  null: false
+    t.boolean "auto_issue",                  default: true, null: false
+    t.integer "period"
+  end
+
+  add_index "user_billing_settings", ["user_id"], name: "index_user_billing_settings_on_user_id", unique: true, using: :btree
 
   create_table "user_cluster_resources", force: true do |t|
     t.integer "user_id"
