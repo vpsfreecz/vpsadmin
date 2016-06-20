@@ -33,10 +33,13 @@ module TransactionChains
 
             datasets = []
 
-            # Chown datasets
+            # Chown datasets and transfer cluster resources
             vps.dataset_in_pool.dataset.subtree.each do |ds|
               datasets << ds
               db_changes[ds] = {user_id: vps.m_id}
+
+              dip = ds.primary_dataset_in_pool!
+              db_changes.update(dip.transfer_resources!(vps.user))
             end
 
             # Check mounts
