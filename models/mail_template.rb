@@ -1,6 +1,6 @@
 class MailTemplate < ActiveRecord::Base
-  has_many :mail_template_translations
-  has_many :mail_template_recipients
+  has_many :mail_template_translations, dependent: :destroy
+  has_many :mail_template_recipients, dependent: :destroy
   has_many :mail_recipients, through: :mail_template_recipients
 
   has_paper_trail
