@@ -13,8 +13,17 @@ module VpsAdmin::MailTemplates
       @meta = Meta.last_meta
       Meta.reset_last
 
+      langs = {}
+
       Dir.glob(File.join(path, '*.erb')).each do |tr|
-        @translations << Translation.new(self, tr)
+        lang = File.basename(tr).split('.')[0]
+        
+        langs[lang] ||= []
+        langs[lang] << tr
+      end
+
+      langs.each do |code, files|
+        @translations << Translation.new(self, code, files)
       end
     end
 

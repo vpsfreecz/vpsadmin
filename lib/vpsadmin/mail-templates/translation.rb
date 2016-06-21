@@ -1,15 +1,21 @@
 module VpsAdmin::MailTemplates
   class Translation
-    attr_reader :lang, :format, :plain, :html
+    attr_reader :lang, :formats, :plain, :html
 
-    def initialize(tpl, file)
+    def initialize(tpl, lang, files)
       @tpl = tpl
-      parts = File.basename(file).split('.')
+      @lang = lang
+      @files = files
+      @formats = []
 
-      @lang = parts[0]
-      @format = parts[1]
+      files.each do |f|
+        parts = File.basename(f).split('.')
+        instance_variable_set("@#{parts[1]}", File.read(f))
 
-      instance_variable_set("@#{@format}", File.read(file))
+        @formats << parts[1] unless @formats.include?(parts[1])
+      end
+
+      @formats.sort!
     end
     
     def params

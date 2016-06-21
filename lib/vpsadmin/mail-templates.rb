@@ -41,7 +41,7 @@ module VpsAdmin
         end
 
         tpl.translations.each do |tr|
-          puts "  #{tr.lang}.#{tr.format}"
+          puts "  #{tr.lang} (#{tr.formats.join(',')})"
           tr_exists = tpl_exists && tpl_exists[1].detect { |v| v.language.code == tr.lang }
 
           if tr_exists
