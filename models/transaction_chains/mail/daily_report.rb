@@ -3,7 +3,7 @@ module TransactionChains
     label 'Daily report'
     allow_empty
 
-    def link_chain
+    def link_chain(lang)
       now = Time.now.utc
       t = now.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -15,6 +15,7 @@ module TransactionChains
       )
 
       mail(:daily_report, {
+          language: lang,
           vars: {
               base_url: ::SysConfig.get('general_base_url'),
               
