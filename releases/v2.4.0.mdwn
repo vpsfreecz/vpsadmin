@@ -16,6 +16,7 @@ are saved as text files on disk and uploaded to the API using this utility.
 - Mail templates use erb trim mode '-'
 - VPS chown: transfer diskspace cluster resource
   (issue [#103](https://redmine.vpsfree.cz/issues/103))
+- Rake task `vpsadmin:mail_daily_report` has new variable `VPSADMIN_LANG`
 
 ## vpsAdmin web UI
 - Removed mail template management
