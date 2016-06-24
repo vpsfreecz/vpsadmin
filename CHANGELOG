@@ -1,7 +1,10 @@
+* Fri Jun 24 2016 - version 2.4.0
 - New resource `Language`
 - New resource `MailTemplate.Translation`
 - New parameter `User.language`
 - Mail templates use erb trim mode '-'
+- VPS chown: transfer diskspace cluster resource
+- Rake task `vpsadmin:mail_daily_report` has new variable `VPSADMIN_LANG`
 
 * Tue Jun 14 2016 - version 2.3.0
 - TransactionChain.Index: fix ambiguous column name in DB query
