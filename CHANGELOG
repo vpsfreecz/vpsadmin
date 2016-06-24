@@ -1,3 +1,6 @@
+* Fri Jun 24 2016 - version 2.4.0
+- No changes
+
 * Tue Jun 14 2016 - version 2.3.0
 - VPS status: only one thread can update status at a time
 - Dataset::ApplyRollback: re-share datasets
