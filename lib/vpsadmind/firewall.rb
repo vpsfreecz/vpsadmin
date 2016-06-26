@@ -25,9 +25,10 @@ module VpsAdmind
 
         rs = db.query("SELECT ip_addr
                       FROM vps_ip, vps
+                      INNER JOIN networks n ON n.id = vps_ip.network_id
                       WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}
                       AND vps_ip.vps_id = vps.vps_id
-                      AND ip_v = #{v}")
+                      AND n.ip_version = #{v}")
         rs.each_hash do |ip|
           reg_ip(ip['ip_addr'], v)
         end

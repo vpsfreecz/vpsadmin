@@ -82,7 +82,7 @@ module VpsAdmind
       tc("class add dev #{dev} parent 1: classid 1:1 htb rate #{tx}bps ceil #{tx}bps burst 1M", [2])
 
       all_ips(db) do |ip|
-        shape_ip(ip['ip_addr'], ip['ip_v'].to_i, ip['class_id'], ip['max_tx'], ip['max_rx'], dev)
+        shape_ip(ip['ip_addr'], ip['ip_version'].to_i, ip['class_id'], ip['max_tx'], ip['max_rx'], dev)
       end
     end
 
@@ -161,15 +161,17 @@ module VpsAdmind
 
       # since all filters were deleted, set them up again
       all_ips(Db.new) do |ip|
-        add_filters(ip['ip_addr'], ip['ip_v'].to_i, ip['class_id'], dev)
+        add_filters(ip['ip_addr'], ip['ip_version'].to_i, ip['class_id'], dev)
       end
     end
 
     def all_ips(db)
-      rs = db.query("SELECT ip_addr, ip_v, class_id, max_tx, max_rx
-                    FROM vps_ip, vps
+      rs = db.query("SELECT ip_addr, ip_version, class_id, max_tx, max_rx
+                    FROM vps
+                    INNER JOIN vps_ip ip ON ip.vps_id = vps.vps_id
+                    INNER JOIN networks n ON n.id = ip.network_id
                     WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}
-                      AND vps_ip.vps_id = vps.vps_id")
+                      AND ip.vps_id = vps.vps_id")
       rs.each_hash do |ip|
         yield ip
       end
