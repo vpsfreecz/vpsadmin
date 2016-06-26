@@ -3,6 +3,13 @@ module VpsAdmin::API::Resources
     desc 'Manage networks'
     model ::Network
 
+    params(:ro) do
+      integer :size, desc: 'Number of possible host IP addresses'
+      integer :used, desc: 'Number of IP addresses present in vpsAdmin'
+      integer :assigned, desc: 'Number of IP addresses assigned to VPSes'
+      integer :owned, desc: 'Number of IP addresses owned by some users'
+    end
+
     params(:common) do
       string :label
       resource Location
@@ -17,6 +24,7 @@ module VpsAdmin::API::Resources
     params(:all) do
       id :id
       use :common
+      use :ro
     end
 
     class Index < HaveAPI::Actions::Default::Index

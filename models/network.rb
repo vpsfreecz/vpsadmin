@@ -17,6 +17,26 @@ class Network < ActiveRecord::Base
     net_addr { |n| n.to_string }
   end
 
+  # Return number of possible IP addresses without network and broadcast address
+  def size
+    net_addr { |n| n.size - 2 }
+  end
+
+  # Number of IP addresses present in vpsAdmin
+  def used
+    ip_addresses.count
+  end
+
+  # Number of IP addresses assigned to VPSes
+  def assigned
+    ip_addresses.where.not(vps: nil).count
+  end
+
+  # Number of IP addresses owned by some users
+  def owned
+    ip_addresses.where.not(user: nil).count
+  end
+
   protected
   def net_addr
     @net_addr ||= IPAddress.parse("#{address}/#{prefix}")
