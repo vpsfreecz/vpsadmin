@@ -4,7 +4,7 @@ class Network < ActiveRecord::Base
 
   enum role: %i(public_access private_access)
 
-  validate :version, inclusion: {
+  validate :ip_version, inclusion: {
       in: [4, 6],
       messave: '%{value} is not a valid IP version',
   }

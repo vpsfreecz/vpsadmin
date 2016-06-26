@@ -16,7 +16,7 @@ module VpsAdmin::API::Resources
       integer :ip_version
       string :address
       integer :prefix
-      string :role
+      string :role, choices: ::Network.roles.keys
       bool :partial
       bool :managed
     end
@@ -72,6 +72,38 @@ module VpsAdmin::API::Resources
 
       def exec
         @net
+      end
+    end
+
+    class Create < HaveAPI::Actions::Default::Create
+      desc 'Add a new network'
+
+      input do
+        use :common
+        patch :location, required: true
+        patch :address, required: true
+        patch :prefix, required: true
+        patch :ip_version, required: true
+        patch :role, required: true
+        patch :managed, required: true
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        ::Network.create!(input)
+
+      rescue ActiveRecord::RecordInvalid => e
+        error('create failed', e.record.errors.to_hash)
+
+      rescue ActiveRecord::RecordNotUnique
+        error('this network already exists')
       end
     end
   end
