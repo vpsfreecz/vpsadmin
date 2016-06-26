@@ -153,7 +153,7 @@ class Vps < ActiveRecord::Base
     ::IpAddress.transaction do
       ip = ::IpAddress.find(ip.id) unless safe
 
-      unless ip.ip_location == node.server_location
+      unless ip.network.location_id == node.server_location
         raise VpsAdmin::API::Exceptions::IpAddressInvalidLocation
       end
 
@@ -161,11 +161,13 @@ class Vps < ActiveRecord::Base
         raise VpsAdmin::API::Exceptions::IpAddressInUse
       end
 
-      if !ip.user_id && ::IpAddress.where(
+      if !ip.user_id && ::IpAddress.joins(:network).where(
             user: self.user,
             vps: nil,
-            ip_location: node.server_location,
-            ip_v: ip.ip_v,
+            networks: {
+                location_id: node.server_location,
+                ip_version: ip.network.ip_version,
+            }
       ).exists?
         raise VpsAdmin::API::Exceptions::IpAddressNotOwned
       end
@@ -201,7 +203,7 @@ class Vps < ActiveRecord::Base
   def delete_ips(v=nil)
     ::IpAddress.transaction do
       if v
-        ips = ip_addresses.where(ip_v: v)
+        ips = ip_addresses.joins(:network).where(networks: {ip_version: v})
       else
         ips = ip_addresses.all
       end

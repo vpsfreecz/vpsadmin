@@ -336,8 +336,12 @@ module TransactionChains
     # IP addresses.
     def clone_ip_addresses(vps, dst_vps)
       ips = {
-          ipv4: vps.ip_addresses.where(ip_v: 4).count,
-          ipv6: vps.ip_addresses.where(ip_v: 6).count
+          ipv4: vps.ip_addresses.joins(:network).where(
+                  networks: {ip_version: 4}
+              ).count,
+          ipv6: vps.ip_addresses.joins(:network).where(
+                  networks: {ip_version: 6}
+              ).count,
       }
 
       versions = [:ipv4]

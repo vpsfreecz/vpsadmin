@@ -186,7 +186,11 @@ module TransactionChains
           dst_ip_addresses = []
 
           vps.ip_addresses.each do |ip|
-            replacement = ::IpAddress.pick_addr!(dst_vps.user, dst_vps.node.location, ip.ip_v)
+            replacement = ::IpAddress.pick_addr!(
+                dst_vps.user,
+                dst_vps.node.location,
+                ip.network.ip_version
+            )
             lock(replacement)
 
             append(Transactions::Vps::IpDel, args: [dst_vps, ip, false], urgent: true) do

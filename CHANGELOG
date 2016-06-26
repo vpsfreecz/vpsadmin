@@ -1,3 +1,6 @@
+- API version set to 3.0
+- Track network subnets that IP addresses belong to
+
 * Fri Jun 24 2016 - version 2.4.0
 - New resource `Language`
 - New resource `MailTemplate.Translation`

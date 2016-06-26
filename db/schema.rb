@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160614112222) do
+ActiveRecord::Schema.define(version: 20160624185945) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -290,31 +290,6 @@ ActiveRecord::Schema.define(version: 20160614112222) do
     t.datetime "updated_at"
   end
 
-  create_table "invoices", force: true do |t|
-    t.integer  "user_id",                                  null: false
-    t.string   "number",          limit: 30,               null: false
-    t.string   "name",            limit: 100,              null: false
-    t.string   "street",          limit: 100,              null: false
-    t.string   "city",            limit: 100,              null: false
-    t.string   "postal_code",     limit: 10,               null: false
-    t.string   "country",         limit: 100,              null: false
-    t.string   "registration_no", limit: 15,               null: false
-    t.string   "vat_no",          limit: 15
-    t.datetime "from_date",                                null: false
-    t.datetime "to_date",                                  null: false
-    t.datetime "issued_on",                                null: false
-    t.datetime "due_on",                                   null: false
-    t.integer  "due",                                      null: false
-    t.integer  "vs",                                       null: false
-    t.string   "currency",                                 null: false
-    t.integer  "total_amount",                             null: false
-    t.integer  "paid_amount",                  default: 0, null: false
-    t.string   "url",             limit: 1024,             null: false
-    t.text     "backend_data"
-  end
-
-  add_index "invoices", ["user_id"], name: "index_invoices_on_user_id", using: :btree
-
   create_table "languages", force: true do |t|
     t.string "code",  limit: 2,   null: false
     t.string "label", limit: 100, null: false
@@ -466,6 +441,7 @@ ActiveRecord::Schema.define(version: 20160614112222) do
     t.integer "m_distribution"
     t.integer "m_location"
     t.string  "m_currency",       limit: 10
+    t.string  "m_language",       limit: 5,               null: false
     t.string  "m_addr",           limit: 127,             null: false
     t.string  "m_addr_reverse",                           null: false
     t.string  "m_reason",         limit: 500,             null: false
@@ -525,6 +501,19 @@ ActiveRecord::Schema.define(version: 20160614112222) do
   end
 
   add_index "mounts", ["vps_id"], name: "index_mounts_on_vps_id", using: :btree
+
+  create_table "networks", force: true do |t|
+    t.string  "label"
+    t.integer "location_id", null: false
+    t.integer "ip_version",  null: false
+    t.string  "address",     null: false
+    t.integer "prefix",      null: false
+    t.integer "role",        null: false
+    t.boolean "partial",     null: false
+    t.boolean "managed",     null: false
+  end
+
+  add_index "networks", ["location_id", "address", "prefix"], name: "index_networks_on_location_id_and_address_and_prefix", unique: true, using: :btree
 
   create_table "node_current_statuses", force: true do |t|
     t.integer  "node_id",                       null: false
@@ -863,22 +852,6 @@ ActiveRecord::Schema.define(version: 20160614112222) do
     t.datetime "tr_date",                                null: false
   end
 
-  create_table "user_billing_settings", force: true do |t|
-    t.integer "user_id",                                    null: false
-    t.string  "name",            limit: 100,                null: false
-    t.string  "street",          limit: 100,                null: false
-    t.string  "city",            limit: 100,                null: false
-    t.string  "postal_code",     limit: 100,                null: false
-    t.string  "country",         limit: 100,                null: false
-    t.string  "registration_no", limit: 15,                 null: false
-    t.string  "vat_no",          limit: 15
-    t.string  "currency",        limit: 5,                  null: false
-    t.boolean "auto_issue",                  default: true, null: false
-    t.integer "period"
-  end
-
-  add_index "user_billing_settings", ["user_id"], name: "index_user_billing_settings_on_user_id", unique: true, using: :btree
-
   create_table "user_cluster_resources", force: true do |t|
     t.integer "user_id"
     t.integer "environment_id",      null: false
@@ -1021,17 +994,16 @@ ActiveRecord::Schema.define(version: 20160614112222) do
 
   create_table "vps_ip", primary_key: "ip_id", force: true do |t|
     t.integer "vps_id"
-    t.integer "ip_v",                   default: 4,        null: false
-    t.integer "ip_location",                               null: false
-    t.string  "ip_addr",     limit: 40,                    null: false
-    t.integer "max_tx",      limit: 8,  default: 39321600, null: false
-    t.integer "max_rx",      limit: 8,  default: 39321600, null: false
-    t.integer "class_id",                                  null: false
+    t.string  "ip_addr",    limit: 40,                    null: false
+    t.integer "max_tx",     limit: 8,  default: 39321600, null: false
+    t.integer "max_rx",     limit: 8,  default: 39321600, null: false
+    t.integer "class_id",                                 null: false
     t.integer "user_id"
+    t.integer "network_id",                               null: false
   end
 
   add_index "vps_ip", ["class_id"], name: "index_vps_ip_on_class_id", unique: true, using: :btree
-  add_index "vps_ip", ["ip_location"], name: "index_vps_ip_on_ip_location", using: :btree
+  add_index "vps_ip", ["network_id"], name: "index_vps_ip_on_network_id", using: :btree
   add_index "vps_ip", ["user_id"], name: "index_vps_ip_on_user_id", using: :btree
   add_index "vps_ip", ["vps_id"], name: "index_vps_ip_on_vps_id", using: :btree
   add_index "vps_ip", ["vps_id"], name: "vps_id", using: :btree

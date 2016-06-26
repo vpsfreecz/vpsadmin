@@ -906,14 +906,14 @@ END
     params(:common) do
       id :id, label: 'IP address ID', db_name: :ip_id
       string :addr, label: 'Address', desc: 'Address itself', db_name: :ip_addr
-      integer :version, label: 'IP version', desc: '4 or 6', db_name: :ip_v
+      resource VpsAdmin::API::Resources::Network, label: 'Network'
     end
 
     class Index < HaveAPI::Actions::Default::Index
       desc 'List VPS IP addresses'
 
       input do
-        integer :version, label: 'IP version', desc: '4 or 6', db_name: :ip_v
+        integer :version, label: 'IP version', desc: '4 or 6'
       end
 
       output(:object_list) do
@@ -932,8 +932,8 @@ END
         ).ip_addresses
 
         if input[:version]
-          ips = ips.where(
-              ip_v: input[:version]
+          ips = ips.joins(:network).where(
+              networks: {ip_version: input[:version]},
           )
         end
 
@@ -948,7 +948,7 @@ END
         resource VpsAdmin::API::Resources::IpAddress, label: 'IP address',
             desc: 'If the address is not provided, first free IP address of given version is assigned instead'
         integer :version, label: 'IP version',
-                desc: 'provide only if IP address is not selected', db_name: :ip_v
+                desc: 'provide only if IP address is not selected'
       end
 
       output do
@@ -1010,8 +1010,8 @@ END
 
         vps.delete_ip(vps.ip_addresses.find_by!(
             ip_id: params[:ip_address_id],
-            vps_id: vps.id)
-        )
+            vps_id: vps.id
+        ))
       end
     end
 

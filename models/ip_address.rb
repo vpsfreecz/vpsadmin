@@ -2,20 +2,15 @@ class IpAddress < ActiveRecord::Base
   self.table_name = 'vps_ip'
   self.primary_key = 'ip_id'
 
-  belongs_to :location, :foreign_key => :ip_location
+  belongs_to :network
   belongs_to :vps, :foreign_key => :vps_id
   belongs_to :user
   has_paper_trail
 
   alias_attribute :addr, :ip_addr
-  alias_attribute :version, :ip_v
 
   include Lockable
 
-  validates :ip_v, inclusion: {
-      in: [4, 6],
-      message: '%{value} is not a valid IP version'
-  }
   validate :check_address
   validates :ip_addr, uniqueness: true
 
@@ -39,8 +34,7 @@ class IpAddress < ActiveRecord::Base
 
       ip = self.new(
           ip_addr: addr.to_s,
-          ip_v: addr.ipv4? ? 4 : 6,
-          location: params[:location],
+          network: params[:network],
           class_id: class_id,
           user: params[:user]
       )
@@ -53,6 +47,10 @@ class IpAddress < ActiveRecord::Base
     ip
   end
 
+  def version
+    network.ip_version
+  end
+
   def free?
     vps_id.nil? || vps_id == 0
   end
@@ -60,8 +58,9 @@ class IpAddress < ActiveRecord::Base
   # Return first free and unlocked IP address version +v+ from +location+.
   def self.pick_addr!(user, location, v)
     self.select('vps_ip.*')
+      .joins(:network)
       .joins("LEFT JOIN resource_locks rl ON rl.resource = 'IpAddress' AND rl.row_id = vps_ip.ip_id")
-      .where(ip_v: v, location: location)
+      .where(networks: {ip_version: v, location: location})
       .where('vps_id IS NULL')
       .where('(vps_ip.user_id = ? OR vps_ip.user_id IS NULL)', user.id)
       .where('rl.id IS NULL')
@@ -84,12 +83,16 @@ class IpAddress < ActiveRecord::Base
 
   def check_address
     a = ::IPAddress.parse(ip_addr)
+    ip_v = network.ip_version
 
     if (a.ipv4? && ip_v != 4) || (a.ipv6? && ip_v != 6)
       errors.add(:ip_addr, 'IP version does not match the address')
 
     elsif a.network? && a.prefix != (a.ipv4? ? 32 : 128)
       errors.add(:ip_addr, 'not a host address')
+
+    elsif !network.include?(self)
+      errors.add(:ip_addr, "does not belong to network #{network}")
     end
 
   rescue ArgumentError => e

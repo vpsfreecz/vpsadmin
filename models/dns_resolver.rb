@@ -13,8 +13,12 @@ class DnsResolver < ActiveRecord::Base
   validate :universal_or_location
 
   def self.pick_suitable_resolver_for_vps(vps, except: [])
-    first_ip = vps.ip_addresses.group(:ip_v).order(:ip_v).take
-    ip_v = first_ip ? first_ip.ip_v : 4
+    first_ip = vps.ip_addresses
+        .joins(:network)
+        .group('networks.ip_version')
+        .order('networks.ip_version')
+        .take
+    ip_v = first_ip ? first_ip.network.ip_version : 4
 
     self.where(
       'dns_location = ? OR dns_is_universal = 1',

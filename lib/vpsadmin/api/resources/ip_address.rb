@@ -12,9 +12,11 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
   end
 
   params(:filters) do
-    resource VpsAdmin::API::Resources::VPS, label: 'VPS', desc: 'VPS this IP is assigned to, might be null',
-             value_label: :hostname
-    integer :version, label: 'IP version', desc: '4 or 6', db_name: :ip_v
+    resource VpsAdmin::API::Resources::VPS, label: 'VPS',
+            desc: 'VPS this IP is assigned to, can be null',
+            value_label: :hostname
+    integer :version, label: 'IP version', desc: '4 or 6'
+    resource VpsAdmin::API::Resources::Network, label: 'Network'
     resource VpsAdmin::API::Resources::Location, label: 'Location',
               desc: 'Location this IP address is available in'
     resource VpsAdmin::API::Resources::User, label: 'User',
@@ -24,7 +26,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
   end
 
   params(:common) do
-    use :filters
+    use :filters, include: %i(network vps user)
+    use :shaper
     string :addr, label: 'Address', desc: 'Address itself', db_name: :ip_addr
     integer :class_id, label: 'Class id', desc: 'Class id for shaper'
   end
@@ -82,12 +85,20 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     def query
       ips = ::IpAddress
 
-      %i(vps user version location user max_tx max_rx).each do |filter|
+      %i(network vps user max_tx max_rx).each do |filter|
         next unless input.has_key?(filter)
 
         ips = ips.where(
             filter => input[filter],
         )
+      end
+
+      if input[:location]
+        ips = ips.joins(:network).where(networks: {location_id: input[:location].id})
+      end
+      
+      if input[:version]
+        ips = ips.joins(:network).where(networks: {ip_version: input[:version]})
       end
 
       if current_user.role != :admin
@@ -139,9 +150,9 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     desc 'Add an IP address'
 
     input do
-      use :common, exclude: %i(vps class_id version)
+      use :common, exclude: %i(vps class_id version location)
       patch :addr, required: true
-      patch :location, required: true
+      patch :network, required: true
     end
 
     output do

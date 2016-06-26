@@ -13,7 +13,7 @@ module TransactionChains
       
       if reallocate
         {ipv4: 4, ipv6: 6}.each do |r, v|
-          cnt = ips.count { |ip| ip.ip_v == v }
+          cnt = ips.count { |ip| ip.network.ip_version == v }
 
           uses << resource_obj.reallocate_resource!(r, resource_obj.send(r) - cnt, user: vps.user)
         end
