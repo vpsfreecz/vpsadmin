@@ -106,5 +106,33 @@ module VpsAdmin::API::Resources
         error('this network already exists')
       end
     end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Update a network'
+
+      input do
+        use :common
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        net = ::Network.find(params[:network_id])
+        net.update!(input)
+        net
+
+      rescue ActiveRecord::RecordInvalid => e
+        error('update failed', e.record.errors.to_hash)
+
+      rescue ActiveRecord::RecordNotUnique
+        error('this network already exists')
+      end
+    end
   end
 end

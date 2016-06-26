@@ -98,4 +98,8 @@ class IpAddress < ActiveRecord::Base
   rescue ArgumentError => e
     errors.add(:ip_addr, e.message)
   end
+
+  def to_ip
+    IPAddress.parse(addr)
+  end
 end
