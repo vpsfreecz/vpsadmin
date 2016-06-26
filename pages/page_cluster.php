@@ -422,7 +422,7 @@ switch($_REQUEST["action"]) {
 		$res = array();
 		$params = array(
 			'addr' => $t,
-			'location' => $_POST['location'],
+			'network' => $_POST['network'],
 		);
 		
 		if ($_POST['user'])

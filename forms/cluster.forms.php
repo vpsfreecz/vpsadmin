@@ -200,6 +200,17 @@ function ip_adress_list($title) {
 	$xtpl->form_add_select(_("Version").':', 'v', $versions, get_val('v', 0));
 	$xtpl->form_add_input(_("User ID").':', 'text', '40', 'user', get_val('user'), _("'unassigned' to list free addresses"));
 	$xtpl->form_add_input(_("VPS").':', 'text', '40', 'vps', get_val('vps'), _("'unassigned' to list free addresses"));
+	$xtpl->form_add_select(
+		_("Network").':',
+		'network',
+		resource_list_to_options(
+			$api->network->list(),
+			'id', 'label',
+			true,
+			network_label
+		),
+		get_val('network')
+	);
 	$xtpl->form_add_select(_("Location").':', 'location',
 		resource_list_to_options($api->location->list()), get_val('location'));
 	
@@ -211,7 +222,7 @@ function ip_adress_list($title) {
 	$params = array(
 		'limit' => get_val('limit', 25),
 		'offset' => get_val('offset', 0),
-		'meta' => array('includes' => 'user,vps,location')
+		'meta' => array('includes' => 'user,vps,network__location')
 	);
 	
 	if ($_GET['user'] === 'unassigned')
@@ -224,6 +235,9 @@ function ip_adress_list($title) {
 	elseif ($_GET['vps'])
 		$params['vps'] = $_GET['vps'];
 	
+	if ($_GET['network'])
+		$params['network'] = $_GET['network'];
+
 	if ($_GET['location'])
 		$params['location'] = $_GET['location'];
 	
@@ -233,6 +247,7 @@ function ip_adress_list($title) {
 	$ips = $api->ip_address->list($params);
 	
 	$xtpl->table_add_category(_("IP address"));
+	$xtpl->table_add_category(_("Network"));
 	$xtpl->table_add_category(_("Location"));
 	$xtpl->table_add_category(_('User'));
 	$xtpl->table_add_category('VPS');
@@ -240,7 +255,8 @@ function ip_adress_list($title) {
 	
 	foreach ($ips as $ip) {
 		$xtpl->table_td($ip->addr);
-		$xtpl->table_td($ip->location->label);
+		$xtpl->table_td($ip->network->address .'/'. $ip->network->prefix);
+		$xtpl->table_td($ip->network->location->label);
 		
 		if ($ip->user_id)
 			$xtpl->table_td('<a href="?page=adminm&action=edit&id='.$ip->user_id.'">'.$ip->user->login.'</a>');
@@ -271,8 +287,17 @@ function ip_add_form($ip_addresses = '') {
 	
 	$xtpl->form_create('?page=cluster&action=ipaddr_add2', 'post');
 	$xtpl->form_add_textarea(_("IP addresses").':', 40, 10, 'ip_addresses', $ip_addresses);
-	$xtpl->form_add_select(_("Location").':', 'location',
-		resource_list_to_options($api->location->list()), $_POST['location']);
+	$xtpl->form_add_select(
+		_("Network").':',
+		'network',
+		resource_list_to_options(
+			$api->network->list(),
+			'id', 'label',
+			true,
+			network_label
+		),
+		$_POST['network']
+	);
 	$xtpl->form_add_select(_("User").':', 'user',
 		resource_list_to_options($api->user->list(), 'id', 'login'), $_POST['user']);
 	

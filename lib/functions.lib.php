@@ -577,4 +577,8 @@ function lang_id_by_code($code, $langs = null) {
   return false;
 }
 
+
+function network_label($net) {
+  return $net->label ? $net->label : $net->address.'/'.$net->prefix;
+}
 ?>

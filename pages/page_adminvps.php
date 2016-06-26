@@ -959,8 +959,8 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_title(_('IP addresses'));
 		$xtpl->form_create('?page=adminvps&action=addip&veid='.$vps->id, 'post');
 		
-		foreach ($api->vps($vps->id)->ip_address->list() as $ip) {
-			if ($ip->version == 4)
+		foreach ($api->vps($vps->id)->ip_address->list(array('meta' => array('includes' => 'network'))) as $ip) {
+			if ($ip->network->ip_version == 4)
 				$xtpl->table_td(_("IPv4"));
 			else
 				$xtpl->table_td(_("IPv6"));
