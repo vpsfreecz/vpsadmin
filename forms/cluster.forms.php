@@ -7,6 +7,7 @@ function cluster_header() {
 	$xtpl->sbar_add(_("Register new node"), '?page=cluster&action=newnode');
 	$xtpl->sbar_add(_("Manage OS templates"), '?page=cluster&action=templates');
 	$xtpl->sbar_add(_("Manage configs"), '?page=cluster&action=configs');
+	$xtpl->sbar_add(_("Manage networks"), '?page=cluster&action=networks');
 	$xtpl->sbar_add(_("Manage IP addresses"), '?page=cluster&action=ip_addresses');
 	$xtpl->sbar_add(_("Manage DNS servers"), '?page=cluster&action=dns');
 	$xtpl->sbar_add(_("Manage environments"), '?page=cluster&action=environments');
@@ -174,6 +175,66 @@ function node_vps_overview() {
 	$xtpl->table_out('cluster_node_list');
 }
 
+function networks_list($title) {
+	global $xtpl, $api;
+	
+	$xtpl->title(_('Networks'));
+
+	$xtpl->table_add_category(_('Network'));
+	$xtpl->table_add_category(_('Label'));
+	$xtpl->table_add_category(_('Location'));
+	$xtpl->table_add_category(_('Public'));
+	$xtpl->table_add_category(_('Managed'));
+	$xtpl->table_add_category(_('Size'));
+	$xtpl->table_add_category(_('Used'));
+	$xtpl->table_add_category(_('Assigned'));
+	$xtpl->table_add_category(_('Owned'));
+	$xtpl->table_add_category(_('Free'));
+	$xtpl->table_add_category(_('IPs'));
+
+	$networks = $api->network->list(array(
+		'meta' => array('includes' => 'location')
+	));
+
+	foreach ($networks as $n) {
+		$xtpl->table_td($n->address .'/'. $n->prefix);
+		$xtpl->table_td($n->label);
+		$xtpl->table_td($n->location->label);
+		$xtpl->table_td(boolean_icon($n->role === 'public_access'));
+		$xtpl->table_td(boolean_icon($n->managed));
+		$xtpl->table_td($n->size, false, true);
+		$xtpl->table_td($n->used, false, true);
+		$xtpl->table_td($n->assigned, false, true);
+		$xtpl->table_td($n->owned, false, true);
+		$xtpl->table_td(
+			($n->used - max($n->assigned, $n->owned)).
+			' ('.($n->size - max($n->assigned, $n->owned)).')',
+			false, true
+		);
+		$xtpl->table_td(ip_list_link(
+			'<img
+				src="template/icons/vps_ip_list.png"
+				title="'._('List IP addresses in this network').'">',
+			array('network' => $n->id))
+		);
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_out();
+}
+
+function ip_list_link($text, $conds) {
+	$str_conds = array();
+
+	foreach ($conds as $k => $v)
+		$str_conds[] = "$k=$v";
+
+	$ret = '<a href="?page=cluster&action=ip_addresses&list=1&'.implode('&', $str_conds).'">';
+	$ret .= $text;
+	$ret .= '</a>';
+
+	return $ret;
+}
 
 function ip_adress_list($title) {
 	global $xtpl, $api;

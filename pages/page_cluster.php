@@ -403,7 +403,12 @@ switch($_REQUEST["action"]) {
 		}
 		
 		break;
-		
+
+	case "networks":
+		networks_list();
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		break;
+
 	case "ip_addresses":
 		ip_adress_list();
 		$xtpl->sbar_add(_("Back"), '?page=cluster');
