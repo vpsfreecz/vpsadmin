@@ -134,5 +134,36 @@ module VpsAdmin::API::Resources
         error('this network already exists')
       end
     end
+
+    class AddAddresses < HaveAPI::Action
+      desc 'Add IP addresses to a managed network'
+      route ':%{resource}_id/add_addresses'
+      http_method :post
+
+      input do
+        integer :count, required: true, number: {
+            min: 1,
+        }
+        resource User, desc: 'Owner of new IP addresses'
+      end
+
+      output(:hash) do
+        integer :count, desc: 'Number of added IP addresses'
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        net = ::Network.find(params[:network_id])
+        
+        unless net.managed
+          error('this action can be used only on managed networks')
+        end
+
+        {count: net.add_ips(input[:count], user: input[:user])}
+      end
+    end
   end
 end
