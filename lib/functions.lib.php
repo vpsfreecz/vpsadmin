@@ -23,15 +23,24 @@
 $DATA_SIZE_UNITS = array("k" => "KiB", "m" => "MiB", "g" => "GiB", "t" => "TiB");
 
 
-function get_free_ip_list ($v = 4, $vps, $limit = null) {
+function get_free_ip_list ($res, $vps, $role = null, $limit = null) {
 	global $api;
-	
+ 
+	if ($res === 'ipv4' || $res === 'ipv4_private')
+		$v = 4;
+	else
+		$v = 6;
+
 	$ret = array();
 	$filters = array(
 		'version' => $v,
 		'vps' => null,
-		'location' => $vps->node->location_id
+		'location' => $vps->node->location_id,
+		'meta' => array('includes' => 'user'),
 	);
+
+	if ($role)
+		$filters['role'] = $role;
 	
 	if ($_SESSION['is_admin']) {
 		if ($limit)
@@ -47,7 +56,7 @@ function get_free_ip_list ($v = 4, $vps, $limit = null) {
 		));
 		
 		foreach ($resources as $r) {
-			if ($r->cluster_resource->name == "ipv$v") {
+			if ($r->cluster_resource->name === $res) {
 				$filters['limit'] = $r->free;
 				break;
 			}
@@ -414,6 +423,7 @@ function unit_for_cluster_resource($name) {
 			return _('cores');
 		
 		case 'ipv4':
+		case 'ipv4_private':
 		case 'ipv6':
 			return _('addresses');
 		

@@ -131,7 +131,8 @@ switch ($_GET["action"]) {
 				'cpu' => $_POST['cpu'],
 				'diskspace' => $_POST['diskspace'],
 				'ipv4' => $_POST['ipv4'],
-				'ipv6' => $_POST['ipv6']
+				'ipv4_private' => $_POST['ipv4_private'],
+				'ipv6' => $_POST['ipv6'],
 			);
 			
 			if($_SESSION["is_admin"]) {
@@ -387,6 +388,10 @@ switch ($_GET["action"]) {
 				if($_POST['ip_recycle']) {
 					$api->vps($_GET['veid'])->ip_address->create(array('ip_address' => $_POST['ip_recycle']));
 					notify_user(_("Addition of IP address planned"), '');
+					
+				} else if($_POST['ip_private_recycle']) {
+					$api->vps($_GET['veid'])->ip_address->create(array('ip_address' => $_POST['ip_private_recycle']));
+					notify_user(_("Addition of private IP address planned"), '');	
 					
 				} else if($_POST['ip6_recycle']) {
 					$api->vps($_GET['veid'])->ip_address->create(array('ip_address' => $_POST['ip6_recycle']));
@@ -960,10 +965,16 @@ if (isset($show_info) && $show_info) {
 		$xtpl->form_create('?page=adminvps&action=addip&veid='.$vps->id, 'post');
 		
 		foreach ($api->vps($vps->id)->ip_address->list(array('meta' => array('includes' => 'network'))) as $ip) {
-			if ($ip->network->ip_version == 4)
-				$xtpl->table_td(_("IPv4"));
-			else
+			if ($ip->network->ip_version == 4) {
+				if ($ip->network->role === 'public_access')
+					$xtpl->table_td(_("IPv4"));
+
+				else
+					$xtpl->table_td(_("Private IPv4"));
+
+			} else {
 				$xtpl->table_td(_("IPv6"));
+			}
 			
 			$xtpl->table_td($ip->addr);
 			$xtpl->table_td('<a href="?page=adminvps&action=delip&ip='.$ip->id.'&veid='.$vps->id.'&t='.csrf_token().'">('._("Remove").')</a>');
@@ -971,12 +982,15 @@ if (isset($show_info) && $show_info) {
 		}
 		
 		$tmp[] = '-------';
-		$free_4 = $tmp + get_free_ip_list(4, $vps, 25);
+		$free_4 = $tmp + get_free_ip_list('ipv4', $vps, 'public_access', 25);
+		$free_4_private = $tmp + get_free_ip_list('ipv4_private', $vps, 'private_access', 25);
 		
 		if ($vps->node->location->has_ipv6)
-			$free_6 = $tmp + get_free_ip_list(6, $vps, 25);
+			$free_6 = $tmp + get_free_ip_list('ipv6', $vps, null, 25);
 			
 		$xtpl->form_add_select(_("Add IPv4 address").':', 'ip_recycle', $free_4, '', _('Add one IP address at a time'));
+		
+		$xtpl->form_add_select(_("Add private IPv4 address").':', 'ip_private_recycle', $free_4_private, '', _('Add one IP address at a time'));
 		
 		if ($vps->node->location->has_ipv6)
 			$xtpl->form_add_select(_("Add IPv6 address").':', 'ip6_recycle', $free_6, '', _('Add one IP address at a time'));

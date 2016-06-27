@@ -89,7 +89,8 @@ function print_newvps_page3($env_id, $loc_id) {
 		'swap' => 0,
 		'diskspace' => 120*1024,
 		'ipv4' => 1,
-		'ipv6' => 1
+		'ipv4_private' => 0,
+		'ipv6' => 1,
 	);
 	
 	$user_resources = $api->user->current()->cluster_resource->list(array(
