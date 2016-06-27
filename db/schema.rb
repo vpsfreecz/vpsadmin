@@ -509,7 +509,6 @@ ActiveRecord::Schema.define(version: 20160624185945) do
     t.string  "address",     null: false
     t.integer "prefix",      null: false
     t.integer "role",        null: false
-    t.boolean "partial",     null: false
     t.boolean "managed",     null: false
   end
 

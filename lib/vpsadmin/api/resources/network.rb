@@ -17,7 +17,6 @@ module VpsAdmin::API::Resources
       string :address
       integer :prefix
       string :role, choices: ::Network.roles.keys
-      bool :partial
       bool :managed
     end
 

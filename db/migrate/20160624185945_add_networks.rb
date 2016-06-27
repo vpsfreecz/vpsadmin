@@ -32,7 +32,6 @@ class AddNetworks < ActiveRecord::Migration
       t.string      :address,             null: false
       t.integer     :prefix,              null: false
       t.integer     :role,                null: false
-      t.boolean     :partial,             null: false
       t.boolean     :managed,             null: false
     end
 
@@ -145,7 +144,6 @@ class AddNetworks < ActiveRecord::Migration
           address: net.to_s,
           prefix: net.prefix,
           role: 0,  # public
-          partial: true,
           managed: true,
       )
     end
