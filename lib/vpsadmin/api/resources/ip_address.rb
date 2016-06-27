@@ -21,7 +21,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
               desc: 'Location this IP address is available in'
     resource VpsAdmin::API::Resources::User, label: 'User',
              value_label: :login
-
+    string :role, choices: ::Network.roles.keys
     use :shaper
   end
 
@@ -51,7 +51,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(location version limit offset)
+      input whitelist: %i(location version role limit offset)
       output blacklist: %i(class_id)
       allow
     end
@@ -99,6 +99,10 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       
       if input[:version]
         ips = ips.joins(:network).where(networks: {ip_version: input[:version]})
+      end
+      
+      if input[:role]
+        ips = ips.joins(:network).where(networks: {role: ::Network.roles[input[:role]]})
       end
 
       if current_user.role != :admin
