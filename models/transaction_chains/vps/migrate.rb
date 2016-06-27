@@ -189,7 +189,8 @@ module TransactionChains
             replacement = ::IpAddress.pick_addr!(
                 dst_vps.user,
                 dst_vps.node.location,
-                ip.network.ip_version
+                ip.network.ip_version,
+                ip.network.role.to_sym,
             )
             lock(replacement)
 

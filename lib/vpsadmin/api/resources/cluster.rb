@@ -35,7 +35,7 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
     output do
       integer :user_count, label: 'Number of users'
       integer :vps_count, label: 'Number of VPSes'
-      integer :ipv4_left, label: 'Number of free IPv4 addresses'
+      integer :ipv4_left, label: 'Number of free public IPv4 addresses'
     end
 
     authorize do
@@ -59,7 +59,10 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
           ipv4_left: ::IpAddress.joins(:network).where(
               user: nil,
               vps: nil,
-              networks: {ip_version: 4},
+              networks: {
+                  ip_version: 4,
+                  role: ::Network.roles[:public_access],
+              },
           ).count,
       }
     end
@@ -123,10 +126,16 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
           ).count,
           user_count: ::User.unscoped.all.count,
           ipv4_used: ::IpAddress.joins(:network).where.not(vps_id: nil).where(
-              networks: {ip_version: 4}
+              networks: {
+                  ip_version: 4,
+                  role: ::Network.roles[:public_access],
+              }
           ).count,
           ipv4_count: ::IpAddress.joins(:network).where(
-              networks: {ip_version: 4}
+              networks: {
+                  ip_version: 4,
+                  role: ::Network.roles[:public_access],
+              }
           ).count,
       }
     end

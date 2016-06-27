@@ -9,8 +9,21 @@ module TransactionChains
       uses = []
 
       if reallocate
-        {ipv4: 4, ipv6: 6}.each do |r, v|
-          cnt = ips.count { |ip| ip.network.ip_version == v }
+        %i(ipv4 ipv4_private ipv6).each do |r|
+          cnt = case r
+          when :ipv4
+            ips.count do |ip|
+              ip.network.role == 'public_access' && ip.network.ip_version == 4
+            end
+          
+          when :ipv4_private
+            ips.count do |ip|
+              ip.network.role == 'private_access' && ip.network.ip_version == 4
+            end
+
+          when :ipv6
+            ips.count { |ip| ip.network.ip_version == 6 }
+          end
 
           uses << vps.reallocate_resource!(r, vps.send(r) + cnt, user: vps.user)
         end

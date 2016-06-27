@@ -17,7 +17,8 @@ module TransactionChains
       if target
         ips = [
             vps.free_resource!(:ipv4, chain: self),
-            vps.free_resource!(:ipv6, chain: self)
+            vps.free_resource!(:ipv4_private, chain: self),
+            vps.free_resource!(:ipv6, chain: self),
         ].compact
       end
       

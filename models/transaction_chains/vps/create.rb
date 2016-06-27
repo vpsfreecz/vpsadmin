@@ -65,7 +65,7 @@ module TransactionChains
 
       use_chain(Vps::ApplyConfig, args: [vps, vps.node.environment.vps_configs.pluck(:id)])
 
-      versions = [:ipv4]
+      versions = [:ipv4, :ipv4_private]
       versions << :ipv6 if vps.node.location.has_ipv6
 
       ip_resources = vps.allocate_resources(

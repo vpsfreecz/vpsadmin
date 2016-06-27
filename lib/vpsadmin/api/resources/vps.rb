@@ -198,7 +198,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       input whitelist: %i(environment location hostname os_template
-                          dns_resolver cpu memory swap diskspace ipv4 ipv6)
+                          dns_resolver cpu memory swap diskspace ipv4 ipv4_private ipv6)
       output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
                           node dataset memory swap cpu backup_enabled maintenance_lock
                           maintenance_lock_reason object_state expiration_date
@@ -949,6 +949,8 @@ END
             desc: 'If the address is not provided, first free IP address of given version is assigned instead'
         integer :version, label: 'IP version',
                 desc: 'provide only if IP address is not selected'
+        string :role, choices: ::Network.roles.keys, default: 'public_access',
+            fill: true
       end
 
       output do
@@ -984,7 +986,7 @@ END
 
         else
           begin
-            ip = vps.add_free_ip(input[:version])
+            ip = vps.add_free_ip(input[:version], input[:role].to_sym)
 
           rescue ActiveRecord::RecordNotFound
             error('no free IP address is available')

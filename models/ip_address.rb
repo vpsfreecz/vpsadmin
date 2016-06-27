@@ -56,11 +56,15 @@ class IpAddress < ActiveRecord::Base
   end
 
   # Return first free and unlocked IP address version +v+ from +location+.
-  def self.pick_addr!(user, location, v)
+  def self.pick_addr!(user, location, v, role = :public_access)
     self.select('vps_ip.*')
       .joins(:network)
       .joins("LEFT JOIN resource_locks rl ON rl.resource = 'IpAddress' AND rl.row_id = vps_ip.ip_id")
-      .where(networks: {ip_version: v, location: location})
+      .where(networks: {
+          ip_version: v,
+          location_id: location.id,
+          role: ::Network.roles[role],
+      })
       .where('vps_id IS NULL')
       .where('(vps_ip.user_id = ? OR vps_ip.user_id IS NULL)', user.id)
       .where('rl.id IS NULL')

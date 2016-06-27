@@ -35,7 +35,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        output whitelist: %i(location ip_version)
+        output whitelist: %i(location ip_version role)
         allow
       end
 
@@ -61,7 +61,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        output whitelist: %i(location ip_version)
+        output whitelist: %i(location ip_version role)
         allow
       end
 

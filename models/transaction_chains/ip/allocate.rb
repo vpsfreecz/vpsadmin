@@ -6,12 +6,17 @@ module TransactionChains
       return n if n == 0
 
       ips = []
-      v = r.name == 'ipv4' ? 4 : 6
+      v = r.name == 'ipv6' ? 6 : 4
 
       loop do
         begin
           ::IpAddress.transaction do
-            ip = ::IpAddress.pick_addr!(vps.user, vps.node.location, v)
+            ip = ::IpAddress.pick_addr!(
+                vps.user,
+                vps.node.location,
+                v,
+                r.name.end_with?('_private') ? :private_access : :public_access,
+            )
             lock(ip)
 
             ips << ip
