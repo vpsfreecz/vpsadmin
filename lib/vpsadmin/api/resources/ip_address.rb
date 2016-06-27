@@ -115,7 +115,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     end
 
     def exec
-      query.order('ip_id').limit(input[:limit]).offset(input[:offset])
+      with_includes(query).order('ip_id').limit(input[:limit]).offset(input[:offset])
     end
   end
 
