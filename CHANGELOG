@@ -3,6 +3,7 @@
 - New resource `Network`
 - Removed parameters `IpAddress.version` and `IpAddress.location`
 - `IpAddress.Index`: filter by network role
+- `IpAddress.Update` has new input parameter `user`
 
 * Fri Jun 24 2016 - version 2.4.0
 - New resource `Language`

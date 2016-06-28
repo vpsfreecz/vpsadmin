@@ -185,6 +185,11 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     input do
       use :shaper
+      use :filters, include: %i(user)
+    end
+
+    output do
+      use :all
     end
 
     authorize do |u|
@@ -193,7 +198,16 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     def exec
       ip = ::IpAddress.find(params[:ip_address_id])
-      ip.set_shaper(input[:max_tx], input[:max_rx])
+
+      if input[:max_tx] || input[:max_rx]
+        ip.set_shaper(input[:max_tx], input[:max_rx])
+      end
+
+      ip.update!(user: input[:user]) if input.has_key?(:user)
+      ip
+
+    rescue ActiveRecord::RecordInvalid => e
+      error('update failed', e.record.errors.to_hash)
     end
   end
 end

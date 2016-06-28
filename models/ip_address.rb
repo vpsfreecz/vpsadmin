@@ -12,6 +12,7 @@ class IpAddress < ActiveRecord::Base
   include Lockable
 
   validate :check_address
+  validate :check_ownership
   validates :ip_addr, uniqueness: true
 
   def self.register(addr, params)
@@ -101,6 +102,15 @@ class IpAddress < ActiveRecord::Base
 
   rescue ArgumentError => e
     errors.add(:ip_addr, e.message)
+  end
+
+  def check_ownership
+    if user && vps && user.id != vps.m_id
+      errors.add(
+          :user,
+          'can be owned only by the owner of the VPS that uses this address'
+      )
+    end
   end
 
   def to_ip
