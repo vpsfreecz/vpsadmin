@@ -12,7 +12,7 @@ module TransactionChains
         lock(ip)
 
         append(Transactions::Vps::IpDel, args: [vps, ip]) do
-          edit(ip, vps_id: nil)
+          edit(ip, vps_id: nil, order: nil)
         end
       end
     end

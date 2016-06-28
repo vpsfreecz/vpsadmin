@@ -929,15 +929,18 @@ END
       def exec
         ips = ::Vps.find_by!(
             with_restricted(vps_id: params[:vps_id])
-        ).ip_addresses
+        ).ip_addresses.joins(:network)
 
         if input[:version]
-          ips = ips.joins(:network).where(
+          ips = ips.where(
               networks: {ip_version: input[:version]},
           )
         end
 
-        ips.limit(input[:limit]).offset(input[:offset])
+        ips
+          .limit(input[:limit])
+          .offset(input[:offset])
+          .order('networks.ip_version, `order`')
       end
     end
 

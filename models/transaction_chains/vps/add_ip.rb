@@ -30,16 +30,26 @@ module TransactionChains
       end
 
       chain = self
+      order = {}
+      [4, 6].each do |v|
+        last_ip = vps.ip_addresses.joins(:network).where(
+            networks: {ip_version: v}
+        ).order('`order` DESC').take
+
+        order[v] = last_ip ? last_ip.order + 1 : 0
+      end
 
       ips.each do |ip|
         lock(ip)
 
         append(Transactions::Vps::IpAdd, args: [vps, ip, register]) do
-          edit(ip, vps_id: vps.veid)
+          edit(ip, vps_id: vps.veid, order: order[ip.version])
           edit(ip, user_id: vps.user_id)  if !ip.user_id && vps.node.environment.user_ip_ownership
 
           just_create(vps.log(:ip_add, {id: ip.id, addr: ip.addr})) unless chain.included?
         end
+
+        order[ip.version] += 1
       end
 
       append(Transactions::Utils::NoOp, args: vps.vps_server) do
