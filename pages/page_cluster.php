@@ -480,6 +480,32 @@ switch($_REQUEST["action"]) {
 		}
 		
 		break;
+	
+	case "ipaddr_edit":
+		ip_edit_form($_GET['id']);
+		break;
+
+	case "ipaddr_edit2":
+		csrf_check();
+
+		try {
+			$params = array(
+				'max_tx' => $_POST['max_tx'] * 1024 * 1024 / 8,
+				'max_rx' => $_POST['max_rx'] * 1024 * 1024 / 8,
+				'user' => $_POST['user'] ? $_POST['user'] : null,
+			);
+
+			$ret = $api->ip_address($_GET['id'])->update($params);
+
+			notify_user(_('Changes saved'), '');
+			redirect($_GET['return'] ? $_GET['return'] : '?page=cluster&action=ip_addresses');
+		
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
+			ip_edit_form($_GET['id']);
+		}
+
+		break;
 		
 	case "templates":
 		$list_templates = true;

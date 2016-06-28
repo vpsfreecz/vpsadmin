@@ -312,7 +312,9 @@ function ip_adress_list($title) {
 	$xtpl->table_add_category(_("Location"));
 	$xtpl->table_add_category(_('User'));
 	$xtpl->table_add_category('VPS');
-// 	$xtpl->table_add_category("&nbsp;");
+	$xtpl->table_add_category('');
+
+	$return_url = urlencode($_SERVER['REQUEST_URI']);
 	
 	foreach ($ips as $ip) {
 		$xtpl->table_td($ip->addr);
@@ -328,6 +330,12 @@ function ip_adress_list($title) {
 			$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$ip->vps_id.'">'.$ip->vps_id.' ('.$ip->vps->hostname.')</a>');
 		else
 			$xtpl->table_td('---');
+
+		$xtpl->table_td(
+			'<a href="?page=cluster&action=ipaddr_edit&id='.$ip->id.'&return='.$return_url.'">'.
+			'<img src="template/icons/m_edit.png" alt="'._('Edit').'" title="'._('Edit').'">'.
+			'</a>'
+		);
 		
 // 		$xtpl->table_td('<a href="?page=cluster&action=ipaddr_delete&ip_id='.$ip->id.'"><img src="template/icons/m_delete.png"  title="'. _("Delete from cluster") .'" /></a>');
 		
@@ -363,6 +371,49 @@ function ip_add_form($ip_addresses = '') {
 		resource_list_to_options($api->user->list(), 'id', 'login'), $_POST['user']);
 	
 	$xtpl->form_out(_("Add"));
+}
+
+function ip_edit_form($id) {
+	global $xtpl, $api;
+
+	$ip = $api->ip_address->show($id, array('meta' => array('includes' => 'network__location')));
+
+	$xtpl->table_title($ip->network->location->label.': '.$ip->addr.'/'.$ip->network->prefix);
+	$xtpl->sbar_add(
+		_("Back"),
+		$_GET['return'] ? $_GET['return'] : '?page=cluster&action=ip_addresses'
+	);
+	
+	$xtpl->form_create(
+		'?page=cluster&action=ipaddr_edit2&id='.$ip->id.'&return='.urlencode($_GET['return']),
+		'post'
+	);
+
+	$xtpl->table_td(_('Max TX').':');
+	$xtpl->form_add_number_pure(
+		'max_tx',
+		post_val('max_tx', $ip->max_tx / 1024.0 / 1024.0 * 8),
+		0,
+		999999999999,
+		1,
+		'Mbps'
+	);
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_('Max RX').':');
+	$xtpl->form_add_number_pure(
+		'max_rx',
+		post_val('max_rx', $ip->max_rx / 1024.0 / 1024.0 * 8),
+		0,
+		999999999999,
+		1,
+		'Mbps'
+	);
+	$xtpl->table_tr();
+
+	$xtpl->form_add_input(_('User ID').':', 'text', '30', 'user', post_val('user', $ip->user_id));
+
+	$xtpl->form_out(_("Save"));
 }
 
 function dns_delete_form() {
