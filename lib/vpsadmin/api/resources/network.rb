@@ -85,6 +85,9 @@ module VpsAdmin::API::Resources
         patch :ip_version, required: true
         patch :role, required: true
         patch :managed, required: true
+
+        bool :add_ip_addresses, default: false,
+            desc: 'Add all IP addresses from this network to the database now'
       end
 
       output do
@@ -96,7 +99,11 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ::Network.create!(input)
+        add_ips = input.delete(:add_ip_addresses)
+
+        net = ::Network.create!(input)
+        net.add_ips(net.size) if add_ips
+        net
 
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
