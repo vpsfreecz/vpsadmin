@@ -167,6 +167,7 @@ class Vps < ActiveRecord::Base
             networks: {
                 location_id: node.server_location,
                 ip_version: ip.network.ip_version,
+                role: ::Network.roles[ip.network.role],
             }
       ).exists?
         raise VpsAdmin::API::Exceptions::IpAddressNotOwned
