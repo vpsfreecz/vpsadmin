@@ -1,6 +1,7 @@
 - Support for network subnets
 - Network list on cluster page
 - IP address edit form for changing shaper and owner
+- Show Tx/Rx in IP address list
 
 * Fri Jun 24 2016 - version 2.4.0
 - Removed mail template management

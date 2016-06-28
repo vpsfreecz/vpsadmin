@@ -310,6 +310,8 @@ function ip_adress_list($title) {
 	$xtpl->table_add_category(_("Network"));
 	$xtpl->table_add_category(_("IP address"));
 	$xtpl->table_add_category(_("Location"));
+	$xtpl->table_add_category(_("TX"));
+	$xtpl->table_add_category(_("RX"));
 	$xtpl->table_add_category(_('User'));
 	$xtpl->table_add_category('VPS');
 	$xtpl->table_add_category('');
@@ -320,6 +322,8 @@ function ip_adress_list($title) {
 		$xtpl->table_td($ip->network->address .'/'. $ip->network->prefix);
 		$xtpl->table_td($ip->addr);
 		$xtpl->table_td($ip->network->location->label);
+		$xtpl->table_td(round($ip->max_tx * 8.0 / 1024 / 1024, 1), false, true);
+		$xtpl->table_td(round($ip->max_rx * 8.0 / 1024 / 1024, 1), false, true);
 		
 		if ($ip->user_id)
 			$xtpl->table_td('<a href="?page=adminm&action=edit&id='.$ip->user_id.'">'.$ip->user->login.'</a>');
