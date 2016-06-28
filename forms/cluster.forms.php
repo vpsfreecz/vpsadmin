@@ -315,6 +315,7 @@ function ip_adress_list($title) {
 	$xtpl->table_add_category(_('User'));
 	$xtpl->table_add_category('VPS');
 	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
 
 	$return_url = urlencode($_SERVER['REQUEST_URI']);
 	
@@ -340,6 +341,21 @@ function ip_adress_list($title) {
 			'<img src="template/icons/m_edit.png" alt="'._('Edit').'" title="'._('Edit').'">'.
 			'</a>'
 		);
+
+		if ($ip->vps_id) {
+			$xtpl->table_td(
+				'<a href="?page=cluster&action=ipaddr_unassign&id='.$ip->id.'&return='.$return_url.'">'.
+				'<img src="template/icons/m_remove.png" alt="'._('Remove from VPS').'" title="'._('Remove from VPS').'">'.
+				'</a>'
+			);
+
+		} else {
+			$xtpl->table_td(
+				'<a href="?page=cluster&action=ipaddr_assign&id='.$ip->id.'&return='.$return_url.'">'.
+				'<img src="template/icons/vps_add.png" alt="'._('Add to a VPS').'" title="'._('Add to a VPS').'">'.
+				'</a>'
+			);
+		}
 		
 // 		$xtpl->table_td('<a href="?page=cluster&action=ipaddr_delete&ip_id='.$ip->id.'"><img src="template/icons/m_delete.png"  title="'. _("Delete from cluster") .'" /></a>');
 		
@@ -418,6 +434,64 @@ function ip_edit_form($id) {
 	$xtpl->form_add_input(_('User ID').':', 'text', '30', 'user', post_val('user', $ip->user_id));
 
 	$xtpl->form_out(_("Save"));
+}
+
+function ip_assign_form($id) {
+	global $xtpl, $api;
+
+	$ip = $api->ip_address->show($id, array('meta' => array('includes' => 'network__location')));
+
+	$xtpl->table_title(_('Add IP to a VPS'));
+	$xtpl->sbar_add(
+		_("Back"),
+		$_GET['return'] ? $_GET['return'] : '?page=cluster&action=ip_addresses'
+	);
+
+	$xtpl->form_create(
+		'?page=cluster&action=ipaddr_assign2&id='.$ip->id.'&return='.urlencode($_GET['return']),
+		'post'
+	);
+
+	$xtpl->table_td('IP:');
+	$xtpl->table_td($ip->network->location->label.': '.$ip->addr.'/'.$ip->network->prefix);
+	$xtpl->table_tr();
+
+	$xtpl->form_add_input(_('VPS ID').':', 'text', '30', 'vps', post_val('vps'));
+
+	$xtpl->form_out(_("Add"));
+}
+
+function ip_unassign_form($id) {
+	global $xtpl, $api;
+
+	$ip = $api->ip_address->show($id, array('meta' => array('includes' => 'network__location')));
+
+	$xtpl->table_title(_('Remove IP from a VPS'));
+	$xtpl->sbar_add(
+		_("Back"),
+		$_GET['return'] ? $_GET['return'] : '?page=cluster&action=ip_addresses'
+	);
+
+	$xtpl->form_create(
+		'?page=cluster&action=ipaddr_unassign2&id='.$ip->id.'&return='.urlencode($_GET['return']),
+		'post'
+	);
+	
+	$xtpl->table_td(_('VPS').':');
+	$xtpl->table_td(
+		'<a href="?page=adminvps&action=info&veid='.$ip->vps_id.'">#'.$ip->vps_id.'</a>'.
+		' '.$ip->vps->hostname
+	);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('IP').':');
+	$xtpl->table_td($ip->network->location->label.': '.$ip->addr.'/'.$ip->network->prefix);
+	$xtpl->table_tr();
+
+	$xtpl->form_add_checkbox(_('Disown').':', 'disown', '1', false);
+	$xtpl->form_add_checkbox(_('Confirm').':', 'confirm', '1', false);
+
+	$xtpl->form_out(_("Remove"));
 }
 
 function dns_delete_form() {

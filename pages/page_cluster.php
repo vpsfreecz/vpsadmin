@@ -506,6 +506,57 @@ switch($_REQUEST["action"]) {
 		}
 
 		break;
+
+	case "ipaddr_assign":
+		ip_assign_form($_GET['id']);
+		break;
+	
+	case "ipaddr_assign2":
+		csrf_check();
+
+		try {
+			$ip = $api->ip_address->show($_GET['id']);
+			$api->vps($_POST['vps'])->ip_address->create(array('ip_address' => $ip->id));
+
+			notify_user(_('IP assigned'), '');
+			redirect($_GET['return'] ? $_GET['return'] : '?page=cluster&action=ip_addresses');
+		
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Action failed'), $e->getResponse());
+			ip_assign_form($_GET['id']);
+		}
+
+		break;
+	
+	case "ipaddr_unassign":
+		ip_unassign_form($_GET['id']);
+		break;
+	
+	case "ipaddr_unassign2":
+		csrf_check();
+
+		if (!$_POST['confirm']) {
+			ip_unassign_form($_GET['id']);
+			break;
+		}
+
+		try {
+			$ip = $api->ip_address->show($_GET['id']);
+
+			if ($_POST['disown'])
+				$ip->update(array('user' => null));
+
+			$ip->vps->ip_address->delete($ip->id);
+
+			notify_user(_('IP removed'), '');
+			redirect($_GET['return'] ? $_GET['return'] : '?page=cluster&action=ip_addresses');
+		
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Action failed'), $e->getResponse());
+			ip_unassign_form($_GET['id']);
+		}
+
+		break;
 		
 	case "templates":
 		$list_templates = true;
