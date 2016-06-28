@@ -6,6 +6,6 @@ VEID = <%= @vps_id %>
 load '<%= File.join($CFG.get(:vpsadmin, :mounts_dir), "#{@vps_id}.mounts") %>'
 
 puts "Executing #{$0}"
-VpsAdmind::Mounter.umount_all(VEID, MOUNTS.reverse)
+VpsAdmind::Mounter.umount_all(VEID, MOUNTS.reverse, mode: :actionscript)
 
 exit(0)

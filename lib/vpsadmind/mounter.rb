@@ -8,14 +8,14 @@ module VpsAdmind
     include Utils::Pool
 
     class << self
-      def mount_all(vps_id, mounts, oneshot)
+      def mount_all(vps_id, mounts, oneshot, mode: nil)
         mounter = new(vps_id)
         mounts.each { |mnt| mounter.mount(mnt, oneshot) }
       end
 
-      def umount_all(vps_id, mounts)
+      def umount_all(vps_id, mounts, mode: nil)
         mounter = new(vps_id)
-        mounts.each { |mnt| mounter.umount(mnt) }
+        mounts.each { |mnt| mounter.umount(mnt, keep_going: mode == :actionscript) }
       end
     end
 
@@ -121,7 +121,7 @@ module VpsAdmind
       [dst, "#{$CFG.get(:bin, :umount)} #{mnt['umount_opts']} #{dst}"]
     end
 
-    def umount(opts)
+    def umount(opts, keep_going: false)
       dst, cmd = umount_cmd(opts)
 
       if File.exists?(dst)
@@ -129,7 +129,7 @@ module VpsAdmind
           syscmd(cmd)
 
         rescue CommandFailed => e
-          raise e if e.rc != 1 || /not mounted/ !~ e.output
+          raise e if !keep_going && (e.rc != 1 || /not mounted/ !~ e.output)
         end
       end
 

@@ -1,3 +1,6 @@
+- Support special handling for mount/umount action scripts
+- Failed umounts in action scripts are ignored
+
 * Fri Jun 24 2016 - version 2.4.0
 - No changes
 
