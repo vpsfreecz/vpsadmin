@@ -307,8 +307,8 @@ function ip_adress_list($title) {
 	
 	$ips = $api->ip_address->list($params);
 	
-	$xtpl->table_add_category(_("IP address"));
 	$xtpl->table_add_category(_("Network"));
+	$xtpl->table_add_category(_("IP address"));
 	$xtpl->table_add_category(_("Location"));
 	$xtpl->table_add_category(_('User'));
 	$xtpl->table_add_category('VPS');
@@ -317,8 +317,8 @@ function ip_adress_list($title) {
 	$return_url = urlencode($_SERVER['REQUEST_URI']);
 	
 	foreach ($ips as $ip) {
-		$xtpl->table_td($ip->addr);
 		$xtpl->table_td($ip->network->address .'/'. $ip->network->prefix);
+		$xtpl->table_td($ip->addr);
 		$xtpl->table_td($ip->network->location->label);
 		
 		if ($ip->user_id)
