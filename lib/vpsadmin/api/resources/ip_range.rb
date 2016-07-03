@@ -12,6 +12,7 @@ module VpsAdmin::API::Resources
     params(:common) do
       string :label
       resource Network
+      resource User, value_label: :login
       string :address
       integer :prefix
     end
@@ -25,18 +26,34 @@ module VpsAdmin::API::Resources
     class Index < HaveAPI::Actions::Default::Index
       desc 'List IP ranges'
 
+      input do
+        resource Network
+        resource Location
+        integer :ip_version
+        resource User
+      end
+
       output(:object_list) do
         use :all
       end
 
       authorize do |u|
         allow if u.role == :admin
+        input blacklist: %i(user)
+        output blacklist: %i(user)
         restrict user: u
         allow
       end
 
       def query
-        ::IpRange.where(with_restricted)
+        q = ::IpRange.where(with_restricted)
+        q = q.children_of(input[:network]) if input[:network]
+
+        %i(location ip_version user).each do |f|
+          q = q.where(f => input[f]) if input.has_key?(f)
+        end
+
+        q
       end
 
       def count
@@ -57,6 +74,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
+        output blacklist: %i(user)
         restrict user: u
         allow
       end
