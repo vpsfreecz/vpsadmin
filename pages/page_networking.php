@@ -29,13 +29,92 @@ function month_list() {
 
 if ($_SESSION["logged_in"]) {
 
-$xtpl->sbar_add(_("List monthly traffic"), '?page=networking&action=list');
-$xtpl->sbar_add(_("Live monitor"), '?page=networking&action=live');
-$xtpl->sbar_out(_('Networking'));
-
 switch($_GET['action']) {
-	case 'list':
-		$show_list = true;
+	case 'ip_addresses':
+		ip_address_list('networking');
+		break;
+	
+	case "ipaddr_assign":
+		ip_assign_form($_GET['id']);
+		break;
+	
+	case "ipaddr_assign2":
+		csrf_check();
+
+		try {
+			$ip = $api->ip_address->show($_GET['id']);
+			$api->vps($_POST['vps'])->ip_address->create(array('ip_address' => $ip->id));
+
+			notify_user(_('IP assigned'), '');
+			redirect($_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses');
+		
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Action failed'), $e->getResponse());
+			ip_assign_form($_GET['id']);
+		}
+
+		break;
+	
+	case "ipaddr_unassign":
+		ip_unassign_form($_GET['id']);
+		break;
+	
+	case "ipaddr_unassign2":
+		csrf_check();
+
+		if (!$_POST['confirm']) {
+			ip_unassign_form($_GET['id']);
+			break;
+		}
+
+		try {
+			$ip = $api->ip_address->show($_GET['id']);
+
+			if ($_SESSION['is_admin'] && $_POST['disown'])
+				$ip->update(array('user' => null));
+
+			$ip->vps->ip_address->delete($ip->id);
+
+			notify_user(_('IP removed'), '');
+			redirect($_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses');
+		
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Action failed'), $e->getResponse());
+			ip_unassign_form($_GET['id']);
+		}
+
+		break;
+	
+	case 'ip_ranges':
+		$xtpl->sbar_add(_("New IP range"), '?page=networking&action=ip_range_new');
+		ip_range_list();
+		break;
+
+	case 'ip_range_new':
+		ip_range_new_step1();
+		break;
+	
+	case 'ip_range_new2':
+		ip_range_new_step2($_POST['location']);
+		break;
+	
+	case 'ip_range_new3':
+		csrf_check();
+
+		try {
+			$r = $api->ip_range->create(array('network' => $_POST['network']));
+
+			notify_user(_('Range').' '.$r->address.'/'.$r->prefix.' '._('created').'.');
+			redirect('?page=networking&action=ip_ranges');
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Action failed'), $e->getResponse());
+			ip_range_new_step2($_POST['network']);
+		}
+		break;
+
+	case 'traffic':
+		$show_traffic = true;
 		break;
 	
 	case 'live':
@@ -43,11 +122,17 @@ switch($_GET['action']) {
 		break;
 	
 	default:
-		$show_list = true;
+		$show_traffic = true;
 		break;
 }
 
-if ($show_list) {
+$xtpl->sbar_add(_("IP addresses"), '?page=networking&action=ip_addresses');
+$xtpl->sbar_add(_("IP ranges"), '?page=networking&action=ip_ranges');
+$xtpl->sbar_add(_("List monthly traffic"), '?page=networking&action=traffic');
+$xtpl->sbar_add(_("Live monitor"), '?page=networking&action=live');
+$xtpl->sbar_out(_('Networking'));
+
+if ($show_traffic) {
 	$xtpl->title(_("Networking"));
 	
 	$xtpl->table_title(_('Filters'));
