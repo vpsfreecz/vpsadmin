@@ -1,8 +1,9 @@
 - API version set to 3.0
 - Track network subnets that IP addresses belong to
 - New resource `Network`
+- New resource `IpRange`
 - Removed parameters `IpAddress.version` and `IpAddress.location`
-- `IpAddress.Index`: filter by network role
+- `IpAddress.Index`: filter by network, ip_range and role
 - `IpAddress.Update` has new input parameter `user`
 
 * Fri Jun 24 2016 - version 2.4.0

@@ -17,6 +17,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
             value_label: :hostname
     integer :version, label: 'IP version', desc: '4 or 6'
     resource VpsAdmin::API::Resources::Network, label: 'Network'
+    resource VpsAdmin::API::Resources::IpRange, label: 'IP Range'
     resource VpsAdmin::API::Resources::Location, label: 'Location',
               desc: 'Location this IP address is available in'
     resource VpsAdmin::API::Resources::User, label: 'User',
@@ -26,7 +27,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
   end
 
   params(:common) do
-    use :filters, include: %i(network vps user)
+    use :filters, include: %i(network ip_range vps user)
     use :shaper
     string :addr, label: 'Address', desc: 'Address itself', db_name: :ip_addr
     integer :class_id, label: 'Class id', desc: 'Class id for shaper'
@@ -35,6 +36,9 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
   params(:all) do
     use :id
     use :common
+
+    patch :network, db_name: :api_network
+    patch :ip_range, db_name: :api_ip_range
   end
 
   class Index < HaveAPI::Actions::Default::Index
@@ -51,7 +55,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(location version role limit offset)
+      input whitelist: %i(location network ip_range version role vps limit offset)
       output blacklist: %i(class_id)
       allow
     end
@@ -93,6 +97,10 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
         )
       end
 
+      if input[:ip_range]
+        ips = ips.where(network_id: input[:ip_range].id)
+      end
+
       if input[:location]
         ips = ips.joins(:network).where(networks: {location_id: input[:location].id})
       end
@@ -107,8 +115,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
       if current_user.role != :admin
         ips = ips.where(
-            'user_id = ? OR user_id IS NULL', current_user.id
-        ).where(vps_id: nil).order('user_id DESC, ip_id ASC')
+            'vps_ip.user_id = ? OR vps_ip.user_id IS NULL', current_user.id
+        ).order('vps_ip.user_id DESC, ip_id ASC')
       end
 
       ips

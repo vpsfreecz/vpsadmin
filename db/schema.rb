@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160628064205) do
+ActiveRecord::Schema.define(version: 20160629150716) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -504,12 +504,18 @@ ActiveRecord::Schema.define(version: 20160628064205) do
 
   create_table "networks", force: true do |t|
     t.string  "label"
-    t.integer "location_id", null: false
-    t.integer "ip_version",  null: false
-    t.string  "address",     null: false
-    t.integer "prefix",      null: false
-    t.integer "role",        null: false
-    t.boolean "managed",     null: false
+    t.integer "location_id",                null: false
+    t.integer "ip_version",                 null: false
+    t.string  "address",                    null: false
+    t.integer "prefix",                     null: false
+    t.integer "role",                       null: false
+    t.boolean "managed",                    null: false
+    t.string  "type",                       null: false
+    t.string  "ancestry"
+    t.integer "ancestry_depth", default: 0, null: false
+    t.integer "split_access",   default: 0, null: false
+    t.integer "split_prefix"
+    t.integer "user_id"
   end
 
   add_index "networks", ["location_id", "address", "prefix"], name: "index_networks_on_location_id_and_address_and_prefix", unique: true, using: :btree

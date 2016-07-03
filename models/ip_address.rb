@@ -52,6 +52,14 @@ class IpAddress < ActiveRecord::Base
     network.ip_version
   end
 
+  def api_network
+    network.is_a?(::IpRange) ? network.parent : network
+  end
+
+  def api_ip_range
+    network.is_a?(::IpRange) ? network : nil
+  end
+
   def free?
     vps_id.nil? || vps_id == 0
   end

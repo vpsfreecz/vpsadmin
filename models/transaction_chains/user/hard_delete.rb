@@ -49,6 +49,13 @@ module TransactionChains
         ::IpAddress.where(user: user).each do |ip|
           edit(ip, user_id: nil)
         end
+
+        # Free all IP ranges
+        ::IpRange.where(user: user).each do |range|
+          edit(range, user_id: nil)
+        end
+
+        # TODO: what about owned networks?
       end
     end
   end

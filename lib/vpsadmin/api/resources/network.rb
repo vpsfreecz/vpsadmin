@@ -18,6 +18,8 @@ module VpsAdmin::API::Resources
       integer :prefix
       string :role, choices: ::Network.roles.keys
       bool :managed
+      string :split_access, choices: ::Network.split_accesses.keys
+      integer :split_prefix
     end
 
     params(:all) do
@@ -28,6 +30,10 @@ module VpsAdmin::API::Resources
 
     class Index < HaveAPI::Actions::Default::Index
       desc 'List networks'
+      
+      input do
+        use :common, include: %i(location)
+      end
 
       output(:object_list) do
         use :all
@@ -35,12 +41,14 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        output whitelist: %i(location ip_version role)
+        output whitelist: %i(id location address prefix ip_version role split_access split_prefix)
         allow
       end
 
       def query
-        ::Network.all
+        q = ::Network.all
+        q = q.where(location: input[:location]) if input[:location]
+        q
       end
 
       def count
@@ -61,7 +69,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        output whitelist: %i(location ip_version role)
+        output whitelist: %i(id location address prefix ip_version role split_access split_prefix)
         allow
       end
 

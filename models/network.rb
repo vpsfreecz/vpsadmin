@@ -1,17 +1,30 @@
 class Network < ActiveRecord::Base
   belongs_to :location
+  belongs_to :user
   has_many :ip_addresses
+  
+  has_ancestry cache_depth: true
 
   enum role: %i(public_access private_access)
+  enum split_access: %i(no_access user_split owner_split)
 
   validates :ip_version, inclusion: {
       in: [4, 6],
       messave: '%{value} is not a valid IP version',
   }
   validate :check_ip_integrity
+  validate :check_network_integrity
 
-  def include?(ip)
-    net_addr { |n| n.include?(IPAddress.parse(ip.addr)) }
+  def include?(what)
+    case what
+    when ::IpAddress
+      addr = what.addr
+
+    when ::Network
+      addr = what.address
+    end
+
+    net_addr { |n| n.include?(IPAddress.parse(addr)) }
   end
 
   def to_s
@@ -44,9 +57,7 @@ class Network < ActiveRecord::Base
   def add_ips(n, opts = {})
     cnt = 0
     net = net_addr
-    last_ip = ip_addresses.order(
-        (ip_version == 4 ? 'INET_ATON' : 'INET6_ATON') + '(ip_addr) DESC'
-    ).take
+    last_ip = ip_addresses.order("#{ip_order('ip_addr')} DESC").take
 
     self.class.transaction do
       each_ip(last_ip && last_ip.ip_addr) do |host|
@@ -62,6 +73,40 @@ class Network < ActiveRecord::Base
     end
 
     cnt
+  end
+
+  def get_or_create_range(opts)
+    self.class.transaction do
+      range = ::IpRange.children_of(self).where(user: nil).order(ip_order).take
+      return range if range
+
+      net = net_addr
+      cnt = ::IpRange.children_of(self).count
+
+      if ip_version == 4
+        next_address = IPAddress::IPv4.parse_u32(
+            net.to_u32 + (2**(32 - split_prefix)) * cnt
+        )
+
+      else
+        next_address = IPAddress::IPv6.parse_u128(
+            net.to_u128 + (2**(128 - split_prefix)) * cnt
+        )
+      end
+
+      attrs = opts.clone
+      attrs.update({
+          parent: self,
+          location: location,
+          ip_version: ip_version,
+          address: next_address.address,
+          prefix: split_prefix,
+          role: self.class.roles[role],
+          managed: true,
+      })
+
+      ::IpRange.create!(attrs)
+    end
   end
 
   protected
@@ -86,6 +131,20 @@ class Network < ActiveRecord::Base
         end
       end
     end
+  end
+  
+  def check_network_integrity
+    return unless parent
+
+    net_addr(true) do |n|
+      unless parent.include?(self)
+        errors.add(:address, "#{address} is not within parent network #{parent}")
+      end
+    end
+  end
+
+  def ip_order(col = 'address')
+    (ip_version == 4 ? 'INET_ATON' : 'INET6_ATON') + '(' + col + ')'
   end
 
   # @param from [String] IPv4/IPv6 address
