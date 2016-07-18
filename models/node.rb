@@ -139,9 +139,15 @@ class Node < ActiveRecord::Base
   end
 
   def status
-    (node_current_status && \
-     ((Time.now.utc.to_i - node_current_status.created_at.to_i) <= 150)
-    ) || false
+    return false unless node_current_status
+
+    t = Time.now.utc.to_i
+    
+    if node_current_status.updated_at
+      return (t - node_current_status.updated_at.to_i) <= 120
+    end
+
+    (t - node_current_status.created_at.to_i) <= 120
   end
 
   def last_report
