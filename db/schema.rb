@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160629150716) do
+ActiveRecord::Schema.define(version: 20160805144125) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -630,11 +630,13 @@ ActiveRecord::Schema.define(version: 20160629150716) do
   add_index "object_states", ["class_name", "row_id"], name: "index_object_states_on_class_name_and_row_id", using: :btree
 
   create_table "pools", force: true do |t|
-    t.integer "node_id",                                    null: false
-    t.string  "label",          limit: 500,                 null: false
-    t.string  "filesystem",     limit: 500,                 null: false
-    t.integer "role",                                       null: false
-    t.boolean "refquota_check",             default: false, null: false
+    t.integer "node_id",                                             null: false
+    t.string  "label",                   limit: 500,                 null: false
+    t.string  "filesystem",              limit: 500,                 null: false
+    t.integer "role",                                                null: false
+    t.boolean "refquota_check",                      default: false, null: false
+    t.integer "maintenance_lock",                    default: 0,     null: false
+    t.string  "maintenance_lock_reason"
   end
 
   create_table "port_reservations", force: true do |t|

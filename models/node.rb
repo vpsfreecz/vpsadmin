@@ -41,9 +41,10 @@ class Node < ActiveRecord::Base
   after_update :shaper_changed, if: :shaper_changed?
 
   include VpsAdmin::API::Maintainable::Model
+  include VpsAdmin::API::Maintainable::Check
 
   maintenance_parents :location, :environment
-  maintenance_children :vpses
+  maintenance_children :pools, :vpses
 
   include Lockable
 

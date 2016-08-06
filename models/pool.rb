@@ -12,6 +12,11 @@ class Pool < ActiveRecord::Base
   include Lockable
   include VpsAdmin::API::DatasetProperties::Model
 
+  include VpsAdmin::API::Maintainable::Model
+  include VpsAdmin::API::Maintainable::Check
+
+  maintenance_parents :node
+
   def self.create!(attrs, properties)
     pool = new(attrs)
     TransactionChains::Pool::Create.fire(pool, properties)

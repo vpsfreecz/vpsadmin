@@ -108,5 +108,7 @@ module VpsAdmin::API::Resources
         error('create failed', e.record.errors.to_hash)
       end
     end
+
+    include VpsAdmin::API::Maintainable::Action
   end
 end
