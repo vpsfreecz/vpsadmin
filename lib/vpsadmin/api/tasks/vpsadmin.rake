@@ -1,4 +1,10 @@
 namespace :vpsadmin do
+  desc 'Open an interactive shell'
+  task :shell do
+    require 'pry'
+    pry
+  end
+
   namespace :lifetimes do
     desc 'Progress state of expired objects'
     task :progress do

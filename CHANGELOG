@@ -6,6 +6,7 @@
 - `IpAddress.Index`: filter by `network`, `ip_range` and `role`
 - `IpAddress.Update` has new input parameter `user`
 - Pool maintenance mode
+- New rake task `vpsadmin:shell`
 
 * Fri Jun 24 2016 - version 2.4.0
 - New resource `Language`
