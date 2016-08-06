@@ -121,13 +121,17 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     input do
       use :all, include: %i(id name type location environment ip_addr
-                            net_interface max_tx max_rx max_vps ve_private)
+                            net_interface max_tx max_rx max_vps ve_private
+                            cpus total_memory total_swap)
       patch :name, required: true
       patch :type, required: true
       patch :location, required: true
       patch :environment, required: true
       patch :ip_addr, required: true
       patch :net_interface, required: true
+      patch :cpus, required: true
+      patch :total_memory, required: true
+      patch :total_swap, required: true
       bool :maintenance, desc: 'Put the node into maintenance mode'
     end
 
