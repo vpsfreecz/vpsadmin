@@ -22,6 +22,8 @@ module TransactionChains
 
       download(dl)
 
+      dl.pool.node.maintenance_check!(dl.pool)
+
       tries = 0
 
       begin

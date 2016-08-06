@@ -196,6 +196,7 @@ module VpsAdmin::API::Resources
 
       def exec
         ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+        ds.maintenance_check!(ds.primary_dataset_in_pool!.pool)
 
         properties = VpsAdmin::API::DatasetProperties.validate_params(input)
         ds.update_properties(properties, input)
@@ -232,6 +233,8 @@ module VpsAdmin::API::Resources
         elsif ::Vps.exists?(dataset_in_pool: ds.primary_dataset_in_pool!)
           error('unable to delete, this dataset serves as a root FS for a VPS')
         end
+        
+        ds.maintenance_check!(ds.primary_dataset_in_pool!.pool)
 
         ds.destroy
         ok
@@ -264,6 +267,8 @@ module VpsAdmin::API::Resources
         if current_user.role != :admin && !ds.user_editable
           error('insufficient permission to inherit this property')
         end
+        
+        ds.maintenance_check!(ds.primary_dataset_in_pool!.pool)
 
         not_exists = []
         not_inheritable = []
@@ -384,6 +389,7 @@ module VpsAdmin::API::Resources
 
         def exec
           ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+          ds.maintenance_check!(ds.primary_dataset_in_pool!.pool)
          
           max_snapshots = ds.max_snapshots
 
@@ -418,6 +424,8 @@ module VpsAdmin::API::Resources
                 ).count > 0
             error('cannot destroy snapshot with backups')
           end
+          
+          snap.dataset.maintenance_check!(snap.dataset.primary_dataset_in_pool!.pool)
 
           snap.destroy
           ok
@@ -440,6 +448,8 @@ module VpsAdmin::API::Resources
               dataset_id: params[:dataset_id],
               id: params[:snapshot_id]
           ))
+          
+          snap.dataset.maintenance_check!(snap.dataset.primary_dataset_in_pool!.pool)
 
           # Check if any snapshots on primary pool are mounted
           mnt = snap.dataset.snapshots.select(
