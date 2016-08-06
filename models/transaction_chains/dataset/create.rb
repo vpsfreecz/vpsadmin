@@ -53,7 +53,7 @@ module TransactionChains
         part.save!
 
       else
-        part.expiration = nil
+        part.expiration_date = nil
         part.save!
       end
 
