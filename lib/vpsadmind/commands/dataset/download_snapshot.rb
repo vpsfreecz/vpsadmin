@@ -36,27 +36,13 @@ module VpsAdmind
       size = 0
 
       if @from_snapshot
-        rx = /^total estimated size is ([^$]+)$/
-        str = zfs(:send, "-nv -I @#{@from_snapshot}", "#{ds}@#{@snapshot}")[:output]
-        m = rx.match(str)
-
-        fail 'unable to estimate size' if m.nil?
-
-        size = m[1].to_f
-        suffix = m[1].strip[-1]
-
-        if suffix !~ /^\d+$/
-          units = %w(K M G T)
-
-          if i = units.index(suffix)
-            (i+1).times { size *= 1024 }
-
-          else
-            fail "unsupported suffix '#{suffix}'"
-          end
-        end
-
-        size = (size / 1024 / 1024).round
+        stream = ZfsStream.new({
+            pool: @pool_fs,
+            tree: @tree,
+            branch: @branch,
+            dataset: @dataset_name,
+        }, @snapshot, @from_snapshot)
+        size = stream.size
 
       else
         size = zfs(

@@ -6,11 +6,28 @@ module VpsAdmind
     def exec
       db = Db.new
 
-      snap1 = confirmed_snapshot_name(db, @snapshots.first)
-      snap2 = @snapshots.count > 1 ? confirmed_snapshot_name(db, @snapshots.last) : nil
+      snap = confirmed_snapshot_name(db, @snapshots.last)
+      from_snap = @snapshots.count > 1 ? confirmed_snapshot_name(db, @snapshots.first) : nil
 
       db.close
-      do_transfer(snap1, snap2)
+      
+      stream = ZfsStream.new(
+          {
+              pool: @src_pool_fs,
+              tree: @tree,
+              branch: @branch,
+              dataset: @dataset_name,
+          },
+          snap,
+          from_snap,
+      )
+
+      stream.command(self) do
+        stream.send_to(
+            @addr,
+            port: @port,
+        )
+      end
 
       ok
     end
@@ -20,20 +37,6 @@ module VpsAdmind
     end
 
     protected
-    # Supports only transfer from primary/hypervisor pools to backup pool.
-    # Not the other way around.
-    def do_transfer(snap1, snap2 = nil)
-      ds_name = @branch ? "#{@dataset_name}/#{@tree}/#{@branch}" : @dataset_name
-
-      if snap2
-        send = "zfs send -I #{@src_pool_fs}/#{ds_name}@#{snap1} #{@src_pool_fs}/#{ds_name}@#{snap2}"
-      else
-        send = "zfs send #{@src_pool_fs}/#{ds_name}@#{snap1}"
-      end
-
-      pipeline_r(send, "nc #{@addr} #{@port}")
-    end
-
     def confirmed_snapshot_name(db, snap)
       if snap['confirmed'] == 1
         snap['name']
