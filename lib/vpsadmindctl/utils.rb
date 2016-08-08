@@ -25,8 +25,8 @@ def unitize(v)
   "#{v}M"
 end
 
-def format_progress(progress)
-  case progress[:unit].to_sym
+def format_progress(t, progress)
+  ret = case progress[:unit].to_sym
   when :mib
     "#{unitize(progress[:current])}/#{unitize(progress[:total])}"
 
@@ -36,4 +36,8 @@ def format_progress(progress)
   else
     '?'
   end
+
+  ret += '(?)' if t.to_i > (progress[:time] + 60)
+
+  ret
 end

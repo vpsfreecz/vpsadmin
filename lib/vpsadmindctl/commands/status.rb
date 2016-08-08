@@ -65,7 +65,7 @@ module VpsAdmindCtl::Commands
                   w[1][:type],
                   w[1][:start] ? (t.to_i - w[1][:start]).round : '-',
                   w[1][:pid] || '-',
-                  w[1][:progress] ? format_progress(w[1][:progress]) : '-',
+                  w[1][:progress] ? format_progress(t, w[1][:progress]) : '-',
                   w[1][:step]
               )
 
@@ -78,7 +78,7 @@ module VpsAdmindCtl::Commands
                   w[1][:handler],
                   w[1][:type],
                   w[1][:start] ? format_duration(t.to_i - w[1][:start]) : '-',
-                  w[1][:progress] ? format_progress(w[1][:progress]) : '-',
+                  w[1][:progress] ? format_progress(t, w[1][:progress]) : '-',
                   w[1][:pid],
                   w[1][:step]
               )
