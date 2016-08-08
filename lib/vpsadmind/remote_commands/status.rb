@@ -24,6 +24,8 @@ module VpsAdmind::RemoteCommands
             h = w.cmd.handler
             
             start = w.cmd.time_start
+            p = w.cmd.progress
+            p[:time] = p[:time].to_i if p
 
             q[:workers][wid] = {
                 :id => w.cmd.id,
@@ -32,6 +34,7 @@ module VpsAdmind::RemoteCommands
                 :step => w.cmd.step,
                 :pid => w.cmd.subtask,
                 :start => start && start.localtime.to_i,
+                :progress => p,
             }
           end
 

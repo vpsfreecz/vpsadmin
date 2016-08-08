@@ -64,6 +64,14 @@ module VpsAdmind::Commands
       end
     end
 
+    def progress
+      @command.progress
+    end
+
+    def progress=(v)
+      @command.progress=(v)
+    end
+
     protected
     def anchor(name)
       @anchors << name

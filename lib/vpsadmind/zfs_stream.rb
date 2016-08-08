@@ -133,6 +133,15 @@ module VpsAdmind
         n = parse_transfered(line)
         change = transfered == 0 ? n : n - transfered
         transfered = n
+        
+        if @cmd
+          @cmd.progress = {
+              total: size,
+              current: transfered,
+              unit: :mib,
+              time: Time.now
+          }
+        end
 
         @progress.each do |block|
           block.call(transfered, change)

@@ -281,6 +281,14 @@ module VpsAdmind
       @m_attr.synchronize { @time_start && @time_start.clone }
     end
 
+    def progress
+      @m_attr.synchronize { @progress && @progress.clone }
+    end
+
+    def progress=(v)
+      @m_attr.synchronize { @progress = v }
+    end
+
     def current_chain_direction
       if @rollbacked
         :rollback
