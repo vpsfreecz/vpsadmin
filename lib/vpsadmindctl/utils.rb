@@ -10,3 +10,30 @@ def format_duration(interval)
     "%02d:%02d:%02d" % [h, m, s]
   end
 end
+
+def unitize(v)
+  return "#{v}M" if v < 1024
+
+  bits = 19
+
+  %w(T G).each_with_index do |u, i|
+    n = 2 << (bits - 10*i)
+
+    return "#{(v / n.to_f).round(1)}#{u}" if v >= n
+  end
+
+  "#{v}M"
+end
+
+def format_progress(progress)
+  case progress[:unit].to_sym
+  when :mib
+    "#{unitize(progress[:current])}/#{unitize(progress[:total])}"
+
+  when :percent
+    "#{progres[:current].to_f / progress[:total] * 100}%"
+
+  else
+    '?'
+  end
+end
