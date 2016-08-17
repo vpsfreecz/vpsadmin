@@ -197,10 +197,16 @@ module VpsAdmin::API
         ::DatasetInPoolPlan.transaction do
           BlockEnv.new(:del, env_dataset_plan(dip), confirmation).instance_exec(dip, &@block)
 
-          ::DatasetInPoolPlan.find_by!(
+          plan = ::DatasetInPoolPlan.find_by!(
               environment_dataset_plan: env_dataset_plan(dip),
               dataset_in_pool: dip
-          ).destroy!
+          )
+          
+          if confirmation
+            confirmation.just_destroy(plan)
+          else
+            plan.destroy!
+          end
         end
       end
 
