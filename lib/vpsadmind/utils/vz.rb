@@ -1,6 +1,6 @@
 module VpsAdmind
   module Utils::Vz
-    def vzctl(cmd, veid, opts = {}, save = false, valid_rcs = [])
+    def vzctl(cmd, veid, opts = {}, save = false, valid_rcs = [], cmd_opts = {})
       options = []
 
       if opts.instance_of?(Hash)
@@ -14,7 +14,12 @@ module VpsAdmind
         options << opts
       end
 
-      syscmd("#{$CFG.get(:vz, :vzctl)} #{cmd} #{veid} #{options.join(" ")} #{"--save" if save}", valid_rcs)
+      cmd_opts[:valid_rcs] ||= valid_rcs
+
+      syscmd2(
+          "#{$CFG.get(:vz, :vzctl)} #{cmd} #{veid} #{options.join(" ")} #{"--save" if save}",
+          cmd_opts
+      )
     end
 
     def array_or_string_each(obj)

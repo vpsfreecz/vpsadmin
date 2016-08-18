@@ -129,6 +129,7 @@ module VpsAdmind
           :migration => {
               :dumpfile => "/vz/dump/Dump.%{veid}",
           },
+          :stop_timeout => 5*60,
       },
 
       :node => {

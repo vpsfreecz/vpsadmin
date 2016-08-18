@@ -22,13 +22,29 @@ module VpsAdmind
 
     def stop(params = {})
       try_harder do
-        vzctl(:stop, @veid, {}, false, params[:force] ? [5, 66] : [])
+        vzctl(
+            :stop,
+            @veid,
+            {},
+            false,
+            params[:force] ? [5, 66] : [],
+            timeout: $CFG.get(:vps, :stop_timeout),
+            on_timeout: ->(io) { Process.kill('TERM', io.pid) },
+        )
         vzctl(:set, @veid, {:onboot => "no"}, true)
       end
     end
 
     def restart
-      vzctl(:restart, @veid)
+      vzctl(
+          :restart,
+          @veid,
+          {},
+          false,
+          [],
+          timeout: $CFG.get(:vps, :stop_timeout),
+          on_timeout: ->(io) { Process.kill('TERM', io.pid) },
+      )
       vzctl(:set, @veid, {:onboot => "yes"}, true)
     end
 

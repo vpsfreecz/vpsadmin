@@ -1,5 +1,9 @@
+require 'timeout'
+
 module VpsAdmind
   module Utils::System
+    include Timeout
+
     def try_harder(attempts = 3)
       @output ||= {}
       @output[:attempts] = []
@@ -51,6 +55,8 @@ module VpsAdmind
     # @param opts [Hash]
     # @option opts [Array<Integer>] valid_rcs valid exit codes
     # @option opts [Boolean] stderr include stderr in output?
+    # @option opts [Integer] timeout in seconds
+    # @option opts [Proc] on_timeout
     # @return [Hash]
     def syscmd2(cmd, opts = {})
       valid_rcs = opts[:valid_rcs] || []
@@ -64,8 +70,28 @@ module VpsAdmind
 
       IO.popen("exec #{cmd} #{stderr ? '2>&1' : '2> /dev/null'}") do |io|
         current_cmd.subtask = io.pid if current_cmd
+        
+        if opts[:timeout]
+          begin
+            timeout(opts[:timeout]) do
+              out = io.read
+            end
 
-        out = io.read
+          rescue Timeout::Error
+            log(:work, current_cmd || @command, 'Timeout')
+
+            if opts[:on_timeout]
+              opts[:on_timeout].call(io)
+
+            else
+              Process.kill('TERM', io.pid)
+              raise CommandFiled.new(cmd, 1, 'Timeout')
+            end
+          end
+
+        else
+          out = io.read
+        end
       end
 
       current_cmd.subtask = nil if current_cmd
