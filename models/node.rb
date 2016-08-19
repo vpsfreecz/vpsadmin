@@ -2,7 +2,6 @@ class Node < ActiveRecord::Base
   self.table_name = 'servers'
   self.primary_key = 'server_id'
 
-  belongs_to :environment
   belongs_to :location, :foreign_key => :server_location
   has_many :vpses, :foreign_key => :vps_server
   has_many :transactions, foreign_key: :t_server
@@ -43,7 +42,7 @@ class Node < ActiveRecord::Base
   include VpsAdmin::API::Maintainable::Model
   include VpsAdmin::API::Maintainable::Check
 
-  maintenance_parents :location, :environment
+  maintenance_parents :location
   maintenance_children :pools, :vpses
 
   include Lockable
@@ -74,7 +73,7 @@ class Node < ActiveRecord::Base
           (st.is_running = 1 OR st.is_running IS NULL)
           AND servers.max_vps > 0
           AND servers.maintenance_lock = 0
-          AND servers.environment_id = ?
+          AND locations.environment_id = ?
         ', env.id)
 
     if location
@@ -89,13 +88,14 @@ class Node < ActiveRecord::Base
 
     return n if n
     
-    q = self.joins(
-        'LEFT JOIN vps ON vps.vps_server = servers.server_id'
-    ).where(
+    q = self.joins('
+        LEFT JOIN vps ON vps.vps_server = servers.server_id
+        INNER JOIN locations ON locations.location_id = servers.server_location
+    ').where(
         'max_vps > 0'
     ).where(
         maintenance_lock: 0,
-        environment: env
+        locations: {environment_id: env.id},
     )
 
     if location

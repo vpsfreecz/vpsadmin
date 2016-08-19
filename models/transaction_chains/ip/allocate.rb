@@ -36,7 +36,7 @@ module TransactionChains
       order = 0
 
       ips.each do |ip|
-        ownership = !ip.user_id && vps.node.environment.user_ip_ownership
+        ownership = !ip.user_id && vps.node.location.environment.user_ip_ownership
 
         append(Transactions::Vps::IpAdd, args: [vps, ip]) do
           edit_before(ip, vps_id: ip.vps_id, order: order)

@@ -216,7 +216,7 @@ module VpsAdmin::API
 
       def env_dataset_plan(dip)
         @env_dataset_plan ||= ::EnvironmentDatasetPlan.find_by!(
-            environment: dip.pool.node.environment,
+            environment: dip.pool.node.location.environment,
             dataset_plan: dataset_plan
         )
 

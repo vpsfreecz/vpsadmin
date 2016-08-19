@@ -1,6 +1,7 @@
 class Location < ActiveRecord::Base
   self.primary_key = 'location_id'
 
+  belongs_to :environment
   has_many :nodes, :foreign_key => :server_location
   has_many :networks
   has_many :dns_resolvers, foreign_key: :dns_location
@@ -23,14 +24,7 @@ class Location < ActiveRecord::Base
 
   include VpsAdmin::API::Maintainable::Model
 
-  maintenance_parents do
-    MaintenanceLock.find_by(
-        class_name: 'Cluster',
-        row_id: nil,
-        active: true
-    )
-  end
-
+  maintenance_parents :environment
   maintenance_children :nodes
 
   def fqdn

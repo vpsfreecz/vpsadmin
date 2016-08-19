@@ -8,6 +8,7 @@
 - `Node.Create`: add required input parameters `cpus`, `total_memory` and `total_swap`
 - Pool maintenance mode
 - New rake task `vpsadmin:shell`
+- Move locations to environment
 
 * Fri Jun 24 2016 - version 2.4.0
 - New resource `Language`

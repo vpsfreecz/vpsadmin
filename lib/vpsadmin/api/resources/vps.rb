@@ -155,7 +155,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       if input[:environment]
-        q = q.joins(:node).where(servers: {environment_id: input[:environment].id})
+        q = q.joins(node: [:location]).where(
+            locations: {environment_id: input[:environment].id}
+        )
       end
 
       if input[:os_template]
@@ -257,7 +259,7 @@ END
           error('no free node is available in selected environment/location')
         end
 
-        env = node.environment
+        env = node.location.environment
 
         if !current_user.env_config(env, :can_create_vps)
           error('insufficient permission to create a VPS in this environment')
@@ -646,7 +648,7 @@ END
 
       error('no node available in this environment') unless node
 
-      env = node.environment
+      env = node.location.environment
 
       if current_user.role != :admin && !current_user.env_config(env, :can_create_vps)
         error('insufficient permission to create a VPS in this environment')

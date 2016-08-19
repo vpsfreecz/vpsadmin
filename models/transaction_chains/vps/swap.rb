@@ -35,7 +35,8 @@ module TransactionChains
       new_secondary_vps = ::Vps.find(primary_vps.id)
       new_secondary_vps.node = secondary_vps.node
 
-      same_env = primary_vps.node.environment_id == secondary_vps.node.environment_id
+      same_env = primary_vps.node.location.environment_id \
+                 == secondary_vps.node.location.environment_id
       faked_resources = []
 
       # Free resources, just mark them as for destroyal so that the VPSes

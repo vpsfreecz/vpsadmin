@@ -19,7 +19,7 @@ module TransactionChains
       else
         use_chain(Vps::ApplyConfig, args: [
             dst_vps,
-            vps.node.environment.vps_configs.pluck(:id)
+            vps.node.location.environment.vps_configs.pluck(:id)
         ])
       end
     end
@@ -72,7 +72,7 @@ module TransactionChains
             begin
               next unless ::EnvironmentDatasetPlan.find_by!(
                   dataset_plan: plan,
-                  environment: dst_dip.pool.node.environment
+                  environment: dst_dip.pool.node.location.environment
               ).user_add
 
             rescue ActiveRecord::RecordNotFound

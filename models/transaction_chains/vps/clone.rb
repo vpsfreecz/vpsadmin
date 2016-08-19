@@ -52,7 +52,7 @@ module TransactionChains
       )
       
       lifetime = dst_vps.user.env_config(
-          dst_vps.node.environment,
+          dst_vps.node.location.environment,
           :vps_lifetime
       )
 
@@ -357,7 +357,7 @@ module TransactionChains
       versions << :ipv6 if dst_vps.node.location.has_ipv6
 
       ip_resources = dst_vps.allocate_resources(
-          dst_vps.node.environment,
+          dst_vps.node.location.environment,
           required: [],
           optional: versions,
           user: dst_vps.user,

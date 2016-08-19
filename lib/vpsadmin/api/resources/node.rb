@@ -13,7 +13,6 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     string :type, label: 'Role', desc: 'node, storage or mailer', db_name: :server_type
     resource VpsAdmin::API::Resources::Location, label: 'Location',
              desc: 'Location node is placed in'
-    resource VpsAdmin::API::Resources::Environment, label: 'Environment'
     string :availstat, label: 'Availability stats', desc: 'HTML code with availability graphs',
            db_name: :server_availstat
     string :ip_addr, label: 'IPv4 address', desc: 'Node\'s IP address', db_name: :server_ip4
@@ -74,7 +73,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      output whitelist: %i(id name location environment)
+      output whitelist: %i(id name location)
       allow
     end
 
@@ -89,10 +88,6 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
               id: 1,
               label: 'The Location'
           },
-          environment: {
-              id: 1,
-              label: 'Production'
-          },
           availstat: '',
           ip_addr: '192.168.0.10',
           maintenance: false
@@ -103,7 +98,13 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     def query
       q = ::Node
       q = q.where(location: input[:location]) if input[:location]
-      q = q.where(environment: input[:environment]) if input[:environment]
+      
+      if input[:environment]
+        q = q.joins(:location).where(
+            locations: {environment_id: input[:environment].id}
+        )
+      end
+
       q
     end
 
@@ -120,13 +121,11 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     desc 'Create a new node'
 
     input do
-      use :all, include: %i(id name type location environment ip_addr
-                            net_interface max_tx max_rx max_vps ve_private
-                            cpus total_memory total_swap)
+      use :all, include: %i(id name type location ip_addr net_interface max_tx
+                            max_rx max_vps ve_private cpus total_memory total_swap)
       patch :name, required: true
       patch :type, required: true
       patch :location, required: true
-      patch :environment, required: true
       patch :ip_addr, required: true
       patch :net_interface, required: true
       patch :cpus, required: true
@@ -175,7 +174,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     def exec
       with_includes.includes(:node_current_status).joins(:location).all
-        .order('environment_id, locations.location_id, servers.server_id')
+        .order('locations.environment_id, locations.location_id, servers.server_id')
     end
   end
 
@@ -203,7 +202,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     def exec
       ::Node.includes(:location, :node_current_status).joins(:location).all
-        .order('environment_id, locations.location_id, servers.server_id')
+        .order('locations.environment_id, locations.location_id, servers.server_id')
     end
   end
 
@@ -216,7 +215,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      output whitelist: %i(id name domain_name location environment)
+      output whitelist: %i(id name domain_name location)
       allow
     end
 
@@ -230,10 +229,6 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
           location: {
               id: 1,
               label: 'The Location'
-          },
-          environment: {
-              id: 1,
-              label: 'Production'
           },
           availstat: '',
           ip_addr: '192.168.0.11',
@@ -259,7 +254,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     authorize do |u|
-      input blacklist: %i(type location environment)
+      input blacklist: %i(type location)
       allow if u.role == :admin
     end
 
@@ -269,7 +264,6 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
           name: 'node2',
           type: 'storage',
           location: 1,
-          environment: 1,
           availstat: '',
           ip_addr: '192.168.0.11',
           maintenance: false
@@ -339,7 +333,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       if n.server_location != dst.server_location
         error('the destination node is in a different location')
 
-      elsif n.environment_id != dst.environment_id
+      elsif n.location.environment_id != dst.location.environment_id
         error('the destination node is in a different environment')
       end
 

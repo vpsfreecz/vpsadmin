@@ -122,7 +122,7 @@ class Dataset < ActiveRecord::Base
 
   def environment
     dataset_in_pools.each do |dip|
-      return dip.pool.node.environment if dip.pool.role != 'backup'
+      return dip.pool.node.location.environment if dip.pool.role != 'backup'
     end
 
     nil

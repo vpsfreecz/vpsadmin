@@ -19,7 +19,7 @@ class DatasetInPool < ActiveRecord::Base
   include VpsAdmin::API::ClusterResources
 
   cluster_resources required: %i(diskspace),
-                    environment: ->(){ pool.node.environment }
+                    environment: ->(){ pool.node.location.environment }
 
   has_hook :create,
       desc: 'Called when a new DatasetInPool is being created',

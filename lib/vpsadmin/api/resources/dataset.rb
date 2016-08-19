@@ -83,7 +83,7 @@ module VpsAdmin::API::Resources
 
         query.includes(
             :dataset_properties,
-            dataset_in_pools: [pool: [node: [:environment]]]
+            dataset_in_pools: [pool: [node: [location: [:environment]]]]
         ).order('full_name').limit(input[:limit]).offset(input[:offset]).each do |ds|
           ret << ds
         end

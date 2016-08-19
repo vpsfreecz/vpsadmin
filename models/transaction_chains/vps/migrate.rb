@@ -72,10 +72,10 @@ module TransactionChains
 
       # Transfer resources if the destination node is in a different
       # environment.
-      if vps.node.environment_id != dst_node.environment_id
+      if vps.node.location.environment_id != dst_node.location.environment_id
         resources_changes = vps.transfer_resources_to_env!(
             vps.user,
-            dst_node.environment,
+            dst_node.location.environment,
             @opts[:resources]
         )
       end
@@ -97,10 +97,10 @@ module TransactionChains
         # Transfer resources
         resources_changes ||= {}
 
-        if vps.node.environment_id != dst_node.environment_id
+        if vps.node.location.environment_id != dst_node.location.environment_id
           # This code expects that the datasets have a just one cluster resource,
           # which is diskspace.
-          changes = src.transfer_resources_to_env!(vps.user, dst_node.environment)
+          changes = src.transfer_resources_to_env!(vps.user, dst_node.location.environment)
           changes[changes.keys.first][:row_id] = dst.id
           resources_changes.update(changes)
 
@@ -201,7 +201,7 @@ module TransactionChains
             append(Transactions::Vps::IpAdd, args: [dst_vps, replacement], urgent: true) do
               edit(replacement, vps_id: dst_vps.veid)
 
-              if !replacement.user_id && dst_vps.node.environment.user_ip_ownership
+              if !replacement.user_id && dst_vps.node.location.environment.user_ip_ownership
                 edit(replacement, user_id: dst_vps.user_id)
               end
             end
@@ -398,7 +398,7 @@ module TransactionChains
         begin
           next unless ::EnvironmentDatasetPlan.find_by!(
               dataset_plan: plan,
-              environment: dst_dip.pool.node.environment
+              environment: dst_dip.pool.node.location.environment,
           ).user_add
 
         rescue ActiveRecord::RecordNotFound

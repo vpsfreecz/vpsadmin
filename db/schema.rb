@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160805144125) do
+ActiveRecord::Schema.define(version: 20160819084000) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -307,6 +307,7 @@ ActiveRecord::Schema.define(version: 20160805144125) do
     t.datetime "updated_at"
     t.integer  "maintenance_lock",                           default: 0,    null: false
     t.string   "maintenance_lock_reason"
+    t.integer  "environment_id",                                            null: false
   end
 
   create_table "log", force: true do |t|
@@ -688,7 +689,6 @@ ActiveRecord::Schema.define(version: 20160805144125) do
     t.integer "max_rx",                  limit: 8,   default: 235929600,                     null: false
     t.integer "maintenance_lock",                    default: 0,                             null: false
     t.string  "maintenance_lock_reason"
-    t.integer "environment_id",                                                              null: false
     t.integer "cpus",                                                                        null: false
     t.integer "total_memory",                                                                null: false
     t.integer "total_swap",                                                                  null: false

@@ -15,6 +15,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     string :remote_console_server, label: 'Remote console server', desc: 'URL to HTTP remote console server',
            db_name: :location_remote_console_server
     string :domain, label: 'Domain', desc: 'Location domain, subdomain at environment domain'
+    resource VpsAdmin::API::Resources::Environment, label: 'Environment'
   end
 
   params(:all) do
@@ -36,7 +37,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      output whitelist: %i(id label)
+      output whitelist: %i(id label environment)
       allow
     end
 
@@ -59,8 +60,8 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       q = ::Location
 
       if input[:environment]
-        q = q.joins(:nodes).where(
-            servers: {environment_id: input[:environment].id}
+        q = q.where(
+            environment_id: input[:environment].id
         ).group('locations.location_id')
       end
 
@@ -128,7 +129,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      restrict whitelist: %i(id label)
+      restrict whitelist: %i(id label environment)
       allow
     end
 

@@ -42,7 +42,7 @@ class Vps < ActiveRecord::Base
   include VpsAdmin::API::ClusterResources
   cluster_resources required: %i(cpu memory diskspace),
                     optional: %i(ipv4 ipv4_private ipv6 swap),
-                    environment: ->(){ node.environment }
+                    environment: ->(){ node.location.environment }
 
   include VpsAdmin::API::Lifetimes::Model
   set_object_states suspended: {
@@ -59,7 +59,7 @@ class Vps < ActiveRecord::Base
                     deleted: {
                         enter: TransactionChains::Lifetimes::NotImplemented
                     },
-                    environment: ->(){ node.environment }
+                    environment: ->(){ node.location.environment }
 
   include VpsAdmin::API::ObjectHistory::Model
   log_events %i(
@@ -104,7 +104,7 @@ class Vps < ActiveRecord::Base
     self.vps_config = ''
 
     lifetime = self.user.env_config(
-        node.environment,
+        node.location.environment,
         :vps_lifetime
     )
 
