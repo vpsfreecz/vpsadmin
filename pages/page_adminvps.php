@@ -746,7 +746,7 @@ if ($list_vps) {
 				if ($_SESSION['is_admin'])
 					$xtpl->table_td(maintenance_lock_icon('vps', $vps));
 				
-				if ($_SESSION["is_admin"] || $envs_destroy[$vps->node->environment_id]){
+				if ($_SESSION["is_admin"] || $envs_destroy[$vps->node->location->environment_id]){
 					$xtpl->table_td((!$vps->is_running) ? '<a href="?page=adminvps&action=delete&veid='.$vps->id.'"><img src="template/icons/vps_delete.png"  title="'._("Delete").'"/></a>' : '<img src="template/icons/vps_delete_grey.png"  title="'._("Unable to delete").'"/>');
 				} else {
 					$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'._("Cannot delete").'"/>');
@@ -795,7 +795,7 @@ if (isset($show_info) && $show_info) {
 	if (!isset($veid))
 		$veid = $_GET["veid"];
 	
-	$vps = $api->vps->find($veid, array('meta' => array('includes' => 'node__location,node__environment,user,os_template')));
+	$vps = $api->vps->find($veid, array('meta' => array('includes' => 'node__location__environment,user,os_template')));
 	
 	vps_details_suite($vps);
 	
@@ -815,7 +815,7 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_tr();
 	
 	$xtpl->table_td(_("Environment").':');
-	$xtpl->table_td($vps->node->environment->label);
+	$xtpl->table_td($vps->node->location->environment->label);
 	$xtpl->table_tr();
 	
 	$xtpl->table_td(_("Owner").':');
@@ -1126,7 +1126,7 @@ if (isset($show_info) && $show_info) {
 	$params = $api->vps->update->getParameters('input');
 	$vps_resources = array('memory', 'cpu', 'swap');
 	$user_resources = $vps->user->cluster_resource->list(array(
-		'environment' => $vps->node->environment_id,
+		'environment' => $vps->node->location->environment_id,
 		'meta' => array('includes' => 'environment,cluster_resource'))
 	);
 	$resource_map = array();

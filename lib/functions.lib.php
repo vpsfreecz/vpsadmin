@@ -51,7 +51,7 @@ function get_free_ip_list ($res, $vps, $role = null, $limit = null) {
 		// of user's IP addresses left.
 		
 		$resources = $vps->user->cluster_resource->list(array(
-			'environment' => $vps->node->environment_id,
+			'environment' => $vps->node->location->environment_id,
 			'meta' => array('includes' => 'cluster_resource')
 		));
 		
