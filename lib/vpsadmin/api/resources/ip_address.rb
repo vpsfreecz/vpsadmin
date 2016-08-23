@@ -206,12 +206,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     def exec
       ip = ::IpAddress.find(params[:ip_address_id])
-
-      if input[:max_tx] || input[:max_rx]
-        ip.set_shaper(input[:max_tx], input[:max_rx])
-      end
-
-      ip.update!(user: input[:user]) if input.has_key?(:user)
+      # TODO: deny disown of IP assigned to a VPS
+      ip.do_update(input)
       ip
 
     rescue ActiveRecord::RecordInvalid => e

@@ -228,7 +228,8 @@ module VpsAdmin::API
 
         return use unless use.valid?
 
-        if resource_obj.resource_type.to_sym == :object && chain
+        if resource_obj.resource_type.to_sym == :object && chain \
+           && resource_obj.allocate_chain
           res = chain.use_chain(
               TransactionChains.const_get(resource_obj.allocate_chain),
               args: [resource_obj, self, value],

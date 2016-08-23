@@ -64,9 +64,13 @@ class IpAddress < ActiveRecord::Base
     vps_id.nil? || vps_id == 0
   end
 
+  def cluster_resource
+    network.cluster_resource
+  end
+
   # Return first free and unlocked IP address version +v+ from +location+.
   def self.pick_addr!(user, location, v, role = :public_access)
-    self.select('vps_ip.*')
+    q = self.select('vps_ip.*')
       .joins(:network)
       .joins("LEFT JOIN resource_locks rl ON rl.resource = 'IpAddress' AND rl.row_id = vps_ip.ip_id")
       .where(networks: {
@@ -78,20 +82,6 @@ class IpAddress < ActiveRecord::Base
       .where('(vps_ip.user_id = ? OR vps_ip.user_id IS NULL)', user.id)
       .where('rl.id IS NULL')
       .order('vps_ip.user_id DESC, ip_id').take!
-  end
-
-  def set_shaper(tx, rx)
-    if vps_id > 0
-      TransactionChains::Vps::ShaperChange.fire(
-          self,
-          tx || self.max_tx,
-          rx || self.max_rx
-      )
-    else
-      self.max_tx = tx
-      self.max_rx = rx
-      save!
-    end
   end
 
   def check_address
@@ -110,6 +100,14 @@ class IpAddress < ActiveRecord::Base
 
   rescue ArgumentError => e
     errors.add(:ip_addr, e.message)
+  end
+
+  # @param opts [Hash]
+  # @option opts [Integer] max_tx
+  # @option opts [Integer] max_rx
+  # @option opts [User] user
+  def do_update(opts)
+    TransactionChains::Ip::Update.fire(self, opts)
   end
 
   def check_ownership

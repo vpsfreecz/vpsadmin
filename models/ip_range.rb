@@ -20,11 +20,16 @@ class IpRange < Network
   def ensure_ip_addresses
     net_addr do |net|
       net.each do |ip|
-        ::IpAddress.register(
-            ip.address,
-            network: self,
-            user: self.user,
-        )
+        begin
+          ::IpAddress.register(
+              ip.address,
+              network: self,
+              user: self.user,
+          )
+
+        rescue ActiveRecord::RecordInvalid => e
+          raise e if (e.record.errors.keys - %i(ip_addr)).any?
+        end
       end
     end
   end

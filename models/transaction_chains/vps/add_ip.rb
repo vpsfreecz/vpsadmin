@@ -7,25 +7,39 @@ module TransactionChains
       concerns(:affect, [vps.class.name, vps.id])
 
       uses = []
+      user_env = user.environment_user_configs.find_by!(
+          environment: vps.node.location.environment,
+      )
+      ownership = vps.node.location.environment.user_ip_ownership
 
       if reallocate
         %i(ipv4 ipv4_private ipv6).each do |r|
           cnt = case r
           when :ipv4
             ips.count do |ip|
-              ip.network.role == 'public_access' && ip.network.ip_version == 4
+              (!ownership || ip.user.nil?) \
+              && ip.network.role == 'public_access' && ip.network.ip_version == 4
             end
           
           when :ipv4_private
             ips.count do |ip|
-              ip.network.role == 'private_access' && ip.network.ip_version == 4
+              (!ownership || ip.user.nil?) \
+              && ip.network.role == 'private_access' && ip.network.ip_version == 4
             end
 
           when :ipv6
-            ips.count { |ip| ip.network.ip_version == 6 }
+            ips.count do |ip|
+              (!ownership || ip.user.nil?) && ip.network.ip_version == 6
+            end
           end
 
-          uses << vps.reallocate_resource!(r, vps.send(r) + cnt, user: vps.user)
+          cur = user_env.send(r)
+
+          uses << user_env.reallocate_resource!(
+              r,
+              cur + cnt,
+              user: vps.user
+          ) if cnt != 0
         end
       end
 
@@ -44,10 +58,6 @@ module TransactionChains
 
         append(Transactions::Vps::IpAdd, args: [vps, ip, register]) do
           edit(ip, vps_id: vps.veid, order: order[ip.version])
-
-          if !ip.user_id && vps.node.location.environment.user_ip_ownership
-            edit(ip, user_id: vps.user_id)
-          end
 
           just_create(vps.log(:ip_add, {id: ip.id, addr: ip.addr})) unless chain.included?
         end

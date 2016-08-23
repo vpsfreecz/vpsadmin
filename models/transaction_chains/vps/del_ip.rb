@@ -10,8 +10,11 @@ module TransactionChains
       resource_obj ||= vps
 
       uses = []
+      user_env = user.environment_user_configs.find_by!(
+          environment: vps.node.location.environment,
+      )
       
-      if reallocate
+      if reallocate && !vps.node.location.environment.user_ip_ownership
         %i(ipv4 ipv4_private ipv6).each do |r|
           cnt = case r
           when :ipv4
@@ -28,7 +31,11 @@ module TransactionChains
             ips.count { |ip| ip.network.ip_version == 6 }
           end
 
-          uses << vps.reallocate_resource!(r, vps.send(r) - cnt, user: vps.user)
+          uses << user_env.reallocate_resource!(
+              r,
+              user_env.send(r) - cnt,
+              user: vps.user
+          )
         end
       end
 

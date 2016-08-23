@@ -9,6 +9,7 @@
 - Pool maintenance mode
 - New rake task `vpsadmin:shell`
 - Move locations to environment
+- IP addresses are allocated to users, not VPSes
 
 * Fri Jun 24 2016 - version 2.4.0
 - New resource `Language`

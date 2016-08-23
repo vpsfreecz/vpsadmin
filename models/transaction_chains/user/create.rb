@@ -21,7 +21,6 @@ module TransactionChains
             max_vps_count: env.max_vps_count
         )
 
-
         env.default_object_cluster_resources.where(
             class_name: user.class.name
         ).each do |d|

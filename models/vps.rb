@@ -41,7 +41,7 @@ class Vps < ActiveRecord::Base
 
   include VpsAdmin::API::ClusterResources
   cluster_resources required: %i(cpu memory diskspace),
-                    optional: %i(ipv4 ipv4_private ipv6 swap),
+                    optional: %i(swap),
                     environment: ->(){ node.location.environment }
 
   include VpsAdmin::API::Lifetimes::Model
@@ -100,7 +100,11 @@ class Vps < ActiveRecord::Base
 
   PathInfo = Struct.new(:dataset, :exists)
 
-  def create
+  # @param opts [Hash]
+  # @option opts [Integer] ipv4
+  # @option opts [Integer] ipv6
+  # @option opts [Integer] ipv4_private
+  def create(opts)
     self.vps_config = ''
 
     lifetime = self.user.env_config(
@@ -111,7 +115,7 @@ class Vps < ActiveRecord::Base
     self.expiration_date = Time.now + lifetime if lifetime != 0
 
     if valid?
-      TransactionChains::Vps::Create.fire(self)
+      TransactionChains::Vps::Create.fire(self, opts)
     else
       false
     end

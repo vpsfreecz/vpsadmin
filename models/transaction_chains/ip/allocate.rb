@@ -2,6 +2,11 @@ module TransactionChains
   class Ip::Allocate < ::TransactionChain
     label 'Allocate IP to object'
 
+    def allocate_to_environment_user_config(r, vps, n)
+      return n if n == 0
+      raise NotImplementedError
+    end
+
     def allocate_to_vps(r, vps, n)
       return n if n == 0
 
@@ -23,7 +28,7 @@ module TransactionChains
           end
 
         rescue ActiveRecord::RecordNotFound
-          fail "no #{r.name} available"
+          fail "no #{r} available"
 
         rescue ResourceLocked
           sleep(0.25)
@@ -33,6 +38,7 @@ module TransactionChains
         break if ips.size == n
       end
 
+      chowned = 0
       order = 0
 
       ips.each do |ip|
@@ -48,9 +54,10 @@ module TransactionChains
         ip.save!
 
         order += 1
+        chowned += 1 if ownership
       end
 
-      ips.size
+      chowned
     end
   end
 end

@@ -44,15 +44,17 @@ module TransactionChains
         use_chain(Dataset::RemoveDownload, args: dl)
       end
 
-      append(Transactions::Utils::NoOp, args: find_node_id) do
+      append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
         # Free all IP addresses
-        ::IpAddress.where(user: user).each do |ip|
-          edit(ip, user_id: nil)
+        user.environment_user_configs.each do |cfg|
+          cfg.free_resources(chain: self, free_objects: true).each do |use|
+            t.destroy(use)
+          end
         end
 
         # Free all IP ranges
         ::IpRange.where(user: user).each do |range|
-          edit(range, user_id: nil)
+          t.edit(range, user_id: nil)
         end
 
         # TODO: what about owned networks?

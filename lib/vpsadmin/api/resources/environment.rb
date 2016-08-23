@@ -79,13 +79,13 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
       end
 
       if has.size > 0
-        q = q.joins(:nodes).where(
+        q = q.joins(locations: :nodes).where(
             servers: {server_type: has}
         ).group('environments.id')
       end
 
       if not_has.size > 0
-        q = q.joins(:nodes).where.not(
+        q = q.joins(locations: :nodes).where.not(
             servers: {server_type: not_has}
         ).group('environments.id')
       end

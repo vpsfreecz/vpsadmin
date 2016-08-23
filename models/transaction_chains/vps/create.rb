@@ -2,7 +2,11 @@ module TransactionChains
   class Vps::Create < ::TransactionChain
     label 'Create'
 
-    def link_chain(vps)
+    # @param opts [Hash]
+    # @option opts [Integer] ipv4
+    # @option opts [Integer] ipv6
+    # @option opts [Integer] ipv4_private
+    def link_chain(vps, opts)
       lock(vps.user)
       vps.save!
       lock(vps)
@@ -68,20 +72,41 @@ module TransactionChains
           vps.node.location.environment.vps_configs.pluck(:id)
       ])
 
+      # Add IP addresses
       versions = [:ipv4, :ipv4_private]
       versions << :ipv6 if vps.node.location.has_ipv6
 
-      ip_resources = vps.allocate_resources(
-          vps.node.location.environment,
-          required: [],
-          optional: versions,
-          user: vps.user,
-          chain: self
+      ip_resources = []
+      user_env = vps.user.environment_user_configs.find_by!(
+          environment: vps.node.location.environment,
       )
+         
+      versions.each do |v|
+        next if opts[v].nil? || opts[v] <= 0
+
+        n = use_chain(
+            Ip::Allocate,
+            args: [::ClusterResource.find_by!(name: v), vps, opts[v]],
+            method: :allocate_to_vps
+        )
+        ip_resources << user_env.reallocate_resource!(
+            v,
+            n,
+            user: vps.user,
+            chain: self,
+        )
+      end
 
       if ip_resources.size > 0
         append(Transactions::Utils::NoOp, args: vps.vps_server) do
-          ip_resources.each { |r| create(r) }
+          ip_resources.each do |r|
+            if %i(confirmed confirm_destroy).include?(r.confirmed)
+              edit(r, r.attr_changes)
+
+            else
+              create(r)
+            end
+          end
         end
       end
 

@@ -51,6 +51,13 @@ class Network < ActiveRecord::Base
     ip_addresses.where.not(user: nil).count
   end
 
+  # Name of cluster resource appropriate for this network
+  def cluster_resource
+    return :ipv6 if ip_version == 6
+    return :ipv4 if role == 'public_access'
+    :ipv4_private
+  end
+
   # @param n [Integer] number of IP addresses to add
   # @param opts [Hash] options
   # @option opts [::User] user owner
@@ -70,6 +77,20 @@ class Network < ActiveRecord::Base
         cnt += 1
         break if cnt == n
       end
+
+      if opts[:user]
+        user_env = opts[:user].environment_user_configs.find_by!(
+            environment: location.environment,
+        )
+
+        user_env.reallocate_resource!(
+            cluster_resource,
+            user_env.send(cluster_resource) + cnt,
+            user: opts[:user],
+            save: true,
+            confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+        )
+      end
     end
 
     cnt
@@ -78,34 +99,58 @@ class Network < ActiveRecord::Base
   def get_or_create_range(opts)
     self.class.transaction do
       range = ::IpRange.children_of(self).where(user: nil).order(ip_order).take
-      return range if range
+      attrs = opts.clone
 
-      net = net_addr
-      cnt = ::IpRange.children_of(self).count
-
-      if ip_version == 4
-        next_address = IPAddress::IPv4.parse_u32(
-            net.to_u32 + (2**(32 - split_prefix)) * cnt
-        )
+      if range
+        if attrs[:user]
+          range.user = attrs[:user]
+          range.ip_addresses.update_all(user_id: attrs[:user].id)
+        end
 
       else
-        next_address = IPAddress::IPv6.parse_u128(
-            net.to_u128 + (2**(128 - split_prefix)) * cnt
+        net = net_addr
+        cnt = ::IpRange.children_of(self).count
+
+        if ip_version == 4
+          next_address = IPAddress::IPv4.parse_u32(
+              net.to_u32 + (2**(32 - split_prefix)) * cnt
+          )
+
+        else
+          next_address = IPAddress::IPv6.parse_u128(
+              net.to_u128 + (2**(128 - split_prefix)) * cnt
+          )
+        end
+
+        attrs.update({
+            parent: self,
+            location: location,
+            ip_version: ip_version,
+            address: next_address.address,
+            prefix: split_prefix,
+            role: self.class.roles[role],
+            managed: true,
+        })
+
+        range = ::IpRange.new(attrs)
+      end
+      
+      if attrs[:user]
+        user_env = attrs[:user].environment_user_configs.find_by!(
+            environment: location.environment,
+        )
+
+        user_env.reallocate_resource!(
+            cluster_resource,
+            user_env.send(cluster_resource) + range.size,
+            user: attrs[:user],
+            save: true,
+            confirmed: ::ClusterResourceUse.confirmed(:confirmed),
         )
       end
 
-      attrs = opts.clone
-      attrs.update({
-          parent: self,
-          location: location,
-          ip_version: ip_version,
-          address: next_address.address,
-          prefix: split_prefix,
-          role: self.class.roles[role],
-          managed: true,
-      })
-
-      ::IpRange.create!(attrs)
+      range.save!
+      range
     end
   end
 

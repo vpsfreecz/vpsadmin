@@ -189,6 +189,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
                desc: 'Location in which to create the VPS, for non-admins'
       use :common, exclude: %i(manage_hostname)
       VpsAdmin::API::ClusterResources.to_params(::Vps, self)
+      integer :ipv4, label: 'IPv4', default: 1, fill: true
+      integer :ipv6, label: 'IPv6', default: 1, fill: true
+      integer :ipv4_private, label: 'Private IPv4', default: 0, fill: true
 
       patch :hostname, required: true
     end
@@ -276,10 +279,16 @@ END
 
       maintenance_check!(input[:node])
 
+      opts = {}
+
+      %i(ipv4 ipv6 ipv4_private).each do |opt|
+        opts[opt] = input.delete(opt) if input.has_key?(opt)
+      end
+
       vps = ::Vps.new(to_db_names(input))
       vps.set_cluster_resources(input)
 
-      if vps.create
+      if vps.create(opts)
         ok(vps)
 
       else
@@ -1019,6 +1028,7 @@ END
             ip_id: params[:ip_address_id],
             vps_id: vps.id
         ))
+        ok
       end
     end
 
@@ -1043,6 +1053,7 @@ END
         maintenance_check!(vps)
 
         vps.delete_ips((params[:ip_addresses] || {})[:version])
+        ok
       end
     end
   end
