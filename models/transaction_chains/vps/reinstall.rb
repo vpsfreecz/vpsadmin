@@ -63,7 +63,7 @@ module TransactionChains
       ])
 
       vps.ip_addresses.all.each do |ip|
-        append(Transactions::Vps::IpAdd, args: [vps, ip])
+        append(Transactions::Vps::IpAdd, args: [vps, ip, false])
       end
       
       append(Transactions::Vps::DnsResolver, args: [
