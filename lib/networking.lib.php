@@ -87,10 +87,12 @@ function get_live_traffic_by_ip($limit_cnt, $limit_ip = false, $limit_vps = fals
 		tr_ip, tr_proto, tr_packets_in, tr_packets_out, tr_bytes_in, tr_bytes_out, tr_date, vps_ip.vps_id
 		FROM transfered_recent r1
 		INNER JOIN vps_ip ON ip_addr = r1.tr_ip
+		INNER JOIN networks n ON n.id = vps_ip.network_id
 		".($limit_member ? 'INNER JOIN vps ON vps.vps_id = vps_ip.vps_id
 		                    INNER JOIN members ON vps.m_id = members.m_id' : '')."
 		WHERE
-		  tr_date > DATE_SUB(NOW(), INTERVAL 60 SECOND)
+		  n.role = 0
+		  AND tr_date > DATE_SUB(NOW(), INTERVAL 60 SECOND)
 		  ".($limit_ip ? "AND tr_ip = '".$db->check($limit_ip)."'" : '')."
 		  ".($limit_vps ? 'AND vps_id = '.$db->check($limit_vps) : '')."
 		  ".($limit_member ? 'AND members.m_id = '.$db->check($limit_member) : '')."

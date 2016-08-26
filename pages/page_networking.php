@@ -177,12 +177,13 @@ if ($show_traffic) {
 	
 	$sql = 'SELECT v.vps_id, vps_hostname, m.m_id, m_nick, ip_addr
 	        FROM vps v
-	        INNER JOIN vps_ip ip ON v.vps_id = ip.vps_id
+			INNER JOIN vps_ip ip ON v.vps_id = ip.vps_id
+			INNER JOIN networks n ON n.id = ip.network_id
 	        INNER JOIN members m ON v.m_id = m.m_id
 	        ';
 	
 	if ($_SESSION['is_admin']) {
-		$conds = array();
+		$conds = array('n.role' => 0);
 
 		if ($_GET['ip_addr'])
 			$conds['ip.ip_addr'] = trim($_GET['ip_addr']);
@@ -217,7 +218,7 @@ if ($show_traffic) {
 		}
 		
 	} else {
-		$sql .= "WHERE v.m_id = ".((int) $db->check($_SESSION['member']['m_id']));
+		$sql .= "WHERE n.role = 0 AND v.m_id = ".((int) $db->check($_SESSION['member']['m_id']));
 	}
 	
 	$rs = $db->query($sql);
