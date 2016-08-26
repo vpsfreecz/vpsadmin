@@ -377,15 +377,6 @@ ActiveRecord::Schema.define(version: 20160826150804) do
 
   add_index "mail_templates", ["name"], name: "index_mail_templates_on_name", unique: true, using: :btree
 
-  create_table "mailer", force: true do |t|
-    t.integer "sentTime",  null: false
-    t.integer "member_id"
-    t.string  "type",      null: false
-    t.text    "details",   null: false
-  end
-
-  add_index "mailer", ["member_id"], name: "member_id", using: :btree
-
   create_table "maintenance_locks", force: true do |t|
     t.string   "class_name", limit: 100,                null: false
     t.integer  "row_id"
@@ -752,15 +743,6 @@ ActiveRecord::Schema.define(version: 20160826150804) do
   add_index "snapshots", ["dataset_id"], name: "index_snapshots_on_dataset_id", using: :btree
 
   create_table "sysconfig", primary_key: "cfg_name", force: true do |t|
-    t.text "cfg_value"
-  end
-
-  create_table "testik", force: true do |t|
-    t.integer "val",     null: false
-    t.integer "sum_val", null: false
-  end
-
-  create_table "tmp_sysconfig", primary_key: "cfg_name", force: true do |t|
     t.text "cfg_value"
   end
 
