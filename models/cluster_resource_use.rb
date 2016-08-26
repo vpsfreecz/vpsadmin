@@ -43,7 +43,7 @@ class ClusterResourceUse < ActiveRecord::Base
     min = user_cluster_resource.cluster_resource.min
     max = user_cluster_resource.cluster_resource.max
 
-    if !admin_override && total > user_cluster_resource.value
+    if !admin_override && total > user_cluster_resource.value && total > used
       errors.add(
           :value,
           "cannot allocate more #{user_cluster_resource.cluster_resource.name} than is available (#{user_cluster_resource.value - used} left)"
