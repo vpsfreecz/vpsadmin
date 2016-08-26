@@ -12,20 +12,9 @@ module TransactionChains
 
       chain = self
 
-      # Free IP addresses only if this is the target state, because hard_delete
-      # (Vps::Destroy) will free all resources anyway.
-      if target
-        ips = [
-            vps.free_resource!(:ipv4, chain: self),
-            vps.free_resource!(:ipv4_private, chain: self),
-            vps.free_resource!(:ipv6, chain: self),
-        ].compact
-      end
+      use_chain(Vps::DelIp, args: [vps, vps.ip_addresses])
       
       append(Transactions::Utils::NoOp, args: vps.vps_server) do
-        # Free IP addresses
-        ips.each { |ip| destroy(ip) } if target
-
         # Mark all resources as disabled until they are really freed by
         # hard_delete. Revive should mark them back as enabled.
         objs = [vps, vps.dataset_in_pool]
