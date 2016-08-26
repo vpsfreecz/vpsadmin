@@ -50,6 +50,7 @@ module TransactionChains
         end
         
         ip.vps_id = vps.id
+        ip.order = order
         ip.user_id = vps.m_id if ownership
         ip.save!
 
