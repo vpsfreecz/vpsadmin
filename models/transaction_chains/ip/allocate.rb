@@ -39,7 +39,11 @@ module TransactionChains
       end
 
       chowned = 0
-      order = 0
+      last_ip = vps.ip_addresses.joins(:network).where(
+          networks: {ip_version: v}
+      ).order('`order` DESC').take
+
+      order = last_ip ? last_ip.order + 1 : 0
 
       ips.each do |ip|
         ownership = !ip.user_id && vps.node.location.environment.user_ip_ownership
