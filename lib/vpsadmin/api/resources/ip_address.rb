@@ -206,7 +206,18 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     def exec
       ip = ::IpAddress.find(params[:ip_address_id])
-      # TODO: deny disown of IP assigned to a VPS
+      
+      if input.has_key?(:user) && ip.user != input[:user]
+        # Check if the IP is assigned to a VPS in an environment with IP ownership
+        if ip.vps && ip.network.location.environment.user_ip_ownership
+          error('cannot chown IP while it belongs to a VPS')
+
+        # Check if the IP is not in an assigned range
+        elsif ip.network.is_a?(::IpRange) && ip.network.user
+          error('cannot chown IP, it belongs to an owned IP range')
+        end
+      end
+      
       ip.do_update(input)
       ip
 
