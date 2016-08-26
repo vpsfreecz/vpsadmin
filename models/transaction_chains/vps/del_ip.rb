@@ -10,7 +10,7 @@ module TransactionChains
       resource_obj ||= vps
 
       uses = []
-      user_env = user.environment_user_configs.find_by!(
+      user_env = vps.user.environment_user_configs.find_by!(
           environment: vps.node.location.environment,
       )
       
