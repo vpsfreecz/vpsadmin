@@ -88,6 +88,9 @@ function print_newvps_page3($env_id, $loc_id) {
 		'cpu' => 8,
 		'swap' => 0,
 		'diskspace' => 120*1024,
+	);
+
+	$ips = array(
 		'ipv4' => 1,
 		'ipv4_private' => 0,
 		'ipv6' => 1,
@@ -122,6 +125,25 @@ function print_newvps_page3($env_id, $loc_id) {
 			unit_for_cluster_resource($name)
 		);
 		$xtpl->table_td(_('You have').' '.$r->free.' '.unit_for_cluster_resource($name).' '._('available'));
+		$xtpl->table_tr();
+	}
+
+	foreach ($ips as $name => $default) {
+		$p = $params->{$name};
+		$r = $resource_map[$name];
+		
+		if (!$_SESSION['is_admin'] && $r->value === 0)
+			continue;
+		
+		$xtpl->table_td($p->label.':');
+		$xtpl->form_add_number_pure(
+			$name,
+			$_POST[$name] ? $_POST[$name] : $default,
+			0,
+			$r->cluster_resource->max,
+			$r->cluster_resource->stepsize,
+			unit_for_cluster_resource($name)
+		);
 		$xtpl->table_tr();
 	}
 	
