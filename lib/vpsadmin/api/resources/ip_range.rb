@@ -132,5 +132,36 @@ module VpsAdmin::API::Resources
         error('create failed', e.record.errors.to_hash)
       end
     end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Change an IP range'
+
+      input do
+        resource User, required: true
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        range = ::IpRange.find(params[:ip_range_id])
+        
+        if range.user == input[:user]
+          range
+
+        else
+          range.chown(input[:user])
+          range
+        end
+
+      rescue RuntimeError => e
+        error(e.message)
+      end
+    end
   end
 end
