@@ -52,6 +52,7 @@ module TransactionChains
           user_env.send(@ip.cluster_resource) + n,
           user: u,
           save: true,
+          confirmed: ::ClusterResourceUse.confirmed(:confirmed),
       )
     end
   end
