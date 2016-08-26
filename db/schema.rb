@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160819100816) do
+ActiveRecord::Schema.define(version: 20160826150804) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -243,6 +243,8 @@ ActiveRecord::Schema.define(version: 20160819100816) do
     t.integer "dataset_action_id"
     t.integer "dataset_in_pool_id"
   end
+
+  add_index "group_snapshots", ["dataset_action_id", "dataset_in_pool_id"], name: "group_snapshots_unique", unique: true, using: :btree
 
   create_table "helpbox", force: true do |t|
     t.string "page",    limit: 50, null: false

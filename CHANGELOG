@@ -13,6 +13,7 @@
 - Fixed bug in VPS reinstall that broke traffic accounting
 - Cluster resource use can exceed the maximum value if it is less than
   the current value
+- Disallow duplicities in droup snapshots
 
 * Fri Jun 24 2016 - version 2.4.0
 - New resource `Language`
