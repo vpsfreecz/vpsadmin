@@ -42,26 +42,8 @@ function get_free_ip_list ($res, $vps, $role = null, $limit = null) {
 	if ($role)
 		$filters['role'] = $role;
 	
-	if ($_SESSION['is_admin']) {
-		if ($limit)
-			$filters['limit'] = $limit;
-
-	} else {
-		// Limit the number of shown IP addresses by a number
-		// of user's IP addresses left.
-		
-		$resources = $vps->user->cluster_resource->list(array(
-			'environment' => $vps->node->location->environment_id,
-			'meta' => array('includes' => 'cluster_resource')
-		));
-		
-		foreach ($resources as $r) {
-			if ($r->cluster_resource->name === $res) {
-				$filters['limit'] = $r->free;
-				break;
-			}
-		}
-	}
+	if ($limit)
+		$filters['limit'] = $limit;
 	
 	foreach($api->ip_address->list($filters) as $ip) {
 		$note = '';
