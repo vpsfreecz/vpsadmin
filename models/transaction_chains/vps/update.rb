@@ -47,7 +47,11 @@ module TransactionChains
             datasets.each { |ds| check_ds_mounts(vps, ds, vps.m_id) }
 
             # Transfer cluster resources
+            ## CPU, memory, swap
             db_changes.update(vps.transfer_resources!(vps.user))
+            
+            ## IP addresses
+            db_changes.update(transfer_ip_addresses(vps))
 
             # Chown IP addresses
             vps.ip_addresses.where.not(user_id: nil).each do |ip|
@@ -181,6 +185,55 @@ module TransactionChains
           fail 'is mounted elsewhere'
         end
       end
+    end
+
+    # Frees IP addresses of +vps+ from current owner and allocates them to the
+    # new one.
+    def transfer_ip_addresses(vps)
+      ret = {}
+      src_env = ::User.find(vps.user_id_was).environment_user_configs.find_by!(
+          environment: vps.node.location.environment,
+      )
+      dst_env = vps.user.environment_user_configs.find_by!(
+          environment: vps.node.location.environment,
+      )
+      
+      %i(ipv4 ipv4_private ipv6).each do |r|
+        q = vps.ip_addresses.joins(:network)
+
+        case r
+        when :ipv4
+          q = q.where(networks: {ip_version: 4, role: ::Network.roles[:public_access]})
+        
+        when :ipv4_private
+          q = q.where(networks: {ip_version: 4, role: ::Network.roles[:private_access]})
+        
+        when :ipv6
+          q = q.where(networks: {ip_version: 6})
+        end
+
+        cnt = q.count
+        next if cnt == 0
+
+        src_use = src_env.reallocate_resource!(
+            r,
+            src_env.send(r) - cnt,
+            user: src_env.user,
+            confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+        )
+        
+        dst_use = dst_env.reallocate_resource!(
+            r,
+            dst_env.send(r) + cnt,
+            user: dst_env.user,
+            confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+        )
+
+        ret[src_use] = {value: src_use.value}
+        ret[dst_use] = {value: dst_use.value}
+      end
+
+      ret
     end
   end
 end
