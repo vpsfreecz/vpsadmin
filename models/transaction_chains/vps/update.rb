@@ -268,7 +268,8 @@ module TransactionChains
       # Check that all ranges can be chowned
       q.includes(:network).group('networks.id').each do |ip|
         if ip.network.ip_addresses.where('vps_id != ? AND vps_id IS NOT NULL', vps.id).any?
-          fail "range #{ip.network} is not exclusive to VPS #{vps.id}"
+          raise VpsAdmin::API::Exceptions::IpRangeInUse,
+                "range #{ip.network} is not exclusive to VPS #{vps.id}"
         end
         
         cnt += ip.network.size

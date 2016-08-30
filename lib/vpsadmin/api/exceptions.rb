@@ -19,6 +19,10 @@ module VpsAdmin::API::Exceptions
     
   end
 
+  class IpRangeInUse < ::StandardError
+
+  end
+
   class DatasetAlreadyExists < ::StandardError
     attr_reader :dataset, :path
 

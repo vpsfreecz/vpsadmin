@@ -19,7 +19,8 @@ class IpRange < Network
   def chown(user)
     self.class.transaction do
       if ip_addresses.where.not(vps: nil).count > 0
-        fail 'IP range in use'
+        raise VpsAdmin::API::Exceptions::IpRangeInUse,
+              'IP range in use'
       end
 
       reallocate_resource(self.user, -size) if self.user

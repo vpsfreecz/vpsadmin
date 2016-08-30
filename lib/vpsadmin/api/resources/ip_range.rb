@@ -159,7 +159,7 @@ module VpsAdmin::API::Resources
           range
         end
 
-      rescue RuntimeError => e
+      rescue VpsAdmin::API::Exceptions::IpRangeInUse => e
         error(e.message)
       end
     end
