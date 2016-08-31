@@ -58,6 +58,7 @@ module TransactionChains
 
         append(Transactions::Vps::IpAdd, args: [vps, ip, register]) do
           edit(ip, vps_id: vps.veid, order: order[ip.version])
+          edit(ip, user_id: vps.m_id) if ownership && !ip.user_id
 
           just_create(vps.log(:ip_add, {id: ip.id, addr: ip.addr})) unless chain.included?
         end
