@@ -7,7 +7,7 @@ module TransactionChains
       concerns(:affect, [vps.class.name, vps.id])
 
       uses = []
-      user_env = user.environment_user_configs.find_by!(
+      user_env = vps.user.environment_user_configs.find_by!(
           environment: vps.node.location.environment,
       )
       ownership = vps.node.location.environment.user_ip_ownership
