@@ -22,12 +22,12 @@ module VpsAdmind
 
         iptables(v, {:Z => CHAIN})
         iptables(v, {:A => 'FORWARD', :j => CHAIN})
-
+        
         rs = db.query("SELECT ip_addr
-                      FROM vps_ip, vps
+                      FROM vps_ip
+                      INNER JOIN vps ON vps.vps_id = vps_ip.vps_id
                       INNER JOIN networks n ON n.id = vps_ip.network_id
                       WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}
-                      AND vps_ip.vps_id = vps.vps_id
                       AND n.ip_version = #{v}")
         rs.each_hash do |ip|
           reg_ip(ip['ip_addr'], v)
