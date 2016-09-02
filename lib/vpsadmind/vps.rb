@@ -81,7 +81,7 @@ module VpsAdmind
     def ip_add(addr, v, register, shaper)
       if register
         Shaper.new.shape_set(addr, v, shaper)
-        Firewall.new.reg_ip(addr, v)
+        Firewall.accounting.reg_ip(addr, v)
       end
 
       vzctl(:set, @veid, {:ipadd => addr}, true)
@@ -90,7 +90,7 @@ module VpsAdmind
     def ip_del(addr, v, unregister, shaper)
       if unregister
         Shaper.new.shape_unset(addr, v, shaper)
-        Firewall.new.unreg_ip(addr, v)
+        Firewall.accounting.unreg_ip(addr, v)
       end
 
       vzctl(:set, @veid, {:ipdel => addr}, true)

@@ -34,6 +34,7 @@ module VpsAdmind
       @remote_control = RemoteControl.new(self) if remote
       @node_status = NodeStatus.new
       @vps_status = VpsStatus.new
+      @fw = Firewall.instance
     end
 
     def init(do_init)
@@ -50,7 +51,6 @@ module VpsAdmind
       @remote_control && @remote_control.start
      
       if do_init
-        @fw = Firewall.new
         @fw.init(@db)
 
         @shaper = Shaper.new
@@ -283,10 +283,9 @@ module VpsAdmind
     def update_transfers
       return unless $CFG.get(:vpsadmin, :track_transfers)
 
-      Firewall.mutex.synchronize do
+      Firewall.synchronize do |fw|
         my = Db.new
-        fw = Firewall.new
-        fw.update_traffic(my)
+        fw.accounting.update_traffic(my)
         my.close
       end
     end

@@ -10,8 +10,7 @@ module VpsAdmind::RemoteCommands
         case r
           when 'fw'
             log(:info, :remote, 'Flushing firewall')
-            VpsAdmind::Firewall.mutex.synchronize do
-              fw = VpsAdmind::Firewall.new
+            VpsAdmind::Firewall.synchronize do |fw|
               ret[:fw] = fw.flush(db ||= VpsAdmind::Db.new)
             end
 
