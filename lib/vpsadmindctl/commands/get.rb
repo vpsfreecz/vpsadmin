@@ -1,3 +1,5 @@
+require 'ipaddr'
+
 module VpsAdmindCtl::Commands
   class Get < VpsAdmindCtl::Command
     args '<command>'
@@ -22,6 +24,7 @@ module VpsAdmindCtl::Commands
 Subcommands:
 config [some.key]    Show vpsAdmind's config or specific key
 queue                List transactions queued for execution
+ip_map               Print hash table that maps IP addresses to their IDs
 END
     end
 
@@ -67,6 +70,29 @@ END
                   t[:chain], t[:id], t[:state], t[:urgent] ? 1 : 0, t[:priority], t[:m_id], t[:vps_id],
                   t[:type], t[:depends_on],
                   format_duration(Time.new.to_i - t[:time])
+              )
+            end
+          end
+
+        when 'ip_map'
+          map = @res[:ip_map]
+
+          if @global_opts[:parsable]
+            puts map.to_json
+
+          else
+            puts sprintf(
+              '%-40s %8s %8s',
+              'ADDR', 'ID', 'USER'
+            ) if @opts[:header]
+
+            map.sort do |a, b|
+              IPAddr.new(a[0].to_s).to_i <=> IPAddr.new(b[0].to_s).to_i
+
+            end.each do |ip, opts|
+              puts sprintf(
+                  '%-40s %8s %8s',
+                  ip, opts[:id], opts[:user_id]
               )
             end
           end
