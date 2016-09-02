@@ -41,6 +41,12 @@ module VpsAdmind::RemoteCommands
           end
 
           ok.update({:output => {:queue => queue}})
+        
+        when 'ip_map'
+          map = {}
+          VpsAdmind::Firewall.ip_map.dump.each { |k, v| map[k] = v.to_h }
+
+          ok.update({:output => {:ip_map => map}})
 
         else
           raise VpsAdmind::CommandFailed.new(nil, nil, "Unknown resource #{@resource}")
