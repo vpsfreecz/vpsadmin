@@ -16,21 +16,27 @@ module VpsAdmind
     def self.accounting
       instance.accounting
     end
+    
+    def self.ip_map
+      instance.ip_map
+    end
 
     def self.synchronize(&block)
       instance.synchronize(&block)
     end
 
-    attr_reader :accounting
+    attr_reader :accounting, :ip_map
 
     private
     def initialize
       @mutex = ::Mutex.new
+      @ip_map = IpMap.new
       @accounting = Accounting.new(self)
     end
 
     public
     def init(db)
+      ip_map.populate(db)
       accounting.init(db)
     end
 

@@ -7,6 +7,7 @@ module VpsAdmind
       
       CHAIN = 'accounting'
       PROTOCOLS = [:tcp, :udp, :all]
+      PROTOCOL_MAP = [:all, :tcp, :udp]
 
       attr_reader :fw
 
@@ -73,22 +74,24 @@ module VpsAdmind
       def read_traffic
         ret = {}
 
-        {4 => '0.0.0.0/0', 6 => '::/0'}.each do |v, all|
-          iptables(v, ['-L', CHAIN, '-nvx', '-Z'])[:output].split("\n")[2..-2].each do |l|
-            fields = l.strip.split(/\s+/)
-            src = fields[v == 4 ? 7 : 6]
-            dst = fields[v == 4 ? 8 : 7]
-            ip = src == all ? dst : src
-            proto = fields[3].to_sym
+        @fw.synchronize do
+          {4 => '0.0.0.0/0', 6 => '::/0'}.each do |v, all|
+            iptables(v, ['-L', CHAIN, '-nvx', '-Z'])[:output].split("\n")[2..-2].each do |l|
+              fields = l.strip.split(/\s+/)
+              src = fields[v == 4 ? 7 : 6]
+              dst = fields[v == 4 ? 8 : 7]
+              ip = src == all ? dst : src
+              proto = fields[3].to_sym
 
-            if v == 6
-              ip = ip.split('/').first
+              if v == 6
+                ip = ip.split('/').first
+              end
+
+              ret[ip] ||= {}
+              ret[ip][proto] ||= {:bytes => {}, :packets => {}}
+              ret[ip][proto][:packets][src == all ? :in : :out] = fields[0].to_i
+              ret[ip][proto][:bytes][src == all ? :in : :out] = fields[1].to_i
             end
-
-            ret[ip] ||= {}
-            ret[ip][proto] ||= {:bytes => {}, :packets => {}}
-            ret[ip][proto][:packets][src == all ? :in : :out] = fields[0].to_i
-            ret[ip][proto][:bytes][src == all ? :in : :out] = fields[1].to_i
           end
         end
 
@@ -97,23 +100,33 @@ module VpsAdmind
 
       def update_traffic(db)
         read_traffic.each do |ip, traffic|
-          traffic.each do |proto, t|
-            next if t[:packets][:in] == 0 && t[:packets][:out] == 0
+          @fw.ip_map.synchronize do
+            traffic.each do |proto, t|
+              next if t[:packets][:in] == 0 && t[:packets][:out] == 0
+              
+              addr = @fw.ip_map[ip]
 
-            db.prepared('INSERT INTO transfered_recent SET
-                          tr_ip = ?, tr_proto = ?,
-                          tr_packets_in = ?, tr_packets_out = ?,
-                          tr_bytes_in = ?, tr_bytes_out = ?,
-                          tr_date = NOW()
-                        ON DUPLICATE KEY UPDATE
-                          tr_packets_in = tr_packets_in + values(tr_packets_in),
-                          tr_packets_out = tr_packets_out + values(tr_packets_out),
-                          tr_bytes_in = tr_bytes_in + values(tr_bytes_in),
-                          tr_bytes_out = tr_bytes_out + values(tr_bytes_out)',
-                        ip, proto.to_s,
-                        t[:packets][:in], t[:packets][:out],
-                        t[:bytes][:in], t[:bytes][:out]
-            )
+              unless addr
+                log(:warn, :firewall, "IP '#{ip}' not found in IP map")
+                next
+              end
+
+              db.prepared(
+                  'INSERT INTO ip_recent_traffics SET
+                    ip_address_id = ?, user_id = ?, protocol = ?,
+                    packets_in = ?, packets_out = ?,
+                    bytes_in = ?, bytes_out = ?,
+                    created_at = NOW()
+                  ON DUPLICATE KEY UPDATE
+                    packets_in = packets_in + values(packets_in),
+                    packets_out = packets_out + values(packets_out),
+                    bytes_in = bytes_in + values(bytes_in),
+                    bytes_out = bytes_out + values(bytes_out)',
+                  addr.id, addr.user_id, PROTOCOL_MAP.index(proto),
+                  t[:packets][:in], t[:packets][:out],
+                  t[:bytes][:in], t[:bytes][:out]
+              )
+            end
           end
         end
 

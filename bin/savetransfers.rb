@@ -35,20 +35,24 @@ db = VpsAdmind::Db.new
 
 db.transaction do |t|
   t.query("
-          INSERT INTO transfered (tr_ip, tr_proto, tr_packets_in, tr_packets_out, tr_bytes_in, tr_bytes_out, tr_date)
+          INSERT INTO ip_traffics (
+            ip_address_id, user_id, protocol, packets_in, packets_out, bytes_in, bytes_out,
+            created_at
+          )
 
           SELECT
-            tr_ip, tr_proto, SUM(tr_packets_in) AS spi,
-            SUM(tr_packets_out) AS spo, SUM(tr_bytes_in) AS sbi,
-            SUM(tr_bytes_out) AS sbo, DATE_FORMAT(tr_date, '%Y-%m-%d %H:00:00')
-          FROM `transfered_recent` r
-          WHERE tr_date < DATE_SUB(NOW(), INTERVAL 60 SECOND)
-          GROUP BY tr_ip, tr_proto, DATE_FORMAT(tr_date, '%Y-%m-%d %H:00:00')
+            ip_address_id, user_id, protocol,
+            SUM(packets_in) AS spi, SUM(packets_out) AS spo,
+            SUM(bytes_in) AS sbi, SUM(bytes_out) AS sbo,
+            DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00')
+          FROM `ip_recent_traffics` r
+          WHERE created_at < DATE_SUB(NOW(), INTERVAL 60 SECOND)
+          GROUP BY ip_address_id, user_id, protocol, DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00')
 
-          ON DUPLICATE KEY UPDATE tr_packets_in = tr_packets_in + values(tr_packets_in),
-                                  tr_packets_out = tr_packets_out + values(tr_packets_out),
-                                  tr_bytes_in = tr_bytes_in + values(tr_bytes_in),
-                                  tr_bytes_out = tr_bytes_out + values(tr_bytes_out)
+          ON DUPLICATE KEY UPDATE packets_in = packets_in + values(packets_in),
+                                  packets_out = packets_out + values(packets_out),
+                                  bytes_in = bytes_in + values(bytes_in),
+                                  bytes_out = bytes_out + values(bytes_out)
           ")
-  t.query('DELETE FROM transfered_recent WHERE tr_date < DATE_SUB(NOW(), INTERVAL 60 SECOND)')
+  t.query('DELETE FROM ip_recent_traffics WHERE created_at < DATE_SUB(NOW(), INTERVAL 60 SECOND)')
 end
