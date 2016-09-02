@@ -11,7 +11,9 @@ module Transactions::Vps
       ret = {
           addr: ip.addr,
           version: ip.version,
-          unregister: unregister
+          unregister: unregister,
+          id: ip.id,
+          user_id: ip.user_id,
       }
 
       if unregister

@@ -11,7 +11,9 @@ module Transactions::Vps
       ret = {
           addr: ip.addr,
           version: ip.version,
-          register: register
+          register: register,
+          id: ip.id,
+          user_id: ip.user_id,
       }
 
       if register

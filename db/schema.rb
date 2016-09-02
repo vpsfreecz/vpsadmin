@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160826150804) do
+ActiveRecord::Schema.define(version: 20160831111818) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -39,8 +39,8 @@ ActiveRecord::Schema.define(version: 20160826150804) do
   create_table "cfg_dns", primary_key: "dns_id", force: true do |t|
     t.string  "dns_ip",           limit: 63,                 null: false
     t.string  "dns_label",        limit: 63,                 null: false
-    t.boolean "dns_is_universal",            default: false
-    t.integer "dns_location"
+    t.boolean "dns_is_universal",            default: false,              unsigned: true
+    t.integer "dns_location",                                             unsigned: true
     t.integer "ip_version",                  default: 4
   end
 
@@ -292,6 +292,36 @@ ActiveRecord::Schema.define(version: 20160826150804) do
     t.datetime "updated_at"
   end
 
+  create_table "ip_recent_traffics", force: true do |t|
+    t.integer  "ip_address_id",                       null: false
+    t.integer  "user_id"
+    t.integer  "protocol",                            null: false
+    t.integer  "packets_in",    limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "packets_out",   limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "bytes_in",      limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "bytes_out",     limit: 8, default: 0, null: false, unsigned: true
+    t.datetime "created_at",                          null: false
+  end
+
+  add_index "ip_recent_traffics", ["ip_address_id", "user_id", "protocol", "created_at"], name: "transfers_unique", unique: true, using: :btree
+  add_index "ip_recent_traffics", ["ip_address_id"], name: "index_ip_recent_traffics_on_ip_address_id", using: :btree
+  add_index "ip_recent_traffics", ["user_id"], name: "index_ip_recent_traffics_on_user_id", using: :btree
+
+  create_table "ip_traffics", force: true do |t|
+    t.integer  "ip_address_id",                       null: false
+    t.integer  "user_id"
+    t.integer  "protocol",                            null: false
+    t.integer  "packets_in",    limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "packets_out",   limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "bytes_in",      limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "bytes_out",     limit: 8, default: 0, null: false, unsigned: true
+    t.datetime "created_at",                          null: false
+  end
+
+  add_index "ip_traffics", ["ip_address_id", "user_id", "protocol", "created_at"], name: "transfers_unique", unique: true, using: :btree
+  add_index "ip_traffics", ["ip_address_id"], name: "index_ip_traffics_on_ip_address_id", using: :btree
+  add_index "ip_traffics", ["user_id"], name: "index_ip_traffics_on_user_id", using: :btree
+
   create_table "languages", force: true do |t|
     t.string "code",  limit: 2,   null: false
     t.string "label", limit: 100, null: false
@@ -302,7 +332,7 @@ ActiveRecord::Schema.define(version: 20160826150804) do
   create_table "locations", primary_key: "location_id", force: true do |t|
     t.string   "location_label",                 limit: 63,                 null: false
     t.boolean  "location_has_ipv6",                                         null: false
-    t.boolean  "location_vps_onboot",                        default: true, null: false
+    t.boolean  "location_vps_onboot",                        default: true, null: false, unsigned: true
     t.string   "location_remote_console_server",                            null: false
     t.string   "domain",                         limit: 100,                null: false
     t.datetime "created_at"
@@ -391,15 +421,15 @@ ActiveRecord::Schema.define(version: 20160826150804) do
 
   create_table "members", primary_key: "m_id", force: true do |t|
     t.text     "m_info"
-    t.integer  "m_level",                                       null: false
+    t.integer  "m_level",                                       null: false, unsigned: true
     t.string   "m_nick",             limit: 63,                 null: false
     t.string   "m_name"
     t.string   "m_pass",                                        null: false
     t.string   "m_mail",             limit: 127
     t.text     "m_address"
     t.string   "m_lang",             limit: 16
-    t.integer  "m_monthly_payment",              default: 300,  null: false
-    t.boolean  "m_mailer_enable",                default: true, null: false
+    t.integer  "m_monthly_payment",              default: 300,  null: false, unsigned: true
+    t.boolean  "m_mailer_enable",                default: true, null: false, unsigned: true
     t.integer  "login_count",                    default: 0,    null: false
     t.integer  "failed_login_count",             default: 0,    null: false
     t.datetime "last_request_at"
@@ -498,16 +528,16 @@ ActiveRecord::Schema.define(version: 20160826150804) do
 
   create_table "networks", force: true do |t|
     t.string  "label"
-    t.integer "location_id",                null: false
-    t.integer "ip_version",                 null: false
-    t.string  "address",                    null: false
-    t.integer "prefix",                     null: false
-    t.integer "role",                       null: false
-    t.boolean "managed",                    null: false
-    t.string  "type",                       null: false
+    t.integer "location_id",                        null: false
+    t.integer "ip_version",                         null: false
+    t.string  "address",                            null: false
+    t.integer "prefix",                             null: false
+    t.integer "role",                               null: false
+    t.boolean "managed",                            null: false
+    t.string  "type",           default: "Network", null: false
     t.string  "ancestry"
-    t.integer "ancestry_depth", default: 0, null: false
-    t.integer "split_access",   default: 0, null: false
+    t.integer "ancestry_depth", default: 0,         null: false
+    t.integer "split_access",   default: 0,         null: false
     t.integer "split_prefix"
     t.integer "user_id"
   end
@@ -671,15 +701,15 @@ ActiveRecord::Schema.define(version: 20160826150804) do
   create_table "servers", primary_key: "server_id", force: true do |t|
     t.string  "server_name",             limit: 64,                                          null: false
     t.string  "server_type",             limit: 7,                                           null: false
-    t.integer "server_location",                                                             null: false
+    t.integer "server_location",                                                             null: false, unsigned: true
     t.text    "server_availstat"
     t.string  "server_ip4",              limit: 127,                                         null: false
     t.integer "max_vps"
     t.string  "ve_private",                          default: "/vz/private/%{veid}/private"
     t.string  "fstype",                  limit: 10,  default: "zfs",                         null: false
     t.string  "net_interface",           limit: 50
-    t.integer "max_tx",                  limit: 8,   default: 235929600,                     null: false
-    t.integer "max_rx",                  limit: 8,   default: 235929600,                     null: false
+    t.integer "max_tx",                  limit: 8,   default: 235929600,                     null: false, unsigned: true
+    t.integer "max_rx",                  limit: 8,   default: 235929600,                     null: false, unsigned: true
     t.integer "maintenance_lock",                    default: 0,                             null: false
     t.string  "maintenance_lock_reason"
     t.integer "cpus",                                                                        null: false
@@ -787,22 +817,22 @@ ActiveRecord::Schema.define(version: 20160826150804) do
   add_index "transaction_confirmations", ["transaction_id"], name: "index_transaction_confirmations_on_transaction_id", using: :btree
 
   create_table "transaction_groups", force: true do |t|
-    t.boolean "is_clusterwide",  default: false
-    t.boolean "is_locationwide", default: false
-    t.integer "location_id",     default: 0
+    t.boolean "is_clusterwide",  default: false, unsigned: true
+    t.boolean "is_locationwide", default: false, unsigned: true
+    t.integer "location_id",     default: 0,     unsigned: true
   end
 
   create_table "transactions", primary_key: "t_id", force: true do |t|
-    t.integer  "t_group"
-    t.integer  "t_m_id"
-    t.integer  "t_server"
-    t.integer  "t_vps"
-    t.integer  "t_type",                                                      null: false
+    t.integer  "t_group",                                                                  unsigned: true
+    t.integer  "t_m_id",                                                                   unsigned: true
+    t.integer  "t_server",                                                                 unsigned: true
+    t.integer  "t_vps",                                                                    unsigned: true
+    t.integer  "t_type",                                                      null: false, unsigned: true
     t.integer  "t_depends_on"
     t.text     "t_fallback"
     t.boolean  "t_urgent",                                default: false,     null: false
     t.integer  "t_priority",                              default: 0,         null: false
-    t.integer  "t_success",                                                   null: false
+    t.integer  "t_success",                                                   null: false, unsigned: true
     t.integer  "t_done",                                  default: 0,         null: false
     t.text     "t_param",              limit: 2147483647
     t.text     "t_output"
@@ -819,29 +849,6 @@ ActiveRecord::Schema.define(version: 20160826150804) do
   add_index "transactions", ["t_server"], name: "t_server", using: :btree
   add_index "transactions", ["t_success"], name: "index_transactions_on_t_success", using: :btree
   add_index "transactions", ["transaction_chain_id"], name: "index_transactions_on_transaction_chain_id", using: :btree
-
-  create_table "transfered", id: false, force: true do |t|
-    t.string   "tr_ip",          limit: 127,             null: false
-    t.string   "tr_proto",       limit: 4,               null: false
-    t.integer  "tr_packets_in",  limit: 8,   default: 0, null: false
-    t.integer  "tr_packets_out", limit: 8,   default: 0, null: false
-    t.integer  "tr_bytes_in",    limit: 8,   default: 0, null: false
-    t.integer  "tr_bytes_out",   limit: 8,   default: 0, null: false
-    t.datetime "tr_date",                                null: false
-  end
-
-  add_index "transfered", ["tr_ip", "tr_date"], name: "index_transfered_on_tr_ip_and_tr_date", using: :btree
-  add_index "transfered", ["tr_ip"], name: "index_transfered_on_tr_ip", using: :btree
-
-  create_table "transfered_recent", id: false, force: true do |t|
-    t.string   "tr_ip",          limit: 127,             null: false
-    t.string   "tr_proto",       limit: 5,               null: false
-    t.integer  "tr_packets_in",  limit: 8,   default: 0, null: false
-    t.integer  "tr_packets_out", limit: 8,   default: 0, null: false
-    t.integer  "tr_bytes_in",    limit: 8,   default: 0, null: false
-    t.integer  "tr_bytes_out",   limit: 8,   default: 0, null: false
-    t.datetime "tr_date",                                null: false
-  end
 
   create_table "user_cluster_resources", force: true do |t|
     t.integer "user_id"
@@ -891,14 +898,14 @@ ActiveRecord::Schema.define(version: 20160826150804) do
   add_index "versions", ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id", using: :btree
 
   create_table "vps", primary_key: "vps_id", force: true do |t|
-    t.integer  "m_id",                                                     null: false
+    t.integer  "m_id",                                                     null: false, unsigned: true
     t.string   "vps_hostname",                             default: "vps"
-    t.integer  "vps_template",                             default: 1,     null: false
+    t.integer  "vps_template",                             default: 1,     null: false, unsigned: true
     t.text     "vps_info",                limit: 16777215
     t.integer  "dns_resolver_id"
-    t.integer  "vps_server",                                               null: false
-    t.boolean  "vps_onboot",                               default: true,  null: false
-    t.boolean  "vps_onstartall",                           default: true,  null: false
+    t.integer  "vps_server",                                               null: false, unsigned: true
+    t.boolean  "vps_onboot",                               default: true,  null: false, unsigned: true
+    t.boolean  "vps_onstartall",                           default: true,  null: false, unsigned: true
     t.text     "vps_config",                                               null: false
     t.integer  "confirmed",                                default: 0,     null: false
     t.integer  "dataset_in_pool_id"
@@ -984,10 +991,10 @@ ActiveRecord::Schema.define(version: 20160826150804) do
   add_index "vps_has_config", ["vps_id"], name: "index_vps_has_config_on_vps_id", using: :btree
 
   create_table "vps_ip", primary_key: "ip_id", force: true do |t|
-    t.integer "vps_id"
+    t.integer "vps_id",                                                unsigned: true
     t.string  "ip_addr",    limit: 40,                    null: false
-    t.integer "max_tx",     limit: 8,  default: 39321600, null: false
-    t.integer "max_rx",     limit: 8,  default: 39321600, null: false
+    t.integer "max_tx",     limit: 8,  default: 39321600, null: false, unsigned: true
+    t.integer "max_rx",     limit: 8,  default: 39321600, null: false, unsigned: true
     t.integer "class_id",                                 null: false
     t.integer "user_id"
     t.integer "network_id",                               null: false

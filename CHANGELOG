@@ -14,6 +14,7 @@
 - Cluster resource use can exceed the maximum value if it is less than
   the current value
 - Disallow duplicities in droup snapshots
+- Adapt and register IP traffic accounting database tables
 
 * Fri Jun 24 2016 - version 2.4.0
 - New resource `Language`
