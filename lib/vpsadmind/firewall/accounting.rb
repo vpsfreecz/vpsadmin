@@ -18,7 +18,7 @@ module VpsAdmind
         res = {}
 
         [4, 6].each do |v|
-          ret = iptables(v, {:N => CHAIN}, [1,])
+          ret = iptables(v, {:N => CHAIN}, valid_rcs: [1,])
 
           # Chain already exists, we don't have to continue
           if ret[:exitstatus] == 1
