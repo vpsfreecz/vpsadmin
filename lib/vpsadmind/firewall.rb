@@ -69,7 +69,12 @@ module VpsAdmind
     end
     
     def synchronize
-      @mutex.synchronize { yield(self) }
+      if @mutex.owned?
+        yield(self)
+
+      else
+        @mutex.synchronize { yield(self) }
+      end
     end
   end
 end
