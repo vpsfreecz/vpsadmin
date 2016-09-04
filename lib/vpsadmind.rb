@@ -18,10 +18,12 @@ end
 module VpsAdmind
   STANDALONE = false unless const_defined?(:STANDALONE)
 
+  module Firewall ; end
   module SystemProbe ; end
 end
 
 require_rel 'vpsadmind/utils.rb'
+require_rel 'vpsadmind/firewall/main'
 require_rel 'vpsadmind/*.rb'
 require_rel 'vpsadmind/console'
 require_rel 'vpsadmind/commands/base'
