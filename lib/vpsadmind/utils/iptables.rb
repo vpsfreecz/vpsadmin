@@ -57,5 +57,9 @@ module VpsAdmind::Utils
         end
       end
     end
+
+    def ipset(cmd, *args)
+      syscmd2((['ipset', cmd] + args).join(' '))
+    end
   end
 end

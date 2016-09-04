@@ -4,40 +4,96 @@ module VpsAdmind
     include Utils::System
     include Utils::Iptables
 
-    def self.instance
-      return @instance if @instance
-      @instance = new
+    class << self
+      def instance
+        return @instance if @instance
+        @instance = new
+      end
+
+      def get
+        instance
+      end
+
+      def synchronize(&block)
+        instance.synchronize(&block)
+      end
+
+      %i(accounting ip_map networks).each do |v|
+        define_method(v) { instance.send(v) }
+      end
     end
 
-    def self.get
-      instance
-    end
-
-    def self.accounting
-      instance.accounting
-    end
-    
-    def self.ip_map
-      instance.ip_map
-    end
-
-    def self.synchronize(&block)
-      instance.synchronize(&block)
-    end
-
-    attr_reader :accounting, :ip_map
+    attr_reader :accounting, :ip_map, :networks
 
     private
     def initialize
       @mutex = ::Mutex.new
       @ip_map = IpMap.new
+      @networks = Networks.new
       @accounting = Accounting.new(self)
     end
 
     public
     def init(db)
+      networks.populate(db)
       ip_map.populate(db)
-      accounting.init(db)
+
+      %i(public private).each do |r|
+        IpSet.create_or_replace!(
+            "vpsadmin_networks_#{r}",
+            'hash:net',
+            networks.send(r).map(&:to_s)
+        )
+      end
+
+      [4, 6].each do |v|
+        ret = iptables(v, {N: 'vpsadmin_main'}, valid_rcs: [1,])
+
+        # Chain already exists, we don't have to continue
+        if ret[:exitstatus] == 1
+          log("Skipping init for IPv#{v}, chain vpsadmin_main already exists")
+          next
+        end
+        
+        iptables(v, ['-A', 'FORWARD', '-j', 'vpsadmin_main'])
+
+        accounting.init(db, v)
+
+        # pub ip to pub ip -> private traffic
+        iptables(v, [
+            '-A', 'vpsadmin_main',
+            '-m set', '--match-set vpsadmin_networks_public src',
+            '-m set', '--match-set vpsadmin_networks_public dst',
+            '-j', accounting.private.chain,
+        ])
+        
+        # pub ip to priv ip -> private traffic
+        iptables(v, [
+            '-A', 'vpsadmin_main',
+            '-m set', '--match-set vpsadmin_networks_public src',
+            '-m set', '--match-set vpsadmin_networks_private dst',
+            '-j', accounting.private.chain,
+        ])
+        
+        # priv ip to pub ip -> private traffic
+        iptables(v, [
+            '-A', 'vpsadmin_main',
+            '-m set', '--match-set vpsadmin_networks_private src',
+            '-m set', '--match-set vpsadmin_networks_public dst',
+            '-j', accounting.private.chain,
+        ])
+        
+        # priv ip to priv ip -> private traffic
+        iptables(v, [
+            '-A', 'vpsadmin_main',
+            '-m set', '--match-set vpsadmin_networks_private src',
+            '-m set', '--match-set vpsadmin_networks_private dst',
+            '-j', accounting.private.chain,
+        ])
+
+        # everything else is to be considered as public traffic
+        iptables(v, ['-A', 'vpsadmin_main', '-j', accounting.public.chain])
+      end
     end
 
     def flush(db = nil)
@@ -46,6 +102,12 @@ module VpsAdmind
       unless db
         db = Db.new
         created = true
+      end
+      
+      [4, 6].each do |v|
+        iptables(v, ['-D', 'FORWARD', '-j', 'vpsadmin_main'])
+        iptables(v, {F: 'vpsadmin_main'})
+        iptables(v, {X: 'vpsadmin_main'})
       end
 
       accounting.update_traffic(db)

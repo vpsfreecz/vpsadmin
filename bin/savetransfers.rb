@@ -36,18 +36,23 @@ db = VpsAdmind::Db.new
 db.transaction do |t|
   t.query("
           INSERT INTO ip_traffics (
-            ip_address_id, user_id, protocol, packets_in, packets_out, bytes_in, bytes_out,
+            ip_address_id, user_id, protocol, role,
+            packets_in, packets_out, bytes_in, bytes_out,
             created_at
           )
 
           SELECT
-            ip_address_id, user_id, protocol,
+            ip_address_id, user_id, protocol, role,
             SUM(packets_in) AS spi, SUM(packets_out) AS spo,
             SUM(bytes_in) AS sbi, SUM(bytes_out) AS sbo,
             DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00')
           FROM `ip_recent_traffics` r
           WHERE created_at < DATE_SUB(NOW(), INTERVAL 60 SECOND)
-          GROUP BY ip_address_id, user_id, protocol, DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00')
+          GROUP BY ip_address_id,
+                   user_id,
+                   protocol,
+                   role,
+                   DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00')
 
           ON DUPLICATE KEY UPDATE packets_in = packets_in + values(packets_in),
                                   packets_out = packets_out + values(packets_out),
