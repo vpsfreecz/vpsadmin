@@ -46,54 +46,65 @@ function get_traffic_by_ip_this_day ($ip, $generated = false) {
 	else return false;
 	return $ret;
 }
-function get_traffic_by_ip_this_month ($ip, $generated = false) {
+
+function get_traffic_by_ip_this_month ($ip, $from = null) {
 	global $db;
 
 	$ret = array();
 	$ip_row = $db->findByColumnOnce('vps_ip', 'ip_addr', $ip);
 	$ip_id = $ip_row['ip_id'];
+	
+	$sql = '
+		SELECT role, SUM(bytes_in) AS sum_in, SUM(bytes_out) AS sum_out
+		FROM ip_traffics
+		WHERE ip_address_id = '.$ip_id;
+	
+	if ($from) {
+	    $y = date('Y', $from);
+	    $m = date('m', $from);
+	    $from_m = mktime (0, 0, 0, $m, 0, $y);
+		$to_m = mktime (0, 0, 0, $m + 1, 0, $y);
 
-	if (!$generated){
-	    $generated = time();
-	    $ret = array();
-	    $year = date('Y', $generated);
-	    $month = date('m', $generated);
-	    $this_month = mktime (0, 0, 0, $month, 0, $year);
-		$sql = '
-			SELECT *
-			FROM ip_traffics
-			WHERE
-				created_at >= FROM_UNIXTIME('.$db->check($this_month).')
-				AND ip_address_id = "'.$ip_id.'"
-			ORDER BY created_at DESC';
-
+		$sql .= ' AND created_at >= FROM_UNIXTIME('.$from_m.')';
+		$sql .= ' AND created_at < FROM_UNIXTIME('.$to_m.')';
+	
 	} else {
-	    $year = date('Y', $generated);
-	    $month = date('m', $generated);
-	    $this_month = mktime (0, 0, 0, $month, 0, $year);
-	    $time_lastmonth = mktime (0, 0, 0, $month+1, 0, $year);
-		$sql = '
-			SELECT *
-			FROM transfered
-			WHERE
-				created_at < FROM_UNIXTIME('.$time_lastmonth.')
-				AND created_at >= FROM_UNIXTIME('.$db->check($this_month).')
-				AND ip_address_id = "'.$ip_id.'"
-			ORDER BY created_at DESC';
+	    $t = time();
+	    $y = date('Y', $t);
+	    $m = date('m', $t);
+		$from_m = mktime (0, 0, 0, $m, 0, $y);
+
+		$sql .= ' AND created_at >= FROM_UNIXTIME('.$from_m.')';
 	}
+	
+	$sql .=' GROUP BY ip_address_id, role';
 
-	// hour, minute, second, month, day, year
-	$ret['in']    = 0;
-	$ret['out']   = 0;
+	if (! ($rs = $db->query($sql)))
+		return false;
 
-	if ($result = $db->query($sql)) {
-		while ($row = $db->fetch_array($result)) {
-			$ret['in']    += $row['bytes_in'];
-			$ret['out']   += $row['bytes_out'];
-		}
+	$ret = array(
+		'public' => array(
+			'in' => 0,
+			'out' => 0,
+		),
+		'private' => array(
+			'in' => 0,
+			'out' => 0,
+		),
+		'in' => 0,
+		'out' => 0,
+	);
 
-	} else return false;
+	while ($row = $db->fetch_array($rs)) {
+		$role = $row['role'] === '0' ? 'public' : 'private';
 
+		$ret[$role]['in'] += $row['sum_in'];
+		$ret[$role]['out'] += $row['sum_out'];
+		
+		$ret['in'] += $row['sum_in'];
+		$ret['out'] += $row['sum_out'];
+	}
+	
 	return $ret;
 }
 

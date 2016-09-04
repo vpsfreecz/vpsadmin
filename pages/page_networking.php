@@ -27,6 +27,18 @@ function month_list() {
 	return $ret;
 }
 
+function show_traffic_row ($arr) {
+	global $xtpl;
+
+	$in = round(($arr['in'])/1024/1024/1024, 2);
+	$out = round(($arr['out'])/1024/1024/1024, 2);
+	$total = round(($arr['in'] + $arr['out'])/1024/1024/1024, 2);
+	
+	$xtpl->table_td($in, false, true);
+	$xtpl->table_td($out, false, true);
+	$xtpl->table_td($total, false, true);
+}
+
 if ($_SESSION["logged_in"]) {
 
 switch($_GET['action']) {
@@ -166,11 +178,6 @@ if ($show_traffic) {
 		return;
 	
 	$xtpl->table_title(_("Statistics"));
-	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
 	
 	$traffic_per_vps = array();
 	$traffic_total_ordered = array();
@@ -257,32 +264,48 @@ if ($show_traffic) {
 		$login = $traffic_per_vps[$vps_id]['login'];
 		$hostname = $traffic_per_vps[$vps_id]['hostname'];
 		
-		$xtpl->table_td('<b><a href="?page=adminvps&action=info&veid='.$vps_id. '">'
-						.$vps_id.'</a> '
-						.'<a href="?page=adminm&section=members&action=edit&id='.$user_id. '">'
-						.$login.'</a> ['.$hostname.'] </b>', false, false, 1, (count($traffic_per_vps[$vps_id]['ips'])+1));
+		$xtpl->table_td(
+			'<strong>VPS <a href="?page=adminvps&action=info&veid='.$vps_id. '">'
+			.$vps_id.'</a> '
+			.'<a href="?page=adminm&section=members&action=edit&id='.$user_id. '">'
+			.$login.'</a> ['.$hostname.']</strong>'
+		);
+
+		$xtpl->table_td(_("PUBLIC [GB]"), '#5EAFFF; color:#FFF; font-weight:bold; text-align: center;', false, '3');
+		$xtpl->table_td(_("PRIVATE [GB]"), '#5EAFFF; color:#FFF; font-weight:bold; text-align: center;', false, '3');
+		$xtpl->table_td(_("SUM [GB]"), '#5EAFFF; color:#FFF; font-weight:bold; text-align: center;', false, '3');
+		$xtpl->table_tr();
+
 		$xtpl->table_td(_("IP Address"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("IN [GB]"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("OUT [GB]"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("TOTAL [GB]"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		
+		$xtpl->table_td(_("IN"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("OUT"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("TOTAL"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		
+		$xtpl->table_td(_("IN"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("OUT"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("TOTAL"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		
+		$xtpl->table_td(_("IN"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("OUT"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("TOTAL"), '#5EAFFF; color:#FFF; font-weight:bold;');
+
 		$xtpl->table_tr();
 		
 		foreach ($traffic_per_vps[$vps_id]['ips'] as $ip => $traffic) {
 			$xtpl->table_td($ip);
-			
-			$in = round(($traffic['in'])/1024/1024/1024, 2);
-			$out = round(($traffic['out'])/1024/1024/1024, 2);
-			$total = round(($traffic['in'] + $traffic['out'])/1024/1024/1024, 2);
-			
-			$xtpl->table_td($in, false, true);
-			$xtpl->table_td($out, false, true);
-			$xtpl->table_td($total, false, true);
+
+			show_traffic_row($traffic['public']);
+			show_traffic_row($traffic['private']);
+			show_traffic_row($traffic);
+
 			$xtpl->table_tr();
 		}
 		
 		if (++$i == $limit)
 			break;
 	}
+	
 	$xtpl->table_out();
 }
 
