@@ -242,6 +242,7 @@ module Transactions
   module Utils        ; end
   module Hypervisor   ; end
   module Mail         ; end
+  module Network      ; end
   module OutageWindow ; end
   module Queue        ; end
 end

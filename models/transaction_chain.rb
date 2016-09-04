@@ -384,4 +384,5 @@ module TransactionChains
   module IntegrityCheck ; end
   module MigrationPlan  ; end
   module Maintenance    ; end
+  module Network        ; end
 end

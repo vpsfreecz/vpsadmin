@@ -1,4 +1,6 @@
 class Network < ActiveRecord::Base
+  include Lockable
+
   belongs_to :location
   belongs_to :user
   has_many :ip_addresses
@@ -14,6 +16,15 @@ class Network < ActiveRecord::Base
   }
   validate :check_ip_integrity
   validate :check_network_integrity
+
+  # @param attrs [Hash]
+  # @param opts [Hash]
+  # @option opts [Boolean] add_ips
+  def self.register!(attrs, opts)
+    net = new(attrs)
+    TransactionChains::Network::Create.fire(net, opts)
+    net
+  end
 
   def include?(what)
     case what
@@ -62,20 +73,19 @@ class Network < ActiveRecord::Base
   # @param opts [Hash] options
   # @option opts [::User] user owner
   def add_ips(n, opts = {})
-    cnt = 0
+    ips = []
     net = net_addr
     last_ip = ip_addresses.order("#{ip_order('ip_addr')} DESC").take
 
     self.class.transaction do
       each_ip(last_ip && last_ip.ip_addr) do |host|
-        ::IpAddress.register(
+        ips << ::IpAddress.register(
             host.address,
             network: self,
             user: opts[:user],
         )
 
-        cnt += 1
-        break if cnt == n
+        break if ips.count == n
       end
 
       if opts[:user]
@@ -85,7 +95,7 @@ class Network < ActiveRecord::Base
 
         user_env.reallocate_resource!(
             cluster_resource,
-            user_env.send(cluster_resource) + cnt,
+            user_env.send(cluster_resource) + ips.count,
             user: opts[:user],
             save: true,
             confirmed: ::ClusterResourceUse.confirmed(:confirmed),
@@ -93,7 +103,7 @@ class Network < ActiveRecord::Base
       end
     end
 
-    cnt
+    ips
   end
 
   def get_or_create_range(opts)

@@ -109,9 +109,7 @@ module VpsAdmin::API::Resources
       def exec
         add_ips = input.delete(:add_ip_addresses)
 
-        net = ::Network.create!(input)
-        net.add_ips(net.size) if add_ips
-        net
+        ::Network.register!(input, add_ips: add_ips)
 
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
@@ -176,7 +174,7 @@ module VpsAdmin::API::Resources
           error('this action can be used only on managed networks')
         end
 
-        {count: net.add_ips(input[:count], user: input[:user])}
+        {count: net.add_ips(input[:count], user: input[:user]).count}
       end
     end
   end
