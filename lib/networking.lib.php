@@ -48,31 +48,52 @@ function get_traffic_by_ip_this_day ($ip, $generated = false) {
 }
 function get_traffic_by_ip_this_month ($ip, $generated = false) {
 	global $db;
+
 	$ret = array();
+	$ip_row = $db->findByColumnOnce('vps_ip', 'ip_addr', $ip);
+	$ip_id = $ip_row['ip_id'];
+
 	if (!$generated){
 	    $generated = time();
 	    $ret = array();
 	    $year = date('Y', $generated);
 	    $month = date('m', $generated);
 	    $this_month = mktime (0, 0, 0, $month, 0, $year);
-	    $sql = 'SELECT * FROM transfered WHERE tr_date >= FROM_UNIXTIME('.$db->check($this_month).') AND tr_ip = "'.$db->check($ip).'" ORDER BY tr_date DESC';
+		$sql = '
+			SELECT *
+			FROM ip_traffics
+			WHERE
+				created_at >= FROM_UNIXTIME('.$db->check($this_month).')
+				AND ip_address_id = "'.$ip_id.'"
+			ORDER BY created_at DESC';
+
 	} else {
 	    $year = date('Y', $generated);
 	    $month = date('m', $generated);
 	    $this_month = mktime (0, 0, 0, $month, 0, $year);
 	    $time_lastmonth = mktime (0, 0, 0, $month+1, 0, $year);
-	    $sql = 'SELECT * FROM transfered WHERE tr_date < FROM_UNIXTIME('.$time_lastmonth.') AND tr_date >= FROM_UNIXTIME('.$db->check($this_month).') AND tr_ip = "'.$db->check($ip).'" ORDER BY tr_date DESC';
+		$sql = '
+			SELECT *
+			FROM transfered
+			WHERE
+				created_at < FROM_UNIXTIME('.$time_lastmonth.')
+				AND created_at >= FROM_UNIXTIME('.$db->check($this_month).')
+				AND ip_address_id = "'.$ip_id.'"
+			ORDER BY created_at DESC';
 	}
+
 	// hour, minute, second, month, day, year
 	$ret['in']    = 0;
 	$ret['out']   = 0;
+
 	if ($result = $db->query($sql)) {
 		while ($row = $db->fetch_array($result)) {
-			$ret['in']    += $row['tr_bytes_in'];
-			$ret['out']   += $row['tr_bytes_out'];
+			$ret['in']    += $row['bytes_in'];
+			$ret['out']   += $row['bytes_out'];
 		}
-	}
-	else return false;
+
+	} else return false;
+
 	return $ret;
 }
 
