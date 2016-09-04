@@ -72,7 +72,10 @@ class Network < ActiveRecord::Base
   # @param n [Integer] number of IP addresses to add
   # @param opts [Hash] options
   # @option opts [::User] user owner
+  # @option opts [Boolean] lock
   def add_ips(n, opts = {})
+    acquire_lock(self) if opts[:lock].nil? || opts[:lock]
+
     ips = []
     net = net_addr
     last_ip = ip_addresses.order("#{ip_order('ip_addr')} DESC").take
