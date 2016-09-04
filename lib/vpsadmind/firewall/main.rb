@@ -38,13 +38,7 @@ module VpsAdmind::Firewall
       networks.populate(db)
       ip_map.populate(db)
 
-      %i(public private).each do |r|
-        IpSet.create_or_replace!(
-            "vpsadmin_networks_#{r}",
-            'hash:net',
-            networks.send(r).map(&:to_s)
-        )
-      end
+      networks.deploy!
 
       [4, 6].each do |v|
         ret = iptables(v, {N: 'vpsadmin_main'}, valid_rcs: [1,])

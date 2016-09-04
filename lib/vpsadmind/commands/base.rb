@@ -115,4 +115,5 @@ module VpsAdmind::Commands
   module IntegrityCheck ; end
   module OutageWindow   ; end
   module Queue          ; end
+  module Network        ; end
 end

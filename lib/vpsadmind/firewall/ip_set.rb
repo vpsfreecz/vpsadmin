@@ -22,7 +22,13 @@ module VpsAdmind::Firewall
       set.create_or_replace!
     end
 
-    def initialize(name, type)
+    def self.append!(name, ips)
+      set = new(name)
+      set.concat(ips)
+      set.append!
+    end
+
+    def initialize(name, type = nil)
       @name = name
       @type = type
       @ips = []
@@ -56,6 +62,10 @@ module VpsAdmind::Firewall
       replace!
     end
 
+    def append!
+      @ips.each { |ip| ipset(:add, @name, ip) }
+    end
+
     def test!(ip)
       ipset(:test, @name, ip)
       true
@@ -67,7 +77,7 @@ module VpsAdmind::Firewall
     protected
     def do_create(name)
       ipset(:create, name, @type)
-      @ips.each { |ip| puts "\nIPSET ADD #{ip}\n" ; ipset(:add, name, ip) }
+      @ips.each { |ip| ipset(:add, name, ip) }
     end
   end
 end

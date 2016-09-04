@@ -10,32 +10,70 @@ module VpsAdmind::Firewall
     end
 
     def initialize
+      @mutex = ::Mutex.new
       @networks = []
     end
 
     def populate(db)
-      @networks.clear unless @networks.empty?
+      sync do
+        @networks.clear unless @networks.empty?
 
-      db.query("
-          SELECT ip_version, address, prefix, role
-          FROM networks
-          WHERE type = 'Network'
-      ").each_hash do |row|
-        @networks << Network.new(
-            row['ip_version'].to_i,
-            row['address'],
-            row['prefix'].to_i,
-            ROLES[ row['role'].to_i ],
-        )
+        db.query("
+            SELECT ip_version, address, prefix, role
+            FROM networks
+            WHERE type = 'Network'
+        ").each_hash do |row|
+          @networks << Network.new(
+              row['ip_version'].to_i,
+              row['address'],
+              row['prefix'].to_i,
+              ROLES[ row['role'].to_i ],
+          )
+        end
       end
     end
 
     ROLES.each do |r|
-      define_method(r) { @networks.select { |n| n.role == r } }
+      define_method(r) { sync { @networks.select { |n| n.role == r } } }
     end
 
     def each(&block)
-      @networks.each(&block)
+      sync { @networks.each(&block) }
+    end
+
+    def add!(v, addr, prefix, role)
+      sync do
+        r = ROLES[role]
+        n = Network.new(v, addr, prefix, r)
+        @networks << n
+        
+        IpSet.append!("vpsadmin_networks_#{r}", [n.to_s])
+      end
+    end
+
+    def remove!(v, addr, prefix, role)
+      sync do
+        @networks.delete(Network.new(v, addr, prefix, ROLES[role]))
+        deploy!(ROLES[role])
+      end
+    end
+
+    def deploy!(role = nil)
+      if role.nil?
+        ROLES.each { |r| deploy!(r) }
+
+      else
+        IpSet.create_or_replace!(
+            "vpsadmin_networks_#{role}",
+            'hash:net',
+            send(role).map(&:to_s)
+        )
+      end
+    end
+
+    protected
+    def sync
+      @mutex.synchronize { yield }
     end
   end
 end
