@@ -12,6 +12,7 @@ gem 'ancestry', '~> 2.1.0'
 gem 'mysql2'
 gem 'bcrypt', '~> 3.1.10'
 gem 'ipaddress', '~> 0.8.0'
+gem 'activerecord-mysql-unsigned'
 
 group :test do
   gem 'rspec'
