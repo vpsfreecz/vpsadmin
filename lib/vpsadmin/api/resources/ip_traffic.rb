@@ -26,7 +26,8 @@ module VpsAdmin::API::Resources
         resource VpsAdmin::API::Resources::VPS
         integer :year
         integer :month
-        datetime :since
+        datetime :from
+        datetime :to
         string :accumulate, choices: %w(monthly), required: true
         string :order, choices: %w(created_at descending ascending), default: 'created_at'
 
@@ -58,7 +59,14 @@ module VpsAdmin::API::Resources
           )
         end
 
-        q = q.where('created_at > ?', input[:since]) if input[:since]
+        if input[:from]
+          q = q.where('ip_traffic_monthly_summaries.created_at >= ?', input[:from])
+        end
+
+        if input[:to]
+          q = q.where('ip_traffic_monthly_summaries.created_at <= ?', input[:to])
+        end
+
         q
       end
 
