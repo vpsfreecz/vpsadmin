@@ -23,6 +23,11 @@ module VpsAdmin::API::Resources
 
       input do
         use :filters
+        resource VpsAdmin::API::Resources::Environment
+        resource VpsAdmin::API::Resources::Location
+        resource VpsAdmin::API::Resources::Network
+        resource VpsAdmin::API::Resources::IpRange
+        resource VpsAdmin::API::Resources::Node
         resource VpsAdmin::API::Resources::VPS
         integer :year
         integer :month
@@ -49,8 +54,40 @@ module VpsAdmin::API::Resources
       def query
         q = ::IpTrafficMonthlySummary.where(with_restricted)
 
+        # Directly accessible filters
         %i(ip_address user year month).each do |f|
           q = q.where(f => input[f]) if input.has_key?(f)
+        end
+
+        # Custom filters
+        if input[:environment]
+          q = q.joins(ip_address: {network: :location}).where(
+              locations: {environment_id: input[:environment].id}
+          )
+        end
+       
+        if input[:location]
+          q = q.joins(ip_address: :network).where(
+              networks: {location_id: input[:location].id}
+          )
+        end
+        
+        if input[:network]
+          q = q.joins(:ip_address).where(
+              vps_ip: {network_id: input[:network].id}
+          )
+        end
+
+        if input[:ip_range]
+          q = q.joins(:ip_address).where(
+              vps_ip: {network_id: input[:ip_range].id}
+          )
+        end
+
+        if input[:node]
+          q = q.joins(ip_address: :vps).where(
+              vps: {vps_server: input[:node].id}
+          )
         end
 
         if input.has_key?(:vps)
