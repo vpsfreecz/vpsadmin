@@ -30,7 +30,7 @@ module VpsAdmin::API::Resources
         string :accumulate, choices: %w(monthly), required: true
         string :order, choices: %w(created_at descending ascending), default: 'created_at'
 
-        patch :limit, default: 25
+        patch :limit, default: 25, fill: true
       end
 
       output(:object_list) do
@@ -71,7 +71,7 @@ module VpsAdmin::API::Resources
 
         case input[:order]
         when nil, 'created_at'
-          q = q.order('created_at')
+          q = q.order('created_at DESC')
         
         when 'descending'
           q = q.order('(bytes_in + bytes_out) DESC')
@@ -80,7 +80,6 @@ module VpsAdmin::API::Resources
           q = q.order('(bytes_in + bytes_out) ASC')
 
         else
-          puts "\n\nDAT ERROR\n\n"
           error('invalid order')
         end
 
