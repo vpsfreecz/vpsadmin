@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160902154617) do
+ActiveRecord::Schema.define(version: 20160904191844) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -307,6 +307,29 @@ ActiveRecord::Schema.define(version: 20160902154617) do
   add_index "ip_recent_traffics", ["ip_address_id", "user_id", "protocol", "role", "created_at"], name: "transfers_unique", unique: true, using: :btree
   add_index "ip_recent_traffics", ["ip_address_id"], name: "index_ip_recent_traffics_on_ip_address_id", using: :btree
   add_index "ip_recent_traffics", ["user_id"], name: "index_ip_recent_traffics_on_user_id", using: :btree
+
+  create_table "ip_traffic_monthly_summaries", force: true do |t|
+    t.integer  "ip_address_id",                       null: false
+    t.integer  "user_id"
+    t.integer  "protocol",                            null: false
+    t.integer  "role",                                null: false
+    t.integer  "packets_in",    limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "packets_out",   limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "bytes_in",      limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "bytes_out",     limit: 8, default: 0, null: false, unsigned: true
+    t.datetime "created_at",                          null: false
+    t.integer  "year",                                null: false
+    t.integer  "month",                               null: false
+  end
+
+  add_index "ip_traffic_monthly_summaries", ["ip_address_id", "user_id", "protocol", "role", "created_at"], name: "ip_traffic_monthly_summaries_unique", unique: true, using: :btree
+  add_index "ip_traffic_monthly_summaries", ["ip_address_id", "year", "month"], name: "ip_traffic_monthly_summaries_ip_year_month", using: :btree
+  add_index "ip_traffic_monthly_summaries", ["ip_address_id"], name: "index_ip_traffic_monthly_summaries_on_ip_address_id", using: :btree
+  add_index "ip_traffic_monthly_summaries", ["month"], name: "index_ip_traffic_monthly_summaries_on_month", using: :btree
+  add_index "ip_traffic_monthly_summaries", ["protocol"], name: "index_ip_traffic_monthly_summaries_on_protocol", using: :btree
+  add_index "ip_traffic_monthly_summaries", ["user_id"], name: "index_ip_traffic_monthly_summaries_on_user_id", using: :btree
+  add_index "ip_traffic_monthly_summaries", ["year", "month"], name: "index_ip_traffic_monthly_summaries_on_year_and_month", using: :btree
+  add_index "ip_traffic_monthly_summaries", ["year"], name: "index_ip_traffic_monthly_summaries_on_year", using: :btree
 
   create_table "ip_traffics", force: true do |t|
     t.integer  "ip_address_id",                       null: false
