@@ -18,7 +18,7 @@ class AddIpTransfers < ActiveRecord::Migration
       add_index table, :user_id
     end
 
-    if table_exists?(:transfered)
+    if ENV['MIGRATE_TRAFFIC_DATA'] != 'no' && table_exists?(:transfered)
       {
           transfered: :ip_traffics,
           transfered_recent: :ip_recent_traffics,
@@ -68,7 +68,9 @@ class AddIpTransfers < ActiveRecord::Migration
       add_index table, %i(tr_ip tr_proto tr_date), unique: true,
                 name: :transfers_unique
     end
-      
+     
+    return if ENV['MIGRATE_TRAFFIC_DATA'] == 'no'
+
     {
         ip_traffics: :transfered,
         ip_recent_traffics: :transfered_recent,

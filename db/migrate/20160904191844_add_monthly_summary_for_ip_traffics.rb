@@ -26,6 +26,8 @@ class AddMonthlySummaryForIpTraffics < ActiveRecord::Migration
     add_index :ip_traffic_monthly_summaries, %i(ip_address_id year month),
               name: :ip_traffic_monthly_summaries_ip_year_month
 
+    return if ENV['MIGRATE_TRAFFIC_DATA'] == 'no'
+
     reversible do |dir|
       dir.up do
         ActiveRecord::Base.connection.execute("
