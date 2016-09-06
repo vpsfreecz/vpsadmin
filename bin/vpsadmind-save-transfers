@@ -1,20 +1,15 @@
 #!/usr/bin/env ruby
 
 require 'pathname'
-require File.join(File.dirname(Pathname.new(__FILE__).realpath), '..', 'lib/vpsadmind')
+require File.join(File.dirname(Pathname.new(__FILE__).realpath), '..', 'lib/vpsadmind/standalone')
 
 require 'optparse'
 
 options = {
-    :config => '/etc/vpsadmin/vpsadmind.yml',
     :older => 60,
 }
 
 OptionParser.new do |opts|
-  opts.on('-c', '--config [CONFIG FILE]', 'Config file') do |cfg|
-    options[:config] = cfg
-  end
-
   opts.on('-o', '--older-than [SECONDS]', Integer, 'Move transfers older than SECONDS') do |cfg|
     options[:older] = cfg || 60
   end
@@ -24,12 +19,6 @@ OptionParser.new do |opts|
     exit
   end
 end.parse!
-
-$CFG = VpsAdmind::AppConfig.new(options[:config])
-
-unless $CFG.load
-  exit(false)
-end
 
 db = VpsAdmind::Db.new
 
