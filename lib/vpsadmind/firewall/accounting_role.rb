@@ -94,16 +94,16 @@ module VpsAdmind::Firewall
             end
 
             db.prepared(
-                'INSERT INTO ip_recent_traffics SET
+                "INSERT INTO ip_recent_traffics SET
                   ip_address_id = ?, user_id = ?, protocol = ?, role = ?,
                   packets_in = ?, packets_out = ?,
                   bytes_in = ?, bytes_out = ?,
-                  created_at = NOW()
+                  created_at = CONVERT_TZ(NOW(), 'Europe/Prague', 'UTC')
                 ON DUPLICATE KEY UPDATE
                   packets_in = packets_in + values(packets_in),
                   packets_out = packets_out + values(packets_out),
                   bytes_in = bytes_in + values(bytes_in),
-                  bytes_out = bytes_out + values(bytes_out)',
+                  bytes_out = bytes_out + values(bytes_out)",
                 addr.id, addr.user_id, PROTOCOL_MAP.index(proto),
                 VpsAdmind::Firewall::Accounting::ROLES.index(role),
                 t[:packets][:in], t[:packets][:out],
