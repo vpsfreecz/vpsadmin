@@ -42,7 +42,6 @@ class AddIpTransfers < ActiveRecord::Migration
             FROM #{src}
             INNER JOIN vps_ip ON vps_ip.ip_addr = tr_ip COLLATE utf8_general_ci
             LEFT JOIN vps ON vps.vps_id = vps_ip.vps_id
-            ORDER BY tr_date, tr_ip, tr_proto
         ")
 
         drop_table src
