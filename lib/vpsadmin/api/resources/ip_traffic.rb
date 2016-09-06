@@ -156,5 +156,98 @@ module VpsAdmin::API::Resources
         @traffic
       end
     end
+  
+    class UserTop < HaveAPI::Actions::Default::Index
+      desc "Summed users' traffic"
+      route ':%{resource}_id/user_top'
+      http_method :get
+      aliases []
+      
+      input do
+        resource VpsAdmin::API::Resources::Environment
+        resource VpsAdmin::API::Resources::Location
+        resource VpsAdmin::API::Resources::Network
+        resource VpsAdmin::API::Resources::Node
+        integer :year
+        integer :month
+        datetime :from
+        datetime :to
+        string :accumulate, choices: %w(monthly), required: true
+        string :order, choices: %w(created_at descending ascending), default: 'created_at'
+
+        patch :limit, default: 25, fill: true
+      end
+
+      output(:object_list) do
+        resource VpsAdmin::API::Resources::User, value_label: :login
+        integer :packets_in, db_name: :sum_packets_in
+        integer :packets_out, db_name: :sum_packets_out
+        integer :bytes_in, db_name: :sum_bytes_in
+        integer :bytes_out, db_name: :sum_bytes_out
+        datetime :created_at
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def query
+        q = ::IpTrafficMonthlySummary.select('
+            ip_traffic_monthly_summaries.user_id, ip_traffic_monthly_summaries.created_at,
+            SUM(packets_in) AS sum_packets_in, SUM(packets_out) AS sum_packets_out,
+            SUM(bytes_in) AS sum_bytes_in, SUM(bytes_out) AS sum_bytes_out
+        ').joins(:user).group('members.m_id, ip_traffic_monthly_summaries.created_at')
+        
+        # Directly accessible filters
+        %i(year month).each do |f|
+          q = q.where(f => input[f]) if input.has_key?(f)
+        end
+
+        # Custom filters
+        if input[:environment]
+          q = q.joins(ip_address: {network: :location}).where(
+              locations: {environment_id: input[:environment].id}
+          )
+        end
+       
+        if input[:location]
+          q = q.joins(ip_address: :network).where(
+              networks: {location_id: input[:location].id}
+          )
+        end
+        
+        if input[:network]
+          q = q.joins(:ip_address).where(
+              vps_ip: {network_id: input[:network].id}
+          )
+        end
+
+        if input[:node]
+          q = q.joins(ip_address: :vps).where(
+              vps: {vps_server: input[:node].id}
+          )
+        end
+
+        if input[:from]
+          q = q.where('ip_traffic_monthly_summaries.created_at >= ?', input[:from])
+        end
+
+        if input[:to]
+          q = q.where('ip_traffic_monthly_summaries.created_at <= ?', input[:to])
+        end
+        
+        q
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        q = query.offset(input[:offset]).limit(input[:limit])
+        q = q.order('(SUM(bytes_in) + SUM(bytes_out)) DESC')
+        q
+      end
+    end
   end
 end
