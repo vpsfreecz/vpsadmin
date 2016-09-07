@@ -6,6 +6,7 @@ module VpsAdmin::API::Resources
     params(:filters) do
       resource VpsAdmin::API::Resources::IpAddress, value_label: :addr
       resource VpsAdmin::API::Resources::User, value_label: :login
+      string :role, choices: %i(public private), db_name: :api_role
     end
 
     params(:all) do
@@ -60,6 +61,10 @@ module VpsAdmin::API::Resources
         end
 
         # Custom filters
+        if input[:role]
+          q = q.where(role: ::IpTrafficMonthlySummary.roles["role_#{input[:role]}"])
+        end
+        
         if input[:environment]
           q = q.joins(ip_address: {network: :location}).where(
               locations: {environment_id: input[:environment].id}

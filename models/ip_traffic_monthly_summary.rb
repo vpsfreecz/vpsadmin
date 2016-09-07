@@ -4,4 +4,8 @@ class IpTrafficMonthlySummary < ActiveRecord::Base
 
   enum protocol: %i(proto_all proto_tcp proto_udp)
   enum role: %i(role_public role_private)
+
+  def api_role
+    role['role_'.size..-1]
+  end
 end
