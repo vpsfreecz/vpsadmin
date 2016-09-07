@@ -117,6 +117,10 @@ switch($_GET['action']) {
 		$show_traffic = true;
 		break;
 	
+	case 'user_top':
+		$show_top = true;
+		break;
+	
 	case 'live':
 		$show_live = true;
 		break;
@@ -130,6 +134,7 @@ $xtpl->sbar_add(_("IP addresses"), '?page=networking&action=ip_addresses');
 $xtpl->sbar_add(_("IP ranges"), '?page=networking&action=ip_ranges');
 $xtpl->sbar_add(_("List monthly traffic"), '?page=networking&action=traffic');
 $xtpl->sbar_add(_("Live monitor"), '?page=networking&action=live');
+$xtpl->sbar_add(_("User top"), '?page=networking&action=user_top');
 $xtpl->sbar_out(_('Networking'));
 
 if ($show_traffic) {
@@ -153,6 +158,14 @@ if ($show_traffic) {
 		'public' => _('Public'),
 		'private' => _('Private'),
 	), get_val('role'));
+	
+	$xtpl->form_add_select(_('Protocol').':', 'protocol', array(
+		'sum' => _('Sum'),
+		'' => _('All'),
+		'tcp' => 'TCP',
+		'udp' => 'UDP',
+		'other' => 'Other',
+	), get_val('protocol'));
 
 	$xtpl->form_add_select(_('IP version').':', 'ip_version', array(
 		0 => _('All'),
@@ -194,7 +207,7 @@ if ($show_traffic) {
 	
 	$conds = array(
 		'year', 'month', 'role', 'ip_version', 'vps', 'node', 'location', 'environment',
-		'network', 'ip_range'
+		'network', 'ip_range', 'protocol'
 	);
 	
 	if ($_SESSION['is_admin']) {
@@ -219,6 +232,8 @@ if ($show_traffic) {
 	
 	$xtpl->table_add_category(_('VPS'));
 	$xtpl->table_add_category(_('Category'));
+	$xtpl->table_add_category(_('Date'));
+	$xtpl->table_add_category(_('Protocol'));
 	$xtpl->table_add_category(_('In'));
 	$xtpl->table_add_category(_('Out'));
 	$xtpl->table_add_category(_('Total'));
@@ -244,6 +259,108 @@ if ($show_traffic) {
 			$xtpl->table_td('---');
 
 		$xtpl->table_td($stat->role);
+
+		$t = new DateTime($stat->created_at);
+		$xtpl->table_td($t->format('Y/m'));
+		
+		$xtpl->table_td($stat->protocol);
+		$xtpl->table_td(data_size_to_humanreadable($stat->bytes_in/1024/1024), false, true);
+		$xtpl->table_td(data_size_to_humanreadable($stat->bytes_out/1024/1024), false, true);
+		$xtpl->table_td(data_size_to_humanreadable(($stat->bytes_in + $stat->bytes_out)/1024/1024), false, true);
+
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_out();
+}
+
+if ($_SESSION['is_admin'] && $show_top) {
+	$xtpl->title(_("Top users"));
+	
+	$xtpl->table_title(_('Filters'));
+	$xtpl->form_create('', 'get', 'networking-filter', false);
+	
+	$xtpl->table_td(_("Limit").':'.
+		'<input type="hidden" name="page" value="networking">'.
+		'<input type="hidden" name="action" value="user_top">'.
+		'<input type="hidden" name="list" value="1">'
+	);
+	$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
+	$xtpl->table_tr();
+	
+	$xtpl->form_add_select(_("Year").':', 'year', year_list(), get_val('year', date("Y")));
+	$xtpl->form_add_select(_("Month").':', 'month', month_list(), get_val('month', date("n")));
+
+	$xtpl->form_add_select(_('Category').':', 'role', array(
+		'' => _('All'),
+		'public' => _('Public'),
+		'private' => _('Private'),
+	), get_val('role'));
+	
+	$xtpl->form_add_select(_('Protocol').':', 'protocol', array(
+		'' => _('All'),
+		'tcp' => 'TCP',
+		'udp' => 'UDP',
+		'other' => 'Other',
+	), get_val('protocol'));
+
+	$xtpl->form_add_select(_('IP version').':', 'ip_version', array(
+		0 => _('All'),
+		4 => 'IPv4',
+		6 => 'IPv6',
+	), get_val('ip_version'));
+
+	$xtpl->form_add_select(_("Environment").':', 'environment',
+		resource_list_to_options($api->environment->list()), get_val('environment'));
+	$xtpl->form_add_select(_("Location").':', 'location',
+		resource_list_to_options($api->location->list()), get_val('location'));
+	$xtpl->form_add_select(_("Network").':', 'network', 
+		resource_list_to_options($api->network->list(), 'id', 'label', true, network_label), get_val('network'));
+	$xtpl->form_add_select(_("Node").':', 'node', 
+		resource_list_to_options($api->node->list(), 'id', 'domain_name'), get_val('node'));
+	
+	$xtpl->form_out(_('Show'));
+
+	if (!$_GET['list'])
+		return;
+	
+	$xtpl->table_title(_("Statistics"));
+
+	$params = array(
+		'offset' => get_val('offset', 0),
+		'limit' => get_val('limit', 25),
+		'accumulate' => 'monthly',
+		'meta' => array('includes' => 'user'),
+	);
+	
+	$conds = array(
+		'year', 'month', 'role', 'ip_version', 'node', 'location', 'environment',
+		'network', 'protocol'
+	);
+	
+	foreach ($conds as $c) {
+		if ($_GET[$c])
+			$params[$c] = $_GET[$c];
+	}
+
+	$stats = $api->ip_traffic->user_top($params);
+
+	$xtpl->table_add_category(_('User'));
+	$xtpl->table_add_category(_('Date'));
+	$xtpl->table_add_category(_('In'));
+	$xtpl->table_add_category(_('Out'));
+	$xtpl->table_add_category(_('Total'));
+
+	foreach ($stats as $stat) {	
+		$xtpl->table_td(
+			'<a href="?page=networking&action=list&user='.$stat->user_id.'&year='.$_GET['year'].'&month='.$_GET['month'].'&protocol=sum">'.
+			$stat->user->login.
+			'</a>'
+		);
+		
+		$t = new DateTime($stat->created_at);
+		$xtpl->table_td($t->format('Y/m'));
+
 		$xtpl->table_td(data_size_to_humanreadable($stat->bytes_in/1024/1024), false, true);
 		$xtpl->table_td(data_size_to_humanreadable($stat->bytes_out/1024/1024), false, true);
 		$xtpl->table_td(data_size_to_humanreadable(($stat->bytes_in + $stat->bytes_out)/1024/1024), false, true);
