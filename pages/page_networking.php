@@ -27,18 +27,6 @@ function month_list() {
 	return $ret;
 }
 
-function show_traffic_row ($arr) {
-	global $xtpl;
-
-	$in = round(($arr['in'])/1024/1024/1024, 2);
-	$out = round(($arr['out'])/1024/1024/1024, 2);
-	$total = round(($arr['in'] + $arr['out'])/1024/1024/1024, 2);
-	
-	$xtpl->table_td($in, false, true);
-	$xtpl->table_td($out, false, true);
-	$xtpl->table_td($total, false, true);
-}
-
 if ($_SESSION["logged_in"]) {
 
 switch($_GET['action']) {
@@ -159,17 +147,34 @@ if ($show_traffic) {
 	
 	$xtpl->form_add_select(_("Year").':', 'year', year_list(), get_val('year', date("Y")));
 	$xtpl->form_add_select(_("Month").':', 'month', month_list(), get_val('month', date("n")));
+
+	$xtpl->form_add_select(_('Category').':', 'role', array(
+		'' => _('All'),
+		'public' => _('Public'),
+		'private' => _('Private'),
+	), get_val('role'));
+
+	$xtpl->form_add_select(_('IP version').':', 'ip_version', array(
+		0 => _('All'),
+		4 => 'IPv4',
+		6 => 'IPv6',
+	), get_val('ip_version'));
+
+	$xtpl->form_add_select(_("Environment").':', 'environment',
+		resource_list_to_options($api->environment->list()), get_val('environment'));
+	$xtpl->form_add_select(_("Location").':', 'location',
+		resource_list_to_options($api->location->list()), get_val('location'));
+	$xtpl->form_add_select(_("Network").':', 'network', 
+		resource_list_to_options($api->network->list(), 'id', 'label', true, network_label), get_val('network'));
+	$xtpl->form_add_select(_("IP range").':', 'ip_range', 
+		resource_list_to_options($api->ip_range->list(), 'id', 'label', true, network_label), get_val('ip_range'));
+	$xtpl->form_add_select(_("Node").':', 'node', 
+		resource_list_to_options($api->node->list(), 'id', 'domain_name'), get_val('node'));
+	$xtpl->form_add_input(_("VPS").':', 'text', '30', 'vps', get_val('vps'));
 	
 	if ($_SESSION['is_admin']) {
-		$xtpl->form_add_input(_("IP address").':', 'text', '30', 'ip_addr', get_val('ip_addr'));
+		$xtpl->form_add_input(_("IP address").':', 'text', '30', 'ip_address', get_val('ip_address'));
 		$xtpl->form_add_input(_("User").':', 'text', '30', 'user', get_val('user'));
-		$xtpl->form_add_input(_("VPS").':', 'text', '30', 'vps', get_val('vps'));
-		$xtpl->form_add_select(_("Node").':', 'node', 
-			resource_list_to_options($api->node->list(), 'id', 'name'), get_val('node'));
-		$xtpl->form_add_select(_("Location").':', 'location',
-			resource_list_to_options($api->location->list()), get_val('location'));
-		$xtpl->form_add_select(_("Environment").':', 'environment',
-			resource_list_to_options($api->environment->list()), get_val('environment'));
 	}
 	
 	$xtpl->form_out(_('Show'));
@@ -178,132 +183,72 @@ if ($show_traffic) {
 		return;
 	
 	$xtpl->table_title(_("Statistics"));
+
+	$params = array(
+		'offset' => get_val('offset', 0),
+		'limit' => get_val('limit', 25),
+		'accumulate' => 'monthly',
+		'order' => 'descending',
+		'meta' => array('includes' => 'user,ip_address'),
+	);
 	
-	$traffic_per_vps = array();
-	$traffic_total_ordered = array();
-	
-	$sql = 'SELECT v.vps_id, vps_hostname, m.m_id, m_nick, ip_addr
-	        FROM vps v
-			INNER JOIN vps_ip ip ON v.vps_id = ip.vps_id
-			INNER JOIN networks n ON n.id = ip.network_id
-	        INNER JOIN members m ON v.m_id = m.m_id
-	        ';
+	$conds = array(
+		'year', 'month', 'role', 'ip_version', 'vps', 'node', 'location', 'environment',
+		'network', 'ip_range'
+	);
 	
 	if ($_SESSION['is_admin']) {
-		$conds = array('n.role' => 0);
-
-		if ($_GET['ip_addr'])
-			$conds['ip.ip_addr'] = trim($_GET['ip_addr']);
+		if ($_GET['ip_address'])
+			$params['ip_address'] = trim($_GET['ip_address']);
 
 		if ($_GET['user'])
-			$conds['v.m_id'] =  $_GET['user'];
-		
-		if ($_GET['vps'])
-			$conds['v.vps_id'] = $_GET['vps'];
-		
-		if ($_GET['node'])
-			$conds['vps_server'] = $_GET['node'];
-		
-		if ($_GET['location'])
-			$conds['server_location'] = $_GET['location'];
-		
-		if ($_GET['environment'])
-			$conds['s.environment_id'] = $_GET['environment'];
-		
-		if ($_GET['location'] || $_GET['environment'])
-			$sql .= "INNER JOIN servers s ON v.vps_server = s.server_id\n";
-		
-		if (count($conds)) {
-			$sql .= "WHERE\n";
-			$tmp = array();
-			
-			foreach ($conds as $c => $v) {
-				$tmp[] = "($c = '".($db->check($v))."')";
-			}
-			
-			$sql .= implode(' AND ', $tmp);
-		}
-		
-	} else {
-		$sql .= "WHERE n.role = 0 AND v.m_id = ".((int) $db->check($_SESSION['member']['m_id']));
+			$params['user'] =  $_GET['user'];
 	}
+
+	foreach ($conds as $c) {
+		if ($_GET[$c])
+			$params[$c] = $_GET[$c];
+	}
+
+	$stats = $api->ip_traffic->list($params);
+
+	$xtpl->table_add_category(_('IP address'));
+
+	if ($_SESSION['is_admin'])
+		$xtpl->table_add_category(_('User'));
 	
-	$rs = $db->query($sql);
-	
-	while ($row = $db->fetch_array($rs)) {
-		if (!array_key_exists($row['vps_id'], $traffic_per_vps)) {
-			$traffic_per_vps[ $row['vps_id'] ] = array(
-				'hostname' => $row['vps_hostname'],
-				'user_id' => $row['m_id'],
-				'login' => $row['m_nick']
+	$xtpl->table_add_category(_('VPS'));
+	$xtpl->table_add_category(_('Category'));
+	$xtpl->table_add_category(_('In'));
+	$xtpl->table_add_category(_('Out'));
+	$xtpl->table_add_category(_('Total'));
+
+	foreach ($stats as $stat) {	
+		$xtpl->table_td($stat->ip_address->addr);
+		
+		if ($_SESSION['is_admin']) {
+			$xtpl->table_td(
+				'<a href="?page=adminm&action=edit&id='.$stat->user_id.'">'.
+				$stat->user->login.
+				'</a>'
 			);
 		}
-		
-		if ($_GET['month'] || $_GET['year']) {
-			// hour, minute, second, month, day, year
-			$this_month = mktime (0, 0, 0, get_val('month', date('n')), 1, get_val('year', date('Y')));
-			
-			$traffic = $accounting->get_traffic_by_ip_this_month($row['ip_addr'], $this_month);
-			
-		} else {
-			$traffic = $accounting->get_traffic_by_ip_this_month($row['ip_addr']);
-		}
-		
-		$traffic_per_vps[ $row['vps_id'] ]['ips'][$row["ip_addr"]] = $traffic;
-		
-		$traffic_total_ordered[ $row['vps_id'] ] += $traffic['in'] + $traffic['out'];
-	}
-	
-	arsort($traffic_total_ordered);
-	
-	$i = 0;
-	$limit = get_val('limit', 25);
-	
-	foreach ($traffic_total_ordered as $vps_id => $total) {
-		$user_id = $traffic_per_vps[$vps_id]['user_id'];
-		$login = $traffic_per_vps[$vps_id]['login'];
-		$hostname = $traffic_per_vps[$vps_id]['hostname'];
-		
-		$xtpl->table_td(
-			'<strong>VPS <a href="?page=adminvps&action=info&veid='.$vps_id. '">'
-			.$vps_id.'</a> '
-			.'<a href="?page=adminm&section=members&action=edit&id='.$user_id. '">'
-			.$login.'</a> ['.$hostname.']</strong>'
-		);
 
-		$xtpl->table_td(_("PUBLIC [GB]"), '#5EAFFF; color:#FFF; font-weight:bold; text-align: center;', false, '3');
-		$xtpl->table_td(_("PRIVATE [GB]"), '#5EAFFF; color:#FFF; font-weight:bold; text-align: center;', false, '3');
-		$xtpl->table_td(_("SUM [GB]"), '#5EAFFF; color:#FFF; font-weight:bold; text-align: center;', false, '3');
-		$xtpl->table_tr();
+		if ($stat->ip_address->vps_id)
+			$xtpl->table_td(
+				'<a href="?page=adminvps&action=info&veid='.$stat->ip_address->vps_id.'">'.
+				$stat->ip_address->vps_id.
+				'</a>'
+			);
+		else
+			$xtpl->table_td('---');
 
-		$xtpl->table_td(_("IP Address"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		
-		$xtpl->table_td(_("IN"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("OUT"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("TOTAL"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		
-		$xtpl->table_td(_("IN"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("OUT"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("TOTAL"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		
-		$xtpl->table_td(_("IN"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("OUT"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("TOTAL"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td($stat->role);
+		$xtpl->table_td(data_size_to_humanreadable($stat->bytes_in/1024/1024), false, true);
+		$xtpl->table_td(data_size_to_humanreadable($stat->bytes_out/1024/1024), false, true);
+		$xtpl->table_td(data_size_to_humanreadable(($stat->bytes_in + $stat->bytes_out)/1024/1024), false, true);
 
 		$xtpl->table_tr();
-		
-		foreach ($traffic_per_vps[$vps_id]['ips'] as $ip => $traffic) {
-			$xtpl->table_td($ip);
-
-			show_traffic_row($traffic['public']);
-			show_traffic_row($traffic['private']);
-			show_traffic_row($traffic);
-
-			$xtpl->table_tr();
-		}
-		
-		if (++$i == $limit)
-			break;
 	}
 	
 	$xtpl->table_out();
