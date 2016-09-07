@@ -143,39 +143,16 @@ module VpsAdmin::API::Resources
         q
       end
     end
-
-    class Show < HaveAPI::Actions::Default::Show
-      desc 'Show an IP traffic record'
-
-      output do
-        use :all
-      end
-
-      authorize do |u|
-        allow if u.role == :admin
-        output blacklist: %i(user)
-        restrict user: u
-        allow
-      end
-
-      def prepare
-        @traffic = ::IpTrafficMonthlySummary.find_by!(with_restricted(
-            id: params[:ip_traffic_id]
-        ))
-      end
-
-      def exec
-        @traffic
-      end
-    end
-  
+    
     class UserTop < HaveAPI::Actions::Default::Index
       desc "Summed users' traffic"
-      route ':%{resource}_id/user_top'
+      route 'user_top'
       http_method :get
       aliases []
       
       input do
+        string :role, choices: %i(public private), db_name: :api_role
+        integer :ip_version, choices: [4, 6]
         resource VpsAdmin::API::Resources::Environment
         resource VpsAdmin::API::Resources::Location
         resource VpsAdmin::API::Resources::Network
@@ -185,13 +162,13 @@ module VpsAdmin::API::Resources
         datetime :from
         datetime :to
         string :accumulate, choices: %w(monthly), required: true
-        string :order, choices: %w(created_at descending ascending), default: 'created_at'
 
         patch :limit, default: 25, fill: true
       end
 
       output(:object_list) do
         resource VpsAdmin::API::Resources::User, value_label: :login
+        string :role, choices: %i(public private), db_name: :api_role
         integer :packets_in, db_name: :sum_packets_in
         integer :packets_out, db_name: :sum_packets_out
         integer :bytes_in, db_name: :sum_bytes_in
@@ -205,7 +182,9 @@ module VpsAdmin::API::Resources
 
       def query
         q = ::IpTrafficMonthlySummary.select('
-            ip_traffic_monthly_summaries.user_id, ip_traffic_monthly_summaries.created_at,
+            ip_traffic_monthly_summaries.user_id,
+            ip_traffic_monthly_summaries.role,
+            ip_traffic_monthly_summaries.created_at,
             SUM(packets_in) AS sum_packets_in, SUM(packets_out) AS sum_packets_out,
             SUM(bytes_in) AS sum_bytes_in, SUM(bytes_out) AS sum_bytes_out
         ').joins(:user).group('members.m_id, ip_traffic_monthly_summaries.created_at')
@@ -216,6 +195,16 @@ module VpsAdmin::API::Resources
         end
 
         # Custom filters
+        if input[:role]
+          q = q.where(role: ::IpTrafficMonthlySummary.roles["role_#{input[:role]}"])
+        end
+
+        if input[:ip_version]
+          q = q.joins(ip_address: :network).where(
+              networks: {ip_version: input[:ip_version]}
+          )
+        end
+        
         if input[:environment]
           q = q.joins(ip_address: {network: :location}).where(
               locations: {environment_id: input[:environment].id}
@@ -259,6 +248,31 @@ module VpsAdmin::API::Resources
         q = query.offset(input[:offset]).limit(input[:limit])
         q = q.order('(SUM(bytes_in) + SUM(bytes_out)) DESC')
         q
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      desc 'Show an IP traffic record'
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        output blacklist: %i(user)
+        restrict user: u
+        allow
+      end
+
+      def prepare
+        @traffic = ::IpTrafficMonthlySummary.find_by!(with_restricted(
+            id: params[:ip_traffic_id]
+        ))
+      end
+
+      def exec
+        @traffic
       end
     end
   end
