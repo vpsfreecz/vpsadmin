@@ -171,6 +171,7 @@ module VpsAdmin::API::Resources
       
       input do
         string :role, choices: %i(public private), db_name: :api_role
+        string :protocol, choices: %w(all tcp udp other), db_name: :api_protocol
         integer :ip_version, choices: [4, 6]
         resource VpsAdmin::API::Resources::Environment
         resource VpsAdmin::API::Resources::Location
@@ -187,7 +188,6 @@ module VpsAdmin::API::Resources
 
       output(:object_list) do
         resource VpsAdmin::API::Resources::User, value_label: :login
-        string :role, choices: %i(public private), db_name: :api_role
         integer :packets_in, db_name: :sum_packets_in
         integer :packets_out, db_name: :sum_packets_out
         integer :bytes_in, db_name: :sum_bytes_in
@@ -221,6 +221,16 @@ module VpsAdmin::API::Resources
         if input[:ip_version]
           q = q.joins(ip_address: :network).where(
               networks: {ip_version: input[:ip_version]}
+          )
+        end
+        
+        case input[:protocol]
+        when nil, 'all'
+          # Do nothing
+          
+        when 'tcp', 'udp', 'other'
+          q = q.where(
+              protocol: ::IpTrafficMonthlySummary.protocols["proto_#{input[:protocol]}"]
           )
         end
         
