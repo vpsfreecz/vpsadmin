@@ -24,6 +24,7 @@ module VpsAdmin::API::Resources
 
       input do
         use :filters
+        integer :ip_version, choices: [4, 6]
         resource VpsAdmin::API::Resources::Environment
         resource VpsAdmin::API::Resources::Location
         resource VpsAdmin::API::Resources::Network
@@ -63,6 +64,12 @@ module VpsAdmin::API::Resources
         # Custom filters
         if input[:role]
           q = q.where(role: ::IpTrafficMonthlySummary.roles["role_#{input[:role]}"])
+        end
+
+        if input[:ip_version]
+          q = q.joins(ip_address: :network).where(
+              networks: {ip_version: input[:ip_version]}
+          )
         end
         
         if input[:environment]
