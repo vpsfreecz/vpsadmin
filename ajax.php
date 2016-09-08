@@ -35,7 +35,6 @@ include WWW_ROOT.'lib/functions.lib.php';
 include WWW_ROOT.'lib/transact.lib.php';
 include WWW_ROOT.'lib/vps.lib.php';
 include WWW_ROOT.'lib/members.lib.php';
-include WWW_ROOT.'lib/networking.lib.php';
 include WWW_ROOT.'lib/cluster.lib.php';
 
 include WWW_ROOT.'lib/gettext_stream.lib.php';

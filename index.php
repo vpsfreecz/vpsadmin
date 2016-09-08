@@ -33,7 +33,6 @@ include WWW_ROOT.'lib/functions.lib.php';
 include WWW_ROOT.'lib/transact.lib.php';
 include WWW_ROOT.'lib/vps.lib.php';
 include WWW_ROOT.'lib/members.lib.php';
-include WWW_ROOT.'lib/networking.lib.php';
 include WWW_ROOT.'lib/cluster.lib.php';
 include WWW_ROOT.'lib/ajax.lib.php';
 include WWW_ROOT.'lib/mail.lib.php';
@@ -47,6 +46,7 @@ include WWW_ROOT.'forms/vps.forms.php';
 include WWW_ROOT.'forms/users.forms.php';
 include WWW_ROOT.'forms/lifetimes.forms.php';
 include WWW_ROOT.'forms/object_history.forms.php';
+include WWW_ROOT.'forms/networking.forms.php';
 
 include WWW_ROOT.'lib/gettext_stream.lib.php';
 include WWW_ROOT.'lib/gettext_inc.lib.php';
