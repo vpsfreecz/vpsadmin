@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160906090554) do
+ActiveRecord::Schema.define(version: 20160907135218) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -307,6 +307,68 @@ ActiveRecord::Schema.define(version: 20160906090554) do
   add_index "ip_recent_traffics", ["ip_address_id", "user_id", "protocol", "role", "created_at"], name: "transfers_unique", unique: true, using: :btree
   add_index "ip_recent_traffics", ["ip_address_id"], name: "index_ip_recent_traffics_on_ip_address_id", using: :btree
   add_index "ip_recent_traffics", ["user_id"], name: "index_ip_recent_traffics_on_user_id", using: :btree
+
+  create_table "ip_traffic_live_monitors", force: true do |t|
+    t.integer  "ip_address_id",                                   null: false
+    t.integer  "packets",                   limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "packets_in",                limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "packets_out",               limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "bytes",                     limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "bytes_in",                  limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "bytes_out",                 limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_packets",            limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_packets_in",         limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_packets_out",        limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_bytes",              limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_bytes_in",           limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_bytes_out",          limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_tcp_packets",        limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_tcp_packets_in",     limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_tcp_packets_out",    limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_tcp_bytes",          limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_tcp_bytes_in",       limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_tcp_bytes_out",      limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_udp_packets",        limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_udp_packets_in",     limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_udp_packets_out",    limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_udp_bytes",          limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_udp_bytes_in",       limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_udp_bytes_out",      limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_other_packets",      limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_other_packets_in",   limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_other_packets_out",  limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_other_bytes",        limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_other_bytes_in",     limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "public_other_bytes_out",    limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_packets",           limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_packets_in",        limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_packets_out",       limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_bytes",             limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_bytes_in",          limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_bytes_out",         limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_tcp_packets",       limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_tcp_packets_in",    limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_tcp_packets_out",   limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_tcp_bytes",         limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_tcp_bytes_in",      limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_tcp_bytes_out",     limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_udp_packets",       limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_udp_packets_in",    limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_udp_packets_out",   limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_udp_bytes",         limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_udp_bytes_in",      limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_udp_bytes_out",     limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_other_packets",     limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_other_packets_in",  limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_other_packets_out", limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_other_bytes",       limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_other_bytes_in",    limit: 8, default: 0, null: false, unsigned: true
+    t.integer  "private_other_bytes_out",   limit: 8, default: 0, null: false, unsigned: true
+    t.datetime "updated_at",                                      null: false
+    t.integer  "delta"
+  end
+
+  add_index "ip_traffic_live_monitors", ["ip_address_id"], name: "index_ip_traffic_live_monitors_on_ip_address_id", unique: true, using: :btree
 
   create_table "ip_traffic_monthly_summaries", force: true do |t|
     t.integer  "ip_address_id",                       null: false
