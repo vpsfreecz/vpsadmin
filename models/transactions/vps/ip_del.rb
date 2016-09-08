@@ -13,7 +13,7 @@ module Transactions::Vps
           version: ip.version,
           unregister: unregister,
           id: ip.id,
-          user_id: ip.user_id,
+          user_id: ip.user_id || vps.m_id,
       }
 
       if unregister
