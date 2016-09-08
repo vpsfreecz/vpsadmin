@@ -1,6 +1,18 @@
 module VpsAdmind::Firewall
   class IpMap
-    IpAddr = Struct.new(:id, :user_id)
+    IpAddr = Struct.new(:id, :user_id, :monitor) do
+      def initialize(*_)
+        super
+
+        self.monitor = IpMonitor.new(self)
+      end
+
+      def to_h
+        ret = super
+        ret.delete(:monitor)
+        ret
+      end
+    end
 
     def initialize
       @mutex = ::Mutex.new

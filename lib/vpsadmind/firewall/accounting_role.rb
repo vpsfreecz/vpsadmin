@@ -80,36 +80,10 @@ module VpsAdmind::Firewall
       ret
     end
 
-    def update_traffic(db)
+    def update_traffic
       read_traffic.each do |ip, traffic|
-        @fw.ip_map.synchronize do
-          traffic.each do |proto, t|
-            next if t[:packets][:in] == 0 && t[:packets][:out] == 0
-            
-            addr = @fw.ip_map[ip]
-
-            unless addr
-              log(:warn, :firewall, "IP '#{ip}' not found in IP map")
-              next
-            end
-
-            db.prepared(
-                "INSERT INTO ip_recent_traffics SET
-                  ip_address_id = ?, user_id = ?, protocol = ?, role = ?,
-                  packets_in = ?, packets_out = ?,
-                  bytes_in = ?, bytes_out = ?,
-                  created_at = CONVERT_TZ(NOW(), 'Europe/Prague', 'UTC')
-                ON DUPLICATE KEY UPDATE
-                  packets_in = packets_in + values(packets_in),
-                  packets_out = packets_out + values(packets_out),
-                  bytes_in = bytes_in + values(bytes_in),
-                  bytes_out = bytes_out + values(bytes_out)",
-                addr.id, addr.user_id, PROTOCOL_MAP.index(proto),
-                VpsAdmind::Firewall::Accounting::ROLES.index(role),
-                t[:packets][:in], t[:packets][:out],
-                t[:bytes][:in], t[:bytes][:out]
-            )
-          end
+        traffic.each do |proto, t|
+          yield(ip, proto, t)
         end
       end
 
