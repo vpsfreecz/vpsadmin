@@ -375,78 +375,94 @@ if ($_SESSION['is_admin'] && $show_top) {
 if ($show_live) {
 	$xtpl->title(_('Live monitor'));
 	
-	if($_SESSION["is_admin"]) {
-		$xtpl->form_create('?page=adminm&section=members&action=approval_requests', 'get');
-		
-		$xtpl->table_td(_("Limit").':'.
-			'<input type="hidden" name="page" value="networking">'.
-			'<input type="hidden" name="action" value="live">'
-		);
-		$xtpl->form_add_input_pure('text', '30', 'limit', $_GET["limit"] ? $_GET["limit"] : 50);
-		$xtpl->table_tr();
-		
-		$xtpl->form_add_input(_("IP address").':', 'text', '30', 'ip', $_GET["ip"]);
-		$xtpl->form_add_input(_("VPS ID").':', 'text', '30', 'vps', $_GET["vps"]);
-		$xtpl->form_add_input(_("Member ID").':', 'text', '30', 'member', $_GET["member"]);
-		
-		$xtpl->form_out(_("Show"));
+	$xtpl->form_create('?page=adminm&section=members&action=approval_requests', 'get');
+	
+	$xtpl->table_td(_("Limit").':'.
+		'<input type="hidden" name="page" value="networking">'.
+		'<input type="hidden" name="action" value="live">'
+	);
+	$xtpl->form_add_input_pure('text', '30', 'limit', get_val('limit', 25));
+	$xtpl->table_tr();
+	
+	$xtpl->form_add_select(_('IP version').':', 'ip_version', array(
+		0 => _('All'),
+		4 => 'IPv4',
+		6 => 'IPv6',
+	), get_val('ip_version'));
+
+	$xtpl->form_add_select(_("Environment").':', 'environment',
+		resource_list_to_options($api->environment->list()), get_val('environment'));
+	$xtpl->form_add_select(_("Location").':', 'location',
+		resource_list_to_options($api->location->list()), get_val('location'));
+	$xtpl->form_add_select(_("Network").':', 'network', 
+		resource_list_to_options($api->network->list(), 'id', 'label', true, network_label), get_val('network'));
+	$xtpl->form_add_select(_("IP range").':', 'ip_range', 
+		resource_list_to_options($api->ip_range->list(), 'id', 'label', true, network_label), get_val('ip_range'));
+	$xtpl->form_add_select(_("Node").':', 'node', 
+		resource_list_to_options($api->node->list(), 'id', 'domain_name'), get_val('node'));
+	
+	$xtpl->form_add_input(_("IP address").':', 'text', '30', 'ip_address_id', get_val('ip_address'));
+	$xtpl->form_add_input(_("VPS ID").':', 'text', '30', 'vps', get_val('vps'));
+	
+	if($_SESSION["is_admin"])
+		$xtpl->form_add_input(_("User ID").':', 'text', '30', 'user', get_val('user'));
+	
+	$xtpl->form_out(_("Show"));
+	
+	$params = array(
+		'limit' => get_val('limit', 25),
+		'meta' => array('includes' => 'ip_address'),
+	);
+	
+	$conds = array(
+		'ip_version', 'vps', 'node', 'location', 'environment',
+		'network', 'ip_range', 'ip_address'
+	);
+	
+	foreach ($conds as $c) {
+		if ($_GET[$c])
+			$params[$c] = $_GET[$c];
 	}
 	
+	$traffic = $api->ip_traffic_monitor->list($params);
+
+	$roles = array('public', 'private');
+
+	$xtpl->table_td(_('VPS'), '#5EAFFF; color:#FFF; font-weight:bold;', false, '1', '2');
+	$xtpl->table_td(_('IP'), '#5EAFFF; color:#FFF; font-weight:bold;', false, '1', '2');
+
+	$xtpl->table_td(_('Public'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;', false, '3');
+	$xtpl->table_td(_('Private'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;', false, '3');
+	$xtpl->table_td(_('Total'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;', false, '3');
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('In'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('Out'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('Total'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
 	
-	$xtpl->table_add_category(_('VPS'));
-	$xtpl->table_add_category(_('IP'));
-	$xtpl->table_add_category(_('TCP<br>IN'));
-	$xtpl->table_add_category(_('TCP<br>OUT'));
-	$xtpl->table_add_category(_('UDP<br>IN'));
-	$xtpl->table_add_category(_('UDP<br>OUT'));
-	$xtpl->table_add_category(_('OTHERS<br>IN'));
-	$xtpl->table_add_category(_('OTHERS<br>OUT'));
-	$xtpl->table_add_category(_('TOTAL'));
+	$xtpl->table_td(_('In'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('Out'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('Total'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
 	
-	$traffic = null;
-	
-	if($_SESSION["is_admin"]) {
-		$traffic = $accounting->get_live_traffic_by_ip(
-			$_GET["limit"] ? (int)$_GET["limit"] : 50,
-			$_GET["ip"],
-			(int)$_GET["vps"],
-			(int)$_GET["member"]
-		);
-	} else {
-		$traffic = $accounting->get_live_traffic_by_ip(
-			50,
-			false,
-			false,
-			$_SESSION["member"]["m_id"]
-		);
-	}
-	
-	$cols = array('tcp', 'udp', 'others');
-	
-	foreach($traffic as $data) {
-		$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$data['vps_id'].'">'.$data['vps_id'].'</a>');
-		$xtpl->table_td($data['ip_addr']);
-		
-		foreach($cols as $col) {
-			$xtpl->table_td(
-				format_data_rate($data['protocols'][$col]['bps']['in'] * 8, 'bps')."<br>".
-				format_data_rate($data['protocols'][$col]['pps']['in'] * 8, 'pps'),
-				false, true
-			);
-			
-			$xtpl->table_td(
-				format_data_rate($data['protocols'][$col]['bps']['out'] * 8, 'bps')."<br>".
-				format_data_rate($data['protocols'][$col]['pps']['out'] * 8, 'pps'),
-				false, true
-			);
+	$xtpl->table_td(_('In'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('Out'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('Total'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_tr();
+
+	foreach ($traffic as $data) {
+		$xtpl->table_td($data->ip_address->vps_id);
+		$xtpl->table_td($data->ip_address->addr);
+
+		foreach ($roles as $role) {
+			$xtpl->table_td(format_data_rate($data->{"${role}_bytes_in"}, 'bps'), false, true);
+			$xtpl->table_td(format_data_rate($data->{"${role}_bytes_out"}, 'bps'), false, true);
+			$xtpl->table_td(format_data_rate($data->{"${role}_bytes"}, 'bps'), false, true);
 		}
 		
-		$xtpl->table_td(
-			format_data_rate(($data['protocols']['all']['bps']['in'] + $data['protocols']['all']['bps']['out']) * 8, 'bps')."<br>".
-			format_data_rate(($data['protocols']['all']['pps']['in'] + $data['protocols']['all']['pps']['out']) * 8, 'pps'),
-			false, true
-		);
-		
+		$xtpl->table_td(format_data_rate($data->bytes_in, 'bps'), false, true);
+		$xtpl->table_td(format_data_rate($data->bytes_out, 'bps'), false, true);
+		$xtpl->table_td(format_data_rate($data->bytes, 'bps'), false, true);
+
 		$xtpl->table_tr();
 	}
 	
