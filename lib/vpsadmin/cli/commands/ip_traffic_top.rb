@@ -116,7 +116,7 @@ module VpsAdmin::CLI::Commands
           else
             v.capitalize
           end
-        end.join('')
+        end.join('') + '/s'
 
         size = title.size + 1
 
@@ -153,8 +153,7 @@ module VpsAdmin::CLI::Commands
 
       setpos(0, 0)
       addstr("#{File.basename($0)} ip_traffic top - #{t.strftime('%H:%M:%S')}, ")
-      addstr("next update at #{(t + REFRESH_RATE).strftime('%H:%M:%S')}, ")
-      addstr("unit: #{@opts[:unit]} per second")
+      addstr("next update at #{(t + REFRESH_RATE).strftime('%H:%M:%S')}")
 
       attron(color_pair(1))
       setpos(2, 0)
@@ -234,10 +233,18 @@ module VpsAdmin::CLI::Commands
       setpos(lines-5, 0)
       addstr('─' * cols)
 
-      fmt = Array.new(5, '%10s').join(' ')
+      fmt = '%10s %10s %10s %14s %14s'
+      unit = @opts[:unit].to_s.capitalize
 
       setpos(lines-4, 0)
-      addstr(sprintf(fmt, '', 'Packets', @opts[:unit].to_s.capitalize, 'Public', 'Private'))
+      addstr(sprintf(
+          fmt,
+          '',
+          'Packets/s',
+          "#{unit}/s",
+          "Public#{unit}/s",
+          "Private#{unit}/s"
+      ))
 
       setpos(lines-3, 0)
       addstr(sprintf(fmt, 'In', *fields.map { |f| unitize(stats[:"#{f}_in"], avg_delta) }))
