@@ -5,6 +5,7 @@ module VpsAdmin::CLI::Commands
     include Curses
 
     REFRESH_RATE = 10
+    FILTERS = %i(limit ip_address ip_version environment location network ip_range node vps)
 
     cmd :ip_traffic, :top
     args ''
@@ -17,6 +18,24 @@ module VpsAdmin::CLI::Commands
 
       opts.on('--unit UNIT', %w(bytes bits), 'Select data unit (bytes or bits)') do |v|
         @opts[:unit] = v.to_sym
+      end
+      
+      opts.on('--limit LIMIT', Integer, 'Number of IP addresses to monitor') do |v|
+        @opts[:limit] = v
+      end
+      
+      opts.on('--ip-address ID', Integer, 'ID of IP addresses to monitor') do |v|
+        @opts[:ip_address] = v
+      end
+      
+      opts.on('--ip-version VER', [4, 6], 'Filter IP addresses by version') do |v|
+        @opts[:ip_version] = v
+      end
+    
+      (FILTERS - %i(limit ip_address ip_version)).each do |f|
+        opts.on("--#{f.to_s.gsub(/_/, '-')} ID", Integer, "Filter IP addresses by #{f}") do |v|
+          @opts[f] = v
+        end
       end
     end
 
@@ -109,10 +128,18 @@ module VpsAdmin::CLI::Commands
     def fetch
       return @data if @data
 
-      @data = @api.ip_traffic_monitor.list(
+      params =  {
           order: "#{@sort_desc ? '-' : ''}#{@sort_param}",
           meta: {includes: 'ip_address'}
-      )
+      }
+
+      FILTERS.each do |f|
+        next unless @opts[f]
+
+        params[f] = @opts[f]
+      end
+
+      @data = @api.ip_traffic_monitor.list(params)
     end
 
     def render(t, refresh)
