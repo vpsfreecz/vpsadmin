@@ -38,6 +38,7 @@ module VpsAdmin::CLI::Commands
       start_color
       crmode
       stdscr.keypad = true
+      curs_set(0)  # hide cursor
       self.timeout = REFRESH_RATE * 1000
 
       init_pair(1, COLOR_BLACK, COLOR_WHITE)
