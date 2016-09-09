@@ -14,7 +14,7 @@ module VpsAdmin::CLI::Commands
       @opts = {
           params: %i(bytes_in bytes_out bytes),
           unit: :bits,
-          order: '-bytes',
+          sort: '-bytes',
       }
 
       opts.on('-o', '--parameters PARAMS', 'Output parameters to show, separated by comma') do |v|
@@ -25,8 +25,8 @@ module VpsAdmin::CLI::Commands
         @opts[:unit] = v.to_sym
       end
 
-      opts.on('--order PARAM', 'Order by specified output parameter') do |v|
-        @opts[:order] = v
+      opts.on('-s', '--sort PARAM', 'Order by specified output parameter') do |v|
+        @opts[:sort] = v
       end
     end
 
@@ -52,7 +52,7 @@ module VpsAdmin::CLI::Commands
     protected
     def fetch
       @api.ip_traffic_monitor.list(
-          order: @opts[:order],
+          sort: @opts[:sort],
           meta: {includes: 'ip_address'}
       )
     end
