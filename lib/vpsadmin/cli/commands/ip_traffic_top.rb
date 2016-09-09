@@ -165,6 +165,8 @@ module VpsAdmin::CLI::Commands
         print_row(data)
         
         i += 1
+
+        break if i >= (lines - 5)
       end
 
       stats
