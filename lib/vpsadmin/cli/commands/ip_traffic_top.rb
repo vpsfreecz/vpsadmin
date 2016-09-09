@@ -12,9 +12,14 @@ module VpsAdmin::CLI::Commands
     
     def options(opts)
       @opts = {
+          params: %i(bytes_in bytes_out bytes),
           unit: :bits,
           order: '-bytes',
       }
+
+      opts.on('-o', '--parameters PARAMS', 'Output parameters to show, separated by comma') do |v|
+        @opts[:params] = v.split(',').map(&:to_sym)
+      end
 
       opts.on('--unit UNIT', %w(bytes bits), 'Select data unit (bytes or bits)') do |v|
         @opts[:unit] = v.to_sym
@@ -59,15 +64,16 @@ module VpsAdmin::CLI::Commands
       addstr("#{File.basename($0)} ip_traffic top - #{t.strftime('%H:%M:%S')}, ")
       addstr("next update at #{(t + REFRESH_RATE).strftime('%H:%M:%S')}, ")
       addstr("unit: #{@opts[:unit]} per second")
-      
+     
+      fmt = "%-30s #{Array.new(@opts[:params].count, '%10s').join(' ')}"
+
       attron(color_pair(1))
       setpos(2, 0)
+
       header = sprintf(
-          "%-30s %10s %10s %10s",
+          fmt,
           'IP Address',
-          'Rx',
-          'Tx',
-          'Total'
+          *param_titles,
       )
       addstr(header + (' ' * (cols - header.size)) + "\n")
       attroff(color_pair(1))
@@ -76,17 +82,32 @@ module VpsAdmin::CLI::Commands
       fetch.each do |data|
         setpos(i, 0)
         addstr(sprintf(
-            "%-30s %10s %10s %10s",
+            fmt,
             data.ip_address.addr,
-            unitize(data.bytes_in, data.delta),
-            unitize(data.bytes_out, data.delta),
-            unitize(data.bytes, data.delta),
+            *param_values(data),
         ))
 
         i += 1
       end
 
       refresh
+    end
+
+    def param_titles
+      @opts[:params].map do |v|
+        v.to_s.split('_').map do |p|
+          if @opts[:unit] == :bits
+            p.gsub(/bytes/, 'bits').capitalize
+
+          else
+            p.capitalize
+          end
+        end.join('')
+      end
+    end
+
+    def param_values(data)
+      @opts[:params].map { |v| unitize(data.send(v), data.delta) }
     end
 
     def unitize(n, delta)
