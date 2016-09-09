@@ -13,10 +13,15 @@ module VpsAdmin::CLI::Commands
     def options(opts)
       @opts = {
           unit: :bits,
+          order: '-bytes',
       }
 
-      opts.on('--unit [UNIT]', %w(bytes bits), 'Select data unit (bytes or bits)') do |v|
+      opts.on('--unit UNIT', %w(bytes bits), 'Select data unit (bytes or bits)') do |v|
         @opts[:unit] = v.to_sym
+      end
+
+      opts.on('--order PARAM', 'Order by specified output parameter') do |v|
+        @opts[:order] = v
       end
     end
 
@@ -30,6 +35,7 @@ module VpsAdmin::CLI::Commands
 
       loop do
         render
+
         break if getch == 'q'
       end
 
@@ -40,7 +46,10 @@ module VpsAdmin::CLI::Commands
 
     protected
     def fetch
-      @api.ip_traffic_monitor.list(meta: {includes: 'ip_address'})
+      @api.ip_traffic_monitor.list(
+          order: @opts[:order],
+          meta: {includes: 'ip_address'}
+      )
     end
 
     def render
