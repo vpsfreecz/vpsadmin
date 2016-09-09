@@ -246,7 +246,9 @@ module VpsAdmin::CLI::Commands
       addstr(sprintf(fmt, 'Out', *fields.map { |f| unitize(stats[:"#{f}_out"], avg_delta) }))
       
       setpos(lines-1, 0)
+      attron(A_BOLD)
       addstr(sprintf(fmt, 'Total', *fields.map { |f| unitize(stats[:"#{f}_in"] + stats[:"#{f}_out"], avg_delta) }))
+      attroff(A_BOLD)
     end
 
     def unitize(n, delta)
