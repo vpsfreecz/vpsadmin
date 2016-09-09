@@ -76,6 +76,9 @@ module VpsAdmin::CLI::Commands
 
         when Key::UP, Key::DOWN
           sort_inverse
+
+        when Key::RESIZE
+          clear
         end
       end
 
