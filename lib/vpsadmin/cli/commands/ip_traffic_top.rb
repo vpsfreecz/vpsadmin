@@ -177,11 +177,12 @@ module VpsAdmin::CLI::Commands
 
     def header
       unless @header
-        fmt = (['%-30s'] + @columns.map { |c| "%#{c[:width]}s" }).join(' ')
+        fmt = (['%-30s', '%6s'] + @columns.map { |c| "%#{c[:width]}s" }).join(' ')
 
         @header = sprintf(
             fmt,
             'IP Address',
+            'VPS',
             *@columns.map { |c| c[:title] },
         )
 
@@ -192,7 +193,7 @@ module VpsAdmin::CLI::Commands
     end
 
     def print_row(data)
-      addstr(sprintf('%-30s', data.ip_address.addr))
+      addstr(sprintf('%-30s %6s', data.ip_address.addr, data.ip_address.vps_id))
 
       @columns.each do |c|
         p = c[:name]
