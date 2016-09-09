@@ -159,12 +159,15 @@ module VpsAdmin::CLI::Commands
       attroff(color_pair(1))
 
       i = 3
+      
       fetch.each do |data|
         setpos(i, 0)
         print_row(data)
+        
         i += 1
       end
 
+      stats
       refresh
     end
 
@@ -194,6 +197,51 @@ module VpsAdmin::CLI::Commands
         addstr(sprintf(" %#{c[:width]}s", unitize(data.send(p), data.delta)))
         attroff(A_BOLD) if p == @sort_param
       end
+    end
+
+    def stats
+      fields = %i(packets bytes public_bytes private_bytes)
+      stats = {}
+      delta_sum = 0
+
+      fields.each do |f|
+        stats[f] = 0
+        
+        %i(in out).each do |dir|
+          stats[:"#{f}_#{dir}"] = 0
+        end
+      end
+
+      fetch.each do |data|
+        delta_sum += data.delta
+
+        fields.each do |f|
+          stats[f] += data.send(f)
+          
+          %i(in out).each do |dir|
+            stats[:"#{f}_#{dir}"] += data.send("#{f}_#{dir}")
+          end
+        end
+      end
+
+      avg_delta = delta_sum.to_f / fetch.count
+
+      setpos(lines-5, 0)
+      addstr('─' * cols)
+
+      fmt = Array.new(5, '%10s').join(' ')
+
+      setpos(lines-4, 0)
+      addstr(sprintf(fmt, '', 'Packets', @opts[:unit].to_s.capitalize, 'Public', 'Private'))
+
+      setpos(lines-3, 0)
+      addstr(sprintf(fmt, 'In', *fields.map { |f| unitize(stats[:"#{f}_in"], avg_delta) }))
+      
+      setpos(lines-2, 0)
+      addstr(sprintf(fmt, 'Out', *fields.map { |f| unitize(stats[:"#{f}_out"], avg_delta) }))
+      
+      setpos(lines-1, 0)
+      addstr(sprintf(fmt, 'Total', *fields.map { |f| unitize(stats[:"#{f}_in"] + stats[:"#{f}_out"], avg_delta) }))
     end
 
     def unitize(n, delta)
