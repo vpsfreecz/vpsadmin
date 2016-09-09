@@ -27,12 +27,23 @@ module VpsAdmin::CLI::Commands
       crmode
       stdscr.keypad = true
       curs_set(0)  # hide cursor
-      self.timeout = REFRESH_RATE * 1000
 
       init_pair(1, COLOR_BLACK, COLOR_WHITE)
+      last = nil
 
       loop do
-        render
+        now = Time.now
+
+        if @refresh || last.nil? || (now - last) >= REFRESH_RATE
+          @refresh = false
+          render(now, true)
+          last = Time.now
+          self.timeout = REFRESH_RATE * 1000
+
+        else
+          render(last, false)
+          self.timeout = (REFRESH_RATE - (now - last)) * 1000
+        end
 
         case getch
         when 'q'
@@ -96,14 +107,19 @@ module VpsAdmin::CLI::Commands
     end
 
     def fetch
-      @api.ip_traffic_monitor.list(
+      return @data if @data
+
+      @data = @api.ip_traffic_monitor.list(
           order: "#{@sort_desc ? '-' : ''}#{@sort_param}",
           meta: {includes: 'ip_address'}
       )
     end
 
-    def render
-      t = Time.now
+    def render(t, refresh)
+      if refresh
+        @data = nil
+        @header = nil
+      end
 
       setpos(0, 0)
       addstr("#{File.basename($0)} ip_traffic top - #{t.strftime('%H:%M:%S')}, ")
@@ -180,10 +196,12 @@ module VpsAdmin::CLI::Commands
       return unless @params[next_i]
 
       @sort_param = @params[next_i]
+      @refresh = true
     end
 
     def sort_inverse
       @sort_desc = !@sort_desc
+      @refresh = true
     end
   end
 end
