@@ -12,28 +12,16 @@ module VpsAdmin::CLI::Commands
     
     def options(opts)
       @opts = {
-          params: %i(bytes_in bytes_out bytes),
           unit: :bits,
       }
-
-      opts.on('-o', '--parameters PARAMS', 'Output parameters to show, separated by comma') do |v|
-        @opts[:params] = v.split(',').map(&:to_sym)
-      end
 
       opts.on('--unit UNIT', %w(bytes bits), 'Select data unit (bytes or bits)') do |v|
         @opts[:unit] = v.to_sym
       end
-
-      opts.on('-s', '--sort PARAM', 'Order by specified output parameter') do |v|
-        @sort_desc = v.start_with?('-')
-        @sort_param = (v.start_with?('-') ? v[1..-1] : v).to_sym
-      end
     end
 
     def exec(args)
-      @sort_desc = true if @sort_desc.nil?
-      @sort_param ||= :bytes
-
+      set_global_opts
       init_screen
       start_color
       crmode
@@ -67,6 +55,25 @@ module VpsAdmin::CLI::Commands
     end
 
     protected
+    def set_global_opts
+      if @global_opts[:output]
+        @params = @global_opts[:output].split(',').map(&:to_sym)
+
+      else
+        @params = %i(bytes_in bytes_out bytes)
+      end
+
+      if @global_opts[:sort]
+        v = @global_opts[:sort]
+        @sort_desc = v.start_with?('-')
+        @sort_param = (v.start_with?('-') ? v[1..-1] : v).to_sym
+
+      else
+        @sort_desc = true
+        @sort_param = :bytes
+      end
+    end
+
     def fetch
       @api.ip_traffic_monitor.list(
           order: "#{@sort_desc ? '-' : ''}#{@sort_param}",
@@ -82,7 +89,7 @@ module VpsAdmin::CLI::Commands
       addstr("next update at #{(t + REFRESH_RATE).strftime('%H:%M:%S')}, ")
       addstr("unit: #{@opts[:unit]} per second")
      
-      fmt = "%-30s #{Array.new(@opts[:params].count, '%10s').join(' ')}"
+      fmt = "%-30s #{Array.new(@params.count, '%10s').join(' ')}"
 
       attron(color_pair(1))
       setpos(2, 0)
@@ -106,7 +113,7 @@ module VpsAdmin::CLI::Commands
     end
 
     def param_titles
-      @opts[:params].map do |v|
+      @params.map do |v|
         v.to_s.split('_').map do |p|
           if @opts[:unit] == :bits
             p.gsub(/bytes/, 'bits').capitalize
@@ -121,7 +128,7 @@ module VpsAdmin::CLI::Commands
     def print_row(data)
       addstr(sprintf('%-30s', data.ip_address.addr))
 
-      @opts[:params].each do |p|
+      @params.each do |p|
         attron(A_BOLD) if p == @sort_param
         addstr(sprintf(' %10s', unitize(data.send(p), data.delta)))
         attroff(A_BOLD) if p == @sort_param
@@ -150,11 +157,11 @@ module VpsAdmin::CLI::Commands
     end
 
     def sort_next(n)
-      cur_i = @opts[:params].index(@sort_param)
+      cur_i = @params.index(@sort_param)
       next_i = cur_i + n
-      return unless @opts[:params][next_i]
+      return unless @params[next_i]
 
-      @sort_param = @opts[:params][next_i]
+      @sort_param = @params[next_i]
     end
 
     def sort_inverse
