@@ -14,7 +14,6 @@ module VpsAdmin::CLI::Commands
       @opts = {
           params: %i(bytes_in bytes_out bytes),
           unit: :bits,
-          sort: '-bytes',
       }
 
       opts.on('-o', '--parameters PARAMS', 'Output parameters to show, separated by comma') do |v|
@@ -26,14 +25,19 @@ module VpsAdmin::CLI::Commands
       end
 
       opts.on('-s', '--sort PARAM', 'Order by specified output parameter') do |v|
-        @opts[:sort] = v
+        @sort_desc = v.start_with?('-')
+        @sort_param = (v.start_with?('-') ? v[1..-1] : v).to_sym
       end
     end
 
     def exec(args)
+      @sort_desc = true if @sort_desc.nil?
+      @sort_param ||= :bytes
+
       init_screen
       start_color
       crmode
+      stdscr.keypad = true
       self.timeout = REFRESH_RATE * 1000
 
       init_pair(1, COLOR_BLACK, COLOR_WHITE)
@@ -41,7 +45,19 @@ module VpsAdmin::CLI::Commands
       loop do
         render
 
-        break if getch == 'q'
+        case getch
+        when 'q'
+          break
+
+        when Key::LEFT
+          sort_next(-1)
+
+        when Key::RIGHT
+          sort_next(+1)
+
+        when Key::UP, Key::DOWN
+          sort_inverse
+        end
       end
 
     rescue Interrupt
@@ -52,7 +68,7 @@ module VpsAdmin::CLI::Commands
     protected
     def fetch
       @api.ip_traffic_monitor.list(
-          sort: @opts[:sort],
+          order: "#{@sort_desc ? '-' : ''}#{@sort_param}",
           meta: {includes: 'ip_address'}
       )
     end
@@ -81,12 +97,7 @@ module VpsAdmin::CLI::Commands
       i = 3
       fetch.each do |data|
         setpos(i, 0)
-        addstr(sprintf(
-            fmt,
-            data.ip_address.addr,
-            *param_values(data),
-        ))
-
+        print_row(data)
         i += 1
       end
 
@@ -106,8 +117,14 @@ module VpsAdmin::CLI::Commands
       end
     end
 
-    def param_values(data)
-      @opts[:params].map { |v| unitize(data.send(v), data.delta) }
+    def print_row(data)
+      addstr(sprintf('%-30s', data.ip_address.addr))
+
+      @opts[:params].each do |p|
+        attron(A_BOLD) if p == @sort_param
+        addstr(sprintf(' %10s', unitize(data.send(p), data.delta)))
+        attroff(A_BOLD) if p == @sort_param
+      end
     end
 
     def unitize(n, delta)
@@ -129,6 +146,18 @@ module VpsAdmin::CLI::Commands
       end
 
       per_s.to_s
+    end
+
+    def sort_next(n)
+      cur_i = @opts[:params].index(@sort_param)
+      next_i = cur_i + n
+      return unless @opts[:params][next_i]
+
+      @sort_param = @opts[:params][next_i]
+    end
+
+    def sort_inverse
+      @sort_desc = !@sort_desc
     end
   end
 end
