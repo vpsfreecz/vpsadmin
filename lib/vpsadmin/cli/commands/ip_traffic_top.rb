@@ -72,6 +72,27 @@ module VpsAdmin::CLI::Commands
         @sort_desc = true
         @sort_param = :bytes
       end
+
+      @columns = []
+
+      @params.each do |p|
+        title = p.to_s.split('_').map do |v|
+          if @opts[:unit] == :bits
+            v.to_s.gsub(/bytes/, 'bits').capitalize
+
+          else
+            v.capitalize
+          end
+        end.join('')
+
+        size = title.size + 1
+
+        @columns << {
+            name: p,
+            title: title,
+            width: size < 8 ? 8 : size,
+        }
+      end
     end
 
     def fetch
@@ -88,18 +109,10 @@ module VpsAdmin::CLI::Commands
       addstr("#{File.basename($0)} ip_traffic top - #{t.strftime('%H:%M:%S')}, ")
       addstr("next update at #{(t + REFRESH_RATE).strftime('%H:%M:%S')}, ")
       addstr("unit: #{@opts[:unit]} per second")
-     
-      fmt = "%-30s #{Array.new(@params.count, '%10s').join(' ')}"
 
       attron(color_pair(1))
       setpos(2, 0)
-
-      header = sprintf(
-          fmt,
-          'IP Address',
-          *param_titles,
-      )
-      addstr(header + (' ' * (cols - header.size)) + "\n")
+      header
       attroff(color_pair(1))
 
       i = 3
@@ -112,25 +125,30 @@ module VpsAdmin::CLI::Commands
       refresh
     end
 
-    def param_titles
-      @params.map do |v|
-        v.to_s.split('_').map do |p|
-          if @opts[:unit] == :bits
-            p.gsub(/bytes/, 'bits').capitalize
+    def header
+      unless @header
+        fmt = (['%-30s'] + @columns.map { |c| "%#{c[:width]}s" }).join(' ')
 
-          else
-            p.capitalize
-          end
-        end.join('')
+        @header = sprintf(
+            fmt,
+            'IP Address',
+            *@columns.map { |c| c[:title] },
+        )
+
+        @header << (' ' * (cols - @header.size)) << "\n"
       end
+      
+      addstr(@header)
     end
 
     def print_row(data)
       addstr(sprintf('%-30s', data.ip_address.addr))
 
-      @params.each do |p|
+      @columns.each do |c|
+        p = c[:name]
+
         attron(A_BOLD) if p == @sort_param
-        addstr(sprintf(' %10s', unitize(data.send(p), data.delta)))
+        addstr(sprintf(" %#{c[:width]}s", unitize(data.send(p), data.delta)))
         attroff(A_BOLD) if p == @sort_param
       end
     end
