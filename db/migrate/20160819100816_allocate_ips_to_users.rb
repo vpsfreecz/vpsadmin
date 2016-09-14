@@ -127,30 +127,32 @@ class AllocateIpsToUsers < ActiveRecord::Migration
         )
 
         used = 0
+        
+        q = IpAddress.joins(
+            'LEFT JOIN vps ON vps.vps_id = vps_ip.vps_id'
+        ).joins(network: {location: :environment}).where(
+            locations: {environment_id: ucr.environment},
+        )
 
-        [
-            {environments: {user_ip_ownership: true}, user: ucr.user},
-            {environments: {user_ip_ownership: false}, vps: {m_id: ucr.user_id}},
-        ].each do |cond|
-          q = IpAddress.joins(
-              'LEFT JOIN vps ON vps.vps_id = vps_ip.vps_id'
-          ).joins(
-              network: [location: [:environment]]
-          ).where(cond)
+        if ucr.environment.user_ip_ownership
+          q = q.where(user: ucr.user)
 
-          case ucr.cluster_resource.name.to_sym
-          when :ipv4
-            q = q.where(networks: {ip_version: 4, role: Network.roles[:public_access]})
-
-          when :ipv6
-            q = q.where(networks: {ip_version: 6})
-
-          when :ipv4_private
-            q = q.where(networks: {ip_version: 4, role: Network.roles[:private_access]})
-          end
-          
-          used += q.count
+        else
+          q = q.where(vps: {m_id: ucr.user_id})
         end
+
+        case ucr.cluster_resource.name.to_sym
+        when :ipv4
+          q = q.where(networks: {ip_version: 4, role: Network.roles[:public_access]})
+
+        when :ipv6
+          q = q.where(networks: {ip_version: 6})
+
+        when :ipv4_private
+          q = q.where(networks: {ip_version: 4, role: Network.roles[:private_access]})
+        end
+        
+        used += q.count
 
         ClusterResourceUse.create!(
             user_cluster_resource: ucr,
@@ -177,33 +179,31 @@ class AllocateIpsToUsers < ActiveRecord::Migration
 
       # Calculate new resource use
       u.vpses.where('object_state < 3').each do |vps|
-        %i(ipv4 ipv6 ipv4_private).each do |r_name|
-          q = vps.ip_addresses.joins(:network)
+        q = vps.ip_addresses.joins(:network)
 
-          case r_name
-          when :ipv4
-            q = q.where(networks: {ip_version: 4, role: Network.roles[:public_access]})
+        case r_name
+        when :ipv4
+          q = q.where(networks: {ip_version: 4, role: Network.roles[:public_access]})
 
-          when :ipv6
-            q = q.where(networks: {ip_version: 6})
+        when :ipv6
+          q = q.where(networks: {ip_version: 6})
 
-          when :ipv4_private
-            q = q.where(networks: {ip_version: 4, role: Network.roles[:private_access]})
-          end
-          
-          ClusterResourceUse.create!(
-              user_cluster_resource: u.user_cluster_resources.joins(:cluster_resource).find_by!(
-                  environment: vps.node.location.environment,
-                  cluster_resources: {name: r_name},
-                  user: u,
-              ),
-              class_name: 'Vps',
-              table_name: 'vps',
-              row_id: vps.id,
-              value: q.count,
-              confirmed: 1,
-          )
+        when :ipv4_private
+          q = q.where(networks: {ip_version: 4, role: Network.roles[:private_access]})
         end
+        
+        ClusterResourceUse.create!(
+            user_cluster_resource: u.user_cluster_resources.joins(:cluster_resource).find_by!(
+                environment: vps.node.location.environment,
+                cluster_resources: {name: r_name},
+                user: u,
+            ),
+            class_name: 'Vps',
+            table_name: 'vps',
+            row_id: vps.id,
+            value: q.count,
+            confirmed: 1,
+        )
       end
     end
   end
