@@ -1,5 +1,7 @@
 module VpsAdmind::Firewall
   class Accounting
+    include VpsAdmind::Utils::Log
+
     ROLES = %i(public private)
 
     attr_reader :fw, *ROLES
