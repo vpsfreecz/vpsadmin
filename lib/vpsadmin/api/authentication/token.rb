@@ -28,7 +28,7 @@ module VpsAdmin::API::Authentication
     def renew_token(request, user, token)
       t = ::ApiToken.find_by(user: user, token: token)
 
-      if t.lifetime.start_with('renewable')
+      if t.lifetime.start_with?('renewable')
         t.renew
         t.save!
         t.valid_to
