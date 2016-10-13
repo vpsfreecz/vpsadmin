@@ -1,4 +1,29 @@
 module VpsAdmind
+  # Control class for ZFS send invocation.
+  #
+  # ZfsStream uses the `-v` flag of zfs send to monitor how the transfer progresses.
+  # The following output from zfs send is parsed:
+  #
+  #   send from <snap1> to <snap2> estimated size is <n><unit>
+  #   send from <snap2> to <snap3> estimated size is <n><unit>
+  #   send from <snap3> to <snap4> estimated size is <n><unit>
+  #   ...
+  #   total estimated size is <n><unit>  # this is the size that is read
+  #   TIME        SENT         SNAPSHOT
+  #   HH:MM:SS    <n1><unit>   <snap>
+  #   HH:MM:SS    <n2><unit>   <snap>
+  #   HH:MM:SS    <n3><unit>   <snap>
+  #   TIME        SENT         SNAPSHOT
+  #   HH:MM:SS    <m1><unit>   <snap>
+  #   HH:MM:SS    <m2><unit>   <snap>
+  #   HH:MM:SS    <m3><unit>   <snap>
+  #   ...
+  # 
+  # A line with column headers separates transfers of snapshots listed at the top.
+  # There might not be any transfered data between column headers if the snapshot
+  # has zero (or possibly very little) size. Time and snapshot columns are ignored,
+  # sent data are expected to increment and reset when the next snapshot is being
+  # transfered.
   class ZfsStream
     include Utils::System
     include Utils::Zfs
@@ -116,28 +141,32 @@ module VpsAdmind
 
       w_err.close
 
-      # Skip the first three lines, i.e.:
-      #   send from @ to <ds> estimated size is 19.8G
-      #   total estimated size is 19.8G
-      #   TIME        SENT   SNAPSHOT
-      @size = parse_total_size(r_err.readline)
-      2.times { r_err.readline }
+      @size = parse_total_size(r_err)
 
       [pid, r_err]
     end
 
     def monitor_progress(io)
+      total = 0
       transfered = 0
 
       io.each_line do |line|
         n = parse_transfered(line)
-        change = transfered == 0 ? n : n - transfered
-        transfered = n
+        
+        if n
+          change = transfered == 0 ? n : n - transfered
+          transfered = n
+          total += change
+
+        else  # Transfer of another snapshot has begun, zfs send is counting from 0
+          transfered = 0
+          next
+        end
         
         if @cmd
           @cmd.progress = {
               total: size,
-              current: transfered,
+              current: total,
               unit: :mib,
               time: Time.now
           }
@@ -176,14 +205,21 @@ module VpsAdmind
       parse_size(m[1])
     end
 
-    # @param str [String] output of zfs send -v
-    def parse_total_size(str)
-      rx = /estimated size is ([^$]+)$/
-      m = rx.match(str)
+    # Reads from fd until total transfer size can be estimated.
+    # @param fd [IO] IO object to read
+    def parse_total_size(fd)
+      rx = /total estimated size is ([^$]+)$/
 
-      raise ArgumentError, 'unable to estimate size' if m.nil?
-      
-      parse_size(m[1])
+      until fd.eof? do
+        line = fd.readline
+  
+        m = rx.match(line)
+        next if m.nil?
+
+        return parse_size(m[1])
+      end
+
+      raise RuntimeError, 'unable to estimate total transfer size'
     end
 
     def parse_transfered(str)
