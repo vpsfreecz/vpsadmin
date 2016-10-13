@@ -49,7 +49,7 @@ module TransactionChains
         ownership = !ip.user_id && vps.node.location.environment.user_ip_ownership
 
         append(Transactions::Vps::IpAdd, args: [vps, ip]) do
-          edit_before(ip, vps_id: ip.vps_id, order: order)
+          edit_before(ip, vps_id: ip.vps_id, order: ip.order)
           edit_before(ip, user_id: ip.user_id) if ownership
         end
         
