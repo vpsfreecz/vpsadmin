@@ -10,7 +10,9 @@ module Transactions::Firewall
 
       {
           addr: ip.addr,
-          version: ip.version
+          version: ip.version,
+          id: ip.id,
+          user_id: vps.m_id,
       }
     end
   end
