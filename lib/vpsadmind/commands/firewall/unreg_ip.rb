@@ -4,10 +4,12 @@ module VpsAdmind
 
     def exec
       Firewall.accounting.unreg_ip(@addr, @version)
+      Firewall.ip_map.unset(@addr)
       ok
     end
 
     def rollback
+      Firewall.ip_map.set(@addr, @id, @user_id)
       Firewall.accounting.reg_ip(@addr, @version)
       ok
     end
