@@ -14,7 +14,7 @@ function print_newvps_page1() {
 	);	
 	$xtpl->form_add_select_pure(
 		'location',
-		resource_list_to_options($api->location->list()),
+		resource_list_to_options($api->location->list(array('has_hypervisor' => true))),
 		$_GET['location'],
 		''
 	);
