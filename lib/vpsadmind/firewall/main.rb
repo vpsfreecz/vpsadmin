@@ -56,32 +56,32 @@ module VpsAdmind::Firewall
         # pub ip to pub ip -> private traffic
         iptables(v, [
             '-A', 'vpsadmin_main',
-            '-m set', '--match-set vpsadmin_networks_public src',
-            '-m set', '--match-set vpsadmin_networks_public dst',
+            '-m set', "--match-set vpsadmin_v#{v}_networks_public src",
+            '-m set', "--match-set vpsadmin_v#{v}_networks_public dst",
             '-j', accounting.private.chain,
         ])
         
         # pub ip to priv ip -> private traffic
         iptables(v, [
             '-A', 'vpsadmin_main',
-            '-m set', '--match-set vpsadmin_networks_public src',
-            '-m set', '--match-set vpsadmin_networks_private dst',
+            '-m set', "--match-set vpsadmin_v#{v}_networks_public src",
+            '-m set', "--match-set vpsadmin_v#{v}_networks_private dst",
             '-j', accounting.private.chain,
         ])
         
         # priv ip to pub ip -> private traffic
         iptables(v, [
             '-A', 'vpsadmin_main',
-            '-m set', '--match-set vpsadmin_networks_private src',
-            '-m set', '--match-set vpsadmin_networks_public dst',
+            '-m set', "--match-set vpsadmin_v#{v}_networks_private src",
+            '-m set', "--match-set vpsadmin_v#{v}_networks_public dst",
             '-j', accounting.private.chain,
         ])
         
         # priv ip to priv ip -> private traffic
         iptables(v, [
             '-A', 'vpsadmin_main',
-            '-m set', '--match-set vpsadmin_networks_private src',
-            '-m set', '--match-set vpsadmin_networks_private dst',
+            '-m set', "--match-set vpsadmin_v#{v}_networks_private src",
+            '-m set', "--match-set vpsadmin_v#{v}_networks_private dst",
             '-j', accounting.private.chain,
         ])
 

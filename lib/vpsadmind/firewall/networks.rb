@@ -47,7 +47,7 @@ module VpsAdmind::Firewall
         n = Network.new(v, addr, prefix, r)
         @networks << n
         
-        IpSet.append!("vpsadmin_networks_#{r}", [n.to_s])
+        IpSet.append!("vpsadmin_networks_#{r}_v#{n.version}", [n.to_s])
       end
     end
 
@@ -63,11 +63,13 @@ module VpsAdmind::Firewall
         ROLES.each { |r| deploy!(r) }
 
       else
-        IpSet.create_or_replace!(
-            "vpsadmin_networks_#{role}",
-            'hash:net',
-            send(role).map(&:to_s)
-        )
+        [4, 6].each do |v|
+          IpSet.create_or_replace!(
+              "vpsadmin_v#{v}_networks_#{role}",
+              "hash:net family #{v == 4 ? 'inet' : 'inet6'}",
+              send(role).select { |n| n.version == v }.map(&:to_s)
+          )
+        end
       end
     end
 
