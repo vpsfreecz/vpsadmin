@@ -181,43 +181,7 @@ module TransactionChains
       # Migration to different location - remove or replace
       # IP addresses
       if vps.node.location != dst_vps.node.location && @opts[:handle_ips]
-        # Add the same number of IP addresses from the target location
-        if @opts[:replace_ips]
-          dst_ip_addresses = []
-
-          vps.ip_addresses.each do |ip|
-            replacement = ::IpAddress.pick_addr!(
-                dst_vps.user,
-                dst_vps.node.location,
-                ip.network.ip_version,
-                ip.network.role.to_sym,
-            )
-            lock(replacement)
-
-            append(Transactions::Vps::IpDel, args: [dst_vps, ip, false], urgent: true) do
-              edit(ip, vps_id: nil)
-            end
-
-            append(Transactions::Vps::IpAdd, args: [dst_vps, replacement], urgent: true) do
-              edit(replacement, vps_id: dst_vps.veid)
-
-              if !replacement.user_id && dst_vps.node.location.environment.user_ip_ownership
-                edit(replacement, user_id: dst_vps.user_id)
-              end
-            end
-
-            dst_ip_addresses << replacement
-          end
-
-        else
-          # Remove all IP addresses
-          dst_ip_addresses = []
-          ips = []
-
-          vps.ip_addresses.each { |ip| ips << ip }
-          use_chain(Vps::DelIp, args: [dst_vps, ips, vps, false, @opts[:reallocate_ips]],
-                    urgent: true)
-        end
+        migrate_ip_addresses(vps, dst_vps)
       end
 
       # Regenerate mount scripts of the migrated VPS
@@ -416,6 +380,167 @@ module TransactionChains
           # in the target environment is caught by the rescue above.
           next
         end
+      end
+    end
+   
+    # Replaces IP addresses if migrating to another location. Handles reallocation
+    # of cluster resources when migrating to a different environment.
+    #
+    # 1) Within one location
+    #    - nothing to do
+    # 2) Different location, same env
+    #    - no reallocation needed, just find replacement ips
+    # 3) Different location, different env
+    #    - find replacements, reallocate to different env
+    #
+    # Only standalone IP addresses are disowned, i.e. addresses belonging to an IP range
+    # are not freed.
+    def migrate_ip_addresses(vps, dst_vps)
+      # Add the same number of IP addresses from the target location
+      if @opts[:replace_ips]
+        dst_ip_addresses = []
+
+        vps.ip_addresses.joins(:network).order(
+            'networks.ip_version, vps_ip.order'
+        ).each do |ip|
+          begin
+            replacement = ::IpAddress.pick_addr!(
+                dst_vps.user,
+                dst_vps.node.location,
+                ip.network.ip_version,
+                ip.network.role.to_sym,
+            )
+          
+          rescue ActiveRecord::RecordNotFound
+            dst_ip_addresses << [ip, nil]
+            next
+          end
+
+          lock(replacement)
+
+          dst_ip_addresses << [ip, replacement]
+        end
+
+        if dst_ip_addresses.detect { |v| v[1].nil? }
+          src = dst_ip_addresses.map { |v| v[0] }
+          dst = dst_ip_addresses.map { |v| v[1] }.compact
+          errors = []
+
+          %i(ipv4 ipv4_private ipv6).each do |r|
+            puts "\n\nmm #{r}"
+            p filter_ip_addresses(src, r)
+            p filter_ip_addresses(dst, r)
+            puts "endmm\n\n"
+            diff = filter_ip_addresses(src, r).count - filter_ip_addresses(dst, r).count
+            next if diff == 0
+
+            errors << "#{diff} #{r} addresses"
+          end
+
+          fail "Not enough free IP addresses in the target location: #{errors.join(', ')}"
+        end
+
+        # Migrating to a different environment, transfer IP cluster resources
+        if @opts[:reallocate_ips] \
+           && vps.node.location.environment_id != dst_vps.node.location.environment_id
+          changes = transfer_ip_addresses(
+              vps.user,
+              dst_ip_addresses,
+              vps.node.location.environment,
+              dst_vps.node.location.environment,
+          )
+
+          unless changes.empty?
+            append_t(Transactions::Utils::NoOp, args: find_node_id, urgent: true) do |t|
+              changes.each { |obj, change| t.edit(obj, change) }
+            end
+          end
+        end
+
+        dst_ip_addresses.each do |src_ip, dst_ip|
+          append(Transactions::Vps::IpDel, args: [dst_vps, src_ip, false], urgent: true) do
+            edit(src_ip, vps_id: nil)
+
+            if src_ip.user_id && src_ip.network.type != 'IpRange'
+              edit(src_ip, user_id: nil)
+            end
+          end
+
+          append(Transactions::Vps::IpAdd, args: [dst_vps, dst_ip], urgent: true) do
+            edit(dst_ip, vps_id: dst_vps.id, order: src_ip.order)
+
+            if !dst_ip.user_id && dst_vps.node.location.environment.user_ip_ownership
+              edit(dst_ip, user_id: dst_vps.user_id)
+            end
+          end
+        end
+
+      else
+        # Remove all IP addresses
+        dst_ip_addresses = []
+        ips = []
+
+        vps.ip_addresses.each { |ip| ips << ip }
+        use_chain(Vps::DelIp, args: [dst_vps, ips, vps, false, @opts[:reallocate_ips]],
+                  urgent: true)
+      end
+    end
+
+    # Transfer number of `ips` belonging to `user` from `src_env` to `dst_env`.
+    def transfer_ip_addresses(user, ips, src_env, dst_env)
+      ret = {}
+
+      src_user_env = user.environment_user_configs.find_by!(
+          environment: src_env,
+      )
+      dst_user_env = user.environment_user_configs.find_by!(
+          environment: dst_env,
+      )
+
+      new_ips = ips.select { |_, ip| !ip.user_id }.map { |v| v[1] }
+
+      %i(ipv4 ipv4_private ipv6).each do |r|
+        # Free only standalone IP addresses
+        standalone_ips = ips.select do |ip, _|
+          ip.network.type != 'IpRange'
+        end.map { |v| v[0] }
+
+        src_use = src_user_env.reallocate_resource!(
+          r,
+          src_user_env.send(r) - filter_ip_addresses(standalone_ips, r).count,
+          user: user,
+          confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+        )
+
+        # Allocate all _new_ IP addresses
+        dst_use = dst_user_env.reallocate_resource!(
+          r,
+          dst_user_env.send(r) + filter_ip_addresses(new_ips, r).count,
+          user: user,
+          confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+        )
+        
+        ret[src_use] = {value: src_use.value}
+        ret[dst_use] = {value: dst_use.value}
+      end
+
+      ret
+    end
+
+    def filter_ip_addresses(ips, r)
+      case r
+      when :ipv4
+        ips.select do |ip|
+          ip.network.ip_version == 4 && ip.network.role == 'public_access'
+        end
+      
+      when :ipv4_private
+        ips.select do |ip|
+          ip.network.ip_version == 4 && ip.network.role == 'private_access'
+        end
+      
+      when :ipv6
+        ips.select { |ip| ip.network.ip_version == 6 }
       end
     end
 
