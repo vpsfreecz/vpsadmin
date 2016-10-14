@@ -3,73 +3,54 @@
 function print_newvps_page1() {
 	global $xtpl, $api;
 	
-	$xtpl->title(_("Create a VPS: Select an environment (1/3)"));
+	$xtpl->title(_("Create a VPS: Select a location (1/2)"));
 	
 	$xtpl->form_create('', 'get', 'newvps-step1', false);
 
 	$xtpl->table_td(
-		_("Environment").':'.
+		_('Location').':'.
 		'<input type="hidden" name="page" value="adminvps">'.
 		'<input type="hidden" name="action" value="new2">'
+	);	
+	$xtpl->form_add_select_pure(
+		'location',
+		resource_list_to_options($api->location->list()),
+		$_GET['location'],
+		''
 	);
-	$xtpl->form_add_select_pure('environment',
-		resource_list_to_options(
-			$api->environment->list(array('has_hypervisor' => true))
-			, 'id',  'label', false
-		),
-		$_GET['environment']);
 	$xtpl->table_tr();
 	
 	$xtpl->form_out(_("Next"));
 }
 
-function print_newvps_page2($env_id) {
-	global $xtpl, $api;
-	
-	$xtpl->title(_("Create a VPS: Select a location (2/3)"));
-	
-	$xtpl->form_create('', 'get', 'newvps-step2', false);
-	
-	$env = $api->environment->show($env_id);
-	
-	$xtpl->table_td(
-		_('Environment').':'.
-		'<input type="hidden" name="page" value="adminvps">'.
-		'<input type="hidden" name="action" value="new3">'.
-		'<input type="hidden" name="environment" value="'.$env_id.'">'
-	);
-	$xtpl->table_td($env->label);
-	$xtpl->table_tr();
-	
-	$choices = resource_list_to_options($api->location->list(array('environment' => $env_id)));
-	$choices[0] = _('--- select automatically ---');
-	
-	$xtpl->form_add_select(_("Location").':', 'location', $choices, $_GET['location'],  '');
-	
-	$xtpl->form_out(_("Next"));
-	
-	$xtpl->sbar_add(_('Back'), '?page=adminvps&action=new&environment='.$env_id);
-}
-
-function print_newvps_page3($env_id, $loc_id) {
+function print_newvps_page2($loc_id) {
 	global $xtpl, $api;
 	
 	if ($_SESSION['is_admin'])
 		$xtpl->title(_("Create a VPS: Specify parameters"));
 	else
-		$xtpl->title(_("Create a VPS: Specify parameters (3/3)"));
+		$xtpl->title(_("Create a VPS: Specify parameters (2/2)"));
 	
-	$xtpl->form_create('?page=adminvps&action=new4&environment='.$env_id.'&location='.$loc_id, 'post');
+	$xtpl->form_create('?page=adminvps&action=new2&location='.$loc_id, 'post');
 	
 	if (!$_SESSION['is_admin']) {
-		$env = $api->environment->show($env_id);
+		try {
+			$loc = $api->location->show(
+				$loc_id,
+				array('meta' => array('includes' => 'environment'))
+			);
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			notify_user(_('Invalid location'), _('Please select the desired location of your new VPS.'));
+			redirect('?page=adminvps&action=new');
+		}
 		
 		$xtpl->table_td(_('Environment').':');
-		$xtpl->table_td($env->label);
+		$xtpl->table_td($loc->environment->label);
 		$xtpl->table_tr();
 		
 		$xtpl->table_td(_('Location').':');
-		$xtpl->table_td($loc_id ? $api->location->show($loc_id)->label : _('select automatically'));
+		$xtpl->table_td($loc->label);
 		$xtpl->table_tr();
 	}
 	
@@ -97,7 +78,7 @@ function print_newvps_page3($env_id, $loc_id) {
 	);
 	
 	$user_resources = $api->user->current()->cluster_resource->list(array(
-		'environment' => $env_id,
+		'environment' => $loc->environment_id,
 		'meta' => array('includes' => 'environment,cluster_resource')
 	));
 	$resource_map = array();

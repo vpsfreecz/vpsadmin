@@ -101,23 +101,10 @@ switch ($_GET["action"]) {
 		case 'new':
 			print_newvps_page1();
 			break;
-			
-		case 'new2':
-			print_newvps_page2($_GET['environment']);
-			break;
 		
-		case 'new3':
-			print_newvps_page3(
-				$_SESSION['is_admin']
-					? ENV_VPS_PRODUCTION_ID
-					: $_GET['environment'],
-				$_GET['location']
-			);
-			break;
-			
-		case 'new4':
+		case 'new2':
 			if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-				print_newvps_page3($_GET['environment'], $_GET['location']);
+				print_newvps_page2($_GET['location']);
 				break;
 			}
 			
@@ -143,8 +130,6 @@ switch ($_GET["action"]) {
 			} else {
 				if ($_GET['location'])
 					$params['location'] = (int)$_GET['location'];
-				if ($_GET['environment'])
-					$params['environment'] = (int)$_GET['environment'];
 			}
 			
 			try {
@@ -162,7 +147,7 @@ switch ($_GET["action"]) {
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 				$xtpl->perex_format_errors(_('VPS creation failed'), $e->getResponse());
 				
-				print_newvps_page3($_GET['environment'], $_GET['location']);
+				print_newvps_page2($_GET['location']);
 			}
 			break;
 			
@@ -786,7 +771,7 @@ if ($list_vps) {
 
 if($_SESSION["is_admin"] && $list_vps) {
 	if ($_SESSION["is_admin"]) {
-		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new3');
+		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new2');
 		$xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List VPSes").'" /> '._("List VPSes"), '?page=adminvps&action=list');
 	}
 }
