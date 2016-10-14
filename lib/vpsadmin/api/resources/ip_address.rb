@@ -115,7 +115,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
       if current_user.role != :admin
         ips = ips.where(
-            'vps_ip.user_id = ? OR vps_ip.user_id IS NULL', current_user.id
+            'vps_ip.user_id = ? OR (vps_ip.user_id IS NULL AND vps_ip.vps_id IS NULL)',
+            current_user.id
         ).order('vps_ip.user_id DESC, ip_id ASC')
       end
 
