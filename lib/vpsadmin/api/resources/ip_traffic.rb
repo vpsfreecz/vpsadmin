@@ -55,6 +55,7 @@ module VpsAdmin::API::Resources
       end
 
       def query
+        table = ::IpTrafficMonthlySummary.table_name
         q = ::IpTrafficMonthlySummary.where(with_restricted)
 
         # Directly accessible filters
@@ -84,11 +85,11 @@ module VpsAdmin::API::Resources
 
         when 'sum'
           q = q.select("
-              #{::IpTrafficMonthlySummary.table_name}.*,
+              #{table}.*,
               1 AS is_sum,
               SUM(packets_in) AS packets_in, SUM(packets_out) AS packets_out,
               SUM(bytes_in) AS bytes_in, SUM(bytes_out) AS bytes_out
-          ").group('ip_address_id, role, created_at')
+          ").group("#{table}.ip_address_id, #{table}.role, #{table}.created_at")
         end
         
         if input[:environment]
