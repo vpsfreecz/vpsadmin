@@ -9,7 +9,7 @@ module VpsAdmind
     end
 
     def rollback
-      VpsAdmind::Firewall.ip_map.set(@addr, @id, @user_id) if @unregister
+      VpsAdmind::Firewall.ip_map.set(@addr, @id, @version, @user_id) if @unregister
       Vps.new(@vps_id).ip_add(@addr, @version, @unregister, @shaper)
       ok
     end

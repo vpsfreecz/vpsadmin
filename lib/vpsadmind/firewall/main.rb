@@ -53,6 +53,14 @@ module VpsAdmind::Firewall
 
         accounting.init(db, v)
 
+        # skip local transfers
+        iptables(v, [
+            '-A', 'vpsadmin_main',
+            '-m set', "--match-set vpsadmin_v#{v}_local_addrs src",
+            '-m set', "--match-set vpsadmin_v#{v}_local_addrs dst",
+            '-j', 'ACCEPT',
+        ])
+
         # pub ip to pub ip -> private traffic
         iptables(v, [
             '-A', 'vpsadmin_main',

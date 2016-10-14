@@ -9,7 +9,7 @@ module VpsAdmind
     end
 
     def rollback
-      Firewall.ip_map.set(@addr, @id, @user_id)
+      Firewall.ip_map.set(@addr, @id, @version, @user_id)
       Firewall.accounting.reg_ip(@addr, @version)
       ok
     end

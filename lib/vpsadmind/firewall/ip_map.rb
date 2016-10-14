@@ -1,6 +1,6 @@
 module VpsAdmind::Firewall
   class IpMap
-    IpAddr = Struct.new(:id, :user_id, :monitor) do
+    IpAddr = Struct.new(:id, :version, :user_id, :monitor) do
       def initialize(*_)
         super
 
@@ -24,18 +24,41 @@ module VpsAdmind::Firewall
         @map.clear unless @map.empty?
 
         db.query("
-            SELECT ip_id, ip_addr, vps.m_id
+            SELECT ip_id, ip_addr, n.ip_version, vps.m_id
             FROM vps_ip
+            INNER JOIN networks n ON n.id = vps_ip.network_id
             INNER JOIN vps ON vps.vps_id = vps_ip.vps_id
             WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}
         ").each_hash do |ip|
-          @map[ip['ip_addr']] = IpAddr.new(ip['ip_id'].to_i, ip['m_id'].to_i)
+          @map[ip['ip_addr']] = IpAddr.new(
+              ip['ip_id'].to_i,
+              ip['ip_version'].to_i,
+              ip['m_id'].to_i
+          )
+        end
+
+        [4, 6].each do |v|
+          IpSet.create_or_replace!(
+              "vpsadmin_v#{v}_local_addrs",
+              "hash:ip family #{v == 4 ? 'inet' : 'inet6'}",
+              @map.select { |_, n| n.version == v }.keys
+          )
         end
       end
     end
 
-    def set(addr, id, user_id)
-      sync { @map[addr] = IpAddr.new(id, user_id) }
+    def set(addr, id, version, user_id)
+      sync do
+        @map[addr] = IpAddr.new(id, version, user_id)
+      
+        [4, 6].each do |v|
+          IpSet.create_or_replace!(
+              "vpsadmin_v#{v}_local_addrs",
+              "hash:ip family #{v == 4 ? 'inet' : 'inet6'}",
+              @map.select { |_, n| n.version == v }.keys
+          )
+        end
+      end
     end
 
     def get(addr)
@@ -47,7 +70,17 @@ module VpsAdmind::Firewall
     end
 
     def unset(addr)
-      sync { @map.delete(addr) }
+      sync do
+        @map.delete(addr)
+        
+        [4, 6].each do |v|
+          IpSet.create_or_replace!(
+              "vpsadmin_v#{v}_local_addrs",
+              "hash:ip family #{v == 4 ? 'inet' : 'inet6'}",
+              @map.select { |_, n| n.version == v }.keys
+          )
+        end
+      end
     end
 
     def clear
