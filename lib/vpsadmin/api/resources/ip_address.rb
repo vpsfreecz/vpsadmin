@@ -16,8 +16,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
             desc: 'VPS this IP is assigned to, can be null',
             value_label: :hostname
     integer :version, label: 'IP version', desc: '4 or 6'
-    resource VpsAdmin::API::Resources::Network, label: 'Network'
-    resource VpsAdmin::API::Resources::IpRange, label: 'IP Range'
+    resource VpsAdmin::API::Resources::Network, label: 'Network', value_label: :address
+    resource VpsAdmin::API::Resources::IpRange, label: 'IP Range', value_label: :address
     resource VpsAdmin::API::Resources::Location, label: 'Location',
               desc: 'Location this IP address is available in'
     resource VpsAdmin::API::Resources::User, label: 'User',
