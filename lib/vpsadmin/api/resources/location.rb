@@ -28,7 +28,11 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
     input do
       resource VpsAdmin::API::Resources::Environment,
-               desc: 'Filter locations having nodes in an environment'
+               desc: 'Filter locations by environment'
+      bool :has_hypervisor, label: 'Has hypervisor',
+        desc: 'List only locations having at least one hypervisor node'
+      bool :has_storage, label: 'Has storage',
+        desc: 'List only locations having at least one storage node'
     end
 
     output(:object_list) do
@@ -62,6 +66,35 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       if input[:environment]
         q = q.where(
             environment_id: input[:environment].id
+        ).group('locations.location_id')
+      end
+      
+      has = []
+      not_has = []
+
+      if input[:has_hypervisor]
+        has << 'node'
+
+      elsif input[:has_hypervisor] === false
+        not_has << 'node'
+      end
+      
+      if input[:has_storage]
+        has << 'storage'
+
+      elsif input[:has_storage] === false
+        not_has << 'storage'
+      end
+
+      if has.size > 0
+        q = q.joins(:nodes).where(
+            servers: {server_type: has}
+        ).group('locations.location_id')
+      end
+
+      if not_has.size > 0
+        q = q.joins(:nodes).where.not(
+            servers: {server_type: not_has}
         ).group('locations.location_id')
       end
 
