@@ -150,7 +150,7 @@ function format_duration($interval) {
 	$s = $interval % 60;
 	
 	if($d >= 1)
-		return sprintf("%d days, %02d:%02d:%02d", round($d), $h, $m, $s);
+		return sprintf("%d days, %02d:%02d:%02d", floor($d), $h, $m, $s);
 	else
 		return sprintf("%02d:%02d:%02d", $h, $m, $s);
 }
