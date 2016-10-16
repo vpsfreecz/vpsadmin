@@ -151,10 +151,20 @@ module VpsAdmin::API::Resources
           q = q.order('created_at DESC')
         
         when 'descending'
-          q = q.order('(bytes_in + bytes_out) DESC')
+          if input[:protocol] == 'sum'
+            q = q.order('(SUM(bytes_in) + SUM(bytes_out)) DESC')
+
+          else
+            q = q.order('(bytes_in + bytes_out) DESC')
+          end
         
         when 'ascending'
-          q = q.order('(bytes_in + bytes_out) ASC')
+          if input[:protocol] == 'sum'
+            q = q.order('(SUM(bytes_in) + SUM(bytes_out)) ASC')
+
+          else
+            q = q.order('(bytes_in + bytes_out) ASC')
+          end
 
         else
           error('invalid order')
