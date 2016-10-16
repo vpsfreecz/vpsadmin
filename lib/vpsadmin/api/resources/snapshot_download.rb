@@ -13,7 +13,7 @@ module VpsAdmin::API::Resources
     end
 
     params(:filters) do
-      resource Dataset
+      resource Dataset, value_label: :name
       resource Dataset::Snapshot
     end
 
