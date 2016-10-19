@@ -145,7 +145,10 @@ $xtpl->sbar_add(_("IP addresses"), '?page=networking&action=ip_addresses');
 $xtpl->sbar_add(_("IP ranges"), '?page=networking&action=ip_ranges');
 $xtpl->sbar_add(_("List monthly traffic"), '?page=networking&action=traffic');
 $xtpl->sbar_add(_("Live monitor"), '?page=networking&action=live');
-$xtpl->sbar_add(_("User top"), '?page=networking&action=user_top');
+
+if ($_SESSION['is_admin'])
+	$xtpl->sbar_add(_("User top"), '?page=networking&action=user_top');
+
 $xtpl->sbar_out(_('Networking'));
 
 if ($show_traffic) {
