@@ -347,6 +347,7 @@ function ip_range_new_step1() {
 		_("Back"),
 		'?page=networking&action=ip_ranges'
 	);
+	$xtpl->sbar_out(_('IP ranges'));
 
 	$xtpl->form_create(
 		'?page=networking&action=ip_range_new2',
@@ -371,6 +372,7 @@ function ip_range_new_step2($location_id) {
 		_("Back"),
 		'?page=networking&action=ip_ranges'
 	);
+	$xtpl->sbar_out(_('IP ranges'));
 
 	$xtpl->form_create(
 		'?page=networking&action=ip_range_new3',

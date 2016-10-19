@@ -86,7 +86,9 @@ switch($_GET['action']) {
 		break;
 	
 	case 'ip_ranges':
+		$xtpl->title(_('IP ranges'));
 		$xtpl->sbar_add(_("New IP range"), '?page=networking&action=ip_range_new');
+		$xtpl->sbar_out(_('IP ranges'));
 		ip_range_list();
 		break;
 
@@ -95,7 +97,16 @@ switch($_GET['action']) {
 		break;
 	
 	case 'ip_range_new2':
-		ip_range_new_step2($_POST['location']);
+		try {
+			$api->location->show($_POST['location']);
+			
+			ip_range_new_step2($_POST['location']);
+			$xtpl->sbar_out(_('IP ranges'));
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Action failed'), $e->getResponse());
+			ip_range_new_step1();
+		}
 		break;
 	
 	case 'ip_range_new3':
@@ -109,7 +120,7 @@ switch($_GET['action']) {
 
 		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 			$xtpl->perex_format_errors(_('Action failed'), $e->getResponse());
-			ip_range_new_step2($_POST['network']);
+			ip_range_new_step2($_POST['location']);
 		}
 		break;
 
@@ -138,7 +149,7 @@ $xtpl->sbar_add(_("User top"), '?page=networking&action=user_top');
 $xtpl->sbar_out(_('Networking'));
 
 if ($show_traffic) {
-	$xtpl->title(_("Networking"));
+	$xtpl->title(_("Monthly traffic"));
 	
 	$xtpl->table_title(_('Filters'));
 	$xtpl->form_create('', 'get', 'networking-filter', false);
