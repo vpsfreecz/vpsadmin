@@ -441,6 +441,38 @@ function data_size_to_humanreadable($val) {
 	return round($res[0], 2) . " " . $DATA_SIZE_UNITS[$res[1]];
 }
 
+function approx_number($val) {
+	$start = 1000;
+	$units = array(
+		"&nbsp;million",
+		"&nbsp;billion",
+		"&times;10<sup>12</sup>",
+		"&times;10<sup>15</sup>",
+		"&times;10<sup>18</sup>",
+		"&times;10<sup>21</sup>",
+		"&times;10<sup>24</sup>",
+		"&times;10<sup>27</sup>",
+		"&times;10<sup>30</sup>",
+		"&times;10<sup>33</sup>",
+	);
+
+	$i = 1;
+	$n = $start;
+	$data = array();
+
+	foreach ($units as $u) {
+		$n *= 1000;
+		$data[] = array('n' => $n, 'unit' => $u);
+	}
+
+	foreach (array_reverse($data) as $unit) {
+		if ($val > $unit['n'])
+			return round($val / $unit['n'], 2).$unit['unit'];
+	}
+
+	return number_format($val, 0, '.', ' ');
+}
+
 function get_val($name, $default = '') {
 	if (isset($_GET[$name]))
 		return $_GET[$name];

@@ -202,13 +202,13 @@ function networks_list($title) {
 		$xtpl->table_td($n->location->label);
 		$xtpl->table_td(boolean_icon($n->role === 'public_access'));
 		$xtpl->table_td(boolean_icon($n->managed));
-		$xtpl->table_td($n->size, false, true);
+		$xtpl->table_td(approx_number($n->size), false, true);
 		$xtpl->table_td($n->used, false, true);
 		$xtpl->table_td($n->assigned, false, true);
 		$xtpl->table_td($n->owned, false, true);
 		$xtpl->table_td(
-			($n->used - max($n->assigned, $n->owned)).
-			' ('.($n->size - max($n->assigned, $n->owned)).')',
+			(approx_number($n->used - max($n->assigned, $n->owned))).
+			' ('.(approx_number($n->size - max($n->assigned, $n->owned))).')',
 			false, true
 		);
 		$xtpl->table_td(ip_list_link(
