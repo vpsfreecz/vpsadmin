@@ -173,10 +173,22 @@ if ($show_traffic) {
 		6 => 'IPv6',
 	), get_val('ip_version'));
 
-	$xtpl->form_add_select(_("Environment").':', 'environment',
-		resource_list_to_options($api->environment->list()), get_val('environment'));
-	$xtpl->form_add_select(_("Location").':', 'location',
-		resource_list_to_options($api->location->list()), get_val('location'));
+	$xtpl->form_add_select(
+		_("Environment").':',
+		'environment',
+		resource_list_to_options(
+			$api->environment->list(array('has_hypervisor' => true))
+		),
+		get_val('environment')
+	);
+	$xtpl->form_add_select(
+		_("Location").':',
+		'location',
+		resource_list_to_options(
+			$api->location->list(array('has_hypervisor' => true))
+		),
+		get_val('location')
+	);
 	$xtpl->form_add_select(_("Network").':', 'network', 
 		resource_list_to_options($api->network->list(), 'id', 'label', true, network_label), get_val('network'));
 	$xtpl->form_add_select(_("IP range").':', 'ip_range', 
