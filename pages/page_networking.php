@@ -191,8 +191,19 @@ if ($show_traffic) {
 	);
 	$xtpl->form_add_select(_("Network").':', 'network', 
 		resource_list_to_options($api->network->list(), 'id', 'label', true, network_label), get_val('network'));
-	$xtpl->form_add_select(_("IP range").':', 'ip_range', 
-		resource_list_to_options($api->ip_range->list(), 'id', 'label', true, network_label), get_val('ip_range'));
+
+	$ip_ranges = $api->ip_range->list();
+
+	if ($ip_ranges->count() > 0) {
+		$xtpl->form_add_select(
+			_("IP range").':',
+			'ip_range', 
+			resource_list_to_options(
+				$ip_ranges, 'id', 'label', true, network_label
+			), get_val('ip_range')
+		);
+	}
+
 	$xtpl->form_add_select(_("Node").':', 'node', 
 		resource_list_to_options($api->node->list(), 'id', 'domain_name'), get_val('node'));
 	$xtpl->form_add_input(_("VPS").':', 'text', '30', 'vps', get_val('vps'));
