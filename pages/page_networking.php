@@ -9,7 +9,7 @@
 
 function year_list() {
 	$now = date("Y");
-	$ret = array();
+	$ret = array('' => '---');
 	
 	for ($i = $now - 5; $i <= $now; $i++)
 		$ret[$i] = $i;
@@ -18,7 +18,7 @@ function year_list() {
 }
 
 function month_list() {
-	$ret = array();
+	$ret = array('' => '---');
 	
 	for ($i = 1; $i <= 12; $i++) {
 		$ret[$i] = $i;
@@ -242,11 +242,14 @@ if ($show_traffic) {
 		$xtpl->table_td($stat->ip_address->addr);
 		
 		if ($_SESSION['is_admin']) {
-			$xtpl->table_td(
-				'<a href="?page=adminm&action=edit&id='.$stat->user_id.'">'.
-				$stat->user->login.
-				'</a>'
-			);
+			if ($stat->user_id) {
+				$xtpl->table_td(
+					'<a href="?page=adminm&action=edit&id='.$stat->user_id.'">'.
+					$stat->user->login.
+					'</a>'
+				);
+			} else
+				$xtpl->table_td('---');
 		}
 
 		if ($stat->ip_address->vps_id)
