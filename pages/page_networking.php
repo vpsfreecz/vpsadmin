@@ -446,8 +446,27 @@ if ($show_live) {
 	
 	if($_SESSION["is_admin"])
 		$xtpl->form_add_input(_("User ID").':', 'text', '30', 'user', get_val('user'));
+
+	$xtpl->form_add_checkbox(
+		_('Refresh automatically').':',
+		'refresh',
+		'1',
+		true,
+		_('10 second interval')
+	);
+
+	$xtpl->table_td(_('Last update').':');
+	$xtpl->table_td('
+		<span id="monitor-last-update">
+			'.date('Y-m-d H:i:s').'
+			<noscript>
+				JavaScript needs to be enabled for automated refreshing to work.
+			</noscript>
+		</span>'
+	);
+	$xtpl->table_tr();
 	
-	$xtpl->form_out(_("Show"));
+	$xtpl->form_out(_("Show"), 'monitor-filters');
 	
 	$params = array(
 		'limit' => get_val('limit', 25),
@@ -488,6 +507,10 @@ if ($show_live) {
 	$xtpl->table_td(_('Out'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
 	$xtpl->table_td(_('Total'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
 	$xtpl->table_tr();
+	
+	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
+		<script type="text/javascript" src="js/network-monitor.js"></script>'
+	);
 
 	foreach ($traffic as $data) {
 		$xtpl->table_td($data->ip_address->vps_id);
