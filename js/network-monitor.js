@@ -87,8 +87,8 @@ function td () {
 	return $('<td>').html(Array.prototype.slice.call(arguments).join(''));
 }
 
-function rate (n) {
-	return td(formatDataRate(n * 8)).css('text-align', 'right');
+function rate (n, delta) {
+	return td(formatDataRate(n / delta * 8)).css('text-align', 'right');
 }
 
 function updateMonitor () {
@@ -107,14 +107,14 @@ function updateMonitor () {
 				tr.append(td(stat.ip_address.addr));
 				
 				['public', 'private'].forEach(function (role) {
-					tr.append(rate(stat[role+'_bytes_in']));
-					tr.append(rate(stat[role+'_bytes_out']));
-					tr.append(rate(stat[role+'_bytes']));
+					tr.append(rate(stat[role+'_bytes_in'], stat.delta));
+					tr.append(rate(stat[role+'_bytes_out'], stat.delta));
+					tr.append(rate(stat[role+'_bytes'], stat.delta));
 				});
 			
-				tr.append(rate(stat.bytes_in));
-				tr.append(rate(stat.bytes_out));
-				tr.append(rate(stat.bytes));
+				tr.append(rate(stat.bytes_in, stat.delta));
+				tr.append(rate(stat.bytes_out, stat.delta));
+				tr.append(rate(stat.bytes, stat.delta));
 
 				tr.appendTo('#live_monitor tbody');
 			});
