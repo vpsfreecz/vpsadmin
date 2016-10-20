@@ -513,7 +513,11 @@ if ($show_live) {
 	);
 
 	foreach ($traffic as $data) {
-		$xtpl->table_td($data->ip_address->vps_id);
+		$xtpl->table_td(
+			'<a href="?page=adminvps&action=info&veid='.$data->ip_address->vps_id.'">'.
+			$data->ip_address->vps_id.
+			'</a>'
+		);
 		$xtpl->table_td($data->ip_address->addr);
 
 		foreach ($roles as $role) {

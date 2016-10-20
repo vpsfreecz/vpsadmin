@@ -72,7 +72,11 @@ function updateMonitor () {
 		list.each(function (stat) {
 			var tr = $('<tr>');
 
-			tr.append(td(stat.ip_address.vps_id));
+			tr.append(td(
+				'<a href="?page=adminvps&action=info&veid='+stat.ip_address.vps_id+'">' +
+				stat.ip_address.vps_id +
+				'</a>'
+			));
 			tr.append(td(stat.ip_address.addr));
 			
 			['public', 'private'].forEach(function (role) {
