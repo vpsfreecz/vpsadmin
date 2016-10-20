@@ -24,8 +24,16 @@ module VpsAdmin::CLI::Commands
         @opts[:limit] = v
       end
       
-      opts.on('--ip-address ID', Integer, 'ID of IP addresses to monitor') do |v|
-        @opts[:ip_address] = v
+      opts.on('--ip-address ADDR', 'ADDR or ID of IP addresses to monitor') do |v|
+        id = ip_address_id(v)
+
+        if id
+          @opts[:ip_address] = id
+
+        else
+          warn "IP address '#{v}' not found"
+          exit(1)
+        end
       end
       
       opts.on('--ip-version VER', [4, 6], 'Filter IP addresses by version') do |v|
@@ -292,6 +300,17 @@ module VpsAdmin::CLI::Commands
     def sort_inverse
       @sort_desc = !@sort_desc
       @refresh = true
+    end
+
+    def ip_address_id(v)
+      return v if /^\d+$/ =~ v
+
+      ips = @api.ip_address.list(addr: v)
+      return false if ips.count < 1
+      ips.first.id
+
+    rescue HaveAPI::Client::ActionFailed
+      return false
     end
   end
 end
