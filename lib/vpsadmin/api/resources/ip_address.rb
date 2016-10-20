@@ -23,13 +23,13 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     resource VpsAdmin::API::Resources::User, label: 'User',
              value_label: :login
     string :role, choices: ::Network.roles.keys
+    string :addr, label: 'Address', desc: 'Address itself', db_name: :ip_addr
     use :shaper
   end
 
   params(:common) do
-    use :filters, include: %i(network ip_range vps user)
+    use :filters, include: %i(network ip_range vps user addr)
     use :shaper
-    string :addr, label: 'Address', desc: 'Address itself', db_name: :ip_addr
     integer :class_id, label: 'Class id', desc: 'Class id for shaper'
   end
 
@@ -55,7 +55,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(location network ip_range version role vps limit offset)
+      input whitelist: %i(location network ip_range version role addr vps limit offset)
       output blacklist: %i(class_id)
       allow
     end
@@ -89,7 +89,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     def query
       ips = ::IpAddress
 
-      %i(network vps user max_tx max_rx).each do |filter|
+      %i(network vps user addr max_tx max_rx).each do |filter|
         next unless input.has_key?(filter)
 
         ips = ips.where(
