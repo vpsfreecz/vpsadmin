@@ -40,7 +40,19 @@ function formatDataRate(n) {
 	return round(n, 2) + "&nbsp;bps";
 }
 
-function getParams () {
+function getIpAddressId (v, callback) {
+	if (/^\d+$/.test(v))
+		return callback(v);
+
+	apiClient.ip_address.list({addr: v}, function (c, ips) {
+		if (ips.length < 1)
+			return callback(false);
+
+		callback(ips.first().id);
+	});
+}
+
+function getParams (callback) {
 	var ret = {
 		'meta': {
 			'includes': 'ip_address',
@@ -54,7 +66,21 @@ function getParams () {
 			ret[param] = v;
 	 });
 
-	return ret;
+	if (ret.ip_address) {
+			getIpAddressId(ret.ip_address, function (id) {
+				if (id)
+					ret.ip_address = id;
+
+				else
+					delete ret.ip_address;
+
+				callback(ret);
+			});
+
+			return;
+	}
+
+	return callback(ret);
 }
 
 function td () {
@@ -66,30 +92,32 @@ function rate (n) {
 }
 
 function updateMonitor () {
-	apiClient.ip_traffic_monitor.list(getParams(), function (c, list) {
-		$('#live_monitor tr').slice(3).remove();
+	getParams(function (params) {
+		apiClient.ip_traffic_monitor.list(params, function (c, list) {
+			$('#live_monitor tr').slice(3).remove();
 
-		list.each(function (stat) {
-			var tr = $('<tr>');
+			list.each(function (stat) {
+				var tr = $('<tr>');
 
-			tr.append(td(
-				'<a href="?page=adminvps&action=info&veid='+stat.ip_address.vps_id+'">' +
-				stat.ip_address.vps_id +
-				'</a>'
-			));
-			tr.append(td(stat.ip_address.addr));
+				tr.append(td(
+					'<a href="?page=adminvps&action=info&veid='+stat.ip_address.vps_id+'">' +
+					stat.ip_address.vps_id +
+					'</a>'
+				));
+				tr.append(td(stat.ip_address.addr));
+				
+				['public', 'private'].forEach(function (role) {
+					tr.append(rate(stat[role+'_bytes_in']));
+					tr.append(rate(stat[role+'_bytes_out']));
+					tr.append(rate(stat[role+'_bytes']));
+				});
 			
-			['public', 'private'].forEach(function (role) {
-				tr.append(rate(stat[role+'_bytes_in']));
-				tr.append(rate(stat[role+'_bytes_out']));
-				tr.append(rate(stat[role+'_bytes']));
-			});
-		
-			tr.append(rate(stat.bytes_in));
-			tr.append(rate(stat.bytes_out));
-			tr.append(rate(stat.bytes));
+				tr.append(rate(stat.bytes_in));
+				tr.append(rate(stat.bytes_out));
+				tr.append(rate(stat.bytes));
 
-			tr.appendTo('#live_monitor tbody');
+				tr.appendTo('#live_monitor tbody');
+			});
 		});
 	});
 

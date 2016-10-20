@@ -61,6 +61,21 @@ function get_free_ip_list ($res, $vps, $role = null, $limit = null) {
 	return $ret;
 }
 
+function get_ip_address_id ($val) {
+	global $api;
+
+	if (is_numeric($val))
+		return $val;
+
+	$ips = $api->ip_address->list(array('addr' => $val));
+
+	if ($ips->count() < 1)
+		return false;
+
+	else
+		return $ips->first()->id;
+}
+
 function list_configs($empty = false) {
 	global $db;
 	

@@ -248,8 +248,19 @@ if ($show_traffic) {
 	);
 	
 	if ($_SESSION['is_admin']) {
-		if ($_GET['ip_address'])
-			$params['ip_address'] = trim($_GET['ip_address']);
+		if ($_GET['ip_address']) {
+			$ip_id = get_ip_address_id($_GET['ip_address']);
+
+			if ($ip_id === false) {
+				$xtpl->perex(
+					_('IP address not found'),
+					_('IP address').' '.$_GET['ip_address'].' '._('not found.')
+				);
+
+			} else {
+				$params['ip_address'] = $ip_id;
+			}
+		}
 
 		if ($_GET['user'])
 			$params['user'] =  $_GET['user'];
@@ -441,7 +452,7 @@ if ($show_live) {
 	$xtpl->form_add_select(_("Node").':', 'node', 
 		resource_list_to_options($api->node->list(), 'id', 'domain_name'), get_val('node'));
 	
-	$xtpl->form_add_input(_("IP address").':', 'text', '30', 'ip_address_id', get_val('ip_address'));
+	$xtpl->form_add_input(_("IP address").':', 'text', '30', 'ip_address', get_val('ip_address'));
 	$xtpl->form_add_input(_("VPS ID").':', 'text', '30', 'vps', get_val('vps'));
 	
 	if($_SESSION["is_admin"])
@@ -475,12 +486,26 @@ if ($show_live) {
 	
 	$conds = array(
 		'ip_version', 'vps', 'node', 'location', 'environment',
-		'network', 'ip_range', 'ip_address'
+		'network', 'ip_range'
 	);
 	
 	foreach ($conds as $c) {
 		if ($_GET[$c])
 			$params[$c] = $_GET[$c];
+	}
+
+	if ($_GET['ip_address']) {
+		$ip_id = get_ip_address_id($_GET['ip_address']);
+
+		if ($ip_id === false) {
+			$xtpl->perex(
+				_('IP address not found'),
+				_('IP address').' '.$_GET['ip_address'].' '._('not found.')
+			);
+
+		} else {
+			$params['ip_address'] = $ip_id;
+		}
 	}
 	
 	$traffic = $api->ip_traffic_monitor->list($params);
