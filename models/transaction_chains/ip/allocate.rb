@@ -39,6 +39,7 @@ module TransactionChains
       end
 
       chowned = 0
+      ownership = vps.node.location.environment.user_ip_ownership
       last_ip = vps.ip_addresses.joins(:network).where(
           networks: {ip_version: v}
       ).order('`order` DESC').take
@@ -46,8 +47,6 @@ module TransactionChains
       order = last_ip ? last_ip.order + 1 : 0
 
       ips.each do |ip|
-        ownership = !ip.user_id && vps.node.location.environment.user_ip_ownership
-
         append(Transactions::Vps::IpAdd, args: [vps, ip]) do
           edit_before(ip, vps_id: ip.vps_id, order: ip.order)
           edit_before(ip, user_id: ip.user_id) if ownership
@@ -55,11 +54,13 @@ module TransactionChains
         
         ip.vps_id = vps.id
         ip.order = order
-        ip.user_id = vps.m_id if ownership
+        
+        chowned += 1 if (!ip.user_id && ownership) || !ownership
+        ip.user_id = vps.m_id if !ip.user_id && ownership
+
         ip.save!
 
         order += 1
-        chowned += 1 if ownership
       end
 
       chowned
