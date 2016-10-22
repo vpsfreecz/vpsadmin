@@ -11,24 +11,25 @@ module TransactionChains
           environment: vps.node.location.environment,
       )
       ownership = vps.node.location.environment.user_ip_ownership
+      ips_arr = ips.to_a
 
       if reallocate
         %i(ipv4 ipv4_private ipv6).each do |r|
           cnt = case r
           when :ipv4
-            ips.count do |ip|
+            ips_arr.count do |ip|
               (!ownership || ip.user.nil?) \
               && ip.network.role == 'public_access' && ip.network.ip_version == 4
             end
           
           when :ipv4_private
-            ips.count do |ip|
+            ips_arr.count do |ip|
               (!ownership || ip.user.nil?) \
               && ip.network.role == 'private_access' && ip.network.ip_version == 4
             end
 
           when :ipv6
-            ips.count do |ip|
+            ips_arr.count do |ip|
               (!ownership || ip.user.nil?) && ip.network.ip_version == 6
             end
           end
@@ -53,7 +54,7 @@ module TransactionChains
         order[v] = last_ip ? last_ip.order + 1 : 0
       end
 
-      ips.each do |ip|
+      ips_arr.each do |ip|
         lock(ip)
 
         append(Transactions::Vps::IpAdd, args: [vps, ip, register]) do
