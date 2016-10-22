@@ -13,14 +13,7 @@ module VpsAdmindCtl::CommandTemplates
       @res.each do |k, v|
         case k
           when :fw
-            if v.nil? || v.empty?
-              puts 'Firewall  ...  ok'
-            else
-              puts 'Firewall'
-              v.each do |k, v|
-                puts "\t#{v} rules for IPv#{k}"
-              end
-            end
+            puts 'Firewall  ...  ok'
 
           when :shaper
             puts 'Shaper  ...  ok'
