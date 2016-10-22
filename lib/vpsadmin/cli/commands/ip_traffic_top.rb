@@ -139,7 +139,10 @@ module VpsAdmin::CLI::Commands
     def fetch
       return @data if @data
 
+      limit = lines - 6
+
       params =  {
+          limit: limit > 0 ? limit : 25,
           order: "#{@sort_desc ? '-' : ''}#{@sort_param}",
           meta: {includes: 'ip_address'}
       }
