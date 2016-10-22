@@ -54,6 +54,7 @@ module VpsAdmin::CLI::Commands
       crmode
       stdscr.keypad = true
       curs_set(0)  # hide cursor
+      use_default_colors
 
       init_pair(1, COLOR_BLACK, COLOR_WHITE)
       last = nil
