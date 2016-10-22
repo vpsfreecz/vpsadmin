@@ -47,7 +47,7 @@ module VpsAdmind::Firewall
     end
 
     def replace!
-      tmp = "#{@name}_new"
+      tmp = "#{@name}.n"
       do_create(tmp)
       ipset(:swap, tmp, @name)
       ipset(:destroy, tmp)
