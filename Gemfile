@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gem 'haveapi', '~> 0.5.0'
+gem 'haveapi', '~> 0.6.0'
 gem 'activerecord', '~> 4.1.14'
 gem 'paper_trail', '~> 3.0.9'
 gem 'require_all'
