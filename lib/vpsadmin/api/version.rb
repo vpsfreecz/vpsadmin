@@ -1,5 +1,5 @@
 module VpsAdmin
   module API
-    VERSION = '2.4.0'
+    VERSION = '2.5.0'
   end
 end
