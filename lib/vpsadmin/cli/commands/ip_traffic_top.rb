@@ -289,7 +289,7 @@ module VpsAdmin::CLI::Commands
         bits -= 10
       end
 
-      per_s.to_s
+      per_s.round(2).to_s
     end
 
     def sort_next(n)
