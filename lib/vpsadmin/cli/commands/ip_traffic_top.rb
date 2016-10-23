@@ -78,12 +78,15 @@ module VpsAdmin::CLI::Commands
           break
 
         when Key::LEFT
+          clear
           sort_next(-1)
 
         when Key::RIGHT
+          clear
           sort_next(+1)
 
         when Key::UP, Key::DOWN
+          clear
           sort_inverse
 
         when Key::RESIZE
