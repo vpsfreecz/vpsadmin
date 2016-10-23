@@ -217,11 +217,11 @@ function format_data_rate($n, $suffix) {
 	
 	foreach($units as $threshold => $unit) {
 		if($n > $threshold) {
-			return round(($n / $threshold), 2)."&nbsp;$unit$suffix";
+			return round(($n / $threshold), 2)."$unit$suffix";
 		}
 	}
 	
-	return round($n, 2)."&nbsp;$suffix";
+	return round($n, 2)."$suffix";
 }
 
 function client_identity() {
