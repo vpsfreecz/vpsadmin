@@ -23,11 +23,15 @@ module VpsAdmind::Firewall
     end
   
     def reg_ip(addr, v)
-      @roles.each { |r| r.reg_ip(addr, v) }
+      @fw.synchronize do
+        @roles.each { |r| r.reg_ip(addr, v) }
+      end
     end
 
     def unreg_ip(addr, v)
-      @roles.each { |r| r.unreg_ip(addr, v) }
+      @fw.synchronize do
+        @roles.each { |r| r.unreg_ip(addr, v) }
+      end
     end
 
     def fetch_traffic
@@ -89,8 +93,8 @@ module VpsAdmind::Firewall
                 bytes_out = bytes_out + values(bytes_out)",
               addr.id, addr.user_id, AccountingRole::PROTOCOL_MAP.index(proto),
               ROLES.index(role),
-              t[:packets][:in], t[:packets][:out],
-              t[:bytes][:in], t[:bytes][:out]
+              t[:packets][:in] || 0, t[:packets][:out] || 0,
+              t[:bytes][:in] || 0, t[:bytes][:out] || 0
           )
         end
       end
