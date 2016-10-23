@@ -546,14 +546,14 @@ if ($show_live) {
 		$xtpl->table_td($data->ip_address->addr);
 
 		foreach ($roles as $role) {
-			$xtpl->table_td(format_data_rate($data->{"${role}_bytes_in"} / $data->delta * 8, 'bps'), false, true);
-			$xtpl->table_td(format_data_rate($data->{"${role}_bytes_out"} / $data->delta * 8, 'bps'), false, true);
-			$xtpl->table_td(format_data_rate($data->{"${role}_bytes"} / $data->delta * 8, 'bps'), false, true);
+			$xtpl->table_td(format_data_rate($data->{"${role}_bytes_in"} / $data->delta * 8, ''), false, true);
+			$xtpl->table_td(format_data_rate($data->{"${role}_bytes_out"} / $data->delta * 8, ''), false, true);
+			$xtpl->table_td(format_data_rate($data->{"${role}_bytes"} / $data->delta * 8, ''), false, true);
 		}
 		
-		$xtpl->table_td(format_data_rate($data->bytes_in / $data->delta * 8, 'bps'), false, true);
-		$xtpl->table_td(format_data_rate($data->bytes_out / $data->delta * 8, 'bps'), false, true);
-		$xtpl->table_td(format_data_rate($data->bytes / $data->delta * 8, 'bps'), false, true);
+		$xtpl->table_td(format_data_rate($data->bytes_in / $data->delta * 8, ''), false, true);
+		$xtpl->table_td(format_data_rate($data->bytes_out / $data->delta * 8, ''), false, true);
+		$xtpl->table_td(format_data_rate($data->bytes / $data->delta * 8, ''), false, true);
 
 		$xtpl->table_tr();
 	}

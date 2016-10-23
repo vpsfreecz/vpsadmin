@@ -34,7 +34,7 @@ function formatDataRate(n) {
 
 	for (var i = 0; i < units.length; i++) {
 		if (n > units[i].threshold)
-			return round((n / units[i].threshold), 2) + "&nbsp;" + units[i].unit + "bps";
+			return round((n / units[i].threshold), 2) + "&nbsp;" + units[i].unit;
 	}
 	
 	return round(n, 2) + "&nbsp;bps";
