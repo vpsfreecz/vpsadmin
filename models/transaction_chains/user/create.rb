@@ -45,7 +45,18 @@ module TransactionChains
         )
         vps.dns_resolver = ::DnsResolver.pick_suitable_resolver_for_vps(vps)
 
-        use_chain(Vps::Create, args: vps)
+        vps_opts = {}
+
+        node.location.environment.default_object_cluster_resources.joins(
+            :cluster_resource
+        ).where(
+          class_name: 'Vps',
+          cluster_resources: {name: %w(ipv4 ipv4_private ipv6)},
+        ).each do |default|
+          vps_opts[ default.cluster_resource.name.to_sym ] = default.value
+        end
+
+        use_chain(Vps::Create, args: [vps, vps_opts])
       end
 
       unless empty?
