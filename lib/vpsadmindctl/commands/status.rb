@@ -56,9 +56,16 @@ module VpsAdmindCtl::Commands
         @res[:queues].each do |name, queue|
           queue[:workers].sort { |a, b| a[0].to_s.to_i <=> b[0].to_s.to_i }.each do |w|
 
+            eta = nil
+
             if w[1][:progress] && w[1][:start]
-              rate = w[1][:progress][:current] / (t.to_i - w[1][:start])
-              eta = (w[1][:progress][:total] - w[1][:progress][:current]) / rate
+              begin
+                rate = w[1][:progress][:current] / (t.to_i - w[1][:start])
+                eta = (w[1][:progress][:total] - w[1][:progress][:current]) / rate
+
+              rescue ZeroDivisionError
+                eta = nil
+              end
             end
 
             if @global_opts[:parsable]
