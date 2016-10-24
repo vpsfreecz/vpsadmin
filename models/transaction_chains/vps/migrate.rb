@@ -427,10 +427,6 @@ module TransactionChains
           errors = []
 
           %i(ipv4 ipv4_private ipv6).each do |r|
-            puts "\n\nmm #{r}"
-            p filter_ip_addresses(src, r)
-            p filter_ip_addresses(dst, r)
-            puts "endmm\n\n"
             diff = filter_ip_addresses(src, r).count - filter_ip_addresses(dst, r).count
             next if diff == 0
 
