@@ -229,7 +229,7 @@ if ($show_traffic) {
 	
 	$xtpl->form_out(_('Show'));
 	
-	if ($_SESSION['is_admin'] && $_GET['action'] != 'list')
+	if ($_GET['action'] != 'list')
 		return;
 	
 	$xtpl->table_title(_("Statistics"));
