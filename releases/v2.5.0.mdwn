@@ -1,0 +1,252 @@
+# Release notes
+Version 2.5.0 greatly improves network management:
+
+ - vpsAdmin now knows what network subnets it has
+ - IPv4 addresses are divided to public and private
+ - IP addresses can now be assigned to users in greater numbers using IP ranges
+ - IP traffic accounting including live network monitoring is finally integrated
+   into the API
+ - Remember order in which IP addresses were added to VPS
+
+## API resources
+- API version set to 3.0
+- Track network subnets that IP addresses belong to
+- New resource `Network`
+- New resource `IpRange`
+- New resource `IpTraffic` and `IpTrafficMonitor`
+- Removed parameters `IpAddress.version` and `IpAddress.location`
+- `IpAddress.Index`: filter by `network`, `ip_range` and `role`
+- `IpAddress.Update` has new input parameter `user`
+- `Node.Create`: add required input parameters `cpus`, `total_memory` and `total_swap`
+- `Location.Index`: filter by node type
+- `Vps`: whitelist output parameter `created_at`
+- `Vps::Migrate`: add labels and descriptions for input parameters
+
+## API internals
+- Pool maintenance mode
+- New rake task `vpsadmin:shell`
+- Move locations to environment
+- IP addresses are allocated to users, not VPSes
+- New cluster resource `ipv4_private`
+- Sort IP addresses in the order in which they're added to VPS
+- Fixed bug in VPS reinstall that broke traffic accounting
+- Cluster resource use can exceed the maximum value if it is less than
+  the current value
+- Node.status: fix time check
+- Disallow duplicities in group snapshots
+- Adapt and register IP traffic accounting database tables
+- Distinguish private and public IP traffic
+- Fixed renewal of authentication tokens
+- VPS migration fails when there aren't enough IP addresses in the target location
+- VPS migration does not break backup plans on failure
+- New dependency on activerecord-mysql-unsigned
+- Require HaveAPI v0.6
+
+## vpsAdmin web UI
+- Support for network subnets
+- Network list on cluster page
+- IP address edit form for changing shaper and owner
+- Show Tx/Rx in IP address list
+- Fix rounding of days in format_duration()
+- Fetch IP traffic data from the API
+- Auto refreshing of network live monitor
+- Traffic list: month and year filters are optional
+
+## vpsAdmind
+- Support special handling for mount/umount action scripts
+- Failed umounts in action scripts are ignored
+- Track progress of zfs send commands
+- New remote command get ip_map
+- savetransfers.rb renamed to vpsadmin-save-transfers
+- Distinguish private and public IP traffic
+- Reworked live network monitor
+- Requires the ipset command
+- Timeout for vzctl stop/restart commands
+- Fixed race condition in IP traffic accounting
+
+## vpsAdmindctl
+- Add command get ip_map
+- Status shows command progress and ETA
+
+## vpsAdmin client
+- New command ip_traffic top
+
+# Upgrade instructions
+Do not run all migrations at once, but in steps described below.
+
+## Install new dependencies
+vpsAdmind requires the `ipset` command to be present on all hypervisor nodes:
+
+    # yum install ipset
+
+## Flush firewall
+Before the upgrade, flush firewall on all nodes. If you fail to do this at the beginning,
+you will have to flush it manually.
+
+    # vpsadmindctl flush fw
+
+When the database and vpsAdmind is upgraded, vpsAdmind will reinitialize the firewall
+once it is started again.
+
+## Register networks
+
+Prepare a list of network subnets you use in vpsAdmin, as the migration will ask
+you to enter them. The list must be complete and without duplicities -- each IP address
+has to belong to exactly one network.
+
+    # rake db:migrate VERSION=20160805144125
+
+Now is the time to mark private networks in database, if you have any:
+
+[[!format sql """
+UPDATE networks SET role = 1 WHERE id IN (<ids>);
+"""]]
+
+## Assign locations to environments
+From this release on, location belongs to environment instead of node to environment,
+because vpsAdmin needs to know what environment IP addresses are in, even if they're
+not assigned.
+
+Continue the migration:
+
+    # rake db:migrate VERSION=20160819084000
+
+Now assign all locations to environments. The change must be done manually using SQL:
+
+[[!format sql """
+UPDATE locations SET environment_id = <env-id> WHERE location_id = <loc-id>;
+"""]]
+
+All locations have to have environment set. If you had nodes with different
+environments in a single location, you will have to create a new location
+and relocate the nodes. This has to be done also with raw SQL.
+
+## Traffic accounting
+As the IP traffic accounting is integrated within the API, it's database tables
+are changed and require migration. Because those migrations can take a lot of time
+(several hours, depending on how long a history you have), it is possible
+to skip data migration and migrate only the database schema. Data can be migrated later on,
+with vpsAdmin running, except the unfinished network accounting.
+
+    # rake db:migrate MIGRATE_TRAFFIC_DATA=no
+
+The migrations will finish successfully, you may continue with the upgrade and return
+to the IP traffic when all else is finished.
+
+The following SQL queries will migrate the data more efficiently than included database
+migrations would, because what migrations would do in several steps is merged into one.
+
+[[!format sql """
+-- Migrate recent traffic
+INSERT INTO ip_recent_traffics (
+    ip_address_id, user_id, protocol, role,
+    packets_in, packets_out, bytes_in, bytes_out,
+    created_at
+)
+
+SELECT
+    vps_ip.ip_id,
+    IF(vps_ip.user_id IS NULL, vps.m_id, vps_ip.user_id),
+    (
+    CASE tr_proto
+    WHEN 'all' THEN 0
+    WHEN 'tcp' THEN 1
+    WHEN 'udp' THEN 2
+    END
+    ), 0, tr_packets_in, tr_packets_out, tr_bytes_in, tr_bytes_out,
+    CONVERT_TZ(tr_date, 'Europe/Prague', 'UTC')
+FROM transfered_recent
+INNER JOIN vps_ip ON vps_ip.ip_addr = tr_ip COLLATE utf8_general_ci
+LEFT JOIN vps ON vps.vps_id = vps_ip.vps_id;
+
+-- Migrate main traffic table, will take a long time
+INSERT INTO ip_traffics (
+    ip_address_id, user_id, protocol, role,
+    packets_in, packets_out, bytes_in, bytes_out,
+    created_at
+)
+
+SELECT
+    vps_ip.ip_id,
+    IF(vps_ip.user_id IS NULL, vps.m_id, vps_ip.user_id),
+    (
+    CASE tr_proto
+    WHEN 'all' THEN 0
+    WHEN 'tcp' THEN 1
+    WHEN 'udp' THEN 2
+    END
+    ), 0, tr_packets_in, tr_packets_out, tr_bytes_in, tr_bytes_out,
+    CONVERT_TZ(tr_date, 'Europe/Prague', 'UTC')
+FROM transfered
+INNER JOIN vps_ip ON vps_ip.ip_addr = tr_ip COLLATE utf8_general_ci
+LEFT JOIN vps ON vps.vps_id = vps_ip.vps_id;
+
+-- Generate monthly summaries
+INSERT INTO ip_traffic_monthly_summaries
+    (ip_address_id, user_id, protocol, role,
+    packets_in, packets_out, bytes_in, bytes_out,
+    created_at, year, month)
+
+SELECT
+    ip_address_id, user_id, protocol, role,
+    SUM(packets_in), SUM(packets_out), SUM(bytes_in), SUM(bytes_out),
+    DATE_FORMAT(created_at, '%Y-%m-01 00:00:00'),
+    YEAR(created_at), MONTH(created_at)
+FROM ip_traffics
+GROUP BY
+    ip_address_id,
+    user_id,
+    protocol,
+    YEAR(created_at),
+    MONTH(created_at)
+ORDER BY created_at, ip_address_id;
+
+-- Drop old tables
+DROP TABLE transfered_recent;
+DROP TABLE transfered;
+"""]]
+
+## `ipv4_private` availability
+After the migration, all users will have `ipv4_private` resource assigned.
+By default, they have 0 private IPv4 addresses available. You can change that
+by the following query:
+
+[[!format sql """
+UPDATE user_cluster_resources ucr
+INNER JOIN cluster_resources cr ON cr.id = ucr.cluster_resource_id
+SET ucr.value = <count>
+WHERE
+  cr.name = 'ipv4_private'
+  AND
+  ucr.environment_id IN (<environment ids>)
+"""]]
+
+## Default values for new cluster resource `ipv4_private`
+Configure the number of `ipv4_private` assigned to new users per environment.
+The resource is not assigned by default. You should configure defaults for
+`User` in every suitable environment, e.g.:
+
+[[!format sql """
+INSERT INTO default_object_cluster_resources SET
+  environment_id = <environment id>,
+  cluster_resource_id = (SELECT id FROM cluster_resources WHERE name = 'ipv4_private'),
+  class_name = 'User',
+  value = 32;
+"""]]
+
+The query above will ensure that new users get 32 private IPv4 addresses in the
+chosen environment.
+
+## Ordering of IP addresses
+The migration cannot guess the correct order of IP addresses, so if you want it
+to represent the reality, [[order_vps_ips.rb]] must be run on every hypervisor
+node.
+
+## Regeneration of mount/umount action scripts
+Umount action scripts now never fail, as `vzctl` will recursively take care of
+any left-over mounts (issue [#107](https://redmine.vpsfree.cz/issues/107)). For
+this reason, all action scripts should be regenerated by running
+[[regenerate_vps_mounts.rb]] on the API server.
+
+New action scripts will be better suited for the future, so that a change in
+mounting should not require the action scripts to be regenerated.
