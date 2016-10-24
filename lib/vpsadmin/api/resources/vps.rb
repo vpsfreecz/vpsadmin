@@ -209,7 +209,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
                           maintenance_lock_reason object_state expiration_date
                           is_running process_count used_memory used_swap used_diskspace
                           uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-                          cpu_irq cpu_softirq)
+                          cpu_irq cpu_softirq created_at)
       allow
     end
 
@@ -318,7 +318,7 @@ END
                           maintenance_lock_reason object_state expiration_date
                           is_running process_count used_memory used_swap used_diskspace
                           uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-                          cpu_irq cpu_softirq)
+                          cpu_irq cpu_softirq created_at)
       allow
     end
 
@@ -623,7 +623,7 @@ END
                           maintenance_lock_reason object_state expiration_date
                           is_running process_count used_memory used_swap used_disk uptime
                           loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq
-                          cpu_softirq)
+                          cpu_softirq created_at)
       allow
     end
 
