@@ -2,21 +2,32 @@
 - Track network subnets that IP addresses belong to
 - New resource `Network`
 - New resource `IpRange`
+- New resource `IpTraffic` and `IpTrafficMonitor`
 - Removed parameters `IpAddress.version` and `IpAddress.location`
 - `IpAddress.Index`: filter by `network`, `ip_range` and `role`
 - `IpAddress.Update` has new input parameter `user`
 - `Node.Create`: add required input parameters `cpus`, `total_memory` and `total_swap`
+- `Location.Index`: filter by node type
+- `Vps`: whitelist output parameter `created_at`
+- `Vps::Migrate`: add labels and descriptions for input parameters
 - Pool maintenance mode
 - New rake task `vpsadmin:shell`
 - Move locations to environment
 - IP addresses are allocated to users, not VPSes
+- New cluster resource `ipv4_private`
+- Sort IP addresses in the order in which they're added to VPS
 - Fixed bug in VPS reinstall that broke traffic accounting
 - Cluster resource use can exceed the maximum value if it is less than
   the current value
-- Disallow duplicities in droup snapshots
+- Node.status: fix time check
+- Disallow duplicities in group snapshots
 - Adapt and register IP traffic accounting database tables
+- Distinguish private and public IP traffic
 - Fixed renewal of authentication tokens
 - VPS migration fails when there aren't enough IP addresses in the target location
+- VPS migration does not break backup plans on failure
+- New dependency on activerecord-mysql-unsigned
+- Require HaveAPI v0.6
 
 * Fri Jun 24 2016 - version 2.4.0
 - New resource `Language`
