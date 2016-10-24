@@ -48,6 +48,16 @@ module VpsAdmin::CLI::Commands
     end
 
     def exec(args)
+      if @global_opts[:list_output]
+        exclude = %i(id ip_address user updated_at delta)
+
+        @api.ip_traffic_monitor.actions[:index].params.each_key do |name|
+          next if exclude.include?(name)
+          puts name
+        end
+        exit
+      end
+
       set_global_opts
       init_screen
       start_color
