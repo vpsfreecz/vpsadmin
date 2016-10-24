@@ -1,5 +1,13 @@
 - Support special handling for mount/umount action scripts
 - Failed umounts in action scripts are ignored
+- Track progress of zfs send commands
+- New remote command get ip_map
+- savetransfers.rb renamed to vpsadmin-save-transfers
+- Distinguish private and public IP traffic
+- Reworked live network monitor
+- Requires the ipset command
+- Timeout for vzctl stop/restart commands
+- Fixed race condition in IP traffic accounting
 
 * Fri Jun 24 2016 - version 2.4.0
 - No changes
