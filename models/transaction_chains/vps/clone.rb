@@ -353,21 +353,34 @@ module TransactionChains
               ).count,
       }
 
-      versions = [:ipv4]
+      versions = [:ipv4, :ipv4_private]
       versions << :ipv6 if dst_vps.node.location.has_ipv6
 
-      ip_resources = dst_vps.allocate_resources(
-          dst_vps.node.location.environment,
-          required: [],
-          optional: versions,
-          user: dst_vps.user,
-          chain: self,
-          values: ips
+      user_env = dst_vps.user.environment_user_configs.find_by!(
+          environment: dst_vps.node.location.environment,
       )
 
-      if ip_resources.size > 0
-        append(Transactions::Utils::NoOp, args: dst_vps.vps_server) do
-          ip_resources.each { |r| create(r) }
+      changes = []
+
+      versions.each do |r|
+        chowned = use_chain(
+            Ip::Allocate,
+            args: [::ClusterResource.find_by!(name: r), dst_vps, ips[r]],
+            method: :allocate_to_vps
+        )
+        
+        changes << user_env.reallocate_resource!(
+            r,
+            user_env.send(r) + chowned,
+            user: dst_vps.user,
+            chain: self,
+            confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+        )
+      end
+        
+      unless changes.empty?
+        append_t(Transactions::Utils::NoOp, args: dst_vps.vps_server) do |t|
+          changes.each { |use| t.edit(use, {value: use.value}) }
         end
       end
     end
