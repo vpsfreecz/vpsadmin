@@ -561,9 +561,15 @@ END
                required: true
       bool :replace_ip_addresses, label: 'Replace IP addresses',
           desc: 'When migrating to another location, current IP addresses are replaced by addresses from the new location'
-      bool :outage_window, default: true
-      bool :cleanup_data, default: true
-      bool :send_mail, default: true
+      bool :outage_window, label: 'Outage window',
+          desc: 'Migrate the VPS within the nearest outage window',
+          default: true
+      bool :cleanup_data, label: 'Cleanup data',
+          desc: 'Remove VPS dataset from the source node',
+          default: true
+      bool :send_mail, label: 'Send e-mails',
+          desc: 'Inform the VPS owner about migration progress',
+          default: true
       string :reason
     end
 
