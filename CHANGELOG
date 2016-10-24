@@ -3,6 +3,9 @@
 - IP address edit form for changing shaper and owner
 - Show Tx/Rx in IP address list
 - Fix rounding of days in format_duration()
+- Fetch IP traffic data from the API
+- Auto refreshing of network live monitor
+- Traffic list: month and year filters are optional
 
 * Fri Jun 24 2016 - version 2.4.0
 - Removed mail template management
