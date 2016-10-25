@@ -6,7 +6,7 @@ Version 2.5.0 greatly improves network management:
  - IP addresses can now be assigned to users in greater numbers using IP ranges
  - IP traffic accounting including live network monitoring is finally integrated
    into the API
- - Remember order in which IP addresses were added to VPS
+ - The order in which IP addresses were added to VPS is remembered
 
 ## API resources
 - API version set to 3.0
