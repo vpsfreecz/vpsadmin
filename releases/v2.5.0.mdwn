@@ -10,12 +10,12 @@ Version 2.5.0 greatly improves network management:
 
 ## API resources
 - API version set to 3.0
-- Track network subnets that IP addresses belong to
 - New resource `Network`
 - New resource `IpRange`
 - New resource `IpTraffic` and `IpTrafficMonitor`
 - Removed parameters `IpAddress.version` and `IpAddress.location`
 - `IpAddress.Index`: filter by `network`, `ip_range` and `role`
+- `IpAddress.Index`: users can see owned, assigned and free addresses
 - `IpAddress.Update` has new input parameter `user`
 - `Node.Create`: add required input parameters `cpus`, `total_memory` and `total_swap`
 - `Location.Index`: filter by node type
@@ -23,6 +23,7 @@ Version 2.5.0 greatly improves network management:
 - `Vps::Migrate`: add labels and descriptions for input parameters
 
 ## API internals
+- Track network subnets that IP addresses belong to
 - Pool maintenance mode
 - New rake task `vpsadmin:shell`
 - Move locations to environment
@@ -57,7 +58,7 @@ Version 2.5.0 greatly improves network management:
 - Failed umounts in action scripts are ignored
 - Track progress of zfs send commands
 - New remote command get ip_map
-- savetransfers.rb renamed to vpsadmin-save-transfers
+- savetransfers.rb renamed to vpsadmind-save-transfers
 - Distinguish private and public IP traffic
 - Reworked live network monitor
 - Requires the ipset command
