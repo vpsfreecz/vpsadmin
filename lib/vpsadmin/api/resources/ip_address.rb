@@ -114,9 +114,11 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       end
 
       if current_user.role != :admin
-        ips = ips.where(
-            'vps_ip.user_id = ? OR (vps_ip.user_id IS NULL AND vps_ip.vps_id IS NULL)',
-            current_user.id
+        ips = ips.joins('LEFT JOIN vps ON vps.vps_id = vps_ip.vps_id').where(
+            'vps_ip.user_id = ?
+             OR (vps_ip.vps_id IS NOT NULL AND vps.m_id = ?)
+             OR (vps_ip.user_id IS NULL AND vps_ip.vps_id IS NULL)',
+            current_user.id, current_user.id
         ).order('vps_ip.user_id DESC, ip_id ASC')
       end
 

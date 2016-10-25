@@ -5,6 +5,7 @@
 - New resource `IpTraffic` and `IpTrafficMonitor`
 - Removed parameters `IpAddress.version` and `IpAddress.location`
 - `IpAddress.Index`: filter by `network`, `ip_range` and `role`
+- `IpAddress.Index`: users can see owned, assigned and free addresses
 - `IpAddress.Update` has new input parameter `user`
 - `Node.Create`: add required input parameters `cpus`, `total_memory` and `total_swap`
 - `Location.Index`: filter by node type
