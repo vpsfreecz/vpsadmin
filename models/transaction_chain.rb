@@ -32,6 +32,7 @@ class TransactionChain < ActiveRecord::Base
   # @param locks [Array] list of global locks
   def self.fire2(args: [], locks: [])
     ret = nil
+    chain = nil
 
     TransactionChain.transaction(requires_new: true) do
       chain = new
@@ -65,7 +66,7 @@ class TransactionChain < ActiveRecord::Base
       chain.save
     end
 
-    ret
+    [chain, ret]
   end
 
   # The chain name is a class name in lowercase with added
