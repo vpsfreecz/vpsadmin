@@ -441,9 +441,11 @@ module VpsAdmin::API
 
         if chain
           chain.use_chain(TransactionChains::Lifetimes::Wrapper, args: chain_args)
+          chain
 
         else
-          TransactionChains::Lifetimes::Wrapper.fire(*chain_args)
+          new_chain, _ = TransactionChains::Lifetimes::Wrapper.fire(*chain_args)
+          new_chain
         end
       end
 
