@@ -186,10 +186,10 @@ class Vps < ActiveRecord::Base
 
     ::IpAddress.transaction do
       ip = ::IpAddress.pick_addr!(user, node.location, v, role)
-      add_ip(ip, true)
+      chain, _ = add_ip(ip, true)
     end
 
-    ip
+    [chain, ip]
   end
 
   # See #add_ip for more information about +safe+.
@@ -223,9 +223,7 @@ class Vps < ActiveRecord::Base
   def passwd(t)
     pass = generate_password(t)
 
-    TransactionChains::Vps::Passwd.fire(self, pass)
-
-    pass
+    [TransactionChains::Vps::Passwd.fire(self, pass).first, pass]
   end
 
   def reinstall(template)

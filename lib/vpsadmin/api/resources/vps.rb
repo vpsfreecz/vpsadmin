@@ -337,6 +337,7 @@ END
 
   class Update < HaveAPI::Actions::Default::Update
     desc 'Update VPS'
+    blocking true
 
     input do
       use :common
@@ -385,7 +386,7 @@ END
         error('update failed', hostname: ['must be present'])
       end
 
-      vps.update(to_db_names(input))
+      @chain, _ = vps.update(to_db_names(input))
       ok
 
     rescue ActiveRecord::RecordInvalid => e
@@ -394,10 +395,15 @@ END
     rescue VpsAdmin::API::Exceptions::IpRangeInUse => e
       error(e.message)
     end
+
+    def state_id
+      @chain && @chain.id
+    end
   end
 
   class Delete < HaveAPI::Actions::Default::Delete
     desc 'Delete VPS'
+    blocking true
 
     input do
       bool :lazy, label: 'Lazy delete', desc: 'Only mark VPS as deleted',
@@ -422,12 +428,16 @@ END
         state = :soft_delete
       end
 
-      vps.set_object_state(
+      @chain, _ = vps.set_object_state(
           state,
           reason: 'Deletion requested',
           expiration: true,
       )
       ok
+    end
+
+    def state_id
+      @chain.id
     end
   end
 
@@ -435,6 +445,7 @@ END
     desc 'Start VPS'
     route ':%{resource}_id/start'
     http_method :post
+    blocking true
 
     authorize do |u|
       allow if u.role == :admin
@@ -447,8 +458,12 @@ END
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
-      vps.start
+      @chain, _ = vps.start
       ok
+    end
+
+    def state_id
+      @chain.id
     end
   end
 
@@ -456,6 +471,7 @@ END
     desc 'Restart VPS'
     route ':%{resource}_id/restart'
     http_method :post
+    blocking true
 
     authorize do |u|
       allow if u.role == :admin
@@ -468,8 +484,12 @@ END
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
-      vps.restart
+      @chain, _ = vps.restart
       ok
+    end
+
+    def state_id
+      @chain.id
     end
   end
 
@@ -477,6 +497,7 @@ END
     desc 'Stop VPS'
     route ':%{resource}_id/stop'
     http_method :post
+    blocking true
 
     authorize do |u|
       allow if u.role == :admin
@@ -489,8 +510,12 @@ END
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
-      vps.stop
+      @chain, _ = vps.stop
       ok
+    end
+
+    def state_id
+      @chain.id
     end
   end
 
@@ -498,6 +523,7 @@ END
     desc 'Set root password'
     route ':%{resource}_id/passwd'
     http_method :post
+    blocking true
 
     input(:hash) do
       string :type, label: 'Type', choices: %w(secure simple), default: 'secure',
@@ -518,7 +544,12 @@ END
       vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
       maintenance_check!(vps)
 
-      {password: vps.passwd(input[:type].to_sym)}
+      @chain, password = vps.passwd(input[:type].to_sym)
+      {password: password}
+    end
+
+    def state_id
+      @chain.id
     end
   end
 
@@ -526,6 +557,7 @@ END
     desc 'Reinstall VPS'
     route ':%{resource}_id/reinstall'
     http_method :post
+    blocking true
 
     input do
       use :template
@@ -545,8 +577,12 @@ END
 
       error('selected os template is disabled') unless tpl.enabled?
 
-      vps.reinstall(tpl)
+      @chain, _ = vps.reinstall(tpl)
       ok
+    end
+    
+    def state_id
+      @chain.id
     end
   end
 
@@ -554,6 +590,7 @@ END
     desc 'Migrate VPS to another node'
     route ':%{resource}_id/migrate'
     http_method :post
+    blocking true
 
     input do
       resource VpsAdmin::API::Resources::Node, label: 'Node',
@@ -587,8 +624,12 @@ END
         error('target node is not a hypervisor')
       end
 
-      vps.migrate(input[:node], input)
+      @chain, _ = vps.migrate(input[:node], input)
       ok
+    end
+
+    def state_id
+      @chain.id
     end
   end
 
@@ -596,6 +637,7 @@ END
     desc 'Clone VPS'
     route ':%{resource}_id/clone'
     http_method :post
+    blocking true
 
     input do
       resource VpsAdmin::API::Resources::Environment, desc: 'Clone to environment'
@@ -681,10 +723,15 @@ END
         input[:hostname] = "#{vps.hostname}-#{vps.id}-clone"
       end
 
-      vps.clone(node, input)
+      @chain, cloned_vps = vps.clone(node, input)
+      cloned_vps
 
     rescue ActiveRecord::RecordInvalid => e
       error('clone failed', to_param_names(e.record.errors.to_hash))
+    end
+
+    def state_id
+      @chain.id
     end
   end
 
@@ -692,6 +739,7 @@ END
     desc 'Swap VPS with another'
     route ':%{resource}_id/swap_with'
     http_method :post
+    blocking true
 
     input do
       resource VpsAdmin::API::Resources::VPS, desc: 'Swap with this VPS',
@@ -732,8 +780,12 @@ END
         input[:expirations] = true
       end
 
-      vps.swap_with(input[:vps], input)
+      @chain, _ = vps.swap_with(input[:vps], input)
       ok
+    end
+
+    def state_id
+      @chain.id
     end
   end
 
@@ -782,6 +834,7 @@ END
       desc 'Replace VPS configs'
       route 'replace'
       http_method :post
+      blocking true
 
       input(:object_list) do
         use :all
@@ -795,7 +848,12 @@ END
         vps = ::Vps.find(params[:vps_id])
         maintenance_check!(vps)
 
-        vps.applyconfig(input.map { |cfg| cfg[:vps_config].id })
+        @chain, _ = vps.applyconfig(input.map { |cfg| cfg[:vps_config].id })
+        ok
+      end
+
+      def state_id
+        @chain.id
       end
     end
   end
@@ -873,6 +931,7 @@ END
 
     class Update < HaveAPI::Actions::Default::Update
       desc 'Toggle VPS feature'
+      blocking true
 
       input do
         use :toggle
@@ -888,7 +947,15 @@ END
         vps = ::Vps.find_by!(
             with_restricted(vps_id: params[:vps_id])
         )
-        vps.set_feature(vps.vps_features.find(params[:feature_id]), input[:enabled])
+        @chain, _ = vps.set_feature(
+            vps.vps_features.find(params[:feature_id]),
+            input[:enabled]
+        )
+        ok
+      end
+
+      def state_id
+        @chain.id
       end
     end
 
@@ -896,6 +963,7 @@ END
       desc 'Set all features at once'
       http_method :post
       route 'update_all'
+      blocking true
 
       input do
         ::VpsFeature::FEATURES.each do |name, label|
@@ -913,7 +981,12 @@ END
         vps = ::Vps.find_by!(
             with_restricted(vps_id: params[:vps_id])
         )
-        vps.set_features(input)
+        @chain, _ = vps.set_features(input)
+        ok
+      end
+
+      def state_id
+        @chain.id
       end
     end
   end
@@ -966,6 +1039,7 @@ END
 
     class Create < HaveAPI::Actions::Default::Create
       desc 'Assign IP address to VPS'
+      blocking true
 
       input do
         resource VpsAdmin::API::Resources::IpAddress, label: 'IP address',
@@ -989,10 +1063,12 @@ END
       def exec
         vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
         maintenance_check!(vps)
+        ip = nil
 
         if input[:ip_address]
           begin
-            vps.add_ip(ip = input[:ip_address])
+            ip = input[:ip_address]
+            @chain, _ = vps.add_ip(ip)
 
           rescue VpsAdmin::API::Exceptions::IpAddressInUse
             error('IP address is already in use')
@@ -1009,7 +1085,7 @@ END
 
         else
           begin
-            ip = vps.add_free_ip(input[:version], input[:role].to_sym)
+            @chain, ip = vps.add_free_ip(input[:version], input[:role].to_sym)
 
           rescue ActiveRecord::RecordNotFound
             error('no free IP address is available')
@@ -1018,10 +1094,15 @@ END
 
         ok(ip)
       end
+
+      def state_id
+        @chain.id
+      end
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
       desc 'Free IP address'
+      blocking true
 
       authorize do |u|
         allow if u.role == :admin
@@ -1033,11 +1114,15 @@ END
         vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
         maintenance_check!(vps)
 
-        vps.delete_ip(vps.ip_addresses.find_by!(
+        @chain, _ = vps.delete_ip(vps.ip_addresses.find_by!(
             ip_id: params[:ip_address_id],
             vps_id: vps.id
         ))
         ok
+      end
+
+      def state_id
+        @chain.id
       end
     end
 
@@ -1045,6 +1130,7 @@ END
       desc 'Free all IP addresses'
       route ''
       http_method :delete
+      blocking true
 
       input(namespace: :ip_addresses) do
         integer :version, label: 'IP version',
@@ -1061,8 +1147,12 @@ END
         vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
         maintenance_check!(vps)
 
-        vps.delete_ips((params[:ip_addresses] || {})[:version])
+        @chain, _ = vps.delete_ips((params[:ip_addresses] || {})[:version])
         ok
+      end
+
+      def state_id
+        @chain.id
       end
     end
   end
@@ -1146,6 +1236,7 @@ END
 
     class Create < HaveAPI::Actions::Default::Create
       desc 'Mount remote dataset or snapshot to directory in VPS'
+      blocking true
 
       input do
         use :all, include: %i(dataset snapshot mountpoint mode on_start_fail)
@@ -1181,11 +1272,13 @@ END
         end
 
         if input[:dataset]
-          vps.mount_dataset(input[:dataset], input[:mountpoint], input)
+          @chain, ret = vps.mount_dataset(input[:dataset], input[:mountpoint], input)
 
         else
-          vps.mount_snapshot(input[:snapshot], input[:mountpoint], input)
+          @chain, ret = vps.mount_snapshot(input[:snapshot], input[:mountpoint], input)
         end
+
+        ret
 
       rescue VpsAdmin::API::Exceptions::SnapshotAlreadyMounted => e
         error(e.message)
@@ -1193,10 +1286,15 @@ END
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
       end
+
+      def state_id
+        @chain.id
+      end
     end
 
     class Update < HaveAPI::Actions::Default::Update
       desc 'Update a mount'
+      blocking true
 
       input do
         use :all, include: %i(on_start_fail enabled master_enabled)
@@ -1218,13 +1316,18 @@ END
         maintenance_check!(vps)
 
         mnt = ::Mount.find_by!(vps: vps, id: params[:mount_id])
-        mnt.update_chain(input)
+        @chain, _ = mnt.update_chain(input)
         mnt
+      end
+
+      def state_id
+        @chain.id
       end
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
       desc 'Delete mount from VPS'
+      blocking true
 
       authorize do |u|
         allow if u.role == :admin
@@ -1237,9 +1340,13 @@ END
         maintenance_check!(vps)
 
         mnt = ::Mount.find_by!(vps: vps, id: params[:mount_id])
-        vps.umount(mnt)
+        @chain, _ = vps.umount(mnt)
 
         ok
+      end
+
+      def state_id
+        @chain.id
       end
     end
   end
