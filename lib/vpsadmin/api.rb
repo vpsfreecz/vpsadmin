@@ -16,6 +16,7 @@ module VpsAdmin
 
       api = HaveAPI::Server.new
       api.use_version(:all)
+      api.action_state = ActionState
 
       authenticate(api)
 
