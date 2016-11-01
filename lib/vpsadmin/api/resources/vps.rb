@@ -181,6 +181,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
   class Create < HaveAPI::Actions::Default::Create
     desc 'Create VPS'
+    blocking true
 
     input do
       resource VpsAdmin::API::Resources::Environment, label: 'Environment',
@@ -287,13 +288,18 @@ END
 
       vps = ::Vps.new(to_db_names(input))
       vps.set_cluster_resources(input)
+      @chain, vps = vps.create(opts)
 
-      if vps.create(opts)
+      if @chain
         ok(vps)
 
       else
         error('save failed', to_param_names(vps.errors.to_hash, :input))
       end
+    end
+
+    def state_id
+      @chain.id
     end
   end
 
