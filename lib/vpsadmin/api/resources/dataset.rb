@@ -118,6 +118,7 @@ module VpsAdmin::API::Resources
 
     class Create < HaveAPI::Actions::Default::Create
       desc 'Create a subdataset'
+      blocking true
 
       input do
         string :name, label: 'Name', required: true
@@ -151,12 +152,13 @@ module VpsAdmin::API::Resources
 
         properties = VpsAdmin::API::DatasetProperties.validate_params(input)
 
-        ::Dataset.create_new(
+        @chain, dataset = ::Dataset.create_new(
             input[:name].strip,
             input[:dataset],
             input[:automount],
             properties
         )
+        dataset
 
       rescue VpsAdmin::API::Exceptions::PropertyInvalid => e
         error("property invalid: #{e.message}")
@@ -174,10 +176,15 @@ module VpsAdmin::API::Resources
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
       end
+
+      def state_id
+        @chain.id
+      end
     end
 
     class Update < HaveAPI::Actions::Default::Update
       desc 'Update a dataset'
+      blocking true
 
       input do
         use :editable_properties
@@ -199,7 +206,7 @@ module VpsAdmin::API::Resources
         ds.maintenance_check!(ds.primary_dataset_in_pool!.pool)
 
         properties = VpsAdmin::API::DatasetProperties.validate_params(input)
-        ds.update_properties(properties, input)
+        @chain, _ = ds.update_properties(properties, input)
 
         ok
 
@@ -213,10 +220,15 @@ module VpsAdmin::API::Resources
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', e.record.errors.to_hash)
       end
+
+      def state_id
+        @chain.id
+      end
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
       desc 'Destroy a dataset with all its subdatasets and snapshots'
+      blocking true
 
       authorize do |u|
         allow if u.role == :admin
@@ -236,11 +248,15 @@ module VpsAdmin::API::Resources
         
         ds.maintenance_check!(ds.primary_dataset_in_pool!.pool)
 
-        ds.destroy
+        @chain, _ = ds.destroy
         ok
 
       rescue VpsAdmin::API::Exceptions::DatasetDoesNotExist => e
         error(e.message)
+      end
+
+      def state_id
+        @chain.id
       end
     end
 
@@ -248,6 +264,7 @@ module VpsAdmin::API::Resources
       desc 'Inherit dataset property'
       route ':%{resource}_id/inherit'
       http_method :post
+      blocking true
 
       input do
         string :property, label: 'Property',
@@ -297,8 +314,12 @@ module VpsAdmin::API::Resources
           error("property is not inheritable: #{not_inheritable.join(',')}")
         end
 
-        ds.inherit_properties(props)
+        @chain, _ = ds.inherit_properties(props)
         ok
+      end
+
+      def state_id
+        @chain.id
       end
     end
 
@@ -376,6 +397,7 @@ module VpsAdmin::API::Resources
 
       class Create < HaveAPI::Actions::Default::Create
         desc 'Create snapshot'
+        blocking true
 
         output do
           use :all
@@ -397,12 +419,18 @@ module VpsAdmin::API::Resources
             error("cannot make more than #{max_snapshots} snapshots")
           end
 
-          ds.snapshot.snapshot
+          @chain, snap = ds.snapshot.snapshot
+          snap
+        end
+
+        def state_id
+          @chain.id
         end
       end
 
       class Delete < HaveAPI::Actions::Default::Delete
         desc 'Destroy a snapshot'
+        blocking true
 
         authorize do |u|
           allow if u.role == :admin
@@ -427,8 +455,12 @@ module VpsAdmin::API::Resources
           
           snap.dataset.maintenance_check!(snap.dataset.primary_dataset_in_pool!.pool)
 
-          snap.destroy
+          @chain, _ = snap.destroy
           ok
+        end
+
+        def state_id
+          @chain.id
         end
       end
 
@@ -436,6 +468,7 @@ module VpsAdmin::API::Resources
         desc 'Rollback to a snapshot'
         route ':%{resource}_id/rollback'
         http_method :post
+        blocking true
 
         authorize do |u|
           allow if u.role == :admin
@@ -476,11 +509,15 @@ module VpsAdmin::API::Resources
             )
           end
 
-          snap.dataset.rollback_snapshot(snap)
+          @chain, _ = snap.dataset.rollback_snapshot(snap)
           ok
 
         rescue VpsAdmin::API::Exceptions::SnapshotInUse => e
           error(e.message)
+        end
+
+        def state_id
+          @chain.id
         end
       end
     end
