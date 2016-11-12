@@ -1,16 +1,18 @@
 module VpsAdmin::API
   class ActionState < HaveAPI::ActionState
-    def self.list_pending(user, offset, limit)
+    def self.list_pending(user, offset, limit, order)
       ret = []
       return ret if user.nil?
 
-      ::TransactionChain.where(
+      q = ::TransactionChain.where(
           user: user,
           state: [
               ::TransactionChain.states[:queued],
               ::TransactionChain.states[:rollbacking],
           ]
-      ).order('id DESC').offset(offset).limit(limit).each do |chain|
+      ).order(
+          "id #{order == :newest ? 'DESC' : 'ASC'}"
+      ).offset(offset).limit(limit).each do |chain|
         ret << new(user, state: chain)
       end
 
@@ -53,6 +55,14 @@ module VpsAdmin::API
 
     def progress
       {current: @chain.progress, total: @chain.size, unit: 'transactions'}
+    end
+
+    def created_at
+      @chain.created_at
+    end
+
+    def updated_at
+      @chain.created_at
     end
   end
 end
