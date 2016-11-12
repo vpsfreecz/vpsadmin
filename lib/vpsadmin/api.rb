@@ -29,6 +29,7 @@ module VpsAdmin
 
       e.rescue(::ActiveRecord::RecordNotFound) do |ret, exception|
         ret[:status] = false
+        ret[:http_status] = 404
 
         if /find ([^\s]+)[^=]+=(\d+)/ =~ exception.message
           ret[:message] = "object #{$~[1]} = #{$~[2]} not found"
@@ -48,12 +49,14 @@ module VpsAdmin
 
       e.rescue(VpsAdmin::API::Maintainable::ResourceUnderMaintenance) do |ret, exception|
         ret[:status] = false
+        ret[:http_status] = 423
         ret[:message] = "Resource is under maintenance: #{exception.message}"
         ret
       end
 
       e.rescue(VpsAdmin::API::Exceptions::ClusterResourceAllocationError) do |ret, exception|
         ret[:status] = false
+        ret[:http_status] = 400
         ret[:message] = "Resource allocation error: #{exception.message}"
 
         ret
