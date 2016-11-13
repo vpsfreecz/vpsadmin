@@ -79,8 +79,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     example do
       request({})
-      response({
-        nodes: {
+      response([{
           id: 1,
           name: 'node1',
           type: 'node',
@@ -90,9 +89,8 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
           },
           availstat: '',
           ip_addr: '192.168.0.10',
-          maintenance: false
-        }
-      })
+          maintenance_lock: 'no'
+      }])
     end
 
     def query
@@ -220,9 +218,9 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     example do
+      url_params(2)
       request({})
       response({
-        node: {
           id: 2,
           name: 'node2',
           type: 'node',
@@ -232,8 +230,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
           },
           availstat: '',
           ip_addr: '192.168.0.11',
-          maintenance: false
-        }
+          maintenance_lock: 'no'
       })
     end
 
@@ -259,15 +256,13 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     example do
+      url_params(2)
       request({
-        node: {
           name: 'node2',
           type: 'storage',
           location: 1,
           availstat: '',
           ip_addr: '192.168.0.11',
-          maintenance: false
-        }
       })
       response({})
     end

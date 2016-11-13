@@ -103,32 +103,30 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     example do
       request({})
-      response({vpses: [
-        {
-            id: 150,
-            user: {
-                id: 1,
-                name: 'somebody'
-            },
-            hostname: 'thehostname',
-            os_template: {
-                id: 1,
-                label: 'Scientific Linux 6'
-            },
-            info: 'My very important VPS',
-            dns_resolver: {
-                id: 1,
-            },
-            node: {
-                id: 1,
-                name: 'node1'
-            },
-            onboot: true,
-            onstartall: true,
-            backup_enabled: true,
-            vps_config: '',
-        }
-      ]})
+      response([{
+          id: 150,
+          user: {
+              id: 1,
+              name: 'somebody'
+          },
+          hostname: 'thehostname',
+          os_template: {
+              id: 1,
+              label: 'Scientific Linux 6'
+          },
+          info: 'My very important VPS',
+          dns_resolver: {
+              id: 1,
+          },
+          node: {
+              id: 1,
+              name: 'node1'
+          },
+          onboot: true,
+          onstartall: true,
+          backup_enabled: true,
+          vps_config: '',
+      }])
     end
 
     def query
@@ -216,7 +214,6 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     example 'Create vps' do
       request({
-        vps: {
           user: 1,
           hostname: 'my-vps',
           os_template: 1,
@@ -225,14 +222,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
           node: 1,
           onboot: true,
           onstartall: true,
-          backup_enabled: true,
-          vps_config: ''
-        }
       })
       response({
-        vps: {
-            id: 150
-        }
+          id: 150
       })
       comment <<END
 Create VPS owned by user with ID 1, template ID 1 and DNS resolver ID 1. VPS

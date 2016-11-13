@@ -47,17 +47,15 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
     example do
       request({})
-      response({
-        locations: {
-            label: 'Prague',
-            has_ipv6: true,
-            vps_onboot: true,
-            remote_console_server: 'https://console.vpsadmin.mydomain.com',
-            domain: 'prg',
-            created_at: '2014-05-04 16:59:52 +0200',
-            updated_at: '2014-05-04 16:59:52 +0200'
-        }
-      })
+      response([{
+          label: 'Prague',
+          has_ipv6: true,
+          vps_onboot: true,
+          remote_console_server: 'https://console.vpsadmin.mydomain.com',
+          domain: 'prg',
+          created_at: '2014-05-04 16:59:52 +0200',
+          updated_at: '2014-05-04 16:59:52 +0200'
+      }])
     end
 
     def query
@@ -127,18 +125,14 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
     example do
       request({
-        location: {
-            label: 'Brno',
-            has_ipv6: true,
-            vps_onboot: true,
-            remote_console_server: '',
-            domain: 'brq'
-        }
+          label: 'Brno',
+          has_ipv6: true,
+          vps_onboot: true,
+          remote_console_server: '',
+          domain: 'brq'
       })
       response({
-        location: {
-          id: 2
-        }
+        id: 2
       })
     end
 
@@ -156,7 +150,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
   class Show < HaveAPI::Actions::Default::Show
     desc 'Show location'
 
-    output do
+    output(:hash) do
       use :all
     end
 
@@ -167,16 +161,15 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     example do
+      url_params(2)
       request({})
       response({
-        location: {
           id: 2,
           label: 'Brno',
           has_ipv6: true,
           vps_onboot: true,
           remote_console_server: '',
           domain: 'brq'
-        }
       })
     end
 
@@ -197,15 +190,14 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     example do
+      url_params(2)
       request({
-        location: {
-            label: 'Ostrava',
-            has_ipv6: true,
-            vps_onboot: true,
-            remote_console_server: '',
-            environment: 1,
-            domain: 'ova'
-        }
+          label: 'Ostrava',
+          has_ipv6: true,
+          vps_onboot: true,
+          remote_console_server: '',
+          environment: 1,
+          domain: 'ova'
       })
       response({})
     end

@@ -62,27 +62,21 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     example do
       request({
-        ip_addresses: {
-          vps_id: 101
-        }
+          vps: 101
       })
-      response({
-        ip_addresses: [
-            {
-                id: 10,
-                vps: {
-                    id: 101,
-                    hostname: 'myvps'
-                },
-                version: 4,
-                location: {
-                    id: 1,
-                    label: 'The Location'
-                },
-                addr: '192.168.0.50'
-            }
-        ]
-      })
+      response([{
+          id: 10,
+          vps: {
+              id: 101,
+              hostname: 'myvps'
+          },
+          version: 4,
+          location: {
+              id: 1,
+              label: 'The Location'
+          },
+          addr: '192.168.0.50'
+      }])
       comment 'List IP addresses assigned to VPS with ID 101.'
     end
 

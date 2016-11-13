@@ -45,17 +45,13 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
     example do
       request({})
-      response({
-        environments: [
-            {
+      response([
+          {
               id: 1,
               label: 'Production',
               domain: 'vpsfree.cz',
-              created_at: '2014-05-04 16:59:52 +0200',
-              updated_at: '2014-05-04 16:59:52 +0200',
-            }
-          ]
-       })
+          }
+      ])
     end
 
     def query
@@ -119,15 +115,11 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
     example do
       request({
-        environment: {
           label: 'Devel',
           domain: 'vpsfree.cz'
-        }
       })
       response({
-        environment: {
           id: 2
-        }
       })
     end
 
@@ -156,15 +148,12 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     end
 
     example do
+      url_params(1)
       request({})
       response({
-        environment: {
           id: 1,
           label: 'Production',
           domain: 'vpsfree.cz',
-          created_at: '2014-05-04 16:59:52 +0200',
-          updated_at: '2014-05-04 16:59:52 +0200',
-        }
       })
     end
 
@@ -189,9 +178,10 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     end
 
     example do
+      url_params(1)
       request({
-        label: 'My new name',
-        domain: 'new.domain'
+          label: 'My new name',
+          domain: 'new.domain'
       })
       response({})
     end
