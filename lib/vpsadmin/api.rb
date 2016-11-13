@@ -25,6 +25,15 @@ module VpsAdmin
         ret
       end
 
+      api.connect_hook(:description_exception) do |ret, ctx, e|
+        if e.is_a?(::ActiveRecord::RecordNotFound)
+          ret[:http_status] = 404
+          ret[:message] = 'Object not found'
+        end
+
+        ret
+      end
+
       e = HaveAPI::Extensions::ActionExceptions
 
       e.rescue(::ActiveRecord::RecordNotFound) do |ret, exception|
