@@ -10,8 +10,7 @@ class Location < ActiveRecord::Base
   alias_attribute :label, :location_label
   alias_attribute :has_ipv6, :location_has_ipv6
 
-  validates :location_label, :location_vps_onboot,
-            :domain, presence: true
+  validates :location_label, :domain, presence: true
   validates :location_has_ipv6, inclusion: { in: [true, false] }
   validates :domain, format: {
       with: /[[0-9a-zA-Z\-\.]{3,255}]/,
