@@ -29,6 +29,7 @@
 - VPS migration does not break backup plans on failure
 - New dependency on activerecord-mysql-unsigned
 - Require HaveAPI v0.6
+- Vps::Destroy does not fail when there is no VPS status
 
 * Fri Jun 24 2016 - version 2.4.0
 - New resource `Language`
