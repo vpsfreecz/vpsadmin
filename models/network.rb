@@ -22,8 +22,8 @@ class Network < ActiveRecord::Base
   # @option opts [Boolean] add_ips
   def self.register!(attrs, opts)
     net = new(attrs)
-    TransactionChains::Network::Create.fire(net, opts)
-    net
+    chain, _ = TransactionChains::Network::Create.fire(net, opts)
+    [chain, net]
   end
 
   def include?(what)

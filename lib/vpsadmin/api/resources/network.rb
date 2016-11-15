@@ -84,6 +84,7 @@ module VpsAdmin::API::Resources
 
     class Create < HaveAPI::Actions::Default::Create
       desc 'Add a new network'
+      blocking true
 
       input do
         use :common
@@ -109,13 +110,18 @@ module VpsAdmin::API::Resources
       def exec
         add_ips = input.delete(:add_ip_addresses)
 
-        ::Network.register!(input, add_ips: add_ips)
+        @chain, net = ::Network.register!(input, add_ips: add_ips)
+        net
 
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
 
       rescue ActiveRecord::RecordNotUnique
         error('this network already exists')
+      end
+
+      def state_id
+        @chain.id
       end
     end
 
