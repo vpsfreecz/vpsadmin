@@ -1,3 +1,4 @@
+* Tue Nov 15 2016 - version 2.5.0
 - Support for network subnets
 - Network list on cluster page
 - IP address edit form for changing shaper and owner
