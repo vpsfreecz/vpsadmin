@@ -82,6 +82,7 @@ module VpsAdmin::API::Resources
 
     class Create < HaveAPI::Actions::Default::Create
       desc 'Create a new storage pool'
+      blocking true
 
       input do
         use :common
@@ -99,13 +100,18 @@ module VpsAdmin::API::Resources
       def exec
         properties = VpsAdmin::API::DatasetProperties.validate_params(input)
         
-        ::Pool.create!(input, properties)
+        @chain, pool = ::Pool.create!(input, properties)
+        pool
 
       rescue VpsAdmin::API::Exceptions::PropertyInvalid => e
         error("property invalid: #{e.message}")
 
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
+      end
+
+      def state_id
+        @chain.id
       end
     end
 
