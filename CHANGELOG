@@ -12,6 +12,7 @@
   - `Pool.Create`
   - `SnapshotDownload.Create`
   - `SnapshotDownload.Delete`
+  - `User.Create`
   - `Vps.Create`
   - `Vps.Update`
   - `Vps.Delete`
@@ -32,7 +33,8 @@
   - `Vps.Mount.Create`
   - `Vps.Mount.Update`
   - `Vps.Mount.Delete`
-  - `User.Create`
+  - `VpsConfig.Create`
+  - `VpsConfig.Update`
 - TransactionChain.fire returns the create chain and return value from link_chain
 - Global action exception handlers set HTTP status code
 

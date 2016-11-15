@@ -43,6 +43,7 @@ class VpsAdmin::API::Resources::VpsConfig < HaveAPI::Resource
 
   class Create < HaveAPI::Actions::Default::Create
     desc 'Create a new VPS config'
+    blocking true
 
     input do
       use :common
@@ -58,10 +59,15 @@ class VpsAdmin::API::Resources::VpsConfig < HaveAPI::Resource
 
     def exec
       cfg = ::VpsConfig.new(input)
-      cfg.create!
+      @chain, ret = cfg.create!
+      ret
 
     rescue ActiveRecord::RecordInvalid
       error('save failed', cfg.errors.to_hash)
+    end
+
+    def state_id
+      @chain.id
     end
   end
 
@@ -85,6 +91,7 @@ class VpsAdmin::API::Resources::VpsConfig < HaveAPI::Resource
 
   class Update < HaveAPI::Actions::Default::Update
     desc 'Update VPS config'
+    blocking true
 
     input do
       use :common
@@ -96,10 +103,14 @@ class VpsAdmin::API::Resources::VpsConfig < HaveAPI::Resource
 
     def exec
       cfg = ::VpsConfig.find(params[:vps_config_id])
-      cfg.update!(input)
+      @chain, _ = cfg.update!(input)
 
     rescue ActiveRecord::RecordInvalid
       error('update failed', cfg.errors.to_hash)
+    end
+
+    def state_id
+      @chain.id
     end
   end
 
