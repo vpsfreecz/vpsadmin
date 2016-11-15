@@ -104,6 +104,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   class Create < HaveAPI::Actions::Default::Create
     desc 'Create new user'
+    blocking true
 
     input do
       use :writable
@@ -152,10 +153,15 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         input[:node] = node
       end
 
-      user.create(input[:vps], input[:node], input[:os_template])
+      @chain, _ = user.create(input[:vps], input[:node], input[:os_template])
+      user
 
     rescue ActiveRecord::RecordInvalid
       error('create failed', to_param_names(user.errors.to_hash, :input))
+    end
+
+    def state_id
+      @chain.empty? ? nil : @chain.id
     end
   end
 

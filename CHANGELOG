@@ -32,6 +32,7 @@
   - `Vps.Mount.Create`
   - `Vps.Mount.Update`
   - `Vps.Mount.Delete`
+  - `User.Create`
 - TransactionChain.fire returns the create chain and return value from link_chain
 - Global action exception handlers set HTTP status code
 
