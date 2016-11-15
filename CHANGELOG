@@ -1,3 +1,40 @@
+- Rebase on new HaveAPI
+- Implement ActionState interface from HaveAPI
+- Blocking actions:
+  - `Dataset.Create`
+  - `Dataset.Update`
+  - `Dataset.Delete`
+  - `Dataset.Inherit`
+  - `Dataset.Snapshot.Create`
+  - `Dataset.Snapshot.Delete`
+  - `Dataset.Snapshot.Rollback`
+  - `Node.Create`
+  - `Pool.Create`
+  - `SnapshotDownload.Create`
+  - `SnapshotDownload.Delete`
+  - `Vps.Create`
+  - `Vps.Update`
+  - `Vps.Delete`
+  - `Vps.Start`
+  - `Vps.Stop`
+  - `Vps.Restart`
+  - `Vps.Passwd`
+  - `Vps.Reinstall`
+  - `Vps.Migrate`
+  - `Vps.Clone`
+  - `Vps.SwapWith`
+  - `Vps.Config.Replace`
+  - `Vps.Feature.Update`
+  - `Vps.Feature.UpdateAll`
+  - `Vps.IpAddress.Create`
+  - `Vps.IpAddress.Delete`
+  - `Vps.IpAddress.DeleteAll`
+  - `Vps.Mount.Create`
+  - `Vps.Mount.Update`
+  - `Vps.Mount.Delete`
+- TransactionChain.fire returns the create chain and return value from link_chain
+- Global action exception handlers set HTTP status code
+
 * Tue Nov 15 2016 - version 2.5.0
 - API version set to 3.0
 - Track network subnets that IP addresses belong to
