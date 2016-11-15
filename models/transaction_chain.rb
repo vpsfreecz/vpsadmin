@@ -55,7 +55,7 @@ class TransactionChain < ActiveRecord::Base
         if chain.class.allow_empty?
           chain.release_locks
           chain.destroy
-          return ret
+          return [chain, ret]
 
         else
           fail 'empty'
