@@ -117,6 +117,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
   class Create < HaveAPI::Actions::Default::Create
     desc 'Create a new node'
+    blocking true
 
     input do
       use :all, include: %i(id name type location ip_addr net_interface max_tx
@@ -141,10 +142,15 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     def exec
-      ::Node.register!(to_db_names(input))
+      @chain, node = ::Node.register!(to_db_names(input))
+      node
     
     rescue ActiveRecord::RecordInvalid => e
       error('save failed', to_param_names(e.record.errors.to_hash, :input))
+    end
+
+    def state_id
+      @chain.id
     end
   end
 
