@@ -42,6 +42,7 @@ Version 2.5.0 greatly improves network management:
 - VPS migration does not break backup plans on failure
 - New dependency on activerecord-mysql-unsigned
 - Require HaveAPI v0.6
+- Vps::Destroy does not fail when there is no VPS status
 
 ## vpsAdmin web UI
 - Support for network subnets
