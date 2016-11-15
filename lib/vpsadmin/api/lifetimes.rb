@@ -472,19 +472,23 @@ module VpsAdmin::API
             end
 
           else
-            obj.set_object_state(
-                input[:object_state].to_sym,
-                reason: input[:change_reason],
-                expiration: input[:expiration_date]
-            )
+            return [
+                obj.set_object_state(
+                  input[:object_state].to_sym,
+                  reason: input[:change_reason],
+                  expiration: input[:expiration_date]
+                ),
+                obj,
+            ]
           end
 
-          obj
+          [nil, obj]
         end
 
         action.send(:define_method, :update_object_state!) do |obj|
           begin
-            ok(update_object_state(obj))
+            @chain, obj = update_object_state(obj)
+            ok(obj)
 
           rescue VpsAdmin::API::Exceptions::TooManyParameters => e
             error(e.message)

@@ -230,6 +230,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
   end
 
   class Update < HaveAPI::Actions::Default::Update
+    blocking true
+
     input do
       use :writable
       use :password
@@ -278,6 +280,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     rescue ActiveRecord::RecordInvalid => e
       error('update failed', to_param_names(e.record.errors.to_hash, :input))
     end
+
+    def state_id
+      @chain && @chain.id
+    end
   end
 
   class Delete < HaveAPI::Actions::Default::Delete
@@ -289,8 +295,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     def exec
       u = ::User.including_deleted.find(params[:user_id])
-      @chain = update_object_state!(u)
-      ok
+      update_object_state!(u)
     end
 
     def state_id
