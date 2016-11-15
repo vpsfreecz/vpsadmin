@@ -15,6 +15,7 @@
   - `SnapshotDownload.Create`
   - `SnapshotDownload.Delete`
   - `User.Create`
+  - `User.Delete`
   - `Vps.Create`
   - `Vps.Update`
   - `Vps.Delete`

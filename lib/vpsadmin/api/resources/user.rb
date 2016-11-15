@@ -281,13 +281,20 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
   end
 
   class Delete < HaveAPI::Actions::Default::Delete
+    blocking true
+
     authorize do |u|
       allow if u.role == :admin
     end
 
     def exec
       u = ::User.including_deleted.find(params[:user_id])
-      update_object_state!(u)
+      @chain = update_object_state!(u)
+      ok
+    end
+
+    def state_id
+      @chain.id
     end
   end
 
