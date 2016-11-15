@@ -187,6 +187,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
   class Update < HaveAPI::Actions::Default::Update
     desc 'Update IP address'
+    blocking true
 
     input do
       use :shaper
@@ -215,11 +216,15 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
         end
       end
       
-      ip.do_update(input)
+      @chain, _ = ip.do_update(input)
       ip
 
     rescue ActiveRecord::RecordInvalid => e
       error('update failed', e.record.errors.to_hash)
+    end
+
+    def state_id
+      @chain.empty? ? nil : @chain.id
     end
   end
 end

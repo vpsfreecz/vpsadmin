@@ -8,6 +8,7 @@
   - `Dataset.Snapshot.Create`
   - `Dataset.Snapshot.Delete`
   - `Dataset.Snapshot.Rollback`
+  - `IpAddress.Update`
   - `Node.Create`
   - `Pool.Create`
   - `SnapshotDownload.Create`
