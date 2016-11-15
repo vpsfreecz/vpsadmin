@@ -91,6 +91,7 @@ module VpsAdmin::API::Resources
 
     class Create < HaveAPI::Actions::Default::Create
       desc 'Download a snapshot'
+      blocking true
 
       input do
         use :input
@@ -132,16 +133,22 @@ module VpsAdmin::API::Resources
           end
         end
 
-        snap.download(
+        @chain, dl = snap.download(
             format: input[:format].to_sym,
             from_snapshot: input[:from_snapshot],
             send_mail: input[:send_mail],
         )
+        dl
+      end
+
+      def state_id
+        @chain.id
       end
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
       desc 'Delete download link'
+      blocking true
 
       authorize do |u|
         allow if u.role == :admin
@@ -151,8 +158,12 @@ module VpsAdmin::API::Resources
 
       def exec
         dl = ::SnapshotDownload.find_by!(with_restricted(id: params[:snapshot_download_id]))
-        dl.destroy
+        @chain, _ = dl.destroy
         ok
+      end
+
+      def state_id
+        @chain.id
       end
     end
   end
