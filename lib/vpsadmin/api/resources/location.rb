@@ -150,7 +150,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
   class Show < HaveAPI::Actions::Default::Show
     desc 'Show location'
 
-    output(:hash) do
+    output do
       use :all
     end
 
