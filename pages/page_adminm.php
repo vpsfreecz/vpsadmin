@@ -303,9 +303,9 @@ function edit_pubkey($user, $id) {
 	$xtpl->table_title(_('Edit public key').' #'.$id);
 	$xtpl->form_create('?page=adminm&section=members&action=pubkey_edit&id='.$user.'&pubkey_id='.$id, 'post');
 	
-	$xtpl->form_add_input(_("Label").':', 'text', '30', 'label', $k->label);
-	$xtpl->form_add_textarea(_("Key").':', '80', '12', 'key', $k->key);
-	$xtpl->form_add_checkbox(_("Auto add").':', 'auto_add', '1', $k->auto_add);
+	$xtpl->form_add_input(_("Label").':', 'text', '30', 'label', post_val('label', $k->label));
+	$xtpl->form_add_textarea(_("Key").':', '80', '12', 'key', post_val('key', $k->key));
+	$xtpl->form_add_checkbox(_("Auto add").':', 'auto_add', '1', post_val('auto_add', $k->auto_add));
 	
 	$xtpl->table_td(_('Fingerprint').':');
 	$xtpl->table_td($k->fingerprint);
