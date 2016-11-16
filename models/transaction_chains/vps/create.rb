@@ -120,6 +120,10 @@ module TransactionChains
 
       use_chain(Vps::SetResources, args: [vps, vps_resources])
 
+      vps.user.user_public_keys.where(auto_add: true).each do |key|
+        use_chain(Vps::DeployPublicKey, args: [vps, key])
+      end
+
       if vps.vps_onboot
         use_chain(TransactionChains::Vps::Start, args: vps)
       end

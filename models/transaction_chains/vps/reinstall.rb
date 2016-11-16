@@ -72,6 +72,10 @@ module TransactionChains
           vps.dns_resolver
       ])
 
+      vps.user.user_public_keys.where(auto_add: true).each do |key|
+        use_chain(Vps::DeployPublicKey, args: [vps, key], reversible: :keep_going)
+      end
+
       if running
         # Set reversible to :keep_going, because we cannot be certain that
         # the template is correct.
