@@ -5,6 +5,8 @@ class AddUserPublicKeys < ActiveRecord::Migration
       t.string      :label,              null: false, limit: 255
       t.text        :key,                null: false, limit: 5000
       t.boolean     :auto_add,           null: false, default: false
+      t.string      :fingerprint,        null: false, limit: 50
+      t.string      :comment,            null: false, limit: 255
       t.timestamps
     end
 

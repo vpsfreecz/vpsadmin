@@ -950,10 +950,12 @@ ActiveRecord::Schema.define(version: 20161115174257) do
   add_index "user_cluster_resources", ["user_id"], name: "index_user_cluster_resources_on_user_id", using: :btree
 
   create_table "user_public_keys", force: true do |t|
-    t.integer  "user_id",                    null: false
-    t.string   "label",                      null: false
-    t.text     "key",                        null: false
-    t.boolean  "auto_add",   default: false, null: false
+    t.integer  "user_id",                                null: false
+    t.string   "label",                                  null: false
+    t.text     "key",                                    null: false
+    t.boolean  "auto_add",               default: false, null: false
+    t.string   "fingerprint", limit: 50,                 null: false
+    t.string   "comment",                                null: false
     t.datetime "created_at"
     t.datetime "updated_at"
   end

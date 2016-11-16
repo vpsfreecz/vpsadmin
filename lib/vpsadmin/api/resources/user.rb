@@ -571,9 +571,15 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
           desc: 'Add this key automatically into newly created VPS'
     end
 
+    params(:readonly) do
+      string :fingerprint, label: 'Fingerprint', desc: 'MD5 fingerprint'
+      string :comment, label: 'Comment'
+    end
+
     params(:all) do
       id :id
       use :common
+      use :readonly
       datetime :created_at, label: 'Created at'
       datetime :updated_at, label: 'Updated at'
     end
