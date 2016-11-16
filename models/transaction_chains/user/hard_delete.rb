@@ -58,6 +58,11 @@ module TransactionChains
         end
 
         # TODO: what about owned networks?
+        
+        # Delete all public keys
+        user.user_public_keys.each do |key|
+          t.just_destroy(key)
+        end
       end
     end
   end
