@@ -40,6 +40,10 @@
   - `VpsConfig.Update`
 - TransactionChain.fire returns the create chain and return value from link_chain
 - Global action exception handlers set HTTP status code
+- New API resource `User.PublicKey`
+- New blocking action `Vps.DeployPublicKey`
+- New transaction chain `Vps::DeployPublicKey`
+- New transaction `Vps::DeployPublicKey`
 
 * Tue Nov 15 2016 - version 2.5.0
 - API version set to 3.0

@@ -65,7 +65,7 @@ class Vps < ActiveRecord::Base
   log_events %i(
       hostname os_template dns_resolver reinstall resources node ip_add ip_del
       start stop restart passwd clone swap configs features mount umount
-      outage_windows outage_window restore
+      outage_windows outage_window restore deploy_public_key
   )
 
   validates :m_id, :vps_server, :vps_template, presence: true, numericality: {only_integer: true}
@@ -296,6 +296,10 @@ class Vps < ActiveRecord::Base
 
   def set_features(features)
     TransactionChains::Vps::Features.fire(self, features)
+  end
+
+  def deploy_public_key(key)
+    TransactionChains::Vps::DeployPublicKey.fire(self, key)
   end
 
   def has_mount_of?(vps)

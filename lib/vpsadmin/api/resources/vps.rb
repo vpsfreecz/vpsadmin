@@ -787,6 +787,38 @@ END
     end
   end
 
+  class DeployPublicKey < HaveAPI::Action
+    desc 'Deploy public SSH key'
+    route ':%{resource}_id/deploy_public_key'
+    http_method :post
+    blocking true
+    
+    input do
+      resource VpsAdmin::API::Resources::User::PublicKey, label: 'Public key',
+          required: true
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+      restrict m_id: u.id
+      allow
+    end
+
+    def exec
+      vps = ::Vps.includes(:node).find_by!(
+          with_restricted(vps_id: params[:vps_id])
+      )
+      maintenance_check!(vps)
+      
+      @chain, _ = vps.deploy_public_key(input[:public_key])
+      ok
+    end
+
+    def state_id
+      @chain.id
+    end
+  end
+
   include VpsAdmin::API::Maintainable::Action
   include VpsAdmin::API::Lifetimes::Resource
   add_lifetime_methods([Start, Stop, Restart])

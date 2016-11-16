@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160907135218) do
+ActiveRecord::Schema.define(version: 20161115174257) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -948,6 +948,17 @@ ActiveRecord::Schema.define(version: 20160907135218) do
   add_index "user_cluster_resources", ["environment_id"], name: "index_user_cluster_resources_on_environment_id", using: :btree
   add_index "user_cluster_resources", ["user_id", "environment_id", "cluster_resource_id"], name: "user_cluster_resource_unique", unique: true, using: :btree
   add_index "user_cluster_resources", ["user_id"], name: "index_user_cluster_resources_on_user_id", using: :btree
+
+  create_table "user_public_keys", force: true do |t|
+    t.integer  "user_id",                    null: false
+    t.string   "label",                      null: false
+    t.text     "key",                        null: false
+    t.boolean  "auto_add",   default: false, null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "user_public_keys", ["user_id"], name: "index_user_public_keys_on_user_id", using: :btree
 
   create_table "user_session_agents", force: true do |t|
     t.text     "agent",                 null: false

@@ -559,6 +559,163 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
   end
 
+  class PublicKey < HaveAPI::Resource
+    desc 'Manage public keys'
+    route ':user_id/public_keys'
+    model ::UserPublicKey
+
+    params(:common) do
+      string :label, label: 'Label'
+      text :key, label: 'Key'
+      bool :auto_add, label: 'Auto add',
+          desc: 'Add this key automatically into newly created VPS'
+    end
+
+    params(:all) do
+      id :id
+      use :common
+      datetime :created_at, label: 'Created at'
+      datetime :updated_at, label: 'Updated at'
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      desc 'List saved public keys'
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |u|
+        allow
+      end
+
+      def query
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error("Access denied")
+        end
+
+        ::UserPublicKey.where(user_id: params[:user_id])
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        query.limit(input[:limit]).offset(input[:offset])
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      desc 'Show saved public key'
+      
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow
+      end
+
+      def prepare
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error("Access denied")
+        end
+
+        @key = ::UserPublicKey.find_by!(user_id: params[:user_id], id: params[:public_key_id])
+      end
+
+      def exec
+        @key
+      end
+    end
+
+    class Create < HaveAPI::Actions::Default::Create
+      desc 'Store a public key'
+      
+      input do
+        use :common
+        patch :label, required: true
+        patch :key, required: true
+        patch :auto_add, default: false, fill: true
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow
+      end
+
+      def exec
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error("Access denied")
+        end
+
+        input[:user] = current_user
+        input[:key].strip!
+
+        ::UserPublicKey.create!(input)
+
+      rescue ActiveRecord::RecordInvalid => e
+        error('create failed', e.record.errors.to_hash)
+      end
+    end
+    
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Update a public key'
+      
+      input do
+        use :common
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow
+      end
+
+      def exec
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error("Access denied")
+        end
+
+        error("Provide at least one input parameter") if input.empty?
+
+        key = ::UserPublicKey.find_by!(user_id: params[:user_id], id: params[:public_key_id])
+
+        input[:key].strip! if input[:key]
+
+        key.update!(input)
+        key
+
+      rescue ActiveRecord::RecordInvalid => e
+        error('update failed', e.record.errors.to_hash)
+      end
+    end
+    
+    class Delete < HaveAPI::Actions::Default::Delete
+      desc 'Delete public key'
+
+      authorize do |u|
+        allow
+      end
+
+      def exec
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error("Access denied")
+        end
+
+        key = ::UserPublicKey.find_by!(user_id: params[:user_id], id: params[:public_key_id])
+        key.destroy!
+        ok
+      end
+    end
+  end
+
   include VpsAdmin::API::Lifetimes::Resource
   add_lifetime_params(Current, :output, :lifetime_expiration)
 end
