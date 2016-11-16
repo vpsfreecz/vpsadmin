@@ -208,6 +208,7 @@ function print_editm($u) {
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("State log").'" />'._('State log'), '?page=lifetimes&action=changelog&resource=user&id='.$u->id.'&return='. urlencode($_SERVER['REQUEST_URI']));
 	}
 	
+	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Public keys").'" />'._('Public keys'), "?page=adminm&section=members&action=pubkeys&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Authentication tokens").'" />'._('Authentication tokens'), "?page=adminm&section=members&action=auth_tokens&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Session log").'" />'._('Session log'), "?page=adminm&action=user_sessions&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Cluster resources").'" />'._('Cluster resources'), "?page=adminm&section=members&action=cluster_resources&id={$u->id}");
@@ -236,6 +237,87 @@ function print_deletem($u) {
 	api_param_to_form('object_state', $desc);
 	
 	$xtpl->form_out(_("Delete"));
+}
+
+function list_pubkeys() {
+	global $api, $xtpl;
+	
+	$xtpl->table_title(_("Public keys"));
+	$xtpl->table_add_category(_('Label'));
+	$xtpl->table_add_category(_('Auto add'));
+	$xtpl->table_add_category(_('Created at'));
+	$xtpl->table_add_category(_('Updated at'));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+
+	$pubkeys = $api->user($_GET['id'])->public_key->list();
+
+	if ($pubkeys->count() == 0) {
+		$xtpl->table_td(
+			'<a href="?page=adminm&section=members&action=pubkey_add&id='.$_GET['id'].'">'.
+			_('Add a public key').'</a>',
+			false, false, '7'
+		);
+		$xtpl->table_tr();
+	}
+	
+	foreach($pubkeys as $k) {
+		$xtpl->table_td($k->label);
+		$xtpl->table_td(boolean_icon($k->auto_add));
+		$xtpl->table_td(tolocaltz($k->created_at));
+		$xtpl->table_td(tolocaltz($k->updated_at));
+		
+		$xtpl->table_td('<a href="?page=adminm&section=members&action=pubkey_edit&id='.$_GET['id'].'&pubkey_id='.$k->id.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
+		$xtpl->table_td('<a href="?page=adminm&section=members&action=pubkey_del&id='.$_GET['id'].'&pubkey_id='.$k->id.'"><img src="template/icons/m_delete.png"  title="'. _("Delete") .'" /></a>');
+		
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_out();
+	
+	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Add public key").'" />'._('Add public key'), "?page=adminm&section=members&action=pubkey_add&id={$_GET['id']}");
+	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&section=members&action=edit&id={$_GET['id']}");
+	
+}
+
+function add_pubkey($user) {
+	global $api, $xtpl;
+	
+	$xtpl->table_title(_('Add public key'));
+	$xtpl->form_create('?page=adminm&section=members&action=pubkey_add&id='.$user.'&pubkey_id='.$id, 'post');
+	
+	$xtpl->form_add_input(_("Label").':', 'text', '30', 'label', post_val('label'));
+	$xtpl->form_add_textarea(_("Key").':', '80', '12', 'key', post_val('key'));
+	$xtpl->form_add_checkbox(_("Auto add").':', 'auto_add', '1', post_val('auto_add', false));
+	
+	$xtpl->form_out(_('Save'));
+	
+	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to public keys").'" />'._('Back to public keys'), "?page=adminm&section=members&action=pubkeys&id={$user}");
+}
+
+function edit_pubkey($user, $id) {
+	global $api, $xtpl;
+	
+	$k = $api->user($user)->public_key->find($id);
+	
+	$xtpl->table_title(_('Edit public key').' #'.$id);
+	$xtpl->form_create('?page=adminm&section=members&action=pubkey_edit&id='.$user.'&pubkey_id='.$id, 'post');
+	
+	$xtpl->form_add_input(_("Label").':', 'text', '30', 'label', $k->label);
+	$xtpl->form_add_textarea(_("Key").':', '80', '12', 'key', $k->key);
+	$xtpl->form_add_checkbox(_("Auto add").':', 'auto_add', '1', $k->auto_add);
+	
+	$xtpl->table_td(_('Created at').':');
+	$xtpl->table_td(tolocaltz($k->created_at));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_('Updated at').':');
+	$xtpl->table_td(tolocaltz($k->updated_at));
+	$xtpl->table_tr();
+	
+	$xtpl->form_out(_('Save'));
+	
+	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to public keys").'" />'._('Back to public keys'), "?page=adminm&section=members&action=pubkeys&id={$user}");
 }
 
 function list_auth_tokens() {
@@ -1357,6 +1439,70 @@ if ($_SESSION["logged_in"]) {
 		case 'payments_overview':
 			if ($_SESSION['is_admin'])
 				payments_overview();
+			break;
+
+		case 'pubkeys':
+			list_pubkeys();
+			break;
+		
+		case 'pubkey_add':
+			if(isset($_POST['label'])) {
+				try {
+					$api->user($_GET['id'])->public_key->create(array(
+						'label' => $_POST['label'],
+						'key' => $_POST['key'],
+						'auto_add' => isset($_POST['auto_add']),
+					));
+					
+					notify_user(_('Public key saved'), '');
+					redirect('?page=adminm&section=members&action=pubkeys&id='.$_GET['id']);
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Failed to save public key'), $e->getResponse());
+					add_pubkey($_GET['id']);
+				}
+				
+			} else {
+				add_pubkey($_GET['id']);
+			}
+			
+			break;
+
+		case 'pubkey_edit':
+			if(isset($_POST['label'])) {
+				try {
+					$api->user($_GET['id'])->public_key($_GET['pubkey_id'])->update(array(
+						'label' => $_POST['label'],
+						'key' => $_POST['key'],
+						'auto_add' => isset($_POST['auto_add']),
+					));
+					
+					notify_user(_('Public key updated'), '');
+					redirect('?page=adminm&section=members&action=pubkeys&id='.$_GET['id']);
+					
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Failed to edit public key'), $e->getResponse());
+					edit_pubkey($_GET['id'], $_GET['pubkey_id']);
+				}
+				
+			} else {
+				edit_pubkey($_GET['id'], $_GET['pubkey_id']);
+			}
+			
+			break;
+		
+		case 'pubkey_del':
+			try {
+				$api->user($_GET['id'])->public_key($_GET['pubkey_id'])->delete();
+					
+				notify_user(_('Public key deleted'), '');
+				redirect('?page=adminm&section=members&action=pubkeys&id='.$_GET['id']);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Failed to delete public key'), $e->getResponse());
+					list_pubkeys();
+				}
+			
 			break;
 		
 		case 'auth_tokens':

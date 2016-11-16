@@ -204,6 +204,25 @@ switch ($_GET["action"]) {
 				$show_info=true;
 			}
 			break;
+
+		case 'pubkey':
+			try {
+				csrf_check();
+
+				$ret = $api->vps->deploy_public_key($_GET["veid"], array(
+					'public_key' => $_POST['public_key'],
+				));
+				
+				notify_user(_("Public key deployment planned"), '');
+				redirect('?page=adminvps&action=info&veid='.$_GET["veid"]);
+				
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Public key deployment failed'), $e->getResponse());
+				$show_info=true;
+			}
+
+			break;
+
 		case 'hostname':
 			try {
 				csrf_check();
@@ -944,6 +963,26 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_tr();
 		
 		$xtpl->form_out(_("Go >>"));
+
+	// Public keys
+		$xtpl->table_title(_("Deploy public key to /root/.ssh/authorized_keys"));
+		$xtpl->form_create('?page=adminvps&action=pubkey&veid='.$vps->id, 'post');
+
+		$xtpl->table_td(
+			_('Public keys can be registered in').
+			' <a href="?page=adminm&action=pubkeys&id='.$vps->user_id.'">'.
+			_('profile settings').'</a>.',
+			false, false, '2'
+		);
+		$xtpl->table_tr();
+		
+		$xtpl->form_add_select(
+			_('Public key').':',
+			'public_key',
+			resource_list_to_options($api->user($vps->user_id)->public_key->list())
+		);
+
+		$xtpl->form_out(_('Go >>'));
 
 	// IP addresses
 		$xtpl->table_title(_('IP addresses'));
