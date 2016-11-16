@@ -244,9 +244,9 @@ function list_pubkeys() {
 	
 	$xtpl->table_title(_("Public keys"));
 	$xtpl->table_add_category(_('Label'));
+	$xtpl->table_add_category(_('Fingerprint'));
+	$xtpl->table_add_category(_('Comment'));
 	$xtpl->table_add_category(_('Auto add'));
-	$xtpl->table_add_category(_('Created at'));
-	$xtpl->table_add_category(_('Updated at'));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 
@@ -263,9 +263,9 @@ function list_pubkeys() {
 	
 	foreach($pubkeys as $k) {
 		$xtpl->table_td($k->label);
+		$xtpl->table_td($k->fingerprint);
+		$xtpl->table_td($k->comment);
 		$xtpl->table_td(boolean_icon($k->auto_add));
-		$xtpl->table_td(tolocaltz($k->created_at));
-		$xtpl->table_td(tolocaltz($k->updated_at));
 		
 		$xtpl->table_td('<a href="?page=adminm&section=members&action=pubkey_edit&id='.$_GET['id'].'&pubkey_id='.$k->id.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
 		$xtpl->table_td('<a href="?page=adminm&section=members&action=pubkey_del&id='.$_GET['id'].'&pubkey_id='.$k->id.'"><img src="template/icons/m_delete.png"  title="'. _("Delete") .'" /></a>');
@@ -307,6 +307,14 @@ function edit_pubkey($user, $id) {
 	$xtpl->form_add_textarea(_("Key").':', '80', '12', 'key', $k->key);
 	$xtpl->form_add_checkbox(_("Auto add").':', 'auto_add', '1', $k->auto_add);
 	
+	$xtpl->table_td(_('Fingerprint').':');
+	$xtpl->table_td($k->fingerprint);
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_('Comment').':');
+	$xtpl->table_td($k->comment);
+	$xtpl->table_tr();
+
 	$xtpl->table_td(_('Created at').':');
 	$xtpl->table_td(tolocaltz($k->created_at));
 	$xtpl->table_tr();
