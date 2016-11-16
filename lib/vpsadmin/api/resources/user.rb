@@ -653,7 +653,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
           error("Access denied")
         end
 
-        input[:user] = current_user
+        input[:user] = ::User.find(params[:user_id])
         input[:key].strip!
 
         ::UserPublicKey.create!(input)
