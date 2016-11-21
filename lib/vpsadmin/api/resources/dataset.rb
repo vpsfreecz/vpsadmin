@@ -419,8 +419,8 @@ module VpsAdmin::API::Resources
             error("cannot make more than #{max_snapshots} snapshots")
           end
 
-          @chain, snap = ds.snapshot.snapshot
-          snap
+          @chain, snap = ds.snapshot
+          snap.snapshot
         end
 
         def state_id
