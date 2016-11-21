@@ -1,5 +1,11 @@
 module VpsAdmin::CLI::Commands
   class BaseDownload < HaveAPI::CLI::Command
+    def initialize(*)
+      super
+
+      @api.set_opts(block: false)
+    end
+
     protected
     def find_or_create_dl(opts, do_create = true)
       @api.snapshot_download.index(snapshot: opts[:snapshot]).each do |r|
