@@ -44,6 +44,7 @@
 - New blocking action `Vps.DeployPublicKey`
 - New transaction chain `Vps::DeployPublicKey`
 - New transaction `Vps::DeployPublicKey`
+- New dynamic configuration file `config/api.rb`
 
 * Tue Nov 15 2016 - version 2.5.0
 - API version set to 3.0

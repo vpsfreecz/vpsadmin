@@ -73,6 +73,8 @@ module VpsAdmin
 
       api.extensions << e
 
+      @configure && @configure.call(api)
+
       api.mount('/')
 
       api
@@ -93,8 +95,17 @@ module VpsAdmin
     end
 
     def self.load_configurable(name)
-      path = File.join(File.dirname(__FILE__), '..', '..', 'config', "#{name}.rb")
+      path = File.join(root, 'config', "#{name}.rb")
       require_relative path if File.exists?(path)
+    end
+
+    def self.configure(&block)
+      @configure = block
+    end
+
+    def self.root
+      return @root if @root
+      @root = File.realpath(File.join(File.dirname(__FILE__), '..', '..'))
     end
   end
 end
