@@ -25,7 +25,7 @@ if ($_SESSION['logged_in']) {
 						$validators = $input_params->{$p}->validators;
 
 						if ($validators && $validators->include)
-							$params[$p] = $$validators->include->values[ (int) $_POST[$p] ];
+							$params[$p] = $validators->include->values[ (int) $_POST[$p] ];
 
 						elseif (in_array($p, array('compression', 'atime', 'relatime')))
 							$params[$p] = isset($_POST[$p]);
