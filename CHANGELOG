@@ -1,5 +1,6 @@
 - Public key management forms
 - Fix typo in dataset creation code
+- Set charset for outgoing mails
 
 * Tue Nov 15 2016 - version 2.5.0
 - Support for network subnets
