@@ -29,6 +29,10 @@ module VpsAdmin
         if e.is_a?(::ActiveRecord::RecordNotFound)
           ret[:http_status] = 404
           ret[:message] = 'Object not found'
+
+          # Stop this hook's propagation. If there is ExceptionMailer connected, we
+          # don't want it to report this error.
+          HaveAPI::Hooks.stop(ret)
         end
 
         ret
@@ -45,8 +49,10 @@ module VpsAdmin
         else
           ret[:message] = "object not found: #{exception.to_s}"
         end
-
-        ret
+        
+        # Stop this hook's propagation. If there is ExceptionMailer connected, we
+        # don't want it to report this error.
+        HaveAPI::Hooks.stop(ret)
       end
 
       e.rescue(::ResourceLocked) do |ret, exception|
