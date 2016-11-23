@@ -288,7 +288,10 @@ function add_pubkey($user) {
 	
 	$xtpl->form_add_input(_("Label").':', 'text', '30', 'label', post_val('label'));
 	$xtpl->form_add_textarea(_("Key").':', '80', '12', 'key', post_val('key'));
-	$xtpl->form_add_checkbox(_("Auto add").':', 'auto_add', '1', post_val('auto_add', false));
+	$xtpl->form_add_checkbox(
+		_("Auto add").':', 'auto_add', '1', post_val('auto_add', false), '',
+		_('Add this key to newly created VPS')
+	);
 	
 	$xtpl->form_out(_('Save'));
 	
@@ -305,7 +308,10 @@ function edit_pubkey($user, $id) {
 	
 	$xtpl->form_add_input(_("Label").':', 'text', '30', 'label', post_val('label', $k->label));
 	$xtpl->form_add_textarea(_("Key").':', '80', '12', 'key', post_val('key', $k->key));
-	$xtpl->form_add_checkbox(_("Auto add").':', 'auto_add', '1', post_val('auto_add', $k->auto_add));
+	$xtpl->form_add_checkbox(
+		_("Auto add").':', 'auto_add', '1', post_val('auto_add', $k->auto_add), '',
+		_('Add this key to newly created VPS')
+	);
 	
 	$xtpl->table_td(_('Fingerprint').':');
 	$xtpl->table_td($k->fingerprint);
