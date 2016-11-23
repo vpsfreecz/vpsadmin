@@ -8,6 +8,10 @@ module VpsAdmin::API
     def initialize(str)
       parts = str.split
 
+      if parts.size < 2 || parts.size > 3
+        raise ArgumentError, 'invalid public key'
+      end
+
       @comment = parts[2]
       @encoded_key = Base64.decode64(parts[1])
     end
