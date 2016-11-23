@@ -20,23 +20,25 @@ module VpsAdmind
       end
       
       # Walk through the file, write the key if it is not there yet
-      File.open(authorized_keys, 'r+') do |f|
-        last_line = ''
+      # For some reason, when File.open is given a block, it does not raise
+      # exceptions like "Errno::EDQUOT: Disk quota exceeded", so don't use it.
+      f = File.open(authorized_keys, 'r+')
+      last_line = ''
 
-        f.each_line do |line|
-          last_line = line
+      f.each_line do |line|
+        last_line = line
 
-          if line.strip == @pubkey
-            f.close
-            return ok
-          end
+        if line.strip == @pubkey
+          f.close
+          return ok
         end
-
-        # The key is not there yet
-        f.write("\n") unless last_line.end_with?("\n")
-        f.write(@pubkey)
-        f.write("\n")
       end
+
+      # The key is not there yet
+      f.write("\n") unless last_line.end_with?("\n")
+      f.write(@pubkey)
+      f.write("\n")
+      f.close
 
       ok
     end
