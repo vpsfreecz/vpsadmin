@@ -844,9 +844,9 @@ class XTemplate {
 	  * @param $checked - if it is checked by default
 	  * @param $hint - helping hint
 	  */
-	function form_add_checkbox($label = 'popisek', $name = 'input_fromgen', $value = '', $checked=false, $hint = '') {
+	function form_add_checkbox($label = 'popisek', $name = 'input_fromgen', $value = '', $checked=false, $hint = '', $text = '') {
 		$this->table_td($label);
-		$this->table_td('<input type="checkbox" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' />');
+		$this->table_td('<input type="checkbox" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' /> '.$text);
 		if ($hint != '') $this->table_td($hint);
 		$this->table_tr();
 	}
