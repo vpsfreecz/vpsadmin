@@ -131,6 +131,8 @@ module TransactionChains
       vps.save!
 
       concerns(:affect, [vps.class.name, vps.id])
+
+      vps
     end
   end
 end
