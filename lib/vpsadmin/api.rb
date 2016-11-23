@@ -50,8 +50,6 @@ module VpsAdmin
           ret[:message] = "object not found: #{exception.to_s}"
         end
         
-        # Stop this hook's propagation. If there is ExceptionMailer connected, we
-        # don't want it to report this error.
         HaveAPI::Hooks.stop(ret)
       end
 
@@ -59,14 +57,16 @@ module VpsAdmin
         ret[:http_status] = 423 # locked
         ret[:status] = false
         ret[:message] = 'Resource is locked. Try again later.'
-        ret
+        
+        HaveAPI::Hooks.stop(ret)
       end
 
       e.rescue(VpsAdmin::API::Maintainable::ResourceUnderMaintenance) do |ret, exception|
         ret[:status] = false
         ret[:http_status] = 423
         ret[:message] = "Resource is under maintenance: #{exception.message}"
-        ret
+
+        HaveAPI::Hooks.stop(ret)
       end
 
       e.rescue(VpsAdmin::API::Exceptions::ClusterResourceAllocationError) do |ret, exception|
@@ -74,7 +74,7 @@ module VpsAdmin
         ret[:http_status] = 400
         ret[:message] = "Resource allocation error: #{exception.message}"
 
-        ret
+        HaveAPI::Hooks.stop(ret)
       end
 
       api.extensions << e
