@@ -200,6 +200,11 @@ module VpsAdmin::CLI::Commands
         end
       end
 
+      if snap_map.empty?
+        warn "There are no snapshots to choose from, create one first."
+        exit(false)
+      end
+
       loop do
         STDOUT.write('Pick a snapshot for download: ')
         STDOUT.flush
