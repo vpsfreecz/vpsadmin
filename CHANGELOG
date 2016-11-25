@@ -1,4 +1,4 @@
-- Rebase on new HaveAPI
+- Rebase on HaveAPI v0.7
 - API version set to 3.1
 - Implement ActionState interface from HaveAPI
 - Blocking actions:
