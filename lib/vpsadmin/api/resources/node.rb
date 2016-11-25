@@ -204,6 +204,52 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       allow
     end
 
+    example do
+      response([
+          {
+              status: true,
+              name: 'node1.prg',
+              location: {
+                  id: 1,
+                  label: 'Prague',
+              },
+              last_report: '2016-11-20T08:30:50+01:00',
+              vps_count: 68,
+              vps_free: 12,
+              kernel: '2.6.32-042stab120.6',
+              cpu_idle: 65.3,
+          },
+          {
+              status: false,
+              name: 'node2.prg',
+              location: {
+                  id: 1,
+                  label: 'Prague',
+              },
+              last_report: '2016-11-14T06:41:23+01:00',
+              vps_count: 0,
+              vps_free: 80,
+              kernel: '2.6.32-042stab120.6',
+              cpu_idle: 100.0,
+              maintenance_lock: 'lock',
+              maintenance_lock_reason: 'HW upgrade',
+          },
+          {
+              status: true,
+              name: 'node3.prg',
+              location: {
+                  id: 1,
+                  label: 'Prague',
+              },
+              last_report: '2016-11-20T08:30:46+01:00',
+              vps_count: 65,
+              vps_free: 15,
+              kernel: '2.6.32-042stab120.6',
+              cpu_idle: 72.6,
+          },
+      ])
+    end
+
     def exec
       ::Node.includes(:location, :node_current_status).joins(:location).all
         .order('locations.environment_id, locations.location_id, servers.server_id')

@@ -49,6 +49,7 @@
 - Fix resource allocation in `IpAddress.register`
 - Fix resource lock release in `Network.add_ips`
 - `Network.AddAddresses` handles record invalid errors
+- Add example usage of `Node.PublicStatus`
 
 * Tue Nov 15 2016 - version 2.5.0
 - API version set to 3.0
