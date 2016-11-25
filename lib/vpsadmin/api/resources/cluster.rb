@@ -42,6 +42,14 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
       allow
     end
 
+    example do
+      response({
+          user_count: 1100,
+          vps_count: 1560,
+          ipv4_left: 256,
+      })
+    end
+
     def exec
       {
           user_count: ::User.unscoped.where(
