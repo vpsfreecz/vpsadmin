@@ -181,6 +181,9 @@ module VpsAdmin::API::Resources
         end
 
         {count: net.add_ips(input[:count], user: input[:user]).count}
+
+      rescue ActiveRecord::RecordInvalid => e
+        error('add failed', e.record.errors.to_hash)
       end
     end
   end
