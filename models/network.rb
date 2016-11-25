@@ -108,6 +108,9 @@ class Network < ActiveRecord::Base
     end
 
     ips
+
+  ensure
+    release_lock(self) if opts[:lock].nil? || opts[:lock]
   end
 
   def get_or_create_range(opts)

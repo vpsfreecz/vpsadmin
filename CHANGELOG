@@ -47,6 +47,7 @@
 - New transaction `Vps::DeployPublicKey`
 - New dynamic configuration file `config/api.rb`
 - Fix resource allocation in `IpAddress.register`
+- Fix resource lock release in `Network.add_ips`
 
 * Tue Nov 15 2016 - version 2.5.0
 - API version set to 3.0
