@@ -86,6 +86,7 @@ class Network < ActiveRecord::Base
             host.address,
             network: self,
             user: opts[:user],
+            allocate: false,
         )
 
         break if ips.count == n

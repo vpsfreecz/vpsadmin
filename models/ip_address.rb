@@ -18,10 +18,32 @@ class IpAddress < ActiveRecord::Base
   validate :check_ownership
   validates :ip_addr, uniqueness: true
 
+  # @param addr [IPAddress::IPv4, IPAddress::IPv6]
+  # @param params [Hash]
+  # @option params [Network] network
+  # @option params [User] user
+  # @option params [Integer] max_tx
+  # @option params [Integer] max_rx
+  # @option params [Boolean] allocate (true)
   def self.register(addr, params)
     ip = nil
 
     self.transaction do
+      if params[:user] && (params[:allocate].nil? || params[:allocate])
+        user_env = params[:user].environment_user_configs.find_by!(
+            environment: params[:network].location.environment,
+        )
+        resource = params[:network].cluster_resource
+
+        user_env.reallocate_resource!(
+            resource,
+            user_env.send(resource) + 1,
+            user: params[:user],
+            save: true,
+            confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+        )
+      end
+
       class_id = nil
 
       begin
