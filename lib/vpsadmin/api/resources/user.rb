@@ -482,6 +482,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     class Show < HaveAPI::Actions::Default::Show
       desc 'Show user cluster resource'
+      resolve ->(ucr) { [ucr.user_id, ucr.id] }
 
       output do
         use :all
