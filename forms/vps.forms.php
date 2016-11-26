@@ -287,7 +287,7 @@ function format_swap_node_cell($node, $primary = false) {
 	<h3>{$node->domain_name}</h3>
 	<dl>
 		<dt>Environment:</dt>
-		<dd>{$node->environment->label}</dd>
+		<dd>{$node->location->environment->label}</dd>
 		<dt>Outage duration:</dt>
 		<dd>{$outage_len}</dd>
 	</dl>
