@@ -24,7 +24,7 @@ function send_mail($to, $subject, $msg, $cc = array(), $bcc = array(), $html = f
 		$headers .= "References: ".implode(", ", $references)."\r\n";
 
 	$headers .= "MIME-Version: 1.0\r\n";
-	$headers .= "Content-type: text/html; charset=UTF-8\r\n";
+	$headers .= "Content-type: text/plain; charset=UTF-8\r\n";
 	
 	mail(
 		$to,
