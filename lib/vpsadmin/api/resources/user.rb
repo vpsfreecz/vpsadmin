@@ -567,7 +567,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     params(:common) do
       string :label, label: 'Label'
-      text :key, label: 'Key'
+      text :key, label: 'Public key'
       bool :auto_add, label: 'Auto add',
           desc: 'Add this key automatically into newly created VPS'
     end
