@@ -51,6 +51,7 @@
 - `Network.AddAddresses` handles record invalid errors
 - Add example usage of `Node.PublicStatus`
 - Add example usage of `Cluster.PublicStats`
+- Fix password check in `User.Update`
 
 * Tue Nov 15 2016 - version 2.5.0
 - API version set to 3.0

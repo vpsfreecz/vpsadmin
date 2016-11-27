@@ -266,10 +266,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         u.expiration_date = t
       end
 
-      if input[:password]
+      if input.has_key?(:password)
         error('update failed',
               password: ['password must be at least 8 characters long']
-        ) if input[:password].length < 8
+        ) if input[:password].nil? || input[:password].length < 8
 
         u.set_password(input.delete(:password))
       end
