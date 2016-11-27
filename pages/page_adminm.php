@@ -287,7 +287,7 @@ function add_pubkey($user) {
 	$xtpl->form_create('?page=adminm&section=members&action=pubkey_add&id='.$user.'&pubkey_id='.$id, 'post');
 	
 	$xtpl->form_add_input(_("Label").':', 'text', '30', 'label', post_val('label'));
-	$xtpl->form_add_textarea(_("Key").':', '80', '12', 'key', post_val('key'));
+	$xtpl->form_add_textarea(_("Public key").':', '80', '12', 'key', post_val('key'));
 	$xtpl->form_add_checkbox(
 		_("Auto add").':', 'auto_add', '1', post_val('auto_add', false), '',
 		_('Add this key to newly created VPS')
@@ -307,7 +307,7 @@ function edit_pubkey($user, $id) {
 	$xtpl->form_create('?page=adminm&section=members&action=pubkey_edit&id='.$user.'&pubkey_id='.$id, 'post');
 	
 	$xtpl->form_add_input(_("Label").':', 'text', '30', 'label', post_val('label', $k->label));
-	$xtpl->form_add_textarea(_("Key").':', '80', '12', 'key', post_val('key', $k->key));
+	$xtpl->form_add_textarea(_("Public key").':', '80', '12', 'key', post_val('key', $k->key));
 	$xtpl->form_add_checkbox(
 		_("Auto add").':', 'auto_add', '1', post_val('auto_add', $k->auto_add), '',
 		_('Add this key to newly created VPS')
