@@ -13,6 +13,11 @@ class UserPublicKey < ActiveRecord::Base
 
   protected
   def process_key
+    if /\A-----BEGIN [^ ]+ PRIVATE KEY-----/ =~ key
+      errors.add(:key, 'never upload your private key')
+      return
+    end
+
     k = VpsAdmin::API::PublicKeyDecoder.new(key)
 
     self.comment = k.comment || ''
