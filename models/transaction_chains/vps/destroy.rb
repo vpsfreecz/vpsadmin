@@ -28,7 +28,7 @@ module TransactionChains
       # Destroy VPS
       append(Transactions::Vps::Destroy, args: vps) do
         resources.each { |r| destroy(r) }
-        destroy(vps.vps_current_status) if vps.vps_current_status
+        just_destroy(vps.vps_current_status) if vps.vps_current_status
       end
 
       # Destroy underlying dataset
