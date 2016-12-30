@@ -1,3 +1,4 @@
+* Fri Dec 30 2016 - version 2.6.0
 - Public key management forms
 - Fix typo in dataset creation code
 - Set charset for outgoing mails
