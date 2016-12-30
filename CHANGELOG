@@ -1,3 +1,4 @@
+* Fri Dec 30 2016 - version 2.6.0
 - New transaction `Vps::DeployPublicKey`
 
 * Tue Nov 15 2016 - version 2.5.0
