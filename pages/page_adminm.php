@@ -1464,7 +1464,7 @@ if ($_SESSION["logged_in"]) {
 				try {
 					$api->user($_GET['id'])->public_key->create(array(
 						'label' => $_POST['label'],
-						'key' => $_POST['key'],
+						'key' => trim($_POST['key']),
 						'auto_add' => isset($_POST['auto_add']),
 					));
 					
@@ -1487,7 +1487,7 @@ if ($_SESSION["logged_in"]) {
 				try {
 					$api->user($_GET['id'])->public_key($_GET['pubkey_id'])->update(array(
 						'label' => $_POST['label'],
-						'key' => $_POST['key'],
+						'key' => trim($_POST['key']),
 						'auto_add' => isset($_POST['auto_add']),
 					));
 					
