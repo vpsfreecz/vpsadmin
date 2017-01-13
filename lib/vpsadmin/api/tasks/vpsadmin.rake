@@ -42,4 +42,36 @@ namespace :vpsadmin do
       end
     end
   end
+
+  namespace :plugins do
+    desc 'List installed plugins'
+    task :list do
+      puts 'List installed plugins'
+      VpsAdmin::API::Tasks.run(:plugins, :list)
+    end
+
+    desc 'Show migration status'
+    task :status do
+      puts 'Show migration status'
+      VpsAdmin::API::Tasks.run(:plugins, :status)
+    end
+
+    desc 'Run plugin migrations'
+    task :migrate do
+      puts 'Run plugin migrations'
+      VpsAdmin::API::Tasks.run(:plugins, :migrate)
+    end
+    
+    desc 'Rollback plugin migrations'
+    task :rollback do
+      puts 'Run plugin rollback'
+      VpsAdmin::API::Tasks.run(:plugins, :rollback)
+    end
+    
+    desc 'Rollback all plugin migrations'
+    task :uninstall do
+      puts 'Rollback all plugin migrations'
+      VpsAdmin::API::Tasks.run(:plugins, :uninstall)
+    end
+  end
 end

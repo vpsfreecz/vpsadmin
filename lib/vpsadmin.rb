@@ -30,6 +30,7 @@ require_relative 'vpsadmin/api/dataset_properties'
 require_rel 'vpsadmin/*.rb'
 require_rel 'vpsadmin/api/*.rb'
 require_rel 'vpsadmin/api/authentication'
+require_rel 'vpsadmin/api/plugin'
 
 VpsAdmin::API.load_configurable(:dataset_properties)
 

@@ -83,14 +83,6 @@ module VpsAdmin::API::Tasks
     end
 
     protected
-    def required_env(vars)
-      vars.each do |env|
-        next if ENV[env] && ENV[env].length > 0
-
-        fail "Missing required environment variable #{env}"
-      end
-    end
-
     def get_objects
       return VpsAdmin::API::Lifetimes.models if ENV['OBJECTS'] == 'all'
 
