@@ -74,22 +74,6 @@ switch($_REQUEST["action"]) {
 		notify_user(_("Changes saved"), _("Changes sucessfully saved."));
 		redirect('?page=cluster&action=general_settings');
 		break;
-	case "restart_node":
-		$node = new cluster_node($_REQUEST["id"]);
-		$xtpl->perex(_("Are you sure to reboot node").' '.$node->s["server_name"].'?',
-			'<a href="?page=cluster">NO</a> | <a href="?page=cluster&action=restart_node2&id='.$_REQUEST["id"].'">YES</a>');
-		break;
-	case "restart_node2":
-		$node = new cluster_node($_REQUEST["id"]);
-		$xtpl->perex(_("WARNING: This will stop ALL VPSes on the node. Really continue?"),
-			'<a href="?page=cluster&action=restart_node3&id='.$_REQUEST["id"].'">YES</a> | <a href="?page=cluster">NO</a>');
-		break;
-	case "restart_node3":
-		if (isset($_REQUEST["id"])) {
-			add_transaction($_SESSION["member"]["m_id"], $_REQUEST["id"], 0, T_RESTART_NODE);
-		}
-		$list_nodes = true;
-		break;
 		
 	case "dns":
 		$list_dns = true;
@@ -667,159 +651,43 @@ switch($_REQUEST["action"]) {
 		break;
 	
 	case "newnode":
-		$xtpl->title2(_("Register new server into cluster"));
-		$xtpl->table_add_category('');
-		$xtpl->table_add_category('');
-		$xtpl->form_create('?page=cluster&action=newnode_save', 'post');
-		$xtpl->form_add_input(_("ID").':', 'text', '8', 'server_id', '', '');
-		$xtpl->form_add_input(_("Name").':', 'text', '30', 'server_name', '', '');
-		$xtpl->form_add_select(_("Type").':', 'server_type', $server_types);
-		$xtpl->form_add_select(_("Location").':', 'server_location', $cluster->list_locations(), '',  '');
-		$xtpl->form_add_input(_("Server IPv4 address").':', 'text', '30', 'server_ip4', '', '');
-		$xtpl->form_add_textarea(_("Availability icon (if you wish)").':', 28, 4, 'server_availstat', '', _("Paste HTML link here"));
-		$xtpl->form_out(_("Save changes"));
+		node_create_form();
 		break;
+
 	case "newnode_save":
-		if (isset($_REQUEST["server_id"]) &&
-			isset($_REQUEST["server_name"]) &&
-			isset($_REQUEST["server_ip4"]) &&
-			isset($_REQUEST["server_location"]) &&
-			isset($_REQUEST["server_type"]) && in_array($_REQUEST["server_type"], array_keys($server_types))
-		) {
-			$sql = 'INSERT INTO servers
-					SET server_id = "'.$db->check($_REQUEST["server_id"]).'",
-					server_name = "'.$db->check($_REQUEST["server_name"]).'",
-					server_type = "'.$db->check($_REQUEST["server_type"]).'",
-					server_location = "'.$db->check($_REQUEST["server_location"]).'",
-					server_availstat = "'.$db->check($_REQUEST["server_availstat"]).'",
-					server_ip4 = "'.$db->check($_REQUEST["server_ip4"]).'"';
-			$db->query($sql);
-			$list_nodes = true;
+		try {
+			$data = $_POST;
+
+			$params = $api->node->create->getParameters('input');
+			$data['type'] = $params->type->validators->include->values[ $_POST['type'] ];
+
+			$api->node->create($data);
+			notify_user(_("Node created"), _("The node was succesfully registered."));
+			redirect('?page=cluster');
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors('Registration failed', $e->getResponse());
+			node_create_form();
 		}
 		break;
+
 	case "node_edit":
-		$node = new cluster_node($_GET["node_id"]);
-		
 		$xtpl->sbar_add(_("Back"), '?page=cluster');
-		
-		if ($node->exists) {
-			$xtpl->title2(_("Edit node"));
-			$xtpl->table_add_category('');
-			$xtpl->table_add_category('');
-			$xtpl->form_create('?page=cluster&action=node_edit_save&node_id='.$node->s["server_id"], 'post');
-			$xtpl->form_add_input(_("Name").':', 'text', '30', 'server_name', $node->s["server_name"]);
-			$xtpl->form_add_select(_("Type").':', 'server_type', $server_types, $node->s["server_type"]);
-			$xtpl->form_add_select(_("Location").':', 'server_location', $cluster->list_locations(), $node->s["server_location"]);
-			$xtpl->form_add_input(_("Server IPv4 address").':', 'text', '30', 'server_ip4', $node->s["server_ip4"]);
-			$xtpl->form_add_textarea(_("Availability icon (if you wish)").':', 28, 4, 'server_availstat', $node->s["server_availstat"], _("Paste HTML link here"));
-			
-			switch ($node->s["server_type"]) {
-				case "node":
-					$xtpl->form_add_input(_("Max VPS count").':', 'text', '8', 'max_vps', $node->role["max_vps"]);
-					$xtpl->form_add_input(_("Path to VE private").':', 'text', '30', 've_private', $node->role["ve_private"], _("%{veid} - VPS ID"));
-					$xtpl->form_add_select(_("FS type").':', 'fstype', $NODE_FSTYPES, $node->role["fstype"]);
-					break;
-				default:break;
-			}
-			
-			$xtpl->form_out(_("Save"));
-			
-			switch ($node->s["server_type"]) {
-				case "storage":
-					$xtpl->table_title(_("Export roots"));
-					
-					foreach($node->storage_roots as $root) {
-						$q = nas_quota_to_val_unit($root["quota"]);
-						
-						$xtpl->table_add_category('');
-						$xtpl->table_add_category('');
-						$xtpl->form_create('?page=cluster&action=node_storage_root_save&node_id='.$node->s["server_id"].'&root_id='.$root["id"], 'post');
-						$xtpl->form_add_input(_("Label").':', 'text', '30', 'storage_label', $root["label"]);
-						$xtpl->form_add_input(_("Root dataset").':', 'text', '30', 'storage_root_dataset', $root["root_dataset"]);
-						$xtpl->form_add_input(_("Root path").':', 'text', '30', 'storage_root_path', $root["root_path"]);
-						$xtpl->form_add_select(_("Storage type").':', 'storage_type', $STORAGE_TYPES, $root["storage_layout"]);
-						$xtpl->form_add_checkbox(_("User export").':', 'storage_user_export', '1', $root["user_export"], _("Can user manage exports?"));
-						$xtpl->form_add_select(_("User mount").':', 'storage_user_mount', $STORAGE_MOUNT_MODES, $root["user_mount"]);
-						$xtpl->table_td(_("Quota").':');
-						$xtpl->form_add_input_pure('text', '30', 'quota_val', $q[0]);
-						$xtpl->form_add_select_pure('quota_unit', $NAS_QUOTA_UNITS, $q[1]);
-						$xtpl->table_tr();
-						$xtpl->form_add_input(_("Share options").':', 'text', '30', 'share_options', $root["share_options"], _("Passed directly to zfs sharenfs"));
-						$xtpl->form_out(_("Save"));
-					}
-					
-					$xtpl->sbar_add(_("Add export root"), '?page=cluster&action=node_storage_root_add&node_id='.$node->s["server_id"]);
-					break;
-				default:break;
-			}
-		}
+		node_update_form($_GET['node_id']);
 		break;
+
 	case "node_edit_save":
-		$node = new cluster_node($_GET["node_id"]);
-		
-		if ($node->exists) {
-			$node->update_settings($_POST);
-			$xtpl->perex(_("Settings updated"), _("Settings succesfully updated."));
-		}
-		
-		$list_nodes = true;
-		break;
-	case "node_storage_root_add":
-		$node = new cluster_node($_GET["node_id"]);
-		
-		if ($node->exists) {
-			$xtpl->title2(_("Add export root"));
-			$xtpl->table_add_category('');
-			$xtpl->table_add_category('');
-			$xtpl->form_create('?page=cluster&action=node_storage_root_save&node_id='.$node->s["server_id"], 'post');
-			$xtpl->form_add_input(_("Label").':', 'text', '30', 'storage_label');
-			$xtpl->form_add_input(_("Root dataset").':', 'text', '30', 'storage_root_dataset');
-			$xtpl->form_add_input(_("Root path").':', 'text', '30', 'storage_root_path');
-			$xtpl->form_add_select(_("Storage type").':', 'storage_type', $STORAGE_TYPES);
-			$xtpl->form_add_checkbox(_("User export").':', 'storage_user_export', '1', '', _("Can user manage exports?"));
-			$xtpl->form_add_select(_("User mount").':', 'storage_user_mount', $STORAGE_MOUNT_MODES);
-			$xtpl->table_td(_("Quota").':');
-			$xtpl->form_add_input_pure('text', '30', 'quota_val', $_POST["quota_val"] ? $_POST["quota_val"] : '0');
-			$xtpl->form_add_select_pure('quota_unit', $NAS_QUOTA_UNITS, $_POST["quota_unit"]);
-			$xtpl->table_tr();
-			$xtpl->form_add_input(_("Share options").':', 'text', '30', 'share_options', $root["share_options"], _("Passed directly to zfs sharenfs"));
-			$xtpl->form_out(_("Save"));
-		}
-		
-		break;
-	case "node_storage_root_save":
-		$node = new cluster_node($_GET["node_id"]);
-		
-		if($node->exists && $_POST["storage_root_dataset"] && $_POST["storage_root_path"]) {
-			if($_GET["root_id"]) {
-				nas_root_update(
-					$_GET["root_id"],
-					$_POST["storage_label"],
-					$_POST["storage_root_dataset"],
-					$_POST["storage_root_path"],
-					$_POST["storage_type"],
-					$_POST["storage_user_export"],
-					$_POST["storage_user_mount"],
-					$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]),
-					$_POST["share_options"]
-				);
-			} else {
-				nas_root_add(
-					$_GET["node_id"],
-					$_POST["storage_label"],
-					$_POST["storage_root_dataset"],
-					$_POST["storage_root_path"],
-					$_POST["storage_type"],
-					$_POST["storage_user_export"],
-					$_POST["storage_user_mount"],
-					$_POST["quota_val"] * (2 << $NAS_UNITS_TR[$_POST["quota_unit"]]),
-					$_POST["share_options"]
-				);
-			}
-			
-			header('Location: ?page=cluster&action=node_edit&node_id='.$node->s["server_id"]);
+		try {
+			$api->node->update($_GET['node_id'], $_POST);
+			notify_user(_("Settings updated"), _("Settings succesfully updated."));
+			redirect('?page=cluster');
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors('Update failed', $e->getResponse());
+			node_update_form($_GET['node_id']);
 		}
 		break;
+
 	case "fields":
 		$xtpl->title2(_("Edit textfields"));
 		$xtpl->table_add_category('');

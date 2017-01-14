@@ -696,3 +696,31 @@ function integrity_fact_list() {
 
 	$xtpl->table_out();
 }
+
+function node_create_form() {
+	global $xtpl, $api;
+
+	$xtpl->title2(_("Register new server into cluster"));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+	$xtpl->form_create('?page=cluster&action=newnode_save', 'post');
+
+	api_create_form($api->node);
+
+	$xtpl->form_out(_("Register"));
+}
+
+function node_update_form($id) {
+	global $xtpl, $api;
+	
+	$node = $api->node->show($id);
+
+	$xtpl->title2(_("Edit node"));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+	$xtpl->form_create('?page=cluster&action=node_edit_save&node_id='.$node->id, 'post');
+	
+	api_update_form($node);
+	
+	$xtpl->form_out(_("Save"));
+}

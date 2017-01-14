@@ -287,6 +287,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 	switch ($desc->type) {
 		case 'String':
 		case 'Integer':
+		case 'Float':
 			if ($desc->validators && $desc->validators->include) {
 				$desc_choices = $desc->validators->include->values;
 				$choices = array();
