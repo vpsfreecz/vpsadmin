@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20161115174257) do
+ActiveRecord::Schema.define(version: 20170114091907) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -509,7 +509,7 @@ ActiveRecord::Schema.define(version: 20161115174257) do
   create_table "members", primary_key: "m_id", force: true do |t|
     t.text     "m_info"
     t.integer  "m_level",                                       null: false, unsigned: true
-    t.string   "m_nick",             limit: 63,                 null: false
+    t.string   "m_nick",             limit: 63
     t.string   "m_name"
     t.string   "m_pass",                                        null: false
     t.string   "m_mail",             limit: 127
@@ -532,6 +532,7 @@ ActiveRecord::Schema.define(version: 20161115174257) do
     t.datetime "paid_until"
     t.datetime "last_activity_at"
     t.integer  "language_id",                    default: 1
+    t.string   "orig_login",         limit: 63
   end
 
   create_table "members_changes", primary_key: "m_id", force: true do |t|

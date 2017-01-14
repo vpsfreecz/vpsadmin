@@ -63,6 +63,9 @@ module TransactionChains
         user.user_public_keys.each do |key|
           t.just_destroy(key)
         end
+
+        # Free the login
+        t.edit(user, m_nick: nil, orig_login: user.m_nick)
       end
     end
   end
