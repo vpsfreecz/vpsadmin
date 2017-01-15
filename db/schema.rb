@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170115092224) do
+ActiveRecord::Schema.define(version: 20170115104106) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -63,12 +63,6 @@ ActiveRecord::Schema.define(version: 20170115092224) do
   end
 
   add_index "cluster_resources", ["name"], name: "index_cluster_resources_on_name", unique: true, using: :btree
-
-  create_table "config", force: true do |t|
-    t.string "name",   limit: 50, null: false
-    t.string "label",  limit: 50, null: false
-    t.text   "config",            null: false
-  end
 
   create_table "dataset_actions", force: true do |t|
     t.integer "pool_id"
@@ -1023,6 +1017,12 @@ ActiveRecord::Schema.define(version: 20170115092224) do
   add_index "vps", ["m_id"], name: "m_id", using: :btree
   add_index "vps", ["vps_server"], name: "index_vps_on_vps_server", using: :btree
 
+  create_table "vps_configs", force: true do |t|
+    t.string "name",   limit: 50, null: false
+    t.string "label",  limit: 50, null: false
+    t.text   "config",            null: false
+  end
+
   create_table "vps_console", force: true do |t|
     t.integer  "vps_id",                 null: false
     t.string   "token",      limit: 100
@@ -1081,15 +1081,15 @@ ActiveRecord::Schema.define(version: 20170115092224) do
   add_index "vps_features", ["vps_id", "name"], name: "index_vps_features_on_vps_id_and_name", unique: true, using: :btree
   add_index "vps_features", ["vps_id"], name: "index_vps_features_on_vps_id", using: :btree
 
-  create_table "vps_has_config", force: true do |t|
-    t.integer "vps_id",    null: false
-    t.integer "config_id", null: false
-    t.integer "order",     null: false
-    t.integer "confirmed", null: false
+  create_table "vps_has_configs", force: true do |t|
+    t.integer "vps_id",        null: false
+    t.integer "vps_config_id", null: false
+    t.integer "order",         null: false
+    t.integer "confirmed",     null: false
   end
 
-  add_index "vps_has_config", ["vps_id", "config_id", "confirmed"], name: "index_vps_has_config_on_vps_id_and_config_id_and_confirmed", unique: true, using: :btree
-  add_index "vps_has_config", ["vps_id"], name: "index_vps_has_config_on_vps_id", using: :btree
+  add_index "vps_has_configs", ["vps_id", "vps_config_id", "confirmed"], name: "index_vps_has_configs_on_vps_id_and_vps_config_id_and_confirmed", unique: true, using: :btree
+  add_index "vps_has_configs", ["vps_id"], name: "index_vps_has_configs_on_vps_id", using: :btree
 
   create_table "vps_ip", primary_key: "ip_id", force: true do |t|
     t.integer "vps_id",                                                unsigned: true

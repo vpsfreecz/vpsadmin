@@ -9,8 +9,8 @@ class Vps < ActiveRecord::Base
   has_many :ip_addresses
   has_many :transactions, foreign_key: :t_vps
 
-  has_many :vps_has_config, -> { order '`order`' }
-  has_many :vps_configs, through: :vps_has_config
+  has_many :vps_has_configs, -> { order '`order`' }
+  has_many :vps_configs, through: :vps_has_configs
   has_many :vps_mounts, dependent: :delete_all
   has_many :vps_features
   has_many :vps_consoles

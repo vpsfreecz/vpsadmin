@@ -27,7 +27,7 @@ module TransactionChains
         new_configs.each do |c|
           t.create(VpsHasConfig.create(
               vps_id: vps.veid,
-              config_id: c,
+              vps_config_id: c,
               order: i,
               confirmed: VpsHasConfig.confirmed(:confirm_create)
           ))
