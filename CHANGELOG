@@ -3,6 +3,7 @@
 - Removed unused functions from cluster lib
 - Removed function list_servers
 - OS templates in VPS details are fetched from the API
+- VPS configs are fetched from the API
 
 * Fri Dec 30 2016 - version 2.6.0
 - Public key management forms

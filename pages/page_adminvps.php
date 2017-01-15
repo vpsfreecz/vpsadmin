@@ -1075,56 +1075,50 @@ if (isset($show_info) && $show_info) {
 	// Configs
 		$xtpl->table_title(_('Configs'));
 		
-		$configs_select = list_configs(true);
-		$options = "";
-		
-		foreach($configs_select as $id => $label)
-			$options .= '<option value="'.$id.'">'.$label.'</option>';
-		
-		$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
-		<script type="text/javascript">
-			function dnd() {
-				$("#configs").tableDnD({
-					onDrop: function(table, row) {
-						$("#configs_order").val($.tableDnD.serialize());
-					}
-				});
-			}
-			
-			$(document).ready(function() {
-				var add_config_id = 1;
-				
-				dnd();
-				
-				$("#add_row").click(function (){
-					$(\'<tr id="add_config_\' + add_config_id++ + \'"><td>'._('Add').':</td><td><select name="add_config[]">'.$options.'</select></td></tr>\').fadeIn("slow").insertBefore("#configs tr:nth-last-child(2)");
-					dnd();
-				});
-				
-				$(".delete-config").click(function (){
-					$(this).closest("tr").remove();
-				});
-			});
-		</script>');
-		
 		$vps_configs = $api->vps($vps->id)->config->list();
-		
-		if ($_SESSION["is_admin"]) {
+
+		if ($_SESSION['is_admin']) {
 			$all_configs = $api->vps_config->list();
-			$config_choices = array();
+			$configs_select = resource_list_to_options($all_configs, 'id', 'label', false);
+			$options = "";
 			
-			foreach ($all_configs as $cfg) {
-				$config_choices[$cfg->id] = $cfg->label;
-			}
+			foreach($configs_select as $id => $label)
+				$options .= '<option value="'.$id.'">'.$label.'</option>';
 			
-			$config_choices_empty = array(0 => '---') + $config_choices;
+			$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
+			<script type="text/javascript">
+				function dnd() {
+					$("#configs").tableDnD({
+						onDrop: function(table, row) {
+							$("#configs_order").val($.tableDnD.serialize());
+						}
+					});
+				}
+				
+				$(document).ready(function() {
+					var add_config_id = 1;
+					
+					dnd();
+					
+					$("#add_row").click(function (){
+						$(\'<tr id="add_config_\' + add_config_id++ + \'"><td>'._('Add').':</td><td><select name="add_config[]">'.$options.'</select></td></tr>\').fadeIn("slow").insertBefore("#configs tr:nth-last-child(2)");
+						dnd();
+					});
+					
+					$(".delete-config").click(function (){
+						$(this).closest("tr").remove();
+					});
+				});
+			</script>');
+		
+			$config_choices_empty = array(0 => '---') + $configs_select;
 			
 			$xtpl->form_create('?page=adminvps&action=configs&veid='.$vps->id, 'post');
 		}
 		
 		foreach($vps_configs as $cfg) {
 			if ($_SESSION["is_admin"]) {
-				$xtpl->form_add_select_pure('configs[]', $config_choices, $cfg->vps_config->id);
+				$xtpl->form_add_select_pure('configs[]', $configs_select, $cfg->vps_config->id);
 				$xtpl->table_td('<a href="javascript:" class="delete-config">'._('delete').'</a>');
 			} else $xtpl->table_td($cfg->vps_config->label);
 			

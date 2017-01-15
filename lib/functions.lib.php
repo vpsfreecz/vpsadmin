@@ -76,19 +76,6 @@ function get_ip_address_id ($val) {
 		return $ips->first()->id;
 }
 
-function list_configs($empty = false) {
-	global $db;
-	
-	$sql = "SELECT id, `label` FROM config ORDER BY name";
-	$ret = $empty ? array(0 => '---') : array();
-	
-	if ($result = $db->query($sql))
-		while ($row = $db->fetch_array($result))
-			$ret[$row["id"]] = $row["label"];
-	
-	return $ret;
-}
-
 function list_templates($vps = null) {
 	global $api;
 
