@@ -3,17 +3,15 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
   desc 'Manage locations'
 
   params(:id) do
-    id :id, label: 'ID', desc: 'Location ID', db_name: :location_id
+    id :id, label: 'ID', desc: 'Location ID'
   end
 
   params(:common) do
-    string :label, label: 'Label', desc: 'Location label', db_name: :location_label
-    bool :has_ipv6, label: 'Has IPv6', desc: 'True if location has IPv6 addresses',
-         db_name: :location_has_ipv6
-    bool :vps_onboot, label: 'VPS onboot', desc: 'Start all VPSes in this location on boot?',
-         db_name: :location_vps_onboot
-    string :remote_console_server, label: 'Remote console server', desc: 'URL to HTTP remote console server',
-           db_name: :location_remote_console_server
+    string :label, label: 'Label', desc: 'Location label'
+    bool :has_ipv6, label: 'Has IPv6', desc: 'True if location has IPv6 addresses'
+    bool :vps_onboot, label: 'VPS onboot', desc: 'Start all VPSes in this location on boot?'
+    string :remote_console_server, label: 'Remote console server',
+        desc: 'URL to HTTP remote console server'
     string :domain, label: 'Domain', desc: 'Location domain, subdomain at environment domain'
     resource VpsAdmin::API::Resources::Environment, label: 'Environment'
   end
@@ -64,7 +62,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       if input[:environment]
         q = q.where(
             environment_id: input[:environment].id
-        ).group('locations.location_id')
+        ).group('locations.id')
       end
       
       has = []
@@ -87,13 +85,13 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       if has.size > 0
         q = q.joins(:nodes).where(
             servers: {server_type: has}
-        ).group('locations.location_id')
+        ).group('locations.id')
       end
 
       if not_has.size > 0
         q = q.joins(:nodes).where.not(
             servers: {server_type: not_has}
-        ).group('locations.location_id')
+        ).group('locations.id')
       end
 
       q

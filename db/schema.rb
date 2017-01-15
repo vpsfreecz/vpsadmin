@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170115104106) do
+ActiveRecord::Schema.define(version: 20170115153933) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -401,17 +401,17 @@ ActiveRecord::Schema.define(version: 20170115104106) do
 
   add_index "languages", ["code"], name: "index_languages_on_code", unique: true, using: :btree
 
-  create_table "locations", primary_key: "location_id", force: true do |t|
-    t.string   "location_label",                 limit: 63,                 null: false
-    t.boolean  "location_has_ipv6",                                         null: false
-    t.boolean  "location_vps_onboot",                        default: true, null: false, unsigned: true
-    t.string   "location_remote_console_server",                            null: false
-    t.string   "domain",                         limit: 100,                null: false
+  create_table "locations", force: true do |t|
+    t.string   "label",                   limit: 63,                 null: false
+    t.boolean  "has_ipv6",                                           null: false
+    t.boolean  "vps_onboot",                          default: true, null: false, unsigned: true
+    t.string   "remote_console_server",                              null: false
+    t.string   "domain",                  limit: 100,                null: false
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "maintenance_lock",                           default: 0,    null: false
+    t.integer  "maintenance_lock",                    default: 0,    null: false
     t.string   "maintenance_lock_reason"
-    t.integer  "environment_id",                                            null: false
+    t.integer  "environment_id",                                     null: false
   end
 
   create_table "log", force: true do |t|

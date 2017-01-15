@@ -181,7 +181,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     def exec
       with_includes.includes(:node_current_status).joins(:location).all
-        .order('locations.environment_id, locations.location_id, servers.server_id')
+        .order('locations.environment_id, locations.id, servers.server_id')
     end
   end
 
@@ -255,7 +255,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     def exec
       ::Node.includes(:location, :node_current_status).joins(:location).all
-        .order('locations.environment_id, locations.location_id, servers.server_id')
+        .order('locations.environment_id, locations.id, servers.server_id')
     end
   end
 

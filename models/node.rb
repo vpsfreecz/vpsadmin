@@ -68,7 +68,7 @@ class Node < ActiveRecord::Base
     q = self.joins('
           LEFT JOIN vps ON vps.vps_server = servers.server_id
           LEFT JOIN vps_current_statuses st ON st.vps_id = vps.vps_id
-          INNER JOIN locations ON locations.location_id = servers.server_location
+          INNER JOIN locations ON locations.id = servers.server_location
         ').where('
           (st.is_running = 1 OR st.is_running IS NULL)
           AND servers.max_vps > 0
@@ -77,7 +77,7 @@ class Node < ActiveRecord::Base
         ', env.id)
 
     if location
-      q = q.where('locations.location_id = ?', location.id)
+      q = q.where('locations.id = ?', location.id)
     end
 
     q = q.where('servers.server_id != ?', except.id) if except
@@ -90,7 +90,7 @@ class Node < ActiveRecord::Base
     
     q = self.joins('
         LEFT JOIN vps ON vps.vps_server = servers.server_id
-        INNER JOIN locations ON locations.location_id = servers.server_location
+        INNER JOIN locations ON locations.id = servers.server_location
     ').where(
         'max_vps > 0'
     ).where(
@@ -111,12 +111,12 @@ class Node < ActiveRecord::Base
     n = self.joins('
         LEFT JOIN vps ON vps.vps_server = servers.server_id
         LEFT JOIN vps_current_statuses st ON st.vps_id = vps.vps_id
-        INNER JOIN locations l ON server_location = location_id
+        INNER JOIN locations l ON server_location = l.id
       ').where('
         (st.is_running = 1 OR st.is_running IS NULL)
         AND servers.max_vps > 0
         AND servers.maintenance_lock = 0
-        AND location_id = ?
+        AND l.id = ?
       ', loc.id).group('server_id')
       .order('COUNT(st.is_running) / max_vps ASC')
       .take
