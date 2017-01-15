@@ -1027,7 +1027,16 @@ if (isset($show_info) && $show_info) {
 	// DNS Server
 		$xtpl->table_title(_('DNS resolver (/etc/resolv.conf)'));
 		$xtpl->form_create('?page=adminvps&action=nameserver&veid='.$vps->id, 'post');
-		$xtpl->form_add_select(_("DNS servers address").':', 'nameserver', $cluster->list_dns_servers($vps->node->location_id), $vps->dns_resolver_id,  '');
+		$xtpl->form_add_select(
+			_("DNS resolver").':',
+			'nameserver',
+			resource_list_to_options(
+				$api->dns_resolver->list(array('vps' => $vps->id)),
+				'id', 'label', false
+			),
+			$vps->dns_resolver_id,
+			''
+		);
 		$xtpl->form_out(_("Go >>"));
 
 	// Hostname change

@@ -77,19 +77,6 @@ class cluster {
 	return $ret;
 	}
     }
-    
-    function list_dns_servers($location_id = false) {
-	global $db;
-	$sql = 'SELECT * FROM cfg_dns';
-	if ($location_id)
-	    $sql .= ' WHERE dns_location="'.$db->check($location_id).'" OR dns_is_universal=1';
-	if ($result = $db->query($sql)) {
-	    while ($row = $db->fetch_array($result)) {
-		$ret[$row["dns_id"]] = $row["dns_label"];
-	    }
-	return $ret;
-	}
-    }
 }
 
 $cluster = new cluster();
