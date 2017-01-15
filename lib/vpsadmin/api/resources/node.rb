@@ -65,6 +65,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       resource VpsAdmin::API::Resources::Location, label: 'Location',
                desc: 'Location node is placed in'
       resource VpsAdmin::API::Resources::Environment, label: 'Environment'
+      use :common, include: %i(type)
     end
 
     output(:object_list) do
@@ -102,6 +103,8 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
             locations: {environment_id: input[:environment].id}
         )
       end
+
+      q = q.where(server_type: input[:type]) if input[:type]
 
       q
     end
