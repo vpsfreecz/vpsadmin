@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170114091907) do
+ActiveRecord::Schema.define(version: 20170114153715) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -35,14 +35,6 @@ ActiveRecord::Schema.define(version: 20170114091907) do
   end
 
   add_index "branches", ["dataset_tree_id"], name: "index_branches_on_dataset_tree_id", using: :btree
-
-  create_table "cfg_dns", primary_key: "dns_id", force: true do |t|
-    t.string  "dns_ip",           limit: 63,                 null: false
-    t.string  "dns_label",        limit: 63,                 null: false
-    t.boolean "dns_is_universal",            default: false,              unsigned: true
-    t.integer "dns_location",                                             unsigned: true
-    t.integer "ip_version",                  default: 4
-  end
 
   create_table "cfg_templates", primary_key: "templ_id", force: true do |t|
     t.string  "templ_name",      limit: 64,             null: false
@@ -196,6 +188,14 @@ ActiveRecord::Schema.define(version: 20170114091907) do
     t.integer "cluster_resource_id", null: false
     t.string  "class_name",          null: false
     t.integer "value",               null: false
+  end
+
+  create_table "dns_resolvers", force: true do |t|
+    t.string  "addrs",        limit: 63,                 null: false
+    t.string  "label",        limit: 63,                 null: false
+    t.boolean "is_universal",            default: false,              unsigned: true
+    t.integer "location_id",                                          unsigned: true
+    t.integer "ip_version",              default: 4
   end
 
   create_table "environment_config_chains", force: true do |t|

@@ -14,7 +14,7 @@ module TransactionChains
       changed_vpses = []
 
       ns.changed.each do |attr|
-        unless %w(dns_ip dns_label dns_is_universal dns_location).include?(attr)
+        unless %w(addrs label is_universal location_id).include?(attr)
           fail "cannot change attribute '#{attr}'"
         end
 
@@ -23,12 +23,12 @@ module TransactionChains
 
       # The nameserver was universal and now is assigned to a location OR the location
       # has changed.
-      if (ns.dns_is_universal_changed? && ns.dns_location_changed? && !ns.dns_is_universal) \
-          || ns.dns_location_changed?
+      if (ns.is_universal_changed? && ns.location_id_changed? && !ns.is_universal) \
+          || ns.location_id_changed?
         # Set another NS to all VPSes using this server and not
         # being in the new location.
         ::Vps.including_deleted.where(dns_resolver: ns).joins(:node)
-            .where('server_location != ?', ns.dns_location).each do |vps|
+            .where('server_location != ?', ns.location_id).each do |vps|
           lock(vps)
 
           new_ns = ::DnsResolver.pick_suitable_resolver_for_vps(vps, except: [ns.id])
@@ -41,7 +41,7 @@ module TransactionChains
         end
       end
 
-      if ns.dns_ip_changed?
+      if ns.addrs_changed?
         # Only the address of the nameserver has changed.
         old_ns = ::DnsResolver.find(ns.id)
 

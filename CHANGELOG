@@ -1,6 +1,7 @@
 - Fix crash of vpsAdmind caused by deleting of current VPS status in chain
   Vps::Destroy
 - Free unused login names
+- Refactored DB schema of DNS resolvers
 
 * Fri Dec 30 2016 - version 2.6.0
 - Rebase on HaveAPI v0.7

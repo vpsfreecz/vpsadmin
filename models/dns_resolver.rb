@@ -1,15 +1,12 @@
 class DnsResolver < ActiveRecord::Base
-  self.table_name = 'cfg_dns'
-  self.primary_key = 'dns_id'
-
-  belongs_to :location, foreign_key: :dns_location
+  belongs_to :location
   has_many :vpses
 
-  alias_attribute :addr, :dns_ip
+  alias_attribute :addr, :addrs
 
   include Lockable
 
-  validates :dns_ip, :dns_label, presence: true
+  validates :addrs, :label, presence: true
   validate :universal_or_location
 
   def self.pick_suitable_resolver_for_vps(vps, except: [])
@@ -21,11 +18,11 @@ class DnsResolver < ActiveRecord::Base
     ip_v = first_ip ? first_ip.network.ip_version : 4
 
     self.where(
-      'dns_location = ? OR dns_is_universal = 1',
+      'dns_servers.location_id = ? OR is_universal = 1',
       vps.node.location.id
     ).where(
         'ip_version = ? OR ip_version IS NULL', ip_v
-    ).where.not(dns_id: except).order(:dns_is_universal).take
+    ).where.not(id: except).order(:is_universal).take
   end
 
   def update(attrs)
@@ -41,8 +38,8 @@ class DnsResolver < ActiveRecord::Base
   end
 
   def universal_or_location
-    if (dns_is_universal && dns_location) || (!dns_is_universal && !dns_location)
-      errors.add(:dns_is_universal, 'must be either universal or location specific')
+    if (is_universal && location_id) || (!is_universal && !location_id)
+      errors.add(:is_universal, 'must be either universal or location specific')
     end
   end
 end

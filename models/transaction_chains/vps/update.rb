@@ -89,7 +89,7 @@ module TransactionChains
               just_create(vps.log(:dns_resolver, {
                   id: vps.dns_resolver_id,
                   addr: vps.dns_resolver.addr,
-                  label: vps.dns_resolver.dns_label,
+                  label: vps.dns_resolver.label,
               }))
             end
 

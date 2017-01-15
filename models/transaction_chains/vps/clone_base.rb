@@ -4,7 +4,7 @@ module TransactionChains
     # to a different location and its DNS resolver is not universal,
     # it must be changed to DNS resolver in target location.
     def dns_resolver(vps, dst_vps)
-      if vps.dns_resolver.dns_is_universal
+      if vps.dns_resolver.is_universal
         vps.dns_resolver
 
       else

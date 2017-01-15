@@ -3,16 +3,15 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
   desc 'Manage DNS resolvers'
 
   params(:id) do
-    id :id, label: 'ID', desc: 'DNS resolver ID', db_name: :dns_id
+    id :id, label: 'ID', desc: 'DNS resolver ID'
   end
 
   params(:common) do
     string :ip_addr, label: 'IP address', desc: 'Multiple addresses separated by comma',
-           db_name: :dns_ip
-    string :label, label: 'Label', db_name: :dns_label
+           db_name: :addrs
+    string :label, label: 'Label'
     bool :is_universal, label: 'Is universal?',
-         desc: 'Universal resolver is independent on location',
-         db_name: :dns_is_universal
+         desc: 'Universal resolver is independent on location'
     resource VpsAdmin::API::Resources::Location, label: 'Location',
              desc: 'Location this resolver can be used on'
   end
