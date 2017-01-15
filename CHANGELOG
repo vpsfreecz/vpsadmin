@@ -1,7 +1,7 @@
 - Fix crash of vpsAdmind caused by deleting of current VPS status in chain
   Vps::Destroy
 - Free unused login names
-- Refactored DB schema of DNS resolvers
+- Refactored DB schema of DNS resolvers and OS templates
 - Node.Update: remove input parameter domain_name
 - DnsResolver.Index: add input parameter vps
 - Node.Index: add input parameter type

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170114153715) do
+ActiveRecord::Schema.define(version: 20170115092224) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -35,15 +35,6 @@ ActiveRecord::Schema.define(version: 20170114153715) do
   end
 
   add_index "branches", ["dataset_tree_id"], name: "index_branches_on_dataset_tree_id", using: :btree
-
-  create_table "cfg_templates", primary_key: "templ_id", force: true do |t|
-    t.string  "templ_name",      limit: 64,             null: false
-    t.string  "templ_label",     limit: 64,             null: false
-    t.text    "templ_info"
-    t.integer "templ_enabled",   limit: 1,  default: 1, null: false
-    t.integer "templ_supported", limit: 1,  default: 1, null: false
-    t.integer "templ_order",     limit: 1,  default: 1, null: false
-  end
 
   create_table "cluster_resource_uses", force: true do |t|
     t.integer "user_cluster_resource_id",                null: false
@@ -740,6 +731,15 @@ ActiveRecord::Schema.define(version: 20170114153715) do
   end
 
   add_index "object_states", ["class_name", "row_id"], name: "index_object_states_on_class_name_and_row_id", using: :btree
+
+  create_table "os_templates", force: true do |t|
+    t.string  "name",      limit: 64,             null: false
+    t.string  "label",     limit: 64,             null: false
+    t.text    "info"
+    t.integer "enabled",   limit: 1,  default: 1, null: false
+    t.integer "supported", limit: 1,  default: 1, null: false
+    t.integer "order",     limit: 1,  default: 1, null: false
+  end
 
   create_table "pools", force: true do |t|
     t.integer "node_id",                                             null: false

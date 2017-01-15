@@ -3,21 +3,16 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
   desc 'Manage OS templates'
 
   params(:id) do
-    id :id, label: 'ID', desc: 'OS template ID', db_name: :templ_id
+    id :id, label: 'ID', desc: 'OS template ID'
   end
 
   params(:common) do
-    string :name, label: 'Name', desc: 'Template file name',
-           db_name: :templ_name
-    string :label, label: 'Label', desc: 'Human-friendly label',
-           db_name: :templ_label
-    string :info, label: 'Info', desc: 'Information about template',
-           db_name: :templ_info
-    bool :enabled, label: 'Enabled', desc: 'Enable/disable template usage',
-         db_name: :templ_enabled
-    bool :supported, label: 'Supported', desc: 'Is template known to work?',
-         db_name: :templ_supported
-    integer :order, label: 'Order', desc: 'Template order', db_name: :templ_order
+    string :name, label: 'Name', desc: 'Template file name'
+    string :label, label: 'Label', desc: 'Human-friendly label'
+    string :info, label: 'Info', desc: 'Information about template'
+    bool :enabled, label: 'Enabled', desc: 'Enable/disable template usage'
+    bool :supported, label: 'Supported', desc: 'Is template known to work?'
+    integer :order, label: 'Order', desc: 'Template order'
   end
 
   params(:all) do
@@ -34,7 +29,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      restrict templ_enabled: true
+      restrict enabled: true
       output whitelist: %i(id label info supported)
       allow
     end
@@ -74,13 +69,13 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      restrict templ_enabled: true
+      restrict enabled: true
       output whitelist: %i(id label info supported)
       allow
     end
 
     def prepare
-      @os_template = ::OsTemplate.find_by!(with_restricted(templ_id: params[:os_template_id]))
+      @os_template = ::OsTemplate.find_by!(with_restricted(id: params[:os_template_id]))
     end
 
     def exec
