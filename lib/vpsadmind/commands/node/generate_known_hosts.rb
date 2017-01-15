@@ -14,9 +14,9 @@ module VpsAdmind
       f = File.open(p, "w")
 
       rs = db.query(
-          'SELECT node_id, `key`, server_ip4
-           FROM servers s
-           INNER JOIN node_pubkey p ON s.server_id = p.node_id
+        'SELECT node_id, `key`, n.ip_addr
+           FROM nodes n
+           INNER JOIN node_pubkey p ON n.id = p.node_id
            ORDER BY node_id, `type`'
       )
 

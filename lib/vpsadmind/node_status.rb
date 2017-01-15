@@ -12,9 +12,9 @@ module VpsAdmind
       mem = SystemProbes::Memory.new
       
       db.prepared(
-          'UPDATE servers
+          'UPDATE nodes
           SET cpus = ?, total_memory = ?, total_swap = ?
-          WHERE server_id = ?',
+          WHERE id = ?',
           @cpus, mem.total / 1024, mem.swap_total / 1024,
           $CFG.get(:vpsadmin, :server_id)
       )

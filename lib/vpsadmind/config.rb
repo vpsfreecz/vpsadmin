@@ -79,7 +79,6 @@ module VpsAdmind
           :track_transfers => true,
           :root => "/opt/vpsadmind",
           :init => true,
-          :fstype => :zfs, # loaded from db
           :type => nil, # loaded from db
           :mounts_dir => '/var/vpsadmin/mounts'
       },
@@ -191,7 +190,10 @@ module VpsAdmind
     def load_db_settings
       db = Db.new(@cfg[:db])
 
-      st = db.prepared_st("SELECT server_type, server_ip4, net_interface, max_tx, max_rx FROM servers WHERE server_id = ?", @cfg[:vpsadmin][:server_id])
+      st = db.prepared_st(
+          "SELECT role, ip_addr, net_interface, max_tx, max_rx FROM nodes WHERE id = ?",
+          @cfg[:vpsadmin][:server_id]
+      )
       rs = st.fetch
 
       unless rs
@@ -199,7 +201,7 @@ module VpsAdmind
         return
       end
 
-      @cfg[:vpsadmin][:type] = rs[0].to_sym
+      @cfg[:vpsadmin][:type] = %i(node storage mailer)[ rs[0] ]
       @cfg[:vpsadmin][:node_addr] = rs[1]
       @cfg[:vpsadmin][:netdev] = rs[2]
       @cfg[:vpsadmin][:max_tx] = rs[3]
@@ -207,12 +209,14 @@ module VpsAdmind
 
       case @cfg[:vpsadmin][:type]
         when :node
-          st = db.prepared_st("SELECT ve_private, fstype FROM servers WHERE server_id = ?", @cfg[:vpsadmin][:server_id])
+          st = db.prepared_st(
+              "SELECT ve_private FROM nodes WHERE id = ?",
+              @cfg[:vpsadmin][:server_id]
+          )
           rs = st.fetch
 
           if rs
             @cfg[:vz][:ve_private] = rs[0]
-            @cfg[:vpsadmin][:fstype] = rs[1].to_sym
           else
             $stderr.puts "Failed to load settings from database"
           end
