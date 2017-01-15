@@ -644,11 +644,6 @@ switch($_REQUEST["action"]) {
 
 		$list_configs = true;
 		break;
-	case "configs_regen":
-		$cluster->regenerate_all_configs();
-		
-		$xtpl->perex(_("Regeneration scheduled"), _("Regeneration of all configs on all nodes scheduled."));
-		break;
 	
 	case "newnode":
 		node_create_form();
@@ -999,7 +994,6 @@ if ($list_templates) {
 
 if ($list_configs) {
 	$xtpl->sbar_add(_("New config"), '?page=cluster&action=config_new');
-	$xtpl->sbar_add(_("Regenerate all configs on all nodes"), '?page=cluster&action=configs_regen');
 	
 	$xtpl->title2(_("Configs"));
 		
