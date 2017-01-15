@@ -89,25 +89,28 @@ function list_configs($empty = false) {
 	return $ret;
 }
 
-function list_templates($disabled = true) {
-    global $db;
-    $sql = 'SELECT * FROM cfg_templates '.($disabled ? '' : 'WHERE templ_enabled = 1').' ORDER BY templ_label ASC';
-    if ($result = $db->query($sql))
-	while ($row = $db->fetch_array($result)) {
-	    $ret[$row["templ_id"]] = $row["templ_label"];
-	    if (!$row["templ_enabled"])
-			$ret[$row["templ_id"]] .= ' '._('(IMPORTANT: This template is currently disabled, it cannot be used)');
-	}
-    return $ret;
-}
+function list_templates($vps = null) {
+	global $api;
 
-function template_by_id ($id) {
-    global $db;
-    $sql = 'SELECT * FROM cfg_templates WHERE templ_id="'.$db->check($id).'" LIMIT 1';
-    if ($result = $db->query($sql))
-	if ($row = $db->fetch_array($result))
-	    return $row;
-    return false;
+	$disabled = _('(IMPORTANT: This template is currently disabled, it cannot be used)');
+	$tpls = $api->os_template->list();
+	$choices = resource_list_to_options(
+		$tpls,
+		'id', 'label', false, function ($t) {
+			$ret = $t->label;
+
+			if (!$t->enabled)
+				return $ret.' '._('(IMPORTANT: This template is currently disabled, it cannot be used)');;
+
+			return $ret;
+		}
+	);
+
+	if ($vps && !$vps->os_template->enabled && !$_SESSION['is_admin']) {
+		$choices = array($vps->os_template_id => $vps->os_template->label .' '.$disabled) + $choices;
+	}
+
+	return $choices;
 }
 
 function server_by_id ($id) {
