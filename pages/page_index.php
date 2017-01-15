@@ -78,9 +78,6 @@ $xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_tr();
 
-$sql = 'SELECT * FROM servers ORDER BY server_location,server_id';
-$rslt = $db->query($sql);
-
 $position = 1;
 $last_location = 0;
 
