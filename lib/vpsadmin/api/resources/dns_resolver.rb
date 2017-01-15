@@ -24,6 +24,11 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List DNS resolvers'
 
+    input do
+      resource VpsAdmin::API::Resources::VPS, label: 'VPS',
+          desc: 'List DNS resolvers usable for a specific VPS'
+    end
+
     output(:object_list) do
       use :all
     end
@@ -45,8 +50,25 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
        })
     end
 
+    def query
+      q = ::DnsResolver.all
+      
+      if input[:vps]
+        q = q.where(
+            'location_id = ? OR is_universal = 1',
+            input[:vps].node.server_location
+        )
+      end
+
+      q
+    end
+
+    def count
+      query.count
+    end
+
     def exec
-      ::DnsResolver.all.limit(params[:dns_resolver][:limit]).offset(params[:dns_resolver][:offset])
+      with_includes(query).limit(input[:limit]).offset(input[:offset])
     end
   end
 
