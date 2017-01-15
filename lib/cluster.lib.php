@@ -62,22 +62,3 @@ class cluster_cfg {
 }
 $cluster_cfg = new cluster_cfg();
 
-class cluster {
-    function cluster() {
-    }
-    
-    function list_locations($ipv6_only = false) {
-	global $db;
-	$sql = 'SELECT * FROM locations';
-	if ($ipv6_only) $sql .= ' WHERE location_has_ipv6=1';
-	if ($result = $db->query($sql)) {
-	    while ($row = $db->fetch_array($result)) {
-		$ret[$row["location_id"]] = $row["location_label"];
-	    }
-	return $ret;
-	}
-    }
-}
-
-$cluster = new cluster();
-?>

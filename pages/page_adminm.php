@@ -1797,7 +1797,15 @@ if ($_SESSION["logged_in"]) {
 					$xtpl->form_add_checkbox(_("Create VPS").':', 'm_create_vps', '1', true);
 					
 					$xtpl->form_add_select(_("Distribution").':', 'm_distribution', list_templates(false), $row["m_distribution"]);
-					$xtpl->form_add_select(_("Location").':', 'm_location', $cluster->list_locations(), $row["m_location"]);
+					$xtpl->form_add_select(
+						_("Location").':',
+						'm_location',
+						resource_list_to_options(
+							$api->location->list(array('has_hypervisor' => true)),
+							'id', 'label', false
+						),
+						$row["m_location"]
+					);
 					
 					$empty = array("" => _("pick automatically"));
 					$nodes = list_servers(false, array('node'));
