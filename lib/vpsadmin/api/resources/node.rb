@@ -299,7 +299,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     desc 'Update node'
 
     input do
-      use :common
+      use :common, exclude: %i(domain_name)
     end
 
     authorize do |u|

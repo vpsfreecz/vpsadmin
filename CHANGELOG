@@ -2,6 +2,7 @@
   Vps::Destroy
 - Free unused login names
 - Refactored DB schema of DNS resolvers
+- Node.Update: remove input parameter domain_name
 
 * Fri Dec 30 2016 - version 2.6.0
 - Rebase on HaveAPI v0.7
