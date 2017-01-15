@@ -1,6 +1,6 @@
 class Location < ActiveRecord::Base
   belongs_to :environment
-  has_many :nodes, :foreign_key => :server_location
+  has_many :nodes
   has_many :networks
   has_many :dns_resolvers
   has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)

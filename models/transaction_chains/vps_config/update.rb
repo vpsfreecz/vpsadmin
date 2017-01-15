@@ -11,7 +11,7 @@ module TransactionChains
         return cfg
       end
 
-      ::Node.where(server_type: 'node').each do |n|
+      ::Node.where(role: 'node').each do |n|
         append(Transactions::Hypervisor::UpdateConfig, args: [n, cfg])
       end
 

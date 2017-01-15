@@ -11,7 +11,7 @@ module TransactionChains
 
       use_chain(Network::AddIps, args: [net, net.size]) if opts[:add_ips]
 
-      ::Node.where(server_type: 'node').each do |n|
+      ::Node.where(role: 'node').each do |n|
         append(Transactions::Network::Register, args: [n, net])
       end
 

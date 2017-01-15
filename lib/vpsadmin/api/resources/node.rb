@@ -3,19 +3,17 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
   desc 'Manage nodes'
 
   params(:id) do
-    id :id, label: 'ID', desc: 'Node ID', db_name: :server_id
+    id :id, label: 'ID', desc: 'Node ID'
   end
 
   params(:common) do
-    string :name, label: 'Name', desc: 'Node name', db_name: :server_name
+    string :name, label: 'Name', desc: 'Node name'
     string :domain_name, label: 'Domain name',
       desc: 'Node name including location domain'
-    string :type, label: 'Role', desc: 'node, storage or mailer', db_name: :server_type
+    string :type, label: 'Role', desc: 'node, storage or mailer', db_name: :role
     resource VpsAdmin::API::Resources::Location, label: 'Location',
              desc: 'Location node is placed in'
-    string :availstat, label: 'Availability stats', desc: 'HTML code with availability graphs',
-           db_name: :server_availstat
-    string :ip_addr, label: 'IPv4 address', desc: 'Node\'s IP address', db_name: :server_ip4
+    string :ip_addr, label: 'IPv4 address', desc: 'Node\'s IP address'
     string :net_interface, label: 'Network interface', desc: 'Outgoing network interface'
     integer :max_tx, label: 'Max tx', desc: 'Maximum output throughput'
     integer :max_rx, label: 'Max tx', desc: 'Maximum input throughput'
@@ -88,7 +86,6 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
               id: 1,
               label: 'The Location'
           },
-          availstat: '',
           ip_addr: '192.168.0.10',
           maintenance_lock: 'no'
       }])
@@ -104,7 +101,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
         )
       end
 
-      q = q.where(server_type: input[:type]) if input[:type]
+      q = q.where(role: input[:type]) if input[:type]
 
       q
     end
@@ -181,7 +178,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     def exec
       with_includes.includes(:node_current_status).joins(:location).all
-        .order('locations.environment_id, locations.id, servers.server_id')
+        .order('locations.environment_id, locations.id, nodes.id')
     end
   end
 
@@ -255,7 +252,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     def exec
       ::Node.includes(:location, :node_current_status).joins(:location).all
-        .order('locations.environment_id, locations.id, servers.server_id')
+        .order('locations.environment_id, locations.id, nodes.id')
     end
   end
 
@@ -283,7 +280,6 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
               id: 1,
               label: 'The Location'
           },
-          availstat: '',
           ip_addr: '192.168.0.11',
           maintenance_lock: 'no'
       })
@@ -316,7 +312,6 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
           name: 'node2',
           type: 'storage',
           location: 1,
-          availstat: '',
           ip_addr: '192.168.0.11',
       })
       response({})
@@ -380,7 +375,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       n = ::Node.find(params[:node_id])
       dst = input[:dst_node]
 
-      if n.server_location != dst.server_location
+      if n.location_id != dst.location_id
         error('the destination node is in a different location')
 
       elsif n.location.environment_id != dst.location.environment_id

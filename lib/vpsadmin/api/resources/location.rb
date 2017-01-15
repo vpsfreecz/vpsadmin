@@ -84,13 +84,13 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
       if has.size > 0
         q = q.joins(:nodes).where(
-            servers: {server_type: has}
+            nodes: {role: has}
         ).group('locations.id')
       end
 
       if not_has.size > 0
         q = q.joins(:nodes).where.not(
-            servers: {server_type: not_has}
+            nodes: {role: not_has}
         ).group('locations.id')
       end
 

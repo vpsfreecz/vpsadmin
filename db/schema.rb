@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170115153933) do
+ActiveRecord::Schema.define(version: 20170115162128) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -699,6 +699,25 @@ ActiveRecord::Schema.define(version: 20170115153933) do
 
   add_index "node_statuses", ["node_id"], name: "index_node_statuses_on_node_id", using: :btree
 
+  create_table "nodes", force: true do |t|
+    t.string  "name",                    limit: 64,                                          null: false
+    t.integer "location_id",                                                                 null: false, unsigned: true
+    t.string  "ip_addr",                 limit: 127,                                         null: false
+    t.integer "max_vps"
+    t.string  "ve_private",                          default: "/vz/private/%{veid}/private"
+    t.string  "net_interface",           limit: 50
+    t.integer "max_tx",                  limit: 8,   default: 235929600,                     null: false, unsigned: true
+    t.integer "max_rx",                  limit: 8,   default: 235929600,                     null: false, unsigned: true
+    t.integer "maintenance_lock",                    default: 0,                             null: false
+    t.string  "maintenance_lock_reason"
+    t.integer "cpus",                                                                        null: false
+    t.integer "total_memory",                                                                null: false
+    t.integer "total_swap",                                                                  null: false
+    t.integer "role",                                                                        null: false
+  end
+
+  add_index "nodes", ["location_id"], name: "location_id", using: :btree
+
   create_table "object_histories", force: true do |t|
     t.integer  "user_id"
     t.integer  "user_session_id"
@@ -779,27 +798,6 @@ ActiveRecord::Schema.define(version: 20170115153933) do
 
   add_index "resource_locks", ["locked_by_id", "locked_by_type"], name: "index_resource_locks_on_locked_by_id_and_locked_by_type", using: :btree
   add_index "resource_locks", ["resource", "row_id"], name: "index_resource_locks_on_resource_and_row_id", unique: true, using: :btree
-
-  create_table "servers", primary_key: "server_id", force: true do |t|
-    t.string  "server_name",             limit: 64,                                          null: false
-    t.string  "server_type",             limit: 7,                                           null: false
-    t.integer "server_location",                                                             null: false, unsigned: true
-    t.text    "server_availstat"
-    t.string  "server_ip4",              limit: 127,                                         null: false
-    t.integer "max_vps"
-    t.string  "ve_private",                          default: "/vz/private/%{veid}/private"
-    t.string  "fstype",                  limit: 10,  default: "zfs",                         null: false
-    t.string  "net_interface",           limit: 50
-    t.integer "max_tx",                  limit: 8,   default: 235929600,                     null: false, unsigned: true
-    t.integer "max_rx",                  limit: 8,   default: 235929600,                     null: false, unsigned: true
-    t.integer "maintenance_lock",                    default: 0,                             null: false
-    t.string  "maintenance_lock_reason"
-    t.integer "cpus",                                                                        null: false
-    t.integer "total_memory",                                                                null: false
-    t.integer "total_swap",                                                                  null: false
-  end
-
-  add_index "servers", ["server_location"], name: "server_location", using: :btree
 
   create_table "snapshot_downloads", force: true do |t|
     t.integer  "user_id",                                  null: false

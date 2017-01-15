@@ -1,8 +1,5 @@
 class Node < ActiveRecord::Base
-  self.table_name = 'servers'
-  self.primary_key = 'server_id'
-
-  belongs_to :location, :foreign_key => :server_location
+  belongs_to :location
   has_many :vpses, :foreign_key => :vps_server
   has_many :transactions, foreign_key: :t_server
   has_many :storage_roots
@@ -12,23 +9,24 @@ class Node < ActiveRecord::Base
   has_many :node_statuses, dependent: :destroy
   has_one :node_current_status
 
+  enum role: %i(node storage mailer)
+
   has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
 
-  alias_attribute :name, :server_name
-  alias_attribute :addr, :server_ip4
+  alias_attribute :addr, :ip_addr
   alias_attribute :vps_max, :max_vps
 
-  validates :server_name, :server_type, :server_location, :server_ip4, presence: true
-  validates :server_location, numericality: {only_integer: true}
-  validates :server_name, format: {
+  validates :name, :role, :location_id, :ip_addr, presence: true
+  validates :location_id, numericality: {only_integer: true}
+  validates :name, format: {
       with: /\A[a-zA-Z0-9\.\-_]+\Z/,
       message: 'invalid format'
   }
-  validates :server_type, inclusion: {
+  validates :role, inclusion: {
       in: %w(node storage mailer),
       message: '%{value} is not a valid node role'
   }
-  validates :server_ip4, format: {
+  validates :ip_addr, format: {
       with: /\A\d+\.\d+\.\d+\.\d+\Z/,
       message: 'not a valid IPv4 address'
   }
@@ -66,13 +64,13 @@ class Node < ActiveRecord::Base
 
   def self.pick_by_env(env, location = nil, except = nil)
     q = self.joins('
-          LEFT JOIN vps ON vps.vps_server = servers.server_id
+          LEFT JOIN vps ON vps.vps_server = nodes.id
           LEFT JOIN vps_current_statuses st ON st.vps_id = vps.vps_id
-          INNER JOIN locations ON locations.id = servers.server_location
+          INNER JOIN locations ON locations.id = nodes.location_id
         ').where('
           (st.is_running = 1 OR st.is_running IS NULL)
-          AND servers.max_vps > 0
-          AND servers.maintenance_lock = 0
+          AND nodes.max_vps > 0
+          AND nodes.maintenance_lock = 0
           AND locations.environment_id = ?
         ', env.id)
 
@@ -80,17 +78,17 @@ class Node < ActiveRecord::Base
       q = q.where('locations.id = ?', location.id)
     end
 
-    q = q.where('servers.server_id != ?', except.id) if except
+    q = q.where('nodes.id != ?', except.id) if except
 
-    n = q.group('servers.server_id')
+    n = q.group('nodes.id')
      .order('COUNT(st.is_running) / max_vps ASC')
      .take
 
     return n if n
     
     q = self.joins('
-        LEFT JOIN vps ON vps.vps_server = servers.server_id
-        INNER JOIN locations ON locations.id = servers.server_location
+        LEFT JOIN vps ON vps.vps_server = nodes.id
+        INNER JOIN locations ON locations.id = nodes.location_id
     ').where(
         'max_vps > 0'
     ).where(
@@ -99,38 +97,38 @@ class Node < ActiveRecord::Base
     )
 
     if location
-      q = q.where('server_location = ?', location.id)
+      q = q.where('location_id = ?', location.id)
     end
     
-    q = q.where('servers.server_id != ?', except.id) if except
+    q = q.where('nodes.id != ?', except.id) if except
 
-    q.group('servers.server_id').order('COUNT(vps_id) / max_vps ASC').take
+    q.group('nodes.id').order('COUNT(vps_id) / max_vps ASC').take
   end
 
   def self.pick_by_location(loc)
     n = self.joins('
-        LEFT JOIN vps ON vps.vps_server = servers.server_id
+        LEFT JOIN vps ON vps.vps_server = nodes.id
         LEFT JOIN vps_current_statuses st ON st.vps_id = vps.vps_id
-        INNER JOIN locations l ON server_location = l.id
+        INNER JOIN locations l ON nodes.location_id = l.id
       ').where('
         (st.is_running = 1 OR st.is_running IS NULL)
-        AND servers.max_vps > 0
-        AND servers.maintenance_lock = 0
+        AND nodes.max_vps > 0
+        AND nodes.maintenance_lock = 0
         AND l.id = ?
-      ', loc.id).group('server_id')
+      ', loc.id).group('nodes.id')
       .order('COUNT(st.is_running) / max_vps ASC')
       .take
 
     return n if n
 
     self.joins(
-        'LEFT JOIN vps ON vps.vps_server = servers.server_id'
+        'LEFT JOIN vps ON vps.vps_server = nodes.node_id'
     ).where(
         'max_vps > 0'
     ).where(
         maintenance_lock: 0,
-        server_location: loc.id
-    ).group('servers.server_id').order('COUNT(vps_id) / max_vps ASC').take
+        location_id: loc.id
+    ).group('nodes.id').order('COUNT(vps_id) / max_vps ASC').take
   end
 
   def self.first_available
@@ -206,7 +204,7 @@ class Node < ActiveRecord::Base
   end
 
   def hypervisor?
-    server_type == 'node'
+    role == 'node'
   end
 
   # @param opts [Hash]

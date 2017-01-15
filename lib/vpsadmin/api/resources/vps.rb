@@ -149,7 +149,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       if input[:location]
-        q = q.joins(:node).where(servers: {server_location: input[:location].id})
+        q = q.joins(:node).where(nodes: {location_id: input[:location].id})
       end
 
       if input[:environment]
@@ -618,7 +618,7 @@ END
       if vps.node == input[:node]
         error('the VPS already is on this very node')
 
-      elsif input[:node].server_type != 'node'
+      elsif input[:node].role != 'node'
         error('target node is not a hypervisor')
       end
 
@@ -766,7 +766,7 @@ END
       if vps.user != input[:vps].user
         error('access denied')
 
-      elsif vps.node.server_location == input[:vps].node.server_location
+      elsif vps.node.location_id == input[:vps].node.location_id
         error("swap within one location is not supported")
 
       elsif vps.has_mount_of?(input[:vps]) || input[:vps].has_mount_of?(vps)

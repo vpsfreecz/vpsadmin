@@ -157,7 +157,7 @@ class Vps < ActiveRecord::Base
     ::IpAddress.transaction do
       ip = ::IpAddress.find(ip.id) unless safe
 
-      unless ip.network.location_id == node.server_location
+      unless ip.network.location_id == node.location_id
         raise VpsAdmin::API::Exceptions::IpAddressInvalidLocation
       end
 
@@ -169,7 +169,7 @@ class Vps < ActiveRecord::Base
             user: self.user,
             vps: nil,
             networks: {
-                location_id: node.server_location,
+                location_id: node.location_id,
                 ip_version: ip.network.ip_version,
                 role: ::Network.roles[ip.network.role],
             }

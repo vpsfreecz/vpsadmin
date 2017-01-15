@@ -56,7 +56,7 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
       if input[:vps]
         q = q.where(
             'location_id = ? OR is_universal = 1',
-            input[:vps].node.server_location
+            input[:vps].node.location_id
         )
       end
 

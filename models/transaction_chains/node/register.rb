@@ -16,7 +16,7 @@ module TransactionChains
 
       # Port reservations
       append(Transactions::Utils::NoOp, args: node.id) do
-        if %w(node storage).include?(node.server_type)
+        if %w(node storage).include?(node.role)
           10000.times do |i|
             r = ::PortReservation.create!(
                 node: node,
@@ -31,13 +31,13 @@ module TransactionChains
       end
       
       # Create configs
-      if node.server_type == 'node'
+      if node.role == 'node'
         ::VpsConfig.all.each do |cfg|
           append(Transactions::Hypervisor::CreateConfig, args: [node, cfg])
         end
       end
 
-      if node.server_type != 'mailer'
+      if node.role != 'mailer'
         # Save SSH public key to database
         append(Transactions::Node::StorePublicKeys, args: node)
         
