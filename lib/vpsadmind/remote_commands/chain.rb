@@ -113,7 +113,7 @@ module VpsAdmind::RemoteCommands
           'SELECT s.server_name, l.domain, r.node_id, r.addr, r.port
           FROM port_reservations r
           INNER JOIN servers s ON s.server_id = r.node_id
-          INNER JOIN locations l ON l.location_id = s.server_location
+          INNER JOIN locations l ON l.id = s.server_location
           WHERE transaction_chain_id = ?',
           @chain
       )
