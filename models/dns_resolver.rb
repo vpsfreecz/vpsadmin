@@ -18,7 +18,7 @@ class DnsResolver < ActiveRecord::Base
     ip_v = first_ip ? first_ip.network.ip_version : 4
 
     self.where(
-      'dns_servers.location_id = ? OR is_universal = 1',
+      'dns_resolvers.location_id = ? OR is_universal = 1',
       vps.node.location.id
     ).where(
         'ip_version = ? OR ip_version IS NULL', ip_v
