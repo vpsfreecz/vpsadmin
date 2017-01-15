@@ -1808,7 +1808,10 @@ if ($_SESSION["logged_in"]) {
 					);
 					
 					$empty = array("" => _("pick automatically"));
-					$nodes = list_servers(false, array('node'));
+					$nodes = resource_list_to_options(
+						$api->node->list(array('type' => 'node')),
+						'id', 'domain_name', false
+					);
 					$xtpl->form_add_select(_("Node").':', 'm_node', $empty + $nodes);
 					
 					$xtpl->form_add_input(_("Admin response").':', 'text', '30', 'm_admin_response', $row["m_admin_response"]);

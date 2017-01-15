@@ -110,23 +110,6 @@ function template_by_id ($id) {
     return false;
 }
 
-function list_servers($without_id = false, $roles = NULL) {
-    global $db, $NODE_TYPES;
-    
-	if ($roles === NULL)
-		$roles = $NODE_TYPES;
-	
-	if ($without_id)
-		$sql = 'SELECT * FROM servers WHERE server_id != \''.$db->check($without_id).'\' AND server_type IN (\''.implode("','", $roles).'\') ORDER BY server_location,server_id';
-	else
-		$sql = 'SELECT * FROM servers WHERE server_type IN (\''.implode("','", $roles).'\') ORDER BY server_location,server_id';
-	
-    if ($result = $db->query($sql))
-	while ($row = $db->fetch_array($result))
-	    $ret[$row["server_id"]] = $row["server_name"];
-    return $ret;
-}
-
 function server_by_id ($id) {
     global $db;
     $sql = 'SELECT * FROM servers WHERE server_id="'.$db->check($id).'" LIMIT 1';

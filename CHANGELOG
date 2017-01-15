@@ -1,6 +1,7 @@
 - Trim public key before it is sent to the API
 - Removed class cluster_node, node registration and edit uses the API
 - Removed unused functions from cluster lib
+- Removed function list_servers
 
 * Fri Dec 30 2016 - version 2.6.0
 - Public key management forms
