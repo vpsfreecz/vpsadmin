@@ -29,7 +29,7 @@ module VpsAdmind::RemoteCommands
 
             q[:workers][wid] = {
                 :id => w.cmd.id,
-                :type => w.cmd.trans['t_type'].to_i,
+                :type => w.cmd.trans['handle'].to_i,
                 :handler => "#{h.split('::')[-2..-1].join('::')}",
                 :step => w.cmd.step,
                 :pid => w.cmd.subtask,
@@ -59,7 +59,10 @@ module VpsAdmind::RemoteCommands
         mounts = m.dup
       end
 
-      st = db.prepared_st('SELECT COUNT(t_id) AS cnt FROM transactions WHERE t_server = ? AND t_done = 0', $CFG.get(:vpsadmin, :server_id))
+      st = db.prepared_st(
+          'SELECT COUNT(id) AS cnt FROM transactions WHERE node_id = ? AND done = 0',
+          $CFG.get(:vpsadmin, :server_id)
+      )
       q_size = st.fetch()[0]
       st.close
 

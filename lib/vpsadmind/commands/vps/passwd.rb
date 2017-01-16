@@ -11,7 +11,7 @@ module VpsAdmind
     end
 
     def post_save(db)
-      db.prepared("UPDATE transactions SET t_param = '{}' WHERE t_id = ?", @command.id)
+      db.prepared("UPDATE transactions SET input = '{}' WHERE id = ?", @command.id)
     end
   end
 end

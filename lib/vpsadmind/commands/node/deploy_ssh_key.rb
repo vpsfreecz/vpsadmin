@@ -18,7 +18,7 @@ module VpsAdmind
     
     def post_save(db)
       db.prepared(
-          'UPDATE transactions SET t_param = ? WHERE t_id = ?',
+          'UPDATE transactions SET input = ? WHERE id = ?',
           {:key_type => @key_type}.to_json, @command.id
       )
     end

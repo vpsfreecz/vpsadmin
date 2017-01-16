@@ -48,14 +48,14 @@ module VpsAdmind
       end
 
       begin
-        param = JSON.parse(@trans['t_param'])
+        param = JSON.parse(@trans['input'])
 
       rescue
-        @output[:error] = 'Bad param syntax'
+        @output[:error] = 'Bad input syntax'
         return false
       end
 
-      param[:vps_id] = @trans['t_vps'].to_i
+      param[:vps_id] = @trans['vps_id'].to_i
 
       @cmd = class_from_name(klass).new(self, param)
 
@@ -138,12 +138,18 @@ module VpsAdmind
       end
 
       db.prepared(
-          'UPDATE transactions SET t_done=?, t_success=?, t_output=?, started_at=?, finished_at=? WHERE t_id=?',
+          'UPDATE transactions
+          SET done = ?,
+              status = ?,
+              output = ?,
+              started_at = ?,
+              finished_at = ?
+          WHERE id = ?',
           done, {:failed => 0, :ok => 1, :warning => 2}[@status],
           (@cmd ? @output.merge(@cmd.output) : @output).to_json,
           @time_start && @time_start.strftime('%Y-%m-%d %H:%M:%S'),
           @time_end && @time_end.strftime('%Y-%m-%d %H:%M:%S'),
-          @trans['t_id']
+          @trans['id']
       )
     end
 
@@ -201,10 +207,10 @@ module VpsAdmind
     def fail_followers(db)
       log(:debug, self, 'Fail followers')
       db.prepared('UPDATE transactions
-                   SET t_done = 1, t_success = 0, t_output = ?
+                   SET done = 1, status = 0, output = ?
                    WHERE
                        transaction_chain_id = ?
-                       AND t_id > ?',
+                       AND id > ?',
                   {:error => 'Dependency failed'}.to_json,
                   chain_id,
                   id
@@ -214,7 +220,7 @@ module VpsAdmind
     def fail_all(db)
       log(:debug, self, 'Fail all')
       db.prepared('UPDATE transactions
-                   SET t_done = 1, t_success = 0, t_output = ?
+                   SET done = 1, status = 0, output = ?
                    WHERE
                        transaction_chain_id = ?',
                   {:error => 'Chain failed'}.to_json,
@@ -250,11 +256,11 @@ module VpsAdmind
     alias_method :worker_id, :chain_id
 
     def id
-      @trans["t_id"]
+      @trans["id"]
     end
 
     def type
-      @trans["t_type"]
+      @trans["handle"]
     end
 
     def queue
@@ -262,11 +268,11 @@ module VpsAdmind
     end
 
     def urgent?
-      @trans['t_urgent'].to_i == 1 || (original_chain_direction == :execute && @chain[:urgent_rollback])
+      @trans['urgent'].to_i == 1 || (original_chain_direction == :execute && @chain[:urgent_rollback])
     end
 
     def handler
-      @@handlers[@trans["t_type"].to_i]
+      @@handlers[@trans["handle"].to_i]
     end
 
     def step

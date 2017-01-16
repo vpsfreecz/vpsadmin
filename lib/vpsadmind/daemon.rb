@@ -114,30 +114,30 @@ module VpsAdmind
                   FROM transactions t1
                   INNER JOIN transaction_chains ch1 ON ch1.id = t1.transaction_chain_id
                   WHERE
-                      t_done = 0 AND t_server = #{$CFG.get(:vpsadmin, :server_id)}
+                      done = 0 AND node_id = #{$CFG.get(:vpsadmin, :server_id)}
                       AND ch1.state = 1
-                      AND t_depends_on IS NULL
-                  GROUP BY transaction_chain_id, t_priority, t_id)
+                      AND depends_on IS NULL
+                  GROUP BY transaction_chain_id, priority, t1.id)
 
                   UNION ALL
 
-                  (SELECT t2.*, d.t_success AS dependency_success,
+                  (SELECT t2.*, d.status AS dependency_success,
                           ch2.state AS chain_state, ch2.progress AS chain_progress,
                           ch2.size AS chain_size
                   FROM transactions t2
-                  INNER JOIN transactions d ON t2.t_depends_on = d.t_id
+                  INNER JOIN transactions d ON t2.depends_on = d.id
                   INNER JOIN transaction_chains ch2 ON ch2.id = t2.transaction_chain_id
                   WHERE
-                      t2.t_done = 0
-                      AND d.t_done = 1
-                      AND t2.t_server = #{$CFG.get(:vpsadmin, :server_id)}
+                      t2.done = 0
+                      AND d.done = 1
+                      AND t2.node_id = #{$CFG.get(:vpsadmin, :server_id)}
                       AND ch2.state = 1
-                      GROUP BY transaction_chain_id, t_priority, t_id)
+                      GROUP BY transaction_chain_id, priority, id)
 
-                  ORDER BY t_priority DESC, t_id ASC
+                  ORDER BY priority DESC, id ASC
                 ) tmp
-                GROUP BY transaction_chain_id, t_priority
-                ORDER BY t_priority DESC, t_id ASC
+                GROUP BY transaction_chain_id, priority
+                ORDER BY priority DESC, id ASC
                 LIMIT #{limit}")
 
         # Transactions for rollback.
@@ -147,19 +147,19 @@ module VpsAdmind
                           ch2.state AS chain_state, ch2.progress AS chain_progress,
                           ch2.size AS chain_size, ch2.urgent_rollback AS chain_urgent_rollback
                   FROM transactions t2
-                  INNER JOIN transactions d ON t2.t_depends_on = d.t_id
+                  INNER JOIN transactions d ON t2.depends_on = d.id
                   INNER JOIN transaction_chains ch2 ON ch2.id = t2.transaction_chain_id
                   WHERE
-                      t2.t_done = 2
-                      AND d.t_success IN (1,2)
-                      AND d.t_done = 1
-                      AND d.t_server = #{$CFG.get(:vpsadmin, :server_id)}
+                      t2.done = 2
+                      AND d.status IN (1,2)
+                      AND d.done = 1
+                      AND d.node_id = #{$CFG.get(:vpsadmin, :server_id)}
                       AND ch2.state = 3)
 
-                  ORDER BY t_priority DESC, t_id DESC
+                  ORDER BY priority DESC, id DESC
                 ) tmp
-                GROUP BY transaction_chain_id, t_priority
-                ORDER BY t_priority DESC, t_id DESC
+                GROUP BY transaction_chain_id, priority
+                ORDER BY priority DESC, id DESC
                 LIMIT #{limit}")
       end
     end

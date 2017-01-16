@@ -15,12 +15,12 @@ module VpsAdmind
       log(:debug, "chain=#{@chain_id}", 'Running transaction confirmations')
 
       st = t.prepared_st(
-          'SELECT table_name, row_pks, attr_changes, confirm_type, t.t_success
+          'SELECT table_name, row_pks, attr_changes, confirm_type, t.status
            FROM transactions t
-           INNER JOIN transaction_confirmations c ON t.t_id = c.transaction_id
+           INNER JOIN transaction_confirmations c ON t.id = c.transaction_id
            WHERE
              t.transaction_chain_id = ?
-             AND done = 0',
+             AND t.done = 0',
           @chain_id
       )
 
@@ -31,7 +31,7 @@ module VpsAdmind
       st.close
 
       t.prepared('UPDATE transaction_confirmations c
-                  INNER JOIN transactions t ON t.t_id = c.transaction_id
+                  INNER JOIN transactions t ON t.id = c.transaction_id
                   SET c.done = 1
                   WHERE t.transaction_chain_id = ? AND c.done = 0',
                  @chain_id)
@@ -44,19 +44,19 @@ module VpsAdmind
       ret = {}
      
       rs = t.query(
-          "SELECT table_name, row_pks, attr_changes, confirm_type, t.t_success,
-                  done, id, t_id, class_name
+          "SELECT table_name, row_pks, attr_changes, confirm_type, t.status,
+                  c.done, c.id AS c_id, t.id AS t_id, class_name
            FROM transactions t
-           INNER JOIN transaction_confirmations c ON t.t_id = c.transaction_id
+           INNER JOIN transaction_confirmations c ON t.id = c.transaction_id
            WHERE
              t.transaction_chain_id = #{@chain_id}
-             AND t_id IN (#{transactions.join(',')})
+             AND t.id IN (#{transactions.join(',')})
       ")
 
       rs.each_hash do |trans|
         ret[ trans['t_id'].to_i ] ||= []
         ret[ trans['t_id'].to_i ] << {
-            :id => trans['id'].to_i,
+            :id => trans['c_id'].to_i,
             :class_name => trans['class_name'],
             :row_pks => YAML.load(trans['row_pks']),
             :attr_changes => trans['attr_changes'] ? YAML.load(trans['attr_changes']) : nil,
@@ -72,7 +72,7 @@ module VpsAdmind
                 trans['row_pks'],
                 trans['attr_changes'],
                 trans['confirm_type'].to_i,
-                trans['t_success'].to_i
+                trans['status'].to_i
             ],
             direction,
             success
@@ -81,10 +81,10 @@ module VpsAdmind
 
       t.query(
           "UPDATE transaction_confirmations c
-           INNER JOIN transactions t ON t.t_id = c.transaction_id
+           INNER JOIN transactions t ON t.id = c.transaction_id
            SET c.done = 1
            WHERE t.transaction_chain_id = #{@chain_id}
-                 AND t.t_id IN (#{transactions.join(',')})
+                 AND t.id IN (#{transactions.join(',')})
       ")
 
       ret

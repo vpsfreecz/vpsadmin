@@ -11,11 +11,11 @@ module VpsAdmind::RemoteCommands
           ret = {}
           st = db.prepared_st(
               'SELECT transaction_id, class_name, row_pks, attr_changes,
-                      confirm_type, done, id
+                      confirm_type, c.done, c.id
                FROM transaction_confirmations c
-               INNER JOIN transactions t ON t.t_id = c.transaction_id
+               INNER JOIN transactions t ON t.id = c.transaction_id
                WHERE t.transaction_chain_id = ?
-               ORDER BY t.t_id', @chain
+               ORDER BY t.id', @chain
           )
 
           st.each do |row|
@@ -43,9 +43,9 @@ module VpsAdmind::RemoteCommands
               transactions = []
 
               st = db.prepared_st(
-                  'SELECT t_id FROM transactions
+                  'SELECT id FROM transactions
                    WHERE transaction_chain_id = ?
-                   ORDER BY t_id',
+                   ORDER BY id',
                   @chain
               )
 
