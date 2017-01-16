@@ -5,7 +5,7 @@ module Transactions::Storage
     queue :storage
 
     def params(pool, properties)
-      self.t_server = pool.node_id
+      self.node_id = pool.node_id
 
       {
           pool_fs: pool.filesystem,

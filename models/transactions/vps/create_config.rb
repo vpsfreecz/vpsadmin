@@ -4,8 +4,8 @@ module Transactions::Vps
     t_type 4003
 
     def params(vps)
-      self.t_vps = vps.vps_id
-      self.t_server = vps.vps_server
+      self.vps_id = vps.vps_id
+      self.node_id = vps.vps_server
 
       {
           os_template: vps.os_template.name

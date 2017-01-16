@@ -5,7 +5,7 @@ module Transactions::Storage
     queue :storage
 
     def params(snapshot_in_pool)
-      self.t_server = snapshot_in_pool.dataset_in_pool.pool.node_id
+      self.node_id = snapshot_in_pool.dataset_in_pool.pool.node_id
 
       {
           pool_fs: snapshot_in_pool.dataset_in_pool.pool.filesystem,

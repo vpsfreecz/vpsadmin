@@ -3,7 +3,7 @@ class User < ActiveRecord::Base
   self.primary_key = 'm_id'
 
   has_many :vpses, :foreign_key => :m_id
-  has_many :transactions, foreign_key: :t_m_id
+  has_many :transactions
   has_many :storage_exports, foreign_key: :member_id
   has_many :environment_user_configs
   has_many :environments, through: :environment_user_configs

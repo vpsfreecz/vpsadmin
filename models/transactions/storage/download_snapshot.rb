@@ -4,7 +4,7 @@ module Transactions::Storage
     t_type 5004
 
     def params(dl)
-      self.t_server = dl.pool.node_id
+      self.node_id = dl.pool.node_id
 
       ret = {
           pool_fs: dl.pool.filesystem,

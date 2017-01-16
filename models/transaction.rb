@@ -5,15 +5,13 @@
 # [t_name]    a name for this transaction for future referencing, symbol
 # [t_type]    numeric code as recognized in vpsAdmin
 class Transaction < ActiveRecord::Base
-  self.primary_key = 't_id'
-
   belongs_to :transaction_chain
-  belongs_to :user, foreign_key: :t_m_id
-  belongs_to :node, foreign_key: :t_server
-  belongs_to :vps, foreign_key: :t_vps
+  belongs_to :user
+  belongs_to :node
+  belongs_to :vps
   has_many :transaction_confirmations
 
-  enum t_done: %i(waiting done staged)
+  enum done: %i(waiting done staged)
   enum reversible: %i(not_reversible is_reversible keep_going)
 
   before_save :set_init_values
@@ -88,17 +86,17 @@ class Transaction < ActiveRecord::Base
     t = new
 
     t.transaction_chain = chain
-    t.t_depends_on = dep
-    t.t_type = t.class.t_type if t.class.t_type
+    t.depends_on = dep
+    t.handle = t.class.t_type if t.class.t_type
     t.queue = (opts[:queue] || t.class.queue || 'general').to_s
-    t.t_urgent = opts[:urgent]
-    t.t_priority = opts[:prio] || 0
+    t.urgent = opts[:urgent]
+    t.priority = opts[:prio] || 0
 
     reversible = opts[:reversible] || @reversible
     t.reversible = reversible.nil? ? :is_reversible : reversible
 
     if block
-      t.t_done = :staged
+      t.done = :staged
       t.save!
 
       c = Confirmable.new(t)
@@ -111,8 +109,8 @@ class Transaction < ActiveRecord::Base
       end
     end
 
-    t.t_param = (t.params(* (opts[:args] || [])) || {}).to_json
-    t.t_done = :waiting
+    t.input = (t.params(* (opts[:args] || [])) || {}).to_json
+    t.done = :waiting
 
     t.save!
     t
@@ -120,8 +118,8 @@ class Transaction < ActiveRecord::Base
 
   # Set default values for start time, success, done and user id.
   def set_init_values
-    self.t_success = 0
-    self.t_m_id = User.current && User.current.m_id
+    self.status = 0
+    self.user_id = User.current && User.current.m_id
   end
 
   # Must be implemented in subclasses.
@@ -131,7 +129,7 @@ class Transaction < ActiveRecord::Base
   end
 
   def name
-    self.class.for_type(t_type).to_s.demodulize
+    self.class.for_type(handle).to_s.demodulize
   end
 
   # Configure transaction confirmations - objects in the database

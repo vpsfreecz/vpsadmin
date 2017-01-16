@@ -4,7 +4,7 @@ module Transactions::Hypervisor
     t_type 7303
 
     def params(node, cfg)
-      self.t_server = node.id
+      self.node_id = node.id
 
       {
           original: {

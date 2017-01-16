@@ -5,7 +5,7 @@ module Transactions::Storage
     irreversible
 
     def params(dl)
-      self.t_server = dl.pool.node_id
+      self.node_id = dl.pool.node_id
 
       {
           pool_fs: dl.pool.filesystem,

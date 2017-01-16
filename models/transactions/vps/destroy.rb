@@ -6,8 +6,8 @@ module Transactions::Vps
     irreversible
 
     def params(vps)
-      self.t_vps = vps.vps_id
-      self.t_server = vps.vps_server
+      self.vps_id = vps.vps_id
+      self.node_id = vps.vps_server
 
       {}
     end

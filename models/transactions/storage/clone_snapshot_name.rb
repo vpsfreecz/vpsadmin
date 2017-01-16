@@ -5,7 +5,7 @@ module Transactions::Storage
     queue :storage
 
     def params(node, clones)
-      self.t_server = node.id
+      self.node_id = node.id
 
       {
           snapshots: clones

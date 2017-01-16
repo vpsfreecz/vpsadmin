@@ -8,16 +8,16 @@ module VpsAdmin::API::Resources
       resource TransactionChain
       resource Node, label: 'Node', value_label: :name
       resource User, label: 'User', value_label: :login
-      integer :type, db_name: :t_type
+      integer :type, db_name: :handle
       string :name
       resource VPS, label: 'VPS', value_label: :hostname
       resource Transaction, name: :depends_on, label: 'Depends on', value_label: :name
-      bool :urgent, db_name: :t_urgent
-      integer :priority, db_name: :t_priority
-      integer :success, db_name: :t_success
-      string :done, db_name: :t_done, choices: ::Transaction.t_dones.keys
-      string :input, db_name: :t_param
-      string :output, db_name: :t_output
+      bool :urgent
+      integer :priority
+      integer :success, db_name: :status
+      string :done, choices: ::Transaction.dones.keys
+      string :input
+      string :output
       datetime :created_at
       datetime :started_at
       datetime :finished_at
@@ -29,9 +29,9 @@ module VpsAdmin::API::Resources
       input do
         resource TransactionChain, label: 'Transaction chain', value_label: :name
         resource Node, label: 'Node', value_label: :name
-        integer :type, db_name: :t_type
-        integer :success, db_name: :t_success
-        string :done, db_name: :t_done, choices: ::Transaction.t_dones.keys
+        integer :type, db_name: :handle
+        integer :success, db_name: :status
+        string :done, choices: ::Transaction.dones.keys
         
         patch :limit, default: 25, fill: true
       end
@@ -52,9 +52,9 @@ module VpsAdmin::API::Resources
 
         q = q.where(transaction_chain: input[:transaction_chain]) if input[:transaction_chain]
         q = q.where(node: input[:node]) if input[:node]
-        q = q.where(t_type: input[:type]) if input[:type]
-        q = q.where(t_success: input[:success]) if input[:success]
-        q = q.where(t_done: ::Transaction.t_dones[input[:done]]) if input[:done]
+        q = q.where(handle: input[:type]) if input[:type]
+        q = q.where(status: input[:success]) if input[:success]
+        q = q.where(done: ::Transaction.dones[input[:done]]) if input[:done]
 
         q
       end
@@ -64,7 +64,10 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_includes(query).limit(input[:limit]).offset(input[:offset]).order('t_id DESC')
+        with_includes(query)
+            .limit(input[:limit])
+            .offset(input[:offset])
+            .order('transactions.id DESC')
       end
     end
 

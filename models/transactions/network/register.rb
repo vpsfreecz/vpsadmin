@@ -4,7 +4,7 @@ module Transactions::Network
     t_type 2201
 
     def params(node, net)
-      self.t_server = node.id
+      self.node_id = node.id
       {
           ip_version: net.ip_version,
           address: net.address,

@@ -6,7 +6,7 @@ module Transactions::Storage
     irreversible
 
     def params(snapshot_in_pool, branch = nil)
-      self.t_server = snapshot_in_pool.dataset_in_pool.pool.node_id
+      self.node_id = snapshot_in_pool.dataset_in_pool.pool.node_id
 
       ret = {
           pool_fs: snapshot_in_pool.dataset_in_pool.pool.filesystem,

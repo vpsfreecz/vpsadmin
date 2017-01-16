@@ -5,8 +5,8 @@ module Transactions::Vps
     queue :network
 
     def params(node)
-      self.t_vps = nil
-      self.t_server = node.id
+      self.vps_id = nil
+      self.node_id = node.id
 
       ret = {
           max_tx: node.max_tx,

@@ -7,7 +7,7 @@ module Transactions::IntegrityCheck
 
     def params(check, node)
       @integrity_check = check
-      self.t_server = node.id
+      self.node_id = node.id
 
       {
           vpses: serialize_query(

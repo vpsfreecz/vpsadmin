@@ -5,8 +5,8 @@ module Transactions::Vps
     queue :vps
 
     def params(vps, orig, hostname)
-      self.t_vps = vps.vps_id
-      self.t_server = vps.vps_server
+      self.vps_id = vps.vps_id
+      self.node_id = vps.vps_server
 
       {
           hostname: hostname,

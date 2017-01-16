@@ -6,7 +6,7 @@ module Transactions::Mail
     keep_going
 
     def params(node, mail)
-      self.t_server = node.id
+      self.node_id = node.id
 
       {
           to: mail.to,

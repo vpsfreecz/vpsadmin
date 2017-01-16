@@ -177,12 +177,12 @@ module TransactionChains
 
               transactions: {
                   total: trans,
-                  done: trans.where(t_done: 1),
-                  rollbacked: trans.where(t_done: 2),
-                  successful: trans.where(t_done: 1, t_success: 1),
-                  failed: trans.where(t_done: 1, t_success: 0),
-                  warning: trans.where(t_done: 1, t_success: 2),
-                  pending: trans.where(t_done: 0)
+                  done: trans.where(done: 1),
+                  rollbacked: trans.where(done: 2),
+                  successful: trans.where(done: 1, status: 1),
+                  failed: trans.where(done: 1, status: 0),
+                  warning: trans.where(done: 1, status: 2),
+                  pending: trans.where(done: 0)
               }
 
           }

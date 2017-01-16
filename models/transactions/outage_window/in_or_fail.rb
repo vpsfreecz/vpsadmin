@@ -7,8 +7,8 @@ module Transactions::OutageWindow
     # @param vps [::Vps]
     # @param reserve_time [Integer] number of minutes that must be left in the window
     def params(vps, reserve_time)
-      self.t_vps = vps.vps_id
-      self.t_server = vps.vps_server
+      self.vps_id = vps.vps_id
+      self.node_id = vps.vps_server
 
       windows = []
 

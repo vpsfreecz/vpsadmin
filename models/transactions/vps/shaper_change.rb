@@ -5,8 +5,8 @@ module Transactions::Vps
     queue :network
 
     def params(ip, tx, rx)
-      self.t_vps = ip.vps_id
-      self.t_server = ip.vps.vps_server
+      self.vps_id = ip.vps_id
+      self.node_id = ip.vps.vps_server
 
       {
           addr: ip.addr,

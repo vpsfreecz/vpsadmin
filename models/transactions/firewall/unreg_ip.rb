@@ -6,8 +6,8 @@ module Transactions::Firewall
     keep_going
 
     def params(ip, vps)
-      self.t_vps = ip.vps_id
-      self.t_server = vps.vps_server
+      self.vps_id = ip.vps_id
+      self.node_id = vps.vps_server
 
       {
           addr: ip.addr,

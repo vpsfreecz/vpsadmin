@@ -350,7 +350,7 @@ class TransactionChain < ActiveRecord::Base
 
     @dst_chain.size += 1
     t = klass.fire_chained(@dst_chain, dep, t_opts, &block)
-    @last_node_id = t.t_server
+    @last_node_id = t.node_id
     @last_id = t.id
     @named[ opts[:name] ] = @last_id if opts[:name]
     @last_id

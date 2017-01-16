@@ -5,7 +5,7 @@ module Transactions::Storage
     queue :storage
 
     def params(branch, src_snapshot_in_branch = nil)
-      self.t_server = branch.dataset_tree.dataset_in_pool.pool.node_id
+      self.node_id = branch.dataset_tree.dataset_in_pool.pool.node_id
 
       ret = {
           pool_fs: branch.dataset_tree.dataset_in_pool.pool.filesystem,

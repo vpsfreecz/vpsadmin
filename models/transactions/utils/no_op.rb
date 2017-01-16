@@ -4,7 +4,7 @@ module Transactions::Utils
     t_type 10001
 
     def params(node_id)
-      self.t_server = node_id
+      self.node_id = node_id
 
       {}
     end

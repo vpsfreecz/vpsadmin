@@ -5,7 +5,7 @@ module Transactions::Storage
     queue :zfs_send
 
     def params(src, dst, snapshots, src_branch = nil, dst_branch = nil)
-      self.t_server = src.pool.node_id
+      self.node_id = src.pool.node_id
 
       tmp = []
 

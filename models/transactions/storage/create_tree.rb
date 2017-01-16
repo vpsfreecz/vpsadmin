@@ -5,7 +5,7 @@ module Transactions::Storage
     queue :storage
 
     def params(tree)
-      self.t_server = tree.dataset_in_pool.pool.node_id
+      self.node_id = tree.dataset_in_pool.pool.node_id
 
       {
           pool_fs: tree.dataset_in_pool.pool.filesystem,

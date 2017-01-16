@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170115162128) do
+ActiveRecord::Schema.define(version: 20170116135908) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -896,26 +896,18 @@ ActiveRecord::Schema.define(version: 20170115162128) do
 
   add_index "transaction_confirmations", ["transaction_id"], name: "index_transaction_confirmations_on_transaction_id", using: :btree
 
-  create_table "transaction_groups", force: true do |t|
-    t.boolean "is_clusterwide",  default: false, unsigned: true
-    t.boolean "is_locationwide", default: false, unsigned: true
-    t.integer "location_id",     default: 0,     unsigned: true
-  end
-
-  create_table "transactions", primary_key: "t_id", force: true do |t|
-    t.integer  "t_group",                                                                  unsigned: true
-    t.integer  "t_m_id",                                                                   unsigned: true
-    t.integer  "t_server",                                                                 unsigned: true
-    t.integer  "t_vps",                                                                    unsigned: true
-    t.integer  "t_type",                                                      null: false, unsigned: true
-    t.integer  "t_depends_on"
-    t.text     "t_fallback"
-    t.boolean  "t_urgent",                                default: false,     null: false
-    t.integer  "t_priority",                              default: 0,         null: false
-    t.integer  "t_success",                                                   null: false, unsigned: true
-    t.integer  "t_done",                                  default: 0,         null: false
-    t.text     "t_param",              limit: 2147483647
-    t.text     "t_output"
+  create_table "transactions", force: true do |t|
+    t.integer  "user_id",                                                                  unsigned: true
+    t.integer  "node_id",                                                                  unsigned: true
+    t.integer  "vps_id",                                                                   unsigned: true
+    t.integer  "handle",                                                      null: false, unsigned: true
+    t.integer  "depends_on"
+    t.boolean  "urgent",                                  default: false,     null: false
+    t.integer  "priority",                                default: 0,         null: false
+    t.integer  "status",                                                      null: false, unsigned: true
+    t.integer  "done",                                    default: 0,         null: false
+    t.text     "input",                limit: 2147483647
+    t.text     "output"
     t.integer  "transaction_chain_id",                                        null: false
     t.integer  "reversible",                              default: 1,         null: false
     t.datetime "created_at"
@@ -924,11 +916,12 @@ ActiveRecord::Schema.define(version: 20170115162128) do
     t.string   "queue",                limit: 30,         default: "general", null: false
   end
 
-  add_index "transactions", ["t_depends_on"], name: "index_transactions_on_t_depends_on", using: :btree
-  add_index "transactions", ["t_done"], name: "index_transactions_on_t_done", using: :btree
-  add_index "transactions", ["t_server"], name: "t_server", using: :btree
-  add_index "transactions", ["t_success"], name: "index_transactions_on_t_success", using: :btree
+  add_index "transactions", ["depends_on"], name: "index_transactions_on_depends_on", using: :btree
+  add_index "transactions", ["done"], name: "index_transactions_on_done", using: :btree
+  add_index "transactions", ["node_id"], name: "index_transactions_on_node_id", using: :btree
+  add_index "transactions", ["status"], name: "index_transactions_on_status", using: :btree
   add_index "transactions", ["transaction_chain_id"], name: "index_transactions_on_transaction_chain_id", using: :btree
+  add_index "transactions", ["user_id"], name: "index_transactions_on_user_id", using: :btree
 
   create_table "user_cluster_resources", force: true do |t|
     t.integer "user_id"

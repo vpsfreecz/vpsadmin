@@ -7,7 +7,7 @@ module Transactions::Queue
     # @param node [::Node]
     # @param queue [Symbol]
     def params(node, queue)
-      self.t_server = node.id
+      self.node_id = node.id
       {queue: queue}
     end
   end
