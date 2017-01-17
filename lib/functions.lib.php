@@ -100,15 +100,6 @@ function list_templates($vps = null) {
 	return $choices;
 }
 
-function server_by_id ($id) {
-    global $db;
-    $sql = 'SELECT * FROM servers WHERE server_id="'.$db->check($id).'" LIMIT 1';
-    if ($result = $db->query($sql))
-	if ($row = $db->fetch_array($result))
-	    return $row;
-    return false;
-}
-
 function notify_user($title, $msg) {
 	$_SESSION["notification"] = array(
 		"title" => $title,
