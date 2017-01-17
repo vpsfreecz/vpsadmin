@@ -27,7 +27,7 @@ module VpsAdmind::RemoteCommands
                     :time => Time.parse(row['created_at'] + ' UTC').localtime.to_i,
                     :m_id => row['user_id'].to_i,
                     :vps_id => row['vps_id'].to_i,
-                    :depends_on => row['depends_on'].to_i,
+                    :depends_on => row['depends_on_id'].to_i,
                     :urgent => row['urgent'].to_i == 1,
                     :priority => row['priority'].to_i,
                     :params => row['input'],

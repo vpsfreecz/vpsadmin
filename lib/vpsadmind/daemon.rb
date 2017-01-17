@@ -116,7 +116,7 @@ module VpsAdmind
                   WHERE
                       done = 0 AND node_id = #{$CFG.get(:vpsadmin, :server_id)}
                       AND ch1.state = 1
-                      AND depends_on IS NULL
+                      AND depends_on_id IS NULL
                   GROUP BY transaction_chain_id, priority, t1.id)
 
                   UNION ALL
@@ -125,7 +125,7 @@ module VpsAdmind
                           ch2.state AS chain_state, ch2.progress AS chain_progress,
                           ch2.size AS chain_size
                   FROM transactions t2
-                  INNER JOIN transactions d ON t2.depends_on = d.id
+                  INNER JOIN transactions d ON t2.depends_on_id = d.id
                   INNER JOIN transaction_chains ch2 ON ch2.id = t2.transaction_chain_id
                   WHERE
                       t2.done = 0
@@ -147,7 +147,7 @@ module VpsAdmind
                           ch2.state AS chain_state, ch2.progress AS chain_progress,
                           ch2.size AS chain_size, ch2.urgent_rollback AS chain_urgent_rollback
                   FROM transactions t2
-                  INNER JOIN transactions d ON t2.depends_on = d.id
+                  INNER JOIN transactions d ON t2.depends_on_id = d.id
                   INNER JOIN transaction_chains ch2 ON ch2.id = t2.transaction_chain_id
                   WHERE
                       t2.done = 2
