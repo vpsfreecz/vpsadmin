@@ -14,7 +14,7 @@ class RefactorTransactions < ActiveRecord::Migration
     rename_column :transactions, :t_server, :node_id
     rename_column :transactions, :t_vps, :vps_id
     rename_column :transactions, :t_type, :handle
-    rename_column :transactions, :t_depends_on, :depends_on
+    rename_column :transactions, :t_depends_on, :depends_on_id
     rename_column :transactions, :t_urgent, :urgent
     rename_column :transactions, :t_priority, :priority
     rename_column :transactions, :t_success, :status

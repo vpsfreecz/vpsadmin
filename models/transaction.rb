@@ -9,6 +9,7 @@ class Transaction < ActiveRecord::Base
   belongs_to :user
   belongs_to :node
   belongs_to :vps
+  belongs_to :depends_on, class_name: 'Transaction'
   has_many :transaction_confirmations
 
   enum done: %i(waiting done staged)
@@ -86,7 +87,7 @@ class Transaction < ActiveRecord::Base
     t = new
 
     t.transaction_chain = chain
-    t.depends_on = dep
+    t.depends_on_id = dep
     t.handle = t.class.t_type if t.class.t_type
     t.queue = (opts[:queue] || t.class.queue || 'general').to_s
     t.urgent = opts[:urgent]

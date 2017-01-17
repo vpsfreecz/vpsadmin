@@ -901,7 +901,7 @@ ActiveRecord::Schema.define(version: 20170116135908) do
     t.integer  "node_id",                                                                  unsigned: true
     t.integer  "vps_id",                                                                   unsigned: true
     t.integer  "handle",                                                      null: false, unsigned: true
-    t.integer  "depends_on"
+    t.integer  "depends_on_id"
     t.boolean  "urgent",                                  default: false,     null: false
     t.integer  "priority",                                default: 0,         null: false
     t.integer  "status",                                                      null: false, unsigned: true
@@ -916,7 +916,7 @@ ActiveRecord::Schema.define(version: 20170116135908) do
     t.string   "queue",                limit: 30,         default: "general", null: false
   end
 
-  add_index "transactions", ["depends_on"], name: "index_transactions_on_depends_on", using: :btree
+  add_index "transactions", ["depends_on_id"], name: "index_transactions_on_depends_on_id", using: :btree
   add_index "transactions", ["done"], name: "index_transactions_on_done", using: :btree
   add_index "transactions", ["node_id"], name: "index_transactions_on_node_id", using: :btree
   add_index "transactions", ["status"], name: "index_transactions_on_status", using: :btree
