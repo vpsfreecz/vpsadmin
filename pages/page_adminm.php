@@ -598,7 +598,7 @@ function request_approve() {
 	
 	$db->query("UPDATE members_changes SET
 	            m_state = 'approved',
-	            m_changed_by = ".$db->check($_SESSION["member"]["m_id"]).",
+	            m_changed_by = ".$db->check($_SESSION["user"]["id"]).",
 	            m_admin_response = '".$db->check($data["m_admin_response"])."',
 	            m_changed_at = ".time()."
 	            WHERE m_id = ".$db->check($row["m_id"]));
@@ -641,7 +641,7 @@ function request_deny() {
 	
 	$db->query("UPDATE members_changes SET
 	            m_state = 'denied',
-	            m_changed_by = ".$db->check($_SESSION["member"]["m_id"]).",
+	            m_changed_by = ".$db->check($_SESSION["user"]["id"]).",
 	            m_admin_response = '".$db->check($data["m_admin_response"])."',
 	            m_changed_at = ".time()."
 	            WHERE m_id = ".$db->check($row["m_id"]));
@@ -684,7 +684,7 @@ function request_invalidate() {
 	
 	$db->query("UPDATE members_changes SET
 	            m_state = 'invalid',
-	            m_changed_by = ".$db->check($_SESSION["member"]["m_id"]).",
+	            m_changed_by = ".$db->check($_SESSION["user"]["id"]).",
 	            m_admin_response = '".$db->check($data["m_admin_response"])."',
 	            m_changed_at = ".time()."
 	            WHERE m_id = ".$db->check($row["m_id"]));
@@ -727,7 +727,7 @@ function request_ignore() {
 	
 	$db->query("UPDATE members_changes SET
 	            m_state = 'ignored',
-	            m_changed_by = ".$db->check($_SESSION["member"]["m_id"]).",
+	            m_changed_by = ".$db->check($_SESSION["user"]["id"]).",
 	            m_admin_response = '".$db->check($data["m_admin_response"])."',
 	            m_changed_at = ".time()."
 	            WHERE m_id = ".$db->check($row["m_id"]));
@@ -833,7 +833,7 @@ function list_members() {
 			
 			$xtpl->table_td($u->id);
 			
-			if (($_SESSION["is_admin"]) && ($u->id != $_SESSION["member"]["m_id"])) {
+			if (($_SESSION["is_admin"]) && ($u->id != $_SESSION["user"]["id"])) {
 				$xtpl->table_td(
 					'<a href="?page=login&action=switch_context&m_id='.$u->id.'&next='.urlencode($_SERVER["REQUEST_URI"]).'">'.
 					'<img src="template/icons/m_switch.png" title="'._("Switch context").'"></a>'.
@@ -1205,12 +1205,12 @@ if ($_SESSION["logged_in"]) {
 				            m_addr_reverse = '".$db->check(gethostbyaddr($_SERVER["REMOTE_ADDR"]))."'
 				            ");
 				
-				$rs = $db->query("SELECT c.*, applicant.m_nick AS applicant_nick, applicant.m_name AS current_name,
-				                  applicant.m_mail AS current_mail, applicant.m_address AS current_address,
-				                  applicant.m_id AS applicant_id, admin.m_id AS admin_id, admin.m_nick AS admin_nick
+				$rs = $db->query("SELECT c.*, applicant.login AS applicant_nick, applicant.full_name AS current_name,
+				                  applicant.email AS current_mail, applicant.address AS current_address,
+				                  applicant.id AS applicant_id, admin.id AS admin_id, admin.login AS admin_nick
 				                  FROM members_changes c
-				                  LEFT JOIN members applicant ON c.m_applicant = applicant.m_id
-				                  LEFT JOIN members admin ON c.m_changed_by = admin.m_id
+				                  LEFT JOIN users applicant ON c.m_applicant = applicant.id
+				                  LEFT JOIN users admin ON c.m_changed_by = admin.id
 				                  WHERE c.m_id = ".$db->check($db->insert_id())."");
 				
 				$row = $db->fetch_array($rs);
@@ -1282,10 +1282,10 @@ if ($_SESSION["logged_in"]) {
 			$xtpl->table_add_category("TO");
 			
 			while ($hist = $db->find("members_payments", "m_id = {$u->id}", "id DESC", 30)) {
-				$acct_m = $db->findByColumnOnce("members", "m_id", $hist["acct_m_id"]);
+				$acct_m = $db->findByColumnOnce("users", "id", $hist["acct_m_id"]);
 				
 				$xtpl->table_td($hist["id"]);
-				$xtpl->table_td($acct_m["m_nick"]);
+				$xtpl->table_td($acct_m["login"]);
 				$xtpl->table_td(date('Y-m-d H:i', $hist["timestamp"]));
 				$xtpl->table_td(date('Y-m-d', $hist["change_from"]));
 				$xtpl->table_td(date('Y-m-d', $hist["change_to"]));
@@ -1309,7 +1309,7 @@ if ($_SESSION["logged_in"]) {
 			}
 			
 			$log["m_id"] = $u->id;
-			$log["acct_m_id"] = $_SESSION["member"]["m_id"];
+			$log["acct_m_id"] = $_SESSION["user"]["id"];
 			$log["timestamp"] = time();
 			$log["change_from"] = strtotime($u->paid_until);
 			
@@ -1429,12 +1429,12 @@ if ($_SESSION["logged_in"]) {
 			$xtpl->table_add_category("MONTHS");
 			
 			while ($hist = $db->find("members_payments", $whereCond, "id DESC", $limit)) {
-				$acct_m = $db->findByColumnOnce("members", "m_id", $hist["acct_m_id"]);
-				$m = $db->findByColumnOnce("members", "m_id", $hist["m_id"]);
+				$acct_m = $db->findByColumnOnce("users", "id", $hist["acct_m_id"]);
+				$m = $db->findByColumnOnce("users", "id", $hist["m_id"]);
 				
 				$xtpl->table_td($hist["id"]);
 				$xtpl->table_td($acct_m["m_id"].' '.$acct_m["m_nick"]);
-				$xtpl->table_td($m["m_id"].' '.$m["m_nick"]);
+				$xtpl->table_td($m["id"].' '.$m["login"]);
 				$xtpl->table_td(date('Y-m-d H:i', $hist["timestamp"]));
 				$xtpl->table_td(date('<- Y-m-d', $hist["change_from"]));
 				$xtpl->table_td(date('-> Y-m-d', $hist["change_to"]));
@@ -1676,10 +1676,10 @@ if ($_SESSION["logged_in"]) {
 			
 			$conds_str = implode(" AND ", $conds);
 			
-			$rs = $db->query("SELECT c.*, applicant.m_nick AS applicant_nick, admin.m_nick AS admin_nick
+			$rs = $db->query("SELECT c.*, applicant.login AS applicant_nick, admin.login AS admin_nick
 			                  FROM members_changes c
-			                  LEFT JOIN members applicant ON c.m_applicant = applicant.m_id
-			                  LEFT JOIN members admin ON c.m_changed_by = admin.m_id
+			                  LEFT JOIN users applicant ON c.m_applicant = applicant.id
+			                  LEFT JOIN users admin ON c.m_changed_by = admin.id
 			                  ".($conds_str ? 'WHERE '.$conds_str : '')."
 			                  ORDER BY c.m_created
 			                  LIMIT ".$db->check($_GET["limit"] ? $_GET["limit"] : "50"));
@@ -1708,12 +1708,12 @@ if ($_SESSION["logged_in"]) {
 			if(!$_SESSION["is_admin"])
 				break;
 			
-			$rs = $db->query("SELECT c.*, applicant.m_nick AS applicant_nick, applicant.m_name AS current_name,
-			                  applicant.m_mail AS current_mail, applicant.m_address AS current_address,
-			                  admin.m_nick AS admin_nick
+			$rs = $db->query("SELECT c.*, applicant.login AS applicant_nick, applicant.full_name AS current_name,
+			                  applicant.email AS current_mail, applicant.address AS current_address,
+			                  admin.login AS admin_nick
 			                  FROM members_changes c
-			                  LEFT JOIN members applicant ON c.m_applicant = applicant.m_id
-			                  LEFT JOIN members admin ON c.m_changed_by = admin.m_id
+			                  LEFT JOIN users applicant ON c.m_applicant = applicant.id
+			                  LEFT JOIN users admin ON c.m_changed_by = admin.id
 			                  WHERE c.m_id = ".$db->check($_GET["id"])."");
 			
 			$row = $db->fetch_array($rs);

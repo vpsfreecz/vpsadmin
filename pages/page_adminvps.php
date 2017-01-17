@@ -689,7 +689,7 @@ if ($list_vps) {
 		if (!$_SESSION['is_admin']) {
 			$envs_destroy = array();
 
-			foreach ($api->user($_SESSION['member']['m_id'])->environment_config->list() as $env) {
+			foreach ($api->user($_SESSION['user']['id'])->environment_config->list() as $env) {
 				$envs_destroy[$env->environment_id] = $env->can_destroy_vps;
 			}
 		}

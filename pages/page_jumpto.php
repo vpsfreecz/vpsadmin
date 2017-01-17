@@ -16,18 +16,18 @@ if ($_SESSION["logged_in"] && $_SESSION["is_admin"]) {
 			}
 		
 		} else {
-			$rs = $db->query("SELECT m_id FROM members WHERE m_nick = '".$db->check($_POST["member"])."'
+			$rs = $db->query("SELECT id FROM users WHERE login = '".$db->check($_POST["member"])."'
 			                  UNION ALL
-			                  SELECT m_id FROM members WHERE m_name = '".$db->check($_POST["member"])."'
+			                  SELECT id FROM users WHERE full_name = '".$db->check($_POST["member"])."'
 			                  UNION ALL
-			                  SELECT m_id FROM members WHERE m_mail = '".$db->check($_POST["member"])."'
+			                  SELECT id FROM users WHERE email = '".$db->check($_POST["member"])."'
 			                  UNION ALL
-			                  SELECT user_id AS m_id FROM vps_ip WHERE ip_addr = '".$db->check($_POST["member"])."' AND user_id IS NOT NULL
+			                  SELECT user_id AS id FROM vps_ip WHERE ip_addr = '".$db->check($_POST["member"])."' AND user_id IS NOT NULL
 			                  UNION ALL
-			                  SELECT v.m_id FROM vps_ip i INNER JOIN vps v ON i.vps_id = v.vps_id WHERE ip_addr = '".$db->check($_POST["member"])."'");
+			                  SELECT v.m_id AS id FROM vps_ip i INNER JOIN vps v ON i.vps_id = v.vps_id WHERE ip_addr = '".$db->check($_POST["member"])."'");
 			
 			if($rs && ($row = $db->fetch_array($rs)))
-				$u = $row["m_id"];
+				$u = $row["id"];
 		}
 		
 		$_SESSION["jumpto"]["member"] = $_POST["member"];

@@ -480,7 +480,7 @@ class XTemplate {
 				$this->assign("V_NEXT", urlencode($_SERVER["REQUEST_URI"]));
 				$this->parse("main.loggedbox.is_admin");
 			} else {
-				$this->assign('L_USER_ID', $_SESSION["member"]["m_id"]);
+				$this->assign('L_USER_ID', $_SESSION["user"]["id"]);
 				$this->assign('L_EDIT_PROFILE', _("Edit profile"));
 				$this->parse("main.loggedbox.not_admin");
 				

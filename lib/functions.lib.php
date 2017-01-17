@@ -158,12 +158,12 @@ function random_string($len) {
 function request_by_id($id) {
 	global $db;
 	
-	$rs = $db->query("SELECT c.*, IFNULL(applicant.m_nick, c.m_nick) AS applicant_nick, IFNULL(applicant.m_name, c.m_name) AS current_name,
-						IFNULL(applicant.m_mail, c.m_mail) AS current_mail, IFNULL(applicant.m_address, c.m_address) AS current_address,
-						applicant.m_id AS applicant_id, admin.m_id AS admin_id, admin.m_nick AS admin_nick
+	$rs = $db->query("SELECT c.*, IFNULL(applicant.login, c.m_nick) AS applicant_nick, IFNULL(applicant.full_name, c.m_name) AS current_name,
+						IFNULL(applicant.email, c.m_mail) AS current_mail, IFNULL(applicant.address, c.m_address) AS current_address,
+						applicant.id AS applicant_id, admin.id AS admin_id, admin.login AS admin_nick
 						FROM members_changes c
-						LEFT JOIN members applicant ON c.m_applicant = applicant.m_id
-						LEFT JOIN members admin ON c.m_changed_by = admin.m_id
+						LEFT JOIN users applicant ON c.m_applicant = applicant.id
+						LEFT JOIN users admin ON c.m_changed_by = admin.id
 						WHERE c.m_id = ".$db->check($id)."");
 	
 	return $db->fetch_array($rs);

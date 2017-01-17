@@ -37,13 +37,13 @@ if ($_GET["action"] == 'login') {
 			
 			$m = $api->user->current();
 			
-			$_SESSION["member"]["m_id"] = $m->id;
+			$_SESSION["user"]["id"] = $m->id;
 			
 			$_SESSION["logged_in"] = true;
 			$_SESSION["auth_token"] = $api->getAuthenticationProvider()->getToken();
-			$_SESSION["member"] = array(
-				'm_id' => $m->id,
-				'm_nick' => $m->login
+			$_SESSION["user"] = array(
+				'id' => $m->id,
+				'login' => $m->login
 			);
 			$_SESSION["is_user"] =       ($m->level >= PRIV_USER) ?       true : false;
 			$_SESSION["is_poweruser"] =  ($m->level >= PRIV_POWERUSER) ?  true : false;
@@ -82,7 +82,7 @@ if ($_GET["action"] == 'logout') {
 
 	$_SESSION["logged_in"] = false;
 	$_SESSION["auth_token"] = NULL;
-	unset($_SESSION["member"]);
+	unset($_SESSION["user"]);
 	
 	$api->logout();
 
@@ -102,7 +102,7 @@ if ($_SESSION["is_admin"] && ($_GET["action"] == 'drop_admin')) {
 
 if ($_SESSION["is_admin"] && ($_GET["action"] == 'switch_context') && isset($_GET["m_id"]) && !$_SESSION["context_switch"]) {
 
-	$sql = 'SELECT * FROM members WHERE m_id="' . $db->check($_GET["m_id"]) . '"';
+	$sql = 'SELECT * FROM users WHERE id="' . $db->check($_GET["m_id"]) . '"';
 	$admin = $_SESSION;
 
 	if ($result = $db->query($sql)) {
@@ -111,7 +111,7 @@ if ($_SESSION["is_admin"] && ($_GET["action"] == 'switch_context') && isset($_GE
 			try {
 				// Get a token for target user
 				$token = $api->auth_token->create(array(
-					'user' => $member['m_id'],
+					'user' => $member['id'],
 					'label' => client_identity().'(context switch)',
 					'lifetime' => 'renewable_auto',
 					'interval' => USER_LOGIN_INTERVAL
@@ -126,16 +126,16 @@ if ($_SESSION["is_admin"] && ($_GET["action"] == 'switch_context') && isset($_GE
 				$_SESSION["logged_in"] = true;
 				$_SESSION["auth_token"] = $token->token;
 				$_SESSION["borrowed_token"] = true;
-				$_SESSION["member"] = $member;
-				$_SESSION["is_user"] =       ($member["m_level"] >= PRIV_USER) ?       true : false;
-				$_SESSION["is_poweruser"] =  ($member["m_level"] >= PRIV_POWERUSER) ?  true : false;
-				$_SESSION["is_admin"] =      ($member["m_level"] >= PRIV_ADMIN) ?      true : false;
-				$_SESSION["is_superadmin"] = ($member["m_level"] >= PRIV_SUPERADMIN) ? true : false;
+				$_SESSION["user"] = $member;
+				$_SESSION["is_user"] =       ($member["level"] >= PRIV_USER) ?       true : false;
+				$_SESSION["is_poweruser"] =  ($member["level"] >= PRIV_POWERUSER) ?  true : false;
+				$_SESSION["is_admin"] =      ($member["level"] >= PRIV_ADMIN) ?      true : false;
+				$_SESSION["is_superadmin"] = ($member["level"] >= PRIV_SUPERADMIN) ? true : false;
 				
 				$_SESSION["context_switch"] = true;
 				$_SESSION["original_admin"] = $admin;
 
-				$xtpl->perex(_("Change to ").$member["m_nick"],
+				$xtpl->perex(_("Change to ").$member["login"],
 						_(" successful <br /> Your privilege level: ")
 						. $cfg_privlevel[$member["m_level"]]);
 				

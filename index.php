@@ -84,7 +84,7 @@ try {
 			$api_cluster = $api->cluster->show();
 			
 			if(!$_SESSION["context_switch"])
-				$api->user->touch($_SESSION["member"]["m_id"]);
+				$api->user->touch($_SESSION["user"]["id"]);
 			
 			$_SESSION["transactbox_expiration"] = time() + USER_LOGIN_INTERVAL;
 // 			$xtpl->assign('AJAX_SCRIPT', ajax_getHTML('ajax.php?page=transactbox', 'transactions', 1000));
@@ -220,7 +220,7 @@ if(!$_SESSION["logged_in"])
 
 $xtpl->logbox(
 	isset($_SESSION["logged_in"]) ? $_SESSION["logged_in"] : false,
-	isset($_SESSION["member"]) ? $_SESSION["member"]["m_nick"] : false,
+	isset($_SESSION["user"]) ? $_SESSION["user"]["login"] : false,
 	isset($_SESSION["is_admin"]) ? $_SESSION["is_admin"] : false,
 	$api_cluster ? $api_cluster->maintenance_lock : false
 );
