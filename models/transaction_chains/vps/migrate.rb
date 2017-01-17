@@ -401,7 +401,7 @@ module TransactionChains
         dst_ip_addresses = []
 
         vps.ip_addresses.joins(:network).order(
-            'networks.ip_version, vps_ip.order'
+            'networks.ip_version, ip_addresses.order'
         ).each do |ip|
           begin
             replacement = ::IpAddress.pick_addr!(

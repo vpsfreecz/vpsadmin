@@ -106,13 +106,13 @@ module VpsAdmin::API::Resources
         
         if input[:network]
           q = q.joins(:ip_address).where(
-              vps_ip: {network_id: input[:network].id}
+              ip_addresses: {network_id: input[:network].id}
           )
         end
 
         if input[:ip_range]
           q = q.joins(:ip_address).where(
-              vps_ip: {network_id: input[:ip_range].id}
+              ip_addresses: {network_id: input[:ip_range].id}
           )
         end
 
@@ -124,7 +124,7 @@ module VpsAdmin::API::Resources
 
         if input.has_key?(:vps)
           q = q.joins(:ip_address).where(
-              vps_ip: {vps_id: input[:vps] && input[:vps].id}
+              ip_addresses: {vps_id: input[:vps] && input[:vps].id}
           )
         end
 
@@ -259,7 +259,7 @@ module VpsAdmin::API::Resources
         
         if input[:network]
           q = q.joins(:ip_address).where(
-              vps_ip: {network_id: input[:network].id}
+              ip_addresses: {network_id: input[:network].id}
           )
         end
 

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170117132633) do
+ActiveRecord::Schema.define(version: 20170117181427) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -276,6 +276,23 @@ ActiveRecord::Schema.define(version: 20170117132633) do
     t.datetime "created_at"
     t.datetime "updated_at"
   end
+
+  create_table "ip_addresses", force: true do |t|
+    t.integer "vps_id",                                                unsigned: true
+    t.string  "ip_addr",    limit: 40,                    null: false
+    t.integer "max_tx",     limit: 8,  default: 39321600, null: false, unsigned: true
+    t.integer "max_rx",     limit: 8,  default: 39321600, null: false, unsigned: true
+    t.integer "class_id",                                 null: false
+    t.integer "user_id"
+    t.integer "network_id",                               null: false
+    t.integer "order"
+  end
+
+  add_index "ip_addresses", ["class_id"], name: "index_ip_addresses_on_class_id", unique: true, using: :btree
+  add_index "ip_addresses", ["network_id"], name: "index_ip_addresses_on_network_id", using: :btree
+  add_index "ip_addresses", ["user_id"], name: "index_ip_addresses_on_user_id", using: :btree
+  add_index "ip_addresses", ["vps_id"], name: "index_ip_addresses_on_vps_id", using: :btree
+  add_index "ip_addresses", ["vps_id"], name: "vps_id", using: :btree
 
   create_table "ip_recent_traffics", force: true do |t|
     t.integer  "ip_address_id",                       null: false
@@ -1083,23 +1100,6 @@ ActiveRecord::Schema.define(version: 20170117132633) do
 
   add_index "vps_has_configs", ["vps_id", "vps_config_id", "confirmed"], name: "index_vps_has_configs_on_vps_id_and_vps_config_id_and_confirmed", unique: true, using: :btree
   add_index "vps_has_configs", ["vps_id"], name: "index_vps_has_configs_on_vps_id", using: :btree
-
-  create_table "vps_ip", primary_key: "ip_id", force: true do |t|
-    t.integer "vps_id",                                                unsigned: true
-    t.string  "ip_addr",    limit: 40,                    null: false
-    t.integer "max_tx",     limit: 8,  default: 39321600, null: false, unsigned: true
-    t.integer "max_rx",     limit: 8,  default: 39321600, null: false, unsigned: true
-    t.integer "class_id",                                 null: false
-    t.integer "user_id"
-    t.integer "network_id",                               null: false
-    t.integer "order"
-  end
-
-  add_index "vps_ip", ["class_id"], name: "index_vps_ip_on_class_id", unique: true, using: :btree
-  add_index "vps_ip", ["network_id"], name: "index_vps_ip_on_network_id", using: :btree
-  add_index "vps_ip", ["user_id"], name: "index_vps_ip_on_user_id", using: :btree
-  add_index "vps_ip", ["vps_id"], name: "index_vps_ip_on_vps_id", using: :btree
-  add_index "vps_ip", ["vps_id"], name: "vps_id", using: :btree
 
   create_table "vps_migrations", force: true do |t|
     t.integer  "vps_id",                              null: false

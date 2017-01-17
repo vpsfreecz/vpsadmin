@@ -3,7 +3,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
   desc 'Manage IP addresses'
 
   params(:id) do
-    id :id, label: 'ID', desc: 'IP address ID', db_name: :ip_id
+    id :id, label: 'ID', desc: 'IP address ID'
   end
 
   params(:shaper) do
@@ -108,12 +108,12 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       end
 
       if current_user.role != :admin
-        ips = ips.joins('LEFT JOIN vps my_vps ON my_vps.vps_id = vps_ip.vps_id').where(
-            'vps_ip.user_id = ?
-             OR (vps_ip.vps_id IS NOT NULL AND my_vps.m_id = ?)
-             OR (vps_ip.user_id IS NULL AND vps_ip.vps_id IS NULL)',
+        ips = ips.joins('LEFT JOIN vps my_vps ON my_vps.vps_id = ip_addresses.vps_id').where(
+            'ip_addresses.user_id = ?
+             OR (ip_addresses.vps_id IS NOT NULL AND my_vps.m_id = ?)
+             OR (ip_addresses.user_id IS NULL AND ip_addresses.vps_id IS NULL)',
             current_user.id, current_user.id
-        ).order('vps_ip.user_id DESC, ip_id ASC')
+        ).order('ip_addresses.user_id DESC, ip_addresses.id ASC')
       end
 
       ips
@@ -124,7 +124,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     end
 
     def exec
-      with_includes(query).order('ip_id').limit(input[:limit]).offset(input[:offset])
+      with_includes(query).order('ip_addresses.id').limit(input[:limit]).offset(input[:offset])
     end
   end
 
@@ -146,7 +146,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
         @ip = ::IpAddress.where(
             'user_id = ? OR user_id IS NULL',
             current_user.id
-        ).where(ip_id: params[:ip_address_id]).take!
+        ).where(id: params[:ip_address_id]).take!
       end
     end
 

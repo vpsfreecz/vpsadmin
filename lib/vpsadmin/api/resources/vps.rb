@@ -1027,7 +1027,7 @@ END
     desc 'Manage VPS IP addresses'
 
     params(:common) do
-      id :id, label: 'IP address ID', db_name: :ip_id
+      id :id, label: 'IP address ID'
       string :addr, label: 'Address', desc: 'Address itself', db_name: :ip_addr
       resource VpsAdmin::API::Resources::Network, label: 'Network'
     end
@@ -1145,7 +1145,7 @@ END
         maintenance_check!(vps)
 
         @chain, _ = vps.delete_ip(vps.ip_addresses.find_by!(
-            ip_id: params[:ip_address_id],
+            id: params[:ip_address_id],
             vps_id: vps.id
         ))
         ok
