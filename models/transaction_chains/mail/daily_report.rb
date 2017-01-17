@@ -28,48 +28,48 @@ module TransactionChains
                   new: {
                       changed: ::User.existing.where(
                           'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
-                      ).order('m_id')
+                      ).order('id')
                   },
 
                   active: {
                       all: ::User.unscoped.where(object_state: ::User.object_states[:active]),
                       changed: ::User.unscoped.where(
                           object_state: ::User.object_states[:active]
-                      ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND members.m_id = s.row_id")
+                      ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND users.id = s.row_id")
                       .where('s.state = ?', ::User.object_states[:active])
-                      .where('s.created_at != members.created_at')
+                      .where('s.created_at != users.created_at')
                       .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-                      .order('members.m_id')
+                      .order('users.id')
                   },
 
                   soft_deleted: {
                       all: ::User.unscoped.where(object_state: ::User.object_states[:soft_delete]),
                       changed: ::User.unscoped.where(
                           object_state: ::User.object_states[:soft_delete]
-                      ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND members.m_id = s.row_id")
+                      ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND users.id = s.row_id")
                       .where('s.state = ?', ::User.object_states[:soft_delete])
                       .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-                      .order('members.m_id')
+                      .order('users.id')
                   },
                   
                   hard_deleted: {
                       all: ::User.unscoped.where(object_state: ::User.object_states[:hard_delete]),
                       changed: ::User.unscoped.where(
                           object_state: ::User.object_states[:hard_delete]
-                      ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND members.m_id = s.row_id")
+                      ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND users.id = s.row_id")
                       .where('s.state = ?', ::User.object_states[:hard_delete])
                       .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-                      .order('members.m_id')
+                      .order('users.id')
                   },
 
                   suspended: {
                       all: ::User.unscoped.where(object_state: ::User.object_states[:suspended]),
                       changed: ::User.unscoped.where(
                           object_state: ::User.object_states[:suspended]
-                      ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND members.m_id = s.row_id")
+                      ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND users.id = s.row_id")
                       .where('s.state = ?', ::User.object_states[:suspended])
                       .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-                      .order('members.m_id')
+                      .order('users.id')
                   }
               },
 

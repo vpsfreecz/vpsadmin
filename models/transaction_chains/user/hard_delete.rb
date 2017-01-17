@@ -65,7 +65,7 @@ module TransactionChains
         end
 
         # Free the login
-        t.edit(user, m_nick: nil, orig_login: user.m_nick)
+        t.edit(user, login: nil, orig_login: user.m_nick)
       end
     end
   end

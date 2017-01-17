@@ -120,7 +120,7 @@ class Transaction < ActiveRecord::Base
   # Set default values for start time, success, done and user id.
   def set_init_values
     self.status = 0
-    self.user_id = User.current && User.current.m_id
+    self.user_id = User.current && User.current.id
   end
 
   # Must be implemented in subclasses.

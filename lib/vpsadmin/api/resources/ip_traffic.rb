@@ -217,7 +217,7 @@ module VpsAdmin::API::Resources
             ip_traffic_monthly_summaries.created_at,
             SUM(packets_in) AS sum_packets_in, SUM(packets_out) AS sum_packets_out,
             SUM(bytes_in) AS sum_bytes_in, SUM(bytes_out) AS sum_bytes_out
-        ').joins(:user).group('members.m_id, ip_traffic_monthly_summaries.created_at')
+        ').joins(:user).group('users.id, ip_traffic_monthly_summaries.created_at')
         
         # Directly accessible filters
         %i(year month).each do |f|

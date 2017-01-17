@@ -15,7 +15,7 @@ module TransactionChains
                 src_node: m.src_node,
                 dst_node: m.dst_node,
             }
-        }) if m.vps.user.m_mailer_enable 
+        }) if m.vps.user.mailer_enabled
       end
     end
   end

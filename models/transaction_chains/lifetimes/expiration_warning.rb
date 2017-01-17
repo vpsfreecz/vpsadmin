@@ -20,7 +20,7 @@ module TransactionChains
                 state: obj.current_state,
                 klass.name.underscore => obj
             }
-        }) if user.m_mailer_enable
+        }) if user.mailer_enabled
       end
     end
   end

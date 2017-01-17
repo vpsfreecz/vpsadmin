@@ -1,10 +1,6 @@
 class User < ActiveRecord::Base
-  self.table_name = 'members'
-  self.primary_key = 'm_id'
-
   has_many :vpses, :foreign_key => :m_id
   has_many :transactions
-  has_many :storage_exports, foreign_key: :member_id
   has_many :environment_user_configs
   has_many :environments, through: :environment_user_configs
   has_many :datasets
@@ -19,20 +15,19 @@ class User < ActiveRecord::Base
 
   before_validation :set_no_password
 
-  alias_attribute :login, :m_nick
-  alias_attribute :role, :m_level
+  alias_attribute :role, :level
 
   attr_reader :password_plain
 
-  has_paper_trail only: %i(m_nick m_level m_name m_mail m_address
-                           m_monthly_payment m_mailer_enable object_state
+  has_paper_trail only: %i(login level full_name email address
+                           monthly_payment mailer_enabled object_state
                            expiration_date paid_until)
 
-  validates :m_level, :m_nick, :m_pass, presence: true
-  validates :m_level, numericality: {
+  validates :level, :login, :password, presence: true
+  validates :level, numericality: {
       only_integer: true
   }
-  validates :m_nick, format: {
+  validates :login, format: {
       with: /\A[a-zA-Z0-9\.\-]{2,63}\z/,
       message: 'not a valid login'
   }, uniqueness: true
@@ -105,25 +100,21 @@ class User < ActiveRecord::Base
   end
 
   def role
-    if m_level >= 90
+    if level >= 90
       :admin
-    elsif m_level >= 21
+    elsif level >= 21
       :support
-    elsif m_level >= 1
+    elsif level >= 1
       :user
     end
   end
 
   def first_name
-    m_name.split(' ').first
+    full_name.split(' ').first
   end
 
   def last_name
-    m_name.split(' ').last
-  end
-
-  def full_name
-    m_name.nil? || m_name.empty? ? m_nick : m_name
+    full_name.split(' ').last
   end
 
   def last_request_at
@@ -135,7 +126,7 @@ class User < ActiveRecord::Base
 
     VpsAdmin::API::CryptoProviders.current do |name, provider|
       self.password_version = name
-      self.m_pass = provider.encrypt(login, plaintext)
+      self.password = provider.encrypt(login, plaintext)
     end
   end
 
@@ -171,12 +162,12 @@ class User < ActiveRecord::Base
             object_states[:active],
             object_states[:suspended],
         ]
-    ).find_by('m_nick = ? COLLATE utf8_bin', username)
+    ).find_by('login = ? COLLATE utf8_bin', username)
     return unless u
 
     c = VpsAdmin::API::CryptoProviders
 
-    if !c.provider(u.password_version).matches?(u.m_pass, u.login, password)
+    if !c.provider(u.password_version).matches?(u.password, u.login, password)
       self.increment_counter(:failed_login_count, u.id)
       return
     end
@@ -193,7 +184,7 @@ class User < ActiveRecord::Base
       c.current do |name, provider|
         u.update!(
             password_version: name,
-            m_pass: provider.encrypt(u.login, password)
+            password: provider.encrypt(u.login, password)
         )
       end
     end
@@ -215,6 +206,6 @@ class User < ActiveRecord::Base
 
   private
   def set_no_password
-    self.m_pass = '!' if self.m_pass.nil? || self.m_pass.empty?
+    self.password = '!' if self.password.nil? || self.password.empty?
   end
 end

@@ -59,7 +59,7 @@ module TransactionChains
               outage_window: @opts[:outage_window],
               reason: opts[:reason],
           }
-      }) if @opts[:send_mail] && vps.user.m_mailer_enable 
+      }) if @opts[:send_mail] && vps.user.mailer_enabled
 
       # Create target dataset in pool.
       # No new dataset in pool is created in database, it is simply
@@ -279,7 +279,7 @@ module TransactionChains
               outage_window: @opts[:outage_window],
               reason: opts[:reason],
           }
-      }) if @opts[:send_mail] && vps.user.m_mailer_enable 
+      }) if @opts[:send_mail] && vps.user.mailer_enabled
 
       # fail 'ohnoes'
       self

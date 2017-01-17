@@ -90,7 +90,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.m_id
+      restrict m_id: u.id
       input blacklist: %i(user)
       output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
                           node dataset memory swap cpu backup_enabled maintenance_lock
@@ -310,7 +310,7 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.m_id
+      restrict m_id: u.id
       output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
                           node dataset memory swap cpu backup_enabled maintenance_lock
                           maintenance_lock_reason object_state expiration_date
@@ -350,7 +350,7 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.m_id
+      restrict m_id: u.id
       input whitelist: %i(hostname manage_hostname os_template dns_resolver cpu
                           memory swap)
       allow
@@ -410,7 +410,7 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.m_id
+      restrict m_id: u.id
       input whitelist: []
       allow
     end
@@ -447,7 +447,7 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.m_id
+      restrict m_id: u.id
       allow
     end
 
@@ -473,7 +473,7 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.m_id
+      restrict m_id: u.id
       allow
     end
 
@@ -499,7 +499,7 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.m_id
+      restrict m_id: u.id
       allow
     end
 
@@ -534,7 +534,7 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.m_id
+      restrict m_id: u.id
       allow
     end
 
@@ -563,7 +563,7 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.m_id
+      restrict m_id: u.id
       allow
     end
 
@@ -841,7 +841,7 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.m_id
+        restrict m_id: u.id
         allow
       end
 
@@ -1045,7 +1045,7 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.m_id
+        restrict m_id: u.id
         allow
       end
 

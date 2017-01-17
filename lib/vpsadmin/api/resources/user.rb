@@ -3,22 +3,19 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
   desc 'Manage users'
 
   params(:id) do
-    id :id, label: 'User ID', db_name: :m_id
+    id :id, label: 'User ID'
   end
 
   params(:writable) do
-    string :login, label: 'Login', db_name: :m_nick
-    string :full_name, label: 'Full name', desc: 'First and last name',
-           db_name: :m_name
-    string :email, label: 'E-mail', db_name: :m_mail
-    string :address, label: 'Address', db_name: :m_address
-    integer :level, label: 'Access level', db_name: :m_level
-    string :info, label: 'Info', db_name: :m_info
-    integer :monthly_payment, label: 'Monthly payment', db_name: :m_monthly_payment,
-            default: 300
+    string :login, label: 'Login'
+    string :full_name, label: 'Full name', desc: 'First and last name'
+    string :email, label: 'E-mail'
+    string :address, label: 'Address'
+    integer :level, label: 'Access level'
+    string :info, label: 'Info'
+    integer :monthly_payment, label: 'Monthly payment', default: 300
     datetime :paid_until, label: 'Paid until'
-    bool :mailer_enabled, label: 'Enabled mailer', db_name: :m_mailer_enable,
-         default: true
+    bool :mailer_enabled, label: 'Enabled mailer', default: true
     resource VpsAdmin::API::Resources::Language, label: 'Language of e-mails'
   end
 
@@ -252,7 +249,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         error('access denied')
       end
 
-      u = ::User.including_deleted.find_by!(m_id: params[:user_id])
+      u = ::User.including_deleted.find(params[:user_id])
       
       if input.empty?
         error('provide at least one attribute to update')

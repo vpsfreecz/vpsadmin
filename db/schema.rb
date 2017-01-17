@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170116135908) do
+ActiveRecord::Schema.define(version: 20170117132633) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -491,35 +491,6 @@ ActiveRecord::Schema.define(version: 20170116135908) do
 
   add_index "maintenance_locks", ["class_name", "row_id"], name: "index_maintenance_locks_on_class_name_and_row_id", using: :btree
 
-  create_table "members", primary_key: "m_id", force: true do |t|
-    t.text     "m_info"
-    t.integer  "m_level",                                       null: false, unsigned: true
-    t.string   "m_nick",             limit: 63
-    t.string   "m_name"
-    t.string   "m_pass",                                        null: false
-    t.string   "m_mail",             limit: 127
-    t.text     "m_address"
-    t.string   "m_lang",             limit: 16
-    t.integer  "m_monthly_payment",              default: 300,  null: false, unsigned: true
-    t.boolean  "m_mailer_enable",                default: true, null: false, unsigned: true
-    t.integer  "login_count",                    default: 0,    null: false
-    t.integer  "failed_login_count",             default: 0,    null: false
-    t.datetime "last_request_at"
-    t.datetime "current_login_at"
-    t.datetime "last_login_at"
-    t.string   "current_login_ip"
-    t.string   "last_login_ip"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.integer  "object_state",                                  null: false
-    t.datetime "expiration_date"
-    t.integer  "password_version",               default: 1,    null: false
-    t.datetime "paid_until"
-    t.datetime "last_activity_at"
-    t.integer  "language_id",                    default: 1
-    t.string   "orig_login",         limit: 63
-  end
-
   create_table "members_changes", primary_key: "m_id", force: true do |t|
     t.integer "m_created",                                null: false
     t.string  "m_type",           limit: 6,               null: false
@@ -971,6 +942,37 @@ ActiveRecord::Schema.define(version: 20170116135908) do
   end
 
   add_index "user_sessions", ["user_id"], name: "index_user_sessions_on_user_id", using: :btree
+
+  create_table "users", force: true do |t|
+    t.text     "info"
+    t.integer  "level",                                         null: false, unsigned: true
+    t.string   "login",              limit: 63
+    t.string   "full_name"
+    t.string   "password",                                      null: false
+    t.string   "email",              limit: 127
+    t.text     "address"
+    t.integer  "monthly_payment",                default: 300,  null: false, unsigned: true
+    t.boolean  "mailer_enabled",                 default: true, null: false, unsigned: true
+    t.integer  "login_count",                    default: 0,    null: false
+    t.integer  "failed_login_count",             default: 0,    null: false
+    t.datetime "last_request_at"
+    t.datetime "current_login_at"
+    t.datetime "last_login_at"
+    t.string   "current_login_ip"
+    t.string   "last_login_ip"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.integer  "object_state",                                  null: false
+    t.datetime "expiration_date"
+    t.integer  "password_version",               default: 1,    null: false
+    t.datetime "paid_until"
+    t.datetime "last_activity_at"
+    t.integer  "language_id",                    default: 1
+    t.string   "orig_login",         limit: 63
+  end
+
+  add_index "users", ["login"], name: "index_users_on_login", unique: true, using: :btree
+  add_index "users", ["object_state"], name: "index_users_on_object_state", using: :btree
 
   create_table "versions", force: true do |t|
     t.string   "item_type",  null: false
