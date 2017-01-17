@@ -5,6 +5,7 @@
 - OS templates in VPS details are fetched from the API
 - VPS configs are fetched from the API
 - User context switching does not require the database
+- Removed /cluster_status.php
 
 * Fri Dec 30 2016 - version 2.6.0
 - Public key management forms
