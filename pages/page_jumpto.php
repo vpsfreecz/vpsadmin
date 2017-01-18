@@ -51,7 +51,7 @@ if ($_SESSION["logged_in"] && $_SESSION["is_admin"]) {
 		} else {
 			$rs = $db->query("SELECT vps_id FROM vps_ip WHERE vps_id != 0 AND ip_addr = '".$db->check($_POST["vps"])."'
 			                  UNION ALL
-			                  SELECT vps_id FROM vps WHERE vps_hostname = '".$db->check($_POST["vps"])."'");
+			                  SELECT id AS vps_id FROM vpses WHERE hostname = '".$db->check($_POST["vps"])."'");
 			
 			if($rs && ($row = $db->fetch_array($rs)))
 				$v = $row["vps_id"];
