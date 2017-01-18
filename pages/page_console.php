@@ -3,11 +3,11 @@
 function get_console_server($vps) {
 	global $db;
 	
-	$sql = "SELECT location_remote_console_server FROM locations WHERE location_id = '".$db->check($vps->node->location_id)."'";
+	$sql = "SELECT remote_console_server FROM locations WHERE id = '".$db->check($vps->node->location_id)."'";
 	
 	if ($result = $db->query($sql)) {
 		if ($row = $db->fetch_array($result)) {
-			return $row["location_remote_console_server"];
+			return $row["remote_console_server"];
 		}
 	}
 	
