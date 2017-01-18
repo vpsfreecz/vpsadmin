@@ -103,9 +103,9 @@ module VpsAdmin::ConsoleRouter
 
       unless @connections.include?(veid)
         st = db.prepared_st(
-            'SELECT server_ip4
-            FROM servers
-            INNER JOIN vps ON vps_server = server_id
+            'SELECT ip_addr
+            FROM nodes
+            INNER JOIN vps ON vps_server = nodes.id
             WHERE vps_id = ?',
             veid
         )
@@ -147,7 +147,7 @@ module VpsAdmin::ConsoleRouter
 
       st = db.prepared_st(
           'SELECT UNIX_TIMESTAMP(expiration)
-          FROM vps_console
+          FROM vps_consoles
           WHERE vps_id = ? AND token = ? AND expiration > ?',
           veid,
           session,
