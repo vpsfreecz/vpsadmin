@@ -8,7 +8,7 @@ module VpsAdmind
       db.transaction do |t|
         get_pubkeys.each do |type, key|
           t.prepared(
-              'INSERT INTO node_pubkey (node_id, `type`, `key`) VALUES (?, ?, ?)
+              'INSERT INTO node_pubkeys (node_id, `key_type`, `key`) VALUES (?, ?, ?)
                ON DUPLICATE KEY UPDATE `key` = ?',
               $CFG.get(:vpsadmin, :server_id), type, key, key
           )
@@ -23,7 +23,7 @@ module VpsAdmind
     def rollback
       db = Db.new
       db.prepared(
-          'DELETE FROM node_pubkey WHERE node_id = ?',
+          'DELETE FROM node_pubkeys WHERE node_id = ?',
           $CFG.get(:vpsadmin, :server_id)
       )
       db.close

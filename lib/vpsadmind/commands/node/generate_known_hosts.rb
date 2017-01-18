@@ -16,12 +16,12 @@ module VpsAdmind
       rs = db.query(
         'SELECT node_id, `key`, n.ip_addr
            FROM nodes n
-           INNER JOIN node_pubkey p ON n.id = p.node_id
-           ORDER BY node_id, `type`'
+           INNER JOIN node_pubkeys p ON n.id = p.node_id
+           ORDER BY node_id, `key_type`'
       )
 
       rs.each_hash do |r|
-        f.write("#{r["server_ip4"]} #{r["key"]}\n")
+        f.write("#{r["ip_addr"]} #{r["key"]}\n")
       end
 
       f.close
