@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170118094034) do
+ActiveRecord::Schema.define(version: 20170118160101) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -652,11 +652,13 @@ ActiveRecord::Schema.define(version: 20170118094034) do
 
   add_index "node_current_statuses", ["node_id"], name: "index_node_current_statuses_on_node_id", unique: true, using: :btree
 
-  create_table "node_pubkey", id: false, force: true do |t|
-    t.integer "node_id",           null: false
-    t.string  "type",    limit: 3, null: false
-    t.text    "key",               null: false
+  create_table "node_pubkeys", id: false, force: true do |t|
+    t.integer "node_id",            null: false
+    t.string  "key_type", limit: 3, null: false
+    t.text    "key",                null: false
   end
+
+  add_index "node_pubkeys", ["node_id"], name: "index_node_pubkeys_on_node_id", using: :btree
 
   create_table "node_statuses", force: true do |t|
     t.integer  "node_id",                      null: false

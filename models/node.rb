@@ -4,6 +4,7 @@ class Node < ActiveRecord::Base
   has_many :transactions
   has_many :pools
   has_many :port_reservations
+  has_many :node_pubkeys
   has_many :node_statuses, dependent: :destroy
   has_one :node_current_status
 
