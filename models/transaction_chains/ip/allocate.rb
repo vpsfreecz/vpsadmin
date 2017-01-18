@@ -56,7 +56,7 @@ module TransactionChains
         ip.order = order
         
         chowned += 1 if (!ip.user_id && ownership) || !ownership
-        ip.user_id = vps.m_id if !ip.user_id && ownership
+        ip.user_id = vps.user_id if !ip.user_id && ownership
 
         ip.save!
 

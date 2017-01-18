@@ -3,7 +3,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   desc 'Manage VPS'
 
   params(:id) do
-    id :id, label: 'VPS id', db_name: :vps_id
+    id :id, label: 'VPS id'
   end
 
   params(:template) do
@@ -13,22 +13,21 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   params(:common) do
     resource VpsAdmin::API::Resources::User, label: 'User', desc: 'VPS owner',
              value_label: :login
-    string :hostname, desc: 'VPS hostname', db_name: :vps_hostname
+    string :hostname, desc: 'VPS hostname'
     bool :manage_hostname, label: 'Manage hostname',
           desc: 'Determines whether vpsAdmin sets VPS hostname or not'
     use :template
-    string :info, label: 'Info', desc: 'VPS description', db_name: :vps_info
+    string :info, label: 'Info', desc: 'VPS description'
     resource VpsAdmin::API::Resources::DnsResolver, label: 'DNS resolver',
              desc: 'DNS resolver the VPS will use'
     resource VpsAdmin::API::Resources::Node, label: 'Node', desc: 'Node VPS will run on',
              value_label: :domain_name
     bool :onboot, label: 'On boot', desc: 'Start VPS on node boot?',
-         db_name: :vps_onboot, default: true
-    bool :onstartall, label: 'On start all',
-         desc: 'Start VPS on start all action?', db_name: :vps_onstartall,
          default: true
+    bool :onstartall, label: 'On start all',
+         desc: 'Start VPS on start all action?', default: true
     string :config, label: 'Config', desc: 'Custom configuration options',
-           db_name: :vps_config, default: ''
+           default: ''
   end
 
   params(:dataset) do
@@ -90,7 +89,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.id
+      restrict user_id: u.id
       input blacklist: %i(user)
       output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
                           node dataset memory swap cpu backup_enabled maintenance_lock
@@ -142,10 +141,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       q = with_includes(q).includes(dataset_in_pool: [:dataset_properties])
 
       q = q.where(with_restricted)
-      q = q.where(m_id: input[:user].id) if input[:user]
+      q = q.where(user_id: input[:user].id) if input[:user]
 
       if input[:node]
-        q = q.where(vps_server: input[:node].id)
+        q = q.where(node_id: input[:node].id)
       end
 
       if input[:location]
@@ -310,7 +309,7 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.id
+      restrict user_id: u.id
       output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
                           node dataset memory swap cpu backup_enabled maintenance_lock
                           maintenance_lock_reason object_state expiration_date
@@ -324,7 +323,7 @@ END
       @vps = with_includes(::Vps.including_deleted).includes(
           dataset_in_pool: [:dataset_properties]
       ).find_by!(with_restricted(
-          vps_id: params[:vps_id])
+          id: params[:vps_id])
       )
     end
 
@@ -350,14 +349,14 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.id
+      restrict user_id: u.id
       input whitelist: %i(hostname manage_hostname os_template dns_resolver cpu
                           memory swap)
       allow
     end
 
     def exec
-      vps = ::Vps.including_deleted.find_by!(with_restricted(vps_id: params[:vps_id]))
+      vps = ::Vps.including_deleted.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
 
       if input.empty?
@@ -410,13 +409,13 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.id
+      restrict user_id: u.id
       input whitelist: []
       allow
     end
 
     def exec
-      vps = ::Vps.including_deleted.find_by!(with_restricted(vps_id: params[:vps_id]))
+      vps = ::Vps.including_deleted.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
       
       if current_user.role == :admin
@@ -447,12 +446,12 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.id
+      restrict user_id: u.id
       allow
     end
 
     def exec
-      vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
@@ -473,12 +472,12 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.id
+      restrict user_id: u.id
       allow
     end
 
     def exec
-      vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
@@ -499,12 +498,12 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.id
+      restrict user_id: u.id
       allow
     end
 
     def exec
-      vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
@@ -534,12 +533,12 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.id
+      restrict user_id: u.id
       allow
     end
 
     def exec
-      vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
 
       @chain, password = vps.passwd(input[:type].to_sym)
@@ -563,12 +562,12 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.id
+      restrict user_id: u.id
       allow
     end
 
     def exec
-      vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
 
       tpl = input[:os_template] || vps.os_template
@@ -662,7 +661,7 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.id
+      restrict user_id: u.id
       input blacklist: %i(node user configs)
       output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
                           node dataset memory swap cpu backup_enabled maintenance_lock
@@ -674,7 +673,7 @@ END
     end
 
     def exec
-      vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
 
       if current_user.role == :admin
@@ -751,14 +750,14 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.id
+      restrict user_id: u.id
       input blacklist: %i(configs expirations)
       allow
     end
 
     def exec
       vps = ::Vps.includes(:node).find_by!(
-          with_restricted(vps_id: params[:vps_id])
+          with_restricted(id: params[:vps_id])
       )
       maintenance_check!(vps)
       maintenance_check!(input[:vps])
@@ -800,13 +799,13 @@ END
 
     authorize do |u|
       allow if u.role == :admin
-      restrict m_id: u.id
+      restrict user_id: u.id
       allow
     end
 
     def exec
       vps = ::Vps.includes(:node).find_by!(
-          with_restricted(vps_id: params[:vps_id])
+          with_restricted(id: params[:vps_id])
       )
       maintenance_check!(vps)
       
@@ -841,12 +840,12 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def query
-        @vps ||= ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        @vps ||= ::Vps.find_by!(with_restricted(id: params[:vps_id]))
 
         ::VpsHasConfig.where(vps: @vps)
       end
@@ -917,12 +916,12 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def query
-        ::Vps.find_by!(with_restricted(vps_id: params[:vps_id])).vps_features
+        ::Vps.find_by!(with_restricted(id: params[:vps_id])).vps_features
       end
 
       def count
@@ -944,13 +943,13 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def prepare
         @feature = ::Vps.find_by!(
-            with_restricted(vps_id: params[:vps_id])
+            with_restricted(id: params[:vps_id])
         ).vps_features.find(params[:feature_id])
       end
 
@@ -969,13 +968,13 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def exec
         vps = ::Vps.find_by!(
-            with_restricted(vps_id: params[:vps_id])
+            with_restricted(id: params[:vps_id])
         )
         @chain, _ = vps.set_feature(
             vps.vps_features.find(params[:feature_id]),
@@ -1003,13 +1002,13 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def exec
         vps = ::Vps.find_by!(
-            with_restricted(vps_id: params[:vps_id])
+            with_restricted(id: params[:vps_id])
         )
         @chain, _ = vps.set_features(input)
         ok
@@ -1045,13 +1044,13 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def exec
         ips = ::Vps.find_by!(
-            with_restricted(vps_id: params[:vps_id])
+            with_restricted(id: params[:vps_id])
         ).ip_addresses.joins(:network)
 
         if input[:version]
@@ -1086,12 +1085,12 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
         ip = nil
 
@@ -1136,12 +1135,12 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
 
         @chain, _ = vps.delete_ip(vps.ip_addresses.find_by!(
@@ -1169,12 +1168,12 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
 
         @chain, _ = vps.delete_ips((params[:ip_addresses] || {})[:version])
@@ -1221,12 +1220,12 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict vps: {m_id: u.id}
+        restrict vpses: {user_id: u.id}
         allow
       end
 
       def query
-        ::Mount.joins(:vps).where(with_restricted(vps_id: params[:vps_id]))
+        ::Mount.joins(:vps).where(with_restricted(id: params[:vps_id]))
       end
 
       def count
@@ -1248,7 +1247,7 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict vps: {m_id: u.id}
+        restrict vpses: {user_id: u.id}
         allow
       end
 
@@ -1278,12 +1277,12 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
 
         if !input[:dataset] && !input[:snapshot]
@@ -1336,13 +1335,13 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         input blacklist: %i(master_enabled)
         allow
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
 
         mnt = ::Mount.find_by!(vps: vps, id: params[:mount_id])
@@ -1361,12 +1360,12 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
 
         mnt = ::Mount.find_by!(vps: vps, id: params[:mount_id])
@@ -1406,12 +1405,12 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def query
-        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         vps.vps_outage_windows
       end
 
@@ -1434,12 +1433,12 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def prepare
-        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         @window = vps.vps_outage_windows.find_by!(weekday: params[:outage_window_id])
       end
       
@@ -1461,12 +1460,12 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
         window = vps.vps_outage_windows.find_by!(weekday: params[:outage_window_id])
 
@@ -1508,12 +1507,12 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
 
         if input.empty?
@@ -1569,12 +1568,12 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
 
         t = ::VpsConsole.find_for(vps, current_user)
@@ -1598,12 +1597,12 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
 
         ::VpsConsole.find_for!(vps, current_user)
@@ -1613,12 +1612,12 @@ END
     class Delete < HaveAPI::Actions::Default::Delete
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
 
         ::VpsConsole.find_for!(vps, current_user).update!(token: nil)
@@ -1670,12 +1669,12 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def query
-        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         q = vps.vps_statuses
         q = q.where('created_at >= ?', input[:from]) if input[:from]
         q = q.where('created_at <= ?', input[:to]) if input[:to]
@@ -1700,12 +1699,12 @@ END
       
       authorize do |u|
         allow if u.role == :admin
-        restrict m_id: u.id
+        restrict user_id: u.id
         allow
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(vps_id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         vps.vps_statuses.find(params[:status_id])
       end
     end

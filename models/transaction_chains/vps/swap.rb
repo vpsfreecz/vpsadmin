@@ -170,7 +170,7 @@ module TransactionChains
                       ],
                       urgent: true
                   ) do
-                    edit(new_primary_vps, vps_hostname: primary_vps.hostname)
+                    edit(new_primary_vps, hostname: primary_vps.hostname)
                   end
                 end
 
@@ -250,7 +250,7 @@ module TransactionChains
                       ],
                       urgent: true
                   ) do
-                    edit(new_secondary_vps, vps_hostname: secondary_vps.hostname)
+                    edit(new_secondary_vps, hostname: secondary_vps.hostname)
                   end
                 end
 

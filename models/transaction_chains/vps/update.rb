@@ -21,8 +21,8 @@ module TransactionChains
 
       vps.changed.each do |attr|
         case attr
-          when 'm_id'
-            db_changes[vps][:m_id] = vps.m_id
+          when 'user_id'
+            db_changes[vps][:user_id] = vps.user_id
 
             # VPS and all related objects must be given to the target user:
             #   - dataset and all subdatasets
@@ -36,7 +36,7 @@ module TransactionChains
             # Chown datasets and transfer cluster resources
             vps.dataset_in_pool.dataset.subtree.each do |ds|
               datasets << ds
-              db_changes[ds] = {user_id: vps.m_id}
+              db_changes[ds] = {user_id: vps.user_id}
 
               dip = ds.primary_dataset_in_pool!
               db_changes.update(dip.transfer_resources!(vps.user))
@@ -44,7 +44,7 @@ module TransactionChains
 
             # Check mounts
             check_vps_mounts(vps, datasets)
-            datasets.each { |ds| check_ds_mounts(vps, ds, vps.m_id) }
+            datasets.each { |ds| check_ds_mounts(vps, ds, vps.user_id) }
 
             # Transfer cluster resources
             ## CPU, memory, swap
@@ -53,7 +53,7 @@ module TransactionChains
             ## IP addresses
             db_changes.update(transfer_ip_addresses(vps))
 
-          when 'vps_hostname'
+          when 'hostname'
             append(Transactions::Vps::Hostname, args: [vps, vps.hostname_was, vps.hostname]) do
               edit(vps, {attr => vps.hostname, 'manage_hostname' => true})
               just_create(vps.log(:hostname, {
@@ -70,14 +70,14 @@ module TransactionChains
               end
             end
 
-          when 'vps_template'
+          when 'os_template_id'
             append(Transactions::Vps::OsTemplate, args: [
                   vps,
-                  ::OsTemplate.find(vps.vps_template_was),
+                  ::OsTemplate.find(vps.os_template_id_was),
                   vps.os_template]) do
-              edit(vps, attr => vps.vps_template)
+              edit(vps, attr => vps.os_template_id)
               just_create(vps.log(:os_template, {
-                  id: vps.vps_template,
+                  id: vps.os_template_id,
                   name: vps.os_template.name,
                   label: vps.os_template.label,
               }))
@@ -96,7 +96,7 @@ module TransactionChains
           when 'config'
             # FIXME
 
-          when 'vps_onboot'
+          when 'onboot'
           when 'info', 'onstartall'
             db_changes[vps][attr] = vps.send(attr)
         end
@@ -143,7 +143,7 @@ module TransactionChains
 
       else
         # Changes are part of the transaction chain
-        append(Transactions::Utils::NoOp, args: vps.vps_server) do
+        append(Transactions::Utils::NoOp, args: vps.node_id) do
           db_changes.each do |obj, changes|
             edit(obj, changes) unless changes.empty?
           end
@@ -175,7 +175,7 @@ module TransactionChains
     def check_ds_mounts(vps, dataset, user_id)
       dataset.dataset_in_pools.each do |dip|
         if dip.mounts.joins(:vps).where.not(
-               vps: {vps_id: vps.id, m_id: user_id}
+               vpses: {id: vps.id, user_id: user_id}
            ).any?
           fail 'is mounted elsewhere'
         end
@@ -241,7 +241,7 @@ module TransactionChains
       end
 
       changes = {}
-      q.each { |ip| changes[ip] = {user_id: vps.m_id} }
+      q.each { |ip| changes[ip] = {user_id: vps.user_id} }
 
       [q.count, changes]
     end
@@ -273,9 +273,9 @@ module TransactionChains
         end
         
         cnt += ip.network.size
-        changes[ip.network] = {user_id: vps.m_id}
+        changes[ip.network] = {user_id: vps.user_id}
 
-        ip.network.ip_addresses.each { |ip| changes[ip] = {user_id: vps.m_id} }
+        ip.network.ip_addresses.each { |ip| changes[ip] = {user_id: vps.user_id} }
       end
 
       [cnt, changes]

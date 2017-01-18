@@ -5,8 +5,8 @@ module Transactions::Vps
     queue :vps
 
     def params(vps)
-      self.vps_id = vps.vps_id
-      self.node_id = vps.vps_server
+      self.vps_id = vps.id
+      self.node_id = vps.node_id
 
       ret = {
           configs: [],
@@ -22,7 +22,7 @@ module Transactions::Vps
         ret[:configs] << c.vps_config.name
       end
 
-      ret[:configs] << "vps-#{vps.veid}" unless vps.vps_config.empty?
+      ret[:configs] << "vps-#{vps.veid}" unless vps.config.empty?
 
       ret
     end

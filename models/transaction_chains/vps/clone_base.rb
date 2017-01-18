@@ -150,7 +150,7 @@ module TransactionChains
       use_chain(Vps::Mounts, args: dst_vps)
 
       if mounts.size > 0
-        append(Transactions::Utils::NoOp, args: dst_vps.vps_server) do
+        append(Transactions::Utils::NoOp, args: dst_vps.node_id) do
           mounts.each { |m| create(m) }
         end
       end

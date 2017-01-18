@@ -6,7 +6,7 @@ module Transactions::Shaper
 
     def params(ip, vps)
       self.vps_id = ip.vps_id
-      self.node_id = vps.vps_server
+      self.node_id = vps.node_id
 
       {
           addr: ip.addr,

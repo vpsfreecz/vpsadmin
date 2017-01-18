@@ -9,7 +9,7 @@ module TransactionChains
       
       chain = self
       
-      append(Transactions::Utils::NoOp, args: vps.vps_server) do
+      append(Transactions::Utils::NoOp, args: vps.node_id) do
         # Mark all resources as confirmed
         objs = [vps, vps.dataset_in_pool]
         objs.concat(vps.dataset_in_pool.subdatasets_in_pool)

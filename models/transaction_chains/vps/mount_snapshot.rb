@@ -28,7 +28,7 @@ module TransactionChains
       remote = false
 
       # Snapshot is present locally on hypervisor
-      if hypervisor && hypervisor.dataset_in_pool.pool.node_id == vps.vps_server
+      if hypervisor && hypervisor.dataset_in_pool.pool.node_id == vps.node_id
         clone_from = hypervisor
         mnt.mount_type = 'zfs'
         mnt.mount_opts = '-t zfs'
@@ -89,7 +89,7 @@ module TransactionChains
       use_chain(Vps::Mount, args: [vps, [mnt]])
 
       unless remote
-        append(Transactions::Utils::NoOp, args: vps.vps_server) do
+        append(Transactions::Utils::NoOp, args: vps.node_id) do
           create(mnt)
           increment(clone_from, :reference_count)
           edit(clone_from, mount_id: mnt.id)

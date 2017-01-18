@@ -133,7 +133,7 @@ class IpAddress < ActiveRecord::Base
   end
 
   def check_ownership
-    if user && vps && user.id != vps.m_id
+    if user && vps && user.id != vps.user_id
       errors.add(
           :user,
           'can be owned only by the owner of the VPS that uses this address'

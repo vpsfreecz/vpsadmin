@@ -5,15 +5,15 @@ module Transactions::Vps
     queue :network
 
     def params(vps, ip, unregister = true)
-      self.vps_id = vps.vps_id
-      self.node_id = vps.vps_server
+      self.vps_id = vps.id
+      self.node_id = vps.node_id
 
       ret = {
           addr: ip.addr,
           version: ip.version,
           unregister: unregister,
           id: ip.id,
-          user_id: ip.user_id || vps.m_id,
+          user_id: ip.user_id || vps.user_id,
       }
 
       if unregister

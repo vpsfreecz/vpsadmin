@@ -5,8 +5,8 @@ module Transactions::Vps
     queue :vps
 
     def params(vps)
-      self.vps_id = vps.vps_id
-      self.node_id = vps.vps_server
+      self.vps_id = vps.id
+      self.node_id = vps.node_id
       {}
     end
   end

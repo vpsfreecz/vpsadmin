@@ -10,7 +10,7 @@ module TransactionChains
       mount.confirmed = ::Mount.confirmed(:confirm_destroy)
       mount.save!
 
-      remote = mount.snapshot_in_pool.dataset_in_pool.pool.node_id != vps.vps_server
+      remote = mount.snapshot_in_pool.dataset_in_pool.pool.node_id != vps.node_id
 
       use_chain(Vps::Mounts, args: vps) if regenerate
       # Umount must be done even if the VPS seems to be stopped,
@@ -28,7 +28,7 @@ module TransactionChains
         append_t(Transactions::Storage::RemoveClone, args: mount.snapshot_in_pool, &cleanup)
 
       else
-        append_t(Transactions::Utils::NoOp, args: vps.vps_server, &cleanup)
+        append_t(Transactions::Utils::NoOp, args: vps.node_id, &cleanup)
       end
     end
   end

@@ -1,6 +1,4 @@
 class VpsConsole < ActiveRecord::Base
-  self.table_name = 'vps_console'
-
   belongs_to :user
   belongs_to :vps
 

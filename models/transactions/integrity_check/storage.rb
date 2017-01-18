@@ -32,7 +32,7 @@ module Transactions::IntegrityCheck
               ).where(
                   dataset_in_pools: {pool_id: pool.id}
               ).where.not(
-                vps: {vps_server: pool.node_id}
+                vpses: {node_id: pool.node_id}
               ),
               obj,
               :add_snapshot_clone

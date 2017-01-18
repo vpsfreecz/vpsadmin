@@ -1,10 +1,8 @@
 class Node < ActiveRecord::Base
   belongs_to :location
-  has_many :vpses, :foreign_key => :vps_server
-  has_many :transactions, foreign_key: :t_server
-  has_many :storage_roots
+  has_many :vpses
+  has_many :transactions
   has_many :pools
-  has_many :vps_mounts, foreign_key: :server_id
   has_many :port_reservations
   has_many :node_statuses, dependent: :destroy
   has_one :node_current_status
@@ -64,8 +62,8 @@ class Node < ActiveRecord::Base
 
   def self.pick_by_env(env, location = nil, except = nil)
     q = self.joins('
-          LEFT JOIN vps ON vps.vps_server = nodes.id
-          LEFT JOIN vps_current_statuses st ON st.vps_id = vps.vps_id
+          LEFT JOIN vpses ON vpses.node_id = nodes.id
+          LEFT JOIN vps_current_statuses st ON st.vps_id = vpses.id
           INNER JOIN locations ON locations.id = nodes.location_id
         ').where('
           (st.is_running = 1 OR st.is_running IS NULL)
@@ -87,7 +85,7 @@ class Node < ActiveRecord::Base
     return n if n
     
     q = self.joins('
-        LEFT JOIN vps ON vps.vps_server = nodes.id
+        LEFT JOIN vpses ON vpses.node_id = nodes.id
         INNER JOIN locations ON locations.id = nodes.location_id
     ').where(
         'max_vps > 0'
@@ -102,13 +100,13 @@ class Node < ActiveRecord::Base
     
     q = q.where('nodes.id != ?', except.id) if except
 
-    q.group('nodes.id').order('COUNT(vps_id) / max_vps ASC').take
+    q.group('nodes.id').order('COUNT(vpses.id) / max_vps ASC').take
   end
 
   def self.pick_by_location(loc)
     n = self.joins('
-        LEFT JOIN vps ON vps.vps_server = nodes.id
-        LEFT JOIN vps_current_statuses st ON st.vps_id = vps.vps_id
+        LEFT JOIN vpses ON vpses.node_id = nodes.id
+        LEFT JOIN vps_current_statuses st ON st.vps_id = vpses.id
         INNER JOIN locations l ON nodes.location_id = l.id
       ').where('
         (st.is_running = 1 OR st.is_running IS NULL)
@@ -122,13 +120,13 @@ class Node < ActiveRecord::Base
     return n if n
 
     self.joins(
-        'LEFT JOIN vps ON vps.vps_server = nodes.node_id'
+        'LEFT JOIN vpses ON vpses.node_id = nodes.node_id'
     ).where(
         'max_vps > 0'
     ).where(
         maintenance_lock: 0,
         location_id: loc.id
-    ).group('nodes.id').order('COUNT(vps_id) / max_vps ASC').take
+    ).group('nodes.id').order('COUNT(vpses.id) / max_vps ASC').take
   end
 
   def self.first_available

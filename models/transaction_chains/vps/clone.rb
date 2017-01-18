@@ -39,15 +39,15 @@ module TransactionChains
       end
 
       dst_vps = ::Vps.new(
-          m_id: attrs[:user].id,
-          vps_hostname: attrs[:hostname],
+          user_id: attrs[:user].id,
+          hostname: attrs[:hostname],
           manage_hostname: vps.manage_hostname,
-          vps_template: vps.vps_template,
-          vps_info: "Cloned from #{vps.id}. Original info:\n#{vps.vps_info}",
-          vps_server: node.id,
-          vps_onboot: vps.vps_onboot,
-          vps_onstartall: vps.vps_onstartall,
-          vps_config: attrs[:configs] ? vps.vps_config : '',
+          os_template_id: vps.os_template_id,
+          info: "Cloned from #{vps.id}. Original info:\n#{vps.info}",
+          node_id: node.id,
+          onboot: vps.onboot,
+          onstartall: vps.onstartall,
+          config: attrs[:configs] ? vps.config : '',
           confirmed: ::Vps.confirmed(:confirm_create)
       )
       
@@ -379,7 +379,7 @@ module TransactionChains
       end
         
       unless changes.empty?
-        append_t(Transactions::Utils::NoOp, args: dst_vps.vps_server) do |t|
+        append_t(Transactions::Utils::NoOp, args: dst_vps.node_id) do |t|
           changes.each { |use| t.edit(use, {value: use.value}) }
         end
       end

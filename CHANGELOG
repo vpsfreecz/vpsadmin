@@ -10,6 +10,7 @@
   - Transactions
   - Users
   - IP addresses
+  - VPSes
 - Node.Update: remove input parameter domain_name
 - DnsResolver.Index: add input parameter vps
 - Node.Index: add input parameter type

@@ -118,7 +118,7 @@ module VpsAdmin::API::Resources
 
         if input[:node]
           q = q.joins(ip_address: :vps).where(
-              vps: {vps_server: input[:node].id}
+              vpses: {node_id: input[:node].id}
           )
         end
 
@@ -265,7 +265,7 @@ module VpsAdmin::API::Resources
 
         if input[:node]
           q = q.joins(ip_address: :vps).where(
-              vps: {vps_server: input[:node].id}
+              vpses: {node_id: input[:node].id}
           )
         end
 

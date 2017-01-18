@@ -119,7 +119,7 @@ module VpsAdmin::API::Tasks
     end
 
     def migrate_vps(m, locks)
-      if m.vps.vps_server != m.src_node_id
+      if m.vps.node_id != m.src_node_id
         raise SkipMigration, 'the VPS has been migrated elsewhere in the meantime'
 
       elsif m.vps.object_state == 'hard_delete'

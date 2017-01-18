@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170117181427) do
+ActiveRecord::Schema.define(version: 20170118094034) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -1002,38 +1002,13 @@ ActiveRecord::Schema.define(version: 20170117181427) do
 
   add_index "versions", ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id", using: :btree
 
-  create_table "vps", primary_key: "vps_id", force: true do |t|
-    t.integer  "m_id",                                                     null: false, unsigned: true
-    t.string   "vps_hostname",                             default: "vps"
-    t.integer  "vps_template",                             default: 1,     null: false, unsigned: true
-    t.text     "vps_info",                limit: 16777215
-    t.integer  "dns_resolver_id"
-    t.integer  "vps_server",                                               null: false, unsigned: true
-    t.boolean  "vps_onboot",                               default: true,  null: false, unsigned: true
-    t.boolean  "vps_onstartall",                           default: true,  null: false, unsigned: true
-    t.text     "vps_config",                                               null: false
-    t.integer  "confirmed",                                default: 0,     null: false
-    t.integer  "dataset_in_pool_id"
-    t.integer  "maintenance_lock",                         default: 0,     null: false
-    t.string   "maintenance_lock_reason"
-    t.integer  "object_state",                                             null: false
-    t.datetime "expiration_date"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.boolean  "manage_hostname",                          default: true,  null: false
-  end
-
-  add_index "vps", ["m_id"], name: "index_vps_on_m_id", using: :btree
-  add_index "vps", ["m_id"], name: "m_id", using: :btree
-  add_index "vps", ["vps_server"], name: "index_vps_on_vps_server", using: :btree
-
   create_table "vps_configs", force: true do |t|
     t.string "name",   limit: 50, null: false
     t.string "label",  limit: 50, null: false
     t.text   "config",            null: false
   end
 
-  create_table "vps_console", force: true do |t|
+  create_table "vps_consoles", force: true do |t|
     t.integer  "vps_id",                 null: false
     t.string   "token",      limit: 100
     t.datetime "expiration",             null: false
@@ -1042,7 +1017,7 @@ ActiveRecord::Schema.define(version: 20170117181427) do
     t.datetime "updated_at"
   end
 
-  add_index "vps_console", ["token"], name: "index_vps_console_on_token", unique: true, using: :btree
+  add_index "vps_consoles", ["token"], name: "index_vps_consoles_on_token", unique: true, using: :btree
 
   create_table "vps_current_statuses", force: true do |t|
     t.integer  "vps_id",                       null: false
@@ -1150,5 +1125,33 @@ ActiveRecord::Schema.define(version: 20170117181427) do
   end
 
   add_index "vps_statuses", ["vps_id"], name: "index_vps_statuses_on_vps_id", using: :btree
+
+  create_table "vpses", force: true do |t|
+    t.integer  "user_id",                                                  null: false, unsigned: true
+    t.string   "hostname",                                 default: "vps"
+    t.integer  "os_template_id",                           default: 1,     null: false, unsigned: true
+    t.text     "info",                    limit: 16777215
+    t.integer  "dns_resolver_id"
+    t.integer  "node_id",                                                  null: false, unsigned: true
+    t.boolean  "onboot",                                   default: true,  null: false, unsigned: true
+    t.boolean  "onstartall",                               default: true,  null: false, unsigned: true
+    t.text     "config",                                                   null: false
+    t.integer  "confirmed",                                default: 0,     null: false
+    t.integer  "dataset_in_pool_id"
+    t.integer  "maintenance_lock",                         default: 0,     null: false
+    t.string   "maintenance_lock_reason"
+    t.integer  "object_state",                                             null: false
+    t.datetime "expiration_date"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.boolean  "manage_hostname",                          default: true,  null: false
+  end
+
+  add_index "vpses", ["dataset_in_pool_id"], name: "index_vpses_on_dataset_in_pool_id", using: :btree
+  add_index "vpses", ["dns_resolver_id"], name: "index_vpses_on_dns_resolver_id", using: :btree
+  add_index "vpses", ["node_id"], name: "index_vpses_on_node_id", using: :btree
+  add_index "vpses", ["object_state"], name: "index_vpses_on_object_state", using: :btree
+  add_index "vpses", ["os_template_id"], name: "index_vpses_on_os_template_id", using: :btree
+  add_index "vpses", ["user_id"], name: "index_vpses_on_user_id", using: :btree
 
 end

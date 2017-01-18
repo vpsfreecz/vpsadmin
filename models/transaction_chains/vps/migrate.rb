@@ -213,7 +213,7 @@ module TransactionChains
       
       append(Transactions::Utils::NoOp, args: dst_node.id, urgent: true) do
         edit(vps, dataset_in_pool_id: datasets.first[1].id)
-        edit(vps, vps_server: dst_node.id)
+        edit(vps, node_id: dst_node.id)
 
         # Transfer resources
         resources_changes.each do |use, changes|
@@ -230,8 +230,8 @@ module TransactionChains
         end
 
         just_create(vps.log(:node, {
-            src: {id: vps.vps_server, name: vps.node.domain_name},
-            dst: {id: dst_vps.vps_server, name: dst_vps.node.domain_name},
+            src: {id: vps.node_id, name: vps.node.domain_name},
+            dst: {id: dst_vps.node_id, name: dst_vps.node.domain_name},
         }))
       end
 
@@ -590,7 +590,7 @@ module TransactionChains
         @chain.use_chain(Vps::Mounts, args: @dst_vps, urgent: true)
 
         unless obj_changes.empty?
-          @chain.append(Transactions::Utils::NoOp, args: @dst_vps.vps_server,
+          @chain.append(Transactions::Utils::NoOp, args: @dst_vps.node_id,
                         urgent: true) do
             obj_changes.each do |obj, changes|
               edit_before(obj, changes)
@@ -668,18 +668,18 @@ module TransactionChains
         dst_dip = @ds_map[mnt.dataset_in_pool]
 
         is_subdataset = \
-          mnt.dataset_in_pool.pool.node_id == @src_vps.vps_server && \
+          mnt.dataset_in_pool.pool.node_id == @src_vps.node_id && \
           mnt.vps.dataset_in_pool.dataset.subtree_ids.include?(
               mnt.dataset_in_pool.dataset.id
           )
         
-        is_local = @src_vps.vps_server == mnt.dataset_in_pool.pool.node_id
+        is_local = @src_vps.node_id == mnt.dataset_in_pool.pool.node_id
         is_remote = !is_local
 
         if is_subdataset
-          become_local = @dst_vps.vps_server == dst_dip.pool.node_id
+          become_local = @dst_vps.node_id == dst_dip.pool.node_id
         else
-          become_local = @dst_vps.vps_server == mnt.dataset_in_pool.pool.node_id
+          become_local = @dst_vps.node_id == mnt.dataset_in_pool.pool.node_id
         end
 
         become_remote = !become_local
@@ -774,10 +774,10 @@ module TransactionChains
       def migrate_others_mount(mnt)
         dst_dip = @ds_map[mnt.dataset_in_pool]
 
-        is_local = @src_vps.vps_server == mnt.vps.vps_server
+        is_local = @src_vps.node_id == mnt.vps.node_id
         is_remote = !is_local
 
-        become_local = @dst_vps.vps_server == mnt.vps.vps_server
+        become_local = @dst_vps.node_id == mnt.vps.node_id
         become_remote = !become_local
 
         is_snapshot = !mnt.snapshot_in_pool.nil?

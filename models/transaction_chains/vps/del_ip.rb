@@ -51,7 +51,7 @@ module TransactionChains
         end
       end
 
-      append(Transactions::Utils::NoOp, args: vps.vps_server) do
+      append(Transactions::Utils::NoOp, args: vps.node_id) do
         uses.each do |use|
           edit(use, value: use.value)
         end

@@ -6,7 +6,7 @@ module Transactions::Vps
 
     def params(ip, tx, rx)
       self.vps_id = ip.vps_id
-      self.node_id = ip.vps.vps_server
+      self.node_id = ip.vps.node_id
 
       {
           addr: ip.addr,

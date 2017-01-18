@@ -59,7 +59,7 @@ module TransactionChains
 
         append(Transactions::Vps::IpAdd, args: [vps, ip, register]) do
           edit(ip, vps_id: vps.veid, order: order[ip.version])
-          edit(ip, user_id: vps.m_id) if ownership && !ip.user_id
+          edit(ip, user_id: vps.user_id) if ownership && !ip.user_id
 
           just_create(vps.log(:ip_add, {id: ip.id, addr: ip.addr})) unless chain.included?
         end
@@ -67,7 +67,7 @@ module TransactionChains
         order[ip.version] += 1
       end
 
-      append(Transactions::Utils::NoOp, args: vps.vps_server) do
+      append(Transactions::Utils::NoOp, args: vps.node_id) do
         uses.each do |use|
           edit(use, value: use.value)
         end

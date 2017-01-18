@@ -5,7 +5,7 @@ module Transactions::Vps
     t_type 4002
 
     def params(vps, dst_node)
-      self.vps_id = vps.vps_id
+      self.vps_id = vps.id
       self.node_id = dst_node.id
 
       {}

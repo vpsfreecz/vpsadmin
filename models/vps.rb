@@ -1,13 +1,10 @@
 class Vps < ActiveRecord::Base
-  self.table_name = 'vps'
-  self.primary_key = 'vps_id'
-
-  belongs_to :node, :foreign_key => :vps_server
-  belongs_to :user, :foreign_key => :m_id
-  belongs_to :os_template, :foreign_key => :vps_template
+  belongs_to :node
+  belongs_to :user
+  belongs_to :os_template
   belongs_to :dns_resolver
   has_many :ip_addresses
-  has_many :transactions, foreign_key: :t_vps
+  has_many :transactions
 
   has_many :vps_has_configs, -> { order '`order`' }
   has_many :vps_configs, through: :vps_has_configs
@@ -26,9 +23,7 @@ class Vps < ActiveRecord::Base
 
   has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
 
-  alias_attribute :veid, :vps_id
-  alias_attribute :hostname, :vps_hostname
-  alias_attribute :user_id, :m_id
+  alias_attribute :veid, :id
 
   include Lockable
   include Confirmable
@@ -68,8 +63,8 @@ class Vps < ActiveRecord::Base
       outage_windows outage_window restore deploy_public_key
   )
 
-  validates :m_id, :vps_server, :vps_template, presence: true, numericality: {only_integer: true}
-  validates :vps_hostname, presence: true, format: {
+  validates :user_id, :node_id, :os_template_id, presence: true, numericality: {only_integer: true}
+  validates :hostname, presence: true, format: {
       with: /\A[a-zA-Z\-_\.0-9]{0,255}\z/,
       message: 'bad format'
   }
@@ -105,7 +100,7 @@ class Vps < ActiveRecord::Base
   # @option opts [Integer] ipv6
   # @option opts [Integer] ipv4_private
   def create(opts)
-    self.vps_config = ''
+    self.config = ''
 
     lifetime = self.user.env_config(
         node.location.environment,
@@ -332,8 +327,8 @@ class Vps < ActiveRecord::Base
 
   def foreign_keys_exist
     User.find(user_id)
-    Node.find(vps_server)
-    OsTemplate.find(vps_template)
+    Node.find(node_id)
+    OsTemplate.find(os_template_id)
   end
 
   def prefix_mountpoint(parent, part, mountpoint)

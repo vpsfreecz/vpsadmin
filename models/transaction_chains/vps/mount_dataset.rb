@@ -27,7 +27,7 @@ module TransactionChains
 
       mnt.on_start_fail = opts[:on_start_fail] if opts[:on_start_fail]
 
-      if dip.pool.node_id == vps.vps_server
+      if dip.pool.node_id == vps.node_id
         mnt.mount_type = 'bind'
         mnt.mount_opts = '--bind'
 
@@ -40,7 +40,7 @@ module TransactionChains
       use_chain(Vps::Mounts, args: vps)
       use_chain(Vps::Mount, args: [vps, [mnt]])
 
-      append(Transactions::Utils::NoOp, args: vps.vps_server) do
+      append(Transactions::Utils::NoOp, args: vps.node_id) do
         create(mnt)
         just_create(vps.log(:mount, {
             id: mnt.id,

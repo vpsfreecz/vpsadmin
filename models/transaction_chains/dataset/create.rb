@@ -91,7 +91,7 @@ module TransactionChains
       parent_dip = dataset_in_pool.dataset.dataset_in_pools.where(pool: dataset_in_pool.pool).take!
 
       parent_dip.mounts.includes(:vps).joins(:vps).where(
-          vps: {object_state: [
+          vpses: {object_state: [
               ::Vps.object_states[:active],
               ::Vps.object_states[:suspended]
           ]}
@@ -148,7 +148,7 @@ module TransactionChains
         use_chain(Vps::Mounts, args: vps)
         use_chain(Vps::Mount, args: [vps, mounts]) if vps.running?
 
-        append(Transactions::Utils::NoOp, args: vps.vps_server) do
+        append(Transactions::Utils::NoOp, args: vps.node_id) do
           mounts.each { |m| create(m) }
         end
       end

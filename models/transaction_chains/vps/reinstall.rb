@@ -40,7 +40,7 @@ module TransactionChains
       vps.os_template = template
 
       append(Transactions::Vps::Create, args: vps) do
-        edit(vps, vps_template: template.id)
+        edit(vps, os_template_id: template.id)
 
         # Reset features
         vps.vps_features.each do |f|

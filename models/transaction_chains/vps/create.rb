@@ -98,7 +98,7 @@ module TransactionChains
       end
 
       if ip_resources.size > 0
-        append(Transactions::Utils::NoOp, args: vps.vps_server) do
+        append(Transactions::Utils::NoOp, args: vps.node_id) do
           ip_resources.each do |r|
             if %i(confirmed confirm_destroy).include?(r.confirmed)
               edit(r, r.attr_changes)
@@ -124,9 +124,7 @@ module TransactionChains
         use_chain(Vps::DeployPublicKey, args: [vps, key])
       end
 
-      if vps.vps_onboot
-        use_chain(TransactionChains::Vps::Start, args: vps)
-      end
+      use_chain(TransactionChains::Vps::Start, args: vps) if vps.onboot
 
       vps.save!
 

@@ -14,7 +14,7 @@ module TransactionChains
 
       use_chain(Vps::DelIp, args: [vps, vps.ip_addresses])
       
-      append(Transactions::Utils::NoOp, args: vps.vps_server) do
+      append(Transactions::Utils::NoOp, args: vps.node_id) do
         # Mark all resources as disabled until they are really freed by
         # hard_delete. Revive should mark them back as enabled.
         objs = [vps, vps.dataset_in_pool]

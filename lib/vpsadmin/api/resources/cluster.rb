@@ -116,7 +116,7 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
               vps_current_statuses: {is_running: false}
           ).count,
           vps_suspended: ::Vps.joins(:user).where(
-              'users.object_state = ? OR vps.object_state = ?',
+              'users.object_state = ? OR vpses.object_state = ?',
               ::User.object_states['suspended'], ::Vps.object_states['suspended']
           ).count,
           vps_deleted: ::Vps.unscoped.where(

@@ -11,7 +11,7 @@ module Transactions::Utils
         if mnt.dataset_in_pool_id && !mnt.snapshot_in_pool_id
 
           # Mount it locally
-          if mnt.dataset_in_pool.pool.node_id == mnt.vps.vps_server
+          if mnt.dataset_in_pool.pool.node_id == mnt.vps.node_id
             m[:type] = :dataset_local
 
           # Mount via NFS
@@ -33,7 +33,7 @@ module Transactions::Utils
         elsif mnt.snapshot_in_pool_id
 
           # Mount it locally
-          if mnt.snapshot_in_pool.dataset_in_pool.pool.node_id == mnt.vps.vps_server
+          if mnt.snapshot_in_pool.dataset_in_pool.pool.node_id == mnt.vps.node_id
             m[:type] = :snapshot_local
 
             # Mount via NFS

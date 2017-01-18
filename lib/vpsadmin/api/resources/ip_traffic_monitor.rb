@@ -68,7 +68,7 @@ module VpsAdmin::API::Resources
         q = ::IpTrafficLiveMonitor.where('delta > 0')
 
         if current_user.role != :admin
-          q = q.joins(ip_address: :vps).where(vps: {m_id: current_user.id})
+          q = q.joins(ip_address: :vps).where(vpses: {user_id: current_user.id})
         end
 
         # Directly accessible filters
@@ -109,7 +109,7 @@ module VpsAdmin::API::Resources
 
         if input[:node]
           q = q.joins(ip_address: :vps).where(
-              vps: {vps_server: input[:node].id}
+              vpses: {node_id: input[:node].id}
           )
         end
 
@@ -167,7 +167,7 @@ module VpsAdmin::API::Resources
         q = ::IpTrafficLiveMonitor
 
         if current_user.role != :admin
-          q = q.joins(ip_address: :vps).where(vps: {m_id: current_user.id})
+          q = q.joins(ip_address: :vps).where(vpses: {user_id: current_user.id})
         end
         
         @mon = q.find_by!(id: params[:ip_traffic_monitor_id])

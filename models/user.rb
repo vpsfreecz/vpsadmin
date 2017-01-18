@@ -1,5 +1,5 @@
 class User < ActiveRecord::Base
-  has_many :vpses, :foreign_key => :m_id
+  has_many :vpses
   has_many :transactions
   has_many :environment_user_configs
   has_many :environments, through: :environment_user_configs
@@ -142,7 +142,7 @@ class User < ActiveRecord::Base
   def vps_in_env(env)
     vpses.joins(node: [:location]).where(
         locations: {environment_id: env.id},
-        vps: {object_state: [
+        vpses: {object_state: [
             ::Vps.object_states[:active],
             ::Vps.object_states[:suspended]
         ]}
