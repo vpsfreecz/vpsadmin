@@ -26,7 +26,7 @@ module VpsAdmind
       db_vpses = {}
 
       fetch_vpses(db).each_hash do |row|
-        db_vpses[ row['vps_id'].to_i ] = {
+        db_vpses[ row['id'].to_i ] = {
             :read_hostname => row['manage_hostname'].to_i == 0,
             :last_status_id => row['status_id'] && row['status_id'].to_i,
             :last_is_running => row['is_running'].to_i == 1,
@@ -125,7 +125,7 @@ module VpsAdmind
 
         if vps[:hostname]
           db.prepared(
-              'UPDATE vps SET vps_hostname = ? WHERE vps_id = ?',
+              'UPDATE vpses SET hostname = ? WHERE id = ?',
               vps[:hostname], vps_id
           )
         end
@@ -138,16 +138,16 @@ module VpsAdmind
     protected
     def fetch_vpses(db)
       sql = "
-          SELECT vps.vps_id, vps.manage_hostname, st.id AS status_id, st.is_running,
+          SELECT vpses.id, vpses.manage_hostname, st.id AS status_id, st.is_running,
                  st.cpus, st.total_memory, st.total_swap, st.created_at
-          FROM vps
-          LEFT JOIN vps_current_statuses st ON st.vps_id = vps.vps_id
+          FROM vpses
+          LEFT JOIN vps_current_statuses st ON st.vps_id = vpses.id
           WHERE
-            vps_server = #{$CFG.get(:vpsadmin, :server_id)}
+            node_id = #{$CFG.get(:vpsadmin, :server_id)}
             AND object_state < 3"
 
       if @vps_ids
-        sql += " AND vps.vps_id IN (#{@vps_ids.join(',')})"
+        sql += " AND vpses.id IN (#{@vps_ids.join(',')})"
       end
       
       db.query(sql)

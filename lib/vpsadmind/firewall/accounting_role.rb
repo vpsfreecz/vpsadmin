@@ -28,9 +28,9 @@ module VpsAdmind::Firewall
       
       rs = db.query("SELECT ip_addr
                     FROM ip_addresses ip
-                    INNER JOIN vps ON vps.vps_id = ip.vps_id
+                    INNER JOIN vpses ON vpses.id = ip.vps_id
                     INNER JOIN networks n ON n.id = ip.network_id
-                    WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}
+                    WHERE node_id = #{$CFG.get(:vpsadmin, :server_id)}
                     AND n.ip_version = #{v}")
       rs.each_hash do |ip|
         reg_ip(ip['ip_addr'], v)

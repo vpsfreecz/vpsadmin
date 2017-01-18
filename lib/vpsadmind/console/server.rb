@@ -65,7 +65,7 @@ module VpsAdmind
     def open_console(data)
       db = Db.new
       st = db.prepared_st(
-          'SELECT vps_id FROM vps_console WHERE token = ? AND expiration > ?',
+          'SELECT vps_id FROM vps_consoles WHERE token = ? AND expiration > ?',
           data[:session], # can be nil
           Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
       )

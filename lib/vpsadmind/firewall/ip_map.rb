@@ -24,16 +24,16 @@ module VpsAdmind::Firewall
         @map.clear unless @map.empty?
 
         db.query("
-            SELECT ip.id, ip_addr, n.ip_version, vps.m_id
+            SELECT ip.id, ip_addr, n.ip_version, vpses.user_id
             FROM ip_addresses ip
             INNER JOIN networks n ON n.id = ip.network_id
-            INNER JOIN vps ON vps.vps_id = ip.vps_id
-            WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}
+            INNER JOIN vpses ON vpses.id = ip.vps_id
+            WHERE node_id = #{$CFG.get(:vpsadmin, :server_id)}
         ").each_hash do |ip|
           @map[ip['ip_addr']] = IpAddr.new(
               ip['id'].to_i,
               ip['ip_version'].to_i,
-              ip['m_id'].to_i
+              ip['user_id'].to_i
           )
         end
 

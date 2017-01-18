@@ -167,11 +167,11 @@ module VpsAdmind
 
     def all_ips(db)
       rs = db.query("SELECT ip_addr, ip_version, class_id, max_tx, max_rx
-                    FROM vps
-                    INNER JOIN ip_addresses ip ON ip.vps_id = vps.vps_id
+                    FROM vpses
+                    INNER JOIN ip_addresses ip ON ip.vps_id = vpses.id
                     INNER JOIN networks n ON n.id = ip.network_id
-                    WHERE vps_server = #{$CFG.get(:vpsadmin, :server_id)}
-                      AND ip.vps_id = vps.vps_id")
+                    WHERE vpses.node_id = #{$CFG.get(:vpsadmin, :server_id)}
+                      AND ip.vps_id = vpses.id")
       rs.each_hash do |ip|
         yield ip
       end

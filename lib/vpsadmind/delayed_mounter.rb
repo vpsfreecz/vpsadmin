@@ -180,8 +180,8 @@ module VpsAdmind
       st = db.prepared_st(
           "SELECT m.vps_id, m.id
           FROM mounts m
-          INNER JOIN vps ON vps.vps_id = m.vps_id
-          WHERE vps_server = ? AND m.current_state = 4",
+          INNER JOIN vpses ON vpses.id = m.vps_id
+          WHERE node_id = ? AND m.current_state = 4",
           $CFG.get(:vpsadmin, :server_id)
       )
 

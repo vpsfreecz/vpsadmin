@@ -1,4 +1,4 @@
-- Use refactored DB schema of nodes, transactions, IP addresses
+- Use refactored DB schema of nodes, transactions, IP addresses, VPSes
 
 * Fri Dec 30 2016 - version 2.6.0
 - New transaction `Vps::DeployPublicKey`
