@@ -16,6 +16,7 @@
 - Node.Index: add input parameter type
 - Register model NodePubkey
 - Add action `Cluster.Search`
+- Add new task `log` to Rakefile
 
 * Fri Dec 30 2016 - version 2.6.0
 - Rebase on HaveAPI v0.7
