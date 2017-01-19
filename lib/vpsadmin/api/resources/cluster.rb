@@ -149,5 +149,31 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
     end
   end
 
+  class Search < HaveAPI::Action
+    http_method :post
+    desc 'Search users and VPSes by IDs, names and owned objects'
+    
+    input(:hash) do
+      string :value, label: 'Value', desc: 'Value to be searched for',
+          required: true
+    end
+
+    output(:hash_list) do
+      string :resource, label: 'Resource', desc: 'Resource name of the located object'
+      integer :id, label: 'ID', desc: 'Identifier of the located object'
+      string :attribute, label: 'Attribute',
+          desc: 'Name of the attribute containing the searched value'
+      string :value, label: 'Value', desc: 'Located value'
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def exec
+      ::Cluster.search(input[:value].strip)
+    end
+  end
+
   include VpsAdmin::API::Maintainable::Action
 end

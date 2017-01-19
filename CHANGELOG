@@ -15,6 +15,7 @@
 - DnsResolver.Index: add input parameter vps
 - Node.Index: add input parameter type
 - Register model NodePubkey
+- Add action `Cluster.Search`
 
 * Fri Dec 30 2016 - version 2.6.0
 - Rebase on HaveAPI v0.7
