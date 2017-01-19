@@ -462,10 +462,8 @@ class XTemplate {
 	function logbox ($logged = false, $user_name = 'none', $is_admin=false, $maint_mode = false) {
 		if ($logged) {
 			if ($is_admin) {
-				$this->assign("L_MEMBER", _("Member"));
-				$this->assign("L_VPS", _("VPS"));
-				$this->assign("V_MEMBER", $_SESSION["jumpto"]["member"]);
-				$this->assign("V_VPS", $_SESSION["jumpto"]["vps"]);
+				$this->assign("L_SEARCH", _("Search"));
+				$this->assign("V_SEARCH", $_SESSION["jumpto"]);
 				$this->assign("L_JUMP", _("Jump"));
 				$this->parse("main.loggedbox.jumpto");
 				

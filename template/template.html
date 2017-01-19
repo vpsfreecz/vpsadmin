@@ -82,16 +82,13 @@
 	<!-- END: logbox -->
 	<!-- BEGIN: loggedbox -->
 			<!-- BEGIN: jumpto -->
-			<form action="?page=jumpto" method="post" id="jumpto">
+			<form action="?page=jumpto" method="get" id="jumpto">
+                                <input type="hidden" name="page" value="jumpto">
 				<table>
 					<tr>
-						<td><span>{L_MEMBER}:</span></td>
-						<td><input type="text" name="member" size="10" value="{V_MEMBER}"></td>
-						<td rowspan="2"><input type="submit" name="jump" value="{L_JUMP}"></td>
-					</tr>
-					<tr>
-						<td><span>{L_VPS}:</span></td>
-						<td><input type="text" name="vps" size="10" value="{V_VPS}"></td>
+						<td><span>{L_SEARCH}:</span></td>
+						<td><input type="text" name="search" size="10" value="{V_SEARCH}"></td>
+						<td><input type="submit" value="{L_JUMP}"></td>
 					</tr>
 				</table>
 			</form>
