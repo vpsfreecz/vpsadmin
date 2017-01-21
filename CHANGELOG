@@ -18,6 +18,7 @@
 - Register model NodePubkey
 - Add action `Cluster.Search`
 - Add new task `log` to Rakefile
+- New resource `SystemConfig`
 
 * Fri Dec 30 2016 - version 2.6.0
 - Rebase on HaveAPI v0.7
