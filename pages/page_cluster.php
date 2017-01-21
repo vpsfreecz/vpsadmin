@@ -649,15 +649,20 @@ switch($_REQUEST["action"]) {
 		break;
 
 	case "config_edit":
-		if ($cfg = $db->findByColumnOnce("config", "id", $_GET["config"])) {
+		try {
+			$cfg = $api->vps_config->find($_GET['config']);
+
 			$xtpl->title2(_("Edit config"));
 			$xtpl->table_add_category('');
 			$xtpl->table_add_category('');
-			$xtpl->form_create('?page=cluster&action=config_edit_save&config='.$cfg["id"], 'post');
-			$xtpl->form_add_input(_('Name').':', 'text', '30', 'name', $cfg["name"]);
-			$xtpl->form_add_input(_('Label').':', 'text', '30', 'label', $cfg["label"]);
-			$xtpl->form_add_textarea(_('Config').':', '60', '30', 'config', $cfg["config"]);
+			$xtpl->form_create('?page=cluster&action=config_edit_save&config='.$cfg->id, 'post');
+			$xtpl->form_add_input(_('Name').':', 'text', '30', 'name', $cfg->name);
+			$xtpl->form_add_input(_('Label').':', 'text', '30', 'label', $cfg->label);
+			$xtpl->form_add_textarea(_('Config').':', '60', '30', 'config', $cfg->config);
 			$xtpl->form_out(_('Save'));
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Fetch failed'), $e->getResponse());
 		}
 		
 		$xtpl->sbar_add(_("Back"), '?page=cluster&action=configs');
@@ -919,11 +924,11 @@ if ($list_configs) {
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 	
-	while($row = $db->find("config", NULL, "name")) {
-		$xtpl->table_td($row["label"]);
-		$xtpl->table_td($row["name"]);
-		$xtpl->table_td('<a href="?page=cluster&action=config_edit&config='.$row["id"].'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-		$xtpl->table_td('<a href="?page=cluster&action=config_delete&id='.$row["id"].'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+	foreach ($api->vps_config->list() as $cfg) {
+		$xtpl->table_td($cfg->label);
+		$xtpl->table_td($cfg->name);
+		$xtpl->table_td('<a href="?page=cluster&action=config_edit&config='.$cfg->id.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		$xtpl->table_td('<a href="?page=cluster&action=config_delete&id='.$cfg->id.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
 		$xtpl->table_tr();
 	}
 	
