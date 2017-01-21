@@ -7,55 +7,86 @@
     Copyright (C) 2008-2011 Pavel Snajdr, snajpa@snajpa.net
 */
 
-class cluster_cfg {
-    function cluster_cfg() {
-	return true;
-    }
-    /**
-      * Test wether config item exists
-      * @param $setting - setting name
-      * @return true if exists, false if not or error occurs
-      */
-    function exists($setting) {
-		global $db;
-		$sql = 'SELECT * FROM sysconfig WHERE cfg_name="'.$db->check($setting).'"';
-		
-		if ($result = $db->query($sql)) {
-			if ($row = $db->fetch_array($result)) {
-				return true;
-			} else return false;
-		} else return false;
-    }
-    /**
-      * Get value of saved setting
-      * @param $setting - setting name
-      * @return original setting content if success, false if error occurs
-      * WARNING: returns false also if original setting content was false
-      */
-    function get($setting) {
-	global $db;
-	$sql = 'SELECT * FROM sysconfig WHERE cfg_name="'.$db->check($setting).'"';
-	if ($result = $db->query($sql)) {
-	    if ($row = $db->fetch_array($result)) {
-		return json_decode($row["cfg_value"]);
-	    } else return false;
-	} else return false;
-    }
-    /**
-      * Save setting
-      * @param $setting - setting name
-      * @param $value - its value in natural form (eg. array etc), basically everything that could be serialized
-      * @return SQL result descriptor
-      */
-    function set($setting, $value) {
-	global $db;
-	if ($this->exists($setting))
-	    $sql = 'UPDATE sysconfig SET cfg_value = "'.$db->check(json_encode($value)).'" WHERE cfg_name = "'.$db->check($setting).'"';
-	else
-    	    $sql = 'INSERT INTO sysconfig SET cfg_value = "'.$db->check(json_encode($value)).'", cfg_name = "'.$db->check($setting).'"';
-	
-	return ($db->query($sql));
-    }
-}
-$cluster_cfg = new cluster_cfg();
+class SystemConfig implements Iterator {
+	public function __construct($api, $forceLoad = false) {
+		$this->api = $api;
 
+		$this->loadConfig($forceLoad);
+		$this->setupIterator();
+	}
+
+	public function get($cat, $name) {
+		return $this->cfg[$cat][$name]['value'];
+	}
+
+	public function getType($cat, $name) {
+		return $this->cfg[$cat][$name]['type'];
+	}
+
+	public function reload() {
+		$this->loadConfig(true);
+		$this->setupIterator();
+	}
+
+	protected function loadConfig($force) {
+		if (!$force && isset($_SESSION['sysconfig']))
+			return $this->cfg = $_SESSION['sysconfig'];
+
+		$this->cfg = $this->fetchConfig();
+		$_SESSION['sysconfig'] = $this->cfg;
+	}
+
+	protected function fetchConfig() {
+		$cfg = array();
+		
+		$options = $this->api->system_config->index();
+
+		foreach ($options as $opt) {
+			if (!array_key_exists($opt->category, $cfg))
+				$cfg[$opt->category] = array();
+
+			$cfg[$opt->category][$opt->name] = $opt->attributes();
+		}
+
+		return $cfg;
+	}
+
+	protected function setupIterator() {
+		$this->categories = new ArrayObject($this->cfg);
+		$this->catIterator = $this->categories->getIterator();
+
+		$this->options = new ArrayObject($this->catIterator->current());
+		$this->optIterator = $this->options->getIterator();
+	}
+
+	/* Iterator methods */
+	public function current() {
+		return $this->optIterator->current()->value;
+	}
+
+	public function key() {
+		return $this->catIterator->key().':'.$this->optIterator->key();
+	}
+
+	public function next() {
+		$this->optIterator->next();
+
+		if (!$this->optIterator->valid()) {
+			$this->catIterator->next();
+
+			if (!$this->catIterator->valid())
+				return;
+
+			$this->options = new ArrayObject($this->catIterator->current());
+			$this->optIterator = $this->options->getIterator();
+		}
+	}
+
+	public function rewind() {
+		$this->setupIterator();
+	}
+
+	public function valid() {
+		return $this->catIterator->valid() && $this->optIterator->valid();
+	}
+}

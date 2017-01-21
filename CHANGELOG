@@ -7,6 +7,7 @@
 - User context switching does not require the database
 - Removed /cluster_status.php
 - Jump to uses the API to search for resources
+- Fetch system config from the API, new system config editor
 
 * Fri Dec 30 2016 - version 2.6.0
 - Public key management forms

@@ -3,7 +3,7 @@ function cluster_header() {
 	global $xtpl, $api;
 
 	$xtpl->sbar_add(_("VPS overview"), '?page=cluster&action=vps');
-	$xtpl->sbar_add(_("General settings"), '?page=cluster&action=general_settings');
+	$xtpl->sbar_add(_("System config"), '?page=cluster&action=sysconfig');
 	$xtpl->sbar_add(_("Register new node"), '?page=cluster&action=newnode');
 	$xtpl->sbar_add(_("Manage OS templates"), '?page=cluster&action=templates');
 	$xtpl->sbar_add(_("Manage configs"), '?page=cluster&action=configs');
@@ -13,10 +13,8 @@ function cluster_header() {
 	$xtpl->sbar_add(_("Manage environments"), '?page=cluster&action=environments');
 	$xtpl->sbar_add(_("Manage locations"), '?page=cluster&action=locations');
 	$xtpl->sbar_add(_("Integrity check"), '?page=cluster&action=integrity_check');
-	$xtpl->sbar_add(_("Manage Payments"), '?page=cluster&action=payments_settings');
-	$xtpl->sbar_add(_("Notice board & log"), '?page=cluster&action=noticeboard');
+	$xtpl->sbar_add(_("Event log"), '?page=cluster&action=eventlog');
 	$xtpl->sbar_add(_("Help boxes"), '?page=cluster&action=helpboxes');
-	$xtpl->sbar_add(_("Edit vpsAdmin textfields"), '?page=cluster&action=fields');
 	
 	$xtpl->table_title(_("Summary"));
 	
@@ -723,4 +721,59 @@ function node_update_form($id) {
 	api_update_form($node);
 	
 	$xtpl->form_out(_("Save"));
+}
+
+function system_config_form() {
+	global $xtpl, $api;
+
+	$xtpl->title2(_("System config"));
+	$xtpl->form_create('?page=cluster&action=sysconfig_save', 'post');
+
+	$options = $api->system_config->index();
+	$last_cat = null;
+
+	foreach ($options as $opt) {
+		if ($last_cat === null || $last_cat != $opt->category) {
+			$xtpl->table_td($opt->category, '#5EAFFF; color:#FFF; font-weight:bold;', false, 2);
+			$xtpl->table_tr();
+			$last_cat = $opt->category;
+		}
+
+		$xtpl->table_td(
+			($opt->label ? $opt->label : $opt->name).':',
+			false, false, '1', $opt->description ? '2' : '1'
+		);
+
+		$name = $opt->category.':'.$opt->name;
+		$value = isset($_POST[$name]) ? $_POST[$name] : $opt->value;
+
+		switch ($opt->type) {
+		case 'String':
+			$xtpl->form_add_input_pure('text', '70', $name, $value);
+			break;
+
+		case 'Text':
+		case 'Custom':
+			$xtpl->form_add_textarea_pure('70', '15', $name, $value);
+			break;
+
+		case 'Integer':
+		case 'Float':
+			$xtpl->form_add_number_pure($name, $value);
+			break;
+
+		case 'Boolean':
+			$xtpl->form_add_checkbox_pure($name, '1', $value ? true : false);
+			break;
+		}
+
+		$xtpl->table_tr();
+
+		if ($opt->description) {
+			$xtpl->table_td($opt->description);
+			$xtpl->table_tr();
+		}
+	}
+
+	$xtpl->form_out(_("Save changes"));
 }

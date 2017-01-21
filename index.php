@@ -96,6 +96,8 @@ try {
 		}
 	}
 
+	$config = new SystemConfig($api);
+
 	$_GET["page"] = isset($_GET["page"]) ? $_GET["page"] : false;
 
 	if (($_GET["page"] != "login") &&
@@ -225,7 +227,7 @@ $xtpl->logbox(
 	$api_cluster ? $api_cluster->maintenance_lock : false
 );
 
-$xtpl->adminbox($cluster_cfg->get("adminbox_content"));
+$xtpl->adminbox($config->get("webui", "adminbox_content"));
 
 $help = get_helpbox();
 
@@ -237,7 +239,7 @@ if ($help)
 
 $lang->lang_switcher();
 
-$xtpl->assign('PAGE_TITLE', $cluster_cfg->get("page_title"));
+$xtpl->assign('PAGE_TITLE', $config->get("webui", "document_title"));
 $xtpl->assign('API_SPENT_TIME', round($api->getSpentTime(), 6));
 
 if (defined('TRACKING_CODE')) {

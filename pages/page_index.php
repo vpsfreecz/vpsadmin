@@ -30,7 +30,7 @@ if ($_SESSION["is_admin"]) {
 
 $xtpl->table_add_category('');
 
-$noticeboard = $cluster_cfg->get("noticeboard");
+$noticeboard = $config->get("webui", "noticeboard");
 
 if ($noticeboard) {
 	$xtpl->table_td(nl2br($noticeboard), false, false, 2);
@@ -162,8 +162,8 @@ if($position == 2) { // last row has only one node
 
 $xtpl->table_out();
 
-$xtpl->table_add_category($cluster_cfg->get('page_index_info_box_title'));
-$xtpl->table_td($cluster_cfg->get('page_index_info_box_content'));
+$xtpl->table_add_category($config->get('webui', 'page_index_info_box_title'));
+$xtpl->table_td($config->get('webui', 'page_index_info_box_content'));
 $xtpl->table_tr();
 $xtpl->table_out();
 

@@ -7,7 +7,7 @@
     Copyright (C) 2008-2011 Pavel Snajdr, snajpa@snajpa.net
 */
 function print_newm() {
-	global $xtpl, $cfg_privlevel, $cluster_cfg;
+	global $xtpl, $cfg_privlevel, $config;
 
 	$xtpl->title(_("Add a member"));
 	$xtpl->table_add_category('&nbsp;');
@@ -25,13 +25,11 @@ function print_newm() {
 	$xtpl->form_add_input(_("E-mail").':', 'text', '30', 'm_mail', $_POST["m_mail"], ' ');
 	$xtpl->form_add_input(_("Postal address").':', 'text', '30', 'm_address', $_POST["m_address"], ' ');
 
-	if ($cluster_cfg->get("payments_enabled")) {
+	if ($config->get("webui", "payments_enabled")) {
 		$xtpl->form_add_input(_("Monthly payment").':', 'text', '30', 'm_monthly_payment', $_POST["m_monthly_payment"] ? $_POST["m_monthly_payment"] : '300', ' ');
 	}
 
-	if ($cluster_cfg->get("mailer_enabled")) {
-		$xtpl->form_add_checkbox(_("Enable vpsAdmin mailer").':', 'm_mailer_enable', '1', $_POST["m_nick"] ? $_POST["m_mailer_enable"] : true, $hint = '');
-	}
+	$xtpl->form_add_checkbox(_("Enable vpsAdmin mailer").':', 'm_mailer_enable', '1', $_POST["m_nick"] ? $_POST["m_mailer_enable"] : true, $hint = '');
 	
 	$xtpl->form_add_textarea(_("Info").':', 28, 4, 'm_info', $_POST["m_info"], _("Note for administrators"));
 	$xtpl->form_out(_("Add"));
@@ -65,7 +63,7 @@ function print_newm() {
 }
 
 function print_editm($u) {
-	global $xtpl, $cfg_privlevel, $cluster_cfg, $api;
+	global $xtpl, $cfg_privlevel, $config, $api;
 
 	$xtpl->title(_("Manage members"));
 	
@@ -103,7 +101,7 @@ function print_editm($u) {
 		$xtpl->table_tr();
 	}
 	
-	if ($cluster_cfg->get("payments_enabled")) {
+	if ($config->get("webui", "payments_enabled")) {
 		$xtpl->table_td(_("Paid until").':');
 
 		$dt = new DateTime($u->paid_until);
@@ -159,9 +157,7 @@ function print_editm($u) {
 		$xtpl->table_tr();
 	}
 	
-	if ($cluster_cfg->get("mailer_enabled")) {
-		$xtpl->form_add_checkbox(_("Enable mail notifications from vpsAdmin").':', 'm_mailer_enable', '1', $u->mailer_enabled, $hint = '');
-	}
+	$xtpl->form_add_checkbox(_("Enable mail notifications from vpsAdmin").':', 'm_mailer_enable', '1', $u->mailer_enabled, $hint = '');
 
 	api_param_to_form(
 		'language',
@@ -743,7 +739,7 @@ function request_ignore() {
 }
 
 function list_members() {
-	global $xtpl, $api, $cluster_cfg;
+	global $xtpl, $api, $config;
 	
 	if ($_SESSION["is_admin"]) {
 		$xtpl->title(_("Manage members [Admin mode]"));
@@ -784,14 +780,14 @@ function list_members() {
 		$xtpl->table_add_category(_("NICKNAME"));
 		$xtpl->table_add_category(_("VPS"));
 		
-		if ($cluster_cfg->get("payments_enabled")) {
+		if ($config->get("webui", "payments_enabled")) {
 			$xtpl->table_add_category(_("$"));
 		}
 		
 		$xtpl->table_add_category(_("FULL NAME"));
 		$xtpl->table_add_category(_("LAST ACTIVITY"));
 		
-		if ($cluster_cfg->get("payments_enabled")) {
+		if ($config->get("webui", "payments_enabled")) {
 			$xtpl->table_add_category(_("PAYMENT"));
 		}
 		
@@ -852,7 +848,7 @@ function list_members() {
 			
 			$xtpl->table_td('<a href="?page=adminvps&action=list&user='.$u->id.'">[ '.$vps_count.' ]</a>');
 			
-			if ($cluster_cfg->get("payments_enabled"))
+			if ($config->get("webui", "payments_enabled"))
 				$xtpl->table_td($u->monthly_payment);
 			
 			$xtpl->table_td($u->full_name);
@@ -880,7 +876,7 @@ function list_members() {
 				$xtpl->table_td("---", '#FFF');
 			}
 			
-			if ($cluster_cfg->get("payments_enabled")) {
+			if ($config->get("webui", "payments_enabled")) {
 				if ($paid_until)
 					$paid_until_str = date('Y-m-d', $paid_until);
 				else
@@ -1035,7 +1031,7 @@ if ($_SESSION["logged_in"]) {
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Requests for approval").'" /> '._("Requests for approval"), '?page=adminm&section=members&action=approval_requests');
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Export e-mails").'" /> '._("Export e-mails"), '?page=adminm&section=members&action=export_mails');
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Export e-mails of non-payers").'" /> '._("Export e-mails of non-payers"), '?page=adminm&section=members&action=export_notpaid_mails');
-		if ($cluster_cfg->get("payments_enabled")) {
+		if ($config->get("webui", "payments_enabled")) {
 			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments history").'" /> '._("Display history of payments"), '?page=adminm&section=members&action=payments_history');
 			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments overview").'" /> '._("Payments overview"), '?page=adminm&section=members&action=payments_overview');
 		}

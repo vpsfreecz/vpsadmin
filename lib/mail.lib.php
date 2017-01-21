@@ -1,10 +1,10 @@
 <?php
 function send_mail($to, $subject, $msg, $cc = array(), $bcc = array(), $html = false, $dep = NULL,
                    $message_id = NULL, $in_reply_to = NULL, $references = array()) {
-	global $cluster_cfg;
+	global $config;
 	
-	$from_name = $cluster_cfg->get("mailer_from_name");
-	$from_mail = $cluster_cfg->get("mailer_from_mail");
+	$from_name = $config->get("webui", "mailer_from_name");
+	$from_mail = $config->get("webui", "mailer_from_mail");
 	
 	$headers = "From: $from_name <$from_mail>\r\nDate: ".date("r")."\r\n";
 	
@@ -41,9 +41,9 @@ function request_change_mail_all($request, $state, $mail) {
 }
 
 function request_change_mail_admins($request, $state) {
-	global $cluster_cfg;
+	global $config;
 	
-	$admins = explode(",", $cluster_cfg->get("mailer_requests_sendto"));
+	$admins = explode(",", $config->get("webui", "mailer_requests_sendto"));
 	
 	foreach($admins as $admin) {
 		request_change_mail_send($request, $state, "admin", array(
@@ -69,10 +69,10 @@ function request_change_mail_member($request, $state, $mail) {
 }
 
 function request_change_mail_send($request, $state, $who, $member, $admin, $mail) {
-	global $cluster_cfg;
+	global $config;
 	
-	$subject = $cluster_cfg->get("mailer_requests_${who}_sub");
-	$text = $cluster_cfg->get("mailer_requests_${who}_text");
+	$subject = $config->get("webui", "mailer_requests_${who}_sub");
+	$text = $config->get("webui", "mailer_requests_${who}_text");
 	
 	$subject = str_replace("%request_id%", $request["m_id"], $subject);
 	$subject = str_replace("%type%", $request["m_type"], $subject);

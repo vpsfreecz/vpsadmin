@@ -55,24 +55,61 @@ switch($_REQUEST["action"]) {
 		node_vps_overview();
 		break;
 
-	case "general_settings":
-		$xtpl->title2(_("General settings"));
-		$xtpl->table_add_category('');
-		$xtpl->table_add_category('');
-		$xtpl->form_create('?page=cluster&action=general_settings_save', 'post');
-		$xtpl->form_add_input(_("Base URL").':', 'text', '30', 'base_url', $cluster_cfg->get("general_base_url"));
-		$xtpl->form_add_input(_("Member delete timeout").':', 'text', '30', 'member_del_timeout', $cluster_cfg->get("general_member_delete_timeout"), _("days"));
-		$xtpl->form_add_input(_("VPS delete timeout").':', 'text', '30', 'vps_del_timeout', $cluster_cfg->get("general_vps_delete_timeout"), _("days"));
-		$xtpl->form_out(_("Save changes"));
-		
+	case "sysconfig":
+		system_config_form();
+
 		$xtpl->sbar_add(_("Back"), '?page=cluster');
 		break;
-	case "general_settings_save":
-		$cluster_cfg->set("general_base_url", $_POST["base_url"]);
-		$cluster_cfg->set("general_member_delete_timeout", $_POST["member_del_timeout"]);
-		$cluster_cfg->set("general_vps_delete_timeout", $_POST["vps_del_timeout"]);
-		notify_user(_("Changes saved"), _("Changes sucessfully saved."));
-		redirect('?page=cluster&action=general_settings');
+
+	case "sysconfig_save":
+		$current_cfg = new SystemConfig($api, true);
+		$changes = array();
+
+		foreach ($current_cfg as $k => $v) {
+			list($cat, $name) = explode(':', $k);
+			$type = $current_cfg->getType($cat, $name);
+
+			if ($type === 'Boolean') {
+				if ($v && !$_POST[$k]) {
+					$changes[] = array($cat, $name, '0');
+					
+				} elseif (!$v && $_POST[$k]) {
+					$changes[] = array($cat, $name, '1');
+				}
+			
+			} elseif ($_POST[$k] != $v) {
+				$changes[] = array($cat, $name, $v);
+			}
+		}
+
+		$failed = array();
+
+		foreach ($changes as $change) {
+			try {
+				$api->system_config->update($change[0], $change[1], array(
+					'value' => $change[2],
+				));
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$failed[] = $change[0].':'.$change[1];
+			}
+		}
+
+		$config->reload();
+
+		if (count($failed)) {
+			$xtpl->perex(
+				_("Some changes were saved"),
+				_("The following options failed:").'<br>'.
+				implode("\n<br>\n", $failed)
+			);
+			system_config_form();
+
+		} else {
+			notify_user(_("Changes saved"), _("Changes sucessfully saved."));
+			redirect('?page=cluster&action=sysconfig');
+		}
+
 		break;
 		
 	case "dns":
@@ -683,97 +720,6 @@ switch($_REQUEST["action"]) {
 		}
 		break;
 
-	case "fields":
-		$xtpl->title2(_("Edit textfields"));
-		$xtpl->table_add_category('');
-		$xtpl->table_add_category('');
-		$xtpl->form_create('?page=cluster&action=fields_save', 'post');
-		$xtpl->form_add_input(_("Page title").':', 'text', '40', 'page_title', $cluster_cfg->get("page_title"), '');
-		$xtpl->form_add_textarea(_("Text on sidebar").':', 50, 8, 'adminbox_content', $cluster_cfg->get("adminbox_content"), _("HTML"));
-		$xtpl->form_add_textarea(_("Page Status infobox title").':', 50, 8, 'page_index_info_box_title', $cluster_cfg->get("page_index_info_box_title"), _("HTML"));
-		$xtpl->form_add_textarea(_("Page Status infobox content").':', 50, 8, 'page_index_info_box_content', $cluster_cfg->get("page_index_info_box_content"), _("HTML"));
-		$xtpl->form_out(_("Save changes"));
-		break;
-	case "fields_save":
-		$cluster_cfg->set('page_title', $_REQUEST["page_title"]);
-		$cluster_cfg->set('adminbox_content', $_REQUEST["adminbox_content"]);
-		$cluster_cfg->set('page_index_info_box_title', $_REQUEST["page_index_info_box_title"]);
-		$cluster_cfg->set('page_index_info_box_content', $_REQUEST["page_index_info_box_content"]);
-		$list_nodes = true;
-		break;
-		
-	case "daily_reports":
-		$xtpl->form_create('?page=cluster&action=daily_reports_save', 'post');
-		$xtpl->form_add_input(_("Send to").':', 'text', '40', 'sendto', $cluster_cfg->get("mailer_daily_report_sendto"));
-		$xtpl->form_out(_('Save changes'));
-		
-		$xtpl->sbar_add(_("Back"), '?page=cluster&action=mailer');
-		break;
-	case "daily_reports_save":
-		$cluster_cfg->set("mailer_daily_report_sendto", $_POST["sendto"]);
-		
-		$list_mails = true;
-		break;
-	case "approval_requests":
-		$xtpl->form_create('?page=cluster&action=approval_requests_save', 'post');
-		$xtpl->form_add_input(_("Send to").':', 'text', '40', 'sendto', $cluster_cfg->get("mailer_requests_sendto"));
-		
-		$xtpl->form_add_input(_("Admin subject").':', 'text', '40', 'admin_sub', $cluster_cfg->get("mailer_requests_admin_sub"), '
-								%request_id% - ID<br />
-								%type% <br />
-								%state% - approved/denied/ignored<br />
-								%member_id% - id<br />
-								%member% - nick
-								');
-		$xtpl->form_add_textarea(_("Admin mail").':', 50, 8, 'admin_text', $cluster_cfg->get("mailer_requests_admin_text"), '
-								%created% - datetime<br />
-								%changed_at% - datetime<br />
-								%request_id%<br />
-								%type% <br />
-								%state% - approved/denied/ignored<br />
-								%member_id% - id<br />
-								%member% - nick<br />
-								%admin_id% - admin id<br />
-								%admin% - admin nick<br />
-								%changed_info% - changed data<br />
-								%reason%<br />
-								%admin_response%<br />
-								%ip%<br />
-								%ptr%
-								');
-		
-		$xtpl->form_add_input(_("Member subject").':', 'text', '40', 'member_sub', $cluster_cfg->get("mailer_requests_member_sub"), '
-								%request_id% - ID<br />
-								%state% - approved/denied<br />
-								%member_id% - id<br />
-								%member% - nick
-								');
-		$xtpl->form_add_textarea(_("Member mail").':', 50, 8, 'member_text', $cluster_cfg->get("mailer_requests_member_text"), '
-								%request_id% - ID
-								%state% - approved/denied<br />
-								%member_id% - id<br />
-								%member% - nick<br />
-								%admin_id% - admin id<br />
-								%admin% - admin nick<br />
-								%admin_response%<br />
-								');
-		
-		$xtpl->form_out(_('Save changes'));
-		
-		$xtpl->sbar_add(_("Back"), '?page=cluster&action=mailer');
-		break;
-	case "approval_requests_save":
-		$cluster_cfg->set("mailer_requests_sendto", $_POST["sendto"]);
-		
-		$cluster_cfg->set("mailer_requests_admin_sub", $_POST["admin_sub"]);
-		$cluster_cfg->set("mailer_requests_admin_text", $_POST["admin_text"]);
-		
-		$cluster_cfg->set("mailer_requests_member_sub", $_POST["member_sub"]);
-		$cluster_cfg->set("mailer_requests_member_text", $_POST["member_text"]);
-		
-		$list_mails = true;
-		break;
-
 	case "integrity_check":
 		integrity_check_list();
 		break;
@@ -833,30 +779,11 @@ switch($_REQUEST["action"]) {
 		}
 		break;
 		
-	case "payments_settings":
-		$xtpl->title2("Manage Payment Settings");
-		$xtpl->table_add_category('');
-		$xtpl->table_add_category('');
-		$xtpl->form_create('?page=cluster&action=payments_settings_save', 'post');
-		$xtpl->form_add_checkbox(_("Payments management enabled").':', 'payments_enabled', '1', $cluster_cfg->get("payments_enabled"), $hint = '');
-		$xtpl->form_out(_("Save changes"));
-		$xtpl->sbar_add(_("Back"), '?page=cluster');
-		break;
-	case "payments_settings_save":
-		$cluster_cfg->set("payments_enabled", $_REQUEST["payments_enabled"]);
-		$xtpl->perex(_("Payments settings saved"), '');
-		$list_nodes = true;
-		break;
-	case "noticeboard":
-		$noticeboard = true;
-		break;
-	case "noticeboard_save":
-		$cluster_cfg->set("noticeboard", $_POST["noticeboard"]);
-		$xtpl->perex(_("Notice board saved"), '');
-		$list_nodes = true;
+	case "eventlog":
+		$eventlog = true;
 		break;
 	case "log_add":
-		$noticeboard = true;
+		$eventlog = true;
 		if ($_POST["datetime"] && $_POST["msg"]) {
 			log_add($_POST["datetime"], $_POST["msg"]);
 			
@@ -873,7 +800,7 @@ switch($_REQUEST["action"]) {
 		
 		break;
 	case "log_edit_save":
-		$noticeboard = true;
+		$eventlog = true;
 		
 		if ($_GET["id"]) {
 			log_save($_GET["id"], $_POST["datetime"], $_POST["msg"]);
@@ -882,7 +809,7 @@ switch($_REQUEST["action"]) {
 		
 		break;
 	case "log_del":
-		$noticeboard = true;
+		$eventlog = true;
 		
 		log_del($_GET["id"]);
 		
@@ -935,17 +862,7 @@ switch($_REQUEST["action"]) {
 	default:
 		$list_nodes = true;
 }
-if ($list_mails) {
-	$xtpl->title2("Mailer");
-	
-	$xtpl->form_create('?page=cluster&action=mailer_save', 'post');
-	$xtpl->form_add_input(_("Send mails from name").':', 'text', '40', 'from_name', $cluster_cfg->get("mailer_from_name"));
-	$xtpl->form_add_input(_("Send mails from mail").':', 'text', '40', 'from_mail', $cluster_cfg->get("mailer_from_mail"));
-	$xtpl->form_out(_("Save"));
-	
-	$xtpl->sbar_add(_("Daily reports"), '?page=cluster&action=daily_reports');
-	$xtpl->sbar_add(_("Approval requests"), '?page=cluster&action=approval_requests');
-}
+
 if ($list_nodes) {
 	cluster_header();
 	node_overview();
@@ -1159,14 +1076,7 @@ if ($env_settings) {
 	$xtpl->form_out(_("Save changes"), 'configs', '<a href="javascript:" id="add_row">+</a>');
 }
 
-if ($noticeboard) {
-	$xtpl->table_title(_("Notice board"));
-	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
-	$xtpl->form_create('?page=cluster&action=noticeboard_save', 'post');
-	$xtpl->form_add_textarea(_("Text").':', 80, 15, 'noticeboard', $cluster_cfg->get("noticeboard"));
-	$xtpl->form_out(_("Save changes"));
-	
+if ($eventlog) {
 	$xtpl->table_title(_("Log"));
 	$xtpl->table_add_category('Add entry');
 	$xtpl->table_add_category('');
