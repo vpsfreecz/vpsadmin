@@ -86,7 +86,7 @@ module TransactionChains
                           object_state: ::Vps.object_states[:active]
                       ).joins("INNER JOIN object_states s ON s.class_name = 'Vps' AND vpses.id = s.row_id")
                       .where('s.state = ?', ::Vps.object_states[:active])
-                      .where('s.created_at != vps.created_at')
+                      .where('s.created_at != vpses.created_at')
                       .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
                       .order('vpses.id')
                   },
