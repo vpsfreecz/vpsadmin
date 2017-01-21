@@ -17,7 +17,7 @@ module TransactionChains
       mail(:daily_report, {
           language: lang,
           vars: {
-              base_url: ::SysConfig.get('general_base_url'),
+              base_url: ::SysConfig.get('webui', 'base_url'),
               
               date: {
                   start: (now - 24*60*60),

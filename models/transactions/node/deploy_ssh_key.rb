@@ -7,9 +7,9 @@ module Transactions::Node
       self.node_id = node.id
 
       {
-          public_key: SysConfig.get('node_public_key'),
-          private_key: SysConfig.get('node_private_key'),
-          key_type: SysConfig.get('node_key_type')
+          public_key: SysConfig.get('node', 'public_key'),
+          private_key: SysConfig.get('node', 'private_key'),
+          key_type: SysConfig.get('node', 'key_type'),
       }
     end
   end

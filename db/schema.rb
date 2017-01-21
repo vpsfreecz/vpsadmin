@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170118160101) do
+ActiveRecord::Schema.define(version: 20170120080846) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -842,9 +842,20 @@ ActiveRecord::Schema.define(version: 20170118160101) do
 
   add_index "snapshots", ["dataset_id"], name: "index_snapshots_on_dataset_id", using: :btree
 
-  create_table "sysconfig", primary_key: "cfg_name", force: true do |t|
-    t.text "cfg_value"
+  create_table "sysconfig", force: true do |t|
+    t.string   "category",       limit: 75,                  null: false
+    t.string   "name",           limit: 75,                  null: false
+    t.string   "data_type",                 default: "Text", null: false
+    t.text     "value"
+    t.string   "label"
+    t.text     "description"
+    t.integer  "min_user_level"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
+
+  add_index "sysconfig", ["category", "name"], name: "index_sysconfig_on_category_and_name", unique: true, using: :btree
+  add_index "sysconfig", ["category"], name: "index_sysconfig_on_category", using: :btree
 
   create_table "transaction_chain_concerns", force: true do |t|
     t.integer "transaction_chain_id", null: false

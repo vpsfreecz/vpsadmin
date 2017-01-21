@@ -17,7 +17,7 @@ class SnapshotDownload < ActiveRecord::Base
 
   def self.base_url
     return @base_url if @base_url
-    @base_url = ::SysConfig.get('snapshot_download_base_url')
+    @base_url = ::SysConfig.get('core', 'snapshot_download_base_url')
   end
 
   def destroy
