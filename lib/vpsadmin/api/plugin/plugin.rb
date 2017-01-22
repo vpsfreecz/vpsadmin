@@ -6,7 +6,6 @@ module VpsAdmin::API::Plugin
       define_method(field) do |v = nil|
         if v
           instance_variable_set("@#{field}", v)
-
         else
           instance_variable_get("@#{field}")
         end
@@ -17,8 +16,13 @@ module VpsAdmin::API::Plugin
       @id = id
     end
 
+    def components(*args)
+      return @components if args.empty?
+      @components = args
+    end
+
     def migration_directory
-      File.join(directory, 'db', 'migrate')
+      File.join(directory, 'api', 'db', 'migrate')
     end
 
     def migrations

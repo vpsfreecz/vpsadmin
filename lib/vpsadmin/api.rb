@@ -81,7 +81,7 @@ module VpsAdmin
 
       @configure && @configure.call(api)
 
-      VpsAdmin::API::Plugin::Loader.load
+      VpsAdmin::API::Plugin::Loader.load('api')
 
       api.mount('/')
 

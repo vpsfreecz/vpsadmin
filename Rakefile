@@ -6,7 +6,7 @@ require './lib/vpsadmin'
 require './lib/vpsadmin/api/tasks'
 require 'haveapi/tasks/yard'
 
-VpsAdmin::API::Plugin::Loader.load
+VpsAdmin::API::Plugin::Loader.load('api')
 
 YARD::Rake::YardocTask.new do |t|
   t.files   = ['lib/**/*.rb', 'models/**/*.rb']

@@ -2,9 +2,15 @@ module VpsAdmin::API::Tasks
   class Plugin < Base
     # List installed plugins
     def list
-      puts sprintf('%-15s %-20s %10s', 'ID', 'NAME', 'VERSION')
+      puts sprintf('%-20s %-20s %10s  %-20s', 'ID', 'NAME', 'VERSION', 'COMPONENTS')
       VpsAdmin::API::Plugin.registered.each do |id, p|
-        puts sprintf('%-15s %-20s %10s', p.id, p.name, p.version)
+        puts sprintf(
+            '%-20s %-20s %10s  %-20s',
+            p.id,
+            p.name,
+            p.version,
+            p.components && p.components.join(',')
+        )
       end
     end
     
