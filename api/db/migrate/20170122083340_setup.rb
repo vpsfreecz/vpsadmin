@@ -26,5 +26,10 @@ class Setup < ActiveRecord::Migration
       t.string      :currency
       t.references  :language
     end
+
+    add_index :user_requests, :user_id
+    add_index :user_requests, :type
+    add_index :user_requests, :state
+    add_index :user_requests, :admin_id
   end
 end
