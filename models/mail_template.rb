@@ -4,7 +4,17 @@ class MailTemplate < ActiveRecord::Base
   has_many :mail_recipients, through: :mail_template_recipients
 
   has_paper_trail
-  
+ 
+  # Generate an e-mail from template
+  # @param name [Symbol] template name
+  # @param opts [Hash] options
+  # @option opts [User, nil] user whom to send mail
+  # @option opts [Language, nil] language defaults to user's language
+  # @option opts [Hash] vars variables passed to the template
+  # @option opts [String] from
+  # @option opts [String] reply_to
+  # @option opts [String] return_path
+  # @return [MailLog]
   def self.send_mail!(name, opts = {})
     tpl = MailTemplate.find_by(name: name)
     raise VpsAdmin::API::Exceptions::MailTemplateDoesNotExist, name unless tpl
