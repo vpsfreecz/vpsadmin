@@ -41,7 +41,7 @@ module TransactionChains
             node: node,
             os_template: tpl,
             hostname: 'vps',
-            vps_config: ''
+            config: '',
         )
         vps.dns_resolver = ::DnsResolver.pick_suitable_resolver_for_vps(vps)
 
