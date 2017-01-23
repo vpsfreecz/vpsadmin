@@ -21,7 +21,7 @@ module VpsAdmin::API::Resources
       end
 
       params(:resolve) do
-        resource VpsAdmin::API::Resources::Node
+        resource VpsAdmin::API::Resources::Node, value_label: :domain_name
       end
       
       include VpsAdmin::API::Plugins::Requests::BaseResource
