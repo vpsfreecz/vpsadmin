@@ -7,6 +7,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
       concerns(:affect, [request.class.name, request.id])
 
       reply_to = request.last_mail_id
+      webui_url = ::SysConfig.get(:webui, :base_url)
      
       params.each do |k, v|
         if request.class.attribute_names.include?(k.to_s)
@@ -39,6 +40,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
                 vars: {
                     request: request,
                     r: request,
+                    webui_url: webui_url,
                 },
             })
             break
@@ -65,6 +67,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
                 vars: {
                     request: request,
                     r: request,
+                    webui_url: webui_url,
                 },
             })
             break

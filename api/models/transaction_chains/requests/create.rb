@@ -5,6 +5,8 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
 
     def link_chain(request)
       concerns(:affect, [request.class.name, request.id])
+
+      webui_url = ::SysConfig.get(:webui, :base_url)
      
       [
           :"request_create_user_#{request.type_name}",
@@ -19,6 +21,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
               vars: {
                   request: request,
                   r: request,
+                  webui_url: webui_url,
               },
           })
           break
@@ -40,6 +43,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
                 vars: {
                     request: request,
                     r: request,
+                    webui_url: webui_url,
                 },
             })
             break
