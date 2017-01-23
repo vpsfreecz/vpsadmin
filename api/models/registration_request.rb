@@ -15,6 +15,7 @@ class RegistrationRequest < UserRequest
       message: 'not a valid e-mail address',
   }
   validate :check_login
+  validate :check_org
 
   def user_mail
     email
@@ -31,7 +32,6 @@ class RegistrationRequest < UserRequest
   def approve(chain, params)
     new_user = ::User.new(
         login: login,
-        full_name: full_name,
         address: address,
         email: email,
         language: language,
@@ -39,6 +39,13 @@ class RegistrationRequest < UserRequest
         mailer_enabled: true,
     )
     new_user.set_password(generate_password)
+
+    if org_name
+      new_user.full_name = "#{org_name} (ID #{org_id}), #{full_name}"
+
+    else
+      new_user.full_name = full_name
+    end
 
     chain.use_chain(TransactionChains::User::Create, args: [
         new_user,
@@ -63,5 +70,11 @@ class RegistrationRequest < UserRequest
     )
 
     errors.add(:login, "is taken") if user || req
+  end
+
+  def check_org
+    if org_name && !org_id
+      errors.add(:org_id, 'must be set when org_name is set')
+    end
   end
 end
