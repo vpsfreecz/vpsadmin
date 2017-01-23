@@ -7,8 +7,13 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
       concerns(:affect, [request.class.name, request.id])
 
       reply_to = request.last_mail_id
-      
-      request.assign_attributes(params)
+     
+      params.each do |k, v|
+        if request.class.attribute_names.include?(k.to_s)
+          request.send("#{k}=", v)
+        end
+      end
+
       request.update!(
           state: ::UserRequest.states[state],
           admin: ::User.current,
@@ -70,7 +75,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
         end
       end
 
-      request.send(action, self)
+      request.send(action, self, params)
     end
   end
 end

@@ -19,6 +19,10 @@ module VpsAdmin::API::Resources
         string :currency, required: true
         resource VpsAdmin::API::Resources::Language, required: true
       end
+
+      params(:resolve) do
+        resource VpsAdmin::API::Resources::Node
+      end
       
       include VpsAdmin::API::Plugins::Requests::BaseResource
 

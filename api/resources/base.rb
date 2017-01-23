@@ -110,6 +110,8 @@ module VpsAdmin::API::Plugins::Requests
             next if %i(action reason).include?(p.name)
             p.patch(required: false)
           end
+
+          use :resolve
         end
         
         authorize do |u|

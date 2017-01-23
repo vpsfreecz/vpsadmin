@@ -50,19 +50,19 @@ class UserRequest < ActiveRecord::Base
     )
   end
 
-  def approve(chain)
+  def approve(chain, params)
 
   end
 
-  def deny(chain)
+  def deny(chain, params)
 
   end
 
-  def ignore(chain)
+  def ignore(chain, params)
 
   end
 
-  def invalidate(chain)
+  def invalidate(chain, params)
 
   end
 end

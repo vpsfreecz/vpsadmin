@@ -28,7 +28,7 @@ class RegistrationRequest < UserRequest
     'registration'
   end
 
-  def approve(chain)
+  def approve(chain, params)
     new_user = ::User.new(
         login: login,
         full_name: full_name,
@@ -43,7 +43,7 @@ class RegistrationRequest < UserRequest
     chain.use_chain(TransactionChains::User::Create, args: [
         new_user,
         true,
-        ::Node.pick_by_location(location),
+        params[:node] || ::Node.pick_by_location(location),
         os_template,
     ])
   end
