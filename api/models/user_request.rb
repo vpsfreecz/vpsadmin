@@ -4,6 +4,8 @@ class UserRequest < ActiveRecord::Base
   belongs_to :user
   belongs_to :admin, class_name: 'User'
 
+  has_paper_trail
+
   enum state: %i(awaiting approved denied ignored)
 
   validates :ip_addr, :ip_addr_ptr, :state, presence: true
