@@ -17,7 +17,9 @@ class MailTemplate < ActiveRecord::Base
   # @option opts [String] from
   # @option opts [String] reply_to
   # @option opts [String] return_path
-  # @option opts [String] message id
+  # @option opts [String] message_id
+  # @option opts [String] in_reply_to
+  # @option opts [String] references
   # @return [MailLog]
   def self.send_mail!(name, opts = {})
     tpl = MailTemplate.find_by(name: name)
@@ -36,6 +38,8 @@ class MailTemplate < ActiveRecord::Base
         reply_to: opts[:reply_to] || tr.reply_to,
         return_path: opts[:return_path] || tr.return_path,
         message_id: opts[:message_id],
+        in_reply_to: opts[:in_reply_to],
+        references: opts[:references],
         subject: tr.subject,
         text_plain: tr.text_plain,
         text_html: tr.text_html,
