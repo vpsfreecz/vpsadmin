@@ -21,6 +21,18 @@ class ChangeRequest < UserRequest
     user.save!
   end
 
+  # @yieldparam attribute [Symbol]
+  # @yieldparam new_value
+  # @yieldparam current_value
+  def each_change
+    %i(full_name email address).each do |attr|
+      v = send(attr)
+      next unless v
+
+      yield(attr, v, user.send(attr))
+    end
+  end
+
   protected
   def check_changes
     if !full_name && !email && !address
