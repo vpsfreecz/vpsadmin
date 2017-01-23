@@ -128,6 +128,9 @@ module VpsAdmin::API::Plugins::Requests
 
           r.resolve(input[:action].to_sym, input[:reason], request_params)
           ok
+
+        rescue ActiveRecord::RecordInvalid => e
+          error('unable to resolve', e.record.errors.to_hash)
         end
       end
     end

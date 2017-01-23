@@ -41,9 +41,16 @@ class UserRequest < ActiveRecord::Base
   end
 
   def resolve(action, reason, params)
+    target_state = {approve: :approved, deny: :denied, ignore: :ignored}[action]
+
+    if target_state == state.to_sym
+      errors.add(:state, "is already '#{state}'")
+      raise ActiveRecord::RecordInvalid, self
+    end
+
     VpsAdmin::API::Plugins::Requests::TransactionChains::Resolve.fire(
         self,
-        {approve: :approved, deny: :denied, ignore: :ignored}[action],
+        target_state,
         action,
         reason,
         params,
