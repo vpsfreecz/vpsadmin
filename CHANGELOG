@@ -8,6 +8,7 @@
 - Removed /cluster_status.php
 - Jump to uses the API to search for resources
 - Fetch system config from the API, new system config editor
+- User requests work through the API, if it has installed the plugin for it
 
 * Fri Dec 30 2016 - version 2.6.0
 - Public key management forms

@@ -155,20 +155,6 @@ function random_string($len) {
 	return $str;
 }
 
-function request_by_id($id) {
-	global $db;
-	
-	$rs = $db->query("SELECT c.*, IFNULL(applicant.login, c.m_nick) AS applicant_nick, IFNULL(applicant.full_name, c.m_name) AS current_name,
-						IFNULL(applicant.email, c.m_mail) AS current_mail, IFNULL(applicant.address, c.m_address) AS current_address,
-						applicant.id AS applicant_id, admin.id AS admin_id, admin.login AS admin_nick
-						FROM members_changes c
-						LEFT JOIN users applicant ON c.m_applicant = applicant.id
-						LEFT JOIN users admin ON c.m_changed_by = admin.id
-						WHERE c.m_id = ".$db->check($id)."");
-	
-	return $db->fetch_array($rs);
-}
-
 function format_data_rate($n, $suffix) {
 	$units = array(
 		2 << 29 => 'G',

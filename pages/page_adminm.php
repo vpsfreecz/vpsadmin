@@ -184,12 +184,12 @@ function print_editm($u) {
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->form_create('?page=adminm&section=members&action=edit_personal&id='.$u->id, 'post');
-	$xtpl->form_add_input(_("Full name").':', 'text', '30', 'm_name', $_POST["m_name"] ? $_POST["m_name"] : $u->full_name, _("A-Z, a-z, with diacritic"), 255);
-	$xtpl->form_add_input(_("E-mail").':', 'text', '30', 'm_mail', $_POST["m_mail"] ? $_POST["m_mail"] : $u->email, ' ');
-	$xtpl->form_add_input(_("Postal address").':', 'text', '30', 'm_address', $_POST["m_address"] ? $_POST["m_address"] : $u->address, ' ');
+	$xtpl->form_add_input(_("Full name").':', 'text', '30', 'full_name', post_val('full_name', $u->full_name), _("A-Z, a-z, with diacritic"), 255);
+	$xtpl->form_add_input(_("E-mail").':', 'text', '30', 'email', post_val('email', $u->email), ' ');
+	$xtpl->form_add_input(_("Postal address").':', 'text', '30', 'address', post_val('address', $u->address), ' ');
 
 	if(!$_SESSION["is_admin"]) {
-		$xtpl->form_add_input(_("Reason for change").':', 'text', '50', 'reason');
+		$xtpl->form_add_input(_("Reason for change").':', 'text', '50', 'change_reason');
 		$xtpl->table_td(_("Request for change will be sent to administrators for approval.".
 		                  "Changes will not take effect immediately. You will be informed about the result."), false, false, 3);
 		$xtpl->table_tr();
@@ -519,223 +519,75 @@ function cluster_resource_edit_form() {
 }
 
 function request_approve() {
-	global $db, $api;
+	global $xtpl, $api;
 	
 	if(!$_SESSION["is_admin"])
 		return;
+
+	if ($_POST['action'])
+		$params = $_POST;
+
+	else
+		$params = array('action' => 'approve');
+
+	try {
+		$api->user_request->{$_GET['type']}->resolve($_GET['id'], $params);
 	
-	$row = request_by_id($_GET["id"]);
+		notify_user(_("Request approved"), '');
+		redirect('?page=adminm&section=members&action=approval_requests');
 	
-	if(!$row)
-		return;
-	
-	elseif($row["m_state"] == "approved") {
-		notify_user(_("Request has already been approved"), '');
-		redirect('?page=adminm&section=members&action=request_details&id='.$row["m_id"]);
-		return;
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		$xtpl->perex_format_errors(_('Request approval failed'), $e->getResponse());
+		approval_requests_details($_GET['type'], $_GET['id']);
 	}
-	
-	$data = null;
-	$mail = false;
-	
-	if(isset($_POST["m_name"])) { // called from request details
-		$data = $_POST;
-		
-	} else { // accessed from request list or mail
-		$data = $row;
-		$mail = true;
-	}
-	
-	switch($row["m_type"]) {
-		case "add":
-			$params = array(
-				'login' => $data['m_nick'],
-				'full_name' => $data['m_name'],
-				'email' => $data['m_mail'],
-				'address' => $data['m_address'],
-				'level' => PRIV_USER,
-				'mailer_enabled' => true,
-				'language' => lang_id_by_code($data['m_language']),
-				'info' => "",
-				'password' => random_string(10)
-			);
-			
-			if($mail || $_POST["m_create_vps"]) { // create vps
-				$params['vps'] = true;
-				$params['os_template'] = $data['m_distribution'];
-				
-				if ($_POST['m_node'])
-					$params['node'] = $_POST['m_node'];
-				
-				$params['location'] = $data['m_location'];
-				$params['environment'] = ENV_VPS_PRODUCTION_ID;
-			}
-			
-			try {
-				$api->user->create($params);
-				
-			}  catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				notify_user(_('Request approval failed'), _('An error occurred. I won\'t tell you which though.'));
-				redirect('?page=adminm&section=members&action=request_details&id='.$row["m_id"]);
-			}
-			break;
-		
-		case "change":
-			$api->user($row['m_applicant'])->update(array(
-				'full_name' => $row['m_name'],
-				'email' => $row['m_mail'],
-				'address' => $row['m_address']
-			));
-			
-			// mail user about the approval
-			request_change_mail_member($row, "approved", $row["m_mail"]);
-			break;
-	}
-	
-	$db->query("UPDATE members_changes SET
-	            m_state = 'approved',
-	            m_changed_by = ".$db->check($_SESSION["user"]["id"]).",
-	            m_admin_response = '".$db->check($data["m_admin_response"])."',
-	            m_changed_at = ".time()."
-	            WHERE m_id = ".$db->check($row["m_id"]));
-	
-	$row = request_by_id($_GET["id"]);
-	
-	// mail admins about the approval
-	request_change_mail_admins($row, "approved");
-	request_mail_last_update($row);
-	
-	notify_user(_("Request approved"), '');
-	redirect('?page=adminm&section=members&action=approval_requests');
 }
 
 function request_deny() {
-	global $db;
+	global $xtpl, $api;
 	
 	if(!$_SESSION["is_admin"])
 		return;
 	
-	$row = request_by_id($_GET["id"]);
-	
-	if(!$row)
-		return;
-	
-	elseif($row["m_state"] == "denied") {
-		notify_user(_("Request has already been denied"), '');
-		redirect('?page=adminm&section=members&action=request_details&id='.$row["m_id"]);
-		return;
-	}
-	
-	$data = null;
-	
-	if(isset($_POST["m_name"])) { // called from request details
-		$data = $_POST;
-		
-	} else { // accessed from request list or mail
-		$data = $row;
-	}
-	
-	$db->query("UPDATE members_changes SET
-	            m_state = 'denied',
-	            m_changed_by = ".$db->check($_SESSION["user"]["id"]).",
-	            m_admin_response = '".$db->check($data["m_admin_response"])."',
-	            m_changed_at = ".time()."
-	            WHERE m_id = ".$db->check($row["m_id"]));
-	
-	$row = request_by_id($_GET["id"]);
-	
-	// mail user about the denial
-	// mail admins about the denial
-	request_change_mail_all($row, "denied", $row["current_mail"]);
-	
-	notify_user(_("Request denied"), '');
-	redirect('?page=adminm&section=members&action=approval_requests');
-}
+	if ($_POST['action'])
+		$params = $_POST;
 
-function request_invalidate() {
-	global $db;
+	else
+		$params = array('action' => 'deny');
 	
-	if(!$_SESSION["is_admin"])
-		return;
+	try {
+		$api->user_request->{$_GET['type']}->resolve($_GET['id'], $params);
 	
-	$row = request_by_id($_GET["id"]);
+		notify_user(_("Request denied"), '');
+		redirect('?page=adminm&section=members&action=approval_requests');
 	
-	if(!$row)
-		return;
-	
-	elseif($row["m_state"] == "invalid") {
-		notify_user(_("Request has already been invalidated"), '');
-		redirect('?page=adminm&section=members&action=request_details&id='.$row["m_id"]);
-		return;
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		$xtpl->perex_format_errors(_('Request denial failed'), $e->getResponse());
+		approval_requests_details($_GET['type'], $_GET['id']);
 	}
-	
-	$data = null;
-	
-	if(isset($_POST["m_name"])) { // called from request details
-		$data = $_POST;
-		
-	} else { // accessed from request list or mail
-		$data = $row;
-	}
-	
-	$db->query("UPDATE members_changes SET
-	            m_state = 'invalid',
-	            m_changed_by = ".$db->check($_SESSION["user"]["id"]).",
-	            m_admin_response = '".$db->check($data["m_admin_response"])."',
-	            m_changed_at = ".time()."
-	            WHERE m_id = ".$db->check($row["m_id"]));
-	
-	$row = request_by_id($_GET["id"]);
-	
-	// mail user about the invalidation
-	// mail admins about the invalidation
-	request_change_mail_all($row, "invalid", $row["current_mail"]);
-	
-	notify_user(_("Request invalidated"), '');
-	redirect('?page=adminm&section=members&action=approval_requests');
 }
 
 function request_ignore() {
-	global $db;
+	global $xtpl, $api;
 	
 	if(!$_SESSION["is_admin"])
 		return;
 	
-	$row = request_by_id($_GET["id"]);
+	if ($_POST['action'])
+		$params = $_POST;
+
+	else
+		$params = array('action' => 'ignore');
 	
-	if(!$row)
-		return;
+	try {
+		$api->user_request->{$_GET['type']}->resolve($_GET['id'], $params);
 	
-	elseif($row["m_state"] == "ignored") {
-		notify_user(_("Request has already been ignored"), '');
-		redirect('?page=adminm&section=members&action=request_details&id='.$row["m_id"]);
-		return;
+		notify_user(_("Request ignored"), '');
+		redirect('?page=adminm&section=members&action=approval_requests');
+	
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		$xtpl->perex_format_errors(_('Request ignore failed'), $e->getResponse());
+		approval_requests_details($_GET['type'], $_GET['id']);
 	}
-	
-	$data = null;
-	
-	if(isset($_POST["m_name"])) { // called from request details
-		$data = $_POST;
-		
-	} else { // accessed from request list or mail
-		$data = $row;
-	}
-	
-	$db->query("UPDATE members_changes SET
-	            m_state = 'ignored',
-	            m_changed_by = ".$db->check($_SESSION["user"]["id"]).",
-	            m_admin_response = '".$db->check($data["m_admin_response"])."',
-	            m_changed_at = ".time()."
-	            WHERE m_id = ".$db->check($row["m_id"]));
-	
-	$row = request_by_id($_GET["id"]);
-	
-	// mail admins about the ignoring
-	request_change_mail_admins($row, "ignored");
-	request_mail_last_update($row);
-	
-	notify_user(_("Request ignored"), '');
-	redirect('?page=adminm&section=members&action=approval_requests');
 }
 
 function list_members() {
@@ -1028,7 +880,10 @@ if ($_SESSION["logged_in"]) {
 
 	if ($_SESSION["is_admin"]) {
 		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New member").'" /> '._("New member"), '?page=adminm&section=members&action=new');
-		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Requests for approval").'" /> '._("Requests for approval"), '?page=adminm&section=members&action=approval_requests');
+
+		if ($api->user_request)
+			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Requests for approval").'" /> '._("Requests for approval"), '?page=adminm&section=members&action=approval_requests');
+
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Export e-mails").'" /> '._("Export e-mails"), '?page=adminm&section=members&action=export_mails');
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Export e-mails of non-payers").'" /> '._("Export e-mails of non-payers"), '?page=adminm&section=members&action=export_notpaid_mails');
 		if ($config->get("webui", "payments_enabled")) {
@@ -1182,40 +1037,26 @@ if ($_SESSION["logged_in"]) {
 					$xtpl->perex_format_errors(_('User update failed'), $e->getResponse());
 					print_editm($u);
 				}
-				
-			} elseif(!$_POST["reason"]) {
-				$xtpl->perex(_("Reason is required"), _("Please fill in reason for change."));
-				print_editm($u);
-				
-			} else {
-				$db->query("INSERT INTO members_changes SET
-				            m_created = ".time().",
-				            m_type = 'change',
-				            m_state = 'awaiting',
-				            m_applicant = ".$db->check($u->id).",
-				            m_name = '".$db->check($_POST["m_name"])."',
-				            m_mail = '".$db->check($_POST["m_mail"])."',
-				            m_address = '".$db->check($_POST["m_address"])."',
-				            m_reason = '".$db->check($_POST["reason"])."',
-				            m_addr = '".$db->check($_SERVER["REMOTE_ADDR"])."',
-				            m_addr_reverse = '".$db->check(gethostbyaddr($_SERVER["REMOTE_ADDR"]))."'
-				            ");
-				
-				$rs = $db->query("SELECT c.*, applicant.login AS applicant_nick, applicant.full_name AS current_name,
-				                  applicant.email AS current_mail, applicant.address AS current_address,
-				                  applicant.id AS applicant_id, admin.id AS admin_id, admin.login AS admin_nick
-				                  FROM members_changes c
-				                  LEFT JOIN users applicant ON c.m_applicant = applicant.id
-				                  LEFT JOIN users admin ON c.m_changed_by = admin.id
-				                  WHERE c.m_id = ".$db->check($db->insert_id())."");
-				
-				$row = $db->fetch_array($rs);
+
+			} elseif ($api->user_request->change) {	
+				try {
+					$req = $api->user_request->change->create(array(
+						'full_name' => $_POST['full_name'],
+						'email' => $_POST['email'],
+						'address' => $_POST['address'],
+						'change_reason' => $_POST['change_reason'],
+					));
 					
-				request_change_mail_admins($row, "awaiting");
-				request_mail_last_update($row);
-				
-				notify_user(_("Request was scheduled for approval"), _("Please wait for administrator to approve or deny your request."));
-				redirect('?page=adminm&section=members&action=edit&id='.$u->id);
+					notify_user(
+						_("Request").' #'.$req->id.' '._("was accepted"),
+						_("Please wait for the administrator to approve or deny your request.")
+					);
+					redirect('?page=adminm&section=members&action=edit&id='.$u->id);
+
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Change request failed'), $e->getResponse());
+					print_editm($u);
+				}
 			}
 			
 			break;
@@ -1621,268 +1462,32 @@ if ($_SESSION["logged_in"]) {
 			if(!$_SESSION["is_admin"])
 				break;
 			
-			$xtpl->title(_("Requests for approval"));
-			
-			$xtpl->form_create('?page=adminm&section=members&action=approval_requests', 'get');
-			
-			$xtpl->table_td(_("Limit").':'.
-				'<input type="hidden" name="page" value="adminm">'.
-				'<input type="hidden" name="section" value="members">'.
-				'<input type="hidden" name="action" value="approval_requests">'
-			);
-			$xtpl->form_add_input_pure('text', '30', 'limit', $_GET["limit"] ? $_GET["limit"] : 50);
-			$xtpl->table_tr();
-			
-			$xtpl->form_add_select(_("Type").':', 'type', array("" => _("all"), "add" => _("registration"), "change" => _("change")), $_GET["type"]);
-			$xtpl->form_add_select(_("State").':', 'state', array(
-				"all" => _("all"),
-				"awaiting" => _("awaiting"),
-				"approved" => _("approved"),
-				"denied" => _("denied"),
-				"invalid" => _("invalid"),
-				"ignored" => _("ignored")
-			), $_GET["state"] ? $_GET["state"] : "awaiting");
-			
-			$xtpl->form_add_input(_("IP address").':', 'text', '30', 'ip', $_GET["ip"]);
-			
-			$xtpl->form_out(_("Show"));
-			
-			$xtpl->table_add_category('DATE');
-			$xtpl->table_add_category('TYPE');
-			$xtpl->table_add_category('NICK');
-			$xtpl->table_add_category('NAME');
-			$xtpl->table_add_category('IP');
-			$xtpl->table_add_category('STATE');
-			$xtpl->table_add_category('ADMIN');
-			$xtpl->table_add_category('');
-			$xtpl->table_add_category('');
-			$xtpl->table_add_category('');
-			$xtpl->table_add_category('');
-			
-			$conds = array();
-			
-			if($_GET["state"] != "all")
-				$conds[] = "c.m_state = '".$db->check($_GET["state"] ? $_GET["state"] : "awaiting")."'";
-			
-			if($_GET["type"])
-				$conds[] = "c.m_type = '".$db->check($_GET["type"])."'";
-			
-			if($_GET["ip"])
-				$conds[] = "c.m_addr = '".$db->check($_GET["ip"])."'";
-			
-			$conds_str = implode(" AND ", $conds);
-			
-			$rs = $db->query("SELECT c.*, applicant.login AS applicant_nick, admin.login AS admin_nick
-			                  FROM members_changes c
-			                  LEFT JOIN users applicant ON c.m_applicant = applicant.id
-			                  LEFT JOIN users admin ON c.m_changed_by = admin.id
-			                  ".($conds_str ? 'WHERE '.$conds_str : '')."
-			                  ORDER BY c.m_created
-			                  LIMIT ".$db->check($_GET["limit"] ? $_GET["limit"] : "50"));
-			
-			while($row = $db->fetch_array($rs)) {
-				$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $row["m_created"]));
-				$xtpl->table_td($row["m_type"] == "add" ? _("registration") : _("change"));
-				$xtpl->table_td($row["m_type"] == "change" ? ('<a href="?page=adminm&section=members&action=info&id='.$row["m_applicant"].'">'.$row["applicant_nick"].'</a>') : $row["m_nick"]);
-				$xtpl->table_td($row["m_name"]);
-				$xtpl->table_td($row["m_addr"]);
-				$xtpl->table_td($row["m_state"]);
-				$xtpl->table_td($row["m_changed_by"] ? ('<a href="?page=adminm&section=members&action=info&id='.$row["m_changed_by"].'">'.$row["admin_nick"].'</a>') : '-');
-				$xtpl->table_td('<a href="?page=adminm&section=members&action=request_details&id='.$row["m_id"].'"><img src="template/icons/m_edit.png"  title="'. _("Details") .'" /></a>');
-				$xtpl->table_td('<a href="?page=adminm&section=members&action=request_process&id='.$row["m_id"].'&rule=approve">'._("approve").'</a>');
-				$xtpl->table_td('<a href="?page=adminm&section=members&action=request_process&id='.$row["m_id"].'&rule=deny">'._("deny").'</a>');
-				$xtpl->table_td('<a href="?page=adminm&section=members&action=request_process&id='.$row["m_id"].'&rule=ignore">'._("ignore").'</a>');
-				
-				$xtpl->table_tr();
-			}
-			
-			$xtpl->table_out();
-			
+			approval_requests_list();	
 			break;
 			
 		case "request_details":
 			if(!$_SESSION["is_admin"])
 				break;
 			
-			$rs = $db->query("SELECT c.*, applicant.login AS applicant_nick, applicant.full_name AS current_name,
-			                  applicant.email AS current_mail, applicant.address AS current_address,
-			                  admin.login AS admin_nick
-			                  FROM members_changes c
-			                  LEFT JOIN users applicant ON c.m_applicant = applicant.id
-			                  LEFT JOIN users admin ON c.m_changed_by = admin.id
-			                  WHERE c.m_id = ".$db->check($_GET["id"])."");
-			
-			$row = $db->fetch_array($rs);
-			
-			if(!$row)
-				break;
-			
-			$xtpl->title(_("Request for approval details"));
-			
-			$xtpl->table_add_category(_("Request info"));
-			$xtpl->table_add_category('');
-			
-			$xtpl->table_td(_("Created").':');
-			$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $row["m_created"]));
-			$xtpl->table_tr();
-			
-			$xtpl->table_td(_("Changed").':');
-			$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $row["m_changed_at"]));
-			$xtpl->table_tr();
-			
-			$xtpl->table_td(_("Type").':');
-			$xtpl->table_td($row["m_type"] == "add" ? _("registration") : _("change"));
-			$xtpl->table_tr();
-			
-			$xtpl->table_td(_("State").':');
-			$xtpl->table_td($row["m_state"]);
-			$xtpl->table_tr();
-			
-			$xtpl->table_td(_("Applicant").':');
-			$xtpl->table_td($row["m_applicant"] ? ('<a href="?page=adminm&section=members&action=info&id='.$row["m_applicant"].'">'.$row["applicant_nick"].'</a>') : '-');
-			$xtpl->table_tr();
-			
-			$xtpl->table_td(_("Admin").':');
-			$xtpl->table_td($row["m_changed_by"] ? ('<a href="?page=adminm&section=members&action=info&id='.$row["m_changed_by"].'">'.$row["admin_nick"].'</a>') : '-');
-			$xtpl->table_tr();
-			
-			$xtpl->table_td(_("IP Address").':');
-			$xtpl->table_td($row["m_addr"]);
-			$xtpl->table_tr();
-			
-			$xtpl->table_td(_("IP Address PTR").':');
-			$xtpl->table_td($row["m_addr_reverse"]);
-			$xtpl->table_tr();
-			
-			$xtpl->table_out();
-			
-			switch($row["m_type"]) {
-				case "add":
-					$xtpl->table_add_category(_("Application"));
-					$xtpl->table_add_category('');
-					
-					$xtpl->form_create('?page=adminm&section=members&action=request_process&id='.$row["m_id"], 'post');
-					
-					$xtpl->form_add_input(_("Nickname").':', 'text', '30', 'm_nick', $row["m_nick"], _("A-Z, a-z, dot, dash"), 63);
-					$xtpl->form_add_input(_("Name").':', 'text', '30', 'm_name', $row["m_name"], '', 255);
-					$xtpl->form_add_input(_("Email").':', 'text', '30', 'm_mail', $row["m_mail"], '', 127);
-					$xtpl->form_add_input(_("Postal address").':', 'text', '30', 'm_address', $row["m_address"]);
-					
-					$xtpl->table_td(_("Year of birth").':');
-					$xtpl->table_td($row["m_year"]);
-					$xtpl->table_tr();
-					
-					$xtpl->table_td(_("Jabber").':');
-					$xtpl->table_td($row["m_jabber"]);
-					$xtpl->table_tr();
-					
-					$xtpl->table_td(_("How").':');
-					$xtpl->table_td($row["m_how"]);
-					$xtpl->table_tr();
-					
-					$xtpl->table_td(_("Note").':');
-					$xtpl->table_td($row["m_note"]);
-					$xtpl->table_tr();
-					
-					$xtpl->table_td(_("Currency").':');
-					$xtpl->table_td($row["m_currency"]);
-					$xtpl->table_tr();
-					
-					$xtpl->form_add_input(_("Language").':', 'text', '30', 'm_language', $row['m_language']);
-					
-					$xtpl->form_add_checkbox(_("Create VPS").':', 'm_create_vps', '1', true);
-					
-					$xtpl->form_add_select(_("Distribution").':', 'm_distribution', list_templates(false), $row["m_distribution"]);
-					$xtpl->form_add_select(
-						_("Location").':',
-						'm_location',
-						resource_list_to_options(
-							$api->location->list(array('has_hypervisor' => true)),
-							'id', 'label', false
-						),
-						$row["m_location"]
-					);
-					
-					$empty = array("" => _("pick automatically"));
-					$nodes = resource_list_to_options(
-						$api->node->list(array('type' => 'node')),
-						'id', 'domain_name', false
-					);
-					$xtpl->form_add_select(_("Node").':', 'm_node', $empty + $nodes);
-					
-					$xtpl->form_add_input(_("Admin response").':', 'text', '30', 'm_admin_response', $row["m_admin_response"]);
-					
-					$xtpl->table_td('');
-					$xtpl->table_td(
-						$xtpl->html_submit(_("Approve"), "approve").
-						$xtpl->html_submit(_("Deny"), "deny").
-						$xtpl->html_submit(_("Invalidate"), "invalidate").
-						$xtpl->html_submit(_("Ignore"), "ignore")
-					);
-					$xtpl->table_tr();
-					
-					$xtpl->form_out_raw();
-					
-					break;
-				
-				case "change":
-					$xtpl->table_add_category(_("Personal information"));
-					$xtpl->table_add_category(_("From"));
-					$xtpl->table_add_category(_("To"));
-					
-					$xtpl->form_create('?page=adminm&section=members&action=request_process&id='.$row["m_id"], 'post');
-					
-					$xtpl->table_td(_("Name").':');
-					$xtpl->table_td($row["current_name"]);
-					$xtpl->form_add_input_pure('text', '30', 'm_name', $row["m_name"], '', 255);
-					$xtpl->table_tr();
-					
-					$xtpl->table_td(_("Email").':');
-					$xtpl->table_td($row["current_mail"]);
-					$xtpl->form_add_input_pure('text', '30', 'm_mail', $row["m_mail"], '', 127);
-					$xtpl->table_tr();
-					
-					$xtpl->table_td(_("Postal address").':');
-					$xtpl->table_td($row["current_address"]);
-					$xtpl->form_add_input_pure('text', '30', 'm_address', $row["m_address"]);
-					$xtpl->table_tr();
-					
-					$xtpl->table_td(_("Reason for change").':');
-					$xtpl->table_td($row["m_reason"], false, false, 2);
-					$xtpl->table_tr();
-					
-					$xtpl->form_add_input(_("Admin response").':', 'text', '30', 'm_admin_response', $row["m_admin_response"]);
-					
-					$xtpl->table_td('');
-					$xtpl->table_td(
-						$xtpl->html_submit(_("Approve"), "approve").
-						$xtpl->html_submit(_("Deny"), "deny").
-						$xtpl->html_submit(_("Invalidate"), "invalidate").
-						$xtpl->html_submit(_("Ignore"), "ignore")
-					);
-					$xtpl->table_tr();
-					
-					$xtpl->form_out_raw();
-					
-					break;
-			}
-			
+			approval_requests_details($_GET['type'], $_GET['id']);	
 			break;
 		
 		case "request_process":
 			if(!$_SESSION["is_admin"])
 				break;
-			
-			if(isset($_POST["approve"]) || $_GET["rule"] == "approve")
+
+			$action = null;
+
+			if (isset($_POST['action']))
+				$action = $api->user_request->{$_GET['type']}->resolve->getParameters('input')->action->validators->include->values[(int) $_POST['action']];
+
+			if($action == "approve" || $_GET["rule"] == "approve")
 				request_approve();
 			
-			elseif(isset($_POST["deny"]) || $_GET["rule"] == "deny")
+			elseif($action == "deny" || $_GET["rule"] == "deny")
 				request_deny();
 			
-			elseif(isset($_POST["invalidate"]) || $_GET["rule"] == "invalidate")
-				request_invalidate();
-			
-			elseif(isset($_POST["ignore"]) || $_GET["rule"] == "ignore")
+			elseif($action == "ignore" || $_GET["rule"] == "ignore")
 				request_ignore();
 			
 			break;

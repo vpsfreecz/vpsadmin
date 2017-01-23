@@ -194,3 +194,132 @@ function list_user_sessions($user_id) {
 	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&action=edit&id=$user_id");
 }
 
+function approval_requests_list() {
+	global $xtpl, $api;
+
+	$xtpl->title(_("Requests for approval"));
+	
+	$xtpl->form_create('?page=adminm&section=members&action=approval_requests', 'get');
+	
+	$xtpl->table_td(_("Limit").':'.
+		'<input type="hidden" name="page" value="adminm">'.
+		'<input type="hidden" name="section" value="members">'.
+		'<input type="hidden" name="action" value="approval_requests">'
+	);
+	$xtpl->form_add_input_pure('text', '30', 'limit', $_GET["limit"] ? $_GET["limit"] : 50);
+	$xtpl->table_tr();
+	
+	$xtpl->form_add_select(_("Type").':', 'type', array(
+		"registration" => _("registration"),
+		"change" => _("change")
+	), $_GET["type"]);
+	$xtpl->form_add_select(_("State").':', 'state', array(
+		"all" => _("all"),
+		"awaiting" => _("awaiting"),
+		"approved" => _("approved"),
+		"denied" => _("denied"),
+		"ignored" => _("ignored")
+	), $_GET["state"] ? $_GET["state"] : "awaiting");
+	
+	$xtpl->form_add_input(_("IP address").':', 'text', '30', 'ip_addr', $_GET["ip_addr"]);
+	$xtpl->form_add_input(_("User ID").':', 'text', '30', 'user', $_GET["user"]);
+	$xtpl->form_add_input(_("Admin ID").':', 'text', '30', 'admin', $_GET["admin"]);
+	
+	$xtpl->form_out(_("Show"));
+
+	if (!isset($_GET['type']))
+		return;
+	
+	$xtpl->table_add_category('#');
+	$xtpl->table_add_category('DATE');
+	$xtpl->table_add_category('IP');
+	$xtpl->table_add_category('STATE');
+	$xtpl->table_add_category('ADMIN');
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+
+	$params = array('limit' => $_GET['limit'],);
+
+	if ($_GET['state'] != 'all')
+		$params['state'] = $_GET['state'];
+
+	foreach (array('ip_addr', 'user', 'admin') as $v) {
+		if ($_GET[$v])
+			$params[$v] = $_GET[$v];
+	}
+
+	$requests = $api->user_request->{$_GET['type']}->list($params);
+	
+	foreach ($requests as $r) {
+		$xtpl->table_td('<a href="?page=adminm&action=request_details&id='.$r->id.'&type='.$_GET['type'].'">#'.$r->id.'</a>');
+		$xtpl->table_td(tolocaltz($r->created));
+		$xtpl->table_td($r->ip_addr);
+		$xtpl->table_td($r->state);
+		$xtpl->table_td($r->admin_id ? ('<a href="?page=adminm&action=edit&id='.$r->admin_id.'&type='.$_GET['type'].'">'.$r->admin->login.'</a>') : '-');
+		$xtpl->table_td('<a href="?page=adminm&action=request_details&id='.$r->id.'&type='.$_GET['type'].'"><img src="template/icons/m_edit.png"  title="'. _("Details") .'" /></a>');
+		$xtpl->table_td('<a href="?page=adminm&action=request_process&id='.$r->id.'&type='.$_GET['type'].'&rule=approve">'._("approve").'</a>');
+		$xtpl->table_td('<a href="?page=adminm&action=request_process&id='.$r->id.'&type='.$_GET['type'].'&rule=deny">'._("deny").'</a>');
+		$xtpl->table_td('<a href="?page=adminm&action=request_process&id='.$r->id.'&type='.$_GET['type'].'&rule=ignore">'._("ignore").'</a>');
+		
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_out();
+
+}
+
+function approval_requests_details($type, $id) {
+	global $xtpl, $api;
+	
+	$r = $api->user_request->{$type}->show($id);
+	
+	$xtpl->title(_("Request for approval details"));
+	
+	$xtpl->table_add_category(_("Request info"));
+	$xtpl->table_add_category('');
+	
+	$xtpl->table_td(_("Created").':');
+	$xtpl->table_td(tolocaltz($r->created_at));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("Changed").':');
+	$xtpl->table_td(tolocaltz($r->updated_at));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("Type").':');
+	$xtpl->table_td($type == "registration" ? _("registration") : _("change"));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("State").':');
+	$xtpl->table_td($r->state);
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("Applicant").':');
+	$xtpl->table_td($r->user_id ? ('<a href="?page=adminm&action=edit&id='.$r->user_id.'">'.$r->user->login.'</a>') : '-');
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("Admin").':');
+	$xtpl->table_td($r->admin_id ? ('<a href="?page=adminm&action=edit&id='.$r->admin_id.'">'.$r->admin->login.'</a>') : '-');
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("IP Address").':');
+	$xtpl->table_td($r->ip_addr);
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("PTR").':');
+	$xtpl->table_td($r->ip_addr_ptr);
+	$xtpl->table_tr();
+	
+	$xtpl->table_out();
+	
+	$xtpl->form_create('?page=adminm&action=request_process&id='.$r->id.'&type='.$type, 'post');
+	$params = $r->resolve->getParameters('input');
+	
+	foreach ($params as $name => $desc) {
+		api_param_to_form($name, $desc, post_val($name, $r->{$name}));
+	}
+
+	$xtpl->form_out(_('Close request'));
+}
