@@ -9,7 +9,7 @@ module VpsAdmin::API::Resources
             desc: 'Why do you wish to make the change?'
         string :full_name, label: 'Full name'
         string :email, label: 'E-mail'
-        text :address, label: 'Address'
+        string :address, label: 'Address'
       end
       
       include VpsAdmin::API::Plugins::Requests::BaseResource
