@@ -38,19 +38,28 @@ class UserRequest < ActiveRecord::Base
     self.class.name.demodulize.underscore
   end
 
-  def approve
+  def resolve(action, reason)
+    VpsAdmin::API::Plugins::Requests::TransactionChains::Resolve.fire(
+        self,
+        {approve: :approved, deny: :denied, ignore: :ignored}[action],
+        action,
+        reason
+    )
+  end
+
+  def approve(chain)
 
   end
 
-  def deny
+  def deny(chain)
 
   end
 
-  def ignore
+  def ignore(chain)
 
   end
 
-  def invalidate
+  def invalidate(chain)
 
   end
 end

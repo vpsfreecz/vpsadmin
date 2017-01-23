@@ -28,10 +28,36 @@ class RegistrationRequest < UserRequest
     'registration'
   end
 
+  def approve(chain)
+    new_user = ::User.new(
+        login: login,
+        full_name: full_name,
+        address: address,
+        email: email,
+        language: language,
+        level: 2,
+        mailer_enabled: true,
+    )
+    new_user.set_password(generate_password)
+
+    chain.use_chain(TransactionChains::User::Create, args: [
+        new_user,
+        true,
+        ::Node.pick_by_location(location),
+        os_template,
+    ])
+  end
+
   protected
+  def generate_password
+    chars = ('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a
+    (0..11).map { chars.sample }.join
+  end
+
   def check_login
+    return if persisted?
     user = ::User.exists?(login: login)
-    req = self.class.exists?(
+    req = self.class.where.exists?(
         state: self.class.states[:awaiting],
         login: login,
     )

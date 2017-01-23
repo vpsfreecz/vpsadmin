@@ -94,6 +94,29 @@ module VpsAdmin::API::Plugins::Requests
           error('create failed', e.record.errors.to_hash)
         end
       end
+
+      res.define_action(:Resolve) do
+        http_method :post
+        route ':%{resource}_id/resolve'
+        desc 'Resolve user request'
+
+        input do
+          string :action, choices: %w(approve deny ignore), required: true
+          text :reason
+        end
+        
+        authorize do |u|
+          allow if u.role == :admin
+        end
+
+        def exec
+          r = ::UserRequest.find(
+              params[:"#{self.class.resource.to_s.demodulize.underscore}_id"]
+          )
+          r.resolve(input[:action].to_sym, input[:reason])
+          ok
+        end
+      end
     end
   end
 end
