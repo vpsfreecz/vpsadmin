@@ -20,7 +20,7 @@ module VpsAdmin::API::Plugins::Requests
 
       res.define_action(:Index, superclass: HaveAPI::Actions::Default::Index) do
         input do
-          use :common, exclude: %i(id)
+          use :common, include: %i(user state ip_addr admin)
         end
 
         output(:object_list) do
@@ -38,7 +38,11 @@ module VpsAdmin::API::Plugins::Requests
         def query
           q = self.class.model.where(with_restricted)
           q = q.where(state: ::UserRequest.states[input[:state]]) if input[:state]
-          # TODO: other filters
+          
+          %i(user ip_addr admin).each do |v|
+            q = q.where(v =>input[v]) if input[v]
+          end
+
           q
         end
 
