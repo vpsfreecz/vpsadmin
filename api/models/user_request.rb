@@ -20,11 +20,22 @@ class UserRequest < ActiveRecord::Base
     end
 
     req.user = user
-
-    # TODO: transaction chain to send mails
-
     req.save!
+
+    VpsAdmin::API::Plugins::Requests::TransactionChains::Create.fire(req)
     req
+  end
+
+  def user_mail
+    user.email
+  end
+
+  def user_language
+    user.language
+  end
+
+  def type_name
+    self.class.name.demodulize.underscore
   end
 
   def approve

@@ -1,5 +1,7 @@
 module VpsAdmin::API::Plugins
-  module Requests ; end
+  module Requests
+    module TransactionChains ; end
+  end
 end
 
 require_rel 'lib'

@@ -16,6 +16,18 @@ class RegistrationRequest < UserRequest
   }
   validate :check_login
 
+  def user_mail
+    email
+  end
+
+  def user_language
+    language
+  end
+
+  def type_name
+    'registration'
+  end
+
   protected
   def check_login
     user = ::User.exists?(login: login)
