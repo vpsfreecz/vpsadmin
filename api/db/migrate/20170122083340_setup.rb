@@ -25,6 +25,12 @@ class Setup < ActiveRecord::Migration
       t.references  :location
       t.string      :currency
       t.references  :language
+
+      # Change request fields
+      # full_name
+      # email
+      # address
+      t.string      :change_reason,       null: true,  limit: 255
     end
 
     add_index :user_requests, :user_id
