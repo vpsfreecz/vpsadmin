@@ -57,7 +57,7 @@ class RegistrationRequest < UserRequest
   def check_login
     return if persisted?
     user = ::User.exists?(login: login)
-    req = self.class.where.exists?(
+    req = self.class.exists?(
         state: self.class.states[:awaiting],
         login: login,
     )

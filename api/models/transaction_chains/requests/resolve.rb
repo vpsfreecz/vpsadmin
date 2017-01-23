@@ -3,11 +3,12 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
     label 'Resolve'
     allow_empty
 
-    def link_chain(request, state, action, reason)
+    def link_chain(request, state, action, reason, params)
       concerns(:affect, [request.class.name, request.id])
 
       reply_to = request.last_mail_id
-
+      
+      request.assign_attributes(params)
       request.update!(
           state: ::UserRequest.states[state],
           admin: ::User.current,

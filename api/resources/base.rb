@@ -103,6 +103,13 @@ module VpsAdmin::API::Plugins::Requests
         input do
           string :action, choices: %w(approve deny ignore), required: true
           text :reason
+
+          use :request
+
+          params.each do |p|
+            next if %i(action reason).include?(p.name)
+            p.patch(required: false)
+          end
         end
         
         authorize do |u|
@@ -113,7 +120,11 @@ module VpsAdmin::API::Plugins::Requests
           r = ::UserRequest.find(
               params[:"#{self.class.resource.to_s.demodulize.underscore}_id"]
           )
-          r.resolve(input[:action].to_sym, input[:reason])
+
+          request_params = input.clone
+          request_params.delete_if { |k, _| %i(action reason).include?(k) }
+
+          r.resolve(input[:action].to_sym, input[:reason], request_params)
           ok
         end
       end
