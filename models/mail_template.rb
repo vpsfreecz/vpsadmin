@@ -11,9 +11,13 @@ class MailTemplate < ActiveRecord::Base
   # @option opts [User, nil] user whom to send mail
   # @option opts [Language, nil] language defaults to user's language
   # @option opts [Hash] vars variables passed to the template
+  # @option opts [Array<String>] to
+  # @option opts [Array<String>] cc
+  # @option opts [Array<String>] bcc
   # @option opts [String] from
   # @option opts [String] reply_to
   # @option opts [String] return_path
+  # @option opts [String] message id
   # @return [MailLog]
   def self.send_mail!(name, opts = {})
     tpl = MailTemplate.find_by(name: name)
@@ -31,12 +35,13 @@ class MailTemplate < ActiveRecord::Base
         from: opts[:from] || tr.from,
         reply_to: opts[:reply_to] || tr.reply_to,
         return_path: opts[:return_path] || tr.return_path,
+        message_id: opts[:message_id],
         subject: tr.subject,
         text_plain: tr.text_plain,
         text_html: tr.text_html,
     )
 
-    recipients = {to: [], cc: [], bcc: []}
+    recipients = {to: opts[:to] || [], cc: opts[:cc] || [], bcc: opts[:bcc] || []}
     recipients[:to] << opts[:user].email if opts[:user]
 
     tpl.mail_recipients.each do |recp|

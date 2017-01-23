@@ -19,6 +19,7 @@
 - Add action `Cluster.Search`
 - Add new task `log` to Rakefile
 - New resource `SystemConfig`
+- MailTemplate.send_mail! accepts options to, cc, bcc and message_id
 
 * Fri Dec 30 2016 - version 2.6.0
 - Rebase on HaveAPI v0.7
