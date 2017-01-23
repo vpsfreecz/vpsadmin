@@ -87,7 +87,7 @@ module VpsAdmin::API::Resources
 
       def prepare
         @trans = ::Transaction.find_by!(with_restricted(
-            t_id: params[:transaction_id]
+            id: params[:transaction_id]
         ))
       end
 
