@@ -24,7 +24,7 @@ actions. Clients need this information in order to know what options they can
 select from.
 
 ## Usage
-Use actions `UserRequest.Registration#{Create,Resolve} to manipulate registration
+Use actions `UserRequest.Registration#{Create,Resolve}` to manipulate registration
 requests and `UserRequest.Change#{Create,Resolve}` for requests of changing
 personal information.
 
