@@ -16,9 +16,17 @@ Examples of such templates are in subdirectory `mail_templates/`. Use
 [vpsadmin-mail-templates](https://github.com/vpsfreecz/vpsadmin-mail-templates)
 to install them.
 
-## Usage
+## Changes
 This plugin defines two new API resources: `UserRequest.Registration` and
-`UserRequest.Change`.
+`UserRequest.Change`. In addition to this, it overrides base resources
+`Location`, `OsTemplate` and `Language` to disable authentication on `Index`
+actions. Clients need this information in order to know what options they can
+select from.
+
+## Usage
+Use actions `UserRequest.Registration#{Create,Resolve} to manipulate registration
+requests and `UserRequest.Change#{Create,Resolve}` for requests of changing
+personal information.
 
 Mail templates are searched for in the following order:
 
