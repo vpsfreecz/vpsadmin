@@ -35,12 +35,13 @@ class SysConfig < ActiveRecord::Base
 
   # @param category [Symbol]
   # @param name [Symbol]
+  # @param type [Object]
   # @param opts [Hash]
   # @option opts [String] label
   # @option opts [String] description
   # @option opts [String] default
   # @option opts [Integer] min_user_level
-  def self.register(category, name, opts = {})
+  def self.register(category, name, type, opts = {})
     cfg = find_by(category: category, name: name)
 
     if cfg
@@ -48,6 +49,8 @@ class SysConfig < ActiveRecord::Base
         next unless opts.has_key?(opt)
         cfg.send("#{opt}=", opts[opt]) if cfg.send("#{opt}") != opts[opt]
       end
+
+      cfg.data_type = type.to_s if cfg.data_type != type.to_s
 
       cfg.save! if cfg.changed?
 
@@ -67,13 +70,13 @@ class SysConfig < ActiveRecord::Base
          "been applied yet"
   end
 
-  register :core, :snapshot_download_base_url
-  register :node, :public_key
-  register :node, :private_key
-  register :node, :key_type
-  register :webui, :base_url
-  register :webui, :document_title
-  register :webui, :noticeboard
-  register :webui, :index_info_box_title
-  register :webui, :index_info_box_content
+  register :core, :snapshot_download_base_url, String
+  register :node, :public_key, Text
+  register :node, :private_key, Text
+  register :node, :key_type, String
+  register :webui, :base_url, String
+  register :webui, :document_title, String
+  register :webui, :noticeboard, Text
+  register :webui, :index_info_box_title, String
+  register :webui, :index_info_box_content, Text
 end
