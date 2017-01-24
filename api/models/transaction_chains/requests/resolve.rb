@@ -1,5 +1,7 @@
 module VpsAdmin::API::Plugins::Requests::TransactionChains
   class Resolve < ::TransactionChain
+    include Utils
+
     label 'Resolve'
     allow_empty
 
@@ -34,9 +36,9 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
                 user: request.user,
                 to: [request.user_mail],
                 language: request.user_language,
-                message_id: "<vpsadmin-request-#{request.id}-#{request.last_mail_id}@vpsadmin.vpsfree.cz>",
-                in_reply_to: "<vpsadmin-request-#{request.id}-#{reply_to}@vpsadmin.vpsfree.cz>",
-                references: "<vpsadmin-request-#{request.id}-#{reply_to}@vpsadmin.vpsfree.cz>",
+                message_id: message_id(request),
+                in_reply_to: message_id(request, reply_to),
+                references: message_id(request, reply_to),
                 vars: {
                     request: request,
                     r: request,
@@ -61,9 +63,9 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
           begin
             mail(t, {
                 user: admin,
-                message_id: "<vpsadmin-request-#{request.id}-#{request.last_mail_id}@vpsadmin.vpsfree.cz>",
-                in_reply_to: "<vpsadmin-request-#{request.id}-#{reply_to}@vpsadmin.vpsfree.cz>",
-                references: "<vpsadmin-request-#{request.id}-#{reply_to}@vpsadmin.vpsfree.cz>",
+                message_id: message_id(request),
+                in_reply_to: message_id(request, reply_to),
+                references: message_id(request, reply_to),
                 vars: {
                     request: request,
                     r: request,

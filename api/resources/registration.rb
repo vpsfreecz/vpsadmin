@@ -16,7 +16,8 @@ module VpsAdmin::API::Resources
         string :note
         resource VpsAdmin::API::Resources::OsTemplate, required: true
         resource VpsAdmin::API::Resources::Location, required: true
-        string :currency, required: true
+        string :currency, required: true,
+            choices: ::SysConfig.get(:plugin_requests, :currencies).split(',')
         resource VpsAdmin::API::Resources::Language, required: true
       end
 

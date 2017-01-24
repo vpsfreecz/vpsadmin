@@ -1,5 +1,7 @@
 module VpsAdmin::API::Plugins::Requests::TransactionChains
   class Create < ::TransactionChain
+    include Utils
+
     label 'Create'
     allow_empty
 
@@ -17,7 +19,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
               user: request.user,
               to: [request.user_mail],
               language: request.user_language,
-              message_id: "<vpsadmin-request-#{request.id}-#{request.last_mail_id}@vpsadmin.vpsfree.cz>",
+              message_id: message_id(request),
               vars: {
                   request: request,
                   r: request,
@@ -39,7 +41,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
           begin
             mail(t, {
                 user: admin,
-                message_id: "<vpsadmin-request-#{request.id}-#{request.last_mail_id}@vpsadmin.vpsfree.cz>",
+                message_id: message_id(request),
                 vars: {
                     request: request,
                     r: request,
