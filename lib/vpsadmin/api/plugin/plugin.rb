@@ -12,8 +12,18 @@ module VpsAdmin::API::Plugin
       end
     end
 
-    def initialize(id)
+    def initialize(id, &block)
       @id = id
+      @config = block
+    end
+
+    def configure(type)
+      @type = type
+      instance_exec(&@config)
+    end
+
+    def config(&block)
+      block.call if @type == 'api'
     end
 
     def components(*args)

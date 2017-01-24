@@ -4,8 +4,6 @@ module VpsAdmin::API
 
     def self.register(id, &block)
       p = self::Plugin.new(id, &block)
-      p.instance_exec(&block)
-      p.directory(File.join(VpsAdmin::API.root, 'plugins', id.to_s)) if p.directory.nil?
 
       @plugins[id.to_sym] = p
       throw(:plugin, p) if @throw

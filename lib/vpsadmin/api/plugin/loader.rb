@@ -14,8 +14,16 @@ module VpsAdmin::API::Plugin
         plugin = VpsAdmin::API::Plugin.catch_plugin do
           Kernel.load(File.join(plugin_dir, p, 'meta.rb'))
         end
+        
+        plugin.configure(component)
 
         next if plugin.components.nil? || !plugin.components.include?(component.to_sym)
+
+        if component == 'api'
+          if plugin.directory.nil?
+            plugin.directory(File.join(VpsAdmin::API.root, 'plugins', plugin.id.to_s))
+          end
+        end
 
         basedir = File.join(plugin_dir, p, component)
         fail "Plugin dir '#{basedir}' not found" unless Dir.exists?(basedir)
