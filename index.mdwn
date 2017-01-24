@@ -14,6 +14,7 @@ network settings based on OpenVZ and ZFS.
  - [[Transactions]]
  - [[Networking]]
  - [[Storage]]
+ - [[Plugins]]
 
 # Concepts
  - [[Object lifetimes]]
