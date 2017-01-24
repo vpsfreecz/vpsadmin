@@ -1,4 +1,5 @@
-vpsAdmin is a system for management of virtual servers based on OpenVZ.
+vpsAdmin is a system for management of virtual servers, storage and related
+network settings based on OpenVZ and ZFS.
 
 # Architecture
  - [[Overview]]
