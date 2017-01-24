@@ -1,0 +1,62 @@
+A simplified view of the main vpsAdmin components:
+
+[[!uml src="""
+database Database as db
+
+node "vpsAdmin API" as api
+
+node "Hypervisor (OpenVZ+ZFS)" as hypervisor1 {
+    node vpsAdmind as vpsadmind1
+    node VPS as vps1
+    node VPS as vps2
+}
+
+node "Hypervisor (OpenVZ+ZFS)" as hypervisor2 {
+    node vpsAdmind as vpsadmind2
+    node VPS as vps3
+    node VPS as vps4
+}
+
+node "Storage (ZFS)" as storage1 {
+    node vpsAdmind as vpsadmind3
+}
+
+node "Web UI" as webui
+node "vpsAdmin Client" as client
+
+actor User as user1
+actor User as user2
+actor User as user3
+
+api --> db
+webui --> api
+client --> api
+
+vpsadmind1 --> db
+vpsadmind2 --> db
+vpsadmind3 --> db
+
+vpsadmind1 .. vps1
+vpsadmind1 .. vps2
+vpsadmind2 .. vps3
+vpsadmind2 .. vps4
+
+user1 --> webui
+user2 --> api
+user3 --> client
+"""]]
+
+The central point of vpsAdmin is the API. Most of the business logic is located
+there. The API saves user actions in the database as [[transactions]]. These
+transactions are then picked up by vpsAdmind, which is a daemon running on all
+nodes in the vpsAdmin cluster. vpsAdmind executes these actions, such as VPS
+creation, start/stop, and stores results in the database.
+
+Hypervisor is a node with OpenVZ kernel running virtual servers
+(containers actually) stored in ZFS datasets. vpsAdmin can also manage storage
+servers, which can be used for backups of VPS datasets or can serve as a NAS
+that can be mounted to VPS.
+
+The user interacts with vpsAdmin exclusivelly through the API, but often
+indirectly, as there are various user interfaces for the API, such as web
+interface, command line interface or even virtual file system.
