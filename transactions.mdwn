@@ -7,18 +7,18 @@ depends on its predecessor.
 
 # Scheduler
 Transactions are stored in the database. They are enqueued by [[vpsAdmin-api]] and executed by [[vpsAdmind]].
-The two components communicate on a peer-to-peer basis. Enqueued transactions are immediately sent 
-to the appropriate [[vpsAdmind]], which then sends the results back.
+The two components communicate through the database. vpsAdmind periodically checks
+the database for new transactions and executes them. Results are then stored to
+the database, where the API might pick them up, if the user requests it.
 
-## Queues (not implemented)
+## Queues
 Transactions are divided into queues. Queues are being processed parallelly. Each queue has
 the following properties:
 
  - maximum number of common transactions that are executed parallelly
- - maximum number of opened transaction chains that may continue parallelly
  - maximum number of urgent transactions that may be executed parallelly
 
-Common transaction are executed only if ``urgent + opened + common < max_common``.
+Common transaction are executed only if ``urgent + common < max_common``.
 
 ## Parallelism
 Transactions are executed simultaneously to the configured maximum number, except:
