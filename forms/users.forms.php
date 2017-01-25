@@ -232,6 +232,7 @@ function approval_requests_list() {
 	
 	$xtpl->table_add_category('#');
 	$xtpl->table_add_category('DATE');
+	$xtpl->table_add_category('LABEL');
 	$xtpl->table_add_category('IP');
 	$xtpl->table_add_category('STATE');
 	$xtpl->table_add_category('ADMIN');
@@ -255,6 +256,7 @@ function approval_requests_list() {
 	foreach ($requests as $r) {
 		$xtpl->table_td('<a href="?page=adminm&action=request_details&id='.$r->id.'&type='.$_GET['type'].'">#'.$r->id.'</a>');
 		$xtpl->table_td(tolocaltz($r->created_at));
+		$xtpl->table_td($r->label);
 		$xtpl->table_td($r->client_ip_addr ? $r->client_ip_addr : $r->api_ip_addr);
 		$xtpl->table_td($r->state);
 		$xtpl->table_td($r->admin_id ? ('<a href="?page=adminm&action=edit&id='.$r->admin_id.'&type='.$_GET['type'].'">'.$r->admin->login.'</a>') : '-');
