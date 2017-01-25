@@ -23,6 +23,7 @@ module VpsAdmin::API::Resources
 
       params(:resolve) do
         resource VpsAdmin::API::Resources::Node, value_label: :domain_name
+        bool :create_vps, default: true, fill: true
       end
       
       include VpsAdmin::API::Plugins::Requests::BaseResource
