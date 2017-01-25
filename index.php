@@ -227,7 +227,7 @@ $xtpl->logbox(
 	$api_cluster ? $api_cluster->maintenance_lock : false
 );
 
-$xtpl->adminbox($config->get("webui", "adminbox_content"));
+$xtpl->adminbox($config->get("webui", "sidebar"));
 
 $help = get_helpbox();
 
