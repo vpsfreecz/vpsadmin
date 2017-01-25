@@ -11,6 +11,10 @@ class ChangeRequest < UserRequest
     'change'
   end
 
+  def label
+    user.full_name
+  end
+
   def approve(chain, params)
     %i(full_name email address).each do |attr|
       v = send(attr)

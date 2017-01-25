@@ -13,6 +13,7 @@ module VpsAdmin::API::Plugins::Requests
         string :admin_response
         datetime :created_at
         datetime :updated_at
+        string :label
       end
 
       res.params(:all) do

@@ -29,6 +29,15 @@ class RegistrationRequest < UserRequest
     'registration'
   end
 
+  def label
+    if org_name
+      "#{org_name}, #{full_name}"
+
+    else
+      full_name
+    end
+  end
+
   def approve(chain, params)
     new_user = ::User.new(
         login: login,

@@ -39,6 +39,10 @@ class UserRequest < ActiveRecord::Base
     self.class.name.demodulize.underscore
   end
 
+  def label
+    "#{selc.class.name} ##{id}"
+  end
+
   def resolve(action, reason, params)
     target_state = {approve: :approved, deny: :denied, ignore: :ignored}[action]
 
