@@ -20,7 +20,7 @@ module VpsAdmind
            INNER JOIN transaction_confirmations c ON t.id = c.transaction_id
            WHERE
              t.transaction_chain_id = ?
-             AND t.done = 0',
+             AND c.done = 0',
           @chain_id
       )
 
