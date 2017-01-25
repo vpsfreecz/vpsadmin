@@ -5,15 +5,15 @@ module VpsAdmin::API::Plugins::Requests
         id :id
         resource VpsAdmin::API::Resources::User, value_label: :login
         string :state, choices: ::UserRequest.states.keys.map(&:to_s)
-        string :api_ip_addr
-        string :api_ip_ptr
-        string :client_ip_addr
-        string :client_ip_ptr
+        string :api_ip_addr, label: 'API IP address'
+        string :api_ip_ptr, label: 'API IP PTR'
+        string :client_ip_addr, label: 'Client IP address'
+        string :client_ip_ptr, label: 'Client IP PTR'
         resource VpsAdmin::API::Resources::User, name: :admin, value_label: :login
-        string :admin_response
-        datetime :created_at
-        datetime :updated_at
-        string :label
+        string :admin_response, label: "Admin's response"
+        datetime :created_at, label: 'Created at'
+        datetime :updated_at, label: 'Updated at'
+        string :label, label: 'Label'
       end
 
       res.params(:all) do
