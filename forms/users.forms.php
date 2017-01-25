@@ -254,8 +254,8 @@ function approval_requests_list() {
 	
 	foreach ($requests as $r) {
 		$xtpl->table_td('<a href="?page=adminm&action=request_details&id='.$r->id.'&type='.$_GET['type'].'">#'.$r->id.'</a>');
-		$xtpl->table_td(tolocaltz($r->created));
-		$xtpl->table_td($r->ip_addr);
+		$xtpl->table_td(tolocaltz($r->created_at));
+		$xtpl->table_td($r->client_ip_addr ? $r->client_ip_addr : $r->api_ip_addr);
 		$xtpl->table_td($r->state);
 		$xtpl->table_td($r->admin_id ? ('<a href="?page=adminm&action=edit&id='.$r->admin_id.'&type='.$_GET['type'].'">'.$r->admin->login.'</a>') : '-');
 		$xtpl->table_td('<a href="?page=adminm&action=request_details&id='.$r->id.'&type='.$_GET['type'].'"><img src="template/icons/m_edit.png"  title="'. _("Details") .'" /></a>');
@@ -304,12 +304,20 @@ function approval_requests_details($type, $id) {
 	$xtpl->table_td($r->admin_id ? ('<a href="?page=adminm&action=edit&id='.$r->admin_id.'">'.$r->admin->login.'</a>') : '-');
 	$xtpl->table_tr();
 	
-	$xtpl->table_td(_("IP Address").':');
-	$xtpl->table_td($r->ip_addr);
+	$xtpl->table_td(_("API IP Address").':');
+	$xtpl->table_td($r->api_ip_addr);
 	$xtpl->table_tr();
 	
-	$xtpl->table_td(_("PTR").':');
-	$xtpl->table_td($r->ip_addr_ptr);
+	$xtpl->table_td(_("API PTR").':');
+	$xtpl->table_td($r->api_ip_ptr);
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("Client IP Address").':');
+	$xtpl->table_td($r->client_ip_addr);
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("Client PTR").':');
+	$xtpl->table_td($r->client_ip_ptr);
 	$xtpl->table_tr();
 	
 	$xtpl->table_out();
