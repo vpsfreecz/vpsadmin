@@ -326,9 +326,14 @@ function approval_requests_details($type, $id) {
 	
 	$xtpl->form_create('?page=adminm&action=request_process&id='.$r->id.'&type='.$type, 'post');
 	$params = $r->resolve->getParameters('input');
+	$request_attrs = $r->show->getParameters('output');
 	
 	foreach ($params as $name => $desc) {
-		api_param_to_form($name, $desc, post_val($name, $r->{$name}));
+		api_param_to_form(
+			$name,
+			$desc,
+			post_val($name, property_exists($request_attrs, $name) ? $r->{$name} : null)
+		);
 	}
 
 	$xtpl->form_out(_('Close request'));
