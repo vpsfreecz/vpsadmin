@@ -78,7 +78,7 @@ switch($_REQUEST["action"]) {
 				}
 			
 			} elseif ($_POST[$k] != $v) {
-				$changes[] = array($cat, $name, $v);
+				$changes[] = array($cat, $name, $_POST[$k]);
 			}
 		}
 
