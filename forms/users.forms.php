@@ -149,7 +149,7 @@ function list_user_sessions($user_id) {
 		$xtpl->table_td(tolocaltz($s->created_at));
 		$xtpl->table_td($s->last_request_at ? tolocaltz($s->last_request_at) : '---');
 		$xtpl->table_td($s->closed_at ? tolocaltz($s->closed_at) : '---');
-		$xtpl->table_td($s->ip_addr);
+		$xtpl->table_td($s->client_ip_addr ? $s->client_ip_addr : $s->api_ip_addr);
 		$xtpl->table_td($s->auth_type);
 		$xtpl->table_td($s->auth_token_str
 			? substr($s->auth_token_str, 0, 8).'...'
@@ -180,6 +180,10 @@ function list_user_sessions($user_id) {
 
 		$xtpl->table_td(
 			'<dl>'.
+			'<dt>API IP address:</dt><dd>'.$s->api_ip_addr.'</dd>'.
+			'<dt>API IP PTR:</dt><dd>'.$s->api_ip_ptr.'</dd>'.
+			'<dt>Client IP address:</dt><dd>'.$s->client_ip_addr.'</dd>'.
+			'<dt>Client IP PTR:</dt><dd>'.$s->client_ip_ptr.'</dd>'.
 			'<dt>User agent:</dt><dd>'.$s->user_agent.'</dd>'.
 			'<dt>Client version:</dt><dd>'.$s->client_version.'</dd>'.
 			'<dt>Token:</dt><dd>'.$s->auth_token_str.'</dd>'.
