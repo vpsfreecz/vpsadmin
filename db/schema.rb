@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170120080846) do
+ActiveRecord::Schema.define(version: 20170125153139) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -960,7 +960,7 @@ ActiveRecord::Schema.define(version: 20170120080846) do
   create_table "user_sessions", force: true do |t|
     t.integer  "user_id",                           null: false
     t.string   "auth_type",             limit: 30,  null: false
-    t.string   "ip_addr",               limit: 46,  null: false
+    t.string   "api_ip_addr",           limit: 46,  null: false
     t.integer  "user_session_agent_id"
     t.string   "client_version",                    null: false
     t.integer  "api_token_id"
@@ -969,6 +969,9 @@ ActiveRecord::Schema.define(version: 20170120080846) do
     t.datetime "last_request_at"
     t.datetime "closed_at"
     t.integer  "admin_id"
+    t.string   "api_ip_ptr"
+    t.string   "client_ip_addr",        limit: 46
+    t.string   "client_ip_ptr"
   end
 
   add_index "user_sessions", ["user_id"], name: "index_user_sessions_on_user_id", using: :btree

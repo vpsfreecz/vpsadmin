@@ -5,7 +5,7 @@ module VpsAdmin::API::Resources
 
     params(:filters) do
       resource VpsAdmin::API::Resources::User, value_label: :login
-      resource VpsAdmin::API::Resources::UserSession, value_label: :ip_addr
+      resource VpsAdmin::API::Resources::UserSession, value_label: :api_ip_addr
       string :object, db_name: :tracked_object_type
       integer :object_id, db_name: :tracked_object_id
       string :event_type

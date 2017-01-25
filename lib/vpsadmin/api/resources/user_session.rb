@@ -7,7 +7,10 @@ module VpsAdmin::API::Resources
       id :id
       resource User, value_label: :login
       string :auth_type, label: 'Authentication type', choices: %i(basic token)
-      string :ip_addr, label: 'IP Address'
+      string :api_ip_addr, label: 'IP Address'
+      string :api_ip_ptr, label: 'IP PTR'
+      string :client_ip_addr, label: 'Client IP Address'
+      string :client_ip_ptr, label: 'Client IP PTR'
       string :user_agent, label: 'User agent'
       string :client_version, label: 'Client version'
       resource AuthToken, label: 'Authentication token'
@@ -23,8 +26,9 @@ module VpsAdmin::API::Resources
       desc 'List user sessions'
 
       input do
-        use :all, include: %i(user auth_type ip_addr user_agent client_version
-                              auth_token_str admin)
+        use :all, include: %i(user auth_type ip_addr api_ip_addr client_ip_addr
+                              user_agent client_version auth_token_str admin)
+        string :ip_addr, label: 'IP Address', desc: 'Search both API and client IP address'
         patch :limit, default: 25, fill: true
       end
 
@@ -45,7 +49,16 @@ module VpsAdmin::API::Resources
 
         q = q.where(user: input[:user]) if input[:user] && current_user.role == :admin
         q = q.where(auth_type: input[:auth_type]) if input[:auth_type]
-        q = q.where('ip_addr LIKE ?', input[:ip_addr]) if input[:ip_addr]
+
+        if input[:ip_addr]
+          q = q.where(
+              'api_ip_addr LIKE ? OR client_ip_addr LIKE ?',
+              input[:ip_addr], input[:ip_addr]
+          )
+        end
+
+        q = q.where('api_ip_addr LIKE ?', input[:api_ip_addr]) if input[:api_ip_addr]
+        q = q.where('client_ip_addr LIKE ?', input[:client_ip_addr]) if input[:client_ip_addr]
         
         if input[:user_agent]
           q = q.joins(:user_session_agents).where('agent LIKE ?', input[:user_agent])

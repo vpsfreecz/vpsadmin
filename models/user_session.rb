@@ -12,7 +12,10 @@ class UserSession < ActiveRecord::Base
     self.current = create!(
         user: user,
         auth_type: token ? 'token' : 'basic',
-        ip_addr: request.ip,
+        api_ip_addr: request.ip,
+        api_ip_ptr: get_ptr(request.ip),
+        client_ip_addr: request.env['HTTP_CLIENT_IP'],
+        client_ip_ptr: request.env['HTTP_CLIENT_IP'] && get_ptr(request.env['HTTP_CLIENT_IP']),
         user_session_agent: ::UserSessionAgent.find_or_create!(request.user_agent || ''),
         client_version: request.user_agent || '',
         api_token_id: token && token.id,
@@ -56,6 +59,13 @@ class UserSession < ActiveRecord::Base
         api_token_id: token.id,
         closed_at: nil
     )
+  end
+
+  def self.get_ptr(ip)
+    Resolv.new.getname(ip)
+
+  rescue Resolv::ResolvError => e
+    e.message
   end
 
   def self.current
