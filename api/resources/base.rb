@@ -5,8 +5,10 @@ module VpsAdmin::API::Plugins::Requests
         id :id
         resource VpsAdmin::API::Resources::User, value_label: :login
         string :state, choices: ::UserRequest.states.keys.map(&:to_s)
-        string :ip_addr
-        string :ip_addr_ptr
+        string :api_ip_addr
+        string :api_ip_ptr
+        string :client_ip_addr
+        string :client_ip_ptr
         resource VpsAdmin::API::Resources::User, name: :admin, value_label: :login
         string :admin_response
         datetime :created_at
@@ -20,7 +22,7 @@ module VpsAdmin::API::Plugins::Requests
 
       res.define_action(:Index, superclass: HaveAPI::Actions::Default::Index) do
         input do
-          use :common, include: %i(user state ip_addr admin)
+          use :common, include: %i(user state api_ip_addr client_ip_addr admin)
         end
 
         output(:object_list) do
@@ -39,7 +41,7 @@ module VpsAdmin::API::Plugins::Requests
           q = self.class.model.where(with_restricted)
           q = q.where(state: ::UserRequest.states[input[:state]]) if input[:state]
           
-          %i(user ip_addr admin).each do |v|
+          %i(user api_ip_addr client_ip_addr admin).each do |v|
             q = q.where(v =>input[v]) if input[v]
           end
 

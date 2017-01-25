@@ -4,8 +4,10 @@ class Setup < ActiveRecord::Migration
       t.references  :user,                null: true
       t.string      :type,                null: false, limit: 255
       t.integer     :state,               null: false, default: 0
-      t.string      :ip_addr,             null: false, limit: 127
-      t.string      :ip_addr_ptr,         null: false
+      t.string      :api_ip_addr,         null: false, limit: 127
+      t.string      :api_ip_ptr,          null: false
+      t.string      :client_ip_addr,      null: true,  limit: 127
+      t.string      :client_ip_ptr,       null: true
       t.integer     :last_mail_id,        null: false, default: 0
       t.references  :admin,               null: true
       t.string      :admin_response,      null: true,  limit: 500
@@ -47,8 +49,8 @@ class Setup < ActiveRecord::Migration
               user_id,
               type,
               state,
-              ip_addr,
-              ip_addr_ptr,
+              api_ip_addr,
+              api_ip_ptr,
               last_mail_id,
               admin_id,
               admin_response,

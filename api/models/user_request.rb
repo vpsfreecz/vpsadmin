@@ -8,17 +8,16 @@ class UserRequest < ActiveRecord::Base
 
   enum state: %i(awaiting approved denied ignored)
 
-  validates :ip_addr, :ip_addr_ptr, :state, presence: true
+  validates :api_ip_addr, :api_ip_ptr, :state, presence: true
 
   def self.create!(request, user, input)
     req = new(input)
-    req.ip_addr = request.ip
+    req.api_ip_addr = request.ip
+    req.api_ip_ptr = req.send(:get_ptr, req.api_ip_addr)
 
-    begin
-      req.ip_addr_ptr = Resolv.new.getname(req.ip_addr)
-
-    rescue Resolv::ResolvError => e
-      req.ip_addr_ptr = e.message
+    if request.env['HTTP_CLIENT_IP']
+      req.client_ip_addr = request.env['HTTP_CLIENT_IP']
+      req.client_ip_ptr = req.send(:get_ptr, req.client_ip_addr)
     end
 
     req.user = user
@@ -71,5 +70,13 @@ class UserRequest < ActiveRecord::Base
 
   def invalidate(chain, params)
 
+  end
+
+  private
+  def get_ptr(ip)
+    Resolv.new.getname(ip)
+
+  rescue Resolv::ResolvError => e
+    e.message
   end
 end
