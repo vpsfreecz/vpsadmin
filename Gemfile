@@ -23,3 +23,12 @@ group :development do
   gem 'pry'
   gem 'yard'
 end
+
+Dir.entries('plugins').select do |v|
+  next if v == '.' || v == '..'
+  
+  path = File.join('plugins', v, 'api', 'Gemfile')
+  next unless File.exists?(path)
+
+  eval_gemfile path
+end
