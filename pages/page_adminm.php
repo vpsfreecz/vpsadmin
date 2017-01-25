@@ -524,11 +524,15 @@ function request_approve() {
 	if(!$_SESSION["is_admin"])
 		return;
 
-	if ($_POST['action'])
-		$params = $_POST;
+	if (isset($_POST['action'])) {
+		$params = client_params_to_api(
+			$api->user_request->{$_GET['type']}->resolve,
+			$_POST
+		);
 
-	else
+	} else {
 		$params = array('action' => 'approve');
+	}
 
 	try {
 		$api->user_request->{$_GET['type']}->resolve($_GET['id'], $params);
@@ -548,11 +552,15 @@ function request_deny() {
 	if(!$_SESSION["is_admin"])
 		return;
 	
-	if ($_POST['action'])
-		$params = $_POST;
+	if (isset($_POST['action'])) {
+		$params = client_params_to_api(
+			$api->user_request->{$_GET['type']}->resolve,
+			$_POST
+		);
 
-	else
+	} else {
 		$params = array('action' => 'deny');
+	}
 	
 	try {
 		$api->user_request->{$_GET['type']}->resolve($_GET['id'], $params);
@@ -572,11 +580,15 @@ function request_ignore() {
 	if(!$_SESSION["is_admin"])
 		return;
 	
-	if ($_POST['action'])
-		$params = $_POST;
+	if (isset($_POST['action'])) {
+		$params = client_params_to_api(
+			$api->user_request->{$_GET['type']}->resolve,
+			$_POST
+		);
 
-	else
+	} else {
 		$params = array('action' => 'ignore');
+	}
 	
 	try {
 		$api->user_request->{$_GET['type']}->resolve($_GET['id'], $params);
