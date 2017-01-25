@@ -189,7 +189,7 @@ function print_editm($u) {
 	$xtpl->form_add_input(_("Postal address").':', 'text', '30', 'address', post_val('address', $u->address), ' ');
 
 	if(!$_SESSION["is_admin"]) {
-		$xtpl->form_add_input(_("Reason for change").':', 'text', '50', 'change_reason');
+		$xtpl->form_add_input(_("Reason for change").':', 'text', '50', 'change_reason', $_POST['change_reason']);
 		$xtpl->table_td(_("Request for change will be sent to administrators for approval.".
 		                  "Changes will not take effect immediately. You will be informed about the result."), false, false, 3);
 		$xtpl->table_tr();
