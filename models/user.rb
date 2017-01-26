@@ -40,6 +40,9 @@ class User < ActiveRecord::Base
       context: 'TransactionChains::User::Create instance',
       args: {
           user: 'User instance'
+      },
+      ret: {
+          objects: 'An array of created objects'
       }
 
   include VpsAdmin::API::Lifetimes::Model

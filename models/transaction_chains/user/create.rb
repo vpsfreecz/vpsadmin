@@ -33,7 +33,13 @@ module TransactionChains
         end
       end
 
-      user.call_class_hooks_for(:create, self, args: [user])
+      ret = user.call_class_hooks_for(
+          :create,
+          self,
+          args: [user],
+          initial: {objects: []}
+      )
+      objects.concat(ret[:objects])
 
       if create_vps
         vps = ::Vps.new(
