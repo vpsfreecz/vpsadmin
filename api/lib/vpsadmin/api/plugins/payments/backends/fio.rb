@@ -32,7 +32,7 @@ module VpsAdmin::API::Plugins::Payments::Backends
 
         p.save!
 
-        ::UserPayment.accept(p)
+        ::UserAccount.accept_payment(p)
       end
     end
   end

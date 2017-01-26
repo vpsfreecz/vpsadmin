@@ -24,6 +24,15 @@ class Setup < ActiveRecord::Migration
     add_index :incoming_payments, :ks
     add_index :incoming_payments, :ss
 
+    create_table :user_accounts do |t|
+      t.references  :user,             null: false
+      t.integer     :monthly_payment,  null: false, default: 0
+      t.datetime    :paid_until,       null: true
+      t.datetime    :updated_at
+    end
+
+    add_index :user_accounts, :user_id, unique: true
+
     create_table :user_payments do |t|
       t.references  :incoming_payment, null: true
       t.references  :user,             null: false
@@ -35,5 +44,17 @@ class Setup < ActiveRecord::Migration
 
     add_index :user_payments, :incoming_payment_id
     add_index :user_payments, :user_id
+
+    reversible do |dir|
+      dir.up do
+        ActiveRecord::Base.connection.execute(
+            "INSERT INTO user_accounts (user_id, monthly_payment, paid_until)
+            SELECT id, monthly_payment, paid_until
+            FROM users
+            WHERE object_state < 3
+            ORDER BY id"
+        )
+      end
+    end
   end
 end
