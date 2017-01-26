@@ -10,6 +10,14 @@ end
 
 class User
   has_one :user_account
+
+  def monthly_payment
+    user_account.monthly_payment
+  end
+  
+  def paid_until
+    user_account.paid_until
+  end
 end
 
 User.connect_hook(:create) do |ret, user|
