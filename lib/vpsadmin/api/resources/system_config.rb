@@ -7,7 +7,7 @@ module VpsAdmin::API::Resources
       string :category
       string :name
       string :type, db_name: :data_type
-      custom :value
+      custom :value, db_name: :get_value
       string :label
       string :description
       integer :min_user_level
@@ -100,7 +100,8 @@ module VpsAdmin::API::Resources
             category: params[:category],
             name: params[:name],
         )
-        cfg.update!(input)
+        cfg.set_value(input[:value])
+        cfg.save!
         cfg
       end
     end

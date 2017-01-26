@@ -79,4 +79,24 @@ class SysConfig < ActiveRecord::Base
   register :webui, :noticeboard, Text
   register :webui, :index_info_box_title, String
   register :webui, :index_info_box_content, Text
+
+  def get_value
+    case data_type
+    when 'Hash', 'Array'
+      YAML.dump(value)
+
+    else
+      value
+    end
+  end
+  
+  def set_value(v)
+    case data_type
+    when 'Hash', 'Array'
+      self.value = YAML.load(v)
+
+    else
+      self.value = value
+    end
+  end
 end
