@@ -2,8 +2,11 @@ class UserPayment < ActiveRecord::Base
   belongs_to :incoming_payment
   belongs_to :user
 
-  validates :incoming_payment_id, :user_id, :amount, :from_date, :to_date,
-      presence: true
+  validates :user_id, :amount, :from_date, :to_date, presence: true
+
+  def self.create!(attrs)
+    VpsAdmin::API::Plugins::Payments::TransactionChains::Create.fire(new(attrs))
+  end
 
   def received_amount
     return amount unless incoming_payment_id
