@@ -45,10 +45,10 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
       amount = nil
 
       if income.src_amount
-        case income.src_currency
-        when 'EUR'
-          amount = income.src_amount * 25
-        end
+        rates = ::SysConfig.get(:plugin_payments, :conversion_rates)
+        rate = rates[ income.src_currency.downcase ]
+
+        amount = income.src_amount * rate if rate
 
       else
         amount = income.amount

@@ -11,7 +11,7 @@ class UserPayment < ActiveRecord::Base
   end
 
   def received_currency
-    return 'TODO: add default currency' unless incoming_payment_id
+    return SysConfig.get(:plugin_payments, :default_currency) unless incoming_payment_id
     incoming_payment.src_currency || incoming_payment.currency
   end
 end

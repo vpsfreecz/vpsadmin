@@ -7,8 +7,10 @@ VpsAdmin::API::Plugin.register(:payments) do
   components :api
 
   config do
-    #SysConfig.register :plugin_payments, :default_currency, String
-    #SysConfig.register :plugin_payments, :conversion_rates, String
+    SysConfig.register :plugin_payments, :default_currency, String,
+        min_user_level: 99
+    SysConfig.register :plugin_payments, :conversion_rates, Hash,
+        min_user_level: 99
     SysConfig.register :plugin_payments, :api_token, String,
         label: 'API token', min_user_level: 99
   end
