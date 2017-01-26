@@ -1,3 +1,3 @@
 class IncomingPayment < ActiveRecord::Base
-  enum state: %i(unmatched processed ignored)
+  enum state: %i(queued unmatched processed ignored)
 end

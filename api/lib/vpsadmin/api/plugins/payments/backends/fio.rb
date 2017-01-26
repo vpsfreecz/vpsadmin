@@ -31,9 +31,9 @@ module VpsAdmin::API::Plugins::Payments::Backends
         end
 
         p.save!
-
-        ::UserAccount.accept_payment(p)
       end
+
+      ::UserAccount.accept_payments
     end
   end
 end
