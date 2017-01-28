@@ -47,13 +47,24 @@ class Setup < ActiveRecord::Migration
 
     reversible do |dir|
       dir.up do
-        ActiveRecord::Base.connection.execute(
-            "INSERT INTO user_accounts (user_id, monthly_payment, paid_until)
-            SELECT id, monthly_payment, paid_until
-            FROM users
-            WHERE object_state < 3
-            ORDER BY id"
-        )
+        if ENV['FROM_VPSADMIN1']
+          ActiveRecord::Base.connection.execute(
+              "INSERT INTO user_accounts (user_id, monthly_payment, paid_until)
+              SELECT id, monthly_payment, paid_until
+              FROM users
+              WHERE object_state < 3
+              ORDER BY id"
+          )
+
+        else
+          ActiveRecord::Base.connection.execute(
+              "INSERT INTO user_accounts (user_id, monthly_payment)
+              SELECT id, 0
+              FROM users
+              WHERE object_state < 3
+              ORDER BY id"
+          )
+        end
       end
     end
   end
