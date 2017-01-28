@@ -21,3 +21,14 @@ Transfer from vpsAdmin 1:
 
 Clean install:
     $ rake vpsadmin:plugins:migrate PLUGIN=payments
+
+## Usage
+This plugin defines three new resources:
+
+- `IncomingPayment` - all incoming payments from the bank account
+- `UserAccount` - per-user payment-related settings
+- `UserPayment` - accepted user payments, may be created from `IncomingPayment`
+
+To fetch incoming payments from the bank, use rake task `vpsadmin:payments:fetch`:
+
+    $ rake vpsadmin:payments:fetch BACKEND=fio
