@@ -5,7 +5,19 @@ class UserPayment < ActiveRecord::Base
   validates :user_id, :amount, :from_date, :to_date, presence: true
 
   def self.create!(attrs)
-    VpsAdmin::API::Plugins::Payments::TransactionChains::Create.fire(new(attrs))
+    payment = new(attrs)
+    payment.amount = payment.incoming_payment.amount if attrs[:incoming_payment]
+    monthly = payment.user.user_account.monthly_payment
+
+    if payment.amount % monthly != 0
+      payment.errors.add(
+          :amount,
+          "not a multiple of the monthly payment (#{monthly})"
+      )
+      raise ActiveRecord::RecordInvalid, payment
+    end
+
+    VpsAdmin::API::Plugins::Payments::TransactionChains::Create.fire(payment)
   end
 
   def received_amount

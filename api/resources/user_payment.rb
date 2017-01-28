@@ -80,7 +80,7 @@ module VpsAdmin::API::Resources
       input do
         use :writable
         patch :user, required: true
-        patch :amount, required: true
+        patch :amount
       end
 
       output do
@@ -92,8 +92,15 @@ module VpsAdmin::API::Resources
       end
 
       def exec
+        if !input[:amount] && !input[:incoming_payment]
+          error("Provide amount or incoming payment")
+        end
+
         _, payment = ::UserPayment.create!(input)
         payment
+
+      rescue ActiveRecord::RecordInvalid => e
+        error('Create failed', e.record.errors.to_hash)
       end
     end
   end
