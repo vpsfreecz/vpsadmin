@@ -96,7 +96,7 @@ class SysConfig < ActiveRecord::Base
       self.value = YAML.load(v)
 
     else
-      self.value = value
+      self.value = v
     end
   end
 end
