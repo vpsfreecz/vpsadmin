@@ -20,6 +20,10 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
       payment.to_date = u.user_account.paid_until
       payment.save!
       u.user_account.save!
+      u.set_expiration(
+          payment.to_date,
+          reason: "Payment ##{payment.id} accepted."
+      )
 
       if payment.incoming_payment
         payment.incoming_payment.update!(
