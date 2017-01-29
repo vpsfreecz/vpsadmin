@@ -88,7 +88,7 @@ module VpsAdmin::API::Resources
       input do
         use :writable
         patch :user, required: true
-        patch :amount
+        patch :amount, number: {min: 1}
       end
 
       output do
