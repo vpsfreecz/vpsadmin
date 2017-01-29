@@ -36,6 +36,7 @@ class Setup < ActiveRecord::Migration
     create_table :user_payments do |t|
       t.references  :incoming_payment, null: true
       t.references  :user,             null: false
+      t.references  :accounted_by,     null: true
       t.integer     :amount,           null: false
       t.datetime    :created_at,       null: false
       t.datetime    :from_date,        null: false
@@ -44,6 +45,7 @@ class Setup < ActiveRecord::Migration
 
     add_index :user_payments, :incoming_payment_id
     add_index :user_payments, :user_id
+    add_index :user_payments, :accounted_by_id
 
     reversible do |dir|
       dir.up do

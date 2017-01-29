@@ -12,6 +12,7 @@ module VpsAdmin::API::Resources
     params(:all) do
       id :id
       use :writable
+      resource VpsAdmin::API::Resources::User, name: :accounted_by, value_label: :login
       datetime :from_date
       datetime :to_date
       datetime :created_at

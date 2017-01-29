@@ -1,12 +1,14 @@
 class UserPayment < ActiveRecord::Base
   belongs_to :incoming_payment
   belongs_to :user
+  belongs_to :accounted_by, class_name: 'User'
 
   validates :user_id, :amount, :from_date, :to_date, presence: true
 
   def self.create!(attrs)
     payment = new(attrs)
     payment.amount = payment.incoming_payment.amount if attrs[:incoming_payment]
+    payment.accounted_by = ::User.current
     monthly = payment.user.user_account.monthly_payment
 
     if payment.amount % monthly != 0
