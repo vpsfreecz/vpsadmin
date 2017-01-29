@@ -43,7 +43,7 @@ class Setup < ActiveRecord::Migration
       t.datetime    :to_date,          null: false
     end
 
-    add_index :user_payments, :incoming_payment_id
+    add_index :user_payments, :incoming_payment_id, unique: true
     add_index :user_payments, :user_id
     add_index :user_payments, :accounted_by_id
 
