@@ -1031,6 +1031,25 @@ if ($_SESSION["logged_in"]) {
 			incoming_payments_details($_GET['id']);
 			break;
 		
+		case 'incoming_payment_state':
+			if (!$_SESSION['is_admin'])
+				break;
+
+			try {
+				$api->incoming_payment->update($_GET['id'], client_params_to_api(
+					$api->incoming_payment->update
+				));
+			
+				notify_user(_("State changed"), '');
+				redirect('?page=adminm&action=incoming_payment&id='.$_GET['id']);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Unable to change state'), $e->getResponse());
+				incoming_payments_details($_GET['id']);
+			}
+			
+			break;
+		
 		case 'incoming_payment_assign':
 			if (!$_SESSION['is_admin'])
 				break;

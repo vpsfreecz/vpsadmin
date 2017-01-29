@@ -594,6 +594,7 @@ function incoming_payments_details($id) {
 	$p = $api->incoming_payment->find($id);
 
 	$xtpl->title(_("Incoming payment").' #'.$p->id);
+	$xtpl->form_create('?page=adminm&action=incoming_payment_state&id='.$p->id, 'post');
 
 	$xtpl->table_td(_('Transaction ID').':');
 	$xtpl->table_td($p->transaction_id);
@@ -607,9 +608,13 @@ function incoming_payments_details($id) {
 	$xtpl->table_td(tolocaltz($p->created_at));
 	$xtpl->table_tr();
 
-	$xtpl->table_td(_('State').':');
-	$xtpl->table_td($p->state);
-	$xtpl->table_tr();
+	$state_desc = $api->incoming_payment->update->getParameters('input')->state;
+
+	api_param_to_form(
+		'state',
+		$state_desc,
+		post_val('state', array_search($p->state, $state_desc->validators->include->values))
+	);
 
 	$xtpl->table_td(_('Type').':');
 	$xtpl->table_td($p->transaction_type);
@@ -661,7 +666,7 @@ function incoming_payments_details($id) {
 	$xtpl->table_td($p->comment);
 	$xtpl->table_tr();
 
-	$xtpl->table_out();
+	$xtpl->form_out(_('Set state'));
 
 	if ($p->state != 'processed') {
 		$xtpl->table_title(_('Assign payment'));
