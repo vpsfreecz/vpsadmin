@@ -20,6 +20,12 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
       payment.to_date = u.user_account.paid_until
       payment.save!
       u.user_account.save!
+
+      if payment.incoming_payment
+        payment.incoming_payment.update!(
+            state: ::IncomingPayment.states[:processed],
+        )
+      end
       
       if u.mailer_enabled
         mail(:payment_accepted, {

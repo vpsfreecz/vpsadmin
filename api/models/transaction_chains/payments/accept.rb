@@ -21,8 +21,6 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
           income.update!(state: ::IncomingPayment.states[:unmatched])
           next
         end
-
-        income.update!(state: ::IncomingPayment.states[:processed])
       end
     end
 
