@@ -23,6 +23,7 @@ module VpsAdmin::API::Resources
 
       input do
         resource VpsAdmin::API::Resources::User
+        resource VpsAdmin::API::Resources::User, name: :accounted_by
       end
 
       output(:object_list) do
@@ -32,13 +33,17 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
-        input blacklist: %i(user)
+        input blacklist: %i(user accounted_by)
         allow
       end
 
       def query
         q = ::UserPayment.where(with_restricted)
-        q = q.where(user: input[:user]) if input[:user]
+
+        %i(user accounted_by).each do |v|
+          q = q.where(v => input[v]) if input[v]
+        end
+
         q
       end
 
