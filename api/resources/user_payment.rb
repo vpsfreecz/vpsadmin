@@ -109,6 +109,9 @@ module VpsAdmin::API::Resources
 
       rescue ActiveRecord::RecordInvalid => e
         error('Create failed', e.record.errors.to_hash)
+
+      rescue ActiveRecord::RecordNotUnique
+        error('Create failed: this incoming payment is already assigned')
       end
     end
   end
