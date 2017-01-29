@@ -332,7 +332,7 @@ function client_params_to_api($action, $from = null) {
 	foreach ($params as $name => $desc) {
 		if (isset($from[ $name ])) {
 			if ($desc->validators->include) {
-				$ret[ $name ] = $desc->validators->include->values[ (int) $from[$v] ];
+				$ret[ $name ] = $desc->validators->include->values[ (int) $from[$name] ];
 				continue;
 			}
 
