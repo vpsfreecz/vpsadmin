@@ -32,7 +32,7 @@ module VpsAdmin::API::Resources
 
       input do
         use :filters
-        patch :limit, fill: true
+        patch :limit, default: 25, fill: true
       end
 
       output(:object_list) do
