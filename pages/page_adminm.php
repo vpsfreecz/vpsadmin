@@ -819,12 +819,6 @@ if ($_SESSION["logged_in"]) {
 
 		if ($api->user_request)
 			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Requests for approval").'" /> '._("Requests for approval"), '?page=adminm&section=members&action=approval_requests');
-
-		if (payments_enabled()) {
-			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Incoming payments").'" /> '._("Incoming payments"), '?page=adminm&action=incoming_payments');
-			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments history").'" /> '._("Display history of payments"), '?page=adminm&section=members&action=payments_history');
-			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments overview").'" /> '._("Payments overview"), '?page=adminm&section=members&action=payments_overview');
-		}
 	}
 
 	switch ($_GET["action"]) {
@@ -1275,6 +1269,14 @@ if ($_SESSION["logged_in"]) {
 	}
 	
 	$xtpl->sbar_out(_("Manage members"));
+	
+	if (payments_enabled()) {
+		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Incoming payments").'" /> '._("Incoming payments"), '?page=adminm&action=incoming_payments');
+		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments history").'" /> '._("Display history of payments"), '?page=adminm&section=members&action=payments_history');
+		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments overview").'" /> '._("Payments overview"), '?page=adminm&section=members&action=payments_overview');
+
+		$xtpl->sbar_out(_('Payments'));
+	}
 
 } else $xtpl->perex(_("Access forbidden"), _("You have to log in to be able to access vpsAdmin's functions"));
 ?>
