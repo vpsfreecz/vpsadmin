@@ -820,8 +820,6 @@ if ($_SESSION["logged_in"]) {
 		if ($api->user_request)
 			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Requests for approval").'" /> '._("Requests for approval"), '?page=adminm&section=members&action=approval_requests');
 
-		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Export e-mails").'" /> '._("Export e-mails"), '?page=adminm&section=members&action=export_mails');
-		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Export e-mails of non-payers").'" /> '._("Export e-mails of non-payers"), '?page=adminm&section=members&action=export_notpaid_mails');
 		if (payments_enabled()) {
 			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments history").'" /> '._("Display history of payments"), '?page=adminm&section=members&action=payments_history');
 			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments overview").'" /> '._("Payments overview"), '?page=adminm&section=members&action=payments_overview');
@@ -1024,43 +1022,6 @@ if ($_SESSION["logged_in"]) {
 			
 			break;
 		
-		case 'export_mails':
-			if ($_SESSION["is_admin"]) {
-				$xtpl->table_add_category('');
-				
-				$mails = array();
-				
-				foreach (get_all_users() as $u) {
-					$mails[$u->email] = $u->email;
-				}
-				
-				$xtpl->table_td(implode(', ', $mails));
-				$xtpl->table_tr();
-				
-				$xtpl->table_out();
-			}
-			break;
-			
-		case 'export_notpaid_mails':
-			if ($_SESSION["is_admin"]) {
-				$xtpl->table_add_category('');
-				
-				$mails = array();
-				$now = time();
-				
-				foreach (get_all_users() as $u) {
-					$paid = strtotime($u->paid_until);
-					
-					if (!$paid || $paid < $now)
-						$mails[$u->email] = $u->email;
-				}
-				
-				$xtpl->table_td(implode(', ', $mails));
-				$xtpl->table_tr();
-				
-				$xtpl->table_out();
-			}
-			break;
 		case 'payments_history':
 			if (!$_SESSION['is_admin'])
 				break;
