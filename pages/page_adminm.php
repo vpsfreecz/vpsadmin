@@ -999,133 +999,28 @@ if ($_SESSION["logged_in"]) {
 		case 'payset':
 			if (!$_SESSION['is_admin'])
 				break;
-			
-			try {
-				$u = $api->user->find($_GET['id']);
 				
-			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				$xtpl->perex_format_errors(_('User not found'), $e->getResponse());
-				break;
-			}
-			
-			$paidUntil = strtotime($u->paid_until);
-			
-			$xtpl->title(_("Edit payments"));
-			$xtpl->form_create('?page=adminm&section=members&action=payset2&id='.$u->id, 'post');
-			
-			$xtpl->table_td(_("Paid until").':');
-			
-			if ($paidUntil) {
-				$lastPaidTo = date('Y-m-d', $paidUntil);
-				
-			} else {
-				$lastPaidTo = _("Never been paid");
-			}
-			
-			$xtpl->table_td($lastPaidTo);
-			$xtpl->table_tr();
-			
-			$xtpl->table_td(_("Login").':');
-			$xtpl->table_td($u->login);
-			$xtpl->table_tr();
-			
-			$xtpl->table_td(_("Monthly payment").':');
-			$xtpl->table_td($u->monthly_payment);
-			$xtpl->table_tr();
-			
-			$xtpl->form_add_input(_("Newly paid until").':', 'text', '30', 'paid_until', '', 'Y-m-d, eg. 2009-05-01');
-
-			$xtpl->table_td(_("Months to add").':');
-			$xtpl->form_add_input_pure('text', '30', 'months_to_add', '');
-			$xtpl->form_add_select_pure('add_from', array(
-				'from_last_paid' => _('From last paid date'),
-				'from_now' => _('From now')
-			));
-			$xtpl->table_tr();
-			
-			$xtpl->table_add_category('');
-			$xtpl->table_add_category('');
-			
-			$xtpl->form_out(_("Save"));
-			
-			$xtpl->table_add_category("ID");
-			$xtpl->table_add_category("MEMBER");
-			$xtpl->table_add_category("CHANGED");
-			$xtpl->table_add_category("FROM");
-			$xtpl->table_add_category("TO");
-			
-			while ($hist = $db->find("members_payments", "m_id = {$u->id}", "id DESC", 30)) {
-				$acct_m = $db->findByColumnOnce("users", "id", $hist["acct_m_id"]);
-				
-				$xtpl->table_td($hist["id"]);
-				$xtpl->table_td($acct_m["login"]);
-				$xtpl->table_td(date('Y-m-d H:i', $hist["timestamp"]));
-				$xtpl->table_td(date('Y-m-d', $hist["change_from"]));
-				$xtpl->table_td(date('Y-m-d', $hist["change_to"]));
-				
-				$xtpl->table_tr();
-			}
-			
-			$xtpl->table_out();
-			
+			user_payment_form($_GET['id']);
 			break;
+
 		case 'payset2':
 			if (!$_SESSION['is_admin'])
 				break;
 			
 			try {
-				$u = $api->user->find($_GET['id']);
-				
-			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				$xtpl->perex_format_errors(_('User not found'), $e->getResponse());
-				break;
-			}
-			
-			$log["m_id"] = $u->id;
-			$log["acct_m_id"] = $_SESSION["user"]["id"];
-			$log["timestamp"] = time();
-			$log["change_from"] = strtotime($u->paid_until);
-			
-			try {
-				if ($_POST["paid_until"]) {
-					$t = strtotime($_POST['paid_until']);
-					$log["change_to"] = $t;
-					
-					$u->update(array('paid_until' => date('c', $t)));
-				
-				} elseif ($_POST["months_to_add"]) {
-					if ($_POST['add_from'] == 'from_now')
-						$from = time();
-
-					else
-						$from = strtotime($u->paid_until ? $u->paid_until : $u->created_at);
-
-					$t = strtotime('+'.$_POST['months_to_add'].' month', $from);
-					$log["change_to"] = $t;
-					
-					$u->update(array('paid_until' => date('c', $t)));
-					
-				} else {
-					notify_user(_("Payment not set"), _('Provide a new date or months to add.'));
-					redirect('?page=adminm&action=payset&id='.$u->id);
-				}
+				$api->user_payment->create(array(
+					'user' => $_GET['id'],
+					'amount' => $_POST['amount'],
+				));
 				
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 				$xtpl->perex_format_errors(_('Failed to add payment'), $e->getResponse());
+				user_payment_form($_GET['id']);
 				break;
 			}
 			
-			$sql = "INSERT INTO members_payments
-			        SET m_id    = '". $db->check($log["m_id"]) ."',
-			        acct_m_id   = '". $db->check($log["acct_m_id"]) ."',
-			        timestamp   = '". $db->check($log["timestamp"]) ."',
-			        change_from = '". $db->check($log["change_from"]) ."',
-			        change_to   = '". $db->check($log["change_to"]) ."'";
-			
-			$db->query($sql);
-			
-			notify_user(_("Payment successfully set"), '');
-			redirect('?page=adminm&action=payset&id='.$u->id);
+			notify_user(_("Payment accepted"), '');
+			redirect('?page=adminm&action=payset&id='.$_GET['id']);
 			
 			break;
 		

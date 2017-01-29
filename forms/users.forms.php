@@ -394,3 +394,70 @@ function user_payment_info($u) {
 		$xtpl->table_td('<b>'._("not paid!").'</b>', '#B22222');
 	}
 }
+
+function user_payment_form($user_id) {
+	global $xtpl, $api;
+
+	try {
+		$u = $api->user->find($user_id);
+		
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		$xtpl->perex_format_errors(_('User not found'), $e->getResponse());
+		break;
+	}
+	
+	$paidUntil = strtotime($u->paid_until);
+	
+	$xtpl->title(_("Edit payments"));
+	$xtpl->form_create('?page=adminm&action=payset2&id='.$u->id, 'post');
+	
+	$xtpl->table_td(_("Paid until").':');
+	
+	if ($paidUntil) {
+		$lastPaidTo = date('Y-m-d', $paidUntil);
+		
+	} else {
+		$lastPaidTo = _("Never been paid");
+	}
+	
+	$xtpl->table_td($lastPaidTo);
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("Login").':');
+	$xtpl->table_td($u->login);
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_("Monthly payment").':');
+	$xtpl->table_td($u->monthly_payment);
+	$xtpl->table_tr();
+	
+	$xtpl->form_add_input(_("Amount").':', 'text', '30', 'amount', post_val('amount'));
+
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+	
+	$xtpl->form_out(_("Save"));
+	
+	$xtpl->table_add_category("ACCEPTED AT");
+	$xtpl->table_add_category("ACCOUNTED BY");
+	$xtpl->table_add_category("AMOUNT");
+	$xtpl->table_add_category("FROM");
+	$xtpl->table_add_category("TO");
+
+	$payments = $api->user_payment->list(array(
+		'user' => $u->id,
+		'meta' => array('includes' => 'accounted_by'),
+	));
+
+	foreach ($payments as $payment) {
+		$xtpl->table_td(tolocaltz($payment->created_at));
+		$xtpl->table_td($payment->accounted_by_id ? $payment->accounted_by->login : '-');
+		$xtpl->table_td($payment->amount, false, true);
+		$xtpl->table_td(tolocaltz($payment->from_date, 'Y-m-d'));
+		$xtpl->table_td(tolocaltz($payment->to_date, 'Y-m-d'));
+		
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_out();
+}
