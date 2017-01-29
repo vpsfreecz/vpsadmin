@@ -576,4 +576,10 @@ function lang_id_by_code($code, $langs = null) {
 function network_label($net) {
   return $net->label ? $net->label : $net->address.'/'.$net->prefix;
 }
+
+function payments_enabled() {
+	global $api;
+
+	return $api->user_payment ? true : false;
+}
 ?>

@@ -25,7 +25,7 @@ function print_newm() {
 	$xtpl->form_add_input(_("E-mail").':', 'text', '30', 'm_mail', $_POST["m_mail"], ' ');
 	$xtpl->form_add_input(_("Postal address").':', 'text', '30', 'm_address', $_POST["m_address"], ' ');
 
-	if ($config->get("webui", "payments_enabled")) {
+	if (payments_enabled()) {
 		$xtpl->form_add_input(_("Monthly payment").':', 'text', '30', 'm_monthly_payment', $_POST["m_monthly_payment"] ? $_POST["m_monthly_payment"] : '300', ' ');
 	}
 
@@ -101,7 +101,7 @@ function print_editm($u) {
 		$xtpl->table_tr();
 	}
 	
-	if ($config->get("webui", "payments_enabled")) {
+	if (payments_enabled()) {
 		$xtpl->table_td(_("Paid until").':');
 
 		$dt = new DateTime($u->paid_until);
@@ -644,14 +644,14 @@ function list_members() {
 		$xtpl->table_add_category(_("NICKNAME"));
 		$xtpl->table_add_category(_("VPS"));
 		
-		if ($config->get("webui", "payments_enabled")) {
+		if (payments_enabled()) {
 			$xtpl->table_add_category(_("$"));
 		}
 		
 		$xtpl->table_add_category(_("FULL NAME"));
 		$xtpl->table_add_category(_("LAST ACTIVITY"));
 		
-		if ($config->get("webui", "payments_enabled")) {
+		if (payments_enabled()) {
 			$xtpl->table_add_category(_("PAYMENT"));
 		}
 		
@@ -712,7 +712,7 @@ function list_members() {
 			
 			$xtpl->table_td('<a href="?page=adminvps&action=list&user='.$u->id.'">[ '.$vps_count.' ]</a>');
 			
-			if ($config->get("webui", "payments_enabled"))
+			if (payments_enabled())
 				$xtpl->table_td($u->monthly_payment);
 			
 			$xtpl->table_td($u->full_name);
@@ -740,7 +740,7 @@ function list_members() {
 				$xtpl->table_td("---", '#FFF');
 			}
 			
-			if ($config->get("webui", "payments_enabled")) {
+			if (payments_enabled()) {
 				if ($paid_until)
 					$paid_until_str = date('Y-m-d', $paid_until);
 				else
@@ -898,7 +898,7 @@ if ($_SESSION["logged_in"]) {
 
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Export e-mails").'" /> '._("Export e-mails"), '?page=adminm&section=members&action=export_mails');
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Export e-mails of non-payers").'" /> '._("Export e-mails of non-payers"), '?page=adminm&section=members&action=export_notpaid_mails');
-		if ($config->get("webui", "payments_enabled")) {
+		if (payments_enabled()) {
 			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments history").'" /> '._("Display history of payments"), '?page=adminm&section=members&action=payments_history');
 			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments overview").'" /> '._("Payments overview"), '?page=adminm&section=members&action=payments_overview');
 		}
