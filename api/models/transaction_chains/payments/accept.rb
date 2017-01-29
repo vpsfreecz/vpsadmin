@@ -29,17 +29,7 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
           incoming_payment: income,
           user: u,
       )
-      amount = nil
-
-      if income.src_amount
-        rates = ::SysConfig.get(:plugin_payments, :conversion_rates)
-        rate = rates[ income.src_currency.downcase ]
-
-        amount = income.src_amount * rate if rate
-
-      else
-        amount = income.amount
-      end
+      amount = income.converted_amount
 
       # Break if we're unable to figure out the received amount
       return if amount.nil?

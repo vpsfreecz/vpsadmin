@@ -7,8 +7,12 @@ class UserPayment < ActiveRecord::Base
 
   def self.create!(attrs)
     payment = new(attrs)
-    payment.amount = payment.incoming_payment.amount if attrs[:incoming_payment]
     payment.accounted_by = ::User.current
+    
+    if attrs[:incoming_payment]
+      payment.amount = payment.incoming_payment.converted_amount
+    end
+
     monthly = payment.user.user_account.monthly_payment
 
     if payment.amount % monthly != 0
