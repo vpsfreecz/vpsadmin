@@ -79,5 +79,28 @@ module VpsAdmin::API::Resources
         @payment
       end
     end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc "Change payment's state"
+
+      input do
+        use :all, include: %i(state)
+        patch :state, required: true
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        payment = ::IncomingPayment.find(params[:incoming_payment_id])
+        payment.update!(state: ::IncomingPayment.states[input[:state]])
+        payment
+      end
+    end
   end
 end
