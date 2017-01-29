@@ -58,6 +58,33 @@ class Setup < ActiveRecord::Migration
               ORDER BY id"
           )
 
+          if table_exists?(:members_payments)
+            ActiveRecord::Base.connection.execute(
+                "INSERT INTO user_payments (
+                  user_id,
+                  accounted_by_id,
+                  amount,
+                  created_at,
+                  from_date,
+                  to_date
+                )
+                SELECT
+                  m_id,
+                  acct_m_id,
+                  CASE change_from
+                  WHEN 0 THEN
+                    u.monthly_payment * ((change_to - UNIX_TIMESTAMP(u.created_at)) DIV (60*60*24*30))
+                  ELSE
+                    u.monthly_payment * ((change_to - change_from) DIV (60*60*24*30))
+                  END,
+                  FROM_UNIXTIME(`timestamp`),
+                  FROM_UNIXTIME(change_from),
+                  FROM_UNIXTIME(change_to)
+                FROM members_payments p
+                INNER JOIN users u ON p.m_id = u.id"
+            )
+          end
+
         else
           ActiveRecord::Base.connection.execute(
               "INSERT INTO user_accounts (user_id, monthly_payment)
