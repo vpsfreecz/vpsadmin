@@ -103,47 +103,9 @@ function print_editm($u) {
 	
 	if (payments_enabled()) {
 		$xtpl->table_td(_("Paid until").':');
-
-		$dt = new DateTime($u->paid_until);
-		$dt->setTimezone(new DateTimezone(date_default_timezone_get()));
-
-		$t = $dt->getTimestamp();
-		$paid = $t > time();
-		$paid_until = date('Y-m-d', $t);
-		
-		if ($_SESSION["is_admin"]) {
-			if ($paid) {
-				if (($t - time()) >= 604800) {
-						$xtpl->table_td('<a href="?page=adminm&section=members&action=payset&id='
-										. $u->id
-										. '">' . _("->") . ' ' . $paid_until . '</a>', '#66FF66');
-				} else {
-						$xtpl->table_td('<a href="?page=adminm&section=members&action=payset&id='
-										. $u->id
-										. '">' . _("->") . ' ' . $paid_until . '</a>', '#FFA500');
-				}
-				
-			} else {
-				$xtpl->table_td('<a href="?page=adminm&section=members&action=payset&id='
-								. $u->id
-								. '"><b>' . _("not paid!") . '</b></a>', '#B22222');
-			}
-			
-		} else {
-			if ($paid) {
-				if (($t - time()) >= 604800) {
-					$xtpl->table_td(_("->").' '.$paid_until, '#66FF66');
-					
-				} else {
-					$xtpl->table_td(_("->").' '.$paid_until, '#FFA500');
-				}
-				
-			} else {
-				$xtpl->table_td('<b>'._("not paid!").'</b>', '#B22222');
-			}
-		}
+		user_payment_info($u);
+		$xtpl->table_tr();
 	}
-	$xtpl->table_tr();
 	
 	if ($_SESSION["is_admin"]) {
 		$vps_count = $api->vps->list(array(
@@ -740,46 +702,8 @@ function list_members() {
 				$xtpl->table_td("---", '#FFF');
 			}
 			
-			if (payments_enabled()) {
-				if ($paid_until)
-					$paid_until_str = date('Y-m-d', $paid_until);
-				else
-					$paid_until_str = "Never been paid";
-				
-				if ($_SESSION["is_admin"]) {
-					if ($paid) {
-						if (($paid_until - time()) >= 604800) {
-								$xtpl->table_td('<a href="?page=adminm&section=members&action=payset&id='.$u->id.'">'._("->").' '.$paid_until_str.'</a>', '#66FF66');
-						} else {
-								$xtpl->table_td('<a href="?page=adminm&section=members&action=payset&id='.$u->id.'">'._("->").' '.$paid_until_str.'</a>', '#FFA500');
-						}
-						
-					} else {
-						$table_td = '<b><a href="?page=adminm&section=members&action=payset&id='.$u->id.'" title="'.$paid_until_str.'">'.
-							_("not paid!").
-							'</a></b>';
-						
-						if ($u->paid_until) {
-							$table_td .= ' '.ceil(($paid_until - time()) / 86400).'d';
-						}
-						
-						$xtpl->table_td($table_td, '#B22222');
-					}
-					
-				} else {
-					if ($paid) {
-						if (($paid_until - time()) >= 604800) {
-							$xtpl->table_td(_("->").' '.$paid_until_str, '#66FF66');
-							
-						} else {
-							$xtpl->table_td(_("->").' '.$paid_until_str, '#FFA500');
-						}
-						
-					} else {
-						$xtpl->table_td('<b>'._("not paid!").' (->'.$paid_until_str.')</b>', '#B22222');
-					}
-				}
-			}
+			if (payments_enabled())
+				user_payment_info($u);
 			
 			$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$u->id.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
 			

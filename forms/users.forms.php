@@ -342,3 +342,55 @@ function approval_requests_details($type, $id) {
 
 	$xtpl->form_out(_('Close request'));
 }
+
+function user_payment_info($u) {
+	global $xtpl;
+
+	$dt = new DateTime($u->paid_until);
+	$dt->setTimezone(new DateTimezone(date_default_timezone_get()));
+
+	$t = $dt->getTimestamp();
+	$paid = $t > time();
+	$paid_until = date('Y-m-d', $t);
+
+	if ($_SESSION["is_admin"]) {
+		$td = '<a href="?page=adminm&action=payset&id='.$u->id.'">';
+		$color = '';
+
+		if ($paid) {
+			if (($t - time()) >= 604800) {
+				$td .= _("->") . ' ' . $paid_until;
+				$color = '#66FF66';
+
+			} else {
+				$td .= _("->") . ' ' . $paid_until;
+				$color = '#FFA500';
+			}
+			
+		} else {
+			$td .= '<strong>' . _("not paid!") . '</strong>';
+			$color = '#B22222';
+			
+			if ($u->paid_until) {
+				$td .= ' ('.ceil(($paid_until - time()) / 86400).'d)';
+			}
+		}
+
+		$td .= '</a>';
+		$xtpl->table_td($td, $color);
+
+		return;	
+	}
+
+	if ($paid) {
+		if (($t - time()) >= 604800) {
+			$xtpl->table_td(_("->").' '.$paid_until, '#66FF66');
+			
+		} else {
+			$xtpl->table_td(_("->").' '.$paid_until, '#FFA500');
+		}
+		
+	} else {
+		$xtpl->table_td('<b>'._("not paid!").'</b>', '#B22222');
+	}
+}
