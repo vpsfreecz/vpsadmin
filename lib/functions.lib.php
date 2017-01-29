@@ -525,6 +525,13 @@ function vps_link($vps) {
 	return '<a href="?page=adminvps&action=info&veid='.$vps->id.'">#'.$vps->id.'</a>';
 }
 
+function user_link($user) {
+	if ($user)
+		return '<a href="?page=adminm&action=edit&id='.$user->id.'">'.$user->login.'</a>';
+
+	return '-';
+}
+
 function kernel_version($v) {
 	if (preg_match("/\d+stab.+/",$v, $matches))
 		return $matches[0];

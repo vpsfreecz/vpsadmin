@@ -461,3 +461,52 @@ function user_payment_form($user_id) {
 	
 	$xtpl->table_out();
 }
+
+function user_payment_history() {
+	global $xtpl, $api;
+	
+	$xtpl->form_create('?page=adminm&action=payments_history', 'get');
+	$xtpl->table_td(_("Limit").':'.
+		'<input type="hidden" name="page" value="adminm">'.
+		'<input type="hidden" name="action" value="payments_history">'
+	);
+	$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', 25), '');
+	$xtpl->table_tr();
+
+	$xtpl->form_add_input(_("Admin ID").':', 'text', '40', 'accounted_by', get_val('accounted_by'));
+	$xtpl->form_add_input(_("User ID").':', 'text', '40', 'user', get_val('user'));
+	$xtpl->form_out(_("Show"));
+
+	$params = array('limit' => get_val('limit', 25));
+
+	foreach (array('accounted_by', 'user') as $filter) {
+		if ($_GET[$filter])
+			$params[$filter] = $_GET[$filter];
+	}
+
+	$payments = $api->user_payment->list($params);
+	
+	$xtpl->table_add_category("ACCEPTED AT");
+	$xtpl->table_add_category("USER");
+	$xtpl->table_add_category("ACCOUNTED BY");
+	$xtpl->table_add_category("AMOUNT");
+	$xtpl->table_add_category("FROM");
+	$xtpl->table_add_category("TO");
+	$xtpl->table_add_category("MONTHS");
+
+	foreach ($payments as $p) {
+		$xtpl->table_td(tolocaltz($p->created_at));
+		$xtpl->table_td(user_link($p->user));
+		$xtpl->table_td(user_link($p->accounted_by));
+		$xtpl->table_td($p->amount, false, true);
+		$xtpl->table_td(tolocaltz($p->from_date, 'Y-m-d'));
+		$xtpl->table_td(tolocaltz($p->to_date, 'Y-m-d'));
+		$xtpl->table_td(
+			round((strtotime($p->to_date) - strtotime($p->from_date)) / 2629800),
+			false, true
+		);
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_out();
+}
