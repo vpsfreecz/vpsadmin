@@ -443,6 +443,7 @@ function user_payment_form($user_id) {
 	$xtpl->table_add_category("AMOUNT");
 	$xtpl->table_add_category("FROM");
 	$xtpl->table_add_category("TO");
+	$xtpl->table_add_category("PAYMENT");
 
 	$payments = $api->user_payment->list(array(
 		'user' => $u->id,
@@ -455,6 +456,17 @@ function user_payment_form($user_id) {
 		$xtpl->table_td($payment->amount, false, true);
 		$xtpl->table_td(tolocaltz($payment->from_date, 'Y-m-d'));
 		$xtpl->table_td(tolocaltz($payment->to_date, 'Y-m-d'));
+
+		if ($payment->incoming_payment_id) {
+			$xtpl->table_td(
+				'<a href="?page=adminm&action=incoming_payment&id='.
+				$payment->incoming_payment_id.'">'.
+				'#'.$payment->incoming_payment_id.
+				'</a>'
+			);
+		} else {
+			$xtpl->table_td('-');
+		}
 		
 		$xtpl->table_tr();
 	}
@@ -496,8 +508,8 @@ function user_payment_history() {
 
 	foreach ($payments as $p) {
 		$xtpl->table_td(tolocaltz($p->created_at));
-		$xtpl->table_td(user_link($p->user));
-		$xtpl->table_td(user_link($p->accounted_by));
+		$xtpl->table_td($p->user_id ? user_link($p->user) : '-');
+		$xtpl->table_td($p->accounted_by_id ? user_link($p->accounted_by) : '-');
 		$xtpl->table_td($p->amount, false, true);
 		$xtpl->table_td(tolocaltz($p->from_date, 'Y-m-d'));
 		$xtpl->table_td(tolocaltz($p->to_date, 'Y-m-d'));
@@ -509,4 +521,150 @@ function user_payment_history() {
 	}
 	
 	$xtpl->table_out();
+}
+
+function incoming_payments_list() {
+	global $xtpl, $api;
+
+	$xtpl->title(_('Incoming payments'));
+
+	$xtpl->form_create('?page=adminm&action=incoming_payments', 'get');
+	$xtpl->table_td(_("Limit").':'.
+		'<input type="hidden" name="page" value="adminm">'.
+		'<input type="hidden" name="action" value="incoming_payments">'
+	);
+	$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', 25), '');
+	$xtpl->table_tr();
+	$xtpl->form_add_input(_('Offset').':', 'text', '40', 'offset', get_val('offset', 0), '');
+
+	$input = $api->incoming_payment->list->getParameters('input');
+
+	api_param_to_form(
+		'state',
+		$input->state,
+		get_val('state')
+	);
+	
+	$xtpl->form_out(_('Show'));
+
+	$params = array(
+		'limit' => get_val('limit', 25),
+		'offset' => get_val('offset', 25),
+	);
+
+	if (isset($_GET['state']))
+		$params['state'] = $input->state->validators->include->values[ (int) $_GET['state'] ];
+	
+	$payments = $api->incoming_payment->list($params);
+
+	$xtpl->table_add_category("DATE");
+	$xtpl->table_add_category("AMOUNT");
+	$xtpl->table_add_category("STATE");
+	$xtpl->table_add_category("FROM");
+	$xtpl->table_add_category("MESSAGE");
+	$xtpl->table_add_category("VS");
+	$xtpl->table_add_category("COMMENT");
+	$xtpl->table_add_category("");
+
+	foreach ($payments as $p) {
+		$xtpl->table_td(tolocaltz($p->date, 'Y-m-d'));
+		$xtpl->table_td($p->amount, false, true);
+		$xtpl->table_td($p->state);
+		$xtpl->table_td($p->account_name);
+		$xtpl->table_td($p->user_message);
+		$xtpl->table_td($p->vs);
+		$xtpl->table_td($p->comment);
+		$xtpl->table_td(
+			'<a href="?page=adminm&action=incoming_payment&id='.$p->id.'">'.
+			'<img src="template/icons/m_edit.png" title="'._('Details').'">'.
+			'</a>'
+		);
+
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_out();
+}
+
+function incoming_payments_details($id) {
+	global $xtpl, $api;
+
+	$p = $api->incoming_payment->find($id);
+
+	$xtpl->title(_("Incoming payment").' #'.$p->id);
+
+	$xtpl->table_td(_('Transaction ID').':');
+	$xtpl->table_td($p->transaction_id);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Date').':');
+	$xtpl->table_td(tolocaltz($p->date, 'Y-m-d'));
+	$xtpl->table_tr();
+	
+	$xtpl->table_td(_('Accepted at').':');
+	$xtpl->table_td(tolocaltz($p->created_at));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('State').':');
+	$xtpl->table_td($p->state);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Type').':');
+	$xtpl->table_td($p->transaction_type);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Amount').':');
+	$xtpl->table_td($p->amount);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Currency').':');
+	$xtpl->table_td($p->currency);
+	$xtpl->table_tr();
+
+	if ($p->src_amount) {
+		$xtpl->table_td(_('Original amount').':');
+		$xtpl->table_td($p->src_amount);
+		$xtpl->table_tr();
+		
+		$xtpl->table_td(_('Original currency').':');
+		$xtpl->table_td($p->src_currency);
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_td(_('Account name').':');
+	$xtpl->table_td($p->account_name);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('User identification').':');
+	$xtpl->table_td($p->user_ident);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('User message').':');
+	$xtpl->table_td($p->user_message);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('VS').':');
+	$xtpl->table_td($p->vs);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('KS').':');
+	$xtpl->table_td($p->ks);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('SS').':');
+	$xtpl->table_td($p->ss);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Comment').':');
+	$xtpl->table_td($p->comment);
+	$xtpl->table_tr();
+
+	$xtpl->table_out();
+
+	if ($p->state != 'processed') {
+		$xtpl->table_title(_('Assign payment'));
+		$xtpl->form_create('?page=adminm&action=incoming_payment_assign&id='.$p->id, 'post');
+		$xtpl->form_add_input(_('User ID').':', 'text', '30', 'user', post_val('user'));
+		$xtpl->form_out(_('Assign'));
+	}
 }

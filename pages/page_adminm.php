@@ -821,6 +821,7 @@ if ($_SESSION["logged_in"]) {
 			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Requests for approval").'" /> '._("Requests for approval"), '?page=adminm&section=members&action=approval_requests');
 
 		if (payments_enabled()) {
+			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Incoming payments").'" /> '._("Incoming payments"), '?page=adminm&action=incoming_payments');
 			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments history").'" /> '._("Display history of payments"), '?page=adminm&section=members&action=payments_history');
 			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments overview").'" /> '._("Payments overview"), '?page=adminm&section=members&action=payments_overview');
 		}
@@ -1019,6 +1020,40 @@ if ($_SESSION["logged_in"]) {
 			
 			notify_user(_("Payment accepted"), '');
 			redirect('?page=adminm&action=payset&id='.$_GET['id']);
+			
+			break;
+
+		case 'incoming_payments':
+			if (!$_SESSION['is_admin'])
+				break;
+			
+			incoming_payments_list();
+			break;
+		
+		case 'incoming_payment':
+			if (!$_SESSION['is_admin'])
+				break;
+			
+			incoming_payments_details($_GET['id']);
+			break;
+		
+		case 'incoming_payment_assign':
+			if (!$_SESSION['is_admin'])
+				break;
+
+			try {
+				$api->user_payment->create(array(
+					'user' => $_POST['user'],
+					'incoming_payment' => $_GET['id'],
+				));
+			
+				notify_user(_("Payment assigned"), '');
+				redirect('?page=adminm&action=payset&id='.$_POST['user']);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Failed to add payment'), $e->getResponse());
+				incoming_payments_details($_GET['id']);
+			}
 			
 			break;
 		
