@@ -476,6 +476,8 @@ function user_payment_form($user_id) {
 
 function user_payment_history() {
 	global $xtpl, $api;
+
+	$xtpl->title(_('Payment history'));
 	
 	$xtpl->form_create('?page=adminm&action=payments_history', 'get');
 	$xtpl->table_td(_("Limit").':'.
