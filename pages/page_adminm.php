@@ -1005,15 +1005,14 @@ if ($_SESSION["logged_in"]) {
 					'user' => $_GET['id'],
 					'amount' => $_POST['amount'],
 				));
+			
+				notify_user(_("Payment accepted"), '');
+				redirect('?page=adminm&action=payset&id='.$_GET['id']);
 				
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 				$xtpl->perex_format_errors(_('Failed to add payment'), $e->getResponse());
 				user_payment_form($_GET['id']);
-				break;
 			}
-			
-			notify_user(_("Payment accepted"), '');
-			redirect('?page=adminm&action=payset&id='.$_GET['id']);
 			
 			break;
 
