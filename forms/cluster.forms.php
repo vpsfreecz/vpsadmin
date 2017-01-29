@@ -754,6 +754,8 @@ function system_config_form() {
 
 		case 'Text':
 		case 'Custom':
+		case 'Hash':
+		case 'Array':
 			$xtpl->form_add_textarea_pure('70', '15', $name, $value);
 			break;
 
