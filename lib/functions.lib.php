@@ -252,7 +252,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 				$xtpl->form_add_select_pure(
 					$name,
 					$choices,
-					array_search($v, $desc_choices)
+					array_search($desc->validators->include->values[(int) $v], $desc_choices)
 				);
 
 			} else {
