@@ -551,7 +551,7 @@ function incoming_payments_list() {
 
 	$params = array(
 		'limit' => get_val('limit', 25),
-		'offset' => get_val('offset', 25),
+		'offset' => get_val('offset', 0),
 	);
 
 	if (isset($_GET['state']))
