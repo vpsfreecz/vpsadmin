@@ -34,6 +34,7 @@ module VpsAdmin::API::Plugins::Payments::Backends
           p.save!
 
         rescue ActiveRecord::RecordNotUnique
+          warn "Duplicit transaction ID '#{t.transaction_id}'"
           next
         end
       end
