@@ -64,8 +64,8 @@ module TransactionChains
           t.just_destroy(key)
         end
 
-        # Free the login
-        t.edit(user, login: nil, orig_login: user.login)
+        # Free the login and forget password
+        t.edit(user, login: nil, orig_login: user.login, password: '!')
       end
     end
   end

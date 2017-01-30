@@ -22,6 +22,8 @@
 - MailTemplate.send_mail! accepts options to, cc, bcc, message_id, in_reply_to
   and references
 - User session records client's original IP address, if provided, and PTR
+- User.create hooks can now return a list of objects to create
+- Forget user's password when he's moved to hard_delete
 
 * Fri Dec 30 2016 - version 2.6.0
 - Rebase on HaveAPI v0.7
