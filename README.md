@@ -17,9 +17,11 @@ During the database setup, you can choose to transfer user payment settings
 from vpsAdmin 1 by setting environment variable `FROM_VPSADMIN1`.
 
 Transfer from vpsAdmin 1:
+
     $ rake vpsadmin:plugins:migrate PLUGIN=payments FROM_VPSADMIN1=yes
 
 Clean install:
+
     $ rake vpsadmin:plugins:migrate PLUGIN=payments
 
 ## Usage
