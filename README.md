@@ -24,13 +24,23 @@ Clean install:
 
     $ rake vpsadmin:plugins:migrate PLUGIN=payments
 
-## Usage
+## Changes
 This plugin defines three new resources:
 
 - `IncomingPayment` - all incoming payments from the bank account
 - `UserAccount` - per-user payment-related settings
 - `UserPayment` - accepted user payments, may be created from `IncomingPayment`
 
+## Usage
 To fetch incoming payments from the bank, use rake task `vpsadmin:payments:fetch`:
 
     $ rake vpsadmin:payments:fetch BACKEND=fio
+
+Now, the tasks are stored in the DB queue. The queue can be processed by rake task
+`vpsadmin:payments:process`:
+
+    $ rake vpsadmin:payments:process
+
+These two tasks can be run at once with task `vpsadmin:payments:accept`:
+
+    $ rake vpsadmin:payments:accept BACKEND=fio

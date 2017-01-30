@@ -16,5 +16,13 @@ namespace :vpsadmin do
 
       b.new.fetch
     end
+
+    desc 'Process fetched transactions'
+    task :process do
+      ::UserAccount.accept_payments
+    end
+
+    desc 'Fetch and process transactions'
+    task accept: %i(fetch process)
   end
 end

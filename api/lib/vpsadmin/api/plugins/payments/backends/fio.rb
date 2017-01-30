@@ -30,10 +30,13 @@ module VpsAdmin::API::Plugins::Payments::Backends
           p.src_amount, p.src_currency = t.detail_info.split(' ')
         end
 
-        p.save!
-      end
+        begin
+          p.save!
 
-      ::UserAccount.accept_payments
+        rescue ActiveRecord::RecordNotUnique
+          next
+        end
+      end
     end
   end
 end
