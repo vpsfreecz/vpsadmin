@@ -431,6 +431,12 @@ module VpsAdmin::API
               expiration = Time.now + default.add_expiration
             end
           end
+
+          if expiration === true
+            fail "Unable to determine the expiration date, no default is set ("+
+                 "environment=#{env.id},class_name=#{obj.class.to_s},direction="+
+                 "#{enter ? 'enter' : 'leave'},state=#{target})"
+          end
         end
         
         reason ||= ''
