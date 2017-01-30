@@ -1,12 +1,12 @@
 <?php
 
 if ($_SESSION["logged_in"] && $_SESSION["is_admin"]) {
-	$v = trim($_GET['search']);
+	$search = trim($_GET['search']);
 
-	$_SESSION["jumpto"] = $v;
+	$_SESSION["jumpto"] = $search;
 	
 	try {
-		$res = $api->cluster->search(array('value' => $v))->getResponse();
+		$res = $api->cluster->search(array('value' => $search))->getResponse();
 
 		if (count($res) === 1) {
 			$v = $res[0];
@@ -46,7 +46,13 @@ if ($_SESSION["logged_in"] && $_SESSION["is_admin"]) {
 
 				$xtpl->table_td($link ? '<a href="'.$link.'">'.$v->id.'</a>' : $v->id);
 				$xtpl->table_td($v->attribute);
-				$xtpl->table_td($v->value);
+				$xtpl->table_td(preg_replace_callback(
+					"/(".preg_quote($search).")/i",
+					function ($matches) {
+						return "<strong>".htmlspecialchars($matches[0])."</strong>";
+					},
+					$v->value
+				));
 				$xtpl->table_tr();
 			}
 
