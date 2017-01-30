@@ -20,8 +20,7 @@ class User < ActiveRecord::Base
   attr_reader :password_plain
 
   has_paper_trail only: %i(login level full_name email address
-                           monthly_payment mailer_enabled object_state
-                           expiration_date paid_until)
+                           mailer_enabled object_state expiration_date)
 
   validates :level, :login, :password, presence: true
   validates :level, numericality: {

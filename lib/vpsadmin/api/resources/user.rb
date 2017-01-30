@@ -13,8 +13,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     string :address, label: 'Address'
     integer :level, label: 'Access level'
     string :info, label: 'Info'
-    integer :monthly_payment, label: 'Monthly payment', default: 300
-    datetime :paid_until, label: 'Paid until'
     bool :mailer_enabled, label: 'Enabled mailer', default: true
     resource VpsAdmin::API::Resources::Language, label: 'Language of e-mails'
   end
@@ -54,7 +52,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     desc 'List users'
 
     input do
-      use :writable, exclude: %i(paid_until)
+      use :writable
     end
 
     output(:object_list) do
@@ -82,7 +80,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         q = q.where("#{in_params[p].db_name} LIKE ? COLLATE utf8_unicode_ci", "#{input[p]}")
       end
 
-      %i(level monthly_payment mailer_enabled).each do |p|
+      %i(level mailer_enabled).each do |p|
         next unless input[p]
         q = q.where(in_params[p].db_name => input[p])
       end
@@ -256,12 +254,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       update_object_state!(u) if change_object_state?
-
-      if input[:paid_until]
-        t = input.delete(:paid_until)
-        u.paid_until = t
-        u.expiration_date = t
-      end
 
       if input.has_key?(:password)
         error('update failed',

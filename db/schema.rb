@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170130112048) do
+ActiveRecord::Schema.define(version: 20170130154206) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -958,7 +958,6 @@ ActiveRecord::Schema.define(version: 20170130112048) do
     t.string   "password",                                      null: false
     t.string   "email",              limit: 127
     t.text     "address"
-    t.integer  "monthly_payment",                default: 300,  null: false, unsigned: true
     t.boolean  "mailer_enabled",                 default: true, null: false, unsigned: true
     t.integer  "login_count",                    default: 0,    null: false
     t.integer  "failed_login_count",             default: 0,    null: false
@@ -972,7 +971,6 @@ ActiveRecord::Schema.define(version: 20170130112048) do
     t.integer  "object_state",                                  null: false
     t.datetime "expiration_date"
     t.integer  "password_version",               default: 1,    null: false
-    t.datetime "paid_until"
     t.datetime "last_activity_at"
     t.integer  "language_id",                    default: 1
     t.string   "orig_login",         limit: 63
