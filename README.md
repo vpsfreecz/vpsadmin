@@ -16,11 +16,16 @@ Copy the plugin to directory `plugins/` in your API installation directory.
 During the database setup, you can choose to transfer user payment settings
 from vpsAdmin 1 by setting environment variable `FROM_VPSADMIN1`.
 
-Transfer from vpsAdmin 1:
+### Migration from vpsAdmin core
+To transfer payment settings from vpsAdmin core to this plugin, you must upgrade
+the API up to migration `20170130112048`, then install this plugin and finally
+apply the rest of vpsAdmin migrations:
 
+    $ rake db:migrate VERSION=20170130112048
     $ rake vpsadmin:plugins:migrate PLUGIN=payments FROM_VPSADMIN1=yes
+    $ rake db:migrate
 
-Clean install:
+### Clean install
 
     $ rake vpsadmin:plugins:migrate PLUGIN=payments
 
