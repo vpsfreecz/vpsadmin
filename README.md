@@ -37,10 +37,13 @@ To fetch incoming payments from the bank, use rake task `vpsadmin:payments:fetch
     $ rake vpsadmin:payments:fetch BACKEND=fio
 
 Now, the tasks are stored in the DB queue. The queue can be processed by rake task
-`vpsadmin:payments:process`:
+`vpsadmin:payments:accept`:
 
-    $ rake vpsadmin:payments:process
+    $ rake vpsadmin:payments:accept
 
-These two tasks can be run at once with task `vpsadmin:payments:accept`:
+Matching payments are assigned to users, unknown payments stay in the queue
+in state `unmatched`.
 
-    $ rake vpsadmin:payments:accept BACKEND=fio
+These two tasks can be run at once with task `vpsadmin:payments:process`:
+
+    $ rake vpsadmin:payments:process BACKEND=fio
