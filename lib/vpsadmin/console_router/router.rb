@@ -6,7 +6,7 @@ module VpsAdmin::ConsoleRouter
     end
 
     def api_url
-      rs = db.query("SELECT cfg_value FROM sysconfig WHERE cfg_name = 'api_url'")
+      rs = db.query("SELECT value FROM sysconfig WHERE name = 'api_url'")
       JSON.parse("{ \"v\": #{rs.fetch_row.first} }", symbolize_names: true)[:v]
     end
 
@@ -105,8 +105,8 @@ module VpsAdmin::ConsoleRouter
         st = db.prepared_st(
             'SELECT ip_addr
             FROM nodes
-            INNER JOIN vps ON vps_server = nodes.id
-            WHERE vps_id = ?',
+            INNER JOIN vpses ON vpses.node_id = nodes.id
+            WHERE vpses.id = ?',
             veid
         )
 
