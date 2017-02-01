@@ -36,6 +36,9 @@ This plugin defines three new resources:
 - `UserAccount` - per-user payment-related settings
 - `UserPayment` - accepted user payments, may be created from `IncomingPayment`
 
+It also extends daily report e-mails' with variable `payments`, containing lists
+of incoming payments and accepted user payments.
+
 ## Usage
 To fetch incoming payments from the bank, use rake task `vpsadmin:payments:fetch`:
 

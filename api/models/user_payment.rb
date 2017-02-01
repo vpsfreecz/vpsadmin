@@ -36,3 +36,13 @@ class UserPayment < ActiveRecord::Base
     incoming_payment.src_currency || incoming_payment.currency
   end
 end
+
+TransactionChains::Mail::DailyReport.connect_hook(:send) do |ret, from, now|
+  t = now.strftime('%Y-%m-%d %H:%M:%S')
+
+  ret[:payments] ||= {}
+  ret[:payments][:accepted] = ::UserPayment.where(
+      'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
+  ).order('user_payments.created_at, user_payments.user_id')
+  ret
+end
