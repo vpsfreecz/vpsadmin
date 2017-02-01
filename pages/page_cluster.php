@@ -785,40 +785,57 @@ switch($_REQUEST["action"]) {
 		break;
 		
 	case "eventlog":
-		$eventlog = true;
+		news_list_and_create_form();
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
 		break;
+
 	case "log_add":
-		$eventlog = true;
-		if ($_POST["datetime"] && $_POST["msg"]) {
-			log_add($_POST["datetime"], $_POST["msg"]);
+		try {
+			$api->news_log->create(array(
+				'published_at' => date('c', strtotime($_POST['published_at'])),
+				'message' => $_POST['message'],
+			));
 			
-			$xtpl->perex(_("Log message added"), _("Message successfully saved."));
+			notify_user(_("News message added"), _("Message successfully saved."));
+			redirect('?page=cluster&action=eventlog');
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Create failed'), $e->getResponse());
+			news_list_and_create_form();
 		}
 		break;
+
 	case "log_edit":
-		$log = $db->findByColumnOnce("log", "id", $_GET["id"]);
-		
-		$xtpl->form_create('?page=cluster&action=log_edit_save&id='.$log["id"], 'post');
-		$xtpl->form_add_input(_("Date and time").':', 'text', '30', 'datetime', strftime("%Y-%m-%d %H:%M", $log["timestamp"]));
-		$xtpl->form_add_textarea(_("Message").':', 80, 5, 'msg', $log["msg"]);
-		$xtpl->form_out(_("Update"));
-		
+		news_edit_form($_GET['id']);
 		break;
+
 	case "log_edit_save":
-		$eventlog = true;
-		
-		if ($_GET["id"]) {
-			log_save($_GET["id"], $_POST["datetime"], $_POST["msg"]);
-			$xtpl->perex(_("Log message updated"), _("Message successfully updated."));
+		try {
+			$api->news_log->update($_GET['id'], array(
+				'published_at' => date('c', strtotime($_POST['published_at'])),
+				'message' => $_POST['message'],
+			));
+			
+			notify_user(_("Log message updated"), _("Message successfully updated."));
+			redirect('?page=cluster&action=eventlog');
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Create failed'), $e->getResponse());
+			news_edit_form($_GET['id']);
 		}
-		
 		break;
+
 	case "log_del":
-		$eventlog = true;
-		
-		log_del($_GET["id"]);
-		
-		$xtpl->perex(_("Log message deleted"), _("Message successfully deleted."));
+		try {
+			$api->news_log->delete($_GET['id']);
+			
+			notify_user(_("Log message deleted"), _("Message successfully deleted."));
+			redirect('?page=cluster&action=eventlog');
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Create failed'), $e->getResponse());
+			news_list_and_create_form();
+		}
 		break;
 	
 	case "helpboxes":
@@ -1079,33 +1096,6 @@ if ($env_settings) {
 	$xtpl->form_add_select_pure('add_config[]', $with_empty);
 	$xtpl->table_tr(false, false, false, 'add_config');
 	$xtpl->form_out(_("Save changes"), 'configs', '<a href="javascript:" id="add_row">+</a>');
-}
-
-if ($eventlog) {
-	$xtpl->table_title(_("Log"));
-	$xtpl->table_add_category('Add entry');
-	$xtpl->table_add_category('');
-	$xtpl->form_create('?page=cluster&action=log_add', 'post');
-	$xtpl->form_add_input(_("Date and time").':', 'text', '30', 'datetime', strftime("%Y-%m-%d %H:%M"));
-	$xtpl->form_add_textarea(_("Message").':', 80, 5, 'msg');
-	$xtpl->form_out(_("Add"));
-	
-	$xtpl->table_add_category(_('Date and time'));
-	$xtpl->table_add_category(_('Message'));
-	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
-	
-	while($log = $db->find("log", NULL, "timestamp DESC")) {
-		$xtpl->table_td(strftime("%Y-%m-%d %H:%M", $log["timestamp"]));
-		$xtpl->table_td($log["msg"]);
-		$xtpl->table_td('<a href="?page=cluster&action=log_edit&id='.$log["id"].'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-		$xtpl->table_td('<a href="?page=cluster&action=log_del&id='.$log["id"].'" title="'._("Delete").'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
-		$xtpl->table_tr();
-	}
-	
-	$xtpl->table_out();
-	
-	$xtpl->sbar_add(_("Back"), '?page=cluster');
 }
 
 if ($helpbox) {

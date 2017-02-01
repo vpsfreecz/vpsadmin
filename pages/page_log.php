@@ -5,9 +5,9 @@ $xtpl->title(_("Log"));
 $xtpl->table_add_category(_("Date and time"));
 $xtpl->table_add_category(_("Message"));
 
-while($log = $db->find("log", NULL, "timestamp DESC")) {
-	$xtpl->table_td('['.strftime("%Y-%m-%d %H:%M", $log["timestamp"]).']');
-	$xtpl->table_td($log["msg"]);
+foreach ($api->news_log->list() as $news) {
+	$xtpl->table_td('['.tolocaltz($news->published_at, "Y-m-d H:i").']');
+	$xtpl->table_td($news->message);
 	$xtpl->table_tr();
 }
 $xtpl->table_out("notice_board");

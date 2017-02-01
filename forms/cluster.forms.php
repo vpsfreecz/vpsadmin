@@ -13,7 +13,10 @@ function cluster_header() {
 	$xtpl->sbar_add(_("Manage environments"), '?page=cluster&action=environments');
 	$xtpl->sbar_add(_("Manage locations"), '?page=cluster&action=locations');
 	$xtpl->sbar_add(_("Integrity check"), '?page=cluster&action=integrity_check');
-	$xtpl->sbar_add(_("Event log"), '?page=cluster&action=eventlog');
+
+	if ($api->news_log)
+		$xtpl->sbar_add(_("Event log"), '?page=cluster&action=eventlog');
+
 	$xtpl->sbar_add(_("Help boxes"), '?page=cluster&action=helpboxes');
 	
 	$xtpl->table_title(_("Summary"));
@@ -778,4 +781,42 @@ function system_config_form() {
 	}
 
 	$xtpl->form_out(_("Save changes"));
+}
+
+function news_list_and_create_form() {
+	global $xtpl, $api;
+
+	$xtpl->table_title(_("News Log"));
+	$xtpl->table_add_category('Add entry');
+	$xtpl->table_add_category('');
+	$xtpl->form_create('?page=cluster&action=log_add', 'post');
+	$xtpl->form_add_input(_("Date and time").':', 'text', '30', 'published_at', post_val('published_at', strftime("%Y-%m-%d %H:%M")));
+	$xtpl->form_add_textarea(_("Message").':', 80, 5, 'message', post_val('message'));
+	$xtpl->form_out(_("Add"));
+	
+	$xtpl->table_add_category(_('Date and time'));
+	$xtpl->table_add_category(_('Message'));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+
+	foreach ($api->news_log->list() as $news) {
+		$xtpl->table_td(tolocaltz($news->published_at, "Y-m-d H:i"));
+		$xtpl->table_td($news->message);
+		$xtpl->table_td('<a href="?page=cluster&action=log_edit&id='.$news->id.'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		$xtpl->table_td('<a href="?page=cluster&action=log_del&id='.$news->id.'" title="'._("Delete").'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_out();
+}
+
+function news_edit_form($id) {
+	global $xtpl, $api;
+
+	$news = $api->news_log->show($_GET['id']);
+
+	$xtpl->form_create('?page=cluster&action=log_edit_save&id='.$news->id, 'post');
+	$xtpl->form_add_input(_("Date and time").':', 'text', '30', 'published_at', post_val('published_at', tolocaltz($news->published_at, 'Y-m-d H:i')));
+	$xtpl->form_add_textarea(_("Message").':', 80, 5, 'message', $news->message);
+	$xtpl->form_out(_("Update"));
 }

@@ -36,7 +36,6 @@ include WWW_ROOT.'lib/members.lib.php';
 include WWW_ROOT.'lib/cluster.lib.php';
 include WWW_ROOT.'lib/ajax.lib.php';
 include WWW_ROOT.'lib/mail.lib.php';
-include WWW_ROOT.'lib/log.lib.php';
 include WWW_ROOT.'lib/helpbox.lib.php';
 include WWW_ROOT.'lib/security.lib.php';
 

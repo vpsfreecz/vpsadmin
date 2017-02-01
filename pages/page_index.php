@@ -37,14 +37,17 @@ if ($noticeboard) {
 	$xtpl->table_tr();
 }
 
-while($log = $db->find("log", NULL, "timestamp DESC", "5")) {
-	$xtpl->table_td('['.strftime("%Y-%m-%d %H:%M", $log["timestamp"]).']');
-	$xtpl->table_td($log["msg"]);
+if ($api->news_log) {
+	foreach ($api->news_log->list(array('limit' => 5)) as $news) {
+		$xtpl->table_td('['.tolocaltz($news->published_at, "Y-m-d H:i").']');
+		$xtpl->table_td($news->message);
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_td('<a href="?page=log">'._("View all").'</a>', false, false, '2');
 	$xtpl->table_tr();
 }
 
-$xtpl->table_td('<a href="?page=log">'._("View all").'</a>', false, false, '2');
-$xtpl->table_tr();
 $xtpl->table_out("notice_board");
 
 
