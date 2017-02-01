@@ -12,6 +12,7 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
           base_url: ::SysConfig.get(:webui, :base_url),
           start: now - period,
           end: now,
+          incoming: income,
       }
 
       ::IncomingPayment.states.each_key do |k|

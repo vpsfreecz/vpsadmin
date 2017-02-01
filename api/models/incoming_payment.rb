@@ -24,6 +24,7 @@ TransactionChains::Mail::DailyReport.connect_hook(:send) do |ret, from, now|
   ).order('incoming_payments.created_at, incoming_payments.id')
 
   ret[:payments] ||= {}
+  ret[:payments][:incoming] = income
 
   ::IncomingPayment.states.each_key do |k|
     ret[:payments][k.to_sym] = income.where(state: ::IncomingPayment.states[k])
