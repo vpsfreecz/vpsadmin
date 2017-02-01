@@ -231,12 +231,6 @@ ActiveRecord::Schema.define(version: 20170130154206) do
 
   add_index "group_snapshots", ["dataset_action_id", "dataset_in_pool_id"], name: "group_snapshots_unique", unique: true, using: :btree
 
-  create_table "helpbox", force: true do |t|
-    t.string "page",    limit: 50, null: false
-    t.string "action",  limit: 50, null: false
-    t.text   "content",            null: false
-  end
-
   create_table "integrity_checks", force: true do |t|
     t.integer  "user_id"
     t.integer  "status",           default: 0, null: false
@@ -429,11 +423,6 @@ ActiveRecord::Schema.define(version: 20170130154206) do
     t.integer  "maintenance_lock",                    default: 0,    null: false
     t.string   "maintenance_lock_reason"
     t.integer  "environment_id",                                     null: false
-  end
-
-  create_table "log", force: true do |t|
-    t.integer "timestamp", null: false
-    t.text    "msg",       null: false
   end
 
   create_table "mail_logs", force: true do |t|
