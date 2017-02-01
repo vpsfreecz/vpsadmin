@@ -497,14 +497,6 @@ ActiveRecord::Schema.define(version: 20170130154206) do
 
   add_index "maintenance_locks", ["class_name", "row_id"], name: "index_maintenance_locks_on_class_name_and_row_id", using: :btree
 
-  create_table "members_payments", force: true do |t|
-    t.integer "m_id",                  null: false
-    t.integer "acct_m_id",             null: false
-    t.integer "timestamp",   limit: 8, null: false
-    t.integer "change_from", limit: 8, null: false
-    t.integer "change_to",   limit: 8, null: false
-  end
-
   create_table "migration_plans", force: true do |t|
     t.integer  "state",         default: 0,    null: false
     t.boolean  "stop_on_error", default: true, null: false
