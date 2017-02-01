@@ -74,11 +74,6 @@ class SysConfig < ActiveRecord::Base
   register :node, :public_key, Text
   register :node, :private_key, Text
   register :node, :key_type, String
-  register :webui, :base_url, String
-  register :webui, :document_title, String
-  register :webui, :noticeboard, Text
-  register :webui, :index_info_box_title, String
-  register :webui, :index_info_box_content, Text
 
   def get_value
     case data_type
