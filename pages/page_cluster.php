@@ -394,7 +394,7 @@ switch($_GET["action"]) {
 			$xtpl->form_add_input(_("Label").':', 'text', '30', 'location_label', $loc->label, _("Location name"));
 			$xtpl->form_add_checkbox(_("Has this location IPv6 support?").':', 'has_ipv6', '1', $loc->has_ipv6, '');
 			$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', $loc->vps_onboot, '');
-			$xtpl->form_add_input(_("Remote console server").':', 'text', '30',	'remote_console_server', $loc->_remote_console_server, _("URL"));
+			$xtpl->form_add_input(_("Remote console server").':', 'text', '30',	'remote_console_server', $loc->remote_console_server, _("URL"));
 			$xtpl->form_add_input(_("Domain").':', 'text', '30',	'domain',	$loc->domain, '');
 			
 			$xtpl->form_out(_("Save changes"));
