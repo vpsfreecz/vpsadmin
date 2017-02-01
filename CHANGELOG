@@ -26,6 +26,7 @@
 - Forget user's password when he's moved to hard_delete
 - Removed user payment settings (moved to a plugin)
 - Fix regression breaking VPS migration plans
+- `Location.{Index,Show}`: whitelist output parameter `remote_console_server`
 
 * Fri Dec 30 2016 - version 2.6.0
 - Rebase on HaveAPI v0.7
