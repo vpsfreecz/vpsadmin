@@ -1,7 +1,7 @@
 class Setup < ActiveRecord::Migration
   def change
     create_table :news_logs do |t|
-      t.string   :message,      null: false
+      t.text     :message,      null: false
       t.datetime :published_at, null: false
       t.timestamps
     end

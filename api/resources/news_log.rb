@@ -4,7 +4,7 @@ module VpsAdmin::API::Resources
     model ::NewsLog
 
     params(:editable) do
-      string :message, label: 'Message'
+      text :message, label: 'Message'
       datetime :published_at, label: 'Published at'
     end
 
