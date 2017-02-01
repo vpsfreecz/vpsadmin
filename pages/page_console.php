@@ -1,25 +1,11 @@
 <?php
 
-function get_console_server($vps) {
-	global $db;
-	
-	$sql = "SELECT remote_console_server FROM locations WHERE id = '".$db->check($vps->node->location_id)."'";
-	
-	if ($result = $db->query($sql)) {
-		if ($row = $db->fetch_array($result)) {
-			return $row["remote_console_server"];
-		}
-	}
-	
-	return NULL;
-}
-
 function setup_console() {
 	global $xtpl, $api;
 	
 	try {
 		$vps = $api->vps->find($_GET['veid'], array(
-			'meta' => array('includes', 'node')
+			'meta' => array('includes', 'node__location')
 		));
 	
 	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
@@ -35,7 +21,7 @@ function setup_console() {
 		return;
 	}
 	
-	$server = get_console_server($vps);
+	$server = $vps->node->location->remote_console_server;
 	
 	if (!$server) {
 		$xtpl->perex(_('No console server available'), _('There is no console server for this location.'));
