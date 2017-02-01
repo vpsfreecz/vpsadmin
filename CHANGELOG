@@ -25,6 +25,7 @@
 - User.create hooks can now return a list of objects to create
 - Forget user's password when he's moved to hard_delete
 - Removed user payment settings (moved to a plugin)
+- Fix regression breaking VPS migration plans
 
 * Fri Dec 30 2016 - version 2.6.0
 - Rebase on HaveAPI v0.7

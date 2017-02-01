@@ -12,7 +12,7 @@ class MigrationPlan < ActiveRecord::Base
 
       vps_migrations.order('created_at').each do |m|
         begin
-          chain = TransactionChains::Vps::Migrate.fire2(
+          chain, _ = TransactionChains::Vps::Migrate.fire2(
               args: [m.vps, m.dst_node, {
                   outage_window: m.outage_window,
                   cleanup_data: m.cleanup_data,
