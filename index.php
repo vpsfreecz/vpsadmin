@@ -28,7 +28,6 @@ define ("DEBUG", false);
 include WWW_ROOT.'vendor/autoload.php';
 include WWW_ROOT.'lib/version.lib.php';
 include WWW_ROOT.'lib/xtemplate.lib.php';
-include WWW_ROOT.'lib/db.lib.php';
 include WWW_ROOT.'lib/functions.lib.php';
 include WWW_ROOT.'lib/transact.lib.php';
 include WWW_ROOT.'lib/vps.lib.php';
@@ -52,9 +51,6 @@ include WWW_ROOT.'lib/gettext_inc.lib.php';
 include WWW_ROOT.'lib/gettext_lang.lib.php';
 // include configuration
 include WWW_ROOT.'config_cfg.php';
-
-// connect to database
-$db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_SOCK, true);
 
 $api = new \HaveAPI\Client(API_URL, API_VERSION, client_identity());
 $api->registerDescriptionChangeFunc('api_description_changed');

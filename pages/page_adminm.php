@@ -174,7 +174,7 @@ function print_editm($u) {
 }
 
 function print_deletem($u) {
-	global $db, $xtpl, $api;
+	global $xtpl, $api;
 	
 	$xtpl->table_title(_("Delete member"));
 	$xtpl->table_td(_("Full name").':');

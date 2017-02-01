@@ -30,7 +30,6 @@ header("Expires: Sat, 11 Jan 1991 06:30:00 GMT"); // Date in the past
 include WWW_ROOT.'vendor/autoload.php';
 include WWW_ROOT.'lib/version.lib.php';
 include WWW_ROOT.'lib/xtemplate.lib.php';
-include WWW_ROOT.'lib/db.lib.php';
 include WWW_ROOT.'lib/functions.lib.php';
 include WWW_ROOT.'lib/transact.lib.php';
 include WWW_ROOT.'lib/vps.lib.php';
@@ -47,9 +46,6 @@ $api->registerDescriptionChangeFunc('api_description_changed');
 if($_SESSION["api_description"]) {
 	$api->setDescription($_SESSION["api_description"]);
 }
-
-$db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_SOCK, true);
-
 
 // Create a template class
 
