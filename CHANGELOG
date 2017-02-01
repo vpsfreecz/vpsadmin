@@ -27,6 +27,7 @@
 - Removed user payment settings (moved to a plugin)
 - Fix regression breaking VPS migration plans
 - `Location.{Index,Show}`: whitelist output parameter `remote_console_server`
+- Chain `Mail::DailyReport` has new hook `send`
 
 * Fri Dec 30 2016 - version 2.6.0
 - Rebase on HaveAPI v0.7
