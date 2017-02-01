@@ -11,6 +11,7 @@
 - User requests work through the API, if it has installed the plugin for it
 - Removed user mail exporting
 - News log uses the API
+- Help boxes are fetched from the API
 
 * Fri Dec 30 2016 - version 2.6.0
 - Public key management forms

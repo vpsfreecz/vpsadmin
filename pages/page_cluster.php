@@ -49,7 +49,7 @@ $list_templates = false;
 
 $server_types = array("node" => "Node", "storage" => "Storage", "mailer" => "Mailer");
 
-switch($_REQUEST["action"]) {
+switch($_GET["action"]) {
 	case "vps":
 		cluster_header();
 		node_vps_overview();
@@ -839,46 +839,52 @@ switch($_REQUEST["action"]) {
 		break;
 	
 	case "helpboxes":
-		$helpbox = true;
-		
+		helpbox_list_and_create_form();
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
 		break;
+
 	case "helpboxes_add":
-		$helpbox = true;
-		
-		if (isset($_POST["help_page"])) {
-			helpbox_add($_POST["help_page"], $_POST["help_action"], $_POST["help_content"]);
+		try {
+			$api->help_box->create(client_params_to_api($api->help_box->create));
 			
-			$xtpl->perex(_("Help box added"), _("Help box successfully saved."));
+			notify_user(_("Help box added"), _("Help box successfully saved."));
+			redirect('?page=cluster&action=helpboxes');
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Create failed'), $e->getResponse());
+			helpbox_list_and_create_form();
 		}
-		
 		break;
+
 	case "helpboxes_edit":
-		$help = $db->findByColumnOnce("helpbox", "id", $_GET["id"]);
-		
-		$xtpl->form_create('?page=cluster&action=helpboxes_edit_save&id='.$help["id"], 'post');
-		$xtpl->form_add_input(_("Page").':', 'text', '30', 'help_page', $help["page"]);
-		$xtpl->form_add_input(_("Action").':', 'text', '30', 'help_action', $help["action"]);
-		$xtpl->form_add_textarea(_("Content").':', 80, 15, 'help_content', $help["content"]);
-		$xtpl->form_out(_("Update"));
-		
+		helpbox_edit_form($_GET['id']);
 		break;
+
 	case "helpboxes_edit_save":
-		$helpbox = true;
-		
-		if ($_GET["id"]) {
-			helpbox_save($_GET["id"], $_POST["help_page"], $_POST["help_action"], $_POST["help_content"]);
+		try {
+			$api->help_box->update($_GET['id'], client_params_to_api($api->help_box->update));
 			
-			$xtpl->perex(_("Help box updated"), _("Help box successfully updated."));
+			notify_user(_("Help box updated"), _("Help box successfully saved."));
+			redirect('?page=cluster&action=helpboxes');
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Create failed'), $e->getResponse());
+			helpbox_edit_form($_GET['id']);
 		}
 		
 		break;
+
 	case "helpboxes_del":
-		$helpbox = true;
-		
-		helpbox_del($_GET["id"]);
-		
-		$xtpl->perex(_("Help box deleted"), _("Help box successfully deleted."));
-		
+		try {
+			$api->help_box->delete($_GET['id']);
+			
+			notify_user(_("Help box deleted"), _("Help box successfully deleted."));
+			redirect('?page=cluster&action=helpboxes');
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Create failed'), $e->getResponse());
+			helpbox_list_and_create_form();
+		}
 		break;
 	
 	default:
@@ -1096,37 +1102,6 @@ if ($env_settings) {
 	$xtpl->form_add_select_pure('add_config[]', $with_empty);
 	$xtpl->table_tr(false, false, false, 'add_config');
 	$xtpl->form_out(_("Save changes"), 'configs', '<a href="javascript:" id="add_row">+</a>');
-}
-
-if ($helpbox) {
-	$xtpl->table_title(_("Help boxes"));
-	
-	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
-	$xtpl->form_create('?page=cluster&action=helpboxes_add', 'post');
-	$xtpl->form_add_input(_("Page").':', 'text', '30', 'help_page', $_GET["help_page"]);
-	$xtpl->form_add_input(_("Action").':', 'text', '30', 'help_action', $_GET["help_action"]);
-	$xtpl->form_add_textarea(_("Content").':', 80, 15, 'help_content');
-	$xtpl->form_out(_("Add"));
-	
-	$xtpl->table_add_category(_("Page"));
-	$xtpl->table_add_category(_("Action"));
-	$xtpl->table_add_category(_("Content"));
-	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
-	
-	while ($help = $db->find("helpbox", NULL, "page ASC, action ASC")) {
-		$xtpl->table_td($help["page"]);
-		$xtpl->table_td($help["action"]);
-		$xtpl->table_td($help["content"]);
-		$xtpl->table_td('<a href="?page=cluster&action=helpboxes_edit&id='.$help["id"].'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-		$xtpl->table_td('<a href="?page=cluster&action=helpboxes_del&id='.$help["id"].'" title="'._("Delete").'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
-		$xtpl->table_tr();
-	}
-	
-	$xtpl->table_out();
-	
-	$xtpl->sbar_add(_("Back"), '?page=cluster');
 }
 
 $xtpl->sbar_out(_("Manage Cluster"));

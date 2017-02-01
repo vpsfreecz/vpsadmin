@@ -17,7 +17,8 @@ function cluster_header() {
 	if ($api->news_log)
 		$xtpl->sbar_add(_("Event log"), '?page=cluster&action=eventlog');
 
-	$xtpl->sbar_add(_("Help boxes"), '?page=cluster&action=helpboxes');
+	if ($api->help_box)
+		$xtpl->sbar_add(_("Help boxes"), '?page=cluster&action=helpboxes');
 	
 	$xtpl->table_title(_("Summary"));
 	
@@ -818,5 +819,56 @@ function news_edit_form($id) {
 	$xtpl->form_create('?page=cluster&action=log_edit_save&id='.$news->id, 'post');
 	$xtpl->form_add_input(_("Date and time").':', 'text', '30', 'published_at', post_val('published_at', tolocaltz($news->published_at, 'Y-m-d H:i')));
 	$xtpl->form_add_textarea(_("Message").':', 80, 5, 'message', $news->message);
+	$xtpl->form_out(_("Update"));
+}
+
+function helpbox_list_and_create_form() {
+	global $xtpl, $api;
+
+	$xtpl->table_title(_("Help boxes"));
+	
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+	$xtpl->form_create('?page=cluster&action=helpboxes_add', 'post');
+	$xtpl->form_add_input(_("Page").':', 'text', '30', 'page', post_val('page', $_GET["help_page"]));
+	$xtpl->form_add_input(_("Action").':', 'text', '30', 'action', post_val('action', $_GET["help_action"]));
+	$xtpl->form_add_select(_("Language").':', 'language', resource_list_to_options($api->language->list()), post_val('language'));
+	$xtpl->form_add_textarea(_("Content").':', 80, 15, 'content', post_val('content'));
+	$xtpl->form_out(_("Add"));
+	
+	$xtpl->table_add_category(_("Page"));
+	$xtpl->table_add_category(_("Action"));
+	$xtpl->table_add_category(_("Language"));
+	$xtpl->table_add_category(_("Content"));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+
+	$boxes = $api->help_box->list(array(
+		'meta' => array('includes' => 'language'),
+	));
+
+	foreach ($boxes as $box) {
+		$xtpl->table_td($box->page);
+		$xtpl->table_td($box->action);
+		$xtpl->table_td($box->language_id ? $box->language->label : _('All'));
+		$xtpl->table_td($box->content);
+		$xtpl->table_td('<a href="?page=cluster&action=helpboxes_edit&id='.$box->id.'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		$xtpl->table_td('<a href="?page=cluster&action=helpboxes_del&id='.$box->id.'" title="'._("Delete").'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		$xtpl->table_tr();
+	}
+	
+	$xtpl->table_out();
+}
+
+function helpbox_edit_form($id) {
+	global $xtpl, $api;
+
+	$box = $api->help_box->show($id);
+	
+	$xtpl->form_create('?page=cluster&action=helpboxes_edit_save&id='.$box->id, 'post');
+	$xtpl->form_add_input(_("Page").':', 'text', '30', 'page', $box->page);
+	$xtpl->form_add_input(_("Action").':', 'text', '30', 'action', $box->action);
+	$xtpl->form_add_select(_("Language").':', 'language', resource_list_to_options($api->language->list()), post_val('language'));
+	$xtpl->form_add_textarea(_("Content").':', 80, 15, 'content', $box->content);
 	$xtpl->form_out(_("Update"));
 }
