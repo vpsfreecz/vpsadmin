@@ -5,7 +5,7 @@ module TransactionChains
 
     def link_chain(dataset_in_pool, snapshot)
       # One of the four scenarios will occur:
-      # 0) Snapshot does not have backups
+      # 0) Dataset does not have backups
       #    -> simply rollback, delete newer snapshots (check if it's possible)
       # 1) Snapshot is the last snapshot on the hypervisor
       #    -> just rollback
@@ -17,6 +17,10 @@ module TransactionChains
       #    -> backup all snapshots, transfer from backup to temporary
       #       dataset on the hypervisor,
       #       replace the dataset on hypervisor, branch backup
+      # 5) Snapshot is in the backup, but there is no snapshot on the hypervisor
+      #    (happens e.g. after reinstall)
+      #    -> drop current state
+      #       restore chosen snapshot, branch backup
 
       lock(dataset_in_pool)
       concerns(:affect, [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id])
@@ -62,43 +66,47 @@ module TransactionChains
       snapshot_on_primary = snapshot.snapshot_in_pools.joins(dataset_in_pool: [:pool])
         .where('pools.role IN (?, ?)', ::Pool.roles[:hypervisor], ::Pool.roles[:primary]).take
 
-      # Scenario 1)
-      if primary_last_snap.snapshot_id == snapshot.id
-        pre_local_rollback
-        append(Transactions::Storage::Rollback, args: [dataset_in_pool, primary_last_snap])
-        post_local_rollback
-        return
+      if primary_last_snap
+        # Scenario 1)
+        if primary_last_snap.snapshot_id == snapshot.id
+          pre_local_rollback
+          append(Transactions::Storage::Rollback, args: [dataset_in_pool, primary_last_snap])
+          post_local_rollback
+          return
+        end
+
+        # Scenario 2) or 3)
+        if snapshot_on_primary
+          # Transfer the snapshots to all backup dataset in pools if they aren't backed up yet
+          dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where('pools.role = ?', ::Pool.roles[:backup]).each do |dst|
+            use_chain(TransactionChains::Dataset::Transfer, args: [dataset_in_pool, dst])
+          end
+
+          pre_local_rollback
+
+          append(Transactions::Storage::Rollback, args: [dataset_in_pool, snapshot_on_primary]) do
+            # Delete newer snapshots then the one roll backing to from primary, as they are
+            # destroyed by zfs rollback
+            dataset_in_pool.snapshot_in_pools.where('id > ?', snapshot_on_primary.id).each do |s|
+              destroy(s)
+            end
+          end
+
+          post_local_rollback
+
+          branch_backup(dataset_in_pool, snapshot)
+
+          return
+        end
       end
 
-      # Scenario 2) or 3)
-      if snapshot_on_primary
-        # Transfer the snapshots to all backup dataset in pools if they aren't backed up yet
+      # Scenario 4) and 5) - snapshot is available only in a backup
+
+      # Backup all snapshots
+      if primary_last_snap
         dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where('pools.role = ?', ::Pool.roles[:backup]).each do |dst|
           use_chain(TransactionChains::Dataset::Transfer, args: [dataset_in_pool, dst])
         end
-
-        pre_local_rollback
-
-        append(Transactions::Storage::Rollback, args: [dataset_in_pool, snapshot_on_primary]) do
-          # Delete newer snapshots then the one roll backing to from primary, as they are
-          # destroyed by zfs rollback
-          dataset_in_pool.snapshot_in_pools.where('id > ?', snapshot_on_primary.id).each do |s|
-            destroy(s)
-          end
-        end
-
-        post_local_rollback
-
-        branch_backup(dataset_in_pool, snapshot)
-
-        return
-      end
-
-      # Scenario 4) - snapshot is available only in a backup
-
-      # Backup all snapshots
-      dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where('pools.role = ?', ::Pool.roles[:backup]).each do |dst|
-        use_chain(TransactionChains::Dataset::Transfer, args: [dataset_in_pool, dst])
       end
 
       backup_snap = snapshot.snapshot_in_pools.joins(dataset_in_pool: [:pool])
@@ -148,8 +156,8 @@ module TransactionChains
         snap_in_branch = snap_in_pool.snapshot_in_pool_in_branches
           .where.not(confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy)).take!
         snap_tree = snap_in_branch.branch.dataset_tree
-        head_tree = ds.dataset_trees.find_by!(head: true)
-        old_head = head_tree.branches.find_by(head: true)
+        head_tree = ds.dataset_trees.find_by(head: true)
+        old_head = head_tree && head_tree.branches.find_by(head: true)
         old_branch = snap_in_branch.branch
 
         last_snap = old_branch.snapshot_in_pool_in_branches
@@ -211,9 +219,9 @@ module TransactionChains
           end
         end
 
-        if snap_tree.id != head_tree.id
+        if head_tree.nil? || snap_tree.id != head_tree.id
           append(Transactions::Utils::NoOp, args: ds.pool.node_id) do
-            edit(head_tree, head: false)
+            edit(head_tree, head: false) if head_tree
             edit(snap_tree, head: true)
           end
         end
