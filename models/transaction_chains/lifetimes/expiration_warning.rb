@@ -13,7 +13,11 @@ module TransactionChains
                  fail "Unable to find an owner for #{obj} of class #{klass}"
                end
 
-        mail(:"expiration_#{klass.name.underscore}_#{obj.object_state}", {
+        mail(:expiration_warning, {
+            params: {
+                object: klass.name.underscore,
+                state: obj.object_state,
+            },
             user: user,
             vars: {
                 object: obj,

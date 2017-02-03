@@ -4,10 +4,40 @@ class MailTemplate < ActiveRecord::Base
   has_many :mail_recipients, through: :mail_template_recipients
 
   has_paper_trail
+
+  # @param id [Symbol]
+  # @param opts [Hash] options
+  # @option opts [String] name name with variables
+  # @option opts [String] desc description
+  # @option opts [Hash] params description of variables found in template name
+  # @option opts [Hash] vars description of variables passed to the template
+  def self.register(id, opts = {})
+    @templates ||= {}
+
+    if @templates[id] && @templates[id][:vars]
+      @templates[id][:vars].update(opts[:vars]) if opts[:vars]
+
+    else
+      @templates[id] = opts
+    end
+  end
+
+  def self.templates
+    @templates || {}
+  end
+
+  def self.resolve_name(name, params)
+    tpl = templates[name]
+    fail "Attempted to use an unregistered mail template '#{name}'" unless tpl
+
+    return name if tpl[:name].nil?
+    tpl[:name] % (params || {})
+  end
  
   # Generate an e-mail from template
   # @param name [Symbol] template name
   # @param opts [Hash] options
+  # @option opts [Hash] params parameters to be applied to the name
   # @option opts [User, nil] user whom to send mail
   # @option opts [Language, nil] language defaults to user's language
   # @option opts [Hash] vars variables passed to the template
@@ -22,7 +52,7 @@ class MailTemplate < ActiveRecord::Base
   # @option opts [String] references
   # @return [MailLog]
   def self.send_mail!(name, opts = {})
-    tpl = MailTemplate.find_by(name: name)
+    tpl = MailTemplate.find_by(name: resolve_name(name, opts[:params]))
     raise VpsAdmin::API::Exceptions::MailTemplateDoesNotExist, name unless tpl
 
     lang = opts[:language] || opts[:user].language
@@ -62,4 +92,76 @@ class MailTemplate < ActiveRecord::Base
     mail.save!
     mail
   end
+
+  # Register built-in templates
+  register :daily_report, vars: {
+      base_url: [String, 'URL to the web UI'],
+      date: Hash,
+      users: Hash,
+      vps: Hash,
+      datasets: Hash,
+      snapshots: Hash,
+      downloads: Hash,
+      chains: Hash,
+      transactions: Hash,
+  }
+  register :expiration_warning, name: "expiration_%{object}_%{state}", params: {
+      object: 'class name of the object nearing expiration, demodulized with underscores',
+      state: 'one of lifetime states',
+  }
+  register :snapshot_download_ready, vars: {
+      dl: ::SnapshotDownload,
+  }
+  register :user_create, vars: {
+      user: ::User,
+  }
+  register :user_suspend, vars: {
+      user: ::User,
+      state: ::ObjectState,
+  }
+  register :user_soft_delete, vars: {
+      user: ::User,
+      state: ::ObjectState,
+  }
+  register :user_resume, vars: {
+      user: ::User,
+      state: ::ObjectState,
+  }
+  register :user_revive, vars: {
+      user: ::User,
+      state: ::ObjectState,
+  }
+  register :vps_suspend, vars: {
+      vps: ::Vps,
+      state: ::ObjectState,
+  }
+  register :vps_resume, vars: {
+      vps: ::Vps,
+      state: ::ObjectState,
+  }
+  register :vps_migration_planned, vars: {
+      m: ::VpsMigration,
+      vps: ::Vps,
+      src_node: ::Node,
+      dst_node: ::Node,
+  }
+  register :vps_migration_begun, vars: {
+      vps: ::Vps,
+      src_node: ::Node,
+      dst_node: ::Node,
+      outage_window: ::Boolean,
+      reason: String,
+  }
+  register :vps_migration_finished, vars: {
+      vps: ::Vps,
+      src_node: ::Node,
+      dst_node: ::Node,
+      outage_window: ::Boolean,
+      reason: String,
+  }
+  register :vps_resources_change, vars: {
+      vps: ::Vps,
+      admin: ::User,
+      reason: String,
+  }
 end
