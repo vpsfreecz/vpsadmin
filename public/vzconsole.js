@@ -167,7 +167,7 @@ ShellInABox.prototype.reconnect = function () {
 	};
 
 	if (this.api === undefined) {
-		this.api = new HaveAPI.Client(this.api_url, {version: '1.0'});
+		this.api = new HaveAPI.Client(this.api_url);
 		this.api.authenticate('token', {
 			token: that.auth_token
 		}, restart);
