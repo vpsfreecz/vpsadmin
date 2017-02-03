@@ -25,7 +25,7 @@ $DATA_SIZE_UNITS = array("k" => "KiB", "m" => "MiB", "g" => "GiB", "t" => "TiB")
 
 function get_free_ip_list ($res, $vps, $role = null, $limit = null) {
 	global $api;
- 
+
 	if ($res === 'ipv4' || $res === 'ipv4_private')
 		$v = 4;
 	else
@@ -41,13 +41,13 @@ function get_free_ip_list ($res, $vps, $role = null, $limit = null) {
 
 	if ($role)
 		$filters['role'] = $role;
-	
+
 	if ($limit)
 		$filters['limit'] = $limit;
-	
+
 	foreach($api->ip_address->list($filters) as $ip) {
 		$note = '';
-		
+
 		if ($ip->user_id) {
 			if ($ip->user_id == $vps->user_id)
 				$note = '(owned)';
@@ -57,7 +57,7 @@ function get_free_ip_list ($res, $vps, $role = null, $limit = null) {
 
 		$ret[$ip->id] = $ip->addr . " $note";
 	}
-	
+
 	return $ret;
 }
 
@@ -109,10 +109,10 @@ function notify_user($title, $msg) {
 
 function show_notification() {
 	global $xtpl;
-	
+
 	if(!isset($_SESSION["notification"]))
 		return;
-	
+
 	$xtpl->perex($_SESSION["notification"]["title"], $_SESSION["notification"]["msg"]);
 	unset($_SESSION["notification"]);
 }
@@ -127,7 +127,7 @@ function format_duration($interval) {
 	$h = $interval / 3600 % 24;
 	$m = $interval / 60 % 60;
 	$s = $interval % 60;
-	
+
 	if($d >= 1)
 		return sprintf("%d days, %02d:%02d:%02d", floor($d), $h, $m, $s);
 	else
@@ -148,10 +148,10 @@ function toutc($datetime) {
 function random_string($len) {
 	$str = "";
 	$chars = array_merge(range(0, 9), range('a', 'z'), range('A', 'Z'));
-	
+
 	for($i = 0; $i < $len; $i++)
 		$str .= $chars[array_rand($chars)];
-	
+
 	return $str;
 }
 
@@ -161,16 +161,16 @@ function format_data_rate($n, $suffix) {
 		2 << 19 => 'M',
 		2 << 9 => 'k',
 	);
-	
+
 	$ret = "";
 	$selected = 0;
-	
+
 	foreach($units as $threshold => $unit) {
 		if($n > $threshold) {
 			return round(($n / $threshold), 2)."$unit$suffix";
 		}
 	}
-	
+
 	return round($n, 2)."$suffix";
 }
 
@@ -185,19 +185,19 @@ function api_description_changed($api) {
 function maintenance_lock_icon($type, $obj) {
 	$m_icon_on = '<img alt="'._('Turn maintenance OFF.').'" src="template/icons/maintenance_mode.png">';
 	$m_icon_off = '<img alt="'._('Turn maintenance ON.').'" src="template/icons/transact_ok.png">';
-	
+
 	switch ($obj->maintenance_lock) {
 		case 'no':
 			return '<a href="?page=cluster&action=maintenance_lock&type='.$type.'&obj_id='.$obj->id.'&lock=1">'
 			       .$m_icon_off
 			       .'</a>';
-		
+
 		case 'lock':
 			return '<a href="?page=cluster&action=set_maintenance_lock&type='.$type.'&obj_id='.$obj->id.'&lock=0"
 			           title="'._('Maintenance lock reason').': '.htmlspecialchars($obj->maintenance_lock_reason).'">'
 			        .$m_icon_on
 			        .'</a>';
-		
+
 		case 'master_lock':
 			return '<img alt="'._('Under maintenance.').'"
 			             title="'._('Under maintenance').': '.htmlspecialchars($obj->maintenance_lock_reason).'"
@@ -207,13 +207,13 @@ function maintenance_lock_icon($type, $obj) {
 
 function resource_list_to_options($list, $id = 'id', $label = 'label', $empty = true, $label_callback = null) {
 	$ret = array();
-	
+
 	if ($empty)
 		$ret[0] = '---';
-	
+
 	foreach ($list as $item)
 		$ret[ $item->{$id} ] = $label_callback ? $label_callback($item) : $item->{$label};
-	
+
 	return $ret;
 }
 
@@ -227,13 +227,13 @@ function boolean_icon($val) {
 
 function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null) {
 	global $xtpl, $api;
-	
+
 	if ($v === null)
 		$v = $desc->default === '_nil' ? null : $desc->default;
-	
+
 	if (isset($_POST[$name]))
 		$v = $_POST[$name];
-		
+
 	switch ($desc->type) {
 		case 'String':
 		case 'Integer':
@@ -241,7 +241,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 			if ($desc->validators && $desc->validators->include) {
 				$desc_choices = $desc->validators->include->values;
 				$choices = array();
-				
+
 				if ($label_callback) {
 					foreach ($desc_choices as $k => $val)
 						$choices[$k] = $label_callback($val);
@@ -259,19 +259,19 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 				$xtpl->form_add_input_pure('text', '30', $name, $v);
 			}
 			break;
-		
+
 		case 'Text':
 			$xtpl->form_add_textarea_pure(80, 10, $name, $v);
 			break;
-		
+
 		case 'Boolean':
 			$xtpl->form_add_checkbox_pure($name, '1', $v);
 			break;
-		
+
 		case 'Datetime':
 			$xtpl->form_add_datetime_pure($name, $v, false);
 			break;
-		
+
 		case 'Resource':
 			$xtpl->form_add_select_pure(
 				$name,
@@ -284,7 +284,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 				),
 				$v
 			);
-		
+
 		default:
 			continue;
 	}
@@ -292,19 +292,19 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 
 function api_param_to_form($name, $desc, $v = null, $label_callback = null) {
 	global $xtpl;
-	
+
 	$xtpl->table_td(($desc->label ? $desc->label : $name).':');
 	api_param_to_form_pure($name, $desc, $v, $label_callback);
-	
+
 	if ($desc->description)
 		$xtpl->table_td($desc->description);
-	
+
 	$xtpl->table_tr();
 }
 
 function api_params_to_form($action, $direction, $label_callbacks = null) {
 	$params = $action->getParameters($direction);
-	
+
 	foreach ($params as $name => $desc) {
 		api_param_to_form($name, $desc, null, $label_callbacks ? $label_callbacks[$name] : null);
 	}
@@ -316,7 +316,7 @@ function api_create_form($resource) {
 
 function api_update_form($obj) {
 	$params = $obj->update->getParameters('input');
-	
+
 	foreach ($params as $name => $desc) {
 		api_param_to_form($name, $desc, post_val($name, $obj->{$name}), $label_callbacks ? $label_callbacks[$name] : null);
 	}
@@ -325,10 +325,10 @@ function api_update_form($obj) {
 function client_params_to_api($action, $from = null) {
 	if (!$from)
 		$from = $_POST;
-	
+
 	$params = $action->getParameters('input');
 	$ret = array();
-	
+
 	foreach ($params as $name => $desc) {
 		if (isset($from[ $name ])) {
 			if ($desc->validators->include) {
@@ -340,15 +340,15 @@ function client_params_to_api($action, $from = null) {
 				case 'Integer':
 					$v = (int) $from[$name];
 					break;
-				
+
 				case 'Boolean':
 					$v = true;
 					break;
-				
+
 				case 'Resource':
 					if (!$from[$name])
 						continue 2;
-				
+
 				default:
 					$v = $from[ $name ];
 			}
@@ -366,7 +366,7 @@ function client_params_to_api($action, $from = null) {
 			}
 		}
 	}
-		
+
 	return $ret;
 }
 
@@ -374,12 +374,12 @@ function unit_for_cluster_resource($name) {
 	switch ($name) {
 		case 'cpu':
 			return _('cores');
-		
+
 		case 'ipv4':
 		case 'ipv4_private':
 		case 'ipv6':
 			return _('addresses');
-		
+
 		default:
 			return 'MiB';
 	}
@@ -387,7 +387,7 @@ function unit_for_cluster_resource($name) {
 
 function data_size_unitize($val) {
 	$units = array("t" => 19, "g" => 9, "m" => 0);
-	
+
 	if (!$val)
 		return array(0, "g");
 
@@ -398,16 +398,16 @@ function data_size_unitize($val) {
 		if ($val >= (2 << $ex))
 			return array($val / (2 << $ex), $u);
 	}
-	
+
 	return array($val, "m");
 }
 
 function data_size_to_humanreadable($val) {
 	global $DATA_SIZE_UNITS;
-	
+
 	if (!$val)
 		return _("none");
-	
+
 	$res = data_size_unitize($val);
 	return round($res[0], 2) . " " . $DATA_SIZE_UNITS[$res[1]];
 }
@@ -460,10 +460,10 @@ function transaction_concern_class($klass) {
 	$tr = array(
 		'Vps' => 'VPS'
 	);
-	
+
 	if (array_key_exists($klass, $tr))
 		return $tr[$klass];
-	
+
 	return $klass;
 }
 
@@ -471,10 +471,10 @@ function transaction_concern_link($klass, $row_id) {
 	switch ($klass) {
 		case 'Vps':
 			return '<a href="?page=adminvps&action=info&veid='.$row_id.'">'.$row_id.'</a>';
-		
+
 		case 'User':
 			return '<a href="?page=adminm&action=edit&id='.$row_id.'">'.$row_id.'</a>';
-		
+
 		default:
 			return "$row_id";
 	}
@@ -483,18 +483,18 @@ function transaction_concern_link($klass, $row_id) {
 function transaction_chain_concerns($chain, $limit = 10) {
 	if (!$chain->concerns)
 		return '---';
-	
+
 	switch ($chain->concerns->type) {
 		case 'affect':
 			$o = $chain->concerns->objects[0];
 			return transaction_concern_class($o[0]).' '.transaction_concern_link($o[0], $o[1]);
-			
+
 		case 'transform':
 			$src = $chain->concerns->objects[0];
 			$dst = $chain->concerns->objects[1];
-			
+
 			return transaction_concern_class($src[0]).' '.transaction_concern_link($src[0], $src[1]).' -> '.transaction_concern_link($dst[0], $dst[1]);
-		
+
 		default:
 			return _('Unknown');
 	}
@@ -502,12 +502,12 @@ function transaction_chain_concerns($chain, $limit = 10) {
 
 function get_all_users() {
 	global $api;
-	
+
 	$cnt = $api->user->list(array(
 		'limit' => 0,
 		'meta' => array('count' => true)
 	))->getTotalCount();
-	
+
 	return $api->user->list(array(
 		'limit' => $cnt + 10
 	));
@@ -548,6 +548,10 @@ function colorize($array) {
 	$from = 0x70;
 	$to = 0xff;
 	$cnt = count($array);
+
+	if (!$cnt)
+		return $ret;
+
 	$step = (int) round(($to - $from) / pow($cnt, 1.0/3));
 	$i = 0;
 
