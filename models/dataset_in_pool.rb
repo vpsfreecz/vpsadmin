@@ -35,8 +35,10 @@ class DatasetInPool < ActiveRecord::Base
           dst_dataset_in_pool: 'target DatasetInPool',
       }
 
-  def snapshot
-    TransactionChains::Dataset::Snapshot.fire(self)
+  # @param opts [Hash] options
+  # @option opts [String] label user-friendly snapshot label
+  def snapshot(opts)
+    TransactionChains::Dataset::Snapshot.fire(self, opts)
   end
 
   # +dst+ is destination DatasetInPool.

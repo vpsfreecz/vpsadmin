@@ -2,7 +2,10 @@ module TransactionChains
   class Dataset::Snapshot < ::TransactionChain
     label 'Snapshot'
 
-    def link_chain(dataset_in_pool)
+    # @param dataset_in_pool [DatasetInPool]
+    # @param opts [Hash] options
+    # @option opts [String] label user-friendly snapshot label
+    def link_chain(dataset_in_pool, opts = {})
       lock(dataset_in_pool)
       concerns(:affect, [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id])
 
@@ -12,6 +15,7 @@ module TransactionChains
           name: "#{snap} (unconfirmed)",
           dataset_id: dataset_in_pool.dataset_id,
           history_id: dataset_in_pool.dataset.current_history_id,
+          label: opts[:label],
           confirmed: ::Snapshot.confirmed(:confirm_create)
       )
 

@@ -30,6 +30,7 @@
 - Chain `Mail::DailyReport` has new hook `send`
 - Fixed bug in VPS restore, where it was impossible to restore freshly reinstalled
   VPS with backups (issue #66)
+- Add user-defined snapshot labels
 
 * Fri Dec 30 2016 - version 2.6.0
 - Rebase on HaveAPI v0.7

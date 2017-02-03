@@ -332,6 +332,7 @@ module VpsAdmin::API::Resources
         id :id
         resource Dataset, value_label: :name
         string :name
+        string :label, label: 'Label'
         datetime :created_at # FIXME: this is not correct creation time
         integer :history_id
         resource VPS::Mount, value_label: :mountpoint
@@ -399,6 +400,10 @@ module VpsAdmin::API::Resources
         desc 'Create snapshot'
         blocking true
 
+        input do
+          use :all, include: %i(label)
+        end
+
         output do
           use :all
         end
@@ -419,7 +424,7 @@ module VpsAdmin::API::Resources
             error("cannot make more than #{max_snapshots} snapshots")
           end
 
-          @chain, snap = ds.snapshot
+          @chain, snap = ds.snapshot(input)
           snap.snapshot
         end
 

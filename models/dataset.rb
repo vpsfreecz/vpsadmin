@@ -159,7 +159,9 @@ class Dataset < ActiveRecord::Base
     TransactionChains::Dataset::Inherit.fire(self.primary_dataset_in_pool!, properties)
   end
 
-  def snapshot
+  # @param opts [Hash] options
+  # @option opts [String] label user-friendly snapshot label
+  def snapshot(opts = {})
     dip = primary_dataset_in_pool!
 
     if dip.pool.role == 'hypervisor'
@@ -167,7 +169,7 @@ class Dataset < ActiveRecord::Base
       maintenance_check!(vps)
     end
 
-    dip.snapshot
+    dip.snapshot(opts)
   end
 
   def rollback_snapshot(s)

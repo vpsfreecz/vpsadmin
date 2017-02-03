@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170130154206) do
+ActiveRecord::Schema.define(version: 20170203122106) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -178,7 +178,7 @@ ActiveRecord::Schema.define(version: 20170130154206) do
   create_table "dns_resolvers", force: true do |t|
     t.string  "addrs",        limit: 63,                 null: false
     t.string  "label",        limit: 63,                 null: false
-    t.boolean "is_universal",            default: false,              unsigned: true
+    t.boolean "is_universal",            default: false
     t.integer "location_id",                                          unsigned: true
     t.integer "ip_version",              default: 4
   end
@@ -415,7 +415,7 @@ ActiveRecord::Schema.define(version: 20170130154206) do
   create_table "locations", force: true do |t|
     t.string   "label",                   limit: 63,                 null: false
     t.boolean  "has_ipv6",                                           null: false
-    t.boolean  "vps_onboot",                          default: true, null: false, unsigned: true
+    t.boolean  "vps_onboot",                          default: true, null: false
     t.string   "remote_console_server",                              null: false
     t.string   "domain",                  limit: 100,                null: false
     t.datetime "created_at"
@@ -793,6 +793,7 @@ ActiveRecord::Schema.define(version: 20170130154206) do
     t.datetime "updated_at"
     t.integer  "snapshot_download_id"
     t.integer  "history_id",           default: 0, null: false
+    t.string   "label"
   end
 
   add_index "snapshots", ["dataset_id"], name: "index_snapshots_on_dataset_id", using: :btree
@@ -939,7 +940,7 @@ ActiveRecord::Schema.define(version: 20170130154206) do
     t.string   "password",                                      null: false
     t.string   "email",              limit: 127
     t.text     "address"
-    t.boolean  "mailer_enabled",                 default: true, null: false, unsigned: true
+    t.boolean  "mailer_enabled",                 default: true, null: false
     t.integer  "login_count",                    default: 0,    null: false
     t.integer  "failed_login_count",             default: 0,    null: false
     t.datetime "last_request_at"
@@ -1102,8 +1103,8 @@ ActiveRecord::Schema.define(version: 20170130154206) do
     t.text     "info",                    limit: 16777215
     t.integer  "dns_resolver_id"
     t.integer  "node_id",                                                  null: false, unsigned: true
-    t.boolean  "onboot",                                   default: true,  null: false, unsigned: true
-    t.boolean  "onstartall",                               default: true,  null: false, unsigned: true
+    t.boolean  "onboot",                                   default: true,  null: false
+    t.boolean  "onstartall",                               default: true,  null: false
     t.text     "config",                                                   null: false
     t.integer  "confirmed",                                default: 0,     null: false
     t.integer  "dataset_in_pool_id"
