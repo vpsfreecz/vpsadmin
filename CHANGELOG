@@ -14,6 +14,7 @@
 - Help boxes are fetched from the API
 - VPS console: fetch console server URL from the API
 - Removed db.lib.php
+- Implement NAS snapshot deletion (issue #115)
 
 * Fri Dec 30 2016 - version 2.6.0
 - Public key management forms
