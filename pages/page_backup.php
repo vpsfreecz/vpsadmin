@@ -46,10 +46,41 @@ if ($_SESSION["logged_in"]) {
 			break;
 
 		case 'snapshot':
+			$xtpl->sbar_add(_("Back"), $_GET['return'] ? $_GET['return'] : '?page=backup');
+
+			try {
+				$ds = $api->dataset->find($_GET['dataset']);
+				$return = urlencode($_GET['return']);
+
+				$xtpl->table_title(_('Create a new snapshot of dataset').' '.$ds->name);
+				$xtpl->form_create(
+					'?page=backup&action=snapshot_create&dataset='.$ds->id.'&return='.$return,
+					'post'
+				);
+
+				$xtpl->table_td(_('Dataset').':');
+				$xtpl->table_td($ds->name);
+				$xtpl->table_tr();
+
+				$xtpl->form_add_input(
+					_('Label').':', 'text', '30', 'label', post_val('label'),
+					_('Optional user-defined snapshot identificator')
+				);
+
+				$xtpl->form_out(_('Go >>'));
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Dataset not found'), $e->getResponse());
+			}
+			break;
+
+		case 'snapshot_create':
 			csrf_check();
 
 			try {
-				$api->dataset($_GET['dataset'])->snapshot->create();
+				$api->dataset($_GET['dataset'])->snapshot->create(array(
+					'label' => post_val('label', null),
+				));
 
 				notify_user(_('Snapshot creation scheduled.'), _('Snapshot will be taken momentarily.'));
 				redirect($_GET['return'] ? $_GET['return'] : '?page=');
@@ -57,6 +88,7 @@ if ($_SESSION["logged_in"]) {
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 				$xtpl->perex_format_errors(_('Snapshot failed'), $e->getResponse());
 			}
+
 			break;
 
 		case 'restore':

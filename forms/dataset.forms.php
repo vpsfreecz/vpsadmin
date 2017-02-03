@@ -295,6 +295,7 @@ function dataset_snapshot_list($datasets, $vps = null) {
 
 		$xtpl->table_add_category('<span title="'._('History identifier').'">[H]</span>');
 		$xtpl->table_add_category(_('Date and time'));
+		$xtpl->table_add_category(_('Label'));
 		$xtpl->table_add_category(_('Restore'));
 		$xtpl->table_add_category(_('Download'));
 		$xtpl->table_add_category(_('Mount'));
@@ -313,6 +314,7 @@ function dataset_snapshot_list($datasets, $vps = null) {
 		foreach ($snapshots as $snap) {
 			$xtpl->table_td($snap->history_id, '#'.$colors[ $snap->history_id ], true);
 			$xtpl->table_td(tolocaltz($snap->created_at, 'Y-m-d H:i'));
+			$xtpl->table_td($snap->label ? $snap->label : '-');
 			$xtpl->form_add_radio_pure("restore_snapshot", $snap->id);
 			$xtpl->table_td('[<a href="?page=backup&action=download&dataset='.$ds->id.'&snapshot='.$snap->id.'&return='.$return_url.'">'._("Download").'</a>]');
 
@@ -328,7 +330,7 @@ function dataset_snapshot_list($datasets, $vps = null) {
 			$xtpl->table_tr();
 		}
 
-		$xtpl->table_td('<a href="?page=backup&action=snapshot&dataset='.$ds->id.'&return='.$return_url.'&t='.csrf_token().'">'._('Make a snapshot NOW').'</a>', false, false, '2');
+		$xtpl->table_td('<a href="?page=backup&action=snapshot&dataset='.$ds->id.'&return='.$return_url.'">'._('Make a new snapshot').'</a>', false, false, '2');
 		$xtpl->table_td($xtpl->html_submit(_("Restore"), "restore"));
 		$xtpl->table_tr();
 
