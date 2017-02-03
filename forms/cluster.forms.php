@@ -804,7 +804,7 @@ function news_list_and_create_form() {
 		$xtpl->table_td(tolocaltz($news->published_at, "Y-m-d H:i"));
 		$xtpl->table_td($news->message);
 		$xtpl->table_td('<a href="?page=cluster&action=log_edit&id='.$news->id.'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-		$xtpl->table_td('<a href="?page=cluster&action=log_del&id='.$news->id.'" title="'._("Delete").'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		$xtpl->table_td('<a href="?page=cluster&action=log_del&id='.$news->id.'&t='.csrf_token().'" title="'._("Delete").'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
 		$xtpl->table_tr();
 	}
 
@@ -853,7 +853,7 @@ function helpbox_list_and_create_form() {
 		$xtpl->table_td($box->language_id ? $box->language->label : _('All'));
 		$xtpl->table_td($box->content);
 		$xtpl->table_td('<a href="?page=cluster&action=helpboxes_edit&id='.$box->id.'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-		$xtpl->table_td('<a href="?page=cluster&action=helpboxes_del&id='.$box->id.'" title="'._("Delete").'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		$xtpl->table_td('<a href="?page=cluster&action=helpboxes_del&id='.$box->id.'&t='.csrf_token().'" title="'._("Delete").'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
 		$xtpl->table_tr();
 	}
 

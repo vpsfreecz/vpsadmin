@@ -193,7 +193,7 @@ function maintenance_lock_icon($type, $obj) {
 			       .'</a>';
 
 		case 'lock':
-			return '<a href="?page=cluster&action=set_maintenance_lock&type='.$type.'&obj_id='.$obj->id.'&lock=0"
+			return '<a href="?page=cluster&action=set_maintenance_lock&type='.$type.'&obj_id='.$obj->id.'&lock=0&t='.csrf_token().'"
 			           title="'._('Maintenance lock reason').': '.htmlspecialchars($obj->maintenance_lock_reason).'">'
 			        .$m_icon_on
 			        .'</a>';

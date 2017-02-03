@@ -62,6 +62,8 @@ switch($_GET["action"]) {
 		break;
 
 	case "sysconfig_save":
+		csrf_check();
+
 		$current_cfg = new SystemConfig($api, true);
 		$changes = array();
 
@@ -130,6 +132,8 @@ switch($_GET["action"]) {
 		break;
 
 	case "dns_new_save":
+		csrf_check();
+
 		try {
 			$api->dns_resolver->create(array(
 				'label' => $_POST['dns_label'],
@@ -242,6 +246,7 @@ switch($_GET["action"]) {
 		break;
 
 	case 'env_chain_save':
+		csrf_check();
 		$xtpl->sbar_add(_("Back"), '?page=cluster&action=environments');
 
 		if (isset($_POST["configs"]) || isset($_POST["add_config"])) {
@@ -309,6 +314,8 @@ switch($_GET["action"]) {
 
 	case 'env_save':
 		if (isset($_POST['label'])) {
+			csrf_check();
+
 			try {
 				$api->environment->update($_GET['id'], array(
 					'label' => $_POST['label'],
@@ -364,6 +371,8 @@ switch($_GET["action"]) {
 		break;
 
 	case "location_new_save":
+		csrf_check();
+
 		try {
 			$api->location->create(array(
 				'label' => $_POST['location_label'],
@@ -406,6 +415,8 @@ switch($_GET["action"]) {
 		break;
 
 	case "location_edit_save":
+		csrf_check();
+
 		try {
 			$api->location->update($_GET['id'], array(
 				'label' => $_POST['location_label'],
@@ -441,6 +452,8 @@ switch($_GET["action"]) {
 		break;
 
 	case "ipaddr_add2":
+		csrf_check();
+
 		if (!$_POST['ip_addresses'])
 			return;
 
@@ -629,6 +642,7 @@ switch($_GET["action"]) {
 		$xtpl->form_out(_('Save'));
 		break;
 	case "config_new_save":
+		csrf_check();
 		$xtpl->sbar_add(_("Back"), '?page=cluster');
 
 		try {
@@ -670,6 +684,7 @@ switch($_GET["action"]) {
 		break;
 
 	case "config_edit_save":
+		csrf_check();
 		try {
 			$api->vps_config($_GET['config'])->update(array(
 				'name' => $_POST['name'],
@@ -692,6 +707,8 @@ switch($_GET["action"]) {
 		break;
 
 	case "newnode_save":
+		csrf_check();
+
 		try {
 			$data = $_POST;
 
@@ -714,6 +731,8 @@ switch($_GET["action"]) {
 		break;
 
 	case "node_edit_save":
+		csrf_check();
+
 		try {
 			$api->node->update($_GET['node_id'], $_POST);
 			notify_user(_("Settings updated"), _("Settings succesfully updated."));
@@ -757,6 +776,8 @@ switch($_GET["action"]) {
 		break;
 
 	case "set_maintenance_lock":
+		csrf_check();
+
 		if (isset($_GET['type'])) {
 			$ret = maintenance_lock_by_type();
 
@@ -790,6 +811,8 @@ switch($_GET["action"]) {
 		break;
 
 	case "log_add":
+		csrf_check();
+
 		try {
 			$api->news_log->create(array(
 				'published_at' => date('c', strtotime($_POST['published_at'])),
@@ -810,6 +833,8 @@ switch($_GET["action"]) {
 		break;
 
 	case "log_edit_save":
+		csrf_check();
+
 		try {
 			$api->news_log->update($_GET['id'], array(
 				'published_at' => date('c', strtotime($_POST['published_at'])),
@@ -826,6 +851,8 @@ switch($_GET["action"]) {
 		break;
 
 	case "log_del":
+		csrf_check();
+
 		try {
 			$api->news_log->delete($_GET['id']);
 
@@ -844,6 +871,8 @@ switch($_GET["action"]) {
 		break;
 
 	case "helpboxes_add":
+		csrf_check();
+
 		try {
 			$api->help_box->create(client_params_to_api($api->help_box->create));
 
@@ -861,6 +890,8 @@ switch($_GET["action"]) {
 		break;
 
 	case "helpboxes_edit_save":
+		csrf_check();
+
 		try {
 			$api->help_box->update($_GET['id'], client_params_to_api($api->help_box->update));
 
@@ -875,6 +906,8 @@ switch($_GET["action"]) {
 		break;
 
 	case "helpboxes_del":
+		csrf_check();
+
 		try {
 			$api->help_box->delete($_GET['id']);
 
