@@ -11,11 +11,12 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
       webui_url = ::SysConfig.get(:webui, :base_url)
      
       [
-          :"request_create_user_#{request.type_name}",
-          :request_create_user,
-      ].each do |t|
+          [:request_create_user_type, {type: request.type_name}],
+          [:request_create_user, {}],
+      ].each do |id, params|
         begin
-          mail(t, {
+          mail(id, {
+              params: params,
               user: request.user,
               to: [request.user_mail],
               language: request.user_language,
@@ -35,11 +36,12 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
       
       ::User.where('level > 90').each do |admin|
         [
-            :"request_create_admin_#{request.type_name}",
-            :request_create_admin,
-        ].each do |t|
+            [:request_create_admin_type, {type: request.type_name}],
+            [:request_create_admin, {}],
+        ].each do |id, params|
           begin
-            mail(t, {
+            mail(id, {
+                params: params,
                 user: admin,
                 message_id: message_id(request),
                 vars: {
