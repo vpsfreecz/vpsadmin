@@ -19,10 +19,10 @@
 
 	function hideProperties (init) {
 		anchor.text('Show more properties').click(switchMode(showProperties));
-		
+
 		if (init)
 			$('.advanced-property').hide();
-			
+
 		else {
 			setState('less');
 			$('.advanced-property').fadeOut();

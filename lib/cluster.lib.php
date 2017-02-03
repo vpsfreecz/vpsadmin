@@ -38,7 +38,7 @@ class SystemConfig implements Iterator {
 
 	protected function fetchConfig() {
 		$cfg = array();
-		
+
 		$options = $this->api->system_config->index();
 
 		foreach ($options as $opt) {

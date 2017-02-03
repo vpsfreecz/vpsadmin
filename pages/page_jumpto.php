@@ -4,7 +4,7 @@ if ($_SESSION["logged_in"] && $_SESSION["is_admin"]) {
 	$search = trim($_GET['search']);
 
 	$_SESSION["jumpto"] = $search;
-	
+
 	try {
 		$res = $api->cluster->search(array('value' => $search))->getResponse();
 
@@ -61,11 +61,11 @@ if ($_SESSION["logged_in"] && $_SESSION["is_admin"]) {
 		} else {
 			$xtpl->title('Not a bro to be found.');
 		}
-		
+
 	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 		// nothing
 	}
-	
+
 } else {
 	$xtpl->perex(_("Access forbidden"), _("You have to log in to be able to access vpsAdmin's functions"));
 }

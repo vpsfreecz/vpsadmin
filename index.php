@@ -74,16 +74,16 @@ $api_cluster = null;
 try {
 	if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
 		$api->authenticate('token', array('token' => $_SESSION['auth_token']), false);
-		
+
 		try {
 			$api_cluster = $api->cluster->show();
-			
+
 			if(!$_SESSION["context_switch"])
 				$api->user->touch($_SESSION["user"]["id"]);
-			
+
 			$_SESSION["transactbox_expiration"] = time() + USER_LOGIN_INTERVAL;
 // 			$xtpl->assign('AJAX_SCRIPT', ajax_getHTML('ajax.php?page=transactbox', 'transactions', 1000));
-			
+
 		} catch (\HaveAPI\Client\Exception\AuthenticationFailed $e) {
 			unset($_SESSION);
 			session_destroy();
@@ -109,7 +109,7 @@ try {
 											._("Please be patient."));
 	} else {
 		show_notification();
-		
+
 		switch ($_GET["page"]) {
 			case 'adminvps':
 				include WWW_ROOT.'pages/page_adminvps.php';
@@ -164,10 +164,10 @@ try {
 		}
 		$request_page = $_GET["page"];
 	}
-	
+
 } catch (\Httpful\Exception\ConnectionErrorException $e) {
 	$xtpl->perex(_('Error occured'), _('Unable to connect to the API server. Please contact the support.'));
-	
+
 } catch (\HaveAPI\Client\Exception\Base $e) {
 	$xtpl->perex(_('Error occured'), _('An unhandled error occured in communication with the API. Please contact the support.'));
 } catch (\CsrfTokenInvalid $e) {
@@ -181,32 +181,32 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
     $xtpl->menu_add(_("VPS"),'?page=adminvps', ($_GET["page"] == 'adminvps'));
     if ($_SESSION["is_admin"]) {
 		$xtpl->menu_add(_("Backups"),'?page=backup', ($_GET["page"] == 'backup'));
-		
+
 		if(NAS_PUBLIC || $_SESSION["is_admin"])
 			$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
-		
+
 		$xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));
 		$xtpl->menu_add(_("Cluster"),'?page=cluster', ($_GET["page"] == 'cluster'));
 		$xtpl->menu_add(_("Transaction log"),'?page=transactions', ($_GET["page"] == 'transactions'), true);
     } else {
 		$xtpl->menu_add(_("Backups"),'?page=backup', ($_GET["page"] == 'backup'));
-		
+
 		if(NAS_PUBLIC || $_SESSION["is_admin"])
 			$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
-		
+
 		$xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));
 		$xtpl->menu_add(_("Transaction log"),'?page=transactions', ($_GET["page"] == 'transactions'), true);
     }
-	
+
 	try {
 		list_transaction_chains();
-		
+
 	} catch (\HaveAPI\Client\Exception\AuthenticationFailed $e) {
 		unset($_SESSION);
 		session_destroy();
 		$_GET["page"] = "";
 	}
-	
+
 } else {
     $xtpl->menu_add(_("Status"),'?page=', ($_GET["page"] == ''));
     $xtpl->menu_add(_("About vpsAdmin"),'?page=about', ($_GET["page"] == 'about'), true);

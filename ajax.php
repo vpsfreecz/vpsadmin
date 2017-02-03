@@ -54,7 +54,7 @@ include WWW_ROOT.'config_cfg.php';
 if ($_SESSION["logged_in"]) {
 	try {
 		$api->authenticate('token', array('token' => $_SESSION['auth_token']), false);
-		
+
 		if ($_SESSION["transactbox_expiration"] < time()) {
 			unset($_SESSION);
 			session_destroy();
@@ -68,10 +68,10 @@ if ($_SESSION["logged_in"]) {
 			default:
 				header("HTTP/1.0 404 Not Found");
 		}
-		
+
 	} catch (\HaveAPI\Client\Exception\Base $e) {
 		echo "Connection to the API lost.";
-		
+
 	} catch (\Httpful\Exception\ConnectionErrorException $e) {
 		echo "The API is not responding.";
 	}

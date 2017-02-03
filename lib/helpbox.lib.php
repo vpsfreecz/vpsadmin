@@ -5,7 +5,7 @@ function get_helpbox($page = null, $action = null) {
 
 	if (!$api->help_box)
 		return '';
-	
+
 	if (!$page) $page = $_GET["page"];
 	if (!$action) $action = $_GET["action"];
 
@@ -16,8 +16,8 @@ function get_helpbox($page = null, $action = null) {
 
 	$ret = '';
 
-	foreach ($boxes as $box)	
+	foreach ($boxes as $box)
 		$ret .= $box->content.'<br>';
-	
+
 	return $ret;
 }

@@ -37,10 +37,10 @@ function ajax_getHTML($url, $div, $time=1000)
 	<script type="text/javascript">
 	$(document).ready(function (){
 		var ajax_old_data = "";
-		
+
 		setInterval(function () {
 			var ts = Math.round((new Date()).getTime() / 2000);
-			
+
 			$.get("'.$url.'&ts="+ts, function(data) {
 				if ((data != ajax_old_data)) {
 					$("#'.$div.'").html(data);
@@ -61,7 +61,7 @@ function moo_inputremaining($input, $output, $chars, $uid)
 	global $html_js_e;
 
 	$out = $html_js_b."\n";
-	
+
 	$out .= '
 	$(document).ready(function (){
 		$("#'.$input.'").keyup(function (o){

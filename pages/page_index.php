@@ -43,7 +43,7 @@ if ($api->news_log) {
 		$xtpl->table_td($news->message);
 		$xtpl->table_tr();
 	}
-	
+
 	$xtpl->table_td('<a href="?page=log">'._("View all").'</a>', false, false, '2');
 	$xtpl->table_tr();
 }
@@ -91,55 +91,55 @@ foreach ($nodes as $node) {
 			($last_location != 0) &&
 			($last_location != $node->location_id)
 		) {
-		
+
 		 if ($position == 2) {
 			$xtpl->table_td('', false, false, 5);
 		}
-		
+
 		$xtpl->table_tr(true);
 		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		
+
 		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_tr(true);
-		
-		
+
+
 		$position = 1;
 	}
-	
+
 	$last_location = $node->location_id;
-	
+
 	$icons = "";
-	
+
 	$last_report = strtotime($node->last_report);
 	$last_update = date('Y-m-d H:i:s', $last_report).' ('.date('i:s', (time() - $last_report)).' ago)';
-	
+
 	if($node->maintenance_lock != 'no') {
 		$icons .= '<img title="'._("The server is currently under maintenance").': '.htmlspecialchars($node->maintenance_lock_reason).'" src="template/icons/maintenance_mode.png">';
-		
+
 	} elseif ((time() - $last_report) > 150) {
-		
+
 		$icons .= '<img title="'._("The server is not responding")
 					 . ', last update: ' . $last_update
 					 . '" src="template/icons/error.png"/>';
-		
+
 	} else {
-	
+
 		$icons .= '<img title="'._("The server is online")
 					 . ', last update: ' . $last_update
 					 . '" src="template/icons/server_online.png"/>';
-	
+
 	}
-	
+
 	$xtpl->table_td($icons);
-	
+
 	$xtpl->table_td($node->name);
 	$xtpl->table_td($node->vps_count, false, true);
 
@@ -149,13 +149,13 @@ foreach ($nodes as $node) {
 		$xtpl->table_td(sprintf('%.2f %%', 100.0 - $node->cpu_idle), false, true);
 
 	$xtpl->table_td(kernel_version($node->kernel), false, true);
-	
+
 	$position++;
 	if ($position == 3) {
 		$position = 1;
 		$xtpl->table_tr(true);
 	}
-	
+
 }
 
 if($position == 2) { // last row has only one node

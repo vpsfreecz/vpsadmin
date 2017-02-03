@@ -2,7 +2,7 @@
 
 function ip_address_list($page) {
 	global $xtpl, $api;
-	
+
 	$xtpl->title(_('IP Addresses'));
 	$xtpl->table_title(_('Filters'));
 	$xtpl->form_create('', 'get', 'ip-filter', false);
@@ -14,13 +14,13 @@ function ip_address_list($page) {
 	);
 	$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
 	$xtpl->table_tr();
-	
+
 	$versions = array(
 		0 => 'all',
 		4 => '4',
 		6 => '6'
 	);
-	
+
 	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
 	$xtpl->form_add_select(_("Version").':', 'v', $versions, get_val('v', 0));
 
@@ -53,12 +53,12 @@ function ip_address_list($page) {
 	);
 	$xtpl->form_add_select(_("Location").':', 'location',
 		resource_list_to_options($api->location->list()), get_val('location'));
-	
+
 	$xtpl->form_out(_('Show'));
-	
+
 	if (!$_GET['list'])
 		return;
-	
+
 	$params = array(
 		'limit' => get_val('limit', 25),
 		'offset' => get_val('offset', 0),
@@ -71,26 +71,26 @@ function ip_address_list($page) {
 		elseif ($_GET['user'])
 			$params['user'] = $_GET['user'];
 	}
-	
+
 	if ($_GET['vps'] === 'unassigned')
 		$params['vps'] = null;
 	elseif ($_GET['vps'])
 		$params['vps'] = $_GET['vps'];
-	
+
 	if ($_GET['network'])
 		$params['network'] = $_GET['network'];
-	
+
 	if ($_GET['ip_range'])
 		$params['ip_range'] = $_GET['ip_range'];
 
 	if ($_GET['location'])
 		$params['location'] = $_GET['location'];
-	
+
 	if ($_GET['v'])
 		$params['version'] = $_GET['v'];
-	
+
 	$ips = $api->ip_address->list($params);
-	
+
 	$xtpl->table_add_category(_("Network"));
 	$xtpl->table_add_category(_("Range"));
 	$xtpl->table_add_category(_("IP address"));
@@ -109,7 +109,7 @@ function ip_address_list($page) {
 	$xtpl->table_add_category('');
 
 	$return_url = urlencode($_SERVER['REQUEST_URI']);
-	
+
 	foreach ($ips as $ip) {
 		$xtpl->table_td($ip->network->address .'/'. $ip->network->prefix);
 
@@ -129,7 +129,7 @@ function ip_address_list($page) {
 			else
 				$xtpl->table_td('---');
 		}
-		
+
 		if ($ip->vps_id)
 			$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$ip->vps_id.'">'.$ip->vps_id.' ('.$ip->vps->hostname.')</a>');
 		else
@@ -157,12 +157,12 @@ function ip_address_list($page) {
 				'</a>'
 			);
 		}
-		
+
 // 		$xtpl->table_td('<a href="?page=cluster&action=ipaddr_delete&ip_id='.$ip->id.'"><img src="template/icons/m_delete.png"  title="'. _("Delete from cluster") .'" /></a>');
-		
+
 		$xtpl->table_tr();
 	}
-	
+
 	$xtpl->table_out();
 }
 
@@ -206,7 +206,7 @@ function ip_unassign_form($id) {
 		'?page=networking&action=ipaddr_unassign2&id='.$ip->id.'&return='.urlencode($_GET['return']),
 		'post'
 	);
-	
+
 	$xtpl->table_td(_('VPS').':');
 	$xtpl->table_td(
 		'<a href="?page=adminvps&action=info&veid='.$ip->vps_id.'">#'.$ip->vps_id.'</a>'.
@@ -228,7 +228,7 @@ function ip_unassign_form($id) {
 
 function ip_range_list() {
 	global $xtpl, $api;
-	
+
 	$xtpl->table_title(_('Filters'));
 	$xtpl->form_create('', 'get', 'ip-ranges-filter', false);
 
@@ -239,13 +239,13 @@ function ip_range_list() {
 	);
 	$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
 	$xtpl->table_tr();
-	
+
 	$versions = array(
 		0 => 'all',
 		4 => '4',
 		6 => '6'
 	);
-	
+
 	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
 	$xtpl->form_add_select(_("Version").':', 'v', $versions, get_val('v', 0));
 
@@ -266,12 +266,12 @@ function ip_range_list() {
 	);
 	$xtpl->form_add_select(_("Location").':', 'location',
 		resource_list_to_options($api->location->list()), get_val('location'));
-	
+
 	$xtpl->form_out(_('Show'));
-	
+
 	if ($_SESSION['is_admin'] && !$_GET['list'])
 		return;
-	
+
 	$params = array(
 		'limit' => get_val('limit', 25),
 		'offset' => get_val('offset', 0),
@@ -284,18 +284,18 @@ function ip_range_list() {
 		elseif ($_GET['user'])
 			$params['user'] = $_GET['user'];
 	}
-	
+
 	if ($_GET['network'])
 		$params['network'] = $_GET['network'];
-	
+
 	if ($_GET['location'])
 		$params['location'] = $_GET['location'];
-	
+
 	if ($_GET['v'])
 		$params['version'] = $_GET['v'];
 
 	$ranges = $api->ip_range->list($params);
-	
+
 	$xtpl->title(_('IP ranges'));
 
 	$xtpl->table_add_category(_('Network'));

@@ -19,35 +19,35 @@ function cluster_header() {
 
 	if ($api->help_box)
 		$xtpl->sbar_add(_("Help boxes"), '?page=cluster&action=helpboxes');
-	
+
 	$xtpl->table_title(_("Summary"));
-	
+
 	$stats = $api->cluster->full_stats();
-	
+
 	$xtpl->table_td(_("Nodes").':');
 	$xtpl->table_td($stats["nodes_online"] .' '._("online").' / '. $stats["node_count"] .' '._("total"), $stats["nodes_online"] < $stats["node_count"] ? '#FFA500' : '#66FF66');
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_td(_("VPS").':');
 	$xtpl->table_td($stats["vps_running"] .' '._("running").' / '. $stats["vps_stopped"] .' '._("stopped").' / '. $stats["vps_suspended"] .' '._("suspended").' / '.
 					$stats["vps_deleted"] .' '._("deleted").' / '. $stats["vps_count"] .' '._("total"));
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_td(_("Members").':');
 	$xtpl->table_td($stats["user_active"] .' '._("active").' / '. $stats["user_suspended"] .' '._("suspended")
 	                .' / '. $stats["user_deleted"] .' '._("deleted").' / '. $stats["user_count"] .' '._("total"));
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_td(_("IPv4 addresses").':');
 	$xtpl->table_td($stats["ipv4_used"] .' '._("used").' / '. $stats["ipv4_count"] .' '._("total"));
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_out();
 }
 
 function node_overview() {
 	global $xtpl, $api;
-	
+
 	$xtpl->table_title(_("Node list"));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('#');
@@ -63,26 +63,26 @@ function node_overview() {
 	$xtpl->table_add_category(_("Version"));
 	$xtpl->table_add_category(_("Kernel"));
 	$xtpl->table_add_category('<img title="'._("Toggle maintenance on node.").'" alt="'._("Toggle maintenance on node.").'" src="template/icons/maintenance_mode.png">');
-	
+
 	foreach ($api->node->overview_list() as $node) {
 		// Availability icon
 		$icons = "";
 		$maintenance_toggle = $node->maintenance_lock == 'lock' ? 0 : 1;
-	
+
 		$t = new DateTime($node->last_report);
 		$t->setTimezone(new DateTimeZone(date_default_timezone_get()));
-		
+
 		if (!$node->last_report || (time() - $t->getTimestamp()) > 150) {
 			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
-		
+
 		} else {
 			$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
 		}
-		
+
 		$icons = '<a href="?page=cluster&action='.($maintenance_toggle ? 'maintenance_lock' : 'set_maintenance_lock').'&type=node&obj_id='.$node->id.'&lock='.$maintenance_toggle.'">'.$icons.'</a>';
-		
+
 		$xtpl->table_td($icons, false, true);
-		
+
 		// Node ID, Name, IP, load
 		$xtpl->table_td($node->id);
 		$xtpl->table_td($node->domain_name);
@@ -106,15 +106,15 @@ function node_overview() {
 
 		// Daemon version
 		$xtpl->table_td($node->version, false, true);
-		
+
 		// Kernel
 		$xtpl->table_td(kernel_version($node->kernel));
-		
+
 		$xtpl->table_td(maintenance_lock_icon('node', $node));
-		
+
 		$xtpl->table_tr();
 	}
-	
+
 	$xtpl->table_out('cluster_node_list');
 
 
@@ -134,52 +134,52 @@ function node_vps_overview() {
 	$xtpl->table_add_category(_("Free"));
 	$xtpl->table_add_category(_("Max"));
 	$xtpl->table_add_category(' ');
-	
+
 	foreach ($api->node->overview_list() as $node) {
 		// Availability icon
 		$icons = "";
 		$maintenance_toggle = $node->maintenance_lock == 'lock' ? 0 : 1;
-	
+
 		$t = new DateTime($node->last_report);
 		$t->setTimezone(new DateTimeZone(date_default_timezone_get()));
-		
+
 		if (!$node->last_report || (time() - $t->getTimestamp()) > 150) {
 			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';
-		
+
 		} else {
 			$icons .= '<img title="'._("The server is online").'" src="template/icons/server_online.png"/>';
 		}
-		
+
 		$icons = '<a href="?page=cluster&action='.($maintenance_toggle ? 'maintenance_lock' : 'set_maintenance_lock').'&type=node&obj_id='.$node->id.'&lock='.$maintenance_toggle.'">'.$icons.'</a>';
-		
+
 		$xtpl->table_td($icons, false, true);
-		
+
 		// Node ID, Name, IP, load
 		$xtpl->table_td($node->id);
 		$xtpl->table_td($node->domain_name);
-		
+
 		// Up, down, del, sum
 		$xtpl->table_td($node->vps_running, false, true);
 		$xtpl->table_td($node->vps_stopped, false, true);
 		$xtpl->table_td($node->vps_deleted, false, true);
 		$xtpl->table_td($node->vps_total, false, true);
-		
+
 		// Free, max
 		$xtpl->table_td($node->vps_free, false, true);
 		$xtpl->table_td($node->vps_max, false, true);
-		
+
 		$xtpl->table_td('<a href="?page=cluster&action=node_edit&node_id='.$node->id.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-		
-		
+
+
 		$xtpl->table_tr();
 	}
-	
+
 	$xtpl->table_out('cluster_node_list');
 }
 
 function networks_list($title) {
 	global $xtpl, $api;
-	
+
 	$xtpl->title(_('Networks'));
 
 	$xtpl->table_add_category(_('Network'));
@@ -242,13 +242,13 @@ function ip_list_link($page, $text, $conds) {
 
 function ip_add_form($ip_addresses = '') {
 	global $xtpl, $api;
-	
+
 	if (!$ip_addresses && $_POST['ip_addresses'])
 		$ip_addresses = $_POST['ip_addresses'];
-	
+
 	$xtpl->table_title(_("Add IP addresses"));
 	$xtpl->sbar_add(_("Back"), '?page=cluster&action=ip_addresses');
-	
+
 	$xtpl->form_create('?page=cluster&action=ipaddr_add2', 'post');
 	$xtpl->form_add_textarea(_("IP addresses").':', 40, 10, 'ip_addresses', $ip_addresses);
 	$xtpl->form_add_select(
@@ -264,7 +264,7 @@ function ip_add_form($ip_addresses = '') {
 	);
 	$xtpl->form_add_select(_("User").':', 'user',
 		resource_list_to_options($api->user->list(), 'id', 'login'), $_POST['user']);
-	
+
 	$xtpl->form_out(_("Add"));
 }
 
@@ -278,7 +278,7 @@ function ip_edit_form($id) {
 		_("Back"),
 		$_GET['return'] ? $_GET['return'] : '?page=cluster&action=ip_addresses'
 	);
-	
+
 	$xtpl->form_create(
 		'?page=cluster&action=ipaddr_edit2&id='.$ip->id.'&return='.urlencode($_GET['return']),
 		'post'
@@ -294,7 +294,7 @@ function ip_edit_form($id) {
 		'Mbps'
 	);
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_td(_('Max RX').':');
 	$xtpl->form_add_number_pure(
 		'max_rx',
@@ -313,45 +313,45 @@ function ip_edit_form($id) {
 
 function dns_delete_form() {
 	global $xtpl, $api;
-	
+
 	$ns = $api->dns_resolver->find($_GET['id']);
-	
+
 	$xtpl->table_title(_("Delete DNS resolver").' '.$ns->label.' ('.$ns->ip_addr.')');
 	$xtpl->form_create('?page=cluster&action=dns_delete&id='.$_GET['id'], 'post');
-	
+
 	api_params_to_form($api->dns_resolver->delete, 'input');
-	
+
 	$xtpl->form_out(_("Delete"));
 }
 
 function os_template_edit_form() {
 	global $xtpl, $api;
-	
+
 	$t = $api->os_template->find($_GET['id']);
-	
+
 	$xtpl->title2(_("Edit template").' '.$t->label);
-	
+
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
-	
+
 	$xtpl->form_create('?page=cluster&action=templates_edit&id='.$t->id, 'post');
 	api_update_form($t);
 	$xtpl->form_out(_("Save changes"));
-	
+
 	$xtpl->sbar_add(_("Back"), '?page=cluster&action=templates');
 }
 
 function os_template_add_form() {
 	global $xtpl, $api;
-	
+
 	$xtpl->title2(_("Register new template"));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
-	
+
 	$xtpl->form_create('?page=cluster&action=template_register', 'post');
 	api_create_form($api->os_template);
 	$xtpl->form_out(_("Register"));
-	
+
 	$xtpl->sbar_add(_("Back"), '?page=cluster&action=templates');
 }
 
@@ -367,7 +367,7 @@ function integrity_check_list() {
 
 	$xtpl->table_title(_('Filters'));
 	$xtpl->form_create('', 'get', 'check-filter', false);
-		
+
 	$xtpl->table_td(_("Limit").':'.
 		'<input type="hidden" name="page" value="cluster">'.
 		'<input type="hidden" name="action" value="integrity_check">'.
@@ -375,7 +375,7 @@ function integrity_check_list() {
 	);
 	$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
 	$xtpl->table_tr();
-	
+
 	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
 
 
@@ -385,14 +385,14 @@ function integrity_check_list() {
 		->include
 		->values;
 	$empty = array('' => _('---'));
-		
+
 	$xtpl->form_add_select(
 	 	_('Status').':',
 		'status',
 		$empty + $statuses,
 		$_GET['status']
 	);
-		
+
 	$xtpl->form_out(_('Show'));
 
 	if (!$_GET['list'])
@@ -468,7 +468,7 @@ function integrity_object_list() {
 
 	$xtpl->table_title(_('Filters'));
 	$xtpl->form_create('', 'get', 'check-filter', false);
-		
+
 	$xtpl->table_td(_("Limit").':'.
 		'<input type="hidden" name="page" value="cluster">'.
 		'<input type="hidden" name="action" value="integrity_objects">'.
@@ -476,7 +476,7 @@ function integrity_object_list() {
 	);
 	$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
 	$xtpl->table_tr();
-	
+
 	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
 
 	$check_param = $api->integrity_object->list->getParameters('input')->integrity_check;
@@ -502,14 +502,14 @@ function integrity_object_list() {
 		->include
 		->values;
 	$empty = array('' => _('---'));
-		
+
 	$xtpl->form_add_select(
 	 	_('Status').':',
 		'status',
 		$empty + $statuses,
 		$_GET['status']
 	);
-		
+
 	$xtpl->form_out(_('Show'));
 
 	if (!$_GET['list'])
@@ -532,16 +532,16 @@ function integrity_object_list() {
 
 	if ($_GET['integrity_check'])
 		$params['integrity_check'] = $_GET['integrity_check'];
-	
+
 	if ($_GET['node'])
 		$params['node'] = $_GET['node'];
-	
+
 	if ($_GET['class_name'])
 		$params['class_name'] = $_GET['class_name'];
 
 	if ($_GET['row_id'])
 		$params['row_id'] = $_GET['row_id'];
-	
+
 	if (isset($_GET['status']) && $_GET['status'] !== '')
 		$params['status'] = $statuses[ $_GET['status'] ];
 
@@ -588,7 +588,7 @@ function integrity_fact_list() {
 
 	$xtpl->table_title(_('Filters'));
 	$xtpl->form_create('', 'get', 'check-filter', false);
-		
+
 	$xtpl->table_td(_("Limit").':'.
 		'<input type="hidden" name="page" value="cluster">'.
 		'<input type="hidden" name="action" value="integrity_facts">'.
@@ -596,7 +596,7 @@ function integrity_fact_list() {
 	);
 	$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
 	$xtpl->table_tr();
-	
+
 	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
 
 	$input = $api->integrity_fact->list->getParameters('input');
@@ -605,7 +605,7 @@ function integrity_fact_list() {
 		$input->integrity_check,
 		$_GET['integrity_check']
 	);
-	
+
 	$xtpl->form_add_select(
 		_('Node').':',
 		'node',
@@ -618,7 +618,7 @@ function integrity_fact_list() {
 
 	$statuses = $input->status->validators->include->values;
 	$empty = array('' => _('---'));
-		
+
 	$xtpl->form_add_select(
 	 	_('Status').':',
 		'status',
@@ -633,7 +633,7 @@ function integrity_fact_list() {
 		$empty + $severities,
 		$_GET['severity']
 	);
-		
+
 	$xtpl->form_out(_('Show'));
 
 	if (!$_GET['list'])
@@ -653,10 +653,10 @@ function integrity_fact_list() {
 
 	if ($_GET['integrity_check'])
 		$params['integrity_check'] = $_GET['integrity_check'];
-	
+
 	if ($_GET['node'])
 		$params['node'] = $_GET['node'];
-	
+
 	if ($_GET['class_name'])
 		$params['class_name'] = $_GET['class_name'];
 
@@ -665,7 +665,7 @@ function integrity_fact_list() {
 
 	if (isset($_GET['status']) && $_GET['status'] !== '')
 		$params['status'] = $statuses[ $_GET['status'] ];
-	
+
 	if (isset($_GET['severity']) && $_GET['severity'] !== '')
 		$params['severity'] = $severities[ $_GET['severity'] ];
 
@@ -714,16 +714,16 @@ function node_create_form() {
 
 function node_update_form($id) {
 	global $xtpl, $api;
-	
+
 	$node = $api->node->show($id);
 
 	$xtpl->title2(_("Edit node"));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 	$xtpl->form_create('?page=cluster&action=node_edit_save&node_id='.$node->id, 'post');
-	
+
 	api_update_form($node);
-	
+
 	$xtpl->form_out(_("Save"));
 }
 
@@ -794,7 +794,7 @@ function news_list_and_create_form() {
 	$xtpl->form_add_input(_("Date and time").':', 'text', '30', 'published_at', post_val('published_at', strftime("%Y-%m-%d %H:%M")));
 	$xtpl->form_add_textarea(_("Message").':', 80, 5, 'message', post_val('message'));
 	$xtpl->form_out(_("Add"));
-	
+
 	$xtpl->table_add_category(_('Date and time'));
 	$xtpl->table_add_category(_('Message'));
 	$xtpl->table_add_category('');
@@ -807,7 +807,7 @@ function news_list_and_create_form() {
 		$xtpl->table_td('<a href="?page=cluster&action=log_del&id='.$news->id.'" title="'._("Delete").'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
 		$xtpl->table_tr();
 	}
-	
+
 	$xtpl->table_out();
 }
 
@@ -826,7 +826,7 @@ function helpbox_list_and_create_form() {
 	global $xtpl, $api;
 
 	$xtpl->table_title(_("Help boxes"));
-	
+
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 	$xtpl->form_create('?page=cluster&action=helpboxes_add', 'post');
@@ -835,7 +835,7 @@ function helpbox_list_and_create_form() {
 	$xtpl->form_add_select(_("Language").':', 'language', resource_list_to_options($api->language->list()), post_val('language'));
 	$xtpl->form_add_textarea(_("Content").':', 80, 15, 'content', post_val('content'));
 	$xtpl->form_out(_("Add"));
-	
+
 	$xtpl->table_add_category(_("Page"));
 	$xtpl->table_add_category(_("Action"));
 	$xtpl->table_add_category(_("Language"));
@@ -856,7 +856,7 @@ function helpbox_list_and_create_form() {
 		$xtpl->table_td('<a href="?page=cluster&action=helpboxes_del&id='.$box->id.'" title="'._("Delete").'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
 		$xtpl->table_tr();
 	}
-	
+
 	$xtpl->table_out();
 }
 
@@ -864,7 +864,7 @@ function helpbox_edit_form($id) {
 	global $xtpl, $api;
 
 	$box = $api->help_box->show($id);
-	
+
 	$xtpl->form_create('?page=cluster&action=helpboxes_edit_save&id='.$box->id, 'post');
 	$xtpl->form_add_input(_("Page").':', 'text', '30', 'page', $box->page);
 	$xtpl->form_add_input(_("Action").':', 'text', '30', 'action', $box->action);

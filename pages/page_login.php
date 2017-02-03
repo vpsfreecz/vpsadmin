@@ -22,23 +22,23 @@
 
 if ($_GET["action"] == 'login') {
 	$access_url = $_SESSION["access_url"];
-	
+
 	if ($_POST["passwd"] && $_POST["username"]) {
 		try {
 			session_destroy();
 			session_start();
-			
+
 			$api->authenticate('token', array(
 				'username' => $_POST['username'],
 				'password' => $_POST['passwd'],
 				'lifetime' => 'renewable_auto',
 				'interval' => USER_LOGIN_INTERVAL
 			));
-			
+
 			$m = $api->user->current();
-			
+
 			$_SESSION["user"]["id"] = $m->id;
-			
+
 			$_SESSION["logged_in"] = true;
 			$_SESSION["auth_token"] = $api->getAuthenticationProvider()->getToken();
 			$_SESSION["user"] = array(
@@ -49,32 +49,32 @@ if ($_GET["action"] == 'login') {
 			$_SESSION["is_poweruser"] =  ($m->level >= PRIV_POWERUSER) ?  true : false;
 			$_SESSION["is_admin"] =      ($m->level >= PRIV_ADMIN) ?      true : false;
 			$_SESSION["is_superadmin"] = ($m->level >= PRIV_SUPERADMIN) ? true : false;
-			
+
 			csrf_init();
-			
+
 			$xtpl->perex(_("Welcome, ").$member->m["m_nick"],
 					_("Login successful <br /> Your privilege level: ")
 					. $cfg_privlevel[$m->level]);
-			
+
 			$api->user->touch($m->id);
-			
+
 			if($access_url
 				&& strpos($access_url, "?page=login&action=login") === false
 				&& strpos($access_url, "?page=jumpto") === false) {
-				
+
 				redirect($access_url);
-				
+
 			} elseif ($_SESSION["is_admin"]) {
 				redirect('?page=cluster');
-				
+
 			} else {
 				redirect('?page=');
 			}
-			
+
 		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 			$xtpl->perex(_("Error"), _("Wrong username or password."));
 		}
-		
+
 	} else $xtpl->perex(_("Error"), _("Wrong username or password"));
 }
 
@@ -83,7 +83,7 @@ if ($_GET["action"] == 'logout') {
 	$_SESSION["logged_in"] = false;
 	$_SESSION["auth_token"] = NULL;
 	unset($_SESSION["user"]);
-	
+
 	$api->logout();
 
 	$xtpl->perex(_("Goodbye"), _("Logout successful"));
@@ -95,7 +95,7 @@ if ($_SESSION["is_admin"] && ($_GET["action"] == 'drop_admin')) {
 	$_SESSION["context_switch"] = true;
 	$_SESSION["original_admin"] = $_SESSION;
 	$_SESSION["is_admin"] = false;
-	
+
 	$xtpl->perex(_("Dropped admin privileges"), '');
 	redirect($_GET["next"]);
 }
@@ -114,10 +114,10 @@ if ($_SESSION["is_admin"] && ($_GET["action"] == 'switch_context') && isset($_GE
 			'lifetime' => 'renewable_auto',
 			'interval' => USER_LOGIN_INTERVAL
 		));
-		
+
 		session_destroy();
 		session_start();
-		
+
 		// Do this to reload description from the API
 		$api->authenticate('token', array('token' => $token->token));
 
@@ -132,14 +132,14 @@ if ($_SESSION["is_admin"] && ($_GET["action"] == 'switch_context') && isset($_GE
 		$_SESSION["is_poweruser"] =  ($user->level >= PRIV_POWERUSER) ?  true : false;
 		$_SESSION["is_admin"] =      ($user->level >= PRIV_ADMIN) ?      true : false;
 		$_SESSION["is_superadmin"] = ($user->level >= PRIV_SUPERADMIN) ? true : false;
-		
+
 		$_SESSION["context_switch"] = true;
 		$_SESSION["original_admin"] = $admin;
 
 		notify_user(_("Change to").' '.$user->login.' '._('was successful'),
 				_("Your privilege level: ")
 				. $cfg_privlevel[$user->level]);
-		
+
 		redirect($_GET["next"]);
 
 	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
@@ -149,21 +149,21 @@ if ($_SESSION["is_admin"] && ($_GET["action"] == 'switch_context') && isset($_GE
 
 if ($_GET["action"] == "regain_admin" && $_SESSION["context_switch"]) {
 	$admin = $_SESSION["original_admin"];
-	
+
 	if($_SESSION["borrowed_token"]) {
 		try {
 			$api->logout();
 			$api->authenticate('token', array('token' => $admin['auth_token']));
-			
+
 		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 			notify_user(_('Failed to destroy borrowed token'), $e->getResponse());
 		}
 	}
-	
+
 	session_destroy();
 	session_start();
-		
+
 	$_SESSION = $admin;
-	
+
 	redirect($_GET["next"]);
 }

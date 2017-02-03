@@ -466,7 +466,7 @@ class XTemplate {
 				$this->assign("V_SEARCH", $_SESSION["jumpto"]);
 				$this->assign("L_JUMP", _("Jump"));
 				$this->parse("main.loggedbox.jumpto");
-				
+
 				if ($maint_mode) {
 					$this->assign("L_MAINTENANCE_MODE_ON",_("Maintenance mode status: ON"));
 					$this->parse("main.loggedbox.is_admin.maintenance_mode_on");
@@ -481,7 +481,7 @@ class XTemplate {
 				$this->assign('L_USER_ID', $_SESSION["user"]["id"]);
 				$this->assign('L_EDIT_PROFILE', _("Edit profile"));
 				$this->parse("main.loggedbox.not_admin");
-				
+
 				if($_SESSION["context_switch"]) {
 					$this->assign('L_REGAIN_PRIVILEGES', _("Regain privileges"));
 					$this->assign('V_NEXT', urlencode($_SERVER["REQUEST_URI"]));
@@ -538,18 +538,18 @@ class XTemplate {
 	function perex_format_errors($title, $response) {
 		$body = _('Error message: '). $response->getMessage();
 		$errors = $response->getErrors();
-		
+
 		$body .= '<br>';
-		
+
 		if(count($errors)) {
 			$body .= '<ul>';
-			
+
 			foreach($errors as $param => $err)
 				$body .= '<li>'.$param.': '.implode(', ', $err).'</li>';
-			
+
 			$body .= '</ul>';
 		}
-		
+
 		$this->perex($title, $body);
 	}
 	/**
@@ -632,11 +632,11 @@ class XTemplate {
 				$this->assign('TRCLASS', 'oddrow');
 			}
 		}
-		
+
 		if ($id)
 			$this->assign('TRID', 'id="'.$id.'"');
 		else $this->assign('TRID', '');
-		
+
 		$this->parse('main.table.tr');
 	}
 	/**
@@ -647,7 +647,7 @@ class XTemplate {
 			$this->assign('TABLE_ID', 'id="'.$id.'"');
 			$this->parse('main.table.table_id');
 		}
-		
+
 		$this->table_rows = 0;
 		$this->parse('main.table');
 	}
@@ -659,7 +659,7 @@ class XTemplate {
 	  */
 	function form_create($action = '?page=', $method = 'post', $name = 'generic_form', $csrf = true) {
 		$this->assign('TABLE_FORM_BEGIN','<form action="'.$action.'" method="'.$method.'" name="'.$name.'" AUTOCOMPLETE=OFF>');
-		
+
 		$this->form_csrf('common', $csrf);
 	}
 	/**
@@ -715,7 +715,7 @@ class XTemplate {
 
 		return 'input'.$uid;
 	}
-	
+
 	/**
 	  * Add input to form without label
 	  * @param $type - type of HTML input
@@ -727,14 +727,14 @@ class XTemplate {
 	  */
 	function form_add_input_pure($type = 'text', $size = '30', $name = 'input_fromgen', $value = '') {
 		$this->table_td('<input type="'.$type.'" size="'.$size.'" name="'.$name.'" id="input'. $uid .'" value="'.$value.'" '.$maxlength.' '.$extra.' />');
-		
+
 		return 'input'.$uid;
 	}
-	
+
 	function form_add_number_pure($name, $value, $min = 0, $max = 999999, $step = 1, $unit = '') {
 		$this->table_td('<input type="number" name="'.$name.'" value="'.$value.'" min="'.$min.'" max="'.$max.'" step="'.$step.'">&nbsp;'.$unit);
 	}
-	
+
 	/**
 	  * Add select (combobox) to form
 	  * @param $label - label of textarea
@@ -757,7 +757,7 @@ class XTemplate {
 		if ($hint != '') $this->table_td($hint);
 		$this->table_tr(false, false, false, $name);
 	}
-	
+
 	/**
 	  * Add select (combobox) to form
 	  * @param $name - $_RESULT[name]
@@ -792,10 +792,10 @@ class XTemplate {
 
 		if ($step)
 			$input .= 'step="'.$step.'" ';
-		
+
 		$input .= '>';
 
-		$this->table_td($input);	
+		$this->table_td($input);
 	}
 
 
@@ -848,7 +848,7 @@ class XTemplate {
 		if ($hint != '') $this->table_td($hint);
 		$this->table_tr();
 	}
-	
+
 	/**
 	  * Add checkobox to form without label
 	  * @param $name - $_RESULT[name]
@@ -858,7 +858,7 @@ class XTemplate {
 	function form_add_checkbox_pure($name = 'input_fromgen', $value = '', $checked=false, $text = '') {
 		$this->table_td('<input type="checkbox" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' /> '.$text);
 	}
-	
+
 	/**
 	  * Add radio to form
 	  * @param $label - label of radio
@@ -873,7 +873,7 @@ class XTemplate {
 		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' /> '.$text);
 		if ($hint != '') $this->table_td($hint);
 	}
-	
+
 	/**
 	  * Add radio to form
 	  * @param $name - $_RESULT[name]
@@ -884,18 +884,18 @@ class XTemplate {
 	function form_add_radio_pure($name = 'input_fromgen', $value = '', $checked=false, $text = '') {
 		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' /> '.$text);
 	}
-	
+
 	function form_csrf($name = 'common', $present = true) {
 		if ($present)
 			$this->assign('FORM_CSRF_TOKEN', '<input type="hidden" name="csrf_token" value="'.csrf_token($name).'">');
 		else
 			$this->assign('FORM_CSRF_TOKEN', '');
 	}
-	
+
 	function html_submit($value, $name = null) {
 		return '<input type="submit" name="'.$name.'" value="'.$value.'" class="button" />';
 	}
-	
+
 	/**
 	  * Parse out the form
 	  * @param $submit_label - label of submit button of the form
@@ -904,7 +904,7 @@ class XTemplate {
 		$this->assign('TABLE_FORM_END','</form>');
 		$this->table_out($id);
 	}
-	
+
 	/**
 	  * Parse out the form
 	  * @param $submit_label - label of submit button of the form
@@ -926,25 +926,25 @@ class XTemplate {
 		$this->assign('T_CLASS', $chain->state);
 		$this->assign('T_PROGRESS', round((100.0 / $chain->size) * $chain->progress). '&nbsp;%');
 		$this->assign('T_PROGRESS_VAL', $chain->progress);
-		
+
 		switch ($chain->state) {
 			case 'staged':
 			case 'queued':
 				$this->assign('T_ICO', '<img src="template/icons/transact_pending.gif"> ');
 				break;
-				
+
 		    case "done":
 				$this->assign('T_ICO', '<img src="template/icons/transact_ok.png"> ');
 				break;
-				
+
 			case 'failed':
 				$this->assign('T_ICO', '<img src="template/icons/transact_fail.png"> ');
 				break;
-				
+
 // 			case "warning":
 // 				$this->assign('T_ICO', '<img src="template/icons/warning.png"> ');
 // 				break;
-				
+
 		    default:
 				$this->assign('T_ICO', '<img src="template/icons/transact_fail.png"> ');
 				break;
@@ -960,7 +960,7 @@ class XTemplate {
 		$this->assign("L_WHAT", _("Object"));
 		$this->assign("L_ACTION", _("Action"));
 		$this->assign("L_PROGRESS", _("%"));
-		
+
 		$this->parse('main.transaction_chains');
 	}
 	/**

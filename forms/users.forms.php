@@ -2,24 +2,24 @@
 
 function environment_configs($user_id) {
 	global $xtpl, $api;
-	
+
 	$cfgs = $api->user($user_id)->environment_config->list(array(
 		'meta' => array('includes' => 'environment')
 	));
-	
+
 	$xtpl->title(_('User').' <a href="?page=adminm&action=edit&id='.$user_id.'">#'.$user_id.'</a>: '._('Environment configs'));
-	
+
 	$xtpl->table_add_category(_('Environment'));
 	$xtpl->table_add_category(_('Create VPS'));
 	$xtpl->table_add_category(_('Destroy VPS'));
 	$xtpl->table_add_category(_('VPS count'));
 	$xtpl->table_add_category(_('VPS lifetime'));
-	
+
 	if ($_SESSION['is_admin']) {
 		$xtpl->table_add_category(_('Default'));
 		$xtpl->table_add_category('');
 	}
-	
+
 	foreach ($cfgs as $c) {
 		$vps_count = $api->vps->list(array(
 			'limit' => 0,
@@ -37,39 +37,39 @@ function environment_configs($user_id) {
 			true
 		);
 		$xtpl->table_td(format_duration($c->vps_lifetime), false, true);
-		
+
 		if ($_SESSION['is_admin']) {
 			$xtpl->table_td(boolean_icon($c->default));
 			$xtpl->table_td('<a href="?page=adminm&section=members&action=env_cfg_edit&id='.$user_id.'&cfg='.$c->id.'"><img src="template/icons/m_edit.png"  title="'._("Edit").'"></a>');
 		}
-		
+
 		$xtpl->table_tr();
 	}
-	
+
 	$xtpl->table_out();
-	
+
 	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&section=members&action=edit&id=$user_id");
 }
 
 function env_cfg_edit_form($user_id, $cfg_id) {
 	global $xtpl, $api;
-	
+
 	$cfg = $api->user($user_id)->environment_config->find($cfg_id, array(
 		'meta' => array('includes' => 'environment')
 	));
-	
+
 	$xtpl->title(_('User').' <a href="?page=adminm&action=edit&id='.$user_id.'">#'.$user_id.'</a>: '._('Environment config for').' '.$cfg->environment->label);
-	
+
 	$xtpl->form_create("?page=adminm&action=env_cfg_edit&id=$user_id&cfg=$cfg_id");
-	
+
 	$xtpl->table_td(_('Environment'));
 	$xtpl->table_td($cfg->environment->label);
 	$xtpl->table_tr();
-	
+
 	api_update_form($cfg);
-	
+
 	$xtpl->form_out(_('Save'));
-	
+
 	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to environment configs").'" />'._('Back to user details'), "?page=adminm&section=members&action=env_cfg&id=$user_id");
 }
 
@@ -81,7 +81,7 @@ function list_user_sessions($user_id) {
 	$xtpl->title(_('Session log of').' <a href="?page=adminm&action=edit&id='.$u->id.'">#'.$u->id. '</a> '.$u->login);
 	$xtpl->table_title(_('Filters'));
 	$xtpl->form_create('', 'get', 'user-session-filter', false);
-	
+
 	$xtpl->table_td(_("Limit").':'.
 		'<input type="hidden" name="page" value="adminm">'.
 		'<input type="hidden" name="action" value="user_sessions">'.
@@ -90,7 +90,7 @@ function list_user_sessions($user_id) {
 	);
 	$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
 	$xtpl->table_tr();
-	
+
 	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
 	$xtpl->form_add_input(_("Exact ID").':', 'text', '40', 'session_id', get_val('session_id', ''), '');
 	$xtpl->form_add_input(_("Authentication type").':', 'text', '40', 'auth_type', get_val('auth_type', ''), '');
@@ -142,7 +142,7 @@ function list_user_sessions($user_id) {
 
 	if ($_SESSION['is_admin'])
 		$xtpl->table_add_category(_("Admin"));
-	
+
 	$xtpl->table_add_category('');
 
 	foreach ($sessions as $s) {
@@ -194,7 +194,7 @@ function list_user_sessions($user_id) {
 	}
 
 	$xtpl->table_out();
-	
+
 	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&action=edit&id=$user_id");
 }
 
@@ -202,9 +202,9 @@ function approval_requests_list() {
 	global $xtpl, $api;
 
 	$xtpl->title(_("Requests for approval"));
-	
+
 	$xtpl->form_create('?page=adminm&section=members&action=approval_requests', 'get');
-	
+
 	$xtpl->table_td(_("Limit").':'.
 		'<input type="hidden" name="page" value="adminm">'.
 		'<input type="hidden" name="section" value="members">'.
@@ -212,7 +212,7 @@ function approval_requests_list() {
 	);
 	$xtpl->form_add_input_pure('text', '30', 'limit', $_GET["limit"] ? $_GET["limit"] : 50);
 	$xtpl->table_tr();
-	
+
 	$xtpl->form_add_select(_("Type").':', 'type', array(
 		"registration" => _("registration"),
 		"change" => _("change")
@@ -224,16 +224,16 @@ function approval_requests_list() {
 		"denied" => _("denied"),
 		"ignored" => _("ignored")
 	), $_GET["state"] ? $_GET["state"] : "awaiting");
-	
+
 	$xtpl->form_add_input(_("IP address").':', 'text', '30', 'ip_addr', $_GET["ip_addr"]);
 	$xtpl->form_add_input(_("User ID").':', 'text', '30', 'user', $_GET["user"]);
 	$xtpl->form_add_input(_("Admin ID").':', 'text', '30', 'admin', $_GET["admin"]);
-	
+
 	$xtpl->form_out(_("Show"));
 
 	if (!isset($_GET['type']))
 		return;
-	
+
 	$xtpl->table_add_category('#');
 	$xtpl->table_add_category('DATE');
 	$xtpl->table_add_category('LABEL');
@@ -256,7 +256,7 @@ function approval_requests_list() {
 	}
 
 	$requests = $api->user_request->{$_GET['type']}->list($params);
-	
+
 	foreach ($requests as $r) {
 		$xtpl->table_td('<a href="?page=adminm&action=request_details&id='.$r->id.'&type='.$_GET['type'].'">#'.$r->id.'</a>');
 		$xtpl->table_td(tolocaltz($r->created_at));
@@ -268,70 +268,70 @@ function approval_requests_list() {
 		$xtpl->table_td('<a href="?page=adminm&action=request_process&id='.$r->id.'&type='.$_GET['type'].'&rule=approve">'._("approve").'</a>');
 		$xtpl->table_td('<a href="?page=adminm&action=request_process&id='.$r->id.'&type='.$_GET['type'].'&rule=deny">'._("deny").'</a>');
 		$xtpl->table_td('<a href="?page=adminm&action=request_process&id='.$r->id.'&type='.$_GET['type'].'&rule=ignore">'._("ignore").'</a>');
-		
+
 		$xtpl->table_tr();
 	}
-	
+
 	$xtpl->table_out();
 
 }
 
 function approval_requests_details($type, $id) {
 	global $xtpl, $api;
-	
+
 	$r = $api->user_request->{$type}->show($id);
-	
+
 	$xtpl->title(_("Request for approval details"));
-	
+
 	$xtpl->table_add_category(_("Request info"));
 	$xtpl->table_add_category('');
-	
+
 	$xtpl->table_td(_("Created").':');
 	$xtpl->table_td(tolocaltz($r->created_at));
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_td(_("Changed").':');
 	$xtpl->table_td(tolocaltz($r->updated_at));
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_td(_("Type").':');
 	$xtpl->table_td($type == "registration" ? _("registration") : _("change"));
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_td(_("State").':');
 	$xtpl->table_td($r->state);
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_td(_("Applicant").':');
 	$xtpl->table_td($r->user_id ? ('<a href="?page=adminm&action=edit&id='.$r->user_id.'">'.$r->user->login.'</a>') : '-');
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_td(_("Admin").':');
 	$xtpl->table_td($r->admin_id ? ('<a href="?page=adminm&action=edit&id='.$r->admin_id.'">'.$r->admin->login.'</a>') : '-');
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_td(_("API IP Address").':');
 	$xtpl->table_td($r->api_ip_addr);
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_td(_("API PTR").':');
 	$xtpl->table_td($r->api_ip_ptr);
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_td(_("Client IP Address").':');
 	$xtpl->table_td($r->client_ip_addr);
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_td(_("Client PTR").':');
 	$xtpl->table_td($r->client_ip_ptr);
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_out();
-	
+
 	$xtpl->form_create('?page=adminm&action=request_process&id='.$r->id.'&type='.$type, 'post');
 	$params = $r->resolve->getParameters('input');
 	$request_attrs = $r->show->getParameters('output');
-	
+
 	foreach ($params as $name => $desc) {
 		api_param_to_form(
 			$name,
@@ -366,11 +366,11 @@ function user_payment_info($u) {
 				$td .= _("->") . ' ' . $paid_until;
 				$color = '#FFA500';
 			}
-			
+
 		} else {
 			$td .= '<strong>' . _("not paid!") . '</strong>';
 			$color = '#B22222';
-			
+
 			if ($u->paid_until) {
 				$td .= ' ('.ceil(($paid_until - time()) / 86400).'d)';
 			}
@@ -379,17 +379,17 @@ function user_payment_info($u) {
 		$td .= '</a>';
 		$xtpl->table_td($td, $color);
 
-		return;	
+		return;
 	}
 
 	if ($paid) {
 		if (($t - time()) >= 604800) {
 			$xtpl->table_td(_("->").' '.$paid_until, '#66FF66');
-			
+
 		} else {
 			$xtpl->table_td(_("->").' '.$paid_until, '#FFA500');
 		}
-		
+
 	} else {
 		$xtpl->table_td('<b>'._("not paid!").'</b>', '#B22222');
 	}
@@ -400,44 +400,44 @@ function user_payment_form($user_id) {
 
 	try {
 		$u = $api->user->find($user_id);
-		
+
 	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 		$xtpl->perex_format_errors(_('User not found'), $e->getResponse());
 		break;
 	}
-	
+
 	$paidUntil = strtotime($u->paid_until);
-	
+
 	$xtpl->title(_("Edit payments"));
 	$xtpl->form_create('?page=adminm&action=payset2&id='.$u->id, 'post');
-	
+
 	$xtpl->table_td(_("Paid until").':');
-	
+
 	if ($paidUntil) {
 		$lastPaidTo = date('Y-m-d', $paidUntil);
-		
+
 	} else {
 		$lastPaidTo = _("Never been paid");
 	}
-	
+
 	$xtpl->table_td($lastPaidTo);
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_td(_("Login").':');
 	$xtpl->table_td($u->login);
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_td(_("Monthly payment").':');
 	$xtpl->table_td($u->monthly_payment);
 	$xtpl->table_tr();
-	
+
 	$xtpl->form_add_input(_("Amount").':', 'text', '30', 'amount', post_val('amount'));
 
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
-	
+
 	$xtpl->form_out(_("Save"));
-	
+
 	$xtpl->table_add_category("ACCEPTED AT");
 	$xtpl->table_add_category("ACCOUNTED BY");
 	$xtpl->table_add_category("AMOUNT");
@@ -467,10 +467,10 @@ function user_payment_form($user_id) {
 		} else {
 			$xtpl->table_td('-');
 		}
-		
+
 		$xtpl->table_tr();
 	}
-	
+
 	$xtpl->table_out();
 }
 
@@ -478,7 +478,7 @@ function user_payment_history() {
 	global $xtpl, $api;
 
 	$xtpl->title(_('Payment history'));
-	
+
 	$xtpl->form_create('?page=adminm&action=payments_history', 'get');
 	$xtpl->table_td(_("Limit").':'.
 		'<input type="hidden" name="page" value="adminm">'.
@@ -499,7 +499,7 @@ function user_payment_history() {
 	}
 
 	$payments = $api->user_payment->list($params);
-	
+
 	$xtpl->table_add_category("ACCEPTED AT");
 	$xtpl->table_add_category("USER");
 	$xtpl->table_add_category("ACCOUNTED BY");
@@ -521,7 +521,7 @@ function user_payment_history() {
 		);
 		$xtpl->table_tr();
 	}
-	
+
 	$xtpl->table_out();
 }
 
@@ -546,7 +546,7 @@ function incoming_payments_list() {
 		$input->state,
 		get_val('state')
 	);
-	
+
 	$xtpl->form_out(_('Show'));
 
 	$params = array(
@@ -556,7 +556,7 @@ function incoming_payments_list() {
 
 	if (isset($_GET['state']))
 		$params['state'] = $input->state->validators->include->values[ (int) $_GET['state'] ];
-	
+
 	$payments = $api->incoming_payment->list($params);
 
 	$xtpl->table_add_category("DATE");
@@ -603,7 +603,7 @@ function incoming_payments_details($id) {
 	$xtpl->table_td(_('Date').':');
 	$xtpl->table_td(tolocaltz($p->date, 'Y-m-d'));
 	$xtpl->table_tr();
-	
+
 	$xtpl->table_td(_('Accepted at').':');
 	$xtpl->table_td(tolocaltz($p->created_at));
 	$xtpl->table_tr();
@@ -632,7 +632,7 @@ function incoming_payments_details($id) {
 		$xtpl->table_td(_('Original amount').':');
 		$xtpl->table_td($p->src_amount);
 		$xtpl->table_tr();
-		
+
 		$xtpl->table_td(_('Original currency').':');
 		$xtpl->table_td($p->src_currency);
 		$xtpl->table_tr();

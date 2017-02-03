@@ -2,16 +2,16 @@
 
 function print_newvps_page1() {
 	global $xtpl, $api;
-	
+
 	$xtpl->title(_("Create a VPS: Select a location (1/2)"));
-	
+
 	$xtpl->form_create('', 'get', 'newvps-step1', false);
 
 	$xtpl->table_td(
 		_('Location').':'.
 		'<input type="hidden" name="page" value="adminvps">'.
 		'<input type="hidden" name="action" value="new2">'
-	);	
+	);
 	$xtpl->form_add_select_pure(
 		'location',
 		resource_list_to_options($api->location->list(array('has_hypervisor' => true))),
@@ -19,20 +19,20 @@ function print_newvps_page1() {
 		''
 	);
 	$xtpl->table_tr();
-	
+
 	$xtpl->form_out(_("Next"));
 }
 
 function print_newvps_page2($loc_id) {
 	global $xtpl, $api;
-	
+
 	if ($_SESSION['is_admin'])
 		$xtpl->title(_("Create a VPS: Specify parameters"));
 	else
 		$xtpl->title(_("Create a VPS: Specify parameters (2/2)"));
-	
+
 	$xtpl->form_create('?page=adminvps&action=new2&location='.$loc_id, 'post');
-	
+
 	if (!$_SESSION['is_admin']) {
 		try {
 			$loc = $api->location->show(
@@ -44,25 +44,25 @@ function print_newvps_page2($loc_id) {
 			notify_user(_('Invalid location'), _('Please select the desired location of your new VPS.'));
 			redirect('?page=adminvps&action=new');
 		}
-		
+
 		$xtpl->table_td(_('Environment').':');
 		$xtpl->table_td($loc->environment->label);
 		$xtpl->table_tr();
-		
+
 		$xtpl->table_td(_('Location').':');
 		$xtpl->table_td($loc->label);
 		$xtpl->table_tr();
 	}
-	
+
 	$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'vps_hostname', $_POST['vps_hostname'], _("A-z, a-z"), 255);
-	
+
 	if ($_SESSION["is_admin"]) {
 		$xtpl->form_add_select(_("Node").':', 'vps_server', resource_list_to_options($api->node->list(), 'id', 'domain_name'), $_POST['vps_server'], '');
 		$xtpl->form_add_select(_("Owner").':', 'm_id', resource_list_to_options($api->user->list(), 'id', 'login'), $_SESSION['user']['id'], '');
 	}
-	
+
 	$xtpl->form_add_select(_("OS template").':', 'vps_template', resource_list_to_options($api->os_template->list()), $_POST['vps_template'],  '');
-	
+
 	$params = $api->vps->create->getParameters('input');
 	$vps_resources = array(
 		'memory' => 4096,
@@ -76,24 +76,24 @@ function print_newvps_page2($loc_id) {
 		'ipv4_private' => 0,
 		'ipv6' => 1,
 	);
-	
+
 	$user_resources = $api->user->current()->cluster_resource->list(array(
 		'environment' => $loc->environment_id,
 		'meta' => array('includes' => 'environment,cluster_resource')
 	));
 	$resource_map = array();
-	
+
 	foreach ($user_resources as $r) {
 		$resource_map[ $r->cluster_resource->name ] = $r;
 	}
-	
+
 	foreach ($vps_resources as $name => $default) {
 		$p = $params->{$name};
 		$r = $resource_map[$name];
-		
+
 		if (!$_SESSION['is_admin'] && $r->value === 0)
 			continue;
-		
+
 		$xtpl->table_td($p->label.':');
 		$xtpl->form_add_number_pure(
 			$name,
@@ -112,10 +112,10 @@ function print_newvps_page2($loc_id) {
 	foreach ($ips as $name => $default) {
 		$p = $params->{$name};
 		$r = $resource_map[$name];
-		
+
 		if (!$_SESSION['is_admin'] && $r->value === 0)
 			continue;
-		
+
 		$xtpl->table_td($p->label.':');
 		$xtpl->form_add_number_pure(
 			$name,
@@ -127,7 +127,7 @@ function print_newvps_page2($loc_id) {
 		);
 		$xtpl->table_tr();
 	}
-	
+
 	if ($_SESSION["is_admin"]) {
 		$xtpl->form_add_checkbox(_("Boot on create").':', 'boot_after_create', '1', (isset($_POST['vps_hostname']) && !isset($_POST['boot_after_create'])) ? false : true, $hint = '');
 		$xtpl->form_add_textarea(_("Extra information about VPS").':', 28, 4, 'vps_info', $_POST['vps_info'], '');
@@ -138,9 +138,9 @@ function print_newvps_page2($loc_id) {
 		false, false, '2'
 	);
 	$xtpl->table_tr();
-	
+
 	$xtpl->form_out(_("Create"));
-	
+
 	if ($_SESSION['is_admin'])
 		$xtpl->sbar_add(_('Back'), '?page=adminvps');
 	else
@@ -149,7 +149,7 @@ function print_newvps_page2($loc_id) {
 
 function vps_details_title($vps) {
 	global $xtpl;
-	
+
 	$title = 'VPS <a href="?page=adminvps&action=info&veid='.$vps->id.'">#'.$vps->id.'</a> '._("details");
 
 	if ($_SESSION["is_admin"])
@@ -163,7 +163,7 @@ function vps_details_submenu($vps) {
 
 	if ($_GET['action'] != 'info')
 		$xtpl->sbar_add(_('Back to details'), '?page=adminvps&action=info&veid='.$vps->id);
-	
+
 	$xtpl->sbar_add(_('Backups'), '?page=backup&action=vps&list=1&vps='.$vps->id.'#ds-'.$vps->dataset_id);
 
 	if ($_SESSION['is_admin']) {
@@ -173,7 +173,7 @@ function vps_details_submenu($vps) {
 
 	$xtpl->sbar_add(_('Clone VPS'), '?page=adminvps&action=clone&veid='.$vps->id);
 	$xtpl->sbar_add(_('Swap VPS'), '?page=adminvps&action=swap&veid='.$vps->id);
-	
+
 	$return_url = urlencode($_SERVER['REQUEST_URI']);
 	$xtpl->sbar_add(_('History'), '?page=history&list=1&object=Vps&object_id='.$vps->id.'&return_url='.$return_url);
 }
@@ -203,7 +203,7 @@ function vps_migrate_form($vps) {
 	$xtpl->form_create('?page=adminvps&action=offlinemigrate&veid='.$vps->id, 'post');
 	api_params_to_form($vps->migrate, 'input');
 	$xtpl->form_out(_("Go >>"));
-	
+
 	vps_details_suite($vps);
 }
 
@@ -212,7 +212,7 @@ function vps_clone_form($vps) {
 
 	$xtpl->table_title(_('Clone VPS'));
 	$xtpl->form_create('?page=adminvps&action=clone&veid='.$vps->id, 'post');
-	
+
 	api_params_to_form($vps->clone, 'input', array(
 		'vps' => function($vps) {
 			return '#'.$vps->id.' '.$vps->hostname;
@@ -221,9 +221,9 @@ function vps_clone_form($vps) {
 			return $node->domain_name;
 		}
 	));
-	
+
 	$xtpl->form_out(_("Go >>"));
-	
+
 	vps_details_suite($vps);
 }
 
@@ -232,23 +232,23 @@ function vps_swap_form($vps) {
 
 	$xtpl->table_title(_('Swap VPS'));
 	$xtpl->form_create('?page=adminvps&action=swap_preview&veid='.$vps->id, 'get', 'vps-swap', false);
-	
+
 	api_params_to_form($vps->swap_with, 'input', array('vps' => function($vps) {
 		return '#'.$vps->id.' '.$vps->hostname;
 	}));
-	
+
 	$xtpl->form_out(_("Continue"), null,
 		'<input type="hidden" name="page" value="adminvps">'.
 		'<input type="hidden" name="action" value="swap_preview">'.
 		'<input type="hidden" name="veid" value="'.$vps->id.'">'
 	);
-	
+
 	vps_details_suite($vps);
 }
 
 function format_swap_preview($vps, $hostname, $resources, $ips, $node, $expiration) {
 	$ips_tmp = array();
-	
+
 	foreach ($ips as $ip) {
 		$ips_tmp[] = $ip->addr;
 	}
@@ -257,7 +257,7 @@ function format_swap_preview($vps, $hostname, $resources, $ips, $node, $expirati
 	$expiration_date = $expiration->expiration_date
 		? tolocaltz($expiration->expiration_date, 'Y-m-d')
 		: '---';
-	
+
 	$vps_link = vps_link($vps);
 
 	$s = <<<EOT
@@ -292,13 +292,13 @@ function format_swap_node_cell($node, $primary = false) {
 		<dd>{$outage_len}</dd>
 	</dl>
 EOT;
-	
+
 	return $s;
 }
 
 function vps_swap_preview_form($primary, $secondary, $opts) {
 	global $xtpl, $api;
-	
+
 	$xtpl->table_title(_("Swap VPS ".vps_link($primary)." with ".vps_link($secondary)));
 	$xtpl->form_create('?page=adminvps&action=swap&veid='.$primary->id, 'post');
 	$xtpl->table_add_category(_('Node'));
@@ -324,13 +324,13 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 			$primary
 		)
 	);
-	
+
 	$xtpl->table_td(
 		'<img src="template/icons/draw-arrow-forward.png" alt="will become">',
 		false, false, '1', '1', 'middle'
 	);
 
-	$xtpl->table_td(	
+	$xtpl->table_td(
 		format_swap_preview(
 			$secondary,
 			$opts['hostname'] ? $primary->hostname : $secondary->hostname,
@@ -355,7 +355,7 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 			$secondary
 		)
 	);
-	
+
 	$xtpl->table_td(
 		'<img src="template/icons/draw-arrow-forward.png" alt="will become">',
 		false, false, '1', '1', 'middle'
@@ -373,7 +373,7 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 	);
 
 	$xtpl->table_tr(false, 'notoddrow');
-	
+
 	$xtpl->table_td('');
 	$xtpl->table_td($xtpl->html_submit(_('Cancel'), 'cancel'));
 	$xtpl->table_td('');

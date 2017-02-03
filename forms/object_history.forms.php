@@ -9,10 +9,10 @@ function list_object_history() {
 		$xtpl->sbar_add(_('Back'), $_GET['return_url']);
 		$xtpl->sbar_out(_("Object history"));
 	}
-	
+
 	$xtpl->table_title(_('Filters'));
 	$xtpl->form_create('', 'get', 'user-session-filter', false);
-	
+
 	$xtpl->table_td(_("Limit").':'.
 		'<input type="hidden" name="page" value="history">'.
 		'<input type="hidden" name="return_url" value="'.$_GET['return_url'].'">'.
@@ -20,9 +20,9 @@ function list_object_history() {
 	);
 	$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
 	$xtpl->table_tr();
-	
+
 	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
-	
+
 	if ($_SESSION['is_admin'])
 		$xtpl->form_add_input(_("User").':', 'text', '40', 'user', get_val('user', ''), '');
 
@@ -56,7 +56,7 @@ function list_object_history() {
 	);
 
 	$events = $api->object_history->list($params);
-	
+
 	$xtpl->table_add_category(_("Created at"));
 	$xtpl->table_add_category(_("User"));
 	$xtpl->table_add_category(_("Session"));

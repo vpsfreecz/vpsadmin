@@ -28,7 +28,7 @@ function formatDataRate(n) {
 		{threshold: 2 << 19, unit: 'M'},
 		{threshold: 2 << 9,  unit: 'k'},
 	];
-	
+
 	ret = "";
 	selected = 0;
 
@@ -36,7 +36,7 @@ function formatDataRate(n) {
 		if (n > units[i].threshold)
 			return round((n / units[i].threshold), 2) + units[i].unit;
 	}
-	
+
 	return round(n, 2);
 }
 
@@ -105,13 +105,13 @@ function updateMonitor () {
 					'</a>'
 				));
 				tr.append(td(stat.ip_address.addr));
-				
+
 				['public', 'private'].forEach(function (role) {
 					tr.append(rate(stat[role+'_bytes_in'], stat.delta));
 					tr.append(rate(stat[role+'_bytes_out'], stat.delta));
 					tr.append(rate(stat[role+'_bytes'], stat.delta));
 				});
-			
+
 				tr.append(rate(stat.bytes_in, stat.delta));
 				tr.append(rate(stat.bytes_out, stat.delta));
 				tr.append(rate(stat.bytes, stat.delta));

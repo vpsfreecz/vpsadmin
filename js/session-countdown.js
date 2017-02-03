@@ -6,7 +6,7 @@
 		this.end = this.lastTime + time;
 		this.step = step;
 		this.timeout = timeout;
-		
+
 		var that = this;
 		var tmp = function () {
 			if (that.update())
@@ -15,7 +15,7 @@
 			var next = new Date();
 			next.setMilliseconds(0);
 			next.setSeconds( next.getSeconds() + 60 );
-			
+
 			that.timer = setTimeout(tmp, (next.getTime() - that.lastTime));
 		};
 
@@ -25,11 +25,11 @@
 	countDownTimer.prototype.update = function () {
 		this.lastTime = new Date().getTime();
 		var remaining = Math.floor((this.end - this.lastTime) / 1000);
-		
+
 		if (this.lastTime >= this.end || remaining === 0) {
 			this.timeout();
 			return true;
-			
+
 		} else {
 			this.step(remaining);
 			return false;
@@ -39,7 +39,7 @@
 	countDownTimer.prototype.stop = function () {
 		clearTimeout(this.timer);
 	};
-	
+
 	countDownTimer.prototype.extend = function (v) {
 		this.end += v;
 	};
@@ -59,7 +59,7 @@
 
 	$(document).ready(function() {
 		sessionCountdown(vpsAdmin.sessionLength);
-		
+
 		countdown = new countDownTimer(vpsAdmin.sessionLength * 1000, sessionCountdown, function() {
 			clearTimeout(chainTimeout);
 			api.logout(function() {
