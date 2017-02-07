@@ -5,9 +5,23 @@ class MailTemplate < ActiveRecord::Base
 
   has_paper_trail
 
+  # @param name [Symbol]
+  # @param opts [Hash]
+  # @option opts [String] label
+  # @option opts [String] desc description
+  def self.role(name, opts)
+    @roles ||= {}
+    @roles[name] = opts
+  end
+
+  def self.roles
+    @roles || {}
+  end
+
   # @param id [Symbol]
   # @param opts [Hash] options
   # @option opts [String] name name with variables
+  # @option opts [Array<Symbol>] roles
   # @option opts [String] desc description
   # @option opts [Hash] params description of variables found in template name
   # @option opts [Hash] vars description of variables passed to the template
@@ -76,7 +90,7 @@ class MailTemplate < ActiveRecord::Base
     )
 
     recipients = {to: opts[:to] || [], cc: opts[:cc] || [], bcc: opts[:bcc] || []}
-    recipients[:to] << opts[:user].email if opts[:user]
+    recipients[:to].concat(tpl.recipients(opts[:user]))
 
     tpl.mail_recipients.each do |recp|
       recipients[:to].concat(recp.to.split(',')) if recp.to
@@ -94,6 +108,9 @@ class MailTemplate < ActiveRecord::Base
   end
 
   # Register built-in templates
+  role :account, label: 'Account management'
+  role :admin, label: 'System administrator'
+  
   register :daily_report, vars: {
       base_url: [String, 'URL to the web UI'],
       date: Hash,
@@ -105,63 +122,106 @@ class MailTemplate < ActiveRecord::Base
       chains: Hash,
       transactions: Hash,
   }
+
   register :expiration_warning, name: "expiration_%{object}_%{state}", params: {
       object: 'class name of the object nearing expiration, demodulized with underscores',
       state: 'one of lifetime states',
-  }
+  }, roles: %i(account), public: true
+
   register :snapshot_download_ready, vars: {
       dl: ::SnapshotDownload,
-  }
+  }, roles: %i(admin), public: true
+
   register :user_create, vars: {
       user: ::User,
-  }
+  }, roles: %i(account)
+
   register :user_suspend, vars: {
       user: ::User,
       state: ::ObjectState,
-  }
+  }, roles: %i(account), public: true
+
   register :user_soft_delete, vars: {
       user: ::User,
       state: ::ObjectState,
-  }
+  }, roles: %i(account), public: true
+
   register :user_resume, vars: {
       user: ::User,
       state: ::ObjectState,
-  }
+  }, roles: %i(account), public: true
+
   register :user_revive, vars: {
       user: ::User,
       state: ::ObjectState,
-  }
+  }, roles: %i(account), public: true
+
   register :vps_suspend, vars: {
       vps: ::Vps,
       state: ::ObjectState,
-  }
+  }, roles: %i(account admin), public: true
+
   register :vps_resume, vars: {
       vps: ::Vps,
       state: ::ObjectState,
-  }
+  }, roles: %i(account admin), public: true
+
   register :vps_migration_planned, vars: {
       m: ::VpsMigration,
       vps: ::Vps,
       src_node: ::Node,
       dst_node: ::Node,
-  }
+  }, roles: %i(admin), public: true
+
   register :vps_migration_begun, vars: {
       vps: ::Vps,
       src_node: ::Node,
       dst_node: ::Node,
       outage_window: ::Boolean,
       reason: String,
-  }
+  }, roles: %i(admin), public: true
+
   register :vps_migration_finished, vars: {
       vps: ::Vps,
       src_node: ::Node,
       dst_node: ::Node,
       outage_window: ::Boolean,
       reason: String,
-  }
+  }, roles: %i(admin), public: true
+
   register :vps_resources_change, vars: {
       vps: ::Vps,
       admin: ::User,
       reason: String,
-  }
+  }, roles: %i(admin), public: true
+
+  # Returns a list of e-mail recipients, tries to find role recipients,
+  # user template recipients and defaults to the primary e-mail address.
+  # @param user [User]
+  # @return [Array<String] list of e-mail addresses
+  def recipients(user)
+    ret = []
+    return ret unless user
+
+    # Template recipients
+    user.user_mail_template_recipients.where(
+        mail_template: self
+    ).each do |recp|
+      ret.concat(recp.to.split(','))
+    end
+
+    if ret.empty?
+      user.user_mail_role_recipients.where(role: desc[:roles]).each do |recp|
+        ret.concat(recp.to.split(','))
+      end
+    end
+
+    ret << user.email if ret.empty?
+    ret.uniq!
+    ret
+  end
+
+  def desc
+    self.class.templates[template_id.to_sym]
+  end
 end

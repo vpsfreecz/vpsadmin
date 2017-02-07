@@ -9,6 +9,8 @@ class User < ActiveRecord::Base
   has_many :ip_traffics
   has_many :ip_recent_traffics
   has_many :user_public_keys
+  has_many :user_mail_role_recipients
+  has_many :user_mail_template_recipients
   belongs_to :language
 
   enum password_version: VpsAdmin::API::CryptoProviders::PROVIDERS

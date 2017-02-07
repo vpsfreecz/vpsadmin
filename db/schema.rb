@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170203122106) do
+ActiveRecord::Schema.define(version: 20170204092606) do
 
   create_table "api_tokens", force: true do |t|
     t.integer  "user_id",                            null: false
@@ -477,10 +477,11 @@ ActiveRecord::Schema.define(version: 20170203122106) do
   add_index "mail_template_translations", ["mail_template_id", "language_id"], name: "mail_template_translation_unique", unique: true, using: :btree
 
   create_table "mail_templates", force: true do |t|
-    t.string   "name",       limit: 100, null: false
-    t.string   "label",      limit: 100, null: false
+    t.string   "name",        limit: 100, null: false
+    t.string   "label",       limit: 100, null: false
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "template_id", limit: 100, null: false
   end
 
   add_index "mail_templates", ["name"], name: "index_mail_templates_on_name", unique: true, using: :btree
@@ -891,6 +892,24 @@ ActiveRecord::Schema.define(version: 20170203122106) do
   add_index "user_cluster_resources", ["environment_id"], name: "index_user_cluster_resources_on_environment_id", using: :btree
   add_index "user_cluster_resources", ["user_id", "environment_id", "cluster_resource_id"], name: "user_cluster_resource_unique", unique: true, using: :btree
   add_index "user_cluster_resources", ["user_id"], name: "index_user_cluster_resources_on_user_id", using: :btree
+
+  create_table "user_mail_role_recipients", force: true do |t|
+    t.integer "user_id",             null: false
+    t.string  "role",    limit: 100, null: false
+    t.string  "to",      limit: 500
+  end
+
+  add_index "user_mail_role_recipients", ["user_id", "role"], name: "index_user_mail_role_recipients_on_user_id_and_role", unique: true, using: :btree
+  add_index "user_mail_role_recipients", ["user_id"], name: "index_user_mail_role_recipients_on_user_id", using: :btree
+
+  create_table "user_mail_template_recipients", force: true do |t|
+    t.integer "user_id",                      null: false
+    t.integer "mail_template_id",             null: false
+    t.string  "to",               limit: 500, null: false
+  end
+
+  add_index "user_mail_template_recipients", ["user_id", "mail_template_id"], name: "user_id_mail_template_id", unique: true, using: :btree
+  add_index "user_mail_template_recipients", ["user_id"], name: "index_user_mail_template_recipients_on_user_id", using: :btree
 
   create_table "user_public_keys", force: true do |t|
     t.integer  "user_id",                                null: false

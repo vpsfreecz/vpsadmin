@@ -711,6 +711,204 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
     end
   end
+  
+  class MailRoleRecipient < HaveAPI::Resource
+    desc 'Manage user mail recipients'
+    route ':user_id/mail_role_recipients'
+    model ::UserMailRoleRecipient
+
+    params(:all) do
+      string :id, db_name: :role
+      string :label
+      string :description
+      string :to
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      desc 'List user mail role recipients'
+
+      output(:object_list) do
+        use :all
+      end
+      
+      authorize do |u|
+        allow
+      end
+
+      def query
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error("Access denied")
+        end
+
+        ::UserMailRoleRecipient.all_roles_for(::User.find(params[:user_id]))
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        query
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      desc 'Show user mail role recipient'
+
+      output do
+        use :all
+      end
+      
+      authorize do |u|
+        allow
+      end
+
+      def prepare
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error("Access denied")
+        end
+
+        @recp = ::UserMailRoleRecipient.find_by!(
+            user_id: params[:user_id],
+            role: params[:mail_role_recipient_id]
+        )
+      end
+
+      def exec
+        @recp
+      end
+    end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Update user mail role recipient'
+
+      input do
+        use :all, include: %i(to)
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow
+      end
+
+      def exec
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error("Access denied")
+        end
+        
+        ::UserMailRoleRecipient.handle_update!(
+            ::User.find(params[:user_id]),
+            params[:mail_role_recipient_id],
+            input
+        )
+
+      rescue ActiveRecord::RecordInvalid => e
+        error('Update failed', e.record.errors.to_hash)
+      end
+    end
+  end
+  
+  class MailTemplateRecipient < HaveAPI::Resource
+    desc 'Manage user mail recipients'
+    route ':user_id/mail_template_recipients'
+    model ::UserMailTemplateRecipient
+
+    params(:all) do
+      string :id, db_name: :name
+      string :label
+      string :description
+      string :to
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      desc 'List user mail template recipients'
+
+      output(:object_list) do
+        use :all
+      end
+      
+      authorize do |u|
+        allow
+      end
+
+      def query
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error("Access denied")
+        end
+
+        ::UserMailTemplateRecipient.all_templates_for(::User.find(params[:user_id]))
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        query
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      desc 'Show user mail template recipient'
+
+      output do
+        use :all
+      end
+      
+      authorize do |u|
+        allow
+      end
+
+      def prepare
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error("Access denied")
+        end
+
+        @recp = ::UserMailTemplateRecipient.find_by!(
+            user_id: params[:user_id],
+            mail_template_id: params[:mail_template_id],
+        )
+      end
+
+      def exec
+        @recp
+      end
+    end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Update user mail template recipient'
+
+      input do
+        use :all, include: %i(to)
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow
+      end
+
+      def exec
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error("Access denied")
+        end
+        
+        ::UserMailTemplateRecipient.handle_update!(
+            ::User.find(params[:user_id]),
+            ::MailTemplate.find_by!(name: params[:mail_template_recipient_id]),
+            input
+        )
+
+      rescue ActiveRecord::RecordInvalid => e
+        error('Update failed', e.record.errors.to_hash)
+      end
+    end
+  end
 
   include VpsAdmin::API::Lifetimes::Resource
   add_lifetime_params(Current, :output, :lifetime_expiration)
