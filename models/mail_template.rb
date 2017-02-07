@@ -105,6 +105,9 @@ class MailTemplate < ActiveRecord::Base
 
     mail.save!
     mail
+
+  rescue VpsAdmin::API::Exceptions::MailTemplateDisabled
+    nil
   end
 
   # Register built-in templates
@@ -207,6 +210,10 @@ class MailTemplate < ActiveRecord::Base
     user.user_mail_template_recipients.where(
         mail_template: self
     ).each do |recp|
+      if recp.disabled?
+        raise VpsAdmin::API::Exceptions::MailTemplateDisabled, name
+      end
+
       ret.concat(recp.to.split(','))
     end
 

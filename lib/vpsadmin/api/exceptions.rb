@@ -118,6 +118,12 @@ module VpsAdmin::API::Exceptions
     end
   end
 
+  class MailTemplateDisabled < ::StandardError
+    def initialize(name)
+      super("Mail template '#{name}' is disabled")
+    end
+  end
+
   class ClusterResourceAllocationError < ::StandardError
     attr_reader :resource_use
 

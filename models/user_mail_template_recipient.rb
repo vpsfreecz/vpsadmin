@@ -31,7 +31,10 @@ class UserMailTemplateRecipient < ActiveRecord::Base
   # @param attrs [Hash]
   def self.handle_update!(user, template, attrs)
     recp = nil
-    empty = attrs[:to].nil? || attrs[:to].strip.empty?
+    empty = (
+        (attrs[:to].nil? || attrs[:to].strip.empty?) && \
+        (attrs[:enabled].nil? || attrs[:enabled])
+    )
 
     if empty
       placeholder = new(
@@ -81,6 +84,10 @@ class UserMailTemplateRecipient < ActiveRecord::Base
 
   def description
     mail_template.desc[:desc]
+  end
+
+  def disabled?
+    !enabled
   end
 
   protected

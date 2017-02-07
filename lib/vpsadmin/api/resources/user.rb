@@ -821,6 +821,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       string :label
       string :description
       string :to
+      bool :enabled
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -882,7 +883,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       desc 'Update user mail template recipient'
 
       input do
-        use :all, include: %i(to)
+        use :all, include: %i(to enabled)
       end
 
       output do

@@ -263,6 +263,8 @@ class TransactionChain < ActiveRecord::Base
 
   def mail(*args)
     m = ::MailTemplate.send_mail!(*args)
+    return if m.nil?
+
     append(Transactions::Mail::Send, args: [find_mail_server, m])
     m.update!(transaction_id: @last_id)
     m
