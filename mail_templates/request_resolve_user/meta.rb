@@ -1,4 +1,4 @@
-template do
+template :request_resolve_user do
   label        'Resolve request (user)'
   from         'podpora@vpsfree.cz'
   reply_to     'podpora@vpsfree.cz'

@@ -1,4 +1,4 @@
-template do
+template :request_create_admin do
   label        'Create request (admin)'
   from         'podpora@vpsfree.cz'
   reply_to     'podpora@vpsfree.cz'
