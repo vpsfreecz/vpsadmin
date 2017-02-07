@@ -33,6 +33,7 @@
 - Add user-defined snapshot labels
 - Compulsory registration of mail templates
 - User-defined mail role/template recipients
+- Resource `MailTemplate` has new parameter `template_id`
 
 * Fri Dec 30 2016 - version 2.6.0
 - Rebase on HaveAPI v0.7

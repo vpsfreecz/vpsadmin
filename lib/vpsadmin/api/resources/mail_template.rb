@@ -6,6 +6,7 @@ module VpsAdmin::API::Resources
     params(:common) do
       string :name, desc: 'Template identifier'
       string :label, desc: 'Human-friendly label'
+      string :template_id
     end
 
     params(:all) do
