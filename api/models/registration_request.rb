@@ -11,7 +11,7 @@ class RegistrationRequest < UserRequest
   }
   validates :full_name, length: {minimum: 2}
   validates :email, format: {
-      with: /\A[^@]+@[a-zA-Z0-9_-]+\.[a-z]+\z/,
+      with: /@/,
       message: 'not a valid e-mail address',
   }
   validate :check_login

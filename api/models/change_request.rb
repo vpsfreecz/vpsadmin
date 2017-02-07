@@ -2,7 +2,7 @@ class ChangeRequest < UserRequest
   validates :change_reason, presence: true
   validates :full_name, length: {minimum: 2}, allow_blank: true
   validates :email, format: {
-      with: /\A[^@]+@[a-zA-Z0-9_-]+\.[a-z]+\z/,
+      with: /@/,
       message: 'not a valid e-mail address',
   }, allow_blank: true
   validate :check_changes
