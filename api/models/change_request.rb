@@ -30,10 +30,12 @@ class ChangeRequest < UserRequest
   # @yieldparam current_value
   def each_change
     %i(full_name email address).each do |attr|
-      v = send(attr)
-      next unless v
+      new_v = send(attr)
+      old_v = user.send(attr)
 
-      yield(attr, v, user.send(attr))
+      next if new_v.nil? || old_v == new_v
+
+      yield(attr, new_v, old_v)
     end
   end
 
