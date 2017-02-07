@@ -240,19 +240,33 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 		case 'Float':
 			if ($desc->validators && $desc->validators->include) {
 				$desc_choices = $desc->validators->include->values;
+				$assoc = is_assoc($desc_choices);
 				$choices = array();
 
 				if ($label_callback) {
-					foreach ($desc_choices as $k => $val)
-						$choices[$k] = $label_callback($val);
+					foreach ($desc_choices as $k => $val) {
+						if ($assoc)
+							$choices[$k] = $label_callback($val);
 
-				} else
-					$choices = $desc_choices;
+						else
+							$choices[$val] = $label_callback($val);
+					}
+
+				} else {
+					if ($assoc) {
+						$choices = $desc_choices;
+
+					} else {
+						foreach($desc_choices as $val) {
+							$choices[$val] = $val;
+						}
+					}
+				}
 
 				$xtpl->form_add_select_pure(
 					$name,
 					$choices,
-					array_search($desc->validators->include->values[(int) $v], $desc_choices)
+					$v
 				);
 
 			} else {
@@ -332,7 +346,7 @@ function client_params_to_api($action, $from = null) {
 	foreach ($params as $name => $desc) {
 		if (isset($from[ $name ])) {
 			if ($desc->validators->include) {
-				$ret[ $name ] = $desc->validators->include->values[ (int) $from[$name] ];
+				$ret[ $name ] = $from[$name];
 				continue;
 			}
 
@@ -592,5 +606,12 @@ function payments_enabled() {
 	global $api;
 
 	return $api->user_payment ? true : false;
+}
+
+function is_assoc($arr) {
+	if (array() === $arr)
+		return false;
+
+    return array_keys($arr) !== range(0, count($arr) - 1);
 }
 ?>

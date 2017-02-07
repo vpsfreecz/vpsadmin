@@ -25,7 +25,7 @@ if ($_SESSION['logged_in']) {
 						$validators = $input_params->{$p}->validators;
 
 						if ($validators && $validators->include)
-							$params[$p] = $validators->include->values[ (int) $_POST[$p] ];
+							$params[$p] = $_POST[$p];
 
 						elseif (in_array($p, array('compression', 'atime', 'relatime')))
 							$params[$p] = isset($_POST[$p]);
@@ -61,10 +61,7 @@ if ($_SESSION['logged_in']) {
 
 				if ($_SESSION['is_admin']) {
 					$params['admin_override'] = isset($_POST['admin_override']);
-					$params['admin_lock_type'] = $input_params->admin_lock_type
-						->validators
-						->include
-						->values[ (int) $_POST['admin_lock_type'] ];
+					$params['admin_lock_type'] = $_POST['admin_lock_type'];
 				}
 
 				foreach ($quotas as $quota) {
@@ -77,7 +74,7 @@ if ($_SESSION['logged_in']) {
 						$validators = $input_params->{$p}->validators;
 
 						if ($validators && $validators->include)
-							$params[$p] = $validators->include->values[ (int) $_POST[$p] ];
+							$params[$p] = $_POST[$p];
 
 						elseif (in_array($p, array('compression', 'atime', 'relatime')))
 							$params[$p] = isset($_POST[$p]);
@@ -152,8 +149,8 @@ if ($_SESSION['logged_in']) {
 					$params = array(
 						'dataset' => $_POST['dataset'],
 						'mountpoint' => $_POST['mountpoint'],
-						'mode' => $input_params->mode->validators->include->values[ (int) $_POST['mode']],
-						'on_start_fail' => $input_params->on_start_fail->validators->include->values[ (int) $_POST['on_start_fail']]
+						'mode' => $_POST['mode'],
+						'on_start_fail' => $_POST['on_start_fail'],
 					);
 
 					$api->vps($_POST['vps'])->mount->create($params);
@@ -215,7 +212,7 @@ if ($_SESSION['logged_in']) {
 				try {
 					$input_params = $api->vps->mount->create->getParameters('input');
 					$api->vps($_GET['vps'])->mount($_GET['id'])->update(array(
-						'on_start_fail' => $input_params->on_start_fail->validators->include->values[ (int) $_POST['on_start_fail']]
+						'on_start_fail' => $_POST['on_start_fail']
 					));
 
 					notify_user(_('Changes saved'), '');

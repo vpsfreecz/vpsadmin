@@ -629,9 +629,7 @@ function list_members() {
 		$xtpl->form_add_checkbox(_("Mailer enabled").':', 'mailer_enabled', 1, get_val('mailer_enabled', ''));
 
 		$p = $api->vps->index->getParameters('input')->object_state;
-
-		api_param_to_form('object_state', $p,
-			$p->validators->include->values[ $_GET['object_state'] ]);
+		api_param_to_form('object_state', $p, $_GET['object_state']);
 
 		$xtpl->form_out(_('Show'));
 
@@ -665,20 +663,14 @@ function list_members() {
 				'meta' => array('count' => true)
 			);
 
-			$filters = array('login', 'full_name', 'email', 'address', 'level', 'info', 'monthly_payment',
-			                 'mailer_enabled');
+			$filters = array(
+				'login', 'full_name', 'email', 'address', 'level', 'info', 'monthly_payment',
+				'mailer_enabled', 'object_state'
+			);
 
 			foreach ($filters as $f) {
 				if ($_GET[$f])
 					$params[$f] = $_GET[$f];
-			}
-
-			if ($_GET['object_state']) {
-				$params['object_state'] = $api->user->index->getParameters('input')
-					->object_state
-					->validators
-					->include
-					->values[(int) $_GET['object_state']];
 			}
 
 			$users = $api->user->list($params);
@@ -917,15 +909,8 @@ if ($_SESSION["logged_in"]) {
 		case 'delete3':
 			if ($_SESSION["is_admin"] && ($u = $api->user->find($_GET["id"]))) {
 				try {
-					$choices = $api->user->delete->getParameters('input')
-						->object_state
-						->validators
-						->include
-						->values;
-					$state = $choices[(int) $_GET['object_state']];
-
 					$u->delete(array(
-						'object_state' => $state
+						'object_state' => $_GET['object_state'],
 					));
 
 					notify_user(_("User deleted"), _('The user was successfully deleted.'));
@@ -1353,7 +1338,7 @@ if ($_SESSION["logged_in"]) {
 			$action = null;
 
 			if (isset($_POST['action']))
-				$action = $api->user_request->{$_GET['type']}->resolve->getParameters('input')->action->validators->include->values[(int) $_POST['action']];
+				$action = $_POST['action'];
 
 			if($action == "approve" || $_GET["rule"] == "approve")
 				request_approve();

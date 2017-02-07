@@ -555,7 +555,7 @@ function incoming_payments_list() {
 	);
 
 	if (isset($_GET['state']))
-		$params['state'] = $input->state->validators->include->values[ (int) $_GET['state'] ];
+		$params['state'] = $_GET['state'];
 
 	$payments = $api->incoming_payment->list($params);
 
@@ -613,7 +613,7 @@ function incoming_payments_details($id) {
 	api_param_to_form(
 		'state',
 		$state_desc,
-		post_val('state', array_search($p->state, $state_desc->validators->include->values))
+		post_val('state', $p->state)
 	);
 
 	$xtpl->table_td(_('Type').':');

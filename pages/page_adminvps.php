@@ -325,7 +325,6 @@ switch ($_GET["action"]) {
 				csrf_check();
 
 				try {
-					$update_params = $api->vps->update->getParameters('input');
 					$vps_resources = array('memory', 'cpu', 'swap');
 					$params = array();
 
@@ -341,10 +340,7 @@ switch ($_GET["action"]) {
 						if ($_POST['admin_override'])
 							$params['admin_override'] = $_POST['admin_override'];
 
-						$params['admin_lock_type'] = $update_params->admin_lock_type
-							->validators
-							->include
-							->values[ (int) $_POST['admin_lock_type'] ];
+						$params['admin_lock_type'] = $_POST['admin_lock_type'];
 					}
 
 					$api->vps($_GET['veid'])->update($params);
@@ -666,9 +662,7 @@ if ($list_vps) {
 			resource_list_to_options($api->environment->list()), get_val('environment'));
 
 		$p = $api->vps->index->getParameters('input')->object_state;
-
-		api_param_to_form('object_state', $p,
-			$p->validators->include->values[ $_GET['object_state'] ]);
+		api_param_to_form('object_state', $p, $_GET['object_state']);
 
 		$xtpl->form_out(_('Show'));
 	}
@@ -713,13 +707,8 @@ if ($list_vps) {
 			if ($_GET['environment'])
 				$params['environment'] = $_GET['environment'];
 
-			if ($_GET['object_state']) {
-				$params['object_state'] = $api->vps->index->getParameters('input')
-					->object_state
-					->validators
-					->include
-					->values[(int) $_GET['object_state']];
-			}
+			if ($_GET['object_state'])
+				$params['object_state'] = $_GET['object_state'];
 
 			$vpses = $api->vps->list($params);
 

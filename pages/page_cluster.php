@@ -710,12 +710,7 @@ switch($_GET["action"]) {
 		csrf_check();
 
 		try {
-			$data = $_POST;
-
-			$params = $api->node->create->getParameters('input');
-			$data['type'] = $params->type->validators->include->values[ $_POST['type'] ];
-
-			$api->node->create($data);
+			$api->node->create($_POST);
 			notify_user(_("Node created"), _("The node was succesfully registered."));
 			redirect('?page=cluster');
 
