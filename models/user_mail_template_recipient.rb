@@ -76,7 +76,7 @@ class UserMailTemplateRecipient < ActiveRecord::Base
   end
 
   def label
-    mail_template.desc[:label]
+    mail_template.label
   end
 
   def description
