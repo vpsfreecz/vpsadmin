@@ -696,12 +696,20 @@ function mail_template_recipient_form($user_id) {
 	foreach ($u->mail_template_recipient->list() as $recp) {
 		$xtpl->table_td(
 			$recp->label ? $recp->label : $recp->id, false, false, 1,
-			$recp->description ? 2 : 1
+			$recp->description ? 3 : 2
 		);
 		$xtpl->form_add_textarea_pure(
 			50, 5,
 			"to[{$recp->id}]",
 			$_POST['to'][$recp->id] ? $_POST['to'][$recp->id] : str_replace(',', ",\n", $recp->to)
+		);
+		$xtpl->table_tr();
+
+		$xtpl->form_add_checkbox_pure(
+			"disable[{$recp->id}]",
+			'1',
+			isset($_POST['disable']) ? isset($_POST['disable'][$recp->id]) : !$recp->enabled,
+			_("Do <strong>not</strong> send this e-mail")
 		);
 		$xtpl->table_tr();
 

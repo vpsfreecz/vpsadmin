@@ -1057,6 +1057,7 @@ if ($_SESSION["logged_in"]) {
 					foreach ($_POST['to'] as $tpl => $emails) {
 						$api->user($_GET['id'])->mail_template_recipient($tpl)->update(array(
 							'to' => $emails,
+							'enabled' => $_POST['disable'][$tpl] === '1' ? false : true,
 						));
 					}
 
