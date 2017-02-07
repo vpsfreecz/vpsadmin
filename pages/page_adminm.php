@@ -159,6 +159,43 @@ function print_editm($u) {
 
 	$xtpl->form_out($_SESSION["is_admin"] ? _("Save") : _("Request change"));
 
+	$xtpl->form_create('?page=adminm&action=role_recipients&id='.$u->id, 'post');
+	$xtpl->table_add_category(_('E-mail roles'));
+	$xtpl->table_add_category(_('E-mails'));
+
+	$xtpl->table_td(
+		_('E-mails configured here override the primary e-mail. It is a comma separated list of e-mails, may contain line breaks.'),
+		false, false, 2
+	);
+	$xtpl->table_tr();
+
+	foreach ($u->mail_role_recipient->list() as $recp) {
+		$xtpl->table_td(
+			$recp->label, false, false, 1,
+			$recp->description ? 2 : 1
+		);
+		$xtpl->form_add_textarea_pure(
+			50, 5,
+			"to[{$recp->id}]",
+			$_POST['to'][$recp->id] ? $_POST['to'][$recp->id] : str_replace(',', ",\n", $recp->to)
+		);
+		$xtpl->table_tr();
+
+		if ($recp->description) {
+			$xtpl->table_td($recp->description);
+			$xtpl->table_tr();
+		}
+	}
+
+	$xtpl->table_td(
+		'<a href="?page=adminm&action=template_recipients&id='.$u->id.'">'.
+		_('Advanced configuration').
+		'</a>'
+	);
+	$xtpl->table_td($xtpl->html_submit(_('Save')));
+	$xtpl->table_tr();
+	$xtpl->form_out_raw();
+
 	if ($_SESSION["is_admin"]) {
 		lifetimes_set_state_form('user', $u->id, $u);
 
@@ -166,6 +203,7 @@ function print_editm($u) {
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("State log").'" />'._('State log'), '?page=lifetimes&action=changelog&resource=user&id='.$u->id.'&return='. urlencode($_SERVER['REQUEST_URI']));
 	}
 
+	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Advanced mail configuration").'" />'._('Advanced e-mail configuration'), "?page=adminm&section=members&action=template_recipients&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Public keys").'" />'._('Public keys'), "?page=adminm&section=members&action=pubkeys&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Authentication tokens").'" />'._('Authentication tokens'), "?page=adminm&section=members&action=auth_tokens&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Session log").'" />'._('Session log'), "?page=adminm&action=user_sessions&id={$u->id}");
@@ -989,6 +1027,52 @@ if ($_SESSION["logged_in"]) {
 			}
 
 			break;
+
+		case 'role_recipients':
+			csrf_check();
+
+			try {
+				foreach ($_POST['to'] as $role => $emails) {
+					$api->user($_GET['id'])->mail_role_recipient($role)->update(array(
+						'to' => $emails,
+					));
+				}
+
+				notify_user(_('Role e-mails updated'), _('The changes were successfully saved.'));
+				redirect('?page=adminm&action=edit&id='.$_GET['id']);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
+				print_editm($api->user->show($_GET['id']));
+			}
+			break;
+
+		case 'template_recipients':
+			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&action=edit&id={$_GET['id']}");
+
+			if (isset($_POST['to'])) {
+				csrf_check();
+
+				try {
+					foreach ($_POST['to'] as $tpl => $emails) {
+						$api->user($_GET['id'])->mail_template_recipient($tpl)->update(array(
+							'to' => $emails,
+						));
+					}
+
+					notify_user(_('Template e-mails updated'), _('The changes were successfully saved.'));
+					redirect('?page=adminm&action=edit&id='.$_GET['id']);
+
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
+					mail_template_recipient_form($_GET['id']);
+				}
+
+			} else {
+				mail_template_recipient_form($_GET['id']);
+			}
+			break;
+
 		case 'payset':
 			if (!$_SESSION['is_admin'])
 				break;

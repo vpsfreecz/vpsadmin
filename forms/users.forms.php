@@ -675,3 +675,41 @@ function incoming_payments_details($id) {
 		$xtpl->form_out(_('Assign'));
 	}
 }
+
+function mail_template_recipient_form($user_id) {
+	global $xtpl, $api;
+
+	$u = $api->user->show($user_id);
+
+	$xtpl->title(_('Mail template recipients'));
+
+	$xtpl->form_create('?page=adminm&action=template_recipients&id='.$u->id, 'post');
+	$xtpl->table_add_category(_('Templates'));
+	$xtpl->table_add_category(_('E-mails'));
+
+	$xtpl->table_td(
+		_('E-mails configured here override role recipients. It is a comma separated list of e-mails, may contain line breaks.'),
+		false, false, 2
+	);
+	$xtpl->table_tr();
+
+	foreach ($u->mail_template_recipient->list() as $recp) {
+		$xtpl->table_td(
+			$recp->label ? $recp->label : $recp->id, false, false, 1,
+			$recp->description ? 2 : 1
+		);
+		$xtpl->form_add_textarea_pure(
+			50, 5,
+			"to[{$recp->id}]",
+			$_POST['to'][$recp->id] ? $_POST['to'][$recp->id] : str_replace(',', ",\n", $recp->to)
+		);
+		$xtpl->table_tr();
+
+		if ($recp->description) {
+			$xtpl->table_td($recp->description);
+			$xtpl->table_tr();
+		}
+	}
+
+	$xtpl->form_out(_('Save'));
+}
