@@ -1,6 +1,6 @@
 module VpsAdmin::MailTemplates
   class Template
-    attr_reader :name, :translations, :meta
+    attr_reader :id, :name, :translations, :meta
 
     def initialize(path)
       @path = path
@@ -12,6 +12,8 @@ module VpsAdmin::MailTemplates
 
       @meta = Meta.last_meta
       Meta.reset_last
+
+      @id = @meta[:id] || @name
 
       langs = {}
 
@@ -29,6 +31,7 @@ module VpsAdmin::MailTemplates
 
     def params
       {
+          template_id: @id,
           name: @name,
           label: @meta[:label] || '',
       }

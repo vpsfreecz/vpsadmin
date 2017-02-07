@@ -11,8 +11,8 @@ module VpsAdmin::MailTemplates
     class << self
       attr_reader :last_meta
 
-      def load(block)
-        m = @last_meta = new
+      def load(id, block)
+        m = @last_meta = new(id)
         m.instance_exec(&block)
         m
       end
@@ -24,13 +24,13 @@ module VpsAdmin::MailTemplates
 
     attr_reader :opts
 
-    def initialize
-      @opts = {}
+    def initialize(id)
+      @opts = {id: id}
       @translations = {}
     end
 
     def lang(code, &block)
-      m = Meta.new
+      m = Meta.new(@opts[:id])
       m.instance_exec(&block)
 
       @translations[code.to_s] = m.opts

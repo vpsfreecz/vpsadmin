@@ -8,8 +8,8 @@ require_relative 'mail-templates/template'
 require_relative 'mail-templates/translation'
 require_relative 'mail-templates/version'
 
-def template(&block)
-  VpsAdmin::MailTemplates::Meta.load(block)
+def template(id = nil, &block)
+  VpsAdmin::MailTemplates::Meta.load(id, block)
 end
 
 module VpsAdmin
@@ -27,7 +27,7 @@ module VpsAdmin
 
       # Create or update templates
       templates.each do |tpl|
-        puts "Template #{tpl.name}"
+        puts "Template #{tpl.name}" + (tpl.id == tpl.name ? '': " (#{tpl.id})")
         tpl_exists = tpl_translations.detect { |k, _| k.name == tpl.name }
 
         if tpl_exists
