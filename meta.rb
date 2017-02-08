@@ -24,32 +24,31 @@ VpsAdmin::API::Plugin.register(:requests) do
     }
 
     %w(user admin).each do |role|
-      # Creation
-      MailTemplate.register :"request_create_#{role}_type",
-          name: "request_create_#{role}_%{type}", params: {
-          type: 'registration or change',
+      MailTemplate.register :request_action_role_type,
+          name: "request_%{action}_%{role}_%{type}", params: {
+              action: 'create or resolve',
+              role: 'user or admin',
+              type: 'registration or change',
           }, vars: vars
       
-      MailTemplate.register :"request_create_#{role}", vars: vars
+      MailTemplate.register :request_action_role,
+          name: "request_%{action}_%{role}", params: {
+              action: 'create or resolve',
+              role: 'user or admin',
+          }, vars: vars
 
-      # Resolving
-      MailTemplate.register :"request_resolve_#{role}_type_state",
-          name: "request_resolve_#{role}_%{type}_%{state}", params: {
+      MailTemplate.register :request_resolve_role_type_state,
+          name: "request_resolve_%{role}_%{type}_%{state}", params: {
+              role: 'user or admin',
               type: 'registration or change',
               state: 'one of awaiting, approved, denied, ignored'
           }, vars: vars
       
-      MailTemplate.register :"request_resolve_#{role}_type",
-          name: "request_resolve_#{role}_%{type}", params: {
-              type: 'registration or change',
-          }, vars: vars
-
-      MailTemplate.register :"request_resolve_#{role}_state",
-          name: "request_resolve_#{role}_%{state}", params: {
+      MailTemplate.register :request_resolve_role_state,
+          name: "request_resolve_%{role}_%{state}", params: {
+              role: 'user or admin',
               state: 'one of awaiting, approved, denied, ignored'
           }, vars: vars
-      
-      MailTemplate.register :"request_resolve_#{role}", vars: vars
     end
   end
 end

@@ -26,10 +26,22 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
      
       if state != :ignored
         [
-            [:request_resolve_user_type_state, {type: request.type_name, state: state}],
-            [:request_resolve_user_type, {type: request.type_name}],
-            [:request_resolve_user_state, {state: state}],
-            [:request_resolve_user, {}],
+            [
+                :request_resolve_role_type_state,
+                {role: 'user', type: request.type_name, state: state}
+            ],
+            [
+                :request_action_role_type,
+                {action: 'resolve', role: 'user', type: request.type_name}
+            ],
+            [
+                :request_resolve_role_state,
+                {role: 'user', state: state}
+            ],
+            [
+                :request_action_role,
+                {action: 'resolve', role: 'user'}
+            ],
         ].each do |id, params|
           begin
             mail(id, {
@@ -56,10 +68,22 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
       
       ::User.where('level > 90').each do |admin|
         [
-            [:request_resolve_admin_type_state, {type: request.type_name, state: state}],
-            [:request_resolve_admin_type, {type: request.type_name}],
-            [:request_resolve_admin_state, {state: state}],
-            [:request_resolve_admin, {}],
+            [
+                :request_resolve_role_type_state,
+                {role: 'admin', type: request.type_name, state: state}
+            ],
+            [
+                :request_action_role_type,
+                {action: 'resolve', role: 'admin', type: request.type_name}
+            ],
+            [
+                :request_resolve_role_state,
+                {role: 'admin', state: state}
+            ],
+            [
+                :request_action_role,
+                {action: 'resolve', role: 'admin'}
+            ],
         ].each do |id, params|
           begin
             mail(id, {

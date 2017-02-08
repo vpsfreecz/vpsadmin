@@ -1,4 +1,4 @@
-template :request_create_user do
+template :request_action_role do
   label        'Create request (user)'
   from         'podpora@vpsfree.cz'
   reply_to     'podpora@vpsfree.cz'
