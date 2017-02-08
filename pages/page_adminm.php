@@ -1064,6 +1064,7 @@ if ($_SESSION["logged_in"]) {
 				break;
 
 			user_payment_form($_GET['id']);
+			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&action=edit&id={$_GET['id']}");
 			break;
 
 		case 'payset2':
