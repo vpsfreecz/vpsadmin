@@ -1071,12 +1071,22 @@ if ($_SESSION["logged_in"]) {
 				break;
 
 			try {
-				$api->user_payment->create(array(
-					'user' => $_GET['id'],
-					'amount' => $_POST['amount'],
-				));
+				if (isset($_POST['paid_until'])) {
+					$api->user_account->update($_GET['id'], array(
+						'paid_until' => $_POST['paid_until'],
+					));
 
-				notify_user(_("Payment accepted"), '');
+					notify_user(_("Paid until date set"), '');
+
+				} elseif (isset($_POST['amount'])) {
+					$api->user_payment->create(array(
+						'user' => $_GET['id'],
+						'amount' => $_POST['amount'],
+					));
+
+					notify_user(_("Payment accepted"), '');
+				}
+
 				redirect('?page=adminm&action=payset&id='.$_GET['id']);
 
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {

@@ -408,8 +408,11 @@ function user_payment_form($user_id) {
 
 	$paidUntil = strtotime($u->paid_until);
 
-	$xtpl->title(_("Edit payments"));
-	$xtpl->form_create('?page=adminm&action=payset2&id='.$u->id, 'post');
+	$xtpl->title(_("User payments"));
+
+	$xtpl->table_td(_("Login").':');
+	$xtpl->table_td($u->login);
+	$xtpl->table_tr();
 
 	$xtpl->table_td(_("Paid until").':');
 
@@ -423,21 +426,28 @@ function user_payment_form($user_id) {
 	$xtpl->table_td($lastPaidTo);
 	$xtpl->table_tr();
 
-	$xtpl->table_td(_("Login").':');
-	$xtpl->table_td($u->login);
-	$xtpl->table_tr();
-
 	$xtpl->table_td(_("Monthly payment").':');
 	$xtpl->table_td($u->monthly_payment);
 	$xtpl->table_tr();
 
-	$xtpl->form_add_input(_("Amount").':', 'text', '30', 'amount', post_val('amount'));
-
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
+	$xtpl->table_out();
 
+	$xtpl->table_title(_('Set paid until date'));
+	$xtpl->form_create('?page=adminm&action=payset2&id='.$u->id, 'post');
+	$xtpl->form_add_input(
+		_("Paid until").':', 'text', '30', 'paid_until', post_val('paid_until'),
+		_('YYYY-MM-DD, e.g.').' '.date('Y-m-d')
+	);
 	$xtpl->form_out(_("Save"));
 
+	$xtpl->table_title(_('Add payment'));
+	$xtpl->form_create('?page=adminm&action=payset2&id='.$u->id, 'post');
+	$xtpl->form_add_input(_("Amount").':', 'text', '30', 'amount', post_val('amount'));
+	$xtpl->form_out(_("Save"));
+
+	$xtpl->table_title(_('Payment log'));
 	$xtpl->table_add_category("ACCEPTED AT");
 	$xtpl->table_add_category("ACCOUNTED BY");
 	$xtpl->table_add_category("AMOUNT");
