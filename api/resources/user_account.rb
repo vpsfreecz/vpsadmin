@@ -71,6 +71,15 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
       end
+
+      def exec
+        acc = ::UserAccount.find_by!(user_id: params['user_account_id'])
+        acc.update!(input)
+        acc
+
+      rescue ActiveRecord::RecordInvalid => e
+        error('Update failed', e.record.errors.to_hash)
+      end
     end
   end
 end
