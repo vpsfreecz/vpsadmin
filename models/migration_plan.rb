@@ -61,7 +61,7 @@ class MigrationPlan < ActiveRecord::Base
     )
   end
 
-  # @params state [Symbol]
+  # @param new_state [Symbol]
   def finish!(new_state = nil)
     unless new_state
       case self.state

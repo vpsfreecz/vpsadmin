@@ -19,7 +19,7 @@ module TransactionChains
             running: 'true if the VPS was running before the migration'
         }
 
-    # @params opts [Hash]
+    # @param opts [Hash]
     # @option opts [Boolean] replace_ips (false)
     # @option opts [Hash] resources (nil)
     # @option opts [Boolean] handle_ips (true)
