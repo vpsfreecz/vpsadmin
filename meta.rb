@@ -12,5 +12,9 @@ VpsAdmin::API::Plugin.register(:webui) do
     SysConfig.register :webui, :noticeboard, Text
     SysConfig.register :webui, :index_info_box_title, String
     SysConfig.register :webui, :index_info_box_content, Text
+
+    MailTemplate.register :daily_report, vars: {
+        base_url: [String, 'URL to the web UI'],
+    }
   end
 end
