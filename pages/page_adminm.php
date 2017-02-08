@@ -138,8 +138,12 @@ function print_editm($u) {
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->form_create('?page=adminm&section=members&action=passwd&id='.$u->id, 'post');
-	$xtpl->form_add_input(_("Password").':', 'password', '30', 'm_pass', '', '', -8);
-	$xtpl->form_add_input(_("Repeat password").':', 'password', '30', 'm_pass2', '', '', -8);
+
+	if (!$_SESSION['is_admin'])
+		$xtpl->form_add_input(_("Current password").':', 'password', '30', 'password');
+
+	$xtpl->form_add_input(_("New password").':', 'password', '30', 'new_password', '', '', -8);
+	$xtpl->form_add_input(_("Repeat new password").':', 'password', '30', 'new_password2', '', '', -8);
 	$xtpl->form_out(_("Save"));
 
 	$xtpl->table_add_category(_("Personal information"));
@@ -960,13 +964,18 @@ if ($_SESSION["logged_in"]) {
 		case 'passwd':
 			$u = $api->user->find($_GET["id"]);
 
-			if ($_POST["m_pass"] != $_POST["m_pass2"]) {
+			if ($_POST["new_password"] != $_POST["new_password2"]) {
 				$xtpl->perex(_("Invalid entry").': '._("Password"), _("The two passwords do not match."));
 				print_editm($u);
 
 			} else {
 				try {
-					$u->update(array('password' => $_POST['m_pass']));
+					$params = array('new_password' => $_POST['new_password']);
+
+					if (!$_SESSION['is_admin'])
+						$params['password'] = $_POST['password'];
+
+					$u->update($params);
 
 					notify_user(_("Password set"), _("The password was successfully changed."));
 					redirect('?page=adminm&action=edit&id='.$u->id);
