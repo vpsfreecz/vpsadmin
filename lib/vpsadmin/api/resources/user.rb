@@ -229,7 +229,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     input do
       use :writable
-      use :password
+      string :password, label: 'Current password', protected: true,
+            desc: 'The password must be at least 8 characters long'
+      string :new_password, label: 'Password', protected: true,
+            desc: 'The password must be at least 8 characters long'
     end
 
     output do
@@ -238,7 +241,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(password mailer_enabled language)
+      input whitelist: %i(password new_password mailer_enabled language)
       allow
     end
 
@@ -255,13 +258,34 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       update_object_state!(u) if change_object_state?
 
-      if input.has_key?(:password)
-        error('update failed',
-              password: ['password must be at least 8 characters long']
-        ) if input[:password].nil? || input[:password].length < 8
+      if input.has_key?(:new_password)
+        if current_user.role != :admin && !input.has_key?(:password)
+          error(
+              'update failed',
+              password: ['current password must be entered']
+          )
+        end
 
-        u.set_password(input.delete(:password))
+        if input[:new_password].nil? || input[:new_password].length < 8
+          error(
+              'update failed',
+              new_password: ['password must be at least 8 characters long']
+          )
+        end
+
+        if current_user.role != :admin && ::User.authenticate(
+            request, u.login, input[:password]
+          ).nil?
+          error(
+              'update failed',
+              password: ['incorrect password']
+          )
+        end
+
+        u.set_password(input.delete(:new_password))
       end
+      
+      input.delete(:password)
 
       u.update!(to_db_names(input))
       u

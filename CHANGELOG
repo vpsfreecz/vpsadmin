@@ -34,6 +34,7 @@
 - Compulsory registration of mail templates
 - User-defined mail role/template recipients
 - Resource `MailTemplate` has new parameter `template_id`
+- `User.Update`: changing of password requires the current password
 
 * Fri Dec 30 2016 - version 2.6.0
 - Rebase on HaveAPI v0.7
