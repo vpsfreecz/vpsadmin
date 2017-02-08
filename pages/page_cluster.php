@@ -704,6 +704,7 @@ switch($_GET["action"]) {
 
 	case "newnode":
 		node_create_form();
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
 		break;
 
 	case "newnode_save":
