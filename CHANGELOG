@@ -17,6 +17,7 @@
 - Implement NAS snapshot deletion (issue #115)
 - Configuration of user mail role/template recipients
 - Add field for current password in the password change form
+- VPS reinstall: add overview, confirmation form
 
 * Fri Dec 30 2016 - version 2.6.0
 - Public key management forms

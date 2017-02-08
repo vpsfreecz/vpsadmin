@@ -467,12 +467,30 @@ switch ($_GET["action"]) {
 			break;
 
 		case 'reinstall':
-			csrf_check();
+			if (isset($_POST['reinstall']) && $_POST['confirm']) {
+				csrf_check();
 
-			if ($_POST['reinstall_action'] === '1') {
+				try {
+					$api->vps($_GET['veid'])->reinstall(array(
+						'os_template' => $_POST['os_template'],
+					));
+
+					notify_user(
+						_("Reinstallation of VPS")." {$_GET["veid"]} "._("planned"),
+						_("You will have to reset your <b>root</b> password."));
+					redirect('?page=adminvps&action=info&veid='.$_GET["veid"]);
+
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Reinstall failed'), $e->getResponse());
+					$show_info=true;
+				}
+
+			} elseif ($_POST['reinstall_action'] === '1') {
+				csrf_check();
+
 				try {
 					$api->vps($_GET['veid'])->update(array(
-						'os_template' => $_POST['vps_template']
+						'os_template' => $_POST['os_template']
 					));
 
 					notify_user(_("Distribution information updated"), '');
@@ -482,27 +500,57 @@ switch ($_GET["action"]) {
 					$xtpl->perex_format_errors(_('Failed to update distribution'), $e->getResponse());
 					$show_info=true;
 				}
-
-			} elseif ($_POST['reinstall_action'] === '2') {
-				$xtpl->perex(
-					_("Are you sure you want to reinstall VPS").' '.$_GET["veid"].'?',
-					'<a href="?page=adminvps">'.strtoupper(_("No")).'</a> | <a href="?page=adminvps&action=reinstall2&veid='.$_GET["veid"].'&vps_template='.$_POST["vps_template"].'&t='.csrf_token().'">'.strtoupper(_("Yes")).'</a>'
-				);
-			}
-			break;
-		case 'reinstall2':
-			try {
-				csrf_check();
-				$api->vps->reinstall($_GET["veid"], array('os_template' => $_GET["vps_template"]));
-
-				notify_user(_("Reinstallation of VPS")." {$_GET["veid"]} ".strtolower(_("planned")), _("You will have to reset your <b>root</b> password."));
+			} elseif (isset($_POST['cancel'])) {
 				redirect('?page=adminvps&action=info&veid='.$_GET["veid"]);
 
-			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				$xtpl->perex_format_errors(_('Reinstall failed'), $e->getResponse());
-				$show_info=true;
+			} else {
+				$vps = $api->vps->show($_GET['veid']);
+				$new_tpl = $api->os_template->show(get_val('os_template', $_POST['os_template']));
+
+				$xtpl->table_title(
+					_('Confirm reinstallation of VPS').' #'.$vps->id.
+					' '.$vps->hostname
+				);
+				$xtpl->form_create('?page=adminvps&action=reinstall&veid='.$vps->id);
+
+				$xtpl->table_td(
+					'<strong>'.
+					_('All data from this VPS will be deleted, including all subdatasets.').
+					'</strong>'.
+					'<input type="hidden" name="os_template" value="'.$_POST['os_template'].'">',
+					false, false, 2
+				);
+				$xtpl->table_tr();
+
+				$xtpl->table_td(_('ID').':');
+				$xtpl->table_td($vps->id);
+				$xtpl->table_tr();
+
+				$xtpl->table_td(_('Hostname').':');
+				$xtpl->table_td($vps->hostname);
+				$xtpl->table_tr();
+
+				$xtpl->table_td(_('Current OS template').':');
+				$xtpl->table_td($vps->os_template->label);
+				$xtpl->table_tr();
+
+				$xtpl->table_td(_('New OS template').':');
+				$xtpl->table_td($new_tpl->label);
+				$xtpl->table_tr();
+
+				$xtpl->form_add_checkbox(_('Confirm').':', 'confirm', '1', false);
+
+				$xtpl->table_td('');
+				$xtpl->table_td(
+					$xtpl->html_submit(_('Cancel'), 'cancel').
+					$xtpl->html_submit(_('Reinstall'), 'reinstall')
+				);
+				$xtpl->table_tr();
+
+				$xtpl->form_out_raw();
 			}
 			break;
+
 		case 'features':
 			if (isset($_GET["veid"]) && $_SERVER['REQUEST_METHOD'] === 'POST') {
 				csrf_check();
@@ -1054,7 +1102,7 @@ if (isset($show_info) && $show_info) {
 	// Distribution
 		$xtpl->table_title(_('Distribution'));
 		$xtpl->form_create('?page=adminvps&action=reinstall&veid='.$vps->id, 'post');
-		$xtpl->form_add_select(_("Distribution").':', 'vps_template', list_templates($vps), $vps->os_template_id,  '');
+		$xtpl->form_add_select(_("Distribution").':', 'os_template', list_templates($vps), $vps->os_template_id,  '');
 		$xtpl->form_add_radio(_("Update information").':', 'reinstall_action', '1', true, $hint = _("Use if you have upgraded your system"));
 		$xtpl->table_tr();
 		$xtpl->form_add_radio(_("Reinstall").':', 'reinstall_action', '2', false, $hint = _("Install base system again"));
