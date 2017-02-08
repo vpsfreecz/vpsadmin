@@ -177,7 +177,7 @@ function node_vps_overview() {
 	$xtpl->table_out('cluster_node_list');
 }
 
-function networks_list($title) {
+function networks_list() {
 	global $xtpl, $api;
 
 	$xtpl->title(_('Networks'));
