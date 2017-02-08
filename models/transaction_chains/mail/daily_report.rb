@@ -36,8 +36,6 @@ module TransactionChains
       )
 
       {
-          base_url: ::SysConfig.get('webui', 'base_url'),
-          
           date: {
               start: (now - 24*60*60),
               end: now

@@ -115,7 +115,6 @@ class MailTemplate < ActiveRecord::Base
   role :admin, label: 'System administrator'
   
   register :daily_report, vars: {
-      base_url: [String, 'URL to the web UI'],
       date: Hash,
       users: Hash,
       vps: Hash,
