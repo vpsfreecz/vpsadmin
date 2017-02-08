@@ -927,6 +927,8 @@ if ($_SESSION["logged_in"]) {
 			break;
 		case 'edit_member':
 			try {
+				$user = $api->user->show($_GET['id']);
+
 				$params = array(
 					'mailer_enabled' => isset($_POST['m_mailer_enable']),
 					'language' => $_POST['language'],
@@ -936,10 +938,15 @@ if ($_SESSION["logged_in"]) {
 					$params['login'] = $_POST['m_nick'];
 					$params['level'] = $_POST['m_level'];
 					$params['info'] = $_POST['m_info'];
-					$params['monthly_payment'] = $_POST['m_monthly_payment'];
 				}
 
-				$user = $api->user($_GET['id'])->update($params);
+				$user->update($params);
+
+				if ($user->monthly_payment != $_POST['m_monthly_payment']) {
+					$api->user_account->update($user->id, array(
+						'monthly_payment' => $_POST['m_monthly_payment'],
+					));
+				}
 
 				notify_user(_('User updated'), _('The user was successfully updated.'));
 				redirect('?page=adminm&action=edit&id='.$user->id);
