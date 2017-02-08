@@ -354,7 +354,7 @@ function user_payment_info($u) {
 	$paid_until = date('Y-m-d', $t);
 
 	if ($_SESSION["is_admin"]) {
-		$td = '<a href="?page=adminm&action=payset&id='.$u->id.'">';
+		$td = '<a href="?page=adminm&action=payset&id='.$u->id.'" class="user-'.($paid ? 'paid' : 'unpaid').'">';
 		$color = '';
 
 		if ($paid) {
@@ -372,7 +372,7 @@ function user_payment_info($u) {
 			$color = '#B22222';
 
 			if ($u->paid_until) {
-				$td .= ' ('.ceil(($paid_until - time()) / 86400).'d)';
+				$td .= ' ('.ceil(($t - time()) / 86400).'d)';
 			}
 		}
 
