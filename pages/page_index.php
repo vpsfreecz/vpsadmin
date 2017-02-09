@@ -23,7 +23,7 @@
 $xtpl->title(_("Overview"));
 
 if ($_SESSION["is_admin"]) {
-  $xtpl->table_add_category(_("Event Log <a href=\"?page=cluster&action=noticeboard\">[edit]</a>"));
+  $xtpl->table_add_category(_("Event Log <a href=\"?page=cluster&action=sysconfig\">[edit]</a>"));
 } else {
   $xtpl->table_add_category(_("Event Log"));
 }
