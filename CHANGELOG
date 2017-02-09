@@ -20,6 +20,7 @@
 - VPS reinstall: add overview, confirmation form
 - Improved XSS protection
 - Require API version 4.0
+- IP address list shows ownership to users
 
 * Fri Dec 30 2016 - version 2.6.0
 - Public key management forms

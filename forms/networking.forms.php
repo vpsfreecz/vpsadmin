@@ -100,6 +100,8 @@ function ip_address_list($page) {
 
 	if ($_SESSION['is_admin'])
 		$xtpl->table_add_category(_('User'));
+	else
+		$xtpl->table_add_category(_('Owned'));
 
 	$xtpl->table_add_category('VPS');
 
@@ -128,6 +130,8 @@ function ip_address_list($page) {
 				$xtpl->table_td('<a href="?page=adminm&action=edit&id='.$ip->user_id.'">'.$ip->user->login.'</a>');
 			else
 				$xtpl->table_td('---');
+		} else {
+			$xtpl->table_td(boolean_icon($ip->user_id));
 		}
 
 		if ($ip->vps_id)
