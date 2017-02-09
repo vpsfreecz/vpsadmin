@@ -23,16 +23,12 @@ module VpsAdmind
       )
 
       stream.command(self) do
-        stream.send_recv(
-            {
-                pool: @dst_pool_fs,
-                tree: @dst_tree,
-                branch: @dst_branch,
-                dataset: @dst_dataset_name,
-            },
-            snap2,
-            snap1,
-        )
+        stream.send_recv({
+            pool: @dst_pool_fs,
+            tree: @dst_tree,
+            branch: @dst_branch,
+            dataset: @dst_dataset_name,
+        })
       end
 
       ok
