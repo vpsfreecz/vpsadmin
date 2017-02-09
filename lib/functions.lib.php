@@ -614,4 +614,8 @@ function is_assoc($arr) {
 
     return array_keys($arr) !== range(0, count($arr) - 1);
 }
+
+function h($v) {
+	return htmlspecialchars($v);
+}
 ?>

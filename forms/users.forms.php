@@ -149,7 +149,7 @@ function list_user_sessions($user_id) {
 		$xtpl->table_td(tolocaltz($s->created_at));
 		$xtpl->table_td($s->last_request_at ? tolocaltz($s->last_request_at) : '---');
 		$xtpl->table_td($s->closed_at ? tolocaltz($s->closed_at) : '---');
-		$xtpl->table_td($s->client_ip_addr ? $s->client_ip_addr : $s->api_ip_addr);
+		$xtpl->table_td(h($s->client_ip_addr ? $s->client_ip_addr : $s->api_ip_addr));
 		$xtpl->table_td($s->auth_type);
 		$xtpl->table_td($s->auth_token_str
 			? substr($s->auth_token_str, 0, 8).'...'
@@ -180,12 +180,12 @@ function list_user_sessions($user_id) {
 
 		$xtpl->table_td(
 			'<dl>'.
-			'<dt>API IP address:</dt><dd>'.$s->api_ip_addr.'</dd>'.
-			'<dt>API IP PTR:</dt><dd>'.$s->api_ip_ptr.'</dd>'.
-			'<dt>Client IP address:</dt><dd>'.$s->client_ip_addr.'</dd>'.
-			'<dt>Client IP PTR:</dt><dd>'.$s->client_ip_ptr.'</dd>'.
-			'<dt>User agent:</dt><dd>'.$s->user_agent.'</dd>'.
-			'<dt>Client version:</dt><dd>'.$s->client_version.'</dd>'.
+			'<dt>API IP address:</dt><dd>'.h($s->api_ip_addr).'</dd>'.
+			'<dt>API IP PTR:</dt><dd>'.h($s->api_ip_ptr).'</dd>'.
+			'<dt>Client IP address:</dt><dd>'.h($s->client_ip_addr).'</dd>'.
+			'<dt>Client IP PTR:</dt><dd>'.h($s->client_ip_ptr).'</dd>'.
+			'<dt>User agent:</dt><dd>'.h($s->user_agent).'</dd>'.
+			'<dt>Client version:</dt><dd>'.h($s->client_version).'</dd>'.
 			'<dt>Token:</dt><dd>'.$s->auth_token_str.'</dd>'.
 			'<dl>'
 		, false, false, '7');
@@ -260,8 +260,8 @@ function approval_requests_list() {
 	foreach ($requests as $r) {
 		$xtpl->table_td('<a href="?page=adminm&action=request_details&id='.$r->id.'&type='.$_GET['type'].'">#'.$r->id.'</a>');
 		$xtpl->table_td(tolocaltz($r->created_at));
-		$xtpl->table_td($r->label);
-		$xtpl->table_td($r->client_ip_addr ? $r->client_ip_addr : $r->api_ip_addr);
+		$xtpl->table_td(h($r->label));
+		$xtpl->table_td(h($r->client_ip_addr ? $r->client_ip_addr : $r->api_ip_addr));
 		$xtpl->table_td($r->state);
 		$xtpl->table_td($r->admin_id ? ('<a href="?page=adminm&action=edit&id='.$r->admin_id.'&type='.$_GET['type'].'">'.$r->admin->login.'</a>') : '-');
 		$xtpl->table_td('<a href="?page=adminm&action=request_details&id='.$r->id.'&type='.$_GET['type'].'"><img src="template/icons/m_edit.png"  title="'. _("Details") .'" /></a>');
@@ -311,19 +311,19 @@ function approval_requests_details($type, $id) {
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_("API IP Address").':');
-	$xtpl->table_td($r->api_ip_addr);
+	$xtpl->table_td(h($r->api_ip_addr));
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_("API PTR").':');
-	$xtpl->table_td($r->api_ip_ptr);
+	$xtpl->table_td(h($r->api_ip_ptr));
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_("Client IP Address").':');
-	$xtpl->table_td($r->client_ip_addr);
+	$xtpl->table_td(h($r->client_ip_addr));
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_("Client PTR").':');
-	$xtpl->table_td($r->client_ip_ptr);
+	$xtpl->table_td(h($r->client_ip_ptr));
 	$xtpl->table_tr();
 
 	$xtpl->table_out();
@@ -582,10 +582,10 @@ function incoming_payments_list() {
 		$xtpl->table_td(tolocaltz($p->date, 'Y-m-d'));
 		$xtpl->table_td($p->amount, false, true);
 		$xtpl->table_td($p->state);
-		$xtpl->table_td($p->account_name);
-		$xtpl->table_td($p->user_message);
-		$xtpl->table_td($p->vs);
-		$xtpl->table_td($p->comment);
+		$xtpl->table_td(h($p->account_name));
+		$xtpl->table_td(h($p->user_message));
+		$xtpl->table_td(h($p->vs));
+		$xtpl->table_td(h($p->comment));
 		$xtpl->table_td(
 			'<a href="?page=adminm&action=incoming_payment&id='.$p->id.'">'.
 			'<img src="template/icons/m_edit.png" title="'._('Details').'">'.
@@ -607,7 +607,7 @@ function incoming_payments_details($id) {
 	$xtpl->form_create('?page=adminm&action=incoming_payment_state&id='.$p->id, 'post');
 
 	$xtpl->table_td(_('Transaction ID').':');
-	$xtpl->table_td($p->transaction_id);
+	$xtpl->table_td(h($p->transaction_id));
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('Date').':');
@@ -627,7 +627,7 @@ function incoming_payments_details($id) {
 	);
 
 	$xtpl->table_td(_('Type').':');
-	$xtpl->table_td($p->transaction_type);
+	$xtpl->table_td(h($p->transaction_type));
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('Amount').':');
@@ -635,7 +635,7 @@ function incoming_payments_details($id) {
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('Currency').':');
-	$xtpl->table_td($p->currency);
+	$xtpl->table_td(h($p->currency));
 	$xtpl->table_tr();
 
 	if ($p->src_amount) {
@@ -644,36 +644,36 @@ function incoming_payments_details($id) {
 		$xtpl->table_tr();
 
 		$xtpl->table_td(_('Original currency').':');
-		$xtpl->table_td($p->src_currency);
+		$xtpl->table_td(h($p->src_currency));
 		$xtpl->table_tr();
 	}
 
 	$xtpl->table_td(_('Account name').':');
-	$xtpl->table_td($p->account_name);
+	$xtpl->table_td(h($p->account_name));
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('User identification').':');
-	$xtpl->table_td($p->user_ident);
+	$xtpl->table_td(h($p->user_ident));
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('User message').':');
-	$xtpl->table_td($p->user_message);
+	$xtpl->table_td(h($p->user_message));
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('VS').':');
-	$xtpl->table_td($p->vs);
+	$xtpl->table_td(h($p->vs));
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('KS').':');
-	$xtpl->table_td($p->ks);
+	$xtpl->table_td(h($p->ks));
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('SS').':');
-	$xtpl->table_td($p->ss);
+	$xtpl->table_td(h($p->ss));
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('Comment').':');
-	$xtpl->table_td($p->comment);
+	$xtpl->table_td(h($p->comment));
 	$xtpl->table_tr();
 
 	$xtpl->form_out(_('Set state'));

@@ -770,7 +770,7 @@ if ($list_vps) {
 			$xtpl->table_td('<a href="?page=adminvps&action=list&node='.$vps->node_id.'">'. $vps->node->domain_name . '</a>');
 			$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$vps->user_id.'">'.$vps->user->login.'</a>');
 			$xtpl->table_td($vps->process_count, false, true);
-			$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->id.'"><img src="template/icons/vps_edit.png"  title="'._("Edit").'"/> '.$vps->hostname.'</a>');
+			$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->id.'"><img src="template/icons/vps_edit.png"  title="'._("Edit").'"/> '.h($vps->hostname).'</a>');
 			$xtpl->table_td(sprintf('%4d MB',$vps->used_memory), false, true);
 
 			if ($vps->used_diskspace > 0)
@@ -898,7 +898,7 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_("Hostname").':');
-	$xtpl->table_td($vps->hostname);
+	$xtpl->table_td(h($vps->hostname));
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_("Uptime").':');

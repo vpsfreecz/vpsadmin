@@ -18,6 +18,7 @@
 - Configuration of user mail role/template recipients
 - Add field for current password in the password change form
 - VPS reinstall: add overview, confirmation form
+- Improved XSS protection
 
 * Fri Dec 30 2016 - version 2.6.0
 - Public key management forms

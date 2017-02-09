@@ -314,7 +314,7 @@ function dataset_snapshot_list($datasets, $vps = null) {
 		foreach ($snapshots as $snap) {
 			$xtpl->table_td($snap->history_id, '#'.$colors[ $snap->history_id ], true);
 			$xtpl->table_td(tolocaltz($snap->created_at, 'Y-m-d H:i'));
-			$xtpl->table_td($snap->label ? $snap->label : '-');
+			$xtpl->table_td($snap->label ? h($snap->label) : '-');
 			$xtpl->form_add_radio_pure("restore_snapshot", $snap->id);
 			$xtpl->table_td('[<a href="?page=backup&action=download&dataset='.$ds->id.'&snapshot='.$snap->id.'&return='.$return_url.'">'._("Download").'</a>]');
 
@@ -359,7 +359,7 @@ function mount_list($vps_id) {
 	foreach ($mounts as $m) {
 		$xtpl->table_td($m->dataset->name);
 		$xtpl->table_td($m->snapshot_id ? tolocaltz($m->snapshot->created_at, 'Y-m-d H:i'): '---');
-		$xtpl->table_td($m->mountpoint);
+		$xtpl->table_td(h($m->mountpoint));
 
 		$xtpl->table_td(translate_mount_on_start_fail($m->on_start_fail));
 

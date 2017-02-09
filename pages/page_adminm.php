@@ -262,9 +262,9 @@ function list_pubkeys() {
 	}
 
 	foreach($pubkeys as $k) {
-		$xtpl->table_td($k->label);
+		$xtpl->table_td(h($k->label));
 		$xtpl->table_td($k->fingerprint);
-		$xtpl->table_td($k->comment);
+		$xtpl->table_td(h($k->comment));
 		$xtpl->table_td(boolean_icon($k->auto_add));
 
 		$xtpl->table_td('<a href="?page=adminm&section=members&action=pubkey_edit&id='.$_GET['id'].'&pubkey_id='.$k->id.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
@@ -318,7 +318,7 @@ function edit_pubkey($user, $id) {
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('Comment').':');
-	$xtpl->table_td($k->comment);
+	$xtpl->table_td(h($k->comment));
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('Created at').':');
@@ -363,7 +363,7 @@ function list_auth_tokens() {
 		else
 			$xtpl->table_td($t->valid_to, strtotime($t->valid_to) > time() ? '#66FF66' : '#B22222');
 
-		$xtpl->table_td($t->label);
+		$xtpl->table_td(h($t->label));
 		$xtpl->table_td($t->use_count."&times;");
 		$xtpl->table_td($t->lifetime);
 		$xtpl->table_td($t->interval._(' seconds'));
@@ -711,7 +711,7 @@ function list_members() {
 			if (payments_enabled())
 				$xtpl->table_td($u->monthly_payment);
 
-			$xtpl->table_td($u->full_name);
+			$xtpl->table_td(h($u->full_name));
 
 			$paid = $paid_until > time();
 

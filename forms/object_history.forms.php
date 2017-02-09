@@ -78,7 +78,7 @@ function list_object_history() {
 
 		$xtpl->table_td($e->object .' '.$e->object_id, false, false, 1, 1, 'top');
 		$xtpl->table_td($e->event_type, false, false, 1, 1, 'top');
-		$xtpl->table_td('<pre>'.print_r($e->event_data, true).'</pre>', false, false, 1, 1, 'top');
+		$xtpl->table_td('<pre>'.h(print_r($e->event_data, true)).'</pre>', false, false, 1, 1, 'top');
 		$xtpl->table_tr();
 	}
 

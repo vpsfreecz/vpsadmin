@@ -726,13 +726,13 @@ class XTemplate {
 	  * @return uid;
 	  */
 	function form_add_input_pure($type = 'text', $size = '30', $name = 'input_fromgen', $value = '') {
-		$this->table_td('<input type="'.$type.'" size="'.$size.'" name="'.$name.'" id="input'. $uid .'" value="'.$value.'" '.$maxlength.' '.$extra.' />');
+		$this->table_td('<input type="'.$type.'" size="'.$size.'" name="'.$name.'" id="input'. $uid .'" value="'.h($value).'" '.$maxlength.' '.$extra.' />');
 
 		return 'input'.$uid;
 	}
 
 	function form_add_number_pure($name, $value, $min = 0, $max = 999999, $step = 1, $unit = '') {
-		$this->table_td('<input type="number" name="'.$name.'" value="'.$value.'" min="'.$min.'" max="'.$max.'" step="'.$step.'">&nbsp;'.$unit);
+		$this->table_td('<input type="number" name="'.$name.'" value="'.h($value).'" min="'.$min.'" max="'.$max.'" step="'.$step.'">&nbsp;'.$unit);
 	}
 
 	/**
@@ -749,8 +749,8 @@ class XTemplate {
 		if ($options)
 		foreach ($options as $key=>$value) {
 		if (($selected_value == $key && $selected_value != NULL) || ($multiple && is_array($selected_value) && in_array($key, $selected_value)))
-			$code .= '<option selected="selected" value="'.$key.'" title="">'.$value.'</option>'."\n";
-			else $code .= '<option value="'.$key.'" title="">'.$value.'</option>'."\n";
+			$code .= '<option selected="selected" value="'.$key.'" title="">'.h($value).'</option>'."\n";
+			else $code .= '<option value="'.$key.'" title="">'.h($value).'</option>'."\n";
 		}
 		$code .= ('</select>');
 		$this->table_td($code, false, false, $colspan);
@@ -769,9 +769,9 @@ class XTemplate {
 		if ($options)
 		foreach ($options as $key=>$value) {
 			if ( $selected_value == $key || ($multiple && is_array($selected_value) && in_array($key, $selected_value)) )
-				$code .= '<option selected="selected" value="'.$key.'" title="">'.$value.'</option>'."\n";
+				$code .= '<option selected="selected" value="'.$key.'" title="">'.h($value).'</option>'."\n";
 			else
-				$code .= '<option value="'.$key.'" title="">'.$value.'</option>'."\n";
+				$code .= '<option value="'.$key.'" title="">'.h($value).'</option>'."\n";
 		}
 		$code .= ('</select>');
 		$this->table_td($code);
@@ -782,7 +782,7 @@ class XTemplate {
 		$input = '<input type="datetime'.($local ? '-local' : '').'" name="'.$name.'"';
 
 		if ($value)
-			$input .= 'value="'.($local ? tolocaltz($value, 'Y-m-dTH:i:s') : $value).'" ';
+			$input .= 'value="'.h($local ? tolocaltz($value, 'Y-m-dTH:i:s') : $value).'" ';
 
 		if ($min)
 			$input .= 'min="'.$min.'" ';
@@ -819,7 +819,7 @@ class XTemplate {
 	  */
 	function form_add_textarea($label = 'popisek', $cols = 10, $rows = 4, $name = 'textarea_formgen', $value = '', $hint = '') {
 		$this->table_td($label);
-		$this->table_td('<textarea name="'.$name.'" cols="'.$cols.'" rows="'.$rows.'" id="input">'.$value.'</textarea>');
+		$this->table_td('<textarea name="'.$name.'" cols="'.$cols.'" rows="'.$rows.'" id="input">'.h($value).'</textarea>');
 		if ($hint != '') $this->table_td($hint);
 		$this->table_tr();
 	}
@@ -832,7 +832,7 @@ class XTemplate {
 	  * @param $hint - helping hint
 	  */
 	function form_add_textarea_pure($cols = 10, $rows = 4, $name = 'textarea_formgen', $value = '') {
-		$this->table_td('<textarea name="'.$name.'" cols="'.$cols.'" rows="'.$rows.'" id="input">'.$value.'</textarea>');
+		$this->table_td('<textarea name="'.$name.'" cols="'.$cols.'" rows="'.$rows.'" id="input">'.h($value).'</textarea>');
 	}
 	/**
 	  * Add checkobox to form
@@ -844,7 +844,7 @@ class XTemplate {
 	  */
 	function form_add_checkbox($label = 'popisek', $name = 'input_fromgen', $value = '', $checked=false, $hint = '', $text = '') {
 		$this->table_td($label);
-		$this->table_td('<input type="checkbox" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' /> '.$text);
+		$this->table_td('<input type="checkbox" name="'.$name.'" id="input" value="'.h($value).'" '.(($checked) ? 'checked':'').' /> '.$text);
 		if ($hint != '') $this->table_td($hint);
 		$this->table_tr();
 	}
@@ -856,7 +856,7 @@ class XTemplate {
 	  * @param $checked - if it is checked by default
 	  */
 	function form_add_checkbox_pure($name = 'input_fromgen', $value = '', $checked=false, $text = '') {
-		$this->table_td('<input type="checkbox" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' /> '.$text);
+		$this->table_td('<input type="checkbox" name="'.$name.'" id="input" value="'.h($value).'" '.(($checked) ? 'checked':'').' /> '.$text);
 	}
 
 	/**
@@ -870,7 +870,7 @@ class XTemplate {
 	  */
 	function form_add_radio($label = 'popisek', $name = 'input_fromgen', $value = '', $checked=false, $text = '', $hint = '') {
 		$this->table_td($label);
-		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' /> '.$text);
+		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.h($value).'" '.(($checked) ? 'checked':'').' /> '.$text);
 		if ($hint != '') $this->table_td($hint);
 	}
 
@@ -882,7 +882,7 @@ class XTemplate {
 	  * @param $text - text shown next to the radio button
 	  */
 	function form_add_radio_pure($name = 'input_fromgen', $value = '', $checked=false, $text = '') {
-		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.$value.'" '.(($checked) ? 'checked':'').' /> '.$text);
+		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.h($value).'" '.(($checked) ? 'checked':'').' /> '.$text);
 	}
 
 	function form_csrf($name = 'common', $present = true) {
