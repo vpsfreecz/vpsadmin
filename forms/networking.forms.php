@@ -131,7 +131,7 @@ function ip_address_list($page) {
 		}
 
 		if ($ip->vps_id)
-			$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$ip->vps_id.'">'.$ip->vps_id.' ('.$ip->vps->hostname.')</a>');
+			$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$ip->vps_id.'">'.$ip->vps_id.' ('.h($ip->vps->hostname).')</a>');
 		else
 			$xtpl->table_td('---');
 
