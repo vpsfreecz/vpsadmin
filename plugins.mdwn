@@ -20,6 +20,7 @@ The structure of a plugin in the filesystem:
     |   |-- resources/
     |   |   |-- ...resources...
     |   |-- init.rb
+    |   |-- Gemfile
     |-- meta.rb
 
 `meta.rb` contains information about the plugin, like its name, version and
