@@ -73,7 +73,11 @@ class Setup < ActiveRecord::Migration
                   acct_m_id,
                   CASE change_from
                   WHEN 0 THEN
-                    u.monthly_payment * ((change_to - UNIX_TIMESTAMP(u.created_at)) DIV (60*60*24*30))
+                    IF(
+                      change_to = 0 OR u.created_at IS NULL OR change_to < UNIX_TIMESTAMP(u.created_at),
+                      0,
+                      u.monthly_payment * ((change_to - UNIX_TIMESTAMP(u.created_at)) DIV (60*60*24*30))
+                    )
                   ELSE
                     u.monthly_payment * ((change_to - change_from) DIV (60*60*24*30))
                   END,
