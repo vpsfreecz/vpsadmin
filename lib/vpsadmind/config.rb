@@ -43,7 +43,7 @@ module VpsAdmind
               :zfs_send => {
                   :threads => 1,
                   :urgent => 0,
-                  :start_delay => 4*60*60
+                  :start_delay => 90*60,
               },
               :mail => {
                   :threads => 2,
