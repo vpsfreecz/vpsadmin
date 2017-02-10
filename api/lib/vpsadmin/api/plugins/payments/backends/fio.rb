@@ -5,7 +5,7 @@ module VpsAdmin::API::Plugins::Payments::Backends
     register :fio
 
     def fetch
-      FioAPI.token = SysConfig.get(:plugin_payments, :api_token)
+      FioAPI.token = SysConfig.get(:plugin_payments, :fio_api_token)
       list = FioAPI::List.new
       list.from_last_fetch
       list.response.transactions.each do |t|
