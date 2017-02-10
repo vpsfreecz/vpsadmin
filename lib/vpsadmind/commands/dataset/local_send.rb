@@ -6,8 +6,8 @@ module VpsAdmind
     def exec
       db = Db.new
 
-      snap1 = confirmed_snapshot_name(db, @snapshots.first)
-      snap2 = @snapshots.count > 1 ? confirmed_snapshot_name(db, @snapshots.last) : nil
+      snap = confirmed_snapshot_name(db, @snapshots.last)
+      from_snap = @snapshots.count > 1 ? confirmed_snapshot_name(db, @snapshots.first) : nil
 
       db.close
       
@@ -18,8 +18,8 @@ module VpsAdmind
               branch: @src_branch,
               dataset: @src_dataset_name,
           },
-          snap1,
-          snap2
+          snap,
+          from_snap
       )
 
       stream.command(self) do
