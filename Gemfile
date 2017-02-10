@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gem 'haveapi', '~> 0.7.0'
+gem 'haveapi', '~> 0.8.0'
 gem 'activerecord', '~> 4.1.14'
 gem 'sinatra-activerecord', '~> 2.0.11'
 gem 'paper_trail', '~> 3.0.9'
