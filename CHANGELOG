@@ -1,6 +1,7 @@
 - Use refactored DB schema of nodes, transactions, IP addresses, VPSes,
   node pubkeys
 - Fix errors preventing local send/receive
+- Log commands executed by ZfsStream
 
 * Fri Dec 30 2016 - version 2.6.0
 - New transaction `Vps::DeployPublicKey`

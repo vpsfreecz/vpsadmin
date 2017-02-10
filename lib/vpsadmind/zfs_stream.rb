@@ -101,6 +101,7 @@ module VpsAdmind
       w.close
 
       @cmd.step = @pipeline.join(' | ') if @cmd
+      log(:work, @cmd, @pipeline.join(' | '))
       monitor_progress(err)
       err.close
 
@@ -113,6 +114,7 @@ module VpsAdmind
       zfs_pid, err = zfs_send(io)
 
       @cmd.step = @pipeline.join(' | ') if @cmd
+      log(:work, @cmd, @pipeline.join(' | '))
       monitor_progress(err)
       err.close
 
