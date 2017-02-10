@@ -1,4 +1,7 @@
 * Fri Feb 10 2017 - version 2.7.0
+- Fixed dependency on haveapi-client v0.8
+
+* Fri Feb 10 2017 - version 2.7.0
 - Add shortcut method VpsAdmin::Client.new
 
 * Fri Nov 25 2016 - version 2.6.0
