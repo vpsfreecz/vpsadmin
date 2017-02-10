@@ -1,0 +1,273 @@
+# Release notes
+Version 2.7.0 focuses on refactoring of remaining components from vpsAdmin 1
+and support for plugins, so that vpsAdmin core may remain clean and simple,
+taking care of VPS, storage and networking, while other services, like payments,
+are supplied by plugins.
+
+The web UI has been finally disconnected from the database and entirely relies
+on the API. This also makes it possible for other clients to use functionality
+previously found only in the web UI, since it has been moved to the API.
+
+Users can now configure multiple e-mail addresses for different roles --
+account management and system administrator. Each mail template belongs to one
+or more roles. Optionally, users can override e-mail addresses for selected
+mail templates, or choose to not receive certain messages.
+
+## Plugins
+The plugin system has been designed to work in all components of vpsAdmin, but
+so far only the API can load them. In the web UI, plugin funcionality is hardcoded,
+but enabled only when it detects appropriate plugins in the API.
+
+### Requests
+User requests from vpsAdmin WebUI were removed and placed into a standalone plugin
+for the API. The web UI enables user request browser only if it detects the plugin
+in the API.
+
+Since the plugin is now in the API, users may use other clients to create
+registration and change requests.
+
+### Payments
+Support for paying users was removed from the core and moved into a plugin.
+This plugin also supports integration with bank APIs, allowing automated fetching
+of new transactions and user account management.
+
+### Web UI support
+If you wish to use the web UI, you should enable this plugin, as it contains
+system config variables and help boxes.
+
+### News log
+News log (or event log) was removed from the web UI and moved into a plugin.
+
+## API resources
+- API version se to 4.0, rebased on top of HaveAPI v0.8 (protocol version 1.2)
+- `Node.Update`: remove input parameter `domain_name`
+- `DnsResolver.Index`: add input parameter `vps`
+- `Node.Index`: add input parameter `type`
+- Add action `Cluster.Search`
+- New resource `SystemConfig`
+- `Location.{Index,Show}`: whitelist output parameter `remote_console_server`
+- Resource `MailTemplate` has new parameter `template_id`
+- `User.Update`: changing of password requires the current password
+- Action `Dataset.Snapshot.Create` has new input parameter `label`
+- New resources `User.MailRoleRecipient` and `User.MailTemplateRecipient`
+
+## API internals
+- Fix crash of vpsAdmind caused by deleting of current VPS status in chain
+  `Vps::Destroy`
+- Free unused login names
+- Refactored DB schema of:
+  - DNS resolvers
+  - OS templates
+  - VPS configs
+  - Locations
+  - Nodes
+  - Transactions
+  - Users
+  - IP addresses
+  - VPSes
+  - System config
+- Register model `NodePubkey`
+- Add new task `log` to Rakefile
+- `MailTemplate.send_mail!` accepts options `to`, `cc`, `bcc`, `message_id`, `in_reply_to`
+  and `references`
+- User session records client's original IP address, if provided, and PTR
+- User.create hooks can now return a list of objects to create
+- Forget user's password when he's moved to `hard_delete`
+- Removed user payment settings (moved to a plugin)
+- Fix regression breaking VPS migration plans
+- Chain `Mail::DailyReport` has new hook `send`
+- Fixed bug in VPS restore, where it was impossible to restore freshly reinstalled
+  VPS with backups ([issue #66](https://redmine.vpsfree.cz/issues/66))
+- Add user-defined snapshot labels
+- Compulsory registration of mail templates
+- User-defined mail role/template recipients
+
+## vpsAdmin web UI
+- Trim public key before it is sent to the API
+- Removed class `cluster_node`, node registration and edit uses the API
+- Removed unused functions from cluster lib
+- Removed function `list_servers`
+- OS templates in VPS details are fetched from the API
+- VPS configs are fetched from the API
+- User context switching does not require the database
+- Removed `/cluster_status.php`
+- Jump to uses the API to search for resources
+- Fetch system config from the API, new system config editor
+- User requests work through the API, if it has installed the plugin for it
+- Removed user mail exporting
+- News log uses the API
+- Help boxes are fetched from the API
+- VPS console: fetch console server URL from the API
+- Removed `db.lib.php`
+- Implement NAS snapshot deletion ([issue #115](https://redmine.vpsfree.cz/issues/115))
+- Configuration of user mail role/template recipients
+- Add field for current password in the password change form
+- VPS reinstall: add overview, confirmation form
+- Improved XSS protection
+- Require API version 4.0
+- IP address list shows ownership to users
+
+## vpsAdmind
+- Use refactored DB schema of nodes, transactions, IP addresses, VPSes,
+  node pubkeys
+- Fix errors preventing local send/receive
+- Log commands executed by ZfsStream
+- Decrease the default start delay of `zfs_send` queue to 90 minutes
+
+## vpsAdmin Console Router
+- Use new DB schema of VPSes
+- Limit refresh rate of web console to 20 per second (50 ms)
+- Fixed reconnect
+
+## vpsAdmin Client
+- Add shortcut method VpsAdmin::Client.new
+
+# Upgrade instructions
+User requests and payment support has been moved from the API to plugins, but
+it is possible to migrate data from deprecated database tables into new ones.
+
+## 0. Stop services and backup
+Since the database schema is considerably changed, it is recommended to stop
+all services prior upgrade:
+
+- stop vpsadmind on all nodes
+- stop vpsadmin-console-router
+- stop the scheduler
+- stop cron tasks
+- backup the database
+
+## 1. Upgrade the API
+
+    $ cd /opt/vpsadmin-api
+    $ git pull
+    $ bundle install
+
+## 2. Install plugins
+Plugins are installed into directory `plugins/` found in the API directory.
+
+    $ cd /opt/vpsadmin-api/plugins
+    $ git clone https://git.vpsfree.cz/vpsadmin-plugin-requests.git requests
+    $ git clone https://git.vpsfree.cz/vpsadmin-plugin-payments.git payments
+    $ git clone https://git.vpsfree.cz/vpsadmin-plugin-webui.git webui
+    $ git clone https://git.vpsfree.cz/vpsadmin-plugin-newslog.git newslog
+
+When the plugins are installed, they may require some additional dependencies,
+install them:
+
+    $ cd /opt/vpsadmin-api
+    $ bundle install
+
+You can check the list of available plugins with rake task:
+
+    $ rake vpsadmin:plugins:list
+
+## 3. Run database migrations up to version `20170130112048`
+Version `20170130112048` is the last where user payment settings are present.
+Before we run the next migration to delete them, install the payments plugin,
+if you wish. If you do it later, you will lose monthly payments settings,
+paid until dates and payment history.
+
+    # Run DB migrations up to version 20170130112048
+    $ rake db:migrate VERSION=20170130112048
+    
+    # Install the payment plugin, environment variable FROM_VPSADMIN1=yes
+    # ensures that the data will be migrated.
+    $ rake vpsadmin:plugins:migrate PLUGIN=payments FROM_VPSADMIN1=yes
+
+    # When the payments plugin is installed, you may run the remaining database
+    # migrations.
+    $ rake db:migrate
+
+## 4. Migrate to the requests plugin
+
+    $ rake vpsadmin:plugins:migrate PLUGIN=requests
+
+## 5. Migrate to the web UI support plugin
+
+    $ rake vpsadmin:plugins:migrate PLUGIN=webui FROM_VPSADMIN1=yes
+
+## 6. Migrate to the news log plugin
+
+    $ rake vpsadmin:plugins:migrate PLUGIN=newslog FROM_VPSADMIN1=yes
+
+## 7. Upgrade all remaining components
+
+    # On all nodes
+    $ cd /opt/vpsadmind
+    $ git pull
+    $ cd /opt/vpsadmindctl
+    $ git pull
+
+Then upgrade the web UI, console router, and so on.
+
+## 8. Configuration
+### 8.1 Requests
+You need to set the following sysconfig variables:
+
+- `plugin_requests:message_id` - mail message ID's to enable threading
+- `plugin_requests:currencies` - a comma separated list of available currencies
+
+It's then up to you to register additional mail templates:
+
+- Requests
+  - `request_create_<user role>_<request type>`
+  - `request_create_<user role>`
+
+- Resolve (approval or denial)
+  - `request_resolve_<user role>_<request type>_<request state>`
+  - `request_resolve_<user role>_<request type>`
+  - `request_resolve_<user role>_<request state>`
+  - `request_resolve_<user role>`
+
+Where
+
+- user role is `user` or `admin`
+- request type is `registration` or `change`
+- request state is one of `approved`, `denied` and `ignored`
+
+See the example mail templates in the plugin directory.
+
+### 8.2 Payments
+You need to set the following sysconfig variables:
+
+- `plugin_payments:default_currency` - which currency your bank account uses
+- `plugin_payments:conversion_rates` - a hash with static conversion rates from
+  the default currency to other accepted currencies
+- `plugin_payments:fio_api_token` - if you wish to automatically fetch transactions
+  from the bank account, fill in your API token (supports only FIO bank at the
+  moment)
+
+You have to create mail template `payment_accepted`, which is used when a payment
+is assigned to a user. If you wish to use payment overview mails, create also
+template `payments_overview`.
+
+#### `payments_overview`
+This report is sent using rake task `vpsadmin:payments:mail_overview`:
+
+    $ rake vpsadmin:payments:mail_overview VPSADMIN_LANG=en PERIOD=$((60*60*24))
+
+`VPSADMIN_LANG` determines in which language will the mail be sent, it defaults
+to the first language. `PERIOD` is a number of seconds to the past that this
+report should go to, the default is 1 day.
+
+You have to configure recipients for this mail template, e.g.:
+
+    # Find mail template id
+    $ vpsadminctl mail_template list -oid,name | grep payments_overview
+    30  payments_overview
+
+    # Create or find out mail recipient id (mail_recipient list/create)
+    $ vpsadminctl mail_template.recipient new 30 -- --mail-recipient <id of recipient>
+
+You can add as many recipients as you wish.
+
+## 9. Cleanup
+If the migration was successful, you may remove some deprecated database tables
+that are no longer needed:
+
+- `log`
+- `helpbox`
+- `members_changes`
+- `members_payments`
+
+The web UI no longer requires database credentials, remove them from the config.
