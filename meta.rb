@@ -7,11 +7,11 @@ VpsAdmin::API::Plugin.register(:webui) do
   components :api
 
   config do
-    SysConfig.register :webui, :base_url, String
-    SysConfig.register :webui, :document_title, String
-    SysConfig.register :webui, :noticeboard, Text
-    SysConfig.register :webui, :index_info_box_title, String
-    SysConfig.register :webui, :index_info_box_content, Text
+    SysConfig.register :webui, :base_url, String, min_user_level: 1
+    SysConfig.register :webui, :document_title, String, min_user_level: 0
+    SysConfig.register :webui, :noticeboard, Text, min_user_level: 0
+    SysConfig.register :webui, :index_info_box_title, String, min_user_level: 0
+    SysConfig.register :webui, :index_info_box_content, Text, min_user_level: 0
 
     MailTemplate.register :daily_report, vars: {
         base_url: [String, 'URL to the web UI'],
