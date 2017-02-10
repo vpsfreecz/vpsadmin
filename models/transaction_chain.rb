@@ -362,7 +362,7 @@ class TransactionChain < ActiveRecord::Base
     chain = dst_chain || self
     return chain.mail_server if chain.mail_server
 
-    chain.mail_server = ::Node.find_by(role: 'mailer')
+    chain.mail_server = ::Node.find_by(role: ::Node.roles[:mailer])
     chain.mail_server ||= ::Node.order('id').take!
   end
 end
