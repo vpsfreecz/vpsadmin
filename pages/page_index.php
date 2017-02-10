@@ -165,8 +165,8 @@ if($position == 2) { // last row has only one node
 
 $xtpl->table_out();
 
-$xtpl->table_add_category($config->get('webui', 'page_index_info_box_title'));
-$xtpl->table_td($config->get('webui', 'page_index_info_box_content'));
+$xtpl->table_add_category($config->get('webui', 'index_info_box_title'));
+$xtpl->table_td($config->get('webui', 'index_info_box_content'));
 $xtpl->table_tr();
 $xtpl->table_out();
 
