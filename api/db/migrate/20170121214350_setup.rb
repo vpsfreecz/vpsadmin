@@ -78,8 +78,8 @@ class Setup < ActiveRecord::Migration
                     u.monthly_payment * ((change_to - change_from) DIV (60*60*24*30))
                   END,
                   FROM_UNIXTIME(`timestamp`),
-                  FROM_UNIXTIME(change_from),
-                  FROM_UNIXTIME(change_to)
+                  IFNULL(FROM_UNIXTIME(change_from), NOW()),
+                  IFNULL(FROM_UNIXTIME(change_to), DATE_ADD(NOW(), INTERVAL 100 YEAR))
                 FROM members_payments p
                 INNER JOIN users u ON p.m_id = u.id"
             )
