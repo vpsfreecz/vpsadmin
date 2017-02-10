@@ -66,7 +66,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
         end
       end
       
-      ::User.where('level > 90').each do |admin|
+      ::User.where('level > 90').where(mailer_enabled: true).each do |admin|
         [
             [
                 :request_resolve_role_type_state,
