@@ -1,3 +1,5 @@
+- Add shortcut method VpsAdmin::Client.new
+
 * Fri Nov 25 2016 - version 2.6.0
 - Use haveapi-client v0.7
 - Remove ruby-progressbar as a dependency
