@@ -16,5 +16,11 @@ module VpsAdmin::API::Resources
         use :payments
       end
     end
+    
+    class Current
+      output do
+        use :payments
+      end
+    end
   end
 end
