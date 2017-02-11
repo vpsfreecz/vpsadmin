@@ -6,7 +6,11 @@ module VpsAdmin::ConsoleRouter
     end
 
     def api_url
-      rs = db.query("SELECT value FROM sysconfig WHERE name = 'api_url'")
+      rs = db.query(
+          "SELECT value
+          FROM sysconfig
+          WHERE category = 'core' AND name = 'api_url'"
+      )
       JSON.parse("{ \"v\": #{rs.fetch_row.first} }", symbolize_names: true)[:v]
     end
 
