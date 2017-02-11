@@ -993,9 +993,9 @@ if ($_SESSION["logged_in"]) {
 			if($_SESSION["is_admin"]) {
 				try {
 					$u->update(array(
-						'full_name' => $_POST['m_name'],
-						'email' => $_POST['m_mail'],
-						'address' => $_POST['m_address']
+						'full_name' => $_POST['full_name'],
+						'email' => $_POST['email'],
+						'address' => $_POST['address'],
 					));
 
 					notify_user(_("Changes saved"), _('User personal information were updated.'));
