@@ -19,6 +19,9 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
 
       payment.to_date = u.user_account.paid_until
       payment.save!
+      
+      concerns(:affect, [payment.class.name, payment.id])
+
       u.user_account.save!
       u.set_expiration(
           payment.to_date,
