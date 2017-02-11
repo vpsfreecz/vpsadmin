@@ -70,6 +70,7 @@ class SysConfig < ActiveRecord::Base
          "been applied yet"
   end
 
+  register :core, :api_url, String, min_user_level: 0
   register :core, :snapshot_download_base_url, String
   register :node, :public_key, Text
   register :node, :private_key, Text
