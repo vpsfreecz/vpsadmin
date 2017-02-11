@@ -86,7 +86,7 @@ function list_templates($vps = null) {
 		'id', 'label', false, function ($t) {
 			$ret = $t->label;
 
-			if (!$t->enabled)
+			if ($_SESSION['is_admin'] && !$t->enabled)
 				return $ret.' '._('(IMPORTANT: This template is currently disabled, it cannot be used)');;
 
 			return $ret;
