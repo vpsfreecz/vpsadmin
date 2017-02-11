@@ -333,10 +333,23 @@ function approval_requests_details($type, $id) {
 	$request_attrs = $r->show->getParameters('output');
 
 	foreach ($params as $name => $desc) {
+		$v = null;
+
+		if (property_exists($request_attrs, $name)) {
+			switch ($request_attrs->{$name}->type) {
+			case 'Resource':
+				$v = $r->{"{$name}_id"};
+				break;
+
+			default:
+				$v = $r->{$name};
+			}
+		}
+
 		api_param_to_form(
 			$name,
 			$desc,
-			post_val($name, property_exists($request_attrs, $name) ? $r->{$name} : null)
+			post_val($name, $v)
 		);
 	}
 
