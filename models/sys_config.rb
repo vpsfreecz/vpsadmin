@@ -58,6 +58,7 @@ class SysConfig < ActiveRecord::Base
       attrs = opts.clone
       attrs[:category] = category
       attrs[:name] = name
+      attrs[:data_type] = type.to_s
       attrs.delete(:default)
       attrs[:value] = opts[:default] if opts[:default]
 
