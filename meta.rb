@@ -20,7 +20,7 @@ VpsAdmin::API::Plugin.register(:payments) do
         user: '::User',
         account: '::UserAccount',
         payment: '::UserPayment',
-    }
+    }, roles: %i(account), public: true
 
     MailTemplate.register :payments_overview, vars: {
         base_url: [String, "URL to the web UI"],
