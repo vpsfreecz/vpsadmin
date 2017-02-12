@@ -12,6 +12,7 @@ class UserAccount < ActiveRecord::Base
 
   protected
   def set_defaults
+    return if persisted?
     self.monthly_payment = ::SysConfig.get(
         :plugin_payments,
         :default_monthly_payment
