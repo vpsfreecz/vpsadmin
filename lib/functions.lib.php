@@ -489,6 +489,15 @@ function transaction_concern_link($klass, $row_id) {
 		case 'User':
 			return '<a href="?page=adminm&action=edit&id='.$row_id.'">'.$row_id.'</a>';
 
+		case 'UserPayment':
+			return '<a href="?page=adminm&action=payset&id='.$row_id.'">'.$row_id.'</a>';
+
+		case 'RegistrationRequest':
+			return '<a href="?page=adminm&action=request_details&id='.$row_id.'&type=registration">'.$row_id.'</a>';
+
+		case 'ChangeRequest':
+			return '<a href="?page=adminm&action=request_details&id='.$row_id.'&type=change">'.$row_id.'</a>';
+
 		default:
 			return "$row_id";
 	}

@@ -33,6 +33,15 @@
 			case 'User':
 				return '<a href="?page=adminm&action=edit&id='+ obj[1] +'">'+ obj[1] +'</a>';
 
+			case 'UserPayment':
+				return '<a href="?page=adminm&action=payset&id='+ obj[1] +'">'+ obj[1] +'</a>';
+
+			case 'RegistrationRequest':
+				return '<a href="?page=adminm&action=request_details&id='+ obj[1] +'&type=registration">'+ obj[1] +'</a>';
+
+			case 'ChangeRequest':
+				return '<a href="?page=adminm&action=request_details&id='+ obj[1] +'&type=change">'+ obj[1] +'</a>';
+
 			default:
 				return obj[1];
 		}
