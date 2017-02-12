@@ -2,9 +2,18 @@ require 'date'
 
 class UserAccount < ActiveRecord::Base
   belongs_to :user
+  before_validation :set_defaults
   
   def self.accept_payments
     VpsAdmin::API::Plugins::Payments::TransactionChains::Accept.fire
+  end
+
+  protected
+  def set_defaults
+    self.monthly_payment = ::SysConfig.get(
+        :plugin_payments,
+        :default_monthly_payment
+    ).to_i
   end
 end
 

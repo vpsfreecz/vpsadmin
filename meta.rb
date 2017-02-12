@@ -9,6 +9,8 @@ VpsAdmin::API::Plugin.register(:payments) do
   config do
     SysConfig.register :plugin_payments, :default_currency, String,
         min_user_level: 99
+    SysConfig.register :plugin_payments, :default_monthly_payment, Integer,
+        min_user_level: 99
     SysConfig.register :plugin_payments, :conversion_rates, Hash,
         min_user_level: 99
     SysConfig.register :plugin_payments, :fio_api_token, String,
