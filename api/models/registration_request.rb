@@ -49,7 +49,7 @@ class RegistrationRequest < UserRequest
     )
     new_user.set_password(generate_password)
 
-    if org_name
+    if org_name && !org_name.strip.empty?
       new_user.full_name = "#{org_name} (ID #{org_id}), #{full_name}"
 
     else
