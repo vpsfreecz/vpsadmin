@@ -42,6 +42,9 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
       use_chain(Create, args: payment)
 
       payment
+
+    rescue ::UserAccount::AccountDisabled
+      return
     end
   end
 end

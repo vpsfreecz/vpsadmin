@@ -23,10 +23,24 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
       concerns(:affect, [payment.class.name, payment.id])
 
       u.user_account.save!
-      u.set_expiration(
-          payment.to_date,
-          reason: "Payment ##{payment.id} accepted."
-      )
+
+      if u.object_state == 'active'
+        u.set_expiration(
+            payment.to_date,
+            reason: "Payment ##{payment.id} accepted."
+        )
+
+      elsif u.object_state == 'suspended'
+        u.set_object_state(
+            :active,
+            expiration: payment.to_date,
+            reason: "Payment ##{payment.id} accepted.",
+            chain: self,
+        )
+      else
+        raise ::UserAccount::AccountDisabled,
+            "Account #{u.id} is in state #{u.object_state}, cannot add payment"
+      end
 
       if payment.incoming_payment
         payment.incoming_payment.update!(

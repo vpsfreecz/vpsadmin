@@ -3,6 +3,8 @@ require 'date'
 class UserAccount < ActiveRecord::Base
   belongs_to :user
   before_validation :set_defaults
+
+  class AccountDisabled < StandardError ; end
   
   def self.accept_payments
     VpsAdmin::API::Plugins::Payments::TransactionChains::Accept.fire

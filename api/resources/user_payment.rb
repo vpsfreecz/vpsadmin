@@ -112,6 +112,9 @@ module VpsAdmin::API::Resources
 
       rescue ActiveRecord::RecordNotUnique
         error('Create failed: this incoming payment is already assigned')
+
+      rescue ::UserAccount::AccountDisabled => e
+        error(e.message)
       end
     end
   end
