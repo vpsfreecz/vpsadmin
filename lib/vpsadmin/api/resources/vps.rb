@@ -1225,7 +1225,7 @@ END
       end
 
       def query
-        ::Mount.joins(:vps).where(with_restricted(id: params[:vps_id]))
+        ::Mount.joins(:vps).where(with_restricted(vps_id: params[:vps_id]))
       end
 
       def count
