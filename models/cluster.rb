@@ -32,11 +32,11 @@ class Cluster
         
         UNION
         SELECT 'User', id, 'full_name', full_name
-        FROM users WHERE full_name = #{q}
+        FROM users WHERE full_name = #{q} AND object_state < 3
 			 
         UNION
         SELECT 'User', id, 'email', email
-        FROM users WHERE email = #{q}
+        FROM users WHERE email = #{q} AND object_state < 3
 			  
         UNION
         SELECT 'User', user_id AS id, 'ip_addr', ip_addr
@@ -57,7 +57,7 @@ class Cluster
         UNION
         SELECT 'Vps', id, 'hostname', hostname
         FROM vpses
-        WHERE hostname = #{q}
+        WHERE hostname = #{q} AND object_state < 3
        
         UNION
         SELECT 'User', id, 'login', login
@@ -65,16 +65,16 @@ class Cluster
         
         UNION
         SELECT 'User', id, 'full_name', full_name
-        FROM users WHERE full_name LIKE CONCAT('%', #{q}, '%')
+        FROM users WHERE full_name LIKE CONCAT('%', #{q}, '%') AND object_state < 3
 			 
         UNION
         SELECT 'User', id, 'email', email
-        FROM users WHERE email LIKE CONCAT('%', #{q}, '%')
+        FROM users WHERE email LIKE CONCAT('%', #{q}, '%') AND object_state < 3
 
         UNION
         SELECT 'Vps', id, 'hostname', hostname
         FROM vpses
-        WHERE hostname LIKE CONCAT('%', #{q}, '%')"
+        WHERE hostname LIKE CONCAT('%', #{q}, '%') AND object_state < 3"
     ).map do |v|
       {resource: v[0], id: v[1], attribute: v[2], value: v[3]}
     end
