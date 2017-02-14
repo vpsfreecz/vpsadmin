@@ -7,7 +7,12 @@ class UserSession < ActiveRecord::Base
 
   def self.authenticate!(request, username, password, token: nil)
     user = ::User.login(request, username, password)
-    return unless user
+
+    if user.nil?
+      self.current = nil
+      ::User.current = nil
+      return
+    end
 
     self.current = create!(
         user: user,
@@ -28,6 +33,8 @@ class UserSession < ActiveRecord::Base
       self.current = find_session!(request, user, token: token)
 
     rescue ActiveRecord::RecordNotFound
+      self.current = nil
+      ::User.current = nil
       return
     end
 
