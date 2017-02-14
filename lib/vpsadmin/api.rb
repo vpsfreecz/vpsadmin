@@ -21,6 +21,13 @@ module VpsAdmin
       authenticate(api)
 
       api.connect_hook(:post_authenticated) do |ret, u|
+        # If some user was authenticated in the previous request, but is not now,
+        # reset current user info in the per-thread storage.
+        if u.nil?
+          ::UserSession.current = nil
+          ::User.current = nil
+        end
+
         ::PaperTrail.whodunnit = u
         ret
       end
