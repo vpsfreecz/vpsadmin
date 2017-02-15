@@ -84,6 +84,7 @@ module VpsAdmin::API::Resources
     
     class Create < HaveAPI::Actions::Default::Create
       desc 'Create a user payment'
+      blocking true
 
       input do
         use :writable
@@ -104,7 +105,7 @@ module VpsAdmin::API::Resources
           error("Provide amount or incoming payment")
         end
 
-        _, payment = ::UserPayment.create!(input)
+        @chain, payment = ::UserPayment.create!(input)
         payment
 
       rescue ActiveRecord::RecordInvalid => e
@@ -115,6 +116,10 @@ module VpsAdmin::API::Resources
 
       rescue ::UserAccount::AccountDisabled => e
         error(e.message)
+      end
+
+      def state_id
+        @chain.id
       end
     end
   end
