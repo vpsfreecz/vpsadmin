@@ -7,6 +7,8 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
       u = payment.user
       delta = payment.amount / u.user_account.monthly_payment
 
+      lock(u.user_account)
+
       if u.user_account.paid_until
         payment.from_date = u.user_account.paid_until
         u.user_account.paid_until = add_months(u.user_account.paid_until, delta)

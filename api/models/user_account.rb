@@ -4,6 +4,8 @@ class UserAccount < ActiveRecord::Base
   belongs_to :user
   before_validation :set_defaults
 
+  include Lockable
+
   class AccountDisabled < StandardError ; end
 
   # Accept queued payments
