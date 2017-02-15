@@ -5,9 +5,57 @@ class UserAccount < ActiveRecord::Base
   before_validation :set_defaults
 
   class AccountDisabled < StandardError ; end
-  
+
+  # Accept queued payments
   def self.accept_payments
-    VpsAdmin::API::Plugins::Payments::TransactionChains::Accept.fire
+    transaction do
+      ::IncomingPayment.where(
+          state: ::IncomingPayment.states[:queued],
+      ).each do |income|
+        begin
+          u = ::User.find(income.vs.to_i)
+        
+        rescue ActiveRecord::RecordNotFound
+          income.update!(state: ::IncomingPayment.states[:unmatched])
+          next
+        end
+
+        begin
+          _, payment = accept_payment(u, income)
+
+        rescue ::ResourceLocked
+          next
+        end
+
+        unless payment
+          income.update!(state: ::IncomingPayment.states[:unmatched])
+          next
+        end
+      end
+    end
+  end
+
+  # @param user [User]
+  # @param income [IncomingPayment]
+  def self.accept_payment(user, income)
+    payment = ::UserPayment.new(
+        incoming_payment: income,
+        user: user,
+    )
+    amount = income.converted_amount
+
+    # Break if we're unable to figure out the received amount
+    return if amount.nil?
+
+    # Break if the received amount is not a multiple of the monthly payment
+    return if amount % user.user_account.monthly_payment != 0
+
+    payment.amount = amount
+
+    VpsAdmin::API::Plugins::Payments::TransactionChains::Create.fire(payment)
+
+  rescue ::UserAccount::AccountDisabled
+    return
   end
 
   protected

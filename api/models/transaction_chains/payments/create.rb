@@ -22,9 +22,15 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
       
       concerns(:affect, [payment.class.name, payment.id])
 
-      u.user_account.save!
-
       if u.object_state == 'active'
+        u.user_account.save!
+
+        if payment.incoming_payment
+          payment.incoming_payment.update!(
+              state: ::IncomingPayment.states[:processed],
+          )
+        end
+
         u.set_expiration(
             payment.to_date,
             reason: "Payment ##{payment.id} accepted."
@@ -37,15 +43,21 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
             reason: "Payment ##{payment.id} accepted.",
             chain: self,
         )
+        
+        append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
+          t.just_create(payment)
+          t.edit_before(u.user_account, paid_until: u.user_account.paid_until_was)
+
+          u.user_account.save!
+          
+          if payment.incoming_payment
+            t.edit(payment.incoming_payment, state: ::IncomingPayment.states[:processed])
+          end
+        end
+
       else
         raise ::UserAccount::AccountDisabled,
             "Account #{u.id} is in state #{u.object_state}, cannot add payment"
-      end
-
-      if payment.incoming_payment
-        payment.incoming_payment.update!(
-            state: ::IncomingPayment.states[:processed],
-        )
       end
       
       if u.mailer_enabled
