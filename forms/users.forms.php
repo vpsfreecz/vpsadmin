@@ -514,7 +514,10 @@ function user_payment_history() {
 	$xtpl->form_add_input(_("User ID").':', 'text', '40', 'user', get_val('user'));
 	$xtpl->form_out(_("Show"));
 
-	$params = array('limit' => get_val('limit', 25));
+	$params = array(
+		'limit' => get_val('limit', 25),
+		'meta' => array('includes' => 'user,accounted_by'),
+	);
 
 	foreach (array('accounted_by', 'user') as $filter) {
 		if ($_GET[$filter])
