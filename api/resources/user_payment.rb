@@ -73,7 +73,7 @@ module VpsAdmin::API::Resources
       
       def prepare
         @payment = ::UserPayment.find_by!(with_restricted(
-            params['user_payment_id']
+            id: params['user_payment_id'],
         ))
       end
 
