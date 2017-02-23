@@ -159,6 +159,9 @@ try {
 			case 'history':
 				include WWW_ROOT.'pages/page_history.php';
 				break;
+			case 'redirect':
+				include WWW_ROOT.'pages/page_redirect.php';
+				break;
 			default:
 				include WWW_ROOT.'pages/page_index.php';
 		}
