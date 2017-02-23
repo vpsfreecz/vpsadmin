@@ -237,7 +237,7 @@ function vps_swap_form($vps) {
 		return '#'.$vps->id.' '.$vps->hostname;
 	}));
 
-	$xtpl->form_out(_("Continue"), null,
+	$xtpl->form_out(_("Preview"), null,
 		'<input type="hidden" name="page" value="adminvps">'.
 		'<input type="hidden" name="action" value="swap_preview">'.
 		'<input type="hidden" name="veid" value="'.$vps->id.'">'
