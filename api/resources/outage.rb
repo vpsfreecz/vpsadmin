@@ -175,6 +175,12 @@ module VpsAdmin::API::Resources
 
         if outage.state != 'staged'
           error('Only staged outages can be announced')
+
+        elsif outage.outage_handlers.count <= 0
+          error('Add at least one outage handler')
+
+        elsif outage.outage_entities.count <= 0
+          error('Add at least one entity impaired by the outage')
         end
 
         @chain, ret = outage.announce!
