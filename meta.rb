@@ -5,4 +5,23 @@ VpsAdmin::API::Plugin.register(:outage_reports) do
   author 'Jakub Skokan'
   email 'jakub.skokan@vpsfree.cz'
   components :api
+
+  config do
+    ::MailTemplate.register :outage_report_event,
+        name: "outage_report_%{event}", params:  {
+            event: 'announce, cancel, close or update',
+        }, vars: {
+              outage: '::Outage',
+              o: '::Outage',
+              user: '::User',
+              vpses: 'Array<::Vps>',
+        }
+    
+    ::MailTemplate.register :outage_report, vars: {
+            outage: '::Outage',
+            o: '::Outage',
+            user: '::User',
+            vpses: 'Array<::Vps>',
+        }
+  end
 end

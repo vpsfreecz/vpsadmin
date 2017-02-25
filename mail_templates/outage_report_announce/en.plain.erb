@@ -1,0 +1,19 @@
+Hi <%= @user.login %>,
+
+<%= @o.planned ? 'a planned' : 'an unplanned' %> outage has been reported and <%= @vpses.count %> of your VPS <%= @vpses.count > 1 ? 'are' : 'is' %> affected.
+
+Affected VPS:
+
+<% @vpses.each do |vps| -%>
+  - VPS #<%= vps.id %> - <%= vps.hostname %> (<%= vps.node.domain_name %>)
+<% end -%>
+
+Date and time: <%= @o.begins_at.strftime('%Y-%m-%d %H:%M') %>
+Expected duration: <%= @o.duration %> minutes
+Affected systems: <%= @o.entity_names.join(', ') %>
+Reason: <%= @o.en_summary %>
+Handled by: <%= @o.outage_handlers.map { |h| h.user.full_name }.join(', ') %>
+
+Best regards,
+
+vpsAdmin

@@ -25,13 +25,53 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       end
 
       outage.assign_attributes(attrs)
-      outage.last_report = report
       outage.save!
       outage.load_translations
 
-      # TODO: send e-mails
+      event = {
+          ::Outage.states[:announced] => 'announce',
+          ::Outage.states[:cancelled] => 'cancel',
+          ::Outage.states[:closed] => 'closed',
+      }
+
+      outage.affected_users.each do |u|
+        send_mail(
+            [
+                [
+                    :outage_report_event,
+                    {event: event[attrs[:state]] || 'update'},
+                ],
+                [
+                    :outage_report,
+                    {},
+                ],
+            ],
+            user: u,
+            vars: {
+                outage: outage,
+                o: outage,
+                user: u,
+                vpses: outage.affected_vpses(u),
+            }
+        ) if u.mailer_enabled
+      end
 
       outage
+    end
+
+    protected
+    def send_mail(templates, opts)
+      templates.each do |id, params|
+        begin
+          args = {params: params}
+          args.update(opts)
+
+          mail(id, args)
+
+        rescue VpsAdmin::API::Exceptions::MailTemplateDoesNotExist
+          next
+        end
+      end
     end
   end
 end

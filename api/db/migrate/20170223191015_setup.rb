@@ -1,7 +1,6 @@
 class Setup < ActiveRecord::Migration
   def change
     create_table :outages do |t|
-      t.references  :last_report,    null: true
       t.boolean     :planned,        null: false
       t.datetime    :begins_at,      null: true
       t.datetime    :finished_at,    null: true
@@ -55,13 +54,17 @@ class Setup < ActiveRecord::Migration
     add_index :outage_reports, :outage_type
     
     create_table :outage_translations do |t|
-      t.references  :outage_report,  null: false
+      t.references  :outage,         null: true
+      t.references  :outage_report,  null: true
       t.references  :language,       null: false
       t.string      :summary,        null: false
       t.text        :description,    null: true
     end
 
+    add_index :outage_translations, :outage_id
     add_index :outage_translations, :outage_report_id
     add_index :outage_translations, :language_id
+    add_index :outage_translations, %i(outage_id language_id), unique: true
+    add_index :outage_translations, %i(outage_report_id language_id), unique: true
   end
 end
