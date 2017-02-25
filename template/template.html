@@ -97,7 +97,7 @@
             	<div id="l_form">
             		<!-- BEGIN: is_admin -->
 						<!-- BEGIN: maintenance_mode_on -->
-							<span><a href="?page=cluster&action=set_maintenance_lock&type=cluster&lock=0"><img src="template/icons/error.png" title="{L_MAINTENANCE_MODE_ON}" /></a></span>
+                        <span><a href="?page=cluster&action=set_maintenance_lock&type=cluster&lock=0&t={V_CSRF_TOKEN}"><img src="template/icons/error.png" title="{L_MAINTENANCE_MODE_ON}" /></a></span>
 						<!-- END: maintenance_mode_on -->
 						<!-- BEGIN: maintenance_mode_off -->
 							<span><a href="?page=cluster&action=maintenance_lock&type=cluster&lock=1"><img src="template/icons/server_online.png" title="{L_MAINTENANCE_MODE_OFF}" /></a></span>

@@ -468,6 +468,7 @@ class XTemplate {
 				$this->parse("main.loggedbox.jumpto");
 
 				if ($maint_mode) {
+					$this->assign("V_CSRF_TOKEN", csrf_token());
 					$this->assign("L_MAINTENANCE_MODE_ON",_("Maintenance mode status: ON"));
 					$this->parse("main.loggedbox.is_admin.maintenance_mode_on");
 				} else {
