@@ -13,6 +13,7 @@ VpsAdmin::API::Plugin.register(:outage_reports) do
         }, vars: {
               outage: '::Outage',
               o: '::Outage',
+              update: '::OutageUpdate',
               user: '::User',
               vpses: 'Array<::Vps>',
         }
@@ -20,6 +21,7 @@ VpsAdmin::API::Plugin.register(:outage_reports) do
     ::MailTemplate.register :outage_report, vars: {
             outage: '::Outage',
             o: '::Outage',
+            update: '::OutageUpdate',
             user: '::User',
             vpses: 'Array<::Vps>',
         }

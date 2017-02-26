@@ -116,7 +116,7 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :editable, exclude: %i(planned type)
+        use :editable, exclude: %i(planned)
       end
 
       output do
@@ -144,7 +144,7 @@ module VpsAdmin::API::Resources
           end
         end
 
-        @chain, ret = outage.update!(input, tr)
+        @chain, ret = outage.update!(to_db_names(input), tr)
         ret 
 
       rescue ActiveRecord::RecordInvalid => e

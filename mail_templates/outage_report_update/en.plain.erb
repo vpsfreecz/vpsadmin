@@ -1,0 +1,31 @@
+Hi <%= @user.login %>,
+
+we have an update for you regarding this outage.
+
+<% @update.each_change do |attr, old, new| -%>
+<%= case attr
+    when :begins_at
+      "Begins at: moved from #{old.strftime('%Y-%m-%d %H:%M')} to #{new.strftime('%Y-%m-%d %H:%M')}"
+
+    when :finished_at
+      "Finished at: #{new}"
+
+    when :duration
+      "Duration: #{old} -> #{new} minutes"
+
+    when :state
+      "State: #{old} -> #{new}"
+
+    when :outage_type
+      "Outage type: #{old} -> #{new}"
+    end
+%>
+<% end -%>
+
+<%= @update.summary %>
+
+<%= @update.description %>
+
+Best regards,
+
+vpsAdmin

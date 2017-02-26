@@ -24,6 +24,8 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
         tr.save!
       end
 
+      report.origin = outage.attributes
+
       outage.assign_attributes(attrs)
       outage.save!
       outage.load_translations
@@ -42,6 +44,10 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
                     {event: event[attrs[:state]] || 'update'},
                 ],
                 [
+                    :outage_report_event,
+                    {event: 'update'},
+                ],
+                [
                     :outage_report,
                     {},
                 ],
@@ -50,6 +56,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
             vars: {
                 outage: outage,
                 o: outage,
+                update: report,
                 user: u,
                 vpses: outage.affected_vpses(u),
             }
