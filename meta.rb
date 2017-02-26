@@ -10,7 +10,7 @@ VpsAdmin::API::Plugin.register(:outage_reports) do
     ::MailTemplate.register :outage_report_event,
         name: "outage_report_%{event}", params:  {
             event: 'announce, cancel, close or update',
-        }, vars: {
+        }, roles: %i(admin), vars: {
               outage: '::Outage',
               o: '::Outage',
               update: '::OutageUpdate',
@@ -18,7 +18,7 @@ VpsAdmin::API::Plugin.register(:outage_reports) do
               vpses: 'Array<::Vps>',
         }
     
-    ::MailTemplate.register :outage_report, vars: {
+    ::MailTemplate.register :outage_report, roles: %i(admin), vars: {
             outage: '::Outage',
             o: '::Outage',
             update: '::OutageUpdate',
