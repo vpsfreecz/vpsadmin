@@ -1,4 +1,4 @@
-class OutageReport < ActiveRecord::Base
+class OutageUpdate < ActiveRecord::Base
   belongs_to :outage
   belongs_to :reported_by, class_name: 'User'
   has_many :outage_translations

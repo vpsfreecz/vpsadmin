@@ -36,7 +36,7 @@ class Setup < ActiveRecord::Migration
     add_index :outage_handlers, :user_id
     add_index :outage_handlers, %i(outage_id user_id), unique: true
 
-    create_table :outage_reports do |t|
+    create_table :outage_updates do |t|
       t.references  :outage,         null: false
       t.references  :reported_by,    null: true
       t.datetime    :begins_at,      null: true
@@ -48,23 +48,23 @@ class Setup < ActiveRecord::Migration
       t.datetime    :updated_at,     null: true
     end
     
-    add_index :outage_reports, :outage_id
-    add_index :outage_reports, :reported_by_id
-    add_index :outage_reports, :state
-    add_index :outage_reports, :outage_type
+    add_index :outage_updates, :outage_id
+    add_index :outage_updates, :reported_by_id
+    add_index :outage_updates, :state
+    add_index :outage_updates, :outage_type
     
     create_table :outage_translations do |t|
       t.references  :outage,         null: true
-      t.references  :outage_report,  null: true
+      t.references  :outage_update,  null: true
       t.references  :language,       null: false
       t.string      :summary,        null: false
       t.text        :description,    null: true
     end
 
     add_index :outage_translations, :outage_id
-    add_index :outage_translations, :outage_report_id
+    add_index :outage_translations, :outage_update_id
     add_index :outage_translations, :language_id
     add_index :outage_translations, %i(outage_id language_id), unique: true
-    add_index :outage_translations, %i(outage_report_id language_id), unique: true
+    add_index :outage_translations, %i(outage_update_id language_id), unique: true
   end
 end

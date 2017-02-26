@@ -7,7 +7,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
     # @param attrs [Hash] attributes of {::OutageReport}
     # @param translations [Hash] string; `{Language => {summary => '', description => ''}}`
     def link_chain(outage, attrs, translations)
-      report = ::OutageReport.new
+      report = ::OutageUpdate.new
       
       attrs.each do |k, v|
         report.assign_attributes(k => v) if outage.send(k) != v
@@ -20,7 +20,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       translations.each do |lang, attrs|
         tr = ::OutageTranslation.new(attrs)
         tr.language = lang
-        tr.outage_report = report
+        tr.outage_update = report
         tr.save!
       end
 

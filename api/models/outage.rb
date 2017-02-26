@@ -1,7 +1,7 @@
 class Outage < ActiveRecord::Base
   has_many :outage_entities
   has_many :outage_handlers
-  has_many :outage_reports
+  has_many :outage_updates
   has_many :outage_translations
   
   enum state: %i(staged announced closed cancelled)
@@ -17,7 +17,7 @@ class Outage < ActiveRecord::Base
 
       attrs.delete(:planned)
 
-      report = ::OutageReport.new(attrs)
+      report = ::OutageUpdate.new(attrs)
       report.outage = outage
       report.state = 'staged'
       report.reported_by = ::User.current
@@ -47,15 +47,15 @@ class Outage < ActiveRecord::Base
 
   # TODO: check that we have outage entities, handlers and description
   def announce!
-    update!(state: ::OutageReport.states[:announced])
+    update!(state: self.class.states[:announced])
   end
 
   def close!
-    update!(state: ::OutageReport.states[:closed])
+    update!(state: self.class.states[:closed])
   end
 
   def cancel!
-    update!(state: ::OutageReport.states[:cancelled])
+    update!(state: self.class.states[:cancelled])
   end
 
   def load_translations
