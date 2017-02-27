@@ -8,6 +8,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
     # @param translations [Hash] string; `{Language => {summary => '', description => ''}}`
     def link_chain(outage, attrs, translations)
       concerns(:affect, [outage.class.name, outage.id])
+      last_report = outage.outage_updates.order('id DESC').take
       report = ::OutageUpdate.new
       
       attrs.each do |k, v|
@@ -38,6 +39,15 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       }
 
       outage.affected_users.each do |u|
+        msg_id = message_id(outage, report, u)
+
+        if last_report
+          in_reply_to = message_id(outage, last_report, u)
+
+        else
+          in_reply_to = nil
+        end
+
         send_mail(
             [
                 [
@@ -54,6 +64,9 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
                 ],
             ],
             user: u,
+            message_id: msg_id,
+            in_reply_to: in_reply_to,
+            references: in_reply_to,
             vars: {
                 outage: outage,
                 o: outage,
@@ -81,6 +94,14 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
           next
         end
       end
+    end
+
+    def message_id(outage, update, user)
+      ::SysConfig.get(:plugin_outage_reports, :message_id) % {
+          outage_id: outage.id,
+          update_id: update.id,
+          user_id: user.id,
+      }
     end
   end
 end
