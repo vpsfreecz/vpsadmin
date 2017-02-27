@@ -21,13 +21,15 @@ module VpsAdmin::API::Resources
     params(:all) do
       id :id
       use :editable
+      bool :affected, label: 'Affected',
+          desc: 'True if the current user is affected by the outage'
     end
 
     class Index < HaveAPI::Actions::Default::Index
       desc 'List outages'
 
       input do
-        use :editable, include: %i(planned state type)
+        use :all, include: %i(planned state type affected)
       end
 
       output(:object_list) do
@@ -51,10 +53,22 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_includes(query)
-            .limit(input[:limit])
+        # Fetch twice the number of requested records if filtering outages affecting
+        # the current user. Imagine that the limit is 5, so we fetch 5 outages from
+        # the database, but none is affecting the current user, so the response is empty.
+        # However, there may be outages affecting the current user, there are just 5
+        # unaffecting outages before them. Fetching twice the requested limit is not
+        # solving this issue entirely, but makes it less likely.
+        ret = with_includes(query)
+            .limit((input[:limit] && input.has_key?(:affected)) ? input[:limit]*2 : input[:limit])
             .offset(input[:offset])
             .order('begins_at, created_at')
+
+        if input.has_key?(:affected)
+          ret.to_a.select { |v| input[:affected] === v.affected }
+        else
+          ret
+        end
       end
     end
 

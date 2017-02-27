@@ -68,6 +68,14 @@ class Outage < ActiveRecord::Base
     end
   end
 
+  # @return [Boolean] true if the current user is affected by this outage
+  def affected
+    return false if ::User.current.nil? || state != 'announced'
+    return false if finished_at && finished_at < Time.now
+
+    affected_vpses(::User.current).count > 0
+  end
+
   # @return [Array<User>] list of users that are affected by this outage
   def affected_users
     q = []
