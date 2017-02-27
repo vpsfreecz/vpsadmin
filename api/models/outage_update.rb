@@ -6,6 +6,8 @@ class OutageUpdate < ActiveRecord::Base
   enum state: %i(staged announced closed cancelled)
   enum outage_type: %i(tbd restart reset network performance maintenance)
 
+  after_initialize :load_translations
+
   # Set the origin for attribute changes
   def origin=(attrs)
     @origin = attrs
@@ -38,5 +40,15 @@ class OutageUpdate < ActiveRecord::Base
   rescue ActiveRecord::RecordNotFound
     any = outage_translations.take
     any ? any.description: ''
+  end
+
+  def load_translations
+    outage_translations.each do |tr|
+      %i(summary description).each do |param|
+        define_singleton_method("#{tr.language.code}_#{param}") do
+          tr.send(param)
+        end
+      end
+    end
   end
 end
