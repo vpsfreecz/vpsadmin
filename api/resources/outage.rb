@@ -39,8 +39,11 @@ module VpsAdmin::API::Resources
       end
 
       def query
-        ::Outage.all
-        # TODO: filters
+        q = ::Outage.all
+        q = q.where(planned: input[:planned]) if input.has_key?(:planned)
+        q = q.where(state: ::Outage.states[input[:state]]) if input[:state]
+        q = q.where(outage_type: ::Outage.outage_types[input[:type]]) if input[:type]
+        q
       end
 
       def count
@@ -48,7 +51,10 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_includes(query).limit(input[:limit]).offset(input[:offset])
+        with_includes(query)
+            .limit(input[:limit])
+            .offset(input[:offset])
+            .order('begins_at, created_at')
       end
     end
 
