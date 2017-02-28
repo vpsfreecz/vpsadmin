@@ -31,6 +31,7 @@ module VpsAdmin::API::Resources
 
     class Index < HaveAPI::Actions::Default::Index
       desc 'List outages'
+      auth false
 
       input do
         use :all, include: %i(planned state type affected)
@@ -78,6 +79,7 @@ module VpsAdmin::API::Resources
 
     class Show < HaveAPI::Actions::Default::Show
       desc 'Show outage details'
+      auth false
 
       output do
         use :all
@@ -303,6 +305,7 @@ module VpsAdmin::API::Resources
 
       class Index < HaveAPI::Actions::Default::Index
         desc 'List outage entities'
+        auth false
 
         output(:object_list) do
           use :all
@@ -327,6 +330,7 @@ module VpsAdmin::API::Resources
 
       class Show < HaveAPI::Actions::Default::Show
         desc 'Show an outage entity'
+        auth false
 
         output do
           use :all

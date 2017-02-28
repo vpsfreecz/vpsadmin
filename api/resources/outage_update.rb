@@ -30,6 +30,7 @@ module VpsAdmin::API::Resources
     
     class Index < HaveAPI::Actions::Default::Index
       desc 'List outage updates'
+      auth false
 
       input do
         use :filters
@@ -61,6 +62,7 @@ module VpsAdmin::API::Resources
 
     class Show < HaveAPI::Actions::Default::Show
       desc 'Show outage update'
+      auth false
 
       output do
         use :all
