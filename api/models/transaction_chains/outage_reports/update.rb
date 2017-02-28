@@ -42,10 +42,13 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       }
 
       outage.affected_users.each do |u|
-        msg_id = message_id(outage, report, u)
+        msg_id = message_id(
+            attrs[:state] == ::Outage.states[:announced] ? :announce : :update,
+            outage, report, u
+        )
 
         if last_report
-          in_reply_to = message_id(outage, last_report, u)
+          in_reply_to = message_id(:announce, outage, last_report, u)
 
         else
           in_reply_to = nil
@@ -99,8 +102,8 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       end
     end
 
-    def message_id(outage, update, user)
-      ::SysConfig.get(:plugin_outage_reports, :message_id) % {
+    def message_id(type, outage, update, user)
+      ::SysConfig.get(:plugin_outage_reports, :"#{type}_message_id") % {
           outage_id: outage.id,
           update_id: update.id,
           user_id: user.id,

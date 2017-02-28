@@ -7,9 +7,14 @@ VpsAdmin::API::Plugin.register(:outage_reports) do
   components :api
 
   config do
-    SysConfig.register :plugin_outage_reports, :message_id, String,
-        default: '<vpsadmin-outage-%{outage_id}-%{user_id}-%{update_id}@vpsadmin.vpsfree.cz>',
-        label: 'Message ID',
+    SysConfig.register :plugin_outage_reports, :announce_message_id, String,
+        default: '<vpsadmin-outage-%{outage_id}-%{user_id}-announce@vpsadmin.vpsfree.cz>',
+        label: 'Announce message ID',
+        description: 'Mail header Message-ID used to put e-mails into threads',
+        min_user_level: 99
+    SysConfig.register :plugin_outage_reports, :update_message_id, String,
+        default: '<vpsadmin-outage-%{outage_id}-%{user_id}-update-%{update_id}@vpsadmin.vpsfree.cz>',
+        label: 'Update message ID',
         description: 'Mail header Message-ID used to put e-mails into threads',
         min_user_level: 99
 
