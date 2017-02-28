@@ -313,7 +313,7 @@ module VpsAdmin::API::Resources
         end
 
         def query
-          ::OutageEntity.all
+          ::OutageEntity.where(outage_id: params[:outage_id])
         end
 
         def count
@@ -422,7 +422,7 @@ module VpsAdmin::API::Resources
         end
 
         def query
-          ::OutageHandler.all
+          ::OutageHandler.where(outage_id: params[:outage_id])
         end
 
         def count
