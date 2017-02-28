@@ -301,6 +301,7 @@ module VpsAdmin::API::Resources
       params(:all) do
         id :id
         use :editable
+        string :label, label: 'Label'
       end
 
       class Index < HaveAPI::Actions::Default::Index
