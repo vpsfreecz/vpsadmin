@@ -18,8 +18,9 @@ VpsAdmin::API::Plugin.register(:outage_reports) do
         description: 'Mail header Message-ID used to put e-mails into threads',
         min_user_level: 99
 
-    ::MailTemplate.register :outage_report_event,
-        name: "outage_report_%{event}", params:  {
+    ::MailTemplate.register :outage_report_role_event,
+        name: "outage_report_%{role}_%{event}", params: {
+            role: 'user or generic',
             event: 'announce, cancel, close or update',
         }, roles: %i(admin), vars: {
               outage: '::Outage',
@@ -29,7 +30,10 @@ VpsAdmin::API::Plugin.register(:outage_reports) do
               vpses: 'Array<::Vps>',
         }
     
-    ::MailTemplate.register :outage_report, roles: %i(admin), vars: {
+    ::MailTemplate.register :outage_report_role,
+        name: "outage_report_%{role}", params: {
+            role: 'user or generic',
+        }, roles: %i(admin), vars: {
             outage: '::Outage',
             o: '::Outage',
             update: '::OutageUpdate',

@@ -35,59 +35,69 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       outage.load_translations
       return outage unless opts[:send_mail]
 
-      event = {
-          ::Outage.states[:announced] => 'announce',
-          ::Outage.states[:cancelled] => 'cancel',
-          ::Outage.states[:closed] => 'closed',
-      }
+      # Generic mail announcement
+      send_mail('generic', nil, outage, report, attrs, last_report)
 
+      # Mail affected users directly
       outage.affected_users.each do |u|
-        msg_id = message_id(
-            attrs[:state] == ::Outage.states[:announced] ? :announce : :update,
-            outage, report, u
-        )
+        next unless u.mailer_enabled
 
-        if last_report
-          in_reply_to = message_id(:announce, outage, last_report, u)
-
-        else
-          in_reply_to = nil
-        end
-
-        send_mail(
-            [
-                [
-                    :outage_report_event,
-                    {event: event[attrs[:state]] || 'update'},
-                ],
-                [
-                    :outage_report_event,
-                    {event: 'update'},
-                ],
-                [
-                    :outage_report,
-                    {},
-                ],
-            ],
-            user: u,
-            message_id: msg_id,
-            in_reply_to: in_reply_to,
-            references: in_reply_to,
-            vars: {
-                outage: outage,
-                o: outage,
-                update: report,
-                user: u,
-                vpses: outage.affected_vpses(u),
-            }
-        ) if u.mailer_enabled
+        send_mail('user', u, outage, report, attrs, last_report)
       end
 
       outage
     end
 
     protected
-    def send_mail(templates, opts)
+    def send_mail(role, u, outage, report, attrs, last_report)
+      event = {
+          ::Outage.states[:announced] => 'announce',
+          ::Outage.states[:cancelled] => 'cancel',
+          ::Outage.states[:closed] => 'closed',
+      }
+      msg_id = message_id(
+          attrs[:state] == ::Outage.states[:announced] ? :announce : :update,
+          outage, report, u
+      )
+
+      if last_report
+        in_reply_to = message_id(:announce, outage, last_report, u)
+
+      else
+        in_reply_to = nil
+      end
+
+      send_first(
+          [
+              [
+                  :outage_report_role_event,
+                  {role: role, event: event[attrs[:state]] || 'update'},
+              ],
+              [
+                  :outage_report_role_event,
+                  {role: role, event: 'update'},
+              ],
+              [
+                  :outage_report_role,
+                  {role: role},
+              ],
+          ],
+          user: u,
+          language: u ? nil : ::Language.take, # TODO: configurable language
+          message_id: msg_id,
+          in_reply_to: in_reply_to,
+          references: in_reply_to,
+          vars: {
+              outage: outage,
+              o: outage,
+              update: report,
+              user: u,
+              vpses: u && outage.affected_vpses(u),
+          }
+      )
+    end
+
+    def send_first(templates, opts)
       templates.each do |id, params|
         begin
           args = {params: params}
@@ -106,7 +116,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       ::SysConfig.get(:plugin_outage_reports, :"#{type}_message_id") % {
           outage_id: outage.id,
           update_id: update.id,
-          user_id: user.id,
+          user_id: user ? user.id : 0,
       }
     end
   end

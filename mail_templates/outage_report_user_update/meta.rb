@@ -1,5 +1,5 @@
-template :outage_report_event do
-  label        'Outage report update'
+template :outage_report_role_event do
+  label        'User outage report update'
   from         'podpora@vpsfree.cz'
   reply_to     'podpora@vpsfree.cz'
   return_path  'podpora@vpsfree.cz'

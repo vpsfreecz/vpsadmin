@@ -1,0 +1,10 @@
+template :outage_report_role_event do
+  label        'Generic outage report announcement'
+  from         'podpora@vpsfree.cz'
+  reply_to     'podpora@vpsfree.cz'
+  return_path  'podpora@vpsfree.cz'
+
+  lang :en do
+    subject    "<%= @o.planned ? 'Planned' : 'Unplanned' %> outage - <%= @o.entity_names.join(',') %> - <%= @o.begins_at.strftime('%Y-%m-%d %H:%M') %>"
+  end
+end
