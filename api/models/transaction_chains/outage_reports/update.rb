@@ -6,7 +6,9 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
     # @param outage [::Outage]
     # @param attrs [Hash] attributes of {::OutageReport}
     # @param translations [Hash] string; `{Language => {summary => '', description => ''}}`
-    def link_chain(outage, attrs, translations)
+    # @param opts [Hash]
+    # @option opts [Boolean] send_mail
+    def link_chain(outage, attrs, translations, opts)
       concerns(:affect, [outage.class.name, outage.id])
       last_report = outage.outage_updates.order('id DESC').take
       report = ::OutageUpdate.new
@@ -31,6 +33,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       outage.assign_attributes(attrs)
       outage.save!
       outage.load_translations
+      return outage unless opts[:send_mail]
 
       event = {
           ::Outage.states[:announced] => 'announce',

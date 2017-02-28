@@ -37,25 +37,26 @@ class Outage < ActiveRecord::Base
   end
   
   # TODO: pick a different method name?
-  def update!(attrs = {}, translations = {})
+  def update!(attrs = {}, translations = {}, opts = {})
     VpsAdmin::API::Plugins::OutageReports::TransactionChains::Update.fire(
         self,
         attrs,
-        translations
+        translations,
+        opts
     )
   end
 
   # TODO: check that we have outage entities, handlers and description
-  def announce!
-    update!(state: self.class.states[:announced])
+  def announce!(opts = {})
+    update!({state: self.class.states[:announced]}, {}, opts)
   end
 
-  def close!
-    update!(state: self.class.states[:closed])
+  def close!(opts = {})
+    update!({state: self.class.states[:closed]}, {}, opts)
   end
 
-  def cancel!
-    update!(state: self.class.states[:cancelled])
+  def cancel!(opts = {})
+    update!({state: self.class.states[:cancelled]}, {}, opts)
   end
 
   def load_translations

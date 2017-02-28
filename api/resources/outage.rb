@@ -25,6 +25,10 @@ module VpsAdmin::API::Resources
           desc: 'True if the current user is affected by the outage'
     end
 
+    params(:input) do
+      bool :send_mail, label: 'Send mail', default: true, fill: true
+    end
+
     class Index < HaveAPI::Actions::Default::Index
       desc 'List outages'
 
@@ -137,6 +141,7 @@ module VpsAdmin::API::Resources
 
       input do
         use :editable, exclude: %i(planned)
+        use :input
       end
 
       output do
@@ -164,7 +169,9 @@ module VpsAdmin::API::Resources
           end
         end
 
-        @chain, ret = outage.update!(to_db_names(input), tr)
+        opts = {send_mail: input.delete(:send_mail)}
+
+        @chain, ret = outage.update!(to_db_names(input), tr, opts)
         ret 
 
       rescue ActiveRecord::RecordInvalid => e
@@ -181,6 +188,10 @@ module VpsAdmin::API::Resources
       http_method :post
       route ':%{resource}_id/announce'
       blocking true
+
+      input do
+        use :input
+      end
 
       output do
         use :all
@@ -203,7 +214,7 @@ module VpsAdmin::API::Resources
           error('Add at least one entity impaired by the outage')
         end
 
-        @chain, ret = outage.announce!
+        @chain, ret = outage.announce!({send_mail: input.delete(:send_mail)})
         ret
       end
 
@@ -218,6 +229,10 @@ module VpsAdmin::API::Resources
       route ':%{resource}_id/close'
       blocking true
 
+      input do
+        use :input
+      end
+
       output do
         use :all
       end
@@ -228,7 +243,7 @@ module VpsAdmin::API::Resources
       
       def exec
         outage = ::Outage.find(params[:outage_id])
-        @chain, ret = outage.close!
+        @chain, ret = outage.close!({send_mail: input.delete(:send_mail)})
         ret
       end
 
@@ -242,6 +257,10 @@ module VpsAdmin::API::Resources
       http_method :post
       route ':%{resource}_id/cancel'
       blocking true
+
+      input do
+        use :input
+      end
 
       output do
         use :all
@@ -258,7 +277,7 @@ module VpsAdmin::API::Resources
           error('cannot cancel a closed outage')
         end
 
-        @chain, ret = outage.cancel!
+        @chain, ret = outage.cancel!({send_mail: input.delete(:send_mail)})
         ret
       end
 
