@@ -19,5 +19,11 @@
 <% end -%>
 
 Summary: <%= @update.summary %>
+<% if @update.description && !@update.description.empty? -%>
 
 <%= @update.description %>
+<% end -%>
+<% if @update.reporter_name -%>
+
+Reported by: <%= @update.reporter_name %>
+<% end -%>
