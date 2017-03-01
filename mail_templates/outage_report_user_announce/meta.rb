@@ -5,6 +5,6 @@ template :outage_report_role_event do
   return_path  'podpora@vpsfree.cz'
 
   lang :en do
-    subject    "[Outage Report] <%= @o.planned ? 'Planned' : 'Unplanned' %> outage - <%= @o.outage_entities.map { |e| e.real_name }.join(',') %> - <%= @o.begins_at.strftime('%Y-%m-%d %H:%M') %>"
+    subject    "[Outage Report] <%= @o.planned ? 'Planned' : 'Unplanned' %> outage - <%= @o.outage_entities.map { |e| e.real_name }.join(', ') %> - <%= @o.begins_at.strftime('%Y-%m-%d %H:%M') %>"
   end
 end
