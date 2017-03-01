@@ -14,6 +14,10 @@ Affected systems: <%= @o.outage_entities.map { |e| e.real_name }.join(', ') %>
 Outage type: <%= @o.outage_type %>
 Reason: <%= @o.en_summary %>
 Handled by: <%= @o.outage_handlers.map { |h| h.user.full_name }.join(', ') %>
+<% if @o.en_description && !@o.en_description.empty? -%>
+
+<%= @o.en_description %>
+<% end -%>
 
 Best regards,
 
