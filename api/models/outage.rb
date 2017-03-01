@@ -197,22 +197,4 @@ class Outage < ActiveRecord::Base
       END
     )
   end
-
-  def entity_names
-    outage_entities.map do |ent|
-      case ent.name
-      when 'Cluster'
-        'cluster-wide'
-
-      when 'Environment'
-        ::Environment.find(ent.row_id).label
-
-      when 'Location'
-        ::Location.find(ent.row_id).label
-
-      when 'Node'
-        ::Node.find(ent.row_id).domain_name
-      end
-    end
-  end
 end

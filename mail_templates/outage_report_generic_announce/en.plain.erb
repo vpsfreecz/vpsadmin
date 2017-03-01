@@ -1,6 +1,6 @@
 Date and time: <%= @o.begins_at.strftime('%Y-%m-%d %H:%M') %>
 Expected duration: <%= @o.duration %> minutes
-Affected systems: <%= @o.entity_names.join(', ') %>
+Affected systems: <%= @o.outage_entities.map { |e| e.real_name }.join(', ') %>
 Outage type: <%= @o.outage_type %>
 Reason: <%= @o.en_summary %>
 Handled by: <%= @o.outage_handlers.map { |h| h.user.full_name }.join(', ') %>
