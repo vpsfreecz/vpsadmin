@@ -28,7 +28,8 @@ class Setup < ActiveRecord::Migration
 
     create_table :outage_handlers do |t|
       t.references  :outage,         null: false
-      t.references  :user,           null: false
+      t.references  :user,           null: true
+      t.string      :full_name,      null: false, limit: 100
       t.string      :note,           null: true
     end
 

@@ -407,6 +407,7 @@ module VpsAdmin::API::Resources
 
       params(:editable) do
         resource VpsAdmin::API::Resources::User, value_label: :login
+        string :full_name, label: 'Full name'
         string :note
       end
 
@@ -423,6 +424,8 @@ module VpsAdmin::API::Resources
         end
 
         authorize do |u|
+          allow if u.role == :admin
+          output blacklist: %i(user)
           allow
         end
 
@@ -447,6 +450,8 @@ module VpsAdmin::API::Resources
         end
 
         authorize do |u|
+          allow if u.role == :admin
+          output blacklist: %i(user)
           allow
         end
 
