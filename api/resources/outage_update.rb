@@ -9,7 +9,6 @@ module VpsAdmin::API::Resources
       datetime :begins_at, label: 'Begins at'
       datetime :finished_at, label: 'Finished at'
       integer :duration, label: 'Duration', desc: 'Outage duration in minutes'
-      bool :planned, label: 'Planned', desc: 'Is this outage planned?'
       string :state, label: 'State', choices: ::Outage.states.keys.map(&:to_s)
       string :type, db_name: :outage_type, label: 'Type',
           choices: ::Outage.outage_types.keys.map(&:to_s)
