@@ -68,5 +68,14 @@ class Setup < ActiveRecord::Migration
     add_index :outage_translations, :language_id
     add_index :outage_translations, %i(outage_id language_id), unique: true
     add_index :outage_translations, %i(outage_update_id language_id), unique: true
+
+    create_table :outage_vpses do |t|
+      t.references  :outage,         null: false
+      t.references  :vps,            null: false
+    end
+
+    add_index :outage_vpses, %i(outage_id vps_id), unique: true
+    add_index :outage_vpses, :outage_id
+    add_index :outage_vpses, :vps_id
   end
 end

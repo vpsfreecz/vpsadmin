@@ -33,6 +33,8 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       outage.assign_attributes(attrs)
       outage.save!
       outage.load_translations
+      outage.set_affected_vpses if attrs[:state] == ::Outage.states[:announced]
+
       return outage unless opts[:send_mail]
 
       # Generic mail announcement
@@ -92,7 +94,10 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
               o: outage,
               update: report,
               user: u,
-              vpses: u && outage.affected_vpses(u),
+              vpses: u && ::Vps.joins(:outage_vpses).where(
+                  outage_vpses: {outage_id: outage.id},
+                  vpses: {user_id: u.id},
+              ),
           }
       )
     end

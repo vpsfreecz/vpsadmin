@@ -3,6 +3,8 @@ class Outage < ActiveRecord::Base
   has_many :outage_handlers
   has_many :outage_updates
   has_many :outage_translations
+  has_many :outage_vpses
+  has_many :vpses, through: :outage_vpses
   
   enum state: %i(staged announced closed cancelled)
   enum outage_type: %i(tbd restart reset network performance maintenance)
@@ -74,76 +76,19 @@ class Outage < ActiveRecord::Base
     return false if ::User.current.nil? || state != 'announced'
     return false if finished_at && finished_at < Time.now
 
-    affected_vpses(::User.current).count > 0
+    vpses.where(user: ::User.current).count > 0
   end
 
-  # @return [Array<User>] list of users that are affected by this outage
   def affected_users
-    q = []
-
-    outage_entities.each do |ent|
-      id = self.class.connection.quote(ent.row_id)
-      state = self.class.connection.quote(::User.object_states[:hard_delete])
-
-      case ent.name
-      when 'Cluster'
-        q.clear
-        q << <<-END
-          SELECT * FROM users
-          WHERE object_state < #{state}
-        END
-        break
-
-      when 'Environment'
-        q << <<-END
-          SELECT u.* FROM users u
-          INNER JOIN vpses v ON u.id = v.user_id
-          INNER JOIN nodes n ON v.node_id = n.id
-          INNER JOIN locations l ON l.id = n.location_id
-          WHERE
-            l.environment_id = #{id}
-            AND u.object_state < #{state}
-            AND v.object_state < #{state}
-        END
-
-      when 'Location'
-        q << <<-END
-          SELECT u.* FROM users u
-          INNER JOIN vpses v ON u.id = v.user_id
-          INNER JOIN nodes n ON v.node_id = n.id
-          WHERE
-            n.location_id = #{id}
-            AND u.object_state < #{state}
-            AND v.object_state < #{state}
-        END
-
-      when 'Node'
-        q << <<-END
-          SELECT u.* FROM users u
-          INNER JOIN vpses v ON u.id = v.user_id
-          WHERE
-            v.node_id = #{id}
-            AND u.object_state < #{state}
-            AND v.object_state < #{state}
-        END
-      end
-    end
-
-    q.empty? ? [] : ::User.find_by_sql(<<-END
-      SELECT * FROM (
-        #{q.join("\nUNION\n")}
-      ) as tmp
-      GROUP BY tmp.id
-      ORDER BY tmp.id
-      END
-    )
+    ::User.joins(vpses: [:outage_vpses]).where(
+        outage_vpses: {outage_id: self.id}
+    ).group('users.id').order('users.id')
   end
 
-  def affected_vpses(user)
+  def get_affected_vpses
     q = []
 
     outage_entities.each do |ent|
-      uid = self.class.connection.quote(user.id)
       id = self.class.connection.quote(ent.row_id)
       state = self.class.connection.quote(::User.object_states[:hard_delete])
 
@@ -152,7 +97,7 @@ class Outage < ActiveRecord::Base
         q.clear
         q << <<-END
           SELECT * FROM vpses
-          WHERE object_state < #{state} AND user_id = #{uid}
+          WHERE object_state < #{state}
         END
         break
 
@@ -162,8 +107,7 @@ class Outage < ActiveRecord::Base
           INNER JOIN nodes n ON v.node_id = n.id
           INNER JOIN locations l ON l.id = n.location_id
           WHERE
-            v.user_id = #{uid}
-            AND l.environment_id = #{id}
+            l.environment_id = #{id}
             AND v.object_state < #{state}
         END
 
@@ -172,8 +116,7 @@ class Outage < ActiveRecord::Base
           SELECT v.* FROM vpses v
           INNER JOIN nodes n ON v.node_id = n.id
           WHERE
-            v.user_id = #{uid}
-            AND n.location_id = #{id}
+            n.location_id = #{id}
             AND v.object_state < #{state}
         END
 
@@ -181,8 +124,7 @@ class Outage < ActiveRecord::Base
         q << <<-END
           SELECT v.* FROM vpses v
           WHERE
-            v.user_id = #{uid}
-            AND v.node_id = #{id}
+            v.node_id = #{id}
             AND v.object_state < #{state}
         END
       end
@@ -196,5 +138,30 @@ class Outage < ActiveRecord::Base
       ORDER BY tmp.id
       END
     )
+  end
+
+  # Store affected VPSes in model {OutageVps}
+  def set_affected_vpses
+    self.class.transaction do
+      affected = get_affected_vpses
+        
+      # Register new VPSes
+      affected.each do |vps|
+        begin
+          ::OutageVps.find_by!(outage: self, vps: vps)
+
+        rescue ActiveRecord::RecordNotFound
+          ::OutageVps.create!(outage: self, vps: vps)
+        end
+      end
+
+      # Delete no longer affected VPSes (if affected entities change)
+      ::OutageVps.where(outage: self).each do |outage_vps|
+        exists = affected.detect { |v| v.id == outage_vps.vps_id }
+        next if exists
+
+        outage_vps.destroy!
+      end
+    end
   end
 end

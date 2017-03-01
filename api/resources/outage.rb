@@ -288,6 +288,22 @@ module VpsAdmin::API::Resources
       end
     end
 
+    class RebuildAffectedVps < HaveAPI::Action
+      desc 'Rebuilt the list of affected vpses, use after changing affected entities'
+      http_method :post
+      route ':%{resource}_id/rebuild_affected_vps'
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+      
+      def exec
+        outage = ::Outage.find(params[:outage_id])
+        outage.set_affected_vpses
+        ok
+      end
+    end
+
     class Entity < HaveAPI::Resource
       desc 'Outage entities'
       model ::OutageEntity
