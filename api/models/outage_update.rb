@@ -27,22 +27,20 @@ class OutageUpdate < ActiveRecord::Base
     end
   end
 
-  def summary
-    outage_translations.find_by!(language: ::User.current.language).summary
+  %i(summary description).each do |attr|
+    define_method(attr) do
+      return @translation.send(attr) if @translation
 
-  rescue ActiveRecord::RecordNotFound
-    # It seems that self.outage_translation is cached, so force a new query
-    any = ::OutageTranslation.where(outage_update: self).take
-    any ? any.summary : ''
-  end
+      begin
+        @translation = outage_translations.find_by!(language: ::User.current.language)
+        @translation.send(attr)
 
-  def description
-    outage_translations.find_by!(language: ::User.current.language).description
-
-  rescue ActiveRecord::RecordNotFound
-    # It seems that self.outage_translation is cached, so force a new query
-    any = ::OutageTranslation.where(outage_update: self).take
-    any ? any.description : ''
+      rescue ActiveRecord::RecordNotFound
+        # It seems that self.outage_translation is cached, so force a new query
+        @translation = ::OutageTranslation.where(outage_update: self).take
+        @translation ? @translation.send(attr) : ''
+      end      
+    end
   end
 
   def load_translations
