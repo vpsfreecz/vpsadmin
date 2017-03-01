@@ -7,6 +7,7 @@ class OutageUpdate < ActiveRecord::Base
   enum outage_type: %i(tbd restart reset network performance maintenance)
 
   after_initialize :load_translations
+  before_validation :set_name
 
   # Set the origin for attribute changes
   def origin=(attrs)
@@ -52,5 +53,11 @@ class OutageUpdate < ActiveRecord::Base
         end
       end
     end
+  end
+
+  protected
+  def set_name
+    return if (!reporter_name.nil? && !reporter_name.empty?) || reported_by.nil?
+    self.reporter_name = reported_by.full_name
   end
 end

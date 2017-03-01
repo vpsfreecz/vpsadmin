@@ -20,6 +20,7 @@ module VpsAdmin::API::Resources
 
       resource VpsAdmin::API::Resources::User, name: :reported_by, value_label: :login,
           label: 'Reported by'
+      string :reporter_name, label: "Reporter's name"
       datetime :created_at, label: 'Reported at'
     end
    
@@ -40,6 +41,8 @@ module VpsAdmin::API::Resources
       end
 
       authorize do |u|
+        allow if u.role == :admin
+        output blacklist: %i(user)
         allow
       end
 
@@ -68,6 +71,8 @@ module VpsAdmin::API::Resources
       end
 
       authorize do |u|
+        allow if u.role == :admin
+        output blacklist: %i(user)
         allow
       end
 

@@ -40,6 +40,7 @@ class Setup < ActiveRecord::Migration
     create_table :outage_updates do |t|
       t.references  :outage,         null: false
       t.references  :reported_by,    null: true
+      t.string      :reporter_name,  null: true
       t.datetime    :begins_at,      null: true
       t.datetime    :finished_at,    null: true
       t.integer     :duration,       null: true
