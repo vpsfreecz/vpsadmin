@@ -50,6 +50,54 @@ if ($api->news_log) {
 
 $xtpl->table_out("notice_board");
 
+if ($api->outage) {
+	$outages = $api->outage->list(array('active' => true, 'limit' => 5));
+
+	if ($outages->count()) {
+		$xtpl->table_title(_('Current/planned outages'));
+
+		$xtpl->table_add_category(_('Date'));
+		$xtpl->table_add_category(_('Duration'));
+		$xtpl->table_add_category(_('Planned'));
+		$xtpl->table_add_category(_('Systems'));
+		$xtpl->table_add_category(_('Type'));
+		$xtpl->table_add_category(_('Reason'));
+
+		if ($_SESSION['is_admin']) {
+			$xtpl->table_add_category(_('Users'));
+			$xtpl->table_add_category(_('VPS'));
+
+		} else
+			$xtpl->table_add_category(_('Affects me?'));
+		}
+
+		$xtpl->table_add_category('');
+
+		foreach ($outages as $outage) {
+			$xtpl->table_td(tolocaltz($outage->begins_at, 'Y-m-d H:i'));
+			$xtpl->table_td($outage->duration, false, true);
+			$xtpl->table_td(boolean_icon($outage->planned));
+			$xtpl->table_td(implode(', ', array_map(
+				function ($v) { return $v->label; },
+				$outage->entity->list()->asArray()
+			)));
+			$xtpl->table_td($outage->type);
+			$xtpl->table_td($outage->en_summary);
+
+			if ($_SESSION['is_admin']) {
+				$xtpl->table_td($outage->affected_user_count, false, true);
+				$xtpl->table_td($outage->affected_vps_count, false, true);
+
+			} else
+				$xtpl->table_td(boolean_icon($outage->affected));
+
+			$xtpl->table_td('<a href="?page=outage&action=show&id='.$outage->id.'"><img src="template/icons/m_edit.png"  title="'. _("Details") .'" /></a>');
+
+			$xtpl->table_tr();
+		}
+
+		$xtpl->table_out();
+}
 
 $xtpl->table_title(_("Cluster statistics"));
 
