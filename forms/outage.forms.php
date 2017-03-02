@@ -439,7 +439,7 @@ function outage_list () {
 
 	$xtpl->title(_('Outage list'));
 	$xtpl->table_title(_('Filters'));
-	$xtpl->form_create('', 'get');
+	$xtpl->form_create('', 'get', 'outage-list', false);
 
 	$xtpl->table_td(_("Limit").':'.
 		'<input type="hidden" name="page" value="outage">'.
