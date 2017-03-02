@@ -85,6 +85,14 @@ class Outage < ActiveRecord::Base
     ).group('users.id').order('users.id')
   end
 
+  def affected_user_count
+    affected_users.count.inject(0) { |sum, v| sum += v[1] }
+  end
+
+  def affected_vps_count
+    outage_vpses.count
+  end
+
   def get_affected_vpses
     q = []
 

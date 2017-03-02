@@ -23,6 +23,8 @@ module VpsAdmin::API::Resources
       use :editable
       bool :affected, label: 'Affected',
           desc: 'True if the current user is affected by the outage'
+      integer :affected_user_count, label: 'Affected users', desc: 'Number of affected users'
+      integer :affected_vps_count, label: 'Affected VPSes', desc: 'Number of affected VPSes'
     end
 
     params(:input) do
@@ -42,6 +44,8 @@ module VpsAdmin::API::Resources
       end
 
       authorize do |u|
+        allow if u.role == :admin
+        output blacklist: %i(affected_user_count affected_vps_count)
         allow if u
         input blacklist: %i(affected)
         allow
@@ -97,6 +101,10 @@ module VpsAdmin::API::Resources
       end
 
       authorize do |u|
+        allow if u.role == :admin
+        output blacklist: %i(affected_user_count affected_vps_count)
+        allow if u
+        input blacklist: %i(affected)
         allow
       end
 
