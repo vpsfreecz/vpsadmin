@@ -225,7 +225,7 @@ function boolean_icon($val) {
 	}
 }
 
-function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null) {
+function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null, $empty = false) {
 	global $xtpl, $api;
 
 	if ($v === null)
@@ -242,6 +242,9 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 				$desc_choices = $desc->validators->include->values;
 				$assoc = is_assoc($desc_choices);
 				$choices = array();
+
+				if ($empty)
+					$choices[''] = '---';
 
 				if ($label_callback) {
 					foreach ($desc_choices as $k => $val) {
@@ -304,11 +307,11 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null)
 	}
 }
 
-function api_param_to_form($name, $desc, $v = null, $label_callback = null) {
+function api_param_to_form($name, $desc, $v = null, $label_callback = null, $empty = false) {
 	global $xtpl;
 
 	$xtpl->table_td(($desc->label ? $desc->label : $name).':');
-	api_param_to_form_pure($name, $desc, $v, $label_callback);
+	api_param_to_form_pure($name, $desc, $v, $label_callback, $empty);
 
 	if ($desc->description)
 		$xtpl->table_td($desc->description);
