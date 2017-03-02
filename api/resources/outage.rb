@@ -42,6 +42,8 @@ module VpsAdmin::API::Resources
       end
 
       authorize do |u|
+        allow if u
+        input blacklist: %i(affected)
         allow
       end
 
@@ -50,6 +52,27 @@ module VpsAdmin::API::Resources
         q = q.where(planned: input[:planned]) if input.has_key?(:planned)
         q = q.where(state: ::Outage.states[input[:state]]) if input[:state]
         q = q.where(outage_type: ::Outage.outage_types[input[:type]]) if input[:type]
+
+        if input.has_key?(:affected)
+          q = q.joins(outage_vpses: [:vps]).group('outages.id')
+            
+          if input[:affected]
+            q = q.where(
+                vpses: {user_id: current_user.id},
+            )
+
+          else
+            q = q.where("
+                outages.id NOT IN (
+                  SELECT outage_id
+                  FROM outage_vpses o
+                  INNER JOIN vpses v ON o.vps_id = v.id
+                  WHERE v.user_id = ?
+                )
+            ", current_user.id)
+          end
+        end
+
         q
       end
 
@@ -58,22 +81,10 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        # Fetch twice the number of requested records if filtering outages affecting
-        # the current user. Imagine that the limit is 5, so we fetch 5 outages from
-        # the database, but none is affecting the current user, so the response is empty.
-        # However, there may be outages affecting the current user, there are just 5
-        # unaffecting outages before them. Fetching twice the requested limit is not
-        # solving this issue entirely, but makes it less likely.
-        ret = with_includes(query)
-            .limit((input[:limit] && input.has_key?(:affected)) ? input[:limit]*2 : input[:limit])
+        with_includes(query)
+            .limit(input[:limit])
             .offset(input[:offset])
             .order('begins_at, created_at')
-
-        if input.has_key?(:affected)
-          ret.to_a.select { |v| input[:affected] === v.affected }
-        else
-          ret
-        end
       end
     end
 
