@@ -464,6 +464,7 @@ function outage_list () {
 	$xtpl->form_out(_('Show'));
 
 	$xtpl->table_add_category(_('Date'));
+	$xtpl->table_add_category(_('Duration'));
 	$xtpl->table_add_category(_('Planned'));
 	$xtpl->table_add_category(_('State'));
 	$xtpl->table_add_category(_('Systems'));
@@ -500,6 +501,7 @@ function outage_list () {
 
 	foreach ($outages as $outage) {
 		$xtpl->table_td(tolocaltz($outage->begins_at));
+		$xtpl->table_td($outage->duration, false, true);
 		$xtpl->table_td(boolean_icon($outage->planned));
 		$xtpl->table_td($outage->state);
 		$xtpl->table_td(implode(', ', array_map(
