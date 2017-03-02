@@ -82,11 +82,11 @@ class Outage < ActiveRecord::Base
   def affected_users
     ::User.joins(vpses: [:outage_vpses]).where(
         outage_vpses: {outage_id: self.id}
-    ).group('users.id').order('users.id')
+    ).group('outage_vpses.outage_id, users.id').order('users.id')
   end
 
   def affected_user_count
-    affected_users.count.inject(0) { |sum, v| sum += v[1] }
+    affected_users.count.size
   end
 
   def affected_vps_count
