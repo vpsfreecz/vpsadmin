@@ -44,7 +44,7 @@ module VpsAdmin::API::Resources
       end
 
       authorize do |u|
-        allow if u.role == :admin
+        allow if u && u.role == :admin
         output blacklist: %i(affected_user_count affected_vps_count)
         allow if u
         input blacklist: %i(affected)
@@ -53,6 +53,11 @@ module VpsAdmin::API::Resources
 
       def query
         q = ::Outage.all
+
+        if current_user.nil? || current_user.role != :admin
+          q = q.where.not(state: ::Outage.states[:staged])
+        end
+
         q = q.where(planned: input[:planned]) if input.has_key?(:planned)
         q = q.where(state: ::Outage.states[input[:state]]) if input[:state]
         q = q.where(outage_type: ::Outage.outage_types[input[:type]]) if input[:type]
@@ -101,7 +106,7 @@ module VpsAdmin::API::Resources
       end
 
       authorize do |u|
-        allow if u.role == :admin
+        allow if u && u.role == :admin
         output blacklist: %i(affected_user_count affected_vps_count)
         allow if u
         input blacklist: %i(affected)
@@ -109,7 +114,13 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @outage = ::Outage.find(params[:outage_id])
+        q = ::Outage.where(id: params[:outage_id])
+
+        if current_user.nil? || current_user.role != :admin
+          q = q.where.not(state: ::Outage.states[:staged])
+        end
+
+        @outage = q.take!
       end
 
       def exec
