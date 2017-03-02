@@ -190,8 +190,10 @@ function outage_update_form ($id) {
 function outage_details ($id) {
 	global $xtpl, $api;
 
-	$xtpl->sbar_add(_('Edit'), '?page=outage&action=edit&id='.$id);
-	$xtpl->sbar_add(_('Post update'), '?page=outage&action=update&id='.$id);
+	if ($_SESSION['is_admin']) {
+		$xtpl->sbar_add(_('Edit'), '?page=outage&action=edit&id='.$id);
+		$xtpl->sbar_add(_('Post update'), '?page=outage&action=update&id='.$id);
+	}
 
 	$outage = $api->outage->show($id);
 	$langs = $api->language->list();
