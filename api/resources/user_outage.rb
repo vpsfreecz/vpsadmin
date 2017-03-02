@@ -35,7 +35,7 @@ module VpsAdmin::API::Resources
       end
 
       def count
-        query.count
+        query.count.inject(0) { |sum, v| sum += v[1] }
       end
 
       def exec
