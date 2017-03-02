@@ -769,6 +769,9 @@ switch($_GET["action"]) {
 		$xtpl->form_add_input(_("Reason").':', 'text', '30', 'reason', '', _('optional'));
 
 		$xtpl->form_out(_("Lock"));
+
+		if ($api->outage)
+			outage_report_form($_GET['type'], $_GET['obj_id']);
 		break;
 
 	case "set_maintenance_lock":
