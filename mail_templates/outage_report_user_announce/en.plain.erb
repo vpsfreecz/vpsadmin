@@ -8,7 +8,7 @@ Affected VPS:
   - VPS #<%= vps.id %> - <%= vps.hostname %> (<%= vps.node.domain_name %>)
 <% end -%>
 
-Date and time: <%= @o.begins_at.strftime('%Y-%m-%d %H:%M') %>
+Date and time: <%= @o.begins_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
 Expected duration: <%= @o.duration %> minutes
 Affected systems: <%= @o.outage_entities.map { |e| e.real_name }.join(', ') %>
 Outage type: <%= @o.outage_type %>

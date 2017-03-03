@@ -5,7 +5,7 @@ we have an update for you regarding this outage.
 <% @update.each_change do |attr, old, new| -%>
 <%= case attr
     when :begins_at
-      "Begins at: moved from #{old.strftime('%Y-%m-%d %H:%M')} to #{new.strftime('%Y-%m-%d %H:%M')}"
+      "Begins at: moved from #{old.localtime.strftime('%Y-%m-%d %H:%M %Z')} to #{new.localtime.strftime('%Y-%m-%d %H:%M %Z')}"
 
     when :finished_at
       "Finished at: #{new}"
