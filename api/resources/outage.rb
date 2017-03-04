@@ -38,6 +38,10 @@ module VpsAdmin::API::Resources
       input do
         use :all, include: %i(planned state type affected)
         bool :active, label: 'Active', desc: 'Include only currently active/planned outages'
+        resource VpsAdmin::API::Resources::User, name: :user, label: 'User',
+            desc: 'Filter outages affecting a specific user'
+        resource VpsAdmin::API::Resources::VPS, name: :vps, label: 'VPS',
+            desc: 'Filter outages affecting a specific VPS'
       end
 
       output(:object_list) do
@@ -48,7 +52,7 @@ module VpsAdmin::API::Resources
         allow if u && u.role == :admin
         output blacklist: %i(affected_user_count affected_vps_count)
         allow if u
-        input blacklist: %i(affected)
+        input blacklist: %i(affected user)
         allow
       end
 
@@ -93,6 +97,18 @@ module VpsAdmin::API::Resources
               OR finished_at > UTC_TIMESTAMP()
               
           ")
+        end
+
+        if input[:user]
+          q = q.joins(outage_vpses: [:vps]).group('outages.id').where(
+              vpses: {user_id: input[:user].id}
+          )
+        end
+        
+        if input[:vps]
+          q = q.joins(:outage_vpses).group('outages.id').where(
+              outage_vpses: {vps_id: input[:vps].id}
+          )
         end
 
         q
