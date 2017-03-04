@@ -1,5 +1,33 @@
 <?php
 
+function maintenance_to_entities () {
+	if ($_SERVER['REQUEST_METHOD'] === 'POST')
+		return $_POST;
+
+	$ret = array(
+		'cluster_wide' => false,
+		'environments' => array(),
+		'locations' => array(),
+		'nodes' => array(),
+	);
+
+	switch ($_GET['type']) {
+	case 'cluster':
+		$ret['cluster_wide'] = true;
+		break;
+
+	case 'environment':
+	case 'location':
+	case 'node':
+		$ret[$_GET['type'].'s'][] = $_GET['obj_id'];
+		break;
+
+	default:
+	}
+
+	return $ret;
+}
+
 function outage_entities_to_array ($outage) {
 	$ret = array(
 		'cluster' => false,
@@ -51,21 +79,25 @@ function outage_report_form () {
 	$xtpl->form_add_checkbox(_('Planned').':', 'planned', '1', post_val('planned'));
 	api_param_to_form('type', $input->type);
 
-	$xtpl->form_add_checkbox(_('Cluster-wide').':', 'cluster_wide', '1', post_val('cluster_wide'));
+	$entities = maintenance_to_entities();
+
+	$xtpl->form_add_checkbox(
+		_('Cluster-wide').':', 'cluster_wide', '1', $entities['cluster_wide']
+	);
 	$xtpl->form_add_select(
 		_('Environments').':', 'environments[]',
 		resource_list_to_options($api->environment->list(), 'id', 'label', false),
-		post_val('environments'), '', true, 5
+		$entities['environments'], '', true, 5
 	);
 	$xtpl->form_add_select(
 		_('Locations').':', 'locations[]',
 		resource_list_to_options($api->location->list(), 'id', 'label', false),
-		post_val('locations'), '', true, 5
+		$entities['locations'], '', true, 5
 	);
 	$xtpl->form_add_select(
 		_('Nodes').':', 'nodes[]',
 		resource_list_to_options($api->node->list(), 'id', 'domain_name', false),
-		post_val('nodes'), '', true, 20
+		$entities['nodes'], '', true, 20
 	);
 	$xtpl->form_add_input(
 		_('Additional systems').':', 'text', '70', 'entities', post_val('entities'),
