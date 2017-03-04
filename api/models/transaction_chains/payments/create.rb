@@ -81,14 +81,15 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
     # @param n [Integer] months to add
     # @return [Time]
     def add_months(time, n)
-      d = Date.new(time.year, time.month, time.day) >> n
+      local = time.localtime
+      d = Date.new(local.year, local.month, local.day) >> n
       Time.new(
           d.year,
           d.month,
           d.day,
-          time.hour,
-          time.min,
-          time.sec
+          local.hour,
+          local.min,
+          local.sec
       )
     end
   end
