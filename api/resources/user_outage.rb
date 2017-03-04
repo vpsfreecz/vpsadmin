@@ -7,6 +7,7 @@ module VpsAdmin::API::Resources
       id :id
       resource VpsAdmin::API::Resources::Outage, value_label: :begins_at
       resource VpsAdmin::API::Resources::User, value_label: :login
+      integer :vps_count
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -40,6 +41,7 @@ module VpsAdmin::API::Resources
 
       def exec
         with_includes(query)
+            .select('outage_vpses.*, COUNT(*) AS vps_count')
             .includes(vps: [:user])
             .limit(input[:limit])
             .offset(input[:offset])
@@ -61,7 +63,17 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @outage = ::OutageVps.joins(:vps).includes(vps: [:user]).find(params[:user_outage_id])
+        tmp = ::OutageVps.find(params[:user_outage_id])
+
+        @outage = ::OutageVps
+            .joins(:vps)
+            .includes(vps: [:user])
+            .select('outage_vpses.*, COUNT(*) AS vps_count')
+            .group('outage_vpses.outage_id, vpses.user_id')
+            .find_by!(
+              outage_id: tmp.outage_id,
+              vpses: {user_id: tmp.vps.user_id},
+            )
       end
 
       def exec
