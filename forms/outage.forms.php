@@ -303,7 +303,7 @@ function outage_details ($id) {
 				}, $affected_vpses->asArray()
 			));
 
-			$xtpl->table_td($s);
+			$xtpl->table_td(h($s));
 
 		} else {
 			$xtpl->table_td('<strong>'._('You are not affected by this outage.').'</strong>');
@@ -336,7 +336,7 @@ function outage_details ($id) {
 
 	$xtpl->table_td(_('Affected systems').':');
 	$xtpl->table_td(implode("\n<br>\n", array_map(
-		function ($ent) { return $ent->label; },
+		function ($ent) { return h($ent->label); },
 		$outage->entity->list()->asArray()
 	)));
 	$xtpl->table_tr();
@@ -349,7 +349,7 @@ function outage_details ($id) {
 		if (!$outage->{$name})
 			continue;
 
-		$summary[] = '<strong>'.$lang->label.'</strong>: '.$outage->{$name};
+		$summary[] = '<strong>'.h($lang->label).'</strong>: '.h($outage->{$name});
 	}
 
 	$xtpl->table_td(_('Summary').':');
@@ -364,7 +364,7 @@ function outage_details ($id) {
 		if (!$outage->{$name})
 			continue;
 
-		$desc[] = '<strong>'.$lang->label.'</strong>: '.nl2br($outage->{$name});
+		$desc[] = '<strong>'.h($lang->label).'</strong>: '.nl2br(h($outage->{$name}));
 	}
 
 	$xtpl->table_td(_('Description').':');
@@ -373,7 +373,7 @@ function outage_details ($id) {
 
 	$xtpl->table_td(_('Handled by').':');
 	$xtpl->table_td(implode(', ', array_map(
-		function ($h) { return $h->full_name; },
+		function ($h) { return h($h->full_name); },
 		$outage->handler->list()->asArray()
 	)));
 	$xtpl->table_tr();
@@ -411,7 +411,7 @@ function outage_details ($id) {
 			if (!$update->{$name})
 				continue;
 
-			$summary[] = '<strong>'.$lang->label.'</strong>: '.$update->{$name};
+			$summary[] = '<strong>'.h($lang->label).'</strong>: '.h($update->{$name});
 		}
 
 		$xtpl->table_td(implode("\n<br>\n", $summary));
@@ -454,7 +454,7 @@ function outage_details ($id) {
 			if (!$update->{$name})
 				continue;
 
-			$desc[] = '<strong>'.$lang->label.'</strong>: '.nl2br($update->{$name});
+			$desc[] = '<strong>'.h($lang->label).'</strong>: '.nl2br(h($update->{$name}));
 		}
 
 		$str = implode("\n<br><br>\n", array_filter(array(
@@ -553,11 +553,11 @@ function outage_list () {
 		$xtpl->table_td(boolean_icon($outage->planned));
 		$xtpl->table_td($outage->state);
 		$xtpl->table_td(implode(', ', array_map(
-			function ($v) { return $v->label; },
+			function ($v) { return h($v->label); },
 			$outage->entity->list()->asArray()
 		)));
 		$xtpl->table_td($outage->type);
-		$xtpl->table_td($outage->en_summary);
+		$xtpl->table_td(h($outage->en_summary));
 
 		if ($_SESSION['is_admin']) {
 			if ($outage->state == 'staged') {
@@ -601,7 +601,7 @@ function outage_affected_users ($id) {
 
 	foreach ($users as $out) {
 		$xtpl->table_td(user_link($out->user));
-		$xtpl->table_td($out->user->full_name);
+		$xtpl->table_td(h($out->user->full_name));
 		$xtpl->table_td(
 			'<a href="?page=outage&action=vps&id='.$outage->id.'&user='.$out->user_id.'">'.
 			$out->vps_count.
