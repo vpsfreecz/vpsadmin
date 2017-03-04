@@ -41,7 +41,7 @@ module VpsAdmin::API::Resources
       end
 
       authorize do |u|
-        allow if u.role == :admin
+        allow if u && u.role == :admin
         output blacklist: %i(user)
         allow
       end
@@ -76,7 +76,7 @@ module VpsAdmin::API::Resources
       end
 
       authorize do |u|
-        allow if u.role == :admin
+        allow if u && u.role == :admin
         output blacklist: %i(user)
         allow
       end
