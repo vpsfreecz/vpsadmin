@@ -42,6 +42,8 @@ module VpsAdmin::API::Resources
             desc: 'Filter outages affecting a specific user'
         resource VpsAdmin::API::Resources::VPS, name: :vps, label: 'VPS',
             desc: 'Filter outages affecting a specific VPS'
+        resource VpsAdmin::API::Resources::User, name: :handled_by, label: 'Handled by',
+            desc: 'Filter outages handled by user'
       end
 
       output(:object_list) do
@@ -52,7 +54,7 @@ module VpsAdmin::API::Resources
         allow if u && u.role == :admin
         output blacklist: %i(affected_user_count affected_vps_count)
         allow if u
-        input blacklist: %i(affected user)
+        input blacklist: %i(affected user handled_by)
         allow
       end
 
@@ -108,6 +110,12 @@ module VpsAdmin::API::Resources
         if input[:vps]
           q = q.joins(:outage_vpses).group('outages.id').where(
               outage_vpses: {vps_id: input[:vps].id}
+          )
+        end
+
+        if input[:handled_by]
+          q = q.joins(:outage_handlers).group('outages.id').where(
+              outage_handlers: {user_id: input[:handled_by].id}
           )
         end
 
