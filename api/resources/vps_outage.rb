@@ -14,6 +14,7 @@ module VpsAdmin::API::Resources
 
       input do
         use :all, include: %i(outage vps)
+        resource VpsAdmin::API::Resources::User
       end
 
       output(:object_list) do
@@ -33,6 +34,7 @@ module VpsAdmin::API::Resources
           q = q.where(v => input[v]) if input[v]
         end
 
+        q = q.where(vpses: {user_id: input[:user].id}) if input[:user]
         q
       end
 
