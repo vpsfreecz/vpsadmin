@@ -565,8 +565,18 @@ function outage_list () {
 				$xtpl->table_td('-', false, true);
 
 			} else {
-				$xtpl->table_td($outage->affected_user_count, false, true);
-				$xtpl->table_td($outage->affected_vps_count, false, true);
+				$xtpl->table_td(
+					'<a href="?page=outage&action=users&id='.$outage->id.'">'.
+					$outage->affected_user_count.
+					'</a>',
+					false, true
+				);
+				$xtpl->table_td(
+					'<a href="?page=outage&action=vps&id='.$outage->id.'">'.
+					$outage->affected_vps_count.
+					'</a>',
+					false, true
+				);
 			}
 
 		} else

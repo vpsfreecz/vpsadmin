@@ -85,8 +85,18 @@ if ($api->outage) {
 			$xtpl->table_td(h($outage->en_summary));
 
 			if ($_SESSION['is_admin']) {
-				$xtpl->table_td($outage->affected_user_count, false, true);
-				$xtpl->table_td($outage->affected_vps_count, false, true);
+				$xtpl->table_td(
+					'<a href="?page=outage&action=users&id='.$outage->id.'">'.
+					$outage->affected_user_count.
+					'</a>',
+					false, true
+				);
+				$xtpl->table_td(
+					'<a href="?page=outage&action=vps&id='.$outage->id.'">'.
+					$outage->affected_vps_count.
+					'</a>',
+					false, true
+				);
 
 			} else
 				$xtpl->table_td(boolean_icon($outage->affected));
