@@ -23,11 +23,11 @@ module VpsAdmin::API::Resources
       string :reporter_name, label: "Reporter's name"
       datetime :created_at, label: 'Reported at'
     end
-   
+
     params(:filters) do
       use :all, include: %i(outage reported_by)
     end
-    
+
     class Index < HaveAPI::Actions::Default::Index
       desc 'List outage updates'
       auth false

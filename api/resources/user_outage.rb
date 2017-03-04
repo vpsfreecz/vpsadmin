@@ -8,7 +8,7 @@ module VpsAdmin::API::Resources
       resource VpsAdmin::API::Resources::Outage, value_label: :begins_at
       resource VpsAdmin::API::Resources::User, value_label: :login
     end
-    
+
     class Index < HaveAPI::Actions::Default::Index
       desc 'List users affected by outage'
 

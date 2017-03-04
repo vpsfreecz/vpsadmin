@@ -2,7 +2,7 @@ module VpsAdmin::API::Resources
   class Outage < HaveAPI::Resource
     desc 'Report and browse outages'
     model ::Outage
-    
+
     params(:editable) do
       datetime :begins_at, label: 'Begins at'
       datetime :finished_at, label: 'Finished at'
@@ -69,7 +69,7 @@ module VpsAdmin::API::Resources
 
         if input.has_key?(:affected)
           q = q.joins(outage_vpses: [:vps]).group('outages.id')
-            
+
           if input[:affected]
             q = q.where(
                 vpses: {user_id: current_user.id},
@@ -95,7 +95,7 @@ module VpsAdmin::API::Resources
                 AND finished_at IS NULL
               )
               OR finished_at > UTC_TIMESTAMP()
-              
+
           ")
         end
 
@@ -104,7 +104,7 @@ module VpsAdmin::API::Resources
               vpses: {user_id: input[:user].id}
           )
         end
-        
+
         if input[:vps]
           q = q.joins(:outage_vpses).group('outages.id').where(
               outage_vpses: {vps_id: input[:vps].id}
@@ -195,7 +195,7 @@ module VpsAdmin::API::Resources
         error('report failed', to_param_names(e.record.errors.to_hash))
       end
     end
-    
+
     class Update < HaveAPI::Actions::Default::Update
       desc 'Update an outage'
       blocking true
@@ -233,7 +233,7 @@ module VpsAdmin::API::Resources
         opts = {send_mail: input.delete(:send_mail)}
 
         @chain, ret = outage.update!(to_db_names(input), tr, opts)
-        ret 
+        ret
 
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', to_param_names(e.record.errors.to_hash))
@@ -261,7 +261,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
       end
-      
+
       def exec
         outage = ::Outage.find(params[:outage_id])
 
@@ -301,7 +301,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
       end
-      
+
       def exec
         outage = ::Outage.find(params[:outage_id])
         @chain, ret = outage.close!({send_mail: input.delete(:send_mail)})
@@ -330,7 +330,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
       end
-      
+
       def exec
         outage = ::Outage.find(params[:outage_id])
 
@@ -355,7 +355,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
       end
-      
+
       def exec
         outage = ::Outage.find(params[:outage_id])
         outage.set_affected_vpses
@@ -398,7 +398,7 @@ module VpsAdmin::API::Resources
         def count
           query.count
         end
-        
+
         def exec
           query.limit(input[:limit]).offset(input[:limit])
         end
@@ -464,7 +464,7 @@ module VpsAdmin::API::Resources
         authorize do |u|
           allow if u.role == :admin
         end
-        
+
         def exec
           ::OutageEntity.find_by!(
               outage_id: params[:outage_id],
@@ -511,7 +511,7 @@ module VpsAdmin::API::Resources
         def count
           query.count
         end
-        
+
         def exec
           query.limit(input[:limit]).offset(input[:limit])
         end
@@ -605,7 +605,7 @@ module VpsAdmin::API::Resources
         authorize do |u|
           allow if u.role == :admin
         end
-        
+
         def exec
           ::OutageHandler.find_by!(
               outage_id: params[:outage_id],

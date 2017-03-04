@@ -39,7 +39,7 @@ class OutageUpdate < ActiveRecord::Base
         # It seems that self.outage_translation is cached, so force a new query
         @translation = ::OutageTranslation.where(outage_update: self).take
         @translation ? @translation.send(attr) : ''
-      end      
+      end
     end
   end
 
@@ -52,7 +52,7 @@ class OutageUpdate < ActiveRecord::Base
       end
     end
   end
-  
+
   def to_hash
     ret = {
         id: id,

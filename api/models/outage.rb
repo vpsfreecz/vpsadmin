@@ -5,7 +5,7 @@ class Outage < ActiveRecord::Base
   has_many :outage_translations
   has_many :outage_vpses
   has_many :vpses, through: :outage_vpses
-  
+
   enum state: %i(staged announced closed cancelled)
   enum outage_type: %i(tbd restart reset network performance maintenance)
 
@@ -24,20 +24,20 @@ class Outage < ActiveRecord::Base
       report.state = 'staged'
       report.reported_by = ::User.current
       report.save!
-      
+
       translations.each do |lang, attrs|
         tr = ::OutageTranslation.new(attrs)
         tr.language = lang
         tr.outage = outage
         tr.save!
       end
-      
+
       outage.save!
       outage.load_translations
       outage
     end
   end
-  
+
   # TODO: pick a different method name?
   def update!(attrs = {}, translations = {}, opts = {})
     VpsAdmin::API::Plugins::OutageReports::TransactionChains::Update.fire(
@@ -152,7 +152,7 @@ class Outage < ActiveRecord::Base
   def set_affected_vpses
     self.class.transaction do
       affected = get_affected_vpses
-        
+
       # Register new VPSes
       affected.each do |vps|
         begin

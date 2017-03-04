@@ -49,12 +49,12 @@ class Setup < ActiveRecord::Migration
       t.datetime    :created_at,     null: false
       t.datetime    :updated_at,     null: true
     end
-    
+
     add_index :outage_updates, :outage_id
     add_index :outage_updates, :reported_by_id
     add_index :outage_updates, :state
     add_index :outage_updates, :outage_type
-    
+
     create_table :outage_translations do |t|
       t.references  :outage,         null: true
       t.references  :outage_update,  null: true

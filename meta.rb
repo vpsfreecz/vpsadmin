@@ -29,7 +29,7 @@ VpsAdmin::API::Plugin.register(:outage_reports) do
               user: '::User',
               vpses: 'Array<::Vps>',
         }
-    
+
     ::MailTemplate.register :outage_report_role,
         name: "outage_report_%{role}", params: {
             role: 'user or generic',

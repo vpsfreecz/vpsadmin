@@ -12,7 +12,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       concerns(:affect, [outage.class.name, outage.id])
       last_report = outage.outage_updates.order('id DESC').take
       report = ::OutageUpdate.new
-      
+
       attrs.each do |k, v|
         report.assign_attributes(k => v) if outage.send(k) != v
       end
@@ -32,7 +32,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
 
       outage.assign_attributes(attrs)
       outage.save!
-      
+
       # If the outage is staged, update original translations too
       if outage.state == 'staged' \
           && (attrs[:state].nil? || attrs[:state] == ::Outage.states[:staged])
