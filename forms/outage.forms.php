@@ -495,8 +495,10 @@ function outage_list () {
 		'no' => _('No'),
 	), get_val('affected'));
 
-	if ($_SESSION['is_admin'])
+	if ($_SESSION['is_admin']) {
 		$xtpl->form_add_input(_('User ID').':', 'text', '30', 'user', get_val('user'), '');
+		$xtpl->form_add_input(_('Handled by').':', 'text', '30', 'handled_by', get_val('handled_by'), '');
+	}
 
 	$xtpl->form_add_input(_('VPS ID').':', 'text', '30', 'vps', get_val('vps'), '');
 
@@ -531,7 +533,7 @@ function outage_list () {
 			$params[$v] = false;
 	}
 
-	foreach (array('state', 'type', 'user', 'vps') as $v) {
+	foreach (array('state', 'type', 'user', 'handled_by', 'vps') as $v) {
 		if ($_GET[$v])
 			$params[$v] = $_GET[$v];
 	}
