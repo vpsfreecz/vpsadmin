@@ -59,7 +59,7 @@ class Setup < ActiveRecord::Migration
       t.references  :outage,         null: true
       t.references  :outage_update,  null: true
       t.references  :language,       null: false
-      t.string      :summary,        null: false
+      t.string      :summary,        null: true
       t.text        :description,    null: true
     end
 
