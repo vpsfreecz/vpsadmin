@@ -78,11 +78,11 @@ if ($api->outage) {
 			$xtpl->table_td($outage->duration, false, true);
 			$xtpl->table_td(boolean_icon($outage->planned));
 			$xtpl->table_td(implode(', ', array_map(
-				function ($v) { return $v->label; },
+				function ($v) { return h($v->label); },
 				$outage->entity->list()->asArray()
 			)));
 			$xtpl->table_td($outage->type);
-			$xtpl->table_td($outage->en_summary);
+			$xtpl->table_td(h($outage->en_summary));
 
 			if ($_SESSION['is_admin']) {
 				$xtpl->table_td($outage->affected_user_count, false, true);
