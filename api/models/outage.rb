@@ -172,4 +172,26 @@ class Outage < ActiveRecord::Base
       end
     end
   end
+
+  def to_hash
+    ret = {
+        id: id,
+        planned: planned,
+        begins_at: begins_at.iso8601,
+        duration: duration,
+        type: outage_type,
+        entities: outage_entities.map { |v| {name: v.name, id: v.row_id, label: v.real_name} },
+        handlers: outage_handlers.map { |v| v.full_name },
+        translations: {},
+    }
+
+    outage_translations.each do |tr|
+      ret[:translations][tr.language.code] = {
+          summary: tr.summary,
+          description: tr.description,
+      }
+    end
+
+    ret
+  end
 end

@@ -52,6 +52,36 @@ class OutageUpdate < ActiveRecord::Base
       end
     end
   end
+  
+  def to_hash
+    ret = {
+        id: id,
+        changes: {},
+        translations: {},
+    }
+
+    each_change do |attr, old, new|
+      case attr
+      when :begins_at, :finished_at
+        ret[:changes][attr] = {from: old && old.iso8601, to: new && new.iso8601}
+
+      when :outage_type
+        ret[:changes][:type] = {from: old, to: new}
+
+      else
+        ret[:changes][attr] = {from: old, to: new}
+      end
+    end
+
+    outage_translations(true).each do |tr|
+      ret[:translations][tr.language.code] = {
+          summary: tr.summary,
+          description: tr.description,
+      }
+    end
+
+    ret
+  end
 
   protected
   def set_name

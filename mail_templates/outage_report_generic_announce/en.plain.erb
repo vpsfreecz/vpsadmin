@@ -6,3 +6,7 @@ Reason: <%= @o.en_summary %>
 Handled by: <%= @o.outage_handlers.map { |h| h.user.full_name }.join(', ') %>
 
 <%= @o.en_description %>
+
+-----BEGIN BASE64 ENCODED PARSEABLE JSON-----
+<%= Base64.encode64(@o.to_hash.to_json).scan(/.{1,76}/).join("\n") %>
+-----END BASE64 ENCODED PARSEABLE JSON-----
