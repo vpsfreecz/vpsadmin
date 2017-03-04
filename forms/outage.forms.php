@@ -225,6 +225,11 @@ function outage_details ($id) {
 	if ($_SESSION['is_admin']) {
 		$xtpl->sbar_add(_('Edit'), '?page=outage&action=edit&id='.$id);
 		$xtpl->sbar_add(_('Post update'), '?page=outage&action=update&id='.$id);
+
+		if ($_SESSION['is_admin'])
+			$xtpl->sbar_add(_('Affected users'), '?page=outage&action=users&id='.$id);
+
+		$xtpl->sbar_add(_('Affected VPS'), '?page=outage&action=vps&id='.$id);
 	}
 
 	$outage = $api->outage->show($id);
@@ -263,9 +268,11 @@ function outage_details ($id) {
 			}
 
 			$xtpl->table_td(
-				$affected_vpses->getTotalCount().' '._('VPSes are affected by this outage.').
+				'<a href="?page=outage&action=vps&id='.$outage->id.'">'.
+				$affected_vpses->getTotalCount().'</a> '._('VPSes are affected by this outage.').
 				"\n<br>\n".
-				$affected_users.' '._('users are affected by this outage.')
+				'<a href="?page=outage&action=users&id='.$outage->id.'">'.
+				$affected_users.'</a> '._('users are affected by this outage.')
 			);
 		}
 
@@ -567,6 +574,64 @@ function outage_list () {
 
 		$xtpl->table_td('<a href="?page=outage&action=show&id='.$outage->id.'"><img src="template/icons/m_edit.png"  title="'. _("Details") .'" /></a>');
 
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_out();
+}
+
+function outage_affected_users ($id) {
+	global $xtpl, $api;
+
+	$outage = $api->outage->show($id);
+
+	$xtpl->sbar_add(_('Back'), '?page=outage&action=show&id='.$outage->id);
+
+	$xtpl->title(_('Outage'). '#'.$outage->id);
+	$xtpl->table_title(_('Affected users'));
+
+	$users = $api->user_outage->list(array(
+		'outage' => $outage->id,
+		'meta' => array('includes' => 'user'),
+	));
+
+	$xtpl->table_add_category(_('Login'));
+	$xtpl->table_add_category(_('Name'));
+	$xtpl->table_add_category(_('VPS count'));
+
+	foreach ($users as $out) {
+		$xtpl->table_td(user_link($out->user));
+		$xtpl->table_td($out->user->full_name);
+		$xtpl->table_td($out->vps_count, false, true);
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_out();
+}
+
+function outage_affected_vps ($id) {
+	global $xtpl, $api;
+
+	$outage = $api->outage->show($id);
+
+	$xtpl->sbar_add(_('Back'), '?page=outage&action=show&id='.$outage->id);
+
+	$xtpl->title(_('Outage'). '#'.$outage->id);
+	$xtpl->table_title(_('Affected VPS'));
+
+	$vpses = $api->vps_outage->list(array(
+		'outage' => $outage->id,
+		'meta' => array('includes' => 'vps__user'),
+	));
+
+	$xtpl->table_add_category(_('VPS ID'));
+	$xtpl->table_add_category(_('Hostname'));
+	$xtpl->table_add_category(_('User'));
+
+	foreach ($vpses as $out) {
+		$xtpl->table_td(vps_link($out->vps));
+		$xtpl->table_td(h($out->vps->hostname));
+		$xtpl->table_td(user_link($out->vps->user));
 		$xtpl->table_tr();
 	}
 
