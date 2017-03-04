@@ -597,7 +597,7 @@ function outage_affected_users ($id) {
 
 	$xtpl->sbar_add(_('Back'), '?page=outage&action=show&id='.$outage->id);
 
-	$xtpl->title(_('Outage'). '#'.$outage->id);
+	$xtpl->title(_('Outage').' #'.$outage->id);
 	$xtpl->table_title(_('Affected users'));
 
 	$users = $api->user_outage->list(array(
@@ -631,7 +631,7 @@ function outage_affected_vps ($id) {
 
 	$xtpl->sbar_add(_('Back'), '?page=outage&action=show&id='.$outage->id);
 
-	$xtpl->title(_('Outage'). '#'.$outage->id);
+	$xtpl->title(_('Outage').' #'.$outage->id);
 
 	if ($_SESSION['is_admin']) {
 		$xtpl->table_title(_('Filters'));
