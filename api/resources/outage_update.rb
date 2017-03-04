@@ -48,6 +48,11 @@ module VpsAdmin::API::Resources
 
       def query
         q = ::OutageUpdate.all
+
+        if current_user.nil? || current_user.role != :admin
+          q = q.where.not(state: ::Outage.states[:staged])
+        end
+
         q = q.where(outage: input[:outage]) if input[:outage]
         q = q.where(reported_by: input[:reported_by]) if input[:reported_by]
         q
@@ -77,7 +82,13 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @outage = ::OutageUpdate.find(params[:outage_update_id])
+        q = ::OutageUpdate.where(id: params[:outage_update_id])
+
+        if current_user.nil? || current_user.role != :admin
+          q = q.where.not(state: ::Outage.states[:staged])
+        end
+
+        @outage = q.take!
       end
 
       def exec
