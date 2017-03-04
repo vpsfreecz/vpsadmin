@@ -213,12 +213,15 @@ if ($_SESSION['logged_in']) {
 				foreach ($dates as $d) {
 					$v = strtotime($_POST[$d]);
 
-					if (!$_POST[$f] && $v != strtotime($outage->{$d}))
+					if ($_POST[$d] && $v != strtotime($outage->{$d}))
 						$params[$d] = date('c', $v);
+
+					elseif (!$_POST[$d] && $outage->{$d})
+						$params[$d] = null;
 				}
 
 				foreach ($fields as $f) {
-					if (!$_POST[$f] && $_POST[$f] != $outage->{$f})
+					if ($_POST[$f] && $_POST[$f] != $outage->{$f})
 						$params[$f] = $_POST[$f];
 				}
 
