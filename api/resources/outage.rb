@@ -66,6 +66,14 @@ module VpsAdmin::API::Resources
             desc: 'Filter outages affecting a specific VPS'
         resource VpsAdmin::API::Resources::User, name: :handled_by, label: 'Handled by',
             desc: 'Filter outages handled by user'
+        resource VpsAdmin::API::Resources::Environment,
+            desc: 'Filter outages by environment'
+        resource VpsAdmin::API::Resources::Location,
+            desc: 'Filter outages by location'
+        resource VpsAdmin::API::Resources::Node,
+            desc: 'Filter outages by node'
+        string :entity_name, label: 'Entity name', desc: 'Filter outages by entity name'
+        integer :entity_id, label: 'Entity ID', desc: 'Filter outages by entity ID'
         string :order, label: 'Order', choices: %w(newest oldest), default: 'newest',
             fill: true
       end
@@ -139,6 +147,26 @@ module VpsAdmin::API::Resources
         if input[:handled_by]
           q = q.joins(:outage_handlers).group('outages.id').where(
               outage_handlers: {user_id: input[:handled_by].id}
+          )
+        end
+
+        %i(environment location node).each do |ent|
+          next unless input[ent]
+
+          q = q.joins(:outage_entities).group('outages.id').where(
+            outage_entities: {name: input[ent].class.name, row_id: input[ent].id}
+          )
+        end
+
+        if input[:entity_name]
+          q = q.joins(:outage_entities).group('outages.id').where(
+            outage_entities: {name: input[:entity_name]}
+          )
+        end
+
+        if input[:entity_id]
+          q = q.joins(:outage_entities).group('outages.id').where(
+            outage_entities: {row_id: input[:entity_id]}
           )
         end
 
