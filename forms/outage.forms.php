@@ -506,6 +506,7 @@ function outage_list () {
 	}
 
 	$xtpl->form_add_input(_('VPS ID').':', 'text', '30', 'vps', get_val('vps'), '');
+	api_param_to_form('order', $input->order, $_GET['order']);
 
 	$xtpl->form_out(_('Show'));
 
@@ -538,7 +539,7 @@ function outage_list () {
 			$params[$v] = false;
 	}
 
-	foreach (array('state', 'type', 'user', 'handled_by', 'vps') as $v) {
+	foreach (array('state', 'type', 'user', 'handled_by', 'vps', 'order') as $v) {
 		if ($_GET[$v])
 			$params[$v] = $_GET[$v];
 	}

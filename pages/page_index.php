@@ -51,7 +51,11 @@ if ($api->news_log) {
 $xtpl->table_out("notice_board");
 
 if ($api->outage) {
-	$outages = $api->outage->list(array('active' => true, 'limit' => 5));
+	$outages = $api->outage->list(array(
+		'active' => true,
+		'limit' => 5,
+		'order' => 'oldest',
+	));
 
 	if ($outages->count()) {
 		$xtpl->table_title(_('Current/planned outages'));
