@@ -501,6 +501,9 @@ function transaction_concern_link($klass, $row_id) {
 		case 'ChangeRequest':
 			return '<a href="?page=adminm&action=request_details&id='.$row_id.'&type=change">'.$row_id.'</a>';
 
+		case 'Outage':
+			return '<a href="?page=outage&action=show&id='.$row_id.'">'.$row_id.'</a>';
+
 		default:
 			return "$row_id";
 	}

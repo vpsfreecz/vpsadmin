@@ -42,6 +42,9 @@
 			case 'ChangeRequest':
 				return '<a href="?page=adminm&action=request_details&id='+ obj[1] +'&type=change">'+ obj[1] +'</a>';
 
+			case 'Outage':
+				return '<a href="?page=outage&action=show&id='+ obj[1] +'">'+ obj[1] +'</a>';
+
 			default:
 				return obj[1];
 		}
