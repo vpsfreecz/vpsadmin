@@ -44,6 +44,8 @@ module VpsAdmin::API::Resources
             desc: 'Filter outages affecting a specific VPS'
         resource VpsAdmin::API::Resources::User, name: :handled_by, label: 'Handled by',
             desc: 'Filter outages handled by user'
+        string :order, label: 'Order', choices: %w(newest oldest), default: 'newest',
+            fill: true
       end
 
       output(:object_list) do
@@ -126,10 +128,17 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_includes(query)
+        q = with_includes(query)
             .limit(input[:limit])
             .offset(input[:offset])
-            .order('begins_at, created_at')
+
+        case input[:order]
+        when 'oldest'
+          q.order('begins_at, created_at')
+
+        when 'newest'
+          q.order('begins_at DESC, created_at DESC')
+        end
       end
     end
 
