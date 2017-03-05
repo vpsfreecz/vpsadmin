@@ -20,6 +20,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+$xtpl->sbar_add(_('Outages'), '?page=outage&action=list');
+$xtpl->sbar_out(_('Overview'));
+
 $xtpl->title(_("Overview"));
 
 if ($_SESSION["is_admin"]) {

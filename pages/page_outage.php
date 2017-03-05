@@ -285,8 +285,19 @@ if ($_SESSION['logged_in']) {
 	$xtpl->sbar_out(_('Outages'));
 
 } else {
-	$xtpl->perex(
-		_("Access forbidden"),
-		_("You have to log in to be able to access vpsAdmin's functions")
-	);
+	switch ($_GET['action']) {
+	case 'list':
+		outage_list();
+		break;
+
+	case 'show':
+		outage_details($_GET['id']);
+		break;
+
+	default:
+		$xtpl->perex(
+			_("Access forbidden"),
+			_("You have to log in to be able to access vpsAdmin's functions")
+		);
+	}
 }

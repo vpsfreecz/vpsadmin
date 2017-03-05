@@ -310,7 +310,7 @@ function outage_details ($id) {
 			);
 		}
 
-	} else {
+	} elseif ($_SESSION['logged_in']) {
 		$affected_vpses = $api->vps_outage->list(array(
 			'outage' => $outage->id,
 			'meta' => array(
@@ -514,18 +514,23 @@ function outage_list () {
 	), get_val('planned'));
 	api_param_to_form('state', $input->state, null, null, true);
 	api_param_to_form('type', $input->type, null, null, true);
-	$xtpl->form_add_select(_('Affects me?'), 'affected', array(
-		'' => '---',
-		'yes' => _('Yes'),
-		'no' => _('No'),
-	), get_val('affected'));
+
+	if ($_SESSION['logged_in']) {
+		$xtpl->form_add_select(_('Affects me?'), 'affected', array(
+			'' => '---',
+			'yes' => _('Yes'),
+			'no' => _('No'),
+		), get_val('affected'));
+	}
 
 	if ($_SESSION['is_admin']) {
 		$xtpl->form_add_input(_('User ID').':', 'text', '30', 'user', get_val('user'), '');
 		$xtpl->form_add_input(_('Handled by').':', 'text', '30', 'handled_by', get_val('handled_by'), '');
 	}
 
-	$xtpl->form_add_input(_('VPS ID').':', 'text', '30', 'vps', get_val('vps'), '');
+	if ($_SESSION['logged_in'])
+		$xtpl->form_add_input(_('VPS ID').':', 'text', '30', 'vps', get_val('vps'), '');
+
 	api_param_to_form('order', $input->order, $_GET['order']);
 
 	$xtpl->form_out(_('Show'));
