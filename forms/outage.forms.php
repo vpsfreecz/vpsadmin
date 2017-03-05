@@ -298,12 +298,12 @@ function outage_details ($id) {
 			$s .= implode("\n<br>\n", array_map(
 				function ($outage_vps) {
 					$v = $outage_vps->vps;
-					return vps_link($v).' - '.$v->hostname;
+					return vps_link($v).' - '.h($v->hostname);
 
 				}, $affected_vpses->asArray()
 			));
 
-			$xtpl->table_td(h($s));
+			$xtpl->table_td($s);
 
 		} else {
 			$xtpl->table_td('<strong>'._('You are not affected by this outage.').'</strong>');
