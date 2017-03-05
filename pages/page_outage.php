@@ -156,22 +156,36 @@ if ($_SESSION['logged_in']) {
 		break;
 
 	case 'set_state':
-		csrf_check();
-
 		if ($_SESSION['is_admin']) {
-			try {
-				$api->outage->{$_POST['state']}($_GET['id'], array(
-					'send_mail' => isset($_POST['send_mail']),
-				));
+			if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+				csrf_check();
 
-				notify_user(_('State set'), _('Outage state has been scucessfully set.'));
-				redirect('?page=outage&action=show&id='.$_GET['id']);
+				try {
+					$params = array(
+						'send_mail' => isset($_POST['send_mail']),
+					);
 
-			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				$xtpl->perex_format_errors('State set failed', $e->getResponse());
-				outage_details($_GET['id']);
+					foreach ($api->language->list() as $l) {
+						foreach (array('summary', 'description') as $name) {
+							$param = $l->code.'_'.$name;
+
+							if ($_POST[$param])
+								$params[$param] = $_POST[$param];
+						}
+					}
+
+					$api->outage->{$_POST['state']}($_GET['id'], $params);
+
+					notify_user(_('State set'), _('Outage state has been scucessfully set.'));
+					redirect('?page=outage&action=show&id='.$_GET['id']);
+
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors('State set failed', $e->getResponse());
+					outage_state_form($_GET['id']);
+				}
+			} else {
+				outage_state_form($_GET['id']);
 			}
-
 		}
 		break;
 

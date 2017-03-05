@@ -219,11 +219,50 @@ function outage_update_form ($id) {
 	$xtpl->form_out(_('Post update'));
 }
 
+function outage_state_form ($id) {
+	global $xtpl, $api;
+
+	$outage = $api->outage->show($id);
+
+	$xtpl->sbar_add(_('Back'), '?page=outage&action=show&id='.$outage->id);
+
+	$xtpl->title(_('Outage').' #'.$id);
+
+	$xtpl->table_title(_('Change state'));
+	$xtpl->form_create('?page=outage&action=set_state&id='.$id, 'post');
+	$xtpl->form_add_select(_('State').':', 'state', array(
+		'announce' => _('Announce'),
+		'cancel' => _('Cancel'),
+		'close' => _('Close'),
+	), post_val('state'));
+
+	if ($outage->state != 'staged') {
+		foreach ($api->language->list() as $lang) {
+			$xtpl->form_add_input(
+				$lang->label.' '._('summary').':', 'text', '70', $lang->code.'_summary',
+				post_val($lang->code.'_summary')
+			);
+			$xtpl->form_add_textarea(
+				$lang->label.' '._('description').':', 70, 8, $lang->code.'_description',
+				post_val($lang->code.'_description')
+			);
+		}
+	}
+
+	$xtpl->form_add_checkbox(
+		_('Send mails').':', 'send_mail', '1',
+		($_POST['state'] && !$_POST['send_mail']) ? false : true
+	);
+
+	$xtpl->form_out(_('Change'));
+}
+
 function outage_details ($id) {
 	global $xtpl, $api;
 
 	if ($_SESSION['is_admin']) {
 		$xtpl->sbar_add(_('Edit'), '?page=outage&action=edit&id='.$id);
+		$xtpl->sbar_add(_('Change state'), '?page=outage&action=set_state&id='.$id);
 		$xtpl->sbar_add(_('Post update'), '?page=outage&action=update&id='.$id);
 		$xtpl->sbar_add(_('Affected users'), '?page=outage&action=users&id='.$id);
 	}
@@ -232,9 +271,6 @@ function outage_details ($id) {
 
 	$outage = $api->outage->show($id);
 	$langs = $api->language->list();
-
-	if ($_SESSION['is_admin'])
-		$xtpl->form_create('?page=outage&action=set_state&id='.$id, 'post');
 
 	$xtpl->title(_('Outage').' #'.$id);
 
@@ -375,23 +411,7 @@ function outage_details ($id) {
 		$outage->handler->list()->asArray()
 	)));
 	$xtpl->table_tr();
-
-	if ($_SESSION['is_admin']) {
-		$xtpl->form_add_select(_('State').':', 'state', array(
-			'announce' => _('Announce'),
-			'cancel' => _('Cancel'),
-			'close' => _('Close'),
-		), post_val('state'));
-
-		$xtpl->form_add_checkbox(
-			_('Send mails').':', 'send_mail', '1',
-			($_POST['state'] && !$_POST['send_mail']) ? false : true
-		);
-
-		$xtpl->form_out(_('Change'));
-
-	} else
-		$xtpl->table_out();
+	$xtpl->table_out();
 
 	$xtpl->table_title(_('Updates'));
 	$xtpl->table_add_category(_('Date'));
