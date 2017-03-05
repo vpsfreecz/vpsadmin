@@ -67,7 +67,7 @@ if ($api->outage) {
 			$xtpl->table_add_category(_('Users'));
 			$xtpl->table_add_category(_('VPS'));
 
-		} else
+		} elseif ($_SESSION['logged_in'])
 			$xtpl->table_add_category(_('Affects me?'));
 		}
 
@@ -98,7 +98,7 @@ if ($api->outage) {
 					false, true
 				);
 
-			} else
+			} elseif ($_SESSION['logged_in'])
 				$xtpl->table_td(boolean_icon($outage->affected));
 
 			$xtpl->table_td('<a href="?page=outage&action=show&id='.$outage->id.'"><img src="template/icons/m_edit.png"  title="'. _("Details") .'" /></a>');
