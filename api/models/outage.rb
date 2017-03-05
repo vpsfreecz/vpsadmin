@@ -81,7 +81,9 @@ class Outage < ActiveRecord::Base
 
   def affected_users
     ::User.joins(vpses: [:outage_vpses]).where(
-        outage_vpses: {outage_id: self.id}
+        outage_vpses: {outage_id: self.id},
+    ).where(
+        'users.object_state < ?', ::User.object_states[:soft_delete]
     ).group('outage_vpses.outage_id, users.id').order('users.id')
   end
 
@@ -98,7 +100,7 @@ class Outage < ActiveRecord::Base
 
     outage_entities.each do |ent|
       id = self.class.connection.quote(ent.row_id)
-      state = self.class.connection.quote(::User.object_states[:hard_delete])
+      state = self.class.connection.quote(::Vps.object_states[:soft_delete])
 
       case ent.name
       when 'Cluster'
