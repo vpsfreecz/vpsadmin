@@ -3,6 +3,13 @@ module VpsAdmin::API::Resources
     desc 'Report and browse outages'
     model ::Outage
 
+    params(:texts) do
+      ::Language.all.each do |lang|
+        string :"#{lang.code}_summary", label: "#{lang.label} summary"
+        string :"#{lang.code}_description", label: "#{lang.label} description"
+      end
+    end
+
     params(:editable) do
       datetime :begins_at, label: 'Begins at'
       datetime :finished_at, label: 'Finished at'
@@ -11,11 +18,7 @@ module VpsAdmin::API::Resources
       string :state, label: 'State', choices: ::Outage.states.keys.map(&:to_s)
       string :type, db_name: :outage_type, label: 'Type',
           choices: ::Outage.outage_types.keys.map(&:to_s)
-
-      ::Language.all.each do |lang|
-        string :"#{lang.code}_summary", label: "#{lang.label} summary"
-        string :"#{lang.code}_description", label: "#{lang.label} description"
-      end
+      use :texts
     end
 
     params(:all) do
@@ -29,6 +32,25 @@ module VpsAdmin::API::Resources
 
     params(:input) do
       bool :send_mail, label: 'Send mail', default: true, fill: true
+    end
+
+    module Helpers
+      def extract_translations
+        tr = {}
+
+        ::Language.all.each do |lang|
+          %i(summary description).each do |param|
+            name = :"#{lang.code}_#{param}"
+
+            if input.has_key?(name)
+              tr[lang] ||= {}
+              tr[lang][param] = input.delete(name)
+            end
+          end
+        end
+
+        tr
+      end
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -174,6 +196,8 @@ module VpsAdmin::API::Resources
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      include Helpers
+
       desc 'Stage a new outage'
 
       input do
@@ -191,20 +215,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        # Separate translations from other parameters
-        tr = {}
-
-        ::Language.all.each do |lang|
-          %i(summary description).each do |param|
-            name = :"#{lang.code}_#{param}"
-
-            if input.has_key?(name)
-              tr[lang] ||= {}
-              tr[lang][param] = input.delete(name)
-            end
-          end
-        end
-
+        tr = extract_translations
         ::Outage.create!(to_db_names(input), tr)
 
       rescue ActiveRecord::RecordInvalid => e
@@ -213,6 +224,8 @@ module VpsAdmin::API::Resources
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      include Helpers
+
       desc 'Update an outage'
       blocking true
 
@@ -232,20 +245,7 @@ module VpsAdmin::API::Resources
       def exec
         outage = ::Outage.find(params[:outage_id])
 
-        # Separate translations from other parameters
-        tr = {}
-
-        ::Language.all.each do |lang|
-          %i(summary description).each do |param|
-            name = :"#{lang.code}_#{param}"
-
-            if input.has_key?(name)
-              tr[lang] ||= {}
-              tr[lang][param] = input.delete(name)
-            end
-          end
-        end
-
+        tr = extract_translations
         opts = {send_mail: input.delete(:send_mail)}
 
         @chain, ret = outage.update!(to_db_names(input), tr, opts)
@@ -301,12 +301,15 @@ module VpsAdmin::API::Resources
     end
 
     class Close < HaveAPI::Action
+      include Helpers
+
       desc 'Close the outage, indicating that it is over'
       http_method :post
       route ':%{resource}_id/close'
       blocking true
 
       input do
+        use :texts
         use :input
       end
 
@@ -320,7 +323,9 @@ module VpsAdmin::API::Resources
 
       def exec
         outage = ::Outage.find(params[:outage_id])
-        @chain, ret = outage.close!({send_mail: input.delete(:send_mail)})
+        tr = extract_translations
+        opts = {send_mail: input.delete(:send_mail)}
+        @chain, ret = outage.close!(tr, opts)
         ret
       end
 
@@ -330,12 +335,15 @@ module VpsAdmin::API::Resources
     end
 
     class Cancel < HaveAPI::Action
+      include Helpers
+
       desc 'Cancel scheduled outage'
       http_method :post
       route ':%{resource}_id/cancel'
       blocking true
 
       input do
+        use :texts
         use :input
       end
 
@@ -354,7 +362,9 @@ module VpsAdmin::API::Resources
           error('cannot cancel a closed outage')
         end
 
-        @chain, ret = outage.cancel!({send_mail: input.delete(:send_mail)})
+        tr = extract_translations
+        opts = {send_mail: input.delete(:send_mail)}
+        @chain, ret = outage.cancel!(tr, opts)
         ret
       end
 

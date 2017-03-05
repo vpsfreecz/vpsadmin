@@ -53,12 +53,12 @@ class Outage < ActiveRecord::Base
     update!({state: self.class.states[:announced]}, {}, opts)
   end
 
-  def close!(opts = {})
-    update!({state: self.class.states[:closed]}, {}, opts)
+  def close!(translations = {}, opts = {})
+    update!({state: self.class.states[:closed]}, translations, opts)
   end
 
-  def cancel!(opts = {})
-    update!({state: self.class.states[:cancelled]}, {}, opts)
+  def cancel!(translations = {}, opts = {})
+    update!({state: self.class.states[:cancelled]}, translations, opts)
   end
 
   def load_translations
