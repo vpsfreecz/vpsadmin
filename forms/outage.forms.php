@@ -639,10 +639,27 @@ function outage_affected_vps ($id) {
 
 		$xtpl->table_td(_("User ID").':'.
 			'<input type="hidden" name="page" value="outage">'.
-			'<input type="hidden" name="action" value="vps">'
+			'<input type="hidden" name="action" value="vps">'.
+			'<input type="hidden" name="id" value="'.$outage->id.'">'
 		);
 		$xtpl->form_add_input_pure('text', '30', 'user', get_val('user'), '');
 		$xtpl->table_tr();
+
+		$xtpl->form_add_select(
+			_('Environment').':', 'environment',
+			resource_list_to_options($api->environment->list()),
+			get_val('environment')
+		);
+		$xtpl->form_add_select(
+			_('Location').':', 'location',
+			resource_list_to_options($api->location->list()),
+			get_val('location')
+		);
+		$xtpl->form_add_select(
+			_('Node').':', 'node',
+			resource_list_to_options($api->node->list(), 'id', 'domain_name'),
+			get_val('node')
+		);
 
 		$xtpl->form_out(_('Show'));
 	}
@@ -651,22 +668,30 @@ function outage_affected_vps ($id) {
 
 	$params = array(
 		'outage' => $outage->id,
-		'meta' => array('includes' => 'vps__user'),
+		'meta' => array('includes' => 'vps,user,environment,location,node'),
 	);
 
-	if ($_GET['user'])
-		$params['user'] = $_GET['user'];
+	foreach (array('user', 'environment', 'location', 'node') as $v) {
+		if ($_GET[$v])
+			$params[$v] = $_GET[$v];
+	}
 
 	$vpses = $api->vps_outage->list($params);
 
 	$xtpl->table_add_category(_('VPS ID'));
 	$xtpl->table_add_category(_('Hostname'));
 	$xtpl->table_add_category(_('User'));
+	$xtpl->table_add_category(_('Node'));
+	$xtpl->table_add_category(_('Environment'));
+	$xtpl->table_add_category(_('Location'));
 
 	foreach ($vpses as $out) {
 		$xtpl->table_td(vps_link($out->vps));
 		$xtpl->table_td(h($out->vps->hostname));
 		$xtpl->table_td(user_link($out->vps->user));
+		$xtpl->table_td($out->node->domain_name);
+		$xtpl->table_td($out->environment->label);
+		$xtpl->table_td($out->location->label);
 		$xtpl->table_tr();
 	}
 
