@@ -519,13 +519,14 @@ module VpsAdmin::API::Resources
 
       class Index < HaveAPI::Actions::Default::Index
         desc 'List outage entities'
+        auth false
 
         output(:object_list) do
           use :all
         end
 
         authorize do |u|
-          allow if u.role == :admin
+          allow if u && u.role == :admin
           output blacklist: %i(user)
           allow
         end
@@ -545,13 +546,14 @@ module VpsAdmin::API::Resources
 
       class Show < HaveAPI::Actions::Default::Show
         desc 'Show an outage handler'
+        auth false
 
         output do
           use :all
         end
 
         authorize do |u|
-          allow if u.role == :admin
+          allow if u && u.role == :admin
           output blacklist: %i(user)
           allow
         end
