@@ -225,12 +225,10 @@ function outage_details ($id) {
 	if ($_SESSION['is_admin']) {
 		$xtpl->sbar_add(_('Edit'), '?page=outage&action=edit&id='.$id);
 		$xtpl->sbar_add(_('Post update'), '?page=outage&action=update&id='.$id);
-
-		if ($_SESSION['is_admin'])
-			$xtpl->sbar_add(_('Affected users'), '?page=outage&action=users&id='.$id);
-
-		$xtpl->sbar_add(_('Affected VPS'), '?page=outage&action=vps&id='.$id);
+		$xtpl->sbar_add(_('Affected users'), '?page=outage&action=users&id='.$id);
 	}
+
+	$xtpl->sbar_add(_('Affected VPS'), '?page=outage&action=vps&id='.$id);
 
 	$outage = $api->outage->show($id);
 	$langs = $api->language->list();
