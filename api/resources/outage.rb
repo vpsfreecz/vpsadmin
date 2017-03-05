@@ -70,20 +70,19 @@ module VpsAdmin::API::Resources
         q = q.where(outage_type: ::Outage.outage_types[input[:type]]) if input[:type]
 
         if input.has_key?(:affected)
-          q = q.joins(outage_vpses: [:vps]).group('outages.id')
+          q = q.joins(:outage_vpses).group('outages.id')
 
           if input[:affected]
             q = q.where(
-                vpses: {user_id: current_user.id},
+                user_id: current_user.id,
             )
 
           else
             q = q.where("
                 outages.id NOT IN (
                   SELECT outage_id
-                  FROM outage_vpses o
-                  INNER JOIN vpses v ON o.vps_id = v.id
-                  WHERE v.user_id = ?
+                  FROM outage_vpses
+                  WHERE user_id = ?
                 )
             ", current_user.id)
           end
@@ -102,8 +101,8 @@ module VpsAdmin::API::Resources
         end
 
         if input[:user]
-          q = q.joins(outage_vpses: [:vps]).group('outages.id').where(
-              vpses: {user_id: input[:user].id}
+          q = q.joins(:outage_vpses).group('outages.id').where(
+              user: input[:user],
           )
         end
 

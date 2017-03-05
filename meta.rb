@@ -38,7 +38,7 @@ VpsAdmin::API::Plugin.register(:outage_reports) do
             o: '::Outage',
             update: '::OutageUpdate',
             user: '::User',
-            vpses: 'Array<::Vps>',
+            vpses: 'OutageVps relation',
         }
   end
 end

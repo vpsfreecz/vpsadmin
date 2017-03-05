@@ -7,14 +7,17 @@ module VpsAdmin::API::Resources
       id :id
       resource VpsAdmin::API::Resources::Outage, value_label: :begins_at
       resource VpsAdmin::API::Resources::VPS, value_label: :hostname
+      resource VpsAdmin::API::Resources::User, value_label: :login
+      resource VpsAdmin::API::Resources::Environment
+      resource VpsAdmin::API::Resources::Location
+      resource VpsAdmin::API::Resources::Node, value_label: :domain_name
     end
 
     class Index < HaveAPI::Actions::Default::Index
       desc 'List VPSes affected by outage'
 
       input do
-        use :all, include: %i(outage vps)
-        resource VpsAdmin::API::Resources::User
+        use :all, include: %i(outage vps user environment location node)
       end
 
       output(:object_list) do
@@ -23,18 +26,17 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict vpses: {user_id: u.id}
+        restrict user_id: u.id
         allow
       end
 
       def query
-        q = ::OutageVps.joins(:vps).where(with_restricted)
+        q = ::OutageVps.where(with_restricted)
 
-        %i(outage vps).each do |v|
+        %i(outage vps user environment location node).each do |v|
           q = q.where(v => input[v]) if input[v]
         end
 
-        q = q.where(vpses: {user_id: input[:user].id}) if input[:user]
         q
       end
 
@@ -59,13 +61,13 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict vpses: {user_id: u.id}
+        restrict user_id: u.id
         allow
       end
 
       def prepare
-        @outage = ::OutageVps.joins(:vps).find_by!(with_restricted(
-            id: params[:vps_outage_id]
+        @outage = ::OutageVps.find_by!(with_restricted(
+            id: params[:vps_outage_id],
         ))
       end
 

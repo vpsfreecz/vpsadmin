@@ -23,15 +23,15 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict vpses: {user_id: u.id}
+        restrict user_id: u.id
         allow
       end
 
       def query
-        q = ::OutageUser.joins(:vps).where(with_restricted)
+        q = ::OutageUser.where(with_restricted)
         q = q.where(outage: input[:outage]) if input[:outage]
-        q = q.where(vpses: {user_id: input[:user].id}) if input[:user]
-        q = q.group('outage_vpses.outage_id, vpses.user_id')
+        q = q.where(user: input[:user]) if input[:user]
+        q = q.group('outage_vpses.outage_id, outage_vpses.user_id')
         q
       end
 
@@ -42,10 +42,9 @@ module VpsAdmin::API::Resources
       def exec
         with_includes(query)
             .select('outage_vpses.*, COUNT(*) AS vps_count')
-            .includes(vps: [:user])
             .limit(input[:limit])
             .offset(input[:offset])
-            .order('vpses.user_id')
+            .order('outage_vpses.user_id')
       end
     end
 
@@ -58,21 +57,19 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict vpses: {user_id: u.id}
+        restrict user_id: u.id
         allow
       end
 
       def prepare
         tmp = ::OutageVps.find(params[:user_outage_id])
 
-        @outage = ::OutageVps
-            .joins(:vps)
-            .includes(vps: [:user])
+        @outage = with_includes(::OutageVps)
             .select('outage_vpses.*, COUNT(*) AS vps_count')
-            .group('outage_vpses.outage_id, vpses.user_id')
+            .group('outage_vpses.outage_id, outage_vpses.user_id')
             .find_by!(
-              outage_id: tmp.outage_id,
-              vpses: {user_id: tmp.vps.user_id},
+                outage_id: tmp.outage_id,
+                user_id: tmp.user_id,
             )
       end
 

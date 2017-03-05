@@ -114,10 +114,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
               o: outage,
               update: report,
               user: u,
-              vpses: u && ::Vps.joins(:outage_vpses).where(
-                  outage_vpses: {outage_id: outage.id},
-                  vpses: {user_id: u.id},
-              ),
+              vpses: u && outage.outage_vpses.where(user: u),
           }
       )
     end

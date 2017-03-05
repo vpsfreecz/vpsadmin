@@ -72,10 +72,18 @@ class Setup < ActiveRecord::Migration
     create_table :outage_vpses do |t|
       t.references  :outage,         null: false
       t.references  :vps,            null: false
+      t.references  :user,           null: false
+      t.references  :environment,    null: false
+      t.references  :location,       null: false
+      t.references  :node,           null: false
     end
 
     add_index :outage_vpses, %i(outage_id vps_id), unique: true
     add_index :outage_vpses, :outage_id
     add_index :outage_vpses, :vps_id
+    add_index :outage_vpses, :user_id
+    add_index :outage_vpses, :environment_id
+    add_index :outage_vpses, :location_id
+    add_index :outage_vpses, :node_id
   end
 end

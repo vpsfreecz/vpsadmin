@@ -5,7 +5,7 @@ Hi <%= @user.login %>,
 Affected VPS:
 
 <% @vpses.each do |vps| -%>
-  - VPS #<%= vps.id %> - <%= vps.hostname %> (<%= vps.node.domain_name %>)
+  - VPS #<%= vps.vps_id %> - <%= vps.vps.hostname %> (<%= vps.node.domain_name %>)
 <% end -%>
 
 Date and time: <%= @o.begins_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>

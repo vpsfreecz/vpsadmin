@@ -156,10 +156,22 @@ class Outage < ActiveRecord::Base
       # Register new VPSes
       affected.each do |vps|
         begin
-          ::OutageVps.find_by!(outage: self, vps: vps)
+          ::OutageVps.find_by!(outage: self, vps: vps).update!(
+              user: vps.user,
+              environment: vps.node.location.environment,
+              location: vps.node.location,
+              node: vps.node,
+          )
 
         rescue ActiveRecord::RecordNotFound
-          ::OutageVps.create!(outage: self, vps: vps)
+          ::OutageVps.create!(
+              outage: self,
+              vps: vps,
+              user: vps.user,
+              environment: vps.node.location.environment,
+              location: vps.node.location,
+              node: vps.node,
+          )
         end
       end
 
