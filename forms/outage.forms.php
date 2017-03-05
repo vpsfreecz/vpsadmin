@@ -528,8 +528,33 @@ function outage_list () {
 		$xtpl->form_add_input(_('Handled by').':', 'text', '30', 'handled_by', get_val('handled_by'), '');
 	}
 
-	if ($_SESSION['logged_in'])
+	if ($_SESSION['logged_in']) {
 		$xtpl->form_add_input(_('VPS ID').':', 'text', '30', 'vps', get_val('vps'), '');
+		$xtpl->form_add_select(
+			_('Environment').':', 'environment',
+			resource_list_to_options($api->environment->list()),
+			get_val('environment')
+		);
+		$xtpl->form_add_select(
+			_('Location').':', 'location',
+			resource_list_to_options($api->location->list()),
+			get_val('location')
+		);
+		$xtpl->form_add_select(
+			_('Node').':', 'node',
+			resource_list_to_options($api->node->list(), 'id', 'domain_name'),
+			get_val('node')
+		);
+	}
+
+	if ($_SESSION['is_admin']) {
+		$xtpl->form_add_input(
+			_('Entity name').':', 'text', '30', 'entity_name', get_val('entity_name'), ''
+		);
+		$xtpl->form_add_input(
+			_('Entity ID').':', 'text', '30', 'entity_id', get_val('entity_id'), ''
+		);
+	}
 
 	api_param_to_form('order', $input->order, $_GET['order']);
 
@@ -564,7 +589,12 @@ function outage_list () {
 			$params[$v] = false;
 	}
 
-	foreach (array('state', 'type', 'user', 'handled_by', 'vps', 'order') as $v) {
+	$filters = array(
+		'state', 'type', 'user', 'handled_by', 'vps', 'order',
+		'environment', 'location', 'node', 'entity_name', 'entity_id'
+	);
+
+	foreach ($filters as $v) {
 		if ($_GET[$v])
 			$params[$v] = $_GET[$v];
 	}
