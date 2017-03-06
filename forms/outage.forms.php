@@ -413,6 +413,23 @@ function outage_details ($id) {
 	$xtpl->table_tr();
 	$xtpl->table_out();
 
+	if ($_SESSION['is_admin'] && $outage->state == 'staged') {
+		$xtpl->table_title(_('Change state'));
+		$xtpl->form_create('?page=outage&action=set_state&id='.$id, 'post');
+		$xtpl->form_add_select(_('State').':', 'state', array(
+			'announce' => _('Announce'),
+			'cancel' => _('Cancel'),
+			'close' => _('Close'),
+		), post_val('state'));
+
+		$xtpl->form_add_checkbox(
+			_('Send mails').':', 'send_mail', '1',
+			($_POST['state'] && !$_POST['send_mail']) ? false : true
+		);
+
+		$xtpl->form_out(_('Change'));
+	}
+
 	$xtpl->table_title(_('Updates'));
 	$xtpl->table_add_category(_('Date'));
 	$xtpl->table_add_category(_('Summary'));
