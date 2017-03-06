@@ -76,6 +76,7 @@ module VpsAdmin::API::Resources
         integer :entity_id, label: 'Entity ID', desc: 'Filter outages by entity ID'
         string :order, label: 'Order', choices: %w(newest oldest), default: 'newest',
             fill: true
+        datetime :since, label: 'Since', desc: 'Filter outages reported since specified date'
       end
 
       output(:object_list) do
@@ -170,6 +171,7 @@ module VpsAdmin::API::Resources
           )
         end
 
+        q = q.where('created_at > ?', input[:since]) if input[:since]
         q
       end
 

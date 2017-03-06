@@ -26,6 +26,7 @@ module VpsAdmin::API::Resources
 
     params(:filters) do
       use :all, include: %i(outage reported_by)
+      datetime :since, label: 'Since', desc: 'Filter updates reported since specified date'
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -55,6 +56,7 @@ module VpsAdmin::API::Resources
 
         q = q.where(outage: input[:outage]) if input[:outage]
         q = q.where(reported_by: input[:reported_by]) if input[:reported_by]
+        q = q.where('created_at > ?', input[:since]) if input[:since]
         q
       end
 
