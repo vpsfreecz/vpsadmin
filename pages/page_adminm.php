@@ -946,7 +946,7 @@ if ($_SESSION["logged_in"]) {
 
 				$user->update($params);
 
-				if ($user->monthly_payment != $_POST['m_monthly_payment']) {
+				if ($_SESSION['is_admin'] && $user->monthly_payment != $_POST['m_monthly_payment']) {
 					$api->user_account->update($user->id, array(
 						'monthly_payment' => $_POST['m_monthly_payment'],
 					));
