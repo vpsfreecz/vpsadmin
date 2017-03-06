@@ -51,7 +51,7 @@ module VpsAdmin::API::Resources
         q = ::OutageUpdate.all
 
         if current_user.nil? || current_user.role != :admin
-          q = q.where.not(state: ::Outage.states[:staged])
+          q = q.where('state != ? OR state is NULL', ::Outage.states[:staged])
         end
 
         q = q.where(outage: input[:outage]) if input[:outage]
@@ -87,7 +87,7 @@ module VpsAdmin::API::Resources
         q = ::OutageUpdate.where(id: params[:outage_update_id])
 
         if current_user.nil? || current_user.role != :admin
-          q = q.where.not(state: ::Outage.states[:staged])
+          q = q.where('state != ? OR state is NULL', ::Outage.states[:staged])
         end
 
         @outage = q.take!
