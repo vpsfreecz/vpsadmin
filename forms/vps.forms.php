@@ -159,7 +159,7 @@ function vps_details_title($vps) {
 }
 
 function vps_details_submenu($vps) {
-	global $xtpl;
+	global $xtpl, $api;
 
 	if ($_GET['action'] != 'info')
 		$xtpl->sbar_add(_('Back to details'), '?page=adminvps&action=info&veid='.$vps->id);
@@ -176,6 +176,9 @@ function vps_details_submenu($vps) {
 
 	$return_url = urlencode($_SERVER['REQUEST_URI']);
 	$xtpl->sbar_add(_('History'), '?page=history&list=1&object=Vps&object_id='.$vps->id.'&return_url='.$return_url);
+
+	if ($api->outage)
+		$xtpl->sbar_add(_('Outages'), '?page=outage&action=list&vps='.$vps->id);
 }
 
 function vps_details_suite($vps) {
