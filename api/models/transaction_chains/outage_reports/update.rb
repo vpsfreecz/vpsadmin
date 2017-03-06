@@ -53,6 +53,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       end
 
       outage.load_translations
+      report.load_translations
       outage.set_affected_vpses if attrs[:state] == ::Outage.states[:announced]
 
       return outage unless opts[:send_mail]

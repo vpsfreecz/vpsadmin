@@ -44,7 +44,7 @@ class OutageUpdate < ActiveRecord::Base
   end
 
   def load_translations
-    outage_translations.each do |tr|
+    outage_translations(true).each do |tr|
       %i(summary description).each do |param|
         define_singleton_method("#{tr.language.code}_#{param}") do
           tr.send(param)
