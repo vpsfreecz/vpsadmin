@@ -8,7 +8,7 @@ we have an update for you regarding this outage.
       "Begins at: moved from #{old.localtime.strftime('%Y-%m-%d %H:%M %Z')} to #{new.localtime.strftime('%Y-%m-%d %H:%M %Z')}"
 
     when :finished_at
-      "Finished at: #{new}"
+      "Finished at: #{new.localtime.strftime('%Y-%m-%d %H:%M %Z')}"
 
     when :duration
       "Duration: #{old} -> #{new} minutes"
