@@ -274,78 +274,80 @@ function outage_details ($id) {
 
 	$xtpl->title(_('Outage').' #'.$id);
 
-	$xtpl->table_title(_('Status'));
-	$xtpl->table_td(_('Affected VPS').':');
+	if ($_SESSION['logged_in']) {
+		$xtpl->table_title(_('Status'));
+		$xtpl->table_td(_('Affected VPS').':');
 
-	if ($_SESSION['is_admin']) {
-		if ($outage->state == 'staged') {
-			$xtpl->table_td(_('Affected VPSes have not been checked yet.'));
+		if ($_SESSION['is_admin']) {
+			if ($outage->state == 'staged') {
+				$xtpl->table_td(_('Affected VPSes have not been checked yet.'));
 
-		} else {
-			$affected_vpses = $api->vps_outage->list(array(
-				'outage' => $outage->id,
-				'limit' => 0,
-				'meta' => array(
-					'count' => true,
-				),
-			));
-			$affected_users = 0;
-
-			if ($affected_vpses->getTotalCount()) {
-				$affected_users = $api->user_outage->list(array(
+			} else {
+				$affected_vpses = $api->vps_outage->list(array(
 					'outage' => $outage->id,
 					'limit' => 0,
 					'meta' => array(
 						'count' => true,
 					),
-				))->getTotalCount();
+				));
+				$affected_users = 0;
+
+				if ($affected_vpses->getTotalCount()) {
+					$affected_users = $api->user_outage->list(array(
+						'outage' => $outage->id,
+						'limit' => 0,
+						'meta' => array(
+							'count' => true,
+						),
+					))->getTotalCount();
+				}
+
+				$xtpl->table_td(
+					'<a href="?page=outage&action=vps&id='.$outage->id.'">'.
+					$affected_vpses->getTotalCount().'</a> '._('VPSes are affected by this outage.').
+					"\n<br>\n".
+					'<a href="?page=outage&action=users&id='.$outage->id.'">'.
+					$affected_users.'</a> '._('users are affected by this outage.')
+				);
 			}
-
-			$xtpl->table_td(
-				'<a href="?page=outage&action=vps&id='.$outage->id.'">'.
-				$affected_vpses->getTotalCount().'</a> '._('VPSes are affected by this outage.').
-				"\n<br>\n".
-				'<a href="?page=outage&action=users&id='.$outage->id.'">'.
-				$affected_users.'</a> '._('users are affected by this outage.')
-			);
-		}
-
-	} elseif ($_SESSION['logged_in']) {
-		$affected_vpses = $api->vps_outage->list(array(
-			'outage' => $outage->id,
-			'meta' => array(
-				'includes' => 'vps',
-			),
-		));
-
-		if ($affected_vpses->count()) {
-			$s = '';
-			if ($outage->state == 'closed'
-				|| (strtotime($outage->begins_at) + $outage->duration) < time()
-				|| ($outage->finished_at && strtotime($outage->finished_at) < time())
-			) {
-				$s .= '<strong>';
-				$s .= _('This outage has been resolved and all systems should have recovered.');
-				$s .= '</strong><br>';
-			}
-
-			$s .= implode("\n<br>\n", array_map(
-				function ($outage_vps) {
-					$v = $outage_vps->vps;
-					return vps_link($v).' - '.h($v->hostname);
-
-				}, $affected_vpses->asArray()
-			));
-
-			$xtpl->table_td($s);
 
 		} else {
-			$xtpl->table_td('<strong>'._('You are not affected by this outage.').'</strong>');
-		}
-	}
+			$affected_vpses = $api->vps_outage->list(array(
+				'outage' => $outage->id,
+				'meta' => array(
+					'includes' => 'vps',
+				),
+			));
 
-	$xtpl->table_tr();
-	$xtpl->table_out();
+			if ($affected_vpses->count()) {
+				$s = '';
+				if ($outage->state == 'closed'
+					|| (strtotime($outage->begins_at) + $outage->duration) < time()
+					|| ($outage->finished_at && strtotime($outage->finished_at) < time())
+				) {
+					$s .= '<strong>';
+					$s .= _('This outage has been resolved and all systems should have recovered.');
+					$s .= '</strong><br>';
+				}
+
+				$s .= implode("\n<br>\n", array_map(
+					function ($outage_vps) {
+						$v = $outage_vps->vps;
+						return vps_link($v).' - '.h($v->hostname);
+
+					}, $affected_vpses->asArray()
+				));
+
+				$xtpl->table_td($s);
+
+			} else {
+				$xtpl->table_td('<strong>'._('You are not affected by this outage.').'</strong>');
+			}
+		}
+
+		$xtpl->table_tr();
+		$xtpl->table_out();
+	}
 
 	$xtpl->table_title(_('Information'));
 	$xtpl->table_td(_('Begins at').':');
