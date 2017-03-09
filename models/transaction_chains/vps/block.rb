@@ -11,7 +11,7 @@ module TransactionChains
               vps: vps,
               state: log
           }
-      }) if target
+      }) if target && vps.user.mailer_enabled
     end
   end
 end
