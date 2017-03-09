@@ -124,7 +124,9 @@ function print_editm($u) {
 	api_param_to_form(
 		'language',
 		$api->user->update->getParameters('input')->language,
-		$u->language_id
+		$u->language_id,
+		null,
+		false
 	);
 
 	if ($_SESSION["is_admin"]) {
