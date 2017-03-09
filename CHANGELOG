@@ -37,6 +37,7 @@
 - `User.Update`: changing of password requires the current password
 - API version se to 4.0
 - `OsTemplate.Show` whitelists output parameter `enabled`
+- User has to have language set
 
 * Fri Dec 30 2016 - version 2.6.0
 - Rebase on HaveAPI v0.7

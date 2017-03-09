@@ -24,7 +24,7 @@ class User < ActiveRecord::Base
   has_paper_trail only: %i(login level full_name email address
                            mailer_enabled object_state expiration_date)
 
-  validates :level, :login, :password, presence: true
+  validates :level, :login, :password, :language_id, presence: true
   validates :level, numericality: {
       only_integer: true
   }
