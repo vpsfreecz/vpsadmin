@@ -296,7 +296,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null,
 					$api[ implode('.', $desc->resource) ]->index(),
 					$desc->value_id,
 					$desc->value_label,
-					true,
+					$empty,
 					$label_callback
 				),
 				$v
