@@ -225,7 +225,7 @@ function boolean_icon($val) {
 	}
 }
 
-function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null, $empty = false) {
+function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null, $empty = null) {
 	global $xtpl, $api;
 
 	if ($v === null)
@@ -296,7 +296,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null,
 					$api[ implode('.', $desc->resource) ]->index(),
 					$desc->value_id,
 					$desc->value_label,
-					$empty,
+					$empty === null || $empty,
 					$label_callback
 				),
 				$v
@@ -307,7 +307,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null,
 	}
 }
 
-function api_param_to_form($name, $desc, $v = null, $label_callback = null, $empty = false) {
+function api_param_to_form($name, $desc, $v = null, $label_callback = null, $empty = null) {
 	global $xtpl;
 
 	$xtpl->table_td(($desc->label ? $desc->label : $name).':');
