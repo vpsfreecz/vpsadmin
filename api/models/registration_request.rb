@@ -14,6 +14,10 @@ class RegistrationRequest < UserRequest
       with: /@/,
       message: 'not a valid e-mail address',
   }
+  validates :full_name, :org_name, :email, length: {maximum: 255}
+  validates :org_id, length: {maximum: 30}
+  validates :address, :how, :note, length: {maximum: 500}
+  validates :currency, length: {maximum: 10}
   validate :check_login
   validate :check_org
 

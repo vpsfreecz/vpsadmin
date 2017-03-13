@@ -1,5 +1,5 @@
 class ChangeRequest < UserRequest
-  validates :change_reason, presence: true
+  validates :change_reason, presence: true, length: {maximum: 255}
   validates :full_name, length: {minimum: 2}, allow_blank: true
   validates :email, format: {
       with: /@/,
