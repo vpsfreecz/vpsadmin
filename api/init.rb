@@ -4,7 +4,6 @@ module VpsAdmin::API::Plugins
   end
 end
 
-require_rel 'lib'
 require_rel 'models'
 require_rel 'resources/user_request'
 require_rel 'resources/base'
