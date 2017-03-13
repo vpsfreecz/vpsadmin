@@ -74,7 +74,18 @@ module VpsAdmin::API::Resources
 
       def exec
         acc = ::UserAccount.find_by!(user_id: params['user_account_id'])
-        acc.update!(input)
+
+        acc.class.transaction do
+          acc.update!(input)
+    
+          if input.has_key?(:paid_until)
+            acc.user.set_expiration(
+                input[:paid_until],
+                reason: 'Paid until date has changed.'
+            )
+          end
+        end
+
         acc
 
       rescue ActiveRecord::RecordInvalid => e
