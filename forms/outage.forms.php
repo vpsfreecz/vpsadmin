@@ -590,7 +590,7 @@ function outage_list () {
 		$xtpl->table_add_category(_('Users'));
 		$xtpl->table_add_category(_('VPS'));
 
-	} else
+	} elseif ($_SESSION['logged_in'])
 		$xtpl->table_add_category(_('Affects me?'));
 
 	$xtpl->table_add_category('');
@@ -651,7 +651,7 @@ function outage_list () {
 				);
 			}
 
-		} else
+		} elseif ($_SESSION['logged_in'])
 			$xtpl->table_td(boolean_icon($outage->affected));
 
 		$xtpl->table_td('<a href="?page=outage&action=show&id='.$outage->id.'"><img src="template/icons/m_edit.png"  title="'. _("Details") .'" /></a>');
