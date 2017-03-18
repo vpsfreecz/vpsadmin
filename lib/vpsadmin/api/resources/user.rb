@@ -53,6 +53,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     input do
       use :writable
+      bool :admin, desc: 'Filter users with administrator privileges'
     end
 
     output(:object_list) do
@@ -84,6 +85,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         next unless input[p]
         q = q.where(in_params[p].db_name => input[p])
       end
+
+      q = q.where('level >= 90') if input[:admin]
 
       q
     end
