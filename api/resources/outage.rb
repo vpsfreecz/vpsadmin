@@ -60,7 +60,6 @@ module VpsAdmin::API::Resources
 
       input do
         use :all, include: %i(planned state type affected)
-        bool :active, label: 'Active', desc: 'Include only currently active/planned outages'
         resource VpsAdmin::API::Resources::User, name: :user, label: 'User',
             desc: 'Filter outages affecting a specific user'
         resource VpsAdmin::API::Resources::VPS, name: :vps, label: 'VPS',
@@ -120,18 +119,6 @@ module VpsAdmin::API::Resources
                 )
             ", current_user.id)
           end
-        end
-
-        if input[:active]
-          q = q.where(state: ::Outage.states[:announced])
-          q = q.where("
-              (
-                DATE_ADD(begins_at, INTERVAL duration+30 MINUTE) > UTC_TIMESTAMP()
-                AND finished_at IS NULL
-              )
-              OR finished_at > UTC_TIMESTAMP()
-
-          ")
         end
 
         if input[:user]
