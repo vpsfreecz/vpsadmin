@@ -88,8 +88,12 @@ class Outage < ActiveRecord::Base
     affected_users.count.size
   end
 
-  def affected_vps_count
-    outage_vpses.count
+  def affected_direct_vps_count
+    outage_vpses.where(direct: true).count
+  end
+
+  def affected_indirect_vps_count
+    outage_vpses.where(direct: false).count
   end
 
   def get_affected_vpses
@@ -147,31 +151,101 @@ class Outage < ActiveRecord::Base
     )
   end
 
+  # @param direct_vps [Array<Integer>]
+  def get_affected_mounts(direct_vpses)
+    q = []
+    exclude = direct_vpses.map { |v| self.class.connection.quote(v) }.join(',')
+    exclude = '0' if exclude.empty?
+
+    outage_entities.each do |ent|
+      id = self.class.connection.quote(ent.row_id)
+      state = self.class.connection.quote(::Vps.object_states[:soft_delete])
+
+      case ent.name
+      when 'Cluster'
+        # All VPS are affected directly anyway
+        return []
+
+      when 'Environment'
+        q << <<-END
+          SELECT m.* FROM mounts m
+          INNER JOIN dataset_in_pools dips ON m.dataset_in_pool_id = dips.id
+          INNER JOIN pools p ON dips.pool_id = p.id
+          INNER JOIN nodes n ON p.node_id = n.id
+          INNER JOIN locations l ON n.location_id = l.id
+          INNER JOIN vpses v ON m.vps_id = v.id
+          WHERE
+            v.object_state < #{state}
+            AND l.environment_id = #{id}
+            AND v.id NOT IN (#{exclude})
+        END
+
+      when 'Location'
+        q << <<-END
+          SELECT m.* FROM mounts m
+          INNER JOIN dataset_in_pools dips ON m.dataset_in_pool_id = dips.id
+          INNER JOIN pools p ON dips.pool_id = p.id
+          INNER JOIN nodes n ON p.node_id = n.id
+          INNER JOIN vpses v ON m.vps_id = v.id
+          WHERE
+            v.object_state < #{state}
+            AND n.location_id = #{id}
+            AND v.id NOT IN (#{exclude})
+        END
+
+      when 'Node'
+        q << <<-END
+          SELECT m.* FROM mounts m
+          INNER JOIN dataset_in_pools dips ON m.dataset_in_pool_id = dips.id
+          INNER JOIN pools p ON dips.pool_id = p.id
+          INNER JOIN vpses v ON m.vps_id = v.id
+          WHERE
+            v.object_state < #{state}
+            AND p.node_id = #{id}
+            AND v.id NOT IN (#{exclude})
+        END
+      end
+    end
+
+    q.empty? ? [] : ::Mount.find_by_sql(<<-END
+      SELECT * FROM (
+        #{q.join("\nUNION\n")}
+      ) as tmp
+      GROUP BY tmp.id
+      END
+    )
+  end
+
   # Store affected VPSes in model {OutageVps}
   def set_affected_vpses
     self.class.transaction do
       affected = get_affected_vpses
+      registered_vpses = {}
 
       # Register new VPSes
       affected.each do |vps|
         begin
-          ::OutageVps.find_by!(outage: self, vps: vps).update!(
+          out = ::OutageVps.find_by!(outage: self, vps: vps).update!(
               user: vps.user,
               environment: vps.node.location.environment,
               location: vps.node.location,
               node: vps.node,
+              direct: true,
           )
 
         rescue ActiveRecord::RecordNotFound
-          ::OutageVps.create!(
+          out = ::OutageVps.create!(
               outage: self,
               vps: vps,
               user: vps.user,
               environment: vps.node.location.environment,
               location: vps.node.location,
               node: vps.node,
+              direct: true,
           )
         end
+
+        registered_vpses[vps.id] = out
       end
 
       # Delete no longer affected VPSes (if affected entities change)
@@ -180,6 +254,66 @@ class Outage < ActiveRecord::Base
         next if exists
 
         outage_vps.destroy!
+      end
+
+      # Register indirectly affected VPS (through mounts)
+      affected_mounts = get_affected_mounts(registered_vpses.keys)
+
+      affected_mounts.each do |mnt|
+        if registered_vpses[mnt.vps_id]
+          if registered_vpses[mnt.vps_id].direct
+            registered_vpses[mnt.vps_id].update!(direct: false)
+          end
+
+        else
+          registered_vpses[mnt.vps_id] = ::OutageVps.create!(
+              outage: self,
+              vps: mnt.vps,
+              user: mnt.vps.user,
+              environment: mnt.vps.node.location.environment,
+              location: mnt.vps.node.location,
+              node: mnt.vps.node,
+              direct: false,
+          )
+        end
+
+        begin
+          ::OutageVpsMount.find_by!(
+              outage_vps: registered_vpses[mnt.vps_id],
+              mount: mnt,
+          ).update!(
+              src_node_id: mnt.dataset_in_pool.pool.node_id,
+              src_pool_id: mnt.dataset_in_pool.pool_id,
+              src_dataset_id: mnt.dataset_in_pool.dataset_id,
+              src_snapshot_id: mnt.snapshot_in_pool && mnt.snapshot_in_pool.dataset_in_pool.dataset_id,
+              dataset_name: mnt.dataset_in_pool.dataset.full_name,
+              snapshot_name: mnt.snapshot_in_pool && mnt.snapshot_in_pool.snapshot.name,
+              mountpoint: mnt.dst,
+          )
+
+        rescue ActiveRecord::RecordNotFound
+          ::OutageVpsMount.create!(
+              outage_vps: registered_vpses[mnt.vps_id],
+              mount: mnt,
+              src_node_id: mnt.dataset_in_pool.pool.node_id,
+              src_pool_id: mnt.dataset_in_pool.pool_id,
+              src_dataset_id: mnt.dataset_in_pool.dataset_id,
+              src_snapshot_id: mnt.snapshot_in_pool && mnt.snapshot_in_pool.dataset_in_pool.dataset_id,
+              dataset_name: mnt.dataset_in_pool.dataset.full_name,
+              snapshot_name: mnt.snapshot_in_pool && mnt.snapshot_in_pool.snapshot.name,
+              mountpoint: mnt.dst,
+          )
+        end
+      end
+
+      # Delete no longer affected mounts
+      ::OutageVpsMount.joins(:outage_vps).where(
+          outage_vpses: {outage_id: self.id},
+      ).each do |outage_mnt|
+        exists = affected_mounts.detect { |v| v.id == outage_mnt.mount_id }
+        next if exists
+
+        outage_mnt.destroy!
       end
     end
   end

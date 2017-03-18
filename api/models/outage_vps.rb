@@ -5,6 +5,7 @@ class OutageVps < ActiveRecord::Base
   belongs_to :environment
   belongs_to :location
   belongs_to :node
+  has_many :outage_vps_mounts, dependent: :delete_all
 end
 
 class Vps

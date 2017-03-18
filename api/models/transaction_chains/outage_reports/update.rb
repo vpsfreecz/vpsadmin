@@ -116,6 +116,8 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
               update: report,
               user: u,
               vpses: u && outage.outage_vpses.where(user: u),
+              direct_vpses: u && outage.outage_vpses.where(user: u, direct: true),
+              indirect_vpses: u && outage.outage_vpses.where(user: u, direct: false),
           }
       )
     end

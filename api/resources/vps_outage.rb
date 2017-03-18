@@ -11,13 +11,14 @@ module VpsAdmin::API::Resources
       resource VpsAdmin::API::Resources::Environment
       resource VpsAdmin::API::Resources::Location
       resource VpsAdmin::API::Resources::Node, value_label: :domain_name
+      bool :direct
     end
 
     class Index < HaveAPI::Actions::Default::Index
       desc 'List VPSes affected by outage'
 
       input do
-        use :all, include: %i(outage vps user environment location node)
+        use :all, include: %i(outage vps user environment location node direct)
       end
 
       output(:object_list) do
@@ -37,6 +38,7 @@ module VpsAdmin::API::Resources
           q = q.where(v => input[v]) if input[v]
         end
 
+        q = q.where(direct: input[:direct]) if input.has_key?(:direct)
         q
       end
 

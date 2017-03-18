@@ -27,7 +27,8 @@ module VpsAdmin::API::Resources
       bool :affected, label: 'Affected',
           desc: 'True if the current user is affected by the outage'
       integer :affected_user_count, label: 'Affected users', desc: 'Number of affected users'
-      integer :affected_vps_count, label: 'Affected VPSes', desc: 'Number of affected VPSes'
+      integer :affected_direct_vps_count, label: 'Directly affected VPSes', desc: 'Number of directly affected VPSes'
+      integer :affected_indirect_vps_count, label: 'Indirectly affected VPSes', desc: 'Number of indirectly affected VPSes'
     end
 
     params(:input) do

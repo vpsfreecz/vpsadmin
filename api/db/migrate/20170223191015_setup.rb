@@ -76,6 +76,7 @@ class Setup < ActiveRecord::Migration
       t.references  :environment,    null: false
       t.references  :location,       null: false
       t.references  :node,           null: false
+      t.boolean     :direct,         null: false
     end
 
     add_index :outage_vpses, %i(outage_id vps_id), unique: true
@@ -85,5 +86,21 @@ class Setup < ActiveRecord::Migration
     add_index :outage_vpses, :environment_id
     add_index :outage_vpses, :location_id
     add_index :outage_vpses, :node_id
+
+    create_table :outage_vps_mounts do |t|
+      t.references  :outage_vps,     null: false
+      t.references  :mount,          null: false
+      t.references  :src_node,       null: false
+      t.references  :src_pool,       null: false
+      t.references  :src_dataset,    null: false
+      t.references  :src_snapshot,   null: true
+      t.string      :dataset_name,   null: false, limit: 500
+      t.string      :snapshot_name,  null: true,  limit: 255
+      t.string      :mountpoint,     null: false, limit: 500
+    end
+
+    add_index :outage_vps_mounts, %i(outage_vps_id mount_id), unique: true
+    add_index :outage_vps_mounts, :outage_vps_id
+    add_index :outage_vps_mounts, :mount_id
   end
 end
