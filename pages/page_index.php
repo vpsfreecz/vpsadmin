@@ -100,7 +100,7 @@ if ($api->outage) {
 				);
 				$xtpl->table_td(
 					'<a href="?page=outage&action=vps&id='.$outage->id.'">'.
-					$outage->affected_vps_count.
+					$outage->affected_direct_vps_count.
 					'</a>',
 					false, true
 				);

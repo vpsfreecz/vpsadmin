@@ -276,39 +276,36 @@ function outage_details ($id) {
 
 	if ($_SESSION['logged_in']) {
 		$xtpl->table_title(_('Status'));
-		$xtpl->table_td(_('Affected VPS').':');
 
 		if ($_SESSION['is_admin']) {
 			if ($outage->state == 'staged') {
 				$xtpl->table_td(_('Affected VPSes have not been checked yet.'));
+				$xtpl->table_tr();
 
 			} else {
-				$affected_vpses = $api->vps_outage->list(array(
-					'outage' => $outage->id,
-					'limit' => 0,
-					'meta' => array(
-						'count' => true,
-					),
-				));
-				$affected_users = 0;
-
-				if ($affected_vpses->getTotalCount()) {
-					$affected_users = $api->user_outage->list(array(
-						'outage' => $outage->id,
-						'limit' => 0,
-						'meta' => array(
-							'count' => true,
-						),
-					))->getTotalCount();
-				}
-
+				$xtpl->table_td(_('Affected users').':');
 				$xtpl->table_td(
-					'<a href="?page=outage&action=vps&id='.$outage->id.'">'.
-					$affected_vpses->getTotalCount().'</a> '._('VPSes are affected by this outage.').
-					"\n<br>\n".
 					'<a href="?page=outage&action=users&id='.$outage->id.'">'.
-					$affected_users.'</a> '._('users are affected by this outage.')
+					$outage->affected_user_count.
+					'</a>'
 				);
+				$xtpl->table_tr();
+
+				$xtpl->table_td(_('Directly affected VPS').':');
+				$xtpl->table_td(
+					'<a href="?page=outage&action=vps&id='.$outage->id.'&direct=yes">'.
+					$outage->affected_direct_vps_count.
+					'</a>'
+				);
+				$xtpl->table_tr();
+
+				$xtpl->table_td(_('Indirectly affected VPS').':');
+				$xtpl->table_td(
+					'<a href="?page=outage&action=vps&id='.$outage->id.'&direct=no">'.
+					$outage->affected_indirect_vps_count.
+					'</a>'
+				);
+				$xtpl->table_tr();
 			}
 
 		} else {
@@ -330,22 +327,24 @@ function outage_details ($id) {
 					$s .= '</strong><br>';
 				}
 
+				$xtpl->table_td(_('Affected VPS').':');
 				$s .= implode("\n<br>\n", array_map(
 					function ($outage_vps) {
 						$v = $outage_vps->vps;
-						return vps_link($v).' - '.h($v->hostname);
+						return vps_link($v).' - '.h($v->hostname).($outage_vps->direct ? '' : ' (indirectly)');
 
 					}, $affected_vpses->asArray()
 				));
 
 				$xtpl->table_td($s);
+				$xtpl->table_tr();
 
 			} else {
 				$xtpl->table_td('<strong>'._('You are not affected by this outage.').'</strong>');
+				$xtpl->table_tr();
 			}
 		}
 
-		$xtpl->table_tr();
 		$xtpl->table_out();
 	}
 
@@ -646,7 +645,7 @@ function outage_list () {
 				);
 				$xtpl->table_td(
 					'<a href="?page=outage&action=vps&id='.$outage->id.'">'.
-					$outage->affected_vps_count.
+					$outage->affected_direct_vps_count.
 					'</a>',
 					false, true
 				);
@@ -733,6 +732,11 @@ function outage_affected_vps ($id) {
 			resource_list_to_options($api->node->list(), 'id', 'domain_name'),
 			get_val('node')
 		);
+		$xtpl->form_add_select(
+			_('Direct').':', 'direct',
+			array('' => '---', 'yes' => _('Yes'), 'no' => _('No')),
+			get_val('direct')
+		);
 
 		$xtpl->form_out(_('Show'));
 	}
@@ -747,6 +751,10 @@ function outage_affected_vps ($id) {
 	foreach (array('user', 'environment', 'location', 'node') as $v) {
 		if ($_GET[$v])
 			$params[$v] = $_GET[$v];
+	}
+
+	if ($_GET['direct']) {
+		$params['direct'] = $_GET['direct'] === 'yes';
 	}
 
 	$vpses = $api->vps_outage->list($params);
