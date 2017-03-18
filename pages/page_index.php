@@ -55,7 +55,7 @@ $xtpl->table_out("notice_board");
 
 if ($api->outage) {
 	$outages = $api->outage->list(array(
-		'active' => true,
+		'state' => 'announced',
 		'limit' => 5,
 		'order' => 'oldest',
 	));
