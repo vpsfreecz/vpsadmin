@@ -416,7 +416,7 @@ function user_payment_form($user_id) {
 
 	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 		$xtpl->perex_format_errors(_('User not found'), $e->getResponse());
-		break;
+		return;
 	}
 
 	$paidUntil = strtotime($u->paid_until);
