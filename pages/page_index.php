@@ -82,7 +82,7 @@ if ($api->outage) {
 
 		foreach ($outages as $outage) {
 			$xtpl->table_td(tolocaltz($outage->begins_at, 'Y-m-d H:i'));
-			$xtpl->table_td($outage->duration, false, true);
+			$xtpl->table_td($outage->duration.' min', false, true);
 			$xtpl->table_td(boolean_icon($outage->planned));
 			$xtpl->table_td(implode(', ', array_map(
 				function ($v) { return h($v->label); },
