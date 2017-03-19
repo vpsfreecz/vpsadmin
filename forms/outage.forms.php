@@ -437,7 +437,7 @@ function outage_details ($id) {
 	$xtpl->table_add_category(_('Reported by'));
 
 	foreach ($api->outage_update->list(array('outage' => $outage->id)) as $update) {
-		$xtpl->table_td(tolocaltz($update->created_at));
+		$xtpl->table_td(tolocaltz($update->created_at, "Y-m-d H:i:s T"));
 
 		$summary = array();
 
@@ -460,11 +460,11 @@ function outage_details ($id) {
 			if ($update->{$p}) {
 				switch ($p) {
 				case 'begins_at':
-					$changes[] = _("Begins at:").' '.tolocaltz($update->begins_at);
+					$changes[] = _("Begins at:").' '.tolocaltz($update->begins_at, "Y-m-d H:i T");
 					break;
 
 				case 'finished_at':
-					$changes[] = _("Finished at:").' '.tolocaltz($update->finished_at);
+					$changes[] = _("Finished at:").' '.tolocaltz($update->finished_at, "Y-m-d H:i T");
 					break;
 
 				case 'state':
