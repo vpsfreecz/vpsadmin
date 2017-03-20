@@ -1,3 +1,4 @@
+* Mon Mar 20 2017 - version 2.7.0
 - Use new DB schema of VPSes
 - Limit refresh rate of web console to 20 per second (50 ms)
 - Fixed reconnect
