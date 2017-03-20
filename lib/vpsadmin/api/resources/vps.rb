@@ -237,11 +237,11 @@ END
 
       else
         if input[:environment].nil? && input[:location].nil?
-          error('provide either an environment, a location or both')
+          error('provide either an environment or a location')
         end
 
         if input[:environment]
-          node = ::Node.pick_by_env(input[:environment], input[:location])
+          node = ::Node.pick_by_env(input[:environment])
 
         else
           node = ::Node.pick_by_location(input[:location])
@@ -695,12 +695,14 @@ END
       elsif input[:node]
         node = input[:node]
 
-      else
-        if input[:environment].nil?
-          error('specify environment with location, node or vps')
-        end
+      elsif input[:location]
+        node = ::Node.pick_by_location(input[:location], vps.node)
 
-        node = ::Node.pick_by_env(input[:environment], input[:location], vps.node)
+      elsif input[:environment]
+        node = ::Node.pick_by_env(input[:environment], vps.node)
+
+      else
+        error('provide environment, location or node')
       end
 
       error('no node available in this environment') unless node
@@ -744,7 +746,7 @@ END
       bool :resources,
         desc: 'Swap resources (CPU, memory and swap, not disk space)'
       bool :configs, desc: 'Swap configuration chains'
-      bool :hostname, desc: 'Swap hostname'
+      bool :hostname, desc: 'Swap hostname', load_validators: false
       bool :expirations, desc: 'Swap expirations'
     end
 

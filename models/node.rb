@@ -61,7 +61,7 @@ class Node < ActiveRecord::Base
     "#{name}.#{location.domain}.#{location.environment.domain}"
   end
 
-  def self.pick_by_env(env, location = nil, except = nil)
+  def self.pick_by_env(env, except = nil)
     q = self.joins('
           LEFT JOIN vpses ON vpses.node_id = nodes.id
           LEFT JOIN vps_current_statuses st ON st.vps_id = vpses.id
@@ -72,10 +72,6 @@ class Node < ActiveRecord::Base
           AND nodes.maintenance_lock = 0
           AND locations.environment_id = ?
         ', env.id)
-
-    if location
-      q = q.where('locations.id = ?', location.id)
-    end
 
     q = q.where('nodes.id != ?', except.id) if except
 
@@ -94,18 +90,14 @@ class Node < ActiveRecord::Base
         maintenance_lock: 0,
         locations: {environment_id: env.id},
     )
-
-    if location
-      q = q.where('location_id = ?', location.id)
-    end
     
     q = q.where('nodes.id != ?', except.id) if except
 
     q.group('nodes.id').order('COUNT(vpses.id) / max_vps ASC').take
   end
 
-  def self.pick_by_location(loc)
-    n = self.joins('
+  def self.pick_by_location(loc, except = nil)
+    q = self.joins('
         LEFT JOIN vpses ON vpses.node_id = nodes.id
         LEFT JOIN vps_current_statuses st ON st.vps_id = vpses.id
         INNER JOIN locations l ON nodes.location_id = l.id
@@ -114,20 +106,28 @@ class Node < ActiveRecord::Base
         AND nodes.max_vps > 0
         AND nodes.maintenance_lock = 0
         AND l.id = ?
-      ', loc.id).group('nodes.id')
+      ', loc.id
+    )
+    q = q.where('nodes.id != ?', except.id) if except
+
+    n = q.group('nodes.id')
       .order('COUNT(st.is_running) / max_vps ASC')
       .take
 
     return n if n
 
-    self.joins(
+    q = self.joins(
         'LEFT JOIN vpses ON vpses.node_id = nodes.node_id'
     ).where(
         'max_vps > 0'
     ).where(
         maintenance_lock: 0,
         location_id: loc.id
-    ).group('nodes.id').order('COUNT(vpses.id) / max_vps ASC').take
+    )
+    
+    q = q.where('nodes.id != ?', except.id) if except
+    
+    q.group('nodes.id').order('COUNT(vpses.id) / max_vps ASC').take
   end
 
   def self.first_available
