@@ -1,3 +1,4 @@
+* Mon Mar 20 2017 - version 2.7.0
 - Trim public key before it is sent to the API
 - Removed class cluster_node, node registration and edit uses the API
 - Removed unused functions from cluster lib
