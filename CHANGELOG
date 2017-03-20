@@ -1,3 +1,6 @@
+* Mon Mar 20 2017 - version 2.7.0
+- Add support for template ids
+
 * Fri Dec 30 2016 - version 2.6.0
 - Use haveapi-client v0.7
 
