@@ -213,14 +213,26 @@ function vps_clone_form($vps) {
 	$xtpl->table_title(_('Clone VPS'));
 	$xtpl->form_create('?page=adminvps&action=clone&veid='.$vps->id, 'post');
 
-	api_params_to_form($vps->clone, 'input', array(
-		'vps' => function($vps) {
-			return '#'.$vps->id.' '.$vps->hostname;
-		},
-		'node' => function($node) {
-			return $node->domain_name;
+	if ($_SESSION['is_admin']) {
+		api_params_to_form($vps->clone, 'input', array(
+			'vps' => function($vps) {
+				return '#'.$vps->id.' '.$vps->hostname;
+			},
+			'node' => function($node) {
+				return $node->domain_name;
+			}
+		));
+
+	} else {
+		$input = $vps->clone->getParameters('input');
+
+		foreach ($input as $name => $desc) {
+			if ($name === 'environment')
+				continue;
+
+			api_param_to_form($name, $desc);
 		}
-	));
+	}
 
 	$xtpl->form_out(_("Go >>"));
 
