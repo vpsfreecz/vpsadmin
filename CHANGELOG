@@ -1,3 +1,4 @@
+* Mon March 20 2017 - version 2.7.0
 - Fix crash of vpsAdmind caused by deleting of current VPS status in chain
   Vps::Destroy
 - Free unused login names
