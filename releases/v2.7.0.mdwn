@@ -50,6 +50,7 @@ News log (or event log) was removed from the web UI and moved into a plugin.
 - `User.Update`: changing of password requires the current password
 - Action `Dataset.Snapshot.Create` has new input parameter `label`
 - New resources `User.MailRoleRecipient` and `User.MailTemplateRecipient`
+- `OsTemplate.Show` whitelists output parameter `enabled`
 
 ## API internals
 - Fix crash of vpsAdmind caused by deleting of current VPS status in chain
@@ -81,6 +82,8 @@ News log (or event log) was removed from the web UI and moved into a plugin.
 - Add user-defined snapshot labels
 - Compulsory registration of mail templates
 - User-defined mail role/template recipients
+- User has to have language set
+- VPS block/unblock: honor user's mailer settings
 
 ## vpsAdmin web UI
 - Trim public key before it is sent to the API
@@ -271,3 +274,8 @@ that are no longer needed:
 - `members_payments`
 
 The web UI no longer requires database credentials, remove them from the config.
+
+# Known issues
+- VPS swapping form is broken when parameter `hostname` is sent due to incorrect
+  validator being loaded from the model. Means for fixing will be in the next
+  HaveAPI release.
