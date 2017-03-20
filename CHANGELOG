@@ -1,4 +1,5 @@
 - VPS clone form: hide environment for users
+- Disable privilege dropping until the API can properly handle it
 
 * Mon Mar 20 2017 - version 2.7.0
 - Trim public key before it is sent to the API
