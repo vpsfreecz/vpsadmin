@@ -1,6 +1,7 @@
 - `User.Index`: filter by admin privilege
 - `Node.pick_by_env`: don't filter by location
 - Fix cleanup of concerns of empty transaction chains
+- Resource `Node`: add output parameter `status`
 
 * Mon March 20 2017 - version 2.7.0
 - Fix crash of vpsAdmind caused by deleting of current VPS status in chain

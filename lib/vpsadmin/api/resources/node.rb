@@ -28,6 +28,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
   end
 
   params(:status) do
+    bool :status, label: 'Status'
     integer :uptime, label: 'Uptime'
     float :loadavg
     integer :process_count, label: 'Process count'
