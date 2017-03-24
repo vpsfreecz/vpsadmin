@@ -350,7 +350,7 @@ function outage_details ($id) {
 
 	$xtpl->table_title(_('Information'));
 	$xtpl->table_td(_('Begins at').':');
-	$xtpl->table_td(tolocaltz($outage->begins_at));
+	$xtpl->table_td(tolocaltz($outage->begins_at, "Y-m-d H:i:s T"));
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('Duration').':');
