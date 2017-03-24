@@ -155,6 +155,11 @@ END
       @api.pool.list(meta: {includes: 'node__environment'}).each do |pool|
         puts "Pool #{pool.filesystem} of #{pool.node.domain_name}"
 
+        unless pool.node.status
+          puts "  Node is down, skipping\n"
+          next
+        end
+
         yield(VpsAdmin::DownloadMounter::Mounter.new(@opts, ARGV[1], pool))
 
         puts "\n"
