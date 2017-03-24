@@ -24,12 +24,13 @@ given format from mailman archives to the database.
     $ ./import_outage_list.rb https://api.vpsfree.cz admin
 
 ## Changes
-This plugin defines four new resources:
+This plugin defines five new resources:
 
 - `Outage` - outage reports
 - `OutageUpdate` - updates of reported outages
 - `UserOutage` - browse users affected by outages
 - `VpsOutage` - browse VPS affected by outages
+- `VpsOutageMount` - browse affected mounts
 
 ## Usage
 Outages are reported through action `Outage.Create`. Outages can be in one
