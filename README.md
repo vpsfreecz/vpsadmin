@@ -1,7 +1,7 @@
 vpsAdmin Outage Reports
 =======================
 This plugins adds support for outage reporting. It's possible to report
-outages and the entire cluster, environments, locations and nodes. Affected
+outages of the entire cluster, environments, locations and nodes. Affected
 users are informed via e-mail. Admins can also post updates, to let the users
 know how the outage resolution progresses.
 
@@ -12,10 +12,10 @@ and setup the database.
     $ rake vpsadmin:plugins:migrate PLUGIN=outage_reports
 
 ### Importing outages from the outage-list
-At vpsFree.cz, we've been reporting outages to outage mailing list. All these
-mails have the same form, so it is possible to parse them and import them
-to the database. `utils/import_outage_list.rb` imports all outages in the
-given format from mailman archives to the database.
+At vpsFree.cz, we've been reporting outages to the outage mailing list. All
+these mails have the same form, so it is possible to parse them and import
+them to the database. `utils/import_outage_list.rb` imports all outages in
+the given format from mailman archives to the database.
 
     # Change directory to the mailman archive for the chosen list:
     $ cd /var/lib/mailman/archives/public/outage-list
@@ -33,8 +33,8 @@ This plugin defines five new resources:
 - `VpsOutageMount` - browse affected mounts
 
 ## Usage
-Outages are reported through action `Outage.Create`. Outages can be in one
-of the following states: staged, announced, closed or cancelled. After creation
+Outages are reported using action `Outage.Create`. Outages can be in one
+of the following states: staged, announced, closed or cancelled. After creation,
 it's in the staged state. Staged outages are visible only to admins.
 
 Entities affected by the outage are registered using `Outage.Entity.Create`.
