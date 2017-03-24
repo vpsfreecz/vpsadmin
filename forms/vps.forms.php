@@ -211,7 +211,7 @@ function vps_migrate_form($vps) {
 }
 
 function vps_clone_form($vps) {
-	global $xtpl;
+	global $xtpl, $api;
 
 	$xtpl->table_title(_('Clone VPS'));
 	$xtpl->form_create('?page=adminvps&action=clone&veid='.$vps->id, 'post');
@@ -230,10 +230,19 @@ function vps_clone_form($vps) {
 		$input = $vps->clone->getParameters('input');
 
 		foreach ($input as $name => $desc) {
-			if ($name === 'environment')
+			if ($name === 'environment') {
 				continue;
 
-			api_param_to_form($name, $desc);
+			} elseif ($name === 'location') {
+				$xtpl->form_add_select(
+					_('Location').':', 'location',
+					resource_list_to_options($api->location->list(['has_hypervisor' => true])),
+					post_val('location')
+				);
+
+			} else {
+				api_param_to_form($name, $desc);
+			}
 		}
 	}
 
