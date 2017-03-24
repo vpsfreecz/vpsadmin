@@ -5,7 +5,7 @@
 # have a meaning.
 class TransactionChain < ActiveRecord::Base
   has_many :transactions
-  has_many :transaction_chain_concerns
+  has_many :transaction_chain_concerns, dependent: :delete_all
   belongs_to :user
   belongs_to :user_session
 
