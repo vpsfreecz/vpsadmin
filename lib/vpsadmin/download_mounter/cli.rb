@@ -155,8 +155,9 @@ END
       @api.pool.list(meta: {includes: 'node__environment'}).each do |pool|
         puts "Pool #{pool.filesystem} of #{pool.node.domain_name}"
 
-        unless pool.node.status
-          puts "  Node is down, skipping\n"
+        unless pool.node.attributes[:status]
+          puts "  Node is down, skipping"
+          puts "\n"
           next
         end
 
