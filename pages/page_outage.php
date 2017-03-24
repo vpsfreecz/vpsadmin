@@ -176,7 +176,7 @@ if ($_SESSION['logged_in']) {
 
 					$api->outage->{$_POST['state']}($_GET['id'], $params);
 
-					notify_user(_('State set'), _('Outage state has been scucessfully set.'));
+					notify_user(_('State set'), _('Outage state has been successfully set.'));
 					redirect('?page=outage&action=show&id='.$_GET['id']);
 
 				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
