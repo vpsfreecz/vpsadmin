@@ -12,7 +12,7 @@ if($_SESSION['logged_in']) {
 (function(root) {
 root.vpsAdmin = {
 	api: {
-		url: "<?php echo API_URL ?>",
+		url: "<?php echo EXT_API_URL ?>",
 		version: "<?php echo API_VERSION ?>"
 	},
 	authToken: "<?php echo $_SESSION['auth_token'] ?>",

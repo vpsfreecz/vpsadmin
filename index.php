@@ -53,7 +53,7 @@ include WWW_ROOT.'lib/gettext_lang.lib.php';
 // include configuration
 include WWW_ROOT.'config_cfg.php';
 
-$api = new \HaveAPI\Client(API_URL, API_VERSION, client_identity());
+$api = new \HaveAPI\Client(INT_API_URL, API_VERSION, client_identity());
 $api->registerDescriptionChangeFunc('api_description_changed');
 
 if($_SESSION["api_description"]) {

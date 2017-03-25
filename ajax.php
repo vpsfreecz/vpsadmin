@@ -40,7 +40,7 @@ include WWW_ROOT.'lib/gettext_stream.lib.php';
 include WWW_ROOT.'lib/gettext_inc.lib.php';
 include WWW_ROOT.'lib/gettext_lang.lib.php';
 
-$api = new \HaveAPI\Client(API_URL, API_VERSION, client_identity());
+$api = new \HaveAPI\Client(INT_API_URL, API_VERSION, client_identity());
 $api->registerDescriptionChangeFunc('api_description_changed');
 
 if($_SESSION["api_description"]) {
