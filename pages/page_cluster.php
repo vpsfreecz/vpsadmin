@@ -794,7 +794,7 @@ switch($_GET["action"]) {
 
 				$r->set_maintenance($params);
 
-				notify_user($label.': '._('maintenance').' '.($_GET['lock'] ? _('ON') : _('OFF')));
+				notify_user($label.': '._('maintenance').' '.($_GET['lock'] ? _('ON') : _('OFF')), '');
 				redirect('?page=cluster');
 
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
