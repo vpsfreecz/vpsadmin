@@ -1,6 +1,6 @@
 module VpsAdmin::MailTemplates
   class Meta
-    OPTS = %i(label from reply_to return_path subject)
+    OPTS = %i(label from reply_to return_path subject user_visibility)
 
     OPTS.each do |o|
       define_method(o) do |v|
