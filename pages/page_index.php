@@ -74,7 +74,7 @@ if ($api->outage) {
 			$xtpl->table_add_category(_('Users'));
 			$xtpl->table_add_category(_('VPS'));
 
-		} elseif ($_SESSION['logged_in'])
+		} elseif ($_SESSION['logged_in']) {
 			$xtpl->table_add_category(_('Affects me?'));
 		}
 
@@ -114,6 +114,7 @@ if ($api->outage) {
 		}
 
 		$xtpl->table_out();
+	}
 }
 
 $xtpl->table_title(_("Cluster statistics"));
