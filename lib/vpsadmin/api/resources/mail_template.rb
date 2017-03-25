@@ -7,6 +7,7 @@ module VpsAdmin::API::Resources
       string :name, desc: 'Template identifier'
       string :label, desc: 'Human-friendly label'
       string :template_id
+      string :user_visibility, choices: ::MailTemplate.user_visibilities.keys.map(&:to_s)
     end
 
     params(:all) do

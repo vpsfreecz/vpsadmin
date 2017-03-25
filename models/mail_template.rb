@@ -196,6 +196,8 @@ class MailTemplate < ActiveRecord::Base
       admin: ::User,
       reason: String,
   }, roles: %i(admin), public: true
+  
+  enum user_visibility: %i(default visible invisible)
 
   # Returns a list of e-mail recipients, tries to find role recipients,
   # user template recipients and defaults to the primary e-mail address.

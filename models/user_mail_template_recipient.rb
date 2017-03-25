@@ -21,7 +21,15 @@ class UserMailTemplateRecipient < ActiveRecord::Base
       )
     end
 
-    ret.select { |recp| recp.mail_template.desc[:public] }.sort do |a, b|
+    ret.select do |recp|
+      if recp.mail_template.user_visibility == 'default'
+        recp.mail_template.desc[:public]
+
+      else
+        recp.mail_template.user_visibility == 'visible'
+      end
+
+    end.sort do |a, b|
       a.mail_template.name <=> b.mail_template.name
     end
   end
