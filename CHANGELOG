@@ -3,6 +3,7 @@
 - Fix cleanup of concerns of empty transaction chains
 - Resource `Node`: add output parameter `status`
 - Resource `MailTemplate` has new parameter `user_visibility`
+- API version set to 4.1
 
 * Mon March 20 2017 - version 2.7.0
 - Fix crash of vpsAdmind caused by deleting of current VPS status in chain
