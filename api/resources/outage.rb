@@ -103,7 +103,9 @@ module VpsAdmin::API::Resources
         q = q.where(outage_type: ::Outage.outage_types[input[:type]]) if input[:type]
 
         if input.has_key?(:affected)
-          q = q.joins(:outage_vpses).group('outages.id')
+          q = q.joins(
+              'LEFT JOIN outage_vpses ON outage_vpses.outage_id = outages.id'
+          ).group('outages.id')
 
           if input[:affected]
             q = q.where(
