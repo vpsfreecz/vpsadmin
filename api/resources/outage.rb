@@ -107,7 +107,7 @@ module VpsAdmin::API::Resources
 
           if input[:affected]
             q = q.where(
-                user_id: current_user.id,
+                outage_vpses: {user_id: current_user.id},
             )
 
           else
