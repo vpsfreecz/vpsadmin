@@ -100,7 +100,7 @@ function list_templates($vps = null) {
 	return $choices;
 }
 
-function notify_user($title, $msg) {
+function notify_user($title, $msg = '') {
 	$_SESSION["notification"] = array(
 		"title" => $title,
 		"msg" => $msg,
