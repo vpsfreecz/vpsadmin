@@ -376,35 +376,25 @@ function outage_details ($id) {
 	)));
 	$xtpl->table_tr();
 
-	$summary = array();
+	$xtpl->table_td(_('Summary').':', false, false, '1', $langs->count() + 1);
+	$xtpl->table_tr();
 
 	foreach ($langs as $lang) {
 		$name = $lang->code.'_summary';
 
-		if (!$outage->{$name})
-			continue;
-
-		$summary[] = '<strong>'.h($lang->label).'</strong>: '.h($outage->{$name});
+		$xtpl->table_td('<strong>'.h($lang->label).'</strong>: '.h($outage->{$name}));
+		$xtpl->table_tr();
 	}
 
-	$xtpl->table_td(_('Summary').':');
-	$xtpl->table_td(implode("\n<br><br>\n", $summary));
+	$xtpl->table_td(_('Description').':', false, false, '1', $langs->count() + 1);
 	$xtpl->table_tr();
-
-	$desc = array();
 
 	foreach ($langs as $lang) {
 		$name = $lang->code.'_description';
 
-		if (!$outage->{$name})
-			continue;
-
-		$desc[] = '<strong>'.h($lang->label).'</strong>: '.nl2br(h($outage->{$name}));
+		$xtpl->table_td('<strong>'.h($lang->label).'</strong>: '.nl2br(h($outage->{$name})));
+		$xtpl->table_tr();
 	}
-
-	$xtpl->table_td(_('Description').':');
-	$xtpl->table_td(implode("\n<br><br>\n", $desc));
-	$xtpl->table_tr();
 
 	$xtpl->table_td(_('Handled by').':');
 	$xtpl->table_td(implode(', ', array_map(
