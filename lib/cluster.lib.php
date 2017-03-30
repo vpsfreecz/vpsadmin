@@ -61,7 +61,7 @@ class SystemConfig implements Iterator {
 
 	/* Iterator methods */
 	public function current() {
-		return $this->optIterator->current()->value;
+		return $this->optIterator->current()['value'];
 	}
 
 	public function key() {
