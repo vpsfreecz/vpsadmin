@@ -117,7 +117,7 @@ class Node < ActiveRecord::Base
     return n if n
 
     q = self.joins(
-        'LEFT JOIN vpses ON vpses.node_id = nodes.node_id'
+        'LEFT JOIN vpses ON vpses.node_id = nodes.id'
     ).where(
         'max_vps > 0'
     ).where(
