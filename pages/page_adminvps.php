@@ -125,7 +125,7 @@ switch ($_GET["action"]) {
 			if($_SESSION["is_admin"]) {
 				$params['user'] = $_POST['m_id'];
 				$params['node'] = $_POST['vps_server'];
-				$params['onboot'] = $_POST['boot_after_create'];
+				$params['onboot'] = isset($_POST['boot_after_create']);
 
 			} else {
 				if ($_GET['location'])
