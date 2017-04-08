@@ -7,8 +7,8 @@ module VpsAdmin::API::Plugins::Cop::Dsl
       @opts = opts
     end
 
-    def period
-      @opts[:period]
+    %i(period label).each do |name|
+      define_method(name) { @opts[name] }
     end
 
     def check
