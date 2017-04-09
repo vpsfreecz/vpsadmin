@@ -5,4 +5,11 @@ VpsAdmin::API::Plugin.register(:cop) do
   author 'Jakub Skokan'
   email 'jakub.skokan@vpsfree.cz'
   components :api
+
+  config do
+    ::MailTemplate.register :policy_violation, vars: {
+            violation: '::PolicyViolation',
+            object: 'instance of object that violated a policy',
+        }
+  end
 end

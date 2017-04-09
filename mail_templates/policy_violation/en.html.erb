@@ -1,0 +1,146 @@
+<%
+def duration(interval)
+  d = interval / 86400
+  h = interval / 3600 % 24
+  m = interval / 60 % 60
+  s = interval % 60
+
+  if d > 0
+    "%d days, %02d:%02d:%02d" % [d, h, m, s]
+  else
+    "%02d:%02d:%02d" % [h, m, s]
+  end
+end
+%>
+<html>
+<head>
+  <style>
+    h1, h2, h3, h4, h5, h6 {
+      margin: 15px 0 10px 0;
+    }
+
+    p, table, ul, ol, dl, fieldset {
+      margin: 15px 0;
+    }
+
+    table {
+      border-collapse: collapse;
+      border-spacing: 0;
+      font-size: 100%;
+    }
+
+    th {
+      text-align: center;
+      font-weight: bold;
+    }
+
+    th, td {
+      padding: 3px 7px;
+    }
+
+    td.title {
+      font-weight: bold;
+    }
+
+    dt {
+      font-weight: bold;
+    }
+
+    dd {
+      margin-left: 30px;
+    }
+
+    table th {
+      background: #5EAFFF;
+      color: #FFF;
+    }
+
+    table th, table td {
+      border: 1px solid #B2DAFF;
+    }
+
+    table.log tr td:nth-child(2) {
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+<h1>Violation report</h1>
+
+<% @violations.each do |v| %>
+  <h2><%= v.class_name %> #<%= v.row_id %>: <%= v.policy.label %></h2>
+
+  <% case v.class_name
+     when 'Vps' %>
+    <table>
+      <tr>
+        <th>Created at:</th>
+        <td><%= v.object.created_at %></td>
+      </tr>
+      <tr>
+        <th>Node:</th>
+        <td>
+          <%= v.object.node.domain_name %>,
+          CPU idle <%= v.object.node.cpu_idle %>%,
+          load <%= v.object.node.loadavg %>
+        </td>
+      </tr>
+      <tr>
+        <th>User:</th>
+        <td><%= v.object.user.login %> (created at <%= v.object.user.created_at %>)</td>
+      </tr>
+      <tr>
+        <th>Hostname:</th>
+        <td><%= v.object.hostname %></td>
+      </tr>
+      <tr>
+        <th>Uptime:</th>
+        <td><%= duration(v.object.uptime) %></td>
+      </tr>
+      <tr>
+        <th>Processes:</th>
+        <td><%= v.object.process_count %></td>
+      </tr>
+      <tr>
+        <th>Load:</th>
+        <td><%= v.object.loadavg %></td>
+      </tr>
+      <tr>
+        <th>CPU cores:</th>
+        <td><%= v.object.cpu %></td>
+      </tr>
+    </table>
+
+    <h3>Log</h3>
+    <table class="log">
+      <tr>
+        <th>Date</th>
+        <th>Value</th>
+      </tr>
+      <% v.policy_violation_logs.each do |log| %>
+        <tr>
+          <td><%= log.created_at %></td>
+          <td><%= PP.pp(log.value, '') %></td>
+        </tr>
+      <% end %>
+    </table>
+
+  <% else %>
+    <h3>Log</h3>
+    <table>
+      <tr>
+        <th>DATE</th>
+        <th>VALUE</th>
+      </tr>
+      <% v.policy_violation_logs.each do |log| %>
+        <tr>
+          <td><%= log.created_at %></td>
+          <td><%= PP.pp(log.value, '') %></td>
+        </tr>
+      <% end %>
+    </table>
+  <% end %>
+<% end %>
+
+</body>
+</html>

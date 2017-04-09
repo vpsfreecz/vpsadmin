@@ -2,10 +2,12 @@ class PolicyViolation < ActiveRecord::Base
   has_many :policy_violation_logs
   enum state: %i(monitoring confirmed unconfirmed ignored)
 
+  attr_accessor :policy, :object
+
   # TODO: optimize by fetch all monitored violations in advance
   def self.report!(policy, obj, value, passed)
     attrs = {
-        policy: policy.name,
+        policy_name: policy.name,
         class_name: obj.class.name,
         row_id: obj.id,
         state: states[:monitoring],
@@ -15,8 +17,8 @@ class PolicyViolation < ActiveRecord::Base
       violation = self.find_by(attrs)
 
       if violation.nil?
-        break if passed
-        
+        next if passed
+
         violation = self.create!(attrs)
       end
 
@@ -27,13 +29,17 @@ class PolicyViolation < ActiveRecord::Base
 
       if passed
         violation.update!(state: states[:unconfirmed])
-        break
+        next
       end
-      
+
       if (Time.now - violation.created_at) >= policy.period
         violation.update!(state: states[:confirmed])
-        # TODO: invoke configured action, i.e. notify admins
+        violation.policy = policy
+        violation.object = obj
+        next violation
       end
+
+      nil
     end
   end
 end

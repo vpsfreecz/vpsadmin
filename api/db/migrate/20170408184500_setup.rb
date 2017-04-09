@@ -1,7 +1,7 @@
 class Setup < ActiveRecord::Migration
   def change
     create_table :policy_violations do |t|
-      t.string      :policy,              null: false, limit: 100
+      t.string      :policy_name,         null: false, limit: 100
       t.string      :class_name,          null: false, limit: 255
       t.integer     :row_id,              null: false
       t.integer     :state,               null: false
@@ -19,7 +19,7 @@ class Setup < ActiveRecord::Migration
       t.string      :value,               null: false, limit: 255
       t.timestamps
     end
-    
+
     add_index :policy_violation_logs, :policy_violation_id
     add_index :policy_violation_logs, :passed
   end

@@ -1,4 +1,4 @@
-module VpsAdmin::API::Plugins::Cop::Dsl
+module VpsAdmin::API::Plugins::Cop
   class Policy
     attr_reader :name
 
@@ -12,6 +12,8 @@ module VpsAdmin::API::Plugins::Cop::Dsl
     end
 
     def check
+      ret = []
+
       @opts[:query].call.each do |obj|
         v = @opts[:value].call(obj)
         passed = @opts[:check].call(obj, v)
@@ -20,8 +22,11 @@ module VpsAdmin::API::Plugins::Cop::Dsl
           warn "#{obj.class.name} ##{obj.id} did not pass '#{@name}': value '#{v}'"
         end
 
-        PolicyViolation.report!(self, obj, v, passed)
+        ret << PolicyViolation.report!(self, obj, v, passed)
       end
+
+      ret.compact!
+      ret
     end
   end
 end

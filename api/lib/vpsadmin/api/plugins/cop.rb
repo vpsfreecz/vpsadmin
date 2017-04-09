@@ -1,5 +1,6 @@
 module VpsAdmin::API::Plugins
   module Cop
+    module TransactionChains ; end
     class Policy ; end
 
     module Dsl
