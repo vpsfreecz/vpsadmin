@@ -67,8 +67,19 @@ end
 <body>
 <h1>Violation report</h1>
 
+  <p><%= @violations.count %> new policy violations:</p>
+  <ul>
+    <% @violations.each_with_index do |v, i| %>
+      <li>
+        <a href="#<%= i %>">
+          <%= v.class_name %> #<%= v.row_id %>: <%= v.policy.label %>
+        </a>
+      </li>
+    <% end %>
+  </ul>
+
 <% @violations.each_with_index do |v, i| %>
-  <h2><%= v.class_name %> #<%= v.row_id %>: <%= v.policy.label %></h2>
+  <h2 id="<%= i %>"><%= v.class_name %> #<%= v.row_id %>: <%= v.policy.label %></h2>
 
   <table>
     <tr>
