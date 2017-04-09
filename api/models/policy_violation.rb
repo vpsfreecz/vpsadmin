@@ -44,7 +44,11 @@ class PolicyViolation < ActiveRecord::Base
         next
       end
 
-      if (Time.now - violation.created_at) >= policy.period
+      if policy.period.nil? && policy.check_count.nil?
+        fail "Policy #{policy.name}: specify either period or check_count"
+
+      elsif (policy.period && (Time.now - violation.created_at) >= policy.period) \
+        || (policy.check_count && policy.check_count >= violation.check_count)
         violation.update!(state: states[:confirmed], closed_at: Time.now)
         violation.policy = policy
         violation.object = obj

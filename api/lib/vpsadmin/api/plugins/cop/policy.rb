@@ -7,8 +7,12 @@ module VpsAdmin::API::Plugins::Cop
       @opts = opts
     end
 
-    %i(period cooldown label).each do |name|
+    %i(period check_count cooldown label).each do |name|
       define_method(name) { @opts[name] }
+    end
+
+    def check_count
+      policy_violation_logs.count
     end
 
     def check
