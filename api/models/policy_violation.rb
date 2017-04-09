@@ -58,4 +58,8 @@ class PolicyViolation < ActiveRecord::Base
       nil
     end
   end
+
+  def check_count
+    policy_violation_logs.count
+  end
 end

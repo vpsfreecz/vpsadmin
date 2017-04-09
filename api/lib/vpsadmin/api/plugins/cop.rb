@@ -17,7 +17,7 @@ module VpsAdmin::API::Plugins
           define_method(name) { |v| @data[name] = v }
         end
 
-        %i(query value check).each do |name|
+        %i(query object value check).each do |name|
           define_method(name) { |&block| @data[name] = block }
         end
       end

@@ -11,22 +11,19 @@ module VpsAdmin::API::Plugins::Cop
       define_method(name) { @opts[name] }
     end
 
-    def check_count
-      policy_violation_logs.count
-    end
-
     def check
       ret = []
 
       @opts[:query].call.each do |obj|
         v = @opts[:value].call(obj)
         passed = @opts[:check].call(obj, v)
+        real_obj = @opts[:object] ? @opts[:object].call(obj) : obj
 
         unless passed
-          warn "#{obj.class.name} ##{obj.id} did not pass '#{@name}': value '#{v}'"
+          warn "#{real_obj.class.name} ##{real_obj.id} did not pass '#{@name}': value '#{v}'"
         end
 
-        ret << PolicyViolation.report!(self, obj, v, passed)
+        ret << PolicyViolation.report!(self, real_obj, v, passed)
       end
 
       ret.compact!
