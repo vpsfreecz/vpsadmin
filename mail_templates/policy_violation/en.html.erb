@@ -70,6 +70,21 @@ end
 <% @violations.each do |v| %>
   <h2><%= v.class_name %> #<%= v.row_id %>: <%= v.policy.label %></h2>
 
+  <table>
+    <tr>
+      <th>Monitored from:</th>
+      <td><%= v.created_at %></td>
+    </tr>
+    <tr>
+      <th>Confirmed at:</th>
+      <td><%= v.closed_at %></td>
+    </tr>
+    <tr>
+      <th>Monitored period:</th>
+      <td><%= duration(v.closed_at - v.created_at) %></td>
+    </tr>
+  </table>
+
   <% case v.class_name
      when 'Vps' %>
     <table>
