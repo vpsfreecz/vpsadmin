@@ -13,7 +13,7 @@ module VpsAdmin::API::Plugins
           @data
         end
 
-        %i(label period check_count cooldown).each do |name|
+        %i(label period check_count cooldown desc).each do |name|
           define_method(name) { |v| @data[name] = v }
         end
 

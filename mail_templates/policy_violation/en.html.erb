@@ -67,10 +67,14 @@ end
 <body>
 <h1>Violation report</h1>
 
-<% @violations.each do |v| %>
+<% @violations.each_with_index do |v, i| %>
   <h2><%= v.class_name %> #<%= v.row_id %>: <%= v.policy.label %></h2>
 
   <table>
+    <tr>
+      <th>Issue:</th>
+      <td><%= v.policy.desc %></td>
+    </tr>
     <tr>
       <th>Monitored from:</th>
       <td><%= v.created_at %></td>
