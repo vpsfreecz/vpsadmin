@@ -5,10 +5,11 @@ class Setup < ActiveRecord::Migration
       t.string      :class_name,          null: false, limit: 255
       t.integer     :row_id,              null: false
       t.integer     :state,               null: false
-      t.timestamps
+      t.timestamps,                       null: false
+      t.datetime    :closed_at,           null: true
     end
 
-    add_index :policy_violations, :policy
+    add_index :policy_violations, :policy_name
     add_index :policy_violations, :class_name
     add_index :policy_violations, :row_id
     add_index :policy_violations, :state
@@ -17,7 +18,7 @@ class Setup < ActiveRecord::Migration
       t.references  :policy_violation,    null: false
       t.boolean     :passed,              null: false
       t.string      :value,               null: false, limit: 255
-      t.timestamps
+      t.datetime    :created_at,          null: false
     end
 
     add_index :policy_violation_logs, :policy_violation_id

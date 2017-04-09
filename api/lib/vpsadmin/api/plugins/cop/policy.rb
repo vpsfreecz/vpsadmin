@@ -7,7 +7,7 @@ module VpsAdmin::API::Plugins::Cop
       @opts = opts
     end
 
-    %i(period label).each do |name|
+    %i(period cooldown label).each do |name|
       define_method(name) { @opts[name] }
     end
 
