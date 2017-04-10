@@ -8,8 +8,8 @@ VpsAdmin::API::Plugin.register(:cop) do
 
   config do
     ::MailTemplate.register :policy_violation, vars: {
-            violation: '::PolicyViolation',
-            object: 'instance of object that violated a policy',
+            violations: 'Array<::PolicyViolation>',
+            base_url: 'URL to the web UI'
         }
   end
 end

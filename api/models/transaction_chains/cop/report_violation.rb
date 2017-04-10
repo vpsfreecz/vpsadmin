@@ -7,6 +7,7 @@ module VpsAdmin::API::Plugins::Cop::TransactionChains
           language: ::Language.take!,
           vars: {
               violations: violations,
+              base_url: ::SysConfig.get('webui', 'base_url'),
           }
       })
     end
