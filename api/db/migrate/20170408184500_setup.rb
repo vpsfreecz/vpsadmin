@@ -5,7 +5,7 @@ class Setup < ActiveRecord::Migration
       t.string      :class_name,          null: false, limit: 255
       t.integer     :row_id,              null: false
       t.integer     :state,               null: false
-      t.timestamps,                       null: false
+      t.timestamps                        null: false
       t.datetime    :closed_at,           null: true
     end
 
