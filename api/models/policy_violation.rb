@@ -21,12 +21,12 @@ class PolicyViolation < ActiveRecord::Base
 
         if policy.cooldown
           # Find last confirmed violation of the same type
-          last = self.find_by(
+          last = self.where(
               policy_name: policy.name,
               class_name: obj.class.name,
               row_id: obj.id,
               state: states[:confirmed],
-          )
+          ).order('created_at DESC').take
 
           next if last && (last.closed_at + policy.cooldown) >= Time.now
         end
