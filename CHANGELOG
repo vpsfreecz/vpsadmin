@@ -3,6 +3,7 @@
 - Distinguish external and internal API URL
 - Fix system config saving
 - Fix flag "Boot on create" when creating a new VPS
+- Fix setting of disk quota in MB
 
 * Mon Mar 20 2017 - version 2.7.0
 - Trim public key before it is sent to the API

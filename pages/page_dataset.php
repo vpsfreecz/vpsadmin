@@ -17,7 +17,7 @@ if ($_SESSION['logged_in']) {
 
 				foreach ($quotas as $quota) {
 					if (isset($_POST[$quota]))
-						$params[$quota] = $_POST[$quota] * (2 << $DATASET_UNITS_TR[$_POST["quota_unit"]]);
+						$params[$quota] = $_POST[$quota] * $DATASET_UNITS_TR[$_POST["quota_unit"]];
 				}
 
 				foreach ($DATASET_PROPERTIES as $p) {
@@ -66,7 +66,7 @@ if ($_SESSION['logged_in']) {
 
 				foreach ($quotas as $quota) {
 					if (isset($_POST[$quota]))
-						$params[$quota] = $_POST[$quota] * (2 << $DATASET_UNITS_TR[$_POST["quota_unit"]]);
+						$params[$quota] = $_POST[$quota] * $DATASET_UNITS_TR[$_POST["quota_unit"]];
 				}
 
 				foreach ($DATASET_PROPERTIES as $p) {

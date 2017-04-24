@@ -1,7 +1,7 @@
 <?php
 
 $DATASET_PROPERTIES = array('compression', 'recordsize', 'atime', 'relatime', 'sync');
-$DATASET_UNITS_TR = array("m" => 0, "g" => 9, "t" => 19);
+$DATASET_UNITS_TR = array("m" => 1, "g" => 1024, "t" => 1024*1024);
 
 function is_mount_dst_valid($dst) {
 	$dst = trim($dst);
