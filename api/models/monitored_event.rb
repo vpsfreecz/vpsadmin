@@ -48,7 +48,7 @@ class MonitoredEvent < ActiveRecord::Base
         fail "Monitor #{monitor.name}: specify either period or check_count"
 
       elsif (monitor.period && (Time.now - event.created_at) >= monitor.period) \
-        || (monitor.check_count && monitor.check_count >= event.check_count)
+        || (monitor.check_count && event.check_count >= monitor.check_count)
         event.update!(state: states[:confirmed], closed_at: Time.now)
         event.monitor = monitor
         event.object = obj
