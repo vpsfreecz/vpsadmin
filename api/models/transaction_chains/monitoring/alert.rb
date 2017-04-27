@@ -4,7 +4,7 @@ module VpsAdmin::API::Plugins::Monitoring::TransactionChains
     allow_empty
 
     def link_chain(event)
-      concerns(:affect, [event.object, event.object.id])
+      concerns(:affect, [event.object.class.name, event.object.id])
       event.call_action(self, event)
     end
   end
