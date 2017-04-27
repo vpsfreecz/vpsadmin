@@ -1,5 +1,5 @@
-module VpsAdmin::API::Plugins::Cop
-  class Policy
+module VpsAdmin::API::Plugins::Monitoring
+  class Monitor
     attr_reader :name
 
     def initialize(name, opts)
@@ -23,11 +23,19 @@ module VpsAdmin::API::Plugins::Cop
           warn "#{real_obj.class.name} ##{real_obj.id} did not pass '#{@name}': value '#{v}'"
         end
 
-        ret << PolicyViolation.report!(self, real_obj, v, passed)
+        ret << MonitoredEvent.report!(self, real_obj, v, passed)
       end
 
       ret.compact!
       ret
+    end
+
+    def call_action(chain, *args)
+      return unless @opts[:action]
+      blk = VpsAdmin::API::Plugins::Monitoring.actions[@opts[:action]]
+      fail "unknown action '#{@opts[:action]}'" unless blk
+
+      chain.instance_exec(*args, &blk)
     end
   end
 end

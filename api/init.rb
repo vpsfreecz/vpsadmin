@@ -6,4 +6,4 @@ if defined?(namespace)
   load_rel 'tasks/*.rake'
 end
 
-VpsAdmin::API.load_configurable(:policies)
+VpsAdmin::API.load_configurable(:monitoring)
