@@ -2,10 +2,10 @@ class MonitoredEvent < ActiveRecord::Base
   has_many :monitored_event_logs
   enum state: %i(monitoring confirmed unconfirmed ignored)
 
-  attr_accessor :monitor, :object
+  attr_accessor :monitor, :object, :responsible_user
 
   # TODO: optimize by fetch all monitored violations in advance
-  def self.report!(monitor, obj, value, passed)
+  def self.report!(monitor, obj, value, passed, user)
     attrs = {
         monitor_name: monitor.name,
         class_name: obj.class.name,
@@ -52,6 +52,7 @@ class MonitoredEvent < ActiveRecord::Base
         event.update!(state: states[:confirmed], closed_at: Time.now)
         event.monitor = monitor
         event.object = obj
+        event.responsible_user = user
         next event
       end
 

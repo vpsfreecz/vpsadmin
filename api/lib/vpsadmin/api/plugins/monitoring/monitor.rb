@@ -23,7 +23,26 @@ module VpsAdmin::API::Plugins::Monitoring
           warn "#{real_obj.class.name} ##{real_obj.id} did not pass '#{@name}': value '#{v}'"
         end
 
-        ret << MonitoredEvent.report!(self, real_obj, v, passed)
+        if @opts[:user]
+          responsible_user = @opts[:user].call(obj, real_obj)
+
+        elsif real_obj.respond_to?(:user)
+          responsible_user = real_obj.user
+
+        elsif obj.respond_to?(:user)
+          responsible_user = obj.user
+
+        else
+          responsible_user = nil
+        end
+
+        ret << MonitoredEvent.report!(
+            self,
+            real_obj,
+            v,
+            passed,
+            responsible_user
+        )
       end
 
       ret.compact!
