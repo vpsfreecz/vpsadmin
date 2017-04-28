@@ -6,7 +6,7 @@ class UserRequest < ActiveRecord::Base
 
   has_paper_trail
 
-  enum state: %i(awaiting approved denied ignored)
+  enum state: %i(awaiting approved denied ignored pending_correction)
 
   validates :api_ip_addr, :api_ip_ptr, :state, presence: true
 
@@ -44,7 +44,12 @@ class UserRequest < ActiveRecord::Base
   end
 
   def resolve(action, reason, params)
-    target_state = {approve: :approved, deny: :denied, ignore: :ignored}[action]
+    target_state = {
+        approve: :approved,
+        deny: :denied,
+        ignore: :ignored,
+        request_correction: :pending_correction,
+    }[action]
 
     if target_state == state.to_sym
       errors.add(:state, "is already '#{state}'")
@@ -73,6 +78,10 @@ class UserRequest < ActiveRecord::Base
   end
 
   def invalidate(chain, params)
+
+  end
+
+  def request_correction(chain, params)
 
   end
 

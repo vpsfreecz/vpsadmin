@@ -26,11 +26,69 @@ module VpsAdmin::API::Resources
             desc: 'Create the new VPS on this node'
         bool :create_vps, label: 'Create VPS', default: true, fill: true
       end
+
+      params(:token) do
+        string :token, label: 'Access token'
+      end
       
       include VpsAdmin::API::Plugins::Requests::BaseResource
 
       class Create
         auth false
+      end
+
+      class Preview < HaveAPI::Action
+        auth false
+        http_method :get
+        route ':%{resource}_id/:token'
+
+        output do
+          use :common, include: %i(id admin_response)
+          use :request
+        end
+
+        authorize do |u|
+          allow
+        end
+
+        def exec
+          ::RegistrationRequest.find_by!(with_restricted(
+              id: params[:registration_id],
+              access_token: params[:token],
+              state: ::RegistrationRequest.states[:pending_correction],
+          ))
+        end
+      end
+
+      class Update < HaveAPI::Actions::Default::Update
+        auth false
+        route ':%{resource}_id/:token'
+
+        input do
+          use :request
+        end
+
+        output do
+          use :common, include: %i(id)
+          use :request
+        end
+
+        authorize do |u|
+          allow
+        end
+
+        def exec
+          req = ::RegistrationRequest.find_by!(with_restricted(
+              id: params[:registration_id],
+              access_token: params[:token],
+              state: ::RegistrationRequest.states[:pending_correction],
+          ))
+          req.resubmit!(input)
+          req
+
+        rescue ActiveRecord::RecordInvalid => e
+          error('update failed', e.record.errors.to_hash)
+        end
       end
     end
   end

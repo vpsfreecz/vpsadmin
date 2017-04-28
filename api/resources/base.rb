@@ -108,7 +108,7 @@ module VpsAdmin::API::Plugins::Requests
         desc 'Resolve user request'
 
         input do
-          string :action, choices: %w(approve deny ignore), required: true
+          string :action, choices: %w(approve deny ignore request_correction), required: true
           text :reason
 
           use :request

@@ -1,3 +1,5 @@
+require 'securerandom'
+
 class RegistrationRequest < UserRequest
   belongs_to :os_template
   belongs_to :location
@@ -20,6 +22,8 @@ class RegistrationRequest < UserRequest
   validates :currency, length: {maximum: 10}
   validate :check_login
   validate :check_org
+
+  before_save :generate_token
 
   def user_mail
     email
@@ -68,17 +72,28 @@ class RegistrationRequest < UserRequest
     ])
   end
 
+  def resubmit!(attrs)
+    VpsAdmin::API::Plugins::Requests::TransactionChains::Update.fire(self, attrs)
+  end
+
   protected
   def generate_password
     chars = ('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a
     (0..11).map { chars.sample }.join
   end
 
+  def generate_token
+    self.access_token = SecureRandom.hex(10) unless access_token
+  end
+
   def check_login
     return if persisted?
     user = ::User.exists?(login: login)
     req = self.class.exists?(
-        state: self.class.states[:awaiting],
+        state: [
+            self.class.states[:awaiting],
+            self.class.states[:pending_correction],
+        ],
         login: login,
     )
 
