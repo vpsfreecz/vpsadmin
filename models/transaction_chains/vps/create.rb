@@ -19,7 +19,7 @@ module TransactionChains
           chain: self
       )
 
-      pool = vps.node.pools.where(role: :hypervisor).take!
+      pool = vps.node.pools.where(role: 'hypervisor').take!
 
       ds = ::Dataset.new(
           name: vps.id.to_s,

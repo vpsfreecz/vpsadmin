@@ -12,7 +12,7 @@ class VpsFeature < ActiveRecord::Base
   }
 
   validates :name, inclusion: {
-      in: FEATURES.keys,
+      in: FEATURES.keys.map(&:to_s),
       message: '%{value} is not a valid feature'
   }
 
