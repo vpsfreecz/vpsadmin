@@ -7,7 +7,7 @@ module VpsAdmin::API::Plugins::Monitoring
       @opts = opts
     end
 
-    %i(period check_count cooldown label desc).each do |name|
+    %i(period check_count repeat cooldown label desc).each do |name|
       define_method(name) { @opts[name] }
     end
 
@@ -49,10 +49,10 @@ module VpsAdmin::API::Plugins::Monitoring
       ret
     end
 
-    def call_action(chain, *args)
-      return unless @opts[:action]
-      blk = VpsAdmin::API::Plugins::Monitoring.actions[@opts[:action]]
-      fail "unknown action '#{@opts[:action]}'" unless blk
+    def call_action(state, chain, *args)
+      return if @opts[:action].nil? || @opts[:action][state].nil?
+      blk = VpsAdmin::API::Plugins::Monitoring.actions[@opts[:action][state]]
+      fail "unknown action '#{@opts[:action][state]}'" unless blk
 
       chain.instance_exec(*args, &blk)
     end

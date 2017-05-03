@@ -28,12 +28,29 @@ module VpsAdmin::API::Plugins
           @data
         end
 
-        %i(label period check_count cooldown desc action).each do |name|
+        %i(label period check_count repeat cooldown desc).each do |name|
           define_method(name) { |v| @data[name] = v }
         end
 
         %i(query object value check user).each do |name|
           define_method(name) { |&block| @data[name] = block }
+        end
+
+        def action(arg)
+          res = {}
+
+          if arg.is_a?(Symbol)
+            ::MonitoredEvent.states.keys.each { |v| res[v.to_sym] = arg }
+
+          elsif arg.is_a?(Hash)
+            res.update(arg)
+
+          else
+            fail "unknown arg type '#{arg.class}': pass symbol or hash"
+          end
+
+          @data[:action] ||= {}
+          @data[:action].update(res)
         end
       end
     end
