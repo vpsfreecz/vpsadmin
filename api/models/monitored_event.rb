@@ -120,6 +120,26 @@ class MonitoredEvent < ActiveRecord::Base
     updated_at
   end
 
+  def label
+    unless monitor
+      self.monitor = VpsAdmin::API::Plugins::Monitoring.monitors.detect do |v|
+        v.name == monitor_name.to_sym
+      end
+    end
+
+    monitor.label
+  end
+
+  def issue
+    unless monitor
+      self.monitor = VpsAdmin::API::Plugins::Monitoring.monitors.detect do |v|
+        v.name == monitor_name.to_sym
+      end
+    end
+
+    monitor.desc
+  end
+
   protected
   def log_state
     return if monitored_event_states.last && monitored_event_states.last.state == state

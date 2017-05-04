@@ -5,7 +5,9 @@ module VpsAdmin::API::Resources
 
     params(:all) do
       id :id
-      string :monitor
+      string :monitor, db_name: :monitor_name
+      string :label
+      string :issue
       string :class_name
       integer :object_id, db_name: :row_id
       string :state, choices: ::MonitoredEvent.states.keys.map(&:to_s)
