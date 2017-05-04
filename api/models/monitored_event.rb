@@ -50,7 +50,10 @@ class MonitoredEvent < ActiveRecord::Base
       end
 
       # Skip ignored events completely, whether they're still active or not
-      next if event.state == 'ignored'
+      if event.state == 'ignored'
+        event.touch
+        next
+      end
 
       # Log measured value
       event.monitored_event_logs << MonitoredEventLog.new(
@@ -82,7 +85,13 @@ class MonitoredEvent < ActiveRecord::Base
           event.monitor = monitor
           event.object = obj
           next event
+
+        else
+          event.touch
         end
+
+      elsif event.state == 'acknowledged'
+        event.touch
 
       elsif (monitor.period && (Time.now - event.created_at) >= monitor.period) \
         || (monitor.check_count && event.check_count >= monitor.check_count)
