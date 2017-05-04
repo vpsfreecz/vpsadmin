@@ -14,6 +14,7 @@ module VpsAdmin::API::Resources
       resource VpsAdmin::API::Resources::User, value_label: :login
       datetime :created_at
       datetime :updated_at
+      datetime :saved_until
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -99,6 +100,10 @@ module VpsAdmin::API::Resources
       route ':%{resource}_id/acknowledge'
       aliases %i(ack)
 
+      input do
+        datetime :until
+      end
+
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
@@ -108,7 +113,7 @@ module VpsAdmin::API::Resources
       def exec
         ::MonitoredEvent.find_by!(with_restricted(
             id: params[:monitored_event_id],
-        )).ack!
+        )).ack!(input[:until])
         ok
       end
     end
@@ -117,6 +122,10 @@ module VpsAdmin::API::Resources
       http_method :post
       route ':%{resource}_id/ignore'
 
+      input do
+        datetime :until
+      end
+
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
@@ -126,7 +135,7 @@ module VpsAdmin::API::Resources
       def exec
         ::MonitoredEvent.find_by!(with_restricted(
             id: params[:monitored_event_id],
-        )).ignore!
+        )).ignore!(input[:until])
         ok
       end
     end

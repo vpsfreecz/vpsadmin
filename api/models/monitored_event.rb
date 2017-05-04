@@ -49,6 +49,11 @@ class MonitoredEvent < ActiveRecord::Base
         event.update!(user: user)
       end
 
+      if %w(acknowledged ignored).include?(event.state) && event.saved_until \
+         && event.saved_until <= Time.now
+        event.update!(state: 'confirmed', saved_until: nil)
+      end
+
       # Skip ignored events completely, whether they're still active or not
       if event.state == 'ignored'
         event.touch
@@ -107,13 +112,15 @@ class MonitoredEvent < ActiveRecord::Base
     VpsAdmin::API::Plugins::Monitoring::TransactionChains::Alert.fire(ret) if ret
   end
 
-  def ack!
+  def ack!(save_until)
     self.state = 'acknowledged'
+    self.saved_until = save_until
     self.save!
   end
 
-  def ignore!
+  def ignore!(save_until)
     self.state = 'ignored'
+    self.saved_until = save_until
     self.save!
   end
 

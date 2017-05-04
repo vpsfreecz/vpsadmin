@@ -8,6 +8,7 @@ class Setup < ActiveRecord::Migration
       t.references  :user,                null: true
       t.timestamps                        null: false
       t.datetime    :last_report_at,      null: true
+      t.datetime    :saved_until,         null: true
     end
 
     add_index :monitored_events, :monitor_name
