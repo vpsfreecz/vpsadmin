@@ -220,6 +220,7 @@ function approval_requests_list() {
 	$xtpl->form_add_select(_("State").':', 'state', array(
 		"all" => _("all"),
 		"awaiting" => _("awaiting"),
+		"pending_correction" => _("pending correction"),
 		"approved" => _("approved"),
 		"denied" => _("denied"),
 		"ignored" => _("ignored")
