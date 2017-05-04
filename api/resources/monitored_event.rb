@@ -139,5 +139,88 @@ module VpsAdmin::API::Resources
         ok
       end
     end
+
+    class Log < HaveAPI::Resource
+      route ':monitored_event_id/logs'
+      desc 'Browse monitored event logs'
+      model ::MonitoredEventLog
+
+      params(:all) do
+        id :id
+        bool :passed
+        custom :value
+        datetime :created_at
+      end
+
+      class Index < HaveAPI::Actions::Default::Index
+        desc 'List event logs'
+
+        input do
+          use :all, include: %i(passed)
+          string :order, choices: %w(oldest latest), default: 'oldest', fill: true
+          patch :limit, default: 25, fill: true
+        end
+
+        output(:object_list) do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict monitored_events: {user_id: u.id}
+          allow
+        end
+
+        def query
+          q = ::MonitoredEventLog.joins(:monitored_event).where(with_restricted(
+              monitored_event_id: params[:monitored_event_id],
+          ))
+
+          q = q.where(passed: input[:passed]) if input.has_key?(:passed)
+          q
+        end
+
+        def count
+          query.count
+        end
+
+        def exec
+          q = query.limit(input[:limit]).offset(input[:offset])
+
+          case input[:order]
+          when 'oldest'
+            q = q.order('created_at')
+
+          when 'latest'
+            q = q.order('created_at DESC')
+          end
+
+          q
+        end
+      end
+
+      class Show < HaveAPI::Actions::Default::Show
+        output do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict user_id: u.id
+          allow
+        end
+
+        def prepare
+          @event = ::MonitoredEventLog.joins(:monitored_event).find_by!(with_restricted(
+              monitored_event_id: params[:monitored_event_id],
+              id: params[:log_id],
+          ))
+        end
+
+        def exec
+          @event
+        end
+      end
+    end
   end
 end
