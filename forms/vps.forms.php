@@ -58,7 +58,7 @@ function print_newvps_page2($loc_id) {
 
 	if ($_SESSION["is_admin"]) {
 		$xtpl->form_add_select(_("Node").':', 'vps_server', resource_list_to_options($api->node->list(), 'id', 'domain_name'), $_POST['vps_server'], '');
-		$xtpl->form_add_select(_("Owner").':', 'm_id', resource_list_to_options($api->user->list(), 'id', 'login'), $_SESSION['user']['id'], '');
+		$xtpl->form_add_select(_("Owner").':', 'm_id', resource_list_to_options($api->user->list(), 'id', 'login'), post_val('m_id', $_SESSION['user']['id']), '');
 	}
 
 	$xtpl->form_add_select(_("OS template").':', 'vps_template', resource_list_to_options($api->os_template->list()), $_POST['vps_template'],  '');
