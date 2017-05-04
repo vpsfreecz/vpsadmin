@@ -15,6 +15,7 @@ class Setup < ActiveRecord::Migration
     add_index :monitored_events, :class_name
     add_index :monitored_events, :row_id
     add_index :monitored_events, :state
+    add_index :monitored_events, :user_id
 
     create_table :monitored_event_states do |t|
       t.references  :monitored_event,     null: false
