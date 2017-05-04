@@ -608,6 +608,34 @@ function request_ignore() {
 	}
 }
 
+function request_correction() {
+	global $xtpl, $api;
+
+	if(!$_SESSION["is_admin"])
+		return;
+
+	if (isset($_POST['action'])) {
+		$params = client_params_to_api(
+			$api->user_request->{$_GET['type']}->resolve,
+			$_POST
+		);
+
+	} else {
+		$params = array('action' => 'request_correction');
+	}
+
+	try {
+		$api->user_request->{$_GET['type']}->resolve($_GET['id'], $params);
+
+		notify_user(_("Request correction requested"), '');
+		redirect('?page=adminm&section=members&action=approval_requests');
+
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		$xtpl->perex_format_errors(_('Request correction request failed'), $e->getResponse());
+		approval_requests_details($_GET['type'], $_GET['id']);
+	}
+}
+
 function list_members() {
 	global $xtpl, $api, $config;
 
@@ -1377,6 +1405,9 @@ if ($_SESSION["logged_in"]) {
 
 			elseif($action == "ignore" || $_GET["rule"] == "ignore")
 				request_ignore();
+
+			elseif($action == "request_correction" || $_GET["rule"] == "request_correction")
+				request_correction();
 
 			break;
 
