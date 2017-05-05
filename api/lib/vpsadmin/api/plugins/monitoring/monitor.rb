@@ -7,7 +7,7 @@ module VpsAdmin::API::Plugins::Monitoring
       @opts = opts
     end
 
-    %i(period check_count repeat cooldown label desc).each do |name|
+    %i(period check_count repeat cooldown label desc access_level).each do |name|
       define_method(name) { @opts[name] }
     end
 

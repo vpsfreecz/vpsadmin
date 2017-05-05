@@ -38,7 +38,9 @@ module VpsAdmin::API::Resources
       end
 
       def query
-        q = ::MonitoredEvent.where(with_restricted)
+        q = ::MonitoredEvent.where(with_restricted).where(
+            'access_level <= ?', current_user.level
+        )
         q = q.where(monitor_name: input[:monitor]) if input[:monitor]
         q = q.where(class_name: input[:object_name]) if input[:object_name]
         q = q.where(row_id: input[:object_id]) if input[:object_id]
@@ -85,9 +87,11 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @event = ::MonitoredEvent.find_by!(with_restricted(
+        @event = ::MonitoredEvent.where(with_restricted(
             id: params[:monitored_event_id],
-        ))
+        )).where(
+            'access_level <= ?', current_user.level
+        ).take!
       end
 
       def exec
@@ -111,9 +115,11 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ::MonitoredEvent.find_by!(with_restricted(
+        ::MonitoredEvent.where(with_restricted(
             id: params[:monitored_event_id],
-        )).ack!(input[:until])
+        )).where(
+            'access_level <= ?', current_user.level
+        ).take!.ack!(input[:until])
         ok
       end
     end
@@ -133,9 +139,11 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ::MonitoredEvent.find_by!(with_restricted(
+        ::MonitoredEvent.where(with_restricted(
             id: params[:monitored_event_id],
-        )).ignore!(input[:until])
+        )).where(
+            'access_level <= ?', current_user.level
+        ).take!.ignore!(input[:until])
         ok
       end
     end
@@ -174,7 +182,9 @@ module VpsAdmin::API::Resources
         def query
           q = ::MonitoredEventLog.joins(:monitored_event).where(with_restricted(
               monitored_event_id: params[:monitored_event_id],
-          ))
+          )).where(
+              'monitored_events.access_level <= ?', current_user.level
+          )
 
           q = q.where(passed: input[:passed]) if input.has_key?(:passed)
           q
@@ -211,10 +221,12 @@ module VpsAdmin::API::Resources
         end
 
         def prepare
-          @event = ::MonitoredEventLog.joins(:monitored_event).find_by!(with_restricted(
+          @event = ::MonitoredEventLog.joins(:monitored_event).where(with_restricted(
               monitored_event_id: params[:monitored_event_id],
               id: params[:log_id],
-          ))
+          )).where(
+              'monitored_events.access_level <= ?', current_user.level
+          ).take!
         end
 
         def exec

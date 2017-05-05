@@ -43,6 +43,7 @@ class MonitoredEvent < ActiveRecord::Base
             row_id: obj.id,
             state: states[:monitoring],
             user: user,
+            access_level: monitor.access_level || 0,
         )
 
       elsif event.user != user

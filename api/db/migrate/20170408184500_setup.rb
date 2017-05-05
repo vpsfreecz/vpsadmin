@@ -6,6 +6,7 @@ class Setup < ActiveRecord::Migration
       t.integer     :row_id,              null: false
       t.integer     :state,               null: false
       t.references  :user,                null: true
+      t.integer     :access_level,        null: false, default: 0
       t.timestamps                        null: false
       t.datetime    :last_report_at,      null: true
       t.datetime    :saved_until,         null: true

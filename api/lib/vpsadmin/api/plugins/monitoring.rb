@@ -28,7 +28,7 @@ module VpsAdmin::API::Plugins
           @data
         end
 
-        %i(label period check_count repeat cooldown desc).each do |name|
+        %i(label period check_count repeat cooldown desc access_level).each do |name|
           define_method(name) { |v| @data[name] = v }
         end
 
