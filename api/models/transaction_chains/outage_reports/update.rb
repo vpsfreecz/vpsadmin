@@ -42,7 +42,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
 
             rescue ActiveRecord::RecordNotFound
               tr = ::OutageTranslation.new(attrs)
-              tr.outage = self
+              tr.outage = outage
               tr.language = lang
               tr.save!
             end
