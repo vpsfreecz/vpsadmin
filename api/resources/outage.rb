@@ -224,6 +224,10 @@ module VpsAdmin::API::Resources
         use :editable, exclude: %i(state)
 
         %i(begins_at duration planned type).each { |p| patch p, required: true }
+
+        ::Language.all.each do |lang|
+          patch :"#{lang.code}_summary", required: true
+        end
       end
 
       output do
