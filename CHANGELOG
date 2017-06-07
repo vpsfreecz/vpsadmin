@@ -1,3 +1,6 @@
+* Wed Jun 07 2017 - version 2.8.0
+- No changes
+
 * Mon Mar 20 2017 - version 2.7.0
 - Use refactored DB schema of nodes, transactions, IP addresses, VPSes,
   node pubkeys
