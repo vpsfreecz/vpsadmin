@@ -1,0 +1,36 @@
+# Release notes
+Version 2.8.0 primary features a new plugin for outage reporting. Outages can
+be reported by admins from the web UI or the API. vpsAdmin knows what VPS are
+(in)directly affected and can notify users via e-mail. It also allows admins to
+post update on progress. Each outage is now assigned a type, i.e. how it affects
+your VPS. It can be one of the following options:
+
+ - tbd: to be determined; we're still investigating what's gone wrong
+ - restart: the VPS will see it as a clean restart
+ - reset: the VPS will see it as a hard reset
+ - network: issues with connectivity, DDoS and so on
+ - performance: temporary decreased performance
+ - maintenance: VPS is running, can't be controlled from vpsAdmin
+
+## Outage reports
+- Initial release
+
+## API resources
+- API version set to 4.1
+- `User.Index`: filter by admin privilege
+- Resource `Node`: add output parameter `status`
+- Resource `MailTemplate` has new parameter `user_visibility`
+
+## API internals
+- `Node.pick_by_env`: don't filter by location
+- Fix cleanup of concerns of empty transaction chains
+
+## vpsAdmin web UI
+- VPS clone form: hide environment for users
+- Disable privilege dropping until the API can properly handle it
+- Integration of outage reports plugin
+- Distinguish external and internal API URL
+- Fix system config saving
+- Fix flag "Boot on create" when creating a new VPS
+- Fix setting of disk quota in MB
+- Fix remembering of selected user in VPS create form
