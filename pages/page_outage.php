@@ -155,40 +155,6 @@ if ($_SESSION['logged_in']) {
 		}
 		break;
 
-	case 'set_state':
-		if ($_SESSION['is_admin']) {
-			if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-				csrf_check();
-
-				try {
-					$params = array(
-						'send_mail' => isset($_POST['send_mail']),
-					);
-
-					foreach ($api->language->list() as $l) {
-						foreach (array('summary', 'description') as $name) {
-							$param = $l->code.'_'.$name;
-
-							if ($_POST[$param])
-								$params[$param] = $_POST[$param];
-						}
-					}
-
-					$api->outage->{$_POST['state']}($_GET['id'], $params);
-
-					notify_user(_('State set'), _('Outage state has been successfully set.'));
-					redirect('?page=outage&action=show&id='.$_GET['id']);
-
-				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-					$xtpl->perex_format_errors('State set failed', $e->getResponse());
-					outage_state_form($_GET['id']);
-				}
-			} else {
-				outage_state_form($_GET['id']);
-			}
-		}
-		break;
-
 	case 'edit':
 		if ($_SESSION['is_admin']) {
 			if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -222,7 +188,7 @@ if ($_SESSION['logged_in']) {
 					'send_mail' => isset($_POST['send_mail']),
 				);
 				$dates = array('begins_at', 'finished_at');
-				$fields = array('duration', 'type');
+				$fields = array('duration', 'type', 'state');
 
 				foreach ($dates as $d) {
 					$v = strtotime($_POST[$d]);
