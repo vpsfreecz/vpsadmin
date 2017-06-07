@@ -6,7 +6,7 @@ boxes.
 
 ## Installation
 Copy the plugin to directory `plugins/` in your API installation directory.
-During the database setup, you can choose to transfer user payment settings
+During the database setup, you can choose to transfer help boxes
 from vpsAdmin 1 by setting environment variable `FROM_VPSADMIN1`.
 
 ### Migration from vpsAdmin core
