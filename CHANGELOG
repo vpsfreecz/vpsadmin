@@ -1,3 +1,5 @@
+- Updated haveapi-client to v0.9
+
 * Fri Feb 10 2017 - version 2.7.0
 - Fixed dependency on haveapi-client v0.8
 
