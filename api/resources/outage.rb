@@ -272,124 +272,28 @@ module VpsAdmin::API::Resources
         tr = extract_translations
         opts = {send_mail: input.delete(:send_mail)}
 
+        if input[:state]
+          if input[:state] == outage.state
+            error('update failed', {state: ["is already #{outage.state}"]})
+
+          elsif input[:state] == 'announced'
+            if outage.state != 'staged'
+              error('Only staged outages can be announced')
+
+            elsif outage.outage_handlers.count <= 0
+              error('Add at least one outage handler')
+
+            elsif outage.outage_entities.count <= 0
+              error('Add at least one entity impaired by the outage')
+            end
+          end
+        end
+
         @chain, ret = outage.update!(to_db_names(input), tr, opts)
         ret
 
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', to_param_names(e.record.errors.to_hash))
-      end
-
-      def state_id
-        @chain.empty? ? nil : @chain.id
-      end
-    end
-
-    class Announce < HaveAPI::Action
-      desc 'Publicly announce the outage'
-      http_method :post
-      route ':%{resource}_id/announce'
-      blocking true
-
-      input do
-        use :input
-      end
-
-      output do
-        use :all
-      end
-
-      authorize do |u|
-        allow if u.role == :admin
-      end
-
-      def exec
-        outage = ::Outage.find(params[:outage_id])
-
-        if outage.state != 'staged'
-          error('Only staged outages can be announced')
-
-        elsif outage.outage_handlers.count <= 0
-          error('Add at least one outage handler')
-
-        elsif outage.outage_entities.count <= 0
-          error('Add at least one entity impaired by the outage')
-        end
-
-        @chain, ret = outage.announce!({send_mail: input.delete(:send_mail)})
-        ret
-      end
-
-      def state_id
-        @chain.empty? ? nil : @chain.id
-      end
-    end
-
-    class Close < HaveAPI::Action
-      include Helpers
-
-      desc 'Close the outage, indicating that it is over'
-      http_method :post
-      route ':%{resource}_id/close'
-      blocking true
-
-      input do
-        use :texts
-        use :input
-      end
-
-      output do
-        use :all
-      end
-
-      authorize do |u|
-        allow if u.role == :admin
-      end
-
-      def exec
-        outage = ::Outage.find(params[:outage_id])
-        tr = extract_translations
-        opts = {send_mail: input.delete(:send_mail)}
-        @chain, ret = outage.close!(tr, opts)
-        ret
-      end
-
-      def state_id
-        @chain.empty? ? nil : @chain.id
-      end
-    end
-
-    class Cancel < HaveAPI::Action
-      include Helpers
-
-      desc 'Cancel scheduled outage'
-      http_method :post
-      route ':%{resource}_id/cancel'
-      blocking true
-
-      input do
-        use :texts
-        use :input
-      end
-
-      output do
-        use :all
-      end
-
-      authorize do |u|
-        allow if u.role == :admin
-      end
-
-      def exec
-        outage = ::Outage.find(params[:outage_id])
-
-        if outage.state == 'closed'
-          error('cannot cancel a closed outage')
-        end
-
-        tr = extract_translations
-        opts = {send_mail: input.delete(:send_mail)}
-        @chain, ret = outage.cancel!(tr, opts)
-        ret
       end
 
       def state_id

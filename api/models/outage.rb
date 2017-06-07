@@ -38,8 +38,9 @@ class Outage < ActiveRecord::Base
     end
   end
 
-  # TODO: pick a different method name?
   def update!(attrs = {}, translations = {}, opts = {})
+    attrs[:state] = ::Outage.states[attrs[:state]] if attrs[:state]
+
     VpsAdmin::API::Plugins::OutageReports::TransactionChains::Update.fire(
         self,
         attrs,
@@ -48,21 +49,12 @@ class Outage < ActiveRecord::Base
     )
   end
 
-  # TODO: check that we have outage entities, handlers and description
-  def announce!(opts = {})
-    update!({state: self.class.states[:announced]}, {}, opts)
-  end
-
-  def close!(translations = {}, opts = {})
-    update!({state: self.class.states[:closed]}, translations, opts)
-  end
-
-  def cancel!(translations = {}, opts = {})
-    update!({state: self.class.states[:cancelled]}, translations, opts)
-  end
-
   def load_translations
-    outage_translations.each do |tr|
+    ::OutageTranslation.joins(
+        'RIGHT JOIN languages ON languages.id = outage_translations.language_id'
+    ).where(
+        outage_id: id,
+    ).each do |tr|
       %i(summary description).each do |param|
         define_singleton_method("#{tr.language.code}_#{param}") do
           tr.send(param)

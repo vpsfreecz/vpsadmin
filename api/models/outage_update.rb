@@ -44,7 +44,11 @@ class OutageUpdate < ActiveRecord::Base
   end
 
   def load_translations
-    outage_translations(true).each do |tr|
+    ::OutageTranslation.joins(
+        'RIGHT JOIN languages ON languages.id = outage_translations.language_id'
+    ).where(
+        outage_update_id: id,
+    ).each do |tr|
       %i(summary description).each do |param|
         define_singleton_method("#{tr.language.code}_#{param}") do
           tr.send(param)
