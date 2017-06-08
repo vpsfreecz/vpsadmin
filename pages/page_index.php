@@ -21,6 +21,10 @@
 */
 
 $xtpl->sbar_add(_('Outages'), '?page=outage&action=list');
+
+if ($_SESSION['logged_in'] && $api->monitored_event)
+	$xtpl->sbar_add(_("Monitoring"), '?page=monitoring&action=list');
+
 $xtpl->sbar_out(_('Overview'));
 
 $xtpl->title(_("Overview"));

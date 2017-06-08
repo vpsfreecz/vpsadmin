@@ -17,6 +17,9 @@ function cluster_header() {
 	if ($api->outage)
 		$xtpl->sbar_add(_("Outage list"), '?page=outage&action=list');
 
+	if ($api->monitored_event)
+		$xtpl->sbar_add(_("Monitoring"), '?page=monitoring&action=list');
+
 	if ($api->news_log)
 		$xtpl->sbar_add(_("Event log"), '?page=cluster&action=eventlog');
 
