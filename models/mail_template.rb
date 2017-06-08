@@ -115,6 +115,7 @@ class MailTemplate < ActiveRecord::Base
   # @option opts [String] text_plain
   # @option opts [String] text_html
   # @option opts [User, nil] user whom to send mail
+  # @option opts [Symbol] role contact mail role
   # @option opts [Hash] vars variables passed to the template
   # @option opts [Array<String>] to
   # @option opts [Array<String>] cc
@@ -152,14 +153,45 @@ class MailTemplate < ActiveRecord::Base
         text_html: opts[:text_html] && builder.build(opts[:text_html]),
     )
 
-    recipients = {to: opts[:to] || [], cc: opts[:cc] || [], bcc: opts[:bcc] || []}
+    recps = {to: opts[:to] || [], cc: opts[:cc] || [], bcc: opts[:bcc] || []}
+    recps[:to].concat(recipients(opts[:user], [opts[:role]])) if opts[:user] && opts[:role]
     
     %i(to cc bcc).each do |t|
-      mail.send("#{t}=", recipients[t].uniq.join(','))
+      mail.send("#{t}=", recps[t].uniq.join(','))
     end
 
     mail.save!
     mail
+  end
+  
+  # Returns a list of e-mail recipients, tries to find role recipients,
+  # user template recipients and defaults to the primary e-mail address.
+  # @param user [User]
+  # @return [Array<String] list of e-mail addresses
+  def self.recipients(user, roles)
+    ret = []
+    return ret unless user
+
+    # Template recipients
+    user.user_mail_template_recipients.where(
+        mail_template: self
+    ).each do |recp|
+      if recp.disabled?
+        raise VpsAdmin::API::Exceptions::MailTemplateDisabled, name
+      end
+
+      ret.concat(recp.to.split(','))
+    end
+
+    if ret.empty?
+      user.user_mail_role_recipients.where(role: roles).each do |recp|
+        ret.concat(recp.to.split(','))
+      end
+    end
+
+    ret << user.email if ret.empty?
+    ret.uniq!
+    ret
   end
 
   # Register built-in templates
@@ -251,34 +283,8 @@ class MailTemplate < ActiveRecord::Base
   
   enum user_visibility: %i(default visible invisible)
 
-  # Returns a list of e-mail recipients, tries to find role recipients,
-  # user template recipients and defaults to the primary e-mail address.
-  # @param user [User]
-  # @return [Array<String] list of e-mail addresses
   def recipients(user)
-    ret = []
-    return ret unless user
-
-    # Template recipients
-    user.user_mail_template_recipients.where(
-        mail_template: self
-    ).each do |recp|
-      if recp.disabled?
-        raise VpsAdmin::API::Exceptions::MailTemplateDisabled, name
-      end
-
-      ret.concat(recp.to.split(','))
-    end
-
-    if ret.empty?
-      user.user_mail_role_recipients.where(role: desc[:roles]).each do |recp|
-        ret.concat(recp.to.split(','))
-      end
-    end
-
-    ret << user.email if ret.empty?
-    ret.uniq!
-    ret
+    self.class.recipients(user, desc[:roles])
   end
 
   def desc
