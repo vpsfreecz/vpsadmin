@@ -110,6 +110,58 @@ class MailTemplate < ActiveRecord::Base
     nil
   end
 
+  # @param opts [Hash] options
+  # @option opts [String] subject (required)
+  # @option opts [String] text_plain
+  # @option opts [String] text_html
+  # @option opts [User, nil] user whom to send mail
+  # @option opts [Hash] vars variables passed to the template
+  # @option opts [Array<String>] to
+  # @option opts [Array<String>] cc
+  # @option opts [Array<String>] bcc
+  # @option opts [String] from (required)
+  # @option opts [String] reply_to
+  # @option opts [String] return_path
+  # @option opts [String] message_id
+  # @option opts [String] in_reply_to
+  # @option opts [String] references
+  # @return [MailLog]
+  def self.send_custom(opts)
+    if !opts[:subject]
+      fail 'subject needed'
+
+    elsif !opts[:text_plain] && !opts[:text_html]
+      fail 'provide text_plain, text_html or both'
+
+    elsif !opts[:from]
+      fail 'from needed'
+    end
+
+    builder = MailTemplateTranslation::TemplateBuilder.new(opts[:vars] || {})
+
+    mail = MailLog.new(
+        user: opts[:user],
+        from: opts[:from],
+        reply_to: opts[:reply_to],
+        return_path: opts[:return_path],
+        message_id: opts[:message_id],
+        in_reply_to: opts[:in_reply_to],
+        references: opts[:references],
+        subject: builder.build(opts[:subject]),
+        text_plain: opts[:text_plain] && builder.build(opts[:text_plain]),
+        text_html: opts[:text_html] && builder.build(opts[:text_html]),
+    )
+
+    recipients = {to: opts[:to] || [], cc: opts[:cc] || [], bcc: opts[:bcc] || []}
+    
+    %i(to cc bcc).each do |t|
+      mail.send("#{t}=", recipients[t].uniq.join(','))
+    end
+
+    mail.save!
+    mail
+  end
+
   # Register built-in templates
   role :account, label: 'Account management'
   role :admin, label: 'System administrator'

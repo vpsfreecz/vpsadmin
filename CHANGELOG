@@ -1,3 +1,5 @@
+- Support for sending custom mails without templates
+
 * Wed Jun 07 2017 - version 2.8.0
 - `User.Index`: filter by admin privilege
 - `Node.pick_by_env`: don't filter by location

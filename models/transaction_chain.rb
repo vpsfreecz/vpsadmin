@@ -270,6 +270,13 @@ class TransactionChain < ActiveRecord::Base
     m
   end
 
+  def mail_custom(*args)
+    m = ::MailTemplate.send_custom(*args)
+    append(Transactions::Mail::Send, args: [find_mail_server, m])
+    m.update!(transaction_id: @last_id)
+    m
+  end
+
   # Set chain concerns.
   # +type+ can be one of:
   # [affect]     the chain affects these objects
