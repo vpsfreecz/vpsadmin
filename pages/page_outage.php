@@ -231,6 +231,26 @@ if ($_SESSION['logged_in']) {
 		}
 		break;
 
+	case 'set_state':
+		if ($_SESSION['is_admin'] && $_SERVER['REQUEST_METHOD'] === 'POST') {
+			csrf_check();
+
+			try {
+				$api->outage->update($_GET['id'], array(
+					'send_mail' => isset($_POST['send_mail']),
+					'state' => $_POST['state']
+				));
+
+				notify_user(_('State set'), _('The outage state was successfully set.'));
+				redirect('?page=outage&action=show&id='.$_GET['id']);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors('Update failed', $e->getResponse());
+				outage_details($_GET['id']);
+			}
+		}
+		break;
+
 	case 'list':
 		outage_list();
 		break;

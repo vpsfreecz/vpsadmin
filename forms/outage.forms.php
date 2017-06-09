@@ -374,7 +374,7 @@ function outage_details ($id) {
 
 	if ($_SESSION['is_admin'] && $outage->state == 'staged') {
 		$xtpl->table_title(_('Change state'));
-		$xtpl->form_create('?page=outage&action=update&id='.$id, 'post');
+		$xtpl->form_create('?page=outage&action=set_state&id='.$id, 'post');
 		$xtpl->form_add_select(_('State').':', 'state', array(
 			'announced' => _('Announce'),
 			'cancelled' => _('Cancel'),
