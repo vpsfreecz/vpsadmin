@@ -236,6 +236,8 @@ END
         input[:user] ||= current_user
 
       else
+        object_state_check!(current_user)
+
         if input[:environment].nil? && input[:location].nil?
           error('provide either an environment or a location')
         end
@@ -358,6 +360,7 @@ END
     def exec
       vps = ::Vps.including_deleted.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
+      object_state_check!(vps, vps.user)
 
       if input.empty?
         error('provide at least one attribute to update')
@@ -417,6 +420,7 @@ END
     def exec
       vps = ::Vps.including_deleted.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
+      object_state_check!(vps.user)
       
       if current_user.role == :admin
         state = input[:lazy] ? :soft_delete : :hard_delete
@@ -675,6 +679,7 @@ END
     def exec
       vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
+      object_state_check!(vps.user)
 
       if current_user.role == :admin
         input[:user] ||= current_user
@@ -763,6 +768,7 @@ END
       )
       maintenance_check!(vps)
       maintenance_check!(input[:vps])
+      object_state_check!(vps.user)
 
       if vps.user != input[:vps].user
         error('access denied')
@@ -822,7 +828,7 @@ END
 
   include VpsAdmin::API::Maintainable::Action
   include VpsAdmin::API::Lifetimes::Resource
-  add_lifetime_methods([Start, Stop, Restart])
+  add_lifetime_methods([Start, Stop, Restart, Create, Clone, Update, Delete, SwapWith])
 
   class Config < HaveAPI::Resource
     route ':vps_id/configs'
