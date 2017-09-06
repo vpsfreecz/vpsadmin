@@ -93,6 +93,9 @@ module TransactionChains
               }))
             end
 
+          when 'cpu_limit'
+            db_changes[vps][attr] = vps.send(attr) == 0 ? nil : vps.send(attr)
+
           when 'config'
             # FIXME
 
@@ -112,13 +115,15 @@ module TransactionChains
           lock_type: opts[:admin_lock_type]
       )
 
-      unless resources.empty?
+      if !resources.empty? || vps.cpu_limit_changed?
         append(Transactions::Utils::NoOp, args: find_node_id) do
           data = {}
 
           resources.each do |use|
             data[ use.user_cluster_resource.cluster_resource.name ] = use.value
           end
+
+          data['cpu_limit'] = vps.cpu_limit if vps.cpu_limit_changed?
 
           just_create(vps.log(:resources, data))
         end

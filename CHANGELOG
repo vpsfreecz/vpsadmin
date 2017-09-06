@@ -1,4 +1,5 @@
 - Support for sending custom mails without templates
+- Admins can set CPU limit directly
 
 * Wed Jun 07 2017 - version 2.8.0
 - `User.Index`: filter by admin privilege

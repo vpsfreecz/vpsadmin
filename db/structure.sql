@@ -1,6 +1,6 @@
--- MySQL dump 10.15  Distrib 10.0.29-MariaDB, for Linux (x86_64)
+-- MySQL dump 10.16  Distrib 10.1.24-MariaDB, for Linux (x86_64)
 --
--- Host: 192.168.122.10    Database: 192.168.122.10
+-- Host: 192.168.122.10    Database: vpsadmin_core
 -- ------------------------------------------------------
 -- Server version	5.1.73
 
@@ -1859,6 +1859,7 @@ CREATE TABLE `vpses` (
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   `manage_hostname` tinyint(1) NOT NULL DEFAULT '1',
+  `cpu_limit` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_vpses_on_dataset_in_pool_id` (`dataset_in_pool_id`) USING BTREE,
   KEY `index_vpses_on_dns_resolver_id` (`dns_resolver_id`) USING BTREE,
@@ -1878,7 +1879,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-04-06 13:36:52
+-- Dump completed on 2017-09-06 17:31:58
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2074,4 +2075,6 @@ INSERT INTO schema_migrations (version) VALUES ('20170203122106');
 INSERT INTO schema_migrations (version) VALUES ('20170204092606');
 
 INSERT INTO schema_migrations (version) VALUES ('20170325151018');
+
+INSERT INTO schema_migrations (version) VALUES ('20170610084155');
 

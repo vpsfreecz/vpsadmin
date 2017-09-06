@@ -48,6 +48,7 @@ module TransactionChains
           onboot: vps.onboot,
           onstartall: vps.onstartall,
           config: attrs[:configs] ? vps.config : '',
+          cpu_limit: attrs[:resources] ? vps.cpu_limit : nil,
           confirmed: ::Vps.confirmed(:confirm_create)
       )
       

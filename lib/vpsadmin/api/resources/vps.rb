@@ -28,6 +28,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
          desc: 'Start VPS on start all action?', default: true
     string :config, label: 'Config', desc: 'Custom configuration options',
            default: ''
+    integer :cpu_limit, label: 'CPU limit', desc: 'Limit of maximum CPU usage'
   end
 
   params(:dataset) do

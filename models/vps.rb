@@ -68,6 +68,7 @@ class Vps < ActiveRecord::Base
       with: /\A[a-zA-Z\-_\.0-9]{0,255}\z/,
       message: 'bad format'
   }
+  validates :cpu_limit, numericality: {only_integer: true, greater_than_or_equal_to: 0}
   validate :foreign_keys_exist
 
   default_scope {
