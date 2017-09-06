@@ -1,4 +1,5 @@
 - Browser of monitored events
+- Support for setting CPU limit directly
 
 * Wed Jun 07 2017 - version 2.8.0
 - VPS clone form: hide environment for users

@@ -325,7 +325,7 @@ switch ($_GET["action"]) {
 				csrf_check();
 
 				try {
-					$vps_resources = array('memory', 'cpu', 'swap');
+					$vps_resources = array('memory', 'cpu', 'cpu_limit', 'swap');
 					$params = array();
 
 					foreach ($vps_resources as $r) {
@@ -1218,6 +1218,18 @@ if (isset($show_info) && $show_info) {
 			unit_for_cluster_resource($name)
 		);
 		$xtpl->table_tr();
+	}
+
+	if ($_SESSION['is_admin']) {
+		$xtpl->form_add_number(
+			_('CPU limit').':',
+			'cpu_limit',
+			post_val('cpu_limit', $vps->cpu_limit),
+			0,
+			10000,
+			25,
+			'%'
+		);
 	}
 
 	if ($_SESSION['is_admin']) {
