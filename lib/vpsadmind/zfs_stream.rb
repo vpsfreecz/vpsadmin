@@ -236,10 +236,10 @@ module VpsAdmind
       suffix = str.strip[-1]
 
       if suffix !~ /^\d+$/
-        units = %w(K M G T)
+        units = %w(B K M G T)
 
         if i = units.index(suffix)
-          (i+1).times { size *= 1024 }
+          i.times { size *= 1024 }
 
         else
           fail "unsupported suffix '#{suffix}'"
