@@ -1,4 +1,9 @@
+- Require HaveAPI 0.10
+- Update ActiveRecord to 4.2 and other dependencies
+- Cluster::GenerateKnownHosts: fix query condition
+- Use structure.sql instead of schema.rb
 - Support for sending custom mails without templates
+- Resource VPS: add missing checks for user's state
 - Admins can set CPU limit directly
 
 * Wed Jun 07 2017 - version 2.8.0
