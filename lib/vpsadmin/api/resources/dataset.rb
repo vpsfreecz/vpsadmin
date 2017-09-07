@@ -121,7 +121,10 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        string :name, label: 'Name', required: true
+        string :name, label: 'Name', required: true, load_validators: false, format: {
+                rx: /\A[a-zA-Z0-9][a-zA-Z0-9_\-:\.\/]{0,254}\z/,
+                message: "'%{value}' is not a valid dataset name"
+            }
         resource Dataset, label: 'Parent dataset',
                  value_label: :full_name
         bool :automount, label: 'Automount',
