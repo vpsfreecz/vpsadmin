@@ -72,6 +72,10 @@ class DatasetInPool < ActiveRecord::Base
     ret
   end
 
+  def effective_quota
+    dataset.effective_quota
+  end
+
   protected
   def recursive_serialize(dataset, children)
     ret = []

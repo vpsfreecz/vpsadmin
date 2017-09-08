@@ -186,6 +186,13 @@ class Dataset < ActiveRecord::Base
     end
   end
 
+  # Since property `quota` can be `none`, i.e. `0`, this method returns
+  # quota from the closest parent that has it set.
+  def effective_quota
+    return quota if quota != 0 || root?
+    parent.effective_quota
+  end
+
   protected
   def cache_full_name
     self.full_name = resolve_full_name
