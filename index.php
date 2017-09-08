@@ -46,6 +46,7 @@ include WWW_ROOT.'forms/lifetimes.forms.php';
 include WWW_ROOT.'forms/object_history.forms.php';
 include WWW_ROOT.'forms/networking.forms.php';
 include WWW_ROOT.'forms/outage.forms.php';
+include WWW_ROOT.'forms/monitoring.forms.php';
 
 include WWW_ROOT.'lib/gettext_stream.lib.php';
 include WWW_ROOT.'lib/gettext_inc.lib.php';
@@ -165,6 +166,9 @@ try {
 				break;
 			case 'outage':
 				include WWW_ROOT.'pages/page_outage.php';
+				break;
+			case 'monitoring':
+				include WWW_ROOT.'pages/page_monitoring.php';
 				break;
 			default:
 				include WWW_ROOT.'pages/page_index.php';
