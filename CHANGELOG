@@ -6,6 +6,7 @@
 - Resource VPS: add missing checks for user's state
 - Admins can set CPU limit directly
 - `Dataset.Create`: accept slash as a dataset delimiter
+- `OsTemplate.Show`: let users access disabled templates
 
 * Wed Jun 07 2017 - version 2.8.0
 - `User.Index`: filter by admin privilege

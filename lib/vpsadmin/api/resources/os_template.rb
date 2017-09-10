@@ -69,7 +69,6 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      restrict enabled: true
       output whitelist: %i(id label info supported enabled)
       allow
     end
