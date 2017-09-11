@@ -32,7 +32,12 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict user_id: u.id
+        restrict user_id: u.id, state: [
+                ::MonitoredEvent.states[:confirmed],
+                ::MonitoredEvent.states[:acknowledged],
+                ::MonitoredEvent.states[:ignored],
+                ::MonitoredEvent.states[:closed],
+            ]
         input blacklist: %i(user)
         allow
       end
@@ -82,7 +87,12 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict user_id: u.id
+        restrict user_id: u.id, state: [
+                ::MonitoredEvent.states[:confirmed],
+                ::MonitoredEvent.states[:acknowledged],
+                ::MonitoredEvent.states[:ignored],
+                ::MonitoredEvent.states[:closed],
+            ]
         allow
       end
 
@@ -110,16 +120,27 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict user_id: u.id
+        restrict user_id: u.id, state: [
+                ::MonitoredEvent.states[:confirmed],
+                ::MonitoredEvent.states[:acknowledged],
+                ::MonitoredEvent.states[:ignored],
+                ::MonitoredEvent.states[:closed],
+            ]
         allow
       end
 
       def exec
-        ::MonitoredEvent.where(with_restricted(
+        event = ::MonitoredEvent.where(with_restricted(
             id: params[:monitored_event_id],
         )).where(
             'access_level <= ?', current_user.level
-        ).take!.ack!(input[:until])
+        ).take!
+
+        if !%w(confirmed acknowledged ignored).include?(event.state)
+          error("events in state '#{event.state}' cannot be acknowledged")
+        end
+
+        event.ack!(input[:until])
         ok
       end
     end
@@ -134,16 +155,27 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict user_id: u.id
+        restrict user_id: u.id, state: [
+                ::MonitoredEvent.states[:confirmed],
+                ::MonitoredEvent.states[:acknowledged],
+                ::MonitoredEvent.states[:ignored],
+                ::MonitoredEvent.states[:closed],
+            ]
         allow
       end
 
       def exec
-        ::MonitoredEvent.where(with_restricted(
+        event = ::MonitoredEvent.where(with_restricted(
             id: params[:monitored_event_id],
         )).where(
             'access_level <= ?', current_user.level
-        ).take!.ignore!(input[:until])
+        ).take!
+
+        if !%w(confirmed acknowledged ignored).include?(event.state)
+          error("events in state '#{event.state}' cannot be ignored")
+        end
+
+        event.ignore!(input[:until])
         ok
       end
     end
