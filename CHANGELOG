@@ -1,6 +1,7 @@
 - Browser of monitored events
 - Support for setting CPU limit directly
 - Outage details: unite state change and post update forms
+- Update haveapi-client-js to v0.10
 
 * Wed Jun 07 2017 - version 2.8.0
 - VPS clone form: hide environment for users

@@ -18,10 +18,10 @@ function Client(url, opts) {
 	while (url.length > 0) {
 		if (url[ url.length - 1 ] == '/')
 			url = url.substr(0, url.length - 1);
-		
+
 		else break;
 	}
-	
+
 	/**
 	 * @member {Object} HaveAPI.Client#_private
 	 * @protected
@@ -32,20 +32,20 @@ function Client(url, opts) {
 		description: null,
 		debug: (opts !== undefined && opts.debug !== undefined) ? opts.debug : 0,
 	};
-	
+
 	this._private.hooks = new Client.Hooks(this._private.debug);
 	this._private.http = new Client.Http(this._private.debug);
-	
+
 	/**
 	 * @member {Object} HaveAPI.Client#apiSettings An object containg API settings.
 	 */
 	this.apiSettings = null;
-	
+
 	/**
 	 * @member {Array} HaveAPI.Client#resources A list of top-level resources attached to the client.
 	 */
 	this.resources = [];
-	
+
 	/**
 	 * @member {Object} HaveAPI.Client#authProvider Selected authentication provider.
 	 */
@@ -53,10 +53,10 @@ function Client(url, opts) {
 }
 
 /** @constant HaveAPI.Client.Version */
-Client.Version = '0.4.0';
+Client.Version = '0.10.0';
 
 /** @constant HaveAPI.Client.ProtocolVersion */
-Client.ProtocolVersion = '1.0';
+Client.ProtocolVersion = '1.2';
 
 /**
  * @namespace Exceptions
@@ -84,18 +84,48 @@ Client.Exceptions = {};
  */
 
 /**
+ * @callback HaveAPI.Client~actionStateCallback
+ * @param {HaveAPI.Client} client
+ * @param {HaveAPI.Client.Response} response
+ * @param {HaveAPI.Client.ActionState} state
+ */
+
+/**
+ * Action call parameters
+ * @typedef {Object} HaveAPI.Client~ActionCall
+ * @property {Object} params - Input parameters
+ * @property {Object} meta - Input meta parameters
+ * @property {Boolean} block
+ * @property {Integer} blockInterval
+ * @property {Integer} blockUpdateIn
+ * @property {HaveAPI.Client~replyCallback} onReply - called when the API responds
+ * @property {HaveAPI.Client~actionStateCallback} onStateChange - called when the
+ *                                                                action's state changes
+ * @property {HaveAPI.Client~replyCallback} onDone - called when the blocking action finishes
+ */
+
+/**
  * Setup resources and actions as properties and functions.
  * @method HaveAPI.Client#setup
  * @param {HaveAPI.Client~doneCallback} callback
  */
 Client.prototype.setup = function(callback) {
 	var that = this;
-	
+
 	this.fetchDescription(function(status, extract) {
+		var desc = null;
+
+		try {
+			desc = extract.call();
+
+		} catch (e) {
+			return callback(that, false);
+		}
+
 		that._private.description = extract.call();
 		that.createSettings();
 		that.attachResources();
-		
+
 		callback(that, true);
 		that._private.hooks.invoke('after', 'setup', that, true);
 	});
@@ -119,8 +149,16 @@ Client.prototype.useDescription = function(description) {
  * @param {HaveAPI.Client~versionsCallback} callback
  */
 Client.prototype.availableVersions = function(callback) {
+	var that = this;
+
 	this.fetchDescription(function (status, extract) {
-		callback(status, extract.call());
+		var versions = null;
+
+		try {
+			versions = extract.call();
+		} catch (e) {}
+
+		callback(that, status && !(versions === null), versions);
 
 	}, '/?describe=versions');
 };
@@ -138,7 +176,7 @@ Client.prototype.isCompatible = function(callback) {
 	var that = this;
 
 	this.fetchDescription(function (status, extract) {
-		
+
 		try {
 			extract.call();
 
@@ -184,8 +222,14 @@ Client.prototype.fetchDescription = function(callback, path) {
 	this._private.http.request({
 		method: 'OPTIONS',
 		url: url,
+		credentials: this.authProvider.credentials(),
+		headers: this.authProvider.headers(),
+		queryParameters: this.authProvider.queryParameters(),
 		callback: function (status, response) {
 			callback(status == 200, function () {
+				if (!response)
+					throw new Client.Exceptions.ProtocolError('Failed to fetch the API description');
+
 				if (response.version === undefined) {
 					throw new Client.Exceptions.ProtocolError(
 						'Incompatible protocol version: the client uses v'+ Client.ProtocolVersion +
@@ -194,7 +238,7 @@ Client.prototype.fetchDescription = function(callback, path) {
 				}
 
 				that._private.protocolVersion = response.version;
-				
+
 				if (response.version == Client.ProtocolVersion) {
 					return response.response;
 				}
@@ -213,7 +257,7 @@ Client.prototype.fetchDescription = function(callback, path) {
 					'WARNING: The client uses protocol v'+ Client.ProtocolVersion +
 					' while the API server uses v'+ response.version
 				);
-				
+
 				return response.response;
 			});
 		}
@@ -230,14 +274,20 @@ Client.prototype.attachResources = function() {
 	if (this.resources.length > 0) {
 		this.destroyResources();
 	}
-	
+
 	for(var r in this._private.description.resources) {
 		if (this._private.debug > 10)
 			console.log("Attach resource", r);
-		
-		this.resources.push(r);
-		
-		this[r] = new Client.Resource(this, r, this._private.description.resources[r], []);
+
+		this[r] = new Client.Resource(
+			this,
+			null,
+			r,
+			this._private.description.resources[r],
+			[]
+		);
+
+		this.resources.push(this[r]);
 	}
 };
 
@@ -254,35 +304,37 @@ Client.prototype.attachResources = function() {
  */
 Client.prototype.authenticate = function(method, opts, callback, reset) {
 	var that = this;
-	
+
 	if (reset === undefined) reset = true;
-	
+
 	if (!this._private.description) {
 		// The client has not yet been setup.
 		// Fetch the description, do NOT attach the resources, use it only to authenticate.
-		
+
 		this.fetchDescription(function(status, extract) {
 			that._private.description = extract.call();
 			that.createSettings();
 			that.authenticate(method, opts, callback);
 		});
-		
+
 		return;
 	}
-	
+
 	this.authProvider = new Authentication.providers[method](this, opts, this._private.description.authentication[method]);
-	
-	this.authProvider.setup(function() {
+
+	this.authProvider.setup(function(c, status) {
 		// Fetch new description, which may be different when authenticated
-		if (reset) {
-			that.setup(function(c, status) {
-				callback(c, status);
+		if (status && reset) {
+			that.setup(function(c2, status2) {
+				callback(c2, status2);
 				that._private.hooks.invoke('after', 'authenticated', that, true);
 			});
-			
+
 		} else {
-			callback(that, true);
-			that._private.hooks.invoke('after', 'authenticated', that, true);
+			callback(that, status);
+
+			if (status)
+				that._private.hooks.invoke('after', 'authenticated', that, true);
 		}
 	});
 };
@@ -296,12 +348,12 @@ Client.prototype.authenticate = function(method, opts, callback, reset) {
  */
 Client.prototype.logout = function(callback) {
 	var that = this;
-	
+
 	this.authProvider.logout(function() {
 		that.authProvider = new Client.Authentication.Base();
 		that.destroyResources();
 		that._private.description = null;
-		
+
 		if (callback !== undefined)
 			callback(that, true);
 	});
@@ -311,81 +363,135 @@ Client.prototype.logout = function(callback) {
  * Always calls the callback with {@link HaveAPI.Client.Response} object. It does
  * not interpret the response.
  * @method HaveAPI.Client#directInvoke
- * @param {HaveAPI.Client~replyCallback} callback
+ * @param {HaveAPI.Client.Action} action
+ * @param {HaveAPI.Client~ActionCall} opts
  */
-Client.prototype.directInvoke = function(action, params, callback) {
+Client.prototype.directInvoke = function(action, opts) {
 	if (this._private.debug > 5)
-		console.log("Executing", action, "with params", params, "at", action.preparedUrl);
-	
+		console.log("Executing", action, "with opts", opts, "at", action.preparedUrl);
+
 	var that = this;
-	
-	var opts = {
+	var block = opts.block === undefined ? true : opts.block;
+
+	var httpOpts = {
 		method: action.httpMethod(),
 		url: this._private.url + action.preparedUrl,
 		credentials: this.authProvider.credentials(),
 		headers: this.authProvider.headers(),
 		queryParameters: this.authProvider.queryParameters(),
 		callback: function(status, response) {
-			if(callback !== undefined) {
-				callback(that, new Client.Response(action, response));
+			var res = new Client.Response(action, response);
+
+			if(opts.onReply !== undefined)
+				opts.onReply(that, res);
+
+			if (action.description.blocking && res.meta().action_state_id && opts.block) {
+				if (opts.onStateChange || opts.onDone) {
+					Action.waitForCompletion({
+						id: res.meta().action_state_id,
+						client: that,
+						reply: res,
+						blockInterval: opts.blockInterval,
+						blockUpdateIn: opts.blockUpdateIn,
+						onStateChange: opts.onStateChange,
+						onDone: opts.onDone
+					});
+				}
 			}
 		}
 	};
-	
-	var paramsInQuery = this.sendAsQueryParams(opts.method);
-	var meta = null;
+
+	var paramsInQuery = this.sendAsQueryParams(httpOpts.method);
 	var metaNs = this.apiSettings.meta.namespace;
-	
-	if (params && params.hasOwnProperty('meta')) {
-		meta = params.meta;
-		delete params.meta;
-	}
-	
+
 	if (paramsInQuery) {
-		opts.url = this.addParamsToQuery(opts.url, action.namespace('input'), params);
-		
-		if (meta)
-			opts.url = this.addParamsToQuery(opts.url, metaNs, meta);
-		
+		httpOpts.url = this.addParamsToQuery(
+			httpOpts.url,
+			action.namespace('input'),
+			opts.params
+		);
+
+		if (opts.meta) {
+			httpOpts.url = this.addParamsToQuery(
+				httpOpts.url,
+				metaNs,
+				opts.meta
+			);
+		}
+
 	} else {
 		var scopedParams = {};
-		scopedParams[ action.namespace('input') ] = params;
-		
-		if (meta)
-			scopedParams[metaNs] = meta;
-		
-		opts.params = scopedParams;
+		var ns = action.namespace('input');
+
+		if (ns)
+			scopedParams[ns] = opts.params;
+
+		if (opts.meta)
+			scopedParams[metaNs] = opts.meta;
+
+		httpOpts.params = scopedParams;
 	}
-	
-	this._private.http.request(opts);
+
+	this._private.http.request(httpOpts);
 };
 
 /**
  * The response is interpreted and if the layout is object or object_list, ResourceInstance
  * or ResourceInstanceList is returned with the callback.
  * @method HaveAPI.Client#invoke
- * @param {HaveAPI.Client~replyCallback} callback
+ * @param {HaveAPI.Client.Action} action
+ * @param {HaveAPI.Client~ActionCall} opts
  */
-Client.prototype.invoke = function(action, params, callback) {
+Client.prototype.invoke = function(action, opts) {
 	var that = this;
-	
-	this.directInvoke(action, params, function(status, response) {
-		if (callback === undefined)
+	var origOnReply = opts.onReply;
+	var origOnBlock = opts.block === undefined ? true : opts.block;
+
+	opts.onReply = function (status, response) {
+		if (!origOnReply && (!action.description.blocking || (!opts.onStateUpdate && !opts.onDone)))
 			return;
-		
+
+		var responseObject;
+
 		switch (action.layout('output')) {
 			case 'object':
-				callback(that, new Client.ResourceInstance(that, action, response));
+				responseObject = new Client.ResourceInstance(
+					that,
+					action.resource._private.parent,
+					action,
+					response
+				);
 				break;
-				
+
 			case 'object_list':
-				callback(that, new Client.ResourceInstanceList(that, action, response));
+				responseObject = new Client.ResourceInstanceList(that, action, response);
 				break;
-			
+
 			default:
-				callback(that, response);
+				responseObject = response;
 		}
-	});
+
+		if (origOnReply)
+			origOnReply(that, responseObject);
+
+		if (action.description.blocking && response.meta().action_state_id && origOnBlock) {
+			if (opts.onStateChange || opts.onDone) {
+				Action.waitForCompletion({
+					id: response.meta().action_state_id,
+					client: that,
+					reply: responseObject,
+					blockInterval: opts.blockInterval,
+					blockUpdateIn: opts.blockUpdateIn,
+					onStateChange: opts.onStateChange,
+					onDone: opts.onDone
+				});
+			}
+		}
+	};
+
+	opts.block = false;
+
+	this.directInvoke(action, opts);
 };
 
 /**
@@ -416,8 +522,8 @@ Client.prototype.createSettings = function() {
  * @private
  */
 Client.prototype.destroyResources = function() {
-	while (this.resources.length < 0) {
-		delete this[ that.resources.shift() ];
+	while (this.resources.length > 0) {
+		delete this[ this.resources.shift().getName() ];
 	}
 };
 
@@ -444,22 +550,22 @@ Client.prototype.sendAsQueryParams = function(method) {
  */
 Client.prototype.addParamsToQuery = function(url, namespace, params) {
 	var first = true;
-	
+
 	for (var key in params) {
 		if (first) {
 			if (url.indexOf('?') == -1)
 				url += '?';
-				
+
 			else if (url[ url.length - 1 ] != '&')
 				url += '&';
-			
+
 			first = false;
-			
+
 		} else url += '&';
-		
+
 		url += encodeURI(namespace) + '[' + encodeURI(key) + ']=' + encodeURI(params[key]);
 	}
-	
+
 	return url;
 };
 
@@ -572,35 +678,48 @@ function Http (debug) {
 Http.prototype.request = function(opts) {
 	if (this.debug > 5)
 		console.log("Request to " + opts.method + " " + opts.url);
-	
+
 	var r = new XMLHttpRequest();
-	
+
 	if (opts.credentials === undefined)
 		r.open(opts.method, opts.url);
 	else
 		r.open(opts.method, opts.url, true, opts.credentials.username, opts.credentials.password);
-	
+
 	for (var h in opts.headers) {
 		r.setRequestHeader(h, opts.headers[h]);
 	}
-	
+
 	if (opts.params !== undefined)
 		r.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
-	
+
 	r.onreadystatechange = function() {
 		var state = r.readyState;
-		
+
 		if (this.debug > 6)
 			console.log('Request state is ' + state);
-		
+
 		if (state == 4 && opts.callback !== undefined) {
-			opts.callback(r.status, JSON.parse(r.responseText));
+			var json = null;
+
+			try {
+				json = JSON.parse(r.responseText);
+
+			} catch (e) {
+				console.log('JSON.parse failed', e);
+			}
+
+			if (json)
+				opts.callback(r.status, json);
+
+			else
+				opts.callback(false, undefined);
 		}
 	};
-	
+
 	if (opts.params !== undefined) {
 		r.send(JSON.stringify( opts.params ));
-		
+
 	} else {
 		r.send();
 	}
@@ -717,7 +836,7 @@ Authentication.Token = function(client, opts, description) {
 	this.opts = opts;
 	this.description = description;
 	this.configured = false;
-	
+
 	/**
 	 * @member {String} HaveAPI.Client.Authentication.Token#token The token received from the API.
 	 */
@@ -730,15 +849,22 @@ Authentication.Token.prototype = new Authentication.Base();
  * @param {HaveAPI.Client~doneCallback} callback
  */
 Authentication.Token.prototype.setup = function(callback) {
-	this.resource = new Client.Resource(this.client, 'token', this.description.resources.token, []);
-	
+	this.resource = new Client.Resource(
+		this.client,
+		null,
+		'token',
+		this.description.resources.token,
+		[]
+	);
+
 	if (this.opts.hasOwnProperty('token')) {
 		this.token = this.opts.token;
+		this.validTo = this.opts.validTo;
 		this.configured = true;
-		
+
 		if(callback !== undefined)
 			callback(this.client, true);
-	
+
 	} else {
 		this.requestToken(callback);
 	}
@@ -754,23 +880,46 @@ Authentication.Token.prototype.requestToken = function(callback) {
 		password: this.opts.password,
 		lifetime: this.opts.lifetime || 'renewable_auto'
 	};
-	
+
 	if(this.opts.interval !== undefined)
 		params.interval = this.opts.interval;
-	
+
 	var that = this;
-	
+
 	this.resource.request(params, function(c, response) {
 		if (response.isOk()) {
 			var t = response.response();
-			
+
 			that.token = t.token;
 			that.validTo = t.valid_to;
 			that.configured = true;
-			
+
 			if(callback !== undefined)
 				callback(that.client, true);
-			
+
+		} else {
+			if(callback !== undefined)
+				callback(that.client, false);
+		}
+	});
+};
+
+/**
+ * @method HaveAPI.Client.Authentication.Token#requestToken
+ * @param {HaveAPI.Client~doneCallback} callback
+ */
+Authentication.Token.prototype.renewToken = function(callback) {
+	var that = this;
+
+	this.resource.renew(function(c, response) {
+		if (response.isOk()) {
+			var t = response.response();
+
+			that.validTo = t.valid_to;
+
+			if(callback !== undefined)
+				callback(that.client, true);
+
 		} else {
 			if(callback !== undefined)
 				callback(that.client, false);
@@ -784,10 +933,10 @@ Authentication.Token.prototype.requestToken = function(callback) {
 Authentication.Token.prototype.headers = function(){
 	if(!this.configured)
 		return;
-	
+
 	var ret = {};
 	ret[ this.description.http_header ] = this.token;
-	
+
 	return ret;
 };
 
@@ -818,11 +967,10 @@ function BaseResource (){};
  */
 BaseResource.prototype.attachResources = function(description, args) {
 	this.resources = [];
-	
+
 	for(var r in description.resources) {
-		this.resources.push(r);
-		
-		this[r] = new Client.Resource(this._private.client, r, description.resources[r], args);
+		this[r] = new Client.Resource(this._private.client, this, r, description.resources[r], args);
+		this.resources.push(this[r]);
 	}
 };
 
@@ -835,18 +983,19 @@ BaseResource.prototype.attachResources = function(description, args) {
  */
 BaseResource.prototype.attachActions = function(description, args) {
 	this.actions = [];
-	
+
 	for(var a in description.actions) {
 		var names = [a].concat(description.actions[a].aliases);
 		var actionInstance = new Client.Action(this._private.client, this, a, description.actions[a], args);
-		
+
 		for(var i = 0; i < names.length; i++) {
 			if (names[i] == 'new')
 				continue;
-			
-			this.actions.push(names[i]);
+
 			this[names[i]] = actionInstance;
 		}
+
+		this.actions.push(a);
 	}
 };
 
@@ -862,31 +1011,41 @@ BaseResource.prototype.defaultParams = function(action) {
 };
 
 /**
+ * @method HaveAPI.Client.BaseResource#getName
+ * @return {String} resource name
+ */
+BaseResource.prototype.getName = function () {
+	return this._private.name;
+};
+
+/**
  * @class Resource
  * @memberof HaveAPI.Client
  */
-function Resource (client, name, description, args) {
+function Resource (client, parent, name, description, args) {
 	this._private = {
 		client: client,
+		parent: parent,
 		name: name,
 		description: description,
 		args: args
 	};
-	
+
 	this.attachResources(description, args);
 	this.attachActions(description, args);
-	
+
 	var that = this;
 	var fn = function() {
 		return new Resource(
 			that._private.client,
+			that._private.parent,
 			that._private.name,
 			that._private.description,
 			that._private.args.concat(Array.prototype.slice.call(arguments))
 		);
 	};
 	fn.__proto__ = this;
-	
+
 	return fn;
 };
 
@@ -897,7 +1056,7 @@ Resource.prototype.applyArguments = function(args) {
 	for(var i = 0; i < args.length; i++) {
 		this._private.args.push(args[i]);
 	}
-	
+
 	return this;
 };
 
@@ -907,7 +1066,7 @@ Resource.prototype.applyArguments = function(args) {
  * @return {HaveAPI.Client.ResourceInstance} resource instance
  */
 Resource.prototype.new = function() {
-	return new Client.ResourceInstance(this.client, this.create, null, false);
+	return new Client.ResourceInstance(this.client, this.parent, this.create, null, false);
 };
 
 /**
@@ -917,7 +1076,7 @@ Resource.prototype.new = function() {
 function Action (client, resource, name, description, args) {
 	if (client._private.debug > 10)
 		console.log("Attach action", name, "to", resource._private.name);
-	
+
 	this.client = client;
 	this.resource = resource;
 	this.name = name;
@@ -925,7 +1084,7 @@ function Action (client, resource, name, description, args) {
 	this.args = args;
 	this.providedIdArgs = [];
 	this.preparedUrl = null;
-	
+
 	var that = this;
 	var fn = function() {
 		var new_a = new Action(
@@ -938,7 +1097,7 @@ function Action (client, resource, name, description, args) {
 		return new_a.invoke();
 	};
 	fn.__proto__ = this;
-	
+
 	return fn;
 };
 
@@ -958,7 +1117,10 @@ Action.prototype.httpMethod = function() {
  * @return {String}
  */
 Action.prototype.namespace = function(direction) {
-	return this.description[direction].namespace;
+	if (this.description[direction])
+		return this.description[direction].namespace;
+
+	return null;
 };
 
 /**
@@ -968,7 +1130,10 @@ Action.prototype.namespace = function(direction) {
  * @return {String}
  */
 Action.prototype.layout = function(direction) {
-	return this.description[direction].layout;
+	if (this.description[direction])
+		return this.description[direction].layout;
+
+	return null;
 };
 
 /**
@@ -992,40 +1157,106 @@ Action.prototype.provideUrl = function(url) {
 /**
  * Invoke the action.
  * This method has a variable number of arguments. Arguments are first applied
- * as object IDs in action URL. When there are no more URL parameters to fill,
- * the second last argument is an Object containing parameters to be sent.
- * The last argument is a {@link HaveAPI.Client~replyCallback} callback function.
- * 
- * The argument with parameters may be omitted, if the callback function
- * is in its place.
- * 
+ * as object IDs in action URL. Then there are two ways in which input parameters
+ * can and other options be given to the action.
+ *
+ * The new-style is to pass {@link HaveAPI.Client~ActionCall} object that contains
+ * input parameters, meta parameters and callbacks.
+ *
+ * The old-style, is to pass an object with parameters (meta parameters are passed
+ * within this object) and the second argument is {@link HaveAPI.Client~replyCallback}
+ * callback function.  The argument with parameters may be omitted if there aren't any,
+ * making the callback function the only additional argument.
+ *
  * Arguments do not have to be passed to this method specifically. They may
  * be given to the resources above, the only thing that matters is their correct
  * order.
- * 
+ *
  * @example
- * // Call with parameters and a callback.
+ * // Call with parameters and a callback (new-style).
  * // The first argument '1' is a VPS ID.
- * api.vps.ip_address.list(1, {limit: 5}, function(c, reply) {
+ * api.vps.ip_address.list(1, {
+ *   params: {limit: 5},
+ *   meta: {count: true},
+ *   onReply: function(c, reply) {
+ * 		console.log("Got", reply.response());
+ *   }
+ * });
+ *
+ * @example
+ * // Call with parameters and a callback (old-style).
+ * // The first argument '1' is a VPS ID.
+ * api.vps.ip_address.list(1, {limit: 5, meta: {count: true}}, function(c, reply) {
  * 		console.log("Got", reply.response());
  * });
- * 
+ *
  * @example
- * // Call only with a callback. 
+ * // Call only with a callback.
  * api.vps.ip_address.list(1, function(c, reply) {
  * 		console.log("Got", reply.response());
  * });
- * 
+ *
  * @example
  * // Give parameters to resources.
  * api.vps(101).ip_address(33).delete();
- * 
+ *
  * @method HaveAPI.Client.Action#invoke
+ *
+ * @example
+ * // Calling blocking actions
+ * api.vps.restart(101, {
+ *   onReply: function (c, reply) {
+ *     console.log('The server has returned a response, the action is being executed.');
+ *   },
+ *   onStateChange: function  (c, reply, state) {
+ *     console.log(
+ *       "The action's state has changed, current progress:",
+ *       state.progress.toString()
+ *     );
+ *   },
+ *   onDone: function (c, reply) {
+ *     console.log('The action is finished');
+ *   }
+ * });
+ *
+ * @example
+ * // If the API server supports it, blocking actions can be cancelled
+ * api.vps.restart(101, {
+ *   onReply: function (c, reply) {
+ *     console.log('The server has returned a response, the action is being executed.');
+ *   },
+ *   onStateChange: function  (c, reply, state) {
+ *     if (state.canCancel) {
+ *       // Cancel action can be blocking too, depends on the API server
+ *       state.cancel({
+ *         onReply: function () {},
+ *         onStateChange: function () {},
+ *         onDone: function () {},
+ *       });
+ *     }
+ *   },
+ *   onDone: function (c, reply) {
+ *     console.log('The action is finished');
+ *   }
+ * });
+ *
  */
 Action.prototype.invoke = function() {
 	var prep = this.prepareInvoke(arguments);
-	
-	this.client.invoke(this, prep.params, prep.callback);
+
+	if (!prep.params.validate()) {
+		prep.callback(this.client, new LocalResponse(
+			this,
+			false,
+			'invalid input parameters',
+			prep.params.errors
+		));
+		return;
+	}
+
+	this.client.invoke(this, Object.assign({}, prep, {
+		params: prep.params.params,
+	}));
 };
 
 /**
@@ -1036,8 +1267,20 @@ Action.prototype.invoke = function() {
  */
 Action.prototype.directInvoke = function() {
 	var prep = this.prepareInvoke(arguments);
-	
-	this.client.directInvoke(this, prep.params, prep.callback);
+
+	if (!prep.params.validate()) {
+		prep.onReply(this.client, new LocalResponse(
+			this,
+			false,
+			'invalid input parameters',
+			prep.params.errors
+		));
+		return;
+	}
+
+	this.client.directInvoke(this, Object.assign({}, prep, {
+		params: prep.params.params
+	}));
 };
 
 /**
@@ -1049,64 +1292,334 @@ Action.prototype.directInvoke = function() {
 Action.prototype.prepareInvoke = function(new_args) {
 	var args = this.args.concat(Array.prototype.slice.call(new_args));
 	var rx = /(:[a-zA-Z\-_]+)/;
-	
+
 	if (!this.preparedUrl)
 		this.preparedUrl = this.description.url;
 
+	// First, apply ids returned from the API
 	for (var i = 0; i < this.providedIdArgs.length; i++) {
 		if (this.preparedUrl.search(rx) == -1)
 			break;
-		
+
 		this.preparedUrl = this.preparedUrl.replace(rx, this.providedIdArgs[i]);
 	}
-	
+
+	// Apply ids passed as arguments
 	while (args.length > 0) {
 		if (this.preparedUrl.search(rx) == -1)
 			break;
-		
+
 		var arg = args.shift();
 		this.providedIdArgs.push(arg);
-	
+
 		this.preparedUrl = this.preparedUrl.replace(rx, arg);
 	}
-	
+
 	if (args.length == 0 && this.preparedUrl.search(rx) != -1) {
 		console.log("UnresolvedArguments", "Unable to execute action '"+ this.name +"': unresolved arguments");
-		
+
 		throw new Client.Exceptions.UnresolvedArguments(this);
 	}
-	
+
 	var that = this;
-	var hasParams = args.length > 0;
-	var isFn = hasParams && args.length == 1 && typeof(args[0]) == "function";
-	var params = hasParams && !isFn ? args[0] : null;
-	
-	if (this.layout('input') == 'object') {
+	var params = this.prepareParams(args);
+
+	// Add default parameters from object instance
+	if (this.layout('input') === 'object') {
 		var defaults = this.resource.defaultParams(this);
-		
+
 		for (var param in this.description.input.parameters) {
-			if ( defaults.hasOwnProperty(param) && (!params || (params && !params.hasOwnProperty(param))) ) {
-				if (!params)
-					params = {};
-				
-				params[ param ] = defaults[ param ];
+			if ( defaults.hasOwnProperty(param) && (
+					 !params.params || (params.params && !params.params.hasOwnProperty(param))
+				 )) {
+				if (!params.params)
+					params.params = {};
+
+				params.params[ param ] = defaults[ param ];
 			}
 		}
 	}
-	
-	return {
-		params: params,
-		callback: function(c, response) {
+
+	return Object.assign({}, params, {
+		params: new Parameters(this, params.params),
+		onReply: function(c, response) {
 			that.preparedUrl = null;
-			
-			if (args.length > 1) {
-				args[1](c, response);
-				
-			} else if(isFn) {
-				args[0](c, response);
-			}
+
+			if (params.onReply)
+				params.onReply(c, response);
+		},
+	});
+};
+
+/**
+ * Determine what kind of a call type was used and return parameters
+ * in a unified object.
+ * @private
+ * @method HaveAPI.Client.Action#prepareParams
+ * @param {Array} mix of input parameters and callbacks
+ * @return {Object}
+ */
+Action.prototype.prepareParams = function (args) {
+	if (!args.length)
+		return {};
+
+	if (args.length == 1 && (args[0].params || args[0].onReply)) {
+		// Parameters passed in an object
+		return args[0];
+	}
+
+	// One parameter is passed, it can be old-style hash of parameters or a callback
+	if (args.length == 1) {
+		if (typeof(args[0]) === 'function') {
+			// The one parameter is a callback -- no input parameters given
+			return {onReply: args[0]};
+		}
+
+		var params = this.separateMetaParams(args[0]);
+
+		return {
+			params: params.params,
+			meta: params.meta
+		};
+
+		var ret = {};
+
+		if (opts.meta) {
+			ret.meta = opts.meta;
+			delete opts.meta;
+		}
+
+		ret.params = opts;
+
+		return ret;
+	}
+
+	// Two or more parameters are passed. The first is a hash of parameters, the second
+	// is a callback. The rest is ignored.
+	var params = this.separateMetaParams(args[0]);
+
+	return {
+		params: params.params,
+		meta: params.meta,
+		onReply: args[1]
+	};
+};
+
+/**
+ * Extract meta parameters from `params` and return and object with keys
+ * `params` (action's input parameters) and `meta` (action's input meta parameters).
+ *
+ * @private
+ * @method HaveAPI.Client.Action#separateMetaParams
+ * @param {Object} action's input parameters, meta parameters may be present
+ * @return {Object}
+ */
+Action.prototype.separateMetaParams = function (params) {
+	var ret = {};
+
+	for (var k in params) {
+		if (!params.hasOwnProperty(k))
+			continue;
+
+		if (k === 'meta') {
+			ret.meta = params[k];
+
+		} else {
+			if (!ret.params)
+				ret.params = {};
+
+			ret.params[k] = params[k];
 		}
 	}
+
+	return ret;
+};
+
+/**
+ * @function HaveAPI.Client.Action.waitForCompletion
+ * @memberof HaveAPI.Client.Action
+ * @static
+ * @param {Object} opts
+ */
+Action.waitForCompletion = function (opts) {
+	var interval = opts.blockInterval || 15;
+	var updateIn = opts.blockUpdateIn || 3;
+
+	var updateState = function (state) {
+		if (!opts.onStateChange)
+			return;
+
+		opts.onStateChange(opts.client, opts.reply, state);
+	};
+
+	var callOnDone = function (reply) {
+		if (!opts.onDone)
+			return;
+
+		opts.onDone(opts.client, reply || opts.reply);
+	};
+
+	var onPoll = function (c, reply) {
+		if (!reply.isOk())
+			return callOnDone(reply);
+
+		var state = new ActionState(reply.response());
+
+		updateState(state);
+
+		if (state.finished)
+			return callOnDone();
+
+		if (state.shouldStop())
+			return;
+
+		if (state.shouldCancel()) {
+			if (!state.canCancel)
+				throw new Client.Exceptions.UncancelableAction(opts.id);
+
+			return opts.client.action_state.cancel(
+				opts.id,
+				Object.assign({}, opts, state.cancelOpts)
+			);
+		}
+
+		opts.client.action_state.poll(opts.id, {
+			params: {
+				timeout: interval,
+				update_in: updateIn,
+				current: state.progress.current,
+				total: state.progress.total,
+				status: state.status
+			},
+			onReply: onPoll
+		});
+	};
+
+	opts.client.action_state.show(opts.id, onPoll);
+};
+
+/**
+ * @class ActionState
+ * @memberof HaveAPI.Client
+ */
+function ActionState (state) {
+	/**
+	 * @member {Integer} HaveAPI.Client.ActionState#id
+	 * @readonly
+	 */
+	this.id = state.id;
+
+	/**
+	 * @member {String} HaveAPI.Client.ActionState#label
+	 * @readonly
+	 */
+	this.label = state.label;
+
+	/**
+	 * @member {Boolean} HaveAPI.Client.ActionState#finished
+	 * @readonly
+	 */
+	this.finished = state.finished;
+
+	/**
+	 * @member {Boolean} HaveAPI.Client.ActionState#status
+	 * @readonly
+	 */
+	this.status = state.status;
+
+	/**
+	 * @member {Date} HaveAPI.Client.ActionState#createdAt
+	 * @readonly
+	 */
+	this.createdAt = state.created_at && new Date(state.created_at);
+
+	/**
+	 * @member {Date} HaveAPI.Client.ActionState#updatedAt
+	 * @readonly
+	 */
+	this.updatedAt = state.updated_at && new Date(state.updated_at);
+
+	/**
+	 * @member {Boolean} HaveAPI.Client.ActionState#canCancel
+	 * @readonly
+	 */
+	this.canCancel = state.can_cancel;
+
+	/**
+	 * @member {HaveAPI.Client.ActionState.Progress} HaveAPI.Client.ActionState#progress
+	 * @readonly
+	 */
+	this.progress = new ActionState.Progress(state);
+};
+
+/**
+ * Stop tracking of this action state
+ * @method HaveAPI.Client.ActionState#stop
+ */
+ActionState.prototype.stop = function () {
+	this.doStop = true;
+};
+
+/**
+ * @method HaveAPI.Client.ActionState#shouldStop
+ */
+ActionState.prototype.shouldStop = function () {
+	return this.doStop || false;
+};
+
+/**
+ * Cancel execution of this action. Action can be cancelled only if
+ * {@link HaveAPI.Client.ActionState#canCancel}  is `true`, otherwise exception
+ * {@link HaveAPI.Client.Exceptions.UncancelableAction} is thrown.
+ *
+ * Note that the cancellation can be a blocking action, so you can pass standard callback
+ * functions.
+ *
+ * @method HaveAPI.Client.ActionState#cancel
+ * @param {HaveAPI.Client~ActionCall} opts
+ */
+ActionState.prototype.cancel = function (opts) {
+	this.doCancel = true;
+	this.cancelOpts = opts;
+};
+
+/**
+ * @method HaveAPI.Client.ActionState#shouldCancel
+ */
+ActionState.prototype.shouldCancel = function () {
+	return this.doCancel || false;
+};
+
+/**
+ * @class HaveAPI.Client.ActionState.Progress
+ * @memberof HaveAPI.Client.ActionState
+ */
+ActionState.Progress = function (state) {
+	/**
+   * @member {Integer} HaveAPI.Client.ActionState.Progress#current
+	 * @readonly
+	 */
+	this.current = state.current;
+
+	/**
+	 * @member {Integer} HaveAPI.Client.ActionState.Progress#total
+	 * @readonly
+	 */
+	this.total = state.total;
+
+	/**
+	 * @member {String} HaveAPI.Client.ActionState.Progress#unit
+	 * @readonly
+	 */
+	this.unit = state.unit;
+};
+
+/**
+ * @method HaveAPI.Client.ActionState.Progress#toString
+ * @return {String}
+ */
+ActionState.Progress.prototype.toString = function () {
+	return this.current + "/" + this.total + " " + this.unit;
 };
 
 /**
@@ -1135,14 +1648,17 @@ Response.prototype.isOk = function() {
 Response.prototype.response = function() {
 	if(!this.action)
 		return this.envelope.response;
-	
+
+        if (!this.envelope.response)
+            return null;
+
 	switch (this.action.layout('output')) {
 		case 'object':
 		case 'object_list':
 		case 'hash':
 		case 'hash_list':
 			return this.envelope.response[ this.action.namespace('output') ];
-		
+
 		default:
 			return this.envelope.response;
 	}
@@ -1164,13 +1680,29 @@ Response.prototype.message = function() {
  */
 Response.prototype.meta = function() {
 	var metaNs = this.action.client.apiSettings.meta.namespace;
-	
-	if (this.envelope.response.hasOwnProperty(metaNs))
+
+	if (this.envelope.response && this.envelope.response.hasOwnProperty(metaNs))
 		return this.envelope.response[metaNs];
-	
+
 	return {};
 };
 
+
+/**
+ * @class LocalResponse
+ * @memberof HaveAPI.Client
+ * @augments HaveAPI.Client.Response
+ */
+function LocalResponse (action, status, message, errors) {
+	this.action = action;
+	this.envelope = {
+		status: status,
+		message: message,
+		errors: errors,
+	};
+};
+
+LocalResponse.prototype = new Response();
 
 /**
  * @class ResourceInstance
@@ -1189,57 +1721,58 @@ Response.prototype.meta = function() {
  *                                            but just an object with parameters.
  * @memberof HaveAPI.Client
  */
-function ResourceInstance (client, action, response, shell, item) {
+function ResourceInstance (client, parent, action, response, shell, item) {
 	this._private = {
 		client: client,
+		parent: parent,
 		action: action,
 		response: response,
 		name: action.resource._private.name,
 		description: action.resource._private.description
 	};
-	
+
 	if (!response) {
 		if (shell !== undefined && shell) { // association that is to be fetched
 			this._private.resolved = false;
 			this._private.persistent = true;
-			
+
 			var that = this;
-			
+
 			action.directInvoke(function(c, response) {
 				that.attachResources(that._private.action.resource._private.description, response.meta().url_params);
 				that.attachActions(that._private.action.resource._private.description, response.meta().url_params);
 				that.attachAttributes(response.response());
-				
+
 				that._private.resolved = true;
-				
+
 				if (that._private.resolveCallbacks !== undefined) {
 					for (var i = 0; i < that._private.resolveCallbacks.length; i++)
 						that._private.resolveCallbacks[i](that._private.client, that);
-					
+
 					delete that._private.resolveCallbacks;
 				}
 			});
-			
+
 		} else { // a new, empty instance
 			this._private.resolved = true;
 			this._private.persistent = false;
-			
+
 			this.attachResources(this._private.action.resource._private.description, action.providedIdArgs);
 			this.attachActions(this._private.action.resource._private.description, action.providedIdArgs);
 			this.attachStubAttributes();
 		}
-		
+
 	} else if (item || response.isOk()) {
 		this._private.resolved = true;
 		this._private.persistent = true;
-		
+
 		var metaNs = client.apiSettings.meta.namespace;
 		var idArgs = item ? response[metaNs].url_params : response.meta().url_params;
-		
+
 		this.attachResources(this._private.action.resource._private.description, idArgs);
 		this.attachActions(this._private.action.resource._private.description, idArgs);
 		this.attachAttributes(item ? response : response.response());
-		
+
 	} else {
 		// FIXME
 	}
@@ -1279,29 +1812,29 @@ ResourceInstance.prototype.apiResponse = function() {
  */
 ResourceInstance.prototype.save = function(callback) {
 	var that = this;
-	
+
 	function updateAttrs(attrs) {
 		for (var attr in attrs) {
 			that._private.attributes[ attr ] = attrs[ attr ];
 		}
 	};
-	
+
 	function replyCallback(c, reply) {
 		that._private.response = reply;
 		updateAttrs(reply);
-		
+
 		if (callback !== undefined)
 			callback(c, that);
 	}
-	
+
 	if (this._private.persistent) {
 		this.update.directInvoke(replyCallback);
-		
+
 	} else {
 		this.create.directInvoke(function(c, reply) {
 			if (reply.isOk())
 				that._private.persistent = true;
-			
+
 			replyCallback(c, reply);
 		});
 	}
@@ -1309,23 +1842,23 @@ ResourceInstance.prototype.save = function(callback) {
 
 ResourceInstance.prototype.defaultParams = function(action) {
 	ret = {}
-	
+
 	for (var attr in this._private.attributes) {
 		var desc = action.description.input.parameters[ attr ];
-		
+
 		if (desc === undefined)
 			continue;
-		
+
 		switch (desc.type) {
 			case 'Resource':
 				ret[ attr ] = this._private.attributes[ attr ][ desc.value_id ];
 				break;
-			
+
 			default:
 				ret[ attr ] = this._private.attributes[ attr ];
 		}
 	}
-	
+
 	return ret;
 };
 
@@ -1339,20 +1872,33 @@ ResourceInstance.prototype.defaultParams = function(action) {
  */
 ResourceInstance.prototype.resolveAssociation = function(attr, path, url) {
 	var tmp = this._private.client;
-	
+
 	for(var i = 0; i < path.length; i++) {
 		tmp = tmp[ path[i] ];
 	}
-	
+
 	var obj = this._private.attributes[ attr ];
 	var metaNs = this._private.client.apiSettings.meta.namespace;
 	var action = tmp.show;
 	action.provideIdArgs(obj[metaNs].url_params);
-	
+
 	if (obj[metaNs].resolved)
-		return new Client.ResourceInstance(this._private.client, action, obj, false, true);
-	
-	return new Client.ResourceInstance(this._private.client, action, null, true);
+		return new Client.ResourceInstance(
+			this._private.client,
+			action.resource._private.parent,
+			action,
+			obj,
+			false,
+			true
+		);
+
+	return new Client.ResourceInstance(
+		this._private.client,
+		action.resource._private.parent,
+		action,
+		null,
+		true
+	);
 };
 
 /**
@@ -1364,11 +1910,11 @@ ResourceInstance.prototype.resolveAssociation = function(attr, path, url) {
 ResourceInstance.prototype.whenResolved = function(callback) {
 	if (this._private.resolved)
 		callback(this._private.client, this);
-	
+
 	else {
 		if (this._private.resolveCallbacks === undefined)
 			this._private.resolveCallbacks = [];
-		
+
 		this._private.resolveCallbacks.push(callback);
 	}
 };
@@ -1382,13 +1928,13 @@ ResourceInstance.prototype.whenResolved = function(callback) {
 ResourceInstance.prototype.attachAttributes = function(attrs) {
 	this._private.attributes = attrs;
 	this._private.associations = {};
-	
+
 	var metaNs = this._private.client.apiSettings.meta.namespace;
-	
+
 	for (var attr in attrs) {
 		if (attr === metaNs)
 			continue;
-		
+
 		this.createAttribute(attr, this._private.action.description.output.parameters[ attr ]);
 	}
 };
@@ -1401,7 +1947,7 @@ ResourceInstance.prototype.attachAttributes = function(attrs) {
 ResourceInstance.prototype.attachStubAttributes = function() {
 	var attrs = {};
 	var params = this._private.action.description.input.parameters;
-	
+
 	for (var attr in params) {
 		switch (params[ attr ].type) {
 			case 'Resource':
@@ -1409,12 +1955,12 @@ ResourceInstance.prototype.attachStubAttributes = function() {
 				attrs[ attr ][ params[attr].value_id ] = null;
 				attrs[ attr ][ params[attr].value_label ] = null;
 				break;
-			
+
 			default:
 				attrs[ attr ] = null;
 		}
 	}
-	
+
 	this.attachAttributes(attrs);
 };
 
@@ -1427,14 +1973,14 @@ ResourceInstance.prototype.attachStubAttributes = function() {
  */
 ResourceInstance.prototype.createAttribute = function(attr, desc) {
 	var that = this;
-	
+
 	switch (desc.type) {
 		case 'Resource':
 			Object.defineProperty(this, attr, {
 				get: function() {
 						if (that._private.associations.hasOwnProperty(attr))
 							return that._private.associations[ attr ];
-						
+
 						return that._private.associations[ attr ] = that.resolveAssociation(
 							attr,
 							desc.resource,
@@ -1446,14 +1992,14 @@ ResourceInstance.prototype.createAttribute = function(attr, desc) {
 						that._private.attributes[ attr ][ desc.value_label ] = v[ desc.value_label ];
 					}
 			});
-			
+
 			Object.defineProperty(this, attr + '_id', {
 				get: function()  { return that._private.attributes[ attr ][ desc.value_id ];  },
 				set: function(v) { that._private.attributes[ attr ][ desc.value_id ] = v;     }
 			});
-			
+
 			break;
-		
+
 		default:
 			Object.defineProperty(this, attr, {
 				get: function()  { return that._private.attributes[ attr ];  },
@@ -1471,26 +2017,33 @@ ResourceInstance.prototype.createAttribute = function(attr, desc) {
  */
 function ResourceInstanceList (client, action, response) {
 	this.response = response;
-	
+
 	/**
 	 * @member {Array} HaveAPI.Client.ResourceInstanceList#items An array containg all items.
 	 */
 	this.items = [];
-	
+
 	var ret = response.response();
-	
+
 	/**
 	 * @member {integer} HaveAPI.Client.ResourceInstanceList#length Number of items in the list.
 	 */
-	this.length = ret.length;
-	
+	this.length = ret ? ret.length : 0;
+
 	/**
 	 * @member {integer} HaveAPI.Client.ResourceInstanceList#totalCount Total number of items available.
 	 */
 	this.totalCount = response.meta().total_count;
-	
+
 	for (var i = 0; i < this.length; i++)
-		this.items.push(new Client.ResourceInstance(client, action, ret[i], false, true));
+		this.items.push(new Client.ResourceInstance(
+			client,
+			action.resource._private.parent,
+			action,
+			ret[i],
+			false,
+			true
+		));
 };
 
 /**
@@ -1544,7 +2097,7 @@ ResourceInstanceList.prototype.itemAt = function(index) {
 ResourceInstanceList.prototype.first = function() {
 	if (this.length == 0)
 		return null;
-	
+
 	return this.items[0];
 };
 
@@ -1556,8 +2109,335 @@ ResourceInstanceList.prototype.first = function() {
 ResourceInstanceList.prototype.last = function() {
 	if (this.length == 0)
 		return null;
-	
+
 	return this.items[ this.length - 1 ]
+};
+
+/**
+ * @class Parameters
+ * @private
+ * @param {HaveAPI.Client.Action} action
+ * @param {Object} input parameters
+ */
+function Parameters (action, params) {
+	this.action = action;
+	this.params = this.coerceParams(params);
+
+	/**
+	 * @member {Object} Parameters#errors Errors found during the validation.
+	 */
+	this.errors = {};
+}
+
+/**
+ * Coerce parameters passed to the action to appropriate types.
+ * @method Parameters.coerceParams
+ * @param {Object} params
+ * @return {Object}
+ */
+Parameters.prototype.coerceParams = function (params) {
+	var ret = {};
+
+	if (this.action.description.input === null)
+		return ret;
+
+	var input = this.action.description.input.parameters;
+
+	for (var p in params) {
+		if (!params.hasOwnProperty(p) || !input.hasOwnProperty(p))
+			continue;
+
+		var v = params[p];
+
+		switch (input[p].type) {
+			case 'Resource':
+				if (params[p] instanceof ResourceInstance)
+					ret[p] = v.id;
+
+				else
+					ret[p] = v;
+
+				break;
+
+			case 'Integer':
+				ret[p] = parseInt(v);
+				break;
+
+			case 'Float':
+				ret[p] = parseFloat(v);
+				break;
+
+			case 'Boolean':
+				switch (typeof v) {
+					case 'boolean':
+						ret[p] = v;
+						break;
+
+					case 'string':
+						if (v.match(/^(t|true|yes|y)$/i))
+							ret[p] = true;
+
+						else if (v.match(/^(f|false|no|n)$/i))
+							ret[p] = false;
+
+						else
+							ret[p] = undefined;
+
+						break;
+
+					case 'number':
+						if (v === 0)
+							ret[p] = false;
+
+						else if (v >= 1)
+							ret[p] = true;
+
+						else
+							ret[p] = undefined;
+
+						break;
+
+					default:
+						ret[p] = undefined;
+				}
+
+				break;
+
+			case 'Datetime':
+				if (v instanceof Date)
+					ret[p] = v.toISOString();
+
+				else
+					ret[p] = v;
+
+				break;
+
+			case 'String':
+			case 'Text':
+				ret[p] = v + "";
+
+			default:
+				ret[p] = v;
+		}
+	}
+
+	return ret;
+};
+
+/**
+ * Validate given input parameters.
+ * @method Parameters#validate
+ * @return {Boolean}
+ */
+Parameters.prototype.validate = function () {
+	if (this.action.description.input === null)
+		return true;
+
+	var input = this.action.description.input.parameters;
+
+	for (var name in input) {
+		if (!input.hasOwnProperty(name))
+			continue;
+
+		var p = input[name];
+
+		if (!p.validators)
+			continue;
+
+		if (!this.params.hasOwnProperty(name) || this.params[name] === undefined) {
+			if (p.validators.present)
+				this.errors[name] = ['required parameter missing'];
+
+			continue;
+		}
+
+		for (var validatorName in p.validators) {
+			var validator = Validator.get(
+				validatorName,
+				p.validators[validatorName],
+				this.params[name],
+				this.params
+			);
+
+			if (validator === false) {
+				console.log("Unsupported validator '"+ validatorName +"' for parameter '"+ name +"'");
+				continue;
+			}
+
+			if (!validator.isValid()) {
+				if (!this.errors.hasOwnProperty(name))
+					this.errors[name] = [];
+
+				this.errors[name] = this.errors[name].concat(validator.errors);
+			}
+		}
+	}
+
+	return Object.keys(this.errors).length ? false : true;
+};
+
+/**
+ * @class Validator
+ * @private
+ * @param {Function} fn validator function
+ * @param {Object} opts validator options from API description
+ * @param value the value to validate
+ * @param {Object} params object with all parameters
+ */
+function Validator (fn, opts, value, params) {
+	this.fn = fn;
+	this.opts = opts;
+	this.value = value;
+	this.params = params;
+
+	/**
+	 * @member {Array} Validator#errors Errors found during the validation.
+	 */
+	this.errors = [];
+};
+
+/**
+ * @property {Object} Validator.validators Registered validators
+ */
+Validator.validators = {};
+
+/**
+ * Register validator function.
+ * @func Validator.register
+ * @param {String} name
+ * @param {fn} validator function
+ */
+Validator.register = function (name, fn) {
+	Validator.validators[name] = fn;
+};
+
+/**
+ * Get registered validator using its name.
+ * @func Validator.get
+ * @param {String} name
+ * @param {Object} opts validator options from API description
+ * @param value the value to validate
+ * @param {Object} params object with all parameters
+ * @return {Validator}
+ */
+Validator.get = function (name, opts, value, params) {
+	if (!Validator.validators.hasOwnProperty(name))
+		return false;
+
+	return new Validator(Validator.validators[name], opts, value, params);
+};
+
+/**
+ * @method Validator#isValid
+ * @return {Boolean}
+ */
+Validator.prototype.isValid = function () {
+	var ret = this.fn(this.opts, this.value, this.params);
+
+	if (ret === true)
+		return true;
+
+	if (ret === false) {
+		this.errors.push(this.opts.message.replace(/%{value}/g, this.value + ""));
+		return false;
+	}
+
+	this.errors = this.errors.concat(ret);
+	return false;
+};
+
+Validator.validators.accept = function (opts, value) {
+	return opts.value === value;
+};
+
+Validator.validators.confirm = function (opts, value, params) {
+	var cond = value === params[ opts.parameter ];
+
+	return opts.equal ? cond : !cond;
+};
+
+Validator.validators.custom = function () {
+	return true;
+};
+
+Validator.validators.exclude = function (opts, value) {
+	if (opts.values instanceof Array)
+		return opts.values.indexOf(value) === -1;
+
+	return !opts.values.hasOwnProperty(value);
+};
+
+Validator.validators.format = function (opts, value) {
+	if (typeof value != 'string')
+		return false;
+
+	var rx = new RegExp(opts.rx);
+
+	if (opts.match)
+		return value.match(rx) ? true : false;
+
+	return value.match(rx) ? false : true;
+};
+
+Validator.validators.include = function (opts, value) {
+	if (opts.values instanceof Array)
+		return !(opts.values.indexOf(value) === -1);
+
+	return opts.values.hasOwnProperty(value);
+};
+
+Validator.validators.length = function (opts, value) {
+	if (typeof value != 'string')
+		return false;
+
+	var len = value.length;
+
+	if (typeof opts.equals === 'number')
+		return len === opts.equals;
+
+	if (typeof opts.min === 'number' && !(typeof opts.max === 'number'))
+		return len >= opts.min;
+
+	if (!(typeof opts.min === 'number') && typeof opts.max === 'number')
+		return len <= opts.max;
+
+	return len >= opts.min && len <= opts.max;
+};
+
+Validator.validators.number = function (opts, value) {
+	var v = (typeof value === 'string') ? parseInt(value) : value;
+
+	if (typeof opts.min === 'number' && v < opts.min)
+		return false;
+
+	if (typeof opts.max === 'number' && v > opts.max)
+		return false;
+
+	if (typeof opts.step === 'number') {
+		if ( (v - (typeof opts.min === 'number' ? opts.min : 0)) % opts.step > 0 )
+			return false;
+	}
+
+	if (typeof opts.mod === 'number' && !(v % opts.mod === 0))
+		return false;
+
+	if (typeof opts.odd === 'number' && v % 2 === 0)
+		return false;
+
+	if (typeof opts.even === 'number' && v % 2 > 0)
+		return false;
+
+	return true;
+};
+
+Validator.validators.present = function (opts, value) {
+	if (value === undefined)
+		return false;
+
+	if (!opts.empty && typeof value === 'string' && !value.trim().length)
+		return false;
+
+	return true;
 };
 
 /**
@@ -1577,7 +2457,17 @@ Client.Exceptions.ProtocolError = function (msg) {
  */
 Client.Exceptions.UnresolvedArguments = function (action) {
 	this.name = 'UnresolvedArguments';
-	this.message = "Unable to execute action '"+ this.name +"': unresolved arguments";
+	this.message = "Unable to execute action '"+ action.name +"': unresolved arguments";
+}
+
+/**
+ * Thrown when trying to cancel an action that cannot be cancelled.
+ * @class UncancelableAction
+ * @memberof HaveAPI.Client.Exceptions
+ */
+Client.Exceptions.UncancelableAction = function (stateId) {
+	this.name = 'UncancelableAction';
+	this.message = "Action state #"+ stateId +" cannot be cancelled";
 }
 
 /**
@@ -1585,8 +2475,13 @@ Client.Exceptions.UnresolvedArguments = function (action) {
  * @author Jakub Skokan <jakub.skokan@vpsfree.cz>
  **/
 
-if (typeof exports === 'object') {
+var XMLHttpRequest;
+
+if (typeof exports === 'object' && (typeof window === 'undefined' || !window.XMLHttpRequest)) {
 	XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
+
+} else {
+	XMLHttpRequest = window.XMLHttpRequest;
 }
 
 // Register built-in providers
@@ -1595,6 +2490,7 @@ Authentication.registerProvider('token', Authentication.Token);
 
 var classes = [
 	'Action',
+	'ActionState',
 	'Authentication',
 	'BaseResource',
 	'Hooks',
@@ -1603,6 +2499,7 @@ var classes = [
 	'ResourceInstance',
 	'ResourceInstanceList',
 	'Response',
+	'LocalResponse',
 ];
 
 for (var i = 0; i < classes.length; i++)
