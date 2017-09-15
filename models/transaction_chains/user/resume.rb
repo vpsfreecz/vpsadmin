@@ -11,7 +11,7 @@ module TransactionChains
           }
       }) if target
 
-      user.vpses.where(object_state: %i(active)).each do |vps|
+      user.vpses.where(object_state: ::Vps.object_states[:active]).each do |vps|
         use_chain(Vps::Start, args: vps)
       end
     end

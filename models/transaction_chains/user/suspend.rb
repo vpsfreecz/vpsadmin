@@ -11,7 +11,10 @@ module TransactionChains
           }
       }) if target
 
-      user.vpses.where(object_state: %i(active suspended)).each do |vps|
+      user.vpses.where(object_state: [
+          ::Vps.object_states[:active],
+          ::Vps.object_states[:suspended],
+      ]).each do |vps|
         use_chain(Vps::Stop, args: vps)
       end
     end
