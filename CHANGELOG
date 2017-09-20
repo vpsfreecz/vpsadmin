@@ -1,0 +1,48 @@
+* Wed Sep 20 2017 - version 2.9.0
+- Updated haveapi-client to v0.10
+
+* Wed Jun 07 2017 - version 2.8.0
+- Updated haveapi-client to v0.9
+
+* Fri Feb 10 2017 - version 2.7.0
+- Fixed dependency on haveapi-client v0.8
+
+* Fri Feb 10 2017 - version 2.7.0
+- Add shortcut method VpsAdmin::Client.new
+
+* Fri Nov 25 2016 - version 2.6.0
+- Use haveapi-client v0.7
+- Remove ruby-progressbar as a dependency
+- Exit if there aren't any snapshots to choose from
+
+* Mon Oct 24 2016 - version 2.5.0
+- New command ip_traffic top
+
+* Fri Jun 24 2016 - version 2.4.0
+- No changes
+
+* Tue Jun 14 2016 - version 2.3.2
+- Don't set download progress on new request
+
+* Wed Mar 23 2016 - version 2.3.1
+- Add option --[no-]sudo to command backup dataset
+- Fix ZFS call to work on both ZoL and BSD
+
+* Mon Mar 21 2016 - version 2.3.0
+- New commands for downloading snapshots:
+  - snapshot download
+  - snapshot send
+  - backup dataset
+  - backup vps
+- vps migrate_many has new option --[no-]cleanup-data
+
+* Fri Feb 26 2016 - version 2.2.0
+- New command vps migrate_many
+
+* Sat Jan 23 2016 - version 2.1.0
+- Renamed to vpsadmin-client
+- Rebased on HaveAPI v0.4
+- Remote VPS console
+
+* Tue Dec 29 2015 - version 2.0.0
+- No changes
