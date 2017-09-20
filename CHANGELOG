@@ -1,3 +1,4 @@
+* Wed Sep 20 2017 - version 2.9.0
 - Zfs stream progress tracking support for ZoL 0.7
 - Support for setting CPU limit directly
 
