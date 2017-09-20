@@ -25,3 +25,7 @@ indent_style = space
 [console_router/public/*.js]
 indent_size = 4
 indent_style = space
+
+[*.erb]
+indent_size = 2
+indent_style = space
