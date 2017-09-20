@@ -1,5 +1,5 @@
 # Release notes
-Version 2.8.0 primary features a new plugin for outage reporting. Outages can
+Version 2.8.0 primarily features a new plugin for outage reporting. Outages can
 be reported by admins from the web UI or the API. vpsAdmin knows what VPS are
 (in)directly affected and can notify users via e-mail. It also allows admins to
 post update on progress. Each outage is now assigned a type, i.e. how it affects
