@@ -1,0 +1,37 @@
+# Release notes
+Version 2.9.0 features a new plugin for monitoring of configurable properties
+and executing arbitrary actions. Only values that are present in the database
+can be monitored. For example, it is possible to setup monitors for CPU usage,
+disk usage, network transfer rates or traffic. It has a basic support for
+acknowledging or ignoring of detected events via the web UI.
+
+## API resources
+- `Dataset.Create`: accept slash as a dataset delimiter
+- `OsTemplate.Show`: let users access disabled templates
+- Resource VPS: add missing checks for user's state
+
+## API internals
+- Require HaveAPI v0.10
+- Update ActiveRecord to 4.2 and other dependencies
+- `Cluster::GenerateKnownHosts`: fix query condition
+- Use structure.sql instead of schema.rb
+- Support for sending custom mails without templates
+- Admins can set CPU limit directly
+
+## vpsAdmin web UI
+- Browser of monitored events
+- Support for setting CPU limit directly
+- Outage details: unite state change and post update forms
+
+## vpsAdmind
+- Zfs stream progress tracking support for ZoL 0.7
+- Support for setting CPU limit directly
+
+## Monitoring
+- Initial release
+
+## Outage reports
+- Outage state changing via the update action
+
+## Requests
+- Admins can ask users for correction of registration requests
