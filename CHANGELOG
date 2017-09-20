@@ -1,3 +1,4 @@
+* Wed Sep 20 2017 - version 2.9.0
 - Browser of monitored events
 - Support for setting CPU limit directly
 - Outage details: unite state change and post update forms
