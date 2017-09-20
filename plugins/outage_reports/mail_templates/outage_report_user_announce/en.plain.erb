@@ -1,0 +1,37 @@
+Hi <%= @user.login %>,
+
+<%= @o.planned ? 'a planned' : 'an unplanned' %> outage has been reported and <%= @vpses.count %> of your VPS <%= @vpses.count > 1 ? 'are' : 'is' %> affected.
+
+<% if @direct_vpses.count > 0 -%>
+Directly affected VPS:
+
+<% @direct_vpses.each do |vps| -%>
+  - VPS #<%= vps.vps_id %> - <%= vps.vps.hostname %> (on <%= vps.node.domain_name %>)
+<% end -%>
+
+<% end -%>
+<% if @indirect_vpses.count > 0 -%>
+Indirectly affected VPS:
+
+<% @indirect_vpses.each do |vps| -%>
+  - VPS #<%= vps.vps_id %> - <%= vps.vps.hostname %> (on <%= vps.node.domain_name %>)
+    <% vps.outage_vps_mounts.order('mountpoint').each do |mnt| -%>
+    Mount <%= mnt.mountpoint %> of <%= mnt.snapshot_name ? 'snapshot' : 'dataset' %> <%= mnt.dataset_name %><%= mnt.snapshot_name ? "@#{mnt.snapshot_name}" : '' %> (from <%= mnt.src_node.domain_name %>)
+    <% end -%>
+<% end -%>
+
+<% end -%>
+Date and time: <%= @o.begins_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+Expected duration: <%= @o.duration %> minutes
+Affected systems: <%= @o.outage_entities.map { |e| e.real_name }.join(', ') %>
+Outage type: <%= @o.outage_type %>
+Reason: <%= @o.en_summary %>
+Handled by: <%= @o.outage_handlers.map { |h| h.user.full_name }.join(', ') %>
+<% if @o.en_description && !@o.en_description.empty? -%>
+
+<%= @o.en_description %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

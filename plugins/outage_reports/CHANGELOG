@@ -1,0 +1,6 @@
+* Wed Sep 20 2017 - version 2.9.0
+- Outage.Create: make short summaries required in all languages
+- Replace Outage.Announce, Cancel and Close actions by the Update action
+
+* Wed Jun 07 2017 - version 2.8.0
+- Initial release

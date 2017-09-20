@@ -1,0 +1,33 @@
+<% @update.each_change do |attr, old, new| -%>
+<%= case attr
+    when :begins_at
+      "Begins at: moved from #{old.localtime.strftime('%Y-%m-%d %H:%M %Z')} to #{new.localtime.strftime('%Y-%m-%d %H:%M %Z')}"
+
+    when :finished_at
+      "Finished at: #{new.localtime.strftime('%Y-%m-%d %H:%M %Z')}"
+
+    when :duration
+      "Duration: #{old} -> #{new} minutes"
+
+    when :state
+      "State: #{old} -> #{new}"
+
+    when :outage_type
+      "Outage type: #{old} -> #{new}"
+    end
+%>
+<% end -%>
+
+Summary: <%= @update.summary %>
+<% if @update.description && !@update.description.empty? -%>
+
+<%= @update.description %>
+<% end -%>
+<% if @update.reporter_name -%>
+
+Reported by: <%= @update.reporter_name %>
+<% end -%>
+
+-----BEGIN BASE64 ENCODED PARSEABLE JSON-----
+<%= Base64.encode64(@update.to_hash.to_json).scan(/.{1,76}/).join("\n") %>
+-----END BASE64 ENCODED PARSEABLE JSON-----
