@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+require_relative '../lib/vpsadmin/download_mounter'
+
+VpsAdmin::DownloadMounter::Cli.run
