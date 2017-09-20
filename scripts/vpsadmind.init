@@ -1,0 +1,181 @@
+#!/bin/bash
+#
+# vpsadmind        Startup script for vpsAdmind
+#
+# chkconfig: - 80 15
+# description: vpsAdmind is daemon for vpsAdmin
+# processname: vpsadmind
+# pidfile: /var/run/vpsadmind.pid
+#
+### BEGIN INIT INFO
+# Provides: vpsadmind
+# Required-Start: $local_fs $remote_fs $network $named
+# Required-Stop: $local_fs $remote_fs $network
+# Should-Start:
+# Short-Description: start and stop vpsAdmind
+# Description: vpsAdmind is daemon for vpsAdmin
+### END INIT INFO
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+VPSADMINDCTL="vpsadmindctl"
+VPSADMIND="/opt/vpsadmind/bin/vpsadmind"
+PIDFILE="/var/run/vpsadmind.pid"
+LOGDIR="/var/log"
+CONFIG="/etc/vpsadmin/vpsadmind.yml"
+DAEMON="yes"
+STOP_TIMEOUT="300"
+OPTS=""
+
+if [ -f /etc/sysconfig/vpsadmind ]; then
+	. /etc/sysconfig/vpsadmind
+fi
+
+PATH="$PATH:/usr/local/bin"
+
+run() {
+    $*  > /dev/null 2>&1
+    return $?
+}
+
+is_running() {
+    run $VPSADMINDCTL status
+
+    if [ "$?" == "0" ] ; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+cleanup() {
+    rm -f "$PIDFILE"
+}
+
+wait_for_stopped() {
+    counter=0
+    step=5
+
+    while true ; do
+        run $VPSADMINDCTL status
+
+        if [ "$?" == "1" ] ; then
+            cleanup
+            return 0
+        fi
+
+        if [ "$STOP_TIMEOUT" != "no" ] ; then
+            counter=$(($counter+$step))
+
+            if [ "$counter" == "$STOP_TIMEOUT" ] ; then
+                break
+            fi
+        fi
+
+        echo -n "."
+        sleep $step
+    done
+
+    echo ""
+    echo -n "timeout, stopping daemon forcefully..."
+
+    if [ -f "$PIDFILE" ] ; then
+        kill `cat $PIDFILE`
+
+        if [ "$?" == "0" ] ; then
+            cleanup
+        else
+            echo "failed"
+        fi
+    else
+        echo "unable to kill"
+        return 1
+    fi
+}
+
+start() {
+	if [ -f $PIDFILE ] ; then
+		echo "vpsAdmind is already running."
+		echo "Delete $PIDFILE if it is not."
+		exit 1
+	fi
+	
+	echo -n "Starting vpsAdmind... "
+	
+	CMD="$VPSADMIND --config $CONFIG --pidfile $PIDFILE --remote-control"
+	
+	if [ "$DAEMON" == "yes" ] ; then
+		CMD="$CMD --daemonize --logdir $LOGDIR"
+	fi
+	
+	$CMD $OPTS
+	
+	echo "done"
+}
+
+stop() {
+	echo -n "Stopping vpsAdmind... "
+
+    is_running
+	if [ "$?" == "1" ] ; then
+	    echo "not running"
+	    return 0
+	fi
+
+    echo -n "waiting for vpsAdmind to safely stop..."
+
+    if [ "$STOP_TIMEOUT" == "" ] ; then
+        STOP_TIMEOUT="300"
+    fi
+
+    if [ "$STOP_TIMEOUT" == "no" ] ; then
+        run $VPSADMINDCTL stop -f
+    else
+        run $VPSADMINDCTL stop
+    fi
+
+    wait_for_stopped
+
+    if [ "$?" == "0" ] ; then
+        echo " done"
+        return 0
+    fi
+
+    return 1
+}
+
+status() {
+	STATUS="`$VPSADMINDCTL status`"
+	
+	if [ "$?" == 0 ] ; then
+		echo "$STATUS"
+		exit 0
+		
+	else
+		echo "vpsAdmind is not running or has disabled remote control."
+		exit 1
+	fi
+}
+
+case $1 in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart)
+		stop
+
+		if [ "$?" == "0" ] ; then
+		    start
+		fi
+		;;
+	status)
+		status
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart}"
+		;;
+esac

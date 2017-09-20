@@ -1,0 +1,19 @@
+# vpsAdmind sample config file
+# Uncomment settings to override the defaults
+#
+# If you choose to override any kind of :handlers, you must specify all commands
+# you want to use, as the default handlers are dropped.
+
+:db:
+    :hosts:
+      - localhost
+    :user: vpsadmin
+    :pass: password
+    :name: vpsadmin
+
+:vpsadmin:
+    :server_id: 1
+ 
+:console:
+    :host: localhost
+    :port: 8081

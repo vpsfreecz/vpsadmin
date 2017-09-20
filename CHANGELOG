@@ -1,0 +1,321 @@
+* Wed Sep 20 2017 - version 2.9.0
+- Zfs stream progress tracking support for ZoL 0.7
+- Support for setting CPU limit directly
+
+* Wed Jun 07 2017 - version 2.8.0
+- No changes
+
+* Mon Mar 20 2017 - version 2.7.0
+- Use refactored DB schema of nodes, transactions, IP addresses, VPSes,
+  node pubkeys
+- Fix errors preventing local send/receive
+- Log commands executed by ZfsStream
+- Decrease the default start delay of zfs_send queue to 90 minutes
+
+* Fri Dec 30 2016 - version 2.6.0
+- New transaction `Vps::DeployPublicKey`
+
+* Tue Nov 15 2016 - version 2.5.0
+- Support special handling for mount/umount action scripts
+- Failed umounts in action scripts are ignored
+- Track progress of zfs send commands
+- New remote command get ip_map
+- savetransfers.rb renamed to vpsadmind-save-transfers
+- Distinguish private and public IP traffic
+- Reworked live network monitor
+- Requires the ipset command
+- Timeout for vzctl stop/restart commands
+- Fixed race condition in IP traffic accounting
+
+* Fri Jun 24 2016 - version 2.4.0
+- No changes
+
+* Tue Jun 14 2016 - version 2.3.0
+- VPS status: only one thread can update status at a time
+- Dataset::ApplyRollback: re-share datasets
+- Dataset::DownloadSnapshot: zfs (incremental) streams
+
+* Fri Feb 26 2016 - version 2.2.0
+- System probes to read more information about both nodes and VPSes:
+  - Memory
+  - CPU
+  - Disk space
+  - ARC
+  - Kernel version
+  - Load average
+  - Process counter
+  - Uptime
+  - Number of CPUs
+- Use polymorphic resource locks
+- Fixed rollback of transactions killed using the remote command
+- New queues `outage` and `queue`
+- Queue slot reservation mechanism
+- Fixed issue that remote status changed transaction's start time
+- `Vps::Stop` ensures that the VPS is unmounted
+- Storage status is updated hourly by default
+
+* Sat Jan 23 2016 - version 2.1.0
+- VPS console:
+  - run vzctl console in a pty
+  - support terminal resizing
+  - logging
+- VPS status:
+  - read hostname if necessary
+  - exclude VPS in state hard_delete
+- Removed console router
+
+* Tue Dec 29 2015 - version 2.0.0
+- Major rewrite, see release notes
+
+* Wed Apr 29 2015 - version 1.22.2
+- Fix shaper filter addition for IPv6
+- Preserve ACLs and extended attributes on VPS migration and clone
+- Transaction scheduler orders transactions by urgency
+- New CT feature bridge
+
+* Wed Aug 30 2014 - version 1.22.1
+- Remote control:
+  - do not crash in bug at status, report occurence to log and continue
+  - do not crash when pry connection gets interrupted
+
+* Mon Aug 18 2014 - version 1.22.0
+- Shaper
+- New remote commands init, flush, reinit and pry
+- Firewall uses global lock when registering IP addresses
+
+* Thu Jul 03 2014 - version 1.21.2
+- Fix enabling iptables for VPS (use vzctl --netfilter instead
+  of obsoleted --iptables)
+
+* Tue Jun 03 2014 - version 1.21.1
+- Improve compatibility with ruby2, bugfixes
+
+* Mon May 19 2014 - version 1.21.0
+- Compatibility with the API
+- Fix zfs_compat to zfs_compat migration
+- Fix init script
+
+* Mon Apr 21 2014 - version 1.20.0
+- Database: add timeout to queries so that it can switch hosts quickly
+- Remote queue: fix checking if transaction is being executing at the moment
+- Remote status: report state (running, finishing, paused)
+- Allow pausing execution of transactions
+- New remote commands pause and resume
+
+* Sun Apr 20 2014 - version 1.19.0
+- Wrapper does not load settings from database (prevent hang at boot on node
+  with database)
+- Init script: always enable remote control, use vpsadminctl to stop daemon
+- Support for multiple databases and SSL
+- New remote commands get and set
+- Command update can now be forced
+
+* Tue Apr 15 2014 - version 1.18.2
+- Fix transaction scheduler
+- Save kernel version when invoking vpsadminctl refresh
+- Reload ZFS exports by share -a
+
+* Fri Apr 11 2014 - version 1.18.1
+- Fix VPS reinstall hang
+
+* Fri Apr 11 2014 - version 1.18.0
+- Urgent transactions
+- Fix return value for Executor#assume_lock
+- Fallback on transaction hard kill, release lock
+
+* Thu Apr 10 2014 - version 1.17.1
+- Fix daily report
+- Add -j ACCEPT to traffic accounting
+
+* Web Apr 09 2014 - version 1.17.0
+- Track kernel version
+- VPS.destroy: fix waiting for lock
+- Update network transfers in separate threads and more often
+- Script for moving recent transfers from memory to disk
+- Mailer: add header date
+
+* Sun March 23 2014 - version 1.16.0
+- Mailer: new param 'from', fix in-reply-to
+- NAS mount: umount destination if mounted and not responding
+- Daily report: use base URL from general settings
+- Config for logrotate
+- Updates for vpsadmininstall
+- Install: generate configs, return node ID, handle SSH key and authorized_keys
+- Add sinatra to Gemfile
+- Init script: add status
+- Fix mount for ZFS compat backups
+- Fix backups downloading
+- Command#execute: catch all exceptions, do not crash
+- Reload ZFS exports if not loaded
+- Intensify VPS locking
+- Shorten interval for status updating, save just current status
+- Transaction fallbacks used for migrations
+- Attempt to do some actions several time before failing
+- Remote control: send subtask PID
+
+* Fri Oct 4 2013 - version 1.15.1
+- Mailer: fix message headers
+- Fix vpsadminctl install
+
+* Fri Sep 27 2013 - version 1.15.0
+- ZFS compat to ZFS compat clone and migration, fixes
+- Mailer: add params for headers message-id, in-reply-to and references
+
+* Tue Sep 10 2013 - version 1.14.0
+- ZFS backups, clone and migration: new ZFS compatibility mode which does not use zfs send/recv, but rsync
+
+* Sun Sep 08 2013 - version 1.13.1
+- Daily report: show transaction label, payments
+
+* Sat Sep 07 2013 - version 1.13.0
+- Daily reports
+
+* Fri Sep 06 2013 - version 1.12.3
+- ZFS backup download: fix snapshot name
+- Remove sticky bit from all directories in VE_PRIVATE before trying to remove it
+- ZFS VPS: destroy only dataset, do not delete data before
+- Fix queue processing: do not GROUP BY t_id
+
+* Fri Jul 26 2013 - version 1.12.2
+- Finally fix ZFS restore
+
+* Fri Jul 26 2013 - version 1.12.1
+- Fix ext backup rotation
+- ZFS to ZFS restore: clone snapshot before rsyncing to head
+- ZFS VPS: use refquota instead of quota
+
+* Thu Jul 18 2013 - version 1.12.0
+- Online migration
+- ZFS VPS destroying: fix config renaming
+
+* Tue Jul 09 2013 - version 1.11.1
+- Fix merge error
+
+* Tue Jul 09 2013 - version 1.11.0
+- New command VPS.passwd
+- Migration: reuse dataset if it already exists
+- Clone: fix root and private of cloned VPS
+
+* Mon Jul 08 2013 - version 1.10.2
+- Offline migration: accept rsync return codes 23 and 24
+
+* Mon Jul 08 2013 - version 1.10.1
+- Fix ext restoring
+
+* Mon Jul 08 2013 - version 1.10.0
+- Add support for ZFS nodes (configs, backups, restore, migrations, cloning)
+- New implementation of offline migration and clone
+- Status updating: separate update of alive status and resources status
+- Node install: fix hang when node with same ID is already in database
+- Load selected settings from database
+
+* Tue Jun 11 2013 - version 1.9.1
+- Fix missing onboot flags after some transactions like enable features
+- Restore finish: ignore vzquota drop error if quota does not exist
+
+* Mon May 27 2013 - version 1.9.0
+- Implement new remote commands:
+    - install - add node to cluster, save public keys
+    - refresh - immediately reload VPS state, server status and storage usage
+    - reinit - flush iptables and do init again
+- Manage known_hosts
+- Report backup sizes
+- DB version checking: flush stdout, check exit flag, log just once
+- Firewall: init now checks chains for IPv4 and IPv6 separately, initializing them if missing
+- Fix transaction killing - subprocesses are now sent SIGTERM
+- Fix creating datasets when mountpoint not empty
+- Fix crash when command did not return expected value
+
+* Tue May 07 2013 - version 1.8.3
+- Backup restore: fix crash
+
+* Wed Apr 17 2013 - version 1.8.2
+- VPS enable features: fixed crash caused by wrong return value
+
+* Mon Apr 15 2013 - version 1.8.1
+- Always honor VPS state when manipulating it
+
+* Sun Apr 07 2013 - version 1.8.0
+- Implement Storage executor with backends, so far only ZFS is supported
+- NAS mount/umount, generation of vzctl action scripts, pre/post (u)mount scripts
+- Fix queue ordering
+- Save node load
+- Traffic accounting: fix IPv6 parsing, do not save NULL
+- Add remote commands for transaction killing and forced stop/restart
+- Check database version
+- VPS clone: accept rsync return code 23 and 24
+- Backup scheduler: use exports, schedule only VPS which are not marked for deletion and their owners are active
+
+* Thu Mar 14 2013 - version 1.7.3
+- Fix config: numbers are not strings
+
+* Sun Feb 09 2013 - version 1.7.2
+- Fix ve_mountfile calling
+
+* Sat Feb 09 2013 - version 1.7.1
+- Fix optional backup mount condition
+
+* Sat Feb 09 2013 - version 1.7.0
+- Make backup mount optional
+- Features: add slight delay after VPS start - wait for it to mount properly
+- Clone: make rsync command configurable
+- Manual mount/umount/remount of backups in VPS
+- Register handler for generating mount/umount action scripts for VPS
+- Scheduler: fix random order reversing
+
+* Fri Feb 01 2013 - version 1.6.4
+- Wrapper: real-time logging, log date and time
+- Init: remove option, setting in config; if already initialized, skip
+- Self-update: improve error handling
+- ZFS backuper - download: remove BSD specific options from tar
+
+* Fri Jan 25 2013 - version 1.6.3
+- Backup download: fix tar args, execution; script to delete expired archives
+- ZFS backuper: fix exclude
+
+* Sat Jan 19 2013 - version 1.6.2
+- VE umount script
+- Restore: reorganize code
+- Fix exports
+- Backup download: fix tar args
+
+* Sat Jan 19 2013 - version 1.6.1
+- Exports: reorganize code
+
+* Sat Jan 19 2013 - version 1.6.0
+- New command exports
+- Restore split to two steps (prepare on backuper, finish on node)
+
+* Wed Jan 16 2013 - version 1.5.2
+- Daily backup scheduler: fix config loading
+- Remote control: change communication format
+
+* Wed Jan 16 2013 - version 1.5.1
+- Fix command identifier (probably not needed)
+
+* Wed Jan 16 2013 - version 1.5.0
+- Manage OpenVZ sample configs
+- Applyconfig support
+- vpsAdmind's config can contain only needed settings, not all of them
+- Support for ZFS backups
+- Saving transaction's execution step
+- Safe migration
+
+* Wed Dec 26 2012 - version 1.4.2
+- Remote control (interface for vpsadminctl)
+- Reload thread count from config on SIGHUP
+
+* Sat Dec 22 2012 - version 1.4.1
+- Transaction priorities
+- Always fetch queue from DB, do not cache anything
+- Backup download: handle tar exit code 1
+
+* Wed Dec 19 2012 - version 1.4.0
+- First release
+- Backups: backup, restore, download
+- VPS cloning
+- PPP
+- Mailer
+- VE console exporting
+- vpsAdmind runs in wrapper - capable of self stop, restart, update
+- Commands executed in multiple threads
