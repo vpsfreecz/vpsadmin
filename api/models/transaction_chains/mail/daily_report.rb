@@ -68,7 +68,7 @@ module TransactionChains
                   .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
                   .order('users.id')
               },
-              
+
               hard_deleted: {
                   all: ::User.unscoped.where(object_state: ::User.object_states[:hard_delete]),
                   changed: ::User.unscoped.where(
@@ -137,7 +137,7 @@ module TransactionChains
                   .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
                   .order('vpses.id')
               }
-              
+
           },
 
           datasets: {
@@ -152,7 +152,7 @@ module TransactionChains
                   pools: {role: ::Pool.roles[:backup]}
               ).group('datasets.id')
           },
-          
+
           snapshots: {
               all: ::Snapshot.all,
               new: ::Snapshot.where('DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t),
