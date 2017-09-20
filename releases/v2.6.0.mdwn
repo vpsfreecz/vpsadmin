@@ -1,0 +1,80 @@
+# Release notes
+Version 2.6.0 is mainly rebased onto HaveAPI v0.7, which means it features
+blocking actions. Another important improvement is public key management, using
+which users can upload their public keys to vpsAdmin and deploy them to their
+VPS, thus eliminating the need for setting root's password and easing
+automation.
+
+## API resources
+- API version set to 3.1
+- Blocking actions:
+  - `Dataset.Create`
+  - `Dataset.Update`
+  - `Dataset.Delete`
+  - `Dataset.Inherit`
+  - `Dataset.Snapshot.Create`
+  - `Dataset.Snapshot.Delete`
+  - `Dataset.Snapshot.Rollback`
+  - `IpAddress.Update`
+  - `Network.Create`
+  - `Node.Create`
+  - `Pool.Create`
+  - `SnapshotDownload.Create`
+  - `SnapshotDownload.Delete`
+  - `User.Create`
+  - `User.Delete`
+  - `Vps.Create`
+  - `Vps.Update`
+  - `Vps.Delete`
+  - `Vps.Start`
+  - `Vps.Stop`
+  - `Vps.Restart`
+  - `Vps.Passwd`
+  - `Vps.Reinstall`
+  - `Vps.Migrate`
+  - `Vps.Clone`
+  - `Vps.SwapWith`
+  - `Vps.Config.Replace`
+  - `Vps.Feature.Update`
+  - `Vps.Feature.UpdateAll`
+  - `Vps.IpAddress.Create`
+  - `Vps.IpAddress.Delete`
+  - `Vps.IpAddress.DeleteAll`
+  - `Vps.Mount.Create`
+  - `Vps.Mount.Update`
+  - `Vps.Mount.Delete`
+  - `VpsConfig.Create`
+  - `VpsConfig.Update`
+- New API resource `User.PublicKey`
+- New blocking action `Vps.DeployPublicKey`
+- `Network.AddAddresses` handles record invalid errors
+- Add example usage of `Node.PublicStatus`
+- Add example usage of `Cluster.PublicStats`
+- Fix password check in `User.Update`
+
+## API internals
+- Rebase on HaveAPI v0.7
+- Implement ActionState interface from HaveAPI
+- TransactionChain.fire returns the create chain and return value from link_chain
+- Global action exception handlers set HTTP status code
+- New transaction chain `Vps::DeployPublicKey`
+- New transaction `Vps::DeployPublicKey`
+- New dynamic configuration file `config/api.rb`
+- Fix resource allocation in `IpAddress.register`
+- Fix resource lock release in `Network.add_ips`
+
+## vpsAdmin web UI
+- Public key management forms
+- Fix typo in dataset creation code
+- Set charset for outgoing mails
+
+## vpsAdmind
+- New transaction `Vps::DeployPublicKey`
+
+## vpsAdmin client
+- Use haveapi-client v0.7
+- Remove ruby-progressbar as a dependency
+- Exit if there aren't any snapshots to choose from
+
+# Upgrade instructions
+Standard upgrade process, there are no caveats.

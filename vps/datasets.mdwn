@@ -1,0 +1,32 @@
+# Storage layout
+Private areas of all VPSes are stored in datasets on the hypervisor node in pool
+with role `hypervisor`. Furthermore, to utilize more ZFS features,
+it is possible to create subdatasets and set their properties individually.
+
+Private area is not stored in the VPS dataset directly. Due to the behaviour
+of `vzctl`, which does not support ZFS currently, it must be stored in subdirectory
+`private`. That is because `vzctl` expects to work with a directory, not a dataset.
+
+The dataset structure by default looks as follows:
+
+ - vz/private
+   - 101
+     - directory private/
+     - ..subdatasets..
+   - 102
+     - directory private/
+     - ..subdatasets..
+   - ...
+
+# Subdatasets
+Subdataset for a VPS differ from ordinal subdatasets. Its creation and rollback must
+consider the fact that a system runs on top of it.
+
+When creating a subdataset, its mountpoint must be set correctly
+to `/vz/root/<veid>/<path>`, otherwise it would not be accessible from inside the VPS.
+
+Rollback of a dataset works as usual, except that before the datasets are switched
+(old with the rollbacked one), or before `zfs rollback` is called, the VPS must be stopped
+and then started again, if it was running before the rollback. The VPS must be stopped even
+when rollbacking a subdataset, because a process from the VPS might be working with the data,
+making the dataset busy.

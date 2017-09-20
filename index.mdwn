@@ -1,0 +1,32 @@
+vpsAdmin is a system for management of virtual servers, storage and related
+network settings based on OpenVZ and ZFS.
+
+# Architecture
+ - [[Overview]]
+ - Components
+   - [[vpsAdmin API]]
+   - [[vpsAdmind]]
+   - [[vpsadmindctl]]
+   - [[web interface]]
+
+# Subsystems
+ - [[VPS]]
+ - [[Transactions]]
+ - [[Networking]]
+ - [[Storage]]
+ - [[Plugins]]
+
+# Concepts
+ - [[Object lifetimes]]
+
+# Release notes and upgrade information
+ - [[Releases/v2.9.0]]
+ - [[Releases/v2.8.0]]
+ - [[Releases/v2.7.0]]
+ - [[Releases/v2.6.0]]
+ - [[Releases/v2.5.0]]
+ - [[Releases/v2.4.0]]
+ - [[Releases/v2.3.0]]
+ - [[Releases/v2.2.0]]
+ - [[Releases/v2.1.0]]
+ - [[Releases/v2.0]]

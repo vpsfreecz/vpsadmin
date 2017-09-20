@@ -1,0 +1,87 @@
+vpsAdmin's main objectives are to manage hypervisors with virtual servers,
+storage systems and related network. Anything not closely related to these
+objectives should not be a part of vpsAdmin, but can be implemented as
+a separate plugin that can be optionally installed. vpsAdmin is composed of
+multiple programs, so depending on the nature of the plugin, it must extend
+the behaviour of one or more of such programs.
+
+# Plugin structure
+The structure of a plugin in the filesystem:
+
+    plugin_dir/
+    |-- api/
+    |   |-- db/
+    |   |   |-- migrate/
+    |   |   |   |-- ...migrations...
+    |   |-- lib/
+    |   |   |-- ...custom code...
+    |   |-- models/
+    |   |   |-- ...models...
+    |   |-- resources/
+    |   |   |-- ...resources...
+    |   |-- init.rb
+    |   |-- Gemfile
+    |-- meta.rb
+
+`meta.rb` contains information about the plugin, like its name, version and
+name of its author. Plugin also declares which vpsAdmin components it extends.
+For now, only the vpsAdmin API can be extended.
+
+[[!format ruby """
+VpsAdmin::API::Plugin.register(:billing) do
+  name 'Billing system'
+  description 'Generate invoices'
+  version '0.1.0'
+  author 'John Doe'
+  email 'john.doe@vpsfree.cz'
+  components :api
+  
+  # API plugins may define custom settings
+  config do
+    SysConfig.register :plugin_billing, :variable, String
+  end
+end
+"""]]
+
+The `meta.rb` is loaded first. Then, depending on the component loading the
+plugins, file `<component>/init.rb` is tried, e.g. `api/init.rb`. If it exists,
+you have the freedom to load the plugin as you wish. If it does not exist,
+subdirectories `lib`, `models` and `resources` are loaded recursively in said
+order.
+
+# API
+Plugins in the API can create own models or customize existing ones, define API
+resources, transaction chains and in the future also define custom transactions.
+Every plugin has a separate set of database migrations. Plugins are installed
+by placing them into the `plugins` subdirectory in API root.
+
+If a plugin requires some database changes in order to work, its migrations
+must be run.
+
+    $ rake -T vpsadmin:plugins
+    rake vpsadmin:plugins:list       # List installed plugins
+    rake vpsadmin:plugins:migrate    # Run plugin migrations
+    rake vpsadmin:plugins:rollback   # Rollback plugin migrations
+    rake vpsadmin:plugins:status     # Show migration status
+    rake vpsadmin:plugins:uninstall  # Rollback all plugin migrations
+
+# vpsAdmind
+(This is not yet implemented, but rather a draft of what should be possible in
+the future)
+
+Plugins will have the opportunity to define new handlers for transactions and
+remote commands.
+
+# vpsAdmindctl
+(This is not yet implemented, but rather a draft of what should be possible in
+the future)
+
+Plugins will have the opportunity to define new command-line commands.
+
+# Web UI
+(This is not yet implemented, but rather a draft of what should be possible in
+the future)
+
+The web UI is burdened with its design, so for now plugins are hardcoded using
+ifs, but if needed, it would be possible to allow plugins define custom pages
+and actions.

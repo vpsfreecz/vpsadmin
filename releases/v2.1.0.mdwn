@@ -1,0 +1,81 @@
+# Release notes
+Version 2.1.0 is rebased onto HaveAPI v0.4 and features mainly reworked
+[[remote VPS console|vps/remote_console]]. The console can be accessed using
+CLI tool `vpsadminctl`, which works much better than the web-based console,
+as it uses your own terminal emulator. The VPS console now also supports resizing.
+
+## General
+- VPS hostname can be managed manually and vpsAdmin will merely read it
+
+## API resources
+ - Version set to 1.0
+ - Removed parameter `User.playground_enabled`
+ - `Cluster.PublicStats.ipv4_left` does not count owned IP addresses
+
+## API internals
+ - `TransactionChain#append_t` to gradually replace `TransactionChain#append`
+ - `TransactionChains::User::HardDelete` deletes all user's datasets completely
+ - `TransactionChains::DatasetTree::Destroy` corretcly destroys all branches
+   and snapshots
+ - New transaction `Vps::UnmanageHostname`
+ - Switch to yard from rdoc
+ - Update and complete dependencies in the `Gemfile`
+
+## Web UI
+ - VPS hostname form to support manual and managed modes
+ - Removed `DB_VERSION` constant
+
+## vpsAdmind
+ - VPS console mostly rewritten
+ - New communication protocol with the console router
+ - `vzctl console` run in a pty using wrapper script
+ - Support console resizing
+ - Support transaction `Vps::UnmanageHostname`
+ - Read hostname from VPSes that manage them manually
+ - VPS status
+   - run exec commands only if the VPS is running
+   - exclude VPSes in state `hard_delete`
+
+## Console router
+ - Moved from vpsAdmind to a standalone project
+ - Disconnect from the database after a period of inactivity
+ - Disable caching by adding timestamp parameter to JS scripts
+ - Implemented the reconnect button in web console
+ - Updated protocols with clients and vpsAdmind
+ - Transport console size
+
+## vpsAdmin-client
+ - Renamed from `vpsadminctl` to `vpsadmin-client`
+ - Subcommand `vps remote_console <vps_id>`
+
+# Upgrade instructions
+## vpsAdmin API
+Stop the API and the scheduler.
+
+	# cd /opt/vpsadmin-api
+	# git pull
+	# bundle install
+	# rake db:migrate
+
+Restart both the API and the scheduler.
+
+Set key `api_url` in sysconfig.
+
+## vpsAdmind
+On all nodes:
+
+	# vpsadmindctl update
+	# cd /opt/vpsadmindctl && git pull
+
+## Console router
+The router has been extracted from vpsAdmind and made a standalone project. You
+need to install it next to vpsAdmind and adjust start scripts accordingly.
+
+## vpsAdmin web UI
+
+	# git pull
+	# php composer.phar update
+
+# Known issues
+In order for the console resizing to work, a
+[[patched|vps/remote_console/vzctl-console.patch]] version of `vzctl` is needed.

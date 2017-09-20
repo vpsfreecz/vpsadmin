@@ -1,0 +1,10 @@
+Dataset destroyal may have several steps, depending on the role the pool it is in has.
+
+# Destroying datasets in `primary` or `hypervisor` pool
+Dataset is destroyed immediately, including all its descendants. Its respective
+backup datasets are not. Backup datasets of the destroyed dataset and all its
+descendants are marked for deletion, expiration is set and they are destroyed
+with all their snapshots after the expiration date.
+
+# Destroying datasets in `backup` pool
+Backup datasets are destroyed immediately, if their primary counterparts are kept.

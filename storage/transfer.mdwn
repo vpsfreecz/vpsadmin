@@ -1,0 +1,4 @@
+Transfer one or more snapshots from one dataset in pool to another dataset
+in pool (of the same dataset).
+
+The transfer itself is realized through ``zfs send/recv`` via SSH.

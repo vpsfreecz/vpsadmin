@@ -1,0 +1,52 @@
+This page describes rollback on *primary* or *hypervisor* pools. Roll backing on a *backup*
+pool is described in [[branching]].
+
+# Local rollback
+When roll backing to a snapshot that is present locally, it is as easy as ``zfs rollback -r <snapshot>`` combined
+with [[branching]] of backups.
+
+# Remote rollback
+The situation is more complicated when the target snapshot is not available locally, but only in a backup.
+vpsAdmin transfers the snapshot to a new dataset and then switches it with the original one. It gets
+even more complicated with subdatasets, which must be preserved and not be affected by the rollback at all.
+Therefore, all subdatasets are moved to the new dataset as well. The moving of datasets is implemented
+using ``zfs rename``.
+
+## An example
+Let's assume a dataset `vz/private/101` with a VPS inside it and having two subdatasets.
+
+ - dataset `vz/private/101`
+   - subdataset `var/lib/mysql`
+   - subdataset `var/www`
+
+Now rollback `vz/private/101` to the snapshot from the backup. The snapshot is sent
+to the new dataset `vz/private/101.rollback`.
+
+	# on primary/hypervisor
+	$ zfs create vz/private/101.rollback
+	
+	# on the backup
+	$ zfs send storage/vpsfree.cz/backup/101/tree.0/branch-2014-01-01@2014-01-01 | ssh root@primary zfs recv vz/private/101.rollback
+
+When the transfer is finished, all subdatasets are moved to it.
+
+	$ zfs rename vz/private/101/var vz/private/101.rollback/var
+
+Results in:
+
+ - dataset `vz/private/101`
+   - now empty
+ - dataset `vz/private/101.rollback`
+   - subdataset `var/lib/mysql`
+   - subdataset `var/www`
+
+The next step is to remove the old dataset and replace it with the new one:
+
+	$ zfs destroy vz/private/101
+	$ zfs rename vz/private/101.rollback vz/private/101
+
+Which gives us:
+
+ - dataset `vz/private/101.rollback`
+   - subdataset `var/lib/mysql`
+   - subdataset `var/www`

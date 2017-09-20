@@ -1,0 +1,59 @@
+vpsAdmin has a very flexible storage system that takes care of VPS disks,
+backups, NAS and more. The storage system is built on top of ZFS.
+
+# The concept
+The basic element of the storage system is a dataset (which is indeed a ZFS
+dataset). A dataset can be present at multiple storage pools. Storage pools
+are created on nodes, be it a hypervisor or a storage.
+
+_Dataset in pool_ refers to one dataset being stored on a storage pool.
+
+Datasets can have snapshots, which can be also present at multiple storage
+pools where the dataset is.
+
+## Layouts
+Storage pools have assigned roles which determine their layout. There are three
+layouts: _hypervisor_, _backup_ and _primary_.
+
+### Hypervisor
+Every first-level dataset in a pool is a private area for a VPS.
+
+### Backup
+Datasets here are backups of _hypervisor_ or _primary_ pools and the datasets
+are branched. Branching is required because of the rollback operation, which
+would without branches destroy all snapshots newer then the one rollbacking to.
+
+See [[branching]] for more information.
+
+### Primary
+Primary layout is used when the data's primary location is on this pool.
+vpsAdmin uses this role for NAS, but it can really be anything.
+
+## Operations
+The storage is fully transaction-based. Following operations are defined:
+
+ - [[Create]]
+ - [[Destroy]]
+ - [[Set]]
+ - [[Snapshot]]
+ - [[Transfer]]
+ - [[Rollback]]
+ - [[Rotate]]
+ - [[Download]]
+
+## Repeatable tasks
+Very often it is needed to run operations regularily, e.g. snapshot and transfer
+every day to a backup server. The storage uses vpsAdmin's task scheduler for that.
+
+## Failure resistance
+The storage uses transaction confirmations.
+
+# Usage
+Create a pool on a hypervisor node:
+
+	$ vpsadminctl pool create -- --node 1 --name vz --filesystem vz/private
+	
+Create a pool on a backup server for VPS backups:
+
+	$ vpsadminctl pool create -- --node 5 --name backups --filesystem storage/backup/vps
+

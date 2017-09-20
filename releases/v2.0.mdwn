@@ -1,0 +1,651 @@
+Version 2.0 brings major changes in all components. The application logic
+has shifted from the web interface to the API. The web interface is now
+almost yet another API client.
+
+v2.0 features:
+
+ - a new storage system that utilizes ZFS and drops support for other
+   filesystems
+    - creation of VPS and NAS subdatasets,
+    - any dataset can be mounted to any VPS,
+    - regular and on-demand snapshots of any dataset,
+    - transfers using zfs send/receive,
+    - changing dataset properties,
+    - snapshot downloads are now a part of the system,
+ - more robust transaction system with the ability to rollback changes,
+ - a new cluster resource management, using which the users can distribute
+   their resources as they see fit,
+ - a new way of controlling object lifetimes,
+ - improved mailing system,
+ - more versatile maintenance mode,
+ - reworked VPS cloning and swapping,
+ - configuration of individual VPS features,
+ - KVM in VPS,
+ - integrity checks,
+ - enhanced security and more.
+
+# Upgrade instructions
+The upgrade from previous version is far too complicated to be done seamlessly,
+but it is possible to upgrade without any data loss and a short time with
+unmounted NAS datasets.
+
+The following instructions are valid only for upgrade from v1.22 to v2.0.
+It is up to the administrator to backup all data.
+
+## Prerequisities
+Switch vpsAdmin to maintenance mode and make sure that there are no transactions
+running.
+
+### Nodes
+Install nc on all nodes:
+
+	# yum install nc
+
+### Disable cron jobs
+Locate the cluster crontab file and disable all jobs.
+
+### Unmount mounts of backups
+The new storage system does not support old backup mounts. They must be deleted.
+The following script is supposed to be run on the system that hosts vpsAdmin
+web interface v1.22.
+
+[[!format php """
+<?php
+
+include '/etc/vpsadmin/config.php';
+session_start();
+$_SESSION["is_admin"] = true;
+define ('CRON_MODE', true);
+define ('DEMO_MODE', false);
+
+// Include libraries
+include WWW_ROOT.'lib/db.lib.php';
+include WWW_ROOT.'lib/functions.lib.php';
+include WWW_ROOT.'lib/transact.lib.php';
+include WWW_ROOT.'lib/vps.lib.php';
+include WWW_ROOT.'lib/members.lib.php';
+include WWW_ROOT.'lib/cluster.lib.php';
+include WWW_ROOT.'lib/nas.lib.php';
+
+$db = new sql_db (DB_HOST, DB_USER, DB_PASS, DB_NAME);
+
+$sql = "SELECT m.id, m.dst, m.vps_id
+        FROM vps_mount m
+        INNER JOIN storage_export e ON m.storage_export_id = e.id
+        WHERE e.data_type = 'backup'
+        GROUP BY m.id
+        ORDER BY m.vps_id";
+
+$rs = $db->query($sql);
+$cnt = 0;
+
+while ($m = $db->fetch_array($rs)) {
+        echo "#".$m['vps_id']." ".$m['id']." delete mount '".$m['dst']."'\n";
+	
+        nas_mount_delete($m['id'], true, true);
+	
+        $cnt++;
+}
+
+echo "\nDeleted $cnt mounts\n";
+"""]]
+
+Wait for all transactions to finish.
+
+### Database
+The database contains inconsitencies which v2.0 does not tolerate.
+
+#### Table `vps`
+Remove stray VPSes - lazily deleted VPSes whose nodes were deleted from the
+database.
+
+[[!format sql """
+DELETE vps FROM vps LEFT JOIN servers ON vps_server = server_id
+WHERE server_id IS NULL;
+"""]]
+
+#### Table `vps_ip`
+Column `vps_id` must either be an ID of a VPS or NULL. Up until now, it may
+contain `0` instead of NULL.
+
+[[!format sql """
+UPDATE vps_ip SET vps_id = NULL WHERE vps_id = 0;
+"""]]
+
+Free IP addresses assigned to non-existing VPSes:
+
+[[!format sql """
+UPDATE vps_ip ip
+LEFT JOIN vps v ON ip.vps_id = v.vps_id
+SET ip.vps_id = NULL
+WHERE ip.vps_id > 0 AND v.vps_id IS NULL;
+"""]]
+
+#### Stop all vpsAdmind daemons
+Before the next step, it is necessary to stop all daemons, as they rely on
+table `transactions` to use engine MyISAM.
+
+#### InnoDB
+Change engine for all tables to InnoDB:
+
+[[!format sql """
+ALTER TABLE `log` ENGINE = InnoDB;
+ALTER TABLE `node_pubkey` ENGINE = InnoDB;
+ALTER TABLE `transactions` ENGINE = InnoDB;
+"""]]
+
+#### Encoding
+The web interface did not save data in UTF-8 to the database, the encoding must
+be fixed. Affected tables are:
+
+ - members,
+ - members\_changes,
+ - sysconfig,
+ - vps.
+
+First, dump affected tables:
+
+	# mysqldump -u root -p --opt --quote-names --skip-set-charset \
+	            --default-character-set=latin1 vpsadmin \
+	            members members_changes sysconfig vps > vpsadmin_enc.sql 
+
+Drop dumped tables:
+
+[[!format sql """
+DROP TABLE members;
+DROP TABLE members_changes;
+DROP TABLE sysconfig;
+DROP TABLE vps;
+"""]]
+
+Feed the dump back to the database with the correct encoding:
+
+	# mysql -u root -p --default-character-set=utf8 vpsadmin < vpsadmin_enc.sql 
+
+#### Database timezones
+vpsAdmin-api saves all dates to the database in UTC. Current version of vpsAdmin
+uses local timezone. The database migrations convert all affected columns to
+UTC. For this to work, the timezone tables must be populated:
+
+	# mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -u root -p mysql
+
+## Upgrading the API
+First, shutdown the API, all daemons on hypervisors and all console routers.
+
+HaveAPI is as of yet not installed as a gem, it's cloned to /opt/haveapi.
+Update by:
+
+	# cd /opt/haveapi
+	# git pull
+
+Then update the API by
+
+	# cd /opt/vpsadminapi
+	# git pull
+
+Now run database migrations to bring the database scheme up to date:
+
+	# rake db:migrate VERSION=20150630072821
+
+It is important to specify the `VERSION` to complete the upgrade completely.
+
+If the migration fails, there is no other way but to restore backup, localize
+the error, fix it and try again, until all migrations succeed.
+
+The new database scheme brings a lot of new tables and columns. Some of them
+need to be populated manually.
+
+### Table `environments`
+Create wanted environments.
+
+### Table `servers`
+All nodes must belong to an environment. Hypervisors can be in the same or
+in as many environments as is needed. Storage nodes should be in a different
+environment from hypervisors, so that the disk space cannot be interchanged.
+
+Node name should not contain a location domain, as it is part of the location:
+
+[[!format sql """
+UPDATE servers SET server_name = SUBSTRING_INDEX(server_name, '.', 1);
+"""]]
+
+### Table `sysconfig`
+ - Set key `snapshot_download_base_url`
+
+### Table `default_object_cluster_resources`
+This table contains the default amount of resources assigned to new objects.
+For every environment, it has to contain defaults for `class_name` `Vps` and
+`User` with all cluster resources.
+
+### Table `members`
+Optionally, set `expiration_date` to `paid_until`:
+
+[[!format sql """
+UPDATE members SET expiration_date = paid_until;
+"""]]
+
+### Table `vps`
+Set all VPSes as confirmed:
+
+[[!format sql """
+UPDATE vps SET confirmed = 1;
+"""]]
+
+It is now possible to start the new API server. How is the API server started
+is up to the administrator. It may be started e.g. using rackup or thin:
+
+	# cd /opt/vpsadminapi
+	# thin --address 127.0.0.1 --port 9292 --environment production start &> /var/log/vpsadminapi.log
+
+This will start a single threaded HTTP server. Errors will be logged to
+`/var/log/vpsadminapi.log`.
+
+## Upgrading nodes
+The following commands must be run on all nodes.
+
+### vpsAdmind
+Upgrade by:
+
+	# cd /opt/vpsadmind
+	# git pull
+
+Install new dependencies:
+
+	# bundler install
+
+Changes:
+
+ - the executable has been renamed from `/opt/vpsadmind/vpsadmind.rb` to
+   `/opt/vpsadmind/bin/vpsadmind`
+
+The new vpsAdmind manages iptables rules more intelligently - keeping only
+rules for active IP addresses. Run
+
+	# vpsadmindctl reinit fw
+
+to flush all rules and add only needed ones.
+
+Create directory `/var/vpsadmin/mounts`:
+
+	# mkdir -p /var/vpsadmin/mounts
+
+FIXME: revise /etc/vpsadmin/vpsadmind.yml
+
+### vpsAdmindctl
+Upgrade by:
+
+	# cd /opt/vpsadmindctl
+	# git pull
+
+Install new dependencies:
+
+	# bundler install
+
+Changes:
+
+ - the executable has been renamed from `/opt/vpsadmindctl/vpsadmindctl.rb`
+   to `/opt/vpsadmindctl/bin/vpsadmindctl`
+
+### Pools
+All storage pools must have subdataset `vpsadmin` with the following structure:
+
+ - `vpsadmin/`
+   - `mount`
+   - `download`
+
+These datasets must be created manually:
+
+	# zfs create -p $POOL/vpsadmin/mount
+	# zfs create -p $POOL/vpsadmin/download
+
+### Hypervisors
+
+### Storage nodes
+The data on storage nodes must be migrated to the new layout.
+
+#### Rename datasets named `private`
+Since v2.0, `private` is a reserved name and cannot be used to name a dataset.
+Datasets having this name must be renamed. That is not a big problem if the
+mounts remain the same. It must be done manually. Locate such datasets:
+
+	# zfs list -r -oname $POOL | grep private
+
+Rename all of them to chosen replacement:
+
+	# zfs rename $OLD_NAME $NEW_NAME
+
+Update this dataset's name in the database to `$NEW_NAME`. VPS mount scripts
+will be regenerated later.
+
+#### Backups
+The datasets must be rearranged to fit the new [[/Storage/Branching]] system.
+First, rename snapshots to new format using [[rename_backup_snapshots.sh]].
+
+Next, use [[rearrange_backup_datasets.sh]]
+
+These scripts must be run on every pool containing VPS backups.
+
+When the pools fit the new layout, old backup snapshot in the database must be
+migrated to the new scheme using [[rename_backup_snapshots.rb]].
+
+#### NAS
+All datasets must have a top-level folder `private/` which contains all data.
+The folder must be created and all existing data moved.
+
+You may want to skip this for now and return here when the web interface is
+upgraded, so that you can monitor the transactions and their progress.
+
+Before the data on NAS datasets can be moved, it should be unmounted in all
+VPSes.
+
+The following script must be run on all hypervisor nodes. It expects vpsAdmind
+to be already upgraded, although it does not have to be running.
+
+[[!format ruby """
+#!/usr/bin/env ruby
+require '/opt/vpsadmind/lib/vpsadmind'
+
+include VpsAdmind::Utils::System
+include VpsAdmind::Utils::Log
+
+$CFG = VpsAdmind::AppConfig.new('/etc/vpsadmin/vpsadmind.yml')
+
+unless $CFG.load(true)
+  exit(false)
+end
+
+db = VpsAdmind::Db.new
+
+node_id = $CFG.get(:vpsadmin, :server_id)
+
+rs = db.query(
+    "SELECT m.vps_id, m.dst
+     FROM mounts m
+     INNER JOIN vps v ON v.vps_id = m.vps_id
+     WHERE vps_server = #{node_id}"
+)
+
+succeeded = 0
+
+rs.each_hash do |m|
+  vps = VpsAdmind::Vps.new(m['vps_id'])
+
+  begin
+    syscmd("umount -f #{File.join(vps.ve_root, m['dst'])}")
+    succeeded += 1
+
+  rescue VpsAdmind::CommandFailed => e
+    puts e.message
+  end
+end
+
+puts "#{rs.num_rows} mounts, #{succeeded} umounted"
+"""]]
+
+Now the data in NAS datasets can me migrated.
+Run [[migrate_nas_step1.sh]] and [[migrate_nas_step2.sh]]on every pool with user
+datasets.
+
+When the script finishes, regenerate mount scripts of all affected VPSes and
+remount the previously unmounted mounts. The following script is supposed to be
+run from the node hosting vpsAdmin-api. All daemons must be running, as they
+will be executing transactions.
+
+[[!format ruby """
+#!/usr/bin/env ruby
+Dir.chdir('/opt/vpsadminapi')
+$:.insert(0, '/opt/haveapi/lib')
+require '/opt/vpsadminapi/lib/vpsadmin'
+
+module TransactionChains
+  module Vps
+    # Replace chain Mounts with a temporary class available only during the
+    # upgrade.
+    remove_const(:Mounts)
+
+    class Mounts < TransactionChain
+      def link_chain
+        ::Vps.all.order('vps_server ASC, vps_id ASC').each do |vps|
+          lock(vps)
+
+          append(Transactions::Vps::Mounts, args: [
+              vps, vps.mounts.all.order('dst')
+          ])
+          append(Transactions::Vps::Mount, args: [
+              vps, vps.mounts.all.order('dst')
+          ]) if vps.running?
+        end
+      end
+    end
+  end
+end
+
+TransactionChains::Vps::Mounts.fire
+"""]]
+
+## Upgrading the web interface
+Upgrade by:
+	
+	# cd /where/is/vpsadmin
+	# git pull
+
+Install [composer](https://getcomposer.org) and then use it to install dependencies:
+
+	# php composer.phar install
+
+Changes:
+
+ - Add to `/etc/vpsadmin/config.php`:
+
+	`API_URL` - HTTP URL to the API server
+	`ENV_VPS_PRODUCTION_ID` - the ID of the production environment in which
+	                          VPSes are created by default
+
+
+## Proxy for snapshot downloads
+Must mount subdataset `vpsadmin/mount` from every pool and make it accessible
+from the web server.
+
+## Mail templates
+v2.0 brings new system of mail templates. Old templates are simply ignored,
+the following new templates must be created:
+
+ - `vps_config_change` - sent when VPS config chain is changed
+ - `vps_resources_change` - VPS resources changed
+ - `user_create` - user created
+ - `user_suspend` - user suspended (entered state `suspended`)
+ - `user_resume` - user resumed (left state `suspended`)
+ - `user_soft_delete` - user deleteted (entered state `soft_delete`)
+ - `user_revive` - user was revived (left state `soft_delete`)
+ - `expiration_user_active` - payment notification
+ - `snapshot_download_ready` - snapshot download link is ready
+ - `daily_report` - daily report
+
+## IP address owners
+IP address ownership is a new concept that is needed since users can add/remove
+IP addresses freely. Whenever a user picks an IP address, it is assigned to him.
+He can own as many IPs as his assigned cluster resources allow. No one can use
+somebody else's owned IP, even if it is not assigned to a VPS currently. At the
+same time, the user must use already owned IP addresses and cannot get new ones
+if he hit the limit.
+
+Currently used IP addresses in environments that enforce IP ownership must be
+assigned owners.
+
+[[!format sql """
+UPDATE vps_ip ip
+INNER JOIN vps v ON ip.vps_id = v.vps_id
+INNER JOIN servers s ON s.server_id = v.vps_server
+INNER JOIN environments e ON e.id = s.environment_id
+SET ip.user_id = v.m_id
+WHERE e.user_ip_ownership = 1;
+"""]]
+
+## Assign cluster resources to existing users
+After the database migrations, existing users do not have any cluster resources
+assigned to them. This cannot be done automatically, as there was no one way
+how VPS resources could be assigned.
+
+The attached script assumes that VPS resources are assigned by configs with
+certain names:
+
+ - memory by `ram-vswap-(\d+)g-swap-0g`
+ - swap by `swap-(\d+)g`
+ - CPU by `cpu-(\d+)-\d+`
+ - disk space by `hdd-(\d+)g`
+
+These configs are removed and translated to cluster resources. The user is
+assigned the sum of resources taken by all his VPSes or the minimum default
+amount, should he not have any VPS.
+
+[[assign_cluster_resources.rb]] is supposed to be run on the node hosting
+vpsAdmin-api, it creates user cluster resources for all environments and counts
+all his datasets and VPSes' resources and registers cluster resource usage.
+
+## User environment configs
+The following script creates an environment config for every user in every
+environment. The config is either inherited, or if `m_playground_enable` is set,
+VPS creation in specified environments is forbidden.
+
+[[!format ruby """
+#!/usr/bin/env ruby
+Dir.chdir('/opt/vpsadminapi')
+$:.insert(0, '/opt/haveapi/lib')
+require '/opt/vpsadminapi/lib/vpsadmin'
+
+# A list of environment IDs for which old members.m_playground_enable should
+# be considered.
+PLAYGROUND_ENABLE = []
+
+User.transaction do
+  User.all.each do |user|
+    Environment.all.each do |env|
+      cfg = EnvironmentUserConfig.new(
+          environment: env,
+          user: user,
+          can_create_vps: env.can_create_vps,
+          can_destroy_vps: env.can_destroy_vps,
+          vps_lifetime: env.vps_lifetime,
+          max_vps_count: env.max_vps_count,
+          default: true
+      )
+
+      if PLAYGROUND_ENABLE.include?(env.id) && user.m_playground_enable
+        cfg.can_create_vps = false
+        cfg.default = false
+      end
+
+      cfg.save!
+    end
+  end
+end
+
+"""]]
+
+## Ensure sharenfs
+Make sure that sharenfs of all pools on all nodes allows subnets of all nodes,
+as every two nodes must be able to mount each other's datasets.
+
+## Migrate old backups to snapshots
+The datasets and snapshots in backup pools are already migrated to the new
+layout, all that remains to be done is to register them correctly in the
+database.
+
+Run [[migrate_backups_to_snapshots.rb]] on the node hosting vpsAdmin-api.
+
+## Finalize migrations
+Run the remaining migrations:
+
+	# cd /opt/vpsadminapi
+	# rake db:migrate
+
+## Run system integrity check
+Integrity check is a new feature of v2.0 that compares the contents of the
+database with the real data on servers. It checks that all datasets, snapshots
+and VPSes exists and much more. All discrepancies are reported so that the
+administrator can fix them and see if the cluster is in a proper state.
+
+The integrity check can be started by any API client, e.g.:
+
+	$ vpsadminctl -u http://vpsadmin.your.domain integrity_check new
+
+The results can them be browsed in the web or any other client.
+
+## Scheduler
+The scheduler is located in `/opt/vpsadminapi/bin/vpsadmin-scheduler`. It is up
+to the administrator to start it. The scheduler is used to execute repeatable
+tasks, such as daily backups. It depends on cron.
+
+## Cron jobs
+
+ - `/opt/vpsadmind/backup.rb` is replaced by a scheduler, that is a part of the API
+ - `/opt/vpsadmind/bin/savetransfers.rb` remains unchanged
+ - `vpsadmin/cron_delete.php` and `vpsadmin/cron_mailer.php` are replaced by
+    lifetimes rake tasks
+ - `vpsadmin/cron_nonpayers.php` is deleted
+ - `/opt/vpsadmind/daily_report.rb` is replaced by a new rake task
+
+Mailing users about expiring objects handles rake task
+`vpsadmin:lifetimes:mail`.
+
+
+Mail users 7 days before their account expires:
+
+	# rake vpsadmin:lifetimes:mail OBJECTS=User STATES=active DAYS=7
+
+Mail users 7 days before VPS expires:
+
+	# rake vpsadmin:lifetimes:mail OBJECTS=Vps STATES=active DAYS=7
+
+Objects that have passed the expiration date are advanced by task
+`vpsadmin:lifetimes:progress`.
+
+Suspend expired users, but wait 14 more additional days, do not suspend
+immediately when expiration date passes. Set new expiration date to 14 days
+from now, after which the user will advance to state `soft_delete`:
+
+	# rake vpsadmin:lifetimes:progress \
+	      OBJECTS=User STATES=active GRACE=$((14*24*60*60)) \
+	      NEW_EXPIRATION=$((14*24*60*60)) \
+	      REASON="Your account has expired."
+
+Delete suspended users:
+
+	# rake vpsadmin:lifetimes:progress \
+	      OBJECTS=User STATES=suspended,soft_delete
+
+Advance VPS states:
+
+	# rake vpsadmin:lifetimes:progress \
+	      OBJECTS=Vps NEW_EXPIRATION=$((7*24*60*60))
+
+Advance states of all other objects:
+
+	# rake vpsadmin:lifetimes:progress OBJECTS=Dataset,SnapshotDownload
+
+Daily report is sent by task `vpsadmin:mail_daily_report`.
+
+## Archive downloads
+Downloads are now a part of the system, meaning created downloads are stored
+in the database and are manageable using the API. The system is designed so that
+archives are stored in each pool in subdataset `vpsadmin/download`. It is up to
+the administrator to make these datasets accessible via web server.
+
+[[vpsadmin-download-mounter|https://github.com/vpsfreecz/vpsadmin-download-mounter]]
+can be used to automate this procedure. Basically it mounts `download` datasets
+of all pools to a single mountpoint via NFS. You then make this mountpoint
+accessible via web browser at `snapshot_download_base_url`, which is defined in
+sysconfig.
+
+<a name="known-issues"></a>
+## Known issues
+ - NAS migration script does not take hidden files located in dataset root into
+   account, they must be migrated manually
+ - Users cannot create subdatasets on NAS, as they haven't been given the needed
+   permission. Should it be needed, fix with something like:
+
+[[!format sql """
+UPDATE `datasets` SET user_create = 1
+WHERE full_name = CAST(user_id AS CHAR(10)) COLLATE utf8_czech_ci
+"""]]
+

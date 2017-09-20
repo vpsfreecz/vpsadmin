@@ -1,0 +1,159 @@
+# The purpose of branching
+Branching allows a dataset to be backed up with the capability to rollback
+to a specified snapshot and recover from history flow interruption.
+
+Branched datasets do not contain data directly. They contain `tree`
+datasets. Inside `trees` are `branches`.
+
+Trees are needed when the history flow of snapshots is broken. That happens
+when the snapshot from `primary` or `hypervisor` pool is lost or when the common
+snapshot between the two datasets has been destroyed. Currently,
+this happens only for VPS reinstall. In case of history flow interruption,
+new tree is created and new snapshots are transfered there.
+
+Branches are inside trees. They are needed for the rollback operation, which
+is explained below. The history flow in a tree is never broken.
+
+# Naming conventions
+Every dataset in a pool with `backup` role has at least one tree and every
+tree has at least one branch.
+
+Tree datasets are named as `tree.<index>` where index is an incrementing
+number starting at 0.
+Branch name is a snapshot name that the branch was created from. The first branch
+is named simply by date and time of its creation.
+
+Branch names have a prefix _branch_ and a suffix to index datasets of the same
+name that might be created when restoring from one dataset more than once.
+
+# Head
+vpsAdmin remembers which tree is the head of a dataset and which branch inside
+that tree is the head. New snapshots are always sent to the head. The head
+changes only during rollback or history flow interruption.
+
+# Examples
+Suppose there is a pool with root dataset ``storage/backup`` and dataset
+``101`` (which is a private area of a VPS) is backed up daily.
+
+The backups would look like:
+
+ - storage/backup/101
+   - tree.0
+     - branch-2014-01-01--00:00:00.0
+         - @2014-01-01--00:00:00
+         - @2014-01-02--00:00:00
+         - @2014-01-03--00:00:00
+
+An example with nested datasets:
+
+ - storage/backup/101
+   - tree.0
+     - branch-2014-01-01--00:00:00.0
+         - @2014-01-01--00:00:00
+         - @2014-01-02--00:00:00
+         - @2014-01-03--00:00:00
+   - nested-dataset
+     - tree.0
+         - branch-2014-01-01--00:00:00.0
+             - @2014-01-01--00:00:00
+             - @2014-01-02--00:00:00
+             - @2014-01-03--00:00:00
+
+In the examples above, there are three daily backups and both datasets have
+only one brach, as there was no rollback yet.
+
+## Rollback
+Rollback is why branches are needed. When rolling back, the snapshot to rollback
+to is cloned into a new dataset. The clone is then promoted and dataset head
+is set to the clone. On the other hand, if the target snapshot is on top
+of a branch, it is rollbacked on the hypervisor only.
+
+Let's assume there are five backups of VPS #101:
+
+ - storage/backup/101
+   - tree.0
+     - branch-2014-01-01--01:00:00.0
+         - @2014-01-01--01:00:00
+         - @2014-01-02--01:00:00
+         - @2014-01-03--01:00:00
+         - @2014-01-04--01:00:00
+         - @2014-01-05--01:00:00
+
+Now the user wants to rollback to 2014-01-03--01:00:00. Snapshot
+``storage/backup/101/tree.0/branch-2014-01-01--01:00:00.0@@2014-01-03--01:00:00``
+is cloned to ``storage/backup/101/tree.0/branch-2014-01-03--01:00:00.0`` and promoted.
+The promotion causes the datasets older or equal to the one rollbacking to
+to move to the clone.
+
+At the same time, on a pool with the _hypervisor_ role, the dataset ``101``
+is rollbacked also. There is no branching present on a _hypervisor_
+and all history is kept only on _backup_. If there are snapshots
+on the _hypervisor_ that are not yet present on the _backup_, they must
+be transfered before the rollback.
+
+The branches then look like this:
+
+ - storage/vpsfree.cz/backup/101
+   - tree.0
+     - branch-2014-01-01--01:00:00.0
+         - @2014-01-04--01:00:00
+         - @2014-01-05--01:00:00
+     - branch-2014-01-03-01:00:00.0
+         - @2014-01-01--01:00:00
+         - @2014-01-02--01:00:00
+         - @2014-01-03--01:00:00
+	 
+Note that because of the clone there is a dependency between dataset
+``storage/backup/101/tree.0/branch-2014-01-01--01:00:00.0`` and snapshot
+``storage/backup/101/tree.0/branch-2014-01-03-01:00:00.0@2014-01-03--01:00:00``.
+The snapshot cannot be deleted first. It has to be kept until the dependent
+dataset is destroyed.
+
+The tree head is set to ``branch-2014-01-03-01:00:00.0``. New snapshots are
+sent there:
+
+ - storage/vpsfree.cz/backup/101
+   - tree.0
+     - branch-2014-01-01--01:00:00.0
+         - @2014-01-04--01:00:00
+         - @2014-01-05--01:00:00
+     - branch-2014-01-03-01:00:00.0
+         - @2014-01-01--01:00:00
+         - @2014-01-02--01:00:00
+         - @2014-01-03--01:00:00
+         - @2014-01-06--01:00:00
+         - @2014-01-07--01:00:00
+         - @2014-01-08--01:00:00
+
+# History flow interruption
+When the dataset on `primary` or `hypervisor` pools is destroyed/reset/lost
+or the common snapshot is gone,
+new tree is created and is set as head for the dataset on `backup`.
+New snapshots are then branched and transfered there.
+
+Dataset head changes also during rollback operation, when one rollbacks
+to a snapshot from a different tree. The head is then set to the tree
+the snapshot comes from. The rollback operation is otherwise performed
+as usual.
+
+Snapshots in different trees cannot interact in any way, they are not compatible
+with each other, as basically they are snapshots of different datasets.
+
+## Rotation
+Continuing the example above, the snapshot rotation is not straightforward.
+When there are multiple branches, there are dependencies between them.
+vpsAdmin remembers that and must first destroy the dependants, then the
+_parents_.
+
+ 1. destroy ``@2014-01-01--01:00:00``
+ 2. destroy ``@2014-01-02--01:00:00``
+ 3. skip ``@2014-01-03--01:00:00``
+ 4. destroy ``@2014-01-04--01:00:00``
+ 5. destroy ``@2014-01-05--01:00:00``
+    - branch ``branch-2014-01-01--01:00:00.0`` is empty, destroy it
+    - ``@2014-01-03--01:00:00`` has no dependants, destroy it
+ 6. destroy ``@2014-01-06--01:00:00``
+ 7. and so on...
+ 
+If the dataset has multiple trees, all snapshots are put together on one heap
+and destroyed with the same rules. A tree is destroyed when it's empty.

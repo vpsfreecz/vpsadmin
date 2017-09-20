@@ -1,0 +1,122 @@
+# Concept
+vpsAdmin supports per-IP traffic shaping.
+
+Every hypervisor has configured an outgoing network interface and a maximum allowed throughput.
+Each IP address can have different limits for in/out rates.
+
+# Usage
+Currently, shaper management is available only via the API, not in the web interface.
+
+Manage node global limits, in bytes per second:
+
+	$ vpsadminctl node update <id> -- --max-tx 100000 --max-rx 200000
+
+Manage per-IP rate limits, in bytes per second:
+
+	$ vpsadminctl ip_address update <id> -- --max-tx 10000 --max-rx 20000
+
+Shaper on a hypervisor can also be controlled with vpsadmindctl.
+
+Remove all qdiscs and classes:
+
+	# vpsadmindctl flush shaper
+
+Initialize shaper and add all rules:
+
+	# vpsadmindctl init shaper
+
+Do the two operations in one step:
+
+	# vpsadmindctl reinit shaper
+
+# Implementation
+Shapers are set up on hypervisors using ``tc``.
+
+## Initialize shaper
+At vpsAdmind's initialization, root queueing disciplines
+and classes for shaping all VPSes are created. In the following example, ``bond210``
+is the outgoing interface and 1 800 Mbps is the max rate configured for this hypervisor.
+
+	tc qdisc add dev bond210 root handle 1: htb
+	tc qdisc add dev venet0 root handle 1: htb
+
+	tc class add dev venet0 parent 1: classid 1:1 htb rate 1800Mbit ceil 1800Mbit burst 1M
+	tc class add dev bond210 parent 1: classid 1:1 htb rate 1800Mbit ceil 1800Mbit burst 1M
+
+These four rules must always be present.
+
+The shaper is not initialized if the network interface is not configured (NULL).
+
+## Changing root classes
+Root classes are changed with:
+
+	tc class change dev venet0 parent 1: classid 1:1 htb rate 33Mbps ceil 33Mbps burst 1M
+	tc class change dev bond210 parent 1: classid 1:1 htb rate 11Mbps ceil 11Mbps burst 1M
+
+If that fails due to the classes not present, shaper is initialized.
+
+## Per-IP address shaping
+Following rules must be set for every IP address to shape. In this example, 300 Mbps is the max in/out rate
+for IP 185.8.164.31.
+
+	tc class add dev venet0 parent 1:1 classid 1:10 htb rate 300Mbit ceil 300Mbit burst 300k
+	tc class add dev bond210 parent 1:1 classid 1:10 htb rate 300Mbit ceil 300Mbit burst 300k
+	
+	tc filter add dev venet0 parent 1: protocol ip prio 16 u32 match ip dst 185.8.164.31 flowid 1:10
+	tc filter add dev bond210 parent 1: protocol ip prio 16 u32 match ip src 185.8.164.31 flowid 1:10
+	
+	tc qdisc add dev bond210 parent 1:10 handle 10: sfq perturb 10
+	tc qdisc add dev venet0 parent 1:10 handle 10: sfq perturb 10
+
+These rules have class ``1:1`` as a parent, that being the class created during the initialization.
+In addition to unique IP address id in the database, which is int32, for the purpose
+of shaping there is additional column with int16 id, that is used as a class id (``1:10`` in the example
+above).
+
+These 16-bit ids are independent of row ids. They are set on IP address creation. The lowest available id is selected.
+
+### Adding/removing per-IP rules
+The hypervisor has rules only for IP addresses that are present. The rules are added/removed at:
+
+ - \+ IP assignment to VPS (includes VPS creation, cloning, swapping),
+ - \+ VPS migration to this node,
+ - \- IP removed from VPS,
+ - \- VPS migration from this node,
+ - \- VPS deletion.
+ 
+### Removing rules
+It is not possible to remove only filters specific for one IP address. All filters are always deleted.
+vpsAdmind then fetches all IP addresses for this node from the database and adds remaining filters anew.
+
+Rules for one IP address are removed as:
+
+	tc qdisc del dev bond210 parent 1:10 handle 10:
+	tc qdisc del dev venet0 parent 1:10 handle 10:
+
+	# deletes all filters, impossible to delete just one
+	tc filter del dev venet0 parent 1: protocol ip prio 16
+	tc filter del dev bond210 parent 1: protocol ip prio 16
+
+	tc class del dev venet0 parent 1:1 classid 1:10
+	tc class del dev bond210 parent 1:1 classid 1:10
+
+
+### Changing shapers
+vpsAdmind first tries to change the classes in place. If that fails because the chosen IP address
+did not have any limits before, all rules are added.
+
+Atempt to change rules:
+
+	tc class change dev venet0 parent 1:1 classid 1:10 htb rate 100Mbps ceil 100Mbps burst 300k
+	tc class change dev bond210 parent 1:1 classid 1:10 htb rate 100Mbps ceil 100Mbps burst 300k
+
+If any of those two commands fails with exit code 2, rules are added again.
+
+## Limitations
+It is not possible to change the outgoing network interface the shaper is configured on.
+It must be done manually, the procedure is as follows:
+
+ 1. ``vpsadmindctl flush shaper``
+ 2. Change the network interface in vpsAdmin
+ 3. ``vpsadmindctl reload``
+ 4. ``vpsadmindctl init shaper``

@@ -1,0 +1,55 @@
+# Release notes
+Version 2.4 brings support for multilingual e-mails sent by vpsAdmin. Every
+template can now be translated into multiple languages. Users decide in which
+language they wish to receive their mail.
+
+v2.4 drops mail template management from vpsAdmin web UI. Mail templates are now
+to be managed by a new command line utility `vpsadmin-mail-templates`. Templates
+are saved as text files on disk and uploaded to the API using this utility.
+
+## API resources
+- New resource `Language`
+- New resource `MailTemplate.Translation`
+- New parameter `User.language`
+
+## API internals
+- Mail templates use erb trim mode '-'
+- VPS chown: transfer diskspace cluster resource
+  (issue [#103](https://redmine.vpsfree.cz/issues/103))
+- Rake task `vpsadmin:mail_daily_report` has new variable `VPSADMIN_LANG`
+
+## vpsAdmin web UI
+- Removed mail template management
+
+# Upgrade instructions
+
+Standard upgrade process followed by optional configuration.
+
+## Set original mail template language
+Before v2.4, mail templates used an unspecified language. After upgrade, the
+original templates are marked as English translations. 
+
+If, for example, the templates were written in Czech, add the Czech language and
+mark template translations accordingly:
+
+[[!format sql """
+INSERT INTO `languages` (`code`, `label`) VALUES ('cs', 'Česky');
+UPDATE `mail_template_translations` SET `language_id` = LAST_INSERT_ID();
+"""]]
+
+## Set users' default language
+By default, all users will have English set as their language. It can be
+changed either through API or directly using SQL. First, create a new language
+as shown above and then assign it to users.
+
+[[!format sql """
+UPDATE `members` SET `language_id` = <language-id>;
+"""]]
+
+## vpsAdmin Requests
+If vpsAdmin requests are used, additional SQL query needs to be executed, as
+requests are not a part of the API.
+
+[[!format sql """
+ALTER TABLE `members_changes` ADD `m_language` VARCHAR(5) NOT NULL AFTER `m_currency`;
+"""]]
