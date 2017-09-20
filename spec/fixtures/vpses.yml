@@ -1,0 +1,39 @@
+ve101:
+  user: user01
+  vps_hostname: vps-101-user01
+  os_template: scientific
+  dns_resolver: prg_google
+  node: node1
+  vps_backup_export: ""
+  vps_backup_exclude: ""
+  vps_config: ""
+
+ve102:
+  user: user01
+  vps_hostname: vps-102-user01
+  os_template: scientific
+  dns_resolver: prg_google
+  node: node1
+  vps_backup_export: ""
+  vps_backup_exclude: ""
+  vps_config: ""
+
+ve103:
+  user: user02
+  vps_hostname: vps-103-user02
+  os_template: scientific
+  dns_resolver: prg_google
+  node: node1
+  vps_backup_export: ""
+  vps_backup_exclude: ""
+  vps_config: ""
+
+ve104:
+  user: user02
+  vps_hostname: vps-104-user02
+  os_template: scientific
+  dns_resolver: prg_google
+  node: node1
+  vps_backup_export: ""
+  vps_backup_exclude: ""
+  vps_config: ""

@@ -1,0 +1,40 @@
+<%
+  def render_value(v)
+    if v.is_a?(Class)
+      "{#{v}}"
+
+    elsif v.is_a?(Array)
+      "{#{v[0]}}, #{v[1]}"
+
+    else
+      v
+    end
+  end
+
+	def render_hash(hash)
+		return 'none' unless hash
+		'<dl>' + hash.map { |k,v| "<dt>#{k}</dt><dd>#{render_value(v)}</dd>" }.join('') + '</dl>'
+	end
+%>
+# Mail templates
+<% ::MailTemplate.templates.each do |id, tpl| %>
+## <%= id %>
+<table>
+	<tr>
+		<td style="vertical-align: top;">Name:</td>
+    <td><code><%= (tpl[:name] || id).to_s.gsub(/{/, "\{") %></code></td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top;">Description:</td>
+		<td><%= tpl[:desc] %></td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top;">Parameters:</td>
+		<td><%= render_hash(tpl[:params]) %></td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top;">Variables:</td>
+		<td><%= render_hash(tpl[:vars]) %></td>
+	</tr>
+</table>
+<% end %>

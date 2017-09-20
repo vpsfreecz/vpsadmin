@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+
+Dir.chdir('/opt/vpsadmin-api')
+require_relative '../lib/vpsadmin'
+
+EventMachine.run do
+  VpsAdmin::Scheduler.start
+  
+  EventMachine.add_periodic_timer(3*60*60) do
+    VpsAdmin::Scheduler.regenerate
+  end
+end
+

@@ -1,0 +1,15 @@
+prague:
+  location_label: Praha
+  location_type: production
+  location_has_ipv6: false
+  location_remote_console_server: ''
+  environment: production
+  domain: prg
+
+brno:
+  location_label: Brno
+  location_type: production
+  location_has_ipv6: false
+  location_remote_console_server: ''
+  environment: production
+  domain: brq

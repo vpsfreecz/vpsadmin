@@ -1,0 +1,7 @@
+production:
+  label: Production
+  domain: vpsfree.cz
+
+playground:
+  label: Playground
+  domain: vpsfree.cz
