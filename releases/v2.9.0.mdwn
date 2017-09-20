@@ -31,7 +31,8 @@ acknowledging or ignoring of detected events via the web UI.
 - Initial release
 
 ## Outage reports
-- Outage state changing via the update action
+- Replace `Outage.Announce`, `Cancel` and `Close` actions by the `Update` action
+- `Outage.Create`: make short summaries required in all languages
 
 ## Requests
 - Admins can ask users for correction of registration requests
