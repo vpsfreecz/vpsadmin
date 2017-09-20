@@ -1,0 +1,31 @@
+* Wed Sep 20 2017 - version 2.9.0
+- No changes
+
+* Wed Jun 07 2017 - version 2.8.0
+- No changes
+
+* Mon Mar 20 2017 - version 2.7.0
+- Use new DB schema of VPSes
+- Limit refresh rate of web console to 20 per second (50 ms)
+- Fixed reconnect
+
+* Fri Dec 30 2016 - version 2.6.0
+- No changes
+
+* Tue Nov 15 2016 - version 2.5.0
+- No changes
+
+* Fri Jun 24 2016 - version 2.4.0
+- No changes
+
+* Tue Jun 14 2016 - version 2.3.0
+- No changes
+
+* Fri Feb 26 2016 - version 2.2.0
+- No changes
+
+* Sat Jan 23 2015 - version 2.1.0
+- Change protocols for communication with clients and vpsAdmind
+- Support console rezising
+- Implement reconnect button in web console
+- Disconnect from the database after a period of inactivity

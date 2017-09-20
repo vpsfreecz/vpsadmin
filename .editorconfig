@@ -21,3 +21,7 @@ indent_style = tab
 [*.html]
 indent_size = 4
 indent_style = space
+
+[console_router/public/*.js]
+indent_size = 4
+indent_style = space
