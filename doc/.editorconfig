@@ -1,0 +1,3 @@
+# http://editorconfig.org
+[*.mdwn]
+trim_trailing_whitespace = false
