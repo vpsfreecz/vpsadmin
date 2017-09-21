@@ -31,4 +31,40 @@ namespace :vpsadmin do
       File.read(webui).sub(/define\("VERSION", '[^']+'\);/, "define(\"VERSION\", '#{v}');")
     )
   end
+
+  desc 'Close changelog for the latest version'
+  task :close_changelog do
+    v = File.read('VERSION').strip
+    header = "* #{Time.now.strftime('%a %b %d %Y')} - version #{v}"
+
+    (Dir.glob('*/CHANGELOG') + Dir.glob('plugins/*/CHANGELOG')).each do |file|
+      io = File.open(file, 'r')
+      first = io.readline
+      io.close
+
+      if first.start_with?('* ')
+        # Changelog already closed
+        if first.include?("version #{v}")
+          puts "#{file}: already closed"
+          next
+        end
+
+        # No change has been logged
+        puts "#{file}: closing with no changes"
+        File.write(
+          file,
+          "#{header}\n- No changes\n\n" + File.read(file)
+        )
+      elsif first.start_with?('- ')
+        puts "#{file}: closing"
+        File.write(
+          file,
+          "#{header}\n" + File.read(file)
+        )
+
+      else
+        puts "#{file}: invalid first line, ignoring"
+      end
+    end
+  end
 end
