@@ -6,9 +6,9 @@ module TransactionChains
       lock(vps.dataset_in_pool)
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
-      
+
       chain = self
-      
+
       append(Transactions::Utils::NoOp, args: vps.node_id) do
         # Mark all resources as confirmed
         objs = [vps, vps.dataset_in_pool]

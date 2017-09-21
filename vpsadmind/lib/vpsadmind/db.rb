@@ -63,7 +63,7 @@ module VpsAdmind
         else
           try_restart = false
         end
-        
+
         if restart && try_restart
           counter += 1
 

@@ -16,7 +16,7 @@ VpsAdmin::API::Plugin.register(:requests) do
         label: 'Currencies',
         description: 'Comma separated list of accepted currencies in registration',
         min_user_level: 99
-    
+
     vars = {
         request: '::UserRequest',
         r: '::UserRequest',
@@ -30,7 +30,7 @@ VpsAdmin::API::Plugin.register(:requests) do
               role: 'user or admin',
               type: 'registration or change',
           }, vars: vars
-      
+
       MailTemplate.register :request_action_role,
           name: "request_%{action}_%{role}", params: {
               action: 'create or resolve',
@@ -43,7 +43,7 @@ VpsAdmin::API::Plugin.register(:requests) do
               type: 'registration or change',
               state: 'one of awaiting, approved, denied, ignored'
           }, vars: vars
-      
+
       MailTemplate.register :request_resolve_role_state,
           name: "request_resolve_%{role}_%{state}", params: {
               role: 'user or admin',

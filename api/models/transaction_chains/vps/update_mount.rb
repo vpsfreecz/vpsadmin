@@ -5,17 +5,17 @@ module TransactionChains
     def link_chain(mount, attrs)
       lock(mount.vps)
       concerns(:affect, [mount.vps.class.name, mount.vps.id])
-  
+
       mount.assign_attributes(attrs)
       changes = mount.changes
-      
+
       do_umount = (mount.enabled_changed? && !mount.enabled) \
                   || (mount.master_enabled_changed? && !mount.master_enabled)
       do_mount  = (mount.enabled_changed? || mount.master_enabled_changed?) \
                   && (mount.enabled && mount.master_enabled)
-      
+
       mount.save!
-      
+
       use_chain(Vps::Mounts, args: mount.vps)
 
       use_chain(Vps::Umount, args: [mount.vps, [mount]]) if do_umount

@@ -36,7 +36,7 @@ module VpsAdmin::API::Resources
         with_includes(query).limit(input[:limit]).offset(input[:offset])
       end
     end
-    
+
     class Show < HaveAPI::Actions::Default::Show
       desc 'Show user account'
 
@@ -47,7 +47,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
       end
-      
+
       def prepare
         @acc = ::UserAccount.find_by!(user_id: params['user_account_id'])
       end
@@ -56,7 +56,7 @@ module VpsAdmin::API::Resources
         @acc
       end
     end
-    
+
     class Update < HaveAPI::Actions::Default::Update
       desc 'Update user account'
 
@@ -77,7 +77,7 @@ module VpsAdmin::API::Resources
 
         acc.class.transaction do
           acc.update!(input)
-    
+
           if input.has_key?(:paid_until)
             acc.user.set_expiration(
                 input[:paid_until],

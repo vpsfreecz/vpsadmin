@@ -232,7 +232,7 @@ module VpsAdmind
       if hard
         @output[:error] = 'Killed'
         @status = :failed
-        
+
         if @current_method == :exec
           if keep_going?
             log(:debug, self, 'Transaction failed but keep going on')

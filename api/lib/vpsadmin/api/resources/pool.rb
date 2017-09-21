@@ -10,7 +10,7 @@ module VpsAdmin::API::Resources
       string :role, choices: ::Pool.roles.keys
       bool :refquota_check, label: 'Refquota check'
     end
-    
+
     params(:all_properties) do
       VpsAdmin::API::DatasetProperties.to_params(self, :all)
     end
@@ -70,7 +70,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
       end
-      
+
       def prepare
         @pool = ::Pool.find(params[:pool_id])
       end
@@ -96,10 +96,10 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
       end
-      
+
       def exec
         properties = VpsAdmin::API::DatasetProperties.validate_params(input)
-        
+
         @chain, pool = ::Pool.create!(input, properties)
         pool
 

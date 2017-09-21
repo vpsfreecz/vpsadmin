@@ -46,7 +46,7 @@ module VpsAdmind::Firewall
         r = ROLES[role]
         n = Network.new(v, addr, prefix, r)
         @networks << n
-        
+
         IpSet.append!("vpsadmin_networks_#{r}_v#{n.version}", [n.to_s])
       end
     end

@@ -4,7 +4,7 @@ module TransactionChains
 
     def link_chain(node, opts)
       node.save!
-      
+
       lock(node)
       concerns(:affect, [node.class.name, node.id])
 
@@ -29,7 +29,7 @@ module TransactionChains
 
         just_create(node)
       end
-      
+
       # Create configs
       if node.role == 'node'
         ::VpsConfig.all.each do |cfg|
@@ -40,7 +40,7 @@ module TransactionChains
       if node.role != 'mailer'
         # Save SSH public key to database
         append(Transactions::Node::StorePublicKeys, args: node)
-        
+
         # Regenerate ~/.ssh/known_hosts on all nodes in the cluster
         use_chain(Cluster::GenerateKnownHosts)
 

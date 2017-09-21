@@ -5,7 +5,7 @@ class RefactorNodes < ActiveRecord::Migration
     rename_column :nodes, :server_name, :name
     rename_column :nodes, :server_location, :location_id
     rename_column :nodes, :server_ip4, :ip_addr
-    
+
     remove_column :nodes, :server_availstat, :text
     remove_column :nodes, :fstype, :string, limit: 10, default: 'zfs', null: false
 

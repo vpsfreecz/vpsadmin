@@ -50,7 +50,7 @@ module VpsAdmind
     def mount(opts, oneshot)
       counter = 0
       dst, cmd = mount_cmd(opts)
-      
+
       unless oneshot
         # Check if a parent mount did not fail
         @failed_mounts.each do |m_dst, m_level|
@@ -73,7 +73,7 @@ module VpsAdmind
       end
 
       create_dst(dst)
-      
+
       begin
         syscmd(cmd)
         report_state(opts, :mounted)
@@ -84,7 +84,7 @@ module VpsAdmind
 
         else
           raise e if oneshot
-  
+
           case opts['on_start_fail']
             when 'skip'
               fail_mount(opts)
@@ -95,7 +95,7 @@ module VpsAdmind
               # state is set by mount_later
               mount_later(opts)
               fail_mount(opts)
-               
+
             when 'fail_start'
               report_state(opts, :unmounted)
               raise e
@@ -104,14 +104,14 @@ module VpsAdmind
               report_state(opts, :waiting) if counter == 0
               counter += 1
               wait = random_wait(counter)
-              
+
               log(:warn, :mounter, "Mount failed, retrying in #{wait} seconds")
               sleep(wait)
               retry
 
             else
               fail "unsupported value of mount on_start_fail '#{mnt['on_start_fail']}'"
-          end 
+          end
         end
       end
     end
@@ -135,7 +135,7 @@ module VpsAdmind
 
       report_state(opts, :unmounted)
     end
-    
+
     protected
     def create_dst(dst)
       return if File.exists?(dst)
@@ -158,7 +158,7 @@ module VpsAdmind
             :vps_id => @vps_id,
             :mount => opts
         })
-      
+
       else
         DelayedMounter.mount(@vps_id, opts)
       end
@@ -171,7 +171,7 @@ module VpsAdmind
             :mount_id => opts['id'],
             :state => state
         })
-        
+
       else
         MountReporter.report(@vps_id, opts['id'], state)
       end

@@ -19,7 +19,7 @@ module VpsAdmind::Utils
 
     class OutageWindow
       attr_reader :weekday, :opens_at, :closes_at, :reserve_time
-      
+
       def initialize(cmd, w, reserve_time)
         @cmd = cmd
 
@@ -93,7 +93,7 @@ module VpsAdmind::Utils
 
       @obj_windows = OutageWindows.new
       weekday = Time.now.wday
-      
+
       # Rearrange windows so that today's window is first, tomorrow's second
       # and so on.
       if weekday == 0

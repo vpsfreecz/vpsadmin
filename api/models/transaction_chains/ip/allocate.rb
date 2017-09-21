@@ -51,10 +51,10 @@ module TransactionChains
           edit_before(ip, vps_id: ip.vps_id, order: ip.order)
           edit_before(ip, user_id: ip.user_id) if ownership
         end
-        
+
         ip.vps_id = vps.id
         ip.order = order
-        
+
         chowned += 1 if (!ip.user_id && ownership) || !ownership
         ip.user_id = vps.user_id if !ip.user_id && ownership
 

@@ -68,13 +68,13 @@ module VpsAdmin
 
     def self.find_templates
       ret = []
-      
+
       Dir.glob('*').each do |tpl|
         next unless Dir.exists?(tpl)
-        
+
         ret << Template.new(File.join(Dir.pwd, tpl))
       end
-      
+
       ret
     end
   end

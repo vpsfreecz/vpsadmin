@@ -95,7 +95,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     def query
       q = ::Node
       q = q.where(location: input[:location]) if input[:location]
-      
+
       if input[:environment]
         q = q.joins(:location).where(
             locations: {environment_id: input[:environment].id}
@@ -145,7 +145,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     def exec
       @chain, node = ::Node.register!(to_db_names(input))
       node
-    
+
     rescue ActiveRecord::RecordInvalid => e
       error('save failed', to_param_names(e.record.errors.to_hash, :input))
     end
@@ -390,7 +390,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
   end
 
   include VpsAdmin::API::Maintainable::Action
-  
+
   class Status < HaveAPI::Resource
     desc 'View node statuses in time'
     route ':node_id/statuses'
@@ -423,7 +423,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       string :kernel
       datetime :created_at
     end
-  
+
     class Index < HaveAPI::Actions::Default::Index
       input do
         datetime :from
@@ -461,7 +461,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       output do
         use :all
       end
-      
+
       authorize do |u|
         allow if u.role == :admin
       end

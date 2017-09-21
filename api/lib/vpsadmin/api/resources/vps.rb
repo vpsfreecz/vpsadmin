@@ -392,7 +392,7 @@ END
 
     rescue ActiveRecord::RecordInvalid => e
       error('update failed', e.record == vps ? to_param_names(vps.errors.to_hash, :input) : e.record.errors.to_hash)
-    
+
     rescue VpsAdmin::API::Exceptions::IpRangeInUse => e
       error(e.message)
     end
@@ -422,7 +422,7 @@ END
       vps = ::Vps.including_deleted.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
       object_state_check!(vps.user)
-      
+
       if current_user.role == :admin
         state = input[:lazy] ? :soft_delete : :hard_delete
 
@@ -582,7 +582,7 @@ END
       @chain, _ = vps.reinstall(tpl)
       ok
     end
-    
+
     def state_id
       @chain.id
     end
@@ -800,7 +800,7 @@ END
     route ':%{resource}_id/deploy_public_key'
     http_method :post
     blocking true
-    
+
     input do
       resource VpsAdmin::API::Resources::User::PublicKey, label: 'Public key',
           required: true
@@ -817,7 +817,7 @@ END
           with_restricted(id: params[:vps_id])
       )
       maintenance_check!(vps)
-      
+
       @chain, _ = vps.deploy_public_key(input[:public_key])
       ok
     end
@@ -1388,12 +1388,12 @@ END
       end
     end
   end
-  
+
   class OutageWindow < HaveAPI::Resource
     route ':vps_id/outage_windows'
     model ::VpsOutageWindow
     desc 'Manage VPS outage windows'
-   
+
     params(:editable) do
       bool :is_open
       integer :opens_at
@@ -1450,12 +1450,12 @@ END
         vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         @window = vps.vps_outage_windows.find_by!(weekday: params[:outage_window_id])
       end
-      
+
       def exec
         @window
       end
     end
-    
+
     class Update < HaveAPI::Actions::Default::Update
       desc 'Resize outage window'
 
@@ -1545,7 +1545,7 @@ END
                 closes_at: w.closes_at,
             }
           end
-          
+
           vps.log(:outage_windows, data)
         end
 
@@ -1661,7 +1661,7 @@ END
       integer :used_swap, label: 'Used swap', desc: 'in MB'
       datetime :created_at
     end
-  
+
     class Index < HaveAPI::Actions::Default::Index
       input do
         datetime :from
@@ -1705,7 +1705,7 @@ END
       output do
         use :all
       end
-      
+
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id

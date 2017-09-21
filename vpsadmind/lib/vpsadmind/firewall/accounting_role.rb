@@ -3,7 +3,7 @@ module VpsAdmind::Firewall
     include VpsAdmind::Utils::Log
     include VpsAdmind::Utils::System
     include VpsAdmind::Utils::Iptables
-    
+
     PROTOCOLS = [:tcp, :udp, :all]
     PROTOCOL_MAP = [:all, :tcp, :udp]
 
@@ -25,7 +25,7 @@ module VpsAdmind::Firewall
       end
 
       iptables(v, {Z: chain})
-      
+
       rs = db.query("SELECT ip_addr
                     FROM ip_addresses ip
                     INNER JOIN vpses ON vpses.id = ip.vps_id
@@ -52,7 +52,7 @@ module VpsAdmind::Firewall
         iptables(v, ['-D', chain, '-d', addr, '-p', p.to_s, '-j', 'ACCEPT'])
       end
     end
-    
+
     def read_traffic
       ret = {}
 

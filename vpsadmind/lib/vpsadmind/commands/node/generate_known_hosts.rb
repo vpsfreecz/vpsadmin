@@ -2,7 +2,7 @@ module VpsAdmind
   class Commands::Node::GenerateKnownHosts < Commands::Base
     handle 5
     needs :system
-    
+
     def exec
       p = $CFG.get(:node, :known_hosts)
 

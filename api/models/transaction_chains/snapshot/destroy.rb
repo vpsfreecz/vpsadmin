@@ -14,9 +14,9 @@ module TransactionChains
 
       snap.snapshot_in_pools.includes(dataset_in_pool: [:pool]).each do |sip|
         fail 'reference_count > 0' if sip.reference_count > 0
-        
+
         if sip.dataset_in_pool.pool.role == 'backup'
-          fail 'cannot destroy a snapshot from backup' 
+          fail 'cannot destroy a snapshot from backup'
         end
 
         use_chain(SnapshotInPool::Destroy, args: sip)

@@ -7,7 +7,7 @@ class VoluntaryNodeAttributes < ActiveRecord::Migration
         change_column :servers, :ve_private, :string, limit: 255, null: true,
                       default: '/vz/private/%{veid}/private'
       end
-      
+
       dir.down do
         change_column :servers, :ve_private, :string, limit: 255, null: false,
                       default: '/vz/private/%veid%'

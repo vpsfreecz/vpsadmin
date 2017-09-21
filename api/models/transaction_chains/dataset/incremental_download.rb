@@ -19,11 +19,11 @@ module TransactionChains
       if to_sip
         lock(to_sip)
         lock(to_sip.dataset_in_pool)
-        
+
         from_sip = dl.from_snapshot.snapshot_in_pools.joins(:dataset_in_pool).where(
             dataset_in_pools: {pool_id: to_sip.dataset_in_pool.pool_id}
         ).take!
-        
+
         lock(from_sip)
 
         dl.pool = to_sip.dataset_in_pool.pool

@@ -267,7 +267,7 @@ module VpsAdmin::API::Resources
         output(:object_list) do
           use :all
         end
-        
+
         authorize do |u|
           allow if u.role == :admin
         end
@@ -307,7 +307,7 @@ module VpsAdmin::API::Resources
           @tr
         end
       end
-    
+
       class Create < HaveAPI::Actions::Default::Create
         desc 'Create a mail template translation'
 

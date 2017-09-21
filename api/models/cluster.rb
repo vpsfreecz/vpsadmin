@@ -29,20 +29,20 @@ class Cluster
     ActiveRecord::Base.connection.execute(
         "SELECT 'User', id, 'login', login
         FROM users WHERE login = #{q}
-        
+
         UNION
         SELECT 'User', id, 'full_name', full_name
         FROM users WHERE full_name = #{q} AND object_state < 3
-			 
+
         UNION
         SELECT 'User', id, 'email', email
         FROM users WHERE email = #{q} AND object_state < 3
-			  
+
         UNION
         SELECT 'User', user_id AS id, 'ip_addr', ip_addr
         FROM ip_addresses
         WHERE ip_addr = #{q} AND user_id IS NOT NULL
-			  
+
         UNION
         SELECT 'User', v.user_id AS id, 'ip_addr', ip_addr
         FROM ip_addresses i
@@ -53,20 +53,20 @@ class Cluster
         SELECT 'Vps', vps_id AS id, 'ip_addr', ip_addr
         FROM ip_addresses
         WHERE vps_id != 0 AND ip_addr = #{q}
-			  
+
         UNION
         SELECT 'Vps', id, 'hostname', hostname
         FROM vpses
         WHERE hostname = #{q} AND object_state < 3
-       
+
         UNION
         SELECT 'User', id, 'login', login
         FROM users WHERE login LIKE CONCAT('%', #{q}, '%')
-        
+
         UNION
         SELECT 'User', id, 'full_name', full_name
         FROM users WHERE full_name LIKE CONCAT('%', #{q}, '%') AND object_state < 3
-			 
+
         UNION
         SELECT 'User', id, 'email', email
         FROM users WHERE email LIKE CONCAT('%', #{q}, '%') AND object_state < 3

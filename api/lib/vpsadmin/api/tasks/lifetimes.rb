@@ -3,7 +3,7 @@ module VpsAdmin::API::Tasks
     # Move expired objects to the next state.
     #
     # Accepts the following environment variables:
-    # [OBJECTS]: A list of object names to inform about, separated by a comma. 
+    # [OBJECTS]: A list of object names to inform about, separated by a comma.
     #            To inform about all objects, use special name 'all'.
     # [STATES]:  A list of states that an object must be in to be included.
     #            If not specified, all states are included.
@@ -27,13 +27,13 @@ module VpsAdmin::API::Tasks
                    else
                      nil
                    end
-      
+
       puts "Progressing objects having expiration date older than #{time}"
       states = get_states
 
       get_objects.each do |obj|
         puts "Model #{obj}"
-        
+
         q = obj.where('expiration_date < ?', time)
         q = q.where(object_state: states) if states
         q = q.order('full_name DESC') if obj.name == 'Dataset'
@@ -60,7 +60,7 @@ module VpsAdmin::API::Tasks
     # Mail users regarging expiring objects.
     #
     # Accepts the following environment variables:
-    # [OBJECTS]: A list of object names to inform about, separated by a comma. 
+    # [OBJECTS]: A list of object names to inform about, separated by a comma.
     #            To inform about all objects, use special name 'all'.
     # [STATES]:  A list of states that an object must be in to be included.
     #            If not specified, all states are included.
@@ -92,7 +92,7 @@ module VpsAdmin::API::Tasks
         cls = Object.const_get(obj)
 
         fail warn "Unable to find a class for '#{obj}'" unless obj
-        
+
         classes << cls
       end
 

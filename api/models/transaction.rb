@@ -201,7 +201,7 @@ class Transaction < ActiveRecord::Base
       end
 
       tr_attrs = nil
-      
+
       if attrs && attrs.is_a?(::Hash)
         tr_attrs = {}
 

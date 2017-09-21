@@ -5,13 +5,13 @@ module VpsAdmind
 
     def exec
       return ok unless status[:running]
-      
+
       mounter = VpsAdmind::Mounter.new(@vps_id)
       @umounted_mounts = []
 
       @mounts.each do |m|
         VpsAdmind::DelayedMounter.unregister_vps_mount(@vps_id, m['id'])
-        
+
         mounter.umount(m)
         @umounted_mounts << m
       end

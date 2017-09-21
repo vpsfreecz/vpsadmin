@@ -98,11 +98,11 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       if input[:location]
         ips = ips.joins(:network).where(networks: {location_id: input[:location].id})
       end
-      
+
       if input[:version]
         ips = ips.joins(:network).where(networks: {ip_version: input[:version]})
       end
-      
+
       if input[:role]
         ips = ips.joins(:network).where(networks: {role: ::Network.roles[input[:role]]})
       end
@@ -204,7 +204,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     def exec
       ip = ::IpAddress.find(params[:ip_address_id])
-      
+
       if input.has_key?(:user) && ip.user != input[:user]
         # Check if the IP is assigned to a VPS in an environment with IP ownership
         if ip.vps && ip.network.location.environment.user_ip_ownership
@@ -215,7 +215,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
           error('cannot chown IP, it belongs to an owned IP range')
         end
       end
-      
+
       @chain, _ = ip.do_update(input)
       ip
 

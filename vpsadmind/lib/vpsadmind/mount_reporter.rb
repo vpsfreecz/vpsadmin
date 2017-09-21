@@ -13,12 +13,12 @@ module VpsAdmind
 
     class << self
       attr_accessor :instance
-      
+
       def report(*args)
         instance.report(*args)
       end
     end
-    
+
     def initialize
       self.class.instance = self
 
@@ -27,7 +27,7 @@ module VpsAdmind
       # vps_id => [mounts]
       @mounts = []
     end
-    
+
     def start
       @thread = Thread.new do
         db = nil
@@ -35,7 +35,7 @@ module VpsAdmind
 
         loop do
           mnt = nil
-          
+
           break if @stop
 
           sync do

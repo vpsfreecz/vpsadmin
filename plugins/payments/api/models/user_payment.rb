@@ -8,7 +8,7 @@ class UserPayment < ActiveRecord::Base
   def self.create!(attrs)
     payment = new(attrs)
     payment.accounted_by = ::User.current
-    
+
     if attrs[:incoming_payment]
       payment.amount = payment.incoming_payment.converted_amount
     end

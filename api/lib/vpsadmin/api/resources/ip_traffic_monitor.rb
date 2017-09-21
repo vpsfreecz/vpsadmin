@@ -82,19 +82,19 @@ module VpsAdmin::API::Resources
               networks: {ip_version: input[:ip_version]}
           )
         end
-        
+
         if input[:environment]
           q = q.joins(ip_address: {network: :location}).where(
               locations: {environment_id: input[:environment].id}
           )
         end
-       
+
         if input[:location]
           q = q.joins(ip_address: :network).where(
               networks: {location_id: input[:location].id}
           )
         end
-        
+
         if input[:network]
           q = q.joins(:ip_address).where(
               ip_addresses: {network_id: input[:network].id}
@@ -151,7 +151,7 @@ module VpsAdmin::API::Resources
         q.order("#{order_by} #{desc ? 'DESC' : 'ASC'}")
       end
     end
-    
+
     class Show < HaveAPI::Actions::Default::Show
       desc 'Show an IP traffic monitor'
 
@@ -169,7 +169,7 @@ module VpsAdmin::API::Resources
         if current_user.role != :admin
           q = q.joins(ip_address: :vps).where(vpses: {user_id: current_user.id})
         end
-        
+
         @mon = q.find_by!(id: params[:ip_traffic_monitor_id])
       end
 

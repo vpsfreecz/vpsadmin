@@ -65,7 +65,7 @@ module VpsAdmin::API
             },
             dataset_in_pool: dip
         ).take!
-        
+
         if confirm?
           confirm(:just_destroy, gsnap)
         else
@@ -201,7 +201,7 @@ module VpsAdmin::API
               environment_dataset_plan: env_dataset_plan(dip),
               dataset_in_pool: dip
           )
-          
+
           if confirmation
             confirmation.just_destroy(plan)
           else

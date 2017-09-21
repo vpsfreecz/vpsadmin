@@ -26,7 +26,7 @@ module TransactionChains
 
     def clone_hostname(vps, dst_vps, attrs)
       return unless vps.manage_hostname
-      
+
       append(Transactions::Vps::Hostname, args: [
           dst_vps,
           vps.hostname,
@@ -41,7 +41,7 @@ module TransactionChains
           dst_vps.dns_resolver
       ])
     end
-    
+
     # A hash containing all not-inherited properties, which must
     # be set on the cloned dataset as well.
     def root_dataset_properties(vps)
@@ -53,7 +53,7 @@ module TransactionChains
 
       root_properties
     end
-    
+
     def clone_dataset_plans(src_dip, dst_dip)
       plans = []
 
@@ -67,7 +67,7 @@ module TransactionChains
         append(Transactions::Utils::NoOp, args: find_node_id) do
           plans.each do |dip_plan|
             plan = dip_plan.environment_dataset_plan.dataset_plan
-            
+
             # Do not add the plan in the target environment is for admins only
             begin
               next unless ::EnvironmentDatasetPlan.find_by!(
@@ -101,7 +101,7 @@ module TransactionChains
         end
       end
     end
-    
+
     # Clone mounts.
     # Snapshot mounts are skipped. Dataset mounts are checked if it is
     # a mount of a subdataset of this particular +vps+. If it is, the cloned
@@ -115,7 +115,7 @@ module TransactionChains
           # once, for now...
           next
         end
-        
+
         dst_m = ::Mount.new(
             vps: dst_vps,
             dataset_in_pool: m.dataset_in_pool,
@@ -164,7 +164,7 @@ module TransactionChains
           use_chain(Dataset::Transfer, args: [src, dst], urgent: urgent)
       end
     end
-    
+
     # Dataset::Transfer creates snapshot in pools for vps.dataset_in_pool.dataset,
     # not dst_vps. This is neccessary for how the transfer works and now it must
     # be fixed - create new snapshot objects for dst dataset and move snapshot
@@ -188,7 +188,7 @@ module TransactionChains
           sip.update!(snapshot: s)
         end
       end
-      
+
       snapshot_name_fixes = @snapshot_name_fixes
 
       # Now fix snapshot names - snapshot name is updated by vpsAdmind

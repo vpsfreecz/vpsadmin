@@ -5,7 +5,7 @@ module Transactions::IntegrityCheck
 
     def params(check)
       self.node_id = transaction_chain.find_node_id
-      
+
       {integrity_check_id: check.id}
     end
   end

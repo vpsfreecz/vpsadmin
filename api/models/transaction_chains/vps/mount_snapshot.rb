@@ -22,9 +22,9 @@ module TransactionChains
           confirmed: ::Mount.confirmed(:confirm_create),
           expiration_date: Time.now + 3 * 24 * 60 * 60
       )
-      
+
       mnt.on_start_fail = opts[:on_start_fail] if opts[:on_start_fail]
-      
+
       remote = false
 
       # Snapshot is present locally on hypervisor

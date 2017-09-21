@@ -58,7 +58,7 @@ module VpsAdmin
         else
           ret[:message] = "object not found: #{exception.to_s}"
         end
-        
+
         HaveAPI::Hooks.stop(ret)
       end
 
@@ -66,7 +66,7 @@ module VpsAdmin
         ret[:http_status] = 423 # locked
         ret[:status] = false
         ret[:message] = 'Resource is locked. Try again later.'
-        
+
         HaveAPI::Hooks.stop(ret)
       end
 

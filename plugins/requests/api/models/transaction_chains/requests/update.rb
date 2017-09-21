@@ -10,14 +10,14 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
 
       webui_url = ::SysConfig.get(:webui, :base_url)
       reply_to = request.last_mail_id
-     
+
       request.assign_attributes(attrs)
       request.assign_attributes(
           state: ::UserRequest.states[:awaiting],
           last_mail_id: request.last_mail_id+1,
       )
       request.save!
-     
+
       [
           [
               :request_action_role_type,
@@ -49,7 +49,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
           next
         end
       end
-      
+
           ::User.where('level > 90').where(mailer_enabled: true).each do |admin|
         [
             [

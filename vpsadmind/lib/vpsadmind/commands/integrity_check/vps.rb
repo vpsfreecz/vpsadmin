@@ -36,7 +36,7 @@ module VpsAdmind
       db.close
       ok
     end
-    
+
     def rollback
       ok
     end
@@ -57,7 +57,7 @@ module VpsAdmind
       )
 
       return if real_vps.nil?
-      
+
       # Status
       state_fact(
           @t,
@@ -71,7 +71,7 @@ module VpsAdmind
           :normal,
           "Status is '#{real_vps[:status]}'"
       )
-      
+
       # On boot
       state_fact(
           @t,
@@ -82,7 +82,7 @@ module VpsAdmind
           :normal,
           "Onboot is '#{real_vps[:onboot]}'"
       )
-      
+
       # Private
       state_fact(
           @t,
@@ -93,7 +93,7 @@ module VpsAdmind
           :high,
           "Private is '#{real_vps[:private]}'"
       )
-      
+
       # Root
       state_fact(
           @t,
@@ -115,7 +115,7 @@ module VpsAdmind
           :low,
           "Hostname is '#{real_vps[:hostname]}'"
       )
-      
+
       # OS template
       state_fact(
           @t,
@@ -126,7 +126,7 @@ module VpsAdmind
           :normal,
           "OS template is '#{real_vps[:ostemplate]}'"
       )
-      
+
       # Memory
       state_fact(
           @t,
@@ -137,7 +137,7 @@ module VpsAdmind
           :normal,
           "Memory (physpages) is '#{real_vps[:physpages][:limit] * 4 / 1024}'"
       )
-      
+
       # Swap
       state_fact(
           @t,
@@ -148,7 +148,7 @@ module VpsAdmind
           :normal,
           "Swap (swappages) is '#{real_vps[:swappages][:limit] * 4 / 1024}'"
       )
-      
+
       # CPUs
       state_fact(
           @t,
@@ -159,7 +159,7 @@ module VpsAdmind
           :normal,
           "CPU is '#{real_vps[:cpus]}'"
       )
-      
+
       # CPU limit
       state_fact(
           @t,

@@ -32,7 +32,7 @@ module VpsAdmin::API::Resources
         integer :type, db_name: :handle
         integer :success, db_name: :status
         string :done, choices: ::Transaction.dones.keys
-        
+
         patch :limit, default: 25, fill: true
       end
 

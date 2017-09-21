@@ -150,7 +150,7 @@ module VpsAdmin::API::Resources
 
       def exec
         range = ::IpRange.find(params[:ip_range_id])
-        
+
         if range.user == input[:user]
           range
 

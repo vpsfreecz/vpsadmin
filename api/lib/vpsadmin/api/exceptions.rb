@@ -16,7 +16,7 @@ module VpsAdmin::API::Exceptions
   end
 
   class IpAddressNotOwned < ::StandardError
-    
+
   end
 
   class IpRangeInUse < ::StandardError

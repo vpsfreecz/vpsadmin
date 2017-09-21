@@ -8,7 +8,7 @@ module VpsAdmind
 
       files.each do |path|
         next unless File.exists?(path)
-        
+
         syscmd("#{$CFG.get(:bin, :cp)} -p \"#{path}\" \"#{backup_path(path)}\"")
         File.unlink(path)
       end

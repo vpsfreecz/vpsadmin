@@ -1,9 +1,9 @@
 class EnvironmentUserConfig < ActiveRecord::Base
   belongs_to :environment
   belongs_to :user
-  
+
   has_paper_trail
-  
+
   include VpsAdmin::API::ClusterResources
   cluster_resources optional: %i(ipv4 ipv4_private ipv6),
                     environment: ->() { environment }
@@ -21,7 +21,7 @@ class EnvironmentUserConfig < ActiveRecord::Base
     else
       attrs[:default] = false
     end
-    
+
     super(attrs)
   end
 end

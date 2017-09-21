@@ -244,7 +244,7 @@ class Vps < ActiveRecord::Base
       vps_current_status && vps_current_status.send(attr)
     end
   end
-  
+
   alias_method :is_running?, :is_running
   alias_method :running?, :is_running
 
@@ -267,7 +267,7 @@ class Vps < ActiveRecord::Base
   def clone(node, attrs)
     TransactionChains::Vps::Clone.fire(self, node, attrs)
   end
-  
+
   def swap_with(secondary_vps, attrs)
     TransactionChains::Vps::Swap.fire(self, secondary_vps, attrs)
   end

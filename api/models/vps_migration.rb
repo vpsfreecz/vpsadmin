@@ -12,7 +12,7 @@ class VpsMigration < ActiveRecord::Base
 
   def check_uniqueness
     return if persisted?
-    
+
     exists = self.class.joins(:migration_plan).where(
         vps: vps,
         state: [

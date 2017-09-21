@@ -30,7 +30,7 @@ module VpsAdmin::API::Resources
 
     class Index < HaveAPI::Actions::Default::Index
       desc 'List networks'
-      
+
       input do
         use :common, include: %i(location)
       end
@@ -175,7 +175,7 @@ module VpsAdmin::API::Resources
 
       def exec
         net = ::Network.find(params[:network_id])
-        
+
         unless net.managed
           error('this action can be used only on managed networks')
         end

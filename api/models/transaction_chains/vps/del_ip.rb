@@ -14,7 +14,7 @@ module TransactionChains
           environment: vps.node.location.environment,
       )
       ips_arr = ips.to_a
-      
+
       if reallocate && !vps.node.location.environment.user_ip_ownership
         %i(ipv4 ipv4_private ipv6).each do |r|
           cnt = case r
@@ -22,7 +22,7 @@ module TransactionChains
             ips_arr.count do |ip|
               ip.network.role == 'public_access' && ip.network.ip_version == 4
             end
-          
+
           when :ipv4_private
             ips_arr.count do |ip|
               ip.network.role == 'private_access' && ip.network.ip_version == 4

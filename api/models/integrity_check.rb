@@ -5,7 +5,7 @@ class IntegrityCheck < ActiveRecord::Base
   def self.schedule(opts)
     modules = []
 
-    modules << :storage if opts[:storage] 
+    modules << :storage if opts[:storage]
     modules << :vps if opts[:vps]
 
     if opts[:node]

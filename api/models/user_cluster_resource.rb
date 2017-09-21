@@ -4,7 +4,7 @@ class UserClusterResource < ActiveRecord::Base
   belongs_to :user
   belongs_to :environment
   belongs_to :cluster_resource
-  
+
   has_paper_trail
 
   def used

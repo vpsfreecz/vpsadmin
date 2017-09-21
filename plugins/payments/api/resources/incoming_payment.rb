@@ -59,7 +59,7 @@ module VpsAdmin::API::Resources
         )
       end
     end
-    
+
     class Show < HaveAPI::Actions::Default::Show
       desc 'Show incoming payment'
 
@@ -70,7 +70,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
       end
-      
+
       def prepare
         @payment = ::IncomingPayment.find(params['incoming_payment_id'])
       end

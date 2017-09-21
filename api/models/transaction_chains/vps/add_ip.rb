@@ -21,7 +21,7 @@ module TransactionChains
               (!ownership || ip.user.nil?) \
               && ip.network.role == 'public_access' && ip.network.ip_version == 4
             end
-          
+
           when :ipv4_private
             ips_arr.count do |ip|
               (!ownership || ip.user.nil?) \

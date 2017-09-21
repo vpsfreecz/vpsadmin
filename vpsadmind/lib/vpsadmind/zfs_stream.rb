@@ -18,7 +18,7 @@ module VpsAdmind
   #   HH:MM:SS    <m2><unit>   <snap>
   #   HH:MM:SS    <m3><unit>   <snap>
   #   ...
-  # 
+  #
   # A line with column headers separates transfers of snapshots listed at the top.
   # There might not be any transfered data between column headers if the snapshot
   # has zero (or possibly very little) size. Time and snapshot columns are ignored,
@@ -97,7 +97,7 @@ module VpsAdmind
 
       zfs_pid, err = zfs_send(w)
       @pipeline << cmd
-      
+
       w.close
 
       @cmd.step = @pipeline.join(' | ') if @cmd
@@ -108,7 +108,7 @@ module VpsAdmind
       Process.wait(zfs_pid)
       Process.wait(cmd_pid)
     end
-    
+
     def pipe_io(io)
       @pipeline = []
       zfs_pid, err = zfs_send(io)
@@ -122,8 +122,8 @@ module VpsAdmind
     end
 
     def zfs_send(stdout)
-      r_err, w_err = IO.pipe 
-        
+      r_err, w_err = IO.pipe
+
       if @from_snapshot
         cmd = "zfs send -v -I @#{@from_snapshot} #{path}@#{@snapshot}"
 
@@ -154,7 +154,7 @@ module VpsAdmind
 
       io.each_line do |line|
         n = parse_transfered(line)
-        
+
         if n
           change = transfered == 0 ? n : n - transfered
           transfered = n
@@ -164,7 +164,7 @@ module VpsAdmind
           transfered = 0
           next
         end
-        
+
         if @cmd
           @cmd.progress = {
               total: size,
@@ -198,12 +198,12 @@ module VpsAdmind
       else
         cmd = zfs(:send, '-nv', "#{path}@#{@snapshot}")
       end
-      
+
       rx = /^total estimated size is ([^$]+)$/
       m = rx.match(cmd[:output])
 
       raise ArgumentError, 'unable to estimate size' if m.nil?
-      
+
       parse_size(m[1])
     end
 
@@ -214,7 +214,7 @@ module VpsAdmind
 
       until fd.eof? do
         line = fd.readline
-  
+
         m = rx.match(line)
         next if m.nil?
 
@@ -230,7 +230,7 @@ module VpsAdmind
 
       parse_size(cols[1])
     end
-    
+
     def parse_size(str)
       size = str.to_f
       suffix = str.strip[-1]

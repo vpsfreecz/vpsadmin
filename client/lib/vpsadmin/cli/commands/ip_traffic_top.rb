@@ -10,7 +10,7 @@ module VpsAdmin::CLI::Commands
     cmd :ip_traffic, :top
     args ''
     desc 'Live IP traffic monitor'
-    
+
     def options(opts)
       @opts = {
           unit: :bits,
@@ -19,11 +19,11 @@ module VpsAdmin::CLI::Commands
       opts.on('--unit UNIT', %w(bytes bits), 'Select data unit (bytes or bits)') do |v|
         @opts[:unit] = v.to_sym
       end
-      
+
       opts.on('--limit LIMIT', Integer, 'Number of IP addresses to monitor') do |v|
         @opts[:limit] = v
       end
-      
+
       opts.on('--ip-address ADDR', 'ADDR or ID of IP addresses to monitor') do |v|
         id = ip_address_id(v)
 
@@ -35,11 +35,11 @@ module VpsAdmin::CLI::Commands
           exit(1)
         end
       end
-      
+
       opts.on('--ip-version VER', [4, 6], 'Filter IP addresses by version') do |v|
         @opts[:ip_version] = v
       end
-    
+
       (FILTERS - %i(limit ip_address ip_version)).each do |f|
         opts.on("--#{f.to_s.gsub(/_/, '-')} ID", Integer, "Filter IP addresses by #{f}") do |v|
           @opts[f] = v
@@ -186,11 +186,11 @@ module VpsAdmin::CLI::Commands
       attroff(color_pair(1))
 
       i = 3
-      
+
       fetch.each do |data|
         setpos(i, 0)
         print_row(data)
-        
+
         i += 1
 
         break if i >= (lines - 5)
@@ -213,7 +213,7 @@ module VpsAdmin::CLI::Commands
 
         @header << (' ' * (cols - @header.size)) << "\n"
       end
-      
+
       addstr(@header)
     end
 
@@ -236,7 +236,7 @@ module VpsAdmin::CLI::Commands
 
       fields.each do |f|
         stats[f] = 0
-        
+
         %i(in out).each do |dir|
           stats[:"#{f}_#{dir}"] = 0
         end
@@ -247,7 +247,7 @@ module VpsAdmin::CLI::Commands
 
         fields.each do |f|
           stats[f] += data.send(f)
-          
+
           %i(in out).each do |dir|
             stats[:"#{f}_#{dir}"] += data.send("#{f}_#{dir}")
           end
@@ -274,10 +274,10 @@ module VpsAdmin::CLI::Commands
 
       setpos(lines-3, 0)
       addstr(sprintf(fmt, 'In', *fields.map { |f| unitize(stats[:"#{f}_in"], avg_delta) }))
-      
+
       setpos(lines-2, 0)
       addstr(sprintf(fmt, 'Out', *fields.map { |f| unitize(stats[:"#{f}_out"], avg_delta) }))
-      
+
       setpos(lines-1, 0)
       attron(A_BOLD)
       addstr(sprintf(fmt, 'Total', *fields.map { |f| unitize(stats[:"#{f}_in"] + stats[:"#{f}_out"], avg_delta) }))

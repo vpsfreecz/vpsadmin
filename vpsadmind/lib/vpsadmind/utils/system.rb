@@ -70,7 +70,7 @@ module VpsAdmind
 
       IO.popen("exec #{cmd} #{stderr ? '2>&1' : '2> /dev/null'}") do |io|
         current_cmd.subtask = io.pid if current_cmd
-        
+
         if opts[:timeout]
           begin
             timeout(opts[:timeout]) do

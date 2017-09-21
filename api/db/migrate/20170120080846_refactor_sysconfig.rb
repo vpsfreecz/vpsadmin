@@ -3,7 +3,7 @@ class RefactorSysconfig < ActiveRecord::Migration
     self.table_name = 'sysconfig'
     self.primary_key = 'cfg_name'
   end
-  
+
   class NewSysConfig < ActiveRecord::Base
     self.table_name = 'sysconfig_new'
   end
@@ -89,10 +89,10 @@ class RefactorSysconfig < ActiveRecord::Migration
 
     when /mailer_requests_(admin|member)_sub/
       [:webui, name, 'String', 99]
-    
+
     when /mailer_requests_(admin|member)_text/
       [:webui, name, 'Text', 99]
-      
+
     when /mailer_from_/
       [:webui, name, 'String', 99]
 
@@ -112,7 +112,7 @@ class RefactorSysconfig < ActiveRecord::Migration
       return 'page_title' if name == 'document_title'
       return 'adminbox_content' if name == 'sidebar'
     end
-    
+
     name
   end
 end

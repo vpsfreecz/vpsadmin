@@ -17,7 +17,7 @@ module VpsAdmin::API::Resources
       custom :event_data
       datetime :created_at
     end
-    
+
     class Index < HaveAPI::Actions::Default::Index
       desc 'List object history'
 

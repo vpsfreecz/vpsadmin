@@ -1,7 +1,7 @@
 require 'rubygems'
 require 'eventmachine'
 
-module VpsAdmind  
+module VpsAdmind
   class Console::Server < EventMachine::Connection
     include Utils::Log
 
@@ -61,7 +61,7 @@ module VpsAdmind
         end
       end
     end
-    
+
     def open_console(data)
       db = Db.new
       st = db.prepared_st(

@@ -2,7 +2,7 @@ module VpsAdmind
   class Commands::Node::DeploySshKey < Commands::Base
     handle 7
     needs :system
-    
+
     def exec
       backup_keys
       write_keys
@@ -15,7 +15,7 @@ module VpsAdmind
 
       ok
     end
-    
+
     def post_save(db)
       db.prepared(
           'UPDATE transactions SET input = ? WHERE id = ?',
@@ -29,7 +29,7 @@ module VpsAdmind
         syscmd("#{$CFG.get(:bin, :cp)} #{p} #{p}.backup") if File.exists?(p)
       end
     end
-    
+
     def restore_keys
       [priv_path, pub_path, authorized_keys].each do |p|
         syscmd("#{$CFG.get(:bin, :mv)} #{p}.backup #{p}") if File.exists?("#{p}.backup")

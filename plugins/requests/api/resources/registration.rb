@@ -30,7 +30,7 @@ module VpsAdmin::API::Resources
       params(:token) do
         string :token, label: 'Access token'
       end
-      
+
       include VpsAdmin::API::Plugins::Requests::BaseResource
 
       class Create

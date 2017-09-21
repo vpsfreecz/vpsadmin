@@ -8,9 +8,9 @@ module VpsAdmind
     def exec
       ds = "#{@pool_fs}/#{@dataset_name}"
       ds += "/#{@tree}/#{@branch}" if @tree
-      
+
       syscmd("#{$CFG.get(:bin, :mkdir)} \"#{secret_dir_path}\"")
-     
+
       approx_size(ds)
       method(@format).call(ds)
 

@@ -49,7 +49,7 @@ module TransactionChains
             # Transfer cluster resources
             ## CPU, memory, swap
             db_changes.update(vps.transfer_resources!(vps.user))
-            
+
             ## IP addresses
             db_changes.update(transfer_ip_addresses(vps))
 
@@ -197,7 +197,7 @@ module TransactionChains
       dst_env = vps.user.environment_user_configs.find_by!(
           environment: vps.node.location.environment,
       )
-      
+
       %i(ipv4 ipv4_private ipv6).each do |r|
         st_cnt, st_changes = standalone_ips(vps, r)
         r_cnt, r_changes = range_ips(vps, r)
@@ -214,7 +214,7 @@ module TransactionChains
             user: src_env.user,
             confirmed: ::ClusterResourceUse.confirmed(:confirmed),
         )
-        
+
         dst_use = dst_env.reallocate_resource!(
             r,
             dst_env.send(r) + cnt,
@@ -237,10 +237,10 @@ module TransactionChains
       case r
       when :ipv4
         q = q.where(networks: {ip_version: 4, role: ::Network.roles[:public_access]})
-      
+
       when :ipv4_private
         q = q.where(networks: {ip_version: 4, role: ::Network.roles[:private_access]})
-      
+
       when :ipv6
         q = q.where(networks: {ip_version: 6})
       end
@@ -259,24 +259,24 @@ module TransactionChains
       case r
       when :ipv4
         q = q.where(networks: {ip_version: 4, role: ::Network.roles[:public_access]})
-      
+
       when :ipv4_private
         q = q.where(networks: {ip_version: 4, role: ::Network.roles[:private_access]})
-      
+
       when :ipv6
         q = q.where(networks: {ip_version: 6})
       end
 
       cnt = 0
       changes = {}
-      
+
       # Check that all ranges can be chowned
       q.includes(:network).group('networks.id').each do |ip|
         if ip.network.ip_addresses.where('vps_id != ? AND vps_id IS NOT NULL', vps.id).any?
           raise VpsAdmin::API::Exceptions::IpRangeInUse,
                 "range #{ip.network} is not exclusive to VPS #{vps.id}"
         end
-        
+
         cnt += ip.network.size
         changes[ip.network] = {user_id: vps.user_id}
 

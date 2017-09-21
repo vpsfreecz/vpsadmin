@@ -3,7 +3,7 @@ module VpsAdmin::CLI::Commands
     cmd :vps, :migrate_many
     args 'VPS_ID...'
     desc 'Migrate multiple VPSes using a migration plan'
-    
+
     def options(opts)
       @opts = {}
 
@@ -14,11 +14,11 @@ module VpsAdmin::CLI::Commands
       opts.on('--dst-node NODE_ID', 'Destination node') do |id|
         @opts[:dst_node] = id.to_i
       end
-      
+
       opts.on('--[no-]outage-window', 'Migrate VPSes inside outage windows') do |w|
         @opts[:outage_window] = w
       end
-      
+
       opts.on('--[no-]cleanup-data', 'Cleanup VPS dataset on the source node') do |c|
         @opts[:cleanup_data] = c
       end
@@ -26,7 +26,7 @@ module VpsAdmin::CLI::Commands
       opts.on('--[no-]stop-on-error', 'Cancel the plan if a migration fails') do |s|
         @opts[:stop_on_error] = s
       end
-      
+
       opts.on('--concurrency N', 'How many migrations run concurrently') do |n|
         @opts[:concurrency] = n.to_i
       end
@@ -34,7 +34,7 @@ module VpsAdmin::CLI::Commands
       opts.on('--[no-]send-mail', 'Send users mail informing about the migration') do |s|
         @opts[:send_mail] = s
       end
-      
+
       opts.on('--reason REASON', 'Why are the VPS being migrated') do |r|
         @opts[:reason] = r
       end
@@ -95,7 +95,7 @@ module VpsAdmin::CLI::Commands
 
           plan.vps_migration.create(params)
         end
-      
+
       rescue HaveAPI::Client::ActionFailed => e
         report_error(e)
       end
@@ -107,7 +107,7 @@ module VpsAdmin::CLI::Commands
       rescue HaveAPI::Client::ActionFailed => e
         report_error(e)
       end
-      
+
       HaveAPI::CLI::OutputFormatter.print(ret.attributes)
     end
 

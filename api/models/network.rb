@@ -4,7 +4,7 @@ class Network < ActiveRecord::Base
   belongs_to :location
   belongs_to :user
   has_many :ip_addresses
-  
+
   has_ancestry cache_depth: true
 
   enum role: %i(public_access private_access)
@@ -151,7 +151,7 @@ class Network < ActiveRecord::Base
 
         range = ::IpRange.new(attrs)
       end
-      
+
       if attrs[:user]
         user_env = attrs[:user].environment_user_configs.find_by!(
             environment: location.environment,
@@ -194,7 +194,7 @@ class Network < ActiveRecord::Base
       end
     end
   end
-  
+
   def check_network_integrity
     return unless parent
 

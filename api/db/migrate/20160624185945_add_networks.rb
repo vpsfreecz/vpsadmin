@@ -84,7 +84,7 @@ class AddNetworks < ActiveRecord::Migration
 
     puts "Done"
     puts
-   
+
     used_nets = []
 
     IpAddress.all.each do |ip|
@@ -114,7 +114,7 @@ class AddNetworks < ActiveRecord::Migration
         puts
         @orphans.each { |ip| puts "  #{ip.ip_addr}" }
       end
-      
+
       exit(false)
     end
   end

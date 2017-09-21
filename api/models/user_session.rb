@@ -39,7 +39,7 @@ class UserSession < ActiveRecord::Base
     end
 
     self.current.update!(last_request_at: Time.now)
-    
+
     user.resume_login(request)
   end
 
@@ -78,11 +78,11 @@ class UserSession < ActiveRecord::Base
   def self.current
     Thread.current[:user_session]
   end
-  
+
   def self.current=(s)
     Thread.current[:user_session] = s
   end
-  
+
   def start!(token)
     update!(
         api_token: token,

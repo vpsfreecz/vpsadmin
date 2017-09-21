@@ -15,7 +15,7 @@ module VpsAdmin::CLI::Commands
       opts.on('-f', '--format FORMAT', 'archive, stream or incremental_stream') do |f|
         @opts[:format] = f
       end
-      
+
       opts.on('-I', '--from-snapshot SNAPSHOT_ID', Integer, 'Download snapshot incrementally from SNAPSHOT_ID') do |s|
         @opts[:from_snapshot] = s
       end
@@ -65,7 +65,7 @@ module VpsAdmin::CLI::Commands
       else
         @opts[:snapshot] = args.first.to_i
       end
-      
+
       do_exec(@opts)
     end
 
@@ -113,7 +113,7 @@ module VpsAdmin::CLI::Commands
       rescue VpsAdmin::CLI::DownloadError => e
         warn e.message
         exit(false)
-        
+
       ensure
         f.close
       end
@@ -149,7 +149,7 @@ module VpsAdmin::CLI::Commands
           warn "File '#{path}' already exists"
           exit(false)
         end
-        
+
         case action
         when :resume
           mode = 'a+'
@@ -216,4 +216,4 @@ module VpsAdmin::CLI::Commands
       end
     end
   end
-end 
+end

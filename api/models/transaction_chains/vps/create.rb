@@ -80,7 +80,7 @@ module TransactionChains
       user_env = vps.user.environment_user_configs.find_by!(
           environment: vps.node.location.environment,
       )
-         
+
       versions.each do |v|
         next if opts[v].nil? || opts[v] <= 0
 

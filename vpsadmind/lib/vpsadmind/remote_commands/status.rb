@@ -22,7 +22,7 @@ module VpsAdmind::RemoteCommands
 
           queue.each do |wid, w|
             h = w.cmd.handler
-            
+
             start = w.cmd.time_start
             p = w.cmd.progress
             p[:time] = p[:time].to_i if p

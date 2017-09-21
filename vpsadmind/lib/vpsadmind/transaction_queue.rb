@@ -74,7 +74,7 @@ module VpsAdmind
       else
         s = real_size
       end
-      
+
       used < s || (cmd.urgent? && s < total_size)
     end
 

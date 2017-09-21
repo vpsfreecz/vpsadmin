@@ -4,10 +4,10 @@ module VpsAdmind
 
     def exec
       db = Db.new
-      
+
       db.transaction do |t|
         time = Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
-        
+
         # Close integrity object
         t.prepared(
             'UPDATE integrity_objects o SET
@@ -92,11 +92,11 @@ module VpsAdmind
             time, time, @integrity_check_id
         )
       end
-      
+
       db.close
       ok
     end
-    
+
     def rollback
       ok
     end

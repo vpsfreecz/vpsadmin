@@ -23,7 +23,7 @@ class RefactorVpses < ActiveRecord::Migration
             WHERE table_name = 'vps'
         ")
       end
-      
+
       dir.down do
         add_index :vpses, :user_id, name: :m_id
 

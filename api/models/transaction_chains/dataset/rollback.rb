@@ -29,10 +29,10 @@ module TransactionChains
       if dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where(
              pools: {role: ::Pool.roles[:backup]}
          ).count == 0
-        
+
         sip = snapshot.snapshot_in_pools.where(dataset_in_pool: dataset_in_pool).take
         fail 'nothing to rollback, integrity error' unless sip
-        
+
         pre_local_rollback
 
         append(Transactions::Storage::Rollback, args: [
@@ -175,7 +175,7 @@ module TransactionChains
             append(Transactions::Utils::NoOp, args: find_node_id) do
               # Remove old head
               edit(old_head, head: false) if old_head
-             
+
               # Attach new head
               edit(snap_in_branch.branch, head: true)
             end
@@ -197,7 +197,7 @@ module TransactionChains
             edit(old_head, head: false) if old_head
 
             create(head)
-            
+
             new_history_id = dataset_in_pool.dataset.current_history_id + 1
             edit(dataset_in_pool.dataset, current_history_id: new_history_id)
 

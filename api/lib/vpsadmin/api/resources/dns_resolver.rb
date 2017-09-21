@@ -52,7 +52,7 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
 
     def query
       q = ::DnsResolver.all
-      
+
       if input[:vps]
         q = q.where(
             'location_id = ? OR is_universal = 1',

@@ -5,7 +5,7 @@ class FreeUnusedLogins < ActiveRecord::Migration
     reversible do |dir|
       dir.up do
         change_column_null :members, :m_nick, true
-        
+
         ActiveRecord::Base.connection.execute('
             UPDATE members
             SET orig_login = m_nick, m_nick = NULL

@@ -22,7 +22,7 @@ module TransactionChains
             fail "unsupported module #{m}"
         end
       end
-      
+
       append(Transactions::IntegrityCheck::Finalize, args: check) unless included?
 
       check

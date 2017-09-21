@@ -77,7 +77,7 @@ VpsAdmin::API::DatasetProperties.register do
     default 0
     editable false
   end
-  
+
   property :referenced do
     type :integer
     label 'Referenced space'

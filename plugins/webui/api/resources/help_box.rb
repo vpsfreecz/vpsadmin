@@ -117,7 +117,7 @@ module VpsAdmin::API::Resources
         error('Create failed', e.record.errors.to_hash)
       end
     end
-    
+
     class Update < HaveAPI::Actions::Default::Update
       desc 'Update help box'
 
@@ -142,7 +142,7 @@ module VpsAdmin::API::Resources
         error('Update failed', e.record.errors.to_hash)
       end
     end
-    
+
     class Delete < HaveAPI::Actions::Default::Delete
       desc 'Delete help box'
 

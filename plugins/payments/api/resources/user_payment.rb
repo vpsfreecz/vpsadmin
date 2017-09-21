@@ -8,7 +8,7 @@ module VpsAdmin::API::Resources
       resource VpsAdmin::API::Resources::User, value_label: :login
       integer :amount
     end
-    
+
     params(:all) do
       id :id
       use :writable
@@ -57,7 +57,7 @@ module VpsAdmin::API::Resources
         )
       end
     end
-    
+
     class Show < HaveAPI::Actions::Default::Show
       desc 'Show user payment'
 
@@ -70,7 +70,7 @@ module VpsAdmin::API::Resources
         restrict user_id: u.id
         allow
       end
-      
+
       def prepare
         @payment = ::UserPayment.find_by!(with_restricted(
             id: params['user_payment_id'],
@@ -81,7 +81,7 @@ module VpsAdmin::API::Resources
         @payment
       end
     end
-    
+
     class Create < HaveAPI::Actions::Default::Create
       desc 'Create a user payment'
       blocking true

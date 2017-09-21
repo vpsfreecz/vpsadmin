@@ -50,7 +50,7 @@ module VpsAdmind::Firewall
     def set(addr, id, version, user_id)
       sync do
         @map[addr] = IpAddr.new(id, version, user_id)
-      
+
         [4, 6].each do |v|
           IpSet.create_or_replace!(
               "vpsadmin_v#{v}_local_addrs",
@@ -72,7 +72,7 @@ module VpsAdmind::Firewall
     def unset(addr)
       sync do
         @map.delete(addr)
-        
+
         [4, 6].each do |v|
           IpSet.create_or_replace!(
               "vpsadmin_v#{v}_local_addrs",
@@ -94,10 +94,10 @@ module VpsAdmind::Firewall
     def synchronize
       if @mutex.owned?
         yield
-        
+
       else
         @mutex.synchronize { yield }
-      end      
+      end
     end
 
     alias_method :sync, :synchronize

@@ -9,7 +9,7 @@ module VpsAdmind::Firewall
       set.concat(ips)
       set.create!
     end
-    
+
     def self.replace!(name, type, ips)
       set = new(name, type)
       set.concat(ips)

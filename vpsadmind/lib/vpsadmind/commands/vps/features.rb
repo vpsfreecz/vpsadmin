@@ -15,7 +15,7 @@ module VpsAdmind
     def set_features(key)
       honor_state do
         vzctl(:stop, @vps_id)
-        
+
         opts = {
             :features => [],
             :capability => [],
@@ -61,7 +61,7 @@ module VpsAdmind
           opts[:features] << 'ppp:off'
           opts[:devices] << 'c:108:0:none'
         end
-        
+
         if @features['kvm'][key]
           opts[:devices] << 'c:10:232:rw'
         else
@@ -87,7 +87,7 @@ module VpsAdmind
           vzctl(:exec, @vps_id, 'mknod /dev/ppp c 108 0', false, [8,])
           vzctl(:exec, @vps_id, 'chmod 600 /dev/ppp')
         end
-        
+
         if @features['kvm'][key]
           vzctl(:exec, @vps_id, 'mknod /dev/kvm c 10 232', false, [8,])
         end

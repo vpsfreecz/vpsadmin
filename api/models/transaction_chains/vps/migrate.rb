@@ -210,7 +210,7 @@ module TransactionChains
 
       # Move the dataset in pool to the new pool in the database
       chain = self
-      
+
       append(Transactions::Utils::NoOp, args: dst_node.id, urgent: true) do
         edit(vps, dataset_in_pool_id: datasets.first[1].id)
         edit(vps, node_id: dst_node.id)
@@ -240,7 +240,7 @@ module TransactionChains
         src.call_hooks_for(:migrated, self, args: [src, dst])
       end
 
-      # Setup firewall and shapers 
+      # Setup firewall and shapers
       # Unregister from firewall and remove shaper on source node
       if @opts[:handle_ips]
         use_chain(Vps::FirewallUnregister, args: vps, urgent: true)
@@ -357,7 +357,7 @@ module TransactionChains
             src_dip,
             confirmation: confirmable
         )
-        
+
         # Do not add the plan in the target environment if it is for admins only
         begin
           next unless ::EnvironmentDatasetPlan.find_by!(
@@ -382,7 +382,7 @@ module TransactionChains
         end
       end
     end
-   
+
     # Replaces IP addresses if migrating to another location. Handles reallocation
     # of cluster resources when migrating to a different environment.
     #
@@ -410,7 +410,7 @@ module TransactionChains
                 ip.network.ip_version,
                 ip.network.role.to_sym,
             )
-          
+
           rescue ActiveRecord::RecordNotFound
             dst_ip_addresses << [ip, nil]
             next
@@ -515,7 +515,7 @@ module TransactionChains
           user: user,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed),
         )
-        
+
         ret[src_use] = {value: src_use.value}
         ret[dst_use] = {value: dst_use.value}
       end
@@ -529,12 +529,12 @@ module TransactionChains
         ips.select do |ip|
           ip.network.ip_version == 4 && ip.network.role == 'public_access'
         end
-      
+
       when :ipv4_private
         ips.select do |ip|
           ip.network.ip_version == 4 && ip.network.role == 'private_access'
         end
-      
+
       when :ipv6
         ips.select { |ip| ip.network.ip_version == 6 }
       end
@@ -586,7 +586,7 @@ module TransactionChains
               migrate_mine_mount(m)
           )
         end
-        
+
         @chain.use_chain(Vps::Mounts, args: @dst_vps, urgent: true)
 
         unless obj_changes.empty?
@@ -672,7 +672,7 @@ module TransactionChains
           mnt.vps.dataset_in_pool.dataset.subtree_ids.include?(
               mnt.dataset_in_pool.dataset.id
           )
-        
+
         is_local = @src_vps.node_id == mnt.dataset_in_pool.pool.node_id
         is_remote = !is_local
 
@@ -758,8 +758,8 @@ module TransactionChains
 
             changes[new_snapshot] = {mount_id: nil}
             new_snapshot.update!(mount: mnt)
-            
-            mnt.snapshot_in_pool = new_snapshot 
+
+            mnt.snapshot_in_pool = new_snapshot
           end
         end
 
@@ -865,8 +865,8 @@ module TransactionChains
 
           changes[new_snapshot] = {mount_id: nil}
           new_snapshot.update!(mount: mnt)
-          
-          mnt.snapshot_in_pool = new_snapshot 
+
+          mnt.snapshot_in_pool = new_snapshot
         end
 
         mnt.save!

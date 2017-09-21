@@ -17,7 +17,7 @@ class AddUserMailRecipients < ActiveRecord::Migration
       t.string     :to,               null: false, limit: 500
       t.boolean    :enabled,          null: false, default: true
     end
-    
+
     add_index :user_mail_template_recipients, %i(user_id mail_template_id),
         unique: true, name: :user_id_mail_template_id
     add_index :user_mail_template_recipients, :user_id

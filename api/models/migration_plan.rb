@@ -20,7 +20,7 @@ class MigrationPlan < ActiveRecord::Base
                   reason: reason,
               }],
           )
-         
+
           m.update!(
               state: ::VpsMigration.states[:running],
               started_at: Time.now,
@@ -51,7 +51,7 @@ class MigrationPlan < ActiveRecord::Base
         state: ::VpsMigration.states[:cancelled]
     )
   end
-  
+
   def fail!
     update!(state: self.class.states[:failing])
     vps_migrations.where(

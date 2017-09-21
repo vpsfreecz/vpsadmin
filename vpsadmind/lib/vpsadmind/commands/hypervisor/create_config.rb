@@ -2,7 +2,7 @@ module VpsAdmind
   class Commands::Hypervisor::CreateConfig < Commands::Base
     handle 7301
     needs :hypervisor
-    
+
     def exec
       f = File.new(sample_conf_path(@name), 'w')
       f.write(@vps_config)

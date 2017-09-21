@@ -15,7 +15,7 @@ module VpsAdmind
     def initialize(daemon)
       @daemon = daemon
       @queues = {}
-      
+
       QUEUES.each do |q|
         @queues[q] = TransactionQueue.new(q, @daemon.start_time)
       end
@@ -28,7 +28,7 @@ module VpsAdmind
     def each(&block)
       @queues.each(&block)
     end
-    
+
     def each_value(&block)
       @queues.each_value(&block)
     end

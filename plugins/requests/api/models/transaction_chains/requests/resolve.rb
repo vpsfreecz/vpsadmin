@@ -10,7 +10,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
 
       reply_to = request.last_mail_id
       webui_url = ::SysConfig.get(:webui, :base_url)
-     
+
       params.each do |k, v|
         if request.class.attribute_names.include?(k.to_s)
           request.send("#{k}=", v)
@@ -23,7 +23,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
           admin_response: reason,
           last_mail_id: request.last_mail_id+1,
       )
-     
+
       if state != :ignored
         [
             [
@@ -65,7 +65,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
           end
         end
       end
-      
+
       ::User.where('level > 90').where(mailer_enabled: true).each do |admin|
         [
             [

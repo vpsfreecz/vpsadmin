@@ -37,15 +37,15 @@ EOF
         opts.on('-u', '--user USER', 'Username') do |u|
           @opts[:user] = u
         end
-        
+
         opts.on('-p', '--password PASSWORD', 'Password') do |p|
           @opts[:password] = p
         end
-        
+
         opts.on('-t', '--token TOKEN', 'Token') do |t|
           @opts[:token] = t
         end
-        
+
         opts.on('-i', '--token-lifetime LIFETIME',
                 %w(renewable_manual renewable_auto fixed permanent), 'Token lifetime') do |l|
           @opts[:lifetime] = l
@@ -55,7 +55,7 @@ EOF
           @opts[:save] = f || 'auth.token'
           @opts[:auth] = 'token'
         end
-        
+
         opts.on('-l', '--load-token [FILE]', 'Load token from FILE') do |f|
           @opts[:load] = f || 'auth.token'
           @opts[:auth] = 'token'
@@ -78,9 +78,9 @@ EOF
           ARGV[0],
           identity: "vpsadmin-mail-templates v#{VpsAdmin::MailTemplates::VERSION}"
       )
-      
+
       authenticate
-      
+
       case ARGV[1]
       when 'auth'
         u = @api.user.current
@@ -103,12 +103,12 @@ EOF
         fail "unsupported action '#{ARGV[1]}'"
       end
     end
-    
+
     def authenticate
       if @opts[:auth] == 'basic'
         u, p = get_credentials
         @api.authenticate(:basic, user: u, password: p)
-        
+
       elsif @opts[:auth] == 'token'
         token = @opts[:token]
 
@@ -122,7 +122,7 @@ EOF
 
             if @opts[:save]
               token = @api.auth.token
-              
+
               f = File.new(@opts[:save], 'w')
               f.write(token)
               f.close
@@ -137,7 +137,7 @@ EOF
 
     def get_credentials
       @opts[:user] ||= ask('Username: ') { |q| q.default = nil }.to_s
-      
+
       @opts[:password] ||= ask('Password: ') do |q|
         q.default = nil
         q.echo = false

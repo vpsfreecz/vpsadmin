@@ -29,7 +29,7 @@ module VpsAdmind
             serv.close
             break
           end
-          
+
           handle_client(serv.accept)
         end
       end
@@ -55,7 +55,7 @@ module VpsAdmind
 
       def communicate
         send_data({:version => VpsAdmind::VERSION})
-        
+
         buf = ""
 
         while m = @sock.recv(1024)
@@ -83,7 +83,7 @@ module VpsAdmind
 
         executor = cmd.new(req[:params] || {}, @daemon)
         output = {}
-        
+
         begin
           ret = executor.exec
 
@@ -102,7 +102,7 @@ module VpsAdmind
           end
         end
       end
-      
+
       def error(err)
         send_data({:status => :failed, :error => err})
       end

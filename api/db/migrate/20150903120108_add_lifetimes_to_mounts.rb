@@ -16,7 +16,7 @@ class AddLifetimesToMounts < ActiveRecord::Migration
         )
       end
     end
-    
+
     change_column_null :mounts, :object_state, false
     add_timestamps :mounts
   end

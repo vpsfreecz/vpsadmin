@@ -26,7 +26,7 @@ module TransactionChains
             ).each do |backup|
               use_chain(DatasetInPool::Destroy, args: [backup, {recursive: true}])
             end
-            
+
           else # primary pool, delete right away with all backups
             ds.set_object_state(:deleted, chain: self)
           end
@@ -34,7 +34,7 @@ module TransactionChains
         rescue ActiveRecord::RecordNotFound
           # The dataset is not present on any primary/hypervisor pool as it has
           # been already deleted and exists only in backup.
-          
+
           ds.set_object_state(:deleted, chain: self)
         end
       end
@@ -58,7 +58,7 @@ module TransactionChains
         end
 
         # TODO: what about owned networks?
-        
+
         # Delete all public keys
         user.user_public_keys.each do |key|
           t.just_destroy(key)

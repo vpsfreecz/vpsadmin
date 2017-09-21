@@ -2,7 +2,7 @@ module Transactions::IntegrityCheck
   class Storage < ::Transaction
     t_name :integrity_storage
     t_type 6005
-    
+
     include Utils
 
     def params(check, node)

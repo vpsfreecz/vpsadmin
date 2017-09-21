@@ -10,7 +10,7 @@ module VpsAdmin::API::Tasks
           Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
       ).each do |t|
         puts "Token ##{t.id} valid_to=#{t.valid_to} token=#{t.token}"
-        
+
         ::ApiToken.transaction do
           # There is never more than one user session
           t.user_sessions.each do |s|
@@ -22,7 +22,7 @@ module VpsAdmin::API::Tasks
                 api_token: nil
             )
           end
-          
+
           t.destroy! if ENV['EXECUTE'] == 'yes'
         end
       end

@@ -80,7 +80,7 @@ class Node < ActiveRecord::Base
      .take
 
     return n if n
-    
+
     q = self.joins('
         LEFT JOIN vpses ON vpses.node_id = nodes.id
         INNER JOIN locations ON locations.id = nodes.location_id
@@ -90,7 +90,7 @@ class Node < ActiveRecord::Base
         maintenance_lock: 0,
         locations: {environment_id: env.id},
     )
-    
+
     q = q.where('nodes.id != ?', except.id) if except
 
     q.group('nodes.id').order('COUNT(vpses.id) / max_vps ASC').take
@@ -124,9 +124,9 @@ class Node < ActiveRecord::Base
         maintenance_lock: 0,
         location_id: loc.id
     )
-    
+
     q = q.where('nodes.id != ?', except.id) if except
-    
+
     q.group('nodes.id').order('COUNT(vpses.id) / max_vps ASC').take
   end
 
@@ -140,7 +140,7 @@ class Node < ActiveRecord::Base
     return false unless node_current_status
 
     t = Time.now.utc.to_i
-    
+
     if node_current_status.updated_at
       return (t - node_current_status.updated_at.to_i) <= 120
     end
@@ -184,7 +184,7 @@ class Node < ActiveRecord::Base
   def vps_free
     max_vps && (max_vps - vps_total)
   end
-  
+
   %i(uptime process_count cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
      cpu_irq cpu_softirq cpu_guest loadavg used_memory used_swap arc_c_max arc_c
      arc_size arc_hitpercent kernel vpsadmind_version
@@ -248,7 +248,7 @@ class Node < ActiveRecord::Base
 
       plan.start!
     end
-    
+
     plan
   end
 

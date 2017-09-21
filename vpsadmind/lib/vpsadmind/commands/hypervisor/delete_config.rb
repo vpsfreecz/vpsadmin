@@ -2,7 +2,7 @@ module VpsAdmind
   class Commands::Hypervisor::DeleteConfig < Commands::Base
     handle 7302
     needs :hypervisor
-    
+
     def exec
       File.delete(sample_conf_path(@name))
 

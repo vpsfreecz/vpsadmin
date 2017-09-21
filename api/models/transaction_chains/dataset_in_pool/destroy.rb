@@ -80,7 +80,7 @@ module TransactionChains
       @datasets.each do |dip|
         destroy_dataset(dip, true)
       end
-      
+
       # Destroy the top-level dataset (which is last in the list)
       destroy_dataset(top_level, @opts[:top])
     end

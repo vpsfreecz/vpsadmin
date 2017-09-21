@@ -7,7 +7,7 @@ class AddMultilingualMail < ActiveRecord::Migration
 
   class MailTemplateTranslation < ActiveRecord::Base
     belongs_to :language
-    belongs_to :mail_template  
+    belongs_to :mail_template
   end
 
   def up
@@ -33,9 +33,9 @@ class AddMultilingualMail < ActiveRecord::Migration
     add_index :mail_template_translations, [:mail_template_id, :language_id], unique: true,
               name: :mail_template_translation_unique
     add_column :members, :language_id, :integer, default: 1
-    
+
     lang_en = Language.create!(code: 'en', label: 'English')
-    
+
     MailTemplate.all.each do |tpl|
       tpl.mail_template_translations << MailTemplateTranslation.new(
           language: lang_en,

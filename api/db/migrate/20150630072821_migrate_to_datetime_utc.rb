@@ -48,7 +48,7 @@ class MigrateToDatetimeUtc < ActiveRecord::Migration
         User.where.not(m_created: nil).update_all(
             "created_at = CONVERT_TZ(FROM_UNIXTIME(m_created), 'Europe/Prague', 'UTC')"
         )
-        
+
         User.where("m_paid_until IS NOT NULL AND m_paid_until != ''").update_all(
             "paid_until = CONVERT_TZ(FROM_UNIXTIME(m_paid_until), 'Europe/Prague', 'UTC')"
         )
@@ -90,7 +90,7 @@ class MigrateToDatetimeUtc < ActiveRecord::Migration
         Vps.where.not(created_at: nil).update_all(
             "vps_created = UNIX_TIMESTAMP(CONVERT_TZ(created_at, 'UTC', 'Europe/Prague'))"
         )
-        
+
         User.where.not(created_at: nil).update_all(
             "m_created = UNIX_TIMESTAMP(CONVERT_TZ(created_at, 'UTC', 'Europe/Prague'))"
         )

@@ -36,7 +36,7 @@ module VpsAdmind
       # Remove received snapshots
       db = Db.new
       ds_name = @branch ? "#{@dataset_name}/#{@tree}/#{@branch}" : @dataset_name
-      
+
       # If there are more than 1 snapshots, it means that it is incremental transfer.
       # The first snapshot MUST NOT be deleted as it would break history flow.
       # The first snapshot is not a part of the transfer anyway, it is already present

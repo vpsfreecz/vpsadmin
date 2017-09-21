@@ -17,7 +17,7 @@ module VpsAdmin::MailTemplates
 
       @formats.sort!
     end
-    
+
     def params
       ret = {
           text_plain: @plain,

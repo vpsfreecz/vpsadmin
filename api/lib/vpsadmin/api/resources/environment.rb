@@ -66,7 +66,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
       elsif input[:has_hypervisor] === false
         not_has << 'node'
       end
-      
+
       if input[:has_storage]
         has << 'storage'
 
@@ -188,7 +188,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
     def exec
       ::Environment.find(params[:environment_id]).update!(input)
-        
+
     rescue ActiveRecord::RecordInvalid => e
       error('update failed', e.record.errors.to_hash)
     end

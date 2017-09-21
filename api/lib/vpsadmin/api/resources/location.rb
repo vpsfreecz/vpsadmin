@@ -64,7 +64,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
             environment_id: input[:environment].id
         ).group('locations.id')
       end
-      
+
       has = []
       not_has = []
 
@@ -74,7 +74,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       elsif input[:has_hypervisor] === false
         not_has << 'node'
       end
-      
+
       if input[:has_storage]
         has << 'storage'
 

@@ -64,11 +64,11 @@ module TransactionChains
     def filename(snapshot, format, from_snapshot)
       ds = snapshot.dataset.full_name.gsub(/\//, '_')
       base = "#{ds}__#{snapshot.name.gsub(/:/, '-')}"
-      
+
       case format
       when :archive
         "#{base}.tar.gz"
-      
+
       when :stream
         "#{base}.dat.gz"
 

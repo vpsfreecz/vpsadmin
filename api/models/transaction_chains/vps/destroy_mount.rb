@@ -5,7 +5,7 @@ module TransactionChains
     def link_chain(mnt, *args)
       lock(mnt)
       concerns(:affect, [mnt.class.name, mnt.id])
-      
+
       if mnt.snapshot_in_pool
         use_chain(Vps::UmountSnapshot, args: [mnt.vps, mnt])
 

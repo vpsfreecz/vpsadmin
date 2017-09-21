@@ -5,7 +5,7 @@ module VpsAdmind::RemoteCommands
     def exec
       db = ::VpsAdmind::Db.new
       out = {}
-      
+
       case @command
         when 'confirmations'
           ret = {}
@@ -73,11 +73,11 @@ module VpsAdmind::RemoteCommands
               end
             end
           end
-          
+
       end
-      
+
       db.close
-      
+
       ok.update({:output => out})
     end
 
@@ -133,7 +133,7 @@ module VpsAdmind::RemoteCommands
       t.prepared(
           'UPDATE port_reservations
           SET transaction_chain_id = NULL, addr = NULL
-          WHERE transaction_chain_id = ?', 
+          WHERE transaction_chain_id = ?',
           @chain
       )
 

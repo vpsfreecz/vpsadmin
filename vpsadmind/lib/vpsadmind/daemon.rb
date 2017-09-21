@@ -49,7 +49,7 @@ module VpsAdmind
       @mount_reporter.start
       @delayed_mounter.start
       @remote_control && @remote_control.start
-     
+
       if do_init
         @fw.init(@db)
 
@@ -82,7 +82,7 @@ module VpsAdmind
                 false
               end
             end
-            
+
             throw :next if @queues.full?
 
             @@mutex.synchronize do
@@ -237,7 +237,7 @@ module VpsAdmind
             log(:info, :regular, 'Update storage resources')
 
             my = Db.new
-            StorageStatus.update(my) 
+            StorageStatus.update(my)
             my.close
           end
 
@@ -268,7 +268,7 @@ module VpsAdmind
       my = Db.new
 
       @node_status.update(my)
-      
+
       if $CFG.get(:vpsadmin, :update_vps_status)
         @vps_status.update(my)
       end

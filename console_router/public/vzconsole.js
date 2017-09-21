@@ -153,7 +153,7 @@ ShellInABox.prototype.sessionClosed = function () {
 ShellInABox.prototype.reconnect = function () {
 	var that = this;
     this.showReconnect(false);
-    
+
 	if (this.session)
 		return false;
 
@@ -203,7 +203,7 @@ ShellInABox.prototype.sendRequest = function (request) {
             }
         }
     }(this);
-    
+
     this.pendingKeys = '';
     request.send(content);
 };

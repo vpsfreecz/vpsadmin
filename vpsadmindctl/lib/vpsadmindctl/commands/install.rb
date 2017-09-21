@@ -1,7 +1,7 @@
 module VpsAdmindCtl::Commands
   class Install < VpsAdmindCtl::Command
     description 'Add node to cluster, save public key to DB, generate configs'
-    
+
     def options(opts, args)
       @opts = {
           :id => nil,

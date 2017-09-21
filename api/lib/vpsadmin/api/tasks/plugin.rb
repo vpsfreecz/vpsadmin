@@ -13,7 +13,7 @@ module VpsAdmin::API::Tasks
         )
       end
     end
-    
+
     # Show plugin status
     # Accepts the following environment variables:
     # [PLUGIN]: plugin name, required
@@ -21,7 +21,7 @@ module VpsAdmin::API::Tasks
       required_env('PLUGIN')
       plugin = VpsAdmin::API::Plugin.registered[ENV['PLUGIN'].to_sym]
       fail 'plugin not found' unless plugin
-      
+
       unless ActiveRecord::Base.connection.table_exists?(ActiveRecord::Migrator.schema_migrations_table_name)
         puts 'Schema migrations table does not exist yet.'
         return
@@ -66,7 +66,7 @@ module VpsAdmin::API::Tasks
     # Run db migrations for plugins
     #
     # Accepts the following environment variables:
-    # [PLUGIN]: plugin name, optional 
+    # [PLUGIN]: plugin name, optional
     # [VERSION]: target version, requires plugin name
     def migrate
       if ENV['PLUGIN'].nil?
@@ -87,7 +87,7 @@ module VpsAdmin::API::Tasks
     end
 
     # Rollback plugin migrations
-    # 
+    #
     # Accepts the following environment variables:
     # [PLUGIN]: plugin name, required
     # [STEP]: how many migrations to rollback, defaults to 1
@@ -99,7 +99,7 @@ module VpsAdmin::API::Tasks
       step = ENV['STEP'] ? ENV['STEP'].to_i : 1
       plugin.rollback(step)
     end
-    
+
     # Rollback all plugin migrations
     #
     # Accepts the following environment variables:
@@ -108,7 +108,7 @@ module VpsAdmin::API::Tasks
       required_env('PLUGIN')
       plugin = VpsAdmin::API::Plugin.registered[ENV['PLUGIN'].to_sym]
       fail 'plugin not found' unless plugin
-      
+
       plugin.rollback(plugin.migrations.count)
     end
   end

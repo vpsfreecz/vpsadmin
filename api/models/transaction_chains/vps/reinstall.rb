@@ -53,7 +53,7 @@ module TransactionChains
             label: template.label,
         }))
       end
-      
+
       append(Transactions::Vps::ApplyConfig, args: vps)
       use_chain(Vps::Mounts, args: vps)
 
@@ -65,7 +65,7 @@ module TransactionChains
       vps.ip_addresses.all.each do |ip|
         append(Transactions::Vps::IpAdd, args: [vps, ip, false])
       end
-      
+
       append(Transactions::Vps::DnsResolver, args: [
           vps,
           vps.dns_resolver,
@@ -99,7 +99,7 @@ module TransactionChains
         end
       end
     end
-    
+
     def recursive_serialize(dataset, children)
       ret = []
 

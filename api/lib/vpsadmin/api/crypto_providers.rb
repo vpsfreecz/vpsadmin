@@ -42,7 +42,7 @@ module VpsAdmin
         def self.matches?(crypted, _, password)
           begin
             ::BCrypt::Password.new(crypted) == password
-            
+
           rescue BCrypt::Errors::InvalidHash
             false
           end

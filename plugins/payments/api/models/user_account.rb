@@ -16,7 +16,7 @@ class UserAccount < ActiveRecord::Base
       ).each do |income|
         begin
           u = ::User.find(income.vs.to_i)
-        
+
         rescue ActiveRecord::RecordNotFound
           income.update!(state: ::IncomingPayment.states[:unmatched])
           next
@@ -76,7 +76,7 @@ class User
   def monthly_payment
     user_account.monthly_payment
   end
-  
+
   def paid_until
     user_account.paid_until
   end

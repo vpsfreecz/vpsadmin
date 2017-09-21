@@ -5,7 +5,7 @@ module TransactionChains
     def free_from_environment_user_config(r, user_env)
       v = r.name == 'ipv6' ? 6 : 4
       ips = []
-      
+
       ::IpAddress.joins(network: :location).where(
           user: user_env.user,
           networks: {

@@ -12,7 +12,7 @@ module VpsAdmind
 
           syscmd("#{$CFG.get(:bin, :cp)} -p #{src} #{dst}")
         end
-        
+
         check_config!
 
         if @vps_id != @dst_vps
@@ -27,7 +27,7 @@ module VpsAdmind
           # Accept return code 1 - file not found
           scp("#{@src_node_addr}:#{src}", "#{dst}", nil, [1])
         end
-        
+
         check_config!
       end
 
@@ -47,7 +47,7 @@ module VpsAdmind
     protected
     def files
       ret = {}
-      
+
       CONFIGS.each do |suffix|
         ret["#{$CFG.get(:vz, :vz_conf)}/conf/#{@vps_id}.#{suffix}"] = \
             "#{$CFG.get(:vz, :vz_conf)}/conf/#{@dst_vps}.#{suffix}"

@@ -2,7 +2,7 @@ module Transactions::IntegrityCheck
   module Utils
     def serialize_query(q, parent, method)
       ret = []
-            
+
       q.each do |obj|
         integrity_obj = register_object!(obj, parent)
         tmp = send(method, obj, integrity_obj)

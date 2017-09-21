@@ -59,7 +59,7 @@ module VpsAdmin::API::Resources
 
         q = q.where('api_ip_addr LIKE ?', input[:api_ip_addr]) if input[:api_ip_addr]
         q = q.where('client_ip_addr LIKE ?', input[:client_ip_addr]) if input[:client_ip_addr]
-        
+
         if input[:user_agent]
           q = q.joins(:user_session_agents).where('agent LIKE ?', input[:user_agent])
         end

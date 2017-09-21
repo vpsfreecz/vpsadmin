@@ -169,7 +169,7 @@ module VpsAdmin
 
             cls = Object.const_get(act[:class_name])
             task = cls.find_by(cls.primary_key => act[:row_id])
-            
+
             unless task
               warn "Action #{act[:class_name]} = #{act[:row_id]} not found"
               next

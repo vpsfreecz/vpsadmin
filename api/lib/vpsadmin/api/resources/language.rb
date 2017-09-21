@@ -37,7 +37,7 @@ module VpsAdmin::API::Resources
       output do
         use :all
       end
-      
+
       authorize { allow }
 
       def prepare

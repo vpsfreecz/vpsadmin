@@ -21,7 +21,7 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
 
       payment.to_date = u.user_account.paid_until
       payment.save!
-      
+
       concerns(:affect, [payment.class.name, payment.id])
 
       if u.object_state == 'active'
@@ -45,13 +45,13 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
             reason: "Payment ##{payment.id} accepted.",
             chain: self,
         )
-        
+
         append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
           t.just_create(payment)
           t.edit_before(u.user_account, paid_until: u.user_account.paid_until_was)
 
           u.user_account.save!
-          
+
           if payment.incoming_payment
             t.edit(payment.incoming_payment, state: ::IncomingPayment.states[:processed])
           end
@@ -61,7 +61,7 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
         raise ::UserAccount::AccountDisabled,
             "Account #{u.id} is in state #{u.object_state}, cannot add payment"
       end
-      
+
       if u.mailer_enabled
         mail(:payment_accepted, {
             user: u,

@@ -84,7 +84,7 @@ module VpsAdmind
 
       db_vpses.each do |vps_id, vps|
         next if !vps[:exists] || !vps[:running] || vps[:skip]
-        
+
         run_or_skip(vps) do
           # Initial run to make sure that all libraries are loaded in memory and
           # consequent calls will be as fast as possible.
@@ -94,7 +94,7 @@ module VpsAdmind
           vps[:cpu].measure_once(vzctl(:exec, vps_id, 'cat /proc/stat')[:output])
 
           sleep(0.2)
-        
+
           # Final measurement
           vps[:cpu].measure_once(vzctl(:exec, vps_id, 'cat /proc/stat')[:output])
         end
@@ -103,7 +103,7 @@ module VpsAdmind
       # Save results to db
       db_vpses.each do |vps_id, vps|
         next unless vps[:exists]
-       
+
         t = Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
 
         # The VPS is not running
@@ -149,13 +149,13 @@ module VpsAdmind
       if @vps_ids
         sql += " AND vpses.id IN (#{@vps_ids.join(',')})"
       end
-      
+
       db.query(sql)
     end
 
     def vzlist
       fields = %w(veid status cpus physpages swappages numproc uptime laverage)
-      
+
       cmd = "#{$CFG.get(:vz, :vzlist)} -ajH -o#{fields.join(',')}"
 
       if @vps_ids
@@ -197,7 +197,7 @@ module VpsAdmind
             process_count, cpu_user, cpu_nice, cpu_system, cpu_idle, cpu_iowait,
             cpu_irq, cpu_softirq, loadavg, used_memory, used_swap, created_at
           )
-            
+
           SELECT
             vps_id, status, is_running, uptime, cpus, total_memory, total_swap,
             sum_process_count / update_count,
@@ -231,7 +231,7 @@ module VpsAdmind
           cpus = #{vps[:cpus]},
           is_running = #{vps[:running] ? 1 : 0},
           update_count = 1,"
-      
+
       if vps[:running] && !vps[:skip]
         cpu = vps[:cpu].to_percent
 
@@ -251,7 +251,7 @@ module VpsAdmind
 
       else
         sql += "
-          uptime = NULL, 
+          uptime = NULL,
           loadavg = NULL,
           process_count = NULL,
           used_memory = NULL,
@@ -264,7 +264,7 @@ module VpsAdmind
           cpu_irq = NULL,
           cpu_softirq = NULL,"
       end
-        
+
       sql += "
           sum_loadavg = loadavg,
           sum_process_count = process_count,
@@ -286,7 +286,7 @@ module VpsAdmind
 
     def update_status(db, t, vps_id, vps)
       sql = "UPDATE vps_current_statuses SET status = #{vps[:skip] ? 0 : 1},"
-      
+
       if vps[:running] && !vps[:skip]
         cpu = vps[:cpu].to_percent
 

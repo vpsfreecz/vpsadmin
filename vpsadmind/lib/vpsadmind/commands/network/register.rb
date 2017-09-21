@@ -1,7 +1,7 @@
 module VpsAdmind
   class Commands::Network::Register < Commands::Base
     handle 2201
-    
+
     def exec
       VpsAdmind::Firewall.networks.add!(@ip_version, @address, @prefix, @role)
       ok

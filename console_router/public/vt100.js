@@ -2427,7 +2427,7 @@ VT100.prototype.showSoftKeyboard = function() {
   var kbd                        = this.keyboard.firstElementChild;
   var scale                      = 1.0;
   var transform                  = this.getTransformName();
-  
+
   if (transform) {
     kbd.style[transform]         = '';
     if (kbd.offsetWidth > 0.9 * this.container.offsetWidth) {

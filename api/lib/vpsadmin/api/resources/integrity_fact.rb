@@ -42,7 +42,7 @@ module VpsAdmin::API::Resources
               integrity_objects: {integrity_check_id: input[:integrity_check].id}
           )
         end
-        
+
         if input[:node]
           q = q.joins(:integrity_object).where(
               integrity_objects: {node_id: input[:node].id}

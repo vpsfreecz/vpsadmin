@@ -86,7 +86,7 @@ class SysConfig < ActiveRecord::Base
       value
     end
   end
-  
+
   def set_value(v)
     case data_type
     when 'Hash', 'Array'

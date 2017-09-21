@@ -51,14 +51,14 @@ module TransactionChains
           cpu_limit: attrs[:resources] ? vps.cpu_limit : nil,
           confirmed: ::Vps.confirmed(:confirm_create)
       )
-      
+
       lifetime = dst_vps.user.env_config(
           dst_vps.node.location.environment,
           :vps_lifetime
       )
 
       dst_vps.expiration_date = Time.now + lifetime if lifetime != 0
-      
+
       dst_vps.save!
       lock(dst_vps)
 
@@ -110,7 +110,7 @@ module TransactionChains
         confirm_features.each do |f|
           just_create(f)
         end
-       
+
         confirm_windows.each do |w|
           just_create(w)
         end
@@ -184,7 +184,7 @@ module TransactionChains
         use_chain(Vps::Stop, args: vps)
 
         transfer_datasets(datasets, urgent: true)
-      
+
         use_chain(Vps::Start, args: vps, urgent: true) if vps.running?
       end
 
@@ -196,7 +196,7 @@ module TransactionChains
 
       # IP addresses
       clone_ip_addresses(vps, dst_vps) unless attrs[:vps]
-      
+
       # DNS resolver
       dst_vps.dns_resolver = dns_resolver(vps, dst_vps)
       clone_dns_resolver(vps, dst_vps)
@@ -215,7 +215,7 @@ module TransactionChains
 
       # Start the new VPS
       use_chain(TransactionChains::Vps::Start, args: dst_vps) if vps.running?
-      
+
       dst_vps.save!
       dst_vps
     end
@@ -369,7 +369,7 @@ module TransactionChains
             args: [::ClusterResource.find_by!(name: r), dst_vps, ips[r]],
             method: :allocate_to_vps
         )
-        
+
         changes << user_env.reallocate_resource!(
             r,
             user_env.send(r) + chowned,
@@ -378,7 +378,7 @@ module TransactionChains
             confirmed: ::ClusterResourceUse.confirmed(:confirmed),
         )
       end
-        
+
       unless changes.empty?
         append_t(Transactions::Utils::NoOp, args: dst_vps.node_id) do |t|
           changes.each { |use| t.edit(use, {value: use.value}) }

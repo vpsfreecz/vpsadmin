@@ -2,7 +2,7 @@ module VpsAdmin::API::Resources
   class MigrationPlan < HaveAPI::Resource
     desc 'View migration plans'
     model ::MigrationPlan
-   
+
     params(:editable) do
       bool :stop_on_error, default: true, fill: true
       bool :send_mail, default: true, fill: true
@@ -101,7 +101,7 @@ module VpsAdmin::API::Resources
       desc 'Begin execution of a migration plan'
       http_method :post
       route ':%{resource}_id/start'
-      
+
       output do
         use :all
       end
@@ -126,7 +126,7 @@ module VpsAdmin::API::Resources
       desc 'Cancel execution of a migration plan'
       http_method :post
       route ':%{resource}_id/cancel'
-      
+
       output do
         use :all
       end

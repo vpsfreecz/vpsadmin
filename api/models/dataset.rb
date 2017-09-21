@@ -74,7 +74,7 @@ class Dataset < ActiveRecord::Base
       vps = Vps.find_by!(dataset_in_pool: top_dip.dataset.root.primary_dataset_in_pool!)
       maintenance_check!(vps)
     end
-    
+
     maintenance_check!(top_dip.pool)
 
     TransactionChains::Dataset::Create.fire(

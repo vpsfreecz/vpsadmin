@@ -41,7 +41,7 @@ module VpsAdmin::API::Plugins::Requests
         def query
           q = self.class.model.where(with_restricted)
           q = q.where(state: ::UserRequest.states[input[:state]]) if input[:state]
-          
+
           %i(user api_ip_addr client_ip_addr admin).each do |v|
             q = q.where(v =>input[v]) if input[v]
           end
@@ -57,7 +57,7 @@ module VpsAdmin::API::Plugins::Requests
           with_includes(query).limit(input[:limit]).offset(input[:offset])
         end
       end
-      
+
       res.define_action(:Show, superclass: HaveAPI::Actions::Default::Show) do
         output do
           use :all
@@ -80,7 +80,7 @@ module VpsAdmin::API::Plugins::Requests
           @req
         end
       end
-      
+
       res.define_action(:Create, superclass: HaveAPI::Actions::Default::Create) do
         input do
           use :request
@@ -120,7 +120,7 @@ module VpsAdmin::API::Plugins::Requests
 
           use :resolve
         end
-        
+
         authorize do |u|
           allow if u.role == :admin
         end

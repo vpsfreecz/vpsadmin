@@ -15,19 +15,19 @@ confirmations [TRANSACTION]...  List transaction confirmations
 confirm [TRANSACTION]...        Run transaction confirmations
 release [locks|ports]           Release acquired locks and reserved ports
 END
-    
+
       if args[1] == 'confirm'
         opts.on('--direction DIR', %w(execute rollback), 'Direction (execute or rollback)') do |d|
           @opts[:direction] = d
         end
-        
+
         opts.on('--[no-]success', 'Success') do |s|
           @opts[:success] = s
         end
       end
     end
 
-    def validate 
+    def validate
       if ARGV.size < 3
         raise VpsAdmindCtl::ValidationError, 'arguments missing'
       end

@@ -51,7 +51,7 @@ module VpsAdmin::CLI::Commands
         exit_msg('--max-rate must be greater than zero') if r <= 0
         @opts[:max_rate] = r
       end
-      
+
       opts.on('-q', '--quiet', 'Print only errors') do |q|
         @opts[:quiet] = q
       end
@@ -90,9 +90,9 @@ module VpsAdmin::CLI::Commands
     def exec(args)
       if args.size == 1 && /^\d+$/ !~ args[0]
         fs = args[0]
-        
+
         ds_id = read_dataset_id(fs)
-        
+
         if ds_id
           ds = @api.dataset.show(ds_id)
         else
@@ -205,7 +205,7 @@ END
         for_transfer.each { |s| puts "  @#{s.name}" }
         puts
       end
-    
+
       if @opts[:pretend]
         pretend_state = local_state.clone
         pretend_state[ds.current_history_id] ||= []
@@ -245,7 +245,7 @@ END
       if local_state[hist_id].nil?
         zfs(:create, nil, ds)
       end
-      
+
       if no_local_snapshots
         msg "Performing a full receive of @#{snapshots.first.name} to #{ds}"
 
@@ -341,7 +341,7 @@ END
     def rotate(fs, pretend: false)
       msg "Rotating snapshots"
       local_state = pretend ? pretend : parse_tree(fs)
-      
+
       # Order snapshots by date of creation
       snapshots = local_state.values.flatten.sort do |a, b|
         a.creation <=> b.creation
@@ -368,7 +368,7 @@ END
 
       local_state.each do |hist_id, snapshots|
         next unless snapshots.empty?
-        
+
         ds = "#{fs}/#{hist_id}"
 
         msg "Destroying #{ds}"
@@ -386,7 +386,7 @@ END
         last_name = name.split('/').last
         ret[last_name.to_i] = [] if dataset?(last_name)
       end
-      
+
       zfs(
           :get,
           '-Hrp -d2 -tsnapshot -oname,property,value name,creation',

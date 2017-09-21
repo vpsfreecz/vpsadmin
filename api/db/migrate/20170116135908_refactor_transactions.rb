@@ -21,7 +21,7 @@ class RefactorTransactions < ActiveRecord::Migration
     rename_column :transactions, :t_done, :done
     rename_column :transactions, :t_param, :input
     rename_column :transactions, :t_output, :output
-    
+
     remove_column :transactions, :t_group, :integer, unsigned: true
     remove_column :transactions, :t_fallback, :text
 

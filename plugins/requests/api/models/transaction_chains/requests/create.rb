@@ -9,7 +9,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
       concerns(:affect, [request.class.name, request.id])
 
       webui_url = ::SysConfig.get(:webui, :base_url)
-     
+
       [
           [
               :request_action_role_type,
@@ -39,7 +39,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
           next
         end
       end
-      
+
           ::User.where('level > 90').where(mailer_enabled: true).each do |admin|
         [
             [

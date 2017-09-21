@@ -21,14 +21,14 @@ module TransactionChains
           [secondary_vps.class.name, secondary_vps.id],
           [primary_vps.class.name, primary_vps.id]
       )
-      
+
       # Migrate secondary VPS to primary node
       # Stop primary VPS, switch IP addresses
       # Switch secondary and primary VPS
       # Start new primary VPS
       # Move old primary to secondary node
       # Add IP addresses, start new secondary VPS
-   
+
       new_primary_vps = ::Vps.find(secondary_vps.id)
       new_primary_vps.node = primary_vps.node
 
@@ -46,7 +46,7 @@ module TransactionChains
                                                         free_objects: false))
       faked_resources.concat(secondary_vps.free_resources(chain: self,
                                                           free_objects: false))
-      
+
       primary_vps.dataset_in_pool.dataset.subtree.arrange.each do |k, v|
         faked_resources.concat(
             recursive_serialize(k, v, primary_vps.dataset_in_pool.pool)
@@ -106,7 +106,7 @@ module TransactionChains
               }
           ],
           hooks: {
-              pre_start: ->(ret, _, _) do 
+              pre_start: ->(ret, _, _) do
                 # The migration has already removed IP addresses from the
                 # secondary VPS.
                 # Remove IP addresses from the original primary VPS.
@@ -142,7 +142,7 @@ module TransactionChains
 
                   else
                     resources = []
-                     
+
                     new_primary_resources_obj.each do |use|
                       use.value = primary_resources[use.user_cluster_resource.cluster_resource.name.to_sym]
                       use.attr_changes = {value: use.value}
@@ -183,7 +183,7 @@ module TransactionChains
       # primary VPS to the secondary node, where it becomes the new secondary
       # VPS.
       use_chain(
-          Vps::Migrate, 
+          Vps::Migrate,
           args: [
               primary_vps,
               secondary_vps.node,
@@ -233,7 +233,7 @@ module TransactionChains
                   use_chain(Vps::SetResources, args: [
                       new_secondary_vps, resources
                   ], urgent: true)
-                
+
                 else  # Resources are not swapped, re-set the original ones
                   append(Transactions::Vps::Resources, args: [
                       new_secondary_vps,
@@ -258,7 +258,7 @@ module TransactionChains
               end
           }
       )
-      
+
       append(Transactions::Utils::NoOp, args: find_node_id) do
         if faked_resources.count > 0
           faked_resources.each do |use|

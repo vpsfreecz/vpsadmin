@@ -4,7 +4,7 @@ module VpsAdmin::API::Resources
       integer :monthly_payment, label: 'Monthly payment'
       datetime :paid_until, label: 'Paid until'
     end
-    
+
     class Index
       output(:object_list) do
         use :payments
@@ -16,7 +16,7 @@ module VpsAdmin::API::Resources
         use :payments
       end
     end
-    
+
     class Current
       output do
         use :payments

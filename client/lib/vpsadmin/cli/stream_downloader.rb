@@ -129,7 +129,7 @@ module VpsAdmin::CLI
             else
               raise DownloadError, "Unexpected HTTP status code '#{res.code}'"
             end
-           
+
             t1 = Time.now
             data_counter = 0
 
@@ -170,7 +170,7 @@ module VpsAdmin::CLI
                   t1 = Time.now
                 end
               end
-            
+
               io.write(fragment)
             end
           end
@@ -194,7 +194,7 @@ module VpsAdmin::CLI
     protected
     def pause(secs)
       @paused = true
-      
+
       if @pb
         secs.times do |i|
           if @download_size

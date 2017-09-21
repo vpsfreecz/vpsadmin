@@ -25,7 +25,7 @@ module VpsAdmind
           children << ds
         end
       end
-      
+
       # Disable mount for all descendants
       @descendant_datasets.reverse.each do |ds|
         zfs(:set, 'canmount=off', "#{origin}/#{ds['relative_name']}")

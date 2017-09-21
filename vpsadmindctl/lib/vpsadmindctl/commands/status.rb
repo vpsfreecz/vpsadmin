@@ -1,7 +1,7 @@
 module VpsAdmindCtl::Commands
   class Status < VpsAdmindCtl::Command
     description "Show vpsAdmind's status"
-    
+
     def options(opts, args)
       @opts = {
           :workers => false,
@@ -12,11 +12,11 @@ module VpsAdmindCtl::Commands
       opts.on('-c', '--consoles', 'List exported consoles') do
         @opts[:consoles] = true
       end
-      
+
       opts.on('-m', '--mounts', 'List delayed mounts') do
         @opts[:mounts] = true
       end
-      
+
       opts.on('-r', '--reservations', 'List queue reservations') do
         @opts[:reservations] = true
       end
@@ -33,7 +33,7 @@ module VpsAdmindCtl::Commands
         @opts[:header] = false
       end
     end
-    
+
     def process
       if @opts[:workers]
         if @opts[:header]
@@ -210,7 +210,7 @@ module VpsAdmindCtl::Commands
     def process_info(pid)
       ret = {}
       s = File.open("/proc/#{pid}/status").read
-      
+
       ret[:name] = /^Name:([^\n]+)/.match(s)[1].strip
       ret[:state] = /^State:([^\n]+)/.match(s)[1].strip
       ret

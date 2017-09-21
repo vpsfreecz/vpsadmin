@@ -49,7 +49,7 @@ module VpsAdmin::API::Authentication
           t.renew
           t.save!
         end
-        
+
         ::UserSession.resume!(request, t.user, token: t)
       end
     end

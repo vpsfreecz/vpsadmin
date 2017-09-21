@@ -67,7 +67,7 @@ class AddIpTransfers < ActiveRecord::Migration
       add_index table, %i(tr_ip tr_proto tr_date), unique: true,
                 name: :transfers_unique
     end
-     
+
     return if ENV['MIGRATE_TRAFFIC_DATA'] == 'no'
 
     {

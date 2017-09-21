@@ -50,7 +50,7 @@ module VpsAdmin::API::Tasks
         else
           fail "unsupported transaction chain state '#{m.transaction_chain.state}'"
         end
-        
+
         m.finished_at = Time.now
         m.save!
       end
@@ -77,12 +77,12 @@ module VpsAdmin::API::Tasks
 
       # Start new migrations if any
       schedule_n = plan.concurrency - running
-      
+
       if schedule_n <= 0
         puts "  #{running} migrations running, nothing to do"
         return
       end
-      
+
       puts "  Start at most #{schedule_n} new migrations"
 
       locks = []
@@ -133,7 +133,7 @@ module VpsAdmin::API::Tasks
           }],
           locks: locks,
       )
-     
+
       m.update!(
           state: ::VpsMigration.states[:running],
           started_at: Time.now,

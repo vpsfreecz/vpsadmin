@@ -288,7 +288,7 @@ module VpsAdmin::API
             case k
               when :states
                 @states = v
-              
+
               when :environment
                 @env = v
 
@@ -390,7 +390,7 @@ module VpsAdmin::API
 
       def self.environment(instance)
         p = instance.class.instance_variable_get('@env')
-        
+
         if p
           instance.instance_exec(&p)
 
@@ -410,7 +410,7 @@ module VpsAdmin::API
           raise Exceptions::CannotLeaveState,
                 "cannot leave state '#{obj.object_state}'"
         end
-          
+
         if ((reason.nil? || reason.empty?) && expiration.nil?) || expiration === true
           # Find default reason and expiration for object's environment
           env = Private.environment(obj)
@@ -438,7 +438,7 @@ module VpsAdmin::API
                  "#{enter ? 'enter' : 'leave'},state=#{target})"
           end
         end
-        
+
         reason ||= ''
 
         log = ::ObjectState.new_log(obj, target, reason, user, expiration)

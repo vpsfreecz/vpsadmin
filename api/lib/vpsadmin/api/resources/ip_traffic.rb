@@ -77,7 +77,7 @@ module VpsAdmin::API::Resources
         case input[:protocol]
         when nil, 'all'
           # Do nothing
-          
+
         when 'tcp', 'udp', 'other'
           q = q.where(
               protocol: ::IpTrafficMonthlySummary.protocols["proto_#{input[:protocol]}"]
@@ -91,19 +91,19 @@ module VpsAdmin::API::Resources
               SUM(bytes_in) AS bytes_in, SUM(bytes_out) AS bytes_out
           ").group("#{table}.ip_address_id, #{table}.role, #{table}.created_at")
         end
-        
+
         if input[:environment]
           q = q.joins(ip_address: {network: :location}).where(
               locations: {environment_id: input[:environment].id}
           )
         end
-       
+
         if input[:location]
           q = q.joins(ip_address: :network).where(
               networks: {location_id: input[:location].id}
           )
         end
-        
+
         if input[:network]
           q = q.joins(:ip_address).where(
               ip_addresses: {network_id: input[:network].id}
@@ -149,7 +149,7 @@ module VpsAdmin::API::Resources
         case input[:order]
         when nil, 'created_at'
           q = q.order('created_at DESC')
-        
+
         when 'descending'
           if input[:protocol] == 'sum'
             q = q.order('(SUM(bytes_in) + SUM(bytes_out)) DESC')
@@ -157,7 +157,7 @@ module VpsAdmin::API::Resources
           else
             q = q.order('(bytes_in + bytes_out) DESC')
           end
-        
+
         when 'ascending'
           if input[:protocol] == 'sum'
             q = q.order('(SUM(bytes_in) + SUM(bytes_out)) ASC')
@@ -173,13 +173,13 @@ module VpsAdmin::API::Resources
         q
       end
     end
-    
+
     class UserTop < HaveAPI::Actions::Default::Index
       desc "Summed users' traffic"
       route 'user_top'
       http_method :get
       aliases []
-      
+
       input do
         string :role, choices: %i(public private), db_name: :api_role
         string :protocol, choices: %w(all tcp udp other), db_name: :api_protocol
@@ -218,7 +218,7 @@ module VpsAdmin::API::Resources
             SUM(packets_in) AS sum_packets_in, SUM(packets_out) AS sum_packets_out,
             SUM(bytes_in) AS sum_bytes_in, SUM(bytes_out) AS sum_bytes_out
         ').joins(:user).group('users.id, ip_traffic_monthly_summaries.created_at')
-        
+
         # Directly accessible filters
         %i(year month).each do |f|
           q = q.where(f => input[f]) if input.has_key?(f)
@@ -234,29 +234,29 @@ module VpsAdmin::API::Resources
               networks: {ip_version: input[:ip_version]}
           )
         end
-        
+
         case input[:protocol]
         when nil, 'all'
           # Do nothing
-          
+
         when 'tcp', 'udp', 'other'
           q = q.where(
               protocol: ::IpTrafficMonthlySummary.protocols["proto_#{input[:protocol]}"]
           )
         end
-        
+
         if input[:environment]
           q = q.joins(ip_address: {network: :location}).where(
               locations: {environment_id: input[:environment].id}
           )
         end
-       
+
         if input[:location]
           q = q.joins(ip_address: :network).where(
               networks: {location_id: input[:location].id}
           )
         end
-        
+
         if input[:network]
           q = q.joins(:ip_address).where(
               ip_addresses: {network_id: input[:network].id}
@@ -276,7 +276,7 @@ module VpsAdmin::API::Resources
         if input[:to]
           q = q.where('ip_traffic_monthly_summaries.created_at <= ?', input[:to])
         end
-        
+
         q
       end
 

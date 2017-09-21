@@ -1,7 +1,7 @@
 module VpsAdmind
   class Commands::Node::StorePublicKeys < Commands::Base
     handle 6
-    
+
     def exec
       db = Db.new
 

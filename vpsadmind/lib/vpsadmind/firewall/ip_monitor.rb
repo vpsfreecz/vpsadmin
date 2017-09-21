@@ -27,10 +27,10 @@ module VpsAdmind::Firewall
 
           add_sums([role, proto], stats)
         end
-        
+
         add_sums([role], protocols)
       end
-      
+
       add_sums([], roles)
     end
 
@@ -79,10 +79,10 @@ module VpsAdmind::Firewall
     def add_column(name, value)
       @cols[name] = value
     end
-    
+
     def recursive_sum(hash, field, dir)
       n = 0
-      
+
       hash.each do |k, v|
         if %i(packets bytes).include?(k) && k != field
           next

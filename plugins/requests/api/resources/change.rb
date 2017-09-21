@@ -11,7 +11,7 @@ module VpsAdmin::API::Resources
         string :email, label: 'E-mail'
         string :address, label: 'Address'
       end
-      
+
       include VpsAdmin::API::Plugins::Requests::BaseResource
     end
   end

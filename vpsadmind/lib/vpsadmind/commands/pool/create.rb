@@ -9,7 +9,7 @@ module VpsAdmind
       else
         opts = ''
       end
-      
+
       zfs(:create, opts, @pool_fs)
       zfs(:create, nil, "#{@pool_fs}/#{pool_work_root}")
 

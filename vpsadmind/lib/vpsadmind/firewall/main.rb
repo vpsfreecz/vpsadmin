@@ -48,7 +48,7 @@ module VpsAdmind::Firewall
           log("Skipping init for IPv#{v}, chain vpsadmin_main already exists")
           next
         end
-        
+
         iptables(v, ['-A', 'FORWARD', '-j', 'vpsadmin_main'])
 
         accounting.init(db, v)
@@ -68,7 +68,7 @@ module VpsAdmind::Firewall
             '-m set', "--match-set vpsadmin_v#{v}_networks_public dst",
             '-j', accounting.private.chain,
         ])
-        
+
         # pub ip to priv ip -> private traffic
         iptables(v, [
             '-A', 'vpsadmin_main',
@@ -76,7 +76,7 @@ module VpsAdmind::Firewall
             '-m set', "--match-set vpsadmin_v#{v}_networks_private dst",
             '-j', accounting.private.chain,
         ])
-        
+
         # priv ip to pub ip -> private traffic
         iptables(v, [
             '-A', 'vpsadmin_main',
@@ -84,7 +84,7 @@ module VpsAdmind::Firewall
             '-m set', "--match-set vpsadmin_v#{v}_networks_public dst",
             '-j', accounting.private.chain,
         ])
-        
+
         # priv ip to priv ip -> private traffic
         iptables(v, [
             '-A', 'vpsadmin_main',
@@ -105,7 +105,7 @@ module VpsAdmind::Firewall
         db = Db.new
         created = true
       end
-      
+
       [4, 6].each do |v|
         iptables(v, ['-D', 'FORWARD', '-j', 'vpsadmin_main'])
         iptables(v, {F: 'vpsadmin_main'})
@@ -137,7 +137,7 @@ module VpsAdmind::Firewall
     def cleanup
       accounting.cleanup
     end
-    
+
     def synchronize
       if @mutex.owned?
         yield(self)

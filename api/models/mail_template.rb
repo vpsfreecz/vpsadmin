@@ -47,7 +47,7 @@ class MailTemplate < ActiveRecord::Base
     return name if tpl[:name].nil?
     tpl[:name] % (params || {})
   end
- 
+
   # Generate an e-mail from template
   # @param name [Symbol] template name
   # @param opts [Hash] options
@@ -155,7 +155,7 @@ class MailTemplate < ActiveRecord::Base
 
     recps = {to: opts[:to] || [], cc: opts[:cc] || [], bcc: opts[:bcc] || []}
     recps[:to].concat(recipients(opts[:user], [opts[:role]])) if opts[:user] && opts[:role]
-    
+
     %i(to cc bcc).each do |t|
       mail.send("#{t}=", recps[t].uniq.join(','))
     end
@@ -163,7 +163,7 @@ class MailTemplate < ActiveRecord::Base
     mail.save!
     mail
   end
-  
+
   # Returns a list of e-mail recipients, tries to find role recipients,
   # user template recipients and defaults to the primary e-mail address.
   # @param user [User]
@@ -197,7 +197,7 @@ class MailTemplate < ActiveRecord::Base
   # Register built-in templates
   role :account, label: 'Account management'
   role :admin, label: 'System administrator'
-  
+
   register :daily_report, vars: {
       date: Hash,
       users: Hash,
@@ -280,7 +280,7 @@ class MailTemplate < ActiveRecord::Base
       admin: ::User,
       reason: String,
   }, roles: %i(admin), public: true
-  
+
   enum user_visibility: %i(default visible invisible)
 
   def recipients(user)

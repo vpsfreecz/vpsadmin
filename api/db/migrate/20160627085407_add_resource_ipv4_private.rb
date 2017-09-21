@@ -31,7 +31,7 @@ class AddResourceIpv4Private < ActiveRecord::Migration
         allocate_chain: 'Ip::Allocate',
         free_chain: 'Ip::Free',
     )
-    
+
     # Do not consider hard-deleted users
     User.where('object_state < 3').each do |u|
       Environment.all.each do |env|

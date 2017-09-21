@@ -61,7 +61,7 @@ class AddSnapshotHistoryIdentifier < ActiveRecord::Migration
     ).where(
         dataset_in_pools: {dataset_id: ds.id}
     ).order('branches.created_at, branches.id').each do |branch|
-        
+
       history_id ||= 0
       head = history_id if branch.head && branch.dataset_tree.head
 

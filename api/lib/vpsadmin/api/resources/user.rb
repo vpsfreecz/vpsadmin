@@ -253,7 +253,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       u = ::User.including_deleted.find(params[:user_id])
-      
+
       if input.empty?
         error('provide at least one attribute to update')
       end
@@ -286,7 +286,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
         u.set_password(input.delete(:new_password))
       end
-      
+
       input.delete(:password)
 
       u.update!(to_db_names(input))
@@ -630,7 +630,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     class Show < HaveAPI::Actions::Default::Show
       desc 'Show saved public key'
-      
+
       output do
         use :all
       end
@@ -654,7 +654,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     class Create < HaveAPI::Actions::Default::Create
       desc 'Store a public key'
-      
+
       input do
         use :common
         patch :label, required: true
@@ -684,10 +684,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         error('create failed', e.record.errors.to_hash)
       end
     end
-    
+
     class Update < HaveAPI::Actions::Default::Update
       desc 'Update a public key'
-      
+
       input do
         use :common
       end
@@ -718,7 +718,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         error('update failed', e.record.errors.to_hash)
       end
     end
-    
+
     class Delete < HaveAPI::Actions::Default::Delete
       desc 'Delete public key'
 
@@ -737,7 +737,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
     end
   end
-  
+
   class MailRoleRecipient < HaveAPI::Resource
     desc 'Manage user mail recipients'
     route ':user_id/mail_role_recipients'
@@ -756,7 +756,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       output(:object_list) do
         use :all
       end
-      
+
       authorize do |u|
         allow
       end
@@ -784,7 +784,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       output do
         use :all
       end
-      
+
       authorize do |u|
         allow
       end
@@ -824,7 +824,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         if current_user.role != :admin && current_user.id != params[:user_id].to_i
           error("Access denied")
         end
-        
+
         ::UserMailRoleRecipient.handle_update!(
             ::User.find(params[:user_id]),
             params[:mail_role_recipient_id],
@@ -836,7 +836,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
     end
   end
-  
+
   class MailTemplateRecipient < HaveAPI::Resource
     desc 'Manage user mail recipients'
     route ':user_id/mail_template_recipients'
@@ -856,7 +856,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       output(:object_list) do
         use :all
       end
-      
+
       authorize do |u|
         allow
       end
@@ -884,7 +884,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       output do
         use :all
       end
-      
+
       authorize do |u|
         allow
       end
@@ -924,7 +924,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         if current_user.role != :admin && current_user.id != params[:user_id].to_i
           error("Access denied")
         end
-        
+
         ::UserMailTemplateRecipient.handle_update!(
             ::User.find(params[:user_id]),
             ::MailTemplate.find_by!(name: params[:mail_template_recipient_id]),

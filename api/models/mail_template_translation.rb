@@ -1,7 +1,7 @@
 class MailTemplateTranslation < ActiveRecord::Base
   belongs_to :language
   belongs_to :mail_template
-  
+
   has_paper_trail
 
   class TemplateBuilder

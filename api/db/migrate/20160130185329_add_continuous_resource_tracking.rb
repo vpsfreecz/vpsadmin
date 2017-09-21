@@ -55,7 +55,7 @@ class AddContinuousResourceTracking < ActiveRecord::Migration
     add_column :servers, :cpus, :integer, null: false
     add_column :servers, :total_memory, :integer, null: false
     add_column :servers, :total_swap, :integer, null: false
-    
+
     drop_table :vps_status
     drop_table :servers_status
   end

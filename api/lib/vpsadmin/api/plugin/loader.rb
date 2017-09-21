@@ -14,7 +14,7 @@ module VpsAdmin::API::Plugin
         plugin = VpsAdmin::API::Plugin.catch_plugin do
           Kernel.load(File.join(plugin_dir, p, 'meta.rb'))
         end
-        
+
         plugin.configure(component)
 
         next if plugin.components.nil? || !plugin.components.include?(component.to_sym)

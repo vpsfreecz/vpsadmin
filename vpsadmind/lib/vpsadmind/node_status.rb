@@ -8,9 +8,9 @@ module VpsAdmind
 
     def init(db)
       return unless linux?
-      
+
       mem = SystemProbes::Memory.new
-      
+
       db.prepared(
           'UPDATE nodes
           SET cpus = ?, total_memory = ?, total_swap = ?
@@ -46,11 +46,11 @@ module VpsAdmind
         log_status(my, info)
         reset_status(my, info)
         @last_log = t
-      
+
       else
         update_status(my, info)
       end
-      
+
       my.close unless db
 
     rescue CommandFailed => e
@@ -78,7 +78,7 @@ module VpsAdmind
             loadavg, used_memory, used_swap, arc_c_max, arc_c, arc_size, arc_hitpercent,
             vpsadmind_version, kernel, created_at
           )
-          
+
           SELECT
             node_id, uptime, cpus, total_memory, total_swap,
             sum_process_count / update_count,
@@ -140,7 +140,7 @@ module VpsAdmind
               used_memory = NULL,
               used_swap = NULL,"
       end
-        
+
       sql += "sum_loadavg = loadavg,
             sum_process_count = process_count,
             sum_used_memory = used_memory,
@@ -169,14 +169,14 @@ module VpsAdmind
             arc_size = NULL,
             arc_hitpercent = NULL,"
       end
-      
+
       sql += "sum_arc_c_max = arc_c_max,
             sum_arc_c = arc_c,
             sum_arc_size = arc_size,
             sum_arc_hitpercent = arc_hitpercent,"
 
       sql += "loadavg = #{info.loadavg[5]},"
-      
+
       db.query(
           "INSERT INTO node_current_statuses SET
             node_id = #{info.node_id},
@@ -212,7 +212,7 @@ module VpsAdmind
             used_memory = #{info.mem.used / 1024},
             total_swap = #{info.mem.swap_total / 1024},
             used_swap = #{info.mem.swap_used / 1024},
-        
+
             sum_loadavg = sum_loadavg + loadavg,
             sum_used_memory = sum_used_memory + used_memory,
             sum_used_swap = sum_used_swap + used_swap,
@@ -235,7 +235,7 @@ module VpsAdmind
             arc_c = #{info.arc.c / 1024 / 1024},
             arc_size = #{info.arc.size / 1024 / 1024},
             arc_hitpercent = #{info.arc.hit_percent},
-      
+
             sum_arc_c_max = sum_arc_c_max + arc_c_max,
             sum_arc_c = sum_arc_c + arc_c,
             sum_arc_size = sum_arc_size + arc_size,
@@ -243,7 +243,7 @@ module VpsAdmind
       end
 
       sql += "loadavg = #{info.loadavg[5]},"
-      
+
       db.query(
           "INSERT INTO node_current_statuses SET
             node_id = #{info.node_id},

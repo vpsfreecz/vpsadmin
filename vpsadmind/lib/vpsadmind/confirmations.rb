@@ -1,7 +1,7 @@
 module VpsAdmind
   class Confirmations
     include Utils::Log
-    
+
     def self.translate_type(t)
       [:create, :just_create, :edit_before, :edit_after, :destroy, :just_destroy,
       :decrement, :increment][t]
@@ -42,7 +42,7 @@ module VpsAdmind
       log(:debug, "chain=#{@chain_id}", "Transactions: #{transactions.join(',')}")
 
       ret = {}
-     
+
       rs = t.query(
           "SELECT table_name, row_pks, attr_changes, confirm_type, t.status,
                   c.done, c.id AS c_id, t.id AS t_id, class_name
@@ -151,11 +151,11 @@ module VpsAdmind
           end
       end
     end
-    
+
     def pk_cond(pks)
       pks.map { |k, v| "`#{k}` = #{sql_val(v)}" }.join(' AND ')
     end
-    
+
     def sql_val(v)
       if v.is_a?(Integer)
         v

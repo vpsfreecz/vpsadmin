@@ -527,7 +527,7 @@ class AddStorage < ActiveRecord::Migration
 
       parts.each do |name|
         # Find all datasets with matching name, then see if any of them are
-        # on the correct pool. 
+        # on the correct pool.
         q = (ds ? Dataset.children_of(ds) : Dataset.roots).where(
             name: name,
             user_id: export.member_id
@@ -535,7 +535,7 @@ class AddStorage < ActiveRecord::Migration
         ds = nil
 
         break if q.empty?
-        
+
         q.each do |dataset|
           if dataset.dataset_in_pools.exists?(
                 pool_id: pool_mapping[ export.root_id ]
@@ -642,7 +642,7 @@ class AddStorage < ActiveRecord::Migration
           day_of_week: '*'
       )
     end
-    
+
     drop_table :storage_root
     drop_table :storage_export
     drop_table :vps_mount

@@ -12,7 +12,7 @@ module VpsAdmin::CLI::Commands
           send_mail: false,
           checksum: true,
       }
-      
+
       opts.on('-I', '--from-snapshot SNAPSHOT_ID', Integer, 'Download snapshot incrementally from SNAPSHOT_ID') do |s|
         @opts[:from_snapshot] = s
       end
@@ -20,7 +20,7 @@ module VpsAdmin::CLI::Commands
       opts.on('-d', '--[no-]delete-after', 'Delete the file from the server after successful download') do |d|
         @opts[:delete_after] = d
       end
-      
+
       opts.on('-q', '--quiet', 'Print only errors') do |q|
         @opts[:quiet] = q
       end

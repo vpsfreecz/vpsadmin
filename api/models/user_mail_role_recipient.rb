@@ -85,7 +85,7 @@ class UserMailRoleRecipient < ActiveRecord::Base
 
     self.to.split(',').each do |mail|
       next if /@/ =~ mail.strip
-      
+
       errors.add(:to, "'#{mail}' is not a valid e-mail address")
     end
   end

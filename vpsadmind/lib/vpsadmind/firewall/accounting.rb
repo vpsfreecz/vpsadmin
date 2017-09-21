@@ -9,7 +9,7 @@ module VpsAdmind::Firewall
     def initialize(fw)
       @fw = fw
       @roles = []
-      
+
       ROLES.each do |r|
         acc = AccountingRole.new(fw, r)
         @roles << acc
@@ -21,7 +21,7 @@ module VpsAdmind::Firewall
     def init(db, v)
       @roles.each { |r| r.init(db, v) }
     end
-  
+
     def reg_ip(addr, v)
       @fw.synchronize do
         @roles.each { |r| r.reg_ip(addr, v) }
@@ -36,7 +36,7 @@ module VpsAdmind::Firewall
 
     def fetch_traffic
       ret = {}
-      
+
       @roles.each do |acc|
         acc.update_traffic do |ip, proto, traffic|
           ret[ip] ||= default_ip_record
@@ -50,7 +50,7 @@ module VpsAdmind::Firewall
     def update_traffic(db)
       time = Time.now
       traffic = fetch_traffic
-      
+
       @fw.ip_map.synchronize do
         # First iteration, update live traffic monitors
         traffic.each do |ip, roles|

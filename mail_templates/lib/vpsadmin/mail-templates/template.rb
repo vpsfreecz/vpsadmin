@@ -6,7 +6,7 @@ module VpsAdmin::MailTemplates
       @path = path
       @name = File.basename(path)
       @translations = []
-    
+
       fail "#{path}/meta.rb does not exist" unless File.exists?(path)
       require_relative File.join(path, 'meta.rb')
 
@@ -19,7 +19,7 @@ module VpsAdmin::MailTemplates
 
       Dir.glob(File.join(path, '*.erb')).each do |tr|
         lang = File.basename(tr).split('.')[0]
-        
+
         langs[lang] ||= []
         langs[lang] << tr
       end

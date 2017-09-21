@@ -6,7 +6,7 @@ module TransactionChains
       lock(pool.node)
 
       pool.save!
-      
+
       lock(pool)
       concerns(:affect, [pool.class.name, pool.id])
 

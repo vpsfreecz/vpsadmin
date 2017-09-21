@@ -2,7 +2,7 @@ class AddKvmVpsFeature < ActiveRecord::Migration
   class Vps < ActiveRecord::Base
     self.table_name = 'vps'
     self.primary_key = 'vps_id'
- 
+
     has_many :vps_features
   end
 

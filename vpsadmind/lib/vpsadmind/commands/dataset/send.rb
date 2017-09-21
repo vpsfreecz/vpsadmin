@@ -10,7 +10,7 @@ module VpsAdmind
       from_snap = @snapshots.count > 1 ? confirmed_snapshot_name(db, @snapshots.first) : nil
 
       db.close
-      
+
       stream = ZfsStream.new(
           {
               pool: @src_pool_fs,

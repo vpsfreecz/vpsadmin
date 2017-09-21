@@ -9,7 +9,7 @@ class AverageContinuousResourceTracking < ActiveRecord::Migration
       t.integer      :total_memory,      null: true
       t.integer      :total_swap,        null: true
       t.integer      :update_count,      null: false
-      
+
       t.integer      :process_count,     null: true
       t.float        :cpu_user,          null: true
       t.float        :cpu_nice,          null: true
@@ -48,7 +48,7 @@ class AverageContinuousResourceTracking < ActiveRecord::Migration
       t.string       :vpsadmind_version, null: false, limit: 25
       t.string       :kernel,            null: false, limit: 30
       t.integer      :update_count,      null: false
-      
+
       t.integer      :process_count,     null: true
       t.float        :cpu_user,          null: true
       t.float        :cpu_nice,          null: true
@@ -150,7 +150,7 @@ class AverageContinuousResourceTracking < ActiveRecord::Migration
             GROUP BY node_id, DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00')
             "
         )
-        
+
         drop_table :node_statuses
         rename_table :node_statuses_new, :node_statuses
 

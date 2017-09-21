@@ -18,7 +18,7 @@ module VpsAdmind::SystemProbes
     def linux(data)
       data ||= File.read('/proc/loadavg')
       parsed = data.split(' ')
-      
+
       @avg = {
           1 => parsed[0].to_f,
           5 => parsed[1].to_f,

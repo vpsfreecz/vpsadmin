@@ -112,7 +112,7 @@ module VpsAdmind
       pool['datasets'].each do |ds|
         check_dataset(ds)
       end
-      
+
       # Remaining objects are not supposed to exist. Try to place them in
       # the tree and add false facts.
       report_stray_objects unless @objects.empty?
@@ -209,7 +209,7 @@ module VpsAdmind
       ds['trees'].each do |t|
         check_tree(ds, t)
       end
-      
+
       ds['datasets'].each do |subds|
         check_dataset(subds)
       end
@@ -228,7 +228,7 @@ module VpsAdmind
           :normal,
           "#{p['name']} is #{real_p[:value]}"
       )
-      
+
       state_fact(
           @t,
           p,
@@ -242,7 +242,7 @@ module VpsAdmind
 
     def check_snapshot(ds, snap)
       real_snap = find_snapshot(ds['name'], snap['name'])
-      
+
       state_fact(
           @t,
           snap,
@@ -316,7 +316,7 @@ module VpsAdmind
           "#{ds['name']}/#{tree['name']}/#{branch['name']}",
           snap['name']
       )
-      
+
       state_fact(
           @t,
           snap,
@@ -350,7 +350,7 @@ module VpsAdmind
       end
 
       return if clones.empty?
-        
+
       clones.each do |c|
         state_fact(
             @t,
@@ -398,12 +398,12 @@ module VpsAdmind
       @objects.each do |o|
         if o[:name].start_with?('@') || o[:name].start_with?('vpsadmin/')
           parent = @pool
-        
+
         else
           # Search dataset's/snapshot's closest parent in tree
           parent = find_object_parent(o)
         end
-        
+
         state_fact(
             @t,
             create_integrity_object(
@@ -438,13 +438,13 @@ module VpsAdmind
 
         if /tree\.\d+/ =~ name
           search = 'trees'
-          
+
         elsif name.start_with?('branch-')
           search = 'branches'
         end
 
         break unless parent[search] # Dead end
-          
+
         parent[search].each do |ds|
           if ds['name'].split('/').last == name
             tmp = ds
@@ -477,7 +477,7 @@ module VpsAdmind
         parts = line.split("\t")
         name = parts[0].sub!(/#{pool}/, '') || ''
         name.slice!(0) if name.start_with?('/')
-        
+
         if current_obj[:name] != name
           objects << current_obj unless current_obj.empty?
           current_obj = {

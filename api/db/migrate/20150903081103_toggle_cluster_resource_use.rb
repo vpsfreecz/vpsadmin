@@ -3,7 +3,7 @@ class ToggleClusterResourceUse < ActiveRecord::Migration
 
   def up
     add_column :cluster_resource_uses, :enabled, :boolean, null: false, default: true
-    
+
     ClusterResourceUse.where(confirmed: 2).update_all(confirmed: 1, enabled: false)
   end
 

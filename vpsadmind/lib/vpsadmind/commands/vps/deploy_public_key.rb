@@ -18,7 +18,7 @@ module VpsAdmind
         File.chmod(0600, authorized_keys)
         return ok
       end
-      
+
       # Walk through the file, write the key if it is not there yet
       # For some reason, when File.open is given a block, it does not raise
       # exceptions like "Errno::EDQUOT: Disk quota exceeded", so don't use it.
@@ -45,7 +45,7 @@ module VpsAdmind
 
     def rollback
       return ok unless File.exists?(authorized_keys)
-      
+
       tmp = File.join(ssh_dir, '.authorized_keys.new')
 
       src = File.open(authorized_keys, 'r')

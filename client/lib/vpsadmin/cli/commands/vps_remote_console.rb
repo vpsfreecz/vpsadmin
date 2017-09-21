@@ -136,7 +136,7 @@ module VpsAdmin::CLI::Commands
 
       pid = Process.fork do
         @size = Terminal.size!
-        
+
         Signal.trap('WINCH') do
           @size = Terminal.size!
         end
@@ -144,7 +144,7 @@ module VpsAdmin::CLI::Commands
         yield
       end
 
-      Process.wait(pid) 
+      Process.wait(pid)
 
       `stty #{state}`
       puts
@@ -170,7 +170,7 @@ module VpsAdmin::CLI::Commands
 
       post.callback do
         ret = JSON.parse(post.response, symbolize_names: true)
-        
+
         unless ret[:session]
           $stdout.write(ret[:data])
           puts "\nSession closed."
