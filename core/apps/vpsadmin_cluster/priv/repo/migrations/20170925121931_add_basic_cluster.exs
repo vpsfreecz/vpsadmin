@@ -15,6 +15,7 @@ defmodule VpsAdmin.Cluster.Repo.Migrations.AddBasicCluster do
       timestamps()
     end
 
+    create index(:nodes, :location_id)
     create unique_index(:nodes, ~w(name location_id)a, name: :nodes_name_unique)
   end
 end

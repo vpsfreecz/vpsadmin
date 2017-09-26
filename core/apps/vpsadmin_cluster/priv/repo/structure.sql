@@ -148,6 +148,13 @@ ALTER TABLE ONLY schema_migrations
 
 
 --
+-- Name: nodes_location_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX nodes_location_id_index ON nodes USING btree (location_id);
+
+
+--
 -- Name: nodes_name_unique; Type: INDEX; Schema: public; Owner: -
 --
 
