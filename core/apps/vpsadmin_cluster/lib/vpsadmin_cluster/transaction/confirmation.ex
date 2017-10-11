@@ -93,7 +93,7 @@ defmodule VpsAdmin.Cluster.Transaction.Confirmation do
     change(ctx, Ecto.Changeset.change(schema), changes)
   end
 
-  def confirm(cnf, :ok) do
+  def confirm(cnf, chain_id, :ok) do
     pks = for {k,v} <- cnf.row_pks, do: {String.to_atom(k), v}
     states = Schema.Transaction.Confirmation.RowState.__enum_map__()
 
@@ -109,10 +109,13 @@ defmodule VpsAdmin.Cluster.Transaction.Confirmation do
       :update ->
         changes = for {k,v} <- cnf.changes, do: {String.to_atom(k), v}
 
-        Ecto.Query.from(cnf.table, where: ^pks)
-        |> Persistence.Repo.update_all(set: changes ++ [
-          row_state: states[:confirmed],
-          row_changes: nil,
+        q = Ecto.Query.from(cnf.table, where: ^pks)
+        row = Persistence.Repo.one(Ecto.Query.from(q, select: [:row_changes]))
+        {state, row_changes} = clear_changes(row[:row_changes], chain_id)
+
+        Persistence.Repo.update_all(q, set: changes ++ [
+          row_state: states[state],
+          row_changes: row_changes,
         ])
     end
 
@@ -121,7 +124,7 @@ defmodule VpsAdmin.Cluster.Transaction.Confirmation do
       |> Persistence.Transaction.Confirmation.update()
   end
 
-  def confirm(cnf, :error) do
+  def confirm(cnf, chain_id, :error) do
     pks = for {k,v} <- cnf.row_pks, do: {String.to_atom(k), v}
     states = Schema.Transaction.Confirmation.RowState.__enum_map__()
 
@@ -135,10 +138,13 @@ defmodule VpsAdmin.Cluster.Transaction.Confirmation do
         |> Persistence.Repo.update_all(set: [row_state: states[:confirmed]])
 
       :update ->
-        Ecto.Query.from(cnf.table, where: ^pks)
-        |> Persistence.Repo.update_all(set: [
-          row_state: states[:confirmed],
-          row_changes: nil,
+        q = Ecto.Query.from(cnf.table, where: ^pks)
+        row = Persistence.Repo.one(Ecto.Query.from(q, select: [:row_changes]))
+        {state, row_changes} = clear_changes(row[:row_changes], chain_id)
+
+        Persistence.Repo.update_all(q, set: [
+          row_state: states[state],
+          row_changes: row_changes,
         ])
     end
 
@@ -173,6 +179,18 @@ defmodule VpsAdmin.Cluster.Transaction.Confirmation do
   defp primary_keys(schema, data) do
     for pk <- schema.__schema__(:primary_key), into: %{} do
       {pk, data[pk]}
+    end
+  end
+
+  defp clear_changes(changes, chain_id) do
+    changes = for {k, [chain, v]} <- changes, chain != chain_id, into: %{} do
+      {k, [chain, v]}
+    end
+
+    if map_size(changes) > 0 do
+      {:updated, changes}
+    else
+      {:confirmed, nil}
     end
   end
 end

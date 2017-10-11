@@ -53,7 +53,7 @@ defmodule VpsAdmin.Cluster.Transaction do
   def close(trans, state) do
     for cmd <- trans.commands do
       for cnf <- cmd.transaction_confirmations do
-        Cluster.Transaction.Confirmation.confirm(cnf, state)
+        Cluster.Transaction.Confirmation.confirm(cnf, trans.transaction_chain_id, state)
       end
     end
   end

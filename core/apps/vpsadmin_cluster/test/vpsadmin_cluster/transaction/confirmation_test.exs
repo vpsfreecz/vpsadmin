@@ -399,4 +399,92 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
       assert cnf.state == :discarded
     end
   end
+
+  test "can confirm changes by multiple chains" do
+    import Cluster.Transaction
+    import Cluster.Transaction.Confirmation
+
+    loc = Persistence.Repo.insert!(%Schema.Location{label: "Test", domain: "test"})
+
+    {:ok, chain1} = Chain.single(Transaction.Custom, fn ctx ->
+      ctx
+      |> append(TestCommand, [], fn ctx ->
+           {ctx, _loc} = change(ctx, loc, %{label: "Better Test"})
+           ctx
+         end)
+    end)
+
+    loc = Persistence.Repo.get(Schema.Location, loc.id)
+
+    {:ok, chain2} = Chain.single(Transaction.Custom, fn ctx ->
+      ctx
+      |> append(TestCommand, [], fn ctx ->
+           {ctx, _loc} = change(ctx, loc, %{domain: "better.test"})
+           ctx
+         end)
+    end)
+
+    {:ok, _chain} = Chain.close(chain1, :ok)
+    loc = Persistence.Repo.get(Schema.Location, loc.id)
+
+    assert loc
+    assert loc.row_state == :updated
+    assert loc.label == "Better Test"
+    assert loc.domain == "test"
+    refute loc.row_changes[:label]
+    assert loc.row_changes[:domain]
+
+    {:ok, _chain} = Chain.close(chain2, :ok)
+    loc = Persistence.Repo.get(Schema.Location, loc.id)
+
+    assert loc
+    assert loc.row_state == :confirmed
+    refute loc.row_changes
+    assert loc.label == "Better Test"
+    assert loc.domain == "better.test"
+  end
+
+  test "can discard changes by one of multiple chains" do
+    import Cluster.Transaction
+    import Cluster.Transaction.Confirmation
+
+    loc = Persistence.Repo.insert!(%Schema.Location{label: "Test", domain: "test"})
+
+    {:ok, chain1} = Chain.single(Transaction.Custom, fn ctx ->
+      ctx
+      |> append(TestCommand, [], fn ctx ->
+           {ctx, _loc} = change(ctx, loc, %{label: "Better Test"})
+           ctx
+         end)
+    end)
+
+    loc = Persistence.Repo.get(Schema.Location, loc.id)
+
+    {:ok, chain2} = Chain.single(Transaction.Custom, fn ctx ->
+      ctx
+      |> append(TestCommand, [], fn ctx ->
+           {ctx, _loc} = change(ctx, loc, %{domain: "better.test"})
+           ctx
+         end)
+    end)
+
+    {:ok, _chain} = Chain.close(chain1, :error)
+    loc = Persistence.Repo.get(Schema.Location, loc.id)
+
+    assert loc
+    assert loc.row_state == :updated
+    assert loc.label == "Test"
+    assert loc.domain == "test"
+    refute loc.row_changes[:label]
+    assert loc.row_changes[:domain]
+
+    {:ok, _chain} = Chain.close(chain2, :ok)
+    loc = Persistence.Repo.get(Schema.Location, loc.id)
+
+    assert loc
+    assert loc.row_state == :confirmed
+    refute loc.row_changes
+    assert loc.label == "Test"
+    assert loc.domain == "better.test"
+  end
 end
