@@ -1,7 +1,7 @@
 defmodule VpsAdmin.Cluster.Connector do
   use GenServer, restart: :transient
 
-  def start_link(_args) do
+  def start_link() do
     GenServer.start_link(__MODULE__, [])
   end
 

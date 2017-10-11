@@ -11,7 +11,8 @@ defmodule VpsAdmin.Cluster.Mixfile do
      elixir: "~> 1.5",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     deps: deps()]
+     deps: deps(),
+     aliases: aliases()]
   end
 
   def application do
@@ -21,6 +22,12 @@ defmodule VpsAdmin.Cluster.Mixfile do
 
   defp deps do
     [{:ecto, "~> 2.1"},
-     {:postgrex, "> 0.0.0"}]
+     {:postgrex, "> 0.0.0"},
+     {:ecto_enum, "~> 1.0"},
+     {:poison, "> 0.0.0"}]
+  end
+
+  defp aliases do
+    ["test": ["ecto.create", "ecto.load", "test"]]
   end
 end

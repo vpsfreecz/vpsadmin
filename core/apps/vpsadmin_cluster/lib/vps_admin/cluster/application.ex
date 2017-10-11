@@ -5,9 +5,12 @@ defmodule VpsAdmin.Cluster.Application do
   alias VpsAdmin.Cluster
 
   def start(_type, _args) do
+    import Supervisor.Spec, warn: false
+
     children = [
-      {Cluster.Repo, []},
-      {Cluster.Connector, []},
+      supervisor(Cluster.Repo, []),
+      worker(Cluster.Transaction.Processes, []),
+      worker(Cluster.Connector, [], restart: :transient),
     ]
 
     opts = [strategy: :one_for_one, name: __MODULE__]

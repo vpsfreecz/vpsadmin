@@ -1,6 +1,5 @@
 defmodule VpsAdmin.Cluster.Schema.Location do
-  use Ecto.Schema
-  alias VpsAdmin.Cluster.Schema
+  use VpsAdmin.Cluster.Schema
 
   schema "locations" do
     field :label, :string
@@ -8,5 +7,7 @@ defmodule VpsAdmin.Cluster.Schema.Location do
     timestamps()
 
     has_many :nodes, Schema.Node
+
+    confirmation_fields()
   end
 end
