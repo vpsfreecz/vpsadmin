@@ -79,7 +79,7 @@ defmodule VpsAdmin.Cluster.Transaction.Confirmation do
   @doc "Confirm update of an existing table row."
   @spec change(ctx :: map, schema_or_changeset :: map, changes :: map) :: {map, map}
   def change(ctx, %Ecto.Changeset{} = changeset, changes) do
-    changeset = @schema.update_changeset(ctx, changeset, changes)
+    changeset = @schema.update_changeset(ctx, changeset, ctx.chain.id, changes)
 
     row = Persistence.Repo.update!(changeset)
 

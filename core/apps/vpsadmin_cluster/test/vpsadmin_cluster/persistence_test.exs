@@ -68,6 +68,56 @@ defmodule VpsAdmin.Cluster.PersistenceTest do
     assert location.label == "Test"
   end
 
+  test "access updated data when changes are by multiple chains" do
+    orig_location = %Schema.Location{
+      label: "Test",
+      domain: "test",
+      row_state: :confirmed,
+    } |> Persistence.Repo.insert!()
+
+    {:ok, chain1} = Chain.single(Transaction.Custom, fn ctx ->
+      import Transaction
+      import Transaction.Confirmation
+
+      ctx
+      |> append(SimpleCommand, [], fn ctx ->
+           {ctx, _location} = change(ctx, orig_location, %{label: "Super Test"})
+           ctx
+         end)
+    end)
+
+    orig_location = Persistence.Repo.get(Schema.Location, orig_location.id)
+
+    {:ok, chain2} = Chain.single(Transaction.Custom, fn ctx ->
+      import Transaction
+      import Transaction.Confirmation
+
+      ctx
+      |> append(SimpleCommand, [], fn ctx ->
+           {ctx, _location} = change(ctx, orig_location, %{domain: "megatest"})
+           ctx
+         end)
+    end)
+
+    location = Persistence.scoped_get(Schema.Location, orig_location.id, chain1)
+
+    assert location.row_state == :updated
+    assert location.label == "Super Test"
+    assert location.domain == "test"
+
+    location = Persistence.scoped_get(Schema.Location, orig_location.id, chain2)
+
+    assert location.row_state == :updated
+    assert location.label == "Test"
+    assert location.domain == "megatest"
+
+    location = Persistence.scoped_get(Schema.Location, orig_location.id, :confirmed)
+
+    assert location.row_state == :updated
+    assert location.label == "Test"
+    assert location.domain == "test"
+  end
+
   test "access deleted and confirmed data" do
     orig_location = %Persistence.Schema.Location{
       label: "Test",

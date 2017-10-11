@@ -114,7 +114,7 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
           assert orig_location.id == location.id
           assert location.label == "Test"
           assert location.row_state == :updated
-          assert location.row_changes == %{label: "Better Test"}
+          assert location.row_changes == %{label: {ctx.chain.id, "Better Test"}}
 
           {ctx, location} = change(
             ctx,
@@ -125,7 +125,7 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
           assert orig_location.id == location.id
           assert location.label == "Test"
           assert location.row_state == :updated
-          assert location.row_changes == %{label: "Best Test"}
+          assert location.row_changes == %{label: {ctx.chain.id, "Best Test"}}
 
           ctx
         end)
@@ -146,11 +146,130 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
           {ctx, location} = change(ctx, location, %{label: "Just Test"})
           assert is_integer(location.id)
           assert location.row_state == :new
-          assert location.row_changes == %{label: "Just Test"}
+          assert location.row_changes == %{label: {ctx.chain.id, "Just Test"}}
           assert location.label == "Test"
 
           ctx
         end)
+    end)
+  end
+
+  test "multiple chains can update different columns in the same row" do
+    import Cluster.Transaction
+    import Cluster.Transaction.Confirmation
+
+    location = Persistence.Repo.insert!(%Schema.Location{
+      label: "Test",
+      domain: "test",
+      row_state: :confirmed,
+    })
+
+    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+      ctx
+      |> append(TestCommand, [], fn ctx ->
+          {ctx, location} = change(ctx, location, %{label: "Change 1"})
+
+          assert location.row_changes == %{label: {ctx.chain.id, "Change 1"}}
+          assert location.label == "Test"
+
+          ctx
+        end)
+    end)
+
+    location = Persistence.Repo.get(Schema.Location, location.id)
+
+    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+      ctx
+      |> append(TestCommand, [], fn ctx ->
+           {ctx, location} = change(ctx, location, %{domain: "change2"})
+
+           assert location.row_changes[:label]
+           assert location.row_changes[:domain] == {ctx.chain.id, "change2"}
+           assert location.label == "Test"
+           assert location.domain == "test"
+
+           ctx
+         end)
+    end)
+  end
+
+  test "only one chain can change a particular column in one row" do
+    import Cluster.Transaction
+    import Cluster.Transaction.Confirmation
+
+    location = Persistence.Repo.insert!(%Schema.Location{
+      label: "Test",
+      domain: "test",
+      row_state: :confirmed,
+    })
+
+    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+      ctx
+      |> append(TestCommand, [], fn ctx ->
+           {ctx, location} = change(ctx, location, %{label: "Change 1"})
+
+           assert location.row_changes == %{label: {ctx.chain.id, "Change 1"}}
+           assert location.label == "Test"
+
+           ctx
+         end)
+    end)
+
+    location = Persistence.Repo.get(Schema.Location, location.id)
+
+    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+      ctx
+      |> append(TestCommand, [], fn ctx ->
+           assert_raise(Ecto.InvalidChangesetError, fn ->
+             {ctx, location} = change(ctx, location, %{label: "change2"})
+           end)
+
+           ctx
+         end)
+    end)
+  end
+
+  test "only one chain can insert/delete one row" do
+    import Cluster.Transaction
+    import Cluster.Transaction.Confirmation
+
+    loc1 = Persistence.Repo.insert!(%Schema.Location{
+      label: "Test",
+      domain: "test",
+      row_state: :new,
+    })
+
+    loc2 = Persistence.Repo.insert!(%Schema.Location{
+      label: "Test",
+      domain: "test",
+      row_state: :confirmed,
+    })
+
+    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+      ctx
+      |> append(TestCommand, [], fn ctx ->
+           {ctx, _location} = insert(ctx, loc1)
+           {ctx, _location} = delete(ctx, loc2)
+           ctx
+         end)
+    end)
+
+    loc1 = Persistence.Repo.get(Schema.Location, loc1.id)
+    loc2 = Persistence.Repo.get(Schema.Location, loc2.id)
+
+    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+      ctx
+      |> append(TestCommand, [], fn ctx ->
+           assert_raise(Ecto.InvalidChangesetError, fn ->
+             {ctx, _location} = insert(ctx, loc1)
+           end)
+
+           assert_raise(Ecto.InvalidChangesetError, fn ->
+             {ctx, _location} = delete(ctx, loc2)
+           end)
+
+           ctx
+         end)
     end)
   end
 

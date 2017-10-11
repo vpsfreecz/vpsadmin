@@ -68,25 +68,21 @@ defmodule VpsAdmin.Persistence do
   def handle_updated(%{row_changes: nil} = struct, chain), do: struct
 
   def handle_updated(%{row_changes: changes} = struct, chain_id) do
-    if chain_id == struct.row_changed_by_id do
-      apply_changes(struct, changes)
+    Enum.reduce(
+      changes,
+      struct,
+      fn {k, {chain, v}}, acc ->
+        if chain == chain_id do
+          Map.put(acc, k, v)
 
-    else
-      struct
-    end
+        else
+          acc
+        end
+      end
+    )
   end
 
   def handle_updated(items, chain_id) when is_list(items) do
     for v <- items, do: handle_updated(v, chain_id)
-  end
-
-  defp apply_changes(struct, changes) do
-    Enum.reduce(
-      changes,
-      struct,
-      fn {k, v}, acc ->
-        Map.put(acc, String.to_atom(k), v)
-      end
-    )
   end
 end
