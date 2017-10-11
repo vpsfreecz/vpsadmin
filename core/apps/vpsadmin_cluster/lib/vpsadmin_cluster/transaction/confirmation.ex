@@ -86,7 +86,7 @@ defmodule VpsAdmin.Cluster.Transaction.Confirmation do
     {update_in(
       ctx.command.transaction_confirmations,
       &[make_confirmation(:update, row, changes) | &1]
-    ), Ecto.Changeset.apply_changes(changeset)}
+    ), changeset |> Ecto.Changeset.change(changes) |> Ecto.Changeset.apply_changes()}
   end
 
   def change(ctx, schema, changes) do

@@ -112,7 +112,7 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
           {ctx, location} = change(ctx, orig_location, %{label: "Better Test"})
           assert is_integer(location.id)
           assert orig_location.id == location.id
-          assert location.label == "Test"
+          assert location.label == "Better Test"
           assert location.row_state == :updated
           assert location.row_changes == %{label: {ctx.chain.id, "Better Test"}}
 
@@ -123,9 +123,14 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
           )
           assert is_integer(location.id)
           assert orig_location.id == location.id
-          assert location.label == "Test"
+          assert location.label == "Best Test"
           assert location.row_state == :updated
           assert location.row_changes == %{label: {ctx.chain.id, "Best Test"}}
+
+          persistent = Persistence.Repo.get(Schema.Location, location.id)
+          assert persistent.row_state == :updated
+          assert persistent.label == "Test"
+          assert persistent.row_changes == %{label: {ctx.chain.id, "Best Test"}}
 
           ctx
         end)
@@ -147,7 +152,7 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
           assert is_integer(location.id)
           assert location.row_state == :new
           assert location.row_changes == %{label: {ctx.chain.id, "Just Test"}}
-          assert location.label == "Test"
+          assert location.label == "Just Test"
 
           ctx
         end)
@@ -170,7 +175,7 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
           {ctx, location} = change(ctx, location, %{label: "Change 1"})
 
           assert location.row_changes == %{label: {ctx.chain.id, "Change 1"}}
-          assert location.label == "Test"
+          assert location.label == "Change 1"
 
           ctx
         end)
@@ -186,7 +191,7 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
            assert location.row_changes[:label]
            assert location.row_changes[:domain] == {ctx.chain.id, "change2"}
            assert location.label == "Test"
-           assert location.domain == "test"
+           assert location.domain == "change2"
 
            ctx
          end)
@@ -209,7 +214,7 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
            {ctx, location} = change(ctx, location, %{label: "Change 1"})
 
            assert location.row_changes == %{label: {ctx.chain.id, "Change 1"}}
-           assert location.label == "Test"
+           assert location.label == "Change 1"
 
            ctx
          end)
