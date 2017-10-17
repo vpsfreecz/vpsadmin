@@ -62,6 +62,8 @@ defmodule VpsAdmin.Persistence do
     Repo.preload(struct_or_list, associations)
   end
 
+  def transaction(fun_or_multi, opts \\ []), do: Repo.transaction(fun_or_multi, opts)
+
   def handle_updated(nil, _chain), do: nil
   def handle_updated(struct_or_list, :confirmed), do: struct_or_list
   def handle_updated(struct_or_list, %{} = chain), do: handle_updated(struct_or_list, chain.id)

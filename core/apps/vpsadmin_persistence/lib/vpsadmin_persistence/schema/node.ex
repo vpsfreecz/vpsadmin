@@ -1,5 +1,6 @@
 defmodule VpsAdmin.Persistence.Schema.Node do
   use VpsAdmin.Persistence.Schema
+  @behaviour Persistence.Lockable
 
   schema "nodes" do
     field :name, :string
@@ -9,5 +10,9 @@ defmodule VpsAdmin.Persistence.Schema.Node do
     belongs_to :location, Schema.Location
 
     confirmation_fields()
+  end
+
+  def lock_parent(node, type) do
+    {node.location, :inclusive}
   end
 end

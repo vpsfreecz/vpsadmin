@@ -70,6 +70,19 @@ ALTER SEQUENCE commands_id_seq OWNED BY commands.id;
 
 
 --
+-- Name: inclusive_locks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE inclusive_locks (
+    resource character varying(255) NOT NULL,
+    resource_id jsonb NOT NULL,
+    transaction_chain_id integer NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
 -- Name: locations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -147,9 +160,10 @@ ALTER SEQUENCE nodes_id_seq OWNED BY nodes.id;
 CREATE TABLE resource_locks (
     resource character varying(255) NOT NULL,
     resource_id jsonb NOT NULL,
-    transaction_chain_id integer NOT NULL,
+    transaction_chain_id integer,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    type integer NOT NULL
 );
 
 
@@ -317,6 +331,14 @@ ALTER TABLE ONLY commands
 
 
 --
+-- Name: inclusive_locks inclusive_locks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY inclusive_locks
+    ADD CONSTRAINT inclusive_locks_pkey PRIMARY KEY (resource, resource_id, transaction_chain_id);
+
+
+--
 -- Name: locations locations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -444,6 +466,14 @@ ALTER TABLE ONLY commands
 
 
 --
+-- Name: inclusive_locks inclusive_locks_transaction_chain_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY inclusive_locks
+    ADD CONSTRAINT inclusive_locks_transaction_chain_id_fkey FOREIGN KEY (transaction_chain_id) REFERENCES transaction_chains(id);
+
+
+--
 -- Name: locations locations_row_changed_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -465,6 +495,14 @@ ALTER TABLE ONLY nodes
 
 ALTER TABLE ONLY nodes
     ADD CONSTRAINT nodes_row_changed_by_id_fkey FOREIGN KEY (row_changed_by_id) REFERENCES transaction_chains(id);
+
+
+--
+-- Name: inclusive_locks resource_locks_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY inclusive_locks
+    ADD CONSTRAINT resource_locks_fkey FOREIGN KEY (resource, resource_id) REFERENCES resource_locks(resource, resource_id);
 
 
 --
@@ -495,5 +533,5 @@ ALTER TABLE ONLY transactions
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO "schema_migrations" (version) VALUES (20170925121931), (20170926075010);
+INSERT INTO "schema_migrations" (version) VALUES (20170925121931), (20170926075010), (20171016064306);
 

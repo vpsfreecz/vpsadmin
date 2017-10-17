@@ -36,12 +36,25 @@ defmodule VpsAdmin.Cluster.Transaction.Context do
   def lock(ctx, lock), do: %{ctx | locks: [lock | ctx.locks]}
 
   @doc "Check if a specific resource is already locked"
-  def locked?(ctx, lock) do
-    Enum.find(ctx.locks, false, fn v ->
-      v.resource == lock.resource && v.resource_id == lock.resource_id
-    end)
+  def locked?(ctx, lock, type) do
+    case find_lock(ctx, lock) do
+      false ->
+        false
+      existing_lock ->
+        case existing_lock.type do
+          ^type -> true
+          :inclusive -> {:upgrade, existing_lock}
+          :exclusive -> true
+        end
+    end
   end
 
   @doc "Store custom data in struct field `data` with key `k` and value `v`"
   def put(ctx, k, v), do: update_in(ctx.data, fn data -> Map.put(data, k, v) end)
+
+  defp find_lock(ctx, lock) do
+    Enum.find(ctx.locks, false, fn v ->
+      v.resource == lock.resource && v.resource_id == lock.resource_id
+    end)
+  end
 end

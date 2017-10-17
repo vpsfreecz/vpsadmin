@@ -45,14 +45,16 @@ defmodule VpsAdmin.Cluster.Transaction.ContextTest do
 
   test "locks" do
     ctx = Context.new(:chain)
-      |> Context.lock(%{resource: "test", resource_id: 123})
-      |> Context.lock(%{resource: "test", resource_id: 456})
-      |> Context.lock(%{resource: "next", resource_id: 123})
+      |> Context.lock(%{resource: "test", resource_id: 123, type: :exclusive})
+      |> Context.lock(%{resource: "test", resource_id: 456, type: :inclusive})
+      |> Context.lock(%{resource: "next", resource_id: 123, type: :inclusive})
 
-    assert Context.locked?(ctx, %{resource: "test", resource_id: 123})
-    assert Context.locked?(ctx, %{resource: "test", resource_id: 456})
-    assert Context.locked?(ctx, %{resource: "next", resource_id: 123})
-    refute Context.locked?(ctx, %{resource: "next", resource_id: 1234})
+    assert Context.locked?(ctx, %{resource: "test", resource_id: 123}, :exclusive) == true
+    assert Context.locked?(ctx, %{resource: "test", resource_id: 123}, :inclusive) == true
+    assert Context.locked?(ctx, %{resource: "test", resource_id: 456}, :inclusive) == true
+    assert {:upgrade, _lock} = Context.locked?(ctx, %{resource: "test", resource_id: 456}, :exclusive)
+    assert Context.locked?(ctx, %{resource: "next", resource_id: 123}, :inclusive) == true
+    assert Context.locked?(ctx, %{resource: "next", resource_id: 1234}, :inclusive) == false
   end
 
   test "context data" do

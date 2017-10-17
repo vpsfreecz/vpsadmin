@@ -68,23 +68,16 @@ defmodule VpsAdmin.Cluster.Transaction do
     evaluate(ctx, transaction_mod, opts)
   end
 
-  @spec lock(ctx :: map, schema_or_function :: (map | (map -> map))) :: map
-  def lock(ctx, fun) when is_function(fun, 1), do: lock(ctx, fun.(ctx))
+  @spec lock(
+    ctx :: map,
+    schema_or_function :: (map | (map -> map)),
+    :inclusive | :exclusive
+  ) :: map
+  def lock(ctx, schema_or_function, type \\ :exclusive)
 
-  def lock(ctx, schema) do
-    params = Cluster.ResourceLock.new(ctx, schema)
+  def lock(ctx, fun, type) when is_function(fun, 1), do: lock(ctx, fun.(ctx), type)
 
-    if Cluster.Transaction.Context.locked?(ctx, params) do
-      ctx
-
-    else
-      lock = %Schema.ResourceLock{}
-        |> Schema.ResourceLock.changeset(params)
-        |> Persistence.ResourceLock.create()
-
-      Cluster.Transaction.Context.lock(ctx, lock)
-    end
-  end
+  def lock(ctx, schema, type), do: Cluster.ResourceLock.lock(ctx, schema, type)
 
   def run(ctx, fun) when is_function(fun, 0) do
     fun.()

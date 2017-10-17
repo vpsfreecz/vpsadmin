@@ -198,22 +198,38 @@ defmodule VpsAdmin.Cluster.TransactionTest do
     {:ok, chain} = Chain.single(ResourceLocking)
     chain = Chain.preload(chain)
 
-    assert length(Persistence.Transaction.Chain.locks(chain)) == 1
-    # TODO: verify that we've actually locked that specific location row
+    locks = Persistence.Transaction.Chain.locks(chain)
+    cluster = Enum.find(
+      locks,
+      nil,
+      &(&1.resource == "Elixir.VpsAdmin.Persistence.Schema.Cluster")
+    )
+    location = Enum.find(
+      locks,
+      nil,
+      &(&1.resource == "Elixir.VpsAdmin.Persistence.Schema.Location")
+    )
+
+    assert cluster
+    assert cluster.type == :inclusive
+    refute cluster.transaction_chain_id
+    assert location
+    assert location.type == :exclusive
+    assert location.transaction_chain_id == chain.id
   end
 
   test "locking already locked resources by this transactions" do
     {:ok, chain} = Chain.single(DoubleResourceLocking)
     chain = Chain.preload(chain)
 
-    assert length(Persistence.Transaction.Chain.locks(chain)) == 1
+    assert length(Persistence.Transaction.Chain.locks(chain)) == 2
   end
 
   test "locking already locked resources by included transactions" do
     {:ok, chain} = Chain.single(NestedResourceLocking)
     chain = Chain.preload(chain)
 
-    assert length(Persistence.Transaction.Chain.locks(chain)) == 1
+    assert length(Persistence.Transaction.Chain.locks(chain)) == 2
   end
 
   test "refuses to lock resource locked by another transaction" do
@@ -222,7 +238,7 @@ defmodule VpsAdmin.Cluster.TransactionTest do
     {:ok, chain} = Chain.single(LockObject, location)
     chain = Chain.preload(chain)
 
-    assert length(Persistence.Transaction.Chain.locks(chain)) == 1
+    assert length(Persistence.Transaction.Chain.locks(chain)) == 2
     assert_raise(Ecto.InvalidChangesetError, fn -> Chain.single(LockObject, location) end)
   end
 

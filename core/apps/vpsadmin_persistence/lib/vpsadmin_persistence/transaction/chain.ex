@@ -1,20 +1,24 @@
 defmodule VpsAdmin.Persistence.Transaction.Chain do
   alias VpsAdmin.Persistence
   alias VpsAdmin.Persistence.Schema
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query
 
   def create(changeset), do: Persistence.Repo.insert!(changeset)
 
   def update(changeset), do: Persistence.Repo.update!(changeset)
 
   def locks(chain) do
-    from(lock in Schema.ResourceLock, where: lock.transaction_chain_id == ^chain.id)
-    |> Persistence.Repo.all()
-  end
-
-  def release_locks(chain) do
-    from(lock in Schema.ResourceLock, where: lock.transaction_chain_id == ^chain.id)
-    |> Persistence.Repo.delete_all()
+    from(
+      lock in Schema.ResourceLock,
+      left_join: inc in Schema.InclusiveLock,
+      on: inc.resource == lock.resource and inc.resource_id == lock.resource_id,
+      where: lock.transaction_chain_id == ^chain.id or inc.transaction_chain_id == ^chain.id,
+      group_by: [
+        lock.resource, lock.resource_id, lock.type, lock.transaction_chain_id,
+        inc.transaction_chain_id,
+      ],
+      select: struct(lock, [:resource, :resource_id, :type, :transaction_chain_id]),
+    ) |> Persistence.Repo.all()
   end
 
   def preload(chain, opts \\ []) do

@@ -55,7 +55,7 @@ defmodule VpsAdmin.Cluster.Transaction.Chain do
 
       for t <- chain.transactions, do: Cluster.Transaction.close(t, :ok)
 
-      Persistence.Transaction.Chain.release_locks(chain)
+      Persistence.ResourceLock.release(chain)
 
       chain
       |> Schema.Transaction.Chain.changeset(%{state: :done})
@@ -69,7 +69,7 @@ defmodule VpsAdmin.Cluster.Transaction.Chain do
 
       for t <- chain.transactions, do: Cluster.Transaction.close(t, :error)
 
-      Persistence.Transaction.Chain.release_locks(chain)
+      Persistence.ResourceLock.release(chain)
 
       chain
       |> Schema.Transaction.Chain.changeset(%{state: :failed})
