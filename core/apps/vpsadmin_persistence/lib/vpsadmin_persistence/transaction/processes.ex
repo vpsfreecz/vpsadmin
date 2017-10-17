@@ -61,7 +61,7 @@ defmodule VpsAdmin.Persistence.Transaction.Processes do
     {:reply, :ok, nil}
   end
 
-  def handle_info({:EXIT, from, reason}, state) do
+  def handle_info({:EXIT, from, reason}, _state) do
     Logger.debug "Linked process #{inspect(from)} exited with #{reason}"
     :ets.delete(__MODULE__, from)
     {:noreply, nil}

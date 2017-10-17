@@ -12,7 +12,7 @@ defmodule VpsAdmin.Persistence.Schema.Node do
     confirmation_fields()
   end
 
-  def lock_parent(node, type) do
+  def lock_parent(node, _type) do
     {node.location, :inclusive}
   end
 end

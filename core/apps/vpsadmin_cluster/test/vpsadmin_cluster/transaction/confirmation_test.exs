@@ -226,7 +226,7 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
       ctx
       |> append(TestCommand, [], fn ctx ->
            assert_raise(Ecto.InvalidChangesetError, fn ->
-             {ctx, location} = change(ctx, location, %{label: "change2"})
+             {_ctx, _location} = change(ctx, location, %{label: "change2"})
            end)
 
            ctx
@@ -266,11 +266,11 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
       ctx
       |> append(TestCommand, [], fn ctx ->
            assert_raise(Ecto.InvalidChangesetError, fn ->
-             {ctx, _location} = insert(ctx, loc1)
+             {_ctx, _location} = insert(ctx, loc1)
            end)
 
            assert_raise(Ecto.InvalidChangesetError, fn ->
-             {ctx, _location} = delete(ctx, loc2)
+             {_ctx, _location} = delete(ctx, loc2)
            end)
 
            ctx

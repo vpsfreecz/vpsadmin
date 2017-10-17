@@ -70,7 +70,7 @@ defmodule VpsAdmin.Persistence.Schema.Transaction.Confirmation do
   end
 
   @doc "Changeset for updating confirmable rows"
-  def update_changeset(ctx, schema_or_changeset, chain_id, new_changes \\ %{}) do
+  def update_changeset(_ctx, schema_or_changeset, chain_id, new_changes \\ %{}) do
     changeset = Ecto.Changeset.change(schema_or_changeset)
 
     changeset

@@ -1,5 +1,4 @@
 defmodule VpsAdmin.Persistence do
-  alias VpsAdmin.Persistence
   alias VpsAdmin.Persistence.{Repo, Schema, Transaction}
   import Ecto.Query, only: [from: 2]
 
@@ -67,7 +66,7 @@ defmodule VpsAdmin.Persistence do
   def handle_updated(nil, _chain), do: nil
   def handle_updated(struct_or_list, :confirmed), do: struct_or_list
   def handle_updated(struct_or_list, %{} = chain), do: handle_updated(struct_or_list, chain.id)
-  def handle_updated(%{row_changes: nil} = struct, chain), do: struct
+  def handle_updated(%{row_changes: nil} = struct, _chain), do: struct
 
   def handle_updated(%{row_changes: changes} = struct, chain_id) do
     Enum.reduce(
