@@ -1,5 +1,8 @@
 defmodule VpsAdmin.Persistence.Lockable do
-  @callback lock_parent(map, :inclusive | :exclusive) :: any
+  @callback lock_parent(
+    struct,
+    :inclusive | :exclusive
+  ) :: {struct, :inclusive | :exclusive} | nil
 
   def get_entities(struct, type) do
     _get_entities(struct, type, [{struct, type}])

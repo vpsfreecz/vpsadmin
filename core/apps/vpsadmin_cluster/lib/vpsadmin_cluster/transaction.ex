@@ -8,11 +8,12 @@ defmodule VpsAdmin.Cluster.Transaction do
   """
 
   alias VpsAdmin.Cluster
+  alias VpsAdmin.Cluster.Transaction.Context
   alias VpsAdmin.Persistence
   alias VpsAdmin.Persistence.Schema
 
   @callback label() :: String.t
-  @callback create(ctx :: map, args :: any) :: map
+  @callback create(ctx :: Context.t, args :: any) :: Context.t
 
   defmacro __using__([]) do
     quote do

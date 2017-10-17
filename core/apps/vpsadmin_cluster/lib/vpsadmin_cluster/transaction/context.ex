@@ -18,6 +18,8 @@ defmodule VpsAdmin.Cluster.Transaction.Context do
 
   defstruct chain: nil, transaction: nil, command: nil, locks: [], data: %{}
 
+  @type t :: struct
+
   @doc "Create an empty context for `chain`"
   def new(chain), do: %__MODULE__{chain: chain}
 

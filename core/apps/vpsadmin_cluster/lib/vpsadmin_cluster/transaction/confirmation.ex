@@ -27,6 +27,7 @@ defmodule VpsAdmin.Cluster.Transaction.Confirmation do
   closed.
   """
 
+  alias VpsAdmin.Cluster.Transaction.Context
   alias VpsAdmin.Persistence
   alias VpsAdmin.Persistence.Schema
   require Ecto.Query
@@ -39,7 +40,7 @@ defmodule VpsAdmin.Cluster.Transaction.Confirmation do
   The new row can be given as a schema or changeset struct. The schema can be
   already saved in the database, but does not have to be.
   """
-  @spec insert(ctx :: map, schema_or_changeset :: map) :: {map, map}
+  @spec insert(ctx :: Context.t, schema_or_changeset :: struct) :: {Context.t, struct}
   def insert(ctx, %Ecto.Changeset{} = changeset) do
     changeset = @schema.insert_changeset(ctx, changeset)
 
@@ -60,7 +61,7 @@ defmodule VpsAdmin.Cluster.Transaction.Confirmation do
   end
 
   @doc "Confirm deletion of an existing table row."
-  @spec delete(ctx :: map, schema_or_changeset :: map) :: {map, map}
+  @spec delete(ctx :: Context.t, schema_or_changeset :: struct) :: {Context.t, struct}
   def delete(ctx, %Ecto.Changeset{} = changeset) do
     row = ctx
       |> @schema.delete_changeset(changeset)
@@ -77,7 +78,11 @@ defmodule VpsAdmin.Cluster.Transaction.Confirmation do
   end
 
   @doc "Confirm update of an existing table row."
-  @spec change(ctx :: map, schema_or_changeset :: map, changes :: map) :: {map, map}
+  @spec change(
+    ctx :: Context.t,
+    schema_or_changeset :: struct,
+    changes :: map
+  ) :: {Context.t, struct}
   def change(ctx, %Ecto.Changeset{} = changeset, changes) do
     changeset = @schema.update_changeset(ctx, changeset, ctx.chain.id, changes)
 

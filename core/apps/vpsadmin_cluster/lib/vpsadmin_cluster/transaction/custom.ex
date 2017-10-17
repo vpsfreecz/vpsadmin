@@ -12,6 +12,6 @@ defmodule VpsAdmin.Cluster.Transaction.Custom do
 
   def label(), do: "Custom"
 
-  @spec create(ctx :: map, fun :: (map -> map)) :: map
+  @spec create(ctx :: Context.t, fun :: (Context.t -> Context.t)) :: Context.t
   def create(ctx, fun), do: fun.(ctx)
 end

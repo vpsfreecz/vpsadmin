@@ -4,7 +4,7 @@ defmodule VpsAdmin.Persistence.ResourceLock do
   import Ecto.Query
 
   @doc "Return a tuple uniquelly identifying `struct`"
-  @spec resource_ident(struct :: map) :: {String.t, map}
+  @spec resource_ident(struct :: struct) :: {String.t, map}
   def resource_ident(struct) do
     name = resource_name(struct)
     id = resource_id(name, Map.from_struct(struct))
