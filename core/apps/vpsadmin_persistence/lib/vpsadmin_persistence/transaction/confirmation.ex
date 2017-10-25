@@ -3,6 +3,15 @@ defmodule VpsAdmin.Persistence.Transaction.Confirmation do
   alias VpsAdmin.Persistence.Schema
   import Ecto.Query, only: [from: 2]
 
+  @doc "Adds schema fields required for row confirmation"
+  defmacro confirmation_fields() do
+    quote do
+      field :row_state, Schema.Transaction.Confirmation.RowState
+      field :row_changes, Schema.Transaction.Confirmation.RowChanges
+      belongs_to :transaction_chain, Schema.Transaction.Chain, foreign_key: :row_changed_by_id
+    end
+  end
+
   def update(confirmation) do
     confirmation
     |> Persistence.Repo.update()

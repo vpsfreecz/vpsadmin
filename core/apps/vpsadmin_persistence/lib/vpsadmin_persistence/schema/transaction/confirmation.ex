@@ -53,15 +53,6 @@ defmodule VpsAdmin.Persistence.Schema.Transaction.Confirmation do
     belongs_to :command, Schema.Command
   end
 
-  @doc "Adds schema fields required for row confirmation"
-  defmacro confirmation_fields() do
-    quote do
-      field :row_state, Schema.Transaction.Confirmation.RowState
-      field :row_changes, Schema.Transaction.Confirmation.RowChanges
-      belongs_to :transaction_chain, Schema.Transaction.Chain, foreign_key: :row_changed_by_id
-    end
-  end
-
   @doc "Changeset for inserting new unconfirmed rows"
   def insert_changeset(ctx, schema_or_changeset) do
     schema_or_changeset

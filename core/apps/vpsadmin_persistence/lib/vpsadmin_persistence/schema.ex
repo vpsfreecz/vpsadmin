@@ -4,7 +4,7 @@ defmodule VpsAdmin.Persistence.Schema do
       use Ecto.Schema
       alias VpsAdmin.Persistence
       alias Persistence.Schema
-      import Schema.Transaction.Confirmation, only: [confirmation_fields: 0]
+      import Persistence.Transaction.Confirmation, only: [confirmation_fields: 0]
     end
   end
 end
