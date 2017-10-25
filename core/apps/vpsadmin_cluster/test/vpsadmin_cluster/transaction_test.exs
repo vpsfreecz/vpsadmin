@@ -7,17 +7,13 @@ defmodule VpsAdmin.Cluster.TransactionTest do
   alias VpsAdmin.Persistence
   alias VpsAdmin.Persistence.Schema
 
-  defmodule SimpleCommand do
-    use Command
-
-    def create(ctx, _opts), do: ctx
-  end
-
   defmodule OptionCommand do
     use Command
 
     def create(ctx, [id: id]) do
-      update_in(ctx.command.params, fn params -> Map.put(params, :id, id) end)
+      ctx
+      |> Cluster.Command.Test.Noop.create(nil)
+      |> params(%{id: id})
     end
   end
 
@@ -28,9 +24,9 @@ defmodule VpsAdmin.Cluster.TransactionTest do
 
     def create(ctx, _opts) do
       ctx
-      |> append(SimpleCommand)
-      |> append(SimpleCommand)
-      |> append(SimpleCommand)
+      |> append(Cluster.Command.Test.Noop)
+      |> append(Cluster.Command.Test.Noop)
+      |> append(Cluster.Command.Test.Noop)
     end
   end
 
@@ -151,7 +147,7 @@ defmodule VpsAdmin.Cluster.TransactionTest do
   end
 
   test "can append commands" do
-    {:ok, chain} = Chain.single(SimpleCommands)
+    {:ok, chain} = Chain.stage_single(SimpleCommands)
     chain = Chain.preload(chain)
 
     assert length(chain.transactions) == 1
@@ -159,7 +155,7 @@ defmodule VpsAdmin.Cluster.TransactionTest do
   end
 
   test "can append commands with options" do
-    {:ok, chain} = Chain.single(CommandOptions, 0)
+    {:ok, chain} = Chain.stage_single(CommandOptions, 0)
     chain = Chain.preload(chain)
     cmds = List.first(chain.transactions).commands
 
@@ -171,7 +167,7 @@ defmodule VpsAdmin.Cluster.TransactionTest do
   end
 
   test "can include other transactions" do
-    {:ok, chain} = Chain.single(ShallowInclude, 0)
+    {:ok, chain} = Chain.stage_single(ShallowInclude, 0)
     chain = Chain.preload(chain)
     cmds = List.first(chain.transactions).commands
 
@@ -183,7 +179,7 @@ defmodule VpsAdmin.Cluster.TransactionTest do
   end
 
   test "included transactions can include other transactions" do
-    {:ok, chain} = Chain.single(NestedInclude)
+    {:ok, chain} = Chain.stage_single(NestedInclude)
     chain = Chain.preload(chain)
     cmds = List.first(chain.transactions).commands
 
@@ -195,7 +191,7 @@ defmodule VpsAdmin.Cluster.TransactionTest do
   end
 
   test "resource locking" do
-    {:ok, chain} = Chain.single(ResourceLocking)
+    {:ok, chain} = Chain.stage_single(ResourceLocking)
     chain = Chain.preload(chain)
 
     locks = Persistence.Transaction.Chain.locks(chain)
@@ -219,14 +215,14 @@ defmodule VpsAdmin.Cluster.TransactionTest do
   end
 
   test "locking already locked resources by this transactions" do
-    {:ok, chain} = Chain.single(DoubleResourceLocking)
+    {:ok, chain} = Chain.stage_single(DoubleResourceLocking)
     chain = Chain.preload(chain)
 
     assert length(Persistence.Transaction.Chain.locks(chain)) == 2
   end
 
   test "locking already locked resources by included transactions" do
-    {:ok, chain} = Chain.single(NestedResourceLocking)
+    {:ok, chain} = Chain.stage_single(NestedResourceLocking)
     chain = Chain.preload(chain)
 
     assert length(Persistence.Transaction.Chain.locks(chain)) == 2
@@ -235,16 +231,16 @@ defmodule VpsAdmin.Cluster.TransactionTest do
   test "refuses to lock resource locked by another transaction" do
     location = Persistence.Repo.insert!(%Schema.Location{label: "Test", domain: "test"})
 
-    {:ok, chain} = Chain.single(LockObject, location)
+    {:ok, chain} = Chain.stage_single(LockObject, location)
     chain = Chain.preload(chain)
 
     assert length(Persistence.Transaction.Chain.locks(chain)) == 2
-    assert_raise(Ecto.InvalidChangesetError, fn -> Chain.single(LockObject, location) end)
+    assert_raise(Ecto.InvalidChangesetError, fn -> Chain.stage_single(LockObject, location) end)
   end
 
   test "running arbitrary functions within pipeline" do
     {:ok, pid} = Agent.start_link(fn -> nil end)
-    {:ok, _chain} = Chain.single(RunPipeline, pid)
+    {:ok, _chain} = Chain.stage_single(RunPipeline, pid)
 
     assert Agent.get(pid, fn state -> state end).label == "Test"
   end

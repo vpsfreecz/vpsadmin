@@ -24,7 +24,7 @@ defmodule VpsAdmin.Cluster.ResourceLockTest do
         row_state: :confirmed,
       } |> Persistence.Repo.insert!()
 
-      {:ok, chain} = Chain.single(Transaction.Custom, fn ctx ->
+      {:ok, chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
         import Transaction
 
         ctx
@@ -49,7 +49,7 @@ defmodule VpsAdmin.Cluster.ResourceLockTest do
       } |> Persistence.Repo.insert!()
 
       for _x <- 0..10 do
-        {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+        {:ok, _chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
           import Transaction
 
           ctx
@@ -70,7 +70,7 @@ defmodule VpsAdmin.Cluster.ResourceLockTest do
         row_state: :confirmed,
       } |> Persistence.Repo.insert!()
 
-      {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+      {:ok, _chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
         import Transaction
 
         ctx
@@ -79,17 +79,15 @@ defmodule VpsAdmin.Cluster.ResourceLockTest do
         |> lock(loc2, :inclusive)
       end)
 
-      assert_raise(DBConnection.ConnectionError, fn ->
-        {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
-          import Transaction
+      {:error, _error} = Chain.stage_single(Transaction.Custom, fn ctx ->
+        import Transaction
 
-          assert_raise(Ecto.InvalidChangesetError, fn ->
-            ctx
-            |> lock(loc2, :exclusive)
-          end)
-
+        assert_raise(Ecto.InvalidChangesetError, fn ->
           ctx
+          |> lock(loc2, :exclusive)
         end)
+
+        ctx
       end)
     end
   end
@@ -102,24 +100,22 @@ defmodule VpsAdmin.Cluster.ResourceLockTest do
         row_state: :confirmed,
       } |> Persistence.Repo.insert!()
 
-      {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+      {:ok, _chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
         import Transaction
 
         ctx
         |> lock(location, :exclusive)
       end)
 
-      assert_raise(DBConnection.ConnectionError, fn ->
-        {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
-          import Transaction
+      {:error, _error} = Chain.stage_single(Transaction.Custom, fn ctx ->
+        import Transaction
 
-          assert_raise(Ecto.InvalidChangesetError, fn ->
-            ctx
-            |> lock(location, :exclusive)
-          end)
-
+        assert_raise(Ecto.InvalidChangesetError, fn ->
           ctx
+          |> lock(location, :exclusive)
         end)
+
+        ctx
       end)
     end
 
@@ -130,24 +126,22 @@ defmodule VpsAdmin.Cluster.ResourceLockTest do
         row_state: :confirmed,
       } |> Persistence.Repo.insert!()
 
-      {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+      {:ok, _chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
         import Transaction
 
         ctx
         |> lock(location, :exclusive)
       end)
 
-      assert_raise(DBConnection.ConnectionError, fn ->
-        {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
-          import Transaction
+      {:error, _error} = Chain.stage_single(Transaction.Custom, fn ctx ->
+        import Transaction
 
-          assert_raise(Ecto.InvalidChangesetError, fn ->
-            ctx
-            |> lock(location, :inclusive)
-          end)
-
+        assert_raise(Ecto.InvalidChangesetError, fn ->
           ctx
+          |> lock(location, :inclusive)
         end)
+
+        ctx
       end)
     end
 
@@ -158,7 +152,7 @@ defmodule VpsAdmin.Cluster.ResourceLockTest do
         row_state: :confirmed,
       } |> Persistence.Repo.insert!()
 
-      {:ok, chain} = Chain.single(Transaction.Custom, fn ctx ->
+      {:ok, chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
         import Transaction
 
         ctx
@@ -191,7 +185,7 @@ defmodule VpsAdmin.Cluster.ResourceLockTest do
         row_state: :confirmed,
       } |> Persistence.Repo.insert!()
 
-      {:ok, chain} = Chain.single(Transaction.Custom, fn ctx ->
+      {:ok, chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
         import Transaction
 
         ctx
@@ -215,14 +209,14 @@ defmodule VpsAdmin.Cluster.ResourceLockTest do
         row_state: :confirmed,
       } |> Persistence.Repo.insert!()
 
-      {:ok, chain1} = Chain.single(Transaction.Custom, fn ctx ->
+      {:ok, chain1} = Chain.stage_single(Transaction.Custom, fn ctx ->
         import Transaction
 
         ctx
         |> lock(location, :inclusive)
       end)
 
-      {:ok, chain2} = Chain.single(Transaction.Custom, fn ctx ->
+      {:ok, chain2} = Chain.stage_single(Transaction.Custom, fn ctx ->
         import Transaction
 
         ctx

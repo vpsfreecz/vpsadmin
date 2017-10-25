@@ -4,7 +4,7 @@ defmodule VpsAdmin.Cluster.Connector do
   alias VpsAdmin.Cluster
   alias VpsAdmin.Persistence
 
-  def start_link() do
+  def start_link(_args) do
     GenServer.start_link(__MODULE__, [])
   end
 
@@ -15,7 +15,7 @@ defmodule VpsAdmin.Cluster.Connector do
 
   def handle_info(:startup, nil) do
     for n <- Persistence.Node.get_other_nodes(Cluster.Node.self_id) do
-      Node.connect(:"#{n.name}@#{n.ip_addr}")
+      Node.connect(Cluster.Node.erlang_node(n))
     end
 
     {:stop, :normal, nil}

@@ -7,12 +7,6 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
   alias VpsAdmin.Persistence
   alias VpsAdmin.Persistence.Schema
 
-  defmodule TestCommand do
-    use Command
-
-    def create(ctx, _opts), do: ctx
-  end
-
   defmodule TestTransaction do
     use Transaction
 
@@ -29,9 +23,9 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
     import Cluster.Transaction
     import Cluster.Transaction.Confirmation
 
-    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, _chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
           {ctx, location} = insert(ctx, %Schema.Location{label: "Test", domain: "test"})
           assert is_integer(location.id)
           assert location.row_state == :new
@@ -52,11 +46,11 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
     import Cluster.Transaction
     import Cluster.Transaction.Confirmation
 
-    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, _chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       new_location = Persistence.Repo.insert!(%Schema.Location{label: "Test", domain: "test"})
 
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
           {ctx, location} = insert(ctx, new_location)
           assert is_integer(location.id)
           assert new_location.id == location.id
@@ -79,11 +73,11 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
     import Cluster.Transaction
     import Cluster.Transaction.Confirmation
 
-    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, _chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       orig_location = Persistence.Repo.insert!(%Schema.Location{label: "Test", domain: "test"})
 
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
           {ctx, location} = delete(ctx, orig_location)
           assert is_integer(location.id)
           assert location.row_state == :deleted
@@ -104,11 +98,11 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
     import Cluster.Transaction
     import Cluster.Transaction.Confirmation
 
-    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, _chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       orig_location = Persistence.Repo.insert!(%Schema.Location{label: "Test", domain: "test"})
 
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
           {ctx, location} = change(ctx, orig_location, %{label: "Better Test"})
           assert is_integer(location.id)
           assert orig_location.id == location.id
@@ -141,9 +135,9 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
     import Cluster.Transaction
     import Cluster.Transaction.Confirmation
 
-    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, _chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
           {ctx, location} = insert(ctx, %Schema.Location{label: "Test", domain: "test"})
           assert is_integer(location.id)
           assert location.row_state == :new
@@ -169,9 +163,9 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
       row_state: :confirmed,
     })
 
-    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, _chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
           {ctx, location} = change(ctx, location, %{label: "Change 1"})
 
           assert location.row_changes == %{label: {ctx.chain.id, "Change 1"}}
@@ -183,9 +177,9 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
 
     location = Persistence.Repo.get(Schema.Location, location.id)
 
-    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, _chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
            {ctx, location} = change(ctx, location, %{domain: "change2"})
 
            assert location.row_changes[:label]
@@ -208,9 +202,9 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
       row_state: :confirmed,
     })
 
-    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, _chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
            {ctx, location} = change(ctx, location, %{label: "Change 1"})
 
            assert location.row_changes == %{label: {ctx.chain.id, "Change 1"}}
@@ -222,9 +216,9 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
 
     location = Persistence.Repo.get(Schema.Location, location.id)
 
-    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, _chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
            assert_raise(Ecto.InvalidChangesetError, fn ->
              {_ctx, _location} = change(ctx, location, %{label: "change2"})
            end)
@@ -250,9 +244,9 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
       row_state: :confirmed,
     })
 
-    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, _chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
            {ctx, _location} = insert(ctx, loc1)
            {ctx, _location} = delete(ctx, loc2)
            ctx
@@ -262,9 +256,9 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
     loc1 = Persistence.Repo.get(Schema.Location, loc1.id)
     loc2 = Persistence.Repo.get(Schema.Location, loc2.id)
 
-    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, _chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
            assert_raise(Ecto.InvalidChangesetError, fn ->
              {_ctx, _location} = insert(ctx, loc1)
            end)
@@ -282,9 +276,9 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
     import Cluster.Transaction
     import Cluster.Transaction.Confirmation
 
-    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, _chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
           {ctx, location} = insert(ctx, %Schema.Location{label: "Test", domain: "test"})
           assert is_integer(location.id)
           assert location.row_state == :new
@@ -304,7 +298,7 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
 
     {:ok, pid} = Agent.start_link(fn -> nil end)
 
-    {:ok, chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       loc1 = Persistence.Repo.insert!(%Schema.Location{label: "Test1", domain: "test1"})
       loc2 = Persistence.Repo.insert!(%Schema.Location{label: "Test2", domain: "test2"})
       loc3 = Persistence.Repo.insert!(%Schema.Location{label: "Test3", domain: "test3"})
@@ -312,7 +306,7 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
       Agent.update(pid, fn _ -> %{loc1: loc1.id, loc2: loc2.id, loc3: loc3.id} end)
 
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
           {ctx, _loc1} = insert(ctx, loc1)
           {ctx, _loc2} = change(ctx, loc2, %{label: "Better Test 2", domain: "better.test2"})
           {ctx, _loc3} = delete(ctx, loc3)
@@ -355,7 +349,7 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
 
     {:ok, pid} = Agent.start_link(fn -> nil end)
 
-    {:ok, chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       loc1 = Persistence.Repo.insert!(%Schema.Location{label: "Test1", domain: "test1"})
       loc2 = Persistence.Repo.insert!(%Schema.Location{label: "Test2", domain: "test2"})
       loc3 = Persistence.Repo.insert!(%Schema.Location{label: "Test3", domain: "test3"})
@@ -363,7 +357,7 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
       Agent.update(pid, fn _ -> %{loc1: loc1.id, loc2: loc2.id, loc3: loc3.id} end)
 
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
           {ctx, _loc1} = insert(ctx, loc1)
           {ctx, _loc2} = change(ctx, loc2, %{label: "Better Test 2", domain: "better.test2"})
           {ctx, _loc3} = delete(ctx, loc3)
@@ -406,9 +400,9 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
 
     loc = Persistence.Repo.insert!(%Schema.Location{label: "Test", domain: "test"})
 
-    {:ok, chain1} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, chain1} = Chain.stage_single(Transaction.Custom, fn ctx ->
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
            {ctx, _loc} = change(ctx, loc, %{label: "Better Test"})
            ctx
          end)
@@ -416,9 +410,9 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
 
     loc = Persistence.Repo.get(Schema.Location, loc.id)
 
-    {:ok, chain2} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, chain2} = Chain.stage_single(Transaction.Custom, fn ctx ->
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
            {ctx, _loc} = change(ctx, loc, %{domain: "better.test"})
            ctx
          end)
@@ -450,9 +444,9 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
 
     loc = Persistence.Repo.insert!(%Schema.Location{label: "Test", domain: "test"})
 
-    {:ok, chain1} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, chain1} = Chain.stage_single(Transaction.Custom, fn ctx ->
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
            {ctx, _loc} = change(ctx, loc, %{label: "Better Test"})
            ctx
          end)
@@ -460,9 +454,9 @@ defmodule VpsAdmin.Cluster.Transaction.ConfirmationTest do
 
     loc = Persistence.Repo.get(Schema.Location, loc.id)
 
-    {:ok, chain2} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, chain2} = Chain.stage_single(Transaction.Custom, fn ctx ->
       ctx
-      |> append(TestCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
            {ctx, _loc} = change(ctx, loc, %{domain: "better.test"})
            ctx
          end)

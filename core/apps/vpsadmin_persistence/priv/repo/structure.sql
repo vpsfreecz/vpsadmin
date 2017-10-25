@@ -46,7 +46,8 @@ CREATE TABLE commands (
     params jsonb NOT NULL,
     output jsonb,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    node_id integer NOT NULL
 );
 
 
@@ -458,11 +459,27 @@ CREATE INDEX transactions_transaction_chain_id_index ON transactions USING btree
 
 
 --
+-- Name: commands commands_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY commands
+    ADD CONSTRAINT commands_node_id_fkey FOREIGN KEY (node_id) REFERENCES nodes(id);
+
+
+--
 -- Name: commands commands_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY commands
     ADD CONSTRAINT commands_transaction_id_fkey FOREIGN KEY (transaction_id) REFERENCES transactions(id);
+
+
+--
+-- Name: inclusive_locks inclusive_locks_resource_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY inclusive_locks
+    ADD CONSTRAINT inclusive_locks_resource_fkey FOREIGN KEY (resource, resource_id) REFERENCES resource_locks(resource, resource_id);
 
 
 --
@@ -498,14 +515,6 @@ ALTER TABLE ONLY nodes
 
 
 --
--- Name: inclusive_locks resource_locks_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY inclusive_locks
-    ADD CONSTRAINT resource_locks_fkey FOREIGN KEY (resource, resource_id) REFERENCES resource_locks(resource, resource_id);
-
-
---
 -- Name: resource_locks resource_locks_transaction_chain_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -533,5 +542,5 @@ ALTER TABLE ONLY transactions
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO "schema_migrations" (version) VALUES (20170925121931), (20170926075010), (20171016064306);
+INSERT INTO "schema_migrations" (version) VALUES (20170925121931), (20170926075010), (20171016064306), (20171017111059);
 

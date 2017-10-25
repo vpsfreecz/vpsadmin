@@ -25,7 +25,7 @@ defmodule VpsAdmin.Cluster.Transaction do
       import unquote(__MODULE__), only: [
         append: 2, append: 3, append: 4,
         include: 2, include: 3,
-        lock: 2,
+        lock: 2, lock: 3,
         run: 2,
       ]
       import Cluster.Transaction.Confirmation
@@ -86,4 +86,40 @@ defmodule VpsAdmin.Cluster.Transaction do
   end
 
   def run(ctx, fun) when is_function(fun, 1), do: fun.(ctx)
+
+  def set_nodes(transaction, chain_node_tuples) do
+    node_ids = for c <- transaction.commands, do: c.node_id
+    node_tuples = Enum.reduce(
+      chain_node_tuples,
+      MapSet.new,
+      fn {id, enode}, acc ->
+        if id in node_ids do
+          MapSet.put(acc, {id, enode})
+
+        else
+          acc
+        end
+      end
+    )
+
+    %{transaction | nodes: MapSet.to_list(node_tuples)}
+  end
+
+  @doc """
+  Returns a list of Erlang nodes involved in execution of `transaction`.
+
+  Requires chain nodes to be set by `set_nodes/2`.
+  """
+  def erlang_nodes(transaction) do
+    for {_id, enode} <- transaction.nodes, do: enode
+  end
+
+  @doc """
+  Returns a list of node IDs involved in execution of `transaction`.
+
+  Requires chain nodes to be set by `set_nodes/2`.
+  """
+  def node_ids(transaction) do
+    for {id, _enode} <- transaction.nodes, do: id
+  end
 end

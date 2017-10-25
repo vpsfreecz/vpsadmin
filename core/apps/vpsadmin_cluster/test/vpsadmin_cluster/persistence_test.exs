@@ -6,12 +6,6 @@ defmodule VpsAdmin.Cluster.PersistenceTest do
   alias VpsAdmin.Persistence
   alias VpsAdmin.Persistence.Schema
 
-  defmodule SimpleCommand do
-    use Command
-
-    def create(ctx, _opts), do: ctx
-  end
-
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Persistence.Repo)
   end
@@ -19,12 +13,12 @@ defmodule VpsAdmin.Cluster.PersistenceTest do
   test "access new and confirmed data" do
     {:ok, pid} = Agent.start_link(fn -> nil end)
 
-    {:ok, chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       import Transaction
       import Transaction.Confirmation
 
       ctx
-      |> append(SimpleCommand, [], fn ctx ->
+      |> append(Command.Test.Noop, [], fn ctx ->
            {ctx, location} = insert(ctx, %Schema.Location{label: "Test", domain: "test"})
            Agent.update(pid, fn _ -> location.id end)
            ctx
@@ -46,12 +40,12 @@ defmodule VpsAdmin.Cluster.PersistenceTest do
       row_state: :confirmed,
     } |> Persistence.Repo.insert!()
 
-    {:ok, chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       import Transaction
       import Transaction.Confirmation
 
       ctx
-      |> append(SimpleCommand, [], fn ctx ->
+      |> append(Command.Test.Noop, [], fn ctx ->
            {ctx, _location} = change(ctx, orig_location, %{label: "Super Test"})
            ctx
          end)
@@ -75,12 +69,12 @@ defmodule VpsAdmin.Cluster.PersistenceTest do
       row_state: :confirmed,
     } |> Persistence.Repo.insert!()
 
-    {:ok, chain1} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, chain1} = Chain.stage_single(Transaction.Custom, fn ctx ->
       import Transaction
       import Transaction.Confirmation
 
       ctx
-      |> append(SimpleCommand, [], fn ctx ->
+      |> append(Command.Test.Noop, [], fn ctx ->
            {ctx, _location} = change(ctx, orig_location, %{label: "Super Test"})
            ctx
          end)
@@ -88,12 +82,12 @@ defmodule VpsAdmin.Cluster.PersistenceTest do
 
     orig_location = Persistence.Repo.get(Schema.Location, orig_location.id)
 
-    {:ok, chain2} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, chain2} = Chain.stage_single(Transaction.Custom, fn ctx ->
       import Transaction
       import Transaction.Confirmation
 
       ctx
-      |> append(SimpleCommand, [], fn ctx ->
+      |> append(Command.Test.Noop, [], fn ctx ->
            {ctx, _location} = change(ctx, orig_location, %{domain: "megatest"})
            ctx
          end)
@@ -125,12 +119,12 @@ defmodule VpsAdmin.Cluster.PersistenceTest do
       row_state: :confirmed,
     } |> Persistence.Repo.insert!()
 
-    {:ok, chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       import Transaction
       import Transaction.Confirmation
 
       ctx
-      |> append(SimpleCommand, [], fn ctx ->
+      |> append(Command.Test.Noop, [], fn ctx ->
            {ctx, _location} = delete(ctx, orig_location)
            ctx
          end)
@@ -162,12 +156,12 @@ defmodule VpsAdmin.Cluster.PersistenceTest do
       location: loc1,
     } |> Persistence.Repo.insert!()
 
-    {:ok, chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       import Transaction
       import Transaction.Confirmation
 
       ctx
-      |> append(SimpleCommand, [], fn ctx ->
+      |> append(Command.Test.Noop, [], fn ctx ->
            {ctx, _} = change(ctx, node, %{location_id: loc2.id})
            ctx
          end)
@@ -201,12 +195,12 @@ defmodule VpsAdmin.Cluster.PersistenceTest do
       row_state: :confirmed,
     } |> Persistence.Repo.insert!()
 
-    {:ok, _chain} = Chain.single(Transaction.Custom, fn ctx ->
+    {:ok, _chain} = Chain.stage_single(Transaction.Custom, fn ctx ->
       import Transaction
       import Transaction.Confirmation
 
       ctx
-      |> append(SimpleCommand, [], fn ctx ->
+      |> append(Command.Test.Noop, [], fn ctx ->
            # Change
            {ctx, _location} = change(ctx, orig_loc1, %{label: "Super Test"})
 

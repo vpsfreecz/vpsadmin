@@ -5,13 +5,7 @@ defmodule VpsAdmin.Cluster.Transaction.ChainTest do
   alias VpsAdmin.Cluster.{Command, Transaction}
   alias VpsAdmin.Cluster.Transaction.Chain
   alias VpsAdmin.Persistence
-  alias VpsAdmin.Persistence.Schema
-
-  defmodule SimpleCommand do
-    use Command
-
-    def create(ctx, _opts), do: ctx
-  end
+  alias VpsAdmin.Persistence.{Factory, Schema}
 
   defmodule Empty do
     use Transaction
@@ -28,9 +22,9 @@ defmodule VpsAdmin.Cluster.Transaction.ChainTest do
 
     def create(ctx, _opts) do
       ctx
-      |> append(SimpleCommand)
-      |> append(SimpleCommand)
-      |> append(SimpleCommand)
+      |> append(Cluster.Command.Test.Noop)
+      |> append(Cluster.Command.Test.Noop)
+      |> append(Cluster.Command.Test.Noop)
     end
   end
 
@@ -52,15 +46,15 @@ defmodule VpsAdmin.Cluster.Transaction.ChainTest do
 
     def create(ctx, pid) do
       ctx
-      |> append(SimpleCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
            {ctx, location} = insert(ctx, %Schema.Location{label: "Test", domain: "test"})
            Context.put(ctx, :loc1, location)
          end)
-      |> append(SimpleCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
            {ctx, location} = insert(ctx, %Schema.Location{label: "Test", domain: "test"})
            Context.put(ctx, :loc2, location)
          end)
-      |> append(SimpleCommand, [], fn ctx ->
+      |> append(Cluster.Command.Test.Noop, [], fn ctx ->
            {ctx, location} = insert(ctx, %Schema.Location{label: "Test", domain: "test"})
            Context.put(ctx, :loc3, location)
          end)
@@ -73,6 +67,20 @@ defmodule VpsAdmin.Cluster.Transaction.ChainTest do
     end
   end
 
+  defmodule WithNodes do
+    use Transaction
+
+    def label, do: "With nodes"
+
+    def create(ctx, [node1, node2, node3]) do
+      ctx
+      |> append(Cluster.Command.Test.Noop, node1)
+      |> append(Cluster.Command.Test.Noop, node2)
+      |> append(Cluster.Command.Test.Noop, node2)
+      |> append(Cluster.Command.Test.Noop, node3)
+    end
+  end
+
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Persistence.Repo)
   end
@@ -82,20 +90,20 @@ defmodule VpsAdmin.Cluster.Transaction.ChainTest do
   end
 
   test "can create a chain with a single transaction" do
-    {:ok, chain} = Chain.single(Full)
+    {:ok, chain} = Chain.stage_single(Full)
     assert is_integer(chain.id)
-    assert chain.state == :running
+    assert chain.state == :staged
   end
 
   test "can create a chain with a single transaction with options" do
     {:ok, pid} = Agent.start_link(fn -> nil end)
-    {:ok, _chain} = Chain.single(WithOptions, agent: pid, value: 123)
+    {:ok, _chain} = Chain.stage_single(WithOptions, agent: pid, value: 123)
     assert Agent.get(pid, fn state -> state end) == 123
     Agent.stop(pid)
   end
 
   test "can create a custom chain" do
-    {:ok, chain} = Chain.custom(fn chain ->
+    {:ok, chain} = Chain.stage_custom(fn chain ->
       import Chain, only: [append: 2]
 
       chain
@@ -104,14 +112,14 @@ defmodule VpsAdmin.Cluster.Transaction.ChainTest do
     end)
 
     assert is_integer(chain.id)
-    assert chain.state == :running
+    assert chain.state == :staged
   end
 
   test "can pass options to transactions via append" do
     {:ok, pid1} = Agent.start_link(fn -> nil end)
     {:ok, pid2} = Agent.start_link(fn -> nil end)
 
-    {:ok, chain} = Chain.custom(fn chain ->
+    {:ok, chain} = Chain.stage_custom(fn chain ->
       import Chain, only: [append: 3]
 
       chain
@@ -120,7 +128,7 @@ defmodule VpsAdmin.Cluster.Transaction.ChainTest do
     end)
 
     assert is_integer(chain.id)
-    assert chain.state == :running
+    assert chain.state == :staged
     assert Agent.get(pid1, fn state -> state end) == 456
     assert Agent.get(pid2, fn state -> state end) == 789
 
@@ -134,7 +142,7 @@ defmodule VpsAdmin.Cluster.Transaction.ChainTest do
 
   test "can be closed on success" do
     {:ok, pid} = Agent.start_link(fn -> nil end)
-    {:ok, chain} = Chain.single(WithChanges, pid)
+    {:ok, chain} = Chain.stage_single(WithChanges, pid)
     {:ok, chain} = Chain.close(chain, :ok)
 
     data = Agent.get(pid, fn state -> state end)
@@ -148,7 +156,7 @@ defmodule VpsAdmin.Cluster.Transaction.ChainTest do
 
   test "can be closed on error" do
     {:ok, pid} = Agent.start_link(fn -> nil end)
-    {:ok, chain} = Chain.single(WithChanges, pid)
+    {:ok, chain} = Chain.stage_single(WithChanges, pid)
     {:ok, chain} = Chain.close(chain, :error)
 
     data = Agent.get(pid, fn state -> state end)
@@ -158,5 +166,28 @@ defmodule VpsAdmin.Cluster.Transaction.ChainTest do
     refute Persistence.get(Schema.Location, data.loc1)
     refute Persistence.get(Schema.Location, data.loc2)
     refute Persistence.get(Schema.Location, data.loc3)
+  end
+
+  test "returns involved nodes" do
+    location = Factory.insert(:location)
+    node1 = Factory.insert(:node, location: location)
+    node2 = Factory.insert(:node, location: location)
+    node3 = Factory.insert(:node, location: location)
+    node4 = Factory.insert(:node, location: location)
+
+    {:ok, chain} = Chain.stage_custom(fn chain ->
+      import Chain, only: [append: 3]
+
+      chain
+      |> append(WithNodes, [node1, node2, node3])
+    end)
+
+    nodes = Persistence.Transaction.Chain.nodes(chain)
+
+    assert length(nodes) == 3
+    assert Enum.find(nodes, false, &(&1.id == node1.id))
+    assert Enum.find(nodes, false, &(&1.id == node2.id))
+    assert Enum.find(nodes, false, &(&1.id == node3.id))
+    refute Enum.find(nodes, false, &(&1.id == node4.id))
   end
 end

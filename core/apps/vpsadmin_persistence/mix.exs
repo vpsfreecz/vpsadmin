@@ -25,10 +25,11 @@ defmodule VpsAdmin.Persistence.Mixfile do
 
   defp deps do
     [
-      {:ecto, "~> 2.1"},
+      {:ecto, "~> 2.2"},
       {:postgrex, "> 0.0.0"},
-      {:ecto_enum, "~> 1.0"},
+      {:ecto_enum, git: "https://github.com/gjaldon/ecto_enum"},
       {:poison, "> 0.0.0"},
+      {:ex_machina, "> 0.0.0"},
     ]
   end
 

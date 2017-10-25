@@ -7,6 +7,13 @@ defmodule VpsAdmin.Persistence.Transaction.Chain do
 
   def update(changeset), do: Persistence.Repo.update!(changeset)
 
+  def update_state(chain, changes) do
+    from(
+      chain in Schema.Transaction.Chain,
+      where: chain.id == ^chain.id,
+    ) |> Persistence.Repo.update_all(set: Enum.into(changes, []))
+  end
+
   def locks(chain) do
     from(
       lock in Schema.ResourceLock,
@@ -31,5 +38,16 @@ defmodule VpsAdmin.Persistence.Transaction.Chain do
         }
       }], opts
     )
+  end
+
+  def nodes(chain) do
+    from(
+      tr in Schema.Transaction,
+      join: cmd in assoc(tr, :commands),
+      join: n in assoc(cmd, :node),
+      where: tr.transaction_chain_id == ^chain.id,
+      group_by: [n.id, n.name, n.ip_addr, n.location_id],
+      select: struct(n, [:id, :name, :ip_addr, :location_id]),
+    ) |> Persistence.Repo.all()
   end
 end
