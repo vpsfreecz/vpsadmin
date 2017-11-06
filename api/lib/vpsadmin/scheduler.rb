@@ -142,7 +142,7 @@ module VpsAdmin
 
             crontab.write(
                 "#{t.minute} #{t.hour} #{t.day_of_month} #{t.month} #{t.day_of_week} " +
-                "root /opt/vpsadmin-api/bin/vpsadmin-run-task #{SOCKET} #{t.id}\n"
+                "root /opt/vpsadmin/api/bin/vpsadmin-run-task #{SOCKET} #{t.id}\n"
             ) # FIXME: remove hardcoded path
           end
         end
