@@ -21,7 +21,7 @@
 */
 
 if ($_GET["action"] == 'login') {
-	$access_url = $_SESSION["access_url"];
+	$access_url = isset($_SESSION["access_url"]) ? $_SESSION["access_url"] : null;
 
 	if ($_POST["passwd"] && $_POST["username"]) {
 		try {
@@ -52,7 +52,7 @@ if ($_GET["action"] == 'login') {
 
 			csrf_init($_POST['username'], $_POST['passwd']);
 
-			$xtpl->perex(_("Welcome, ").$member->m["m_nick"],
+			$xtpl->perex(_("Welcome, ").$m->login,
 					_("Login successful <br /> Your privilege level: ")
 					. $cfg_privlevel[$m->level]);
 
@@ -64,7 +64,7 @@ if ($_GET["action"] == 'login') {
 
 				redirect($access_url);
 
-			} elseif ($_SESSION["is_admin"]) {
+			} elseif (isAdmin()) {
 				redirect('?page=cluster');
 
 			} else {
@@ -91,7 +91,7 @@ if ($_GET["action"] == 'logout') {
 	session_destroy();
 }
 
-if ($_SESSION["is_admin"] && ($_GET["action"] == 'drop_admin')) {
+if (isAdmin() && ($_GET["action"] == 'drop_admin')) {
 	$_SESSION["context_switch"] = true;
 	$_SESSION["original_admin"] = $_SESSION;
 	$_SESSION["is_admin"] = false;
@@ -100,7 +100,7 @@ if ($_SESSION["is_admin"] && ($_GET["action"] == 'drop_admin')) {
 	redirect($_GET["next"]);
 }
 
-if ($_SESSION["is_admin"] && ($_GET["action"] == 'switch_context') && isset($_GET["m_id"]) && !$_SESSION["context_switch"]) {
+if (isAdmin() && ($_GET["action"] == 'switch_context') && isset($_GET["m_id"]) && !$_SESSION["context_switch"]) {
 
 	$admin = $_SESSION;
 

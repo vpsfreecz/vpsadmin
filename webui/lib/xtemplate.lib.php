@@ -483,7 +483,8 @@ class XTemplate {
 				$this->assign('L_EDIT_PROFILE', _("Edit profile"));
 				$this->parse("main.loggedbox.not_admin");
 
-				if($_SESSION["context_switch"]) {
+				$contextSwitch = isset($_SESSION["context_switch"]) ? $_SESSION["context_switch"] : null;
+				if ($contextSwitch) {
 					$this->assign('L_REGAIN_PRIVILEGES', _("Regain privileges"));
 					$this->assign('V_NEXT', urlencode($_SERVER["REQUEST_URI"]));
 					$this->parse('main.loggedbox.context_switch');
@@ -1077,7 +1078,7 @@ function gen_pages_listing($current, $pages, $offset, $display=false)
   */
 function curPageURL() {
  $pageURL = 'http';
- if ($_SERVER["HTTPS"] == "on") {$pageURL .= "s";}
+ if (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == "on") {$pageURL .= "s";}
  $pageURL .= "://";
  if ($_SERVER["SERVER_PORT"] != "80") {
   $pageURL .= $_SERVER["SERVER_NAME"].":".$_SERVER["SERVER_PORT"].$_SERVER["REQUEST_URI"];

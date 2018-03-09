@@ -113,7 +113,7 @@ switch ($_GET["action"]) {
 			$params = array(
 				'hostname' => $_POST['vps_hostname'],
 				'os_template' => $_POST['vps_template'],
-				'info' => $_SESSION['is_admin'] ? '' : $_POST['vps_info'],
+				'info' => isAdmin() ? '' : $_POST['vps_info'],
 				'memory' => $_POST['memory'],
 				'cpu' => $_POST['cpu'],
 				'diskspace' => $_POST['diskspace'],
@@ -122,7 +122,7 @@ switch ($_GET["action"]) {
 				'ipv6' => $_POST['ipv6'],
 			);
 
-			if($_SESSION["is_admin"]) {
+			if(isAdmin()) {
 				$params['user'] = $_POST['m_id'];
 				$params['node'] = $_POST['vps_server'];
 				$params['onboot'] = isset($_POST['boot_after_create']);
@@ -135,7 +135,7 @@ switch ($_GET["action"]) {
 			try {
 				$vps = $api->vps->create($params);
 
-				if ($params['onboot'] || !$_SESSION['is_admin']) {
+				if ($params['onboot'] || !isAdmin()) {
 					notify_user(_("VPS create ").' '.$vps->id, _("VPS will be created and booted afterwards."));
 
 				} else {
@@ -163,7 +163,7 @@ switch ($_GET["action"]) {
 			$xtpl->form_create('?page=adminvps&section=vps&action=delete2&veid='.$_GET["veid"], 'post');
 			$xtpl->form_csrf();
 
-			if($_SESSION["is_admin"]) {
+			if(isAdmin()) {
 				$xtpl->form_add_checkbox(_("Lazy delete").':', 'lazy_delete', '1', true,
 					_("Do not delete VPS immediately, but after passing of predefined time."));
 			}
@@ -244,7 +244,7 @@ switch ($_GET["action"]) {
 			}
 			break;
 		case 'configs':
-			if ($_SESSION["is_admin"] && isset($_REQUEST["veid"]) && (isset($_POST["configs"]) || isset($_POST["add_config"]))) {
+			if (isAdmin() && isset($_REQUEST["veid"]) && (isset($_POST["configs"]) || isset($_POST["add_config"]))) {
 				csrf_check();
 				$raw_order = explode('&', $_POST['configs_order']);
 				$cfgs = array();
@@ -304,7 +304,7 @@ switch ($_GET["action"]) {
 			break;
 
 		case 'custom_config':
-			if ($_SESSION['is_admin']) {
+			if (isAdmin()) {
 				csrf_check();
 
 				try {
@@ -333,7 +333,7 @@ switch ($_GET["action"]) {
 							$params[ $r ] = $_POST[$r];
 					}
 
-					if ($_SESSION['is_admin']) {
+					if (isAdmin()) {
 						if ($_POST['change_reason'])
 							$params['change_reason'] = $_POST['change_reason'];
 
@@ -684,12 +684,12 @@ switch ($_GET["action"]) {
 	}
 
 if ($list_vps) {
-	if ($_SESSION["is_admin"])
+	if (isAdmin())
 		$xtpl->title(_("VPS list").' '._("[Admin mode]"));
 	else
 		$xtpl->title(_("VPS list").' '._("[User mode]"));
 
-	if ($_SESSION['is_admin']) {
+	if (isAdmin()) {
 		$xtpl->table_title(_('Filters'));
 		$xtpl->form_create('', 'get', 'vps-filter', false);
 
@@ -715,7 +715,7 @@ if ($list_vps) {
 		$xtpl->form_out(_('Show'));
 	}
 
-	if (!$_SESSION['is_admin'] || $_GET['action'] == 'list') {
+	if (!isAdmin() || $_GET['action'] == 'list') {
 		$xtpl->table_add_category('ID');
 		$xtpl->table_add_category('HW');
 		$xtpl->table_add_category(_("OWNER"));
@@ -728,7 +728,7 @@ if ($list_vps) {
 		$xtpl->table_add_category('');
 		$xtpl->table_add_category('');
 
-		if (!$_SESSION['is_admin']) {
+		if (!isAdmin()) {
 			$envs_destroy = array();
 
 			foreach ($api->user($_SESSION['user']['id'])->environment_config->list() as $env) {
@@ -736,7 +736,7 @@ if ($list_vps) {
 			}
 		}
 
-		if ($_SESSION['is_admin']) {
+		if (isAdmin()) {
 			$params = array(
 				'limit' => get_val('limit', 25),
 				'offset' => get_val('offset', 0),
@@ -777,17 +777,17 @@ if ($list_vps) {
 				$xtpl->table_td(sprintf('%.2f GB',round($vps->used_diskspace/1024, 2)), false, true);
 			else $xtpl->table_td('---', false, true);
 
-			if($_SESSION['is_admin'] || $vps->maintenance_lock == 'no') {
+			if(isAdmin() || $vps->maintenance_lock == 'no') {
 				$xtpl->table_td(($vps->is_running) ? '<a href="?page=adminvps&run=restart&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_restart.png" title="'._("Restart").'"/></a>' : '<img src="template/icons/vps_restart_grey.png"  title="'._("Unable to restart").'" />');
 				$xtpl->table_td(($vps->is_running) ? '<a href="?page=adminvps&run=stop&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_stop.png"  title="'._("Stop").'"/></a>' : '<a href="?page=adminvps&run=start&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_start.png"  title="'._("Start").'"/></a>');
 
-				if (!$_SESSION['is_admin'])
+				if (!isAdmin())
 					$xtpl->table_td('<a href="?page=console&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/console.png"  title="'._("Remote Console").'"/></a>');
 
-				if ($_SESSION['is_admin'])
+				if (isAdmin())
 					$xtpl->table_td(maintenance_lock_icon('vps', $vps));
 
-				if ($_SESSION["is_admin"] || $envs_destroy[$vps->node->location->environment_id]){
+				if (isAdmin() || $envs_destroy[$vps->node->location->environment_id]){
 					$xtpl->table_td((!$vps->is_running) ? '<a href="?page=adminvps&action=delete&veid='.$vps->id.'"><img src="template/icons/vps_delete.png"  title="'._("Delete").'"/></a>' : '<img src="template/icons/vps_delete_grey.png"  title="'._("Unable to delete").'"/>');
 				} else {
 					$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'._("Cannot delete").'"/>');
@@ -812,7 +812,7 @@ if ($list_vps) {
 
 		$xtpl->table_out();
 
-		if ($_SESSION["is_admin"]) {
+		if (isAdmin()) {
 			$xtpl->table_add_category(_("Total number of VPS").':');
 			$xtpl->table_add_category($vpses->getTotalCount());
 			$xtpl->table_out();
@@ -820,16 +820,14 @@ if ($list_vps) {
 		}
 	}
 
-	if (!$_SESSION['is_admin']) {
+	if (!isAdmin()) {
 		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new');
 	}
 }
 
-if($_SESSION["is_admin"] && $list_vps) {
-	if ($_SESSION["is_admin"]) {
-		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new2');
-		$xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List VPSes").'" /> '._("List VPSes"), '?page=adminvps&action=list');
-	}
+if(isAdmin() && $list_vps) {
+	$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new2');
+	$xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List VPSes").'" /> '._("List VPSes"), '?page=adminvps&action=list');
 }
 
 if (isset($show_info) && $show_info) {
@@ -840,7 +838,7 @@ if (isset($show_info) && $show_info) {
 
 	vps_details_suite($vps);
 
-	if ($_SESSION['is_admin'])
+	if (isAdmin())
 		$xtpl->sbar_add(_('State log'), '?page=lifetimes&action=changelog&resource=vps&id='.$vps->id.'&return='. urlencode($_SERVER['REQUEST_URI']));
 
 	$xtpl->table_td('ID:');
@@ -943,7 +941,7 @@ if (isset($show_info) && $show_info) {
 
 	$xtpl->table_out();
 
-	if (!$_SESSION['is_admin'] && $vps->maintenance_lock != 'no') {
+	if (!isAdmin() && $vps->maintenance_lock != 'no') {
 		$xtpl->perex(
 			_("VPS is under maintenance"),
 			_("All actions for this VPS are forbidden for the time being. This is usually used during outage to prevent data corruption.").
@@ -953,7 +951,7 @@ if (isset($show_info) && $show_info) {
 		);
 
 	} elseif ($vps->object_state == 'soft_delete') {
-		if ($_SESSION["is_admin"]) {
+		if (isAdmin()) {
 			lifetimes_set_state_form('vps', $vps->id, $vps);
 
 		} else {
@@ -985,7 +983,7 @@ if (isset($show_info) && $show_info) {
 
 		$xtpl->table_tr();
 
-		if (!$_SESSION["is_admin"]) {
+		if (!isAdmin()) {
 			$xtpl->table_td('');
 			$xtpl->table_td('<b>Warning</b>: The password is randomly generated.<br>
 							This password changer is here only to enable the first access to SSH.<br>
@@ -1114,7 +1112,7 @@ if (isset($show_info) && $show_info) {
 
 		$vps_configs = $api->vps($vps->id)->config->list();
 
-		if ($_SESSION['is_admin']) {
+		if (isAdmin()) {
 			$all_configs = $api->vps_config->list();
 			$configs_select = resource_list_to_options($all_configs, 'id', 'label', false);
 			$options = "";
@@ -1154,7 +1152,7 @@ if (isset($show_info) && $show_info) {
 		}
 
 		foreach($vps_configs as $cfg) {
-			if ($_SESSION["is_admin"]) {
+			if (isAdmin()) {
 				$xtpl->form_add_select_pure('configs[]', $configs_select, $cfg->vps_config->id);
 				$xtpl->table_td('<a href="javascript:" class="delete-config">'._('delete').'</a>');
 			} else $xtpl->table_td($cfg->vps_config->label);
@@ -1162,7 +1160,7 @@ if (isset($show_info) && $show_info) {
 			$xtpl->table_tr(false, false, false, "order_".$cfg->vps_config->id);
 		}
 
-		if ($_SESSION["is_admin"]) {
+		if (isAdmin()) {
 			$xtpl->table_td('<input type="hidden" name="configs_order" id="configs_order" value="">' .  _('Add').':');
 			$xtpl->form_add_select_pure('add_config[]', $config_choices_empty);
 			$xtpl->table_tr(false, false, false, 'add_config');
@@ -1176,7 +1174,7 @@ if (isset($show_info) && $show_info) {
 		}
 
 	// Custom config
-		if ($_SESSION["is_admin"]) {
+		if (isAdmin()) {
 			$xtpl->table_title(_('Custom config'));
 			$xtpl->form_create('?page=adminvps&action=custom_config&veid='.$vps->id, 'post');
 			$xtpl->form_add_textarea(_("Config").':', 60, 10, 'custom_config', $vps->config, _('Applied last'));
@@ -1203,7 +1201,7 @@ if (isset($show_info) && $show_info) {
 		$p = $params->{$name};
 		$r = $resource_map[$name];
 
-		if (!$_SESSION['is_admin'] && $r->value === 0)
+		if (!isAdmin() && $r->value === 0)
 			continue;
 
 		$xtpl->table_td($p->label);
@@ -1211,7 +1209,7 @@ if (isset($show_info) && $show_info) {
 			$name,
 			$vps->{$name},
 			$r->cluster_resource->min,
-			$_SESSION['is_admin'] ?
+			isAdmin() ?
 				$r->cluster_resource->max :
 				min($vps->{$name} + $r->free, $r->cluster_resource->max),
 			$r->cluster_resource->stepsize,
@@ -1220,7 +1218,7 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_tr();
 	}
 
-	if ($_SESSION['is_admin']) {
+	if (isAdmin()) {
 		$xtpl->form_add_number(
 			_('CPU limit').':',
 			'cpu_limit',
@@ -1232,7 +1230,7 @@ if (isset($show_info) && $show_info) {
 		);
 	}
 
-	if ($_SESSION['is_admin']) {
+	if (isAdmin()) {
 		api_param_to_form('change_reason', $params->change_reason);
 		api_param_to_form('admin_override', $params->admin_override);
 		api_param_to_form('admin_lock_type', $params->admin_lock_type);
@@ -1307,7 +1305,7 @@ if (isset($show_info) && $show_info) {
 
 
 	// State change
-		if ($_SESSION['is_admin']) {
+		if (isAdmin()) {
 			lifetimes_set_state_form('vps', $vps->id, $vps);
 		}
 	}

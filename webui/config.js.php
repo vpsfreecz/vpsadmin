@@ -4,10 +4,11 @@ session_start();
 include '/etc/vpsadmin/config.php';
 include WWW_ROOT.'lib/version.lib.php';
 include WWW_ROOT.'lib/members.lib.php';
+include WWW_ROOT.'lib/functions.lib.php';
 
 header('Content-Type: text/javascript');
 
-if($_SESSION['logged_in']) {
+if(isLoggedIn()) {
 ?>
 (function(root) {
 root.vpsAdmin = {

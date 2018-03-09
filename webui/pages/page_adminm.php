@@ -85,7 +85,7 @@ function print_editm($u) {
 		$xtpl->table_tr();
 	}
 
-	if ($_SESSION["is_admin"]) {
+	if (isAdmin()) {
 		$xtpl->table_add_category('&nbsp;');
 
 		$xtpl->form_add_input(_("Nickname").':', 'text', '30', 'm_nick', $u->login, _("A-Z, a-z, dot, dash"), 63);
@@ -107,7 +107,7 @@ function print_editm($u) {
 		$xtpl->table_tr();
 	}
 
-	if ($_SESSION["is_admin"]) {
+	if (isAdmin()) {
 		$vps_count = $api->vps->list(array(
 			'user' => $u->id,
 			'limit' => 0,
@@ -129,7 +129,7 @@ function print_editm($u) {
 		false
 	);
 
-	if ($_SESSION["is_admin"]) {
+	if (isAdmin()) {
 		$xtpl->form_add_input(_("Monthly payment").':', 'text', '30', 'm_monthly_payment', $u->monthly_payment, ' ');
 		$xtpl->form_add_textarea(_("Info").':', 28, 4, 'm_info', $u->info, _("Note for administrators"));
 	}
@@ -141,7 +141,7 @@ function print_editm($u) {
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->form_create('?page=adminm&section=members&action=passwd&id='.$u->id, 'post');
 
-	if (!$_SESSION['is_admin'])
+	if (!isAdmin())
 		$xtpl->form_add_input(_("Current password").':', 'password', '30', 'password');
 
 	$xtpl->form_add_input(_("New password").':', 'password', '30', 'new_password', '', '', -8);
@@ -156,14 +156,14 @@ function print_editm($u) {
 	$xtpl->form_add_input(_("E-mail").':', 'text', '30', 'email', post_val('email', $u->email), ' ');
 	$xtpl->form_add_input(_("Postal address").':', 'text', '30', 'address', post_val('address', $u->address), ' ');
 
-	if(!$_SESSION["is_admin"]) {
-		$xtpl->form_add_input(_("Reason for change").':', 'text', '50', 'change_reason', $_POST['change_reason']);
+	if(!isAdmin()) {
+		$xtpl->form_add_input(_("Reason for change").':', 'text', '50', 'change_reason', isset($_POST['change_reason']) ? $_POST['change_reason'] : null);
 		$xtpl->table_td(_("Request for change will be sent to administrators for approval.".
 		                  "Changes will not take effect immediately. You will be informed about the result."), false, false, 3);
 		$xtpl->table_tr();
 	}
 
-	$xtpl->form_out($_SESSION["is_admin"] ? _("Save") : _("Request change"));
+	$xtpl->form_out(isAdmin() ? _("Save") : _("Request change"));
 
 	$xtpl->form_create('?page=adminm&action=role_recipients&id='.$u->id, 'post');
 	$xtpl->table_add_category(_('E-mail roles'));
@@ -183,7 +183,7 @@ function print_editm($u) {
 		$xtpl->form_add_textarea_pure(
 			50, 5,
 			"to[{$recp->id}]",
-			$_POST['to'][$recp->id] ? $_POST['to'][$recp->id] : str_replace(',', ",\n", $recp->to)
+			$_POST && $_POST['to'][$recp->id] ? $_POST['to'][$recp->id] : str_replace(',', ",\n", $recp->to)
 		);
 		$xtpl->table_tr();
 
@@ -202,7 +202,7 @@ function print_editm($u) {
 	$xtpl->table_tr();
 	$xtpl->form_out_raw();
 
-	if ($_SESSION["is_admin"]) {
+	if (isAdmin()) {
 		lifetimes_set_state_form('user', $u->id, $u);
 
 		$xtpl->sbar_add("<br><img src=\"template/icons/m_switch.png\"  title=". _("Switch context") ." /> Switch context", "?page=login&action=switch_context&m_id={$u->id}&next=".urlencode($_SERVER["REQUEST_URI"]));
@@ -351,7 +351,7 @@ function list_auth_tokens() {
 
 	$token = array();
 
-	if($_SESSION['is_admin']) {
+	if(isAdmin()) {
 		$tokens = $api->auth_token->list(array('user' => $_GET['id']));
 	} else {
 		$tokens = $api->auth_token->list();
@@ -447,7 +447,7 @@ function list_cluster_resources() {
 		$xtpl->table_add_category(_("Used"));
 		$xtpl->table_add_category(_("Free"));
 
-		if ($_SESSION['is_admin'])
+		if (isAdmin())
 			$xtpl->table_add_category('');
 
 		foreach ($res as $r) {
@@ -466,7 +466,7 @@ function list_cluster_resources() {
 				$xtpl->table_td($r->free);
 			}
 
-			if ($_SESSION['is_admin'])
+			if (isAdmin())
 				$xtpl->table_td('<a href="?page=adminm&section=members&action=cluster_resource_edit&id='.$_GET['id'].'&resource='.$r->id.'"><img src="template/icons/m_edit.png"  title="'._("Edit").'"></a>');
 
 			$xtpl->table_tr();
@@ -527,7 +527,7 @@ function cluster_resource_edit_form() {
 function request_approve() {
 	global $xtpl, $api;
 
-	if(!$_SESSION["is_admin"])
+	if(!isAdmin())
 		return;
 
 	if (isset($_POST['action'])) {
@@ -555,7 +555,7 @@ function request_approve() {
 function request_deny() {
 	global $xtpl, $api;
 
-	if(!$_SESSION["is_admin"])
+	if(!isAdmin())
 		return;
 
 	if (isset($_POST['action'])) {
@@ -583,7 +583,7 @@ function request_deny() {
 function request_ignore() {
 	global $xtpl, $api;
 
-	if(!$_SESSION["is_admin"])
+	if(!isAdmin())
 		return;
 
 	if (isset($_POST['action'])) {
@@ -611,7 +611,7 @@ function request_ignore() {
 function request_correction() {
 	global $xtpl, $api;
 
-	if(!$_SESSION["is_admin"])
+	if(!isAdmin())
 		return;
 
 	if (isset($_POST['action'])) {
@@ -639,7 +639,7 @@ function request_correction() {
 function list_members() {
 	global $xtpl, $api, $config;
 
-	if ($_SESSION["is_admin"]) {
+	if (isAdmin()) {
 		$xtpl->title(_("Manage members [Admin mode]"));
 
 		$xtpl->table_title(_('Filters'));
@@ -671,7 +671,7 @@ function list_members() {
 		$xtpl->title(_("Manage members"));
 	}
 
-	if (!$_SESSION['is_admin'] || $_GET['action'] == 'list') {
+	if (!isAdmin() || $_GET['action'] == 'list') {
 		$xtpl->table_add_category('ID');
 		$xtpl->table_add_category(_("NICKNAME"));
 		$xtpl->table_add_category(_("VPS"));
@@ -690,7 +690,7 @@ function list_members() {
 		$xtpl->table_add_category('');
 		$xtpl->table_add_category('');
 
-		if ($_SESSION['is_admin']) {
+		if (isAdmin()) {
 			$params = array(
 				'limit' => get_val('limit', 25),
 				'offset' => get_val('offset', 0),
@@ -714,12 +714,11 @@ function list_members() {
 		}
 
 		foreach ($users as $u) {
-			$paid_until = strtotime($u->paid_until);
 			$last_activity = strtotime($u->last_activity_at);
 
 			$xtpl->table_td($u->id);
 
-			if (($_SESSION["is_admin"]) && ($u->id != $_SESSION["user"]["id"])) {
+			if ((isAdmin()) && ($u->id != $_SESSION["user"]["id"])) {
 				$xtpl->table_td(
 					'<a href="?page=login&action=switch_context&m_id='.$u->id.'&next='.urlencode($_SERVER["REQUEST_URI"]).'">'.
 					'<img src="template/icons/m_switch.png" title="'._("Switch context").'"></a>'.
@@ -742,8 +741,6 @@ function list_members() {
 				$xtpl->table_td($u->monthly_payment);
 
 			$xtpl->table_td(h($u->full_name));
-
-			$paid = $paid_until > time();
 
 			if ($last_activity) {
 				if (($last_activity + 2592000) < time()) {
@@ -771,14 +768,14 @@ function list_members() {
 
 			$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$u->id.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
 
-			if ($_SESSION["is_admin"]) {
+			if (isAdmin()) {
 				$xtpl->table_td('<a href="?page=adminm&section=members&action=delete&id='.$u->id.'"><img src="template/icons/m_delete.png"  title="'. _("Delete") .'" /></a>');
 
 			} else {
 				$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'. _("Cannot delete yourself") .'" />');
 			}
 
-			if ($_SESSION["is_admin"] && ($u->info != '')) {
+			if (isAdmin() && ($u->info != '')) {
 				$xtpl->table_td('<img src="template/icons/info.png" title="'.$u->info.'"');
 			}
 
@@ -878,21 +875,22 @@ function payments_overview() {
 
 if ($_SESSION["logged_in"]) {
 
-	if ($_SESSION["is_admin"]) {
+	if (isAdmin()) {
 		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New member").'" /> '._("New member"), '?page=adminm&section=members&action=new');
 
 		if ($api->user_request)
 			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Requests for approval").'" /> '._("Requests for approval"), '?page=adminm&section=members&action=approval_requests');
 	}
 
-	switch ($_GET["action"]) {
+	$action = isset($_GET["action"]) ? $_GET["action"] : null;
+	switch ($action) {
 		case 'new':
-			if ($_SESSION["is_admin"]) {
+			if (isAdmin()) {
 				print_newm();
 			}
 			break;
 		case 'new2':
-			if ($_SESSION["is_admin"]) {
+			if (isAdmin()) {
 				if ($_POST['m_pass'] != $_POST['m_pass2']) {
 					$xtpl->perex(_("Passwords don't match"), _('The two passwords differ.'));
 					print_newm();
@@ -922,7 +920,7 @@ if ($_SESSION["logged_in"]) {
 			}
 			break;
 		case 'delete':
-			if ($_SESSION["is_admin"] && ($u = $api->user->find($_GET["id"]))) {
+			if (isAdmin() && ($u = $api->user->find($_GET["id"]))) {
 
 				$xtpl->perex(_("Are you sure, you want to delete")
 								.' '.$u->login.'?','');
@@ -931,7 +929,7 @@ if ($_SESSION["logged_in"]) {
 			}
 			break;
 		case 'delete2':
-			if ($_SESSION["is_admin"] && ($u = $api->user->find($_GET["id"]))) {
+			if (isAdmin() && ($u = $api->user->find($_GET["id"]))) {
 				$xtpl->perex(_("Are you sure, you want to delete")
 						.' '.$u->login.'?',
 						'<a href="?page=adminm">'
@@ -941,7 +939,7 @@ if ($_SESSION["logged_in"]) {
 				}
 			break;
 		case 'delete3':
-			if ($_SESSION["is_admin"] && ($u = $api->user->find($_GET["id"]))) {
+			if (isAdmin() && ($u = $api->user->find($_GET["id"]))) {
 				try {
 					$u->delete(array(
 						'object_state' => $_GET['object_state'],
@@ -957,7 +955,7 @@ if ($_SESSION["logged_in"]) {
 			}
 			break;
 		case 'edit':
-			print_editm($_SESSION['is_admin'] ? $api->user->find($_GET["id"]) : $api->user->current());
+			print_editm(isAdmin() ? $api->user->find($_GET["id"]) : $api->user->current());
 			break;
 		case 'edit_member':
 			try {
@@ -968,7 +966,7 @@ if ($_SESSION["logged_in"]) {
 					'language' => $_POST['language'],
 				);
 
-				if ($_SESSION['is_admin']) {
+				if (isAdmin()) {
 					$params['login'] = $_POST['m_nick'];
 					$params['level'] = $_POST['m_level'];
 					$params['info'] = $_POST['m_info'];
@@ -976,7 +974,7 @@ if ($_SESSION["logged_in"]) {
 
 				$user->update($params);
 
-				if ($_SESSION['is_admin'] && $user->monthly_payment != $_POST['m_monthly_payment']) {
+				if (isAdmin() && $user->monthly_payment != $_POST['m_monthly_payment']) {
 					$api->user_account->update($user->id, array(
 						'monthly_payment' => $_POST['m_monthly_payment'],
 					));
@@ -1002,7 +1000,7 @@ if ($_SESSION["logged_in"]) {
 				try {
 					$params = array('new_password' => $_POST['new_password']);
 
-					if (!$_SESSION['is_admin'])
+					if (!isAdmin())
 						$params['password'] = $_POST['password'];
 
 					$u->update($params);
@@ -1020,7 +1018,7 @@ if ($_SESSION["logged_in"]) {
 		case 'edit_personal':
 			$u = $api->user->find($_GET["id"]);
 
-			if($_SESSION["is_admin"]) {
+			if(isAdmin()) {
 				try {
 					$u->update(array(
 						'full_name' => $_POST['full_name'],
@@ -1106,7 +1104,7 @@ if ($_SESSION["logged_in"]) {
 			break;
 
 		case 'payset':
-			if (!$_SESSION['is_admin'])
+			if (!isAdmin())
 				break;
 
 			user_payment_form($_GET['id']);
@@ -1114,7 +1112,7 @@ if ($_SESSION["logged_in"]) {
 			break;
 
 		case 'payset2':
-			if (!$_SESSION['is_admin'])
+			if (!isAdmin())
 				break;
 
 			try {
@@ -1144,21 +1142,21 @@ if ($_SESSION["logged_in"]) {
 			break;
 
 		case 'incoming_payments':
-			if (!$_SESSION['is_admin'])
+			if (!isAdmin())
 				break;
 
 			incoming_payments_list();
 			break;
 
 		case 'incoming_payment':
-			if (!$_SESSION['is_admin'])
+			if (!isAdmin())
 				break;
 
 			incoming_payments_details($_GET['id']);
 			break;
 
 		case 'incoming_payment_state':
-			if (!$_SESSION['is_admin'])
+			if (!isAdmin())
 				break;
 
 			try {
@@ -1177,7 +1175,7 @@ if ($_SESSION["logged_in"]) {
 			break;
 
 		case 'incoming_payment_assign':
-			if (!$_SESSION['is_admin'])
+			if (!isAdmin())
 				break;
 
 			try {
@@ -1197,14 +1195,14 @@ if ($_SESSION["logged_in"]) {
 			break;
 
 		case 'payments_history':
-			if (!$_SESSION['is_admin'])
+			if (!isAdmin())
 				break;
 
 			user_payment_history();
 			break;
 
 		case 'payments_overview':
-			if ($_SESSION['is_admin'])
+			if (isAdmin())
 				payments_overview();
 			break;
 
@@ -1345,7 +1343,7 @@ if ($_SESSION["logged_in"]) {
 			break;
 
 		case 'env_cfg_edit':
-			if (!$_SESSION['is_admin'])
+			if (!isAdmin())
 				break;
 
 			if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -1375,21 +1373,21 @@ if ($_SESSION["logged_in"]) {
 			break;
 
 		case 'approval_requests':
-			if(!$_SESSION["is_admin"])
+			if(!isAdmin())
 				break;
 
 			approval_requests_list();
 			break;
 
 		case "request_details":
-			if(!$_SESSION["is_admin"])
+			if(!isAdmin())
 				break;
 
 			approval_requests_details($_GET['type'], $_GET['id']);
 			break;
 
 		case "request_process":
-			if(!$_SESSION["is_admin"])
+			if(!isAdmin())
 				break;
 
 			$action = null;
@@ -1418,7 +1416,7 @@ if ($_SESSION["logged_in"]) {
 
 	$xtpl->sbar_out(_("Manage members"));
 
-	if ($_SESSION['is_admin'] && payments_enabled()) {
+	if (isAdmin() && payments_enabled()) {
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Incoming payments").'" /> '._("Incoming payments"), '?page=adminm&action=incoming_payments');
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments history").'" /> '._("Display history of payments"), '?page=adminm&section=members&action=payments_history');
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments overview").'" /> '._("Payments overview"), '?page=adminm&section=members&action=payments_overview');
@@ -1427,4 +1425,3 @@ if ($_SESSION["logged_in"]) {
 	}
 
 } else $xtpl->perex(_("Access forbidden"), _("You have to log in to be able to access vpsAdmin's functions"));
-?>
