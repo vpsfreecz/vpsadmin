@@ -1,6 +1,6 @@
 <?php
 
-if ($_SESSION['logged_in']) {
+if (isLoggedIn()) {
 	switch ($_GET['to']) {
 	case 'payset':
 		switch ($_GET['from']) {

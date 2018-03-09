@@ -330,7 +330,7 @@ if ($_SESSION["logged_in"]) {
 	$xtpl->sbar_out(_('Backups'));
 
 	if($vps_backups) {
-		if ($_SESSION['is_admin']) {
+		if (isAdmin()) {
 			$xtpl->table_title(_('Filters'));
 			$xtpl->form_create('', 'get', 'backup-filter', false);
 
@@ -377,7 +377,7 @@ if ($_SESSION["logged_in"]) {
 		foreach ($vpses as $vps) {
 			$params = array('dataset' => $vps->dataset_id);
 
-			if ($_SESSION['is_admin'] && !$_GET['subdatasets'])
+			if (isAdmin() && !$_GET['subdatasets'])
 				$params['limit'] = 1;
 
 			$datasets = $api->dataset->list($params);
@@ -389,7 +389,7 @@ if ($_SESSION["logged_in"]) {
 	if ($nas_backups) {
 		$datasets = array();
 
-		if ($_SESSION['is_admin']) {
+		if (isAdmin()) {
 			$xtpl->table_title(_('Filters'));
 			$xtpl->form_create('', 'get', 'backup-filter', false);
 
@@ -437,7 +437,7 @@ if ($_SESSION["logged_in"]) {
 			'meta' => array('includes' => 'snapshot__dataset,user'))
 		);
 
-		if ($_SESSION['is_admin'])
+		if (isAdmin())
 			$xtpl->table_add_category(_('User'));
 
 		$xtpl->table_add_category(_('Dataset'));
@@ -454,7 +454,7 @@ if ($_SESSION["logged_in"]) {
 
 			else $short_name = $dl->file_name;
 
-			if ($_SESSION['is_admin'])
+			if (isAdmin())
 				$xtpl->table_td('<a href="?page=adminm&action=edit&id='.$dl->user_id.'">'.$dl->user->login.'</a>');
 
 			$xtpl->table_td($dl->snapshot_id ? $dl->snapshot->dataset->name : '---');

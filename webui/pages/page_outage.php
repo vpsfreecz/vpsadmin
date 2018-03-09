@@ -129,12 +129,12 @@ function outage_set_handlers ($outage) {
 	}
 }
 
-if ($_SESSION['logged_in']) {
+if (isLoggedIn()) {
 	switch ($_GET['action']) {
 	case 'report':
 		csrf_check();
 
-		if ($_SESSION['is_admin']) {
+		if (isAdmin()) {
 			$outage = outage_create();
 
 			if (!$outage) {
@@ -156,7 +156,7 @@ if ($_SESSION['logged_in']) {
 		break;
 
 	case 'edit':
-		if ($_SESSION['is_admin']) {
+		if (isAdmin()) {
 			if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				csrf_check();
 
@@ -179,7 +179,7 @@ if ($_SESSION['logged_in']) {
 		break;
 
 	case 'update':
-		if ($_SESSION['is_admin']) {
+		if (isAdmin()) {
 			if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				csrf_check();
 
@@ -232,7 +232,7 @@ if ($_SESSION['logged_in']) {
 		break;
 
 	case 'set_state':
-		if ($_SESSION['is_admin'] && $_SERVER['REQUEST_METHOD'] === 'POST') {
+		if (isAdmin() && $_SERVER['REQUEST_METHOD'] === 'POST') {
 			csrf_check();
 
 			try {

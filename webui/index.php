@@ -57,7 +57,7 @@ include WWW_ROOT.'config_cfg.php';
 $api = new \HaveAPI\Client(INT_API_URL, API_VERSION, client_identity());
 $api->registerDescriptionChangeFunc('api_description_changed');
 
-if($_SESSION["api_description"]) {
+if(isset($_SESSION["api_description"]) && $_SESSION["api_description"]) {
 	$api->setDescription($_SESSION["api_description"]);
 }
 
@@ -80,8 +80,9 @@ try {
 		try {
 			$api_cluster = $api->cluster->show();
 
-			if(!$_SESSION["context_switch"])
+			if(!isset($_SESSION["context_switch"]) || !$_SESSION["context_switch"]){
 				$api->user->touch($_SESSION["user"]["id"]);
+			}
 
 			$_SESSION["transactbox_expiration"] = time() + USER_LOGIN_INTERVAL;
 // 			$xtpl->assign('AJAX_SCRIPT', ajax_getHTML('ajax.php?page=transactbox', 'transactions', 1000));
@@ -100,8 +101,8 @@ try {
 	if (($_GET["page"] != "login") &&
 					($_GET["page"] != "lang") &&
 					($_GET["page"] != "about") &&
-					(!$_SESSION["is_admin"]) &&
-					$api_cluster->maintenance_lock)
+					(!isAdmin()) &&
+					$api_cluster && $api_cluster->maintenance_lock)
 		{
 			$request_page = "";
 			include WWW_ROOT.'pages/page_index.php';
@@ -185,16 +186,16 @@ try {
 	$xtpl->perex(_('Token invalid'), _('Your security token is either invalid or expired. Please try to repeat the action, you will be given a new, valid token.'));
 }
 
-
-if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
+if (isLoggedIn()) {
     $xtpl->menu_add(_("Status"),'?page=', ($_GET["page"] == ''));
     $xtpl->menu_add(_("Members"),'?page=adminm', ($_GET["page"] == 'adminm'));
     $xtpl->menu_add(_("VPS"),'?page=adminvps', ($_GET["page"] == 'adminvps'));
-    if ($_SESSION["is_admin"]) {
+    if (isAdmin()) {
 		$xtpl->menu_add(_("Backups"),'?page=backup', ($_GET["page"] == 'backup'));
 
-		if(NAS_PUBLIC || $_SESSION["is_admin"])
+		if(NAS_PUBLIC || isAdmin()){
 			$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
+		}
 
 		$xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));
 		$xtpl->menu_add(_("Cluster"),'?page=cluster', ($_GET["page"] == 'cluster'));
@@ -202,7 +203,7 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
     } else {
 		$xtpl->menu_add(_("Backups"),'?page=backup', ($_GET["page"] == 'backup'));
 
-		if(NAS_PUBLIC || $_SESSION["is_admin"])
+		if(NAS_PUBLIC || isAdmin())
 			$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
 
 		$xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));
@@ -223,13 +224,13 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
     $xtpl->menu_add(_("About vpsAdmin"),'?page=about', ($_GET["page"] == 'about'), true);
 }
 
-if(!$_SESSION["logged_in"])
+if(!isLoggedIn()){
 	$_SESSION["access_url"] = $_SERVER["REQUEST_URI"];
+}
 
-$xtpl->logbox(
-	isset($_SESSION["logged_in"]) ? $_SESSION["logged_in"] : false,
+$xtpl->logbox(isLoggedIn(),
 	isset($_SESSION["user"]) ? $_SESSION["user"]["login"] : false,
-	isset($_SESSION["is_admin"]) ? $_SESSION["is_admin"] : false,
+	isAdmin(),
 	$api_cluster ? $api_cluster->maintenance_lock : false
 );
 
@@ -237,7 +238,7 @@ $xtpl->adminbox($config->get("webui", "sidebar"));
 
 $help = get_helpbox();
 
-if ($_SESSION['is_admin'])
+if (isAdmin())
 	$help .= '<p><a href="?page=cluster&action=helpboxes_add&help_page='.$_GET["page"].'&help_action='.$_GET["action"].'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'">'._("Edit help box").'</a></p>';
 
 if ($help)
@@ -253,5 +254,3 @@ if (defined('TRACKING_CODE')) {
 }
 $xtpl->parse('main');
 $xtpl->out('main');
-
-?>

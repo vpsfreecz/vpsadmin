@@ -1,5 +1,5 @@
 <?php
-if ($_SESSION['logged_in']) {
+if (isLoggedIn()) {
 	switch ($_GET['action']) {
 	case 'list':
 		monitoring_list();

@@ -1,6 +1,6 @@
 <?php
-if ($_SESSION["logged_in"] && (NAS_PUBLIC || $_SESSION["is_admin"])) {
-	if ($_SESSION['is_admin']) {
+if ($_SESSION["logged_in"] && (NAS_PUBLIC || isAdmin())) {
+	if (isAdmin()) {
 		// Filter form & query
 		$xtpl->table_title(_('Filters'));
 		$xtpl->form_create('', 'get', 'nas-filter', false);

@@ -70,7 +70,7 @@ switch($_GET['action']) {
 		try {
 			$ip = $api->ip_address->show($_GET['id']);
 
-			if ($_SESSION['is_admin'] && $_POST['disown'])
+			if (isAdmin() && $_POST['disown'])
 				$ip->update(array('user' => null));
 
 			$ip->vps->ip_address->delete($ip->id);
@@ -146,7 +146,7 @@ $xtpl->sbar_add(_("IP ranges"), '?page=networking&action=ip_ranges');
 $xtpl->sbar_add(_("List monthly traffic"), '?page=networking&action=traffic');
 $xtpl->sbar_add(_("Live monitor"), '?page=networking&action=live');
 
-if ($_SESSION['is_admin'])
+if (isAdmin())
 	$xtpl->sbar_add(_("User top"), '?page=networking&action=user_top');
 
 $xtpl->sbar_out(_('Networking'));
@@ -222,7 +222,7 @@ if ($show_traffic) {
 		resource_list_to_options($api->node->list(), 'id', 'domain_name'), get_val('node'));
 	$xtpl->form_add_input(_("VPS").':', 'text', '30', 'vps', get_val('vps'));
 
-	if ($_SESSION['is_admin']) {
+	if (isAdmin()) {
 		$xtpl->form_add_input(_("IP address").':', 'text', '30', 'ip_address', get_val('ip_address'));
 		$xtpl->form_add_input(_("User").':', 'text', '30', 'user', get_val('user'));
 	}
@@ -247,7 +247,7 @@ if ($show_traffic) {
 		'network', 'ip_range', 'protocol'
 	);
 
-	if ($_SESSION['is_admin']) {
+	if (isAdmin()) {
 		if ($_GET['ip_address']) {
 			$ip_id = get_ip_address_id($_GET['ip_address']);
 
@@ -275,7 +275,7 @@ if ($show_traffic) {
 
 	$xtpl->table_add_category(_('IP address'));
 
-	if ($_SESSION['is_admin'])
+	if (isAdmin())
 		$xtpl->table_add_category(_('User'));
 
 	$xtpl->table_add_category(_('VPS'));
@@ -289,7 +289,7 @@ if ($show_traffic) {
 	foreach ($stats as $stat) {
 		$xtpl->table_td($stat->ip_address->addr);
 
-		if ($_SESSION['is_admin']) {
+		if (isAdmin()) {
 			if ($stat->user_id) {
 				$xtpl->table_td(
 					'<a href="?page=adminm&action=edit&id='.$stat->user_id.'">'.
@@ -325,7 +325,7 @@ if ($show_traffic) {
 	$xtpl->table_out();
 }
 
-if ($_SESSION['is_admin'] && $show_top) {
+if (isAdmin() && $show_top) {
 	$xtpl->title(_("Top users"));
 
 	$xtpl->table_title(_('Filters'));
@@ -455,7 +455,7 @@ if ($show_live) {
 	$xtpl->form_add_input(_("IP address").':', 'text', '30', 'ip_address', get_val('ip_address'));
 	$xtpl->form_add_input(_("VPS ID").':', 'text', '30', 'vps', get_val('vps'));
 
-	if($_SESSION["is_admin"])
+	if(isAdmin())
 		$xtpl->form_add_input(_("User ID").':', 'text', '30', 'user', get_val('user'));
 
 	$xtpl->form_add_checkbox(

@@ -1,6 +1,6 @@
 <?php
 
-if ($_SESSION['logged_in']) {
+if (isLoggedIn()) {
 	$quotas = array('quota', 'refquota');
 
 	switch ($_GET['action']) {
@@ -59,7 +59,7 @@ if ($_SESSION['logged_in']) {
 				$input_params = $api->dataset->update->getParameters('input');
 				$params = array();
 
-				if ($_SESSION['is_admin']) {
+				if (isAdmin()) {
 					$params['admin_override'] = isset($_POST['admin_override']);
 					$params['admin_lock_type'] = $_POST['admin_lock_type'];
 				}

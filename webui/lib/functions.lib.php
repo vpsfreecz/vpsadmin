@@ -633,4 +633,17 @@ function is_assoc($arr) {
 function h($v) {
 	return htmlspecialchars($v);
 }
-?>
+
+/**
+ * @return bool
+ */
+function isLoggedIn(){
+	return isset($_SESSION["logged_in"]) && $_SESSION["logged_in"];
+}
+
+/**
+ * @return bool
+ */
+function isAdmin(){
+	return isset($_SESSION["is_admin"]) && $_SESSION["is_admin"];
+}
