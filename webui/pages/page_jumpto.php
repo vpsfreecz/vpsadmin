@@ -1,6 +1,6 @@
 <?php
 
-if ($_SESSION["logged_in"] && $_SESSION["is_admin"]) {
+if ($_SESSION["logged_in"] && isAdmin()) {
 	$search = trim($_GET['search']);
 
 	$_SESSION["jumpto"] = $search;

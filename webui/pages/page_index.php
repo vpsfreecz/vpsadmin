@@ -22,14 +22,14 @@
 
 $xtpl->sbar_add(_('Outages'), '?page=outage&action=list');
 
-if ($_SESSION['logged_in'] && $api->monitored_event)
+if (isLoggedIn() && $api->monitored_event)
 	$xtpl->sbar_add(_("Monitoring"), '?page=monitoring&action=list');
 
 $xtpl->sbar_out(_('Overview'));
 
 $xtpl->title(_("Overview"));
 
-if ($_SESSION["is_admin"]) {
+if (isAdmin()) {
   $xtpl->table_add_category(_("Event Log <a href=\"?page=cluster&action=sysconfig\">[edit]</a>"));
 } else {
   $xtpl->table_add_category(_("Event Log"));
@@ -74,11 +74,11 @@ if ($api->outage) {
 		$xtpl->table_add_category(_('Type'));
 		$xtpl->table_add_category(_('Reason'));
 
-		if ($_SESSION['is_admin']) {
+		if (isAdmin()) {
 			$xtpl->table_add_category(_('Users'));
 			$xtpl->table_add_category(_('VPS'));
 
-		} elseif ($_SESSION['logged_in']) {
+		} elseif (isLoggedIn()) {
 			$xtpl->table_add_category(_('Affects me?'));
 		}
 
@@ -95,7 +95,7 @@ if ($api->outage) {
 			$xtpl->table_td($outage->type);
 			$xtpl->table_td(h($outage->en_summary));
 
-			if ($_SESSION['is_admin']) {
+			if (isAdmin()) {
 				$xtpl->table_td(
 					'<a href="?page=outage&action=users&id='.$outage->id.'">'.
 					$outage->affected_user_count.
@@ -109,7 +109,7 @@ if ($api->outage) {
 					false, true
 				);
 
-			} elseif ($_SESSION['logged_in'])
+			} elseif (isLoggedIn())
 				$xtpl->table_td(boolean_icon($outage->affected));
 
 			$xtpl->table_td('<a href="?page=outage&action=show&id='.$outage->id.'"><img src="template/icons/m_edit.png"  title="'. _("Details") .'" /></a>');

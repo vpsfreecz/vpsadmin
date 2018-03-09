@@ -3,11 +3,17 @@
 function get_helpbox($page = null, $action = null) {
 	global $api;
 
-	if (!$api->help_box)
+	if (!$api->help_box){
 		return '';
+	}
 
-	if (!$page) $page = $_GET["page"];
-	if (!$action) $action = $_GET["action"];
+	if (!$page){
+		$page = isset($_GET["page"]) ? $_GET["page"] : null;
+	}
+
+	if (!$action){
+		$action = isset($_GET["action"]) ? $_GET["action"] : null;
+	}
 
 	$boxes = $api->help_box->list(array(
 		'page' => $page ? $page : null,

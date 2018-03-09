@@ -80,7 +80,7 @@ function list_chains() {
 	$xtpl->table_add_category('#');
 	$xtpl->table_add_category(_('Date'));
 
-	if ($_SESSION['is_admin'])
+	if (isAdmin())
 		$xtpl->table_add_category(_('User'));
 
 	$xtpl->table_add_category(_('Object'));
@@ -93,7 +93,7 @@ function list_chains() {
 		$xtpl->table_td('<a href="?page=transactions&chain='.$chain->id.'">'.$chain->id.'</a>');
 		$xtpl->table_td(tolocaltz($chain->created_at));
 
-		if ($_SESSION['is_admin']) {
+		if (isAdmin()) {
 			if ($chain->user_id)
 				$xtpl->table_td('<a href="?page=adminm&action=edit&id='.$chain->user_id.'">'.$chain->user->login.'</a>');
 			else

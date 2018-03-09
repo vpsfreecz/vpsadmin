@@ -1,6 +1,6 @@
 <?php
 
-if ($_SESSION['logged_in'] && $_SESSION['is_admin']) {
+if (isLoggedIn() && isAdmin()) {
 
 	switch ($_GET['action']) {
 		case 'set_state':
