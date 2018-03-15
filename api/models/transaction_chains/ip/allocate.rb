@@ -7,7 +7,7 @@ module TransactionChains
       raise NotImplementedError
     end
 
-    def allocate_to_vps(r, vps, n)
+    def allocate_to_vps(r, vps, n, strict: true)
       return n if n == 0
 
       ips = []
@@ -28,7 +28,12 @@ module TransactionChains
           end
 
         rescue ActiveRecord::RecordNotFound
-          fail "no #{r} available"
+          if strict
+            fail "no #{r.name} available"
+
+          else
+            break
+          end
 
         rescue ResourceLocked
           sleep(0.25)

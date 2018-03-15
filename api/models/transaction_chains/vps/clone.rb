@@ -366,7 +366,7 @@ module TransactionChains
       versions.each do |r|
         chowned = use_chain(
             Ip::Allocate,
-            args: [::ClusterResource.find_by!(name: r), dst_vps, ips[r]],
+            args: [::ClusterResource.find_by!(name: r), dst_vps, ips[r], strict: true],
             method: :allocate_to_vps
         )
 
