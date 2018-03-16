@@ -318,6 +318,10 @@ class Vps < ActiveRecord::Base
     ).exists?
   end
 
+  def userns
+    dataset_in_pool.user_namespace
+  end
+
   private
   def generate_password(t)
     if t == :secure

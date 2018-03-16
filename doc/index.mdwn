@@ -20,6 +20,7 @@ network settings based on OpenVZ and ZFS.
  - [[Object lifetimes]]
 
 # Release notes and upgrade information
+ - [[Releases/v3.0.0]]
  - [[Releases/v2.9.0]]
  - [[Releases/v2.8.0]]
  - [[Releases/v2.7.0]]

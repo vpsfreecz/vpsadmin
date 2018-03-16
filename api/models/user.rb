@@ -1,4 +1,5 @@
 class User < ActiveRecord::Base
+  has_many :user_namespaces
   has_many :vpses
   has_many :transactions
   has_many :environment_user_configs

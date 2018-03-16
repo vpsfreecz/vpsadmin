@@ -9,6 +9,7 @@ class Node < ActiveRecord::Base
   has_one :node_current_status
 
   enum role: %i(node storage mailer)
+  enum hypervisor_type: %i(openvz vpsadminos)
 
   has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
 

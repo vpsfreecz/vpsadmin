@@ -2,9 +2,21 @@ module TransactionChains
   class Dataset::Create < ::TransactionChain
     label 'Create'
 
-    def link_chain(pool, dataset_in_pool, path, automount, properties, user = nil, label = nil)
+    def link_chain(
+      pool,
+      dataset_in_pool,
+      path,
+      automount,
+      properties,
+      user = nil,
+      label = nil,
+      userns = nil
+    )
       lock(dataset_in_pool) if dataset_in_pool
-      concerns(:affect, [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id]) if dataset_in_pool
+      concerns(
+        :affect,
+        [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id]
+      ) if dataset_in_pool
 
       ret = []
       @pool = pool
@@ -19,7 +31,7 @@ module TransactionChains
         ret << create_dataset(part)
       end
 
-      ret << create_dataset(path.last, properties, label)
+      ret << create_dataset(path.last, properties, label, userns)
 
       use_prop = nil
 
@@ -47,7 +59,7 @@ module TransactionChains
       ret
     end
 
-    def create_dataset(part, properties = {}, label = nil)
+    def create_dataset(part, properties = {}, label = nil, userns = nil)
       if part.new_record?
         part.parent ||= @parent
         part.save!
@@ -63,6 +75,7 @@ module TransactionChains
           dataset: part,
           pool: @pool,
           label: label,
+          user_namespace: userns,
           confirmed: ::DatasetInPool.confirmed(:confirm_create)
       )
 

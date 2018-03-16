@@ -17,6 +17,25 @@ module TransactionChains
       # status may not be up-to-date.
       use_chain(Vps::Stop, args: vps)
 
+      if vps.node.openvz?
+        reinstall_openvz(vps, template)
+
+      else
+        reinstall_vpsadminos(vps, template)
+      end
+
+      vps.user.user_public_keys.where(auto_add: true).each do |key|
+        use_chain(Vps::DeployPublicKey, args: [vps, key], reversible: :keep_going)
+      end
+
+      if running
+        # Set reversible to :keep_going, because we cannot be certain that
+        # the template is correct and the VPS will start.
+        use_chain(Vps::Start, args: vps, reversible: :keep_going)
+      end
+    end
+
+    def reinstall_openvz(vps, template)
       # Destroy underlying dataset with all its descendants,
       # but do not delete the top-level dataset from database.
       use_chain(DatasetInPool::Destroy, args: [vps.dataset_in_pool, {
@@ -71,15 +90,18 @@ module TransactionChains
           vps.dns_resolver,
           vps.dns_resolver
       ])
+    end
 
-      vps.user.user_public_keys.where(auto_add: true).each do |key|
-        use_chain(Vps::DeployPublicKey, args: [vps, key], reversible: :keep_going)
+    def reinstall_vpsadminos(vps, template)
+      # Remove all local snapshots
+      vps.dataset_in_pool.snapshot_in_pools.each do |sip|
+        use_chain(SnapshotInPool::Destroy, args: sip)
       end
 
-      if running
-        # Set reversible to :keep_going, because we cannot be certain that
-        # the template is correct.
-        use_chain(Vps::Start, args: vps, reversible: :keep_going)
+      # Reinstall CT
+      append_t(Transactions::Vps::Reinstall, args: [vps, template]) do |t|
+        t.edit(vps, os_template_id: template.id)
+        t.increment(vps.dataset_in_pool.dataset, 'current_history_id')
       end
     end
 

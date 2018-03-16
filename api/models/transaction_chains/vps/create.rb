@@ -19,6 +19,14 @@ module TransactionChains
           chain: self
       )
 
+      if vps.node.vpsadminos?
+        # TODO: optionally reuse an existing namespace
+        userns = use_chain(UserNamespace::Allocate, args: [vps.user, vps.node])
+
+      else
+        userns = nil
+      end
+
       pool = vps.node.pools.where(role: 'hypervisor').take!
 
       ds = ::Dataset.new(
@@ -37,7 +45,8 @@ module TransactionChains
           false,
           {refquota: vps.diskspace},
           vps.user,
-          "vps#{vps.id}"
+          "vps#{vps.id}",
+          userns
       ]).last
 
       vps.dataset_in_pool = dip
@@ -67,10 +76,12 @@ module TransactionChains
         end
       end
 
-      use_chain(Vps::ApplyConfig, args: [
-          vps,
-          vps.node.location.environment.vps_configs.pluck(:id)
-      ])
+      if vps.node.openvz?
+        use_chain(Vps::ApplyConfig, args: [
+            vps,
+            vps.node.location.environment.vps_configs.pluck(:id)
+        ])
+      end
 
       # Add IP addresses
       versions = [:ipv4, :ipv4_private]

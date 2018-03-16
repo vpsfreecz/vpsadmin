@@ -31,17 +31,17 @@ module TransactionChains
       end
 
       # Create configs
-      if node.role == 'node'
+      if node.role == 'node' && node.openvz?
         ::VpsConfig.all.each do |cfg|
           append(Transactions::Hypervisor::CreateConfig, args: [node, cfg])
         end
       end
 
-      if node.role != 'mailer'
+      if node.role != 'mailer' && !node.vpsadminos?
         # Save SSH public key to database
         append(Transactions::Node::StorePublicKeys, args: node)
 
-        # Regenerate ~/.ssh/known_hosts on all nodes in the cluster
+        # TODO: Regenerate ~/.ssh/known_hosts on all nodes in the cluster
         use_chain(Cluster::GenerateKnownHosts)
 
         # Deploy private key

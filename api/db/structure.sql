@@ -1,4 +1,4 @@
--- MySQL dump 10.16  Distrib 10.1.24-MariaDB, for Linux (x86_64)
+-- MySQL dump 10.16  Distrib 10.1.29-MariaDB, for Linux (x86_64)
 --
 -- Host: 192.168.122.10    Database: vpsadmin_core
 -- ------------------------------------------------------
@@ -159,9 +159,11 @@ CREATE TABLE `dataset_in_pools` (
   `snapshot_max_age` int(11) NOT NULL DEFAULT '1209600',
   `mountpoint` varchar(500) COLLATE utf8_czech_ci DEFAULT NULL,
   `confirmed` int(11) NOT NULL DEFAULT '0',
+  `user_namespace_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_dataset_in_pools_on_dataset_id_and_pool_id` (`dataset_id`,`pool_id`) USING BTREE,
-  KEY `index_dataset_in_pools_on_dataset_id` (`dataset_id`) USING BTREE
+  KEY `index_dataset_in_pools_on_dataset_id` (`dataset_id`) USING BTREE,
+  KEY `index_dataset_in_pools_on_user_namespace_id` (`user_namespace_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1071,8 +1073,10 @@ CREATE TABLE `nodes` (
   `total_memory` int(11) NOT NULL,
   `total_swap` int(11) NOT NULL,
   `role` int(11) NOT NULL,
+  `hypervisor_type` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `location_id` (`location_id`) USING BTREE
+  KEY `location_id` (`location_id`) USING BTREE,
+  KEY `index_nodes_on_hypervisor_type` (`hypervisor_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1136,6 +1140,11 @@ CREATE TABLE `os_templates` (
   `enabled` tinyint(4) NOT NULL DEFAULT '1',
   `supported` tinyint(4) NOT NULL DEFAULT '1',
   `order` tinyint(4) NOT NULL DEFAULT '1',
+  `vendor` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
+  `variant` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
+  `arch` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
+  `distribution` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
+  `version` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1511,6 +1520,66 @@ CREATE TABLE `user_mail_template_recipients` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `user_namespace_blocks`
+--
+
+DROP TABLE IF EXISTS `user_namespace_blocks`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_namespace_blocks` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_namespace_id` int(11) DEFAULT NULL,
+  `index` int(11) NOT NULL,
+  `offset` int(10) unsigned NOT NULL,
+  `size` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_user_namespace_blocks_on_index` (`index`),
+  KEY `index_user_namespace_blocks_on_user_namespace_id` (`user_namespace_id`),
+  KEY `index_user_namespace_blocks_on_offset` (`offset`)
+) ENGINE=InnoDB AUTO_INCREMENT=65535 DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `user_namespace_ugids`
+--
+
+DROP TABLE IF EXISTS `user_namespace_ugids`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_namespace_ugids` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_namespace_id` int(11) DEFAULT NULL,
+  `ugid` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_user_namespace_ugids_on_ugid` (`ugid`),
+  UNIQUE KEY `index_user_namespace_ugids_on_user_namespace_id` (`user_namespace_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10001 DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `user_namespaces`
+--
+
+DROP TABLE IF EXISTS `user_namespaces`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_namespaces` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `user_namespace_ugid_id` int(11) NOT NULL,
+  `block_count` int(11) NOT NULL,
+  `offset` int(10) unsigned NOT NULL,
+  `size` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_user_namespaces_on_user_namespace_ugid_id` (`user_namespace_ugid_id`),
+  KEY `index_user_namespaces_on_user_id` (`user_id`),
+  KEY `index_user_namespaces_on_block_count` (`block_count`),
+  KEY `index_user_namespaces_on_offset` (`offset`),
+  KEY `index_user_namespaces_on_size` (`size`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `user_public_keys`
 --
 
@@ -1879,7 +1948,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-09-06 17:31:58
+-- Dump completed on 2018-03-19 15:31:33
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2077,4 +2146,6 @@ INSERT INTO schema_migrations (version) VALUES ('20170204092606');
 INSERT INTO schema_migrations (version) VALUES ('20170325151018');
 
 INSERT INTO schema_migrations (version) VALUES ('20170610084155');
+
+INSERT INTO schema_migrations (version) VALUES ('20171106154702');
 

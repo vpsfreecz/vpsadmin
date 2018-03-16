@@ -31,14 +31,24 @@ module TransactionChains
         just_destroy(vps.vps_current_status) if vps.vps_current_status
       end
 
-      # Destroy underlying dataset
-      use_chain(DatasetInPool::Destroy, args: [vps.dataset_in_pool, {recursive: true}])
+      # Destroy the underlying dataset
+      #
+      # On vpsAdminOS, all container's datasets are deleted by
+      # `Transactions::Vps::Destroy` as part of `osctl ct del`. That's why
+      # the datasets need to be actually destroyed only on OpenVZ nodes.
+      use_chain(
+          DatasetInPool::Destroy,
+          args: [vps.dataset_in_pool, {recursive: true, destroy: vps.node.openvz?}]
+      )
 
       # The dataset_in_pool_id must be unset after the dataset is actually
       # deleted, as it may fail.
       append(Transactions::Utils::NoOp, args: find_node_id) do
         edit(vps, dataset_in_pool_id: nil)
       end
+
+      # TODO: check if the namespace isn't used by other datasets
+      use_chain(UserNamespace::Free, args: [vps.dataset_in_pool.user_namespace, vps.node])
 
       # Note: there are too many records to delete them using transaction confirmations.
       # All VPS statuses are deleted whether the chain is successful or not.

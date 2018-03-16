@@ -395,4 +395,5 @@ module TransactionChains
   module MigrationPlan  ; end
   module Maintenance    ; end
   module Network        ; end
+  module UserNamespace  ; end
 end

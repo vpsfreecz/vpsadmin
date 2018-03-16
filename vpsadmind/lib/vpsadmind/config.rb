@@ -77,7 +77,7 @@ module VpsAdmind
           :transfers_interval => 10,
           :update_vps_status => true,
           :track_transfers => true,
-          :root => "/opt/vpsadmind",
+          :root => "/opt/vpsadmin/vpsadmind",
           :init => true,
           :type => nil, # loaded from db
           :mounts_dir => '/var/vpsadmin/mounts'

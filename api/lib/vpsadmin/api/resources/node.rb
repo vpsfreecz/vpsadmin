@@ -11,6 +11,8 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     string :domain_name, label: 'Domain name',
       desc: 'Node name including location domain'
     string :type, label: 'Role', desc: 'node, storage or mailer', db_name: :role
+    string :hypervisor_type, label: 'Hypervisor type', desc: 'openvz or vpsadminos',
+      choices: %w(openvz vpsadminos)
     resource VpsAdmin::API::Resources::Location, label: 'Location',
              desc: 'Location node is placed in'
     string :ip_addr, label: 'IPv4 address', desc: 'Node\'s IP address'
@@ -121,8 +123,8 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     blocking true
 
     input do
-      use :all, include: %i(id name type location ip_addr net_interface max_tx
-                            max_rx max_vps ve_private cpus total_memory total_swap)
+      use :all, include: %i(id name type hypervisor_type location ip_addr net_interface
+                            max_tx max_rx max_vps ve_private cpus total_memory total_swap)
       patch :name, required: true
       patch :type, required: true
       patch :location, required: true

@@ -1,0 +1,19 @@
+# Release notes
+Version 3.0 is focused on transition from OpenVZ Legacy to
+[[vpsAdminOS|https://vpsadminos.org]]. As these systems are fundamentally
+different, vpsAdmin 3 has new tools for node management: nodectld and nodectl.
+These are renamed and refactored vpsAdmind and vpsAdmindctl, the difference
+is that nodectld works with osctl, while vpsAdmind uses vzctl, among other
+changes.
+
+# Behavioral changes on vpsAdminOS
+
+- VPS reinstall no longer removes container subdatasets, nor changes
+  VPS configuration
+- VPS features: bridge, iptables and NFS are no longer tunable
+
+# Upgrading
+vpsAdmin 3.0 can be installed on both OpenVZ and vpsAdminOS nodes. The idea is
+that OpenVZ nodes will be replaced one by one with vpsAdminOS nodes, the VPSes
+migrated over. The next vpsAdmin version will then drop support of OpenVZ
+altogether.

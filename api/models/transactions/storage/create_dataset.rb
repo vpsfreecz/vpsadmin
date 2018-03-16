@@ -7,10 +7,17 @@ module Transactions::Storage
     def params(dataset_in_pool, opts = nil)
       self.node_id = dataset_in_pool.pool.node_id
 
+      options = opts || {}
+
+      if dataset_in_pool.user_namespace
+        opts[:uidoffset] = dataset_in_pool.user_namespace.offset
+        opts[:gidoffset] = dataset_in_pool.user_namespace.offset
+      end
+
       {
           pool_fs: dataset_in_pool.pool.filesystem,
           name: dataset_in_pool.dataset.full_name,
-          options: opts,
+          options: options.any? ? options : nil,
           create_private: %w(hypervisor primary).include?(dataset_in_pool.pool.role)
       }
     end
