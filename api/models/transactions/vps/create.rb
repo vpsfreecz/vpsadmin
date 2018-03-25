@@ -19,7 +19,7 @@ module Transactions::Vps
         {
             pool_fs: vps.dataset_in_pool.pool.filesystem,
             dataset_name: vps.dataset_in_pool.dataset.full_name,
-            userns: "u#{vps.userns.id}",
+            userns: vps.userns.id.to_s,
             hostname: vps.hostname,
             distribution: vps.os_template.distribution,
             version: vps.os_template.version,
