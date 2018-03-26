@@ -11,6 +11,7 @@ changes.
 - VPS reinstall no longer removes container subdatasets, nor changes
   VPS configuration
 - VPS features: bridge, iptables and NFS are no longer tunable
+- VPS load average and swap usage is no longer tracked
 
 # Upgrading
 vpsAdmin 3.0 can be installed on both OpenVZ and vpsAdminOS nodes. The idea is

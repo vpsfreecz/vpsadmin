@@ -230,16 +230,15 @@ module NodeCtld
       end
 
       run_thread_unless_runs(:vps_status) do
-        loop do
-          if $CFG.get(:vpsadmin, :update_vps_status)
-            log(:info, :regular, 'Update VPS resources')
-
-            my = Db.new
-            @vps_status.update(my)
-            my.close
+        if $CFG.get(:vpsadmin, :update_vps_status)
+          @ct_top = CtTop.new
+          @ct_top.monitor($CFG.get(:vpsadmin, :vps_status_interval)) do |data|
+            @vps_status.update(data[:containers])
           end
 
-          sleep($CFG.get(:vpsadmin, :vps_status_interval))
+        else
+          @ct_top.stop if @ct_top
+          @ct_top = nil
         end
       end
 
@@ -282,7 +281,8 @@ module NodeCtld
       @node_status.update(my)
 
       if $CFG.get(:vpsadmin, :update_vps_status)
-        @vps_status.update(my)
+        # TODO
+        # @vps_status.update(my)
       end
 
       if $CFG.get(:storage, :update_status)
