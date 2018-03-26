@@ -54,9 +54,9 @@ module NodeCtld
 
     def register_mount(vps_id, opts)
       opts.update({
-          'mounted' => false,
-          'dst_slash' => File.join(opts['dst'], '/'),
-          'registered_at' => Time.now.to_i
+        'mounted' => false,
+        'dst_slash' => File.join(opts['dst'], '/'),
+        'registered_at' => Time.now.to_i
       })
 
       synchronize do
@@ -64,9 +64,9 @@ module NodeCtld
 
         if @mounts[vps_id].detect { |m| m['id'] == opts['id'] }
           log(
-              :info,
-              :delayed_mounter,
-              "Mount #{opts['id']} of VPS #{vps_id} is already registered"
+            :info,
+            :delayed_mounter,
+            "Mount #{opts['id']} of VPS #{vps_id} is already registered"
           )
 
         else
@@ -90,9 +90,9 @@ module NodeCtld
         if i
           mnt = @mounts[vps_id].delete_at(i)
           log(
-              :info,
-              :delayed_mounter,
-              "Unregistered mount #{mnt['dst']} of VPS #{vps_id}"
+            :info,
+            :delayed_mounter,
+            "Unregistered mount #{mnt['dst']} of VPS #{vps_id}"
           )
         end
       end
@@ -116,9 +116,9 @@ module NodeCtld
 
         else
           log(
-              :critical,
-              :delayed_mounter,
-              "unsupported on_start_fail type '#{mnt['on_start_fail']}' for mount #{mnt['id']}"
+            :critical,
+            :delayed_mounter,
+            "unsupported on_start_fail type '#{mnt['on_start_fail']}' for mount #{mnt['id']}"
           )
         end
       end
@@ -177,11 +177,11 @@ module NodeCtld
       db = Db.new
 
       st = db.prepared_st(
-          "SELECT m.vps_id, m.id
-          FROM mounts m
-          INNER JOIN vpses ON vpses.id = m.vps_id
-          WHERE node_id = ? AND m.current_state = 4",
-          $CFG.get(:vpsadmin, :node_id)
+        "SELECT m.vps_id, m.id
+        FROM mounts m
+        INNER JOIN vpses ON vpses.id = m.vps_id
+        WHERE node_id = ? AND m.current_state = 4",
+        $CFG.get(:vpsadmin, :node_id)
       )
 
       st.each do |row|

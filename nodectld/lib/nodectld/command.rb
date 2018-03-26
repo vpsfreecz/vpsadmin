@@ -9,11 +9,11 @@ module NodeCtld
 
     def initialize(trans)
       @chain = {
-          :id => trans['transaction_chain_id'].to_i,
-          :state => trans['chain_state'].to_i,
-          :progress => trans['chain_progress'].to_i,
-          :size => trans['chain_size'].to_i,
-          :urgent_rollback => trans['chain_urgent_rollback'].to_i == 1
+        id: trans['transaction_chain_id'].to_i,
+        state: trans['chain_state'].to_i,
+        progress: trans['chain_progress'].to_i,
+        size: trans['chain_size'].to_i,
+        urgent_rollback: trans['chain_urgent_rollback'].to_i == 1
       }
       @trans = trans
       @output = {}
@@ -124,18 +124,18 @@ module NodeCtld
       end
 
       db.prepared(
-          'UPDATE transactions
-          SET done = ?,
-              status = ?,
-              output = ?,
-              started_at = ?,
-              finished_at = ?
-          WHERE id = ?',
-          done, {:failed => 0, :ok => 1, :warning => 2}[@status],
-          (@cmd ? @output.merge(@cmd.output) : @output).to_json,
-          @time_start && @time_start.strftime('%Y-%m-%d %H:%M:%S'),
-          @time_end && @time_end.strftime('%Y-%m-%d %H:%M:%S'),
-          @trans['id']
+        'UPDATE transactions
+        SET done = ?,
+            status = ?,
+            output = ?,
+            started_at = ?,
+            finished_at = ?
+        WHERE id = ?',
+        done, {failed: 0, ok: 1, warning: 2}[@status],
+        (@cmd ? @output.merge(@cmd.output) : @output).to_json,
+        @time_start && @time_start.strftime('%Y-%m-%d %H:%M:%S'),
+        @time_end && @time_end.strftime('%Y-%m-%d %H:%M:%S'),
+        @trans['id']
       )
     end
 
@@ -146,71 +146,87 @@ module NodeCtld
 
     def continue_chain(db)
       log(:debug, self, 'Continue chain')
-      db.prepared("UPDATE transaction_chains
-                   SET `progress` = `progress` #{current_chain_direction == :execute ? '+' : '-'} 1
-                   WHERE id = ?", chain_id)
+      db.prepared(
+        "UPDATE transaction_chains
+        SET `progress` = `progress` #{current_chain_direction == :execute ? '+' : '-'} 1
+        WHERE id = ?",
+        chain_id
+      )
     end
 
     def rollback_chain(db)
       log(:debug, self, 'Rollback chain')
-      db.prepared('UPDATE transaction_chains
-                   SET `state` = 3, `progress` = `progress` - 1
-                   WHERE id = ?', chain_id)
+      db.prepared(
+        'UPDATE transaction_chains
+        SET `state` = 3, `progress` = `progress` - 1
+        WHERE id = ?',
+        chain_id
+      )
     end
 
     def close_chain(db, fatal = false)
       log(:debug, self, 'Close chain')
 
       state = if fatal
-                5
-              elsif current_chain_direction == :execute && @status != :failed
-                2
-              else
-                4
-              end
+        5
+      elsif current_chain_direction == :execute && @status != :failed
+        2
+      else
+        4
+      end
 
       # mark chain as finished
-      db.prepared("UPDATE transaction_chains
-                   SET
-                     `state` = ?,
-                     `progress` = #{current_chain_direction == :execute ? '`progress` + 1' : '0'}
-                   WHERE id = ?", state, chain_id)
+      db.prepared(
+        "UPDATE transaction_chains
+        SET
+          `state` = ?,
+          `progress` = #{current_chain_direction == :execute ? '`progress` + 1' : '0'}
+        WHERE id = ?",
+        state, chain_id
+      )
 
       # release all locks
       unless fatal
         db.prepared(
-            "DELETE FROM resource_locks
-            WHERE
-              locked_by_type = 'TransactionChain' AND locked_by_id = ?",
-            chain_id
+          "DELETE FROM resource_locks
+          WHERE
+            locked_by_type = 'TransactionChain' AND locked_by_id = ?",
+          chain_id
         )
 
         # release ports
-        db.prepared('UPDATE port_reservations SET transaction_chain_id = NULL, addr = NULL WHERE transaction_chain_id = ?', chain_id)
+        db.prepared(
+          'UPDATE port_reservations
+          SET transaction_chain_id = NULL, addr = NULL
+          WHERE transaction_chain_id = ?',
+          chain_id
+        )
       end
     end
 
     def fail_followers(db)
       log(:debug, self, 'Fail followers')
-      db.prepared('UPDATE transactions
-                   SET done = 1, status = 0, output = ?
-                   WHERE
-                       transaction_chain_id = ?
-                       AND id > ?',
-                  {:error => 'Dependency failed'}.to_json,
-                  chain_id,
-                  id
+      db.prepared(
+        'UPDATE transactions
+        SET done = 1, status = 0, output = ?
+        WHERE
+          transaction_chain_id = ?
+          AND id > ?',
+        {error: 'Dependency failed'}.to_json,
+        chain_id,
+        id
       )
     end
 
     def fail_all(db)
       log(:debug, self, 'Fail all')
-      db.prepared('UPDATE transactions
-                   SET done = 1, status = 0, output = ?
-                   WHERE
-                       transaction_chain_id = ?',
-                  {:error => 'Chain failed'}.to_json,
-                  chain_id
+      db.prepared(
+        'UPDATE transactions
+        SET done = 1, status = 0, output = ?
+        WHERE
+          transaction_chain_id = ?',
+        {error: 'Chain failed'}.to_json,
+        chain_id
       )
     end
 
@@ -254,7 +270,8 @@ module NodeCtld
     end
 
     def urgent?
-      @trans['urgent'].to_i == 1 || (original_chain_direction == :execute && @chain[:urgent_rollback])
+      @trans['urgent'].to_i == 1 \
+        || (original_chain_direction == :execute && @chain[:urgent_rollback])
     end
 
     def handler

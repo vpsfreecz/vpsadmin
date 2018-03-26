@@ -13,7 +13,7 @@ module NodeCtl::Commands
     end
 
     def prepare
-      {:t_id => specific? ? @args[1].to_i : nil}
+      {t_id: specific? ? @args[1].to_i : nil}
     end
 
     def process

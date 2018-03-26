@@ -3,7 +3,7 @@ module NodeCtld::RemoteCommands
     handle :ping
 
     def exec
-      ok.update({:output => {:pong => :pong}})
+      ok.update({output: {pong: :pong}})
     end
   end
 end

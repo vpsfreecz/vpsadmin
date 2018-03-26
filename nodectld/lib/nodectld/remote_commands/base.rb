@@ -23,7 +23,7 @@ module NodeCtld
 
       protected
       def ok
-        {:ret => :ok}
+        {ret: :ok}
       end
     end
   end

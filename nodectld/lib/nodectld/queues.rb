@@ -1,15 +1,15 @@
 module NodeCtld
   class Queues
     QUEUES = [
-        :general,
-        :storage,
-        :network,
-        :vps,
-        :zfs_send,
-        :mail,
-        :outage,
-        :queue,
-        :rollback,
+      :general,
+      :storage,
+      :network,
+      :vps,
+      :zfs_send,
+      :mail,
+      :outage,
+      :queue,
+      :rollback,
     ]
 
     def initialize(daemon)
@@ -61,9 +61,9 @@ module NodeCtld
       counter = 0
 
       db.query(
-          "SELECT id
-          FROM transaction_chains
-          WHERE id IN (#{chain_reservations.keys.join(',')}) AND (state = 2 OR state >= 4)"
+        "SELECT id
+        FROM transaction_chains
+        WHERE id IN (#{chain_reservations.keys.join(',')}) AND (state = 2 OR state >= 4)"
       ).each_hash do |row|
         chain_id = row['id'].to_i
 

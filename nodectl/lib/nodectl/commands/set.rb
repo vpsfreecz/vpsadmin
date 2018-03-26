@@ -20,29 +20,29 @@ END
       ret = {}
 
       case @args[1]
-        when 'config'
-          ret[:config] = []
-          @args[2..-1].each do |opt|
-            key, val = opt.split('=')
-            root = {}
-            tmp = root
+      when 'config'
+        ret[:config] = []
+        @args[2..-1].each do |opt|
+          key, val = opt.split('=')
+          root = {}
+          tmp = root
 
-            parts = key.split('.')
-            parts[0..-2].each do |part|
-              tmp[part] = {}
-              tmp = tmp[part]
-            end
-
-            if val =~ /^\d+$/
-              tmp[parts.last] = val.to_i
-            else
-              tmp[parts.last] = val
-            end
-            ret[:config] << root
+          parts = key.split('.')
+          parts[0..-2].each do |part|
+            tmp[part] = {}
+            tmp = tmp[part]
           end
+
+          if val =~ /^\d+$/
+            tmp[parts.last] = val.to_i
+          else
+            tmp[parts.last] = val
+          end
+          ret[:config] << root
+        end
       end
 
-      {:resource => @args[1]}.update(ret)
+      {resource: @args[1]}.update(ret)
     end
 
     def process

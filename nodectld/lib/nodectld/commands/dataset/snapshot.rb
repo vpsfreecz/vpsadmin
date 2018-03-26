@@ -15,10 +15,10 @@ module NodeCtld
 
     def post_save(db)
       db.prepared(
-          'UPDATE snapshots SET name = ?, created_at = ? WHERE id = ?',
-          @name,
-          @created_at.strftime('%Y-%m-%d %H:%M:%S'),
-          @snapshot_id
+        'UPDATE snapshots SET name = ?, created_at = ? WHERE id = ?',
+        @name,
+        @created_at.strftime('%Y-%m-%d %H:%M:%S'),
+        @snapshot_id
       )
     end
   end

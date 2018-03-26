@@ -5,27 +5,31 @@ module NodeCtld
 
     def exec
       db = Db.new
-
       snap = confirmed_snapshot_name(db, @snapshots.last)
-      from_snap = @snapshots.count > 1 ? confirmed_snapshot_name(db, @snapshots.first) : nil
+
+      if @snapshots.count > 1
+        from_snap = confirmed_snapshot_name(db, @snapshots.first)
+      else
+        from_snap = nil
+      end
 
       db.close
 
       stream = ZfsStream.new(
-          {
-              pool: @src_pool_fs,
-              tree: @tree,
-              branch: @branch,
-              dataset: @dataset_name,
-          },
-          snap,
-          from_snap,
+        {
+          pool: @src_pool_fs,
+          tree: @tree,
+          branch: @branch,
+          dataset: @dataset_name,
+        },
+        snap,
+        from_snap,
       )
 
       stream.command(self) do
         stream.send_to(
-            @addr,
-            port: @port,
+          @addr,
+          port: @port,
         )
       end
 

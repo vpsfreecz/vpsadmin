@@ -42,7 +42,11 @@ module NodeCtld
 
       m.header['X-Mailer'] = 'vpsAdmin'
 
-      m.delivery_method :smtp, :address => $CFG.get(:mailer, :smtp_server), :port => $CFG.get(:mailer, :smtp_port)
+      m.delivery_method(
+        :smtp,
+        address: $CFG.get(:mailer, :smtp_server),
+        port: $CFG.get(:mailer, :smtp_port)
+      )
 
       tries = 0
 

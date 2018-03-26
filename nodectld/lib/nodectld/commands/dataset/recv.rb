@@ -48,7 +48,12 @@ module NodeCtld
               end
 
       snaps.reverse_each do |s|
-        zfs(:destroy, nil, "#{@dst_pool_fs}/#{ds_name}@#{confirmed_snapshot_name(db, s)}", [1])
+        zfs(
+          :destroy,
+          nil,
+          "#{@dst_pool_fs}/#{ds_name}@#{confirmed_snapshot_name(db, s)}",
+          valid_rcs: [1]
+        )
       end
 
       ok

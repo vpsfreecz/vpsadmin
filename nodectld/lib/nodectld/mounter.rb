@@ -28,20 +28,24 @@ module NodeCtld
       dst = "#{ve_root}/#{mnt['dst']}"
 
       cmd = case mnt['type']
-        when 'dataset_local'
-          "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} /#{mnt['pool_fs']}/#{mnt['dataset_name']}/private #{dst}"
+      when 'dataset_local'
+        "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} "+
+        "/#{mnt['pool_fs']}/#{mnt['dataset_name']}/private #{dst}"
 
-        when 'dataset_remote'
-          "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} #{mnt['src_node_addr']}:/#{mnt['pool_fs']}/#{mnt['dataset_name']}/private #{dst}"
+      when 'dataset_remote'
+        "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} "+
+        "#{mnt['src_node_addr']}:/#{mnt['pool_fs']}/#{mnt['dataset_name']}/private #{dst}"
 
-        when 'snapshot_local'
-          "#{$CFG.get(:bin, :mount)} -t zfs #{mnt['pool_fs']}/#{mnt['dataset_name']}@#{mnt['snapshot']} #{dst}"
+      when 'snapshot_local'
+        "#{$CFG.get(:bin, :mount)} -t zfs "+
+        "#{mnt['pool_fs']}/#{mnt['dataset_name']}@#{mnt['snapshot']} #{dst}"
 
-        when 'snapshot_remote'
-          "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} #{mnt['src_node_addr']}:/#{pool_mounted_snapshot(mnt['pool_fs'], mnt['snapshot_id'])}/private #{dst}"
+      when 'snapshot_remote'
+        "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} "+
+        "#{mnt['src_node_addr']}:/#{pool_mounted_snapshot(mnt['pool_fs'], mnt['snapshot_id'])}/private #{dst}"
 
-        else
-          fail "unknown mount type '#{mnt['type']}'"
+      else
+        fail "unknown mount type '#{mnt['type']}'"
       end
 
       [dst, cmd]
@@ -56,15 +60,15 @@ module NodeCtld
         @failed_mounts.each do |m_dst, m_level|
           if dst.start_with?(m_dst)
             case m_level
-              when 'skip'
-                fail_mount(opts)
+            when 'skip'
+              fail_mount(opts)
 
-              when 'mount_later'
-                mount_later(opts)
-                fail_mount(opts)
+            when 'mount_later'
+              mount_later(opts)
+              fail_mount(opts)
 
-              else
-                # nothing to do, as it cannot be fail_start nor wait_for_mount
+            else
+              # nothing to do, as it cannot be fail_start nor wait_for_mount
             end
 
             return
@@ -86,31 +90,31 @@ module NodeCtld
           raise e if oneshot
 
           case opts['on_start_fail']
-            when 'skip'
-              fail_mount(opts)
-              report_state(opts, :skipped)
-              return
+          when 'skip'
+            fail_mount(opts)
+            report_state(opts, :skipped)
+            return
 
-            when 'mount_later'
-              # state is set by mount_later
-              mount_later(opts)
-              fail_mount(opts)
+          when 'mount_later'
+            # state is set by mount_later
+            mount_later(opts)
+            fail_mount(opts)
 
-            when 'fail_start'
-              report_state(opts, :unmounted)
-              raise e
+          when 'fail_start'
+            report_state(opts, :unmounted)
+            raise e
 
-            when 'wait_for_mount'
-              report_state(opts, :waiting) if counter == 0
-              counter += 1
-              wait = random_wait(counter)
+          when 'wait_for_mount'
+            report_state(opts, :waiting) if counter == 0
+            counter += 1
+            wait = random_wait(counter)
 
-              log(:warn, :mounter, "Mount failed, retrying in #{wait} seconds")
-              sleep(wait)
-              retry
+            log(:warn, :mounter, "Mount failed, retrying in #{wait} seconds")
+            sleep(wait)
+            retry
 
-            else
-              fail "unsupported value of mount on_start_fail '#{mnt['on_start_fail']}'"
+          else
+            fail "unsupported value of mount on_start_fail '#{mnt['on_start_fail']}'"
           end
         end
       end
@@ -155,8 +159,8 @@ module NodeCtld
 
       if NodeCtld::STANDALONE
         RemoteClient.send_or_not($CFG.get(:remote, :socket), :delayed_mount, {
-            :vps_id => @vps_id,
-            :mount => opts
+          vps_id: @vps_id,
+          mount: opts,
         })
 
       else
@@ -167,9 +171,9 @@ module NodeCtld
     def report_state(opts, state)
       if NodeCtld::STANDALONE
         RemoteClient.send_or_not($CFG.get(:remote, :socket), :mount_state, {
-            :vps_id => @vps_id,
-            :mount_id => opts['id'],
-            :state => state
+          vps_id: @vps_id,
+          mount_id: opts['id'],
+          state: state,
         })
 
       else

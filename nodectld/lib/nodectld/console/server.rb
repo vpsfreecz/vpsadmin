@@ -7,7 +7,7 @@ module NodeCtld
 
     def receive_data(raw_data)
       raw_data.split("\n").each do |msg|
-        process_msg(JSON.parse(msg, :symbolize_names => true))
+        process_msg(JSON.parse(msg, symbolize_names: true))
       end
 
     rescue JSON::ParserError
@@ -65,9 +65,9 @@ module NodeCtld
     def open_console(data)
       db = Db.new
       st = db.prepared_st(
-          'SELECT vps_id FROM vps_consoles WHERE token = ? AND expiration > ?',
-          data[:session], # can be nil
-          Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
+        'SELECT vps_id FROM vps_consoles WHERE token = ? AND expiration > ?',
+        data[:session], # can be nil
+        Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
       )
 
       if st.num_rows == 1
@@ -89,15 +89,15 @@ module NodeCtld
         else
           log(:info, :console, "Attaching console of ##{@veid}")
           @console = EventMachine.popen(
-              File.join(
-                  File.dirname(__FILE__),
-                  '..',
-                  '..',
-                  '..',
-                  'bin',
-                  'nodectld-vps-console'
-              ) + " '#{$CFG.get(:vz, :vzctl)}' #{@veid}",
-              Console::Wrapper, @veid, self
+            File.join(
+              File.dirname(__FILE__),
+              '..',
+              '..',
+              '..',
+              'bin',
+              'nodectld-vps-console'
+            ) + " '#{$CFG.get(:vz, :vzctl)}' #{@veid}",
+            Console::Wrapper, @veid, self
           )
         end
       end

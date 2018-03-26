@@ -5,13 +5,14 @@ module NodeCtl::Commands
 
     def options(opts, args)
       @opts = {
-          :all => false,
-          :type => nil,
+        all: false,
+        type: nil,
       }
 
       opts.on('-a', '--all', 'Kill all transactions') do
         @opts[:all] = true
       end
+
       opts.on('-t', '--type', 'Kill all transactions of this type') do
         @opts[:type] = true
       end
@@ -19,21 +20,21 @@ module NodeCtl::Commands
 
     def validate
       if @opts[:all]
-        {:transactions => :all}
+        {transactions: :all}
 
       elsif @opts[:type]
         if ARGV.size < 2
           raise NodeCtl::ValidationError.new('missing transaction type(s)')
         end
 
-        {:types => ARGV[1..-1]}
+        {types: ARGV[1..-1]}
 
       else
         if ARGV.size < 2
           raise NodeCtl::ValidationError.new('missing transaction id(s)')
         end
 
-        {:transactions => ARGV[1..-1]}
+        {transactions: ARGV[1..-1]}
       end
     end
 

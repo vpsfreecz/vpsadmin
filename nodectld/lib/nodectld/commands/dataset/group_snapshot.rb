@@ -10,9 +10,11 @@ module NodeCtld
       @name = @created_at.strftime('%Y-%m-%dT%H:%M:%S')
 
       zfs(
-          :snapshot,
-          nil,
-          @snapshots.inject([]) { |snaps, s| snaps << "#{s['pool_fs']}/#{s['dataset_name']}@#{@name}" }.join(' ')
+        :snapshot,
+        nil,
+        @snapshots.inject([]) do |snaps, s|
+          snaps << "#{s['pool_fs']}/#{s['dataset_name']}@#{@name}"
+        end.join(' ')
       )
     end
 
@@ -27,10 +29,10 @@ module NodeCtld
     def post_save(db)
       @snapshots.each do |snap|
         db.prepared(
-            'UPDATE snapshots SET name = ?, created_at = ? WHERE id = ?',
-            @name,
-            @created_at,
-            snap['snapshot_id']
+          'UPDATE snapshots SET name = ?, created_at = ? WHERE id = ?',
+          @name,
+          @created_at,
+          snap['snapshot_id']
         )
       end
     end

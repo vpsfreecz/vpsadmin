@@ -242,7 +242,7 @@ module NodeCtld
       JSON.parse(syscmd(
           "#{$CFG.get(:vz, :vzlist)} -aj -o veid,status,onboot,private,root,"+
           "hostname,ostemplate,physpages,swappages,cpus,cpulimit,ip"
-      )[:output], :symbolize_names => true)
+      )[:output], symbolize_names: true)
     end
   end
 end

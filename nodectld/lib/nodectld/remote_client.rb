@@ -27,7 +27,7 @@ module NodeCtld
     end
 
     def cmd(cmd, params = {})
-      @sock.send({:command => cmd, :params => params}.to_json + "\n", 0)
+      @sock.send({command: cmd, params: params}.to_json + "\n", 0)
     end
 
     def reply
@@ -50,7 +50,7 @@ module NodeCtld
     end
 
     def parse(raw)
-      JSON.parse(raw, :symbolize_names => true)
+      JSON.parse(raw, symbolize_names: true)
     end
   end
 end

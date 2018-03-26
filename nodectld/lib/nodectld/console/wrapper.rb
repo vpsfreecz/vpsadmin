@@ -31,9 +31,9 @@ module NodeCtld
 
     def unbind
       log(
-          :info,
-          :console,
-          "Detached console of ##{@veid} with exit status: #{get_status.exitstatus}"
+        :info,
+        :console,
+        "Detached console of ##{@veid} with exit status: #{get_status.exitstatus}"
       )
 
       @listeners.each do |l|

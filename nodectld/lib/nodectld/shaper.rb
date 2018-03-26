@@ -27,8 +27,8 @@ module NodeCtld
     def root_change(max_tx, max_rx)
       @@mutex.synchronize do
         shape_root(
-            max_tx,
-            max_rx
+          max_tx,
+          max_rx
         )
       end
     end
@@ -36,11 +36,11 @@ module NodeCtld
     def shape_set(addr, version, shaper)
       @@mutex.synchronize do
         shape_ip(
-            addr,
-            version,
-            shaper['class_id'],
-            shaper['max_tx'],
-            shaper['max_rx']
+          addr,
+          version,
+          shaper['class_id'],
+          shaper['max_tx'],
+          shaper['max_rx']
         )
       end
     end
@@ -48,11 +48,11 @@ module NodeCtld
     def shape_change(addr, version, shaper)
       @@mutex.synchronize do
         change_shaper(
-            addr,
-            version,
-            shaper['class_id'],
-            shaper['max_tx'],
-            shaper['max_rx']
+          addr,
+          version,
+          shaper['class_id'],
+          shaper['max_tx'],
+          shaper['max_rx']
         )
       end
     end
@@ -60,9 +60,9 @@ module NodeCtld
     def shape_unset(addr, version, shaper)
       @@mutex.synchronize do
         free_ip(
-            addr,
-            version,
-            shaper['class_id']
+          addr,
+          version,
+          shaper['class_id']
         )
       end
     end
@@ -166,12 +166,14 @@ module NodeCtld
     end
 
     def all_ips(db)
-      rs = db.query("SELECT ip_addr, ip_version, class_id, max_tx, max_rx
-                    FROM vpses
-                    INNER JOIN ip_addresses ip ON ip.vps_id = vpses.id
-                    INNER JOIN networks n ON n.id = ip.network_id
-                    WHERE vpses.node_id = #{$CFG.get(:vpsadmin, :node_id)}
-                      AND ip.vps_id = vpses.id")
+      rs = db.query(
+        "SELECT ip_addr, ip_version, class_id, max_tx, max_rx
+        FROM vpses
+        INNER JOIN ip_addresses ip ON ip.vps_id = vpses.id
+        INNER JOIN networks n ON n.id = ip.network_id
+        WHERE vpses.node_id = #{$CFG.get(:vpsadmin, :node_id)}
+          AND ip.vps_id = vpses.id"
+      )
       rs.each_hash do |ip|
         yield ip
       end

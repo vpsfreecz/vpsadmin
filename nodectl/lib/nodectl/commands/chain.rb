@@ -5,8 +5,8 @@ module NodeCtl::Commands
 
     def options(opts, args)
       @opts = {
-          :direction => :execute,
-          :success => true
+        direction: :execute,
+        success: true,
       }
 
       opts.separator <<END
@@ -41,26 +41,26 @@ END
       end
 
       ret = {
-          :chain => @args[1].to_i,
-          :command => @args[2],
-          :transactions => @args.size > 3 ? @args[3..-1].map { |v| v.to_i } : nil
+        chain: @args[1].to_i,
+        command: @args[2],
+        transactions: @args.size > 3 ? @args[3..-1].map { |v| v.to_i } : nil,
       }
 
       case @args[2]
-        when 'confirm'
-          ret.update({
-              :direction => @opts[:direction],
-              :success => @opts[:success]
-          })
+      when 'confirm'
+        ret.update({
+          direction: @opts[:direction],
+          success: @opts[:success],
+        })
 
-        when 'release'
-          if @args[3] && !%w(locks ports).include?(@args[3])
-            raise NodeCtldctl::ValidationError, "invalid resource '#{@args[3]}'"
-          end
+      when 'release'
+        if @args[3] && !%w(locks ports).include?(@args[3])
+          raise NodeCtldctl::ValidationError, "invalid resource '#{@args[3]}'"
+        end
 
-          ret.update({
-              :release => @args[3].nil? ? %w(locks ports) : [@args[3]]
-          })
+        ret.update({
+          release: @args[3].nil? ? %w(locks ports) : [@args[3]],
+        })
       end
 
       ret
@@ -68,24 +68,25 @@ END
 
     def process
       case @args[2]
-        when 'confirmations'
-          list_confirmations(@res[:transactions])
+      when 'confirmations'
+        list_confirmations(@res[:transactions])
 
-        when 'confirm'
-          list_confirmations(@res[:transactions])
+      when 'confirm'
+        list_confirmations(@res[:transactions])
 
-        when 'release'
-          list_locks(@res[:locks]) if @res[:locks]
-          list_ports(@res[:ports]) if @res[:ports]
-
+      when 'release'
+        list_locks(@res[:locks]) if @res[:locks]
+        list_ports(@res[:ports]) if @res[:ports]
       end
     end
 
     def list_confirmations(list)
       list.each do |t, confirmations|
         puts "TRANSACTION ##{t}"
-        puts sprintf("%-6s %-13s %-4s %-20s %-12s %s",
-                    'ID', 'TYPE', 'DONE', 'OBJECT', 'ID', 'ATTRS')
+        puts sprintf(
+          "%-6s %-13s %-4s %-20s %-12s %s",
+          'ID', 'TYPE', 'DONE', 'OBJECT', 'ID', 'ATTRS'
+        )
 
         confirmations.each do |c|
           puts sprintf(
@@ -125,10 +126,10 @@ END
 
       ports.each do |p|
         puts sprintf(
-            '%-20s %-20s %-10d',
-            "#{p[:node_name]}.#{p[:location_domain]}",
-            p[:addr],
-            p[:port]
+          '%-20s %-20s %-10d',
+          "#{p[:node_name]}.#{p[:location_domain]}",
+          p[:addr],
+          p[:port]
         )
       end
 

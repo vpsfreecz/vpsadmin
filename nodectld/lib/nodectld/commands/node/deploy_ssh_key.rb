@@ -18,8 +18,8 @@ module NodeCtld
 
     def post_save(db)
       db.prepared(
-          'UPDATE transactions SET input = ? WHERE id = ?',
-          {:key_type => @key_type}.to_json, @command.id
+        'UPDATE transactions SET input = ? WHERE id = ?',
+        {key_type: @key_type}.to_json, @command.id
       )
     end
 

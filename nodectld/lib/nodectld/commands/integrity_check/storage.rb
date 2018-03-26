@@ -481,13 +481,13 @@ module NodeCtld
         if current_obj[:name] != name
           objects << current_obj unless current_obj.empty?
           current_obj = {
-              :name => name,
+              name: name,
           }
         end
 
         current_obj[ parts[1].to_sym ] = {
-            :value => clean_value(parts[1], parts[2]),
-            :inherited => parts[3].start_with?('inherited') || parts[3] == 'default'
+            value: clean_value(parts[1], parts[2]),
+            inherited: parts[3].start_with?('inherited') || parts[3] == 'default'
         }
       end
 

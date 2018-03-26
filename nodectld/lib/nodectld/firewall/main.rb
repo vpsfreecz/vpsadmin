@@ -55,42 +55,42 @@ module NodeCtld::Firewall
 
         # skip local transfers
         iptables(v, [
-            '-A', 'vpsadmin_main',
-            '-m set', "--match-set vpsadmin_v#{v}_local_addrs src",
-            '-m set', "--match-set vpsadmin_v#{v}_local_addrs dst",
-            '-j', 'ACCEPT',
+          '-A', 'vpsadmin_main',
+          '-m set', "--match-set vpsadmin_v#{v}_local_addrs src",
+          '-m set', "--match-set vpsadmin_v#{v}_local_addrs dst",
+          '-j', 'ACCEPT',
         ])
 
         # pub ip to pub ip -> private traffic
         iptables(v, [
-            '-A', 'vpsadmin_main',
-            '-m set', "--match-set vpsadmin_v#{v}_networks_public src",
-            '-m set', "--match-set vpsadmin_v#{v}_networks_public dst",
-            '-j', accounting.private.chain,
+          '-A', 'vpsadmin_main',
+          '-m set', "--match-set vpsadmin_v#{v}_networks_public src",
+          '-m set', "--match-set vpsadmin_v#{v}_networks_public dst",
+          '-j', accounting.private.chain,
         ])
 
         # pub ip to priv ip -> private traffic
         iptables(v, [
-            '-A', 'vpsadmin_main',
-            '-m set', "--match-set vpsadmin_v#{v}_networks_public src",
-            '-m set', "--match-set vpsadmin_v#{v}_networks_private dst",
-            '-j', accounting.private.chain,
+          '-A', 'vpsadmin_main',
+          '-m set', "--match-set vpsadmin_v#{v}_networks_public src",
+          '-m set', "--match-set vpsadmin_v#{v}_networks_private dst",
+          '-j', accounting.private.chain,
         ])
 
         # priv ip to pub ip -> private traffic
         iptables(v, [
-            '-A', 'vpsadmin_main',
-            '-m set', "--match-set vpsadmin_v#{v}_networks_private src",
-            '-m set', "--match-set vpsadmin_v#{v}_networks_public dst",
-            '-j', accounting.private.chain,
+          '-A', 'vpsadmin_main',
+          '-m set', "--match-set vpsadmin_v#{v}_networks_private src",
+          '-m set', "--match-set vpsadmin_v#{v}_networks_public dst",
+          '-j', accounting.private.chain,
         ])
 
         # priv ip to priv ip -> private traffic
         iptables(v, [
-            '-A', 'vpsadmin_main',
-            '-m set', "--match-set vpsadmin_v#{v}_networks_private src",
-            '-m set', "--match-set vpsadmin_v#{v}_networks_private dst",
-            '-j', accounting.private.chain,
+          '-A', 'vpsadmin_main',
+          '-m set', "--match-set vpsadmin_v#{v}_networks_private src",
+          '-m set', "--match-set vpsadmin_v#{v}_networks_private dst",
+          '-j', accounting.private.chain,
         ])
 
         # everything else is to be considered as public traffic

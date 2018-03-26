@@ -70,7 +70,7 @@ module NodeCtld::Firewall
             end
 
             ret[ip] ||= {}
-            ret[ip][proto] ||= {:bytes => {}, :packets => {}}
+            ret[ip][proto] ||= {bytes: {}, packets: {}}
             ret[ip][proto][:packets][src == all ? :in : :out] = fields[0].to_i
             ret[ip][proto][:bytes][src == all ? :in : :out] = fields[1].to_i
           end

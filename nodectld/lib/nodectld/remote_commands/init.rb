@@ -23,7 +23,7 @@ module NodeCtld::RemoteCommands
       end
 
       db && db.close
-      ok.update({:output => ret})
+      ok.update({output: ret})
     end
   end
 end

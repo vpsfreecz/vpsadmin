@@ -5,7 +5,7 @@ module NodeCtld::RemoteCommands
     def exec
       case @resource
         when 'config'
-          ok.update({:output => {:config => $CFG.get}})
+          ok.update({output: {config: $CFG.get}})
 
         when 'queue'
           queue = []
@@ -20,17 +20,17 @@ module NodeCtld::RemoteCommands
                 throw :next if queues.has_transaction?(t_id)
 
                 queue << {
-                    :id => t_id,
-                    :chain => row['transaction_chain_id'],
-                    :state => row['chain_state'],
-                    :type => row['handle'].to_i,
-                    :time => Time.parse(row['created_at'] + ' UTC').localtime.to_i,
-                    :m_id => row['user_id'].to_i,
-                    :vps_id => row['vps_id'].to_i,
-                    :depends_on => row['depends_on_id'].to_i,
-                    :urgent => row['urgent'].to_i == 1,
-                    :priority => row['priority'].to_i,
-                    :params => row['input'],
+                  id: t_id,
+                  chain: row['transaction_chain_id'],
+                  state: row['chain_state'],
+                  type: row['handle'].to_i,
+                  time: Time.parse(row['created_at'] + ' UTC').localtime.to_i,
+                  m_id: row['user_id'].to_i,
+                  vps_id: row['vps_id'].to_i,
+                  depends_on: row['depends_on_id'].to_i,
+                  urgent: row['urgent'].to_i == 1,
+                  priority: row['priority'].to_i,
+                  params: row['input'],
                 }
               end
             end
@@ -39,16 +39,20 @@ module NodeCtld::RemoteCommands
 
           end
 
-          ok.update({:output => {:queue => queue}})
+          ok.update({output: {queue: queue}})
 
         when 'ip_map'
           map = {}
           NodeCtld::Firewall.ip_map.dump.each { |k, v| map[k] = v.to_h }
 
-          ok.update({:output => {:ip_map => map}})
+          ok.update({output: {ip_map: map}})
 
         else
-          raise NodeCtld::SystemCommandFailed.new(nil, nil, "Unknown resource #{@resource}")
+          raise NodeCtld::SystemCommandFailed.new(
+            nil,
+            nil,
+            "Unknown resource #{@resource}"
+          )
       end
     end
   end

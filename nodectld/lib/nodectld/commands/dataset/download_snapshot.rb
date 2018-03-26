@@ -20,8 +20,8 @@ module NodeCtld
 
     def post_save(db)
       db.prepared(
-          'UPDATE snapshot_downloads SET size = ?, sha256sum = ? WHERE id = ?',
-          @size / 1024 / 1024, @sum, @download_id
+        'UPDATE snapshot_downloads SET size = ?, sha256sum = ? WHERE id = ?',
+        @size / 1024 / 1024, @sum, @download_id
       )
     end
 
@@ -37,16 +37,16 @@ module NodeCtld
 
       if @from_snapshot
         stream = ZfsStream.new({
-            pool: @pool_fs,
-            tree: @tree,
-            branch: @branch,
-            dataset: @dataset_name,
+          pool: @pool_fs,
+          tree: @tree,
+          branch: @branch,
+          dataset: @dataset_name,
         }, @snapshot, @from_snapshot)
         size = stream.size
 
       else
         size = zfs(
-            :get, '-Hp -o value referenced', "#{ds}@#{@snapshot}"
+          :get, '-Hp -o value referenced', "#{ds}@#{@snapshot}"
         )[:output].strip.to_i / 1024 / 1024
       end
 

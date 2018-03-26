@@ -34,16 +34,16 @@ module NodeCtld
       # Rename direct children
       children.each do |child|
         zfs(
-            :rename,
-            nil,
-            "#{origin}/#{child['relative_name']} #{origin}.rollback/#{child['relative_name']}"
+          :rename,
+          nil,
+          "#{origin}/#{child['relative_name']} #{origin}.rollback/#{child['relative_name']}"
         )
       end
 
       # Save original properties
       state = dataset_properties(origin, [
-          :atime, :compression, :mountpoint, :quota,
-          :recordsize, :refquota, :sync
+        :atime, :compression, :mountpoint, :quota,
+        :recordsize, :refquota, :sync
       ])
 
       # Destroy the original dataset

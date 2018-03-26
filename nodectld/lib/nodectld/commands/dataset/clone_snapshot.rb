@@ -5,9 +5,9 @@ module NodeCtld
 
     def exec
       zfs(
-          :clone,
-          nil,
-          "#{ds} #{pool_mounted_snapshot(@pool_fs, @snapshot_id)}"
+        :clone,
+        nil,
+        "#{ds} #{pool_mounted_snapshot(@pool_fs, @snapshot_id)}"
       )
     end
 

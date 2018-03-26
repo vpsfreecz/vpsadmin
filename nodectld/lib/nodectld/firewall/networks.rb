@@ -24,10 +24,10 @@ module NodeCtld::Firewall
             WHERE type = 'Network'
         ").each_hash do |row|
           @networks << Network.new(
-              row['ip_version'].to_i,
-              row['address'],
-              row['prefix'].to_i,
-              ROLES[ row['role'].to_i ],
+            row['ip_version'].to_i,
+            row['address'],
+            row['prefix'].to_i,
+            ROLES[ row['role'].to_i ],
           )
         end
       end
@@ -65,9 +65,9 @@ module NodeCtld::Firewall
       else
         [4, 6].each do |v|
           IpSet.create_or_replace!(
-              "vpsadmin_v#{v}_networks_#{role}",
-              "hash:net family #{v == 4 ? 'inet' : 'inet6'}",
-              send(role).select { |n| n.version == v }.map(&:to_s)
+            "vpsadmin_v#{v}_networks_#{role}",
+            "hash:net family #{v == 4 ? 'inet' : 'inet6'}",
+            send(role).select { |n| n.version == v }.map(&:to_s)
           )
         end
       end

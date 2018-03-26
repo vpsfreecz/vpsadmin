@@ -16,7 +16,11 @@ module NodeCtld
     protected
     def change_properties(i)
       @properties.each do |k, v|
-        zfs(:set, "#{k}=\"#{translate_property(k, v[i])}\"", "#{@pool_fs}/#{@name}")
+        zfs(
+          :set,
+          "#{k}=\"#{translate_property(k, v[i])}\"",
+          "#{@pool_fs}/#{@name}"
+        )
       end
     end
   end

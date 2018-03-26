@@ -13,7 +13,13 @@ module NodeCtld::Utils
       if cmd_opts.instance_of?(Hash)
         cmd_opts.each do |k, v|
           k = k.to_s
-          options << "#{k.start_with?("-") ? "" : (k.length > 1 ? "--" : "-")}#{k}#{v ? " " : ""}#{v}"
+
+          if k.start_with?('-')
+            options << "#{k}#{v ? ' ' : ''}#{v}"
+
+          else
+            options << "#{(k.length > 1 ? '--' : '-')}#{k}#{v ? ' ' : ''}#{v}"
+          end
         end
 
       elsif cmd_opts.instance_of?(Array)
@@ -26,8 +32,8 @@ module NodeCtld::Utils
       try_cnt = 0
       cmd = Proc.new do
         syscmd(
-            "#{$CFG.get(:bin, ver == 4 ? :iptables : :ip6tables)} #{options.join(" ")}",
-            opts
+          "#{$CFG.get(:bin, ver == 4 ? :iptables : :ip6tables)} #{options.join(" ")}",
+          opts
         )
       end
 
@@ -46,7 +52,10 @@ module NodeCtld::Utils
             raise err
           end
 
-          log "#{err.cmd} failed with error 'Resource temporarily unavailable', retrying in 3 seconds"
+          log(
+            "#{err.cmd} failed with error 'Resource temporarily unavailable', "+
+            "retrying in 3 seconds"
+          )
 
           try_cnt += 1
           sleep(3)

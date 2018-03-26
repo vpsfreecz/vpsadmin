@@ -15,9 +15,9 @@ module NodeCtld
     def status
       stat = vzctl(:status, @vps_id)[:output].split(" ")[2..-1]
       {
-          :exists => stat[0] == 'exist',
-          :mounted => stat[1] == 'mounted',
-          :running => stat[2] == 'running'
+          exists: stat[0] == 'exist',
+          mounted: stat[1] == 'mounted',
+          running: stat[2] == 'running'
       }
     end
 
@@ -27,10 +27,10 @@ module NodeCtld
       after = status
 
       if before[:running] && !after[:running]
-        call_cmd(Commands::Vps::Start, {:vps_id => @vps_id})
+        call_cmd(Commands::Vps::Start, {vps_id: @vps_id})
 
       elsif !before[:running] && after[:running]
-        call_cmd(Commands::Vps::Stop, {:vps_id => @vps_id})
+        call_cmd(Commands::Vps::Stop, {vps_id: @vps_id})
       end
     end
   end

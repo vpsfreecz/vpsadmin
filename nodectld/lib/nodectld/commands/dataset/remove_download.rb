@@ -4,8 +4,13 @@ module NodeCtld
     needs :system, :pool
 
     def exec
-      syscmd("#{$CFG.get(:bin, :rm)} -f \"#{file_path}\"") if File.exists?(file_path)
-      syscmd("#{$CFG.get(:bin, :rmdir)} \"#{secret_dir_path}\"") if File.exists?(secret_dir_path)
+      if File.exists?(file_path)
+        syscmd("#{$CFG.get(:bin, :rm)} -f \"#{file_path}\"")
+      end
+
+      if File.exists?(secret_dir_path)
+        syscmd("#{$CFG.get(:bin, :rmdir)} \"#{secret_dir_path}\"")
+      end
     end
 
     protected

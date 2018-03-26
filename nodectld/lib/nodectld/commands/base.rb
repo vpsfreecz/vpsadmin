@@ -96,7 +96,7 @@ module NodeCtld::Commands
     end
 
     def ok
-      {:ret => :ok}
+      {ret: :ok}
     end
 
     # Call command +cmd+ with +opts+.

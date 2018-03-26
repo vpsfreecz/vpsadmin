@@ -43,13 +43,13 @@ module NodeCtl
       rescue
         warn "Error occured: #{$!}"
         warn 'Are you sure that nodectld is running and configured properly?'
-        return {:status => :failed, :error => 'Cannot connect to nodectld'}
+        return {status: :failed, error: 'Cannot connect to nodectld'}
       end
 
       unless @reply[:status] == 'ok'
         return {
-            :status => :failed,
-            :error => @reply[:error].instance_of?(Hash) ? @reply[:error][:error] : @reply[:error],
+          status: :failed,
+          error: @reply[:error].instance_of?(Hash) ? @reply[:error][:error] : @reply[:error],
         }
       end
 

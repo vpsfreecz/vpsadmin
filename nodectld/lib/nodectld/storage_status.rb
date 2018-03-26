@@ -23,14 +23,14 @@ module NodeCtld
     def fetch
       # Fetch pools
       st = @db.prepared_st(
-          "SELECT id, filesystem FROM pools WHERE node_id = ?",
-          $CFG.get(:vpsadmin, :node_id)
+        "SELECT id, filesystem FROM pools WHERE node_id = ?",
+        $CFG.get(:vpsadmin, :node_id)
       )
 
       st.each do |row|
         @pools[ row[0] ] = {
-            :fs => row[1],
-            :objects => []
+          fs: row[1],
+          objects: []
         }
       end
 
@@ -39,11 +39,11 @@ module NodeCtld
       @pools.each do |pool_id, pool|
         # Fetch datasets
         @db.query("
-            SELECT d.full_name, dips.id, props.name AS p_name, props.id AS p_id
-            FROM dataset_in_pools dips
-            INNER JOIN datasets d ON d.id = dips.dataset_id
-            INNER JOIN dataset_properties props ON props.dataset_in_pool_id = dips.id
-            WHERE dips.pool_id = #{pool_id}
+          SELECT d.full_name, dips.id, props.name AS p_name, props.id AS p_id
+          FROM dataset_in_pools dips
+          INNER JOIN datasets d ON d.id = dips.dataset_id
+          INNER JOIN dataset_properties props ON props.dataset_in_pool_id = dips.id
+          WHERE dips.pool_id = #{pool_id}
         ").each_hash do |row|
           row_id = row['id'].to_i
 
@@ -52,10 +52,10 @@ module NodeCtld
 
           else
             pool[:objects] << {
-                :type => :filesystem,
-                :name => row['full_name'],
-                :object_id => row['id'].to_i,
-                :properties => { row['p_name'] => row['p_id'].to_i }
+              type: :filesystem,
+              name: row['full_name'],
+              object_id: row['id'].to_i,
+              properties: { row['p_name'] => row['p_id'].to_i }
             }
           end
         end
@@ -66,17 +66,17 @@ module NodeCtld
         # This code may be used in the future, when properties of snapshots are tracked
         # as well.
         @db.query("
-            SELECT d.full_name, s.name, sips.id
-            FROM snapshot_in_pools sips
-            INNER JOIN dataset_in_pools dips ON dips.id = sips.dataset_in_pool_id
-            INNER JOIN datasets d ON d.id = dips.dataset_id
-            INNER JOIN snapshots s ON s.id = sips.snapshot_id
-            WHERE dips.pool_id = #{pool_id}
+          SELECT d.full_name, s.name, sips.id
+          FROM snapshot_in_pools sips
+          INNER JOIN dataset_in_pools dips ON dips.id = sips.dataset_in_pool_id
+          INNER JOIN datasets d ON d.id = dips.dataset_id
+          INNER JOIN snapshots s ON s.id = sips.snapshot_id
+          WHERE dips.pool_id = #{pool_id}
         ").each_hash do |row|
           pool[:objects] << {
-              :type => :snapshot,
-              :name => "#{row['full_name']}@#{row['name']}",
-              :object_id => row['id'].to_i
+            type: :snapshot,
+            name: "#{row['full_name']}@#{row['name']}",
+            object_id: row['id'].to_i
           }
         end
       end
@@ -85,9 +85,9 @@ module NodeCtld
     def read
       @pools.each_value do |pool|
         zfs(
-            :get,
-            "-Hrp -t filesystem -o name,property,value #{PROPERTIES.join(',')}",
-            pool[:fs]
+          :get,
+          "-Hrp -t filesystem -o name,property,value #{PROPERTIES.join(',')}",
+          pool[:fs]
         )[:output].split("\n").each do |prop|
           parts = prop.split
           next if parts[0] == pool[:fs]
@@ -127,19 +127,19 @@ module NodeCtld
             prop = translate_property(p).to_s
 
             @db.query("
-                UPDATE dataset_properties
-                SET value = '#{YAML.dump(obj[p])}'
-                WHERE
-                  #{col} = #{obj[:object_id]}
-                  AND
-                  name = '#{prop}'
+              UPDATE dataset_properties
+              SET value = '#{YAML.dump(obj[p])}'
+              WHERE
+                #{col} = #{obj[:object_id]}
+                AND
+                name = '#{prop}'
             ")
 
             if tracked.include?(prop)
               @db.prepared(
-                  "INSERT INTO dataset_property_histories SET
-                  dataset_property_id = ?, value = ?, created_at = ?",
-                  obj[:properties][prop], obj[p], Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
+                "INSERT INTO dataset_property_histories SET
+                dataset_property_id = ?, value = ?, created_at = ?",
+                obj[:properties][prop], obj[p], Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
               )
             end
           end

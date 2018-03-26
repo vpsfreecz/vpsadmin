@@ -113,8 +113,8 @@ module NodeCtld::Firewall
 
         AccountingRole::PROTOCOLS.each do |p|
           ret[r][p] = {
-              packets: {in: 0, out: 0},
-              bytes: {in: 0, out: 0},
+            packets: {in: 0, out: 0},
+            bytes: {in: 0, out: 0},
           }
         end
       end

@@ -54,9 +54,9 @@ module NodeCtld
 
     def dataset_properties(ds, names)
       DatasetInfo.new(self, zfs(
-          :get,
-          "-H -p -o property,source,value #{names.is_a?(Array) ? names.join(',') : names}",
-          ds
+        :get,
+        "-H -p -o property,source,value #{names.is_a?(Array) ? names.join(',') : names}",
+        ds
       )[:output])
     end
 

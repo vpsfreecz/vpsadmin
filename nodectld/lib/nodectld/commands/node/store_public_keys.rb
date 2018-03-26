@@ -8,9 +8,9 @@ module NodeCtld
       db.transaction do |t|
         get_pubkeys.each do |type, key|
           t.prepared(
-              'INSERT INTO node_pubkeys (node_id, `key_type`, `key`) VALUES (?, ?, ?)
-               ON DUPLICATE KEY UPDATE `key` = ?',
-              $CFG.get(:vpsadmin, :node_id), type, key, key
+            'INSERT INTO node_pubkeys (node_id, `key_type`, `key`) VALUES (?, ?, ?)
+              ON DUPLICATE KEY UPDATE `key` = ?',
+            $CFG.get(:vpsadmin, :node_id), type, key, key
           )
         end
       end
@@ -23,8 +23,8 @@ module NodeCtld
     def rollback
       db = Db.new
       db.prepared(
-          'DELETE FROM node_pubkeys WHERE node_id = ?',
-          $CFG.get(:vpsadmin, :node_id)
+        'DELETE FROM node_pubkeys WHERE node_id = ?',
+        $CFG.get(:vpsadmin, :node_id)
       )
       db.close
       ok

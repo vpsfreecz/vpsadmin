@@ -3,17 +3,17 @@ module NodeCtld::Utils
     module ClassMethods
       # Mapping of module names.
       MODULES = {
-          :system => :System,
-          :osctl => :OsCtl,
-          :zfs => :Zfs,
-          :vps => :Vps,
-          :worker => :Worker,
-          :pool => :Pool,
-          :subprocess => :Subprocess,
-          :integrity => :Integrity,
-          :hypervisor => :Hypervisor,
-          :outage_window => :OutageWindow,
-          :queue => :Queue,
+        system: :System,
+        osctl: :OsCtl,
+        zfs: :Zfs,
+        vps: :Vps,
+        worker: :Worker,
+        pool: :Pool,
+        subprocess: :Subprocess,
+        integrity: :Integrity,
+        hypervisor: :Hypervisor,
+        outage_window: :OutageWindow,
+        queue: :Queue,
       }
 
       # Includes module from NodeCtld::Utils using mapping

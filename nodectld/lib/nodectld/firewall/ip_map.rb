@@ -31,17 +31,17 @@ module NodeCtld::Firewall
             WHERE node_id = #{$CFG.get(:vpsadmin, :node_id)}
         ").each_hash do |ip|
           @map[ip['ip_addr']] = IpAddr.new(
-              ip['id'].to_i,
-              ip['ip_version'].to_i,
-              ip['user_id'].to_i
+            ip['id'].to_i,
+            ip['ip_version'].to_i,
+            ip['user_id'].to_i
           )
         end
 
         [4, 6].each do |v|
           IpSet.create_or_replace!(
-              "vpsadmin_v#{v}_local_addrs",
-              "hash:ip family #{v == 4 ? 'inet' : 'inet6'}",
-              @map.select { |_, n| n.version == v }.keys
+            "vpsadmin_v#{v}_local_addrs",
+            "hash:ip family #{v == 4 ? 'inet' : 'inet6'}",
+            @map.select { |_, n| n.version == v }.keys
           )
         end
       end
@@ -53,9 +53,9 @@ module NodeCtld::Firewall
 
         [4, 6].each do |v|
           IpSet.create_or_replace!(
-              "vpsadmin_v#{v}_local_addrs",
-              "hash:ip family #{v == 4 ? 'inet' : 'inet6'}",
-              @map.select { |_, n| n.version == v }.keys
+            "vpsadmin_v#{v}_local_addrs",
+            "hash:ip family #{v == 4 ? 'inet' : 'inet6'}",
+            @map.select { |_, n| n.version == v }.keys
           )
         end
       end
@@ -75,9 +75,9 @@ module NodeCtld::Firewall
 
         [4, 6].each do |v|
           IpSet.create_or_replace!(
-              "vpsadmin_v#{v}_local_addrs",
-              "hash:ip family #{v == 4 ? 'inet' : 'inet6'}",
-              @map.select { |_, n| n.version == v }.keys
+            "vpsadmin_v#{v}_local_addrs",
+            "hash:ip family #{v == 4 ? 'inet' : 'inet6'}",
+            @map.select { |_, n| n.version == v }.keys
           )
         end
       end

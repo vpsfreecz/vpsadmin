@@ -53,7 +53,7 @@ module NodeCtld
       end
 
       def communicate
-        send_data({:version => NodeCtld::VERSION})
+        send_data({version: NodeCtld::VERSION})
 
         buf = ""
 
@@ -70,7 +70,7 @@ module NodeCtld
 
       def parse(data)
         begin
-          req = JSON.parse(data, :symbolize_names => true)
+          req = JSON.parse(data, symbolize_names: true)
 
         rescue TypeError, JSON::ParserError
           return error("Syntax error")
@@ -103,11 +103,11 @@ module NodeCtld
       end
 
       def error(err)
-        send_data({:status => :failed, :error => err})
+        send_data({status: :failed, error: err})
       end
 
       def ok(res)
-        send_data({:status => :ok, :response => res})
+        send_data({status: :ok, response: res})
       end
 
       def send_data(data)

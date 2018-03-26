@@ -4,9 +4,9 @@ module NodeCtl::Commands
 
     def options(opts, args)
       @opts = {
-          :workers => false,
-          :consoles => false,
-          :header => true,
+          workers: false,
+          consoles: false,
+          header: true,
       }
 
       opts.on('-c', '--consoles', 'List exported consoles') do
@@ -70,32 +70,32 @@ module NodeCtl::Commands
 
             if @global_opts[:parsable]
               puts sprintf(
-                  '%-8s %-8d %-8d %-20.19s %-5d %8d %12s %-20.19s %-8s %s',
-                  name,
-                  w[0].to_s,
-                  w[1][:id],
-                  w[1][:handler],
-                  w[1][:type],
-                  w[1][:start] ? (t.to_i - w[1][:start]).round : '-',
-                  w[1][:pid] || '-',
-                  w[1][:progress] ? format_progress(t, w[1][:progress]) : '-',
-                  eta ? eta : '-',
-                  w[1][:step]
+                '%-8s %-8d %-8d %-20.19s %-5d %8d %12s %-20.19s %-8s %s',
+                name,
+                w[0].to_s,
+                w[1][:id],
+                w[1][:handler],
+                w[1][:type],
+                w[1][:start] ? (t.to_i - w[1][:start]).round : '-',
+                w[1][:pid] || '-',
+                w[1][:progress] ? format_progress(t, w[1][:progress]) : '-',
+                eta ? eta : '-',
+                w[1][:step]
               )
 
             else
               puts sprintf(
-                  '%-8s %-8d %-8d %-20.19s %-5d %-18.16s %12s %-20.19s  %-8s  %s',
-                  name,
-                  w[0].to_s,
-                  w[1][:id],
-                  w[1][:handler],
-                  w[1][:type],
-                  w[1][:start] ? format_duration(t.to_i - w[1][:start]) : '-',
-                  w[1][:progress] ? format_progress(t, w[1][:progress]) : '-',
-                  eta ? format_duration(eta) : '-',
-                  w[1][:pid],
-                  w[1][:step]
+                '%-8s %-8d %-8d %-20.19s %-5d %-18.16s %12s %-20.19s  %-8s  %s',
+                name,
+                w[0].to_s,
+                w[1][:id],
+                w[1][:handler],
+                w[1][:type],
+                w[1][:start] ? format_duration(t.to_i - w[1][:start]) : '-',
+                w[1][:progress] ? format_progress(t, w[1][:progress]) : '-',
+                eta ? format_duration(eta) : '-',
+                w[1][:pid],
+                w[1][:step]
               )
             end
           end
@@ -127,11 +127,11 @@ module NodeCtl::Commands
           chain_tasks[1].each do |task|
             info = process_info(task)
             puts sprintf(
-                '%-10d %-10d %-20s %s',
-                chain_tasks[0].to_s,
-                task,
-                info[:state],
-                info[:name]
+              '%-10d %-10d %-20s %s',
+              chain_tasks[0].to_s,
+              task,
+              info[:state],
+              info[:name]
             )
           end
         end
@@ -146,12 +146,12 @@ module NodeCtl::Commands
 
           mounts.each do |m|
             puts sprintf(
-                '%-5s %-6s %-16s %-18.16s %s',
-                vps_id,
-                m[:id],
-                m[:type],
-                format_duration(Time.new.to_i - m[:registered_at]),
-                m[:dst]
+              '%-5s %-6s %-16s %-18.16s %s',
+              vps_id,
+              m[:id],
+              m[:type],
+              format_duration(Time.new.to_i - m[:registered_at]),
+              m[:dst]
             )
           end
 
@@ -171,13 +171,13 @@ module NodeCtl::Commands
 
         @res[:queues].each do |name, queue|
           puts sprintf(
-              "    %10s  %d / %d (+%d%s) %s",
-              name,
-              queue[:workers].size,
-              queue[:threads],
-              queue[:urgent],
-              queue[:reservations].empty? ? '' : " *#{queue[:reservations].size}",
-              !queue[:started] ? "opens in #{format_duration((@res[:start_time] + queue[:start_delay]) - Time.now.to_i)}" : ''
+            "    %10s  %d / %d (+%d%s) %s",
+            name,
+            queue[:workers].size,
+            queue[:threads],
+            queue[:urgent],
+            queue[:reservations].empty? ? '' : " *#{queue[:reservations].size}",
+            !queue[:started] ? "opens in #{format_duration((@res[:start_time] + queue[:start_delay]) - Time.now.to_i)}" : ''
           )
         end
       end
@@ -201,9 +201,9 @@ module NodeCtl::Commands
 
     def translate_exitstatus(s)
       {
-         100 => 'stop',
-         150 => 'restart',
-         200 => 'update',
+        100 => 'stop',
+        150 => 'restart',
+        200 => 'update',
       }[s]
     end
 

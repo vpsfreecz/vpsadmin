@@ -3,12 +3,12 @@ module NodeCtld
     include OsCtl::Lib::Utils::Log
 
     STATES = [
-        :created,
-        :mounted,
-        :unmounted,
-        :skipped,
-        :delayed,
-        :waiting
+      :created,
+      :mounted,
+      :unmounted,
+      :skipped,
+      :delayed,
+      :waiting
     ]
 
     class << self
@@ -57,14 +57,14 @@ module NodeCtld
           end
 
           log(
-              :debug,
-              :mount_reporter,
-              "vps=#{mnt[:vps_id]},mount=##{mnt[:id]},state=#{mnt[:state]}"
+            :debug,
+            :mount_reporter,
+            "vps=#{mnt[:vps_id]},mount=##{mnt[:id]},state=#{mnt[:state]}"
           )
           db ||= Db.new
           db.prepared(
-              'UPDATE mounts SET current_state = ? WHERE id = ?',
-              STATES.index(mnt[:state]), mnt[:id]
+            'UPDATE mounts SET current_state = ? WHERE id = ?',
+            STATES.index(mnt[:state]), mnt[:id]
           )
 
           misses = 0
@@ -84,9 +84,9 @@ module NodeCtld
         end
 
         @mounts << {
-            :vps_id => vps_id,
-            :id => mount_id,
-            :state => state
+          vps_id: vps_id,
+          id: mount_id,
+          state: state
         }
       end
     end

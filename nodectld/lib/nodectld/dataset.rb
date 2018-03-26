@@ -5,8 +5,17 @@ module NodeCtld
     include Utils::Zfs
 
     def set
-      zfs(:set, "sharenfs=\"#{@params['share_options']}\"", @params['name']) if @params['share_options']
-      zfs(:set, "quota=#{@params['quota'].to_i == 0 ? 'none' : @params['quota']}", @params['name'])
+      zfs(
+        :set,
+        "sharenfs=\"#{@params['share_options']}\"",
+        @params['name']
+      ) if @params['share_options']
+
+      zfs(
+        :set,
+        "quota=#{@params['quota'].to_i == 0 ? 'none' : @params['quota']}",
+        @params['name']
+      )
     end
 
     def destroy(pool_fs, name, recursive)

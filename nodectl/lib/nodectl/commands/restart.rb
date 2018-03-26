@@ -4,7 +4,7 @@ module NodeCtl::Commands
 
     def options(opts, args)
       @opts = {
-          :force => false,
+          force: false,
       }
 
       opts.on('-f', '--force', 'Force restart - kills all transactions that are being processed and restarts immediately') do
@@ -13,7 +13,7 @@ module NodeCtl::Commands
     end
 
     def prepare
-      {:force => @opts[:force]}
+      {force: @opts[:force]}
     end
 
     def process

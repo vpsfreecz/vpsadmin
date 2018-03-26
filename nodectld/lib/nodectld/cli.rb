@@ -99,21 +99,21 @@ module NodeCtld
           Process.waitpid(pid)
 
           case $?.exitstatus
-            when NodeCtld::EXIT_OK
-              log 'Stopping daemon'
-              exit
+          when NodeCtld::EXIT_OK
+            log 'Stopping daemon'
+            exit
 
-            when NodeCtld::EXIT_STOP
-              log 'Stopping daemon'
-              exit
+          when NodeCtld::EXIT_STOP
+            log 'Stopping daemon'
+            exit
 
-            when NodeCtld::EXIT_RESTART
-              log 'Restarting daemon'
-              next
+          when NodeCtld::EXIT_RESTART
+            log 'Restarting daemon'
+            next
 
-            else
-              log "Daemon crashed with exit status #{$?.exitstatus}"
-              exit(false)
+          else
+            log "Daemon crashed with exit status #{$?.exitstatus}"
+            exit(false)
           end
         end
       end

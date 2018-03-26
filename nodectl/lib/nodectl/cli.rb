@@ -6,8 +6,8 @@ require 'optparse'
 require 'lib/nodectl/rc'
 
 options = {
-    :parsable => false,
-    :sock => '/run/nodectld.sock',
+  parsable: false,
+  sock: '/run/nodectld.sock',
 }
 
 command = nil

@@ -22,12 +22,12 @@ module NodeCtld
       t = Time.now.utc
 
       info = OpenStruct.new({
-        :node_id => $CFG.get(:vpsadmin, :node_id),
-        :time => t,
-        :str_time => t.strftime('%Y-%m-%d %H:%M:%S'),
-        :nproc => SystemProbes::ProcessCounter.new.count,
-        :uptime => SystemProbes::Uptime.new.uptime.round,
-        :loadavg => SystemProbes::LoadAvg.new.avg,
+        node_id: $CFG.get(:vpsadmin, :node_id),
+        time: t,
+        str_time: t.strftime('%Y-%m-%d %H:%M:%S'),
+        nproc: SystemProbes::ProcessCounter.new.count,
+        uptime: SystemProbes::Uptime.new.uptime.round,
+        loadavg: SystemProbes::LoadAvg.new.avg,
       })
 
       info.kernel = SystemProbes::Kernel.new.version
@@ -64,36 +64,36 @@ module NodeCtld
 
     def log_status(db, info)
       db.query(
-          "INSERT INTO node_statuses (
-            node_id, uptime, cpus, total_memory, total_swap, process_count,
-            cpu_user, cpu_nice, cpu_system, cpu_idle, cpu_iowait, cpu_irq, cpu_softirq,
-            loadavg, used_memory, used_swap, arc_c_max, arc_c, arc_size, arc_hitpercent,
-            vpsadmind_version, kernel, created_at
-          )
+        "INSERT INTO node_statuses (
+          node_id, uptime, cpus, total_memory, total_swap, process_count,
+          cpu_user, cpu_nice, cpu_system, cpu_idle, cpu_iowait, cpu_irq, cpu_softirq,
+          loadavg, used_memory, used_swap, arc_c_max, arc_c, arc_size, arc_hitpercent,
+          vpsadmind_version, kernel, created_at
+        )
 
-          SELECT
-            node_id, uptime, cpus, total_memory, total_swap,
-            sum_process_count / update_count,
-            sum_cpu_user / update_count,
-            sum_cpu_nice / update_count,
-            sum_cpu_system / update_count,
-            sum_cpu_idle / update_count,
-            sum_cpu_iowait / update_count,
-            sum_cpu_irq / update_count,
-            sum_cpu_softirq / update_count,
-            sum_loadavg / update_count,
-            sum_used_memory / update_count,
-            sum_used_swap / update_count,
-            sum_arc_c_max / update_count,
-            sum_arc_c / update_count,
-            sum_arc_size / update_count,
-            sum_arc_hitpercent / update_count,
-            vpsadmind_version,
-            kernel,
-            '#{info.str_time}'
+        SELECT
+          node_id, uptime, cpus, total_memory, total_swap,
+          sum_process_count / update_count,
+          sum_cpu_user / update_count,
+          sum_cpu_nice / update_count,
+          sum_cpu_system / update_count,
+          sum_cpu_idle / update_count,
+          sum_cpu_iowait / update_count,
+          sum_cpu_irq / update_count,
+          sum_cpu_softirq / update_count,
+          sum_loadavg / update_count,
+          sum_used_memory / update_count,
+          sum_used_swap / update_count,
+          sum_arc_c_max / update_count,
+          sum_arc_c / update_count,
+          sum_arc_size / update_count,
+          sum_arc_hitpercent / update_count,
+          vpsadmind_version,
+          kernel,
+          '#{info.str_time}'
 
-          FROM node_current_statuses WHERE node_id = #{info.node_id}
-          "
+        FROM node_current_statuses WHERE node_id = #{info.node_id}
+        "
       )
     end
 

@@ -9,9 +9,10 @@ module NodeCtld
 
     def rollback
       zfs(
-          :clone,
-          nil,
-          "#{@pool_fs}/#{@dataset_name}@#{@snapshot} #{pool_mounted_snapshot(@pool_fs, @snapshot_id)}"
+        :clone,
+        nil,
+        "#{@pool_fs}/#{@dataset_name}@#{@snapshot} "+
+        pool_mounted_snapshot(@pool_fs, @snapshot_id)
       )
     end
   end
