@@ -3,12 +3,10 @@ require 'ostruct'
 module NodeCtld
   class NodeStatus
     def initialize
-      @cpus = SystemProbes::Cpus.new.count if linux?
+      @cpus = SystemProbes::Cpus.new.count
     end
 
     def init(db)
-      return unless linux?
-
       mem = SystemProbes::Memory.new
 
       db.prepared(
@@ -32,13 +30,11 @@ module NodeCtld
         :loadavg => SystemProbes::LoadAvg.new.avg,
       })
 
-      if linux?
-        info.kernel = SystemProbes::Kernel.new.version
-        info.cpu = SystemProbes::CpuUsage.new.measure.to_percent
-        info.mem = SystemProbes::Memory.new
+      info.kernel = SystemProbes::Kernel.new.version
+      info.cpu = SystemProbes::CpuUsage.new.measure.to_percent
+      info.mem = SystemProbes::Memory.new
 
-        info.arc = SystemProbes::Arc.new if hypervisor? || storage?
-      end
+      info.arc = SystemProbes::Arc.new if hypervisor? || storage?
 
       my = db || Db.new
 
@@ -58,10 +54,6 @@ module NodeCtld
     end
 
     protected
-    def linux?
-      /solaris/ !~ RUBY_PLATFORM
-    end
-
     def hypervisor?
       $CFG.get(:vpsadmin, :type) == :node
     end
@@ -110,55 +102,37 @@ module NodeCtld
           uptime = #{info.uptime},
           process_count = #{info.nproc},
           vpsadmind_version = '#{NodeCtld::VERSION}',
-          kernel = '#{info.kernel}',"
-
-      if linux?
-        sql += "
-            cpus = #{@cpus},
-            cpu_user = #{info.cpu[:user]},
-            cpu_nice = #{info.cpu[:nice]},
-            cpu_system = #{info.cpu[:system]},
-            cpu_idle = #{info.cpu[:idle]},
-            cpu_iowait = #{info.cpu[:iowait]},
-            cpu_irq = #{info.cpu[:irq]},
-            cpu_softirq = #{info.cpu[:softirq]},
-            total_memory = #{info.mem.total / 1024},
-            used_memory = #{info.mem.used / 1024},
-            total_swap = #{info.mem.swap_total / 1024},
-            used_swap = #{info.mem.swap_used / 1024},"
-      else
-          sql += "cpus = NULL,
-              cpu_user = NULL,
-              cpu_nice = NULL,
-              cpu_system = NULL,
-              cpu_idle = NULL,
-              cpu_iowait = NULL,
-              cpu_irq = NULL,
-              cpu_softirq = NULL,
-              total_memory = NULL,
-              total_swap = NULL,
-              used_memory = NULL,
-              used_swap = NULL,"
-      end
-
-      sql += "sum_loadavg = loadavg,
-            sum_process_count = process_count,
-            sum_used_memory = used_memory,
-            sum_used_swap = used_swap,
-            sum_cpu_user = cpu_user,
-            sum_cpu_nice = cpu_nice,
-            sum_cpu_system = cpu_system,
-            sum_cpu_idle = cpu_idle,
-            sum_cpu_iowait = cpu_iowait,
-            sum_cpu_irq = cpu_irq,
-            sum_cpu_softirq = cpu_softirq,"
+          kernel = '#{info.kernel}',
+          cpus = #{@cpus},
+          cpu_user = #{info.cpu[:user]},
+          cpu_nice = #{info.cpu[:nice]},
+          cpu_system = #{info.cpu[:system]},
+          cpu_idle = #{info.cpu[:idle]},
+          cpu_iowait = #{info.cpu[:iowait]},
+          cpu_irq = #{info.cpu[:irq]},
+          cpu_softirq = #{info.cpu[:softirq]},
+          total_memory = #{info.mem.total / 1024},
+          used_memory = #{info.mem.used / 1024},
+          total_swap = #{info.mem.swap_total / 1024},
+          used_swap = #{info.mem.swap_used / 1024},
+          sum_loadavg = loadavg,
+          sum_process_count = process_count,
+          sum_used_memory = used_memory,
+          sum_used_swap = used_swap,
+          sum_cpu_user = cpu_user,
+          sum_cpu_nice = cpu_nice,
+          sum_cpu_system = cpu_system,
+          sum_cpu_idle = cpu_idle,
+          sum_cpu_iowait = cpu_iowait,
+          sum_cpu_irq = cpu_irq,
+          sum_cpu_softirq = cpu_softirq,"
 
       if hypervisor? && info.cpu[:guest]
         sql += "cpu_guest = #{info.cpu[:guest]},
             sum_cpu_guest = cpu_guest,"
       end
 
-      if linux? && (hypervisor? || storage?)
+      if hypervisor? || storage?
         sql += "arc_c_max = #{info.arc.c_max / 1024 / 1024},
             arc_c = #{info.arc.c / 1024 / 1024},
             arc_size = #{info.arc.size / 1024 / 1024},
@@ -197,40 +171,36 @@ module NodeCtld
       sql = "
           uptime = #{info.uptime},
           process_count = #{info.nproc},
-          sum_process_count = sum_process_count + process_count,"
+          sum_process_count = sum_process_count + process_count,
+          cpu_user = #{info.cpu[:user]},
+          cpu_nice = #{info.cpu[:nice]},
+          cpu_system = #{info.cpu[:system]},
+          cpu_idle = #{info.cpu[:idle]},
+          cpu_iowait = #{info.cpu[:iowait]},
+          cpu_irq = #{info.cpu[:irq]},
+          cpu_softirq = #{info.cpu[:softirq]},
+          total_memory = #{info.mem.total / 1024},
+          used_memory = #{info.mem.used / 1024},
+          total_swap = #{info.mem.swap_total / 1024},
+          used_swap = #{info.mem.swap_used / 1024},
 
-      if linux?
-        sql += "
-            cpu_user = #{info.cpu[:user]},
-            cpu_nice = #{info.cpu[:nice]},
-            cpu_system = #{info.cpu[:system]},
-            cpu_idle = #{info.cpu[:idle]},
-            cpu_iowait = #{info.cpu[:iowait]},
-            cpu_irq = #{info.cpu[:irq]},
-            cpu_softirq = #{info.cpu[:softirq]},
-            total_memory = #{info.mem.total / 1024},
-            used_memory = #{info.mem.used / 1024},
-            total_swap = #{info.mem.swap_total / 1024},
-            used_swap = #{info.mem.swap_used / 1024},
-
-            sum_loadavg = sum_loadavg + loadavg,
-            sum_used_memory = sum_used_memory + used_memory,
-            sum_used_swap = sum_used_swap + used_swap,
-            sum_cpu_user = sum_cpu_user + cpu_user,
-            sum_cpu_nice = sum_cpu_nice + cpu_nice,
-            sum_cpu_system = sum_cpu_system + cpu_system,
-            sum_cpu_idle = sum_cpu_idle + cpu_idle,
-            sum_cpu_iowait = sum_cpu_iowait + cpu_iowait,
-            sum_cpu_irq = sum_cpu_irq + cpu_irq,
-            sum_cpu_softirq = sum_cpu_softirq + cpu_softirq,"
-      end
+          sum_loadavg = sum_loadavg + loadavg,
+          sum_used_memory = sum_used_memory + used_memory,
+          sum_used_swap = sum_used_swap + used_swap,
+          sum_cpu_user = sum_cpu_user + cpu_user,
+          sum_cpu_nice = sum_cpu_nice + cpu_nice,
+          sum_cpu_system = sum_cpu_system + cpu_system,
+          sum_cpu_idle = sum_cpu_idle + cpu_idle,
+          sum_cpu_iowait = sum_cpu_iowait + cpu_iowait,
+          sum_cpu_irq = sum_cpu_irq + cpu_irq,
+          sum_cpu_softirq = sum_cpu_softirq + cpu_softirq,"
 
       if hypervisor? && info.cpu[:guest]
         sql += "cpu_guest = #{info.cpu[:guest]},
             sum_cpu_guest = sum_cpu_guest + cpu_guest,"
       end
 
-      if linux? && (hypervisor? || storage?)
+      if hypervisor? || storage?
         sql += "arc_c_max = #{info.arc.c_max / 1024 / 1024},
             arc_c = #{info.arc.c / 1024 / 1024},
             arc_size = #{info.arc.size / 1024 / 1024},
