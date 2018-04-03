@@ -70,7 +70,7 @@ module NodeCtld::Firewall
       ipset(:test, @name, ip)
       true
 
-    rescue NodeCtld::CommandFailed
+    rescue NodeCtld::SystemCommandFailed
       false
     end
 

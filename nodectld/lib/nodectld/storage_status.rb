@@ -22,19 +22,17 @@ module NodeCtld
 
     def fetch
       # Fetch pools
-      st = @db.prepared_st(
+      rs = @db.prepared(
         "SELECT id, filesystem FROM pools WHERE node_id = ?",
         $CFG.get(:vpsadmin, :node_id)
       )
 
-      st.each do |row|
-        @pools[ row[0] ] = {
-          fs: row[1],
+      rs.each do |row|
+        @pools[ row['id'] ] = {
+          fs: row['filesystem'],
           objects: []
         }
       end
-
-      st.close
 
       @pools.each do |pool_id, pool|
         # Fetch datasets
@@ -44,7 +42,7 @@ module NodeCtld
           INNER JOIN datasets d ON d.id = dips.dataset_id
           INNER JOIN dataset_properties props ON props.dataset_in_pool_id = dips.id
           WHERE dips.pool_id = #{pool_id}
-        ").each_hash do |row|
+        ").each do |row|
           row_id = row['id'].to_i
 
           if obj = pool[:objects].detect { |o| o[:object_id] == row_id }
@@ -72,7 +70,7 @@ module NodeCtld
           INNER JOIN datasets d ON d.id = dips.dataset_id
           INNER JOIN snapshots s ON s.id = sips.snapshot_id
           WHERE dips.pool_id = #{pool_id}
-        ").each_hash do |row|
+        ").each do |row|
           pool[:objects] << {
             type: :snapshot,
             name: "#{row['full_name']}@#{row['name']}",

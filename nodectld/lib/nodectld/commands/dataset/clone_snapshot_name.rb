@@ -6,7 +6,7 @@ module NodeCtld
       db = Db.new
 
       rs = db.query("SELECT id, name FROM snapshots WHERE id IN (#{@snapshots.keys.join(',')})")
-      rs.each_hash do |row|
+      rs.each do |row|
         s = @snapshots[row['id']]
 
         db.prepared('UPDATE snapshots SET name = ? WHERE id = ?', row['name'], s[1])

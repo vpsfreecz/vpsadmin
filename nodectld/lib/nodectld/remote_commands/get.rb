@@ -13,7 +13,7 @@ module NodeCtld::RemoteCommands
           @daemon.queues do |queues|
             db = NodeCtld::Db.new
 
-            @daemon.select_commands(db, @limit).each_hash do |row|
+            @daemon.select_commands(db, @limit).each do |row|
               t_id = row['id'].to_i
 
               catch (:next) do

@@ -22,7 +22,7 @@ module NodeCtld::Firewall
             SELECT ip_version, address, prefix, role
             FROM networks
             WHERE type = 'Network'
-        ").each_hash do |row|
+        ").each do |row|
           @networks << Network.new(
             row['ip_version'].to_i,
             row['address'],

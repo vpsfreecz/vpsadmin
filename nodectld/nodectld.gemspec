@@ -24,7 +24,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'libosctl', ENV['OS_BUILD_ID']
   s.add_runtime_dependency 'osctl', ENV['OS_BUILD_ID']
   s.add_runtime_dependency 'json'
-  s.add_runtime_dependency 'mysql'
+  s.add_runtime_dependency 'mysql2'
   s.add_runtime_dependency 'eventmachine'
   s.add_runtime_dependency 'pry-remote'
   s.add_runtime_dependency 'require_all', '~> 1.5.0'

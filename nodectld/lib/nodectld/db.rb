@@ -10,24 +10,19 @@ module NodeCtld
 
     def query(q)
       protect do
-        @my.query(q)
+        Result.new(@my.query(q))
       end
     end
 
     def prepared(q, *params)
-      prepared_st(q, *params).close
-    end
-
-    def prepared_st(q, *params)
       protect do
         st = @my.prepare(q)
-        st.execute(*params)
-        st
+        Result.new(st.execute(*params))
       end
     end
 
     def insert_id
-      @my.insert_id
+      @my.last_id
     end
 
     def transaction(kwargs = {})
@@ -47,7 +42,7 @@ module NodeCtld
         log(:info, :sql, 'Rollback requested')
         query('ROLLBACK')
 
-      rescue Mysql::Error => err
+      rescue Mysql2::Error => err
         query('ROLLBACK')
 
         case err.errno
@@ -104,7 +99,6 @@ module NodeCtld
     end
 
     private
-
     def connect(db)
       if !db[:host].nil? && db[:hosts].empty?
         db[:hosts] << db[:host]
@@ -116,17 +110,21 @@ module NodeCtld
         db[:hosts].each do |host|
           begin
             log(:info, :sql, "Trying to connect to #{host}") if problem
-            @my = Mysql.init
-            @my.ssl_set if db[:ssl]
-            @my.options(Mysql::OPT_CONNECT_TIMEOUT, db[:connect_timeout])
-            @my.options(Mysql::OPT_READ_TIMEOUT, db[:read_timeout])
-            @my.options(Mysql::OPT_WRITE_TIMEOUT, db[:write_timeout])
-            @my.connect(host, db[:user], db[:pass], db[:name])
+            @my = Mysql2::Client.new(
+              host: host,
+              username: db[:user],
+              password: db[:pass],
+              database: db[:name],
+              encoding: 'utf8',
+              connect_timeout: db[:connect_timeout],
+              read_timeout: db[:read_timeout],
+              write_timeout: db[:write_timeout],
+            )
             query('SET NAMES UTF8')
             log(:info, :sql, "Connected to #{host}") if problem
             return
 
-          rescue Mysql::Error => err
+          rescue Mysql2::Error => err
             problem = true
             log(:warn, :sql, "MySQL error ##{err.errno}: #{err.error}")
             log(:info, :sql, 'Trying another host')
@@ -142,7 +140,7 @@ module NodeCtld
     def protect(try_again = true)
       begin
         yield
-      rescue Mysql::Error => err
+      rescue Mysql2::Error => err
         log(:critical, :sql, "MySQL error ##{err.errno}: #{err.error}")
         close if @my
         sleep($CFG.get(:db, :retry_interval))
@@ -160,7 +158,7 @@ module NodeCtld
     def protect(try_again = true)
       begin
         yield
-      rescue Mysql::Error => err
+      rescue Mysql2::Error => err
         log(:critical, :sql, "MySQL error ##{err.errno}: #{err.error}")
         raise err
       end
@@ -181,16 +179,38 @@ module NodeCtld
       @results << @db.query(*args)
     end
 
-    def each_hash
+    def each
       @results.each do |r|
-        r.each_hash do |row|
+        r.each do |row|
           yield(row)
         end
       end
     end
   end
 
-  class RequestRollback < StandardError
+  class Result
+    # @param result [Mysql2::Result]
+    def initialize(result)
+      @result = result
+    end
 
+    def each(&block)
+      @result.each(&block)
+    end
+
+    def get
+      @result.each { |row| return row }
+      nil
+    end
+
+    def get!
+      get || (fail 'no row returned')
+    end
+
+    def count
+      @result.count
+    end
   end
+
+  class RequestRollback < StandardError ; end
 end

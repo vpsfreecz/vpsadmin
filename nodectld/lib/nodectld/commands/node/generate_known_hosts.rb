@@ -20,7 +20,7 @@ module NodeCtld
         ORDER BY node_id, `key_type`'
       )
 
-      rs.each_hash do |r|
+      rs.each do |r|
         f.write("#{r['ip_addr']} #{r['key']}\n")
       end
 

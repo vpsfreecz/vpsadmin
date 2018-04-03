@@ -22,7 +22,7 @@ module NodeCtld
     def run(t, direction)
       log(:debug, "chain=#{@chain_id}", 'Running transaction confirmations')
 
-      st = t.prepared_st(
+      rs = t.prepared(
         'SELECT table_name, row_pks, attr_changes, confirm_type, t.status
           FROM transactions t
           INNER JOIN transaction_confirmations c ON t.id = c.transaction_id
@@ -32,11 +32,9 @@ module NodeCtld
         @chain_id
       )
 
-      st.each do |trans|
+      rs.each do |trans|
         confirm(t, trans, direction)
       end
-
-      st.close
 
       t.prepared(
         'UPDATE transaction_confirmations c
@@ -63,7 +61,7 @@ module NodeCtld
             AND t.id IN (#{transactions.join(',')})
       ")
 
-      rs.each_hash do |trans|
+      rs.each do |trans|
         ret[ trans['t_id'].to_i ] ||= []
         ret[ trans['t_id'].to_i ] << {
           id: trans['c_id'].to_i,
@@ -101,62 +99,62 @@ module NodeCtld
 
     protected
     def confirm(t, trans, dir, success = nil)
-      success = success.nil? ? trans[4].to_i > 0 : success
-      pk = pk_cond(YAML.load(trans[1]))
+      success = success.nil? ? trans['status'].to_i > 0 : success
+      pk = pk_cond(YAML.load(trans['row_pks']))
 
-      case trans[3].to_i
+      case trans['confirm_type'].to_i
       when 0 # create
         if success && dir == :execute
-          t.query("UPDATE #{trans[0]} SET confirmed = 1 WHERE #{pk}")
+          t.query("UPDATE #{trans['table_name']} SET confirmed = 1 WHERE #{pk}")
         else
-          t.query("DELETE FROM #{trans[0]} WHERE #{pk}")
+          t.query("DELETE FROM #{trans['table_name']} WHERE #{pk}")
         end
 
       when 1 # just create
         if !success || dir != :execute
-          t.query("DELETE FROM #{trans[0]} WHERE #{pk}")
+          t.query("DELETE FROM #{trans['table_name']} WHERE #{pk}")
         end
 
       when 2 # edit before
         if !success || dir == :rollback
-          attrs = YAML.load(trans[2])
+          attrs = YAML.load(trans['attr_changes'])
           update = attrs.collect { |k, v| "`#{k}` = #{sql_val(v)}" }.join(',')
 
-          t.query("UPDATE #{trans[0]} SET #{update} WHERE #{pk}")
+          t.query("UPDATE #{trans['table_name']} SET #{update} WHERE #{pk}")
         end
 
       when 3 # edit after
         if success && dir == :execute
-          attrs = YAML.load(trans[2])
+          attrs = YAML.load(trans['attr_changes'])
           update = attrs.collect { |k, v| "`#{k}` = #{sql_val(v)}" }.join(',')
 
-          t.query("UPDATE #{trans[0]} SET #{update} WHERE #{pk}")
+          t.query("UPDATE #{trans['table_name']} SET #{update} WHERE #{pk}")
         end
 
       when 4 # destroy
         if success && dir == :execute
-          t.query("DELETE FROM #{trans[0]} WHERE #{pk}")
+          t.query("DELETE FROM #{trans['table_name']} WHERE #{pk}")
         else
-          t.query("UPDATE #{trans[0]} SET confirmed = 1 WHERE #{pk}")
+          t.query("UPDATE #{trans['table_name']} SET confirmed = 1 WHERE #{pk}")
         end
 
       when 5 # just destroy
         if success && dir == :execute
-          t.query("DELETE FROM #{trans[0]} WHERE #{pk}")
+          t.query("DELETE FROM #{trans['table_name']} WHERE #{pk}")
         end
 
       when 6 # decrement
         if success && dir == :execute
-          attr = YAML.load(trans[2])
+          attr = YAML.load(trans['attr_changes'])
 
-          t.query("UPDATE #{trans[0]} SET #{attr} = #{attr} - 1 WHERE #{pk}")
+          t.query("UPDATE #{trans['table_name']} SET #{attr} = #{attr} - 1 WHERE #{pk}")
         end
 
       when 7 # increment
         if success && dir == :execute
-          attr = YAML.load(trans[2])
+          attr = YAML.load(trans['attr_changes'])
 
-          t.query("UPDATE #{trans[0]} SET #{attr} = #{attr} + 1 WHERE #{pk}")
+          t.query("UPDATE #{trans['table_name']} SET #{attr} = #{attr} + 1 WHERE #{pk}")
         end
       end
     end

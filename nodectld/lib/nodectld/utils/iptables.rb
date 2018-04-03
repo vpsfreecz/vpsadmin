@@ -45,7 +45,7 @@ module NodeCtld::Utils
           cmd.call
         end
 
-      rescue NodeCtld::CommandFailed => err
+      rescue NodeCtld::SystemCommandFailed => err
         if err.rc == 1 && err.output =~ /Resource temporarily unavailable/
           if try_cnt == opts[:tries]
             log 'Run out of tries'

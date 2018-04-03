@@ -64,14 +64,16 @@ module NodeCtld
 
     def open_console(data)
       db = Db.new
-      st = db.prepared_st(
+      rs = db.prepared(
         'SELECT vps_id FROM vps_consoles WHERE token = ? AND expiration > ?',
         data[:session], # can be nil
         Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
       )
 
-      if st.num_rows == 1
-        @veid = st.fetch[0].to_i
+      row = rs.get
+
+      if row
+        @veid = row['vps_id'].to_i
 
       else
         db.close

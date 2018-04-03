@@ -9,7 +9,7 @@ module NodeCtld::RemoteCommands
       case @command
         when 'confirmations'
           ret = {}
-          st = db.prepared_st(
+          rs = db.prepared(
             'SELECT transaction_id, class_name, row_pks, attr_changes,
                     confirm_type, c.done, c.id
               FROM transaction_confirmations c
@@ -18,19 +18,17 @@ module NodeCtld::RemoteCommands
               ORDER BY t.id', @chain
           )
 
-          st.each do |row|
-            ret[row[0]] ||= []
-            ret[row[0]] << {
-              id: row[6],
-              class_name: row[1],
-              row_pks: YAML.load(row[2]),
-              attr_changes: row[3] ? YAML.load(row[3]) : nil,
-              type: NodeCtld::Confirmations.translate_type(row[4]),
-              done: row[5] == 1 ? true : false
+          rs.each do |row|
+            ret[row['transaction_id']] ||= []
+            ret[row['transaction_id']] << {
+              id: row['id'],
+              class_name: row['class_name'],
+              row_pks: YAML.load(row['row_pks']),
+              attr_changes: row['attr_changes'] ? YAML.load(row['attr_changes']) : nil,
+              type: NodeCtld::Confirmations.translate_type(row['confirm_type']),
+              done: row['done'] == 1 ? true : false
             }
           end
-
-          st.close
 
           out = {transactions: ret}
 
@@ -42,18 +40,16 @@ module NodeCtld::RemoteCommands
             unless transactions
               transactions = []
 
-              st = db.prepared_st(
+              rs = db.prepared(
                 'SELECT id FROM transactions
                   WHERE transaction_chain_id = ?
                   ORDER BY id',
                 @chain
               )
 
-              st.each do |row|
-                transactions << row[0]
+              rs.each do |row|
+                transactions << row['id']
               end
-
-              st.close
             end
 
             out = {
@@ -84,22 +80,20 @@ module NodeCtld::RemoteCommands
     def release_locks(t)
       ret = []
 
-      st = t.prepared_st(
+      rs = t.prepared(
         "SELECT resource, row_id, created_at
         FROM resource_locks
         WHERE locked_by_type = 'TransactionChain' AND locked_by_id = ?",
         @chain
       )
 
-      st.each do |lock|
+      rs.each do |lock|
         ret << {
-          resource: lock[0],
-          row_id: lock[1],
-          created_at: lock[2]
+          resource: lock['resource'],
+          row_id: lock['row_id'],
+          created_at: lock['created_at'],
         }
       end
-
-      st.close
 
       t.prepared(
         "DELETE FROM resource_locks
@@ -113,7 +107,7 @@ module NodeCtld::RemoteCommands
     def release_ports(t)
       ret = []
 
-      st = t.prepared_st(
+      rs = t.prepared(
         'SELECT n.name, l.domain, r.node_id, r.addr, r.port
         FROM port_reservations r
         INNER JOIN nodes n ON n.id = r.node_id
@@ -122,17 +116,15 @@ module NodeCtld::RemoteCommands
         @chain
       )
 
-      st.each do |lock|
+      rs.each do |lock|
         ret << {
-          node_name: lock[0],
-          node_id: lock[2],
-          location_domain: lock[1],
-          addr: lock[3],
-          port: lock[4]
+          node_name: lock['name'],
+          node_id: lock['node_id'],
+          location_domain: lock['domain'],
+          addr: lock['addr'],
+          port: lock['port'],
         }
       end
-
-      st.close
 
       t.prepared(
         'UPDATE port_reservations

@@ -59,12 +59,10 @@ module NodeCtld::RemoteCommands
         mounts = m.dup
       end
 
-      st = db.prepared_st(
+      q_size = db.prepared(
         'SELECT COUNT(id) AS cnt FROM transactions WHERE node_id = ? AND done = 0',
         $CFG.get(:vpsadmin, :node_id)
-      )
-      q_size = st.fetch()[0]
-      st.close
+      ).get['cnt']
 
       {
         ret: :ok,

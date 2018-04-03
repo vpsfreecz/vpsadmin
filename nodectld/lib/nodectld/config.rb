@@ -189,38 +189,34 @@ module NodeCtld
     def load_db_settings
       db = Db.new(@cfg[:db])
 
-      st = db.prepared_st(
+      rs = db.prepared(
         'SELECT role, ip_addr, net_interface, max_tx, max_rx FROM nodes WHERE id = ?',
         @cfg[:vpsadmin][:node_id]
-      )
-      rs = st.fetch
+      ).get
 
       unless rs
         warn 'Node is not registered in database!'
         return
       end
 
-      @cfg[:vpsadmin][:type] = %i(node storage mailer)[ rs[0] ]
-      @cfg[:vpsadmin][:node_addr] = rs[1]
-      @cfg[:vpsadmin][:netdev] = rs[2]
-      @cfg[:vpsadmin][:max_tx] = rs[3]
-      @cfg[:vpsadmin][:max_rx] = rs[4]
+      @cfg[:vpsadmin][:type] = %i(node storage mailer)[ rs['role'] ]
+      @cfg[:vpsadmin][:node_addr] = rs['ip_addr']
+      @cfg[:vpsadmin][:netdev] = rs['net_interface']
+      @cfg[:vpsadmin][:max_tx] = rs['max_tx']
+      @cfg[:vpsadmin][:max_rx] = rs['max_rx']
 
       case @cfg[:vpsadmin][:type]
         when :node
-          st = db.prepared_st(
+          rs = db.prepared(
             'SELECT ve_private FROM nodes WHERE id = ?',
             @cfg[:vpsadmin][:node_id]
-          )
-          rs = st.fetch
+          ).get
 
           if rs
-            @cfg[:vz][:ve_private] = rs[0]
+            @cfg[:vz][:ve_private] = rs['ve_private']
           else
             warn 'Failed to load settings from database'
           end
-
-          st.close
       end
 
       db.close

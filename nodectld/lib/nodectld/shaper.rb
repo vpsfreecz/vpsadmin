@@ -174,7 +174,7 @@ module NodeCtld
         WHERE vpses.node_id = #{$CFG.get(:vpsadmin, :node_id)}
           AND ip.vps_id = vpses.id"
       )
-      rs.each_hash do |ip|
+      rs.each do |ip|
         yield ip
       end
     end

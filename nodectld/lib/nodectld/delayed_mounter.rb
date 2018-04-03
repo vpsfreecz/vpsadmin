@@ -176,7 +176,7 @@ module NodeCtld
       vps_mounts = {}
       db = Db.new
 
-      st = db.prepared_st(
+      rs = db.prepared(
         "SELECT m.vps_id, m.id
         FROM mounts m
         INNER JOIN vpses ON vpses.id = m.vps_id
@@ -184,12 +184,11 @@ module NodeCtld
         $CFG.get(:vpsadmin, :node_id)
       )
 
-      st.each do |row|
-        vps_mounts[ row[0] ] ||= []
-        vps_mounts[ row[0] ] << row[1]
+      rs.each do |row|
+        vps_mounts[ row['vps_id'] ] ||= []
+        vps_mounts[ row['vps_id'] ] << row['id']
       end
 
-      st.close
       db.close
 
       return if vps_mounts.empty?

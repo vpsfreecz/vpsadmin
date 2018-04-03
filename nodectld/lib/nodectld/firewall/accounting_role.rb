@@ -32,11 +32,11 @@ module NodeCtld::Firewall
                     INNER JOIN networks n ON n.id = ip.network_id
                     WHERE node_id = #{$CFG.get(:vpsadmin, :node_id)}
                     AND n.ip_version = #{v}")
-      rs.each_hash do |ip|
+      rs.each do |ip|
         reg_ip(ip['ip_addr'], v)
       end
 
-      log("#{role} accounting for #{rs.num_rows} IPv#{v} addresses")
+      log("#{role} accounting for #{rs.count} IPv#{v} addresses")
     end
 
     def reg_ip(addr, v)
@@ -87,7 +87,7 @@ module NodeCtld::Firewall
         end
       end
 
-    rescue NodeCtld::CommandFailed => err
+    rescue NodeCtld::SystemCommandFailed => err
       log(:critical, :firewall, "Failed to update traffic accounting: #{err.output}")
     end
 

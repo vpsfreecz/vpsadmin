@@ -29,7 +29,7 @@ module NodeCtld::Firewall
             INNER JOIN networks n ON n.id = ip.network_id
             INNER JOIN vpses ON vpses.id = ip.vps_id
             WHERE node_id = #{$CFG.get(:vpsadmin, :node_id)}
-        ").each_hash do |ip|
+        ").each do |ip|
           @map[ip['ip_addr']] = IpAddr.new(
             ip['id'].to_i,
             ip['ip_version'].to_i,

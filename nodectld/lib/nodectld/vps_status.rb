@@ -10,14 +10,11 @@ module NodeCtld
 
       # @param row [Hash] row from databse table `vpses`
       def initialize(row)
-        @id = row['id']
+        @id = row['id'].to_s
         @read_hostname = row['manage_hostname'].to_i == 0
         @last_status_id = row['status_id'] && row['status_id'].to_i
         @last_is_running = row['is_running'].to_i == 1
-        @status_time = row['created_at'] && Time.strptime(
-          row['created_at'] + ' UTC',
-          '%Y-%m-%d %H:%M:%S %Z'
-        )
+        @status_time = row['created_at']
         @cpus = row['cpus'].to_i
       end
 
@@ -64,9 +61,9 @@ module NodeCtld
     def safe_update(db)
       db_vpses = {}
 
-      fetch_vpses(db).each_hash do |row|
+      fetch_vpses(db).each do |row|
         ent = Entry.new(row)
-        db_vpses[ent.id] = ent
+        db_vpses[ent.id.to_s] = ent
       end
 
       ct_list.each do |vps|

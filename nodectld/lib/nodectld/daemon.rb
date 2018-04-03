@@ -183,7 +183,7 @@ module NodeCtld
     def do_commands
       rs = select_commands(@db)
 
-      rs.each_hash do |row|
+      rs.each do |row|
         c = Command.new(row)
 
         do_command(c)
