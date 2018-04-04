@@ -13,9 +13,5 @@ module NodeCtld
     def rollback
       ok
     end
-
-    def post_save(db)
-      VpsStatus.new([@vps_id]).update
-    end
   end
 end
