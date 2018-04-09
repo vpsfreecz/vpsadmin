@@ -1,8 +1,8 @@
 require 'pp'
-require 'lib/nodectl/nodectld'
-require 'lib/nodectl/utils'
-require 'lib/nodectl/version'
-require 'lib/nodectl/command'
+require 'nodectl/nodectld'
+require 'nodectl/utils'
+require 'nodectl/version'
+require 'nodectl/command'
 
 require 'pry-remote' if RUBY_VERSION >= '2.0'
 

@@ -1,9 +1,6 @@
 require 'pathname'
-
-$: << File.dirname(Pathname.new(__FILE__).realpath + '../../')
-
 require 'optparse'
-require 'lib/nodectl/rc'
+require 'nodectl/rc'
 
 options = {
   parsable: false,
