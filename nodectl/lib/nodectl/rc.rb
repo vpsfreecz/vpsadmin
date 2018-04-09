@@ -3,8 +3,7 @@ require 'nodectl/nodectld'
 require 'nodectl/utils'
 require 'nodectl/version'
 require 'nodectl/command'
-
-require 'pry-remote' if RUBY_VERSION >= '2.0'
+require 'pry-remote'
 
 module NodeCtl
   class RemoteControl
