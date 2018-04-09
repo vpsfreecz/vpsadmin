@@ -1,17 +1,13 @@
 require 'json'
 
 module NodeCtld
-  # Interface to `osctl ct top`
-  class CtTop
+  # Interface to `osctl monitor`
+  class CtMonitor
     include OsCtl::Lib::Utils::Log
 
-    # @param rate [Integer] refresh frequency in seconds
-    # @yieldparam [Hash] data from ct top
-    def monitor(rate, &block)
-      @rate = rate
-
+    def start
       loop do
-        run(&block)
+        run
 
         if stop?
           break
@@ -22,31 +18,23 @@ module NodeCtld
       end
     end
 
-    def refresh
-      return unless pid
-      log(:info, 'Refreshing VPS statuses')
-
-      # TODO: allow one refresh every 5-10 seconds
-      Process.kill('USR1', pid)
-    end
-
     def stop
       @stop = true
       pipe.close
     end
 
     def log_type
-      'ct top'
+      'ct monitor'
     end
 
     protected
-    attr_reader :rate, :pipe, :pid
+    attr_reader :pipe, :pid
 
     def run
       r, w = IO.pipe
       @pipe = r
       @pid = Process.spawn(
-        'osctl', '-j', 'ct', 'top', '--rate', rate.to_s,
+        'osctl', '-j', 'monitor',
         out: w, close_others: true
       )
       w.close
@@ -54,7 +42,7 @@ module NodeCtld
       log(:info, "Started with pid #{pid}")
 
       until pipe.eof?
-        yield(JSON.parse(pipe.readline, symbolize_names: true))
+        process_event(JSON.parse(pipe.readline, symbolize_names: true))
       end
 
       Process.wait(pid)
@@ -63,6 +51,15 @@ module NodeCtld
 
     def stop?
       @stop
+    end
+
+    def process_event(event)
+      case event[:type]
+      when 'state'
+        if %w(running stopped).include?(event[:opts][:state])
+          Daemon.instance.ct_top.refresh
+        end
+      end
     end
   end
 end

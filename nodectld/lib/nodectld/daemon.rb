@@ -27,7 +27,7 @@ module NodeCtld
       end
     end
 
-    attr_reader :start_time, :export_console, :delayed_mounter
+    attr_reader :start_time, :export_console, :delayed_mounter, :ct_top
 
     def initialize
       self.class.instance = self
@@ -243,6 +243,17 @@ module NodeCtld
         else
           @ct_top.stop if @ct_top
           @ct_top = nil
+        end
+      end
+
+      run_thread_unless_runs(:vps_monitor) do
+        if $CFG.get(:vpsadmin, :update_vps_status)
+          @ct_monitor = CtMonitor.new
+          @ct_monitor.start
+
+        else
+          @ct_monitor.stop if @ct_monitor
+          @ct_monitor = nil
         end
       end
 
