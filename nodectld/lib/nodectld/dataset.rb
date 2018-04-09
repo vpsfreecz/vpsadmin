@@ -1,3 +1,6 @@
+require 'libosctl'
+require 'nodectld/utils'
+
 module NodeCtld
   class Dataset
     include OsCtl::Lib::Utils::Log

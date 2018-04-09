@@ -1,3 +1,6 @@
+require 'libosctl'
+require 'yaml'
+
 module NodeCtld
   class Confirmations
     include OsCtl::Lib::Utils::Log

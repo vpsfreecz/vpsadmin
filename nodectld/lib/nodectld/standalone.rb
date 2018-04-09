@@ -4,6 +4,7 @@ end
 
 if NodeCtld::STANDALONE
   require_relative '../nodectld'
+  require_relative '../nodectld/config'
 
   $CFG = NodeCtld::AppConfig.new(ENV['CONFIG'] || '/etc/vpsadmin/nodectld.yml')
 

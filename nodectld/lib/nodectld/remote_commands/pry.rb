@@ -1,3 +1,5 @@
+require 'pry-remote'
+
 module NodeCtld::RemoteCommands
   class Pry < Base
     handle :pry

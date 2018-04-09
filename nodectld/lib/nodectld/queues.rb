@@ -1,3 +1,5 @@
+require 'nodectld/transaction_queue'
+
 module NodeCtld
   class Queues
     QUEUES = [

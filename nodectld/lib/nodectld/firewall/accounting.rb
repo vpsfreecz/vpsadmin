@@ -1,3 +1,6 @@
+require 'libosctl'
+require 'nodectld/firewall/accounting_role'
+
 module NodeCtld::Firewall
   class Accounting
     include OsCtl::Lib::Utils::Log

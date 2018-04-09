@@ -1,4 +1,7 @@
-#!/usr/bin/env ruby
+require 'optparse'
+require 'libosctl'
+require 'nodectld/config'
+require 'nodectld/daemon'
 
 module NodeCtld
   module Cli
@@ -58,7 +61,6 @@ module NodeCtld
 
       executable = File.expand_path($0)
 
-      # TODO: optionally log to syslog
       OsCtl::Lib::Logger.setup(options[:logger], facility: options[:log_facility])
 
       # Load config

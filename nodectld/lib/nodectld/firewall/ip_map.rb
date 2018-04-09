@@ -1,3 +1,6 @@
+require 'nodectld/firewall/ip_monitor'
+require 'nodectld/firewall/ip_set'
+
 module NodeCtld::Firewall
   class IpMap
     IpAddr = Struct.new(:id, :version, :user_id, :monitor) do

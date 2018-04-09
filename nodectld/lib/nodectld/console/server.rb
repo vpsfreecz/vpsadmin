@@ -1,5 +1,7 @@
-require 'rubygems'
 require 'eventmachine'
+require 'json'
+require 'libosctl'
+require 'nodectld/console/wrapper'
 
 module NodeCtld
   class Console::Server < EventMachine::Connection

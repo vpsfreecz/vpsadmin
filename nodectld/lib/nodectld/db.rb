@@ -1,3 +1,6 @@
+require 'libosctl'
+require 'mysql2'
+
 module NodeCtld
   class Db
     include OsCtl::Lib::Utils::Log

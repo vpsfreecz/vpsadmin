@@ -1,3 +1,5 @@
+require 'mail'
+
 module NodeCtld
   class Commands::Mail::Send < Commands::Base
     handle 9001

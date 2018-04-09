@@ -1,3 +1,4 @@
+require 'libosctl'
 require 'monitor'
 
 module NodeCtld

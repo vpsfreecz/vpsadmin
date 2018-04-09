@@ -1,3 +1,7 @@
+require 'libosctl'
+require 'monitor'
+require 'thread'
+
 module NodeCtld
   class TransactionQueue
     class Semaphore

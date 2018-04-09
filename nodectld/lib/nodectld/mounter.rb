@@ -1,3 +1,9 @@
+require 'libosctl'
+require 'nodectld/utils'
+require 'nodectld/exceptions'
+require 'nodectld/remote_client'
+require 'nodectld/mount_reporter'
+
 module NodeCtld
   # Mounter takes care of mounting and umounting local/remote
   # datasets/snapshots to VPS.

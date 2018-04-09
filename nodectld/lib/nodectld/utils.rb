@@ -1,6 +1,5 @@
 module NodeCtld
-  module Utils
-  end
-
-  require_rel 'utils'
+  module Utils ; end
 end
+
+require_rel 'utils'

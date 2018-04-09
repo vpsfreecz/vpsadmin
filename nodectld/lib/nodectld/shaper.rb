@@ -1,3 +1,7 @@
+require 'libosctl'
+require 'nodectld/db'
+require 'nodectld/utils'
+
 module NodeCtld
   class Shaper
     include OsCtl::Lib::Utils::Log

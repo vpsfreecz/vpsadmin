@@ -1,6 +1,8 @@
 require 'erb'
 require 'tempfile'
 require 'fileutils'
+require 'libosctl'
+require 'nodectld/utils'
 
 module NodeCtld
   class Vps

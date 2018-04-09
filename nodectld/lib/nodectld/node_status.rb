@@ -1,4 +1,7 @@
 require 'ostruct'
+require 'nodectld/db'
+require 'nodectld/exceptions'
+require 'nodectld/system_probes'
 
 module NodeCtld
   class NodeStatus

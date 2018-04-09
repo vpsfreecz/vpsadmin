@@ -1,3 +1,10 @@
+require 'libosctl'
+require 'nodectld/db'
+require 'nodectld/utils'
+require 'nodectld/firewall/ip_map'
+require 'nodectld/firewall/networks'
+require 'nodectld/firewall/accounting'
+
 module NodeCtld::Firewall
   class Main
     include OsCtl::Lib::Utils::Log

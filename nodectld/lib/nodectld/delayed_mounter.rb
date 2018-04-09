@@ -1,3 +1,7 @@
+require 'thread'
+require 'nodectld/mounter'
+require 'nodectld/utils'
+
 module NodeCtld
   class DelayedMounter
     include OsCtl::Lib::Utils::Log

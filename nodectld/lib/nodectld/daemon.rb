@@ -1,3 +1,20 @@
+require 'eventmachine'
+require 'libosctl'
+require 'nodectld/db'
+require 'nodectld/command'
+require 'nodectld/queues'
+require 'nodectld/mount_reporter'
+require 'nodectld/delayed_mounter'
+require 'nodectld/remote_control'
+require 'nodectld/node_status'
+require 'nodectld/vps_status'
+require 'nodectld/storage_status'
+require 'nodectld/firewall'
+require 'nodectld/shaper'
+require 'nodectld/ct_top'
+require 'nodectld/ct_monitor'
+require 'thread'
+
 module NodeCtld
   EXIT_OK = 0
   EXIT_ERR = 1

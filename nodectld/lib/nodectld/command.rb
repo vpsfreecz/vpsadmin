@@ -1,3 +1,8 @@
+require 'json'
+require 'libosctl'
+require 'nodectld/exceptions'
+require 'nodectld/utils'
+
 module NodeCtld
   class Command
     include Utils::Compat

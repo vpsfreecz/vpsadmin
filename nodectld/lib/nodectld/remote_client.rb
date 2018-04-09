@@ -1,3 +1,6 @@
+require 'json'
+require 'socket'
+
 module NodeCtld
   class RemoteClient
     class << self

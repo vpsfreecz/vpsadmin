@@ -1,3 +1,5 @@
+require 'libosctl'
+
 module NodeCtld
   SystemCommandFailed = OsCtl::Lib::Exceptions::SystemCommandFailed
 

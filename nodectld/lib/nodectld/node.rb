@@ -1,3 +1,6 @@
+require 'libosctl'
+require 'nodectld/utils'
+
 module NodeCtld
   class Node
     include OsCtl::Lib::Utils::Log

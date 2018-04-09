@@ -1,3 +1,5 @@
+require 'nodectld/firewall/ip_set'
+
 module NodeCtld::Firewall
   class Networks
     include ::Enumerable

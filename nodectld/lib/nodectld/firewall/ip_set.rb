@@ -1,3 +1,7 @@
+require 'libosctl'
+require 'nodectld/utils'
+require 'nodectld/exceptions'
+
 module NodeCtld::Firewall
   class IpSet
     include OsCtl::Lib::Utils::Log

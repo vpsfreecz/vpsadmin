@@ -1,3 +1,5 @@
+require 'yaml'
+
 module NodeCtld
   IMPLICIT_CONFIG = {
     db: {

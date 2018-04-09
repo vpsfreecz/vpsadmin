@@ -1,4 +1,5 @@
 require 'json'
+require 'nodectld/daemon'
 
 module NodeCtld
   # Interface to `osctl monitor`

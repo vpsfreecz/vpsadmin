@@ -1,3 +1,4 @@
+require 'libosctl'
 require 'timeout'
 
 module NodeCtld

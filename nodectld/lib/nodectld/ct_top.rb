@@ -1,4 +1,5 @@
 require 'json'
+require 'libosctl'
 
 module NodeCtld
   # Interface to `osctl ct top`

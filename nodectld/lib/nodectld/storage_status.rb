@@ -1,3 +1,6 @@
+require 'libosctl'
+require 'nodectld/utils'
+
 module NodeCtld
   class StorageStatus
     include OsCtl::Lib::Utils::Log

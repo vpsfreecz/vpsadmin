@@ -1,5 +1,9 @@
 require 'etc'
 require 'time'
+require 'libosctl'
+require 'nodectld/utils'
+require 'nodectld/exceptions'
+require 'nodectld/system_probes'
 
 module NodeCtld
   class VpsStatus

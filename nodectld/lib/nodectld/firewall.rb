@@ -1,3 +1,5 @@
+require 'nodectld/firewall/main'
+
 module NodeCtld
   module Firewall
     class << self

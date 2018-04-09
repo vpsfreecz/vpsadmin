@@ -1,3 +1,5 @@
+require 'thread'
+
 module NodeCtld
   class Worker
     attr_reader :cmd
