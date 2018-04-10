@@ -53,7 +53,7 @@ module VpsAdmin::ConsoleRouter
       data = {}
 
       if params[:keys] && !params[:keys].empty?
-        data[:keys] = Base64.encode64(params[:keys])
+        data[:keys] = Base64.strict_encode64(params[:keys])
       end
 
       w = params[:width].to_i

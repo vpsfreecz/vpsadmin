@@ -1,3 +1,4 @@
+require 'json'
 require 'libosctl'
 require 'monitor'
 
@@ -49,6 +50,10 @@ module NodeCtld
     def register(c)
       @listeners << c
       @usage += 1
+    end
+
+    def send_cmd(hash)
+      send_data(hash.to_json + "\n")
     end
 
     def self.consoles

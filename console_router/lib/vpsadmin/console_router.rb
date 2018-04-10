@@ -1,7 +1,7 @@
 require 'sinatra/base'
 require 'eventmachine'
 require 'base64'
-require '/opt/vpsadmind/lib/vpsadmind/standalone'
+require '/opt/vpsadmin/vpsadmind/lib/vpsadmind/standalone'
 
 module VpsAdmin
   module ConsoleRouter

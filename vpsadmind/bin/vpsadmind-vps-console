@@ -39,7 +39,7 @@ master.readline
 catch :stop do
   loop do
     rs, _ = IO.select([$stdin, master])
-    
+
     rs.each do |r|
       case r
       when $stdin
@@ -51,7 +51,7 @@ catch :stop do
 
           case cmd[0]
           when 'W'
-            write.write(Base64.decode64(cmd[1]))
+            write.write(Base64.strict_decode64(cmd[1]))
 
           when 'S'
             w, h = cmd[1..2].map { |v| v.to_i }

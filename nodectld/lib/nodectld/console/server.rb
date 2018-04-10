@@ -29,8 +29,7 @@ module NodeCtld
 
       if @console.usage == 0
         Console::Wrapper.consoles do |c|
-          # TODO: detach
-          # c[@veid].send_cmd('Q')
+          c[@veid].close_connection
           c.delete(@veid)
         end
       end
@@ -45,8 +44,8 @@ module NodeCtld
     protected
     def process_msg(data)
       if data[:width] && data[:height]
-        @w ||= data[:width]
-        @h ||= data[:height]
+        @rows ||= data[:height]
+        @cols ||= data[:width]
       end
 
       unless @veid
@@ -56,12 +55,14 @@ module NodeCtld
 
       Console::Wrapper.consoles do |c|
         if !data[:keys].nil? && !data[:keys].empty?
-          c[@veid].send_data(Base64.decode64(data[:keys]))
+          c[@veid].send_cmd(keys: data[:keys])
         end
 
         if (data[:width] && data[:height]) && \
-            (@w != data[:width] || @h != data[:height] || init)
-          # TODO: handle resize
+            (@cols != data[:width] || @rows != data[:height] || init)
+          @rows = data[:height]
+          @cols = data[:width]
+          c[@veid].send_cmd(rows: @rows, cols: @cols)
         end
       end
     end
