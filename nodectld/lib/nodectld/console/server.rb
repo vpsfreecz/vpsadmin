@@ -1,3 +1,4 @@
+require 'base64'
 require 'eventmachine'
 require 'json'
 require 'libosctl'
@@ -28,7 +29,8 @@ module NodeCtld
 
       if @console.usage == 0
         Console::Wrapper.consoles do |c|
-          c[@veid].send_cmd('Q')
+          # TODO: detach
+          # c[@veid].send_cmd('Q')
           c.delete(@veid)
         end
       end
@@ -54,12 +56,12 @@ module NodeCtld
 
       Console::Wrapper.consoles do |c|
         if !data[:keys].nil? && !data[:keys].empty?
-          c[@veid].send_cmd('W', data[:keys])
+          c[@veid].send_data(Base64.decode64(data[:keys]))
         end
 
         if (data[:width] && data[:height]) && \
             (@w != data[:width] || @h != data[:height] || init)
-          c[@veid].send_cmd('S', "#{data[:width]} #{data[:height]}")
+          # TODO: handle resize
         end
       end
     end
@@ -93,14 +95,7 @@ module NodeCtld
         else
           log(:info, :console, "Attaching console of ##{@veid}")
           @console = EventMachine.popen(
-            File.join(
-              File.dirname(__FILE__),
-              '..',
-              '..',
-              '..',
-              'bin',
-              'nodectld-vps-console'
-            ) + " '#{$CFG.get(:vz, :vzctl)}' #{@veid}",
+            "osctl -j ct console #{@veid}",
             Console::Wrapper, @veid, self
           )
         end

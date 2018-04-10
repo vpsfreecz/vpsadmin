@@ -51,14 +51,6 @@ module NodeCtld
       @usage += 1
     end
 
-    def send_cmd(cmd, arg = nil)
-      msg = cmd
-      msg += " #{arg}" if arg
-      msg += "\n"
-
-      send_data(msg)
-    end
-
     def self.consoles
       @@mutex.synchronize do
         yield(@@consoles)
