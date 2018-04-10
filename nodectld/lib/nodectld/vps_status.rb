@@ -176,7 +176,14 @@ module NodeCtld
 
     def apply_usage_stats(vps)
       st = @top_data.detect { |ct| ct[:id] == vps.id }
-      return unless st
+
+      # It may happen that `osctl ct top` does not yet have information
+      # about a newly started VPS.
+      unless st
+        log(:warn, :vps, "VPS #{vps.id} not found in ct top")
+        vps.skip
+        return
+      end
 
       vps.cpu_usage = st[:cpu_usage] / vps.cpus
 

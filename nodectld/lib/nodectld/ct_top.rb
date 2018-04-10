@@ -1,10 +1,28 @@
 require 'json'
 require 'libosctl'
+require 'thread'
 
 module NodeCtld
   # Interface to `osctl ct top`
   class CtTop
     include OsCtl::Lib::Utils::Log
+
+    def initialize
+      @mutex = Mutex.new
+      @refresher = Thread.new do
+        loop do
+          sleep(10)
+
+          sync do
+            next if !pid || !@refresh || @refresh > Time.now
+
+            log(:info, 'Refreshing VPS statuses')
+            Process.kill('USR1', pid)
+            @refresh = false
+          end
+        end
+      end
+    end
 
     # @param rate [Integer] refresh frequency in seconds
     # @yieldparam [Hash] data from ct top
@@ -24,16 +42,15 @@ module NodeCtld
     end
 
     def refresh
-      return unless pid
-      log(:info, 'Refreshing VPS statuses')
-
-      # TODO: allow one refresh every 5-10 seconds
-      Process.kill('USR1', pid)
+      # Refresh VPS statuses in 3 seconds. This should give `osctl ct top`
+      # controller by {CtTop} to register newly started VPSes.
+      sync { @refresh = Time.now + 3 }
     end
 
     def stop
-      @stop = true
+      sync { @stop = true }
       pipe.close
+      @refresher.terminate
     end
 
     def log_type
@@ -46,7 +63,7 @@ module NodeCtld
     def run
       r, w = IO.pipe
       @pipe = r
-      @pid = Process.spawn(
+      pid = Process.spawn(
         'osctl', '-j', 'ct', 'top', '--rate', rate.to_s,
         out: w, close_others: true
       )
@@ -54,8 +71,12 @@ module NodeCtld
 
       log(:info, "Started with pid #{pid}")
 
+      sync { @pid = pid }
+
       until pipe.eof?
-        yield(JSON.parse(pipe.readline, symbolize_names: true))
+        data = JSON.parse(pipe.readline, symbolize_names: true)
+        sync { @refresh = false }
+        yield(data)
       end
 
       Process.wait(pid)
@@ -63,7 +84,11 @@ module NodeCtld
     end
 
     def stop?
-      @stop
+      sync { @stop }
+    end
+
+    def sync(&block)
+      @mutex.synchronize(&block)
     end
   end
 end
