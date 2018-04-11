@@ -1929,13 +1929,15 @@ CREATE TABLE `vpses` (
   `updated_at` datetime DEFAULT NULL,
   `manage_hostname` tinyint(1) NOT NULL DEFAULT '1',
   `cpu_limit` int(11) DEFAULT NULL,
+  `veth_name` varchar(30) COLLATE utf8_czech_ci NOT NULL DEFAULT 'venet0',
   PRIMARY KEY (`id`),
   KEY `index_vpses_on_dataset_in_pool_id` (`dataset_in_pool_id`) USING BTREE,
   KEY `index_vpses_on_dns_resolver_id` (`dns_resolver_id`) USING BTREE,
   KEY `index_vpses_on_node_id` (`node_id`) USING BTREE,
   KEY `index_vpses_on_object_state` (`object_state`) USING BTREE,
   KEY `index_vpses_on_os_template_id` (`os_template_id`) USING BTREE,
-  KEY `index_vpses_on_user_id` (`user_id`) USING BTREE
+  KEY `index_vpses_on_user_id` (`user_id`) USING BTREE,
+  KEY `index_vpses_on_veth_name` (`veth_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -1948,7 +1950,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-03-19 15:31:33
+-- Dump completed on 2018-04-11 11:53:23
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');

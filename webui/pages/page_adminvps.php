@@ -381,6 +381,24 @@ switch ($_GET["action"]) {
 
 			break;
 
+		case 'netif':
+			try {
+				csrf_check();
+
+				if ($_POST['veth_name']) {
+					$api->vps($_GET['veid'])->update(array(
+						'veth_name' => trim($_POST['veth_name'])
+					));
+				}
+
+				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Failed to set interface name'), $e->getResponse());
+				$show_info=true;
+			}
+			break;
+
 		case 'addip':
 			try {
 				csrf_check();
@@ -1018,6 +1036,14 @@ if (isset($show_info) && $show_info) {
 		);
 
 		$xtpl->form_out(_('Go >>'));
+
+	// Network interface
+		if ($vps->node->hypervisor_type == 'vpsadminos') {
+			$xtpl->table_title(_('Network interface'));
+			$xtpl->form_create('?page=adminvps&action=netif&veid='.$vps->id, 'post');
+			$xtpl->form_add_input(_('Veth name').':', 'text', '30', 'veth_name', $vps->veth_name);
+			$xtpl->form_out(_('Go >>'));
+		}
 
 	// IP addresses
 		$xtpl->table_title(_('IP addresses'));

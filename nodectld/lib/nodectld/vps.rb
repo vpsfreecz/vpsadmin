@@ -31,24 +31,24 @@ module NodeCtld
       osctl(%i(ct set autostart), @veid)
     end
 
-    def ip_add(addr, v, register, shaper)
+    def ip_add(netif, addr, v, register, shaper)
       if register
         # TODO
         # Shaper.new.shape_set(addr, v, shaper)
         Firewall.accounting.reg_ip(addr, v)
       end
 
-      osctl(%i(ct netif ip add), [@veid, 'venet0', addr])
+      osctl(%i(ct netif ip add), [@veid, netif, addr])
     end
 
-    def ip_del(addr, v, unregister, shaper)
+    def ip_del(netif, addr, v, unregister, shaper)
       if unregister
         # TODO
         # Shaper.new.shape_unset(addr, v, shaper)
         Firewall.accounting.unreg_ip(addr, v)
       end
 
-      osctl(%i(ct netif ip del), [@veid, 'venet0', addr])
+      osctl(%i(ct netif ip del), [@veid, netif, addr])
     end
 
     def passwd(user, password)

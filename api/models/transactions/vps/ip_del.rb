@@ -9,6 +9,7 @@ module Transactions::Vps
       self.node_id = vps.node_id
 
       ret = {
+          veth_name: vps.veth_name,
           addr: ip.addr,
           version: ip.version,
           unregister: unregister,

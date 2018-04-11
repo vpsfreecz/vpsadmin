@@ -79,6 +79,9 @@ class AddOsctlSupport < ActiveRecord::Migration
     add_column :dataset_in_pools, :user_namespace_id, :integer, null: true
     add_index :dataset_in_pools, :user_namespace_id
 
+    add_column :vpses, :veth_name, :string, limit: 30, null: false, default: 'venet0'
+    add_index :vpses, :veth_name
+
     add_column :os_templates, :vendor, :string
     add_column :os_templates, :variant, :string
     add_column :os_templates, :arch, :string

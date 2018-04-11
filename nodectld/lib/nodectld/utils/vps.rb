@@ -9,7 +9,7 @@ module NodeCtld
     end
 
     def status
-      ct.state
+      find_ct.state
     end
 
     def honor_state

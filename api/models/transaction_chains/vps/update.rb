@@ -83,6 +83,15 @@ module TransactionChains
               }))
             end
 
+          when 'veth_name'
+            append_t(Transactions::Vps::VethName, args: [
+              vps,
+              vps.veth_name_was,
+              vps.veth_name
+            ]) do |t|
+              t.edit(vps, veth_name: vps.veth_name)
+            end
+
           when 'dns_resolver_id'
             append(Transactions::Vps::DnsResolver, args: [vps, *find_obj(vps, attr)]) do
               edit(vps, attr => vps.dns_resolver_id)

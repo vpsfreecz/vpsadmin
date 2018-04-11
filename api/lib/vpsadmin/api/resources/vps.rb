@@ -17,6 +17,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     bool :manage_hostname, label: 'Manage hostname',
           desc: 'Determines whether vpsAdmin sets VPS hostname or not'
     use :template
+    string :veth_name, label: 'Veth name', default: 'venet0', fill: true
     string :info, label: 'Info', desc: 'VPS description'
     resource VpsAdmin::API::Resources::DnsResolver, label: 'DNS resolver',
              desc: 'DNS resolver the VPS will use'
@@ -385,6 +386,10 @@ END
       elsif input[:manage_hostname] === true && \
             (input[:hostname].nil? || input[:hostname].empty?)
         error('update failed', hostname: ['must be present'])
+      end
+
+      if input[:veth_name] && !vps.node.vpsadminos?
+        error('veth configuration not available on this node')
       end
 
       @chain, _ = vps.update(to_db_names(input))
