@@ -1140,6 +1140,7 @@ CREATE TABLE `os_templates` (
   `enabled` tinyint(4) NOT NULL DEFAULT '1',
   `supported` tinyint(4) NOT NULL DEFAULT '1',
   `order` tinyint(4) NOT NULL DEFAULT '1',
+  `hypervisor_type` int(11) NOT NULL DEFAULT '0',
   `vendor` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
   `variant` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
   `arch` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
@@ -1950,7 +1951,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-04-11 11:53:23
+-- Dump completed on 2018-04-11 18:47:12
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');

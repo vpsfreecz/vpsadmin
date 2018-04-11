@@ -13,6 +13,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     bool :enabled, label: 'Enabled', desc: 'Enable/disable template usage'
     bool :supported, label: 'Supported', desc: 'Is template known to work?'
     integer :order, label: 'Order', desc: 'Template order'
+    string :hypervisor_type, choices: ::OsTemplate.hypervisor_types.keys
   end
 
   params(:all) do
@@ -23,6 +24,10 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
   class Index < HaveAPI::Actions::Default::Index
     desc 'List OS templates'
 
+    input do
+      resource VpsAdmin::API::Resources::Location
+    end
+
     output(:object_list) do
       use :all
     end
@@ -30,7 +35,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict enabled: true
-      output whitelist: %i(id label info supported)
+      output whitelist: %i(id label info supported hypervisor_type)
       allow
     end
 
@@ -50,7 +55,17 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     end
 
     def query
-      ::OsTemplate.where(with_restricted)
+      q = ::OsTemplate.where(with_restricted)
+
+      if input[:location]
+        hypervisor_types = ::Node.where(
+            location_id: input[:location].id,
+        ).group('hypervisor_type').pluck('hypervisor_type')
+
+        q = q.where(hypervisor_type: hypervisor_types)
+      end
+
+      q
     end
 
     def count
@@ -69,7 +84,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      output whitelist: %i(id label info supported enabled)
+      output whitelist: %i(id label info supported enabled hypervisor_type)
       allow
     end
 

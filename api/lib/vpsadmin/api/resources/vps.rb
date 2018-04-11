@@ -245,10 +245,18 @@ END
         end
 
         if input[:environment]
-          node = ::Node.pick_by_env(input[:environment])
+          node = ::Node.pick_by_env(
+              input[:environment],
+              nil,
+              input[:os_template].hypervisor_type
+          )
 
         else
-          node = ::Node.pick_by_location(input[:location])
+          node = ::Node.pick_by_location(
+              input[:location],
+              nil,
+              input[:os_template].hypervisor_type
+          )
         end
 
         input.delete(:location)

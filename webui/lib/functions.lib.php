@@ -83,7 +83,10 @@ function list_templates($vps = null) {
 	$tpls = $api->os_template->list();
 	$choices = resource_list_to_options(
 		$tpls,
-		'id', 'label', false, function ($t) {
+		'id', 'label', false, function ($t) use ($vps) {
+			if ($vps && $t->hypervisor_type != $vps->node->hypervisor_type)
+				return null;
+
 			$ret = $t->label;
 
 			if ($_SESSION['is_admin'] && !$t->enabled)
@@ -211,8 +214,14 @@ function resource_list_to_options($list, $id = 'id', $label = 'label', $empty = 
 	if ($empty)
 		$ret[0] = '---';
 
-	foreach ($list as $item)
-		$ret[ $item->{$id} ] = $label_callback ? $label_callback($item) : $item->{$label};
+	foreach ($list as $item) {
+		$item_label = $label_callback ? $label_callback($item) : $item->{$label};
+
+		if ($item_label === null)
+			continue;
+
+		$ret[ $item->{$id} ] = $item_label;
+	}
 
 	return $ret;
 }

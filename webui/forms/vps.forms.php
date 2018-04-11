@@ -61,7 +61,38 @@ function print_newvps_page2($loc_id) {
 		$xtpl->form_add_select(_("Owner").':', 'm_id', resource_list_to_options($api->user->list(), 'id', 'login'), post_val('m_id', $_SESSION['user']['id']), '');
 	}
 
-	$xtpl->form_add_select(_("OS template").':', 'vps_template', resource_list_to_options($api->os_template->list()), $_POST['vps_template'],  '');
+	$xtpl->form_add_select(
+		_("OS template").':',
+		'vps_template',
+		resource_list_to_options(
+			$api->os_template->list(array(
+				'location' => isAdmin() ? null : $loc_id,
+			)),
+			'id', 'label', false, function ($t) {
+				$ret = '';
+
+				switch ($t->hypervisor_type)
+				{
+				case 'openvz':
+					$ret .= '[OpenVZ] ';
+					break;
+
+				case 'vpsadminos':
+					$ret .= '[vpsAdminOS] ';
+					break;
+
+				default:
+					$ret .= '[Unknown] ';
+				}
+
+				$ret .= $t->label;
+
+				return $ret;
+			}
+		),
+		$_POST['vps_template'],
+		''
+	);
 
 	$params = $api->vps->create->getParameters('input');
 	$vps_resources = array(

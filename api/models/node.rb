@@ -62,7 +62,7 @@ class Node < ActiveRecord::Base
     "#{name}.#{location.domain}.#{location.environment.domain}"
   end
 
-  def self.pick_by_env(env, except = nil)
+  def self.pick_by_env(env, except = nil, hypervisor_type = nil)
     q = self.joins('
           LEFT JOIN vpses ON vpses.node_id = nodes.id
           LEFT JOIN vps_current_statuses st ON st.vps_id = vpses.id
@@ -75,6 +75,10 @@ class Node < ActiveRecord::Base
         ', env.id)
 
     q = q.where('nodes.id != ?', except.id) if except
+
+    if hypervisor_type
+      q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type])
+    end
 
     n = q.group('nodes.id')
      .order('COUNT(st.is_running) / max_vps ASC')
@@ -94,10 +98,14 @@ class Node < ActiveRecord::Base
 
     q = q.where('nodes.id != ?', except.id) if except
 
+    if hypervisor_type
+      q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type])
+    end
+
     q.group('nodes.id').order('COUNT(vpses.id) / max_vps ASC').take
   end
 
-  def self.pick_by_location(loc, except = nil)
+  def self.pick_by_location(loc, except = nil, hypervisor_type = nil)
     q = self.joins('
         LEFT JOIN vpses ON vpses.node_id = nodes.id
         LEFT JOIN vps_current_statuses st ON st.vps_id = vpses.id
@@ -110,6 +118,10 @@ class Node < ActiveRecord::Base
       ', loc.id
     )
     q = q.where('nodes.id != ?', except.id) if except
+
+    if hypervisor_type
+      q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type])
+    end
 
     n = q.group('nodes.id')
       .order('COUNT(st.is_running) / max_vps ASC')
@@ -127,6 +139,10 @@ class Node < ActiveRecord::Base
     )
 
     q = q.where('nodes.id != ?', except.id) if except
+
+    if hypervisor_type
+      q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type])
+    end
 
     q.group('nodes.id').order('COUNT(vpses.id) / max_vps ASC').take
   end

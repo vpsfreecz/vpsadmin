@@ -18,10 +18,10 @@ module VpsAdmin::API::Resources
 
     if u
       restrict enabled: true
-      output whitelist: %i(id label info supported)
+      output whitelist: %i(id label info supported hypervisor_type)
 
     else
-      restrict enabled: true, supported: true
+      restrict enabled: true, supported: true, hypervisor_type: 'openvz'
       output whitelist: %i(id label)
     end
 
