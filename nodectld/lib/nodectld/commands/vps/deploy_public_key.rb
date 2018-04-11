@@ -1,7 +1,7 @@
 module NodeCtld
   class Commands::Vps::DeployPublicKey < Commands::Base
     handle 2017
-    needs :system, :vps
+    needs :system, :osctl, :vps
 
     def exec
       unless Dir.exists?(root_dir)
@@ -65,11 +65,11 @@ module NodeCtld
 
     protected
     def root_dir
-      File.join(ve_private, 'root') # TODO
+      File.join(ct.rootfs, 'root')
     end
 
     def ssh_dir
-      File.join(root_dir, '.ssh') # TODO
+      File.join(root_dir, '.ssh')
     end
 
     def authorized_keys
