@@ -456,10 +456,7 @@ module TransactionChains
         dst_ip_addresses.each do |src_ip, dst_ip|
           append(Transactions::Vps::IpDel, args: [dst_vps, src_ip, false], urgent: true) do
             edit(src_ip, vps_id: nil)
-
-            if src_ip.user_id && src_ip.network.type != 'IpRange'
-              edit(src_ip, user_id: nil)
-            end
+            edit(src_ip, user_id: nil) if src_ip.user_id
           end
 
           append(Transactions::Vps::IpAdd, args: [dst_vps, dst_ip], urgent: true) do
@@ -497,9 +494,7 @@ module TransactionChains
 
       %i(ipv4 ipv4_private ipv6).each do |r|
         # Free only standalone IP addresses
-        standalone_ips = ips.select do |ip, _|
-          ip.network.type != 'IpRange'
-        end.map { |v| v[0] }
+        standalone_ips = ips.map { |v| v[0] }
 
         src_use = src_user_env.reallocate_resource!(
           r,

@@ -405,9 +405,6 @@ END
 
     rescue ActiveRecord::RecordInvalid => e
       error('update failed', e.record == vps ? to_param_names(vps.errors.to_hash, :input) : e.record.errors.to_hash)
-
-    rescue VpsAdmin::API::Exceptions::IpRangeInUse => e
-      error(e.message)
     end
 
     def state_id
@@ -1050,6 +1047,7 @@ END
     params(:common) do
       id :id, label: 'IP address ID'
       string :addr, label: 'Address', desc: 'Address itself', db_name: :ip_addr
+      integer :prefix, label: 'Prefix'
       resource VpsAdmin::API::Resources::Network, label: 'Network'
     end
 

@@ -29,7 +29,6 @@ module VpsAdmin::API::Resources
         resource VpsAdmin::API::Resources::Environment
         resource VpsAdmin::API::Resources::Location
         resource VpsAdmin::API::Resources::Network
-        resource VpsAdmin::API::Resources::IpRange
         resource VpsAdmin::API::Resources::Node
         resource VpsAdmin::API::Resources::VPS
         integer :year
@@ -107,12 +106,6 @@ module VpsAdmin::API::Resources
         if input[:network]
           q = q.joins(:ip_address).where(
               ip_addresses: {network_id: input[:network].id}
-          )
-        end
-
-        if input[:ip_range]
-          q = q.joins(:ip_address).where(
-              ip_addresses: {network_id: input[:ip_range].id}
           )
         end
 

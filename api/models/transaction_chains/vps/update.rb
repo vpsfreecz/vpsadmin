@@ -209,11 +209,9 @@ module TransactionChains
 
       %i(ipv4 ipv4_private ipv6).each do |r|
         st_cnt, st_changes = standalone_ips(vps, r)
-        r_cnt, r_changes = range_ips(vps, r)
 
         cnt = st_cnt + r_cnt
         ret.update(st_changes)
-        ret.update(r_changes)
 
         next if cnt == 0
 
@@ -239,9 +237,7 @@ module TransactionChains
     end
 
     def standalone_ips(vps, r)
-      q = vps.ip_addresses.joins(:network).where(
-          networks: {type: 'Network'}
-      )
+      q = vps.ip_addresses
 
       case r
       when :ipv4
@@ -258,41 +254,6 @@ module TransactionChains
       q.each { |ip| changes[ip] = {user_id: vps.user_id} }
 
       [q.count, changes]
-    end
-
-    def range_ips(vps, r)
-      q = vps.ip_addresses.joins(:network).where(
-          networks: {type: 'IpRange'}
-      )
-
-      case r
-      when :ipv4
-        q = q.where(networks: {ip_version: 4, role: ::Network.roles[:public_access]})
-
-      when :ipv4_private
-        q = q.where(networks: {ip_version: 4, role: ::Network.roles[:private_access]})
-
-      when :ipv6
-        q = q.where(networks: {ip_version: 6})
-      end
-
-      cnt = 0
-      changes = {}
-
-      # Check that all ranges can be chowned
-      q.includes(:network).group('networks.id').each do |ip|
-        if ip.network.ip_addresses.where('vps_id != ? AND vps_id IS NOT NULL', vps.id).any?
-          raise VpsAdmin::API::Exceptions::IpRangeInUse,
-                "range #{ip.network} is not exclusive to VPS #{vps.id}"
-        end
-
-        cnt += ip.network.size
-        changes[ip.network] = {user_id: vps.user_id}
-
-        ip.network.ip_addresses.each { |ip| changes[ip] = {user_id: vps.user_id} }
-      end
-
-      [cnt, changes]
     end
   end
 end

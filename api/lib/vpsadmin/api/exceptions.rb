@@ -19,10 +19,6 @@ module VpsAdmin::API::Exceptions
 
   end
 
-  class IpRangeInUse < ::StandardError
-
-  end
-
   class DatasetAlreadyExists < ::StandardError
     attr_reader :dataset, :path
 
@@ -131,5 +127,9 @@ module VpsAdmin::API::Exceptions
       @resource_use = record
       super("#{record.errors.to_hash[:value].join(';')}")
     end
+  end
+
+  class NotAvailableOnOpenVz < ::StandardError
+
   end
 end

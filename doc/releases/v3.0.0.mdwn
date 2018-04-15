@@ -6,14 +6,19 @@ These are renamed and refactored vpsAdmind and vpsAdmindctl, the difference
 is that nodectld works with osctl, while vpsAdmind uses vzctl, among other
 changes.
 
-# Behavioral changes on vpsAdminOS
+## Behavioral changes on vpsAdminOS
 
 - VPS reinstall no longer removes container subdatasets, nor changes
   VPS configuration
 - VPS features: bridge, iptables and NFS are no longer tunable
 - VPS load average and swap usage is no longer tracked
 
-# Upgrading
+## API changes
+- Version increased to `5.0`
+- Removed resource `IpRange` and `ip_range` parameter from all actions
+- Resource `IpAddress` has new parameter `prefix`
+
+## Upgrading
 vpsAdmin 3.0 can be installed on both OpenVZ and vpsAdminOS nodes. The idea is
 that OpenVZ nodes will be replaced one by one with vpsAdminOS nodes, the VPSes
 migrated over. The next vpsAdmin version will then drop support of OpenVZ

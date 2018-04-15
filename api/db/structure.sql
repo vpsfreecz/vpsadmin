@@ -510,6 +510,8 @@ CREATE TABLE `ip_addresses` (
   `user_id` int(11) DEFAULT NULL,
   `network_id` int(11) NOT NULL,
   `order` int(11) DEFAULT NULL,
+  `prefix` int(11) NOT NULL,
+  `size` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_ip_addresses_on_class_id` (`class_id`) USING BTREE,
   KEY `index_ip_addresses_on_network_id` (`network_id`) USING BTREE,
@@ -930,12 +932,8 @@ CREATE TABLE `networks` (
   `prefix` int(11) NOT NULL,
   `role` int(11) NOT NULL,
   `managed` tinyint(1) NOT NULL,
-  `type` varchar(255) COLLATE utf8_czech_ci NOT NULL DEFAULT 'Network',
-  `ancestry` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
-  `ancestry_depth` int(11) NOT NULL DEFAULT '0',
   `split_access` int(11) NOT NULL DEFAULT '0',
-  `split_prefix` int(11) DEFAULT NULL,
-  `user_id` int(11) DEFAULT NULL,
+  `split_prefix` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_networks_on_location_id_and_address_and_prefix` (`location_id`,`address`,`prefix`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
@@ -1951,7 +1949,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-04-11 18:47:12
+-- Dump completed on 2018-04-15 19:34:36
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2151,4 +2149,6 @@ INSERT INTO schema_migrations (version) VALUES ('20170325151018');
 INSERT INTO schema_migrations (version) VALUES ('20170610084155');
 
 INSERT INTO schema_migrations (version) VALUES ('20171106154702');
+
+INSERT INTO schema_migrations (version) VALUES ('20180412063632');
 

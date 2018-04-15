@@ -25,15 +25,15 @@ module NodeCtld::Firewall
       @roles.each { |r| r.init(db, v) }
     end
 
-    def reg_ip(addr, v)
+    def reg_ip(addr, prefix, v)
       @fw.synchronize do
-        @roles.each { |r| r.reg_ip(addr, v) }
+        @roles.each { |r| r.reg_ip(addr, prefix, v) }
       end
     end
 
-    def unreg_ip(addr, v)
+    def unreg_ip(addr, prefix, v)
       @fw.synchronize do
-        @roles.each { |r| r.unreg_ip(addr, v) }
+        @roles.each { |r| r.unreg_ip(addr, prefix, v) }
       end
     end
 

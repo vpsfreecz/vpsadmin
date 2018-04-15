@@ -44,7 +44,13 @@ class Network < ActiveRecord::Base
 
   # Return number of possible IP addresses without network and broadcast address
   def size
-    net_addr { |n| n.size - 2 }
+    if ip_version == 4
+      n = 32
+    else
+      n = 128
+    end
+
+    (2 ** (n - prefix)) / (2 ** (n - split_prefix))
   end
 
   # Number of IP addresses present in vpsAdmin
@@ -79,11 +85,14 @@ class Network < ActiveRecord::Base
     ips = []
     net = net_addr
     last_ip = ip_addresses.order("#{ip_order('ip_addr')} DESC").take
+    subsize = subnet_size
 
     self.class.transaction do
-      each_ip(last_ip && last_ip.ip_addr) do |host|
+      each_ip(last_ip && last_ip.to_ip) do |host|
         ips << ::IpAddress.register(
             host.address,
+            prefix: split_prefix,
+            size: subsize,
             network: self,
             user: opts[:user],
             allocate: false,
@@ -99,7 +108,7 @@ class Network < ActiveRecord::Base
 
         user_env.reallocate_resource!(
             cluster_resource,
-            user_env.send(cluster_resource) + ips.count,
+            user_env.send(cluster_resource) + (ips.count * subsize),
             user: opts[:user],
             save: true,
             confirmed: ::ClusterResourceUse.confirmed(:confirmed),
@@ -111,64 +120,6 @@ class Network < ActiveRecord::Base
 
   ensure
     release_lock(self) if opts[:lock].nil? || opts[:lock]
-  end
-
-  def get_or_create_range(opts)
-    self.class.transaction do
-      range = ::IpRange.children_of(self).where(user: nil).order(ip_order).take
-      attrs = opts.clone
-
-      if range
-        if attrs[:user]
-          range.user = attrs[:user]
-          range.ip_addresses.update_all(user_id: attrs[:user].id)
-        end
-
-      else
-        net = net_addr
-        cnt = ::IpRange.children_of(self).count
-
-        if ip_version == 4
-          next_address = IPAddress::IPv4.parse_u32(
-              net.to_u32 + (2**(32 - split_prefix)) * cnt
-          )
-
-        else
-          next_address = IPAddress::IPv6.parse_u128(
-              net.to_u128 + (2**(128 - split_prefix)) * cnt
-          )
-        end
-
-        attrs.update({
-            parent: self,
-            location: location,
-            ip_version: ip_version,
-            address: next_address.address,
-            prefix: split_prefix,
-            role: self.class.roles[role],
-            managed: true,
-        })
-
-        range = ::IpRange.new(attrs)
-      end
-
-      if attrs[:user]
-        user_env = attrs[:user].environment_user_configs.find_by!(
-            environment: location.environment,
-        )
-
-        user_env.reallocate_resource!(
-            cluster_resource,
-            user_env.send(cluster_resource) + range.size,
-            user: attrs[:user],
-            save: true,
-            confirmed: ::ClusterResourceUse.confirmed(:confirmed),
-        )
-      end
-
-      range.save!
-      range
-    end
   end
 
   protected
@@ -209,7 +160,7 @@ class Network < ActiveRecord::Base
     (ip_version == 4 ? 'INET_ATON' : 'INET6_ATON') + '(' + col + ')'
   end
 
-  # @param from [String] IPv4/IPv6 address
+  # @param from [IPAddress] IPv4/IPv6 address
   def each_ip(from = nil, &block)
     if ip_version == 4
       each_ipv4(from, &block)
@@ -219,21 +170,49 @@ class Network < ActiveRecord::Base
     end
   end
 
-  # @param from [String] IPv4 address
+  # @param from [IPAddress] IPv4 address
   def each_ipv4(from = nil)
-    addr = (from && IPAddress.parse(from).to_u32) || net_addr.network_u32
+    if from
+      t = from.broadcast_u32 + 1
 
-    (addr + 1 .. net_addr.broadcast_u32 - 1).each do |i|
-      yield(IPAddress::IPv4.parse_u32(i))
+    else
+      addr = net_addr.network_u32
+      t = split_prefix == 32 ? addr + 1 : addr
+    end
+
+    last = net_addr.broadcast_u32
+
+    while t < last
+      yield(IPAddress::IPv4.parse_u32(t, split_prefix))
+      t += 2 ** (32 - split_prefix)
     end
   end
 
-  # @param from [String] IPv6 address
+  # @param from [IPAddress] IPv6 address
   def each_ipv6(from = nil)
-    addr = (from && IPAddress.parse(from).to_u128) || net_addr.network_u128
+    if from
+      t = from.broadcast_u128 + 1
 
-    (addr + 1 .. net_addr.broadcast_u128 - 1).each do |i|
-      yield(IPAddress::IPv6.parse_u128(i))
+    else
+      addr = net_addr.network_u128
+      t = split_prefix == 128 ? addr + 1 : addr
     end
+
+    last = net_addr.broadcast_u128
+
+    while t < last
+      yield(IPAddress::IPv6.parse_u128(t, split_prefix))
+      t += 2 ** (128 - split_prefix)
+    end
+  end
+
+  def subnet_size
+    if ip_version == 4
+      n = 32
+    else
+      n = 128
+    end
+
+    2 ** (n - split_prefix)
   end
 end

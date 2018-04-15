@@ -85,45 +85,6 @@ switch($_GET['action']) {
 
 		break;
 
-	case 'ip_ranges':
-		$xtpl->title(_('IP ranges'));
-		$xtpl->sbar_add(_("New IP range"), '?page=networking&action=ip_range_new');
-		$xtpl->sbar_out(_('IP ranges'));
-		ip_range_list();
-		break;
-
-	case 'ip_range_new':
-		ip_range_new_step1();
-		break;
-
-	case 'ip_range_new2':
-		try {
-			$api->location->show($_POST['location']);
-
-			ip_range_new_step2($_POST['location']);
-			$xtpl->sbar_out(_('IP ranges'));
-
-		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-			$xtpl->perex_format_errors(_('Action failed'), $e->getResponse());
-			ip_range_new_step1();
-		}
-		break;
-
-	case 'ip_range_new3':
-		csrf_check();
-
-		try {
-			$r = $api->ip_range->create(array('network' => $_POST['network']));
-
-			notify_user(_('Range').' '.$r->address.'/'.$r->prefix.' '._('created').'.');
-			redirect('?page=networking&action=ip_ranges');
-
-		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-			$xtpl->perex_format_errors(_('Action failed'), $e->getResponse());
-			ip_range_new_step2($_POST['location']);
-		}
-		break;
-
 	case 'traffic':
 		$show_traffic = true;
 		break;
@@ -142,7 +103,6 @@ switch($_GET['action']) {
 }
 
 $xtpl->sbar_add(_("IP addresses"), '?page=networking&action=ip_addresses');
-$xtpl->sbar_add(_("IP ranges"), '?page=networking&action=ip_ranges');
 $xtpl->sbar_add(_("List monthly traffic"), '?page=networking&action=traffic');
 $xtpl->sbar_add(_("Live monitor"), '?page=networking&action=live');
 
@@ -206,18 +166,6 @@ if ($show_traffic) {
 	$xtpl->form_add_select(_("Network").':', 'network',
 		resource_list_to_options($api->network->list(), 'id', 'label', true, network_label), get_val('network'));
 
-	$ip_ranges = $api->ip_range->list();
-
-	if ($ip_ranges->count() > 0) {
-		$xtpl->form_add_select(
-			_("IP range").':',
-			'ip_range',
-			resource_list_to_options(
-				$ip_ranges, 'id', 'label', true, network_label
-			), get_val('ip_range')
-		);
-	}
-
 	$xtpl->form_add_select(_("Node").':', 'node',
 		resource_list_to_options($api->node->list(), 'id', 'domain_name'), get_val('node'));
 	$xtpl->form_add_input(_("VPS").':', 'text', '30', 'vps', get_val('vps'));
@@ -244,7 +192,7 @@ if ($show_traffic) {
 
 	$conds = array(
 		'year', 'month', 'role', 'ip_version', 'vps', 'node', 'location', 'environment',
-		'network', 'ip_range', 'protocol'
+		'network', 'protocol'
 	);
 
 	if (isAdmin()) {
@@ -447,8 +395,6 @@ if ($show_live) {
 		resource_list_to_options($api->location->list()), get_val('location'));
 	$xtpl->form_add_select(_("Network").':', 'network',
 		resource_list_to_options($api->network->list(), 'id', 'label', true, network_label), get_val('network'));
-	$xtpl->form_add_select(_("IP range").':', 'ip_range',
-		resource_list_to_options($api->ip_range->list(), 'id', 'label', true, network_label), get_val('ip_range'));
 	$xtpl->form_add_select(_("Node").':', 'node',
 		resource_list_to_options($api->node->list(), 'id', 'domain_name'), get_val('node'));
 
@@ -486,7 +432,7 @@ if ($show_live) {
 
 	$conds = array(
 		'ip_version', 'vps', 'node', 'location', 'environment',
-		'network', 'ip_range'
+		'network'
 	);
 
 	foreach ($conds as $c) {

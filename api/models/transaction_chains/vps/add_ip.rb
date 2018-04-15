@@ -6,6 +6,11 @@ module TransactionChains
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
+      if vps.node.openvz? && ips.detect { |ip| ip.size > 1 }
+        raise VpsAdmin::API::Exceptions::NotAvailableOnOpenVz,
+              "cannot add IP address with prefix other than /32 or /128"
+      end
+
       uses = []
       user_env = vps.user.environment_user_configs.find_by!(
           environment: vps.node.location.environment,
@@ -17,20 +22,35 @@ module TransactionChains
         %i(ipv4 ipv4_private ipv6).each do |r|
           cnt = case r
           when :ipv4
-            ips_arr.count do |ip|
-              (!ownership || ip.user.nil?) \
-              && ip.network.role == 'public_access' && ip.network.ip_version == 4
+            ips_arr.inject(0) do |sum, ip|
+              if (!ownership || ip.user.nil?) \
+                 && ip.network.role == 'public_access' && ip.network.ip_version == 4
+                sum + ip.size
+
+              else
+                sum
+              end
             end
 
           when :ipv4_private
-            ips_arr.count do |ip|
-              (!ownership || ip.user.nil?) \
-              && ip.network.role == 'private_access' && ip.network.ip_version == 4
+            ips_arr.inject(0) do |sum, ip|
+              if (!ownership || ip.user.nil?) \
+                 && ip.network.role == 'private_access' && ip.network.ip_version == 4
+                sum + ip.size
+
+              else
+                sum
+              end
             end
 
           when :ipv6
-            ips_arr.count do |ip|
-              (!ownership || ip.user.nil?) && ip.network.ip_version == 6
+            ips_arr.inject(0) do |sum, ip|
+              if (!ownership || ip.user.nil?) && ip.network.ip_version == 6
+                sum + ip.size
+
+              else
+                sum
+              end
             end
           end
 

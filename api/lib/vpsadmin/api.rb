@@ -1,6 +1,6 @@
 module VpsAdmin
   HaveAPI.module_name = VpsAdmin::API::Resources
-  HaveAPI.implicit_version = '4.1'
+  HaveAPI.implicit_version = '5.0'
   ActiveRecord::Base.schema_format = :sql
   ActiveRecord::Base.raise_in_transactional_callbacks = true
 
@@ -82,6 +82,15 @@ module VpsAdmin
         ret[:status] = false
         ret[:http_status] = 400
         ret[:message] = "Resource allocation error: #{exception.message}"
+
+        HaveAPI::Hooks.stop(ret)
+      end
+
+      e.rescue(VpsAdmin::API::Exceptions::NotAvailableOnOpenVz) do |ret, exception|
+        ret[:http_status] = 500
+        ret[:status] = false
+        ret[:message] = "This function is not available on OpenVZ Legacy nodes: "+
+                        exception.message
 
         HaveAPI::Hooks.stop(ret)
       end

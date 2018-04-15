@@ -19,17 +19,34 @@ module TransactionChains
         %i(ipv4 ipv4_private ipv6).each do |r|
           cnt = case r
           when :ipv4
-            ips_arr.count do |ip|
-              ip.network.role == 'public_access' && ip.network.ip_version == 4
+            ips_arr.inject(0) do |sum, ip|
+              if ip.network.role == 'public_access' && ip.network.ip_version == 4
+                sum + ip.size
+
+              else
+                sum
+              end
             end
 
           when :ipv4_private
-            ips_arr.count do |ip|
-              ip.network.role == 'private_access' && ip.network.ip_version == 4
+            ips_arr.inject(0) do |sum, ip|
+              if ip.network.role == 'private_access' && ip.network.ip_version == 4
+                sum + ip.size
+
+              else
+                sum
+              end
             end
 
           when :ipv6
-            ips_arr.count { |ip| ip.network.ip_version == 6 }
+            ips_arr.inject(0) do |sum, ip|
+              if ip.network.ip_version == 6
+                sum + ip.size
+
+              else
+                sum
+              end
+            end
           end
 
           uses << user_env.reallocate_resource!(

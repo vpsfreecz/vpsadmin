@@ -17,18 +17,19 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
             value_label: :hostname
     integer :version, label: 'IP version', desc: '4 or 6'
     resource VpsAdmin::API::Resources::Network, label: 'Network', value_label: :address
-    resource VpsAdmin::API::Resources::IpRange, label: 'IP Range', value_label: :address
     resource VpsAdmin::API::Resources::Location, label: 'Location',
               desc: 'Location this IP address is available in'
     resource VpsAdmin::API::Resources::User, label: 'User',
              value_label: :login
     string :role, choices: ::Network.roles.keys
     string :addr, label: 'Address', desc: 'Address itself', db_name: :ip_addr
+    integer :prefix, label: 'Prefix'
+    integer :size, label: 'Size'
     use :shaper
   end
 
   params(:common) do
-    use :filters, include: %i(network ip_range vps user addr)
+    use :filters, include: %i(network prefix size vps user addr)
     use :shaper
     integer :class_id, label: 'Class id', desc: 'Class id for shaper'
   end
@@ -36,9 +37,6 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
   params(:all) do
     use :id
     use :common
-
-    patch :network, db_name: :api_network
-    patch :ip_range, db_name: :api_ip_range
   end
 
   class Index < HaveAPI::Actions::Default::Index
@@ -55,7 +53,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(location network ip_range version role addr vps limit offset)
+      input whitelist: %i(location network version role addr prefix vps limit offset)
       output blacklist: %i(class_id)
       allow
     end
@@ -83,16 +81,12 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     def query
       ips = ::IpAddress
 
-      %i(network vps user addr max_tx max_rx).each do |filter|
+      %i(prefix network vps user addr max_tx max_rx).each do |filter|
         next unless input.has_key?(filter)
 
         ips = ips.where(
             filter => input[filter],
         )
-      end
-
-      if input[:ip_range]
-        ips = ips.where(network_id: input[:ip_range].id)
       end
 
       if input[:location]
@@ -175,7 +169,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     def exec
       addr = ::IPAddress.parse(input[:addr]) # gem
 
-      ::IpAddress.register(addr, input) # model
+      ::IpAddress.register(addr, input.merge(prefix: addr.prefix)) # model
 
     rescue ArgumentError => e
       error(e.message, {addr: ['not a valid IP address']})
@@ -209,10 +203,6 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
         # Check if the IP is assigned to a VPS in an environment with IP ownership
         if ip.vps && ip.network.location.environment.user_ip_ownership
           error('cannot chown IP while it belongs to a VPS')
-
-        # Check if the IP is not in an assigned range
-        elsif ip.network.is_a?(::IpRange) && ip.network.user
-          error('cannot chown IP, it belongs to an owned IP range')
         end
       end
 

@@ -55,7 +55,7 @@ function get_free_ip_list ($res, $vps, $role = null, $limit = null) {
 				$note = '(owned by '.$ip->user->login.')';
 		}
 
-		$ret[$ip->id] = $ip->addr . " $note";
+		$ret[$ip->id] = $ip->addr.'/'.$ip->prefix." $note";
 	}
 
 	return $ret;

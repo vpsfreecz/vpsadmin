@@ -11,6 +11,7 @@ module Transactions::Vps
       ret = {
           veth_name: vps.veth_name,
           addr: ip.addr,
+          prefix: ip.prefix,
           version: ip.version,
           unregister: unregister,
           id: ip.id,

@@ -1061,7 +1061,7 @@ if (isset($show_info) && $show_info) {
 				$xtpl->table_td(_("IPv6"));
 			}
 
-			$xtpl->table_td($ip->addr);
+			$xtpl->table_td($ip->addr.'/'.$ip->prefix);
 			$xtpl->table_td('<a href="?page=adminvps&action=delip&ip='.$ip->id.'&veid='.$vps->id.'&t='.csrf_token().'">('._("Remove").')</a>');
 			$xtpl->table_tr();
 		}

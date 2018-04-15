@@ -23,6 +23,7 @@ function ip_address_list($page) {
 
 	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
 	$xtpl->form_add_select(_("Version").':', 'v', $versions, get_val('v', 0));
+	$xtpl->form_add_input(_("Prefix").':', 'text', '40', 'prefix', get_val('prefix'));
 
 	if ($_SESSION['is_admin']) {
 		$xtpl->form_add_input(_("User ID").':', 'text', '40', 'user', get_val('user'), _("'unassigned' to list free addresses"));
@@ -40,17 +41,6 @@ function ip_address_list($page) {
 		),
 		get_val('network')
 	);
-	$xtpl->form_add_select(
-		_("IP range").':',
-		'ip_range',
-		resource_list_to_options(
-			$api->ip_range->list(),
-			'id', 'label',
-			true,
-			network_label
-		),
-		get_val('ip_range')
-	);
 	$xtpl->form_add_select(_("Location").':', 'location',
 		resource_list_to_options($api->location->list()), get_val('location'));
 
@@ -62,7 +52,7 @@ function ip_address_list($page) {
 	$params = array(
 		'limit' => get_val('limit', 25),
 		'offset' => get_val('offset', 0),
-		'meta' => array('includes' => 'user,vps,network__location,ip_range')
+		'meta' => array('includes' => 'user,vps,network__location')
 	);
 
 	if ($_SESSION['is_admin']) {
@@ -80,21 +70,21 @@ function ip_address_list($page) {
 	if ($_GET['network'])
 		$params['network'] = $_GET['network'];
 
-	if ($_GET['ip_range'])
-		$params['ip_range'] = $_GET['ip_range'];
-
 	if ($_GET['location'])
 		$params['location'] = $_GET['location'];
 
 	if ($_GET['v'])
 		$params['version'] = $_GET['v'];
 
+	if ($_GET['prefix'])
+		$params['prefix'] = $_GET['prefix'];
+
 	$ips = $api->ip_address->list($params);
 
-	$xtpl->table_add_category(_("Network"));
-	$xtpl->table_add_category(_("Range"));
-	$xtpl->table_add_category(_("IP address"));
 	$xtpl->table_add_category(_("Location"));
+	$xtpl->table_add_category(_("Network"));
+	$xtpl->table_add_category(_("IP address"));
+	$xtpl->table_add_category(_("Size"));
 	$xtpl->table_add_category(_("TX"));
 	$xtpl->table_add_category(_("RX"));
 
@@ -113,15 +103,10 @@ function ip_address_list($page) {
 	$return_url = urlencode($_SERVER['REQUEST_URI']);
 
 	foreach ($ips as $ip) {
-		$xtpl->table_td($ip->network->address .'/'. $ip->network->prefix);
-
-		if ($ip->ip_range_id)
-			$xtpl->table_td($ip->ip_range->address .'/'. $ip->ip_range->prefix);
-		else
-			$xtpl->table_td('-');
-
-		$xtpl->table_td($ip->addr);
 		$xtpl->table_td($ip->network->location->label);
+		$xtpl->table_td($ip->network->address .'/'. $ip->network->prefix);
+		$xtpl->table_td($ip->addr.'/'.$ip->prefix);
+		$xtpl->table_td($ip->size, false, true);
 		$xtpl->table_td(round($ip->max_tx * 8.0 / 1024 / 1024, 1), false, true);
 		$xtpl->table_td(round($ip->max_rx * 8.0 / 1024 / 1024, 1), false, true);
 
@@ -228,181 +213,4 @@ function ip_unassign_form($id) {
 	$xtpl->form_add_checkbox(_('Confirm').':', 'confirm', '1', false);
 
 	$xtpl->form_out(_("Remove"));
-}
-
-function ip_range_list() {
-	global $xtpl, $api;
-
-	$xtpl->table_title(_('Filters'));
-	$xtpl->form_create('', 'get', 'ip-ranges-filter', false);
-
-	$xtpl->table_td(_("Limit").':'.
-		'<input type="hidden" name="page" value="networking">'.
-		'<input type="hidden" name="action" value="ip_ranges">'.
-		'<input type="hidden" name="list" value="1">'
-	);
-	$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-	$xtpl->table_tr();
-
-	$versions = array(
-		0 => 'all',
-		4 => '4',
-		6 => '6'
-	);
-
-	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
-	$xtpl->form_add_select(_("Version").':', 'v', $versions, get_val('v', 0));
-
-	if ($_SESSION['is_admin']) {
-		$xtpl->form_add_input(_("User ID").':', 'text', '40', 'user', get_val('user'), _("'unassigned' to list free addresses"));
-	}
-
-	$xtpl->form_add_select(
-		_("Network").':',
-		'network',
-		resource_list_to_options(
-			$api->network->list(),
-			'id', 'label',
-			true,
-			network_label
-		),
-		get_val('network')
-	);
-	$xtpl->form_add_select(_("Location").':', 'location',
-		resource_list_to_options($api->location->list()), get_val('location'));
-
-	$xtpl->form_out(_('Show'));
-
-	if ($_SESSION['is_admin'] && !$_GET['list'])
-		return;
-
-	$params = array(
-		'limit' => get_val('limit', 25),
-		'offset' => get_val('offset', 0),
-		'meta' => array('includes' => 'user'),
-	);
-
-	if ($_SESSION['is_admin']) {
-		if ($_GET['user'] === 'unassigned')
-			$params['user'] = null;
-		elseif ($_GET['user'])
-			$params['user'] = $_GET['user'];
-	}
-
-	if ($_GET['network'])
-		$params['network'] = $_GET['network'];
-
-	if ($_GET['location'])
-		$params['location'] = $_GET['location'];
-
-	if ($_GET['v'])
-		$params['version'] = $_GET['v'];
-
-	$ranges = $api->ip_range->list($params);
-
-	$xtpl->title(_('IP ranges'));
-
-	$xtpl->table_add_category(_('Network'));
-	$xtpl->table_add_category(_('Range'));
-	$xtpl->table_add_category(_('Location'));
-
-	if ($_SESSION['is_admin'])
-		$xtpl->table_add_category(_('User'));
-
-	$xtpl->table_add_category(_('Public'));
-	$xtpl->table_add_category(_('Size'));
-	$xtpl->table_add_category(_('Assigned'));
-	$xtpl->table_add_category(_('Free'));
-	$xtpl->table_add_category(_('IPs'));
-
-	foreach ($ranges as $r) {
-		$xtpl->table_td($r->network->address .'/'. $r->network->prefix);
-		$xtpl->table_td($r->address .'/'. $r->prefix);
-		$xtpl->table_td($r->network->location->label);
-
-		if ($_SESSION['is_admin']) {
-			if ($r->user_id)
-				$xtpl->table_td('<a href="?page=adminm&action=edit&id='.$r->user_id.'">'.$r->user->login.'</a>');
-			else
-				$xtpl->table_td('-');
-		}
-		$xtpl->table_td(boolean_icon($r->role === 'public_access'));
-		$xtpl->table_td($r->size, false, true);
-		$xtpl->table_td($r->assigned, false, true);
-		$xtpl->table_td($r->size - $r->assigned, false, true);
-		$xtpl->table_td(ip_list_link(
-			'networking',
-			'<img
-				src="template/icons/vps_ip_list.png"
-				title="'._('List IP addresses in this range').'">',
-			array('ip_range' => $r->id))
-		);
-		$xtpl->table_tr();
-	}
-
-	$xtpl->table_out();
-}
-
-function ip_range_new_step1() {
-	global $xtpl, $api;
-
-	$xtpl->table_title(_('Create a new IP range'));
-	$xtpl->sbar_add(
-		_("Back"),
-		'?page=networking&action=ip_ranges'
-	);
-	$xtpl->sbar_out(_('IP ranges'));
-
-	$xtpl->form_create(
-		'?page=networking&action=ip_range_new2',
-		'post'
-	);
-
-	$xtpl->form_add_select(
-		_('Location').':',
-		'location',
-		resource_list_to_options($api->location->list()),
-		post_val('location')
-	);
-
-	$xtpl->form_out(_('Go >>'));
-}
-
-function ip_range_new_step2($location_id) {
-	global $xtpl, $api;
-
-	$xtpl->table_title(_('Create a new IP range'));
-	$xtpl->sbar_add(
-		_("Back"),
-		'?page=networking&action=ip_ranges'
-	);
-	$xtpl->sbar_out(_('IP ranges'));
-
-	$xtpl->form_create(
-		'?page=networking&action=ip_range_new3',
-		'post'
-	);
-
-	$xtpl->form_add_select(
-		_('Network').':',
-		'network',
-		resource_list_to_options(
-			array_filter(
-				$api->network->list(array('location' => $location_id))->asArray(),
-				function ($n) { return $n->split_access != "no_access"; }
-			),
-			'id',
-			'label',
-			true,
-			function ($n) {
-				$len = $n->ip_version == 4 ? 32 : 128;
-				$title = $n->role == 'public_access' ? _('Public') : _('Private');
-				return "$title IPv{$n->ip_version}: /{$n->split_prefix} from {$n->address}/{$n->prefix} ".
-					"(".pow(2, $len - $n->split_prefix)." addresses)";
-			}
-		),
-		post_val('network')
-	);
-
-	$xtpl->form_out(_('Go >>'));
 }

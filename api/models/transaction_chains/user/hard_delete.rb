@@ -52,11 +52,6 @@ module TransactionChains
           end
         end
 
-        # Free all IP ranges
-        ::IpRange.where(user: user).each do |range|
-          t.edit(range, user_id: nil)
-        end
-
         # TODO: what about owned networks?
 
         # Delete all public keys

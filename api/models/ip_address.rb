@@ -19,6 +19,8 @@ class IpAddress < ActiveRecord::Base
   # @param params [Hash]
   # @option params [Network] network
   # @option params [User] user
+  # @option params [Integer] prefix
+  # @option params [Integer] size
   # @option params [Integer] max_tx
   # @option params [Integer] max_rx
   # @option params [Boolean] allocate (true)
@@ -34,7 +36,7 @@ class IpAddress < ActiveRecord::Base
 
         user_env.reallocate_resource!(
             resource,
-            user_env.send(resource) + 1,
+            user_env.send(resource) + params[:size],
             user: params[:user],
             save: true,
             confirmed: ::ClusterResourceUse.confirmed(:confirmed),
@@ -57,6 +59,8 @@ class IpAddress < ActiveRecord::Base
 
       ip = self.new(
           ip_addr: addr.to_s,
+          prefix: params[:prefix],
+          size: params[:size],
           network: params[:network],
           class_id: class_id,
           user: params[:user]
@@ -72,14 +76,6 @@ class IpAddress < ActiveRecord::Base
 
   def version
     network.ip_version
-  end
-
-  def api_network
-    network.is_a?(::IpRange) ? network.parent : network
-  end
-
-  def api_ip_range
-    network.is_a?(::IpRange) ? network : nil
   end
 
   def free?
@@ -113,8 +109,8 @@ class IpAddress < ActiveRecord::Base
     if (a.ipv4? && ip_v != 4) || (a.ipv6? && ip_v != 6)
       errors.add(:ip_addr, 'IP version does not match the address')
 
-    elsif a.network? && a.prefix != (a.ipv4? ? 32 : 128)
-      errors.add(:ip_addr, 'not a host address')
+    elsif prefix != network.split_prefix
+      errors.add(:ip_addr, "expected /#{network.split_prefix}, got /#{a.prefix}")
 
     elsif !network.include?(self)
       errors.add(:ip_addr, "does not belong to network #{network}")
@@ -142,6 +138,6 @@ class IpAddress < ActiveRecord::Base
   end
 
   def to_ip
-    IPAddress.parse(addr)
+    IPAddress.parse("#{addr}/#{prefix}")
   end
 end

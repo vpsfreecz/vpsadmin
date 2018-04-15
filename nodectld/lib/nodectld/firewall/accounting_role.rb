@@ -30,30 +30,30 @@ module NodeCtld::Firewall
 
       iptables(v, {Z: chain})
 
-      rs = db.query("SELECT ip_addr
+      rs = db.query("SELECT ip.ip_addr, ip.prefix
                     FROM ip_addresses ip
                     INNER JOIN vpses ON vpses.id = ip.vps_id
                     INNER JOIN networks n ON n.id = ip.network_id
                     WHERE node_id = #{$CFG.get(:vpsadmin, :node_id)}
                     AND n.ip_version = #{v}")
       rs.each do |ip|
-        reg_ip(ip['ip_addr'], v)
+        reg_ip(ip['ip_addr'], ip['prefix'], v)
       end
 
       log("#{role} accounting for #{rs.count} IPv#{v} addresses")
     end
 
-    def reg_ip(addr, v)
+    def reg_ip(addr, prefix, v)
       PROTOCOLS.each do |p|
-        iptables(v, ['-A', chain, '-s', addr, '-p', p.to_s, '-j', 'ACCEPT'])
-        iptables(v, ['-A', chain, '-d', addr, '-p', p.to_s, '-j', 'ACCEPT'])
+        iptables(v, ['-A', chain, '-s', "#{addr}/#{prefix}", '-p', p.to_s, '-j', 'ACCEPT'])
+        iptables(v, ['-A', chain, '-d', "#{addr}/#{prefix}", '-p', p.to_s, '-j', 'ACCEPT'])
       end
     end
 
-    def unreg_ip(addr, v)
+    def unreg_ip(addr, prefix, v)
       PROTOCOLS.each do |p|
-        iptables(v, ['-D', chain, '-s', addr, '-p', p.to_s, '-j', 'ACCEPT'])
-        iptables(v, ['-D', chain, '-d', addr, '-p', p.to_s, '-j', 'ACCEPT'])
+        iptables(v, ['-D', chain, '-s', "#{addr}/#{prefix}", '-p', p.to_s, '-j', 'ACCEPT'])
+        iptables(v, ['-D', chain, '-d', "#{addr}/#{prefix}", '-p', p.to_s, '-j', 'ACCEPT'])
       end
     end
 
