@@ -17,7 +17,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     bool :manage_hostname, label: 'Manage hostname',
           desc: 'Determines whether vpsAdmin sets VPS hostname or not'
     use :template
-    string :veth_name, label: 'Veth name', default: 'venet0', fill: true
+    string :veth_name, label: 'Veth name', default: 'venet0'
     string :info, label: 'Info', desc: 'VPS description'
     resource VpsAdmin::API::Resources::DnsResolver, label: 'DNS resolver',
              desc: 'DNS resolver the VPS will use'

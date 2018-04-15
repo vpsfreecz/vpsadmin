@@ -104,6 +104,7 @@ class Vps < ActiveRecord::Base
   # @option opts [Integer] ipv6
   # @option opts [Integer] ipv4_private
   def create(opts)
+    self.veth_name ||= 'venet0'
     self.config = ''
 
     lifetime = self.user.env_config(
