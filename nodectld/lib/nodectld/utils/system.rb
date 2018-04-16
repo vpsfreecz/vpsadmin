@@ -17,12 +17,12 @@ module NodeCtld
       end
     end
 
-    alias_method :libosctl_syscmd, :syscmd
+    libosctl_syscmd = instance_method(:syscmd)
 
     # Provide return value, so that commands don't have to explicitly
     # return `ok`.
-    def syscmd(*args)
-      ret = libosctl_syscmd(*args)
+    define_method(:syscmd) do |*args|
+      ret = libosctl_syscmd.bind(self).(*args)
       ret[:ret] = :ok
       ret
     end
