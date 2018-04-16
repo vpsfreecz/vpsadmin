@@ -20,6 +20,7 @@ module VpsAdmin::API::Resources
       bool :managed
       string :split_access, choices: ::Network.split_accesses.keys
       integer :split_prefix
+      bool :autopick
     end
 
     params(:all) do

@@ -95,6 +95,7 @@ class IpAddress < ActiveRecord::Base
           ip_version: v,
           location_id: location.id,
           role: ::Network.roles[role],
+          autopick: true,
       })
       .where('vps_id IS NULL')
       .where('(ip_addresses.user_id = ? OR ip_addresses.user_id IS NULL)', user.id)

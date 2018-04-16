@@ -2,7 +2,7 @@
 --
 -- Host: 192.168.122.10    Database: vpsadmin_core
 -- ------------------------------------------------------
--- Server version	5.1.73
+-- Server version	10.0.34-MariaDB-wsrep
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -934,6 +934,7 @@ CREATE TABLE `networks` (
   `managed` tinyint(1) NOT NULL,
   `split_access` int(11) NOT NULL DEFAULT '0',
   `split_prefix` int(11) NOT NULL,
+  `autopick` int(11) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_networks_on_location_id_and_address_and_prefix` (`location_id`,`address`,`prefix`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
@@ -1949,7 +1950,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-04-15 19:34:36
+-- Dump completed on 2018-04-16 13:20:52
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2151,4 +2152,6 @@ INSERT INTO schema_migrations (version) VALUES ('20170610084155');
 INSERT INTO schema_migrations (version) VALUES ('20171106154702');
 
 INSERT INTO schema_migrations (version) VALUES ('20180412063632');
+
+INSERT INTO schema_migrations (version) VALUES ('20180416111102');
 
