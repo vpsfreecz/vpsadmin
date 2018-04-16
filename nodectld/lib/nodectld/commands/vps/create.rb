@@ -20,9 +20,6 @@ module NodeCtld
 
       osctl(%i(ct set hostname), [@vps_id, @hostname])
 
-      # TODO: configurable veth name, routed veth
-      osctl(%i(ct netif new bridge), [@vps_id, @veth_name], link: 'lxcbr0')
-
       ok
     end
 

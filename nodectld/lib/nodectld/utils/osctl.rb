@@ -48,6 +48,11 @@ module NodeCtld
         elsif v === false
           ret << "--no-#{k.to_s.gsub('_', '-')}"
 
+        elsif v.is_a?(Array)
+          v.each do |arg|
+            ret << "--#{k.to_s.gsub('_', '-')}" << "\"#{arg}\""
+          end
+
         else
           ret << "--#{k.to_s.gsub('_', '-')}" << "\"#{v}\""
         end

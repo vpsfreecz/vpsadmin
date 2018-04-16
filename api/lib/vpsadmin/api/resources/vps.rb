@@ -1095,7 +1095,7 @@ END
             desc: 'If the address is not provided, first free IP address of given version is assigned instead'
         integer :version, label: 'IP version',
                 desc: 'provide only if IP address is not selected'
-        string :role, choices: ::Network.roles.keys, default: 'public_access',
+        string :role, choices: %w(public_access private_access), default: 'public_access',
             fill: true
       end
 
@@ -1127,6 +1127,9 @@ END
 
           rescue VpsAdmin::API::Exceptions::IpAddressNotOwned
             error('Use an IP address you already own first')
+
+          rescue VpsAdmin::API::Exceptions::InterconnectingIp
+            error('Cannot add an interconnecting IP')
           end
 
         elsif input[:version].nil?
@@ -1168,6 +1171,9 @@ END
             vps_id: vps.id
         ))
         ok
+
+      rescue VpsAdmin::API::Exceptions::InterconnectingIp
+        error('Cannot remove an interconnecting IP')
       end
 
       def state_id

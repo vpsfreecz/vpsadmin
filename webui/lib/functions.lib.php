@@ -76,6 +76,17 @@ function get_ip_address_id ($val) {
 		return $ips->first()->id;
 }
 
+function ip_label($ip) {
+	switch ($ip->network->role) {
+	case 'public_access':
+		return 'Public IPv'.$ip->network->ip_version;
+	case 'private_access':
+		return 'Private IPv'.$ip->network->ip_version;
+	case 'interconnecting':
+		return 'Interconnecting IPv'.$ip->network->ip_version;
+	}
+}
+
 function list_templates($vps = null) {
 	global $api;
 

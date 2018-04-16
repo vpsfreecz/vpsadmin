@@ -191,7 +191,7 @@ function networks_list() {
 	$xtpl->table_add_category(_('Network'));
 	$xtpl->table_add_category(_('Label'));
 	$xtpl->table_add_category(_('Location'));
-	$xtpl->table_add_category(_('Public'));
+	$xtpl->table_add_category(_('Type'));
 	$xtpl->table_add_category(_('Managed'));
 	$xtpl->table_add_category(_('Size'));
 	$xtpl->table_add_category(_('Used'));
@@ -208,7 +208,11 @@ function networks_list() {
 		$xtpl->table_td($n->address .'/'. $n->prefix);
 		$xtpl->table_td($n->label);
 		$xtpl->table_td($n->location->label);
-		$xtpl->table_td(boolean_icon($n->role === 'public_access'));
+		$xtpl->table_td(array(
+			'public_access' => 'Pub',
+			'private_access' => 'Priv',
+			'interconnecting' => 'Int',
+		)[$n->role]);
 		$xtpl->table_td(boolean_icon($n->managed));
 		$xtpl->table_td(approx_number($n->size), false, true);
 		$xtpl->table_td($n->used, false, true);

@@ -11,8 +11,10 @@ module TransactionChains
 
       use_chain(Network::AddIps, args: [net, net.size]) if opts[:add_ips]
 
-      ::Node.where(role: 'node').each do |n|
-        append(Transactions::Network::Register, args: [n, net])
+      if net.role != 'interconnecting'
+        ::Node.where(role: 'node').each do |n|
+          append(Transactions::Network::Register, args: [n, net])
+        end
       end
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|

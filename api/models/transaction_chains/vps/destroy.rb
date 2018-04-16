@@ -25,6 +25,9 @@ module TransactionChains
 
       use_chain(Vps::Mounts, args: vps) if vps.mounts.any?
 
+      # Remove veth interface
+      use_chain(Vps::RemoveVeth, args: vps) if vps.node.vpsadminos?
+
       # Destroy VPS
       append(Transactions::Vps::Destroy, args: vps) do
         resources.each { |r| destroy(r) }

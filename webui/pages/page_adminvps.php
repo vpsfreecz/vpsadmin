@@ -1050,19 +1050,19 @@ if (isset($show_info) && $show_info) {
 		$xtpl->form_create('?page=adminvps&action=addip&veid='.$vps->id, 'post');
 
 		foreach ($api->vps($vps->id)->ip_address->list(array('meta' => array('includes' => 'network'))) as $ip) {
-			if ($ip->network->ip_version == 4) {
-				if ($ip->network->role === 'public_access')
-					$xtpl->table_td(_("IPv4"));
+			$xtpl->table_td(ip_label($ip));
+			$xtpl->table_td($ip->addr.'/'.$ip->prefix);
 
-				else
-					$xtpl->table_td(_("Private IPv4"));
+			if ($ip->network->role == 'interconnecting') {
+				$xtpl->table_td('');
 
 			} else {
-				$xtpl->table_td(_("IPv6"));
+				$xtpl->table_td(
+					'<a href="?page=adminvps&action=delip&ip='.$ip->id.
+					'&veid='.$vps->id.'&t='.csrf_token().'">('._("Remove").')</a>'
+				);
 			}
 
-			$xtpl->table_td($ip->addr.'/'.$ip->prefix);
-			$xtpl->table_td('<a href="?page=adminvps&action=delip&ip='.$ip->id.'&veid='.$vps->id.'&t='.csrf_token().'">('._("Remove").')</a>');
 			$xtpl->table_tr();
 		}
 
@@ -1073,12 +1073,12 @@ if (isset($show_info) && $show_info) {
 		if ($vps->node->location->has_ipv6)
 			$free_6 = $tmp + get_free_ip_list('ipv6', $vps, null, 25);
 
-		$xtpl->form_add_select(_("Add IPv4 address").':', 'ip_recycle', $free_4, '', _('Add one IP address at a time'));
+		$xtpl->form_add_select(_("Add public IPv4 address").':', 'ip_recycle', $free_4, '', _('Add one IP address at a time'));
 
 		$xtpl->form_add_select(_("Add private IPv4 address").':', 'ip_private_recycle', $free_4_private, '', _('Add one IP address at a time'));
 
 		if ($vps->node->location->has_ipv6)
-			$xtpl->form_add_select(_("Add IPv6 address").':', 'ip6_recycle', $free_6, '', _('Add one IP address at a time'));
+			$xtpl->form_add_select(_("Add public IPv6 address").':', 'ip6_recycle', $free_6, '', _('Add one IP address at a time'));
 
 		$xtpl->table_tr();
 

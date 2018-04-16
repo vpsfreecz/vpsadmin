@@ -12,7 +12,15 @@ module TransactionChains
 
       chain = self
 
-      use_chain(Vps::DelIp, args: [vps, vps.ip_addresses])
+      use_chain(Vps::DelIp, args: [
+          vps,
+          vps.ip_addresses.joins(:network).where(
+              networks: {role: [
+                  ::Network.roles[:public_access],
+                  ::Network.roles[:private_access],
+              ]}
+          )
+      ])
 
       append(Transactions::Utils::NoOp, args: vps.node_id) do
         # Mark all resources as disabled until they are really freed by

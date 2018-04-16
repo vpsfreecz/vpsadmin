@@ -140,4 +140,8 @@ class IpAddress < ActiveRecord::Base
   def to_ip
     IPAddress.parse("#{addr}/#{prefix}")
   end
+
+  def to_s
+    "#{addr}/#{prefix}"
+  end
 end

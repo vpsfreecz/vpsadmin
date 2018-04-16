@@ -1,7 +1,7 @@
 module Transactions::Vps
   class VethName < ::Transaction
     t_name :vps_veth_name
-    t_type 2018
+    t_type 2020
     queue :vps
 
     def params(vps, orig, new_name)

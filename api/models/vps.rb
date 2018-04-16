@@ -157,6 +157,10 @@ class Vps < ActiveRecord::Base
     ::IpAddress.transaction do
       ip = ::IpAddress.find(ip.id) unless safe
 
+      if ip.network.role == 'interconnecting'
+        raise VpsAdmin::API::Exceptions::InterconnectingIp
+      end
+
       unless ip.network.location_id == node.location_id
         raise VpsAdmin::API::Exceptions::IpAddressInvalidLocation
       end
@@ -197,8 +201,11 @@ class Vps < ActiveRecord::Base
     ::IpAddress.transaction do
       ip = ::IpAddress.find(ip.id) unless safe
 
-      unless ip.vps_id == self.id
+      if ip.vps_id != self.id
         raise VpsAdmin::API::Exceptions::IpAddressNotAssigned
+
+      elsif ip.network.role == 'interconnecting'
+        raise VpsAdmin::API::Exceptions::InterconnectingIp
       end
 
       TransactionChains::Vps::DelIp.fire(self, [ip])

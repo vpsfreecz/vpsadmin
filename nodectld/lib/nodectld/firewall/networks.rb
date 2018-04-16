@@ -23,6 +23,7 @@ module NodeCtld::Firewall
         db.query("
             SELECT ip_version, address, prefix, role
             FROM networks
+            WHERE role IN (0, 1)
         ").each do |row|
           @networks << Network.new(
             row['ip_version'].to_i,

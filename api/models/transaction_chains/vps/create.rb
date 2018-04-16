@@ -83,6 +83,8 @@ module TransactionChains
         ])
       end
 
+      use_chain(Vps::CreateVeth, args: vps) if vps.node.vpsadminos?
+
       # Add IP addresses
       versions = [:ipv4, :ipv4_private]
       versions << :ipv6 if vps.node.location.has_ipv6

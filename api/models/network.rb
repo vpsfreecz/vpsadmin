@@ -5,9 +5,7 @@ class Network < ActiveRecord::Base
   belongs_to :user
   has_many :ip_addresses
 
-  has_ancestry cache_depth: true
-
-  enum role: %i(public_access private_access)
+  enum role: %i(public_access private_access interconnecting)
   enum split_access: %i(no_access user_split owner_split)
 
   validates :ip_version, inclusion: {
@@ -15,7 +13,6 @@ class Network < ActiveRecord::Base
       messave: '%{value} is not a valid IP version',
   }
   validate :check_ip_integrity
-  validate :check_network_integrity
 
   # @param attrs [Hash]
   # @param opts [Hash]
@@ -142,16 +139,6 @@ class Network < ActiveRecord::Base
         unless n.include?(ip.to_ip)
           errors.add(:address, "IP #{ip.addr} does not belong to this network")
         end
-      end
-    end
-  end
-
-  def check_network_integrity
-    return unless parent
-
-    net_addr(true) do |n|
-      unless parent.include?(self)
-        errors.add(:address, "#{address} is not within parent network #{parent}")
       end
     end
   end

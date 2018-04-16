@@ -1,6 +1,6 @@
 module NodeCtld
   class Commands::Vps::VethName < Commands::Base
-    handle 2018
+    handle 2020
     needs :system, :osctl, :vps
 
     def exec

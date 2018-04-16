@@ -204,6 +204,9 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
         if ip.vps && ip.network.location.environment.user_ip_ownership
           error('cannot chown IP while it belongs to a VPS')
         end
+
+      elsif ip.network.role == 'interconnecting'
+        error('interconnecting addresses cannot be modified')
       end
 
       @chain, _ = ip.do_update(input)

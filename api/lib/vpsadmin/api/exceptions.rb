@@ -132,4 +132,8 @@ module VpsAdmin::API::Exceptions
   class NotAvailableOnOpenVz < ::StandardError
 
   end
+
+  class InterconnectingIp < ::StandardError
+
+  end
 end
