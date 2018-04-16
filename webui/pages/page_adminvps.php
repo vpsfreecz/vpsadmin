@@ -1038,10 +1038,24 @@ if (isset($show_info) && $show_info) {
 		$xtpl->form_out(_('Go >>'));
 
 	// Network interface
+		$vps_ips = $api->vps($vps->id)->ip_address->list(array(
+			'meta' => array('includes' => 'network')
+		));
+
 		if ($vps->node->hypervisor_type == 'vpsadminos') {
 			$xtpl->table_title(_('Network interface'));
 			$xtpl->form_create('?page=adminvps&action=netif&veid='.$vps->id, 'post');
 			$xtpl->form_add_input(_('Veth name').':', 'text', '30', 'veth_name', $vps->veth_name);
+
+			foreach ($vps_ips as $ip) {
+				if ($ip->network->role != 'interconnecting')
+					continue;
+
+				$xtpl->table_td(ip_label($ip).':');
+				$xtpl->table_td($ip->addr.'/'.$ip->prefix);
+				$xtpl->table_tr();
+			}
+
 			$xtpl->form_out(_('Go >>'));
 		}
 
@@ -1049,19 +1063,16 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_title(_('IP addresses'));
 		$xtpl->form_create('?page=adminvps&action=addip&veid='.$vps->id, 'post');
 
-		foreach ($api->vps($vps->id)->ip_address->list(array('meta' => array('includes' => 'network'))) as $ip) {
+		foreach ($vps_ips as $ip) {
+			if ($ip->network->role == 'interconnecting')
+				continue;
+
 			$xtpl->table_td(ip_label($ip));
 			$xtpl->table_td($ip->addr.'/'.$ip->prefix);
-
-			if ($ip->network->role == 'interconnecting') {
-				$xtpl->table_td('');
-
-			} else {
-				$xtpl->table_td(
-					'<a href="?page=adminvps&action=delip&ip='.$ip->id.
-					'&veid='.$vps->id.'&t='.csrf_token().'">('._("Remove").')</a>'
-				);
-			}
+			$xtpl->table_td(
+				'<a href="?page=adminvps&action=delip&ip='.$ip->id.
+				'&veid='.$vps->id.'&t='.csrf_token().'">('._("Remove").')</a>'
+			);
 
 			$xtpl->table_tr();
 		}
