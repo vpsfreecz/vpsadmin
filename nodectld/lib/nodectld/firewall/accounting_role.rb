@@ -66,12 +66,8 @@ module NodeCtld::Firewall
             fields = l.strip.split(/\s+/)
             src = fields[v == 4 ? 7 : 6]
             dst = fields[v == 4 ? 8 : 7]
-            ip = src == all ? dst : src
+            ip = (src == all ? dst : src).split('/').first
             proto = fields[3].to_sym
-
-            if v == 6
-              ip = ip.split('/').first
-            end
 
             ret[ip] ||= {}
             ret[ip][proto] ||= {bytes: {}, packets: {}}
