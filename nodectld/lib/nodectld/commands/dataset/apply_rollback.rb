@@ -43,7 +43,8 @@ module NodeCtld
       # Save original properties
       state = dataset_properties(origin, [
         :atime, :compression, :mountpoint, :quota,
-        :recordsize, :refquota, :sync
+        :recordsize, :refquota, :sync,
+        :uidoffset, :gidoffset
       ])
 
       # Destroy the original dataset
