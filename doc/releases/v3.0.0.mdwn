@@ -12,6 +12,8 @@ changes.
   VPS configuration
 - VPS features: bridge, iptables and NFS are no longer tunable
 - VPS load average and swap usage is no longer tracked
+- Compressed ZFS send is now used, make sure that required zpool features
+  are enabled
 
 ## API changes
 - Version increased to `5.0`

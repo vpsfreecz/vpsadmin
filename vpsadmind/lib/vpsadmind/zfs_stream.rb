@@ -125,10 +125,10 @@ module VpsAdmind
       r_err, w_err = IO.pipe
 
       if @from_snapshot
-        cmd = "zfs send -v -I @#{@from_snapshot} #{path}@#{@snapshot}"
+        cmd = "zfs send -c -v -I @#{@from_snapshot} #{path}@#{@snapshot}"
 
       else
-        cmd = "zfs send -v #{path}@#{@snapshot}"
+        cmd = "zfs send -c -v #{path}@#{@snapshot}"
       end
 
       @pipeline << cmd
@@ -193,10 +193,10 @@ module VpsAdmind
 
     def approximate_size
       if @from_snapshot
-        cmd = zfs(:send, "-nv -I @#{@from_snapshot}", "#{path}@#{@snapshot}")
+        cmd = zfs(:send, "-ncv -I @#{@from_snapshot}", "#{path}@#{@snapshot}")
 
       else
-        cmd = zfs(:send, '-nv', "#{path}@#{@snapshot}")
+        cmd = zfs(:send, '-ncv', "#{path}@#{@snapshot}")
       end
 
       rx = /^total estimated size is ([^$]+)$/
