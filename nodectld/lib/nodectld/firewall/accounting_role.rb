@@ -35,7 +35,8 @@ module NodeCtld::Firewall
                     INNER JOIN vpses ON vpses.id = ip.vps_id
                     INNER JOIN networks n ON n.id = ip.network_id
                     WHERE node_id = #{$CFG.get(:vpsadmin, :node_id)}
-                    AND n.ip_version = #{v}")
+                    AND n.ip_version = #{v}
+                    AND n.role IN (0, 1)")
       rs.each do |ip|
         reg_ip(ip['ip_addr'], ip['prefix'], v)
       end
