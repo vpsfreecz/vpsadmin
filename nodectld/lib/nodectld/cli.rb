@@ -98,7 +98,7 @@ module NodeCtld
           end
 
           r.each do |line|
-            puts line
+            log(:unknown, line)
           end
 
           # Sets $?
