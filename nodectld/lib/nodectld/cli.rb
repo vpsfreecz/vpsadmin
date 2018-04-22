@@ -83,7 +83,11 @@ module NodeCtld
 
           w.close
 
-          Signal.trap("TERM") do
+          Signal.trap('CHLD') do
+            r.close
+          end
+
+          Signal.trap('TERM') do
             log 'Killing daemon'
             Process.kill('TERM', pid)
             exit
