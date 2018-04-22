@@ -40,6 +40,11 @@ module NodeCtl
 
     end
 
+    # Method called for local commands
+    def exec
+      raise NotImplementedError
+    end
+
     def set_global_options(opts)
       @global_opts = opts
     end
@@ -58,6 +63,10 @@ module NodeCtl
 
     def nodectld(d)
       @nodectld = d
+    end
+
+    def remote?
+      self.class.remote?
     end
 
     def self.all
@@ -125,6 +134,19 @@ module NodeCtl
         else
           name.split('::').last.downcase
         end
+      end
+
+      def remote(v)
+        if v
+          @remote = true
+
+        else
+          @remote = false
+        end
+      end
+
+      def remote?
+        @remote.nil? || @remote
       end
 
       def label

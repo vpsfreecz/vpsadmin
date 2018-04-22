@@ -92,7 +92,7 @@ namespace :vpsadmin do
       exit(false)
     end
 
-    %w(nodectld nodectl).each do |gem|
+    %w(libnodectld nodectld nodectl).each do |gem|
       ret = system('./tools/update_gem.sh', 'packages', gem, build_id, os_build_id)
       unless ret
         fail "unable to build #{gem}: failed with exit status #{$?.exitstatus}"

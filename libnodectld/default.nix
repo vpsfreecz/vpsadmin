@@ -3,13 +3,14 @@ let
   stdenv = pkgs.stdenv;
 
 in stdenv.mkDerivation rec {
-  name = "nodectl";
+  name = "libnodectld";
 
   buildInputs = [
     pkgs.ruby
     pkgs.git
     pkgs.zlib
     pkgs.openssl
+    pkgs.ncurses
     pkgs.libmysql
   ];
 

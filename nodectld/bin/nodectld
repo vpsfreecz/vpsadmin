@@ -1,3 +1,4 @@
 #!/usr/bin/env ruby
 require 'nodectld'
+require 'nodectld/cli'
 NodeCtld::Cli.run

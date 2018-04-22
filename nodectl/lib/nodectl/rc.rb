@@ -17,6 +17,11 @@ module NodeCtl
       cmd.set_global_options(@global_opts)
       cmd.nodectld(@nodectld)
 
+      unless cmd.remote?
+        cmd.exec
+        exit
+      end
+
       begin
         params = cmd.validate
 

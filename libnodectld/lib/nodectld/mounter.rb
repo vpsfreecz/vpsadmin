@@ -10,7 +10,6 @@ module NodeCtld
   class Mounter
     include OsCtl::Lib::Utils::Log
     include Utils::System
-    include Utils::Vps
     include Utils::Pool
 
     class << self

@@ -5,4 +5,3 @@ os_path = ENV['OS'] || '../../vpsadminos'
 
 gem 'libosctl', path: File.join(os_path, 'libosctl')
 gem 'osctl', path: File.join(os_path, 'osctl')
-gem 'libnodectld', path: '../libnodectld'
