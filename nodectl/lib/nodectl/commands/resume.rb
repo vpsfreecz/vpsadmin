@@ -1,5 +1,6 @@
-module NodeCtl::Commands
-  class Resume < NodeCtl::Command
+module NodeCtl
+  class Commands::Resume < Command::Remote
+    cmd :resume
     description 'Resume execution of queued transactions'
 
     def process

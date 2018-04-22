@@ -1,25 +1,28 @@
 require 'ipaddr'
 
-module NodeCtl::Commands
-  class Get < NodeCtl::Command
+module NodeCtl
+  class Commands::Get < Command::Remote
+    cmd :get
     args '<command>'
     description 'Get nodectld resources and properties'
 
-    def options(opts, args)
-      @opts = {
+    include Utils
+
+    def options(parser, args)
+      opts.update({
           header: true,
           limit: 50,
-      }
+      })
 
-      opts.on('-H', '--no-header', 'Suppress header row') do
-        @opts[:header] = false
+      parser.on('-H', '--no-header', 'Suppress header row') do
+        opts[:header] = false
       end
 
-      opts.on('-l', '--limit LIMIT', Integer, 'Limit number of items to get') do |l|
-        @opts[:limit] = l
+      parser.on('-l', '--limit LIMIT', Integer, 'Limit number of items to get') do |l|
+        opts[:limit] = l
       end
 
-      opts.separator <<END
+      parser.separator <<END
 
 Subcommands:
 config [some.key]    Show nodectld's config or specific key
@@ -29,40 +32,40 @@ END
     end
 
     def validate
-      if ARGV.size < 2
-        raise NodeCtl::ValidationError.new('missing resource')
-      end
+      raise ValidationError, 'missing resource' if args.size < 1
 
-      {resource: @args[1], limit: @opts[:limit]}
+      params.update({resource: args[0], limit: opts[:limit]})
     end
 
     def process
-      case @args[1]
+      case args[0]
       when 'config'
-        cfg = @res[:config]
+        cfg = response[:config]
 
-        if @args[2]
-          @args[2].split('.').each do |s|
+        if args[1]
+          args[1].split('.').each do |s|
             cfg = cfg[cfg.instance_of?(Array) ? s.to_i : s.to_sym]
           end
         end
 
-        if @global_opts[:parsable]
+        if global_opts[:parsable]
           puts cfg.to_json
+
         else
           pp cfg
         end
 
       when 'queue'
-        q = @res[:queue]
+        q = response[:queue]
 
-        if @global_opts[:parsable]
+        if global_opts[:parsable]
           puts q.to_json
+
         else
           puts sprintf(
             '%-6s %-8s %-3s %-3s %-4s %-5s %-5s %-5s %-8s %-18.16s',
             'CHAIN', 'TRANS', 'DIR', 'URG', 'PRIO', 'USER', 'VEID', 'TYPE', 'DEP', 'WAITING'
-          ) if @opts[:header]
+          ) if opts[:header]
 
           q.each do |t|
             puts sprintf(
@@ -75,16 +78,16 @@ END
         end
 
       when 'ip_map'
-        map = @res[:ip_map]
+        map = response[:ip_map]
 
-        if @global_opts[:parsable]
+        if global_opts[:parsable]
           puts map.to_json
 
         else
           puts sprintf(
             '%-40s %8s %8s',
             'ADDR', 'ID', 'USER'
-          ) if @opts[:header]
+          ) if opts[:header]
 
           map.sort do |a, b|
             IPAddr.new(a[0].to_s).to_i <=> IPAddr.new(b[0].to_s).to_i
@@ -98,7 +101,7 @@ END
         end
 
       else
-        pp @res
+        pp response
       end
 
       nil

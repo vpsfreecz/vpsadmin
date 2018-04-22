@@ -1,31 +1,31 @@
-module NodeCtl::Commands
-  class Pause < NodeCtl::Command
+module NodeCtl
+  class Commands::Pause < Command::Remote
+    cmd :pause
     args '[ID]'
     description 'Pause execution of queued transactions'
 
     def validate
-      if @args.size > 2
-        raise NodeCtl::ValidationError.new('too many arguments')
+      if args.size > 1
+        raise ValidationError, 'too many arguments'
 
       elsif specific?
-        raise NodeCtl::ValidationError.new('invalid transaction id') unless @args[1] =~ /^\d+$/
+        raise ValidationError, 'invalid transaction id' if args[0] !~ /^\d+$/
       end
-    end
 
-    def prepare
-      {t_id: specific? ? @args[1].to_i : nil}
+      params[:t_id] = specific? ? args[0].to_i : nil
     end
 
     def process
       if specific?
         puts 'Pause scheduled'
+
       else
         puts 'Paused'
       end
     end
 
     def specific?
-      @args.size == 2
+      args.size == 1
     end
   end
 end

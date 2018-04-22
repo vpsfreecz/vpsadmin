@@ -1,16 +1,22 @@
-module NodeCtl::CommandTemplates
-  class ResourceControl < NodeCtl::Command
+module NodeCtl
+  class CommandTemplates::ResourceControl < Command::Remote
     args 'all|fw|shaper'
 
     def validate
-      raise NodeCtl::ValidationError.new('missing resource') if @args.size < 2
-      raise NodeCtl::ValidationError.new('not a valid resource') unless %w(all fw shaper).include?(@args[1])
+      if args.size < 1
+        raise ValidationError, 'missing resource'
 
-      {resources: @args[1] == 'all' ? [:fw, :shaper] : [@args[1]]}
+      elsif !%w(all fw shaper).include?(args[0])
+        raise ValidationError, 'not a valid resource'
+      end
+
+      params.update({
+        resources: args[0] == 'all' ? [:fw, :shaper] : [args[0]]
+      })
     end
 
     def process
-      @res.each do |k, v|
+      response.each do |k, v|
         case k
         when :fw
           puts 'Firewall  ...  ok'

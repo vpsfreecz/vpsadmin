@@ -1,5 +1,6 @@
-module NodeCtl::Commands
-  class Init < NodeCtl::CommandTemplates::ResourceControl
+module NodeCtl
+  class Commands::Init < CommandTemplates::ResourceControl
+    cmd :init
     description 'Initialize resource'
 
     def process

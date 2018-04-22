@@ -1,10 +1,11 @@
-module NodeCtl::Commands
-  class Set < NodeCtl::Command
+module NodeCtl
+  class Commands::Set < Command::Remote
+    cmd :set
     args '<command>'
     description 'Set nodectld resources and properties'
 
-    def options(opts, args)
-      opts.separator <<END
+    def options(parser, args)
+      parser.separator <<END
 
 Subcommands:
 config <some.key=value>...    Change variable in nodectld's configuration
@@ -12,17 +13,14 @@ END
     end
 
     def validate
-      raise NodeCtl::ValidationError.new('missing resource') if @args.size < 2
-      raise NodeCtl::ValidationError.new('missing arguments') if @args.size < 3
-    end
+      raise ValidationError, 'missing resource' if args.size < 1
+      raise ValidationError, 'missing arguments' if args.size < 2
 
-    def prepare
-      ret = {}
-
-      case @args[1]
+      case args[0]
       when 'config'
-        ret[:config] = []
-        @args[2..-1].each do |opt|
+        params[:config] = []
+
+        args[1..-1].each do |opt|
           key, val = opt.split('=')
           root = {}
           tmp = root
@@ -38,11 +36,12 @@ END
           else
             tmp[parts.last] = val
           end
-          ret[:config] << root
+
+          params[:config] << root
         end
       end
 
-      {resource: @args[1]}.update(ret)
+      params[:resource] = args[0]
     end
 
     def process

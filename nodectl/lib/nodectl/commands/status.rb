@@ -1,43 +1,46 @@
-module NodeCtl::Commands
-  class Status < NodeCtl::Command
+module NodeCtl
+  class Commands::Status < Command::Remote
+    cmd :status
     description "Show nodectld's status"
 
-    def options(opts, args)
-      @opts = {
-          workers: false,
-          consoles: false,
-          header: true,
-      }
+    include Utils
 
-      opts.on('-c', '--consoles', 'List exported consoles') do
-        @opts[:consoles] = true
+    def options(parser, args)
+      opts.update({
+        workers: false,
+        consoles: false,
+        header: true,
+      })
+
+      parser.on('-c', '--consoles', 'List exported consoles') do
+        opts[:consoles] = true
       end
 
-      opts.on('-m', '--mounts', 'List delayed mounts') do
-        @opts[:mounts] = true
+      parser.on('-m', '--mounts', 'List delayed mounts') do
+        opts[:mounts] = true
       end
 
-      opts.on('-r', '--reservations', 'List queue reservations') do
-        @opts[:reservations] = true
+      parser.on('-r', '--reservations', 'List queue reservations') do
+        opts[:reservations] = true
       end
 
-      opts.on('-t', '--subtasks', 'List subtasks') do
-        @opts[:subtasks] = true
+      parser.on('-t', '--subtasks', 'List subtasks') do
+        opts[:subtasks] = true
       end
 
-      opts.on('-w', '--workers', 'List workers') do
-        @opts[:workers] = true
+      parser.on('-w', '--workers', 'List workers') do
+        opts[:workers] = true
       end
 
-      opts.on('-H', '--no-header', 'Suppress header row') do
-        @opts[:header] = false
+      parser.on('-H', '--no-header', 'Suppress header row') do
+        opts[:header] = false
       end
     end
 
     def process
-      if @opts[:workers]
-        if @opts[:header]
-          if @global_opts[:parsable]
+      if opts[:workers]
+        if opts[:header]
+          if global_opts[:parsable]
             puts sprintf(
               '%-8s %-8s %-8s %-20.19s %-5s %8s  %12s %-18.16s %-8s %s',
               'QUEUE', 'CHAIN', 'TRANS', 'HANDLER', 'TYPE', 'TIME', 'PROGRESS', 'ETA', 'PID', 'STEP'
@@ -53,7 +56,7 @@ module NodeCtl::Commands
 
         t = Time.now
 
-        @res[:queues].each do |name, queue|
+        response[:queues].each do |name, queue|
           queue[:workers].sort { |a, b| a[0].to_s.to_i <=> b[0].to_s.to_i }.each do |w|
 
             eta = nil
@@ -68,7 +71,7 @@ module NodeCtl::Commands
               end
             end
 
-            if @global_opts[:parsable]
+            if global_opts[:parsable]
               puts sprintf(
                 '%-8s %-8d %-8d %-20.19s %-5d %8d %12s %-20.19s %-8s %s',
                 name,
@@ -102,28 +105,31 @@ module NodeCtl::Commands
         end
       end
 
-      if @opts[:consoles]
-        puts sprintf('%-5s %s', 'VEID', 'LISTENERS')  if @opts[:header]
+      if opts[:consoles]
+        puts sprintf('%-5s %s', 'VEID', 'LISTENERS') if opts[:header]
 
-        @res[:consoles].sort { |a, b| a[0].to_s.to_i <=> b[0].to_s.to_i }.each do |c|
+        response[:consoles].sort { |a, b| a[0].to_s.to_i <=> b[0].to_s.to_i }.each do |c|
           puts sprintf('%-5d %d', c[0].to_s, c[1])
         end
       end
 
-      if @opts[:reservations]
+      if opts[:reservations]
         puts sprintf('%-12s %-10s', 'QUEUE', 'CHAIN')
 
-        @res[:queues].each do |name, queue|
+        response[:queues].each do |name, queue|
           queue[:reservations].each do |r|
             puts sprintf("%-12s %-10d", name, r)
           end
         end
       end
 
-      if @opts[:subtasks]
+      if opts[:subtasks]
         puts sprintf('%-10s %-10s %-20s %s', 'CHAIN', 'PID', 'STATE', 'NAME') if @opts[:header]
 
-        @res[:subprocesses].sort { |a, b| a[0].to_s.to_i <=> b[0].to_s.to_i }.each do |chain_tasks|
+        response[:subprocesses].sort do |a, b|
+          a[0].to_s.to_i <=> b[0].to_s.to_i
+
+        end.each do |chain_tasks|
           chain_tasks[1].each do |task|
             info = process_info(task)
             puts sprintf(
@@ -137,13 +143,13 @@ module NodeCtl::Commands
         end
       end
 
-      if @opts[:mounts]
+      if opts[:mounts]
         puts sprintf('%-5s %-6s %-16s %-18.16s %s', 'VEID', 'ID', 'TYPE', 'TIME', 'DST')
 
-        @res[:delayed_mounts].sort do |a, b|
+        response[:delayed_mounts].sort do |a, b|
           a[0].to_s.to_i <=> b[0].to_s.to_i
-        end.each do |vps_id, mounts|
 
+        end.each do |vps_id, mounts|
           mounts.each do |m|
             puts sprintf(
               '%-5s %-6s %-16s %-18.16s %s',
@@ -154,22 +160,21 @@ module NodeCtl::Commands
               m[:dst]
             )
           end
-
         end
       end
 
-      unless @opts[:workers] || @opts[:consoles] || @opts[:subtasks] \
-            || @opts[:mounts] || @opts[:reservations]
-        puts "   Version: #{@nodectld.version}"
+      unless opts[:workers] || opts[:consoles] || opts[:subtasks] \
+             || opts[:mounts] || opts[:reservations]
+        puts "   Version: #{client.version}"
         puts "     State: #{state}"
-        puts "    Uptime: #{format_duration(Time.new.to_i - @res[:start_time])}"
-        puts "  Consoles: #{@res[:export_console] ? @res[:consoles].size : 'disabled'}"
-        puts "  Subtasks: #{@res[:subprocesses].inject(0) { |sum, v| sum + v[1].size }}"
-        puts "    Mounts: #{@res[:delayed_mounts].inject(0) { |sum, v| sum + v[1].size }}"
-        puts "Queue size: #{@res[:queue_size]}"
+        puts "    Uptime: #{format_duration(Time.new.to_i - response[:start_time])}"
+        puts "  Consoles: #{response[:export_console] ? response[:consoles].size : 'disabled'}"
+        puts "  Subtasks: #{response[:subprocesses].inject(0) { |sum, v| sum + v[1].size }}"
+        puts "    Mounts: #{response[:delayed_mounts].inject(0) { |sum, v| sum + v[1].size }}"
+        puts "Queue size: #{response[:queue_size]}"
         puts "    Queues:"
 
-        @res[:queues].each do |name, queue|
+        response[:queues].each do |name, queue|
           puts sprintf(
             "    %10s  %d / %d (+%d%s) %s",
             name,
@@ -177,25 +182,27 @@ module NodeCtl::Commands
             queue[:threads],
             queue[:urgent],
             queue[:reservations].empty? ? '' : " *#{queue[:reservations].size}",
-            !queue[:started] ? "opens in #{format_duration((@res[:start_time] + queue[:start_delay]) - Time.now.to_i)}" : ''
+            !queue[:started] ? "opens in #{format_duration((response[:start_time] + queue[:start_delay]) - Time.now.to_i)}" : ''
           )
         end
       end
+
+      ok
     end
 
     def state
-      if @res[:state][:run]
-        if @res[:state][:pause]
-          "running, going to pause after #{@res[:state][:pause]}"
+      if response[:state][:run]
+        if response[:state][:pause]
+          "running, going to pause after #{response[:state][:pause]}"
         else
           'running'
         end
 
-      elsif @res[:state][:status] == 0
+      elsif response[:state][:status] == 0
         'paused'
 
       else
-        "finishing, going to #{translate_exitstatus(@res[:state][:status])}"
+        "finishing, going to #{translate_exitstatus(response[:state][:status])}"
       end
     end
 

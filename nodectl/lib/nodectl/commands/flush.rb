@@ -1,5 +1,6 @@
-module NodeCtl::Commands
-  class Flush < NodeCtl::CommandTemplates::ResourceControl
+module NodeCtl
+  class Commands::Flush < CommandTemplates::ResourceControl
+    cmd :flush
     description 'Flush resource'
 
     def process

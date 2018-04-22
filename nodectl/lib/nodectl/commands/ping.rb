@@ -1,13 +1,14 @@
-module NodeCtl::Commands
-  class Ping < NodeCtl::Command
+module NodeCtl
+  class Commands::Ping < Command::Remote
+    cmd :ping
     description 'Check if nodectld is alive'
 
     def process
-      if @res[:pong] == 'pong'
+      if response[:pong] == 'pong'
         puts 'pong'
 
       else
-        {status: :failed, error: 'nodectld did not respond correctly'}
+        error('nodectld did not respond correctly')
       end
     end
   end

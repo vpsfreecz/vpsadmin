@@ -1,15 +1,16 @@
-module NodeCtl::Commands
-  class Script < NodeCtl::Command
+module NodeCtl
+  class Commands::Script < Command::Local
+    cmd :script
     args '<file>'
     description 'Run ruby script with libnodectld and nodectl in path'
-    remote false
 
-    def exec
-      unless ARGV[1]
-        raise NodeCtl::ValidationError, 'missing script name'
-      end
+    def validate
+      raise ValidationError, 'missing script name' if args.size < 1
+      raise ValidationError, 'too many arguments' if args.size > 1
+    end
 
-      load(ARGV[1])
+    def execute
+      load(args[0])
     end
   end
 end

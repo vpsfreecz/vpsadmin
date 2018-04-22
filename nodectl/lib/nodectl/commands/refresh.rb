@@ -1,5 +1,6 @@
-module NodeCtl::Commands
-  class Refresh < NodeCtl::Command
+module NodeCtl
+  class Commands::Refresh < Command::Remote
+    cmd :refresh
     description 'Update VPS status, traffic counters, storage usage and server status'
 
     def process

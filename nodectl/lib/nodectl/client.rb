@@ -1,10 +1,8 @@
 require 'socket'
-
-require 'rubygems'
 require 'json'
 
 module NodeCtl
-  class NodeCtld
+  class Client
     attr_reader :version
 
     def initialize(sock)
@@ -13,7 +11,7 @@ module NodeCtl
 
     def open
       @sock = UNIXSocket.new(@sock_path)
-      greetings = reply
+      greetings = receive
       @version = greetings[:version]
     end
 
@@ -21,7 +19,7 @@ module NodeCtl
       @sock.send({command: cmd, params: params}.to_json + "\n", 0)
     end
 
-    def reply
+    def receive
       buf = ""
 
       while m = @sock.recv(1024)
@@ -33,7 +31,7 @@ module NodeCtl
     end
 
     def response
-      reply[:response]
+      receive[:response]
     end
 
     def close

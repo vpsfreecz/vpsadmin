@@ -1,65 +1,68 @@
-module NodeCtl::Commands
-  class Chain < NodeCtl::Command
+module NodeCtl
+  class Commands::Chain < Command::Remote
+    cmd :chain
     args '<chain> <command>'
     description 'List transaction confirmations and run them'
 
-    def options(opts, args)
-      @opts = {
+    def options(parser, args)
+      self.opts = {
         direction: :execute,
         success: true,
       }
 
-      opts.separator <<END
+      parser.separator <<END
 Subcommands:
 confirmations [TRANSACTION]...  List transaction confirmations
 confirm [TRANSACTION]...        Run transaction confirmations
 release [locks|ports]           Release acquired locks and reserved ports
 END
 
-      if args[1] == 'confirm'
-        opts.on('--direction DIR', %w(execute rollback), 'Direction (execute or rollback)') do |d|
-          @opts[:direction] = d
-        end
+      return if args[0] !~ 'confirm'
 
-        opts.on('--[no-]success', 'Success') do |s|
-          @opts[:success] = s
-        end
+      parser.on(
+        '--direction DIR',
+        %w(execute rollback),
+        'Direction (execute or rollback)'
+      ) do |d|
+        opts[:direction] = d
+      end
+
+      parser.on('--[no-]success', 'Success') do |s|
+        opts[:success] = s
       end
     end
 
     def validate
-      if ARGV.size < 3
-        raise NodeCtl::ValidationError, 'arguments missing'
+      if args.size < 2
+        raise ValidationError, 'arguments missing'
+
+      elsif /\A\d+\z/ !~ args[0]
+        raise ValidationError, "invalid chain id '#{args[0]}'"
+
+      elsif !%w(confirmations confirm release).include?(args[1])
+        raise ValidationError, "invalid subcommand '#{args[1]}'"
       end
 
-      unless /\A\d+\z/ =~ @args[1]
-        raise NodeCtl::ValidationError, "invalid chain id '#{@args[1]}'"
-      end
+      params.update({
+        chain: args[0].to_i,
+        command: args[1],
+        transactions: args.size > 2 ? args[2..-1].map { |v| v.to_i } : nil,
+      })
 
-      unless %w(confirmations confirm release).include?(@args[2])
-        raise NodeCtl::ValidationError, "invalid subcommand '#{@args[2]}'"
-      end
-
-      ret = {
-        chain: @args[1].to_i,
-        command: @args[2],
-        transactions: @args.size > 3 ? @args[3..-1].map { |v| v.to_i } : nil,
-      }
-
-      case @args[2]
+      case args[1]
       when 'confirm'
-        ret.update({
-          direction: @opts[:direction],
-          success: @opts[:success],
+        params.update({
+          direction: opts[:direction],
+          success: opts[:success],
         })
 
       when 'release'
-        if @args[3] && !%w(locks ports).include?(@args[3])
-          raise NodeCtldctl::ValidationError, "invalid resource '#{@args[3]}'"
+        if args[2] && !%w(locks ports).include?(args[2])
+          raise ValidationError, "invalid resource '#{args[2]}'"
         end
 
-        ret.update({
-          release: @args[3].nil? ? %w(locks ports) : [@args[3]],
+        params.update({
+          release: args[2].nil? ? %w(locks ports) : [args[2]],
         })
       end
 
@@ -67,19 +70,20 @@ END
     end
 
     def process
-      case @args[2]
+      case args[1]
       when 'confirmations'
-        list_confirmations(@res[:transactions])
+        list_confirmations(response[:transactions])
 
       when 'confirm'
-        list_confirmations(@res[:transactions])
+        list_confirmations(response[:transactions])
 
       when 'release'
-        list_locks(@res[:locks]) if @res[:locks]
-        list_ports(@res[:ports]) if @res[:ports]
+        list_locks(response[:locks]) if response[:locks]
+        list_ports(response[:ports]) if response[:ports]
       end
     end
 
+    protected
     def list_confirmations(list)
       list.each do |t, confirmations|
         puts "TRANSACTION ##{t}"

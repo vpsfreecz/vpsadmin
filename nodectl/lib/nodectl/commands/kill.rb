@@ -1,51 +1,52 @@
-module NodeCtl::Commands
-  class Kill < NodeCtl::Command
+module NodeCtl
+  class Commands::Kill < Command::Remote
+    cmd :kill
     args '[ID|TYPE]...'
     description 'Kill transaction(s) that are being processed'
 
-    def options(opts, args)
-      @opts = {
+    def options(parser, args)
+      opts.update({
         all: false,
         type: nil,
-      }
+      })
 
-      opts.on('-a', '--all', 'Kill all transactions') do
-        @opts[:all] = true
+      parser.on('-a', '--all', 'Kill all transactions') do
+        opts[:all] = true
       end
 
-      opts.on('-t', '--type', 'Kill all transactions of this type') do
-        @opts[:type] = true
+      parser.on('-t', '--type', 'Kill all transactions of this type') do
+        opts[:type] = true
       end
     end
 
     def validate
-      if @opts[:all]
-        {transactions: :all}
+      if opts[:all]
+        params[:transactions] = :all
 
-      elsif @opts[:type]
-        if ARGV.size < 2
-          raise NodeCtl::ValidationError.new('missing transaction type(s)')
+      elsif opts[:type]
+        if args.size < 1
+          raise ValidationError, 'missing transaction type(s)'
         end
 
-        {types: ARGV[1..-1]}
+        params[:types] = args
 
       else
-        if ARGV.size < 2
-          raise NodeCtl::ValidationError.new('missing transaction id(s)')
+        if args.size < 1
+          raise ValidationError, 'missing transaction id(s)'
         end
 
-        {transactions: ARGV[1..-1]}
+        params[:transactions] = args
       end
     end
 
     def process
-      @res[:msgs].each do |i, msg|
+      response[:msgs].each do |i, msg|
         puts "#{i}: #{msg}"
       end
 
-      puts '' if @res[:msgs].size > 0
+      puts '' if response[:msgs].size > 0
 
-      puts "Killed #{@res[:killed]} transactions"
+      puts "Killed #{response[:killed]} transactions"
     end
   end
 end
