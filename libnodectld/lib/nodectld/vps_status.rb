@@ -161,7 +161,7 @@ module NodeCtld
     def run_or_skip(vps)
       yield
 
-    rescue SystemCommandFailed => e
+    rescue => e
       log(:warn, :vps, e.message)
       vps.skip
     end
