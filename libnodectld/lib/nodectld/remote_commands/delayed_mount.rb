@@ -9,7 +9,7 @@ module NodeCtld::RemoteCommands
         mount[k.to_s] = v
       end
 
-      NodeCtld::DelayedMounter.mount(@vps_id.to_i, mount)
+      NodeCtld::DelayedMounter.mount(@pool_fs, @vps_id.to_i, mount)
       ok
     end
   end

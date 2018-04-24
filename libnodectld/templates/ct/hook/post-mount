@@ -1,0 +1,16 @@
+#!/run/current-system/sw/bin/nodectl script
+require 'nodectld/standalone'
+
+vars = %w(OSCTL_POOL_NAME OSCTL_CT_ID OSCTL_CT_ROOTFS_MOUNT)
+vars.each do |v|
+  next if ENV[v]
+  warn 'Expected environment variables:'
+  warn "  #{vars.join("\n  ")}"
+  exit(false)
+end
+
+NodeCtld::Mounter.mount_vps_mounts(
+  File.join(ENV['OSCTL_POOL_NAME'], 'ct'),
+  ENV['OSCTL_CT_ID'],
+  ENV['OSCTL_CT_ROOTFS_MOUNT']
+)

@@ -57,6 +57,10 @@ module NodeCtld
     def process_event(event)
       case event[:type]
       when 'state'
+        if event[:opts][:state] == 'stopped'
+          MountReporter.report(event[:opts][:id], :all, :unmounted)
+        end
+
         if %w(running stopped).include?(event[:opts][:state])
           Daemon.instance.ct_top.refresh
         end

@@ -66,10 +66,19 @@ module NodeCtld
             "vps=#{mnt[:vps_id]},mount=##{mnt[:id]},state=#{mnt[:state]}"
           )
           db ||= Db.new
-          db.prepared(
-            'UPDATE mounts SET current_state = ? WHERE id = ?',
-            STATES.index(mnt[:state]), mnt[:id]
-          )
+
+          if mnt[:id] == :all
+            db.prepared(
+              'UPDATE mounts SET current_state = ? WHERE vps_id = ?',
+              STATES.index(mnt[:state]), mnt[:vps_id]
+            )
+
+          else
+            db.prepared(
+              'UPDATE mounts SET current_state = ? WHERE id = ?',
+              STATES.index(mnt[:state]), mnt[:id]
+            )
+          end
 
           misses = 0
         end

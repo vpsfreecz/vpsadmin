@@ -16,7 +16,8 @@ module Transactions::Vps
       end
 
       {
-          mounts: res
+          pool_fs: vps.dataset_in_pool.pool.filesystem,
+          mounts: res,
       }
     end
   end

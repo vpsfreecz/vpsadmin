@@ -4,6 +4,10 @@ module NodeCtld
   STANDALONE = false unless const_defined?(:STANDALONE)
 
   module Firewall ; end
+
+  def self.root
+    File.join(File.dirname(__FILE__), '..')
+  end
 end
 
 require 'nodectld/utils'

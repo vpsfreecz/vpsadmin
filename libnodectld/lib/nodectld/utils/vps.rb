@@ -24,5 +24,13 @@ module NodeCtld
         call_cmd(Commands::Vps::Stop, {vps_id: @vps_id})
       end
     end
+
+    def ct_hook_dir(pool_fs: @pool_fs, vps_id: @vps_id)
+      File.join('/', pool_fs, '..', 'hook/ct', vps_id.to_s)
+    end
+
+    def mounts_config(pool_fs: @pool_fs, vps_id: @vps_id)
+      File.join('/', pool_fs, path_to_pool_working_dir(:config), 'mounts', "#{vps_id}.yml")
+    end
   end
 end

@@ -80,7 +80,6 @@ module NodeCtld
       track_transfers: true,
       init: true,
       type: nil, # loaded from db
-      mounts_dir: '/var/vpsadmin/mounts'
     },
 
     vz: {
