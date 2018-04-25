@@ -12,7 +12,7 @@ module NodeCtld
     end
 
     def rollback
-      zfs(:destroy, nil, pool_mounted_snapshot(@pool_fs, @snapshot_id), [1])
+      zfs(:destroy, nil, pool_mounted_snapshot(@pool_fs, @snapshot_id), valid_rcs: [1])
     end
 
     protected
