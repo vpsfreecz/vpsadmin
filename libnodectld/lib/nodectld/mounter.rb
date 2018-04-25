@@ -274,7 +274,7 @@ module NodeCtld
       log(:info, :mounter, 'Delaying mount')
 
       if NodeCtld::STANDALONE
-        RemoteClient.send_or_not($CFG.get(:remote, :socket), :delayed_mount, {
+        RemoteClient.send_or_not(RemoteControl::SOCKET, :delayed_mount, {
           pool_fs: @pool_fs,
           vps_id: @vps_id,
           mount: opts,
@@ -287,7 +287,7 @@ module NodeCtld
 
     def report_state(opts, state)
       if NodeCtld::STANDALONE
-        RemoteClient.send_or_not($CFG.get(:remote, :socket), :mount_state, {
+        RemoteClient.send_or_not(RemoteControl::SOCKET, :mount_state, {
           vps_id: @vps_id,
           mount_id: opts['id'],
           state: state,

@@ -8,6 +8,9 @@ require 'thread'
 
 module NodeCtld
   class RemoteControl
+    RUNDIR = '/run/nodectl'
+    SOCKET = File.join(RUNDIR, 'nodectld.sock')
+
     extend Utils::Compat
     include OsCtl::Lib::Utils::Log
 
@@ -27,9 +30,10 @@ module NodeCtld
 
     def start
       @thread = Thread.new do
-        path = $CFG.get(:remote, :socket)
-        File.unlink(path) if File.exists?(path)
-        serv = UNIXServer.new(path)
+        Dir.mkdir(RUNDIR, 0700) unless Dir.exist?(RUNDIR)
+        File.unlink(SOCKET) if File.exists?(SOCKET)
+        serv = UNIXServer.new(SOCKET)
+        File.chmod(0600, SOCKET)
 
         loop do
           if @stop

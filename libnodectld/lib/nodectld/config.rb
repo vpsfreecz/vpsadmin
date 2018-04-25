@@ -151,10 +151,6 @@ module NodeCtld
       host: "localhost",
       port: 8081,
     },
-
-    remote: {
-      socket: "/run/nodectld.sock",
-    }
   }
 
   class AppConfig

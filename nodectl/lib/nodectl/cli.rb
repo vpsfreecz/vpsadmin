@@ -14,7 +14,7 @@ module NodeCtl
     def initialize
       @options = {
         parsable: false,
-        sock: '/run/nodectld.sock',
+        sock: '/run/nodectl/nodectld.sock',
       }
     end
 
