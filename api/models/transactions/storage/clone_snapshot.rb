@@ -4,7 +4,7 @@ module Transactions::Storage
     t_type 5217
     queue :storage
 
-    def params(snapshot_in_pool)
+    def params(snapshot_in_pool, userns = nil)
       self.node_id = snapshot_in_pool.dataset_in_pool.pool.node_id
 
       ret = {
@@ -22,6 +22,13 @@ module Transactions::Storage
 
         ret[:dataset_tree] = in_branch.branch.dataset_tree.full_name
         ret[:branch] = in_branch.branch.full_name
+      end
+
+      if userns
+        ret.update(
+            uidoffset: userns.offset,
+            gidoffset: userns.offset,
+        )
       end
 
       ret

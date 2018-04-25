@@ -103,9 +103,7 @@ module NodeCtld
         pool_host_mountpoint(@pool_fs, mnt['id'])
 
       when 'snapshot_local'
-        # TODO: even snapshot_local needs to be cloned in order to put it in
-        # userns
-        raise NotImplementedError
+        "/#{pool_mounted_snapshot(@pool_fs, mnt['snapshot_id'])}/private"
 
       when 'snapshot_remote'
         pool_host_mountpoint(@pool_fs, mnt['id'])
@@ -220,15 +218,12 @@ module NodeCtld
 
     def mount_to_host_cmd(mnt, dst)
       case mnt['type']
-      when 'dataset_local'
+      when 'dataset_local', 'snapshot_local'
         fail 'programming error'
 
       when 'dataset_remote'
         "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} "+
         "#{mnt['src_node_addr']}:/#{mnt['pool_fs']}/#{mnt['dataset_name']}/private #{dst}"
-
-      when 'snapshot_local'
-        raise NotImplementedError
 
       when 'snapshot_remote'
         "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} "+

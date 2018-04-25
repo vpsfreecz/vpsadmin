@@ -30,8 +30,8 @@ module TransactionChains
       # Snapshot is present locally on hypervisor
       if hypervisor && hypervisor.dataset_in_pool.pool.node_id == vps.node_id
         clone_from = hypervisor
-        mnt.mount_type = 'zfs'
-        mnt.mount_opts = '-t zfs'
+        mnt.mount_type = 'none'
+        mnt.mount_opts = '-o bind'
 
       # Snapshot is present on hypervisor and NOT in backup
       elsif hypervisor && !backup
@@ -66,46 +66,28 @@ module TransactionChains
       mnt.snapshot_in_pool = clone_from
       mnt.save!
 
-      if remote
-        append(Transactions::Storage::CloneSnapshot, args: clone_from) do
-          create(mnt)
-          increment(clone_from, :reference_count)
-          edit(clone_from, mount_id: mnt.id)
-          just_create(vps.log(:mount, {
-              id: mnt.id,
-              type: :snapshot,
-              src: {
-                  id: mnt.snapshot_in_pool.snapshot_id,
-                  name: mnt.snapshot_in_pool.snapshot.name
-              },
-              dst: mnt.dst,
-              mode: mnt.mode,
-              on_start_fail: mnt.on_start_fail,
-          }))
-        end
+      append(
+        Transactions::Storage::CloneSnapshot,
+        args: [clone_from, vps.node.vpsadminos? ? vps.userns : nil]
+      ) do
+        create(mnt)
+        increment(clone_from, :reference_count)
+        edit(clone_from, mount_id: mnt.id)
+        just_create(vps.log(:mount, {
+            id: mnt.id,
+            type: :snapshot,
+            src: {
+                id: mnt.snapshot_in_pool.snapshot_id,
+                name: mnt.snapshot_in_pool.snapshot.name
+            },
+            dst: mnt.dst,
+            mode: mnt.mode,
+            on_start_fail: mnt.on_start_fail,
+        }))
       end
 
       use_chain(Vps::Mounts, args: vps)
       use_chain(Vps::Mount, args: [vps, [mnt]])
-
-      unless remote
-        append(Transactions::Utils::NoOp, args: vps.node_id) do
-          create(mnt)
-          increment(clone_from, :reference_count)
-          edit(clone_from, mount_id: mnt.id)
-          just_create(vps.log(:mount, {
-              id: mnt.id,
-              type: :snapshot,
-              src: {
-                  id: mnt.snapshot_in_pool.snapshot_id,
-                  name: mnt.snapshot_in_pool.snapshot.name
-              },
-              dst: mnt.dst,
-              mode: mnt.mode,
-              on_start_fail: mnt.on_start_fail,
-          }))
-        end
-      end
 
       mnt
     end

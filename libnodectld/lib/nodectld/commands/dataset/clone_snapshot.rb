@@ -4,11 +4,17 @@ module NodeCtld
     needs :system, :zfs, :pool
 
     def exec
-      zfs(
-        :clone,
-        nil,
-        "#{ds} #{pool_mounted_snapshot(@pool_fs, @snapshot_id)}"
-      )
+      clone = pool_mounted_snapshot(@pool_fs, @snapshot_id)
+
+      zfs(:clone, "-o readonly=on", "#{ds} #{clone}")
+
+      if @uidoffset && @gidoffset
+        zfs(:umount, nil, clone)
+        zfs(:set, "uidoffset=#{@uidoffset} gidoffset=#{@gidoffset}", clone)
+        zfs(:mount, nil, clone)
+      end
+
+      ok
     end
 
     def rollback

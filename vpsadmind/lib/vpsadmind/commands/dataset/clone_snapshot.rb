@@ -6,7 +6,7 @@ module VpsAdmind
     def exec
       zfs(
           :clone,
-          nil,
+          "-o readonly=on",
           "#{ds} #{pool_mounted_snapshot(@pool_fs, @snapshot_id)}"
       )
     end
