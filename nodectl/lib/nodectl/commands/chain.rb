@@ -65,8 +65,6 @@ END
           release: args[2].nil? ? %w(locks ports) : [args[2]],
         })
       end
-
-      ret
     end
 
     def process
