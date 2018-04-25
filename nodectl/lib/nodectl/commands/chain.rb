@@ -17,7 +17,7 @@ confirm [TRANSACTION]...        Run transaction confirmations
 release [locks|ports]           Release acquired locks and reserved ports
 END
 
-      return if args[0] !~ 'confirm'
+      return if args[1] != 'confirm'
 
       parser.on(
         '--direction DIR',
