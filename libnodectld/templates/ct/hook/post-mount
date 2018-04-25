@@ -1,4 +1,4 @@
-#!/run/current-system/sw/bin/nodectl script
+#!/run/nodectl/nodectl script
 require 'nodectld/standalone'
 
 vars = %w(OSCTL_POOL_NAME OSCTL_CT_ID OSCTL_CT_ROOTFS_MOUNT)
