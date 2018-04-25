@@ -75,18 +75,7 @@ module NodeCtld
           done: trans['done'].to_i == 1 ? true : false,
         }
 
-        confirm(
-          t,
-          [
-            trans['table_name'],
-            trans['row_pks'],
-            trans['attr_changes'],
-            trans['confirm_type'].to_i,
-            trans['status'].to_i
-          ],
-          direction,
-          success
-        )
+        confirm(t, trans, direction, success)
       end
 
       t.query(
