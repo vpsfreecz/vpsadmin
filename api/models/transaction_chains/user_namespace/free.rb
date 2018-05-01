@@ -3,6 +3,12 @@ module TransactionChains
     label 'Free userns'
 
     def link_chain(userns, node = nil)
+      lock(userns)
+
+      userns.user_namespace_blocks.each do |blk|
+        lock(blk)
+      end
+
       confirmations = Proc.new do |t|
         t.edit(userns.user_namespace_ugid, user_namespace_id: nil)
 

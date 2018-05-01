@@ -4,6 +4,8 @@ class UserNamespace < ActiveRecord::Base
   has_many :user_namespace_blocks
   has_many :dataset_in_pools
 
+  include Lockable
+
   def ugid
     user_namespace_ugid.ugid
   end

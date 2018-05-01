@@ -167,7 +167,9 @@ class TransactionChain < ActiveRecord::Base
     return if @global_locks.detect { |l| l.locks?(obj) }
     return if @locks.detect { |l| l.locks?(obj) }
 
-    @locks << obj.acquire_lock(@dst_chain, *args)
+    lock = obj.acquire_lock(@dst_chain, *args)
+    @locks << lock
+    lock
   end
 
   # Release all locks acquired by this and all nested chains.
