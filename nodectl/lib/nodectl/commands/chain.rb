@@ -79,6 +79,8 @@ END
         list_locks(response[:locks]) if response[:locks]
         list_ports(response[:ports]) if response[:ports]
       end
+
+      nil
     end
 
     protected
