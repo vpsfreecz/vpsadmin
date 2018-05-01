@@ -20,8 +20,8 @@ module TransactionChains
       )
 
       if vps.node.vpsadminos?
-        # TODO: optionally reuse an existing namespace
-        userns = use_chain(UserNamespace::Allocate, args: [vps.user, 1, vps.node])
+        # TODO: configurable userns
+        userns = vps.user.user_namespaces.take!
 
       else
         userns = nil

@@ -50,8 +50,7 @@ module TransactionChains
         edit(vps, dataset_in_pool_id: nil)
       end
 
-      # TODO: check if the namespace isn't used by other datasets
-      use_chain(UserNamespace::Free, args: [vps.dataset_in_pool.user_namespace, vps.node])
+      use_chain(UserNamespace::Disuse, args: [vps])
 
       # Note: there are too many records to delete them using transaction confirmations.
       # All VPS statuses are deleted whether the chain is successful or not.

@@ -1540,6 +1540,24 @@ CREATE TABLE `user_namespace_blocks` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `user_namespace_nodes`
+--
+
+DROP TABLE IF EXISTS `user_namespace_nodes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_namespace_nodes` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_namespace_id` int(11) NOT NULL,
+  `node_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_user_namespace_nodes_on_user_namespace_id_and_node_id` (`user_namespace_id`,`node_id`),
+  KEY `index_user_namespace_nodes_on_user_namespace_id` (`user_namespace_id`),
+  KEY `index_user_namespace_nodes_on_node_id` (`node_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `user_namespace_ugids`
 --
 
@@ -1952,7 +1970,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-05-01  9:38:18
+-- Dump completed on 2018-05-01 18:45:48
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2158,4 +2176,6 @@ INSERT INTO schema_migrations (version) VALUES ('20180412063632');
 INSERT INTO schema_migrations (version) VALUES ('20180416111102');
 
 INSERT INTO schema_migrations (version) VALUES ('20180501071844');
+
+INSERT INTO schema_migrations (version) VALUES ('20180501145934');
 
