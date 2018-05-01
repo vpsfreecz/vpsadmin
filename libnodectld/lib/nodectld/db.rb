@@ -143,10 +143,18 @@ module NodeCtld
     def protect(try_again = true)
       begin
         yield
+
       rescue Mysql2::Error => err
         log(:critical, :sql, "MySQL error ##{err.errno}: #{err.error}")
         close if @my
         sleep($CFG.get(:db, :retry_interval))
+        connect($CFG.get(:db))
+        retry if try_again
+
+      rescue Errno::EBADF
+        log(:critical, :sql, 'Errno::EBADF raised, reconnecting')
+        close if @my
+        sleep(1)
         connect($CFG.get(:db))
         retry if try_again
       end
