@@ -1930,7 +1930,9 @@ CREATE TABLE `vpses` (
   `manage_hostname` tinyint(1) NOT NULL DEFAULT '1',
   `cpu_limit` int(11) DEFAULT NULL,
   `veth_name` varchar(30) COLLATE utf8_czech_ci NOT NULL DEFAULT 'venet0',
+  `veth_mac` varchar(17) COLLATE utf8_czech_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `index_vpses_on_veth_mac` (`veth_mac`),
   KEY `index_vpses_on_dataset_in_pool_id` (`dataset_in_pool_id`) USING BTREE,
   KEY `index_vpses_on_dns_resolver_id` (`dns_resolver_id`) USING BTREE,
   KEY `index_vpses_on_node_id` (`node_id`) USING BTREE,
@@ -1950,7 +1952,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-04-16 13:20:52
+-- Dump completed on 2018-05-01  9:38:18
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2154,4 +2156,6 @@ INSERT INTO schema_migrations (version) VALUES ('20171106154702');
 INSERT INTO schema_migrations (version) VALUES ('20180412063632');
 
 INSERT INTO schema_migrations (version) VALUES ('20180416111102');
+
+INSERT INTO schema_migrations (version) VALUES ('20180501071844');
 

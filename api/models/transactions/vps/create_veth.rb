@@ -10,6 +10,7 @@ module Transactions::Vps
 
       {
           veth_name: vps.veth_name,
+          mac_address: vps.veth_mac,
           interconnecting_networks: {
               4 => interconnecting_ips[4].to_s,
               6 => interconnecting_ips[6].to_s,
