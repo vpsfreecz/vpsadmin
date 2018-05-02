@@ -1,7 +1,7 @@
 VpsAdmin::API::Plugin.register(:webui) do
   name 'Web UI support'
   description 'Support for Web UI specific API endpoints'
-  version '3.0.0'
+  version '3.0.0.dev'
   author 'Jakub Skokan'
   email 'jakub.skokan@vpsfree.cz'
   components :api
