@@ -667,3 +667,31 @@ function isLoggedIn(){
 function isAdmin(){
 	return isset($_SESSION["is_admin"]) && $_SESSION["is_admin"];
 }
+
+function get_version () {
+	if ($_SESSION['commit_hash']) {
+		$hash = $_SESSION['commit_hash'];
+
+	} else {
+		$hash = get_commit_hash();
+		$_SESSION['commit_hash'] = $hash;
+	}
+
+	if (!$hash)
+		return VERSION;
+
+	$short = substr($hash, 0, 8);
+
+	return VERSION.'.'.
+		   '<a href="https://github.com/vpsfreecz/vpsadmin/commit/'.$hash.'" target="_blank">'.
+		   $short.'</a>';
+}
+
+function get_commit_hash () {
+	$hash = exec('cd "'.WWW_ROOT.'" && git rev-parse HEAD', $out, $ret);
+
+	if ($ret === 0)
+		return $hash;
+
+	return null;
+}

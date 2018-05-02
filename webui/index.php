@@ -66,6 +66,7 @@ $xtpl = new XTemplate(WWW_ROOT.'template/template.html');
 // Create a langauge class
 $lang = new Lang($langs, $xtpl);
 
+$xtpl->assign("VERSION", get_version());
 $xtpl->assign("L_USERNAME", _("Username"));
 $xtpl->assign("L_PASSWORD", _("Password"));
 $xtpl->assign("L_LOGIN", _("Login"));
