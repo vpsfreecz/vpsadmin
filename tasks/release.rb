@@ -12,7 +12,7 @@ namespace :vpsadmin do
     [
       'vpsadmind/lib/vpsadmind/version.rb',
       'vpsadmindctl/lib/vpsadmindctl/version.rb',
-      'nodectld/lib/nodectld/version.rb',
+      'libnodectld/lib/nodectld/version.rb',
       'nodectl/lib/nodectl/version.rb',
       'console_router/lib/vpsadmin/console_router/version.rb',
       'client/lib/vpsadmin/client/version.rb',
