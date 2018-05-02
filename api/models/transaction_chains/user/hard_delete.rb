@@ -44,6 +44,11 @@ module TransactionChains
         use_chain(Dataset::RemoveDownload, args: dl)
       end
 
+      # Free user namespaces
+      user.user_namespaces.each do |userns|
+        use_chain(UserNamespace::Free, args: userns)
+      end
+
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
         # Free all IP addresses
         user.environment_user_configs.each do |cfg|
