@@ -386,6 +386,10 @@ END
             error('resources cannot be changed when changing VPS owner')
           end
         end
+
+        if vps.node.vpsadminos?
+          error('VPS chowning is not supported on vpsAdminOS yet')
+        end
       end
 
       if input[:manage_hostname] === false && input[:hostname]
@@ -634,6 +638,12 @@ END
 
       elsif input[:node].role != 'node'
         error('target node is not a hypervisor')
+
+      elsif vps.node.hypervisor_type != input[:node].hypervisor_type
+        error('migration between OpenVZ and vpsAdminOS is not supported yet')
+
+      elsif vps.node.vpsadminos?
+        error('migration is not supported on vpsAdminOS yet')
       end
 
       @chain, _ = vps.migrate(input[:node], input)
@@ -723,6 +733,13 @@ END
 
       error('no node available in this environment') unless node
 
+      if vps.node.hypervisor_type != node.hypervisor_type
+        error('clone between OpenVZ and vpsAdminOS is not supported yet')
+
+      elsif vps.node.vpsadminos? && node.vpsadminos?
+        error('clone is not supported on vpsAdminOS yet')
+      end
+
       env = node.location.environment
 
       if current_user.role != :admin && !current_user.env_config(env, :can_create_vps)
@@ -789,6 +806,12 @@ END
 
       elsif vps.has_mount_of?(input[:vps]) || input[:vps].has_mount_of?(vps)
         error("swapping VPSes with mounts of each other is not supported")
+
+      elsif vps.node.hypervisor_type != input[:vps].node.hypervisor_type
+        error('swap between OpenVZ and vpsAdminOS is not supported yet')
+
+      elsif vps.node.vpsadminos? && input[:vps].node.vpsadminos?
+        error('swap is not supported on vpsAdminOS yet')
       end
 
       if current_user.role != :admin
