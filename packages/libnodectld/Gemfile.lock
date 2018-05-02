@@ -1,0 +1,52 @@
+GEM
+  remote: https://rubygems.vpsfree.cz/
+  specs:
+    coderay (1.1.2)
+    curses (1.2.4)
+    eventmachine (1.2.6)
+    gli (2.17.1)
+    highline (1.7.10)
+    ipaddress (0.8.3)
+    json (2.1.0)
+    libnodectld (3.0.0.dev.build20180502145328)
+      eventmachine
+      json
+      libosctl (= 18.03.0.build20180430140815)
+      mail
+      mysql2
+      osctl (= 18.03.0.build20180430140815)
+      pry-remote
+      require_all (~> 2.0.0)
+    libosctl (18.03.0.build20180430140815)
+    mail (2.7.0)
+      mini_mime (>= 0.1.1)
+    method_source (0.9.0)
+    mini_mime (1.0.0)
+    mysql2 (0.5.1)
+    osctl (18.03.0.build20180430140815)
+      curses
+      gli (~> 2.17.1)
+      highline (~> 1.7.10)
+      ipaddress (~> 0.8.3)
+      json
+      rainbow (~> 3.0.0)
+      ruby-progressbar (~> 1.9.0)
+    pry (0.11.3)
+      coderay (~> 1.1.0)
+      method_source (~> 0.9.0)
+    pry-remote (0.1.8)
+      pry (~> 0.9)
+      slop (~> 3.0)
+    rainbow (3.0.0)
+    require_all (2.0.0)
+    ruby-progressbar (1.9.0)
+    slop (3.6.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  libnodectld (= 3.0.0.dev.build20180502145328)
+
+BUNDLED WITH
+   1.14.6
