@@ -70,32 +70,54 @@ namespace :vpsadmin do
     end
   end
 
-  desc 'Build gems and deploy to rubygems'
-  task :gems do
-    build_id = Time.now.strftime('%Y%m%d%H%M%S')
+  gems = %i(libnodectld nodectl nodectld)
 
-    begin
-      os = File.realpath(ENV['OS'] || '../vpsadminos')
+  desc 'Build all gems and deploy to rubygems'
+  multitask gems: gems.map { |v| "gems:#{v}" }
 
-    rescue Errno::ENOENT
-      warn "vpsAdminOS not found at '#{ENV['OS'] || '../vpsadminos'}'"
-      exit(false)
+  namespace :gems do
+    desc 'Setup parameters for gem building'
+    task :environment do
+      unless ENV.has_key?('VPSADMIN_BUILD_ID')
+        ENV['VPSADMIN_BUILD_ID'] = Time.now.strftime('%Y%m%d%H%M%S')
+      end
+
+      unless ENV.has_key?('OS_BUILD_ID')
+        begin
+          os = File.realpath(ENV['OS'] || '../vpsadminos')
+
+        rescue Errno::ENOENT
+          warn "vpsAdminOS not found at '#{ENV['OS'] || '../vpsadminos'}'"
+          exit(false)
+        end
+
+        os_build_id_path = File.join(os, '.build_id')
+
+        begin
+          os_build_id = File.read(os_build_id_path)
+
+        rescue Errno::ENOENT
+          abort "vpsAdminOS build ID not found at '#{os_build_id_path}'"
+        end
+
+        ENV['OS_BUILD_ID'] = os_build_id
+      end
     end
 
-    os_build_id_path = File.join(os, '.build_id')
+    gems.each do |gem|
+      desc "Build and deploy #{gem} gem"
+      task gem => :environment do
+        ret = system(
+          './tools/update_gem.sh',
+          'packages',
+          gem.to_s,
+          ENV['VPSADMIN_BUILD_ID'],
+          ENV['OS_BUILD_ID']
+        )
 
-    begin
-      os_build_id = File.read(os_build_id_path)
-
-    rescue Errno::ENOENT
-      warn "vpsAdminOS build ID not found at '#{os_build_id_path}'"
-      exit(false)
-    end
-
-    %w(libnodectld nodectld nodectl).each do |gem|
-      ret = system('./tools/update_gem.sh', 'packages', gem, build_id, os_build_id)
-      unless ret
-        fail "unable to build #{gem}: failed with exit status #{$?.exitstatus}"
+        unless ret
+          fail "unable to build #{gem}: failed with exit status #{$?.exitstatus}"
+        end
       end
     end
   end
