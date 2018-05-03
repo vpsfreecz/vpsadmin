@@ -70,7 +70,7 @@ CREATE TABLE `cluster_resource_uses` (
   `class_name` varchar(255) COLLATE utf8_czech_ci NOT NULL,
   `table_name` varchar(255) COLLATE utf8_czech_ci NOT NULL,
   `row_id` int(11) NOT NULL,
-  `value` int(11) NOT NULL,
+  `value` decimal(40,0) NOT NULL,
   `confirmed` int(11) NOT NULL DEFAULT '0',
   `admin_lock_type` int(11) NOT NULL DEFAULT '0',
   `admin_limit` int(11) DEFAULT NULL,
@@ -92,8 +92,8 @@ CREATE TABLE `cluster_resources` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(100) COLLATE utf8_czech_ci NOT NULL,
   `label` varchar(100) COLLATE utf8_czech_ci NOT NULL,
-  `min` int(11) NOT NULL,
-  `max` int(11) NOT NULL,
+  `min` decimal(40,0) NOT NULL,
+  `max` decimal(40,0) NOT NULL,
   `stepsize` int(11) NOT NULL,
   `resource_type` int(11) NOT NULL,
   `allocate_chain` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
@@ -1474,7 +1474,7 @@ CREATE TABLE `user_cluster_resources` (
   `user_id` int(11) DEFAULT NULL,
   `environment_id` int(11) NOT NULL,
   `cluster_resource_id` int(11) NOT NULL,
-  `value` int(11) NOT NULL,
+  `value` decimal(40,0) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_cluster_resource_unique` (`user_id`,`environment_id`,`cluster_resource_id`) USING BTREE,
   KEY `index_user_cluster_resources_on_cluster_resource_id` (`cluster_resource_id`) USING BTREE,
@@ -1970,7 +1970,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-05-01 18:45:48
+-- Dump completed on 2018-05-03  9:50:23
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2178,4 +2178,6 @@ INSERT INTO schema_migrations (version) VALUES ('20180416111102');
 INSERT INTO schema_migrations (version) VALUES ('20180501071844');
 
 INSERT INTO schema_migrations (version) VALUES ('20180501145934');
+
+INSERT INTO schema_migrations (version) VALUES ('20180503073718');
 
