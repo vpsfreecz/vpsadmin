@@ -20,7 +20,7 @@
 . /etc/rc.d/init.d/functions
 
 VPSADMINDCTL="vpsadmindctl"
-VPSADMIND="/opt/vpsadmind/bin/vpsadmind"
+VPSADMIND="/opt/vpsadmin/vpsadmind/bin/vpsadmind"
 PIDFILE="/var/run/vpsadmind.pid"
 LOGDIR="/var/log"
 CONFIG="/etc/vpsadmin/vpsadmind.yml"
@@ -100,17 +100,17 @@ start() {
 		echo "Delete $PIDFILE if it is not."
 		exit 1
 	fi
-	
+
 	echo -n "Starting vpsAdmind... "
-	
+
 	CMD="$VPSADMIND --config $CONFIG --pidfile $PIDFILE --remote-control"
-	
+
 	if [ "$DAEMON" == "yes" ] ; then
 		CMD="$CMD --daemonize --logdir $LOGDIR"
 	fi
-	
+
 	$CMD $OPTS
-	
+
 	echo "done"
 }
 
@@ -147,11 +147,11 @@ stop() {
 
 status() {
 	STATUS="`$VPSADMINDCTL status`"
-	
+
 	if [ "$?" == 0 ] ; then
 		echo "$STATUS"
 		exit 0
-		
+
 	else
 		echo "vpsAdmind is not running or has disabled remote control."
 		exit 1
