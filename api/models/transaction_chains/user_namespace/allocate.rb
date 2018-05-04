@@ -19,7 +19,7 @@ module TransactionChains
       uns = ::UserNamespace.create!(
           user: user,
           user_namespace_ugid: ugid,
-          block_count: 1,
+          block_count: block_count,
           offset: blocks.first.offset,
           size: blocks.inject(0) { |sum, block| sum + block.size }
       )
