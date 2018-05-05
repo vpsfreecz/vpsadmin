@@ -63,6 +63,8 @@ module TransactionChains
           resources.each { |r| destroy(r) }
           just_destroy(vps.vps_current_status) if vps.vps_current_status
         end
+
+        use_chain(UserNamespace::Disuse, args: [vps])
       end
 
       # The dataset_in_pool_id must be unset after the dataset is actually
@@ -70,8 +72,6 @@ module TransactionChains
       append(Transactions::Utils::NoOp, args: find_node_id) do
         edit(vps, dataset_in_pool_id: nil)
       end
-
-      use_chain(UserNamespace::Disuse, args: [vps])
 
       # Note: there are too many records to delete them using transaction confirmations.
       # All VPS statuses are deleted whether the chain is successful or not.
