@@ -161,7 +161,7 @@ module VpsAdmin::API::Resources
 
       input do
         integer :count, required: true, number: {
-            min: 1,
+          min: 1,
         }
         resource User, desc: 'Owner of new IP addresses'
       end

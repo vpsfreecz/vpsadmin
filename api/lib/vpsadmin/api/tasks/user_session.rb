@@ -6,8 +6,8 @@ module VpsAdmin::API::Tasks
     # [EXECUTE]: The sessions are closed only when set to 'yes'
     def close_expired
       ::ApiToken.includes(:user_sessions).where(
-          'valid_to IS NOT NULL AND valid_to < ?',
-          Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
+        'valid_to IS NOT NULL AND valid_to < ?',
+        Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
       ).each do |t|
         puts "Token ##{t.id} valid_to=#{t.valid_to} token=#{t.token}"
 
@@ -18,8 +18,8 @@ module VpsAdmin::API::Tasks
             next if ENV['EXECUTE'] != 'yes'
 
             s.update!(
-                closed_at: t.valid_to,
-                api_token: nil
+              closed_at: t.valid_to,
+              api_token: nil
             )
           end
 

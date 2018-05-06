@@ -17,10 +17,10 @@ module TransactionChains
         begin
           ::IpAddress.transaction do
             ip = ::IpAddress.pick_addr!(
-                vps.user,
-                vps.node.location,
-                v,
-                r.name.end_with?('_private') ? :private_access : :public_access,
+              vps.user,
+              vps.node.location,
+              v,
+              r.name.end_with?('_private') ? :private_access : :public_access,
             )
             lock(ip)
 
@@ -46,7 +46,7 @@ module TransactionChains
       chowned = 0
       ownership = vps.node.location.environment.user_ip_ownership
       last_ip = vps.ip_addresses.joins(:network).where(
-          networks: {ip_version: v}
+        networks: {ip_version: v}
       ).order('`order` DESC').take
 
       order = last_ip ? last_ip.order + 1 : 0

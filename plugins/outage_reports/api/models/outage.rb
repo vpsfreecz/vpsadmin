@@ -42,18 +42,18 @@ class Outage < ActiveRecord::Base
     attrs[:state] = ::Outage.states[attrs[:state]] if attrs[:state]
 
     VpsAdmin::API::Plugins::OutageReports::TransactionChains::Update.fire(
-        self,
-        attrs,
-        translations,
-        opts
+      self,
+      attrs,
+      translations,
+      opts
     )
   end
 
   def load_translations
     ::OutageTranslation.joins(
-        'RIGHT JOIN languages ON languages.id = outage_translations.language_id'
+      'RIGHT JOIN languages ON languages.id = outage_translations.language_id'
     ).where(
-        outage_id: id,
+      outage_id: id,
     ).each do |tr|
       %i(summary description).each do |param|
         define_singleton_method("#{tr.language.code}_#{param}") do
@@ -218,22 +218,22 @@ class Outage < ActiveRecord::Base
       affected.each do |vps|
         begin
           out = ::OutageVps.find_by!(outage: self, vps: vps).update!(
-              user: vps.user,
-              environment: vps.node.location.environment,
-              location: vps.node.location,
-              node: vps.node,
-              direct: true,
+            user: vps.user,
+            environment: vps.node.location.environment,
+            location: vps.node.location,
+            node: vps.node,
+            direct: true,
           )
 
         rescue ActiveRecord::RecordNotFound
           out = ::OutageVps.create!(
-              outage: self,
-              vps: vps,
-              user: vps.user,
-              environment: vps.node.location.environment,
-              location: vps.node.location,
-              node: vps.node,
-              direct: true,
+            outage: self,
+            vps: vps,
+            user: vps.user,
+            environment: vps.node.location.environment,
+            location: vps.node.location,
+            node: vps.node,
+            direct: true,
           )
         end
 
@@ -259,48 +259,48 @@ class Outage < ActiveRecord::Base
 
         else
           registered_vpses[mnt.vps_id] = ::OutageVps.create!(
-              outage: self,
-              vps: mnt.vps,
-              user: mnt.vps.user,
-              environment: mnt.vps.node.location.environment,
-              location: mnt.vps.node.location,
-              node: mnt.vps.node,
-              direct: false,
+            outage: self,
+            vps: mnt.vps,
+            user: mnt.vps.user,
+            environment: mnt.vps.node.location.environment,
+            location: mnt.vps.node.location,
+            node: mnt.vps.node,
+            direct: false,
           )
         end
 
         begin
           ::OutageVpsMount.find_by!(
-              outage_vps: registered_vpses[mnt.vps_id],
-              mount: mnt,
+            outage_vps: registered_vpses[mnt.vps_id],
+            mount: mnt,
           ).update!(
-              src_node_id: mnt.dataset_in_pool.pool.node_id,
-              src_pool_id: mnt.dataset_in_pool.pool_id,
-              src_dataset_id: mnt.dataset_in_pool.dataset_id,
-              src_snapshot_id: mnt.snapshot_in_pool && mnt.snapshot_in_pool.dataset_in_pool.dataset_id,
-              dataset_name: mnt.dataset_in_pool.dataset.full_name,
-              snapshot_name: mnt.snapshot_in_pool && mnt.snapshot_in_pool.snapshot.name,
-              mountpoint: mnt.dst,
+            src_node_id: mnt.dataset_in_pool.pool.node_id,
+            src_pool_id: mnt.dataset_in_pool.pool_id,
+            src_dataset_id: mnt.dataset_in_pool.dataset_id,
+            src_snapshot_id: mnt.snapshot_in_pool && mnt.snapshot_in_pool.dataset_in_pool.dataset_id,
+            dataset_name: mnt.dataset_in_pool.dataset.full_name,
+            snapshot_name: mnt.snapshot_in_pool && mnt.snapshot_in_pool.snapshot.name,
+            mountpoint: mnt.dst,
           )
 
         rescue ActiveRecord::RecordNotFound
           ::OutageVpsMount.create!(
-              outage_vps: registered_vpses[mnt.vps_id],
-              mount: mnt,
-              src_node_id: mnt.dataset_in_pool.pool.node_id,
-              src_pool_id: mnt.dataset_in_pool.pool_id,
-              src_dataset_id: mnt.dataset_in_pool.dataset_id,
-              src_snapshot_id: mnt.snapshot_in_pool && mnt.snapshot_in_pool.dataset_in_pool.dataset_id,
-              dataset_name: mnt.dataset_in_pool.dataset.full_name,
-              snapshot_name: mnt.snapshot_in_pool && mnt.snapshot_in_pool.snapshot.name,
-              mountpoint: mnt.dst,
+            outage_vps: registered_vpses[mnt.vps_id],
+            mount: mnt,
+            src_node_id: mnt.dataset_in_pool.pool.node_id,
+            src_pool_id: mnt.dataset_in_pool.pool_id,
+            src_dataset_id: mnt.dataset_in_pool.dataset_id,
+            src_snapshot_id: mnt.snapshot_in_pool && mnt.snapshot_in_pool.dataset_in_pool.dataset_id,
+            dataset_name: mnt.dataset_in_pool.dataset.full_name,
+            snapshot_name: mnt.snapshot_in_pool && mnt.snapshot_in_pool.snapshot.name,
+            mountpoint: mnt.dst,
           )
         end
       end
 
       # Delete no longer affected mounts
       ::OutageVpsMount.joins(:outage_vps).where(
-          outage_vpses: {outage_id: self.id},
+        outage_vpses: {outage_id: self.id},
       ).each do |outage_mnt|
         exists = affected_mounts.detect { |v| v.id == outage_mnt.mount_id }
         next if exists
@@ -312,20 +312,20 @@ class Outage < ActiveRecord::Base
 
   def to_hash
     ret = {
-        id: id,
-        planned: planned,
-        begins_at: begins_at.iso8601,
-        duration: duration,
-        type: outage_type,
-        entities: outage_entities.map { |v| {name: v.name, id: v.row_id, label: v.real_name} },
-        handlers: outage_handlers.map { |v| v.full_name },
-        translations: {},
+      id: id,
+      planned: planned,
+      begins_at: begins_at.iso8601,
+      duration: duration,
+      type: outage_type,
+      entities: outage_entities.map { |v| {name: v.name, id: v.row_id, label: v.real_name} },
+      handlers: outage_handlers.map { |v| v.full_name },
+      translations: {},
     }
 
     outage_translations.each do |tr|
       ret[:translations][tr.language.code] = {
-          summary: tr.summary,
-          description: tr.description,
+        summary: tr.summary,
+        description: tr.description,
       }
     end
 

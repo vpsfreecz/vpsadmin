@@ -44,9 +44,9 @@ module VpsAdmin::API::Tasks
 
           begin
             instance.progress_object_state(
-                :enter,
-                reason: ENV['REASON'],
-                expiration: expiration
+              :enter,
+              reason: ENV['REASON'],
+              expiration: expiration
             )
 
           rescue ResourceLocked

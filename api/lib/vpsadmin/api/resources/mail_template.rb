@@ -179,8 +179,8 @@ module VpsAdmin::API::Resources
 
         def prepare
           @r = ::MailTemplateRecipient.find_by!(
-              mail_template_id: params[:mail_template_id],
-              mail_recipient_id: params[:recipient_id]
+            mail_template_id: params[:mail_template_id],
+            mail_recipient_id: params[:recipient_id]
           )
         end
 
@@ -209,8 +209,8 @@ module VpsAdmin::API::Resources
           tpl = ::MailTemplate.find(params[:mail_template_id])
 
           r = ::MailTemplateRecipient.new(
-              mail_template: tpl,
-              mail_recipient: input[:mail_recipient]
+            mail_template: tpl,
+            mail_recipient: input[:mail_recipient]
           )
 
           if r.save
@@ -231,8 +231,8 @@ module VpsAdmin::API::Resources
 
         def exec
           ::MailTemplateRecipient.find_by!(
-              mail_template_id: params[:mail_template_id],
-              mail_recipient_id: params[:recipient_id]
+            mail_template_id: params[:mail_template_id],
+            mail_recipient_id: params[:recipient_id]
           ).destroy
           ok
         end
@@ -298,8 +298,8 @@ module VpsAdmin::API::Resources
 
         def prepare
           @tr = ::MailTemplateTranslation.find_by!(
-              id: params[:translation_id],
-              mail_template_id: params[:mail_template_id],
+            id: params[:translation_id],
+            mail_template_id: params[:mail_template_id],
           )
         end
 
@@ -353,8 +353,8 @@ module VpsAdmin::API::Resources
 
         def exec
           tr = ::MailTemplateTranslation.find_by!(
-              id: params[:translation_id],
-              mail_template_id: params[:mail_template_id],
+            id: params[:translation_id],
+            mail_template_id: params[:mail_template_id],
           )
 
           if tr.update(input)
@@ -375,8 +375,8 @@ module VpsAdmin::API::Resources
 
         def exec
           ::MailTemplateTranslation.find_by!(
-              id: params[:translation_id],
-              mail_template_id: params[:mail_template_id],
+            id: params[:translation_id],
+            mail_template_id: params[:mail_template_id],
           ).destroy!
           ok
         end

@@ -22,11 +22,11 @@ module TransactionChains
           .joins(dataset_in_pool: [:pool])
           .all.group('pools.role').each do |sip|
         case sip.dataset_in_pool.pool.role.to_sym
-          when :hypervisor, :primary
-            pr = sip
+        when :hypervisor, :primary
+          pr = sip
 
-          when :backup
-            bc = sip
+        when :backup
+          bc = sip
         end
       end
 

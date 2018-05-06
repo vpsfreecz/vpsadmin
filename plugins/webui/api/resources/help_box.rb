@@ -41,10 +41,10 @@ module VpsAdmin::API::Resources
 
         if input.has_key?(:page) || input.has_key?(:action)
           q = q.where(
-              "(page = ? AND (action = ? OR action = '*'))
-              OR
-              (page = '*' AND (action = ? OR action = '*'))",
-              input[:page], input[:action], input[:action]
+            "(page = ? AND (action = ? OR action = '*'))
+            OR
+            (page = '*' AND (action = ? OR action = '*'))",
+            input[:page], input[:action], input[:action]
           )
         end
 
@@ -53,8 +53,8 @@ module VpsAdmin::API::Resources
 
         else
           q = q.where(
-              'language_id IS NULL OR language_id = ?',
-              current_user ? current_user.language_id : ::Language.take!.id
+            'language_id IS NULL OR language_id = ?',
+            current_user ? current_user.language_id : ::Language.take!.id
           )
         end
 
@@ -67,9 +67,9 @@ module VpsAdmin::API::Resources
 
       def exec
         with_includes(query)
-            .limit(input[:limit])
-            .offset(input[:offset])
-            .order('`order`, page, action')
+          .limit(input[:limit])
+          .offset(input[:offset])
+          .order('`order`, page, action')
       end
     end
 

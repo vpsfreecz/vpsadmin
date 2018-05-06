@@ -12,15 +12,15 @@ module TransactionChains
       hypervisor, primary, backup = snap_in_pools(snapshot)
       clone_from = nil
       mnt = ::Mount.new(
-          vps: vps,
-          dst: dst,
-          mount_opts: '',
-          umount_opts: '-f',
-          mount_type: 'nfs',
-          mode: 'ro',
-          user_editable: false,
-          confirmed: ::Mount.confirmed(:confirm_create),
-          expiration_date: Time.now + 3 * 24 * 60 * 60
+        vps: vps,
+        dst: dst,
+        mount_opts: '',
+        umount_opts: '-f',
+        mount_type: 'nfs',
+        mode: 'ro',
+        user_editable: false,
+        confirmed: ::Mount.confirmed(:confirm_create),
+        expiration_date: Time.now + 3 * 24 * 60 * 60
       )
 
       mnt.on_start_fail = opts[:on_start_fail] if opts[:on_start_fail]
@@ -74,15 +74,15 @@ module TransactionChains
         increment(clone_from, :reference_count)
         edit(clone_from, mount_id: mnt.id)
         just_create(vps.log(:mount, {
-            id: mnt.id,
-            type: :snapshot,
-            src: {
-                id: mnt.snapshot_in_pool.snapshot_id,
-                name: mnt.snapshot_in_pool.snapshot.name
-            },
-            dst: mnt.dst,
-            mode: mnt.mode,
-            on_start_fail: mnt.on_start_fail,
+          id: mnt.id,
+          type: :snapshot,
+          src: {
+              id: mnt.snapshot_in_pool.snapshot_id,
+              name: mnt.snapshot_in_pool.snapshot.name
+          },
+          dst: mnt.dst,
+          mode: mnt.mode,
+          on_start_fail: mnt.on_start_fail,
         }))
       end
 
@@ -97,18 +97,18 @@ module TransactionChains
       hv = pr = bc = nil
 
       snapshot.snapshot_in_pools
-          .includes(dataset_in_pool: [:pool])
-          .joins(dataset_in_pool: [:pool])
-          .all.group('pools.role').each do |sip|
+        .includes(dataset_in_pool: [:pool])
+        .joins(dataset_in_pool: [:pool])
+        .all.group('pools.role').each do |sip|
         case sip.dataset_in_pool.pool.role.to_sym
-          when :hypervisor
-            hv = sip
+        when :hypervisor
+          hv = sip
 
-          when :primary
-            pr = sip
+        when :primary
+          pr = sip
 
-          when :backup
-            bc = sip
+        when :backup
+          bc = sip
         end
       end
 

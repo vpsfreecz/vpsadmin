@@ -3,8 +3,8 @@ module VpsAdmin::API::Plugin
     # @param component [String] name of a plugin component to load
     def self.load(component)
       plugin_dir = File.realpath(File.join(
-          VpsAdmin::API.root,
-          'plugins'
+        VpsAdmin::API.root,
+        'plugins'
       ))
       return unless File.exists?(plugin_dir)
 

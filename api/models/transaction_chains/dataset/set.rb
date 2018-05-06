@@ -11,8 +11,8 @@ module TransactionChains
 
       dataset_in_pool.dataset_properties.where(name: properties.keys).each do |p|
         props[p.name.to_sym] = [
-            p,
-            properties[p.name.to_sym]
+          p,
+          properties[p.name.to_sym]
         ]
       end
 
@@ -20,21 +20,21 @@ module TransactionChains
 
       if props[:refquota] && dataset_in_pool.pool.refquota_check
         use = dataset_in_pool.reallocate_resource!(
-            :diskspace,
-            properties[:refquota],
-            user: dataset_in_pool.dataset.user,
-            override: opts[:admin_override],
-            lock_type: opts[:admin_lock_type]
+          :diskspace,
+          properties[:refquota],
+          user: dataset_in_pool.dataset.user,
+          override: opts[:admin_override],
+          lock_type: opts[:admin_lock_type]
         )
 
       # Quota is checked only for top-level dataset
       elsif props[:quota] && dataset_in_pool.dataset.parent_id.nil?
         use = dataset_in_pool.reallocate_resource!(
-            :diskspace,
-            properties[:quota],
-            user: dataset_in_pool.dataset.user,
-            override: opts[:admin_override],
-            lock_type: opts[:admin_lock_type]
+          :diskspace,
+          properties[:quota],
+          user: dataset_in_pool.dataset.user,
+          override: opts[:admin_override],
+          lock_type: opts[:admin_lock_type]
         )
       end
 

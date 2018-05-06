@@ -4,12 +4,12 @@ class ObjectState < ::ActiveRecord::Base
 
   def self.new_log(obj, state, reason, user, expiration)
     new(
-        class_name: obj.class.name,
-        row_id: obj.id,
-        state: state,
-        reason: reason,
-        user: user,
-        expiration_date: expiration
+      class_name: obj.class.name,
+      row_id: obj.id,
+      state: state,
+      reason: reason,
+      user: user,
+      expiration_date: expiration
     )
   end
 end

@@ -9,8 +9,8 @@ class Network < ActiveRecord::Base
   enum split_access: %i(no_access user_split owner_split)
 
   validates :ip_version, inclusion: {
-      in: [4, 6],
-      messave: '%{value} is not a valid IP version',
+    in: [4, 6],
+    messave: '%{value} is not a valid IP version',
   }
   validate :check_ip_integrity
 
@@ -87,12 +87,12 @@ class Network < ActiveRecord::Base
     self.class.transaction do
       each_ip(last_ip && last_ip.to_ip) do |host|
         ips << ::IpAddress.register(
-            host.address,
-            prefix: split_prefix,
-            size: subsize,
-            network: self,
-            user: opts[:user],
-            allocate: false,
+          host.address,
+          prefix: split_prefix,
+          size: subsize,
+          network: self,
+          user: opts[:user],
+          allocate: false,
         )
 
         break if ips.count == n
@@ -100,15 +100,15 @@ class Network < ActiveRecord::Base
 
       if opts[:user]
         user_env = opts[:user].environment_user_configs.find_by!(
-            environment: location.environment,
+          environment: location.environment,
         )
 
         user_env.reallocate_resource!(
-            cluster_resource,
-            user_env.send(cluster_resource) + (ips.count * subsize),
-            user: opts[:user],
-            save: true,
-            confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+          cluster_resource,
+          user_env.send(cluster_resource) + (ips.count * subsize),
+          user: opts[:user],
+          save: true,
+          confirmed: ::ClusterResourceUse.confirmed(:confirmed),
         )
       end
     end

@@ -28,11 +28,11 @@ class DatasetProperty < ActiveRecord::Base
 
     VpsAdmin::API::DatasetProperties::Registrator.properties.each do |name, p|
       property = self.new(
-          dataset_in_pool: dataset_in_pool,
-          dataset: dataset_in_pool.dataset,
-          parent: parents[name],
-          name: name,
-          confirmed: confirmed(:confirm_create)
+        dataset_in_pool: dataset_in_pool,
+        dataset: dataset_in_pool.dataset,
+        parent: parents[name],
+        name: name,
+        confirmed: confirmed(:confirm_create)
       )
 
       if properties.has_key?(name)
@@ -57,13 +57,13 @@ class DatasetProperty < ActiveRecord::Base
 
     self.where(dataset_in_pool: from).each do |p|
       ret[p.name.to_sym] = self.create!(
-          dataset_in_pool: to,
-          dataset: to.dataset,
-          parent: parents[p.name.to_sym],
-          name: p.name,
-          value: p.value,
-          inherited: p.inherited,
-          confirmed: confirmed(:confirm_create)
+        dataset_in_pool: to,
+        dataset: to.dataset,
+        parent: parents[p.name.to_sym],
+        name: p.name,
+        value: p.value,
+        inherited: p.inherited,
+        confirmed: confirmed(:confirm_create)
       )
     end
 
@@ -74,8 +74,8 @@ class DatasetProperty < ActiveRecord::Base
     parents = {}
 
     self.joins(:dataset_in_pool).where(
-        dataset: dataset_in_pool.dataset.parent,
-        dataset_in_pools: {pool_id: dataset_in_pool.pool_id}
+      dataset: dataset_in_pool.dataset.parent,
+      dataset_in_pools: {pool_id: dataset_in_pool.pool_id}
     ).each do |p|
       parents[p.name.to_sym] = p
     end

@@ -6,8 +6,8 @@ module TransactionChains
 
     def link_chain(vps)
       userns_vpses = ::Vps.joins(:dataset_in_pool).where(
-          dataset_in_pools: {user_namespace_id: vps.userns.id},
-          node_id: vps.node_id,
+        dataset_in_pools: {user_namespace_id: vps.userns.id},
+        node_id: vps.node_id,
       ).where.not(id: vps.id)
 
       return if userns_vpses.any?
@@ -17,8 +17,8 @@ module TransactionChains
         args: [vps.node, vps.userns]
       ) do |t|
         uns_node = ::UserNamespaceNode.find_by!(
-            user_namespace_id: vps.userns.id,
-            node_id: vps.node_id,
+          user_namespace_id: vps.userns.id,
+          node_id: vps.node_id,
         )
 
         t.just_destroy(uns_node)

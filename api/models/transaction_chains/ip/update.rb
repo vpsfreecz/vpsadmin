@@ -24,15 +24,15 @@ module TransactionChains
       if @ip.vps_id && @ip.vps_id > 0 && \
          (tx != @ip.max_tx || rx != @ip.max_rx)
         use_chain(Vps::ShaperChange, args:[
-            @ip,
-            tx || @ip.max_tx,
-            rx || @ip.max_rx
+          @ip,
+          tx || @ip.max_tx,
+          rx || @ip.max_rx
         ])
 
       else
         @ip.update!(
-            max_tx: tx,
-            max_rx: rx,
+          max_tx: tx,
+          max_rx: rx,
         )
       end
     end
@@ -45,14 +45,14 @@ module TransactionChains
 
     def reallocate_user(u, n)
       user_env = u.environment_user_configs.find_by!(
-          environment: @ip.network.location.environment,
+        environment: @ip.network.location.environment,
       )
       user_env.reallocate_resource!(
-          @ip.cluster_resource,
-          user_env.send(@ip.cluster_resource) + n,
-          user: u,
-          save: true,
-          confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+        @ip.cluster_resource,
+        user_env.send(@ip.cluster_resource) + n,
+        user: u,
+        save: true,
+        confirmed: ::ClusterResourceUse.confirmed(:confirmed),
       )
     end
   end

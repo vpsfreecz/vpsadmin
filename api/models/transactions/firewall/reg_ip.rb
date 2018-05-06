@@ -9,10 +9,10 @@ module Transactions::Firewall
       self.node_id = vps.node_id
 
       {
-          addr: ip.addr,
-          version: ip.version,
-          id: ip.id,
-          user_id: vps.user_id,
+        addr: ip.addr,
+        version: ip.version,
+        id: ip.id,
+        user_id: vps.user_id,
       }
     end
   end

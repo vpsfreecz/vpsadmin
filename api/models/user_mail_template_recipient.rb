@@ -10,14 +10,14 @@ class UserMailTemplateRecipient < ActiveRecord::Base
     ret = self.includes(:mail_template).where(user: user).to_a
 
     ::MailTemplate.where.not(
-        id: ret.map { |recp| recp.mail_template_id }
+      id: ret.map { |recp| recp.mail_template_id }
     ).each do |tpl|
       next unless tpl.desc[:public]
 
       ret << new(
-          user: user,
-          mail_template: tpl,
-          to: nil,
+        user: user,
+        mail_template: tpl,
+        to: nil,
       )
     end
 
@@ -40,21 +40,21 @@ class UserMailTemplateRecipient < ActiveRecord::Base
   def self.handle_update!(user, template, attrs)
     recp = nil
     empty = (
-        (attrs[:to].nil? || attrs[:to].strip.empty?) && \
-        (attrs[:enabled].nil? || attrs[:enabled])
+      (attrs[:to].nil? || attrs[:to].strip.empty?) && \
+      (attrs[:enabled].nil? || attrs[:enabled])
     )
 
     if empty
       placeholder = new(
-          user: user,
-          mail_template: template,
+        user: user,
+        mail_template: template,
       )
     end
 
     transaction do
       recp = find_by(
-          user: user,
-          mail_template: template,
+        user: user,
+        mail_template: template,
       )
 
       if recp
@@ -71,8 +71,8 @@ class UserMailTemplateRecipient < ActiveRecord::Base
 
       else
         recp = new(
-            user: user,
-            mail_template: template,
+          user: user,
+          mail_template: template,
         )
         recp.assign_attributes(attrs)
         recp.save!

@@ -8,9 +8,9 @@ module VpsAdmin::CLI::Commands
 
     def options(opts)
       @opts = {
-          delete_after: true,
-          send_mail: false,
-          checksum: true,
+        delete_after: true,
+        send_mail: false,
+        checksum: true,
       }
 
       opts.on('-I', '--from-snapshot SNAPSHOT_ID', Integer, 'Download snapshot incrementally from SNAPSHOT_ID') do |s|
@@ -72,12 +72,12 @@ module VpsAdmin::CLI::Commands
 
         begin
           VpsAdmin::CLI::StreamDownloader.download(
-              @api,
-              dl,
-              w,
-              progress: !opts[:quiet] && STDERR,
-              max_rate: opts[:max_rate],
-              checksum: opts[:checksum],
+            @api,
+            dl,
+            w,
+            progress: !opts[:quiet] && STDERR,
+            max_rate: opts[:max_rate],
+            checksum: opts[:checksum],
           )
 
         rescue VpsAdmin::CLI::DownloadError => e

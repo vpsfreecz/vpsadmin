@@ -8,9 +8,9 @@ module Transactions::Storage
       self.node_id = dl.pool.node_id
 
       {
-          pool_fs: dl.pool.filesystem,
-          secret_key: dl.secret_key,
-          file_name: dl.file_name
+        pool_fs: dl.pool.filesystem,
+        secret_key: dl.secret_key,
+        file_name: dl.file_name,
       }
     end
   end

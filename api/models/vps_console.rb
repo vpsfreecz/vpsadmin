@@ -20,9 +20,9 @@ class VpsConsole < ActiveRecord::Base
 
   def self.create_for!(vps, user)
     t = self.new(
-        vps: vps,
-        user: user,
-        expiration: Time.now + 60
+      vps: vps,
+      user: user,
+      expiration: Time.now + 60
     )
 
     tries = 5

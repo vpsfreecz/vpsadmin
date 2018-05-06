@@ -207,9 +207,7 @@ module VpsAdmin::API::Resources
         end
 
         def query
-          q = with_includes.where(
-              migration_plan_id: params[:migration_plan_id],
-          )
+          q = with_includes.where(migration_plan_id: params[:migration_plan_id])
           q = q.where(state: ::VpsMigration.states[input[:state]]) if input[:state]
           q = q.where(src_node: input[:src_node]) if input[:src_node]
           q = q.where(dst_node: input[:dst_node]) if input[:dst_node]
@@ -238,8 +236,8 @@ module VpsAdmin::API::Resources
 
         def prepare
           @m = ::VpsMigrationPlan.find_by!(
-              migration_plan_id: params[:migration_plan_id],
-              id: params[:vps_migration_id],
+            migration_plan_id: params[:migration_plan_id],
+            id: params[:vps_migration_id],
           )
         end
 
@@ -273,11 +271,11 @@ module VpsAdmin::API::Resources
           end
 
           plan.vps_migrations.create!(
-              vps: input[:vps],
-              outage_window: input[:outage_window],
-              cleanup_data: input[:cleanup_data],
-              src_node: input[:vps].node,
-              dst_node: input[:dst_node],
+            vps: input[:vps],
+            outage_window: input[:outage_window],
+            cleanup_data: input[:cleanup_data],
+            src_node: input[:vps].node,
+            dst_node: input[:dst_node],
           )
 
         rescue ActiveRecord::RecordInvalid => e

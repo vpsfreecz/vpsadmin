@@ -8,15 +8,15 @@ module Transactions::Storage
       self.node_id = dst.pool.node_id
 
       {
-          dst_pool_fs: dst.pool.filesystem,
-          dataset_name: ds_suffix ? "#{dst.dataset.full_name}.#{ds_suffix}" : dst.dataset.full_name,
-          snapshot: {
-              id: snapshots.last.snapshot_id,
-              name: snapshots.last.snapshot.name,
-              confirmed: snapshots.last.snapshot.confirmed
-          },
-          tree: branch && branch.dataset_tree.full_name,
-          branch: branch && branch.full_name
+        dst_pool_fs: dst.pool.filesystem,
+        dataset_name: ds_suffix ? "#{dst.dataset.full_name}.#{ds_suffix}" : dst.dataset.full_name,
+        snapshot: {
+          id: snapshots.last.snapshot_id,
+          name: snapshots.last.snapshot.name,
+          confirmed: snapshots.last.snapshot.confirmed
+        },
+        tree: branch && branch.dataset_tree.full_name,
+        branch: branch && branch.full_name,
       }
     end
   end

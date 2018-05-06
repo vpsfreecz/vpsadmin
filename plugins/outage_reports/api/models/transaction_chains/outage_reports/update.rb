@@ -74,13 +74,13 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
     protected
     def send_mail(role, u, outage, report, attrs, last_report)
       event = {
-          ::Outage.states[:announced] => 'announce',
-          ::Outage.states[:cancelled] => 'cancel',
-          ::Outage.states[:closed] => 'closed',
+        ::Outage.states[:announced] => 'announce',
+        ::Outage.states[:cancelled] => 'cancel',
+        ::Outage.states[:closed] => 'closed',
       }
       msg_id = message_id(
-          attrs[:state] == ::Outage.states[:announced] ? :announce : :update,
-          outage, report, u
+        attrs[:state] == ::Outage.states[:announced] ? :announce : :update,
+        outage, report, u
       )
 
       if last_report
@@ -91,34 +91,34 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       end
 
       send_first(
+        [
           [
-              [
-                  :outage_report_role_event,
-                  {role: role, event: event[attrs[:state]] || 'update'},
-              ],
-              [
-                  :outage_report_role_event,
-                  {role: role, event: 'update'},
-              ],
-              [
-                  :outage_report_role,
-                  {role: role},
-              ],
+            :outage_report_role_event,
+            {role: role, event: event[attrs[:state]] || 'update'},
           ],
+          [
+            :outage_report_role_event,
+            {role: role, event: 'update'},
+          ],
+          [
+            :outage_report_role,
+            {role: role},
+          ],
+        ],
+        user: u,
+        language: u ? nil : ::Language.take, # TODO: configurable language
+        message_id: msg_id,
+        in_reply_to: in_reply_to,
+        references: in_reply_to,
+        vars: {
+          outage: outage,
+          o: outage,
+          update: report,
           user: u,
-          language: u ? nil : ::Language.take, # TODO: configurable language
-          message_id: msg_id,
-          in_reply_to: in_reply_to,
-          references: in_reply_to,
-          vars: {
-              outage: outage,
-              o: outage,
-              update: report,
-              user: u,
-              vpses: u && outage.outage_vpses.where(user: u),
-              direct_vpses: u && outage.outage_vpses.where(user: u, direct: true),
-              indirect_vpses: u && outage.outage_vpses.where(user: u, direct: false),
-          }
+          vpses: u && outage.outage_vpses.where(user: u),
+          direct_vpses: u && outage.outage_vpses.where(user: u, direct: true),
+          indirect_vpses: u && outage.outage_vpses.where(user: u, direct: false),
+        }
       )
     end
 
@@ -139,9 +139,9 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
 
     def message_id(type, outage, update, user)
       ::SysConfig.get(:plugin_outage_reports, :"#{type}_message_id") % {
-          outage_id: outage.id,
-          update_id: update.id,
-          user_id: user ? user.id : 0,
+        outage_id: outage.id,
+        update_id: update.id,
+        user_id: user ? user.id : 0,
       }
     end
   end

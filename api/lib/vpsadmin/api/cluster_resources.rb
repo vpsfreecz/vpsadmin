@@ -10,11 +10,11 @@ module VpsAdmin::API
 
             elsif klass.respond_to?(:confirmed) && self.confirmed.to_sym == :confirm_create
               ::DefaultObjectClusterResource.joins(:cluster_resource).find_by!(
-                  cluster_resources: {
-                      name: r
-                  },
-                  environment: Private.environment(self),
-                  class_name: self.class.name
+                cluster_resources: {
+                  name: r
+                },
+                environment: Private.environment(self),
+                class_name: self.class.name
               ).value
 
             else
@@ -42,17 +42,17 @@ module VpsAdmin::API
 
       def self.find_resource_use(obj, resource)
         ::ClusterResourceUse.joins(
-            user_cluster_resource: [:cluster_resource]
+          user_cluster_resource: [:cluster_resource]
         ).find_by(
-            user_cluster_resources: {
-                environment_id: environment(obj).id,
-            },
-            cluster_resources: {
-                name: resource
-            },
-            class_name: obj.class.name,
-            table_name: obj.class.table_name,
-            row_id: obj.id,
+          user_cluster_resources: {
+            environment_id: environment(obj).id,
+          },
+          cluster_resources: {
+            name: resource
+          },
+          class_name: obj.class.name,
+          table_name: obj.class.table_name,
+          row_id: obj.id,
         )
       end
 
@@ -81,8 +81,8 @@ module VpsAdmin::API
           @cluster_resources[:optional].concat(optional)
 
           Private.define_access_methods(
-              self,
-              @cluster_resources[:required] + @cluster_resources[:optional]
+            self,
+            @cluster_resources[:required] + @cluster_resources[:optional]
           )
         else
           @cluster_resources
@@ -107,21 +107,21 @@ module VpsAdmin::API
 
         required.each do |r|
           ret << allocate_resource!(
-              r,
-              values[r] || method(r).call,
-              user: user,
-              confirmed: confirmed,
-              chain: chain
+            r,
+            values[r] || method(r).call,
+            user: user,
+            confirmed: confirmed,
+            chain: chain
           )
         end
 
         optional.each do |r|
           use = allocate_resource(
-              r,
-              values[r] || method(r).call,
-              user: user,
-              confirmed: confirmed,
-              chain: chain
+            r,
+            values[r] || method(r).call,
+            user: user,
+            confirmed: confirmed,
+            chain: chain
           )
 
           ret << use if use.valid?
@@ -134,21 +134,21 @@ module VpsAdmin::API
         ret = []
 
         ::ClusterResourceUse.includes(
-            user_cluster_resource: [:cluster_resource]
+          user_cluster_resource: [:cluster_resource]
         ).joins(:user_cluster_resource).where(
-            class_name: self.class.name,
-            table_name: self.class.table_name,
-            row_id: self.id,
-            user_cluster_resources: {
-                environment_id: Private.environment(self).id
-            }
+          class_name: self.class.name,
+          table_name: self.class.table_name,
+          row_id: self.id,
+          user_cluster_resources: {
+            environment_id: Private.environment(self).id
+          }
         ).each do |use|
           ret << free_resource!(
-              use.user_cluster_resource.cluster_resource.name.to_sym,
-              destroy: destroy,
-              chain: chain,
-              use: use,
-              free_object: free_objects
+            use.user_cluster_resource.cluster_resource.name.to_sym,
+            destroy: destroy,
+            chain: chain,
+            use: use,
+            free_object: free_objects
           )
         end
 
@@ -161,12 +161,12 @@ module VpsAdmin::API
 
         available.each do |r|
           ret << reallocate_resource!(
-              r,
-              resources[r],
-              user: user,
-              chain: chain,
-              override: override,
-              lock_type: lock_type
+            r,
+            resources[r],
+            user: user,
+            chain: chain,
+            override: override,
+            lock_type: lock_type
           ) if resources.has_key?(r)
         end
 
@@ -183,14 +183,14 @@ module VpsAdmin::API
 
       def get_cluster_resources(resources = nil)
         q = ::ClusterResourceUse.includes(
-            user_cluster_resource: [:cluster_resource]
+          user_cluster_resource: [:cluster_resource]
         ).joins(user_cluster_resource: [:cluster_resource]).where(
-            class_name: self.class.name,
-            table_name: self.class.table_name,
-            row_id: self.id,
-            user_cluster_resources: {
-                environment_id: Private.environment(self).id
-            }
+          class_name: self.class.name,
+          table_name: self.class.table_name,
+          row_id: self.id,
+          user_cluster_resources: {
+            environment_id: Private.environment(self).id
+          }
         )
 
         q = q.where(cluster_resources: {name: resources}) if resources
@@ -205,9 +205,9 @@ module VpsAdmin::API
 
         resource_obj = ::ClusterResource.find_by!(name: resource)
         user_resource = ::UserClusterResource.find_by(
-            user: user,
-            environment: env,
-            cluster_resource: resource_obj
+          user: user,
+          environment: env,
+          cluster_resource: resource_obj
         )
 
         unless user_resource
@@ -218,12 +218,12 @@ module VpsAdmin::API
         chain.lock(user_resource) if chain
 
         use = ::ClusterResourceUse.create(
-            user_cluster_resource: user_resource,
-            class_name: self.class.name,
-            table_name: self.class.table_name,
-            row_id: self.id,
-            value: value,
-            confirmed: confirmed
+          user_cluster_resource: user_resource,
+          class_name: self.class.name,
+          table_name: self.class.table_name,
+          row_id: self.id,
+          value: value,
+          confirmed: confirmed
         )
 
         return use unless use.valid?
@@ -231,9 +231,9 @@ module VpsAdmin::API
         if resource_obj.resource_type.to_sym == :object && chain \
            && resource_obj.allocate_chain
           res = chain.use_chain(
-              TransactionChains.const_get(resource_obj.allocate_chain),
-              args: [resource_obj, self, value],
-              method: "allocate_to_#{self.class.name.demodulize.underscore}"
+            TransactionChains.const_get(resource_obj.allocate_chain),
+            args: [resource_obj, self, value],
+            method: "allocate_to_#{self.class.name.demodulize.underscore}"
           )
 
           fail 'not enough' if res != value
@@ -258,23 +258,23 @@ module VpsAdmin::API
         user ||= ::User.current
 
         use = ::ClusterResourceUse.joins(:user_cluster_resource).find_by(
-            user_cluster_resources: {
-                user_id: user.id,
-                environment_id: Private.environment(self).id,
-                cluster_resource_id: ::ClusterResource.find_by!(name: resource).id
-            },
-            class_name: self.class.name,
-            table_name: self.class.table_name,
-            row_id: self.id,
+          user_cluster_resources: {
+            user_id: user.id,
+            environment_id: Private.environment(self).id,
+            cluster_resource_id: ::ClusterResource.find_by!(name: resource).id
+          },
+          class_name: self.class.name,
+          table_name: self.class.table_name,
+          row_id: self.id,
         )
 
         unless use
           return allocate_resource!(
-              resource,
-              value,
-              user: user,
-              confirmed: confirmed,
-              chain: chain
+            resource,
+            value,
+            user: user,
+            confirmed: confirmed,
+            chain: chain
           )
         end
 
@@ -312,9 +312,9 @@ module VpsAdmin::API
 
         if resource_obj.resource_type.to_sym == :object && free_object
           chain.use_chain(
-              TransactionChains.const_get(resource_obj.free_chain),
-              args: [resource_obj, self],
-              method: "free_from_#{self.class.name.demodulize.underscore}"
+            TransactionChains.const_get(resource_obj.free_chain),
+            args: [resource_obj, self],
+            method: "free_from_#{self.class.name.demodulize.underscore}"
           )
         end
 
@@ -340,14 +340,14 @@ module VpsAdmin::API
         end
 
         ::ClusterResourceUse.includes(
-            user_cluster_resource: [:cluster_resource]
+          user_cluster_resource: [:cluster_resource]
         ).joins(:user_cluster_resource).where(
-            class_name: self.class.name,
-            table_name: self.class.table_name,
-            row_id: self.id,
-            user_cluster_resources: {
-                environment_id: env.id
-            }
+          class_name: self.class.name,
+          table_name: self.class.table_name,
+          row_id: self.id,
+          user_cluster_resources: {
+            environment_id: env.id
+          }
         ).each do |use|
 
           t = target_resources[use.user_cluster_resource.cluster_resource.name.to_sym]
@@ -371,21 +371,21 @@ module VpsAdmin::API
         target_resources = {}
 
         ::UserClusterResource.includes(:cluster_resource).where(
-            environment: dst_env,
-            user: user
+          environment: dst_env,
+          user: user
         ).each do |r|
           target_resources[r.cluster_resource.name.to_sym] = r
         end
 
         ::ClusterResourceUse.includes(
-            user_cluster_resource: [:cluster_resource]
+          user_cluster_resource: [:cluster_resource]
         ).joins(:user_cluster_resource).where(
-            class_name: self.class.name,
-            table_name: self.class.table_name,
-            row_id: self.id,
-            user_cluster_resources: {
-                environment_id: src_env.id
-            }
+          class_name: self.class.name,
+          table_name: self.class.table_name,
+          row_id: self.id,
+          user_cluster_resources: {
+            environment_id: src_env.id
+          }
         ).each do |use|
           name = use.user_cluster_resource.cluster_resource.name.to_sym
           t = target_resources[name]
@@ -416,9 +416,9 @@ module VpsAdmin::API
 
       ::ClusterResource.where(name: resources).each do |r|
         api.integer(
-            r.name.to_sym,
-            label: r.label,
-            desc: "Minimally #{r.min}, maximally #{r.max}, step size is #{r.stepsize}"
+          r.name.to_sym,
+          label: r.label,
+          desc: "Minimally #{r.min}, maximally #{r.max}, step size is #{r.stepsize}"
         )
       end
     end

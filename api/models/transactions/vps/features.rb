@@ -14,8 +14,8 @@ module Transactions::Vps
         n = features[f.name.to_sym]
 
         res[f.name] = {
-            enabled: n.nil? ? f.enabled : n,
-            original: f.enabled
+          enabled: n.nil? ? f.enabled : n,
+          original: f.enabled,
         }
       end
 

@@ -69,7 +69,7 @@ module VpsAdmin::API::Resources
 
         if input[:ip_version]
           q = q.joins(ip_address: :network).where(
-              networks: {ip_version: input[:ip_version]}
+            networks: {ip_version: input[:ip_version]}
           )
         end
 
@@ -79,45 +79,45 @@ module VpsAdmin::API::Resources
 
         when 'tcp', 'udp', 'other'
           q = q.where(
-              protocol: ::IpTrafficMonthlySummary.protocols["proto_#{input[:protocol]}"]
+            protocol: ::IpTrafficMonthlySummary.protocols["proto_#{input[:protocol]}"]
           )
 
         when 'sum'
           q = q.select("
-              #{table}.*,
-              1 AS is_sum,
-              SUM(packets_in) AS packets_in, SUM(packets_out) AS packets_out,
-              SUM(bytes_in) AS bytes_in, SUM(bytes_out) AS bytes_out
+            #{table}.*,
+            1 AS is_sum,
+            SUM(packets_in) AS packets_in, SUM(packets_out) AS packets_out,
+            SUM(bytes_in) AS bytes_in, SUM(bytes_out) AS bytes_out
           ").group("#{table}.ip_address_id, #{table}.role, #{table}.created_at")
         end
 
         if input[:environment]
           q = q.joins(ip_address: {network: :location}).where(
-              locations: {environment_id: input[:environment].id}
+            locations: {environment_id: input[:environment].id}
           )
         end
 
         if input[:location]
           q = q.joins(ip_address: :network).where(
-              networks: {location_id: input[:location].id}
+            networks: {location_id: input[:location].id}
           )
         end
 
         if input[:network]
           q = q.joins(:ip_address).where(
-              ip_addresses: {network_id: input[:network].id}
+            ip_addresses: {network_id: input[:network].id}
           )
         end
 
         if input[:node]
           q = q.joins(ip_address: :vps).where(
-              vpses: {node_id: input[:node].id}
+            vpses: {node_id: input[:node].id}
           )
         end
 
         if input.has_key?(:vps)
           q = q.joins(:ip_address).where(
-              ip_addresses: {vps_id: input[:vps] && input[:vps].id}
+            ip_addresses: {vps_id: input[:vps] && input[:vps].id}
           )
         end
 
@@ -205,11 +205,11 @@ module VpsAdmin::API::Resources
 
       def query
         q = ::IpTrafficMonthlySummary.select('
-            ip_traffic_monthly_summaries.user_id,
-            ip_traffic_monthly_summaries.role,
-            ip_traffic_monthly_summaries.created_at,
-            SUM(packets_in) AS sum_packets_in, SUM(packets_out) AS sum_packets_out,
-            SUM(bytes_in) AS sum_bytes_in, SUM(bytes_out) AS sum_bytes_out
+          ip_traffic_monthly_summaries.user_id,
+          ip_traffic_monthly_summaries.role,
+          ip_traffic_monthly_summaries.created_at,
+          SUM(packets_in) AS sum_packets_in, SUM(packets_out) AS sum_packets_out,
+          SUM(bytes_in) AS sum_bytes_in, SUM(bytes_out) AS sum_bytes_out
         ').joins(:user).group('users.id, ip_traffic_monthly_summaries.created_at')
 
         # Directly accessible filters
@@ -234,31 +234,31 @@ module VpsAdmin::API::Resources
 
         when 'tcp', 'udp', 'other'
           q = q.where(
-              protocol: ::IpTrafficMonthlySummary.protocols["proto_#{input[:protocol]}"]
+            protocol: ::IpTrafficMonthlySummary.protocols["proto_#{input[:protocol]}"]
           )
         end
 
         if input[:environment]
           q = q.joins(ip_address: {network: :location}).where(
-              locations: {environment_id: input[:environment].id}
+            locations: {environment_id: input[:environment].id}
           )
         end
 
         if input[:location]
           q = q.joins(ip_address: :network).where(
-              networks: {location_id: input[:location].id}
+            networks: {location_id: input[:location].id}
           )
         end
 
         if input[:network]
           q = q.joins(:ip_address).where(
-              ip_addresses: {network_id: input[:network].id}
+            ip_addresses: {network_id: input[:network].id}
           )
         end
 
         if input[:node]
           q = q.joins(ip_address: :vps).where(
-              vpses: {node_id: input[:node].id}
+            vpses: {node_id: input[:node].id}
           )
         end
 
@@ -300,7 +300,7 @@ module VpsAdmin::API::Resources
 
       def prepare
         @traffic = ::IpTrafficMonthlySummary.find_by!(with_restricted(
-            id: params[:ip_traffic_id]
+          id: params[:ip_traffic_id]
         ))
       end
 

@@ -8,7 +8,7 @@ module Transactions::Storage
       self.node_id = node.id
 
       {
-          snapshots: clones
+        snapshots: clones,
       }
     end
   end

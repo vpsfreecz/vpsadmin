@@ -5,11 +5,11 @@ module VpsAdmin::API::Tasks
       puts sprintf('%-20s %-20s %10s  %-20s', 'ID', 'NAME', 'VERSION', 'COMPONENTS')
       VpsAdmin::API::Plugin.registered.each do |id, p|
         puts sprintf(
-            '%-20s %-20s %10s  %-20s',
-            p.id,
-            p.name,
-            p.version,
-            p.components && p.components.join(',')
+          '%-20s %-20s %10s  %-20s',
+          p.id,
+          p.name,
+          p.version,
+          p.components && p.components.join(',')
         )
       end
     end

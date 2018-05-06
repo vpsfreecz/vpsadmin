@@ -11,8 +11,8 @@ module TransactionChains
 
       append_t(Transactions::UserNamespace::Create, args: [node, userns]) do |t|
         uns_on_node = ::UserNamespaceNode.create!(
-            user_namespace: userns,
-            node: node,
+          user_namespace: userns,
+          node: node,
         )
 
         t.just_create!(uns_on_node)

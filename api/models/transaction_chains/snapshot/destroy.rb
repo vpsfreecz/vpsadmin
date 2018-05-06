@@ -7,7 +7,7 @@ module TransactionChains
       concerns(:affect, [snap.class.name, snap.id])
 
       if snap.dataset.dataset_in_pools.joins(:pool).where(
-             pools: {role: ::Pool.roles[:backup]}
+            pools: {role: ::Pool.roles[:backup]}
          ).count > 0
         fail 'cannot destroy snaphot with backups'
       end

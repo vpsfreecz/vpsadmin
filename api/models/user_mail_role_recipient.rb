@@ -12,9 +12,9 @@ class UserMailRoleRecipient < ActiveRecord::Base
       next if ret.detect { |recp| recp.role == role.to_s }
 
       ret << new(
-          user: user,
-          role: role.to_s,
-          to: nil,
+        user: user,
+        role: role.to_s,
+        to: nil,
       )
     end
 
@@ -30,15 +30,15 @@ class UserMailRoleRecipient < ActiveRecord::Base
 
     if empty
       placeholder = new(
-          user: user,
-          role: role,
+        user: user,
+        role: role,
       )
     end
 
     transaction do
       recp = find_by(
-          user: user,
-          role: role,
+        user: user,
+        role: role,
       )
 
       if recp
@@ -55,8 +55,8 @@ class UserMailRoleRecipient < ActiveRecord::Base
 
       else
         recp = new(
-            user: user,
-            role: role,
+          user: user,
+          role: role,
         )
         recp.assign_attributes(attrs)
         recp.save!

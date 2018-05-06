@@ -7,14 +7,14 @@ module Transactions::Hypervisor
       self.node_id = node.id
 
       {
-          original: {
-              name: cfg.name_was,
-              vps_config: cfg.config_was
-          },
-          new: {
-              name: cfg.name,
-              vps_config: cfg.config
-          }
+        original: {
+          name: cfg.name_was,
+          vps_config: cfg.config_was,
+        },
+        new: {
+          name: cfg.name,
+          vps_config: cfg.config,
+        },
       }
     end
   end

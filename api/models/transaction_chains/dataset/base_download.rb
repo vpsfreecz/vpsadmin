@@ -10,14 +10,14 @@ module TransactionChains
       concerns(:affect, [snapshot.class.name, snapshot.id])
 
       dl = ::SnapshotDownload.new(
-          user: ::User.current,
-          snapshot: snapshot,
-          from_snapshot: opts[:from_snapshot],
-          secret_key: generate_key,
-          format: opts[:format],
-          file_name: filename(snapshot, opts[:format], opts[:from_snapshot]),
-          expiration_date: Time.now + 7 * 24 * 60 * 60,
-          confirmed: ::SnapshotDownload.confirmed(:confirm_create)
+        user: ::User.current,
+        snapshot: snapshot,
+        from_snapshot: opts[:from_snapshot],
+        secret_key: generate_key,
+        format: opts[:format],
+        file_name: filename(snapshot, opts[:format], opts[:from_snapshot]),
+        expiration_date: Time.now + 7 * 24 * 60 * 60,
+        confirmed: ::SnapshotDownload.confirmed(:confirm_create)
       )
 
       download(dl)
@@ -38,19 +38,19 @@ module TransactionChains
       end
 
       append(
-          Transactions::Storage::DownloadSnapshot,
-          args: dl,
-          queue: opts[:format] == :archive ? nil : :zfs_send,
+        Transactions::Storage::DownloadSnapshot,
+        args: dl,
+        queue: opts[:format] == :archive ? nil : :zfs_send,
       ) do
         create(dl)
         edit(snapshot, snapshot_download_id: dl.id)
       end
 
       mail(:snapshot_download_ready, {
-          user: ::User.current,
-          vars: {
-              dl: dl
-          }
+        user: ::User.current,
+        vars: {
+          dl: dl,
+        }
       }) if opts[:send_mail]
 
       dl

@@ -48,7 +48,7 @@ module VpsAdmin::API::Resources
 
       def query
         q = ::SnapshotDownload.where(with_restricted).where.not(
-            confirmed: ::SnapshotDownload.confirmed(:confirm_destroy)
+          confirmed: ::SnapshotDownload.confirmed(:confirm_destroy)
         )
 
         if input[:dataset]
@@ -110,7 +110,7 @@ module VpsAdmin::API::Resources
 
       def exec
         snap = ::Snapshot.includes(:dataset).joins(:dataset).find_by!(with_restricted(
-            id: input[:snapshot].id
+          id: input[:snapshot].id
         ))
 
         if snap.snapshot_download_id
@@ -134,9 +134,9 @@ module VpsAdmin::API::Resources
         end
 
         @chain, dl = snap.download(
-            format: input[:format].to_sym,
-            from_snapshot: input[:from_snapshot],
-            send_mail: input[:send_mail],
+          format: input[:format].to_sym,
+          from_snapshot: input[:from_snapshot],
+          send_mail: input[:send_mail],
         )
         dl
       end

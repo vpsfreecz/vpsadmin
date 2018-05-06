@@ -21,12 +21,12 @@ module VpsAdmin::CLI
       if position > 0 && checksum
         if progress
           pb = ProgressBar.create(
-              title: 'Calculating checksum',
-              total: position,
-              format: '%E %t: [%B] %p%% %r MB/s',
-              rate_scale: ->(rate) { (rate / 1024.0 / 1024.0).round(2) },
-              throttle_rate: 0.2,
-              output: progress,
+            title: 'Calculating checksum',
+            total: position,
+            format: '%E %t: [%B] %p%% %r MB/s',
+            rate_scale: ->(rate) { (rate / 1024.0 / 1024.0).round(2) },
+            throttle_rate: 0.2,
+            output: progress,
           )
         end
 
@@ -49,14 +49,14 @@ module VpsAdmin::CLI
         self.format = '%t: [%B] %r kB/s'
 
         @pb = ProgressBar.create(
-            title: 'Downloading',
-            total: nil,
-            format: @format,
-            rate_scale: ->(rate) { (rate / 1024.0).round(2) },
-            throttle_rate: 0.2,
-            starting_at: downloaded,
-            autofinish: false,
-            output: progress,
+          title: 'Downloading',
+          total: nil,
+          format: @format,
+          rate_scale: ->(rate) { (rate / 1024.0).round(2) },
+          throttle_rate: 0.2,
+          starting_at: downloaded,
+          autofinish: false,
+          output: progress,
         )
       end
 

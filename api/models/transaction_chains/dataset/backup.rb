@@ -8,15 +8,18 @@ module TransactionChains
       lock(dst_dataset_in_pool)
 
       concerns(:affect, [
-          src_dataset_in_pool.dataset.class.name,
-          src_dataset_in_pool.dataset_id
+        src_dataset_in_pool.dataset.class.name,
+        src_dataset_in_pool.dataset_id
       ])
 
       # The transfer transaction MUST retrieve the snapshot name before
       # execution (on vpsAdmind), because it may be different!
       # That is not very nice and should be solved better in the future.
-      use_chain(Dataset::Transfer, args: [src_dataset_in_pool, dst_dataset_in_pool],
-               prio: -10)
+      use_chain(
+        Dataset::Transfer,
+        args: [src_dataset_in_pool, dst_dataset_in_pool],
+        prio: -10
+      )
 
       use_chain(Dataset::Rotate, args: src_dataset_in_pool, prio: -10)
       use_chain(Dataset::Rotate, args: dst_dataset_in_pool)

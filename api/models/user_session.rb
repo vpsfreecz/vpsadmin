@@ -15,16 +15,16 @@ class UserSession < ActiveRecord::Base
     end
 
     self.current = create!(
-        user: user,
-        auth_type: token ? 'token' : 'basic',
-        api_ip_addr: request.ip,
-        api_ip_ptr: get_ptr(request.ip),
-        client_ip_addr: request.env['HTTP_CLIENT_IP'],
-        client_ip_ptr: request.env['HTTP_CLIENT_IP'] && get_ptr(request.env['HTTP_CLIENT_IP']),
-        user_session_agent: ::UserSessionAgent.find_or_create!(request.user_agent || ''),
-        client_version: request.user_agent || '',
-        api_token_id: token && token.id,
-        api_token_str: token && token.token
+      user: user,
+      auth_type: token ? 'token' : 'basic',
+      api_ip_addr: request.ip,
+      api_ip_ptr: get_ptr(request.ip),
+      client_ip_addr: request.env['HTTP_CLIENT_IP'],
+      client_ip_ptr: request.env['HTTP_CLIENT_IP'] && get_ptr(request.env['HTTP_CLIENT_IP']),
+      user_session_agent: ::UserSessionAgent.find_or_create!(request.user_agent || ''),
+      client_version: request.user_agent || '',
+      api_token_id: token && token.id,
+      api_token_str: token && token.token
     )
   end
 
@@ -45,8 +45,8 @@ class UserSession < ActiveRecord::Base
 
   def self.close!(request, user, token: nil, session: nil)
     (session || find_session!(request, user, token: token)).update!(
-        api_token: nil,
-        closed_at: Time.now
+      api_token: nil,
+      closed_at: Time.now
     )
     token && token.destroy!
   end
@@ -62,9 +62,9 @@ class UserSession < ActiveRecord::Base
 
   def self.find_session!(request, user, token: nil)
     find_by!(
-        user: user,
-        api_token_id: token.id,
-        closed_at: nil
+      user: user,
+      api_token_id: token.id,
+      closed_at: nil
     )
   end
 
@@ -85,9 +85,9 @@ class UserSession < ActiveRecord::Base
 
   def start!(token)
     update!(
-        api_token: token,
-        api_token_str: token.token,
-        auth_type: 'token'
+      api_token: token,
+      api_token_str: token.token,
+      auth_type: 'token'
     )
   end
 

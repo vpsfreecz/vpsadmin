@@ -3,9 +3,9 @@ module VpsAdmin::DownloadMounter
     def initialize(opts, mountpoint, pool)
       @opts = opts
       @full_mnt = File.join(
-          mountpoint,
-          pool.node.domain_name + '.' + pool.node.location.environment.domain,
-          pool.filesystem.split('/').last
+        mountpoint,
+        pool.node.domain_name + '.' + pool.node.location.environment.domain,
+        pool.filesystem.split('/').last
       )
       @pool = pool
     end

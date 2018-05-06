@@ -11,15 +11,15 @@ class MonitoredEvent < ActiveRecord::Base
   def self.report!(monitor, obj, value, passed, user)
     ret = transaction do
       event = self.find_by(
-          monitor_name: monitor.name,
-          class_name: obj.class.name,
-          row_id: obj.id,
-          state: [
-              states[:monitoring],
-              states[:confirmed],
-              states[:acknowledged],
-              states[:ignored],
-          ],
+        monitor_name: monitor.name,
+        class_name: obj.class.name,
+        row_id: obj.id,
+        state: [
+          states[:monitoring],
+          states[:confirmed],
+          states[:acknowledged],
+          states[:ignored],
+        ],
       )
 
       if event.nil?
@@ -28,22 +28,22 @@ class MonitoredEvent < ActiveRecord::Base
         if monitor.cooldown
           # Find last confirmed event of the same type
           last = self.where(
-              monitor_name: monitor.name,
-              class_name: obj.class.name,
-              row_id: obj.id,
-              state: states[:closed],
+            monitor_name: monitor.name,
+            class_name: obj.class.name,
+            row_id: obj.id,
+            state: states[:closed],
           ).order('created_at DESC').take
 
           next if last && (last.updated_at + monitor.cooldown) >= Time.now
         end
 
         event = self.create!(
-            monitor_name: monitor.name,
-            class_name: obj.class.name,
-            row_id: obj.id,
-            state: states[:monitoring],
-            user: user,
-            access_level: monitor.access_level || 0,
+          monitor_name: monitor.name,
+          class_name: obj.class.name,
+          row_id: obj.id,
+          state: states[:monitoring],
+          user: user,
+          access_level: monitor.access_level || 0,
         )
 
       elsif event.user != user
@@ -63,8 +63,8 @@ class MonitoredEvent < ActiveRecord::Base
 
       # Log measured value
       event.monitored_event_logs << MonitoredEventLog.new(
-          passed: passed,
-          value: value,
+        passed: passed,
+        value: value,
       )
 
       # Close passed events
@@ -161,7 +161,7 @@ class MonitoredEvent < ActiveRecord::Base
   def log_state
     return if monitored_event_states.last && monitored_event_states.last.state == state
     monitored_event_states << MonitoredEventState.new(
-        state: state,
+      state: state,
     )
   end
 end

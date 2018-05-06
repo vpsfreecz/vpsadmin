@@ -5,13 +5,13 @@ module VpsAdmin::API
       return ret if user.nil?
 
       q = ::TransactionChain.where(
-          user: user,
-          state: [
-              ::TransactionChain.states[:queued],
-              ::TransactionChain.states[:rollbacking],
-          ]
+        user: user,
+        state: [
+          ::TransactionChain.states[:queued],
+          ::TransactionChain.states[:rollbacking],
+        ]
       ).order(
-          "id #{order == :newest ? 'DESC' : 'ASC'}"
+        "id #{order == :newest ? 'DESC' : 'ASC'}"
       ).offset(offset).limit(limit).each do |chain|
         ret << new(user, state: chain)
       end

@@ -11,9 +11,9 @@ module Transactions::Storage
       self.node_id = dataset_in_pool.pool.node_id
 
       {
-          pool_fs: dataset_in_pool.pool.filesystem,
-          dataset_name: dataset_in_pool.dataset.full_name,
-          snapshot: snapshot_in_pool.snapshot.name
+        pool_fs: dataset_in_pool.pool.filesystem,
+        dataset_name: dataset_in_pool.dataset.full_name,
+        snapshot: snapshot_in_pool.snapshot.name,
       }
     end
   end

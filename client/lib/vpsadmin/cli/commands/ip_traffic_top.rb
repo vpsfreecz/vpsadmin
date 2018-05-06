@@ -13,7 +13,7 @@ module VpsAdmin::CLI::Commands
 
     def options(opts)
       @opts = {
-          unit: :bits,
+        unit: :bits,
       }
 
       opts.on('--unit UNIT', %w(bytes bits), 'Select data unit (bytes or bits)') do |v|
@@ -143,9 +143,9 @@ module VpsAdmin::CLI::Commands
         size = title.size + 1
 
         @columns << {
-            name: p,
-            title: title,
-            width: size < 8 ? 8 : size,
+          name: p,
+          title: title,
+          width: size < 8 ? 8 : size,
         }
       end
     end
@@ -156,9 +156,9 @@ module VpsAdmin::CLI::Commands
       limit = @opts[:limit] || lines - 6
 
       params =  {
-          limit: limit > 0 ? limit : 25,
-          order: "#{@sort_desc ? '-' : ''}#{@sort_param}",
-          meta: {includes: 'ip_address'}
+        limit: limit > 0 ? limit : 25,
+        order: "#{@sort_desc ? '-' : ''}#{@sort_param}",
+        meta: {includes: 'ip_address'}
       }
 
       FILTERS.each do |f|
@@ -205,10 +205,10 @@ module VpsAdmin::CLI::Commands
         fmt = (['%-30s', '%6s'] + @columns.map { |c| "%#{c[:width]}s" }).join(' ')
 
         @header = sprintf(
-            fmt,
-            'IP Address',
-            'VPS',
-            *@columns.map { |c| c[:title] },
+          fmt,
+          'IP Address',
+          'VPS',
+          *@columns.map { |c| c[:title] },
         )
 
         @header << (' ' * (cols - @header.size)) << "\n"
@@ -264,12 +264,12 @@ module VpsAdmin::CLI::Commands
 
       setpos(lines-4, 0)
       addstr(sprintf(
-          fmt,
-          '',
-          'Packets/s',
-          "#{unit}/s",
-          "Public#{unit}/s",
-          "Private#{unit}/s"
+        fmt,
+        '',
+        'Packets/s',
+        "#{unit}/s",
+        "Public#{unit}/s",
+        "Private#{unit}/s"
       ))
 
       setpos(lines-3, 0)

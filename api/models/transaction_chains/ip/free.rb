@@ -7,16 +7,16 @@ module TransactionChains
       ips = []
 
       ::IpAddress.joins(network: :location).where(
-          user: user_env.user,
-          networks: {
-              ip_version: v,
-              role: ::Network.roles[
-                  r.name.end_with?('_private') ? :private_access : :public_access
-              ],
-          },
-          locations: {
-              environment_id: user_env.environment_id,
-          }
+        user: user_env.user,
+        networks: {
+          ip_version: v,
+          role: ::Network.roles[
+            r.name.end_with?('_private') ? :private_access : :public_access
+          ],
+        },
+        locations: {
+          environment_id: user_env.environment_id,
+        }
       ).each do |ip|
         lock(ip)
         ips << ip

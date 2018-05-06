@@ -45,9 +45,9 @@ class OutageUpdate < ActiveRecord::Base
 
   def load_translations
     ::OutageTranslation.joins(
-        'RIGHT JOIN languages ON languages.id = outage_translations.language_id'
+      'RIGHT JOIN languages ON languages.id = outage_translations.language_id'
     ).where(
-        outage_update_id: id,
+      outage_update_id: id,
     ).each do |tr|
       %i(summary description).each do |param|
         define_singleton_method("#{tr.language.code}_#{param}") do
@@ -59,9 +59,9 @@ class OutageUpdate < ActiveRecord::Base
 
   def to_hash
     ret = {
-        id: id,
-        changes: {},
-        translations: {},
+      id: id,
+      changes: {},
+      translations: {},
     }
 
     each_change do |attr, old, new|
@@ -79,8 +79,8 @@ class OutageUpdate < ActiveRecord::Base
 
     outage_translations(true).each do |tr|
       ret[:translations][tr.language.code] = {
-          summary: tr.summary,
-          description: tr.description,
+        summary: tr.summary,
+        description: tr.description,
       }
     end
 

@@ -45,10 +45,10 @@ class UserRequest < ActiveRecord::Base
 
   def resolve(action, reason, params)
     target_state = {
-        approve: :approved,
-        deny: :denied,
-        ignore: :ignored,
-        request_correction: :pending_correction,
+      approve: :approved,
+      deny: :denied,
+      ignore: :ignored,
+      request_correction: :pending_correction,
     }[action]
 
     if target_state == state.to_sym
@@ -57,11 +57,11 @@ class UserRequest < ActiveRecord::Base
     end
 
     VpsAdmin::API::Plugins::Requests::TransactionChains::Resolve.fire(
-        self,
-        target_state,
-        action,
-        reason,
-        params,
+      self,
+      target_state,
+      action,
+      reason,
+      params,
     )
   end
 

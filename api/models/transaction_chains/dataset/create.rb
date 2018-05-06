@@ -44,9 +44,9 @@ module TransactionChains
 
       if use_prop
         use = ret.last.allocate_resource!(
-            :diskspace,
-            properties[use_prop],
-            user: user || dataset_in_pool.dataset.user
+          :diskspace,
+          properties[use_prop],
+          user: user || dataset_in_pool.dataset.user
         )
 
         append(Transactions::Utils::NoOp, args: pool.node_id) do
@@ -72,11 +72,11 @@ module TransactionChains
       @parent = part
 
       dip = ::DatasetInPool.create!(
-          dataset: part,
-          pool: @pool,
-          label: label,
-          user_namespace: userns,
-          confirmed: ::DatasetInPool.confirmed(:confirm_create)
+        dataset: part,
+        pool: @pool,
+        label: label,
+        user_namespace: userns,
+        confirmed: ::DatasetInPool.confirmed(:confirm_create)
       )
 
       lock(dip)
@@ -104,10 +104,10 @@ module TransactionChains
       parent_dip = dataset_in_pool.dataset.dataset_in_pools.where(pool: dataset_in_pool.pool).take!
 
       parent_dip.mounts.includes(:vps).joins(:vps).where(
-          vpses: {object_state: [
-              ::Vps.object_states[:active],
-              ::Vps.object_states[:suspended]
-          ]}
+        vpses: {object_state: [
+          ::Vps.object_states[:active],
+          ::Vps.object_states[:suspended]
+        ]}
       ).each do |mnt|
         @vps_mounts[mnt.vps] ||= []
         @vps_mounts[mnt.vps] << mnt
@@ -120,14 +120,14 @@ module TransactionChains
 
         if vps
           @vps_mounts[vps] = [::Mount.new(
-              vps: vps,
-              dst: "/#{dataset_in_pool.dataset.full_name.split('/')[1..-1].join('/')}",
-              mount_opts: '--bind',
-              umount_opts: '-f',
-              mount_type: 'bind',
-              mode: 'rw',
-              user_editable: true,
-              dataset_in_pool: dataset_in_pool
+            vps: vps,
+            dst: "/#{dataset_in_pool.dataset.full_name.split('/')[1..-1].join('/')}",
+            mount_opts: '--bind',
+            umount_opts: '-f',
+            mount_type: 'bind',
+            mode: 'rw',
+            user_editable: true,
+            dataset_in_pool: dataset_in_pool
           )]
         end
       end
@@ -141,9 +141,9 @@ module TransactionChains
 
           new_mnt = ::Mount.new(attrs)
           new_mnt.assign_attributes(
-              vps: vps,
-              dataset_in_pool: dip,
-              confirmed: ::Mount.confirmed(:confirm_create)
+            vps: vps,
+            dataset_in_pool: dip,
+            confirmed: ::Mount.confirmed(:confirm_create)
           )
 
           new_mnt.dst = File.join(new_mnt.dst, '/', dip.dataset.name)

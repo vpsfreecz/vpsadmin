@@ -8,10 +8,10 @@ module Transactions::Storage
       self.node_id = branch.dataset_tree.dataset_in_pool.pool.node_id
 
       ret = {
-          pool_fs: branch.dataset_tree.dataset_in_pool.pool.filesystem,
-          dataset_name: branch.dataset_tree.dataset_in_pool.dataset.full_name,
-          tree: branch.dataset_tree.full_name,
-          new_branch_name: branch.full_name,
+        pool_fs: branch.dataset_tree.dataset_in_pool.pool.filesystem,
+        dataset_name: branch.dataset_tree.dataset_in_pool.dataset.full_name,
+        tree: branch.dataset_tree.full_name,
+        new_branch_name: branch.full_name,
       }
 
       if src_snapshot_in_branch

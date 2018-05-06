@@ -5,12 +5,15 @@ module TransactionChains
     def link_chain(user, target, state, log)
       # Destroy all VPSes
       user.vpses.where(object_state: [
-          ::Vps.object_states[:active],
-          ::Vps.object_states[:suspended],
-          ::Vps.object_states[:soft_delete],
+        ::Vps.object_states[:active],
+        ::Vps.object_states[:suspended],
+        ::Vps.object_states[:soft_delete],
       ]).each do |vps|
-        vps.set_object_state(:hard_delete, reason: 'User was hard deleted',
-                             chain: self)
+        vps.set_object_state(
+          :hard_delete,
+          reason: 'User was hard deleted',
+          chain: self
+        )
       end
 
       # Destroy all datasets
@@ -22,7 +25,7 @@ module TransactionChains
             # VPS datasets are already deleted but from hypervisor pools only,
             # we have to take care about backups.
             ds.dataset_in_pools.joins(:pool).where(
-                pools: {role: ::Pool.roles[:backup]}
+              pools: {role: ::Pool.roles[:backup]}
             ).each do |backup|
               use_chain(DatasetInPool::Destroy, args: [backup, {recursive: true}])
             end

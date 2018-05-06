@@ -9,8 +9,8 @@ module TransactionChains
       interconnecting_ips = {}
 
       ::IpAddress.joins(:network).where(
-          networks: {role: ::Network.roles[:interconnecting]},
-          vps_id: vps.id
+        networks: {role: ::Network.roles[:interconnecting]},
+        vps_id: vps.id
       ).each do |ip|
         fail "shouldn't happen" if interconnecting_ips[ip.network.ip_version]
         interconnecting_ips[ip.network.ip_version] = ip

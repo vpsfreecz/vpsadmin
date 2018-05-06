@@ -4,12 +4,12 @@ class SysConfig < ActiveRecord::Base
   serialize :value, JSON
   validates :name, presence: true
   validates :category, format: {
-      with: /\A[a-zA-Z0-9_]{1,75}\z/,
-      message: 'bad format',
+    with: /\A[a-zA-Z0-9_]{1,75}\z/,
+    message: 'bad format',
   }
   validates :name, format: {
-      with: /\A[a-zA-Z0-9_]{1,75}\z/,
-      message: 'bad format',
+    with: /\A[a-zA-Z0-9_]{1,75}\z/,
+    message: 'bad format',
   }
 
   def self.get(category, key)
@@ -25,9 +25,9 @@ class SysConfig < ActiveRecord::Base
         obj.update!(value: v)
       else
         create!(
-            category: category,
-            name: k.to_s,
-            value: v
+          category: category,
+          name: k.to_s,
+          value: v
         )
       end
     end

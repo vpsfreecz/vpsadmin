@@ -16,15 +16,15 @@ class Dataset < ActiveRecord::Base
   include VpsAdmin::API::Lifetimes::Model
   set_object_states states: %i(active deleted),
                     deleted: {
-                        enter: TransactionChains::Dataset::Destroy
+                      enter: TransactionChains::Dataset::Destroy
                     }
 
   validates :name, format: {
-      with: /\A[a-zA-Z0-9][a-zA-Z0-9_\-:\.]{0,254}\z/,
-      message: "'%{value}' is not a valid dataset name"
+    with: /\A[a-zA-Z0-9][a-zA-Z0-9_\-:\.]{0,254}\z/,
+    message: "'%{value}' is not a valid dataset name"
   }, exclusion: {
-      in: %w(private vpsadmin),
-      message: "'%{value}' is a reserved name"
+    in: %w(private vpsadmin),
+    message: "'%{value}' is a reserved name"
   }
   validate :check_name
 
@@ -63,10 +63,10 @@ class Dataset < ActiveRecord::Base
 
     parent_dip = (last && last.primary_dataset_in_pool!) || top_dip
     top_dip.dataset.send(
-        :check_refquota,
-        top_dip,
-        path,
-        properties[:refquota]
+      :check_refquota,
+      top_dip,
+      path,
+      properties[:refquota]
     )
 
     # VPS subdatasets are more complicated and need special handling
@@ -78,11 +78,11 @@ class Dataset < ActiveRecord::Base
     maintenance_check!(top_dip.pool)
 
     TransactionChains::Dataset::Create.fire(
-        parent_dip.pool,
-        parent_dip,
-        path,
-        automount,
-        properties
+      parent_dip.pool,
+      parent_dip,
+      path,
+      automount,
+      properties
     )
   end
 
@@ -143,15 +143,15 @@ class Dataset < ActiveRecord::Base
     dip = primary_dataset_in_pool!
 
     check_refquota(
-        dip,
-        [],
-        properties[:refquota]
+      dip,
+      [],
+      properties[:refquota]
     )
 
     TransactionChains::Dataset::Set.fire(
-        dip,
-        properties,
-        opts
+      dip,
+      properties,
+      opts
     )
   end
 
@@ -249,12 +249,12 @@ class Dataset < ActiveRecord::Base
   # may be raised.
   def dataset_create_append_new(part, parent)
     new_ds = ::Dataset.new(
-        name: part,
-        user: User.current,
-        user_editable: true,
-        user_create: true,
-        user_destroy: true,
-        confirmed: ::Dataset.confirmed(:confirm_create)
+      name: part,
+      user: User.current,
+      user_editable: true,
+      user_create: true,
+      user_destroy: true,
+      confirmed: ::Dataset.confirmed(:confirm_create)
     )
 
     new_ds.parent = parent if parent

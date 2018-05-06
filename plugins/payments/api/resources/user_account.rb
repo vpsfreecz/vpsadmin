@@ -80,8 +80,8 @@ module VpsAdmin::API::Resources
 
           if input.has_key?(:paid_until)
             acc.user.set_expiration(
-                input[:paid_until],
-                reason: 'Paid until date has changed.'
+              input[:paid_until],
+              reason: 'Paid until date has changed.'
             )
           end
         end

@@ -9,8 +9,8 @@ module Transactions::Vps
       self.node_id = vps.node_id
 
       {
-          hostname: hostname,
-          original: orig
+        hostname: hostname,
+        original: orig,
       }
     end
   end

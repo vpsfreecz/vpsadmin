@@ -14,16 +14,16 @@ module TransactionChains
                end
 
         mail(:expiration_warning, {
-            params: {
-                object: klass.name.underscore,
-                state: obj.object_state,
-            },
-            user: user,
-            vars: {
-                object: obj,
-                state: obj.current_state,
-                klass.name.underscore => obj
-            }
+          params: {
+            object: klass.name.underscore,
+            state: obj.object_state,
+          },
+          user: user,
+          vars: {
+            object: obj,
+            state: obj.current_state,
+            klass.name.underscore => obj
+          }
         }) if user.mailer_enabled
       end
     end

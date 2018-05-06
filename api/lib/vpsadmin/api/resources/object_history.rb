@@ -54,9 +54,9 @@ module VpsAdmin::API::Resources
 
       def exec
         with_includes(query)
-            .limit(input[:limit])
-            .offset(input[:offset])
-            .order('created_at, id')
+          .limit(input[:limit])
+          .offset(input[:offset])
+          .order('created_at, id')
       end
     end
 
@@ -75,7 +75,7 @@ module VpsAdmin::API::Resources
 
       def prepare
         @event = with_includes.where(with_restricted(
-            id: params[:history_id]
+          id: params[:history_id]
         )).take!
       end
 

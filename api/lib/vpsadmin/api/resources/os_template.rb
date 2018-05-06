@@ -42,15 +42,15 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     example do
       request({})
       response({
-         os_templates: [{
-             id: 26,
-             name: 'scientific-6-x86_64',
-             label: 'Scientific Linux 6',
-             info: 'Some important notes',
-             enabled: true,
-             supported: true,
-             order: 1
-         }]
+        os_templates: [{
+          id: 26,
+          name: 'scientific-6-x86_64',
+          label: 'Scientific Linux 6',
+          info: 'Some important notes',
+          enabled: true,
+          supported: true,
+          order: 1,
+        }]
      })
     end
 
@@ -59,7 +59,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
       if input[:location]
         hypervisor_types = ::Node.where(
-            location_id: input[:location].id,
+          location_id: input[:location].id,
         ).group('hypervisor_type').pluck('hypervisor_type')
 
         q = q.where(hypervisor_type: hypervisor_types)

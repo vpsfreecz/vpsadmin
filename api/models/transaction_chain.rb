@@ -251,12 +251,12 @@ class TransactionChain < ActiveRecord::Base
     prio = opts[:prio] || self.prio
 
     c, ret = chain.use_in(self, {
-        args: args.is_a?(Array) ? args : [args],
-        urgent: urgent,
-        prio: prio,
-        reversible: opts[:reversible],
-        method: opts[:method],
-        hooks: opts[:hooks],
+      args: args.is_a?(Array) ? args : [args],
+      urgent: urgent,
+      prio: prio,
+      reversible: opts[:reversible],
+      method: opts[:method],
+      hooks: opts[:hooks],
     })
     @last_id = c.last_id
     @last_node_id = c.last_node_id
@@ -296,9 +296,9 @@ class TransactionChain < ActiveRecord::Base
 
     objects.each do |obj|
       TransactionChainConcern.create!(
-          transaction_chain: self,
-          class_name: obj[0],
-          row_id: obj[1]
+        transaction_chain: self,
+        class_name: obj[0],
+        row_id: obj[1]
       )
     end
   end
@@ -351,12 +351,12 @@ class TransactionChain < ActiveRecord::Base
   # @param retain_context [Boolean]
   def do_append(dep, klass, opts, block, retain_context = false)
     t_opts = {
-        args: opts[:args].is_a?(Array) ? opts[:args] : [ opts[:args] ],
-        urgent: opts[:urgent].nil? ? self.urgent : opts[:urgent],
-        prio: opts[:prio] || self.prio,
-        reversible: opts[:reversible] || self.reversible,
-        queue: opts[:queue],
-        retain_context: retain_context,
+      args: opts[:args].is_a?(Array) ? opts[:args] : [ opts[:args] ],
+      urgent: opts[:urgent].nil? ? self.urgent : opts[:urgent],
+      prio: opts[:prio] || self.prio,
+      reversible: opts[:reversible] || self.reversible,
+      queue: opts[:queue],
+      retain_context: retain_context,
     }
 
     @dst_chain.size += 1

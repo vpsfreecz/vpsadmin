@@ -82,8 +82,8 @@ module VpsAdmin::API::Resources
         ret = []
 
         query.includes(
-            :dataset_properties,
-            dataset_in_pools: [pool: [node: [location: [:environment]]]]
+          :dataset_properties,
+          dataset_in_pools: [pool: [node: [location: [:environment]]]]
         ).order('full_name').limit(input[:limit]).offset(input[:offset]).each do |ds|
           ret << ds
         end
@@ -156,10 +156,10 @@ module VpsAdmin::API::Resources
         properties = VpsAdmin::API::DatasetProperties.validate_params(input)
 
         @chain, dataset = ::Dataset.create_new(
-            input[:name].strip,
-            input[:dataset],
-            input[:automount],
-            properties
+          input[:name].strip,
+          input[:dataset],
+          input[:automount],
+          properties
         )
         dataset
 
@@ -448,15 +448,15 @@ module VpsAdmin::API::Resources
 
         def exec
           snap = ::Snapshot.includes(:dataset).joins(:dataset).find_by!(with_restricted(
-              dataset_id: params[:dataset_id],
-              id: params[:snapshot_id]
+            dataset_id: params[:dataset_id],
+            id: params[:snapshot_id]
           ))
 
           if snap.snapshot_in_pools.exists?('reference_count > 0')
             error('this snapshot cannot be destroyed as others are depending on it')
 
           elsif snap.dataset.dataset_in_pools.joins(:pool).where(
-                    pools: {role: ::Pool.roles[:backup]}
+                  pools: {role: ::Pool.roles[:backup]}
                 ).count > 0
             error('cannot destroy snapshot with backups')
           end
@@ -486,34 +486,34 @@ module VpsAdmin::API::Resources
 
         def exec
           snap = ::Snapshot.includes(:dataset).joins(:dataset).find_by!(with_restricted(
-              dataset_id: params[:dataset_id],
-              id: params[:snapshot_id]
+            dataset_id: params[:dataset_id],
+            id: params[:snapshot_id]
           ))
 
           snap.dataset.maintenance_check!(snap.dataset.primary_dataset_in_pool!.pool)
 
           # Check if any snapshots on primary pool are mounted
           mnt = snap.dataset.snapshots.select(
-              'snapshots.id, snapshots.name, mounts.id AS mnt_id, mounts.vps_id,'+
-              'mounts.dst'
+            'snapshots.id, snapshots.name, mounts.id AS mnt_id, mounts.vps_id,'+
+            'mounts.dst'
           ).joins(
-              snapshot_in_pools: [
-                  {dataset_in_pool: [:pool]},
-                  :mounts
-              ]
+            snapshot_in_pools: [
+              {dataset_in_pool: [:pool]},
+              :mounts
+            ]
           ).where(
-              pools: {
-                  role: [
-                      ::Pool.roles[:primary],
-                      ::Pool.roles[:hypervisor]
-                  ]
-              }
+            pools: {
+              role: [
+                ::Pool.roles[:primary],
+                ::Pool.roles[:hypervisor]
+              ]
+            }
           ).take
 
           if mnt
             error(
-                "Please delete mount of snapshot #{snap.dataset.full_name}@#{mnt.name} "+
-                "from VPS #{mnt.vps_id} at '#{mnt.dst}' (mount id #{mnt.mnt_id})"
+              "Please delete mount of snapshot #{snap.dataset.full_name}@#{mnt.name} "+
+              "from VPS #{mnt.vps_id} at '#{mnt.dst}' (mount id #{mnt.mnt_id})"
             )
           end
 
@@ -568,7 +568,7 @@ module VpsAdmin::API::Resources
 
         def exec
           with_includes(query).includes(
-              environment_dataset_plan: [:dataset_plan]
+            environment_dataset_plan: [:dataset_plan]
           ).offset(input[:offset]).limit(input[:limit])
         end
       end
@@ -687,7 +687,7 @@ module VpsAdmin::API::Resources
           props = props.where(name: input[:name]) if input[:name]
 
           q = ::DatasetPropertyHistory.includes(:dataset_property).where(
-              dataset_property_id: props.pluck(:id)
+            dataset_property_id: props.pluck(:id)
           )
           q = q.where('created_at >= ?', input[:from]) if input[:from]
           q = q.where('created_at <= ?', input[:to]) if input[:to]
@@ -717,12 +717,12 @@ module VpsAdmin::API::Resources
         def exec
           ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
           ::DatasetPropertyHistory.includes(
-              :dataset_property
+            :dataset_property
           ).joins(
-              :dataset_property
+            :dataset_property
           ).find_by!(
-              dataset_properties: {dataset_id: ds.id},
-              id: params[:property_history_id]
+            dataset_properties: {dataset_id: ds.id},
+            id: params[:property_history_id]
           )
         end
       end

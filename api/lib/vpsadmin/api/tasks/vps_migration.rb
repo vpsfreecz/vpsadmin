@@ -10,11 +10,11 @@ module VpsAdmin::API::Tasks
     protected
     def do_run_plans
       ::MigrationPlan.where(
-          state: [
-              ::MigrationPlan.states[:running],
-              ::MigrationPlan.states[:cancelling],
-              ::MigrationPlan.states[:failing],
-          ]
+        state: [
+          ::MigrationPlan.states[:running],
+          ::MigrationPlan.states[:cancelling],
+          ::MigrationPlan.states[:failing],
+        ]
       ).each do |plan|
         puts "Plan ##{plan.id} #{plan.state}"
         run_plan(plan)
@@ -24,13 +24,13 @@ module VpsAdmin::API::Tasks
     def run_plan(plan)
       # Close finished migrations
       plan.vps_migrations.includes(
-          :transaction_chain
+        :transaction_chain
       ).joins(
-          :transaction_chain
+        :transaction_chain
       ).where(
-          state: ::VpsMigration.states[:running],
+        state: ::VpsMigration.states[:running],
       ).where.not(
-          transaction_chains: {state: ::TransactionChain.states[:queued]}
+        transaction_chains: {state: ::TransactionChain.states[:queued]}
       ).each do |m|
         # The migration has finished - successfully or not
         case m.transaction_chain.state.to_sym
@@ -57,12 +57,12 @@ module VpsAdmin::API::Tasks
 
       # Check if the plan is finished
       running = plan.vps_migrations.where(
-          state: ::VpsMigration.states[:running],
+        state: ::VpsMigration.states[:running],
       ).count
 
       if running <= 0
         queued = plan.vps_migrations.where(
-            state: ::VpsMigration.states[:queued]
+          state: ::VpsMigration.states[:queued]
         ).count
 
         # No running migrations, nothing in the queue -> finished
@@ -127,17 +127,17 @@ module VpsAdmin::API::Tasks
       end
 
       chain, _ = TransactionChains::Vps::Migrate.fire2(
-          args: [m.vps, m.dst_node, {
-              outage_window: m.outage_window,
-              cleanup_data: m.cleanup_data,
-          }],
-          locks: locks,
+        args: [m.vps, m.dst_node, {
+          outage_window: m.outage_window,
+          cleanup_data: m.cleanup_data,
+        }],
+        locks: locks,
       )
 
       m.update!(
-          state: ::VpsMigration.states[:running],
-          started_at: Time.now,
-          transaction_chain: chain,
+        state: ::VpsMigration.states[:running],
+        started_at: Time.now,
+        transaction_chain: chain,
       )
     end
   end

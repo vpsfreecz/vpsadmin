@@ -21,107 +21,108 @@ module TransactionChains
 
       vps.changed.each do |attr|
         case attr
-          when 'user_id'
-            db_changes[vps][:user_id] = vps.user_id
+        when 'user_id'
+          db_changes[vps][:user_id] = vps.user_id
 
-            # VPS and all related objects must be given to the target user:
-            #   - dataset and all subdatasets
-            #   - IP addresses (resource allocation)
-            #   - check that there is no dataset/snapshot mount of an object
-            #     that does NOT belong to the target user
-            #   - free/allocate cluster resources
+          # VPS and all related objects must be given to the target user:
+          #   - dataset and all subdatasets
+          #   - IP addresses (resource allocation)
+          #   - check that there is no dataset/snapshot mount of an object
+          #     that does NOT belong to the target user
+          #   - free/allocate cluster resources
 
-            datasets = []
+          datasets = []
 
-            # Chown datasets and transfer cluster resources
-            vps.dataset_in_pool.dataset.subtree.each do |ds|
-              datasets << ds
-              db_changes[ds] = {user_id: vps.user_id}
+          # Chown datasets and transfer cluster resources
+          vps.dataset_in_pool.dataset.subtree.each do |ds|
+            datasets << ds
+            db_changes[ds] = {user_id: vps.user_id}
 
-              dip = ds.primary_dataset_in_pool!
-              db_changes.update(dip.transfer_resources!(vps.user))
+            dip = ds.primary_dataset_in_pool!
+            db_changes.update(dip.transfer_resources!(vps.user))
+          end
+
+          # Check mounts
+          check_vps_mounts(vps, datasets)
+          datasets.each { |ds| check_ds_mounts(vps, ds, vps.user_id) }
+
+          # Transfer cluster resources
+          ## CPU, memory, swap
+          db_changes.update(vps.transfer_resources!(vps.user))
+
+          ## IP addresses
+          db_changes.update(transfer_ip_addresses(vps))
+
+        when 'hostname'
+          append(Transactions::Vps::Hostname, args: [vps, vps.hostname_was, vps.hostname]) do
+            edit(vps, {attr => vps.hostname, 'manage_hostname' => true})
+            just_create(vps.log(:hostname, {
+              manage_hostname: true,
+              hostname: vps.hostname,
+            }))
+          end
+
+        when 'manage_hostname'
+          unless vps.manage_hostname
+            append(Transactions::Vps::UnmanageHostname, args: vps) do
+              edit(vps, attr => vps.manage_hostname)
+            just_create(vps.log(:hostname, {:manage_hostname => false}))
             end
+          end
 
-            # Check mounts
-            check_vps_mounts(vps, datasets)
-            datasets.each { |ds| check_ds_mounts(vps, ds, vps.user_id) }
-
-            # Transfer cluster resources
-            ## CPU, memory, swap
-            db_changes.update(vps.transfer_resources!(vps.user))
-
-            ## IP addresses
-            db_changes.update(transfer_ip_addresses(vps))
-
-          when 'hostname'
-            append(Transactions::Vps::Hostname, args: [vps, vps.hostname_was, vps.hostname]) do
-              edit(vps, {attr => vps.hostname, 'manage_hostname' => true})
-              just_create(vps.log(:hostname, {
-                  :manage_hostname => true,
-                  :hostname => vps.hostname
-              }))
-            end
-
-          when 'manage_hostname'
-            unless vps.manage_hostname
-              append(Transactions::Vps::UnmanageHostname, args: vps) do
-                edit(vps, attr => vps.manage_hostname)
-              just_create(vps.log(:hostname, {:manage_hostname => false}))
-              end
-            end
-
-          when 'os_template_id'
-            append(Transactions::Vps::OsTemplate, args: [
-                  vps,
-                  ::OsTemplate.find(vps.os_template_id_was),
-                  vps.os_template]) do
-              edit(vps, attr => vps.os_template_id)
-              just_create(vps.log(:os_template, {
-                  id: vps.os_template_id,
-                  name: vps.os_template.name,
-                  label: vps.os_template.label,
-              }))
-            end
-
-          when 'veth_name'
-            append_t(Transactions::Vps::VethName, args: [
+        when 'os_template_id'
+          append(Transactions::Vps::OsTemplate, args: [
               vps,
-              vps.veth_name_was,
-              vps.veth_name
-            ]) do |t|
-              t.edit(vps, veth_name: vps.veth_name)
-            end
+              ::OsTemplate.find(vps.os_template_id_was),
+              vps.os_template
+          ]) do
+            edit(vps, attr => vps.os_template_id)
+            just_create(vps.log(:os_template, {
+              id: vps.os_template_id,
+              name: vps.os_template.name,
+              label: vps.os_template.label,
+            }))
+          end
 
-          when 'dns_resolver_id'
-            append(Transactions::Vps::DnsResolver, args: [vps, *find_obj(vps, attr)]) do
-              edit(vps, attr => vps.dns_resolver_id)
-              just_create(vps.log(:dns_resolver, {
-                  id: vps.dns_resolver_id,
-                  addr: vps.dns_resolver.addr,
-                  label: vps.dns_resolver.label,
-              }))
-            end
+        when 'veth_name'
+          append_t(Transactions::Vps::VethName, args: [
+            vps,
+            vps.veth_name_was,
+            vps.veth_name
+          ]) do |t|
+            t.edit(vps, veth_name: vps.veth_name)
+          end
 
-          when 'cpu_limit'
-            db_changes[vps][attr] = vps.send(attr) == 0 ? nil : vps.send(attr)
+        when 'dns_resolver_id'
+          append(Transactions::Vps::DnsResolver, args: [vps, *find_obj(vps, attr)]) do
+            edit(vps, attr => vps.dns_resolver_id)
+            just_create(vps.log(:dns_resolver, {
+              id: vps.dns_resolver_id,
+              addr: vps.dns_resolver.addr,
+              label: vps.dns_resolver.label,
+            }))
+          end
 
-          when 'config'
-            # FIXME
+        when 'cpu_limit'
+          db_changes[vps][attr] = vps.send(attr) == 0 ? nil : vps.send(attr)
 
-          when 'onboot'
-          when 'info', 'onstartall'
-            db_changes[vps][attr] = vps.send(attr)
+        when 'config'
+          # FIXME
+
+        when 'onboot'
+        when 'info', 'onstartall'
+          db_changes[vps][attr] = vps.send(attr)
         end
       end
 
       # Note: this will not work correctly when chowning the VPS, that's
       # why it is forbidden in controller.
       resources = vps.reallocate_resources(
-          attrs,
-          vps.user,
-          chain: self,
-          override: opts[:admin_override],
-          lock_type: opts[:admin_lock_type]
+        attrs,
+        vps.user,
+        chain: self,
+        override: opts[:admin_override],
+        lock_type: opts[:admin_lock_type]
       )
 
       if !resources.empty? || vps.cpu_limit_changed?
@@ -139,12 +140,12 @@ module TransactionChains
 
         use_chain(Vps::SetResources, args: [vps, resources])
         mail(:vps_resources_change, {
-            user: vps.user,
-            vars: {
-                vps: vps,
-                admin: ::User.current,
-                reason: opts[:change_reason]
-            }
+          user: vps.user,
+          vars: {
+            vps: vps,
+            admin: ::User.current,
+            reason: opts[:change_reason],
+          }
         }) if opts[:change_reason]
       end
 
@@ -178,7 +179,7 @@ module TransactionChains
     # given to the target user.
     def check_vps_mounts(vps, allowed)
       any = vps.mounts.joins(dataset_in_pool: [:dataset]).where.not(
-          datasets: {id: allowed.map { |ds| ds.id }}
+        datasets: {id: allowed.map { |ds| ds.id }}
       ).any?
 
       fail 'has forbidden mount' if any
@@ -189,7 +190,7 @@ module TransactionChains
     def check_ds_mounts(vps, dataset, user_id)
       dataset.dataset_in_pools.each do |dip|
         if dip.mounts.joins(:vps).where.not(
-               vpses: {id: vps.id, user_id: user_id}
+             vpses: {id: vps.id, user_id: user_id}
            ).any?
           fail 'is mounted elsewhere'
         end
@@ -201,10 +202,10 @@ module TransactionChains
     def transfer_ip_addresses(vps)
       ret = {}
       src_env = ::User.find(vps.user_id_was).environment_user_configs.find_by!(
-          environment: vps.node.location.environment,
+        environment: vps.node.location.environment,
       )
       dst_env = vps.user.environment_user_configs.find_by!(
-          environment: vps.node.location.environment,
+        environment: vps.node.location.environment,
       )
 
       %i(ipv4 ipv4_private ipv6).each do |r|
@@ -216,17 +217,17 @@ module TransactionChains
         next if cnt == 0
 
         src_use = src_env.reallocate_resource!(
-            r,
-            src_env.send(r) - cnt,
-            user: src_env.user,
-            confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+          r,
+          src_env.send(r) - cnt,
+          user: src_env.user,
+          confirmed: ::ClusterResourceUse.confirmed(:confirmed),
         )
 
         dst_use = dst_env.reallocate_resource!(
-            r,
-            dst_env.send(r) + cnt,
-            user: dst_env.user,
-            confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+          r,
+          dst_env.send(r) + cnt,
+          user: dst_env.user,
+          confirmed: ::ClusterResourceUse.confirmed(:confirmed),
         )
 
         ret[src_use] = {value: src_use.value}

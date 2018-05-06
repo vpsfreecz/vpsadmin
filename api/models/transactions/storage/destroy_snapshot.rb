@@ -9,13 +9,13 @@ module Transactions::Storage
       self.node_id = snapshot_in_pool.dataset_in_pool.pool.node_id
 
       ret = {
-          pool_fs: snapshot_in_pool.dataset_in_pool.pool.filesystem,
-          dataset_name: snapshot_in_pool.dataset_in_pool.dataset.full_name,
-          snapshot: {
-              id: snapshot_in_pool.snapshot_id,
-              name: snapshot_in_pool.snapshot.name,
-              confirmed: snapshot_in_pool.snapshot.confirmed
-          }
+        pool_fs: snapshot_in_pool.dataset_in_pool.pool.filesystem,
+        dataset_name: snapshot_in_pool.dataset_in_pool.dataset.full_name,
+        snapshot: {
+          id: snapshot_in_pool.snapshot_id,
+          name: snapshot_in_pool.snapshot.name,
+          confirmed: snapshot_in_pool.snapshot.confirmed,
+        },
       }
 
       if branch

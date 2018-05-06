@@ -29,21 +29,21 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
 
         if payment.incoming_payment
           payment.incoming_payment.update!(
-              state: ::IncomingPayment.states[:processed],
+            state: ::IncomingPayment.states[:processed],
           )
         end
 
         u.set_expiration(
-            payment.to_date,
-            reason: "Payment ##{payment.id} accepted."
+          payment.to_date,
+          reason: "Payment ##{payment.id} accepted."
         )
 
       elsif u.object_state == 'suspended'
         u.set_object_state(
-            :active,
-            expiration: payment.to_date,
-            reason: "Payment ##{payment.id} accepted.",
-            chain: self,
+          :active,
+          expiration: payment.to_date,
+          reason: "Payment ##{payment.id} accepted.",
+          chain: self,
         )
 
         append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
@@ -64,12 +64,12 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
 
       if u.mailer_enabled
         mail(:payment_accepted, {
+          user: u,
+          vars: {
             user: u,
-            vars: {
-                user: u,
-                account: u.user_account,
-                payment: payment,
-            },
+            account: u.user_account,
+            payment: payment,
+          },
         })
       end
 
@@ -84,12 +84,12 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
       local = time.localtime
       d = Date.new(local.year, local.month, local.day) >> n
       Time.new(
-          d.year,
-          d.month,
-          d.day,
-          local.hour,
-          local.min,
-          local.sec
+        d.year,
+        d.month,
+        d.day,
+        local.hour,
+        local.min,
+        local.sec
       )
     end
   end

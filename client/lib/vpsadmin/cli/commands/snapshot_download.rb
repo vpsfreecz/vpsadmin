@@ -6,10 +6,10 @@ module VpsAdmin::CLI::Commands
 
     def options(opts)
       @opts = {
-          delete_after: true,
-          send_mail: false,
-          checksum: true,
-          format: 'archive',
+        delete_after: true,
+        send_mail: false,
+        checksum: true,
+        format: 'archive',
       }
 
       opts.on('-f', '--format FORMAT', 'archive, stream or incremental_stream') do |f|
@@ -101,13 +101,13 @@ module VpsAdmin::CLI::Commands
 
       begin
         VpsAdmin::CLI::StreamDownloader.download(
-            @api,
-            dl,
-            f,
-            progress: !@opts[:quiet] && (f == STDOUT ? STDERR : STDOUT),
-            position: pos,
-            max_rate: @opts[:max_rate],
-            checksum: @opts[:checksum],
+          @api,
+          dl,
+          f,
+          progress: !@opts[:quiet] && (f == STDOUT ? STDERR : STDOUT),
+          position: pos,
+          max_rate: @opts[:max_rate],
+          checksum: @opts[:checksum],
         )
 
       rescue VpsAdmin::CLI::DownloadError => e
@@ -139,9 +139,9 @@ module VpsAdmin::CLI::Commands
             STDERR.flush
 
             action = {
-                'r' => :resume,
-                'o' => :overwrite,
-                '' => false,
+              'r' => :resume,
+              'o' => :overwrite,
+              '' => false,
             }[STDIN.readline.strip.downcase]
           end
 

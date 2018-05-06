@@ -11,8 +11,8 @@ module VpsAdmin::MailTemplates
 
     def initialize
       @opts = {
-          auth: 'token',
-          lifetime: 'renewable_auto',
+        auth: 'token',
+        lifetime: 'renewable_auto',
       }
     end
 
@@ -75,8 +75,8 @@ EOF
       end
 
       @api = HaveAPI::Client::Client.new(
-          ARGV[0],
-          identity: "vpsadmin-mail-templates v#{VpsAdmin::MailTemplates::VERSION}"
+        ARGV[0],
+        identity: "vpsadmin-mail-templates v#{VpsAdmin::MailTemplates::VERSION}"
       )
 
       authenticate

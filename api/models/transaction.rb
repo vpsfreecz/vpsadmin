@@ -18,7 +18,7 @@ class Transaction < ActiveRecord::Base
   before_save :set_init_values
 
   validates :queue, inclusion: {
-      in: %w(general storage network vps zfs_send mail outage queue)
+    in: %w(general storage network vps zfs_send mail outage queue)
   }
 
   class << self
@@ -222,12 +222,12 @@ class Transaction < ActiveRecord::Base
       end
 
       ::TransactionConfirmation.create(
-          parent_transaction: @transaction,
-          class_name: obj.class.name,
-          table_name: obj.class.table_name,
-          row_pks: pks,
-          attr_changes: tr_attrs,
-          confirm_type: type
+        parent_transaction: @transaction,
+        class_name: obj.class.name,
+        table_name: obj.class.table_name,
+        row_pks: pks,
+        attr_changes: tr_attrs,
+        confirm_type: type
       )
     end
   end

@@ -9,9 +9,9 @@ module Transactions::Vps
       self.node_id = vps.node_id
 
       ret = {
-          configs: [],
-          pool_fs: vps.dataset_in_pool.pool.filesystem,
-          dataset_name: vps.dataset_in_pool.dataset.full_name
+        configs: [],
+        pool_fs: vps.dataset_in_pool.pool.filesystem,
+        dataset_name: vps.dataset_in_pool.dataset.full_name,
       }
 
       VpsHasConfig

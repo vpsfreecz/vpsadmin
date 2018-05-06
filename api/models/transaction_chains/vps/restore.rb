@@ -8,7 +8,9 @@ module TransactionChains
 
       @vps = vps
 
-      dip = snapshot.dataset.dataset_in_pools.where(pool_id: vps.dataset_in_pool.pool_id).take!
+      dip = snapshot.dataset.dataset_in_pools.where(
+        pool_id: vps.dataset_in_pool.pool_id
+      ).take!
 
       super(dip, snapshot)
 

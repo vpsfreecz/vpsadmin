@@ -27,11 +27,11 @@ class User < ActiveRecord::Base
 
   validates :level, :login, :password, :language_id, presence: true
   validates :level, numericality: {
-      only_integer: true
+    only_integer: true
   }
   validates :login, format: {
-      with: /\A[a-zA-Z0-9\.\-]{2,63}\z/,
-      message: 'not a valid login'
+    with: /\A[a-zA-Z0-9\.\-]{2,63}\z/,
+    message: 'not a valid login'
   }, uniqueness: true
 
   include Lockable
@@ -41,26 +41,26 @@ class User < ActiveRecord::Base
       desc: 'Called when a new User is being created',
       context: 'TransactionChains::User::Create instance',
       args: {
-          user: 'User instance'
+        user: 'User instance'
       },
       ret: {
-          objects: 'An array of created objects'
+        objects: 'An array of created objects'
       }
 
   include VpsAdmin::API::Lifetimes::Model
   set_object_states suspended: {
-                        enter: TransactionChains::User::Suspend,
-                        leave: TransactionChains::User::Resume
+                      enter: TransactionChains::User::Suspend,
+                      leave: TransactionChains::User::Resume
                     },
                     soft_delete: {
-                        enter: TransactionChains::User::SoftDelete,
-                        leave: TransactionChains::User::Revive
+                      enter: TransactionChains::User::SoftDelete,
+                      leave: TransactionChains::User::Revive
                     },
                     hard_delete: {
-                        enter: TransactionChains::User::HardDelete
+                      enter: TransactionChains::User::HardDelete
                     },
                     deleted: {
-                        enter: TransactionChains::Lifetimes::NotImplemented
+                      enter: TransactionChains::Lifetimes::NotImplemented
                     }
 
   default_scope {
@@ -76,20 +76,20 @@ class User < ActiveRecord::Base
   scope :including_deleted, -> {
     unscoped {
       where(object_state: [
-                object_states[:active],
-                object_states[:suspended],
-                object_states[:soft_delete]
+              object_states[:active],
+              object_states[:suspended],
+              object_states[:soft_delete]
             ])
     }
   }
 
   ROLES = {
-      1 => 'Poor user',
-      2 => 'User',
-      3 => 'Power user',
-      21 => 'Admin',
-      90 => 'Super admin',
-      99 => 'God',
+    1 => 'Poor user',
+    2 => 'User',
+    3 => 'Power user',
+    21 => 'Admin',
+    90 => 'Super admin',
+    99 => 'God',
   }
 
   def create(vps, node, tpl)
@@ -146,11 +146,11 @@ class User < ActiveRecord::Base
 
   def vps_in_env(env)
     vpses.joins(node: [:location]).where(
-        locations: {environment_id: env.id},
-        vpses: {object_state: [
-            ::Vps.object_states[:active],
-            ::Vps.object_states[:suspended]
-        ]}
+      locations: {environment_id: env.id},
+      vpses: {object_state: [
+        ::Vps.object_states[:active],
+        ::Vps.object_states[:suspended]
+      ]}
     ).count
   end
 
@@ -163,10 +163,10 @@ class User < ActiveRecord::Base
 
   def self.authenticate(request, username, password)
     u = User.unscoped.where(
-        object_state: [
-            object_states[:active],
-            object_states[:suspended],
-        ]
+      object_state: [
+        object_states[:active],
+        object_states[:suspended],
+      ]
     ).find_by('login = ? COLLATE utf8_bin', username)
     return unless u
 
@@ -179,17 +179,17 @@ class User < ActiveRecord::Base
 
     self.increment_counter(:login_count, u.id)
     u.update!(
-        last_login_at: u.current_login_at,
-        current_login_at: Time.now,
-        last_login_ip: u.current_login_ip,
-        current_login_ip: request.ip
+      last_login_at: u.current_login_at,
+      current_login_at: Time.now,
+      last_login_ip: u.current_login_ip,
+      current_login_ip: request.ip
     )
 
     if c.update?(u.password_version)
       c.current do |name, provider|
         u.update!(
-            password_version: name,
-            password: provider.encrypt(u.login, password)
+          password_version: name,
+          password: provider.encrypt(u.login, password)
         )
       end
     end

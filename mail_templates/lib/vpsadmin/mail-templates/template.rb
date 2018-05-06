@@ -33,10 +33,10 @@ module VpsAdmin::MailTemplates
       v = @meta[:user_visibility]
 
       {
-          template_id: @id,
-          name: @name,
-          label: @meta[:label] || '',
-          user_visibility: v.nil? ? 'default' : (v ? 'visible' : 'invisible'),
+        template_id: @id,
+        name: @name,
+        label: @meta[:label] || '',
+        user_visibility: v.nil? ? 'default' : (v ? 'visible' : 'invisible'),
       }
     end
   end

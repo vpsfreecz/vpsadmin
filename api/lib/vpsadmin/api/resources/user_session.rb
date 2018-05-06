@@ -52,8 +52,8 @@ module VpsAdmin::API::Resources
 
         if input[:ip_addr]
           q = q.where(
-              'api_ip_addr LIKE ? OR client_ip_addr LIKE ?',
-              input[:ip_addr], input[:ip_addr]
+            'api_ip_addr LIKE ? OR client_ip_addr LIKE ?',
+            input[:ip_addr], input[:ip_addr]
           )
         end
 
@@ -77,10 +77,10 @@ module VpsAdmin::API::Resources
 
       def exec
         with_includes(query)
-            .includes(:user_session_agent)
-            .order('created_at DESC')
-            .limit(input[:limit])
-            .offset(input[:offset])
+          .includes(:user_session_agent)
+          .order('created_at DESC')
+          .limit(input[:limit])
+          .offset(input[:offset])
       end
     end
 

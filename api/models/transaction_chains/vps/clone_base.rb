@@ -18,8 +18,8 @@ module TransactionChains
 
       else
         use_chain(Vps::ApplyConfig, args: [
-            dst_vps,
-            vps.node.location.environment.vps_configs.pluck(:id)
+          dst_vps,
+          vps.node.location.environment.vps_configs.pluck(:id)
         ])
       end
     end
@@ -28,17 +28,17 @@ module TransactionChains
       return unless vps.manage_hostname
 
       append(Transactions::Vps::Hostname, args: [
-          dst_vps,
-          vps.hostname,
-          attrs[:hostname]
+        dst_vps,
+        vps.hostname,
+        attrs[:hostname]
       ])
     end
 
     def clone_dns_resolver(vps, dst_vps)
       append(Transactions::Vps::DnsResolver, args: [
-          dst_vps,
-          vps.dns_resolver,
-          dst_vps.dns_resolver
+        dst_vps,
+        vps.dns_resolver,
+        dst_vps.dns_resolver
       ])
     end
 
@@ -58,7 +58,7 @@ module TransactionChains
       plans = []
 
       src_dip.dataset_in_pool_plans.includes(
-          environment_dataset_plan: [:dataset_plan]
+        environment_dataset_plan: [:dataset_plan]
       ).each do |dip_plan|
         plans << dip_plan
       end
@@ -71,8 +71,8 @@ module TransactionChains
             # Do not add the plan in the target environment is for admins only
             begin
               next unless ::EnvironmentDatasetPlan.find_by!(
-                  dataset_plan: plan,
-                  environment: dst_dip.pool.node.location.environment
+                dataset_plan: plan,
+                environment: dst_dip.pool.node.location.environment
               ).user_add
 
             rescue ActiveRecord::RecordNotFound
@@ -81,8 +81,8 @@ module TransactionChains
 
             begin
               VpsAdmin::API::DatasetPlans.plans[plan.name.to_sym].register(
-                  dst_dip,
-                  confirmation: self
+                dst_dip,
+                confirmation: self
               )
 
             rescue VpsAdmin::API::Exceptions::DatasetPlanNotInEnvironment
@@ -117,18 +117,18 @@ module TransactionChains
         end
 
         dst_m = ::Mount.new(
-            vps: dst_vps,
-            dataset_in_pool: m.dataset_in_pool,
-            dst: m.dst,
-            mount_opts: m.mount_opts,
-            umount_opts: m.umount_opts,
-            mount_type: m.mount_type,
-            user_editable: m.user_editable,
-            mode: m.mode,
-            confirmed: ::Mount.confirmed(:confirm_create),
-            expiration_date: m.expiration_date,
-            enabled: m.enabled,
-            master_enabled: m.master_enabled
+          vps: dst_vps,
+          dataset_in_pool: m.dataset_in_pool,
+          dst: m.dst,
+          mount_opts: m.mount_opts,
+          umount_opts: m.umount_opts,
+          mount_type: m.mount_type,
+          user_editable: m.user_editable,
+          mode: m.mode,
+          confirmed: ::Mount.confirmed(:confirm_create),
+          expiration_date: m.expiration_date,
+          enabled: m.enabled,
+          master_enabled: m.master_enabled
         )
 
         dst_m.current_state = :unmounted unless m.enabled?
@@ -176,10 +176,10 @@ module TransactionChains
       datasets.each do |_, dst|
         dst.snapshot_in_pools.order('snapshot_id').each do |sip|
           s = ::Snapshot.create!(
-              dataset: dst.dataset,
-              name: sip.snapshot.name,
-              confirmed: ::Snapshot.confirmed(:confirm_create),
-              created_at: sip.snapshot.created_at
+            dataset: dst.dataset,
+            name: sip.snapshot.name,
+            confirmed: ::Snapshot.confirmed(:confirm_create),
+            created_at: sip.snapshot.created_at
           )
 
           @snapshot_name_fixes[sip.snapshot.id] = [sip.snapshot.name, s.id]
@@ -205,8 +205,8 @@ module TransactionChains
     def cleanup_transfer_snapshots
       @transfer_snapshots.each do |src_sip|
         dst_sip = ::SnapshotInPool.joins(:dataset_in_pool).where(
-            snapshot_id: @snapshot_name_fixes[ src_sip.snapshot_id ][1],
-            dataset_in_pools: {pool_id: @dst_pool.id}
+          snapshot_id: @snapshot_name_fixes[ src_sip.snapshot_id ][1],
+          dataset_in_pools: {pool_id: @dst_pool.id}
         ).take!
 
         use_chain(SnapshotInPool::Destroy, args: src_sip)

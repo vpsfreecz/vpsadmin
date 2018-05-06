@@ -13,48 +13,48 @@ module TransactionChains
       # Create environment configs
       ::Environment.all.each do |env|
         objects << ::EnvironmentUserConfig.create!(
-            environment: env,
-            user: user,
-            can_create_vps: env.can_create_vps,
-            can_destroy_vps: env.can_destroy_vps,
-            vps_lifetime: env.vps_lifetime,
-            max_vps_count: env.max_vps_count
+          environment: env,
+          user: user,
+          can_create_vps: env.can_create_vps,
+          can_destroy_vps: env.can_destroy_vps,
+          vps_lifetime: env.vps_lifetime,
+          max_vps_count: env.max_vps_count
         )
 
         env.default_object_cluster_resources.where(
             class_name: user.class.name
         ).each do |d|
           objects << ::UserClusterResource.create!(
-              user: user,
-              environment: env,
-              cluster_resource: d.cluster_resource,
-              value: d.value
+            user: user,
+            environment: env,
+            cluster_resource: d.cluster_resource,
+            value: d.value
           )
         end
       end
 
       ret = user.call_class_hooks_for(
-          :create,
-          self,
-          args: [user],
-          initial: {objects: []}
+        :create,
+        self,
+        args: [user],
+        initial: {objects: []}
       )
       objects.concat(ret[:objects])
 
       if create_vps
         vps = ::Vps.new(
-            user: user,
-            node: node,
-            os_template: tpl,
-            hostname: 'vps',
-            config: '',
+          user: user,
+          node: node,
+          os_template: tpl,
+          hostname: 'vps',
+          config: '',
         )
         vps.dns_resolver = ::DnsResolver.pick_suitable_resolver_for_vps(vps)
 
         vps_opts = {}
 
         node.location.environment.default_object_cluster_resources.joins(
-            :cluster_resource
+          :cluster_resource
         ).where(
           class_name: 'Vps',
           cluster_resources: {name: %w(ipv4 ipv4_private ipv6)},
@@ -72,10 +72,10 @@ module TransactionChains
       end
 
       mail(:user_create, {
-          user: user,
-          vars: {
-              user: user
-          }
+        user: user,
+        vars: {
+          user: user
+        }
       })
 
       user

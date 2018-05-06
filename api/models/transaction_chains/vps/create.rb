@@ -13,10 +13,10 @@ module TransactionChains
       concerns(:affect, [vps.class.name, vps.id])
 
       vps_resources = vps.allocate_resources(
-          required: %i(cpu memory swap),
-          optional: [],
-          user: vps.user,
-          chain: self
+        required: %i(cpu memory swap),
+        optional: [],
+        user: vps.user,
+        chain: self
       )
 
       if vps.node.vpsadminos?
@@ -30,23 +30,23 @@ module TransactionChains
       pool = vps.node.pools.where(role: 'hypervisor').take!
 
       ds = ::Dataset.new(
-          name: vps.id.to_s,
-          user: vps.user,
-          user_editable: false,
-          user_create: true,
-          user_destroy: false,
-          confirmed: ::Dataset.confirmed(:confirm_create)
+        name: vps.id.to_s,
+        user: vps.user,
+        user_editable: false,
+        user_create: true,
+        user_destroy: false,
+        confirmed: ::Dataset.confirmed(:confirm_create)
       )
 
       dip = use_chain(Dataset::Create, args: [
-          pool,
-          nil,
-          [ds],
-          false,
-          {refquota: vps.diskspace},
-          vps.user,
-          "vps#{vps.id}",
-          userns
+        pool,
+        nil,
+        [ds],
+        false,
+        {refquota: vps.diskspace},
+        vps.user,
+        "vps#{vps.id}",
+        userns
       ]).last
 
       vps.dataset_in_pool = dip
@@ -65,11 +65,11 @@ module TransactionChains
         # Outage windows
         7.times do |i|
           w = VpsOutageWindow.new(
-              vps: vps,
-              weekday: i,
-              is_open: true,
-              opens_at: 60,
-              closes_at: 5*60,
+            vps: vps,
+            weekday: i,
+            is_open: true,
+            opens_at: 60,
+            closes_at: 5*60,
           )
           w.save!(validate: false)
           just_create(w)
@@ -78,8 +78,8 @@ module TransactionChains
 
       if vps.node.openvz?
         use_chain(Vps::ApplyConfig, args: [
-            vps,
-            vps.node.location.environment.vps_configs.pluck(:id)
+          vps,
+          vps.node.location.environment.vps_configs.pluck(:id)
         ])
       end
 
@@ -91,22 +91,22 @@ module TransactionChains
 
       ip_resources = []
       user_env = vps.user.environment_user_configs.find_by!(
-          environment: vps.node.location.environment,
+        environment: vps.node.location.environment,
       )
 
       versions.each do |v|
         next if opts[v].nil? || opts[v] <= 0
 
         n = use_chain(
-            Ip::Allocate,
-            args: [::ClusterResource.find_by!(name: v), vps, opts[v]],
-            method: :allocate_to_vps
+          Ip::Allocate,
+          args: [::ClusterResource.find_by!(name: v), vps, opts[v]],
+          method: :allocate_to_vps
         )
         ip_resources << user_env.reallocate_resource!(
-            v,
-            user_env.send(v) + n,
-            user: vps.user,
-            chain: self,
+          v,
+          user_env.send(v) + n,
+          user: vps.user,
+          chain: self,
         )
       end
 
@@ -126,9 +126,9 @@ module TransactionChains
       vps.dns_resolver ||= ::DnsResolver.pick_suitable_resolver_for_vps(vps)
 
       append(Transactions::Vps::DnsResolver, args: [
-          vps,
-          vps.dns_resolver,
-          vps.dns_resolver
+        vps,
+        vps.dns_resolver,
+        vps.dns_resolver
       ])
 
       use_chain(Vps::SetResources, args: [vps, vps_resources])

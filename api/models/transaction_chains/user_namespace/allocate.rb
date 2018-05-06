@@ -17,11 +17,11 @@ module TransactionChains
 
       ugid = ::UserNamespaceUgid.where(user_namespace_id: nil).order('ugid').take!
       uns = ::UserNamespace.create!(
-          user: user,
-          user_namespace_ugid: ugid,
-          block_count: block_count,
-          offset: blocks.first.offset,
-          size: blocks.inject(0) { |sum, block| sum + block.size }
+        user: user,
+        user_namespace_ugid: ugid,
+        block_count: block_count,
+        offset: blocks.first.offset,
+        size: blocks.inject(0) { |sum, block| sum + block.size }
       )
       blocks.each { |blk| blk.update!(user_namespace: uns) }
       ugid.update!(user_namespace: uns)
@@ -110,8 +110,8 @@ module TransactionChains
         f_id, f_index, l_id, l_index = row
 
         AvailableRange.new(
-            ::UserNamespaceBlock.new(id: f_id, index: f_index),
-            ::UserNamespaceBlock.new(id: l_id, index: l_index),
+          ::UserNamespaceBlock.new(id: f_id, index: f_index),
+          ::UserNamespaceBlock.new(id: l_id, index: l_index),
         )
       end
     end

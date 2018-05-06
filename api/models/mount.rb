@@ -11,7 +11,7 @@ class Mount < ActiveRecord::Base
   include VpsAdmin::API::Lifetimes::Model
   set_object_states states: %i(active deleted),
                     deleted: {
-                        enter: TransactionChains::Vps::DestroyMount
+                      enter: TransactionChains::Vps::DestroyMount
                     }
 
   enum on_start_fail: %i(skip mount_later fail_start wait_for_mount)

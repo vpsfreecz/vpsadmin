@@ -27,7 +27,7 @@ module TransactionChains
 
       # Scenario 0)
       if dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where(
-             pools: {role: ::Pool.roles[:backup]}
+           pools: {role: ::Pool.roles[:backup]}
          ).count == 0
 
         sip = snapshot.snapshot_in_pools.where(dataset_in_pool: dataset_in_pool).take
@@ -36,11 +36,11 @@ module TransactionChains
         pre_local_rollback
 
         append(Transactions::Storage::Rollback, args: [
-            dataset_in_pool,
-            sip
+          dataset_in_pool,
+          sip
         ]) do
           dataset_in_pool.snapshot_in_pools.where(
-              'id > ?', sip.id
+            'id > ?', sip.id
           ).order('id').each do |s|
             if s.reference_count > 0
               raise VpsAdmin::API::Exceptions::SnapshotInUse, s
@@ -117,21 +117,21 @@ module TransactionChains
 
 
       port = ::PortReservation.reserve(
-          dataset_in_pool.pool.node,
-          dataset_in_pool.pool.node.addr,
-          self.id ? self : dst_chain
+        dataset_in_pool.pool.node,
+        dataset_in_pool.pool.node.addr,
+        self.id ? self : dst_chain
       )
 
       append(Transactions::Storage::PrepareRollback, args: dataset_in_pool)
       use_chain(Dataset::Send, args: [
-          port,
-          backup_snap.dataset_in_pool,
-          dataset_in_pool,
-          [backup_snap],
-          snap_in_branch.branch,
-          nil,
-          true,
-          :rollback
+        port,
+        backup_snap.dataset_in_pool,
+        dataset_in_pool,
+        [backup_snap],
+        snap_in_branch.branch,
+        nil,
+        true,
+        :rollback
       ])
 
       pre_local_rollback
@@ -185,11 +185,11 @@ module TransactionChains
           last_index = snap_tree.branches.where(name: snapshot.name).maximum('index')
 
           head = ::Branch.create!(
-              dataset_tree: snap_tree,
-              name: snapshot.name,
-              index: last_index ? last_index + 1 : 0,
-              head: true,
-              confirmed: ::Branch.confirmed(:confirm_create)
+            dataset_tree: snap_tree,
+            name: snapshot.name,
+            index: last_index ? last_index + 1 : 0,
+            head: true,
+            confirmed: ::Branch.confirmed(:confirm_create)
           )
 
           append(Transactions::Storage::BranchDataset, args: [head, snap_in_branch]) do

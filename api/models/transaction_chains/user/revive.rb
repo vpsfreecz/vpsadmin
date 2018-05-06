@@ -4,11 +4,11 @@ module TransactionChains
 
     def link_chain(user, target, state, log)
       mail(:user_revive, {
+        user: user,
+        vars: {
           user: user,
-          vars: {
-              user: user,
-              state: log
-          }
+          state: log,
+        }
       })
 
       user.vpses.where(object_state: ::Vps.object_states[:soft_delete]).each do |vps|

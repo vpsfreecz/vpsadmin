@@ -6,11 +6,11 @@ module TransactionChains
       use_chain(Vps::Stop, args: vps)
 
       mail(:vps_suspend, {
-          user: vps.user,
-          vars: {
-              vps: vps,
-              state: log
-          }
+        user: vps.user,
+        vars: {
+          vps: vps,
+          state: log,
+        }
       }) if target && vps.user.mailer_enabled
     end
   end

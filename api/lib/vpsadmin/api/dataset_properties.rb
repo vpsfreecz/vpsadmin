@@ -156,14 +156,14 @@ module VpsAdmin::API
       ret = {}
 
       case mode
-        when :ro
-          Registrator.properties.each { |k,v| ret[k] = v unless v.editable? }
+      when :ro
+        Registrator.properties.each { |k,v| ret[k] = v unless v.editable? }
 
-        when :rw
-          Registrator.properties.each { |k,v| ret[k] = v if v.editable? }
+      when :rw
+        Registrator.properties.each { |k,v| ret[k] = v if v.editable? }
 
-        else
-          ret = Registrator.properties
+      else
+        ret = Registrator.properties
       end
 
       ret

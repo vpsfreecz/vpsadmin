@@ -8,13 +8,13 @@ class RegistrationRequest < UserRequest
   validates :login, :full_name, :email, :address, :year_of_birth, :os_template_id,
             :location_id, :currency, :language_id, presence: true
   validates :login, format: {
-      with: /\A[a-zA-Z0-9\.\-]{2,63}\z/,
-      message: 'not a valid login',
+    with: /\A[a-zA-Z0-9\.\-]{2,63}\z/,
+    message: 'not a valid login',
   }
   validates :full_name, length: {minimum: 2}
   validates :email, format: {
-      with: /@/,
-      message: 'not a valid e-mail address',
+    with: /@/,
+    message: 'not a valid e-mail address',
   }
   validates :full_name, :org_name, :email, length: {maximum: 255}
   validates :org_id, length: {maximum: 30}
@@ -48,12 +48,12 @@ class RegistrationRequest < UserRequest
 
   def approve(chain, params)
     new_user = ::User.new(
-        login: login,
-        address: address,
-        email: email,
-        language: language,
-        level: 2,
-        mailer_enabled: true,
+      login: login,
+      address: address,
+      email: email,
+      language: language,
+      level: 2,
+      mailer_enabled: true,
     )
     new_user.set_password(generate_password)
 
@@ -65,10 +65,10 @@ class RegistrationRequest < UserRequest
     end
 
     chain.use_chain(TransactionChains::User::Create, args: [
-        new_user,
-        params[:create_vps],
-        params[:create_vps] && (params[:node] || ::Node.pick_by_location(location)),
-        os_template,
+      new_user,
+      params[:create_vps],
+      params[:create_vps] && (params[:node] || ::Node.pick_by_location(location)),
+      os_template,
     ])
   end
 
@@ -90,11 +90,11 @@ class RegistrationRequest < UserRequest
     return if persisted?
     user = ::User.exists?(login: login)
     req = self.class.exists?(
-        state: [
-            self.class.states[:awaiting],
-            self.class.states[:pending_correction],
-        ],
-        login: login,
+      state: [
+        self.class.states[:awaiting],
+        self.class.states[:pending_correction],
+      ],
+      login: login,
     )
 
     errors.add(:login, "is taken") if user || req

@@ -6,15 +6,15 @@ module TransactionChains
       lock(tree)
 
       ::SnapshotInPoolInBranch.joins(:snapshot_in_pool, :branch).where(
-            branches: {dataset_tree_id: tree.id}
+          branches: {dataset_tree_id: tree.id}
       ).where.not(
-            confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy)
+          confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy)
       ).order('snapshot_in_pools.reference_count, snapshot_in_pools.id').each do |sipb|
         use_chain(SnapshotInPool::Destroy, args: sipb)
       end
 
       tree.branches.where.not(
-          confirmed: ::Branch.confirmed(:confirm_destroy)
+        confirmed: ::Branch.confirmed(:confirm_destroy)
       ).each do |branch|
         use_chain(Branch::Destroy, args: branch)
       end

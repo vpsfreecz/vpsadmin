@@ -14,9 +14,9 @@ module VpsAdmin::ConsoleRouter
 
     def post_init
       send_data({
-          session: @session,
-          width: @w,
-          height: @h,
+        session: @session,
+        width: @w,
+        height: @h,
       }.to_json + "\n")
     end
 

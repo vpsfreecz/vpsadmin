@@ -41,10 +41,10 @@ module VpsAdmin::API::Resources
 
       def exec
         with_includes(query)
-            .select('outage_vpses.*, COUNT(*) AS vps_count')
-            .limit(input[:limit])
-            .offset(input[:offset])
-            .order('outage_vpses.user_id')
+          .select('outage_vpses.*, COUNT(*) AS vps_count')
+          .limit(input[:limit])
+          .offset(input[:offset])
+          .order('outage_vpses.user_id')
       end
     end
 
@@ -65,12 +65,12 @@ module VpsAdmin::API::Resources
         tmp = ::OutageVps.find(params[:user_outage_id])
 
         @outage = with_includes(::OutageVps)
-            .select('outage_vpses.*, COUNT(*) AS vps_count')
-            .group('outage_vpses.outage_id, outage_vpses.user_id')
-            .find_by!(
-                outage_id: tmp.outage_id,
-                user_id: tmp.user_id,
-            )
+          .select('outage_vpses.*, COUNT(*) AS vps_count')
+          .group('outage_vpses.outage_id, outage_vpses.user_id')
+          .find_by!(
+            outage_id: tmp.outage_id,
+            user_id: tmp.user_id,
+          )
       end
 
       def exec

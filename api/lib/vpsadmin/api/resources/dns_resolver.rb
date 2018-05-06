@@ -40,14 +40,14 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
     example do
       request({})
       response({
-           dns_resolvers: [{
-                              id: 26,
-                              ip_addr: '8.8.8.8',
-                              label: 'Google DNS',
-                              is_universal: true,
-                              location: nil
-                          }]
-       })
+        dns_resolvers: [{
+          id: 26,
+          ip_addr: '8.8.8.8',
+          label: 'Google DNS',
+          is_universal: true,
+          location: nil
+        }]
+      })
     end
 
     def query
@@ -55,8 +55,8 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
 
       if input[:vps]
         q = q.where(
-            'location_id = ? OR is_universal = 1',
-            input[:vps].node.location_id
+          'location_id = ? OR is_universal = 1',
+          input[:vps].node.location_id
         )
       end
 

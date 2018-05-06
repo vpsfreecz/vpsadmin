@@ -105,35 +105,35 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     example do
       request({})
       response([{
-          id: 150,
-          user: {
-              id: 1,
-              name: 'somebody'
-          },
-          hostname: 'thehostname',
-          os_template: {
-              id: 1,
-              label: 'Scientific Linux 6'
-          },
-          info: 'My very important VPS',
-          dns_resolver: {
-              id: 1,
-          },
-          node: {
-              id: 1,
-              name: 'node1'
-          },
-          onboot: true,
-          onstartall: true,
-          backup_enabled: true,
-          vps_config: '',
+        id: 150,
+        user: {
+          id: 1,
+          name: 'somebody'
+        },
+        hostname: 'thehostname',
+        os_template: {
+          id: 1,
+          label: 'Scientific Linux 6'
+        },
+        info: 'My very important VPS',
+        dns_resolver: {
+          id: 1,
+        },
+        node: {
+          id: 1,
+          name: 'node1'
+        },
+        onboot: true,
+        onstartall: true,
+        backup_enabled: true,
+        vps_config: '',
       }])
     end
 
     def query
       q = if input[:object_state]
         Vps.unscoped.where(
-            object_state: Vps.object_states[input[:object_state]]
+          object_state: Vps.object_states[input[:object_state]]
         )
 
       else
@@ -155,7 +155,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       if input[:environment]
         q = q.joins(node: [:location]).where(
-            locations: {environment_id: input[:environment].id}
+          locations: {environment_id: input[:environment].id}
         )
       end
 
@@ -172,8 +172,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     def exec
       with_includes(query).includes(
-          :vps_current_status,
-          dataset_in_pool: [:dataset]
+        :vps_current_status,
+        dataset_in_pool: [:dataset]
       ).limit(params[:vps][:limit]).offset(params[:vps][:offset])
     end
   end
@@ -215,17 +215,17 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     example 'Create vps' do
       request({
-          user: 1,
-          hostname: 'my-vps',
-          os_template: 1,
-          info: '',
-          dns_resolver: 1,
-          node: 1,
-          onboot: true,
-          onstartall: true,
+        user: 1,
+        hostname: 'my-vps',
+        os_template: 1,
+        info: '',
+        dns_resolver: 1,
+        node: 1,
+        onboot: true,
+        onstartall: true,
       })
       response({
-          id: 150
+        id: 150
       })
       comment <<END
 Create VPS owned by user with ID 1, template ID 1 and DNS resolver ID 1. VPS
@@ -246,16 +246,16 @@ END
 
         if input[:environment]
           node = ::Node.pick_by_env(
-              input[:environment],
-              nil,
-              input[:os_template].hypervisor_type
+            input[:environment],
+            nil,
+            input[:os_template].hypervisor_type
           )
 
         else
           node = ::Node.pick_by_location(
-              input[:location],
-              nil,
-              input[:os_template].hypervisor_type
+            input[:location],
+            nil,
+            input[:os_template].hypervisor_type
           )
         end
 
@@ -276,8 +276,8 @@ END
         end
 
         input.update({
-            user: current_user,
-            node: node
+          user: current_user,
+          node: node
         })
       end
 
@@ -333,9 +333,9 @@ END
 
     def prepare
       @vps = with_includes(::Vps.including_deleted).includes(
-          dataset_in_pool: [:dataset_properties]
+        dataset_in_pool: [:dataset_properties]
       ).find_by!(with_restricted(
-          id: params[:vps_id])
+        id: params[:vps_id])
       )
     end
 
@@ -408,7 +408,10 @@ END
       ok
 
     rescue ActiveRecord::RecordInvalid => e
-      error('update failed', e.record == vps ? to_param_names(vps.errors.to_hash, :input) : e.record.errors.to_hash)
+      error(
+        'update failed',
+        e.record == vps ? to_param_names(vps.errors.to_hash, :input) : e.record.errors.to_hash
+      )
     end
 
     def state_id
@@ -445,9 +448,9 @@ END
       end
 
       @chain, _ = vps.set_object_state(
-          state,
-          reason: 'Deletion requested',
-          expiration: true,
+        state,
+        reason: 'Deletion requested',
+        expiration: true,
       )
       ok
     end
@@ -991,7 +994,7 @@ END
 
       def prepare
         @feature = ::Vps.find_by!(
-            with_restricted(id: params[:vps_id])
+          with_restricted(id: params[:vps_id])
         ).vps_features.find(params[:feature_id])
       end
 
@@ -1016,11 +1019,11 @@ END
 
       def exec
         vps = ::Vps.find_by!(
-            with_restricted(id: params[:vps_id])
+          with_restricted(id: params[:vps_id])
         )
         @chain, _ = vps.set_feature(
-            vps.vps_features.find(params[:feature_id]),
-            input[:enabled]
+          vps.vps_features.find(params[:feature_id]),
+          input[:enabled]
         )
         ok
       end
@@ -1050,7 +1053,7 @@ END
 
       def exec
         vps = ::Vps.find_by!(
-            with_restricted(id: params[:vps_id])
+          with_restricted(id: params[:vps_id])
         )
         @chain, _ = vps.set_features(input)
         ok
@@ -1093,12 +1096,12 @@ END
 
       def exec
         ips = ::Vps.find_by!(
-            with_restricted(id: params[:vps_id])
+          with_restricted(id: params[:vps_id])
         ).ip_addresses.joins(:network)
 
         if input[:version]
           ips = ips.where(
-              networks: {ip_version: input[:version]},
+            networks: {ip_version: input[:version]},
           )
         end
 
@@ -1190,8 +1193,8 @@ END
         maintenance_check!(vps)
 
         @chain, _ = vps.delete_ip(vps.ip_addresses.find_by!(
-            id: params[:ip_address_id],
-            vps_id: vps.id
+          id: params[:ip_address_id],
+          vps_id: vps.id
         ))
         ok
 
@@ -1302,8 +1305,8 @@ END
 
       def prepare
         @mount = ::Mount.joins(:vps).find_by!(with_restricted(
-                                                  vps_id: params[:vps_id],
-                                                  id: params[:mount_id])
+          vps_id: params[:vps_id],
+          id: params[:mount_id])
         )
       end
 
@@ -1529,10 +1532,10 @@ END
 
         window.update!(input)
         vps.log(:outage_window, {
-            weekday: window.weekday,
-            is_open: window.is_open,
-            opens_at: window.opens_at,
-            closes_at: window.closes_at,
+          weekday: window.weekday,
+          is_open: window.is_open,
+          opens_at: window.opens_at,
+          closes_at: window.closes_at,
         })
         window
 
@@ -1579,10 +1582,10 @@ END
           vps.vps_outage_windows.each do |w|
             w.update!(input)
             data << {
-                weekday: w.weekday,
-                is_open: w.is_open,
-                opens_at: w.opens_at,
-                closes_at: w.closes_at,
+              weekday: w.weekday,
+              is_open: w.is_open,
+              opens_at: w.opens_at,
+              closes_at: w.closes_at,
             }
           end
 

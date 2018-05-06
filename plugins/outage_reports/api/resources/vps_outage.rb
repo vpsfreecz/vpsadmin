@@ -48,9 +48,9 @@ module VpsAdmin::API::Resources
 
       def exec
         with_includes(query)
-            .limit(input[:limit])
-            .offset(input[:offset])
-            .order('outage_vpses.id')
+          .limit(input[:limit])
+          .offset(input[:offset])
+          .order('outage_vpses.id')
       end
     end
 
@@ -69,7 +69,7 @@ module VpsAdmin::API::Resources
 
       def prepare
         @outage = ::OutageVps.find_by!(with_restricted(
-            id: params[:vps_outage_id],
+          id: params[:vps_outage_id],
         ))
       end
 

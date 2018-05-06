@@ -9,11 +9,11 @@ module Transactions::Vps
       self.node_id = vps.node_id
 
       {
-          distribution: template.distribution,
-          version: template.version,
-          arch: template.arch,
-          vendor: template.vendor,
-          variant: template.variant,
+        distribution: template.distribution,
+        version: template.version,
+        arch: template.arch,
+        vendor: template.vendor,
+        variant: template.variant,
       }
     end
   end

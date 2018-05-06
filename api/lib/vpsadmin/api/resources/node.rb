@@ -82,15 +82,15 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     example do
       request({})
       response([{
+        id: 1,
+        name: 'node1',
+        type: 'node',
+        location: {
           id: 1,
-          name: 'node1',
-          type: 'node',
-          location: {
-              id: 1,
-              label: 'The Location'
-          },
-          ip_addr: '192.168.0.10',
-          maintenance_lock: 'no'
+          label: 'The Location'
+        },
+        ip_addr: '192.168.0.10',
+        maintenance_lock: 'no'
       }])
     end
 
@@ -100,7 +100,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
       if input[:environment]
         q = q.joins(:location).where(
-            locations: {environment_id: input[:environment].id}
+          locations: {environment_id: input[:environment].id}
         )
       end
 
@@ -209,47 +209,47 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     example do
       response([
-          {
-              status: true,
-              name: 'node1.prg',
-              location: {
-                  id: 1,
-                  label: 'Prague',
-              },
-              last_report: '2016-11-20T08:30:50+01:00',
-              vps_count: 68,
-              vps_free: 12,
-              kernel: '2.6.32-042stab120.6',
-              cpu_idle: 65.3,
+        {
+          status: true,
+          name: 'node1.prg',
+          location: {
+            id: 1,
+            label: 'Prague',
           },
-          {
-              status: false,
-              name: 'node2.prg',
-              location: {
-                  id: 1,
-                  label: 'Prague',
-              },
-              last_report: '2016-11-14T06:41:23+01:00',
-              vps_count: 0,
-              vps_free: 80,
-              kernel: '2.6.32-042stab120.6',
-              cpu_idle: 100.0,
-              maintenance_lock: 'lock',
-              maintenance_lock_reason: 'HW upgrade',
+          last_report: '2016-11-20T08:30:50+01:00',
+          vps_count: 68,
+          vps_free: 12,
+          kernel: '2.6.32-042stab120.6',
+          cpu_idle: 65.3,
+        },
+        {
+          status: false,
+          name: 'node2.prg',
+          location: {
+            id: 1,
+            label: 'Prague',
           },
-          {
-              status: true,
-              name: 'node3.prg',
-              location: {
-                  id: 1,
-                  label: 'Prague',
-              },
-              last_report: '2016-11-20T08:30:46+01:00',
-              vps_count: 65,
-              vps_free: 15,
-              kernel: '2.6.32-042stab120.6',
-              cpu_idle: 72.6,
+          last_report: '2016-11-14T06:41:23+01:00',
+          vps_count: 0,
+          vps_free: 80,
+          kernel: '2.6.32-042stab120.6',
+          cpu_idle: 100.0,
+          maintenance_lock: 'lock',
+          maintenance_lock_reason: 'HW upgrade',
+        },
+        {
+          status: true,
+          name: 'node3.prg',
+          location: {
+            id: 1,
+            label: 'Prague',
           },
+          last_report: '2016-11-20T08:30:46+01:00',
+          vps_count: 65,
+          vps_free: 15,
+          kernel: '2.6.32-042stab120.6',
+          cpu_idle: 72.6,
+        },
       ])
     end
 
@@ -276,15 +276,15 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       url_params(2)
       request({})
       response({
-          id: 2,
-          name: 'node2',
-          type: 'node',
-          location: {
-              id: 1,
-              label: 'The Location'
-          },
-          ip_addr: '192.168.0.11',
-          maintenance_lock: 'no'
+        id: 2,
+        name: 'node2',
+        type: 'node',
+        location: {
+          id: 1,
+          label: 'The Location'
+        },
+        ip_addr: '192.168.0.11',
+        maintenance_lock: 'no'
       })
     end
 
@@ -312,10 +312,10 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     example do
       url_params(2)
       request({
-          name: 'node2',
-          type: 'storage',
-          location: 1,
-          ip_addr: '192.168.0.11',
+        name: 'node2',
+        type: 'storage',
+        location: 1,
+        ip_addr: '192.168.0.11',
       })
       response({})
     end

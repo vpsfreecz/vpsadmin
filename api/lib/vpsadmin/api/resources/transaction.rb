@@ -65,9 +65,9 @@ module VpsAdmin::API::Resources
 
       def exec
         with_includes(query)
-            .limit(input[:limit])
-            .offset(input[:offset])
-            .order('transactions.id DESC')
+          .limit(input[:limit])
+          .offset(input[:offset])
+          .order('transactions.id DESC')
       end
     end
 
@@ -87,7 +87,7 @@ module VpsAdmin::API::Resources
 
       def prepare
         @trans = ::Transaction.find_by!(with_restricted(
-            id: params[:transaction_id]
+          id: params[:transaction_id]
         ))
       end
 

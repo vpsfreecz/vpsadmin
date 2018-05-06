@@ -26,14 +26,14 @@ class DatasetInPool < ActiveRecord::Base
       desc: 'Called when a new DatasetInPool is being created',
       context: 'TransactionChains::Dataset::Create instance',
       args: {
-          dataset_in_pool: 'instance of DatasetInPool'
+        dataset_in_pool: 'instance of DatasetInPool'
       }
   has_hook :migrated,
       desc: 'Called when a DatasetInPool is being migrated with a VPS',
       context: 'TransactionChains::Vps::Migrate instance',
       args: {
-          src_dataset_in_pool: 'source DatasetInPool',
-          dst_dataset_in_pool: 'target DatasetInPool',
+        src_dataset_in_pool: 'source DatasetInPool',
+        dst_dataset_in_pool: 'target DatasetInPool',
       }
 
   # @param opts [Hash] options

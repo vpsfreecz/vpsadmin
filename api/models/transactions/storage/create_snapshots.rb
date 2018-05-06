@@ -11,14 +11,14 @@ module Transactions::Storage
 
       snapshot_in_pools.each do |sip|
         snapshots << {
-            pool_fs: sip.dataset_in_pool.pool.filesystem,
-            dataset_name: sip.dataset_in_pool.dataset.full_name,
-            snapshot_id: sip.snapshot_id
+          pool_fs: sip.dataset_in_pool.pool.filesystem,
+          dataset_name: sip.dataset_in_pool.dataset.full_name,
+          snapshot_id: sip.snapshot_id,
         }
       end
 
       {
-          snapshots: snapshots
+        snapshots: snapshots,
       }
     end
   end

@@ -28,7 +28,7 @@ module TransactionChains
         # Empty branch may still contain SnapshotInPoolInBranch rows, but they
         # are all marked for confirm_destroy.
         if s.branch.snapshot_in_pool_in_branches.where.not(
-            confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy)
+          confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy)
         ).count == 0
 
           s.branch.update!(confirmed: ::Branch.confirmed(:confirm_destroy))
@@ -39,11 +39,11 @@ module TransactionChains
           # Destroy the tree if it is empty, checking for child branches
           # with the same condition as above.
           if s.branch.dataset_tree.branches.where.not(
-              confirmed: ::Branch.confirmed(:confirm_destroy)
+            confirmed: ::Branch.confirmed(:confirm_destroy)
           ).count == 0
 
             s.branch.dataset_tree.update!(
-                confirmed: ::DatasetTree.confirmed(:confirm_destroy)
+              confirmed: ::DatasetTree.confirmed(:confirm_destroy)
             )
             append(Transactions::Storage::DestroyTree, args: s.branch.dataset_tree) do
               destroy(s.branch.dataset_tree)
@@ -68,8 +68,8 @@ module TransactionChains
     protected
     def cleanup_snapshot?(snapshot_in_pool)
       ::Snapshot.joins(:snapshot_in_pools)
-          .where(snapshots: {id: snapshot_in_pool.snapshot_id})
-          .where.not(snapshot_in_pools: {confirmed: ::SnapshotInPool.confirmed(:confirm_destroy)}).count == 0
+        .where(snapshots: {id: snapshot_in_pool.snapshot_id})
+        .where.not(snapshot_in_pools: {confirmed: ::SnapshotInPool.confirmed(:confirm_destroy)}).count == 0
     end
 
     def destroy_snapshot(sip)

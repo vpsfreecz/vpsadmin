@@ -10,15 +10,19 @@ module TransactionChains
       append_t(Transactions::Vps::ApplyConfig, args: vps) do |t|
         # First remove old configs
         VpsHasConfig.where(
-            vps_id: vps.veid,
-            confirmed: VpsHasConfig.confirmed(:confirmed)).each do |cfg|
+          vps_id: vps.veid,
+          confirmed: VpsHasConfig.confirmed(:confirmed)
+        ).each do |cfg|
           t.destroy(cfg)
         end
 
         VpsHasConfig
-          .where(vps_id: vps.veid,
-                 confirmed: VpsHasConfig.confirmed(:confirmed))
-          .update_all(confirmed: VpsHasConfig.confirmed(:confirm_destroy))
+          .where(
+            vps_id: vps.veid,
+            confirmed: VpsHasConfig.confirmed(:confirmed)
+          ).update_all(
+            confirmed: VpsHasConfig.confirmed(:confirm_destroy)
+          )
 
         # Create new configs
         i = 0
@@ -26,10 +30,10 @@ module TransactionChains
 
         new_configs.each do |c|
           t.create(VpsHasConfig.create(
-              vps_id: vps.veid,
-              vps_config_id: c,
-              order: i,
-              confirmed: VpsHasConfig.confirmed(:confirm_create)
+            vps_id: vps.veid,
+            vps_config_id: c,
+            order: i,
+            confirmed: VpsHasConfig.confirmed(:confirm_create)
           ))
 
           data << ::VpsConfig.find(c).name
@@ -40,8 +44,8 @@ module TransactionChains
       end
 
       append(Transactions::Vps::Resources, args: [
-          vps,
-          vps.get_cluster_resources(%i(cpu memory swap)),
+        vps,
+        vps.get_cluster_resources(%i(cpu memory swap)),
       ]) if resources
     end
   end

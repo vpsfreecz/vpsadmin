@@ -18,8 +18,8 @@ module TransactionChains
       lock(primary_vps)
       lock(secondary_vps)
       concerns(:transform,
-          [secondary_vps.class.name, secondary_vps.id],
-          [primary_vps.class.name, primary_vps.id]
+        [secondary_vps.class.name, secondary_vps.id],
+        [primary_vps.class.name, primary_vps.id]
       )
 
       # Migrate secondary VPS to primary node
@@ -49,13 +49,13 @@ module TransactionChains
 
       primary_vps.dataset_in_pool.dataset.subtree.arrange.each do |k, v|
         faked_resources.concat(
-            recursive_serialize(k, v, primary_vps.dataset_in_pool.pool)
+          recursive_serialize(k, v, primary_vps.dataset_in_pool.pool)
         )
       end
 
       secondary_vps.dataset_in_pool.dataset.subtree.arrange.each do |k, v|
         faked_resources.concat(
-            recursive_serialize(k, v, secondary_vps.dataset_in_pool.pool)
+          recursive_serialize(k, v, secondary_vps.dataset_in_pool.pool)
         )
       end
 
@@ -92,171 +92,171 @@ module TransactionChains
       # Migrate secondary VPS to primary node.
       # Do not replace IP addresses.
       use_chain(
-          Vps::Migrate,
-          args: [
-              secondary_vps,
-              primary_vps.node,
-              {
-                  replace_ips: false,
-                  resources: opts[:resources] ? primary_resources : nil,
-                  handle_ips: true,
-                  reallocate_ips: false,
-                  outage_window: false,
-                  send_mail: false,
-              }
-          ],
-          hooks: {
-              pre_start: ->(ret, _, _) do
-                # The migration has already removed IP addresses from the
-                # secondary VPS.
-                # Remove IP addresses from the original primary VPS.
-                use_chain(Vps::DelIp, args: [
-                    primary_vps,
-                    primary_ips,
-                    nil,
-                    true,  # unregister
-                    false  # do not reallocate
-                ], urgent: true)
-
-                # Add IPs from the original primary to the new primary
-                use_chain(Vps::AddIp, args: [
-                    new_primary_vps,
-                    primary_ips,
-                    true,
-                    false
-                ], urgent: true)
-
-                if opts[:configs]
-                  use_chain(Vps::ApplyConfig,
-                            args: [new_primary_vps, primary_configs],
-                            urgent: true)
-                end
-
-                if opts[:resources]
-                  if same_env
-                    resources = new_primary_vps.reallocate_resources(
-                        primary_resources,
-                        new_primary_vps.user,
-                        chain: self
-                    )
-
-                  else
-                    resources = []
-
-                    new_primary_resources_obj.each do |use|
-                      use.value = primary_resources[use.user_cluster_resource.cluster_resource.name.to_sym]
-                      use.attr_changes = {value: use.value}
-                      resources << use
-                    end
-                  end
-
-                  use_chain(Vps::SetResources, args: [
-                      new_primary_vps, resources
-                  ], urgent: true)
-
-                else  # Resources are not swapped, re-set the original ones
-                  append(Transactions::Vps::Resources, args: [
-                      new_primary_vps,
-                      secondary_resources_obj
-                  ])
-                end
-
-                if opts[:hostname] && new_primary_vps.manage_hostname
-                  append(Transactions::Vps::Hostname,
-                      args: [
-                          new_primary_vps,
-                          secondary_vps.hostname,
-                          primary_vps.hostname
-                      ],
-                      urgent: true
-                  ) do
-                    edit(new_primary_vps, hostname: primary_vps.hostname)
-                  end
-                end
-
-                ret
-              end
+        Vps::Migrate,
+        args: [
+          secondary_vps,
+          primary_vps.node,
+          {
+            replace_ips: false,
+            resources: opts[:resources] ? primary_resources : nil,
+            handle_ips: true,
+            reallocate_ips: false,
+            outage_window: false,
+            send_mail: false,
           }
+        ],
+        hooks: {
+          pre_start: ->(ret, _, _) do
+            # The migration has already removed IP addresses from the
+            # secondary VPS.
+            # Remove IP addresses from the original primary VPS.
+            use_chain(Vps::DelIp, args: [
+              primary_vps,
+              primary_ips,
+              nil,
+              true,  # unregister
+              false  # do not reallocate
+            ], urgent: true)
+
+            # Add IPs from the original primary to the new primary
+            use_chain(Vps::AddIp, args: [
+              new_primary_vps,
+              primary_ips,
+              true,
+              false
+            ], urgent: true)
+
+            if opts[:configs]
+              use_chain(Vps::ApplyConfig,
+                        args: [new_primary_vps, primary_configs],
+                        urgent: true)
+            end
+
+            if opts[:resources]
+              if same_env
+                resources = new_primary_vps.reallocate_resources(
+                  primary_resources,
+                  new_primary_vps.user,
+                  chain: self
+                )
+
+              else
+                resources = []
+
+                new_primary_resources_obj.each do |use|
+                  use.value = primary_resources[use.user_cluster_resource.cluster_resource.name.to_sym]
+                  use.attr_changes = {value: use.value}
+                  resources << use
+                end
+              end
+
+              use_chain(Vps::SetResources, args: [
+                new_primary_vps, resources
+              ], urgent: true)
+
+            else  # Resources are not swapped, re-set the original ones
+              append(Transactions::Vps::Resources, args: [
+                new_primary_vps,
+                secondary_resources_obj
+              ])
+            end
+
+            if opts[:hostname] && new_primary_vps.manage_hostname
+              append(Transactions::Vps::Hostname,
+                args: [
+                  new_primary_vps,
+                  secondary_vps.hostname,
+                  primary_vps.hostname
+                ],
+                urgent: true
+              ) do
+                edit(new_primary_vps, hostname: primary_vps.hostname)
+              end
+            end
+
+            ret
+          end
+        }
       )
 
       # At this point, the new primary VPS is complete. Migrate the original
       # primary VPS to the secondary node, where it becomes the new secondary
       # VPS.
       use_chain(
-          Vps::Migrate,
-          args: [
-              primary_vps,
-              secondary_vps.node,
-              {
-                  replace_ips: false,
-                  resources: opts[:resources] ? secondary_resources : nil,
-                  handle_ips: false,
-                  reallocate_ips: false,
-                  outage_window: false,
-                  send_mail: false,
-              }
-          ],
-          hooks: {
-              pre_start: ->(ret, _, _) do
-                # Add IP addresses to the new secondary VPS
-                use_chain(Vps::AddIp, args: [
-                    new_secondary_vps,
-                    secondary_ips,
-                    true,  # register
-                    false  # do not reallocate
-                ], urgent: true)
-
-                if opts[:configs]
-                  use_chain(Vps::ApplyConfig,
-                            args: [new_secondary_vps, secondary_configs],
-                            urgent: true)
-                end
-
-                if opts[:resources]
-                  if same_env
-                    resources = new_secondary_vps.reallocate_resources(
-                        secondary_resources,
-                        new_secondary_vps.user,
-                        chain: self
-                    )
-
-                  else
-                     resources = []
-
-                     new_secondary_resources_obj.each do |use|
-                       use.value = secondary_resources[use.user_cluster_resource.cluster_resource.name.to_sym]
-                       use.attr_changes = {value: use.value}
-                       resources << use
-                     end
-                  end
-
-                  use_chain(Vps::SetResources, args: [
-                      new_secondary_vps, resources
-                  ], urgent: true)
-
-                else  # Resources are not swapped, re-set the original ones
-                  append(Transactions::Vps::Resources, args: [
-                      new_secondary_vps,
-                      primary_resources_obj
-                  ])
-                end
-
-                if opts[:hostname] && new_secondary_vps.manage_hostname
-                  append(Transactions::Vps::Hostname,
-                      args: [
-                          new_secondary_vps,
-                          primary_vps.hostname,
-                          secondary_vps.hostname
-                      ],
-                      urgent: true
-                  ) do
-                    edit(new_secondary_vps, hostname: secondary_vps.hostname)
-                  end
-                end
-
-                ret
-              end
+        Vps::Migrate,
+        args: [
+          primary_vps,
+          secondary_vps.node,
+          {
+            replace_ips: false,
+            resources: opts[:resources] ? secondary_resources : nil,
+            handle_ips: false,
+            reallocate_ips: false,
+            outage_window: false,
+            send_mail: false,
           }
+        ],
+        hooks: {
+          pre_start: ->(ret, _, _) do
+            # Add IP addresses to the new secondary VPS
+            use_chain(Vps::AddIp, args: [
+              new_secondary_vps,
+              secondary_ips,
+              true,  # register
+              false  # do not reallocate
+            ], urgent: true)
+
+            if opts[:configs]
+              use_chain(Vps::ApplyConfig,
+                        args: [new_secondary_vps, secondary_configs],
+                        urgent: true)
+            end
+
+            if opts[:resources]
+              if same_env
+                resources = new_secondary_vps.reallocate_resources(
+                  secondary_resources,
+                  new_secondary_vps.user,
+                  chain: self
+                )
+
+              else
+                resources = []
+
+                new_secondary_resources_obj.each do |use|
+                  use.value = secondary_resources[use.user_cluster_resource.cluster_resource.name.to_sym]
+                  use.attr_changes = {value: use.value}
+                  resources << use
+                end
+              end
+
+              use_chain(Vps::SetResources, args: [
+                new_secondary_vps, resources
+              ], urgent: true)
+
+            else  # Resources are not swapped, re-set the original ones
+              append(Transactions::Vps::Resources, args: [
+                new_secondary_vps,
+                primary_resources_obj
+              ])
+            end
+
+            if opts[:hostname] && new_secondary_vps.manage_hostname
+              append(Transactions::Vps::Hostname,
+                args: [
+                  new_secondary_vps,
+                  primary_vps.hostname,
+                  secondary_vps.hostname
+                ],
+                urgent: true
+              ) do
+                edit(new_secondary_vps, hostname: secondary_vps.hostname)
+              end
+            end
+
+            ret
+          end
+        }
       )
 
       append(Transactions::Utils::NoOp, args: find_node_id) do
@@ -270,14 +270,14 @@ module TransactionChains
         if opts[:expirations]
           fmt = '%Y-%m-%d %H:%M:%S'
           edit(
-              new_primary_vps,
-              expiration_date: primary_vps.expiration_date && \
-                               primary_vps.expiration_date.utc.strftime(fmt)
+            new_primary_vps,
+            expiration_date: primary_vps.expiration_date && \
+                              primary_vps.expiration_date.utc.strftime(fmt)
           )
           edit(
-              new_secondary_vps,
-              expiration_date: secondary_vps.expiration_date && \
-                               secondary_vps.expiration_date.utc.strftime(fmt)
+            new_secondary_vps,
+            expiration_date: secondary_vps.expiration_date && \
+                              secondary_vps.expiration_date.utc.strftime(fmt)
           )
         end
 

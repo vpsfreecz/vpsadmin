@@ -60,20 +60,20 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     example do
       request({
-          vps: 101
+        vps: 101
       })
       response([{
-          id: 10,
-          vps: {
-              id: 101,
-              hostname: 'myvps'
-          },
-          version: 4,
-          location: {
-              id: 1,
-              label: 'The Location'
-          },
-          addr: '192.168.0.50'
+        id: 10,
+        vps: {
+          id: 101,
+          hostname: 'myvps'
+        },
+        version: 4,
+        location: {
+          id: 1,
+          label: 'The Location'
+        },
+        addr: '192.168.0.50'
       }])
       comment 'List IP addresses assigned to VPS with ID 101.'
     end
@@ -85,7 +85,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
         next unless input.has_key?(filter)
 
         ips = ips.where(
-            filter => input[filter],
+          filter => input[filter],
         )
       end
 
@@ -103,10 +103,10 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
       if current_user.role != :admin
         ips = ips.joins('LEFT JOIN vpses my_vps ON my_vps.id = ip_addresses.vps_id').where(
-            'ip_addresses.user_id = ?
-             OR (ip_addresses.vps_id IS NOT NULL AND my_vps.user_id = ?)
-             OR (ip_addresses.user_id IS NULL AND ip_addresses.vps_id IS NULL)',
-            current_user.id, current_user.id
+          'ip_addresses.user_id = ?
+            OR (ip_addresses.vps_id IS NOT NULL AND my_vps.user_id = ?)
+            OR (ip_addresses.user_id IS NULL AND ip_addresses.vps_id IS NULL)',
+          current_user.id, current_user.id
         ).order('ip_addresses.user_id DESC, ip_addresses.id ASC')
       end
 
@@ -138,8 +138,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
         @ip = ::IpAddress.find(params[:ip_address_id])
       else
         @ip = ::IpAddress.where(
-            'user_id = ? OR user_id IS NULL',
-            current_user.id
+          'user_id = ? OR user_id IS NULL',
+          current_user.id
         ).where(id: params[:ip_address_id]).take!
       end
     end

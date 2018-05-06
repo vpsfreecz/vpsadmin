@@ -30,16 +30,16 @@ class IpAddress < ActiveRecord::Base
     self.transaction do
       if params[:user] && (params[:allocate].nil? || params[:allocate])
         user_env = params[:user].environment_user_configs.find_by!(
-            environment: params[:network].location.environment,
+          environment: params[:network].location.environment,
         )
         resource = params[:network].cluster_resource
 
         user_env.reallocate_resource!(
-            resource,
-            user_env.send(resource) + params[:size],
-            user: params[:user],
-            save: true,
-            confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+          resource,
+          user_env.send(resource) + params[:size],
+          user: params[:user],
+          save: true,
+          confirmed: ::ClusterResourceUse.confirmed(:confirmed),
         )
       end
 
@@ -47,23 +47,23 @@ class IpAddress < ActiveRecord::Base
 
       begin
         class_id = self.select('ip1.class_id+1 AS first_id')
-            .from('ip_addresses ip1')
-            .joins('LEFT JOIN ip_addresses ip2 ON ip2.class_id = ip1.class_id + 1')
-            .where('ip2.class_id IS NULL')
-            .order('ip1.class_id')
-            .take!.first_id
+          .from('ip_addresses ip1')
+          .joins('LEFT JOIN ip_addresses ip2 ON ip2.class_id = ip1.class_id + 1')
+          .where('ip2.class_id IS NULL')
+          .order('ip1.class_id')
+          .take!.first_id
 
       rescue ActiveRecord::RecordNotFound
         class_id = 1
       end
 
       ip = self.new(
-          ip_addr: addr.to_s,
-          prefix: params[:prefix],
-          size: params[:size],
-          network: params[:network],
-          class_id: class_id,
-          user: params[:user]
+        ip_addr: addr.to_s,
+        prefix: params[:prefix],
+        size: params[:size],
+        network: params[:network],
+        class_id: class_id,
+        user: params[:user]
       )
 
       ip.max_tx = params[:max_tx] if params[:max_tx]
@@ -92,10 +92,10 @@ class IpAddress < ActiveRecord::Base
       .joins(:network)
       .joins("LEFT JOIN resource_locks rl ON rl.resource = 'IpAddress' AND rl.row_id = ip_addresses.id")
       .where(networks: {
-          ip_version: v,
-          location_id: location.id,
-          role: ::Network.roles[role],
-          autopick: true,
+        ip_version: v,
+        location_id: location.id,
+        role: ::Network.roles[role],
+        autopick: true,
       })
       .where('vps_id IS NULL')
       .where('(ip_addresses.user_id = ? OR ip_addresses.user_id IS NULL)', user.id)
@@ -132,8 +132,8 @@ class IpAddress < ActiveRecord::Base
   def check_ownership
     if user && vps && user.id != vps.user_id
       errors.add(
-          :user,
-          'can be owned only by the owner of the VPS that uses this address'
+        :user,
+        'can be owned only by the owner of the VPS that uses this address'
       )
     end
   end

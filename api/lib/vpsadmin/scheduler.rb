@@ -136,13 +136,13 @@ module VpsAdmin
 
           RepeatableTask.all.order(:id).each do |t|
             @actions[t.id] = {
-                class_name: t.class_name,
-                row_id: t.row_id
+              class_name: t.class_name,
+              row_id: t.row_id
             }
 
             crontab.write(
-                "#{t.minute} #{t.hour} #{t.day_of_month} #{t.month} #{t.day_of_week} " +
-                "root /opt/vpsadmin/api/bin/vpsadmin-run-task #{SOCKET} #{t.id}\n"
+              "#{t.minute} #{t.hour} #{t.day_of_month} #{t.month} #{t.day_of_week} " +
+              "root /opt/vpsadmin/api/bin/vpsadmin-run-task #{SOCKET} #{t.id}\n"
             ) # FIXME: remove hardcoded path
           end
         end

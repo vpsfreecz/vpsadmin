@@ -88,17 +88,17 @@ class VpsAdmin::API::Resources::AuthToken < HaveAPI::Resource
 
       if t.save
         ::UserSession.create!(
-            user: t.user,
-            auth_type: 'token',
-            api_ip_addr: request.ip,
-            api_ip_ptr: ::UserSession.get_ptr(request.ip),
-            client_ip_addr: request.env['HTTP_CLIENT_IP'],
-            client_ip_ptr: request.env['HTTP_CLIENT_IP'] && ::UserSession.get_ptr(request.env['HTTP_CLIENT_IP']),
-            user_session_agent: ::UserSessionAgent.find_or_create!(request.user_agent),
-            client_version: request.user_agent,
-            api_token_id: t.id,
-            api_token_str: t.token,
-            admin_id: current_user.id
+          user: t.user,
+          auth_type: 'token',
+          api_ip_addr: request.ip,
+          api_ip_ptr: ::UserSession.get_ptr(request.ip),
+          client_ip_addr: request.env['HTTP_CLIENT_IP'],
+          client_ip_ptr: request.env['HTTP_CLIENT_IP'] && ::UserSession.get_ptr(request.env['HTTP_CLIENT_IP']),
+          user_session_agent: ::UserSessionAgent.find_or_create!(request.user_agent),
+          client_version: request.user_agent,
+          api_token_id: t.id,
+          api_token_str: t.token,
+          admin_id: current_user.id
         )
         ok(t)
       else

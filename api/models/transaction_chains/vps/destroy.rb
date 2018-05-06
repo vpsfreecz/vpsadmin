@@ -37,8 +37,8 @@ module TransactionChains
 
         # Destroy underlying dataset
         use_chain(
-            DatasetInPool::Destroy,
-            args: [vps.dataset_in_pool, {recursive: true}]
+          DatasetInPool::Destroy,
+          args: [vps.dataset_in_pool, {recursive: true}]
         )
 
       else # vpsAdminOS
@@ -54,8 +54,8 @@ module TransactionChains
         # transactions and osctl expects the container to exist when
         # evaluating them.
         use_chain(
-            DatasetInPool::Destroy,
-            args: [vps.dataset_in_pool, {recursive: true, destroy: false}]
+          DatasetInPool::Destroy,
+          args: [vps.dataset_in_pool, {recursive: true, destroy: false}]
         )
 
         # Destroy VPS

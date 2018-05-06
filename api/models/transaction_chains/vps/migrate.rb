@@ -8,15 +8,15 @@ module TransactionChains
         desc: 'Called before the VPS is started on the new node',
         context: 'TransactionChains::Vps::Migrate instance',
         args: {
-            vps: 'destination Vps',
-            running: 'true if the VPS was running before the migration'
+          vps: 'destination Vps',
+          running: 'true if the VPS was running before the migration'
         }
     has_hook :post_start,
         desc: 'Called after the VPS was started on the new node',
         context: 'TransactionChains::Vps::Migrate instance',
         args: {
-            vps: 'destination Vps',
-            running: 'true if the VPS was running before the migration'
+          vps: 'destination Vps',
+          running: 'true if the VPS was running before the migration'
         }
 
     # @param opts [Hash]
@@ -30,14 +30,14 @@ module TransactionChains
     # @option opts [Boolean] cleanup_data (true) destroy datasets on the source node
     def link_chain(vps, dst_node, opts = {})
       @opts = set_hash_opts(opts, {
-          replace_ips: false,
-          resources: nil,
-          handle_ips: true,
-          reallocate_ips: true,
-          outage_window: true,
-          send_mail: true,
-          reason: nil,
-          cleanup_data: true,
+        replace_ips: false,
+        resources: nil,
+        handle_ips: true,
+        reallocate_ips: true,
+        outage_window: true,
+        send_mail: true,
+        reason: nil,
+        cleanup_data: true,
       })
 
       lock(vps)
@@ -51,14 +51,14 @@ module TransactionChains
 
       # Mail notification
       mail(:vps_migration_begun, {
-          user: vps.user,
-          vars: {
-              vps: vps,
-              src_node: vps.node,
-              dst_node: dst_vps.node,
-              outage_window: @opts[:outage_window],
-              reason: opts[:reason],
-          }
+        user: vps.user,
+        vars: {
+          vps: vps,
+          src_node: vps.node,
+          dst_node: dst_vps.node,
+          outage_window: @opts[:outage_window],
+          reason: opts[:reason],
+        }
       }) if @opts[:send_mail] && vps.user.mailer_enabled
 
       # Create target dataset in pool.
@@ -74,9 +74,9 @@ module TransactionChains
       # environment.
       if vps.node.location.environment_id != dst_node.location.environment_id
         resources_changes = vps.transfer_resources_to_env!(
-            vps.user,
-            dst_node.location.environment,
-            @opts[:resources]
+          vps.user,
+          dst_node.location.environment,
+          @opts[:resources]
         )
       end
 
@@ -202,7 +202,7 @@ module TransactionChains
       # Remove migration snapshots
       migration_snapshots.each do |sip|
         dst_sip = sip.snapshot.snapshot_in_pools.joins(:dataset_in_pool).where(
-            dataset_in_pools: {pool_id: @dst_pool.id}
+          dataset_in_pools: {pool_id: @dst_pool.id}
         ).take!
 
         use_chain(SnapshotInPool::Destroy, args: dst_sip, urgent: true)
@@ -230,8 +230,8 @@ module TransactionChains
         end
 
         just_create(vps.log(:node, {
-            src: {id: vps.node_id, name: vps.node.domain_name},
-            dst: {id: dst_vps.node_id, name: dst_vps.node.domain_name},
+          src: {id: vps.node_id, name: vps.node.domain_name},
+          dst: {id: dst_vps.node_id, name: dst_vps.node.domain_name},
         }))
       end
 
@@ -259,11 +259,11 @@ module TransactionChains
       # Do not detach backup trees and branches
       # Do not delete repeatable tasks - they are re-used for new datasets
       use_chain(DatasetInPool::Destroy, args: [src_dip, {
-          recursive: true,
-          top: true,
-          tasks: false,
-          detach_backups: false,
-          destroy: @opts[:cleanup_data],
+        recursive: true,
+        top: true,
+        tasks: false,
+        detach_backups: false,
+        destroy: @opts[:cleanup_data],
       }])
 
       # Destroy old root
@@ -271,14 +271,14 @@ module TransactionChains
 
       # Mail notification
       mail(:vps_migration_finished, {
-          user: vps.user,
-          vars: {
-              vps: vps,
-              src_node: vps.node,
-              dst_node: dst_vps.node,
-              outage_window: @opts[:outage_window],
-              reason: opts[:reason],
-          }
+        user: vps.user,
+        vars: {
+          vps: vps,
+          src_node: vps.node,
+          dst_node: dst_vps.node,
+          outage_window: @opts[:outage_window],
+          reason: opts[:reason],
+        }
       }) if @opts[:send_mail] && vps.user.mailer_enabled
 
       # fail 'ohnoes'
@@ -296,12 +296,12 @@ module TransactionChains
       lock(dip)
 
       dst = ::DatasetInPool.create!(
-          pool: @dst_pool,
-          dataset_id: dip.dataset_id,
-          label: dip.label,
-          min_snapshots: dip.min_snapshots,
-          max_snapshots: dip.max_snapshots,
-          snapshot_max_age: dip.snapshot_max_age
+        pool: @dst_pool,
+        dataset_id: dip.dataset_id,
+        label: dip.label,
+        min_snapshots: dip.min_snapshots,
+        max_snapshots: dip.max_snapshots,
+        snapshot_max_age: dip.snapshot_max_age
       )
 
       lock(dst)
@@ -317,12 +317,12 @@ module TransactionChains
           lock(dip)
 
           dst = ::DatasetInPool.create!(
-              pool: @dst_pool,
-              dataset_id: dip.dataset_id,
-              label: dip.label,
-              min_snapshots: dip.min_snapshots,
-              max_snapshots: dip.max_snapshots,
-              snapshot_max_age: dip.snapshot_max_age
+            pool: @dst_pool,
+            dataset_id: dip.dataset_id,
+            label: dip.label,
+            min_snapshots: dip.min_snapshots,
+            max_snapshots: dip.max_snapshots,
+            snapshot_max_age: dip.snapshot_max_age
           )
 
           lock(dst)
@@ -341,7 +341,7 @@ module TransactionChains
       plans = []
 
       src_dip.dataset_in_pool_plans.includes(
-          environment_dataset_plan: [:dataset_plan]
+        environment_dataset_plan: [:dataset_plan]
       ).each do |dip_plan|
         plans << dip_plan
       end
@@ -354,15 +354,15 @@ module TransactionChains
 
         # Remove src dip from the plan
         VpsAdmin::API::DatasetPlans.plans[name].unregister(
-            src_dip,
-            confirmation: confirmable
+          src_dip,
+          confirmation: confirmable
         )
 
         # Do not add the plan in the target environment if it is for admins only
         begin
           next unless ::EnvironmentDatasetPlan.find_by!(
-              dataset_plan: plan,
-              environment: dst_dip.pool.node.location.environment,
+            dataset_plan: plan,
+            environment: dst_dip.pool.node.location.environment,
           ).user_add
 
         rescue ActiveRecord::RecordNotFound
@@ -371,8 +371,8 @@ module TransactionChains
 
         begin
           VpsAdmin::API::DatasetPlans.plans[name].register(
-              dst_dip,
-              confirmation: confirmable
+            dst_dip,
+            confirmation: confirmable
           )
 
         rescue VpsAdmin::API::Exceptions::DatasetPlanNotInEnvironment
@@ -401,7 +401,7 @@ module TransactionChains
         dst_ip_addresses = []
 
         vps.ip_addresses.joins(:network).order(
-            'networks.ip_version, ip_addresses.order'
+          'networks.ip_version, ip_addresses.order'
         ).each do |ip|
           begin
             replacement = ::IpAddress.pick_addr!(
@@ -440,10 +440,10 @@ module TransactionChains
         if @opts[:reallocate_ips] \
            && vps.node.location.environment_id != dst_vps.node.location.environment_id
           changes = transfer_ip_addresses(
-              vps.user,
-              dst_ip_addresses,
-              vps.node.location.environment,
-              dst_vps.node.location.environment,
+            vps.user,
+            dst_ip_addresses,
+            vps.node.location.environment,
+            dst_vps.node.location.environment,
           )
 
           unless changes.empty?
@@ -474,8 +474,11 @@ module TransactionChains
         ips = []
 
         vps.ip_addresses.each { |ip| ips << ip }
-        use_chain(Vps::DelIp, args: [dst_vps, ips, vps, false, @opts[:reallocate_ips]],
-                  urgent: true)
+        use_chain(
+          Vps::DelIp,
+          args: [dst_vps, ips, vps, false, @opts[:reallocate_ips]],
+          urgent: true
+        )
       end
     end
 
@@ -484,10 +487,10 @@ module TransactionChains
       ret = {}
 
       src_user_env = user.environment_user_configs.find_by!(
-          environment: src_env,
+        environment: src_env,
       )
       dst_user_env = user.environment_user_configs.find_by!(
-          environment: dst_env,
+        environment: dst_env,
       )
 
       new_ips = ips.select { |_, ip| !ip.user_id }.map { |v| v[1] }
@@ -567,8 +570,8 @@ module TransactionChains
       def umount_others
         @others_mounts.each do |v, vps_mounts|
           @chain.append(
-              Transactions::Vps::Umount,
-              args: [v, vps_mounts.select { |m| m.enabled? }]
+            Transactions::Vps::Umount,
+            args: [v, vps_mounts.select { |m| m.enabled? }]
           )
         end
       end
@@ -578,7 +581,7 @@ module TransactionChains
 
         @my_mounts.each do |m|
           obj_changes.update(
-              migrate_mine_mount(m)
+            migrate_mine_mount(m)
           )
         end
 
@@ -600,16 +603,16 @@ module TransactionChains
 
           mounts.each do |m|
             obj_changes.update(
-                migrate_others_mount(m)
+              migrate_others_mount(m)
             )
           end
 
           @chain.use_chain(Vps::Mounts, args: vps, urgent: true)
 
           @chain.append(
-              Transactions::Vps::Mount,
-              args: [vps, mounts.select { |m| m.enabled? }.reverse],
-              urgent: true
+            Transactions::Vps::Mount,
+            args: [vps, mounts.select { |m| m.enabled? }.reverse],
+            urgent: true
           ) do
             obj_changes.each do |obj, changes|
               edit_before(obj, changes)
@@ -622,9 +625,9 @@ module TransactionChains
       def sort_mounts
         # Fetch ids of all descendant datasets in pool
         dataset_in_pools = @src_vps.dataset_in_pool.dataset.subtree.joins(
-            :dataset_in_pools
+          :dataset_in_pools
         ).where(
-            dataset_in_pools: {pool_id: @src_vps.dataset_in_pool.pool_id}
+          dataset_in_pools: {pool_id: @src_vps.dataset_in_pool.pool_id}
         ).pluck('dataset_in_pools.id')
 
         # Fetch all snapshot in pools of above datasets
@@ -641,10 +644,10 @@ module TransactionChains
         end
 
         ::Mount.includes(
-            :vps, :snapshot_in_pool, dataset_in_pool: [:dataset, pool: [:node]]
+          :vps, :snapshot_in_pool, dataset_in_pool: [:dataset, pool: [:node]]
         ).where(
-            'vps_id = ? OR (dataset_in_pool_id IN (?) OR snapshot_in_pool_id IN (?))',
-            @src_vps.id, dataset_in_pools, snapshot_in_pools
+          'vps_id = ? OR (dataset_in_pool_id IN (?) OR snapshot_in_pool_id IN (?))',
+          @src_vps.id, dataset_in_pools, snapshot_in_pools
         ).order('dst DESC').each do |mnt|
           if mnt.vps_id == @src_vps.id
             @my_mounts << mnt
@@ -665,7 +668,7 @@ module TransactionChains
         is_subdataset = \
           mnt.dataset_in_pool.pool.node_id == @src_vps.node_id && \
           mnt.vps.dataset_in_pool.dataset.subtree_ids.include?(
-              mnt.dataset_in_pool.dataset.id
+            mnt.dataset_in_pool.dataset.id
           )
 
         is_local = @src_vps.node_id == mnt.dataset_in_pool.pool.node_id
@@ -682,18 +685,18 @@ module TransactionChains
         is_snapshot = !mnt.snapshot_in_pool.nil?
         new_snapshot = if is_snapshot && is_subdataset
                          ::SnapshotInPool.where(
-                             snapshot_id: mnt.snapshot_in_pool.snapshot_id,
-                             dataset_in_pool: dst_dip
+                           snapshot_id: mnt.snapshot_in_pool.snapshot_id,
+                           dataset_in_pool: dst_dip
                          ).take!
                        else
                          nil
                        end
 
         original = {
-            dataset_in_pool_id: mnt.dataset_in_pool_id,
-            snapshot_in_pool_id: mnt.snapshot_in_pool_id,
-            mount_type: mnt.mount_type,
-            mount_opts: mnt.mount_opts
+          dataset_in_pool_id: mnt.dataset_in_pool_id,
+          snapshot_in_pool_id: mnt.snapshot_in_pool_id,
+          mount_type: mnt.mount_type,
+          mount_opts: mnt.mount_opts
         }
 
         changes = {}
@@ -723,8 +726,8 @@ module TransactionChains
 
           if is_snapshot
             @chain.append(
-                Transactions::Storage::RemoveClone,
-                args: mnt.snapshot_in_pool, urgent: true
+              Transactions::Storage::RemoveClone,
+              args: mnt.snapshot_in_pool, urgent: true
             ) do
               decrement(mnt.snapshot_in_pool, :reference_count)
             end
@@ -747,7 +750,7 @@ module TransactionChains
             # delete mount, when the snapshot gets deleted in
             # DatasetInPool::Destroy.
             changes[mnt.snapshot_in_pool] = {
-                mount_id: mnt.snapshot_in_pool.mount_id
+              mount_id: mnt.snapshot_in_pool.mount_id
             }
             mnt.snapshot_in_pool.update!(mount: nil)
 
@@ -778,18 +781,18 @@ module TransactionChains
         is_snapshot = !mnt.snapshot_in_pool.nil?
         new_snapshot = if is_snapshot
                          ::SnapshotInPool.where(
-                             snapshot_id: mnt.snapshot_in_pool.snapshot_id,
-                             dataset_in_pool: dst_dip
+                           snapshot_id: mnt.snapshot_in_pool.snapshot_id,
+                           dataset_in_pool: dst_dip
                          ).take!
                        else
                          nil
                        end
 
         original = {
-            dataset_in_pool_id: mnt.dataset_in_pool_id,
-            snapshot_in_pool_id: mnt.snapshot_in_pool_id,
-            mount_type: mnt.mount_type,
-            mount_opts: mnt.mount_opts
+          dataset_in_pool_id: mnt.dataset_in_pool_id,
+          snapshot_in_pool_id: mnt.snapshot_in_pool_id,
+          mount_type: mnt.mount_type,
+          mount_opts: mnt.mount_opts
         }
 
         changes = {}
@@ -803,8 +806,8 @@ module TransactionChains
 
           if is_snapshot
             @chain.append(
-                Transactions::Storage::CloneSnapshot,
-                args: new_snapshot, urgent: true
+              Transactions::Storage::CloneSnapshot,
+              args: new_snapshot, urgent: true
             ) do
               increment(new_snapshot, :reference_count)
             end
@@ -819,8 +822,8 @@ module TransactionChains
 
           if is_snapshot
             @chain.append(
-                Transactions::Storage::RemoveClone,
-                args: mnt.snapshot_in_pool, urgent: true
+              Transactions::Storage::RemoveClone,
+              args: mnt.snapshot_in_pool, urgent: true
             ) do
               decrement(mnt.snapshot_in_pool, :reference_count)
             end
@@ -832,12 +835,12 @@ module TransactionChains
         elsif is_remote && become_remote
           if is_snapshot
             @chain.append(
-                Transactions::Storage::RemoveClone,
-                args: mnt.snapshot_in_pool, urgent: true
+              Transactions::Storage::RemoveClone,
+              args: mnt.snapshot_in_pool, urgent: true
             )
             @chain.append(
-                Transactions::Storage::CloneSnapshot,
-                args: new_snapshot, urgent: true
+              Transactions::Storage::CloneSnapshot,
+              args: new_snapshot, urgent: true
             )
           end
 
@@ -854,7 +857,7 @@ module TransactionChains
           # delete mount, when the snapshot gets deleted in
           # DatasetInPool::Destroy.
           changes[mnt.snapshot_in_pool] = {
-              mount_id: mnt.snapshot_in_pool.mount_id
+            mount_id: mnt.snapshot_in_pool.mount_id
           }
           mnt.snapshot_in_pool.update!(mount: nil)
 

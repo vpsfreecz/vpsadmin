@@ -78,37 +78,37 @@ module VpsAdmin::API::Resources
         # Custom filters
         if input[:ip_version]
           q = q.joins(ip_address: :network).where(
-              networks: {ip_version: input[:ip_version]}
+            networks: {ip_version: input[:ip_version]}
           )
         end
 
         if input[:environment]
           q = q.joins(ip_address: {network: :location}).where(
-              locations: {environment_id: input[:environment].id}
+            locations: {environment_id: input[:environment].id}
           )
         end
 
         if input[:location]
           q = q.joins(ip_address: :network).where(
-              networks: {location_id: input[:location].id}
+            networks: {location_id: input[:location].id}
           )
         end
 
         if input[:network]
           q = q.joins(:ip_address).where(
-              ip_addresses: {network_id: input[:network].id}
+            ip_addresses: {network_id: input[:network].id}
           )
         end
 
         if input[:node]
           q = q.joins(ip_address: :vps).where(
-              vpses: {node_id: input[:node].id}
+            vpses: {node_id: input[:node].id}
           )
         end
 
         if input.has_key?(:vps)
           q = q.joins(:ip_address).where(
-              ip_addresses: {vps_id: input[:vps] && input[:vps].id}
+            ip_addresses: {vps_id: input[:vps] && input[:vps].id}
           )
         end
 

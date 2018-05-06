@@ -14,14 +14,14 @@ module VpsAdmin::CLI::Commands
 
     def options(opts)
       @opts = {
-          rotate: true,
-          min_snapshots: 30,
-          max_snapshots: 45,
-          max_age: 30,
-          attempts: 10,
-          checksum: true,
-          delete_after: true,
-          sudo: true,
+        rotate: true,
+        min_snapshots: 30,
+        max_snapshots: 45,
+        max_age: 30,
+        attempts: 10,
+        checksum: true,
+        delete_after: true,
+        sudo: true,
       }
 
       opts.on('-p', '--pretend', 'Print what would the program do') do
@@ -130,8 +130,8 @@ module VpsAdmin::CLI::Commands
       if remote_state[ds.current_history_id].nil? \
          || remote_state[ds.current_history_id].empty?
         exit_msg(
-            "Nothing to transfer: no snapshots with history id #{ds.current_history_id}",
-            error: @opts[:no_snapshots_error]
+          "Nothing to transfer: no snapshots with history id #{ds.current_history_id}",
+          error: @opts[:no_snapshots_error]
         )
       end
 
@@ -170,9 +170,9 @@ module VpsAdmin::CLI::Commands
       if for_transfer.empty?
         if found_latest
           exit_msg(
-              "Nothing to transfer: all snapshots with history id "+
-              "#{ds.current_history_id} are already present locally",
-              error: @opts[:no_snapshots_error]
+            "Nothing to transfer: all snapshots with history id "+
+            "#{ds.current_history_id} are already present locally",
+            error: @opts[:no_snapshots_error]
           )
 
         else
@@ -255,12 +255,12 @@ END
         else
           run_piped(zfs_cmd(:recv, '-F', ds)) do
             SnapshotSend.new({}, @api).do_exec({
-                snapshot: snapshots.first.id,
-                send_mail: false,
-                delete_after: @opts[:delete_after],
-                max_rate: @opts[:max_rate],
-                checksum: @opts[:checksum],
-                quiet: @opts[:quiet],
+              snapshot: snapshots.first.id,
+              send_mail: false,
+              delete_after: @opts[:delete_after],
+              max_rate: @opts[:max_rate],
+              checksum: @opts[:checksum],
+              quiet: @opts[:quiet],
             })
           end || exit_msg('Receive failed')
         end
@@ -276,13 +276,13 @@ END
         else
           run_piped(zfs_cmd(:recv, '-F', ds)) do
             SnapshotSend.new({}, @api).do_exec({
-                snapshot: snapshots.last.id,
-                from_snapshot: snapshots.first.id,
-                send_mail: false,
-                delete_after: @opts[:delete_after],
-                max_rate: @opts[:max_rate],
-                checksum: @opts[:checksum],
-                quiet: @opts[:quiet],
+              snapshot: snapshots.last.id,
+              from_snapshot: snapshots.first.id,
+              send_mail: false,
+              delete_after: @opts[:delete_after],
+              max_rate: @opts[:max_rate],
+              checksum: @opts[:checksum],
+              quiet: @opts[:quiet],
             })
           end || exit_msg('Receive failed')
         end
@@ -297,16 +297,16 @@ END
 
         begin
           SnapshotDownload.new({}, @api).do_exec({
-              snapshot: snapshot.id,
-              from_snapshot: from_snapshot && from_snapshot.id,
-              format: from_snapshot ? :incremental_stream : :stream,
-              file: part,
-              max_rate: @opts[:max_rate],
-              checksum: @opts[:checksum],
-              quiet: @opts[:quiet],
-              resume: true,
-              delete_after: @opts[:delete_after],
-              send_mail: false,
+            snapshot: snapshot.id,
+            from_snapshot: from_snapshot && from_snapshot.id,
+            format: from_snapshot ? :incremental_stream : :stream,
+            file: part,
+            max_rate: @opts[:max_rate],
+            checksum: @opts[:checksum],
+            quiet: @opts[:quiet],
+            resume: true,
+            delete_after: @opts[:delete_after],
+            send_mail: false,
           })
 
         rescue Errno::ECONNREFUSED,

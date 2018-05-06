@@ -12,18 +12,18 @@ module VpsAdmin::API::Plugins::Payments::Backends
         next if t.amount < 0 # Skip outgoing payments
 
         p = ::IncomingPayment.new(
-            transaction_id: t.transaction_id.to_s,
-            date: t.date,
-            amount: t.amount,
-            currency: t.currency,
-            account_name: t.account_name,
-            user_ident: t.user_identification,
-            user_message: t.message_for_recipient,
-            vs: t.vs,
-            ks: t.ks,
-            ss: t.ss,
-            transaction_type: t.transaction_type,
-            comment: t.comment,
+          transaction_id: t.transaction_id.to_s,
+          date: t.date,
+          amount: t.amount,
+          currency: t.currency,
+          account_name: t.account_name,
+          user_ident: t.user_identification,
+          user_message: t.message_for_recipient,
+          vs: t.vs,
+          ks: t.ks,
+          ss: t.ss,
+          transaction_type: t.transaction_type,
+          comment: t.comment,
         )
 
         if t.detail_info

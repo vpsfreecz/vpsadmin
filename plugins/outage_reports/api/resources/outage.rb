@@ -104,40 +104,40 @@ module VpsAdmin::API::Resources
 
         if input.has_key?(:affected)
           q = q.joins(
-              'LEFT JOIN outage_vpses ON outage_vpses.outage_id = outages.id'
+            'LEFT JOIN outage_vpses ON outage_vpses.outage_id = outages.id'
           ).group('outages.id')
 
           if input[:affected]
             q = q.where(
-                outage_vpses: {user_id: current_user.id},
+              outage_vpses: {user_id: current_user.id},
             )
 
           else
             q = q.where("
-                outages.id NOT IN (
-                  SELECT outage_id
-                  FROM outage_vpses
-                  WHERE user_id = ?
-                )
+              outages.id NOT IN (
+                SELECT outage_id
+                FROM outage_vpses
+                WHERE user_id = ?
+              )
             ", current_user.id)
           end
         end
 
         if input[:user]
           q = q.joins(:outage_vpses).group('outages.id').where(
-              user: input[:user],
+            user: input[:user],
           )
         end
 
         if input[:vps]
           q = q.joins(:outage_vpses).group('outages.id').where(
-              outage_vpses: {vps_id: input[:vps].id}
+            outage_vpses: {vps_id: input[:vps].id}
           )
         end
 
         if input[:handled_by]
           q = q.joins(:outage_handlers).group('outages.id').where(
-              outage_handlers: {user_id: input[:handled_by].id}
+            outage_handlers: {user_id: input[:handled_by].id}
           )
         end
 
@@ -399,9 +399,9 @@ module VpsAdmin::API::Resources
 
         def exec
           ::OutageEntity.create!(
-              outage: ::Outage.find(params[:outage_id]),
-              name: input[:name],
-              row_id: input[:entity_id],
+            outage: ::Outage.find(params[:outage_id]),
+            name: input[:name],
+            row_id: input[:entity_id],
           )
 
         rescue ActiveRecord::RecordInvalid => e
@@ -421,8 +421,8 @@ module VpsAdmin::API::Resources
 
         def exec
           ::OutageEntity.find_by!(
-              outage_id: params[:outage_id],
-              id: params[:entity_id],
+            outage_id: params[:outage_id],
+            id: params[:entity_id],
           ).destroy!
           ok
         end
@@ -488,8 +488,8 @@ module VpsAdmin::API::Resources
 
         def prepare
           @handler = ::OutageHandler.find_by!(
-              outage_id: params[:outage_id],
-              id: params[:handler_id],
+            outage_id: params[:outage_id],
+            id: params[:handler_id],
           )
         end
 
@@ -515,9 +515,9 @@ module VpsAdmin::API::Resources
 
         def exec
           ::OutageHandler.create!(
-              outage: ::Outage.find(params[:outage_id]),
-              user: input[:user],
-              note: input[:note],
+            outage: ::Outage.find(params[:outage_id]),
+            user: input[:user],
+            note: input[:note],
           )
 
         rescue ActiveRecord::RecordInvalid => e
@@ -546,8 +546,8 @@ module VpsAdmin::API::Resources
 
         def exec
           ::OutageHandler.find_by!(
-              outage_id: ::Outage.find(params[:outage_id]),
-              id: params[:handler_id],
+            outage_id: ::Outage.find(params[:outage_id]),
+            id: params[:handler_id],
           ).update!(note: input[:note])
 
         rescue ActiveRecord::RecordInvalid => e
@@ -564,8 +564,8 @@ module VpsAdmin::API::Resources
 
         def exec
           ::OutageHandler.find_by!(
-              outage_id: params[:outage_id],
-              id: params[:handler_id],
+            outage_id: params[:outage_id],
+            id: params[:handler_id],
           ).destroy!
           ok
         end

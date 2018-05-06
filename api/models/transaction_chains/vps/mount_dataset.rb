@@ -8,21 +8,21 @@ module TransactionChains
       concerns(:affect, [vps.class.name, vps.id])
 
       dip = dataset.dataset_in_pools.joins(:pool).where(
-          pools: {role: [::Pool.roles[:hypervisor], ::Pool.roles[:primary]]}
+        pools: {role: [::Pool.roles[:hypervisor], ::Pool.roles[:primary]]}
       ).take!
 
       lock(dip)
 
       mnt = ::Mount.new(
-          vps: vps,
-          dst: dst,
-          mount_opts: '',
-          umount_opts: '-f',
-          mount_type: 'nfs',
-          mode: opts[:mode],
-          user_editable: false,
-          dataset_in_pool: dip,
-          confirmed: ::Mount.confirmed(:confirm_create)
+        vps: vps,
+        dst: dst,
+        mount_opts: '',
+        umount_opts: '-f',
+        mount_type: 'nfs',
+        mode: opts[:mode],
+        user_editable: false,
+        dataset_in_pool: dip,
+        confirmed: ::Mount.confirmed(:confirm_create)
       )
 
       mnt.on_start_fail = opts[:on_start_fail] if opts[:on_start_fail]
@@ -43,15 +43,15 @@ module TransactionChains
       append(Transactions::Utils::NoOp, args: vps.node_id) do
         create(mnt)
         just_create(vps.log(:mount, {
-            id: mnt.id,
-            type: :dataset,
-            src: {
-                id: mnt.dataset_in_pool.dataset_id,
-                name: mnt.dataset_in_pool.dataset.full_name
-            },
-            dst: mnt.dst,
-            mode: mnt.mode,
-            on_start_fail: mnt.on_start_fail,
+          id: mnt.id,
+          type: :dataset,
+          src: {
+            id: mnt.dataset_in_pool.dataset_id,
+            name: mnt.dataset_in_pool.dataset.full_name
+          },
+          dst: mnt.dst,
+          mode: mnt.mode,
+          on_start_fail: mnt.on_start_fail,
         }))
       end
 

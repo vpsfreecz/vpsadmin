@@ -13,11 +13,11 @@ module TransactionChains
       append(Transactions::Storage::CreatePool, args: [pool, properties]) do
         VpsAdmin::API::DatasetProperties::Registrator.properties.each do |name, p|
           create(::DatasetProperty.create!(
-              pool: pool,
-              name: name,
-              value: properties.has_key?(name) ? properties[name] : p.meta[:default],
-              inherited: false,
-              confirmed: ::DatasetProperty.confirmed(:confirm_create)
+            pool: pool,
+            name: name,
+            value: properties.has_key?(name) ? properties[name] : p.meta[:default],
+            inherited: false,
+            confirmed: ::DatasetProperty.confirmed(:confirm_create)
           ))
         end
       end

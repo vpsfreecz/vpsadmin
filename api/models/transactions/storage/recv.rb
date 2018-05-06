@@ -11,20 +11,20 @@ module Transactions::Storage
 
       snapshots.each do |snap|
         tmp << {
-            id: snap.snapshot.id,
-            name: snap.snapshot.name,
-            confirmed: snap.snapshot.confirmed
+          id: snap.snapshot.id,
+          name: snap.snapshot.name,
+          confirmed: snap.snapshot.confirmed,
         }
       end
 
       {
-          addr: port.addr,
-          port: port.port,
-          dst_pool_fs: dst.pool.filesystem,
-          dataset_name: ds_suffix ? "#{dst.dataset.full_name}.#{ds_suffix}" : dst.dataset.full_name,
-          snapshots: tmp,
-          tree: branch && branch.dataset_tree.full_name,
-          branch: branch && branch.full_name
+        addr: port.addr,
+        port: port.port,
+        dst_pool_fs: dst.pool.filesystem,
+        dataset_name: ds_suffix ? "#{dst.dataset.full_name}.#{ds_suffix}" : dst.dataset.full_name,
+        snapshots: tmp,
+        tree: branch && branch.dataset_tree.full_name,
+        branch: branch && branch.full_name,
       }
     end
   end

@@ -76,13 +76,13 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
       if has.size > 0
         q = q.joins(locations: :nodes).where(
-            nodes: {role: has}
+          nodes: {role: has}
         ).group('environments.id')
       end
 
       if not_has.size > 0
         q = q.joins(locations: :nodes).where.not(
-            nodes: {role: not_has}
+          nodes: {role: not_has}
         ).group('environments.id')
       end
 
@@ -115,11 +115,11 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
     example do
       request({
-          label: 'Devel',
-          domain: 'vpsfree.cz'
+        label: 'Devel',
+        domain: 'vpsfree.cz'
       })
       response({
-          id: 2
+        id: 2
       })
     end
 
@@ -151,9 +151,9 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
       url_params(1)
       request({})
       response({
-          id: 1,
-          label: 'Production',
-          domain: 'vpsfree.cz',
+        id: 1,
+        label: 'Production',
+        domain: 'vpsfree.cz',
       })
     end
 
@@ -180,8 +180,8 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     example do
       url_params(1)
       request({
-          label: 'My new name',
-          domain: 'new.domain'
+        label: 'My new name',
+        domain: 'new.domain'
       })
       response({})
     end
@@ -235,7 +235,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
       def query
         ::EnvironmentConfigChain.where(
-            environment: ::Environment.find(params[:environment_id])
+          environment: ::Environment.find(params[:environment_id])
         ).order('cfg_order')
       end
 
@@ -263,7 +263,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
       def exec
         ::Environment.find(params[:environment_id]).set_config_chain(
-            input.map { |v| v[:vps_config] }
+          input.map { |v| v[:vps_config] }
         )
         ok
       end
@@ -308,7 +308,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
       def query
         ::EnvironmentDatasetPlan.where(with_restricted(
-            environment_id: params[:environment_id]
+          environment_id: params[:environment_id]
         ))
       end
 
@@ -335,8 +335,8 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
       def exec
         ::EnvironmentDatasetPlan.find_by!(
-            environment_id: params[:environment_id],
-            id: params[:dataset_plan_id]
+          environment_id: params[:environment_id],
+          id: params[:dataset_plan_id]
         )
       end
     end

@@ -14,19 +14,19 @@ class VpsMigration < ActiveRecord::Base
     return if persisted?
 
     exists = self.class.joins(:migration_plan).where(
-        vps: vps,
+      vps: vps,
+      state: [
+        self.class.states[:queued],
+        self.class.states[:running],
+      ],
+      migration_plans: {
         state: [
-            self.class.states[:queued],
-            self.class.states[:running],
-        ],
-        migration_plans: {
-            state: [
-                ::VpsMigration.states[:staged],
-                ::VpsMigration.states[:running],
-                ::VpsMigration.states[:cancelling],
-                ::VpsMigration.states[:failing],
-            ]
-        }
+          ::VpsMigration.states[:staged],
+          ::VpsMigration.states[:running],
+          ::VpsMigration.states[:cancelling],
+          ::VpsMigration.states[:failing],
+        ]
+      }
     ).any?
 
     if exists

@@ -22,16 +22,16 @@ module TransactionChains
     def link_chain(dataset_in_pool, opts = {})
       lock(dataset_in_pool)
       concerns(:affect, [
-          dataset_in_pool.dataset.class.name,
-          dataset_in_pool.dataset_id
+        dataset_in_pool.dataset.class.name,
+        dataset_in_pool.dataset_id
       ])
 
       @opts = set_hash_opts(opts, {
-          recursive: false,
-          top: true,
-          tasks: true,
-          detach_backups: true,
-          destroy: true,
+        recursive: false,
+        top: true,
+        tasks: true,
+        detach_backups: true,
+        destroy: true,
       })
 
       @datasets = []
@@ -39,7 +39,7 @@ module TransactionChains
       if @opts[:recursive]
         @pool_id = dataset_in_pool.pool.id
         dataset_in_pool.dataset.subtree.where.not(
-            confirmed: ::Dataset.confirmed(:confirm_destroy)
+          confirmed: ::Dataset.confirmed(:confirm_destroy)
         ).arrange.each do |k, v|
           destroy_recursive(k, v)
         end
@@ -150,7 +150,7 @@ module TransactionChains
         if opts[:detach_backups] && %w(primary hypervisor).include?(dataset_in_pool.pool.role)
           # Detach dataset tree heads in all backups
           dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where(
-              pools: {role: ::Pool.roles[:backup]}
+            pools: {role: ::Pool.roles[:backup]}
           ).each do |backup|
 
             backup.dataset_trees.all.each do |tree|
@@ -171,7 +171,7 @@ module TransactionChains
             end
 
             dataset_in_pool.dataset_properties.update_all(
-                confirmed: ::DatasetProperty.confirmed(:confirm_destroy)
+              confirmed: ::DatasetProperty.confirmed(:confirm_destroy)
             )
             dataset_in_pool.dataset_properties.each do |p|
               # Note: there are too many records to delete them using transaction confirmations.
@@ -187,8 +187,9 @@ module TransactionChains
             end
 
             DatasetAction.where(
-                'src_dataset_in_pool_id = ? OR dst_dataset_in_pool_id = ?',
-                dataset_in_pool.id, dataset_in_pool.id).each do |act|
+              'src_dataset_in_pool_id = ? OR dst_dataset_in_pool_id = ?',
+              dataset_in_pool.id, dataset_in_pool.id
+            ).each do |act|
               just_destroy(act)
 
               just_destroy(RepeatableTask.find_for!(act))
@@ -200,28 +201,28 @@ module TransactionChains
 
           # Check if ::Dataset should be destroyed or marked for destroyal
           if dataset_in_pool.dataset.dataset_in_pools.where.not(
-                confirmed: ::DatasetInPool.confirmed(:confirm_destroy)
+               confirmed: ::DatasetInPool.confirmed(:confirm_destroy)
              ).count == 0
             dataset_in_pool.dataset.update!(
-                confirmed: ::Dataset.confirmed(:confirm_destroy)
+              confirmed: ::Dataset.confirmed(:confirm_destroy)
             )
             destroy(dataset_in_pool.dataset)
 
           elsif dataset_in_pool.dataset.dataset_in_pools
-                    .joins(:pool)
-                    .where.not(
-                        confirmed: ::DatasetInPool.confirmed(:confirm_destroy),
-                        pools: {role: ::Pool.roles[:backup]}
-                    ).count == 0
+                  .joins(:pool)
+                  .where.not(
+                    confirmed: ::DatasetInPool.confirmed(:confirm_destroy),
+                    pools: {role: ::Pool.roles[:backup]}
+                  ).count == 0
 
             # Is now only in backup pools
             just_create(dataset_in_pool.dataset.set_expiration(
-                Time.now.utc + 30*24*60*60),
-                reason: 'Dataset on the primary pool was deleted.'
+              Time.now.utc + 30*24*60*60),
+              reason: 'Dataset on the primary pool was deleted.'
             )
             edit(
-                dataset_in_pool.dataset,
-                expiration_date: dataset_in_pool.dataset.expiration_date
+              dataset_in_pool.dataset,
+              expiration_date: dataset_in_pool.dataset.expiration_date
             )
           end
         end

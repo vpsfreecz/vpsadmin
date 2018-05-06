@@ -48,10 +48,10 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
       q = q.where(user: input[:user]) if input[:user]
       q = q.where(user_session: input[:user_session]) if input[:user_session]
       q = q.joins(:transaction_chain_concerns).where(
-          transaction_chain_concerns: {class_name: input[:class_name]}
+        transaction_chain_concerns: {class_name: input[:class_name]}
       ) if input[:class_name]
       q = q.joins(:transaction_chain_concerns).where(
-          transaction_chain_concerns: {row_id: input[:row_id]}
+        transaction_chain_concerns: {row_id: input[:row_id]}
       ) if input[:row_id]
 
       q
@@ -63,10 +63,10 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
 
     def exec
       with_includes(query)
-          .includes(:transaction_chain_concerns)
-          .limit(input[:limit])
-          .offset(input[:offset])
-          .order('transaction_chains.created_at DESC, transaction_chains.id DESC')
+        .includes(:transaction_chain_concerns)
+        .limit(input[:limit])
+        .offset(input[:offset])
+        .order('transaction_chains.created_at DESC, transaction_chains.id DESC')
     end
   end
 

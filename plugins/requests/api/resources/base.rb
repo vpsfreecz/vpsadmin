@@ -127,7 +127,7 @@ module VpsAdmin::API::Plugins::Requests
 
         def exec
           r = ::UserRequest.find(
-              params[:"#{self.class.resource.to_s.demodulize.underscore}_id"]
+            params[:"#{self.class.resource.to_s.demodulize.underscore}_id"]
           )
 
           request_params = input.clone

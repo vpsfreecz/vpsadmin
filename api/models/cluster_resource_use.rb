@@ -11,9 +11,9 @@ class ClusterResourceUse < ActiveRecord::Base
 
   def self.for_obj(obj)
     self.where(
-        class_name: obj.class.name,
-        table_name: obj.class.table_name,
-        row_id: obj.id
+      class_name: obj.class.name,
+      table_name: obj.class.table_name,
+      row_id: obj.id
     )
   end
 
@@ -28,10 +28,10 @@ class ClusterResourceUse < ActiveRecord::Base
     end
 
     used = self.class.where(
-        user_cluster_resource: user_cluster_resource,
-        enabled: true
+      user_cluster_resource: user_cluster_resource,
+      enabled: true
     ).where.not(
-        confirmed: self.class.confirmed(:confirm_destroy)
+      confirmed: self.class.confirmed(:confirm_destroy)
     ).sum(:value)
 
     if self.new_record? || resource_transfer
@@ -45,8 +45,8 @@ class ClusterResourceUse < ActiveRecord::Base
 
     if !admin_override && total > user_cluster_resource.value && total > used
       errors.add(
-          :value,
-          "cannot allocate more #{user_cluster_resource.cluster_resource.name} than is available (#{user_cluster_resource.value - used} left)"
+        :value,
+        "cannot allocate more #{user_cluster_resource.cluster_resource.name} than is available (#{user_cluster_resource.value - used} left)"
       )
     end
 
@@ -59,22 +59,22 @@ class ClusterResourceUse < ActiveRecord::Base
 
     if (self.value % user_cluster_resource.cluster_resource.stepsize) != 0
       errors.add(
-          :value,
-          "is not a multiple of step size (#{user_cluster_resource.cluster_resource.stepsize})"
+        :value,
+        "is not a multiple of step size (#{user_cluster_resource.cluster_resource.stepsize})"
       )
     end
 
     if self.admin_limit
       case self.admin_lock_type
-        when 'absolute'
-          errors.add(:value, "cannot allocate other than #{admin_limit}") if admin_limit != value
+      when 'absolute'
+        errors.add(:value, "cannot allocate other than #{admin_limit}") if admin_limit != value
 
-        when 'not_less'
-          errors.add(:value, "cannot allocate less than #{admin_limit}") if value < admin_limit
+      when 'not_less'
+        errors.add(:value, "cannot allocate less than #{admin_limit}") if value < admin_limit
 
-        when 'not_more'
-          errors.add(:value, "cannot allocate more than #{admin_limit}") if value > admin_limit
-        else
+      when 'not_more'
+        errors.add(:value, "cannot allocate more than #{admin_limit}") if value > admin_limit
+      else
 
       end
     end

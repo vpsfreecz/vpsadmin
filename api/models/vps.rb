@@ -41,18 +41,18 @@ class Vps < ActiveRecord::Base
 
   include VpsAdmin::API::Lifetimes::Model
   set_object_states suspended: {
-                        enter: TransactionChains::Vps::Block,
-                        leave: TransactionChains::Vps::Unblock
+                      enter: TransactionChains::Vps::Block,
+                      leave: TransactionChains::Vps::Unblock
                     },
                     soft_delete: {
-                        enter: TransactionChains::Vps::SoftDelete,
-                        leave: TransactionChains::Vps::Revive
+                      enter: TransactionChains::Vps::SoftDelete,
+                      leave: TransactionChains::Vps::Revive
                     },
                     hard_delete: {
-                        enter: TransactionChains::Vps::Destroy
+                      enter: TransactionChains::Vps::Destroy
                     },
                     deleted: {
-                        enter: TransactionChains::Lifetimes::NotImplemented
+                      enter: TransactionChains::Lifetimes::NotImplemented
                     },
                     environment: ->(){ node.location.environment }
 
@@ -65,12 +65,12 @@ class Vps < ActiveRecord::Base
 
   validates :user_id, :node_id, :os_template_id, presence: true, numericality: {only_integer: true}
   validates :hostname, presence: true, format: {
-      with: /\A[a-zA-Z\-_\.0-9]{0,255}\z/,
-      message: 'bad format'
+    with: /\A[a-zA-Z\-_\.0-9]{0,255}\z/,
+    message: 'bad format'
   }
   validates :cpu_limit, numericality: {
-      only_integer: true,
-      greater_than_or_equal_to: 0
+    only_integer: true,
+    greater_than_or_equal_to: 0
   }, allow_nil: true
   validate :foreign_keys_exist
 
@@ -81,8 +81,8 @@ class Vps < ActiveRecord::Base
   scope :existing, -> {
     unscoped {
       where(object_state: [
-                object_states[:active],
-                object_states[:suspended]
+              object_states[:active],
+              object_states[:suspended]
             ])
     }
   }
@@ -90,9 +90,9 @@ class Vps < ActiveRecord::Base
   scope :including_deleted, -> {
     unscoped {
       where(object_state: [
-                object_states[:active],
-                object_states[:suspended],
-                object_states[:soft_delete]
+              object_states[:active],
+              object_states[:suspended],
+              object_states[:soft_delete]
             ])
     }
   }
@@ -108,8 +108,8 @@ class Vps < ActiveRecord::Base
     self.config = ''
 
     lifetime = self.user.env_config(
-        node.location.environment,
-        :vps_lifetime
+      node.location.environment,
+      :vps_lifetime
     )
 
     self.expiration_date = Time.now + lifetime if lifetime != 0
@@ -170,13 +170,13 @@ class Vps < ActiveRecord::Base
       end
 
       if !ip.user_id && ::IpAddress.joins(:network).where(
-            user: self.user,
-            vps: nil,
-            networks: {
-                location_id: node.location_id,
-                ip_version: ip.network.ip_version,
-                role: ::Network.roles[ip.network.role],
-            }
+          user: self.user,
+          vps: nil,
+          networks: {
+            location_id: node.location_id,
+            ip_version: ip.network.ip_version,
+            role: ::Network.roles[ip.network.role],
+          }
       ).exists?
         raise VpsAdmin::API::Exceptions::IpAddressNotOwned
       end
@@ -311,18 +311,18 @@ class Vps < ActiveRecord::Base
 
   def has_mount_of?(vps)
     dataset_in_pools = vps.dataset_in_pool.dataset.subtree.joins(
-        :dataset_in_pools
+      :dataset_in_pools
     ).where(
-        dataset_in_pools: {pool_id: vps.dataset_in_pool.pool_id}
+      dataset_in_pools: {pool_id: vps.dataset_in_pool.pool_id}
     ).pluck('dataset_in_pools.id')
 
     snapshot_in_pools = ::SnapshotInPool.where(
-        dataset_in_pool_id: dataset_in_pools
+      dataset_in_pool_id: dataset_in_pools
     ).pluck('id')
 
     ::Mount.where(
-        'vps_id = ? AND (dataset_in_pool_id IN (?) OR snapshot_in_pool_id IN (?))',
-        self.id, dataset_in_pools, snapshot_in_pools
+      'vps_id = ? AND (dataset_in_pool_id IN (?) OR snapshot_in_pool_id IN (?))',
+      self.id, dataset_in_pools, snapshot_in_pools
     ).exists?
   end
 

@@ -20,19 +20,19 @@ class Node < ActiveRecord::Base
   validates :name, :role, :location_id, :ip_addr, presence: true
   validates :location_id, numericality: {only_integer: true}
   validates :name, format: {
-      with: /\A[a-zA-Z0-9\.\-_]+\Z/,
-      message: 'invalid format'
+    with: /\A[a-zA-Z0-9\.\-_]+\Z/,
+    message: 'invalid format'
   }
   validates :role, inclusion: {
-      in: %w(node storage mailer),
-      message: '%{value} is not a valid node role'
+    in: %w(node storage mailer),
+    message: '%{value} is not a valid node role'
   }
   validates :ip_addr, format: {
-      with: /\A\d+\.\d+\.\d+\.\d+\Z/,
-      message: 'not a valid IPv4 address'
+    with: /\A\d+\.\d+\.\d+\.\d+\Z/,
+    message: 'not a valid IPv4 address'
   }
   validates :max_vps, presence: true, numericality: {
-      only_integer: true,
+    only_integer: true,
   }, if: :hypervisor?
   validates :ve_private, presence: true, if: :hypervisor?
 
@@ -48,7 +48,7 @@ class Node < ActiveRecord::Base
 
   def self.register!(attrs)
     opts = {
-        maintenance: attrs.delete(:maintenance)
+      maintenance: attrs.delete(:maintenance)
     }
     n = new(attrs)
 
@@ -88,13 +88,13 @@ class Node < ActiveRecord::Base
     return n if n
 
     q = self.joins('
-        LEFT JOIN vpses ON vpses.node_id = nodes.id
-        INNER JOIN locations ON locations.id = nodes.location_id
+      LEFT JOIN vpses ON vpses.node_id = nodes.id
+      INNER JOIN locations ON locations.id = nodes.location_id
     ').where(
-        'max_vps > 0'
+      'max_vps > 0'
     ).where(
-        maintenance_lock: 0,
-        locations: {environment_id: env.id},
+      maintenance_lock: 0,
+      locations: {environment_id: env.id},
     )
 
     q = q.where('nodes.id != ?', except.id) if except
@@ -131,12 +131,12 @@ class Node < ActiveRecord::Base
     return n if n
 
     q = self.joins(
-        'LEFT JOIN vpses ON vpses.node_id = nodes.id'
+      'LEFT JOIN vpses ON vpses.node_id = nodes.id'
     ).where(
-        'max_vps > 0'
+      'max_vps > 0'
     ).where(
-        maintenance_lock: 0,
-        location_id: loc.id
+      maintenance_lock: 0,
+      location_id: loc.id
     )
 
     q = q.where('nodes.id != ?', except.id) if except
@@ -177,20 +177,20 @@ class Node < ActiveRecord::Base
 
   def vps_running
     vpses.joins(:vps_current_status).where(
-        vps_current_statuses: {is_running: true}
+      vps_current_statuses: {is_running: true}
     ).count
   end
 
   def vps_stopped
     vpses.joins(:vps_current_status).where(
-        vps_current_statuses: {is_running: false}
+      vps_current_statuses: {is_running: false}
     ).count
   end
 
   def vps_deleted
     vpses.unscoped.where(
-        node: self,
-        object_state: ::Vps.object_states['soft_delete']
+      node: self,
+      object_state: ::Vps.object_states['soft_delete']
     ).count
   end
 
@@ -240,27 +240,27 @@ class Node < ActiveRecord::Base
 
     ActiveRecord::Base.transaction do
       plan = ::MigrationPlan.create!(
-          stop_on_error: opts[:stop_on_error].nil? ? false : opts[:stop_on_error],
-          user: ::User.current,
-          node: opts[:dst_node],
-          concurrency: concurrency,
-          send_mail: send_mail,
-          reason: opts[:reason],
+        stop_on_error: opts[:stop_on_error].nil? ? false : opts[:stop_on_error],
+        user: ::User.current,
+        node: opts[:dst_node],
+        concurrency: concurrency,
+        send_mail: send_mail,
+        reason: opts[:reason],
       )
 
       # Lock evacuated node by the MigrationPlan
       self.acquire_lock(plan)
 
       ::Vps.where(
-          node: self
+        node: self
       ).order('object_state, vps_id').each do |vps|
         plan.vps_migrations.create!(
-            vps: vps,
-            migration_plan: plan,
-            outage_window: outage_window,
-            cleanup_data: cleanup_data,
-            src_node: self,
-            dst_node: opts[:dst_node],
+          vps: vps,
+          migration_plan: plan,
+          outage_window: outage_window,
+          cleanup_data: cleanup_data,
+          src_node: self,
+          dst_node: opts[:dst_node],
         )
       end
 

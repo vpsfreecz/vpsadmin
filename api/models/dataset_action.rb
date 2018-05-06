@@ -10,20 +10,20 @@ class DatasetAction < ActiveRecord::Base
 
   def execute
     case action.to_sym
-      when :snapshot
-        src_dataset_in_pool.snapshot
+    when :snapshot
+      src_dataset_in_pool.snapshot
 
-      when :transfer
-        src_dataset_in_pool.transfer(dst_dataset_in_pool)
+    when :transfer
+      src_dataset_in_pool.transfer(dst_dataset_in_pool)
 
-      when :rollback
-        src_dataset_in_pool.rollback
+    when :rollback
+      src_dataset_in_pool.rollback
 
-      when :backup
-        src_dataset_in_pool.backup(dst_dataset_in_pool)
+    when :backup
+      src_dataset_in_pool.backup(dst_dataset_in_pool)
 
-      when :group_snapshot
-        do_group_snapshots
+    when :group_snapshot
+      do_group_snapshots
     end
   end
 

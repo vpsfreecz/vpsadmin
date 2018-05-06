@@ -4,8 +4,8 @@ class UserSessionAgent < ActiveRecord::Base
   def self.find_or_create!(user_agent)
     hash = Digest::SHA1.hexdigest(user_agent)
     find_by(agent_hash: hash) || create!(
-        agent: user_agent,
-        agent_hash: hash
+      agent: user_agent,
+      agent_hash: hash
     )
   end
 end

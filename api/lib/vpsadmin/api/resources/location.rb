@@ -46,13 +46,13 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     example do
       request({})
       response([{
-          label: 'Prague',
-          has_ipv6: true,
-          vps_onboot: true,
-          remote_console_server: 'https://console.vpsadmin.mydomain.com',
-          domain: 'prg',
-          created_at: '2014-05-04 16:59:52 +0200',
-          updated_at: '2014-05-04 16:59:52 +0200'
+        label: 'Prague',
+        has_ipv6: true,
+        vps_onboot: true,
+        remote_console_server: 'https://console.vpsadmin.mydomain.com',
+        domain: 'prg',
+        created_at: '2014-05-04 16:59:52 +0200',
+        updated_at: '2014-05-04 16:59:52 +0200'
       }])
     end
 
@@ -90,7 +90,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
       if not_has.size > 0
         q = q.joins(:nodes).where.not(
-            nodes: {role: not_has}
+          nodes: {role: not_has}
         ).group('locations.id')
       end
 
@@ -123,11 +123,11 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
     example do
       request({
-          label: 'Brno',
-          has_ipv6: true,
-          vps_onboot: true,
-          remote_console_server: '',
-          domain: 'brq'
+        label: 'Brno',
+        has_ipv6: true,
+        vps_onboot: true,
+        remote_console_server: '',
+        domain: 'brq'
       })
       response({
         id: 2
@@ -162,12 +162,12 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       url_params(2)
       request({})
       response({
-          id: 2,
-          label: 'Brno',
-          has_ipv6: true,
-          vps_onboot: true,
-          remote_console_server: '',
-          domain: 'brq'
+        id: 2,
+        label: 'Brno',
+        has_ipv6: true,
+        vps_onboot: true,
+        remote_console_server: '',
+        domain: 'brq'
       })
     end
 
@@ -190,12 +190,12 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     example do
       url_params(2)
       request({
-          label: 'Ostrava',
-          has_ipv6: true,
-          vps_onboot: true,
-          remote_console_server: '',
-          environment: 1,
-          domain: 'ova'
+        label: 'Ostrava',
+        has_ipv6: true,
+        vps_onboot: true,
+        remote_console_server: '',
+        environment: 1,
+        domain: 'ova'
       })
       response({})
     end

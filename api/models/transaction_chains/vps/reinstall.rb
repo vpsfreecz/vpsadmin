@@ -39,8 +39,8 @@ module TransactionChains
       # Destroy underlying dataset with all its descendants,
       # but do not delete the top-level dataset from database.
       use_chain(DatasetInPool::Destroy, args: [vps.dataset_in_pool, {
-          recursive: true,
-          top: false,
+        recursive: true,
+        top: false,
       }])
 
       # Destroy VPS configs, mounts, root
@@ -48,8 +48,8 @@ module TransactionChains
 
       # Create the dataset again
       append(Transactions::Storage::CreateDataset, args: [
-          vps.dataset_in_pool,
-          vps.dataset_in_pool.refquota ? {refquota: vps.dataset_in_pool.refquota} : nil
+        vps.dataset_in_pool,
+        vps.dataset_in_pool.refquota ? {refquota: vps.dataset_in_pool.refquota} : nil
       ]) do
         # FIXME: would be nicer to put this into confirmation of DatasetInPool::Destroy
         increment(vps.dataset_in_pool.dataset, 'current_history_id')
@@ -67,9 +67,9 @@ module TransactionChains
         end
 
         just_create(vps.log(:reinstall, {
-            id: template.id,
-            name: template.name,
-            label: template.label,
+          id: template.id,
+          name: template.name,
+          label: template.label,
         }))
       end
 
@@ -77,8 +77,8 @@ module TransactionChains
       use_chain(Vps::Mounts, args: vps)
 
       append(Transactions::Vps::Resources, args: [
-          vps,
-          vps.get_cluster_resources(%i(memory swap cpu))
+        vps,
+        vps.get_cluster_resources(%i(memory swap cpu))
       ])
 
       vps.ip_addresses.all.each do |ip|
@@ -86,9 +86,9 @@ module TransactionChains
       end
 
       append(Transactions::Vps::DnsResolver, args: [
-          vps,
-          vps.dns_resolver,
-          vps.dns_resolver
+        vps,
+        vps.dns_resolver,
+        vps.dns_resolver
       ])
     end
 
@@ -115,7 +115,7 @@ module TransactionChains
       # Transfer all datasets to all backups
       datasets.each do |dip|
         dip.dataset.dataset_in_pools.joins(:pool).where(
-            'pools.role = ?', ::Pool.roles[:backup]
+          'pools.role = ?', ::Pool.roles[:backup]
         ).each do |dst|
           use_chain(TransactionChains::Dataset::Transfer, args: [dip, dst])
         end

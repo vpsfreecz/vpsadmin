@@ -15,9 +15,9 @@ module TransactionChains
       dst_last_snapshot = dst_dataset_in_pool.snapshot_in_pools.all.order('snapshot_id DESC').take
 
       port = ::PortReservation.reserve(
-          dst_dataset_in_pool.pool.node,
-          dst_dataset_in_pool.pool.node.addr,
-          self.id ? self : dst_chain
+        dst_dataset_in_pool.pool.node,
+        dst_dataset_in_pool.pool.node.addr,
+        self.id ? self : dst_chain
       )
 
       # no snapshots on the destination
@@ -45,14 +45,14 @@ module TransactionChains
         end
 
         use_chain(Dataset::Send, args: [
-                port,
-                src_dataset_in_pool,
-                dst_dataset_in_pool,
-                transfer_snapshots,
-                nil,
-                branch,
-                true
-            ]
+            port,
+            src_dataset_in_pool,
+            dst_dataset_in_pool,
+            transfer_snapshots,
+            nil,
+            branch,
+            true
+          ]
         )
 
       else
@@ -88,12 +88,12 @@ module TransactionChains
             # if they are the same, it is the last snapshot on source and nothing has to be sent
             unless src_last_snapshot.snapshot_id == snap.snapshot_id
               use_chain(Dataset::Send, args: [
-                  port,
-                  src_dataset_in_pool,
-                  dst_dataset_in_pool,
-                  transfer_snapshots,
-                  nil,
-                  branch
+                port,
+                src_dataset_in_pool,
+                dst_dataset_in_pool,
+                transfer_snapshots,
+                nil,
+                branch
               ])
 
               return
@@ -126,10 +126,10 @@ module TransactionChains
         last_index = dataset_in_pool.dataset_trees.all.maximum('index')
 
         tree = ::DatasetTree.create!(
-            dataset_in_pool: dataset_in_pool,
-            index: last_index ? last_index + 1 : 0,
-            head: true,
-            confirmed: ::DatasetTree.confirmed(:confirm_create)
+          dataset_in_pool: dataset_in_pool,
+          index: last_index ? last_index + 1 : 0,
+          head: true,
+          confirmed: ::DatasetTree.confirmed(:confirm_create)
         )
 
         append(Transactions::Storage::CreateTree, args: tree) do
@@ -145,10 +145,10 @@ module TransactionChains
 
       unless branch
         branch = ::Branch.create!(
-            dataset_tree: tree,
-            name: Time.new.strftime('%Y-%m-%dT%H:%M:%S'),
-            head: true,
-            confirmed: ::Branch.confirmed(:confirm_create)
+          dataset_tree: tree,
+          name: Time.new.strftime('%Y-%m-%dT%H:%M:%S'),
+          head: true,
+          confirmed: ::Branch.confirmed(:confirm_create)
         )
 
         append(Transactions::Storage::BranchDataset, args: branch) do

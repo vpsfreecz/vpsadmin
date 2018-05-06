@@ -8,9 +8,9 @@ module Transactions::Vps
       self.node_id = dst_node.id
 
       {
-          src_node_addr: vps.node.addr,
-          local: vps.node_id == dst_node.id,
-          dst_vps: (dst_vps && dst_vps.id) || vps.id
+        src_node_addr: vps.node.addr,
+        local: vps.node_id == dst_node.id,
+        dst_vps: (dst_vps && dst_vps.id) || vps.id,
       }
     end
   end

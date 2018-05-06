@@ -13,18 +13,18 @@ class MigrationPlan < ActiveRecord::Base
       vps_migrations.order('created_at').each do |m|
         begin
           chain, _ = TransactionChains::Vps::Migrate.fire2(
-              args: [m.vps, m.dst_node, {
-                  outage_window: m.outage_window,
-                  cleanup_data: m.cleanup_data,
-                  send_mail: send_mail,
-                  reason: reason,
-              }],
+            args: [m.vps, m.dst_node, {
+              outage_window: m.outage_window,
+              cleanup_data: m.cleanup_data,
+              send_mail: send_mail,
+              reason: reason,
+            }],
           )
 
           m.update!(
-              state: ::VpsMigration.states[:running],
-              started_at: Time.now,
-              transaction_chain: chain,
+            state: ::VpsMigration.states[:running],
+            started_at: Time.now,
+            transaction_chain: chain,
           )
 
           i += 1
@@ -46,18 +46,18 @@ class MigrationPlan < ActiveRecord::Base
   def cancel!
     update!(state: self.class.states[:cancelling])
     vps_migrations.where(
-        state: ::VpsMigration.states[:queued]
+      state: ::VpsMigration.states[:queued]
     ).update_all(
-        state: ::VpsMigration.states[:cancelled]
+      state: ::VpsMigration.states[:cancelled]
     )
   end
 
   def fail!
     update!(state: self.class.states[:failing])
     vps_migrations.where(
-        state: ::VpsMigration.states[:queued]
+      state: ::VpsMigration.states[:queued]
     ).update_all(
-        state: ::VpsMigration.states[:cancelled]
+      state: ::VpsMigration.states[:cancelled]
     )
   end
 
@@ -77,8 +77,8 @@ class MigrationPlan < ActiveRecord::Base
     end
 
     update!(
-        state: self.class.states[new_state],
-        finished_at: Time.now,
+      state: self.class.states[new_state],
+      finished_at: Time.now,
     )
 
     resource_locks.delete_all

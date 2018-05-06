@@ -7,8 +7,8 @@ module VpsAdmin::DownloadMounter
 
     def initialize
       @opts = {
-          auth: 'token',
-          lifetime: 'renewable_auto',
+        auth: 'token',
+        lifetime: 'renewable_auto',
       }
     end
 
@@ -76,8 +76,8 @@ END
       end
 
       @api = HaveAPI::Client::Client.new(
-          ARGV[0],
-          identity: "vpsadmin-download-mounter v#{VpsAdmin::DownloadMounter::VERSION}"
+        ARGV[0],
+        identity: "vpsadmin-download-mounter v#{VpsAdmin::DownloadMounter::VERSION}"
       )
 
       authenticate

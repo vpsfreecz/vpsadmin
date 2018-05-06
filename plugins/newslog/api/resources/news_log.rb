@@ -49,9 +49,9 @@ module VpsAdmin::API::Resources
 
       def exec
         with_includes(query)
-            .limit(input[:limit])
-            .offset(input[:offset])
-            .order('published_at DESC')
+          .limit(input[:limit])
+          .offset(input[:offset])
+          .order('published_at DESC')
       end
     end
 

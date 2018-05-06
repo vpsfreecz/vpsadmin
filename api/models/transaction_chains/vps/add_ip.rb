@@ -13,7 +13,7 @@ module TransactionChains
 
       uses = []
       user_env = vps.user.environment_user_configs.find_by!(
-          environment: vps.node.location.environment,
+        environment: vps.node.location.environment,
       )
       ownership = vps.node.location.environment.user_ip_ownership
       ips_arr = ips.to_a
@@ -57,9 +57,9 @@ module TransactionChains
           cur = user_env.send(r)
 
           uses << user_env.reallocate_resource!(
-              r,
-              cur + cnt,
-              user: vps.user
+            r,
+            cur + cnt,
+            user: vps.user
           ) if cnt != 0
         end
       end
@@ -68,7 +68,7 @@ module TransactionChains
       order = {}
       [4, 6].each do |v|
         last_ip = vps.ip_addresses.joins(:network).where(
-            networks: {ip_version: v}
+          networks: {ip_version: v}
         ).order('`order` DESC').take
 
         order[v] = last_ip ? last_ip.order + 1 : 0

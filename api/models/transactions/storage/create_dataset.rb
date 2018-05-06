@@ -15,10 +15,10 @@ module Transactions::Storage
       end
 
       {
-          pool_fs: dataset_in_pool.pool.filesystem,
-          name: dataset_in_pool.dataset.full_name,
-          options: options.any? ? options : nil,
-          create_private: %w(hypervisor primary).include?(dataset_in_pool.pool.role)
+        pool_fs: dataset_in_pool.pool.filesystem,
+        name: dataset_in_pool.dataset.full_name,
+        options: options.any? ? options : nil,
+        create_private: %w(hypervisor primary).include?(dataset_in_pool.pool.role),
       }
     end
   end

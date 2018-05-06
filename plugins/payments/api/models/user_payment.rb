@@ -17,8 +17,8 @@ class UserPayment < ActiveRecord::Base
 
     if payment.amount % monthly != 0
       payment.errors.add(
-          :amount,
-          "not a multiple of the monthly payment (#{monthly})"
+        :amount,
+        "not a multiple of the monthly payment (#{monthly})"
       )
       raise ActiveRecord::RecordInvalid, payment
     end
@@ -42,7 +42,7 @@ TransactionChains::Mail::DailyReport.connect_hook(:send) do |ret, from, now|
 
   ret[:payments] ||= {}
   ret[:payments][:accepted] = ::UserPayment.where(
-      'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
+    'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
   ).order('user_payments.created_at, user_payments.user_id')
   ret
 end

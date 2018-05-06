@@ -39,22 +39,22 @@ module TransactionChains
       end
 
       dst_vps = ::Vps.new(
-          user_id: attrs[:user].id,
-          hostname: attrs[:hostname],
-          manage_hostname: vps.manage_hostname,
-          os_template_id: vps.os_template_id,
-          info: "Cloned from #{vps.id}. Original info:\n#{vps.info}",
-          node_id: node.id,
-          onboot: vps.onboot,
-          onstartall: vps.onstartall,
-          config: attrs[:configs] ? vps.config : '',
-          cpu_limit: attrs[:resources] ? vps.cpu_limit : nil,
-          confirmed: ::Vps.confirmed(:confirm_create)
+        user_id: attrs[:user].id,
+        hostname: attrs[:hostname],
+        manage_hostname: vps.manage_hostname,
+        os_template_id: vps.os_template_id,
+        info: "Cloned from #{vps.id}. Original info:\n#{vps.info}",
+        node_id: node.id,
+        onboot: vps.onboot,
+        onstartall: vps.onstartall,
+        config: attrs[:configs] ? vps.config : '',
+        cpu_limit: attrs[:resources] ? vps.cpu_limit : nil,
+        confirmed: ::Vps.confirmed(:confirm_create)
       )
 
       lifetime = dst_vps.user.env_config(
-          dst_vps.node.location.environment,
-          :vps_lifetime
+        dst_vps.node.location.environment,
+        :vps_lifetime
       )
 
       dst_vps.expiration_date = Time.now + lifetime if lifetime != 0
@@ -64,9 +64,9 @@ module TransactionChains
 
       ::VpsFeature::FEATURES.each_key do |name|
         confirm_features << ::VpsFeature.create!(
-            vps: dst_vps,
-            name: name,
-            enabled: attrs[:features] ? dst_features[name] : false
+          vps: dst_vps,
+          name: name,
+          enabled: attrs[:features] ? dst_features[name] : false
         )
       end
 
@@ -74,11 +74,11 @@ module TransactionChains
       # FIXME: user could choose if he wants to clone it
       vps.vps_outage_windows.each do |w|
         w = VpsOutageWindow.new(
-            vps: dst_vps,
-            weekday: w.weekday,
-            is_open: w.is_open,
-            opens_at: w.opens_at,
-            closes_at: w.closes_at,
+          vps: dst_vps,
+          weekday: w.weekday,
+          is_open: w.is_open,
+          opens_at: w.opens_at,
+          closes_at: w.closes_at,
         )
         w.save!(validate: false)
         confirm_windows << w
@@ -89,15 +89,15 @@ module TransactionChains
       # Perhaps make it a boolean attribute determining if resources
       # must be allocated all or if the available number is sufficient.
       vps_resources = dst_vps.allocate_resources(
-          required: %i(cpu memory swap),
-          optional: [],
-          user: dst_vps.user,
-          chain: self,
-          values: attrs[:resources] ? {
-              cpu: vps.cpu,
-              memory: vps.memory,
-              swap: vps.swap
-          } : {}
+        required: %i(cpu memory swap),
+        optional: [],
+        user: dst_vps.user,
+        chain: self,
+        values: attrs[:resources] ? {
+          cpu: vps.cpu,
+          memory: vps.memory,
+          swap: vps.swap
+        } : {}
       )
 
       dst_vps.dataset_in_pool = vps_dataset(vps, dst_vps, attrs[:dataset_plans])
@@ -143,9 +143,9 @@ module TransactionChains
       datasets.each do |src, dst|
         if src != vps.dataset_in_pool
           use = dst.allocate_resource!(
-              :diskspace,
-              src.diskspace,
-              user: dst_vps.user
+            :diskspace,
+            src.diskspace,
+            user: dst_vps.user
           )
 
           properties = ::DatasetProperty.clone_properties!(src, dst)
@@ -223,22 +223,22 @@ module TransactionChains
     # Create a new dataset for target VPS.
     def vps_dataset(vps, dst_vps, clone_plans)
       ds = ::Dataset.new(
-          name: dst_vps.id.to_s,
-          user: dst_vps.user,
-          user_editable: false,
-          user_create: true,
-          user_destroy: false,
-          confirmed: ::Dataset.confirmed(:confirm_create)
+        name: dst_vps.id.to_s,
+        user: dst_vps.user,
+        user_editable: false,
+        user_create: true,
+        user_destroy: false,
+        confirmed: ::Dataset.confirmed(:confirm_create)
       )
 
       dip = use_chain(Dataset::Create, args: [
-          @dst_pool,
-          nil,
-          [ds],
-          false,
-          root_dataset_properties(vps),
-          dst_vps.user,
-          "vps#{dst_vps.id}"
+        @dst_pool,
+        nil,
+        [ds],
+        false,
+        root_dataset_properties(vps),
+        dst_vps.user,
+        "vps#{dst_vps.id}"
       ]).last
 
       # Clone dataset plans
@@ -269,24 +269,24 @@ module TransactionChains
       lock(dip)
 
       ds = ::Dataset.create!(
-          parent: parent,
-          name: dip.dataset.name,
-          user: dip.dataset.user,
-          user_editable: dip.dataset.user_editable,
-          user_create: dip.dataset.user_create,
-          user_destroy: dip.dataset.user_destroy,
-          confirmed: ::Dataset.confirmed(:confirm_create)
+        parent: parent,
+        name: dip.dataset.name,
+        user: dip.dataset.user,
+        user_editable: dip.dataset.user_editable,
+        user_create: dip.dataset.user_create,
+        user_destroy: dip.dataset.user_destroy,
+        confirmed: ::Dataset.confirmed(:confirm_create)
       )
 
       parent = ds
 
       dst = ::DatasetInPool.create!(
-          pool: @dst_pool,
-          dataset: ds,
-          label: dip.label,
-          min_snapshots: dip.min_snapshots,
-          max_snapshots: dip.max_snapshots,
-          snapshot_max_age: dip.snapshot_max_age
+        pool: @dst_pool,
+        dataset: ds,
+        label: dip.label,
+        min_snapshots: dip.min_snapshots,
+        max_snapshots: dip.max_snapshots,
+        snapshot_max_age: dip.snapshot_max_age
       )
 
       lock(dst)
@@ -302,22 +302,22 @@ module TransactionChains
           lock(dip)
 
           ds = ::Dataset.create!(
-              parent: parent,
-              name: dip.dataset.name,
-              user: dip.dataset.user,
-              user_editable: dip.dataset.user_editable,
-              user_create: dip.dataset.user_create,
-              user_destroy: dip.dataset.user_destroy,
-              confirmed: ::Dataset.confirmed(:confirm_create)
+            parent: parent,
+            name: dip.dataset.name,
+            user: dip.dataset.user,
+            user_editable: dip.dataset.user_editable,
+            user_create: dip.dataset.user_create,
+            user_destroy: dip.dataset.user_destroy,
+            confirmed: ::Dataset.confirmed(:confirm_create)
           )
 
           dst = ::DatasetInPool.create!(
-              pool: @dst_pool,
-              dataset_id: ds,
-              label: dip.label,
-              min_snapshots: dip.min_snapshots,
-              max_snapshots: dip.max_snapshots,
-              snapshot_max_age: dip.snapshot_max_age
+            pool: @dst_pool,
+            dataset_id: ds,
+            label: dip.label,
+            min_snapshots: dip.min_snapshots,
+            max_snapshots: dip.max_snapshots,
+            snapshot_max_age: dip.snapshot_max_age
           )
 
           lock(dst)
@@ -337,45 +337,45 @@ module TransactionChains
     # IP addresses.
     def clone_ip_addresses(vps, dst_vps)
       ips = {
-          ipv4: vps.ip_addresses.joins(:network).where(
-                  networks: {
-                      ip_version: 4,
-                      role: ::Network.roles[:public_access],
-                  }
-              ).count,
-          ipv4_private: vps.ip_addresses.joins(:network).where(
-                  networks: {
-                      ip_version: 4,
-                      role: ::Network.roles[:private_access],
-                  }
-              ).count,
-          ipv6: vps.ip_addresses.joins(:network).where(
-                  networks: {ip_version: 6}
-              ).count,
+        ipv4: vps.ip_addresses.joins(:network).where(
+                networks: {
+                  ip_version: 4,
+                  role: ::Network.roles[:public_access],
+                }
+            ).count,
+        ipv4_private: vps.ip_addresses.joins(:network).where(
+                networks: {
+                  ip_version: 4,
+                  role: ::Network.roles[:private_access],
+                }
+            ).count,
+        ipv6: vps.ip_addresses.joins(:network).where(
+                networks: {ip_version: 6}
+            ).count,
       }
 
       versions = [:ipv4, :ipv4_private]
       versions << :ipv6 if dst_vps.node.location.has_ipv6
 
       user_env = dst_vps.user.environment_user_configs.find_by!(
-          environment: dst_vps.node.location.environment,
+        environment: dst_vps.node.location.environment,
       )
 
       changes = []
 
       versions.each do |r|
         chowned = use_chain(
-            Ip::Allocate,
-            args: [::ClusterResource.find_by!(name: r), dst_vps, ips[r], strict: true],
-            method: :allocate_to_vps
+          Ip::Allocate,
+          args: [::ClusterResource.find_by!(name: r), dst_vps, ips[r], strict: true],
+          method: :allocate_to_vps
         )
 
         changes << user_env.reallocate_resource!(
-            r,
-            user_env.send(r) + chowned,
-            user: dst_vps.user,
-            chain: self,
-            confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+          r,
+          user_env.send(r) + chowned,
+          user: dst_vps.user,
+          chain: self,
+          confirmed: ::ClusterResourceUse.confirmed(:confirmed),
         )
       end
 

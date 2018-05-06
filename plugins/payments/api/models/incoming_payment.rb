@@ -20,7 +20,7 @@ TransactionChains::Mail::DailyReport.connect_hook(:send) do |ret, from, now|
   t = now.strftime('%Y-%m-%d %H:%M:%S')
 
   income = ::IncomingPayment.where(
-      'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
+    'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
   ).order('incoming_payments.created_at, incoming_payments.id')
 
   ret[:payments] ||= {}

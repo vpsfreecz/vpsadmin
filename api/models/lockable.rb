@@ -46,26 +46,26 @@ module Lockable
   # Assign already acquired lock to +chain+.
   def assign_lock(obj)
     ResourceLock.find_by(
-        resource: lock_resource_name,
-        row_id: self.id,
-        locked_by: nil,
+      resource: lock_resource_name,
+      row_id: self.id,
+      locked_by: nil,
     ).assign_to(obj)
   end
 
   # Release lock owned by +chain+.
   def release_lock(locked_by = nil)
     ResourceLock.find_by(
-        resource: lock_resource_name,
-        row_id: self.id,
-        locked_by: locked_by,
+      resource: lock_resource_name,
+      row_id: self.id,
+      locked_by: locked_by,
     ).release
   end
 
   # True if this resource is locked.
   def locked?
     !ResourceLock.find_by(
-        resource: lock_resource_name,
-        row_id: self.id,
+      resource: lock_resource_name,
+      row_id: self.id,
     ).nil?
   end
 

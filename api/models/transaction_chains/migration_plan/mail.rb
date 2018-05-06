@@ -8,13 +8,13 @@ module TransactionChains
 
       plan.vps_migrations.includes(:src_node, :dst_node, vps: [:user]).each do |m|
         mail(:vps_migration_planned, {
-            user: m.vps.user,
-            vars: {
-                m: m,
-                vps: m.vps,
-                src_node: m.src_node,
-                dst_node: m.dst_node,
-            }
+          user: m.vps.user,
+          vars: {
+            m: m,
+            vps: m.vps,
+            src_node: m.src_node,
+            dst_node: m.dst_node,
+          }
         }) if m.vps.user.mailer_enabled
       end
     end

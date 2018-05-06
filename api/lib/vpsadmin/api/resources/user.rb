@@ -67,7 +67,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     def query
       q = if input[:object_state]
         ::User.unscoped.where(
-            object_state: ::User.object_states[input[:object_state]]
+          object_state: ::User.object_states[input[:object_state]]
         )
 
       else
@@ -263,15 +263,15 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       if input.has_key?(:new_password)
         if current_user.role != :admin && !input.has_key?(:password)
           error(
-              'update failed',
-              password: ['current password must be entered']
+            'update failed',
+            password: ['current password must be entered']
           )
         end
 
         if input[:new_password].nil? || input[:new_password].length < 8
           error(
-              'update failed',
-              new_password: ['password must be at least 8 characters long']
+            'update failed',
+            new_password: ['password must be at least 8 characters long']
           )
         end
 
@@ -279,8 +279,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
             request, u.login, input[:password]
           ).nil?
           error(
-              'update failed',
-              password: ['incorrect password']
+            'update failed',
+            password: ['incorrect password']
           )
         end
 
@@ -425,8 +425,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         error('provide at least one parameter to update') if input.empty?
 
         ::EnvironmentUserConfig.find_by!(
-            user_id: params[:user_id],
-            id: params[:environment_config_id]
+          user_id: params[:user_id],
+          id: params[:environment_config_id]
         ).update!(input)
 
       rescue ActiveRecord::RecordInvalid => e
@@ -509,8 +509,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       def prepare
         @r = with_includes.find_by!(
-            user_id: params[:user_id],
-            id: params[:cluster_resource_id]
+          user_id: params[:user_id],
+          id: params[:cluster_resource_id]
         )
       end
 
@@ -540,7 +540,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       def exec
         ::UserClusterResource.create!(input.update({
-            user: ::User.find(params[:user_id]),
+          user: ::User.find(params[:user_id]),
         }))
 
       rescue ActiveRecord::RecordInvalid => e
@@ -565,8 +565,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       def exec
         ::UserClusterResource.find_by!(
-            user_id: params[:user_id],
-            id: params[:cluster_resource_id]
+          user_id: params[:user_id],
+          id: params[:cluster_resource_id]
         ).update!(input)
 
       rescue ActiveRecord::RecordInvalid => e
@@ -795,8 +795,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         end
 
         @recp = ::UserMailRoleRecipient.find_by!(
-            user_id: params[:user_id],
-            role: params[:mail_role_recipient_id]
+          user_id: params[:user_id],
+          role: params[:mail_role_recipient_id]
         )
       end
 
@@ -826,9 +826,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         end
 
         ::UserMailRoleRecipient.handle_update!(
-            ::User.find(params[:user_id]),
-            params[:mail_role_recipient_id],
-            input
+          ::User.find(params[:user_id]),
+          params[:mail_role_recipient_id],
+          input
         )
 
       rescue ActiveRecord::RecordInvalid => e
@@ -895,8 +895,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         end
 
         @recp = ::UserMailTemplateRecipient.find_by!(
-            user_id: params[:user_id],
-            mail_template_id: params[:mail_template_id],
+          user_id: params[:user_id],
+          mail_template_id: params[:mail_template_id],
         )
       end
 
@@ -926,9 +926,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         end
 
         ::UserMailTemplateRecipient.handle_update!(
-            ::User.find(params[:user_id]),
-            ::MailTemplate.find_by!(name: params[:mail_template_recipient_id]),
-            input
+          ::User.find(params[:user_id]),
+          ::MailTemplate.find_by!(name: params[:mail_template_recipient_id]),
+          input
         )
 
       rescue ActiveRecord::RecordInvalid => e

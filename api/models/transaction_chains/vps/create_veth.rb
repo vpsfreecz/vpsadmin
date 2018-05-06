@@ -12,8 +12,8 @@ module TransactionChains
           t.edit_before(ip, vps_id: ip.vps_id, order: ip.order)
 
           ip.update!(
-              vps_id: vps.id,
-              order: 0, # interconnecting IPs are always first
+            vps_id: vps.id,
+            order: 0, # interconnecting IPs are always first
           )
 
           t.edit_before(vps, veth_mac: nil)
@@ -26,10 +26,10 @@ module TransactionChains
     def get_ip(vps, version)
       ::IpAddress.transaction do
         ip = ::IpAddress.pick_addr!(
-            vps.user,
-            vps.node.location,
-            version,
-            :interconnecting
+          vps.user,
+          vps.node.location,
+          version,
+          :interconnecting
         )
 
         lock(ip)

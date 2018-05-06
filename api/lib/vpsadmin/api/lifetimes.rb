@@ -35,12 +35,12 @@ module VpsAdmin::API
   #   class User < ActiveRecord::Base
   #     include VpsAdmin::API::Lifetimes::Model
   #     set_object_states suspended: {
-  #                           enter: TransactionChains::User::Suspend,
-  #                           leave: TransactionChains::User::Resume
+  #                         enter: TransactionChains::User::Suspend,
+  #                         leave: TransactionChains::User::Resume
   #                       },
   #                       soft_delete: {
-  #                          enter: TransactionChains::User::SoftDelete,
-  #                           leave: TransactionChains::User::Revive
+  #                         enter: TransactionChains::User::SoftDelete,
+  #                         leave: TransactionChains::User::Revive
   #                      }
   #   end
   #
@@ -167,8 +167,8 @@ module VpsAdmin::API
 
           def query
             ::ObjectState.where(
-                class_name: self.class::PARENT_RESOURCE.model.name,
-                row_id: params[self.class::PARENT_OBJECT_ID]
+              class_name: self.class::PARENT_RESOURCE.model.name,
+              row_id: params[self.class::PARENT_OBJECT_ID]
             )
           end
 
@@ -286,14 +286,14 @@ module VpsAdmin::API
 
           states.each do |k, v|
             case k
-              when :states
-                @states = v
+            when :states
+              @states = v
 
-              when :environment
-                @env = v
+            when :environment
+              @env = v
 
-              else
-                @state_changes[k] = v
+            else
+              @state_changes[k] = v
             end
           end
 
@@ -315,12 +315,12 @@ module VpsAdmin::API
           end
 
           Private.change_state(
-              self,
-              state,
-              chain,
-              reason,
-              user || ::User.current,
-              expiration
+            self,
+            state,
+            chain,
+            reason,
+            user || ::User.current,
+            expiration
           )
         end
 
@@ -344,12 +344,12 @@ module VpsAdmin::API
           self.expiration_date = expiration
 
           log = ::ObjectState.create!(
-              class_name: self.class.name,
-              row_id: self.id,
-              state: self.object_state,
-              expiration_date: expiration,
-              reason: reason,
-              user: user || ::User.current
+            class_name: self.class.name,
+            row_id: self.id,
+            state: self.object_state,
+            expiration_date: expiration,
+            reason: reason,
+            user: user || ::User.current
           )
 
           save! if save
@@ -359,8 +359,8 @@ module VpsAdmin::API
         # Returns the current (last) state.
         def current_state
           ::ObjectState.where(
-              class_name: self.class.name,
-              row_id: self.id
+            class_name: self.class.name,
+            row_id: self.id
           ).order('created_at DESC').take
         end
       end
@@ -416,10 +416,10 @@ module VpsAdmin::API
           env = Private.environment(obj)
 
           default = ::DefaultLifetimeValue.find_by(
-              environment: env,
-              class_name: obj.class.to_s,
-              direction: ::DefaultLifetimeValue.directions[enter ? :enter : :leave],
-              state: ::DefaultLifetimeValue.states[target]
+            environment: env,
+            class_name: obj.class.to_s,
+            direction: ::DefaultLifetimeValue.directions[enter ? :enter : :leave],
+            state: ::DefaultLifetimeValue.states[target]
           )
 
           if default
@@ -469,8 +469,8 @@ module VpsAdmin::API
           if !input[:object_state] || obj.object_state == input[:object_state]
             if input[:expiration_date] || obj.expiration_date != input[:expiration_date]
               obj.set_expiration(
-                  input[:expiration_date],
-                  reason: input[:change_reason]
+                input[:expiration_date],
+                reason: input[:change_reason]
               )
 
             else
@@ -479,12 +479,12 @@ module VpsAdmin::API
 
           else
             return [
-                obj.set_object_state(
-                  input[:object_state].to_sym,
-                  reason: input[:change_reason],
-                  expiration: input[:expiration_date]
-                ),
-                obj,
+              obj.set_object_state(
+                input[:object_state].to_sym,
+                reason: input[:change_reason],
+                expiration: input[:expiration_date]
+              ),
+              obj,
             ]
           end
 
@@ -530,12 +530,12 @@ module VpsAdmin::API
 
         def after_create(record)
           s = ::ObjectState.new(
-              class_name: record.class.name,
-              row_id: record.id,
-              state: record.object_state,
-              expiration_date: record.expiration_date,
-              reason: 'Object was created.',
-              user: ::User.current
+            class_name: record.class.name,
+            row_id: record.id,
+            state: record.object_state,
+            expiration_date: record.expiration_date,
+            reason: 'Object was created.',
+            user: ::User.current
           )
           s.save!
         end

@@ -14,15 +14,15 @@ module Transactions::OutageWindow
 
       vps.vps_outage_windows.where(is_open: true).order('weekday').each do |w|
         windows << {
-            weekday: w.weekday,
-            opens_at: w.opens_at,
-            closes_at: w.closes_at,
+          weekday: w.weekday,
+          opens_at: w.opens_at,
+          closes_at: w.closes_at,
         }
       end
 
       {
-          windows: windows,
-          reserve_time: reserve_time,
+        windows: windows,
+        reserve_time: reserve_time,
       }
     end
   end

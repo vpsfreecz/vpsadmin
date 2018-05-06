@@ -44,9 +44,9 @@ module VpsAdmin::API::Resources
 
       def exec
         with_includes(query)
-            .limit(input[:limit])
-            .offset(input[:offset])
-            .order('outage_vpses.outage_id, outage_vpses.id, outage_vps_mounts.id')
+          .limit(input[:limit])
+          .offset(input[:offset])
+          .order('outage_vpses.outage_id, outage_vpses.id, outage_vps_mounts.id')
       end
     end
 
@@ -65,7 +65,7 @@ module VpsAdmin::API::Resources
 
       def prepare
         @outage = ::OutageVps.joins(outage_vps: [:vps]).find_by!(with_restricted(
-            id: params[:vps_outage_mount_id],
+          id: params[:vps_outage_mount_id],
         ))
       end
 

@@ -41,8 +41,8 @@ class UserAccount < ActiveRecord::Base
   # @param income [IncomingPayment]
   def self.accept_payment(user, income)
     payment = ::UserPayment.new(
-        incoming_payment: income,
-        user: user,
+      incoming_payment: income,
+      user: user,
     )
     amount = income.converted_amount
 
@@ -64,8 +64,8 @@ class UserAccount < ActiveRecord::Base
   def set_defaults
     return if persisted?
     self.monthly_payment = ::SysConfig.get(
-        :plugin_payments,
-        :default_monthly_payment
+      :plugin_payments,
+      :default_monthly_payment
     ).to_i
   end
 end

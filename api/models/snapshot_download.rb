@@ -10,7 +10,7 @@ class SnapshotDownload < ActiveRecord::Base
   include VpsAdmin::API::Lifetimes::Model
   set_object_states states: %i(active deleted),
                     deleted: {
-                        enter: TransactionChains::Dataset::RemoveDownload
+                      enter: TransactionChains::Dataset::RemoveDownload
                     }
 
   enum format: %i(archive stream incremental_stream)
@@ -26,11 +26,11 @@ class SnapshotDownload < ActiveRecord::Base
 
   def url
     File.join(
-        self.class.base_url,
-        pool.node.fqdn,
-        pool.filesystem.split('/').last,
-        secret_key,
-        file_name
+      self.class.base_url,
+      pool.node.fqdn,
+      pool.filesystem.split('/').last,
+      secret_key,
+      file_name
     )
   end
 end

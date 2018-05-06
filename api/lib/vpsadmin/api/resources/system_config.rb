@@ -59,8 +59,8 @@ module VpsAdmin::API::Resources
 
       def prepare
         q = ::SysConfig.where.not(min_user_level: nil).where(
-            category: params[:category],
-            name: params[:name],
+          category: params[:category],
+          name: params[:name],
         )
 
         if current_user.nil?
@@ -97,8 +97,8 @@ module VpsAdmin::API::Resources
 
       def exec
         cfg = ::SysConfig.find_by!(
-            category: params[:category],
-            name: params[:name],
+          category: params[:category],
+          name: params[:name],
         )
         cfg.set_value(input[:value])
         cfg.save!

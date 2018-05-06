@@ -7,9 +7,9 @@ module VpsAdmin::ConsoleRouter
 
     def api_url
       rs = db.query(
-          "SELECT value
-          FROM sysconfig
-          WHERE category = 'core' AND name = 'api_url'"
+        "SELECT value
+        FROM sysconfig
+        WHERE category = 'core' AND name = 'api_url'"
       )
       JSON.parse("{ \"v\": #{rs.fetch_row.first} }", symbolize_names: true)[:v]
     end
@@ -107,17 +107,17 @@ module VpsAdmin::ConsoleRouter
 
       unless @connections.include?(veid)
         st = db.prepared_st(
-            'SELECT ip_addr
-            FROM nodes
-            INNER JOIN vpses ON vpses.node_id = nodes.id
-            WHERE vpses.id = ?',
-            veid
+          'SELECT ip_addr
+          FROM nodes
+          INNER JOIN vpses ON vpses.node_id = nodes.id
+          WHERE vpses.id = ?',
+          veid
         )
 
         @connections[veid] = EventMachine.connect(
-            st.fetch[0],
-            8081,
-            Console, veid, params, self
+          st.fetch[0],
+          8081,
+          Console, veid, params, self
         )
 
         st.close
@@ -150,21 +150,21 @@ module VpsAdmin::ConsoleRouter
       end
 
       st = db.prepared_st(
-          'SELECT UNIX_TIMESTAMP(expiration)
-          FROM vps_consoles
-          WHERE vps_id = ? AND token = ? AND expiration > ?',
-          veid,
-          session,
-          Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
+        'SELECT UNIX_TIMESTAMP(expiration)
+        FROM vps_consoles
+        WHERE vps_id = ? AND token = ? AND expiration > ?',
+        veid,
+        session,
+        Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
       )
 
       if st.num_rows == 1
         @sessions[veid] ||= []
         @sessions[veid] << {
-            session: session,
-            expiration: st.fetch[0].to_i,
-            last_access: Time.now.utc.to_i,
-            buf: ''
+          session: session,
+          expiration: st.fetch[0].to_i,
+          last_access: Time.now.utc.to_i,
+          buf: ''
         }
         st.close
         return true

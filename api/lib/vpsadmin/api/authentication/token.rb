@@ -7,12 +7,12 @@ module VpsAdmin::API::Authentication
 
     def save_token(request, user_session, token, lifetime, interval)
       t = ::ApiToken.create!(
-          user: user_session.user,
-          token: token,
-          valid_to: (lifetime != 'permanent' ? Time.now + interval : nil),
-          lifetime: lifetime,
-          interval: interval,
-          label: request.user_agent
+        user: user_session.user,
+        token: token,
+        valid_to: (lifetime != 'permanent' ? Time.now + interval : nil),
+        lifetime: lifetime,
+        interval: interval,
+        label: request.user_agent,
       )
 
       ::UserSession.current.start!(t)
@@ -40,7 +40,10 @@ module VpsAdmin::API::Authentication
     end
 
     def find_user_by_token(request, token)
-      t = ::ApiToken.where('token = ? AND ((lifetime = 3 AND valid_to IS NULL) OR valid_to >= ?)', token, Time.now).take
+      t = ::ApiToken.where(
+        'token = ? AND ((lifetime = 3 AND valid_to IS NULL) OR valid_to >= ?)',
+        token, Time.now
+      ).take
 
       if t
         ::ApiToken.increment_counter(:use_count, t.id)

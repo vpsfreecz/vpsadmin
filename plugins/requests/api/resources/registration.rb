@@ -53,9 +53,9 @@ module VpsAdmin::API::Resources
 
         def exec
           ::RegistrationRequest.find_by!(with_restricted(
-              id: params[:registration_id],
-              access_token: params[:token],
-              state: ::RegistrationRequest.states[:pending_correction],
+            id: params[:registration_id],
+            access_token: params[:token],
+            state: ::RegistrationRequest.states[:pending_correction],
           ))
         end
       end
@@ -79,9 +79,9 @@ module VpsAdmin::API::Resources
 
         def exec
           req = ::RegistrationRequest.find_by!(with_restricted(
-              id: params[:registration_id],
-              access_token: params[:token],
-              state: ::RegistrationRequest.states[:pending_correction],
+            id: params[:registration_id],
+            access_token: params[:token],
+            state: ::RegistrationRequest.states[:pending_correction],
           ))
           req.resubmit!(input)
           req

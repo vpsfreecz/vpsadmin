@@ -76,17 +76,17 @@ class MailTemplate < ActiveRecord::Base
     tr.resolve(opts[:vars]) if opts[:vars]
 
     mail = MailLog.new(
-        user: opts[:user],
-        mail_template: tpl,
-        from: opts[:from] || tr.from,
-        reply_to: opts[:reply_to] || tr.reply_to,
-        return_path: opts[:return_path] || tr.return_path,
-        message_id: opts[:message_id],
-        in_reply_to: opts[:in_reply_to],
-        references: opts[:references],
-        subject: tr.subject,
-        text_plain: tr.text_plain,
-        text_html: tr.text_html,
+      user: opts[:user],
+      mail_template: tpl,
+      from: opts[:from] || tr.from,
+      reply_to: opts[:reply_to] || tr.reply_to,
+      return_path: opts[:return_path] || tr.return_path,
+      message_id: opts[:message_id],
+      in_reply_to: opts[:in_reply_to],
+      references: opts[:references],
+      subject: tr.subject,
+      text_plain: tr.text_plain,
+      text_html: tr.text_html,
     )
 
     recipients = {to: opts[:to] || [], cc: opts[:cc] || [], bcc: opts[:bcc] || []}
@@ -141,16 +141,16 @@ class MailTemplate < ActiveRecord::Base
     builder = MailTemplateTranslation::TemplateBuilder.new(opts[:vars] || {})
 
     mail = MailLog.new(
-        user: opts[:user],
-        from: opts[:from],
-        reply_to: opts[:reply_to],
-        return_path: opts[:return_path],
-        message_id: opts[:message_id],
-        in_reply_to: opts[:in_reply_to],
-        references: opts[:references],
-        subject: builder.build(opts[:subject]),
-        text_plain: opts[:text_plain] && builder.build(opts[:text_plain]),
-        text_html: opts[:text_html] && builder.build(opts[:text_html]),
+      user: opts[:user],
+      from: opts[:from],
+      reply_to: opts[:reply_to],
+      return_path: opts[:return_path],
+      message_id: opts[:message_id],
+      in_reply_to: opts[:in_reply_to],
+      references: opts[:references],
+      subject: builder.build(opts[:subject]),
+      text_plain: opts[:text_plain] && builder.build(opts[:text_plain]),
+      text_html: opts[:text_html] && builder.build(opts[:text_html]),
     )
 
     recps = {to: opts[:to] || [], cc: opts[:cc] || [], bcc: opts[:bcc] || []}
@@ -174,7 +174,7 @@ class MailTemplate < ActiveRecord::Base
 
     # Template recipients
     user.user_mail_template_recipients.where(
-        mail_template: self
+      mail_template: self
     ).each do |recp|
       if recp.disabled?
         raise VpsAdmin::API::Exceptions::MailTemplateDisabled, name
@@ -199,86 +199,86 @@ class MailTemplate < ActiveRecord::Base
   role :admin, label: 'System administrator'
 
   register :daily_report, vars: {
-      date: Hash,
-      users: Hash,
-      vps: Hash,
-      datasets: Hash,
-      snapshots: Hash,
-      downloads: Hash,
-      chains: Hash,
-      transactions: Hash,
+    date: Hash,
+    users: Hash,
+    vps: Hash,
+    datasets: Hash,
+    snapshots: Hash,
+    downloads: Hash,
+    chains: Hash,
+    transactions: Hash,
   }
 
   register :expiration_warning, name: "expiration_%{object}_%{state}", params: {
-      object: 'class name of the object nearing expiration, demodulized with underscores',
-      state: 'one of lifetime states',
+    object: 'class name of the object nearing expiration, demodulized with underscores',
+    state: 'one of lifetime states',
   }, roles: %i(account), public: true
 
   register :snapshot_download_ready, vars: {
-      dl: ::SnapshotDownload,
+    dl: ::SnapshotDownload,
   }, roles: %i(admin), public: true
 
   register :user_create, vars: {
-      user: ::User,
+    user: ::User,
   }, roles: %i(account)
 
   register :user_suspend, vars: {
-      user: ::User,
-      state: ::ObjectState,
+    user: ::User,
+    state: ::ObjectState,
   }, roles: %i(account), public: true
 
   register :user_soft_delete, vars: {
-      user: ::User,
-      state: ::ObjectState,
+    user: ::User,
+    state: ::ObjectState,
   }, roles: %i(account), public: true
 
   register :user_resume, vars: {
-      user: ::User,
-      state: ::ObjectState,
+    user: ::User,
+    state: ::ObjectState,
   }, roles: %i(account), public: true
 
   register :user_revive, vars: {
-      user: ::User,
-      state: ::ObjectState,
+    user: ::User,
+    state: ::ObjectState,
   }, roles: %i(account), public: true
 
   register :vps_suspend, vars: {
-      vps: ::Vps,
-      state: ::ObjectState,
+    vps: ::Vps,
+    state: ::ObjectState,
   }, roles: %i(account admin), public: true
 
   register :vps_resume, vars: {
-      vps: ::Vps,
-      state: ::ObjectState,
+    vps: ::Vps,
+    state: ::ObjectState,
   }, roles: %i(account admin), public: true
 
   register :vps_migration_planned, vars: {
-      m: ::VpsMigration,
-      vps: ::Vps,
-      src_node: ::Node,
-      dst_node: ::Node,
+    m: ::VpsMigration,
+    vps: ::Vps,
+    src_node: ::Node,
+    dst_node: ::Node,
   }, roles: %i(admin), public: true
 
   register :vps_migration_begun, vars: {
-      vps: ::Vps,
-      src_node: ::Node,
-      dst_node: ::Node,
-      outage_window: ::Boolean,
-      reason: String,
+    vps: ::Vps,
+    src_node: ::Node,
+    dst_node: ::Node,
+    outage_window: ::Boolean,
+    reason: String,
   }, roles: %i(admin), public: true
 
   register :vps_migration_finished, vars: {
-      vps: ::Vps,
-      src_node: ::Node,
-      dst_node: ::Node,
-      outage_window: ::Boolean,
-      reason: String,
+    vps: ::Vps,
+    src_node: ::Node,
+    dst_node: ::Node,
+    outage_window: ::Boolean,
+    reason: String,
   }, roles: %i(admin), public: true
 
   register :vps_resources_change, vars: {
-      vps: ::Vps,
-      admin: ::User,
-      reason: String,
+    vps: ::Vps,
+    admin: ::User,
+    reason: String,
   }, roles: %i(admin), public: true
 
   enum user_visibility: %i(default visible invisible)

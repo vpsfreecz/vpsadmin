@@ -8,10 +8,10 @@ module Transactions::UserNamespace
       self.node_id = node.id
 
       {
-          name: userns.id.to_s,
-          ugid: userns.ugid,
-          offset: userns.offset,
-          size: userns.size,
+        name: userns.id.to_s,
+        ugid: userns.ugid,
+        offset: userns.offset,
+        size: userns.size,
       }
     end
   end

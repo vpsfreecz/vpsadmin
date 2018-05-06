@@ -24,14 +24,14 @@ module TransactionChains
       append(Transactions::Utils::NoOp, args: find_node_id) do
         changes.each do |k, v|
           case k.to_sym
-            when :enabled, :master_enabled
-              edit_before(mount, k => (v.first ? 1 : 0))
+          when :enabled, :master_enabled
+            edit_before(mount, k => (v.first ? 1 : 0))
 
-            when :on_start_fail
-              edit_before(mount, k => ::Mount.on_start_fails[v.first])
+          when :on_start_fail
+            edit_before(mount, k => ::Mount.on_start_fails[v.first])
 
-            else
-              fail "unsupported attribute '#{k}'"
+          else
+            fail "unsupported attribute '#{k}'"
           end
         end
       end

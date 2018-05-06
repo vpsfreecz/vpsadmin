@@ -48,10 +48,10 @@ module VpsAdmin::API
 
             if input[:lock]
               lock = MaintenanceLock.new(
-                  class_name: (m && m.to_s) || res.to_s.demodulize.classify,
-                  row_id: obj && obj.id,
-                  reason: input[:reason],
-                  user: current_user
+                class_name: (m && m.to_s) || res.to_s.demodulize.classify,
+                row_id: obj && obj.id,
+                reason: input[:reason],
+                user: current_user
               )
 
               if lock.lock!(obj)
@@ -62,9 +62,9 @@ module VpsAdmin::API
 
             else
               lock = MaintenanceLock.find_by!(
-                  class_name: (m && m.to_s) || res.to_s.demodulize.classify,
-                  row_id: obj && obj.id,
-                  active: true
+                class_name: (m && m.to_s) || res.to_s.demodulize.classify,
+                row_id: obj && obj.id,
+                active: true
               )
               lock.unlock!(obj)
             end
@@ -124,9 +124,9 @@ module VpsAdmin::API
           cls = self.class
 
           lock = ::MaintenanceLock.find_by(
-              class_name: cls.to_s,
-              row_id: is_a?(ActiveRecord::Base) ? self.id : nil,
-              active: true
+            class_name: cls.to_s,
+            row_id: is_a?(ActiveRecord::Base) ? self.id : nil,
+            active: true
           )
 
           @maintenance_lock_cache = lock

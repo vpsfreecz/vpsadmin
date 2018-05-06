@@ -8,16 +8,16 @@ module Transactions::Storage
       self.node_id = snapshot_in_pool.dataset_in_pool.pool.node_id
 
       ret = {
-          pool_fs: snapshot_in_pool.dataset_in_pool.pool.filesystem,
-          dataset_name: snapshot_in_pool.dataset_in_pool.dataset.full_name,
-          snapshot_id: snapshot_in_pool.snapshot_id,
-          snapshot: snapshot_in_pool.snapshot.name
+        pool_fs: snapshot_in_pool.dataset_in_pool.pool.filesystem,
+        dataset_name: snapshot_in_pool.dataset_in_pool.dataset.full_name,
+        snapshot_id: snapshot_in_pool.snapshot_id,
+        snapshot: snapshot_in_pool.snapshot.name,
       }
 
       if snapshot_in_pool.dataset_in_pool.pool.role == 'backup'
         in_branch = ::SnapshotInPoolInBranch.joins(branch: [:dataset_tree]).find_by!(
-            dataset_trees: {dataset_in_pool_id: snapshot_in_pool.dataset_in_pool_id},
-            snapshot_in_pool_id: snapshot_in_pool.id
+          dataset_trees: {dataset_in_pool_id: snapshot_in_pool.dataset_in_pool_id},
+          snapshot_in_pool_id: snapshot_in_pool.id
         )
 
         ret[:dataset_tree] = in_branch.branch.dataset_tree.full_name
@@ -26,8 +26,8 @@ module Transactions::Storage
 
       if userns
         ret.update(
-            uidoffset: userns.offset,
-            gidoffset: userns.offset,
+          uidoffset: userns.offset,
+          gidoffset: userns.offset,
         )
       end
 

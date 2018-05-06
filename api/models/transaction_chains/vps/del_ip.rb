@@ -11,7 +11,7 @@ module TransactionChains
 
       uses = []
       user_env = vps.user.environment_user_configs.find_by!(
-          environment: vps.node.location.environment,
+        environment: vps.node.location.environment,
       )
       ips_arr = ips.to_a
 
@@ -50,9 +50,9 @@ module TransactionChains
           end
 
           uses << user_env.reallocate_resource!(
-              r,
-              user_env.send(r) - cnt,
-              user: vps.user
+            r,
+            user_env.send(r) - cnt,
+            user: vps.user
           )
         end
       end

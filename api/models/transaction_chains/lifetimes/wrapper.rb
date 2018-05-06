@@ -16,27 +16,27 @@ module TransactionChains
 
         if chains[s] && chains[s][dir]
           default = use_chain(chains[s][dir], args: [
-              obj,
-              last,
-              states.last,
-              log
+            obj,
+            last,
+            states.last,
+            log
           ])
         end
 
         if last
           if empty?
             obj.update!(
-                object_state: target,
-                expiration_date: log.expiration_date
+              object_state: target,
+              expiration_date: log.expiration_date
             )
 
           else
             append(Transactions::Utils::NoOp, args: find_node_id) do
               if default.nil? || default != false
                 edit(
-                    obj,
-                    object_state: ::VpsAdmin::API::Lifetimes::STATES.index(target),
-                    expiration_date: log.expiration_date
+                  obj,
+                  object_state: ::VpsAdmin::API::Lifetimes::STATES.index(target),
+                  expiration_date: log.expiration_date
                 )
               end
 

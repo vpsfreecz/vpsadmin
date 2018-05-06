@@ -9,14 +9,14 @@ module Transactions::Vps
       self.node_id = node.id
 
       ret = {
-          max_tx: node.max_tx,
-          max_rx: node.max_rx
+        max_tx: node.max_tx,
+        max_rx: node.max_rx,
       }
 
       if node.max_tx_changed? || node.max_rx_changed?
         ret[:original] = {
-            max_tx: node.max_tx_was,
-            max_rx: node.max_rx_was
+          max_tx: node.max_tx_was,
+          max_rx: node.max_rx_was,
         }
       end
 

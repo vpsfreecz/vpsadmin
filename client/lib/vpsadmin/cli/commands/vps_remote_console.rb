@@ -66,7 +66,7 @@ module VpsAdmin::CLI::Commands
 
     def options(opts)
       @opts = {
-          rate: 0.05
+        rate: 0.05
       }
 
       opts.on('--refresh-rate MSEC', 'How often send and receive data, defaults to 50 ms') do |r|
@@ -152,13 +152,13 @@ module VpsAdmin::CLI::Commands
 
     def communicate
       post = @http.post(
-          body: {
-              session: @token,
-              keys: @input.buffer,
-              width: @size[:width],
-              height: @size[:height],
-          },
-          keepalive: true
+        body: {
+          session: @token,
+          keys: @input.buffer,
+          width: @size[:width],
+          height: @size[:height],
+        },
+        keepalive: true
       )
 
       @input.buffer = ''

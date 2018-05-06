@@ -87,8 +87,8 @@ module VpsAdmin::CLI::Commands
       begin
         vpses.each do |vps_id|
           params = {
-              vps: vps_id,
-              dst_node: @opts[:dst_node],
+            vps: vps_id,
+            dst_node: @opts[:dst_node],
           }
           params[:outage_window] = @opts[:outage_window] unless @opts[:outage_window].nil?
           params[:cleanup_data] = @opts[:cleanup_data] unless @opts[:cleanup_data].nil?
