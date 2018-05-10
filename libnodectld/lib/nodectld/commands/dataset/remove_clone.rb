@@ -4,6 +4,7 @@ module NodeCtld
     needs :system, :zfs, :pool
 
     def exec
+      zfs(:set, 'sharenfs=off', pool_mounted_snapshot(@pool_fs, @snapshot_id))
       zfs(:destroy, nil, pool_mounted_snapshot(@pool_fs, @snapshot_id))
     end
 
@@ -11,8 +12,10 @@ module NodeCtld
       zfs(
         :clone,
         nil,
-        "#{ds} #{pool_mounted_snapshot(@pool_fs, @snapshot_id)}"
+        "#{ds} #{pool_mounted_snapshot(@pool_fs, @snapshot_id)}",
+        valid_rcs: [1] # the dataset might exist if destroy failed
       )
+      zfs(:inherit, 'sharenfs', pool_mounted_snapshot(@pool_fs, @snapshot_id))
     end
 
     protected
