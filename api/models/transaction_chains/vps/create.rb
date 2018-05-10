@@ -23,6 +23,8 @@ module TransactionChains
         # TODO: configurable userns
         userns = vps.user.user_namespaces.take!
 
+        use_chain(UserNamespace::Use, args: [userns, vps.node])
+
       else
         userns = nil
       end

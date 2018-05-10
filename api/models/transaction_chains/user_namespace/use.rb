@@ -15,7 +15,7 @@ module TransactionChains
           node: node,
         )
 
-        t.just_create!(uns_on_node)
+        t.just_create(uns_on_node)
       end
     end
   end
