@@ -9,8 +9,8 @@ vars.each do |v|
   exit(false)
 end
 
-NodeCtld::Mounter.mount_vps_mounts(
-  File.join(ENV['OSCTL_POOL_NAME'], 'ct'),
+NodeCtld::CtHook.post_mount(
+  ENV['OSCTL_POOL_NAME'],
   ENV['OSCTL_CT_ID'],
   ENV['OSCTL_CT_ROOTFS_MOUNT']
 )

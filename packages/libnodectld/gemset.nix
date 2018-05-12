@@ -18,10 +18,10 @@
   eventmachine = {
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "08477hl609rmmngwfy8dmsqz5zvsg8xrsrrk6xi70jf48majwli0";
+      sha256 = "0wh9aqb0skz80fhfn66lbpr4f86ya2z5rx6gm5xlfhd05bj1ch4r";
       type = "gem";
     };
-    version = "1.2.6";
+    version = "1.2.7";
   };
   gli = {
     source = {
@@ -59,10 +59,10 @@
     dependencies = ["eventmachine" "json" "libosctl" "mail" "mysql2" "osctl" "pry-remote" "require_all"];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "0c4rkykvwr0d245qrdpfnbbybmswdxlwv5wd9mz1ifiwsqz4qac2";
+      sha256 = "09dn15xywnbd32aivzczqkwc6g769rmg3gm1dfnzngkz9vv87zp7";
       type = "gem";
     };
-    version = "3.0.0.dev.build20180512125652";
+    version = "3.0.0.dev.build20180512193208";
   };
   libosctl = {
     source = {

@@ -9,7 +9,7 @@ vars.each do |v|
   exit(false)
 end
 
-NodeCtld::Mounter.prepare_vps_mounts(
-  File.join(ENV['OSCTL_POOL_NAME'], 'ct'),
+NodeCtld::CtHook.pre_start(
+  ENV['OSCTL_POOL_NAME'],
   ENV['OSCTL_CT_ID']
 )
