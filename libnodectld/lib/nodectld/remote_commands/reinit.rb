@@ -16,8 +16,7 @@ module NodeCtld::RemoteCommands
 
           when 'shaper'
             log(:info, :remote, 'Reinitializing shaper')
-            sh = NodeCtld::Shaper.new
-            sh.reinit(db ||= NodeCtld::Db.new)
+            NodeCtld::Shaper.reinit(db ||= NodeCtld::Db.new)
             ret[:shaper] = true
         end
       end

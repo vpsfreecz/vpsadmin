@@ -25,6 +25,8 @@ module NodeCtl
           puts 'Shaper  ...  ok'
         end
       end
+
+      ok
     end
   end
 end

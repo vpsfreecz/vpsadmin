@@ -9,7 +9,9 @@ module Transactions::Vps
       self.node_id = ip.vps.node_id
 
       {
+        veth_name: ip.vps.veth_name,
         addr: ip.addr,
+        prefix: ip.prefix,
         version: ip.version,
         shaper: {
           class_id: ip.class_id,

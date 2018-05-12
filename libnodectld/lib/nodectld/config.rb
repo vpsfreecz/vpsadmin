@@ -18,9 +18,9 @@ module NodeCtld
       node_id: nil,
       domain: "vpsfree.cz",
       node_addr: nil, # loaded from db
-      netdev: "eth0", # loaded from db
       max_tx: nil, # loaded from db
       max_rx: nil, # loaded from db
+      net_interfaces: [],
       queues: {
         general: {
             threads: 6,
@@ -187,7 +187,7 @@ module NodeCtld
       db = Db.new(@cfg[:db])
 
       rs = db.prepared(
-        'SELECT role, ip_addr, net_interface, max_tx, max_rx FROM nodes WHERE id = ?',
+        'SELECT role, ip_addr, max_tx, max_rx FROM nodes WHERE id = ?',
         @cfg[:vpsadmin][:node_id]
       ).get
 
@@ -198,7 +198,6 @@ module NodeCtld
 
       @cfg[:vpsadmin][:type] = %i(node storage mailer)[ rs['role'] ]
       @cfg[:vpsadmin][:node_addr] = rs['ip_addr']
-      @cfg[:vpsadmin][:netdev] = rs['net_interface']
       @cfg[:vpsadmin][:max_tx] = rs['max_tx']
       @cfg[:vpsadmin][:max_rx] = rs['max_rx']
 

@@ -28,6 +28,7 @@ Subcommands:
 config [some.key]    Show nodectld's config or specific key
 queue                List transactions queued for execution
 ip_map               Print hash table that maps IP addresses to their IDs
+veth_map             Print hash table that maps VPS interfaces to host interfaces
 END
     end
 
@@ -96,6 +97,30 @@ END
             puts sprintf(
               '%-40s %8s %8s',
               ip, opts[:id], opts[:user_id]
+            )
+          end
+        end
+
+      when 'veth_map'
+        map = response[:veth_map]
+
+        if global_opts[:parsable]
+          puts map.to_json
+
+        else
+          puts sprintf(
+            '%-10s %s',
+            'VPS', 'INTERFACES'
+          ) if opts[:header]
+
+          map.sort do |a, b|
+            a[0] <=> b[0]
+
+          end.each do |vps_id, netifs|
+            puts sprintf(
+              '%-10s %s',
+              vps_id,
+              netifs.map { |vps_veth, host_veth| "#{vps_veth}=#{host_veth}" }.join(',')
             )
           end
         end

@@ -63,6 +63,7 @@ module NodeCtld
       @node_status = NodeStatus.new
       @vps_status = VpsStatus.new
       @fw = Firewall.instance
+      Shaper.instance
     end
 
     def init(do_init)
@@ -80,10 +81,7 @@ module NodeCtld
 
       if do_init
         @fw.init(@db)
-
-        @shaper = Shaper.new
-        # TODO
-        #@shaper.init(@db)
+        Shaper.init(@db)
       end
     end
 

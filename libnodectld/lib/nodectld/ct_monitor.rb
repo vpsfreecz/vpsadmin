@@ -59,6 +59,7 @@ module NodeCtld
       when 'state'
         if event[:opts][:state] == 'stopped'
           MountReporter.report(event[:opts][:id], :all, :unmounted)
+          VethMap.reset(event[:opts][:id].to_i)
         end
 
         if %w(running stopped).include?(event[:opts][:state])

@@ -8,7 +8,7 @@ GEM
     highline (1.7.10)
     ipaddress (0.8.3)
     json (2.1.0)
-    libnodectld (3.0.0.dev.build20180510165911)
+    libnodectld (3.0.0.dev.build20180512125652)
       eventmachine
       json
       libosctl (= 18.03.0.build20180510143139)
@@ -46,7 +46,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  libnodectld (= 3.0.0.dev.build20180510165911)
+  libnodectld (= 3.0.0.dev.build20180512125652)
 
 BUNDLED WITH
    1.14.6

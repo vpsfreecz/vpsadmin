@@ -16,8 +16,7 @@ module NodeCtld::RemoteCommands
 
           when 'shaper'
             log(:info, :remote, 'Flushing shaper')
-            sh = NodeCtld::Shaper.new
-            sh.flush
+            NodeCtld::Shaper.flush
             ret[:shaper] = true
         end
       end

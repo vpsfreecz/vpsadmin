@@ -47,6 +47,9 @@ module NodeCtld::RemoteCommands
 
           ok.update({output: {ip_map: map}})
 
+        when 'veth_map'
+          ok.update({output: {veth_map: NodeCtld::VethMap.dump}})
+
         else
           raise NodeCtld::SystemCommandFailed.new(
             nil,

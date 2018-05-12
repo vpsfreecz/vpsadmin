@@ -33,8 +33,16 @@ module NodeCtld
 
     def ip_add(netif, addr, prefix, v, register, shaper)
       if register
-        # TODO
-        # Shaper.new.shape_set(addr, v, shaper)
+        Shaper.add_ip(
+          @veid,
+          netif: netif,
+          addr: addr,
+          prefix: prefix,
+          version: v,
+          class_id: shaper['class_id'],
+          max_tx: shaper['max_tx'],
+          max_rx: shaper['max_rx'],
+        )
         Firewall.accounting.reg_ip(addr, prefix, v)
       end
 
@@ -43,8 +51,14 @@ module NodeCtld
 
     def ip_del(netif, addr, prefix, v, unregister, shaper)
       if unregister
-        # TODO
-        # Shaper.new.shape_unset(addr, v, shaper)
+        Shaper.remove_ip(
+          @veid,
+          netif: netif,
+          addr: addr,
+          prefix: prefix,
+          version: v,
+          class_id: shaper['class_id'],
+        )
         Firewall.accounting.unreg_ip(addr, prefix, v)
       end
 
