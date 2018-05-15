@@ -305,7 +305,7 @@ CREATE TABLE `default_object_cluster_resources` (
   `environment_id` int(11) NOT NULL,
   `cluster_resource_id` int(11) NOT NULL,
   `class_name` varchar(255) COLLATE utf8_czech_ci NOT NULL,
-  `value` int(11) NOT NULL,
+  `value` decimal(40,0) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1970,7 +1970,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-05-03  9:50:23
+-- Dump completed on 2018-05-15 17:06:01
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
