@@ -10,8 +10,10 @@ module Transactions::Storage
       options = opts || {}
 
       if dataset_in_pool.user_namespace
-        opts[:uidoffset] = dataset_in_pool.user_namespace.offset
-        opts[:gidoffset] = dataset_in_pool.user_namespace.offset
+        userns = dataset_in_pool.user_namespace
+
+        options[:uidmap] = "0:#{userns.offset}:#{userns.size}"
+        options[:gidmap] = "0:#{userns.offset}:#{userns.size}"
       end
 
       {

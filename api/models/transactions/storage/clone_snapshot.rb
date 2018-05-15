@@ -26,8 +26,8 @@ module Transactions::Storage
 
       if userns
         ret.update(
-          uidoffset: userns.offset,
-          gidoffset: userns.offset,
+          uidmap: ["0:#{userns.offset}:#{userns.size}"],
+          gidmap: ["0:#{userns.offset}:#{userns.size}"],
         )
       end
 

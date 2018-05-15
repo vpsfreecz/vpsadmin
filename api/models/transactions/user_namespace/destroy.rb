@@ -10,8 +10,8 @@ module Transactions::UserNamespace
       {
         name: userns.id.to_s,
         ugid: userns.ugid,
-        offset: userns.offset,
-        size: userns.size,
+        uidmap: ["0:#{userns.offset}:#{userns.size}"],
+        gidmap: ["0:#{userns.offset}:#{userns.size}"],
       }
     end
   end

@@ -8,9 +8,9 @@ module NodeCtld
 
       zfs(:clone, "-o readonly=on", "#{ds} #{clone}")
 
-      if @uidoffset && @gidoffset
+      if @uidmap && @gidmap
         zfs(:umount, nil, clone)
-        zfs(:set, "uidoffset=#{@uidoffset} gidoffset=#{@gidoffset}", clone)
+        zfs(:set, "uidmap=\"#{@uidmap.join(',')}\" gidmap=\"#{@gidmap.join(',')}\"", clone)
         zfs(:mount, nil, clone)
       end
 
