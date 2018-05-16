@@ -377,25 +377,26 @@ class TransactionChain < ActiveRecord::Base
 end
 
 module TransactionChains
-  module Cluster        ; end
-  module Node           ; end
-  module Vps            ; end
-  module VpsConfig      ; end
-  module Ip             ; end
-  module Pool           ; end
-  module Dataset        ; end
-  module DatasetInPool  ; end
-  module Snapshot       ; end
-  module SnapshotInPool ; end
-  module DatasetTree    ; end
-  module Branch         ; end
-  module User           ; end
-  module Lifetimes      ; end
-  module DnsResolver    ; end
-  module Mail           ; end
-  module IntegrityCheck ; end
-  module MigrationPlan  ; end
-  module Maintenance    ; end
-  module Network        ; end
-  module UserNamespace  ; end
+  module Cluster           ; end
+  module Node              ; end
+  module Vps               ; end
+  module VpsConfig         ; end
+  module Ip                ; end
+  module Pool              ; end
+  module Dataset           ; end
+  module DatasetInPool     ; end
+  module Snapshot          ; end
+  module SnapshotInPool    ; end
+  module DatasetTree       ; end
+  module Branch            ; end
+  module User              ; end
+  module Lifetimes         ; end
+  module DnsResolver       ; end
+  module Mail              ; end
+  module IntegrityCheck    ; end
+  module MigrationPlan     ; end
+  module Maintenance       ; end
+  module Network           ; end
+  module UserNamespace     ; end
+  module UserNamespaceMap  ; end
 end

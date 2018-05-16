@@ -9,7 +9,7 @@ module NodeCtld
       osctl(
         %i(ct create),
         @vps_id,
-        user: @userns,
+        user: @userns_map,
         dataset: File.join(@pool_fs, @dataset_name),
         distribution: @distribution,
         version: @version,

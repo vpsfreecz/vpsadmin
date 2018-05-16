@@ -1,7 +1,7 @@
 class DatasetInPool < ActiveRecord::Base
   belongs_to :dataset
   belongs_to :pool
-  belongs_to :user_namespace
+  belongs_to :user_namespace_map
   has_many :snapshot_in_pools
   has_many :dataset_trees
   has_many :dataset_properties

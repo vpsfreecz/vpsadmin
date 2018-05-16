@@ -4,7 +4,9 @@ module Transactions::Storage
     t_type 5217
     queue :storage
 
-    def params(snapshot_in_pool, userns = nil)
+    include Transactions::Utils::UserNamespaces
+
+    def params(snapshot_in_pool, userns_map = nil)
       self.node_id = snapshot_in_pool.dataset_in_pool.pool.node_id
 
       ret = {
@@ -24,10 +26,10 @@ module Transactions::Storage
         ret[:branch] = in_branch.branch.full_name
       end
 
-      if userns
+      if userns_map
         ret.update(
-          uidmap: ["0:#{userns.offset}:#{userns.size}"],
-          gidmap: ["0:#{userns.offset}:#{userns.size}"],
+          uidmap: build_map(userns_map, :uid),
+          gidmap: build_map(userns_map, :gid),
         )
       end
 

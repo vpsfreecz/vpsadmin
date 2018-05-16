@@ -68,7 +68,7 @@ module TransactionChains
 
       append(
         Transactions::Storage::CloneSnapshot,
-        args: [clone_from, vps.node.vpsadminos? ? vps.userns : nil]
+        args: [clone_from, vps.node.vpsadminos? ? vps.userns_map : nil]
       ) do
         create(mnt)
         increment(clone_from, :reference_count)

@@ -64,7 +64,7 @@ module TransactionChains
           just_destroy(vps.vps_current_status) if vps.vps_current_status
         end
 
-        use_chain(UserNamespace::Disuse, args: [vps])
+        use_chain(UserNamespaceMap::Disuse, args: [vps])
       end
 
       # The dataset_in_pool_id must be unset after the dataset is actually

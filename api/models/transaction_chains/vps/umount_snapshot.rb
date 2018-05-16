@@ -17,7 +17,13 @@ module TransactionChains
       # because that's not certain information.
       use_chain(Vps::Umount, args: [vps, [mount]])
 
-      append_t(Transactions::Storage::RemoveClone, args: mount.snapshot_in_pool) do |t|
+      append_t(
+        Transactions::Storage::RemoveClone,
+        args: [
+          mount.snapshot_in_pool,
+          vps.node.vpsadminos? ? vps.userns_map : nil,
+        ]
+      ) do |t|
         t.destroy(mount)
         t.decrement(mount.snapshot_in_pool, :reference_count)
         t.edit(mount.snapshot_in_pool, mount_id: nil)

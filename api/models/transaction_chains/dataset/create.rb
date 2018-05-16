@@ -10,7 +10,7 @@ module TransactionChains
       properties,
       user = nil,
       label = nil,
-      userns = nil
+      userns_map = nil
     )
       lock(dataset_in_pool) if dataset_in_pool
       concerns(
@@ -31,7 +31,7 @@ module TransactionChains
         ret << create_dataset(part)
       end
 
-      ret << create_dataset(path.last, properties, label, userns)
+      ret << create_dataset(path.last, properties, label, userns_map)
 
       use_prop = nil
 
@@ -59,7 +59,7 @@ module TransactionChains
       ret
     end
 
-    def create_dataset(part, properties = {}, label = nil, userns = nil)
+    def create_dataset(part, properties = {}, label = nil, userns_map = nil)
       if part.new_record?
         part.parent ||= @parent
         part.save!
@@ -75,7 +75,7 @@ module TransactionChains
         dataset: part,
         pool: @pool,
         label: label,
-        user_namespace: userns,
+        user_namespace_map: userns_map,
         confirmed: ::DatasetInPool.confirmed(:confirm_create)
       )
 

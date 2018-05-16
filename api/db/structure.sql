@@ -159,11 +159,11 @@ CREATE TABLE `dataset_in_pools` (
   `snapshot_max_age` int(11) NOT NULL DEFAULT '1209600',
   `mountpoint` varchar(500) COLLATE utf8_czech_ci DEFAULT NULL,
   `confirmed` int(11) NOT NULL DEFAULT '0',
-  `user_namespace_id` int(11) DEFAULT NULL,
+  `user_namespace_map_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_dataset_in_pools_on_dataset_id_and_pool_id` (`dataset_id`,`pool_id`) USING BTREE,
   KEY `index_dataset_in_pools_on_dataset_id` (`dataset_id`) USING BTREE,
-  KEY `index_dataset_in_pools_on_user_namespace_id` (`user_namespace_id`)
+  KEY `index_dataset_in_pools_on_user_namespace_map_id` (`user_namespace_map_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1540,38 +1540,75 @@ CREATE TABLE `user_namespace_blocks` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `user_namespace_nodes`
+-- Table structure for table `user_namespace_map_entries`
 --
 
-DROP TABLE IF EXISTS `user_namespace_nodes`;
+DROP TABLE IF EXISTS `user_namespace_map_entries`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `user_namespace_nodes` (
+CREATE TABLE `user_namespace_map_entries` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_namespace_id` int(11) NOT NULL,
-  `node_id` int(11) NOT NULL,
+  `user_namespace_map_id` int(11) NOT NULL,
+  `kind` int(11) NOT NULL,
+  `ns_id` int(10) unsigned NOT NULL,
+  `host_id` int(10) unsigned NOT NULL,
+  `count` int(10) unsigned NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_user_namespace_nodes_on_user_namespace_id_and_node_id` (`user_namespace_id`,`node_id`),
-  KEY `index_user_namespace_nodes_on_user_namespace_id` (`user_namespace_id`),
-  KEY `index_user_namespace_nodes_on_node_id` (`node_id`)
+  KEY `index_user_namespace_map_entries_on_user_namespace_map_id` (`user_namespace_map_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `user_namespace_ugids`
+-- Table structure for table `user_namespace_map_nodes`
 --
 
-DROP TABLE IF EXISTS `user_namespace_ugids`;
+DROP TABLE IF EXISTS `user_namespace_map_nodes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `user_namespace_ugids` (
+CREATE TABLE `user_namespace_map_nodes` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_namespace_id` int(11) DEFAULT NULL,
+  `user_namespace_map_id` int(11) NOT NULL,
+  `node_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_namespace_map_nodes_unique` (`user_namespace_map_id`,`node_id`),
+  KEY `index_user_namespace_map_nodes_on_user_namespace_map_id` (`user_namespace_map_id`),
+  KEY `index_user_namespace_map_nodes_on_node_id` (`node_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `user_namespace_map_ugids`
+--
+
+DROP TABLE IF EXISTS `user_namespace_map_ugids`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_namespace_map_ugids` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_namespace_map_id` int(11) DEFAULT NULL,
   `ugid` int(10) unsigned NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_user_namespace_ugids_on_ugid` (`ugid`),
-  UNIQUE KEY `index_user_namespace_ugids_on_user_namespace_id` (`user_namespace_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10001 DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+  UNIQUE KEY `index_user_namespace_map_ugids_on_ugid` (`ugid`),
+  UNIQUE KEY `index_user_namespace_map_ugids_on_user_namespace_map_id` (`user_namespace_map_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=16384 DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `user_namespace_maps`
+--
+
+DROP TABLE IF EXISTS `user_namespace_maps`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_namespace_maps` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_namespace_id` int(11) NOT NULL,
+  `user_namespace_map_ugid_id` int(11) NOT NULL,
+  `label` varchar(255) COLLATE utf8_czech_ci NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_user_namespace_maps_on_user_namespace_map_ugid_id` (`user_namespace_map_ugid_id`),
+  KEY `index_user_namespace_maps_on_user_namespace_id` (`user_namespace_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1584,12 +1621,10 @@ DROP TABLE IF EXISTS `user_namespaces`;
 CREATE TABLE `user_namespaces` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
-  `user_namespace_ugid_id` int(11) NOT NULL,
   `block_count` int(11) NOT NULL,
   `offset` int(10) unsigned NOT NULL,
   `size` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_user_namespaces_on_user_namespace_ugid_id` (`user_namespace_ugid_id`),
   KEY `index_user_namespaces_on_user_id` (`user_id`),
   KEY `index_user_namespaces_on_block_count` (`block_count`),
   KEY `index_user_namespaces_on_offset` (`offset`),
@@ -1970,7 +2005,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-05-15 17:06:01
+-- Dump completed on 2018-05-16 11:57:12
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2180,4 +2215,6 @@ INSERT INTO schema_migrations (version) VALUES ('20180501071844');
 INSERT INTO schema_migrations (version) VALUES ('20180501145934');
 
 INSERT INTO schema_migrations (version) VALUES ('20180503073718');
+
+INSERT INTO schema_migrations (version) VALUES ('20180516061203');
 

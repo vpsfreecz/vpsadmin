@@ -327,7 +327,11 @@ class Vps < ActiveRecord::Base
   end
 
   def userns
-    dataset_in_pool.user_namespace
+    userns_map.user_namespace
+  end
+
+  def userns_map
+    dataset_in_pool.user_namespace_map
   end
 
   private

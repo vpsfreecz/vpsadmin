@@ -20,13 +20,15 @@ module TransactionChains
       )
 
       if vps.node.vpsadminos?
-        # TODO: configurable userns
-        userns = vps.user.user_namespaces.take!
+        # TODO: configurable userns map
+        userns_map = ::UserNamespaceMap.joins(:user_namespace).where(
+          user_namespaces: {user_id: vps.user_id}
+        ).take!
 
-        use_chain(UserNamespace::Use, args: [userns, vps.node])
+        use_chain(UserNamespaceMap::Use, args: [userns_map, vps.node])
 
       else
-        userns = nil
+        userns_map = nil
       end
 
       pool = vps.node.pools.where(role: 'hypervisor').take!
@@ -48,7 +50,7 @@ module TransactionChains
         {refquota: vps.diskspace},
         vps.user,
         "vps#{vps.id}",
-        userns
+        userns_map
       ]).last
 
       vps.dataset_in_pool = dip

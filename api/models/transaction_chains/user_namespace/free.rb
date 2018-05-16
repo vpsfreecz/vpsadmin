@@ -10,7 +10,9 @@ module TransactionChains
       end
 
       confirmations = Proc.new do |t|
-        t.edit(userns.user_namespace_ugid, user_namespace_id: nil)
+        userns.user_namespace_maps.each do |map|
+          t.just_destroy(map)
+        end
 
         userns.user_namespace_blocks.each do |block|
           t.edit(block, user_namespace_id: nil)

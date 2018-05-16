@@ -11,10 +11,17 @@ module NodeCtld
     def rollback
       zfs(
         :clone,
-        nil,
+        "-o readonly=on",
         "#{ds} #{pool_mounted_snapshot(@pool_fs, @snapshot_id)}",
         valid_rcs: [1] # the dataset might exist if destroy failed
       )
+
+      if @uidmap && @gidmap
+        zfs(:umount, nil, clone)
+        zfs(:set, "uidmap=\"#{@uidmap.join(',')}\" gidmap=\"#{@gidmap.join(',')}\"", clone)
+        zfs(:mount, nil, clone)
+      end
+
       zfs(:inherit, 'sharenfs', pool_mounted_snapshot(@pool_fs, @snapshot_id))
     end
 

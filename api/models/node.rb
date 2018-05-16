@@ -6,7 +6,7 @@ class Node < ActiveRecord::Base
   has_many :port_reservations
   has_many :node_pubkeys
   has_many :node_statuses, dependent: :destroy
-  has_many :user_namespaces, through: :user_namespace_nodes
+  has_many :user_namespace_maps, through: :user_namespace_map_nodes
   has_one :node_current_status
 
   enum role: %i(node storage mailer)

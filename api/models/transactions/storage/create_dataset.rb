@@ -4,16 +4,18 @@ module Transactions::Storage
     t_type 5201
     queue :storage
 
+    include Transactions::Utils::UserNamespaces
+
     def params(dataset_in_pool, opts = nil)
       self.node_id = dataset_in_pool.pool.node_id
 
       options = opts || {}
 
-      if dataset_in_pool.user_namespace
-        userns = dataset_in_pool.user_namespace
+      if dataset_in_pool.user_namespace_map
+        userns_map = dataset_in_pool.user_namespace_map
 
-        options[:uidmap] = "0:#{userns.offset}:#{userns.size}"
-        options[:gidmap] = "0:#{userns.offset}:#{userns.size}"
+        options[:uidmap] = build_map(userns_map, :uid).join(',')
+        options[:gidmap] = build_map(userns_map, :gid).join(',')
       end
 
       {

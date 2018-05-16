@@ -15,23 +15,19 @@ module TransactionChains
     def link_chain(user, block_count, node = nil)
       blocks = allocate_block_range(block_count)
 
-      ugid = ::UserNamespaceUgid.where(user_namespace_id: nil).order('ugid').take!
       uns = ::UserNamespace.create!(
         user: user,
-        user_namespace_ugid: ugid,
         block_count: block_count,
         offset: blocks.first.offset,
         size: blocks.inject(0) { |sum, block| sum + block.size }
       )
       blocks.each { |blk| blk.update!(user_namespace: uns) }
-      ugid.update!(user_namespace: uns)
 
       lock(uns)
 
       confirmations = Proc.new do |t|
         t.just_create(uns)
         blocks.each { |blk| t.edit_before(blk, user_namespace_id: nil) }
-        t.edit_before(ugid, user_namespace_id: nil)
       end
 
       if node
