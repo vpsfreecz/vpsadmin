@@ -174,5 +174,6 @@ div.page_listing {text-align: center;}
 
 #notice_board, #live_monitor, #cluster_node_list {width: 100%;}
 #vps_swap_preview td {vertical-align: top;}
+form[name="userns-map-entries"] input[type="text"] {text-align: right;}
 
 a.user-unpaid {color: #fff;}

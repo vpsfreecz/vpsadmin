@@ -493,6 +493,12 @@ function post_val($name, $default = '') {
 	return $default;
 }
 
+function post_val_array($name, $index, $default = '') {
+	if (isset($_POST[$name]) && isset($_POST[$name][$index]))
+		return $_POST[$name][$index];
+	return $default;
+}
+
 function transaction_concern_class($klass) {
 	$tr = array(
 		'Vps' => 'VPS'
@@ -694,4 +700,22 @@ function get_commit_hash () {
 		return $hash;
 
 	return null;
+}
+
+function format_errors ($response) {
+	$body = _('Error message: '). $response->getMessage();
+	$errors = $response->getErrors();
+
+	$body .= '<br>';
+
+	if(count($errors)) {
+		$body .= '<ul>';
+
+		foreach($errors as $param => $err)
+			$body .= '<li>'.$param.': '.implode(', ', $err).'</li>';
+
+		$body .= '</ul>';
+	}
+
+	return $body;
 }

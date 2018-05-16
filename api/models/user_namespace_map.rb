@@ -1,6 +1,9 @@
 class UserNamespaceMap < ActiveRecord::Base
   belongs_to :user_namespace
-  has_one :user_namespace_map_ugid, dependent: :nullify
+  has_one :user_namespace_map_ugid_one,
+          class_name: 'UserNamespaceMapUgid',
+          foreign_key: 'user_namespace_map_id',
+          dependent: :nullify
   belongs_to :user_namespace_map_ugid
   has_many :dataset_in_pools
   has_many :user_namespace_map_entries, dependent: :delete_all
@@ -29,5 +32,9 @@ class UserNamespaceMap < ActiveRecord::Base
 
   def ugid
     user_namespace_map_ugid.ugid
+  end
+
+  def in_use?
+    dataset_in_pools.any?
   end
 end

@@ -538,21 +538,7 @@ class XTemplate {
 	  * @param \HaveAPI\Client\Response $response
 	  */
 	function perex_format_errors($title, $response) {
-		$body = _('Error message: '). $response->getMessage();
-		$errors = $response->getErrors();
-
-		$body .= '<br>';
-
-		if(count($errors)) {
-			$body .= '<ul>';
-
-			foreach($errors as $param => $err)
-				$body .= '<li>'.$param.': '.implode(', ', $err).'</li>';
-
-			$body .= '</ul>';
-		}
-
-		$this->perex($title, $body);
+		$this->perex($title, format_errors($response));
 	}
 	/**
 	  * Add link to sidebar

@@ -47,6 +47,7 @@ include WWW_ROOT.'forms/object_history.forms.php';
 include WWW_ROOT.'forms/networking.forms.php';
 include WWW_ROOT.'forms/outage.forms.php';
 include WWW_ROOT.'forms/monitoring.forms.php';
+include WWW_ROOT.'forms/userns.forms.php';
 
 include WWW_ROOT.'lib/gettext_stream.lib.php';
 include WWW_ROOT.'lib/gettext_inc.lib.php';
@@ -172,6 +173,9 @@ try {
 			case 'monitoring':
 				include WWW_ROOT.'pages/page_monitoring.php';
 				break;
+			case 'userns':
+				include WWW_ROOT.'pages/page_userns.php';
+				break;
 			default:
 				include WWW_ROOT.'pages/page_index.php';
 		}
@@ -198,6 +202,7 @@ if (isLoggedIn()) {
 			$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
 		}
 
+		$xtpl->menu_add(_("User namespaces"),'?page=userns', ($_GET["page"] == 'userns'));
 		$xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));
 		$xtpl->menu_add(_("Cluster"),'?page=cluster', ($_GET["page"] == 'cluster'));
 		$xtpl->menu_add(_("Transaction log"),'?page=transactions', ($_GET["page"] == 'transactions'), true);
@@ -207,6 +212,7 @@ if (isLoggedIn()) {
 		if(NAS_PUBLIC || isAdmin())
 			$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
 
+		$xtpl->menu_add(_("User namespaces"),'?page=userns', ($_GET["page"] == 'userns'));
 		$xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));
 		$xtpl->menu_add(_("Transaction log"),'?page=transactions', ($_GET["page"] == 'transactions'), true);
     }
