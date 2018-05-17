@@ -5,6 +5,8 @@ module TransactionChains
     allow_empty
 
     def link_chain(vps)
+      lock(vps.userns_map)
+
       userns_map_vpses = ::Vps.joins(:dataset_in_pool).where(
         dataset_in_pools: {user_namespace_map_id: vps.userns_map.id},
         node_id: vps.node_id,
