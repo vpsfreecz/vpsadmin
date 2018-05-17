@@ -154,7 +154,10 @@ class MailTemplate < ActiveRecord::Base
     )
 
     recps = {to: opts[:to] || [], cc: opts[:cc] || [], bcc: opts[:bcc] || []}
-    recps[:to].concat(recipients(opts[:user], [opts[:role]])) if opts[:user] && opts[:role]
+
+    if opts[:user] && opts[:role]
+      recps[:to].concat(recipients(nil, opts[:user], [opts[:role]]))
+    end
 
     %i(to cc bcc).each do |t|
       mail.send("#{t}=", recps[t].uniq.join(','))
@@ -166,21 +169,25 @@ class MailTemplate < ActiveRecord::Base
 
   # Returns a list of e-mail recipients, tries to find role recipients,
   # user template recipients and defaults to the primary e-mail address.
+  # @param template [MailTemplate, nil]
   # @param user [User]
-  # @return [Array<String] list of e-mail addresses
-  def self.recipients(user, roles)
+  # @param roles [Array, Symbol]
+  # @return [Array<String>] list of e-mail addresses
+  def self.recipients(template, user, roles)
     ret = []
     return ret unless user
 
     # Template recipients
-    user.user_mail_template_recipients.where(
-      mail_template: self
-    ).each do |recp|
-      if recp.disabled?
-        raise VpsAdmin::API::Exceptions::MailTemplateDisabled, name
-      end
+    if template
+      user.user_mail_template_recipients.where(
+        mail_template: template
+      ).each do |recp|
+        if recp.disabled?
+          raise VpsAdmin::API::Exceptions::MailTemplateDisabled, name
+        end
 
-      ret.concat(recp.to.split(','))
+        ret.concat(recp.to.split(','))
+      end
     end
 
     if ret.empty?
@@ -284,7 +291,7 @@ class MailTemplate < ActiveRecord::Base
   enum user_visibility: %i(default visible invisible)
 
   def recipients(user)
-    self.class.recipients(user, desc[:roles])
+    self.class.recipients(self, user, desc[:roles])
   end
 
   def desc
