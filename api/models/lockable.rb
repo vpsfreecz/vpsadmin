@@ -24,8 +24,15 @@ module Lockable
       )
 
       if code_block
-        code_block.call(lock)
-        lock.release
+        begin
+          code_block.call(lock)
+
+        rescue
+          raise
+
+        ensure
+          lock.release
+        end
       end
 
       return lock
