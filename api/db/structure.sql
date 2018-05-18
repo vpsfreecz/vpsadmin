@@ -1553,6 +1553,8 @@ CREATE TABLE `user_namespace_map_entries` (
   `ns_id` int(10) unsigned NOT NULL,
   `host_id` int(10) unsigned NOT NULL,
   `count` int(10) unsigned NOT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_user_namespace_map_entries_on_user_namespace_map_id` (`user_namespace_map_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
@@ -1605,6 +1607,8 @@ CREATE TABLE `user_namespace_maps` (
   `user_namespace_id` int(11) NOT NULL,
   `user_namespace_map_ugid_id` int(11) NOT NULL,
   `label` varchar(255) COLLATE utf8_czech_ci NOT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_user_namespace_maps_on_user_namespace_map_ugid_id` (`user_namespace_map_ugid_id`),
   KEY `index_user_namespace_maps_on_user_namespace_id` (`user_namespace_id`)
@@ -1624,6 +1628,8 @@ CREATE TABLE `user_namespaces` (
   `block_count` int(11) NOT NULL,
   `offset` int(10) unsigned NOT NULL,
   `size` int(11) NOT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_user_namespaces_on_user_id` (`user_id`),
   KEY `index_user_namespaces_on_block_count` (`block_count`),
@@ -2005,7 +2011,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-05-16 11:57:12
+-- Dump completed on 2018-05-18 12:54:36
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2217,4 +2223,6 @@ INSERT INTO schema_migrations (version) VALUES ('20180501145934');
 INSERT INTO schema_migrations (version) VALUES ('20180503073718');
 
 INSERT INTO schema_migrations (version) VALUES ('20180516061203');
+
+INSERT INTO schema_migrations (version) VALUES ('20180518104840');
 
