@@ -212,7 +212,9 @@ if (isLoggedIn()) {
 		if(NAS_PUBLIC || isAdmin())
 			$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
 
-		$xtpl->menu_add(_("User namespaces"),'?page=userns', ($_GET["page"] == 'userns'));
+		if (USERNS_PUBLIC)
+			$xtpl->menu_add(_("User namespaces"),'?page=userns', ($_GET["page"] == 'userns'));
+
 		$xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));
 		$xtpl->menu_add(_("Transaction log"),'?page=transactions', ($_GET["page"] == 'transactions'), true);
     }
