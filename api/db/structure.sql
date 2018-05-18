@@ -511,7 +511,7 @@ CREATE TABLE `ip_addresses` (
   `network_id` int(11) NOT NULL,
   `order` int(11) DEFAULT NULL,
   `prefix` int(11) NOT NULL,
-  `size` bigint(20) unsigned NOT NULL,
+  `size` decimal(40,0) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_ip_addresses_on_class_id` (`class_id`) USING BTREE,
   KEY `index_ip_addresses_on_network_id` (`network_id`) USING BTREE,
@@ -2011,7 +2011,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-05-18 12:54:36
+-- Dump completed on 2018-05-18 16:02:00
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2225,4 +2225,6 @@ INSERT INTO schema_migrations (version) VALUES ('20180503073718');
 INSERT INTO schema_migrations (version) VALUES ('20180516061203');
 
 INSERT INTO schema_migrations (version) VALUES ('20180518104840');
+
+INSERT INTO schema_migrations (version) VALUES ('20180518140011');
 
