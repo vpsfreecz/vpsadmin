@@ -100,6 +100,24 @@ if (isLoggedIn()) {
 			}
 			break;
 
+		case 'edit_map':
+			csrf_check();
+
+			try {
+				$api->dataset->update($_GET['id'], [
+					'user_namespace_map' => $_POST['user_namespace_map'] ? $_POST['user_namespace_map'] : null,
+				]);
+
+				notify_user(_('Dataset mapping updated'). '');
+				redirect($_POST['return'] ? $_POST['return'] : '?page=');
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Dataset map change failed'), $e->getResponse());
+				dataset_edit_form();
+			}
+
+			break;
+
 		case 'destroy':
 			if (isset($_POST['confirm']) && $_POST['confirm']) {
 				csrf_check();

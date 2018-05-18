@@ -136,4 +136,12 @@ module VpsAdmin::API::Exceptions
   class InterconnectingIp < ::StandardError
 
   end
+
+  class UserNamespaceMapNil < ::StandardError
+
+  end
+
+  class UserNamespaceMapUnchanged < ::StandardError
+
+  end
 end

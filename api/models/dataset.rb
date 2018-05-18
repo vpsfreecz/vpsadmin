@@ -28,7 +28,7 @@ class Dataset < ActiveRecord::Base
   }
   validate :check_name
 
-  def self.create_new(name, parent_ds, automount, properties)
+  def self.create_new(name, parent_ds, automount, properties, userns_map)
     parts = name.split('/')
 
     if parts.empty?
@@ -82,7 +82,10 @@ class Dataset < ActiveRecord::Base
       parent_dip,
       path,
       automount,
-      properties
+      properties,
+      nil,
+      nil,
+      userns_map
     )
   end
 
@@ -191,6 +194,32 @@ class Dataset < ActiveRecord::Base
   def effective_quota
     return quota if quota != 0 || root?
     parent.effective_quota
+  end
+
+  def user_namespace_map
+    primary_dataset_in_pool!.user_namespace_map
+  end
+
+  def set_user_namespace_map(userns_map)
+    dip = primary_dataset_in_pool!
+
+    if dip.user_namespace_map == userns_map
+      raise VpsAdmin::API::Exceptions::UserNamespaceMapUnchanged
+    end
+
+    if dip.pool.role == 'hypervisor' && vps = Vps.find_by(dataset_in_pool: dip)
+      maintenance_check!(vps)
+
+      if userns_map.nil?
+        raise VpsAdmin::API::Exceptions::UserNamespaceMapNil,
+              'datasets used as VPS rootfs cannot have uid/gid map unset'
+      end
+
+      TransactionChains::Vps::SetUserNamespaceMap.fire(vps, userns_map)
+
+    else
+      TransactionChains::Dataset::SetUserNamespaceMap.fire(dip, userns_map)
+    end
   end
 
   protected

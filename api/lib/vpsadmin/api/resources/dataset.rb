@@ -16,6 +16,7 @@ module VpsAdmin::API::Resources
           desc: 'Dataset owner'
       resource Environment, label: 'Environment',
                desc: 'The environment in which the dataset is'
+      resource UserNamespaceMap, label: 'UID/GID mapping'
       integer :current_history_id
     end
 
@@ -127,6 +128,7 @@ module VpsAdmin::API::Resources
             }
         resource Dataset, label: 'Parent dataset',
                  value_label: :full_name
+      resource UserNamespaceMap, label: 'UID/GID mapping'
         bool :automount, label: 'Automount',
              desc: 'Automatically mount newly created datasets under all its parents',
              default: false, fill: true
@@ -151,6 +153,11 @@ module VpsAdmin::API::Resources
 
         elsif current_user.role != :admin && input[:dataset] && !input[:dataset].user_create
           error('access denied')
+
+        elsif input[:user_namespace_map] && \
+              current_user.role != :admin && \
+              input[:user_namespace_map].user_namespace.user_id != current_user.id
+          error('access denied')
         end
 
         properties = VpsAdmin::API::DatasetProperties.validate_params(input)
@@ -159,7 +166,8 @@ module VpsAdmin::API::Resources
           input[:name].strip,
           input[:dataset],
           input[:automount],
-          properties
+          properties,
+          input[:user_namespace_map]
         )
         dataset
 
@@ -190,6 +198,7 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
+        resource UserNamespaceMap, label: 'UID/GID mapping'
         use :editable_properties
         bool :admin_override, label: 'Admin override',
              desc: 'Make it possible to assign more resource than the user actually has'
@@ -208,8 +217,21 @@ module VpsAdmin::API::Resources
         ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
         ds.maintenance_check!(ds.primary_dataset_in_pool!.pool)
 
-        properties = VpsAdmin::API::DatasetProperties.validate_params(input)
-        @chain, _ = ds.update_properties(properties, input)
+        if input.has_key?(:user_namespace_map)
+          if input.size > 1
+            error('update either user_namespace_map or properties, not both')
+
+          elsif input[:user_namespace_map] && \
+                input[:user_namespace_map].user_namespace.user_id != ds.user_id
+            error('access denied')
+          end
+
+          @chain, _ = ds.set_user_namespace_map(input[:user_namespace_map])
+
+        else
+          properties = VpsAdmin::API::DatasetProperties.validate_params(input)
+          @chain, _ = ds.update_properties(properties, input)
+        end
 
         ok
 
@@ -217,8 +239,12 @@ module VpsAdmin::API::Resources
         error("property invalid: #{e.message}")
 
       rescue VpsAdmin::API::Exceptions::InvalidRefquotaDataset,
-             VpsAdmin::API::Exceptions::RefquotaCheckFailed => e
+             VpsAdmin::API::Exceptions::RefquotaCheckFailed,
+             VpsAdmin::API::Exceptions::UserNamespaceMapNil => e
         error(e.message)
+
+      rescue VpsAdmin::API::Exceptions::UserNamespaceMapUnchanged
+        ok
 
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', e.record.errors.to_hash)

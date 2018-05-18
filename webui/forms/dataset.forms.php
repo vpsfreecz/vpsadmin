@@ -247,6 +247,17 @@ function dataset_edit_form() {
 
 	$xtpl->form_out(_('Save'), null, '<span class="advanced-property-toggle"></span>');
 
+	$xtpl->table_title(_('UID/GID mapping'));
+	$xtpl->form_create('?page=dataset&action=edit_map&role='.$_GET['role'].'&id='.$ds->id, 'post');
+	$xtpl->form_add_select(
+		_('Map').':'.
+		'<input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">',
+		'user_namespace_map',
+		resource_list_to_options($api->user_namespace_map->list(['user' => $ds->user_id])),
+		$ds->user_namespace_map_id
+	);
+	$xtpl->form_out(_('Save'));
+
 	$xtpl->table_title(_('Backup plans'));
 
 	$plans = $ds->plan->list();
