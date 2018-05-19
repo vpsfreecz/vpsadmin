@@ -6,7 +6,7 @@ module Transactions::Storage
 
     include Transactions::Utils::UserNamespaces
 
-    def params(snapshot_in_pool)
+    def params(snapshot_in_pool, userns_map = nil)
       self.node_id = snapshot_in_pool.dataset_in_pool.pool.node_id
 
       ret = {
@@ -32,7 +32,6 @@ module Transactions::Storage
           gidmap: build_map(userns_map, :gid),
         )
       end
-
 
       ret
     end

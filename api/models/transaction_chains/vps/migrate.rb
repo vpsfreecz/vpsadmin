@@ -711,7 +711,7 @@ module TransactionChains
           if is_snapshot
             @chain.append(
                 Transactions::Storage::CloneSnapshot,
-                args: mnt.snapshot_in_pool, urgent: true
+                args: [mnt.snapshot_in_pool, mnt.vps.userns_map], urgent: true
             ) do
               increment(mnt.snapshot_in_pool, :reference_count)
             end
@@ -727,7 +727,7 @@ module TransactionChains
           if is_snapshot
             @chain.append(
               Transactions::Storage::RemoveClone,
-              args: mnt.snapshot_in_pool, urgent: true
+              args: [mnt.snapshot_in_pool, mnt.vps.userns_map], urgent: true
             ) do
               decrement(mnt.snapshot_in_pool, :reference_count)
             end
@@ -807,7 +807,7 @@ module TransactionChains
           if is_snapshot
             @chain.append(
               Transactions::Storage::CloneSnapshot,
-              args: new_snapshot, urgent: true
+              args: [new_snapshot, mnt.vps.userns_map], urgent: true
             ) do
               increment(new_snapshot, :reference_count)
             end
@@ -823,7 +823,7 @@ module TransactionChains
           if is_snapshot
             @chain.append(
               Transactions::Storage::RemoveClone,
-              args: mnt.snapshot_in_pool, urgent: true
+              args: [mnt.snapshot_in_pool, mnt.vps.userns_map], urgent: true
             ) do
               decrement(mnt.snapshot_in_pool, :reference_count)
             end
@@ -836,11 +836,11 @@ module TransactionChains
           if is_snapshot
             @chain.append(
               Transactions::Storage::RemoveClone,
-              args: mnt.snapshot_in_pool, urgent: true
+              args: [mnt.snapshot_in_pool, mnt.vps.userns_map], urgent: true
             )
             @chain.append(
               Transactions::Storage::CloneSnapshot,
-              args: new_snapshot, urgent: true
+              args: [new_snapshot, mnt.vps.userns_map], urgent: true
             )
           end
 
