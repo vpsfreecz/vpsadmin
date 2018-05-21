@@ -1,3 +1,4 @@
+require 'base64'
 require 'json'
 require 'libosctl'
 require 'monitor'
@@ -22,7 +23,7 @@ module NodeCtld
     end
 
     def post_init
-      send_data "\n"
+      send_data({keys: Base64.strict_encode64("\n")}.to_json + "\n")
     end
 
     def receive_data(data)
