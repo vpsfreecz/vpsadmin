@@ -730,7 +730,7 @@ class XTemplate {
 	}
 
 	function form_add_number_pure($name, $value, $min = 0, $max = 999999, $step = 1, $unit = '') {
-		$this->table_td('<input type="number" name="'.$name.'" value="'.h($value).'" min="'.$min.'" max="'.$max.'" step="'.$step.'">&nbsp;'.$unit);
+		$this->table_td('<input type="number" name="'.$name.'" value="'.h($value).'" min="'.$min.'" '.($max > 0 ? 'max="'.$max.'"' : '').' step="'.$step.'">&nbsp;'.$unit);
 	}
 
 	/**
