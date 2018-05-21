@@ -106,7 +106,7 @@ function ip_address_list($page) {
 		$xtpl->table_td($ip->network->location->label);
 		$xtpl->table_td($ip->network->address .'/'. $ip->network->prefix);
 		$xtpl->table_td($ip->addr.'/'.$ip->prefix);
-		$xtpl->table_td($ip->size, false, true);
+		$xtpl->table_td(approx_number($ip->size), false, true);
 		$xtpl->table_td(round($ip->max_tx * 8.0 / 1024 / 1024, 1), false, true);
 		$xtpl->table_td(round($ip->max_rx * 8.0 / 1024 / 1024, 1), false, true);
 

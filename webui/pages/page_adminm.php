@@ -460,10 +460,10 @@ function list_cluster_resources() {
 				$xtpl->table_td(data_size_to_humanreadable($r->free));
 
 			} else {
-				$xtpl->table_td($r->value);
-				$xtpl->table_td($r->cluster_resource->stepsize);
-				$xtpl->table_td($r->used);
-				$xtpl->table_td($r->free);
+				$xtpl->table_td(approx_number($r->value));
+				$xtpl->table_td(approx_number($r->cluster_resource->stepsize));
+				$xtpl->table_td(approx_number($r->used));
+				$xtpl->table_td(approx_number($r->free));
 			}
 
 			if (isAdmin())
