@@ -62,7 +62,8 @@ module TransactionChains
         just_create(vps.current_state)
 
         # Create features
-        ::VpsFeature::FEATURES.each_key do |name|
+        ::VpsFeature::FEATURES.each do |name, f|
+          next unless f.support?(vps.node)
           just_create(::VpsFeature.create!(vps: vps, name: name, enabled: false))
         end
 
