@@ -43,7 +43,7 @@ module NodeCtld
             start_delay: 0
         },
         zfs_send: {
-            threads: 1,
+            threads: 3,
             urgent: 0,
             start_delay: 90*60,
         },

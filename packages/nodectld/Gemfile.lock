@@ -8,7 +8,7 @@ GEM
     highline (1.7.10)
     ipaddress (0.8.3)
     json (2.1.0)
-    libnodectld (3.0.0.dev.build20180524105403)
+    libnodectld (3.0.0.dev.build20180524182052)
       eventmachine
       json
       libosctl (= 18.03.0.build20180522084252)
@@ -24,8 +24,8 @@ GEM
     method_source (0.9.0)
     mini_mime (1.0.0)
     mysql2 (0.5.1)
-    nodectld (3.0.0.dev.build20180524105403)
-      libnodectld (= 3.0.0.dev.build20180524105403)
+    nodectld (3.0.0.dev.build20180524182052)
+      libnodectld (= 3.0.0.dev.build20180524182052)
     osctl (18.03.0.build20180522084252)
       curses
       gli (~> 2.17.1)
@@ -50,7 +50,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  nodectld (= 3.0.0.dev.build20180524105403)
+  nodectld (= 3.0.0.dev.build20180524182052)
 
 BUNDLED WITH
    1.14.6
