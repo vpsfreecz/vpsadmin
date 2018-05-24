@@ -18,6 +18,7 @@ module NodeCtld
       # bridge: ?
       # nfs: ?
 
+      # Generic device access
       devices = {
         tun: [%w(char 10 200), '/dev/net/tun'],
         fuse: [%w(char 10 229), '/dev/fuse'],
@@ -52,6 +53,16 @@ module NodeCtld
           )
         end
       end
+
+      # LXC nesting
+      osctl(
+        %i(ct set nesting),
+        [@vps_id, @features['lxc'][key] ? 'enabled' : 'disabled']
+      )
+
+      # Restart the VPS if it is running, this is needed for LXC nesting
+      # access to take effect.
+      osctl(%i(ct restart), @vps_id) if status == :running
 
       ok
     end

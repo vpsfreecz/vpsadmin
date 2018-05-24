@@ -9,6 +9,7 @@ class VpsFeature < ActiveRecord::Base
     ppp: 'PPP',
     bridge: 'Bridge',
     kvm: 'KVM',
+    lxc: 'LXC nesting',
   }
 
   validates :name, inclusion: {
