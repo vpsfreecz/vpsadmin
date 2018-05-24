@@ -30,11 +30,16 @@ module NodeCtld
 
         if @features[name.to_s][key]
           # Enable
-          osctl(
-            %i(ct devices add),
-            [@vps_id, *ident, 'rwm', devnode],
-            parents: true
-          )
+          begin
+            osctl(
+              %i(ct devices add),
+              [@vps_id, *ident, 'rwm', devnode],
+              parents: true
+            )
+
+          rescue SystemCommandFailed => e
+            raise if e.rc != 1 || /error: device already exists/ !~ e.output
+          end
 
         else
           # Disable
