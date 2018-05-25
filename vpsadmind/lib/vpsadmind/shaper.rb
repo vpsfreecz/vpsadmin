@@ -138,10 +138,19 @@ module VpsAdmind
     end
 
     def add_filters(addr, v, class_id, dev)
-      prot = v == 6 ? 'ip6' : 'ip'
+      if v == 4
+        proto = 'ip'
+        match = 'ip'
+        prio = 16
 
-      tc("filter add dev venet0 parent 1: protocol ip prio 16 u32 match #{prot} dst #{addr} flowid 1:#{class_id}", [2])
-      tc("filter add dev #{dev} parent 1: protocol ip prio 16 u32 match #{prot} src #{addr} flowid 1:#{class_id}", [2])
+      else
+        proto = 'ipv6'
+        match = 'ip6'
+        prio = 17
+      end
+
+      tc("filter add dev venet0 parent 1: protocol #{proto} prio #{prio} u32 match #{match} dst #{addr} flowid 1:#{class_id}", [2])
+      tc("filter add dev #{dev} parent 1: protocol #{proto} prio #{prio} u32 match #{match} src #{addr} flowid 1:#{class_id}", [2])
     end
 
     def free_ip(addr, v, class_id)

@@ -343,10 +343,20 @@ module NodeCtld
     def add_filters(netifs, dir, ips)
       netifs.each do |netif|
         ips.each do |ip|
-          prot = ip.version == 6 ? 'ip6' : 'ip'
+          if ip.version == 4
+            proto = 'ip'
+            match = 'ip'
+            prio = 16
 
-          tc("filter add dev #{netif} parent 1: protocol ip prio 16 u32 match "+
-             "#{prot} #{dir} #{ip.addr}/#{ip.prefix} flowid 1:#{ip.class_id}", [2])
+          else
+            proto = 'ipv6'
+            match = 'ip6'
+            prio = 17
+          end
+
+          tc("filter add dev #{netif} parent 1: protocol #{proto} prio #{prio} "+
+             "u32 match #{match} #{dir} #{ip.addr}/#{ip.prefix} "+
+             "flowid 1:#{ip.class_id}", [2])
         end
       end
     end
