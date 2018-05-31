@@ -102,7 +102,14 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       end
 
       if current_user.role != :admin
-        ips = ips.joins('LEFT JOIN vpses my_vps ON my_vps.id = ip_addresses.vps_id').where(
+        ips = ips.joins(:network).joins(
+          'LEFT JOIN vpses my_vps ON my_vps.id = ip_addresses.vps_id'
+        ).where(
+          networks: {role: [
+            ::Network.roles[:public_access],
+            ::Network.roles[:private_access],
+          ]},
+        ).where(
           'ip_addresses.user_id = ?
             OR (ip_addresses.vps_id IS NOT NULL AND my_vps.user_id = ?)
             OR (ip_addresses.user_id IS NULL AND ip_addresses.vps_id IS NULL)',
