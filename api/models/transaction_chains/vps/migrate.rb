@@ -114,13 +114,15 @@ module TransactionChains
           create(dst)
         end
 
+        # Set all properties except for quotas to ensure send/recv will pass
         props = {}
 
         src.dataset_properties.where(inherited: false).each do |p|
+          next if %w(quota refquota).include?(p.name)
           props[p.name.to_sym] = [p, p.value]
         end
 
-        append(Transactions::Storage::SetDataset, args: [dst, props]) unless props.empty?
+        append(Transactions::Storage::SetDataset, args: [dst, props]) if props.any?
       end
 
       # Unmount VPS datasets & snapshots in other VPSes
@@ -174,6 +176,18 @@ module TransactionChains
         # The final transfer is done when the VPS is stopped
         migration_snapshots << use_chain(Dataset::Snapshot, args: src, urgent: true)
         use_chain(Dataset::Transfer, args: [src, dst], urgent: true)
+      end
+
+      # Set quotas when all data is transfered
+      datasets.each do |pair|
+        src, dst = pair
+        props = {}
+
+        src.dataset_properties.where(inherited: false, name: %w(quota refquota)).each do |p|
+          props[p.name.to_sym] = [p, p.value]
+        end
+
+        append(Transactions::Storage::SetDataset, args: [dst, props]) if props.any?
       end
 
       dst_ip_addresses = vps.ip_addresses
