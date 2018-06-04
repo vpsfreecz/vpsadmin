@@ -207,7 +207,7 @@ module TransactionChains
       clone_mounts(vps, dst_vps, datasets)
 
       # Features
-      append(Transactions::Vps::Features, args: [dst_vps, dst_features]) do
+      append(Transactions::Vps::Features, args: [dst_vps, confirm_features]) do
         if attrs[:vps]
           dst_vps.vps_features.each do |f|
             edit(f, enabled: dst_features[f.name.to_sym] ? 1 : 0)

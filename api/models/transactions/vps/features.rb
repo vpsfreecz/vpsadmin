@@ -10,12 +10,10 @@ module Transactions::Vps
 
       res = {}
 
-      vps.vps_features.each do |f|
-        n = features[f.name.to_sym]
-
+      features.each do |f|
         res[f.name] = {
-          enabled: n.nil? ? f.enabled : n,
-          original: f.enabled,
+          enabled: f.enabled,
+          original: f.enabled_was,
         }
       end
 

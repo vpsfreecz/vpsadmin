@@ -297,12 +297,15 @@ class Vps < ActiveRecord::Base
     end
   end
 
+  # @param feature [Symbol]
+  # @param enabled [Boolean]
   def set_feature(feature, enabled)
     set_features({feature.name.to_sym => enabled})
   end
 
+  # @param features [Hash<Symbol, Boolean>]
   def set_features(features)
-    TransactionChains::Vps::Features.fire(self, features)
+    TransactionChains::Vps::Features.fire(self, build_features(features))
   end
 
   def deploy_public_key(key)
@@ -387,5 +390,14 @@ class Vps < ActiveRecord::Base
     end
 
     dip
+  end
+
+  # @return [Array<VpsFeature>]
+  def build_features(features)
+    vps_features.map do |f|
+      n = f.name.to_sym
+      f.enabled = features[n] if features.has_key?(n)
+      f
+    end
   end
 end
