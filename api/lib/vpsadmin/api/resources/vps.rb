@@ -1026,10 +1026,13 @@ END
           input[:enabled]
         )
         ok
+
+      rescue VpsAdmin::API::Exceptions::VpsFeatureConflict => e
+        error(e.message)
       end
 
       def state_id
-        @chain.id
+        @chain && @chain.id
       end
     end
 
@@ -1057,10 +1060,13 @@ END
         )
         @chain, _ = vps.set_features(input)
         ok
+
+      rescue VpsAdmin::API::Exceptions::VpsFeatureConflict => e
+        error(e.message)
       end
 
       def state_id
-        @chain.id
+        @chain && @chain.id
       end
     end
   end

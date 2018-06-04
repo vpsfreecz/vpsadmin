@@ -394,10 +394,21 @@ class Vps < ActiveRecord::Base
 
   # @return [Array<VpsFeature>]
   def build_features(features)
-    vps_features.map do |f|
+    set = vps_features.map do |f|
       n = f.name.to_sym
       f.enabled = features[n] if features.has_key?(n)
       f
     end
+
+    # Check for conflicts
+    set.each do |f1|
+      set.each do |f2|
+        if f1.conflict?(f2)
+          raise VpsAdmin::API::Exceptions::VpsFeatureConflict.new(f1, f2)
+        end
+      end
+    end
+
+    set
   end
 end

@@ -144,4 +144,12 @@ module VpsAdmin::API::Exceptions
   class UserNamespaceMapUnchanged < ::StandardError
 
   end
+
+  class VpsFeatureConflict < ::StandardError
+    # @param f1 [::VpsFeature] f1 conflicts with f2
+    # @param f2 [::VpsFeature]
+    def initialize(f1, f2)
+      super("feature #{f1.name} is in conflict with #{f2.name}, pick one")
+    end
+  end
 end
