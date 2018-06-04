@@ -10,7 +10,8 @@ module NodeCtld
     class Entry
       attr_reader :id, :read_hostname, :last_status_id, :last_is_running,
         :status_time, :cpus, :last_total_memory
-      attr_accessor :exists, :running, :hostname, :uptime, :cpu_usage, :memory, :nproc
+      attr_accessor :exists, :running, :hostname, :uptime, :cpu_usage, :memory,
+        :nproc, :loadavg
 
       # @param row [Hash] row from databse table `vpses`
       def initialize(row)
@@ -83,6 +84,7 @@ module NodeCtld
 
           run_or_skip(db_vps) do
             db_vps.uptime = read_uptime(vps[:init_pid])
+            db_vps.loadavg = read_loadavg(vps[:id])
           end
 
           # Read hostname if it isn't managed by vpsAdmin
@@ -208,11 +210,15 @@ module NodeCtld
       @host_uptime - (str.split(' ')[21].to_i / @tics_per_sec)
     end
 
+    def read_loadavg(vps_id)
+      osctl(%i(ct exec), [vps_id, 'cat /proc/loadavg'])[:output].split[1].to_f
+    end
+
     def log_status(db, t, vps_id)
       db.query(
         "INSERT INTO vps_statuses (
           vps_id, status, is_running, uptime, cpus, total_memory, total_swap,
-          process_count, cpu_idle, used_memory, created_at
+          process_count, cpu_idle, used_memory, loadavg, created_at
         )
 
         SELECT
@@ -220,6 +226,7 @@ module NodeCtld
           sum_process_count / update_count,
           sum_cpu_idle / update_count,
           sum_used_memory / update_count,
+          sum_loadavg / update_count,
           '#{t}'
         FROM vps_current_statuses WHERE vps_id = #{vps_id}"
       )
@@ -241,6 +248,7 @@ module NodeCtld
       if vps.running? && !vps.skip?
         sql += "
           uptime = #{vps.uptime},
+          loadavg = #{vps.loadavg},
           process_count = #{vps.nproc},
           used_memory = #{vps.memory},
           cpu_idle = #{100.0 - vps.cpu_usage},"
@@ -286,10 +294,12 @@ module NodeCtld
       if vps.running? && !vps.skip?
         sql += "
           uptime = #{vps.uptime},
+          loadavg = #{vps.loadavg},
           process_count = #{vps.nproc},
           used_memory = #{vps.memory},
           cpu_idle = #{100.0 - vps.cpu_usage},
 
+          sum_loadavg = sum_loadavg + loadavg,
           sum_process_count = sum_process_count + process_count,
           sum_used_memory = sum_used_memory + used_memory,
           sum_cpu_idle = sum_cpu_idle + cpu_idle,
