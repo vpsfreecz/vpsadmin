@@ -4,14 +4,8 @@ module VpsAdmind
     needs :system, :vps
 
     def exec
-      unless Dir.exists?(root_dir)
-        raise CommandFailed.new('', 1, "root homedir '#{root_dir}' not found")
-      end
-
-      unless Dir.exists?(ssh_dir)
-        Dir.mkdir(ssh_dir)
-        File.chmod(0700, ssh_dir)
-      end
+      Dir.mkdir(root_dir, 0700) unless Dir.exists?(root_dir)
+      Dir.mkdir(ssh_dir, 0700) unless Dir.exists?(ssh_dir)
 
       unless File.exists?(authorized_keys)
         File.open(authorized_keys, 'w') { |f| f.write(@pubkey + "\n") }
