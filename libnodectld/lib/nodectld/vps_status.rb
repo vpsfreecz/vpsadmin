@@ -71,6 +71,8 @@ module NodeCtld
         db_vpses[ent.id.to_s] = ent
       end
 
+      lavgs = OsCtl::Lib::LoadAvgReader.read_all_hash
+
       ct_list.each do |vps|
         _, db_vps = db_vpses.detect { |k, v| k == vps[:id] }
         next unless db_vps
@@ -84,7 +86,15 @@ module NodeCtld
 
           run_or_skip(db_vps) do
             db_vps.uptime = read_uptime(vps[:init_pid])
-            db_vps.loadavg = read_loadavg(vps[:id])
+          end
+
+          # Set loadavg
+          lavg = lavgs[ "#{vps[:pool]}:#{vps[:id]}" ]
+
+          if lavg
+            db_vps.loadavg = lavg.avg[5]
+          else
+            db_vps.loadavg = nil
           end
 
           # Read hostname if it isn't managed by vpsAdmin
@@ -210,10 +220,6 @@ module NodeCtld
       @host_uptime - (str.split(' ')[21].to_i / @tics_per_sec)
     end
 
-    def read_loadavg(vps_id)
-      osctl(%i(ct exec), [vps_id, 'cat /proc/loadavg'])[:output].split[1].to_f
-    end
-
     def log_status(db, t, vps_id)
       db.query(
         "INSERT INTO vps_statuses (
@@ -248,7 +254,7 @@ module NodeCtld
       if vps.running? && !vps.skip?
         sql += "
           uptime = #{vps.uptime},
-          loadavg = #{vps.loadavg},
+          loadavg = #{vps.loadavg || 0.0},
           process_count = #{vps.nproc},
           used_memory = #{vps.memory},
           cpu_idle = #{100.0 - vps.cpu_usage},"
@@ -294,7 +300,7 @@ module NodeCtld
       if vps.running? && !vps.skip?
         sql += "
           uptime = #{vps.uptime},
-          loadavg = #{vps.loadavg},
+          loadavg = #{vps.loadavg || 0.0},
           process_count = #{vps.nproc},
           used_memory = #{vps.memory},
           cpu_idle = #{100.0 - vps.cpu_usage},
