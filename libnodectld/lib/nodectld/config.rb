@@ -1,6 +1,8 @@
 require 'yaml'
 
 module NodeCtld
+  SECRET_CONFIG = '/run/keys/nodectld-config'
+
   IMPLICIT_CONFIG = {
     db: {
       hosts: [],
@@ -164,8 +166,8 @@ module NodeCtld
     def load(db = true)
       begin
         tmp = YAML.load(File.read(@file))
-      rescue ArgumentError
-        warn "Error loading config: #{$!.message}"
+      rescue ArgumentError => e
+        warn "Error loading config: #{e.message}"
         return false
       end
 
@@ -177,6 +179,17 @@ module NodeCtld
       end
 
       @cfg = merge(IMPLICIT_CONFIG, tmp)
+
+      if File.exist?(SECRET_CONFIG)
+        begin
+          tmp = YAML.load(File.read(SECRET_CONFIG))
+        rescue ArgumentError => e
+          warn "Error loading secret config: #{e.message}"
+          return false
+        end
+
+        @cfg = merge(@cfg, tmp)
+      end
 
       load_db_settings if db
 
