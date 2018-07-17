@@ -1,7 +1,7 @@
 require 'yaml'
 
 module NodeCtld
-  SECRET_CONFIG = '/run/keys/nodectld-config'
+  SECRET_CONFIG = '/var/secrets/nodectld-config'
 
   IMPLICIT_CONFIG = {
     db: {
