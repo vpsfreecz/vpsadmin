@@ -60,6 +60,9 @@ module TransactionChains
         end
       end
 
+      # Remove duplicit mounts
+      affected_vpses.each { |vps, mounts| mounts.uniq! }
+
       # Update mount action scripts
       affected_vpses.each_key do |vps|
         use_chain(TransactionChains::Vps::Mounts, args: vps)
