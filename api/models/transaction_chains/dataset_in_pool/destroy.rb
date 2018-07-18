@@ -67,9 +67,12 @@ module TransactionChains
 
       # Umount
       affected_vpses.each do |vps, mounts|
-        append(Transactions::Vps::Umount, args: [vps, mounts]) do
-          mounts.each do |mnt|
-            destroy(mnt)
+        mounts.each do |mnt|
+          if mnt.snapshot_in_pool_id
+            use_chain(TransactionChains::Vps::UmountSnapshot, args: [vps, mnt, false])
+
+          else
+            use_chain(TransactionChains::Vps::UmountDataset, args: [vps, mnt, false])
           end
         end
       end
