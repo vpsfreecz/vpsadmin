@@ -402,7 +402,9 @@ module NodeCtld
         WHERE
           node_id = ?
           AND
-          object_state < 3',
+          object_state < 3
+          AND
+          confirmed = 1',
         $CFG.get(:vpsadmin, :node_id)
       ).each do |row|
         vpses[ row['id'] ] = VpsInfo.new(row['id'], row['veth_name'], [])
@@ -421,6 +423,8 @@ module NodeCtld
           ip.vps_id = vpses.id
           AND
           object_state < 3
+          AND
+          vpses.confirmed = 1
           AND
           n.role IN (0, 1)',
         $CFG.get(:vpsadmin, :node_id)
