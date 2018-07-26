@@ -234,15 +234,16 @@ class Transaction < ActiveRecord::Base
 end
 
 module Transactions
-  module Vps           ; end
-  module Shaper        ; end
-  module Firewall      ; end
-  module Storage       ; end
-  module Utils         ; end
-  module Hypervisor    ; end
-  module Mail          ; end
-  module Network       ; end
-  module OutageWindow  ; end
-  module Queue         ; end
-  module UserNamespace ; end
+  module Vps              ; end
+  module Shaper           ; end
+  module Firewall         ; end
+  module Storage          ; end
+  module Utils            ; end
+  module Hypervisor       ; end
+  module Mail             ; end
+  module Network          ; end
+  module OutageWindow     ; end
+  module Queue            ; end
+  module UserNamespace    ; end
+  module NetworkInterface ; end
 end

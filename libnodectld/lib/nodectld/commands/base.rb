@@ -105,19 +105,20 @@ module NodeCtld::Commands
     end
   end
 
-  module Node           ; end
-  module Pool           ; end
-  module DatasetTree    ; end
-  module Branch         ; end
-  module Vps            ; end
-  module Dataset        ; end
-  module Shaper         ; end
-  module Firewall       ; end
-  module Utils          ; end
-  module Mail           ; end
-  module IntegrityCheck ; end
-  module OutageWindow   ; end
-  module Queue          ; end
-  module Network        ; end
-  module UserNamespace  ; end
+  module Node              ; end
+  module Pool              ; end
+  module DatasetTree       ; end
+  module Branch            ; end
+  module Vps               ; end
+  module Dataset           ; end
+  module Shaper            ; end
+  module Firewall          ; end
+  module Utils             ; end
+  module Mail              ; end
+  module IntegrityCheck    ; end
+  module OutageWindow      ; end
+  module Queue             ; end
+  module Network           ; end
+  module UserNamespace     ; end
+  module NetworkInterface  ; end
 end

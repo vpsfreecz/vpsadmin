@@ -60,11 +60,19 @@ module TransactionChains
       end
 
       # Save IP addresses for later
-      primary_ips = []
-      primary_vps.ip_addresses.each { |ip| primary_ips << ip }
+      primary_netifs = Hash[primary_vps.network_interfaces.map do |netif|
+        new_netif = ::NetworkInterface.find(netif.id)
+        new_netif.vps = new_primary_vps
 
-      secondary_ips = []
-      secondary_vps.ip_addresses.each { |ip| secondary_ips << ip }
+        [netif, target: new_netif, ips: netif.ip_addresses.to_a]
+      end]
+
+      secondary_netifs = Hash[secondary_vps.network_interfaces.map do |netif|
+        new_netif = ::NetworkInterface.find(netif.id)
+        new_netif.vps = new_secondary_vps
+
+        [netif, target: new_netif, ips: netif.ip_addresses.to_a]
+      end]
 
       if opts[:configs]
         primary_configs = primary_vps.vps_configs.all.pluck(:id)
@@ -110,21 +118,24 @@ module TransactionChains
             # The migration has already removed IP addresses from the
             # secondary VPS.
             # Remove IP addresses from the original primary VPS.
-            use_chain(Vps::DelIp, args: [
-              primary_vps,
-              primary_ips,
-              nil,
-              true,  # unregister
-              false  # do not reallocate
-            ], urgent: true)
+            primary_netifs.each do |netif, attrs|
+              # TODO: we need to ensure the interfaces exist
 
-            # Add IPs from the original primary to the new primary
-            use_chain(Vps::AddIp, args: [
-              new_primary_vps,
-              primary_ips,
-              true,
-              false
-            ], urgent: true)
+              use_chain(NetworkInterface::DelRoute, args: [
+                netif,
+                attrs[:ips],
+                unregister: true,
+                reallocate: false,
+              ], urgent: true)
+
+              # Add IPs from the original primary to the new primary
+              use_chain(NetworkInterface::AddRoute, args: [
+                attrs[:target],
+                attrs[:ips],
+                register: true,
+                reallocate: false,
+              ], urgent: true)
+            end
 
             if opts[:configs]
               use_chain(Vps::ApplyConfig,
@@ -199,12 +210,15 @@ module TransactionChains
         hooks: {
           pre_start: ->(ret, _, _) do
             # Add IP addresses to the new secondary VPS
-            use_chain(Vps::AddIp, args: [
-              new_secondary_vps,
-              secondary_ips,
-              true,  # register
-              false  # do not reallocate
-            ], urgent: true)
+            secondary_netifs.each do |netif, attrs|
+              # TODO: we need to ensure the interfaces exist
+              use_chain(NetworkInterface::AddRoute, args: [
+                attrs[:target],
+                attrs[:ips],
+                register: true,
+                reallocate: false,
+              ], urgent: true)
+            end
 
             if opts[:configs]
               use_chain(Vps::ApplyConfig,

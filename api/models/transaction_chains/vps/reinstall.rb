@@ -81,8 +81,13 @@ module TransactionChains
         vps.get_cluster_resources(%i(memory swap cpu))
       ])
 
+      # OpenVZ VPS can in fact have only one interface, so all IPs can be
+      # handled at once like this.
       vps.ip_addresses.all.each do |ip|
-        append(Transactions::Vps::IpAdd, args: [vps, ip, false])
+        append(
+          Transactions::NetworkInterface::AddRoute,
+          args: [ip.network_interface, ip, false],
+        )
       end
 
       append(Transactions::Vps::DnsResolver, args: [

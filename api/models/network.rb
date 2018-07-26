@@ -57,7 +57,7 @@ class Network < ActiveRecord::Base
 
   # Number of IP addresses assigned to VPSes
   def assigned
-    ip_addresses.where.not(vps: nil).count
+    ip_addresses.where.not(network_interface: nil).count
   end
 
   # Number of IP addresses owned by some users

@@ -66,7 +66,7 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
         ).count,
         ipv4_left: ::IpAddress.joins(:network).where(
           user: nil,
-          vps: nil,
+          network_interface: nil,
           networks: {
             ip_version: 4,
             role: ::Network.roles[:public_access],
@@ -133,7 +133,7 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
           object_state: ::User.object_states['soft_delete']
         ).count,
         user_count: ::User.unscoped.all.count,
-        ipv4_used: ::IpAddress.joins(:network).where.not(vps_id: nil).where(
+        ipv4_used: ::IpAddress.joins(:network).where.not(network_interface: nil).where(
           networks: {
             ip_version: 4,
             role: ::Network.roles[:public_access],

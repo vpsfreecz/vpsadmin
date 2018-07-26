@@ -115,8 +115,9 @@ module NodeCtld
         rx = $CFG.get(:vpsadmin, :max_rx)
 
         vps = get_vps(Db.new, vps_id)
+        netif = vps.netifs[vps_ct_veth]
 
-        if vps.netif != vps_ct_veth
+        unless netif
           log(:warn, "Unknown veth #{vps_ct_veth} for VPS #{vps_id}")
           next
         end
@@ -125,7 +126,7 @@ module NodeCtld
         tc("class add dev #{vps_host_veth} parent 1: classid 1:1 htb "+
            "rate #{rx}bps ceil #{rx}bps burst 1M", [2])
 
-        vps.ips.each do |ip|
+        netif.ips.each do |ip|
           # Host net interfaces are already setup, so all that needs to be
           # configured is the VPS veth interface
 
@@ -141,7 +142,8 @@ module NodeCtld
     end
 
     def add_ip(vps_id, opts)
-      vps = VpsInfo.new(vps_id, opts[:netif], [])
+      netif = NetifInfo.new(opts[:netif], [])
+      vps = VpsInfo.new(vps_id, {opts[:netif] => netif})
 
       ip = IpInfo.new(
         opts[:addr],
@@ -152,7 +154,7 @@ module NodeCtld
         opts[:max_rx],
       )
 
-      vps_host_veth = VethMap[vps.id][vps.netif]
+      vps_host_veth = VethMap[vps.id][netif.name]
 
       sync do
         shape_ips(vps, vps_host_veth, [ip])
@@ -193,10 +195,12 @@ module NodeCtld
 
         # Since all filters were deleted, set them up again
         get_vpses(Db.new).each do |vps|
-          vps_host_veth = VethMap[vps.id][vps.netif]
+          vps.netifs.each_value do |netif|
+            vps_host_veth = VethMap[vps.id][netif]
 
-          add_filters(host_netifs, 'src', vps.ips)
-          add_filters([vps_host_veth], 'dst', vps.ips) if vps_host_veth
+            add_filters(host_netifs, 'src', netif.ips)
+            add_filters([vps_host_veth], 'dst', netif.ips) if vps_host_veth
+          end
         end
       end
     end
@@ -283,7 +287,8 @@ module NodeCtld
 
     protected
     IpInfo = Struct.new(:addr, :prefix, :version, :class_id, :max_tx, :max_rx)
-    VpsInfo = Struct.new(:id, :netif, :ips)
+    NetifInfo = Struct.new(:name, :ips)
+    VpsInfo = Struct.new(:id, :netifs)
 
     def safe_init(db)
       host_netifs = $CFG.get(:vpsadmin, :net_interfaces)
@@ -299,15 +304,17 @@ module NodeCtld
 
       # Setup main host interfaces together with available per-VPS veth interfaces
       get_vpses(db).each do |vps|
-        vps_host_veth = VethMap[vps.id][vps.netif]
+        vps.netifs.each_value do |netif|
+          vps_host_veth = VethMap[vps.id][netif]
 
-        if vps_host_veth
-          tc("qdisc add dev #{vps_host_veth} root handle 1: htb", [2])
-          tc("class add dev #{vps_host_veth} parent 1: classid 1:1 htb "+
-             "rate #{rx}bps ceil #{rx}bps burst 1M", [2])
+          if vps_host_veth
+            tc("qdisc add dev #{vps_host_veth} root handle 1: htb", [2])
+            tc("class add dev #{vps_host_veth} parent 1: classid 1:1 htb "+
+               "rate #{rx}bps ceil #{rx}bps burst 1M", [2])
+          end
+
+          shape_ips(vps, vps_host_veth, netif.ips)
         end
-
-        shape_ips(vps, vps_host_veth, vps.ips)
       end
     end
 
@@ -362,23 +369,31 @@ module NodeCtld
     end
 
     def get_vps(db, vps_id)
-      row = db.prepared('SELECT veth_name FROM vpses WHERE id = ?', vps_id).get
-      fail "vps '#{vps_id}' not found" unless row
-
-      vps = VpsInfo.new(vps_id, row['veth_name'], [])
+      vps = VpsInfo.new(vps_id, {})
+      netif = nil
 
       db.prepared(
         'SELECT
-          ip_addr, ip.prefix, ip_version, class_id, max_tx, max_rx
+          netifs.name, ip_addr, ip.prefix, ip_version, class_id, max_tx, max_rx
         FROM ip_addresses ip
+        INNER JOIN network_interfaces netifs ON netifs.id = ip.network_interface_id
         INNER JOIN networks n ON n.id = ip.network_id
         WHERE
-          ip.vps_id = ?
+          netifs.vps_id = ?
           AND
-          n.role IN (0, 1)',
+          n.role IN (0, 1)
+        ORDER BY netifs.name',
         vps_id
       ).each do |row|
-        vps.ips << IpInfo.new(
+        if netif.nil?
+          netif = NetifInfo.new(row['name'], [])
+
+        elsif netif.name != row['name']
+          vps.netifs[ netif.name ] = netif
+          netif = NetifInfo.new(row['name'], [])
+        end
+
+        netif.ips << IpInfo.new(
           row['ip_addr'],
           row['prefix'],
           row['ip_version'],
@@ -388,58 +403,53 @@ module NodeCtld
         )
       end
 
+      vps.netifs[ netif.name ] = netif if netif
       vps
     end
 
     def get_vpses(db)
       vpses = {}
 
-      # Fetch VPSes and veth names
-      db.prepared(
-        'SELECT
-          id, veth_name
-        FROM vpses
-        WHERE
-          node_id = ?
-          AND
-          object_state < 3
-          AND
-          confirmed = 1',
-        $CFG.get(:vpsadmin, :node_id)
-      ).each do |row|
-        vpses[ row['id'] ] = VpsInfo.new(row['id'], row['veth_name'], [])
-      end
+      vps = nil
+      netif = nil
 
       # Fetch IP addresses
       db.prepared(
         'SELECT
-          vpses.id, ip_addr, ip.prefix, ip_version, class_id, max_tx, max_rx
+          vpses.id, netifs.name, ip_addr, ip.prefix, ip_version, class_id,
+          max_tx, max_rx
         FROM vpses
-        INNER JOIN ip_addresses ip ON ip.vps_id = vpses.id
+        INNER JOIN network_interfaces netifs ON vpses.id = netifs.vps_id
+        INNER JOIN ip_addresses ip ON ip.network_interface_id = netifs.id
         INNER JOIN networks n ON n.id = ip.network_id
         WHERE
           vpses.node_id = ?
-          AND
-          ip.vps_id = vpses.id
           AND
           object_state < 3
           AND
           vpses.confirmed = 1
           AND
-          n.role IN (0, 1)',
+          n.role IN (0, 1)
+        ORDER BY vpses.id, netifs.name',
         $CFG.get(:vpsadmin, :node_id)
       ).each do |row|
-        vps = vpses[ row['id'] ]
+        if vps.nil?
+          vps = VpsInfo.new(row['id'], {})
 
-        unless vps
-          log(
-            :warn,
-            "VPS #{row['id']} for IP #{row['ip_addr']}/#{row['prefix']} not found"
-          )
-          next
+        elsif vps.id != row['id']
+          vpses[vps.id] = vps
+          vps = VpsInfo.new(row['id'], {})
         end
 
-        vps.ips << IpInfo.new(
+        if netif.nil?
+          netif = NetifInfo.new(row['name'], [])
+
+        elsif netif.name != row['name']
+          vps.netifs[netif.name] = netif
+          netif = NetifInfo.new(row['name'], [])
+        end
+
+        netif.ips << IpInfo.new(
           row['ip_addr'],
           row['prefix'],
           row['ip_version'],
@@ -448,6 +458,9 @@ module NodeCtld
           row['max_rx'],
         )
       end
+
+      vps.netifs[ netif.name ] = netif if netif
+      vpses[vps.id] = vps if vps
 
       vpses.sort { |a, b| a[0] <=> b[0] }.map { |k, v| v }
     end

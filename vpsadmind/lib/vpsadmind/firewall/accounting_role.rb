@@ -26,12 +26,14 @@ module VpsAdmind::Firewall
 
       iptables(v, {Z: chain})
 
-      rs = db.query("SELECT ip_addr
-                    FROM ip_addresses ip
-                    INNER JOIN vpses ON vpses.id = ip.vps_id
-                    INNER JOIN networks n ON n.id = ip.network_id
-                    WHERE node_id = #{$CFG.get(:vpsadmin, :server_id)}
-                    AND n.ip_version = #{v}")
+      rs = db.query("
+        SELECT ip_addr
+        FROM ip_addresses ip
+        INNER JOIN network_interfaces netifs ON netifs.id = ip.network_interface_id
+        INNER JOIN vpses ON vpses.id = netifs.vps_id
+        INNER JOIN networks n ON n.id = ip.network_id
+        WHERE node_id = #{$CFG.get(:vpsadmin, :server_id)}
+              AND n.ip_version = #{v}")
       rs.each_hash do |ip|
         reg_ip(ip['ip_addr'], v)
       end

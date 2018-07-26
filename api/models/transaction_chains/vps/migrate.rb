@@ -406,23 +406,33 @@ module TransactionChains
     #    - no reallocation needed, just find replacement ips
     # 3) Different location, different env
     #    - find replacements, reallocate to different env
-    #
-    # Only standalone IP addresses are disowned, i.e. addresses belonging to an IP range
-    # are not freed.
-    def migrate_ip_addresses(vps, dst_vps)
+    def migrate_network_interfaces(vps, dst_vps)
+      if vps.network_interfaces.count > 1
+        fail 'migration of VPS with multiple network interfaces is not implemented'
+      end
+
+      vps.network_interfaces.each do |netif|
+        migrate_ip_addresses(netif, dst_vps)
+      end
+    end
+
+    def migrate_ip_addresses(netif, dst_vps)
+      dst_netif = ::NetworkInterface.find(netif.id)
+      dst_netif.vps = dst_vps
+
       # Add the same number of IP addresses from the target location
       if @opts[:replace_ips]
         dst_ip_addresses = []
 
-        vps.ip_addresses.joins(:network).order(
+        netif.ip_addresses.joins(:network).order(
           'networks.ip_version, ip_addresses.order'
         ).each do |ip|
           begin
             replacement = ::IpAddress.pick_addr!(
-                dst_vps.user,
-                dst_vps.node.location,
-                ip.network.ip_version,
-                ip.network.role.to_sym,
+              dst_vps.user,
+              dst_vps.node.location,
+              ip.network.ip_version,
+              ip.network.role.to_sym,
             )
 
           rescue ActiveRecord::RecordNotFound
@@ -468,12 +478,20 @@ module TransactionChains
         end
 
         dst_ip_addresses.each do |src_ip, dst_ip|
-          append(Transactions::Vps::IpDel, args: [dst_vps, src_ip, false], urgent: true) do
+          append(
+            Transactions::NetworkInterface::DelRoute,
+            args: [netif, src_ip, false],
+            urgent: true
+          ) do
             edit(src_ip, vps_id: nil)
             edit(src_ip, user_id: nil) if src_ip.user_id
           end
 
-          append(Transactions::Vps::IpAdd, args: [dst_vps, dst_ip], urgent: true) do
+          append(
+            Transactions::NetworkInterface::AddRoute,
+            args: [dst_netif, dst_ip],
+            urgent: true
+          ) do
             edit(dst_ip, vps_id: dst_vps.id, order: src_ip.order)
 
             if !dst_ip.user_id && dst_vps.node.location.environment.user_ip_ownership
@@ -487,16 +505,23 @@ module TransactionChains
         dst_ip_addresses = []
         ips = []
 
-        vps.ip_addresses.each { |ip| ips << ip }
+        netif.ip_addresses.each { |ip| ips << ip }
         use_chain(
-          Vps::DelIp,
-          args: [dst_vps, ips, vps, false, @opts[:reallocate_ips]],
+          NetworkInterface::DelRoute,
+          args: [
+            dst_vps, ips,
+            resource_obj: vps, unregister: false, reallocate: @opts[:reallocate_ips]
+          ],
           urgent: true
         )
       end
     end
 
     # Transfer number of `ips` belonging to `user` from `src_env` to `dst_env`.
+    #
+    # TODO: this method will not properly work when the VPS has multiple
+    # network interfaces. The resource reallocation needs to take into account
+    # previous runs of this method -- one for each interface.
     def transfer_ip_addresses(user, ips, src_env, dst_env)
       ret = {}
 

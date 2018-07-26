@@ -1037,7 +1037,14 @@ if (isset($show_info) && $show_info) {
 
 		$xtpl->form_out(_('Go >>'));
 
-	// Network interface
+		// Network interfaces
+		$netifs = $api->network_interface->list(['vps' => $vps->id]);
+
+		foreach ($netifs as $netif) {
+			vps_netif_form($vps, $netif);
+		}
+
+		/*
 		$vps_ips = $api->vps($vps->id)->ip_address->list(array(
 			'meta' => array('includes' => 'network')
 		));
@@ -1047,9 +1054,11 @@ if (isset($show_info) && $show_info) {
 			$xtpl->form_create('?page=adminvps&action=netif&veid='.$vps->id, 'post');
 			$xtpl->form_add_input(_('Veth name').':', 'text', '30', 'veth_name', $vps->veth_name);
 			$xtpl->form_out(_('Go >>'));
-		}
+		}*/
 
-	// IP addresses
+
+		// IP addresses
+		/*
 		$xtpl->table_title(_('IP addresses'));
 		$xtpl->form_create('?page=adminvps&action=addip&veid='.$vps->id, 'post');
 
@@ -1081,6 +1090,7 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_tr();
 
 		$xtpl->form_out(_("Go >>"));
+		 */
 
 
 	// DNS Server

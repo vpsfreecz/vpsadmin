@@ -424,6 +424,24 @@ CREATE TABLE `group_snapshots` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `host_ip_addresses`
+--
+
+DROP TABLE IF EXISTS `host_ip_addresses`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `host_ip_addresses` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `ip_address_id` int(11) NOT NULL,
+  `ip_addr` varchar(40) COLLATE utf8_czech_ci NOT NULL,
+  `order` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_host_ip_addresses_on_ip_address_id_and_ip_addr` (`ip_address_id`,`ip_addr`),
+  KEY `index_host_ip_addresses_on_ip_address_id` (`ip_address_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `integrity_checks`
 --
 
@@ -502,7 +520,6 @@ DROP TABLE IF EXISTS `ip_addresses`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `ip_addresses` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `vps_id` int(10) unsigned DEFAULT NULL,
   `ip_addr` varchar(40) COLLATE utf8_czech_ci NOT NULL,
   `max_tx` bigint(20) unsigned NOT NULL DEFAULT '39321600',
   `max_rx` bigint(20) unsigned NOT NULL DEFAULT '39321600',
@@ -512,12 +529,12 @@ CREATE TABLE `ip_addresses` (
   `order` int(11) DEFAULT NULL,
   `prefix` int(11) NOT NULL,
   `size` decimal(40,0) NOT NULL,
+  `network_interface_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_ip_addresses_on_class_id` (`class_id`) USING BTREE,
   KEY `index_ip_addresses_on_network_id` (`network_id`) USING BTREE,
   KEY `index_ip_addresses_on_user_id` (`user_id`) USING BTREE,
-  KEY `index_ip_addresses_on_vps_id` (`vps_id`) USING BTREE,
-  KEY `vps_id` (`vps_id`) USING BTREE
+  KEY `index_ip_addresses_on_network_interface_id` (`network_interface_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -913,6 +930,29 @@ CREATE TABLE `mounts` (
   `current_state` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `index_mounts_on_vps_id` (`vps_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `network_interfaces`
+--
+
+DROP TABLE IF EXISTS `network_interfaces`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `network_interfaces` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `vps_id` int(11) NOT NULL,
+  `name` varchar(30) COLLATE utf8_czech_ci NOT NULL,
+  `kind` int(11) NOT NULL,
+  `mac` varchar(17) COLLATE utf8_czech_ci DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_network_interfaces_on_vps_id_and_name` (`vps_id`,`name`),
+  UNIQUE KEY `index_network_interfaces_on_mac` (`mac`),
+  KEY `index_network_interfaces_on_vps_id` (`vps_id`),
+  KEY `index_network_interfaces_on_kind` (`kind`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1988,17 +2028,13 @@ CREATE TABLE `vpses` (
   `updated_at` datetime DEFAULT NULL,
   `manage_hostname` tinyint(1) NOT NULL DEFAULT '1',
   `cpu_limit` int(11) DEFAULT NULL,
-  `veth_name` varchar(30) COLLATE utf8_czech_ci NOT NULL DEFAULT 'venet0',
-  `veth_mac` varchar(17) COLLATE utf8_czech_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_vpses_on_veth_mac` (`veth_mac`),
   KEY `index_vpses_on_dataset_in_pool_id` (`dataset_in_pool_id`) USING BTREE,
   KEY `index_vpses_on_dns_resolver_id` (`dns_resolver_id`) USING BTREE,
   KEY `index_vpses_on_node_id` (`node_id`) USING BTREE,
   KEY `index_vpses_on_object_state` (`object_state`) USING BTREE,
   KEY `index_vpses_on_os_template_id` (`os_template_id`) USING BTREE,
-  KEY `index_vpses_on_user_id` (`user_id`) USING BTREE,
-  KEY `index_vpses_on_veth_name` (`veth_name`)
+  KEY `index_vpses_on_user_id` (`user_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -2011,7 +2047,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-10-17 14:16:19
+-- Dump completed on 2018-10-17 14:18:11
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2237,4 +2273,6 @@ INSERT INTO schema_migrations (version) VALUES ('20180525100900');
 INSERT INTO schema_migrations (version) VALUES ('20180604115723');
 
 INSERT INTO schema_migrations (version) VALUES ('20180928161725');
+
+INSERT INTO schema_migrations (version) VALUES ('20180929203314');
 

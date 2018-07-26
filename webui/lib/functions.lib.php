@@ -85,6 +85,10 @@ function ip_label($ip) {
 	}
 }
 
+function host_ip_label($ip) {
+	return ip_label($ip->ip_address);
+}
+
 function list_templates($vps = null) {
 	global $api;
 

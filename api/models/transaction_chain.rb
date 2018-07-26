@@ -399,4 +399,9 @@ module TransactionChains
   module Network           ; end
   module UserNamespace     ; end
   module UserNamespaceMap  ; end
+  module NetworkInterface
+    module Venet           ; end
+    module Veth            ; end
+    module VethRouted      ; end
+  end
 end

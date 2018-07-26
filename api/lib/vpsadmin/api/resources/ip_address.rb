@@ -12,6 +12,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
   end
 
   params(:filters) do
+    resource VpsAdmin::API::Resources::NetworkInterface, value_label: :name
     resource VpsAdmin::API::Resources::VPS, label: 'VPS',
             desc: 'VPS this IP is assigned to, can be null',
             value_label: :hostname
@@ -29,7 +30,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
   end
 
   params(:common) do
-    use :filters, include: %i(network prefix size vps user addr)
+    use :filters, include: %i(network prefix size network_interface user addr)
     use :shaper
     integer :class_id, label: 'Class id', desc: 'Class id for shaper'
   end
@@ -53,7 +54,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(location network version role addr prefix vps limit offset)
+      input whitelist: %i(location network version role addr prefix vps
+                          network_interface limit offset)
       output blacklist: %i(class_id)
       allow
     end
@@ -81,11 +83,17 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     def query
       ips = ::IpAddress
 
-      %i(prefix network vps user addr max_tx max_rx).each do |filter|
+      %i(prefix network network_interface user addr max_tx max_rx).each do |filter|
         next unless input.has_key?(filter)
 
         ips = ips.where(
           filter => input[filter],
+        )
+      end
+
+      if input.has_key?(:vps)
+        ips = ips.joins(:network_interface).where(
+          network_interfaces: {vps_id: input[:vps] && input[:vps].id},
         )
       end
 
@@ -103,7 +111,10 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
       if current_user.role != :admin
         ips = ips.joins(:network).joins(
-          'LEFT JOIN vpses my_vps ON my_vps.id = ip_addresses.vps_id'
+          'LEFT JOIN network_interfaces my_netifs
+           ON my_netifs.id = ip_addresses.network_interface_id'
+        ).joins(
+          'LEFT JOIN vpses my_vps ON my_vps.id = my_netifs.vps_id'
         ).where(
           networks: {role: [
             ::Network.roles[:public_access],
@@ -111,8 +122,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
           ]},
         ).where(
           'ip_addresses.user_id = ?
-            OR (ip_addresses.vps_id IS NOT NULL AND my_vps.user_id = ?)
-            OR (ip_addresses.user_id IS NULL AND ip_addresses.vps_id IS NULL)',
+            OR (ip_addresses.network_interface_id IS NOT NULL AND my_vps.user_id = ?)
+            OR (ip_addresses.user_id IS NULL AND ip_addresses.network_interface_id IS NULL)',
           current_user.id, current_user.id
         ).order('ip_addresses.user_id DESC, ip_addresses.id ASC')
       end
@@ -147,6 +158,18 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
         @ip = ::IpAddress.where(
           'user_id = ? OR user_id IS NULL',
           current_user.id
+        ).where(id: params[:ip_address_id]).take!
+
+        @ip = ::IpAddress.joins(
+          'LEFT JOIN network_interfaces my_netifs
+           ON my_netifs.id = ip_addresses.network_interface_id'
+        ).joins(
+          'LEFT JOIN vpses my_vps ON my_vps.id = my_netifs.vps_id'
+        ).where(
+          'ip_addresses.user_id = ?
+           OR
+          (ip_addresses.network_interface_id IS NOT NULL AND my_vps.user_id = ?)',
+          current_user.id, current_user.id
         ).where(id: params[:ip_address_id]).take!
       end
     end
@@ -208,7 +231,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
       if input.has_key?(:user) && ip.user != input[:user]
         # Check if the IP is assigned to a VPS in an environment with IP ownership
-        if ip.vps && ip.network.location.environment.user_ip_ownership
+        if ip.network_interface && ip.network.location.environment.user_ip_ownership
           error('cannot chown IP while it belongs to a VPS')
         end
       end
@@ -222,6 +245,92 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     def state_id
       @chain.empty? ? nil : @chain.id
+    end
+  end
+
+  class Assign < HaveAPI::Action
+    desc 'Route the address to an interface'
+    route ':%{resource}_id/assign'
+    http_method :post
+    blocking true
+
+    input do
+      resource VpsAdmin::API::Resources::NetworkInterface, value_label: :name,
+        required: true
+    end
+
+    output do
+      use :all
+    end
+
+    authorize do |u|
+      allow
+    end
+
+    def exec
+      ip = ::IpAddress.find(params[:ip_address_id])
+      netif = input[:network_interface]
+
+      if current_user.role != :admin && ( \
+           (ip.user_id && ip.user_id != current_user.id) \
+           || (netif.vps.user_id != current_user.id)
+         )
+        error('access denied')
+      end
+
+      maintenance_check!(netif.vps)
+
+      @chain, _ = netif.add_route(ip)
+      ip
+
+    rescue VpsAdmin::API::Exceptions::IpAddressInUse
+      error('IP address is already in use')
+
+    rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation
+      error('IP address is from the wrong location')
+
+    rescue VpsAdmin::API::Exceptions::IpAddressNotOwned
+      error('Use an IP address you already own first')
+    end
+
+    def state_id
+      @chain && @chain.id
+    end
+  end
+
+  class Free < HaveAPI::Action
+    desc 'Remove the route from an interface'
+    route ':%{resource}_id/assign'
+    http_method :post
+    blocking true
+
+    output do
+      use :all
+    end
+
+    authorize do |u|
+      allow
+    end
+
+    def exec
+      ip = ::IpAddress.find(params[:ip_address_id])
+
+      if current_user.role != :admin && ( \
+           (ip.user_id && ip.user_id != current_user.id) \
+           || (ip.network_interface_id && \
+               ip.network_interface.vps.user_id != current_user.id) \
+         )
+        error('access denied')
+      end
+
+      maintenance_check!(netif.vps)
+
+      @chain, _ = netif.remove_route(ip)
+      ip
+    end
+
+    def state_id
+      @chain && @chain.id
     end
   end
 end

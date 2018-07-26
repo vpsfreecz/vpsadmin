@@ -1,21 +1,26 @@
 module TransactionChains
-  class Vps::DelIp < ::TransactionChain
-    label 'IP-'
+  class NetworkInterface::DelRoute < ::TransactionChain
+    label 'Route-'
 
-    def link_chain(vps, ips, resource_obj = nil, unregister = true,
-                   reallocate = true)
-      lock(vps)
-      concerns(:affect, [vps.class.name, vps.id])
+    # @param netif [::NetworkInterface]
+    # @param ips [Array<::IpAddress>]
+    # @param opts [Hash] options
+    # @option opts [Boolean] :unregister
+    # @option opts [Boolean] :reallocate
+    def link_chain(netif, ips, opts = {})
+      opts[:unregister] = true unless opts.has_key?(:unregister)
+      opts[:reallocate] = true unless opts.has_key?(:reallocate)
 
-      resource_obj ||= vps
+      lock(netif.vps)
+      concerns(:affect, [netif.vps.class.name, netif.vps.id])
 
       uses = []
-      user_env = vps.user.environment_user_configs.find_by!(
-        environment: vps.node.location.environment,
+      user_env = netif.vps.user.environment_user_configs.find_by!(
+        environment: netif.vps.node.location.environment,
       )
       ips_arr = ips.to_a
 
-      if reallocate && !vps.node.location.environment.user_ip_ownership
+      if opts[:reallocate] && !netif.vps.node.location.environment.user_ip_ownership
         %i(ipv4 ipv4_private ipv6).each do |r|
           cnt = case r
           when :ipv4
@@ -52,28 +57,31 @@ module TransactionChains
           uses << user_env.reallocate_resource!(
             r,
             user_env.send(r) - cnt,
-            user: vps.user
+            user: netif.vps.user
           )
         end
       end
 
-      chain = self
-
       ips_arr.each do |ip|
         lock(ip)
 
-        append(Transactions::Vps::IpDel, args: [vps, ip, unregister]) do
-          edit(ip, vps_id: nil, order: nil)
-          just_create(vps.log(:ip_del, {id: ip.id, addr: ip.addr})) unless chain.included?
+        append_t(
+          Transactions::NetworkInterface::RouteDel,
+          args: [netif, ip, opts[:unregister]]
+        ) do |t|
+          t.edit(ip, network_interface_id: nil, order: nil)
+          t.just_create(
+            netif.vps.log(:ip_del, {id: ip.id, addr: ip.addr})
+          ) unless included?
         end
       end
 
-      append(Transactions::Utils::NoOp, args: vps.node_id) do
+      append_t(Transactions::Utils::NoOp, args: netif.vps.node_id) do |t|
         uses.each do |use|
           if use.updating?
-            edit(use, value: use.value)
+            t.edit(use, value: use.value)
           else
-            create(use)
+            t.create(use)
           end
         end
       end unless uses.empty?

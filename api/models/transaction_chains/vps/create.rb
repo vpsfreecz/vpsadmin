@@ -88,7 +88,16 @@ module TransactionChains
         ])
       end
 
-      use_chain(Vps::CreateVeth, args: vps) if vps.node.vpsadminos?
+      # Create network interface
+      if vps.node.vpsadminos?
+        netif = use_chain(
+          NetworkInterface::VethRouted::Create,
+          args: [vps, 'venet0']
+        )
+
+      else
+        netif = use_chain(NetworkInterface::Venet::Create, args: vps)
+      end
 
       # Add IP addresses
       versions = [:ipv4, :ipv4_private]
@@ -104,8 +113,13 @@ module TransactionChains
 
         n = use_chain(
           Ip::Allocate,
-          args: [::ClusterResource.find_by!(name: v), vps, opts[v]],
-          method: :allocate_to_vps
+          args: [
+            ::ClusterResource.find_by!(name: v),
+            netif,
+            opts[v],
+            host_addrs: true,
+          ],
+          method: :allocate_to_netif,
         )
         ip_resources << user_env.reallocate_resource!(
           v,

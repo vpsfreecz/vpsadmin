@@ -177,7 +177,8 @@ module VpsAdmind
     def all_ips(db)
       rs = db.query("SELECT ip_addr, ip_version, class_id, max_tx, max_rx
                     FROM vpses
-                    INNER JOIN ip_addresses ip ON ip.vps_id = vpses.id
+                    INNER JOIN network_interfaces netifs ON netifs.vps_id = vpses.id
+                    INNER JOIN ip_addresses ip ON ip.network_interface_id = netifs.id
                     INNER JOIN networks n ON n.id = ip.network_id
                     WHERE vpses.node_id = #{$CFG.get(:vpsadmin, :server_id)}
                       AND ip.vps_id = vpses.id")

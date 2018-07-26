@@ -31,40 +31,6 @@ module NodeCtld
       osctl(%i(ct set autostart), @veid)
     end
 
-    def ip_add(netif, addr, prefix, v, register, shaper)
-      if register
-        Shaper.add_ip(
-          @veid,
-          netif: netif,
-          addr: addr,
-          prefix: prefix,
-          version: v,
-          class_id: shaper['class_id'],
-          max_tx: shaper['max_tx'],
-          max_rx: shaper['max_rx'],
-        )
-        Firewall.accounting.reg_ip(addr, prefix, v)
-      end
-
-      osctl(%i(ct netif ip add), [@veid, netif, "#{addr}/#{prefix}"])
-    end
-
-    def ip_del(netif, addr, prefix, v, unregister, shaper)
-      if unregister
-        Shaper.remove_ip(
-          @veid,
-          netif: netif,
-          addr: addr,
-          prefix: prefix,
-          version: v,
-          class_id: shaper['class_id'],
-        )
-        Firewall.accounting.unreg_ip(addr, prefix, v)
-      end
-
-      osctl(%i(ct netif ip del), [@veid, netif, "#{addr}/#{prefix}"])
-    end
-
     def passwd(user, password)
       osctl(%i(ct passwd), [@veid, user, password])
     end

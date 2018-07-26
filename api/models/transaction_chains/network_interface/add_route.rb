@@ -1,24 +1,33 @@
 module TransactionChains
-  class Vps::AddIp < ::TransactionChain
-    label 'IP+'
+  class NetworkInterface::AddRoute < ::TransactionChain
+    label 'Route+'
 
-    def link_chain(vps, ips, register = true, reallocate = true)
-      lock(vps)
-      concerns(:affect, [vps.class.name, vps.id])
+    # @param netif [::NetworkInterface]
+    # @param ips [Array<::IpAddress>]
+    # @param opts [Hash] options
+    # @option opts [Boolean] :register (true)
+    # @option opts [Boolean] :reallocate (true)
+    def link_chain(netif, ips, opts = {})
+      opts[:register] = true unless opts.has_key?(:register)
+      opts[:reallocate] = true unless opts.has_key?(:reallocate)
 
-      if vps.node.openvz? && ips.detect { |ip| ip.size > 1 }
+      lock(netif)
+      lock(netif.vps)
+      concerns(:affect, [netif.vps.class.name, netif.vps.id])
+
+      if netif.vps.node.openvz? && ips.detect { |ip| ip.size > 1 }
         raise VpsAdmin::API::Exceptions::NotAvailableOnOpenVz,
               "cannot add IP address with prefix other than /32 or /128"
       end
 
       uses = []
-      user_env = vps.user.environment_user_configs.find_by!(
-        environment: vps.node.location.environment,
+      user_env = netif.vps.user.environment_user_configs.find_by!(
+        environment: netif.vps.node.location.environment,
       )
-      ownership = vps.node.location.environment.user_ip_ownership
+      ownership = netif.vps.node.location.environment.user_ip_ownership
       ips_arr = ips.to_a
 
-      if reallocate
+      if opts[:reallocate]
         %i(ipv4 ipv4_private ipv6).each do |r|
           cnt = case r
           when :ipv4
@@ -59,15 +68,14 @@ module TransactionChains
           uses << user_env.reallocate_resource!(
             r,
             cur + cnt,
-            user: vps.user
+            user: netif.vps.user
           ) if cnt != 0
         end
       end
 
-      chain = self
       order = {}
       [4, 6].each do |v|
-        last_ip = vps.ip_addresses.joins(:network).where(
+        last_ip = netif.ip_addresses.joins(:network).where(
           networks: {ip_version: v}
         ).order('`order` DESC').take
 
@@ -77,17 +85,22 @@ module TransactionChains
       ips_arr.each do |ip|
         lock(ip)
 
-        append(Transactions::Vps::IpAdd, args: [vps, ip, register]) do
-          edit(ip, vps_id: vps.veid, order: order[ip.version])
-          edit(ip, user_id: vps.user_id) if ownership && !ip.user_id
+        append_t(
+          Transactions::NetworkInterface::RouteAdd,
+          args: [netif, ip, opts[:register]]
+        ) do |t|
+          t.edit(ip, network_interface_id: netif.id, order: order[ip.version])
+          t.edit(ip, user_id: netif.vps.user_id) if ownership && !ip.user_id
 
-          just_create(vps.log(:ip_add, {id: ip.id, addr: ip.addr})) unless chain.included?
+          t.just_create(
+            netif.vps.log(:route_add, {id: ip.id, addr: ip.addr})
+          ) unless included?
         end
 
         order[ip.version] += 1
       end
 
-      append(Transactions::Utils::NoOp, args: vps.node_id) do
+      append(Transactions::Utils::NoOp, args: netif.vps.node_id) do
         uses.each do |use|
           if use.updating?
             edit(use, value: use.value)

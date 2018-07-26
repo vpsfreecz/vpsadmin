@@ -32,7 +32,8 @@ module NodeCtld::Firewall
 
       rs = db.query("SELECT ip.ip_addr, ip.prefix
                     FROM ip_addresses ip
-                    INNER JOIN vpses ON vpses.id = ip.vps_id
+                    INNER JOIN network_interfaces netifs ON netifs.id = ip.network_interface_id
+                    INNER JOIN vpses ON vpses.id = netifs.vps_id
                     INNER JOIN networks n ON n.id = ip.network_id
                     WHERE node_id = #{$CFG.get(:vpsadmin, :node_id)}
                     AND n.ip_version = #{v}

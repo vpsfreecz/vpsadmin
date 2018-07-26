@@ -34,7 +34,8 @@ module NodeCtld::Firewall
             SELECT ip.id, ip.ip_addr, ip.prefix, n.ip_version, vpses.user_id
             FROM ip_addresses ip
             INNER JOIN networks n ON n.id = ip.network_id
-            INNER JOIN vpses ON vpses.id = ip.vps_id
+            INNER JOIN network_interfaces netifs ON netifs.id = ip.network_interface_id
+            INNER JOIN vpses ON vpses.id = netifs.vps_id
             WHERE
               node_id = #{$CFG.get(:vpsadmin, :node_id)}
               AND

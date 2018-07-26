@@ -197,7 +197,7 @@ module TransactionChains
       cleanup_transfer_snapshots unless attrs[:keep_snapshots]
 
       # IP addresses
-      clone_ip_addresses(vps, dst_vps) unless attrs[:vps]
+      clone_network_interfaces(vps, dst_vps) unless attrs[:vps]
 
       # DNS resolver
       dst_vps.dns_resolver = dns_resolver(vps, dst_vps)
@@ -334,58 +334,92 @@ module TransactionChains
       ret
     end
 
-    # Clone IP addresses.
-    # Allocates the equal number (or how many are available) of
-    # IP addresses.
-    def clone_ip_addresses(vps, dst_vps)
-      ips = {
-        ipv4: vps.ip_addresses.joins(:network).where(
-                networks: {
-                  ip_version: 4,
-                  role: ::Network.roles[:public_access],
-                }
-            ).count,
-        ipv4_private: vps.ip_addresses.joins(:network).where(
-                networks: {
-                  ip_version: 4,
-                  role: ::Network.roles[:private_access],
-                }
-            ).count,
-        ipv6: vps.ip_addresses.joins(:network).where(
-                networks: {ip_version: 6}
-            ).count,
+    def clone_network_interfaces(vps, dst_vps)
+      sums = {
+        ipv4: 0,
+        ipv4_private: 0,
+        ipv6: 0,
       }
 
-      versions = [:ipv4, :ipv4_private]
-      versions << :ipv6 if dst_vps.node.location.has_ipv6
-
-      user_env = dst_vps.user.environment_user_configs.find_by!(
-        environment: dst_vps.node.location.environment,
-      )
-
-      changes = []
-
-      versions.each do |r|
-        chowned = use_chain(
-          Ip::Allocate,
-          args: [::ClusterResource.find_by!(name: r), dst_vps, ips[r], strict: true],
-          method: :allocate_to_vps
+      # Allocate addresses to interfaces
+      vps.network_interfaces.each do |netif|
+        dst_netif = use_chain(
+          NetworkInterface.chain_for(netif.kind, :Clone),
+          args: [netif, dst_vps],
         )
 
-        changes << user_env.reallocate_resource!(
+        sums.merge!(clone_ip_addresses(netif, dst_netif)) do |key, old_val, new_val|
+          old_val + new_val
+        end
+      end
+
+      # Reallocate cluster resources
+      user_env = dst_netif.vps.user.environment_user_configs.find_by!(
+        environment: dst_netif.vps.node.location.environment,
+      )
+
+      changes = sums.map do |r, sum|
+        user_env.reallocate_resource!(
           r,
-          user_env.send(r) + chowned,
+          user_env.send(r) + sum,
           user: dst_vps.user,
           chain: self,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed),
         )
       end
 
-      unless changes.empty?
+      if changes.any?
         append_t(Transactions::Utils::NoOp, args: dst_vps.node_id) do |t|
           changes.each { |use| t.edit(use, {value: use.value}) }
         end
       end
+    end
+
+    # Clone IP addresses.
+    # Allocates the equal number (or how many are available) of
+    # IP addresses.
+    def clone_ip_addresses(netif, dst_netif)
+      ips = {
+        ipv4: netif.ip_addresses.joins(:network).where(
+          networks: {
+            ip_version: 4,
+            role: ::Network.roles[:public_access],
+          }
+        ).count,
+
+        ipv4_private: netif.ip_addresses.joins(:network).where(
+          networks: {
+            ip_version: 4,
+            role: ::Network.roles[:private_access],
+          }
+        ).count,
+
+        ipv6: netif.ip_addresses.joins(:network).where(
+          networks: {ip_version: 6}
+        ).count,
+      }
+
+      versions = [:ipv4, :ipv4_private]
+      versions << :ipv6 if dst_netif.vps.node.location.has_ipv6
+
+      ret = {}
+
+      versions.each do |r|
+        chowned = use_chain(
+          Ip::Allocate,
+          args: [
+            ::ClusterResource.find_by!(name: r),
+            dst_netif,
+            ips[r],
+            strict: true
+          ],
+          method: :allocate_to_netif
+        )
+
+        ret[r] = chowned
+      end
+
+      ret
     end
   end
 end

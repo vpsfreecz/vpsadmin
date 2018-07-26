@@ -1,7 +1,8 @@
 class IpAddress < ActiveRecord::Base
   belongs_to :network
-  belongs_to :vps, :foreign_key => :vps_id
+  belongs_to :network_interface
   belongs_to :user
+  has_many :host_ip_addresses
   has_many :ip_traffics
   has_many :ip_recent_traffics
 
@@ -97,7 +98,7 @@ class IpAddress < ActiveRecord::Base
         role: ::Network.roles[role],
         autopick: true,
       })
-      .where('vps_id IS NULL')
+      .where('network_interface_id IS NULL')
       .where('(ip_addresses.user_id = ? OR ip_addresses.user_id IS NULL)', user.id)
       .where('rl.id IS NULL')
       .order('ip_addresses.user_id DESC, ip_addresses.id').take!
@@ -130,7 +131,7 @@ class IpAddress < ActiveRecord::Base
   end
 
   def check_ownership
-    if user && vps && user.id != vps.user_id
+    if user && network_interface && user.id != network_interface.vps.user_id
       errors.add(
         :user,
         'can be owned only by the owner of the VPS that uses this address'

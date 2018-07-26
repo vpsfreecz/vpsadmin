@@ -447,3 +447,128 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 	$xtpl->form_out_raw('vps_swap_preview');
 }
 
+function vps_netif_form($vps, $netif) {
+	global $xtpl, $api;
+
+	$xtpl->table_title(_('Network interface').' '.$netif->name);
+
+	$xtpl->table_add_category(_('Interface'));
+	$xtpl->table_add_category('');
+
+	$xtpl->form_create('?page=adminvps&action=netif&id='.$netif->id, 'post');
+	$xtpl->form_add_input(_('Name').':', 'text', '30', 'name', $netif->name);
+
+	$xtpl->table_td(_('Type').':');
+	$xtpl->table_td($netif->type);
+	$xtpl->table_tr();
+
+	if ($vps->node->hypervisor_type == "vpsadminos") {
+		$xtpl->table_td(_('MAC address').':');
+		$xtpl->table_td($netif->mac);
+		$xtpl->table_tr();
+	}
+
+	$xtpl->form_out(_('Go >>'));
+
+	vps_netif_iproutes_form($vps, $netif);
+	vps_netif_ipaddrs_form($vps, $netif);
+}
+
+function vps_netif_iproutes_form($vps, $netif) {
+	global $xtpl, $api;
+
+	$host_ips = $api->ip_address->list([
+		'network_interface' => $netif->id,
+		'meta' => ['includes' => 'network'],
+	]);
+
+	$xtpl->table_add_category(_('Routed addresses'));
+	$xtpl->table_add_category('');
+	$xtpl->form_create('?page=adminvps&action=iproute_add&veid='.$vps->id, 'post');
+
+	foreach ($host_ips as $ip) {
+		$xtpl->table_td(ip_label($ip));
+		$xtpl->table_td($ip->addr.'/'.$ip->prefix);
+		$xtpl->table_td(
+			'<a href="?page=adminvps&action=iproute_del&id='.$ip->id.
+			'&veid='.$vps->id.'&t='.csrf_token().'" title="'._('Remove').'">'.
+			'<img src="template/icons/m_remove.png" alt="'._("Remove").'">'.
+			'</a>'
+		);
+		$xtpl->table_tr();
+	}
+
+	$xtpl->form_add_select(
+		_("Add public IPv4 address").':',
+		'iproute_public_v4',
+		[],
+		'', _('Add one IP address at a time')
+	);
+
+	$xtpl->form_add_select(
+		_("Add private IPv4 address").':',
+		'iproute_private_v4',
+		[],
+		'', _('Add one IP address at a time')
+	);
+
+	if ($vps->node->location->has_ipv6) {
+		$xtpl->form_add_select(
+			_("Add public IPv6 address").':',
+			'iproute_public_v6',
+			[],
+			'', _('Add one IP address at a time')
+		);
+	}
+	$xtpl->form_out(_('Go >>'));
+
+}
+
+function vps_netif_ipaddrs_form($vps, $netif) {
+	global $xtpl, $api;
+
+	$ips = $api->host_ip_address->list([
+		'network_interface' => $netif->id,
+		'meta' => ['includes' => 'ip_address__network'],
+	]);
+
+	$xtpl->table_add_category(_('Interface addresses'));
+	$xtpl->table_add_category('');
+	$xtpl->form_create('?page=adminvps&action=ipaddr_add&veid='.$vps->id, 'post');
+
+	foreach ($ips as $ip) {
+		$xtpl->table_td(host_ip_label($ip));
+		$xtpl->table_td($ip->addr.'/'.$ip->ip_address->prefix);
+		$xtpl->table_td(
+			'<a href="?page=adminvps&action=ipaddr_del&id='.$ip->id.
+			'&veid='.$vps->id.'&t='.csrf_token().'" title="'._('Remove').'">'.
+			'<img src="template/icons/m_remove.png" alt="'._("Remove").'">'.
+			'</a>'
+		);
+		$xtpl->table_tr();
+	}
+
+	$xtpl->form_add_select(
+		_("Add public IPv4 address").':',
+		'iproute_public_v4',
+		[],
+		'', _('Add one IP address at a time')
+	);
+
+	$xtpl->form_add_select(
+		_("Add private IPv4 address").':',
+		'iproute_private_v4',
+		[],
+		'', _('Add one IP address at a time')
+	);
+
+	if ($vps->node->location->has_ipv6) {
+		$xtpl->form_add_select(
+			_("Add public IPv6 address").':',
+			'iproute_public_v6',
+			[],
+			'', _('Add one IP address at a time')
+		);
+	}
+	$xtpl->form_out(_('Go >>'));
+}

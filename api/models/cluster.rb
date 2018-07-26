@@ -46,13 +46,15 @@ class Cluster
       UNION
       SELECT 'User', v.user_id AS id, 'ip_addr', ip_addr
       FROM ip_addresses i
-      INNER JOIN vpses v ON i.vps_id = v.id
+      INNER JOIN network_interfaces n ON i.network_interface_id = n.id
+      INNER JOIN vpses v ON n.vps_id = v.id
       WHERE ip_addr = #{q}
 
       UNION
-      SELECT 'Vps', vps_id AS id, 'ip_addr', ip_addr
-      FROM ip_addresses
-      WHERE vps_id != 0 AND ip_addr = #{q}
+      SELECT 'Vps', n.vps_id AS id, 'ip_addr', ip_addr
+      FROM ip_addresses i
+      INNER JOIN network_interfaces n ON i.network_interface_id = n.id
+      WHERE i.ip_addr = #{q}
 
       UNION
       SELECT 'Vps', id, 'hostname', hostname

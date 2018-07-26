@@ -7,7 +7,7 @@ module TransactionChains
       raise NotImplementedError
     end
 
-    def allocate_to_vps(r, vps, n, strict: true)
+    def allocate_to_netif(r, netif, n, strict: true)
       return n if n == 0
 
       ips = []
@@ -17,8 +17,8 @@ module TransactionChains
         begin
           ::IpAddress.transaction do
             ip = ::IpAddress.pick_addr!(
-              vps.user,
-              vps.node.location,
+              netif.vps.user,
+              netif.vps.node.location,
               v,
               r.name.end_with?('_private') ? :private_access : :public_access,
             )
@@ -44,24 +44,28 @@ module TransactionChains
       end
 
       chowned = 0
-      ownership = vps.node.location.environment.user_ip_ownership
-      last_ip = vps.ip_addresses.joins(:network).where(
+      ownership = netif.vps.node.location.environment.user_ip_ownership
+      last_ip = netif.ip_addresses.joins(:network).where(
         networks: {ip_version: v}
       ).order('`order` DESC').take
 
       order = last_ip ? last_ip.order + 1 : 0
 
       ips.each do |ip|
-        append(Transactions::Vps::IpAdd, args: [vps, ip]) do
-          edit_before(ip, vps_id: ip.vps_id, order: ip.order)
-          edit_before(ip, user_id: ip.user_id) if ownership
+        append_t(Transactions::NetworkInterface::AddRoute, args: [netif, ip]) do |t|
+          t.edit_before(
+            ip,
+            network_interface_id: ip.network_interface_id,
+            order: ip.order,
+          )
+          t.edit_before(ip, user_id: ip.user_id) if ownership
         end
 
-        ip.vps_id = vps.id
+        ip.network_interface_id = netif.id
         ip.order = order
 
         chowned += ip.size if (!ip.user_id && ownership) || !ownership
-        ip.user_id = vps.user_id if !ip.user_id && ownership
+        ip.user_id = netif.vps.user_id if !ip.user_id && ownership
 
         ip.save!
 
