@@ -132,7 +132,8 @@ function show_notification() {
 }
 
 function redirect($loc) {
-	header('Location: '.$loc);
+	// Redirect to $loc without a leading slash
+	header('Location: '.ltrim($loc,'/'));
 	exit;
 }
 
