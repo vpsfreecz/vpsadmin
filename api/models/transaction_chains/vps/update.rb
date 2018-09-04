@@ -211,7 +211,7 @@ module TransactionChains
       %i(ipv4 ipv4_private ipv6).each do |r|
         st_cnt, st_changes = standalone_ips(vps, r)
 
-        cnt = st_cnt + r_cnt
+        cnt = st_cnt
         ret.update(st_changes)
 
         next if cnt == 0
@@ -238,7 +238,7 @@ module TransactionChains
     end
 
     def standalone_ips(vps, r)
-      q = vps.ip_addresses
+      q = vps.ip_addresses.joins(:network)
 
       case r
       when :ipv4
