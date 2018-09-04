@@ -132,7 +132,7 @@ function show_notification() {
 }
 
 function redirect($loc) {
-	header('Location: '.$loc);
+	header('Location: '.preg_replace('#^/+#', '/', $loc));
 	exit;
 }
 
