@@ -594,7 +594,15 @@ END
 
       tpl = input[:os_template] || vps.os_template
 
-      error('selected os template is disabled') unless tpl.enabled?
+      if !tpl.enabled?
+        error('selected os template is disabled')
+
+      elsif tpl.hypervisor_type != vps.node.hypervisor_type
+        error(
+          "incompatible template: needs #{tpl.hypervisor_type}, but VPS is "+
+          "using #{vps.node.hypervisor_type}"
+        )
+      end
 
       @chain, _ = vps.reinstall(tpl)
       ok
