@@ -65,11 +65,9 @@ module NodeCtld
       # Docker
       if @features['docker'][key]
         osctl(%i(ct set seccomp), [@vps_id, '/etc/lxc/config/common.seccomp'])
-        osctl(%i(ct set apparmor), [@vps_id, 'osctl-ct-docker-vfs'])
 
       else
         osctl(%i(ct unset seccomp), @vps_id)
-        osctl(%i(ct unset apparmor), @vps_id)
       end
 
       # Restart the VPS if it is running, this is needed for LXC nesting
