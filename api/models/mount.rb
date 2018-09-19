@@ -21,7 +21,7 @@ class Mount < ActiveRecord::Base
     dst.insert(0, '/') unless dst.start_with?('/')
     dst.chop! while dst.end_with?('/')
 
-    if dst !~ /\A[a-zA-Z0-9_\-\/\.]{3,500}\z/ || dst =~ /\.\./ || dst =~ /\/\//
+    if dst !~ /\A[a-zA-Z0-9_\-\/\.:]{3,500}\z/ || dst =~ /\.\./ || dst =~ /\/\//
       errors.add(:dst, 'invalid format')
     end
 
