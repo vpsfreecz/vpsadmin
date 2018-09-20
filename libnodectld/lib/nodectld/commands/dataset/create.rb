@@ -15,6 +15,7 @@ module NodeCtld
       zfs(:create, "-p #{opts}", "#{@pool_fs}/#{@name}")
 
       if @create_private
+        zfs(:mount, nil, "#{@pool_fs}/#{@name}", valid_rcs: [1])
         mnt = zfs(:get, '-ovalue -H mountpoint', "#{@pool_fs}/#{@name}")[:output].strip
         syscmd("#{$CFG.get(:bin, :mkdir)} \"#{mnt}/private\"")
       end
