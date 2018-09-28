@@ -7,7 +7,7 @@ module NodeCtld
       osctl(
         %i(ct netif new routed),
         [@vps_id, @veth_name],
-        {via: @interconnecting_networks.values, hwaddr: @mac_address}
+        {hwaddr: @mac_address}
       )
     end
 
