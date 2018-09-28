@@ -5,7 +5,7 @@ class Network < ActiveRecord::Base
   belongs_to :user
   has_many :ip_addresses
 
-  enum role: %i(public_access private_access interconnecting)
+  enum role: %i(public_access private_access)
   enum split_access: %i(no_access user_split owner_split)
 
   validates :ip_version, inclusion: {

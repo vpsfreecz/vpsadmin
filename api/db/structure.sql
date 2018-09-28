@@ -1,4 +1,4 @@
--- MySQL dump 10.16  Distrib 10.1.29-MariaDB, for Linux (x86_64)
+-- MySQL dump 10.16  Distrib 10.2.17-MariaDB, for Linux (x86_64)
 --
 -- Host: 192.168.122.10    Database: vpsadmin_core
 -- ------------------------------------------------------
@@ -1356,7 +1356,7 @@ CREATE TABLE `sysconfig` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_sysconfig_on_category_and_name` (`category`,`name`) USING BTREE,
   KEY `index_sysconfig_on_category` (`category`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1592,7 +1592,7 @@ CREATE TABLE `user_namespace_map_ugids` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_user_namespace_map_ugids_on_ugid` (`ugid`),
   UNIQUE KEY `index_user_namespace_map_ugids_on_user_namespace_map_id` (`user_namespace_map_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=16384 DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10001 DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2011,7 +2011,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-06-04 14:39:16
+-- Dump completed on 2018-10-17 14:16:19
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2235,4 +2235,6 @@ INSERT INTO schema_migrations (version) VALUES ('20180524103629');
 INSERT INTO schema_migrations (version) VALUES ('20180525100900');
 
 INSERT INTO schema_migrations (version) VALUES ('20180604115723');
+
+INSERT INTO schema_migrations (version) VALUES ('20180928161725');
 

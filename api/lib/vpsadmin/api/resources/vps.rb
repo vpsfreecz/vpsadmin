@@ -1167,9 +1167,6 @@ END
 
           rescue VpsAdmin::API::Exceptions::IpAddressNotOwned
             error('Use an IP address you already own first')
-
-          rescue VpsAdmin::API::Exceptions::InterconnectingIp
-            error('Cannot add an interconnecting IP')
           end
 
         elsif input[:version].nil?
@@ -1211,9 +1208,6 @@ END
           vps_id: vps.id
         ))
         ok
-
-      rescue VpsAdmin::API::Exceptions::InterconnectingIp
-        error('Cannot remove an interconnecting IP')
       end
 
       def state_id

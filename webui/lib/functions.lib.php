@@ -82,8 +82,6 @@ function ip_label($ip) {
 		return 'Public IPv'.$ip->network->ip_version;
 	case 'private_access':
 		return 'Private IPv'.$ip->network->ip_version;
-	case 'interconnecting':
-		return 'Interconnecting IPv'.$ip->network->ip_version;
 	}
 }
 

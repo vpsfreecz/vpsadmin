@@ -211,7 +211,6 @@ function networks_list() {
 		$xtpl->table_td(array(
 			'public_access' => 'Pub',
 			'private_access' => 'Priv',
-			'interconnecting' => 'Int',
 		)[$n->role]);
 		$xtpl->table_td(boolean_icon($n->managed));
 		$xtpl->table_td(approx_number($n->size), false, true);
