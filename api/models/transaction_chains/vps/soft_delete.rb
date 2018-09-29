@@ -10,16 +10,11 @@ module TransactionChains
       # Stop VPS - should be already stopped when suspended (blocked)
       use_chain(TransactionChains::Vps::Stop, args: vps)
 
-      vps.network_interfaces.each do |netif|
-        use_chain(NetworkInterface::DelRoute, args: [
-          netif,
-          netif.ip_addresses.joins(:network).where(
-            networks: {role: [
-              ::Network.roles[:public_access],
-              ::Network.roles[:private_access],
-            ]}
-          )
-        ])
+      # Remove IP addresses
+      if target
+        vps.network_interfaces.each do |netif|
+          use_chain(NetworkInterface::Clear, args: netif)
+        end
       end
 
       append_t(Transactions::Utils::NoOp, args: vps.node_id) do |t|

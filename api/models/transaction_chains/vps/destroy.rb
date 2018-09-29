@@ -25,9 +25,10 @@ module TransactionChains
 
       use_chain(Vps::Mounts, args: vps) if vps.mounts.any?
 
-      # Remove veth interface
-      # ### TODO remove all interfacesss
-      use_chain(Vps::RemoveVeth, args: vps) if vps.node.vpsadminos?
+      # Remove network interfaces
+      vps.network_interfaces.each do |netif|
+        use_chain(NetworkInterface::Destroy, args: netif)
+      end
 
       if vps.node.openvz?
         # Destroy VPS
