@@ -26,6 +26,7 @@ module TransactionChains
       use_chain(Vps::Mounts, args: vps) if vps.mounts.any?
 
       # Remove veth interface
+      # ### TODO remove all interfacesss
       use_chain(Vps::RemoveVeth, args: vps) if vps.node.vpsadminos?
 
       if vps.node.openvz?
