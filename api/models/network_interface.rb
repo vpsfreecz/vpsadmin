@@ -1,6 +1,7 @@
 class NetworkInterface < ActiveRecord::Base
   belongs_to :vps
   has_many :ip_addresses
+  has_many :host_ip_addresses, through: :ip_addresses
   enum kind: %i(venet veth_bridge veth_routed)
 
   include Lockable
@@ -17,11 +18,11 @@ class NetworkInterface < ActiveRecord::Base
     ::IpAddress.transaction do
       ip = ::IpAddress.find(ip.id) unless safe
 
-      if ip.network.location_id != node.location_id
+      if ip.network.location_id != vps.node.location_id
         raise VpsAdmin::API::Exceptions::IpAddressInvalidLocation
       end
 
-      if !ip.free? || (ip.user_id && ip.user_id != self.user_id)
+      if !ip.free? || (ip.user_id && ip.user_id != vps.user_id)
         raise VpsAdmin::API::Exceptions::IpAddressInUse
       end
 
@@ -29,7 +30,7 @@ class NetworkInterface < ActiveRecord::Base
           user: vps.user,
           network_interface: nil,
           networks: {
-            location_id: node.location_id,
+            location_id: vps.node.location_id,
             ip_version: ip.network.ip_version,
             role: ::Network.roles[ip.network.role],
           }
@@ -49,25 +50,25 @@ class NetworkInterface < ActiveRecord::Base
   #
   # @param ip [IpAddress]
   # @param safe [Boolean]
-  def remove_route(addr, safe: false)
+  def remove_route(ip, safe: false)
     ::IpAddress.transaction do
       ip = ::IpAddress.find(ip.id) unless safe
 
-      if ip.vps_id != self.id
+      if ip.network_interface_id != self.id
         raise VpsAdmin::API::Exceptions::IpAddressNotAssigned
       end
 
-      TransactionChains::NetworkInterface::DelIp.fire(self, [ip])
+      TransactionChains::NetworkInterface::DelRoute.fire(self, [ip])
     end
   end
 
   # @param addr [HostIpAddress]
   def add_host_address(addr)
-
+    TransactionChains::NetworkInterface::AddHostIp.fire(self, [addr])
   end
 
   # @param addr [HostIpAddress]
   def remove_host_address(addr)
-
+    TransactionChains::NetworkInterface::DelHostIp.fire(self, [addr])
   end
 end

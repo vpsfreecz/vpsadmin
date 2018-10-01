@@ -42,5 +42,21 @@ module NodeCtld
 
       osctl(%i(ct netif route del), [@vps_id, @name, "#{addr}/#{prefix}"])
     end
+
+    def add_host_addr(addr, prefix)
+      osctl(
+        %i(ct netif ip add),
+        [@vps_id, @name, "#{addr}/#{prefix}"],
+        {no_route: true},
+      )
+    end
+
+    def del_host_addr(addr, prefix)
+      osctl(
+        %i(ct netif ip del),
+        [@vps_id, @name, "#{addr}/#{prefix}"],
+        {keep_route: true},
+      )
+    end
   end
 end

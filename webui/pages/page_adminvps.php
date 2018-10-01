@@ -399,20 +399,26 @@ switch ($_GET["action"]) {
 			}
 			break;
 
-		case 'addip':
+		case 'iproute_add':
 			try {
 				csrf_check();
 
-				if($_POST['ip_recycle']) {
-					$api->vps($_GET['veid'])->ip_address->create(array('ip_address' => $_POST['ip_recycle']));
+				if($_POST['iproute_public_v4']) {
+					$api->ip_address->assign($_POST['iproute_public_v4'], [
+						'network_interface' => $_GET['netif'],
+					]);
 					notify_user(_("Addition of IP address planned"), '');
 
-				} else if($_POST['ip_private_recycle']) {
-					$api->vps($_GET['veid'])->ip_address->create(array('ip_address' => $_POST['ip_private_recycle']));
+				} else if($_POST['iproute_private_v4']) {
+					$api->ip_address->assign($_POST['iproute_private_v4'], [
+						'network_interface' => $_GET['netif'],
+					]);
 					notify_user(_("Addition of private IP address planned"), '');
 
-				} else if($_POST['ip6_recycle']) {
-					$api->vps($_GET['veid'])->ip_address->create(array('ip_address' => $_POST['ip6_recycle']));
+				} else if($_POST['iproute_public_v6']) {
+					$api->ip_address->assign($_POST['iproute_public_v6'], [
+						'network_interface' => $_GET['netif'],
+					]);
 					notify_user(_("Addition of IP address planned"), '');
 
 				} else {
@@ -426,10 +432,11 @@ switch ($_GET["action"]) {
 				$show_info=true;
 			}
 			break;
-		case 'delip':
+
+		case 'iproute_del':
 			try {
 				csrf_check();
-				$api->vps($_GET['veid'])->ip_address($_GET['ip'])->delete();
+				$api->ip_address($_GET['id'])->free();
 
 				notify_user(_("Deletion of IP address planned"), '');
 				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
@@ -438,8 +445,50 @@ switch ($_GET["action"]) {
 				$xtpl->perex_format_errors(_('Failed to remove IP address'), $e->getResponse());
 				$show_info=true;
 			}
-
 			break;
+
+		case 'hostaddr_add':
+			try {
+				csrf_check();
+
+				if($_POST['hostaddr_public_v4']) {
+					$api->host_ip_address->assign($_POST['hostaddr_public_v4']);
+					notify_user(_("Addition of IP address planned"), '');
+
+				} else if($_POST['hostaddr_private_v4']) {
+					$api->host_ip_address->assign($_POST['hostaddr_private_v4']);
+					notify_user(_("Addition of private IP address planned"), '');
+
+				} else if($_POST['hostaddr_public_v6']) {
+					$api->host_ip_address->assign($_POST['hostaddr_public_v6']);
+					notify_user(_("Addition of IP address planned"), '');
+
+				} else {
+					notify_user(_("Error"), 'Contact your administrator');
+				}
+
+				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Failed to add IP address'), $e->getResponse());
+				$show_info=true;
+			}
+			break;
+
+		case 'hostaddr_del':
+			try {
+				csrf_check();
+				$api->host_ip_address($_GET['id'])->free();
+
+				notify_user(_("Deletion of IP address planned"), '');
+				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Failed to remove IP address'), $e->getResponse());
+				$show_info=true;
+			}
+			break;
+
 		case 'nameserver':
 			try {
 				csrf_check();
@@ -1043,55 +1092,6 @@ if (isset($show_info) && $show_info) {
 		foreach ($netifs as $netif) {
 			vps_netif_form($vps, $netif);
 		}
-
-		/*
-		$vps_ips = $api->vps($vps->id)->ip_address->list(array(
-			'meta' => array('includes' => 'network')
-		));
-
-		if ($vps->node->hypervisor_type == 'vpsadminos') {
-			$xtpl->table_title(_('Network interface'));
-			$xtpl->form_create('?page=adminvps&action=netif&veid='.$vps->id, 'post');
-			$xtpl->form_add_input(_('Veth name').':', 'text', '30', 'veth_name', $vps->veth_name);
-			$xtpl->form_out(_('Go >>'));
-		}*/
-
-
-		// IP addresses
-		/*
-		$xtpl->table_title(_('IP addresses'));
-		$xtpl->form_create('?page=adminvps&action=addip&veid='.$vps->id, 'post');
-
-		foreach ($vps_ips as $ip) {
-			$xtpl->table_td(ip_label($ip));
-			$xtpl->table_td($ip->addr.'/'.$ip->prefix);
-			$xtpl->table_td(
-				'<a href="?page=adminvps&action=delip&ip='.$ip->id.
-				'&veid='.$vps->id.'&t='.csrf_token().'">('._("Remove").')</a>'
-			);
-
-			$xtpl->table_tr();
-		}
-
-		$tmp[] = '-------';
-		$free_4 = $tmp + get_free_ip_list('ipv4', $vps, 'public_access', 25);
-		$free_4_private = $tmp + get_free_ip_list('ipv4_private', $vps, 'private_access', 25);
-
-		if ($vps->node->location->has_ipv6)
-			$free_6 = $tmp + get_free_ip_list('ipv6', $vps, null, 25);
-
-		$xtpl->form_add_select(_("Add public IPv4 address").':', 'ip_recycle', $free_4, '', _('Add one IP address at a time'));
-
-		$xtpl->form_add_select(_("Add private IPv4 address").':', 'ip_private_recycle', $free_4_private, '', _('Add one IP address at a time'));
-
-		if ($vps->node->location->has_ipv6)
-			$xtpl->form_add_select(_("Add public IPv6 address").':', 'ip6_recycle', $free_6, '', _('Add one IP address at a time'));
-
-		$xtpl->table_tr();
-
-		$xtpl->form_out(_("Go >>"));
-		 */
-
 
 	// DNS Server
 		$xtpl->table_title(_('DNS resolver (/etc/resolv.conf)'));

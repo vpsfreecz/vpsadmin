@@ -86,7 +86,7 @@ module TransactionChains
         lock(ip)
 
         append_t(
-          Transactions::NetworkInterface::RouteAdd,
+          Transactions::NetworkInterface::AddRoute,
           args: [netif, ip, opts[:register]]
         ) do |t|
           t.edit(ip, network_interface_id: netif.id, order: order[ip.version])

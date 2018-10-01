@@ -300,7 +300,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
   class Free < HaveAPI::Action
     desc 'Remove the route from an interface'
-    route ':%{resource}_id/assign'
+    route ':%{resource}_id/free'
     http_method :post
     blocking true
 
@@ -322,6 +322,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
          )
         error('access denied')
       end
+
+      netif = ip.network_interface
 
       maintenance_check!(netif.vps)
 

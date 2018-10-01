@@ -25,10 +25,11 @@ module VpsAdmin::API::Resources
       integer :size, label: 'Size'
       integer :max_tx, label: 'Max tx', desc: 'Maximum output throughput'
       integer :max_rx, label: 'Max rx', desc: 'Maximum input throughput'
+      bool :assigned, label: 'Assigned'
     end
 
     params(:common) do
-      use :filters, include: %i(ip_address addr)
+      use :filters, include: %i(ip_address addr assigned)
     end
 
     params(:all) do
@@ -98,6 +99,14 @@ module VpsAdmin::API::Resources
           ips = ips.joins(ip_address: :network).where(
             networks: {role: ::Network.roles[input[:role]]},
           )
+        end
+
+        if input.has_key?(:assigned) && !input[:assigned].nil?
+          if input[:assigned]
+            ips = ips.where.not(order: nil)
+          else
+            ips = ips.where(order: nil)
+          end
         end
 
         if current_user.role != :admin
@@ -227,7 +236,7 @@ module VpsAdmin::API::Resources
         netif = host.ip_address.network_interface
 
         if netif.nil?
-          error("#{host.ip_address} is not assigned to any interface")
+          error("#{host.ip_address} is not routed to any interface")
 
         elsif current_user.role != :admin && ( \
                 (host.ip_address.user_id && host.ip_address.user_id != current_user.id) \

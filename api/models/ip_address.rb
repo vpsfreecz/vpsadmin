@@ -80,7 +80,7 @@ class IpAddress < ActiveRecord::Base
   end
 
   def free?
-    vps_id.nil? || vps_id == 0
+    network_interface_id.nil?
   end
 
   def cluster_resource

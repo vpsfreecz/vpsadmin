@@ -4,4 +4,10 @@ class HostIpAddress < ActiveRecord::Base
   def assigned?
     !order.nil?
   end
+
+  alias_method :assigned, :assigned?
+
+  def version
+    ip_address.network.ip_version
+  end
 end

@@ -8,6 +8,10 @@ module TransactionChains
     # @option opts [Boolean] :unregister
     # @option opts [Boolean] :reallocate
     def link_chain(netif, ips, opts = {})
+      lock(netif)
+      lock(netif.vps)
+      concerns(:affect, [netif.vps.class.name, netif.vps.id])
+
       opts[:unregister] = true unless opts.has_key?(:unregister)
       opts[:reallocate] = true unless opts.has_key?(:reallocate)
 
@@ -66,12 +70,12 @@ module TransactionChains
         lock(ip)
 
         append_t(
-          Transactions::NetworkInterface::RouteDel,
+          Transactions::NetworkInterface::DelRoute,
           args: [netif, ip, opts[:unregister]]
         ) do |t|
           t.edit(ip, network_interface_id: nil, order: nil)
           t.just_create(
-            netif.vps.log(:ip_del, {id: ip.id, addr: ip.addr})
+            netif.vps.log(:route_del, {id: ip.id, addr: ip.addr})
           ) unless included?
         end
       end

@@ -23,7 +23,7 @@
 $DATA_SIZE_UNITS = array("k" => "KiB", "m" => "MiB", "g" => "GiB", "t" => "TiB");
 
 
-function get_free_ip_list ($res, $vps, $role = null, $limit = null) {
+function get_free_route_list ($res, $vps, $role = null, $limit = null) {
 	global $api;
 
 	if ($res === 'ipv4' || $res === 'ipv4_private')
@@ -34,7 +34,7 @@ function get_free_ip_list ($res, $vps, $role = null, $limit = null) {
 	$ret = array();
 	$filters = array(
 		'version' => $v,
-		'vps' => null,
+		'network_interface' => null,
 		'location' => $vps->node->location_id,
 		'meta' => array('includes' => 'user'),
 	);
@@ -45,7 +45,7 @@ function get_free_ip_list ($res, $vps, $role = null, $limit = null) {
 	if ($limit)
 		$filters['limit'] = $limit;
 
-	foreach($api->ip_address->list($filters) as $ip) {
+	foreach ($api->ip_address->list($filters) as $ip) {
 		$note = '';
 
 		if ($ip->user_id) {
@@ -56,6 +56,35 @@ function get_free_ip_list ($res, $vps, $role = null, $limit = null) {
 		}
 
 		$ret[$ip->id] = $ip->addr.'/'.$ip->prefix." $note";
+	}
+
+	return $ret;
+}
+
+function get_free_host_addr_list ($res, $vps, $netif, $role = null, $limit = null) {
+	global $api;
+
+	if ($res === 'ipv4' || $res === 'ipv4_private')
+		$v = 4;
+	else
+		$v = 6;
+
+	$ret = array();
+	$filters = array(
+		'version' => $v,
+		'network_interface' => $netif->id,
+		'assigned' => false,
+		'meta' => array('includes' => 'ip_address'),
+	);
+
+	if ($role)
+		$filters['role'] = $role;
+
+	if ($limit)
+		$filters['limit'] = $limit;
+
+	foreach ($api->host_ip_address->list($filters) as $ip) {
+		$ret[$ip->id] = $ip->addr.'/'.$ip->ip_address->prefix;
 	}
 
 	return $ret;
