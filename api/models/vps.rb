@@ -61,7 +61,8 @@ class Vps < ActiveRecord::Base
 
   include VpsAdmin::API::ObjectHistory::Model
   log_events %i(
-      hostname os_template dns_resolver reinstall resources node ip_add ip_del
+      hostname os_template dns_resolver reinstall resources node
+      route_add route_del host_addr_add host_addr_del
       start stop restart passwd clone swap configs features mount umount
       outage_windows outage_window restore deploy_public_key
   )
