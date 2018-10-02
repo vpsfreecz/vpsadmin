@@ -1,6 +1,6 @@
 module TransactionChains
   class NetworkInterface::Rename < ::TransactionChain
-    label 'Modify'
+    label 'Rename'
 
     def link_chain(netif, new_name)
       lock(netif)
@@ -13,6 +13,12 @@ module TransactionChains
         new_name,
       ]) do |t|
         t.edit(netif, name: new_name)
+
+        t.just_create(netif.vps.log(:netif_rename, {
+          id: netif.id,
+          name: netif.name,
+          new_name: new_name,
+        })) unless included?
       end
     end
   end

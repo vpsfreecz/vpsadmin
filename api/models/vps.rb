@@ -64,7 +64,7 @@ class Vps < ActiveRecord::Base
       hostname os_template dns_resolver reinstall resources node
       route_add route_del host_addr_add host_addr_del
       start stop restart passwd clone swap configs features mount umount
-      outage_windows outage_window restore deploy_public_key
+      outage_windows outage_window restore deploy_public_key netif_rename
   )
 
   validates :user_id, :node_id, :os_template_id, presence: true, numericality: {only_integer: true}
