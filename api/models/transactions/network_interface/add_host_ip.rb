@@ -4,13 +4,14 @@ module Transactions::NetworkInterface
     t_type 2022
     queue :network
 
+    # @param netif [::NetworkInterface]
     # @param addr [::HostIpAddress]
-    def params(addr)
-      self.vps_id = addr.ip_address.network_interface.vps.id
-      self.node_id = addr.ip_address.network_interface.vps.node_id
+    def params(netif, addr)
+      self.vps_id = netif.vps.id
+      self.node_id = netif.vps.node_id
 
       {
-        interface: addr.ip_address.network_interface.name,
+        interface: netif.name,
         addr: addr.ip_addr,
         prefix: addr.ip_address.prefix,
         version: addr.version,

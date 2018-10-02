@@ -4,18 +4,21 @@ module TransactionChains
 
     # @param netif [::NetworkInterface]
     # @param addrs [Array<::HostIpAddress>]
-    def link_chain(netif, addrs)
+    # @param check_addrs [Boolean]
+    def link_chain(netif, addrs, check_addrs: true)
       lock(netif)
       lock(netif.vps)
       concerns(:affect, [netif.vps.class.name, netif.vps.id])
 
       # Ensure all addresses are added to the same interface
-      addrs.each do |addr|
-        next if addr.ip_address.network_interface_id == netif.id
+      if check_addrs
+        addrs.each do |addr|
+          next if addr.ip_address.network_interface_id == netif.id
 
-        fail "address #{addr} belongs to network routed to interface "+
-             "#{addr.ip_address.network_interface}, unable to assign to "+
-             "interface #{netif}"
+          fail "address #{addr.id} belongs to network routed to interface "+
+               "#{addr.ip_address.network_interface_id}, unable to assign to "+
+               "interface #{netif.id}"
+        end
       end
 
       # Determine address order
@@ -33,7 +36,10 @@ module TransactionChains
 
       # Add the addresses
       addrs.each do |addr|
-        append_t(Transactions::NetworkInterface::AddHostIp, args: addr) do |t|
+        append_t(
+          Transactions::NetworkInterface::AddHostIp,
+          args: [netif, addr]
+        ) do |t|
           t.edit(addr, order: order[addr.version])
 
           t.just_create(

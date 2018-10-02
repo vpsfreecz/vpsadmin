@@ -14,7 +14,8 @@ class NetworkInterface < ActiveRecord::Base
   #
   # @param ip [IpAddress]
   # @param safe [Boolean]
-  def add_route(ip, safe: false)
+  # @param host_addrs [Array<::HostIpAddress>] host addresses to assign
+  def add_route(ip, safe: false, host_addrs: [])
     ::IpAddress.transaction do
       ip = ::IpAddress.find(ip.id) unless safe
 
@@ -38,7 +39,11 @@ class NetworkInterface < ActiveRecord::Base
         raise VpsAdmin::API::Exceptions::IpAddressNotOwned
       end
 
-      TransactionChains::NetworkInterface::AddRoute.fire(self, [ip])
+      TransactionChains::NetworkInterface::AddRoute.fire(
+        self,
+        [ip],
+        host_addrs: host_addrs,
+      )
     end
   end
 

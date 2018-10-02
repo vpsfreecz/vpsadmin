@@ -298,6 +298,64 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     end
   end
 
+  class AssignWithHostAddress < HaveAPI::Action
+    desc 'Route the address to an interface'
+    route ':%{resource}_id/assign_with_host_address'
+    http_method :post
+    blocking true
+
+    input do
+      resource VpsAdmin::API::Resources::NetworkInterface, value_label: :name,
+        required: true
+      resource VpsAdmin::API::Resources::HostIpAddress, value_label: :addr,
+        desc: 'Host address to assign to the interface, defaults to the first address'
+    end
+
+    output do
+      use :all
+    end
+
+    authorize do |u|
+      allow
+    end
+
+    def exec
+      ip = ::IpAddress.find(params[:ip_address_id])
+      netif = input[:network_interface]
+
+      if current_user.role != :admin && ( \
+           (ip.user_id && ip.user_id != current_user.id) \
+           || (netif.vps.user_id != current_user.id)
+         )
+        error('access denied')
+      end
+
+      if input[:host_ip_address] && input[:host_ip_address].ip_address != ip
+        error('invalid host IP address')
+      end
+
+      host_addr = input[:host_ip_address] || ip.host_ip_addresses.take!
+
+      maintenance_check!(netif.vps)
+
+      @chain, _ = netif.add_route(ip, host_addrs: [host_addr])
+      ip
+
+    rescue VpsAdmin::API::Exceptions::IpAddressInUse
+      error('IP address is already in use')
+
+    rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation
+      error('IP address is from the wrong location')
+
+    rescue VpsAdmin::API::Exceptions::IpAddressNotOwned
+      error('Use an IP address you already own first')
+    end
+
+    def state_id
+      @chain && @chain.id
+    end
+  end
+
   class Free < HaveAPI::Action
     desc 'Remove the route from an interface'
     route ':%{resource}_id/free'

@@ -470,8 +470,12 @@ function vps_netif_form($vps, $netif) {
 
 	$xtpl->form_out(_('Go >>'));
 
-	vps_netif_iproutes_form($vps, $netif);
-	vps_netif_ipaddrs_form($vps, $netif);
+	if ($vps->node->hypervisor_type == 'vpsadminos') {
+		vps_netif_iproutes_form($vps, $netif);
+		vps_netif_ipaddrs_form($vps, $netif);
+	} else {
+		vps_netif_ip_joined_form($vps, $netif);
+	}
 }
 
 function vps_netif_iproutes_form($vps, $netif) {
@@ -581,6 +585,62 @@ function vps_netif_ipaddrs_form($vps, $netif) {
 		$xtpl->form_add_select(
 			_("Add public IPv6 address").':',
 			'hostaddr_public_v6',
+			$free_6,
+			'', _('Add one IP address at a time')
+		);
+	}
+	$xtpl->form_out(_('Go >>'));
+}
+
+function vps_netif_ip_joined_form($vps, $netif) {
+	global $xtpl, $api;
+
+	$ips = $api->ip_address->list([
+		'network_interface' => $netif->id,
+		'meta' => ['includes' => 'network'],
+	]);
+
+	$xtpl->table_add_category(_('IP addresses'));
+	$xtpl->table_add_category('');
+	$xtpl->form_create('?page=adminvps&action=ipjoined_add&veid='.$vps->id.'&netif='.$netif->id, 'post');
+
+	foreach ($ips as $ip) {
+		$xtpl->table_td(ip_label($ip));
+		$xtpl->table_td($ip->addr.'/'.$ip->prefix);
+		$xtpl->table_td(
+			'<a href="?page=adminvps&action=iproute_del&id='.$ip->id.
+			'&veid='.$vps->id.'&netif='.$netif->id.'&t='.csrf_token().'" title="'._('Remove').'">'.
+			'<img src="template/icons/m_remove.png" alt="'._("Remove").'">'.
+			'</a>'
+		);
+		$xtpl->table_tr();
+	}
+
+	$tmp = ['-------'];
+	$free_4_pub = $tmp + get_free_route_list('ipv4', $vps, 'public_access', 25);
+	$free_4_priv = $tmp + get_free_route_list('ipv4_private', $vps, 'private_access', 25);
+
+	if ($vps->node->location->has_ipv6)
+		$free_6 = $tmp + get_free_route_list('ipv6', $vps, null, 25);
+
+	$xtpl->form_add_select(
+		_("Add public IPv4 address").':',
+		'iproute_public_v4',
+		$free_4_pub,
+		'', _('Add one IP address at a time')
+	);
+
+	$xtpl->form_add_select(
+		_("Add private IPv4 address").':',
+		'iproute_private_v4',
+		$free_4_priv,
+		'', _('Add one IP address at a time')
+	);
+
+	if ($vps->node->location->has_ipv6) {
+		$xtpl->form_add_select(
+			_("Add public IPv6 address").':',
+			'iproute_public_v6',
 			$free_6,
 			'', _('Add one IP address at a time')
 		);

@@ -7,9 +7,11 @@ module TransactionChains
     # @param opts [Hash] options
     # @option opts [Boolean] :register (true)
     # @option opts [Boolean] :reallocate (true)
+    # @option opts [Array<::HostIpAddress>] :host_addrs
     def link_chain(netif, ips, opts = {})
       opts[:register] = true unless opts.has_key?(:register)
       opts[:reallocate] = true unless opts.has_key?(:reallocate)
+      opts[:host_addrs] ||= []
 
       lock(netif)
       lock(netif.vps)
@@ -98,6 +100,12 @@ module TransactionChains
         end
 
         order[ip.version] += 1
+
+        host_addrs = opts[:host_addrs].select { |addr| addr.ip_address == ip }
+        use_chain(
+          NetworkInterface::AddHostIp,
+          args: [netif, host_addrs, check_addrs: false]
+        ) if host_addrs.any?
       end
 
       append(Transactions::Utils::NoOp, args: netif.vps.node_id) do
