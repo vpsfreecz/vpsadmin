@@ -69,6 +69,11 @@ module TransactionChains
       ips_arr.each do |ip|
         lock(ip)
 
+        use_chain(NetworkInterface::DelHostIp, args: [
+          netif,
+          ip.host_ip_addresses.where.not(order: nil).to_a
+        ])
+
         append_t(
           Transactions::NetworkInterface::DelRoute,
           args: [netif, ip, opts[:unregister]]
