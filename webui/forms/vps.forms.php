@@ -456,7 +456,14 @@ function vps_netif_form($vps, $netif) {
 	$xtpl->table_add_category('');
 
 	$xtpl->form_create('?page=adminvps&action=netif&id='.$netif->id, 'post');
-	$xtpl->form_add_input(_('Name').':', 'text', '30', 'name', $netif->name);
+
+	if ($vps->node->hypervisor_type == "vpsadminos") {
+		$xtpl->form_add_input(_('Name').':', 'text', '30', 'name', $netif->name);
+	} else {
+		$xtpl->table_td(_('Name').':');
+		$xtpl->table_td($netif->name);
+		$xtpl->table_tr();
+	}
 
 	$xtpl->table_td(_('Type').':');
 	$xtpl->table_td($netif->type);
@@ -468,7 +475,10 @@ function vps_netif_form($vps, $netif) {
 		$xtpl->table_tr();
 	}
 
-	$xtpl->form_out(_('Go >>'));
+	if ($vps->node->hypervisor_type == "vpsadminos")
+		$xtpl->form_out(_('Go >>'));
+	else
+		$xtpl->form_out_raw();
 
 	if ($vps->node->hypervisor_type == 'vpsadminos') {
 		vps_netif_iproutes_form($vps, $netif);
