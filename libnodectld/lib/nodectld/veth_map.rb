@@ -49,6 +49,7 @@ module NodeCtld
     def initialize
       @map = {}
       @mutex = Mutex.new
+      sync { load_all }
     end
 
     def [](vps_id)
@@ -101,6 +102,15 @@ module NodeCtld
       end
 
       entry
+    end
+
+    def load_all
+      osctl_parse(%i(ct netif ls)).each do |netif|
+        next if netif[:veth].nil?
+
+        @map[netif[:ctid]] ||= {}
+        @map[netif[:ctid]][netif[:name]] = netif[:veth]
+      end
     end
 
     def sync
