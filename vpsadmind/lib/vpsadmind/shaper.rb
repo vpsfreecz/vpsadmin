@@ -180,8 +180,7 @@ module VpsAdmind
                     INNER JOIN network_interfaces netifs ON netifs.vps_id = vpses.id
                     INNER JOIN ip_addresses ip ON ip.network_interface_id = netifs.id
                     INNER JOIN networks n ON n.id = ip.network_id
-                    WHERE vpses.node_id = #{$CFG.get(:vpsadmin, :server_id)}
-                      AND ip.vps_id = vpses.id")
+                    WHERE vpses.node_id = #{$CFG.get(:vpsadmin, :server_id)}")
       rs.each_hash do |ip|
         yield ip
       end
