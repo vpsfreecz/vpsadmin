@@ -57,6 +57,13 @@ class Cluster
       WHERE i.ip_addr = #{q}
 
       UNION
+      SELECT 'Vps', n.vps_id AS id, 'ip_addr', h.ip_addr
+      FROM host_ip_addresses h
+      INNER JOIN ip_addresses i ON h.ip_address_id = i.id
+      INNER JOIN network_interfaces n ON i.network_interface_id = n.id
+      WHERE h.ip_addr = #{q}
+
+      UNION
       SELECT 'Vps', id, 'hostname', hostname
       FROM vpses
       WHERE hostname = #{q} AND object_state < 3
