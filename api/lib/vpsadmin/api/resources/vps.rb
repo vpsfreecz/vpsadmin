@@ -17,7 +17,6 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     bool :manage_hostname, label: 'Manage hostname',
           desc: 'Determines whether vpsAdmin sets VPS hostname or not'
     use :template
-    string :veth_name, label: 'Veth name', default: 'venet0'
     string :info, label: 'Info', desc: 'VPS description'
     resource VpsAdmin::API::Resources::DnsResolver, label: 'DNS resolver',
              desc: 'DNS resolver the VPS will use'
@@ -98,7 +97,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
                           maintenance_lock_reason object_state expiration_date
                           is_running process_count used_memory used_swap used_diskspace
                           uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-                          cpu_irq cpu_softirq veth_name)
+                          cpu_irq cpu_softirq)
       allow
     end
 
@@ -327,7 +326,7 @@ END
                           maintenance_lock_reason object_state expiration_date
                           is_running process_count used_memory used_swap used_diskspace
                           uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-                          cpu_irq cpu_softirq created_at veth_name)
+                          cpu_irq cpu_softirq created_at)
       allow
     end
 
@@ -363,7 +362,7 @@ END
       allow if u.role == :admin
       restrict user_id: u.id
       input whitelist: %i(hostname manage_hostname os_template dns_resolver cpu
-                          memory swap veth_name)
+                          memory swap)
       allow
     end
 
@@ -398,10 +397,6 @@ END
       elsif input[:manage_hostname] === true && \
             (input[:hostname].nil? || input[:hostname].empty?)
         error('update failed', hostname: ['must be present'])
-      end
-
-      if input[:veth_name] && !vps.node.vpsadminos?
-        error('veth configuration not available on this node')
       end
 
       @chain, _ = vps.update(to_db_names(input))

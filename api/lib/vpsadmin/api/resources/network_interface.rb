@@ -81,5 +81,41 @@ module VpsAdmin::API::Resources
         @netif
       end
     end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Modify a network interface'
+      blocking true
+
+      input do
+        string :name, required: true
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict vpses: {user_id: u.id}
+        allow
+      end
+
+      def exec
+        netif = ::NetworkInterface.joins(:vps).find_by!(with_restricted(
+          network_interfaces: {id: params[:network_interface_id]},
+        ))
+
+        if input[:name] && !netif.vps.node.vpsadminos?
+          error('veth renaming is not available on this node')
+        end
+
+        @chain, _ = netif.rename(input[:name])
+        netif
+      end
+
+      def state_id
+        @chain && @chain.id
+      end
+    end
   end
 end

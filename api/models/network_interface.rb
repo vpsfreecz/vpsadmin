@@ -6,6 +6,11 @@ class NetworkInterface < ActiveRecord::Base
 
   include Lockable
 
+  # @param new_name [String]
+  def rename(new_name)
+    TransactionChains::NetworkInterface::Rename.fire(self, new_name)
+  end
+
   # Route `ip` to this interface
   #
   # Unless `safe` is true, the IP address `ip` is fetched from the database

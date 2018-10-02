@@ -455,7 +455,7 @@ function vps_netif_form($vps, $netif) {
 	$xtpl->table_add_category(_('Interface'));
 	$xtpl->table_add_category('');
 
-	$xtpl->form_create('?page=adminvps&action=netif&id='.$netif->id, 'post');
+	$xtpl->form_create('?page=adminvps&action=netif&veid='.$vps->id.'&id='.$netif->id, 'post');
 
 	if ($vps->node->hypervisor_type == "vpsadminos") {
 		$xtpl->form_add_input(_('Name').':', 'text', '30', 'name', $netif->name);

@@ -385,12 +385,13 @@ switch ($_GET["action"]) {
 			try {
 				csrf_check();
 
-				if ($_POST['veth_name']) {
-					$api->vps($_GET['veid'])->update(array(
-						'veth_name' => trim($_POST['veth_name'])
-					));
+				if ($_POST['name']) {
+					$api->network_interface($_GET['id'])->update([
+						'name' => trim($_POST['name']),
+					]);
 				}
 
+				notify_user(_('Interface renamed'), '');
 				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
 
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {

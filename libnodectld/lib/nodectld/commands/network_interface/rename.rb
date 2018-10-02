@@ -1,12 +1,12 @@
 module NodeCtld
-  class Commands::Vps::VethName < Commands::Base
+  class Commands::NetworkInterface::Rename < Commands::Base
     handle 2020
     needs :system, :osctl, :vps
 
     def exec
       honor_state do
         osctl(%i(ct stop), @vps_id)
-        osctl(%i(ct netif rename), [@vps_id, @original, @veth_name])
+        osctl(%i(ct netif rename), [@vps_id, @original, @name])
       end
 
       ok
@@ -15,7 +15,7 @@ module NodeCtld
     def rollback
       honor_state do
         osctl(%i(ct stop), @vps_id)
-        osctl(%i(ct netif rename), [@vps_id, @veth_name, @original])
+        osctl(%i(ct netif rename), [@vps_id, @name, @original])
       end
 
       ok
