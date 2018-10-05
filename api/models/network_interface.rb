@@ -4,10 +4,18 @@ class NetworkInterface < ActiveRecord::Base
   has_many :host_ip_addresses, through: :ip_addresses
   enum kind: %i(venet veth_bridge veth_routed)
 
+  NAME_RX = /\A[a-zA-Z\-_\.0-9]{1,30}\z/
+
+  validates :name, presence: true, format: {
+    with: NAME_RX,
+    message: 'bad format'
+  }
+
   include Lockable
 
   # @param new_name [String]
   def rename(new_name)
+    fail 'invalid name' if NAME_RX !~ new_name
     TransactionChains::NetworkInterface::Rename.fire(self, new_name)
   end
 
