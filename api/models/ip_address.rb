@@ -70,6 +70,12 @@ class IpAddress < ActiveRecord::Base
       ip.max_tx = params[:max_tx] if params[:max_tx]
       ip.max_rx = params[:max_rx] if params[:max_rx]
       ip.save!
+
+      HostIpAddress.create!(
+        ip_address: ip,
+        ip_addr: ip.to_ip.first.to_s,
+        order: nil,
+      )
     end
 
     ip
