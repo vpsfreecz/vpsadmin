@@ -447,6 +447,11 @@ switch($_GET["action"]) {
 		$xtpl->sbar_add(_("Add IP addresses"), '?page=cluster&action=ipaddr_add');
 		break;
 
+	case "host_ip_addresses":
+		host_ip_address_list('cluster');
+		$xtpl->sbar_add(_("Back"), '?page=cluster');
+		break;
+
 	case "ipaddr_add":
 		ip_add_form();
 		break;

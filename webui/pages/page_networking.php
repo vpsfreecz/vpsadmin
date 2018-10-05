@@ -34,16 +34,73 @@ switch($_GET['action']) {
 		ip_address_list('networking');
 		break;
 
-	case "ipaddr_assign":
-		ip_assign_form($_GET['id']);
+	case 'host_ip_addresses':
+		host_ip_address_list('networking');
 		break;
 
-	case "ipaddr_assign2":
+	case "route_assign":
+		route_assign_form($_GET['id']);
+		break;
+
+	case "route_assign2":
 		csrf_check();
 
 		try {
+			$api->ip_address($_GET['id'])->assign([
+				'network_interface' => $_POST['network_interface'],
+			]);
+
+			notify_user(_('IP assigned'), '');
+			redirect($_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses');
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Action failed'), $e->getResponse());
+			route_assign_form($_GET['id']);
+		}
+
+		break;
+
+	case "route_unassign":
+		route_unassign_form($_GET['id']);
+		break;
+
+	case "route_unassign2":
+		csrf_check();
+
+		if (!$_POST['confirm']) {
+			route_unassign_form($_GET['id']);
+			break;
+		}
+
+		try {
 			$ip = $api->ip_address->show($_GET['id']);
-			$api->vps($_POST['vps'])->ip_address->create(array('ip_address' => $ip->id));
+
+			if (isAdmin() && $_POST['disown'])
+				$ip->update(['user' => null]);
+
+			$ip->free();
+
+			notify_user(_('IP removed'), '');
+			redirect($_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses');
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Action failed'), $e->getResponse());
+			route_unassign_form($_GET['id']);
+		}
+
+		break;
+
+	case "hostaddr_assign":
+		hostaddr_assign_form($_GET['id']);
+		break;
+
+	case "hostaddr_assign2":
+		csrf_check();
+
+		try {
+			$api->host_ip_address($_GET['id'])->assign([
+				'network_interface' => $_POST['network_interface'],
+			]);
 
 			notify_user(_('IP assigned'), '');
 			redirect($_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses');
@@ -55,25 +112,20 @@ switch($_GET['action']) {
 
 		break;
 
-	case "ipaddr_unassign":
-		ip_unassign_form($_GET['id']);
+	case "hostaddr_unassign":
+		hostaddr_unassign_form($_GET['id']);
 		break;
 
-	case "ipaddr_unassign2":
+	case "hostaddr_unassign2":
 		csrf_check();
 
 		if (!$_POST['confirm']) {
-			ip_unassign_form($_GET['id']);
+			hostaddr_unassign_form($_GET['id']);
 			break;
 		}
 
 		try {
-			$ip = $api->ip_address->show($_GET['id']);
-
-			if (isAdmin() && $_POST['disown'])
-				$ip->update(array('user' => null));
-
-			$ip->vps->ip_address->delete($ip->id);
+			$api->host_ip_address->free($_GET['id']);
 
 			notify_user(_('IP removed'), '');
 			redirect($_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses');
@@ -102,7 +154,8 @@ switch($_GET['action']) {
 		break;
 }
 
-$xtpl->sbar_add(_("IP addresses"), '?page=networking&action=ip_addresses');
+$xtpl->sbar_add(_("Routable addresses"), '?page=networking&action=ip_addresses');
+$xtpl->sbar_add(_("Host addresses"), '?page=networking&action=host_ip_addresses');
 $xtpl->sbar_add(_("List monthly traffic"), '?page=networking&action=traffic');
 $xtpl->sbar_add(_("Live monitor"), '?page=networking&action=live');
 

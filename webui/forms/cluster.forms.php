@@ -8,7 +8,8 @@ function cluster_header() {
 	$xtpl->sbar_add(_("Manage OS templates"), '?page=cluster&action=templates');
 	$xtpl->sbar_add(_("Manage configs"), '?page=cluster&action=configs');
 	$xtpl->sbar_add(_("Manage networks"), '?page=cluster&action=networks');
-	$xtpl->sbar_add(_("Manage IP addresses"), '?page=cluster&action=ip_addresses');
+	$xtpl->sbar_add(_("Manage routable addresses"), '?page=cluster&action=ip_addresses');
+	$xtpl->sbar_add(_("Manage host addresses"), '?page=cluster&action=host_ip_addresses');
 	$xtpl->sbar_add(_("Manage DNS servers"), '?page=cluster&action=dns');
 	$xtpl->sbar_add(_("Manage environments"), '?page=cluster&action=environments');
 	$xtpl->sbar_add(_("Manage locations"), '?page=cluster&action=locations');
