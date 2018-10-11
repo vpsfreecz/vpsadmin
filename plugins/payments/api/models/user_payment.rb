@@ -27,13 +27,15 @@ class UserPayment < ActiveRecord::Base
   end
 
   def received_amount
-    return amount unless incoming_payment_id
-    incoming_payment.src_amount || amount
+    incoming_payment_id ? incoming_payment.received_amount : amount
   end
 
   def received_currency
-    return SysConfig.get(:plugin_payments, :default_currency) unless incoming_payment_id
-    incoming_payment.src_currency || incoming_payment.currency
+    if incoming_payment_id
+      incoming_payment.received_currency
+    else
+      SysConfig.get(:plugin_payments, :default_currency)
+    end
   end
 end
 

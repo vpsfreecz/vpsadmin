@@ -1,18 +1,36 @@
 class IncomingPayment < ActiveRecord::Base
   enum state: %i(queued unmatched processed ignored)
 
+  # Amount converted to vpsAdmin's default currency
   def converted_amount
+    rates = ::SysConfig.get(:plugin_payments, :conversion_rates)
+
     if src_amount
-      rates = ::SysConfig.get(:plugin_payments, :conversion_rates)
       rate = rates[ src_currency.downcase ]
-
       return src_amount * rate if rate
+    end
 
-    else
+    default_currency = SysConfig.get(:plugin_payments, :default_currency)
+    currency_downcase = currency.downcase
+
+    if currency_downcase == default_currency.downcase
       return amount
+
+    elsif rates[currency_downcase]
+      return amount * rates[currency_downcase]
     end
 
     nil
+  end
+
+  # Amount sent by the user in his currency
+  def received_amount
+    src_amount || amount
+  end
+
+  # Currency used by the user
+  def received_currency
+    src_currency || currency
   end
 end
 
