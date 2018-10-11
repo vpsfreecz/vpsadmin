@@ -597,7 +597,7 @@ function incoming_payments_list() {
 
 	foreach ($payments as $p) {
 		$xtpl->table_td(tolocaltz($p->date, 'Y-m-d'));
-		$xtpl->table_td($p->amount, false, true);
+		$xtpl->table_td($p->amount."&nbsp;".$p->currency, false, true);
 		$xtpl->table_td($p->state);
 		$xtpl->table_td(h($p->account_name));
 		$xtpl->table_td(h($p->user_message));
