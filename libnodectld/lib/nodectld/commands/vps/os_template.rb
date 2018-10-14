@@ -1,7 +1,7 @@
 module NodeCtld
   class Commands::Vps::OsTemplate < Commands::Base
     handle 2013
-    needs :osctl
+    needs :system, :osctl
 
     def exec
       osctl(
