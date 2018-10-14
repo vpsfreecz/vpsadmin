@@ -118,7 +118,7 @@ module TransactionChains
       if ip_resources.size > 0
         append(Transactions::Utils::NoOp, args: vps.node_id) do
           ip_resources.each do |r|
-            if %i(confirmed confirm_destroy).include?(r.confirmed)
+            if r.updating?
               edit(r, r.attr_changes)
 
             else

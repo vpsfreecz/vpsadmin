@@ -17,6 +17,10 @@ class ClusterResourceUse < ActiveRecord::Base
     )
   end
 
+  def updating?
+    %w(confirmed confirm_destroy).include?(confirmed.to_s)
+  end
+
   protected
   def check_allocation
     self.attr_changes ||= {value: self.value}
