@@ -90,6 +90,12 @@ function get_free_host_addr_list ($res, $vps, $netif, $role = null, $limit = nul
 	return $ret;
 }
 
+function get_vps_ip_route_list ($vps) {
+	global $api;
+
+	return $api->ip_address->list(['vps' => $vps->id]);
+}
+
 function get_ip_address_id ($val) {
 	global $api;
 

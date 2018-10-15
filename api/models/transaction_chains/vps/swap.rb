@@ -64,14 +64,24 @@ module TransactionChains
         new_netif = ::NetworkInterface.find(netif.id)
         new_netif.vps = new_primary_vps
 
-        [netif, target: new_netif, ips: netif.ip_addresses.to_a]
+        [
+          netif,
+          target: new_netif,
+          routes: netif.ip_addresses.to_a,
+          host_addrs: netif.host_ip_addresses.to_a,
+        ]
       end]
 
       secondary_netifs = Hash[secondary_vps.network_interfaces.map do |netif|
         new_netif = ::NetworkInterface.find(netif.id)
         new_netif.vps = new_secondary_vps
 
-        [netif, target: new_netif, ips: netif.ip_addresses.to_a]
+        [
+          netif,
+          target: new_netif,
+          routes: netif.ip_addresses.to_a,
+          host_addrs: netif.host_ip_addresses.to_a,
+        ]
       end]
 
       if opts[:configs]
@@ -123,7 +133,7 @@ module TransactionChains
 
               use_chain(NetworkInterface::DelRoute, args: [
                 netif,
-                attrs[:ips],
+                attrs[:routes],
                 unregister: true,
                 reallocate: false,
               ], urgent: true)
@@ -131,10 +141,16 @@ module TransactionChains
               # Add IPs from the original primary to the new primary
               use_chain(NetworkInterface::AddRoute, args: [
                 attrs[:target],
-                attrs[:ips],
+                attrs[:routes],
                 register: true,
                 reallocate: false,
               ], urgent: true)
+
+              use_chain(
+                NetworkInterface::AddHostIp,
+                args: [attrs[:target], attrs[:host_addrs], check_addrs: false],
+                urgent: true,
+              )
             end
 
             if opts[:configs]
@@ -214,10 +230,16 @@ module TransactionChains
               # TODO: we need to ensure the interfaces exist
               use_chain(NetworkInterface::AddRoute, args: [
                 attrs[:target],
-                attrs[:ips],
+                attrs[:routes],
                 register: true,
                 reallocate: false,
               ], urgent: true)
+
+              use_chain(
+                NetworkInterface::AddHostIp,
+                args: [attrs[:target], attrs[:host_addrs], check_addrs: false],
+                urgent: true,
+              )
             end
 
             if opts[:configs]

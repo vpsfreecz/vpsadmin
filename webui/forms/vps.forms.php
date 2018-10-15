@@ -361,8 +361,8 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 	$xtpl->table_add_category("&rarr;");
 	$xtpl->table_add_category(_('After swap'));
 
-	$primary_ips = $primary->ip_address->list();
-	$secondary_ips = $secondary->ip_address->list();
+	$primary_ips = get_vps_ip_route_list($primary);
+	$secondary_ips = get_vps_ip_route_list($secondary);
 
 	if (!$_SESSION['is_admin'])
 		$opts['expirations'] = true;
