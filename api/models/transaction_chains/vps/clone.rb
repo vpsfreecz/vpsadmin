@@ -354,8 +354,8 @@ module TransactionChains
       end
 
       # Reallocate cluster resources
-      user_env = dst_netif.vps.user.environment_user_configs.find_by!(
-        environment: dst_netif.vps.node.location.environment,
+      user_env = dst_vps.user.environment_user_configs.find_by!(
+        environment: dst_vps.node.location.environment,
       )
 
       changes = sums.map do |r, sum|
@@ -411,7 +411,8 @@ module TransactionChains
             ::ClusterResource.find_by!(name: r),
             dst_netif,
             ips[r],
-            strict: true
+            strict: true,
+            host_addrs: true
           ],
           method: :allocate_to_netif
         )

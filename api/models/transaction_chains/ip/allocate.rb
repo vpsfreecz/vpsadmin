@@ -7,7 +7,7 @@ module TransactionChains
       raise NotImplementedError
     end
 
-    def allocate_to_netif(r, netif, n, strict: true)
+    def allocate_to_netif(r, netif, n, strict: true, host_addrs: false)
       return n if n == 0
 
       ips = []
@@ -68,6 +68,13 @@ module TransactionChains
         ip.user_id = netif.vps.user_id if !ip.user_id && ownership
 
         ip.save!
+
+        if host_addrs
+          use_chain(
+            NetworkInterface::AddHostIp,
+            args: [netif, ip.host_ip_addresses, check_addrs: false]
+          )
+        end
 
         order += 1
       end

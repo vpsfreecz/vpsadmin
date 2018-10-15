@@ -40,7 +40,8 @@ module TransactionChains
           Transactions::NetworkInterface::AddHostIp,
           args: [netif, addr]
         ) do |t|
-          t.edit(addr, order: order[addr.version])
+          t.edit_before(addr, order: nil)
+          addr.update!(order: order[addr.version])
 
           t.just_create(
             netif.vps.log(:host_addr_add, {id: addr.id, addr: addr.ip_addr})
