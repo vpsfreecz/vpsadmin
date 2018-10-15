@@ -5,7 +5,7 @@ module NodeCtld
     def exec
       Shaper.add_ip(
         @vps_id,
-        netif: @veth_name,
+        interface: @netif,
         addr: @addr,
         prefix: @prefix,
         version: @version,
@@ -19,7 +19,7 @@ module NodeCtld
     def rollback
       Shaper.remove_ip(
         @vps_id,
-        netif: @veth_name,
+        interface: @netif,
         addr: @addr,
         prefix: @prefix,
         version: @version,

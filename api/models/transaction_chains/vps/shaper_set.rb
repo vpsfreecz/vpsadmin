@@ -8,7 +8,7 @@ module TransactionChains
       (ips || vps.ip_addresses.all).each do |ip|
         lock(ip)
 
-        append(Transactions::Shaper::Set, args: [ip, vps])
+        append(Transactions::Shaper::Set, args: [vps, ip])
       end
     end
   end

@@ -4,12 +4,12 @@ module Transactions::Shaper
     t_type 2010
     queue :network
 
-    def params(ip, vps)
-      self.vps_id = ip.vps_id
+    def params(vps, ip)
+      self.vps_id = vps.id
       self.node_id = vps.node_id
 
       {
-        veth_name: ip.vps.veth_name,
+        netif: ip.network_interface.name,
         addr: ip.addr,
         prefix: ip.prefix,
         version: ip.version,

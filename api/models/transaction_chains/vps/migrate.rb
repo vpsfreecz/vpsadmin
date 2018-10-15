@@ -195,7 +195,7 @@ module TransactionChains
       # Migration to different location - remove or replace
       # IP addresses
       if vps.node.location != dst_vps.node.location && @opts[:handle_ips]
-        migrate_ip_addresses(vps, dst_vps)
+        migrate_network_interfaces(vps, dst_vps)
       end
 
       # Regenerate mount scripts of the migrated VPS
@@ -462,11 +462,11 @@ module TransactionChains
 
         # Migrating to a different environment, transfer IP cluster resources
         if @opts[:reallocate_ips] \
-           && vps.node.location.environment_id != dst_vps.node.location.environment_id
+            && netif.vps.node.location.environment_id != dst_vps.node.location.environment_id
           changes = transfer_ip_addresses(
-            vps.user,
+            netif.vps.user,
             dst_ip_addresses,
-            vps.node.location.environment,
+            netif.vps.node.location.environment,
             dst_vps.node.location.environment,
           )
 
@@ -477,26 +477,65 @@ module TransactionChains
           end
         end
 
+        all_src_host_addrs = []
+        all_dst_host_addrs = []
+
         dst_ip_addresses.each do |src_ip, dst_ip|
-          append(
+          src_host_addrs = src_ip.host_ip_addresses.where.not(order: nil).to_a
+          all_src_host_addrs.concat(src_host_addrs.map { |addr| [addr, dst_ip] })
+
+          dst_host_addrs = dst_ip.host_ip_addresses.where(order: nil).to_a
+          all_dst_host_addrs.concat(dst_host_addrs)
+
+          # Remove addresses from the source node
+          append_t(
             Transactions::NetworkInterface::DelRoute,
             args: [netif, src_ip, false],
-            urgent: true
-          ) do
-            edit(src_ip, vps_id: nil)
-            edit(src_ip, user_id: nil) if src_ip.user_id
+            urgent: true,
+          ) do |t|
+            t.edit(src_ip, network_interface_id: nil)
+            t.edit(src_ip, user_id: nil) if src_ip.user_id
+
+            src_host_addrs.each do |host_addr|
+              t.edit(host_addr, order: nil)
+            end
           end
 
-          append(
+          # Add addresses on the target node
+          append_t(
             Transactions::NetworkInterface::AddRoute,
             args: [dst_netif, dst_ip],
-            urgent: true
-          ) do
-            edit(dst_ip, vps_id: dst_vps.id, order: src_ip.order)
+            urgent: true,
+          ) do |t|
+            t.edit(dst_ip, network_interface_id: dst_netif.id, order: src_ip.order)
 
             if !dst_ip.user_id && dst_vps.node.location.environment.user_ip_ownership
-              edit(dst_ip, user_id: dst_vps.user_id)
+              t.edit(dst_ip, user_id: dst_vps.user_id)
             end
+          end
+        end
+
+        # Sort src host addresses by order
+        all_src_host_addrs.sort! { |a, b| a.order <=> b.order }
+
+        # Add host addresses in the correct order
+        all_src_host_addrs.each_with_index do |arr, i|
+          src_addr, dst_ip = arr
+
+          # Find target host address
+          dst_addr = all_dst_host_addrs.detect do |addr|
+            addr.ip_address_id == dst_ip.id
+          end
+
+          next if dst_addr.nil?
+          all_dst_host_addrs.delete(dst_addr)
+
+          append_t(
+            Transactions::NetworkInterface::AddHostIp,
+            args: [dst_netif, dst_addr],
+            urgent: true,
+          ) do |t|
+            t.edit(dst_addr, order: i)
           end
         end
 
@@ -509,8 +548,10 @@ module TransactionChains
         use_chain(
           NetworkInterface::DelRoute,
           args: [
-            dst_vps, ips,
-            resource_obj: vps, unregister: false, reallocate: @opts[:reallocate_ips]
+            dst_netif,
+            ips,
+            unregister: false,
+            reallocate: @opts[:reallocate_ips],
           ],
           urgent: true
         )

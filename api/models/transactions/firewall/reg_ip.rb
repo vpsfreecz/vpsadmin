@@ -5,7 +5,7 @@ module Transactions::Firewall
     queue :network
 
     def params(ip, vps)
-      self.vps_id = ip.vps_id
+      self.vps_id = vps.id
       self.node_id = vps.node_id
 
       {
