@@ -187,7 +187,11 @@ module TransactionChains
           props[p.name.to_sym] = [p, p.value]
         end
 
-        append(Transactions::Storage::SetDataset, args: [dst, props]) if props.any?
+        append(
+          Transactions::Storage::SetDataset,
+          args: [dst, props],
+          urgent: true,
+        ) if props.any?
       end
 
       dst_ip_addresses = vps.ip_addresses

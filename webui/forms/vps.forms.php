@@ -542,7 +542,6 @@ function vps_netif_iproutes_form($vps, $netif) {
 		);
 	}
 	$xtpl->form_out(_('Go >>'));
-
 }
 
 function vps_netif_ipaddrs_form($vps, $netif) {
