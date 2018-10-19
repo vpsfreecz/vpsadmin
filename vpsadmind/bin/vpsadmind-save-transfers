@@ -5,6 +5,11 @@ require File.join(File.dirname(Pathname.new(__FILE__).realpath), '..', 'lib/vpsa
 
 require 'optparse'
 
+LOCK_FILE = '/tmp/vpsadmind-save-transfers'
+
+exit if File.exist?(LOCK_FILE)
+File.open(LOCK_FILE, 'w') {}
+
 options = {
     :older => 60,
 }
@@ -76,3 +81,5 @@ db.transaction do |t|
           ")
   t.query('DELETE FROM ip_recent_traffics WHERE created_at < DATE_SUB(NOW(), INTERVAL 60 SECOND)')
 end
+
+File.unlink(LOCK_FILE)
