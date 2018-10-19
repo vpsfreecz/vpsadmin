@@ -52,7 +52,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         input whitelist: %i(location network version role addr prefix vps
-                            ip_address limit offset)
+                            network_interface ip_address assigned limit offset)
         allow
       end
 
