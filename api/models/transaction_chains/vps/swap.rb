@@ -67,8 +67,8 @@ module TransactionChains
         [
           netif,
           target: new_netif,
-          routes: netif.ip_addresses.to_a,
-          host_addrs: netif.host_ip_addresses.to_a,
+          routes: netif.ip_addresses.order('`order`').to_a,
+          host_addrs: netif.host_ip_addresses.order('`order`').to_a,
         ]
       end]
 
@@ -79,8 +79,8 @@ module TransactionChains
         [
           netif,
           target: new_netif,
-          routes: netif.ip_addresses.to_a,
-          host_addrs: netif.host_ip_addresses.to_a,
+          routes: netif.ip_addresses.order('`order`').to_a,
+          host_addrs: netif.host_ip_addresses.order('`order`').to_a,
         ]
       end]
 
@@ -117,7 +117,7 @@ module TransactionChains
           {
             replace_ips: false,
             resources: opts[:resources] ? primary_resources : nil,
-            handle_ips: true,
+            handle_ips: false,
             reallocate_ips: false,
             outage_window: false,
             send_mail: false,
@@ -125,32 +125,69 @@ module TransactionChains
         ],
         hooks: {
           pre_start: ->(ret, _, _) do
-            # The migration has already removed IP addresses from the
-            # secondary VPS.
-            # Remove IP addresses from the original primary VPS.
+            # Remove addresses from the secondary (new primary) VPS
+            secondary_netifs.each do |netif, attrs|
+              dst_netif = ::NetworkInterface.find(netif.id)
+              dst_netif.vps.node = primary_vps.node
+
+              attrs[:host_addrs].each do |addr|
+                append_t(
+                  Transactions::NetworkInterface::DelHostIp,
+                  args: [dst_netif, addr],
+                  urgent: true,
+                )
+              end
+
+              attrs[:routes].each do |ip|
+                append_t(
+                  Transactions::NetworkInterface::DelRoute,
+                  args: [dst_netif, ip, false],
+                  urgent: true,
+                )
+              end
+            end
+
             primary_netifs.each do |netif, attrs|
               # TODO: we need to ensure the interfaces exist
 
-              use_chain(NetworkInterface::DelRoute, args: [
-                netif,
-                attrs[:routes],
-                unregister: true,
-                reallocate: false,
-              ], urgent: true)
+              # Move the network interface to the new primary VPS
+              append_t(Transactions::Utils::NoOp, args: find_node_id, urgent: true) do |t|
+                t.edit(netif, vps_id: new_primary_vps.id, name: "#{netif.name}.tmp")
+              end
+
+              # Remove IP addresses from the original primary VPS.
+              attrs[:host_addrs].each do |addr|
+                append_t(
+                  Transactions::NetworkInterface::DelHostIp,
+                  args: [netif, addr],
+                  urgent: true,
+                )
+              end
+
+              attrs[:routes].each do |ip|
+                append_t(
+                  Transactions::NetworkInterface::DelRoute,
+                  args: [netif, ip, true],
+                  urgent: true,
+                )
+              end
 
               # Add IPs from the original primary to the new primary
-              use_chain(NetworkInterface::AddRoute, args: [
-                attrs[:target],
-                attrs[:routes],
-                register: true,
-                reallocate: false,
-              ], urgent: true)
+              attrs[:routes].each do |ip|
+                append_t(
+                  Transactions::NetworkInterface::AddRoute,
+                  args: [attrs[:target], ip, true],
+                  urgent: true,
+                )
+              end
 
-              use_chain(
-                NetworkInterface::AddHostIp,
-                args: [attrs[:target], attrs[:host_addrs], check_addrs: false],
-                urgent: true,
-              )
+              attrs[:host_addrs].each do |addr|
+                append_t(
+                  Transactions::NetworkInterface::AddHostIp,
+                  args: [attrs[:target], addr],
+                  urgent: true,
+                )
+              end
             end
 
             if opts[:configs]
@@ -228,18 +265,27 @@ module TransactionChains
             # Add IP addresses to the new secondary VPS
             secondary_netifs.each do |netif, attrs|
               # TODO: we need to ensure the interfaces exist
-              use_chain(NetworkInterface::AddRoute, args: [
-                attrs[:target],
-                attrs[:routes],
-                register: true,
-                reallocate: false,
-              ], urgent: true)
 
-              use_chain(
-                NetworkInterface::AddHostIp,
-                args: [attrs[:target], attrs[:host_addrs], check_addrs: false],
-                urgent: true,
-              )
+              # Move the network interface to the new secondary VPS
+              append_t(Transactions::Utils::NoOp, args: find_node_id, urgent: true) do |t|
+                t.edit(netif, vps_id: new_secondary_vps.id, name: "#{netif.name}.tmp")
+              end
+
+              attrs[:routes].each do |ip|
+                append_t(
+                  Transactions::NetworkInterface::AddRoute,
+                  args: [attrs[:target], ip, true],
+                  urgent: true,
+                )
+              end
+
+              attrs[:host_addrs].each do |addr|
+                append_t(
+                  Transactions::NetworkInterface::AddHostIp,
+                  args: [attrs[:target], addr],
+                  urgent: true,
+                )
+              end
             end
 
             if opts[:configs]
@@ -295,30 +341,34 @@ module TransactionChains
         }
       )
 
-      append(Transactions::Utils::NoOp, args: find_node_id) do
+      append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
+        # Revert original veth names
+        primary_netifs.each { |n, _| t.edit(n, name: n.name) }
+        secondary_netifs.each { |n, _| t.edit(n, name: n.name) }
+
         if faked_resources.count > 0
           faked_resources.each do |use|
-            edit(use, confirmed: ::ClusterResourceUse.confirmed(:confirmed))
+            t.edit(use, confirmed: ::ClusterResourceUse.confirmed(:confirmed))
           end
         end
 
         # Expirations
         if opts[:expirations]
           fmt = '%Y-%m-%d %H:%M:%S'
-          edit(
+          t.edit(
             new_primary_vps,
             expiration_date: primary_vps.expiration_date && \
                               primary_vps.expiration_date.utc.strftime(fmt)
           )
-          edit(
+          t.edit(
             new_secondary_vps,
             expiration_date: secondary_vps.expiration_date && \
                               secondary_vps.expiration_date.utc.strftime(fmt)
           )
         end
 
-        just_create(new_primary_vps.log(:swap, new_secondary_vps.id))
-        just_create(new_secondary_vps.log(:swap, new_primary_vps.id))
+        t.just_create(new_primary_vps.log(:swap, new_secondary_vps.id))
+        t.just_create(new_secondary_vps.log(:swap, new_primary_vps.id))
       end
 
 #      fail 'all done!'
