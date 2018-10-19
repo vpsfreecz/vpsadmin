@@ -520,7 +520,7 @@ module TransactionChains
         end
 
         # Sort src host addresses by order
-        all_src_host_addrs.sort! { |a, b| a.order <=> b.order }
+        all_src_host_addrs.sort! { |a, b| a[0].order <=> b[0].order }
 
         # Add host addresses in the correct order
         all_src_host_addrs.each_with_index do |arr, i|
