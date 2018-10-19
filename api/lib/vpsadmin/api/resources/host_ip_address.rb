@@ -130,7 +130,7 @@ module VpsAdmin::API::Resources
             'ip_addresses.user_id = ?
              OR
             (ip_addresses.network_interface_id IS NOT NULL AND my_vps.user_id = ?)',
-            current_user.id, current_user.id, current_user.id
+            current_user.id, current_user.id
           ).order('host_ip_addresses.id ASC')
         end
 
