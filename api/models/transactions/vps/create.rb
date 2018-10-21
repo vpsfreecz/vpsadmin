@@ -26,7 +26,6 @@ module Transactions::Vps
           arch: vps.os_template.arch,
           vendor: vps.os_template.vendor,
           variant: vps.os_template.variant,
-          veth_name: vps.veth_name,
           onboot: vps.node.location.vps_onboot,
         }
       end
