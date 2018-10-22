@@ -1,5 +1,5 @@
 module Transactions::NetworkInterface
-  class CreateVethRoute < ::Transaction
+  class CreateVethRouted < ::Transaction
     t_name :netif_create_veth_routed
     t_type 2018
     queue :vps
