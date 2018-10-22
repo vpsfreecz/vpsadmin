@@ -59,10 +59,10 @@
     dependencies = ["eventmachine" "json" "libosctl" "mail" "mysql2" "osctl" "pry-remote" "require_all"];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "1y52772y7j8yi6nqbg3ck31fq1afvldmcdcj8lqajy33mvmh961w";
+      sha256 = "0i1bz786qng142dbjynzc82slx0nrgayni6wn86d68hvmavcj4nr";
       type = "gem";
     };
-    version = "3.0.0.dev.build20181022141806";
+    version = "3.0.0.dev.build20181022144739";
   };
   libosctl = {
     dependencies = ["require_all"];
@@ -110,10 +110,10 @@
     dependencies = ["libnodectld"];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "05ryjsp9f2vh7sz8gm4dkmw95vxilngxa653abigkvk0sqz0c94s";
+      sha256 = "0y1178bc1bb4cprzi8rxjmj4kbbim2gbzcgnwa9lz8fjkc4vnv3d";
       type = "gem";
     };
-    version = "3.0.0.dev.build20181022141806";
+    version = "3.0.0.dev.build20181022144739";
   };
   osctl = {
     dependencies = ["curses" "gli" "highline" "ipaddress" "json" "libosctl" "rainbow" "require_all" "ruby-progressbar"];
