@@ -8,7 +8,12 @@ module NodeCtld
     def exec
       origin = "#{@pool_fs}/#{@dataset_name}"
 
-      zfs(:umount, nil, origin)
+      begin
+        zfs(:umount, nil, origin)
+
+      rescue SystemCommandFailed => e
+        raise if e.rc != 1 || e.output !~ /not currently mounted/
+      end
 
       # Move subdatasets from original dataset to the rollbacked one
       children = []
@@ -19,20 +24,22 @@ module NodeCtld
         ds['relative_name'] = ds['full_name'].sub("#{@dataset_name}/", '')
         puts "Relative: #{ds['full_name']} => #{ds['relative_name']}"
 
+        ds_state = dataset_properties("#{@pool_fs}/#{ds['full_name']}", [:canmount])
+
         if /\// =~ ds['relative_name']
-          descendants << ds
+          descendants << [ds, ds_state]
         else
-          children << ds
+          children << [ds, ds_state]
         end
       end
 
       # Disable mount for all descendants
-      @descendant_datasets.reverse.each do |ds|
+      @descendant_datasets.reverse.each do |ds, ds_state|
         zfs(:set, 'canmount=off', "#{origin}/#{ds['relative_name']}")
       end
 
       # Rename direct children
-      children.each do |child|
+      children.each do |child, ds_state|
         zfs(
           :rename,
           nil,
@@ -43,8 +50,8 @@ module NodeCtld
       # Save original properties
       state = dataset_properties(origin, [
         :atime, :compression, :mountpoint, :quota,
-        :recordsize, :refquota, :sync,
-        :uidmap, :gidmap
+        :recordsize, :refquota, :sync, :canmount,
+        :uidmap, :gidmap,
       ])
 
       # Destroy the original dataset
@@ -56,12 +63,16 @@ module NodeCtld
       # Restore original properties
       state.apply_to(origin)
 
-      # Restore canmount and mount all datasets
-      zfs(:set, 'canmount=on', origin)
+      # Restore and mount all datasets
       zfs(:mount, nil, origin)
 
-      @descendant_datasets.each do |ds|
-        zfs(:set, 'canmount=on', "#{origin}/#{ds['relative_name']}")
+      children.each do |ds, ds_state|
+        ds_state.apply_to("#{origin}/#{ds['relative_name']}")
+        zfs(:mount, nil, "#{origin}/#{ds['relative_name']}")
+      end
+
+      descendants.each do |ds, ds_state|
+        ds_state.apply_to("#{origin}/#{ds['relative_name']}")
         zfs(:mount, nil, "#{origin}/#{ds['relative_name']}")
       end
 
