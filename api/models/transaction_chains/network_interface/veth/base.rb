@@ -6,7 +6,7 @@ module TransactionChains
     # @param name [String]
     def create_netif(vps, type, name)
       create_unique do
-        NetworkInterface.create!(
+        ::NetworkInterface.create!(
           vps: vps,
           kind: type,
           name: name,
@@ -19,7 +19,7 @@ module TransactionChains
     # @param dst_vps [::Vps]
     def clone_netif(src_netif, dst_vps)
       create_unique do
-        NetworkInterface.create!(
+        ::NetworkInterface.create!(
           vps: dst_vps,
           kind: src_netif.kind,
           name: src_netif.name,
