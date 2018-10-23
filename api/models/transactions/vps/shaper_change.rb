@@ -5,11 +5,11 @@ module Transactions::Vps
     queue :network
 
     def params(ip, tx, rx)
-      self.vps_id = ip.vps_id
-      self.node_id = ip.vps.node_id
+      self.vps_id = ip.network_interface.vps_id
+      self.node_id = ip.network_interface.vps.node_id
 
       {
-        veth_name: ip.vps.veth_name,
+        veth_name: ip.network_interface.name,
         addr: ip.addr,
         prefix: ip.prefix,
         version: ip.version,

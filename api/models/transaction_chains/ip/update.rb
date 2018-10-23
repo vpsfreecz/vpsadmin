@@ -21,8 +21,7 @@ module TransactionChains
     end
 
     def set_shaper(tx, rx)
-      if @ip.vps_id && @ip.vps_id > 0 && \
-         (tx != @ip.max_tx || rx != @ip.max_rx)
+      if @ip.network_interface_id && (tx != @ip.max_tx || rx != @ip.max_rx)
         use_chain(Vps::ShaperChange, args:[
           @ip,
           tx || @ip.max_tx,
