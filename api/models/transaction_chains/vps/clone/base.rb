@@ -1,5 +1,5 @@
 module TransactionChains
-  module Vps::CloneBase
+  module Vps::Clone::Base
     # Pick correct DNS resolver. If the VPS is being cloned
     # to a different location and its DNS resolver is not universal,
     # it must be changed to DNS resolver in target location.
