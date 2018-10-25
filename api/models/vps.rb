@@ -199,7 +199,7 @@ class Vps < ActiveRecord::Base
   end
 
   def clone(node, attrs)
-    TransactionChains::Vps::Clone.fire(self, node, attrs)
+    TransactionChains::Vps::Clone.chain_for(self, node).fire(self, node, attrs)
   end
 
   def swap_with(secondary_vps, attrs)
