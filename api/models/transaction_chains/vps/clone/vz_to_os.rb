@@ -206,6 +206,9 @@ module TransactionChains
         end
       end
 
+      # Convert internal configuration files to vpsAdminOS based on distribution
+      append(Transactions::Vps::VzToOs, args: [dst_vps])
+
       # Start the new VPS
       use_chain(TransactionChains::Vps::Start, args: dst_vps) if vps.running?
 

@@ -1,0 +1,172 @@
+module NodeCtld
+  class Commands::Vps::VzToOs < Commands::Base
+    handle 2024
+    needs :system, :osctl
+
+    include OsCtl::Lib::Utils::File
+
+    def exec
+      # Ensure the container is mounted
+      osctl(%i(ct mount), @vps_id)
+
+      # Get path to its rootfs
+      @rootfs = osctl_parse(%i(ct show), @vps_id)[:rootfs]
+
+      # Call distribution-dependent conversion code
+      m = :"convert_#{@distribution}"
+      send(m) if respond_to?(m, true)
+
+      ok
+    end
+
+    def rollback
+      ok
+    end
+
+    protected
+    def convert_alpine
+      regenerate_file(File.join(@rootfs, 'etc/inittab'), 0644) do |new, old|
+        if old.nil?
+          new.puts('# vpsAdmin console')
+          new.puts('::respawn:/sbin/getty 38400 console')
+        else
+          old.each_line do |line|
+            if line =~ /^#{Regexp.escape('::respawn:/sbin/getty 38400 tty0')}/
+              new.puts('::respawn:/sbin/getty 38400 console')
+            else
+              new.write(line)
+            end
+          end
+        end
+      end
+    end
+
+    def convert_arch
+      remove_systemd_overrides
+    end
+
+    def convert_centos
+      convert_redhat
+
+      fstab = File.join(@rootfs, 'etc/fstab')
+
+      if File.exist?(fstab)
+        regenerate_file(fstab, 0644) do |new, old|
+          old.each_line do |line|
+            if line.start_with?('#')
+              new.write(line)
+              next
+            end
+
+            fs, mountpoint = line.split
+
+            next if fs == 'none' && %w(/dev/pts /dev/shm).include?(mountpoint)
+            new.write(line)
+          end
+        end
+      end
+    end
+
+    def convert_devuan
+      inittab = File.join(@rootfs, 'etc/inittab')
+
+      if File.exist?(inittab)
+        regenerate_file(inittab, 0644) do |new, old|
+          old.each_line do |line|
+            if line =~ /^#{Regexp.escape('pf::powerwait:/etc/init.d/powerfail start')}/
+              new.puts('pf::powerwait:/sbin/halt')
+            else
+              new.write(line)
+            end
+          end
+
+          new.puts
+          new.puts('# Start getty on /dev/console')
+          new.puts('c0:2345:respawn:/sbin/agetty --noreset 38400 console')
+        end
+      end
+    end
+
+    def convert_fedora
+      convert_redhat
+    end
+
+    def convert_gentoo
+      inittab = File.join(@rootfs, 'etc/inittab')
+
+      if File.exist?(inittab)
+        regenerate_file(inittab, 0644) do |new, old|
+          old.each_line do |line|
+            if line =~ /^#{Regexp.escape('c0:2345:respawn:/sbin/agetty --noreset 38400 tty0')}/
+              next
+            else
+              new.write(line)
+            end
+          end
+
+          new.puts
+          new.puts('# Start getty on /dev/console')
+          new.puts('c0:2345:respawn:/sbin/agetty --noreset 38400 console')
+          new.puts
+          new.puts('# Clean container shutdown on SIGPWR')
+          new.puts('pf:12345:powerwait:/sbin/halt')
+        end
+      end
+
+      regenerate_file(File.join(@rootfs, 'etc/rc.conf'), 0644) do |new, old|
+        if old.nil?
+          new.puts('rc_sys="lxc"')
+        else
+          old.each_line do |line|
+            if line =~ /^rc_sys=/
+              new.puts('rc_sys="lxc"')
+            else
+              new.write(line)
+            end
+          end
+        end
+      end
+    end
+
+    def convert_opensuse
+      raise NotImplementedError
+    end
+
+    def convert_redhat
+      remove_systemd_overrides
+    end
+
+    def remove_systemd_overrides
+      %w(systemd-journald systemd-logind).each do |sv|
+        dir = File.join(@rootfs, 'etc/systemd/system', "#{sv}.service.d")
+        next unless Dir.exist?(dir)
+
+        file = File.join(dir, 'override.conf')
+        next unless File.exist?(file)
+
+        custom = false
+
+        regenerate_file(file, 0644) do |new, old|
+          old.each_line do |line|
+            if line =~ /^SystemCallFilter=$/ || line =~ /^MemoryDenyWriteExecute=no/
+              next
+            elsif line =~ /^\[Service\]/
+              new.write(line)
+            else
+              custom = true
+              new.write(line)
+            end
+          end
+        end
+
+        File.unlink(file) unless custom
+
+        begin
+          Dir.rmdir(dir)
+        rescue SystemCallError
+          # pass
+        end
+      end
+    end
+  end
+end
