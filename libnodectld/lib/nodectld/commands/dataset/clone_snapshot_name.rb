@@ -7,7 +7,7 @@ module NodeCtld
 
       rs = db.query("SELECT id, name FROM snapshots WHERE id IN (#{@snapshots.keys.join(',')})")
       rs.each do |row|
-        s = @snapshots[row['id']]
+        s = @snapshots[row['id'].to_s]
 
         db.prepared('UPDATE snapshots SET name = ? WHERE id = ?', row['name'], s[1])
       end
