@@ -739,13 +739,6 @@ END
 
       error('no node available in this environment') unless node
 
-      if vps.node.hypervisor_type != node.hypervisor_type
-        error('clone between OpenVZ and vpsAdminOS is not supported yet')
-
-      elsif vps.node.vpsadminos? && node.vpsadminos?
-        error('clone is not supported on vpsAdminOS yet')
-      end
-
       env = node.location.environment
 
       if current_user.role != :admin && !current_user.env_config(env, :can_create_vps)

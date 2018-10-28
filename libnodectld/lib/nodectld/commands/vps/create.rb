@@ -6,17 +6,19 @@ module NodeCtld
     def exec
       # FIXME: what about onboot param?
 
-      osctl(
-        %i(ct create),
-        @vps_id,
+      opts = {
         user: @userns_map,
         dataset: File.join(@pool_fs, @dataset_name),
         distribution: @distribution,
         version: @version,
         arch: @arch,
         variant: @variant,
-        vendor: @vendor
-      )
+        vendor: @vendor,
+      }
+
+      opts[:skip_template] = true if @empty
+
+      osctl(%i(ct create), @vps_id, opts)
 
       osctl(%i(ct set hostname), [@vps_id, @hostname])
 
