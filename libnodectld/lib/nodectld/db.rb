@@ -48,18 +48,22 @@ module NodeCtld
       rescue Mysql2::Error => err
         query('ROLLBACK')
 
-        case err.errno
-        when 1213
-          log(:warn, :sql, 'Deadlock found')
-
-        when 2006
-          log(:warn, :sql, 'Lost connection to MySQL server during query')
-
-        when 2013
-          log(:warn, :sql, 'MySQL server has gone away')
-
+        if err.message == 'MySQL client is not connected'
+          log(:warn, :sql, 'MySQL client is not connected')
         else
-          try_restart = false
+          case err.errno
+          when 1213
+            log(:warn, :sql, 'Deadlock found')
+
+          when 2006
+            log(:warn, :sql, 'Lost connection to MySQL server during query')
+
+          when 2013
+            log(:warn, :sql, 'MySQL server has gone away')
+
+          else
+            try_restart = false
+          end
         end
 
         if restart && try_restart
