@@ -89,6 +89,23 @@ module NodeCtld
           end
         end
       end
+
+      # Create an upstart service on centos < 7 to handle graceful shutdown
+      init = File.join(@rootfs, 'etc/init')
+      shutdown = File.join(init, 'shutdown.conf')
+
+      if Dir.exist?(init) && !File.exist?(shutdown)
+        File.open(shutdown, 'w') do |f|
+          f.puts(<<END
+description "Trigger an immediate shutdown on SIGPWR"
+start on power-status-changed
+
+task
+exec shutdown -h now "SIGPWR received"
+END
+          )
+        end
+      end
     end
 
     def runscript_debian
