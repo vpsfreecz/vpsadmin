@@ -424,7 +424,14 @@ module TransactionChains
 
     def replace_os_template(os_template)
       ret = nil
-      dist, ver = os_template.name.split('-')
+
+      if os_template.distribution && !os_template.distribution.empty? \
+         && os_template.version && !os_template.version.empty?
+        dist = os_template.distribution
+        ver = os_template.version
+      else
+        dist, ver = os_template.name.split('-')
+      end
 
       # Exact match
       ret = ::OsTemplate.find_by(
