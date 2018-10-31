@@ -106,6 +106,35 @@ END
           )
         end
       end
+
+      # Patch/create tty services for centos < 7
+      if Dir.exist?(init)
+        regenerate_file(File.join(init, 'console.conf'), 0644) do |new, old|
+          if old
+            old.each_line do |line|
+              if /^#{Regexp.escape('exec /sbin/mingetty')}/ =~ line
+                new.puts('exec /sbin/agetty 38400 console')
+              else
+                new.write(line)
+              end
+            end
+
+          else
+            File.open(console, 'w') do |f|
+              f.puts(<<END
+start on stopped rc RUNLEVEL=[2345]
+stop on runlevel [!2345]
+respawn
+exec /sbin/agetty 38400 console
+END
+              )
+            end
+          end
+        end
+
+        tty2 = File.join(init, 'tty2.conf')
+        File.unlink(tty2) if File.exist?(tty2)
+      end
     end
 
     def runscript_debian
