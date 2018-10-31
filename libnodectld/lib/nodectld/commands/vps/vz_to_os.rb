@@ -173,6 +173,13 @@ END
 
     def convert_redhat
       remove_systemd_overrides
+
+      # Remove obsolete ifcfg configs
+      Dir.glob(File.join(
+        @rootfs, 'etc', 'sysconfig', 'network-scripts', 'ifcfg-venet0:*'
+      )).each do |file|
+        File.unlink(file)
+      end
     end
 
     alias_method :convert_fedora, :convert_redhat
