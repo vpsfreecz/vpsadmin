@@ -1,3 +1,5 @@
+require 'tempfile'
+
 module NodeCtld
   class Commands::Vps::VzToOs < Commands::Base
     handle 2024
@@ -15,6 +17,28 @@ module NodeCtld
       # Call distribution-dependent conversion code
       m = :"convert_#{@distribution}"
       send(m) if respond_to?(m, true)
+
+      m = :"runscript_#{@distribution}"
+      if respond_to?(m, true)
+        tmp = Tempfile.create(['nodectld', '.sh'])
+        tmp.puts('#!/bin/sh')
+        tmp.puts(send(m))
+        tmp.close
+
+        begin
+          osctl(
+            %i(ct runscript),
+            [@vps_id, tmp.path],
+            {run_container: true, network: true}
+          )
+        ensure
+          begin
+            File.unlink(tmp.path)
+          rescue SystemCallError
+            # pass
+          end
+        end
+      end
 
       ok
     end
@@ -67,6 +91,21 @@ module NodeCtld
       end
     end
 
+    def runscript_debian
+      <<END
+installpkg() {
+  local pkg=$1
+
+  apt-get install -y $pkg && return 0
+  apt-get update
+  apt-get install -y $pkg
+}
+
+type ip || installpkg iproute
+type ifup || installpkg ifupdown
+END
+    end
+
     def convert_devuan
       inittab = File.join(@rootfs, 'etc/inittab')
 
@@ -87,9 +126,7 @@ module NodeCtld
       end
     end
 
-    def convert_fedora
-      convert_redhat
-    end
+    alias_method :runscript_devuan, :runscript_debian
 
     def convert_gentoo
       inittab = File.join(@rootfs, 'etc/inittab')
@@ -132,9 +169,13 @@ module NodeCtld
       raise NotImplementedError
     end
 
+    alias_method :runscript_ubuntu, :runscript_debian
+
     def convert_redhat
       remove_systemd_overrides
     end
+
+    alias_method :convert_fedora, :convert_redhat
 
     def remove_systemd_overrides
       %w(systemd-journald systemd-logind).each do |sv|
