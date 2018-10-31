@@ -441,8 +441,9 @@ module TransactionChains
       ).order('version DESC').take
       return ret if ret
 
-      fail "unable to find replacement for OS template #{os_template.label} "+
-           "(#{os_template.id})"
+      raise VpsAdmin::API::Exceptions::OsTemplateNotFound,
+            "unable to find replacement for OS template #{os_template.label} "+
+            "(#{os_template.id})"
     end
   end
 end

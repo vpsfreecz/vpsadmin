@@ -759,6 +759,9 @@ END
 
     rescue ActiveRecord::RecordInvalid => e
       error('clone failed', to_param_names(e.record.errors.to_hash))
+
+    rescue VpsAdmin::API::Exceptions::OsTemplateNotFound => e
+      error(e.message)
     end
 
     def state_id

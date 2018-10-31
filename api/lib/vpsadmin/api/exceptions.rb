@@ -148,4 +148,8 @@ module VpsAdmin::API::Exceptions
       super("feature #{f1.name} is in conflict with #{f2.name}, pick one")
     end
   end
+
+  class OsTemplateNotFound < ::StandardError
+
+  end
 end
