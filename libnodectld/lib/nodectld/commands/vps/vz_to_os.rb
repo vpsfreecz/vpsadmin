@@ -211,6 +211,17 @@ END
       end
     end
 
+    def convert_nixos
+      sbin = File.join(@rootfs, 'sbin')
+      sbin_init = File.join(sbin, 'init')
+      bin_init = File.join(@rootfs, 'bin', 'init')
+
+      if link_exist?(bin_init) && !link_exist?(sbin_init)
+        Dir.mkdir(sbin) unless Dir.exist?(sbin)
+        File.symlink('/bin/init', sbin_init)
+      end
+    end
+
     def convert_opensuse
       raise NotImplementedError
     end
@@ -261,6 +272,14 @@ END
           # pass
         end
       end
+    end
+
+    def link_exist?(path)
+      File.lstat(path)
+      true
+
+    rescue Errno::ENOENT
+      false
     end
   end
 end
