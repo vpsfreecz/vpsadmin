@@ -179,10 +179,11 @@ module NodeCtld
     end
 
     def state_changed?(vps)
-      vps.running? != vps.last_is_running
+      vps.last_status_id.nil? || vps.running? != vps.last_is_running
     end
 
     def status_expired?(vps)
+      return true if vps.status_time.nil?
       (vps.status_time + $CFG.get(:vpsadmin, :vps_status_log_interval)) < Time.now.utc
     end
 
