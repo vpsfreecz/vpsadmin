@@ -210,7 +210,9 @@ module TransactionChains
       append(Transactions::Vps::VzToOs, args: [dst_vps])
 
       # Start the new VPS
-      use_chain(TransactionChains::Vps::Start, args: dst_vps) if vps.running?
+      if vps.running?
+        use_chain(TransactionChains::Vps::Start, args: dst_vps, reversible: :keep_going)
+      end
 
       dst_vps.save!
       dst_vps
