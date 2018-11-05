@@ -56,13 +56,13 @@
     version = "2.1.0";
   };
   libnodectld = {
-    dependencies = ["eventmachine" "json" "libosctl" "mail" "mysql2" "osctl" "pry-remote" "require_all"];
+    dependencies = ["eventmachine" "json" "libosctl" "mail" "mysql2" "osctl" "pry" "pry-remote" "require_all"];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "0hn5qy5z9vliydnawvqm87kjxvfz85q2xavs2z9iinnp7zlq1bvp";
+      sha256 = "0rsc9zrjcp77qn3mr62g8aw69mlsiyf7j973035p3sjsqm6b747n";
       type = "gem";
     };
-    version = "3.0.0.dev.build20181105082306";
+    version = "3.0.0.dev.build20181105132416";
   };
   libosctl = {
     dependencies = ["require_all"];
@@ -107,13 +107,13 @@
     version = "0.5.2";
   };
   nodectl = {
-    dependencies = ["json" "libnodectld" "pry-remote" "require_all"];
+    dependencies = ["json" "libnodectld" "pry" "pry-remote" "require_all"];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "1qgm75ihy1vmjnfll045r1vwhi981chpcpwli9q2khrb6j54rb7r";
+      sha256 = "1538mbv6hv6h3mn2f3397in3g71y7c96i44k7ymxmyczm2npmxlp";
       type = "gem";
     };
-    version = "3.0.0.dev.build20181105082306";
+    version = "3.0.0.dev.build20181105132416";
   };
   osctl = {
     dependencies = ["curses" "gli" "highline" "ipaddress" "json" "libosctl" "rainbow" "require_all" "ruby-progressbar"];
@@ -128,10 +128,10 @@
     dependencies = ["coderay" "method_source"];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "1417109nmp7sp8blbdhjx3ckkygm94x1fsfdqn3n7s6dgmc5c35y";
+      sha256 = "1mh312k3y94sj0pi160wpia0ps8f4kmzvm505i6bvwynfdh7v30g";
       type = "gem";
     };
-    version = "0.12.0";
+    version = "0.11.3";
   };
   pry-remote = {
     dependencies = ["pry" "slop"];
