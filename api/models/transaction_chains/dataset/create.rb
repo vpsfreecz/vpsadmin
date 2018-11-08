@@ -10,7 +10,8 @@ module TransactionChains
       properties,
       user = nil,
       label = nil,
-      userns_map = nil
+      userns_map = nil,
+      opts = {}
     )
       lock(dataset_in_pool) if dataset_in_pool
       concerns(
@@ -24,6 +25,7 @@ module TransactionChains
       @parent = dataset_in_pool && dataset_in_pool.dataset
       @parent_properties = {}
       @automount = dataset_in_pool && automount
+      @opts = opts
 
       find_parent_mounts(dataset_in_pool) if @automount
 
@@ -83,7 +85,10 @@ module TransactionChains
 
       @parent_properties = tmp = ::DatasetProperty.inherit_properties!(dip, @parent_properties, properties)
 
-      append(Transactions::Storage::CreateDataset, args: [dip, properties]) do
+      append(
+        Transactions::Storage::CreateDataset,
+        args: [dip, properties, {create_private: @opts[:create_private]}]
+      ) do
         create(part)
         create(dip)
         tmp.each_value { |p| create(p) }

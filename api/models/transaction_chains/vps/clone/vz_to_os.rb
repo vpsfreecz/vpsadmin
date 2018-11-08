@@ -152,7 +152,7 @@ module TransactionChains
           end
 
           append_t(Transactions::Storage::CreateDataset, args: [
-              dst, props_to_set
+              dst, props_to_set, {create_private: false}
           ]) do |t|
             t.create(dst.dataset)
             t.create(dst)
@@ -238,7 +238,8 @@ module TransactionChains
         root_dataset_properties(vps),
         dst_vps.user,
         "vps#{dst_vps.id}",
-        @userns_map
+        @userns_map,
+        {create_private: false},
       ]).last
 
       # Clone dataset plans
