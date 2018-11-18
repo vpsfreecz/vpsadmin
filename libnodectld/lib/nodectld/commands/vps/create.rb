@@ -21,6 +21,8 @@ module NodeCtld
       osctl(%i(ct create), @vps_id, opts)
 
       osctl(%i(ct set hostname), [@vps_id, @hostname])
+      osctl(%i(ct cgparams set), [@vps_id, 'cglimit.memory.max', 64*1024])
+      osctl(%i(ct cgparams set), [@vps_id, 'cglimit.all.max', 512*1024])
 
       %w(veth-up).each do |hook|
         dst = hook_path(hook)
