@@ -210,6 +210,9 @@ module VpsAdmin::API::Resources
                 || (netif && netif.vps.user_id != current_user.id) \
               )
           error('access denied')
+
+        elsif host.assigned?
+          error("#{host.addr} address is already assigned")
         end
 
         maintenance_check!(netif.vps)
