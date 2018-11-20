@@ -2,6 +2,7 @@ class IpAddress < ActiveRecord::Base
   belongs_to :network
   belongs_to :network_interface
   belongs_to :user
+  belongs_to :route_via, class_name: 'HostIpAddress'
   has_many :host_ip_addresses
   has_many :ip_traffics
   has_many :ip_recent_traffics

@@ -530,11 +530,13 @@ CREATE TABLE `ip_addresses` (
   `prefix` int(11) NOT NULL,
   `size` decimal(40,0) NOT NULL,
   `network_interface_id` int(11) DEFAULT NULL,
+  `route_via_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_ip_addresses_on_class_id` (`class_id`) USING BTREE,
   KEY `index_ip_addresses_on_network_id` (`network_id`) USING BTREE,
   KEY `index_ip_addresses_on_user_id` (`user_id`) USING BTREE,
-  KEY `index_ip_addresses_on_network_interface_id` (`network_interface_id`)
+  KEY `index_ip_addresses_on_network_interface_id` (`network_interface_id`),
+  KEY `index_ip_addresses_on_route_via_id` (`route_via_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -2047,7 +2049,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-10-17 14:18:11
+-- Dump completed on 2018-11-20 15:17:34
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2275,4 +2277,6 @@ INSERT INTO schema_migrations (version) VALUES ('20180604115723');
 INSERT INTO schema_migrations (version) VALUES ('20180928161725');
 
 INSERT INTO schema_migrations (version) VALUES ('20180929203314');
+
+INSERT INTO schema_migrations (version) VALUES ('20181119183704');
 

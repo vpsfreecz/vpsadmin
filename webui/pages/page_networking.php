@@ -48,6 +48,7 @@ switch($_GET['action']) {
 		try {
 			$api->ip_address($_GET['id'])->assign([
 				'network_interface' => $_POST['network_interface'],
+				'route_via' => $_POST['route_via'] ? $_POST['route_via'] : null,
 			]);
 
 			notify_user(_('IP assigned'), '');

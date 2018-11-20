@@ -498,11 +498,14 @@ function vps_netif_iproutes_form($vps, $netif) {
 
 	$xtpl->table_add_category(_('Routed addresses'));
 	$xtpl->table_add_category('');
-	$xtpl->form_create('?page=adminvps&action=iproute_add&veid='.$vps->id.'&netif='.$netif->id, 'post');
+	$xtpl->form_create('?page=adminvps&action=iproute_select&veid='.$vps->id.'&netif='.$netif->id, 'post');
 
 	foreach ($ips as $ip) {
 		$xtpl->table_td(ip_label($ip));
-		$xtpl->table_td($ip->addr.'/'.$ip->prefix);
+		$xtpl->table_td(
+			$ip->addr.'/'.$ip->prefix.
+			($ip->route_via_id ? _(' via ').$ip->route_via->addr : '')
+		);
 		$xtpl->table_td(
 			'<a href="?page=adminvps&action=iproute_del&id='.$ip->id.
 			'&veid='.$vps->id.'&netif='.$netif->id.'&t='.csrf_token().'" title="'._('Remove').'">'.
@@ -512,36 +515,74 @@ function vps_netif_iproutes_form($vps, $netif) {
 		$xtpl->table_tr();
 	}
 
-	$tmp = ['-------'];
-	$free_4_pub = $tmp + get_free_route_list('ipv4', $vps, 'public_access', 25);
-	$free_4_priv = $tmp + get_free_route_list('ipv4_private', $vps, 'private_access', 25);
-
-	if ($vps->node->location->has_ipv6)
-		$free_6 = $tmp + get_free_route_list('ipv6', $vps, null, 25);
-
 	$xtpl->form_add_select(
-		_("Add public IPv4 address").':',
-		'iproute_public_v4',
-		$free_4_pub,
-		'', _('Add one IP address at a time')
+		_('Add route').':',
+		'iproute_type',
+		available_ip_options($vps),
+		post_val('iproute_type')
 	);
 
-	$xtpl->form_add_select(
-		_("Add private IPv4 address").':',
-		'iproute_private_v4',
-		$free_4_priv,
-		'', _('Add one IP address at a time')
-	);
+	$xtpl->form_out(_('Continue'));
+}
 
-	if ($vps->node->location->has_ipv6) {
-		$xtpl->form_add_select(
-			_("Add public IPv6 address").':',
-			'iproute_public_v6',
-			$free_6,
-			'', _('Add one IP address at a time')
-		);
+function vps_netif_iproute_add_form() {
+	global $xtpl, $api;
+
+	$vps = $api->vps->show($_GET['veid']);
+	$netif = $api->network_interface->show($_GET['netif']);
+
+	$xtpl->title(_('Add route'));
+	$xtpl->sbar_add(_('Back to details'), '?page=adminvps&action=info&veid='.$vps->id);
+
+	$xtpl->form_create('?page=adminvps&action=iproute_add&veid='.$vps->id.'&netif='.$netif->id, 'post');
+
+	switch ($_POST['iproute_type']) {
+	case 'ipv4':
+		$free = get_free_route_list('ipv4', $vps, 'public_access', 25);
+		break;
+	case 'ipv4_private':
+		$free = get_free_route_list('ipv4_private', $vps, 'private_access', 25);
+		break;
+	case 'ipv6':
+		$free = get_free_route_list('ipv6', $vps, null, 25);
+		break;
+	default:
+		$xtpl->perex(_('Invalid IP route type'), '');
+		return;
 	}
-	$xtpl->form_out(_('Go >>'));
+
+	$via_addrs = resource_list_to_options(
+		$api->host_ip_address->list([
+			'network_interface' => $netif->id,
+			'assigned' => true,
+			'version' => $_POST['iproute_type'] == 'ipv6' ? 6 : 4,
+		]),
+		'id', 'addr',
+		false
+	);
+
+	$via_addrs = [
+		'' => _('host address from this network will be on '.$netif->name)
+	] + $via_addrs;
+
+	$xtpl->table_td(_('VPS').':');
+	$xtpl->table_td($vps->id.' '.$vps->hostname);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Network interface').':');
+	$xtpl->table_td($netif->name);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(
+		_('Address').':'.
+		'<input type="hidden" name="iproute_type" value="'.$_POST['iproute_type'].'">'
+	);
+	$xtpl->form_add_select_pure('addr', $free, post_val('addr'));
+	$xtpl->table_tr();
+
+	$xtpl->form_add_select(_('Via').':', 'route_via', $via_addrs, post_val('route_via'));
+
+	$xtpl->form_out(_('Add route'));
 }
 
 function vps_netif_ipaddrs_form($vps, $netif) {

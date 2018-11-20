@@ -31,6 +31,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
   params(:common) do
     use :filters, include: %i(network prefix size network_interface user addr)
+    resource VpsAdmin::API::Resources::HostIpAddress, name: :route_via, value_label: :addr
     use :shaper
     integer :class_id, label: 'Class id', desc: 'Class id for shaper'
   end
@@ -167,8 +168,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
           'LEFT JOIN vpses my_vps ON my_vps.id = my_netifs.vps_id'
         ).where(
           'ip_addresses.user_id = ?
-           OR
-          (ip_addresses.network_interface_id IS NOT NULL AND my_vps.user_id = ?)',
+           OR (ip_addresses.network_interface_id IS NOT NULL AND my_vps.user_id = ?)
+           OR (ip_addresses.user_id IS NULL AND ip_addresses.network_interface_id IS NULL)',
           current_user.id, current_user.id
         ).where(id: params[:ip_address_id]).take!
       end
@@ -257,6 +258,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     input do
       resource VpsAdmin::API::Resources::NetworkInterface, value_label: :name,
         required: true
+      resource VpsAdmin::API::Resources::HostIpAddress, name: :route_via,
+        value_label: :addr
     end
 
     output do
@@ -280,7 +283,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
       maintenance_check!(netif.vps)
 
-      @chain, _ = netif.add_route(ip)
+      @chain, _ = netif.add_route(ip, via: input[:route_via])
       ip
 
     rescue VpsAdmin::API::Exceptions::IpAddressInUse

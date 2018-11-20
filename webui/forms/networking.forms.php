@@ -343,7 +343,17 @@ function route_assign_form($id) {
 		$vps = false;
 	}
 
-	if ($vps)
+	if ($_POST['network_interface']) {
+		try {
+			$netif = $api->network_interface->show($_POST['network_interface']);
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$netif = false;
+		}
+	} else {
+		$netif = false;
+	}
+
+	if ($vps && $netif)
 		$target = 'route_assign2';
 	else
 		$target = 'route_assign';
@@ -362,12 +372,50 @@ function route_assign_form($id) {
 		$xtpl->table_td($vps->id.' ('.$vps->hostname.')');
 		$xtpl->table_tr();
 
-		$netifs = $api->network_interface->list(['vps' => $_POST['vps']]);
+		if ($netif) {
+			$xtpl->table_td(_('Network interface').':');
+			$xtpl->table_td($netif->name);
+			$xtpl->table_tr();
 
-		$xtpl->form_add_select(_('Network interface').':', 'network_interface',
-			resource_list_to_options($netifs, 'id', 'name', false),
-			post_val('network_interface'));
-		$xtpl->form_out(_('Add route'));
+			$via_addrs = resource_list_to_options(
+				$api->host_ip_address->list([
+					'network_interface' => $netif->id,
+					'assigned' => true,
+					'version' => $ip->network->ip_version,
+				]),
+				'id', 'addr',
+				false
+			);
+
+			$via_addrs = [
+				'' => _('host address from this network will be on '.$netif->name)
+			] + $via_addrs;
+
+			$xtpl->table_td(
+				_('Address').':'.
+				'<input type="hidden" name="vps" value="'.$vps->id.'">'.
+				'<input type="hidden" name="network_interface" value="'.$netif->id.'">'
+			);
+			$xtpl->form_add_select_pure('route_via', $via_addrs, post_val('route_via'));
+			$xtpl->table_tr();
+
+			$xtpl->form_out(_('Add route'));
+
+		} else {
+			$netifs = $api->network_interface->list(['vps' => $_POST['vps']]);
+
+			$xtpl->table_td(
+				_('Network interface').':'.
+				'<input type="hidden" name="vps" value="'.$vps->id.'">'
+			);
+			$xtpl->form_add_select_pure(
+				'network_interface',
+				resource_list_to_options($netifs, 'id', 'name', false),
+				post_val('network_interface'));
+			$xtpl->table_tr();
+
+			$xtpl->form_out(_('Continue'));
+		}
 
 	} else {
 		$xtpl->form_add_input(_('VPS ID').':', 'text', '30', 'vps', post_val('vps'));

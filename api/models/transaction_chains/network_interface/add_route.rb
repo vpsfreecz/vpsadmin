@@ -8,6 +8,7 @@ module TransactionChains
     # @option opts [Boolean] :register (true)
     # @option opts [Boolean] :reallocate (true)
     # @option opts [Array<::HostIpAddress>] :host_addrs
+    # @option opts [::HostIpAddress] :via
     def link_chain(netif, ips, opts = {})
       opts[:register] = true unless opts.has_key?(:register)
       opts[:reallocate] = true unless opts.has_key?(:reallocate)
@@ -89,9 +90,14 @@ module TransactionChains
 
         append_t(
           Transactions::NetworkInterface::AddRoute,
-          args: [netif, ip, opts[:register]]
+          args: [netif, ip, opts[:register], via: opts[:via]]
         ) do |t|
-          t.edit(ip, network_interface_id: netif.id, order: order[ip.version])
+          t.edit(
+            ip,
+            network_interface_id: netif.id,
+            route_via_id: opts[:via] && opts[:via].id,
+            order: order[ip.version],
+          )
           t.edit(ip, user_id: netif.vps.user_id) if ownership && !ip.user_id
 
           t.just_create(

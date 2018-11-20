@@ -9,7 +9,7 @@ module NodeCtld
       @name = name
     end
 
-    def add_route(addr, prefix, v, register, shaper)
+    def add_route(addr, prefix, v, register, shaper, via: nil)
       if register
         Shaper.add_ip(
           @vps_id,
@@ -24,7 +24,10 @@ module NodeCtld
         Firewall.accounting.reg_ip(addr, prefix, v)
       end
 
-      osctl(%i(ct netif route add), [@vps_id, @name, "#{addr}/#{prefix}"])
+      opts = {}
+      opts[:via] = via if via
+
+      osctl(%i(ct netif route add), [@vps_id, @name, "#{addr}/#{prefix}"], opts)
     end
 
     def del_route(addr, prefix, v, unregister, shaper)

@@ -28,7 +28,8 @@ class NetworkInterface < ActiveRecord::Base
   # @param ip [IpAddress]
   # @param safe [Boolean]
   # @param host_addrs [Array<::HostIpAddress>] host addresses to assign
-  def add_route(ip, safe: false, host_addrs: [])
+  # @param via [HostIpAddress, nil] route via on-interface address
+  def add_route(ip, safe: false, host_addrs: [], via: nil)
     ::IpAddress.transaction do
       ip = ::IpAddress.find(ip.id) unless safe
 
@@ -52,10 +53,25 @@ class NetworkInterface < ActiveRecord::Base
         raise VpsAdmin::API::Exceptions::IpAddressNotOwned
       end
 
+      if via
+        if !via.assigned?
+          raise VpsAdmin::API::Exceptions::IpAddressNotAssigned,
+                "#{via.ip_addr} is not assigned to any interface"
+
+        elsif via.ip_address.network_interface_id != id
+          raise VpsAdmin::API::Exceptions::IpAddressNotOwned,
+                "#{via.ip_addr} does not belong to target network interface"
+
+        elsif via.ip_address.network.ip_version != ip.network.ip_version
+          raise ArgumentError, 'via uses incompatible IP version'
+        end
+      end
+
       TransactionChains::NetworkInterface::AddRoute.fire(
         self,
         [ip],
         host_addrs: host_addrs,
+        via: via,
       )
     end
   end

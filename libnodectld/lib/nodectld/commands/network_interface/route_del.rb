@@ -14,7 +14,7 @@ module NodeCtld
     def rollback
       NodeCtld::Firewall.ip_map.set(@addr, @prefix, @id, @version, @user_id) if @unregister
       NetworkInterface.new(@vps_id, @veth_name).add_route(
-        @addr, @prefix, @version, @unregister, @shaper
+        @addr, @prefix, @version, @unregister, @shaper, via: @via
       )
       ok
     end

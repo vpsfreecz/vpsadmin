@@ -124,6 +124,44 @@ function host_ip_label($ip) {
 	return ip_label($ip->ip_address);
 }
 
+function ip_type_label($type) {
+	return [
+		'ipv4' => _('Public IPv4'),
+		'ipv4_private' => _('Private IPv4'),
+		'ipv6' => _('Public IPv6'),
+	][$type];
+}
+
+function available_ip_types($vps) {
+	$ret = [];
+
+	$free_4_pub = get_free_route_list('ipv4', $vps, 'public_access', 1);
+	if (!empty($free_4_pub))
+		$ret[] = 'ipv4';
+
+	$free_4_priv = get_free_route_list('ipv4_private', $vps, 'private_access', 1);
+	if (!empty($free_4_priv))
+		$ret[] = 'ipv4_private';
+
+	if ($vps->node->location->has_ipv6) {
+		$free_6 = get_free_route_list('ipv6', $vps, null, 1);
+
+		if (!empty($free_6))
+			$ret[] = 'ipv6';
+	}
+
+	return $ret;
+}
+
+function available_ip_options($vps) {
+	$ret = [];
+
+	foreach (available_ip_types($vps) as $t)
+		$ret[$t] = ip_type_label($t);
+
+	return $ret;
+}
+
 function list_templates($vps = null) {
 	global $api;
 

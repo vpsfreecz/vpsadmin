@@ -5,7 +5,7 @@ module NodeCtld
     def exec
       NodeCtld::Firewall.ip_map.set(@addr, @prefix, @id, @version, @user_id) if @register
       NetworkInterface.new(@vps_id, @veth_name).add_route(
-        @addr, @prefix, @version, @register, @shaper
+        @addr, @prefix, @version, @register, @shaper, via: @via
       )
       ok
     end

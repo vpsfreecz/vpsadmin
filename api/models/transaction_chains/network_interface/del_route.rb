@@ -78,7 +78,7 @@ module TransactionChains
           Transactions::NetworkInterface::DelRoute,
           args: [netif, ip, opts[:unregister]]
         ) do |t|
-          t.edit(ip, network_interface_id: nil, order: nil)
+          t.edit(ip, network_interface_id: nil, route_via_id: nil, order: nil)
           t.just_create(
             netif.vps.log(:route_del, {id: ip.id, addr: ip.addr})
           ) unless included?

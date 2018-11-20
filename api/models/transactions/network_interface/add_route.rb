@@ -7,7 +7,8 @@ module Transactions::NetworkInterface
     # @param netif [::NetworkInterface]
     # @param ip [::IpAddress]
     # @param register [Boolean]
-    def params(netif, ip, register = true)
+    # @param via [::HostIpAddress]
+    def params(netif, ip, register = true, via: nil)
       self.vps_id = netif.vps.id
       self.node_id = netif.vps.node_id
 
@@ -16,6 +17,7 @@ module Transactions::NetworkInterface
         addr: ip.addr,
         prefix: ip.prefix,
         version: ip.version,
+        via: via && via.ip_addr,
         register: register,
         id: ip.id,
         user_id: ip.user_id || netif.vps.user_id,

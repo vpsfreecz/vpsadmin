@@ -400,37 +400,25 @@ switch ($_GET["action"]) {
 			}
 			break;
 
+		case 'iproute_select':
+			vps_netif_iproute_add_form();
+			break;
+
 		case 'iproute_add':
 			try {
 				csrf_check();
 
-				if($_POST['iproute_public_v4']) {
-					$api->ip_address->assign($_POST['iproute_public_v4'], [
-						'network_interface' => $_GET['netif'],
-					]);
-					notify_user(_("Addition of IP address planned"), '');
-
-				} else if($_POST['iproute_private_v4']) {
-					$api->ip_address->assign($_POST['iproute_private_v4'], [
-						'network_interface' => $_GET['netif'],
-					]);
-					notify_user(_("Addition of private IP address planned"), '');
-
-				} else if($_POST['iproute_public_v6']) {
-					$api->ip_address->assign($_POST['iproute_public_v6'], [
-						'network_interface' => $_GET['netif'],
-					]);
-					notify_user(_("Addition of IP address planned"), '');
-
-				} else {
-					notify_user(_("Error"), 'Contact your administrator');
-				}
+				$api->ip_address->assign($_POST['addr'], [
+					'network_interface' => $_GET['netif'],
+					'route_via' => $_POST['route_via'] ? $_POST['route_via'] : null,
+				]);
+				notify_user(_("Addition of IP address planned"), '');
 
 				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
 
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 				$xtpl->perex_format_errors(_('Failed to add IP address'), $e->getResponse());
-				$show_info=true;
+				vps_netif_iproute_add_form();
 			}
 			break;
 
