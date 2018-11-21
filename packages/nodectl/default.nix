@@ -4,7 +4,6 @@ bundlerApp {
   pname = "nodectl";
   gemdir = ./.;
   exes = [ "nodectl" ];
-  manpages = [ "man8/nodectl.8" ];
 
   meta = with lib; {
     description = "";
