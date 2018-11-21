@@ -74,7 +74,7 @@ class IpAddress < ActiveRecord::Base
 
       HostIpAddress.create!(
         ip_address: ip,
-        ip_addr: ip.to_ip.first.to_s,
+        ip_addr: (addr.ipv4? ? addr.first : addr.take(2).last).to_s,
         order: nil,
       )
     end
