@@ -435,9 +435,11 @@ CREATE TABLE `host_ip_addresses` (
   `ip_address_id` int(11) NOT NULL,
   `ip_addr` varchar(40) COLLATE utf8_czech_ci NOT NULL,
   `order` int(11) DEFAULT NULL,
+  `auto_add` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_host_ip_addresses_on_ip_address_id_and_ip_addr` (`ip_address_id`,`ip_addr`),
-  KEY `index_host_ip_addresses_on_ip_address_id` (`ip_address_id`)
+  KEY `index_host_ip_addresses_on_ip_address_id` (`ip_address_id`),
+  KEY `index_host_ip_addresses_on_auto_add` (`auto_add`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -2049,7 +2051,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-11-20 15:17:34
+-- Dump completed on 2018-11-21 16:35:42
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2279,4 +2281,6 @@ INSERT INTO schema_migrations (version) VALUES ('20180928161725');
 INSERT INTO schema_migrations (version) VALUES ('20180929203314');
 
 INSERT INTO schema_migrations (version) VALUES ('20181119183704');
+
+INSERT INTO schema_migrations (version) VALUES ('20181121153314');
 
