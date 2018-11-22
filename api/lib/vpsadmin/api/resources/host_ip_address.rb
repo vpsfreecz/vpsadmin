@@ -252,6 +252,9 @@ module VpsAdmin::API::Resources
                 || (netif && netif.vps.user_id != current_user.id) \
               )
           error('access denied')
+
+        elsif host.routed_via_addresses.any?
+          error('one or more networks are routed via this address')
         end
 
         maintenance_check!(netif.vps)
