@@ -21,7 +21,6 @@ defmodule VpsAdmin.Transactional.Distributor do
   ### Server implementation
   @impl true
   def init(:ok) do
-    IO.inspect("distributor up!")
     {:ok, nil}
   end
 

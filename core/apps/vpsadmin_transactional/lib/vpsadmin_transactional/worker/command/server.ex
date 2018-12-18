@@ -1,6 +1,7 @@
 defmodule VpsAdmin.Transactional.Worker.Command.Server do
   use GenServer, restart: :transient
 
+  require Logger
   alias VpsAdmin.Transactional.Distributor
   alias VpsAdmin.Base.NodeCtl
 
@@ -12,7 +13,7 @@ defmodule VpsAdmin.Transactional.Worker.Command.Server do
   ### Server implementation
   @impl true
   def init({{t, cmd}, func}) do
-    IO.inspect("yo initializing cmd #{t}:#{cmd.id} executor for #{func}")
+    Logger.debug("Initializing executor of command #{t}:#{cmd.id}.#{func}")
     {:ok, %{t: t, cmd: cmd, func: func}, {:continue, :startup}}
   end
 
@@ -36,14 +37,11 @@ defmodule VpsAdmin.Transactional.Worker.Command.Server do
 
   @impl true
   def handle_info({:nodectl, %{"version" => v}}, state) do
-    IO.inspect("nodectld reports version '#{v}'")
+    Logger.debug("Connected to nodectld")
     {:noreply, state}
   end
 
   def handle_info({:nodectl, msg}, state) do
-    IO.inspect("reveived msg")
-    IO.inspect(msg)
-
     NodeCtl.close(state.nodectl)
 
     Distributor.report_result(

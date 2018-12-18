@@ -1,6 +1,8 @@
 defmodule VpsAdmin.Transactional.Worker.Executor do
   use GenServer
 
+  require Logger
+  alias VpsAdmin.Transactional.Distributor
   alias VpsAdmin.Transactional.Worker
   alias VpsAdmin.Transactional.Queue
 
@@ -34,20 +36,23 @@ defmodule VpsAdmin.Transactional.Worker.Executor do
 
   @impl true
   def handle_cast({:queue, {t, cmd}, :executing}, state) do
-    IO.inspect("queue says #{t}:#{cmd.id} is executing")
+    Logger.debug("Begun execution/rollback of command #{t}:#{cmd.id}")
     {:noreply, state}
   end
 
   def handle_cast({:queue, {t, cmd}, :done, :normal}, state) do
-    IO.inspect("queue says #{t}:#{cmd.id} finished normally")
+    Logger.debug("Eecution/rollback of command #{t}:#{cmd.id}")
     {:noreply, state}
   end
 
   def handle_cast({:queue, {t, cmd}, :done, reason}, state) do
-    IO.inspect("queue says #{t}:#{cmd.id} finished with #{reason}")
-
-    Distributor.report_result({state.t, %{state.cmd | status: :failed, output: %{error: reason}}})
-
+    Logger.debug(
+      "Eecution/rollback of command #{t}:#{cmd.id} failed with "<>
+      "'#{inspect(reason)}'"
+    )
+    Distributor.report_result(
+      {state.t, %{state.cmd | status: :failed, output: %{error: reason}}}
+    )
     {:noreply, state}
   end
 end

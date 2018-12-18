@@ -8,8 +8,6 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Supervisor do
   end
 
   def add_transaction(trans, manager, worker) do
-    IO.inspect("yo starting transaction server")
-
     DynamicSupervisor.start_child(
       __MODULE__,
       {Manager.Transaction.Server, {trans, manager, worker}}

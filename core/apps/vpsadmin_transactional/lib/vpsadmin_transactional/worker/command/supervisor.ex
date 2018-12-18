@@ -8,8 +8,6 @@ defmodule VpsAdmin.Transactional.Worker.Command.Supervisor do
   end
 
   def run_command(cmd, func) do
-    IO.inspect("yo starting command server")
-
     DynamicSupervisor.start_child(
       __MODULE__,
       {Worker.Command.Server, {cmd, func}}

@@ -1,6 +1,7 @@
 defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
   use GenServer, restart: :transient
 
+  require Logger
   alias VpsAdmin.Transactional.Manager
   alias VpsAdmin.Transactional.Worker
   alias VpsAdmin.Transactional.Distributor
@@ -29,7 +30,7 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
   ### Server implementation
   @impl true
   def init({{trans, cmds}, manager, worker}) do
-    IO.inspect("yo manager for #{trans.id} here (#{manager})")
+    Logger.debug("Starting manager for transaction #{trans.id} (#{manager}, #{worker})")
 
     {
       :ok,
@@ -53,8 +54,6 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
         {:stop, :normal, state}
 
       new_queue ->
-        IO.inspect("transaction #{trans.id} has #{length(new_queue)} commands queued")
-
         {
           :noreply,
           state
@@ -67,7 +66,7 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
 
   @impl true
   def handle_cast({:report_result, %{state: :executed, status: :done} = cmd}, state) do
-    IO.inspect("awright execution succeeded")
+    Logger.debug("Command #{state.transaction.id}:#{cmd.id} executed")
     state.manager.command_finished(state.transaction, cmd)
 
     [_ | queue] = state.queue
@@ -83,11 +82,12 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
   end
 
   def handle_cast({:report_result, %{state: :executed, status: :failed} = cmd}, state) do
-    IO.inspect("awright execution failed")
+    Logger.debug("Command #{state.transaction.id}:#{cmd.id} failed to execute")
     state.manager.command_finished(state.transaction, cmd)
 
     case handle_failure(state.transaction.state, cmd.reversible) do
       :continue ->
+        Logger.debug("Continuing execution of transaction #{state.transaction.id}")
         [_ | queue] = state.queue
 
         case process_queue(state, queue) do
@@ -100,7 +100,7 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
         end
 
       :rollback ->
-        IO.inspect("initiating rollback")
+        Logger.debug("Initiating rollback of transaction #{state.transaction.id}")
         new_state = rollback(state, cmd)
 
         case process_queue(new_state, new_state.queue) do
@@ -111,17 +111,19 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
         {:noreply, new_state}
 
       :close ->
+        Logger.debug("Prematurely closing transaction #{state.transaction.id}")
         close(state.transaction, :failed, state.manager)
         {:noreply, state}
 
       :abort ->
+        Logger.debug("Aborting transaction #{state.transaction.id}")
         abort(state.transaction, state.manager)
         {:stop, :normal, state}
     end
   end
 
   def handle_cast({:report_result, %{state: :rolledback, status: :done} = cmd}, state) do
-    IO.inspect("awright rollback succeeded")
+    Logger.debug("Command #{state.transaction.id}:#{cmd.id} rolled back")
     state.manager.command_finished(state.transaction, cmd)
 
     [_ | queue] = state.queue
@@ -137,11 +139,12 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
   end
 
   def handle_cast({:report_result, %{state: :rolledback, status: :failed} = cmd}, state) do
-    IO.inspect("awright rollback failed")
+    Logger.debug("Command #{state.transaction.id}:#{cmd.id} failed to rollback")
     state.manager.command_finished(state.transaction, cmd)
 
     case handle_failure(state.transaction.state, cmd.reversible) do
       :continue ->
+        Logger.debug("Continuing rollback of transaction #{state.transaction.id}")
         [_ | queue] = state.queue
 
         case process_queue(state, queue) do
@@ -154,10 +157,12 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
         end
 
       :close ->
+        Logger.debug("Prematurely closing transaction #{state.transaction.id}")
         close(state.transaction, :failed, state.manager)
         {:noreply, state}
 
       :abort ->
+        Logger.debug("Aborting transaction #{state.transaction.id}")
         abort(state.transaction, state.manager)
         {:stop, :normal, state}
     end
@@ -222,12 +227,10 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
   defp handle_failure(:rollingback, _reversible), do: :abort
 
   defp close(trans, state, manager) do
-    IO.inspect("closing transaction #{trans.id} as #{state}")
     manager.close_transaction(%{trans | state: state})
   end
 
   defp abort(trans, manager) do
-    IO.inspect("aborting transaction #{trans.id}")
     manager.abort_transaction(%{trans | state: :aborted})
   end
 end
