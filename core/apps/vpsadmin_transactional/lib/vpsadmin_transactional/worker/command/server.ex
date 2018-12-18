@@ -19,7 +19,7 @@ defmodule VpsAdmin.Transactional.Worker.Command.Server do
   @impl true
   def handle_continue(:startup, state) do
     {:ok, nodectl} = NodeCtl.start_link()
-    NodeCtl.send_msg(
+    NodeCtl.send(
       nodectl,
       %{
         command: :execute,

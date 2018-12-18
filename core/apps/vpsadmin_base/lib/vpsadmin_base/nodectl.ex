@@ -1,5 +1,6 @@
 defmodule VpsAdmin.Base.NodeCtl do
   use GenServer
+  import Kernel, except: [send: 2]
   require Logger
   alias VpsAdmin.Base.NodeCtl
 
@@ -8,12 +9,12 @@ defmodule VpsAdmin.Base.NodeCtl do
     GenServer.start_link(__MODULE__, self())
   end
 
-  def send_msg(gw, msg) do
-    GenServer.cast(gw, {:send, msg})
+  def send(nodectl, msg) do
+    GenServer.cast(nodectl, {:send, msg})
   end
 
-  def close(gw) do
-    GenServer.call(gw, :close)
+  def close(nodectl) do
+    GenServer.call(nodectl, :close)
   end
 
   ### Server implementation
@@ -64,7 +65,7 @@ defmodule VpsAdmin.Base.NodeCtl do
   defp handle_msg(%{type: :init}, _parent), do: :ok
 
   defp handle_msg(%{type: :response} = msg, parent) do
-    send(parent, {:nodectl, msg})
+    Kernel.send(parent, {:nodectl, msg})
   end
 
   defp encode(msg) do
