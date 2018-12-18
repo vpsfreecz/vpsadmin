@@ -1,14 +1,13 @@
 module NodeCtld::RemoteCommands
   class Restart < Base
     handle :restart
-    needs :worker, :subprocess
+    needs :subprocess
 
     def exec
       NodeCtld::Daemon.safe_exit(NodeCtld::EXIT_RESTART)
 
       if @force
-        walk_workers { |w| :silent }
-        drop_workers
+        NodeCtld::Worker.kill_all
         killall_subprocesses
       end
 

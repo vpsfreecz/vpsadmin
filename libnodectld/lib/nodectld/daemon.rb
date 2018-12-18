@@ -2,7 +2,6 @@ require 'eventmachine'
 require 'libosctl'
 require 'nodectld/db'
 require 'nodectld/command'
-require 'nodectld/queues'
 require 'nodectld/mount_reporter'
 require 'nodectld/delayed_mounter'
 require 'nodectld/remote_control'
@@ -49,14 +48,12 @@ module NodeCtld
     def initialize
       self.class.instance = self
       @db = Db.new
-      @m_workers = Mutex.new
       @start_time = Time.new
       @export_console = false
       @cmd_counter = 0
       @threads = {}
       @blockers_mutex = Mutex.new
       @chain_blockers = {}
-      @queues = Queues.new(self)
       @mount_reporter = MountReporter.new
       @delayed_mounter = DelayedMounter.new # FIXME: call stop?
       @remote_control = RemoteControl.new(self)
@@ -64,6 +61,7 @@ module NodeCtld
       @vps_status = VpsStatus.new
       @fw = Firewall.instance
       Shaper.instance
+      Worker.instance
     end
 
     def init(do_init)
@@ -87,41 +85,12 @@ module NodeCtld
 
     def start
       loop do
-        sleep($CFG.get(:vpsadmin, :check_interval))
+        sleep(1)
 
-        run_threads
-
-        catch (:next) do
-          @m_workers.synchronize do
-            @queues.each_value do |queue|
-              queue.delete_if do |wid, w|
-                unless w.working?
-                  c = w.cmd
-                  c.save(@db)
-
-                  if @pause && w.cmd.id.to_i === @pause
-                    pause!(true)
-                  end
-
-                  next true
-                end
-
-                false
-              end
-            end
-
-            throw :next if @queues.full?
-
-            @@mutex.synchronize do
-              unless @@run
-                exit(@@exitstatus) if can_stop?
-
-                throw :next
-              end
-            end
-
-            do_commands
-          end
+        if @@run
+          run_threads
+        else
+          break if can_stop?
         end
 
         $stdout.flush
@@ -129,115 +98,7 @@ module NodeCtld
       end
     end
 
-    def select_commands(db, limit = nil)
-      limit ||= @queues.total_limit
-
-      db.union do |u|
-        # Transactions for execution
-        u.query(
-          "SELECT * FROM (
-            (SELECT t1.*, 1 AS depencency_success,
-                    ch1.state AS chain_state, ch1.progress AS chain_progress,
-                    ch1.size AS chain_size
-            FROM transactions t1
-            INNER JOIN transaction_chains ch1 ON ch1.id = t1.transaction_chain_id
-            WHERE
-                done = 0 AND node_id = #{$CFG.get(:vpsadmin, :node_id)}
-                AND ch1.state = 1
-                AND depends_on_id IS NULL
-            GROUP BY transaction_chain_id, priority, t1.id)
-
-            UNION ALL
-
-            (SELECT t2.*, d.status AS dependency_success,
-                    ch2.state AS chain_state, ch2.progress AS chain_progress,
-                    ch2.size AS chain_size
-            FROM transactions t2
-            INNER JOIN transactions d ON t2.depends_on_id = d.id
-            INNER JOIN transaction_chains ch2 ON ch2.id = t2.transaction_chain_id
-            WHERE
-                t2.done = 0
-                AND d.done = 1
-                AND t2.node_id = #{$CFG.get(:vpsadmin, :node_id)}
-                AND ch2.state = 1
-                GROUP BY transaction_chain_id, priority, id)
-
-            ORDER BY priority DESC, id ASC
-          ) tmp
-          GROUP BY transaction_chain_id, priority
-          ORDER BY priority DESC, id ASC
-          LIMIT #{limit}"
-        )
-
-        # Transactions for rollback.
-        # It is the same query, only transactions are in reverse order.
-        u.query(
-          "SELECT * FROM (
-            (SELECT d.*,
-                    ch2.state AS chain_state, ch2.progress AS chain_progress,
-                    ch2.size AS chain_size, ch2.urgent_rollback AS chain_urgent_rollback
-            FROM transactions t2
-            INNER JOIN transactions d ON t2.depends_on_id = d.id
-            INNER JOIN transaction_chains ch2 ON ch2.id = t2.transaction_chain_id
-            WHERE
-                t2.done = 2
-                AND d.status IN (1,2)
-                AND d.done = 1
-                AND d.node_id = #{$CFG.get(:vpsadmin, :node_id)}
-                AND ch2.state = 3)
-
-            ORDER BY priority DESC, id DESC
-          ) tmp
-          GROUP BY transaction_chain_id, priority
-          ORDER BY priority DESC, id DESC
-          LIMIT #{limit}"
-        )
-      end
-    end
-
-    def do_commands
-      rs = select_commands(@db)
-
-      rs.each do |row|
-        c = Command.new(row)
-
-        do_command(c)
-      end
-    end
-
-    def do_command(cmd)
-      wid = cmd.worker_id
-
-      threads = $CFG.get(:vpsadmin, :threads)
-      urgent = $CFG.get(:vpsadmin, :urgent_threads)
-
-      if chain_blocked?(cmd.chain_id)
-        log(:debug, cmd, 'Transaction is blocked - waiting for child process to finish')
-        return
-      end
-
-      if @queues.execute(cmd)
-        @cmd_counter += 1
-      end
-    end
-
     def run_threads
-      run_thread_unless_runs(:queues_prune) do
-        loop do
-          n = 0
-
-          @m_workers.synchronize do
-            db = Db.new
-            n = @queues.prune_reservations(db)
-            db.close
-          end
-
-          log(:info, :queues, "Released #{n} slot reservations") if n > 0
-
-          sleep($CFG.get(:vpsadmin, :queues_reservation_prune_interval))
-        end
-      end
-
       run_thread_unless_runs(:status) do
         loop do
           log(:info, :regular, 'Update status')
@@ -350,47 +211,12 @@ module NodeCtld
       end
     end
 
-    def queues
-      @m_workers.synchronize do
-        yield(@queues)
-      end
-    end
-
-    def pause(t = true)
-      @m_workers.synchronize do
-        pause!(t)
-      end
-    end
-
-    def pause!(t = true)
-      @pause = t
-
-      if @pause === true
-        @@mutex.synchronize do
-          @@run = false
-        end
-      end
-    end
-
-    def resume
-      @m_workers.synchronize do
-        @@run = true
-        @pause = nil
-      end
+    def can_stop?
+      Worker.empty? && @blockers_mutex.synchronize { @chain_blockers.empty? }
     end
 
     def run?
       @@run
-    end
-
-    def paused?
-      @pause
-    end
-
-    def can_stop?
-      @blockers_mutex.synchronize do
-        !@pause && @queues.empty? && @chain_blockers.empty?
-      end
     end
 
     def exitstatus

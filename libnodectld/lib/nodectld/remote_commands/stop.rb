@@ -1,14 +1,13 @@
 module NodeCtld::RemoteCommands
   class Stop < Base
     handle :stop
-    needs :worker, :subprocess
+    needs :subprocess
 
     def exec
       NodeCtld::Daemon.safe_exit(NodeCtld::EXIT_STOP)
 
       if @force
-        walk_workers { |w| :silent }
-        drop_workers
+        NodeCtld::Worker.kill_all
         killall_subprocesses
       end
 

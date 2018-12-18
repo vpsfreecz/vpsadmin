@@ -1,3 +1,4 @@
+require 'etc'
 require 'json'
 require 'libosctl'
 require 'nodectld/utils'
@@ -11,13 +12,15 @@ module NodeCtld
     RUNDIR = '/run/nodectl'
     SOCKET = File.join(RUNDIR, 'nodectld.sock')
 
-    extend Utils::Compat
+    NODE_USER_NAME = 'node'
+    NODE_USER_UID = Etc.getpwnam(NODE_USER_NAME).uid
+
     include OsCtl::Lib::Utils::Log
 
     @@handlers = {}
 
-    def self.register(klass, name)
-      @@handlers[name] = class_from_name(klass)
+    def self.register(name, klass)
+      @@handlers[name] = klass
     end
 
     def self.handlers
@@ -30,10 +33,11 @@ module NodeCtld
 
     def start
       @thread = Thread.new do
-        Dir.mkdir(RUNDIR, 0700) unless Dir.exist?(RUNDIR)
+        Dir.mkdir(RUNDIR, 0711) unless Dir.exist?(RUNDIR)
         File.unlink(SOCKET) if File.exists?(SOCKET)
         serv = UNIXServer.new(SOCKET)
         File.chmod(0600, SOCKET)
+        File.chown(NODE_USER_UID, 0, SOCKET)
 
         loop do
           if @stop

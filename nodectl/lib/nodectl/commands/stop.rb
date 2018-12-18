@@ -3,7 +3,7 @@ module NodeCtl
     cmd :stop
     description 'Safely stop nodectld'
 
-    def options(parse, args)
+    def options(parser, args)
       opts[:force] = false
 
       parser.on(

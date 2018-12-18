@@ -3,7 +3,7 @@ module NodeCtld::RemoteCommands
     handle :pause
 
     def exec
-      @daemon.pause(@t_id || true)
+      ::NodeCtld::Worker.pause
       ok
     end
   end

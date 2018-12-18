@@ -2,7 +2,7 @@ module NodeCtl
   class Commands::Kill < Command::Remote
     cmd :kill
     args '[ID|TYPE]...'
-    description 'Kill transaction(s) that are being processed'
+    description 'Kill command(s) that are being executed'
 
     def options(parser, args)
       opts.update({
@@ -10,32 +10,32 @@ module NodeCtl
         type: nil,
       })
 
-      parser.on('-a', '--all', 'Kill all transactions') do
+      parser.on('-a', '--all', 'Kill all commands') do
         opts[:all] = true
       end
 
-      parser.on('-t', '--type', 'Kill all transactions of this type') do
+      parser.on('-t', '--type', 'Kill all commands of this type') do
         opts[:type] = true
       end
     end
 
     def validate
       if opts[:all]
-        params[:transactions] = :all
+        params[:commands] = :all
 
       elsif opts[:type]
         if args.size < 1
-          raise ValidationError, 'missing transaction type(s)'
+          raise ValidationError, 'missing command type(s)'
         end
 
         params[:types] = args
 
       else
         if args.size < 1
-          raise ValidationError, 'missing transaction id(s)'
+          raise ValidationError, 'missing command id(s)'
         end
 
-        params[:transactions] = args
+        params[:commands] = args
       end
     end
 
@@ -46,7 +46,7 @@ module NodeCtl
 
       puts '' if response[:msgs].size > 0
 
-      puts "Killed #{response[:killed]} transactions"
+      puts "Killed #{response[:killed]} commands"
     end
   end
 end

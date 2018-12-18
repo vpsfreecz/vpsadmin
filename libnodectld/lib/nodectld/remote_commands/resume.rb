@@ -3,7 +3,7 @@ module NodeCtld::RemoteCommands
     handle :resume
 
     def exec
-      @daemon.resume
+      NodeCtld::Worker.resume
       ok
     end
   end

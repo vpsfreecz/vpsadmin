@@ -9,13 +9,11 @@ module NodeCtld::Utils
         osctl: :OsCtl,
         zfs: :Zfs,
         vps: :Vps,
-        worker: :Worker,
         pool: :Pool,
         subprocess: :Subprocess,
         integrity: :Integrity,
         hypervisor: :Hypervisor,
         outage_window: :OutageWindow,
-        queue: :Queue,
       }
 
       # Includes module from NodeCtld::Utils using mapping

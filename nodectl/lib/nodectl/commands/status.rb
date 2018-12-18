@@ -42,65 +42,60 @@ module NodeCtl
         if opts[:header]
           if global_opts[:parsable]
             puts sprintf(
-              '%-8s %-8s %-8s %-20.19s %-5s %8s  %12s %-18.16s %-8s %s',
-              'QUEUE', 'CHAIN', 'TRANS', 'HANDLER', 'TYPE', 'TIME', 'PROGRESS', 'ETA', 'PID', 'STEP'
+              '%-8s %-8s %-20.19s %-5s %8s  %12s %-18.16s %-8s %s',
+              'TRANS', 'CMD', 'HANDLER', 'TYPE', 'TIME', 'PROGRESS', 'ETA', 'PID', 'STEP'
             )
 
           else
             puts sprintf(
-              '%-8s %-8s %-8s %-20.19s %-5s %-18.16s %12s %-18.16s  %-8s %s',
-              'QUEUE', 'CHAIN', 'TRANS', 'HANDLER', 'TYPE', 'TIME', 'PROGRESS', 'ETA', 'PID', 'STEP'
+              '%-8s %-8s %-20.19s %-5s %-18.16s %12s %-18.16s  %-8s %s',
+              'TRANS', 'CMD', 'HANDLER', 'TYPE', 'TIME', 'PROGRESS', 'ETA', 'PID', 'STEP'
             )
           end
         end
 
         t = Time.now
 
-        response[:queues].each do |name, queue|
-          queue[:workers].sort { |a, b| a[0].to_s.to_i <=> b[0].to_s.to_i }.each do |w|
+        response[:workers].each do |cmd|
+          eta = nil
 
-            eta = nil
+          if cmd[:progress] && cmd[:start]
+            begin
+              rate = cmd[:progress][:current] / (t.to_i - cmd[:start])
+              eta = (cmd[:progress][:total] - cmd[:progress][:current]) / rate
 
-            if w[1][:progress] && w[1][:start]
-              begin
-                rate = w[1][:progress][:current] / (t.to_i - w[1][:start])
-                eta = (w[1][:progress][:total] - w[1][:progress][:current]) / rate
-
-              rescue ZeroDivisionError
-                eta = nil
-              end
+            rescue ZeroDivisionError
+              eta = nil
             end
+          end
 
-            if global_opts[:parsable]
-              puts sprintf(
-                '%-8s %-8d %-8d %-20.19s %-5d %8d %12s %-20.19s %-8s %s',
-                name,
-                w[0].to_s,
-                w[1][:id],
-                w[1][:handler],
-                w[1][:type],
-                w[1][:start] ? (t.to_i - w[1][:start]).round : '-',
-                w[1][:pid] || '-',
-                w[1][:progress] ? format_progress(t, w[1][:progress]) : '-',
-                eta ? eta : '-',
-                w[1][:step]
-              )
+          if global_opts[:parsable]
+            puts sprintf(
+              '%-8d %-8d %-20.19s %-5d %8d %12s %-20.19s %-8s %s',
+              cmd[:transaction_id],
+              cmd[:command_id],
+              cmd[:handler],
+              cmd[:handle],
+              cmd[:start] ? (t.to_i - cmd[:start]).round : '-',
+              cmd[:pid] || '-',
+              cmd[:progress] ? format_progress(t, cmd[:progress]) : '-',
+              eta ? eta : '-',
+              cmd[:step]
+            )
 
-            else
-              puts sprintf(
-                '%-8s %-8d %-8d %-20.19s %-5d %-18.16s %12s %-20.19s  %-8s  %s',
-                name,
-                w[0].to_s,
-                w[1][:id],
-                w[1][:handler],
-                w[1][:type],
-                w[1][:start] ? format_duration(t.to_i - w[1][:start]) : '-',
-                w[1][:progress] ? format_progress(t, w[1][:progress]) : '-',
-                eta ? format_duration(eta) : '-',
-                w[1][:pid],
-                w[1][:step]
-              )
-            end
+          else
+            puts sprintf(
+              '%-8d %-8d %-20.19s %-5d %-18.16s %12s %-20.19s  %-8s  %s',
+              cmd[:transaction_id],
+              cmd[:command_id],
+              cmd[:handler],
+              cmd[:handle],
+              cmd[:start] ? format_duration(t.to_i - cmd[:start]) : '-',
+              cmd[:progress] ? format_progress(t, cmd[:progress]) : '-',
+              eta ? format_duration(eta) : '-',
+              cmd[:pid],
+              cmd[:step]
+            )
           end
         end
       end
@@ -171,35 +166,18 @@ module NodeCtl
         puts "  Consoles: #{response[:export_console] ? response[:consoles].size : 'disabled'}"
         puts "  Subtasks: #{response[:subprocesses].inject(0) { |sum, v| sum + v[1].size }}"
         puts "    Mounts: #{response[:delayed_mounts].inject(0) { |sum, v| sum + v[1].size }}"
-        puts "Queue size: #{response[:queue_size]}"
-        puts "    Queues:"
-
-        response[:queues].each do |name, queue|
-          puts sprintf(
-            "    %10s  %d / %d (+%d%s) %s",
-            name,
-            queue[:workers].size,
-            queue[:threads],
-            queue[:urgent],
-            queue[:reservations].empty? ? '' : " *#{queue[:reservations].size}",
-            !queue[:started] ? "opens in #{format_duration((response[:start_time] + queue[:start_delay]) - Time.now.to_i)}" : ''
-          )
-        end
+        puts "   Workers: #{response[:workers].count}"
       end
 
       ok
     end
 
     def state
-      if response[:state][:run]
-        if response[:state][:pause]
-          "running, going to pause after #{response[:state][:pause]}"
-        else
-          'running'
-        end
-
-      elsif response[:state][:status] == 0
+      if response[:state][:pause]
         'paused'
+
+      elsif response[:state][:run]
+        'running'
 
       else
         "finishing, going to #{translate_exitstatus(response[:state][:status])}"

@@ -1,7 +1,7 @@
 module NodeCtld::Commands
   class Base
     def self.handle(type)
-      NodeCtld::Command.register(self.to_s, type)
+      NodeCtld::Command.register(type, self)
     end
 
     include NodeCtld::Utils::Command
