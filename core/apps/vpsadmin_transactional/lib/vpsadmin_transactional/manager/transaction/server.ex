@@ -4,14 +4,14 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
   require Logger
   alias VpsAdmin.Transactional.Manager
   alias VpsAdmin.Transactional.Worker
-  alias VpsAdmin.Transactional.Distributor
+  alias VpsAdmin.Transactional.Transaction
 
   ### Client interface
-  def start_link({{trans, cmds}, manager, worker}) do
+  def start_link({trans_id, manager, worker}) do
     GenServer.start_link(
       __MODULE__,
-      {{trans, cmds}, manager, worker},
-      name: via_tuple(trans)
+      {trans_id, manager, worker},
+      name: via_tuple(trans_id)
     )
   end
 
@@ -23,20 +23,19 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
     {:via, Registry, {Manager.Transaction.Registry, {:transaction, id}}}
   end
 
-  def via_tuple(trans) when is_map(trans) do
+  def via_tuple(%Transaction{} = trans) do
     via_tuple(trans.id)
   end
 
   ### Server implementation
   @impl true
-  def init({{trans, cmds}, manager, worker}) do
-    Logger.debug("Starting manager for transaction #{trans.id} (#{manager}, #{worker})")
+  def init({trans_id, manager, worker}) do
+    Logger.debug("Starting manager for transaction #{trans_id} (#{manager}, #{worker})")
 
     {
       :ok,
       %{
-        transaction: trans,
-        commands: cmds,
+        id: trans_id,
         manager: manager,
         worker: worker
       },
@@ -45,22 +44,27 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
   end
 
   @impl true
-  def handle_continue(:startup, %{transaction: trans, commands: cmds} = state) do
-    queue = make_queue(trans.state, cmds)
+  def handle_continue(:startup, %{id: id} = state) do
+    with %Transaction{} = trans <- state.manager.get_transaction(id),
+         cmds when is_list(cmds) <- state.manager.get_commands(id),
+         queue <- make_queue(trans.state, cmds) do
+      new_state =
+        state
+        |> Map.delete(:id)
+        |> Map.put(:transaction, trans)
+        |> Map.put(:done, [])
 
-    case process_queue(state, queue) do
-      v when v in ~w(done failed)a ->
-        close(trans, v, state.manager)
-        {:stop, :normal, state}
+      case process_queue(new_state, queue) do
+        v when v in ~w(done failed)a ->
+          close(trans, v, new_state.manager)
+          {:stop, :normal, new_state}
 
-      new_queue ->
-        {
-          :noreply,
-          state
-          |> Map.delete(:commands)
-          |> Map.put(:queue, new_queue)
-          |> Map.put(:done, [])
-        }
+        new_queue ->
+          {:noreply, Map.put(new_state, :queue, new_queue)}
+      end
+    else
+      {:error, error} ->
+        {:stop, error, state}
     end
   end
 

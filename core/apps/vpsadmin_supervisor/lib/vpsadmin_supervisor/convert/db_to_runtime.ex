@@ -2,12 +2,9 @@ defmodule VpsAdmin.Supervisor.Convert.DbToRuntime do
   alias VpsAdmin.Transactional
 
   def chain_to_transaction(chain) do
-    {
-      %Transactional.Transaction{
-        id: chain.id,
-        state: chain.state
-      },
-      Enum.map(chain.transactions, &transaction_to_command/1)
+    %Transactional.Transaction{
+      id: chain.id,
+      state: chain.state
     }
   end
 

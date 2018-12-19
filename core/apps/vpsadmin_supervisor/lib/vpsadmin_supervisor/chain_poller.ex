@@ -18,24 +18,20 @@ defmodule VpsAdmin.Supervisor.ChainPoller do
   end
 
   def handle_info(:timeout, nil) do
-    {:noreply, run(Query.TransactionChain.get_open(), nil), 1000}
+    {:noreply, run(Query.TransactionChain.get_open_ids(), nil), 1000}
   end
 
   def handle_info(:timeout, last_id) do
-    {:noreply, run(Query.TransactionChain.get_open_since(last_id), last_id), 1000}
+    {:noreply, run(Query.TransactionChain.get_open_ids_since(last_id), last_id), 1000}
   end
 
-  defp run(chains, last_id) do
+  defp run(chain_ids, last_id) do
     Enum.reduce(
-      chains,
+      chain_ids,
       last_id,
-      fn chain, acc ->
-        Manager.add_transaction(
-          Convert.DbToRuntime.chain_to_transaction(chain),
-          MyManager,
-          Worker.Distributed
-        )
-        chain.id
+      fn id, acc ->
+        Manager.add_transaction(id, MyManager, Worker.Distributed)
+        id
       end
     )
   end

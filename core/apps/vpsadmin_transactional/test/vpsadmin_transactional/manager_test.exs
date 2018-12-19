@@ -14,6 +14,23 @@ defmodule VpsAdmin.Transactional.ManagerTest do
       []
     end
 
+    def get_transaction(id) do
+      Transaction.new(id, :executing)
+    end
+
+    def get_commands(_id) do
+      for x <- 1..10 do
+        %Command{
+          id: x,
+          node: node(),
+          queue: :default,
+          reversible: :reversible,
+          state: :queued,
+          input: %{}
+        }
+      end
+    end
+
     def close_transaction(t) do
       Monitor.publish(TestMonitor, {:transaction, :close}, t)
     end
@@ -22,8 +39,12 @@ defmodule VpsAdmin.Transactional.ManagerTest do
       Monitor.publish(TestMonitor, {:transaction, :abort}, t)
     end
 
+    def command_started(t, c) do
+      Monitor.publish(TestMonitor, {:command, :started}, {t, c})
+    end
+
     def command_finished(t, c) do
-      Monitor.publish(TestMonitor, :command, {t, c})
+      Monitor.publish(TestMonitor, {:command, :finished}, {t, c})
     end
   end
 
@@ -39,28 +60,14 @@ defmodule VpsAdmin.Transactional.ManagerTest do
     Monitor.start_link(name: TestMonitor)
     start_supervised!({Manager.Supervisor, {TestManager, SuccessfulWorker}})
 
-    interval = 1..10
-    t = Transaction.new(1, :executing)
-    cmds =
-      for x <- interval do
-        %Command{
-          id: x,
-          node: node(),
-          queue: :default,
-          reversible: :reversible,
-          state: :queued,
-          input: %{}
-        }
-      end
-
     :ok = Monitor.subscribe(TestMonitor, {:transaction, :close})
-    :ok = Monitor.subscribe(TestMonitor, :command)
+    :ok = Monitor.subscribe(TestMonitor, {:command, :finished})
 
-    Manager.add_transaction({t, cmds}, TestManager, SuccessfulWorker)
+    Manager.add_transaction(1, TestManager, SuccessfulWorker)
 
-    for x <- interval do
+    for x <- 1..10 do
       assert {
-        :command,
+        {:command, :finished},
         {
           %Transaction{id: 1, state: :executing},
           %Command{id: ^x, state: :executed, status: :done}
@@ -94,29 +101,15 @@ defmodule VpsAdmin.Transactional.ManagerTest do
     Monitor.start_link(name: TestMonitor)
     start_supervised!({Manager.Supervisor, {TestManager, RollbackWorker}})
 
-    interval = 1..10
-    t = Transaction.new(1, :executing)
-    cmds =
-      for x <- interval do
-        %Command{
-          id: x,
-          node: node(),
-          queue: :default,
-          reversible: :reversible,
-          state: :queued,
-          input: %{}
-        }
-      end
-
     :ok = Monitor.subscribe(TestMonitor, {:transaction, :close})
-    :ok = Monitor.subscribe(TestMonitor, :command)
+    :ok = Monitor.subscribe(TestMonitor, {:command, :finished})
 
-    Manager.add_transaction({t, cmds}, TestManager, RollbackWorker)
+    Manager.add_transaction(1, TestManager, RollbackWorker)
 
     # Execution
     for x <- 1..7 do
       assert {
-        :command,
+        {:command, :finished},
         {
           %Transaction{id: 1, state: :executing},
           %Command{id: ^x, state: :executed, status: :done}
@@ -126,7 +119,7 @@ defmodule VpsAdmin.Transactional.ManagerTest do
 
     # Failure
     assert {
-      :command,
+      {:command, :finished},
       {
         %Transaction{id: 1, state: :executing},
         %Command{id: 8, state: :executed, status: :failed}
@@ -136,7 +129,7 @@ defmodule VpsAdmin.Transactional.ManagerTest do
     # Rollback
     for x <- 8..1 do
       assert {
-        :command,
+        {:command, :finished},
         {
           %Transaction{id: 1, state: :rollingback},
           %Command{id: ^x, state: :rolledback, status: :done}

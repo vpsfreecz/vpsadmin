@@ -1,13 +1,13 @@
 defmodule VpsAdmin.Transactional.Manager do
-  alias VpsAdmin.Transactional
+  alias VpsAdmin.Transactional.{Manager, Transaction, Command}
 
-  @callback open_transactions() ::
-              [{Transactional.Transaction.t(), [Transactional.Command.t()]}]
-              | {:error, term}
-  @callback close_transaction(Transactional.Transaction.t()) :: any
-  @callback abort_transaction(Transactional.Transaction.t()) :: any
-  @callback command_started(Transactional.Transaction.t(), Transactional.Command.t()) :: any
-  @callback command_finished(Transactional.Transaction.t(), Transactional.Command.t()) :: any
+  @callback open_transactions() :: [Transaction.id()] | {:error, term}
+  @callback get_transaction(Transaction.id()) :: Transaction.t() | {:error, term}
+  @callback get_commands(Transaction.id()) :: [Command.t()] | {:error, term}
+  @callback close_transaction(Transaction.t()) :: any
+  @callback abort_transaction(Transaction.t()) :: any
+  @callback command_started(Transaction.t(), Command.t()) :: any
+  @callback command_finished(Transaction.t(), Command.t()) :: any
 
   defmacro __using__(_opts) do
     quote do
@@ -16,7 +16,7 @@ defmodule VpsAdmin.Transactional.Manager do
     end
   end
 
-  def add_transaction(t, manager, worker) do
-    Transactional.Manager.Transaction.Supervisor.add_transaction(t, manager, worker)
+  def add_transaction(t_id, manager, worker) do
+    Manager.Transaction.Supervisor.add_transaction(t_id, manager, worker)
   end
 end

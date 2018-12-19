@@ -1,26 +1,29 @@
 defmodule VpsAdmin.Persistence.Query.TransactionChain do
   use VpsAdmin.Persistence.Query
 
-  def get_open do
-    transaction_query = from(t in Schema.Transaction, order_by: [asc: t.id])
-
+  def get(chain_id) do
     from(
       c in schema(),
+      where: c.id == ^chain_id
+    ) |> repo().one()
+  end
+
+  def get_open_ids do
+    from(
+      c in schema(),
+      select: c.id,
       where: c.state in ^[:executing, :rollingback],
       order_by: [asc: c.id],
-      preload: [transactions: ^transaction_query]
     ) |> repo().all()
   end
 
-  def get_open_since(chain_id) do
-    transaction_query = from(t in Schema.Transaction, order_by: [asc: t.id])
-
+  def get_open_ids_since(chain_id) do
     from(
       c in schema(),
+      select: c.id,
       where: c.state in ^[:executing, :rollingback],
       where: c.id > ^chain_id,
       order_by: [asc: c.id],
-      preload: [transactions: ^transaction_query]
     ) |> repo().all()
   end
 

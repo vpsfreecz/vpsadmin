@@ -7,10 +7,10 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Supervisor do
     DynamicSupervisor.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  def add_transaction(trans, manager, worker) do
+  def add_transaction(t_id, manager, worker) do
     DynamicSupervisor.start_child(
       __MODULE__,
-      {Manager.Transaction.Server, {trans, manager, worker}}
+      {Manager.Transaction.Server, {t_id, manager, worker}}
     )
   end
 

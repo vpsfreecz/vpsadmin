@@ -1,6 +1,14 @@
 defmodule VpsAdmin.Persistence.Query.Transaction do
   use VpsAdmin.Persistence.Query
 
+  def list(chain_id) do
+    from(
+      t in schema(),
+      where: t.transaction_chain_id == ^chain_id,
+      order_by: [asc: t.id]
+    ) |> repo().all()
+  end
+
   def started(trans_id) do
     from(
       t in schema(),

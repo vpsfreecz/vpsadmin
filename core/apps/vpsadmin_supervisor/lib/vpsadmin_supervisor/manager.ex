@@ -6,8 +6,21 @@ defmodule VpsAdmin.Supervisor.Manager do
 
   @impl true
   def open_transactions do
-    Persistence.Query.TransactionChain.get_open()
-    |> Enum.map(&Convert.DbToRuntime.chain_to_transaction/1)
+    Persistence.Query.TransactionChain.get_open_ids()
+  end
+
+  @impl true
+  def get_transaction(id) do
+    id
+    |> Persistence.Query.TransactionChain.get()
+    |> Convert.DbToRuntime.chain_to_transaction()
+  end
+
+  @impl true
+  def get_commands(id) do
+    id
+    |> Persistence.Query.Transaction.list()
+    |> Enum.map(&Convert.DbToRuntime.transaction_to_command/1)
   end
 
   @impl true
