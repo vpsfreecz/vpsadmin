@@ -66,7 +66,8 @@ defmodule VpsAdmin.Transactional.QueueTest do
         self()
       )
 
-    assert_receive {_, {:queue, :test, :done, :timeout}}, 250
+    assert_receive {_, {:queue, :test, :executing}}
+    assert_receive {_, {:queue, :test, :done, :timeout}}, 500
   end
 
   test "does not crash if process cannot be launched" do
@@ -94,7 +95,7 @@ defmodule VpsAdmin.Transactional.QueueTest do
         self()
       )
 
-    assert_receive {_, {:queue, :test, :done, :testcrash}}, 250
+    assert_receive {_, {:queue, :test, :done, :testcrash}}, 500
   end
 
   test "items are enqueued if the queue is full" do
