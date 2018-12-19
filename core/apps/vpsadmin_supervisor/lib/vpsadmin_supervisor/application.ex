@@ -5,11 +5,11 @@ defmodule VpsAdmin.Supervisor.Application do
   alias VpsAdmin.Supervisor.Manager, as: MyManager
   alias VpsAdmin.Supervisor.ChainPoller
   alias VpsAdmin.Transactional.Manager
-  alias VpsAdmin.Transactional.Workers
+  alias VpsAdmin.Transactional.Worker
 
   def start(_type, _args) do
     children = [
-      {Manager.Supervisor, {MyManager, Workers.Distributed}},
+      {Manager.Supervisor, {MyManager, Worker.Distributed}},
       ChainPoller
     ]
 

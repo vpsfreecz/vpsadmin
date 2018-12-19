@@ -7,7 +7,7 @@ defmodule VpsAdmin.Node.Application do
 
   def start(_type, _args) do
     children = [
-      VpsAdmin.Transactional.Worker.Supervisor
+      VpsAdmin.Transactional.Worker.Distributed.Supervisor
     ]
 
     opts = [strategy: :one_for_one, name: VpsAdmin.Node.Supervisor]

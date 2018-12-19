@@ -1,8 +1,8 @@
-defmodule VpsAdmin.Transactional.Distributor do
+defmodule VpsAdmin.Transactional.Worker.Distributed.Distributor do
   use GenServer
 
   alias VpsAdmin.Transactional.Manager
-  alias VpsAdmin.Transactional.Worker
+  alias VpsAdmin.Transactional.Worker.Distributed
 
   ### Client interface
   def start_link(_arg) do
@@ -26,7 +26,7 @@ defmodule VpsAdmin.Transactional.Distributor do
 
   @impl true
   def handle_call({:run_command, {t, cmd}, func}, _from, state) do
-    Worker.Executor.run_command({t, cmd}, func)
+    Distributed.Executor.run_command({t, cmd}, func)
     {:reply, :ok, state}
   end
 end

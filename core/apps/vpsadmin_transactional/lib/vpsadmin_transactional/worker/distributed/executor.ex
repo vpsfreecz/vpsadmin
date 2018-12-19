@@ -1,9 +1,8 @@
-defmodule VpsAdmin.Transactional.Worker.Executor do
+defmodule VpsAdmin.Transactional.Worker.Distributed.Executor do
   use GenServer
 
   require Logger
-  alias VpsAdmin.Transactional.Distributor
-  alias VpsAdmin.Transactional.Worker
+  alias VpsAdmin.Transactional.Worker.Distributed
   alias VpsAdmin.Transactional.Queue
 
   ### Client interface
@@ -27,7 +26,7 @@ defmodule VpsAdmin.Transactional.Worker.Executor do
       Queue.enqueue(
         cmd.queue,
         {t, cmd},
-        {Worker.Command.Server, :run, [{t, cmd}, func]},
+        {Distributed.Command.Server, :run, [{t, cmd}, func]},
         self()
       )
 
@@ -50,7 +49,7 @@ defmodule VpsAdmin.Transactional.Worker.Executor do
       "Eecution/rollback of command #{t}:#{cmd.id} failed with "<>
       "'#{inspect(reason)}'"
     )
-    Distributor.report_result(
+    Distributed.Distributor.report_result(
       {state.t, %{state.cmd | status: :failed, output: %{error: reason}}}
     )
     {:noreply, state}

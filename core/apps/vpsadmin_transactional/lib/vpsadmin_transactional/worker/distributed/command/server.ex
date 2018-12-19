@@ -1,8 +1,8 @@
-defmodule VpsAdmin.Transactional.Worker.Command.Server do
+defmodule VpsAdmin.Transactional.Worker.Distributed.Command.Server do
   use GenServer, restart: :transient
 
   require Logger
-  alias VpsAdmin.Transactional.Distributor
+  alias VpsAdmin.Transactional.Worker.Distributed.Distributor
   alias VpsAdmin.Base.NodeCtl
 
   ### Client interface

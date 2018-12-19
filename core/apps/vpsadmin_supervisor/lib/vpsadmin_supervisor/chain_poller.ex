@@ -5,7 +5,7 @@ defmodule VpsAdmin.Supervisor.ChainPoller do
   alias VpsAdmin.Supervisor.Manager, as: MyManager
   alias VpsAdmin.Persistence.Query
   alias VpsAdmin.Transactional.Manager
-  alias VpsAdmin.Transactional.Workers
+  alias VpsAdmin.Transactional.Worker
 
   ### Client interface
   def start_link(_arg) do
@@ -33,7 +33,7 @@ defmodule VpsAdmin.Supervisor.ChainPoller do
         Manager.add_transaction(
           Convert.DbToRuntime.chain_to_transaction(chain),
           MyManager,
-          Workers.Distributed
+          Worker.Distributed
         )
         chain.id
       end

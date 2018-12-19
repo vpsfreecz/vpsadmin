@@ -6,7 +6,7 @@ defmodule VpsAdmin.Transactional.Application do
 
   def start(_type, _args) do
     children = [
-      Transactional.Distributor
+      Transactional.Worker.Distributed.Distributor
     ]
 
     opts = [strategy: :one_for_one, name: Transactional.Supervisor]
