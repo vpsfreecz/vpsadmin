@@ -143,4 +143,107 @@ defmodule VpsAdmin.Transactional.ManagerTest do
       %Transaction{id: 1, state: :failed}
     } = Monitor.read_one(TestMonitor)
   end
+
+  defmodule TransactionState do
+    def start_link do
+      Agent.start_link(fn ->
+        %{
+          transaction: Transaction.new(1, :executing),
+          commands: for x <- 1..10 do
+            %Command{
+              id: x,
+              node: node(),
+              queue: :default,
+              reversible: :reversible,
+              state: :queued,
+              input: %{}
+            }
+          end
+        }
+      end, name: __MODULE__)
+    end
+
+    def transaction do
+      Agent.get(__MODULE__, fn %{transaction: t} -> t end)
+    end
+
+    def commands do
+      Agent.get(__MODULE__, fn %{commands: cmds} -> cmds end)
+    end
+
+    def command_finished(t, c) do
+      Agent.get_and_update(__MODULE__, fn %{transaction: t, commands: cmds} = state ->
+        new_cmds = Enum.map(cmds, fn
+          %{id: ^c.id} = cmd ->
+            c
+          cmd ->
+            c
+        end)
+
+        {nil, %{state | transaction: t, cmds: new_cmds}}
+      end)
+    end
+
+    def crash_once do
+      do_crash = Agent.get_and_update(__MODULE__, fn
+        %{crashed: true} = state ->
+          {false, state}
+        state ->
+          {true, Map.put(state, :crashed, true)}
+      end)
+
+      if do_crash, do: raise "oops", else: nil
+    end
+  end
+
+  defmodule StateManager do
+    use Manager
+
+    def open_transactions do
+      []
+    end
+
+    def get_transaction(id) do
+      TransactionState.transaction
+    end
+
+    def get_commands(_id) do
+      TransactionState.commands
+    end
+
+    def close_transaction(t) do
+      Monitor.publish(TestMonitor, {:transaction, :close}, t)
+    end
+
+    def abort_transaction(t) do
+      Monitor.publish(TestMonitor, {:transaction, :abort}, t)
+    end
+
+    def command_started(t, c) do
+      Monitor.publish(TestMonitor, {:command, :started}, {t, c})
+    end
+
+    def command_finished(t, %{id: 5} = c) do
+      TransactionState.crash_once
+      TransactionState.command_finished(t, c)
+      Monitor.publish(TestMonitor, {:command, :finished}, {t, c})
+    end
+
+    def command_finished(t, c) do
+      TransactionState.command_finished(t, c)
+      Monitor.publish(TestMonitor, {:command, :finished}, {t, c})
+    end
+  end
+
+  defmodule SuccessfulWorker do
+    use Worker
+
+    def run_command({t, cmd}, func) do
+      Manager.Transaction.Server.report_result({t, %{cmd | status: :done}})
+    end
+  end
+
+  test "execution state is remembered" do
+
+  end
 end
