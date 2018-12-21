@@ -158,7 +158,7 @@ module VpsAdmin::CLI::Commands
       params =  {
         limit: limit > 0 ? limit : 25,
         order: "#{@sort_desc ? '-' : ''}#{@sort_param}",
-        meta: {includes: 'ip_address'}
+        meta: {includes: 'ip_address__network_interface'}
       }
 
       FILTERS.each do |f|
@@ -218,7 +218,11 @@ module VpsAdmin::CLI::Commands
     end
 
     def print_row(data)
-      addstr(sprintf('%-30s %6s', data.ip_address.addr, data.ip_address.vps_id))
+      addstr(sprintf(
+        '%-30s %6s',
+        data.ip_address.addr,
+        data.ip_address.network_interface.vps_id
+      ))
 
       @columns.each do |c|
         p = c[:name]
