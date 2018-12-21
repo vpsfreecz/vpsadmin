@@ -481,7 +481,7 @@ if ($show_live) {
 
 	$params = array(
 		'limit' => get_val('limit', 25),
-		'meta' => array('includes' => 'ip_address'),
+		'meta' => array('includes' => 'ip_address__network_interface'),
 	);
 
 	$conds = array(
@@ -539,8 +539,8 @@ if ($show_live) {
 
 	foreach ($traffic as $data) {
 		$xtpl->table_td(
-			'<a href="?page=adminvps&action=info&veid='.$data->ip_address->vps_id.'">'.
-			$data->ip_address->vps_id.
+			'<a href="?page=adminvps&action=info&veid='.$data->ip_address->network_interface->vps_id.'">'.
+			$data->ip_address->network_interface->vps_id.
 			'</a>'
 		);
 		$xtpl->table_td($data->ip_address->addr);

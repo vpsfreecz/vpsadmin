@@ -55,7 +55,7 @@ function getIpAddressId (v, callback) {
 function getParams (callback) {
 	var ret = {
 		'meta': {
-			'includes': 'ip_address',
+			'includes': 'ip_address__network_interface',
 		}
 	};
 
@@ -100,8 +100,8 @@ function updateMonitor () {
 				var tr = $('<tr>');
 
 				tr.append(td(
-					'<a href="?page=adminvps&action=info&veid='+stat.ip_address.vps_id+'">' +
-					stat.ip_address.vps_id +
+					'<a href="?page=adminvps&action=info&veid='+stat.ip_address.network_interface.vps_id+'">' +
+					stat.ip_address.network_interface.vps_id +
 					'</a>'
 				));
 				tr.append(td(stat.ip_address.addr));
