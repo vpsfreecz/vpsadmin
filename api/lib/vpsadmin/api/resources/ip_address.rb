@@ -390,6 +390,9 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
       @chain, _ = netif.remove_route(ip)
       ip
+
+    rescue VpsAdmin::API::Exceptions::IpAddressInUse => e
+      error(e.message)
     end
 
     def state_id

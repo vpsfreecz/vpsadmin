@@ -92,6 +92,14 @@ class NetworkInterface < ActiveRecord::Base
         raise VpsAdmin::API::Exceptions::IpAddressNotAssigned
       end
 
+      routed_addrs = ::IpAddress.where(route_via: ip.host_ip_addresses)
+
+      if routed_addrs.any?
+        raise VpsAdmin::API::Exceptions::IpAddressInUse,
+          "The following addresses are routed via host addresses from #{ip}:\n"+
+          (routed_addrs.map { |v| "#{v} via #{v.route_via.ip_addr}" }.join(", \n"))
+      end
+
       TransactionChains::NetworkInterface::DelRoute.fire(self, [ip])
     end
   end
