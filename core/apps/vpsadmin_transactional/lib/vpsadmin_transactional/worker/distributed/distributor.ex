@@ -26,7 +26,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Distributor do
 
   @impl true
   def handle_call({:run_command, {t, cmd}, func}, _from, state) do
-    Distributed.Executor.run_command({t, cmd}, func)
-    {:reply, :ok, state}
+    {:ok, pid} = Distributed.Executor.Supervisor.run_command({t, cmd}, func)
+    {:reply, {:ok, pid}, state}
   end
 end

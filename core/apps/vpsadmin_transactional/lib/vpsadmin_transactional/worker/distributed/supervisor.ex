@@ -4,15 +4,16 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Supervisor do
   alias VpsAdmin.Transactional
   alias VpsAdmin.Transactional.Worker.Distributed
 
-  def start_link(opts \\ [queues: []]) do
-    Supervisor.start_link(__MODULE__, opts)
+  def start_link(_opts) do
+    Supervisor.start_link(__MODULE__, :ok)
   end
 
   @impl true
-  def init(opts) do
+  def init(:ok) do
     children = [
-      Distributed.Command.Supervisor,
-      Distributed.Executor
+      {Registry, keys: :unique, name: Distributed.Registry},
+      Distributed.Executor.Supervisor,
+      Distributed.Command.Supervisor
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
