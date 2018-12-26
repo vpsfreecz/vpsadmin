@@ -13,7 +13,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Supervisor do
     children = [
       {Registry, keys: :unique, name: Distributed.Registry},
       Distributed.Executor.Supervisor,
-      Distributed.Command.Supervisor
+      Distributed.NodeCtldCommand.Supervisor
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

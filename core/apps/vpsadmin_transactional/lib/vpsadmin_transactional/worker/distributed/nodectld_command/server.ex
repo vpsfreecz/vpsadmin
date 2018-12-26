@@ -1,4 +1,4 @@
-defmodule VpsAdmin.Transactional.Worker.Distributed.Command.Server do
+defmodule VpsAdmin.Transactional.Worker.Distributed.NodeCtldCommand.Server do
   use GenServer, restart: :transient
 
   require Logger

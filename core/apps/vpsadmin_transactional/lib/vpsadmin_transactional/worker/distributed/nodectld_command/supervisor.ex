@@ -1,4 +1,4 @@
-defmodule VpsAdmin.Transactional.Worker.Distributed.Command.Supervisor do
+defmodule VpsAdmin.Transactional.Worker.Distributed.NodeCtldCommand.Supervisor do
   use DynamicSupervisor
 
   alias VpsAdmin.Transactional.Worker.Distributed

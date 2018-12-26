@@ -30,7 +30,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
       Queue.enqueue(
         cmd.queue,
         {t, cmd},
-        {Distributed.Command.Server, :run, [{t, cmd}, func]},
+        {Distributed.NodeCtldCommand.Server, :run, [{t, cmd}, func]},
         self()
       )
 
