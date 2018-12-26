@@ -3,7 +3,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor do
 
   require Logger
   alias VpsAdmin.Transactional.Worker.Distributed
-  alias VpsAdmin.Transactional.Queue
+  alias VpsAdmin.Queue
 
   ### Client interface
   def start_link(_arg) do

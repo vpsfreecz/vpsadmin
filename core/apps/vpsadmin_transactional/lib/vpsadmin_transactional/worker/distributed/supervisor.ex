@@ -11,7 +11,6 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Supervisor do
   @impl true
   def init(opts) do
     children = [
-      Transactional.Queue.MainSupervisor,
       Distributed.Command.Supervisor,
       Distributed.Executor
     ]

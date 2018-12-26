@@ -19,6 +19,6 @@ import_config "../apps/*/config/config.exs"
 
 import_config "#{Mix.env()}.secret.exs"
 
-config :vpsadmin_transactional, :queues, [
+config :vpsadmin_queue, :queues, [
   {:default, 4}
 ]

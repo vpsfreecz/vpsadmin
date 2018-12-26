@@ -1,4 +1,4 @@
-defmodule VpsAdmin.Transactional.Queue do
+defmodule VpsAdmin.Queue do
   @moduledoc """
   Named FIFO queue for executing commands.
 
@@ -10,7 +10,7 @@ defmodule VpsAdmin.Transactional.Queue do
   for an execution slot to open.
   """
 
-  alias VpsAdmin.Transactional.Queue
+  alias VpsAdmin.Queue
 
   @type name :: atom
 

@@ -1,8 +1,8 @@
-defmodule VpsAdmin.Transactional.Queue.Server do
+defmodule VpsAdmin.Queue.Server do
   @moduledoc false
 
   use GenServer
-  alias VpsAdmin.Transactional
+  alias VpsAdmin.Queue
 
   ### Client API
   def start_link({queue, size}) do
@@ -18,7 +18,7 @@ defmodule VpsAdmin.Transactional.Queue.Server do
   end
 
   def via_tuple(name) do
-    {:via, Registry, {Transactional.Queue.Registry, {:queue, name}}}
+    {:via, Registry, {Queue.Registry, {:queue, name}}}
   end
 
   ### Server implementation

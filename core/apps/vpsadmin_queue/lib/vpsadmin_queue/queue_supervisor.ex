@@ -1,8 +1,8 @@
-defmodule VpsAdmin.Transactional.Queue.QueueSupervisor do
+defmodule VpsAdmin.Queue.QueueSupervisor do
   @moduledoc false
 
   use Supervisor
-  alias VpsAdmin.Transactional.Queue
+  alias VpsAdmin.Queue
 
   def start_link(arg) do
     Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
@@ -10,9 +10,9 @@ defmodule VpsAdmin.Transactional.Queue.QueueSupervisor do
 
   def init(_arg) do
     children =
-      :vpsadmin_transactional
+      :vpsadmin_queue
       |> Application.get_env(:queues)
-      |> Enum.map(fn v -> {Queue.Server, v} end)
+      |> Enum.map(&{Queue.Server, &1})
 
     Supervisor.init(children, strategy: :one_for_one)
   end
