@@ -15,11 +15,17 @@ defmodule VpsAdmin.Queue do
   @type name :: atom
 
   @spec start_link({name, integer}) :: GenServer.on_start()
-  def start_link({queue, size} = arg) do
+  def start_link({_queue, _size} = arg) do
     Queue.Server.start_link(arg)
   end
 
-  @spec enqueue(name, term, {atom, atom, list}, GenServer.server()) :: :ok
+  @spec enqueue(
+          name,
+          term,
+          {atom, atom, list},
+          GenServer.server(),
+          keyword
+        ) :: :ok
   @doc """
   Add command to the queue.
 
@@ -34,8 +40,42 @@ defmodule VpsAdmin.Queue do
   when the executed process finishes with whatever reason. When the process
   cannot be started, message `{:queue, id, :error, error}` is sent.
   """
-  def enqueue(queue, id, mfa, parent) do
-    Queue.Server.enqueue(queue, id, mfa, parent)
+  def enqueue(queue, id, mfa, parent, opts \\ []) do
+    Queue.Server.enqueue(queue, id, mfa, parent, opts)
+  end
+
+  @spec reserve(
+          name,
+          term,
+          integer,
+          GenServer.server()
+        ) :: :ok | {:error, :invalid}
+  @doc """
+  Reserve one or more execution slots
+
+  The reservation happens immediately if the requested execution slots are free.
+  If they are not, the reservation request is enqueued and will take place as
+  soon as previous runnable and reservation requests are fullfilled. Message
+  `{:queue, name, :reserved}` is sent to `parent` once the reservation is
+  secured.
+
+  The queue size is shrunk until the reservation is released. Reserved slots
+  can only be used by `enqueue/4` calls with appropriate `name` option.
+  """
+  def reserve(queue, name, size, parent) do
+    Queue.Server.reserve(queue, name, size, parent)
+  end
+
+  @spec release(
+          name,
+          term,
+          integer
+        ) :: :ok | {:error, :invalid} | {:error, :notfound}
+  @doc """
+  Release previously reserved execution slots
+  """
+  def release(queue, name, size) do
+    Queue.Server.release(queue, name, size)
   end
 
   @spec status(queue :: name) :: %{
