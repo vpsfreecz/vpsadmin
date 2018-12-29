@@ -13,6 +13,7 @@ defmodule VpsAdmin.Queue do
   alias VpsAdmin.Queue
 
   @type name :: atom
+  @type on_start :: {:ok, pid} | {:error, term}
 
   @spec start_link({name, integer}) :: GenServer.on_start()
   def start_link({_queue, _size} = arg) do
@@ -32,7 +33,9 @@ defmodule VpsAdmin.Queue do
   The command is identified by `id`. It can be any term, but you have to ensure
   its uniqueness. `mfa` is a tuple `{module, function, arguments}`. This
   function is called to execute the command. It has to return type
-  `GenServer.on_start`. The process has to be started as linked.
+  `VpsAdmin.Queue.on_start`. The process must not be linked to the queue, but
+  should be a part of an independent supervision tree, so as to not bring down
+  the queue when the executed process is killed.
 
   `parent` is a name of a process that is to be notified when the command
   is executed and when it finishes. Message `{:queue, id, :executing}` is sent

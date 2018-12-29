@@ -6,7 +6,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.NodeCtldCommand.Server do
   alias VpsAdmin.Base.NodeCtl
 
   ### Client interface
-  def run({t, cmd}, func) do
+  def start_link({{t, cmd}, func}) do
     GenServer.start_link(__MODULE__, {{t, cmd}, func})
   end
 

@@ -32,7 +32,6 @@ defmodule VpsAdmin.Queue.Server do
   ### Server implementation
   @impl true
   def init(size) do
-    Process.flag(:trap_exit, true)
     {:ok, %{
       max_size: size,
       current_size: size,
@@ -99,29 +98,34 @@ defmodule VpsAdmin.Queue.Server do
   end
 
   @impl true
-  def handle_info({:EXIT, pid, reason}, state) do
-    state =
-      case Enum.find(state.executing, nil, fn {p, _, _} -> p == pid end) do
-        nil ->
-          state
+  def handle_info({:DOWN, ref, :process, object, reason}, state) do
+    item = Enum.find(state.executing, fn
+      {^object, ^ref, _id, _parent} -> true
+      _ -> false
+    end)
 
-        {pid, id, parent} ->
+    new_state =
+      case item do
+        {^object, ^ref, id, parent} ->
           notify(parent, id, :done, reason)
 
           state.executing
-          |> update_in(&List.delete(&1, {pid, id, parent}))
+          |> update_in(&List.delete(&1, item))
           |> process_next()
+
+        nil ->
+          state
       end
 
-    {:noreply, state}
+    {:noreply, new_state}
   end
 
   defp do_execute(state, id, {m, f, a}, parent) do
     case apply(m, f, a) do
       {:ok, pid} ->
-        Process.link(pid)
+        ref = Process.monitor(pid)
         notify(parent, id, :executing)
-        update_in(state.executing, &[{pid, id, parent} | &1])
+        update_in(state.executing, &[{pid, ref, id, parent} | &1])
 
       {:error, error} ->
         notify(parent, id, :error, error)

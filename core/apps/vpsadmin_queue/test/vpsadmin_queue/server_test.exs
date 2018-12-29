@@ -4,8 +4,24 @@ defmodule VpsAdmin.Queue.ServerTest do
   alias VpsAdmin.Queue
   alias VpsAdmin.Queue.Server
 
+  defmodule Supervisor do
+    use DynamicSupervisor
+
+    def start_link(_arg) do
+      DynamicSupervisor.start_link(__MODULE__, :ok, name: __MODULE__)
+    end
+
+    def run(mod, arg) do
+      DynamicSupervisor.start_child(__MODULE__, {mod, arg})
+    end
+
+    def init(:ok) do
+      DynamicSupervisor.init(strategy: :one_for_one)
+    end
+  end
+
   defmodule Worker do
-    use GenServer
+    use GenServer, restart: :temporary
 
     def start_link(arg) do
       GenServer.start_link(__MODULE__, arg)
@@ -21,6 +37,7 @@ defmodule VpsAdmin.Queue.ServerTest do
   end
 
   setup do
+    start_supervised!(Supervisor)
     start_supervised!({Registry, keys: :unique, name: Queue.Registry})
     :ok
   end
@@ -52,7 +69,7 @@ defmodule VpsAdmin.Queue.ServerTest do
       Server.enqueue(
         :myqueue,
         :test,
-        {Worker, :start_link, [fn -> {:ok, :normal, 200} end]},
+        {Supervisor, :run, [Worker, fn -> {:ok, :normal, 200} end]},
         self()
       )
 
@@ -66,7 +83,7 @@ defmodule VpsAdmin.Queue.ServerTest do
       Server.enqueue(
         :myqueue,
         :test,
-        {Worker, :start_link, [fn -> {:ok, :timeout, 200} end]},
+        {Supervisor, :run, [Worker, fn -> {:ok, :timeout, 200} end]},
         self()
       )
 
@@ -81,7 +98,7 @@ defmodule VpsAdmin.Queue.ServerTest do
       Server.enqueue(
         :myqueue,
         :test,
-        {Worker, :start_link, [fn -> {:stop, :error} end]},
+        {Supervisor, :run, [Worker, fn -> {:stop, :error} end]},
         self()
       )
 
@@ -95,11 +112,57 @@ defmodule VpsAdmin.Queue.ServerTest do
       Server.enqueue(
         :myqueue,
         :test,
-        {Worker, :start_link, [fn -> {:ok, :testcrash, 200} end]},
+        {Supervisor, :run, [Worker, fn -> {:ok, :testcrash, 200} end]},
         self()
       )
 
     assert_receive {_, {:queue, :test, :done, :testcrash}}, 500
+  end
+
+  defmodule SuicideWorker do
+    use GenServer, restart: :temporary
+
+    def start_link(timeout) do
+      GenServer.start_link(__MODULE__, timeout)
+    end
+
+    def init(timeout) do
+      {:ok, nil, timeout}
+    end
+
+    def handle_info(:timeout, nil) do
+      Process.exit(self(), :kill)
+    end
+  end
+
+  test "does not exit when the launched process is killed" do
+    {:ok, _pid} = Server.start_link({:myqueue, 2})
+
+    :ok =
+      Server.enqueue(
+        :myqueue,
+        :innocent,
+        {Supervisor, :run, [Worker, fn -> {:ok, :normal, 1000} end]},
+        self()
+      )
+
+    assert_receive {_, {:queue, :innocent, :executing}}, 500
+
+    :ok =
+      Server.enqueue(
+        :myqueue,
+        :killer,
+        {Supervisor, :run, [SuicideWorker, 100]},
+        self()
+      )
+
+    assert_receive {_, {:queue, :killer, :executing}}, 500
+    assert_receive {_, {:queue, :killer, :done, :killed}}, 500
+
+    status = Server.status(:myqueue)
+    assert status.executing == 1
+
+    assert_receive {_, {:queue, :innocent, :done, :normal}}, 1200
   end
 
   test "items are enqueued if the queue is full" do
@@ -110,7 +173,7 @@ defmodule VpsAdmin.Queue.ServerTest do
         Server.enqueue(
           :myqueue,
           :test,
-          {Worker, :start_link, [fn -> {:ok, :normal, 100} end]},
+          {Supervisor, :run, [Worker, fn -> {:ok, :normal, 100} end]},
           self()
         )
     end
@@ -185,7 +248,7 @@ defmodule VpsAdmin.Queue.ServerTest do
         Server.enqueue(
           :myqueue,
           :test,
-          {Worker, :start_link, [fn -> {:ok, :timeout, 100} end]},
+          {Supervisor, :run, [Worker, fn -> {:ok, :timeout, 100} end]},
           self(),
           name: :myname
         )
@@ -204,7 +267,7 @@ defmodule VpsAdmin.Queue.ServerTest do
         Server.enqueue(
           :myqueue,
           :test,
-          {Worker, :start_link, [fn -> {:ok, :timeout, 10} end]},
+          {Supervisor, :run, [Worker, fn -> {:ok, :timeout, 10} end]},
           self()
         )
 
