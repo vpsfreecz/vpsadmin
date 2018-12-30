@@ -19,4 +19,8 @@ defmodule VpsAdmin.Transactional.Manager do
   def add_transaction(t_id, manager, worker) do
     Manager.Transaction.Supervisor.add_transaction(t_id, manager, worker)
   end
+
+  def report_result({t, cmd}) do
+    Manager.Transaction.Server.report_result({t, cmd})
+  end
 end

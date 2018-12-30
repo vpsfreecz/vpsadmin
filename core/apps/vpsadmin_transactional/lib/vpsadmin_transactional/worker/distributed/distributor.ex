@@ -14,8 +14,13 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Distributor do
   end
 
   def report_result({t, cmd}) do
-    # TODO: send to node with supervisor running
-    Manager.Transaction.Server.report_result({t, cmd})
+    GenServer.call(
+      {
+        __MODULE__,
+        Application.get_env(:vpsadmin_transactional, :supervisor_node)
+      },
+      {:report_result, {t, cmd}}
+    )
   end
 
   ### Server implementation
@@ -28,5 +33,10 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Distributor do
   def handle_call({:run_command, {t, cmd}, func}, _from, state) do
     {:ok, pid} = Distributed.Executor.Supervisor.run_command({t, cmd}, func)
     {:reply, {:ok, pid}, state}
+  end
+
+  def handle_call({:report_result, {t, cmd}}, _from, state) do
+    Manager.report_result({t, cmd})
+    {:reply, :ok, state}
   end
 end
