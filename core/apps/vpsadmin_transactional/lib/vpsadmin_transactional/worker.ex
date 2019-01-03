@@ -5,7 +5,7 @@ defmodule VpsAdmin.Transactional.Worker do
   @callback run_command(
               {Transaction.id(), Command.t()},
               :execute | :rollback
-            ) :: {:ok, pid}
+            ) :: {:ok, pid} | {:error, term}
 
   defmacro __using__(_opts) do
     quote do

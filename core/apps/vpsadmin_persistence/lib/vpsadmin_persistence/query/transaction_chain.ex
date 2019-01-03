@@ -68,4 +68,12 @@ defmodule VpsAdmin.Persistence.Query.TransactionChain do
        )
     |> repo().transaction()
   end
+
+  def abort(chain_id) do
+    from(
+      c in schema(),
+      where: c.id == ^chain_id,
+      update: [set: [state: ^:aborted]]
+    ) |> repo().update_all([])
+  end
 end

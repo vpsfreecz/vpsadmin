@@ -36,6 +36,8 @@ defmodule VpsAdmin.Supervisor.Manager do
   @impl true
   def abort_transaction(trans) do
     Logger.debug("Aborting transaction #{trans.id}")
+
+    Persistence.Query.TransactionChain.abort(trans.id)
   end
 
   @impl true

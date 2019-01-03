@@ -59,13 +59,16 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
           close(trans, v, new_state.manager)
           {:stop, :normal, new_state}
 
-        {new_queue, ref} ->
+        {:ok, new_queue, ref} ->
           {
             :noreply,
             new_state
             |> Map.put(:queue, new_queue)
             |> Map.put(:ref, ref)
           }
+
+        {:error, _error, cmd, new_queue} ->
+          handle_result(cmd, Map.put(new_state, :queue, new_queue))
       end
     else
       {:error, error} ->
@@ -102,7 +105,7 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
         close(state.transaction, :done, state.manager)
         {:stop, :normal, state}
 
-      {new_queue, ref} ->
+      {:ok, new_queue, ref} ->
         {
           :noreply,
           state
@@ -110,6 +113,9 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
           |> Map.put(:done, [cmd | state.done])
           |> Map.put(:ref, ref)
         }
+
+      {:error, _error, cmd, new_queue} ->
+        handle_result(cmd, %{state | queue: new_queue})
     end
   end
 
@@ -127,7 +133,7 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
             close(state.transaction, v, state.manager)
             {:stop, :normal, state}
 
-          {new_queue, ref} ->
+          {:ok, new_queue, ref} ->
             {
               :noreply,
               state
@@ -135,20 +141,29 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
               |> Map.put(:done, [cmd | state.done])
               |> Map.put(:ref, ref)
             }
+
+          {:error, _error, cmd, new_queue} ->
+            handle_result(cmd, %{state | queue: new_queue})
         end
 
       :rollback ->
         Logger.debug("Initiating rollback of transaction #{state.transaction.id}")
         new_state = rollback(state, cmd)
 
-        {new_queue, ref} = process_queue(new_state, new_state.queue)
-        {
-          :noreply,
-          new_state
-          |> Map.put(:queue, new_queue)
-          |> Map.put(:done, [cmd | state.done])
-          |> Map.put(:ref, ref)
-        }
+        case process_queue(new_state, new_state.queue) do
+          {:ok, new_queue, ref} ->
+            {
+              :noreply,
+              new_state
+              |> Map.put(:queue, new_queue)
+              |> Map.put(:done, [cmd | state.done])
+              |> Map.put(:ref, ref)
+            }
+
+          {:error, _error, cmd, new_queue} ->
+            # TODO: not sure if missing any state updates from above
+            handle_result(cmd, %{new_state | queue: new_queue})
+        end
 
       :close ->
         Logger.debug("Prematurely closing transaction #{state.transaction.id}")
@@ -173,7 +188,7 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
         close(state.transaction, :failed, state.manager)
         {:stop, :normal, state}
 
-      {new_queue, ref} ->
+      {:ok, new_queue, ref} ->
         {
           :noreply,
           state
@@ -181,6 +196,9 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
           |> Map.put(:done, [cmd | state.done])
           |> Map.put(:ref, ref)
         }
+
+        {:error, _error, cmd, new_queue} ->
+          handle_result(cmd, %{state | queue: new_queue})
     end
   end
 
@@ -198,7 +216,7 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
             close(state.transaction, :failed, state.manager)
             {:stop, :normal, state}
 
-          {new_queue, ref} ->
+          {:ok, new_queue, ref} ->
             {
               :noreply,
               state
@@ -206,6 +224,9 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
               |> Map.put(:done, [cmd | state.done])
               |> Map.put(:ref, ref)
             }
+
+          {:error, _error, cmd, new_queue} ->
+            handle_result(cmd, %{state | queue: new_queue, done: [cmd | state.done]})
         end
 
       :close ->
@@ -241,14 +262,26 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
 
   defp process_queue(%{transaction: %{state: :executing}} = state, [h | t]) do
     {:queued, nil} = {h.state, h.status}
-    ref = run(state.manager, state.worker, {state.transaction, h}, :execute)
-    {[h | t], ref}
+
+    case run(state.manager, state.worker, {state.transaction, h}, :execute) do
+      {:ok, ref} ->
+        {:ok, [h|t], ref}
+
+      {:error, error, cmd} ->
+        {:error, error, %{cmd | status: :failed}, [h|t]}
+    end
   end
 
   defp process_queue(%{transaction: %{state: :rollingback}} = state, [h | t]) do
     {:executed, _} = {h.state, h.status}
-    ref = run(state.manager, state.worker, {state.transaction, h}, :rollback)
-    {[h | t], ref}
+
+    case run(state.manager, state.worker, {state.transaction, h}, :rollback) do
+      {:ok, ref} ->
+        {:ok, [h|t], ref}
+
+      {:error, error, cmd} ->
+        {:error, error, %{cmd | status: :failed}, [h|t]}
+    end
   end
 
   defp rollback(state, cmd) do
@@ -270,8 +303,14 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
 
   defp do_run(manager, worker, {t, cmd}, func) do
     manager.command_started(t, cmd)
-    {:ok, pid} = worker.run_command({t.id, cmd}, func)
-    Process.monitor(pid)
+
+    case worker.run_command({t.id, cmd}, func) do
+      {:ok, pid} ->
+        {:ok, Process.monitor(pid)}
+
+      {:error, error} ->
+        {:error, error, cmd}
+    end
   end
 
   defp handle_failure(:executing, :ignore), do: :continue
