@@ -50,6 +50,9 @@ defmodule VpsAdmin.Queue.Server do
       {nil, _size} ->
         {:reply, :ok, do_enqueue(state, state.current_size, arg)}
 
+      {^name, nil} ->
+        {:reply, :ok, do_enqueue(state, state.current_size, arg)}
+
       {^name, size} ->
         {:reply, :ok, do_enqueue(state, state.current_size + size, arg)}
     end
