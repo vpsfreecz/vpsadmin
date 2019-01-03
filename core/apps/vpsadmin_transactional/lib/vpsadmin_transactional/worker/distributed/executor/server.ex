@@ -2,6 +2,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
   use GenServer, restart: :transient
 
   require Logger
+  alias VpsAdmin.Transactional.Command
   alias VpsAdmin.Transactional.Worker.Distributed
   alias VpsAdmin.Queue
 
@@ -26,15 +27,13 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
 
   @impl true
   def handle_continue(:startup, {t, cmd, func}) do
-    :ok =
-      Queue.enqueue(
-        cmd.queue,
-        {t, cmd},
-        {Distributed.NodeCtldCommand.Supervisor, :run_command, [{t, cmd}, func]},
-        self()
-      )
+    case run_command({t, cmd}, func) do
+      {:ok, {t, cmd}} ->
+        {:noreply, {t, cmd}}
 
-    {:noreply, {t, cmd}}
+      {:stop, {t, cmd}} ->
+        {:stop, :normal, {t, cmd}}
+    end
   end
 
   @impl true
@@ -63,5 +62,52 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
       {state.t, %{state.cmd | status: :failed, output: %{error: reason}}}
     )
     {:stop, :normal, state}
+  end
+
+  def handle_cast({:queue, {:transaction, t}, :reserved}, {t, cmd} = state) do
+    Logger.debug("Reserved slot(s) in queue #{cmd.queue}")
+    Distributed.Distributor.report_result({t, %{cmd | status: :done}})
+    {:stop, :normal, state}
+  end
+
+  # Queue slot reservation
+  defp run_command({t, %Command{input: %{handle: 101}} = cmd}, :execute) do
+    :ok = Queue.reserve(cmd.queue, {:transaction, t}, 1, self())
+    {:ok, {t, cmd}}
+  end
+
+  defp run_command({t, %Command{input: %{handle: 101}} = cmd}, :rollback) do
+    Queue.release(cmd.queue, {:transaction, t}, 1)
+    new_cmd = %{cmd | status: :done}
+    Distributed.Distributor.report_result({t, new_cmd})
+    {:stop, {t, cmd}}
+  end
+
+  # Queue slot release
+  defp run_command({t, %Command{input: %{handle: 102}} = cmd}, :execute) do
+    Queue.release(cmd.queue, {:transaction, t}, 1)
+    new_cmd = %{cmd | status: :done}
+    Distributed.Distributor.report_result({t, new_cmd})
+    {:stop, {t, new_cmd}}
+  end
+
+  defp run_command({t, %Command{input: %{handle: 102}} = cmd}, :rollback) do
+    new_cmd = %{cmd | status: :done}
+    Distributed.Distributor.report_result({t, new_cmd})
+    {:stop, {t, new_cmd}}
+  end
+
+  # nodectld commands
+  defp run_command({t, cmd}, func) do
+    :ok =
+      Queue.enqueue(
+        cmd.queue,
+        {t, cmd},
+        {Distributed.NodeCtldCommand.Supervisor, :run_command, [{t, cmd}, func]},
+        self(),
+        name: {:transaction, t}
+      )
+
+    {:ok, {t, cmd}}
   end
 end
