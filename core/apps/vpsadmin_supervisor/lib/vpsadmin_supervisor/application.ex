@@ -3,6 +3,7 @@ defmodule VpsAdmin.Supervisor.Application do
 
   use Application
   alias VpsAdmin.Supervisor.Manager, as: MyManager
+  alias VpsAdmin.Supervisor.Connector
   alias VpsAdmin.Supervisor.ChainPoller
   alias VpsAdmin.Transactional.Manager
   alias VpsAdmin.Transactional.Worker
@@ -10,6 +11,7 @@ defmodule VpsAdmin.Supervisor.Application do
   def start(_type, _args) do
     children = [
       {Manager.Supervisor, {MyManager, Worker.Distributed}},
+      Connector,
       ChainPoller
     ]
 

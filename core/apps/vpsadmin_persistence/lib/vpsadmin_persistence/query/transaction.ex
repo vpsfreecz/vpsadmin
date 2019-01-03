@@ -5,7 +5,8 @@ defmodule VpsAdmin.Persistence.Query.Transaction do
     from(
       t in schema(),
       where: t.transaction_chain_id == ^chain_id,
-      order_by: [asc: t.id]
+      order_by: [asc: t.id],
+      preload: [node: ^Query.Node.preload()]
     ) |> repo().all()
   end
 
