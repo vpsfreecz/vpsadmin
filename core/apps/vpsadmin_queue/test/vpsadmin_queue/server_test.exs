@@ -244,6 +244,20 @@ defmodule VpsAdmin.Queue.ServerTest do
       assert {:error, :badreservation} = Server.reserve(:myqueue, :myname, 1, self())
     end
 
+    test "reservations are queued" do
+      {:ok, _pid} = Server.start_link({:myqueue, 4})
+
+      assert :ok = Server.reserve(:myqueue, :myname1, 2, self())
+      assert_receive {_, {:queue, :myname1, :reserved}}, 100
+      assert :ok = Server.reserve(:myqueue, :myname2, 2, self())
+      assert_receive {_, {:queue, :myname2, :reserved}}, 100
+      assert :ok = Server.reserve(:myqueue, :myname3, 2, self())
+      refute_receive {_, {:queue, :myname3, :reserved}}, 200
+
+      assert :ok = Server.release(:myqueue, :myname1, 2)
+      assert_receive {_, {:queue, :myname3, :reserved}}, 100
+    end
+
     test "urgent items can reserve extra slots" do
       {:ok, _pid} = Server.start_link({:myqueue, 4, 2})
       status = Server.status(:myqueue)
