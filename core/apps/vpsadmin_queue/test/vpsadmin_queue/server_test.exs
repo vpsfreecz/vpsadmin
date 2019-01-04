@@ -331,4 +331,59 @@ defmodule VpsAdmin.Queue.ServerTest do
       assert status.max_size == 4
     end
   end
+
+  defmacro assert_next_receive(pattern, timeout \\ 100) do
+    code = Macro.to_string(pattern)
+
+    quote do
+      receive do
+        msg ->
+          assert unquote(pattern) = msg
+      after unquote(timeout) ->
+        raise "expected #{unquote(code)}, but the message was not delivered"
+      end
+    end
+  end
+
+  test "enqueued items are ordered by default" do
+    {:ok, _pid} = Server.start_link({:myqueue, 1})
+
+    for x <- 1..5 do
+      :ok =
+        Server.enqueue(
+          :myqueue,
+          x,
+          {Supervisor, :run, [Worker, fn -> {:ok, :normal, 10} end]},
+          self()
+        )
+    end
+
+    for x <- 1..5 do
+      assert_next_receive {_, {:queue, ^x, :executing}}, 100
+      assert_next_receive {_, {:queue, ^x, :done, :normal}}, 100
+    end
+  end
+
+  test "enqueued items can be ordered by priority" do
+    {:ok, _pid} = Server.start_link({:myqueue, 1})
+
+    for x <- 1..5 do
+      :ok =
+        Server.enqueue(
+          :myqueue,
+          x,
+          {Supervisor, :run, [Worker, fn -> {:ok, :normal, 100} end]},
+          self(),
+          priority: 10 - x
+        )
+    end
+
+    assert_next_receive {_, {:queue, 1, :executing}}, 200
+    assert_next_receive {_, {:queue, 1, :done, :normal}}, 200
+
+    for x <- 5..2 do
+      assert_next_receive {_, {:queue, ^x, :executing}}, 200
+      assert_next_receive {_, {:queue, ^x, :done, :normal}}, 200
+    end
+  end
 end

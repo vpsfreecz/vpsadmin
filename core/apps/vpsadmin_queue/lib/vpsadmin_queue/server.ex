@@ -4,6 +4,14 @@ defmodule VpsAdmin.Queue.Server do
   use GenServer
   alias VpsAdmin.Queue
 
+  defmodule Item do
+    defstruct ~w(type id mfa parent order priority)a
+
+    def compare(item1, item2) do
+      [item1.priority, item1.order] <= [item2.priority, item2.order]
+    end
+  end
+
   ### Client API
   def start_link({queue, size}) do
     GenServer.start_link(__MODULE__, size, name: via_tuple(queue))
@@ -13,8 +21,8 @@ defmodule VpsAdmin.Queue.Server do
     GenServer.call(via_tuple(queue), {:enqueue, id, mfa, parent, opts})
   end
 
-  def reserve(queue, name, size, parent) do
-    GenServer.call(via_tuple(queue), {:reserve, name, size, parent})
+  def reserve(queue, name, size, parent, opts \\ []) do
+    GenServer.call(via_tuple(queue), {:reserve, name, size, parent, opts})
   end
 
   def release(queue, name, size) do
@@ -36,40 +44,44 @@ defmodule VpsAdmin.Queue.Server do
       max_size: size,
       current_size: size,
       executing: [],
-      queued: :queue.new(),
-      reservations: %{}
+      queued: [],
+      reservations: %{},
+      counter: 0
     }}
   end
 
   @impl true
   def handle_call({:enqueue, id, mfa, parent, opts}, _from, state) do
     name = Keyword.get(opts, :name)
-    arg = {id, mfa, parent}
+    prio = Keyword.get(opts, :priority, 0)
+    arg = {id, mfa, parent, prio}
 
     case {name, state.reservations[name]} do
       {nil, _size} ->
-        {:reply, :ok, do_enqueue(state, state.current_size, arg)}
+        {:reply, :ok, do_enqueue_runnable(state, state.current_size, arg)}
 
       {^name, nil} ->
-        {:reply, :ok, do_enqueue(state, state.current_size, arg)}
+        {:reply, :ok, do_enqueue_runnable(state, state.current_size, arg)}
 
       {^name, size} ->
-        {:reply, :ok, do_enqueue(state, state.current_size + size, arg)}
+        {:reply, :ok, do_enqueue_runnable(state, state.current_size + size, arg)}
     end
   end
 
-  def handle_call({:reserve, _n, size, _p}, _from, %{max_size: max_size} = state) when size > max_size or size < 1 do
+  def handle_call({:reserve, _n, size, _p, _o}, _from, %{max_size: max_size} = state) when size > max_size or size < 1 do
     {:reply, {:error, :badreservation}, state}
   end
 
-  def handle_call({:reserve, name, size, parent}, _from, %{max_size: max_size} = state) do
+  def handle_call({:reserve, name, size, parent, opts}, _from, %{max_size: max_size} = state) do
+    prio = Keyword.get(opts, :priority, 0)
+
     case state.reservations[name] do
       v when is_nil(v) or (v + size) <= max_size ->
         state =
           if length(state.executing) + size <= state.current_size do
             do_reserve(state, name, size, parent)
           else
-            do_enqueue_reservation(state, name, size, parent)
+            do_enqueue_reservation(state, name, size, parent, prio)
           end
 
         {:reply, :ok, state}
@@ -93,7 +105,7 @@ defmodule VpsAdmin.Queue.Server do
     {:reply,
      %{
        executing: length(state.executing),
-       queued: :queue.len(state.queued),
+       queued: length(state.queued),
        current_size: state.current_size,
        max_size: state.max_size,
        reservations: %{}
@@ -175,30 +187,47 @@ defmodule VpsAdmin.Queue.Server do
     end
   end
 
-  defp do_enqueue(state, size, {id, mfa, parent}) do
+  defp do_enqueue_runnable(state, size, {id, mfa, parent, prio}) do
     if length(state.executing) < size do
       do_execute(state, id, mfa, parent)
     else
-      do_enqueue_runnable(state, id, mfa, parent)
+      do_enqueue_item(state, %Item{
+        type: :runnable,
+        id: id,
+        mfa: mfa,
+        parent: parent,
+        priority: prio
+      })
     end
   end
 
-  defp do_enqueue_runnable(state, id, mfa, parent) do
-    %{state | queued: :queue.in({:run, {id, mfa, parent}}, state.queued)}
+  defp do_enqueue_reservation(state, name, size, parent, prio) do
+    do_enqueue_item(state, %Item{
+      type: :reservation,
+      id: name,
+      parent: parent,
+      priority: prio
+    })
   end
 
-  defp do_enqueue_reservation(state, name, size, parent) do
-    %{state | queued: :queue.in({:reserve, {name, size, parent}}, state.queued)}
+  defp do_enqueue_item(state, item) do
+    new_state = Map.update!(state, :counter, &(&1 + 1))
+    new_item = %{item | order: new_state.counter}
+    Map.update!(new_state, :queued, &make_queue([new_item|&1]))
+  end
+
+  defp make_queue(list) do
+    Enum.sort(list, &Item.compare/2)
   end
 
   defp process_next(state) do
     if length(state.executing) < state.current_size do
-      case :queue.peek(state.queued) do
-        :empty ->
+      case state.queued do
+        [] ->
           state
 
-        {:value, item} ->
-          case process_item(state, item) do
+        [h|_t] ->
+          case process_item(state, h) do
             {:ok, state} ->
               process_next(state)
             {:error, state} ->
@@ -210,25 +239,26 @@ defmodule VpsAdmin.Queue.Server do
     end
   end
 
-  defp process_item(state, {:run, {id, mfa, parent}} = item) do
-    {{:value, ^item}, new_queue} = :queue.out(state.queued)
+  defp process_item(state, %Item{type: :runnable} = item) do
+    [^item|new_queue] = state.queued
 
     {
       :ok,
       state
-      |> Map.put(:queued, new_queue)
-      |> do_execute(id, mfa, parent)
+      |> Map.put(:queued, make_queue(new_queue))
+      |> do_execute(item.id, item.mfa, item.parent)
     }
   end
 
-  defp process_item(state, {:reserve, {name, size, parent}} = item) do
-    if (state.current_size - length(state.executing)) >= size do
-      {{:value, ^item}, new_queue} = :queue.out(state.queued)
+  defp process_item(state, %Item{type: :reservation} = item) do
+    if (state.current_size - length(state.executing)) >= item.size do
+      [^item|new_queue] = state.queued
+
       {
         :ok,
         state
-        |> Map.put(:queued, new_queue)
-        |> do_reserve(name, size, parent)
+        |> Map.put(:queued, make_queue(new_queue))
+        |> do_reserve(item.id, item.size, item.parent)
       }
     else
       {:error, state}

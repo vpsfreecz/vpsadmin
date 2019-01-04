@@ -65,8 +65,8 @@ defmodule VpsAdmin.Queue do
   The queue size is shrunk until the reservation is released. Reserved slots
   can only be used by `enqueue/4` calls with appropriate `name` option.
   """
-  def reserve(queue, name, size, parent) do
-    Queue.Server.reserve(queue, name, size, parent)
+  def reserve(queue, name, size, parent, opts \\ []) do
+    Queue.Server.reserve(queue, name, size, parent, opts)
   end
 
   @spec release(
