@@ -50,6 +50,7 @@ defmodule VpsAdmin.Queue.ServerTest do
     assert status.queued == 0
     assert status.current_size == 2
     assert status.max_size == 2
+    assert status.urgent_size == 0
   end
 
   test "has configurable size" do
@@ -60,6 +61,13 @@ defmodule VpsAdmin.Queue.ServerTest do
     {:ok, _pid} = Server.start_link({:myqueue2, 4})
     assert Server.status(:myqueue2).current_size == 4
     assert Server.status(:myqueue2).max_size == 4
+  end
+
+  test "has configurable extra slots for urgent items" do
+    {:ok, _pid} = Server.start_link({:myqueue1, 1, 1})
+    assert Server.status(:myqueue1).current_size == 1
+    assert Server.status(:myqueue1).max_size == 1
+    assert Server.status(:myqueue1).urgent_size == 1
   end
 
   test "notifies when execution starts" do
@@ -235,6 +243,56 @@ defmodule VpsAdmin.Queue.ServerTest do
 
       assert {:error, :badreservation} = Server.reserve(:myqueue, :myname, 1, self())
     end
+
+    test "urgent items can reserve extra slots" do
+      {:ok, _pid} = Server.start_link({:myqueue, 4, 2})
+      status = Server.status(:myqueue)
+
+      assert status.current_size == 4
+      assert status.max_size == 4
+      assert status.urgent_size == 2
+
+      assert :ok = Server.reserve(:myqueue, :myname, 6, self(), urgent: true)
+      assert_receive {_, {:queue, :myname, :reserved}}, 500
+
+      status = Server.status(:myqueue)
+      assert status.current_size == 0
+      assert status.max_size == 4
+      assert status.urgent_size == 2
+    end
+
+    test "urgent items cannot reserve infinite slots" do
+      {:ok, _pid} = Server.start_link({:myqueue, 4, 2})
+      status = Server.status(:myqueue)
+
+      assert status.current_size == 4
+      assert status.max_size == 4
+      assert status.urgent_size == 2
+
+      assert {:error, :badreservation} =
+        Server.reserve(:myqueue, :myname, 7, self(), urgent: true)
+
+      status = Server.status(:myqueue)
+      assert status.current_size == 4
+      assert status.max_size == 4
+      assert status.urgent_size == 2
+    end
+
+    test "non-urgent items cannot reserve extra slots" do
+      {:ok, _pid} = Server.start_link({:myqueue, 4, 2})
+      status = Server.status(:myqueue)
+
+      assert status.current_size == 4
+      assert status.max_size == 4
+      assert status.urgent_size == 2
+
+      assert {:error, :badreservation} = Server.reserve(:myqueue, :myname, 5, self())
+
+      status = Server.status(:myqueue)
+      assert status.current_size == 4
+      assert status.max_size == 4
+      assert status.urgent_size == 2
+    end
   end
 
   describe "slot reservation usage" do
@@ -385,5 +443,112 @@ defmodule VpsAdmin.Queue.ServerTest do
       assert_next_receive {_, {:queue, ^x, :executing}}, 200
       assert_next_receive {_, {:queue, ^x, :done, :normal}}, 200
     end
+  end
+
+  test "urgent items have higher priority" do
+    {:ok, _pid} = Server.start_link({:myqueue, 1})
+
+    for x <- 1..5 do
+      :ok =
+        Server.enqueue(
+          :myqueue,
+          x,
+          {Supervisor, :run, [Worker, fn -> {:ok, :normal, 100} end]},
+          self()
+        )
+    end
+
+    for x <- 6..10 do
+      :ok =
+        Server.enqueue(
+          :myqueue,
+          x,
+          {Supervisor, :run, [Worker, fn -> {:ok, :normal, 100} end]},
+          self(),
+          urgent: true
+        )
+    end
+
+    assert_next_receive {_, {:queue, 1, :executing}}, 200
+    assert_next_receive {_, {:queue, 1, :done, :normal}}, 200
+
+    for x <- 6..10 do
+      assert_next_receive {_, {:queue, ^x, :executing}}, 200
+      assert_next_receive {_, {:queue, ^x, :done, :normal}}, 200
+    end
+
+    for x <- 2..5 do
+      assert_next_receive {_, {:queue, ^x, :executing}}, 200
+      assert_next_receive {_, {:queue, ^x, :done, :normal}}, 200
+    end
+  end
+
+  test "urgent items can utilize extra slots" do
+    {:ok, _pid} = Server.start_link({:myqueue, 1, 1})
+
+    :ok =
+      Server.enqueue(
+        :myqueue,
+        :regular,
+        {Supervisor, :run, [Worker, fn -> {:ok, :normal, 500} end]},
+        self()
+      )
+
+    assert_receive {_, {:queue, :regular, :executing}}, 100
+
+    status = Server.status(:myqueue)
+    assert status.executing == 1
+    assert status.max_size == 1
+    assert status.urgent_size == 1
+
+    :ok =
+      Server.enqueue(
+        :myqueue,
+        :urgent,
+        {Supervisor, :run, [Worker, fn -> {:ok, :normal, 500} end]},
+        self(),
+        urgent: true
+      )
+
+    assert_receive {_, {:queue, :urgent, :executing}}, 100
+
+    status = Server.status(:myqueue)
+    assert status.executing == 2
+    assert status.max_size == 1
+    assert status.urgent_size == 1
+  end
+
+  test "regular items cannot utilize extra slots" do
+    {:ok, _pid} = Server.start_link({:myqueue, 1, 1})
+
+    :ok =
+      Server.enqueue(
+        :myqueue,
+        :regular1,
+        {Supervisor, :run, [Worker, fn -> {:ok, :normal, 500} end]},
+        self()
+      )
+
+    assert_receive {_, {:queue, :regular1, :executing}}, 100
+
+    status = Server.status(:myqueue)
+    assert status.executing == 1
+    assert status.max_size == 1
+    assert status.urgent_size == 1
+
+    :ok =
+      Server.enqueue(
+        :myqueue,
+        :regular2,
+        {Supervisor, :run, [Worker, fn -> {:ok, :normal, 500} end]},
+        self()
+      )
+
+    refute_receive {_, {:queue, :regular2, :executing}}, 100
+
+    status = Server.status(:myqueue)
+    assert status.executing == 1
+    assert status.max_size == 1
+    assert status.urgent_size == 1
   end
 end

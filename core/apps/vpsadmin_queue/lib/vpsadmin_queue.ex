@@ -15,8 +15,10 @@ defmodule VpsAdmin.Queue do
   @type name :: atom
   @type on_start :: {:ok, pid} | {:error, term}
 
-  @spec start_link({name, integer}) :: GenServer.on_start()
-  def start_link({_queue, _size} = arg) do
+  @spec start_link(
+          {name, integer} | {name, integer, integer}
+        ) :: GenServer.on_start()
+  def start_link(arg) do
     Queue.Server.start_link(arg)
   end
 
