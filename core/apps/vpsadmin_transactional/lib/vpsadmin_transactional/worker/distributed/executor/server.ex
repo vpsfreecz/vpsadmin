@@ -72,7 +72,13 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
 
   # Queue slot reservation
   defp run_command({t, %Command{input: %{handle: 101}} = cmd}, :execute) do
-    :ok = Queue.reserve(cmd.queue, {:transaction, t}, 1, self())
+    :ok = Queue.reserve(
+      cmd.queue,
+      {:transaction, t},
+      1,
+      self(),
+      priority: cmd.input.priority
+    )
     {:ok, {t, cmd}}
   end
 
@@ -105,7 +111,8 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
         {t, cmd},
         {Distributed.NodeCtldCommand.Supervisor, :run_command, [{t, cmd}, func]},
         self(),
-        name: {:transaction, t}
+        name: {:transaction, t},
+        priority: cmd.input.priority
       )
 
     {:ok, {t, cmd}}
