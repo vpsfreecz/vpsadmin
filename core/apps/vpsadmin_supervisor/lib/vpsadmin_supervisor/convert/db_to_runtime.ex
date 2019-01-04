@@ -21,6 +21,7 @@ defmodule VpsAdmin.Supervisor.Convert.DbToRuntime do
       status: status,
       input: %{
         handle: trans.handle,
+        urgent: trans.urgent == 1,
         priority: trans.priority,
         input: add_vps_id(trans.input, trans.vps_id)
       },

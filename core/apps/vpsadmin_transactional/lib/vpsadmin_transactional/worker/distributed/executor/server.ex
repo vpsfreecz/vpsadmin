@@ -112,6 +112,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
         {Distributed.NodeCtldCommand.Supervisor, :run_command, [{t, cmd}, func]},
         self(),
         name: {:transaction, t},
+        urgent: cmd.input.urgent,
         priority: cmd.input.priority
       )
 
