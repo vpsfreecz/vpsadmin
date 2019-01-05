@@ -12,6 +12,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Supervisor do
   def init(:ok) do
     children = [
       {Registry, keys: :unique, name: Distributed.Registry},
+      Distributed.ResultReporter.Supervisor,
       Distributed.Executor.Supervisor,
       Distributed.NodeCtldCommand.Supervisor
     ]

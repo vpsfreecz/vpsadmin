@@ -310,8 +310,8 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
     {:queued, nil} = {h.state, h.status}
 
     case run(state.manager, state.worker, {state.transaction, h}, :execute) do
-      {:ok, ref} ->
-        {:ok, [h|t], ref}
+      {:ok, cmd, ref} ->
+        {:ok, [cmd|t], ref}
 
       {:error, error, cmd} ->
         {:error, error, %{cmd | status: :failed}, [h|t]}
@@ -325,8 +325,8 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
     {:executed, _} = {h.state, h.status}
 
     case run(state.manager, state.worker, {state.transaction, h}, :rollback) do
-      {:ok, ref} ->
-        {:ok, [h|t], ref}
+      {:ok, cmd, ref} ->
+        {:ok, [cmd|t], ref}
 
       {:error, error, cmd} ->
         {:error, error, %{cmd | status: :failed}, [h|t]}
@@ -358,7 +358,7 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
 
     case worker.run_command({t.id, cmd}, func) do
       {:ok, pid} ->
-        {:ok, Process.monitor(pid)}
+        {:ok, cmd, Process.monitor(pid)}
 
       {:error, error} ->
         {:error, error, cmd}

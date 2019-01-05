@@ -2,7 +2,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.NodeCtldCommand.Server do
   use GenServer, restart: :temporary
 
   require Logger
-  alias VpsAdmin.Transactional.Worker.Distributed.Distributor
+  alias VpsAdmin.Transactional.Worker.Distributed.Executor
   alias VpsAdmin.Base.NodeCtl
 
   ### Client interface
@@ -44,7 +44,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.NodeCtldCommand.Server do
   def handle_info({:nodectl, msg}, state) do
     NodeCtl.close(state.nodectl)
 
-    Distributor.report_result(
+    Executor.report_result(
       {
         state.t,
         %{state.cmd
