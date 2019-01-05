@@ -69,6 +69,9 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
 
         {:error, _error, cmd, new_queue} ->
           handle_result(cmd, Map.put(new_state, :queue, new_queue))
+
+        {:unavailable, time, new_queue} ->
+          reschedule(Map.put(new_state, :queue, new_queue), time)
       end
     else
       {:error, error} ->
@@ -94,6 +97,30 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
     {:noreply, state}
   end
 
+  def handle_info(:retry, state) do
+    new_state = Map.delete(state, :timer)
+
+    case process_queue(new_state, new_state.queue) do
+      v when v in ~w(done failed)a ->
+        close(state.transaction, v, new_state.manager)
+        {:stop, :normal, new_state}
+
+      {:ok, new_queue, ref} ->
+        {
+          :noreply,
+          new_state
+          |> Map.put(:queue, new_queue)
+          |> Map.put(:ref, ref)
+        }
+
+      {:error, _error, cmd, new_queue} ->
+        handle_result(cmd, Map.put(new_state, :queue, new_queue))
+
+      {:unavailable, time, new_queue} ->
+        reschedule(Map.put(new_state, :queue, new_queue), time)
+    end
+  end
+
   defp handle_result(%{state: :executed, status: :done} = cmd, state) do
     Logger.debug("Command #{state.transaction.id}:#{cmd.id} executed")
     state.manager.command_finished(state.transaction, cmd)
@@ -116,6 +143,9 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
 
       {:error, _error, cmd, new_queue} ->
         handle_result(cmd, %{state | queue: new_queue})
+
+      {:unavailable, time, new_queue} ->
+        reschedule(Map.put(state, :queue, new_queue), time)
     end
   end
 
@@ -144,6 +174,9 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
 
           {:error, _error, cmd, new_queue} ->
             handle_result(cmd, %{state | queue: new_queue})
+
+          {:unavailable, time, new_queue} ->
+            reschedule(Map.put(state, :queue, new_queue), time)
         end
 
       :rollback ->
@@ -161,8 +194,10 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
             }
 
           {:error, _error, cmd, new_queue} ->
-            # TODO: not sure if missing any state updates from above
             handle_result(cmd, %{new_state | queue: new_queue})
+
+          {:unavailable, time, new_queue} ->
+            reschedule(Map.put(new_state, :queue, new_queue), time)
         end
 
       :close ->
@@ -197,8 +232,11 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
           |> Map.put(:ref, ref)
         }
 
-        {:error, _error, cmd, new_queue} ->
-          handle_result(cmd, %{state | queue: new_queue})
+      {:error, _error, cmd, new_queue} ->
+        handle_result(cmd, %{state | queue: new_queue})
+
+      {:unavailable, time, new_queue} ->
+        reschedule(Map.put(state, :queue, new_queue), time)
     end
   end
 
@@ -227,6 +265,9 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
 
           {:error, _error, cmd, new_queue} ->
             handle_result(cmd, %{state | queue: new_queue, done: [cmd | state.done]})
+
+          {:unavailable, time, new_queue} ->
+            reschedule(Map.put(state, :queue, new_queue), time)
         end
 
       :close ->
@@ -239,6 +280,11 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
         abort(state.transaction, state.manager)
         {:stop, :normal, state}
     end
+  end
+
+  defp reschedule(state, time) do
+    Logger.debug("Executor unavailable, will retry in #{time} ms")
+    {:noreply, Map.put(state, :timer, Process.send_after(self(), :retry, time))}
   end
 
   defp make_queue(:executing, commands) do
@@ -269,6 +315,9 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
 
       {:error, error, cmd} ->
         {:error, error, %{cmd | status: :failed}, [h|t]}
+
+      {:unavailable, time, _cmd} ->
+        {:unavailable, time, [h|t]}
     end
   end
 
@@ -281,6 +330,9 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
 
       {:error, error, cmd} ->
         {:error, error, %{cmd | status: :failed}, [h|t]}
+
+      {:unavailable, time, _cmd} ->
+        {:unavailable, time, [h|t]}
     end
   end
 
@@ -310,6 +362,9 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
 
       {:error, error} ->
         {:error, error, cmd}
+
+      {:unavailable, time} ->
+        {:unavailable, time, cmd}
     end
   end
 

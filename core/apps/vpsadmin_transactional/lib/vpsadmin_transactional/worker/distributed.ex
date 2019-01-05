@@ -11,7 +11,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed do
 
     catch
       :exit, {{:nodedown, _}, _} ->
-        {:error, :nodedown}
+        {:unavailable, 30_000}
     end
   end
 end
