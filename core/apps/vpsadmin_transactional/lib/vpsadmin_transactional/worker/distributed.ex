@@ -3,6 +3,8 @@ defmodule VpsAdmin.Transactional.Worker.Distributed do
   require Logger
   alias Transactional.Worker.Distributed.Distributor
 
+  @retry 30_000
+
   def run_command({t, cmd}, func) do
     Logger.debug("Scheduling command #{t}:#{cmd.id} for #{func}")
 
@@ -11,7 +13,10 @@ defmodule VpsAdmin.Transactional.Worker.Distributed do
 
     catch
       :exit, {{:nodedown, _}, _} ->
-        {:unavailable, 30_000}
+        {:unavailable, @retry}
+
+      :exit, {:noproc, _} ->
+        {:unavailable, @retry}
     end
   end
 end
