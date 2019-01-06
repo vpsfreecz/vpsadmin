@@ -86,8 +86,9 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
   end
 
   @impl true
-  def handle_info({:DOWN, ref, :process, _object, _reason}, %{ref: ref} = state) do
+  def handle_info({:DOWN, ref, :process, _object, reason}, %{ref: ref} = state) do
     Logger.debug("Executed command exited prematurely")
+    IO.inspect(reason)
     [cmd|_] = state.queue
     handle_result(%{cmd | status: :failed}, state)
   end

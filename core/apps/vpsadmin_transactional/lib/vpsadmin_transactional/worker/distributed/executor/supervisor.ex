@@ -10,7 +10,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Supervisor do
   def run_command({t, cmd}, func) do
     {:ok, _pid} = DynamicSupervisor.start_child(
       __MODULE__,
-      {Distributed.Executor.Server, {t, cmd, func}}
+      {Distributed.Executor.Server, {{t, cmd}, func}}
     )
   end
 

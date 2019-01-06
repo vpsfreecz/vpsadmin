@@ -1,7 +1,6 @@
 defmodule VpsAdmin.Transactional.Worker.Distributed.Distributor do
   use GenServer
 
-  alias VpsAdmin.Transactional.Manager
   alias VpsAdmin.Transactional.Worker.Distributed
 
   ### Client interface
@@ -10,17 +9,46 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Distributor do
   end
 
   def run_command({t, cmd}, func) do
-    GenServer.call({__MODULE__, cmd.node}, {:run_command, {t, cmd}, func})
+    call_worker(cmd.node, {:run_command, {t, cmd}, func})
   end
 
   def report_result({t, cmd}) do
+    try do
+      call_supervisor({:report_result, {t, cmd}})
+      :ok
+    catch
+      :exit, {{:nodedown, _}, _} ->
+        {:error, :nodedown}
+
+      :exit, {:noproc, _} ->
+        {:error, :noproc}
+    end
+  end
+
+  def retrieve_result({t, cmd}) do
+    try do
+      call_worker(cmd.node, {:retrieve_result, {t, cmd}})
+    catch
+      :exit, {{:nodedown, _}, _} ->
+        {:error, :nodedown}
+
+      :exit, {:noproc, _} ->
+        {:error, :noproc}
+    end
+  end
+
+  defp call_supervisor(msg) do
     GenServer.call(
       {
         __MODULE__,
         Application.get_env(:vpsadmin_transactional, :supervisor_node)
       },
-      {:report_result, {t, cmd}}
+      msg
     )
+  end
+
+  defp call_worker(node, msg) do
+    GenServer.call({__MODULE__, node}, msg)
   end
 
   ### Server implementation
@@ -36,7 +64,17 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Distributor do
   end
 
   def handle_call({:report_result, {t, cmd}}, _from, state) do
-    Manager.report_result({t, cmd})
+    Distributed.Monitor.report_result({t, cmd})
     {:reply, :ok, state}
+  end
+
+  def handle_call({:retrieve_result, {t, cmd}}, _from, state) do
+    try do
+      reply = Distributed.Executor.retrieve_result({t, cmd})
+      {:reply, reply, state}
+    catch
+      :exit, _ ->
+        {:reply, {:error, :noproc}, state}
+    end
   end
 end

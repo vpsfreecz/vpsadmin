@@ -1,5 +1,5 @@
 defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
-  use GenServer, restart: :transient
+  use GenServer, restart: :temporary
 
   require Logger
   alias VpsAdmin.Transactional.Command
@@ -7,12 +7,16 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
   alias VpsAdmin.Queue
 
   ### Client interface
-  def start_link({t, cmd, func} = arg) do
+  def start_link({{t, cmd}, _func} = arg) do
     GenServer.start_link(__MODULE__, arg, name: via_tuple({t, cmd}))
   end
 
   def report_result({t, cmd}) do
-    :ok = GenServer.call(via_tuple({t, cmd}), {:result, {t, cmd}})
+    GenServer.cast(via_tuple({t, cmd}), {:report_result, {t, cmd}})
+  end
+
+  def retrieve_result({t, cmd}) do
+    GenServer.call(via_tuple({t, cmd}), :retrieve_result)
   end
 
   defp via_tuple({t, cmd}) do
@@ -21,53 +25,70 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
 
   ### Server implementation
   @impl true
-  def init({t, cmd, func} = arg) do
-    {:ok, arg, {:continue, :startup}}
+  def init({{t, cmd}, func}) do
+    Process.flag(:trap_exit, true)
+    {:ok, %{
+      command: {t, cmd},
+      func: func,
+      result: nil
+    }, {:continue, :startup}}
   end
 
   @impl true
-  def handle_continue(:startup, {t, cmd, func}) do
+  def handle_continue(:startup, %{command: {t, cmd}, func: func} = state) do
     case run_command({t, cmd}, func) do
       {:ok, {t, cmd}} ->
-        {:noreply, {t, cmd}}
+        {:noreply, %{state | command: {t, cmd}}}
 
-      {:stop, {t, cmd}} ->
-        {:stop, :normal, {t, cmd}}
+      {:done, {t, cmd}} ->
+        do_report_result({t, cmd}, %{state | command: {t, cmd}})
     end
   end
 
   @impl true
-  def handle_call({:result, {t, cmd}}, _from, {_t, _cmd} = state) do
-    do_report_result({t, cmd})
-    {:reply, :ok, state}
+  def handle_call(:retrieve_result, _from, %{result: res} = state) when not is_nil(res) do
+    {:stop, :normal, {:ok, {:done, res}}, state}
+  end
+
+  def handle_call(:retrieve_result, _from, state) do
+    {:reply, {:ok, {:running, self()}}, state}
   end
 
   @impl true
-  def handle_cast({:queue, {t, cmd}, :executing}, {t, cmd} = state) do
-    Logger.debug("Begun execution/rollback of command #{t}:#{cmd.id}")
+  def handle_cast({:queue, {t, cmd}, :executing}, %{command: {t, cmd}} = state) do
+    Logger.debug("Begun execution/rollback of enqueued command #{t}:#{cmd.id}")
     {:noreply, state}
   end
 
-  def handle_cast({:queue, {t, cmd}, :done, :normal}, {t, cmd} = state) do
-    Logger.debug("Execution/rollback of command #{t}:#{cmd.id} finished")
-    {:stop, :normal, state}
+  def handle_cast({:queue, {t, cmd}, :done, :normal}, %{command: {t, cmd}} = state) do
+    Logger.debug("Execution/rollback of enqueued command #{t}:#{cmd.id} finished")
+    {:noreply, state}
   end
 
-  def handle_cast({:queue, {t, cmd}, :done, reason}, {t, cmd} = state) do
+  def handle_cast({:queue, {t, cmd}, :done, reason}, %{command: {t, cmd}} = state) do
     Logger.debug(
-      "Execution/rollback of command #{t}:#{cmd.id} failed with "<>
+      "Execution/rollback of enqueued command #{t}:#{cmd.id} failed with "<>
       "'#{inspect(reason)}'"
     )
     do_report_result(
-      {state.t, %{state.cmd | status: :failed, output: %{error: reason}}}
+      {state.t, %{state.cmd | status: :failed, output: %{error: reason}}},
+      state
     )
-    {:stop, :normal, state}
   end
 
-  def handle_cast({:queue, {:transaction, t}, :reserved}, {t, cmd} = state) do
+  def handle_cast({:queue, {:transaction, t}, :reserved}, %{command: {t, cmd}} = state) do
     Logger.debug("Reserved slot(s) in queue #{cmd.queue}")
-    do_report_result({t, %{cmd | status: :done}})
-    {:stop, :normal, state}
+    do_report_result({t, %{cmd | status: :done}}, state)
+  end
+
+  def handle_cast({:report_result, {t, cmd}}, state) do
+    do_report_result({t, cmd}, state)
+  end
+
+  # @impl true
+  def handle_info({:EXIT, reporter, :normal}, %{reporter: reporter} = state) do
+    Logger.debug("Ignoring reporter exit")
+    {:noreply, state}
   end
 
   # Queue slot reservation
@@ -84,23 +105,18 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
 
   defp run_command({t, %Command{input: %{handle: 101}} = cmd}, :rollback) do
     Queue.release(cmd.queue, {:transaction, t}, 1)
-    new_cmd = %{cmd | status: :done}
-    do_report_result({t, new_cmd})
-    {:stop, {t, cmd}}
+    {:done, {t, %{cmd | status: :done}}}
   end
 
   # Queue slot release
   defp run_command({t, %Command{input: %{handle: 102}} = cmd}, :execute) do
     Queue.release(cmd.queue, {:transaction, t}, 1)
-    new_cmd = %{cmd | status: :done}
-    do_report_result({t, new_cmd})
-    {:stop, {t, new_cmd}}
+    {:done, {t, %{cmd | status: :done}}}
   end
 
   defp run_command({t, %Command{input: %{handle: 102}} = cmd}, :rollback) do
     new_cmd = %{cmd | status: :done}
-    do_report_result({t, new_cmd})
-    {:stop, {t, new_cmd}}
+    {:done, {t, new_cmd}}
   end
 
   # nodectld commands
@@ -119,8 +135,16 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
     {:ok, {t, cmd}}
   end
 
-  defp do_report_result({t, cmd}) do
+  defp do_report_result({t, cmd}, state) do
     Logger.debug("Reporting result of command #{t}:#{cmd.id}")
-    :ok = Distributed.ResultReporter.report({t, cmd})
+
+    case Distributed.ResultReporter.report({t, cmd}) do
+      :ok ->
+        {:stop, :normal, state}
+
+      {:error, error} ->
+        Logger.debug("Failed to report command result due to #{error} error")
+        {:noreply, %{state | result: cmd}}
+    end
   end
 end

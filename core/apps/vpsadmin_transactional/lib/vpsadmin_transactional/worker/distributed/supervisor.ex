@@ -1,7 +1,6 @@
 defmodule VpsAdmin.Transactional.Worker.Distributed.Supervisor do
   use Supervisor
 
-  alias VpsAdmin.Transactional
   alias VpsAdmin.Transactional.Worker.Distributed
 
   def start_link(_opts) do
@@ -12,7 +11,6 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Supervisor do
   def init(:ok) do
     children = [
       {Registry, keys: :unique, name: Distributed.Registry},
-      Distributed.ResultReporter.Supervisor,
       Distributed.Executor.Supervisor,
       Distributed.NodeCtldCommand.Supervisor
     ]

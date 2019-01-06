@@ -1,21 +1,28 @@
 defmodule VpsAdmin.Transactional.Worker.Distributed.ResultReporter do
-  alias VpsAdmin.Transactional.Worker.Distributed.Distributor
-  alias VpsAdmin.Transactional.Worker.Distributed.ResultReporter
+  use GenServer
 
-  def report({t, cmd}) do
-    ret =
+  alias VpsAdmin.Transactional.Worker.Distributed.Distributor
+
+  def report({t, cmd} = arg) do
+    {:ok, pid} = GenServer.start_link(__MODULE__, :ok)
+    GenServer.call(pid, {:report, arg}, 10_000)
+  end
+
+  @impl true
+  def init(:ok) do
+    {:ok, nil}
+  end
+
+  @impl true
+  def handle_call({:report, {t, cmd}}, _from, nil) do
+    reply =
       try do
         Distributor.report_result({t, cmd})
-        :ok
       catch
-        :exit, {{:nodedown, _}, _} -> :error
-        :exit, {:noproc, _} -> :error
+        :exit, {:timeout, _} ->
+          {:error, :timeout}
       end
 
-    if ret == :error do
-      {:ok, _pid} = ResultReporter.Supervisor.report({t, cmd})
-    end
-
-    :ok
+    {:stop, :normal, reply, nil}
   end
 end

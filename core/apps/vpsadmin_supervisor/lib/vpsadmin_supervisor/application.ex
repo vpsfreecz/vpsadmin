@@ -10,6 +10,7 @@ defmodule VpsAdmin.Supervisor.Application do
 
   def start(_type, _args) do
     children = [
+      Worker.Distributed.Monitor.Supervisor,
       {Manager.Supervisor, {MyManager, Worker.Distributed}},
       Connector,
       ChainPoller
