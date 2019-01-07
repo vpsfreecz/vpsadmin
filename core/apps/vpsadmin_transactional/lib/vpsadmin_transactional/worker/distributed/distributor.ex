@@ -25,9 +25,9 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Distributor do
     end
   end
 
-  def retrieve_result({t, cmd}) do
+  def retrieve_result({t, cmd}, func) do
     try do
-      call_worker(cmd.node, {:retrieve_result, {t, cmd}})
+      call_worker(cmd.node, {:retrieve_result, {t, cmd}, func})
     catch
       :exit, {{:nodedown, _}, _} ->
         {:error, :nodedown}
@@ -68,9 +68,9 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Distributor do
     {:reply, :ok, state}
   end
 
-  def handle_call({:retrieve_result, {t, cmd}}, _from, state) do
+  def handle_call({:retrieve_result, {t, cmd}, func}, _from, state) do
     try do
-      reply = Distributed.Executor.retrieve_result({t, cmd})
+      reply = Distributed.Executor.retrieve_result({t, cmd}, func)
       {:reply, reply, state}
     catch
       :exit, _ ->

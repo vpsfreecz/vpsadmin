@@ -33,16 +33,20 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Monitor.Server do
 
   @impl true
   def handle_continue(:startup, %{command: {t, cmd}, func: func} = state) do
-    new_state =
-      case start_executor({t, cmd}, func) do
-        {:ok, node, ref} ->
-          %{state | ref: ref, node: node}
+    case check_executor({t, cmd}, func) do
+      {:ok, :notfound} ->
+        do_start(state)
 
-        {:error, _error, timer} ->
-          %{state | timer: timer}
-      end
+      {:ok, {:running, pid}} ->
+        {:noreply, %{state | ref: Process.monitor(pid)}}
 
-    {:noreply, new_state}
+      {:ok, {:done, result}} ->
+        Manager.report_result({t, result})
+        {:stop, :normal, state}
+
+      {:error, :badfunc} ->
+        {:stop, :badfunc, state}
+    end
   end
 
   @impl true
@@ -67,7 +71,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Monitor.Server do
     {:noreply, state}
   end
 
-  def handle_info({:nodeup, node}, %{node: node, command: {t, cmd}} = state) do
+  def handle_info({:nodeup, node}, %{node: node, command: {t, cmd}, func: func} = state) do
     Logger.debug("Node #{node} with command executor has come back online")
 
     new_state =
@@ -78,13 +82,16 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Monitor.Server do
         state
       end
 
-    case recover_executor({t, cmd}) do
+    case recover_executor({t, cmd}, func) do
       {:ok, {:running, pid}} ->
         {:noreply, %{new_state | ref: Process.monitor(pid)}}
 
       {:ok, {:done, result}} ->
         Manager.report_result({t, result})
         {:stop, :normal, new_state}
+
+      {:error, :badfunc, nil} ->
+        {:stop, :badfunc, new_state}
 
       {:error, _error, timer} ->
         {:noreply, %{state | timer: timer}}
@@ -100,7 +107,24 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Monitor.Server do
 
   def handle_info({:nodedown, _node}, state), do: {:noreply, state}
 
-  def handle_info({:retry, :start}, %{command: {t, cmd}, func: func, ref: nil} = state) do
+  def handle_info({:retry, :start}, %{ref: nil} = state) do
+    do_start(state)
+  end
+
+  defp check_executor({t, cmd}, func) do
+    case Distributor.retrieve_result({t, cmd}, func) do
+      {:ok, _} = v ->
+        v
+
+      {:error, :badfunc} = v ->
+        v
+
+      {:error, _} ->
+        {:ok, :notfound}
+    end
+  end
+
+  defp do_start(%{command: {t, cmd}, func: func} = state) do
     new_state =
       case start_executor({t, cmd}, func) do
         {:ok, node, ref} ->
@@ -136,8 +160,8 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Monitor.Server do
     Process.send_after(self(), {:retry, :start}, 10_000)
   end
 
-  defp recover_executor({t, cmd}) do
-    case Distributor.retrieve_result({t, cmd}) do
+  defp recover_executor({t, cmd}, func) do
+    case Distributor.retrieve_result({t, cmd}, func) do
       {:ok, _} = v ->
         v
 
@@ -146,6 +170,9 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Monitor.Server do
 
       {:error, :noproc} ->
         {:error, :noproc, reschedule_recovery()}
+
+      {:error, :badfunc} ->
+        {:error, :badfunc, nil}
     end
   end
 

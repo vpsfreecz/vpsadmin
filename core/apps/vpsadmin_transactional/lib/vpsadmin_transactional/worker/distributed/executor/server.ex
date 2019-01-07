@@ -15,8 +15,8 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
     GenServer.cast(via_tuple({t, cmd}), {:report_result, {t, cmd}})
   end
 
-  def retrieve_result({t, cmd}) do
-    GenServer.call(via_tuple({t, cmd}), :retrieve_result)
+  def retrieve_result({t, cmd}, func) do
+    GenServer.call(via_tuple({t, cmd}), {:retrieve_result, func})
   end
 
   defp via_tuple({t, cmd}) do
@@ -26,7 +26,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
   ### Server implementation
   @impl true
   def init({{t, cmd}, func}) do
-    Process.flag(:trap_exit, true)
+    # Process.flag(:trap_exit, true)
     {:ok, %{
       command: {t, cmd},
       func: func,
@@ -46,12 +46,16 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
   end
 
   @impl true
-  def handle_call(:retrieve_result, _from, %{result: res} = state) when not is_nil(res) do
+  def handle_call({:retrieve_result, func}, _from, %{result: res, func: func} = state) when not is_nil(res) do
     {:stop, :normal, {:ok, {:done, res}}, state}
   end
 
-  def handle_call(:retrieve_result, _from, state) do
+  def handle_call({:retrieve_result, func}, _from, %{func: func} = state) do
     {:reply, {:ok, {:running, self()}}, state}
+  end
+
+  def handle_call({:retrieve_result, _func}, _from, state) do
+    {:reply, {:error, :badfunc}, state}
   end
 
   @impl true
@@ -86,10 +90,10 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
   end
 
   # @impl true
-  def handle_info({:EXIT, reporter, :normal}, %{reporter: reporter} = state) do
-    Logger.debug("Ignoring reporter exit")
-    {:noreply, state}
-  end
+  # def handle_info({:EXIT, reporter, :normal}, %{reporter: reporter} = state) do
+  #   Logger.debug("Ignoring reporter exit")
+  #   {:noreply, state}
+  # end
 
   # Queue slot reservation
   defp run_command({t, %Command{input: %{handle: 101}} = cmd}, :execute) do
