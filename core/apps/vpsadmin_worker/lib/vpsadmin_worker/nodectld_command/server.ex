@@ -37,7 +37,7 @@ defmodule VpsAdmin.Worker.NodeCtldCommand.Server do
 
   @impl true
   def handle_info({:nodectl, %{"version" => v}}, state) do
-    Logger.debug("Connected to nodectld")
+    Logger.debug("Connected to nodectld #{v}")
     {:noreply, state}
   end
 

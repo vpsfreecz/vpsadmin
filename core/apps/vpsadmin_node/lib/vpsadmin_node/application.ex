@@ -3,8 +3,6 @@ defmodule VpsAdmin.Node.Application do
 
   use Application
 
-  alias VpsAdmin.Node.Transaction
-
   def start(_type, _args) do
     children = []
 

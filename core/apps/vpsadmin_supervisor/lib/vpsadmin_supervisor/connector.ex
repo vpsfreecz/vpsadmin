@@ -15,12 +15,12 @@ defmodule VpsAdmin.Supervisor.Connector do
   end
 
   def handle_continue(:startup, nil) do
-    do_connect
+    do_connect()
     {:noreply, nil, @timeout}
   end
 
   def handle_info(:timeout, nil) do
-    do_connect
+    do_connect()
     {:noreply, nil, @timeout}
   end
 

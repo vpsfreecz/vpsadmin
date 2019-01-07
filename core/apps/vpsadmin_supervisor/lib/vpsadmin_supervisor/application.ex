@@ -6,7 +6,6 @@ defmodule VpsAdmin.Supervisor.Application do
   alias VpsAdmin.Supervisor.Connector
   alias VpsAdmin.Supervisor.ChainPoller
   alias VpsAdmin.Transactional.Manager
-  alias VpsAdmin.Worker
 
   def start(_type, _args) do
     children = [

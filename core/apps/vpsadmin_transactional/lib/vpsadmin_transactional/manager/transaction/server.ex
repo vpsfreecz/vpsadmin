@@ -3,7 +3,6 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
 
   require Logger
   alias VpsAdmin.Transactional.Manager
-  alias VpsAdmin.Transactional.Worker
   alias VpsAdmin.Transactional.Transaction
 
   ### Client interface

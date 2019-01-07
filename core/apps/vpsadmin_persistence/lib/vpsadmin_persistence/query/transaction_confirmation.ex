@@ -47,11 +47,11 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
 
     from(
       t in confirmation.table_name,
-      where: ^pks_cond,
+      where: ^pks_cond
     ) |> repo().delete_all()
   end
 
-  defp do_confirm(%{confirm_type: :just_create} = confirmation, :done) do
+  defp do_confirm(%{confirm_type: :just_create}, :done) do
     :ok
   end
 
@@ -60,11 +60,11 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
 
     from(
       t in confirmation.table_name,
-      where: ^pks_cond,
+      where: ^pks_cond
     ) |> repo().delete_all()
   end
 
-  defp do_confirm(%{confirm_type: :edit_before} = confirmation, :done) do
+  defp do_confirm(%{confirm_type: :edit_before}, :done) do
     :ok
   end
 
@@ -88,7 +88,7 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
     ) |> repo().update_all([])
   end
 
-  defp do_confirm(%{confirm_type: :edit_after} = confirmation, :failed) do
+  defp do_confirm(%{confirm_type: :edit_after}, :failed) do
     :ok
   end
 
@@ -97,7 +97,7 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
 
     from(
       t in confirmation.table_name,
-      where: ^pks_cond,
+      where: ^pks_cond
     ) |> repo().delete_all()
   end
 
@@ -116,11 +116,11 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
 
     from(
       t in confirmation.table_name,
-      where: ^pks_cond,
+      where: ^pks_cond
     ) |> repo().delete_all()
   end
 
-  defp do_confirm(%{confirm_type: :just_destroy} = confirmation, :failed) do
+  defp do_confirm(%{confirm_type: :just_destroy}, :failed) do
     :ok
   end
 
@@ -135,7 +135,7 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
     ) |> repo().update_all([])
   end
 
-  defp do_confirm(%{confirm_type: :increment} = confirmation, :failed) do
+  defp do_confirm(%{confirm_type: :increment}, :failed) do
     :ok
   end
 
@@ -150,7 +150,7 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
     ) |> repo().update_all([])
   end
 
-  defp do_confirm(%{confirm_type: :decrement} = confirmation, :failed) do
+  defp do_confirm(%{confirm_type: :decrement}, :failed) do
     :ok
   end
 

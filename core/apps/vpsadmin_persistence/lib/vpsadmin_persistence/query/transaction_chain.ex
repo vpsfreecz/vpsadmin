@@ -13,7 +13,7 @@ defmodule VpsAdmin.Persistence.Query.TransactionChain do
       c in schema(),
       select: c.id,
       where: c.state in ^[:executing, :rollingback],
-      order_by: [asc: c.id],
+      order_by: [asc: c.id]
     ) |> repo().all()
   end
 
@@ -23,7 +23,7 @@ defmodule VpsAdmin.Persistence.Query.TransactionChain do
       select: c.id,
       where: c.state in ^[:executing, :rollingback],
       where: c.id > ^chain_id,
-      order_by: [asc: c.id],
+      order_by: [asc: c.id]
     ) |> repo().all()
   end
 

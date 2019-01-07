@@ -1,7 +1,6 @@
 defmodule VpsAdmin.Supervisor.ChainPoller do
   use GenServer
 
-  alias VpsAdmin.Supervisor.Convert
   alias VpsAdmin.Supervisor.Manager, as: MyManager
   alias VpsAdmin.Persistence.Query
   alias VpsAdmin.Transactional.Manager

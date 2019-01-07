@@ -3,7 +3,7 @@ defmodule VpsAdmin.Worker.ResultReporter do
 
   alias VpsAdmin.Worker.Distributor
 
-  def report({t, cmd} = arg) do
+  def report({_t, _cmd} = arg) do
     {:ok, pid} = GenServer.start_link(__MODULE__, :ok)
     GenServer.call(pid, {:report, arg}, 10_000)
   end

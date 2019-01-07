@@ -41,7 +41,7 @@ defmodule VpsAdmin.Supervisor.Manager do
   end
 
   @impl true
-  def command_started(trans, cmd) do
+  def command_started(_trans, cmd) do
     Persistence.Query.Transaction.started(cmd.id)
   end
 

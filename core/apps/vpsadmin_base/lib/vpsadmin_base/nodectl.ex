@@ -31,7 +31,7 @@ defmodule VpsAdmin.Base.NodeCtl do
   end
 
   @impl true
-  def handle_info({:tcp, _socket, raw_msg}, {parent, socket} = state) do
+  def handle_info({:tcp, socket, raw_msg}, {parent, socket} = state) do
     case decode(raw_msg) do
       {:ok, msg} ->
         handle_msg(msg, parent)
@@ -75,7 +75,7 @@ defmodule VpsAdmin.Base.NodeCtl do
   defp decode(msg) do
     msg
     |> to_string()
-    |> String.strip()
+    |> String.trim()
     |> Jason.decode!()
     |> NodeCtl.Message.parse()
   end
