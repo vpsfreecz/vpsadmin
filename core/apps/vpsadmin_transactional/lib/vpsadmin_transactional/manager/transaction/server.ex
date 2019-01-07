@@ -15,6 +15,10 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
     )
   end
 
+  def abort(trans_id) do
+    GenServer.call(via_tuple(trans_id), :abort)
+  end
+
   def report_result({t, cmd}) do
     GenServer.cast(via_tuple(t), {:report_result, cmd})
   end
@@ -80,6 +84,16 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
   end
 
   @impl true
+  def handle_call(:abort, _from, %{timer: _} = state) do
+    do_abort(state.transaction, state.manager)
+    {:stop, :normal, :ok, state}
+  end
+
+  def handle_call(:abort, _from, state) do
+    {:reply, :ok, Map.put(state, :abort, true)}
+  end
+
+  @impl true
   def handle_cast({:report_result, cmd}, state) do
     Process.demonitor(state.ref)
     handle_result(cmd, state)
@@ -120,6 +134,15 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
       {:unavailable, time, new_queue} ->
         reschedule(Map.put(new_state, :queue, new_queue), time)
     end
+  end
+
+  defp handle_result(cmd, %{abort: true} = state) do
+    Logger.debug("Command #{state.transaction.id}:#{cmd.id} finished")
+    state.manager.command_finished(state.transaction, cmd)
+
+    Logger.debug("Aborting transaction #{state.transaction.id}")
+    do_abort(state.transaction, state.manager)
+    {:stop, :normal, state}
   end
 
   defp handle_result(%{state: :executed, status: :done} = cmd, state) do
@@ -208,7 +231,7 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
 
       :abort ->
         Logger.debug("Aborting transaction #{state.transaction.id}")
-        abort(state.transaction, state.manager)
+        do_abort(state.transaction, state.manager)
         {:stop, :normal, state}
     end
   end
@@ -278,7 +301,7 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
 
       :abort ->
         Logger.debug("Aborting transaction #{state.transaction.id}")
-        abort(state.transaction, state.manager)
+        do_abort(state.transaction, state.manager)
         {:stop, :normal, state}
     end
   end
@@ -297,6 +320,10 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
     commands
     |> Enum.reverse()
     |> Enum.drop_while(&(&1.state == :rolledback || &1.state == :queued))
+  end
+
+  defp process_queue(%{abort: true}, _) do
+    :abort
   end
 
   defp process_queue(%{transaction: %{state: :executing}}, []) do
@@ -379,7 +406,7 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
     manager.close_transaction(%{trans | state: state})
   end
 
-  defp abort(trans, manager) do
+  defp do_abort(trans, manager) do
     manager.abort_transaction(%{trans | state: :aborted})
   end
 end
