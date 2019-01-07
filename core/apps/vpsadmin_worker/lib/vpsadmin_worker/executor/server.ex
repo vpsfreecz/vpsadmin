@@ -26,11 +26,12 @@ defmodule VpsAdmin.Worker.Executor.Server do
   @impl true
   def init({{t, cmd}, func}) do
     # Process.flag(:trap_exit, true)
-    {:ok, %{
-      command: {t, cmd},
-      func: func,
-      result: nil
-    }, {:continue, :startup}}
+    {:ok,
+     %{
+       command: {t, cmd},
+       func: func,
+       result: nil
+     }, {:continue, :startup}}
   end
 
   @impl true
@@ -45,7 +46,8 @@ defmodule VpsAdmin.Worker.Executor.Server do
   end
 
   @impl true
-  def handle_call({:retrieve_result, func}, _from, %{result: res, func: func} = state) when not is_nil(res) do
+  def handle_call({:retrieve_result, func}, _from, %{result: res, func: func} = state)
+      when not is_nil(res) do
     {:stop, :normal, {:ok, {:done, res}}, state}
   end
 
@@ -70,9 +72,10 @@ defmodule VpsAdmin.Worker.Executor.Server do
 
   def handle_cast({:queue, {t, cmd}, :done, reason}, %{command: {t, cmd}} = state) do
     Logger.debug(
-      "Execution/rollback of enqueued command #{t}:#{cmd.id} failed with "<>
-      "'#{inspect(reason)}'"
+      "Execution/rollback of enqueued command #{t}:#{cmd.id} failed with " <>
+        "'#{inspect(reason)}'"
     )
+
     do_report_result(
       {state.t, %{state.cmd | status: :failed, output: %{error: reason}}},
       state

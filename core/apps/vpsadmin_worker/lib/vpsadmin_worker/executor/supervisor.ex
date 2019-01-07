@@ -8,10 +8,11 @@ defmodule VpsAdmin.Worker.Executor.Supervisor do
   end
 
   def run_command({t, cmd}, func) do
-    {:ok, _pid} = DynamicSupervisor.start_child(
-      __MODULE__,
-      {Executor.Server, {{t, cmd}, func}}
-    )
+    {:ok, _pid} =
+      DynamicSupervisor.start_child(
+        __MODULE__,
+        {Executor.Server, {{t, cmd}, func}}
+      )
   end
 
   @impl true

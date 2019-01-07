@@ -20,6 +20,7 @@ defmodule VpsAdmin.Worker.NodeCtldCommand.Server do
   @impl true
   def handle_continue(:startup, state) do
     {:ok, nodectl} = NodeCtl.start_link()
+
     NodeCtl.send(
       nodectl,
       %{
@@ -32,6 +33,7 @@ defmodule VpsAdmin.Worker.NodeCtldCommand.Server do
         }
       }
     )
+
     {:noreply, Map.put(state, :nodectl, nodectl)}
   end
 
@@ -45,11 +47,8 @@ defmodule VpsAdmin.Worker.NodeCtldCommand.Server do
     NodeCtl.close(state.nodectl)
 
     Executor.report_result(
-      {
-        state.t,
-        %{state.cmd
-          | status: if(msg.status, do: :done, else: :failed),
-            output: msg.response}}
+      {state.t,
+       %{state.cmd | status: if(msg.status, do: :done, else: :failed), output: msg.response}}
     )
 
     {:stop, :normal, Map.delete(state, :nodectl)}

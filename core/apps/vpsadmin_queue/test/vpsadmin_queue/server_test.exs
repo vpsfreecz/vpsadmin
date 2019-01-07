@@ -284,7 +284,7 @@ defmodule VpsAdmin.Queue.ServerTest do
       assert status.urgent_size == 2
 
       assert {:error, :badreservation} =
-        Server.reserve(:myqueue, :myname, 7, self(), urgent: true)
+               Server.reserve(:myqueue, :myname, 7, self(), urgent: true)
 
       status = Server.status(:myqueue)
       assert status.current_size == 4
@@ -317,13 +317,13 @@ defmodule VpsAdmin.Queue.ServerTest do
       assert_receive {_, {:queue, :myname, :reserved}}, 500
 
       assert :ok =
-        Server.enqueue(
-          :myqueue,
-          :test,
-          {Supervisor, :run, [Worker, fn -> {:ok, :timeout, 100} end]},
-          self(),
-          name: :myname
-        )
+               Server.enqueue(
+                 :myqueue,
+                 :test,
+                 {Supervisor, :run, [Worker, fn -> {:ok, :timeout, 100} end]},
+                 self(),
+                 name: :myname
+               )
 
       assert_receive {_, {:queue, :test, :executing}}
       assert_receive {_, {:queue, :test, :done, :timeout}}, 500
@@ -336,12 +336,12 @@ defmodule VpsAdmin.Queue.ServerTest do
       assert_receive {_, {:queue, :myname, :reserved}}, 500
 
       assert :ok =
-        Server.enqueue(
-          :myqueue,
-          :test,
-          {Supervisor, :run, [Worker, fn -> {:ok, :timeout, 10} end]},
-          self()
-        )
+               Server.enqueue(
+                 :myqueue,
+                 :test,
+                 {Supervisor, :run, [Worker, fn -> {:ok, :timeout, 10} end]},
+                 self()
+               )
 
       refute_receive {_, {:queue, :test, :executing}}, 500
       refute_receive {_, {:queue, :test, :done, :timeout}}, 500
@@ -411,8 +411,9 @@ defmodule VpsAdmin.Queue.ServerTest do
       receive do
         msg ->
           assert unquote(pattern) = msg
-      after unquote(timeout) ->
-        raise "expected #{unquote(code)}, but the message was not delivered"
+      after
+        unquote(timeout) ->
+          raise "expected #{unquote(code)}, but the message was not delivered"
       end
     end
   end
@@ -431,8 +432,8 @@ defmodule VpsAdmin.Queue.ServerTest do
     end
 
     for x <- 1..5 do
-      assert_next_receive {_, {:queue, ^x, :executing}}, 100
-      assert_next_receive {_, {:queue, ^x, :done, :normal}}, 100
+      assert_next_receive({_, {:queue, ^x, :executing}}, 100)
+      assert_next_receive({_, {:queue, ^x, :done, :normal}}, 100)
     end
   end
 
@@ -450,12 +451,12 @@ defmodule VpsAdmin.Queue.ServerTest do
         )
     end
 
-    assert_next_receive {_, {:queue, 1, :executing}}, 200
-    assert_next_receive {_, {:queue, 1, :done, :normal}}, 200
+    assert_next_receive({_, {:queue, 1, :executing}}, 200)
+    assert_next_receive({_, {:queue, 1, :done, :normal}}, 200)
 
     for x <- 5..2 do
-      assert_next_receive {_, {:queue, ^x, :executing}}, 200
-      assert_next_receive {_, {:queue, ^x, :done, :normal}}, 200
+      assert_next_receive({_, {:queue, ^x, :executing}}, 200)
+      assert_next_receive({_, {:queue, ^x, :done, :normal}}, 200)
     end
   end
 
@@ -483,17 +484,17 @@ defmodule VpsAdmin.Queue.ServerTest do
         )
     end
 
-    assert_next_receive {_, {:queue, 1, :executing}}, 200
-    assert_next_receive {_, {:queue, 1, :done, :normal}}, 200
+    assert_next_receive({_, {:queue, 1, :executing}}, 200)
+    assert_next_receive({_, {:queue, 1, :done, :normal}}, 200)
 
     for x <- 6..10 do
-      assert_next_receive {_, {:queue, ^x, :executing}}, 200
-      assert_next_receive {_, {:queue, ^x, :done, :normal}}, 200
+      assert_next_receive({_, {:queue, ^x, :executing}}, 200)
+      assert_next_receive({_, {:queue, ^x, :done, :normal}}, 200)
     end
 
     for x <- 2..5 do
-      assert_next_receive {_, {:queue, ^x, :executing}}, 200
-      assert_next_receive {_, {:queue, ^x, :done, :normal}}, 200
+      assert_next_receive({_, {:queue, ^x, :executing}}, 200)
+      assert_next_receive({_, {:queue, ^x, :done, :normal}}, 200)
     end
   end
 

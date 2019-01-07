@@ -8,9 +8,7 @@ defmodule VpsAdmin.Queue.Server do
     defstruct ~w(type id mfa parent order urgent priority size)a
 
     def compare(item1, item2) do
-      [!item1.urgent, item1.priority, item1.order] \
-      <= \
-      [!item2.urgent, item2.priority, item2.order]
+      [!item1.urgent, item1.priority, item1.order] <= [!item2.urgent, item2.priority, item2.order]
     end
   end
 
@@ -46,15 +44,16 @@ defmodule VpsAdmin.Queue.Server do
   ### Server implementation
   @impl true
   def init({size, urgent}) do
-    {:ok, %{
-      max_size: size,
-      max_urgent: urgent,
-      current_size: size,
-      executing: [],
-      queued: [],
-      reservations: %{},
-      counter: 0
-    }}
+    {:ok,
+     %{
+       max_size: size,
+       max_urgent: urgent,
+       current_size: size,
+       executing: [],
+       queued: [],
+       reservations: %{},
+       counter: 0
+     }}
   end
 
   @impl true
@@ -97,7 +96,7 @@ defmodule VpsAdmin.Queue.Server do
     urgent_size = state.current_size + state.max_urgent
 
     case {state.reservations[name], urgent} do
-      {v, false} when (is_nil(v) and size <= max_size) or (v + size) <= max_size ->
+      {v, false} when (is_nil(v) and size <= max_size) or v + size <= max_size ->
         state =
           if length(state.executing) + size <= state.current_size do
             do_reserve(state, name, size, parent)
@@ -107,7 +106,7 @@ defmodule VpsAdmin.Queue.Server do
 
         {:reply, :ok, state}
 
-      {v, true} when (is_nil(v) and size <= max_urgent) or (v + size) <= max_urgent ->
+      {v, true} when (is_nil(v) and size <= max_urgent) or v + size <= max_urgent ->
         state =
           if length(state.executing) + size <= urgent_size do
             do_reserve(state, name, size, parent)
@@ -137,7 +136,7 @@ defmodule VpsAdmin.Queue.Server do
      %{
        executing: length(state.executing),
        queued: length(state.queued),
-       current_size: (if state.current_size < 0, do: 0, else: state.current_size),
+       current_size: if(state.current_size < 0, do: 0, else: state.current_size),
        max_size: state.max_size,
        urgent_size: state.max_urgent,
        reservations: %{}
@@ -146,10 +145,11 @@ defmodule VpsAdmin.Queue.Server do
 
   @impl true
   def handle_info({:DOWN, ref, :process, object, reason}, state) do
-    item = Enum.find(state.executing, fn
-      {^object, ^ref, _id, _parent} -> true
-      _ -> false
-    end)
+    item =
+      Enum.find(state.executing, fn
+        {^object, ^ref, _id, _parent} -> true
+        _ -> false
+      end)
 
     new_state =
       case item do
@@ -205,6 +205,7 @@ defmodule VpsAdmin.Queue.Server do
           state
           |> Map.update!(:current_size, &(&1 + size))
           |> Map.update!(:reservations, &remove_reservation(&1, name, size))
+
         {:ok, new_state}
     end
   end
@@ -248,7 +249,7 @@ defmodule VpsAdmin.Queue.Server do
   defp do_enqueue_item(state, item) do
     new_state = Map.update!(state, :counter, &(&1 + 1))
     new_item = %{item | order: new_state.counter}
-    Map.update!(new_state, :queued, &make_queue([new_item|&1]))
+    Map.update!(new_state, :queued, &make_queue([new_item | &1]))
   end
 
   defp make_queue(list) do
@@ -261,10 +262,11 @@ defmodule VpsAdmin.Queue.Server do
         [] ->
           state
 
-        [h|_t] ->
+        [h | _t] ->
           case process_item(state, h) do
             {:ok, state} ->
               process_next(state)
+
             {:error, state} ->
               state
           end
@@ -275,7 +277,7 @@ defmodule VpsAdmin.Queue.Server do
   end
 
   defp process_item(state, %Item{type: :runnable} = item) do
-    [^item|new_queue] = state.queued
+    [^item | new_queue] = state.queued
 
     {
       :ok,
@@ -286,8 +288,8 @@ defmodule VpsAdmin.Queue.Server do
   end
 
   defp process_item(state, %Item{type: :reservation} = item) do
-    if (state.current_size - length(state.executing)) >= item.size do
-      [^item|new_queue] = state.queued
+    if state.current_size - length(state.executing) >= item.size do
+      [^item | new_queue] = state.queued
 
       {
         :ok,

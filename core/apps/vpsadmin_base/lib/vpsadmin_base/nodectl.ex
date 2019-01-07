@@ -35,6 +35,7 @@ defmodule VpsAdmin.Base.NodeCtl do
     case decode(raw_msg) do
       {:ok, msg} ->
         handle_msg(msg, parent)
+
       {:error, :invalid} ->
         Logger.info("Ignoring invalid message from nodectl: '#{inspect(raw_msg)}'")
     end

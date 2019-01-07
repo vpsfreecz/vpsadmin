@@ -39,7 +39,8 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
       t in confirmation.table_name,
       where: ^pks_cond,
       update: [set: [confirmed: 1]]
-    ) |> repo().update_all([])
+    )
+    |> repo().update_all([])
   end
 
   defp do_confirm(%{confirm_type: :create} = confirmation, :failed) do
@@ -48,7 +49,8 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
     from(
       t in confirmation.table_name,
       where: ^pks_cond
-    ) |> repo().delete_all()
+    )
+    |> repo().delete_all()
   end
 
   defp do_confirm(%{confirm_type: :just_create}, :done) do
@@ -61,7 +63,8 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
     from(
       t in confirmation.table_name,
       where: ^pks_cond
-    ) |> repo().delete_all()
+    )
+    |> repo().delete_all()
   end
 
   defp do_confirm(%{confirm_type: :edit_before}, :done) do
@@ -75,7 +78,8 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
       t in confirmation.table_name,
       where: ^pks_cond,
       update: [set: ^changes(confirmation.attr_changes)]
-    ) |> repo().update_all([])
+    )
+    |> repo().update_all([])
   end
 
   defp do_confirm(%{confirm_type: :edit_after} = confirmation, :done) do
@@ -85,7 +89,8 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
       t in confirmation.table_name,
       where: ^pks_cond,
       update: [set: ^changes(confirmation.attr_changes)]
-    ) |> repo().update_all([])
+    )
+    |> repo().update_all([])
   end
 
   defp do_confirm(%{confirm_type: :edit_after}, :failed) do
@@ -98,7 +103,8 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
     from(
       t in confirmation.table_name,
       where: ^pks_cond
-    ) |> repo().delete_all()
+    )
+    |> repo().delete_all()
   end
 
   defp do_confirm(%{confirm_type: :destroy} = confirmation, :failed) do
@@ -108,7 +114,8 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
       t in confirmation.table_name,
       where: ^pks_cond,
       update: [set: [confirmed: 1]]
-    ) |> repo().update_all([])
+    )
+    |> repo().update_all([])
   end
 
   defp do_confirm(%{confirm_type: :just_destroy} = confirmation, :done) do
@@ -117,7 +124,8 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
     from(
       t in confirmation.table_name,
       where: ^pks_cond
-    ) |> repo().delete_all()
+    )
+    |> repo().delete_all()
   end
 
   defp do_confirm(%{confirm_type: :just_destroy}, :failed) do
@@ -132,7 +140,8 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
       t in confirmation.table_name,
       where: ^pks_cond,
       update: [inc: [{^String.to_atom(attr), 1}]]
-    ) |> repo().update_all([])
+    )
+    |> repo().update_all([])
   end
 
   defp do_confirm(%{confirm_type: :increment}, :failed) do
@@ -147,7 +156,8 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
       t in confirmation.table_name,
       where: ^pks_cond,
       update: [inc: [{^String.to_atom(attr), -1}]]
-    ) |> repo().update_all([])
+    )
+    |> repo().update_all([])
   end
 
   defp do_confirm(%{confirm_type: :decrement}, :failed) do
@@ -158,7 +168,7 @@ defmodule VpsAdmin.Persistence.Query.TransactionConfirmation do
 
   defp changes(map), do: atomize(map)
 
-  defp atomize(map) when is_map(map), do: Enum.map(map, fn {k,v} -> {atomize(k), v} end)
+  defp atomize(map) when is_map(map), do: Enum.map(map, fn {k, v} -> {atomize(k), v} end)
   defp atomize(":" <> s) when is_binary(s), do: String.to_atom(s)
   defp atomize(s) when is_binary(s), do: String.to_atom(s)
 end

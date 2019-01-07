@@ -80,8 +80,7 @@ defmodule VpsAdmin.Base.Monitor do
   end
 
   defp do_subscribe(state, event, proc) do
-    %{state
-      | listeners: [{event, proc, Process.monitor(proc)} | state.listeners]}
+    %{state | listeners: [{event, proc, Process.monitor(proc)} | state.listeners]}
   end
 
   defp do_unsubscribe(state, event, proc) do
@@ -113,27 +112,28 @@ defmodule VpsAdmin.Base.Monitor do
   end
 
   defp do_publish(state, event, arg) do
-    {new_readers, new_queue} = Enum.reduce(
-      state.listeners,
-      {state.readers, state.queue},
-      fn
-        {^event, proc, _ref}, {readers, queue} ->
-          case Enum.find(readers, fn {proc2, _from} -> proc == proc2 end) do
-            nil ->
-              {
-                readers,
-                Map.update(queue, proc, [{event, arg}], &(&1 ++ [{event, arg}]))
-              }
+    {new_readers, new_queue} =
+      Enum.reduce(
+        state.listeners,
+        {state.readers, state.queue},
+        fn
+          {^event, proc, _ref}, {readers, queue} ->
+            case Enum.find(readers, fn {proc2, _from} -> proc == proc2 end) do
+              nil ->
+                {
+                  readers,
+                  Map.update(queue, proc, [{event, arg}], &(&1 ++ [{event, arg}]))
+                }
 
-            {_proc, from} = reader ->
-              GenServer.reply(from, {event, arg})
-              {List.delete(readers, reader), queue}
-          end
+              {_proc, from} = reader ->
+                GenServer.reply(from, {event, arg})
+                {List.delete(readers, reader), queue}
+            end
 
-        _, acc ->
-          acc
-      end
-    )
+          _, acc ->
+            acc
+        end
+      )
 
     %{state | readers: new_readers, queue: new_queue}
   end
@@ -143,7 +143,8 @@ defmodule VpsAdmin.Base.Monitor do
       case queue[proc] do
         [h] ->
           {Map.delete(queue, proc), h}
-        [h|t] ->
+
+        [h | t] ->
           {Map.put(queue, proc, t), h}
       end
     else

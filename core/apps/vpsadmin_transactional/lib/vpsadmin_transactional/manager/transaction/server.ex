@@ -102,7 +102,7 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
   def handle_info({:DOWN, ref, :process, _object, reason}, %{ref: ref} = state) do
     Logger.debug("Executed command exited prematurely")
     IO.inspect(reason)
-    [cmd|_] = state.queue
+    [cmd | _] = state.queue
     handle_result(%{cmd | status: :failed}, state)
   end
 
@@ -338,13 +338,13 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
 
     case run(state.manager, state.worker, {state.transaction, h}, :execute) do
       {:ok, cmd, ref} ->
-        {:ok, [cmd|t], ref}
+        {:ok, [cmd | t], ref}
 
       {:error, error, cmd} ->
-        {:error, error, %{cmd | status: :failed}, [h|t]}
+        {:error, error, %{cmd | status: :failed}, [h | t]}
 
       {:unavailable, time, _cmd} ->
-        {:unavailable, time, [h|t]}
+        {:unavailable, time, [h | t]}
     end
   end
 
@@ -353,13 +353,13 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
 
     case run(state.manager, state.worker, {state.transaction, h}, :rollback) do
       {:ok, cmd, ref} ->
-        {:ok, [cmd|t], ref}
+        {:ok, [cmd | t], ref}
 
       {:error, error, cmd} ->
-        {:error, error, %{cmd | status: :failed}, [h|t]}
+        {:error, error, %{cmd | status: :failed}, [h | t]}
 
       {:unavailable, time, _cmd} ->
-        {:unavailable, time, [h|t]}
+        {:unavailable, time, [h | t]}
     end
   end
 

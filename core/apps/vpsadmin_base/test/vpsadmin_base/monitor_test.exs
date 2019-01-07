@@ -20,11 +20,12 @@ defmodule VpsAdmin.Base.MonitorTest do
   test "unsunscribes dead processes" do
     {:ok, m} = Monitor.start_link()
 
-    task = Task.async(fn ->
-      assert :ok = Monitor.subscribe(m, :myevent)
-      assert [{:myevent, self()}] == Monitor.subscribers(m)
-      :ok
-    end)
+    task =
+      Task.async(fn ->
+        assert :ok = Monitor.subscribe(m, :myevent)
+        assert [{:myevent, self()}] == Monitor.subscribers(m)
+        :ok
+      end)
 
     assert :ok = Task.await(task)
     assert [] == Monitor.subscribers(m)
@@ -66,12 +67,13 @@ defmodule VpsAdmin.Base.MonitorTest do
     {:ok, m} = Monitor.start_link()
     interval = 1..10
 
-    tasks = for x <- interval do
-      Task.async(fn ->
-        Monitor.subscribe(m, {:myevent, x})
-        Monitor.read_one(m)
-      end)
-    end
+    tasks =
+      for x <- interval do
+        Task.async(fn ->
+          Monitor.subscribe(m, {:myevent, x})
+          Monitor.read_one(m)
+        end)
+      end
 
     # Wait for the tasks to subscribe
     Process.sleep(200)
@@ -90,7 +92,7 @@ defmodule VpsAdmin.Base.MonitorTest do
 
     Monitor.subscribe(m, :myevent)
     for x <- 1..10, do: Monitor.publish(m, :myevent, x)
-    for x <- 1..10, do: assert {:myevent, x} == Monitor.read_one(m)
+    for x <- 1..10, do: assert({:myevent, x} == Monitor.read_one(m))
   end
 
   test "different event ordering" do
@@ -101,6 +103,6 @@ defmodule VpsAdmin.Base.MonitorTest do
     seq = Enum.shuffle(1..10)
 
     for x <- seq, do: Monitor.publish(m, {:myevent, x}, x)
-    for x <- seq, do: assert {{:myevent, x}, x} == Monitor.read_one(m)
+    for x <- seq, do: assert({{:myevent, x}, x} == Monitor.read_one(m))
   end
 end

@@ -22,13 +22,14 @@ defmodule VpsAdmin.Worker.Monitor.Server do
   ### Server implementation
   @impl true
   def init({{t, cmd}, func}) do
-    {:ok, %{
-      command: {t, cmd},
-      func: func,
-      ref: nil,
-      node: nil,
-      timer: nil
-    }, {:continue, :startup}}
+    {:ok,
+     %{
+       command: {t, cmd},
+       func: func,
+       ref: nil,
+       node: nil,
+       timer: nil
+     }, {:continue, :startup}}
   end
 
   @impl true
@@ -144,7 +145,6 @@ defmodule VpsAdmin.Worker.Monitor.Server do
 
       :net_kernel.monitor_nodes(true)
       {:ok, node(pid), Process.monitor(pid)}
-
     catch
       :exit, {{:nodedown, _}, _} ->
         Logger.debug("Unable to start remote command executor (nodedown)")

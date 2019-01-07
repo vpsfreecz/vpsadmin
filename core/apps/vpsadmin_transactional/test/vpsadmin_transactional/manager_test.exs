@@ -67,18 +67,18 @@ defmodule VpsAdmin.Transactional.ManagerTest do
 
     for x <- 1..10 do
       assert {
-        {:command, :finished},
-        {
-          %Transaction{id: 1, state: :executing},
-          %Command{id: ^x, state: :executed, status: :done}
-        }
-      } = Monitor.read_one(TestMonitor)
+               {:command, :finished},
+               {
+                 %Transaction{id: 1, state: :executing},
+                 %Command{id: ^x, state: :executed, status: :done}
+               }
+             } = Monitor.read_one(TestMonitor)
     end
 
     assert {
-      {:transaction, :close},
-      %Transaction{id: 1, state: :done}
-    } = Monitor.read_one(TestMonitor)
+             {:transaction, :close},
+             %Transaction{id: 1, state: :done}
+           } = Monitor.read_one(TestMonitor)
   end
 
   defmodule RollbackWorker do
@@ -109,58 +109,62 @@ defmodule VpsAdmin.Transactional.ManagerTest do
     # Execution
     for x <- 1..7 do
       assert {
-        {:command, :finished},
-        {
-          %Transaction{id: 1, state: :executing},
-          %Command{id: ^x, state: :executed, status: :done}
-        }
-      } = Monitor.read_one(TestMonitor)
+               {:command, :finished},
+               {
+                 %Transaction{id: 1, state: :executing},
+                 %Command{id: ^x, state: :executed, status: :done}
+               }
+             } = Monitor.read_one(TestMonitor)
     end
 
     # Failure
     assert {
-      {:command, :finished},
-      {
-        %Transaction{id: 1, state: :executing},
-        %Command{id: 8, state: :executed, status: :failed}
-      }
-    } = Monitor.read_one(TestMonitor)
+             {:command, :finished},
+             {
+               %Transaction{id: 1, state: :executing},
+               %Command{id: 8, state: :executed, status: :failed}
+             }
+           } = Monitor.read_one(TestMonitor)
 
     # Rollback
     for x <- 8..1 do
       assert {
-        {:command, :finished},
-        {
-          %Transaction{id: 1, state: :rollingback},
-          %Command{id: ^x, state: :rolledback, status: :done}
-        }
-      } = Monitor.read_one(TestMonitor)
+               {:command, :finished},
+               {
+                 %Transaction{id: 1, state: :rollingback},
+                 %Command{id: ^x, state: :rolledback, status: :done}
+               }
+             } = Monitor.read_one(TestMonitor)
     end
 
     # Closure
     assert {
-      {:transaction, :close},
-      %Transaction{id: 1, state: :failed}
-    } = Monitor.read_one(TestMonitor)
+             {:transaction, :close},
+             %Transaction{id: 1, state: :failed}
+           } = Monitor.read_one(TestMonitor)
   end
 
   defmodule TransactionState do
     def start_link do
-      Agent.start_link(fn ->
-        %{
-          transaction: Transaction.new(1, :executing),
-          commands: for x <- 1..10 do
-            %Command{
-              id: x,
-              node: node(),
-              queue: :default,
-              reversible: :reversible,
-              state: :queued,
-              input: %{}
-            }
-          end
-        }
-      end, name: __MODULE__)
+      Agent.start_link(
+        fn ->
+          %{
+            transaction: Transaction.new(1, :executing),
+            commands:
+              for x <- 1..10 do
+                %Command{
+                  id: x,
+                  node: node(),
+                  queue: :default,
+                  reversible: :reversible,
+                  state: :queued,
+                  input: %{}
+                }
+              end
+          }
+        end,
+        name: __MODULE__
+      )
     end
 
     def transaction do
@@ -173,26 +177,30 @@ defmodule VpsAdmin.Transactional.ManagerTest do
 
     def command_finished(t, c) do
       Agent.get_and_update(__MODULE__, fn %{transaction: t, commands: cmds} = state ->
-        new_cmds = Enum.map(cmds, fn
-          %{id: ^c.id} = cmd ->
-            c
-          cmd ->
-            c
-        end)
+        new_cmds =
+          Enum.map(cmds, fn
+            %{id: ^c.id} = cmd ->
+              c
+
+            cmd ->
+              c
+          end)
 
         {nil, %{state | transaction: t, cmds: new_cmds}}
       end)
     end
 
     def crash_once do
-      do_crash = Agent.get_and_update(__MODULE__, fn
-        %{crashed: true} = state ->
-          {false, state}
-        state ->
-          {true, Map.put(state, :crashed, true)}
-      end)
+      do_crash =
+        Agent.get_and_update(__MODULE__, fn
+          %{crashed: true} = state ->
+            {false, state}
 
-      if do_crash, do: raise "oops", else: nil
+          state ->
+            {true, Map.put(state, :crashed, true)}
+        end)
+
+      if do_crash, do: raise("oops", else: nil)
     end
   end
 
@@ -204,11 +212,11 @@ defmodule VpsAdmin.Transactional.ManagerTest do
     end
 
     def get_transaction(id) do
-      TransactionState.transaction
+      TransactionState.transaction()
     end
 
     def get_commands(_id) do
-      TransactionState.commands
+      TransactionState.commands()
     end
 
     def close_transaction(t) do
@@ -224,7 +232,7 @@ defmodule VpsAdmin.Transactional.ManagerTest do
     end
 
     def command_finished(t, %{id: 5} = c) do
-      TransactionState.crash_once
+      TransactionState.crash_once()
       TransactionState.command_finished(t, c)
       Monitor.publish(TestMonitor, {:command, :finished}, {t, c})
     end
@@ -244,6 +252,5 @@ defmodule VpsAdmin.Transactional.ManagerTest do
   end
 
   test "execution state is remembered" do
-
   end
 end

@@ -7,7 +7,7 @@ defmodule VpsAdmin.Queue.Application do
   def start(_type, _args) do
     children = [
       {Registry, keys: :unique, name: Queue.Registry},
-      Queue.QueueSupervisor,
+      Queue.QueueSupervisor
     ]
 
     opts = [strategy: :rest_for_one, name: Queue.AppSupervisor]

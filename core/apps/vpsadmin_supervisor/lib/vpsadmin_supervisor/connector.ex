@@ -27,13 +27,14 @@ defmodule VpsAdmin.Supervisor.Connector do
   defp do_connect do
     self_node = node()
 
-    Persistence.Query.Node.list
+    Persistence.Query.Node.list()
     |> Enum.map(&Convert.DbToRuntime.node/1)
     |> Enum.each(fn
-         ^self_node ->
-           :ok
-         n ->
-           Node.connect(n)
-       end)
+      ^self_node ->
+        :ok
+
+      n ->
+        Node.connect(n)
+    end)
   end
 end

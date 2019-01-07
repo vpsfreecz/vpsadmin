@@ -17,6 +17,7 @@ defmodule VpsAdmin.Persistence.Query.Node do
     from(
       n in preload(),
       order_by: [asc: n.id]
-    ) |> repo().all()
+    )
+    |> repo().all()
   end
 end

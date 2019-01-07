@@ -5,14 +5,16 @@ defmodule VpsAdmin.Worker.CommandHandler do
 
   # Queue slot reservation
   def run({t, %Command{input: %{handle: 101}} = cmd}, :execute) do
-    :ok = Queue.reserve(
-      cmd.queue,
-      {:transaction, t},
-      1,
-      self(),
-      urgent: cmd.input.urgent,
-      priority: cmd.input.priority
-    )
+    :ok =
+      Queue.reserve(
+        cmd.queue,
+        {:transaction, t},
+        1,
+        self(),
+        urgent: cmd.input.urgent,
+        priority: cmd.input.priority
+      )
+
     {:ok, {t, cmd}}
   end
 

@@ -31,7 +31,7 @@ defmodule VpsAdmin.Supervisor.MixProject do
       # {:sibling_app_in_umbrella, in_umbrella: true},
       {:vpsadmin_persistence, in_umbrella: true},
       {:vpsadmin_worker, in_umbrella: true},
-      {:vpsadmin_transactional, in_umbrella: true},
+      {:vpsadmin_transactional, in_umbrella: true}
     ]
   end
 end
