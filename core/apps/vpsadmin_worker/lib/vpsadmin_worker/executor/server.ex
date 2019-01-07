@@ -2,9 +2,8 @@ defmodule VpsAdmin.Worker.Executor.Server do
   use GenServer, restart: :temporary
 
   require Logger
-  alias VpsAdmin.Transactional.Command
-  alias VpsAdmin.Queue
   alias VpsAdmin.Worker
+  alias VpsAdmin.Worker.{CommandHandler, ResultReporter}
 
   ### Client interface
   def start_link({{t, cmd}, _func} = arg) do
@@ -36,7 +35,7 @@ defmodule VpsAdmin.Worker.Executor.Server do
 
   @impl true
   def handle_continue(:startup, %{command: {t, cmd}, func: func} = state) do
-    case run_command({t, cmd}, func) do
+    case CommandHandler.run({t, cmd}, func) do
       {:ok, {t, cmd}} ->
         {:noreply, %{state | command: {t, cmd}}}
 
@@ -95,54 +94,10 @@ defmodule VpsAdmin.Worker.Executor.Server do
   #   {:noreply, state}
   # end
 
-  # Queue slot reservation
-  defp run_command({t, %Command{input: %{handle: 101}} = cmd}, :execute) do
-    :ok = Queue.reserve(
-      cmd.queue,
-      {:transaction, t},
-      1,
-      self(),
-      priority: cmd.input.priority
-    )
-    {:ok, {t, cmd}}
-  end
-
-  defp run_command({t, %Command{input: %{handle: 101}} = cmd}, :rollback) do
-    Queue.release(cmd.queue, {:transaction, t}, 1)
-    {:done, {t, %{cmd | status: :done}}}
-  end
-
-  # Queue slot release
-  defp run_command({t, %Command{input: %{handle: 102}} = cmd}, :execute) do
-    Queue.release(cmd.queue, {:transaction, t}, 1)
-    {:done, {t, %{cmd | status: :done}}}
-  end
-
-  defp run_command({t, %Command{input: %{handle: 102}} = cmd}, :rollback) do
-    new_cmd = %{cmd | status: :done}
-    {:done, {t, new_cmd}}
-  end
-
-  # nodectld commands
-  defp run_command({t, cmd}, func) do
-    :ok =
-      Queue.enqueue(
-        cmd.queue,
-        {t, cmd},
-        {Worker.NodeCtldCommand, :run_command, [{t, cmd}, func]},
-        self(),
-        name: {:transaction, t},
-        urgent: cmd.input.urgent,
-        priority: cmd.input.priority
-      )
-
-    {:ok, {t, cmd}}
-  end
-
   defp do_report_result({t, cmd}, state) do
     Logger.debug("Reporting result of command #{t}:#{cmd.id}")
 
-    case Worker.ResultReporter.report({t, cmd}) do
+    case ResultReporter.report({t, cmd}) do
       :ok ->
         {:stop, :normal, state}
 
