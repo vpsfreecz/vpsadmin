@@ -1,7 +1,7 @@
-defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Supervisor do
+defmodule VpsAdmin.Worker.Executor.Supervisor do
   use DynamicSupervisor
 
-  alias VpsAdmin.Transactional.Worker.Distributed
+  alias VpsAdmin.Worker.Executor
 
   def start_link(_arg) do
     DynamicSupervisor.start_link(__MODULE__, :ok, name: __MODULE__)
@@ -10,7 +10,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Supervisor do
   def run_command({t, cmd}, func) do
     {:ok, _pid} = DynamicSupervisor.start_child(
       __MODULE__,
-      {Distributed.Executor.Server, {{t, cmd}, func}}
+      {Executor.Server, {{t, cmd}, func}}
     )
   end
 

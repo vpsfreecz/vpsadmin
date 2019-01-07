@@ -1,7 +1,7 @@
-defmodule VpsAdmin.Transactional.Worker.Distributed do
+defmodule VpsAdmin.Worker do
   use VpsAdmin.Transactional.Worker
   require Logger
-  alias Transactional.Worker.Distributed.Monitor
+  alias VpsAdmin.Worker.Monitor
 
   def run_command({t, cmd}, func) do
     Logger.debug("Scheduling command #{t}:#{cmd.id} for #{func}")

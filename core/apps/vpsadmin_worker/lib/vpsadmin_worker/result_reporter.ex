@@ -1,7 +1,7 @@
-defmodule VpsAdmin.Transactional.Worker.Distributed.ResultReporter do
+defmodule VpsAdmin.Worker.ResultReporter do
   use GenServer
 
-  alias VpsAdmin.Transactional.Worker.Distributed.Distributor
+  alias VpsAdmin.Worker.Distributor
 
   def report({t, cmd} = arg) do
     {:ok, pid} = GenServer.start_link(__MODULE__, :ok)

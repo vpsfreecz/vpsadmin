@@ -5,7 +5,7 @@ defmodule VpsAdmin.Supervisor.ChainPoller do
   alias VpsAdmin.Supervisor.Manager, as: MyManager
   alias VpsAdmin.Persistence.Query
   alias VpsAdmin.Transactional.Manager
-  alias VpsAdmin.Transactional.Worker
+  alias VpsAdmin.Worker
 
   ### Client interface
   def start_link(_arg) do
@@ -29,8 +29,8 @@ defmodule VpsAdmin.Supervisor.ChainPoller do
     Enum.reduce(
       chain_ids,
       last_id,
-      fn id, acc ->
-        Manager.add_transaction(id, MyManager, Worker.Distributed)
+      fn id, _acc ->
+        Manager.add_transaction(id, MyManager, Worker)
         id
       end
     )

@@ -30,6 +30,7 @@ defmodule VpsAdmin.Node.MixProject do
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
       # {:sibling_app_in_umbrella, in_umbrella: true},
       {:vpsadmin_queue, in_umbrella: true},
+      {:vpsadmin_worker, in_umbrella: true},
       {:vpsadmin_transactional, in_umbrella: true}
     ]
   end

@@ -1,5 +1,5 @@
-defmodule VpsAdmin.Transactional.Worker.Distributed.Executor do
-  alias VpsAdmin.Transactional.Worker.Distributed.Executor
+defmodule VpsAdmin.Worker.Executor do
+  alias VpsAdmin.Worker.Executor
 
   def report_result({_t, _cmd} = arg) do
     Executor.Server.report_result(arg)

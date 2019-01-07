@@ -1,7 +1,7 @@
-defmodule VpsAdmin.Transactional.Worker.Distributed.Distributor do
+defmodule VpsAdmin.Worker.Distributor do
   use GenServer
 
-  alias VpsAdmin.Transactional.Worker.Distributed
+  alias VpsAdmin.Worker
 
   ### Client interface
   def start_link(_arg) do
@@ -59,18 +59,18 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Distributor do
 
   @impl true
   def handle_call({:run_command, {t, cmd}, func}, _from, state) do
-    {:ok, pid} = Distributed.Executor.Supervisor.run_command({t, cmd}, func)
+    {:ok, pid} = Worker.Executor.Supervisor.run_command({t, cmd}, func)
     {:reply, {:ok, pid}, state}
   end
 
   def handle_call({:report_result, {t, cmd}}, _from, state) do
-    Distributed.Monitor.report_result({t, cmd})
+    Worker.Monitor.report_result({t, cmd})
     {:reply, :ok, state}
   end
 
   def handle_call({:retrieve_result, {t, cmd}, func}, _from, state) do
     try do
-      reply = Distributed.Executor.retrieve_result({t, cmd}, func)
+      reply = Worker.Executor.retrieve_result({t, cmd}, func)
       {:reply, reply, state}
     catch
       :exit, _ ->

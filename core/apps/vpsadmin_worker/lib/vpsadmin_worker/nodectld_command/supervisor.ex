@@ -1,7 +1,7 @@
-defmodule VpsAdmin.Transactional.Worker.Distributed.Monitor.Supervisor do
+defmodule VpsAdmin.Worker.NodeCtldCommand.Supervisor do
   use DynamicSupervisor
 
-  alias VpsAdmin.Transactional.Worker.Distributed
+  alias VpsAdmin.Worker.NodeCtldCommand
 
   def start_link(_arg) do
     DynamicSupervisor.start_link(__MODULE__, :ok, name: __MODULE__)
@@ -10,7 +10,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Monitor.Supervisor do
   def run_command({t, cmd}, func) do
     DynamicSupervisor.start_child(
       __MODULE__,
-      {Distributed.Monitor.Server, {{t, cmd}, func}}
+      {NodeCtldCommand.Server, {{t, cmd}, func}}
     )
   end
 

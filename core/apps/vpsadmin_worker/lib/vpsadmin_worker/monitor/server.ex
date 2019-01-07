@@ -1,9 +1,10 @@
-defmodule VpsAdmin.Transactional.Worker.Distributed.Monitor.Server do
+defmodule VpsAdmin.Worker.Monitor.Server do
   use GenServer, restart: :temporary
 
   require Logger
   alias VpsAdmin.Transactional.Manager
-  alias VpsAdmin.Transactional.Worker.Distributed.Distributor
+  alias VpsAdmin.Worker
+  alias VpsAdmin.Worker.Distributor
 
   ### Client interface
   def start_link({{t, cmd}, _func} = arg) do
@@ -15,8 +16,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Monitor.Server do
   end
 
   defp via_tuple({t, cmd}) do
-    # TODO: registry?
-    {:via, Registry, {Manager.Transaction.Registry, {:monitor, t, cmd.id}}}
+    {:via, Registry, {Worker.Registry, {:monitor, t, cmd.id}}}
   end
 
   ### Server implementation

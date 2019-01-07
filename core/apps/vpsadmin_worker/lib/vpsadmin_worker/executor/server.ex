@@ -1,10 +1,10 @@
-defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
+defmodule VpsAdmin.Worker.Executor.Server do
   use GenServer, restart: :temporary
 
   require Logger
   alias VpsAdmin.Transactional.Command
-  alias VpsAdmin.Transactional.Worker.Distributed
   alias VpsAdmin.Queue
+  alias VpsAdmin.Worker
 
   ### Client interface
   def start_link({{t, cmd}, _func} = arg) do
@@ -20,7 +20,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
   end
 
   defp via_tuple({t, cmd}) do
-    {:via, Registry, {Distributed.Registry, {:executor, t, cmd.id}}}
+    {:via, Registry, {Worker.Registry, {:executor, t, cmd.id}}}
   end
 
   ### Server implementation
@@ -129,7 +129,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
       Queue.enqueue(
         cmd.queue,
         {t, cmd},
-        {Distributed.NodeCtldCommand.Supervisor, :run_command, [{t, cmd}, func]},
+        {Worker.NodeCtldCommand, :run_command, [{t, cmd}, func]},
         self(),
         name: {:transaction, t},
         urgent: cmd.input.urgent,
@@ -142,7 +142,7 @@ defmodule VpsAdmin.Transactional.Worker.Distributed.Executor.Server do
   defp do_report_result({t, cmd}, state) do
     Logger.debug("Reporting result of command #{t}:#{cmd.id}")
 
-    case Distributed.ResultReporter.report({t, cmd}) do
+    case Worker.ResultReporter.report({t, cmd}) do
       :ok ->
         {:stop, :normal, state}
 
