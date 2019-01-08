@@ -77,7 +77,7 @@ defmodule VpsAdmin.Worker.Executor.Server do
     )
 
     do_report_result(
-      {state.t, %{state.cmd | status: :failed, output: %{error: reason}}},
+      {t, %{cmd | status: :failed, output: %{error: inspect(reason)}}},
       state
     )
   end
