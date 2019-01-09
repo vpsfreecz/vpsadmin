@@ -35,4 +35,13 @@ defmodule VpsAdmin.Persistence.Query.Transaction do
     )
     |> repo().update_all([])
   end
+
+  def clear_input(trans_id) do
+    from(
+      t in schema(),
+      where: t.id == ^trans_id,
+      update: [set: [input: ^%{}]]
+    )
+    |> repo().update_all([])
+  end
 end
