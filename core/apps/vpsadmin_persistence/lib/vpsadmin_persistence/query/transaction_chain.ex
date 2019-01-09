@@ -71,6 +71,13 @@ defmodule VpsAdmin.Persistence.Query.TransactionChain do
         {:ok, changes}
       end
     )
+    |> Multi.run(
+      :ports,
+      fn _repo, changes ->
+        Query.PortReservation.release_by(chain_id)
+        {:ok, changes}
+      end
+    )
     |> repo().transaction()
   end
 
