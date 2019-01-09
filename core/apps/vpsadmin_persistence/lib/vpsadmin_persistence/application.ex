@@ -4,13 +4,15 @@ defmodule VpsAdmin.Persistence.Application do
   @moduledoc false
 
   use Application
+  alias VpsAdmin.Persistence
 
   def start(_type, _args) do
     children = [
-      VpsAdmin.Persistence.Repo
+      Persistence.Repo,
+      Persistence.ReliableQuery.Supervisor
     ]
 
-    opts = [strategy: :one_for_one, name: VpsAdmin.Persistence.Supervisor]
+    opts = [strategy: :one_for_one, name: Persistence.Supervisor]
     Supervisor.start_link(children, opts)
   end
 end

@@ -1,7 +1,7 @@
 defmodule VpsAdmin.Supervisor.Manager do
   use VpsAdmin.Transactional.Manager
   require Logger
-  alias VpsAdmin.Persistence.Query
+  alias VpsAdmin.Persistence.{Query, ReliableQuery}
   alias VpsAdmin.Supervisor.Convert
   alias VpsAdmin.Transactional.Command
 
@@ -28,29 +28,37 @@ defmodule VpsAdmin.Supervisor.Manager do
   def close_transaction(trans) do
     Logger.debug("Closing transaction #{trans.id}")
 
-    Query.TransactionChain.close(
-      trans.id,
-      Convert.RuntimeToDb.chain_state(trans.state)
-    )
+    ReliableQuery.run(fn ->
+      Query.TransactionChain.close(
+        trans.id,
+        Convert.RuntimeToDb.chain_state(trans.state)
+      )
+    end)
   end
 
   @impl true
   def rollback_transaction(trans) do
     Logger.debug("Rolling back transaction #{trans.id}")
 
-    Query.TransactionChain.rollback(trans.id)
+    ReliableQuery.run(fn ->
+      Query.TransactionChain.rollback(trans.id)
+    end)
   end
 
   @impl true
   def abort_transaction(trans) do
     Logger.debug("Aborting transaction #{trans.id}")
 
-    Query.TransactionChain.abort(trans.id)
+    ReliableQuery.run(fn ->
+      Query.TransactionChain.abort(trans.id)
+    end)
   end
 
   @impl true
   def command_started(_trans, cmd) do
-    Query.Transaction.started(cmd.id)
+    ReliableQuery.run(fn ->
+      Query.Transaction.started(cmd.id)
+    end)
   end
 
   @impl true
@@ -58,12 +66,16 @@ defmodule VpsAdmin.Supervisor.Manager do
     Logger.debug("Persisting command state #{trans.id}:#{cmd.id} -> #{cmd.state}")
 
     {done, status, output} = Convert.RuntimeToDb.command_result(cmd)
-    Query.Transaction.finished(cmd.id, done, status, output)
 
-    Query.TransactionChain.progress(trans.id, done, status)
+    ReliableQuery.run(fn ->
+      Query.Transaction.finished(cmd.id, done, status, output)
+      Query.TransactionChain.progress(trans.id, done, status)
+    end)
 
     if cmd.state == :executed && cmd.status == :done do
-      post_save(cmd)
+      ReliableQuery.run(fn ->
+        post_save(cmd)
+      end)
     end
   end
 
