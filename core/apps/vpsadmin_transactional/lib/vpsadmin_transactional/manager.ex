@@ -5,6 +5,7 @@ defmodule VpsAdmin.Transactional.Manager do
   @callback get_transaction(Transaction.id()) :: Transaction.t() | {:error, term}
   @callback get_commands(Transaction.id()) :: [Command.t()] | {:error, term}
   @callback close_transaction(Transaction.t()) :: any
+  @callback rollback_transaction(Transaction.t()) :: any
   @callback abort_transaction(Transaction.t()) :: any
   @callback command_started(Transaction.t(), Command.t()) :: any
   @callback command_finished(Transaction.t(), Command.t()) :: any

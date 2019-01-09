@@ -35,6 +35,13 @@ defmodule VpsAdmin.Supervisor.Manager do
   end
 
   @impl true
+  def rollback_transaction(trans) do
+    Logger.debug("Rolling back transaction #{trans.id}")
+
+    Query.TransactionChain.rollback(trans.id)
+  end
+
+  @impl true
   def abort_transaction(trans) do
     Logger.debug("Aborting transaction #{trans.id}")
 

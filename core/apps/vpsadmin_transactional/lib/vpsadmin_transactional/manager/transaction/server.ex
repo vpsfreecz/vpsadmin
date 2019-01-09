@@ -364,11 +364,13 @@ defmodule VpsAdmin.Transactional.Manager.Transaction.Server do
   end
 
   defp rollback(state, cmd) do
+    t = %{state.transaction | state: :rollingback}
+    state.manager.rollback_transaction(t)
     %{
       state
       | queue: [cmd | state.done],
         done: [],
-        transaction: %{state.transaction | state: :rollingback}
+        transaction: t
     }
   end
 

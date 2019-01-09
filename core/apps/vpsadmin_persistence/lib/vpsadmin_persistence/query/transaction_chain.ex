@@ -74,6 +74,15 @@ defmodule VpsAdmin.Persistence.Query.TransactionChain do
     |> repo().transaction()
   end
 
+  def rollback(chain_id) do
+    from(
+      c in schema(),
+      where: c.id == ^chain_id,
+      update: [set: [state: ^:rollingback]]
+    )
+    |> repo().update_all([])
+  end
+
   def abort(chain_id) do
     from(
       c in schema(),
