@@ -36,10 +36,6 @@ module NodeCtld::Commands
 
     end
 
-    def post_save(db)
-
-    end
-
     def step
       attrs do
         @step
@@ -95,8 +91,8 @@ module NodeCtld::Commands
       ret
     end
 
-    def ok
-      {ret: :ok}
+    def ok(output = nil)
+      {ret: :ok, output: output || {}}
     end
 
     # Call command +cmd+ with +opts+.

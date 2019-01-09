@@ -16,13 +16,6 @@ module NodeCtld
       ok
     end
 
-    def post_save(db)
-      db.prepared(
-        'UPDATE transactions SET input = ? WHERE id = ?',
-        {key_type: @key_type}.to_json, @command.id
-      )
-    end
-
     protected
     def backup_keys
       [priv_path, pub_path, authorized_keys].each do |p|

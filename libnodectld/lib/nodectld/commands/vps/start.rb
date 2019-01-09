@@ -11,10 +11,5 @@ module NodeCtld
       @vps = Vps.new(@vps_id)
       @vps.stop
     end
-
-    def post_save(db)
-      # TODO
-      # VpsStatus.new([@vps_id]).update
-    end
   end
 end
