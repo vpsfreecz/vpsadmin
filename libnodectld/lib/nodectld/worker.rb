@@ -70,7 +70,7 @@ module NodeCtld
     def resume
       sync do
         @paused = false
-        @cond.signal
+        @cond.broadcast
       end
     end
 
