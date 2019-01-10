@@ -30,10 +30,7 @@ module NodeCtld::RemoteCommands
         end
       end
 
-      subtasks = nil
-      @daemon.chain_blockers do |blockers|
-        subtasks = blockers || {}
-      end
+      subtasks = NodeCtld::TransactionBlocker.list
 
       mounts = nil
       @daemon.delayed_mounter.mounts do |m|

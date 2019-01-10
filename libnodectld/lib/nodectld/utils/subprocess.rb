@@ -8,21 +8,11 @@ module NodeCtld
     # It has no effect on transactions on other nodes.
     def blocking_fork(&block)
       child = Process.fork(&block)
-      Daemon.register_subprocess(@command.chain_id, child)
+      TransactionBlocker.add(@command.transaction_id, child)
     end
 
     def killall_subprocesses
-      @daemon.chain_blockers do |blockers|
-        return unless blockers
-        log("Killing all subprocesses")
-
-        blockers.each do |chain, pids|
-          pids.each do |pid|
-            log("Sending SIGTERM to subprocess #{pid}")
-            Process.kill('TERM', pid)
-          end
-        end
-      end
+      TransactionBlocker.kill_all
     end
   end
 end
