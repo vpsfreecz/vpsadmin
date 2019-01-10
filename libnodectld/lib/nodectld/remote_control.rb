@@ -119,7 +119,7 @@ module NodeCtld
       end
 
       def error(err)
-        send_data({status: :failed, error: err})
+        send_data({status: :failed, response: err})
       end
 
       def ok(res)

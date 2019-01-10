@@ -39,7 +39,7 @@ module NodeCtl
 
       if msg[:status] != 'ok'
         return error(
-          msg[:error].instance_of?(Hash) ? msg[:error][:error] : msg[:error]
+          msg[:response].instance_of?(Hash) ? msg[:response][:error] : msg[:response]
         )
       end
 
