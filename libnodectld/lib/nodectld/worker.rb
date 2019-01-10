@@ -1,9 +1,11 @@
+require 'libosctl'
 require 'singleton'
 require 'thread'
 
 module NodeCtld
   class Worker
     include Singleton
+    include OsCtl::Lib::Utils::Log
 
     class << self
       %i(run list pause resume paused? kill_all kill_by_handle kill_by_id
@@ -32,14 +34,27 @@ module NodeCtld
         add_worker(t, cmd)
 
         begin
-          q << cmd.execute(method)
-        ensure
-          q << nil
+          q << {status: true, output: cmd.execute(method)}
+        rescue CommandFailed => e
+          q << {status: false, output: e.error}
+        rescue Exception => e
+          log(:warn, "Exception occurred during command execution: #{e.message}")
+          log(:warn, e.backtrace.join("\n"))
+          q << {
+            status: false,
+            output: {
+              error: e.message,
+              backtrace: e.backtrace,
+            },
+          }
         end
       end
 
       ret = q.pop
       remove_worker(t)
+
+      raise CommandFailed, ret[:output] unless ret[:status]
+
       t.join
       ret
     end
