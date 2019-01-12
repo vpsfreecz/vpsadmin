@@ -5,15 +5,13 @@ module VpsAdmind
     def exec
       @vps = Vps.new(@vps_id)
       @vps.start
+      VpsStatus.new([@vps_id]).update
+      ok
     end
 
     def rollback
       @vps = Vps.new(@vps_id)
       @vps.stop
-    end
-
-    def post_save(db)
-      VpsStatus.new([@vps_id]).update
     end
   end
 end

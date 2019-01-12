@@ -1,3 +1,5 @@
+require 'time'
+
 module VpsAdmind
   class Commands::Dataset::GroupSnapshot < Commands::Base
     handle 5215
@@ -14,6 +16,10 @@ module VpsAdmind
           nil,
           @snapshots.inject([]) { |snaps, s| snaps << "#{s['pool_fs']}/#{s['dataset_name']}@#{@name}" }.join(' ')
       )
+      ok(
+        name: @name,
+        created_at: @created_at.iso8601,
+      )
     end
 
     def rollback
@@ -22,17 +28,6 @@ module VpsAdmind
       end
 
       ok
-    end
-
-    def post_save(db)
-      @snapshots.each do |snap|
-        db.prepared(
-            'UPDATE snapshots SET name = ?, created_at = ? WHERE id = ?',
-            @name,
-            @created_at,
-            snap['snapshot_id']
-        )
-      end
     end
   end
 end

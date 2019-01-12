@@ -9,9 +9,5 @@ module VpsAdmind
     def rollback
       ok
     end
-
-    def post_save(db)
-      db.prepared("UPDATE transactions SET input = '{}' WHERE id = ?", @command.id)
-    end
   end
 end

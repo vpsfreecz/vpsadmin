@@ -91,8 +91,8 @@ module VpsAdmind::Commands
       ret
     end
 
-    def ok
-      {:ret => :ok}
+    def ok(output = nil)
+      {ret: :ok, output: output || {}}
     end
 
     # Call command +cmd+ with +opts+.

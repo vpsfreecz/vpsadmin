@@ -14,14 +14,9 @@ module VpsAdmind
       approx_size(ds)
       method(@format).call(ds)
 
-      @size = File.size(file_path)
-      ok
-    end
-
-    def post_save(db)
-      db.prepared(
-          'UPDATE snapshot_downloads SET size = ?, sha256sum = ? WHERE id = ?',
-          @size / 1024 / 1024, @sum, @download_id
+      ok(
+        size: File.size(file_path),
+        sha256sum: @sum,
       )
     end
 
