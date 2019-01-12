@@ -49,7 +49,7 @@ module VpsAdmindCtl
       unless @reply[:status] == 'ok'
         return {
             :status => :failed,
-            :error => @reply[:error].instance_of?(Hash) ? @reply[:error][:error] : @reply[:error],
+            :error => @reply[:response].instance_of?(Hash) ? @reply[:response][:error] : @reply[:response],
         }
       end
 
