@@ -12,7 +12,7 @@ module VpsAdmind::RemoteCommands
           ok
 
         else
-          raise CommandFailed.new(nil, nil, "Unknown resource #{@resource}")
+          raise SystemCommandFailed.new(nil, nil, "Unknown resource #{@resource}")
       end
     end
   end

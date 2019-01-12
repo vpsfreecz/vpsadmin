@@ -56,7 +56,7 @@ module VpsAdmind::Firewall
     def create_or_replace!
       create!
 
-    rescue VpsAdmind::CommandFailed => e
+    rescue VpsAdmind::SystemCommandFailed => e
       raise e if e.rc != 1 || e.output !~ /set with the same name already exists/
 
       replace!
@@ -70,7 +70,7 @@ module VpsAdmind::Firewall
       ipset(:test, @name, ip)
       true
 
-    rescue VpsAdmind::CommandFailed
+    rescue VpsAdmind::SystemCommandFailed
       false
     end
 

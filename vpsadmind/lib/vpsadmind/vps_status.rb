@@ -131,7 +131,7 @@ module VpsAdmind
         end
       end
 
-    rescue CommandFailed => e
+    rescue SystemCommandFailed => e
       log(:fatal, :vps_status, e.message)
     end
 
@@ -168,13 +168,13 @@ module VpsAdmind
       )
 
     rescue JSON::ParserError => e
-      raise CommandFailed.new(cmd, 0, e.message)
+      raise SystemCommandFailed.new(cmd, 0, e.message)
     end
 
     def run_or_skip(vps)
       yield
 
-    rescue CommandFailed => e
+    rescue SystemCommandFailed => e
       log(:warn, :vps, e.message)
       vps[:skip] = true
     end

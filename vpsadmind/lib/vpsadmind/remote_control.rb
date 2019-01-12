@@ -87,7 +87,7 @@ module VpsAdmind
         begin
           ret = executor.exec
 
-        rescue CommandFailed => err
+        rescue SystemCommandFailed => err
           output[:cmd] = err.cmd
           output[:exitstatus] = err.rc
           output[:error] = err.output

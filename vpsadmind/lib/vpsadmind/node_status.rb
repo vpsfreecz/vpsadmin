@@ -53,7 +53,7 @@ module VpsAdmind
 
       my.close unless db
 
-    rescue CommandFailed => e
+    rescue SystemCommandFailed => e
       log(:fatal, :node_status, e.message)
     end
 

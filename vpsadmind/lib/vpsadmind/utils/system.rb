@@ -11,7 +11,7 @@ module VpsAdmind
       attempts.times do |i|
         begin
           return yield
-        rescue CommandFailed => err
+        rescue SystemCommandFailed => err
           log "Attempt #{i+1} of #{attempts} failed for '#{err.cmd}'"
           @output[:attempts] << {
               :cmd => err.cmd,
@@ -97,7 +97,7 @@ module VpsAdmind
       current_cmd.subtask = nil if current_cmd
 
       if $?.exitstatus != 0 and not valid_rcs.include?($?.exitstatus)
-        raise CommandFailed.new(cmd, $?.exitstatus, out)
+        raise SystemCommandFailed.new(cmd, $?.exitstatus, out)
       end
 
       {:ret => :ok, :output => out, :exitstatus => $?.exitstatus}
@@ -116,7 +116,7 @@ module VpsAdmind
 
         threads.each do |t|
           ret = t.value.exitstatus
-          raise CommandFailed.new(cmds.to_s, ret, out) if ret != 0
+          raise SystemCommandFailed.new(cmds.to_s, ret, out) if ret != 0
         end
 
         {:ret => :ok, :output => out, :exitstatus => ret}
@@ -187,7 +187,7 @@ module VpsAdmind
         children.each do |pid|
           _, last_status = Process.wait2(pid)
 
-          raise CommandFailed.new(cmds.to_s, last_status, out) if last_status != 0
+          raise SystemCommandFailed.new(cmds.to_s, last_status, out) if last_status != 0
         end
 
         {:ret => :ok, :output => out, :exitstatus => last_status}

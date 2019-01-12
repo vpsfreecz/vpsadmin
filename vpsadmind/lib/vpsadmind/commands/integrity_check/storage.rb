@@ -32,7 +32,7 @@ module VpsAdmind
         @objects = parse_pool(pool['filesystem'])
         exists = true
 
-      rescue CommandFailed => e
+      rescue SystemCommandFailed => e
         msg = e.message
 
       ensure

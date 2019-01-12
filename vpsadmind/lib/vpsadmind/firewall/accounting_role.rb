@@ -89,7 +89,7 @@ module VpsAdmind::Firewall
         end
       end
 
-    rescue VpsAdmind::CommandFailed => err
+    rescue VpsAdmind::SystemCommandFailed => err
       log(:critical, :firewall, "Failed to update traffic accounting: #{err.output}")
     end
 

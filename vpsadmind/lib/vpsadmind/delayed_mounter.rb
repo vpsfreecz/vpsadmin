@@ -159,7 +159,7 @@ module VpsAdmind
             log(:info, :delayed_mounter, 'Mount succeeded')
             ret = true
 
-          rescue CommandFailed => e
+          rescue SystemCommandFailed => e
             log(:info, :delayed_mounter, 'Mount failed')
             ret = false
           end

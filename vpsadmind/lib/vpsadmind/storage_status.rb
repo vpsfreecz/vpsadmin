@@ -111,7 +111,7 @@ module VpsAdmind
 
       end
 
-    rescue CommandFailed => e
+    rescue SystemCommandFailed => e
       p e
     end
 

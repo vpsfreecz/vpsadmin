@@ -48,7 +48,7 @@ module VpsAdmind::RemoteCommands
           ok.update({:output => {:ip_map => map}})
 
         else
-          raise VpsAdmind::CommandFailed.new(nil, nil, "Unknown resource #{@resource}")
+          raise VpsAdmind::SystemCommandFailed.new(nil, nil, "Unknown resource #{@resource}")
       end
     end
   end

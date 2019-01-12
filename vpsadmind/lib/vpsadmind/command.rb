@@ -1,22 +1,4 @@
 module VpsAdmind
-  class CommandFailed < StandardError
-    attr_reader :cmd, :rc, :output
-
-    def initialize(cmd, rc, out)
-      @cmd = cmd
-      @rc = rc
-      @output = out
-    end
-
-    def message
-      "command '#{@cmd}' exited with code '#{@rc}', output: '#{@output}'"
-    end
-  end
-
-  class CommandNotImplemented < StandardError
-
-  end
-
   class Command
     include Utils::Compat
     include Utils::Log
@@ -77,7 +59,7 @@ module VpsAdmind
     end
 
     def bad_value(klass)
-      raise CommandFailed.new('process handler return value', 1, "#{klass} did not return expected value")
+      raise SystemCommandFailed.new('process handler return value', 1, "#{klass} did not return expected value")
     end
 
     def save(db)
@@ -335,7 +317,7 @@ module VpsAdmind
           bad_value(klass)
         end
 
-      rescue CommandFailed => err
+      rescue SystemCommandFailed => err
         @status = :failed
         @output[:cmd] = err.cmd
         @output[:exitstatus] = err.rc

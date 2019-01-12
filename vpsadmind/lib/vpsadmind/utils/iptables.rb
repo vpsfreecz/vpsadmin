@@ -39,7 +39,7 @@ module VpsAdmind::Utils
           cmd.call
         end
 
-      rescue VpsAdmind::CommandFailed => err
+      rescue VpsAdmind::SystemCommandFailed => err
         if err.rc == 1 && err.output =~ /Resource temporarily unavailable/
           if try_cnt == opts[:tries]
             log 'Run out of tries'

@@ -78,7 +78,7 @@ module VpsAdmind
         syscmd(cmd)
         report_state(opts, :mounted)
 
-      rescue CommandFailed => e
+      rescue SystemCommandFailed => e
         if /is busy or already mounted/ =~ e.output
           log(:info, :mounter, 'Already mounted')
 
@@ -128,7 +128,7 @@ module VpsAdmind
         begin
           syscmd(cmd)
 
-        rescue CommandFailed => e
+        rescue SystemCommandFailed => e
           raise e if !keep_going && (e.rc != 1 || /not mounted/ !~ e.output)
         end
       end

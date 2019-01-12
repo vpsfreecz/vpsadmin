@@ -107,7 +107,7 @@ module VpsAdmind
       Process.wait(pid)
 
       if $?.exitstatus != 0
-        raise CommandFailed.new(cmd, $?.exitstatus, '')
+        raise SystemCommandFailed.new(cmd, $?.exitstatus, '')
       end
     end
   end
