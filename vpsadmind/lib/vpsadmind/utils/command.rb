@@ -8,13 +8,11 @@ module VpsAdmind::Utils
           :vz => :Vz,
           :zfs => :Zfs,
           :vps => :Vps,
-          :worker => :Worker,
           :pool => :Pool,
           :subprocess => :Subprocess,
           :integrity => :Integrity,
           :hypervisor => :Hypervisor,
           :outage_window => :OutageWindow,
-          :queue => :Queue,
       }
 
       # Includes module from VpsAdmind::Utils using mapping

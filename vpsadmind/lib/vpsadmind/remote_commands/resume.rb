@@ -3,7 +3,7 @@ module VpsAdmind::RemoteCommands
     handle :resume
 
     def exec
-      @daemon.resume
+      VpsAdmind::Worker.resume
       ok
     end
   end

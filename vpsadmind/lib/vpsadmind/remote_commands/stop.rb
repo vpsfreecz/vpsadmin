@@ -1,14 +1,13 @@
 module VpsAdmind::RemoteCommands
   class Stop < Base
     handle :stop
-    needs :worker, :subprocess
+    needs :subprocess
 
     def exec
       VpsAdmind::Daemon.safe_exit(VpsAdmind::EXIT_STOP)
 
       if @force
-        walk_workers { |w| :silent }
-        drop_workers
+        VpsAdmind::Worker.kill_all
         killall_subprocesses
       end
 

@@ -1,13 +1,16 @@
+require 'etc'
+
 module VpsAdmind
   class RemoteControl
-    extend Utils::Compat
     include Utils::Log
+
+    NODE_USER_NAME = 'node'
+    NODE_USER_UID = Etc.getpwnam(NODE_USER_NAME).uid
 
     @@handlers = {}
 
-    def self.register(klass, name)
-      @@handlers[name] = class_from_name(klass)
-      log(:info, :init, "Remote cmd #{name} => #{klass}") unless VpsAdmind::STANDALONE
+    def self.register(name, klass)
+      @@handlers[name] = klass
     end
 
     def self.handlers
@@ -23,6 +26,7 @@ module VpsAdmind
         path = $CFG.get(:remote, :socket)
         File.unlink(path) if File.exists?(path)
         serv = UNIXServer.new(path)
+        File.chown(NODE_USER_UID, 0, path)
 
         loop do
           if @stop

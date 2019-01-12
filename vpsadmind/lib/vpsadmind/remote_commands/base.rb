@@ -2,7 +2,7 @@ module VpsAdmind
   module RemoteCommands
     class Base
       def self.handle(name)
-        VpsAdmind::RemoteControl.register(self.to_s, name)
+        VpsAdmind::RemoteControl.register(name, self)
       end
 
       include VpsAdmind::Utils::Command
@@ -23,7 +23,11 @@ module VpsAdmind
 
       protected
       def ok
-        {:ret => :ok}
+        {ret: :ok}
+      end
+
+      def error
+        {ret: :error}
       end
     end
   end

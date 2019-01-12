@@ -19,56 +19,6 @@ module VpsAdmind
           :netdev => "eth0", # loaded from db
           :max_tx => nil, # loaded from db
           :max_rx => nil, # loaded from db
-          :queues => {
-              :general => {
-                  :threads => 6,
-                  :urgent => 6,
-                  :start_delay => 0
-              },
-              :storage => {
-                  :threads => 2,
-                  :urgent => 2,
-                  :start_delay => 0
-              },
-              :network => {
-                  :threads => 1,
-                  :urgent => 0,
-                  :start_delay => 0
-              },
-              :vps => {
-                  :threads => 4,
-                  :urgent => 4,
-                  :start_delay => 0
-              },
-              :zfs_send => {
-                  :threads => 3,
-                  :urgent => 0,
-                  :start_delay => 90*60,
-              },
-              :mail => {
-                  :threads => 2,
-                  :urgent => 2,
-                  :start_delay => 0
-              },
-              :outage => {
-                  :threads => 24,
-                  :urgent => 0,
-                  :start_delay => 0,
-              },
-              :queue => {
-                  :threads => 8,
-                  :urgent => 2,
-                  :start_delay => 0,
-              },
-              :rollback => {
-                  :threads => 6,
-                  :urgent => 6,
-                  :start_delay => 0,
-              },
-          },
-          :queues_reservation_prune_interval => 60,
-          :urgent_threads => 6,
-          :check_interval => 1,
           :status_interval => 30,
           :status_log_interval => 900,
           :vps_status_interval => 120,

@@ -10,7 +10,7 @@ module VpsAdmind::Utils
       end
 
       def self.cmd_type(cmd)
-        "chain=#{cmd.chain_id},trans=#{cmd.id},type=#{cmd.current_chain_direction}"
+        "trans=#{cmd.transaction_id},cmd=#{cmd.command_id},type=#{cmd.method}"
       end
     end
 

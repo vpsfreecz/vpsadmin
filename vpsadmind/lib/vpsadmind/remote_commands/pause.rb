@@ -3,7 +3,7 @@ module VpsAdmind::RemoteCommands
     handle :pause
 
     def exec
-      @daemon.pause(@t_id || true)
+      VpsAdmind::Worker.pause
       ok
     end
   end
