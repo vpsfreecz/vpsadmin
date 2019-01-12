@@ -25,8 +25,6 @@ module VpsAdmind
       @export_console = false
       @cmd_counter = 0
       @threads = {}
-      @blockers_mutex = Mutex.new
-      @chain_blockers = {}
       @mount_reporter = MountReporter.new
       @delayed_mounter = DelayedMounter.new # FIXME: call stop?
       @remote_control = RemoteControl.new(self) if remote
@@ -175,7 +173,7 @@ module VpsAdmind
     end
 
     def can_stop?
-      Worker.empty? && @blockers_mutex.synchronize { @chain_blockers.empty? }
+      Worker.empty? && TransactionBlocker.empty?
     end
 
     def run?
@@ -186,48 +184,11 @@ module VpsAdmind
       @@exitstatus
     end
 
-    def chain_blocked?(chain_id)
-      @blockers_mutex.synchronize do
-        @chain_blockers.has_key?(chain_id)
-      end
-    end
-
-    def block_chain(chain_id, pid)
-      @blockers_mutex.synchronize do
-        @chain_blockers[chain_id] ||= []
-        @chain_blockers[chain_id] << pid
-
-        Thread.new do
-          log(:debug, :daemon, "Chain #{chain_id} is waiting for subprocess #{pid} to finish")
-          Process.wait(pid)
-          subprocess_finished(chain_id, pid)
-        end
-      end
-    end
-
-    def chain_blockers
-      @blockers_mutex.synchronize do
-        yield(@chain_blockers)
-      end
-    end
-
-    def subprocess_finished(chain_id, pid)
-      @blockers_mutex.synchronize do
-        log(:debug, :daemon, "Subprocess #{pid} of chain #{chain_id} finished")
-        @chain_blockers[chain_id].delete(pid)
-        @chain_blockers.delete(chain_id) if @chain_blockers[chain_id].empty?
-      end
-    end
-
     def Daemon.safe_exit(status)
       @@mutex.synchronize do
         @@run = false
         @@exitstatus = status
       end
-    end
-
-    def self.register_subprocess(chain_id, pid)
-      instance.block_chain(chain_id, pid)
     end
   end
 end

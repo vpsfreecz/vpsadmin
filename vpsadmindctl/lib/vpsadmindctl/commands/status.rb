@@ -116,7 +116,7 @@ module VpsAdmindCtl::Commands
       end
 
       if @opts[:subtasks]
-        puts sprintf('%-10s %-10s %-20s %s', 'CHAIN', 'PID', 'STATE', 'NAME') if @opts[:header]
+        puts sprintf('%-10s %-10s %-20s %s', 'TRANS', 'PID', 'STATE', 'NAME') if @opts[:header]
 
         @res[:subprocesses].sort { |a, b| a[0].to_s.to_i <=> b[0].to_s.to_i }.each do |chain_tasks|
           chain_tasks[1].each do |task|

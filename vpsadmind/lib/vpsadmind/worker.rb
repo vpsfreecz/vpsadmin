@@ -30,6 +30,7 @@ module VpsAdmind
           @cond.wait(@mutex) if @paused
         end
 
+        TransactionBlocker.wait(cmd.transaction_id)
         add_worker(t, cmd)
 
         begin
