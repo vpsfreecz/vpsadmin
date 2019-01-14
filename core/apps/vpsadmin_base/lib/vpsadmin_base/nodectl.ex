@@ -4,6 +4,8 @@ defmodule VpsAdmin.Base.NodeCtl do
   require Logger
   alias VpsAdmin.Base.NodeCtl
 
+  @nodectld_socket "/run/nodectl/nodectld.sock"
+
   ### Client interface
   def start_link do
     GenServer.start_link(__MODULE__, self())
@@ -22,12 +24,16 @@ defmodule VpsAdmin.Base.NodeCtl do
   def init(parent) do
     {:ok, socket} =
       :gen_tcp.connect(
-        {:local, '/run/nodectl/nodectld.sock'},
+        {:local, String.to_charlist(socket_path())},
         0,
         [:local, active: true, packet: :line]
       )
 
     {:ok, {parent, socket}}
+  end
+
+  defp socket_path do
+    Application.get_env(:vpsadmin_base, :nodectld_socket) || @nodectld_socket
   end
 
   @impl true
