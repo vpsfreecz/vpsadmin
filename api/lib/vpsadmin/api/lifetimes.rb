@@ -324,6 +324,24 @@ module VpsAdmin::API
           )
         end
 
+        # Record object state change, but do not invoke chains to realize the
+        # transition. It is the caller's responsibility to ensure that the
+        # object and its environment is in the expected state.
+        def record_object_state_change(state, reason: nil, user: nil, expiration: nil, chain: nil)
+          unless Private.states(self.class).include?(state)
+            fail "#{self.class.to_s} does not have state '#{state}'"
+          end
+
+          Private.record_state(
+            self,
+            state,
+            chain,
+            reason,
+            user || ::User.current,
+            expiration
+          )
+        end
+
         # Move the object to next state (up or down - direction leave or enter).
         # Accepts the same keyword arguments as #set_object_state.
         def progress_object_state(direction, *args)
@@ -361,7 +379,7 @@ module VpsAdmin::API
           ::ObjectState.where(
             class_name: self.class.name,
             row_id: self.id
-          ).order('created_at DESC').take
+          ).order('created_at DESC, id DESC').take
         end
       end
 
@@ -380,6 +398,18 @@ module VpsAdmin::API
     end
 
     module Private
+      StateTransition = Struct.new(
+        :object,
+        :log,
+        :target,
+        :transaction_chain,
+        :reason,
+        :user,
+        :expiration,
+        :enter,
+        :state_chain,
+      )
+
       def self.states(o)
         o.instance_variable_get('@states')
       end
@@ -400,6 +430,49 @@ module VpsAdmin::API
       end
 
       def self.change_state(obj, target, chain, reason, user, expiration)
+        t = state_transition(obj, target, chain, reason, user, expiration)
+        chain_args = [
+          obj,
+          target,
+          t.state_chain,
+          t.enter,
+          state_changes(obj.class),
+          t.log,
+        ]
+
+        if chain
+          chain.use_chain(TransactionChains::Lifetimes::Wrapper, args: chain_args)
+          chain
+
+        else
+          new_chain, _ = TransactionChains::Lifetimes::Wrapper.fire(*chain_args)
+          new_chain
+        end
+      end
+
+      def self.record_state(obj, target, chain, reason, user, expiration)
+        transition = state_transition(obj, target, chain, reason, user, expiration)
+
+        changes =  {
+          object_state: ::VpsAdmin::API::Lifetimes::STATES.index(target),
+          expiration_date: transition.log.expiration_date,
+        }
+
+        transition.log.save!
+
+        if chain
+          chain.append_t(Transactions::Utils::NoOp, args: chain.find_node_id) do |t|
+            t.edit(obj, changes)
+            t.just_create(transition.log)
+          end
+        else
+          obj.update!(changes)
+        end
+
+        obj
+      end
+
+      def self.state_transition(obj, target, chain, reason, user, expiration)
         states = states(obj.class)
         t_i = states.index(target)
         o_i = states.index(obj.object_state.to_sym)
@@ -440,19 +513,19 @@ module VpsAdmin::API
         end
 
         reason ||= ''
-
         log = ::ObjectState.new_log(obj, target, reason, user, expiration)
 
-        chain_args = [obj, target, state_chain, enter, state_changes(obj.class), log]
-
-        if chain
-          chain.use_chain(TransactionChains::Lifetimes::Wrapper, args: chain_args)
-          chain
-
-        else
-          new_chain, _ = TransactionChains::Lifetimes::Wrapper.fire(*chain_args)
-          new_chain
-        end
+        StateTransition.new(
+          obj,
+          log,
+          target,
+          chain,
+          reason,
+          user,
+          expiration,
+          enter,
+          state_chain
+        )
       end
 
       def self.action_methods(action)

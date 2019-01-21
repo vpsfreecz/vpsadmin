@@ -6,6 +6,7 @@ module TransactionChains
     # @option opts [Integer] ipv4
     # @option opts [Integer] ipv6
     # @option opts [Integer] ipv4_private
+    # @option opts [Boolean] start (true)
     def link_chain(vps, opts)
       lock(vps.user)
       vps.save!
@@ -156,7 +157,9 @@ module TransactionChains
         use_chain(Vps::DeployPublicKey, args: [vps, key])
       end
 
-      use_chain(TransactionChains::Vps::Start, args: vps) if vps.onboot
+      if vps.onboot && (!opts.has_key?(:start) || opts[:start])
+        use_chain(TransactionChains::Vps::Start, args: vps)
+      end
 
       vps.save!
 

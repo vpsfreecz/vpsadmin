@@ -22,6 +22,7 @@ module VpsAdmin::API::Resources
       end
 
       params(:resolve) do
+        bool :activate, label: 'Activate account', default: true, fill: true
         resource VpsAdmin::API::Resources::Node, label: 'Node', value_label: :domain_name,
             desc: 'Create the new VPS on this node'
         bool :create_vps, label: 'Create VPS', default: true, fill: true

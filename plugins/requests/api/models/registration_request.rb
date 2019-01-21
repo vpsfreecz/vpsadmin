@@ -69,6 +69,7 @@ class RegistrationRequest < UserRequest
       params[:create_vps],
       params[:create_vps] && (params[:node] || ::Node.pick_by_location(location)),
       os_template,
+      params[:activate],
     ])
   end
 

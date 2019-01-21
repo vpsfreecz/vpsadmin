@@ -3,7 +3,7 @@ module TransactionChains
     label 'Create user'
     allow_empty
 
-    def link_chain(user, create_vps, node, tpl)
+    def link_chain(user, create_vps, node, tpl, activate = true)
       user.save!
       lock(user)
       concerns(:affect, [user.class.name, user.id])
@@ -33,6 +33,11 @@ module TransactionChains
         end
       end
 
+      unless activate
+        user.record_object_state_change(:suspended, chain: self)
+        user.object_state = 'suspended'
+      end
+
       ret = user.call_class_hooks_for(
         :create,
         self,
@@ -51,7 +56,9 @@ module TransactionChains
         )
         vps.dns_resolver = ::DnsResolver.pick_suitable_resolver_for_vps(vps)
 
-        vps_opts = {}
+        vps_opts = {
+          start: activate,
+        }
 
         node.location.environment.default_object_cluster_resources.joins(
           :cluster_resource
