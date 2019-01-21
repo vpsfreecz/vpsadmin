@@ -873,6 +873,51 @@ function payments_overview() {
 	$xtpl->table_out();
 }
 
+function estimate_income () {
+	global $xtpl, $api;
+
+	$xtpl->table_title(_('Estimate income'));
+
+	$xtpl->form_create('', 'get');
+
+	$y = date('Y');
+	$xtpl->table_td(
+		_('Year').':'.
+		'<input type="hidden" name="page" value="adminm">'.
+		'<input type="hidden" name="action" value="estimate_income">'
+	);
+	$xtpl->form_add_number_pure('y', get_val('y', $y), $y);
+	$xtpl->table_tr();
+
+	$xtpl->form_add_number(_('Month').':', 'm', get_val('m', date('n')), 1, 12, 1);
+	$xtpl->form_add_select(_('Select users').':', 's', [
+		'exactly_until' => _('Having paid until exactly to the selected year/month'),
+		'all_until' => _('Having paid until the selected year/month or before'),
+	], get_val('s', 'exactly_until'));
+	$xtpl->form_add_number(_('Payment for').':', 'd', get_val('d', 1), 1, 1000, 1, _('months'));
+	$xtpl->form_out(_('Show'));
+
+	if (!$_GET['y'] || !$_GET['m'] || !$_GET['d'])
+		return;
+
+	$income = $api->payment_stats->estimate_income([
+		'year' => $_GET['y'],
+		'month' => $_GET['m'],
+		'select' => $_GET['s'],
+		'duration' => $_GET['d'],
+	]);
+
+	$xtpl->table_td(_('Users').':');
+	$xtpl->table_td(number_format($income['user_count']));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Estimated income').':');
+	$xtpl->table_td(number_format($income['estimated_income']));
+	$xtpl->table_tr();
+
+	$xtpl->table_out();
+}
+
 if ($_SESSION["logged_in"]) {
 
 	if (isAdmin()) {
@@ -1206,6 +1251,11 @@ if ($_SESSION["logged_in"]) {
 				payments_overview();
 			break;
 
+		case 'estimate_income':
+			if (isAdmin())
+				estimate_income();
+			break;
+
 		case 'pubkeys':
 			list_pubkeys();
 			break;
@@ -1420,6 +1470,7 @@ if ($_SESSION["logged_in"]) {
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Incoming payments").'" /> '._("Incoming payments"), '?page=adminm&action=incoming_payments');
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments history").'" /> '._("Display history of payments"), '?page=adminm&section=members&action=payments_history');
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments overview").'" /> '._("Payments overview"), '?page=adminm&section=members&action=payments_overview');
+		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Estimate income").'" /> '._("Estimate income"), '?page=adminm&section=members&action=estimate_income');
 
 		$xtpl->sbar_out(_('Payments'));
 	}
