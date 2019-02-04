@@ -226,6 +226,33 @@ END
       raise NotImplementedError
     end
 
+    def convert_ubuntu
+      fstab = File.join(@rootfs, 'lib/init/fstab')
+
+      if File.exist?(fstab)
+        regenerate_file(fstab, 0644) do |new, old|
+          old.each_line do |line|
+            if line.lstrip.start_with?('#')
+              new.write(line)
+              next
+            end
+
+            cols = line.split
+
+            if cols[0..2] == %w(none /proc/sys/fs/binfmt_misc binfmt_misc)
+              new.puts(
+                "# The following entry was commented by vpsAdmin when migrating\n"+
+                "# to vpsAdminOS. Do not uncomment while running on vpsAdminOS."
+              )
+              new.write("# #{line}")
+            else
+              new.write(line)
+            end
+          end
+        end
+      end
+    end
+
     alias_method :runscript_ubuntu, :runscript_debian
 
     def convert_redhat
