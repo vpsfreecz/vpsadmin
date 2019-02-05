@@ -110,7 +110,7 @@ module TransactionChains
       # Migrate secondary VPS to primary node.
       # Do not replace IP addresses.
       use_chain(
-        Vps::Migrate,
+        Vps::Migrate.chain_for(secondary_vps, primary_vps.node),
         args: [
           secondary_vps,
           primary_vps.node,
@@ -247,7 +247,7 @@ module TransactionChains
       # primary VPS to the secondary node, where it becomes the new secondary
       # VPS.
       use_chain(
-        Vps::Migrate,
+        Vps::Migrate.chain_for(primary_vps, secondary_vps.node),
         args: [
           primary_vps,
           secondary_vps.node,

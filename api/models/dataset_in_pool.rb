@@ -30,7 +30,7 @@ class DatasetInPool < ActiveRecord::Base
       }
   has_hook :migrated,
       desc: 'Called when a DatasetInPool is being migrated with a VPS',
-      context: 'TransactionChains::Vps::Migrate instance',
+      context: 'TransactionChains::Vps::Migrate::Base instance',
       args: {
         src_dataset_in_pool: 'source DatasetInPool',
         dst_dataset_in_pool: 'target DatasetInPool',

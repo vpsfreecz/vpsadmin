@@ -195,7 +195,7 @@ class Vps < ActiveRecord::Base
     chain_opts[:reason] = opts[:reason]
     chain_opts[:cleanup_data] = opts[:cleanup_data]
 
-    TransactionChains::Vps::Migrate.fire(self, node, chain_opts)
+    TransactionChains::Vps::Migrate.chain_for(self, node).fire(self, node, chain_opts)
   end
 
   def clone(node, attrs)
