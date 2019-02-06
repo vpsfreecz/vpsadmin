@@ -644,12 +644,6 @@ END
 
       elsif input[:node].role != 'node'
         error('target node is not a hypervisor')
-
-      elsif vps.node.hypervisor_type != input[:node].hypervisor_type
-        error('migration between OpenVZ and vpsAdminOS is not supported yet')
-
-      elsif vps.node.vpsadminos?
-        error('migration is not supported on vpsAdminOS yet')
       end
 
       @chain, _ = vps.migrate(input[:node], input)

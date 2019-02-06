@@ -1,6 +1,8 @@
 module TransactionChains
   class NetworkInterface::Veth::Base < ::TransactionChain
     protected
+    include NetworkInterface::Veth::Helpers
+
     # @param vps [::Vps]
     # @param type [String]
     # @param name [String]
@@ -40,20 +42,6 @@ module TransactionChains
       end
 
       fail 'unable to create veth interface with a unique mac address'
-    end
-
-    def gen_mac
-      # First three octets -- OUI
-      octets = (1..3).map { rand(256) }
-
-      # Mark as locally administered
-      octets[0] &= 0xfe
-      octets[0] |= 0x02
-
-      # Last three octets -- NIC
-      3.times { octets << rand(256) }
-
-      octets.map { |v| '%02x' % [v] }.join(':')
     end
   end
 end

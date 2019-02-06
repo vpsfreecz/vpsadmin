@@ -33,6 +33,7 @@ module TransactionChains
     protected
     attr_reader :opts, :user, :src_node, :dst_node, :src_pool, :dst_pool,
       :src_vps, :dst_vps, :datasets, :resources_changes
+    attr_accessor :userns_map
 
     def setup(vps, dst_node, opts)
       @opts = set_hash_opts(opts, {
@@ -69,6 +70,7 @@ module TransactionChains
         @datasets.concat(recursive_serialize(k, v))
       end
 
+      @dst_vps.dataset_in_pool = @datasets.first[1]
       @resources_changes = {}
     end
 
@@ -135,7 +137,8 @@ module TransactionChains
         label: dip.label,
         min_snapshots: dip.min_snapshots,
         max_snapshots: dip.max_snapshots,
-        snapshot_max_age: dip.snapshot_max_age
+        snapshot_max_age: dip.snapshot_max_age,
+        user_namespace_map: userns_map,
       )
 
       lock(dst)
@@ -156,7 +159,8 @@ module TransactionChains
             label: dip.label,
             min_snapshots: dip.min_snapshots,
             max_snapshots: dip.max_snapshots,
-            snapshot_max_age: dip.snapshot_max_age
+            snapshot_max_age: dip.snapshot_max_age,
+            user_namespace_map: userns_map,
           )
 
           lock(dst)
