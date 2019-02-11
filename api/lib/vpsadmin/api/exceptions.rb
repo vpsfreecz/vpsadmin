@@ -152,4 +152,8 @@ module VpsAdmin::API::Exceptions
   class OsTemplateNotFound < ::StandardError
 
   end
+
+  class OperationNotSupported < ::StandardError
+
+  end
 end

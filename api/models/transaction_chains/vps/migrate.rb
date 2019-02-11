@@ -17,7 +17,8 @@ module TransactionChains
         OsToVz
 
       else
-        fail "migration from #{src} to #{dst} is not supported"
+        raise VpsAdmin::API::Exceptions::OperationNotSupported,
+              "Migration from #{src} to #{dst} is not supported"
       end
     end
   end

@@ -14,7 +14,8 @@ module TransactionChains
         VzToOs
 
       else
-        fail "clone from #{src} to #{dst} is not supported"
+        raise VpsAdmin::API::Exceptions::OperationNotSupported,
+              "Clone from #{src} to #{dst} is not supported"
       end
     end
   end
