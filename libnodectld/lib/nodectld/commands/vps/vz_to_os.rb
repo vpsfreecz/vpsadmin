@@ -120,15 +120,13 @@ END
             end
 
           else
-            File.open(console, 'w') do |f|
-              f.puts(<<END
+            new.puts(<<END
 start on stopped rc RUNLEVEL=[2345]
 stop on runlevel [!2345]
 respawn
 exec /sbin/agetty 38400 console
 END
-              )
-            end
+            )
           end
         end
 

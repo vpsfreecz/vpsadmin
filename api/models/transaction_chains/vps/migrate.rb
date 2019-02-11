@@ -13,6 +13,9 @@ module TransactionChains
       elsif src == 'openvz' && dst == 'vpsadminos'
         VzToOs
 
+      elsif src == 'vpsadminos' && dst == 'openvz'
+        OsToVz
+
       else
         fail "migration from #{src} to #{dst} is not supported"
       end

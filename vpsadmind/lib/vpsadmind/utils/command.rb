@@ -15,6 +15,7 @@ module VpsAdmind::Utils
           :hypervisor => :Hypervisor,
           :outage_window => :OutageWindow,
           :queue => :Queue,
+          :file => :File,
       }
 
       # Includes module from VpsAdmind::Utils using mapping
