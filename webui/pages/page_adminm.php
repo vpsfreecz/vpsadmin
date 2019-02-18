@@ -448,9 +448,6 @@ function list_cluster_resources() {
 		$xtpl->table_add_category(_("Used"));
 		$xtpl->table_add_category(_("Free"));
 
-		if (isAdmin())
-			$xtpl->table_add_category('');
-
 		foreach ($res as $r) {
 			$xtpl->table_td($r->cluster_resource->label);
 
@@ -467,9 +464,6 @@ function list_cluster_resources() {
 				$xtpl->table_td(approx_number($r->free));
 			}
 
-			if (isAdmin())
-				$xtpl->table_td('<a href="?page=adminm&section=members&action=cluster_resource_edit&id='.$_GET['id'].'&resource='.$r->id.'"><img src="template/icons/m_edit.png"  title="'._("Edit").'"></a>');
-
 			$xtpl->table_tr();
 		}
 
@@ -477,52 +471,6 @@ function list_cluster_resources() {
 	}
 
 	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&section=members&action=edit&id={$_GET['id']}");
-}
-
-function cluster_resource_edit_form() {
-	global $xtpl, $api;
-
-	$r = $api->user($_GET['id'])->cluster_resource($_GET['resource'])->show(
-		array('meta' => array('includes' => 'environment,cluster_resource'))
-	);
-
-	$xtpl->table_title(_('Change cluster resource').' '.$r->cluster_resource->label.' '._('of user').' #'.$_GET['id']);
-	$xtpl->form_create('?page=adminm&section=members&action=cluster_resource_edit&id='.$_GET['id'].'&resource='.$_GET['resource'], 'post');
-
-	$xtpl->table_td(_('Environment').':');
-	$xtpl->table_td($r->environment->label);
-	$xtpl->table_tr();
-
-	$xtpl->table_td(_('Resource').':');
-	$xtpl->table_td($r->cluster_resource->label);
-	$xtpl->table_tr();
-
-	$xtpl->table_td(_('Used').':');
-	$xtpl->table_td($r->used);
-	$xtpl->table_tr();
-
-	$xtpl->table_td(_('Free').':');
-	$xtpl->table_td($r->free);
-	$xtpl->table_tr();
-
-	$xtpl->table_td(_('Step size').':');
-	$xtpl->table_td($r->cluster_resource->stepsize);
-	$xtpl->table_tr();
-
-	$xtpl->table_td(_('Value').':');
-	$xtpl->form_add_number_pure(
-		'value',
-		$r->value,
-		0,
-		0,
-		$r->cluster_resource->stepsize,
-		unit_for_cluster_resource($r->cluster_resource->name)
-	);
-	$xtpl->table_tr();
-
-	$xtpl->form_out(_('Save'));
-
-	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back").'" /> '._('Back'), "?page=adminm&section=members&action=cluster_resources&id=".$_GET['id']);
 }
 
 function request_approve() {
@@ -1440,29 +1388,6 @@ if ($_SESSION["logged_in"]) {
 
 		case 'cluster_resources':
 			list_cluster_resources();
-			break;
-
-		case 'cluster_resource_edit':
-			if (isset($_POST['value'])) {
-				csrf_check();
-
-				try {
-					$api->user($_GET['id'])->cluster_resource($_GET['resource'])->update(
-						array('value' => $_POST['value'])
-					);
-
-					notify_user(_('Cluster resource changed'), '');
-					redirect('?page=adminm&section=members&action=cluster_resources&id='.$_GET['id']);
-
-				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-					$xtpl->perex_format_errors(_('Failed to change user\'s cluster resource'), $e->getResponse());
-					cluster_resource_edit_form();
-				}
-
-			} else {
-				cluster_resource_edit_form();
-			}
-
 			break;
 
 		case 'env_cfg':

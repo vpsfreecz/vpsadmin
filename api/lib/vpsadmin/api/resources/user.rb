@@ -547,32 +547,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         error('create failed', e.record.errors.to_hash)
       end
     end
-
-    class Update < HaveAPI::Actions::Default::Update
-      desc 'Update a cluster resource'
-
-      input do
-        use :common
-      end
-
-      output do
-        use :all
-      end
-
-      authorize do |u|
-        allow if u.role == :admin
-      end
-
-      def exec
-        ::UserClusterResource.find_by!(
-          user_id: params[:user_id],
-          id: params[:cluster_resource_id]
-        ).update!(input)
-
-      rescue ActiveRecord::RecordInvalid => e
-        error('update failed', e.record.errors.to_hash)
-      end
-    end
   end
 
   class PublicKey < HaveAPI::Resource
