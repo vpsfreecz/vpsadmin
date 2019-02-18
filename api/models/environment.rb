@@ -8,6 +8,7 @@ class Environment < ActiveRecord::Base
   has_many :users, through: :environment_user_configs
   has_many :environment_dataset_plans
   has_many :default_object_cluster_resources
+  has_many :default_user_cluster_resource_packages
 
   has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
 

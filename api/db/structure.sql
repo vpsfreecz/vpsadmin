@@ -58,6 +58,46 @@ CREATE TABLE `branches` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `cluster_resource_package_items`
+--
+
+DROP TABLE IF EXISTS `cluster_resource_package_items`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `cluster_resource_package_items` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `cluster_resource_package_id` int(11) NOT NULL,
+  `cluster_resource_id` int(11) NOT NULL,
+  `value` decimal(40,0) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `cluster_resource_package_items_unique` (`cluster_resource_package_id`,`cluster_resource_id`),
+  KEY `cluster_resource_package_id` (`cluster_resource_package_id`),
+  KEY `cluster_resource_id` (`cluster_resource_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `cluster_resource_packages`
+--
+
+DROP TABLE IF EXISTS `cluster_resource_packages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `cluster_resource_packages` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `label` varchar(255) COLLATE utf8_czech_ci NOT NULL,
+  `environment_id` int(11) DEFAULT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `cluster_resource_packages_unique` (`environment_id`,`user_id`),
+  KEY `index_cluster_resource_packages_on_environment_id` (`environment_id`),
+  KEY `index_cluster_resource_packages_on_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `cluster_resource_uses`
 --
 
@@ -307,6 +347,22 @@ CREATE TABLE `default_object_cluster_resources` (
   `class_name` varchar(255) COLLATE utf8_czech_ci NOT NULL,
   `value` decimal(40,0) NOT NULL,
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `default_user_cluster_resource_packages`
+--
+
+DROP TABLE IF EXISTS `default_user_cluster_resource_packages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `default_user_cluster_resource_packages` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `environment_id` int(11) NOT NULL,
+  `cluster_resource_package_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `default_user_cluster_resource_packages_unique` (`environment_id`,`cluster_resource_package_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1507,6 +1563,30 @@ CREATE TABLE `transactions` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `user_cluster_resource_packages`
+--
+
+DROP TABLE IF EXISTS `user_cluster_resource_packages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_cluster_resource_packages` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `environment_id` int(11) DEFAULT NULL,
+  `user_id` int(11) NOT NULL,
+  `cluster_resource_package_id` int(11) NOT NULL,
+  `added_by_id` int(11) DEFAULT NULL,
+  `comment` varchar(255) COLLATE utf8_czech_ci NOT NULL DEFAULT '',
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `environment_id` (`environment_id`),
+  KEY `user_id` (`user_id`),
+  KEY `cluster_resource_package_id` (`cluster_resource_package_id`),
+  KEY `added_by_id` (`added_by_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `user_cluster_resources`
 --
 
@@ -2051,7 +2131,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-11-21 16:35:42
+-- Dump completed on 2019-02-18 16:10:12
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2283,4 +2363,6 @@ INSERT INTO schema_migrations (version) VALUES ('20180929203314');
 INSERT INTO schema_migrations (version) VALUES ('20181119183704');
 
 INSERT INTO schema_migrations (version) VALUES ('20181121153314');
+
+INSERT INTO schema_migrations (version) VALUES ('20190211124513');
 

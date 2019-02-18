@@ -6,6 +6,7 @@ class User < ActiveRecord::Base
   has_many :environments, through: :environment_user_configs
   has_many :datasets
   has_many :user_cluster_resources
+  has_many :user_cluster_resource_packages
   has_many :snapshot_downloads
   has_many :ip_traffics
   has_many :ip_recent_traffics
@@ -154,11 +155,37 @@ class User < ActiveRecord::Base
     ).count
   end
 
-
   def resume_login(request)
     self.update!(last_request_at: Time.now)
 
     User.current = self
+  end
+
+  def calculate_cluster_resources
+    self.class.transaction do
+      ::Environment.all.each do |env|
+        calculate_cluster_resources_in_env(env)
+      end
+    end
+  end
+
+  def calculate_cluster_resources_in_env(env)
+    self.class.transaction do
+      ucrs = Hash[user_cluster_resources.where(environment: env).map do |ucr|
+        ucr.value = 0
+        [ucr.cluster_resource_id, ucr]
+      end]
+
+      user_cluster_resource_packages.includes(
+        cluster_resource_package: [:cluster_resource_package_items]
+      ).where(environment: env).each do |user_pkg|
+        user_pkg.cluster_resource_package.cluster_resource_package_items.each do |it|
+          ucrs[it.cluster_resource_id].value += it.value
+        end
+      end
+
+      ucrs.each_value { |ucr| ucr.save! }
+    end
   end
 
   def self.authenticate(request, username, password)

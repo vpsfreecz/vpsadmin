@@ -36,6 +36,11 @@ module TransactionChains
           just_destroy(cfg)
         end
 
+        # Destroy user resource packages
+        user.user_cluster_resource_packages.each do |pkg|
+          just_destroy(pkg)
+        end
+
         # Destroy user resources
         user.user_cluster_resources.each do |r|
           just_destroy(r)

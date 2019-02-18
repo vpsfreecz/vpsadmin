@@ -21,16 +21,40 @@ module TransactionChains
           max_vps_count: env.max_vps_count
         )
 
-        env.default_object_cluster_resources.where(
-            class_name: user.class.name
-        ).each do |d|
+        # Create all cluster resources in all environments
+        ::ClusterResource.each do |cr|
           objects << ::UserClusterResource.create!(
             user: user,
             environment: env,
-            cluster_resource: d.cluster_resource,
-            value: d.value
+            cluster_resource: cr,
+            value: 0,
           )
         end
+
+        # Create an empty personal resource package for every environment
+        personal_pkg = ::ClusterResourcePackage.create!(
+          user: user,
+          environment: env,
+          label: 'Personal package',
+        )
+        objects << personal_pkg
+        objects << ::UserClusterResourcePackage.create!(
+          user: user,
+          environment: env,
+          cluster_resource_package: personal_pkg,
+        )
+
+        # Assign default resource packages
+        env.default_user_cluster_resource_packages.each do |pkg|
+          objects << ::UserClusterResourcePackage.create!(
+            user: user,
+            environment: env,
+            cluster_resource_package: pkg,
+            comment: 'User was created',
+          )
+        end
+
+        user.calculate_cluster_resources_in_env(env)
       end
 
       unless activate
