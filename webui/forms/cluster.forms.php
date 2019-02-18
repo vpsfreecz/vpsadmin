@@ -13,6 +13,7 @@ function cluster_header() {
 	$xtpl->sbar_add(_("Manage DNS servers"), '?page=cluster&action=dns');
 	$xtpl->sbar_add(_("Manage environments"), '?page=cluster&action=environments');
 	$xtpl->sbar_add(_("Manage locations"), '?page=cluster&action=locations');
+	$xtpl->sbar_add(_("Manage resource packages"), '?page=cluster&action=resource_packages');
 	$xtpl->sbar_add(_("Integrity check"), '?page=cluster&action=integrity_check');
 
 	if ($api->outage)
@@ -881,4 +882,192 @@ function helpbox_edit_form($id) {
 	$xtpl->form_add_select(_("Language").':', 'language', resource_list_to_options($api->language->list()), post_val('language'));
 	$xtpl->form_add_textarea(_("Content").':', 80, 15, 'content', $box->content);
 	$xtpl->form_out(_("Update"));
+}
+
+function resource_packages_list() {
+	global $xtpl, $api;
+
+	$xtpl->title(_('Cluster resource packages'));
+	$xtpl->table_add_category(_('Package'));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+
+	$pkgs = $api->cluster_resource_package->list(['user' => null]);
+
+	foreach ($pkgs as $pkg) {
+		$xtpl->table_td($pkg->label);
+		$xtpl->table_td('<a href="?page=cluster&action=resource_packages_edit&id='.$pkg->id.'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		$xtpl->table_td('<a href="?page=cluster&action=resource_packages_delete&id='.$pkg->id.'&t='.csrf_token().'" title="'._("Delete").'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_out();
+
+	$xtpl->sbar_add(_("Back"), '?page=cluster');
+	$xtpl->sbar_add(_("New package"), '?page=cluster&action=resource_packages_new');
+}
+
+function resource_packages_create_form() {
+	global $xtpl, $api;
+
+	$xtpl->title(_('Create a new cluster resource package'));
+	$xtpl->form_create('?page=cluster&action=resource_packages_new');
+	api_param_to_form(
+		'label',
+		$api->cluster_resource_package->create->getParameters('input')->label
+	);
+	$xtpl->form_out(_('Create'));
+
+	$xtpl->sbar_add(_("Back"), '?page=cluster&action=resource_packages');
+}
+
+function resource_packages_edit_form($pkg_id) {
+	global $xtpl, $api;
+
+	$pkg = $api->cluster_resource_package->show($pkg_id);
+
+	$xtpl->title(_('Edit cluster resource package'));
+	$xtpl->form_create('?page=cluster&action=resource_packages_edit&id='.$pkg->id, 'post');
+
+	if ($pkg->user_id) {
+		$xtpl->table_td(_('User').':');
+		$xtpl->table_td(user_link($pkg->user));
+		$xtpl->table_tr();
+
+		$xtpl->table_td(_('Environment').':');
+		$xtpl->table_td($pkg->environment->label);
+		$xtpl->table_tr();
+	}
+
+	api_param_to_form(
+		'label',
+		$api->cluster_resource_package->create->getParameters('input')->label,
+		$pkg->label
+	);
+	$xtpl->form_out(_('Update'));
+
+	$xtpl->table_title(_('Cluster resources'));
+	$xtpl->table_add_category(_("Resource"));
+	$xtpl->table_add_category(_("Value"));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+
+	$items = $pkg->item->list(['meta' => ['includes' => 'cluster_resource']]);
+
+	foreach ($items as $it) {
+		$xtpl->table_td($it->cluster_resource->label);
+		$xtpl->table_td($it->value);
+		$xtpl->table_td('<a href="?page=cluster&action=resource_packages_item_edit&id='.$pkg->id.'&item='.$it->id.'"><img src="template/icons/m_edit.png"  title="'._("Edit").'"></a>');
+		$xtpl->table_td('<a href="?page=cluster&action=resource_packages_item_delete&id='.$pkg->id.'&item='.$it->id.'"><img src="template/icons/delete.png"  title="'._("Delete").'"></a>');
+		$xtpl->table_tr();
+	}
+
+	$desc = $pkg->item->create->getParameters('input');
+
+	$xtpl->table_out();
+
+	$xtpl->table_title(_('Add resource'));
+	$xtpl->form_create('?page=cluster&action=resource_packages_item_add&id='.$pkg->id, 'post');
+	api_param_to_form('cluster_resource', $desc->cluster_resource);
+	api_param_to_form('value', $desc->value);
+	$xtpl->form_out(_('Add'));
+
+	if ($pkg->user_id)
+		$xtpl->sbar_add(_("Back"), '?page=adminm&action=resource_packages&id='.$pkg->user_id);
+	else
+		$xtpl->sbar_add(_("Back"), '?page=cluster&action=resource_packages');
+}
+
+function resource_packages_delete_form($pkg_id) {
+	global $xtpl, $api;
+
+	$pkg = $api->cluster_resource_package->show($pkg_id);
+
+	$xtpl->title(_('Remove cluster resource package'));
+	$xtpl->form_create('?page=cluster&action=resource_packages_delete&id='.$pkg_id, 'post');
+
+	$xtpl->table_td(_('Package').':');
+	$xtpl->table_td($pkg->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(
+		_('<b>Warning:</b> The package will also be immediately removed from '.
+		'all users that are using it.'),
+		false, false, '2'
+	);
+	$xtpl->table_tr();
+
+	$xtpl->form_add_checkbox(_('Confirm').':', 'confirm', '1', false);
+
+	$xtpl->form_out(_('Remove'));
+
+	$xtpl->sbar_add(_("Back"), '?page=cluster&action=resource_packages');
+}
+
+function resource_packages_item_edit_form($pkg_id, $item_id) {
+	global $xtpl, $api;
+
+	$pkg = $api->cluster_resource_package->show($pkg_id);
+	$it = $pkg->item->show($item_id);
+
+	$xtpl->title(_('Edit cluster resource package item'));
+	$xtpl->form_create('?page=cluster&action=resource_packages_item_edit&id='.$pkg_id.'&item='.$item_id, 'post');
+
+	$xtpl->table_td(_('Package').':');
+	$xtpl->table_td($pkg->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Resource').':');
+	$xtpl->table_td($it->cluster_resource->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Value').':');
+	$xtpl->form_add_number_pure(
+		'value',
+		$it->value,
+		0,
+		0,
+		$it->cluster_resource->stepsize,
+		unit_for_cluster_resource($it->cluster_resource->name)
+	);
+	$xtpl->table_tr();
+
+	$xtpl->form_out(_('Save'));
+
+	$xtpl->sbar_add(_("Back"), '?page=cluster&action=resource_packages_edit&id='.$pkg_id);
+}
+
+function resource_packages_item_delete_form($pkg_id, $item_id) {
+	global $xtpl, $api;
+
+	$pkg = $api->cluster_resource_package->show($pkg_id);
+	$it = $pkg->item->show($item_id);
+
+	$xtpl->title(_('Remove cluster resource package item'));
+	$xtpl->form_create('?page=cluster&action=resource_packages_item_delete&id='.$pkg_id.'&item='.$item_id, 'post');
+
+	$xtpl->table_td(_('Package').':');
+	$xtpl->table_td($pkg->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Resource').':');
+	$xtpl->table_td($it->cluster_resource->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Value').':');
+	$xtpl->table_td($it->value);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(
+		_('<b>Warning:</b> The resource will also be immediately removed from '.
+		'all users having this package.'),
+		false, false, '2'
+	);
+	$xtpl->table_tr();
+
+	$xtpl->form_add_checkbox(_('Confirm').':', 'confirm', '1', false);
+
+	$xtpl->form_out(_('Remove'));
+
+	$xtpl->sbar_add(_("Back"), '?page=cluster&action=resource_packages_edit&id='.$pkg_id);
 }

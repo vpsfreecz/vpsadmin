@@ -748,3 +748,201 @@ function mail_template_recipient_form($user_id) {
 
 	$xtpl->form_out(_('Save'));
 }
+
+function sort_resource_packages ($pkgs) {
+	$ret = [];
+	$envs = [];
+
+	foreach ($pkgs as $pkg) {
+		$envs[$pkg->environment_id] = $pkg->environment;
+	}
+
+	usort($envs, function ($a, $b) {
+		return $a->environment_id - $b->environment_id;
+	});
+
+	foreach ($envs as $env) {
+		$env_pkgs = [];
+
+		foreach ($pkgs as $pkg) {
+			if ($pkg->environment_id == $env->id)
+				$env_pkgs[] = $pkg;
+		}
+
+		$ret[] = [$env, $env_pkgs];
+	}
+
+	return $ret;
+}
+
+function list_user_resource_packages($user_id) {
+	global $xtpl, $api;
+
+	$convert = array('memory', 'swap', 'diskspace');
+
+	$xtpl->title(_('User').' <a href="?page=adminm&action=edit&id='.$user_id.'">#'.$user_id.'</a>: '._('Cluster resource packages'));
+
+	$pkgs = $api->user_cluster_resource_package->list([
+		'user' => $user_id,
+		'meta' => ['includes' => 'environment'],
+	]);
+
+	foreach (sort_resource_packages($pkgs) as $v) {
+		list($env, $env_pkgs) = $v;
+
+		$xtpl->table_title(_('Environment').': '.$env->label);
+
+		foreach ($env_pkgs as $pkg) {
+			$xtpl->table_td(_('Package').':');
+			$xtpl->table_td($pkg->label);
+
+			if (isAdmin()) {
+				$xtpl->table_td('<a href="?page=adminm&action=resource_packages_edit&id='.$user_id.'&pkg='.$pkg->id.'"><img src="template/icons/m_edit.png"  title="'._("Edit").'"></a>');
+
+				if ($pkg->is_personal) {
+					$xtpl->table_td('<a href="?page=cluster&action=resource_packages_edit&id='.$pkg->id.'"><img src="template/icons/tool.png"  title="'._("Configure resources").'"></a>');
+				} else {
+					$xtpl->table_td('<a href="?page=adminm&action=resource_packages_delete&id='.$user_id.'&pkg='.$pkg->id.'"><img src="template/icons/delete.png"  title="'._("Delete").'"></a>');
+				}
+			}
+
+			$xtpl->table_tr();
+
+			$xtpl->table_td(_('Resources').':');
+
+			$items = $pkg->item->list(['meta' => ['includes' => 'cluster_resource']]);
+			$s = '';
+
+			foreach ($items as $it) {
+				$s .= $it->cluster_resource->label.": ";
+
+				if (in_array($it->cluster_resource->name, $convert))
+					$s .= data_size_to_humanreadable($it->value);
+				else
+					$s .= $it->value;
+
+				$s .= "<br>\n";
+			}
+
+			$xtpl->table_td($s);
+			$xtpl->table_tr();
+
+			$xtpl->table_td(_('Since').':');
+			$xtpl->table_td(tolocaltz($pkg->created_at));
+			$xtpl->table_tr();
+
+			if (isAdmin()) {
+				$xtpl->table_td(_('Added by').':');
+				$xtpl->table_td($pkg->added_by_id ? user_link($pkg->added_by) : '-');
+				$xtpl->table_tr();
+
+				$xtpl->table_td(_('Comment').':');
+				$xtpl->table_td($pkg->comment);
+				$xtpl->table_tr();
+			}
+
+			$xtpl->table_out();
+		}
+	}
+
+	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&section=members&action=edit&id={$user_id}");
+
+	if (isAdmin()) {
+		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Add package").'" />'._('Add package'), "?page=adminm&section=members&action=resource_packages_add&id={$user_id}");
+	}
+}
+
+function user_resource_package_add_form($user_id) {
+	global $xtpl, $api;
+
+	$user = $api->user->show($user_id);
+	$desc = $api->user_cluster_resource_package->create->getParameters('input');
+
+	$xtpl->title(_('User').' <a href="?page=adminm&action=edit&id='.$user->id.'">#'.$user->id.'</a>: '._('Add cluster resource package'));
+	$xtpl->form_create('?page=adminm&action=resource_packages_add&id='.$user->id, 'post');
+
+	$xtpl->table_td('User'.':');
+	$xtpl->table_td($user->id .' '. $user->login);
+	$xtpl->table_tr();
+
+	api_param_to_form('environment', $desc->environment);
+
+	$xtpl->form_add_select(
+		_('Package').':',
+		'cluster_resource_package',
+		resource_list_to_options($api->cluster_resource_package->list(['user' => null])),
+		post_val('cluster_resource_package')
+	);
+
+	api_param_to_form('comment', $desc->comment);
+
+	$xtpl->form_out(_('Add'));
+}
+
+function user_resource_package_edit_form($user_id, $pkg_id) {
+	global $xtpl, $api;
+
+	$user = $api->user->show($user_id);
+	$pkg = $api->user_cluster_resource_package->show($pkg_id);
+	$desc = $api->user_cluster_resource_package->update->getParameters('input');
+
+	if ($user->id != $pkg->user_id)
+		die('invalid user or package');
+
+	$xtpl->title(_('User').' <a href="?page=adminm&action=edit&id='.$user->id.'">#'.$user->id.'</a>: '._('Edit cluster resource package'));
+	$xtpl->form_create('?page=adminm&action=resource_packages_edit&id='.$user->id.'&pkg='.$pkg->id, 'post');
+
+	$xtpl->table_td('User'.':');
+	$xtpl->table_td($user->id .' '. $user->login);
+	$xtpl->table_tr();
+
+	$xtpl->table_td('Environment'.':');
+	$xtpl->table_td($pkg->environment->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td('Package'.':');
+	$xtpl->table_td($pkg->label);
+	$xtpl->table_tr();
+
+	api_param_to_form('comment', $desc->comment, $pkg->comment);
+
+	$xtpl->form_out(_('Save'));
+
+	if ($pkg->is_personal) {
+
+	}
+
+	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back").'" />'._('Back'), "?page=adminm&section=members&action=resource_packages&id={$user_id}");
+	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Edit resources").'" />'._('Edit resources'), "?page=cluster&action=resource_packages_edit&id={$pkg->cluster_resource_package_id}");
+}
+
+function user_resource_package_delete_form($user_id, $pkg_id) {
+	global $xtpl, $api;
+
+	$user = $api->user->show($user_id);
+	$pkg = $api->user_cluster_resource_package->show($pkg_id);
+
+	if ($user->id != $pkg->user_id)
+		die('invalid user or package');
+
+	$xtpl->title(_('Remove cluster resource package'));
+	$xtpl->form_create('?page=adminm&action=resource_packages_delete&id='.$user->id.'&pkg='.$pkg->id, 'post');
+
+	$xtpl->table_td('User'.':');
+	$xtpl->table_td($user->id .' '. $user->login);
+	$xtpl->table_tr();
+
+	$xtpl->table_td('Environment'.':');
+	$xtpl->table_td($pkg->environment->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td('Package'.':');
+	$xtpl->table_td($pkg->label);
+	$xtpl->table_tr();
+
+	$xtpl->form_add_checkbox(_('Confirm').':', 'confirm', '1', false);
+
+	$xtpl->form_out(_('Remove'));
+
+	$xtpl->sbar_add('<br>'._("Back"), '?page=adminm&action=resource_packages&id='.$user->id);
+}

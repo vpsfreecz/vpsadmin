@@ -436,6 +436,129 @@ switch($_GET["action"]) {
 
 		break;
 
+	case 'resource_packages':
+		resource_packages_list();
+		break;
+
+	case 'resource_packages_new':
+		if ($_POST['label']) {
+			csrf_check();
+
+			try {
+				$pkg = $api->cluster_resource_package->create([
+					'label' => $_POST['label'],
+				]);
+
+				notify_user(_("Package created"), _("The cluster resource package was created."));
+				redirect('?page=cluster&action=resource_packages_edit&id='.$pkg->id);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Create failed'), $e->getResponse());
+				resource_packages_create_form();
+			}
+		} else {
+			resource_packages_create_form();
+		}
+		break;
+
+	case 'resource_packages_edit':
+		if ($_POST['label']) {
+			csrf_check();
+
+			try {
+				$api->cluster_resource_package->update($_GET['id'], [
+					'label' => $_POST['label'],
+				]);
+
+				notify_user(_("Package updated "), _("The cluster resource package was updated."));
+				redirect('?page=cluster&action=resource_packages_edit&id='.$_GET['id']);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
+				resource_packages_edit_form($_GET['id']);
+			}
+		} else {
+			resource_packages_edit_form($_GET['id']);
+		}
+		break;
+
+	case 'resource_packages_delete':
+		if ($_POST['confirm'] == '1') {
+			csrf_check();
+
+			try {
+				$api->cluster_resource_package->delete($_GET['id']);
+
+				redirect('?page=cluster&action=resource_packages');
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Delete failed'), $e->getResponse());
+				resource_packages_delete_form($_GET['id']);
+			}
+		} else {
+			resource_packages_delete_form($_GET['id']);
+		}
+		break;
+
+	case 'resource_packages_item_add':
+		if ($_POST['value']) {
+			csrf_check();
+
+			try {
+				$api->cluster_resource_package($_GET['id'])->item->create([
+					'cluster_resource' => $_POST['cluster_resource'],
+					'value' => $_POST['value'],
+				]);
+
+				redirect('?page=cluster&action=resource_packages_edit&id='.$_GET['id']);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
+				resource_packages_edit_form($_GET['id']);
+			}
+		} else {
+			resource_packages_edit_form($_GET['id']);
+		}
+		break;
+
+	case 'resource_packages_item_edit':
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			csrf_check();
+
+			try {
+				$api->cluster_resource_package($_GET['id'])->item->update($_GET['item'], [
+					'value' => $_POST['value'],
+				]);
+
+				redirect('?page=cluster&action=resource_packages_edit&id='.$_GET['id']);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
+				resource_packages_item_edit_form($_GET['id'], $_GET['item']);
+			}
+		} else {
+			resource_packages_item_edit_form($_GET['id'], $_GET['item']);
+		}
+		break;
+
+	case 'resource_packages_item_delete':
+		if ($_POST['confirm'] == '1') {
+			csrf_check();
+
+			try {
+				$api->cluster_resource_package($_GET['id'])->item->delete($_GET['item']);
+
+				redirect('?page=cluster&action=resource_packages_edit&id='.$_GET['id']);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Delete failed'), $e->getResponse());
+				resource_packages_item_delete_form($_GET['id'], $_GET['item']);
+			}
+		} else {
+			resource_packages_item_delete_form($_GET['id'], $_GET['item']);
+		}
+		break;
+
 	case "networks":
 		networks_list();
 		$xtpl->sbar_add(_("Back"), '?page=cluster');

@@ -213,6 +213,7 @@ function print_editm($u) {
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Public keys").'" />'._('Public keys'), "?page=adminm&section=members&action=pubkeys&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Authentication tokens").'" />'._('Authentication tokens'), "?page=adminm&section=members&action=auth_tokens&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Session log").'" />'._('Session log'), "?page=adminm&action=user_sessions&id={$u->id}");
+	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Resource packages").'" />'._('Resource packages'), "?page=adminm&section=members&action=resource_packages&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Cluster resources").'" />'._('Cluster resources'), "?page=adminm&section=members&action=cluster_resources&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Environment configs").'" />'._('Environment configs'), "?page=adminm&section=members&action=env_cfg&id={$u->id}");
 }
@@ -424,12 +425,12 @@ function edit_auth_token($id) {
 function list_cluster_resources() {
 	global $xtpl, $api;
 
+	$convert = array('memory', 'swap', 'diskspace');
+
 	$xtpl->title(_('User').' <a href="?page=adminm&action=edit&id='.$_GET['id'].'">#'.$_GET['id'].'</a>: '._('Cluster resources'));
 
 	$resources = $api->user($_GET['id'])->cluster_resource->list(array('meta' => array('includes' => 'environment,cluster_resource')));
 	$by_env = array();
-
-	$convert = array('memory', 'swap', 'diskspace');
 
 	foreach ($resources as $r) {
 		if (!isset($by_env[$r->environment_id]))
@@ -439,7 +440,7 @@ function list_cluster_resources() {
 	}
 
 	foreach ($by_env as $res) {
-		$xtpl->table_title($res[0]->environment->label);
+		$xtpl->table_title(_('Environment').': '.$res[0]->environment->label);
 
 		$xtpl->table_add_category(_("Resource"));
 		$xtpl->table_add_category(_("Value"));
@@ -1359,6 +1360,82 @@ if ($_SESSION["logged_in"]) {
 
 		case 'user_sessions':
 			list_user_sessions($_GET['id']);
+			break;
+
+		case 'resource_packages':
+			list_user_resource_packages($_GET['id']);
+			break;
+
+		case 'resource_packages_add':
+			if (isAdmin()) {
+				if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+					csrf_check();
+
+					try {
+						$api->user_cluster_resource_package->create([
+							'environment' => $_POST['environment'],
+							'user' => $_GET['id'],
+							'cluster_resource_package' => $_POST['cluster_resource_package'],
+							'comment' => $_POST['comment'],
+						]);
+
+						notify_user(_('Package added'), '');
+						redirect('?page=adminm&action=resource_packages&id='.$_GET['id']);
+
+					} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+						$xtpl->perex_format_errors(_('Failed to add package'), $e->getResponse());
+						user_resource_package_add_form($_GET['id']);
+					}
+				} else {
+					user_resource_package_add_form($_GET['id']);
+				}
+			}
+			break;
+
+		case 'resource_packages_edit':
+			if (isAdmin()) {
+				if (isset($_POST['comment'])) {
+					csrf_check();
+
+					try {
+						$api->user_cluster_resource_package->update($_GET['pkg'], [
+							'comment' => $_POST['comment'],
+						]);
+
+						notify_user(_('Package updated'), '');
+						redirect('?page=adminm&action=resource_packages&id='.$_GET['id']);
+
+					} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+						$xtpl->perex_format_errors(_('Failed to update package'), $e->getResponse());
+						user_resource_package_edit_form($_GET['id'], $_GET['pkg']);
+					}
+
+				} else {
+					user_resource_package_edit_form($_GET['id'], $_GET['pkg']);
+				}
+			}
+			break;
+
+		case 'resource_packages_delete':
+			if (isAdmin()) {
+				if ($_POST['confirm'] == '1') {
+					csrf_check();
+
+					try {
+						$api->user_cluster_resource_package->delete($_GET['pkg']);
+
+						notify_user(_('Package removed'), '');
+						redirect('?page=adminm&action=resource_packages&id='.$_GET['id']);
+
+					} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+						$xtpl->perex_format_errors(_('Failed to remove package'), $e->getResponse());
+						user_resource_package_delete_form($_GET['id'], $_GET['pkg']);
+					}
+
+				} else {
+					user_resource_package_delete_form($_GET['id'], $_GET['pkg']);
+				}
+			}
 			break;
 
 		case 'cluster_resources':
