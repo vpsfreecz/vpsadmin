@@ -76,7 +76,10 @@ module NodeCtld
         zfs(:mount, nil, "#{origin}/#{ds['relative_name']}")
       end
 
-      zfs(:share, '-a', '')
+      # zfs share -a may report an error and exit with status `1` e.g. if dataset
+      # `tank/ct` isn't mounted. We're generally not interested in failures
+      # of this kind as there's nothing that vpsAdmin can do about it.
+      zfs(:share, '-a', '', valid_rcs: [1])
 
       ok
     end
