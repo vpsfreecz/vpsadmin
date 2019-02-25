@@ -88,6 +88,11 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
     input do
       params = %i(environment user cluster_resource_package comment)
       use :common, include: params
+      bool :from_personal,
+        label: 'From personal package',
+        desc: 'Substract the added resources from the personal package',
+        default: false,
+        fill: true
 
       params.each { |p| patch(p, required: true) }
     end
@@ -104,8 +109,12 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
       input[:cluster_resource_package].assign_to(
         input[:environment],
         input[:user],
-        input[:comment] || '',
+        comment: input[:comment],
+        from_personal: input[:from_personal]
       )
+
+    rescue VpsAdmin::API::Exceptions::UserResourceAllocationError => e
+      error(e.message)
     end
   end
 

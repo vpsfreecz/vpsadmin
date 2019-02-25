@@ -44,18 +44,52 @@ class ClusterResourcePackage < ActiveRecord::Base
   # @param env [::Environment]
   # @param user [::User]
   # @param comment [String]
+  # @param opts [Hash]
+  # @option opts [String] :comment
+  # @option opts [Boolean] :from_personal substract resources in this package
+  #                                       from the user's personal package
   # @return [UserClusterResourcePackage]
-  def assign_to(env, user, comment)
+  def assign_to(env, user, opts = {})
     self.class.transaction do
       ucrp = ::UserClusterResourcePackage.create!(
         cluster_resource_package: self,
         environment: env,
         user: user,
         added_by: ::User.current,
-        comment: comment,
+        comment: opts[:comment] || '',
       )
 
-      user.calculate_cluster_resources_in_env(env)
+      if opts[:from_personal]
+        personal_pkg = user.cluster_resource_packages.where(environment: env).take!
+        personal_items = Hash[personal_pkg.cluster_resource_package_items.map do |it|
+          [it.cluster_resource_id, it]
+        end]
+
+        cluster_resource_package_items.each do |it|
+          personal_item = personal_items[it.cluster_resource_id]
+
+          if personal_item.nil?
+            raise VpsAdmin::API::Exceptions::UserResourceAllocationError,
+                  "unable to add package and substract from the personal package: "+
+                  "resource #{it.cluster_resource.name} not found"
+          elsif personal_item.value < it.value
+            raise VpsAdmin::API::Exceptions::UserResourceAllocationError,
+                  "unable to add package and substract from the personal package: "+
+                  "not enough #{it.cluster_resource.name} in the personal package "+
+                  "(#{personal_item.value} < #{it.value})"
+          end
+        end
+
+        cluster_resource_package_items.each do |it|
+          personal_item = personal_items[it.cluster_resource_id]
+          personal_item.value -= it.value
+          personal_item.save!
+        end
+
+      else
+        user.calculate_cluster_resources_in_env(env)
+      end
+
       ucrp
     end
   end

@@ -7,6 +7,7 @@ class User < ActiveRecord::Base
   has_many :datasets
   has_many :user_cluster_resources
   has_many :user_cluster_resource_packages
+  has_many :cluster_resource_packages
   has_many :snapshot_downloads
   has_many :ip_traffics
   has_many :ip_recent_traffics

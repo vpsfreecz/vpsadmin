@@ -875,6 +875,7 @@ function user_resource_package_add_form($user_id) {
 	);
 
 	api_param_to_form('comment', $desc->comment);
+	api_param_to_form('from_personal', $desc->from_personal);
 
 	$xtpl->form_out(_('Add'));
 }

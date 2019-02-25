@@ -1325,6 +1325,7 @@ if ($_SESSION["logged_in"]) {
 							'user' => $_GET['id'],
 							'cluster_resource_package' => $_POST['cluster_resource_package'],
 							'comment' => $_POST['comment'],
+							'from_personal' => isset($_POST['from_personal']),
 						]);
 
 						notify_user(_('Package added'), '');
