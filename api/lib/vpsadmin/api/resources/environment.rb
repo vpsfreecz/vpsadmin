@@ -114,6 +114,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     end
 
     example do
+      authorize { |u| u.role == :admin }
       request({
         label: 'Devel',
         domain: 'vpsfree.cz'
@@ -178,6 +179,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     end
 
     example do
+      authorize { |u| u.role == :admin }
       url_params(1)
       request({
         label: 'My new name',

@@ -41,8 +41,8 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
     example do
       request({})
-      response({
-        os_templates: [{
+      response([
+        {
           id: 26,
           name: 'scientific-6-x86_64',
           label: 'Scientific Linux 6',
@@ -50,8 +50,8 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
           enabled: true,
           supported: true,
           order: 1,
-        }]
-     })
+        }
+      ])
     end
 
     def query

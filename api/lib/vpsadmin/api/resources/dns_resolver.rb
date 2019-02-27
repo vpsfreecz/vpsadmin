@@ -39,15 +39,15 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
 
     example do
       request({})
-      response({
-        dns_resolvers: [{
+      response([
+        {
           id: 26,
           ip_addr: '8.8.8.8',
           label: 'Google DNS',
           is_universal: true,
           location: nil
-        }]
-      })
+        }
+      ])
     end
 
     def query
