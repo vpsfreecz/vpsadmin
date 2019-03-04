@@ -1,3 +1,5 @@
+require 'vpsadmin/api/hash_options'
+
 # Transaction chain is a container for multiple transactions.
 # Every transaction chain inherits this class. Chains must implement
 # method TransactionChain#link_chain.

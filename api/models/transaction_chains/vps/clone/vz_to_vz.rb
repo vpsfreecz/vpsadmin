@@ -1,3 +1,5 @@
+require_relative 'base'
+
 module TransactionChains
   # Clone VPS to new or another VPS.
   class Vps::Clone::VzToVz < ::TransactionChain

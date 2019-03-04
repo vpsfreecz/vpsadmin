@@ -1,3 +1,5 @@
+require_relative 'confirmable'
+
 class VpsHasConfig < ActiveRecord::Base
   belongs_to :vps
   belongs_to :vps_config

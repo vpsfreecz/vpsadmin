@@ -1,3 +1,6 @@
+require_relative 'base'
+require_relative '../os_to_vz'
+
 module TransactionChains
   # Migrate VPS from vpsAdminOS to OpenVZ node
   class Vps::Migrate::OsToVz < Vps::Migrate::Base

@@ -1,10 +1,10 @@
 source 'https://rubygems.org'
 
-gem 'haveapi', '~> 0.11.1'
+gem 'haveapi', '~> 0.12.0'
 gem 'activerecord', '~> 4.2.8'
 gem 'sinatra-activerecord', '~> 2.0.13'
 gem 'paper_trail', '~> 7.0.0'
-gem 'require_all', '~> 1.5.0'
+gem 'require_all', '~> 2.0.0'
 gem 'rake'
 gem 'composite_primary_keys', '~> 8.1.5'
 gem 'eventmachine'

@@ -1,3 +1,10 @@
+require 'vpsadmin/api/maintainable'
+require 'vpsadmin/api/dataset_properties'
+require 'vpsadmin/api/lifetimes'
+require_relative 'confirmable'
+require_relative 'lockable'
+require_relative 'transaction_chains/dataset/destroy'
+
 class Dataset < ActiveRecord::Base
   belongs_to :user
   has_many :dataset_in_pools

@@ -1,3 +1,5 @@
+require_relative 'lockable'
+
 class NetworkInterface < ActiveRecord::Base
   belongs_to :vps
   has_many :ip_addresses

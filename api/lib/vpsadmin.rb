@@ -34,7 +34,11 @@ require_rel 'vpsadmin/api/plugin'
 
 VpsAdmin::API.load_configurable(:dataset_properties)
 
-require_rel '../models'
+require_rel '../models/transaction.rb'
+require_rel '../models/transactions/'
+require_rel '../models/transaction_chain.rb'
+require_rel '../models/transaction_chains/'
+require_rel '../models/*.rb'
 
 # Customize the API server before it is mounted.
 # @yieldparam [HaveAPI::Server]

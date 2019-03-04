@@ -1,3 +1,8 @@
+require 'vpsadmin/api/lifetimes'
+require_relative 'confirmable'
+require_relative 'lockable'
+require_relative 'transaction_chains/vps/destroy_mount'
+
 class Mount < ActiveRecord::Base
   belongs_to :vps
   belongs_to :dataset_in_pool

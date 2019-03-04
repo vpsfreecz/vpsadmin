@@ -1,3 +1,5 @@
+require_relative 'lockable'
+
 class VpsConfig < ActiveRecord::Base
   has_many :vps_has_configs
   has_many :vpses, through: :vps_has_configs

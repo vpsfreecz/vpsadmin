@@ -1,3 +1,5 @@
+require 'vpsadmin/api/maintainable'
+
 class Cluster
   include VpsAdmin::API::Maintainable::Model
 

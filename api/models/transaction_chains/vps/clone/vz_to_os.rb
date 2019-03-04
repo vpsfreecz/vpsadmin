@@ -1,3 +1,6 @@
+require_relative 'base'
+require_relative '../vz_to_os'
+
 module TransactionChains
   # Clone OpenVZ VPS to new vpsAdminOS VPS
   class Vps::Clone::VzToOs < ::TransactionChain

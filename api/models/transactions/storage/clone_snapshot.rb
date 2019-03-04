@@ -1,3 +1,5 @@
+require_relative '../utils/user_namespaces'
+
 module Transactions::Storage
   class CloneSnapshot < ::Transaction
     t_name :storage_clone_snapshot

@@ -1,3 +1,10 @@
+require_relative 'node'
+require_relative 'object_state'
+require_relative 'snapshot_download'
+require_relative 'user'
+require_relative 'vps'
+require_relative 'vps_migration'
+
 class MailTemplate < ActiveRecord::Base
   has_many :mail_template_translations, dependent: :destroy
   has_many :mail_template_recipients, dependent: :destroy

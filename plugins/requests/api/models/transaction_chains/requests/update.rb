@@ -1,3 +1,5 @@
+require_relative 'utils'
+
 module VpsAdmin::API::Plugins::Requests::TransactionChains
   class Update < ::TransactionChain
     include Utils

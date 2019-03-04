@@ -1,3 +1,5 @@
+require_relative 'confirmable'
+
 class DatasetProperty < ActiveRecord::Base
   belongs_to :pool
   belongs_to :dataset_in_pool

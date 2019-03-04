@@ -1,3 +1,6 @@
+require 'vpsadmin/api/maintainable'
+require_relative 'lockable'
+
 class Node < ActiveRecord::Base
   belongs_to :location
   has_many :vpses

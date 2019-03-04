@@ -1,3 +1,5 @@
+require_relative 'utils'
+
 module Transactions::IntegrityCheck
   class Vps < ::Transaction
     t_name :integrity_vps

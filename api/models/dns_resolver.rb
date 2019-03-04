@@ -1,3 +1,5 @@
+require_relative 'lockable'
+
 class DnsResolver < ActiveRecord::Base
   belongs_to :location
   has_many :vpses

@@ -1,3 +1,6 @@
+require_relative 'confirmable'
+require_relative 'lockable'
+
 class SnapshotInPool < ActiveRecord::Base
   belongs_to :snapshot
   belongs_to :dataset_in_pool

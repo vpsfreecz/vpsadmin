@@ -1,3 +1,13 @@
+require 'vpsadmin/api/crypto_providers'
+require 'vpsadmin/api/lifetimes'
+require_relative 'lockable'
+require_relative 'transaction_chains/user/suspend'
+require_relative 'transaction_chains/user/resume'
+require_relative 'transaction_chains/user/soft_delete'
+require_relative 'transaction_chains/user/revive'
+require_relative 'transaction_chains/user/hard_delete'
+require_relative 'transaction_chains/lifetimes/not_implemented'
+
 class User < ActiveRecord::Base
   has_many :user_namespaces
   has_many :vpses

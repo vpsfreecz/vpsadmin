@@ -1,3 +1,8 @@
+require 'vpsadmin/api/cluster_resources'
+require 'vpsadmin/api/dataset_properties'
+require_relative 'confirmable'
+require_relative 'lockable'
+
 class DatasetInPool < ActiveRecord::Base
   belongs_to :dataset
   belongs_to :pool

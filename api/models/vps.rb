@@ -1,3 +1,16 @@
+require 'vpsadmin/api/cluster_resources'
+require 'vpsadmin/api/lifetimes'
+require 'vpsadmin/api/maintainable'
+require 'vpsadmin/api/object_history'
+require_relative 'confirmable'
+require_relative 'lockable'
+require_relative 'transaction_chains/vps/block'
+require_relative 'transaction_chains/vps/unblock'
+require_relative 'transaction_chains/vps/soft_delete'
+require_relative 'transaction_chains/vps/revive'
+require_relative 'transaction_chains/vps/destroy'
+require_relative 'transaction_chains/lifetimes/not_implemented'
+
 class Vps < ActiveRecord::Base
   belongs_to :node
   belongs_to :user

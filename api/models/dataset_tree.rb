@@ -1,3 +1,6 @@
+require_relative 'confirmable'
+require_relative 'lockable'
+
 class DatasetTree < ActiveRecord::Base
   belongs_to :dataset_in_pool
   has_many :branches

@@ -1,3 +1,5 @@
+require_relative 'lockable'
+
 class Network < ActiveRecord::Base
   include Lockable
 

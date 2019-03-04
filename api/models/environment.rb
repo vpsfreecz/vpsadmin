@@ -1,3 +1,5 @@
+require 'vpsadmin/api/maintainable'
+
 class Environment < ActiveRecord::Base
   has_many :locations
   has_many :environment_config_chains

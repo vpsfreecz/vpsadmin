@@ -1,3 +1,5 @@
+require_relative 'lockable'
+
 class IpAddress < ActiveRecord::Base
   belongs_to :network
   belongs_to :network_interface

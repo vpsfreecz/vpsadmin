@@ -1,3 +1,5 @@
+require_relative 'lockable'
+
 class UserNamespace < ActiveRecord::Base
   belongs_to :user
   has_many :user_namespace_blocks

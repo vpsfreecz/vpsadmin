@@ -1,3 +1,5 @@
+require_relative 'base'
+
 module TransactionChains
   # Migrate VPS between two OpenVZ nodes
   class Vps::Migrate::VzToVz < Vps::Migrate::Base

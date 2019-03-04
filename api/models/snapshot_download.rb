@@ -1,3 +1,8 @@
+require 'vpsadmin/api/lifetimes'
+require_relative 'confirmable'
+require_relative 'lockable'
+require_relative 'transaction_chains/dataset/remove_download'
+
 class SnapshotDownload < ActiveRecord::Base
   belongs_to :user
   belongs_to :snapshot

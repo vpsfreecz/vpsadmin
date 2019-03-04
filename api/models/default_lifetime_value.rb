@@ -1,3 +1,5 @@
+require 'vpsadmin/api/lifetimes'
+
 class DefaultLifetimeValue < ActiveRecord::Base
   belongs_to :environment
 

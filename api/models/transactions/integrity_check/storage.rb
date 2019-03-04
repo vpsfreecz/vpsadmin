@@ -1,3 +1,5 @@
+require_relative 'utils'
+
 module Transactions::IntegrityCheck
   class Storage < ::Transaction
     t_name :integrity_storage

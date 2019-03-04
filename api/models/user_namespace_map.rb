@@ -1,3 +1,5 @@
+require_relative 'lockable'
+
 class UserNamespaceMap < ActiveRecord::Base
   belongs_to :user_namespace
   has_one :user_namespace_map_ugid_one,

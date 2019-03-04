@@ -1,3 +1,5 @@
+require_relative 'lockable'
+
 class UserClusterResource < ActiveRecord::Base
   include Lockable
 

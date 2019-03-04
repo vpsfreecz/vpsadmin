@@ -1,4 +1,5 @@
 require 'securerandom'
+require_relative 'user_request'
 
 class RegistrationRequest < UserRequest
   belongs_to :os_template

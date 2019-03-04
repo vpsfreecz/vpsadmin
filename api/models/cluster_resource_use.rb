@@ -1,3 +1,5 @@
+require_relative 'confirmable'
+
 class ClusterResourceUse < ActiveRecord::Base
   include Confirmable
 

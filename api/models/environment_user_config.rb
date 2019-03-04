@@ -1,3 +1,5 @@
+require 'vpsadmin/api/cluster_resources'
+
 class EnvironmentUserConfig < ActiveRecord::Base
   belongs_to :environment
   belongs_to :user
