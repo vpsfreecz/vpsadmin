@@ -697,3 +697,23 @@ function vps_netif_ip_joined_form($vps, $netif) {
 	}
 	$xtpl->form_out(_('Go >>'));
 }
+
+function vps_delete_form($vps_id) {
+	global $xtpl, $api;
+	$vps = $api->vps->find($vps_id);
+
+	$xtpl->perex(_("Are you sure you want to delete VPS number").' '.$vps->id.'?', '');
+
+	$xtpl->table_title(_("Delete VPS"));
+	$xtpl->table_td(_("Hostname").':');
+	$xtpl->table_td($vps->hostname);
+	$xtpl->table_tr();
+	$xtpl->form_create('?page=adminvps&section=vps&action=delete2&veid='.$vps->id, 'post');
+	$xtpl->form_csrf();
+
+	if(isAdmin()) {
+		$xtpl->form_add_checkbox(_("Lazy delete").':', 'lazy_delete', '1', true,
+			_("Do not delete VPS immediately, but after passing of predefined time."));
+	}
+	$xtpl->form_out(_("Delete"));
+}

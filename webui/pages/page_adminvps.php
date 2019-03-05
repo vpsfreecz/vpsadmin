@@ -152,30 +152,25 @@ switch ($_GET["action"]) {
 			break;
 
 		case 'delete':
-			$vps = $api->vps->find($_GET['veid']);
-
-			$xtpl->perex(_("Are you sure you want to delete VPS number").' '.$vps->id.'?', '');
-
-			$xtpl->table_title(_("Delete VPS"));
-			$xtpl->table_td(_("Hostname").':');
-			$xtpl->table_td($vps->hostname);
-			$xtpl->table_tr();
-			$xtpl->form_create('?page=adminvps&section=vps&action=delete2&veid='.$_GET["veid"], 'post');
-			$xtpl->form_csrf();
-
-			if(isAdmin()) {
-				$xtpl->form_add_checkbox(_("Lazy delete").':', 'lazy_delete', '1', true,
-					_("Do not delete VPS immediately, but after passing of predefined time."));
-			}
-			$xtpl->form_out(_("Delete"));
+			vps_delete_form($_GET['veid']);
 			break;
 
 		case 'delete2':
-			csrf_check();
-			$api->vps->destroy($_GET["veid"], array('lazy' => $_POST["lazy_delete"] ? true : false));
+			try {
+				csrf_check();
+				$api->vps->destroy($_GET['veid'], [
+					'lazy' => $_POST['lazy_delete'] ? true : false
+				]);
 
-			notify_user(_("Delete VPS").' #'.$_GET["veid"], _("Deletion of VPS")." {$_GET["veid"]} ".strtolower(_("planned")));
-			redirect('?page=adminvps');
+				notify_user(
+					_('Delete VPS').' #'.$_GET['veid'],
+					_('Deletion of VPS')." {$_GET['veid']} ".strtolower(_('planned'))
+				);
+				redirect('?page=adminvps');
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('VPS deletion failed'), $e->getResponse());
+				vps_delete_form($_GET['veid']);
+			}
 			break;
 
 		case 'info':
