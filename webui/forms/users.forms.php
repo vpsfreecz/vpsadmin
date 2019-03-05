@@ -775,6 +775,35 @@ function sort_resource_packages ($pkgs) {
 	return $ret;
 }
 
+function resource_package_counts ($env_pkgs) {
+	$ret = [];
+	$tmp = [];
+
+	foreach ($env_pkgs as $pkg) {
+		if ($pkg->is_personal)
+			continue;
+		elseif (array_key_exists($pkg->label, $tmp))
+			$tmp[$pkg->label] += 1;
+		else
+			$tmp[$pkg->label] = 1;
+	}
+
+	foreach ($tmp as $pkg_label => $count) {
+		$pkg = null;
+
+		foreach ($env_pkgs as $p) {
+			if ($p->label == $pkg_label) {
+				$pkg = $p;
+				break;
+			}
+		}
+
+		$ret[] = [$pkg, $count];
+	}
+
+	return $ret;
+}
+
 function list_user_resource_packages($user_id) {
 	global $xtpl, $api;
 
@@ -786,8 +815,30 @@ function list_user_resource_packages($user_id) {
 		'user' => $user_id,
 		'meta' => ['includes' => 'environment'],
 	]);
+	$sorted_pkgs = sort_resource_packages($pkgs);
 
-	foreach (sort_resource_packages($pkgs) as $v) {
+	$xtpl->table_title(_('Summary'));
+	$xtpl->table_add_category(_('Environment'));
+	$xtpl->table_add_category(_('Package'));
+	$xtpl->table_add_category(_('Count'));
+
+	foreach ($sorted_pkgs as $v) {
+		list($env, $env_pkgs) = $v;
+
+		$pkg_counts = resource_package_counts($env_pkgs);
+		$xtpl->table_td($env->label, false, false, '1', count($pkg_counts));
+
+		foreach ($pkg_counts as $v) {
+			list($pkg, $count) = $v;
+			$xtpl->table_td($pkg->label);
+			$xtpl->table_td($count."&times;");
+			$xtpl->table_tr('#fff', '#fff', 'nohover');
+		}
+	}
+
+	$xtpl->table_out();
+
+	foreach ($sorted_pkgs as $v) {
 		list($env, $env_pkgs) = $v;
 
 		$xtpl->table_title(_('Environment').': '.$env->label);
