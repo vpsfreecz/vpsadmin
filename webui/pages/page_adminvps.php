@@ -872,11 +872,25 @@ if ($list_vps) {
 				if (isAdmin())
 					$xtpl->table_td(maintenance_lock_icon('vps', $vps));
 
-				if (isAdmin() || $envs_destroy[$vps->node->location->environment_id]){
-					$xtpl->table_td((!$vps->is_running) ? '<a href="?page=adminvps&action=delete&veid='.$vps->id.'"><img src="template/icons/vps_delete.png"  title="'._("Delete").'"/></a>' : '<img src="template/icons/vps_delete_grey.png"  title="'._("Unable to delete").'"/>');
+				$deleteAction = function () use ($xtpl, $vps) {
+					$xtpl->table_td('<a href="?page=adminvps&action=delete&veid='.$vps->id.'"><img src="template/icons/vps_delete.png" title="'._("Delete").'"/></a>');
+				};
+
+				$cantDelete = function ($reason) use ($xtpl) {
+					$xtpl->table_td('<img src="template/icons/vps_delete_grey.png" title="'.$reason.'"/>');
+				};
+
+				if (isAdmin()) {
+					$deleteAction();
+				} elseif ($envs_destroy[$vps->node->location->environment_id]) {
+					if ($vps->is_running)
+						$cantDelete(_('Stop the VPS to be able to delete it'));
+					else
+						$deleteAction();
 				} else {
-					$xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'._("Cannot delete").'"/>');
+					$cantDelete(_('Environment configuration does not allow VPS deletion'));
 				}
+
 			} else {
 				$xtpl->table_td('');
 				$xtpl->table_td('');
