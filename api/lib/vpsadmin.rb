@@ -11,6 +11,9 @@ require 'digest/sha1'
 
 Thread.abort_on_exception = true
 
+path = File.dirname(__FILE__)
+$: << path unless $:.include?(path)
+
 module VpsAdmin
   module API
     module Resources
