@@ -22,7 +22,7 @@ module TransactionChains
         )
 
         # Create all cluster resources in all environments
-        ::ClusterResource.each do |cr|
+        ::ClusterResource.all.each do |cr|
           objects << ::UserClusterResource.create!(
             user: user,
             environment: env,
@@ -49,7 +49,7 @@ module TransactionChains
           objects << ::UserClusterResourcePackage.create!(
             user: user,
             environment: env,
-            cluster_resource_package: pkg,
+            cluster_resource_package: pkg.cluster_resource_package,
             comment: 'User was created',
           )
         end
