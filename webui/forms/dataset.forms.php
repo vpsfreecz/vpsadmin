@@ -42,7 +42,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 	else
 		$include[] = 'refquota';
 
-	$colspan = 5 + count($include);
+	$colspan = ((isAdmin() || USERNS_PUBLIC) ? 6 : 5) + count($include);
 
 	$xtpl->table_title(_('Datasets'));
 
@@ -58,6 +58,9 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 		$xtpl->table_add_category($desc->label);
 	}
 
+	if (isAdmin() || USERNS_PUBLIC)
+		$xtpl->table_add_category(_('UID/GID map'));
+
 	$xtpl->table_add_category(_('Mount'));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
@@ -65,7 +68,8 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 
 	$listParams = array(
 		'role' => $role,
-		'dataset' => $parent
+		'dataset' => $parent,
+		'meta' => ['includes' => 'user_namespace_map'],
 	);
 
 	if ($user)
@@ -98,6 +102,14 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 			$xtpl->table_td(
 				$desc->type == 'Integer' ? data_size_to_humanreadable($ds->{$name}) : $ds->{$name}
 			);
+		}
+
+		if (isAdmin() || USERNS_PUBLIC) {
+			if ($ds->user_namespace_map_id) {
+				$xtpl->table_td('<a href="?page=userns&action=map_show&id='.$ds->user_namespace_map_id.'">'.$ds->user_namespace_map->label.'</a>');
+			} else {
+				$xtpl->table_td(_('none'));
+			}
 		}
 
 		$xtpl->table_td('<a href="?page=dataset&action=mount&dataset='.$ds->id.'&vps='.$_GET['veid'].'&return='.$return.'">'._('Mount').'</a>');
