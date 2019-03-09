@@ -81,6 +81,7 @@ function userns_list() {
 
 	$xtpl->table_add_category(_('Size'));
 	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
 
 	foreach ($userns_list as $uns) {
 		$xtpl->table_td(
@@ -94,6 +95,9 @@ function userns_list() {
 		}
 
 		$xtpl->table_td($uns->size, false, true);
+		$xtpl->table_td(
+			'<a href="?page=userns&action=maps&user_namespace='.$uns->id.'"><img src="template/icons/vps_ip_list.png" alt="'._('List UID/GID maps').'" title="'._('List UID/GID maps').'"></a>'
+		);
 		$xtpl->table_td(
 			'<a href="?page=userns&action=show&id='.$uns->id.'"><img src="template/icons/vps_edit.png" alt="'._('Details').'" title="'._('Details').'"></a>'
 		);
