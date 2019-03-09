@@ -534,7 +534,7 @@ module VpsAdmin::API
         end
 
         action.send(:define_method, :update_object_state) do |obj|
-          unless (input.keys - %i(object_state change_reason expiration_date)).empty?
+          unless (input.keys - %w(object_state change_reason expiration_date)).empty?
             raise VpsAdmin::API::Exceptions::TooManyParameters,
                   'cannot update any parameters when changing object state'
           end
