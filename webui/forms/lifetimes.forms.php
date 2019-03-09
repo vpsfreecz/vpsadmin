@@ -3,7 +3,7 @@
 function lifetimes_set_state_form($resource, $id, $current_obj = null) {
 	global $xtpl, $api;
 
-	$return = $_GET['return'] ? $_GET['return'] : urlencode($_SERVER['REQUEST_URI']);
+	$return = urlencode($_GET['return'] ? $_GET['return'] : $_SERVER['REQUEST_URI']);
 
 	$xtpl->table_title(_('Object state'));
 	$xtpl->form_create('?page=lifetimes&action=set_state&resource='.$resource.'&id='.$id.'&return='.$return, 'post');
