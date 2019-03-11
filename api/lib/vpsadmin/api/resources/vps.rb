@@ -81,6 +81,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
           value_label: :domain_name
       resource VpsAdmin::API::Resources::Location, label: 'Location', desc: 'Filter by location'
       resource VpsAdmin::API::Resources::Environment, label: 'Environment', desc: 'Filter by environment'
+      resource VpsAdmin::API::Resources::UserNamespaceMap, label: 'UID/GID mapping'
       use :template
     end
 
@@ -155,6 +156,12 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       if input[:environment]
         q = q.joins(node: [:location]).where(
           locations: {environment_id: input[:environment].id}
+        )
+      end
+
+      if input.has_key?(:user_namespace_map)
+        q = q.joins(:dataset_in_pool).where(
+          dataset_in_pools: {user_namespace_map_id: input[:user_namespace_map].id},
         )
       end
 

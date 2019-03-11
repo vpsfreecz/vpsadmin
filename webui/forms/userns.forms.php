@@ -188,6 +188,7 @@ function userns_map_list ($userns_id = null) {
 	$xtpl->table_add_category(_('Label'));
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
 
 	foreach ($maps as $m) {
 		$xtpl->table_td(
@@ -204,6 +205,9 @@ function userns_map_list ($userns_id = null) {
 			'</a>'
 		);
 		$xtpl->table_td($m->label);
+		$xtpl->table_td(
+			'<a href="?page=userns&action=map_datasets&id='.$m->id.'"><img src="template/icons/vps_ip_list.png" alt="'._('List datasets').'" title="'._('List datasets').'"></a>'
+		);
 		$xtpl->table_td(
 			'<a href="?page=userns&action=map_show&id='.$m->id.'"><img src="template/icons/vps_edit.png" alt="'._('Details').'" title="'._('Details').'"></a>'
 		);
@@ -309,4 +313,36 @@ function userns_map_new () {
 	$xtpl->table_tr();
 
 	$xtpl->form_out(_('Go >>'));
+}
+
+function userns_map_dataset_list ($map_id) {
+	global $xtpl, $api;
+
+	$map = $api->user_namespace_map->show($map_id);
+
+	$xtpl->title(
+		_('Datasets using UID/GID mapping').' '.
+		'<a href="?page=userns&action=map_show&id='.$map->id.'">#'.$map->id.'</a> '.
+		$map->label
+	);
+
+	dataset_list(
+		'hypervisor',
+		null, null, null, null, null,
+		[
+			'title' => _('VPS datasets'),
+			'submenu' => false,
+			'ugid_map' => $map->id,
+		]
+	);
+
+	dataset_list(
+		'primary',
+		null, null, null, null, null,
+		[
+			'title' => _('NAS datasets'),
+			'submenu' => false,
+			'ugid_map' => $map->id,
+		]
+	);
 }

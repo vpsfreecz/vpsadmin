@@ -41,6 +41,7 @@ module VpsAdmin::API::Resources
         resource User, label: 'User', value_label: :login,
                  desc: 'Dataset owner'
         resource VpsAdmin::API::Resources::Dataset, label: 'Subtree'
+        resource VpsAdmin::API::Resources::UserNamespaceMap, label: 'UID/GID mapping'
         string :role, label: 'Role', desc: 'Show only datasets of certain role',
             choices: ::Pool.roles.keys
         integer :to_depth, label: 'To depth', desc: 'Show only datasets to certain depth'
@@ -61,6 +62,14 @@ module VpsAdmin::API::Resources
       def query
         q = with_includes.joins(dataset_in_pools: [:pool]).where(with_restricted)
         q = q.subtree_of(input[:dataset]) if input[:dataset]
+
+        if input.has_key?(:user_namespace_map)
+          q = q.where(
+            dataset_in_pools: {
+              user_namespace_map: input[:user_namespace_map],
+            },
+          )
+        end
 
         if input[:role]
           q = q.where(pools: {role: ::Pool.roles[input[:role].to_sym]})

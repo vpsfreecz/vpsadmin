@@ -30,7 +30,7 @@ function is_ds_valid($p) {
 	return $p;
 }
 
-function dataset_list($role, $parent = null, $user = null, $dataset = null, $limit = null, $offset = null) {
+function dataset_list($role, $parent = null, $user = null, $dataset = null, $limit = null, $offset = null, $opts = []) {
 	global $xtpl, $api;
 
 	$params = $api->dataset->list->getParameters('output');
@@ -44,7 +44,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 
 	$colspan = ((isAdmin() || USERNS_PUBLIC) ? 6 : 5) + count($include);
 
-	$xtpl->table_title(_('Datasets'));
+	$xtpl->table_title($opts['title'] ? $opts['title'] : _('Datasets'));
 
 	if ($_SESSION['is_admin'])
 		$xtpl->table_add_category('#');
@@ -83,6 +83,9 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 
 	if ($offset)
 		$listParams['offset'] = $offset;
+
+	if ($opts['ugid_map'])
+		$listParams['user_namespace_map'] = $opts['ugid_map'];
 
 	$datasets = $api->dataset->list($listParams);
 	$return = urlencode($_SERVER['REQUEST_URI']);
@@ -130,7 +133,9 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 
 	$xtpl->table_out();
 
-	$xtpl->sbar_add(_('Create dataset'), '?page=dataset&action=new&role='.$role.'&parent='.$parent.'&return='.urlencode($_SERVER['REQUEST_URI']));
+	if ($opts['submenu'] !== false) {
+		$xtpl->sbar_add(_('Create dataset'), '?page=dataset&action=new&role='.$role.'&parent='.$parent.'&return='.urlencode($_SERVER['REQUEST_URI']));
+	}
 }
 
 function dataset_create_form() {

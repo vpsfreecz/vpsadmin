@@ -148,6 +148,11 @@ if (isLoggedIn()) {
 
 		break;
 
+	case 'map_datasets':
+		userns_submenu();
+		userns_map_dataset_list($_GET['id']);
+		break;
+
 	default:
 		userns_submenu();
 		userns_or_map_list();
