@@ -304,7 +304,14 @@ function userns_map_new () {
 			$hidden = '<input type="hidden" name="user_namespace" value="'.$ret[0]->id.'">';
 
 		} else {
-			api_param_to_form('user_namespace', $input->user_namespace, post_val('user_namespace'));
+			api_param_to_form(
+				'user_namespace',
+				$input->user_namespace,
+				post_val('user_namespace'),
+				function ($userns) {
+					return '#'.$userns->id.' ('.$userns->size.' IDs)';
+				}
+			);
 		}
 	}
 
