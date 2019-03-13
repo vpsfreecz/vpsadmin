@@ -130,6 +130,8 @@ switch ($_GET["action"]) {
 			} else {
 				if ($_GET['location'])
 					$params['location'] = (int)$_GET['location'];
+				if ($_POST['user_namespace_map'])
+					$params['user_namespace_map'] = $_POST['user_namespace_map'];
 			}
 
 			try {

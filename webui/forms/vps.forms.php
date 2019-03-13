@@ -159,6 +159,18 @@ function print_newvps_page2($loc_id) {
 		$xtpl->table_tr();
 	}
 
+	if (!isAdmin() && USERNS_PUBLIC) {
+		// User namespace map
+		$ugid_maps = resource_list_to_options($api->user_namespace_map->list());
+		$ugid_maps[0] = _('None/auto');
+		$xtpl->form_add_select(
+			_('UID/GID map').':',
+			'user_namespace_map',
+			$ugid_maps,
+			post_val('user_namespace_map')
+		);
+	}
+
 	if ($_SESSION["is_admin"]) {
 		$xtpl->form_add_checkbox(_("Boot on create").':', 'boot_after_create', '1', (isset($_POST['vps_hostname']) && !isset($_POST['boot_after_create'])) ? false : true, $hint = '');
 		$xtpl->form_add_textarea(_("Extra information about VPS").':', 28, 4, 'vps_info', $_POST['vps_info'], '');

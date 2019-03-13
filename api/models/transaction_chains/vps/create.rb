@@ -7,6 +7,7 @@ module TransactionChains
     # @option opts [Integer] ipv6
     # @option opts [Integer] ipv4_private
     # @option opts [Boolean] start (true)
+    # @Option opts [::UserNamespaceMap, nil] userns_map
     def link_chain(vps, opts)
       lock(vps.user)
       vps.save!
@@ -21,8 +22,7 @@ module TransactionChains
       )
 
       if vps.node.vpsadminos?
-        # TODO: configurable userns map
-        userns_map = ::UserNamespaceMap.joins(:user_namespace).where(
+        userns_map = opts[:userns_map] || ::UserNamespaceMap.joins(:user_namespace).where(
           user_namespaces: {user_id: vps.user_id}
         ).take!
 

@@ -198,6 +198,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       integer :ipv4, label: 'IPv4', default: 1, fill: true
       integer :ipv6, label: 'IPv6', default: 1, fill: true
       integer :ipv4_private, label: 'Private IPv4', default: 0, fill: true
+      resource VpsAdmin::API::Resources::UserNamespaceMap, label: 'UID/GID mapping'
 
       patch :hostname, required: true
     end
@@ -209,7 +210,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       input whitelist: %i(environment location hostname os_template
-                          dns_resolver cpu memory swap diskspace ipv4 ipv4_private ipv6)
+                          dns_resolver cpu memory swap diskspace ipv4 ipv4_private ipv6
+                          user_namespace_map)
       output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
                           node dataset memory swap cpu backup_enabled maintenance_lock
                           maintenance_lock_reason object_state expiration_date
@@ -293,6 +295,14 @@ END
 
       %i(ipv4 ipv6 ipv4_private).each do |opt|
         opts[opt] = input.delete(opt) if input.has_key?(opt)
+      end
+
+      if input[:user_namespace_map]
+        if input[:user_namespace_map].user_namespace.user_id != input[:user].id
+          error('user namespace map has to belong to VPS owner')
+        end
+
+        opts[:userns_map] = input.delete(:user_namespace_map)
       end
 
       vps = ::Vps.new(to_db_names(input))
@@ -1083,6 +1093,7 @@ END
                value_label: :name
       resource VpsAdmin::API::Resources::Dataset::Snapshot, label: 'Snapshot',
                value_label: :created_at
+      resource VpsAdmin::API::Resources::UserNamespaceMap, label: 'UID/GID map'
       string :mountpoint, label: 'Mountpoint', db_name: :dst
       string :mode, label: 'Mode', choices: %w(ro rw), default: 'rw', fill: true
       string :on_start_fail, label: 'On mount failure',
@@ -1153,7 +1164,9 @@ END
       blocking true
 
       input do
-        use :all, include: %i(dataset snapshot mountpoint mode on_start_fail)
+        use :all, include: %i(
+            dataset snapshot user_namespace_map mountpoint mode on_start_fail
+          )
       end
 
       output do
