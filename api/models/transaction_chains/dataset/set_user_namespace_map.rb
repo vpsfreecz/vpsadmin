@@ -6,18 +6,23 @@ module TransactionChains
       lock(dip)
       concerns(:affect, [dip.dataset.class.name, dip.dataset.id])
 
-      # TODO: unmount all mounts of this datasets... and probably all
-      #       subdatasets as well
-      #       we also have to handle situation where we need to unmount e.g.
-      #       `/mnt/something`, but some other dataset/snapshot might be mounted
-      #       below that point, e.g. `/mnt/something/whatever`. So we need to
-      #       unmount all of that in the correct order.
+      selector = VpsAdmin::API::MountSelector.new(dip)
 
+      # Unmount all related mounts
+      selector.each_vps_unmount do |vps, mounts|
+        lock(vps)
+        append(Transactions::Vps::Umount, args: [vps, mounts])
+      end
+
+      # Change UID/GID map
       append_t(Transactions::Storage::SetMap, args: [dip, userns_map]) do |t|
         t.edit(dip, user_namespace_map_id: userns_map && userns_map.id)
       end
 
-      # TODO: remount all mounts
+      # Remount all mounts
+      selector.each_vps_mount do |vps, mounts|
+        append(Transactions::Vps::Mount, args: [vps, mounts])
+      end
     end
   end
 end
