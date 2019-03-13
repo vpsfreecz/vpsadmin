@@ -5,6 +5,12 @@ module NodeCtld
   class Db
     include OsCtl::Lib::Utils::Log
 
+    def self.open
+      db = Db.new
+      yield(db)
+      db.close
+    end
+
     def initialize(db = nil)
       db ||= $CFG.get(:db)
 

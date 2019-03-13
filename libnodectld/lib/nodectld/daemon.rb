@@ -48,7 +48,6 @@ module NodeCtld
 
     def initialize
       self.class.instance = self
-      @db = Db.new
       @m_workers = Mutex.new
       @start_time = Time.new
       @export_console = false
@@ -68,8 +67,9 @@ module NodeCtld
 
     def init(do_init)
       if do_init
-        @node_status.init(@db)
-        @node_status.update(@db)
+        db = Db.new
+        @node_status.init(db)
+        @node_status.update(db)
 
         node = Node.new
         node.init
@@ -80,12 +80,15 @@ module NodeCtld
       @remote_control.start
 
       if do_init
-        @fw.init(@db)
-        Shaper.init(@db)
+        @fw.init(db)
+        Shaper.init(db)
+        db.close
       end
     end
 
     def start
+      cmd_db = Db.new
+
       loop do
         sleep($CFG.get(:vpsadmin, :check_interval))
 
@@ -97,7 +100,7 @@ module NodeCtld
               queue.delete_if do |wid, w|
                 unless w.working?
                   c = w.cmd
-                  c.save(@db)
+                  Db.open { |db| c.save(db) }
 
                   if @pause && w.cmd.id.to_i === @pause
                     pause!(true)
@@ -120,7 +123,7 @@ module NodeCtld
               end
             end
 
-            do_commands
+            do_commands(cmd_db)
           end
         end
 
@@ -195,8 +198,8 @@ module NodeCtld
       end
     end
 
-    def do_commands
-      rs = select_commands(@db)
+    def do_commands(db)
+      rs = select_commands(db)
 
       rs.each do |row|
         c = Command.new(row)
