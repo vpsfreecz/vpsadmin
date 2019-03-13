@@ -2,17 +2,17 @@ module TransactionChains
   class Dataset::Create < ::TransactionChain
     label 'Create'
 
-    def link_chain(
-      pool,
-      dataset_in_pool,
-      path,
-      automount,
-      properties,
-      user = nil,
-      label = nil,
-      userns_map = nil,
-      opts = {}
-    )
+    # @param pool [::Pool]
+    # @param dataset_in_pool [::DatasetInPool]
+    # @param path [Array<::Dataset>]
+    # @param opts [Hash]
+    # @option opts [Boolean] :automount
+    # @option opts [Hash] :properties
+    # @option opts [::User, nil] :user
+    # @option opts [String] :label
+    # @option opts [::UserNamespaceMap, nil] :userns_map
+    # @option opts [Boolean] :create_private
+    def link_chain(pool, dataset_in_pool, path, opts)
       lock(dataset_in_pool) if dataset_in_pool
       concerns(
         :affect,
@@ -24,8 +24,10 @@ module TransactionChains
       @dataset_in_pool = dataset_in_pool
       @parent = dataset_in_pool && dataset_in_pool.dataset
       @parent_properties = {}
-      @automount = dataset_in_pool && automount
+      @automount = dataset_in_pool && opts[:automount]
       @opts = opts
+
+      opts[:properties] ||= {}
 
       find_parent_mounts(dataset_in_pool) if @automount
 
@@ -33,26 +35,31 @@ module TransactionChains
         ret << create_dataset(part)
       end
 
-      ret << create_dataset(path.last, properties, label, userns_map)
+      ret << create_dataset(
+        path.last,
+        opts[:properties],
+        opts[:label],
+        opts[:userns_map],
+      )
 
       use_prop = nil
 
-      if properties[:refquota] && pool.refquota_check
+      if opts[:properties][:refquota] && pool.refquota_check
         use_prop = :refquota
 
-      elsif properties[:quota] && ret.last.dataset.parent_id.nil?
+      elsif opts[:properties][:quota] && ret.last.dataset.parent_id.nil?
         use_prop = :quota
       end
 
       if use_prop
         use = ret.last.allocate_resource!(
           :diskspace,
-          properties[use_prop],
+          opts[:properties][use_prop],
           user: user || dataset_in_pool.dataset.user
         )
 
-        append(Transactions::Utils::NoOp, args: pool.node_id) do
-          create(use)
+        append_t(Transactions::Utils::NoOp, args: pool.node_id) do |t|
+          t.create(use)
         end
       end
 
@@ -83,15 +90,19 @@ module TransactionChains
 
       lock(dip)
 
-      @parent_properties = tmp = ::DatasetProperty.inherit_properties!(dip, @parent_properties, properties)
+      @parent_properties = tmp = ::DatasetProperty.inherit_properties!(
+        dip,
+        @parent_properties,
+        properties
+      )
 
-      append(
+      append_t(
         Transactions::Storage::CreateDataset,
         args: [dip, properties, {create_private: @opts[:create_private]}]
-      ) do
-        create(part)
-        create(dip)
-        tmp.each_value { |p| create(p) }
+      ) do |t|
+        t.create(part)
+        t.create(dip)
+        tmp.each_value { |p| t.create(p) }
       end
 
       dip.call_class_hooks_for(:create, self, args: [dip])
@@ -166,8 +177,8 @@ module TransactionChains
         use_chain(Vps::Mounts, args: vps)
         use_chain(Vps::Mount, args: [vps, mounts]) if vps.running?
 
-        append(Transactions::Utils::NoOp, args: vps.node_id) do
-          mounts.each { |m| create(m) }
+        append_t(Transactions::Utils::NoOp, args: vps.node_id) do |t|
+          mounts.each { |m| t.create(m) }
         end
       end
     end

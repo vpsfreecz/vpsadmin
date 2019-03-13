@@ -238,12 +238,12 @@ module TransactionChains
         @dst_pool,
         nil,
         [ds],
-        false,
-        root_dataset_properties(vps),
-        dst_vps.user,
-        "vps#{dst_vps.id}",
-        @userns_map,
-        {create_private: false},
+        automount: false,
+        properties: root_dataset_properties(vps),
+        user: dst_vps.user,
+        label: "vps#{dst_vps.id}",
+        userns_map: @userns_map,
+        create_private: false,
       ]).last
 
       # Clone dataset plans

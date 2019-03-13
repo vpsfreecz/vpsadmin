@@ -137,7 +137,7 @@ module VpsAdmin::API::Resources
             }
         resource Dataset, label: 'Parent dataset',
                  value_label: :full_name
-      resource UserNamespaceMap, label: 'UID/GID mapping'
+        resource UserNamespaceMap, label: 'UID/GID mapping'
         bool :automount, label: 'Automount',
              desc: 'Automatically mount newly created datasets under all its parents',
              default: false, fill: true
@@ -174,9 +174,9 @@ module VpsAdmin::API::Resources
         @chain, dataset = ::Dataset.create_new(
           input[:name].strip,
           input[:dataset],
-          input[:automount],
-          properties,
-          input[:user_namespace_map]
+          automount: input[:automount],
+          properties: properties,
+          userns_map: input[:user_namespace_map],
         )
         dataset
 

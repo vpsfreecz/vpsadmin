@@ -35,7 +35,14 @@ class Dataset < ActiveRecord::Base
   }
   validate :check_name
 
-  def self.create_new(name, parent_ds, automount, properties, userns_map)
+  # @param name [String]
+  # @param parent_ds [::Dataset]
+  # @param opts [Hash]
+  # @option opts [Boolean] :automount
+  # @option opts [Hash] :properties
+  # @option opts [::UserNamespaceMap, :inherit] :userns_map
+  def self.create_new(name, parent_ds, opts = {})
+    opts[:properties] ||= {}
     parts = name.split('/')
 
     if parts.empty?
@@ -73,7 +80,7 @@ class Dataset < ActiveRecord::Base
       :check_refquota,
       top_dip,
       path,
-      properties[:refquota]
+      opts[:properties][:refquota]
     )
 
     # VPS subdatasets are more complicated and need special handling
@@ -88,11 +95,7 @@ class Dataset < ActiveRecord::Base
       parent_dip.pool,
       parent_dip,
       path,
-      automount,
-      properties,
-      nil,
-      nil,
-      userns_map
+      opts,
     )
   end
 
