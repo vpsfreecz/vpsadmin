@@ -74,8 +74,10 @@ module NodeCtld
     def save(db)
       db.transaction do |t|
         save_transaction(t)
+      end
 
-        if (@status == :ok && !@rollbacked) || keep_going?
+      if (@status == :ok && !@rollbacked) || keep_going?
+        db.transaction do |t|
           # Chain is finished, close up
           if chain_finished?
             run_confirmations(t)
@@ -84,16 +86,20 @@ module NodeCtld
           else # There are more transaction in this chain
             continue_chain(t)
           end
+        end
 
-        elsif @status == :failed || @rollbacked
-          # Fail if already rollbacking
-          if original_chain_direction == :rollback && !@rollbacked
-            log(:critical, :chain, 'Transaction rollback failed, admin intervention is necessary')
-            # FIXME: do something
+      elsif @status == :failed || @rollbacked
+        # Fail if already rollbacking
+        if original_chain_direction == :rollback && !@rollbacked
+          log(:critical, :chain, 'Transaction rollback failed, admin intervention is necessary')
+          # FIXME: do something
 
+          db.transaction do |t|
             close_chain(t, true)
+          end
 
-          else # Reverse chain direction
+        else # Reverse chain direction
+          db.transaction do |t|
             # Is it the last transaction to rollback?
             if chain_finished?
               fail_followers(t) if @rollbacked
