@@ -264,7 +264,7 @@ function dataset_edit_form() {
 
 	$xtpl->form_out(_('Save'), null, '<span class="advanced-property-toggle"></span>');
 
-	if (USERNS_PUBLIC) {
+	if (isAdmin() || USERNS_PUBLIC) {
 		$xtpl->table_title(_('UID/GID mapping'));
 		$xtpl->form_create('?page=dataset&action=edit_map&role='.$_GET['role'].'&id='.$ds->id, 'post');
 		$xtpl->form_add_select(
