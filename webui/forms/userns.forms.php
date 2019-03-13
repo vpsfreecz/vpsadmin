@@ -270,8 +270,8 @@ function userns_map_show ($map_id) {
 	}
 
 	$xtpl->form_add_select_pure(
-		'new_kind', ['uid' => 'UID','gid' => 'GID'],
-		post_val('new_kind', 0)
+		'new_kind', ['both' => 'UID&GID', 'uid' => 'UID','gid' => 'GID'],
+		post_val('new_kind', 'both')
 	);
 	$xtpl->form_add_input_pure('text', '14', 'new_ns_id', post_val('new_ns_id', 0));
 	$xtpl->form_add_input_pure('text', '14', 'new_host_id', post_val('new_host_id', 0));

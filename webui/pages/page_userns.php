@@ -47,12 +47,19 @@ if (isLoggedIn()) {
 
 		if (isset($_POST['add'])) {
 			try {
-				$api->user_namespace_map($_GET['id'])->entry->create([
-					'kind' => $_POST['new_kind'],
-					'ns_id' => $_POST['new_ns_id'],
-					'host_id' => $_POST['new_host_id'],
-					'count' => $_POST['new_count'],
-				]);
+				if ($_POST['new_kind'] == 'both')
+					$kinds = ['uid', 'gid'];
+				else
+					$kinds = [$_POST['new_kind']];
+
+				foreach ($kinds as $kind) {
+					$api->user_namespace_map($_GET['id'])->entry->create([
+						'kind' => $kind,
+						'ns_id' => $_POST['new_ns_id'],
+						'host_id' => $_POST['new_host_id'],
+						'count' => $_POST['new_count'],
+					]);
+				}
 
 				notify_user(_("Entry added"));
 				redirect('?page=userns&action=map_show&id='.$_GET['id']);
