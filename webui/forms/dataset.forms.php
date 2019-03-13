@@ -177,6 +177,21 @@ function dataset_create_form() {
 		.'Use / as a separator to create subdatasets. Max length 254 chars.'));
 	$xtpl->form_add_checkbox(_("Auto mount"), 'automount', '1', true, $params->automount->description);
 
+	if (isAdmin() || USERNS_PUBLIC) {
+		// User namespace map
+		$ugid_params = [];
+		if ($_GET['parent'])
+			$ugid_params['user'] = $ds->user_id;
+
+		$ugid_maps = resource_list_to_options($api->user_namespace_map->list($ugid_params));
+		$ugid_maps[0] = _('None/inherit');
+		$xtpl->form_add_select(
+			_('UID/GID map').':',
+			'user_namespace_map',
+			$ugid_maps,
+			post_val('user_namespace_map')
+		);
+	}
 
 	// Quota
 	$quota = $params->{$quota_name};

@@ -40,7 +40,7 @@ class Dataset < ActiveRecord::Base
   # @param opts [Hash]
   # @option opts [Boolean] :automount
   # @option opts [Hash] :properties
-  # @option opts [::UserNamespaceMap, :inherit] :userns_map
+  # @option opts [::UserNamespaceMap, :inherit, nil] :userns_map
   def self.create_new(name, parent_ds, opts = {})
     opts[:properties] ||= {}
     parts = name.split('/')
@@ -90,6 +90,10 @@ class Dataset < ActiveRecord::Base
     end
 
     maintenance_check!(top_dip.pool)
+
+    if opts[:userns_map] == :inherit
+      opts[:userns_map] = parent_dip.user_namespace_map
+    end
 
     TransactionChains::Dataset::Create.fire(
       parent_dip.pool,

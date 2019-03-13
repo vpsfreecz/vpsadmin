@@ -12,8 +12,15 @@ if (isLoggedIn()) {
 				$params = array(
 					'name' => $_POST['name'],
 					'dataset' => $_POST['dataset'] ? $_POST['dataset'] : $_GET['parent'],
-					'automount' => $_POST['automount'] ? true : false
+					'automount' => $_POST['automount'] ? true : false,
 				);
+
+				if ($_POST['user_namespace_map']) {
+					$params['inherit_user_namespace_map'] = false;
+					$params['user_namespace_map'] = $_POST['user_namespace_map'];
+				} else {
+					$params['inherit_user_namespace_map'] = true;
+				}
 
 				foreach ($quotas as $quota) {
 					if (isset($_POST[$quota]))

@@ -55,7 +55,7 @@ module TransactionChains
         use = ret.last.allocate_resource!(
           :diskspace,
           opts[:properties][use_prop],
-          user: user || dataset_in_pool.dataset.user
+          user: opts[:user] || dataset_in_pool.dataset.user
         )
 
         append_t(Transactions::Utils::NoOp, args: pool.node_id) do |t|
