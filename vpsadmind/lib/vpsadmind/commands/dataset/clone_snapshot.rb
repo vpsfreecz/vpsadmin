@@ -4,11 +4,21 @@ module VpsAdmind
     needs :system, :zfs, :pool
 
     def exec
+      clone = pool_mounted_snapshot(@pool_fs, @snapshot_id)
+
       zfs(
           :clone,
           "-o readonly=on",
-          "#{ds} #{pool_mounted_snapshot(@pool_fs, @snapshot_id)}"
+          "#{ds} #{clone}"
       )
+
+      if @uidmap && @gidmap
+        zfs(:umount, nil, clone)
+        zfs(:set, "uidmap=\"#{@uidmap.join(',')}\" gidmap=\"#{@gidmap.join(',')}\"", clone)
+        zfs(:mount, nil, clone)
+      end
+
+      ok
     end
 
     def rollback

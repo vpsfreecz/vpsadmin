@@ -4,18 +4,25 @@ module VpsAdmind
     needs :system, :zfs, :pool
 
     def exec
-      zfs(:set, 'sharenfs=off', pool_mounted_snapshot(@pool_fs, @snapshot_id))
-      zfs(:destroy, nil, pool_mounted_snapshot(@pool_fs, @snapshot_id))
+      clone = pool_mounted_snapshot(@pool_fs, @snapshot_id)
+
+      zfs(:set, 'sharenfs=off', clone)
+      zfs(:destroy, nil, clone)
     end
 
     def rollback
-      zfs(
-          :clone,
-          nil,
-          "#{ds} #{pool_mounted_snapshot(@pool_fs, @snapshot_id)}",
-          [1] # the dataset might exist if destroy failed
-      )
-      zfs(:inherit, 'sharenfs', pool_mounted_snapshot(@pool_fs, @snapshot_id))
+      clone = pool_mounted_snapshot(@pool_fs, @snapshot_id)
+
+      # the dataset might exist if destroy failed
+      zfs(:clone, nil, "#{ds} #{clone}", [1])
+
+      if @uidmap && @gidmap
+        zfs(:umount, nil, clone)
+        zfs(:set, "uidmap=\"#{@uidmap.join(',')}\" gidmap=\"#{@gidmap.join(',')}\"", clone)
+        zfs(:mount, nil, clone)
+      end
+
+      zfs(:inherit, 'sharenfs', clone)
     end
 
     protected
