@@ -243,8 +243,8 @@ function userns_map_show ($map_id) {
 
 	$xtpl->form_create('?page=userns&action=map_entries_edit&id='.$m->id, 'post', 'userns-map-entries');
 	$xtpl->table_add_category(_('Type'));
+	$xtpl->table_add_category(_('ID within VPS'));
 	$xtpl->table_add_category(_('ID within namespace'));
-	$xtpl->table_add_category(_('ID outside namespace'));
 	$xtpl->table_add_category(_('ID count'));
 	$xtpl->table_add_category('');
 
@@ -256,8 +256,8 @@ function userns_map_show ($map_id) {
 			'<input type="hidden" name="entry_id[]" value="'.$e->id.'">'
 		);
 
+		$xtpl->form_add_input_pure('text', '14', 'vps_id[]', post_val_array('vps_id', $i, $e->vps_id));
 		$xtpl->form_add_input_pure('text', '14', 'ns_id[]', post_val_array('ns_id', $i, $e->ns_id));
-		$xtpl->form_add_input_pure('text', '14', 'host_id[]', post_val_array('host_id', $i, $e->host_id));
 		$xtpl->form_add_input_pure('text', '14', 'count[]', post_val_array('count', $i, $e->count));
 		$xtpl->table_td(
 			'<a href="?page=userns&action=map_entry_del&map='.$m->id.'&entry='.$e->id.'&t='.csrf_token().'">'.
@@ -273,8 +273,8 @@ function userns_map_show ($map_id) {
 		'new_kind', ['both' => 'UID&GID', 'uid' => 'UID','gid' => 'GID'],
 		post_val('new_kind', 'both')
 	);
+	$xtpl->form_add_input_pure('text', '14', 'new_vps_id', post_val('new_vps_id', 0));
 	$xtpl->form_add_input_pure('text', '14', 'new_ns_id', post_val('new_ns_id', 0));
-	$xtpl->form_add_input_pure('text', '14', 'new_host_id', post_val('new_host_id', 0));
 	$xtpl->form_add_input_pure('text', '14', 'new_count', post_val('new_count', 0));
 	$xtpl->table_td($xtpl->html_submit(_('Add'), 'add'));
 	$xtpl->table_tr();

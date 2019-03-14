@@ -1674,8 +1674,8 @@ CREATE TABLE `user_namespace_map_entries` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_namespace_map_id` int(11) NOT NULL,
   `kind` int(11) NOT NULL,
+  `vps_id` int(10) unsigned NOT NULL,
   `ns_id` int(10) unsigned NOT NULL,
-  `host_id` int(10) unsigned NOT NULL,
   `count` int(10) unsigned NOT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
@@ -2131,7 +2131,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-02-18 16:10:12
+-- Dump completed on 2019-03-14 12:52:48
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2365,4 +2365,6 @@ INSERT INTO schema_migrations (version) VALUES ('20181119183704');
 INSERT INTO schema_migrations (version) VALUES ('20181121153314');
 
 INSERT INTO schema_migrations (version) VALUES ('20190211124513');
+
+INSERT INTO schema_migrations (version) VALUES ('20190314114331');
 

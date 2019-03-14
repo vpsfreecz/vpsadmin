@@ -167,13 +167,13 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
     params(:all) do
       id :id, label: 'Entry ID'
       string :kind, choices: ::UserNamespaceMapEntry.kinds.keys.map(&:to_s)
+      integer :vps_id, desc: 'Beginning of the ID range within VPS'
       integer :ns_id, desc: 'Beginning of the ID range within the user namespace'
-      integer :host_id, desc: 'Beginning of the ID range outside the user namespace'
       integer :count, desc: 'Number of mapped IDs'
     end
 
     params(:editable) do
-      use :all, include: %i(ns_id host_id count)
+      use :all, include: %i(vps_id ns_id count)
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -237,7 +237,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
       desc 'Create a new map entry'
 
       input do
-        arr = %i(kind ns_id host_id count)
+        arr = %i(kind vps_id ns_id count)
 
         use :all, include: arr
         arr.each { |v| patch v, required: true }
@@ -278,7 +278,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
       desc 'Edit map entry'
 
       input do
-        use :all, include: %i(ns_id host_id count)
+        use :all, include: %i(vps_id ns_id count)
       end
 
       output do

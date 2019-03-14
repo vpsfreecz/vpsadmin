@@ -55,8 +55,8 @@ if (isLoggedIn()) {
 				foreach ($kinds as $kind) {
 					$api->user_namespace_map($_GET['id'])->entry->create([
 						'kind' => $kind,
+						'vps_id' => $_POST['new_vps_id'],
 						'ns_id' => $_POST['new_ns_id'],
-						'host_id' => $_POST['new_host_id'],
 						'count' => $_POST['new_count'],
 					]);
 				}
@@ -76,8 +76,8 @@ if (isLoggedIn()) {
 				foreach ($_POST['entry_id'] as $i => $id) {
 					$api->user_namespace_map($_GET['id'])->entry($id)->update([
 						'kind' => $_POST['kind'][$i],
+						'vps_id' => $_POST['vps_id'][$i],
 						'ns_id' => $_POST['ns_id'][$i],
-						'host_id' => $_POST['host_id'][$i],
 						'count' => $_POST['count'][$i],
 					]);
 				}
