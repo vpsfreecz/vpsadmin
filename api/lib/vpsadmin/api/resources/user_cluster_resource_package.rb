@@ -32,7 +32,7 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input blacklist: %i(user)
+      input blacklist: %i(user cluster_resource_package)
       output whitelist: %i(id environment label comment created_at updated_at)
       restrict user_id: u.id
       allow
@@ -41,7 +41,7 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
     def query
       q = ::UserClusterResourcePackage.where(with_restricted)
 
-      %i(environment user added_by).each do |v|
+      %i(environment user cluster_resource_package added_by).each do |v|
         q = q.where(v => input[v]) if input.has_key?(v)
       end
 
