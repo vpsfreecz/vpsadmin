@@ -221,12 +221,24 @@ class Dataset < ActiveRecord::Base
       raise VpsAdmin::API::Exceptions::UserNamespaceMapUnchanged
     end
 
+    # Check if the dataset is mounted in any userns-aware VPS
+    if ::Mount.where(dataset_in_pool: dip, snapshot_in_pool: nil).any?
+      raise VpsAdmin::API::Exceptions::UserNamespaceMapBusy,
+            "cannot change uid/gid map because dataset #{full_name} is mounted in VPS"
+    end
+
     if dip.pool.role == 'hypervisor' && vps = Vps.find_by(dataset_in_pool: dip)
       maintenance_check!(vps)
 
       if userns_map.nil?
         raise VpsAdmin::API::Exceptions::UserNamespaceMapNil,
               'datasets used as VPS rootfs cannot have uid/gid map unset'
+      end
+
+      # Check if the VPS has any mounts
+      if ::Mount.where(vps: vps).any?
+        raise VpsAdmin::API::Exceptions::UserNamespaceMapBusy,
+              "cannot change uid/gid map because VPS #{vps.id} has mounts"
       end
 
       TransactionChains::Vps::SetUserNamespaceMap.fire(vps, userns_map)

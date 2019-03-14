@@ -258,7 +258,8 @@ module VpsAdmin::API::Resources
 
       rescue VpsAdmin::API::Exceptions::InvalidRefquotaDataset,
              VpsAdmin::API::Exceptions::RefquotaCheckFailed,
-             VpsAdmin::API::Exceptions::UserNamespaceMapNil => e
+             VpsAdmin::API::Exceptions::UserNamespaceMapNil,
+             VpsAdmin::API::Exceptions::UserNamespaceMapBusy => e
         error(e.message)
 
       rescue VpsAdmin::API::Exceptions::UserNamespaceMapUnchanged

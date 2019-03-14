@@ -141,6 +141,10 @@ module VpsAdmin::API::Exceptions
 
   end
 
+  class UserNamespaceMapBusy < ::StandardError
+
+  end
+
   class VpsFeatureConflict < ::StandardError
     # @param f1 [::VpsFeature] f1 conflicts with f2
     # @param f2 [::VpsFeature]
