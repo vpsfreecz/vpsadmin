@@ -263,6 +263,13 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
 
         elsif map.in_use?
           error('the map is in use, it cannot be changed at this time')
+
+        elsif map.user_namespace_map_entries.where(
+          kind: ::UserNamespaceMapEntry.kinds[input[:kind]],
+              ).count >= 10
+          # ZFS properties uidmap/gidmap do not accept more than 10 entries
+          # at the moment.
+          error('maps are limited to 10 UID and 10 GID entries')
         end
 
         map.acquire_lock do
