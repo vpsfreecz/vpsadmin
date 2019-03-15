@@ -5,7 +5,6 @@ module VpsAdmin::API::Resources
 
     class EstimateIncome < HaveAPI::Action
       desc 'Estimate income for selected month and duration'
-      auth false
 
       input(:hash) do
         integer :year, required: true
