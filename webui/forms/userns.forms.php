@@ -202,7 +202,9 @@ function userns_map_list ($userns_id = null) {
 		$xtpl->table_td(
 			'<a href="?page=userns&action=show&id='.$m->user_namespace->id.'">'.
 			$m->user_namespace->id.
-			'</a>'
+			'</a>'.
+			' '.
+			'('.$m->user_namespace->size.' '._('IDs').')'
 		);
 		$xtpl->table_td($m->label);
 		$xtpl->table_td(
@@ -230,8 +232,16 @@ function userns_map_show ($map_id) {
 	$xtpl->title(_('UID/GID map').' #'.$m->id.' - '.$m->label);
 
 	$xtpl->form_create('?page=userns&action=map_edit&id='.$m->id, 'post');
+	$xtpl->table_td(_('User namespace').':');
+	$xtpl->table_td(
+		'<a href="?page=userns&action=show&id='.$m->user_namespace->id.'">'.
+		$m->user_namespace->id.
+		'</a>'
+	);
+	$xtpl->table_tr();
+
 	$xtpl->table_td(_('Namespace size').':');
-	$xtpl->table_td($m->user_namespace->size);
+	$xtpl->table_td($m->user_namespace->size.' '._('IDs'));
 	$xtpl->table_tr();
 
 	$xtpl->form_add_input(_('Map label').':', 'text', '40', 'label', post_val('label', $m->label), '');
