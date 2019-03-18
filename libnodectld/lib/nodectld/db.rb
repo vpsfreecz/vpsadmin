@@ -43,6 +43,7 @@ module NodeCtld
 
       begin
         log(:info, :sql, "Retrying transaction, attempt ##{counter}") if counter > 0
+        connect($CFG.get(:db)) if @my.closed?
         @my.query('BEGIN')
         yield(DbTransaction.new(@my))
         @my.query('COMMIT')
@@ -66,6 +67,10 @@ module NodeCtld
 
           when 2013
             log(:warn, :sql, 'MySQL server has gone away')
+
+          when 2014
+            log(:warn, :sql, 'Commands out of sync')
+            @my.close
 
           else
             try_restart = false
