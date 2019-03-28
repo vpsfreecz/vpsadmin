@@ -6,7 +6,7 @@ module TransactionChains
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
-      selector = VpsAdmin::API::MountSelector.new(dip)
+      selector = VpsAdmin::API::MountSelector.new(vps.dataset_in_pool)
 
       # Unmount all related mounts
       selector.each_vps_unmount do |vps, mounts|
