@@ -233,6 +233,9 @@ class Dataset < ActiveRecord::Base
       if userns_map.nil?
         raise VpsAdmin::API::Exceptions::UserNamespaceMapNil,
               'datasets used as VPS rootfs cannot have uid/gid map unset'
+      elsif vps.node.openvz?
+        raise VpsAdmin::API::Exceptions::NotAvailableOnOpenVz,
+              'user namespace is supported only on vpsAdminOS nodes'
       end
 
       # Check if the VPS has any mounts
