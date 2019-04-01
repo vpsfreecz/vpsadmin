@@ -1,10 +1,13 @@
+require 'ipaddress'
+
 module NodeCtld
   class NetworkInterface
     include OsCtl::Lib::Utils::Log
     include Utils::System
     include Utils::OsCtl
 
-    def initialize(vps_id, name)
+    def initialize(pool_fs, vps_id, name)
+      @pool_fs = pool_fs
       @vps_id = vps_id
       @name = name
     end
@@ -22,6 +25,12 @@ module NodeCtld
           max_rx: shaper['max_rx'],
         )
         Firewall.accounting.reg_ip(addr, prefix, v)
+      end
+
+      VpsConfig.open(@pool_fs, @vps_id) do |cfg|
+        cfg.network_interfaces[@name].add_route(config_route(
+          addr, prefix, shaper, via
+        ))
       end
 
       opts = {}
@@ -43,6 +52,12 @@ module NodeCtld
         Firewall.accounting.unreg_ip(addr, prefix, v)
       end
 
+      VpsConfig.open(@pool_fs, @vps_id) do |cfg|
+        cfg.network_interfaces[@name].remove_route(config_route(
+          addr, prefix, shaper, nil
+        ))
+      end
+
       osctl(%i(ct netif route del), [@vps_id, @name, "#{addr}/#{prefix}"])
     end
 
@@ -59,6 +74,17 @@ module NodeCtld
         %i(ct netif ip del),
         [@vps_id, @name, "#{addr}/#{prefix}"],
         {keep_route: true},
+      )
+    end
+
+    protected
+    def config_route(addr, prefix, shaper, via)
+      VpsConfig::Route.new(
+        IPAddress.parse("#{addr}/#{prefix}"),
+        via,
+        shaper['class_id'],
+        shaper['max_tx'],
+        shaper['max_rx'],
       )
     end
   end

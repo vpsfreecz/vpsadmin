@@ -4,6 +4,10 @@ module NodeCtld
     needs :system, :osctl, :vps
 
     def exec
+      VpsConfig.open(@pool_fs, @vps_id) do |cfg|
+        cfg.network_interfaces << VpsConfig::NetworkInterface.new(@name)
+      end
+
       osctl(
         %i(ct netif new routed),
         [@vps_id, @name],
@@ -12,6 +16,10 @@ module NodeCtld
     end
 
     def rollback
+      VpsConfig.open(@pool_fs, @vps_id) do |cfg|
+        cfg.network_interfaces.remove(@name)
+      end
+
       osctl(%i(ct netif del), [@vps_id, @name])
     end
   end

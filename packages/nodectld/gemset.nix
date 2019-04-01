@@ -23,6 +23,14 @@
     };
     version = "1.2.7";
   };
+  filelock = {
+    source = {
+      remotes = ["https://rubygems.vpsfree.cz"];
+      sha256 = "085vrb6wf243iqqnrrccwhjd4chphfdsybkvjbapa2ipfj1ja1sj";
+      type = "gem";
+    };
+    version = "1.1.1";
+  };
   gli = {
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
@@ -56,22 +64,22 @@
     version = "2.2.0";
   };
   libnodectld = {
-    dependencies = ["eventmachine" "json" "libosctl" "mail" "mysql2" "osctl" "pry" "pry-remote" "require_all"];
+    dependencies = ["eventmachine" "filelock" "ipaddress" "json" "libosctl" "mail" "mysql2" "osctl" "pry" "pry-remote" "require_all"];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "0anj3w2fif3798663vdcz16xcc5h32nkbhcfynvs0c3mc9r4xj4p";
+      sha256 = "0nfkzrgd89k80as80yxm0rradvq8bl6ra5nywvibk904jlkp1mgm";
       type = "gem";
     };
-    version = "3.0.0.dev.build20190328140915";
+    version = "3.0.0.dev.build20190404092053";
   };
   libosctl = {
     dependencies = ["require_all"];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "11fl3sb0yvd2r8kh6icrzl278d54rs9xq03hn68jvgasvl310adi";
+      sha256 = "1hp6giq8iwpsz60l67aq0pmzciaq0mrdav1x9sjsazxl2f3a7fx2";
       type = "gem";
     };
-    version = "18.09.0.build20190326164203";
+    version = "18.09.0.build20190403201923";
   };
   mail = {
     dependencies = ["mini_mime"];
@@ -110,19 +118,19 @@
     dependencies = ["libnodectld"];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "0fvia3a8aw787li2dys4hrsf7hfhd2f1c5q8q5hln85l45jj5shg";
+      sha256 = "08jhwgkki8hig2aff3n2dh95i4vrblpxp2cgkcr9hk92migw3g9y";
       type = "gem";
     };
-    version = "3.0.0.dev.build20190328140915";
+    version = "3.0.0.dev.build20190404092053";
   };
   osctl = {
     dependencies = ["curses" "gli" "highline" "ipaddress" "json" "libosctl" "rainbow" "require_all" "ruby-progressbar"];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "03qpbcdxfk2blssxgrx3qx4w0fq6mffziz0lkfw5gyv325dphm07";
+      sha256 = "0gvvkza0p0cyypkzz8j46jv65cwfw3cr8ridr7idds8j3mkpb2qg";
       type = "gem";
     };
-    version = "18.09.0.build20190326164203";
+    version = "18.09.0.build20190403201923";
   };
   pry = {
     dependencies = ["coderay" "method_source"];

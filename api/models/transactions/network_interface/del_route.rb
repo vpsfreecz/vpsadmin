@@ -12,6 +12,7 @@ module Transactions::NetworkInterface
       self.node_id = netif.vps.node_id
 
       ret = {
+        pool_fs: netif.vps.dataset_in_pool.pool.filesystem,
         veth_name: netif.name,
         addr: ip.addr,
         prefix: ip.prefix,

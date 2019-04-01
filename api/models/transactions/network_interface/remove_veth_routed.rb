@@ -9,6 +9,7 @@ module Transactions::Vps
       self.node_id = netif.vps.node_id
 
       {
+        pool_fs: netif.vps.dataset_in_pool.pool.filesystem,
         name: netif.name,
         mac_address: netif.mac,
       }
