@@ -213,26 +213,13 @@ module NodeCtld
       log(:info, :delayed_mounter, "Loading delayed mounts from the database")
 
       vps_mounts.each do |vps, mounts|
-        mounts_file = mounts_config(vps_id: vps)
-
-        unless File.exists?(mounts_file)
-          log(:warn, :delayed_mounter, "'#{mounts_file}' does not exist")
-          next
-        end
-
-        begin
-          cfg_mounts = YAML.load_file(mounts_file)
-
-        rescue Exception => e
-          log(:critical, :delayed_mounter, "Failed to load '#{mounts_file}': #{e.message}")
-          next
-        end
+        cfg = VpsConfig.open(@pool_fs, vps)
 
         mounts.each do |mnt|
-          opts = cfg_mounts.detect { |m| m['id'] == mnt }
+          found_mnt = cfg.mounts.detect { |m| m.id == mnt }
 
-          if opts
-            register_mount(@pool_fs, vps, opts)
+          if found_mnt
+            register_mount(@pool_fs, vps, found_mnt.to_h)
 
           else
             log(:warn, :delayed_mounter, "Mount #{mnt} not found")

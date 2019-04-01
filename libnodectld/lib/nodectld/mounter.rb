@@ -262,7 +262,7 @@ module NodeCtld
     end
 
     def load_vps_mounts
-      YAML.load_file(mounts_config)
+      VpsConfig.open(@pool_fs, @vps_id) { |cfg| cfg.mounts.map(&:to_h) }
     end
 
     protected

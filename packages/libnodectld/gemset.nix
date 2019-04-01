@@ -67,10 +67,10 @@
     dependencies = ["eventmachine" "filelock" "ipaddress" "json" "libosctl" "mail" "mysql2" "osctl" "pry" "pry-remote" "require_all"];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "1wmhjsqynxqbx2bmx4xbxn6irfbcc8xipv1kv20aj5mivkspj39n";
+      sha256 = "0xx7lzh4445p6pszk0czgwcp307sy3ihgwiraljv3q6z0p573imk";
       type = "gem";
     };
-    version = "3.0.0.dev.build20190404092522";
+    version = "3.0.0.dev.build20190404092548";
   };
   libosctl = {
     dependencies = ["require_all"];

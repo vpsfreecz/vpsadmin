@@ -8,17 +8,14 @@ module NodeCtld
     def exec
       @mounts.each { |m| DelayedMounter.change_mount(@vps_id, m) }
 
-      # Backup original files
-      files.each do |path|
-        FileUtils.cp(path, backup_path(path)) if File.exist?(path)
-      end
+      cfg = VpsConfig.open(@pool_fs, @vps_id)
+
+      # Backup original config
+      cfg.backup
 
       # Write new mounts
-      File.open("#{mounts_config}.new", 'w') do |f|
-        f.puts(YAML.dump(@mounts))
-      end
-
-      File.rename("#{mounts_config}.new", mounts_config)
+      cfg.mounts = @mounts.map { |v| VpsConfig::Mount.load(v) }
+      cfg.save
 
       # Install osctl hooks
       if @mounts.any?
@@ -32,11 +29,9 @@ module NodeCtld
     end
 
     def rollback
-      # Restore original files
-      files.each do |path|
-        backup = backup_path(path)
-        File.rename(backup, path) if File.exists?(backup)
-      end
+      # Restore original config
+      cfg = VpsConfig.open(@pool_fs, @vps_id)
+      cfg.restore
 
       ok
     end
@@ -65,10 +60,6 @@ module NodeCtld
 
     def hooks
       %w(pre-start post-mount)
-    end
-
-    def files
-      [mounts_config] + hooks.map {|v| hook_path(v) }
     end
 
     def hook_path(name)
