@@ -49,8 +49,10 @@ module NodeCtld
     end
 
     def restore
-      lock { File.rename(backup_path, path) }
-      load
+      lock do
+        File.rename(backup_path, path)
+        load
+      end
     end
 
     def exist?
@@ -82,7 +84,16 @@ module NodeCtld
     end
 
     def lock
-      Filelock(path) { yield }
+      if @locked
+        yield
+      else
+        Filelock(path) do
+          @locked = true
+          ret = yield
+          @locked = false
+          ret
+        end
+      end
     end
 
     def path
