@@ -20,12 +20,13 @@ module NodeCtld
 
     # @param pool_fs [String]
     # @param vps_id [Integer]
-    def initialize(pool_fs, vps_id)
+    # @param load [Boolean]
+    def initialize(pool_fs, vps_id, load: true)
       @pool_fs = pool_fs
       @vps_id = vps_id
 
-      if exist?
-        load
+      if load && exist?
+        self.load
       else
         @network_interfaces = VpsConfig::NetworkInterfaceList.new
         @mounts = []
@@ -63,26 +64,6 @@ module NodeCtld
       File.exist?(backup_path)
     end
 
-    protected
-    def config
-      {
-        'network_interfaces' => network_interfaces.save,
-        'mounts' => mounts.map(&:to_h),
-      }
-    end
-
-    def load
-      data = lock { YAML.load_file(path) }
-
-      @network_interfaces = VpsConfig::NetworkInterfaceList.load(data['network_interfaces'])
-      @mounts = (data['mounts'] || []).map { |v| VpsConfig::Mount.load(v) }
-    end
-
-    def save_to(file)
-      FileUtils.mkpath(File.dirname(file))
-      lock { File.write(file, YAML.dump(config)) }
-    end
-
     def lock
       if @locked
         yield
@@ -96,6 +77,18 @@ module NodeCtld
       end
     end
 
+    protected
+    def config
+      {
+        'network_interfaces' => network_interfaces.save,
+        'mounts' => mounts.map(&:to_h),
+      }
+    end
+
+    def save_to(file)
+      FileUtils.mkpath(File.dirname(file))
+      lock { File.write(file, YAML.dump(config)) }
+    end
     def path
       File.join('/', pool_fs, path_to_pool_working_dir(:config), 'vps', "#{vps_id}.yml")
     end

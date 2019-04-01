@@ -14,5 +14,19 @@ module NodeCtld
         cfg
       end
     end
+
+    # @param pool_fs [String]
+    # @param vps_id [Integer]
+    # @yiledparam cfg [VpsConfig::TopLevel]
+    def self.edit(pool_fs, vps_id)
+      ret = nil
+      cfg = TopLevel.new(pool_fs, vps_id, load: false)
+      cfg.lock do
+        cfg.load if cfg.exist?
+        ret = yield(cfg)
+        cfg.save
+      end
+      ret
+    end
   end
 end
