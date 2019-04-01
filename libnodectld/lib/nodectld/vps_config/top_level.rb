@@ -87,7 +87,11 @@ module NodeCtld
 
     def save_to(file)
       FileUtils.mkpath(File.dirname(file))
-      lock { File.write(file, YAML.dump(config)) }
+      lock do
+        new_file = "#{file}.new"
+        File.write(new_file, YAML.dump(config))
+        File.rename(new_file, file)
+      end
     end
     def path
       File.join('/', pool_fs, path_to_pool_working_dir(:config), 'vps', "#{vps_id}.yml")
