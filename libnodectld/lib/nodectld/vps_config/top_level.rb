@@ -35,13 +35,25 @@ module NodeCtld
     end
 
     def save
-      FileUtils.mkpath(File.dirname(path))
-      lock { File.write(path, YAML.dump(config)) }
+      save_to(path)
       true
+    end
+
+    def backup
+      save_to(backup_path)
+    end
+
+    def restore
+      lock { File.rename(backup_path, path) }
+      load
     end
 
     def exist?
       File.exist?(path)
+    end
+
+    def backup_exist?
+      File.exist?(backup_path)
     end
 
     protected
@@ -57,12 +69,21 @@ module NodeCtld
       @network_interfaces = VpsConfig::NetworkInterfaceList.load(data['network_interfaces'])
     end
 
+    def save_to(file)
+      FileUtils.mkpath(File.dirname(file))
+      lock { File.write(file, YAML.dump(config)) }
+    end
+
     def lock
       Filelock(path) { yield }
     end
 
     def path
       File.join('/', pool_fs, path_to_pool_working_dir(:config), 'vps', "#{vps_id}.yml")
+    end
+
+    def backup_path
+      "#{path}.backup"
     end
   end
 end
