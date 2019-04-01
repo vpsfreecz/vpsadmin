@@ -1,7 +1,7 @@
 #!/run/nodectl/nodectl script
 require 'nodectld/standalone'
 
-vars = %w(OSCTL_CT_ID OSCTL_HOST_VETH OSCTL_CT_VETH)
+vars = %w(OSCTL_POOL_NAME OSCTL_CT_ID OSCTL_HOST_VETH OSCTL_CT_VETH)
 vars.each do |v|
   next if ENV[v]
   warn 'Expected environment variables:'
@@ -10,6 +10,7 @@ vars.each do |v|
 end
 
 NodeCtld::CtHook.veth_up(
+  ENV['OSCTL_POOL_NAME'],
   ENV['OSCTL_CT_ID'],
   ENV['OSCTL_HOST_VETH'],
   ENV['OSCTL_CT_VETH']

@@ -33,11 +33,12 @@ module NodeCtld
       end
 
       # Configure shaper on the per-VPS veth interface
+      # @param pool [String]
       # @param vps_id [Integer]
       # @param host_veth [String] VPS veth interface name on the host
       # @param ct_veth [String] VPS veth interface name in the VPS
-      def setup_vps_veth(vps_id, host_veth, ct_veth)
-        instance.setup_vps_veth(vps_id, host_veth, ct_veth)
+      def setup_vps_veth(pool, vps_id, host_veth, ct_veth)
+        instance.setup_vps_veth(pool, vps_id, host_veth, ct_veth)
       end
 
       # Configure shaper for a new IP address on all interfaces
@@ -109,12 +110,12 @@ module NodeCtld
       end
     end
 
-    def setup_vps_veth(vps_id, vps_host_veth, vps_ct_veth)
+    def setup_vps_veth(pool, vps_id, vps_host_veth, vps_ct_veth)
       sync do
         tx = $CFG.get(:vpsadmin, :max_tx)
         rx = $CFG.get(:vpsadmin, :max_rx)
 
-        vps = get_vps(Db.new, vps_id)
+        vps = get_vps(pool, vps_id)
         netif = vps.netifs[vps_ct_veth]
 
         unless netif
@@ -368,42 +369,28 @@ module NodeCtld
       end
     end
 
-    def get_vps(db, vps_id)
+    def get_vps(pool, vps_id)
       vps = VpsInfo.new(vps_id, {})
-      netif = nil
+      cfg = VpsConfig.open(File.join(pool, 'ct'), vps_id)
 
-      db.prepared(
-        'SELECT
-          netifs.name, ip_addr, ip.prefix, ip_version, class_id, max_tx, max_rx
-        FROM ip_addresses ip
-        INNER JOIN network_interfaces netifs ON netifs.id = ip.network_interface_id
-        INNER JOIN networks n ON n.id = ip.network_id
-        WHERE
-          netifs.vps_id = ?
-          AND
-          n.role IN (0, 1)
-        ORDER BY netifs.name',
-        vps_id
-      ).each do |row|
-        if netif.nil?
-          netif = NetifInfo.new(row['name'], [])
-
-        elsif netif.name != row['name']
-          vps.netifs[ netif.name ] = netif
-          netif = NetifInfo.new(row['name'], [])
-        end
-
-        netif.ips << IpInfo.new(
-          row['ip_addr'],
-          row['prefix'],
-          row['ip_version'],
-          row['class_id'],
-          row['max_tx'],
-          row['max_rx'],
+      cfg.network_interfaces.each do |n|
+        vps.netifs[n.name] = NetifInfo.new(
+          n.name,
+          n.routes.map do |ip_v, routes|
+            routes.map do |r|
+              IpInfo.new(
+                r.address.to_s,
+                r.address.prefix.to_i,
+                r.version,
+                r.class_id,
+                r.max_tx,
+                r.max_rx,
+              )
+            end
+          end.flatten
         )
       end
 
-      vps.netifs[ netif.name ] = netif if netif
       vps
     end
 
