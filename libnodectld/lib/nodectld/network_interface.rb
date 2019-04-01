@@ -27,7 +27,7 @@ module NodeCtld
         Firewall.accounting.reg_ip(addr, prefix, v)
       end
 
-      VpsConfig.open(@pool_fs, @vps_id) do |cfg|
+      VpsConfig.edit(@pool_fs, @vps_id) do |cfg|
         cfg.network_interfaces[@name].add_route(config_route(
           addr, prefix, shaper, via
         ))
@@ -52,7 +52,7 @@ module NodeCtld
         Firewall.accounting.unreg_ip(addr, prefix, v)
       end
 
-      VpsConfig.open(@pool_fs, @vps_id) do |cfg|
+      VpsConfig.edit(@pool_fs, @vps_id) do |cfg|
         cfg.network_interfaces[@name].remove_route(config_route(
           addr, prefix, shaper, nil
         ))
