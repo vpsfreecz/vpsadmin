@@ -312,10 +312,10 @@ module TransactionChains
           dst_host_addrs = dst_ip.host_ip_addresses.where(order: nil).to_a
           all_dst_host_addrs.concat(dst_host_addrs)
 
-          # Remove addresses from the source node
+          # Remove old addresses on the target node
           append_t(
             Transactions::NetworkInterface::DelRoute,
-            args: [netif, src_ip, false],
+            args: [dst_netif, src_ip, false],
             urgent: true,
           ) do |t|
             t.edit(src_ip, network_interface_id: nil)
@@ -326,7 +326,7 @@ module TransactionChains
             end
           end
 
-          # Add addresses on the target node
+          # Add new addresses on the target node
           append_t(
             Transactions::NetworkInterface::AddRoute,
             args: [dst_netif, dst_ip],
