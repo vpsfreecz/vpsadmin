@@ -528,7 +528,7 @@ module VpsAdmin::API::Resources
         end
       end
 
-      class Update < HaveAPI::Actions::Default::Create
+      class Update < HaveAPI::Actions::Default::Update
         desc 'Update an outage handler'
 
         input do
@@ -551,7 +551,7 @@ module VpsAdmin::API::Resources
           ).update!(note: input[:note])
 
         rescue ActiveRecord::RecordInvalid => e
-          error('create failed', e.record.errors.to_hash)
+          error('update failed', e.record.errors.to_hash)
         end
       end
 
