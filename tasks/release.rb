@@ -70,10 +70,14 @@ namespace :vpsadmin do
     end
   end
 
-  gems = %i(libnodectld nodectl nodectld)
+  gems = {
+    libnodectld: [],
+    nodectl: [:libnodectld],
+    nodectld: [:libnodectld],
+  }
 
   desc 'Build all gems and deploy to rubygems'
-  multitask gems: gems.map { |v| "gems:#{v}" }
+  multitask gems: gems.each_key.map { |v| "gems:#{v}" }
 
   namespace :gems do
     desc 'Setup parameters for gem building'
@@ -104,9 +108,9 @@ namespace :vpsadmin do
       end
     end
 
-    gems.each do |gem|
+    gems.each do |gem, deps|
       desc "Build and deploy #{gem} gem"
-      task gem => :environment do
+      task gem => [:environment] + deps do
         ret = system(
           './tools/update_gem.sh',
           'packages',

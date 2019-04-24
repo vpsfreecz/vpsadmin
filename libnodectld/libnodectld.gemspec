@@ -32,4 +32,5 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'mail'
   s.add_runtime_dependency 'filelock'
   s.add_runtime_dependency 'ipaddress', '~> 0.8.3'
+  s.add_development_dependency 'rake'
 end

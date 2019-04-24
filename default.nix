@@ -1,17 +1,27 @@
 let
-  pkgs = import <nixpkgs> {};
+  pkgs = import <nixpkgs> {
+    overlays = [
+      (import ../vpsadminos/os/overlays/ruby.nix)
+    ];
+  };
   stdenv = pkgs.stdenv;
 
 in stdenv.mkDerivation rec {
   name = "vpsadmin";
 
   buildInputs = with pkgs; [
+    bundix
     git
+    libmysql
+    ncurses
     ruby
+    zlib
   ];
 
   shellHook = ''
-    export PATH="$PATH:$(ruby -e 'puts Gem.bindir')"
-    gem install --no-ri geminabox md2man rake yard
+    export GEM_HOME="$(pwd)/.gems"
+    export PATH="$(ruby -e 'puts Gem.bindir'):$PATH"
+    export RUBYLIB="$GEM_HOME"
+    gem install --no-document bundler geminabox rake
   '';
 }

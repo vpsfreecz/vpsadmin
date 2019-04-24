@@ -1,7 +1,9 @@
 source 'https://rubygems.vpsfree.cz'
 gemspec
 
-os_path = ENV['OS'] || '../../vpsadminos'
+if !ENV.has_key?('VPSADMIN_BUILD_ID')
+  os_path = ENV['OS'] || '../../vpsadminos'
 
-gem 'libosctl', path: File.join(os_path, 'libosctl')
-gem 'osctl', path: File.join(os_path, 'osctl')
+  gem 'libosctl', path: File.join(os_path, 'libosctl')
+  gem 'osctl', path: File.join(os_path, 'osctl')
+end

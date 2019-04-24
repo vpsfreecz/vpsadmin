@@ -11,7 +11,9 @@ export VPSADMIN_BUILD_ID="$3"
 export OS_BUILD_ID="$4"
 
 pushd "$GEMDIR"
-pkg=$(rake build | grep -oP "pkg/.+\.gem")
+[ -f Gemfile.lock ] && rm -f Gemfile.lock
+bundle install
+pkg=$(bundle exec rake build | grep -oP "pkg/.+\.gem")
 version=$(echo $pkg | grep -oP "\d+\.\d+\.\d+.*[^.gem]")
 
 gem inabox "$pkg"
