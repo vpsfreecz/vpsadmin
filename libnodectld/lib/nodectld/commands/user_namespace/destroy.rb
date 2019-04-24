@@ -9,7 +9,7 @@ module NodeCtld
     end
 
     def rollback
-      osctl(%i(user new), @name, ugid: @ugid, map_uid: @uidmap, map_gid: @gidmap)
+      osctl(%i(user new), @name, map_uid: @uidmap, map_gid: @gidmap)
       ok
     end
   end
