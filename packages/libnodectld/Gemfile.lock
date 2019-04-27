@@ -9,7 +9,7 @@ GEM
     highline (1.7.10)
     ipaddress (0.8.3)
     json (2.2.0)
-    libnodectld (3.0.0.dev.build20190424172137)
+    libnodectld (3.0.0.dev.build20190427195221)
       eventmachine
       filelock
       ipaddress (~> 0.8.3)
@@ -53,7 +53,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  libnodectld (= 3.0.0.dev.build20190424172137)
+  libnodectld (= 3.0.0.dev.build20190427195221)
 
 BUNDLED WITH
    1.17.2

@@ -42,9 +42,6 @@ module NodeCtld
           %i(ct set memory),
           [@vps_id, "#{mem}M", swap > 0 ? "#{swap}M" : nil].compact
         )
-
-      else
-        osctl(%i(ct unset memory), @vps_id)
       end
 
       cpu_limit = cpu_limits.min || 0
