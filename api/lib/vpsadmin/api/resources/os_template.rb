@@ -35,7 +35,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict enabled: true
-      output whitelist: %i(id label info supported hypervisor_type)
+      output whitelist: %i(id name label info supported hypervisor_type)
       allow
     end
 
@@ -84,7 +84,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      output whitelist: %i(id label info supported enabled hypervisor_type)
+      output whitelist: %i(id name label info supported enabled hypervisor_type)
       allow
     end
 
