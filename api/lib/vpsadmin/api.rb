@@ -56,7 +56,7 @@ module VpsAdmin
         if /find ([^\s]+)[^=]+=(\d+)/ =~ exception.message
           ret[:message] = "object #{$~[1]} = #{$~[2]} not found"
         else
-          ret[:message] = "object not found: #{exception.to_s}"
+          ret[:message] = "object not found"
         end
 
         puts "Exception ActiveRecord::RecordNotFound: #{exception.message}"
