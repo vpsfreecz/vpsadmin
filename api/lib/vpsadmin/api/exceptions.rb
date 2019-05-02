@@ -1,4 +1,10 @@
+require 'haveapi'
+
 module VpsAdmin::API::Exceptions
+  class AuthenticationError < HaveAPI::AuthenticationError
+
+  end
+
   class AccessDenied < ::StandardError
 
   end

@@ -1861,6 +1861,8 @@ CREATE TABLE `users` (
   `last_activity_at` datetime DEFAULT NULL,
   `language_id` int(11) DEFAULT '1',
   `orig_login` varchar(63) COLLATE utf8_czech_ci DEFAULT NULL,
+  `password_reset` tinyint(1) NOT NULL DEFAULT '0',
+  `lockout` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_users_on_login` (`login`) USING BTREE,
   KEY `index_users_on_object_state` (`object_state`) USING BTREE
@@ -2131,7 +2133,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-03-14 12:52:48
+-- Dump completed on 2019-05-02 19:15:54
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2367,4 +2369,6 @@ INSERT INTO schema_migrations (version) VALUES ('20181121153314');
 INSERT INTO schema_migrations (version) VALUES ('20190211124513');
 
 INSERT INTO schema_migrations (version) VALUES ('20190314114331');
+
+INSERT INTO schema_migrations (version) VALUES ('20190501185918');
 

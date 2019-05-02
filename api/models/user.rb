@@ -145,6 +145,11 @@ class User < ActiveRecord::Base
       self.password_version = name
       self.password = provider.encrypt(login, plaintext)
     end
+
+    if password_reset && lockout
+      self.password_reset = false
+      self.lockout = false
+    end
   end
 
   def env_config(env, name)
@@ -199,32 +204,52 @@ class User < ActiveRecord::Base
     end
   end
 
+  # Returns the user and whether he was authenticated
+  # @param request [Sinatra::Request]
+  # @param username [String]
+  # @param password [String]
+  # @return [Array(User, Boolean), nil]
   def self.authenticate(request, username, password)
     u = User.unscoped.where(
       object_state: [
         object_states[:active],
         object_states[:suspended],
-      ]
+      ],
     ).find_by('login = ? COLLATE utf8_bin', username)
     return unless u
 
-    c = VpsAdmin::API::CryptoProviders
+    provider = VpsAdmin::API::CryptoProviders.provider(u.password_version)
+    [u, provider.matches?(u.password, u.login, password)]
+  end
 
-    if !c.provider(u.password_version).matches?(u.password, u.login, password)
-      self.increment_counter(:failed_login_count, u.id)
+  # Authenticate user and log him in
+  # @param request [Sinatra::Request]
+  # @param username [String]
+  # @param password [String]
+  # @return [User, nil]
+  def self.login(request, username, password)
+    u, authenticated = authenticate(request, username, password)
+
+    if u.nil?
       return
+    elsif !authenticated
+      u.class.increment_counter(:failed_login_count, u.id)
+      return
+    elsif u.lockout
+      raise VpsAdmin::API::Exceptions::AuthenticationError,
+            'account is locked out'
     end
 
-    self.increment_counter(:login_count, u.id)
-    u.update!(
-      last_login_at: u.current_login_at,
-      current_login_at: Time.now,
-      last_login_ip: u.current_login_ip,
-      current_login_ip: request.ip
-    )
+    u.class.increment_counter(:login_count, u.id)
+    u.last_login_at = u.current_login_at
+    u.current_login_at = Time.now
+    u.last_login_ip = u.current_login_ip
+    u.current_login_ip = request.ip
+    u.lockout = true if u.password_reset
+    u.save!
 
-    if c.update?(u.password_version)
-      c.current do |name, provider|
+    if VpsAdmin::API::CryptoProviders.update?(u.password_version)
+      VpsAdmin::API::CryptoProviders.current do |name, provider|
         u.update!(
           password_version: name,
           password: provider.encrypt(u.login, password)
@@ -232,11 +257,7 @@ class User < ActiveRecord::Base
       end
     end
 
-    u
-  end
-
-  def self.login(*args)
-    self.current = authenticate(*args)
+    self.current = u
   end
 
   def self.current

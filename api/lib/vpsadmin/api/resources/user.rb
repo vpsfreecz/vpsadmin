@@ -14,6 +14,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     integer :level, label: 'Access level'
     string :info, label: 'Info'
     bool :mailer_enabled, label: 'Enabled mailer', default: true
+    bool :password_reset, label: 'Password reset'
+    bool :lockout, label: 'Lock-out'
     resource VpsAdmin::API::Resources::Language, label: 'Language of e-mails'
   end
 
@@ -275,13 +277,17 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
           )
         end
 
-        if current_user.role != :admin && ::User.authenticate(
+        if current_user.role != :admin
+          u, authenticated = ::User.authenticate(
             request, u.login, input[:password]
-          ).nil?
-          error(
-            'update failed',
-            password: ['incorrect password']
           )
+
+          if u.nil? || !authenticated
+            error(
+              'update failed',
+              password: ['incorrect password']
+            )
+          end
         end
 
         u.set_password(input.delete(:new_password))
