@@ -55,6 +55,7 @@ class RegistrationRequest < UserRequest
       language: language,
       level: 2,
       mailer_enabled: true,
+      password_reset: true,
     )
     new_user.set_password(generate_password)
 
