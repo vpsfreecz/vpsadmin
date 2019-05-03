@@ -132,6 +132,9 @@ function print_editm($u) {
 	if (isAdmin()) {
 		$xtpl->form_add_input(_("Monthly payment").':', 'text', '30', 'm_monthly_payment', $u->monthly_payment, ' ');
 		$xtpl->form_add_textarea(_("Info").':', 28, 4, 'm_info', $u->info, _("Note for administrators"));
+
+		$xtpl->form_add_checkbox(_("Require password reset").':', 'm_password_reset', '1', $u->password_reset, $hint = '');
+		$xtpl->form_add_checkbox(_("Lock-out").':', 'm_lockout', '1', $u->lockout, $hint = '');
 	}
 
 	$xtpl->form_out(_("Save"));
@@ -964,6 +967,8 @@ if ($_SESSION["logged_in"]) {
 					$params['login'] = $_POST['m_nick'];
 					$params['level'] = $_POST['m_level'];
 					$params['info'] = $_POST['m_info'];
+					$params['password_reset'] = isset($_POST['m_password_reset']);
+					$params['lockout'] = isset($_POST['m_lockout']);
 				}
 
 				$user->update($params);
