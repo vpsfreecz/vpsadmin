@@ -112,6 +112,8 @@ try {
 											This is usually used during outage to prevent data corruption.<br />")
 											."<br>".($api_cluster->maintenance_lock_reason ? _('Reason').': '.$api_cluster->maintenance_lock_reason.'<br><br>' : '')
 											._("Please be patient."));
+	} else if (mustResetPassword()) {
+		include WWW_ROOT.'pages/page_password_reset.php';
 	} else {
 		show_notification();
 

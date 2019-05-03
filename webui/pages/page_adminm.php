@@ -1004,6 +1004,10 @@ if ($_SESSION["logged_in"]) {
 
 					$u->update($params);
 
+					if ($u->id == $_SESSION['user']['id']) {
+						$_SESSION['user']['password_reset'] = $u->password_reset;
+					}
+
 					notify_user(_("Password set"), _("The password was successfully changed."));
 					redirect('?page=adminm&action=edit&id='.$u->id);
 

@@ -43,7 +43,9 @@ if ($_GET["action"] == 'login') {
 			$_SESSION["auth_token"] = $api->getAuthenticationProvider()->getToken();
 			$_SESSION["user"] = array(
 				'id' => $m->id,
-				'login' => $m->login
+				'login' => $m->login,
+				'password_reset' => $m->password_reset,
+				'password' => $m->password_reset ? $_POST['passwd'] : null,
 			);
 			$_SESSION["is_user"] =       ($m->level >= PRIV_USER) ?       true : false;
 			$_SESSION["is_poweruser"] =  ($m->level >= PRIV_POWERUSER) ?  true : false;
@@ -58,7 +60,10 @@ if ($_GET["action"] == 'login') {
 
 			$api->user->touch($m->id);
 
-			if($access_url
+			if (mustResetPassword()) {
+				redirect('?page=');
+
+			} elseif($access_url
 				&& strpos($access_url, "?page=login&action=login") === false
 				&& strpos($access_url, "?page=jumpto") === false) {
 
