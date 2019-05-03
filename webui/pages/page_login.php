@@ -72,7 +72,7 @@ if ($_GET["action"] == 'login') {
 			}
 
 		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-			$xtpl->perex(_("Error"), _("Wrong username or password."));
+			$xtpl->perex(_("Error"), $e->getMessage());
 		}
 
 	} else $xtpl->perex(_("Error"), _("Wrong username or password"));
