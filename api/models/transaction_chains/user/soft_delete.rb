@@ -21,6 +21,8 @@ module TransactionChains
           chain: self
         )
       end
+
+      user.api_tokens.delete_all
     end
   end
 end

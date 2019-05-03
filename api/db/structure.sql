@@ -2133,7 +2133,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-05-02 19:15:54
+-- Dump completed on 2019-05-03 16:30:09
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2371,4 +2371,6 @@ INSERT INTO schema_migrations (version) VALUES ('20190211124513');
 INSERT INTO schema_migrations (version) VALUES ('20190314114331');
 
 INSERT INTO schema_migrations (version) VALUES ('20190501185918');
+
+INSERT INTO schema_migrations (version) VALUES ('20190503142157');
 
