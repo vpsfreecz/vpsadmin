@@ -46,6 +46,11 @@ module VpsAdmin::API::Authentication
       ).take
 
       if t
+        if !%w(active suspended).include?(t.user.object_state)
+          t.destroy
+          return
+        end
+
         ::ApiToken.increment_counter(:use_count, t.id)
 
         if t.lifetime == 'renewable_auto'
