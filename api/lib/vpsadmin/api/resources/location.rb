@@ -159,7 +159,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     example do
-      url_params(2)
+      path_params(2)
       request({})
       response({
         id: 2,
@@ -188,7 +188,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     example do
-      url_params(2)
+      path_params(2)
       request({
         label: 'Ostrava',
         has_ipv6: true,

@@ -149,7 +149,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     end
 
     example do
-      url_params(1)
+      path_params(1)
       request({})
       response({
         id: 1,
@@ -180,7 +180,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
     example do
       authorize { |u| u.role == :admin }
-      url_params(1)
+      path_params(1)
       request({
         label: 'My new name',
         domain: 'new.domain'
