@@ -1460,6 +1460,26 @@ CREATE TABLE `sysconfig` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `tokens`
+--
+
+DROP TABLE IF EXISTS `tokens`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `tokens` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `token` varchar(100) COLLATE utf8_czech_ci NOT NULL,
+  `valid_to` datetime DEFAULT NULL,
+  `owner_id` int(11) DEFAULT NULL,
+  `owner_type` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_tokens_on_token` (`token`),
+  KEY `index_tokens_on_owner_type_and_owner_id` (`owner_type`,`owner_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `transaction_chain_concerns`
 --
 
@@ -2133,7 +2153,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-05-03 16:30:09
+-- Dump completed on 2019-05-07 15:11:31
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2373,4 +2393,6 @@ INSERT INTO schema_migrations (version) VALUES ('20190314114331');
 INSERT INTO schema_migrations (version) VALUES ('20190501185918');
 
 INSERT INTO schema_migrations (version) VALUES ('20190503142157');
+
+INSERT INTO schema_migrations (version) VALUES ('20190507121309');
 
