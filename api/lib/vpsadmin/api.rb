@@ -122,7 +122,10 @@ module VpsAdmin
     end
 
     def self.authenticate(api=nil)
-      chain = [Authentication::Basic, Authentication::Token]
+      chain = [
+        Authentication::Basic,
+        HaveAPI::Authentication::Token.with_config(Authentication::TokenConfig),
+      ]
 
       if api
         api.auth_chain << chain
