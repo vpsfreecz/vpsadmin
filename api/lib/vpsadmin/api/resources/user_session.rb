@@ -13,9 +13,9 @@ module VpsAdmin::API::Resources
       string :client_ip_ptr, label: 'Client IP PTR'
       string :user_agent, label: 'User agent'
       string :client_version, label: 'Client version'
-      resource AuthToken, label: 'Authentication token'
-      string :auth_token_str, label: 'Authentication token',
-        db_name: :api_token_str
+      resource SessionToken, label: 'Authentication token'
+      string :session_token_str, label: 'Authentication token',
+        db_name: :session_token_str
       datetime :created_at, label: 'Created at'
       datetime :last_request_at, label: 'Last request at'
       datetime :closed_at, label: 'Closed at'
@@ -65,7 +65,7 @@ module VpsAdmin::API::Resources
         end
 
         q = q.where('client_version LIKE ?', input[:client_version]) if input[:client_version]
-        q = q.where('api_token_str LIKE ?', input[:auth_token_str]) if input[:auth_token_str]
+        q = q.where('session_token_str LIKE ?', input[:auth_token_str]) if input[:auth_token_str]
         q = q.where(admin_id: input[:admin].id) if input[:admin]
 
         q

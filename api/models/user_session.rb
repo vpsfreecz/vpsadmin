@@ -2,7 +2,7 @@ class UserSession < ActiveRecord::Base
   belongs_to :user, class_name: 'User', foreign_key: :user_id
   belongs_to :admin, class_name: 'User', foreign_key: :admin_id
   belongs_to :user_session_agent
-  belongs_to :api_token
+  belongs_to :session_token
   has_many :transaction_chains
 
   def self.authenticate!(request, username, password, token: nil)
@@ -23,8 +23,8 @@ class UserSession < ActiveRecord::Base
       client_ip_ptr: request.env['HTTP_CLIENT_IP'] && get_ptr(request.env['HTTP_CLIENT_IP']),
       user_session_agent: ::UserSessionAgent.find_or_create!(request.user_agent || ''),
       client_version: request.user_agent || '',
-      api_token_id: token && token.id,
-      api_token_str: token && token.token
+      session_token_id: token && token.id,
+      session_token_str: token && token.token
     )
   end
 
@@ -45,7 +45,7 @@ class UserSession < ActiveRecord::Base
 
   def self.close!(request, user, token: nil, session: nil)
     (session || find_session!(request, user, token: token)).update!(
-      api_token: nil,
+      session_token: nil,
       closed_at: Time.now
     )
     token && token.destroy!
@@ -63,7 +63,7 @@ class UserSession < ActiveRecord::Base
   def self.find_session!(request, user, token: nil)
     find_by!(
       user: user,
-      api_token_id: token.id,
+      session_token_id: token.id,
       closed_at: nil
     )
   end
@@ -85,8 +85,8 @@ class UserSession < ActiveRecord::Base
 
   def start!(token)
     update!(
-      api_token: token,
-      api_token_str: token.token,
+      session_token: token,
+      session_token_str: token.token,
       auth_type: 'token'
     )
   end

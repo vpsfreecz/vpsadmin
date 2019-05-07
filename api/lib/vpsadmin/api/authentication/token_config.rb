@@ -23,19 +23,12 @@ module VpsAdmin::API::Authentication
               nil
             end
 
-          begin
-            t = ::ApiToken.create!(
-              user: session.user,
-              token: ::ApiToken.generate,
-              valid_to: valid_to,
-              lifetime: req.input[:lifetime],
-              interval: req.input[:interval],
-              label: req.request.user_agent,
-            )
-          rescue ActiveRecord::RecordNotUnique
-            sleep(0.1)
-            next
-          end
+          t = ::SessionToken.custom(
+            user: session.user,
+            lifetime: req.input[:lifetime],
+            interval: req.input[:interval],
+            label: req.request.user_agent,
+          )
         end
 
         if t.nil?
@@ -45,7 +38,7 @@ module VpsAdmin::API::Authentication
 
         ::UserSession.current.start!(t)
 
-        res.token = t.token
+        res.token = t.token_string
         res.valid_to = t.valid_to && t.valid_to.strftime('%FT%T%z')
         res.complete = true
         res.ok
@@ -54,7 +47,10 @@ module VpsAdmin::API::Authentication
 
     renew do
       handle do |req, res|
-        t = ::ApiToken.find_by(user: req.user, token: req.token)
+        t = ::SessionToken.joins(:token).where(
+          user: req.user,
+          tokens: {token: req.token},
+        ).take
 
         if t && t.lifetime.start_with?('renewable')
           t.renew
@@ -70,7 +66,10 @@ module VpsAdmin::API::Authentication
 
     revoke do
       handle do |req, res|
-        t = ::ApiToken.find_by(user: req.user, token: req.token)
+        t = ::SessionToken.joins(:token).where(
+          user: req.user,
+          tokens: {token: req.token},
+        ).take
 
         if t
           ::UserSession.close!(req.request, req.user, token: t)
@@ -83,8 +82,8 @@ module VpsAdmin::API::Authentication
     end
 
     def find_user_by_token(request, token)
-      t = ::ApiToken.where(
-        'token = ? AND ((lifetime = 3 AND valid_to IS NULL) OR valid_to >= ?)',
+      t = ::SessionToken.joins(:token).where(
+        'tokens.token = ? AND ((lifetime = 3 AND valid_to IS NULL) OR valid_to >= ?)',
         token, Time.now
       ).take
 
@@ -94,7 +93,7 @@ module VpsAdmin::API::Authentication
           return
         end
 
-        ::ApiToken.increment_counter(:use_count, t.id)
+        ::SessionToken.increment_counter(:use_count, t.id)
 
         if t.lifetime == 'renewable_auto'
           t.renew

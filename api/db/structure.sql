@@ -16,27 +16,6 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `api_tokens`
---
-
-DROP TABLE IF EXISTS `api_tokens`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `api_tokens` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `token` varchar(100) COLLATE utf8_czech_ci NOT NULL,
-  `valid_to` datetime DEFAULT NULL,
-  `label` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
-  `use_count` int(11) NOT NULL DEFAULT '0',
-  `lifetime` int(11) NOT NULL,
-  `interval` int(11) DEFAULT NULL,
-  `created_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `branches`
 --
 
@@ -1346,6 +1325,26 @@ CREATE TABLE `schema_migrations` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `session_tokens`
+--
+
+DROP TABLE IF EXISTS `session_tokens`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `session_tokens` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `label` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
+  `use_count` int(11) NOT NULL DEFAULT '0',
+  `lifetime` int(11) NOT NULL,
+  `interval` int(11) DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `token_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `snapshot_downloads`
 --
 
@@ -1835,8 +1834,8 @@ CREATE TABLE `user_sessions` (
   `api_ip_addr` varchar(46) COLLATE utf8_czech_ci NOT NULL,
   `user_session_agent_id` int(11) DEFAULT NULL,
   `client_version` varchar(255) COLLATE utf8_czech_ci NOT NULL,
-  `api_token_id` int(11) DEFAULT NULL,
-  `api_token_str` varchar(100) COLLATE utf8_czech_ci DEFAULT NULL,
+  `session_token_id` int(11) DEFAULT NULL,
+  `session_token_str` varchar(100) COLLATE utf8_czech_ci DEFAULT NULL,
   `created_at` datetime NOT NULL,
   `last_request_at` datetime DEFAULT NULL,
   `closed_at` datetime DEFAULT NULL,
@@ -2153,7 +2152,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-05-07 15:11:31
+-- Dump completed on 2019-05-07 15:51:21
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2395,4 +2394,6 @@ INSERT INTO schema_migrations (version) VALUES ('20190501185918');
 INSERT INTO schema_migrations (version) VALUES ('20190503142157');
 
 INSERT INTO schema_migrations (version) VALUES ('20190507121309');
+
+INSERT INTO schema_migrations (version) VALUES ('20190507122654');
 

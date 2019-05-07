@@ -1,5 +1,5 @@
-class VpsAdmin::API::Resources::AuthToken < HaveAPI::Resource
-  model ::ApiToken
+class VpsAdmin::API::Resources::SessionToken < HaveAPI::Resource
+  model ::SessionToken
   desc 'Manage authentication tokens'
 
   params(:id) do
@@ -26,7 +26,7 @@ class VpsAdmin::API::Resources::AuthToken < HaveAPI::Resource
 
   params(:common) do
     use :user
-    string :token, label: 'Token', desc: 'Authentication token'
+    string :token, label: 'Token', desc: 'Authentication token', db_name: :token_string
     datetime :valid_to, label: 'Valid to', desc: 'End of token validity period'
     use :create
     integer :use_count, label: 'Use count',
@@ -57,7 +57,7 @@ class VpsAdmin::API::Resources::AuthToken < HaveAPI::Resource
     end
 
     def exec
-      tokens = ::ApiToken
+      tokens = ::SessionToken
       tokens = tokens.where(user: input[:user]) if current_user.role == :admin && input[:user]
       tokens.where(with_restricted)
     end
@@ -84,7 +84,7 @@ class VpsAdmin::API::Resources::AuthToken < HaveAPI::Resource
     end
 
     def exec
-      t = ::ApiToken.custom(input)
+      t = ::SessionToken.custom(input)
 
       if t.save
         ::UserSession.create!(
@@ -96,8 +96,8 @@ class VpsAdmin::API::Resources::AuthToken < HaveAPI::Resource
           client_ip_ptr: request.env['HTTP_CLIENT_IP'] && ::UserSession.get_ptr(request.env['HTTP_CLIENT_IP']),
           user_session_agent: ::UserSessionAgent.find_or_create!(request.user_agent),
           client_version: request.user_agent,
-          api_token_id: t.id,
-          api_token_str: t.token,
+          session_token_id: t.id,
+          session_token_str: t.token,
           admin_id: current_user.id
         )
         ok(t)
@@ -124,7 +124,7 @@ class VpsAdmin::API::Resources::AuthToken < HaveAPI::Resource
     end
 
     def exec
-      ::ApiToken.find_by!(with_restricted(id: params[:auth_token_id]))
+      ::SessionToken.find_by!(with_restricted(id: params[:auth_token_id]))
     end
   end
 
@@ -142,7 +142,7 @@ class VpsAdmin::API::Resources::AuthToken < HaveAPI::Resource
     end
 
     def exec
-      t = ::ApiToken.find_by!(with_restricted(id: params[:auth_token_id]))
+      t = ::SessionToken.find_by!(with_restricted(id: params[:auth_token_id]))
 
       if t.update(input)
         ok
@@ -162,7 +162,7 @@ class VpsAdmin::API::Resources::AuthToken < HaveAPI::Resource
     end
 
     def exec
-      t = ::ApiToken.find_by!(with_restricted(id: params[:auth_token_id]))
+      t = ::SessionToken.find_by!(with_restricted(id: params[:auth_token_id]))
       ::UserSession.close!(request, t.user, token: t)
       ok
     end

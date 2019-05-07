@@ -24,7 +24,7 @@ class User < ActiveRecord::Base
   has_many :user_public_keys
   has_many :user_mail_role_recipients
   has_many :user_mail_template_recipients
-  has_many :api_tokens
+  has_many :session_tokens
   belongs_to :language
 
   enum password_version: VpsAdmin::API::CryptoProviders::PROVIDERS

@@ -22,7 +22,7 @@ module TransactionChains
         )
       end
 
-      user.api_tokens.delete_all
+      user.session_tokens.destroy_all
     end
   end
 end
