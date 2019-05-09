@@ -29,7 +29,7 @@ if ($_GET["action"] == 'login') {
 			session_start();
 
 			$api->authenticate('token', array(
-				'username' => $_POST['username'],
+				'user' => $_POST['username'],
 				'password' => $_POST['passwd'],
 				'lifetime' => 'renewable_auto',
 				'interval' => USER_LOGIN_INTERVAL
