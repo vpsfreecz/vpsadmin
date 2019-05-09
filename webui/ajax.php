@@ -53,7 +53,7 @@ include WWW_ROOT.'config_cfg.php';
 
 if ($_SESSION["logged_in"]) {
 	try {
-		$api->authenticate('token', array('token' => $_SESSION['auth_token']), false);
+		$api->authenticate('token', array('token' => $_SESSION['session_token']), false);
 
 		if ($_SESSION["transactbox_expiration"] < time()) {
 			unset($_SESSION);

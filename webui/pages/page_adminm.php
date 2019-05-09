@@ -229,7 +229,7 @@ function print_editm($u) {
 
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Advanced mail configuration").'" />'._('Advanced e-mail configuration'), "?page=adminm&section=members&action=template_recipients&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Public keys").'" />'._('Public keys'), "?page=adminm&section=members&action=pubkeys&id={$u->id}");
-	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Authentication tokens").'" />'._('Authentication tokens'), "?page=adminm&section=members&action=auth_tokens&id={$u->id}");
+	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Session tokens").'" />'._('Session tokens'), "?page=adminm&section=members&action=session_tokens&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Session log").'" />'._('Session log'), "?page=adminm&action=user_sessions&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Resource packages").'" />'._('Resource packages'), "?page=adminm&section=members&action=resource_packages&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Cluster resources").'" />'._('Cluster resources'), "?page=adminm&section=members&action=cluster_resources&id={$u->id}");
@@ -355,10 +355,10 @@ function edit_pubkey($user, $id) {
 	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to public keys").'" />'._('Back to public keys'), "?page=adminm&section=members&action=pubkeys&id={$user}");
 }
 
-function list_auth_tokens() {
+function list_session_tokens() {
 	global $api, $xtpl;
 
-	$xtpl->table_title(_("Authentication tokens"));
+	$xtpl->table_title(_("Session tokens"));
 	$xtpl->table_add_category(_('Token'));
 	$xtpl->table_add_category(_('Valid to'));
 	$xtpl->table_add_category(_('Label'));
@@ -371,9 +371,9 @@ function list_auth_tokens() {
 	$token = array();
 
 	if(isAdmin()) {
-		$tokens = $api->auth_token->list(array('user' => $_GET['id']));
+		$tokens = $api->session_token->list(array('user' => $_GET['id']));
 	} else {
-		$tokens = $api->auth_token->list();
+		$tokens = $api->session_token->list();
 	}
 
 	foreach($tokens as $t) {
@@ -389,8 +389,8 @@ function list_auth_tokens() {
 		$xtpl->table_td($t->lifetime);
 		$xtpl->table_td($t->interval._(' seconds'));
 
-		$xtpl->table_td('<a href="?page=adminm&section=members&action=auth_token_edit&id='.$_GET['id'].'&token_id='.$t->id.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
-		$xtpl->table_td('<a href="?page=adminm&section=members&action=auth_token_del&id='.$_GET['id'].'&token_id='.$t->id.'"><img src="template/icons/m_delete.png"  title="'. _("Delete") .'" /></a>');
+		$xtpl->table_td('<a href="?page=adminm&section=members&action=session_token_edit&id='.$_GET['id'].'&token_id='.$t->id.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
+		$xtpl->table_td('<a href="?page=adminm&section=members&action=session_token_del&id='.$_GET['id'].'&token_id='.$t->id.'"><img src="template/icons/m_delete.png"  title="'. _("Delete") .'" /></a>');
 
 		$xtpl->table_tr();
 	}
@@ -400,13 +400,13 @@ function list_auth_tokens() {
 	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&section=members&action=edit&id={$_GET['id']}");
 }
 
-function edit_auth_token($id) {
+function edit_session_token($id) {
 	global $api, $xtpl;
 
-	$t = $api->auth_token->find($id);
+	$t = $api->session_token->find($id);
 
 	$xtpl->table_title(_('Edit authentication token').' #'.$id);
-	$xtpl->form_create('?page=adminm&section=members&action=auth_token_edit&id='.$_GET['id'].'&token_id='.$id, 'post');
+	$xtpl->form_create('?page=adminm&section=members&action=sesssion_token_edit&id='.$_GET['id'].'&token_id='.$id, 'post');
 
 	$xtpl->table_td(_('Token').':');
 	$xtpl->table_td($t->token);
@@ -437,7 +437,7 @@ function edit_auth_token($id) {
 
 	$xtpl->form_out(_('Save'));
 
-	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to authentication tokens").'" />'._('Back to authentication tokens'), "?page=adminm&section=members&action=auth_tokens&id={$_GET['id']}");
+	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to authentication tokens").'" />'._('Back to authentication tokens'), "?page=adminm&section=members&action=session_tokens&id={$_GET['id']}");
 }
 
 function list_cluster_resources() {
@@ -1358,39 +1358,39 @@ if ($_SESSION["logged_in"]) {
 
 			break;
 
-		case 'auth_tokens':
-			list_auth_tokens();
+		case 'session_tokens':
+			list_session_tokens();
 			break;
 
-		case 'auth_token_edit':
+		case 'session_token_edit':
 			if(isset($_POST['label'])) {
 				try {
-					$api->auth_token->update($_GET['token_id'], array('label' => $_POST['label']));
+					$api->session_token->update($_GET['token_id'], array('label' => $_POST['label']));
 
-					notify_user(_('Authentication token updated'), '');
-					redirect('?page=adminm&section=members&action=auth_tokens&id='.$_GET['id'].'&token_id='.$_GET['token_id']);
+					notify_user(_('Session token updated'), '');
+					redirect('?page=adminm&section=members&action=session_tokens&id='.$_GET['id'].'&token_id='.$_GET['token_id']);
 
 				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 					$xtpl->perex_format_errors(_('Failed to edit authentication token'), $e->getResponse());
-					edit_auth_token($_GET['token_id']);
+					edit_session_token($_GET['token_id']);
 				}
 
 			} else {
-				edit_auth_token($_GET['token_id']);
+				edit_session_token($_GET['token_id']);
 			}
 
 			break;
 
-		case 'auth_token_del':
+		case 'session_token_del':
 			try {
-				$api->auth_token->delete($_GET['token_id']);
+				$api->session_token->delete($_GET['token_id']);
 
-				notify_user(_('Authentication token deleted'), '');
-				redirect('?page=adminm&section=members&action=auth_tokens&id='.$_GET['id'].'&token_id='.$_GET['token_id']);
+				notify_user(_('Session token deleted'), '');
+				redirect('?page=adminm&section=members&action=session_tokens&id='.$_GET['id'].'&token_id='.$_GET['token_id']);
 
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 					$xtpl->perex_format_errors(_('Failed to delete authentication token'), $e->getResponse());
-					edit_auth_token($_GET['token_id']);
+					edit_session_token($_GET['token_id']);
 				}
 
 			break;

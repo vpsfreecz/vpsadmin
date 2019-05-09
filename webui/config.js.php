@@ -16,7 +16,7 @@ root.vpsAdmin = {
 		url: "<?php echo EXT_API_URL ?>",
 		version: "<?php echo API_VERSION ?>"
 	},
-	authToken: "<?php echo $_SESSION['auth_token'] ?>",
+	sessionToken: "<?php echo $_SESSION['session_token'] ?>",
 	sessionLength: <?php echo USER_LOGIN_INTERVAL ?>,
 	description: <?php echo json_encode($_SESSION['api_description']) ?>,
 	sessionManagement: <?php echo $_SESSION['is_admin'] ? 'true' : 'false' ?>
@@ -25,7 +25,7 @@ root.vpsAdmin = {
 var chainTimeout;
 var api = root.apiClient = new HaveAPI.Client(root.vpsAdmin.api.url, {version: root.vpsAdmin.api.version});
 api.useDescription(root.vpsAdmin.description);
-api.authenticate('token', {token: root.vpsAdmin.authToken}, function(){}, false);
+api.authenticate('token', {token: root.vpsAdmin.sessionToken}, function(){}, false);
 
 <?php include 'js/transaction-chains.js'; ?>
 <?php include 'js/session-countdown.js'; ?>

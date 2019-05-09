@@ -78,7 +78,7 @@ $api_cluster = null;
 
 try {
 	if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
-		$api->authenticate('token', array('token' => $_SESSION['auth_token']), false);
+		$api->authenticate('token', array('token' => $_SESSION['session_token']), false);
 
 		try {
 			$api_cluster = $api->cluster->show();

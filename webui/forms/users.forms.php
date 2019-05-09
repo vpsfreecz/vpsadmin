@@ -99,7 +99,7 @@ function list_user_sessions($user_id) {
 	$xtpl->form_add_input(_("IP Address").':', 'text', '40', 'ip_addr', get_val('ip_addr', ''), '');
 	$xtpl->form_add_input(_("User agent").':', 'text', '40', 'user_agent', get_val('user_agent', ''), '');
 	$xtpl->form_add_input(_("Client version").':', 'text', '40', 'client_version', get_val('client_version', ''), '');
-	$xtpl->form_add_input(_("Token").':', 'text', '40', 'auth_token_str', get_val('auth_token_str', ''), '');
+	$xtpl->form_add_input(_("Token").':', 'text', '40', 'session_token_str', get_val('session_token_str', ''), '');
 
 	if ($_SESSION['is_admin'])
 		$xtpl->form_add_input(_("Admin ID").':', 'text', '40', 'admin', get_val('admin', ''), '');
@@ -118,7 +118,7 @@ function list_user_sessions($user_id) {
 	);
 
 	$conds = array('auth_type', 'ip_addr', 'user_agent', 'client_version',
-			'auth_token_str', 'admin');
+			'session_token_str', 'admin');
 
 	foreach ($conds as $c) {
 		if ($_GET[$c])
@@ -153,8 +153,8 @@ function list_user_sessions($user_id) {
 		$xtpl->table_td($s->closed_at ? tolocaltz($s->closed_at) : '---');
 		$xtpl->table_td(h($s->client_ip_addr ? $s->client_ip_addr : $s->api_ip_addr));
 		$xtpl->table_td($s->auth_type);
-		$xtpl->table_td($s->auth_token_str
-			? substr($s->auth_token_str, 0, 8).'...'
+		$xtpl->table_td($s->session_token_str
+			? substr($s->session_token_str, 0, 8).'...'
 			: '---'
 		);
 
@@ -167,7 +167,7 @@ function list_user_sessions($user_id) {
 
 		$color = false;
 
-		if (!$s->closed_at && $s->auth_token_str == $api->getAuthenticationProvider()->getToken())
+		if (!$s->closed_at && $s->session_token_str == $api->getAuthenticationProvider()->getToken())
 			$color = '#33CC00';
 
 		elseif (!$s->closed_at)
@@ -188,7 +188,7 @@ function list_user_sessions($user_id) {
 			'<dt>Client IP PTR:</dt><dd>'.h($s->client_ip_ptr).'</dd>'.
 			'<dt>User agent:</dt><dd>'.h($s->user_agent).'</dd>'.
 			'<dt>Client version:</dt><dd>'.h($s->client_version).'</dd>'.
-			'<dt>Token:</dt><dd>'.$s->auth_token_str.'</dd>'.
+			'<dt>Token:</dt><dd>'.$s->session_token_str.'</dd>'.
 			'<dl>'
 		, false, false, '7');
 

@@ -31,7 +31,7 @@ function loginUser() {
 	$_SESSION["user"]["id"] = $m->id;
 
 	$_SESSION["logged_in"] = true;
-	$_SESSION["auth_token"] = $api->getAuthenticationProvider()->getToken();
+	$_SESSION["session_token"] = $api->getAuthenticationProvider()->getToken();
 	$_SESSION["user"] = array(
 		'id' => $m->id,
 		'login' => $m->login,
@@ -112,6 +112,7 @@ if ($_GET['action'] == 'totp' && isSet($_SESSION['auth_token'])) {
 				'callback' => authenticationCallback,
 			]);
 
+			unset($_SESSION['auth_token']);
 			loginUser();
 
 		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
@@ -126,7 +127,7 @@ if ($_GET['action'] == 'totp' && isSet($_SESSION['auth_token'])) {
 if ($_GET["action"] == 'logout') {
 
 	$_SESSION["logged_in"] = false;
-	$_SESSION["auth_token"] = NULL;
+	$_SESSION["session_token"] = NULL;
 	unset($_SESSION["user"]);
 
 	$api->logout();
@@ -153,7 +154,7 @@ if (isAdmin() && ($_GET["action"] == 'switch_context') && isset($_GET["m_id"]) &
 		$user = $api->user->show($_GET['m_id']);
 
 		// Get a token for target user
-		$token = $api->auth_token->create(array(
+		$token = $api->session_token->create(array(
 			'user' => $user->id,
 			'label' => client_identity().'(context switch)',
 			'lifetime' => 'renewable_auto',
@@ -167,7 +168,7 @@ if (isAdmin() && ($_GET["action"] == 'switch_context') && isset($_GET["m_id"]) &
 		$api->authenticate('token', array('token' => $token->token));
 
 		$_SESSION["logged_in"] = true;
-		$_SESSION["auth_token"] = $token->token;
+		$_SESSION["session_token"] = $token->token;
 		$_SESSION["borrowed_token"] = true;
 		$_SESSION["user"] = array(
 			'id' => $user->id,
@@ -198,7 +199,7 @@ if ($_GET["action"] == "regain_admin" && $_SESSION["context_switch"]) {
 	if($_SESSION["borrowed_token"]) {
 		try {
 			$api->logout();
-			$api->authenticate('token', array('token' => $admin['auth_token']));
+			$api->authenticate('token', array('token' => $admin['session_token']));
 
 		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 			notify_user(_('Failed to destroy borrowed token'), $e->getResponse());
