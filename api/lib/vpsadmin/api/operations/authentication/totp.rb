@@ -17,12 +17,17 @@ module VpsAdmin::API
 
       totp = ROTP::TOTP.new(auth_token.user.totp_secret)
 
-      if totp.verify(code)
+      if totp.verify(code) || is_recovery_code?(auth_token.user, code)
         auth_token.destroy!
         auth_token
       else
         false
       end
+    end
+
+    protected
+    def is_recovery_code?(user, code)
+      CryptoProviders::Bcrypt.matches?(user.totp_recovery_code, nil, code)
     end
   end
 end
