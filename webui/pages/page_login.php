@@ -20,67 +20,107 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+function loginUser() {
+	global $xtpl, $api;
+
+	session_destroy();
+	session_start();
+
+	$m = $api->user->current();
+
+	$_SESSION["user"]["id"] = $m->id;
+
+	$_SESSION["logged_in"] = true;
+	$_SESSION["auth_token"] = $api->getAuthenticationProvider()->getToken();
+	$_SESSION["user"] = array(
+		'id' => $m->id,
+		'login' => $m->login,
+		'password_reset' => $m->password_reset,
+		'password' => $m->password_reset ? $_POST['passwd'] : null,
+	);
+	$_SESSION["is_user"] =       ($m->level >= PRIV_USER) ?       true : false;
+	$_SESSION["is_poweruser"] =  ($m->level >= PRIV_POWERUSER) ?  true : false;
+	$_SESSION["is_admin"] =      ($m->level >= PRIV_ADMIN) ?      true : false;
+	$_SESSION["is_superadmin"] = ($m->level >= PRIV_SUPERADMIN) ? true : false;
+
+	csrf_init($_POST['username'], $_POST['passwd']);
+
+	$xtpl->perex(_("Welcome, ").$m->login,
+			_("Login successful <br /> Your privilege level: ")
+			. $cfg_privlevel[$m->level]);
+
+	$api->user->touch($m->id);
+
+	if (mustResetPassword()) {
+		redirect('?page=');
+
+	} elseif($access_url
+		&& strpos($access_url, "?page=login&action=login") === false
+		&& strpos($access_url, "?page=jumpto") === false) {
+
+		redirect($access_url);
+
+	} elseif (isAdmin()) {
+		redirect('?page=cluster');
+
+	} else {
+		redirect('?page=');
+	}
+}
+
+function authenticationCallback($action, $token, $params) {
+	if ($action == 'totp') {
+		session_start();
+		$_SESSION['auth_token'] = $token;
+		redirect('?page=login&action=totp');
+	}
+
+	$xtpl->perex(_('Error'), 'Unsupported authentication method, please contact support.');
+}
+
 if ($_GET["action"] == 'login') {
 	$access_url = isset($_SESSION["access_url"]) ? $_SESSION["access_url"] : null;
 
 	if ($_POST["passwd"] && $_POST["username"]) {
 		try {
-			session_destroy();
-			session_start();
-
-			$api->authenticate('token', array(
+			$api->authenticate('token', [
 				'user' => $_POST['username'],
 				'password' => $_POST['passwd'],
 				'lifetime' => 'renewable_auto',
-				'interval' => USER_LOGIN_INTERVAL
-			));
+				'interval' => USER_LOGIN_INTERVAL,
+				'callback' => authenticationCallback,
+			]);
 
-			$m = $api->user->current();
-
-			$_SESSION["user"]["id"] = $m->id;
-
-			$_SESSION["logged_in"] = true;
-			$_SESSION["auth_token"] = $api->getAuthenticationProvider()->getToken();
-			$_SESSION["user"] = array(
-				'id' => $m->id,
-				'login' => $m->login,
-				'password_reset' => $m->password_reset,
-				'password' => $m->password_reset ? $_POST['passwd'] : null,
-			);
-			$_SESSION["is_user"] =       ($m->level >= PRIV_USER) ?       true : false;
-			$_SESSION["is_poweruser"] =  ($m->level >= PRIV_POWERUSER) ?  true : false;
-			$_SESSION["is_admin"] =      ($m->level >= PRIV_ADMIN) ?      true : false;
-			$_SESSION["is_superadmin"] = ($m->level >= PRIV_SUPERADMIN) ? true : false;
-
-			csrf_init($_POST['username'], $_POST['passwd']);
-
-			$xtpl->perex(_("Welcome, ").$m->login,
-					_("Login successful <br /> Your privilege level: ")
-					. $cfg_privlevel[$m->level]);
-
-			$api->user->touch($m->id);
-
-			if (mustResetPassword()) {
-				redirect('?page=');
-
-			} elseif($access_url
-				&& strpos($access_url, "?page=login&action=login") === false
-				&& strpos($access_url, "?page=jumpto") === false) {
-
-				redirect($access_url);
-
-			} elseif (isAdmin()) {
-				redirect('?page=cluster');
-
-			} else {
-				redirect('?page=');
-			}
+			loginUser();
 
 		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 			$xtpl->perex(_("Error"), $e->getMessage());
 		}
 
 	} else $xtpl->perex(_("Error"), _("Wrong username or password"));
+}
+
+if ($_GET['action'] == 'totp' && isSet($_SESSION['auth_token'])) {
+	if ($_POST['code']) {
+		try {
+			$api->authenticate('token', [
+				'resume' => [
+					'action' => 'totp',
+					'token' => $_SESSION['auth_token'],
+					'input' => ['code' => $_POST['code']],
+				],
+				'callback' => authenticationCallback,
+			]);
+
+			loginUser();
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex(_("Error"), $e->getMessage());
+			totp_login_form();
+		}
+	} else {
+		totp_login_form();
+	}
 }
 
 if ($_GET["action"] == 'logout') {
