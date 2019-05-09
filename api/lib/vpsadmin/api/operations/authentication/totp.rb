@@ -15,9 +15,12 @@ module VpsAdmin::API
         raise Exceptions::AuthenticationError, 'invalid token'
       end
 
-      totp = ROTP::TOTP.new(auth_token.user.totp_secret)
+      user = auth_token.user
+      totp = ROTP::TOTP.new(user.totp_secret)
+      last_use_at = totp.verify(code, after: user.totp_last_use_at)
 
-      if totp.verify(code) || is_recovery_code?(auth_token.user, code)
+      if last_use_at || is_recovery_code?(user, code)
+        user.update!(totp_last_use_at: last_use_at) if last_use_at
         auth_token.destroy!
         auth_token
       else

@@ -1902,6 +1902,7 @@ CREATE TABLE `users` (
   `totp_enabled` tinyint(1) NOT NULL DEFAULT '0',
   `totp_secret` varchar(32) COLLATE utf8_czech_ci DEFAULT NULL,
   `totp_recovery_code` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
+  `totp_last_use_at` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_users_on_login` (`login`) USING BTREE,
   UNIQUE KEY `index_users_on_totp_secret` (`totp_secret`),
@@ -2173,7 +2174,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-05-09  8:11:37
+-- Dump completed on 2019-05-09 12:53:54
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
