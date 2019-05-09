@@ -7,7 +7,7 @@ class SessionToken < ActiveRecord::Base
 
   enum lifetime: %i(fixed renewable_manual renewable_auto permanent)
 
-  def self.custom(attrs)
+  def self.custom!(attrs)
     st = new(
       user: attrs[:user],
       label: attrs[:label],
@@ -27,11 +27,15 @@ class SessionToken < ActiveRecord::Base
     token.to_s
   end
 
+  def to_s
+    token_string
+  end
+
   def valid_to
     token.valid_to
   end
 
-  def renew
-    token.valid_to = Time.now + interval
+  def renew!
+    token.update!(valid_to: Time.now + interval)
   end
 end

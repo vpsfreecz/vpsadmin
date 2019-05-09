@@ -84,26 +84,15 @@ class VpsAdmin::API::Resources::SessionToken < HaveAPI::Resource
     end
 
     def exec
-      t = ::SessionToken.custom(input)
-
-      if t.save
-        ::UserSession.create!(
-          user: t.user,
-          auth_type: 'token',
-          api_ip_addr: request.ip,
-          api_ip_ptr: ::UserSession.get_ptr(request.ip),
-          client_ip_addr: request.env['HTTP_CLIENT_IP'],
-          client_ip_ptr: request.env['HTTP_CLIENT_IP'] && ::UserSession.get_ptr(request.env['HTTP_CLIENT_IP']),
-          user_session_agent: ::UserSessionAgent.find_or_create!(request.user_agent),
-          client_version: request.user_agent,
-          session_token_id: t.id,
-          session_token_str: t.token,
-          admin_id: current_user.id
-        )
-        ok(t)
-      else
-        error('save failed', t.errors.to_hash)
-      end
+      session = VpsAdmin::API::Operations::UserSession::NewTokenDetached.run(
+        user: input[:user],
+        admin: current_user,
+        request: request,
+        lifetime: input[:lifetime],
+        interval: input[:interval],
+        label: input[:label],
+      )
+      ok(session.session_token)
 
     rescue ActiveRecord::RecordInvalid
       error('failed to create a session')
@@ -163,8 +152,11 @@ class VpsAdmin::API::Resources::SessionToken < HaveAPI::Resource
 
     def exec
       t = ::SessionToken.find_by!(with_restricted(id: params[:auth_token_id]))
-      ::UserSession.close!(request, t.user, token: t)
+      VpsAdmin::API::Operations::UserSession::CloseToken.run(t.user, t)
       ok
+
+    rescue VpsAdmin::API::Exceptions::OperationError => e
+      error(e.message)
     end
   end
 end

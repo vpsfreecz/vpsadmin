@@ -37,6 +37,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   params(:common) do
     use :writable
+    bool :totp_enabled, label: 'TOTP enabled'
     datetime :last_activity_at, label: 'Last activity'
   end
 
@@ -278,11 +279,13 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         end
 
         if current_user.role != :admin
-          u, authenticated = ::User.authenticate(
-            request, u.login, input[:password]
+          auth = VpsAdmin::API::Operations::Authentication::Password.run(
+            u.login,
+            input[:password],
+            multi_factor: false
           )
 
-          if u.nil? || !authenticated
+          if auth.nil? || !auth.authenticated?
             error(
               'update failed',
               password: ['incorrect password']
@@ -304,6 +307,84 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     def state_id
       @chain && @chain.id
+    end
+  end
+
+  class TotpEnable < HaveAPI::Action
+    http_method :post
+    route 'totp_enable/:user_id'
+
+    output(:hash) do
+      string :secret
+      string :provisioning_uri
+    end
+
+    authorize do |u|
+      allow
+    end
+
+    def exec
+      if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error('access denied')
+      end
+
+      u = ::User.find(params[:user_id])
+      ret = VpsAdmin::API::Operations::User::TotpEnable.run(u)
+      {secret: ret.secret, provisioning_uri: ret.provisioning_uri}
+
+    rescue VpsAdmin::API::Exceptions::OperationError => e
+      error(e.message)
+    end
+  end
+
+  class TotpConfirm < HaveAPI::Action
+    http_method :post
+    route 'totp_confirm/:user_id'
+
+    input(:hash) do
+      string :code, label: 'TOTP code', required: true
+    end
+
+    output(:hash) do
+      string :recovery_code
+    end
+
+    authorize do |u|
+      allow
+    end
+
+    def exec
+      if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error('access denied')
+      end
+
+      u = ::User.find(params[:user_id])
+      {recovery_code: VpsAdmin::API::Operations::User::TotpConfirm.run(u, input[:code])}
+
+    rescue VpsAdmin::API::Exceptions::OperationError => e
+      error(e.message)
+    end
+  end
+
+  class TotpDisable < HaveAPI::Action
+    http_method :post
+    route 'totp_disable/:user_id'
+
+    authorize do |u|
+      allow
+    end
+
+    def exec
+      if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error('access denied')
+      end
+
+      u = ::User.find(params[:user_id])
+      VpsAdmin::API::Operations::User::TotpDisable.run(u)
+      ok
+
+    rescue VpsAdmin::API::Exceptions::OperationError => e
+      error(e.message)
     end
   end
 

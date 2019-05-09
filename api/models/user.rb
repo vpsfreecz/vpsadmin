@@ -172,12 +172,6 @@ class User < ActiveRecord::Base
     ).count
   end
 
-  def resume_login(request)
-    self.update!(last_request_at: Time.now)
-
-    User.current = self
-  end
-
   def calculate_cluster_resources
     self.class.transaction do
       ::Environment.all.each do |env|
@@ -203,62 +197,6 @@ class User < ActiveRecord::Base
 
       ucrs.each_value { |ucr| ucr.save! }
     end
-  end
-
-  # Returns the user and whether he was authenticated
-  # @param request [Sinatra::Request]
-  # @param username [String]
-  # @param password [String]
-  # @return [Array(User, Boolean), nil]
-  def self.authenticate(request, username, password)
-    u = User.unscoped.where(
-      object_state: [
-        object_states[:active],
-        object_states[:suspended],
-      ],
-    ).find_by('login = ? COLLATE utf8_bin', username)
-    return unless u
-
-    provider = VpsAdmin::API::CryptoProviders.provider(u.password_version)
-    [u, provider.matches?(u.password, u.login, password)]
-  end
-
-  # Authenticate user and log him in
-  # @param request [Sinatra::Request]
-  # @param username [String]
-  # @param password [String]
-  # @return [User, nil]
-  def self.login(request, username, password)
-    u, authenticated = authenticate(request, username, password)
-
-    if u.nil?
-      return
-    elsif !authenticated
-      u.class.increment_counter(:failed_login_count, u.id)
-      return
-    elsif u.lockout
-      raise VpsAdmin::API::Exceptions::AuthenticationError,
-            'account is locked out'
-    end
-
-    u.class.increment_counter(:login_count, u.id)
-    u.last_login_at = u.current_login_at
-    u.current_login_at = Time.now
-    u.last_login_ip = u.current_login_ip
-    u.current_login_ip = request.ip
-    u.lockout = true if u.password_reset
-    u.save!
-
-    if VpsAdmin::API::CryptoProviders.update?(u.password_version)
-      VpsAdmin::API::CryptoProviders.current do |name, provider|
-        u.update!(
-          password_version: name,
-          password: provider.encrypt(u.login, password)
-        )
-      end
-    end
-
-    self.current = u
   end
 
   def self.current

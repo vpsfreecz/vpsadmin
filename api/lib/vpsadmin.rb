@@ -54,3 +54,4 @@ VpsAdmin::API.load_configurable(:hooks)
 VpsAdmin::API.load_configurable(:dataset_plans)
 
 require_rel 'vpsadmin/api/resources'
+require_rel 'vpsadmin/api/operations'

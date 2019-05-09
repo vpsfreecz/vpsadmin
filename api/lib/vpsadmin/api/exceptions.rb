@@ -163,7 +163,11 @@ module VpsAdmin::API::Exceptions
 
   end
 
-  class OperationNotSupported < ::StandardError
+  class OperationError < ::StandardError
+
+  end
+
+  class OperationNotSupported < OperationError
 
   end
 end

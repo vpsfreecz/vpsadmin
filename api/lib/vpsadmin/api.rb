@@ -5,8 +5,11 @@ module VpsAdmin
   ActiveRecord::Base.raise_in_transactional_callbacks = true
 
   module API
-    module Authentication
-
+    module Authentication ; end
+    module Operations
+      module Authentication ; end
+      module User ; end
+      module UserSession ; end
     end
 
     def self.initialize

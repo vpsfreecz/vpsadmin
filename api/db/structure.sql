@@ -16,6 +16,23 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `auth_tokens`
+--
+
+DROP TABLE IF EXISTS `auth_tokens`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `auth_tokens` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `token_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `opts` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `branches`
 --
 
@@ -1455,7 +1472,7 @@ CREATE TABLE `sysconfig` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_sysconfig_on_category_and_name` (`category`,`name`) USING BTREE,
   KEY `index_sysconfig_on_category` (`category`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1882,8 +1899,12 @@ CREATE TABLE `users` (
   `orig_login` varchar(63) COLLATE utf8_czech_ci DEFAULT NULL,
   `password_reset` tinyint(1) NOT NULL DEFAULT '0',
   `lockout` tinyint(1) NOT NULL DEFAULT '0',
+  `totp_enabled` tinyint(1) NOT NULL DEFAULT '0',
+  `totp_secret` varchar(32) COLLATE utf8_czech_ci DEFAULT NULL,
+  `totp_recovery_code` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_users_on_login` (`login`) USING BTREE,
+  UNIQUE KEY `index_users_on_totp_secret` (`totp_secret`),
   KEY `index_users_on_object_state` (`object_state`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -2152,7 +2173,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-05-07 15:51:21
+-- Dump completed on 2019-05-09  8:11:37
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2396,4 +2417,6 @@ INSERT INTO schema_migrations (version) VALUES ('20190503142157');
 INSERT INTO schema_migrations (version) VALUES ('20190507121309');
 
 INSERT INTO schema_migrations (version) VALUES ('20190507122654');
+
+INSERT INTO schema_migrations (version) VALUES ('20190508070536');
 
