@@ -1,5 +1,7 @@
 <?php
 
+use Endroid\QrCode\QrCode;
+
 function environment_configs($user_id) {
 	global $xtpl, $api;
 
@@ -997,4 +999,60 @@ function user_resource_package_delete_form($user_id, $pkg_id) {
 	$xtpl->form_out(_('Remove'));
 
 	$xtpl->sbar_add('<br>'._("Back"), '?page=adminm&action=resource_packages&id='.$user->id);
+}
+
+function user_totp_confirm_form($user) {
+	global $xtpl, $api;
+
+	$xtpl->title(_('Two-factor authentication setup'));
+
+	$xtpl->form_create('?page=adminm&action=totp_confirm&id='.$user->id, 'post');
+
+	$xtpl->table_td(
+		_('Install a TOTP authenticator application like FreeOTP or Google Authenticator '.
+		  'and scan the QR code below, or enter the secret key manually.'),
+		false, false, '2'
+	);
+	$xtpl->table_tr();
+
+	$qrCode = new QrCode($_SESSION['totp_setup']['provisioning_uri']);
+
+	$xtpl->table_td(_('QR code').':');
+	$xtpl->table_td(
+		'<img src="'.$qrCode->writeDataUri().'">'
+	);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Secret key').':');
+	$xtpl->table_td(implode('&nbsp;', str_split($_SESSION['totp_setup']['secret'], 4)));
+	$xtpl->table_tr();
+
+	$xtpl->form_add_input(_('TOTP code').':', 'text', '30', 'code');
+
+	$xtpl->form_out(_('Enable two-factor authentication'));
+}
+
+function user_totp_configured_form($user, $recoveryCode) {
+	global $xtpl;
+
+	$xtpl->title(_('Two-factor authentication configured'));
+
+	$xtpl->form_create('?page=adminm&action=edit&id='.$user->id, 'get');
+
+	$xtpl->table_td(
+		_('Two-factor authentication using TOTP is now enabled. In case you ever '.
+		  'lose access to the TOTP authenticator, you can use the recovery code '.
+		  'below instead of the TOTP token to login.').
+		  '<input type="hidden" name="page" value="adminm">'.
+		  '<input type="hidden" name="action" value="edit">'.
+		  '<input type="hidden" name="id" value="'.$user->id.'">',
+		false, false, '2'
+	);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Recovery code').':');
+	$xtpl->table_td($recoveryCode);
+	$xtpl->table_tr();
+
+	$xtpl->form_out(_('Return to profile'));
 }

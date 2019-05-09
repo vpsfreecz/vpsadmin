@@ -151,6 +151,21 @@ function print_editm($u) {
 	$xtpl->form_add_input(_("Repeat new password").':', 'password', '30', 'new_password2', '', '', -8);
 	$xtpl->form_out(_("Save"));
 
+	$xtpl->table_add_category(_("Two-factor authentication"));
+	$xtpl->table_add_category('&nbsp;');
+	$xtpl->form_create('?page=adminm&section=members&action=totp&id='.$u->id, 'post');
+	$xtpl->table_td(_('Status').':');
+	$xtpl->table_td($u->totp_enabled ? _('Enabled') : _('Disabled'));
+	$xtpl->table_tr();
+
+	if ($u->totp_enabled) {
+		$xtpl->form_add_checkbox(_("Disable").':', 'totp_disable', '1');
+	} else {
+		$xtpl->form_add_checkbox(_("Enable").':', 'totp_enable', '1');
+	}
+
+	$xtpl->form_out(_("Set"));
+
 	$xtpl->table_add_category(_("Personal information"));
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->table_add_category('&nbsp;');
@@ -1015,6 +1030,71 @@ if ($_SESSION["logged_in"]) {
 					$xtpl->perex_format_errors(_('Password change failed'), $e->getResponse());
 					print_editm($u);
 				}
+			}
+
+			break;
+		case 'totp':
+			$u = $api->user->find($_GET["id"]);
+
+			if ($_POST['totp_enable']) {
+				try {
+					$res = $api->user->totp_enable($u->id);
+
+					$_SESSION['totp_setup'] = [
+						'secret' => $res['secret'],
+						'provisioning_uri' => $res['provisioning_uri'],
+					];
+
+					user_totp_confirm_form($u);
+
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(
+						_('Two-factor authentication change failed'),
+						$e->getResponse()
+					);
+					print_editm($u);
+				}
+
+			} elseif ($_POST['totp_disable']) {
+				try {
+					$api->user->totp_disable($u->id);
+					notify_user(_('Two-factor authentication was disabled'), '');
+					redirect('?page=adminm&action=edit&id='.$u->id);
+
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(
+						_('Two-factor authentication change failed'),
+						$e->getResponse()
+					);
+					print_editm($u);
+				}
+
+			} else {
+				$xtpl->perex(_('No action selected'), '');
+					print_editm($u);
+			}
+
+			break;
+		case 'totp_confirm':
+			$u = $api->user->find($_GET["id"]);
+
+			if ($_POST['code']) {
+				try {
+					$res = $api->user->totp_confirm($u->id, ['code' => $_POST['code']]);
+					unset($_SESSION['totp_setup']);
+					user_totp_configured_form($u, $res['recovery_code']);
+
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(
+						_('Two-factor authentication setup failed'),
+						$e->getResponse()
+					);
+					user_totp_confirm_form($u);
+				}
+			} elseif (isSet($_SESSION['totp_setup'])) {
+				user_totp_confirm_form($u);
+			} else {
+				redirect('?page=adminm&action=edit&id='.$u->id);
 			}
 
 			break;
