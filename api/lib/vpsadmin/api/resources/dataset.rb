@@ -311,7 +311,7 @@ module VpsAdmin::API::Resources
 
     class Inherit < HaveAPI::Action
       desc 'Inherit dataset property'
-      route ':%{resource}_id/inherit'
+      route '{%{resource}_id}/inherit'
       http_method :post
       blocking true
 
@@ -373,7 +373,7 @@ module VpsAdmin::API::Resources
     end
 
     class Snapshot < HaveAPI::Resource
-      route ':dataset_id/snapshots'
+      route '{dataset_id}/snapshots'
       model ::Snapshot
       desc 'Manage dataset snapshots'
 
@@ -520,7 +520,7 @@ module VpsAdmin::API::Resources
 
       class Rollback < HaveAPI::Action
         desc 'Rollback to a snapshot'
-        route ':%{resource}_id/rollback'
+        route '{%{resource}_id}/rollback'
         http_method :post
         blocking true
 
@@ -577,7 +577,7 @@ module VpsAdmin::API::Resources
     end
 
     class Plan < HaveAPI::Resource
-      route ':dataset_id/plans'
+      route '{dataset_id}/plans'
       model ::DatasetInPoolPlan
       desc 'Manage dataset plans'
 
@@ -698,7 +698,7 @@ module VpsAdmin::API::Resources
 
     class PropertyHistory < HaveAPI::Resource
       desc 'View property history'
-      route ':dataset_id/property_history'
+      route '{dataset_id}/property_history'
       model ::DatasetPropertyHistory
 
       params(:all) do

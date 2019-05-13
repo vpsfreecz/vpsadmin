@@ -156,7 +156,7 @@ module VpsAdmin::API::Resources
 
     class AddAddresses < HaveAPI::Action
       desc 'Add IP addresses to a managed network'
-      route ':%{resource}_id/add_addresses'
+      route '{%{resource}_id}/add_addresses'
       http_method :post
 
       input do

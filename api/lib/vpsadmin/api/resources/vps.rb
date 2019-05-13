@@ -474,7 +474,7 @@ END
 
   class Start < HaveAPI::Action
     desc 'Start VPS'
-    route ':%{resource}_id/start'
+    route '{%{resource}_id}/start'
     http_method :post
     blocking true
 
@@ -500,7 +500,7 @@ END
 
   class Restart < HaveAPI::Action
     desc 'Restart VPS'
-    route ':%{resource}_id/restart'
+    route '{%{resource}_id}/restart'
     http_method :post
     blocking true
 
@@ -526,7 +526,7 @@ END
 
   class Stop < HaveAPI::Action
     desc 'Stop VPS'
-    route ':%{resource}_id/stop'
+    route '{%{resource}_id}/stop'
     http_method :post
     blocking true
 
@@ -552,7 +552,7 @@ END
 
   class Passwd < HaveAPI::Action
     desc 'Set root password'
-    route ':%{resource}_id/passwd'
+    route '{%{resource}_id}/passwd'
     http_method :post
     blocking true
 
@@ -586,7 +586,7 @@ END
 
   class Reinstall < HaveAPI::Action
     desc 'Reinstall VPS'
-    route ':%{resource}_id/reinstall'
+    route '{%{resource}_id}/reinstall'
     http_method :post
     blocking true
 
@@ -627,7 +627,7 @@ END
 
   class Migrate < HaveAPI::Action
     desc 'Migrate VPS to another node'
-    route ':%{resource}_id/migrate'
+    route '{%{resource}_id}/migrate'
     http_method :post
     blocking true
 
@@ -674,7 +674,7 @@ END
 
   class Clone < HaveAPI::Action
     desc 'Clone VPS'
-    route ':%{resource}_id/clone'
+    route '{%{resource}_id}/clone'
     http_method :post
     blocking true
 
@@ -782,7 +782,7 @@ END
 
   class SwapWith < HaveAPI::Action
     desc 'Swap VPS with another'
-    route ':%{resource}_id/swap_with'
+    route '{%{resource}_id}/swap_with'
     http_method :post
     blocking true
 
@@ -843,7 +843,7 @@ END
 
   class DeployPublicKey < HaveAPI::Action
     desc 'Deploy public SSH key'
-    route ':%{resource}_id/deploy_public_key'
+    route '{%{resource}_id}/deploy_public_key'
     http_method :post
     blocking true
 
@@ -878,7 +878,7 @@ END
   add_lifetime_methods([Start, Stop, Restart, Create, Clone, Update, Delete, SwapWith])
 
   class Config < HaveAPI::Resource
-    route ':vps_id/configs'
+    route '{vps_id}/configs'
     desc 'Manage VPS configs'
     model ::VpsHasConfig
 
@@ -944,7 +944,7 @@ END
 
   class Feature < HaveAPI::Resource
     model ::VpsFeature
-    route ':vps_id/features'
+    route '{vps_id}/features'
     desc 'Toggle VPS features'
 
     params(:toggle) do
@@ -1082,7 +1082,7 @@ END
   end
 
   class Mount < HaveAPI::Resource
-    route ':vps_id/mounts'
+    route '{vps_id}/mounts'
     model ::Mount
     desc 'Manage mounts'
 
@@ -1279,7 +1279,7 @@ END
   end
 
   class OutageWindow < HaveAPI::Resource
-    route ':vps_id/outage_windows'
+    route '{vps_id}/outage_windows'
     model ::VpsOutageWindow
     desc 'Manage VPS outage windows'
 
@@ -1447,7 +1447,7 @@ END
   end
 
   class ConsoleToken < HaveAPI::Resource
-    route ':vps_id/console_token'
+    route '{vps_id}/console_token'
     singular true
     model ::VpsConsole
     desc 'Remote console tokens'
@@ -1525,7 +1525,7 @@ END
 
   class Status < HaveAPI::Resource
     desc 'View VPS statuses in time'
-    route ':vps_id/statuses'
+    route '{vps_id}/statuses'
     model ::VpsStatus
 
     params(:all) do

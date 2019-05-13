@@ -130,7 +130,7 @@ module VpsAdmin::API::Resources
 
     class Recipient < HaveAPI::Resource
       model ::MailTemplateRecipient
-      route ':mail_template_id/recipients'
+      route '{mail_template_id}/recipients'
       desc 'Manage mail recipients'
 
       params(:common) do
@@ -241,7 +241,7 @@ module VpsAdmin::API::Resources
 
     class Translation < HaveAPI::Resource
       model ::MailTemplateTranslation
-      route ':mail_template_id/translations'
+      route '{mail_template_id}/translations'
       desc 'Manage mail templates'
 
       params(:common) do

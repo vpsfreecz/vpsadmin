@@ -216,7 +216,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
   include VpsAdmin::API::Maintainable::Action
 
   class ConfigChain < HaveAPI::Resource
-    route ':environment_id/config_chains'
+    route '{environment_id}/config_chains'
     desc 'Manage implicit VPS config chains'
     model ::EnvironmentConfigChain
 
@@ -273,7 +273,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
   end
 
   class DatasetPlan < HaveAPI::Resource
-    route ':environment_id/dataset_plans'
+    route '{environment_id}/dataset_plans'
     desc 'Manage environment dataset plans'
     model ::EnvironmentDatasetPlan
 

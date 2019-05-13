@@ -164,7 +164,7 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
 
   class Item < HaveAPI::Resource
     desc "View user cluster resource package contents"
-    route ':user_cluster_resource_package_id/items'
+    route '{user_cluster_resource_package_id}/items'
     model ::ClusterResourcePackageItem
 
     params(:common) do

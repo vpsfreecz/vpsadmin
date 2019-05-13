@@ -304,7 +304,7 @@ module VpsAdmin::API::Resources
     class RebuildAffectedVps < HaveAPI::Action
       desc 'Rebuilt the list of affected vpses, use after changing affected entities'
       http_method :post
-      route ':%{resource}_id/rebuild_affected_vps'
+      route '{%{resource}_id}/rebuild_affected_vps'
 
       authorize do |u|
         allow if u.role == :admin
@@ -320,7 +320,7 @@ module VpsAdmin::API::Resources
     class Entity < HaveAPI::Resource
       desc 'Outage entities'
       model ::OutageEntity
-      route ':outage_id/entities'
+      route '{outage_id}/entities'
 
       params(:editable) do
         string :name
@@ -432,7 +432,7 @@ module VpsAdmin::API::Resources
     class Handler < HaveAPI::Resource
       desc 'Outage handlers'
       model ::OutageHandler
-      route ':outage_id/handlers'
+      route '{outage_id}/handlers'
 
       params(:editable) do
         resource VpsAdmin::API::Resources::User, value_label: :login

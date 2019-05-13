@@ -186,7 +186,7 @@ module VpsAdmin::API::Resources
 
     class Assign < HaveAPI::Action
       desc 'Assign the address to an interface'
-      route ':%{resource}_id/assign'
+      route '{%{resource}_id}/assign'
       http_method :post
       blocking true
 
@@ -228,7 +228,7 @@ module VpsAdmin::API::Resources
 
     class Free < HaveAPI::Action
       desc 'Remove the address from its interface'
-      route ':%{resource}_id/free'
+      route '{%{resource}_id}/free'
       http_method :post
       blocking true
 

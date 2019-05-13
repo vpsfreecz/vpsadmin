@@ -138,7 +138,7 @@ module VpsAdmin::API
         parent_object_id = "#{r.to_s.demodulize.underscore}_id"
 
         log = r.define_resource(:StateLog) do
-          route ":#{parent_object_id}/state_logs"
+          route "{#{parent_object_id}}/state_logs"
           version r.version
           desc 'Browse object\'s state log'
           model ::ObjectState

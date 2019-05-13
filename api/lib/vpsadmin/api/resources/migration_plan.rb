@@ -100,7 +100,7 @@ module VpsAdmin::API::Resources
     class Start < HaveAPI::Action
       desc 'Begin execution of a migration plan'
       http_method :post
-      route ':%{resource}_id/start'
+      route '{%{resource}_id}/start'
 
       output do
         use :all
@@ -125,7 +125,7 @@ module VpsAdmin::API::Resources
     class Cancel < HaveAPI::Action
       desc 'Cancel execution of a migration plan'
       http_method :post
-      route ':%{resource}_id/cancel'
+      route '{%{resource}_id}/cancel'
 
       output do
         use :all
@@ -168,7 +168,7 @@ module VpsAdmin::API::Resources
 
     class VpsMigration < HaveAPI::Resource
       desc 'VPS migrations'
-      route ':migration_plan_id/vps_migrations'
+      route '{migration_plan_id}/vps_migrations'
       model ::VpsMigration
 
       params(:editable) do

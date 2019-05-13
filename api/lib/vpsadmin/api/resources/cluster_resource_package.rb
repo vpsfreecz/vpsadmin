@@ -141,7 +141,7 @@ module VpsAdmin::API::Resources
     class Item < HaveAPI::Resource
       desc "Manage cluster resource package contents"
       model ::ClusterResourcePackageItem
-      route ':cluster_resource_package_id/items'
+      route '{cluster_resource_package_id}/items'
 
       params(:common) do
         resource VpsAdmin::API::Resources::ClusterResource

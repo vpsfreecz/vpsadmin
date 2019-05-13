@@ -29,7 +29,7 @@ module VpsAdmin::API
 
         resource.define_action(:SetMaintenance) do
           desc 'Set maintenance lock'
-          route ->(r){ r.singular ? 'set_maintenance' : ':%{resource}_id/set_maintenance' }
+          route ->(r){ r.singular ? 'set_maintenance' : '{%{resource}_id}/set_maintenance' }
           http_method :post
 
           input(:hash) do

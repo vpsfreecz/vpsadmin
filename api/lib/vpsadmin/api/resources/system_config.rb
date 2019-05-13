@@ -46,7 +46,7 @@ module VpsAdmin::API::Resources
 
     class Show < HaveAPI::Action
       desc 'Show configuration variable'
-      route ':category/:name'
+      route '{category}/{name}'
       auth false
 
       output do
@@ -80,7 +80,7 @@ module VpsAdmin::API::Resources
 
     class Update < HaveAPI::Action
       desc 'Update configuration variable'
-      route ':category/:name'
+      route '{category}/{name}'
       http_method :put
 
       input do

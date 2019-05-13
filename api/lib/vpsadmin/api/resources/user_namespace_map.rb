@@ -161,7 +161,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
 
   class Entry < HaveAPI::Resource
     desc 'Browse user namespace map entries'
-    route ':user_namespace_map_id/entries'
+    route '{user_namespace_map_id}/entries'
     model ::UserNamespaceMapEntry
 
     params(:all) do

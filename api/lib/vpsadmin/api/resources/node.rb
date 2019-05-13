@@ -350,7 +350,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
   class Evacuate < HaveAPI::Action
     desc 'Evacuate node'
-    route ':%{resource}_id/evacuate'
+    route '{%{resource}_id}/evacuate'
     http_method :post
 
     input do
@@ -395,7 +395,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
   class Status < HaveAPI::Resource
     desc 'View node statuses in time'
-    route ':node_id/statuses'
+    route '{node_id}/statuses'
     model ::NodeStatus
 
     params(:all) do

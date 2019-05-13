@@ -187,7 +187,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   class Touch < HaveAPI::Action
     desc 'Update last activity'
-    route ':user_id/touch'
+    route '{user_id}/touch'
 
     authorize do |u|
       allow
@@ -312,7 +312,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   class TotpEnable < HaveAPI::Action
     http_method :post
-    route 'totp_enable/:user_id'
+    route 'totp_enable/{user_id}'
 
     output(:hash) do
       string :secret
@@ -339,7 +339,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   class TotpConfirm < HaveAPI::Action
     http_method :post
-    route 'totp_confirm/:user_id'
+    route 'totp_confirm/{user_id}'
 
     input(:hash) do
       string :code, label: 'TOTP code', required: true
@@ -368,7 +368,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   class TotpDisable < HaveAPI::Action
     http_method :post
-    route 'totp_disable/:user_id'
+    route 'totp_disable/{user_id}'
 
     authorize do |u|
       allow
@@ -408,7 +408,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
   class EnvironmentConfig < HaveAPI::Resource
     desc 'User settings per environment'
     model ::EnvironmentUserConfig
-    route ':user_id/environment_configs'
+    route '{user_id}/environment_configs'
 
     params(:all) do
       id :id, label: 'ID'
@@ -525,7 +525,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
   class ClusterResource < HaveAPI::Resource
     desc "Manage user's cluster resources"
     model ::UserClusterResource
-    route ':user_id/cluster_resources'
+    route '{user_id}/cluster_resources'
 
     params(:filters) do
       resource VpsAdmin::API::Resources::Environment
@@ -638,7 +638,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   class PublicKey < HaveAPI::Resource
     desc 'Manage public keys'
-    route ':user_id/public_keys'
+    route '{user_id}/public_keys'
     model ::UserPublicKey
 
     params(:common) do
@@ -801,7 +801,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   class MailRoleRecipient < HaveAPI::Resource
     desc 'Manage user mail recipients'
-    route ':user_id/mail_role_recipients'
+    route '{user_id}/mail_role_recipients'
     model ::UserMailRoleRecipient
 
     params(:all) do
@@ -900,7 +900,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   class MailTemplateRecipient < HaveAPI::Resource
     desc 'Manage user mail recipients'
-    route ':user_id/mail_template_recipients'
+    route '{user_id}/mail_template_recipients'
     model ::UserMailTemplateRecipient
 
     params(:all) do

@@ -111,7 +111,7 @@ module VpsAdmin::API::Resources
 
     class Acknowledge < HaveAPI::Action
       http_method :post
-      route ':%{resource}_id/acknowledge'
+      route '{%{resource}_id}/acknowledge'
       aliases %i(ack)
 
       input do
@@ -147,7 +147,7 @@ module VpsAdmin::API::Resources
 
     class Ignore < HaveAPI::Action
       http_method :post
-      route ':%{resource}_id/ignore'
+      route '{%{resource}_id}/ignore'
 
       input do
         datetime :until
@@ -181,7 +181,7 @@ module VpsAdmin::API::Resources
     end
 
     class Log < HaveAPI::Resource
-      route ':monitored_event_id/logs'
+      route '{monitored_event_id}/logs'
       desc 'Browse monitored event logs'
       model ::MonitoredEventLog
 

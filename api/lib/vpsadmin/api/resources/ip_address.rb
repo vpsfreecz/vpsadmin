@@ -251,7 +251,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
   class Assign < HaveAPI::Action
     desc 'Route the address to an interface'
-    route ':%{resource}_id/assign'
+    route '{%{resource}_id}/assign'
     http_method :post
     blocking true
 
@@ -303,7 +303,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
   class AssignWithHostAddress < HaveAPI::Action
     desc 'Route the address to an interface'
-    route ':%{resource}_id/assign_with_host_address'
+    route '{%{resource}_id}/assign_with_host_address'
     http_method :post
     blocking true
 
@@ -361,7 +361,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
   class Free < HaveAPI::Action
     desc 'Remove the route from an interface'
-    route ':%{resource}_id/free'
+    route '{%{resource}_id}/free'
     http_method :post
     blocking true
 

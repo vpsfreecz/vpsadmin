@@ -107,7 +107,7 @@ module VpsAdmin::API::Plugins::Requests
 
       res.define_action(:Resolve) do
         http_method :post
-        route ':%{resource}_id/resolve'
+        route '{%{resource}_id}/resolve'
         desc 'Resolve user request'
 
         input do

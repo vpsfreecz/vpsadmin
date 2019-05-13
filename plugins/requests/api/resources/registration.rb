@@ -41,7 +41,7 @@ module VpsAdmin::API::Resources
       class Preview < HaveAPI::Action
         auth false
         http_method :get
-        route ':%{resource}_id/:token'
+        route '{%{resource}_id}/{token}'
 
         output do
           use :common, include: %i(id admin_response)
@@ -63,7 +63,7 @@ module VpsAdmin::API::Resources
 
       class Update < HaveAPI::Actions::Default::Update
         auth false
-        route ':%{resource}_id/:token'
+        route '{%{resource}_id}/{token}'
 
         input do
           use :request
