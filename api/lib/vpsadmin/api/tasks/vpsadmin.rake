@@ -19,6 +19,14 @@ namespace :vpsadmin do
     end
   end
 
+  namespace :auth do
+    desc 'Close expired authentication processes'
+    task :close_expired do
+      puts "Close expired authentication processes"
+      VpsAdmin::API::Tasks.run(:authentication, :close_expired)
+    end
+  end
+
   namespace :user_session do
     desc 'Close expired user sessions'
     task :close_expired do
@@ -61,13 +69,13 @@ namespace :vpsadmin do
       puts 'Run plugin migrations'
       VpsAdmin::API::Tasks.run(:plugins, :migrate)
     end
-    
+
     desc 'Rollback plugin migrations'
     task :rollback do
       puts 'Run plugin rollback'
       VpsAdmin::API::Tasks.run(:plugins, :rollback)
     end
-    
+
     desc 'Rollback all plugin migrations'
     task :uninstall do
       puts 'Rollback all plugin migrations'
