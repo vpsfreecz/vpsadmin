@@ -5,6 +5,7 @@ module VpsAdmin::API
         auth = Operations::Authentication::Password.run(
           req.input[:user],
           req.input[:password],
+          request: req.request,
         )
 
         if auth.nil? || !auth.authenticated?

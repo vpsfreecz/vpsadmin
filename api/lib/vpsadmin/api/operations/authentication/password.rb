@@ -1,4 +1,5 @@
 require 'vpsadmin/api/operations/base'
+require 'vpsadmin/api/operations/utils/dns'
 
 module VpsAdmin::API
   class Operations::Authentication::Password < Operations::Base
@@ -7,11 +8,14 @@ module VpsAdmin::API
       alias_method :complete?, :complete
     end
 
+    include Operations::Utils::Dns
+
     # @param username [String]
     # @param password [String]
     # @param multi_factor [Boolean]
+    # @param request [Sinatra::Request]
     # @return [Result, nil]
-    def run(username, password, multi_factor: true)
+    def run(username, password, multi_factor: true, request: nil)
       user = ::User.unscoped.where(
         object_state: [
           ::User.object_states[:active],
@@ -38,10 +42,24 @@ module VpsAdmin::API
 
       if multi_factor && user.totp_enabled
         ret.token = ::Token.for_new_record!(Time.now + 60*5) do |token|
-          ::AuthToken.create!(
+          t = ::AuthToken.new(
             user: user,
             token: token,
           )
+
+          if request
+            t.assign_attributes(
+              api_ip_addr: request.ip,
+              api_ip_ptr: get_ptr(request.ip),
+              client_ip_addr: request.env['HTTP_CLIENT_IP'],
+              client_ip_ptr: request.env['HTTP_CLIENT_IP'] && get_ptr(request.env['HTTP_CLIENT_IP']),
+              user_agent: ::UserAgent.find_or_create!(request.user_agent || ''),
+              client_version: request.user_agent || '',
+            )
+          end
+
+          t.save!
+          t
         end
       end
 

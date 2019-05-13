@@ -2,6 +2,7 @@ require 'json'
 
 class AuthToken < ActiveRecord::Base
   belongs_to :user
+  belongs_to :user_agent
   belongs_to :token, dependent: :delete
 
   serialize :opts, JSON
