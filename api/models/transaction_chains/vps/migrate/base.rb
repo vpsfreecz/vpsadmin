@@ -313,17 +313,35 @@ module TransactionChains
           all_dst_host_addrs.concat(dst_host_addrs)
 
           # Remove old addresses on the target node
-          append_t(
-            Transactions::NetworkInterface::DelRoute,
-            args: [dst_netif, src_ip, false],
-            urgent: true,
-          ) do |t|
+          remove_confirmation = Proc.new do |t|
             t.edit(src_ip, network_interface_id: nil)
             t.edit(src_ip, user_id: nil) if src_ip.user_id
 
             src_host_addrs.each do |host_addr|
               t.edit(host_addr, order: nil)
             end
+          end
+
+          if src_node.hypervisor_type == dst_node.hypervisor_type
+            # When migrating between the same hypervisor types (OpenVZ && OpenVZ
+            # or vpsAdminOS && vpsAdminOS), the original IP addresses were
+            # transfered to the destination node, so we really have to remove
+            # them.
+            append_t(
+              Transactions::NetworkInterface::DelRoute,
+              args: [dst_netif, src_ip, false],
+              urgent: true,
+              &remove_confirmation
+            )
+          else
+            # When migrating to a different hypervisor type, the VPS is setup
+            # from scratch and does not have the original IP addresses configured.
+            # We can remove them just from the database.
+            append_t(
+              Transactions::Utils::NoOp,
+              args: find_node_id,
+              &remove_confirmation
+            )
           end
 
           # Add new addresses on the target node
