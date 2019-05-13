@@ -460,5 +460,41 @@ module TransactionChains
         ips.select { |ip| ip.network.ip_version == 6 }
       end
     end
+
+    def migrate_features
+      return if src_node.hypervisor_type == dst_node.hypervisor_type
+
+      to_keep = {}
+      to_create = []
+      to_remove = []
+
+      src_vps.vps_features.each do |f|
+        name = f.name.to_sym
+
+        if VpsFeature::FEATURES[name].support?(dst_node)
+          to_keep[name] = f
+        else
+          to_remove << f
+        end
+      end
+
+      VpsFeature::FEATURES.each do |name, f|
+        next if !f.support?(dst_node) || to_keep.has_key?(name)
+
+        to_create << ::VpsFeature.create!(
+          vps: dst_vps,
+          name: name,
+          enabled: false,
+        )
+      end
+
+      append_t(Transactions::Vps::Features, args: [
+        dst_vps,
+        to_keep.values + to_create
+      ]) do |t|
+        to_remove.each { |f| t.just_destroy(f) }
+        to_create.each { |f| t.just_create(f) }
+      end
+    end
   end
 end

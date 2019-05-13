@@ -181,8 +181,13 @@ module TransactionChains
       # Convert internal configuration files to OpenVZ based on distribution
       append(Transactions::Vps::OsToVz, args: [dst_vps, src_vps.os_template], urgent: true)
 
-      # Restore VPS state
+      # Pre-start hook (feature configuration may start the VPS)
       call_hooks_for(:pre_start, self, args: [dst_vps, was_running?])
+
+      # Features
+      migrate_features
+
+      # Restore VPS state
       use_chain(Vps::Start, args: dst_vps, urgent: true) if was_running?
       call_hooks_for(:post_start, self, args: [dst_vps, was_running?])
 
