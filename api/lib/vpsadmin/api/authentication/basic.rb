@@ -10,6 +10,15 @@ module VpsAdmin::API
       )
 
       if auth.nil? || !auth.authenticated?
+        if auth
+          Operations::User::FailedLogin.run(
+            auth.user,
+            :password,
+            'invalid password',
+            request
+          )
+        end
+
         return
 
       elsif !auth.complete?

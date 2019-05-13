@@ -8,6 +8,15 @@ module VpsAdmin::API
         )
 
         if auth.nil? || !auth.authenticated?
+          if auth
+            Operations::User::FailedLogin.run(
+              auth.user,
+              :password,
+              'invalid password',
+              req.request,
+            )
+          end
+
           res.error = 'invalid user or password'
           next res
         end
@@ -44,23 +53,29 @@ module VpsAdmin::API
       end
 
       handle do |req, res|
-        auth_token = Operations::Authentication::Totp.run(
+        auth = Operations::Authentication::Totp.run(
           req.input[:token],
           req.input[:code],
         )
 
-        if auth_token
+        if auth.authenticated?
           session = Operations::UserSession::NewTokenLogin.run(
-            auth_token.user,
+            auth.user,
             req.request,
-            auth_token.opts['lifetime'],
-            auth_token.opts['interval'],
+            auth.auth_token.opts['lifetime'],
+            auth.auth_token.opts['interval'],
           )
           res.complete = true
           res.token = session.session_token.to_s
           res.valid_to = session.session_token.valid_to
           next res.ok
         else
+          Operations::User::FailedLogin.run(
+            auth.user,
+            :totp,
+            'invalid totp code',
+            req.request,
+          )
           res.error = 'invalid totp code'
           next res
         end

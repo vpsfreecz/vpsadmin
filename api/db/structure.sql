@@ -1661,6 +1661,32 @@ CREATE TABLE `user_cluster_resources` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `user_failed_logins`
+--
+
+DROP TABLE IF EXISTS `user_failed_logins`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_failed_logins` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `auth_type` varchar(30) COLLATE utf8_czech_ci NOT NULL,
+  `reason` varchar(255) COLLATE utf8_czech_ci NOT NULL,
+  `api_ip_addr` varchar(46) COLLATE utf8_czech_ci DEFAULT NULL,
+  `api_ip_ptr` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
+  `client_ip_addr` varchar(46) COLLATE utf8_czech_ci DEFAULT NULL,
+  `client_ip_ptr` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
+  `user_agent_id` int(11) DEFAULT NULL,
+  `client_version` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_user_failed_logins_on_user_id` (`user_id`),
+  KEY `index_user_failed_logins_on_auth_type` (`auth_type`),
+  KEY `index_user_failed_logins_on_user_agent_id` (`user_agent_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `user_mail_role_recipients`
 --
 
@@ -2174,7 +2200,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-05-13  8:52:23
+-- Dump completed on 2019-05-13  9:06:14
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2422,4 +2448,6 @@ INSERT INTO schema_migrations (version) VALUES ('20190507122654');
 INSERT INTO schema_migrations (version) VALUES ('20190508070536');
 
 INSERT INTO schema_migrations (version) VALUES ('20190513064011');
+
+INSERT INTO schema_migrations (version) VALUES ('20190513064725');
 

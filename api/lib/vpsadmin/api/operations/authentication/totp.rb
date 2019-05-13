@@ -3,9 +3,15 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::Authentication::Totp < Operations::Base
+    Result = Struct.new(:user, :auth_token) do
+      def authenticated?
+        !auth_token.nil?
+      end
+    end
+
     # @param token [String]
     # @param code [String]
-    # @return [::AuthToken, false]
+    # @return [Result]
     def run(token, code)
       auth_token = ::AuthToken.joins(:token).includes(:token, :user).find_by(
         tokens: {token: token},
@@ -22,9 +28,9 @@ module VpsAdmin::API
       if last_use_at || is_recovery_code?(user, code)
         user.update!(totp_last_use_at: last_use_at) if last_use_at
         auth_token.destroy!
-        auth_token
+        Result.new(user, auth_token)
       else
-        false
+        Result.new(user, nil)
       end
     end
 
