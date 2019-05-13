@@ -1,7 +1,7 @@
 class UserSession < ActiveRecord::Base
   belongs_to :user, class_name: 'User', foreign_key: :user_id
   belongs_to :admin, class_name: 'User', foreign_key: :admin_id
-  belongs_to :user_session_agent
+  belongs_to :user_agent
   belongs_to :session_token
   has_many :transaction_chains
 
@@ -36,6 +36,6 @@ class UserSession < ActiveRecord::Base
   end
 
   def user_agent
-    user_session_agent.agent
+    user_agent.agent
   end
 end

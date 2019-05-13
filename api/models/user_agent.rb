@@ -1,4 +1,4 @@
-class UserSessionAgent < ActiveRecord::Base
+class UserAgent < ActiveRecord::Base
   has_many :user_sessions
 
   def self.find_or_create!(user_agent)

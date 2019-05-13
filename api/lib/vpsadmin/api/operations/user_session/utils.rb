@@ -16,7 +16,7 @@ module VpsAdmin::API
         api_ip_ptr: get_ptr(request.ip),
         client_ip_addr: request.env['HTTP_CLIENT_IP'],
         client_ip_ptr: request.env['HTTP_CLIENT_IP'] && get_ptr(request.env['HTTP_CLIENT_IP']),
-        user_session_agent: ::UserSessionAgent.find_or_create!(request.user_agent || ''),
+        user_agent: ::UserAgent.find_or_create!(request.user_agent || ''),
         client_version: request.user_agent || '',
         session_token_id: token && token.id,
         session_token_str: token && token.token,
