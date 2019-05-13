@@ -1,5 +1,9 @@
+require 'vpsadmin/api/operations/utils/dns'
+
 module VpsAdmin::API
   module Operations::UserSession::Utils
+    include Operations::Utils::Dns
+
     # @param user [::User]
     # @param request [Sinatra::Request]
     # @param auth [:basic, :token]
@@ -21,14 +25,6 @@ module VpsAdmin::API
         session_token_id: token && token.id,
         session_token_str: token && token.token,
       )
-    end
-
-    # @param ip [String]
-    # @return [String]
-    def get_ptr(ip)
-      Resolv.new.getname(ip)
-    rescue Resolv::ResolvError => e
-      e.message
     end
   end
 end

@@ -10,6 +10,7 @@ module VpsAdmin
       module Authentication ; end
       module User ; end
       module UserSession ; end
+      module Utils ; end
     end
 
     def self.initialize
