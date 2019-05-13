@@ -11,7 +11,7 @@ module Transactions::NetworkInterface
       self.vps_id = netif.vps.id
       self.node_id = netif.vps.node_id
 
-      ret = {
+      {
         pool_fs: netif.vps.dataset_in_pool.pool.filesystem,
         veth_name: netif.name,
         addr: ip.addr,
@@ -21,17 +21,12 @@ module Transactions::NetworkInterface
         unregister: unregister,
         id: ip.id,
         user_id: ip.user_id || netif.vps.user_id,
-      }
-
-      if unregister
-        ret[:shaper] = {
+        shaper: {
           class_id: ip.class_id,
           max_tx: ip.max_tx,
           max_rx: ip.max_rx,
-        }
-      end
-
-      ret
+        },
+      }
     end
   end
 end
