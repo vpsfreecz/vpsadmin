@@ -31,7 +31,7 @@ module NodeCtld
       ret = zfs(:get, '-H -o value name', fs, valid_rcs: [1])
 
       # Does not exist
-      if ret[:exitstatus] == 1
+      if ret.exitstatus == 1
         if opts
           str_opts = opts.map { |k, v| "-o #{k}=\"#{translate_property(k, v)}\""  }.join(' ')
         else

@@ -7,7 +7,7 @@ module NodeCtld::SystemProbes
 
     def initialize
       ['getconf _NPROCESSORS_ONLN', 'nproc'].each do |cmd|
-        v = syscmd(cmd)[:output]
+        v = syscmd(cmd).output
 
         if $?.exitstatus == 0
           @count = v.strip.to_i

@@ -13,7 +13,7 @@ module NodeCtld
       unless sharenfs.nil?
         ds = $CFG.get(:vps, :zfs, :root_dataset)
 
-        if syscmd("#{$CFG.get(:bin, :exportfs)}")[:output] =~ /^\/#{ds}\/\d+$/
+        if syscmd("#{$CFG.get(:bin, :exportfs)}").output =~ /^\/#{ds}\/\d+$/
           log "ZFS exports already loaded"
           return
         end

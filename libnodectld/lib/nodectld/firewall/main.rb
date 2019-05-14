@@ -51,7 +51,7 @@ module NodeCtld::Firewall
         ret = iptables(v, {N: 'vpsadmin_main'}, valid_rcs: [1,])
 
         # Chain already exists, we don't have to continue
-        if ret[:exitstatus] == 1
+        if ret.exitstatus == 1
           log("Skipping init for IPv#{v}, chain vpsadmin_main already exists")
           next
         end

@@ -49,7 +49,7 @@ module NodeCtld
     end
 
     def list_snapshots(ds)
-      zfs(:list, "-r -t snapshot -H -o name", ds)[:output].split()
+      zfs(:list, "-r -t snapshot -H -o name", ds).output.split()
     end
 
     def dataset_properties(ds, names)
@@ -57,7 +57,7 @@ module NodeCtld
         :get,
         "-H -p -o property,source,value #{names.is_a?(Array) ? names.join(',') : names}",
         ds
-      )[:output])
+      ).output)
     end
 
     def get_confirmed_snapshot_name(db, snap_id)

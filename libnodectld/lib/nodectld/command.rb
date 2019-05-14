@@ -335,14 +335,12 @@ module NodeCtld
       begin
         ret = @cmd.send(m)
 
-        begin
+        if ret.is_a?(OsCtl::Lib::SystemCommandResult)
+          @status = :ok
+        elsif ret.is_a?(::Hash)
           @status = ret[:ret]
-
-          if @status == nil
-            bad_value(klass)
-          end
-
-        rescue
+          bad_value(klass) if @status == nil
+        else
           bad_value(klass)
         end
 

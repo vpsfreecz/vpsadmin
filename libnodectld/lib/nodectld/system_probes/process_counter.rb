@@ -6,7 +6,7 @@ module NodeCtld::SystemProbes
     attr_reader :count
 
     def initialize
-      @count = syscmd('ps axh -opid | wc -l')[:output].strip.to_i
+      @count = syscmd('ps axh -opid | wc -l').output.strip.to_i
     end
   end
 end

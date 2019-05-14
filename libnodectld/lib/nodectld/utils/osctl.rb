@@ -7,6 +7,7 @@ module NodeCtld
     # @param opts [Hash] command options
     # @param gopts [Hash] global command options
     # @param cmd_opts [Hash] options passed to {Utils::System#syscmd}
+    # @return [OsCtl::Lib::SystemCommandResult]
     def osctl(cmd, args = [], opts = {}, gopts = {}, cmd_opts = {})
       argv = ['osctl']
 
@@ -35,7 +36,7 @@ module NodeCtld
     end
 
     def osctl_parse(*args)
-      JSON.parse(osctl(*args)[:output], symbolize_names: true)
+      JSON.parse(osctl(*args).output, symbolize_names: true)
     end
 
     def format_cli_options(opts)

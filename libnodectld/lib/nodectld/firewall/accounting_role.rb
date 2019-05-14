@@ -23,7 +23,7 @@ module NodeCtld::Firewall
       ret = iptables(v, {N: chain}, valid_rcs: [1,])
 
       # Chain already exists, we don't have to continue
-      if ret[:exitstatus] == 1
+      if ret.exitstatus == 1
         log "Skipping init for IPv#{v}, chain #{chain} already exists"
         return
       end
@@ -64,7 +64,7 @@ module NodeCtld::Firewall
 
       @fw.synchronize do
         {4 => '0.0.0.0/0', 6 => '::/0'}.each do |v, all|
-          iptables(v, ['-L', chain, '-nvx', '-Z'])[:output].split("\n")[2..-2].each do |l|
+          iptables(v, ['-L', chain, '-nvx', '-Z']).output.split("\n")[2..-2].each do |l|
             fields = l.strip.split(/\s+/)
             src = fields[v == 4 ? 7 : 6]
             dst = fields[v == 4 ? 8 : 7]

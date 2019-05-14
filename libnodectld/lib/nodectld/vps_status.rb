@@ -100,7 +100,7 @@ module NodeCtld
           # Read hostname if it isn't managed by vpsAdmin
           if db_vps.read_hostname?
             run_or_skip(db_vps) do
-              db_vps.hostname = osctl(%i(ct exec), [vps[:id], 'hostname'])[:output].strip
+              db_vps.hostname = osctl(%i(ct exec), [vps[:id], 'hostname']).output.strip
             end
 
             if !db_vps.hostname || db_vps.hostname.empty?

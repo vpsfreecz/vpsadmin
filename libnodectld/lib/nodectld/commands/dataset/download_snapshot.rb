@@ -47,7 +47,7 @@ module NodeCtld
       else
         size = zfs(
           :get, '-Hp -o value referenced', "#{ds}@#{@snapshot}"
-        )[:output].strip.to_i / 1024 / 1024
+        ).output.strip.to_i / 1024 / 1024
       end
 
       db = NodeCtld::Db.new

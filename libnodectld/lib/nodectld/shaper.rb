@@ -235,7 +235,7 @@ module NodeCtld
           # If Either one of those commands reported
           #   'RTNETLINK answers: No such file or directory',
           # reinitialize the whole shaper
-          if rets.detect { |ret| ret[:exitstatus] == 2 }
+          if rets.detect { |ret| ret.exitstatus == 2 }
             add_ip(addr, opts)
           end
         end
@@ -257,7 +257,7 @@ module NodeCtld
                      "rate #{tx}bps ceil #{tx}bps burst 1M", [2])
         end
 
-        safe_init(Db.new) if rets.detect { |ret| ret[:exitstatus] == 2 }
+        safe_init(Db.new) if rets.detect { |ret| ret.exitstatus == 2 }
       end
     end
 

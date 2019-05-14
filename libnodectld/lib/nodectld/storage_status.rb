@@ -89,7 +89,7 @@ module NodeCtld
           :get,
           "-Hrp -t filesystem -o name,property,value #{PROPERTIES.join(',')}",
           pool[:fs]
-        )[:output].split("\n").each do |prop|
+        ).output.split("\n").each do |prop|
           parts = prop.split
           next if parts[0] == pool[:fs]
 
