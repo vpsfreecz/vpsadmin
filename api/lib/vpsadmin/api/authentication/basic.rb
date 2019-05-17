@@ -27,6 +27,9 @@ module VpsAdmin::API
       end
 
       Operations::UserSession::NewBasicLogin.run(auth.user, request).user
+
+    rescue Exceptions::OperationError => e
+      raise Exceptions::AuthenticationError, e.message
     end
   end
 end

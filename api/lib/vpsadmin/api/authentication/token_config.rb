@@ -23,12 +23,17 @@ module VpsAdmin::API
         end
 
         if auth.complete?
-          session = Operations::UserSession::NewTokenLogin.run(
-            auth.user,
-            req.request,
-            req.input[:lifetime],
-            req.input[:interval],
-          )
+          begin
+            session = Operations::UserSession::NewTokenLogin.run(
+              auth.user,
+              req.request,
+              req.input[:lifetime],
+              req.input[:interval],
+            )
+          rescue Exceptions::OperationError => e
+            raise Exceptions::AuthenticationError, e.message
+          end
+
           res.complete = true
           res.token = session.session_token.to_s
           res.valid_to = session.session_token.valid_to
@@ -60,12 +65,17 @@ module VpsAdmin::API
         )
 
         if auth.authenticated?
-          session = Operations::UserSession::NewTokenLogin.run(
-            auth.user,
-            req.request,
-            auth.auth_token.opts['lifetime'],
-            auth.auth_token.opts['interval'],
-          )
+          begin
+            session = Operations::UserSession::NewTokenLogin.run(
+              auth.user,
+              req.request,
+              auth.auth_token.opts['lifetime'],
+              auth.auth_token.opts['interval'],
+            )
+          rescue Exceptions::OperationError => e
+            raise Exceptions::AuthenticationError, e.message
+          end
+
           res.complete = true
           res.token = session.session_token.to_s
           res.valid_to = session.session_token.valid_to
