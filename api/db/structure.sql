@@ -1898,6 +1898,33 @@ CREATE TABLE `user_sessions` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `user_totp_devices`
+--
+
+DROP TABLE IF EXISTS `user_totp_devices`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_totp_devices` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `label` varchar(100) COLLATE utf8_czech_ci NOT NULL,
+  `confirmed` tinyint(1) NOT NULL DEFAULT '0',
+  `enabled` tinyint(1) NOT NULL DEFAULT '0',
+  `secret` varchar(32) COLLATE utf8_czech_ci DEFAULT NULL,
+  `recovery_code` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
+  `last_verification_at` int(11) DEFAULT NULL,
+  `use_count` int(10) unsigned NOT NULL DEFAULT '0',
+  `last_use_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_user_totp_devices_on_secret` (`secret`),
+  KEY `index_user_totp_devices_on_user_id` (`user_id`),
+  KEY `index_user_totp_devices_on_enabled` (`enabled`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `users`
 --
 
@@ -1931,13 +1958,8 @@ CREATE TABLE `users` (
   `orig_login` varchar(63) COLLATE utf8_czech_ci DEFAULT NULL,
   `password_reset` tinyint(1) NOT NULL DEFAULT '0',
   `lockout` tinyint(1) NOT NULL DEFAULT '0',
-  `totp_enabled` tinyint(1) NOT NULL DEFAULT '0',
-  `totp_secret` varchar(32) COLLATE utf8_czech_ci DEFAULT NULL,
-  `totp_recovery_code` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
-  `totp_last_use_at` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_users_on_login` (`login`) USING BTREE,
-  UNIQUE KEY `index_users_on_totp_secret` (`totp_secret`),
   KEY `index_users_on_object_state` (`object_state`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -2206,7 +2228,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-05-13 10:26:48
+-- Dump completed on 2019-05-19 15:52:31
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2458,4 +2480,6 @@ INSERT INTO schema_migrations (version) VALUES ('20190513064011');
 INSERT INTO schema_migrations (version) VALUES ('20190513064725');
 
 INSERT INTO schema_migrations (version) VALUES ('20190513075510');
+
+INSERT INTO schema_migrations (version) VALUES ('20190519074913');
 

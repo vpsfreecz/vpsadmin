@@ -38,9 +38,10 @@ module VpsAdmin::API
         end
       end
 
-      ret = Result.new(user, authenticated, !user.totp_enabled)
+      require_totp = require_totp?(user)
+      ret = Result.new(user, authenticated, !require_totp)
 
-      if multi_factor && user.totp_enabled
+      if multi_factor && require_totp
         ret.token = ::Token.for_new_record!(Time.now + 60*5) do |token|
           t = ::AuthToken.new(
             user: user,
@@ -64,6 +65,11 @@ module VpsAdmin::API
       end
 
       ret
+    end
+
+    protected
+    def require_totp?(user)
+      user.user_totp_devices.where(enabled: true).any?
     end
   end
 end

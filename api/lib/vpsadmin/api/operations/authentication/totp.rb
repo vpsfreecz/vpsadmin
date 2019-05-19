@@ -1,4 +1,3 @@
-require 'rotp'
 require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
@@ -22,21 +21,32 @@ module VpsAdmin::API
       end
 
       user = auth_token.user
-      totp = ROTP::TOTP.new(user.totp_secret)
-      last_use_at = totp.verify(code, after: user.totp_last_use_at)
 
-      if last_use_at || is_recovery_code?(user, code)
-        user.update!(totp_last_use_at: last_use_at) if last_use_at
-        auth_token.destroy!
-        Result.new(user, auth_token)
-      else
-        Result.new(user, nil)
+      user.user_totp_devices.order('last_use_at DESC').each do |dev|
+        last_verification_at = dev.totp.verify(code, after: dev.last_verification_at)
+
+        if last_verification_at || is_recovery_code?(dev, code)
+          if last_verification_at
+            dev.update!(
+              last_verification_at: last_verification_at,
+              last_use_at: Time.now,
+            )
+            ::UserTotpDevice.increment_counter(:use_count, dev.id)
+          end
+
+          auth_token.destroy!
+          return Result.new(user, auth_token)
+        else
+          return Result.new(user, nil)
+        end
       end
+
+      Result.new(user, nil)
     end
 
     protected
-    def is_recovery_code?(user, code)
-      CryptoProviders::Bcrypt.matches?(user.totp_recovery_code, nil, code)
+    def is_recovery_code?(dev, code)
+      CryptoProviders::Bcrypt.matches?(dev.recovery_code, nil, code)
     end
   end
 end

@@ -67,6 +67,11 @@ module TransactionChains
           t.just_destroy(key)
         end
 
+        # Remove TOTP devices
+        user.user_totp_devices.each do |dev|
+          t.just_destroy(dev)
+        end
+
         # Free the login and forget password
         t.edit(user, login: nil, orig_login: user.login, password: '!')
       end

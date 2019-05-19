@@ -37,7 +37,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   params(:common) do
     use :writable
-    bool :totp_enabled, label: 'TOTP enabled'
     datetime :last_activity_at, label: 'Last activity'
   end
 
@@ -310,84 +309,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
   end
 
-  class TotpEnable < HaveAPI::Action
-    http_method :post
-    route 'totp_enable/{user_id}'
-
-    output(:hash) do
-      string :secret
-      string :provisioning_uri
-    end
-
-    authorize do |u|
-      allow
-    end
-
-    def exec
-      if current_user.role != :admin && current_user.id != params[:user_id].to_i
-        error('access denied')
-      end
-
-      u = ::User.find(params[:user_id])
-      ret = VpsAdmin::API::Operations::User::TotpEnable.run(u)
-      {secret: ret.secret, provisioning_uri: ret.provisioning_uri}
-
-    rescue VpsAdmin::API::Exceptions::OperationError => e
-      error(e.message)
-    end
-  end
-
-  class TotpConfirm < HaveAPI::Action
-    http_method :post
-    route 'totp_confirm/{user_id}'
-
-    input(:hash) do
-      string :code, label: 'TOTP code', required: true
-    end
-
-    output(:hash) do
-      string :recovery_code
-    end
-
-    authorize do |u|
-      allow
-    end
-
-    def exec
-      if current_user.role != :admin && current_user.id != params[:user_id].to_i
-        error('access denied')
-      end
-
-      u = ::User.find(params[:user_id])
-      {recovery_code: VpsAdmin::API::Operations::User::TotpConfirm.run(u, input[:code])}
-
-    rescue VpsAdmin::API::Exceptions::OperationError => e
-      error(e.message)
-    end
-  end
-
-  class TotpDisable < HaveAPI::Action
-    http_method :post
-    route 'totp_disable/{user_id}'
-
-    authorize do |u|
-      allow
-    end
-
-    def exec
-      if current_user.role != :admin && current_user.id != params[:user_id].to_i
-        error('access denied')
-      end
-
-      u = ::User.find(params[:user_id])
-      VpsAdmin::API::Operations::User::TotpDisable.run(u)
-      ok
-
-    rescue VpsAdmin::API::Exceptions::OperationError => e
-      error(e.message)
-    end
-  end
-
   class Delete < HaveAPI::Actions::Default::Delete
     blocking true
 
@@ -632,6 +553,236 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
+      end
+    end
+  end
+
+  class TotpDevice < HaveAPI::Resource
+    desc 'Manage TOTP devices'
+    route '{user_id}/totp_devices'
+    model ::UserTotpDevice
+
+    params(:all) do
+      id :id
+      string :label
+      bool :confirmed
+      bool :enabled
+      datetime :last_use_at
+      integer :use_count
+      datetime :created_at
+      datetime :updated_at
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      desc 'List configured TOTP devices'
+
+      input do
+        use :all, include: %i(confirmed enabled)
+      end
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |u|
+        allow
+      end
+
+      def query
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error('access denied')
+        end
+
+        q = ::UserTotpDevice.where(user_id: params[:user_id])
+
+        %i(confirmed enabled).each do |v|
+          q = q.where(v => input[v]) if input.has_key?(v)
+        end
+
+        q
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        query.limit(input[:limit]).offset(input[:offset])
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      desc 'Show configured TOTP device'
+      resolve ->(device) { [device.user_id, device.id] }
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow
+      end
+
+      def prepare
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error('access denied')
+        end
+
+        @device = ::UserTotpDevice.find_by!(
+          user_id: params[:user_id],
+          id: params[:totp_device_id],
+        )
+      end
+
+      def exec
+        @device
+      end
+    end
+
+    class Create < HaveAPI::Actions::Default::Create
+      desc 'Create a new TOTP device'
+
+      input do
+        string :label, required: true
+      end
+
+      output do
+        use :all
+        string :secret
+        string :provisioning_uri
+      end
+
+      authorize do |u|
+        allow
+      end
+
+      def exec
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error('access denied')
+        end
+
+        u = ::User.find(params[:user_id])
+        VpsAdmin::API::Operations::TotpDevice::Create.run(u, input[:label])
+
+      rescue VpsAdmin::API::Exceptions::OperationError => e
+        error(e.message)
+      end
+    end
+
+    class Confirm < HaveAPI::Action
+      desc 'Confirm device'
+      route '{totp_device_id}/confirm'
+      http_method :post
+
+      input(:hash) do
+        string :code, label: 'TOTP code', required: true
+      end
+
+      output(:hash) do
+        string :recovery_code
+      end
+
+      authorize do |u|
+        allow
+      end
+
+      def exec
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error('access denied')
+        end
+
+        device = ::UserTotpDevice.find_by!(
+          user_id: params[:user_id],
+          id: params[:totp_device_id],
+        )
+
+        recovery_code = VpsAdmin::API::Operations::TotpDevice::Confirm.run(
+          device,
+          input[:code],
+        )
+
+        {recovery_code: recovery_code}
+
+      rescue VpsAdmin::API::Exceptions::OperationError => e
+        error(e.message)
+      end
+    end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Update device label'
+
+      input do
+        string :label
+        bool :enabled
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow
+      end
+
+      def exec
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error('access denied')
+        elsif input.empty?
+          error('nothing to do')
+        end
+
+        device = ::UserTotpDevice.find_by!(
+          user_id: params[:user_id],
+          id: params[:totp_device_id],
+        )
+
+        if input[:label]
+          VpsAdmin::API::Operations::TotpDevice::Update.run(
+            device,
+            label: input[:label],
+          )
+        end
+
+        if input.has_key?(:enabled)
+          op =
+            if input[:enabled]
+              VpsAdmin::API::Operations::TotpDevice::Enable
+            else
+              VpsAdmin::API::Operations::TotpDevice::Disable
+            end
+
+          op.run(device)
+        end
+
+        device
+
+      rescue VpsAdmin::API::Exceptions::OperationError => e
+        error(e.message)
+      end
+    end
+
+    class Delete < HaveAPI::Actions::Default::Delete
+      desc 'Delete TOTP device'
+
+      authorize do |u|
+        allow
+      end
+
+      def exec
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error('access denied')
+        end
+
+        device = ::UserTotpDevice.find_by!(
+          user_id: params[:user_id],
+          id: params[:totp_device_id],
+        )
+
+        VpsAdmin::API::Operations::TotpDevice::Delete.run(device)
+        ok
+
+      rescue VpsAdmin::API::Exceptions::OperationError => e
+        error(e.message)
       end
     end
   end
