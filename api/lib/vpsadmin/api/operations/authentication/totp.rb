@@ -22,7 +22,7 @@ module VpsAdmin::API
 
       user = auth_token.user
 
-      user.user_totp_devices.order('last_use_at DESC').each do |dev|
+      user.user_totp_devices.where(enabled: true).order('last_use_at DESC').each do |dev|
         last_verification_at = dev.totp.verify(code, after: dev.last_verification_at)
 
         if last_verification_at || is_recovery_code?(dev, code)
@@ -36,8 +36,6 @@ module VpsAdmin::API
 
           auth_token.destroy!
           return Result.new(user, auth_token)
-        else
-          return Result.new(user, nil)
         end
       end
 
