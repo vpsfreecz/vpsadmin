@@ -1001,18 +1001,79 @@ function user_resource_package_delete_form($user_id, $pkg_id) {
 	$xtpl->sbar_add('<br>'._("Back"), '?page=adminm&action=resource_packages&id='.$user->id);
 }
 
-function user_totp_confirm_form($user) {
+function totp_devices_list_form($user) {
 	global $xtpl, $api;
 
-	$xtpl->title(_('Two-factor authentication setup'));
+	$xtpl->table_title(_("TOTP devices"));
+	$xtpl->table_add_category(_('Label'));
+	$xtpl->table_add_category(_('Confirmed'));
+	$xtpl->table_add_category(_('Enabled'));
+	$xtpl->table_add_category(_('Use count'));
+	$xtpl->table_add_category(_('Created at'));
+	$xtpl->table_add_category(_('Last use'));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
 
-	$xtpl->form_create('?page=adminm&action=totp_confirm&id='.$user->id, 'post');
+	$devices = $user->totp_device->list();
+
+	if ($devices->count() == 0) {
+		$xtpl->table_td(
+			'<a href="?page=adminm&action=totp_device_add&id='.$user->id.'">'.
+			_('Add TOTP device').'</a>',
+			false, false, '7'
+		);
+		$xtpl->table_tr();
+	}
+
+	foreach($devices as $dev) {
+		$xtpl->table_td(h($dev->label));
+		$xtpl->table_td(boolean_icon($dev->confirmed));
+		$xtpl->table_td(boolean_icon($dev->enabled));
+		$xtpl->table_td($dev->use_count.'&times;');
+		$xtpl->table_td(tolocaltz($dev->created_at));
+		$xtpl->table_td($dev->last_use_at ? tolocaltz($dev->last_use_at) : '-');
+
+		$xtpl->table_td('<a href="?page=adminm&action=totp_device_toggle&id='.$user->id.'&dev='.$dev->id.'&toggle='.($dev->enabled ? 'disable' : 'enable').'&t='.csrf_token().'">'.($dev->enabled ? _('Disable') : _('Enable')).'</a>');
+		$xtpl->table_td('<a href="?page=adminm&action=totp_device_edit&id='.$user->id.'&dev='.$dev->id.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
+		$xtpl->table_td('<a href="?page=adminm&action=totp_device_del&id='.$user->id.'&dev='.$dev->id.'"><img src="template/icons/m_delete.png"  title="'. _("Delete") .'" /></a>');
+
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_out();
+
+	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Add TOTP device").'" />'._('Add TOTP device'), "?page=adminm&action=totp_device_add&id={$user->id}");
+	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&action=edit&id={$user->id}");
+}
+
+function totp_device_add_form($user) {
+	global $xtpl, $api;
+
+	$xtpl->table_title(_("Add TOTP device"));
+	$xtpl->form_create('?page=adminm&action=totp_device_add&id='.$user->id, 'post');
+	$xtpl->form_add_input(_('Label').':', 'text', '40', 'label', post_val('label'));
+	$xtpl->form_out(_('Continue'));
+
+	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&action=edit&id={$user->id}");
+}
+
+function totp_device_confirm_form($user, $dev) {
+	global $xtpl, $api;
+
+	$xtpl->table_title(_('Confirm TOTP device setup'));
+
+	$xtpl->form_create('?page=adminm&action=totp_device_confirm&id='.$user->id.'&dev='.$dev->id, 'post');
 
 	$xtpl->table_td(
 		_('Install a TOTP authenticator application like FreeOTP or Google Authenticator '.
 		  'and scan the QR code below, or enter the secret key manually.'),
 		false, false, '2'
 	);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Device').':');
+	$xtpl->table_td(h($dev->label));
 	$xtpl->table_tr();
 
 	$qrCode = new QrCode($_SESSION['totp_setup']['provisioning_uri']);
@@ -1029,30 +1090,65 @@ function user_totp_confirm_form($user) {
 
 	$xtpl->form_add_input(_('TOTP code').':', 'text', '30', 'code');
 
-	$xtpl->form_out(_('Enable two-factor authentication'));
+	$xtpl->form_out(_('Enable the device for two-factor authentication'));
 }
 
-function user_totp_configured_form($user, $recoveryCode) {
+function totp_device_configured_form($user, $dev, $recoveryCode) {
 	global $xtpl;
 
-	$xtpl->title(_('Two-factor authentication configured'));
+	$xtpl->perex(
+		_('The TOTP device was configured'),
+		_('The device can now be used for authentication.')
+	);
+	$xtpl->table_title(_('Recovery code'));
 
 	$xtpl->form_create('?page=adminm&action=edit&id='.$user->id, 'get');
 
 	$xtpl->table_td(
 		_('Two-factor authentication using TOTP is now enabled. In case you ever '.
-		  'lose access to the TOTP authenticator, you can use the recovery code '.
-		  'below instead of the TOTP token to login.').
+		  'lose access to the TOTP authenticator device, you can use '.
+		  'the recovery code below instead of the TOTP token to login.').
 		  '<input type="hidden" name="page" value="adminm">'.
-		  '<input type="hidden" name="action" value="edit">'.
+		  '<input type="hidden" name="action" value="totp_devices">'.
 		  '<input type="hidden" name="id" value="'.$user->id.'">',
 		false, false, '2'
 	);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Device').':');
+	$xtpl->table_td(h($dev->label));
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('Recovery code').':');
 	$xtpl->table_td($recoveryCode);
 	$xtpl->table_tr();
 
-	$xtpl->form_out(_('Return to profile'));
+	$xtpl->form_out(_('Go to TOTP device list'));
+}
+
+function totp_device_edit_form($user, $dev) {
+	global $xtpl, $api;
+
+	$xtpl->table_title(_("Edit TOTP device"));
+	$xtpl->form_create('?page=adminm&action=totp_device_edit&id='.$user->id.'&dev='.$dev->id, 'post');
+	$xtpl->form_add_input(_('Label').':', 'text', '40', 'label', post_val('label', $dev->label));
+	$xtpl->form_out(_('Save'));
+
+	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&action=edit&id={$user->id}");
+	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Back to TOTP devices").'" />'._('Back to TOTP devices'), "?page=adminm&action=totp_devices&id={$user->id}");
+}
+
+function totp_device_del_form($user, $dev) {
+	global $xtpl, $api;
+
+	$xtpl->table_title(_('Confirm TOTP device deletion'));
+	$xtpl->form_create('?page=adminm&action=totp_device_del&id='.$user->id.'&dev='.$dev->id, 'post');
+
+	$xtpl->table_td('Device'.':');
+	$xtpl->table_td(h($dev->label));
+	$xtpl->table_tr();
+
+	$xtpl->form_add_checkbox(_('Confirm').':', 'confirm', '1', false);
+
+	$xtpl->form_out(_('Delete'));
 }

@@ -151,20 +151,26 @@ function print_editm($u) {
 	$xtpl->form_add_input(_("Repeat new password").':', 'password', '30', 'new_password2', '', '', -8);
 	$xtpl->form_out(_("Save"));
 
+	$hasTotp = hasTotpEnabled($u);
+
 	$xtpl->table_add_category(_("Two-factor authentication"));
 	$xtpl->table_add_category('&nbsp;');
-	$xtpl->form_create('?page=adminm&section=members&action=totp&id='.$u->id, 'post');
 	$xtpl->table_td(_('Status').':');
-	$xtpl->table_td($u->totp_enabled ? _('Enabled') : _('Disabled'));
+	$xtpl->table_td($hasTotp ? _('Enabled') : _('Disabled'));
 	$xtpl->table_tr();
 
-	if ($u->totp_enabled) {
-		$xtpl->form_add_checkbox(_("Disable").':', 'totp_disable', '1');
+	$xtpl->table_td(_("TOTP devices").':');
+	$manageTotp ='<a href="?page=adminm&action=totp_devices&id='.$u->id.'">Manage TOTP devices</a>';
+
+	if ($hasTotp) {
+		$xtpl->table_td($manageTotp);
 	} else {
-		$xtpl->form_add_checkbox(_("Enable").':', 'totp_enable', '1');
+		$xtpl->table_td('<a href="?page=adminm&action=totp_device_add&id='.$u->id.'">Add TOTP device</a> / '.$manageTotp);
 	}
 
-	$xtpl->form_out(_("Set"));
+	$xtpl->table_tr();
+
+	$xtpl->table_out();
 
 	$xtpl->table_add_category(_("Personal information"));
 	$xtpl->table_add_category('&nbsp;');
@@ -229,6 +235,7 @@ function print_editm($u) {
 
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Advanced mail configuration").'" />'._('Advanced e-mail configuration'), "?page=adminm&section=members&action=template_recipients&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Public keys").'" />'._('Public keys'), "?page=adminm&section=members&action=pubkeys&id={$u->id}");
+	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("TOTP devices").'" />'._('TOTP devices'), "?page=adminm&section=members&action=totp_devices&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Session tokens").'" />'._('Session tokens'), "?page=adminm&section=members&action=session_tokens&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Session log").'" />'._('Session log'), "?page=adminm&action=user_sessions&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Resource packages").'" />'._('Resource packages'), "?page=adminm&section=members&action=resource_packages&id={$u->id}");
@@ -1033,70 +1040,129 @@ if ($_SESSION["logged_in"]) {
 			}
 
 			break;
-		case 'totp':
-			$u = $api->user->find($_GET["id"]);
+		case 'totp_devices':
+			$u = $api->user->find($_GET['id']);
+			totp_devices_list_form($u);
+			break;
+		case 'totp_device_add':
+			$u = $api->user->find($_GET['id']);
 
-			if ($_POST['totp_enable']) {
+			if ($_POST['label']) {
+				csrf_check();
+
 				try {
-					$res = $api->user->totp_enable($u->id);
-
+					$dev = $u->totp_device->create(['label' => $_POST['label']]);
 					$_SESSION['totp_setup'] = [
-						'secret' => $res['secret'],
-						'provisioning_uri' => $res['provisioning_uri'],
+						'device' => $dev->id,
+						'secret' => $dev->secret,
+						'provisioning_uri' => $dev->provisioning_uri,
 					];
-
-					user_totp_confirm_form($u);
-
+					redirect('?page=adminm&action=totp_device_confirm&id='.$u->id.'&dev='.$dev->id);
 				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 					$xtpl->perex_format_errors(
-						_('Two-factor authentication change failed'),
+						_('TOTP device creation failed'),
 						$e->getResponse()
 					);
-					print_editm($u);
+					totp_device_add_form($u);
 				}
-
-			} elseif ($_POST['totp_disable']) {
-				try {
-					$api->user->totp_disable($u->id);
-					notify_user(_('Two-factor authentication was disabled'), '');
-					redirect('?page=adminm&action=edit&id='.$u->id);
-
-				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-					$xtpl->perex_format_errors(
-						_('Two-factor authentication change failed'),
-						$e->getResponse()
-					);
-					print_editm($u);
-				}
-
 			} else {
-				$xtpl->perex(_('No action selected'), '');
-					print_editm($u);
+				totp_device_add_form($u);
+			}
+			break;
+		case 'totp_device_confirm':
+			$u = $api->user->find($_GET['id']);
+			$dev = $u->totp_device->show($_GET['dev']);
+
+			if (!isset($_SESSION['totp_setup']) || $_SESSION['totp_setup']['device'] != $dev->id) {
+				$xtpl->perex(
+					_('Invalid device'),
+					_('Please repeat the device addition procedure.')
+				);
+			} elseif ($_POST['code']) {
+				csrf_check();
+
+				try {
+					$res = $dev->confirm(['code' => $_POST['code']]);
+					unset($_SESSION['totp_setup']);
+					totp_device_configured_form($u, $dev, $res['recovery_code']);
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(
+						_('TOTP device confirmation failed'),
+						$e->getResponse()
+					);
+					totp_device_confirm_form($u, $dev);
+				}
+			} else {
+				totp_device_confirm_form($u, $dev);
+			}
+			break;
+		case 'totp_device_edit':
+			$u = $api->user->find($_GET['id']);
+			$dev = $u->totp_device->show($_GET['dev']);
+
+			if ($_POST['label']) {
+				csrf_check();
+
+				try {
+					$dev->update(['label' => $_POST['label']]);
+					notify_user(_('TOTP device updated'), '');
+					redirect('?page=adminm&action=totp_devices&id='.$u->id);
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(
+						_('TOTP device update failed'),
+						$e->getResponse()
+					);
+					totp_device_edit_form($u, $dev);
+				}
+			} else {
+				totp_device_edit_form($u, $dev);
+			}
+			break;
+		case 'totp_device_toggle':
+			csrf_check();
+			$u = $api->user->find($_GET['id']);
+
+			try {
+				if ($_GET['toggle'] === 'enable') {
+					$u->totp_device($_GET['dev'])->update(['enabled' => true]);
+					notify_user(_('TOTP device enabled'), '');
+				} elseif ($_GET['toggle'] === 'disable') {
+					$u->totp_device($_GET['dev'])->update(['enabled' => false]);
+					notify_user(_('TOTP device disabled'), '');
+				}
+
+				redirect('?page=adminm&action=totp_devices&id='.$u->id);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(
+					_('TOTP device toggle failed'),
+					$e->getResponse()
+				);
+				totp_devices_list_form($u);
 			}
 
 			break;
-		case 'totp_confirm':
-			$u = $api->user->find($_GET["id"]);
+		case 'totp_device_del':
+			$u = $api->user->find($_GET['id']);
+			$dev = $u->totp_device->show($_GET['dev']);
 
-			if ($_POST['code']) {
+			if ($_POST['confirm']) {
+				csrf_check();
+
 				try {
-					$res = $api->user->totp_confirm($u->id, ['code' => $_POST['code']]);
-					unset($_SESSION['totp_setup']);
-					user_totp_configured_form($u, $res['recovery_code']);
-
+					$dev->delete();
+					notify_user(_('TOTP device deleted'), '');
+					redirect('?page=adminm&action=totp_devices&id='.$u->id);
 				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 					$xtpl->perex_format_errors(
-						_('Two-factor authentication setup failed'),
+						_('TOTP device deletion failed'),
 						$e->getResponse()
 					);
-					user_totp_confirm_form($u);
+					totp_device_del_form($u, $dev);
 				}
-			} elseif (isSet($_SESSION['totp_setup'])) {
-				user_totp_confirm_form($u);
 			} else {
-				redirect('?page=adminm&action=edit&id='.$u->id);
+				totp_device_del_form($u, $dev);
 			}
-
 			break;
 		case 'edit_personal':
 			$u = $api->user->find($_GET["id"]);

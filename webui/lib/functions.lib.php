@@ -798,3 +798,13 @@ function format_errors ($response) {
 
 	return $body;
 }
+
+function hasTotpEnabled($user) {
+	global $api;
+
+	return $user->totp_device->list([
+		'enabled' => true,
+		'limit' => 0,
+		'meta' => ['count' => true],
+	])->getTotalCount() > 0;
+}
