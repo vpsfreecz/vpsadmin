@@ -1052,6 +1052,13 @@ function totp_device_add_form($user) {
 
 	$xtpl->table_title(_("Add TOTP device"));
 	$xtpl->form_create('?page=adminm&action=totp_device_add&id='.$user->id, 'post');
+
+	$xtpl->table_td(
+		_('Pick a name for your authentication device. It can be changed at any time.'),
+		false, false, '2'
+	);
+	$xtpl->table_tr();
+
 	$xtpl->form_add_input(_('Label').':', 'text', '40', 'label', post_val('label'));
 	$xtpl->form_out(_('Continue'));
 
@@ -1090,6 +1097,15 @@ function totp_device_confirm_form($user, $dev) {
 
 	$xtpl->form_add_input(_('TOTP code').':', 'text', '30', 'code');
 
+	$xtpl->table_td(
+		_('Once enabled, this authentication device or any other configured '.
+		  'device will be needed to log into your account without any '.
+		  'exception. Two-factor authentication can be later turned off by '.
+		  'disabling or removing all configured authentication devices.'),
+		false, false, '2'
+	);
+	$xtpl->table_tr();
+
 	$xtpl->form_out(_('Enable the device for two-factor authentication'));
 }
 
@@ -1107,7 +1123,7 @@ function totp_device_configured_form($user, $dev, $recoveryCode) {
 	$xtpl->table_td(
 		_('Two-factor authentication using TOTP is now enabled. In case you ever '.
 		  'lose access to the TOTP authenticator device, you can use '.
-		  'the recovery code below instead of the TOTP token to login.').
+		  'the recovery code below instead of the TOTP token to log in.').
 		  '<input type="hidden" name="page" value="adminm">'.
 		  '<input type="hidden" name="action" value="totp_devices">'.
 		  '<input type="hidden" name="id" value="'.$user->id.'">',
@@ -1146,6 +1162,13 @@ function totp_device_del_form($user, $dev) {
 
 	$xtpl->table_td('Device'.':');
 	$xtpl->table_td(h($dev->label));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(
+		_('Two-factor authentication will be turned off when the last '.
+		  'authentication device is either disabled or removed.'),
+		false, false, '2'
+	);
 	$xtpl->table_tr();
 
 	$xtpl->form_add_checkbox(_('Confirm').':', 'confirm', '1', false);
