@@ -30,6 +30,7 @@ function loginUser() {
 
 	$_SESSION["user"]["id"] = $m->id;
 
+	$_SESSION['api_description'] = $api->getDescription();
 	$_SESSION["logged_in"] = true;
 	$_SESSION["session_token"] = $api->getAuthenticationProvider()->getToken();
 	$_SESSION["user"] = array(
