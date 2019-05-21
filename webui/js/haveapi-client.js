@@ -53,10 +53,10 @@ function Client(url, opts) {
 }
 
 /** @constant HaveAPI.Client.Version */
-Client.Version = '0.10.0';
+Client.Version = '0.13.0';
 
 /** @constant HaveAPI.Client.ProtocolVersion */
-Client.ProtocolVersion = '1.2';
+Client.ProtocolVersion = '2.0';
 
 /**
  * @namespace Exceptions
@@ -368,14 +368,14 @@ Client.prototype.logout = function(callback) {
  */
 Client.prototype.directInvoke = function(action, opts) {
 	if (this._private.debug > 5)
-		console.log("Executing", action, "with opts", opts, "at", action.preparedUrl);
+		console.log("Executing", action, "with opts", opts, "at", action.preparedPath);
 
 	var that = this;
 	var block = opts.block === undefined ? true : opts.block;
 
 	var httpOpts = {
 		method: action.httpMethod(),
-		url: this._private.url + action.preparedUrl,
+		url: this._private.url + action.preparedPath,
 		credentials: this.authProvider.credentials(),
 		headers: this.authProvider.headers(),
 		queryParameters: this.authProvider.queryParameters(),
@@ -830,6 +830,9 @@ Authentication.Basic.prototype.credentials = function() {
  * @class Token
  * @classdesc Token authentication provider.
  * @memberof HaveAPI.Client.Authentication
+ * @param {HaveAPI.Client} client
+ * @param {HaveAPI.Client.Authentication.Token~Options} opts
+ * @param {Object} description
  */
 Authentication.Token = function(client, opts, description) {
 	this.client = client;
@@ -843,6 +846,35 @@ Authentication.Token = function(client, opts, description) {
 	this.token = null;
 };
 Authentication.Token.prototype = new Authentication.Base();
+
+/**
+ * Token authentication options
+ *
+ * In addition to the options below, it accepts also input credentials
+ * based on the API server the client is connected to, i.e. usually `user`
+ * and `password`.
+ * @typedef {Object} HaveAPI.Client.Authentication.Token~Options
+ * @property {String} lifetime
+ * @property {Integer} interval
+ * @property {HaveAPI.Client.Authentication.Token~authenticationCallback} callback
+ */
+
+/**
+ * This callback is invoked if the API server requires multi-step authentication
+ * process. The function has to return input parameters for the next
+ * authentication action, or invoke a callback passed as an argument.
+ * @callback HaveAPI.Client.Authentication.Token~authenticationCallback
+ * @param {String} action action name
+ * @param {Object} params input parameters and their description
+ * @param {HaveAPI.Client.Authentication.Token~continueCallback} cont
+ * @return {Object} input parameters to send to the API
+ * @return {null} the callback function will be invoked
+ */
+
+/**
+ * @callback HaveAPI.Client.Authentication.Token~continueCallback
+ * @param {Object} input input parameters to send to the API
+ */
 
 /**
  * @method HaveAPI.Client.Authentication.Token#setup
@@ -875,35 +907,71 @@ Authentication.Token.prototype.setup = function(callback) {
  * @param {HaveAPI.Client~doneCallback} callback
  */
 Authentication.Token.prototype.requestToken = function(callback) {
-	var params = {
-		login: this.opts.username,
-		password: this.opts.password,
+	var that = this;
+	var input = {
 		lifetime: this.opts.lifetime || 'renewable_auto'
 	};
 
-	if(this.opts.interval !== undefined)
-		params.interval = this.opts.interval;
+	if (this.opts.interval !== undefined)
+		input.interval = this.opts.interval;
 
+	this.getRequestCredentials().forEach(function (param) {
+		if (that.opts[param] !== undefined)
+			input[param] = that.opts[param];
+	});
+
+	this.authenticationStep('request', input, callback);
+};
+
+/**
+ * @method HaveAPI.Client.Authentication.Token#authenticationStep
+ * @param {String} action action name
+ * @param {Object} input input parameters
+ * @param {HaveAPI.Client~doneCallback} callback
+ * @private
+ */
+Authentication.Token.prototype.authenticationStep = function(action, input, callback) {
 	var that = this;
 
-	this.resource.request(params, function(c, response) {
+	this.resource[action](input, function(c, response) {
 		if (response.isOk()) {
 			var t = response.response();
 
-			that.token = t.token;
-			that.validTo = t.valid_to;
-			that.configured = true;
+			if (t.complete) {
+				that.token = t.token;
+				that.validTo = t.valid_to;
+				that.configured = true;
 
-			if(callback !== undefined)
-				callback(that.client, true);
+				if (callback !== undefined)
+					callback(that.client, true);
+			} else {
+				if (that.opts.callback === undefined)
+					throw "implement multi-factor authentication";
+
+				var cont = function (input) {
+					that.authenticationStep(
+						t.next_action,
+						Object.assign({}, input, {token: t.token}),
+						callback
+					);
+				}
+
+				var ret = that.opts.callback(
+					t.next_action,
+					that.getCustomActionCredentials(t.next_action),
+					cont
+				);
+
+				if (typeof ret === 'object' && ret !== null)
+					cont(ret);
+			}
 
 		} else {
-			if(callback !== undefined)
+			if (callback !== undefined)
 				callback(that.client, false);
 		}
 	});
 };
-
 /**
  * @method HaveAPI.Client.Authentication.Token#requestToken
  * @param {HaveAPI.Client~doneCallback} callback
@@ -949,6 +1017,42 @@ Authentication.Token.prototype.logout = function(callback) {
 		callback(this.client, reply.isOk());
 	});
 };
+
+/**
+ * Return names of parameters used as credentials for custom authentication
+ * @method HaveAPI.Client.Authentication.Token#getRequestCredentials
+ * @private
+ * @return {Array}
+ */
+Authentication.Token.prototype.getRequestCredentials = function() {
+	var ret = [];
+
+	for (var param in this.resource.request.description.input.parameters) {
+		if (param != "lifetime" && param != "interval")
+			ret.push(param);
+	}
+
+	return ret;
+}
+
+/**
+ * Return names of parameters used as credentials for custom authentication
+ * action
+ * @method HaveAPI.Client.Authentication.Token#getCustomActionCredentials
+ * @private
+ * @return {Array}
+ */
+Authentication.Token.prototype.getCustomActionCredentials = function(action) {
+	var ret = {};
+	var desc = this.resource[action].description.input.parameters;
+
+	for (var param in desc) {
+		if (param != "token")
+			ret[param] = desc[param];
+	}
+
+	return ret;
+}
 
 /**
  * @class BaseResource
@@ -1083,7 +1187,7 @@ function Action (client, resource, name, description, args) {
 	this.description = description;
 	this.args = args;
 	this.providedIdArgs = [];
-	this.preparedUrl = null;
+	this.preparedPath = null;
 
 	var that = this;
 	var fn = function() {
@@ -1137,8 +1241,8 @@ Action.prototype.layout = function(direction) {
 };
 
 /**
- * Set action URL. This method should be used to set fully resolved
- * URL.
+ * Set action path. This method should be used to set fully resolved
+ * path.
  * @method HaveAPI.Client.Action#provideIdArgs
  */
 Action.prototype.provideIdArgs = function(args) {
@@ -1146,18 +1250,18 @@ Action.prototype.provideIdArgs = function(args) {
 };
 
 /**
- * Set action URL. This method should be used to set fully resolved
- * URL.
- * @method HaveAPI.Client.Action#provideUrl
+ * Set action path. This method should be used to set fully resolved
+ * path.
+ * @method HaveAPI.Client.Action#providePath
  */
-Action.prototype.provideUrl = function(url) {
-	this.preparedUrl = url;
+Action.prototype.providePath = function(path) {
+	this.preparedPath = path;
 };
 
 /**
  * Invoke the action.
  * This method has a variable number of arguments. Arguments are first applied
- * as object IDs in action URL. Then there are two ways in which input parameters
+ * as object IDs in action path. Then there are two ways in which input parameters
  * can and other options be given to the action.
  *
  * The new-style is to pass {@link HaveAPI.Client~ActionCall} object that contains
@@ -1245,7 +1349,7 @@ Action.prototype.invoke = function() {
 	var prep = this.prepareInvoke(arguments);
 
 	if (!prep.params.validate()) {
-		prep.callback(this.client, new LocalResponse(
+		prep.onReply(this.client, new LocalResponse(
 			this,
 			false,
 			'invalid input parameters',
@@ -1291,31 +1395,31 @@ Action.prototype.directInvoke = function() {
  */
 Action.prototype.prepareInvoke = function(new_args) {
 	var args = this.args.concat(Array.prototype.slice.call(new_args));
-	var rx = /(:[a-zA-Z\-_]+)/;
+	var rx = /(\{[a-zA-Z\-_]+\})/;
 
-	if (!this.preparedUrl)
-		this.preparedUrl = this.description.url;
+	if (!this.preparedPath)
+		this.preparedPath = this.description.path;
 
 	// First, apply ids returned from the API
 	for (var i = 0; i < this.providedIdArgs.length; i++) {
-		if (this.preparedUrl.search(rx) == -1)
+		if (this.preparedPath.search(rx) == -1)
 			break;
 
-		this.preparedUrl = this.preparedUrl.replace(rx, this.providedIdArgs[i]);
+		this.preparedPath = this.preparedPath.replace(rx, this.providedIdArgs[i]);
 	}
 
 	// Apply ids passed as arguments
 	while (args.length > 0) {
-		if (this.preparedUrl.search(rx) == -1)
+		if (this.preparedPath.search(rx) == -1)
 			break;
 
 		var arg = args.shift();
 		this.providedIdArgs.push(arg);
 
-		this.preparedUrl = this.preparedUrl.replace(rx, arg);
+		this.preparedPath = this.preparedPath.replace(rx, arg);
 	}
 
-	if (args.length == 0 && this.preparedUrl.search(rx) != -1) {
+	if (args.length == 0 && this.preparedPath.search(rx) != -1) {
 		console.log("UnresolvedArguments", "Unable to execute action '"+ this.name +"': unresolved arguments");
 
 		throw new Client.Exceptions.UnresolvedArguments(this);
@@ -1343,7 +1447,7 @@ Action.prototype.prepareInvoke = function(new_args) {
 	return Object.assign({}, params, {
 		params: new Parameters(this, params.params),
 		onReply: function(c, response) {
-			that.preparedUrl = null;
+			that.preparedPath = null;
 
 			if (params.onReply)
 				params.onReply(c, response);
@@ -1739,8 +1843,8 @@ function ResourceInstance (client, parent, action, response, shell, item) {
 			var that = this;
 
 			action.directInvoke(function(c, response) {
-				that.attachResources(that._private.action.resource._private.description, response.meta().url_params);
-				that.attachActions(that._private.action.resource._private.description, response.meta().url_params);
+				that.attachResources(that._private.action.resource._private.description, response.meta().path_params);
+				that.attachActions(that._private.action.resource._private.description, response.meta().path_params);
 				that.attachAttributes(response.response());
 
 				that._private.resolved = true;
@@ -1767,7 +1871,7 @@ function ResourceInstance (client, parent, action, response, shell, item) {
 		this._private.persistent = true;
 
 		var metaNs = client.apiSettings.meta.namespace;
-		var idArgs = item ? response[metaNs].url_params : response.meta().url_params;
+		var idArgs = item ? response[metaNs].path_params : response.meta().path_params;
 
 		this.attachResources(this._private.action.resource._private.description, idArgs);
 		this.attachActions(this._private.action.resource._private.description, idArgs);
@@ -1870,17 +1974,17 @@ ResourceInstance.prototype.defaultParams = function(action) {
  * @private
  * @return {HaveAPI.Client.ResourceInstance}
  */
-ResourceInstance.prototype.resolveAssociation = function(attr, path, url) {
+ResourceInstance.prototype.resolveAssociation = function(attr, resourcePath, path) {
 	var tmp = this._private.client;
 
-	for(var i = 0; i < path.length; i++) {
-		tmp = tmp[ path[i] ];
+	for(var i = 0; i < resourcePath.length; i++) {
+		tmp = tmp[ resourcePath[i] ];
 	}
 
 	var obj = this._private.attributes[ attr ];
 	var metaNs = this._private.client.apiSettings.meta.namespace;
 	var action = tmp.show;
-	action.provideIdArgs(obj[metaNs].url_params);
+	action.provideIdArgs(obj[metaNs].path_params);
 
 	if (obj[metaNs].resolved)
 		return new Client.ResourceInstance(
@@ -1984,7 +2088,7 @@ ResourceInstance.prototype.createAttribute = function(attr, desc) {
 						return that._private.associations[ attr ] = that.resolveAssociation(
 							attr,
 							desc.resource,
-							that._private.attributes[ attr ].url
+							that._private.attributes[ attr ].path
 						);
 					},
 				set: function(v) {
