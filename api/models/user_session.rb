@@ -35,7 +35,7 @@ class UserSession < ActiveRecord::Base
     token && token.destroy!
   end
 
-  def user_agent
+  def user_agent_string
     user_agent.agent
   end
 end

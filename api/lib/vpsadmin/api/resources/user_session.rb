@@ -11,7 +11,7 @@ module VpsAdmin::API::Resources
       string :api_ip_ptr, label: 'IP PTR'
       string :client_ip_addr, label: 'Client IP Address'
       string :client_ip_ptr, label: 'Client IP PTR'
-      string :user_agent, label: 'User agent'
+      string :user_agent, label: 'User agent', db_name: :user_agent_string
       string :client_version, label: 'Client version'
       resource SessionToken, label: 'Authentication token'
       string :session_token_str, label: 'Authentication token',
