@@ -5,8 +5,8 @@ module VpsAdmin::ConsoleRouter
     def initialize(veid, params, router)
       @veid = veid
       @session = params[:session]
-      @w = params[:width]
-      @h = params[:height]
+      @w = params[:width].to_i
+      @h = params[:height].to_i
       @router = router
       @buf = ""
       update_access
