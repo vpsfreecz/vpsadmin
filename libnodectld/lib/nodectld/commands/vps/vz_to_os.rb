@@ -1,3 +1,4 @@
+require 'fileutils'
 require 'tempfile'
 
 module NodeCtld
@@ -132,6 +133,21 @@ END
 
         tty2 = File.join(init, 'tty2.conf')
         File.unlink(tty2) if File.exist?(tty2)
+      end
+    end
+
+    def convert_debian
+      if get_debian_major_version == 8
+        dir = File.join(@rootfs, 'etc/systemd/system/dbus.service.d')
+        file = File.join(dir, 'override.conf')
+        FileUtils.mkpath(dir)
+        File.open(file, 'w') do |f|
+          f.write(<<END
+[Service]
+OOMScoreAdjust=0
+END
+          )
+        end
       end
     end
 
@@ -297,6 +313,19 @@ END
           # pass
         end
       end
+    end
+
+    # @return [Integer, nil]
+    def get_debian_major_version
+      s = File.read(File.join(@rootfs, 'etc/debian_version')).strip
+
+      if /^(\d+)\.(\d+)$/ =~ s
+        return $1.to_i
+      elsif s.start_with?('jessie')
+        return 8
+      end
+
+      nil
     end
 
     def link_exist?(path)
