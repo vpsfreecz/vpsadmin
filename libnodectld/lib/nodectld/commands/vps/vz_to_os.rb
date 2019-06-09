@@ -282,6 +282,11 @@ END
 
     alias_method :convert_fedora, :convert_redhat
 
+    def convert_void
+      File.unlink(File.join(@rootfs, 'etc/runit/core-services/90-venet.sh'))
+    rescue Errno::ENOENT
+    end
+
     def remove_systemd_overrides
       %w(systemd-journald systemd-logind).each do |sv|
         dir = File.join(@rootfs, 'etc/systemd/system', "#{sv}.service.d")

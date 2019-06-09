@@ -85,10 +85,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "1xh3vjhhx9s0r15pi96xlyb5dj9qpk5ixy2xlc44n3h9maw8drjd";
+      sha256 = "0bsab5k12qqdgc3wfcfnx9k6fm9s4jy4zxz9zihmwzpnmhsgid0k";
       type = "gem";
     };
-    version = "3.0.0.dev.build20190609183659";
+    version = "3.0.0.dev.build20190609183745";
   };
   libosctl = {
     dependencies = ["rainbow" "require_all"];
