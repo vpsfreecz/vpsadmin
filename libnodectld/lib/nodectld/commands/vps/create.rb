@@ -16,7 +16,7 @@ module NodeCtld
         vendor: @vendor,
       }
 
-      opts[:skip_template] = true if @empty
+      opts[:skip_image] = true if @empty
 
       osctl(%i(ct create), @vps_id, opts)
 
