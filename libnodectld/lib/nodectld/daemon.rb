@@ -65,25 +65,21 @@ module NodeCtld
       Shaper.instance
     end
 
-    def init(do_init)
-      if do_init
-        db = Db.new
-        @node_status.init(db)
-        @node_status.update(db)
+    def init
+      db = Db.new
+      @node_status.init(db)
+      @node_status.update(db)
 
-        node = Node.new
-        node.init
-      end
+      node = Node.new
+      node.init
 
       @mount_reporter.start
       @delayed_mounter.start
       @remote_control.start
 
-      if do_init
-        @fw.init(db)
-        Shaper.init(db)
-        db.close
-      end
+      @fw.init(db)
+      Shaper.init(db)
+      db.close
     end
 
     def start

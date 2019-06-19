@@ -135,7 +135,7 @@ module NodeCtld
       Thread.abort_on_exception = true
       nodectld = NodeCtld::Daemon.new
       nodectld.start_em(options[:export_console])
-      nodectld.init($CFG.get(:vpsadmin, :init))
+      nodectld.init
       nodectld.start
     end
   end
