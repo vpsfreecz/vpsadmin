@@ -22,9 +22,5 @@ module NodeCtld
         zfs(:share, '-a', '')
       end
     end
-
-    def conf_path(name = nil)
-      "#{$CFG.get(:vz, :vz_conf)}/conf/ve-#{name}.conf-sample"
-    end
   end
 end

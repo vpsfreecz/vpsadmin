@@ -13,7 +13,6 @@ module NodeCtld::Utils
         pool: :Pool,
         subprocess: :Subprocess,
         integrity: :Integrity,
-        hypervisor: :Hypervisor,
         outage_window: :OutageWindow,
         queue: :Queue,
       }
