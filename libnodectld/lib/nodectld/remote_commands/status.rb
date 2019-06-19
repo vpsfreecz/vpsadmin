@@ -68,6 +68,7 @@ module NodeCtld::RemoteCommands
         ret: :ok,
         output: {
           state: {
+            initialized: @daemon.initialized?,
             run: @daemon.run?,
             pause: @daemon.paused?,
             status: @daemon.exitstatus,

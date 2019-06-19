@@ -5,22 +5,53 @@ module NodeCtld
   class Node
     include OsCtl::Lib::Utils::Log
     include Utils::System
-    include Utils::Zfs
+    include Utils::OsCtl
 
-    def init
-      sharenfs = $CFG.get(:vps, :zfs, :sharenfs)
+    def self.init(db)
+      new.init(db)
+    end
 
-      unless sharenfs.nil?
-        ds = $CFG.get(:vps, :zfs, :root_dataset)
-
-        if syscmd("#{$CFG.get(:bin, :exportfs)}").output =~ /^\/#{ds}\/\d+$/
-          log "ZFS exports already loaded"
-          return
-        end
-
-        log "Reload ZFS exports"
-        zfs(:share, '-a', '')
+    def init(db)
+      pools(db).each do |fs|
+        wait_for_pool(fs)
       end
+    end
+
+    def log_type
+      'node'
+    end
+
+    protected
+    def wait_for_pool(fs)
+      name = fs.split('/').first
+      sv = "pool-#{name}"
+
+      # Wait for runit service pool-$name to finish
+      until File.exist?(File.join('/run/service', sv, 'done'))
+        log(:info, "Waiting for service #{sv} to finish")
+        sleep(5)
+      end
+
+      # Wait for osctld to import the pool, if this node is a hypervisor
+      if $CFG.get(:vpsadmin, :type) == :node
+        while osctl(%i(pool show), name, {}, {}, valid_rcs: [1]).exitstatus != 0
+          log(:info, "Waiting for osctld to import pool #{name}")
+          sleep(10)
+        end
+      end
+
+      log(:info, "Pool #{fs} is ready")
+    end
+
+    def pools(db)
+      ret = []
+
+      db.prepared(
+        'SELECT filesystem FROM pools WHERE node_id = ?',
+        $CFG.get(:vpsadmin, :node_id)
+      ).each { |row| ret << row['filesystem'] }
+
+      ret
     end
   end
 end

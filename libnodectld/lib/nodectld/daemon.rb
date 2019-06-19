@@ -48,6 +48,7 @@ module NodeCtld
 
     def initialize
       self.class.instance = self
+      @init = false
       @m_workers = Mutex.new
       @start_time = Time.new
       @export_console = false
@@ -67,18 +68,20 @@ module NodeCtld
 
     def init
       db = Db.new
-      @node_status.init(db)
-      @node_status.update(db)
-
-      node = Node.new
-      node.init
 
       @mount_reporter.start
       @delayed_mounter.start
       @remote_control.start
 
+      Node.init(db)
       @fw.init(db)
       Shaper.init(db)
+
+      @node_status.init(db)
+      @node_status.update(db)
+
+      @init = true
+
       db.close
     end
 
@@ -376,6 +379,10 @@ module NodeCtld
         @@run = true
         @pause = nil
       end
+    end
+
+    def initialized?
+      @init
     end
 
     def run?

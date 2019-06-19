@@ -191,7 +191,10 @@ module NodeCtl
     end
 
     def state
-      if response[:state][:run]
+      if !response[:state][:initialized]
+        'initializing'
+
+      elsif response[:state][:run]
         if response[:state][:pause]
           "running, going to pause after #{response[:state][:pause]}"
         else
