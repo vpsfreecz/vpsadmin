@@ -34,7 +34,15 @@ module NodeCtld
 
       # Wait for osctld to import the pool, if this node is a hypervisor
       if $CFG.get(:vpsadmin, :type) == :node
-        while osctl(%i(pool show), name, {}, {}, valid_rcs: [1]).exitstatus != 0
+        loop do
+          begin
+            pool = osctl_parse(%i(pool show), name)
+          rescue SystemCommandFailed
+            next
+          end
+
+          break if pool[:state] == 'active'
+
           log(:info, "Waiting for osctld to import pool #{name}")
           sleep(10)
         end
