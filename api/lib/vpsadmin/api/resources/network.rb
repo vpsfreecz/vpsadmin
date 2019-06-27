@@ -95,6 +95,7 @@ module VpsAdmin::API::Resources
         patch :ip_version, required: true
         patch :role, required: true
         patch :managed, required: true
+        patch :split_prefix, required: true
 
         bool :add_ip_addresses, default: false,
             desc: 'Add all IP addresses from this network to the database now'
