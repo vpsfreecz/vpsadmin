@@ -89,7 +89,7 @@ class Network < ActiveRecord::Base
     self.class.transaction do
       each_ip(last_ip && last_ip.to_ip) do |host|
         ips << ::IpAddress.register(
-          host.to_s,
+          host,
           prefix: split_prefix,
           size: subsize,
           network: self,
