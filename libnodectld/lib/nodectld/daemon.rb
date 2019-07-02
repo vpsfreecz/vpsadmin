@@ -74,8 +74,9 @@ module NodeCtld
       @remote_control.start
 
       @fw.init(db)
+      Shaper.init_node
       Node.init(db)
-      Shaper.init(db)
+      Shaper.init_vps(db)
 
       @node_status.init(db)
       @node_status.update(db)

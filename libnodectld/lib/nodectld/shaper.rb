@@ -26,10 +26,15 @@ module NodeCtld
     include Utils::System
 
     class << self
+      # Initialize the shaper on host interfaces
+      def init_node
+        instance.init_node
+      end
+
       # Initialize the shaper on all available interfaces
       # @param db [Db]
-      def init(db)
-        instance.init(db)
+      def init_vps(db)
+        instance.init_vps(db)
       end
 
       # Configure shaper on the per-VPS veth interface
@@ -104,10 +109,12 @@ module NodeCtld
       @mutex = Mutex.new
     end
 
-    def init(db)
-      sync do
-        safe_init(db)
-      end
+    def init_node
+      sync { safe_init_node }
+    end
+
+    def init_vps(db)
+      sync { safe_init_vps(db) }
     end
 
     def setup_vps_veth(pool, vps_id, vps_host_veth, vps_ct_veth)
@@ -278,7 +285,8 @@ module NodeCtld
     def reinit(db)
       sync do
         flush
-        safe_init(db)
+        safe_init_node
+        safe_init_vps(db)
       end
     end
 
@@ -291,7 +299,7 @@ module NodeCtld
     NetifInfo = Struct.new(:name, :ips)
     VpsInfo = Struct.new(:id, :netifs)
 
-    def safe_init(db)
+    def safe_init_node
       host_netifs = $CFG.get(:vpsadmin, :net_interfaces)
       tx = $CFG.get(:vpsadmin, :max_tx)
       rx = $CFG.get(:vpsadmin, :max_rx)
@@ -302,6 +310,11 @@ module NodeCtld
         tc("class add dev #{netif} parent 1: classid 1:1 htb "+
            "rate #{tx}bps ceil #{tx}bps burst 1M", [2])
       end
+    end
+
+    def safe_init_vps(db)
+      tx = $CFG.get(:vpsadmin, :max_tx)
+      rx = $CFG.get(:vpsadmin, :max_rx)
 
       # Setup main host interfaces together with available per-VPS veth interfaces
       get_vpses(db).each do |vps|
