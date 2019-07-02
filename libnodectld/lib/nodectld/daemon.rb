@@ -73,6 +73,7 @@ module NodeCtld
       @delayed_mounter.start
       @remote_control.start
 
+      RoutingTable.setup(db)
       @fw.init(db)
       Shaper.init_node
       Node.init(db)
