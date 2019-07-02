@@ -73,8 +73,8 @@ module NodeCtld
       @delayed_mounter.start
       @remote_control.start
 
-      Node.init(db)
       @fw.init(db)
+      Node.init(db)
       Shaper.init(db)
 
       @node_status.init(db)
