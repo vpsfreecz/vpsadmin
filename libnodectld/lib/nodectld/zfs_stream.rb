@@ -3,7 +3,13 @@ require 'libosctl'
 module NodeCtld
   class ZfsStream < OsCtl::Lib::Zfs::Stream
     def initialize(fs, snapshot, from_snapshot = nil)
-      super(build_path(fs), snapshot, from_snapshot, compressed: true)
+      super(
+        build_path(fs),
+        snapshot,
+        from_snapshot,
+        compressed: true,
+        properties: false,
+      )
     end
 
     def send_recv(fs)
