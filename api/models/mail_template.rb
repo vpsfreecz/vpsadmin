@@ -229,6 +229,7 @@ class MailTemplate < ActiveRecord::Base
   }, roles: %i(account), public: true
 
   register :snapshot_download_ready, vars: {
+    base_url: [String, "URL to the web UI"],
     dl: ::SnapshotDownload,
   }, roles: %i(admin), public: true
 

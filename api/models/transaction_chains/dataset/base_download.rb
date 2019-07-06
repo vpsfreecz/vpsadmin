@@ -49,6 +49,7 @@ module TransactionChains
       mail(:snapshot_download_ready, {
         user: ::User.current,
         vars: {
+          base_url: ::SysConfig.get(:webui, :base_url),
           dl: dl,
         }
       }) if opts[:send_mail]
