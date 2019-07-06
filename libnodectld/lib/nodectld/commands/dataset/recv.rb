@@ -5,7 +5,7 @@ module NodeCtld
 
     def exec
       ds_name = @branch ? "#{@dataset_name}/#{@tree}/#{@branch}" : @dataset_name
-      recv = "zfs recv -F #{@dst_pool_fs}/#{ds_name}"
+      recv = "zfs recv -F -u #{@dst_pool_fs}/#{ds_name}"
       cmd = "nc -d -l #{@addr} #{@port} | #{recv}"
 
       log(:work, self, "fork #{cmd}")
