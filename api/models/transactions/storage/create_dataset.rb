@@ -18,7 +18,10 @@ module Transactions::Storage
         options[:gidmap] = build_map(userns_map, :gid).join(',')
       end
 
-      options[:canmount] = 'noauto' if dataset_in_pool.pool.node.vpsadminos?
+      if dataset_in_pool.pool.node.vpsadminos? \
+         && (dataset_in_pool.pool.hypervisor? || dataset_in_pool.pool.backup?)
+        options[:canmount] = 'noauto'
+      end
 
       {
         pool_fs: dataset_in_pool.pool.filesystem,
