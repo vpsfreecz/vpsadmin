@@ -292,7 +292,7 @@ if ($_SESSION["logged_in"]) {
 				try {
 					$dl = $api->snapshot_download->find($_GET['id']);
 
-					$xtpl->table_title(_('Confirm the destroyal of snapshow download').' '.$dl->snapshot->created_at);
+					$xtpl->table_title(_('Confirm the destroyal of snapshot download').' '.$dl->snapshot->created_at);
 					$xtpl->form_create('?page=backup&action=download_destroy&id='.$dl->id, 'post');
 
 					$xtpl->form_add_checkbox(_("Confirm"), 'confirm', '1', false);
