@@ -20,7 +20,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-function loginUser() {
+function loginUser($access_url) {
 	global $xtpl, $api;
 
 	session_destroy();
@@ -80,7 +80,6 @@ function authenticationCallback($action, $token, $params) {
 }
 
 if ($_GET["action"] == 'login') {
-	$access_url = isset($_SESSION["access_url"]) ? $_SESSION["access_url"] : null;
 
 	if ($_POST["passwd"] && $_POST["username"]) {
 		try {
@@ -92,7 +91,7 @@ if ($_GET["action"] == 'login') {
 				'callback' => authenticationCallback,
 			]);
 
-			loginUser();
+			loginUser($_SESSION['access_url']);
 
 		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 			$xtpl->perex(_("Error"), $e->getMessage());
@@ -114,7 +113,7 @@ if ($_GET['action'] == 'totp' && isSet($_SESSION['auth_token'])) {
 			]);
 
 			unset($_SESSION['auth_token']);
-			loginUser();
+			loginUser($_SESSION['access_url']);
 
 		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 			$xtpl->perex(_("Error"), $e->getMessage());

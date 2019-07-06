@@ -119,6 +119,10 @@ try {
 	} else {
 		show_notification();
 
+		if(!isLoggedIn() && !isset($_SESSION['access_url'])){
+			$_SESSION["access_url"] = $_SERVER["REQUEST_URI"];
+		}
+
 		switch ($_GET["page"]) {
 			case 'adminvps':
 				include WWW_ROOT.'pages/page_adminvps.php';
@@ -236,10 +240,6 @@ if (isLoggedIn()) {
 } else {
     $xtpl->menu_add(_("Status"),'?page=', ($_GET["page"] == ''));
     $xtpl->menu_add(_("About vpsAdmin"),'?page=about', ($_GET["page"] == 'about'), true);
-}
-
-if(!isLoggedIn()){
-	$_SESSION["access_url"] = $_SERVER["REQUEST_URI"];
 }
 
 $xtpl->logbox(isLoggedIn(),
