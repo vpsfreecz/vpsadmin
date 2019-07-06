@@ -1,11 +1,5 @@
 <?php
 
-function getval($name, $default = '') {
-	if (isset($_GET[$name]))
-		return $_GET[$name];
-	return $default;
-}
-
 function backup_crossroad_form() {
 	global $xtpl;
 
@@ -36,22 +30,22 @@ function backup_vps_form() {
 			'<input type="hidden" name="action" value="vps">'.
 			'<input type="hidden" name="list" value="1">'
 		);
-		$xtpl->form_add_input_pure('text', '40', 'limit', getval('limit', '25'), '');
+		$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
 		$xtpl->table_tr();
 
-		$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', getval('offset', '0'), '');
-		$xtpl->form_add_input(_("Member ID").':', 'text', '40', 'user', getval('user'), '');
-		$xtpl->form_add_input(_("VPS ID").':', 'text', '40', 'vps', getval('vps'), '');
-// 		$xtpl->form_add_input(_("Node ID").':', 'text', '40', 'node', getval('node'), '');
-		$xtpl->form_add_checkbox(_("Include subdatasets").':', 'subdatasets', '1', getval('subdatasets', '0'));
-		$xtpl->form_add_checkbox(_("Ignore datasets without snapshots").':', 'noempty', '1', getval('noempty', '0'));
+		$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
+		$xtpl->form_add_input(_("Member ID").':', 'text', '40', 'user', get_val('user'), '');
+		$xtpl->form_add_input(_("VPS ID").':', 'text', '40', 'vps', get_val('vps'), '');
+// 		$xtpl->form_add_input(_("Node ID").':', 'text', '40', 'node', get_val('node'), '');
+		$xtpl->form_add_checkbox(_("Include subdatasets").':', 'subdatasets', '1', get_val('subdatasets', '0'));
+		$xtpl->form_add_checkbox(_("Ignore datasets without snapshots").':', 'noempty', '1', get_val('noempty', '0'));
 
 		$xtpl->form_out(_('Show'));
 
 		$vpses = array();
 		$params = array(
-			'limit' => getval('limit', 25),
-			'offset' => getval('offset', 0)
+			'limit' => get_val('limit', 25),
+			'offset' => get_val('offset', 0)
 		);
 
 		if (isset($_GET['user']) && $_GET['user'] !== '') {
@@ -97,21 +91,21 @@ function backup_nas_form() {
 			'<input type="hidden" name="action" value="nas">'.
 			'<input type="hidden" name="list" value="1">'
 		);
-		$xtpl->form_add_input_pure('text', '40', 'limit', getval('limit', '25'), '');
+		$xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
 		$xtpl->table_tr();
 
-		$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', getval('offset', '0'), '');
-		$xtpl->form_add_input(_("Member ID").':', 'text', '40', 'user', getval('user'), '');
-// 		$xtpl->form_add_input(_("Node ID").':', 'text', '40', 'node', getval('node'), '');
-		$xtpl->form_add_checkbox(_("Include subdatasets").':', 'subdatasets', '1', getval('subdatasets', '0'));
-		$xtpl->form_add_checkbox(_("Ignore datasets without snapshots").':', 'noempty', '1', getval('noempty', '0'));
+		$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
+		$xtpl->form_add_input(_("Member ID").':', 'text', '40', 'user', get_val('user'), '');
+// 		$xtpl->form_add_input(_("Node ID").':', 'text', '40', 'node', get_val('node'), '');
+		$xtpl->form_add_checkbox(_("Include subdatasets").':', 'subdatasets', '1', get_val('subdatasets', '0'));
+		$xtpl->form_add_checkbox(_("Ignore datasets without snapshots").':', 'noempty', '1', get_val('noempty', '0'));
 
 		$xtpl->form_out(_('Show'));
 
 		if ($_GET['list']) {
 			$params = array(
-				'limit' => getval('limit', 25),
-				'offset' => getval('offset', 0),
+				'limit' => get_val('limit', 25),
+				'offset' => get_val('offset', 0),
 				'role' => 'primary'
 			);
 
