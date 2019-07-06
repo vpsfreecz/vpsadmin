@@ -6,7 +6,7 @@ module NodeCtld
     include Utils::Zfs
 
     def exec
-      zfs(:create, nil, tree_name)
+      zfs(:create, "-o canmount=noauto", tree_name)
     end
 
     def rollback
