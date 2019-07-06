@@ -38,6 +38,7 @@ include WWW_ROOT.'lib/mail.lib.php';
 include WWW_ROOT.'lib/helpbox.lib.php';
 include WWW_ROOT.'lib/security.lib.php';
 
+include WWW_ROOT.'forms/backup.forms.php';
 include WWW_ROOT.'forms/cluster.forms.php';
 include WWW_ROOT.'forms/dataset.forms.php';
 include WWW_ROOT.'forms/vps.forms.php';
