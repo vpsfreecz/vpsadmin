@@ -4,14 +4,14 @@ module NodeCtld
     needs :system, :zfs, :pool
 
     def exec
-      clone = pool_mounted_snapshot(@pool_fs, @snapshot_id)
+      clone = pool_mounted_clone(@pool_fs, @snapshot_id)
 
       zfs(:set, 'sharenfs=off', clone)
       zfs(:destroy, nil, clone)
     end
 
     def rollback
-      clone = pool_mounted_snapshot(@pool_fs, @snapshot_id)
+      clone = pool_mounted_clone(@pool_fs, @snapshot_id)
 
       # the dataset might exist if destroy failed
       zfs(:clone, "-o readonly=on", "#{ds} #{clone}", valid_rcs: [1])
