@@ -164,3 +164,55 @@ function backup_download_list_form() {
 
 	$xtpl->table_out();
 }
+
+function backup_download_show_form($id) {
+	global $xtpl, $api;
+
+	try {
+		$dl = $api->snapshot_download->show($id, [
+			'meta' => ['includes' => 'snapshot__dataset,user'],
+		]);
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		$xtpl->perex_format_errors(_('Download not found'), $e->getResponse());
+		return;
+	}
+
+	if (isAdmin()) {
+		$xtpl->table_td(_('User').':');
+		$xtpl->table_td(user_link($dl->user));
+		$xtpl->table_tr();
+	}
+
+	if ($dl->snapshot_id) {
+		$xtpl->table_td(_('Dataset').':');
+		$xtpl->table_td($dl->snapshot->dataset->name);
+		$xtpl->table_tr();
+
+		$xtpl->table_td(_('Snapshot').':');
+		$xtpl->table_td(tolocaltz($dl->snapshot->created_at, 'Y-m-d H:i'));
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_td(_('File name').':');
+	$xtpl->table_td($dl->file_name);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Size').':');
+	$xtpl->table_td($dl->size ? (round($dl->size / 1024, 2) . "&nbsp;GiB") : '---');
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Expiration').':');
+	$xtpl->table_td(tolocaltz($dl->expiration_date, 'Y-m-d'));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Download link').':');
+	$xtpl->table_td($dl->ready ? '<a href="'.$dl->url.'">'._('download').'</a>' : _('preparing'));
+	$xtpl->table_tr();
+
+	$xtpl->table_out();
+
+	$xtpl->sbar_add(
+		'<br>'._('Remove download'),
+		'?page=backup&action=download_destroy&id='.$dl->id
+	);
+}

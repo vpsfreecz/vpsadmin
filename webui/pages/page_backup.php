@@ -29,6 +29,11 @@ if ($_SESSION["logged_in"]) {
 			backup_download_list_form();
 			break;
 
+		case 'download_link':
+			$xtpl->title(_('Download backup'));
+			backup_download_show_form($_GET['id']);
+			break;
+
 		case 'snapshot':
 			$xtpl->sbar_add(_("Back"), $_GET['return'] ? $_GET['return'] : '?page=backup');
 
