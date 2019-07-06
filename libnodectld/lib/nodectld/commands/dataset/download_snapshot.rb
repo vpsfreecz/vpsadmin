@@ -56,12 +56,26 @@ module NodeCtld
     end
 
     def archive(ds)
-      # On ZoL, snapshots in .zfs are mounted using automounts, so for tar
-      # to work properly, it must be accessed before, so that it is already mounted
-      # when tar is launched.
-      Dir.entries("/#{ds}/.zfs/snapshot/#{@snapshot}")
+      dir = pool_mounted_download(@pool_fs, @download_id.to_s)
 
-      pipe_cmd("tar -cz -C \"/#{ds}/.zfs/snapshot\" \"#{@snapshot}\"")
+      begin
+        Dir.mkdir(dir) unless Dir.exist?(dir)
+        syscmd("mount -t zfs #{ds}@#{@snapshot} \"#{dir}\"")
+        pipe_cmd("tar -cz -C \"#{dir}\" .")
+      ensure
+        10.times do
+          st = syscmd("umount \"#{dir}\"", valid_rcs: [32])
+
+          if [0, 32].include?(st.exitstatus)
+            Dir.rmdir(dir)
+            return
+          end
+
+          sleep(1)
+        end
+
+        fail "unable to unmount #{dir}"
+      end
     end
 
     def stream(ds)

@@ -19,6 +19,10 @@ module NodeCtld
       "#{pool_fs}/#{path_to_pool_working_dir(:mount)}/#{snap_id}.snapshot"
     end
 
+    def pool_mounted_download(pool_fs, dl_id)
+      "/#{pool_fs}/#{path_to_pool_working_dir(:mount)}/#{dl_id}.download"
+    end
+
     def pool_host_mountpoint(pool_fs, mnt_id)
       "/#{pool_fs}/#{path_to_pool_working_dir(:mount)}/#{mnt_id}.mount"
     end
