@@ -65,6 +65,8 @@ function print_newm() {
 function print_editm($u) {
 	global $xtpl, $cfg_privlevel, $config, $api;
 
+	$mail_role_recipients = $u->mail_role_recipient->list();
+
 	$xtpl->title(_("Manage members"));
 
 	$xtpl->table_add_category(_("Member"));
@@ -139,6 +141,21 @@ function print_editm($u) {
 
 	$xtpl->form_out(_("Save"));
 
+	if (isAdmin()) {
+		$xtpl->table_add_category(_('Contact'));
+		$xtpl->table_add_category('');
+
+		$xtpl->table_td(_('Account management').':');
+		$xtpl->table_td(implode(', ', getUserEmails($u, $mail_role_recipients, 'Account management')));
+		$xtpl->table_tr();
+
+		$xtpl->table_td(_('System administrator').':');
+		$xtpl->table_td(implode(', ', getUserEmails($u, $mail_role_recipients, 'System administrator')));
+		$xtpl->table_tr();
+
+		$xtpl->table_out();
+	}
+
 	$xtpl->table_add_category(_("Change password"));
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->table_add_category('&nbsp;');
@@ -199,7 +216,7 @@ function print_editm($u) {
 	);
 	$xtpl->table_tr();
 
-	foreach ($u->mail_role_recipient->list() as $recp) {
+	foreach ($mail_role_recipients as $recp) {
 		$xtpl->table_td(
 			$recp->label, false, false, 1,
 			$recp->description ? 2 : 1
