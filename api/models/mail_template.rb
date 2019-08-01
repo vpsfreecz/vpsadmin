@@ -2,6 +2,7 @@ require_relative 'node'
 require_relative 'object_state'
 require_relative 'snapshot_download'
 require_relative 'user'
+require_relative 'user_totp_device'
 require_relative 'vps'
 require_relative 'vps_migration'
 
@@ -256,6 +257,13 @@ class MailTemplate < ActiveRecord::Base
     user: ::User,
     state: ::ObjectState,
   }, roles: %i(account), public: true
+
+  register :user_totp_recovery_code_used, vars: {
+    user: ::User,
+    totp_device: ::UserTotpDevice,
+    request: Sinatra::Request,
+    time: Time,
+  }, roles: %i(account)
 
   register :vps_suspend, vars: {
     vps: ::Vps,

@@ -2,9 +2,13 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::Authentication::Totp < Operations::Base
-    Result = Struct.new(:user, :auth_token) do
+    Result = Struct.new(:user, :auth_token, :recovery_device) do
       def authenticated?
         !auth_token.nil?
+      end
+
+      def used_recovery_code?
+        !recovery_device.nil?
       end
     end
 
@@ -32,14 +36,17 @@ module VpsAdmin::API
               last_use_at: Time.now,
             )
             ::UserTotpDevice.increment_counter(:use_count, dev.id)
+          else
+            # Recovery code was used, disable the device
+            dev.update!(enabled: false)
           end
 
           auth_token.destroy!
-          return Result.new(user, auth_token)
+          return Result.new(user, auth_token, last_verification_at ? nil : dev)
         end
       end
 
-      Result.new(user, nil)
+      Result.new(user, nil, nil)
     end
 
     protected

@@ -65,6 +65,14 @@ module VpsAdmin::API
         )
 
         if auth.authenticated?
+          if auth.used_recovery_code?
+            TransactionChains::User::TotpRecoveryCodeUsed.fire(
+              auth.user,
+              auth.recovery_device,
+              req.request,
+            )
+          end
+
           begin
             session = Operations::UserSession::NewTokenLogin.run(
               auth.user,
