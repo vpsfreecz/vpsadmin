@@ -3,6 +3,7 @@ module Transactions::Vps
     t_name :vps_ostovz
     t_type 2025
     queue :vps
+    keep_going
 
     # @param vps [::Vps]
     # @Param os_template [::OsTemplate]

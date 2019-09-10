@@ -3,6 +3,7 @@ module Transactions::Vps
     t_name :vps_vztoos
     t_type 2024
     queue :vps
+    keep_going
 
     # @param vps [::Vps]
     def params(vps)
