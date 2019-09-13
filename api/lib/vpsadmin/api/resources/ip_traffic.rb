@@ -116,8 +116,8 @@ module VpsAdmin::API::Resources
         end
 
         if input.has_key?(:vps)
-          q = q.joins(:ip_address).where(
-            ip_addresses: {vps_id: input[:vps] && input[:vps].id}
+          q = q.joins(ip_address: :network_interface).where(
+            network_interfaces: {vps_id: input[:vps] && input[:vps].id}
           )
         end
 
