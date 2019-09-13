@@ -5,6 +5,9 @@ function totp_login_form() {
 
 	$xtpl->title(_('Two-factor authentication'));
 	$xtpl->form_create('?page=login&action=totp', 'post');
-	$xtpl->form_add_input(_('TOTP code').':', 'code', '30', 'code');
+	$xtpl->form_add_input(
+		_('TOTP code').':',
+		'code', '30', 'code', '', '', 0, 'autofocus'
+	);
 	$xtpl->form_out(_('Login'));
 }
