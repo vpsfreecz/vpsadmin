@@ -4,7 +4,7 @@ module VpsAdmind
     needs :system, :zfs, :pool
 
     def exec
-      clone = pool_mounted_snapshot(@pool_fs, @snapshot_id)
+      clone = pool_mounted_snapshot(@pool_fs, @clone_name)
 
       zfs(
           :clone,
@@ -22,7 +22,7 @@ module VpsAdmind
     end
 
     def rollback
-      zfs(:destroy, nil, pool_mounted_snapshot(@pool_fs, @snapshot_id), [1])
+      zfs(:destroy, nil, pool_mounted_snapshot(@pool_fs, @clone_name), [1])
     end
 
     protected

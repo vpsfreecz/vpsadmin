@@ -35,10 +35,10 @@ module VpsAdmind
           "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} #{mnt['src_node_addr']}:/#{mnt['pool_fs']}/#{mnt['dataset_name']}/private #{dst}"
 
         when 'snapshot_local'
-          "#{$CFG.get(:bin, :mount)} --bind /#{pool_mounted_snapshot(mnt['pool_fs'], mnt['snapshot_id'])}/private #{dst}"
+          "#{$CFG.get(:bin, :mount)} --bind /#{pool_mounted_snapshot(mnt['pool_fs'], mnt['clone_name'])}/private #{dst}"
 
         when 'snapshot_remote'
-          "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} #{mnt['src_node_addr']}:/#{pool_mounted_snapshot(mnt['pool_fs'], mnt['snapshot_id'])}/private #{dst}"
+          "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} #{mnt['src_node_addr']}:/#{pool_mounted_snapshot(mnt['pool_fs'], mnt['clone_name'])}/private #{dst}"
 
         else
           fail "unknown mount type '#{mnt['type']}'"

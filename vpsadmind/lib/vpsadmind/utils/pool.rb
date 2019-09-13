@@ -15,8 +15,8 @@ module VpsAdmind
       "#{pool_work_root}/#{type}"
     end
 
-    def pool_mounted_snapshot(pool_fs, snap_id)
-      "#{pool_fs}/#{path_to_pool_working_dir(:mount)}/#{snap_id}.snapshot"
+    def pool_mounted_snapshot(pool_fs, clone_name)
+      "#{pool_fs}/#{path_to_pool_working_dir(:mount)}/#{clone_name}"
     end
   end
 end
