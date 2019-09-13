@@ -64,16 +64,19 @@ module TransactionChains
 
       mnt.dataset_in_pool = clone_from.dataset_in_pool
       mnt.snapshot_in_pool = clone_from
+      mnt.snapshot_in_pool_clone = use_chain(
+        SnapshotInPool::UseClone,
+        args: [clone_from, vps.node.vpsadminos? ? vps.userns_map : nil]
+      )
       mnt.save!
 
-      append(
-        Transactions::Storage::CloneSnapshot,
-        args: [clone_from, vps.node.vpsadminos? ? vps.userns_map : nil]
-      ) do
-        create(mnt)
-        increment(clone_from, :reference_count)
-        edit(clone_from, mount_id: mnt.id)
-        just_create(vps.log(:mount, {
+      append_t(
+        Transactions::Utils::NoOp,
+        args: find_node_id
+      ) do |t|
+        t.create(mnt)
+        t.edit(clone_from, mount_id: mnt.id)
+        t.just_create(vps.log(:mount, {
           id: mnt.id,
           type: :snapshot,
           src: {

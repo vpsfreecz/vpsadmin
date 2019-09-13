@@ -161,6 +161,7 @@ module TransactionChains
       original = {
         dataset_in_pool_id: mnt.dataset_in_pool_id,
         snapshot_in_pool_id: mnt.snapshot_in_pool_id,
+        snapshot_in_pool_clone_id: mnt.snapshot_in_pool_clone_id,
         mount_type: mnt.mount_type,
         mount_opts: mnt.mount_opts
       }
@@ -175,12 +176,11 @@ module TransactionChains
         mnt.mount_opts = '-n -t nfs -overs=3'
 
         if is_snapshot
-          @chain.append(
-              Transactions::Storage::CloneSnapshot,
-              args: [mnt.snapshot_in_pool, mnt.vps.userns_map], urgent: true
-          ) do
-            increment(mnt.snapshot_in_pool, :reference_count)
-          end
+          mnt.snapshot_in_pool_clone = @chain.use_chain(
+            SnapshotClone::UseClone,
+            args: [mnt.snapshot_in_pool, mnt.vps.userns_map],
+            urgent: true,
+          )
         end
 
       # Remote -> local:
@@ -191,12 +191,13 @@ module TransactionChains
         mnt.mount_opts = '--bind'
 
         if is_snapshot
-          @chain.append(
-            Transactions::Storage::RemoveClone,
-            args: [mnt.snapshot_in_pool, mnt.vps.userns_map], urgent: true
-          ) do
-            decrement(mnt.snapshot_in_pool, :reference_count)
-          end
+          @chain.use_chain(
+            SnapshotClone::FreeClone,
+            args: [mnt.snapshot_in_pool_clone],
+            urgent: true,
+          )
+
+          mnt.snapshot_in_pool_clone = nil
         end
 
       # Remote -> remote:
@@ -257,6 +258,7 @@ module TransactionChains
       original = {
         dataset_in_pool_id: mnt.dataset_in_pool_id,
         snapshot_in_pool_id: mnt.snapshot_in_pool_id,
+        snapshot_in_pool_clone_id: mnt.snapshot_in_pool_clone_id,
         mount_type: mnt.mount_type,
         mount_opts: mnt.mount_opts
       }
@@ -271,12 +273,11 @@ module TransactionChains
         mnt.mount_opts = '-n -t nfs -overs=3'
 
         if is_snapshot
-          @chain.append(
-            Transactions::Storage::CloneSnapshot,
-            args: [new_snapshot, mnt.vps.userns_map], urgent: true
-          ) do
-            increment(new_snapshot, :reference_count)
-          end
+          mnt.snapshot_in_pool_clone = @chain.use_chain(
+            SnapshotInPool::UseClone,
+            args: [new_snapshot, mnt.vps.userns_map],
+            urgent: true,
+          )
         end
 
       # Remote -> local:
@@ -287,12 +288,13 @@ module TransactionChains
         mnt.mount_opts = '--bind'
 
         if is_snapshot
-          @chain.append(
-            Transactions::Storage::RemoveClone,
-            args: [mnt.snapshot_in_pool, mnt.vps.userns_map], urgent: true
-          ) do
-            decrement(mnt.snapshot_in_pool, :reference_count)
-          end
+          @chain.use_chain(
+            SnapshotInPool::FreeClone,
+            args: [mnt.snapshot_in_pool_clone],
+            urgent: true,
+          )
+
+          mnt.snapshot_in_pool_clone = nil
         end
 
       # Remote -> remote:
@@ -300,13 +302,15 @@ module TransactionChains
       #     node
       elsif is_remote && become_remote
         if is_snapshot
-          @chain.append(
-            Transactions::Storage::RemoveClone,
-            args: [mnt.snapshot_in_pool, mnt.vps.userns_map], urgent: true
+          @chain.use_chain(
+            SnapshotInPool::FreeClone,
+            args: [mnt.snapshot_in_pool_clone],
+            urgent: true,
           )
-          @chain.append(
-            Transactions::Storage::CloneSnapshot,
-            args: [new_snapshot, mnt.vps.userns_map], urgent: true
+          mnt.snapshot_in_pool_clone = @chain.use_chain(
+            SnapshotInPool::UseClone,
+            args: [new_snapshot, mnt.vps.userns_map],
+            urgent: true,
           )
         end
 

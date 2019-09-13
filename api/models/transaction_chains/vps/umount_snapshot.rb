@@ -17,15 +17,12 @@ module TransactionChains
       # because that's not certain information.
       use_chain(Vps::Umount, args: [vps, [mount]])
 
+      use_chain(SnapshotInPool::FreeClone, args: [mount.snapshot_in_pool_clone])
       append_t(
-        Transactions::Storage::RemoveClone,
-        args: [
-          mount.snapshot_in_pool,
-          vps.node.vpsadminos? ? vps.userns_map : nil,
-        ]
+        Transactions::Utils::NoOp,
+        args: find_node_id,
       ) do |t|
         t.destroy(mount)
-        t.decrement(mount.snapshot_in_pool, :reference_count)
         t.edit(mount.snapshot_in_pool, mount_id: nil)
         t.just_create(vps.log(:umount, {id: mount.id, dst: mount.dst})) unless included?
       end

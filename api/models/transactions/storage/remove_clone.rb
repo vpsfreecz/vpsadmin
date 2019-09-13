@@ -3,33 +3,36 @@ module Transactions::Storage
     t_name :storage_remove_clone
     t_type 5218
     queue :storage
+    irreversible
 
     include Transactions::Utils::UserNamespaces
 
-    def params(snapshot_in_pool, userns_map = nil)
-      self.node_id = snapshot_in_pool.dataset_in_pool.pool.node_id
+    # @param cl [::SnapshotInPoolClone]
+    def params(cl)
+      self.node_id = cl.snapshot_in_pool.dataset_in_pool.pool.node_id
 
       ret = {
-        pool_fs: snapshot_in_pool.dataset_in_pool.pool.filesystem,
-        dataset_name: snapshot_in_pool.dataset_in_pool.dataset.full_name,
-        snapshot_id: snapshot_in_pool.snapshot_id,
-        snapshot: snapshot_in_pool.snapshot.name,
+        clone_name: cl.name,
+        pool_fs: cl.snapshot_in_pool.dataset_in_pool.pool.filesystem,
+        dataset_name: cl.snapshot_in_pool.dataset_in_pool.dataset.full_name,
+        snapshot_id: cl.snapshot_in_pool.snapshot_id,
+        snapshot: cl.snapshot_in_pool.snapshot.name,
       }
 
-      if snapshot_in_pool.dataset_in_pool.pool.role == 'backup'
+      if cl.snapshot_in_pool.dataset_in_pool.pool.role == 'backup'
         in_branch = ::SnapshotInPoolInBranch.joins(branch: [:dataset_tree]).find_by!(
-          dataset_trees: {dataset_in_pool_id: snapshot_in_pool.dataset_in_pool_id},
-          snapshot_in_pool_id: snapshot_in_pool.id
+          dataset_trees: {dataset_in_pool_id: cl.snapshot_in_pool.dataset_in_pool_id},
+          snapshot_in_pool_id: cl.snapshot_in_pool_id
         )
 
         ret[:dataset_tree] = in_branch.branch.dataset_tree.full_name
         ret[:branch] = in_branch.branch.full_name
       end
 
-      if userns_map
+      if cl.user_namespace_map_id
         ret.update(
-          uidmap: build_map(userns_map, :uid),
-          gidmap: build_map(userns_map, :gid),
+          uidmap: build_map(cl.user_namespace_map, :uid),
+          gidmap: build_map(cl.user_namespace_map, :gid),
         )
       end
 
