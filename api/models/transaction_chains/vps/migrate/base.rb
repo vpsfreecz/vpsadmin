@@ -56,6 +56,8 @@ module TransactionChains
       @dst_vps = ::Vps.find(vps.id)
       @dst_vps.node = dst_node
 
+      check_snapshot_clone_mounts!
+
       @src_node = vps.node
       @dst_node = dst_node
 
@@ -84,6 +86,32 @@ module TransactionChains
 
     def environment_changed?
       src_node.location.environment_id != dst_node.location.environment_id
+    end
+
+    # Check that local snapshots of the migrated VPS are not mounted anywere
+    #
+    # Snapshots are always mounted using clones, but that poses a problem. Since
+    # the VPS is migrated to another node, we would have to recreate the clones
+    # on the target node and remove clones from the source node. Removing clones
+    # is not reliable and it could cause the migration to fail when cleaning up,
+    # i.e. during the worst possible time after the VPS is already running on
+    # the target node. Therefore we do not allow migrations of VPS with existing
+    # snapshot clones.
+    def check_snapshot_clone_mounts!
+      ds_ids = [src_vps.dataset_in_pool.dataset_id] + src_vps.dataset_in_pool.dataset.descendant_ids
+      dip_ids = ::DatasetInPool.where(
+        dataset_id: ds_ids,
+        pool_id: src_vps.dataset_in_pool.pool_id,
+      ).pluck(:id)
+
+      clones = ::SnapshotInPoolClone.joins(:snapshot_in_pool).where(
+        snapshot_in_pools: {dataset_in_pool_id: dip_ids}
+      )
+
+      if clones.any?
+        raise VpsAdmin::API::Exceptions::OperationNotSupported,
+              'unable to migrate VPS with existing snapshot clones'
+      end
     end
 
     def notify_begun

@@ -175,30 +175,12 @@ module TransactionChains
         mnt.mount_type = 'nfs'
         mnt.mount_opts = '-n -t nfs -overs=3'
 
-        if is_snapshot
-          mnt.snapshot_in_pool_clone = @chain.use_chain(
-            SnapshotClone::UseClone,
-            args: [mnt.snapshot_in_pool, mnt.vps.userns_map],
-            urgent: true,
-          )
-        end
-
       # Remote -> local:
       #   - change mount type
       #   - remote snapshot clone if needed
       elsif is_remote && become_local
         mnt.mount_type = 'bind'
         mnt.mount_opts = '--bind'
-
-        if is_snapshot
-          @chain.use_chain(
-            SnapshotClone::FreeClone,
-            args: [mnt.snapshot_in_pool_clone],
-            urgent: true,
-          )
-
-          mnt.snapshot_in_pool_clone = nil
-        end
 
       # Remote -> remote:
       elsif is_remote && become_remote
@@ -265,6 +247,11 @@ module TransactionChains
 
       changes = {}
 
+      if is_snapshot
+        # Should not be possible due to {Vps::Migrate::Base#check_snapshot_clone_mounts!}
+        fail 'programming error'
+      end
+
       # Local -> remote:
       #   - change mount type
       #   - clone snapshot if needed
@@ -273,11 +260,7 @@ module TransactionChains
         mnt.mount_opts = '-n -t nfs -overs=3'
 
         if is_snapshot
-          mnt.snapshot_in_pool_clone = @chain.use_chain(
-            SnapshotInPool::UseClone,
-            args: [new_snapshot, mnt.vps.userns_map],
-            urgent: true,
-          )
+          fail
         end
 
       # Remote -> local:
@@ -288,13 +271,7 @@ module TransactionChains
         mnt.mount_opts = '--bind'
 
         if is_snapshot
-          @chain.use_chain(
-            SnapshotInPool::FreeClone,
-            args: [mnt.snapshot_in_pool_clone],
-            urgent: true,
-          )
-
-          mnt.snapshot_in_pool_clone = nil
+          fail
         end
 
       # Remote -> remote:
@@ -302,16 +279,7 @@ module TransactionChains
       #     node
       elsif is_remote && become_remote
         if is_snapshot
-          @chain.use_chain(
-            SnapshotInPool::FreeClone,
-            args: [mnt.snapshot_in_pool_clone],
-            urgent: true,
-          )
-          mnt.snapshot_in_pool_clone = @chain.use_chain(
-            SnapshotInPool::UseClone,
-            args: [new_snapshot, mnt.vps.userns_map],
-            urgent: true,
-          )
+          fail
         end
 
       # Local -> local:
