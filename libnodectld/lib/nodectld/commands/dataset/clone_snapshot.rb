@@ -4,7 +4,7 @@ module NodeCtld
     needs :system, :zfs, :pool
 
     def exec
-      clone = pool_mounted_clone(@pool_fs, @snapshot_id)
+      clone = pool_mounted_clone(@pool_fs, @clone_name)
 
       zfs(:clone, "-o readonly=on", "#{ds} #{clone}")
 
@@ -18,7 +18,7 @@ module NodeCtld
     end
 
     def rollback
-      zfs(:destroy, nil, pool_mounted_clone(@pool_fs, @snapshot_id), valid_rcs: [1])
+      zfs(:destroy, nil, pool_mounted_clone(@pool_fs, @clone_name), valid_rcs: [1])
     end
 
     protected

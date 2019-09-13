@@ -103,7 +103,7 @@ module NodeCtld
         pool_host_mountpoint(@pool_fs, mnt['id'])
 
       when 'snapshot_local'
-        "/#{pool_mounted_clone(@pool_fs, mnt['snapshot_id'])}/private"
+        "/#{pool_mounted_clone(@pool_fs, mnt['clone_name'])}/private"
 
       when 'snapshot_remote'
         pool_host_mountpoint(@pool_fs, mnt['id'])
@@ -227,7 +227,7 @@ module NodeCtld
 
       when 'snapshot_remote'
         "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} "+
-        "#{mnt['src_node_addr']}:/#{pool_mounted_clone(mnt['pool_fs'], mnt['snapshot_id'])}/private #{dst}"
+        "#{mnt['src_node_addr']}:/#{pool_mounted_clone(mnt['pool_fs'], mnt['clone_name'])}/private #{dst}"
 
       else
         fail "unknown mount type '#{mnt['type']}'"
