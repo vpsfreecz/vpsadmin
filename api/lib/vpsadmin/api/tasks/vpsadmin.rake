@@ -51,6 +51,14 @@ namespace :vpsadmin do
     end
   end
 
+  namespace :snapshot do
+    desc 'Remove unused snapshot clones'
+    task :purge_clones do
+      puts 'Purge snapshot clones'
+      VpsAdmin::API::Tasks.run(:snapshot, :purge_clones)
+    end
+  end
+
   namespace :plugins do
     desc 'List installed plugins'
     task :list do
