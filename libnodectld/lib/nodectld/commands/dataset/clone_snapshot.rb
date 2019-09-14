@@ -14,6 +14,8 @@ module NodeCtld
         zfs(:mount, nil, clone)
       end
 
+      zfs(:share, nil, clone)
+
       ok
     end
 
