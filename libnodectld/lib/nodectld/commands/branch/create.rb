@@ -7,11 +7,15 @@ module NodeCtld
 
     def exec
       if @from_branch_name
-        zfs(:clone, "-o canmount=noauto", "#{from_branch}@#{@from_snapshot} #{new_branch}")
+        zfs(
+          :clone,
+          "-o canmount=noauto -o readonly=on",
+          "#{from_branch}@#{@from_snapshot} #{new_branch}"
+        )
         zfs(:promote, nil, new_branch)
 
       else
-        zfs(:create, "-o canmount=noauto", "#{new_branch}")
+        zfs(:create, "-o canmount=noauto -o readonly=on", "#{new_branch}")
       end
     end
 
