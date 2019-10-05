@@ -413,7 +413,7 @@ module TransactionChains
             ::ClusterResource.find_by!(name: r),
             dst_netif,
             ips[r],
-            strict: true,
+            strict: false,
             host_addrs: true
           ],
           method: :allocate_to_netif
