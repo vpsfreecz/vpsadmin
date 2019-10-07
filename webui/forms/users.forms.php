@@ -229,6 +229,7 @@ function approval_requests_list() {
 	), $_GET["state"] ? $_GET["state"] : "awaiting");
 
 	$xtpl->form_add_input(_("IP address").':', 'text', '30', 'ip_addr', $_GET["ip_addr"]);
+	$xtpl->form_add_input(_("Client IP PTR").':', 'text', '30', 'client_ip_ptr', $_GET["client_ip_ptr"]);
 	$xtpl->form_add_input(_("User ID").':', 'text', '30', 'user', $_GET["user"]);
 	$xtpl->form_add_input(_("Admin ID").':', 'text', '30', 'admin', $_GET["admin"]);
 
@@ -241,6 +242,7 @@ function approval_requests_list() {
 	$xtpl->table_add_category('DATE');
 	$xtpl->table_add_category('LABEL');
 	$xtpl->table_add_category('IP');
+	$xtpl->table_add_category('PTR');
 	$xtpl->table_add_category('STATE');
 	$xtpl->table_add_category('ADMIN');
 	$xtpl->table_add_category('');
@@ -253,7 +255,7 @@ function approval_requests_list() {
 	if ($_GET['state'] != 'all')
 		$params['state'] = $_GET['state'];
 
-	foreach (array('ip_addr', 'user', 'admin') as $v) {
+	foreach (array('ip_addr', 'client_ip_ptr', 'user', 'admin') as $v) {
 		if ($_GET[$v])
 			$params[$v] = $_GET[$v];
 	}
@@ -265,6 +267,7 @@ function approval_requests_list() {
 		$xtpl->table_td(tolocaltz($r->created_at));
 		$xtpl->table_td(h($r->label));
 		$xtpl->table_td(h($r->client_ip_addr ? $r->client_ip_addr : $r->api_ip_addr));
+		$xtpl->table_td(h($r->client_ip_ptr));
 		$xtpl->table_td($r->state);
 		$xtpl->table_td($r->admin_id ? ('<a href="?page=adminm&action=edit&id='.$r->admin_id.'&type='.$_GET['type'].'">'.$r->admin->login.'</a>') : '-');
 		$xtpl->table_td('<a href="?page=adminm&action=request_details&id='.$r->id.'&type='.$_GET['type'].'"><img src="template/icons/m_edit.png"  title="'. _("Details") .'" /></a>');
