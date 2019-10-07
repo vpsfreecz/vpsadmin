@@ -8,6 +8,7 @@ module VpsAdmin
     module Authentication ; end
     module Operations
       module Authentication ; end
+      module Export ; end
       module TotpDevice ; end
       module User ; end
       module UserSession ; end

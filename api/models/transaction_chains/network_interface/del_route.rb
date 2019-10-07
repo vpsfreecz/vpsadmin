@@ -94,6 +94,8 @@ module TransactionChains
           end
         end
       end unless uses.empty?
+
+      use_chain(Export::DelHostsFromAll, args: [netif.vps.user, ips_arr])
     end
   end
 end

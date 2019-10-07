@@ -79,6 +79,8 @@ module TransactionChains
         order += 1
       end
 
+      use_chain(Export::AddHostsToAll, args: [netif.vps.user, ips])
+
       chowned
     end
   end

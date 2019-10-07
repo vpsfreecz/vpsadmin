@@ -246,4 +246,5 @@ module Transactions
   module Queue            ; end
   module UserNamespace    ; end
   module NetworkInterface ; end
+  module Export           ; end
 end

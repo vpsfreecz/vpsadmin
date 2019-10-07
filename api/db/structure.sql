@@ -466,6 +466,55 @@ CREATE TABLE `environments` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `export_hosts`
+--
+
+DROP TABLE IF EXISTS `export_hosts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `export_hosts` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `export_id` int(11) NOT NULL,
+  `ip_address_id` int(11) NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_export_hosts_on_export_id_and_ip_address_id` (`export_id`,`ip_address_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `exports`
+--
+
+DROP TABLE IF EXISTS `exports`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `exports` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `dataset_in_pool_id` int(11) NOT NULL,
+  `snapshot_in_pool_clone_id` int(11) DEFAULT NULL,
+  `user_id` int(11) NOT NULL,
+  `all_vps` tinyint(1) NOT NULL DEFAULT '1',
+  `path` varchar(255) COLLATE utf8_czech_ci NOT NULL,
+  `rw` tinyint(1) NOT NULL DEFAULT '1',
+  `sync` tinyint(1) NOT NULL DEFAULT '1',
+  `subtree_check` tinyint(1) NOT NULL DEFAULT '0',
+  `root_squash` tinyint(1) NOT NULL DEFAULT '0',
+  `enabled` tinyint(1) NOT NULL DEFAULT '1',
+  `object_state` int(11) NOT NULL,
+  `expiration_date` datetime DEFAULT NULL,
+  `confirmed` int(11) NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_exports_on_dataset_in_pool_id` (`dataset_in_pool_id`),
+  UNIQUE KEY `index_exports_on_snapshot_in_pool_clone_id` (`snapshot_in_pool_clone_id`),
+  KEY `index_exports_on_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `group_snapshots`
 --
 
@@ -990,8 +1039,10 @@ CREATE TABLE `mounts` (
   `enabled` tinyint(1) NOT NULL DEFAULT '1',
   `master_enabled` tinyint(1) NOT NULL DEFAULT '1',
   `current_state` int(11) NOT NULL DEFAULT '0',
+  `snapshot_in_pool_clone_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_mounts_on_vps_id` (`vps_id`) USING BTREE
+  KEY `index_mounts_on_vps_id` (`vps_id`) USING BTREE,
+  KEY `index_mounts_on_snapshot_in_pool_clone_id` (`snapshot_in_pool_clone_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1004,15 +1055,17 @@ DROP TABLE IF EXISTS `network_interfaces`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `network_interfaces` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `vps_id` int(11) NOT NULL,
+  `vps_id` int(11) DEFAULT NULL,
   `name` varchar(30) COLLATE utf8_czech_ci NOT NULL,
   `kind` int(11) NOT NULL,
   `mac` varchar(17) COLLATE utf8_czech_ci DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
+  `export_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_network_interfaces_on_vps_id_and_name` (`vps_id`,`name`),
   UNIQUE KEY `index_network_interfaces_on_mac` (`mac`),
+  UNIQUE KEY `index_network_interfaces_on_export_id_and_name` (`export_id`,`name`),
   KEY `index_network_interfaces_on_vps_id` (`vps_id`),
   KEY `index_network_interfaces_on_kind` (`kind`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
@@ -1267,6 +1320,7 @@ CREATE TABLE `pools` (
   `refquota_check` tinyint(1) NOT NULL DEFAULT '0',
   `maintenance_lock` int(11) NOT NULL DEFAULT '0',
   `maintenance_lock_reason` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
+  `export_root` varchar(100) COLLATE utf8_czech_ci NOT NULL DEFAULT '/export',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1392,6 +1446,28 @@ CREATE TABLE `snapshot_downloads` (
   `sha256sum` varchar(64) COLLATE utf8_czech_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_snapshot_downloads_on_secret_key` (`secret_key`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `snapshot_in_pool_clones`
+--
+
+DROP TABLE IF EXISTS `snapshot_in_pool_clones`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `snapshot_in_pool_clones` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `snapshot_in_pool_id` int(11) NOT NULL,
+  `state` int(11) NOT NULL DEFAULT '0',
+  `name` varchar(50) COLLATE utf8_czech_ci NOT NULL,
+  `user_namespace_map_id` int(11) DEFAULT NULL,
+  `confirmed` int(11) NOT NULL DEFAULT '0',
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `snapshot_in_pool_clones_unique` (`snapshot_in_pool_id`,`user_namespace_map_id`),
+  KEY `index_snapshot_in_pool_clones_on_snapshot_in_pool_id` (`snapshot_in_pool_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -2228,7 +2304,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-05-19 15:52:31
+-- Dump completed on 2019-10-07 13:57:44
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2482,4 +2558,8 @@ INSERT INTO schema_migrations (version) VALUES ('20190513064725');
 INSERT INTO schema_migrations (version) VALUES ('20190513075510');
 
 INSERT INTO schema_migrations (version) VALUES ('20190519074913');
+
+INSERT INTO schema_migrations (version) VALUES ('20190912160159');
+
+INSERT INTO schema_migrations (version) VALUES ('20190920153359');
 

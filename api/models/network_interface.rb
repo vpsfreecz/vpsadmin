@@ -2,6 +2,7 @@ require_relative 'lockable'
 
 class NetworkInterface < ActiveRecord::Base
   belongs_to :vps
+  belongs_to :export
   has_many :ip_addresses
   has_many :host_ip_addresses, through: :ip_addresses
   enum kind: %i(venet veth_bridge veth_routed)
