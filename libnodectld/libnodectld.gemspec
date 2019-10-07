@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
 
   s.add_runtime_dependency 'libosctl', ENV['OS_BUILD_ID']
   s.add_runtime_dependency 'osctl', ENV['OS_BUILD_ID']
+  s.add_runtime_dependency 'osctl-exportfs', ENV['OS_BUILD_ID']
   s.add_runtime_dependency 'json'
   s.add_runtime_dependency 'mysql2'
   s.add_runtime_dependency 'eventmachine'

@@ -121,4 +121,5 @@ module NodeCtld::Commands
   module Network           ; end
   module UserNamespace     ; end
   module NetworkInterface  ; end
+  module Export            ; end
 end

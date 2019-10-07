@@ -77,6 +77,7 @@ module NodeCtld
       Shaper.init_node
       Node.init(db)
       Shaper.init_vps(db)
+      Export.init(db)
 
       @node_status.init(db)
       @node_status.update(db)
