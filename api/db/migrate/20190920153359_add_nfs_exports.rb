@@ -24,6 +24,10 @@ class AddNfsExports < ActiveRecord::Migration
     create_table :export_hosts do |t|
       t.references  :export,                        null: false
       t.references  :ip_address,                    null: false
+      t.boolean     :rw,                            null: false
+      t.boolean     :sync,                          null: false
+      t.boolean     :subtree_check,                 null: false
+      t.boolean     :root_squash,                   null: false
       t.timestamps                                  null: false
     end
 

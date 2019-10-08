@@ -61,10 +61,19 @@ module TransactionChains
           vpses: {user_id: export.user_id},
         ).to_a
 
-        append_t(Transactions::Export::AddHosts, args: [export, ips]) do |t|
-          ips.each do |ip|
-            t.just_create(::ExportHost.create!(export: export, ip_address: ip))
-          end
+        hosts = ips.map do |ip|
+          ::ExportHost.create!(
+            export: export,
+            ip_address: ip,
+            rw: export.rw,
+            sync: export.sync,
+            subtree_check: export.subtree_check,
+            root_squash: export.root_squash,
+          )
+        end
+
+        append_t(Transactions::Export::AddHosts, args: [export, hosts]) do |t|
+          hosts.each { |host| t.just_create(host) }
         end
       end
 

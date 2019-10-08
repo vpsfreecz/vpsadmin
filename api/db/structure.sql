@@ -476,6 +476,10 @@ CREATE TABLE `export_hosts` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `export_id` int(11) NOT NULL,
   `ip_address_id` int(11) NOT NULL,
+  `rw` tinyint(1) NOT NULL,
+  `sync` tinyint(1) NOT NULL,
+  `subtree_check` tinyint(1) NOT NULL,
+  `root_squash` tinyint(1) NOT NULL,
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
   PRIMARY KEY (`id`),
@@ -2304,7 +2308,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-10-07 13:57:44
+-- Dump completed on 2019-10-08 13:17:51
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');

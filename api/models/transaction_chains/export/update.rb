@@ -1,6 +1,7 @@
 module TransactionChains
   class Export::Update < ::TransactionChain
     label 'Update'
+    allow_empty
 
     # @param export [::Export]
     # @param opts [Hash]
@@ -29,6 +30,11 @@ module TransactionChains
         end
       end
 
+      if toggle.nil?
+        new_export.save!
+        return new_export
+      end
+
       if toggle === false
         append_t(Transactions::Export::Disable, args: [new_export]) do |t|
           t.edit(export, enabled: new_export.enabled)
@@ -36,11 +42,6 @@ module TransactionChains
       end
 
       if db_changes.any?
-        export.export_hosts.each do |host|
-          append_t(Transactions::Export::DelHosts, args: [export, [host.ip_address]])
-          append_t(Transactions::Export::AddHosts, args: [new_export, [host.ip_address]])
-        end
-
         append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
           t.edit(export, db_changes)
         end

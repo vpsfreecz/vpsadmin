@@ -6,7 +6,7 @@ module VpsAdmin::API
     # @param host [::ExportHost]
     # @return [TransactionChain]
     def run(export, host)
-      chain, _ = TransactionChains::Export::DelHosts.fire(export, [host.ip_address])
+      chain, _ = TransactionChains::Export::DelHosts.fire(export, [host])
       chain
     end
   end

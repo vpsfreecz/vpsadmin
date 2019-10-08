@@ -212,6 +212,16 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
     params(:all) do
       id :id
       resource VpsAdmin::API::Resources::IpAddress, value_label: :addr
+      bool :rw, label: 'Read-write',
+        desc: 'Allow the export to be mounted as read-write.'
+      bool :sync, label: 'Sync',
+        desc: "Determines whether the server replies to requests only after the "+
+              "changes have been committed to stable storage."
+      bool :subtree_check, label: 'Subtree check', desc: 'See man exports(5).'
+      bool :root_squash, label: 'Root squash',
+        desc: "Map requests from uid/gid 0 to the anonymous uid/gid. Note that "+
+              "this does not apply to any other uids or gids that might be "+
+              "equally sensitive."
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -270,7 +280,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       blocking true
 
       input do
-        use :all, include: %i(ip_address)
+        use :all, include: %i(ip_address rw sync subtree_check root_squash)
       end
 
       output do
@@ -290,13 +300,50 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
 
         @chain, host = VpsAdmin::API::Operations::Export::AddHost.run(
           export,
-          input[:ip_address],
+          input,
         )
 
         host
 
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', to_param_names(e.record.errors.to_hash))
+      end
+
+      def state_id
+        @chain.id
+      end
+    end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Edit host options'
+      blocking true
+
+      input do
+        use :all, include: %i(rw sync subtree_check root_squash)
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict user_id: u.id
+        allow
+      end
+
+      def exec
+        host = self.class.model.joins(:export).find_by!(with_restricted(
+          exports: {id: params[:export_id]},
+          id: params[:host_id],
+        ))
+
+        @chain, host = VpsAdmin::API::Operations::Export::EditHost.run(
+          host,
+          input.clone
+        )
+
+        host
       end
 
       def state_id

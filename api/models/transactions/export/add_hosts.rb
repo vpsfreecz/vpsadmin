@@ -4,7 +4,7 @@ module Transactions::Export
     t_type 5405
     queue :storage
 
-    def params(export, ip_addresses)
+    def params(export, hosts)
       self.node_id = export.dataset_in_pool.pool.node_id
 
       {
@@ -13,14 +13,14 @@ module Transactions::Export
         dataset_name: export.dataset_in_pool.dataset.full_name,
         snapshot_clone: export.snapshot_in_pool_clone && export.snapshot_in_pool_clone.name,
         as: export.path,
-        hosts: ip_addresses.map do |ip|
+        hosts: hosts.map do |h|
           {
-            address: ip.to_s,
+            address: h.ip_address.to_s,
             options: {
-              rw: export.rw,
-              sync: export.sync,
-              subtree_check: export.subtree_check,
-              root_squash: export.root_squash,
+              rw: h.rw,
+              sync: h.sync,
+              subtree_check: h.subtree_check,
+              root_squash: h.root_squash,
             },
           }
         end,
