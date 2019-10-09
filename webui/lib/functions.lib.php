@@ -605,6 +605,9 @@ function transaction_concern_link($klass, $row_id) {
 		case 'Outage':
 			return '<a href="?page=outage&action=show&id='.$row_id.'">'.$row_id.'</a>';
 
+		case 'Export':
+			return '<a href="?page=export&action=edit&export='.$row_id.'">'.$row_id.'</a>';
+
 		default:
 			return "$row_id";
 	}

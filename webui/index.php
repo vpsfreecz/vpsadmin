@@ -41,6 +41,7 @@ include WWW_ROOT.'lib/security.lib.php';
 include WWW_ROOT.'forms/backup.forms.php';
 include WWW_ROOT.'forms/cluster.forms.php';
 include WWW_ROOT.'forms/dataset.forms.php';
+include WWW_ROOT.'forms/export.forms.php';
 include WWW_ROOT.'forms/vps.forms.php';
 include WWW_ROOT.'forms/users.forms.php';
 include WWW_ROOT.'forms/lifetimes.forms.php';
@@ -151,6 +152,9 @@ try {
 			case 'dataset':
 				include WWW_ROOT.'pages/page_dataset.php';
 				break;
+			case 'export':
+				include WWW_ROOT.'pages/page_export.php';
+				break;
 			case 'backup':
 				include WWW_ROOT.'pages/page_backup.php';
 				break;
@@ -210,6 +214,9 @@ if (isLoggedIn()) {
 		if(NAS_PUBLIC || isAdmin()){
 			$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
 		}
+
+		if (EXPORT_PUBLIC || isAdmin())
+			$xtpl->menu_add(_("Exports"),'?page=export', ($_GET["page"] == 'export'));
 
 		$xtpl->menu_add(_("User namespaces"),'?page=userns', ($_GET["page"] == 'userns'));
 		$xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));

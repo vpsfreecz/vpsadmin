@@ -42,7 +42,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 	else
 		$include[] = 'refquota';
 
-	$colspan = ((isAdmin() || USERNS_PUBLIC) ? 6 : 5) + count($include);
+	$colspan = ((isAdmin() || USERNS_PUBLIC) ? 7 : 6) + count($include);
 
 	$xtpl->table_title($opts['title'] ? $opts['title'] : _('Datasets'));
 
@@ -58,10 +58,14 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 		$xtpl->table_add_category($desc->label);
 	}
 
-	if (isAdmin() || USERNS_PUBLIC)
+	if (role == 'hypervisor' && (isAdmin() || USERNS_PUBLIC))
 		$xtpl->table_add_category(_('UID/GID map'));
 
 	$xtpl->table_add_category(_('Mount'));
+
+	if (EXPORT_PUBLIC || isAdmin())
+		$xtpl->table_add_category(_('Export'));
+
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
@@ -107,7 +111,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 			);
 		}
 
-		if (isAdmin() || USERNS_PUBLIC) {
+		if (role == 'hypervisor' && (isAdmin() || USERNS_PUBLIC)) {
 			if ($ds->user_namespace_map_id) {
 				$xtpl->table_td('<a href="?page=userns&action=map_show&id='.$ds->user_namespace_map_id.'">'.$ds->user_namespace_map->label.'</a>');
 			} else {
@@ -116,6 +120,14 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 		}
 
 		$xtpl->table_td('<a href="?page=dataset&action=mount&dataset='.$ds->id.'&vps='.$_GET['veid'].'&return='.$return.'">'._('Mount').'</a>');
+
+		if (EXPORT_PUBLIC || isAdmin()) {
+			if ($ds->export_id)
+				$xtpl->table_td('<a href="?page=export&action=edit&export='.$ds->export_id.'">'._('exported').'</a>');
+			else
+				$xtpl->table_td('<a href="?page=export&action=create&dataset='.$ds->id.'">'._('Export').'</a>');
+		}
+
 		$xtpl->table_td('<a href="?page=dataset&action=new&role='.$role.'&parent='.$ds->id.'&return='.$return.'"><img src="template/icons/vps_add.png" title="'._("Create a subdataset").'"></a>');
 		$xtpl->table_td('<a href="?page=dataset&action=edit&role='.$role.'&id='.$ds->id.'&return='.$return.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 		$xtpl->table_td('<a href="?page=dataset&action=destroy&id='.$ds->id.'&return='.$return.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
@@ -345,6 +357,9 @@ function dataset_snapshot_list($datasets, $vps = null) {
 		$xtpl->table_add_category(_('Download'));
 		$xtpl->table_add_category(_('Mount'));
 
+		if (EXPORT_PUBLIC || isAdmin())
+			$xtpl->table_add_category(_('Export'));
+
 		if (!$vps)
 			$xtpl->table_add_category('');
 
@@ -367,6 +382,13 @@ function dataset_snapshot_list($datasets, $vps = null) {
 				$xtpl->table_td(_('mounted to').' <a href="?page=adminvps&action=info&veid='.$snap->mount->vps_id.'">#'.$snap->mount->vps_id.'</a>');
 			else
 				$xtpl->table_td('[<a href="?page=backup&action=mount&vps_id='.$vps->id.'&dataset='.$ds->id.'&snapshot='.$snap->id.'&return='.$return_url.'">'._("Mount").'</a>]');
+
+			if (EXPORT_PUBLIC || isAdmin()) {
+				if ($snap->export_id)
+					$xtpl->table_td('[<a href="?page=export&action=edit&export='.$snap->export_id.'">'._('exported').'</a>]');
+				else
+					$xtpl->table_td('[<a href="?page=export&action=create&dataset='.$ds->id.'&snapshot='.$snap->id.'">'._('Export').'</a>]');
+			}
 
 			if (!$vps) {
 				$xtpl->table_td('<a href="?page=backup&action=snapshot_destroy&dataset='.$ds->id.'&snapshot='.$snap->id.'&return='.$return_url.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');

@@ -45,6 +45,9 @@
 			case 'Outage':
 				return '<a href="?page=outage&action=show&id='+ obj[1] +'">'+ obj[1] +'</a>';
 
+			case 'Export':
+				return '<a href="?page=export&action=edit&export='+ obj[1] +'">'+ obj[1] +'</a>';
+
 			default:
 				return obj[1];
 		}
