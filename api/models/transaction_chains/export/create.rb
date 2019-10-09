@@ -20,19 +20,31 @@ module TransactionChains
         dip = dataset.primary_dataset_in_pool!
       end
 
-      export = ::Export.create!(
-        dataset_in_pool: dip,
-        snapshot_in_pool_clone: snap_clone,
-        user: dataset.user,
-        all_vps: opts[:all_vps] ? true : false,
-        path: export_path(dip, sip),
-        rw: opts[:rw] ? true : false,
-        subtree_check: opts[:subtree_check] ? true : false,
-        root_squash: opts[:root_squash] ? true : false,
-        sync: opts[:sync] ? true : false,
-        enabled: opts[:enabled] ? true : false,
-        expiration_date: sip ? Time.now + 3 * 24 * 60 * 60 : nil,
-      )
+      begin
+        export = ::Export.create!(
+          dataset_in_pool: dip,
+          snapshot_in_pool_clone: snap_clone,
+          user: dataset.user,
+          all_vps: opts[:all_vps] ? true : false,
+          path: export_path(dip, sip),
+          rw: opts[:rw] ? true : false,
+          subtree_check: opts[:subtree_check] ? true : false,
+          root_squash: opts[:root_squash] ? true : false,
+          sync: opts[:sync] ? true : false,
+          enabled: opts[:enabled] ? true : false,
+          expiration_date: sip ? Time.now + 3 * 24 * 60 * 60 : nil,
+        )
+      rescue ActiveRecord::RecordNotUnique
+        msg =
+          if sip
+            "snapshot #{dataset.full_name}@#{sip.snapshot.name} is already "+
+            "exported"
+          else
+            "dataset #{dataset.full_name} is already exported"
+          end
+
+        raise VpsAdmin::API::Exceptions::DatasetAlreadyExported, msg
+      end
 
       concerns(:affect, [export.class.name, export.id])
       lock(export)

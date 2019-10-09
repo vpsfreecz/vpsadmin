@@ -139,6 +139,9 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
         input.clone
       )
       export
+
+    rescue VpsAdmin::API::Exceptions::DatasetAlreadyExported => e
+      error(e.message)
     end
 
     def state_id

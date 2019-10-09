@@ -170,4 +170,8 @@ module VpsAdmin::API::Exceptions
   class OperationNotSupported < OperationError
 
   end
+
+  class DatasetAlreadyExported < ::StandardError
+
+  end
 end
