@@ -10,6 +10,7 @@ class AddNfsExports < ActiveRecord::Migration
       t.boolean     :sync,                          null: false, default: true
       t.boolean     :subtree_check,                 null: false, default: false
       t.boolean     :root_squash,                   null: false, default: false
+      t.integer     :threads,                       null: false, default: 8
       t.boolean     :enabled,                       null: false, default: true
       t.integer     :object_state,                  null: false
       t.datetime    :expiration_date,               null: true

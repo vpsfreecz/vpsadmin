@@ -10,6 +10,7 @@ module TransactionChains
     # @option opts [Boolean] :sync
     # @option opts [Boolean] :subtree_check
     # @option opts [Boolean] :root_squash
+    # @option opts [Integer] :threads
     # @option opts [Boolean] :enabled
     def link_chain(export, opts = {})
       concerns(:affect, [export.class.name, export.id])
@@ -20,17 +21,21 @@ module TransactionChains
 
       db_changes = {}
       toggle = nil
+      set = false
 
       new_export.changed.each do |attr|
         case attr
         when 'all_vps', 'rw', 'sync', 'subtree_check', 'root_squash'
           db_changes[attr] = new_export.send(attr)
+        when 'threads'
+          db_changes[attr] = new_export.send(attr)
+          set = true
         when 'enabled'
           toggle = new_export.enabled
         end
       end
 
-      if toggle.nil?
+      if toggle.nil? && !set
         new_export.save!
         return new_export
       end
@@ -40,6 +45,8 @@ module TransactionChains
           t.edit(export, enabled: new_export.enabled)
         end
       end
+
+      append_t(Transactions::Export::Set, args: [export, new_export]) if set
 
       if db_changes.any?
         append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|

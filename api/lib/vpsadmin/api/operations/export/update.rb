@@ -10,6 +10,7 @@ module VpsAdmin::API
     # @option opts [Boolean] :sync
     # @option opts [Boolean] :subtree_check
     # @option opts [Boolean] :root_squash
+    # @option opts [Integer] :threads
     # @option opts [Boolean] :enabled
     # @return [TransactionChain]
     def run(export, opts)

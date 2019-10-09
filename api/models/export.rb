@@ -12,6 +12,11 @@ class Export < ::ActiveRecord::Base
   has_many :ip_addresses, through: :network_interface
   has_many :host_ip_addresses, through: :network_interface
 
+  validates :threads, presence: true, numericality: {
+    greater_than_or_equal_to: 1,
+    less_than_or_equal_to: 64,
+  }
+
   include Confirmable
   include Lockable
 

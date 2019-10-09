@@ -24,6 +24,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       desc: "Map requests from uid/gid 0 to the anonymous uid/gid. Note that "+
             "this does not apply to any other uids or gids that might be "+
             "equally sensitive."
+    integer :threads, label: 'Threads', desc: 'Number of NFS server threads.'
     bool :enabled
     datetime :expiration_date, label: 'Expiration date'
     datetime :created_at
@@ -31,7 +32,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
   end
 
   params(:editable) do
-    use :all, include: %i(all_vps rw sync subtree_check root_squash enabled)
+    use :all, include: %i(all_vps rw sync subtree_check root_squash threads enabled)
   end
 
   params(:filters) do
@@ -53,6 +54,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       allow if u.role == :admin
       restrict user_id: u.id
       input whitelist: %i(limit offset)
+      output blacklist: %i(user threads)
       allow
     end
 
@@ -79,6 +81,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict user_id: u.id
+      output blacklist: %i(user threads)
       allow
     end
 
@@ -106,6 +109,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       patch :subtree_check, default: false, fill: true
       patch :root_squash, default: false, fill: true
       patch :sync, default: true, fill: true
+      patch :threads, default: 8, fill: true
       patch :enabled, default: true, fill: true
     end
 
@@ -114,6 +118,9 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
     end
 
     authorize do |u|
+      allow if u.role == :admin
+      input blacklist: %i(threads)
+      output blacklist: %i(user threads)
       allow
     end
 
@@ -164,6 +171,8 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict user_id: u.id
+      input blacklist: %i(threads)
+      output blacklist: %i(user threads)
       allow
     end
 

@@ -10,6 +10,7 @@ module TransactionChains
     # @option opts [Boolean] :sync
     # @option opts [Boolean] :subtree_check
     # @option opts [Boolean] :root_squash
+    # @option opts [Integer] :threads
     # @option opts [Boolean] :enabled
     def link_chain(dataset, opts = {})
       if opts[:snapshot]
@@ -31,6 +32,7 @@ module TransactionChains
           subtree_check: opts[:subtree_check] ? true : false,
           root_squash: opts[:root_squash] ? true : false,
           sync: opts[:sync] ? true : false,
+          threads: opts[:threads] || 8,
           enabled: opts[:enabled] ? true : false,
           expiration_date: sip ? Time.now + 3 * 24 * 60 * 60 : nil,
         )

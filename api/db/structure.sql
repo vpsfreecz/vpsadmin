@@ -505,6 +505,7 @@ CREATE TABLE `exports` (
   `sync` tinyint(1) NOT NULL DEFAULT '1',
   `subtree_check` tinyint(1) NOT NULL DEFAULT '0',
   `root_squash` tinyint(1) NOT NULL DEFAULT '0',
+  `threads` int(11) NOT NULL DEFAULT '8',
   `enabled` tinyint(1) NOT NULL DEFAULT '1',
   `object_state` int(11) NOT NULL,
   `expiration_date` datetime DEFAULT NULL,
@@ -2308,7 +2309,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-10-08 13:17:51
+-- Dump completed on 2019-10-09 13:16:36
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
