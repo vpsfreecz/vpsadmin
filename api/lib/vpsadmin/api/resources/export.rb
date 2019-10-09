@@ -35,6 +35,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
   end
 
   params(:filters) do
+    use :all, include: %i(user)
   end
 
   class Index < HaveAPI::Actions::Default::Index
@@ -57,6 +58,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
 
     def query
       q = self.class.model.where(with_restricted)
+      q = q.where(user: input[:user]) if input[:user]
       q
     end
 
