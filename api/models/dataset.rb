@@ -151,6 +151,13 @@ class Dataset < ActiveRecord::Base
     dataset_in_pools.joins(:pool).where.not(pools: {role: Pool.roles[:backup]}).take!
   end
 
+  def export
+    ::Export.joins(:dataset_in_pool).where(
+      dataset_in_pools: {dataset_id: id},
+      snapshot_in_pool_clone: nil,
+    ).take
+  end
+
   # Return the maximum number of snapshots of all dataset in pools
   def max_snapshots
     dataset_in_pools.maximum(:max_snapshots)

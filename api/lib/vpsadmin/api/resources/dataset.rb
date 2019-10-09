@@ -32,6 +32,7 @@ module VpsAdmin::API::Resources
       use :id
       use :common
       use :all_properties
+      resource Export, value_label: :path
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -385,6 +386,7 @@ module VpsAdmin::API::Resources
         datetime :created_at # FIXME: this is not correct creation time
         integer :history_id
         resource VPS::Mount, value_label: :mountpoint
+        resource Export, value_label: :path
       end
 
       class Index < HaveAPI::Actions::Default::Index

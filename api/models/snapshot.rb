@@ -31,4 +31,10 @@ class Snapshot < ActiveRecord::Base
     sip = snapshot_in_pools.where.not(mount: nil).take
     sip && sip.mount
   end
+
+  def export
+    ::Export.joins(snapshot_in_pool_clone: :snapshot_in_pool).where(
+      snapshot_in_pools: {snapshot_id: id},
+    ).take
+  end
 end
