@@ -15,8 +15,8 @@ module NodeCtld
       @address = address
     end
 
-    def create!
-      syscmd("osctl-exportfs server new --address #{address} #{name}")
+    def create!(threads: 8)
+      syscmd("osctl-exportfs server new --address #{address} --nfsd-nproc #{threads} #{name}")
     end
 
     def destroy
@@ -25,6 +25,10 @@ module NodeCtld
 
     def destroy!
       syscmd("osctl-exportfs server del #{name}")
+    end
+
+    def set!(threads)
+      syscmd("osctl-exportfs server set --nfsd-nproc #{threads} #{name}")
     end
 
     def start!

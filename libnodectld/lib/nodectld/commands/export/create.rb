@@ -4,7 +4,7 @@ module NodeCtld
 
     def exec
       s = NfsServer.new(@export_id, @address)
-      s.create!
+      s.create!(threads: @threads)
     end
 
     def rollback
