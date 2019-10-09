@@ -31,6 +31,7 @@ module TransactionChains
         root_squash: opts[:root_squash] ? true : false,
         sync: opts[:sync] ? true : false,
         enabled: opts[:enabled] ? true : false,
+        expiration_date: sip ? Time.now + 3 * 24 * 60 * 60 : nil,
       )
 
       concerns(:affect, [export.class.name, export.id])
