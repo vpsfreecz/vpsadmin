@@ -16,6 +16,9 @@ module TransactionChains
       elsif src == 'vpsadminos' && dst == 'openvz'
         OsToVz
 
+      elsif src == 'vpsadminos' && dst == 'vpsadminos'
+        OsToOs
+
       else
         raise VpsAdmin::API::Exceptions::OperationNotSupported,
               "Migration from #{src} to #{dst} is not supported"
