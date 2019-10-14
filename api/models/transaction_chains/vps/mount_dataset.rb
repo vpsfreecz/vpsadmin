@@ -13,6 +13,24 @@ module TransactionChains
 
       lock(dip)
 
+      # Forbid mounts of vpsAdminOS datasets, unless dip is a subdataset of vps
+      if dip.pool.node.vpsadminos?
+        if !vps.dataset_in_pool.dataset.root_of?(dip.dataset)
+          raise VpsAdmin::API::Exceptions::OperationNotSupported,
+                "Only VPS subdatasets can be mouted using vpsAdmin"
+        elsif dip.pool.node_id != vps.node_id
+          raise VpsAdmin::API::Exceptions::OperationNotSupported,
+                "Datasets on vpsAdminOS cannot be mounted remotely"
+        end
+      end
+
+      # Forbid remote mounts to vpsAdminOS VPS
+      if vps.node.vpsadminos? && dip.pool.node_id != vps.node_id
+        raise VpsAdmin::API::Exceptions::OperationNotSupported,
+              "Remote mounts on vpsAdminOS are not supported, export your "+
+              "dataset and mount it from your VPS manually using NFS"
+      end
+
       mnt = ::Mount.new(
         vps: vps,
         dst: dst,

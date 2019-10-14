@@ -9,6 +9,14 @@ module TransactionChains
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
+      # Forbid snapshot mounts on vpsAdminOS
+      if vps.node.vpsadminos?
+        raise VpsAdmin::API::Exceptions::OperationNotSupported,
+              "Snapshots on vpsAdminOS cannot be mounted using vpsAdmin. "+
+              "Export the snapshot and then mount from your VPS manually using "+
+              "NFS."
+      end
+
       hypervisor, primary, backup = snap_in_pools(snapshot)
       clone_from = nil
       mnt = ::Mount.new(

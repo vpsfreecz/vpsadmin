@@ -1207,7 +1207,8 @@ END
 
         ret
 
-      rescue VpsAdmin::API::Exceptions::SnapshotAlreadyMounted => e
+      rescue VpsAdmin::API::Exceptions::SnapshotAlreadyMounted,
+             VpsAdmin::API::Exceptions::OperationNotSupported => e
         error(e.message)
 
       rescue ActiveRecord::RecordInvalid => e
