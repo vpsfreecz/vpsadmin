@@ -54,6 +54,8 @@ module TransactionChains
         confirmed: ::Vps.confirmed(:confirm_create)
       )
 
+      remote = dst_vps.node_id != vps.node_id
+
       lifetime = dst_vps.user.env_config(
         dst_vps.node.location.environment,
         :vps_lifetime
@@ -108,22 +110,23 @@ module TransactionChains
       lock(dst_vps.dataset_in_pool)
       dst_vps.save!
 
+      concerns(:transform, [vps.class.name, vps.id], [vps.class.name, dst_vps.id])
+
       # Prepare userns
       use_chain(UserNamespaceMap::Use, args: [vps.userns_map, dst_vps.node])
 
-      append(
-        Transactions::Vps::SendConfig,
-        args: [vps, node, as_id: dst_vps.id, network_interfaces: false]
-      )
-
-      concerns(:transform, [vps.class.name, vps.id], [vps.class.name, dst_vps.id])
+      if remote
+        append(
+          Transactions::Vps::SendConfig,
+          args: [vps, node, as_id: dst_vps.id, network_interfaces: false]
+        )
+      end
 
       # Datasets to clone
       datasets = serialize_datasets(vps.dataset_in_pool, dst_vps.dataset_in_pool)
       datasets.insert(0, [vps.dataset_in_pool, dst_vps.dataset_in_pool])
 
-      # Initial transfer
-      append_t(Transactions::Vps::SendRootfs, args: [vps]) do |t|
+      confirm_creation = Proc.new do |t|
         datasets.each do |src, dst|
           use = dst.allocate_resource!(
             :diskspace,
@@ -149,6 +152,18 @@ module TransactionChains
         end
       end
 
+      if remote
+        # Initial transfer
+        append_t(Transactions::Vps::SendRootfs, args: [vps], &confirm_creation)
+      else
+        # Full copy
+        append_t(
+          Transactions::Vps::Copy,
+          args: [vps, dst_vps.id, consistent: attrs[:stop], network_interfaces: false],
+          &confirm_creation
+        )
+      end
+
       # Invoke dataset creation hooks and clone dataset plans
       datasets.each do |src, dst|
         # Invoke dataset create hook
@@ -158,26 +173,28 @@ module TransactionChains
         clone_dataset_plans(src, dst) if attrs[:dataset_plans]
       end
 
-      # Make a second transfer if requested
-      if attrs[:stop]
-        use_chain(Vps::Stop, args: vps)
-        append(Transactions::Vps::SendSync, args: [vps], urgent: true)
-        use_chain(Vps::Start, args: vps, urgent: true) if vps.running?
-      end
-
-      # Finish the transfer
-      append_t(
-        Transactions::Vps::SendState,
-        args: [vps, clone: true, consistent: false, restart: false, start: false],
-      ) do |t|
-        t.create(dst_vps)
-
-        confirm_features.each do |f|
-          t.just_create(f)
+      if remote
+        # Make a second transfer if requested
+        if attrs[:stop]
+          use_chain(Vps::Stop, args: vps)
+          append(Transactions::Vps::SendSync, args: [vps], urgent: true)
+          use_chain(Vps::Start, args: vps, urgent: true) if vps.running?
         end
 
-        confirm_windows.each do |w|
-          t.just_create(w)
+        # Finish the transfer
+        append_t(
+          Transactions::Vps::SendState,
+          args: [vps, clone: true, consistent: false, restart: false, start: false],
+        ) do |t|
+          t.create(dst_vps)
+
+          confirm_features.each do |f|
+            t.just_create(f)
+          end
+
+          confirm_windows.each do |w|
+            t.just_create(w)
+          end
         end
       end
 
@@ -213,8 +230,10 @@ module TransactionChains
       # Start the new VPS
       use_chain(TransactionChains::Vps::Start, args: dst_vps) if vps.running?
 
-      # Cleanup on the source node
-      append(Transactions::Vps::SendCleanup, args: vps)
+      if remote
+        # Cleanup on the source node
+        append(Transactions::Vps::SendCleanup, args: vps)
+      end
 
       dst_vps.save!
       dst_vps
