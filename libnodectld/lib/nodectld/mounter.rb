@@ -27,6 +27,11 @@ module NodeCtld
         mounter = new(pool_fs, vps_id)
 
         mounter.load_vps_mounts.each do |mnt|
+          if mnt['type'] != 'dataset_local'
+            log(:warn, "Ignoring mount ##{mnt['id']}: unsupported type #{mnt['type']}")
+            next
+          end
+
           mounter.mount_to_host(mnt, false)
         end
       end
@@ -43,6 +48,11 @@ module NodeCtld
         mounter = new(pool_fs, vps_id)
 
         mounter.load_vps_mounts.each do |mnt|
+          if mnt['type'] != 'dataset_local'
+            log(:warn, "Ignoring mount ##{mnt['id']}: unsupported type #{mnt['type']}")
+            next
+          end
+
           mounter.bind_mount_to_vps(mnt, rootfs_path)
         end
       end
