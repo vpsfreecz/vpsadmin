@@ -16,9 +16,20 @@ module TransactionChains
       if opts[:snapshot]
         sip = find_snap_in_pool(opts[:snapshot])
         dip = sip.dataset_in_pool
-        snap_clone = use_chain(SnapshotInPool::UseClone, args: [sip, nil])
       else
         dip = dataset.primary_dataset_in_pool!
+      end
+
+      if !%w(primary backup).include?(dip.pool.role)
+        raise VpsAdmin::API::Exceptions::OperationNotSupported,
+              'This dataset cannot be exported or mounted via vpsAdmin'
+      elsif !dip.pool.node.vpsadminos?
+        raise VpsAdmin::API::Exceptions::OperationNotSupported,
+              'This dataset cannot be exported, use legacy mounts instead'
+      end
+
+      if sip
+        snap_clone = use_chain(SnapshotInPool::UseClone, args: [sip, nil])
       end
 
       begin

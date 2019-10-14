@@ -147,7 +147,8 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       )
       export
 
-    rescue VpsAdmin::API::Exceptions::DatasetAlreadyExported => e
+    rescue VpsAdmin::API::Exceptions::DatasetAlreadyExported,
+           VpsAdmin::API::Exceptions::OperationNotSupported => e
       error(e.message)
     end
 
