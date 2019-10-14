@@ -143,8 +143,10 @@ module TransactionChains
         # If it is not mount of a cloned dataset, than the +dst_m.dataset_in_pool+
         # may remain the same.
 
-        dst_m.save!
-        mounts << dst_m
+        if block_given? && yield(dst_m)
+          dst_m.save!
+          mounts << dst_m
+        end
       end
 
       use_chain(Vps::Mounts, args: dst_vps)

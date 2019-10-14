@@ -13,6 +13,9 @@ module TransactionChains
       elsif src == 'openvz' && dst == 'vpsadminos'
         VzToOs
 
+      elsif src == 'vpsadminos' && dst == 'vpsadminos'
+        OsToOs
+
       else
         raise VpsAdmin::API::Exceptions::OperationNotSupported,
               "Clone from #{src} to #{dst} is not supported"
