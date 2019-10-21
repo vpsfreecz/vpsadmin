@@ -21,6 +21,7 @@ module TransactionChains
               netif.vps.node.location,
               v,
               r.name.end_with?('_private') ? :private_access : :public_access,
+              :vps,
             )
             lock(ip)
 

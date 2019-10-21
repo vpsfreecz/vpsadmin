@@ -23,6 +23,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     resource VpsAdmin::API::Resources::User, label: 'User',
              value_label: :login
     string :role, choices: ::Network.roles.keys
+    string :purpose, choices: ::Network.purposes.keys
     string :addr, label: 'Address', desc: 'Address itself', db_name: :ip_addr
     integer :prefix, label: 'Prefix'
     integer :size, label: 'Size'
@@ -55,7 +56,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(location network version role addr prefix vps
+      input whitelist: %i(location network version role purpose addr prefix vps
                           network_interface limit offset)
       output blacklist: %i(class_id)
       allow
@@ -108,6 +109,10 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
       if input[:role]
         ips = ips.joins(:network).where(networks: {role: ::Network.roles[input[:role]]})
+      end
+
+      if input[:purpose]
+        ips = ips.joins(:network).where(networks: {purpose: ::Network.roles[input[:purpose]]})
       end
 
       if current_user.role != :admin
@@ -294,6 +299,9 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     rescue VpsAdmin::API::Exceptions::IpAddressNotOwned
       error('Use an IP address you already own first')
+
+    rescue VpsAdmin::API::Exceptions::IpAddressInvalid => e
+      error(e.message)
     end
 
     def state_id

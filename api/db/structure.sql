@@ -1095,8 +1095,10 @@ CREATE TABLE `networks` (
   `split_access` int(11) NOT NULL DEFAULT '0',
   `split_prefix` int(11) NOT NULL,
   `autopick` int(11) NOT NULL DEFAULT '1',
+  `purpose` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_networks_on_location_id_and_address_and_prefix` (`location_id`,`address`,`prefix`) USING BTREE
+  UNIQUE KEY `index_networks_on_location_id_and_address_and_prefix` (`location_id`,`address`,`prefix`) USING BTREE,
+  KEY `index_networks_on_purpose` (`purpose`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -2309,7 +2311,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-10-09 13:16:36
+-- Dump completed on 2019-10-21 17:47:43
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2567,4 +2569,6 @@ INSERT INTO schema_migrations (version) VALUES ('20190519074913');
 INSERT INTO schema_migrations (version) VALUES ('20190912160159');
 
 INSERT INTO schema_migrations (version) VALUES ('20190920153359');
+
+INSERT INTO schema_migrations (version) VALUES ('20191021125132');
 

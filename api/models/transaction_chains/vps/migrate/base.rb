@@ -287,6 +287,7 @@ module TransactionChains
               dst_vps.node.location,
               ip.network.ip_version,
               ip.network.role.to_sym,
+              ip.network.purpose.to_sym,
             )
 
           rescue ActiveRecord::RecordNotFound

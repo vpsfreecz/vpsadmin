@@ -97,7 +97,7 @@ class IpAddress < ActiveRecord::Base
   end
 
   # Return first free and unlocked IP address version +v+ from +location+.
-  def self.pick_addr!(user, location, v, role = :public_access)
+  def self.pick_addr!(user, location, v, role = :public_access, purpose = :any)
     q = self.select('ip_addresses.*')
       .joins(:network)
       .joins("LEFT JOIN resource_locks rl ON rl.resource = 'IpAddress' AND rl.row_id = ip_addresses.id")
@@ -110,7 +110,16 @@ class IpAddress < ActiveRecord::Base
       .where('network_interface_id IS NULL')
       .where('(ip_addresses.user_id = ? OR ip_addresses.user_id IS NULL)', user.id)
       .where('rl.id IS NULL')
-      .order('ip_addresses.user_id DESC, ip_addresses.id').take!
+
+    if purpose != :any
+      q = q.where(
+        networks: {
+          purpose: [::Network.purposes[:any], ::Network.purposes[purpose]],
+        },
+      )
+    end
+
+    q.order('ip_addresses.user_id DESC, ip_addresses.id').take!
   end
 
   def check_address

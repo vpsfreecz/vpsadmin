@@ -120,6 +120,7 @@ module TransactionChains
               location,
               4,
               :private_access,
+              :export,
             )
             lock(ip)
             return ip

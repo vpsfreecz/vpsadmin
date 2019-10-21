@@ -9,6 +9,7 @@ class Network < ActiveRecord::Base
 
   enum role: %i(public_access private_access)
   enum split_access: %i(no_access user_split owner_split)
+  enum purpose: %i(any vps export)
 
   validates :ip_version, inclusion: {
     in: [4, 6],

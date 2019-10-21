@@ -21,6 +21,7 @@ module VpsAdmin::API::Resources
       string :split_access, choices: ::Network.split_accesses.keys
       integer :split_prefix
       bool :autopick
+      string :purpose, choices: ::Network.purposes.keys
     end
 
     params(:all) do
@@ -33,7 +34,7 @@ module VpsAdmin::API::Resources
       desc 'List networks'
 
       input do
-        use :common, include: %i(location)
+        use :common, include: %i(location purpose)
       end
 
       output(:object_list) do
@@ -42,13 +43,17 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        output whitelist: %i(id location address prefix ip_version role split_access split_prefix)
+        output whitelist: %i(
+            id location address prefix ip_version role split_access split_prefix
+            purpose
+          )
         allow
       end
 
       def query
         q = ::Network.all
         q = q.where(location: input[:location]) if input[:location]
+        q = q.where(purpose: input[:purpose]) if input[:purpose]
         q
       end
 
@@ -70,7 +75,10 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        output whitelist: %i(id location address prefix ip_version role split_access split_prefix)
+        output whitelist: %i(
+            id location address prefix ip_version role split_access split_prefix
+            purpose
+          )
         allow
       end
 
@@ -96,6 +104,7 @@ module VpsAdmin::API::Resources
         patch :role, required: true
         patch :managed, required: true
         patch :split_prefix, required: true
+        patch :purpose, required: true
 
         bool :add_ip_addresses, default: false,
             desc: 'Add all IP addresses from this network to the database now'

@@ -44,6 +44,11 @@ class NetworkInterface < ActiveRecord::Base
         raise VpsAdmin::API::Exceptions::IpAddressInUse
       end
 
+      unless %w(any vps).include?(ip.network.purpose)
+        raise VpsAdmin::API::Exceptions::IpAddressInvalid,
+              "#{ip} cannot be assigned to a VPS"
+      end
+
       if !ip.user_id && ::IpAddress.joins(:network).where(
           user: vps.user,
           network_interface: nil,

@@ -25,6 +25,10 @@ module VpsAdmin::API::Exceptions
 
   end
 
+  class IpAddressInvalid < ::StandardError
+
+  end
+
   class DatasetAlreadyExists < ::StandardError
     attr_reader :dataset, :path
 
