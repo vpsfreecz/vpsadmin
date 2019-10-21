@@ -56,6 +56,11 @@ module NodeCtld
       end
     end
 
+    def destroy
+      backup
+      File.rename(path, destroyed_path)
+    end
+
     def exist?
       File.exist?(path)
     end
@@ -99,6 +104,10 @@ module NodeCtld
 
     def backup_path
       "#{path}.backup"
+    end
+
+    def destroyed_path
+      "#{path}.destroyed"
     end
   end
 end
