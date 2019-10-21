@@ -258,6 +258,7 @@ module TransactionChains
 
       # Destroy old root
       append(Transactions::Vps::Destroy, args: src_vps)
+      append(Transactions::Vps::RemoveConfig, args: src_vps)
 
       # Disuse userns
       use_chain(UserNamespaceMap::Disuse, args: [src_vps])

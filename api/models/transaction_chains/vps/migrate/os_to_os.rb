@@ -144,6 +144,7 @@ module TransactionChains
 
       # Destroy old VPS
       append(Transactions::Vps::SendCleanup, args: src_vps)
+      append(Transactions::Vps::RemoveConfig, args: src_vps)
 
       # Free userns map
       use_chain(UserNamespaceMap::Disuse, args: [src_vps])

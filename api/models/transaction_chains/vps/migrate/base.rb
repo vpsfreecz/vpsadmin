@@ -253,13 +253,20 @@ module TransactionChains
     # of cluster resources when migrating to a different environment.
     #
     # 1) Within one location
-    #    - nothing to do
+    #    - nothing to do but generate VPS config
     # 2) Different location, same env
     #    - no reallocation needed, just find replacement ips
     # 3) Different location, different env
     #    - find replacements, reallocate to different env
     def migrate_network_interfaces
-      if src_node.location != dst_node.location && opts[:handle_ips]
+      return unless opts[:handle_ips]
+
+      if src_node.location == dst_node.location
+        if dst_node.vpsadminos?
+          append(Transactions::Vps::PopulateConfig, args: dst_vps, urgent: true)
+        end
+
+      else
         if src_vps.network_interfaces.count > 1
           fail 'migration of VPS with multiple network interfaces is not implemented'
         end
