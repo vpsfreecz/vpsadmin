@@ -9,19 +9,20 @@ GEM
     highline (1.7.10)
     ipaddress (0.8.3)
     json (2.2.0)
-    libnodectld (3.0.0.dev.build20190914180229)
+    libnodectld (3.0.0.dev.build20191024145004)
       eventmachine
       filelock
       ipaddress (~> 0.8.3)
       json
-      libosctl (= 19.03.0.build20190914164836)
+      libosctl (= 19.09.0.build20191014132203)
       mail
       mysql2
-      osctl (= 19.03.0.build20190914164836)
+      osctl (= 19.09.0.build20191014132203)
+      osctl-exportfs (= 19.09.0.build20191014132203)
       pry (~> 0.11.3)
       pry-remote
       require_all (~> 2.0.0)
-    libosctl (19.03.0.build20190914164836)
+    libosctl (19.09.0.build20191014132203)
       rainbow (~> 3.0.0)
       require_all (~> 2.0.0)
     mail (2.7.1)
@@ -29,18 +30,23 @@ GEM
     method_source (0.9.2)
     mini_mime (1.0.2)
     mysql2 (0.5.2)
-    nodectld (3.0.0.dev.build20190914180229)
-      libnodectld (= 3.0.0.dev.build20190914180229)
-    osctl (19.03.0.build20190914164836)
+    nodectld (3.0.0.dev.build20191024145004)
+      libnodectld (= 3.0.0.dev.build20191024145004)
+    osctl (19.09.0.build20191014132203)
       curses
       gli (~> 2.17.1)
       highline (~> 1.7.10)
       ipaddress (~> 0.8.3)
       json
-      libosctl (= 19.03.0.build20190914164836)
+      libosctl (= 19.09.0.build20191014132203)
       rainbow (~> 3.0.0)
       require_all (~> 2.0.0)
       ruby-progressbar (~> 1.9.0)
+    osctl-exportfs (19.09.0.build20191014132203)
+      filelock
+      gli (~> 2.17.1)
+      libosctl (= 19.09.0.build20191014132203)
+      require_all (~> 2.0.0)
     pry (0.11.3)
       coderay (~> 1.1.0)
       method_source (~> 0.9.0)
@@ -56,7 +62,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  nodectld (= 3.0.0.dev.build20190914180229)
+  nodectld (= 3.0.0.dev.build20191024145004)
 
 BUNDLED WITH
    1.17.2
