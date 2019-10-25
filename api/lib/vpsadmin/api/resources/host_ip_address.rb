@@ -170,11 +170,17 @@ module VpsAdmin::API::Resources
              ON my_netifs.id = ip_addresses.network_interface_id'
           ).joins(
             'LEFT JOIN vpses my_vps ON my_vps.id = my_netifs.vps_id'
+          ).joins(
+            'LEFT JOIN exports my_export ON my_export.id = my_netifs.export_id'
           ).where(
             'ip_addresses.user_id = ?
              OR
-            (ip_addresses.network_interface_id IS NOT NULL AND my_vps.user_id = ?)',
-            current_user.id, current_user.id
+             (
+               ip_addresses.network_interface_id IS NOT NULL
+               AND
+               (my_vps.user_id = ? OR my_export.user_id = ?)
+             )',
+            current_user.id, current_user.id, current_user.id
           ).where(id: params[:host_ip_address_id]).take!
         end
       end
