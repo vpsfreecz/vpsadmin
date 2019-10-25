@@ -48,7 +48,9 @@ function export_list() {
 	$exports = $api->export->list($params);
 
 	foreach ($exports as $ex) {
-		$xtpl->table_td(user_link($ex->user));
+		if (isAdmin())
+			$xtpl->table_td(user_link($ex->user));
+
 		$xtpl->table_td($ex->dataset->name);
 		$xtpl->table_td($ex->snapshot_id ? $ex->snapshot->created_at : '-');
 		$xtpl->table_td($ex->host_ip_address->addr);
