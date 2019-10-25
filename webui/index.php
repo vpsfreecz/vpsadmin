@@ -215,9 +215,7 @@ if (isLoggedIn()) {
 			$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
 		}
 
-		if (EXPORT_PUBLIC || isAdmin())
-			$xtpl->menu_add(_("Exports"),'?page=export', ($_GET["page"] == 'export'));
-
+		$xtpl->menu_add(_("Exports"),'?page=export', ($_GET["page"] == 'export'));
 		$xtpl->menu_add(_("User namespaces"),'?page=userns', ($_GET["page"] == 'userns'));
 		$xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));
 		$xtpl->menu_add(_("Cluster"),'?page=cluster', ($_GET["page"] == 'cluster'));
@@ -227,6 +225,9 @@ if (isLoggedIn()) {
 
 		if(NAS_PUBLIC || isAdmin())
 			$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
+
+		if (EXPORT_PUBLIC || isAdmin())
+			$xtpl->menu_add(_("Exports"),'?page=export', ($_GET["page"] == 'export'));
 
 		if (USERNS_PUBLIC)
 			$xtpl->menu_add(_("User namespaces"),'?page=userns', ($_GET["page"] == 'userns'));
