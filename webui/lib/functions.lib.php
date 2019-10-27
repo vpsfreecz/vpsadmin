@@ -821,3 +821,7 @@ function getUserEmails($user, $mail_role_recipients, $role) {
 
 	return [$user->email];
 }
+
+function isExportPublic() {
+	return isAdmin() || EXPORT_PUBLIC;
+}

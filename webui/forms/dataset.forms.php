@@ -63,7 +63,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 
 	$xtpl->table_add_category(_('Mount'));
 
-	if (EXPORT_PUBLIC || isAdmin())
+	if (isExportPublic())
 		$xtpl->table_add_category(_('Export'));
 
 	$xtpl->table_add_category('');
@@ -121,7 +121,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 
 		$xtpl->table_td('<a href="?page=dataset&action=mount&dataset='.$ds->id.'&vps='.$_GET['veid'].'&return='.$return.'">'._('Mount').'</a>');
 
-		if (EXPORT_PUBLIC || isAdmin()) {
+		if (isExportPublic()) {
 			if ($ds->export_id)
 				$xtpl->table_td('<a href="?page=export&action=edit&export='.$ds->export_id.'">'._('exported').'</a>');
 			else
@@ -357,7 +357,7 @@ function dataset_snapshot_list($datasets, $vps = null) {
 		$xtpl->table_add_category(_('Download'));
 		$xtpl->table_add_category(_('Mount'));
 
-		if (EXPORT_PUBLIC || isAdmin())
+		if (isExportPublic())
 			$xtpl->table_add_category(_('Export'));
 
 		if (!$vps)
@@ -383,7 +383,7 @@ function dataset_snapshot_list($datasets, $vps = null) {
 			else
 				$xtpl->table_td('[<a href="?page=backup&action=mount&vps_id='.$vps->id.'&dataset='.$ds->id.'&snapshot='.$snap->id.'&return='.$return_url.'">'._("Mount").'</a>]');
 
-			if (EXPORT_PUBLIC || isAdmin()) {
+			if (isExportPublic()) {
 				if ($snap->export_id)
 					$xtpl->table_td('[<a href="?page=export&action=edit&export='.$snap->export_id.'">'._('exported').'</a>]');
 				else

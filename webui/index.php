@@ -226,7 +226,7 @@ if (isLoggedIn()) {
 		if(NAS_PUBLIC || isAdmin())
 			$xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
 
-		if (EXPORT_PUBLIC || isAdmin())
+		if (isExportPublic())
 			$xtpl->menu_add(_("Exports"),'?page=export', ($_GET["page"] == 'export'));
 
 		if (USERNS_PUBLIC)
