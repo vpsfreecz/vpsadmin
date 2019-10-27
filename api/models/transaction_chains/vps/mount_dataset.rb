@@ -14,7 +14,7 @@ module TransactionChains
       lock(dip)
 
       # Forbid mounts of vpsAdminOS datasets, unless dip is a subdataset of vps
-      if dip.pool.node.vpsadminos?
+      if dip.pool.node.vpsadminos? && dip.pool.role == 'hypervisor'
         if !vps.dataset_in_pool.dataset.root_of?(dip.dataset)
           raise VpsAdmin::API::Exceptions::OperationNotSupported,
                 "Only VPS subdatasets can be mouted using vpsAdmin"
