@@ -256,7 +256,7 @@ mount -t nfs {$ex->host_ip_address->addr}:{$ex->path} /mnt/export-{$ex->id}
 	$xtpl->table_title(_('systemd mount unit'));
 	$xtpl->table_td("
 		<textarea rows=\"15\" cols=\"80\" readonly>
-# /etc/systemd/system/export\\x2d{$ex->id}.mount
+# /etc/systemd/system/mnt-export\\x2d{$ex->id}.mount
 [Unit]
 Description=Mount of export {$ex->id}
 Requires=network-online.target
