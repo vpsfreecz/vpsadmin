@@ -256,11 +256,11 @@ mount -t nfs {$ex->host_ip_address->addr}:{$ex->path} /mnt/export-{$ex->id}
 	$xtpl->table_title(_('systemd mount unit'));
 	$xtpl->table_td("
 		<textarea rows=\"15\" cols=\"80\" readonly>
-# /etc/systemd/system/export-{$ex->id}.mount
+# /etc/systemd/system/export\\x2d{$ex->id}.mount
 [Unit]
 Description=Mount of export {$ex->id}
-Requires=network-online.service
-After=network-online.service
+Requires=network-online.target
+After=network-online.target
 
 [Mount]
 What={$ex->host_ip_address->addr}:{$ex->path}
