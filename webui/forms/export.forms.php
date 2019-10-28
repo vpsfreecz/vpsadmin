@@ -238,7 +238,7 @@ function export_edit_form($id) {
 	$xtpl->table_title(_('Mount command'));
 	$xtpl->table_td("
 		<textarea rows=\"1\" cols=\"80\" readonly>
-mount -t nfs {$ex->host_ip_address->addr}:{$ex->path} /mnt/export-{$ex->id}
+mount -t nfs {$ex->host_ip_address->addr}:{$ex->path} /mnt/export{$ex->id}
 		</textarea>
 	");
 	$xtpl->table_tr();
@@ -247,7 +247,7 @@ mount -t nfs {$ex->host_ip_address->addr}:{$ex->path} /mnt/export-{$ex->id}
 	$xtpl->table_title(_('fstab entry'));
 	$xtpl->table_td("
 		<textarea rows=\"1\" cols=\"80\" readonly>
-{$ex->host_ip_address->addr}:{$ex->path} /mnt/export-{$ex->id} nfs vers=3 0 0
+{$ex->host_ip_address->addr}:{$ex->path} /mnt/export{$ex->id} nfs vers=3 0 0
 		</textarea>
 	");
 	$xtpl->table_tr();
@@ -256,7 +256,7 @@ mount -t nfs {$ex->host_ip_address->addr}:{$ex->path} /mnt/export-{$ex->id}
 	$xtpl->table_title(_('systemd mount unit'));
 	$xtpl->table_td("
 		<textarea rows=\"15\" cols=\"80\" readonly>
-# /etc/systemd/system/mnt-export\\x2d{$ex->id}.mount
+# /etc/systemd/system/mnt-export{$ex->id}.mount
 [Unit]
 Description=Mount of export {$ex->id}
 Requires=network-online.target
@@ -264,7 +264,7 @@ After=network-online.target
 
 [Mount]
 What={$ex->host_ip_address->addr}:{$ex->path}
-Where=/mnt/export-{$ex->id}
+Where=/mnt/export{$ex->id}
 Options=vers=3
 Type=nfs
 
