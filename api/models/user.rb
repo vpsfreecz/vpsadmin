@@ -15,6 +15,7 @@ class User < ActiveRecord::Base
   has_many :environment_user_configs
   has_many :environments, through: :environment_user_configs
   has_many :datasets
+  has_many :exports
   has_many :user_cluster_resources
   has_many :user_cluster_resource_packages
   has_many :cluster_resource_packages

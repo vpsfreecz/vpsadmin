@@ -3,6 +3,15 @@ module TransactionChains
     label 'Hard delete user'
 
     def link_chain(user, target, state, log)
+      # Destroy all exports
+      user.exports.each do |ex|
+        ex.set_object_state(
+          :deleted,
+          reason: 'User was hard deleted',
+          chain: self
+        )
+      end
+
       # Destroy all VPSes
       user.vpses.where(object_state: [
         ::Vps.object_states[:active],
