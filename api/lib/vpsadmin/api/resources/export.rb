@@ -343,7 +343,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
 
       authorize do |u|
         allow if u.role == :admin
-        restrict user_id: u.id
+        restrict exports: {user_id: u.id}
         allow
       end
 
