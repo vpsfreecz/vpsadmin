@@ -24,6 +24,10 @@ module NodeCtld
       osctl(%i(ct cgparams set), [@vps_id, 'cglimit.memory.max', 64*1024])
       osctl(%i(ct cgparams set), [@vps_id, 'cglimit.all.max', 512*1024])
 
+      # nofile was originally set by osctld automatically, it's not working
+      # because of vpsadminos#28. Until it is fixed, we'll set nofile manually.
+      osctl(%i(ct prlimits set), [@vps_id, 'nofile', 1024, 1024*1024])
+
       %w(veth-up).each do |hook|
         dst = hook_path(hook)
 
