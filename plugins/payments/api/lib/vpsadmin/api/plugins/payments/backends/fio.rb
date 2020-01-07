@@ -23,7 +23,7 @@ module VpsAdmin::API::Plugins::Payments::Backends
             vs: t.vs,
             ks: t.ks,
             ss: t.ss,
-            transaction_type: t.transaction_type,
+            transaction_type: t.transaction_type || 'unset',
             comment: t.comment,
           )
 
