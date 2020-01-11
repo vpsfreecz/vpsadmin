@@ -22,7 +22,7 @@ module VpsAdmin::API::Resources
 
     else
       restrict enabled: true, supported: true, hypervisor_type: 'openvz'
-      output whitelist: %i(id label)
+      output whitelist: %i(id name label hypervisor_type)
     end
 
     allow
