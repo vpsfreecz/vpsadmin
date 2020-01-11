@@ -40,6 +40,9 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
   params(:all) do
     use :id
     use :common
+    resource VpsAdmin::API::Resources::Environment,
+      name: :charged_environment,
+      label: 'Charged environment'
   end
 
   class Index < HaveAPI::Actions::Default::Index
@@ -100,7 +103,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       end
 
       if input[:location]
-        ips = ips.joins(:network).where(networks: {location_id: input[:location].id})
+        locs = ::LocationNetwork.where(location: input[:location]).pluck(:network_id)
+        ips = ips.joins(:network).where(networks: {id: locs})
       end
 
       if input[:version]
@@ -189,7 +193,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     desc 'Add an IP address'
 
     input do
-      use :common, exclude: %i(vps class_id version location)
+      use :common, exclude: %i(vps class_id version)
       patch :addr, required: true
       patch :network, required: true
     end
@@ -204,6 +208,14 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     def exec
       addr = ::IPAddress.parse(input[:addr]) # gem
+
+      if input[:user]
+        if !input[:location]
+          error('provide location together with user')
+        elsif input[:network].locations.include?(input[:location])
+          error('network is not available in selected location')
+        end
+      end
 
       ::IpAddress.register(addr, input.merge(prefix: addr.prefix)) # model
 
@@ -222,6 +234,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     input do
       use :shaper
       use :filters, include: %i(user)
+      resource VpsAdmin::API::Resources::Environment
     end
 
     output do
@@ -237,9 +250,13 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
       if input.has_key?(:user) && ip.user != input[:user]
         # Check if the IP is assigned to a VPS in an environment with IP ownership
-        if ip.network_interface && ip.network.location.environment.user_ip_ownership
+        if ip.network_interface && ip.network_interface.vps.node.location.environment.user_ip_ownership
           error('cannot chown IP while it belongs to a VPS')
         end
+      end
+
+      if input[:user] && !input.has_key?(:environment)
+        error('choose environment')
       end
 
       @chain, _ = ip.do_update(input)
@@ -247,6 +264,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     rescue ActiveRecord::RecordInvalid => e
       error('update failed', e.record.errors.to_hash)
+    rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation => e
+      error(e.message)
     end
 
     def state_id
@@ -288,7 +307,11 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
       maintenance_check!(netif.vps)
 
-      @chain, _ = netif.add_route(ip, via: input[:route_via])
+      @chain, _ = netif.add_route(
+        ip,
+        via: input[:route_via],
+        is_user: current_user.role != :admin,
+      )
       ip
 
     rescue VpsAdmin::API::Exceptions::IpAddressInUse

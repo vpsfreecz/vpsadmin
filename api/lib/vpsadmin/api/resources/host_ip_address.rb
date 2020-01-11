@@ -74,8 +74,9 @@ module VpsAdmin::API::Resources
         end
 
         if input[:location]
+          locs = ::LocationNetwork.where(location: input[:location]).pluck(:network_id)
           ips = ips.joins(ip_address: :network).where(
-            networks: {location_id: input[:location].id},
+            networks: {id: locs.id},
           )
         end
 

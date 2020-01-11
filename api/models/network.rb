@@ -3,8 +3,9 @@ require_relative 'lockable'
 class Network < ActiveRecord::Base
   include Lockable
 
-  belongs_to :location
   belongs_to :user
+  has_many :location_networks
+  has_many :locations, through: :location_networks
   has_many :ip_addresses
 
   enum role: %i(public_access private_access)

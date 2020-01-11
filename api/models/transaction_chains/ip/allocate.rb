@@ -58,12 +58,14 @@ module TransactionChains
             ip,
             network_interface_id: ip.network_interface_id,
             order: ip.order,
+            charged_environment_id: ip.charged_environment_id,
           )
           t.edit_before(ip, user_id: ip.user_id) if ownership
         end
 
         ip.network_interface_id = netif.id
         ip.order = order
+        ip.charged_environment_id = netif.vps.node.location.environment_id
 
         chowned += ip.size if (!ip.user_id && ownership) || !ownership
         ip.user_id = netif.vps.user_id if !ip.user_id && ownership

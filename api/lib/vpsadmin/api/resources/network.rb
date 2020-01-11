@@ -12,7 +12,6 @@ module VpsAdmin::API::Resources
 
     params(:common) do
       string :label
-      resource Location
       integer :ip_version
       string :address
       integer :prefix
@@ -34,7 +33,8 @@ module VpsAdmin::API::Resources
       desc 'List networks'
 
       input do
-        use :common, include: %i(location purpose)
+        resource Location
+        use :common, include: %i(purpose)
       end
 
       output(:object_list) do
@@ -44,15 +44,20 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         output whitelist: %i(
-            id location address prefix ip_version role split_access split_prefix
-            purpose
+            id address prefix ip_version role split_access split_prefix purpose
           )
         allow
       end
 
       def query
         q = ::Network.all
-        q = q.where(location: input[:location]) if input[:location]
+
+        if input[:location]
+          q = q.joins(:location_networks).where(
+            location_networks: {location_id: input[:location].id},
+          )
+        end
+
         q = q.where(purpose: input[:purpose]) if input[:purpose]
         q
       end
@@ -76,8 +81,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         output whitelist: %i(
-            id location address prefix ip_version role split_access split_prefix
-            purpose
+            id address prefix ip_version role split_access split_prefix purpose
           )
         allow
       end
@@ -97,7 +101,6 @@ module VpsAdmin::API::Resources
 
       input do
         use :common
-        patch :location, required: true
         patch :address, required: true
         patch :prefix, required: true
         patch :ip_version, required: true

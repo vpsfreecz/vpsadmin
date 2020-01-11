@@ -5,6 +5,7 @@ class IpAddress < ActiveRecord::Base
   belongs_to :network_interface
   belongs_to :user
   belongs_to :route_via, class_name: 'HostIpAddress'
+  belongs_to :charged_environment, class_name: 'Environment'
   has_many :host_ip_addresses
   has_many :ip_traffics
   has_many :ip_recent_traffics
@@ -23,6 +24,7 @@ class IpAddress < ActiveRecord::Base
   # @param params [Hash]
   # @option params [Network] network
   # @option params [User] user
+  # @option params [Location] location
   # @option params [Integer] prefix
   # @option params [Integer] size
   # @option params [Integer] max_tx
@@ -34,7 +36,7 @@ class IpAddress < ActiveRecord::Base
     self.transaction do
       if params[:user] && (params[:allocate].nil? || params[:allocate])
         user_env = params[:user].environment_user_configs.find_by!(
-          environment: params[:network].location.environment,
+          environment: params[:location].environment,
         )
         resource = params[:network].cluster_resource
 
@@ -99,14 +101,18 @@ class IpAddress < ActiveRecord::Base
   # Return first free and unlocked IP address version +v+ from +location+.
   def self.pick_addr!(user, location, v, role = :public_access, purpose = :any)
     q = self.select('ip_addresses.*')
-      .joins(:network)
+      .joins(network: :location_networks)
       .joins("LEFT JOIN resource_locks rl ON rl.resource = 'IpAddress' AND rl.row_id = ip_addresses.id")
-      .where(networks: {
-        ip_version: v,
-        location_id: location.id,
-        role: ::Network.roles[role],
-        autopick: true,
-      })
+      .where(
+        networks: {
+          ip_version: v,
+          role: ::Network.roles[role],
+        },
+        location_networks: {
+          location_id: location.id,
+          autopick: true,
+        },
+      )
       .where('network_interface_id IS NULL')
       .where('(ip_addresses.user_id = ? OR ip_addresses.user_id IS NULL)', user.id)
       .where('rl.id IS NULL')
@@ -119,7 +125,7 @@ class IpAddress < ActiveRecord::Base
       )
     end
 
-    q.order('ip_addresses.user_id DESC, ip_addresses.id').take!
+    q.order('location_networks.priority, ip_addresses.user_id DESC, ip_addresses.id').take!
   end
 
   def check_address
@@ -144,6 +150,7 @@ class IpAddress < ActiveRecord::Base
   # @option opts [Integer] max_tx
   # @option opts [Integer] max_rx
   # @option opts [User] user
+  # @option opts [User] environment
   def do_update(opts)
     TransactionChains::Ip::Update.fire(self, opts)
   end
@@ -155,6 +162,14 @@ class IpAddress < ActiveRecord::Base
         'can be owned only by the owner of the VPS that uses this address'
       )
     end
+  end
+
+  # @param env [Environment]
+  def is_in_environment?(env)
+    ::LocationNetwork.joins(:location).where(
+      network_id: network_id,
+      locations: {environment_id: env.id},
+    ).any?
   end
 
   def to_ip

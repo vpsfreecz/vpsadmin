@@ -11,6 +11,9 @@ class Environment < ActiveRecord::Base
   has_many :environment_dataset_plans
   has_many :default_object_cluster_resources
   has_many :default_user_cluster_resource_packages
+  has_many :charged_ip_addresses,
+    class_name: 'IpAddress',
+    foreign_key: 'charged_environment_id'
 
   has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
 

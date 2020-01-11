@@ -6,7 +6,7 @@ module TransactionChains
       v = r.name == 'ipv6' ? 6 : 4
       ips = []
 
-      ::IpAddress.joins(network: :location).where(
+      ::IpAddress.joins(network: {location_networks: :location}).where(
         user: user_env.user,
         networks: {
           ip_version: v,
@@ -23,7 +23,9 @@ module TransactionChains
       end
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
-        ips.each { |ip| t.edit(ip, user_id: nil) }
+        ips.each do |ip|
+          t.edit(ip, user_id: nil, charged_environment_id: nil)
+        end
       end unless ips.empty?
     end
   end
