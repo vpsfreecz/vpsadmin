@@ -8,6 +8,7 @@ module TransactionChains
     # @option opts [Integer] max_tx
     # @option opts [Integer] max_rx
     # @option opts [User] user
+    # @option opts [Environment] environment
     def link_chain(ip, opts)
       @ip = ip
 
@@ -16,7 +17,16 @@ module TransactionChains
       end
 
       if opts.has_key?(:user) && ip.user != opts[:user]
-        chown(opts[:user])
+        if opts[:user]
+          if opts[:environment].nil?
+            fail 'missing environment'
+          elsif !ip.is_in_environment?(opts[:environment])
+            raise VpsAdmin::API::Exceptions::IpAddressInvalidLocation,
+                  "#{ip} is not available in environment #{opts[:environment].label}"
+          end
+        end
+
+        chown(opts[:user], opts[:environment])
       end
     end
 
@@ -36,15 +46,18 @@ module TransactionChains
       end
     end
 
-    def chown(user)
-      reallocate_user(@ip.user, -1) if @ip.user
-      reallocate_user(user, +1) if user
-      @ip.update!(user: user)
+    def chown(user, env)
+      reallocate_user(@ip.user, @ip.charged_environment, -1) if @ip.user
+      reallocate_user(user, env, +1) if user
+      @ip.update!(
+        user: user,
+        charged_environment: env,
+      )
     end
 
-    def reallocate_user(u, n)
+    def reallocate_user(u, e, n)
       user_env = u.environment_user_configs.find_by!(
-        environment: @ip.network.location.environment,
+        environment: e,
       )
       user_env.reallocate_resource!(
         @ip.cluster_resource,

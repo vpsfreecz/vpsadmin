@@ -1,4 +1,4 @@
--- MySQL dump 10.16  Distrib 10.2.17-MariaDB, for Linux (x86_64)
+-- MySQL dump 10.17  Distrib 10.3.18-MariaDB, for Linux (x86_64)
 --
 -- Host: 192.168.122.10    Database: vpsadmin_core
 -- ------------------------------------------------------
@@ -645,12 +645,14 @@ CREATE TABLE `ip_addresses` (
   `size` decimal(40,0) NOT NULL,
   `network_interface_id` int(11) DEFAULT NULL,
   `route_via_id` int(11) DEFAULT NULL,
+  `charged_environment_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_ip_addresses_on_class_id` (`class_id`) USING BTREE,
   KEY `index_ip_addresses_on_network_id` (`network_id`) USING BTREE,
   KEY `index_ip_addresses_on_user_id` (`user_id`) USING BTREE,
   KEY `index_ip_addresses_on_network_interface_id` (`network_interface_id`),
-  KEY `index_ip_addresses_on_route_via_id` (`route_via_id`)
+  KEY `index_ip_addresses_on_route_via_id` (`route_via_id`),
+  KEY `index_ip_addresses_on_charged_environment_id` (`charged_environment_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -820,6 +822,25 @@ CREATE TABLE `languages` (
   `label` varchar(100) COLLATE utf8_czech_ci NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_languages_on_code` (`code`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `location_networks`
+--
+
+DROP TABLE IF EXISTS `location_networks`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `location_networks` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `location_id` int(11) NOT NULL,
+  `network_id` int(11) NOT NULL,
+  `priority` int(11) NOT NULL DEFAULT '10',
+  `autopick` tinyint(1) NOT NULL DEFAULT '1',
+  `userpick` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_location_networks_on_location_id_and_network_id` (`location_id`,`network_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1086,7 +1107,6 @@ DROP TABLE IF EXISTS `networks`;
 CREATE TABLE `networks` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `label` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
-  `location_id` int(11) NOT NULL,
   `ip_version` int(11) NOT NULL,
   `address` varchar(255) COLLATE utf8_czech_ci NOT NULL,
   `prefix` int(11) NOT NULL,
@@ -1094,10 +1114,9 @@ CREATE TABLE `networks` (
   `managed` tinyint(1) NOT NULL,
   `split_access` int(11) NOT NULL DEFAULT '0',
   `split_prefix` int(11) NOT NULL,
-  `autopick` int(11) NOT NULL DEFAULT '1',
   `purpose` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_networks_on_location_id_and_address_and_prefix` (`location_id`,`address`,`prefix`) USING BTREE,
+  UNIQUE KEY `index_networks_on_address_and_prefix` (`address`,`prefix`),
   KEY `index_networks_on_purpose` (`purpose`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -2311,7 +2330,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-10-21 17:47:43
+-- Dump completed on 2020-03-12 11:03:31
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2571,4 +2590,6 @@ INSERT INTO schema_migrations (version) VALUES ('20190912160159');
 INSERT INTO schema_migrations (version) VALUES ('20190920153359');
 
 INSERT INTO schema_migrations (version) VALUES ('20191021125132');
+
+INSERT INTO schema_migrations (version) VALUES ('20191104081056');
 

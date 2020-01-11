@@ -32,11 +32,15 @@ class NetworkInterface < ActiveRecord::Base
   # @param safe [Boolean]
   # @param host_addrs [Array<::HostIpAddress>] host addresses to assign
   # @param via [HostIpAddress, nil] route via on-interface address
-  def add_route(ip, safe: false, host_addrs: [], via: nil)
+  def add_route(ip, safe: false, host_addrs: [], via: nil, is_user: true)
     ::IpAddress.transaction do
       ip = ::IpAddress.find(ip.id) unless safe
 
-      if ip.network.location_id != vps.node.location_id
+      locnet = ip.network.location_networks.where(
+        location_id: vps.node.location_id,
+      ).take
+
+      if locnet.nil?
         raise VpsAdmin::API::Exceptions::IpAddressInvalidLocation
       end
 
@@ -49,14 +53,21 @@ class NetworkInterface < ActiveRecord::Base
               "#{ip} cannot be assigned to a VPS"
       end
 
-      if !ip.user_id && ::IpAddress.joins(:network).where(
+      if is_user && !ip.user_id && !locnet.userpick
+        raise VpsAdmin::API::Exceptions::IpAddressInvalid,
+              "#{ip} cannot be freely assigned to a VPS"
+      end
+
+      if !ip.user_id && ::IpAddress.joins(network: :location_networks).where(
           user: vps.user,
           network_interface: nil,
           networks: {
-            location_id: vps.node.location_id,
             ip_version: ip.network.ip_version,
             role: ::Network.roles[ip.network.role],
-          }
+          },
+          location_networks: {
+            location_id: vps.node.location_id,
+          },
       ).exists?
         raise VpsAdmin::API::Exceptions::IpAddressNotOwned
       end

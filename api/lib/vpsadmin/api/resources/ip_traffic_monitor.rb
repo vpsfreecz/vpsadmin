@@ -85,14 +85,14 @@ module VpsAdmin::API::Resources
         end
 
         if input[:environment]
-          q = q.joins(ip_address: {network: :location}).where(
+          q = q.joins(ip_address: {network: {location_networks: :location}}).where(
             locations: {environment_id: input[:environment].id}
           )
         end
 
         if input[:location]
-          q = q.joins(ip_address: :network).where(
-            networks: {location_id: input[:location].id}
+          q = q.joins(ip_address: {network: :location_networks}).where(
+            location_networks: {location_id: input[:location].id}
           )
         end
 
