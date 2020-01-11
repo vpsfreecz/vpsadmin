@@ -26,6 +26,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
     input do
       resource VpsAdmin::API::Resources::Location
+      use :common, include: %i(hypervisor_type)
     end
 
     output(:object_list) do
@@ -63,6 +64,10 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
         ).group('hypervisor_type').pluck('hypervisor_type')
 
         q = q.where(hypervisor_type: hypervisor_types)
+      end
+
+      if input[:hypervisor_type]
+        q = q.where(hypervisor_type: input[:hypervisor_type])
       end
 
       q
