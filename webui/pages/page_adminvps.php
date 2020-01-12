@@ -958,6 +958,10 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_td($vps->node->location->environment->label);
 	$xtpl->table_tr();
 
+	$xtpl->table_td(_("Platform").':');
+	$xtpl->table_td(hypervisorTypeToLabel($vps->node->hypervisor_type));
+	$xtpl->table_tr();
+
 	$xtpl->table_td(_("Owner").':');
 	$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$vps->user_id.'">'.$vps->user->login.'</a>');
 	$xtpl->table_tr();

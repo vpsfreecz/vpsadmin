@@ -825,3 +825,14 @@ function getUserEmails($user, $mail_role_recipients, $role) {
 function isExportPublic() {
 	return isAdmin() || EXPORT_PUBLIC;
 }
+
+function hypervisorTypeToLabel($type) {
+	switch ($type) {
+	case 'vpsadminos':
+		return 'vpsAdminOS';
+	case 'openvz':
+		return 'OpenVZ Legacy';
+	default:
+		return 'Unknown';
+	}
+}
