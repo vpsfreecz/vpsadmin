@@ -739,10 +739,18 @@ END
         node = input[:node]
 
       elsif input[:location]
-        node = ::Node.pick_by_location(input[:location], vps.node)
+        node = ::Node.pick_by_location(
+          input[:location],
+          vps.node,
+          vps.os_template.hypervisor_type,
+        )
 
       elsif input[:environment]
-        node = ::Node.pick_by_env(input[:environment], vps.node)
+        node = ::Node.pick_by_env(
+          input[:environment],
+          vps.node,
+          vps.os_template.hypervisor_type,
+        )
 
       else
         error('provide environment, location or node')
