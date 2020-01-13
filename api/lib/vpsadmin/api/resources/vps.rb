@@ -684,6 +684,9 @@ END
       resource VpsAdmin::API::Resources::Node, desc: 'Clone to node', value_label: :name
       resource VpsAdmin::API::Resources::User, desc: 'The owner of the cloned VPS', value_label: :login
       #resource VpsAdmin::API::Resources::VPS, desc: 'Clone into an existing VPS', value_label: :hostname
+      bool :keep_platform, default: true, fill: true,
+          label: 'Keep platform',
+          desc: 'Clone to a node running the same virtualization platform'
       bool :subdatasets, default: true, fill: true
       bool :dataset_plans, default: true, fill: true, label: 'Dataset plans'
       bool :configs, default: true, fill: true
@@ -742,14 +745,14 @@ END
         node = ::Node.pick_by_location(
           input[:location],
           vps.node,
-          vps.os_template.hypervisor_type,
+          input[:keep_platform] ? vps.os_template.hypervisor_type : nil,
         )
 
       elsif input[:environment]
         node = ::Node.pick_by_env(
           input[:environment],
           vps.node,
-          vps.os_template.hypervisor_type,
+          input[:keep_platform] ? vps.os_template.hypervisor_type : nil,
         )
 
       else
