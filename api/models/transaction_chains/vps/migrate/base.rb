@@ -541,7 +541,7 @@ module TransactionChains
       append_t(Transactions::Vps::Features, args: [
         dst_vps,
         to_keep.values + to_create
-      ]) do |t|
+      ], urgent: true) do |t|
         to_remove.each { |f| t.just_destroy(f) }
         to_create.each { |f| t.just_create(f) }
       end
