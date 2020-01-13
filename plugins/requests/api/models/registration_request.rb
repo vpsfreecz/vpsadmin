@@ -69,7 +69,9 @@ class RegistrationRequest < UserRequest
     chain.use_chain(TransactionChains::User::Create, args: [
       new_user,
       params[:create_vps],
-      params[:create_vps] && (params[:node] || ::Node.pick_by_location(location)),
+      params[:create_vps] && (params[:node] || ::Node.pick_by_location(
+        location, nil, os_template.hypervisor_type
+      )),
       os_template,
       params[:activate],
     ])
