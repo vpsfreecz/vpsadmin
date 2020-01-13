@@ -262,7 +262,7 @@ module TransactionChains
       return unless opts[:handle_ips]
 
       if src_node.location == dst_node.location
-        if dst_node.vpsadminos?
+        if src_node.vpsadminos? && dst_node.vpsadminos?
           append(Transactions::Vps::PopulateConfig, args: dst_vps, urgent: true)
         end
 
