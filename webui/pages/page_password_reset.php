@@ -5,6 +5,10 @@ function change_password_form () {
 
 	$xtpl->title(_('Change password'));
 	$xtpl->form_create('?page=password_reset', 'post');
+
+	if (!$_SESSION['user']['password'])
+		$xtpl->form_add_input(_('Current password').':', 'password', '30', 'old_password', '', '', -8);
+
 	$xtpl->form_add_input(_('New password').':', 'password', '30', 'new_password', '', '', -8);
 	$xtpl->form_add_input(_('Repeat new password').':', 'password', '30', 'new_password2', '', '', -8);
 	$xtpl->form_out(_('Save'));
@@ -18,8 +22,13 @@ function update_changed_password () {
 		change_password_form();
 	} else {
 		try {
+			if ($_SESSION['user']['password'])
+				$old_pass = $_SESSION['user']['password'];
+			else
+				$old_pass = $_POST['old_password'];
+
 			$params = [
-				'password' => $_SESSION['user']['password'],
+				'password' => $old_pass,
 				'new_password' => $_POST['new_password'],
 			];
 
