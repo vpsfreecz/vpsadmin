@@ -40,6 +40,9 @@ class UserAccount < ActiveRecord::Base
   # @param user [User]
   # @param income [IncomingPayment]
   def self.accept_payment(user, income)
+    # Cannot handle payments from users with no monthly payment set
+    return if user.user_account.monthly_payment == 0
+
     payment = ::UserPayment.new(
       incoming_payment: income,
       user: user,
