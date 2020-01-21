@@ -101,7 +101,7 @@ module NodeCtld
       keys = %w(rw sync subtree_check root_squash)
 
       keys.each do |v|
-        ret[v] = export[v]
+        ret[v] = export[v] == 1
       end
 
       ret
