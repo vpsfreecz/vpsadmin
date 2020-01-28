@@ -178,6 +178,9 @@ module TransactionChains
       mounts.datasets = datasets
       mounts.remount_mine
 
+      # Wait for routing to remove routes from the original system
+      append(Transactions::Utils::NoOp, args: [find_node_id, sleep: 20], urgent: true)
+
       # Convert internal configuration files to OpenVZ based on distribution
       append(Transactions::Vps::OsToVz, args: [dst_vps, src_vps.os_template], urgent: true)
 
