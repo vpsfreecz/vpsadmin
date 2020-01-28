@@ -10,7 +10,7 @@ module NodeCtld
 
     def rollback
       s = @name || get_confirmed_snapshot_name(Db.new, @snapshot_id)
-      zfs(:destroy, nil, "#{@pool_fs}/#{@dataset_name}@#{s}", [1])
+      zfs(:destroy, nil, "#{@pool_fs}/#{@dataset_name}@#{s}", valid_rcs: [1])
     end
 
     def post_save(db)
