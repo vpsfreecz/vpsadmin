@@ -180,14 +180,16 @@ module VpsAdmin::API
         plan = nil
 
         ::DatasetInPoolPlan.transaction do
+          env_ds_plan = env_dataset_plan(dip)
+
           plan = ::DatasetInPoolPlan.create!(
-            environment_dataset_plan: env_dataset_plan(dip),
+            environment_dataset_plan: env_ds_plan,
             dataset_in_pool: dip
           )
 
           confirmation.just_create(plan) if confirmation
 
-          BlockEnv.new(:add, env_dataset_plan(dip), confirmation).instance_exec(dip, &@block)
+          BlockEnv.new(:add, env_ds_plan, confirmation).instance_exec(dip, &@block)
         end
 
         plan
@@ -195,10 +197,11 @@ module VpsAdmin::API
 
       def unregister(dip, confirmation: nil)
         ::DatasetInPoolPlan.transaction do
-          BlockEnv.new(:del, env_dataset_plan(dip), confirmation).instance_exec(dip, &@block)
+          env_ds_plan = env_dataset_plan(dip)
+          BlockEnv.new(:del, env_ds_plan, confirmation).instance_exec(dip, &@block)
 
           plan = ::DatasetInPoolPlan.find_by!(
-            environment_dataset_plan: env_dataset_plan(dip),
+            environment_dataset_plan: env_ds_plan,
             dataset_in_pool: dip
           )
 
@@ -215,7 +218,7 @@ module VpsAdmin::API
       end
 
       def env_dataset_plan(dip)
-        @env_dataset_plan ||= ::EnvironmentDatasetPlan.find_by!(
+        ::EnvironmentDatasetPlan.find_by!(
           environment: dip.pool.node.location.environment,
           dataset_plan: dataset_plan
         )
