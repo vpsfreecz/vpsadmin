@@ -362,17 +362,12 @@ module TransactionChains
             # or vpsAdminOS && vpsAdminOS), the original IP addresses were
             # transfered to the destination node, so we really have to remove
             # them.
-            #
-            # Host addresses have to removed only on OpenVZ. vpsAdminOS removes
-            # them together with routes below.
-            if src_node.openvz?
-              src_host_addrs.each do |host_addr|
-                append_t(
-                  Transactions::NetworkInterface::DelHostIp,
-                  args: [dst_netif, host_addr]
-                ) do |t|
-                  t.edit(host_addr, order: nil)
-                end
+            src_host_addrs.each do |host_addr|
+              append_t(
+                Transactions::NetworkInterface::DelHostIp,
+                args: [dst_netif, host_addr]
+              ) do |t|
+                t.edit(host_addr, order: nil)
               end
             end
 
