@@ -261,12 +261,11 @@ module TransactionChains
     def migrate_network_interfaces
       return unless opts[:handle_ips]
 
-      if src_node.location == dst_node.location
-        if src_node.vpsadminos? && dst_node.vpsadminos?
-          append(Transactions::Vps::PopulateConfig, args: dst_vps, urgent: true)
-        end
+      if src_node.vpsadminos? && dst_node.vpsadminos?
+        append(Transactions::Vps::PopulateConfig, args: dst_vps, urgent: true)
+      end
 
-      else
+      if src_node.location != dst_node.location
         if src_vps.network_interfaces.count > 1
           fail 'migration of VPS with multiple network interfaces is not implemented'
         end
