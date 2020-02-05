@@ -192,6 +192,7 @@ module TransactionChains
       end
 
       if is_subdataset
+        mnt.vps = @dst_vps
         mnt.dataset_in_pool = dst_dip
 
         if is_snapshot
