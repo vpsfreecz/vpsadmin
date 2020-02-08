@@ -131,7 +131,7 @@ module TransactionChains
       mounts.remount_mine
 
       # Wait for routing to remove routes from the original system
-      append(Transactions::Utils::NoOp, args: [find_node_id, sleep: 20], urgent: true)
+      append(Transactions::Utils::NoOp, args: [find_node_id, sleep: 60], urgent: true)
 
       # Restore VPS state
       call_hooks_for(:pre_start, self, args: [dst_vps, was_running?])
