@@ -26,6 +26,9 @@ module TransactionChains
         args: [src_vps, dst_node, network_interfaces: true],
       )
 
+      # In case of rollback on the target node
+      append(Transactions::Vps::SendRollbackConfig, args: dst_vps)
+
       # Handle dataset resources
       datasets.each do |pair|
         src, dst = pair

@@ -12,7 +12,7 @@ module NodeCtld
     end
 
     def rollback
-      osctl(%i(ct send cancel), @vps_id, {force: true})
+      osctl(%i(ct send cancel), @vps_id, {force: true, local: true})
     end
   end
 end
