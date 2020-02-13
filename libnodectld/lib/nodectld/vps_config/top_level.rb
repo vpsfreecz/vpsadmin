@@ -56,8 +56,8 @@ module NodeCtld
       end
     end
 
-    def destroy
-      backup
+    def destroy(backup: true)
+      self.backup if backup
       File.rename(path, destroyed_path)
     end
 

@@ -29,7 +29,13 @@ module NodeCtld
 
     def rollback
       cfg = VpsConfig.open(@pool_fs, @vps_id)
-      cfg.restore
+
+      if cfg.backup_exist?
+        cfg.restore
+      elsif cfg.exist?
+        cfg.destroy(backup: false)
+      end
+
       ok
     end
   end
