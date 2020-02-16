@@ -31,49 +31,11 @@ module TransactionChains
       ips_arr = ips.to_a
 
       if opts[:reallocate]
-        %i(ipv4 ipv4_private ipv6).each do |r|
-          cnt = case r
-          when :ipv4
-            ips_arr.inject(0) do |sum, ip|
-              if (!ownership || ip.user.nil?) \
-                 && ip.network.role == 'public_access' && ip.network.ip_version == 4
-                sum + ip.size
-
-              else
-                sum
-              end
-            end
-
-          when :ipv4_private
-            ips_arr.inject(0) do |sum, ip|
-              if (!ownership || ip.user.nil?) \
-                 && ip.network.role == 'private_access' && ip.network.ip_version == 4
-                sum + ip.size
-
-              else
-                sum
-              end
-            end
-
-          when :ipv6
-            ips_arr.inject(0) do |sum, ip|
-              if (!ownership || ip.user.nil?) && ip.network.ip_version == 6
-                sum + ip.size
-
-              else
-                sum
-              end
-            end
-          end
-
-          cur = user_env.send(r)
-
-          uses << user_env.reallocate_resource!(
-            r,
-            cur + cnt,
-            user: netif.vps.user
-          ) if cnt != 0
-        end
+        uses = reallocate_resources(
+          netif.vps.user,
+          netif.vps.node.location.environment,
+          ips_arr,
+        )
       end
 
       order = {}
@@ -92,13 +54,21 @@ module TransactionChains
           Transactions::NetworkInterface::AddRoute,
           args: [netif, ip, opts[:register], via: opts[:via]]
         ) do |t|
-          t.edit(
-            ip,
+          route_changes = {
             network_interface_id: netif.id,
             route_via_id: opts[:via] && opts[:via].id,
             order: order[ip.version],
-          )
-          t.edit(ip, user_id: netif.vps.user_id) if ownership && !ip.user_id
+          }
+
+          if ownership && !ip.user_id
+            route_changes[:user_id] = netif.vps.user_id
+          end
+
+          if opts[:reallocate]
+            route_changes[:charged_environment_id] = netif.vps.node.location.environment_id
+          end
+
+          t.edit(ip, route_changes)
 
           t.just_create(
             netif.vps.log(:route_add, {id: ip.id, addr: ip.addr})
@@ -125,6 +95,71 @@ module TransactionChains
       end unless uses.empty?
 
       use_chain(Export::AddHostsToAll, args: [netif.vps.user, ips_arr])
+    end
+
+    protected
+    # @return [Array<::ClusterResourceUse>] changes to resource allocations
+    def reallocate_resources(user, target_env, ips)
+      uses = []
+      changes = {}
+      user_envs = {}
+
+      ips.map do |ip|
+        ip.charged_environment_id || target_env.id
+      end.each do |env_id|
+        user_envs[env_id] ||= user.environment_user_configs.find_by!(
+          environment_id: env_id,
+        )
+      end
+
+      %i(ipv4 ipv4_private ipv6).each do |r|
+        changes = {}
+        user_envs.each_key do |env_id|
+          changes[env_id] ||= {add: 0, drop: 0}
+        end
+
+        recharger = Proc.new do |ip|
+          # If the addresses is charged to a different environment, recharge it
+          if ip.charged_environment_id && ip.charged_environment_id != target_env.id
+            changes[ip.charged_environment_id][:drop] += ip.size
+            changes[target_env.id][:add] += ip.size
+
+          # If the address is not yet charged to target_env, charge it
+          elsif !target_env.user_ip_ownership || ip.user.nil?
+            changes[target_env.id][:add] += ip.size
+          end
+        end
+
+        case r
+        when :ipv4
+          ips.select do |ip|
+            ip.network.role == 'public_access' && ip.network.ip_version == 4
+          end.each(&recharger)
+
+        when :ipv4_private
+          ips.select do |ip|
+            ip.network.role == 'private_access' && ip.network.ip_version == 4
+          end.each(&recharger)
+
+        when :ipv6
+          ips.select { |ip| ip.network.ip_version == 6 }.each(&recharger)
+        end
+
+        changes.each do |env_id, n|
+          user_env = user_envs[env_id]
+          cur = user_env.send(r)
+
+          if n[:add] > 0 || n[:drop] > 0
+            uses << user_env.reallocate_resource!(
+              r,
+              cur + n[:add] - n[:drop],
+              user: user,
+            )
+          end
+        end
+      end
+
+      uses
     end
   end
 end
