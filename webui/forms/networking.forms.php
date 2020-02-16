@@ -52,7 +52,7 @@ function ip_address_list($page) {
 	$params = array(
 		'limit' => get_val('limit', 25),
 		'offset' => get_val('offset', 0),
-		'meta' => array('includes' => 'user,vps,network__location')
+		'meta' => array('includes' => 'user,vps,network')
 	);
 
 	if ($_SESSION['is_admin']) {
@@ -81,7 +81,6 @@ function ip_address_list($page) {
 
 	$ips = $api->ip_address->list($params);
 
-	$xtpl->table_add_category(_("Location"));
 	$xtpl->table_add_category(_("Network"));
 	$xtpl->table_add_category(_("IP address"));
 	$xtpl->table_add_category(_("Size"));
@@ -106,7 +105,6 @@ function ip_address_list($page) {
 		$netif = $ip->network_interface_id ? $ip->network_interface : null;
 		$vps = $netif ? $netif->vps : null;
 
-		$xtpl->table_td($ip->network->location->label);
 		$xtpl->table_td($ip->network->address .'/'. $ip->network->prefix);
 		$xtpl->table_td($ip->addr.'/'.$ip->prefix);
 		$xtpl->table_td(approx_number($ip->size), false, true);
@@ -217,7 +215,7 @@ function host_ip_address_list($page) {
 		'offset' => get_val('offset', 0),
 		'meta' => array(
 			'includes' => 'ip_address__user,ip_address__network_interface__vps,'.
-			              'ip_address__network__location'
+			              'ip_address__network'
 		)
 	);
 
@@ -252,7 +250,6 @@ function host_ip_address_list($page) {
 
 	$host_addrs = $api->host_ip_address->list($params);
 
-	$xtpl->table_add_category(_("Location"));
 	$xtpl->table_add_category(_("Network"));
 	$xtpl->table_add_category(_("Routed address"));
 	$xtpl->table_add_category(_("Host address"));
@@ -273,7 +270,6 @@ function host_ip_address_list($page) {
 		$netif = $ip->network_interface_id ? $ip->network_interface : null;
 		$vps = $netif ? $netif->vps : null;
 
-		$xtpl->table_td($ip->network->location->label);
 		$xtpl->table_td($ip->network->address .'/'. $ip->network->prefix);
 		$xtpl->table_td($ip->addr .'/'. $ip->prefix);
 		$xtpl->table_td($host_addr->addr);
@@ -325,7 +321,7 @@ function host_ip_address_list($page) {
 function route_assign_form($id) {
 	global $xtpl, $api;
 
-	$ip = $api->ip_address->show($id, array('meta' => array('includes' => 'network__location')));
+	$ip = $api->ip_address->show($id, array('meta' => array('includes' => 'network')));
 
 	$xtpl->table_title(_('Route IP address to a VPS'));
 	$xtpl->sbar_add(
@@ -427,7 +423,7 @@ function route_unassign_form($id) {
 	global $xtpl, $api;
 
 	$ip = $api->ip_address->show($id, ['meta' => [
-		'includes' => 'network__location,network_interface__vps'
+		'includes' => 'network,network_interface__vps'
 	]]);
 
 	$xtpl->table_title(_('Remove route from VPS'));
@@ -470,7 +466,7 @@ function hostaddr_assign_form($id) {
 	global $xtpl, $api;
 
 	$addr = $api->host_ip_address->show($id, ['meta' => [
-		'includes' => 'ip_address__network__location',
+		'includes' => 'ip_address__network',
 	]]);
 	$ip = $addr->ip_address;
 
@@ -504,7 +500,7 @@ function hostaddr_unassign_form($id) {
 	global $xtpl, $api;
 
 	$addr = $api->host_ip_address->show($id, ['meta' => [
-		'includes' => 'ip_address__network__location,ip_address__network_interface__vps'
+		'includes' => 'ip_address__network,ip_address__network_interface__vps'
 	]]);
 	$ip = $addr->ip_address;
 
