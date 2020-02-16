@@ -282,9 +282,9 @@ function ip_add_form($ip_addresses = '') {
 function ip_edit_form($id) {
 	global $xtpl, $api;
 
-	$ip = $api->ip_address->show($id, array('meta' => array('includes' => 'network__location')));
+	$ip = $api->ip_address->show($id, array('meta' => array('includes' => 'network')));
 
-	$xtpl->table_title($ip->network->location->label.': '.$ip->addr.'/'.$ip->network->prefix);
+	$xtpl->table_title($ip->addr.'/'.$ip->network->prefix);
 	$xtpl->sbar_add(
 		_("Back"),
 		$_GET['return'] ? $_GET['return'] : '?page=cluster&action=ip_addresses'
