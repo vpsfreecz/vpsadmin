@@ -125,10 +125,10 @@ module VpsAdmind
       r_err, w_err = IO.pipe
 
       if @from_snapshot
-        cmd = "zfs send -c -v -I @#{@from_snapshot} #{path}@#{@snapshot}"
+        cmd = "zfs send -c -v -L -I @#{@from_snapshot} #{path}@#{@snapshot}"
 
       else
-        cmd = "zfs send -c -v #{path}@#{@snapshot}"
+        cmd = "zfs send -c -v -L #{path}@#{@snapshot}"
       end
 
       @pipeline << cmd
