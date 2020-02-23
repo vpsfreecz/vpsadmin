@@ -9,6 +9,7 @@ module NodeCtld
         from_snapshot,
         compressed: true,
         properties: false,
+        large_block: true,
       )
     end
 
