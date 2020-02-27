@@ -564,6 +564,104 @@ switch($_GET["action"]) {
 		$xtpl->sbar_add(_("Back"), '?page=cluster');
 		break;
 
+	case "network_locations":
+		network_locations_list($_GET['network']);
+		$xtpl->sbar_add(_("Back to networks"), '?page=cluster&action=networks');
+		break;
+
+	case "location_networks":
+		location_networks_list($_GET['location']);
+		$xtpl->sbar_add(_("Back to locations"), '?page=cluster&action=locations');
+		break;
+
+	case "location_network_add_nettoloc":
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			csrf_check();
+
+			try {
+				$api->location_network->create([
+					'location' => $_GET['location'],
+					'network' => $_POST['network'],
+					'priority' => $_POST['priority'],
+					'autopick' => isset($_POST['autopick']),
+					'userpick' => isset($_POST['userpick']),
+				]);
+
+				notify_user(_('Network added to location'), '');
+				redirect('?page=cluster&action=location_networks&location='.$_GET['location']);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Create failed'), $e->getResponse());
+				location_network_add_nettoloc_form($_GET['location']);
+			}
+		} else {
+			location_network_add_nettoloc_form($_GET['location']);
+		}
+		break;
+
+	case "location_network_add_loctonet":
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			csrf_check();
+
+			try {
+				$api->location_network->create([
+					'location' => $_POST['location'],
+					'network' => $_GET['network'],
+					'priority' => $_POST['priority'],
+					'autopick' => isset($_POST['autopick']),
+					'userpick' => isset($_POST['userpick']),
+				]);
+
+				notify_user(_('Location added to network'), '');
+				redirect('?page=cluster&action=network_locations&network='.$_GET['network']);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Create failed'), $e->getResponse());
+				location_network_add_loctonet_form($_GET['network']);
+			}
+		} else {
+			location_network_add_loctonet_form($_GET['network']);
+		}
+		break;
+
+	case "location_network_edit":
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			csrf_check();
+
+			try {
+				$api->location_network($_GET['id'])->update([
+					'priority' => $_POST['priority'],
+					'autopick' => isset($_POST['autopick']),
+					'userpick' => isset($_POST['userpick']),
+				]);
+
+				notify_user(_('Changes saved'), '');
+				redirect('?page=cluster&action=location_network_edit&id='.$_GET['id']);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
+				location_network_edit_form($_GET['id']);
+			}
+		} else {
+			location_network_edit_form($_GET['id']);
+		}
+		break;
+
+	case "location_network_del":
+		csrf_check();
+
+		try {
+			$api->location_network($_GET['id'])->delete();
+
+			notify_user(_('Network removed from location'), '');
+			redirect($_GET['return']);
+
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			$xtpl->perex_format_errors(_('Delete failed'), $e->getResponse());
+			redirect($_GET['return']);
+		}
+		break;
+
 	case "ip_addresses":
 		ip_address_list('cluster');
 		$xtpl->sbar_add(_("Back"), '?page=cluster');
@@ -1128,6 +1226,7 @@ if ($list_locations) {
 	$xtpl->table_add_category(_("IPv6"));
 	$xtpl->table_add_category(_("On Boot"));
 	$xtpl->table_add_category(_("Domain"));
+	$xtpl->table_add_category(_("Networks"));
 	$xtpl->table_add_category('<img title="'._("Toggle maintenance on node.").'" alt="'._("Toggle maintenance on node.").'" src="template/icons/maintenance_mode.png">');
 	$xtpl->table_add_category('');
 // 	$xtpl->table_add_category('');
@@ -1158,6 +1257,13 @@ if ($list_locations) {
 			$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
 		}
 		$xtpl->table_td($loc->domain);
+		$xtpl->table_td(
+			'<a href="?page=cluster&action=location_networks&location='.$loc->id.'">'.
+			'<img
+				src="template/icons/vps_ip_list.png"
+				title="'._('List networks available in this location').'">'.
+			'</a>'
+		);
 		$xtpl->table_td(maintenance_lock_icon('location', $loc));
 		$xtpl->table_td('<a href="?page=cluster&action=location_edit&id='.$loc->id.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
 

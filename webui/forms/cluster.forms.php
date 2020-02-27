@@ -192,7 +192,6 @@ function networks_list() {
 
 	$xtpl->table_add_category(_('Network'));
 	$xtpl->table_add_category(_('Label'));
-	$xtpl->table_add_category(_('Location'));
 	$xtpl->table_add_category(_('Type'));
 	$xtpl->table_add_category(_('Managed'));
 	$xtpl->table_add_category(_('Size'));
@@ -201,15 +200,13 @@ function networks_list() {
 	$xtpl->table_add_category(_('Owned'));
 	$xtpl->table_add_category(_('Free'));
 	$xtpl->table_add_category(_('IPs'));
+	$xtpl->table_add_category(_('Locations'));
 
-	$networks = $api->network->list(array(
-		'meta' => array('includes' => 'location')
-	));
+	$networks = $api->network->list();
 
 	foreach ($networks as $n) {
 		$xtpl->table_td($n->address .'/'. $n->prefix);
 		$xtpl->table_td($n->label);
-		$xtpl->table_td($n->location->label);
 		$xtpl->table_td(array(
 			'public_access' => 'Pub',
 			'private_access' => 'Priv',
@@ -231,6 +228,13 @@ function networks_list() {
 				title="'._('List IP addresses in this network').'">',
 			array('network' => $n->id))
 		);
+		$xtpl->table_td(
+			'<a href="?page=cluster&action=network_locations&network='.$n->id.'">'.
+			'<img
+				src="template/icons/vps_ip_list.png"
+				title="'._('List locations this network is available in').'">'.
+			'</a>'
+		);
 		$xtpl->table_tr();
 	}
 
@@ -250,6 +254,158 @@ function ip_list_link($page, $text, $conds) {
 	return $ret;
 }
 
+function network_locations_list($netId) {
+	global $xtpl, $api;
+
+	$net = $api->network->show($netId);
+
+	$xtpl->title(_('Network locations').': '.$net->address.'/'.$net->prefix);
+	$xtpl->sbar_add(
+		_("Add location"),
+		'?page=cluster&action=location_network_add_loctonet&network='.$net->id
+	);
+
+	$xtpl->table_add_category(_('Label'));
+	$xtpl->table_add_category(_('Priority'));
+	$xtpl->table_add_category(_('Autopick'));
+	$xtpl->table_add_category(_('Userpick'));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+
+	$locnets = $api->location_network->list([
+		'network' => $netId,
+		'meta' => ['includes' => 'location'],
+	]);
+
+	foreach ($locnets as $locnet) {
+		$xtpl->table_td($locnet->location->label);
+		$xtpl->table_td($locnet->priority, false, true);
+		$xtpl->table_td(boolean_icon($locnet->autopick));
+		$xtpl->table_td(boolean_icon($locnet->userpick));
+		$xtpl->table_td('<a href="?page=cluster&action=location_network_edit&id='.$locnet->id.'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		$xtpl->table_td('<a href="?page=cluster&action=location_network_del&id='.$locnet->id.'&t='.csrf_token().'&return='.$return_url.'" title="'._("Delete").'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_out();
+}
+
+function location_networks_list($locId) {
+	global $xtpl, $api;
+
+	$loc = $api->location->show($locId);
+
+	$xtpl->title(_('Location networks').': '.$loc->label);
+	$xtpl->sbar_add(
+		_("Add network"),
+		'?page=cluster&action=location_network_add_nettoloc&location='.$loc->id
+	);
+
+	$xtpl->table_add_category(_('Address'));
+	$xtpl->table_add_category(_('Label'));
+	$xtpl->table_add_category(_('Priority'));
+	$xtpl->table_add_category(_('Autopick'));
+	$xtpl->table_add_category(_('Userpick'));
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+
+	$locnets = $api->location_network->list([
+		'location' => $locId,
+		'meta' => ['includes' => 'network'],
+	]);
+
+	$return_url = urlencode($_SERVER['REQUEST_URI']);
+
+	foreach ($locnets as $locnet) {
+		$xtpl->table_td($locnet->network->address.'/'.$locnet->network->prefix);
+		$xtpl->table_td($locnet->network->label);
+		$xtpl->table_td($locnet->priority, false, true);
+		$xtpl->table_td(boolean_icon($locnet->autopick));
+		$xtpl->table_td(boolean_icon($locnet->userpick));
+		$xtpl->table_td('<a href="?page=cluster&action=location_network_edit&id='.$locnet->id.'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		$xtpl->table_td('<a href="?page=cluster&action=location_network_del&id='.$locnet->id.'&t='.csrf_token().'&return='.$return_url.'" title="'._("Delete").'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_out();
+}
+
+function location_network_add_nettoloc_form($locId) {
+	global $xtpl, $api;
+
+	$loc = $api->location->show($locId);
+
+	$xtpl->title(_('Add network to location'));
+
+	$xtpl->form_create(
+		'?page=cluster&action=location_network_add_nettoloc&location='.$loc->id,
+		'post'
+	);
+
+	$input = $api->location_network->create->getParameters('input');
+
+	$xtpl->table_td(_('Location').':');
+	$xtpl->table_td($loc->label);
+	$xtpl->table_tr();
+
+	api_param_to_form('network', $input->network);
+	api_param_to_form('priority', $input->priority);
+	api_param_to_form('autopick', $input->autopick);
+	api_param_to_form('userpick', $input->userpick);
+	$xtpl->form_out(_('Add'));
+}
+
+function location_network_add_loctonet_form($netId) {
+	global $xtpl, $api;
+
+	$net = $api->network->show($netId);
+
+	$xtpl->title(_('Add location to network'));
+
+	$xtpl->form_create(
+		'?page=cluster&action=location_network_add_loctonet&network='.$net->id,
+		'post'
+	);
+
+	$input = $api->location_network->create->getParameters('input');
+
+	$xtpl->table_td(_('Network').':');
+	$xtpl->table_td($net->address.'/'.$net->prefix);
+	$xtpl->table_tr();
+
+	api_param_to_form('location', $input->location);
+	api_param_to_form('priority', $input->priority);
+	api_param_to_form('autopick', $input->autopick);
+	api_param_to_form('userpick', $input->userpick);
+	$xtpl->form_out(_('Add'));
+}
+
+function location_network_edit_form($locnetId) {
+	global $xtpl, $api;
+
+	$locnet = $api->location_network->show($locnetId, [
+		'meta' => ['includes' => 'location,network'],
+	]);
+
+	$xtpl->sbar_add(
+		_("Back to network locations"),
+		'?page=cluster&action=network_locations&network='.$locnet->network_id
+	);
+
+	$xtpl->sbar_add(
+		_("Back to location networks"),
+		'?page=cluster&action=location_networks&location='.$locnet->location_id
+	);
+
+	$xtpl->title(
+		_('Location network').': '.$locnet->location->label.' @ '.
+		$locnet->network->address.'/'.$locnet->network->prefix
+	);
+
+	$xtpl->form_create('?page=cluster&action=location_network_edit&id='.$locnet->id, 'post');
+	api_update_form($locnet);
+	$xtpl->form_out(_('Save'));
+}
 
 function ip_add_form($ip_addresses = '') {
 	global $xtpl, $api;
