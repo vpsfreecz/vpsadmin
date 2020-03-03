@@ -637,6 +637,9 @@ END
                required: true
       bool :replace_ip_addresses, label: 'Replace IP addresses',
           desc: 'When migrating to another location, current IP addresses are replaced by addresses from the new location'
+      bool :transfer_ip_addresses, label: 'Transfer IP addresses',
+          desc: 'If possible, keep IP addresses and recharge them to a different '+
+                'environment or location'
       bool :outage_window, label: 'Outage window',
           desc: 'Migrate the VPS within the nearest outage window',
           default: true
@@ -665,6 +668,9 @@ END
 
       @chain, _ = vps.migrate(input[:node], input)
       ok
+
+    rescue VpsAdmin::API::Exceptions::VpsMigrationError => e
+      error(e.message)
     end
 
     def state_id

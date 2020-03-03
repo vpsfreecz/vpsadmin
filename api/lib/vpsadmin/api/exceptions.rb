@@ -178,4 +178,8 @@ module VpsAdmin::API::Exceptions
   class DatasetAlreadyExported < ::StandardError
 
   end
+
+  class VpsMigrationError < ::StandardError
+
+  end
 end
