@@ -856,7 +856,7 @@ function list_user_resource_packages($user_id) {
 				$xtpl->table_td('<a href="?page=adminm&action=resource_packages_edit&id='.$user_id.'&pkg='.$pkg->id.'"><img src="template/icons/m_edit.png"  title="'._("Edit").'"></a>');
 
 				if ($pkg->is_personal) {
-					$xtpl->table_td('<a href="?page=cluster&action=resource_packages_edit&id='.$pkg->id.'"><img src="template/icons/tool.png"  title="'._("Configure resources").'"></a>');
+					$xtpl->table_td('<a href="?page=cluster&action=resource_packages_edit&id='.$pkg->cluster_resource_package_id.'"><img src="template/icons/tool.png"  title="'._("Configure resources").'"></a>');
 				} else {
 					$xtpl->table_td('<a href="?page=adminm&action=resource_packages_delete&id='.$user_id.'&pkg='.$pkg->id.'"><img src="template/icons/delete.png"  title="'._("Delete").'"></a>');
 				}
