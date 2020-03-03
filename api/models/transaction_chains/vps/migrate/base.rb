@@ -38,6 +38,7 @@ module TransactionChains
     def setup(vps, dst_node, opts)
       @opts = set_hash_opts(opts, {
         replace_ips: false,
+        transfer_ips: false,
         resources: nil,
         handle_ips: true,
         reallocate_ips: true,
@@ -265,11 +266,29 @@ module TransactionChains
         append(Transactions::Vps::PopulateConfig, args: dst_vps, urgent: true)
       end
 
-      if src_node.location != dst_node.location
-        if src_vps.network_interfaces.count > 1
-          fail 'migration of VPS with multiple network interfaces is not implemented'
+      if src_vps.network_interfaces.count > 1
+        raise VpsAdmin::API::Exceptions::VpsMigrationError,
+              'migration of VPS with multiple network interfaces is not implemented'
+      end
+
+      if opts[:transfer_ips]
+        if src_node.location_id == dst.location_id
+          raise VpsAdmin::API::Exceptions::VpsMigrationError,
+                'cannot transfer IP addresses within the same location'
+        elsif src_node.location.environment_id == dst_node.location.environment_id
+          raise VpsAdmin::API::Exceptions::VpsMigrationError,
+                'cannot transfer IP addresses within the same environment'
         end
 
+        src_vps.network_interfaces.each do |netif|
+          recharge_ip_addresses(
+            dst_vps.user,
+            netif.ip_addresses.to_a,
+            src_node.location,
+            dst_node.location,
+          )
+        end
+      elsif src_node.location != dst_node.location
         src_vps.network_interfaces.each do |netif|
           migrate_ip_addresses(netif)
         end
@@ -488,6 +507,56 @@ module TransactionChains
       ret
     end
 
+    # If all ips are available in both locations and the locations are in
+    # different environments, free all addresses in the source environment
+    # and charge them in the target environment.
+    def recharge_ip_addresses(user, ips, src_loc, dst_loc)
+      changes = {}
+
+      # Check that all addresses are available in both locations
+      ips.each do |ip|
+        if !ip.is_in_environment(dst_loc.environment)
+          raise VpsAdmin::API::Exceptions::VpsMigrationError,
+                "IP #{ip} is not available in the target environment "+
+                "(#{dst_loc.environment.label})"
+        end
+      end
+
+      src_user_env = user.environment_user_configs.find_by!(
+        environment: src_loc.environment,
+      )
+      dst_user_env = user.environment_user_configs.find_by!(
+        environment: dst_loc.environment,
+      )
+
+      %i(ipv4 ipv4_private ipv6).each do |r|
+        # Free addresses from src env
+        src_use = src_user_env.reallocate_resource!(
+          r,
+          src_user_env.send(r) - filter_sum_ip_addresses(ips, r),
+          user: user,
+          confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+        )
+
+        # Allocate in dst env
+        dst_use = dst_user_env.reallocate_resource!(
+          r,
+          dst_user_env.send(r) + filter_sum_ip_addresses(ips, r),
+          user: user,
+          confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+        )
+
+        changes[src_use] = {value: src_use.value}
+        changes[dst_use] = {value: dst_use.value}
+      end
+
+      if changes.any?
+        append_t(Transaction::Utils::NoOp, args: find_node_id) do |t|
+          changes.each { |obj, change| t.edit(obj, change) }
+        end
+      end
+    end
+
     def filter_ip_addresses(ips, r)
       case r
       when :ipv4
@@ -503,6 +572,10 @@ module TransactionChains
       when :ipv6
         ips.select { |ip| ip.network.ip_version == 6 }
       end
+    end
+
+    def filter_sum_ip_addresses(ips, r)
+      filter_ip_addresses(ips, r).inject(0) { |acc, ip| acc + ip.size }
     end
 
     def migrate_features

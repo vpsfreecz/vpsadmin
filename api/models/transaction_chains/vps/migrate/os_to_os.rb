@@ -140,9 +140,13 @@ module TransactionChains
         use_chain(Vps::ShaperUnset, args: src_vps, urgent: true)
       end
 
-      # Is is needed to register IP in fw and shaper when changing location,
-      # as IPs are removed or replaced sooner.
-      unless location_changed?
+      # It is needed to register IP in fw and shaper when either staying
+      # in the same location or when the addresses are just recharged to a new
+      # env, but otherwise are untouched by {migrate_network_interfaces}.
+      #
+      # {migrate_network_interfaces} was already called, so here we don't have
+      # to check if it is valid to recharge IP addresses.
+      if !location_changed? || opts[:transfer_ips]
         # Register to firewall and set shaper on destination node
         use_chain(Vps::FirewallRegister, args: [dst_vps, dst_ip_addresses], urgent: true)
         use_chain(Vps::ShaperSet, args: [dst_vps, dst_ip_addresses], urgent: true)
