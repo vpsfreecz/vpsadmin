@@ -487,7 +487,7 @@ module TransactionChains
 
         src_use = src_user_env.reallocate_resource!(
           r,
-          src_user_env.send(r) - filter_ip_addresses(standalone_ips, r).count,
+          src_user_env.send(r) - filter_sum_ip_addresses(standalone_ips, r),
           user: user,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed),
         )
@@ -495,7 +495,7 @@ module TransactionChains
         # Allocate all _new_ IP addresses
         dst_use = dst_user_env.reallocate_resource!(
           r,
-          dst_user_env.send(r) + filter_ip_addresses(new_ips, r).count,
+          dst_user_env.send(r) + filter_sum_ip_addresses(new_ips, r),
           user: user,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed),
         )
