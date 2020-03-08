@@ -243,6 +243,7 @@ module Transactions
   module Mail             ; end
   module Network          ; end
   module OutageWindow     ; end
+  module Pool             ; end
   module Queue            ; end
   module UserNamespace    ; end
   module NetworkInterface ; end
