@@ -537,6 +537,7 @@ switch ($_GET["action"]) {
 				$vps->migrate(array(
 					'node' => $_POST['node'],
 					'replace_ip_addresses' => isset($_POST['replace_ip_addresses']),
+					'transfer_ip_addresses' => isset($_POST['transfer_ip_addresses']),
 					'outage_window' => isset($_POST['outage_window']),
 					'cleanup_data' => isset($_POST['cleanup_data']),
 					'send_mail' => isset($_POST['send_mail']),
