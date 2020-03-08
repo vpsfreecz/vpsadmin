@@ -8,6 +8,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
   params(:common) do
     string :label, desc: 'Environment label'
+    string :description, desc: 'Environment description'
     string :domain, desc: 'Environment FQDN, should be subject\'s root domain'
     bool :can_create_vps, label: 'Can create a VPS', default: false
     bool :can_destroy_vps, label: 'Can destroy a VPS', default: false

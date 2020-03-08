@@ -461,6 +461,7 @@ CREATE TABLE `environments` (
   `vps_lifetime` int(11) NOT NULL DEFAULT '0',
   `max_vps_count` int(11) NOT NULL DEFAULT '1',
   `user_ip_ownership` tinyint(1) NOT NULL,
+  `description` text COLLATE utf8_czech_ci,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -863,6 +864,7 @@ CREATE TABLE `locations` (
   `maintenance_lock` int(11) NOT NULL DEFAULT '0',
   `maintenance_lock_reason` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
   `environment_id` int(11) NOT NULL,
+  `description` text COLLATE utf8_czech_ci,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -2331,7 +2333,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-03-12 11:04:13
+-- Dump completed on 2020-03-12 11:04:40
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2595,4 +2597,6 @@ INSERT INTO schema_migrations (version) VALUES ('20191021125132');
 INSERT INTO schema_migrations (version) VALUES ('20191104081056');
 
 INSERT INTO schema_migrations (version) VALUES ('20200307143441');
+
+INSERT INTO schema_migrations (version) VALUES ('20200308161901');
 

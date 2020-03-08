@@ -8,6 +8,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
   params(:common) do
     string :label, label: 'Label', desc: 'Location label'
+    string :description, label: 'Description', desc: 'Location description'
     bool :has_ipv6, label: 'Has IPv6', desc: 'True if location has IPv6 addresses'
     bool :vps_onboot, label: 'VPS onboot', desc: 'Start all VPSes in this location on boot?'
     string :remote_console_server, label: 'Remote console server',
