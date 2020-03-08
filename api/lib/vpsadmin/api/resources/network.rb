@@ -177,6 +177,7 @@ module VpsAdmin::API::Resources
           min: 1,
         }
         resource User, desc: 'Owner of new IP addresses'
+        resource Environment, desc: 'Environment to which the addresses are charged'
       end
 
       output(:hash) do
@@ -194,7 +195,13 @@ module VpsAdmin::API::Resources
           error('this action can be used only on managed networks')
         end
 
-        {count: net.add_ips(input[:count], user: input[:user]).count}
+        {
+          count: net.add_ips(
+            input[:count],
+            user: input[:user],
+            environment: input[:environment],
+          ).count,
+        }
 
       rescue ActiveRecord::RecordInvalid => e
         error('add failed', e.record.errors.to_hash)

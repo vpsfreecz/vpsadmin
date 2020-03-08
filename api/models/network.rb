@@ -79,6 +79,7 @@ class Network < ActiveRecord::Base
   # @param n [Integer] number of IP addresses to add
   # @param opts [Hash] options
   # @option opts [::User] user owner
+  # @option opts [::Environment] environment where to charge the addresses
   # @option opts [Boolean] lock
   def add_ips(n, opts = {})
     acquire_lock(self) if opts[:lock].nil? || opts[:lock]
@@ -102,9 +103,14 @@ class Network < ActiveRecord::Base
         break if ips.count == n
       end
 
-      if opts[:user]
+      if opts[:user] && opts[:environment]
+        unless is_in_environment?(opts[:environment])
+          fail "network #{self} (##{id}) not available in environment "+
+               "#{opts[:environment].label} (##{opts[:environment].id})"
+        end
+
         user_env = opts[:user].environment_user_configs.find_by!(
-          environment: location.environment,
+          environment: opts[:environment],
         )
 
         user_env.reallocate_resource!(
@@ -121,6 +127,13 @@ class Network < ActiveRecord::Base
 
   ensure
     release_lock(self) if opts[:lock].nil? || opts[:lock]
+  end
+
+  # @param env [Environment]
+  def is_in_environment?(env)
+    location_networks.joins(:location).where(
+      locations: {environment_id: env.id},
+    ).any?
   end
 
   protected
