@@ -11,7 +11,7 @@ module NodeCtld
         ensure_ds("#{@pool_fs}/#{path_to_pool_working_dir(s)}")
       end
 
-      vps_config = File.join('/', @pool_fs, path_to_pool_working_dir(:config), 'config')
+      vps_config = File.join('/', @pool_fs, path_to_pool_working_dir(:config), 'vps')
       Dir.mkdir(vps_config) unless Dir.exist?(vps_config)
 
       ok
