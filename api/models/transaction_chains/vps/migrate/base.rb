@@ -370,6 +370,7 @@ module TransactionChains
           remove_confirmation = Proc.new do |t|
             t.edit(src_ip, network_interface_id: nil)
             t.edit(src_ip, user_id: nil) if src_ip.user_id
+            t.edit(src_ip, charged_environment_id: nil)
 
             src_host_addrs.each do |host_addr|
               t.edit(host_addr, order: nil)
@@ -413,7 +414,12 @@ module TransactionChains
             args: [dst_netif, dst_ip],
             urgent: true,
           ) do |t|
-            t.edit(dst_ip, network_interface_id: dst_netif.id, order: src_ip.order)
+            t.edit(
+              dst_ip,
+              network_interface_id: dst_netif.id,
+              order: src_ip.order,
+              charged_environment_id: dst_node.location.environment_id,
+            )
 
             if !dst_ip.user_id && dst_node.location.environment.user_ip_ownership
               t.edit(dst_ip, user_id: dst_vps.user_id)
