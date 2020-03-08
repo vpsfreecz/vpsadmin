@@ -272,7 +272,7 @@ module TransactionChains
       end
 
       if opts[:transfer_ips]
-        if src_node.location_id == dst.location_id
+        if src_node.location_id == dst_node.location_id
           raise VpsAdmin::API::Exceptions::VpsMigrationError,
                 'cannot transfer IP addresses within the same location'
         elsif src_node.location.environment_id == dst_node.location.environment_id
@@ -515,7 +515,7 @@ module TransactionChains
 
       # Check that all addresses are available in both locations
       ips.each do |ip|
-        if !ip.is_in_environment(dst_loc.environment)
+        if !ip.is_in_environment?(dst_loc.environment)
           raise VpsAdmin::API::Exceptions::VpsMigrationError,
                 "IP #{ip} is not available in the target environment "+
                 "(#{dst_loc.environment.label})"
@@ -551,8 +551,12 @@ module TransactionChains
       end
 
       if changes.any?
-        append_t(Transaction::Utils::NoOp, args: find_node_id) do |t|
+        append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
           changes.each { |obj, change| t.edit(obj, change) }
+
+          ips.each do |ip|
+            t.edit(ip, charged_environment_id: dst_loc.environment_id)
+          end
         end
       end
     end
