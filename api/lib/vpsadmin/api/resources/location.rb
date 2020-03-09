@@ -44,7 +44,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      output whitelist: %i(id label environment remote_console_server)
+      output whitelist: %i(id label description environment remote_console_server)
       allow
     end
 
@@ -165,7 +165,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      restrict whitelist: %i(id label environment remote_console_server)
+      restrict whitelist: %i(id label description environment remote_console_server)
       allow
     end
 

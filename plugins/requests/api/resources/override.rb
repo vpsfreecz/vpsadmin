@@ -4,9 +4,9 @@ module VpsAdmin::API::Resources
     allow if u && u.role == :admin
 
     if u
-      output whitelist: %i(id label environment remote_console_server)
+      output whitelist: %i(id label description environment remote_console_server)
     else
-      output whitelist: %i(id label environment)
+      output whitelist: %i(id label description environment)
     end
 
     allow
