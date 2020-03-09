@@ -345,7 +345,7 @@ function export_host_add_form($export_id) {
 
 	$addr_filters = [
 		'version' => 4,
-		'assigned' => true,
+		'assigned_to_interface' => true,
 		'limit' => 50,
 		'meta' => ['includes' => 'network_interface__vps'],
 	];
