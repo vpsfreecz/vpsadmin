@@ -1224,6 +1224,9 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_title(_('Distribution'));
 		$xtpl->form_create('?page=adminvps&action=reinstall&veid='.$vps->id, 'post');
 		$xtpl->form_add_select(_("Distribution").':', 'os_template', list_templates($vps), $vps->os_template_id,  '');
+		$xtpl->table_td(_('Info').':');
+		$xtpl->table_td($vps->os_template->info);
+		$xtpl->table_tr();
 		$xtpl->form_add_radio(_("Update information").':', 'reinstall_action', '1', true, $hint = _("Use if you have upgraded your system"));
 		$xtpl->table_tr();
 		$xtpl->form_add_radio(_("Reinstall").':', 'reinstall_action', '2', false, $hint = _("Install base system again"));
