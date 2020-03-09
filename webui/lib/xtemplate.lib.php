@@ -651,6 +651,19 @@ class XTemplate {
 		$this->form_csrf('common', $csrf);
 	}
 	/**
+	 * Add a set of hidden fields
+	 * @param $keyvals array of field names and values
+	 */
+	function form_set_hidden_fields($keyvals) {
+		$str = '';
+
+		foreach ($keyvals as $k => $v) {
+			$str .= '<input type="hidden" name="'.$k.'" value="'.h($v).'">';
+		}
+
+		$this->assign('FORM_HIDDEN_FIELDS', $str);
+	}
+	/**
 	  * Add input to form
 	  * @param $label - label of textarea
 	  * @param $type - type of HTML input
