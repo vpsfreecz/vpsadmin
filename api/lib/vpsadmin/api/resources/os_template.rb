@@ -67,7 +67,9 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
       end
 
       if input[:hypervisor_type]
-        q = q.where(hypervisor_type: input[:hypervisor_type])
+        q = q.where(
+          hypervisor_type: ::OsTemplate.hypervisor_types[input[:hypervisor_type]],
+        )
       end
 
       q
