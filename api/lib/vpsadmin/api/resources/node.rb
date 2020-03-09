@@ -66,7 +66,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       resource VpsAdmin::API::Resources::Location, label: 'Location',
                desc: 'Location node is placed in'
       resource VpsAdmin::API::Resources::Environment, label: 'Environment'
-      use :common, include: %i(type)
+      use :common, include: %i(type hypervisor_type)
     end
 
     output(:object_list) do
@@ -105,6 +105,12 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       end
 
       q = q.where(role: input[:type]) if input[:type]
+
+      if input[:hypervisor_type]
+        q = q.where(
+          hypervisor_type: ::Node.hypervisor_types[input[:hypervisor_type]],
+        )
+      end
 
       q
     end
