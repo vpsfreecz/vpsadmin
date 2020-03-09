@@ -96,6 +96,14 @@ function format_available_resources($user, $environment) {
 function print_newvps_page2($user_id, $platform) {
 	global $xtpl, $api;
 
+	if (!$platform) {
+		notify_user(
+			_('Invalid platform'),
+			_('Please select the desired platform.')
+		);
+		redirect('?page=adminvps&action=new-step-1');
+	}
+
 	$xtpl->title(_("Create a VPS: Select a location (2/5)"));
 	$xtpl->sbar_add(
 		_('Back to platform selection'),
@@ -167,6 +175,14 @@ function print_newvps_page2($user_id, $platform) {
 function print_newvps_page3($user_id, $platform, $loc_id) {
 	global $xtpl, $api;
 
+	if (!$platform) {
+		notify_user(
+			_('Invalid platform'),
+			_('Please select the desired platform.')
+		);
+		redirect('?page=adminvps&action=new-step-1');
+	}
+
 	$xtpl->title(_("Create a VPS: Select distribution (3/5)"));
 	$xtpl->sbar_add(
 		_('Back to location selection'),
@@ -184,7 +200,7 @@ function print_newvps_page3($user_id, $platform, $loc_id) {
 			_('Invalid location'),
 			_('Please select the desired location for your new VPS.')
 		);
-		redirect('?page=adminvps&action=new-step-2');
+		redirect('?page=adminvps&action=new-step-2&platform='.$platform);
 	}
 
 	$xtpl->table_title(_('Configuration'));
@@ -248,6 +264,14 @@ function print_newvps_page3($user_id, $platform, $loc_id) {
 function print_newvps_page4($user_id, $platform, $loc_id, $tpl_id) {
 	global $xtpl, $api;
 
+	if (!$platform) {
+		notify_user(
+			_('Invalid platform'),
+			_('Please select the desired platform.')
+		);
+		redirect('?page=adminvps&action=new-step-1');
+	}
+
 	$xtpl->title(_("Create a VPS: Specify parameters (4/5)"));
 	$xtpl->sbar_add(
 		_('Back to distribution selection'),
@@ -265,7 +289,7 @@ function print_newvps_page4($user_id, $platform, $loc_id, $tpl_id) {
 			_('Invalid location'),
 			_('Please select the desired location for your new VPS.')
 		);
-		redirect('?page=adminvps&action=new-step-2');
+		redirect('?page=adminvps&action=new-step-2&platform='.$platform);
 	}
 
 	try {
@@ -275,7 +299,7 @@ function print_newvps_page4($user_id, $platform, $loc_id, $tpl_id) {
 		notify_user(
 			_('Invalid distribution'),
 			_('Please select the desired distribution of your new VPS.'));
-		redirect('?page=adminvps&action=new-step-3');
+		redirect('?page=adminvps&action=new-step-3&platform='.$platform.'&location='.$loc_id);
 	}
 
 	$xtpl->table_title(_('Configuration'));
@@ -423,6 +447,14 @@ function build_resource_uri_params() {
 function print_newvps_page5($user_id, $platform, $loc_id, $tpl_id) {
 	global $xtpl, $api;
 
+	if (!$platform) {
+		notify_user(
+			_('Invalid platform'),
+			_('Please select the desired platform.')
+		);
+		redirect('?page=adminvps&action=new-step-1');
+	}
+
 	$xtpl->title(_("Create a VPS: Final touches (5/5)"));
 	$xtpl->sbar_add(
 		_('Back to parameters'),
@@ -440,7 +472,7 @@ function print_newvps_page5($user_id, $platform, $loc_id, $tpl_id) {
 			_('Invalid location'),
 			_('Please select the desired location for your new VPS.')
 		);
-		redirect('?page=adminvps&action=new-step-2');
+		redirect('?page=adminvps&action=new-step-2&platform='.$platform);
 	}
 
 	try {
@@ -450,7 +482,7 @@ function print_newvps_page5($user_id, $platform, $loc_id, $tpl_id) {
 		notify_user(
 			_('Invalid distribution'),
 			_('Please select the desired distribution of your new VPS.'));
-		redirect('?page=adminvps&action=new-step-3');
+		redirect('?page=adminvps&action=new-step-3&platform='.$platform.'&location='.$loc_id);
 	}
 
 	$xtpl->table_title(_('Configuration'));
