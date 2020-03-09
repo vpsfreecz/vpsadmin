@@ -2210,6 +2210,25 @@ CREATE TABLE `vps_has_configs` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `vps_maintenance_windows`
+--
+
+DROP TABLE IF EXISTS `vps_maintenance_windows`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `vps_maintenance_windows` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `vps_id` int(11) NOT NULL,
+  `weekday` int(11) NOT NULL,
+  `is_open` tinyint(1) NOT NULL,
+  `opens_at` int(11) DEFAULT NULL,
+  `closes_at` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_vps_maintenance_windows_on_vps_id_and_weekday` (`vps_id`,`weekday`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `vps_migrations`
 --
 
@@ -2231,25 +2250,6 @@ CREATE TABLE `vps_migrations` (
   `cleanup_data` tinyint(1) DEFAULT '1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `vps_migrations_unique` (`migration_plan_id`,`vps_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vps_outage_windows`
---
-
-DROP TABLE IF EXISTS `vps_outage_windows`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `vps_outage_windows` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `vps_id` int(11) NOT NULL,
-  `weekday` int(11) NOT NULL,
-  `is_open` tinyint(1) NOT NULL,
-  `opens_at` int(11) DEFAULT NULL,
-  `closes_at` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `index_vps_outage_windows_on_vps_id_and_weekday` (`vps_id`,`weekday`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -2333,7 +2333,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-03-12 11:04:40
+-- Dump completed on 2020-03-12 11:05:05
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2599,4 +2599,6 @@ INSERT INTO schema_migrations (version) VALUES ('20191104081056');
 INSERT INTO schema_migrations (version) VALUES ('20200307143441');
 
 INSERT INTO schema_migrations (version) VALUES ('20200308161901');
+
+INSERT INTO schema_migrations (version) VALUES ('20200309160016');
 

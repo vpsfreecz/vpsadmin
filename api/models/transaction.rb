@@ -242,7 +242,7 @@ module Transactions
   module Hypervisor       ; end
   module Mail             ; end
   module Network          ; end
-  module OutageWindow     ; end
+  module Maintenanceindow ; end
   module Pool             ; end
   module Queue            ; end
   module UserNamespace    ; end

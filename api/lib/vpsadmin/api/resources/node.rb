@@ -364,7 +364,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
           label: 'Target node', required: true
       bool :stop_on_error, label: 'Stop on error', default: true,
           fill: true
-      bool :outage_window, desc: 'Run migrations in every VPS\'s outage window',
+      bool :maintenance_window, desc: 'Run migrations in every VPS\'s maintenance window',
           default: true, fill: true
       integer :concurrency, desc: 'How many migrations run concurrently', default: 1, fill: true
       bool :cleanup_data, default: true

@@ -286,7 +286,7 @@ class MailTemplate < ActiveRecord::Base
     vps: ::Vps,
     src_node: ::Node,
     dst_node: ::Node,
-    outage_window: ::Boolean,
+    maintenance_window: ::Boolean,
     reason: String,
   }, roles: %i(admin), public: true
 
@@ -294,7 +294,7 @@ class MailTemplate < ActiveRecord::Base
     vps: ::Vps,
     src_node: ::Node,
     dst_node: ::Node,
-    outage_window: ::Boolean,
+    maintenance_window: ::Boolean,
     reason: String,
   }, roles: %i(admin), public: true
 

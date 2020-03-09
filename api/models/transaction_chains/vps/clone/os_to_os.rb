@@ -76,10 +76,10 @@ module TransactionChains
         )
       end
 
-      # Outage windows
+      # Maintenance windows
       # FIXME: user could choose if he wants to clone it
-      vps.vps_outage_windows.each do |w|
-        w = VpsOutageWindow.new(
+      vps.vps_maintenance_windows.each do |w|
+        w = VpsMaintenanceWindow.new(
           vps: dst_vps,
           weekday: w.weekday,
           is_open: w.is_open,

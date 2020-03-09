@@ -1,6 +1,6 @@
-module Transactions::OutageWindow
+module Transactions::MaintenanceWindow
   class Wait < ::Transaction
-    t_name :outage_window_wait
+    t_name :maintenance_window_wait
     t_type 2101
     queue :outage
 
@@ -12,7 +12,7 @@ module Transactions::OutageWindow
 
       windows = []
 
-      vps.vps_outage_windows.where(is_open: true).order('weekday').each do |w|
+      vps.vps_maintenance_windows.where(is_open: true).order('weekday').each do |w|
         windows << {
           weekday: w.weekday,
           opens_at: w.opens_at,

@@ -49,24 +49,24 @@ module TransactionChains
       end
 
       # Transfer datasets
-      unless @opts[:outage_window]
+      unless @opts[:maintenance_window]
         # Reserve a slot in zfs_send queue
         append(Transactions::Queue::Reserve, args: [src_node, :zfs_send])
       end
 
       append(Transactions::Vps::SendRootfs, args: [src_vps])
 
-      if @opts[:outage_window]
+      if @opts[:maintenance_window]
         # Wait for the outage window to open
-        append(Transactions::OutageWindow::Wait, args: [src_vps, 15])
+        append(Transactions::MaintenanceWindow::Wait, args: [src_vps, 15])
         append(Transactions::Queue::Reserve, args: [src_node, :zfs_send])
-        append(Transactions::OutageWindow::InOrFail, args: [src_vps, 15])
+        append(Transactions::MaintenanceWindow::InOrFail, args: [src_vps, 15])
 
         append(Transactions::Vps::SendSync, args: [src_vps], urgent: true)
 
         # Check if we're still inside the outage window. We're in if the window
         # closes in not less than 5 minutes. Fail if not.
-        append(Transactions::OutageWindow::InOrFail, args: [src_vps, 5], urgent: true)
+        append(Transactions::MaintenanceWindow::InOrFail, args: [src_vps, 5], urgent: true)
       end
 
       # Stop the VPS

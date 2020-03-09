@@ -22,7 +22,7 @@ module TransactionChains
     # @option opts [Hash] resources (nil)
     # @option opts [Boolean] handle_ips (true)
     # @option opts [Boolean] reallocate_ips (true)
-    # @option opts [Boolean] outage_window (true)
+    # @option opts [Boolean] maintenance_window (true)
     # @option opts [Boolean] send_mail (true)
     # @option opts [String] reason (nil)
     # @option opts [Boolean] cleanup_data (true) destroy datasets on the source node
@@ -42,7 +42,7 @@ module TransactionChains
         resources: nil,
         handle_ips: true,
         reallocate_ips: true,
-        outage_window: true,
+        maintenance_window: true,
         send_mail: true,
         reason: nil,
         cleanup_data: true,
@@ -122,7 +122,7 @@ module TransactionChains
           vps: src_vps,
           src_node: src_vps.node,
           dst_node: dst_vps.node,
-          outage_window: opts[:outage_window],
+          maintenance_window: opts[:maintenance_window],
           reason: opts[:reason],
         }
       }) if opts[:send_mail] && user.mailer_enabled
@@ -135,7 +135,7 @@ module TransactionChains
           vps: src_vps,
           src_node: src_vps.node,
           dst_node: dst_vps.node,
-          outage_window: opts[:outage_window],
+          maintenance_window: opts[:maintenance_window],
           reason: opts[:reason],
         }
       }) if opts[:send_mail] && user.mailer_enabled

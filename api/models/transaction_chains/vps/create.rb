@@ -68,9 +68,9 @@ module TransactionChains
           just_create(::VpsFeature.create!(vps: vps, name: name, enabled: false))
         end
 
-        # Outage windows
+        # Maintenance windows
         7.times do |i|
-          w = VpsOutageWindow.new(
+          w = VpsMaintenanceWindow.new(
             vps: vps,
             weekday: i,
             is_open: true,

@@ -640,8 +640,8 @@ END
       bool :transfer_ip_addresses, label: 'Transfer IP addresses',
           desc: 'If possible, keep IP addresses and recharge them to a different '+
                 'environment or location'
-      bool :outage_window, label: 'Outage window',
-          desc: 'Migrate the VPS within the nearest outage window',
+      bool :maintenance_window, label: 'Maintenance window',
+          desc: 'Migrate the VPS within the nearest maintenance window',
           default: true
       bool :cleanup_data, label: 'Cleanup data',
           desc: 'Remove VPS dataset from the source node',
@@ -1296,10 +1296,10 @@ END
     end
   end
 
-  class OutageWindow < HaveAPI::Resource
-    route '{vps_id}/outage_windows'
-    model ::VpsOutageWindow
-    desc 'Manage VPS outage windows'
+  class MaintenanceWindow < HaveAPI::Resource
+    route '{vps_id}/maintenance_windows'
+    model ::VpsMaintenanceWindow
+    desc 'Manage VPS maintenance windows'
 
     params(:editable) do
       bool :is_open
@@ -1313,7 +1313,7 @@ END
     end
 
     class Index < HaveAPI::Actions::Default::Index
-      desc 'List outage windows'
+      desc 'List maintenance windows'
 
       output(:object_list) do
         use :all
@@ -1327,7 +1327,7 @@ END
 
       def query
         vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
-        vps.vps_outage_windows
+        vps.vps_maintenance_windows
       end
 
       def count
@@ -1340,7 +1340,7 @@ END
     end
 
     class Show < HaveAPI::Actions::Default::Show
-      desc 'Show outage window'
+      desc 'Show maintenance window'
       resolve ->(w) { [w.vps_id, w.id] }
 
       output do
@@ -1355,7 +1355,7 @@ END
 
       def prepare
         vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
-        @window = vps.vps_outage_windows.find_by!(weekday: params[:outage_window_id])
+        @window = vps.vps_maintenance_windows.find_by!(weekday: params[:maintenance_window_id])
       end
 
       def exec
@@ -1364,7 +1364,7 @@ END
     end
 
     class Update < HaveAPI::Actions::Default::Update
-      desc 'Resize outage window'
+      desc 'Resize maintenance window'
 
       input do
         use :editable
@@ -1383,7 +1383,7 @@ END
       def exec
         vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
-        window = vps.vps_outage_windows.find_by!(weekday: params[:outage_window_id])
+        window = vps.vps_maintenance_windows.find_by!(weekday: params[:maintenance_window_id])
 
         if input.empty?
           error('provide parameters to change')
@@ -1395,7 +1395,7 @@ END
         end
 
         window.update!(input)
-        vps.log(:outage_window, {
+        vps.log(:maintenance_window, {
           weekday: window.weekday,
           is_open: window.is_open,
           opens_at: window.opens_at,
@@ -1409,7 +1409,7 @@ END
     end
 
     class UpdateAll < HaveAPI::Action
-      desc 'Update outage windows for all week days at once'
+      desc 'Update maintenance windows for all week days at once'
       http_method :put
       route ''
 
@@ -1443,7 +1443,7 @@ END
         ::Vps.transaction do
           data = []
 
-          vps.vps_outage_windows.each do |w|
+          vps.vps_maintenance_windows.each do |w|
             w.update!(input)
             data << {
               weekday: w.weekday,
@@ -1453,10 +1453,10 @@ END
             }
           end
 
-          vps.log(:outage_windows, data)
+          vps.log(:maintenance_windows, data)
         end
 
-        vps.vps_outage_windows.order('weekday')
+        vps.vps_maintenance_windows.order('weekday')
 
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', e.record.errors.to_hash)

@@ -27,7 +27,7 @@ class Vps < ActiveRecord::Base
   has_many :vps_mounts, dependent: :delete_all
   has_many :vps_features
   has_many :vps_consoles
-  has_many :vps_outage_windows
+  has_many :vps_maintenance_windows
 
   belongs_to :dataset_in_pool
   has_many :mounts
@@ -77,7 +77,8 @@ class Vps < ActiveRecord::Base
       hostname os_template dns_resolver reinstall resources node
       route_add route_del host_addr_add host_addr_del
       start stop restart passwd clone swap configs features mount umount
-      outage_windows outage_window restore deploy_public_key netif_rename
+      maintenance_windows maintenance_window restore deploy_public_key
+      netif_rename
   )
 
   validates :user_id, :node_id, :os_template_id, presence: true, numericality: {only_integer: true}
@@ -205,7 +206,7 @@ class Vps < ActiveRecord::Base
 
     chain_opts[:replace_ips] = opts[:replace_ip_addresses]
     chain_opts[:transfer_ips] = opts[:transfer_ip_addresses]
-    chain_opts[:outage_window] = opts[:outage_window]
+    chain_opts[:maintenance_window] = opts[:maintenance_window]
     chain_opts[:send_mail] = opts[:send_mail]
     chain_opts[:reason] = opts[:reason]
     chain_opts[:cleanup_data] = opts[:cleanup_data]

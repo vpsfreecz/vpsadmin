@@ -1,4 +1,4 @@
-class VpsOutageWindow < ActiveRecord::Base
+class VpsMaintenanceWindow < ActiveRecord::Base
   belongs_to :vps
 
   validate :check_window
@@ -37,11 +37,11 @@ class VpsOutageWindow < ActiveRecord::Base
       errors.add(:closes_at, 'must be at least 60 minutes after opens_at')
     end
 
-    sum = vps.vps_outage_windows.where.not(id: self.id).sum('closes_at - opens_at')
+    sum = vps.vps_maintenance_windows.where.not(id: self.id).sum('closes_at - opens_at')
     sum += closes_at - opens_at if opens_at && closes_at && is_open
 
     if sum / 60.0 < 12
-      errors.add(:closes_at, 'outage window per week must be at least 12 hours long')
+      errors.add(:closes_at, 'maintenance window per week must be at least 12 hours long')
     end
   end
 end
