@@ -32,6 +32,10 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
         desc: 'List only locations having at least one hypervisor node'
       bool :has_storage, label: 'Has storage',
         desc: 'List only locations having at least one storage node'
+      string :hypervisor_type,
+        label: 'Hypervisor type',
+        choices: %w(openvz vpsadminos),
+        desc: 'List only locations having at least one node of this type'
     end
 
     output(:object_list) do
@@ -92,6 +96,12 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       if not_has.size > 0
         q = q.joins(:nodes).where.not(
           nodes: {role: not_has}
+        ).group('locations.id')
+      end
+
+      if input[:hypervisor_type]
+        q = q.joins(:nodes).where(
+          nodes: {hypervisor_type: ::Node.hypervisor_types[input[:hypervisor_type]]},
         ).group('locations.id')
       end
 
