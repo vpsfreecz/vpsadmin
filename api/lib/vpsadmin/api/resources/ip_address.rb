@@ -22,6 +22,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
               desc: 'Location this IP address is available in'
     resource VpsAdmin::API::Resources::User, label: 'User',
              value_label: :login
+    bool :assigned_to_interface, label: 'Assigned to interface'
     string :role, choices: ::Network.roles.keys
     string :purpose, choices: ::Network.purposes.keys
     string :addr, label: 'Address', desc: 'Address itself', db_name: :ip_addr
@@ -60,7 +61,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       input whitelist: %i(location network version role purpose addr prefix vps
-                          network_interface limit offset)
+                          network_interface assigned_to_interface limit offset)
       output blacklist: %i(class_id)
       allow
     end
@@ -117,6 +118,14 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
       if input[:purpose]
         ips = ips.joins(:network).where(networks: {purpose: ::Network.roles[input[:purpose]]})
+      end
+
+      unless input[:assigned_to_interface].nil?
+        if input[:assigned_to_interface]
+          ips = ips.where.not(network_interface: nil)
+        else
+          ips = ips.where(network_interface: nil)
+        end
       end
 
       if current_user.role != :admin
