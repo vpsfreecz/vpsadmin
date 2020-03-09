@@ -70,6 +70,29 @@ function print_newvps_page1($user_id) {
 	$xtpl->form_out(_("Next"));
 }
 
+function format_available_resources($user, $environment) {
+	$s = '<ul>';
+
+	$user_resources = $user->cluster_resource->list([
+		'environment' => $environment->id,
+		'meta' => ['includes' => 'cluster_resource'],
+	]);
+
+	foreach ($user_resources as $ur) {
+		if ($ur->free <= 0)
+			continue;
+
+		$s .= '<li>';
+		$s .= $ur->cluster_resource->label.': ';
+		$s .= approx_number($ur->free).' ';
+		$s .= unit_for_cluster_resource($ur->cluster_resource->name);
+		$s .= '</li>';
+	}
+
+	$s .= '</ul>';
+	return $s;
+}
+
 function print_newvps_page2($user_id, $platform) {
 	global $xtpl, $api;
 
@@ -112,7 +135,11 @@ function print_newvps_page2($user_id, $platform) {
 	$locations = $api->location->list([
 		'has_hypervisor' => true,
 		'hypervisor_type' => $platform,
+		'meta' => ['includes' => 'environment'],
 	]);
+
+	if (!isAdmin())
+		$user = $api->user->current();
 
 	foreach ($locations as $loc) {
 		$xtpl->form_add_radio_pure(
@@ -124,7 +151,13 @@ function print_newvps_page2($user_id, $platform) {
 		$xtpl->table_tr();
 
 		$xtpl->table_td('');
-		$xtpl->table_td($loc->description);
+		$xtpl->table_td(
+			'<p>'._('Environment').': '.$loc->environment->label.'</p>'.
+			'<p>'.$loc->environment->description.'</p>'.
+			'<p>'.$loc->description.'</p>'.
+			'<h4>'._('Available resources').':</h4>'.
+			format_available_resources($user, $loc->environment)
+		);
 		$xtpl->table_tr();
 	}
 
