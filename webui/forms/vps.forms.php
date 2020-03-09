@@ -1,117 +1,318 @@
 <?php
 
-function print_newvps_page1() {
+function print_newvps_page0() {
 	global $xtpl, $api;
 
-	$xtpl->title(_("Create a VPS: Select a location (1/2)"));
+	$xtpl->title(_("Create a VPS: Select user (0/5)"));
+
+	$xtpl->form_create('', 'get', 'newvps-step0', false);
+	$xtpl->form_set_hidden_fields([
+		'page' => 'adminvps',
+		'action' => 'new-step-1',
+	]);
+	$xtpl->form_add_input(_('User ID').':', 'text', '30', 'user', $_GET['user']);
+	$xtpl->form_out(_("Next"));
+}
+
+function print_newvps_page1($user_id) {
+	global $xtpl, $api;
+
+	$xtpl->title(_("Create a VPS: Select platform (1/5)"));
+
+	if (isAdmin()) {
+		$xtpl->sbar_add(
+			_('Back to user selection'),
+			'?page=adminvps&action=new-step-0&user='.$user_id.'&platform='.$platform
+		);
+	}
 
 	$xtpl->form_create('', 'get', 'newvps-step1', false);
+	$xtpl->form_set_hidden_fields([
+		'page' => 'adminvps',
+		'action' => 'new-step-2',
+		'user' => $user_id,
+	]);
 
-	$xtpl->table_td(
-		_('Location').':'.
-		'<input type="hidden" name="page" value="adminvps">'.
-		'<input type="hidden" name="action" value="new2">'
+	$xtpl->form_add_radio_pure(
+		'platform',
+		'vpsadminos',
+		get_val_issetto('platform', 'vpsadminos', true)
 	);
-	$xtpl->form_add_select_pure(
-		'location',
-		resource_list_to_options($api->location->list(array('has_hypervisor' => true))),
-		$_GET['location'],
-		''
+	$xtpl->table_td('<strong>'._('vpsAdminOS').'</strong>');
+	$xtpl->table_tr();
+	$xtpl->table_td('');
+	$xtpl->table_td(_('
+		vpsAdminOS is an in-house developed container-based
+		virtualization platform that powers our VPS. For more information, see our
+		<a href="https://kb.vpsfree.org/manuals/vps/vpsadminos" target="_blank">knowledge base</a>
+		or project documentation at
+		<a href="https://vpsadminos.org" target="_blank">vpsadminos.org</a>.
+	'));
+	$xtpl->table_tr();
+
+	$xtpl->form_add_radio_pure(
+		'platform',
+		'openvz',
+		get_val_issetto('platform', 'openvz')
 	);
+	$xtpl->table_td('<strong>'._('OpenVZ Legacy').'<strong>');
+	$xtpl->table_tr();
+	$xtpl->table_td('');
+	$xtpl->table_td(_('
+		OpenVZ Legacy is a container-based virtualization platform.
+		We are in the process of migrating to a more up-to-date solution called
+		vpsAdminOS, which is at this time available only in Prague
+		(Praha). For more information, see our
+		<a href="https://kb.vpsfree.org/manuals/vps/vpsadminos" target="_blank">knowledge base</a>.
+	'));
 	$xtpl->table_tr();
 
 	$xtpl->form_out(_("Next"));
 }
 
-function print_newvps_page2($loc_id) {
+function print_newvps_page2($user_id, $platform) {
 	global $xtpl, $api;
 
-	if ($_SESSION['is_admin'])
-		$xtpl->title(_("Create a VPS: Specify parameters"));
-	else
-		$xtpl->title(_("Create a VPS: Specify parameters (2/2)"));
-
-	$xtpl->form_create('?page=adminvps&action=new2&location='.$loc_id, 'post');
-
-	if (!$_SESSION['is_admin']) {
-		try {
-			$loc = $api->location->show(
-				$loc_id,
-				array('meta' => array('includes' => 'environment'))
-			);
-
-		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-			notify_user(_('Invalid location'), _('Please select the desired location of your new VPS.'));
-			redirect('?page=adminvps&action=new');
-		}
-
-		$xtpl->table_td(_('Environment').':');
-		$xtpl->table_td($loc->environment->label);
-		$xtpl->table_tr();
-
-		$xtpl->table_td(_('Location').':');
-		$xtpl->table_td($loc->label);
-		$xtpl->table_tr();
-	}
-
-	$xtpl->form_add_input(_("Hostname").':', 'text', '30', 'vps_hostname', $_POST['vps_hostname'], _("A-z, a-z"), 255);
-
-	if ($_SESSION["is_admin"]) {
-		$xtpl->form_add_select(_("Node").':', 'vps_server', resource_list_to_options($api->node->list(), 'id', 'domain_name'), $_POST['vps_server'], '');
-		$xtpl->form_add_select(_("Owner").':', 'm_id', resource_list_to_options($api->user->list(), 'id', 'login'), post_val('m_id', $_SESSION['user']['id']), '');
-	}
-
-	$xtpl->form_add_select(
-		_("OS template").':',
-		'vps_template',
-		resource_list_to_options(
-			$api->os_template->list(array(
-				'location' => isAdmin() ? null : $loc_id,
-			)),
-			'id', 'label', false, function ($t) {
-				$ret = '';
-
-				switch ($t->hypervisor_type)
-				{
-				case 'openvz':
-					$ret .= '[OpenVZ] ';
-					break;
-
-				case 'vpsadminos':
-					$ret .= '[vpsAdminOS] ';
-					break;
-
-				default:
-					$ret .= '[Unknown] ';
-				}
-
-				$ret .= $t->label;
-
-				return $ret;
-			}
-		),
-		$_POST['vps_template'],
-		''
+	$xtpl->title(_("Create a VPS: Select a location (2/5)"));
+	$xtpl->sbar_add(
+		_('Back to platform selection'),
+		'?page=adminvps&action=new-step-1&user='.$user_id.'&platform='.$platform
 	);
 
+	$xtpl->table_title(_('Configuration'));
+
+	if (isAdmin()) {
+		try {
+			$user = $api->user->show($user_id);
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			notify_user(_('Invalid user'), _('Please select target user.'));
+			redirect('?page=adminvps&action=new-step-0');
+		}
+
+		$xtpl->table_td(_('User').':');
+		$xtpl->table_td(user_link($user));
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_td(_('Platform').':');
+	$xtpl->table_td(hypervisorTypeToLabel($platform));
+	$xtpl->table_tr();
+
+	$xtpl->table_out();
+
+	$xtpl->table_title(_('Location'));
+	$xtpl->form_create('', 'get', 'newvps-step2', false);
+	$xtpl->form_set_hidden_fields([
+		'page' => 'adminvps',
+		'action' => 'new-step-3',
+		'user' => $user_id,
+		'platform' => $platform,
+	]);
+
+	$locations = $api->location->list([
+		'has_hypervisor' => true,
+		'hypervisor_type' => $platform,
+	]);
+
+	foreach ($locations as $loc) {
+		$xtpl->form_add_radio_pure(
+			'location',
+			$loc->id,
+			$_GET['location'] == $loc->id
+		);
+		$xtpl->table_td('<strong>'.$loc->label.'</strong>');
+		$xtpl->table_tr();
+
+		$xtpl->table_td('');
+		$xtpl->table_td($loc->description);
+		$xtpl->table_tr();
+	}
+
+	$xtpl->form_out(_("Next"));
+}
+
+function print_newvps_page3($user_id, $platform, $loc_id) {
+	global $xtpl, $api;
+
+	$xtpl->title(_("Create a VPS: Select distribution (3/5)"));
+	$xtpl->sbar_add(
+		_('Back to location selection'),
+		'?page=adminvps&action=new-step-2&user='.$user_id.'&platform='.$platform.'&location='.$loc_id
+	);
+
+	try {
+		$loc = $api->location->show(
+			$loc_id,
+			['meta' => ['includes' => 'environment']]
+		);
+
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		notify_user(
+			_('Invalid location'),
+			_('Please select the desired location for your new VPS.')
+		);
+		redirect('?page=adminvps&action=new-step-2');
+	}
+
+	$xtpl->table_title(_('Configuration'));
+
+	if (isAdmin()) {
+		try {
+			$user = $api->user->show($user_id);
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			notify_user(_('Invalid user'), _('Please select target user.'));
+			redirect('?page=adminvps&action=new-step-0');
+		}
+
+		$xtpl->table_td(_('User').':');
+		$xtpl->table_td(user_link($user));
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_td(_('Platform').':');
+	$xtpl->table_td(hypervisorTypeToLabel($platform));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Environment').':');
+	$xtpl->table_td($loc->environment->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Location').':');
+	$xtpl->table_td($loc->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_out();
+
+	$xtpl->table_title(_('Distribution'));
+	$xtpl->form_create('', 'get', 'newvps-step3', false);
+	$xtpl->form_set_hidden_fields([
+		'page' => 'adminvps',
+		'action' => 'new-step-4',
+		'user' => $user_id,
+		'platform' => $platform,
+		'location' => $loc_id,
+	]);
+
+	$tpls = $api->os_template->list(['hypervisor_type' => $platform]);
+
+	foreach ($tpls as $t) {
+		$xtpl->form_add_radio_pure(
+			'os_template',
+			$t->id,
+			$_GET['os_template'] == $t->id
+		);
+		$xtpl->table_td('<strong>'.$t->label.'</strong>');
+		$xtpl->table_tr();
+
+		$xtpl->table_td('');
+		$xtpl->table_td($t->info);
+		$xtpl->table_tr();
+	}
+
+	$xtpl->form_out(_("Next"));
+}
+
+function print_newvps_page4($user_id, $platform, $loc_id, $tpl_id) {
+	global $xtpl, $api;
+
+	$xtpl->title(_("Create a VPS: Specify parameters (4/5)"));
+	$xtpl->sbar_add(
+		_('Back to distribution selection'),
+		'?page=adminvps&action=new-step-3&user='.$user_id.'&platform='.$platform.'&location='.$loc_id.'&os_template='.$tpl_id
+	);
+
+	try {
+		$loc = $api->location->show(
+			$loc_id,
+			['meta' => ['includes' => 'environment']]
+		);
+
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		notify_user(
+			_('Invalid location'),
+			_('Please select the desired location for your new VPS.')
+		);
+		redirect('?page=adminvps&action=new-step-2');
+	}
+
+	try {
+		$tpl = $api->os_template->show($tpl_id);
+
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		notify_user(
+			_('Invalid distribution'),
+			_('Please select the desired distribution of your new VPS.'));
+		redirect('?page=adminvps&action=new-step-3');
+	}
+
+	$xtpl->table_title(_('Configuration'));
+
+	if (isAdmin()) {
+		try {
+			$user = $api->user->show($user_id);
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			notify_user(_('Invalid user'), _('Please select target user.'));
+			redirect('?page=adminvps&action=new-step-0');
+		}
+
+		$xtpl->table_td(_('User').':');
+		$xtpl->table_td(user_link($user));
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_td(_('Platform').':');
+	$xtpl->table_td(hypervisorTypeToLabel($platform));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Environment').':');
+	$xtpl->table_td($loc->environment->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Location').':');
+	$xtpl->table_td($loc->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Distribution').':');
+	$xtpl->table_td($tpl->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_out();
+
+	$xtpl->table_title(_('Parameters'));
+	$xtpl->table_add_category(_('Resource'));
+	$xtpl->table_add_category(_('Available'));
+	$xtpl->table_add_category(_('Value'));
+	$xtpl->form_create('', 'get', 'newvps-step4', false);
+	$xtpl->form_set_hidden_fields([
+		'page' => 'adminvps',
+		'action' => 'new-step-5',
+		'user' => $user_id,
+		'platform' => $platform,
+		'location' => $loc_id,
+		'os_template' => $tpl_id,
+	]);
+
 	$params = $api->vps->create->getParameters('input');
-	$vps_resources = array(
+	$vps_resources = [
 		'memory' => 4096,
 		'cpu' => 8,
 		'swap' => 0,
 		'diskspace' => 120*1024,
-	);
+	];
 
-	$ips = array(
+	$ips = [
 		'ipv4' => 1,
 		'ipv4_private' => 0,
 		'ipv6' => 1,
-	);
+	];
 
-	$user_resources = $api->user->current()->cluster_resource->list(array(
+	if (!isAdmin())
+		$user = $api->user->current();
+
+	$user_resources = $user->cluster_resource->list([
 		'environment' => $loc->environment_id,
-		'meta' => array('includes' => 'environment,cluster_resource')
-	));
+		'meta' => ['includes' => 'environment,cluster_resource']
+	]);
 	$resource_map = array();
 
 	foreach ($user_resources as $r) {
@@ -122,21 +323,21 @@ function print_newvps_page2($loc_id) {
 		$p = $params->{$name};
 		$r = $resource_map[$name];
 
-		if (!$_SESSION['is_admin'] && $r->value === 0)
+		if (!isAdmin() && $r->value === 0)
 			continue;
 
-		$xtpl->table_td($p->label.':');
+		$xtpl->table_td($p->label);
+		$xtpl->table_td($r->free.' '.unit_for_cluster_resource($name));
 		$xtpl->form_add_number_pure(
 			$name,
-			$_POST[$name] ? $_POST[$name] : min($default, $r->free),
+			isset($_GET[$name]) ? $_GET[$name] : min($default, $r->free),
 			$r->cluster_resource->min,
-			$_SESSION['is_admin']
+			isAdmin()
 				? $r->cluster_resource->max
 				: min($r->free, $r->cluster_resource->max),
 			$r->cluster_resource->stepsize,
 			unit_for_cluster_resource($name)
 		);
-		$xtpl->table_td(_('You have').' '.$r->free.' '.unit_for_cluster_resource($name).' '._('available'));
 		$xtpl->table_tr();
 	}
 
@@ -144,13 +345,14 @@ function print_newvps_page2($loc_id) {
 		$p = $params->{$name};
 		$r = $resource_map[$name];
 
-		if (!$_SESSION['is_admin'] && $r->value === 0)
+		if (!isAdmin() && $r->value === 0)
 			continue;
 
-		$xtpl->table_td($p->label.':');
+		$xtpl->table_td($p->label);
+		$xtpl->table_td(approx_number($r->free).' '.unit_for_cluster_resource($name));
 		$xtpl->form_add_number_pure(
 			$name,
-			$_POST[$name] ? $_POST[$name] : $default,
+			isset($_GET[$name]) ? $_GET[$name] : $default,
 			0,
 			$r->cluster_resource->max,
 			$r->cluster_resource->stepsize,
@@ -158,6 +360,166 @@ function print_newvps_page2($loc_id) {
 		);
 		$xtpl->table_tr();
 	}
+
+	$xtpl->table_td(
+		_('Contact support if you need more').' <a href="?page=adminm&action=cluster_resources&id='.$user->id.'">'._('resources.').'</a>',
+		false, false, '3'
+	);
+	$xtpl->table_tr();
+
+	$xtpl->form_out(_("Next"));
+}
+
+function build_resource_uri_params() {
+	$resources = [
+		'cpu', 'memory', 'swap', 'diskspace', 'ipv4', 'ipv4_private', 'ipv6'
+	];
+	$params = [];
+
+	foreach ($resources as $r) {
+		if (isset($_GET[$r]))
+			$params[] = $r.'='.$_GET[$r];
+	}
+
+	if (count($params) > 0)
+		return '&'.implode('&', $params);
+	else
+		return '';
+}
+
+function print_newvps_page5($user_id, $platform, $loc_id, $tpl_id) {
+	global $xtpl, $api;
+
+	$xtpl->title(_("Create a VPS: Final touches (5/5)"));
+	$xtpl->sbar_add(
+		_('Back to parameters'),
+		'?page=adminvps&action=new-step-4&user='.$user_id.'&platform='.$platform.'&location='.$loc_id.'&os_template='.$tpl_id.build_resource_uri_params()
+	);
+
+	try {
+		$loc = $api->location->show(
+			$loc_id,
+			['meta' => ['includes' => 'environment']]
+		);
+
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		notify_user(
+			_('Invalid location'),
+			_('Please select the desired location for your new VPS.')
+		);
+		redirect('?page=adminvps&action=new-step-2');
+	}
+
+	try {
+		$tpl = $api->os_template->show($tpl_id);
+
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		notify_user(
+			_('Invalid distribution'),
+			_('Please select the desired distribution of your new VPS.'));
+		redirect('?page=adminvps&action=new-step-3');
+	}
+
+	$xtpl->table_title(_('Configuration'));
+
+	if (isAdmin()) {
+		try {
+			$user = $api->user->show($user_id);
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			notify_user(_('Invalid user'), _('Please select target user.'));
+			redirect('?page=adminvps&action=new-step-0');
+		}
+
+		$xtpl->table_td(_('User').':');
+		$xtpl->table_td(user_link($user));
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_td(_('Platform').':');
+	$xtpl->table_td(hypervisorTypeToLabel($platform));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Environment').':');
+	$xtpl->table_td($loc->environment->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Location').':');
+	$xtpl->table_td($loc->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Distribution').':');
+	$xtpl->table_td($tpl->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('CPUs').':');
+	$xtpl->table_td($_GET['cpu'].' '.unit_for_cluster_resource('cpu'));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Memory').':');
+	$xtpl->table_td($_GET['memory'].' '.unit_for_cluster_resource('memory'));
+	$xtpl->table_tr();
+
+	if ($_GET['swap']) {
+		$xtpl->table_td(_('Swap').':');
+		$xtpl->table_td($_GET['swap'].' '.unit_for_cluster_resource('swap'));
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_td(_('Disk').':');
+	$xtpl->table_td($_GET['diskspace'].' '.unit_for_cluster_resource('diskspace'));
+	$xtpl->table_tr();
+
+	if ($_GET['ipv4']) {
+		$xtpl->table_td(_('Public IPv4').':');
+		$xtpl->table_td($_GET['ipv4'].' '.unit_for_cluster_resource('ipv4'));
+		$xtpl->table_tr();
+	}
+
+	if ($_GET['ipv6']) {
+		$xtpl->table_td(_('Public IPv6').':');
+		$xtpl->table_td($_GET['ipv6'].' '.unit_for_cluster_resource('ipv6'));
+		$xtpl->table_tr();
+	}
+
+	if ($_GET['ipv4_private']) {
+		$xtpl->table_td(_('Private IPv4').':');
+		$xtpl->table_td($_GET['ipv4_private'].' '.unit_for_cluster_resource('ipv4_private'));
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_out();
+
+	$xtpl->table_title(_('Finalize'));
+	$xtpl->form_create(
+		'?page=adminvps&action=new-submit&user='.$user_id.'&platform='.$platform.'&location='.$loc_id.'&os_template='.$tpl_id.build_resource_uri_params(),
+		'post'
+	);
+
+	if (isAdmin()) {
+		$xtpl->form_add_select(
+			_("Node").':',
+			'node',
+			resource_list_to_options(
+				$api->node->list([
+					'location' => $loc->id,
+					'hypervisor_type' => $platform,
+				]),
+				'id', 'domain_name',
+				false
+			),
+			$_POST['node']
+		);
+	}
+
+	$xtpl->form_add_input(
+		_("Hostname").':',
+		'text',
+		'30',
+		'hostname',
+		$_POST['hostname'],
+		_("A-z, a-z"),
+		255
+	);
 
 	if (!isAdmin() && USERNS_PUBLIC) {
 		// User namespace map
@@ -171,23 +533,24 @@ function print_newvps_page2($loc_id) {
 		);
 	}
 
-	if ($_SESSION["is_admin"]) {
-		$xtpl->form_add_checkbox(_("Boot on create").':', 'boot_after_create', '1', (isset($_POST['vps_hostname']) && !isset($_POST['boot_after_create'])) ? false : true, $hint = '');
-		$xtpl->form_add_textarea(_("Extra information about VPS").':', 28, 4, 'vps_info', $_POST['vps_info'], '');
+	if (isAdmin()) {
+		$xtpl->form_add_checkbox(
+			_("Boot on create").':',
+			'boot_after_create',
+			'1',
+			(isset($_POST['hostname']) && !isset($_POST['boot_after_create'])) ? false : true
+		);
+		$xtpl->form_add_textarea(
+			_("Extra information about VPS").':',
+			28, 4,
+			'info',
+			$_POST['info']
+		);
 	}
 
-	$xtpl->table_td(
-		_('Contact support if you need more').' <a href="?page=adminm&action=cluster_resources&id='.$_SESSION['user']['id'].'">'._('resources.').'</a>',
-		false, false, '2'
-	);
 	$xtpl->table_tr();
 
-	$xtpl->form_out(_("Create"));
-
-	if ($_SESSION['is_admin'])
-		$xtpl->sbar_add(_('Back'), '?page=adminvps');
-	else
-		$xtpl->sbar_add(_('Back'), '?page=adminvps&action=new2&environment='.$env_id.'&location='.$loc_id);
+	$xtpl->form_out(_("Create VPS"));
 }
 
 function vps_details_title($vps) {

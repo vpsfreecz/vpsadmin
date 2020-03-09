@@ -574,6 +574,20 @@ function post_val_array($name, $index, $default = '') {
 	return $default;
 }
 
+function get_val_issetto($name, $value, $default = false) {
+	if (!isset($_GET[$name]))
+		return $default;
+
+	return $_GET[$name] == $value;
+}
+
+function post_val_issetto($name, $value, $default = false) {
+	if (!isset($_POST[$name]))
+		return $default;
+
+	return $_POST[$name] == $value;
+}
+
 function transaction_concern_class($klass) {
 	$tr = array(
 		'Vps' => 'VPS'

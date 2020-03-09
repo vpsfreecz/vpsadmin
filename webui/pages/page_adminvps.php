@@ -98,33 +98,73 @@ switch ($_GET["action"]) {
 			$list_vps = true;
 			break;
 
-		case 'new':
-			print_newvps_page1();
+		case 'new-step-0':
+			print_newvps_page0();
 			break;
 
-		case 'new2':
+		case 'new-step-1':
+			print_newvps_page1($_GET['user']);
+			break;
+
+		case 'new-step-2':
+			print_newvps_page2($_GET['user'], $_GET['platform']);
+			break;
+
+		case 'new-step-3':
+			print_newvps_page3(
+				$_GET['user'],
+				$_GET['platform'],
+				$_GET['location']
+			);
+			break;
+
+		case 'new-step-4':
+			print_newvps_page4(
+				$_GET['user'],
+				$_GET['platform'],
+				$_GET['location'],
+				$_GET['os_template']
+			);
+			break;
+
+		case 'new-step-5':
+			print_newvps_page5(
+				$_GET['user'],
+				$_GET['platform'],
+				$_GET['location'],
+				$_GET['os_template']
+			);
+			break;
+
+		case 'new-submit':
 			if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-				print_newvps_page2($_GET['location']);
+				print_newvps_page5(
+					$_GET['user'],
+					$_GET['platform'],
+					$_GET['location'],
+					$_GET['os_template']
+				);
 				break;
 			}
 
 			csrf_check();
 
-			$params = array(
-				'hostname' => $_POST['vps_hostname'],
-				'os_template' => $_POST['vps_template'],
-				'info' => isAdmin() ? '' : $_POST['vps_info'],
-				'memory' => $_POST['memory'],
-				'cpu' => $_POST['cpu'],
-				'diskspace' => $_POST['diskspace'],
-				'ipv4' => $_POST['ipv4'],
-				'ipv4_private' => $_POST['ipv4_private'],
-				'ipv6' => $_POST['ipv6'],
-			);
+			$params = [
+				'hostname' => $_POST['hostname'],
+				'os_template' => $_GET['os_template'],
+				'info' => isAdmin() ? '' : $_POST['info'],
+				'memory' => (int)$_GET['memory'],
+				'swap' => (int)$_GET['swap'],
+				'cpu' => (int)$_GET['cpu'],
+				'diskspace' => (int)$_GET['diskspace'],
+				'ipv4' => (int)$_GET['ipv4'],
+				'ipv4_private' => (int)$_GET['ipv4_private'],
+				'ipv6' => (int)$_GET['ipv6'],
+			];
 
-			if(isAdmin()) {
-				$params['user'] = $_POST['m_id'];
-				$params['node'] = $_POST['vps_server'];
+			if (isAdmin()) {
+				$params['user'] = $_GET['user'];
+				$params['node'] = $_POST['node'];
 				$params['onboot'] = isset($_POST['boot_after_create']);
 
 			} else {
@@ -138,18 +178,28 @@ switch ($_GET["action"]) {
 				$vps = $api->vps->create($params);
 
 				if ($params['onboot'] || !isAdmin()) {
-					notify_user(_("VPS create ").' '.$vps->id, _("VPS will be created and booted afterwards."));
+					notify_user(
+						_("VPS create ").' '.$vps->id,
+						_("VPS will be created and booted afterwards.")
+					);
 
 				} else {
-					notify_user(_("VPS create ").' '.$vps->id, _("VPS will be created. You can start it manually."));
+					notify_user(
+						_("VPS create ").' '.$vps->id,
+						_("VPS will be created. You can start it manually.")
+					);
 				}
 
 				redirect('?page=adminvps&action=info&veid='.$vps->id);
 
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 				$xtpl->perex_format_errors(_('VPS creation failed'), $e->getResponse());
-
-				print_newvps_page2($_GET['location']);
+				print_newvps_page5(
+					$_GET['user'],
+					$_GET['platform'],
+					$_GET['location'],
+					$_GET['os_template']
+				);
 			}
 			break;
 
@@ -923,12 +973,12 @@ if ($list_vps) {
 	}
 
 	if (!isAdmin()) {
-		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new');
+		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new-step-1');
 	}
 }
 
 if(isAdmin() && $list_vps) {
-	$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new2');
+	$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new-step-0');
 	$xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List VPSes").'" /> '._("List VPSes"), '?page=adminvps&action=list');
 }
 
