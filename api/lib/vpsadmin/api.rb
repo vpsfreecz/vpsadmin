@@ -1,6 +1,6 @@
 module VpsAdmin
   HaveAPI.module_name = VpsAdmin::API::Resources
-  HaveAPI.implicit_version = '5.0'
+  HaveAPI.implicit_version = '6.0'
   ActiveRecord::Base.schema_format = :sql
   ActiveRecord::Base.raise_in_transactional_callbacks = true
 
