@@ -528,12 +528,11 @@ module TransactionChains
         end
       end
 
-      src_user_env = user.environment_user_configs.find_by!(
-        environment: src_loc.environment,
-      )
-      dst_user_env = user.environment_user_configs.find_by!(
-        environment: dst_loc.environment,
-      )
+      src_env = src_loc.environment
+      dst_env = dst_loc.environment
+
+      src_user_env = user.environment_user_configs.find_by!(environment: src_env)
+      dst_user_env = user.environment_user_configs.find_by!(environment: dst_env)
 
       %i(ipv4 ipv4_private ipv6).each do |r|
         # Free addresses from src env
@@ -561,7 +560,19 @@ module TransactionChains
           changes.each { |obj, change| t.edit(obj, change) }
 
           ips.each do |ip|
-            t.edit(ip, charged_environment_id: dst_loc.environment_id)
+            ip_changes = {
+              charged_environment_id: dst_loc.environment_id,
+            }
+
+            if ip.user_id \
+               && src_env.user_ip_ownership && !dst_env.user_ip_ownership
+              ip_changes[:user_id] = nil
+            elsif ip.user_id.nil? \
+                  && !src_env.user_ip_ownership && dst_env.user_ip_ownership
+              ip_changes[:user_id] = user.id
+            end
+
+            t.edit(ip, ip_changes)
           end
         end
       end
