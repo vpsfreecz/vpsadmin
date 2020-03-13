@@ -175,5 +175,24 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
     end
   end
 
+  class AuthorizeMigrationKeys < HaveAPI::Action
+    http_method :post
+    desc 'Generate and authorize ssh keys for VPS migrations where applicable'
+    blocking true
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def exec
+      @chain, _ = TransactionChains::Cluster::AuthorizeMigrationKeys.fire
+      ok
+    end
+
+    def state_id
+      @chain && @chain.id
+    end
+  end
+
   include VpsAdmin::API::Maintainable::Action
 end
