@@ -113,7 +113,12 @@ class ClusterResourcePackage < ActiveRecord::Base
   end
 
   def recalculate_user_resources
-    user_cluster_resource_packages.group('user_id, environment_id').each do |user_pkg|
+    t = ::UserClusterResourcePackage.table_name
+    user_cluster_resource_packages
+      .joins(:user)
+      .where.not(users: {object_state: ::User.object_states[:hard_delete]})
+      .group("#{t}.user_id, #{t}.environment_id")
+      .each do |user_pkg|
       user_pkg.user.calculate_cluster_resources_in_env(user_pkg.environment)
     end
   end
