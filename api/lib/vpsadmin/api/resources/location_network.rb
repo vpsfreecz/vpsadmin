@@ -51,8 +51,6 @@ module VpsAdmin::API::Resources
 
         if input[:location] && !input[:network]
           q = q.order('location_networks.priority')
-        elsif !input[:location] && input[:network]
-          q = q.order('location_networks.location_id')
         else
           q = q.order('location_networks.location_id, location_networks.priority')
         end
