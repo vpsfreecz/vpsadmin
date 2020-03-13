@@ -47,10 +47,17 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_includes(query)
-          .order('location_networks.location_id, location_networks.priority')
-          .offset(input[:offset])
-          .limit(input[:limit])
+        q = with_includes(query).offset(input[:offset]).limit(input[:limit])
+
+        if input[:location] && !input[:network]
+          q = q.order('location_networks.priority')
+        elsif !input[:location] && input[:network]
+          q = q.order('location_networks.location_id')
+        else
+          q = q.order('location_networks.location_id, location_networks.priority')
+        end
+
+        q
       end
     end
 
