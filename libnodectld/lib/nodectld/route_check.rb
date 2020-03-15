@@ -5,6 +5,8 @@ module NodeCtld
   class RouteCheck
     include OsCtl::Lib::Utils::Log
 
+    TIMEOUT = 180
+
     def self.wait(pool_fs, ctid)
       check = new(pool_fs, ctid)
       check.wait
@@ -19,7 +21,7 @@ module NodeCtld
     end
 
     # Block until routes of selected VPS disappear from the routing table
-    def wait(timeout: 180)
+    def wait(timeout: TIMEOUT)
       since = Time.now
 
       loop do

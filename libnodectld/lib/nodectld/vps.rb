@@ -17,7 +17,7 @@ module NodeCtld
     end
 
     def start
-      osctl(%i(ct start), @veid)
+      osctl(%i(ct start), @veid, {wait: RouteCheck::TIMEOUT + 60})
       osctl(%i(ct set autostart), @veid)
     end
 
