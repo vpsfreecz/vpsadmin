@@ -59,7 +59,7 @@ module NodeCtld
     end
 
     def hooks
-      %w(pre-start post-mount)
+      %w(post-mount)
     end
 
     def hook_path(name)
