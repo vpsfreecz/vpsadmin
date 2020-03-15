@@ -104,8 +104,18 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       end
 
       if input[:location]
-        locs = ::LocationNetwork.where(location: input[:location]).pluck(:network_id)
-        ips = ips.joins(:network).where(networks: {id: locs})
+        if current_user.role == :admin
+          locs = ::LocationNetwork.where(
+            location: input[:location],
+          ).pluck(:network_id)
+          ips = ips.joins(:network).where(networks: {id: locs})
+        else
+          locs = ::LocationNetwork.where(
+            location: input[:location],
+            userpick: true,
+          ).pluck(:network_id)
+          ips = ips.joins(:network).where(networks: {id: locs})
+        end
       end
 
       if input[:version]
