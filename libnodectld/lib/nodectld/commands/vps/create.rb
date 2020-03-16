@@ -29,7 +29,7 @@ module NodeCtld
       osctl(%i(ct prlimits set), [@vps_id, 'nofile', 1024, 1024*1024])
       osctl(%i(ct prlimits set), [@vps_id, 'nproc', 128*1024, 1024*1024])
 
-      %w(pre-start veth-up).each do |hook|
+      %w(veth-up).each do |hook|
         dst = hook_path(hook)
 
         FileUtils.cp(
