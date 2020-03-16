@@ -89,6 +89,9 @@ module TransactionChains
       mounts.datasets = datasets
       mounts.remount_mine
 
+      # Wait for routing to remove routes from the original system
+      append(Transactions::Vps::WaitForRoutes, args: [dst_vps], urgent: true)
+
       # Restore VPS state
       call_hooks_for(:pre_start, self, args: [dst_vps, was_running?])
       use_chain(Vps::Start, args: dst_vps, urgent: true) if was_running?
