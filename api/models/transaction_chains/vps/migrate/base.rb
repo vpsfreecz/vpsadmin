@@ -464,6 +464,7 @@ module TransactionChains
             ips,
             unregister: false,
             reallocate: opts[:reallocate_ips],
+            phony: src_node.hypervisor_type != dst_node.hypervisor_type,
           ],
           urgent: true
         )

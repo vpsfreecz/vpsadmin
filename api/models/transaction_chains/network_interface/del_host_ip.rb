@@ -4,7 +4,9 @@ module TransactionChains
 
     # @param netif [::NetworkInterface]
     # @param addrs [Array<::HostIpAddress>]
-    def link_chain(netif, addrs)
+    # @param opts [Hash]
+    # @option opts [Boolean] :phony
+    def link_chain(netif, addrs, opts = {})
       lock(netif)
       lock(netif.vps)
       concerns(:affect, [netif.vps.class.name, netif.vps.id])
@@ -18,16 +20,28 @@ module TransactionChains
              "interface #{netif}"
       end
 
-      # Add the addresses
-      addrs.each do |addr|
-        append_t(Transactions::NetworkInterface::DelHostIp, args: [netif, addr]) do |t|
-          t.edit(addr, order: nil)
+      # Delete the addresses
+      if opts[:phony]
+        append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
+          addrs.each { |addr| addr_confirmation(t, netif, addr) }
+        end
 
-          t.just_create(
-            netif.vps.log(:host_addr_del, {id: addr.id, addr: addr.ip_addr})
-          ) unless included?
+      else
+        addrs.each do |addr|
+          append_t(Transactions::NetworkInterface::DelHostIp, args: [netif, addr]) do |t|
+            addr_confirmation(t, netif, addr)
+          end
         end
       end
+    end
+
+    protected
+    def addr_confirmation(t, netif, addr)
+      t.edit(addr, order: nil)
+
+      t.just_create(
+        netif.vps.log(:host_addr_del, {id: addr.id, addr: addr.ip_addr})
+      ) unless included?
     end
   end
 end

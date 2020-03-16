@@ -7,6 +7,7 @@ module TransactionChains
     # @param opts [Hash] options
     # @option opts [Boolean] :unregister
     # @option opts [Boolean] :reallocate
+    # @option opts [Boolean] :phony
     def link_chain(netif, ips, opts = {})
       lock(netif)
       lock(netif.vps)
@@ -71,17 +72,19 @@ module TransactionChains
 
         use_chain(NetworkInterface::DelHostIp, args: [
           netif,
-          ip.host_ip_addresses.where.not(order: nil).to_a
+          ip.host_ip_addresses.where.not(order: nil).to_a,
+          phony: opts[:phony],
         ])
 
-        append_t(
-          Transactions::NetworkInterface::DelRoute,
-          args: [netif, ip, opts[:unregister]]
-        ) do |t|
-          t.edit(ip, network_interface_id: nil, route_via_id: nil, order: nil)
-          t.just_create(
-            netif.vps.log(:route_del, {id: ip.id, addr: ip.addr})
-          ) unless included?
+        if opts[:phony]
+          append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
+            ip_confirmation(t, netif, ip)
+          end
+        else
+          append_t(
+            Transactions::NetworkInterface::DelRoute,
+            args: [netif, ip, opts[:unregister]]
+          ) { |t| ip_confirmation(t, netif, ip) }
         end
       end
 
@@ -96,6 +99,14 @@ module TransactionChains
       end unless uses.empty?
 
       use_chain(Export::DelHostsFromAll, args: [netif.vps.user, ips_arr])
+    end
+
+    protected
+    def ip_confirmation(t, netif, ip)
+      t.edit(ip, network_interface_id: nil, route_via_id: nil, order: nil)
+      t.just_create(
+        netif.vps.log(:route_del, {id: ip.id, addr: ip.addr})
+      ) unless included?
     end
   end
 end
