@@ -7,9 +7,13 @@ module NodeCtld
 
     TIMEOUT = 180
 
-    def self.wait(pool_fs, ctid)
-      check = new(pool_fs, ctid)
-      check.wait
+    class << self
+      %i(wait check check!).each do |m|
+        define_method(m) do |pool_fs, ctid, *args|
+          check = new(pool_fs, ctid)
+          check.send(m, *args)
+        end
+      end
     end
 
     attr_reader :pool_fs, :ctid
@@ -63,6 +67,13 @@ module NodeCtld
       end
 
       ret
+    end
+
+    def check!
+      routes = check
+      return true if routes.empty?
+
+      fail "The following routes exist: #{format_routes(routes)}"
     end
 
     def log_type

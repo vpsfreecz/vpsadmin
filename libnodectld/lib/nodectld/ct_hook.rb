@@ -4,7 +4,7 @@ module NodeCtld
   module CtHook
     def self.pre_start(pool, ct_id)
       pool_fs = File.join(pool, 'ct')
-      RouteCheck.wait(pool_fs, ct_id)
+      RouteCheck.check!(pool_fs, ct_id)
       Mounter.prepare_vps_mounts(pool_fs, ct_id)
     end
 
