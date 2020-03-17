@@ -177,7 +177,7 @@ module TransactionChains
       mounts.remount_mine
 
       # Wait for routing to remove routes from the original system
-      append(Transactions::Utils::NoOp, args: [find_node_id, sleep: 90], urgent: true)
+      append(Transactions::Vps::WaitForRoutes, args: [dst_vps], urgent: true)
 
       # Convert internal configuration files to vpsAdminOS based on distribution
       append(Transactions::Vps::VzToOs, args: [dst_vps], urgent: true)
