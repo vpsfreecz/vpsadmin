@@ -98,9 +98,13 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       end
 
       if input.has_key?(:vps)
-        ips = ips.joins(:network_interface).where(
-          network_interfaces: {vps_id: input[:vps] && input[:vps].id},
-        )
+        if input[:vps]
+          ips = ips.joins(:network_interface).where(
+            network_interfaces: {vps_id: input[:vps].id},
+          )
+        else
+          ips = ips.where(network_interface: nil)
+        end
       end
 
       if input[:location]
