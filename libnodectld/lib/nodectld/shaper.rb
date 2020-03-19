@@ -243,7 +243,7 @@ module NodeCtld
           #   'RTNETLINK answers: No such file or directory',
           # reinitialize the whole shaper
           if rets.detect { |ret| ret.exitstatus == 2 }
-            add_ip(addr, opts)
+            add_ip(vps_id, opts)
           end
         end
       end
