@@ -88,7 +88,7 @@ module VpsAdmin::API::Resources
             1 AS is_sum,
             SUM(packets_in) AS packets_in, SUM(packets_out) AS packets_out,
             SUM(bytes_in) AS bytes_in, SUM(bytes_out) AS bytes_out
-          ").group("#{table}.ip_address_id, #{table}.role, #{table}.created_at")
+          ").group("#{table}.user_id, #{table}.ip_address_id, #{table}.role, #{table}.created_at")
         end
 
         if input[:environment]
