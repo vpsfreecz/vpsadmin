@@ -128,8 +128,22 @@ class NetworkInterface < ActiveRecord::Base
     TransactionChains::NetworkInterface::AddHostIp.fire(self, [addr])
   end
 
+  # Remove host address `addr` from this interface
+  #
+  # Unless `safe` is true, the IP address `addr` is fetched from the database
+  # again in a transaction to ensure that it is still assigned to the interface.
+  #
   # @param addr [HostIpAddress]
-  def remove_host_address(addr)
-    TransactionChains::NetworkInterface::DelHostIp.fire(self, [addr])
+  # @param safe [Boolean]
+  def remove_host_address(addr, safe: false)
+    ::IpAddress.transaction do
+      addr = ::HostIpAddress.find(addr.id) unless safe
+
+      unless addr.assigned?
+        raise VpsAdmin::API::Exceptions::IpAddressNotAssigned
+      end
+
+      TransactionChains::NetworkInterface::DelHostIp.fire(self, [addr])
+    end
   end
 end

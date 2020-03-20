@@ -268,6 +268,9 @@ module VpsAdmin::API::Resources
 
         @chain, _ = netif.remove_host_address(host)
         host
+
+      rescue VpsAdmin::API::Exceptions::IpAddressNotAssigned
+        error("#{host.ip_addr} is not assigned to any interface")
       end
 
       def state_id
