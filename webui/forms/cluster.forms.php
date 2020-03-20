@@ -447,10 +447,12 @@ function ip_edit_form($id) {
 	);
 
 	$xtpl->form_create(
-		'?page=cluster&action=ipaddr_edit2&id='.$ip->id.'&return='.urlencode($_GET['return']),
+		'?page=cluster&action=ipaddr_edit_shaper&id='.$ip->id.'&return='.urlencode($_GET['return']),
 		'post'
 	);
 
+	$xtpl->table_add_category(_('Shaper'));
+	$xtpl->table_add_category('');
 	$xtpl->table_td(_('Max TX').':');
 	$xtpl->form_add_number_pure(
 		'max_tx',
@@ -472,10 +474,25 @@ function ip_edit_form($id) {
 		'Mbps'
 	);
 	$xtpl->table_tr();
+	$xtpl->form_out(_("Set shaper"));
+
+	$xtpl->form_create(
+		'?page=cluster&action=ipaddr_edit_user&id='.$ip->id.'&return='.urlencode($_GET['return']),
+		'post'
+	);
+
+	$xtpl->table_add_category(_('Owner'));
+	$xtpl->table_add_category('');
 
 	$xtpl->form_add_input(_('User ID').':', 'text', '30', 'user', post_val('user', $ip->user_id));
+	$xtpl->form_add_select(
+		_('Environment').':',
+		'environment',
+		resource_list_to_options($api->environment->list()),
+		post_val('environment')
+	);
 
-	$xtpl->form_out(_("Save"));
+	$xtpl->form_out(_("Set owner"));
 }
 
 function dns_delete_form() {
