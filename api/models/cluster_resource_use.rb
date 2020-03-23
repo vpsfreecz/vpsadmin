@@ -57,10 +57,10 @@ class ClusterResourceUse < ActiveRecord::Base
       )
     end
 
-    if self.value > max
+    if !admin_override && self.value > max
       errors.add(:value, "cannot allocate more #{name} than #{max} to one object")
 
-    elsif self.value < min
+    elsif !admin_override && self.value < min
       errors.add(:value, "cannot allocate less #{name} than #{min} to one object")
     end
 
