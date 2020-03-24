@@ -1334,9 +1334,9 @@ if (isset($show_info) && $show_info) {
 		$xtpl->form_add_number_pure(
 			$name,
 			$vps->{$name},
-			$r->cluster_resource->min,
+			isAdmin() ? 0 : $r->cluster_resource->min,
 			isAdmin() ?
-				$r->cluster_resource->max :
+				99999999999 :
 				min($vps->{$name} + $r->free, $r->cluster_resource->max),
 			$r->cluster_resource->stepsize,
 			unit_for_cluster_resource($name)
