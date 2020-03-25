@@ -65,7 +65,7 @@ module VpsAdmin
           ret[:message] = "object not found"
         end
 
-        puts "Exception ActiveRecord::RecordNotFound: #{exception.message}"
+        puts "[#{Time.now}] Exception ActiveRecord::RecordNotFound: #{exception.message}"
         puts exception.backtrace.join("\n")
 
         HaveAPI::Hooks.stop(ret)
