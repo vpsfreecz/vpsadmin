@@ -76,6 +76,9 @@ module VpsAdmin
         ret[:status] = false
         ret[:message] = 'Resource is locked. Try again later.'
 
+        puts "[#{Time.now}] Exception ResourceLocked: #{exception.message}"
+        puts exception.backtrace.join("\n")
+
         HaveAPI::Hooks.stop(ret)
       end
 
