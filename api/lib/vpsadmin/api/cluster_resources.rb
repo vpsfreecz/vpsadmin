@@ -322,6 +322,7 @@ module VpsAdmin::API
           use.destroy!
 
         else
+          use.admin_override = true
           use.update!(confirmed: ::ClusterResourceUse.confirmed(:confirm_destroy))
           use
         end
