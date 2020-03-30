@@ -58,7 +58,9 @@ class NetworkInterface < ActiveRecord::Base
               "#{ip} cannot be freely assigned to a VPS"
       end
 
-      if !ip.user_id && ::IpAddress.joins(network: :location_networks).where(
+      if !ip.user_id \
+        && ::User.current.role != :admin \
+        && ::IpAddress.joins(network: :location_networks).where(
           user: vps.user,
           network_interface: nil,
           networks: {
