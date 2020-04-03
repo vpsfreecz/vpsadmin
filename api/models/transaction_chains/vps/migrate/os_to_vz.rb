@@ -156,8 +156,8 @@ module TransactionChains
       # Migration to different location - remove or replace IP addresses
       migrate_network_interfaces
 
-      # When the location is unchaged, add existing addresses to the new VPS
-      if !location_changed? && @opts[:handle_ips]
+      # When IPs are unchanged, add them to the new VPS
+      if (!location_changed? || @opts[:transfer_ips]) && @opts[:handle_ips]
         vps.ip_addresses.order('`order`').each do |ip|
           append(
             Transactions::NetworkInterface::AddRoute,
