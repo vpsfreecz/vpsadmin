@@ -103,7 +103,18 @@ module TransactionChains
 
     protected
     def ip_confirmation(t, netif, ip)
-      t.edit(ip, network_interface_id: nil, route_via_id: nil, order: nil)
+      changes = {
+        network_interface_id: nil,
+        route_via_id: nil,
+        order: nil,
+      }
+
+      if !netif.vps.node.location.environment.user_ip_ownership
+        changes[:charged_environment_id] = nil
+      end
+
+      t.edit(ip, changes)
+
       t.just_create(
         netif.vps.log(:route_del, {id: ip.id, addr: ip.addr})
       ) unless included?
