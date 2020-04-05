@@ -33,8 +33,9 @@ module NodeCtld
       netif
     end
 
+    # @param [String]
     # @return [String]
-    attr_reader :name
+    attr_accessor :name
 
     # @return [Hash<Integer, Array<Route>>]
     attr_reader :routes

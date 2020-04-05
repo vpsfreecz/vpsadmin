@@ -9,6 +9,7 @@ module Transactions::NetworkInterface
       self.node_id = netif.vps.node_id
 
       {
+        pool_fs: netif.vps.dataset_in_pool.pool.filesystem,
         name: new_name,
         original: orig,
       }

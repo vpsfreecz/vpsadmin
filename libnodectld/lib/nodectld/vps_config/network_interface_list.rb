@@ -31,6 +31,16 @@ module NodeCtld
     end
 
     # @param name [String]
+    # @param new_name [String]
+    def rename(name, new_name)
+      netif = @netifs.detect { |n| n.name == name }
+      fail "netif '#{name}' not found" if netif.nil?
+      netif.name = new_name
+      @index.delete(name)
+      @index[netif.name] = netif.name
+    end
+
+    # @param name [String]
     def remove(name)
       @netifs.delete_if { |n| n.name == name }
       @index.delete(name)
