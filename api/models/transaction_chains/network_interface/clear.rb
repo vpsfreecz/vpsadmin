@@ -13,7 +13,7 @@ module TransactionChains
           ::Network.roles[:private_access],
         ]},
       ).each do |ip|
-        if ip.routed_via_id
+        if ip.route_via_id
           routed_via << ip
         else
           routed_direct << ip
