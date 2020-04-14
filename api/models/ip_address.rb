@@ -125,7 +125,7 @@ class IpAddress < ActiveRecord::Base
       )
     end
 
-    q.order('location_networks.priority, ip_addresses.user_id DESC, ip_addresses.id').take!
+    q.order('ip_addresses.user_id DESC, location_networks.priority, ip_addresses.id').take!
   end
 
   def check_address
