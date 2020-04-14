@@ -54,8 +54,17 @@ module NodeCtld::Firewall
 
     def unreg_ip(addr, prefix, v)
       PROTOCOLS.each do |p|
-        iptables(v, ['-D', chain, '-s', "#{addr}/#{prefix}", '-p', p.to_s, '-j', 'ACCEPT'])
-        iptables(v, ['-D', chain, '-d', "#{addr}/#{prefix}", '-p', p.to_s, '-j', 'ACCEPT'])
+        begin
+          iptables(v, ['-D', chain, '-s', "#{addr}/#{prefix}", '-p', p.to_s, '-j', 'ACCEPT'])
+        rescue NodeCtld::IptablesBadRule
+          log(:warn, "Rule for #{chain} -s #{addr}/#{prefix} -p #{p} not found")
+        end
+
+        begin
+          iptables(v, ['-D', chain, '-d', "#{addr}/#{prefix}", '-p', p.to_s, '-j', 'ACCEPT'])
+        rescue NodeCtld::IptablesBadRule
+          log(:warn, "Rule for #{chain} -d #{addr}/#{prefix} -p #{p} not found")
+        end
       end
     end
 

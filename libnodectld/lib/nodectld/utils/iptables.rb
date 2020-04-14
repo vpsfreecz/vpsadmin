@@ -40,7 +40,6 @@ module NodeCtld::Utils
       begin
         if opts[:sync]
           NodeCtld::Firewall.synchronize { cmd.call }
-
         else
           cmd.call
         end
@@ -60,6 +59,9 @@ module NodeCtld::Utils
           try_cnt += 1
           sleep(3)
           retry
+
+        elsif err.rc == 1 && err.output =~ /Bad rule/
+          raise NodeCtld::IptablesBadRule.new(err.cmd, err.rc, err.output)
 
         else
           raise err
