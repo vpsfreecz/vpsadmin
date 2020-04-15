@@ -11,6 +11,7 @@ module NodeCtld::Utils
         vps: :Vps,
         worker: :Worker,
         pool: :Pool,
+        routes: :Routes,
         subprocess: :Subprocess,
         integrity: :Integrity,
         outage_window: :OutageWindow,
