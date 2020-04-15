@@ -62,24 +62,6 @@ module TransactionChains
         append(Transactions::Storage::SetDataset, args: [dst, props]) if props.any?
       end
 
-      # Create empty new VPS
-      append(Transactions::Vps::Create, args: [dst_vps, empty: true])
-
-      # Configure resources
-      append(
-        Transactions::Vps::Resources,
-        args: [dst_vps, src_vps.get_cluster_resources]
-      )
-
-      # Transform venet into veth_routed
-      src_netif = src_vps.network_interfaces.take!
-      dst_netif = ::NetworkInterface.find(src_netif.id)
-      dst_netif.vps = dst_vps
-      use_chain(
-        NetworkInterface.chain_for(dst_netif.kind, :Morph),
-        args: [dst_netif, :veth_routed]
-      )
-
       # Unmount VPS datasets & snapshots in other VPSes
       mounts = Vps::Migrate::MountMigrator.new(self, vps, dst_vps)
       mounts.umount_others
@@ -155,6 +137,25 @@ module TransactionChains
         canmount: 'noauto',
         mount: true,
       ])
+
+      # Create empty new VPS
+      append(Transactions::Vps::Create, args: [dst_vps, empty: true], urgent: true)
+
+      # Configure resources
+      append(
+        Transactions::Vps::Resources,
+        args: [dst_vps, src_vps.get_cluster_resources],
+        urgent: true,
+      )
+
+      # Transform venet into veth_routed
+      src_netif = src_vps.network_interfaces.take!
+      dst_netif = ::NetworkInterface.find(src_netif.id)
+      dst_netif.vps = dst_vps
+      use_chain(
+        NetworkInterface.chain_for(dst_netif.kind, :Morph),
+        args: [dst_netif, :veth_routed]
+      )
 
       dst_ip_addresses = vps.ip_addresses
 

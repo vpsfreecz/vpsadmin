@@ -114,19 +114,10 @@ module TransactionChains
       dst_vps.dataset_in_pool = vps_dataset(vps, dst_vps, attrs[:dataset_plans])
       lock(dst_vps.dataset_in_pool)
 
-      # Create empty new VPS
-      append_t(Transactions::Vps::Create, args: [dst_vps, empty: true]) do |t|
-        t.create(dst_vps)
-        confirm_features.each { |f| t.just_create(f) }
-        confirm_windows.each { |w| t.just_create(w) }
-      end
-
+      # Save the VPS
       dst_vps.save!
 
       concerns(:transform, [vps.class.name, vps.id], [vps.class.name, dst_vps.id])
-
-      # Resources
-      use_chain(Vps::SetResources, args: [dst_vps, vps_resources]) if vps_resources
 
       # Transfer data
       if attrs[:subdatasets]
@@ -184,21 +175,24 @@ module TransactionChains
 
         transfer_datasets(datasets, urgent: true)
 
-        # Set canmount=noauto on all datasets
-        append(Transactions::Storage::SetCanmount, args: [
-          datasets.map { |src, dst| dst },
-          canmount: 'noauto',
-        ])
-
         use_chain(Vps::Start, args: vps, urgent: true) if vps.running?
-
-      else
-        # Set canmount=noauto on all datasets
-        append(Transactions::Storage::SetCanmount, args: [
-          datasets.map { |src, dst| dst },
-          canmount: 'noauto',
-        ])
       end
+
+      # Set canmount=noauto on all datasets
+      append(Transactions::Storage::SetCanmount, args: [
+        datasets.map { |src, dst| dst },
+        canmount: 'noauto',
+      ])
+
+      # Create empty new VPS
+      append_t(Transactions::Vps::Create, args: [dst_vps, empty: true]) do |t|
+        t.create(dst_vps)
+        confirm_features.each { |f| t.just_create(f) }
+        confirm_windows.each { |w| t.just_create(w) }
+      end
+
+      # Resources
+      use_chain(Vps::SetResources, args: [dst_vps, vps_resources]) if vps_resources
 
       # Fix snapshots
       fix_snapshots(dst_vps, datasets)
