@@ -20,7 +20,7 @@ module Transactions::Storage
 
       if dataset_in_pool.pool.node.vpsadminos? \
          && (dataset_in_pool.pool.hypervisor? || dataset_in_pool.pool.backup?)
-        options[:canmount] = 'noauto'
+        options[:canmount] ||= 'noauto'
       end
 
       {

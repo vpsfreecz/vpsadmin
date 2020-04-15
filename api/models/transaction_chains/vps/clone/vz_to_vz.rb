@@ -160,15 +160,17 @@ module TransactionChains
             props_to_set[p.name.to_sym] = p.value
           end
 
-          append(Transactions::Storage::CreateDataset, args: [
-              dst, props_to_set
-          ]) do
-            create(dst.dataset)
-            create(dst)
-            create(use)
+          props_to_set[:canmount] = 'off'
+
+          append_t(Transactions::Storage::CreateDataset, args: [
+              dst, props_to_set, {create_private: false}
+          ]) do |t|
+            t.create(dst.dataset)
+            t.create(dst)
+            t.create(use)
 
             properties.each_value do |p|
-              create(p)
+              t.create(p)
             end
           end
 
@@ -189,7 +191,22 @@ module TransactionChains
 
         transfer_datasets(datasets, urgent: true)
 
+        # Set canmount=on on all datasets and mount them
+        append(Transactions::Storage::SetCanmount, args: [
+          datasets.map { |src, dst| dst },
+          canmount: 'on',
+          mount: true,
+        ])
+
         use_chain(Vps::Start, args: vps, urgent: true) if vps.running?
+
+      else
+        # Set canmount=on on all datasets and mount them
+        append(Transactions::Storage::SetCanmount, args: [
+          datasets.map { |src, dst| dst },
+          canmount: 'on',
+          mount: true,
+        ])
       end
 
       # Fix snapshots

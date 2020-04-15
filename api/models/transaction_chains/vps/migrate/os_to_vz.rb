@@ -67,9 +67,10 @@ module TransactionChains
           end
         end
 
-        append_t(Transactions::Storage::CreateDataset, args: dst) do |t|
-          t.create(dst)
-        end
+        # Create datasets with canmount=off for the transfer
+        append_t(Transactions::Storage::CreateDataset, args: [
+          dst, {canmount: 'off'}, {create_private: false},
+        ]) { |t| t.create(dst) }
 
         # Set all properties except for quotas to ensure send/recv will pass
         props = {}
@@ -150,6 +151,13 @@ module TransactionChains
           urgent: true,
         ) if props.any?
       end
+
+      # Set canmount=on on all datasets and mount them
+      append(Transactions::Storage::SetCanmount, args: [
+        datasets.map { |src, dst| dst },
+        canmount: 'on',
+        mount: true,
+      ])
 
       dst_ip_addresses = vps.ip_addresses
 
