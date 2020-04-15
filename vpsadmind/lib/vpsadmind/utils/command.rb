@@ -10,6 +10,7 @@ module VpsAdmind::Utils
           :vps => :Vps,
           :worker => :Worker,
           :pool => :Pool,
+          :routes => :Routes,
           :subprocess => :Subprocess,
           :integrity => :Integrity,
           :hypervisor => :Hypervisor,
