@@ -157,7 +157,7 @@ module TransactionChains
         datasets.map { |src, dst| dst },
         canmount: 'on',
         mount: true,
-      ])
+      ], urgent: true)
 
       dst_ip_addresses = vps.ip_addresses
 

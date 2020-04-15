@@ -136,7 +136,7 @@ module TransactionChains
         datasets.map { |src, dst| dst },
         canmount: 'noauto',
         mount: true,
-      ])
+      ], urgent: true)
 
       # Create empty new VPS
       append(Transactions::Vps::Create, args: [dst_vps, empty: true], urgent: true)
