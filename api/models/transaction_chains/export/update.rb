@@ -22,6 +22,7 @@ module TransactionChains
       db_changes = {}
       toggle = nil
       set = false
+      add_hosts = []
 
       new_export.changed.each do |attr|
         case attr
@@ -35,7 +36,9 @@ module TransactionChains
         end
       end
 
-      if toggle.nil? && !set
+      add_hosts = create_missing_hosts(new_export) if new_export.all_vps
+
+      if toggle.nil? && !set && add_hosts.empty?
         new_export.save!
         return new_export
       end
@@ -54,6 +57,12 @@ module TransactionChains
         end
       end
 
+      if add_hosts.any?
+        append_t(Transactions::Export::AddHosts, args: [new_export, add_hosts]) do |t|
+          add_hosts.each { |host| t.just_create(host) }
+        end
+      end
+
       if toggle === true
         append_t(Transactions::Export::Enable, args: [new_export]) do |t|
           t.edit(export, enabled: new_export.enabled)
@@ -61,6 +70,29 @@ module TransactionChains
       end
 
       export
+    end
+
+    protected
+    def create_missing_hosts(export)
+      ips = ::IpAddress.joins(:network, network_interface: :vps).where(
+        networks: {ip_version: 4},
+        vpses: {user_id: export.user_id},
+      ).to_a
+
+      ips.map do |ip|
+        begin
+          ::ExportHost.create!(
+            export: export,
+            ip_address: ip,
+            rw: export.rw,
+            sync: export.sync,
+            subtree_check: export.subtree_check,
+            root_squash: export.root_squash,
+          )
+        rescue ActiveRecord::RecordNotUnique
+          nil
+        end
+      end.compact
     end
   end
 end
