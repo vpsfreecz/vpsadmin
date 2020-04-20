@@ -28,14 +28,14 @@ module NodeCtl
           raise ValidationError, 'missing transaction type(s)'
         end
 
-        params[:types] = args
+        params[:types] = args.map(&:to_i)
 
       else
         if args.size < 1
           raise ValidationError, 'missing transaction id(s)'
         end
 
-        params[:transactions] = args
+        params[:transactions] = args.map(&:to_i)
       end
     end
 
