@@ -128,6 +128,16 @@ module TransactionChains
 
       confirm_creation = Proc.new do |t|
         datasets.each do |src, dst|
+          t.create(dst_vps)
+
+          confirm_features.each do |f|
+            t.just_create(f)
+          end
+
+          confirm_windows.each do |w|
+            t.just_create(w)
+          end
+
           use = dst.allocate_resource!(
             :diskspace,
             src.diskspace,
@@ -185,17 +195,7 @@ module TransactionChains
         append_t(
           Transactions::Vps::SendState,
           args: [vps, clone: true, consistent: false, restart: false, start: false],
-        ) do |t|
-          t.create(dst_vps)
-
-          confirm_features.each do |f|
-            t.just_create(f)
-          end
-
-          confirm_windows.each do |w|
-            t.just_create(w)
-          end
-        end
+        )
       end
 
       # Hostname
