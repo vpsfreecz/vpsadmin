@@ -838,7 +838,7 @@ END
         error("swapping VPSes with mounts of each other is not supported")
 
       elsif vps.node.hypervisor_type != input[:vps].node.hypervisor_type
-        error('swap between OpenVZ and vpsAdminOS is not supported yet')
+        error('swap between OpenVZ and vpsAdminOS platforms is not supported, contact support')
 
       elsif vps.node.vpsadminos? && input[:vps].node.vpsadminos?
         error('swap is not supported on vpsAdminOS yet')
