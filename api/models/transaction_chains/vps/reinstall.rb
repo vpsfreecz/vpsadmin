@@ -110,6 +110,9 @@ module TransactionChains
         use_chain(SnapshotInPool::Destroy, args: sip)
       end
 
+      # Detach all backup heads
+      use_chain(DatasetInPool::DetachBackupHeads, args: vps.dataset_in_pool)
+
       # Reinstall CT
       append_t(Transactions::Vps::Reinstall, args: [vps, template]) do |t|
         t.edit(vps, os_template_id: template.id)
