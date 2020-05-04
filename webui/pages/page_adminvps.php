@@ -1227,9 +1227,21 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_td(_('Info').':');
 		$xtpl->table_td($vps->os_template->info);
 		$xtpl->table_tr();
-		$xtpl->form_add_radio(_("Update information").':', 'reinstall_action', '1', true, $hint = _("Use if you have upgraded your system"));
+		$xtpl->form_add_radio(
+			_("Update information").':',
+			'reinstall_action',
+			'1', true,
+			_("Use if you have upgraded your system.")
+			.($vps->node->hypervisor_type == 'vpsadminos' ? ' '._('The VPS will be restarted.') : '')
+		);
 		$xtpl->table_tr();
-		$xtpl->form_add_radio(_("Reinstall").':', 'reinstall_action', '2', false, $hint = _("Install base system again"));
+		$xtpl->form_add_radio(
+			_("Reinstall").':',
+			'reinstall_action',
+			'2', false,
+			_("Install base system again.").' '
+			.($vps->node->hypervisor_type == 'vpsadminos' ? _('All data in the root filesystem will be removed.') : _('All data will be removed.'))
+		);
 		$xtpl->table_tr();
 		$xtpl->form_out(_("Go >>"));
 
