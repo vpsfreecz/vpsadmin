@@ -205,6 +205,8 @@ module VpsAdmin::API::Resources
         allow
       end
 
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       def exec
         host = ::HostIpAddress.find(params[:host_ip_address_id])
         netif = host.ip_address.network_interface
@@ -223,6 +225,7 @@ module VpsAdmin::API::Resources
         end
 
         maintenance_check!(netif.vps)
+        object_state_check!(netif.vps, netif.vps.user)
 
         @chain, _ = netif.add_host_address(host)
         host
@@ -247,6 +250,8 @@ module VpsAdmin::API::Resources
         allow
       end
 
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       def exec
         host = ::HostIpAddress.find(params[:host_ip_address_id])
         netif = host.ip_address.network_interface
@@ -265,6 +270,7 @@ module VpsAdmin::API::Resources
         end
 
         maintenance_check!(netif.vps)
+        object_state_check!(netif.vps, netif.vps.user)
 
         @chain, _ = netif.remove_host_address(host)
         host

@@ -100,6 +100,9 @@ module VpsAdmin::API::Resources
         allow
       end
 
+      include VpsAdmin::API::Maintainable::Check
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       def exec
         netif = ::NetworkInterface.joins(:vps).find_by!(with_restricted(
           network_interfaces: {id: params[:network_interface_id]},
@@ -108,6 +111,9 @@ module VpsAdmin::API::Resources
         if input[:name] && !netif.vps.node.vpsadminos?
           error('veth renaming is not available on this node')
         end
+
+        maintenance_check!(netif.vps)
+        object_state_check!(netif.vps, netif.vps.user)
 
         @chain, _ = netif.rename(input[:name])
         netif

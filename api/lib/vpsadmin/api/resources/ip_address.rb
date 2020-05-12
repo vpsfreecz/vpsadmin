@@ -317,6 +317,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       allow
     end
 
+    include VpsAdmin::API::Lifetimes::ActionHelpers
+
     def exec
       ip = ::IpAddress.find(params[:ip_address_id])
       netif = input[:network_interface]
@@ -329,6 +331,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       end
 
       maintenance_check!(netif.vps)
+      object_state_check!(netif.vps, netif.vps.user)
 
       @chain, _ = netif.add_route(
         ip,
@@ -376,6 +379,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       allow
     end
 
+    include VpsAdmin::API::Lifetimes::ActionHelpers
+
     def exec
       ip = ::IpAddress.find(params[:ip_address_id])
       netif = input[:network_interface]
@@ -394,6 +399,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       host_addr = input[:host_ip_address] || ip.host_ip_addresses.take!
 
       maintenance_check!(netif.vps)
+      object_state_check!(netif.vps, netif.vps.user)
 
       @chain, _ = netif.add_route(ip, host_addrs: [host_addr])
       ip
@@ -427,6 +433,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       allow
     end
 
+    include VpsAdmin::API::Lifetimes::ActionHelpers
+
     def exec
       ip = ::IpAddress.find(params[:ip_address_id])
 
@@ -441,6 +449,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       netif = ip.network_interface
 
       maintenance_check!(netif.vps)
+      object_state_check!(netif.vps, netif.vps.user)
 
       @chain, _ = netif.remove_route(ip)
       ip

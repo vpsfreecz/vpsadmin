@@ -397,6 +397,12 @@ module VpsAdmin::API
       end
     end
 
+    module ActionHelpers
+      def self.included(klass)
+        Private.action_methods(klass)
+      end
+    end
+
     module Private
       StateTransition = Struct.new(
         :object,

@@ -124,6 +124,8 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       allow
     end
 
+    include VpsAdmin::API::Lifetimes::ActionHelpers
+
     def exec
       if (input[:dataset] && input[:snapshot]) \
          || (!input[:dataset] && !input[:snapshot])
@@ -140,6 +142,8 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       if !current_user.role == :admin && ds.user_id != current_user.id
         error('access denied')
       end
+
+      object_state_check!(ds.user)
 
       @chain, export = VpsAdmin::API::Operations::Export::Create.run(
         ds,
@@ -177,10 +181,14 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       allow
     end
 
+    include VpsAdmin::API::Lifetimes::ActionHelpers
+
     def exec
       export = self.class.model.find_by!(with_restricted(
         id: params[:export_id],
       ))
+
+      object_state_check!(export.user)
 
       @chain, export = VpsAdmin::API::Operations::Export::Update.run(
         export,
@@ -205,10 +213,14 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       allow
     end
 
+    include VpsAdmin::API::Lifetimes::ActionHelpers
+
     def exec
       export = self.class.model.find_by!(with_restricted(
         id: params[:export_id],
       ))
+
+      object_state_check!(export.user)
 
       @chain, export = VpsAdmin::API::Operations::Export::Destroy.run(export)
       ok
@@ -308,10 +320,14 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
         allow
       end
 
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       def exec
         export = ::Export.find_by!(with_restricted(
           id: params[:export_id],
         ))
+
+        object_state_check!(export.user)
 
         @chain, host = VpsAdmin::API::Operations::Export::AddHost.run(
           export,
@@ -347,11 +363,15 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
         allow
       end
 
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       def exec
         host = self.class.model.joins(:export).find_by!(with_restricted(
           exports: {id: params[:export_id]},
           id: params[:host_id],
         ))
+
+        object_state_check!(host.export.user)
 
         @chain, host = VpsAdmin::API::Operations::Export::EditHost.run(
           host,
@@ -376,11 +396,15 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
         allow
       end
 
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       def exec
         host = self.class.model.joins(:export).find_by!(with_restricted(
           exports: {id: params[:export_id]},
           id: params[:host_id],
         ))
+
+        object_state_check!(host.export.user)
 
         @chain = VpsAdmin::API::Operations::Export::DelHost.run(
           host.export,
