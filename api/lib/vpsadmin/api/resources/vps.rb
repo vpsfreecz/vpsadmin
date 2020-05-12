@@ -83,6 +83,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       resource VpsAdmin::API::Resources::Environment, label: 'Environment', desc: 'Filter by environment'
       resource VpsAdmin::API::Resources::UserNamespaceMap, label: 'UID/GID mapping'
       use :template
+      string :hostname_any
+      string :hostname_exact
     end
 
     output(:object_list) do
@@ -167,6 +169,14 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       if input[:os_template]
         q = q.where(os_template: input[:os_template])
+      end
+
+      if input[:hostname_exact]
+        q = q.where(hostname: input[:hostname_exact])
+      end
+
+      if input[:hostname_any]
+        q = q.where('vpses.hostname LIKE ?', "%#{input[:hostname_any]}%")
       end
 
       q
