@@ -37,7 +37,7 @@ module TransactionChains
         if environment_changed?
           # This code expects that the datasets have just one cluster resource,
           # which is diskspace.
-          changes = src.transfer_resources_to_env!(user, dst_node.location.environment)
+          changes = src.transfer_resources_to_env!(vps_user, dst_node.location.environment)
           changes[changes.keys.first][:row_id] = dst.id
           resources_changes.update(changes)
 

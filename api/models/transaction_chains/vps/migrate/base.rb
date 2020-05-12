@@ -31,7 +31,7 @@ module TransactionChains
     end
 
     protected
-    attr_reader :opts, :user, :src_node, :dst_node, :src_pool, :dst_pool,
+    attr_reader :opts, :vps_user, :src_node, :dst_node, :src_pool, :dst_pool,
       :src_vps, :dst_vps, :datasets, :resources_changes
     attr_accessor :userns_map
 
@@ -52,7 +52,7 @@ module TransactionChains
       lock(vps.dataset_in_pool)
       concerns(:affect, [vps.class.name, vps.id])
 
-      @user = vps.user
+      @vps_user = vps.user
       @src_vps = vps
       @dst_vps = ::Vps.find(vps.id)
       @dst_vps.node = dst_node
@@ -117,7 +117,7 @@ module TransactionChains
 
     def notify_begun
       mail(:vps_migration_begun, {
-        user: user,
+        user: vps_user,
         vars: {
           vps: src_vps,
           src_node: src_vps.node,
@@ -125,12 +125,12 @@ module TransactionChains
           maintenance_window: opts[:maintenance_window],
           reason: opts[:reason],
         }
-      }) if opts[:send_mail] && user.mailer_enabled
+      }) if opts[:send_mail] && vps_user.mailer_enabled
     end
 
     def notify_finished
       mail(:vps_migration_finished, {
-        user: user,
+        user: vps_user,
         vars: {
           vps: src_vps,
           src_node: src_vps.node,
@@ -138,13 +138,13 @@ module TransactionChains
           maintenance_window: opts[:maintenance_window],
           reason: opts[:reason],
         }
-      }) if opts[:send_mail] && user.mailer_enabled
+      }) if opts[:send_mail] && vps_user.mailer_enabled
     end
 
     def transfer_cluster_resources
       if environment_changed?
         resources_changes.update(src_vps.transfer_resources_to_env!(
-          user,
+          vps_user,
           dst_node.location.environment,
           opts[:resources]
         ))
@@ -343,7 +343,7 @@ module TransactionChains
         # Migrating to a different environment, transfer IP cluster resources
         if opts[:reallocate_ips] && environment_changed?
           changes = transfer_ip_addresses(
-            user,
+            vps_user,
             dst_ip_addresses,
             src_node.location.environment,
             dst_node.location.environment,
