@@ -20,7 +20,7 @@ module VpsAdmin::API::Resources
       resource User, label: 'User',
         value_label: :login
       string :role, choices: ::Network.roles.keys
-      string :addr, label: 'Address', desc: 'Address itself', db_name: :ip_addr
+      string :addr, label: 'Network address', db_name: :ip_addr
       integer :prefix, label: 'Prefix'
       integer :size, label: 'Size'
       integer :max_tx, label: 'Max tx', desc: 'Maximum output throughput'
@@ -105,6 +105,20 @@ module VpsAdmin::API::Resources
         if input[:role]
           ips = ips.joins(ip_address: :network).where(
             networks: {role: ::Network.roles[input[:role]]},
+          )
+        end
+
+        %i(addr prefix size max_tx max_rx).each do |filter|
+          next unless input[filter]
+
+          ips = ips.joins(:ip_address).where(
+            ip_addresses: {filter => input[:filter]},
+          )
+        end
+
+        if input.has_key?(:user)
+          ips = ips.joins(:ip_address).where(
+            ip_addresses: {user_id: input[:user] && input[:user].id},
           )
         end
 
