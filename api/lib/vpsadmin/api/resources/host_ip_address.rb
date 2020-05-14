@@ -108,7 +108,13 @@ module VpsAdmin::API::Resources
           )
         end
 
-        %i(addr prefix size max_tx max_rx).each do |filter|
+        if input[:addr]
+          ips = ips.joins(:ip_address).where(
+            ip_addresses: {ip_addr: input[:addr]},
+          )
+        end
+
+        %i(prefix size max_tx max_rx).each do |filter|
           next unless input[filter]
 
           ips = ips.joins(:ip_address).where(
