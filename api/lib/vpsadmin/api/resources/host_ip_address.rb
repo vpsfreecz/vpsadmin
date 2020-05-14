@@ -57,7 +57,7 @@ module VpsAdmin::API::Resources
       end
 
       def query
-        ips = ::HostIpAddress
+        ips = ::HostIpAddress.joins(:ip_address)
 
         %i(prefix size max_tx max_rx).each do |filter|
           next unless input.has_key?(filter)
