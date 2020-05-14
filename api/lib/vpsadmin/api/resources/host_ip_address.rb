@@ -35,6 +35,7 @@ module VpsAdmin::API::Resources
     params(:all) do
       use :id
       use :common
+      patch :addr, label: 'Address'
     end
 
     class Index < HaveAPI::Actions::Default::Index
