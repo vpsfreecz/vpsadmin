@@ -17,7 +17,7 @@ module TransactionChains
       append_t(Transactions::Export::DelHosts, args: [host.export, [host]])
       append_t(Transactions::Export::AddHosts, args: [host.export, [new_host]]) do |t|
         changes = Hash[new_host.changed.map { |attr| [attr, new_host.send(attr)] }]
-        t.edit(host, changes)
+        t.edit(host, changes) if changes.any?
       end
 
       host
