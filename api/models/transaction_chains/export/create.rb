@@ -32,6 +32,8 @@ module TransactionChains
         snap_clone = use_chain(SnapshotInPool::UseClone, args: [sip, nil])
       end
 
+      lock(dip)
+
       begin
         export = ::Export.create!(
           dataset_in_pool: dip,
