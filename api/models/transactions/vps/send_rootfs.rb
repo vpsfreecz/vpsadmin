@@ -2,7 +2,7 @@ module Transactions::Vps
   class SendRootfs < ::Transaction
     t_name :vps_send_rootfs
     t_type 3031
-    queue :vps
+    queue :zfs_send
 
     def params(vps)
       self.vps_id = vps.id

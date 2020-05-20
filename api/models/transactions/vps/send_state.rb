@@ -2,7 +2,7 @@ module Transactions::Vps
   class SendState < ::Transaction
     t_name :vps_send_state
     t_type 3033
-    queue :vps
+    queue :zfs_send
 
     # @param vps [::Vps]
     # @param opts [Hash]
