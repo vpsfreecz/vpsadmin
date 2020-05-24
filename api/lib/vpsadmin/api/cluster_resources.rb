@@ -92,7 +92,7 @@ module VpsAdmin::API
 
     module InstanceMethods
       def allocate_resources(_ = nil, required: nil, optional: nil, user: nil,
-                              confirmed: nil, chain: nil, values: {})
+                              confirmed: nil, chain: nil, values: {}, admin_override: nil)
         user ||= ::User.current
 
         required ||= self.class.cluster_resources[:required]
@@ -111,7 +111,8 @@ module VpsAdmin::API
             values[r] || method(r).call,
             user: user,
             confirmed: confirmed,
-            chain: chain
+            chain: chain,
+            admin_override: admin_override,
           )
         end
 
@@ -121,7 +122,8 @@ module VpsAdmin::API
             values[r] || method(r).call,
             user: user,
             confirmed: confirmed,
-            chain: chain
+            chain: chain,
+            admin_override: admin_override,
           )
 
           ret << use if use.valid?
@@ -198,7 +200,7 @@ module VpsAdmin::API
       end
 
       def allocate_resource(resource, value, user: nil, confirmed: nil,
-                            chain: nil)
+                            chain: nil, admin_override: nil)
         user ||= ::User.current
         confirmed ||= ::ClusterResourceUse.confirmed(:confirm_create)
         env = Private.environment(self)
@@ -217,7 +219,7 @@ module VpsAdmin::API
 
         chain.lock(user_resource) if chain
 
-        use = ::ClusterResourceUse.create(
+        use = ::ClusterResourceUse.new(
           user_cluster_resource: user_resource,
           class_name: self.class.name,
           table_name: self.class.table_name,
@@ -226,7 +228,9 @@ module VpsAdmin::API
           confirmed: confirmed
         )
 
+        use.admin_override = true if admin_override
         return use unless use.valid?
+        use.save
 
         if resource_obj.resource_type.to_sym == :object && chain \
            && resource_obj.allocate_chain
