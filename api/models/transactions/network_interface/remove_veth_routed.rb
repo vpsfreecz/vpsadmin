@@ -4,7 +4,7 @@ module Transactions::Vps
     t_type 2019
     queue :vps
 
-    def params(vps)
+    def params(netif)
       self.vps_id = netif.vps.id
       self.node_id = netif.vps.node_id
 
