@@ -222,6 +222,10 @@ class Vps < ActiveRecord::Base
     TransactionChains::Vps::Swap.fire(self, secondary_vps, attrs)
   end
 
+  def replace(node, attrs)
+    TransactionChains::Vps::Replace.chain_for(self, node).fire(self, node, attrs)
+  end
+
   def mount_dataset(dataset, dst, opts)
     TransactionChains::Vps::MountDataset.fire(self, dataset, dst, opts)
   end

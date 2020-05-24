@@ -5,13 +5,18 @@ module Transactions::Vps
     queue :vps
 
     # @param vps [::Vps]
-    def params(vps)
+    # @option opts [Hash]
+    # @param opts [Node] :node
+    # @param opts [any] :network_interfaces
+    def params(vps, opts = {})
       self.vps_id = vps.id
-      self.node_id = vps.node_id
+      self.node_id = opts[:node] || vps.node_id
+
+      netifs = opts[:network_interfaces] || vps.network_interfaces.all
 
       {
         pool_fs: vps.dataset_in_pool.pool.filesystem,
-        network_interfaces: vps.network_interfaces.all.map do |netif|
+        network_interfaces: netifs.map do |netif|
           {
             name: netif.name,
             routes: netif.ip_addresses.all.map do |ip|

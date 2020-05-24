@@ -868,6 +868,42 @@ END
     end
   end
 
+  class Replace < HaveAPI::Action
+    desc 'Replace broken VPS'
+    route '{%{resource}_id}/replace'
+    http_method :post
+    blocking true
+
+    input do
+      resource VpsAdmin::API::Resources::Node, desc: 'Clone to node', value_label: :name
+      datetime :expiration_date, desc: 'How long should the original VPS be kept'
+    end
+
+    output do
+      use :all
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+    end
+
+    def exec
+      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+      maintenance_check!(vps)
+      object_state_check!(vps.user)
+
+      @chain, replaced_vps = vps.replace(input[:node] || vps.node, input)
+      replaced_vps
+
+    rescue ActiveRecord::RecordInvalid => e
+      error('replace failed', to_param_names(e.record.errors.to_hash))
+    end
+
+    def state_id
+      @chain.id
+    end
+  end
+
   class DeployPublicKey < HaveAPI::Action
     desc 'Deploy public SSH key'
     route '{%{resource}_id}/deploy_public_key'
@@ -902,7 +938,7 @@ END
 
   include VpsAdmin::API::Maintainable::Action
   include VpsAdmin::API::Lifetimes::Resource
-  add_lifetime_methods([Start, Stop, Restart, Create, Clone, Update, Delete, SwapWith])
+  add_lifetime_methods([Start, Stop, Restart, Create, Clone, Update, Delete, SwapWith, Replace])
 
   class Config < HaveAPI::Resource
     route '{vps_id}/configs'
