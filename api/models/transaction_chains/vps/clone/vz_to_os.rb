@@ -243,12 +243,15 @@ module TransactionChains
         confirmed: ::Dataset.confirmed(:confirm_create)
       )
 
+      props = root_dataset_properties(vps)
+      props[:canmount] = 'off'
+
       dip = use_chain(Dataset::Create, args: [
         @dst_pool,
         nil,
         [ds],
         automount: false,
-        properties: root_dataset_properties(vps),
+        properties: props,
         user: dst_vps.user,
         label: "vps#{dst_vps.id}",
         userns_map: @userns_map,
