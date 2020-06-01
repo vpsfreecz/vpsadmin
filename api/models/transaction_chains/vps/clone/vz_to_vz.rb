@@ -263,6 +263,7 @@ module TransactionChains
         properties: props,
         user: dst_vps.user,
         label: "vps#{dst_vps.id}",
+        create_private: false,
       ]).last
 
       # Clone dataset plans
