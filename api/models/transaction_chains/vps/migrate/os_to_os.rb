@@ -110,10 +110,14 @@ module TransactionChains
           t.edit(use, changes) unless changes.empty?
         end
 
-        # Transfer datasets and properties
+        # Transfer datasets, snapshots and properties
         datasets.each do |src, dst|
           src.dataset_properties.all.each do |p|
             t.edit(p, dataset_in_pool_id: dst.id)
+          end
+
+          src.snapshot_in_pools.each do |sip|
+            t.edit(sip, dataset_in_pool_id: dst.id)
           end
 
           migrate_dataset_plans(src, dst, t)
