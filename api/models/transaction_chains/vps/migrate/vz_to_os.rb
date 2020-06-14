@@ -181,6 +181,13 @@ module TransactionChains
         end
       end
 
+      # Configure DNS resolvers
+      append(Transactions::Vps::DnsResolver, args: [
+        dst_vps,
+        src_vps.dns_resolver,
+        dst_vps.dns_resolver,
+      ])
+
       # Regenerate mount scripts of the migrated VPS
       mounts.datasets = datasets
       mounts.remount_mine
