@@ -28,7 +28,7 @@ module NodeCtld
       def apply_to(ds)
         @props.each do |name, prop|
           case prop.source
-            when :local, :none
+            when :local, :received, :none
               @cmd.zfs(:set, "#{name}=\"#{translate_value(name, prop.value)}\"", ds)
 
             when :default, :inherited
