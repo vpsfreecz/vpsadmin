@@ -199,7 +199,49 @@ module TransactionChains
           failed: trans.where(done: 1, status: 0),
           warning: trans.where(done: 1, status: 2),
           pending: trans.where(done: 0)
-        }
+        },
+
+        backups: {
+          old_latest_any_snapshot: ::Dataset
+            .joins(dataset_in_pools: :dataset_in_pool_plans)
+            .where('(SELECT COUNT(*) FROM snapshots s WHERE s.dataset_id = datasets.id AND s.created_at > DATE_SUB(NOW(), INTERVAL 3 DAY)) = 0')
+            .group('datasets.id'),
+
+          old_latest_backup_snapshot: ::DatasetInPool
+            .joins(:dataset, :pool, :dataset_in_pool_plans)
+            .where(pools: {role: ::Pool.roles[:backup]})
+            .where('(
+                SELECT dips2.id
+                FROM dataset_in_pools dips2
+                INNER JOIN pools p2 ON p2.id = dips2.pool_id
+                WHERE dataset_id = datasets.id AND p2.role IN (0)
+              ) IS NOT NULL')
+            .where('(
+                SELECT COUNT(*)
+                FROM snapshot_in_pools sips
+                INNER JOIN snapshots s ON s.id = sips.snapshot_id
+                WHERE
+                  sips.dataset_in_pool_id = dataset_in_pools.id
+                  AND s.created_at > DATE_SUB(NOW(), INTERVAL 3 DAY)
+              ) = 0')
+            .group('datasets.id'),
+
+          too_many_in_hypervisor: ::DatasetInPool
+            .select('dataset_in_pools.*, COUNT(snapshot_in_pools.id) AS snapshot_count')
+            .joins(:dataset, :pool, :snapshot_in_pools)
+            .where(pools: {role: ::Pool.roles[:hypervisor]})
+            .group('datasets.id')
+            .having('snapshot_count > 3')
+            .order('COUNT(snapshot_in_pools.id) DESC'),
+
+          too_many_in_backup: ::DatasetInPool
+            .select('dataset_in_pools.*, COUNT(snapshot_in_pools.id) AS snapshot_count')
+            .joins(:dataset, :pool, :snapshot_in_pools)
+            .where(pools: {role: ::Pool.roles[:backup]})
+            .group('datasets.id')
+            .having('snapshot_count > 20')
+            .order('COUNT(snapshot_in_pools.id) DESC'),
+        },
       }
     end
   end
