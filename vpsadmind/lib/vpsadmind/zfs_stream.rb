@@ -50,8 +50,16 @@ module VpsAdmind
     end
 
     # Send stream over a socket.
-    def send_to(addr, port: nil)
-      pipe_cmd("nc #{addr} #{port}")
+    def send_to(addr, port: nil, timeout: 900)
+      socat = "socat -u -T #{timeout} 'EXEC:\"#{full_zfs_send_cmd}\"' TCP:#{addr}:#{port}"
+
+      @cmd.step = socat if @cmd
+      log(:work, @cmd, socat)
+
+      IO.popen("exec #{socat} 2>&1") do |io|
+        @size = parse_total_size(io)
+        monitor_progress(io)
+      end
     end
 
     # Send stream to a local filesystem.
@@ -123,13 +131,7 @@ module VpsAdmind
 
     def zfs_send(stdout)
       r_err, w_err = IO.pipe
-
-      if @from_snapshot
-        cmd = "zfs send -c -v -L -I @#{@from_snapshot} #{path}@#{@snapshot}"
-
-      else
-        cmd = "zfs send -c -v -L #{path}@#{@snapshot}"
-      end
+      cmd = full_zfs_send_cmd
 
       @pipeline << cmd
 
@@ -247,6 +249,14 @@ module VpsAdmind
       end
 
       (size / 1024 / 1024).round
+    end
+
+    def full_zfs_send_cmd
+      if @from_snapshot
+        "zfs send -c -v -L -I @#{@from_snapshot} #{path}@#{@snapshot}"
+      else
+        "zfs send -c -v -L #{path}@#{@snapshot}"
+      end
     end
   end
 end
