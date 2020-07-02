@@ -642,7 +642,11 @@ function vps_details_submenu($vps) {
 		$xtpl->sbar_add(_('Change owner'), '?page=adminvps&action=chown&veid='.$vps->id);
 	}
 
-	$xtpl->sbar_add(_('Clone VPS'), '?page=adminvps&action=clone&veid='.$vps->id);
+	if (isAdmin())
+		$xtpl->sbar_add(_('Clone VPS'), '?page=adminvps&action=clone-step-0&veid='.$vps->id);
+	else
+		$xtpl->sbar_add(_('Clone VPS'), '?page=adminvps&action=clone-step-1&veid='.$vps->id);
+
 	$xtpl->sbar_add(_('Swap VPS'), '?page=adminvps&action=swap&veid='.$vps->id);
 
 	$return_url = urlencode($_SERVER['REQUEST_URI']);
@@ -681,45 +685,392 @@ function vps_migrate_form($vps) {
 	vps_details_suite($vps);
 }
 
-function vps_clone_form($vps) {
+function vps_clone_form_step0($vps_id) {
 	global $xtpl, $api;
 
-	$xtpl->table_title(_('Clone VPS'));
-	$xtpl->form_create('?page=adminvps&action=clone&veid='.$vps->id, 'post');
+	$vps = $api->vps->show(
+		$vps_id,
+		['meta' => ['includes' => 'node__location,user']]
+	);
 
-	if ($_SESSION['is_admin']) {
-		api_params_to_form($vps->clone, 'input', array(
-			'vps' => function($vps) {
-				return '#'.$vps->id.' '.$vps->hostname;
-			},
-			'node' => function($node) {
-				return $node->domain_name;
-			}
-		));
+	$xtpl->title(_("Clone a VPS: Select user (0/3)"));
 
-	} else {
-		$input = $vps->clone->getParameters('input');
+	$xtpl->table_title(_('Source VPS'));
+	$xtpl->table_td(_('VPS:'));
+	$xtpl->table_td(vps_link($vps).' '.$vps->hostname);
+	$xtpl->table_tr();
 
-		foreach ($input as $name => $desc) {
-			if ($name === 'environment') {
-				continue;
-
-			} elseif ($name === 'location') {
-				$xtpl->form_add_select(
-					_('Location').':', 'location',
-					resource_list_to_options($api->location->list(['has_hypervisor' => true])),
-					post_val('location')
-				);
-
-			} else {
-				api_param_to_form($name, $desc);
-			}
-		}
+	if (isAdmin()) {
+		$xtpl->table_td(_('User:'));
+		$xtpl->table_td(user_link($vps->user));
+		$xtpl->table_tr();
 	}
 
-	$xtpl->form_out(_("Go >>"));
+	$xtpl->table_td(_('Platform:'));
+	$xtpl->table_td(hypervisorTypeToLabel($vps->node->hypervisor_type));
+	$xtpl->table_tr();
 
-	vps_details_suite($vps);
+	$xtpl->table_td(_('Location:'));
+	$xtpl->table_td($vps->node->location->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Node:'));
+	$xtpl->table_td($vps->node->domain_name);
+	$xtpl->table_tr();
+	$xtpl->table_out();
+
+	$xtpl->table_title(_('Choose target user'));
+	$xtpl->form_create('', 'get', 'clonevps-step0', false);
+	$xtpl->form_set_hidden_fields([
+		'page' => 'adminvps',
+		'action' => 'clone-step-1',
+		'veid' => $vps_id,
+	]);
+	$xtpl->form_add_input(_('User ID').':', 'text', '30', 'user', get_val('user', $vps->user_id));
+	$xtpl->form_out(_("Next"));
+}
+
+function vps_clone_form_step1($vps_id, $user_id) {
+	global $xtpl, $api;
+
+	$xtpl->title(_("Clone a VPS: Select platform (1/3)"));
+
+	if (isAdmin()) {
+		$xtpl->sbar_add(
+			_('Back to user selection'),
+			'?page=adminvps&action=clone-step-0&veid='.$veid.'&user='.$user_id.'&platform='.$platform
+		);
+	}
+
+	$vps = $api->vps->show(
+		$vps_id,
+		['meta' => ['includes' => 'node__location,user']]
+	);
+
+	$xtpl->table_title(_('Source VPS'));
+
+	if (isAdmin()) {
+		$xtpl->table_td(_('User:'));
+		$xtpl->table_td(user_link($vps->user));
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_td(_('VPS:'));
+	$xtpl->table_td(vps_link($vps).' '.$vps->hostname);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Platform:'));
+	$xtpl->table_td(hypervisorTypeToLabel($vps->node->hypervisor_type));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Location:'));
+	$xtpl->table_td($vps->node->location->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Node:'));
+	$xtpl->table_td($vps->node->domain_name);
+	$xtpl->table_tr();
+	$xtpl->table_out();
+
+	if (isAdmin()) {
+		try {
+			$user = $api->user->show($user_id);
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			notify_user(_('Invalid user'), _('Please select target user.'));
+			redirect('?page=adminvps&action=new-step-0');
+		}
+
+		$xtpl->table_title(_('Target VPS'));
+
+		$xtpl->table_td(_('User').':');
+		$xtpl->table_td(user_link($user));
+		$xtpl->table_tr();
+		$xtpl->table_out();
+	}
+
+	$xtpl->table_title(_('Choose target platform'));
+	$xtpl->form_create('', 'get', 'clonevps-step1', false);
+	$xtpl->form_set_hidden_fields([
+		'page' => 'adminvps',
+		'action' => 'clone-step-2',
+		'veid' => $vps_id,
+		'user' => $user_id,
+	]);
+
+	$xtpl->form_add_radio_pure(
+		'platform',
+		'vpsadminos',
+		get_val_issetto('platform', 'vpsadminos', true)
+	);
+	$xtpl->table_td('<strong>'._('vpsAdminOS').'</strong>');
+	$xtpl->table_tr();
+	$xtpl->table_td('');
+	$xtpl->table_td(_('
+		vpsAdminOS is an in-house developed container-based
+		virtualization platform that powers our VPS. For more information, see our
+		<a href="https://kb.vpsfree.org/manuals/vps/vpsadminos" target="_blank">knowledge base</a>
+		or project documentation at
+		<a href="https://vpsadminos.org" target="_blank">vpsadminos.org</a>.
+	'));
+	$xtpl->table_tr();
+
+	$xtpl->form_add_radio_pure(
+		'platform',
+		'openvz',
+		get_val_issetto('platform', 'openvz')
+	);
+	$xtpl->table_td('<strong>'._('OpenVZ Legacy').'<strong>');
+	$xtpl->table_tr();
+	$xtpl->table_td('');
+	$xtpl->table_td(_('
+		OpenVZ Legacy is a container-based virtualization platform.
+		We are in the process of migrating to a more up-to-date solution called
+		vpsAdminOS, which is at this time available only in Prague
+		(Praha). For more information, see our
+		<a href="https://kb.vpsfree.org/manuals/vps/vpsadminos" target="_blank">knowledge base</a>.
+	'));
+	$xtpl->table_tr();
+
+	$xtpl->form_out(_("Next"));
+}
+
+function vps_clone_form_step2($vps_id, $user_id, $platform) {
+	global $xtpl, $api;
+
+	if (!$platform) {
+		notify_user(
+			_('Invalid platform'),
+			_('Please select the desired platform.')
+		);
+		redirect('?page=adminvps&action=new-step-1&veid='.$vps_id.'&user='.$user_id);
+	}
+
+	$xtpl->title(_("Clone a VPS: Select a location (2/3)"));
+	$xtpl->sbar_add(
+		_('Back to platform selection'),
+		'?page=adminvps&action=clone-step-1&veid='.$vps_id.'&user='.$user_id.'&platform='.$platform
+	);
+
+	$vps = $api->vps->show(
+		$vps_id,
+		['meta' => ['includes' => 'node__location,user']]
+	);
+
+	$xtpl->table_title(_('Source VPS'));
+
+	if (isAdmin()) {
+		$xtpl->table_td(_('User:'));
+		$xtpl->table_td(user_link($vps->user));
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_td(_('VPS:'));
+	$xtpl->table_td(vps_link($vps).' '.$vps->hostname);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Platform:'));
+	$xtpl->table_td(hypervisorTypeToLabel($vps->node->hypervisor_type));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Location:'));
+	$xtpl->table_td($vps->node->location->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Node:'));
+	$xtpl->table_td($vps->node->domain_name);
+	$xtpl->table_tr();
+	$xtpl->table_out();
+
+	$xtpl->table_title(_('Target VPS'));
+
+	if (isAdmin()) {
+		try {
+			$user = $api->user->show($user_id);
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			notify_user(_('Invalid user'), _('Please select target user.'));
+			redirect('?page=adminvps&action=new-step-0');
+		}
+
+		$xtpl->table_td(_('User').':');
+		$xtpl->table_td(user_link($user));
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_td(_('Platform').':');
+	$xtpl->table_td(hypervisorTypeToLabel($platform));
+	$xtpl->table_tr();
+	$xtpl->table_out();
+
+	$xtpl->table_title(_('Choose target location'));
+	$xtpl->form_create('', 'get', 'clonevps-step2', false);
+	$xtpl->form_set_hidden_fields([
+		'page' => 'adminvps',
+		'action' => 'clone-step-3',
+		'veid' => $vps_id,
+		'user' => $user_id,
+		'platform' => $platform,
+	]);
+
+	$locations = $api->location->list([
+		'has_hypervisor' => true,
+		'hypervisor_type' => $platform,
+		'meta' => ['includes' => 'environment'],
+	]);
+
+	if (!isAdmin())
+		$user = $api->user->current();
+
+	foreach ($locations as $loc) {
+		$xtpl->form_add_radio_pure(
+			'location',
+			$loc->id,
+			$_GET['location'] == $loc->id
+		);
+		$xtpl->table_td('<strong>'.$loc->label.'</strong>');
+		$xtpl->table_tr();
+
+		$xtpl->table_td('');
+		$xtpl->table_td(
+			'<p>'._('Environment').': '.$loc->environment->label.'</p>'.
+			'<p>'.$loc->environment->description.'</p>'.
+			'<p>'.$loc->description.'</p>'.
+			'<h4>'._('Available resources').':</h4>'.
+			format_available_resources($user, $loc->environment)
+		);
+		$xtpl->table_tr();
+	}
+
+	$xtpl->form_out(_("Next"));
+}
+
+function vps_clone_form_step3($vps_id, $user_id, $platform, $loc_id) {
+	global $xtpl, $api;
+
+	if (!$platform) {
+		notify_user(
+			_('Invalid platform'),
+			_('Please select the desired platform.')
+		);
+		redirect('?page=adminvps&action=clone-step-1&veid='.$vps_id.'&user='.$user_id);
+	}
+
+	$xtpl->title(_("Clone a VPS: Final touches (3/3)"));
+	$xtpl->sbar_add(
+		_('Back to location'),
+		'?page=adminvps&action=clone-step-2&veid='.$vps_id.'&user='.$user_id.'&platform='.$platform.'&location='.$loc_id
+	);
+
+	try {
+		$loc = $api->location->show(
+			$loc_id,
+			['meta' => ['includes' => 'environment']]
+		);
+
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		notify_user(
+			_('Invalid location'),
+			_('Please select the desired location for your new VPS.')
+		);
+		redirect('?page=adminvps&action=clone-step-2&veid='.$vps_id.'&user='.$user_id.'&platform='.$platform);
+	}
+
+	$vps = $api->vps->show(
+		$vps_id,
+		['meta' => ['includes' => 'node__location,user']]
+	);
+
+	$xtpl->table_title(_('Source VPS'));
+
+	if (isAdmin()) {
+		$xtpl->table_td(_('User:'));
+		$xtpl->table_td(user_link($vps->user));
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_td(_('VPS:'));
+	$xtpl->table_td(vps_link($vps).' '.$vps->hostname);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Platform:'));
+	$xtpl->table_td(hypervisorTypeToLabel($vps->node->hypervisor_type));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Location:'));
+	$xtpl->table_td($vps->node->location->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Node:'));
+	$xtpl->table_td($vps->node->domain_name);
+	$xtpl->table_tr();
+	$xtpl->table_out();
+
+	$xtpl->table_title(_('Target VPS'));
+
+	if (isAdmin()) {
+		try {
+			$user = $api->user->show($user_id);
+		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+			notify_user(_('Invalid user'), _('Please select target user.'));
+			redirect('?page=adminvps&action=new-step-0');
+		}
+
+		$xtpl->table_td(_('User').':');
+		$xtpl->table_td(user_link($user));
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_td(_('Platform').':');
+	$xtpl->table_td(hypervisorTypeToLabel($platform));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Location').':');
+	$xtpl->table_td($loc->label);
+	$xtpl->table_tr();
+	$xtpl->table_out();
+
+	$xtpl->table_title(_('Finalize'));
+	$xtpl->form_create(
+		'?page=adminvps&action=clone-submit&veid='.$vps_id.'&user='.$user_id.'&platform='.$platform.'&location='.$loc_id,
+		'post'
+	);
+
+	$input = $api->vps->clone->getParameters('input');
+
+	if (isAdmin()) {
+		$xtpl->form_add_select(
+			_("Node").':',
+			'node',
+			resource_list_to_options(
+				$api->node->list([
+					'location' => $loc->id,
+					'hypervisor_type' => $platform,
+				]),
+				'id', 'domain_name',
+				false
+			),
+			$_POST['node']
+		);
+	}
+
+	$xtpl->form_add_input(
+		_("Hostname").':',
+		'text',
+		'30',
+		'hostname',
+		post_val('hostname', $vps->hostname.'-clone'),
+		_("A-z, a-z"),
+		255
+	);
+
+	api_param_to_form('subdatasets', $input->subdatasets);
+	api_param_to_form('dataset_plans', $input->dataset_plans);
+	api_param_to_form('resources', $input->resources);
+	api_param_to_form('features', $input->features);
+	api_param_to_form('stop', $input->stop);
+
+	$xtpl->table_tr();
+
+	$xtpl->form_out(_("Clone VPS"));
 }
 
 function vps_swap_form($vps) {

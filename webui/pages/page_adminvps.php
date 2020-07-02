@@ -747,27 +747,70 @@ switch ($_GET["action"]) {
 			}
 			break;
 
-		case 'clone':
-			$vps = $api->vps->find($_GET['veid']);
+		case 'clone-step-0':
+			vps_clone_form_step0($_GET['veid']);
+			break;
 
-			if (isset($_POST['hostname'])) {
-				csrf_check();
+		case 'clone-step-1':
+			vps_clone_form_step1($_GET['veid'], $_GET['user']);
+			break;
 
-				try {
-					$cloned = $vps->clone(client_params_to_api($api->vps->clone));
+		case 'clone-step-2':
+			vps_clone_form_step2($_GET['veid'], $_GET['user'], $_GET['platform']);
+			break;
 
-					notify_user(_("Clone in progress"), '');
-					redirect('?page=adminvps&action=info&veid='.$cloned->id);
+		case 'clone-step-3':
+			vps_clone_form_step3($_GET['veid'], $_GET['user'], $_GET['platform'], $_GET['location']);
+			break;
 
-				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-					$xtpl->perex_format_errors(_('Clone failed'), $e->getResponse());
-					vps_clone_form($vps);
-				}
-
-			} else {
-				vps_clone_form($vps);
+		case 'clone-submit':
+			if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+				vps_clone_form_step3(
+					$_GET['veid'],
+					$_GET['user'],
+					$_GET['platform'],
+					$_GET['location']
+				);
+				break;
 			}
 
+			csrf_check();
+
+			$vps = $api->vps->find($_GET['veid']);
+			$params = [
+				'hostname' => $_POST['hostname'],
+				'platform' => $_GET['platform'],
+				'subdatasets' => isset($_POST['subdatasets']),
+				'dataset_plans' => isset($_POST['dataset_plans']),
+				'resources' => isset($_POST['resources']),
+				'features' => isset($_POST['features']),
+				'stop' => isset($_POST['stop']),
+			];
+
+			if (isAdmin()) {
+				$params['user'] = $_GET['user'];
+				$params['node'] = $_POST['node'];
+
+			} else {
+				if ($_GET['location'])
+					$params['location'] = (int)$_GET['location'];
+			}
+
+			try {
+				$cloned = $vps->clone($params);
+
+				notify_user(_("Clone in progress"), '');
+				redirect('?page=adminvps&action=info&veid='.$cloned->id);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('VPS cloning failed'), $e->getResponse());
+				vps_clone_form_step3(
+					$_GET['veid'],
+					$_GET['user'],
+					$_GET['platform'],
+					$_GET['location']
+				);
+			}
 			break;
 
 		case 'swap_preview':
