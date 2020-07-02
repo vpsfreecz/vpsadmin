@@ -216,6 +216,16 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def prepare
+      # This is a workaround for when the User.Current action gets registered
+      # BELOW User.Show in Sinatra, so User.Show will intercept it, thinking
+      # that 'current' is the user's id that we're looking for. This should
+      # really be fixed in HaveAPI, so that action routes are ALWAYS registered
+      # in the order they are declared.
+      if params[:user_id] == 'current'
+        @user = current_user
+        return @user
+      end
+
       if current_user.role != :admin && current_user.id != params[:user_id].to_i
         error('access denied')
       end
