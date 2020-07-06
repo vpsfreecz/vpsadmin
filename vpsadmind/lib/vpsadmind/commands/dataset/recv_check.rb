@@ -14,7 +14,9 @@ module VpsAdmind
         db.close
       end
 
-      zfs(:get, '-H -ovalue name', "#{@dst_pool_fs}/#{ds_name}@#{snapshot}")
+      try_harder do
+        zfs(:get, '-H -ovalue name', "#{@dst_pool_fs}/#{ds_name}@#{snapshot}")
+      end
     end
 
     def rollback
