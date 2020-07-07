@@ -6,7 +6,7 @@ module VpsAdmind
     def exec
       ds_name = @branch ? "#{@dataset_name}/#{@tree}/#{@branch}" : @dataset_name
       recv = "zfs recv -F #{@dst_pool_fs}/#{ds_name}"
-      cmd = "socat -u -T 1800 TCP4-LISTEN:#{@port},bind=#{@addr} 'EXEC:\"#{recv}\"'"
+      cmd = "socat -u -T 1800 TCP4-LISTEN:#{@port},bind=#{@addr} - | #{recv}"
 
       log(:work, self, "fork #{cmd}")
 
