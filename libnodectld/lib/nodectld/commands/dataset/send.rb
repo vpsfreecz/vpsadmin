@@ -30,6 +30,7 @@ module NodeCtld
         stream.send_to(
           @addr,
           port: @port,
+          timeout: 3600,
         )
       end
 

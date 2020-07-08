@@ -6,7 +6,7 @@ module NodeCtld
     def exec
       ds_name = @branch ? "#{@dataset_name}/#{@tree}/#{@branch}" : @dataset_name
       recv = "zfs recv -F -u #{@dst_pool_fs}/#{ds_name}"
-      cmd = "socat -u -T 1800 TCP4-LISTEN:#{@port},bind=#{@addr} - | #{recv}"
+      cmd = "socat -u -T 3600 TCP4-LISTEN:#{@port},bind=#{@addr} - | #{recv}"
 
       log(:work, self, "fork #{cmd}")
 
