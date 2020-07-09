@@ -26,7 +26,7 @@ module VpsAdmind
         stream.send_to(
             @addr,
             port: @port,
-            timeout: 3600,
+            timeout: 7200,
         )
       end
 
