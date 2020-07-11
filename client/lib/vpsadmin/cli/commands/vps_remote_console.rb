@@ -117,7 +117,8 @@ module VpsAdmin::CLI::Commands
           @input = EventMachine.open_keyboard(InputHandler)
 
           @http = EventMachine::HttpRequest.new(
-              "#{vps.node.location.remote_console_server}/console/feed/#{vps_id}"
+              "#{vps.node.location.remote_console_server}/console/feed/#{vps_id}",
+              ssl: {verify_peer: true},
           )
           communicate
         end
