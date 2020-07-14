@@ -36,6 +36,15 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
         label: 'Hypervisor type',
         choices: %w(openvz vpsadminos),
         desc: 'List only locations having at least one node of this type'
+      resource VpsAdmin::API::Resources::Location,
+        name: :shares_v4_networks_with,
+        label: 'Shares IPv4 networks with location'
+      resource VpsAdmin::API::Resources::Location,
+        name: :shares_v6_networks_with,
+        label: 'Shares IPv4 networks with location'
+      resource VpsAdmin::API::Resources::Location,
+        name: :shares_any_networks_with,
+        label: 'Shares IPv4 networks with location'
     end
 
     output(:object_list) do
@@ -103,6 +112,46 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
         q = q.joins(:nodes).where(
           nodes: {hypervisor_type: ::Node.hypervisor_types[input[:hypervisor_type]]},
         ).group('locations.id')
+      end
+
+      if input[:shares_v4_networks_with]
+        loc_ids = ::LocationNetwork
+          .select('location_networks.location_id')
+          .joins('INNER JOIN location_networks ln2')
+          .joins('INNER JOIN networks ON location_networks.network_id = networks.id')
+          .where('location_networks.location_id != ln2.location_id')
+          .where('location_networks.network_id = ln2.network_id')
+          .where('ln2.location_id = ?', input[:shares_v4_networks_with].id)
+          .where('networks.ip_version = 4')
+          .pluck(:location_id)
+
+        q = q.where(id: loc_ids)
+      end
+
+      if input[:shares_v6_networks_with]
+        loc_ids = ::LocationNetwork
+          .select('location_networks.location_id')
+          .joins('INNER JOIN location_networks ln2')
+          .joins('INNER JOIN networks ON location_networks.network_id = networks.id')
+          .where('location_networks.location_id != ln2.location_id')
+          .where('location_networks.network_id = ln2.network_id')
+          .where('ln2.location_id = ?', input[:shares_v6_networks_with].id)
+          .where('networks.ip_version = 6')
+          .pluck(:location_id)
+
+        q = q.where(id: loc_ids)
+      end
+
+      if input[:shares_any_networks_with]
+        loc_ids = ::LocationNetwork
+          .select('location_networks.location_id')
+          .joins('INNER JOIN location_networks ln2')
+          .where('location_networks.location_id != ln2.location_id')
+          .where('location_networks.network_id = ln2.network_id')
+          .where('ln2.location_id = ?', input[:shares_any_networks_with].id)
+          .pluck(:location_id)
+
+        q = q.where(id: loc_ids)
       end
 
       q
