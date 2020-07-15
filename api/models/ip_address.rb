@@ -98,29 +98,42 @@ class IpAddress < ActiveRecord::Base
     network.cluster_resource
   end
 
-  # Return first free and unlocked IP address version +v+ from +location+.
-  def self.pick_addr!(user, location, v, role = :public_access, purpose = :any)
+  # Return first free and unlocked IP address version `v` from `location`
+  #
+  # @param opts [Hash]
+  # @option opts [::User] :user target user
+  # @option opts [::Location] :location target location
+  # @option opts [4, 6] :ip_v IP version
+  # @option opts [:public_access, :private_access] :role network role
+  # @option opts [:any, :vps, :export] :purpose network purpose
+  def self.pick_addr!(opts)
+    opts[:role] ||= :public_access
+    opts[:purpose] ||= :any
+
     q = self.select('ip_addresses.*')
       .joins(network: :location_networks)
       .joins("LEFT JOIN resource_locks rl ON rl.resource = 'IpAddress' AND rl.row_id = ip_addresses.id")
       .where(
         networks: {
-          ip_version: v,
-          role: ::Network.roles[role],
+          ip_version: opts[:ip_v],
+          role: ::Network.roles[opts[:role]],
         },
         location_networks: {
-          location_id: location.id,
+          location_id: opts[:location].id,
           autopick: true,
         },
       )
       .where('network_interface_id IS NULL')
-      .where('(ip_addresses.user_id = ? OR ip_addresses.user_id IS NULL)', user.id)
+      .where('(ip_addresses.user_id = ? OR ip_addresses.user_id IS NULL)', opts[:user].id)
       .where('rl.id IS NULL')
 
-    if purpose != :any
+    if opts[:purpose] != :any
       q = q.where(
         networks: {
-          purpose: [::Network.purposes[:any], ::Network.purposes[purpose]],
+          purpose: [
+            ::Network.purposes[:any],
+            ::Network.purposes[opts[:purpose]],
+          ],
         },
       )
     end

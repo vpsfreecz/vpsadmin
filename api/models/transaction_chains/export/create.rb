@@ -118,11 +118,11 @@ module TransactionChains
         begin
           ::IpAddress.transaction do
             ip = ::IpAddress.pick_addr!(
-              user,
-              location,
-              4,
-              :private_access,
-              :export,
+              user: user,
+              location: location,
+              ip_v: 4,
+              role: :private_access,
+              purpose: :export,
             )
             lock(ip)
             return ip

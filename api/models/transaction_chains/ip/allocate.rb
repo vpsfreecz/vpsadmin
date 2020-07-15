@@ -17,11 +17,11 @@ module TransactionChains
         begin
           ::IpAddress.transaction do
             ip = ::IpAddress.pick_addr!(
-              netif.vps.user,
-              netif.vps.node.location,
-              v,
-              r.name.end_with?('_private') ? :private_access : :public_access,
-              :vps,
+              user: netif.vps.user,
+              location: netif.vps.node.location,
+              ip_v: v,
+              role: r.name.end_with?('_private') ? :private_access : :public_access,
+              purpose: :vps,
             )
             lock(ip)
 

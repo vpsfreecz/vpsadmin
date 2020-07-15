@@ -308,11 +308,11 @@ module TransactionChains
         ).each do |ip|
           begin
             replacement = ::IpAddress.pick_addr!(
-              dst_vps.user,
-              dst_vps.node.location,
-              ip.network.ip_version,
-              ip.network.role.to_sym,
-              ip.network.purpose.to_sym,
+              user: dst_vps.user,
+              location: dst_vps.node.location,
+              ip_v: ip.network.ip_version,
+              role: ip.network.role.to_sym,
+              purpose: ip.network.purpose.to_sym,
             )
 
           rescue ActiveRecord::RecordNotFound
