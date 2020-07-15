@@ -203,6 +203,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
                desc: 'Environment in which to create the VPS, for non-admins'
       resource VpsAdmin::API::Resources::Location, label: 'Location',
                desc: 'Location in which to create the VPS, for non-admins'
+      resource VpsAdmin::API::Resources::Location, name: :address_location,
+               label: 'Address location',
+               desc: 'Location to select IP addresses from'
       use :common, exclude: %i(manage_hostname)
       VpsAdmin::API::ClusterResources.to_params(::Vps, self)
       integer :ipv4, label: 'IPv4', default: 1, fill: true
@@ -219,7 +222,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(environment location hostname os_template
+      input whitelist: %i(environment location address_location hostname os_template
                           dns_resolver cpu memory swap diskspace ipv4 ipv4_private ipv6
                           user_namespace_map)
       output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
@@ -305,6 +308,14 @@ END
 
       %i(ipv4 ipv6 ipv4_private).each do |opt|
         opts[opt] = input.delete(opt) if input.has_key?(opt)
+      end
+
+      if input[:address_location]
+        unless node.location.shares_any_networks_with?(input[:address_location])
+          error("no shared networks with location #{input[:address_location].label}")
+        end
+
+        opts[:address_location] = input.delete(:address_location)
       end
 
       if input[:user_namespace_map]
@@ -699,6 +710,9 @@ END
       resource VpsAdmin::API::Resources::Location, desc: 'Clone to location'
       resource VpsAdmin::API::Resources::Node, desc: 'Clone to node', value_label: :name
       resource VpsAdmin::API::Resources::User, desc: 'The owner of the cloned VPS', value_label: :login
+      resource VpsAdmin::API::Resources::Location, name: :address_location,
+               label: 'Address location',
+               desc: 'Location to select IP addresses from'
       #resource VpsAdmin::API::Resources::VPS, desc: 'Clone into an existing VPS', value_label: :hostname
       string :platform, default: 'same', fill: true, choices: %w(same openvz vpsadminos)
       bool :subdatasets, default: true, fill: true
@@ -788,6 +802,12 @@ END
 
       if input[:hostname].nil? || input[:hostname].strip.length == 0
         input[:hostname] = "#{vps.hostname}-#{vps.id}-clone"
+      end
+
+      if input[:address_location]
+        unless node.location.shares_any_networks_with?(input[:address_location])
+          error("no shared networks with location #{input[:address_location].label}")
+        end
       end
 
       @chain, cloned_vps = vps.clone(node, input)

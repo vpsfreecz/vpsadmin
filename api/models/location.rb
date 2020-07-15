@@ -27,4 +27,25 @@ class Location < ActiveRecord::Base
   def fqdn
     domain
   end
+
+  def shares_any_networks_with?(location)
+    location_networks
+      .select('location_networks.location_id')
+      .joins('INNER JOIN location_networks ln2')
+      .where('location_networks.location_id != ln2.location_id')
+      .where('location_networks.network_id = ln2.network_id')
+      .where('ln2.location_id = ?', location.id)
+      .count > 0
+  end
+
+  def any_shared_networks_with(location)
+    net_ids = location_networks
+      .select('location_networks.network_id')
+      .joins('INNER JOIN location_networks ln2')
+      .where('location_networks.location_id != ln2.location_id')
+      .where('location_networks.network_id = ln2.network_id')
+      .where('ln2.location_id = ?', location.id)
+      .pluck(:network_id)
+    ::Network.where(id: net_ids)
+  end
 end

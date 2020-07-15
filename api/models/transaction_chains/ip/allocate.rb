@@ -7,7 +7,7 @@ module TransactionChains
       raise NotImplementedError
     end
 
-    def allocate_to_netif(r, netif, n, strict: true, host_addrs: false)
+    def allocate_to_netif(r, netif, n, strict: true, host_addrs: false, address_location: nil)
       return n if n == 0
 
       ips = []
@@ -22,6 +22,7 @@ module TransactionChains
               ip_v: v,
               role: r.name.end_with?('_private') ? :private_access : :public_access,
               purpose: :vps,
+              address_location: address_location,
             )
             lock(ip)
 

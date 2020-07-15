@@ -8,6 +8,7 @@ module TransactionChains
     # @option opts [Integer] ipv4_private
     # @option opts [Boolean] start (true)
     # @Option opts [::UserNamespaceMap, nil] userns_map
+    # @Option opts [::Location, nil] address_location
     def link_chain(vps, opts)
       lock(vps.user)
       vps.save!
@@ -119,6 +120,7 @@ module TransactionChains
             netif,
             opts[v],
             host_addrs: true,
+            address_location: opts[:address_location],
           ],
           method: :allocate_to_netif,
         )

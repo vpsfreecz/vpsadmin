@@ -122,6 +122,7 @@ class Vps < ActiveRecord::Base
   # @option opts [Integer] ipv6
   # @option opts [Integer] ipv4_private
   # @Option opts [::UserNamespaceMap, nil] userns_map
+  # @Option opts [::Location, nil] address_location
   def create(opts)
     self.config = ''
 

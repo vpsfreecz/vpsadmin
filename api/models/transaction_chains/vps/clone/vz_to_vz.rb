@@ -216,7 +216,7 @@ module TransactionChains
       cleanup_transfer_snapshots unless attrs[:keep_snapshots]
 
       # IP addresses
-      clone_network_interfaces(vps, dst_vps) unless attrs[:vps]
+      clone_network_interfaces(vps, dst_vps, attrs) unless attrs[:vps]
 
       # DNS resolver
       dst_vps.dns_resolver = dns_resolver(vps, dst_vps)
@@ -357,7 +357,7 @@ module TransactionChains
       ret
     end
 
-    def clone_network_interfaces(vps, dst_vps)
+    def clone_network_interfaces(vps, dst_vps, attrs)
       sums = {
         ipv4: 0,
         ipv4_private: 0,
@@ -371,7 +371,7 @@ module TransactionChains
           args: [netif, dst_vps],
         )
 
-        sums.merge!(clone_ip_addresses(netif, dst_netif)) do |key, old_val, new_val|
+        sums.merge!(clone_ip_addresses(netif, dst_netif, attrs)) do |key, old_val, new_val|
           old_val + new_val
         end
       end
@@ -435,7 +435,8 @@ module TransactionChains
             dst_netif,
             ips[r],
             strict: false,
-            host_addrs: true
+            host_addrs: true,
+            address_location: attrs[:address_location],
           ],
           method: :allocate_to_netif
         )

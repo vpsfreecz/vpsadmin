@@ -100,12 +100,16 @@ class IpAddress < ActiveRecord::Base
 
   # Return first free and unlocked IP address version `v` from `location`
   #
+  # If option `:address_location` is used, the IP addresses is selected only
+  # from networks that are available both in `:location` and `:address_location`.
+  #
   # @param opts [Hash]
   # @option opts [::User] :user target user
   # @option opts [::Location] :location target location
   # @option opts [4, 6] :ip_v IP version
   # @option opts [:public_access, :private_access] :role network role
   # @option opts [:any, :vps, :export] :purpose network purpose
+  # @option opts [::Location, nil] :address_location
   def self.pick_addr!(opts)
     opts[:role] ||= :public_access
     opts[:purpose] ||= :any
@@ -119,13 +123,22 @@ class IpAddress < ActiveRecord::Base
           role: ::Network.roles[opts[:role]],
         },
         location_networks: {
-          location_id: opts[:location].id,
           autopick: true,
         },
       )
       .where('network_interface_id IS NULL')
       .where('(ip_addresses.user_id = ? OR ip_addresses.user_id IS NULL)', opts[:user].id)
       .where('rl.id IS NULL')
+
+    if opts[:address_location]
+      q = q.where(networks: {
+        id: opts[:location].any_shared_networks_with(opts[:address_location]).map(&:id),
+      })
+    else
+      q = q.where(location_networks: {
+        location_id: opts[:location].id,
+      })
+    end
 
     if opts[:purpose] != :any
       q = q.where(
