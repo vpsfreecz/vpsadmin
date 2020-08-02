@@ -42,6 +42,10 @@ module NodeCtld
           %i(ct set memory),
           [@vps_id, "#{mem}M", swap > 0 ? "#{swap}M" : nil].compact
         )
+        osctl(
+          %i(ct cgparams set),
+          [@vps_id, 'memory.soft_limit_in_bytes', (mem * 0.8 * 1024 * 1024).round]
+        )
       end
 
       cpu_limit = cpu_limits.min || 0
