@@ -28,6 +28,7 @@ module NodeCtld
       # because of vpsadminos#28. Until it is fixed, we'll set nofile manually.
       osctl(%i(ct prlimits set), [@vps_id, 'nofile', 1024, 1024*1024])
       osctl(%i(ct prlimits set), [@vps_id, 'nproc', 128*1024, 1024*1024])
+      osctl(%i(ct prlimits set), [@vps_id, 'memlock', 9223372036854775807, 9223372036854775807])
 
       %w(veth-up).each do |hook|
         dst = hook_path(hook)
