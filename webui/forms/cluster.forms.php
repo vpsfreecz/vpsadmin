@@ -191,6 +191,7 @@ function networks_list() {
 	$xtpl->title(_('Networks'));
 
 	$xtpl->table_add_category(_('Network'));
+	$xtpl->table_add_category(_('Location'));
 	$xtpl->table_add_category(_('Label'));
 	$xtpl->table_add_category(_('Type'));
 	$xtpl->table_add_category(_('Managed'));
@@ -206,6 +207,7 @@ function networks_list() {
 
 	foreach ($networks as $n) {
 		$xtpl->table_td($n->address .'/'. $n->prefix);
+		$xtpl->table_td($n->primary_location_id ? $n->primary_location->label : '-');
 		$xtpl->table_td($n->label);
 		$xtpl->table_td(array(
 			'public_access' => 'Pub',
@@ -266,6 +268,7 @@ function network_locations_list($netId) {
 	);
 
 	$xtpl->table_add_category(_('Label'));
+	$xtpl->table_add_category(_('Primary'));
 	$xtpl->table_add_category(_('Priority'));
 	$xtpl->table_add_category(_('Autopick'));
 	$xtpl->table_add_category(_('Userpick'));
@@ -279,6 +282,7 @@ function network_locations_list($netId) {
 
 	foreach ($locnets as $locnet) {
 		$xtpl->table_td($locnet->location->label);
+		$xtpl->table_td(boolean_icon($locnet->primary));
 		$xtpl->table_td($locnet->priority, false, true);
 		$xtpl->table_td(boolean_icon($locnet->autopick));
 		$xtpl->table_td(boolean_icon($locnet->userpick));
@@ -303,6 +307,7 @@ function location_networks_list($locId) {
 
 	$xtpl->table_add_category(_('Address'));
 	$xtpl->table_add_category(_('Label'));
+	$xtpl->table_add_category(_('Primary'));
 	$xtpl->table_add_category(_('Priority'));
 	$xtpl->table_add_category(_('Autopick'));
 	$xtpl->table_add_category(_('Userpick'));
@@ -319,6 +324,7 @@ function location_networks_list($locId) {
 	foreach ($locnets as $locnet) {
 		$xtpl->table_td($locnet->network->address.'/'.$locnet->network->prefix);
 		$xtpl->table_td($locnet->network->label);
+		$xtpl->table_td(boolean_icon($locnet->primary));
 		$xtpl->table_td($locnet->priority, false, true);
 		$xtpl->table_td(boolean_icon($locnet->autopick));
 		$xtpl->table_td(boolean_icon($locnet->userpick));
@@ -349,6 +355,7 @@ function location_network_add_nettoloc_form($locId) {
 	$xtpl->table_tr();
 
 	api_param_to_form('network', $input->network);
+	api_param_to_form('primary', $input->primary);
 	api_param_to_form('priority', $input->priority);
 	api_param_to_form('autopick', $input->autopick);
 	api_param_to_form('userpick', $input->userpick);
@@ -374,6 +381,7 @@ function location_network_add_loctonet_form($netId) {
 	$xtpl->table_tr();
 
 	api_param_to_form('location', $input->location);
+	api_param_to_form('primary', $input->primary);
 	api_param_to_form('priority', $input->priority);
 	api_param_to_form('autopick', $input->autopick);
 	api_param_to_form('userpick', $input->userpick);

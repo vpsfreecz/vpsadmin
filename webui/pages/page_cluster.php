@@ -582,6 +582,7 @@ switch($_GET["action"]) {
 				$api->location_network->create([
 					'location' => $_GET['location'],
 					'network' => $_POST['network'],
+					'primary' => isset($_POST['primary']),
 					'priority' => $_POST['priority'],
 					'autopick' => isset($_POST['autopick']),
 					'userpick' => isset($_POST['userpick']),
@@ -607,6 +608,7 @@ switch($_GET["action"]) {
 				$api->location_network->create([
 					'location' => $_POST['location'],
 					'network' => $_GET['network'],
+					'primary' => isset($_POST['primary']),
 					'priority' => $_POST['priority'],
 					'autopick' => isset($_POST['autopick']),
 					'userpick' => isset($_POST['userpick']),
@@ -630,6 +632,7 @@ switch($_GET["action"]) {
 
 			try {
 				$api->location_network($_GET['id'])->update([
+					'primary' => isset($_POST['primary']),
 					'priority' => $_POST['priority'],
 					'autopick' => isset($_POST['autopick']),
 					'userpick' => isset($_POST['userpick']),
