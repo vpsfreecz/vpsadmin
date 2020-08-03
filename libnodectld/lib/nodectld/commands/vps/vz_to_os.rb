@@ -68,6 +68,7 @@ module NodeCtld
 
     def convert_arch
       remove_systemd_overrides
+      disable_systemd_udev_trigger
     end
 
     def convert_centos
@@ -149,6 +150,8 @@ END
           )
         end
       end
+
+      disable_systemd_udev_trigger
     end
 
     def runscript_debian
@@ -265,6 +268,8 @@ END
           end
         end
       end
+
+      disable_systemd_udev_trigger
     end
 
     alias_method :runscript_ubuntu, :runscript_debian
@@ -278,6 +283,8 @@ END
       )).each do |file|
         File.unlink(file)
       end
+
+      disable_systemd_udev_trigger
     end
 
     alias_method :convert_fedora, :convert_redhat
@@ -318,6 +325,13 @@ END
           # pass
         end
       end
+    end
+
+    def disable_systemd_udev_trigger
+      f = File.join(@rootfs, 'etc/systemd/system/systemd-udev-trigger.service')
+      File.lstat(f)
+    rescue Errno::ENOENT
+      File.symlink('/dev/null', f)
     end
 
     # @return [Integer, nil]
