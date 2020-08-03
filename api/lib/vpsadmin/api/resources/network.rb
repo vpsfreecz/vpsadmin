@@ -24,6 +24,7 @@ module VpsAdmin::API::Resources
 
     params(:all) do
       id :id
+      resource VpsAdmin::API::Resources::Location, name: :primary_location
       use :common
       use :ro
     end

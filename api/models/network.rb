@@ -7,6 +7,7 @@ class Network < ActiveRecord::Base
   has_many :location_networks
   has_many :locations, through: :location_networks
   has_many :ip_addresses
+  belongs_to :primary_location, class_name: 'Location'
 
   enum role: %i(public_access private_access)
   enum split_access: %i(no_access user_split owner_split)

@@ -840,8 +840,10 @@ CREATE TABLE `location_networks` (
   `priority` int(11) NOT NULL DEFAULT 10,
   `autopick` tinyint(1) NOT NULL DEFAULT 1,
   `userpick` tinyint(1) NOT NULL DEFAULT 1,
+  `primary` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_location_networks_on_location_id_and_network_id` (`location_id`,`network_id`)
+  UNIQUE KEY `index_location_networks_on_location_id_and_network_id` (`location_id`,`network_id`),
+  UNIQUE KEY `location_networks_primary` (`network_id`,`primary`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1117,6 +1119,7 @@ CREATE TABLE `networks` (
   `split_access` int(11) NOT NULL DEFAULT 0,
   `split_prefix` int(11) NOT NULL,
   `purpose` int(11) NOT NULL DEFAULT 0,
+  `primary_location_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_networks_on_address_and_prefix` (`address`,`prefix`),
   KEY `index_networks_on_purpose` (`purpose`)
@@ -2335,7 +2338,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-08-03 15:53:35
+-- Dump completed on 2020-08-04 14:09:38
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2605,4 +2608,6 @@ INSERT INTO schema_migrations (version) VALUES ('20200308161901');
 INSERT INTO schema_migrations (version) VALUES ('20200309160016');
 
 INSERT INTO schema_migrations (version) VALUES ('20200803134524');
+
+INSERT INTO schema_migrations (version) VALUES ('20200803135923');
 

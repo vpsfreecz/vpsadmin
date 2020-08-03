@@ -9,6 +9,7 @@ module VpsAdmin::API::Resources
     end
 
     params(:rw) do
+      bool :primary
       integer :priority
       bool :autopick
       bool :userpick
@@ -96,7 +97,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ::LocationNetwork.create!(input)
+        VpsAdmin::API::Operations::LocationNetwork::Create.run(input)
 
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
@@ -122,9 +123,10 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        net = ::LocationNetwork.find(params[:location_network_id])
-        net.update!(input)
-        net
+        VpsAdmin::API::Operations::LocationNetwork::Update.run(
+          ::LocationNetwork.find(params[:location_network_id]),
+          input
+        )
 
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', e.record.errors.to_hash)
@@ -139,8 +141,9 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        net = ::LocationNetwork.find(params[:location_network_id])
-        net.destroy!
+        VpsAdmin::API::Operations::LocationNetwork::Delete.run(
+          ::LocationNetwork.find(params[:location_network_id])
+        )
         ok
       end
     end
