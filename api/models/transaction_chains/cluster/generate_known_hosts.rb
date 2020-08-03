@@ -9,6 +9,8 @@ module TransactionChains
         "(#{t}.updated_at IS NULL AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(CONVERT_TZ(#{t}.created_at, 'UTC', 'Europe/Prague')) <= 120)
         OR
         (UNIX_TIMESTAMP() - UNIX_TIMESTAMP(CONVERT_TZ(#{t}.updated_at, 'UTC', 'Europe/Prague')) <= 120)"
+      ).where(
+        active: true,
       ).where.not(
         role: ::Node.roles[:mailer],
       ).each do |n|

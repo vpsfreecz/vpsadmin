@@ -7,6 +7,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
   end
 
   params(:common) do
+    bool :active, label: 'Active'
     string :name, label: 'Name', desc: 'Node name'
     string :domain_name, label: 'Domain name',
       desc: 'Node name including location domain'
@@ -67,6 +68,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
                desc: 'Location node is placed in'
       resource VpsAdmin::API::Resources::Environment, label: 'Environment'
       use :common, include: %i(type hypervisor_type)
+      string :state, choices: %w(all active inactive)
     end
 
     output(:object_list) do
@@ -75,7 +77,9 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
+      input blacklist: %i(state)
       output whitelist: %i(id name domain_name location hypervisor_type)
+      restrict active: true
       allow
     end
 
@@ -95,7 +99,15 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     def query
-      q = ::Node
+      q = ::Node.where(with_restricted)
+
+      case input[:state]
+      when 'active', nil
+        q = q.where(active: true)
+      when 'inactive'
+        q = q.where(active: false)
+      end
+
       q = q.where(location: input[:location]) if input[:location]
 
       if input[:environment]
@@ -186,7 +198,10 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     def exec
-      with_includes.includes(:node_current_status).joins(:location).all
+      with_includes
+        .includes(:node_current_status)
+        .joins(:location)
+        .where(active: true)
         .order('locations.environment_id, locations.id, nodes.id')
     end
   end
@@ -260,7 +275,9 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     def exec
-      ::Node.includes(:location, :node_current_status).joins(:location).all
+      ::Node.includes(:location, :node_current_status)
+        .joins(:location)
+        .where(active: true)
         .order('locations.environment_id, locations.id, nodes.id')
     end
   end

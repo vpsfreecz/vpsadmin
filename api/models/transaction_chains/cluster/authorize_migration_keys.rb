@@ -28,6 +28,7 @@ module TransactionChains
         nodes: {
           role: ::Node.roles[:node],
           hypervisor_type: ::Node.hypervisor_types[:vpsadminos],
+          active: true,
         },
       )
     end

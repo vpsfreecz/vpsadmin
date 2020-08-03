@@ -74,6 +74,7 @@ class Node < ActiveRecord::Base
         ').where('
           (st.is_running = 1 OR st.is_running IS NULL)
           AND nodes.max_vps > 0
+          AND nodes.active = 1
           AND nodes.maintenance_lock = 0
           AND locations.environment_id = ?
         ', env.id)
@@ -96,6 +97,7 @@ class Node < ActiveRecord::Base
     ').where(
       'max_vps > 0'
     ).where(
+      active: true,
       maintenance_lock: 0,
       locations: {environment_id: env.id},
     )
@@ -117,6 +119,7 @@ class Node < ActiveRecord::Base
       ').where('
         (st.is_running = 1 OR st.is_running IS NULL)
         AND nodes.max_vps > 0
+        AND nodes.active = 1
         AND nodes.maintenance_lock = 0
         AND l.id = ?
       ', loc.id
@@ -138,6 +141,7 @@ class Node < ActiveRecord::Base
     ).where(
       'max_vps > 0'
     ).where(
+      active: true,
       maintenance_lock: 0,
       location_id: loc.id
     )
@@ -153,6 +157,7 @@ class Node < ActiveRecord::Base
 
   def self.first_available
     return self.joins(:node_current_status)
+        .where(active: true)
         .order('node_current_statuses.created_at DESC')
         .take!
   end
