@@ -1,6 +1,15 @@
 # Raised when attempting the lock an already locked resource.
 class ResourceLocked < StandardError
+  attr_reader :model
 
+  def initialize(model, msg)
+    @model = model
+    super(msg)
+  end
+
+  def get_lock
+    model.get_current_lock
+  end
 end
 
 # Include this module to make a model lockable.
@@ -39,13 +48,13 @@ module Lockable
 
     rescue ActiveRecord::RecordNotUnique => e
       if block
-        raise ResourceLocked.new(e.message) if start + timeout < Time.now
+        raise ResourceLocked.new(self, e.message) if start + timeout < Time.now
 
         sleep(5)
         retry
 
       else
-        raise ResourceLocked.new(e.message)
+        raise ResourceLocked.new(self, e.message)
       end
     end
   end
@@ -70,10 +79,15 @@ module Lockable
 
   # True if this resource is locked.
   def locked?
-    !ResourceLock.find_by(
+    !get_current_lock.nil?
+  end
+
+  # Return the current lock
+  def get_current_lock
+    ResourceLock.find_by(
       resource: lock_resource_name,
       row_id: self.id,
-    ).nil?
+    )
   end
 
   # Returns the class name, which is used as a resource name.

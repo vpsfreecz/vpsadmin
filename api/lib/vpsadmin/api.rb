@@ -75,7 +75,16 @@ module VpsAdmin
       e.rescue(::ResourceLocked) do |ret, exception|
         ret[:http_status] = 423 # locked
         ret[:status] = false
-        ret[:message] = 'Resource is locked. Try again later.'
+
+        lock = exception.get_lock
+
+        if lock && lock.locked_by.is_a?(::TransactionChain)
+          ret[:message] = "Resource is locked by transaction chain "+
+                          "#{lock.locked_by_id} (#{lock.locked_by.label}). "+
+                          "Try again later."
+        else
+          ret[:message] = "Resource is locked. Try again later."
+        end
 
         puts "[#{Time.now}] Exception ResourceLocked: #{exception.message}"
         puts exception.backtrace.join("\n")
