@@ -311,7 +311,10 @@ END
       end
 
       if input[:address_location]
-        unless node.location.shares_any_networks_with?(input[:address_location])
+        unless node.location.shares_any_networks_with_primary?(
+                 input[:address_location],
+                 userpick: current_user.role == :admin ? nil : true,
+               )
           error("no shared networks with location #{input[:address_location].label}")
         end
 
@@ -805,7 +808,10 @@ END
       end
 
       if input[:address_location]
-        unless node.location.shares_any_networks_with?(input[:address_location])
+        unless node.location.shares_any_networks_with_primary?(
+                 input[:address_location],
+                 userpick: current_user.role == :admin ? nil : true,
+               )
           error("no shared networks with location #{input[:address_location].label}")
         end
       end

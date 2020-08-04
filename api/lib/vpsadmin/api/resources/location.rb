@@ -45,6 +45,8 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       resource VpsAdmin::API::Resources::Location,
         name: :shares_any_networks_with,
         label: 'Shares IPv4 networks with location'
+      bool :shares_networks_primary, label: 'Shared network primary',
+        desc: 'Filter locations with shared networks that are primary in the other location'
     end
 
     output(:object_list) do
@@ -123,9 +125,15 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
           .where('location_networks.network_id = ln2.network_id')
           .where('ln2.location_id = ?', input[:shares_v4_networks_with].id)
           .where('networks.ip_version = 4')
-          .pluck(:location_id)
 
-        q = q.where(id: loc_ids)
+        case input[:shares_networks_primary]
+        when true
+          loc_ids = loc_ids.where('ln2.primary = 1')
+        when false
+          loc_ids = loc_ids.where('ln2.primary IS NULL')
+        end
+
+        q = q.where(id: loc_ids.pluck(:location_id))
       end
 
       if input[:shares_v6_networks_with]
@@ -137,9 +145,15 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
           .where('location_networks.network_id = ln2.network_id')
           .where('ln2.location_id = ?', input[:shares_v6_networks_with].id)
           .where('networks.ip_version = 6')
-          .pluck(:location_id)
 
-        q = q.where(id: loc_ids)
+        case input[:shares_networks_primary]
+        when true
+          loc_ids = loc_ids.where('ln2.primary = 1')
+        when false
+          loc_ids = loc_ids.where('ln2.primary IS NULL')
+        end
+
+        q = q.where(id: loc_ids.pluck(:location_id))
       end
 
       if input[:shares_any_networks_with]
@@ -149,9 +163,15 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
           .where('location_networks.location_id != ln2.location_id')
           .where('location_networks.network_id = ln2.network_id')
           .where('ln2.location_id = ?', input[:shares_any_networks_with].id)
-          .pluck(:location_id)
 
-        q = q.where(id: loc_ids)
+        case input[:shares_networks_primary]
+        when true
+          loc_ids = loc_ids.where('ln2.primary = 1')
+        when false
+          loc_ids = loc_ids.where('ln2.primary IS NULL')
+        end
+
+        q = q.where(id: loc_ids.pluck(:location_id))
       end
 
       q

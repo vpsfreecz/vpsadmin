@@ -122,22 +122,40 @@ class IpAddress < ActiveRecord::Base
           ip_version: opts[:ip_v],
           role: ::Network.roles[opts[:role]],
         },
-        location_networks: {
-          autopick: true,
-        },
       )
       .where('network_interface_id IS NULL')
       .where('(ip_addresses.user_id = ? OR ip_addresses.user_id IS NULL)', opts[:user].id)
       .where('rl.id IS NULL')
 
     if opts[:address_location]
-      q = q.where(networks: {
-        id: opts[:location].any_shared_networks_with(opts[:address_location]).map(&:id),
-      })
+      if ::User.current.role == :admin
+        q = q.where(
+          networks: {
+            id: opts[:location].any_shared_networks_with_primary(
+              opts[:address_location],
+            ).map(&:id),
+          },
+        )
+      else
+        q = q.where(
+          networks: {
+            id: opts[:location].any_shared_networks_with_primary(
+              opts[:address_location],
+              userpick: true,
+            ).map(&:id),
+          },
+          location_networks: {
+            userpick: true,
+          },
+        )
+      end
     else
-      q = q.where(location_networks: {
-        location_id: opts[:location].id,
-      })
+      q = q.where(
+        location_networks: {
+          location_id: opts[:location].id,
+          autopick: true,
+        },
+      )
     end
 
     if opts[:purpose] != :any
