@@ -85,10 +85,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "053pw6l7h65drn1fqq6s6y42szjbkp9wwsm2k792vxmv2wjzf1gy";
+      sha256 = "0wv6wg2xip9lqqwfwdmkkl1xb59nlj10garcs93wgw9d89ciwdkq";
       type = "gem";
     };
-    version = "3.0.0.dev.build20200710205221";
+    version = "3.0.0.dev.build20200811161532";
   };
   libosctl = {
     dependencies = ["rainbow" "require_all"];
@@ -96,10 +96,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "1vg3vf6isglzqwqjnvr1k9w4qh2zxzfxfah7qaiz512b89sk6q55";
+      sha256 = "03p178fg65ajk6gasx4bwsvc1jg8j76z6dnqlnrd6825lbdnsb0i";
       type = "gem";
     };
-    version = "20.03.0.build20200706212117";
+    version = "20.03.0.build20200808201843";
   };
   mail = {
     dependencies = ["mini_mime"];
@@ -148,10 +148,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "0fi6hw6b55k7b58c2xjq0dw2yh8ykn20a87jj3d7aw2j2b7xjnwz";
+      sha256 = "1nzqp42jmfsfiw9wyxj4r91gw5das1a92y5j7mqqamgfiq1rx84m";
       type = "gem";
     };
-    version = "3.0.0.dev.build20200710205221";
+    version = "3.0.0.dev.build20200811161532";
   };
   osctl = {
     dependencies = ["curses" "gli" "highline" "ipaddress" "json" "libosctl" "rainbow" "require_all" "ruby-progressbar"];
@@ -159,10 +159,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "159a49y23f5c3399p8zxswy8y76nvvqh7cn7c6b3jan46qk519k9";
+      sha256 = "0bg1gwwlga53rjciakk8w8rza6rcvpk2dd1wx08njy4dbc825585";
       type = "gem";
     };
-    version = "20.03.0.build20200706212117";
+    version = "20.03.0.build20200808201843";
   };
   osctl-exportfs = {
     dependencies = ["filelock" "gli" "libosctl" "require_all"];
@@ -170,10 +170,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "1bb75q1mi59fwjfkcpj4c6k01hwwmx0i084hx9qx56g10mj4v7rm";
+      sha256 = "0kqhb2ic8fibr14h9b7092ljv96zjc9i18vzjdfilrns8mfw69h5";
       type = "gem";
     };
-    version = "20.03.0.build20200706212117";
+    version = "20.03.0.build20200808201843";
   };
   pry = {
     dependencies = ["coderay" "method_source"];
