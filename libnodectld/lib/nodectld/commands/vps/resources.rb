@@ -48,13 +48,15 @@ module NodeCtld
         )
       end
 
-      cpu_limit = cpu_limits.min || 0
+      if cpu_limits.any?
+        cpu_limit = cpu_limits.min || 0
 
-      if cpu_limit > 0
-        osctl(%i(ct set cpu-limit), [@vps_id, cpu_limit.to_s])
+        if cpu_limit > 0
+          osctl(%i(ct set cpu-limit), [@vps_id, cpu_limit.to_s])
 
-      else
-        osctl(%i(ct unset cpu-limit), @vps_id)
+        else
+          osctl(%i(ct unset cpu-limit), @vps_id)
+        end
       end
     end
   end
