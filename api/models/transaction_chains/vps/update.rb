@@ -85,13 +85,29 @@ module TransactionChains
           end
 
         when 'dns_resolver_id'
-          append(Transactions::Vps::DnsResolver, args: [vps, *find_obj(vps, attr)]) do
-            edit(vps, attr => vps.dns_resolver_id)
-            just_create(vps.log(:dns_resolver, {
-              id: vps.dns_resolver_id,
-              addr: vps.dns_resolver.addr,
-              label: vps.dns_resolver.label,
-            }))
+          if vps.dns_resolver_id
+            append_t(
+              Transactions::Vps::DnsResolver,
+              args: [vps, *find_obj(vps, attr, accept_nil: true)],
+            ) do |t|
+              t.edit(vps, attr => vps.dns_resolver_id)
+              t.just_create(vps.log(:dns_resolver, {
+                manage_dns_resolver: true,
+                id: vps.dns_resolver_id,
+                addr: vps.dns_resolver.addr,
+                label: vps.dns_resolver.label,
+              }))
+            end
+          else
+            append_t(
+              Transactions::Vps::UnmanageDnsResolver,
+              args: [vps, ::DnsResolver.find(vps.dns_resolver_id_was)],
+            ) do |t|
+              t.edit(vps, attr => nil)
+              t.just_create(vps.log(:dns_resolver, {
+                manage_dns_resolver: false,
+              }))
+            end
           end
 
         when 'cpu_limit'
@@ -160,8 +176,9 @@ module TransactionChains
     end
 
     protected
-    def find_obj(vps, k)
+    def find_obj(vps, k, accept_nil: false)
       vps.send("#{k}_change").map do |id|
+        next(nil) if id.nil? && accept_nil
         Object.const_get(k[0..-4].classify).find(id)
       end
     end

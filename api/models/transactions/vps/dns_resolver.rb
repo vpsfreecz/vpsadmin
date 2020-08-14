@@ -10,7 +10,7 @@ module Transactions::Vps
 
       {
         nameserver: resolver.addr.split(','),
-        original: orig.addr.split(','),
+        original: orig && orig.addr.split(','),
       }
     end
   end
