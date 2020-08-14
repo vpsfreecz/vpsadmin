@@ -647,7 +647,8 @@ function vps_details_submenu($vps) {
 	else
 		$xtpl->sbar_add(_('Clone VPS'), '?page=adminvps&action=clone-step-1&veid='.$vps->id);
 
-	$xtpl->sbar_add(_('Swap VPS'), '?page=adminvps&action=swap&veid='.$vps->id);
+	if ($vps->node->hypervisor_type == 'openvz')
+		$xtpl->sbar_add(_('Swap VPS'), '?page=adminvps&action=swap&veid='.$vps->id);
 
 	$return_url = urlencode($_SERVER['REQUEST_URI']);
 	$xtpl->sbar_add(_('History'), '?page=history&list=1&object=Vps&object_id='.$vps->id.'&return_url='.$return_url);
