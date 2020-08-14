@@ -97,11 +97,13 @@ module TransactionChains
         end
       end
 
-      append(Transactions::Vps::DnsResolver, args: [
-        vps,
-        vps.dns_resolver,
-        vps.dns_resolver
-      ])
+      if vps.dns_resolver
+        append(Transactions::Vps::DnsResolver, args: [
+          vps,
+          vps.dns_resolver,
+          vps.dns_resolver
+        ])
+      end
     end
 
     def reinstall_vpsadminos(vps, template)
