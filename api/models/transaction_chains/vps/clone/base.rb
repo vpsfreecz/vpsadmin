@@ -4,7 +4,10 @@ module TransactionChains
     # to a different location and its DNS resolver is not universal,
     # it must be changed to DNS resolver in target location.
     def dns_resolver(vps, dst_vps)
-      if vps.dns_resolver.is_universal
+      if vps.dns_resolver_id.nil?
+        nil
+
+      elsif vps.dns_resolver.is_universal
         vps.dns_resolver
 
       else
@@ -35,6 +38,8 @@ module TransactionChains
     end
 
     def clone_dns_resolver(vps, dst_vps)
+      return unless vps.dns_resolver
+
       append(Transactions::Vps::DnsResolver, args: [
         dst_vps,
         vps.dns_resolver,
