@@ -562,7 +562,10 @@ switch ($_GET["action"]) {
 		case 'nameserver':
 			try {
 				csrf_check();
-				$api->vps->update($_GET['veid'], array('dns_resolver' => $_POST['nameserver']));
+
+				$api->vps->update($_GET['veid'], [
+					'dns_resolver' => $_POST['manage_dns_resolver'] == 'managed' ? $_POST['nameserver'] : null,
+				]);
 
 				notify_user(_("DNS change planned"), '');
 				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
@@ -1228,8 +1231,10 @@ if (isset($show_info) && $show_info) {
 	// DNS Server
 		$xtpl->table_title(_('DNS resolver (/etc/resolv.conf)'));
 		$xtpl->form_create('?page=adminvps&action=nameserver&veid='.$vps->id, 'post');
-		$xtpl->form_add_select(
-			_("DNS resolver").':',
+
+		$xtpl->form_add_radio_pure('manage_dns_resolver', 'managed', $vps->dns_resolver_id != null);
+		$xtpl->table_td(_('Manage DNS resolver by vpsAdmin').':');
+		$xtpl->form_add_select_pure(
 			'nameserver',
 			resource_list_to_options(
 				$api->dns_resolver->list(array('vps' => $vps->id)),
@@ -1238,6 +1243,12 @@ if (isset($show_info) && $show_info) {
 			$vps->dns_resolver_id,
 			''
 		);
+		$xtpl->table_tr();
+
+		$xtpl->form_add_radio_pure('manage_dns_resolver', 'manual', $vps->dns_resolver_id == null);
+		$xtpl->table_td(_('Manage DNS resolver manually'));
+		$xtpl->table_tr();
+
 		$xtpl->form_out(_("Go >>"));
 
 	// Hostname change
