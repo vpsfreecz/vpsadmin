@@ -37,11 +37,13 @@ module TransactionChains
       )
 
       # Configure DNS resolvers
-      append(Transactions::Vps::DnsResolver, args: [
-        dst_vps,
-        src_vps.dns_resolver,
-        dst_vps.dns_resolver,
-      ])
+      if src_vps.dns_resolver
+        append(Transactions::Vps::DnsResolver, args: [
+          dst_vps,
+          src_vps.dns_resolver,
+          dst_vps.dns_resolver,
+        ])
+      end
 
       # Transform veth_routed into venet
       if src_vps.network_interfaces.count > 1
