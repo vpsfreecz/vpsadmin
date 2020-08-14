@@ -7,7 +7,11 @@ module VpsAdmind
     end
 
     def rollback
-      Vps.new(@vps_id).set_params({:nameserver => @original})
+      if @original
+        Vps.new(@vps_id).set_params({:nameserver => @original})
+      else
+        syscmd("sed -r -i '/^NAMESERVER=\"[^\"]+\"$/d' #{ve_conf}")
+      end
     end
   end
 end
