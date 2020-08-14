@@ -9,7 +9,11 @@ module NodeCtld
     end
 
     def rollback
-      osctl(%i(ct set dns-resolver), [@vps_id] + @original)
+      if @original
+        osctl(%i(ct set dns-resolver), [@vps_id] + @original)
+      else
+        osctl(%i(ct unset dns-resolver), @vps_id)
+      end
       ok
     end
   end
