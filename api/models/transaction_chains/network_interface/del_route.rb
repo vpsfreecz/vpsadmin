@@ -81,13 +81,13 @@ module TransactionChains
 
         if opts[:phony]
           append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
-            ip_confirmation(t, netif, ip)
+            ip_confirmation(t, netif, ip, env)
           end
         else
           append_t(
             Transactions::NetworkInterface::DelRoute,
             args: [netif, ip, opts[:unregister]]
-          ) { |t| ip_confirmation(t, netif, ip) }
+          ) { |t| ip_confirmation(t, netif, ip, env) }
         end
       end
 
@@ -105,7 +105,7 @@ module TransactionChains
     end
 
     protected
-    def ip_confirmation(t, netif, ip)
+    def ip_confirmation(t, netif, ip, env)
       changes = {
         network_interface_id: nil,
         route_via_id: nil,
