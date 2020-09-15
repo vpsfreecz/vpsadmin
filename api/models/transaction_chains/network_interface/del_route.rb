@@ -8,6 +8,7 @@ module TransactionChains
     # @option opts [Boolean] :unregister
     # @option opts [Boolean] :reallocate
     # @option opts [Boolean] :phony
+    # @option opts [Environment] :environment
     def link_chain(netif, ips, opts = {})
       lock(netif)
       lock(netif.vps)
@@ -19,13 +20,15 @@ module TransactionChains
       lock(netif.vps)
       concerns(:affect, [netif.vps.class.name, netif.vps.id])
 
+      env = opts[:environment] || netif.vps.node.location.environment
+
       uses = []
       user_env = netif.vps.user.environment_user_configs.find_by!(
-        environment: netif.vps.node.location.environment,
+        environment: env,
       )
       ips_arr = ips.to_a
 
-      if opts[:reallocate] && !netif.vps.node.location.environment.user_ip_ownership
+      if opts[:reallocate] && !env.user_ip_ownership
         %i(ipv4 ipv4_private ipv6).each do |r|
           cnt = case r
           when :ipv4
@@ -109,7 +112,7 @@ module TransactionChains
         order: nil,
       }
 
-      if !netif.vps.node.location.environment.user_ip_ownership
+      if !env.user_ip_ownership
         changes[:charged_environment_id] = nil
       end
 
