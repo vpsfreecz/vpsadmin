@@ -401,7 +401,7 @@ module TransactionChains
     # Clone IP addresses.
     # Allocates the equal number (or how many are available) of
     # IP addresses.
-    def clone_ip_addresses(netif, dst_netif)
+    def clone_ip_addresses(netif, dst_netif, attrs)
       ips = {
         ipv4: netif.ip_addresses.joins(:network).where(
           networks: {
