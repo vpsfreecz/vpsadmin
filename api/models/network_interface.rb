@@ -58,22 +58,6 @@ class NetworkInterface < ActiveRecord::Base
               "#{ip} cannot be freely assigned to a VPS"
       end
 
-      if !ip.user_id \
-        && ::User.current.role != :admin \
-        && ::IpAddress.joins(network: :location_networks).where(
-          user: vps.user,
-          network_interface: nil,
-          networks: {
-            ip_version: ip.network.ip_version,
-            role: ::Network.roles[ip.network.role],
-          },
-          location_networks: {
-            location_id: vps.node.location_id,
-          },
-      ).exists?
-        raise VpsAdmin::API::Exceptions::IpAddressNotOwned
-      end
-
       if via
         if !via.assigned?
           raise VpsAdmin::API::Exceptions::IpAddressNotAssigned,

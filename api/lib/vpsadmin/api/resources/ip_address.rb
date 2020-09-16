@@ -346,8 +346,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation
       error('IP address is from the wrong location')
 
-    rescue VpsAdmin::API::Exceptions::IpAddressNotOwned
-      error('Use an IP address you already own first')
+    rescue VpsAdmin::API::Exceptions::IpAddressNotOwned => e
+      error(e.message)
 
     rescue VpsAdmin::API::Exceptions::IpAddressInvalid => e
       error(e.message)
@@ -410,8 +410,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation
       error('IP address is from the wrong location')
 
-    rescue VpsAdmin::API::Exceptions::IpAddressNotOwned
-      error('Use an IP address you already own first')
+    rescue VpsAdmin::API::Exceptions::IpAddressNotOwned => e
+      error(e.message)
     end
 
     def state_id
