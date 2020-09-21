@@ -7,7 +7,7 @@ module NodeCtld
       osctl(
         %i(ct send config),
         [@vps_id, @node],
-        {as_id: @as_id, network_interfaces: @network_interfaces}
+        {as_id: @as_id, network_interfaces: @network_interfaces, passphrase: @passphrase}
       )
     end
 
