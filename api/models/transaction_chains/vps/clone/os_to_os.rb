@@ -1,4 +1,5 @@
 require_relative 'base'
+require 'securerandom'
 
 module TransactionChains
   # Clone VPS to new or another VPS.
@@ -33,6 +34,7 @@ module TransactionChains
       vps_resources = nil
       confirm_features = []
       confirm_windows = []
+      token = SecureRandom.hex(6)
 
       if attrs[:features]
         vps.vps_features.all.each do |f|
@@ -116,9 +118,22 @@ module TransactionChains
       use_chain(UserNamespaceMap::Use, args: [vps.userns_map, dst_vps.node])
 
       if remote
+        # Authorize the migration
+        append(
+          Transactions::Pool::AuthorizeSendKey,
+          args: [dst_pool, src_pool, dst_vps.id, "chain-#{id}-#{token}", token],
+        )
+
+        # Initiate clone
         append(
           Transactions::Vps::SendConfig,
-          args: [vps, node, as_id: dst_vps.id, network_interfaces: false]
+          args: [
+            vps,
+            node,
+            as_id: dst_vps.id,
+            network_interfaces: false,
+            passphrase: token,
+          ]
         )
       end
 

@@ -1,4 +1,5 @@
 require_relative 'base'
+require 'securerandom'
 
 module TransactionChains
   # Migrate VPS between two OpenVZ nodes
@@ -9,6 +10,7 @@ module TransactionChains
       self.userns_map = vps.userns_map
 
       setup(vps, dst_node, opts)
+      token = SecureRandom.hex(6)
 
       # Mail notification
       notify_begun
@@ -20,10 +22,16 @@ module TransactionChains
       # Prepare userns
       use_chain(UserNamespaceMap::Use, args: [src_vps.userns_map, dst_node])
 
+      # Authorize the migration
+      append(
+        Transactions::Pool::AuthorizeSendKey,
+        args: [dst_pool, src_pool, vps.id, "chain-#{id}-#{token}", token],
+      )
+
       # Copy configs
       append(
         Transactions::Vps::SendConfig,
-        args: [src_vps, dst_node, network_interfaces: true],
+        args: [src_vps, dst_node, network_interfaces: true, passphrase: token],
       )
 
       # In case of rollback on the target node
