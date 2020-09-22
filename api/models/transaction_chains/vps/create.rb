@@ -59,6 +59,8 @@ module TransactionChains
 
       lock(vps.dataset_in_pool)
 
+      vps_features = []
+
       append(Transactions::Vps::Create, args: vps) do
         create(vps)
         just_create(vps.current_state)
@@ -66,7 +68,10 @@ module TransactionChains
         # Create features
         ::VpsFeature::FEATURES.each do |name, f|
           next unless f.support?(vps.node)
-          just_create(::VpsFeature.create!(vps: vps, name: name, enabled: false))
+
+          feature = ::VpsFeature.create!(vps: vps, name: name, enabled: false)
+          vps_features << feature
+          just_create(feature)
         end
 
         # Maintenance windows
@@ -88,6 +93,13 @@ module TransactionChains
           vps,
           vps.node.location.environment.vps_configs.pluck(:id)
         ])
+      end
+
+      # Set default features
+      vps_features.each { |f| f.set_to_default }
+
+      if vps_features.any?(&:changed?)
+        use_chain(Vps::Features, args: [vps, vps_features])
       end
 
       # Create network interface

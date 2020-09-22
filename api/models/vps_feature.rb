@@ -16,17 +16,21 @@ class VpsFeature < ActiveRecord::Base
     def conflict?(name)
       opts[:blocks] && opts[:blocks].include?(name)
     end
+
+    def default?
+      opts[:default] ? true : false
+    end
   end
 
   FEATURES = Hash[
     [
-      Feature.new(:iptables, 'iptables', :openvz),
-      Feature.new(:tun, 'TUN/TAP', :all),
-      Feature.new(:fuse, 'FUSE', :all),
+      Feature.new(:iptables, 'iptables', :openvz, default: true),
+      Feature.new(:tun, 'TUN/TAP', :all, default: true),
+      Feature.new(:fuse, 'FUSE', :all, default: true),
       Feature.new(:nfs, 'NFS', :openvz),
       Feature.new(:ppp, 'PPP', :all),
-      Feature.new(:bridge, 'Bridge', :openvz),
-      Feature.new(:kvm, 'KVM', :all),
+      Feature.new(:bridge, 'Bridge', :openvz, default: true),
+      Feature.new(:kvm, 'KVM', :all, default: true),
       Feature.new(:lxc, 'LXC nesting', :vpsadminos),
     ].map { |f| [f.name, f] }
   ]
@@ -43,5 +47,9 @@ class VpsFeature < ActiveRecord::Base
   # @param other [VpsFeature]
   def conflict?(other)
     enabled && other.enabled && FEATURES[name.to_sym].conflict?(other.name.to_sym)
+  end
+
+  def set_to_default
+    self.enabled = FEATURES[name.to_sym].default?
   end
 end
