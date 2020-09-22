@@ -1,18 +1,10 @@
 module TransactionChains
-  class Cluster::AuthorizeMigrationKeys < ::TransactionChain
+  class Cluster::GenerateMigrationKeys < ::TransactionChain
     label 'Migration keys'
 
     def link_chain
       active_pools.where(migration_public_key: nil).each do |pool|
         append(Transactions::Pool::GenerateSendKey, args: pool)
-      end
-
-      pools = active_pools.to_a
-      pools.each do |pool|
-        append(Transactions::Pool::AuthorizeSendKeys, args: [
-          pool,
-          pools.reject { |p| p.id == pool.id },
-        ])
       end
     end
 
