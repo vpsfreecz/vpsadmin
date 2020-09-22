@@ -27,8 +27,7 @@ class VpsFeature < ActiveRecord::Base
       Feature.new(:ppp, 'PPP', :all),
       Feature.new(:bridge, 'Bridge', :openvz),
       Feature.new(:kvm, 'KVM', :all),
-      Feature.new(:lxc, 'LXC nesting', :vpsadminos, blocks: %i(docker)),
-      Feature.new(:docker, 'Docker', :vpsadminos, blocks: %i(lxc)),
+      Feature.new(:lxc, 'LXC nesting', :vpsadminos),
     ].map { |f| [f.name, f] }
   ]
 

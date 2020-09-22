@@ -2,7 +2,7 @@
 --
 -- Host: 192.168.122.10    Database: vpsadmin_core
 -- ------------------------------------------------------
--- Server version	10.3.22-MariaDB
+-- Server version	10.4.13-MariaDB
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -2338,7 +2338,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-08-04 14:09:38
+-- Dump completed on 2020-09-22  9:06:27
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2610,4 +2610,6 @@ INSERT INTO schema_migrations (version) VALUES ('20200309160016');
 INSERT INTO schema_migrations (version) VALUES ('20200803134524');
 
 INSERT INTO schema_migrations (version) VALUES ('20200803135923');
+
+INSERT INTO schema_migrations (version) VALUES ('20200922070226');
 
