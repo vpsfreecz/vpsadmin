@@ -81,6 +81,7 @@ module NodeCtld
       update_vps_status: true,
       track_transfers: true,
       type: nil, # loaded from db
+      transaction_public_key: '/etc/vpsadmin/transaction.key',
     },
 
     vz: {

@@ -64,6 +64,7 @@ module NodeCtld
       @vps_status = VpsStatus.new
       @fw = Firewall.instance
       Shaper.instance
+      TransactionVerifier.instance
     end
 
     def init

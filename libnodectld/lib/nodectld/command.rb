@@ -34,11 +34,25 @@ module NodeCtld
         return false
       end
 
+      if !@trans['signature']
+        @output[:error] = 'Missing signature'
+        return false
+      elsif !TransactionVerifier.verify_base64(@trans['input'], @trans['signature'])
+        @output[:error] = 'Invalid signature'
+        return false
+      end
+
       begin
-        param = JSON.parse(@trans['input'])
+        input = JSON.parse(@trans['input'])
+        param = input['input']
 
       rescue
         @output[:error] = 'Bad input syntax'
+        return false
+      end
+
+      unless check_signed_opts(input)
+        @output[:error] = 'Signed options do not match relational options'
         return false
       end
 
@@ -190,6 +204,12 @@ module NodeCtld
         state, chain_id
       )
 
+      # remove signature from all transactions
+      db.prepared(
+        'UPDATE transactions SET signature = NULL WHERE transaction_chain_id = ?',
+        chain_id
+      )
+
       # release all locks
       unless fatal
         db.prepared(
@@ -328,6 +348,14 @@ module NodeCtld
     end
 
     private
+    def check_signed_opts(input)
+      input['transaction_chain'] == trans['transaction_chain_id'] \
+        && input['depends_on'] == trans['depends_on_id'] \
+        && input['handle'] == trans['handle'] \
+        && input['node'] == trans['node_id'] \
+        && input['reversible'] == trans['reversible']
+    end
+
     def safe_call(klass, m)
       @current_klass = klass
       @current_method = m
