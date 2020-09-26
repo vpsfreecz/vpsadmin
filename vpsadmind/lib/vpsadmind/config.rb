@@ -80,7 +80,8 @@ module VpsAdmind
           :root => "/opt/vpsadmin/vpsadmind",
           :init => true,
           :type => nil, # loaded from db
-          :mounts_dir => '/var/vpsadmin/mounts'
+          :mounts_dir => '/var/vpsadmin/mounts',
+          :transaction_public_key => '/etc/vpsadmin/transaction.key',
       },
 
       :vz => {

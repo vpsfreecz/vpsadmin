@@ -35,6 +35,7 @@ module VpsAdmind
       @node_status = NodeStatus.new
       @vps_status = VpsStatus.new
       @fw = Firewall.instance
+      TransactionVerifier.instance
     end
 
     def init(do_init)
