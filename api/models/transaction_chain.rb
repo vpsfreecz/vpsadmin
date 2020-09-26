@@ -33,6 +33,11 @@ class TransactionChain < ActiveRecord::Base
   # @param args [Array]
   # @param locks [Array] list of global locks
   def self.fire2(args: [], locks: [])
+    unless VpsAdmin::API::TransactionSigner.can_sign?
+      raise VpsAdmin::API::Exceptions::ConfigurationError,
+            'Transaction signing not enabled, please contact support if this error persists'
+    end
+
     ret = nil
     chain = nil
 

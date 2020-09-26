@@ -1588,7 +1588,7 @@ CREATE TABLE `sysconfig` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_sysconfig_on_category_and_name` (`category`,`name`) USING BTREE,
   KEY `index_sysconfig_on_category` (`category`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1704,6 +1704,7 @@ CREATE TABLE `transactions` (
   `started_at` datetime DEFAULT NULL,
   `finished_at` datetime DEFAULT NULL,
   `queue` varchar(30) COLLATE utf8_czech_ci NOT NULL DEFAULT 'general',
+  `signature` text COLLATE utf8_czech_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_transactions_on_depends_on_id` (`depends_on_id`) USING BTREE,
   KEY `index_transactions_on_done` (`done`) USING BTREE,
@@ -2338,7 +2339,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-09-22  9:06:27
+-- Dump completed on 2020-09-26 19:10:48
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2612,4 +2613,6 @@ INSERT INTO schema_migrations (version) VALUES ('20200803134524');
 INSERT INTO schema_migrations (version) VALUES ('20200803135923');
 
 INSERT INTO schema_migrations (version) VALUES ('20200922070226');
+
+INSERT INTO schema_migrations (version) VALUES ('20200924180219');
 

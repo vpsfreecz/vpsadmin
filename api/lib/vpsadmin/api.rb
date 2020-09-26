@@ -125,6 +125,14 @@ module VpsAdmin
         HaveAPI::Hooks.stop(ret)
       end
 
+      e.rescue(VpsAdmin::API::Exceptions::ConfigurationError) do |ret, exception|
+        ret[:http_status] = 500
+        ret[:status] = false
+        ret[:message] = exception.message
+
+        HaveAPI::Hooks.stop(ret)
+      end
+
       api.extensions << e
 
       @configure && @configure.call(api)

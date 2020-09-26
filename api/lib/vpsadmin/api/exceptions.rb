@@ -182,4 +182,8 @@ module VpsAdmin::API::Exceptions
   class VpsMigrationError < ::StandardError
 
   end
+
+  class ConfigurationError < ::StandardError
+
+  end
 end

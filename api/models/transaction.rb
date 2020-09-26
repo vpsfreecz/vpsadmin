@@ -110,7 +110,17 @@ class Transaction < ActiveRecord::Base
       end
     end
 
-    t.input = (t.params(* (opts[:args] || [])) || {}).to_json
+    cmd_input = t.params(* (opts[:args] || [])) || {}
+
+    t.input = {
+      transaction_chain: t.transaction_chain_id,
+      depends_on: t.depends_on_id,
+      handle: t.handle,
+      node: t.node_id,
+      reversible: self.reversibles[t.reversible],
+      input: cmd_input,
+    }.to_json
+    t.signature = VpsAdmin::API::TransactionSigner.sign_base64(t.input)
     t.done = :waiting
 
     t.save!
