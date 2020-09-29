@@ -63,6 +63,7 @@ module NodeCtld
       @node_status = NodeStatus.new
       @vps_status = VpsStatus.new
       @fw = Firewall.instance
+      @kernel_log = KernelLog::Parser.new
       Shaper.instance
       TransactionVerifier.instance
     end
@@ -82,6 +83,8 @@ module NodeCtld
 
       @node_status.init(db)
       @node_status.update(db)
+
+      @kernel_log.start
 
       @init = true
 

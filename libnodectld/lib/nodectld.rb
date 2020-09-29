@@ -4,6 +4,7 @@ module NodeCtld
   STANDALONE = false unless const_defined?(:STANDALONE)
 
   module Firewall ; end
+  module KernelLog ; end
 
   def self.root
     File.join(File.dirname(__FILE__), '..')
@@ -20,4 +21,5 @@ require_rel 'nodectld/remote_commands/base'
 require_rel 'nodectld/remote_commands/'
 require_rel 'nodectld/firewall/'
 require_rel 'nodectld/vps_config'
+require_rel 'nodectld/kernel_log'
 require 'nodectld/system_probes'
