@@ -1313,6 +1313,91 @@ CREATE TABLE `object_states` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `oom_report_stats`
+--
+
+DROP TABLE IF EXISTS `oom_report_stats`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oom_report_stats` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `oom_report_id` int(11) NOT NULL,
+  `parameter` varchar(30) COLLATE utf8_czech_ci NOT NULL,
+  `value` decimal(40,0) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_oom_report_stats_on_oom_report_id` (`oom_report_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `oom_report_tasks`
+--
+
+DROP TABLE IF EXISTS `oom_report_tasks`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oom_report_tasks` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `oom_report_id` int(11) NOT NULL,
+  `name` varchar(50) COLLATE utf8_czech_ci NOT NULL,
+  `host_pid` int(11) NOT NULL,
+  `vps_pid` int(11) DEFAULT NULL,
+  `host_uid` int(11) NOT NULL,
+  `vps_uid` int(11) DEFAULT NULL,
+  `tgid` int(11) NOT NULL,
+  `total_vm` int(11) NOT NULL,
+  `rss` int(11) NOT NULL,
+  `pgtables_bytes` int(11) NOT NULL,
+  `swapents` int(11) NOT NULL,
+  `oom_score_adj` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_oom_report_tasks_on_oom_report_id` (`oom_report_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `oom_report_usages`
+--
+
+DROP TABLE IF EXISTS `oom_report_usages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oom_report_usages` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `oom_report_id` int(11) NOT NULL,
+  `memtype` varchar(20) COLLATE utf8_czech_ci NOT NULL,
+  `usage` decimal(40,0) NOT NULL,
+  `limit` decimal(40,0) NOT NULL,
+  `failcnt` decimal(40,0) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_oom_report_usages_on_oom_report_id` (`oom_report_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `oom_reports`
+--
+
+DROP TABLE IF EXISTS `oom_reports`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oom_reports` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `vps_id` int(11) NOT NULL,
+  `invoked_by_pid` int(11) NOT NULL,
+  `invoked_by_name` varchar(50) COLLATE utf8_czech_ci NOT NULL,
+  `killed_pid` int(11) NOT NULL,
+  `killed_name` varchar(50) COLLATE utf8_czech_ci NOT NULL,
+  `processed` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL,
+  `reported_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_oom_reports_on_vps_id` (`vps_id`),
+  KEY `index_oom_reports_on_processed` (`processed`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `os_templates`
 --
 
@@ -2339,7 +2424,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-09-26 19:10:48
+-- Dump completed on 2020-09-29 15:48:34
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2615,4 +2700,6 @@ INSERT INTO schema_migrations (version) VALUES ('20200803135923');
 INSERT INTO schema_migrations (version) VALUES ('20200922070226');
 
 INSERT INTO schema_migrations (version) VALUES ('20200924180219');
+
+INSERT INTO schema_migrations (version) VALUES ('20200927121503');
 
