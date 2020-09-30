@@ -12,7 +12,6 @@ in stdenv.mkDerivation rec {
   buildInputs = with pkgs; [
     bundix
     git
-    libmysql
     ncurses
     ruby
     zlib
