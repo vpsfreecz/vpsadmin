@@ -653,6 +653,8 @@ function vps_details_submenu($vps) {
 	$return_url = urlencode($_SERVER['REQUEST_URI']);
 	$xtpl->sbar_add(_('History'), '?page=history&list=1&object=Vps&object_id='.$vps->id.'&return_url='.$return_url);
 
+	$xtpl->sbar_add(_('OOM reports'), '?page=oom_reports&action=list&vps='.$vps->id.'&list=1');
+
 	if ($api->outage)
 		$xtpl->sbar_add(_('Outages'), '?page=outage&action=list&vps='.$vps->id);
 }

@@ -22,8 +22,12 @@
 
 $xtpl->sbar_add(_('Outages'), '?page=outage&action=list');
 
-if (isLoggedIn() && $api->monitored_event)
-	$xtpl->sbar_add(_("Monitoring"), '?page=monitoring&action=list');
+if (isLoggedIn()) {
+	if ($api->monitored_event)
+		$xtpl->sbar_add(_("Monitoring"), '?page=monitoring&action=list');
+
+	$xtpl->sbar_add(_("OOM Reports"), '?page=oom_reports&action=list');
+}
 
 $xtpl->sbar_out(_('Overview'));
 

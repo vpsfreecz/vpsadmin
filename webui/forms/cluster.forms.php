@@ -15,6 +15,7 @@ function cluster_header() {
 	$xtpl->sbar_add(_("Manage locations"), '?page=cluster&action=locations');
 	$xtpl->sbar_add(_("Manage resource packages"), '?page=cluster&action=resource_packages');
 	$xtpl->sbar_add(_("Integrity check"), '?page=cluster&action=integrity_check');
+	$xtpl->sbar_add(_("OOM reports"), '?page=oom_reports&action=list');
 
 	if ($api->outage)
 		$xtpl->sbar_add(_("Outage list"), '?page=outage&action=list');
