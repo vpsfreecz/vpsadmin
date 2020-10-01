@@ -21,6 +21,8 @@ module VpsAdmin::API::Tasks
 
       puts "Accepted #{accepted} reports from #{vpses.length} VPS"
       puts "Disregarded #{disregarded} reports"
+
+      TransactionChains::Mail::OomReports.fire(vpses.values)
     end
   end
 end

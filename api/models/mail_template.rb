@@ -304,6 +304,12 @@ class MailTemplate < ActiveRecord::Base
     reason: String,
   }, roles: %i(admin), public: true
 
+  register :vps_oom_report, vars: {
+    base_url: [String, "URL to the web UI"],
+    vps: ::Vps,
+    oom_reports: 'Array<::OomReport>',
+  }, roles: %i(admin), public: true
+
   enum user_visibility: %i(default visible invisible)
 
   def recipients(user)
