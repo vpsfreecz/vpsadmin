@@ -59,6 +59,14 @@ namespace :vpsadmin do
     end
   end
 
+  namespace :oom_report do
+    desc 'Process OOM reports'
+    task :process do
+      puts 'Process OOM reports'
+      VpsAdmin::API::Tasks.run(:oom_report, :process)
+    end
+  end
+
   namespace :plugins do
     desc 'List installed plugins'
     task :list do
