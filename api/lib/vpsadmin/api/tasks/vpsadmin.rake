@@ -65,6 +65,12 @@ namespace :vpsadmin do
       puts 'Process OOM reports'
       VpsAdmin::API::Tasks.run(:oom_report, :process)
     end
+
+    desc 'Notify users about stale OOM reports'
+    task :notify do
+      puts 'Notifying users about stale OOM reports'
+      VpsAdmin::API::Tasks.run(:oom_report, :notify)
+    end
   end
 
   namespace :plugins do

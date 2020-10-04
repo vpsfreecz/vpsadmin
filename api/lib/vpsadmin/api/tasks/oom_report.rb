@@ -1,5 +1,12 @@
 module VpsAdmin::API::Tasks
   class OomReport < Base
+    COOLDOWN = ENV['COOLDOWN'] ? ENV['COOLDOWN'].to_i : 3*60*60
+
+    # Process new OOM reports and inform users
+    #
+    # Accepts the following environment variables:
+    # [COOLDOWN]: Number of seconds from the last report to wait before notifying
+    #             the user again
     def process
       accepted = 0
       disregarded = 0
@@ -22,7 +29,20 @@ module VpsAdmin::API::Tasks
       puts "Accepted #{accepted} reports from #{vpses.length} VPS"
       puts "Disregarded #{disregarded} reports"
 
-      TransactionChains::Mail::OomReports.fire(vpses.values)
+      TransactionChains::Mail::OomReports.fire(vpses.values, cooldown: COOLDOWN)
+    end
+
+    # Notify users about stale and previously unreported OOM reports
+    #
+    # Accepts the following environment variables:
+    # [COOLDOWN]: Number of seconds from the last report to wait before notifying
+    #             the user again
+    def notify
+      vpses = ::Vps.joins(:oom_reports).where(
+        oom_reports: {reported_at: nil},
+      ).group('vpses.id')
+
+      TransactionChains::Mail::OomReports.fire(vpses, cooldown: COOLDOWN)
     end
   end
 end
