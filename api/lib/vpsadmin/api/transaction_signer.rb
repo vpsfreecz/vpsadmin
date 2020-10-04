@@ -22,6 +22,8 @@ module VpsAdmin::API
 
     def can_sign?
       !key.nil?
+      # TODO: return true only if key is set
+      true
     end
 
     # @param passphrase [String]
@@ -39,9 +41,14 @@ module VpsAdmin::API
     # @param data [String]
     # @return [String] base64 encoded signature
     def sign_base64(data)
-      digest = OpenSSL::Digest::SHA256.new
-      signature = key.sign(digest, data)
-      Base64.encode64(signature)
+      # TODO: always sign data
+      if key
+        digest = OpenSSL::Digest::SHA256.new
+        signature = key.sign(digest, data)
+        Base64.encode64(signature)
+      else
+        nil
+      end
     end
 
     protected

@@ -34,10 +34,8 @@ module NodeCtld
         return false
       end
 
-      if !@trans['signature']
-        @output[:error] = 'Missing signature'
-        return false
-      elsif !TransactionVerifier.verify_base64(@trans['input'], @trans['signature'])
+      if @trans['signature'] \
+         && !TransactionVerifier.verify_base64(@trans['input'], @trans['signature'])
         @output[:error] = 'Invalid signature'
         return false
       end
