@@ -378,8 +378,17 @@ class TransactionChain < ActiveRecord::Base
     chain = dst_chain || self
     return chain.mail_server if chain.mail_server
 
+    t = ::NodeCurrentStatus.table_name
     chain.mail_server = ::Node.find_by(role: ::Node.roles[:mailer])
-    chain.mail_server ||= ::Node.order('id').take!
+    chain.mail_server ||= ::Node
+      .joins(:node_current_status)
+      .where(
+        "(#{t}.updated_at IS NULL AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(CONVERT_TZ(#{t}.created_at, 'UTC', 'Europe/Prague')) <= 120)
+        OR
+        (UNIX_TIMESTAMP() - UNIX_TIMESTAMP(CONVERT_TZ(#{t}.updated_at, 'UTC', 'Europe/Prague')) <= 120)"
+      ).where(
+        active: true,
+      ).take!
   end
 end
 
