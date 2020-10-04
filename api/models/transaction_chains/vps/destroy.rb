@@ -75,6 +75,9 @@ module TransactionChains
         edit(vps, dataset_in_pool_id: nil)
       end
 
+      # Delete OOM Reports
+      vps.oom_reports.delete_all
+
       # Note: there are too many records to delete them using transaction confirmations.
       # All VPS statuses are deleted whether the chain is successful or not.
       vps.vps_statuses.delete_all
