@@ -242,6 +242,32 @@ module TransactionChains
             .having('snapshot_count > 20')
             .order('COUNT(snapshot_in_pools.id) DESC'),
         },
+
+        oom_reports: {
+          by_vps: ::Vps
+            .select('vpses.*, COUNT(oom_reports.id) AS oom_count')
+            .joins(:oom_reports)
+            .where(vpses: {object_state: [
+                ::Vps.object_states[:active],
+                ::Vps.object_states[:suspended],
+              ]})
+            .where('DATE_ADD(oom_reports.created_at, INTERVAL 1 DAY) >= ?', t)
+            .group('vpses.id')
+            .having('oom_count > 0')
+            .order('COUNT(oom_reports.id) DESC'),
+
+          by_node: ::Node
+            .select('nodes.*, COUNT(oom_reports.id) AS oom_count')
+            .joins(vpses: :oom_reports)
+            .where(vpses: {object_state: [
+                ::Vps.object_states[:active],
+                ::Vps.object_states[:suspended],
+              ]})
+            .where('DATE_ADD(oom_reports.created_at, INTERVAL 1 DAY) >= ?', t)
+            .group('nodes.id')
+            .having('oom_count > 0')
+            .order('COUNT(oom_reports.id) DESC'),
+        },
       }
     end
   end
