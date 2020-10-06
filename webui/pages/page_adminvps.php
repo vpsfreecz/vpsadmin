@@ -1167,6 +1167,65 @@ if (isset($show_info) && $show_info) {
 
 	} else {
 
+	// SSH
+		$xtpl->table_title(_('SSH connection'));
+		$xtpl->table_td(
+			_('The following credentials can be used on a newly created VPS '.
+			'with the default configuration.'),
+			false, false, '2'
+		);
+		$xtpl->table_tr();
+
+		$xtpl->table_td(_('User').':');
+		$xtpl->table_td('root');
+		$xtpl->table_tr();
+
+		$xtpl->table_td(_('Password or SSH key').':');
+
+		if($_SESSION['vps_password'][$vps->id]) {
+			$xtpl->table_td("<b>".$_SESSION['vps_password'][$vps->id]."</b>");
+
+		} else {
+			$xtpl->table_td(
+				_('Set root password or deploy public key in the forms below.')
+			);
+		}
+
+		$xtpl->table_tr();
+
+		$ssh_ips = $api->host_ip_address->list([
+			'vps' => $vps->id,
+			'assigned' => true,
+		]);
+		$ssh_cnt = count($ssh_ips);
+
+		$xtpl->table_td(_('Address').':');
+
+		if ($ssh_cnt > 1) {
+			$ssh_str = _('One of:').'<br><ul>';
+
+			foreach ($ssh_ips as $ip) {
+				$ssh_str .= '<li>'.$ip->addr.'</li>';
+			}
+
+			$ssh_str .= '</ul>';
+			$xtpl->table_td($ssh_str);
+
+		} elseif ($ssh_cnt == 1) {
+			$xtpl->table_td($ssh_ips[0]->addr);
+		} else {
+			$xtpl->table_td(_('The VPS has no interface IP addresses set'));
+		}
+		$xtpl->table_tr();
+
+		if ($ssh_cnt > 0) {
+			$xtpl->table_td(_('Example command').':');
+			$xtpl->table_td('<pre><code>ssh root@'.$ssh_ips[0]->addr.'</code></pre>');
+			$xtpl->table_tr();
+		}
+
+		$xtpl->table_out();
+
 	// Password changer
 		$xtpl->table_title(_("Set root's password (in the VPS, not in the vpsAdmin)"));
 		$xtpl->form_create('?page=adminvps&action=passwd&veid='.$vps->id, 'post');
