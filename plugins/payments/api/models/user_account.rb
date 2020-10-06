@@ -63,6 +63,13 @@ class UserAccount < ActiveRecord::Base
     return
   end
 
+  def payment_instructions
+    ERB.new(
+      SysConfig.get(:plugin_payments, :payment_instructions) || '',
+      nil, '-'
+    ).result(binding)
+  end
+
   protected
   def set_defaults
     return if persisted?

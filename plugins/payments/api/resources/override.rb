@@ -22,5 +22,26 @@ module VpsAdmin::API::Resources
         use :payments
       end
     end
+
+    class GetPaymentInstructions < HaveAPI::Action
+      route '{%{resource}_id}/get_payment_instructions'
+      http_method :get
+
+      output(:hash) do
+        string :instructions
+      end
+
+      authorize do |u|
+        allow
+      end
+
+      def exec
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error('access denied')
+        end
+
+        {instructions: ::User.find(params[:user_id]).user_account.payment_instructions}
+      end
+    end
   end
 end

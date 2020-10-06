@@ -15,6 +15,8 @@ VpsAdmin::API::Plugin.register(:payments) do
         min_user_level: 99
     SysConfig.register :plugin_payments, :fio_api_tokens, Array,
         label: 'API tokens', min_user_level: 99
+    SysConfig.register :plugin_payments, :payment_instructions, Text,
+        label: 'Payment instructions', min_user_level: 99
 
     MailTemplate.register :payment_accepted, vars: {
         user: '::User',
