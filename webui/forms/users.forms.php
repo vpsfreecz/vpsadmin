@@ -414,6 +414,25 @@ function user_payment_info($u) {
 	}
 }
 
+function user_payment_instructions($user_id) {
+	global $xtpl, $api;
+
+	try {
+		$u = $api->user->find($user_id);
+
+	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+		$xtpl->perex_format_errors(_('User not found'), $e->getResponse());
+		return;
+	}
+
+	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&section=members&action=edit&id={$user_id}");
+
+	$xtpl->title(_('Payment instructions'));
+	$xtpl->table_td($u->get_payment_instructions()['instructions']);
+	$xtpl->table_tr();
+	$xtpl->table_out();
+}
+
 function user_payment_form($user_id) {
 	global $xtpl, $api;
 

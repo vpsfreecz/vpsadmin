@@ -106,6 +106,9 @@ function print_editm($u) {
 	if (payments_enabled()) {
 		$xtpl->table_td(_("Paid until").':');
 		user_payment_info($u);
+		$xtpl->table_td(
+			'<a href="?page=adminm&section=members&action=payment_instructions&id='.$u->id.'">'._('Payment instructions').'</a>'
+		);
 		$xtpl->table_tr();
 	}
 
@@ -249,6 +252,9 @@ function print_editm($u) {
 		$xtpl->sbar_add("<br><img src=\"template/icons/m_switch.png\"  title=". _("Switch context") ." /> Switch context", "?page=login&action=switch_context&m_id={$u->id}&next=".urlencode($_SERVER["REQUEST_URI"]));
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("State log").'" />'._('State log'), '?page=lifetimes&action=changelog&resource=user&id='.$u->id.'&return='. urlencode($_SERVER['REQUEST_URI']));
 	}
+
+	if (payments_enabled())
+		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payment instructions").'" />'._('Payment instructions'), "?page=adminm&section=members&action=payment_instructions&id={$u->id}");
 
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Advanced mail configuration").'" />'._('Advanced e-mail configuration'), "?page=adminm&section=members&action=template_recipients&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Public keys").'" />'._('Public keys'), "?page=adminm&section=members&action=pubkeys&id={$u->id}");
@@ -1267,6 +1273,10 @@ if ($_SESSION["logged_in"]) {
 			} else {
 				mail_template_recipient_form($_GET['id']);
 			}
+			break;
+
+		case 'payment_instructions':
+			user_payment_instructions($_GET['id']);
 			break;
 
 		case 'payset':
