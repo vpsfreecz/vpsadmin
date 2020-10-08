@@ -267,6 +267,12 @@ module TransactionChains
             .group('nodes.id')
             .having('oom_count > 0')
             .order('COUNT(oom_reports.id) DESC'),
+
+          by_killed_name: ::OomReport
+            .where('DATE_ADD(oom_reports.created_at, INTERVAL 1 DAY) >= ?', t)
+            .group('killed_name')
+            .count
+            .sort { |a, b| b[1] <=> a[1] }
         },
       }
     end
