@@ -850,3 +850,24 @@ function hypervisorTypeToLabel($type) {
 		return 'Unknown';
 	}
 }
+
+function findBestPublicHostAddress ($hostAddrs) {
+	// Public IPv4
+	foreach ($hostAddrs as $ip) {
+		$net = $ip->ip_address->network;
+
+		if ($net->ip_version == 4 && $net->role == "public_access")
+			return $ip;
+	}
+
+	// Public IPv6
+	foreach ($hostAddrs as $ip) {
+		$net = $ip->ip_address->network;
+
+		if ($net->ip_version == 6 && $net->role == "public_access")
+			return $ip;
+	}
+
+	// No public IP
+	return null;
+}

@@ -1196,8 +1196,9 @@ if (isset($show_info) && $show_info) {
 		$ssh_ips = $api->host_ip_address->list([
 			'vps' => $vps->id,
 			'assigned' => true,
+			'meta' => ['includes' => 'ip_address__network'],
 		]);
-		$ssh_cnt = count($ssh_ips);
+		$ssh_cnt = $ssh_ips->count();
 
 		$xtpl->table_td(_('Address').':');
 
@@ -1219,8 +1220,13 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_tr();
 
 		if ($ssh_cnt > 0) {
+			$example_ssh_ip = findBestPublicHostAddress($ssh_ips);
+
+			if (!$example_ssh_ip)
+				$example_ssh_ip = $ssh_ips[0];
+
 			$xtpl->table_td(_('Example command').':');
-			$xtpl->table_td('<pre><code>ssh root@'.$ssh_ips[0]->addr.'</code></pre>');
+			$xtpl->table_td('<pre><code>ssh root@'.$example_ssh_ip->addr.'</code></pre>');
 			$xtpl->table_tr();
 		}
 
