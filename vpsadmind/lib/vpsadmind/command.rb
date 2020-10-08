@@ -336,11 +336,13 @@ module VpsAdmind
 
     private
     def check_signed_opts(input)
-      input['transaction_chain'] == trans['transaction_chain_id'] \
-        && input['depends_on'] == trans['depends_on_id'] \
-        && input['handle'] == trans['handle'] \
-        && input['node'] == trans['node_id'] \
-        && input['reversible'] == trans['reversible']
+      input['transaction_chain'] == trans['transaction_chain_id'].to_i \
+        && ( \
+          (input['depends_on'].nil? && trans['depends_on_id'].nil?) \
+           || (input['depends_on'] == trans['depends_on_id'].to_i)) \
+        && input['handle'] == trans['handle'].to_i \
+        && input['node'] == trans['node_id'].to_i \
+        && input['reversible'] == trans['reversible'].to_i
     end
 
     def safe_call(klass, m)
