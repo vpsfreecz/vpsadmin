@@ -71,6 +71,9 @@ namespace :vpsadmin do
       puts 'Notifying users about stale OOM reports'
       VpsAdmin::API::Tasks.run(:oom_report, :notify)
     end
+
+    desc 'Process new reports and notify users'
+    task run: %i(process notify)
   end
 
   namespace :plugins do
