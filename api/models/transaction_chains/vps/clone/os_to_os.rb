@@ -121,7 +121,7 @@ module TransactionChains
         # Authorize the migration
         append(
           Transactions::Pool::AuthorizeSendKey,
-          args: [dst_pool, src_pool, dst_vps.id, "chain-#{id}-#{token}", token],
+          args: [@dst_pool, @src_pool, dst_vps.id, "chain-#{id}-#{token}", token],
         )
 
         # Initiate clone
