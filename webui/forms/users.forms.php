@@ -344,7 +344,7 @@ function approval_requests_details($type, $id) {
 		$xtpl->table_tr();
 		$xtpl->form_add_input_pure(
 			'text', '80', 'full_name',
-			post_val('full_name', $r->user->full_name)
+			post_val('full_name', $r->full_name)
 		);
 		$xtpl->table_tr();
 
@@ -353,7 +353,7 @@ function approval_requests_details($type, $id) {
 		$xtpl->table_tr();
 		$xtpl->form_add_input_pure(
 			'text', '80', 'email',
-			post_val('email', $r->user->email)
+			post_val('email', $r->email)
 		);
 		$xtpl->table_tr();
 
@@ -362,7 +362,7 @@ function approval_requests_details($type, $id) {
 		$xtpl->table_tr();
 		$xtpl->form_add_input_pure(
 			'text', '80', 'address',
-			post_val('address', $r->user->address)
+			post_val('address', $r->address)
 		);
 		$xtpl->table_tr();
 
