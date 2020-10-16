@@ -338,25 +338,62 @@ function approval_requests_details($type, $id) {
 	$params = $r->resolve->getParameters('input');
 	$request_attrs = $r->show->getParameters('output');
 
-	foreach ($params as $name => $desc) {
-		$v = null;
-
-		if (property_exists($request_attrs, $name)) {
-			switch ($request_attrs->{$name}->type) {
-			case 'Resource':
-				$v = $r->{"{$name}_id"};
-				break;
-
-			default:
-				$v = $r->{$name};
-			}
-		}
-
-		api_param_to_form(
-			$name,
-			$desc,
-			post_val($name, $v)
+	if ($type == 'change') {
+		$xtpl->table_td(_('Full name').':', false, false, '1', '2');
+		$xtpl->table_td(h($r->user->full_name));
+		$xtpl->table_tr();
+		$xtpl->form_add_input_pure(
+			'text', '80', 'full_name',
+			post_val('full_name', $r->user->full_name)
 		);
+		$xtpl->table_tr();
+
+		$xtpl->table_td(_('E-mail').':', false, false, '1', '2');
+		$xtpl->table_td(h($r->user->email));
+		$xtpl->table_tr();
+		$xtpl->form_add_input_pure(
+			'text', '80', 'email',
+			post_val('email', $r->user->email)
+		);
+		$xtpl->table_tr();
+
+		$xtpl->table_td(_('Address').':', false, false, '1', '2');
+		$xtpl->table_td(h($r->user->address));
+		$xtpl->table_tr();
+		$xtpl->form_add_input_pure(
+			'text', '80', 'address',
+			post_val('address', $r->user->address)
+		);
+		$xtpl->table_tr();
+
+		$xtpl->table_td(_('Change reason').':');
+		$xtpl->table_td(h($r->change_reason));
+		$xtpl->table_tr();
+
+		api_param_to_form('action', $params->action);
+		api_param_to_form('reason', $params->reason);
+
+	} else {
+		foreach ($params as $name => $desc) {
+			$v = null;
+
+			if (property_exists($request_attrs, $name)) {
+				switch ($request_attrs->{$name}->type) {
+				case 'Resource':
+					$v = $r->{"{$name}_id"};
+					break;
+
+				default:
+					$v = $r->{$name};
+				}
+			}
+
+			api_param_to_form(
+				$name,
+				$desc,
+				post_val($name, $v)
+			);
+		}
 	}
 
 	$xtpl->form_out(_('Close request'));
