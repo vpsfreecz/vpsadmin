@@ -15,6 +15,8 @@ in stdenv.mkDerivation rec {
     ncurses
     ruby
     zlib
+    mariadb
+    mariadb-connector-c
   ];
 
   shellHook = ''

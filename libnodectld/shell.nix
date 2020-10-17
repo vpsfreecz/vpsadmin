@@ -11,7 +11,8 @@ in stdenv.mkDerivation rec {
     pkgs.zlib
     pkgs.openssl
     pkgs.ncurses
-    pkgs.libmysql
+    pkgs.mariadb
+    pkgs.mariadb-connector-c
   ];
 
   shellHook = ''
