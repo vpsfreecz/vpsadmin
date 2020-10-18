@@ -215,6 +215,7 @@ module TransactionChains
                 FROM dataset_in_pools dips2
                 INNER JOIN pools p2 ON p2.id = dips2.pool_id
                 WHERE dataset_id = datasets.id AND p2.role IN (0)
+                LIMIT 1
               ) IS NOT NULL')
             .where('(
                 SELECT COUNT(*)
