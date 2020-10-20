@@ -52,6 +52,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     input do
       use :filters
       patch :user, desc: 'Filter by owner'
+      string :order, choices: %w(asc interface), default: 'asc', fill: true
     end
 
     output(:object_list) do
@@ -61,7 +62,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       input whitelist: %i(location network version role purpose addr prefix vps
-                          network_interface assigned_to_interface limit offset)
+                          network_interface assigned_to_interface order
+                          limit offset)
       output blacklist: %i(class_id)
       allow
     end
@@ -158,7 +160,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
             OR (ip_addresses.network_interface_id IS NOT NULL AND my_vps.user_id = ?)
             OR (ip_addresses.user_id IS NULL AND ip_addresses.network_interface_id IS NULL)',
           current_user.id, current_user.id
-        ).order('ip_addresses.user_id DESC, ip_addresses.id ASC')
+        )
       end
 
       ips
@@ -169,7 +171,24 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     end
 
     def exec
-      with_includes(query).order('ip_addresses.id').limit(input[:limit]).offset(input[:offset])
+      with_includes(query)
+        .order(order_col)
+        .limit(input[:limit])
+        .offset(input[:offset])
+    end
+
+    protected
+    def order_col
+      case input[:order]
+      when 'interface'
+        'ip_addresses.`order`'
+      else
+        if current_user.role == :admin
+          'ip_addresses.id'
+        else
+          'ip_addresses.user_id DESC, ip_addresses.id ASC'
+        end
+      end
     end
   end
 

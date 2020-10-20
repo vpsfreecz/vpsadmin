@@ -44,6 +44,7 @@ module VpsAdmin::API::Resources
       input do
         use :filters
         patch :user, desc: 'Filter by owner'
+        string :order, choices: %w(asc interface), default: 'asc', fill: true
       end
 
       output(:object_list) do
@@ -53,7 +54,8 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         input whitelist: %i(location network version role addr prefix vps
-                            network_interface ip_address assigned limit offset)
+                            network_interface ip_address assigned order
+                            limit offset)
         allow
       end
 
@@ -153,7 +155,7 @@ module VpsAdmin::API::Resources
              OR
             (ip_addresses.network_interface_id IS NOT NULL AND my_vps.user_id = ?)',
             current_user.id, current_user.id
-          ).order('host_ip_addresses.id ASC')
+          )
         end
 
         ips
@@ -165,9 +167,19 @@ module VpsAdmin::API::Resources
 
       def exec
         with_includes(query)
-          .order('ip_addresses.id')
+          .order(order_col)
           .limit(input[:limit])
           .offset(input[:offset])
+      end
+
+      protected
+      def order_col
+        case input[:order]
+        when 'interface'
+          'host_ip_addresses.`order`'
+        else
+          'host_ip_addresses.id'
+        end
       end
     end
 
