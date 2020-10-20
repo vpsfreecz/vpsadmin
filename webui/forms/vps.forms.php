@@ -1287,6 +1287,7 @@ function vps_netif_iproutes_form($vps, $netif) {
 
 	$ips = $api->ip_address->list([
 		'network_interface' => $netif->id,
+		'order' => 'interface',
 		'meta' => ['includes' => 'network'],
 	]);
 
@@ -1385,6 +1386,7 @@ function vps_netif_ipaddrs_form($vps, $netif) {
 	$ips = $api->host_ip_address->list([
 		'network_interface' => $netif->id,
 		'assigned' => true,
+		'order' => 'interface',
 		'meta' => ['includes' => 'ip_address__network'],
 	]);
 
@@ -1441,6 +1443,7 @@ function vps_netif_ip_joined_form($vps, $netif) {
 
 	$ips = $api->ip_address->list([
 		'network_interface' => $netif->id,
+		'order' => 'interface',
 		'meta' => ['includes' => 'network'],
 	]);
 
