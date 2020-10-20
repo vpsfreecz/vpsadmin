@@ -69,6 +69,7 @@ module NodeCtld
     def convert_arch
       remove_systemd_overrides
       disable_systemd_udev_trigger
+      ensure_journal_log
     end
 
     def convert_centos
@@ -152,6 +153,7 @@ END
       end
 
       disable_systemd_udev_trigger
+      ensure_journal_log
     end
 
     def runscript_debian
@@ -270,6 +272,7 @@ END
       end
 
       disable_systemd_udev_trigger
+      ensure_journal_log
     end
 
     alias_method :runscript_ubuntu, :runscript_debian
@@ -285,6 +288,7 @@ END
       end
 
       disable_systemd_udev_trigger
+      ensure_journal_log
     end
 
     alias_method :convert_fedora, :convert_redhat
@@ -332,6 +336,10 @@ END
       File.lstat(f)
     rescue Errno::ENOENT
       File.symlink('/dev/null', f)
+    end
+
+    def ensure_journal_log
+      FileUtils.mkdir_p(File.join(@rootfs, 'var/log/journal'))
     end
 
     # @return [Integer, nil]
