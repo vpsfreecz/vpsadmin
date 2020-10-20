@@ -209,7 +209,9 @@ function dataset_create_form() {
 	$quota = $params->{$quota_name};
 
 	if (!$_POST[$quota_name])
-		$v = data_size_unitize($_POST[$quota_name] ? $_POST[$quota_name] : $quota->default);
+		$v = data_size_unitize(
+			($_POST[$quota_name] ? $_POST[$quota_name] : $quota->default) * 1024 * 1024
+		);
 
 	$xtpl->table_td(
 		$quota->label . ' ' .
@@ -258,7 +260,7 @@ function dataset_edit_form() {
 	$quota = $params->{$quota_name};
 
 	if (!$_POST[$quota_name])
-		$v = data_size_unitize($ds->{$quota_name});
+		$v = data_size_unitize($ds->{$quota_name} * 1024 * 1024);
 
 	$xtpl->table_td(
 		$quota->label . ' ' .

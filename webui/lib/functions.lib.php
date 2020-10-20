@@ -20,7 +20,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-$DATA_SIZE_UNITS = array("k" => "KiB", "m" => "MiB", "g" => "GiB", "t" => "TiB");
+$DATA_SIZE_UNITS = [
+	"b" => "B",
+	"k" => "KiB",
+	"m" => "MiB",
+	"g" => "GiB",
+	"t" => "TiB",
+];
 
 
 function get_free_route_list ($res, $vps, $role = null, $limit = null) {
@@ -498,23 +504,23 @@ function unit_for_cluster_resource($name) {
 }
 
 function data_size_unitize($val) {
-	$units = array("t" => 19, "g" => 9, "m" => 0);
+	$units = ["t" => 39, "g" => 29, "m" => 19, "k" => 9, "b" => 0];
 
 	if (!$val)
-		return array(0, "g");
+		return [0, "b"];
 
 	elseif ($val < 1024)
-		return array($val, "m");
+		return [$val, "b"];
 
 	foreach ($units as $u => $ex) {
 		if ($val >= (2 << $ex))
-			return array($val / (2 << $ex), $u);
+			return [$val / (2 << $ex), $u];
 	}
 
-	return array($val, "m");
+	return [$val, "b"];
 }
 
-function data_size_to_humanreadable($val) {
+function data_size_to_humanreadable_b($val) {
 	global $DATA_SIZE_UNITS;
 
 	if (!$val)
@@ -522,6 +528,24 @@ function data_size_to_humanreadable($val) {
 
 	$res = data_size_unitize($val);
 	return round($res[0], 2) . " " . $DATA_SIZE_UNITS[$res[1]];
+}
+
+function data_size_to_humanreadable_kb($val) {
+	if (!$val)
+		return _("none");
+
+	return data_size_to_humanreadable_b($val * 1024);
+}
+
+function data_size_to_humanreadable_mb($val) {
+	if (!$val)
+		return _("none");
+
+	return data_size_to_humanreadable_b($val * 1024 * 1024);
+}
+
+function data_size_to_humanreadable($val) {
+	return data_size_to_humanreadable_mb($val);
 }
 
 function approx_number($val) {
