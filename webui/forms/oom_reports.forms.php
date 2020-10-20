@@ -201,5 +201,16 @@ function oom_reports_show($id) {
 		$xtpl->table_tr($stat->host_pid == $r->killed_pid ? '#FFCCCC' : false);
 	}
 
+	$xtpl->table_td(_('PID'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('Name'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('UID'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('TGID'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('VM'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('RSS'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('pgtables'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('swapents'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('oom_score_adj'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_tr();
+
 	$xtpl->table_out();
 }
