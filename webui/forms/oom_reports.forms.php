@@ -188,7 +188,17 @@ function oom_reports_show($id) {
 	$xtpl->table_add_category(_('swapents'));
 	$xtpl->table_add_category(_('oom_score_adj'));
 
+	$vm_sum = 0;
+	$rss_sum = 0;
+	$pgtables_sum = 0;
+	$swapents_sum = 0;
+
 	foreach ($r->task->list() as $stat) {
+		$vm_sum += $stat->total_vm;
+		$rss_sum += $stat->rss;
+		$pgtables_sum += $stat->pgtables_bytes;
+		$swapents_sum += $stat->swapents;
+
 		$xtpl->table_td($stat->vps_pid ? $stat->vps_pid : '-', false, true);
 		$xtpl->table_td(h($stat->name));
 		$xtpl->table_td($stat->vps_uid === null ? '-' : $stat->vps_uid, false, true);
@@ -210,6 +220,16 @@ function oom_reports_show($id) {
 	$xtpl->table_td(_('pgtables'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
 	$xtpl->table_td(_('swapents'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
 	$xtpl->table_td(_('oom_score_adj'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Sum').':', false, false, '2');
+	$xtpl->table_td('');
+	$xtpl->table_td('');
+	$xtpl->table_td(data_size_to_humanreadable_kb($vm_sum * 4));
+	$xtpl->table_td(data_size_to_humanreadable_kb($rss_sum * 4));
+	$xtpl->table_td(data_size_to_humanreadable_b($pgtables_sum));
+	$xtpl->table_td(data_size_to_humanreadable_kb($swapents_sum * 4));
+	$xtpl->table_td('');
 	$xtpl->table_tr();
 
 	$xtpl->table_out();
