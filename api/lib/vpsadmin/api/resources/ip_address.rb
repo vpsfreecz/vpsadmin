@@ -89,7 +89,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     end
 
     def query
-      ips = ::IpAddress
+      ips = ::IpAddress.joins(:network)
 
       %i(prefix network network_interface user addr max_tx max_rx size).each do |filter|
         next unless input.has_key?(filter)
@@ -114,26 +114,26 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
           locs = ::LocationNetwork.where(
             location: input[:location],
           ).pluck(:network_id)
-          ips = ips.joins(:network).where(networks: {id: locs})
+          ips = ips.where(networks: {id: locs})
         else
           locs = ::LocationNetwork.where(
             location: input[:location],
             userpick: true,
           ).pluck(:network_id)
-          ips = ips.joins(:network).where(networks: {id: locs})
+          ips = ips.where(networks: {id: locs})
         end
       end
 
       if input[:version]
-        ips = ips.joins(:network).where(networks: {ip_version: input[:version]})
+        ips = ips.where(networks: {ip_version: input[:version]})
       end
 
       if input[:role]
-        ips = ips.joins(:network).where(networks: {role: ::Network.roles[input[:role]]})
+        ips = ips.where(networks: {role: ::Network.roles[input[:role]]})
       end
 
       if input[:purpose]
-        ips = ips.joins(:network).where(networks: {purpose: ::Network.roles[input[:purpose]]})
+        ips = ips.where(networks: {purpose: ::Network.roles[input[:purpose]]})
       end
 
       unless input[:assigned_to_interface].nil?
@@ -145,7 +145,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       end
 
       if current_user.role != :admin
-        ips = ips.joins(:network).joins(
+        ips = ips.joins(
           'LEFT JOIN network_interfaces my_netifs
            ON my_netifs.id = ip_addresses.network_interface_id'
         ).joins(
@@ -181,7 +181,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     def order_col
       case input[:order]
       when 'interface'
-        'ip_addresses.`order`'
+        'networks.ip_version, ip_addresses.`order`'
       else
         if current_user.role == :admin
           'ip_addresses.id'

@@ -60,27 +60,25 @@ module VpsAdmin::API::Resources
       end
 
       def query
-        ips = ::HostIpAddress.joins(:ip_address)
+        ips = ::HostIpAddress.joins(ip_address: :network)
 
         %i(prefix size max_tx max_rx).each do |filter|
           next unless input.has_key?(filter)
 
-          ips = ips.joins(:ip_address).where(
+          ips = ips.where(
             ip_addresses: {filter => input[filter]},
           )
         end
 
         if input[:network]
-          ips = ips.joins(:ip_address).where(
+          ips = ips.where(
             ip_addresses: {network_id: input[:network].id},
           )
         end
 
         if input[:location]
           locs = ::LocationNetwork.where(location: input[:location]).pluck(:network_id)
-          ips = ips.joins(ip_address: :network).where(
-            networks: {id: locs.id},
-          )
+          ips = ips.where(networks: {id: locs.id})
         end
 
         if input.has_key?(:vps)
@@ -94,39 +92,31 @@ module VpsAdmin::API::Resources
         end
 
         if input[:network_interface]
-          ips = ips.joins(:ip_address).where(
+          ips = ips.where(
             ip_addresses: {network_interface_id: input[:network_interface].id},
           )
         end
 
         if input[:version]
-          ips = ips.joins(ip_address: :network).where(
-            networks: {ip_version: input[:version]},
-          )
+          ips = ips.where(networks: {ip_version: input[:version]})
         end
 
         if input[:role]
-          ips = ips.joins(ip_address: :network).where(
-            networks: {role: ::Network.roles[input[:role]]},
-          )
+          ips = ips.where(networks: {role: ::Network.roles[input[:role]]})
         end
 
         if input[:addr]
-          ips = ips.joins(:ip_address).where(
-            ip_addresses: {ip_addr: input[:addr]},
-          )
+          ips = ips.where(ip_addresses: {ip_addr: input[:addr]})
         end
 
         %i(prefix size max_tx max_rx).each do |filter|
           next unless input[filter]
 
-          ips = ips.joins(:ip_address).where(
-            ip_addresses: {filter => input[:filter]},
-          )
+          ips = ips.where(ip_addresses: {filter => input[:filter]})
         end
 
         if input.has_key?(:user)
-          ips = ips.joins(:ip_address).where(
+          ips = ips.where(
             ip_addresses: {user_id: input[:user] && input[:user].id},
           )
         end
@@ -140,7 +130,7 @@ module VpsAdmin::API::Resources
         end
 
         if current_user.role != :admin
-          ips = ips.joins(ip_address: :network).joins(
+          ips = ips.joins(
             'LEFT JOIN network_interfaces my_netifs
              ON my_netifs.id = ip_addresses.network_interface_id'
           ).joins(
@@ -176,7 +166,7 @@ module VpsAdmin::API::Resources
       def order_col
         case input[:order]
         when 'interface'
-          'host_ip_addresses.`order`'
+          'networks.ip_version, host_ip_addresses.`order`'
         else
           'host_ip_addresses.id'
         end
