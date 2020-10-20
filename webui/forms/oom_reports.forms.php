@@ -157,8 +157,8 @@ function oom_reports_show($id) {
 
 	foreach ($r->usage->list() as $usage) {
 		$xtpl->table_td($usage->memtype);
-		$xtpl->table_td($usage->usage, false, true);
-		$xtpl->table_td($usage->limit, false, true);
+		$xtpl->table_td(data_size_to_humanreadable_kb($usage->usage), false, true);
+		$xtpl->table_td(data_size_to_humanreadable_kb($usage->limit), false, true);
 		$xtpl->table_td($usage->failcnt, false, true);
 		$xtpl->table_tr();
 	}
@@ -171,7 +171,7 @@ function oom_reports_show($id) {
 
 	foreach ($r->stat->list() as $stat) {
 		$xtpl->table_td($stat->parameter);
-		$xtpl->table_td($stat->value, false, true);
+		$xtpl->table_td(data_size_to_humanreadable_b($stat->value), false, true);
 		$xtpl->table_tr();
 	}
 
@@ -193,10 +193,10 @@ function oom_reports_show($id) {
 		$xtpl->table_td(h($stat->name));
 		$xtpl->table_td($stat->vps_uid === null ? '-' : $stat->vps_uid, false, true);
 		$xtpl->table_td($stat->tgid, false, true);
-		$xtpl->table_td($stat->total_vm, false, true);
-		$xtpl->table_td($stat->rss, false, true);
-		$xtpl->table_td($stat->pgtables_bytes, false, true);
-		$xtpl->table_td($stat->swapents, false, true);
+		$xtpl->table_td(data_size_to_humanreadable_kb($stat->total_vm * 4), false, true);
+		$xtpl->table_td(data_size_to_humanreadable_kb($stat->rss * 4), false, true);
+		$xtpl->table_td(data_size_to_humanreadable_b($stat->pgtables_bytes), false, true);
+		$xtpl->table_td(data_size_to_humanreadable_kb($stat->swapents * 4), false, true);
 		$xtpl->table_td($stat->oom_score_adj, false, true);
 		$xtpl->table_tr($stat->host_pid == $r->killed_pid ? '#FFCCCC' : false);
 	}
