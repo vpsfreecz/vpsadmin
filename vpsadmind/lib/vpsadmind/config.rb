@@ -16,9 +16,9 @@ module VpsAdmind
           :server_id => nil,
           :domain => "vpsfree.cz",
           :node_addr => nil, # loaded from db
-          :netdev => "eth0", # loaded from db
           :max_tx => nil, # loaded from db
           :max_rx => nil, # loaded from db
+          :net_interfaces => [],
           :queues => {
               :general => {
                   :threads => 6,
@@ -204,7 +204,6 @@ module VpsAdmind
 
       @cfg[:vpsadmin][:type] = %i(node storage mailer)[ rs[0] ]
       @cfg[:vpsadmin][:node_addr] = rs[1]
-      @cfg[:vpsadmin][:netdev] = rs[2]
       @cfg[:vpsadmin][:max_tx] = rs[3]
       @cfg[:vpsadmin][:max_rx] = rs[4]
 
