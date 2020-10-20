@@ -249,6 +249,11 @@ END
       fstab = File.join(@rootfs, 'lib/init/fstab')
 
       if File.exist?(fstab)
+        to_disable = [
+          %w(none /proc/sys/fs/binfmt_misc binfmt_misc),
+          %w(none /sys/kernel/debug debugfs),
+        ]
+
         regenerate_file(fstab, 0644) do |new, old|
           old.each_line do |line|
             if line.lstrip.start_with?('#')
@@ -258,7 +263,7 @@ END
 
             cols = line.split
 
-            if cols[0..2] == %w(none /proc/sys/fs/binfmt_misc binfmt_misc)
+            if to_disable.include?(cols[0..2])
               new.puts(
                 "# The following entry was commented by vpsAdmin when migrating\n"+
                 "# to vpsAdminOS. Do not uncomment while running on vpsAdminOS."
