@@ -50,13 +50,13 @@ module VpsAdmin::API::Resources
         q = q.where(vpses: {node_id: input[:node].id}) if input[:node]
 
         if input[:location]
-          q = q.joins(vpses: :node).where(
+          q = q.joins(vps: :node).where(
             nodes: {location_id: input[:location].id},
           )
         end
 
         if input[:environment]
-          q = q.joins(vpses: {node: :location}).where(
+          q = q.joins(vps: {node: :location}).where(
             locations: {environment_id: input[:environment].id},
           )
         end
