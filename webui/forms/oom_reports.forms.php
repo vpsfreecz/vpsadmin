@@ -225,10 +225,10 @@ function oom_reports_show($id) {
 	$xtpl->table_td(_('Sum').':', false, false, '2');
 	$xtpl->table_td('');
 	$xtpl->table_td('');
-	$xtpl->table_td(data_size_to_humanreadable_kb($vm_sum * 4));
-	$xtpl->table_td(data_size_to_humanreadable_kb($rss_sum * 4));
-	$xtpl->table_td(data_size_to_humanreadable_b($pgtables_sum));
-	$xtpl->table_td(data_size_to_humanreadable_kb($swapents_sum * 4));
+	$xtpl->table_td(data_size_to_humanreadable_kb($vm_sum * 4), false, true);
+	$xtpl->table_td(data_size_to_humanreadable_kb($rss_sum * 4), false, true);
+	$xtpl->table_td(data_size_to_humanreadable_b($pgtables_sum), false, true);
+	$xtpl->table_td(data_size_to_humanreadable_kb($swapents_sum * 4), false, true);
 	$xtpl->table_td('');
 	$xtpl->table_tr();
 
