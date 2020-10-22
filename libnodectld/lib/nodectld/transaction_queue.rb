@@ -35,7 +35,7 @@ module NodeCtld
         return false
       end
 
-      unless has_reservation?(cmd.chain_id)
+      if !has_reservation?(cmd.chain_id) && !cmd.urgent?
         begin
           @sem.down(true)
 
@@ -72,14 +72,9 @@ module NodeCtld
     end
 
     def free_slot?(cmd)
-      if has_reservation?(cmd.chain_id)
-        s = real_size + 1
-
-      else
-        s = real_size
-      end
-
-      used < s || (cmd.urgent? && s < total_size)
+      return true if has_reservation?(cmd.chain_id)
+      s = real_size
+      used < s || (cmd.urgent? && used < total_size)
     end
 
     def busy?(chain_id)
@@ -141,7 +136,7 @@ module NodeCtld
     def delete_if(&block)
       @workers.delete_if do |wid, w|
         ret = block.call(wid, w)
-        @sem.up if ret && !has_reservation?(w.cmd.chain_id)
+        @sem.up if ret && !has_reservation?(w.cmd.chain_id) && !w.cmd.urgent?
         ret
       end
     end
