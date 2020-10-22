@@ -170,7 +170,7 @@ module VpsAdmind
     end
 
     def free_ip(addr, v, class_id)
-      devs = $CFG.get(:vpsadmin, :net_interface)
+      devs = $CFG.get(:vpsadmin, :net_interfaces)
 
       return if devs.empty?
 
