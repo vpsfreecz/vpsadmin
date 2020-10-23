@@ -265,9 +265,9 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       end
 
       def query
-        self.class.model.joins(:export).where(with_restricted(
+        self.class.model.joins(:export).where(with_restricted).where(
           exports: {id: params[:export_id]},
-        ))
+        )
       end
 
       def count
