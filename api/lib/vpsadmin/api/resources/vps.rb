@@ -438,6 +438,11 @@ END
       elsif input[:manage_hostname] === true && \
             (input[:hostname].nil? || input[:hostname].empty?)
         error('update failed', hostname: ['must be present'])
+
+      elsif vps.node.vpsadminos? \
+            && input[:swap] \
+            && input[:swap] > 0 && vps.node.total_swap == 0
+        error("swap is not available on #{vps.node.domain_name}")
       end
 
       @chain, _ = vps.update(to_db_names(input))
