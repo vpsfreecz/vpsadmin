@@ -18,6 +18,9 @@ module TransactionChains
       setup(vps, dst_node, opts)
       dst_vps.os_template = replace_os_template(src_vps.os_template)
 
+      # Check swap is available on the destination node
+      check_swap!
+
       # Mail notification
       notify_begun
 

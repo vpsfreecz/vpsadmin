@@ -22,6 +22,7 @@ module TransactionChains
     # @option opts [Hash] resources (nil)
     # @option opts [Boolean] handle_ips (true)
     # @option opts [Boolean] reallocate_ips (true)
+    # @option opts [Symbol] swap (:enforce)
     # @option opts [Boolean] maintenance_window (true)
     # @option opts [Boolean] send_mail (true)
     # @option opts [String] reason (nil)
@@ -42,6 +43,7 @@ module TransactionChains
         resources: nil,
         handle_ips: true,
         reallocate_ips: true,
+        swap: :enforce,
         maintenance_window: true,
         send_mail: true,
         reason: nil,
@@ -87,6 +89,14 @@ module TransactionChains
 
     def environment_changed?
       src_node.location.environment_id != dst_node.location.environment_id
+    end
+
+    def check_swap!
+      if opts[:swap] == :enforce && src_vps.swap > 0 && dst_node.total_swap == 0
+        raise VpsAdmin::API::Exceptions::OperationNotSupported,
+              "VPS has #{src_vps.swap}MiB of swap, which is not available "+
+              "on #{dst_node.domain_name}"
+      end
     end
 
     # Check that local snapshots of the migrated VPS are not mounted anywere

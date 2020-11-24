@@ -669,6 +669,7 @@ END
       bool :transfer_ip_addresses, label: 'Transfer IP addresses',
           desc: 'If possible, keep IP addresses and recharge them to a different '+
                 'environment or location'
+      string :swap, choices: %w(enforce), default: 'enforce', fill: true
       bool :maintenance_window, label: 'Maintenance window',
           desc: 'Migrate the VPS within the nearest maintenance window',
           default: true

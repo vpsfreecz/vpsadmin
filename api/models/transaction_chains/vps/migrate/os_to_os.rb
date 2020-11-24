@@ -12,6 +12,9 @@ module TransactionChains
       setup(vps, dst_node, opts)
       token = SecureRandom.hex(6)
 
+      # Check swap is available on the destination node
+      check_swap!
+
       # Mail notification
       notify_begun
 
