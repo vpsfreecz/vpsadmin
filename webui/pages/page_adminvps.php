@@ -896,7 +896,7 @@ if (isset($show_info) && $show_info) {
 
 	$xtpl->table_td(_("Platform").':');
 	$xtpl->table_td(
-		($vps->node->hypervisor_type == 'openvz' ? '<img src="template/icons/warning.png"  title="'._("The VPS is running on OpenVZ Legacy, a deprecated virtualization platform").'"/> ' : '').
+		(showPlatformWarning($vps) ? '<img src="template/icons/warning.png"  title="'._("The VPS is running on OpenVZ Legacy, a deprecated virtualization platform").'"/> ' : '').
 		hypervisorTypeToLabel($vps->node->hypervisor_type)
 	);
 	$xtpl->table_tr();
@@ -1011,7 +1011,7 @@ if (isset($show_info) && $show_info) {
 		$xtpl->perex(_('VPS is deleted.'), _('This VPS is deleted and cannot be revived.'));
 
 	} else {
-		if ($vps->node->hypervisor_type == 'openvz') {
+		if (showPlatformWarning($vps)) {
 			$xtpl->table_title(
 				'<img src="template/icons/warning.png" alt="'._('Warning').'">&nbsp;'.
 				_('New virtualization platform available').

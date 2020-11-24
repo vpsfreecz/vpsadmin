@@ -903,3 +903,8 @@ function showVpsDiskWarning ($vps) {
 function vpsDiskUsagePercent ($vps) {
     return $vps->used_diskspace / $vps->diskspace * 100;
 }
+
+function showPlatformWarning ($vps) {
+	// A bit vpsFree-specific, yes...
+	return $vps->node->hypervisor_type == 'openvz' && $vps->node->location_id == 3;
+}

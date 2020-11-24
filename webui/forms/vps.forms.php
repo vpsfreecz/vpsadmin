@@ -709,7 +709,7 @@ function vps_list_form() {
 			$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$vps->user_id.'">'.$vps->user->login.'</a>');
 			$xtpl->table_td($vps->process_count, false, true);
 
-			if ($vps->node->hypervisor_type == 'openvz') {
+			if (showPlatformWarning($vps)) {
 				$xtpl->table_td(
 					'<a href="?page=adminvps&action=info&veid='.$vps->id.'"><img src="template/icons/warning.png"  title="'._("The VPS is running on OpenVZ Legacy, a deprecated virtualization platform").'"/> '.h($vps->hostname).'</a>');
 			} else {
@@ -767,7 +767,7 @@ function vps_list_form() {
 
 			if (!$vps->is_running)
 				$color = '#FFCCCC';
-			elseif ($vps->node->hypervisor_type == 'openvz')
+			elseif (showPlatformWarning($vps))
 				$color = '#FFBDAD';
 			elseif ($diskWarning)
 				$color = '#FFBDAD';
