@@ -59,7 +59,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   end
 
   params(:resources) do
-    VpsAdmin::API::ClusterResources.to_params(::Vps, self, resources: %i(memory swap cpu))
+    VpsAdmin::API::ClusterResources.to_params(::Vps, self, resources: %i(memory swap cpu diskspace))
   end
 
   params(:all) do

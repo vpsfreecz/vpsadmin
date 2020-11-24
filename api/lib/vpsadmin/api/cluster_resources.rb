@@ -4,18 +4,22 @@ module VpsAdmin::API
       def self.define_access_methods(klass, resources)
         resources.each do |r|
 
-          ensure_method(klass, r) do
+          ensure_method(klass, r) do |**kwargs|
             if @cluster_resources && @cluster_resources[r]
               @cluster_resources[r]
 
             elsif klass.respond_to?(:confirmed) && self.confirmed.to_sym == :confirm_create
-              ::DefaultObjectClusterResource.joins(:cluster_resource).find_by!(
-                cluster_resources: {
-                  name: r
-                },
-                environment: Private.environment(self),
-                class_name: self.class.name
-              ).value
+              if kwargs[:default].nil? || kwargs[:default]
+                ::DefaultObjectClusterResource.joins(:cluster_resource).find_by!(
+                  cluster_resources: {
+                    name: r
+                  },
+                  environment: Private.environment(self),
+                  class_name: self.class.name
+                ).value
+              else
+                nil
+              end
 
             else
               use = Private.find_resource_use(self, r)
