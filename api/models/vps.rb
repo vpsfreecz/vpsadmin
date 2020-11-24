@@ -199,7 +199,7 @@ class Vps < ActiveRecord::Base
   alias_method :is_running?, :is_running
   alias_method :running?, :is_running
 
-  def diskspace
+  def rootfs_diskspace
     dataset_in_pool.diskspace(default: false)
   end
 
