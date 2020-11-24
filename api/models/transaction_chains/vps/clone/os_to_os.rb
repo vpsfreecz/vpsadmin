@@ -135,6 +135,9 @@ module TransactionChains
             passphrase: token,
           ]
         )
+
+        # In case of rollback on the target node
+        append(Transactions::Vps::SendRollbackConfig, args: dst_vps)
       end
 
       # Datasets to clone
