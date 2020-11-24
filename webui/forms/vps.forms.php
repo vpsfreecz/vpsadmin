@@ -702,6 +702,7 @@ function vps_list_form() {
 		}
 
 		foreach ($vpses as $vps) {
+			$diskWarning = $vps->diskspace && showVpsDiskWarning($vps);
 
 			$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->id.'">'.$vps->id.'</a>');
 			$xtpl->table_td('<a href="?page=adminvps&action=list&node='.$vps->node_id.'">'. $vps->node->domain_name . '</a>');
@@ -718,9 +719,15 @@ function vps_list_form() {
 
 			$xtpl->table_td(sprintf('%4d MB',$vps->used_memory), false, true);
 
-			if ($vps->used_diskspace > 0)
-				$xtpl->table_td(sprintf('%.2f GB',round($vps->used_diskspace/1024, 2)), false, true);
-			else $xtpl->table_td('---', false, true);
+			if ($vps->used_diskspace > 0) {
+				$xtpl->table_td(
+					($diskWarning ? ('<img src="template/icons/warning.png" title="'._('Disk at').' '.sprintf('%.2f %%', round(vpsDiskUsagePercent($vps), 2)).'"> ') : '').
+					sprintf('%.2f GB',round($vps->used_diskspace/1024, 2)),
+					false, true
+				);
+			} else {
+				$xtpl->table_td('---', false, true);
+			}
 
 			if(isAdmin() || $vps->maintenance_lock == 'no') {
 				$xtpl->table_td(($vps->is_running) ? '<a href="?page=adminvps&run=restart&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_restart.png" title="'._("Restart").'"/></a>' : '<img src="template/icons/vps_restart_grey.png"  title="'._("Unable to restart").'" />');
@@ -761,6 +768,8 @@ function vps_list_form() {
 			if (!$vps->is_running)
 				$color = '#FFCCCC';
 			elseif ($vps->node->hypervisor_type == 'openvz')
+				$color = '#FF977A';
+			elseif ($diskWarning)
 				$color = '#FF977A';
 			else
 				$color = false;

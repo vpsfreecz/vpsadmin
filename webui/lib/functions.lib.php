@@ -895,3 +895,11 @@ function findBestPublicHostAddress ($hostAddrs) {
 	// No public IP
 	return null;
 }
+
+function showVpsDiskWarning ($vps) {
+	return $vps->used_diskspace > $vps->diskspace / 100.0 * 90;
+}
+
+function vpsDiskUsagePercent ($vps) {
+    return $vps->used_diskspace / $vps->diskspace * 100;
+}
