@@ -768,9 +768,9 @@ function vps_list_form() {
 			if (!$vps->is_running)
 				$color = '#FFCCCC';
 			elseif ($vps->node->hypervisor_type == 'openvz')
-				$color = '#FF977A';
+				$color = '#FFBDAD';
 			elseif ($diskWarning)
-				$color = '#FF977A';
+				$color = '#FFBDAD';
 			else
 				$color = false;
 
