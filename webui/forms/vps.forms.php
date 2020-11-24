@@ -707,7 +707,15 @@ function vps_list_form() {
 			$xtpl->table_td('<a href="?page=adminvps&action=list&node='.$vps->node_id.'">'. $vps->node->domain_name . '</a>');
 			$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$vps->user_id.'">'.$vps->user->login.'</a>');
 			$xtpl->table_td($vps->process_count, false, true);
-			$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->id.'"><img src="template/icons/vps_edit.png"  title="'._("Edit").'"/> '.h($vps->hostname).'</a>');
+
+			if ($vps->node->hypervisor_type == 'openvz') {
+				$xtpl->table_td(
+					'<a href="?page=adminvps&action=info&veid='.$vps->id.'"><img src="template/icons/warning.png"  title="'._("The VPS is running on OpenVZ Legacy, a deprecated virtualization platform").'"/> '.h($vps->hostname).'</a>');
+			} else {
+				$xtpl->table_td(
+					'<a href="?page=adminvps&action=info&veid='.$vps->id.'"><img src="template/icons/vps_edit.png"  title="'._("Edit").'"/> '.h($vps->hostname).'</a>');
+			};
+
 			$xtpl->table_td(sprintf('%4d MB',$vps->used_memory), false, true);
 
 			if ($vps->used_diskspace > 0)
@@ -750,11 +758,11 @@ function vps_list_form() {
 				$xtpl->table_td('');
 			}
 
-			$color = '#FFCCCC';
-
-	// 		if($vps->ve["vps_deleted"]) // FIXME
-	// 			$color = '#A6A6A6';
-			if($vps->is_running)
+			if (!$vps->is_running)
+				$color = '#FFCCCC';
+			elseif ($vps->node->hypervisor_type == 'openvz')
+				$color = '#FF977A';
+			else
 				$color = false;
 
 			$xtpl->table_tr($color);
@@ -771,7 +779,10 @@ function vps_list_form() {
 		}
 	}
 
-	if (!isAdmin()) {
+	if (isAdmin()) {
+		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new-step-0');
+		$xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List VPSes").'" /> '._("List VPSes"), '?page=adminvps&action=list');
+	} else {
 		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new-step-1');
 	}
 }

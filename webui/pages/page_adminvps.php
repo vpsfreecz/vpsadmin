@@ -895,7 +895,10 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_("Platform").':');
-	$xtpl->table_td(hypervisorTypeToLabel($vps->node->hypervisor_type));
+	$xtpl->table_td(
+		($vps->node->hypervisor_type == 'openvz' ? '<img src="template/icons/warning.png"  title="'._("The VPS is running on OpenVZ Legacy, a deprecated virtualization platform").'"/> ' : '').
+		hypervisorTypeToLabel($vps->node->hypervisor_type)
+	);
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_("Owner").':');
@@ -1005,6 +1008,29 @@ if (isset($show_info) && $show_info) {
 		$xtpl->perex(_('VPS is deleted.'), _('This VPS is deleted and cannot be revived.'));
 
 	} else {
+		if ($vps->node->hypervisor_type == 'openvz') {
+			$xtpl->table_title(
+				'<img src="template/icons/warning.png" alt="'._('Warning').'">&nbsp;'.
+				_('New virtualization platform available').
+				'&nbsp;<img src="template/icons/warning.png" alt="'._('Warning').'">'
+			);
+			$xtpl->table_td(_('
+				<p>
+				The VPS is running on OpenVZ Legacy. This virtualization platform
+				is old and deprecated. We recommend an upgrade to vpsAdminOS,
+				our new	virtualization platform. Please see the knowledge base
+				<a href="https://kb.vpsfree.org/manuals/vps/vpsadminos" target="_blank">English</a> / <a href="https://kb.vpsfree.cz/navody/vps/vpsadminos" target="_blank">Czech</a>
+				for more information.
+				</p>
+				<p>
+				Contact our support at
+				<a href="mailto:podpora@vpsfree.cz">podpora@vpsfree.cz</a>
+				if you wish to schedule a migration.
+				</p>
+			'));
+			$xtpl->table_tr();
+			$xtpl->table_out();
+		}
 
 	// SSH
 		$xtpl->table_title(_('SSH connection'));
