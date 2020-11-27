@@ -32,6 +32,41 @@ module VpsAdmin::API::Resources
         string :token, label: 'Access token'
       end
 
+      params(:properties) do
+        bool :ip_checked
+        string :ip_request_id
+        bool :ip_success
+        string :ip_message
+        string :ip_errors
+        bool :ip_proxy
+        bool :ip_crawler
+        bool :ip_recent_abuse
+        bool :ip_vpn
+        bool :ip_tor
+        integer :ip_fraud_score
+
+        bool :mail_checked
+        string :mail_request_id
+        bool :mail_success
+        string :mail_message
+        string :mail_errors
+        bool :mail_valid
+        bool :mail_disposable
+        bool :mail_timed_out
+        string :mail_deliverability
+        bool :mail_catch_all
+        bool :mail_leaked
+        bool :mail_suspect
+        integer :mail_smtp_score
+        integer :mail_overall_score
+        integer :mail_fraud_score
+        bool :mail_dns_valid
+        bool :mail_honeypot
+        string :mail_spam_trap_score
+        bool :mail_recent_abuse
+        bool :mail_frequent_complainer
+      end
+
       include VpsAdmin::API::Plugins::Requests::BaseResource
 
       class Create

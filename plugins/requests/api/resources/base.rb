@@ -19,6 +19,7 @@ module VpsAdmin::API::Plugins::Requests
       res.params(:all) do
         use :common
         use :request
+        use :properties
       end
 
       res.define_action(:Index, superclass: HaveAPI::Actions::Default::Index) do

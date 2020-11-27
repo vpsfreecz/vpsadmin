@@ -16,6 +16,8 @@ VpsAdmin::API::Plugin.register(:requests) do
         label: 'Currencies',
         description: 'Comma separated list of accepted currencies in registration',
         min_user_level: 99
+    SysConfig.register :plugin_requests, :ipqs_key, String,
+        min_user_level: 99
 
     vars = {
         request: '::UserRequest',
