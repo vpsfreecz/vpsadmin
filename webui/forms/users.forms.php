@@ -334,6 +334,163 @@ function approval_requests_details($type, $id) {
 
 	$xtpl->table_out();
 
+	if ($type == 'registration') {
+		$xtpl->table_add_category(_('IPQS IP'));
+		$xtpl->table_add_category('');
+
+		if (!$r->ip_checked) {
+			$xtpl->table_td(_('Pending check'));
+			$xtpl->table_tr();
+		} else {
+			$xtpl->table_td(_('Success').':');
+			$xtpl->table_td(boolean_icon($r->ip_success));
+			$xtpl->table_tr();
+			$xtpl->table_td(_('Request ID').':');
+			$xtpl->table_td(h($r->ip_request_id));
+			$xtpl->table_tr();
+
+			if ($r->ip_success) {
+				$xtpl->table_td(_('Proxy').':');
+				$xtpl->table_td(boolean_icon($r->ip_proxy));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('Crawler').':');
+				$xtpl->table_td(boolean_icon($r->ip_crawler));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('VPN').':');
+				$xtpl->table_td(boolean_icon($r->ip_vpn));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('Tor').':');
+				$xtpl->table_td(boolean_icon($r->ip_tor));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('Recent abuse').':');
+				$xtpl->table_td(boolean_icon($r->ip_recent_abuse));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('Fraud score').':');
+				$xtpl->table_td($r->ip_fraud_score);
+				$xtpl->table_tr();
+
+				if ($r->ip_fraud_score >= 85)
+					$action = _("It's fishy, ignore / deny");
+				elseif ($r->ip_fraud_score >= 75)
+					$action = _('Suspicious activity');
+				else
+					$action = _('OK');
+
+				$xtpl->table_td(_('Judgement').':');
+				$xtpl->table_td($action);
+				$xtpl->table_tr();
+			} else {
+				$xtpl->table_td(_('Message').':');
+				$xtpl->table_td(h($r->ip_message));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('Errors').':');
+				$xtpl->table_td(h($r->ip_errors));
+				$xtpl->table_tr();
+			}
+		}
+
+		$xtpl->table_out();
+
+		$xtpl->table_add_category(_('IPQS E-mail'));
+		$xtpl->table_add_category('');
+
+		if (!$r->mail_checked) {
+			$xtpl->table_td(_('Pending check'));
+			$xtpl->table_tr();
+		} else {
+			$xtpl->table_td(_('Success').':');
+			$xtpl->table_td(boolean_icon($r->mail_success));
+			$xtpl->table_tr();
+			$xtpl->table_td(_('Request ID').':');
+			$xtpl->table_td(h($r->mail_request_id));
+			$xtpl->table_tr();
+
+			if ($r->mail_success) {
+				$xtpl->table_td(_('Valid').':');
+				$xtpl->table_td(boolean_icon($r->mail_valid));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('Disposable').':');
+				$xtpl->table_td(boolean_icon($r->mail_disposable));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('Timed out').':');
+				$xtpl->table_td(boolean_icon($r->mail_timed_out));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('Deliverability').':');
+				$xtpl->table_td(h($r->mail_deliverability));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('Catch-all').':');
+				$xtpl->table_td(boolean_icon($r->mail_catch_all));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('Leaked').':');
+				$xtpl->table_td(boolean_icon($r->mail_leaked));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('Suspect').':');
+				$xtpl->table_td(boolean_icon($r->mail_suspect));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('DNS valid').':');
+				$xtpl->table_td(boolean_icon($r->mail_dns_valid));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('Honeypot').':');
+				$xtpl->table_td(boolean_icon($r->mail_honeypot));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('SPAM trap score').':');
+				$xtpl->table_td(h($r->mail_spam_trap_score));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('Recent abuse').':');
+				$xtpl->table_td(boolean_icon($r->mail_recent_abuse));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('Frequent complainer').':');
+				$xtpl->table_td(boolean_icon($r->mail_frequent_complainer));
+				$xtpl->table_tr();
+
+				$smtpScores = [
+					-1 => _('Invalid email address'),
+					0 => _('Mail server exists, but is rejecting all mail'),
+					1 => _('Mail server exists, but is showing a temporary error'),
+					2 => _('Mail server exists, but accepts all email'),
+					3 => _('Mail server exists and has verified the email address'),
+				];
+				$xtpl->table_td(_('SMTP score').':');
+				$xtpl->table_td($smtpScores[$r->mail_smtp_score]);
+				$xtpl->table_tr();
+
+				$overallScores = [
+					0 => _('Invalid email address'),
+					1 => _('DNS valid, unreachable mail server'),
+					2 => _('DNS valid, temporary mail rejection error'),
+					3 => _('DNS valid, accepts all mail'),
+					4 => _('DNS valid, verified email exists'),
+				];
+
+				$xtpl->table_td(_('Overall score').':');
+				$xtpl->table_td($overallScores[$r->mail_overall_score]);
+				$xtpl->table_tr();
+
+				$xtpl->table_td(_('Fraud score').':');
+				$xtpl->table_td($r->mail_fraud_score);
+				$xtpl->table_tr();
+
+				if ($r->mail_fraud_score >= 75)
+					$action = _('Suspicious activity');
+				else
+					$action = _('OK');
+
+				$xtpl->table_td(_('Judgement').':');
+				$xtpl->table_td($action);
+				$xtpl->table_tr();
+			} else {
+				$xtpl->table_td(_('Message').':');
+				$xtpl->table_td(h($r->mail_message));
+				$xtpl->table_tr();
+				$xtpl->table_td(_('Errors').':');
+				$xtpl->table_td(h($r->mail_errors));
+				$xtpl->table_tr();
+			}
+		}
+
+		$xtpl->table_out();
+	};
+
 	$xtpl->form_create('?page=adminm&action=request_process&id='.$r->id.'&type='.$type, 'post');
 	$params = $r->resolve->getParameters('input');
 	$request_attrs = $r->show->getParameters('output');
