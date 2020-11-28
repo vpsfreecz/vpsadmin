@@ -768,9 +768,9 @@ function vps_list_form() {
 			if (!$vps->is_running)
 				$color = '#FFCCCC';
 			elseif (showPlatformWarning($vps))
-				$color = '#FFBDAD';
+				$color = '#FFE27A';
 			elseif ($diskWarning)
-				$color = '#FFBDAD';
+				$color = '#FFE27A';
 			else
 				$color = false;
 
