@@ -54,7 +54,12 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
 
       outage.load_translations
       report.load_translations
-      outage.set_affected_vpses if attrs[:state] == ::Outage.states[:announced]
+
+      if attrs[:state] == ::Outage.states[:announced]
+        outage.set_affected_vpses
+        outage.set_affected_exports
+        outage.set_affected_users
+      end
 
       return outage unless opts[:send_mail]
 
@@ -62,10 +67,10 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       send_mail('generic', nil, outage, report, attrs, last_report)
 
       # Mail affected users directly
-      outage.affected_users.each do |u|
-        next unless u.mailer_enabled
+      outage.outage_users.includes(:user).each do |ou|
+        next unless ou.user.mailer_enabled
 
-        send_mail('user', u, outage, report, attrs, last_report)
+        send_mail('user', ou.user, outage, report, attrs, last_report)
       end
 
       outage
@@ -118,6 +123,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
           vpses: u && outage.outage_vpses.where(user: u),
           direct_vpses: u && outage.outage_vpses.where(user: u, direct: true),
           indirect_vpses: u && outage.outage_vpses.where(user: u, direct: false),
+          exports: u && outage.outage_exports.where(user: u),
         }
       )
     end

@@ -1,7 +1,4 @@
-require_relative 'outage_vps'
-
-class OutageUser < OutageVps
-  def user
-    vps.user
-  end
+class OutageUser < ActiveRecord::Base
+  belongs_to :outage
+  belongs_to :user
 end

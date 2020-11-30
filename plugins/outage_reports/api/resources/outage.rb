@@ -29,6 +29,7 @@ module VpsAdmin::API::Resources
       integer :affected_user_count, label: 'Affected users', desc: 'Number of affected users'
       integer :affected_direct_vps_count, label: 'Directly affected VPSes', desc: 'Number of directly affected VPSes'
       integer :affected_indirect_vps_count, label: 'Indirectly affected VPSes', desc: 'Number of indirectly affected VPSes'
+      integer :affected_export_count, label: 'Affected exports', desc: 'Number of affected exoirts'
     end
 
     params(:input) do
@@ -64,6 +65,8 @@ module VpsAdmin::API::Resources
             desc: 'Filter outages affecting a specific user'
         resource VpsAdmin::API::Resources::VPS, name: :vps, label: 'VPS',
             desc: 'Filter outages affecting a specific VPS'
+        resource VpsAdmin::API::Resources::Export, name: :export, label: 'Export',
+            desc: 'Filter outages affecting a specific export'
         resource VpsAdmin::API::Resources::User, name: :handled_by, label: 'Handled by',
             desc: 'Filter outages handled by user'
         resource VpsAdmin::API::Resources::Environment,
@@ -105,11 +108,14 @@ module VpsAdmin::API::Resources
         if input.has_key?(:affected)
           q = q.joins(
             'LEFT JOIN outage_vpses ON outage_vpses.outage_id = outages.id'
+          ).joins(
+            'LEFT JOIN outage_exports ON outage_exports.outage_id = outages.id'
           ).group('outages.id')
 
           if input[:affected]
             q = q.where(
-              outage_vpses: {user_id: current_user.id},
+              'outage_vpses.user_id = ? OR outage_exports.user_id = ?',
+              current_user.id, current_user.id
             )
 
           else
@@ -117,6 +123,14 @@ module VpsAdmin::API::Resources
               outages.id NOT IN (
                 SELECT outage_id
                 FROM outage_vpses
+                WHERE user_id = ?
+              )
+            ", current_user.id)
+
+            q = q.where("
+              outages.id NOT IN (
+                SELECT outage_id
+                FROM outage_exports
                 WHERE user_id = ?
               )
             ", current_user.id)
@@ -132,6 +146,12 @@ module VpsAdmin::API::Resources
         if input[:vps]
           q = q.joins(:outage_vpses).group('outages.id').where(
             outage_vpses: {vps_id: input[:vps].id}
+          )
+        end
+
+        if input[:export]
+          q = q.joins(:outage_exports).group('outages.id').where(
+            outage_exports: {export_id: input[:export].id}
           )
         end
 
@@ -313,6 +333,8 @@ module VpsAdmin::API::Resources
       def exec
         outage = ::Outage.find(params[:outage_id])
         outage.set_affected_vpses
+        outage.set_affected_exports
+        outage.set_affected_users
         ok
       end
     end

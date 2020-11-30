@@ -3,8 +3,11 @@ class Outage < ActiveRecord::Base
   has_many :outage_handlers
   has_many :outage_updates
   has_many :outage_translations
+  has_many :outage_users
   has_many :outage_vpses
   has_many :vpses, through: :outage_vpses
+  has_many :outage_exports
+  has_many :exports, through: :outage_exports
 
   enum state: %i(staged announced closed cancelled)
   enum outage_type: %i(tbd restart reset network performance maintenance)
@@ -65,19 +68,47 @@ class Outage < ActiveRecord::Base
 
   # @return [Boolean] true if the current user is affected by this outage
   def affected
-    vpses.where(user: ::User.current).count > 0
+    outage_users.where(user_id: ::User.current.id).any?
   end
 
-  def affected_users
-    ::User.joins(vpses: [:outage_vpses]).where(
-        outage_vpses: {outage_id: self.id},
-    ).where(
-        'users.object_state < ?', ::User.object_states[:soft_delete]
-    ).group('outage_vpses.outage_id, users.id').order('users.id')
+  def get_affected_users
+    users = []
+    users.concat(outage_vpses.pluck(:user_id))
+    users.concat(outage_exports.pluck(:user_id))
+    users.uniq!
+
+    ::User
+      .where('object_state < ?', ::User.object_states[:soft_delete])
+      .where(id: users)
+      .order('id')
+  end
+
+  def set_affected_users
+    users = get_affected_users
+
+    users.each do |user|
+      vps_cnt = outage_vpses.where(user: user).count
+      export_cnt = outage_exports.where(user: user).count
+
+      begin
+        outage_users.find_by!(user: user).update!(
+          vps_count: vps_cnt,
+          export_count: export_cnt,
+        )
+      rescue ActiveRecord::RecordNotFound
+        outage_users.create!(
+          user: user,
+          vps_count: vps_cnt,
+          export_count: export_cnt,
+        )
+      end
+    end
+
+    outage_users.where.not(user_id: users.map(&:id)).delete_all
   end
 
   def affected_user_count
-    affected_users.count.size
+    outage_users.count
   end
 
   def affected_direct_vps_count
@@ -86,6 +117,10 @@ class Outage < ActiveRecord::Base
 
   def affected_indirect_vps_count
     outage_vpses.where(direct: false).count
+  end
+
+  def affected_export_count
+    outage_exports.count
   end
 
   def get_affected_vpses
@@ -306,6 +341,104 @@ class Outage < ActiveRecord::Base
         next if exists
 
         outage_mnt.destroy!
+      end
+    end
+  end
+
+  def get_affected_exports
+    q = []
+
+    outage_entities.each do |ent|
+      id = self.class.connection.quote(ent.row_id)
+
+      case ent.name
+      when 'Cluster'
+        q.clear
+        q << <<-END
+          SELECT * FROM exports
+        END
+        break
+
+      when 'Environment'
+        q << <<-END
+          SELECT e.* FROM exports e
+          INNER JOIN dataset_in_pools dip ON e.dataset_in_pool_id = dip.id
+          INNER JOIN pools p ON dip.pool_id = p.id
+          INNER JOIN nodes n ON p.node_id = n.id
+          INNER JOIN locations l ON l.id = n.location_id
+          WHERE
+            l.environment_id = #{id}
+        END
+
+      when 'Location'
+        q << <<-END
+          SELECT e.* FROM exports e
+          INNER JOIN dataset_in_pools dip ON e.dataset_in_pool_id = dip.id
+          INNER JOIN pools p ON dip.pool_id = p.id
+          INNER JOIN nodes n ON p.node_id = n.id
+          WHERE
+            n.location_id = #{id}
+        END
+
+      when 'Node'
+        q << <<-END
+          SELECT e.* FROM exports e
+          INNER JOIN dataset_in_pools dip ON e.dataset_in_pool_id = dip.id
+          INNER JOIN pools p ON dip.pool_id = p.id
+          WHERE
+            p.node_id = #{id}
+        END
+      end
+    end
+
+    q.empty? ? [] : ::Export.find_by_sql(<<-END
+      SELECT * FROM (
+        #{q.join("\nUNION\n")}
+      ) as tmp
+      GROUP BY tmp.id
+      ORDER BY tmp.id
+      END
+    )
+  end
+
+  # Store affected exports in model {OutageExport}
+  def set_affected_exports
+    self.class.transaction do
+      affected = get_affected_exports
+      registered_exports = {}
+
+      # Register new exports
+      affected.each do |ex|
+        node = ex.dataset_in_pool.pool.node
+
+        begin
+          out = ::OutageExport.find_by!(outage: self, export: ex).update!(
+            user: ex.user,
+            environment: node.location.environment,
+            location: node.location,
+            node: node,
+          )
+
+        rescue ActiveRecord::RecordNotFound
+          out = ::OutageExport.create!(
+            outage: self,
+            export: ex,
+            user: ex.user,
+            environment: node.location.environment,
+            location: node.location,
+            node: node,
+          )
+        end
+
+        registered_exports[ex.id] = out
+      end
+
+      # Delete no longer affected VPSes (if affected entities change)
+      ::OutageExport.where(outage: self).each do |outage_export|
+        exists = affected.detect { |ex| ex.id == outage_export.export_id }
+        next if exists
+
+        outage_export.destroy!
       end
     end
   end
