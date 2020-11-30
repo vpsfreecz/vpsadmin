@@ -703,6 +703,10 @@ function user_link($user) {
 	return '-';
 }
 
+function export_link($export) {
+	return '<a href="?page=export&action=edit&export='.$export->id.'">#'.$export->id.'</a>';
+}
+
 function kernel_version($v) {
 	if (preg_match("/\d+stab.+/",$v, $matches))
 		return $matches[0];

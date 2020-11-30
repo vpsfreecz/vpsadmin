@@ -274,6 +274,14 @@ function outage_details ($id) {
 					'</a>'
 				);
 				$xtpl->table_tr();
+
+				$xtpl->table_td(_('Affected exports').':');
+				$xtpl->table_td(
+					'<a href="?page=outage&action=exports&id='.$outage->id.'">'.
+					$outage->affected_export_count.
+					'</a>'
+				);
+				$xtpl->table_tr();
 			}
 
 		} else {
@@ -284,28 +292,41 @@ function outage_details ($id) {
 				),
 			));
 
-			if ($affected_vpses->count()) {
-				$s = '';
-				if ($outage->state == 'closed'
-					|| (strtotime($outage->begins_at) + $outage->duration) < time()
-					|| ($outage->finished_at && strtotime($outage->finished_at) < time())
-				) {
-					$s .= '<strong>';
-					$s .= _('This outage has been resolved and all systems should have recovered.');
-					$s .= '</strong><br>';
+			$affected_exports = $api->export_outage->list(array(
+				'outage' => $outage->id,
+				'meta' => array(
+					'includes' => 'export',
+				),
+			));
+
+			if ($affected_vpses->count() || $affected_exports->count()) {
+				if ($affected_vpses->count()) {
+					$xtpl->table_td(_('Affected VPS').':');
+					$s = implode("\n<br>\n", array_map(
+						function ($outage_vps) {
+							$v = $outage_vps->vps;
+							return vps_link($v).' - '.h($v->hostname).($outage_vps->direct ? '' : ' (indirectly)');
+
+						}, $affected_vpses->asArray()
+					));
+
+					$xtpl->table_td($s);
+					$xtpl->table_tr();
 				}
 
-				$xtpl->table_td(_('Affected VPS').':');
-				$s .= implode("\n<br>\n", array_map(
-					function ($outage_vps) {
-						$v = $outage_vps->vps;
-						return vps_link($v).' - '.h($v->hostname).($outage_vps->direct ? '' : ' (indirectly)');
+				if ($affected_exports->count()) {
+					$xtpl->table_td(_('Affected exports').':');
+					$s = implode("\n<br>\n", array_map(
+						function ($outage_ex) {
+							$e = $outage_ex->export;
+							return export_link($e).' - '.h($e->path);
 
-					}, $affected_vpses->asArray()
-				));
+						}, $affected_exports->asArray()
+					));
 
-				$xtpl->table_td($s);
-				$xtpl->table_tr();
+					$xtpl->table_td($s);
+					$xtpl->table_tr();
+				}
 
 			} else {
 				$xtpl->table_td('<strong>'._('You are not affected by this outage.').'</strong>');
@@ -506,6 +527,7 @@ function outage_list () {
 
 	if ($_SESSION['logged_in']) {
 		$xtpl->form_add_input(_('VPS ID').':', 'text', '30', 'vps', get_val('vps'), '');
+		$xtpl->form_add_input(_('Export ID').':', 'text', '30', 'export', get_val('export'), '');
 		$xtpl->form_add_select(
 			_('Environment').':', 'environment',
 			resource_list_to_options($api->environment->list()),
@@ -566,7 +588,7 @@ function outage_list () {
 	}
 
 	$filters = array(
-		'state', 'type', 'user', 'handled_by', 'vps', 'order',
+		'state', 'type', 'user', 'handled_by', 'vps', 'export', 'order',
 		'environment', 'location', 'node', 'entity_name', 'entity_id'
 	);
 
@@ -638,6 +660,7 @@ function outage_affected_users ($id) {
 	$xtpl->table_add_category(_('Login'));
 	$xtpl->table_add_category(_('Name'));
 	$xtpl->table_add_category(_('VPS count'));
+	$xtpl->table_add_category(_('Export count'));
 
 	foreach ($users as $out) {
 		$xtpl->table_td(user_link($out->user));
@@ -645,6 +668,12 @@ function outage_affected_users ($id) {
 		$xtpl->table_td(
 			'<a href="?page=outage&action=vps&id='.$outage->id.'&user='.$out->user_id.'">'.
 			$out->vps_count.
+			'</a>',
+			false, true
+		);
+		$xtpl->table_td(
+			'<a href="?page=outage&action=exports&id='.$outage->id.'&user='.$out->user_id.'">'.
+			$out->export_count.
 			'</a>',
 			false, true
 		);
@@ -728,6 +757,82 @@ function outage_affected_vps ($id) {
 		$xtpl->table_td(vps_link($out->vps));
 		$xtpl->table_td(h($out->vps->hostname));
 		$xtpl->table_td(user_link($out->vps->user));
+		$xtpl->table_td($out->node->domain_name);
+		$xtpl->table_td($out->environment->label);
+		$xtpl->table_td($out->location->label);
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_out();
+}
+
+function outage_affected_exports ($id) {
+	global $xtpl, $api;
+
+	$outage = $api->outage->show($id);
+
+	$xtpl->sbar_add(_('Back'), '?page=outage&action=show&id='.$outage->id);
+
+	$xtpl->title(_('Outage').' #'.$outage->id);
+
+	if ($_SESSION['is_admin']) {
+		$xtpl->table_title(_('Filters'));
+		$xtpl->form_create('', 'get', 'outage-list', false);
+
+		$xtpl->table_td(_("User ID").':'.
+			'<input type="hidden" name="page" value="outage">'.
+			'<input type="hidden" name="action" value="vps">'.
+			'<input type="hidden" name="id" value="'.$outage->id.'">'
+		);
+		$xtpl->form_add_input_pure('text', '30', 'user', get_val('user'), '');
+		$xtpl->table_tr();
+
+		$xtpl->form_add_select(
+			_('Environment').':', 'environment',
+			resource_list_to_options($api->environment->list()),
+			get_val('environment')
+		);
+		$xtpl->form_add_select(
+			_('Location').':', 'location',
+			resource_list_to_options($api->location->list()),
+			get_val('location')
+		);
+		$xtpl->form_add_select(
+			_('Node').':', 'node',
+			resource_list_to_options($api->node->list(), 'id', 'domain_name'),
+			get_val('node')
+		);
+
+		$xtpl->form_out(_('Show'));
+	}
+
+	$xtpl->table_title(_('Affected exports'));
+
+	$params = array(
+		'outage' => $outage->id,
+		'meta' => array('includes' => 'export,user,environment,location,node'),
+	);
+
+	foreach (array('user', 'environment', 'location', 'node') as $v) {
+		if ($_GET[$v])
+			$params[$v] = $_GET[$v];
+	}
+
+	$exports = $api->export_outage->list($params);
+
+	$xtpl->table_add_category(_('Export ID'));
+	$xtpl->table_add_category(_('Address'));
+	$xtpl->table_add_category(_('Path'));
+	$xtpl->table_add_category(_('User'));
+	$xtpl->table_add_category(_('Node'));
+	$xtpl->table_add_category(_('Environment'));
+	$xtpl->table_add_category(_('Location'));
+
+	foreach ($exports as $out) {
+		$xtpl->table_td(export_link($out->export));
+		$xtpl->table_td($out->export->host_ip_address->addr);
+		$xtpl->table_td($out->export->path);
+		$xtpl->table_td(user_link($out->export->user));
 		$xtpl->table_td($out->node->domain_name);
 		$xtpl->table_td($out->environment->label);
 		$xtpl->table_td($out->location->label);

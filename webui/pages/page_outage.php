@@ -266,6 +266,10 @@ if (isLoggedIn()) {
 	case 'vps':
 		outage_affected_vps($_GET['id']);
 		break;
+
+	case 'exports':
+		outage_affected_exports($_GET['id']);
+		break;
 	}
 
 	$xtpl->sbar_out(_('Outages'));
