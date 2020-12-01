@@ -220,8 +220,8 @@ function networks_list() {
 		$xtpl->table_td($n->assigned, false, true);
 		$xtpl->table_td($n->owned, false, true);
 		$xtpl->table_td(
-			(approx_number($n->used - max($n->assigned, $n->owned))).
-			' ('.(approx_number($n->size - max($n->assigned, $n->owned))).')',
+			(approx_number($n->used - $n->taken)).
+			' ('.(approx_number($n->size - $n->taken)).')',
 			false, true
 		);
 		$xtpl->table_td(ip_list_link(
