@@ -8,6 +8,7 @@ module VpsAdmin::API::Resources
       integer :used, desc: 'Number of IP addresses present in vpsAdmin'
       integer :assigned, desc: 'Number of IP addresses assigned to VPSes'
       integer :owned, desc: 'Number of IP addresses owned by some users'
+      integer :taken, desc: 'Number of owned and assigned IP addresses'
     end
 
     params(:common) do

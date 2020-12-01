@@ -70,6 +70,13 @@ class Network < ActiveRecord::Base
     ip_addresses.where.not(user: nil).count
   end
 
+  # Number of owned/assigned addresses
+  def taken
+    ip_addresses.where(
+      'user_id IS NOT NULL OR network_interface_id IS NOT NULL'
+    ).count
+  end
+
   # Name of cluster resource appropriate for this network
   def cluster_resource
     return :ipv6 if ip_version == 6
