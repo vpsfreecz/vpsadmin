@@ -219,6 +219,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       integer :vps_count, label: 'VPS count', db_name: :vps_running
       integer :vps_free, label: 'Free VPS slots'
       string :kernel, label: 'Kernel'
+      string :hypervisor_type, label: 'Hypervisor type', desc: 'openvz or vpsadminos'
       float :cpu_idle, label: 'CPU idle'
     end
 
