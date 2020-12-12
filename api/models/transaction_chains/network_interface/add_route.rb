@@ -111,6 +111,10 @@ module TransactionChains
         )
       end
 
+      user_envs[target_env.id] ||= user.environment_user_configs.find_by!(
+        environment_id: target_env.id,
+      )
+
       %i(ipv4 ipv4_private ipv6).each do |r|
         changes = {}
         user_envs.each_key do |env_id|
