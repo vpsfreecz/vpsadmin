@@ -101,7 +101,6 @@ module TransactionChains
     # @return [Array<::ClusterResourceUse>] changes to resource allocations
     def reallocate_resources(user, target_env, ips)
       uses = []
-      changes = {}
       user_envs = {}
 
       ips.map do |ip|
@@ -117,6 +116,8 @@ module TransactionChains
         user_envs.each_key do |env_id|
           changes[env_id] ||= {add: 0, drop: 0}
         end
+
+        changes[target_env.id] ||= {add: 0, drop: 0}
 
         recharger = Proc.new do |ip|
           # If the addresses is charged to a different environment, recharge it
