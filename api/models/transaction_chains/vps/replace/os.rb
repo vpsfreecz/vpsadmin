@@ -233,6 +233,11 @@ module TransactionChains
       # Prevent the old vps to autostart
       append(Transactions::Vps::Autostart, args: [vps, enable: false, revert: false])
 
+      # Start the new VPS
+      if attrs[:start]
+        use_chain(Vps::Start, args: dst_vps, reversible: :keep_going)
+      end
+
       if remote
         # Add IPS to accounting and shaper on the destination node
         vps.ip_addresses.each do |ip|

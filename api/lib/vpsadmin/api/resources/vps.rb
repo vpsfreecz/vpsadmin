@@ -908,6 +908,7 @@ END
     input do
       resource VpsAdmin::API::Resources::Node, desc: 'Clone to node', value_label: :name
       datetime :expiration_date, desc: 'How long should the original VPS be kept'
+      bool :start, desc: 'Start thew new VPS', default: true, fill: true
     end
 
     output do
