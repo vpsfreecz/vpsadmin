@@ -230,6 +230,9 @@ module TransactionChains
         append(Transactions::Vps::RemoveVeth, args: n)
       end
 
+      # Prevent the old vps to autostart
+      append(Transactions::Vps::Autostart, args: [vps, enable: false, revert: false])
+
       if remote
         # Add IPS to accounting and shaper on the destination node
         vps.ip_addresses.each do |ip|
