@@ -9,6 +9,7 @@ module Transactions::Vps
     # @param opts [Hash]
     # @option opts [Integer] :as_id
     # @option opts [Boolean] :network_interfaces
+    # @option opts [Boolean] :snapshots
     # @option opts [String] :passphrase
     def params(vps, node, opts = {})
       self.vps_id = vps.id
@@ -18,6 +19,7 @@ module Transactions::Vps
         node: node.ip_addr,
         as_id: (opts[:as_id] || vps.id).to_s,
         network_interfaces: opts[:network_interfaces] || false,
+        snapshots: opts.has_key?(:snapshots) ? opts[:snapshots] : true,
         passphrase: opts[:passphrase],
       }
     end

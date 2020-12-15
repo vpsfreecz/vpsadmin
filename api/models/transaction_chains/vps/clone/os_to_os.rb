@@ -132,6 +132,7 @@ module TransactionChains
             node,
             as_id: dst_vps.id,
             network_interfaces: false,
+            snapshots: false,
             passphrase: token,
           ]
         )
