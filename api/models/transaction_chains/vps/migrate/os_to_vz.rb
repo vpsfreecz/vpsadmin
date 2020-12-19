@@ -178,7 +178,8 @@ module TransactionChains
         vps.ip_addresses.order('`order`').each do |ip|
           append(
             Transactions::NetworkInterface::AddRoute,
-            args: [dst_netif, ip]
+            args: [dst_netif, ip],
+            urgent: true,
           )
         end
 
