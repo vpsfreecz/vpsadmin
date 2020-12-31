@@ -67,9 +67,15 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       send_mail('generic', nil, outage, report, attrs, last_report)
 
       # Mail affected users directly
-      outage.outage_users.includes(:user).each do |ou|
-        next unless ou.user.mailer_enabled
-
+      outage.outage_users.includes(:user).joins(:user).where(
+        users: {
+          object_state: [
+            ::User.object_states[:active],
+            ::User.object_states[:suspended],
+          ],
+          mailer_enabled: true,
+        },
+      ).each do |ou|
         send_mail('user', ou.user, outage, report, attrs, last_report)
       end
 
