@@ -38,6 +38,7 @@ module TransactionChains
         export = ::Export.create!(
           dataset_in_pool: dip,
           snapshot_in_pool_clone: snap_clone,
+          snapshot_in_pool_clone_n: snap_clone ? snap_clone.id : 0,
           user: dataset.user,
           all_vps: opts[:all_vps] ? true : false,
           path: export_path(dip, sip),

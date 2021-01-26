@@ -1,8 +1,8 @@
--- MySQL dump 10.17  Distrib 10.3.22-MariaDB, for Linux (x86_64)
+-- MariaDB dump 10.17  Distrib 10.4.15-MariaDB, for Linux (x86_64)
 --
 -- Host: 192.168.122.10    Database: vpsadmin_core
 -- ------------------------------------------------------
--- Server version	10.4.13-MariaDB
+-- Server version	10.4.14-MariaDB
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -513,9 +513,9 @@ CREATE TABLE `exports` (
   `confirmed` int(11) NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
+  `snapshot_in_pool_clone_n` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_exports_on_dataset_in_pool_id` (`dataset_in_pool_id`),
-  UNIQUE KEY `index_exports_on_snapshot_in_pool_clone_id` (`snapshot_in_pool_clone_id`),
+  UNIQUE KEY `exports_unique` (`dataset_in_pool_id`,`snapshot_in_pool_clone_n`),
   KEY `index_exports_on_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1673,7 +1673,7 @@ CREATE TABLE `sysconfig` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_sysconfig_on_category_and_name` (`category`,`name`) USING BTREE,
   KEY `index_sysconfig_on_category` (`category`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2424,7 +2424,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-09-29 15:48:34
+-- Dump completed on 2021-01-26 22:05:03
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2702,4 +2702,6 @@ INSERT INTO schema_migrations (version) VALUES ('20200922070226');
 INSERT INTO schema_migrations (version) VALUES ('20200924180219');
 
 INSERT INTO schema_migrations (version) VALUES ('20200927121503');
+
+INSERT INTO schema_migrations (version) VALUES ('20210126204326');
 
