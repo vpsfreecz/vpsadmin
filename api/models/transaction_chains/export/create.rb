@@ -20,7 +20,7 @@ module TransactionChains
         dip = dataset.primary_dataset_in_pool!
       end
 
-      if !%w(primary backup).include?(dip.pool.role)
+      if sip.nil? && !%w(primary backup).include?(dip.pool.role)
         raise VpsAdmin::API::Exceptions::OperationNotSupported,
               'This dataset cannot be exported or mounted via vpsAdmin'
       elsif !dip.pool.node.vpsadminos?
