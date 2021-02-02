@@ -1,17 +1,96 @@
 module VpsAdmind
   class TransactionQueue
+    # A priority-based semaphore
+    #
+    # Higher priority downs take precedence over lower priority ones
     class Semaphore
+      Item = Struct.new(:priority, :order, :queue)
+
       def initialize(size)
-        @q = ::Queue.new
-        size.times { @q << nil }
+        @size = size
+        @comm_queue = ::Queue.new
+        @mutex = ::Mutex.new
+        @used = 0
+        @waiting_items = []
+        @counter = 0
+      end
+
+      def start
+        Thread.new do
+          loop do
+            c, *args = comm_queue.pop
+
+            case c
+            when :down
+              prio, queue = args
+              sem_down(prio, queue)
+            when :up
+              sem_up
+            end
+          end
+        end
+      end
+
+      def down_block(priority: 0)
+        q = ::Queue.new
+        comm_queue << [:down, priority, q]
+        q.pop
+      end
+
+      def down_now
+        mutex.synchronize do
+          if used < size
+            @used += 1
+            true
+          else
+            raise ThreadError, 'programming error, no free slot'
+          end
+        end
       end
 
       def up
-        @q << nil
+        comm_queue << [:up]
+        nil
       end
 
-      def down(non_block = false)
-        @q.pop(non_block)
+      protected
+      attr_reader :size, :comm_queue, :mutex, :used, :waiting_items, :counter
+
+      def sem_down(priority, queue)
+        mutex.synchronize do
+          if used < size
+            @used += 1
+            queue << true
+          else
+            it = Item.new(priority, counter, queue)
+            @counter += 1
+            waiting_items << it
+          end
+        end
+      end
+
+      def sem_up
+        mutex.synchronize do
+          if waiting_items.any?
+            sort_queue!
+            it = waiting_items.shift
+            it.queue << true
+          else
+            @used -= 1 if used > 0
+            @counter = 0
+          end
+        end
+      end
+
+      # Sort first by priority, then order of addition
+      def sort_queue!
+        waiting_items.sort! do |a, b|
+          if b.priority != a.priority
+            b.priority <=> a.priority
+          else
+            a.order <=> b.order
+          end
+        end
       end
     end
 
@@ -33,7 +112,7 @@ module VpsAdmind
 
       if !has_reservation?(cmd.chain_id) && !cmd.urgent?
         begin
-          @sem.down(true)
+          @sem.down_now
 
         rescue ThreadError
           log(:info, :queue, 'Prevented deadlock')
@@ -45,7 +124,7 @@ module VpsAdmind
     end
 
     def reserve(chain_id)
-      @sem.down
+      @sem.down_block
       @mon.synchronize { @reserved << chain_id }
       true
     end
