@@ -17,7 +17,7 @@ module TransactionChains
       # That is not very nice and should be solved better in the future.
       use_chain(
         Dataset::Transfer,
-        args: [src_dataset_in_pool, dst_dataset_in_pool],
+        args: [src_dataset_in_pool, dst_dataset_in_pool, send_reservation: true],
         prio: -10
       )
 

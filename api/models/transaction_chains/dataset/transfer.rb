@@ -2,7 +2,7 @@ module TransactionChains
   class Dataset::Transfer < ::TransactionChain
     label 'Transfer'
 
-    def link_chain(src_dataset_in_pool, dst_dataset_in_pool)
+    def link_chain(src_dataset_in_pool, dst_dataset_in_pool, opts = {})
       # FIXME: in theory, the transfer does not have to lock whole datasets.
       # It may be enough to lock only transfered snapshots. It would mean
       # that to deletedo something with a dataset, you'd have to get locks
@@ -51,7 +51,9 @@ module TransactionChains
             transfer_snapshots,
             nil,
             branch,
-            true
+            true,
+            nil,
+            send_reservation: opts[:send_reservation],
           ]
         )
 
@@ -93,7 +95,10 @@ module TransactionChains
                 dst_dataset_in_pool,
                 transfer_snapshots,
                 nil,
-                branch
+                branch,
+                false,
+                nil,
+                send_reservation: opts[:send_reservation],
               ])
 
               return
