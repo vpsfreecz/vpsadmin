@@ -102,6 +102,7 @@ module VpsAdmind
       @workers = {}
       @mon = Monitor.new
       @sem = Semaphore.new(size)
+      @sem.start
       @reserved = []
     end
 
@@ -123,8 +124,8 @@ module VpsAdmind
       @workers[cmd.chain_id] = Worker.new(cmd)
     end
 
-    def reserve(chain_id)
-      @sem.down_block
+    def reserve(chain_id, priority: 0)
+      @sem.down_block(priority: priority)
       @mon.synchronize { @reserved << chain_id }
       true
     end

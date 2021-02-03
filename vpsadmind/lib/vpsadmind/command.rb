@@ -285,6 +285,10 @@ module VpsAdmind
       @trans["queue"].to_sym
     end
 
+    def priority
+      @trans['priority'].to_i
+    end
+
     def urgent?
       @trans['urgent'].to_i == 1 || (original_chain_direction == :execute && @chain[:urgent_rollback])
     end
