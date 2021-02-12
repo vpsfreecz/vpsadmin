@@ -232,7 +232,7 @@ module TransactionChains
             .joins(:dataset, :pool, :snapshot_in_pools)
             .where(pools: {role: ::Pool.roles[:hypervisor]})
             .group('datasets.id')
-            .having('snapshot_count > 3')
+            .having('snapshot_count > 2')
             .order('COUNT(snapshot_in_pools.id) DESC'),
 
           too_many_in_backup: ::DatasetInPool
