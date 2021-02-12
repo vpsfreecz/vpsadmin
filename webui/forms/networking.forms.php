@@ -360,7 +360,7 @@ function route_assign_form($id) {
 	);
 
 	$xtpl->table_td('IP:');
-	$xtpl->table_td($ip->network->location->label.': '.$ip->addr.'/'.$ip->prefix);
+	$xtpl->table_td($ip->addr.'/'.$ip->prefix);
 	$xtpl->table_tr();
 
 	if ($vps) {
