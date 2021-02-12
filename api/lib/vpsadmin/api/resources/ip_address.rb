@@ -415,7 +415,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
         error('invalid host IP address')
       end
 
-      host_addr = input[:host_ip_address] || ip.host_ip_addresses.take!
+      host_addr = input[:host_ip_address] || ip.host_ip_addresses.where(auto_add: true).take!
 
       maintenance_check!(netif.vps)
       object_state_check!(netif.vps, netif.vps.user)
