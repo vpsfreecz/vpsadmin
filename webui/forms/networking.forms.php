@@ -395,7 +395,14 @@ function route_assign_form($id) {
 			$xtpl->form_add_select_pure('route_via', $via_addrs, post_val('route_via'));
 			$xtpl->table_tr();
 
-			$xtpl->form_out(_('Add route'));
+			$xtpl->table_td('');
+			$xtpl->table_td(
+				$xtpl->html_submit(_('Add only route'), 'route-only').
+				$xtpl->html_submit(_('Add route and an address to interface').' '.h($netif->name), 'route-and-host')
+			);
+			$xtpl->table_tr();
+
+			$xtpl->form_out_raw();
 
 		} else {
 			$netifs = $api->network_interface->list(['vps' => $_POST['vps']]);

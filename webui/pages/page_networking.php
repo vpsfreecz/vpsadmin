@@ -46,13 +46,37 @@ switch($_GET['action']) {
 		csrf_check();
 
 		try {
-			$api->ip_address($_GET['id'])->assign([
-				'network_interface' => $_POST['network_interface'],
-				'route_via' => $_POST['route_via'] ? $_POST['route_via'] : null,
-			]);
+			if (isset($_POST['route-only'])) {
+				$api->ip_address($_GET['id'])->assign([
+					'network_interface' => $_POST['network_interface'],
+					'route_via' => $_POST['route_via'] ? $_POST['route_via'] : null,
+				]);
 
-			notify_user(_('IP assigned'), '');
-			redirect($_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses');
+				notify_user(_('IP assigned'), '');
+				redirect($_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses');
+
+			} elseif (isset($_POST['route-and-host'])) {
+				if ($_POST['route_via']) {
+					$xtpl->perex(
+						_('Invalid route'),
+						_('When adding the address to the interface, it cannot be routed '.
+						  'through another address: do not set the "Address" field')
+					);
+					route_assign_form($_GET['id']);
+
+				} else {
+					$api->ip_address($_GET['id'])->assign_with_host_address([
+						'network_interface' => $_POST['network_interface'],
+						'route_via' => $_POST['route_via'] ? $_POST['route_via'] : null,
+					]);
+
+					notify_user(_('IP assigned'), '');
+					redirect($_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses');
+				}
+			} else {
+				$xtpl->perex(_('Something went wrong'), _('Try again or contact support'));
+				route_assign_form($_GET['id']);
+			}
 
 		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 			$xtpl->perex_format_errors(_('Action failed'), $e->getResponse());
