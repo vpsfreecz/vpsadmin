@@ -607,6 +607,32 @@ switch ($_GET["action"]) {
 
 			break;
 
+		case 'boot':
+			if (isset($_POST['os_template'])) {
+				csrf_check();
+
+				try {
+					$api->vps($_GET['veid'])->boot([
+						'os_template' => $_POST['os_template'],
+						'mount_root_dataset' => $_POST['mount_root_dataset'] == 'mount' ? trim($_POST['mountpoint']) : null,
+					]);
+
+					notify_user(
+						_("VPS")." {$_GET["veid"]} "._("will be rebooted momentarily"),
+						''
+					);
+					redirect('?page=adminvps&action=info&veid='.$_GET["veid"]);
+
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Boot failed'), $e->getResponse());
+					$show_info=true;
+				}
+
+			} else {
+					$show_info=true;
+			}
+			break;
+
 		case 'reinstall':
 			if (isset($_POST['reinstall']) && $_POST['confirm']) {
 				csrf_check();
@@ -1206,11 +1232,47 @@ if (isset($show_info) && $show_info) {
 	// Mounts
 	mount_list($vps->id);
 
+		$os_templates = list_templates($vps);
+
+	// Boot
+		if ($vps->node->hypervisor_type == 'vpsadminos') {
+			$xtpl->table_title(_('Boot VPS from template (rescue mode)'));
+			$xtpl->form_create('?page=adminvps&action=boot&veid='.$vps->id, 'post');
+			$xtpl->table_td(
+				'<p>'.
+				_('Boot the VPS from a clean template, e.g. to fix a broken system. '.
+				  'The VPS configuration (IP addresses, resources, etc.) is the same, '.
+				  'the VPS only starts from a clean system. The original root '.
+				  'filesystem from the VPS can be accessed through the mountpoint '.
+				  'configured below.').
+				'</p><p>'.
+				_('On next VPS start/restart, the VPS will start from it\'s own '.
+				  'dataset again. The clean system created by this action is '.
+				  'temporary and any changes to it will be lost.').
+				'</p>',
+				false,
+				false,
+				'3'
+			);
+			$xtpl->table_tr();
+
+			$xtpl->form_add_select(_("Distribution").':', 'os_template', $os_templates, $vps->os_template_id,  '');
+
+			$xtpl->table_td(_('Mount root dataset').':');
+			$xtpl->form_add_radio_pure('mount_root_dataset', 'mount', true);
+			$xtpl->form_add_input_pure('text', '30', 'mountpoint', post_val('mountpoint', '/mnt/vps'));
+			$xtpl->table_tr();
+
+			$xtpl->table_td(_('Do not mount the root dataset'));
+			$xtpl->form_add_radio_pure('mount_root_dataset', 'no', false);
+			$xtpl->table_tr();
+			$xtpl->form_out(_("Go >>"));
+		}
 
 	// Distribution
 		$xtpl->table_title(_('Distribution'));
 		$xtpl->form_create('?page=adminvps&action=reinstall&veid='.$vps->id, 'post');
-		$xtpl->form_add_select(_("Distribution").':', 'os_template', list_templates($vps), $vps->os_template_id,  '');
+		$xtpl->form_add_select(_("Distribution").':', 'os_template', $os_templates, $vps->os_template_id,  '');
 		$xtpl->table_td(_('Info').':');
 		$xtpl->table_td($vps->os_template->info);
 		$xtpl->table_tr();
