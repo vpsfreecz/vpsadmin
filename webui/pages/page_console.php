@@ -51,13 +51,22 @@ function vps_passwd(cmd) {
 	apiClient.after("authenticated", function() {
 		apiClient.vps.passwd(
 			'.$vps->id.',
-			{type: "simple"},
-			function(c, reply) {
-				if (reply.isOk()) {
-					$("#root-password").text(reply.response().password);
-				} else {
-					alert("Password change failed: " + reply.apiResponse().message());
-				}
+			{
+				params: {type: "simple"},
+				onReply: function(c, reply) {
+					if (reply.isOk()) {
+						$("#root-password").text("configuring password...");
+					} else {
+						alert("Password change failed: " + reply.message());
+					}
+				},
+				onDone: function(c, reply) {
+					if (reply.isOk()) {
+						$("#root-password").text(reply.response().password);
+					} else {
+						alert("Password change failed: " + reply.message());
+					}
+				},
 			}
 		);
 	});
