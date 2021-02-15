@@ -47,11 +47,45 @@ function vps_do(cmd) {
 		});
 	});
 }
+function vps_boot(cmd) {
+	apiClient.after("authenticated", function() {
+		var tpl = $("select[name=\"os_template\"]").val();
+		var mnt = $("input[name=\"root_mountpoint\"]").val();
+
+		apiClient.vps.boot(
+			'.$vps->id.',
+			{os_template: tpl, mount_root_dataset: mnt},
+			function(c, reply) {
+				if (!reply.isOk())
+					alert("Boot failed: " + reply.apiResponse().message());
+			}
+		);
+	});
+}
 </script>
 ');
 	$xtpl->sbar_add('<img src="template/icons/vps_start.png"  title="'._("Start").'" /> ' . _("Start"), "javascript:vps_do('start');");
 	$xtpl->sbar_add('<img src="template/icons/vps_stop.png"  title="'._("Stop").'" /> ' . _("Stop"), "javascript:vps_do('stop');");
 	$xtpl->sbar_add('<img src="template/icons/vps_restart.png"  title="'._("Restart").'" /> ' . _("Restart"), "javascript:vps_do('restart');");
+
+	if ($vps->node->hypervisor_type == "vpsadminos") {
+		$os_templates = list_templates($vps);
+
+		$xtpl->sbar_add_fragment(
+			'<h3>'._('Rescue mode').'</h3>'.
+			'<table>'.
+			'<tr>'.
+			'<td>'._('Distribution').': </td>'.
+			'<td>'.$xtpl->form_select_html('os_template', $os_templates, $vps->os_template_id).'</td>'.
+			'</tr><tr>'.
+			'<td>'._('Root dataset mountpoint').': </td>'.
+			'<td><input type="text" name="root_mountpoint" value="/mnt/vps"></td>'.
+			'</tr><tr>'.
+			'<td></td><td><button onclick="vps_boot();">'._('Boot').'</button></td>'.
+			'</tr></table>'
+		);
+	}
+
 	$xtpl->sbar_out(_("Manage VPS"));
 }
 

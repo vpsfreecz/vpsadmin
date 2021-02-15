@@ -550,6 +550,10 @@ class XTemplate {
 		$this->assign('SBI_LINK', $link);
 		$this->parse('main.sidebar.sb_item');
 	}
+	function sbar_add_fragment ($html) {
+		$this->assign('SB_FRAGMENT' ,$html);
+		$this->parse('main.sidebar_fragment');
+	}
 	/**
 	  * Parse out the sidebar
 	  * @param $title - tile for the sidebar
@@ -776,6 +780,22 @@ class XTemplate {
 	  * @param $selected_value - default selected value
 	  */
 	function form_add_select_pure($name = 'select_fromgen', $options, $selected_value = '', $multiple = false, $size = '5') {
+		$this->table_td($this->form_select_html(
+			$name,
+			$options,
+			$selected_value,
+			$multiple,
+			$size
+		));
+	}
+
+	/**
+	  * Select html fragment (combobox)
+	  * @param $name - $_RESULT[name]
+	  * @param $options - array of options, $option[option_name] = "Option Label"
+	  * @param $selected_value - default selected value
+	  */
+	function form_select_html($name = 'select_fromgen', $options, $selected_value = '', $multiple = false, $size = '5') {
 		$code = ('<select  name="'.$name.'" id="input" '.($multiple ? 'multiple size="'.$size.'"' : '').'>');
 		if ($options)
 		foreach ($options as $key=>$value) {
@@ -785,9 +805,8 @@ class XTemplate {
 				$code .= '<option value="'.$key.'" title="">'.h($value).'</option>'."\n";
 		}
 		$code .= ('</select>');
-		$this->table_td($code);
+		return $code;
 	}
-
 
 	function form_add_datetime_pure($name, $value = null, $local = null, $min = null, $max = null, $step = null) {
 		$input = '<input type="datetime'.($local ? '-local' : '').'" name="'.$name.'"';
