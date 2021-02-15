@@ -172,7 +172,7 @@ module NodeCtld
     end
 
     def ct_list
-      osctl_parse(%i(ct ls), [], output: 'pool,id,state,init_pid')
+      osctl_parse(%i(ct ls))
     end
 
     def run_or_skip(vps)
