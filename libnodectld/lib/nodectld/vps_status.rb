@@ -11,7 +11,7 @@ module NodeCtld
       attr_reader :id, :read_hostname, :last_status_id, :last_is_running,
         :status_time, :cpus, :last_total_memory
       attr_accessor :exists, :running, :hostname, :uptime, :cpu_usage, :memory,
-        :nproc, :loadavg
+        :nproc, :loadavg, :in_rescue_mode
 
       # @param row [Hash] row from databse table `vpses`
       def initialize(row)
@@ -106,6 +106,11 @@ module NodeCtld
             if !db_vps.hostname || db_vps.hostname.empty?
               db_vps.hostname = 'unable to read'
             end
+          end
+
+          # Detect osctl ct boot
+          if vps[:dataset] != vps[:boot_dataset]
+            db_vps.in_rescue_mode = true
           end
         end
       end
@@ -224,12 +229,13 @@ module NodeCtld
     def log_status(db, t, vps_id)
       db.query(
         "INSERT INTO vps_statuses (
-          vps_id, status, is_running, uptime, cpus, total_memory, total_swap,
-          process_count, cpu_idle, used_memory, loadavg, created_at
+          vps_id, status, is_running, in_rescue_mode, uptime, cpus, total_memory,
+          total_swap, process_count, cpu_idle, used_memory, loadavg, created_at
         )
 
         SELECT
-          vps_id, status, is_running, uptime, cpus, total_memory, total_swap,
+          vps_id, status, is_running, in_rescue_mode, uptime, cpus, total_memory,
+          total_swap,
           sum_process_count / update_count,
           sum_cpu_idle / update_count,
           sum_used_memory / update_count,
@@ -250,6 +256,7 @@ module NodeCtld
       sql += "
           status = #{vps.skip? ? 0 : 1},
           is_running = #{vps.running? ? 1 : 0},
+          in_rescue_mode = #{vps.in_rescue_mode ? 1 : 0},
           update_count = 1,"
 
       if vps.running? && !vps.skip?
@@ -300,6 +307,7 @@ module NodeCtld
 
       if vps.running? && !vps.skip?
         sql += "
+          in_rescue_mode = #{vps.in_rescue_mode ? 1 : 0},
           uptime = #{vps.uptime},
           loadavg = #{vps.loadavg || 0.0},
           process_count = #{vps.nproc},
