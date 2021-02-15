@@ -47,6 +47,21 @@ function vps_do(cmd) {
 		});
 	});
 }
+function vps_passwd(cmd) {
+	apiClient.after("authenticated", function() {
+		apiClient.vps.passwd(
+			'.$vps->id.',
+			{type: "simple"},
+			function(c, reply) {
+				if (reply.isOk()) {
+					$("#root-password").text(reply.response().password);
+				} else {
+					alert("Password change failed: " + reply.apiResponse().message());
+				}
+			}
+		);
+	});
+}
 function vps_boot(cmd) {
 	apiClient.after("authenticated", function() {
 		var tpl = $("select[name=\"os_template\"]").val();
@@ -67,6 +82,18 @@ function vps_boot(cmd) {
 	$xtpl->sbar_add('<img src="template/icons/vps_start.png"  title="'._("Start").'" /> ' . _("Start"), "javascript:vps_do('start');");
 	$xtpl->sbar_add('<img src="template/icons/vps_stop.png"  title="'._("Stop").'" /> ' . _("Stop"), "javascript:vps_do('stop');");
 	$xtpl->sbar_add('<img src="template/icons/vps_restart.png"  title="'._("Restart").'" /> ' . _("Restart"), "javascript:vps_do('restart');");
+
+	$xtpl->sbar_add_fragment(
+		'<h3>'._('Set password').'</h3>'.
+		'<table>'.
+		'<tr><td>'._('User').': </td><td>root</td></tr>'.
+		'<tr>'.
+		'<td>'._('Password').': </td>'.
+		'<td><span id="root-password">'._('will be generated').'</span></td>'.
+		'</tr><tr>'.
+		'<td></td><td><button onclick="vps_passwd();">'._('Generate password').'</button></td>'.
+		'</tr></table>'
+	);
 
 	if ($vps->node->hypervisor_type == "vpsadminos") {
 		$os_templates = list_templates($vps);
