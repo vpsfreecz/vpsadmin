@@ -1061,6 +1061,25 @@ if (isset($show_info) && $show_info) {
 			$xtpl->table_out();
 		}
 
+		if ($vps->in_rescue_mode) {
+			$xtpl->table_title(
+				'<img src="template/icons/warning.png" alt="'._('Warning').'">&nbsp;'.
+				_('VPS in rescue mode').
+				'&nbsp;<img src="template/icons/warning.png" alt="'._('Warning').'">'
+			);
+			$xtpl->table_td(_('
+				<p>
+				The VPS has been booted from a clean template. All changes to the
+				rescue system will be lost once the VPS is restarted.
+				</p>
+				<p>
+				Restart the VPS to leave the rescue mode.
+				</p>
+			'));
+			$xtpl->table_tr();
+			$xtpl->table_out();
+		}
+
 	// SSH
 		$xtpl->table_title(_('SSH connection'));
 		$xtpl->table_td(
