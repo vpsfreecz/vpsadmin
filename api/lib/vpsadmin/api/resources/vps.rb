@@ -42,6 +42,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
   params(:status) do
     bool :is_running, label: 'Running'
+    bool :in_rescue_mode, label: 'In rescue mode'
     integer :uptime, label: 'Uptime'
     float :loadavg
     integer :process_count, label: 'Process count'
@@ -1628,6 +1629,7 @@ END
       id :id
       bool :status
       bool :is_running, label: 'Running'
+      bool :in_rescue_mode, label: 'In rescue mode'
       integer :uptime, label: 'Uptime'
       float :loadavg
       integer :process_count, label: 'Process count'

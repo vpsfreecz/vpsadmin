@@ -188,8 +188,8 @@ class Vps < ActiveRecord::Base
     dataset_in_pool.dataset
   end
 
-  %i(is_running uptime process_count cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-     cpu_irq cpu_softirq loadavg used_memory used_swap
+  %i(is_running in_rescue_mode uptime process_count cpu_user cpu_nice cpu_system
+     cpu_idle cpu_iowait cpu_irq cpu_softirq loadavg used_memory used_swap
   ).each do |attr|
     define_method(attr) do
       vps_current_status && vps_current_status.send(attr)

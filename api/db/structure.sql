@@ -1,4 +1,4 @@
--- MariaDB dump 10.17  Distrib 10.4.15-MariaDB, for Linux (x86_64)
+-- MariaDB dump 10.18  Distrib 10.4.17-MariaDB, for Linux (x86_64)
 --
 -- Host: 192.168.122.10    Database: vpsadmin_core
 -- ------------------------------------------------------
@@ -2257,6 +2257,7 @@ CREATE TABLE `vps_current_statuses` (
   `sum_used_swap` int(11) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
+  `in_rescue_mode` tinyint(1) DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_vps_current_statuses_on_vps_id` (`vps_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
@@ -2372,6 +2373,7 @@ CREATE TABLE `vps_statuses` (
   `total_swap` int(11) DEFAULT NULL,
   `used_swap` int(11) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
+  `in_rescue_mode` tinyint(1) DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `index_vps_statuses_on_vps_id` (`vps_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
@@ -2424,7 +2426,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2021-01-26 22:05:03
+-- Dump completed on 2021-02-15 17:18:22
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2704,4 +2706,6 @@ INSERT INTO schema_migrations (version) VALUES ('20200924180219');
 INSERT INTO schema_migrations (version) VALUES ('20200927121503');
 
 INSERT INTO schema_migrations (version) VALUES ('20210126204326');
+
+INSERT INTO schema_migrations (version) VALUES ('20210215160434');
 
