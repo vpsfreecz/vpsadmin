@@ -176,6 +176,10 @@ class Vps < ActiveRecord::Base
     [TransactionChains::Vps::Passwd.fire(self, pass).first, pass]
   end
 
+  def boot(template, opts = {})
+    TransactionChains::Vps::Boot.fire(self, template, opts)
+  end
+
   def reinstall(template)
     TransactionChains::Vps::Reinstall.fire(self, template)
   end

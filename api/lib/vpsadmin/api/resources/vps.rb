@@ -615,6 +615,69 @@ END
     end
   end
 
+  class Boot < HaveAPI::Action
+    desc 'Boot VPS from OS template'
+    route '{%{resource}_id}/boot'
+    http_method :post
+    blocking true
+
+    input do
+      use :template
+      string :mount_root_dataset, label: 'Rootfs mountpoint'
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+      restrict user_id: u.id
+      allow
+    end
+
+    def exec
+      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+      maintenance_check!(vps)
+
+      if vps.node.hypervisor_type != 'vpsadminos'
+        error('this action is available only for VPS running on vpsAdminOS')
+      end
+
+      if input[:mount_root_dataset] && !check_mountpoint(input[:mount_root_dataset])
+        error('invalid mountpoint', {
+          mount_root_dataset: [
+            'must start with a slash',
+            'a-z, A-Z, 0-9, _-/.:'
+          ],
+        })
+      end
+
+      tpl = input[:os_template] || vps.os_template
+
+      if !tpl.enabled?
+        error('selected os template is disabled')
+
+      elsif tpl.hypervisor_type != vps.node.hypervisor_type
+        error(
+          "incompatible template: needs #{tpl.hypervisor_type}, but VPS is "+
+          "using #{vps.node.hypervisor_type}"
+        )
+      end
+
+      @chain, _ = vps.boot(tpl, mount_root_dataset: input[:mount_root_dataset])
+      ok
+    end
+
+    def state_id
+      @chain.id
+    end
+
+    protected
+    def check_mountpoint(dst)
+      dst.start_with?('/') \
+        && dst =~ /\A[a-zA-Z0-9_\-\/\.:]{3,500}\z/ \
+        && dst !~ /\.\./ \
+        && dst !~ /\/\//
+    end
+  end
+
   class Reinstall < HaveAPI::Action
     desc 'Reinstall VPS'
     route '{%{resource}_id}/reinstall'
