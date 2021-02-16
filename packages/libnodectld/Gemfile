@@ -1,2 +1,2 @@
 source 'https://rubygems.vpsfree.cz'
-gem 'libnodectld', '3.0.0.dev.build20210202123148'
+gem 'libnodectld', '3.0.0.dev.build20210216183054'
