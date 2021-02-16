@@ -111,7 +111,8 @@ function vps_boot(cmd) {
 		'<tr>'.
 		'<td>'._('Password').': </td>'.
 		'<td><span id="root-password">'._('will be generated').'</span></td>'.
-		'</tr><tr>'.
+		'</tr><tr><td colspan="2"><strong>'._('Change the password to something secure when finished!').'</strong></td></tr>'.
+		'<tr>'.
 		'<td></td><td><button onclick="vps_passwd();">'._('Generate password').'</button></td>'.
 		'</tr></table>'
 	);
