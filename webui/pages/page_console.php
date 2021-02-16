@@ -78,10 +78,22 @@ function vps_boot(cmd) {
 
 		apiClient.vps.boot(
 			'.$vps->id.',
-			{os_template: tpl, mount_root_dataset: mnt},
-			function(c, reply) {
-				if (!reply.isOk())
-					alert("Boot failed: " + reply.apiResponse().message());
+			{
+				params: {os_template: tpl, mount_root_dataset: mnt},
+				onReply: function(c, reply) {
+					if (reply.isOk()) {
+						$("#boot-button").text("'._('Booting...').'")
+					} else {
+						alert("Boot failed: " + reply.apiResponse().message());
+					}
+				},
+				onDone: function(c, reply) {
+					if (reply.isOk()) {
+						$("#boot-button").text("'._('Boot').'")
+					} else {
+						alert("Boot failed: " + reply.apiResponse().message());
+					}
+				},
 			}
 		);
 	});
@@ -117,7 +129,7 @@ function vps_boot(cmd) {
 			'<td>'._('Root dataset mountpoint').': </td>'.
 			'<td><input type="text" name="root_mountpoint" value="/mnt/vps"></td>'.
 			'</tr><tr>'.
-			'<td></td><td><button onclick="vps_boot();">'._('Boot').'</button></td>'.
+			'<td></td><td><button id="boot-button" onclick="vps_boot();">'._('Boot').'</button></td>'.
 			'</tr></table>'
 		);
 	}
