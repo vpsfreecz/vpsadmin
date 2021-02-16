@@ -818,6 +818,7 @@ function vps_details_submenu($vps) {
 	if ($_GET['action'] != 'info')
 		$xtpl->sbar_add(_('Back to details'), '?page=adminvps&action=info&veid='.$vps->id);
 
+	$xtpl->sbar_add(_('Remote console'), '?page=console&veid='.$vps->id.'&t='.csrf_token());
 	$xtpl->sbar_add(_('Backups'), '?page=backup&action=vps&list=1&vps='.$vps->id.'#ds-'.$vps->dataset_id);
 
 	if ($_SESSION['is_admin']) {
@@ -840,6 +841,8 @@ function vps_details_submenu($vps) {
 
 	if ($api->outage)
 		$xtpl->sbar_add(_('Outages'), '?page=outage&action=list&vps='.$vps->id);
+
+	$xtpl->sbar_add(_('Transaction log'), '?page=transactions&class_name=Vps&row_id='.$vps->id);
 }
 
 function vps_details_suite($vps) {
