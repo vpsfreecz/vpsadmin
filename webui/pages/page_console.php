@@ -117,7 +117,7 @@ function vps_boot(cmd) {
 		'</tr></table>'
 	);
 
-	if ($vps->node->hypervisor_type == "vpsadminos") {
+	if ($vps->node->hypervisor_type == "vpsadminos" && isAdmin()) {
 		$os_templates = list_templates($vps);
 
 		$xtpl->sbar_add_fragment(
