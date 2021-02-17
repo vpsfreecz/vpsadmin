@@ -582,14 +582,14 @@ function approx_number($val) {
 
 function get_val($name, $default = '') {
 	if (isset($_GET[$name]))
-		return $_GET[$name];
-	return $default;
+		return h($_GET[$name]);
+	return h($default);
 }
 
 function post_val($name, $default = '') {
 	if (isset($_POST[$name]))
-		return $_POST[$name];
-	return $default;
+		return h($_POST[$name]);
+	return h($default);
 }
 
 function post_val_array($name, $index, $default = '') {
