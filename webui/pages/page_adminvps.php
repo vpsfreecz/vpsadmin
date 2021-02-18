@@ -1254,7 +1254,7 @@ if (isset($show_info) && $show_info) {
 		$os_templates = list_templates($vps);
 
 	// Boot
-		if ($vps->node->hypervisor_type == 'vpsadminos' && isAdmin()) {
+		if ($vps->node->hypervisor_type == 'vpsadminos') {
 			$xtpl->table_title(_('Boot VPS from template (rescue mode)'));
 			$xtpl->form_create('?page=adminvps&action=boot&veid='.$vps->id, 'post');
 			$xtpl->table_td(
