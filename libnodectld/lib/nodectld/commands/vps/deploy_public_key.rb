@@ -59,7 +59,7 @@ module NodeCtld
 
     protected
     def root_dir
-      File.join(ct.rootfs, 'root')
+      File.join(ct.boot_rootfs, 'root')
     end
 
     def ssh_dir
