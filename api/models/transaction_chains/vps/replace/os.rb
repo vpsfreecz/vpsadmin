@@ -136,7 +136,7 @@ module TransactionChains
           node,
           as_id: dst_vps.id,
           network_interfaces: true,
-          passhprase: token,
+          passphrase: token,
         ])
 
         # In case of rollback on the target node
