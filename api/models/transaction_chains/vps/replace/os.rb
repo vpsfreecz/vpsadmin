@@ -241,14 +241,14 @@ module TransactionChains
       if remote
         # Add IPS to accounting and shaper on the destination node
         vps.ip_addresses.each do |ip|
-          append(Transactions::Firewall::RegIp, ip, dst_vps)
-          append(Transactions::Shaper::Set, dst_vps, ip)
+          append(Transactions::Firewall::RegIp, args: [ip, dst_vps])
+          append(Transactions::Shaper::Set, args: [dst_vps, ip])
         end
 
         # Remove IPs from accounting and shaper on the source node
         vps.ip_addresses.each do |ip|
-          append(Transactions::Firewall::UnregIp, ip, vps)
-          append(Transactions::Shaper::Unset, vps, ip)
+          append(Transactions::Firewall::UnregIp, args: [ip, vps])
+          append(Transactions::Shaper::Unset, args: [vps, ip])
         end
       end
 
