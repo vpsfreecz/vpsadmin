@@ -1,4 +1,5 @@
 require_relative '../clone/base'
+require 'securerandom'
 
 module TransactionChains
   # Replace an unresponsive VPS with a new one
@@ -121,10 +122,25 @@ module TransactionChains
       use_chain(UserNamespaceMap::Use, args: [vps.userns_map, dst_vps.node])
 
       if remote
+        token = SecureRandom.hex(6)
+
+        # Authorize the migration
         append(
-          Transactions::Vps::SendConfig,
-          args: [vps, node, as_id: dst_vps.id, network_interfaces: true]
+          Transactions::Pool::AuthorizeSendKey,
+          args: [@dst_pool, @src_pool, dst_vps.id, "chain-#{id}-#{token}", token],
         )
+
+        # Copy configs
+        append(Transactions::Vps::SendConfig, args: [
+          vps,
+          node,
+          as_id: dst_vps.id,
+          network_interfaces: true,
+          passhprase: token,
+        ])
+
+        # In case of rollback on the target node
+        append(Transactions::Vps::SendRollbackConfig, args: dst_vps)
       end
 
       # Datasets to clone
