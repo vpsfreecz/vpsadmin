@@ -19,6 +19,7 @@ module TransactionChains
       @dst_vps = dst_vps
       @my_mounts = []
       @others_mounts = {}
+      @my_deleted = []
 
       sort_mounts
     end
@@ -42,6 +43,19 @@ module TransactionChains
       end
     end
 
+    def delete_mine_if
+      @my_mounts.delete_if do |m|
+        if yield(m)
+          m.confirmed = ::Mount.confirmed(:confirm_destroy)
+          m.save!
+          @my_deleted << m
+          true
+        else
+          false
+        end
+      end
+    end
+
     def remount_mine
       obj_changes = {}
 
@@ -53,11 +67,18 @@ module TransactionChains
 
       @chain.use_chain(Vps::Mounts, args: @dst_vps, urgent: true)
 
-      unless obj_changes.empty?
-        @chain.append(Transactions::Utils::NoOp, args: @dst_vps.node_id,
-                      urgent: true) do
+      if obj_changes.any? || @my_deleted.any?
+        @chain.append_t(
+          Transactions::Utils::NoOp,
+          args: @dst_vps.node_id,
+          urgent: true,
+        ) do |t|
           obj_changes.each do |obj, changes|
-            edit_before(obj, changes)
+            t.edit_before(obj, changes)
+          end
+
+          @my_deleted.each do |m|
+            t.destroy(m)
           end
         end
       end

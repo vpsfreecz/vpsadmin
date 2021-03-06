@@ -197,6 +197,12 @@ module TransactionChains
 
       # Regenerate mount scripts of the migrated VPS
       mounts.datasets = datasets
+
+      mounts.delete_mine_if do |m|
+        # Delete mounts of remote datasets -- those are not supported on vpsAdminOS
+        m.dataset_in_pool.pool.node_id != src_node.id
+      end
+
       mounts.remount_mine
 
       # Wait for routing to remove routes from the original system
