@@ -181,6 +181,9 @@ module TransactionChains
         end
       end
 
+      # Reserve a slot in zfs_send queue
+      append(Transactions::Queue::Reserve, args: [vps.node, :zfs_send])
+
       if remote
         # Initial transfer
         append_t(Transactions::Vps::SendRootfs, args: [vps], &confirm_creation)
@@ -216,6 +219,9 @@ module TransactionChains
           args: [vps, clone: true, consistent: false, restart: false, start: false],
         )
       end
+
+      # Release reserved spot in the queue
+      append(Transactions::Queue::Release, args: [vps.node, :zfs_send])
 
       # Hostname
       clone_hostname(vps, dst_vps, attrs)

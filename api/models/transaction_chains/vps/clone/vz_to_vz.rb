@@ -182,6 +182,9 @@ module TransactionChains
         end
       end
 
+      # Reserve a slot in zfs_send queue
+      append(Transactions::Queue::Reserve, args: [vps.node, :zfs_send])
+
       # Initial transfer
       transfer_datasets(datasets)
 
@@ -190,6 +193,9 @@ module TransactionChains
         use_chain(Vps::Stop, args: vps)
 
         transfer_datasets(datasets, urgent: true)
+
+        # Release reserved spot in the queue
+        append(Transactions::Queue::Release, args: [vps.node, :zfs_send])
 
         # Set canmount=on on all datasets and mount them
         append(Transactions::Storage::SetCanmount, args: [
@@ -201,6 +207,9 @@ module TransactionChains
         use_chain(Vps::Start, args: vps, urgent: true) if vps.running?
 
       else
+        # Release reserved spot in the queue
+        append(Transactions::Queue::Release, args: [vps.node, :zfs_send])
+
         # Set canmount=on on all datasets and mount them
         append(Transactions::Storage::SetCanmount, args: [
           datasets.map { |src, dst| dst },

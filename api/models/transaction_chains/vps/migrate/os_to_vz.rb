@@ -99,10 +99,8 @@ module TransactionChains
       # Transfer datasets
       migration_snapshots = []
 
-      unless @opts[:maintenance_window]
-        # Reserve a slot in zfs_send queue
-        append(Transactions::Queue::Reserve, args: [src_node, :zfs_send])
-      end
+      # Reserve a slot in zfs_send queue
+      append(Transactions::Queue::Reserve, args: [src_node, :zfs_send])
 
       datasets.each do |pair|
         src, dst = pair
@@ -116,6 +114,10 @@ module TransactionChains
       end
 
       if @opts[:maintenance_window]
+        # Temporarily release the reserved spot in the queue, we'll get another
+        # reservation within the maintenance window
+        append(Transactions::Queue::Release, args: [src_node, :zfs_send])
+
         # Wait for the outage window to open
         append(Transactions::MaintenanceWindow::Wait, args: [src_vps, 15])
         append(Transactions::Queue::Reserve, args: [src_node, :zfs_send])
