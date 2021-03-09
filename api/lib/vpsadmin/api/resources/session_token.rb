@@ -113,7 +113,7 @@ class VpsAdmin::API::Resources::SessionToken < HaveAPI::Resource
     end
 
     def exec
-      ::SessionToken.find_by!(with_restricted(id: params[:auth_token_id]))
+      ::SessionToken.find_by!(with_restricted(id: params[:session_token_id]))
     end
   end
 
@@ -131,7 +131,7 @@ class VpsAdmin::API::Resources::SessionToken < HaveAPI::Resource
     end
 
     def exec
-      t = ::SessionToken.find_by!(with_restricted(id: params[:auth_token_id]))
+      t = ::SessionToken.find_by!(with_restricted(id: params[:session_token_id]))
 
       if t.update(input)
         ok
@@ -151,7 +151,7 @@ class VpsAdmin::API::Resources::SessionToken < HaveAPI::Resource
     end
 
     def exec
-      t = ::SessionToken.find_by!(with_restricted(id: params[:auth_token_id]))
+      t = ::SessionToken.find_by!(with_restricted(id: params[:session_token_id]))
       VpsAdmin::API::Operations::UserSession::CloseToken.run(t.user, t)
       ok
 
