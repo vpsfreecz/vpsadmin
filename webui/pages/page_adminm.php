@@ -436,7 +436,7 @@ function edit_session_token($id) {
 	$t = $api->session_token->find($id);
 
 	$xtpl->table_title(_('Edit authentication token').' #'.$id);
-	$xtpl->form_create('?page=adminm&section=members&action=sesssion_token_edit&id='.$_GET['id'].'&token_id='.$id, 'post');
+	$xtpl->form_create('?page=adminm&section=members&action=session_token_edit&id='.$_GET['id'].'&token_id='.$id, 'post');
 
 	$xtpl->table_td(_('Token').':');
 	$xtpl->table_td($t->token);
