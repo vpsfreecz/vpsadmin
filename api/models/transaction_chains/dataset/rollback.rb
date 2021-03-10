@@ -79,7 +79,11 @@ module TransactionChains
         if snapshot_on_primary
           # Transfer the snapshots to all backup dataset in pools if they aren't backed up yet
           dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where('pools.role = ?', ::Pool.roles[:backup]).each do |dst|
-            use_chain(TransactionChains::Dataset::Transfer, args: [dataset_in_pool, dst])
+            use_chain(TransactionChains::Dataset::Transfer, args: [
+              dataset_in_pool,
+              dst,
+              send_reservation: true,
+            ])
           end
 
           pre_local_rollback
@@ -105,7 +109,11 @@ module TransactionChains
       # Backup all snapshots
       if primary_last_snap
         dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where('pools.role = ?', ::Pool.roles[:backup]).each do |dst|
-          use_chain(TransactionChains::Dataset::Transfer, args: [dataset_in_pool, dst])
+          use_chain(TransactionChains::Dataset::Transfer, args: [
+            dataset_in_pool,
+            dst,
+            send_reservation: true,
+          ])
         end
       end
 
