@@ -545,7 +545,7 @@ function approval_requests_details($type, $id) {
 				}
 			}
 
-			api_param_to_form($name, $desc);
+			api_param_to_form($name, $desc, $v);
 		}
 	}
 
