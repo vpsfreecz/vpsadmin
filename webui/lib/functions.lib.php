@@ -583,13 +583,21 @@ function approx_number($val) {
 function get_val($name, $default = '') {
 	if (isset($_GET[$name]))
 		return h($_GET[$name]);
-	return h($default);
+
+	if (is_string($default))
+		return h($default);
+	else
+		return $default;
 }
 
 function post_val($name, $default = '') {
 	if (isset($_POST[$name]))
 		return h($_POST[$name]);
-	return h($default);
+
+	if (is_string($default))
+		return h($default);
+	else
+		return $default;
 }
 
 function post_val_array($name, $index, $default = '') {
