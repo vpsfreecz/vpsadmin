@@ -59,7 +59,7 @@ module VpsAdmin::API::Resources
           )
         end
 
-        q = q.where(purpose: input[:purpose]) if input[:purpose]
+        q = q.where(purpose: ::Network.purposes[input[:purpose]]) if input[:purpose]
         q
       end
 
