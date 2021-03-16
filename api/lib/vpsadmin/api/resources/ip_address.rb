@@ -133,7 +133,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       end
 
       if input[:purpose]
-        ips = ips.where(networks: {purpose: ::Network.roles[input[:purpose]]})
+        ips = ips.where(networks: {purpose: ::Network.purposes[input[:purpose]]})
       end
 
       unless input[:assigned_to_interface].nil?
