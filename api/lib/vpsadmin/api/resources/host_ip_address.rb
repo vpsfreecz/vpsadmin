@@ -20,6 +20,7 @@ module VpsAdmin::API::Resources
       resource User, label: 'User',
         value_label: :login
       string :role, choices: ::Network.roles.keys
+      string :purpose, choices: ::Network.purposes.keys
       string :addr, label: 'Network address', db_name: :ip_addr
       integer :prefix, label: 'Prefix'
       integer :size, label: 'Size'
@@ -53,7 +54,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        input whitelist: %i(location network version role addr prefix vps
+        input whitelist: %i(location network version role purpose addr prefix vps
                             network_interface ip_address assigned order
                             limit offset)
         allow
@@ -103,6 +104,10 @@ module VpsAdmin::API::Resources
 
         if input[:role]
           ips = ips.where(networks: {role: ::Network.roles[input[:role]]})
+        end
+
+        if input[:purpose]
+          ips = ips.where(networks: {purpose: ::Network.purposes[input[:purpose]]})
         end
 
         if input[:addr]
