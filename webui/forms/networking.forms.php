@@ -34,7 +34,7 @@ function ip_address_list($page) {
 		_("Network").':',
 		'network',
 		resource_list_to_options(
-			$api->network->list(),
+			$api->network->list(['purpose' => 'vps']),
 			'id', 'label',
 			true,
 			network_label
@@ -52,6 +52,7 @@ function ip_address_list($page) {
 	$params = array(
 		'limit' => get_val('limit', 25),
 		'offset' => get_val('offset', 0),
+		'purpose' => 'vps',
 		'meta' => array('includes' => 'user,vps,network')
 	);
 
@@ -195,7 +196,7 @@ function host_ip_address_list($page) {
 		_("Network").':',
 		'network',
 		resource_list_to_options(
-			$api->network->list(),
+			$api->network->list(['purpose' => 'vps']),
 			'id', 'label',
 			true,
 			network_label
@@ -213,6 +214,7 @@ function host_ip_address_list($page) {
 	$params = array(
 		'limit' => get_val('limit', 25),
 		'offset' => get_val('offset', 0),
+		'purpose' => 'vps',
 		'meta' => array(
 			'includes' => 'ip_address__user,ip_address__network_interface__vps,'.
 			              'ip_address__network'
