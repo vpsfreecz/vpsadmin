@@ -164,8 +164,10 @@ function print_newvps_page2($user_id, $platform) {
 			'<p>'.$loc->environment->description.'</p>'.
 			'<p>'.$loc->description.'</p>'.
 			'<h4>'._('Available resources').':</h4>'.
-			format_available_resources($user, $loc->environment)
+			format_available_resources($user, $loc->environment).
+			'<p>'._('Contact support if you need more').' <a href="?page=adminm&action=cluster_resources&id='.$user->id.'">'._('resources.').'</a></p>'
 		);
+
 		$xtpl->table_tr();
 	}
 
