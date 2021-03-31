@@ -9,7 +9,7 @@ module TransactionChains
       @deleted = 0
       @min = dataset_in_pool.min_snapshots
       @max = dataset_in_pool.max_snapshots
-      @oldest = Time.now - dataset_in_pool.snapshot_max_age # in seconds
+      @oldest = Time.now.utc - dataset_in_pool.snapshot_max_age # in seconds
       @count = dataset_in_pool.snapshot_in_pools.all.count
 
       return if @count <= @min
