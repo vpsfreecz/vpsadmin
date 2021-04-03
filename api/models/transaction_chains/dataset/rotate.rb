@@ -9,7 +9,7 @@ module TransactionChains
       @deleted = 0
       @min = dataset_in_pool.min_snapshots
       @max = dataset_in_pool.max_snapshots
-      @oldest = Time.now.utc - dataset_in_pool.snapshot_max_age # in seconds
+      @oldest = Time.now.localtime - dataset_in_pool.snapshot_max_age # in seconds
       @count = dataset_in_pool.snapshot_in_pools.all.count
 
       return if @count <= @min
@@ -82,11 +82,11 @@ module TransactionChains
     end
 
     def destroy?(snapshot_in_pool)
-      (snapshot_in_pool.snapshot.created_at < @oldest && (@count - @deleted) > @min) || ((@count - @deleted) > @max)
+      (snapshot_in_pool.snapshot.created_at.localtime < @oldest && (@count - @deleted) > @min) || ((@count - @deleted) > @max)
     end
 
     def stop?(snapshot_in_pool)
-      (@count - @deleted) <= @min || (snapshot_in_pool.snapshot.created_at > @oldest && (@count - @deleted) <= @max)
+      (@count - @deleted) <= @min || (snapshot_in_pool.snapshot.created_at.localtime > @oldest && (@count - @deleted) <= @max)
     end
   end
 end
