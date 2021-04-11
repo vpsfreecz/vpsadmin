@@ -8,7 +8,15 @@ module VpsAdmind
     def exec
       @datasets.each do |name|
         zfs(:set, "canmount=#{@canmount}", "#{@pool_fs}/#{name}")
-        zfs(:mount, nil, "#{@pool_fs}/#{name}") if @mount
+
+        if @mount
+          zfs(:mount, nil, "#{@pool_fs}/#{name}")
+          begin
+            zfs(:share, nil, "#{@pool_fs}/#{name}")
+          rescue CommandFailed => err
+            log "Unable to share #{@pool_fs}/#{name}: #{err.output}"
+          end
+        end
       end
 
       ok
