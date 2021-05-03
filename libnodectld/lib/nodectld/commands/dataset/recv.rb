@@ -1,12 +1,23 @@
 module NodeCtld
   class Commands::Dataset::Recv < Commands::Base
     handle 5220
-    needs :system, :zfs, :subprocess
+    needs :system, :zfs, :subprocess, :mbuffer
 
     def exec
       ds_name = @branch ? "#{@dataset_name}/#{@tree}/#{@branch}" : @dataset_name
       recv = "zfs recv -F -u #{@dst_pool_fs}/#{ds_name}"
-      cmd = "socat -u -T 5400 TCP4-LISTEN:#{@port},bind=#{@addr} - | #{recv}"
+      cmd = [
+        "mbuffer",
+        "-q",
+        "-I #{@port}",
+        "-s #{$CFG.get(:mbuffer, :receive, :block_size)}",
+        "-m #{$CFG.get(:mbuffer, :receive, :buffer_size)}",
+        "-P #{$CFG.get(:mbuffer, :receive, :start_writing_at)}",
+        "-l #{mbuffer_log_file}",
+        "-W #{$CFG.get(:mbuffer, :receive, :timeout)}",
+        "|",
+        recv
+      ].join(' ')
 
       log(:work, self, "fork #{cmd}")
 
@@ -18,6 +29,8 @@ module NodeCtld
         # as well. There may be other hiccups.
         Process.exec(cmd)
       end
+
+      mbuffer_cleanup_log_file
 
       ok
     end

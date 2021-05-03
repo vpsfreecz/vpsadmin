@@ -153,6 +153,20 @@ module NodeCtld
       host: "localhost",
       port: 8081,
     },
+
+    mbuffer: {
+      send: {
+        block_size: '1M',
+        buffer_size: '256M',
+        timeout: 90*60,
+      },
+      receive: {
+        block_size: '1M',
+        buffer_size: '128M',
+        start_writing_at: 60,
+        timeout: 90*60,
+      },
+    },
   }
 
   class AppConfig

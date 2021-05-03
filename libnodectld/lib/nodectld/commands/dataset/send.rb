@@ -1,7 +1,7 @@
 module NodeCtld
   class Commands::Dataset::Send < Commands::Base
     handle 5221
-    needs :system, :zfs
+    needs :system, :zfs, :mbuffer
 
     def exec
       db = Db.new
@@ -29,10 +29,15 @@ module NodeCtld
       stream.command(self) do
         stream.send_to(
           @addr,
-          port: @port,
-          timeout: 5400,
+          @port,
+          block_size: $CFG.get(:mbuffer, :send, :block_size),
+          buffer_size: $CFG.get(:mbuffer, :send, :buffer_size),
+          log_file: mbuffer_log_file,
+          timeout: $CFG.get(:mbuffer, :send, :timeout),
         )
       end
+
+      mbuffer_cleanup_log_file
 
       ok
     end

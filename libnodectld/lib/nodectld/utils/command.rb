@@ -16,6 +16,7 @@ module NodeCtld::Utils
         integrity: :Integrity,
         outage_window: :OutageWindow,
         queue: :Queue,
+        mbuffer: :MBuffer,
       }
 
       # Includes module from NodeCtld::Utils using mapping
