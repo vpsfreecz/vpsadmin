@@ -30,8 +30,6 @@ module NodeCtld
         Process.exec(cmd)
       end
 
-      mbuffer_cleanup_log_file
-
       ok
     end
 
