@@ -39,6 +39,10 @@ module NodeCtld
     end
 
     def <<(msg)
+      if /^[^\s]+ invoked oom-killer: / =~ msg.text
+        raise KernelLog::Event::Error, 'missed ending of the previous oom report'
+      end
+
       if !report.invoked_by_pid \
          && /^CPU: \d+ PID: (\d+) Comm:/ =~ msg.text
         report.invoked_by_pid = $1.to_i
