@@ -165,7 +165,8 @@ module NodeCtld
     def call_event
       begin
         yield
-      rescue KernelLog::Event::Error
+      rescue KernelLog::Event::Error => e
+        log(:warn, "Parser error: #{e.message}")
         close_event
       else
         close_event if event.finished?
