@@ -1386,8 +1386,8 @@ CREATE TABLE `oom_reports` (
   `vps_id` int(11) NOT NULL,
   `invoked_by_pid` int(11) NOT NULL,
   `invoked_by_name` varchar(50) COLLATE utf8_czech_ci NOT NULL,
-  `killed_pid` int(11) NOT NULL,
-  `killed_name` varchar(50) COLLATE utf8_czech_ci NOT NULL,
+  `killed_pid` int(11) DEFAULT NULL,
+  `killed_name` varchar(50) COLLATE utf8_czech_ci DEFAULT NULL,
   `processed` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL,
   `reported_at` datetime DEFAULT NULL,
@@ -2426,7 +2426,7 @@ CREATE TABLE `vpses` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2021-02-15 17:18:22
+-- Dump completed on 2021-05-29 16:39:41
 INSERT INTO schema_migrations (version) VALUES ('20140208170244');
 
 INSERT INTO schema_migrations (version) VALUES ('20140227150154');
@@ -2708,4 +2708,6 @@ INSERT INTO schema_migrations (version) VALUES ('20200927121503');
 INSERT INTO schema_migrations (version) VALUES ('20210126204326');
 
 INSERT INTO schema_migrations (version) VALUES ('20210215160434');
+
+INSERT INTO schema_migrations (version) VALUES ('20210529125923');
 
