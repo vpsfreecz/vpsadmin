@@ -75,7 +75,7 @@ function oom_reports_list() {
 			$xtpl->table_td(user_link($r->vps->user));
 
 		$xtpl->table_td(vps_link($r->vps).' '.h($r->vps->hostname));
-		$xtpl->table_td(h($r->killed_name));
+		$xtpl->table_td($r->killed_name ? h($r->killed_name) : _('nothing killed'));
 
 		$xtpl->table_td(
 			'<a href="?page=oom_reports&action=show&id='.$r->id.'&return_url='.urlencode($_SERVER['REQUEST_URI']).'"><img src="template/icons/vps_edit.png" alt="'._('Details').'" title="'._('Details').'"></a>'
@@ -144,7 +144,12 @@ function oom_reports_show($id) {
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('Killed').':');
-	$xtpl->table_td(h($r->killed_name).' '.($r->invoked_by_pid == $r->killed_pid ? '('._('same process').')' : ''));
+
+	if ($r->killed_name) {
+		$xtpl->table_td(h($r->killed_name).' '.($r->invoked_by_pid == $r->killed_pid ? '('._('same process').')' : ''));
+	} else {
+		$xtpl->table_td(_('nothing killed'));
+	}
 	$xtpl->table_tr();
 
 	$xtpl->table_out();
