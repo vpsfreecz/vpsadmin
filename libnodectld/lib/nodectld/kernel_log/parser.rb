@@ -69,7 +69,16 @@ module NodeCtld
 
         if last_time + 5 < t
           size = queue.size
-          log(:warn, "Parser queue size at #{size} lines") if size > 100
+
+          if size > 128
+            log(:warn, "Parser queue size at #{size} lines")
+          end
+
+          if size > 16*1024
+            log(:warn, "Parser queue too large, resetting")
+            queue.clear
+          end
+
           last_time = t
         end
       end
