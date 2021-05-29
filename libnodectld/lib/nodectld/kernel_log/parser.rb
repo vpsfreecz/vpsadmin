@@ -50,6 +50,8 @@ module NodeCtld
       io = File.open(file, 'r')
       io.seek(0, IO::SEEK_END)
 
+      last_time = Time.now
+
       loop do
         if stop
           queue << :stop
@@ -62,10 +64,14 @@ module NodeCtld
           line = :hole
         end
 
-        queue << [line, Time.now]
+        t = Time.now
+        queue << [line, t]
 
-        size = queue.size
-        log(:warn, "Parser queue size at #{size} lines") if size > 100
+        if last_time + 5 < t
+          size = queue.size
+          log(:warn, "Parser queue size at #{size} lines") if size > 100
+          last_time = t
+        end
       end
 
       io.close
