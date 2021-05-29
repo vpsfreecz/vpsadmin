@@ -8,7 +8,8 @@ module NodeCtld
 
     def initialize(file: '/dev/kmsg')
       @file = file
-      @queue = Queue.new
+      @parse_queue = Queue.new
+      @submit_queue = Queue.new
       @stop = false
       @event = nil
     end
@@ -22,7 +23,16 @@ module NodeCtld
         rescue => e
           log(:warn, "Parser aborted with #{e.class}: #{e.message}")
           sleep(5)
-          queue.clear
+          parse_queue.clear
+          retry unless @stop
+        end
+      end
+      @submitter = Thread.new do
+        begin
+          submit_thread
+        rescue => e
+          log(:warn, "Submitter aborted with #{e.class}: #{e.message}")
+          sleep(5)
           retry unless @stop
         end
       end
@@ -32,8 +42,11 @@ module NodeCtld
     # Stop reading from the kernel log
     def stop
       @stop = true
+      @parse_queue << :stop
+      @submit_queue << :stop
       @reader.join
       @parser.join
+      @submitter.join
       nil
     end
 
@@ -42,7 +55,7 @@ module NodeCtld
     end
 
     protected
-    attr_reader :file, :queue, :stop, :event
+    attr_reader :file, :parse_queue, :submit_queue, :stop, :event
 
     def read_thread
       log(:info, "Reading from #{file}")
@@ -53,10 +66,7 @@ module NodeCtld
       last_time = Time.now
 
       loop do
-        if stop
-          queue << :stop
-          break
-        end
+        break if stop
 
         begin
           line = io.readline
@@ -65,10 +75,10 @@ module NodeCtld
         end
 
         t = Time.now
-        queue << [line, t]
+        parse_queue << [line, t]
 
         if last_time + 5 < t
-          size = queue.size
+          size = parse_queue.size
 
           if size > 128
             log(:warn, "Parser queue size at #{size} lines")
@@ -76,7 +86,7 @@ module NodeCtld
 
           if size > 16*1024
             log(:warn, "Parser queue too large, resetting")
-            queue.clear
+            parse_queue.clear
           end
 
           last_time = t
@@ -94,13 +104,13 @@ module NodeCtld
       lost_msgs = 0
 
       loop do
-        line, time = queue.pop
+        line, time = parse_queue.pop
 
         if line == :hole
           hole = true
           next
         elsif line == :stop
-          break
+          return
         end
 
         msg = KernelLog::Message.new(line, time)
@@ -143,6 +153,15 @@ module NodeCtld
       end
     end
 
+    def submit_thread
+      loop do
+        e = submit_queue.pop
+        return if e == :stop
+
+        e.close
+      end
+    end
+
     def call_event
       begin
         yield
@@ -154,7 +173,7 @@ module NodeCtld
     end
 
     def close_event
-      event.close
+      submit_queue << event
       @event = nil
     end
   end
