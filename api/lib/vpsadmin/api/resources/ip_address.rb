@@ -420,7 +420,10 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       maintenance_check!(netif.vps)
       object_state_check!(netif.vps, netif.vps.user)
 
-      @chain, _ = netif.add_route(ip, host_addrs: [host_addr])
+      @chain, _ = netif.add_route(
+        ip, host_addrs: [host_addr],
+        is_user: current_user.role != :admin,
+      )
       ip
 
     rescue VpsAdmin::API::Exceptions::IpAddressInUse
