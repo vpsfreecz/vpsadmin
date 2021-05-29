@@ -15,7 +15,13 @@ module NodeCtld
   #   anon <n>\x0afile <n>\x0a ...
   #   Tasks state (memory values in pages):
   #   [  pid  ]   uid  tgid total_vm      rss pgtables_bytes swapents oom_score_adj name
+  #
   #   ... follows a list of all tasks ...
+  #
+  #   Out of memory and no killable processes...
+  #
+  #   ... or ...
+  #
   #   oom-kill:constraint=CONSTRAINT_MEMCG,nodemask=...,cpuset=...,mems_allowed=...,oom_memcg=...,task_memcg=...,task=<comm>,pid=<pid>,uid=<uid>
   #   Memory cgroup out of memory: Killed process <pid> (<comm>) total-vm:<n>kB, anon-rss:<n>kB, file-rss:<n>kB, shmem-rss:<n>kB, UID:<uid> pgtables:<n>kB oom_score_adj:<n>
   #   oom_reaper: reaped process <pid> (<comm>)...
@@ -112,6 +118,12 @@ module NodeCtld
           name: name,
         }
 
+        return
+      end
+
+      if msg.text.start_with?('Out of memory and no killable processes')
+        report.no_killable = true
+        finish!
         return
       end
 

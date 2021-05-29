@@ -9,7 +9,7 @@ module NodeCtld
     attr_accessor :usage, :stats
     attr_accessor :tasks
     attr_accessor :pool, :group, :user, :vps_id
-    attr_accessor :killed_pid, :killed_name
+    attr_accessor :killed_pid, :killed_name, :no_killable
 
     def initialize(time, invoked_by_name)
       @time = time
@@ -20,7 +20,10 @@ module NodeCtld
     end
 
     def complete?
-      (invoked_by_pid && invoked_by_name && killed_pid && killed_name && vps_id) ? true : false
+      (invoked_by_pid \
+       && invoked_by_name \
+       && ((killed_pid && killed_name) || no_killable) \
+       && vps_id) ? true : false
     end
 
     def submit
@@ -64,7 +67,7 @@ module NodeCtld
           ',
           vps_id,
           invoked_by_pid, invoked_by_name[0..49],
-          killed_pid, killed_name[0..49],
+          killed_pid, killed_name && killed_name[0..49],
           time.utc.strftime('%Y-%m-%d %H:%M:%S')
         )
 
