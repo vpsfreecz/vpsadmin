@@ -36,7 +36,8 @@ module TransactionChains
         vars: {
           base_url: ::SysConfig.get(:webui, :base_url),
           vps: vps,
-          oom_reports: reports,
+          all_oom_reports: reports,
+          selected_oom_reports: reports[0..29],
         },
       })
 
