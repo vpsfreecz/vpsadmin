@@ -64,7 +64,7 @@ module NodeCtld
       r, w = IO.pipe
       @pipe = r
       pid = Process.spawn(
-        'osctl', '-j', 'ct', 'top', '--rate', rate.to_s,
+        'osctl', '-j', 'ct', 'top', '--rate', rate.to_s, '--no-iostat',
         out: w, close_others: true
       )
       w.close
