@@ -97,8 +97,11 @@ module NodeCtld
             Process.kill('HUP', p.pid)
           end
 
-          r.each do |line|
-            log(:unknown, line)
+          begin
+            r.each do |line|
+              log(:unknown, line)
+            end
+          rescue IOError
           end
 
           # Sets $?
