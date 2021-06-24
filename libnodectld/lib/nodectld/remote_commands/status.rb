@@ -60,7 +60,10 @@ module NodeCtld::RemoteCommands
       end
 
       q_size = db.prepared(
-        'SELECT COUNT(id) AS cnt FROM transactions WHERE node_id = ? AND done = 0',
+        'SELECT COUNT(t.id) AS cnt
+        FROM transactions t
+        INNER JOIN transaction_chains c ON t.transaction_chain_id = c.id
+        WHERE t.node_id = ? AND t.done = 0 AND c.state IN (1, 3)',
         $CFG.get(:vpsadmin, :node_id)
       ).get['cnt']
 
