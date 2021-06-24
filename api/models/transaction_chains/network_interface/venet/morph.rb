@@ -14,21 +14,23 @@ module TransactionChains
 
     protected
     def into_veth_routed(netif)
+      orig_kind = netif.kind
+
+      update_unique do
+        netif.update!(
+          kind: 'veth_routed',
+          mac: gen_mac,
+        )
+      end
+
       append_t(
         Transactions::NetworkInterface::CreateVethRouted,
         args: netif
       ) do |t|
         t.edit_before(
           netif,
-          kind: ::NetworkInterface.kinds[netif.kind],
+          kind: ::NetworkInterface.kinds[orig_kind],
           mac: nil,
-        )
-      end
-
-      update_unique do
-        netif.update!(
-          kind: 'veth_routed',
-          mac: gen_mac,
         )
       end
 
