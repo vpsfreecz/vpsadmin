@@ -4,8 +4,18 @@ let
   cfg = config.vpsadmin.database;
 in {
   options = {
-    vpsadmin.database = {
-      enable = mkEnableOption "Enable vpsAdmin database server";
+    vpsadmin = {
+      database = {
+        enable = mkEnableOption "Enable vpsAdmin database server";
+
+        defaultConfig = mkOption {
+          type = types.bool;
+          default = true;
+          description = ''
+            Apply default configuration
+          '';
+        };
+      };
     };
   };
 
@@ -13,8 +23,8 @@ in {
     services.mysql = {
       enable = true;
       package = pkgs.mariadb;
-      ensureDatabases = [ "vpsadmin" ];
-      ensureUsers = [
+      ensureDatabases = mkIf cfg.defaultConfig [ "vpsadmin" ];
+      ensureUsers = mkIf cfg.defaultConfig [
         {
           name = "vpsadmin";
           ensurePermissions = {
