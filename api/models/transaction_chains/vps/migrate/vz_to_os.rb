@@ -169,7 +169,7 @@ module TransactionChains
 
       # When IPs are unchanged, add them to the new VPS
       if (!location_changed? || @opts[:transfer_ips]) && @opts[:handle_ips]
-        vps.ip_addresses.order('`order`').each do |ip|
+        vps.ip_addresses.order(:order).each do |ip|
           append(
             Transactions::NetworkInterface::AddRoute,
             args: [dst_netif, ip],
@@ -177,7 +177,7 @@ module TransactionChains
           )
         end
 
-        vps.host_ip_addresses.where.not(order: nil).order('`order`').each do |addr|
+        vps.host_ip_addresses.where.not(order: nil).order(:order).each do |addr|
           append(
             Transactions::NetworkInterface::AddHostIp,
             args: [dst_netif, addr],

@@ -69,7 +69,7 @@ module VpsAdmin::API::Resources
         with_includes(query)
           .limit(input[:limit])
           .offset(input[:offset])
-          .order('`order`, page, action')
+          .order(:order, :page, :action)
       end
     end
 

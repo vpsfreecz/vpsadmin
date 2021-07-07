@@ -80,7 +80,10 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     end
 
     def exec
-      query.order('`order`, label').limit(input[:limit]).offset(input[:offset])
+      query
+        .order(:order, :label)
+        .limit(input[:limit])
+        .offset(input[:offset])
     end
   end
 

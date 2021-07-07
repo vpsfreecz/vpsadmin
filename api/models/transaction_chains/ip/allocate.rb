@@ -49,7 +49,7 @@ module TransactionChains
       ownership = netif.vps.node.location.environment.user_ip_ownership
       last_ip = netif.ip_addresses.joins(:network).where(
         networks: {ip_version: v}
-      ).order('`order` DESC').take
+      ).order(order: :desc).take
 
       order = last_ip ? last_ip.order + 1 : 0
 

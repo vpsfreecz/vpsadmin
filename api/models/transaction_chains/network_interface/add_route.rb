@@ -42,7 +42,7 @@ module TransactionChains
       [4, 6].each do |v|
         last_ip = netif.ip_addresses.joins(:network).where(
           networks: {ip_version: v}
-        ).order('`order` DESC').take
+        ).order(order: :desc).take
 
         order[v] = last_ip ? last_ip.order + 1 : 0
       end

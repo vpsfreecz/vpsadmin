@@ -67,8 +67,8 @@ module TransactionChains
         [
           netif,
           target: new_netif,
-          routes: netif.ip_addresses.order('`order`').to_a,
-          host_addrs: netif.host_ip_addresses.order('`order`').to_a,
+          routes: netif.ip_addresses.order(:order).to_a,
+          host_addrs: netif.host_ip_addresses.order(:order).to_a,
         ]
       end]
 
@@ -79,8 +79,8 @@ module TransactionChains
         [
           netif,
           target: new_netif,
-          routes: netif.ip_addresses.order('`order`').to_a,
-          host_addrs: netif.host_ip_addresses.order('`order`').to_a,
+          routes: netif.ip_addresses.order(:order).to_a,
+          host_addrs: netif.host_ip_addresses.order(:order).to_a,
         ]
       end]
 

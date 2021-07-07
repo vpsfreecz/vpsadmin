@@ -233,7 +233,7 @@ module TransactionChains
             .where(pools: {role: ::Pool.roles[:hypervisor]})
             .group('datasets.id')
             .having('snapshot_count > 2')
-            .order('COUNT(snapshot_in_pools.id) DESC'),
+            .order(Arel.sql('COUNT(snapshot_in_pools.id) DESC')),
 
           too_many_in_backup: ::DatasetInPool
             .select('dataset_in_pools.*, COUNT(snapshot_in_pools.id) AS snapshot_count')
@@ -241,7 +241,7 @@ module TransactionChains
             .where(pools: {role: ::Pool.roles[:backup]})
             .group('datasets.id')
             .having('snapshot_count > 20')
-            .order('COUNT(snapshot_in_pools.id) DESC'),
+            .order(Arel.sql('COUNT(snapshot_in_pools.id) DESC')),
         },
 
         oom_reports: {
@@ -255,7 +255,7 @@ module TransactionChains
             .where('DATE_ADD(oom_reports.created_at, INTERVAL 1 DAY) >= ?', t)
             .group('vpses.id')
             .having('oom_count > 0')
-            .order('COUNT(oom_reports.id) DESC'),
+            .order(Arel.sql('COUNT(oom_reports.id) DESC')),
 
           by_node: ::Node
             .select('nodes.*, COUNT(oom_reports.id) AS oom_count')
@@ -267,7 +267,7 @@ module TransactionChains
             .where('DATE_ADD(oom_reports.created_at, INTERVAL 1 DAY) >= ?', t)
             .group('nodes.id')
             .having('oom_count > 0')
-            .order('COUNT(oom_reports.id) DESC'),
+            .order(Arel.sql('COUNT(oom_reports.id) DESC')),
 
           by_killed_name: ::OomReport
             .where('DATE_ADD(oom_reports.created_at, INTERVAL 1 DAY) >= ?', t)

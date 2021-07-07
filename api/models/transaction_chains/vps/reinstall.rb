@@ -83,13 +83,13 @@ module TransactionChains
 
       # OpenVZ VPS can in fact have only one interface, so all IPs can be
       # handled at once like this.
-      vps.ip_addresses.all.order('`order`').each do |ip|
+      vps.ip_addresses.all.order(:order).each do |ip|
         append(
           Transactions::NetworkInterface::AddRoute,
           args: [ip.network_interface, ip, false],
         )
 
-        ip.host_ip_addresses.where.not(order: nil).order('`order`').each do |addr|
+        ip.host_ip_addresses.where.not(order: nil).order(:order).each do |addr|
           append(
             Transactions::NetworkInterface::AddHostIp,
             args: [ip.network_interface, addr],

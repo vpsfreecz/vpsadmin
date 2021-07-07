@@ -86,8 +86,8 @@ class Node < ActiveRecord::Base
     end
 
     n = q.group('nodes.id')
-     .order('COUNT(st.is_running) / max_vps ASC')
-     .take
+      .order(Arel.sql('COUNT(st.is_running) / max_vps ASC'))
+      .take
 
     return n if n
 
@@ -108,7 +108,7 @@ class Node < ActiveRecord::Base
       q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type])
     end
 
-    q.group('nodes.id').order('COUNT(vpses.id) / max_vps ASC').take
+    q.group('nodes.id').order(Arel.sql('COUNT(vpses.id) / max_vps ASC')).take
   end
 
   def self.pick_by_location(loc, except = nil, hypervisor_type = nil)
@@ -131,7 +131,7 @@ class Node < ActiveRecord::Base
     end
 
     n = q.group('nodes.id')
-      .order('COUNT(st.is_running) / max_vps ASC')
+      .order(Arel.sql('COUNT(st.is_running) / max_vps ASC'))
       .take
 
     return n if n
@@ -152,7 +152,7 @@ class Node < ActiveRecord::Base
       q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type])
     end
 
-    q.group('nodes.id').order('COUNT(vpses.id) / max_vps ASC').take
+    q.group('nodes.id').order(Arel.sql('COUNT(vpses.id) / max_vps ASC')).take
   end
 
   def self.first_available

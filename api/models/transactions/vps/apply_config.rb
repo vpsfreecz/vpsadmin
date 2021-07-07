@@ -18,7 +18,7 @@ module Transactions::Vps
         .includes(:vps_config)
         .where(vps_id: vps.veid,
                confirmed: [VpsHasConfig.confirmed(:confirm_create), VpsHasConfig.confirmed(:confirmed)])
-        .order('`order` ASC').each do |c|
+        .order(order: :asc).each do |c|
         ret[:configs] << c.vps_config.name
       end
 

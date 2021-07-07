@@ -172,7 +172,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     def exec
       with_includes(query)
-        .order(order_col)
+        .order(Arel.sql(order_col))
         .limit(input[:limit])
         .offset(input[:offset])
     end

@@ -145,18 +145,18 @@ module VpsAdmin::API::Resources
 
         when 'descending'
           if input[:protocol] == 'sum'
-            q = q.order('(SUM(bytes_in) + SUM(bytes_out)) DESC')
+            q = q.order(Arel.sql('(SUM(bytes_in) + SUM(bytes_out)) DESC'))
 
           else
-            q = q.order('(bytes_in + bytes_out) DESC')
+            q = q.order(Arel.sql('(bytes_in + bytes_out) DESC'))
           end
 
         when 'ascending'
           if input[:protocol] == 'sum'
-            q = q.order('(SUM(bytes_in) + SUM(bytes_out)) ASC')
+            q = q.order(Arel.sql('(SUM(bytes_in) + SUM(bytes_out)) ASC'))
 
           else
-            q = q.order('(bytes_in + bytes_out) ASC')
+            q = q.order(Arel.sql('(bytes_in + bytes_out) ASC'))
           end
 
         else
@@ -279,7 +279,7 @@ module VpsAdmin::API::Resources
 
       def exec
         q = query.offset(input[:offset]).limit(input[:limit])
-        q = q.order('(SUM(bytes_in) + SUM(bytes_out)) DESC')
+        q = q.order(Arel.sql('(SUM(bytes_in) + SUM(bytes_out)) DESC'))
         q
       end
     end

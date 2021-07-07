@@ -29,7 +29,7 @@ module TransactionChains
           host_ip_addresses: {order: nil},
         ).where(
           networks: {ip_version: v},
-        ).order('`order` DESC').take
+        ).order(order: :desc).take
 
         order[v] = last_ip ? last_ip.order + 1 : 0
       end
