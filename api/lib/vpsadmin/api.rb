@@ -2,7 +2,6 @@ module VpsAdmin
   HaveAPI.module_name = VpsAdmin::API::Resources
   HaveAPI.implicit_version = '6.0'
   ActiveRecord::Base.schema_format = :sql
-  ActiveRecord::Base.raise_in_transactional_callbacks = true
 
   module API
     module Authentication ; end
@@ -37,7 +36,7 @@ module VpsAdmin
           ::User.current = nil
         end
 
-        ::PaperTrail.whodunnit = u && u.id
+        ::PaperTrail.request.whodunnit = u && u.id
         ret
       end
 
