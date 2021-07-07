@@ -10,7 +10,7 @@ class Outage < ActiveRecord::Base
   has_many :exports, through: :outage_exports
 
   enum state: %i(staged announced closed cancelled)
-  enum outage_type: %i(tbd restart reset network performance maintenance)
+  enum outage_type: %i(tbd vps_restart vps_reset network performance maintenance)
 
   after_initialize :load_translations
 
