@@ -63,7 +63,7 @@ module TransactionChains
 
       append(Transactions::Vps::Create, args: vps) do
         create(vps)
-        just_create(vps.current_state)
+        just_create(vps.current_object_state)
 
         # Create features
         ::VpsFeature::FEATURES.each do |name, f|

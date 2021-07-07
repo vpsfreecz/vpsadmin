@@ -375,7 +375,7 @@ module VpsAdmin::API
         end
 
         # Returns the current (last) state.
-        def current_state
+        def current_object_state
           ::ObjectState.where(
             class_name: self.class.name,
             row_id: self.id
@@ -587,7 +587,7 @@ module VpsAdmin::API
 
           objs.each do |obj|
             if obj.object_state != 'active'
-              reason = obj.current_state.reason
+              reason = obj.current_object_state.reason
               break
             end
           end
