@@ -12,7 +12,7 @@ module VpsAdmin::API
           return ::UserTotpDevice.create!(
             user: user,
             label: label,
-            secret: ROTP::Base32.random_base32,
+            secret: ROTP::Base32.random,
           )
         rescue ActiveRecord::RecordNotUnique
           next
