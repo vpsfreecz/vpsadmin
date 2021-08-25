@@ -4,15 +4,20 @@ module NodeCtld
     needs :system, :osctl
 
     def exec
+      send_opts = {
+        as_id: @as_id,
+        network_interfaces: @network_interfaces,
+        snapshots: @snapshots,
+        passphrase: @passphrase,
+      }
+
+      send_opts[:send_snapshot] = @send_snapshot if @send_snapshot
+      send_opts[:preexisting_datasets] = true if @preexisting_datasets
+
       osctl(
         %i(ct send config),
         [@vps_id, @node],
-        {
-          as_id: @as_id,
-          network_interfaces: @network_interfaces,
-          snapshots: @snapshots,
-          passphrase: @passphrase,
-        }
+        send_opts,
       )
     end
 

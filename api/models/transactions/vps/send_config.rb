@@ -11,6 +11,8 @@ module Transactions::Vps
     # @option opts [Boolean] :network_interfaces
     # @option opts [Boolean] :snapshots
     # @option opts [String] :passphrase
+    # @option opts [String] :from_snapshot
+    # @option opts [Boolean] :preexisting_datasets
     def params(vps, node, opts = {})
       self.vps_id = vps.id
       self.node_id = vps.node_id
@@ -21,6 +23,8 @@ module Transactions::Vps
         network_interfaces: opts[:network_interfaces] || false,
         snapshots: opts.has_key?(:snapshots) ? opts[:snapshots] : true,
         passphrase: opts[:passphrase],
+        from_snapshot: opts[:from_snapshot],
+        preexisting_datasets: opts[:preexisting_datasets],
       }
     end
   end
