@@ -11,7 +11,7 @@ module NodeCtld
         passphrase: @passphrase,
       }
 
-      send_opts[:send_snapshot] = @send_snapshot if @send_snapshot
+      send_opts[:from_snapshot] = @from_snapshot if @from_snapshot
       send_opts[:preexisting_datasets] = true if @preexisting_datasets
 
       osctl(
