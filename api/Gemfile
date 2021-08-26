@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 $: << File.join(File.dirname(__FILE__), 'lib')
-gem 'haveapi', '~> 0.13.0'
+gem 'haveapi', '~> 0.14.0'
 gem 'activerecord', '~> 5.2.6'
 gem 'sinatra-activerecord', '~> 2.0.13'
 gem 'paper_trail', '~> 10.3.1'
