@@ -16,15 +16,14 @@ module VpsAdmin::API::Plugin
 
       def current_version(plugin = current_plugin)
         ::ActiveRecord::Base.connection.select_values(
-          "SELECT version FROM #{schema_migrations_table_name}"
+          "SELECT version FROM #{::ActiveRecord::SchemaMigration.table_name}"
         ).delete_if { |v| v.match(/-#{plugin.id}$/) == nil }.map(&:to_i).max || 0
       end
     end
 
     def migrated
-      sm_table = self.class.schema_migrations_table_name
       ::ActiveRecord::Base.connection.select_values(
-        "SELECT version FROM #{sm_table}"
+        "SELECT version FROM #{::ActiveRecord::SchemaMigration.table_name}"
       ).delete_if { |v| v.match(/-#{self.class.current_plugin.id}$/) == nil }.map(&:to_i).sort
     end
 

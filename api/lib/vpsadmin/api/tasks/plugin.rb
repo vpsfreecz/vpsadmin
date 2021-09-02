@@ -22,13 +22,13 @@ module VpsAdmin::API::Tasks
       plugin = VpsAdmin::API::Plugin.registered[ENV['PLUGIN'].to_sym]
       fail 'plugin not found' unless plugin
 
-      unless ActiveRecord::Base.connection.table_exists?(ActiveRecord::Migrator.schema_migrations_table_name)
+      unless ActiveRecord::Base.connection.table_exists?(ActiveRecord::SchemaMigration.table_name)
         puts 'Schema migrations table does not exist yet.'
         return
       end
 
       db_list = ActiveRecord::Base.connection.select_values(
-          "SELECT version FROM #{ActiveRecord::Migrator.schema_migrations_table_name}"
+          "SELECT version FROM #{ActiveRecord::SchemaMigration.table_name}"
       ).delete_if do |v|
         v.match(/-#{plugin.id}$/).nil?
 
