@@ -148,11 +148,17 @@ in {
           description = "Create the database and database user locally.";
         };
       };
+
+      scheduler = {
+        enable = mkEnableOption "Enable vpsAdmin scheduler";
+      };
     };
   };
 
   config = mkIf cfg.enable {
-    nixpkgs.overlays = import ../../overlays;
+    nixpkgs.overlays = import ../../overlays ++ [
+      (self: super: { cron = super.callPackage ../../../packages/cronie {}; })
+    ];
 
     systemd.tmpfiles.rules = [
       "d '${cfg.stateDir}' 0750 ${cfg.user} ${cfg.group} - -"
@@ -167,6 +173,8 @@ in {
       "L+ /run/vpsadmin/api/config - - - - ${cfg.stateDir}/config"
       "L+ /run/vpsadmin/api/log - - - - ${cfg.stateDir}/log"
       "L+ /run/vpsadmin/api/plugins - - - - ${cfg.stateDir}/plugins"
+    ] ++ optionals cfg.scheduler.enable [
+      "f /etc/cron.d/vpsadmin 0644 ${cfg.user} ${cfg.group} - -"
     ];
 
     systemd.services.vpsadmin-api = {
@@ -219,6 +227,27 @@ in {
           ExecStop = "${thin} stop";
           ExecReload = "${thin} restart";
         };
+    };
+
+    systemd.services.vpsadmin-scheduler = mkIf cfg.scheduler.enable {
+      after =
+        [ "network.target" "vpsadmin-api.service" ]
+        ++ optional cfg.database.createLocally [ "mysql.service" ];
+      wantedBy = [ "multi-user.target" ];
+      environment.RACK_ENV = "production";
+      environment.SCHEDULER_SOCKET = "${cfg.stateDir}/scheduler.sock";
+      serviceConfig = {
+        Type = "simple";
+        User = cfg.user;
+        Group = cfg.group;
+        WorkingDirectory = "${cfg.package}/api";
+        ExecStart="${bundle} exec bin/vpsadmin-scheduler";
+      };
+    };
+
+    services.cron = mkIf cfg.scheduler.enable {
+      enable = true;
+      permitAnyCrontab = true;
     };
 
     users.users = optionalAttrs (cfg.user == "vpsadmin-api") {
