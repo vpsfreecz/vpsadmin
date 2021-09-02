@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-$: << File.join(File.dirname(__FILE__), 'lib')
+$: << File.realpath(File.join(File.dirname(__FILE__), 'lib'))
 gem 'haveapi', '~> 0.14.0'
 gem 'activerecord', '~> 5.2.6'
 gem 'sinatra-activerecord', '~> 2.0.13'
@@ -25,10 +25,8 @@ group :development do
   gem 'yard'
 end
 
-Dir.entries('plugins').select do |v|
-  next if v == '.' || v == '..'
-
-  path = File.join('plugins', v, 'api', 'Gemfile')
+Dir.glob(File.expand_path("../plugins/*", File.realpath(__FILE__))) do |v|
+  path = File.join(v, 'api', 'Gemfile')
   next unless File.exists?(path)
 
   eval_gemfile path

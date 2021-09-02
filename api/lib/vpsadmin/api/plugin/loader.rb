@@ -28,16 +28,15 @@ module VpsAdmin::API::Plugin
         basedir = File.join(plugin_dir, p, component)
         fail "Plugin dir '#{basedir}' not found" unless Dir.exists?(basedir)
 
-        init = File.join(basedir, 'init.rb')
-
-        if File.exists?(init)
-          Kernel.load(init)
-
-        else
+        begin
+          init = File.realpath(File.join(basedir, 'init.rb'))
+        rescue Errno::ENOENT
           %w(lib models resources).each do |d|
             path = File.join(basedir, d)
             require_all(File.realpath(path)) if File.exists?(path)
           end
+        else
+          Kernel.load(init)
         end
       end
     end
