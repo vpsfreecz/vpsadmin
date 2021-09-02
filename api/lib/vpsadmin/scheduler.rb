@@ -12,8 +12,8 @@ module VpsAdmin
   #
   # The scheduler depends on thin to start EventMachine event loop.
   class Scheduler
-    CRONTAB = '/etc/cron.d/vpsadmin'
-    SOCKET = '/var/run/vpsadmin-scheduler.sock'
+    CRONTAB = ENV.fetch('SCHEDULER_CRONTAB', '/etc/cron.d/vpsadmin')
+    SOCKET = ENV.fetch('SCHEDULER_SOCKET', '/var/run/vpsadmin-scheduler.sock')
 
     # Internal UNIX domain socket server.
     class Server < EventMachine::Connection
@@ -193,7 +193,7 @@ module VpsAdmin
     end
 
     def crontab?
-      ENV['CRONTAB'] != 'no'
+      ENV['SCHEDULER_CRONTAB'] != 'no'
     end
   end
 end
