@@ -15,6 +15,22 @@ let
       password: #dbpass#
       ${optionalString (cfg.database.socket != null) "socket: ${cfg.database.socket}"}
   '';
+
+  serverWait = 90;
+
+  thinYml = pkgs.writeText "thin.yml" ''
+    address: ${cfg.address}
+    port: ${toString cfg.port}
+    servers: ${toString cfg.servers}
+    rackup: ${cfg.package}/api/config.ru
+    pid: ${cfg.stateDir}/pids/thin.pid
+    log: ${cfg.stateDir}/log/thin.log
+    daemonize: true
+    onebyone: true
+    environment: production
+    wait: ${toString serverWait}
+    tag: api
+  '';
 in {
   options = {
     vpsadmin.api = {
@@ -39,10 +55,25 @@ in {
         description = "Group under which the API is ran.";
       };
 
+      address = mkOption {
+        type = types.str;
+        default = "127.0.0.1";
+        description = "Address on which the API is ran.";
+      };
+
       port = mkOption {
         type = types.int;
-        default = 3000;
+        default = 9292;
         description = "Port on which the API is ran.";
+      };
+
+      servers = mkOption {
+        type = types.int;
+        default = 1;
+        description = ''
+          Number of servers to run. Subsequent servers use incremented port
+          number.
+        '';
       };
 
       stateDir = mkOption {
@@ -128,6 +159,7 @@ in {
       "d '${cfg.stateDir}/cache' 0750 ${cfg.user} ${cfg.group} - -"
       "d '${cfg.stateDir}/config' 0750 ${cfg.user} ${cfg.group} - -"
       "d '${cfg.stateDir}/log' 0750 ${cfg.user} ${cfg.group} - -"
+      "d '${cfg.stateDir}/pids' 0750 ${cfg.user} ${cfg.group} - -"
       "d '${cfg.stateDir}/plugins' 0750 ${cfg.user} ${cfg.group} - -"
 
       "d /run/vpsadmin - - - - -"
@@ -173,15 +205,20 @@ in {
         ${bundle} exec rake vpsadmin:plugins:migrate
       '';
 
-      serviceConfig = {
-        Type = "simple";
-        User = cfg.user;
-        Group = cfg.group;
-        TimeoutSec = "300";
-        WorkingDirectory = "${cfg.package}/api";
-        ExecStart="${bundle} exec thin -e production -p ${toString cfg.port} -P '${cfg.stateDir}/thin.pid' start";
-      };
-
+      serviceConfig =
+        let
+          thin = "${bundle} exec thin --config ${thinYml}";
+        in {
+          Type = "forking";
+          User = cfg.user;
+          Group = cfg.group;
+          TimeoutStartSec = "300";
+          TimeoutStopSec = (cfg.servers * serverWait) + 5;
+          WorkingDirectory = "${cfg.package}/api";
+          ExecStart="${thin} start";
+          ExecStop = "${thin} stop";
+          ExecReload = "${thin} restart";
+        };
     };
 
     users.users = optionalAttrs (cfg.user == "vpsadmin-api") {
