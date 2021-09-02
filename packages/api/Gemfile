@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-$: << File.realpath(File.join(File.dirname(__FILE__), 'lib'))
+$: << File.join(File.dirname(__FILE__), 'lib')
 gem 'haveapi', '~> 0.14.0'
 gem 'activerecord', '~> 5.2.6'
 gem 'sinatra-activerecord', '~> 2.0.13'
@@ -25,12 +25,7 @@ group :development do
   gem 'yard'
 end
 
-### vpsAdmin plugin marker ###
-# Do not remove the comment above. It is used to create a Nix package with
-# resolved plugin dependencies.
-Dir.glob(File.expand_path("../plugins/*", File.realpath(__FILE__))) do |v|
-  path = File.join(v, 'api', 'Gemfile')
-  next unless File.exists?(path)
-
-  eval_gemfile path
+# Plugin payments
+source 'https://rubygems.org' do
+  gem 'fio_api'
 end
