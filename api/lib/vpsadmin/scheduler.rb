@@ -146,8 +146,10 @@ module VpsAdmin
             if crontab?
               crontab.write(
                 "#{t.minute} #{t.hour} #{t.day_of_month} #{t.month} #{t.day_of_week} " +
-                "#{Etc.getlogin} /opt/vpsadmin/api/bin/vpsadmin-run-task #{SOCKET} #{t.id}\n"
-              ) # FIXME: remove hardcoded path
+                "#{Etc.getlogin} " +
+                "#{File.join(VpsAdmin::API.root, 'bin/vpsadmin-run-task')} "+
+                "#{SOCKET} #{t.id}\n"
+              )
             end
           end
         end
