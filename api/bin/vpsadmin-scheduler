@@ -1,6 +1,4 @@
 #!/usr/bin/env ruby
-
-Dir.chdir('/opt/vpsadmin/api')
 require_relative '../lib/vpsadmin'
 
 EventMachine.run do
@@ -10,4 +8,3 @@ EventMachine.run do
     VpsAdmin::Scheduler.regenerate
   end
 end
-
