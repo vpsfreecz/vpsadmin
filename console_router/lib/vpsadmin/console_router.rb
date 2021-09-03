@@ -1,13 +1,14 @@
-require 'sinatra/base'
-require 'eventmachine'
+require 'active_record'
 require 'base64'
-require '/opt/vpsadmin/vpsadmind/lib/vpsadmind/standalone'
+require 'eventmachine'
+require 'require_all'
+require 'sinatra/base'
+require 'sinatra/activerecord'
 
 module VpsAdmin
   module ConsoleRouter
   end
 end
 
-require_relative 'console_router/console'
-require_relative 'console_router/router'
-require_relative 'console_router/server'
+require_rel '../../models'
+require_rel 'console_router/*.rb'

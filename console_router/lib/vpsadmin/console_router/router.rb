@@ -6,12 +6,10 @@ module VpsAdmin::ConsoleRouter
     end
 
     def api_url
-      rs = db.query(
-        "SELECT value
-        FROM sysconfig
-        WHERE category = 'core' AND name = 'api_url'"
-      )
-      JSON.parse("{ \"v\": #{rs.fetch_row.first} }", symbolize_names: true)[:v]
+      ::SysConfig.select('value').where(
+        category: 'core',
+        name: 'api_url',
+      ).take!.value
     end
 
     def get_console(veid, session)
@@ -79,14 +77,6 @@ module VpsAdmin::ConsoleRouter
           t = Time.now
           t_i = t.to_i
 
-          if @last_db_access && @db
-            if @last_db_access + 30 < t
-              puts "Disconnecting from db"
-              @db.close
-              @db = nil
-            end
-          end
-
           @connections.each do |veid, console|
             if (console.last_access.to_i + 60) < t_i
               console.close_connection
@@ -106,21 +96,13 @@ module VpsAdmin::ConsoleRouter
       end
 
       unless @connections.include?(veid)
-        st = db.prepared_st(
-          'SELECT ip_addr
-          FROM nodes
-          INNER JOIN vpses ON vpses.node_id = nodes.id
-          WHERE vpses.id = ?',
-          veid
-        )
+        n = ::Node.select('ip_addr').joins(:vpses).where(vpses: {id: veid})
 
         @connections[veid] = EventMachine.connect(
-          st.fetch[0],
+          n.ip_addr,
           8081,
           Console, veid, params, self
         )
-
-        st.close
       end
 
       @connections[veid].update_access
@@ -149,35 +131,24 @@ module VpsAdmin::ConsoleRouter
         end
       end
 
-      st = db.prepared_st(
-        'SELECT UNIX_TIMESTAMP(expiration)
-        FROM vps_consoles
-        WHERE vps_id = ? AND token = ? AND expiration > ?',
-        veid,
-        session,
-        Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
-      )
+      console = ::VpsConsole
+        .select('UNIX_TIMESTAMP(expiration) AS expiration_ts')
+        .where(vps_id: veid, token: session)
+        .where('expiration > ?', Time.now.utc)
+        .take
 
-      if st.num_rows == 1
+      if console
         @sessions[veid] ||= []
         @sessions[veid] << {
           session: session,
-          expiration: st.fetch[0].to_i,
+          expiration: console.expiration_ts,
           last_access: Time.now.utc.to_i,
           buf: ''
         }
-        st.close
         return true
       end
 
-      st.close
       false
-    end
-
-    def db
-      @last_db_access = Time.now
-      return @db if @db
-      @db = VpsAdmind::Db.new
     end
   end
 end

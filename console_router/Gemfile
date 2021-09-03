@@ -1,13 +1,9 @@
 source 'https://rubygems.org'
 
-gem 'sinatra', '~> 1.4.6'
+gem 'activerecord', '~> 5.2.6'
 gem 'eventmachine', '1.2.7'
-gem 'thin', '~> 1.6.4'
-
-# vpsadmind deps
-gem 'daemons'
-gem 'json'
-gem 'require_all', '~> 1.5.0'
-gem 'pry-remote'
-gem 'mail'
-gem 'mysql'
+gem 'mysql2', '~> 0.5.3'
+gem 'require_all', '~> 2.0.0'
+gem 'sinatra', '~> 2.1.0'
+gem 'sinatra-activerecord', '~> 2.0.14'
+gem 'thin'
