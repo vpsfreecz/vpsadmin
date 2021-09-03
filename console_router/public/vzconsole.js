@@ -103,10 +103,10 @@ function extend(subClass, baseClass) {
     subClass.prototype.superClass = baseClass.prototype;
 };
 
-function ShellInABox(api_url, veid, auth_token, session, container) {
+function ShellInABox(api_url, vps_id, auth_token, session, container) {
     this.api_url = api_url;
-    this.veid = veid;
-    this.url = "/console/feed/" + this.veid
+    this.vps_id = vps_id;
+    this.url = "/console/feed/" + this.vps_id
     this.nextUrl = this.url;
     this.auth_token = auth_token;
     this.session = session;
@@ -158,7 +158,7 @@ ShellInABox.prototype.reconnect = function () {
 		return false;
 
 	var restart = function () {
-		that.api.vps(that.veid).console_token.create(function (c, token) {
+		that.api.vps(that.vps_id).console_token.create(function (c, token) {
 			that.session = token.token;
 			that.pendingKeys = '';
 			that.reset(true);

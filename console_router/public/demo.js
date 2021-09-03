@@ -103,9 +103,9 @@ function extend(subClass, baseClass) {
     subClass.prototype.superClass = baseClass.prototype;
 };
 
-function ShellInABox(veid, session, container) {
-    this.veid = veid;
-    this.url = "http://172.16.142.106:4567/console/feed/" + this.veid
+function ShellInABox(vps_id, session, container) {
+    this.vps_id = vps_id;
+    this.url = "http://172.16.142.106:4567/console/feed/" + this.vps_id
     this.nextUrl = this.url;
     this.session = session;
     this.pendingKeys = '';

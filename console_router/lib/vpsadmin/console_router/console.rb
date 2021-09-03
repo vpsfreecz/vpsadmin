@@ -2,8 +2,8 @@ module VpsAdmin::ConsoleRouter
   class Console < EventMachine::Connection
     attr_accessor :buf, :last_access, :w, :h
 
-    def initialize(veid, params, router)
-      @veid = veid
+    def initialize(vps_id, params, router)
+      @vps_id = vps_id
       @session = params[:session]
       @w = params[:width].to_i
       @h = params[:height].to_i
@@ -25,7 +25,7 @@ module VpsAdmin::ConsoleRouter
     end
 
     def unbind
-      @router.disconnected(@veid)
+      @router.disconnected(@vps_id)
     end
 
     def update_access

@@ -9,13 +9,13 @@ module VpsAdmin::ConsoleRouter
       set :router, Router.new
     end
 
-    get '/console/:veid' do |veid|
-      v = veid.to_i
+    get '/console/:vps_id' do |vps_id|
+      v = vps_id.to_i
 
       if settings.router.check_session(v, params[:session])
         erb :console, locals: {
           api_url: settings.router.api_url,
-          veid: v,
+          vps_id: v,
           auth_token: params[:token],
           session: params[:session]
         }
@@ -24,8 +24,8 @@ module VpsAdmin::ConsoleRouter
       end
     end
 
-    post '/console/feed/:veid' do |veid|
-      v = veid.to_i
+    post '/console/feed/:vps_id' do |vps_id|
+      v = vps_id.to_i
 
       if settings.router.check_session(v, params[:session])
         settings.router.send_cmd(v, params)

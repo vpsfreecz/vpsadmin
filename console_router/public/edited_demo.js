@@ -84,9 +84,9 @@ function extend(subClass, baseClass) {
     subClass.prototype.superClass = baseClass.prototype;
 };
 
-function Demo(veid, container) {
+function Demo(vps_id, container) {
     this.superClass.constructor.call(this, container);
-    this.veid = veid;
+    this.vps_id = vps_id;
     this.gotoState(1 /* STATE_INIT */);
 };
 extend(Demo, VT100);
@@ -294,7 +294,7 @@ Demo.prototype.xmlhttpGet = function () {
 
     parent = this;
 
-    xmlHttpReq.open('GET', "http://172.16.142.106:4567/console/feed/" + this.veid, true);
+    xmlHttpReq.open('GET', "http://172.16.142.106:4567/console/feed/" + this.vps_id, true);
     xmlHttpReq.onreadystatechange = function () {
         if (xmlHttpReq.readyState == 4) {
             //alert(xmlHttpReq.responseText);
@@ -321,7 +321,7 @@ Demo.prototype.xmlhttpPost = function (data) {
 
     parent = this;
 
-    xmlHttpReq.open('POST', "http://172.16.142.106:4567/console/feed/" + this.veid + "/cmd", true);
+    xmlHttpReq.open('POST', "http://172.16.142.106:4567/console/feed/" + this.vps_id + "/cmd", true);
     xmlHttpReq.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     xmlHttpReq.onreadystatechange = function () {
         if (xmlHttpReq.readyState == 4) {

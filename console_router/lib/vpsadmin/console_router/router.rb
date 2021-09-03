@@ -12,41 +12,41 @@ module VpsAdmin::ConsoleRouter
       ).take!.value
     end
 
-    def get_console(veid, session)
-      check_connection(veid, session)
+    def get_console(vps_id, session)
+      check_connection(vps_id, session)
 
-      buf = @connections[veid].buf
+      buf = @connections[vps_id].buf
       s_id = -1
 
-      @sessions[veid].each do |s|
+      @sessions[vps_id].each do |s|
         if s[:session] == session
-          s_id = @sessions[veid].index(s)
+          s_id = @sessions[vps_id].index(s)
           next
         end
 
         s[:buf] += buf
       end
 
-      @connections[veid].buf = ""
+      @connections[vps_id].buf = ""
 
-      buf = @sessions[veid][s_id][:buf] + buf
-      @sessions[veid][s_id][:buf] = ""
+      buf = @sessions[vps_id][s_id][:buf] + buf
+      @sessions[vps_id][s_id][:buf] = ""
 
       buf
     end
 
-    def send_cmd(veid, params)
-      check_connection(veid, params)
+    def send_cmd(vps_id, params)
+      check_connection(vps_id, params)
       s_id = -1
 
-      @sessions[veid].each do |s|
+      @sessions[vps_id].each do |s|
         if s[:session] == params[:session]
-          s_id = @sessions[veid].index(s)
+          s_id = @sessions[vps_id].index(s)
           break
         end
       end
 
-      conn = @connections[veid]
+      conn = @connections[vps_id]
 
       data = {}
 
@@ -66,24 +66,24 @@ module VpsAdmin::ConsoleRouter
 
       return if data.empty?
 
-      @sessions[veid][s_id][:last_access] = Time.new.to_i
+      @sessions[vps_id][s_id][:last_access] = Time.new.to_i
 
       conn.send_data(data.to_json + "\n")
     end
 
-    def check_connection(veid, params)
+    def check_connection(vps_id, params)
       unless @timer
         EventMachine.add_periodic_timer(60) do
           t = Time.now
           t_i = t.to_i
 
-          @connections.each do |veid, console|
+          @connections.each do |vps_id, console|
             if (console.last_access.to_i + 60) < t_i
               console.close_connection
             end
           end
 
-          @sessions.delete_if do |veid, sessions|
+          @sessions.delete_if do |vps_id, sessions|
             sessions.delete_if do |s|
               s[:expiration] < t_i && (s[:last_access] + 300) < t_i
             end
@@ -95,31 +95,31 @@ module VpsAdmin::ConsoleRouter
         @timer = true
       end
 
-      unless @connections.include?(veid)
-        n = ::Node.select('ip_addr').joins(:vpses).where(vpses: {id: veid})
+      unless @connections.include?(vps_id)
+        n = ::Node.select('ip_addr').joins(:vpses).where(vpses: {id: vps_id})
 
-        @connections[veid] = EventMachine.connect(
+        @connections[vps_id] = EventMachine.connect(
           n.ip_addr,
           8081,
-          Console, veid, params, self
+          Console, vps_id, params, self
         )
       end
 
-      @connections[veid].update_access
+      @connections[vps_id].update_access
     end
 
-    def disconnected(veid)
-      @connections.delete(veid)
-      @sessions.delete(veid)
+    def disconnected(vps_id)
+      @connections.delete(vps_id)
+      @sessions.delete(vps_id)
     end
 
-    def check_session(veid, session)
-      return false unless session && veid
+    def check_session(vps_id, session)
+      return false unless session && vps_id
 
-      if @sessions.include?(veid)
+      if @sessions.include?(vps_id)
         t = Time.now.utc.to_i
 
-        @sessions[veid].each do |s|
+        @sessions[vps_id].each do |s|
           if s[:session] == session
             if (s[:last_access] + 600) < t
               return false
@@ -133,13 +133,13 @@ module VpsAdmin::ConsoleRouter
 
       console = ::VpsConsole
         .select('UNIX_TIMESTAMP(expiration) AS expiration_ts')
-        .where(vps_id: veid, token: session)
+        .where(vps_id: vps_id, token: session)
         .where('expiration > ?', Time.now.utc)
         .take
 
       if console
-        @sessions[veid] ||= []
-        @sessions[veid] << {
+        @sessions[vps_id] ||= []
+        @sessions[vps_id] << {
           session: session,
           expiration: console.expiration_ts,
           last_access: Time.now.utc.to_i,
