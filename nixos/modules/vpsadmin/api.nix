@@ -1,6 +1,7 @@
 { config, pkgs, lib, ... }:
 with lib;
 let
+  vpsadminCfg = config.vpsadmin;
   cfg = config.vpsadmin.api;
 
   bundle = "${cfg.package}/ruby-env/bin/bundle";
@@ -78,7 +79,7 @@ in {
 
       stateDir = mkOption {
         type = types.str;
-        default = "/var/lib/vpsadmin/api";
+        default = "${vpsadminCfg.stateDir}/api";
         description = "The state directory, logs and plugins are stored here.";
       };
 
@@ -156,7 +157,12 @@ in {
   };
 
   config = mkIf cfg.enable {
-    nixpkgs.overlays = import ../../overlays ++ [
+    vpsadmin = {
+      enableOverlay = true;
+      enableStateDir = true;
+    };
+
+    nixpkgs.overlays = [
       (self: super: { cron = super.callPackage ../../../packages/cronie {}; })
     ];
 
@@ -168,7 +174,6 @@ in {
       "d '${cfg.stateDir}/pids' 0750 ${cfg.user} ${cfg.group} - -"
       "d '${cfg.stateDir}/plugins' 0750 ${cfg.user} ${cfg.group} - -"
 
-      "d /run/vpsadmin - - - - -"
       "d /run/vpsadmin/api - - - - -"
       "L+ /run/vpsadmin/api/config - - - - ${cfg.stateDir}/config"
       "L+ /run/vpsadmin/api/log - - - - ${cfg.stateDir}/log"
