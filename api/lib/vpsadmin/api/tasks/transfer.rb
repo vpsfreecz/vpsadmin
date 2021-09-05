@@ -1,34 +1,9 @@
-#!/usr/bin/env ruby
-
-require 'pathname'
-require File.join(File.dirname(Pathname.new(__FILE__).realpath), '..', 'lib/vpsadmind/standalone')
-
-require 'optparse'
-
-LOCK_FILE = '/tmp/vpsadmind-save-transfers'
-
-exit if File.exist?(LOCK_FILE)
-File.open(LOCK_FILE, 'w') {}
-
-options = {
-    :older => 60,
-}
-
-OptionParser.new do |opts|
-  opts.on('-o', '--older-than [SECONDS]', Integer, 'Move transfers older than SECONDS') do |cfg|
-    options[:older] = cfg || 60
-  end
-
-  opts.on_tail('-h', '--help', 'Show this message') do
-    puts opts
-    exit
-  end
-end.parse!
-
-db = VpsAdmind::Db.new
-
-db.transaction do |t|
-  t.query("
+module VpsAdmin::API::Tasks
+  class Transfer < Base
+    # Process real-time IP transfers
+    def process
+      ActiveRecord::Base.transaction do
+        ActiveRecord::Base.connection.execute("
           INSERT INTO ip_traffics (
             ip_address_id, user_id, protocol, role,
             packets_in, packets_out, bytes_in, bytes_out,
@@ -48,12 +23,14 @@ db.transaction do |t|
                    role,
                    DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00')
 
-          ON DUPLICATE KEY UPDATE packets_in = packets_in + values(packets_in),
-                                  packets_out = packets_out + values(packets_out),
-                                  bytes_in = bytes_in + values(bytes_in),
-                                  bytes_out = bytes_out + values(bytes_out)
-          ")
-  t.query("
+          ON DUPLICATE KEY UPDATE
+            packets_in = packets_in + values(packets_in),
+            packets_out = packets_out + values(packets_out),
+            bytes_in = bytes_in + values(bytes_in),
+            bytes_out = bytes_out + values(bytes_out)
+        ")
+
+        ActiveRecord::Base.connection.execute("
           INSERT INTO ip_traffic_monthly_summaries (
             ip_address_id, user_id, protocol, role,
             packets_in, packets_out, bytes_in, bytes_out,
@@ -74,12 +51,19 @@ db.transaction do |t|
                    role,
                    DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00')
 
-          ON DUPLICATE KEY UPDATE packets_in = packets_in + values(packets_in),
-                                  packets_out = packets_out + values(packets_out),
-                                  bytes_in = bytes_in + values(bytes_in),
-                                  bytes_out = bytes_out + values(bytes_out)
-          ")
-  t.query('DELETE FROM ip_recent_traffics WHERE created_at < DATE_SUB(NOW(), INTERVAL 60 SECOND)')
-end
+          ON DUPLICATE KEY UPDATE
+            packets_in = packets_in + values(packets_in),
+            packets_out = packets_out + values(packets_out),
+            bytes_in = bytes_in + values(bytes_in),
+            bytes_out = bytes_out + values(bytes_out)
+        ")
 
-File.unlink(LOCK_FILE)
+        ActiveRecord::Base.connection.execute('
+          DELETE
+          FROM ip_recent_traffics
+          WHERE created_at < DATE_SUB(NOW(), INTERVAL 60 SECOND)
+        ')
+      end
+    end
+  end
+end

@@ -41,6 +41,14 @@ namespace :vpsadmin do
     VpsAdmin::API::Tasks.run(:mail, :daily_report)
   end
 
+  namespace :transfers do
+    desc 'Process real-time IP transfers'
+    task :process do
+      puts 'Process transfers'
+      VpsAdmin::API::Tasks.run(:transfers, :process)
+    end
+  end
+
   namespace :vps do
     namespace :migration do
       desc 'Execute VPS migration plans'
