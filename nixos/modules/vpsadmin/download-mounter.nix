@@ -38,13 +38,17 @@ in {
   config = mkIf cfg.enable {
     vpsadmin = {
       enableOverlay = true;
+      waitOnline.api = {
+        enable = true;
+        url = cfg.api.url;
+      };
     };
 
     boot.supportedFilesystems = [ "nfs" ];
 
     systemd.services.vpsadmin-download-mounter = {
       description = "Mount download directories from vpsAdmin nodes";
-      after = [ "network.target" ];
+      after = [ "network.target" config.vpsadmin.waitOnline.api.service ];
       wantedBy = [ "multi-user.target" ];
       path = with pkgs; [
         nfs-utils
