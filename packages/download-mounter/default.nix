@@ -1,6 +1,6 @@
-{ lib, stdenv, fetchurl, bundlerEnv, ruby, makeWrapper }:
+{ lib, stdenv, fetchurl, bundlerEnv, ruby, vpsadmin-source }:
 let
-  version = "dev";
+  version = vpsadmin-source.version;
 
   rubyEnv = bundlerEnv {
     name = "vpsadmin-download-mounter-env-${version}";
@@ -9,16 +9,11 @@ let
     gemdir = ./.;
   };
 
-  filterRepository = path: type:
-    !(type == "directory" && baseNameOf path == ".gems")
-    &&
-    !(type == "directory" && baseNameOf path == ".git");
-
 in stdenv.mkDerivation rec {
   pname = "vpsadmin-download-mounter";
   inherit version;
 
-  src = builtins.filterSource filterRepository <vpsadmin>;
+  src = vpsadmin-source;
 
   buildInputs = [ rubyEnv rubyEnv.wrappedRuby rubyEnv.bundler ];
 
