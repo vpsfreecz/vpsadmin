@@ -149,128 +149,91 @@ in {
           description = "Create the database and database user locally.";
         };
       };
-
-      scheduler = {
-        enable = mkEnableOption "Enable vpsAdmin scheduler";
-      };
     };
   };
 
-  config = mkMerge [
-    (mkIf cfg.enable {
-      vpsadmin = {
-        enableOverlay = true;
-        enableStateDir = true;
-      };
+  config = mkIf cfg.enable {
+    vpsadmin = {
+      enableOverlay = true;
+      enableStateDir = true;
+    };
 
-      systemd.tmpfiles.rules = [
-        "d '${cfg.stateDir}' 0750 ${cfg.user} ${cfg.group} - -"
-        "d '${cfg.stateDir}/cache' 0750 ${cfg.user} ${cfg.group} - -"
-        "d '${cfg.stateDir}/config' 0750 ${cfg.user} ${cfg.group} - -"
-        "d '${cfg.stateDir}/log' 0750 ${cfg.user} ${cfg.group} - -"
-        "d '${cfg.stateDir}/pids' 0750 ${cfg.user} ${cfg.group} - -"
-        "d '${cfg.stateDir}/plugins' 0750 ${cfg.user} ${cfg.group} - -"
+    systemd.tmpfiles.rules = [
+      "d '${cfg.stateDir}' 0750 ${cfg.user} ${cfg.group} - -"
+      "d '${cfg.stateDir}/cache' 0750 ${cfg.user} ${cfg.group} - -"
+      "d '${cfg.stateDir}/config' 0750 ${cfg.user} ${cfg.group} - -"
+      "d '${cfg.stateDir}/log' 0750 ${cfg.user} ${cfg.group} - -"
+      "d '${cfg.stateDir}/pids' 0750 ${cfg.user} ${cfg.group} - -"
+      "d '${cfg.stateDir}/plugins' 0750 ${cfg.user} ${cfg.group} - -"
 
-        "d /run/vpsadmin/api - - - - -"
-        "L+ /run/vpsadmin/api/config - - - - ${cfg.stateDir}/config"
-        "L+ /run/vpsadmin/api/log - - - - ${cfg.stateDir}/log"
-        "L+ /run/vpsadmin/api/plugins - - - - ${cfg.stateDir}/plugins"
+      "d /run/vpsadmin/api - - - - -"
+      "L+ /run/vpsadmin/api/config - - - - ${cfg.stateDir}/config"
+      "L+ /run/vpsadmin/api/log - - - - ${cfg.stateDir}/log"
+      "L+ /run/vpsadmin/api/plugins - - - - ${cfg.stateDir}/plugins"
+    ];
+
+    systemd.services.vpsadmin-api = {
+      after =
+        [ "network.target" ]
+        ++ optional cfg.database.createLocally [ "mysql.service" ];
+      wantedBy = [ "multi-user.target" ];
+      environment.RACK_ENV = "production";
+      environment.SCHEMA = "${cfg.stateDir}/cache/structure.sql";
+      path = with pkgs; [
+        mariadb
       ];
+      preStart = ''
+        # Cleanup previous state
+        rm -f "${cfg.stateDir}/plugins/"*
+        find "${cfg.stateDir}/config" -type l -exec rm -f {} +
 
-      systemd.services.vpsadmin-api = {
-        after =
-          [ "network.target" ]
-          ++ optional cfg.database.createLocally [ "mysql.service" ];
-        wantedBy = [ "multi-user.target" ];
-        environment.RACK_ENV = "production";
-        environment.SCHEMA = "${cfg.stateDir}/cache/structure.sql";
-        path = with pkgs; [
-          mariadb
-        ];
-        preStart = ''
-          # Cleanup previous state
-          rm -f "${cfg.stateDir}/plugins/"*
-          find "${cfg.stateDir}/config" -type l -exec rm -f {} +
+        # Link in configuration
+        for v in "${cfg.configDirectory}"/* ; do
+          ln -sf "$v" "${cfg.stateDir}/config/$(basename $v)"
+        done
 
-          # Link in configuration
-          for v in "${cfg.configDirectory}"/* ; do
-            ln -sf "$v" "${cfg.stateDir}/config/$(basename $v)"
-          done
+        # Link in enabled plugins
+        for plugin in ${concatStringsSep " " cfg.plugins}; do
+          ln -sf "${cfg.package}/plugins/$plugin" "${cfg.stateDir}/plugins/$plugin"
+        done
 
-          # Link in enabled plugins
-          for plugin in ${concatStringsSep " " cfg.plugins}; do
-            ln -sf "${cfg.package}/plugins/$plugin" "${cfg.stateDir}/plugins/$plugin"
-          done
+        # Handle database.passwordFile & permissions
+        DBPASS=${optionalString (cfg.database.passwordFile != null) "$(head -n1 ${cfg.database.passwordFile})"}
+        cp -f ${databaseYml} "${cfg.stateDir}/config/database.yml"
+        sed -e "s,#dbpass#,$DBPASS,g" -i "${cfg.stateDir}/config/database.yml"
+        chmod 440 "${cfg.stateDir}/config/database.yml"
 
-          # Handle database.passwordFile & permissions
-          DBPASS=${optionalString (cfg.database.passwordFile != null) "$(head -n1 ${cfg.database.passwordFile})"}
-          cp -f ${databaseYml} "${cfg.stateDir}/config/database.yml"
-          sed -e "s,#dbpass#,$DBPASS,g" -i "${cfg.stateDir}/config/database.yml"
-          chmod 440 "${cfg.stateDir}/config/database.yml"
+        # Run database migrations
+        ${bundle} exec rake db:migrate
+        ${bundle} exec rake vpsadmin:plugins:migrate
+      '';
 
-          # Run database migrations
-          ${bundle} exec rake db:migrate
-          ${bundle} exec rake vpsadmin:plugins:migrate
-        '';
-
-        serviceConfig =
-          let
-            thin = "${bundle} exec thin --config ${thinYml}";
-          in {
-            Type = "forking";
-            User = cfg.user;
-            Group = cfg.group;
-            TimeoutStartSec = "300";
-            TimeoutStopSec = (cfg.servers * serverWait) + 5;
-            WorkingDirectory = "${cfg.package}/api";
-            ExecStart="${thin} start";
-            ExecStop = "${thin} stop";
-            ExecReload = "${thin} restart";
-          };
-      };
-
-      users.users = optionalAttrs (cfg.user == "vpsadmin-api") {
-        ${cfg.user} = {
-          group = cfg.group;
-          home = cfg.stateDir;
-          isSystemUser = true;
-        };
-      };
-
-      users.groups = optionalAttrs (cfg.group == "vpsadmin-api") {
-        ${cfg.group} = {};
-      };
-    })
-
-    (mkIf (cfg.enable && cfg.scheduler.enable) {
-      nixpkgs.overlays = [
-        (self: super: { cron = super.callPackage ../../../packages/cronie {}; })
-      ];
-
-      systemd.tmpfiles.rules = [
-        "f /etc/cron.d/vpsadmin 0644 ${cfg.user} ${cfg.group} - -"
-      ];
-
-      systemd.services.vpsadmin-scheduler = {
-        after =
-          [ "network.target" "vpsadmin-api.service" ]
-          ++ optional cfg.database.createLocally [ "mysql.service" ];
-        wantedBy = [ "multi-user.target" ];
-        environment.RACK_ENV = "production";
-        environment.SCHEDULER_SOCKET = "${cfg.stateDir}/scheduler.sock";
-        serviceConfig = {
-          Type = "simple";
+      serviceConfig =
+        let
+          thin = "${bundle} exec thin --config ${thinYml}";
+        in {
+          Type = "forking";
           User = cfg.user;
           Group = cfg.group;
+          TimeoutStartSec = "300";
+          TimeoutStopSec = (cfg.servers * serverWait) + 5;
           WorkingDirectory = "${cfg.package}/api";
-          ExecStart="${bundle} exec bin/vpsadmin-scheduler";
+          ExecStart="${thin} start";
+          ExecStop = "${thin} stop";
+          ExecReload = "${thin} restart";
         };
-      };
+    };
 
-      services.cron = {
-        enable = true;
-        permitAnyCrontab = true;
+    users.users = optionalAttrs (cfg.user == "vpsadmin-api") {
+      ${cfg.user} = {
+        group = cfg.group;
+        home = cfg.stateDir;
+        isSystemUser = true;
       };
-    })
-  ];
+    };
+
+    users.groups = optionalAttrs (cfg.group == "vpsadmin-api") {
+      ${cfg.group} = {};
+    };
+  };
 }

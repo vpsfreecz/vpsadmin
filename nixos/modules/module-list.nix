@@ -3,6 +3,7 @@
     ./services/scheduling/cronie.nix
     ./vpsadmin/api.nix
     ./vpsadmin/api/rake-tasks.nix
+    ./vpsadmin/api/scheduler.nix
     ./vpsadmin/console-router.nix
     ./vpsadmin/download-mounter.nix
     ./vpsadmin/main.nix
