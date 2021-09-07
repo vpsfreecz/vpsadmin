@@ -215,7 +215,7 @@ in {
           Type = "forking";
           User = cfg.user;
           Group = cfg.group;
-          TimeoutStartSec = "300";
+          TimeoutStartSec = "infinity";
           TimeoutStopSec = (cfg.servers * serverWait) + 5;
           WorkingDirectory = "${cfg.package}/api";
           ExecStart="${thin} start";
