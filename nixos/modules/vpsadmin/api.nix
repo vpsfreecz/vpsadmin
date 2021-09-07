@@ -156,6 +156,24 @@ in {
     vpsadmin = {
       enableOverlay = true;
       enableStateDir = true;
+
+      api.rake.tasks = {
+        migrate-db = {
+          description = "Run database migrations";
+          rake = [ "db:migrate" ];
+          service.config = {
+            TimeoutStartSec = "infinity";
+          };
+        };
+
+        migrate-plugins = {
+          description = "Run plugin database migrations";
+          rake = [ "vpsadmin:plugins:migrate" ];
+          service.config = {
+            TimeoutStartSec = "infinity";
+          };
+        };
+      };
     };
 
     systemd.tmpfiles.rules = [

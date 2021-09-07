@@ -26,6 +26,17 @@ let
           description = "Rake task and arguments";
         };
 
+        service = {
+          config = mkOption {
+            type = types.attrs;
+            default = {};
+            description = ''
+              Options for the systemd service, see
+              <option>systemd.timers.&lt;name&gt;serviceConfig</option>
+            '';
+          };
+        };
+
         timer = {
           enable = mkEnableOption "Enable systemd timer for the rake task";
 
@@ -62,13 +73,18 @@ let
         [ "network.target" "vpsadmin-api.service" ]
         ++ optional cfg.database.createLocally [ "mysql.service" ];
       environment.RACK_ENV = "production";
+      environment.SCHEMA = "${cfg.stateDir}/cache/structure.sql";
+      path = with pkgs; [
+        mariadb
+      ];
       serviceConfig = {
         Type = "simple";
         User = cfg.user;
         Group = cfg.group;
         WorkingDirectory = "${cfg.package}/api";
         ExecStart="${bundle} exec rake ${toString task.rake}";
-      };
+        TimeoutStartSec = "1h";
+      } // task.service.config;
     };
   }) activeRakeServices;
 
