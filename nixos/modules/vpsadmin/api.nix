@@ -148,6 +148,12 @@ in {
           default = false;
           description = "Create the database and database user locally.";
         };
+
+        autoSetup = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Automatically run database migrations";
+        };
       };
     };
   };
@@ -221,9 +227,11 @@ in {
         sed -e "s,#dbpass#,$DBPASS,g" -i "${cfg.stateDir}/config/database.yml"
         chmod 440 "${cfg.stateDir}/config/database.yml"
 
+        ${optionalString cfg.database.autoSetup ''
         # Run database migrations
         ${bundle} exec rake db:migrate
         ${bundle} exec rake vpsadmin:plugins:migrate
+        ''}
       '';
 
       serviceConfig =
