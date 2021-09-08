@@ -1,9 +1,15 @@
 { config, pkgs, lib, ... }:
 with lib;
 let
+  vpsadminCfg = config.vpsadmin;
   cfg = config.vpsadmin.webui;
   app = "vpsadmin-webui";
   boolToPhp = v: if v then "true" else "false";
+  rootDir =
+    if isNull cfg.sourceCodeDir then
+      cfg.package
+    else
+      cfg.sourceCodeDir;
 in {
   options = {
     vpsadmin.webui = {
@@ -13,8 +19,24 @@ in {
         type = types.str;
       };
 
-      dataDir = mkOption {
+      package = mkOption {
+        default = pkgs.vpsadmin-webui pkgs;
+        description = "Which vpsAdmin webui package to use";
+      };
+
+      sourceCodeDir = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = ''
+          Instead of the packaged app, run it from the source code mounted at
+          a configured path
+        '';
+      };
+
+      stateDir = mkOption {
         type = types.str;
+        default = "${vpsadminCfg.stateDir}/webui";
+        description = "The state directory";
       };
 
       api.externalUrl = mkOption {
@@ -63,6 +85,15 @@ in {
   };
 
   config = mkIf cfg.enable {
+    vpsadmin = {
+      enableOverlay = true;
+      enableStateDir = true;
+    };
+
+    systemd.tmpfiles.rules = [
+      "d '${cfg.stateDir}' 0750 ${app} ${app} - -"
+    ];
+
     services.phpfpm.pools.${app} = {
       user = app;
       settings = {
@@ -83,7 +114,7 @@ in {
     services.nginx = {
       enable = true;
       virtualHosts.${cfg.domain} = {
-        root = cfg.dataDir;
+        root = rootDir;
 
         locations."~* .php$".extraConfig = ''
           fastcgi_split_path_info ^(.+\.php)(/.+)$;
@@ -120,8 +151,7 @@ in {
 
     users.users.${app} = {
       isSystemUser = true;
-      createHome = true;
-      home = cfg.dataDir;
+      home = cfg.stateDir;
       group = app;
     };
     users.groups.${app} = {};
@@ -143,7 +173,7 @@ in {
       define ('EXPORT_PUBLIC', ${boolToPhp cfg.exportPublic});
       define ('NAS_PUBLIC', ${boolToPhp cfg.nasPublic});
 
-      define ('WWW_ROOT', '${cfg.dataDir}/');
+      define ('WWW_ROOT', '${rootDir}/');
 
       ${cfg.extraConfig}
     '';
