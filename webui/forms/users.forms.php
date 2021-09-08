@@ -1,6 +1,7 @@
 <?php
 
 use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
 
 function environment_configs($user_id) {
 	global $xtpl, $api;
@@ -1295,11 +1296,13 @@ function totp_device_confirm_form($user, $dev) {
 	$xtpl->table_td(h($dev->label));
 	$xtpl->table_tr();
 
-	$qrCode = new QrCode($_SESSION['totp_setup']['provisioning_uri']);
+	$qrWriter = new PngWriter();
+	$qrCode = QrCode::create($_SESSION['totp_setup']['provisioning_uri']);
+	$qrResult = $qrWriter->write($qrCode);
 
 	$xtpl->table_td(_('QR code').':');
 	$xtpl->table_td(
-		'<img src="'.$qrCode->writeDataUri().'">'
+		'<img src="'.$qrResult->getDataUri().'">'
 	);
 	$xtpl->table_tr();
 
