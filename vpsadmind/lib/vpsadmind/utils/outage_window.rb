@@ -12,8 +12,13 @@ module VpsAdmind::Utils
         t = Time.now
         now_in_mins = t.hour * 60 + t.min
 
-        return first if first.opens_today?
-        return size > 1 ? self[1] : first
+        if first.opens_today?
+          return first
+        elsif first.weekday != t.wday
+          first
+        else
+          return size > 1 ? self[1] : first
+        end
       end
     end
 
