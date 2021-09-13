@@ -31,27 +31,32 @@ module VpsAdmind
 
       cmd = case mnt['type']
         when 'dataset_local'
+          src_check = File.join(mnt['pool_fs'], mnt['dataset_name'])
           "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} /#{mnt['pool_fs']}/#{mnt['dataset_name']}/private #{dst}"
 
         when 'dataset_remote'
-          "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} #{mnt['src_node_addr']}:/#{mnt['pool_fs']}/#{mnt['dataset_name']}/private #{dst}"
+          src_check = "#{mnt['src_node_addr']}:/#{mnt['pool_fs']}/#{mnt['dataset_name']}/private/"
+          "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} #{src_check} #{dst}"
 
         when 'snapshot_local'
+          src_check = pool_mounted_snapshot(mnt['pool_fs'], mnt['clone_name'])
           "#{$CFG.get(:bin, :mount)} --bind /#{pool_mounted_snapshot(mnt['pool_fs'], mnt['clone_name'])}/private #{dst}"
 
         when 'snapshot_remote'
-          "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} #{mnt['src_node_addr']}:/#{pool_mounted_snapshot(mnt['pool_fs'], mnt['clone_name'])}/private #{dst}"
+          src_check = "#{mnt['src_node_addr']}:/#{pool_mounted_snapshot(mnt['pool_fs'], mnt['clone_name'])}/private"
+          "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} #{src_check} #{dst}"
 
         else
           fail "unknown mount type '#{mnt['type']}'"
       end
 
-      [dst, cmd]
+      [src_check, dst, cmd]
     end
 
     def mount(opts, oneshot)
       counter = 0
-      dst, cmd = mount_cmd(opts)
+      mounted = false
+      src_check, dst, cmd = mount_cmd(opts)
 
       unless oneshot
         # Check if a parent mount did not fail
@@ -78,7 +83,7 @@ module VpsAdmind
 
       begin
         syscmd(cmd)
-        report_state(opts, :mounted)
+        mounted = true
 
       rescue CommandFailed => e
         if /is busy or already mounted/ =~ e.output
@@ -116,6 +121,9 @@ module VpsAdmind
           end
         end
       end
+
+      check_mounttable(opts, src_check)
+      report_state(opts, :mounted) if mounted
     end
 
     def umount_cmd(mnt)
@@ -162,6 +170,37 @@ module VpsAdmind
       end
 
       path
+    end
+
+    def check_mounttable(mnt, src_check)
+      found = false
+
+      File.open('/proc/mounts').each_line do |line|
+        next unless line.start_with?(src_check)
+
+        cols = line.split(' ')
+
+        if cols[0] == src_check
+          found = true
+
+          if cols[1].start_with?(ve_root)
+            log(:info, :mounter, "VPS #{@vps_id}: allowing mount '#{cols[1]}'")
+          elsif cols[1].start_with?(ve_private) # subdatasets mounted in /vz/private
+            # pass
+          elsif mnt['type'] == 'snapshot_local' \
+                && cols[1].start_with?("/#{pool_mounted_snapshot(mnt['pool_fs'], mnt['clone_name'])}")
+            # pass
+          else
+            log(:fatal, :mounter, "VPS #{@vps_id}: forbidden mount found at '#{cols[1]}'")
+            syscmd("#{$CFG.get(:bin, :umount)} -fl \"#{cols[1]}\"")
+            fail "VPS #{@vps_id}: forbidden mount found at '#{cols[1]}'"
+          end
+        end
+      end
+
+      unless found
+        log(:warn, :mounter, "VPS #{@vps_id}: did not find mount of '#{src_check}'")
+      end
     end
 
     def fail_mount(opts)
