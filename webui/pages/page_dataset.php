@@ -223,6 +223,11 @@ if (isLoggedIn()) {
 					$xtpl->table_td(_('The dataset will be unmounted. The data itself is not touched.'));
 					$xtpl->table_tr();
 
+					if ($vps->node->hypervisor_type == 'openvz') {
+						$xtpl->table_td(_('<strong>The VPS will be restarted!</strong>'));
+						$xtpl->table_tr();
+					}
+
 					$xtpl->form_out(_('Remove mount'));
 
 				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {

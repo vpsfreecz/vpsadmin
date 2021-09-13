@@ -499,6 +499,16 @@ function mount_list($vps_id) {
 	);
 	$xtpl->table_tr();
 
+	if ($vps->node->hypervisor_type == 'openvz') {
+		$xtpl->table_td(
+			_('<strong>The VPS will be restarted on any mount / unmount operation!</strong>'),
+			false,
+			false, // right
+			9 // colspan
+		);
+		$xtpl->table_tr();
+	}
+
 	$xtpl->table_out();
 
 	$xtpl->sbar_add(_('Create mount'), '?page=dataset&action=mount&vps='.$vps_id.'&return='.$return);
@@ -555,6 +565,12 @@ function mount_create_form() {
 		translate_mount_on_start_fail
 	);
 	$xtpl->table_td($params->on_start_fail->description);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(
+		_('<strong>OpenVZ VPS are restarted when a new mount is created!</strong>'),
+		false, false, 3
+	);
 	$xtpl->table_tr();
 
 	$xtpl->form_out(_('Save'));
