@@ -1249,7 +1249,7 @@ if (isset($show_info) && $show_info) {
 	dataset_list('hypervisor', $vps->dataset_id);
 
 	// Mounts
-	mount_list($vps->id);
+	mount_list($vps);
 
 		$os_templates = list_templates($vps);
 

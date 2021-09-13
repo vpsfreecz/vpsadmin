@@ -407,7 +407,7 @@ function dataset_snapshot_list($datasets, $vps = null) {
 	}
 }
 
-function mount_list($vps_id) {
+function mount_list($vps) {
 	global $xtpl, $api;
 
 	$xtpl->table_title(_('Mounts'));
@@ -422,7 +422,7 @@ function mount_list($vps_id) {
 	$xtpl->table_add_category('');
 	$xtpl->table_add_category('');
 
-	$mounts = $api->vps($vps_id)->mount->list();
+	$mounts = $vps->mount->list();
 	$return = urlencode($_SERVER['REQUEST_URI']);
 
 	foreach ($mounts as $m) {
@@ -468,7 +468,7 @@ function mount_list($vps_id) {
 		$xtpl->table_td($m->expiration_date ? tolocaltz($m->expiration_date, 'Y-m-d H:i') : '---');
 		if ($m->master_enabled) {
 			$xtpl->table_td(
-				'<a href="?page=dataset&action=mount_toggle&vps='.$vps_id.'&id='.$m->id.'&do='.($m->enabled ? 0 : 1).'&return='.$return.'&t='.csrf_token().'">'.
+				'<a href="?page=dataset&action=mount_toggle&vps='.$vps->id.'&id='.$m->id.'&do='.($m->enabled ? 0 : 1).'&return='.$return.'&t='.csrf_token().'">'.
 				($m->enabled ? _('Disable') : _('Enable')).
 				'</a>'
 			);
@@ -477,8 +477,8 @@ function mount_list($vps_id) {
 			$xtpl->table_td(_('Disabled by admin'));
 		}
 
-		$xtpl->table_td('<a href="?page=dataset&action=mount_edit&vps='.$vps_id.'&id='.$m->id.'&return='.$return.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-		$xtpl->table_td('<a href="?page=dataset&action=mount_destroy&vps='.$vps_id.'&id='.$m->id.'&return='.$return.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
+		$xtpl->table_td('<a href="?page=dataset&action=mount_edit&vps='.$vps->id.'&id='.$m->id.'&return='.$return.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
+		$xtpl->table_td('<a href="?page=dataset&action=mount_destroy&vps='.$vps->id.'&id='.$m->id.'&return='.$return.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
 
 		$color = false;
 
@@ -492,7 +492,7 @@ function mount_list($vps_id) {
 	}
 
 	$xtpl->table_td(
-		'<a href="?page=dataset&action=mount&vps='.$vps_id.'&return='.$return.'">'._('Create a new mount').'</a>',
+		'<a href="?page=dataset&action=mount&vps='.$vps->id.'&return='.$return.'">'._('Create a new mount').'</a>',
 		false,
 		true, // right
 		9 // colspan
@@ -511,7 +511,7 @@ function mount_list($vps_id) {
 
 	$xtpl->table_out();
 
-	$xtpl->sbar_add(_('Create mount'), '?page=dataset&action=mount&vps='.$vps_id.'&return='.$return);
+	$xtpl->sbar_add(_('Create mount'), '?page=dataset&action=mount&vps='.$vps->id.'&return='.$return);
 }
 
 function mount_create_form() {
