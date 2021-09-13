@@ -1,3 +1,5 @@
+require 'pathname'
+
 module VpsAdmind
   # Mounter takes care of mounting and umounting local/remote
   # datasets/snapshots to VPS.
@@ -25,7 +27,7 @@ module VpsAdmind
     end
 
     def mount_cmd(mnt)
-      dst = "#{ve_root}/#{mnt['dst']}"
+      dst = sanitize_dst(ve_root, mnt['dst'])
 
       cmd = case mnt['type']
         when 'dataset_local'
@@ -117,7 +119,7 @@ module VpsAdmind
     end
 
     def umount_cmd(mnt)
-      dst = "#{ve_root}/#{mnt['dst']}"
+      dst = sanitize_dst(ve_root, mnt['dst'])
       [dst, "#{$CFG.get(:bin, :umount)} #{mnt['umount_opts']} #{dst}"]
     end
 
@@ -144,6 +146,22 @@ module VpsAdmind
     rescue Errno::EEXIST
       # it means, that the folder is mounted but was removed on the other end
       syscmd("#{$CFG.get(:bin, :umount)} -f #{dst}")
+    end
+
+    def sanitize_dst(root, dst)
+      path = File.join(root, dst)
+      tmp = []
+
+      Pathname.new(dst).each_filename do |fn|
+        tmp << fn
+        abs_path = File.join(root, *tmp)
+
+        if File.symlink?(abs_path)
+          fail "VPS #{@vps_id}: refusing to touch '#{dst}': '#{abs_path}' is a symlink"
+        end
+      end
+
+      path
     end
 
     def fail_mount(opts)
