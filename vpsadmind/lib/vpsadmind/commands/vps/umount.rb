@@ -6,26 +6,17 @@ module VpsAdmind
     def exec
       return ok unless status[:running]
 
-      mounter = VpsAdmind::Mounter.new(@vps_id)
-      @umounted_mounts = []
-
-      @mounts.each do |m|
-        VpsAdmind::DelayedMounter.unregister_vps_mount(@vps_id, m['id'])
-
-        mounter.umount(m)
-        @umounted_mounts << m
-      end
-
+      @vps = Vps.new(@vps_id)
+      @vps.restart
       ok
     end
 
     def rollback
-      mounts = @umounted_mounts || @mounts
+      return ok unless status[:running]
 
-      call_cmd(Commands::Vps::Mount, {
-          :vps_id => @vps_id,
-          :mounts => mounts.reverse
-      })
+      @vps = Vps.new(@vps_id)
+      @vps.restart
+      ok
     end
   end
 end
