@@ -633,6 +633,12 @@ function mount_snapshot_form() {
 	api_param_to_form_pure('mountpoint', $params->mountpoint, '');
 	$xtpl->table_tr();
 
+	$xtpl->table_td(
+		_('<strong>OpenVZ VPS are restarted when a new mount is created!</strong>'),
+		false, false, 3
+	);
+	$xtpl->table_tr();
+
 	$xtpl->form_out(_('Save'));
 
 	$xtpl->sbar_add(_("Back"), $_GET['return'] ? $_GET['return'] : $_POST['return']);
