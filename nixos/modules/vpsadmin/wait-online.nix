@@ -7,6 +7,7 @@ let
 
   waitForApi = pkgs.writeScript "${waitForApiService}.sh" ''
     #!${pkgs.bash}/bin/bash
+    echo -n api-wait-online > /proc/$$/comm
     while true ; do
       ${pkgs.curl}/bin/curl "${cfg.api.url}" >/dev/null 2>&1 && exit 0
       sleep 1
