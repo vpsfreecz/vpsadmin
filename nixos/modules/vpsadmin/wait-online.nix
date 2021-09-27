@@ -9,6 +9,7 @@ let
     #!${pkgs.bash}/bin/bash
     while true ; do
       ${pkgs.curl}/bin/curl "${cfg.api.url}" >/dev/null 2>&1 && exit 0
+      sleep 1
     done
   '';
 in {
