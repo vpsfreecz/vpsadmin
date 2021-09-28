@@ -9,7 +9,7 @@ in {
         Enable frontend to the vpsAdmin API using nginx
 
         The frontend is a public server, usually with SSL, which serves
-        as a reverse proxy to haproxy. See <option>vpsadmin.haproxy.api</option>.
+        as a reverse proxy to HAProxy. See <option>vpsadmin.haproxy.api</option>.
 
         To enable the SSL or to set any other nginx settings, access the nginx
         virtual host using its options,
@@ -41,14 +41,14 @@ in {
         host = mkOption {
           type = types.str;
           description = ''
-            Hostname or IP address of the backend, usually a haproxy instance
+            Hostname or IP address of the backend, usually a HAProxy instance
           '';
         };
 
         port = mkOption {
           type = types.int;
           description = ''
-            Port number of the backend, usually a haproxy instance
+            Port number of the backend, usually a HAProxy instance
           '';
         };
       };

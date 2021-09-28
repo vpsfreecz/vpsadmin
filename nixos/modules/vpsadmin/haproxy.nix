@@ -28,7 +28,7 @@ let
     { config, ... }:
     {
       options = {
-        enable = mkEnableOption "Enable haproxy for the application";
+        enable = mkEnableOption "Enable HAProxy for the application";
 
         frontend = {
           address = mkOption {
@@ -84,13 +84,13 @@ let
 in {
   options = {
     vpsadmin.haproxy = {
-      enable = mkEnableOption "Enable haproxy for vpsAdmin";
+      enable = mkEnableOption "Enable HAProxy for vpsAdmin";
 
       api = mkOption {
         type = types.submodule appOpts;
         default = {};
         description = ''
-          haproxy for vpsAdmin API
+          HAProxy for vpsAdmin API
         '';
       };
 
@@ -98,7 +98,7 @@ in {
         type = types.submodule appOpts;
         default = {};
         description = ''
-          haproxy for vpsAdmin web UI
+          HAProxy for vpsAdmin web UI
         '';
       };
     };
