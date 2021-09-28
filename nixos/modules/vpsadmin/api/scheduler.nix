@@ -1,12 +1,12 @@
 { config, pkgs, lib, ... }:
 with lib;
 let
-  cfg = config.vpsadmin.api;
+  cfg = config.vpsadmin.api.backend;
 
   bundle = "${cfg.package}/ruby-env/bin/bundle";
 in {
   options = {
-    vpsadmin.api = {
+    vpsadmin.api.backend = {
       scheduler = {
         enable = mkEnableOption "Enable vpsAdmin scheduler";
       };
