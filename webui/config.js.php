@@ -1,7 +1,8 @@
 <?php
+include '/etc/vpsadmin/config.php';
+
 session_start();
 
-include '/etc/vpsadmin/config.php';
 include WWW_ROOT.'lib/version.lib.php';
 include WWW_ROOT.'lib/members.lib.php';
 include WWW_ROOT.'lib/functions.lib.php';
