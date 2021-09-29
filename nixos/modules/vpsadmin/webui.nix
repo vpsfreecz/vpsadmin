@@ -80,6 +80,27 @@ in {
       extraConfig = mkOption {
         type = types.lines;
         default = "";
+        description = ''
+          Lines appended to /etc/vpsadmin/config.php
+
+          Note that in order to run multiple instances of the web UI, you need
+          to configure access to redis for session handling. Since connecting
+          to redis requires a password, it cannot be done from Nix configuration.
+          Instead, use this option to require a hidden file which configures
+          access to redis, e.g.
+
+          <literal>
+          require "/secret/vpsadmin-webui.config.php";
+          </literal>
+
+          and the file would contain the following:
+
+          <literal>
+          <?php
+          ini_set("session.save_handler", "redis");
+          ini_set("session.save_path", "tcp://1.2.3.4:6379?auth=your-password");
+          </literal>
+        '';
       };
     };
   };
@@ -109,6 +130,11 @@ in {
         "catch_workers_output" = true;
       };
       phpEnv."PATH" = lib.makeBinPath [ pkgs.php ];
+      phpOptions = ''
+        extension=${pkgs.phpExtensions.json}/lib/php/extensions/json.so
+        extension=${pkgs.phpExtensions.session}/lib/php/extensions/session.so
+        extension=${pkgs.phpExtensions.redis}/lib/php/extensions/redis.so
+      '';
     };
 
     services.nginx = {

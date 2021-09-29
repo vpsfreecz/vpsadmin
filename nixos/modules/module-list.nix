@@ -10,6 +10,7 @@
     ./vpsadmin/haproxy.nix
     ./vpsadmin/main.nix
     ./vpsadmin/database.nix
+    ./vpsadmin/redis.nix
     ./vpsadmin/wait-online.nix
     ./vpsadmin/webui.nix
   ];
