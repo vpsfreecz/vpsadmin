@@ -3,24 +3,27 @@ with lib;
 let
   cfg = config.vpsadmin.frontend;
 
-  anyApp = cfg.api.enable || cfg.webui.enable;
+  appOpt = app:
+    mkOption {
+      type = types.attrsOf (types.submodule (appModule app));
+      default = {};
+      description = ''
+        Frontends to the vpsAdmin ${app} using nginx
 
-  appOpts =
+        A frontend is a public server, usually with SSL, which serves
+        as a reverse proxy to HAProxy. See <option>vpsadmin.haproxy.${app}</option>.
+
+        To enable the SSL or to set any other nginx settings, access the nginx
+        virtual host using its options,
+        i.e. <option>services.nginx.virtualHost</option>.
+      '';
+    };
+
+  appModule =
     app:
     { config, ... }:
     {
       options = {
-        enable = mkEnableOption ''
-          Enable frontend to the vpsAdmin ${app} using nginx
-
-          The frontend is a public server, usually with SSL, which serves
-          as a reverse proxy to HAProxy. See <option>vpsadmin.haproxy.${app}</option>.
-
-          To enable the SSL or to set any other nginx settings, access the nginx
-          virtual host using its options,
-          i.e. <option>services.nginx.virtualHost</option>.
-        '';
-
         domain = mkOption {
           type = types.nullOr types.str;
           default = null;
@@ -42,7 +45,7 @@ let
             else if !isNull config.domain then
               config.domain
             else
-              abort "unable to determine virtual host name";
+              abort "unable to determine virtual host name: set domain or virtualHost";
         };
 
         backend = {
@@ -63,48 +66,31 @@ let
       };
     };
 
-  appConfig = app:
-    let
-      appCfg = cfg.${app};
-    in {
-      assertions = [
-        {
-          assertion = (!isNull appCfg.domain) || (!isNull appCfg.virtualHost);
-          message = "Set vpsadmin.frontend.${app}.domain or virtualHost";
-        }
-      ];
+  appVirtualHosts = app: name: instance: nameValuePair instance.virtualHost {
+    serverName = mkIf (!isNull instance.domain) instance.domain;
+    locations."/".proxyPass = "http://${instance.backend.host}:${toString instance.backend.port}";
+  };
 
-      services.nginx.virtualHosts.${appCfg.virtualHost} = {
-        serverName = mkIf (!isNull appCfg.domain) appCfg.domain;
-        locations."/".proxyPass = "http://${appCfg.backend.host}:${toString appCfg.backend.port}";
-      };
+  appConfigs = app:
+    let
+      instances = cfg.${app};
+    in {
+      services.nginx.virtualHosts = mapAttrs' (appVirtualHosts app) instances;
     };
+
 in {
   options = {
     vpsadmin.frontend = {
       enable = mkEnableOption "Enable vpsAdmin frontend reverse proxy";
 
-      api = mkOption {
-        type = types.submodule (appOpts "api");
-        default = {};
-      };
+      api = appOpt "api";
 
-      webui = mkOption {
-        type = types.submodule (appOpts "webui");
-        default = {};
-      };
+      webui = appOpt "webui";
     };
   };
 
   config = mkIf cfg.enable (mkMerge [
     {
-      assertions = [
-        {
-          assertion = anyApp;
-          message = "Enable at least one component in vpsadmin.frontend";
-        }
-      ];
-
       networking = {
         firewall.allowedTCPPorts = [
           80 443
@@ -121,8 +107,8 @@ in {
       };
     }
 
-    (mkIf cfg.api.enable (appConfig "api"))
+    (appConfigs "api")
 
-    (mkIf cfg.webui.enable (appConfig "webui"))
+    (appConfigs "webui")
   ]);
 }
