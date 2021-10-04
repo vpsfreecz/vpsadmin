@@ -83,6 +83,19 @@ let
   appMaintenances = {
     api = pkgs.writeText "maintenance.json" ''{"status":false,"message":"Server under maintenance."}'';
 
+    console-router = pkgs.writeText "maintenance.html" ''
+      <!DOCTYPE html>
+      <html>
+      <head>
+      <title>Maintenance</title>
+      </head>
+      <body>
+      <h1>Ongoing maintenance</h1>
+      <p>The server is under maintenance. Please try again later.</p>
+      </body>
+      </html>
+    '';
+
     webui = pkgs.writeText "maintenance.html" ''
       <!DOCTYPE html>
       <html>
@@ -138,6 +151,8 @@ in {
 
       api = appOpt "api";
 
+      console-router = appOpt "console-router";
+
       webui = appOpt "webui";
     };
   };
@@ -165,6 +180,8 @@ in {
     }
 
     (appConfigs "api")
+
+    (appConfigs "console-router")
 
     (appConfigs "webui")
   ]);
