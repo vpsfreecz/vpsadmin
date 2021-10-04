@@ -72,6 +72,16 @@ let
     ${concatStringsSep "\n" (backendsConfig cfg.api.backends)}
   '';
 
+  consoleRouterConfig = ''
+    frontend console-router
+      bind ${cfg.console-router.frontend.address}:${toString cfg.console-router.frontend.port}
+      default_backend app-console-router
+
+    backend app-console-router
+      balance hdr(X-Forwarded-For)
+    ${concatStringsSep "\n" (backendsConfig cfg.console-router.backends)}
+  '';
+
   webuiConfig = ''
     frontend webui
       bind ${cfg.webui.frontend.address}:${toString cfg.webui.frontend.port}
@@ -94,6 +104,14 @@ in {
         '';
       };
 
+      console-router = mkOption {
+        type = types.submodule appOpts;
+        default = {};
+        description = ''
+          HAProxy for vpsAdmin console router
+        '';
+      };
+
       webui = mkOption {
         type = types.submodule appOpts;
         default = {};
@@ -107,8 +125,8 @@ in {
   config = mkIf cfg.enable {
     assertions = [
       {
-        assertion = cfg.api.enable || cfg.webui.enable;
-        message = "Enable vpsadmin.haproxy.api or vpsadmin.haproxy.webui";
+        assertion = cfg.api.enable || cfg.console-router.enable || cfg.webui.enable;
+        message = "Enable at least one of vpsadmin.haproxy.api, console-router or webui";
       }
     ];
 
@@ -138,6 +156,7 @@ in {
           maxconn                 3000
 
         ${optionalString cfg.api.enable apiConfig}
+        ${optionalString cfg.console-router.enable consoleRouterConfig}
         ${optionalString cfg.webui.enable webuiConfig}
       '';
     };
