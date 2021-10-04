@@ -48,6 +48,20 @@ let
               abort "unable to determine virtual host name: set domain or virtualHost";
         };
 
+        maintenance = {
+          enable = mkEnableOption ''
+            When enabled, the server responds with HTTP status 503 to all requests
+          '';
+
+          file = mkOption {
+            type = types.path;
+            default = appMaintenances.${app};
+            description = ''
+              File that is served when the maintenance is enabled
+            '';
+          };
+        };
+
         backend = {
           host = mkOption {
             type = types.str;
@@ -66,9 +80,48 @@ let
       };
     };
 
+  appMaintenances = {
+    api = pkgs.writeText "maintenance.json" ''{"status":false,"message":"Server under maintenance."}'';
+
+    webui = pkgs.writeText "maintenance.html" ''
+      <!DOCTYPE html>
+      <html>
+      <head>
+      <title>Maintenance</title>
+      </head>
+      <body>
+      <h1>Ongoing maintenance</h1>
+      <p>The server is under maintenance. Please try again later.</p>
+      </body>
+      </html>
+    '';
+  };
+
   appVirtualHosts = app: name: instance: nameValuePair instance.virtualHost {
     serverName = mkIf (!isNull instance.domain) instance.domain;
-    locations."/".proxyPass = "http://${instance.backend.host}:${toString instance.backend.port}";
+
+    locations = {
+      "/" = {
+        proxyPass = mkIf (!instance.maintenance.enable)
+          "http://${instance.backend.host}:${toString instance.backend.port}";
+
+        return = mkIf instance.maintenance.enable "503";
+      };
+
+      "@maintenance" = {
+        root = pkgs.runCommand "${app}-maintenance-root" {} ''
+          mkdir $out
+          ln -s ${instance.maintenance.file} $out/${instance.maintenance.file.name}
+        '';
+        extraConfig = ''
+          rewrite ^(.*)$ /${instance.maintenance.file.name} break;
+        '';
+      };
+    };
+
+    extraConfig = ''
+      error_page 503 @maintenance;
+    '';
   };
 
   appConfigs = app:
@@ -104,6 +157,10 @@ in {
         recommendedOptimisation = mkDefault true;
         recommendedProxySettings = mkDefault true;
         recommendedTlsSettings = mkDefault true;
+
+        appendHttpConfig = ''
+          server_names_hash_bucket_size 64;
+        '';
       };
     }
 
