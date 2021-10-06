@@ -115,48 +115,33 @@ let
     webui = baseModule app;
   }.${app};
 
-  appMaintenances = {
-    api = pkgs.writeText "maintenance.json" ''{"status":false,"message":"Server under maintenance."}'';
+  appMaintenances =
+    let
+      html = pkgs.writeText "maintenance.html" ''
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <title>Maintenance</title>
+        </head>
+        <body>
+        <h1>Ongoing maintenance</h1>
+        <p>The server is under maintenance. Please try again later.</p>
+        </body>
+        </html>
+      '';
 
-    console-router = pkgs.writeText "maintenance.html" ''
-      <!DOCTYPE html>
-      <html>
-      <head>
-      <title>Maintenance</title>
-      </head>
-      <body>
-      <h1>Ongoing maintenance</h1>
-      <p>The server is under maintenance. Please try again later.</p>
-      </body>
-      </html>
-    '';
+      json = pkgs.writeText
+        "maintenance.json"
+        ''{"status":false,"message":"Server under maintenance."}'';
+    in {
+      api = json;
 
-    download-mounter = pkgs.writeText "maintenance.html" ''
-      <!DOCTYPE html>
-      <html>
-      <head>
-      <title>Maintenance</title>
-      </head>
-      <body>
-      <h1>Ongoing maintenance</h1>
-      <p>The server is under maintenance. Please try again later.</p>
-      </body>
-      </html>
-    '';
+      console-router = html;
 
-    webui = pkgs.writeText "maintenance.html" ''
-      <!DOCTYPE html>
-      <html>
-      <head>
-      <title>Maintenance</title>
-      </head>
-      <body>
-      <h1>Ongoing maintenance</h1>
-      <p>The server is under maintenance. Please try again later.</p>
-      </body>
-      </html>
-    '';
-  };
+      download-mounter = html;
+
+      webui = html;
+    };
 
   upstreamName = app: name: "${app}_${name}";
 
