@@ -239,6 +239,14 @@ in {
     vpsadmin.frontend = {
       enable = mkEnableOption "Enable vpsAdmin frontend reverse proxy";
 
+      openFirewall = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Open ports 80 and 443 in the firewall
+        '';
+      };
+
       api = appOpt "api";
 
       console-router = appOpt "console-router";
@@ -252,7 +260,7 @@ in {
   config = mkIf cfg.enable (mkMerge [
     {
       networking = {
-        firewall.allowedTCPPorts = [
+        firewall.allowedTCPPorts = mkIf cfg.openFirewall [
           80 443
         ];
       };
