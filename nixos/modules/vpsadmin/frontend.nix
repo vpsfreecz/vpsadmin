@@ -72,6 +72,14 @@ let
           Port number of the backend, usually a HAProxy instance
         '';
       };
+
+      address = mkOption {
+        type = types.str;
+        default = "${config.backend.host}:${toString config.backend.port}";
+        description = ''
+          Upstream address string
+        '';
+      };
     };
   };
 
@@ -150,13 +158,33 @@ let
     '';
   };
 
+  upstreamName = app: name: "${app}_${name}";
+
+  baseUpstreams = app: instances: mapAttrs' (name: instance:
+    nameValuePair (upstreamName app name) {
+      servers = {
+        "${instance.backend.address}" = {};
+      };
+    }
+  ) instances;
+
+  appUpstreams = app: instances: {
+    api = baseUpstreams app instances;
+
+    console-router = baseUpstreams app instances;
+
+    download-mounter = {};
+
+    webui = baseUpstreams app instances;
+  }.${app};
+
   baseVirtualHosts = app: name: instance: nameValuePair instance.virtualHost {
     serverName = mkIf (!isNull instance.domain) instance.domain;
 
     locations = {
       "/" = {
         proxyPass = mkIf (!instance.maintenance.enable)
-          "http://${instance.backend.host}:${toString instance.backend.port}";
+          "http://${upstreamName app name}";
 
         return = mkIf instance.maintenance.enable "503";
       };
@@ -214,7 +242,11 @@ let
     in {
       assertions = appAssertions app instances;
 
-      services.nginx.virtualHosts = mapAttrs' (appVirtualHosts app) instances;
+      services.nginx = {
+        upstreams = appUpstreams app instances;
+
+        virtualHosts = mapAttrs' (appVirtualHosts app) instances;
+      };
     };
 
 in {
