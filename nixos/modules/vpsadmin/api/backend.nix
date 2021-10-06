@@ -32,6 +32,8 @@ let
     wait: ${toString serverWait}
     tag: api
   '';
+
+  forAllPorts = fn: genList (i: fn (cfg.port + i)) cfg.servers;
 in {
   options = {
     vpsadmin.api.backend = {
@@ -93,6 +95,22 @@ in {
         type = types.path;
         default = <vpsadmin/api/config>;
         description = "Directory with vpsAdmin configuration files";
+      };
+
+      allowedIPv4Ranges = mkOption {
+        type = types.listOf types.str;
+        default = [];
+        description = ''
+          List of IPv4 ranges to be allowed access to the servers within the firewall
+        '';
+      };
+
+      allowedIPv6Ranges = mkOption {
+        type = types.listOf types.str;
+        default = [];
+        description = ''
+          List of IPv6 ranges to be allowed access to the servers within the firewall
+        '';
       };
 
       database = {
@@ -181,6 +199,16 @@ in {
         };
       };
     };
+
+    networking.firewall.extraCommands = concatStringsSep "\n" (flatten (
+      (map (ip: forAllPorts (port: ''
+        iptables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString port} -j nixos-fw-accept
+      '')) cfg.allowedIPv4Ranges)
+      ++
+      (map (ip: forAllPorts (port: ''
+        ip6tables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString port} -j nixos-fw-accept
+      '')) cfg.allowedIPv6Ranges)
+    ));
 
     systemd.tmpfiles.rules = [
       "d '${cfg.stateDir}' 0750 ${cfg.user} ${cfg.group} - -"

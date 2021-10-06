@@ -102,6 +102,22 @@ in {
           </literal>
         '';
       };
+
+      allowedIPv4Ranges = mkOption {
+        type = types.listOf types.str;
+        default = [];
+        description = ''
+          List of IPv4 ranges to be allowed access to the server within the firewall
+        '';
+      };
+
+      allowedIPv6Ranges = mkOption {
+        type = types.listOf types.str;
+        default = [];
+        description = ''
+          List of IPv6 ranges to be allowed access to the server within the firewall
+        '';
+      };
     };
   };
 
@@ -136,6 +152,16 @@ in {
         extension=${pkgs.phpExtensions.redis}/lib/php/extensions/redis.so
       '';
     };
+
+    networking.firewall.extraCommands = concatStringsSep "\n" (
+      (map (ip: ''
+        iptables -A nixos-fw -p tcp -m tcp -s ${ip} --dport 80 -j nixos-fw-accept
+      '') cfg.allowedIPv4Ranges)
+      ++
+      (map (ip: ''
+        ip6tables -A nixos-fw -p tcp -m tcp -s ${ip} --dport 80 -j nixos-fw-accept
+      '') cfg.allowedIPv6Ranges)
+    );
 
     services.nginx = {
       enable = true;

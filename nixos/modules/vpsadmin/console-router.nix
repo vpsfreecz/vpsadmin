@@ -71,6 +71,22 @@ in {
         description = "The state directory";
       };
 
+      allowedIPv4Ranges = mkOption {
+        type = types.listOf types.str;
+        default = [];
+        description = ''
+          List of IPv4 ranges to be allowed access to the server within the firewall
+        '';
+      };
+
+      allowedIPv6Ranges = mkOption {
+        type = types.listOf types.str;
+        default = [];
+        description = ''
+          List of IPv6 ranges to be allowed access to the server within the firewall
+        '';
+      };
+
       database = {
         host = mkOption {
           type = types.str;
@@ -133,6 +149,16 @@ in {
       enableOverlay = true;
       enableStateDir = true;
     };
+
+    networking.firewall.extraCommands = concatStringsSep "\n" (
+      (map (ip: ''
+        iptables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString cfg.port} -j nixos-fw-accept
+      '') cfg.allowedIPv4Ranges)
+      ++
+      (map (ip: ''
+        ip6tables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString cfg.port} -j nixos-fw-accept
+      '') cfg.allowedIPv6Ranges)
+    );
 
     systemd.tmpfiles.rules = [
       "d '${cfg.stateDir}' 0750 ${cfg.user} ${cfg.group} - -"
