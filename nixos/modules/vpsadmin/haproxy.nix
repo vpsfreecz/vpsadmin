@@ -46,6 +46,14 @@ let
               Port to access the frontend
             '';
           };
+
+          bind = mkOption {
+            type = types.str;
+            default = "${config.address}:${toString config.port}";
+            description = ''
+              HAProxy bind directive
+            '';
+          };
         };
 
         backends = mkOption {
@@ -64,7 +72,7 @@ let
 
   apiConfig = ''
     frontend api
-      bind ${cfg.api.frontend.address}:${toString cfg.api.frontend.port}
+      bind ${cfg.api.frontend.bind}
       default_backend app-api
 
     backend app-api
@@ -74,7 +82,7 @@ let
 
   consoleRouterConfig = ''
     frontend console-router
-      bind ${cfg.console-router.frontend.address}:${toString cfg.console-router.frontend.port}
+      bind ${cfg.console-router.frontend.bind}
       default_backend app-console-router
 
     backend app-console-router
@@ -84,7 +92,7 @@ let
 
   webuiConfig = ''
     frontend webui
-      bind ${cfg.webui.frontend.address}:${toString cfg.webui.frontend.port}
+      bind ${cfg.webui.frontend.bind}
       default_backend app-webui
 
     backend app-webui
