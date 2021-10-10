@@ -1,7 +1,7 @@
 { config, pkgs, lib, ... }:
 with lib;
 let
-  cfg = config.vpsadmin.api.backend;
+  cfg = config.vpsadmin.api;
 
   bundle = "${cfg.package}/ruby-env/bin/bundle";
 
@@ -97,7 +97,7 @@ let
   }) activeRakeTimers;
 in {
   options = {
-    vpsadmin.api.backend.rake = {
+    vpsadmin.api.rake = {
       enableDefaultTasks = mkOption {
         type = types.bool;
         default = true;
@@ -118,7 +118,7 @@ in {
 
   config = mkMerge [
     (mkIf (cfg.enable && cfg.rake.enableDefaultTasks) {
-      vpsadmin.api.backend.rake.tasks = {
+      vpsadmin.api.rake.tasks = {
         auth-tokens = {
           rake = [ "vpsadmin:auth:close_expired" "EXECUTE=yes" ];
           timer.enable = true;

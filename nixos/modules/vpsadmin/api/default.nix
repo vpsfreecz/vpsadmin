@@ -2,7 +2,7 @@
 with lib;
 let
   vpsadminCfg = config.vpsadmin;
-  cfg = config.vpsadmin.api.backend;
+  cfg = config.vpsadmin.api;
 
   bundle = "${cfg.package}/ruby-env/bin/bundle";
 
@@ -36,7 +36,7 @@ let
   forAllPorts = fn: genList (i: fn (cfg.port + i)) cfg.servers;
 in {
   options = {
-    vpsadmin.api.backend = {
+    vpsadmin.api = {
       enable = mkEnableOption "Enable vpsAdmin API server";
 
       package = mkOption {
@@ -181,7 +181,7 @@ in {
       enableOverlay = true;
       enableStateDir = true;
 
-      api.backend.rake.tasks = {
+      api.rake.tasks = {
         migrate-db = {
           description = "Run database migrations";
           rake = [ "db:migrate" ];
