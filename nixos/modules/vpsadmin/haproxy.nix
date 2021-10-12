@@ -48,11 +48,15 @@ let
           };
 
           bind = mkOption {
-            type = types.str;
-            default = "${config.address}:${toString config.port}";
+            type = types.nullOr (types.listOf types.str);
+            default = null;
             description = ''
               HAProxy bind directive
             '';
+            apply = v:
+              if isNull v then
+                [ "${config.address}:${toString config.port}" ]
+              else v;
           };
         };
 
@@ -65,6 +69,23 @@ let
       };
     };
 
+  allAppAssertions =
+    (appAssertions "api")
+    ++
+    (appAssertions "console-router")
+    ++
+    (appAssertions "webui");
+
+  appAssertions = app:
+    let
+      appCfg = cfg.${app};
+    in [
+      {
+        assertion = appCfg.enable -> (appCfg.frontend.bind != []);
+        message = "Add at least one item to vpsadmin.haproxy.${app}.frontend.bind";
+      }
+    ];
+
   backendsConfig = backends:
     imap0 (i: backend:
       "  server app${toString i} ${backend.host}:${toString backend.port} check"
@@ -72,7 +93,7 @@ let
 
   apiConfig = ''
     frontend api
-      bind ${cfg.api.frontend.bind}
+      ${concatMapStringsSep "\n" (v: "bind ${v}") cfg.api.frontend.bind}
       default_backend app-api
 
     backend app-api
@@ -82,7 +103,7 @@ let
 
   consoleRouterConfig = ''
     frontend console-router
-      bind ${cfg.console-router.frontend.bind}
+      ${concatMapStringsSep "\n" (v: "bind ${v}") cfg.console-router.frontend.bind}
       default_backend app-console-router
 
     backend app-console-router
@@ -92,7 +113,7 @@ let
 
   webuiConfig = ''
     frontend webui
-      bind ${cfg.webui.frontend.bind}
+      ${concatMapStringsSep "\n" (v: "bind ${v}") cfg.webui.frontend.bind}
       default_backend app-webui
 
     backend app-webui
@@ -136,7 +157,7 @@ in {
         assertion = cfg.api.enable || cfg.console-router.enable || cfg.webui.enable;
         message = "Enable at least one of vpsadmin.haproxy.api, console-router or webui";
       }
-    ];
+    ] ++ allAppAssertions;
 
     services.haproxy = {
       enable = true;
