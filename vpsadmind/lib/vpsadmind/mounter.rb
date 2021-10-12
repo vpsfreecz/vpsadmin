@@ -28,22 +28,19 @@ module VpsAdmind
 
     def mount_cmd(mnt)
       dst = sanitize_dst(ve_root, mnt['dst'])
+      src_check = mount_src_check(mnt)
 
       cmd = case mnt['type']
         when 'dataset_local'
-          src_check = File.join(mnt['pool_fs'], mnt['dataset_name'])
           "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} /#{mnt['pool_fs']}/#{mnt['dataset_name']}/private #{dst}"
 
         when 'dataset_remote'
-          src_check = "#{mnt['src_node_addr']}:/#{mnt['pool_fs']}/#{mnt['dataset_name']}/private/"
           "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} #{src_check} #{dst}"
 
         when 'snapshot_local'
-          src_check = pool_mounted_snapshot(mnt['pool_fs'], mnt['clone_name'])
           "#{$CFG.get(:bin, :mount)} --bind /#{pool_mounted_snapshot(mnt['pool_fs'], mnt['clone_name'])}/private #{dst}"
 
         when 'snapshot_remote'
-          src_check = "#{mnt['src_node_addr']}:/#{pool_mounted_snapshot(mnt['pool_fs'], mnt['clone_name'])}/private"
           "#{$CFG.get(:bin, :mount)} #{mnt['mount_opts']} -o#{mnt['mode']} #{src_check} #{dst}"
 
         else
@@ -51,6 +48,25 @@ module VpsAdmind
       end
 
       [src_check, dst, cmd]
+    end
+
+    def mount_src_check(mnt)
+      case mnt['type']
+      when 'dataset_local'
+        File.join(mnt['pool_fs'], mnt['dataset_name'])
+
+      when 'dataset_remote'
+        "#{mnt['src_node_addr']}:/#{mnt['pool_fs']}/#{mnt['dataset_name']}/private/"
+
+      when 'snapshot_local'
+        pool_mounted_snapshot(mnt['pool_fs'], mnt['clone_name'])
+
+      when 'snapshot_remote'
+        "#{mnt['src_node_addr']}:/#{pool_mounted_snapshot(mnt['pool_fs'], mnt['clone_name'])}/private"
+
+      else
+        fail "unknown mount type '#{mnt['type']}'"
+      end
     end
 
     def mount(opts, oneshot)
@@ -190,6 +206,9 @@ module VpsAdmind
           elsif mnt['type'] == 'snapshot_local' \
                 && cols[1].start_with?("/#{pool_mounted_snapshot(mnt['pool_fs'], mnt['clone_name'])}")
             # pass
+          elsif /^\/vz\/root\/(\d+)\// =~ cols[1] \
+                && check_vps_mounts_for($1, src_check)
+            # pass, mount of the same src to another VPS
           else
             log(:fatal, :mounter, "VPS #{@vps_id}: forbidden mount found at '#{cols[1]}'")
             syscmd("#{$CFG.get(:bin, :umount)} -fl \"#{cols[1]}\"")
@@ -201,6 +220,31 @@ module VpsAdmind
       unless found
         log(:warn, :mounter, "VPS #{@vps_id}: did not find mount of '#{src_check}'")
       end
+    end
+
+    def check_vps_mounts_for(vps_id, src_check)
+      mounts_file = File.join($CFG.get(:vpsadmin, :mounts_dir), "#{vps_id}.mounts")
+      return false unless File.exist?(mounts_file)
+
+      if ::Object.const_defined?(:MOUNTS)
+        ::Object.send(:remove_const, :MOUNTS)
+      end
+
+      begin
+        load mounts_file
+      rescue LoadError
+        return false
+      end
+
+      return false unless ::Object.const_defined?(:MOUNTS)
+
+      found = MOUNTS.detect do |m|
+        mount_src_check(m) == src_check
+      end
+
+      ::Object.send(:remove_const, :MOUNTS)
+
+      found ? true : false
     end
 
     def fail_mount(opts)
