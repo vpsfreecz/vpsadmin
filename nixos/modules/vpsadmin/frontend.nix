@@ -173,6 +173,10 @@ let
   baseVirtualHosts = app: name: instance: nameValuePair instance.virtualHost {
     serverName = mkIf (!isNull instance.domain) instance.domain;
 
+    forceSSL = mkIf (!isNull cfg.forceSSL) cfg.forceSSL;
+
+    enableACME = mkIf (!isNull cfg.enableACME) cfg.enableACME;
+
     locations = {
       "/" = {
         proxyPass = mkIf (!isUnderMaintenance app name instance)
@@ -198,6 +202,10 @@ let
   };
 
   downloadMounterVirtualHosts = app: name: instance: nameValuePair instance.virtualHost {
+    forceSSL = mkIf (!isNull cfg.forceSSL) cfg.forceSSL;
+
+    enableACME = mkIf (!isNull cfg.enableACME) cfg.enableACME;
+
     locations."/" = mkIf config.vpsadmin.download-mounter.enable {
       root = config.vpsadmin.download-mounter.mountpoint;
     };
@@ -269,6 +277,24 @@ in {
             List of frontend names to put under maintenance
           '';
         };
+      };
+
+      forceSSL = mkOption {
+        type = types.nullOr types.bool;
+        default = null;
+        description = ''
+          Shortcut to set <option>services.nginx.virtualHosts.&lt;name&gt;.forceSSL</option>
+          on all frontends
+        '';
+      };
+
+      enableACME = mkOption {
+        type = types.nullOr types.bool;
+        default = null;
+        description = ''
+          Shortcut to set <option>services.nginx.virtualHosts.&lt;name&gt;.enableACME</option>
+          on all frontends
+        '';
       };
 
       api = appOpt "api";
