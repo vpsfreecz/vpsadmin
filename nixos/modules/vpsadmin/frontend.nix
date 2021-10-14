@@ -143,6 +143,13 @@ let
       webui = html;
     };
 
+  isUnderMaintenance = app: name: instance:
+    instance.maintenance.enable || (
+      cfg.maintenance.enable && (
+        isNull cfg.maintenance.frontends || elem name cfg.maintenance.frontends
+      )
+    );
+
   upstreamName = app: name: "${app}_${name}";
 
   baseUpstreams = app: instances: mapAttrs' (name: instance:
@@ -168,10 +175,10 @@ let
 
     locations = {
       "/" = {
-        proxyPass = mkIf (!instance.maintenance.enable)
+        proxyPass = mkIf (!isUnderMaintenance app name instance)
           "http://${upstreamName app name}";
 
-        return = mkIf instance.maintenance.enable "503";
+        return = mkIf (isUnderMaintenance app name instance) "503";
       };
 
       "@maintenance" = {
@@ -245,6 +252,23 @@ in {
         description = ''
           Open ports 80 and 443 in the firewall
         '';
+      };
+
+      maintenance = {
+        enable = mkEnableOption ''
+          Enable maintenance on all frontends
+
+          Frontends can be further selected using option
+          <option>vpsadmin.frontend.maintenance.frontends</option>.
+        '';
+
+        frontends = mkOption {
+          type = types.nullOr (types.listOf types.str);
+          default = null;
+          description = ''
+            List of frontend names to put under maintenance
+          '';
+        };
       };
 
       api = appOpt "api";
