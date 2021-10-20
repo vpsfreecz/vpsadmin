@@ -315,5 +315,9 @@ in {
     users.groups = optionalAttrs (cfg.group == "vpsadmin-api") {
       ${cfg.group} = {};
     };
+
+    # ExceptionMailer extension in HaveAPI needs sendmail to send errors over
+    # mail
+    services.postfix.enable = true;
   };
 }
