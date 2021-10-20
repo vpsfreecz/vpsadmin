@@ -28,6 +28,8 @@ DAEMON="yes"
 STOP_TIMEOUT="300"
 OPTS=""
 
+export HOME="/opt/vpsadmin/vpsadmind"
+
 if [ -f /etc/sysconfig/vpsadmind ]; then
 	. /etc/sysconfig/vpsadmind
 fi
