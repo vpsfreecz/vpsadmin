@@ -40,6 +40,18 @@ module VpsAdmin::API::Tasks
 
         q.each do |instance|
           puts "  id=#{instance.send(obj.primary_key)}"
+
+          # TODO: this is a temporary relaxation of user suspension rules for
+          # users that exist for more than six months. They are suspended
+          # a month after the expiration date has passed.
+          if instance.is_a?(::User) \
+             && (instance.created_at.nil? || instance.created_at < (Time.now - 6*30*24*60*60)) \
+             && instance.expiration_date > (Time.now - 30*24*60*60) \
+             && instance.object_state == 'active'
+            puts "    we still love you"
+            next
+          end
+
           next if ENV['EXECUTE'] != 'yes'
 
           begin
