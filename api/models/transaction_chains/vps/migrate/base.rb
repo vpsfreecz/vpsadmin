@@ -109,6 +109,8 @@ module TransactionChains
     # the target node. Therefore we do not allow migrations of VPS with existing
     # snapshot clones.
     def check_snapshot_clone_mounts!
+      return if !@opts[:cleanup_data] && self.is_a?(TransactionChains::Vps::Migrate::VzToVz)
+
       ds_ids = [src_vps.dataset_in_pool.dataset_id] + src_vps.dataset_in_pool.dataset.descendant_ids
       dip_ids = ::DatasetInPool.where(
         dataset_id: ds_ids,
