@@ -26,7 +26,7 @@ module VpsAdmin::DownloadMounter
         puts "  is mounted"
 
       else
-        run("mount -t nfs -overs=3 #{src} #{@full_mnt}")
+        run("mount -t nfs -overs=3,nolock #{src} #{@full_mnt}")
       end
     end
 
