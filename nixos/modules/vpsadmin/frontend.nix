@@ -170,6 +170,12 @@ let
     webui = baseUpstreams app instances;
   }.${app};
 
+  accessLog = app: name:
+    if app == "console-router" then
+      "off"
+    else
+      "/var/log/nginx/vpsadmin-${app}-${name}.log";
+
   baseVirtualHosts = app: name: instance: nameValuePair instance.virtualHost {
     serverName = mkIf (!isNull instance.domain) instance.domain;
 
@@ -197,6 +203,7 @@ let
     };
 
     extraConfig = ''
+      access_log ${accessLog app name};
       error_page 503 @maintenance;
     '';
   };
@@ -224,6 +231,7 @@ let
     };
 
     extraConfig = ''
+      access_log ${accessLog app name};
       error_page 503 @maintenance;
     '';
   };
@@ -352,6 +360,24 @@ in {
         appendHttpConfig = ''
           server_names_hash_bucket_size 64;
         '';
+      };
+
+      services.logrotate = {
+        enable = true;
+        paths = {
+          nginx-vpsadmin = {
+            path = "/var/log/nginx/vpsadmin-*.log";
+            user = config.services.nginx.user;
+            group = config.services.nginx.group;
+            frequency = "monthly";
+            keep = 13;
+            extraConfig = ''
+              postrotate
+                [ ! -f /run/nginx/nginx.pid ] || kill -USR1 `cat /run/nginx/nginx.pid`
+              endscript
+            '';
+          };
+        };
       };
     }
 
