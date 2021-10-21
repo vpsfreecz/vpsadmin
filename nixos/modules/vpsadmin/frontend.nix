@@ -206,9 +206,26 @@ let
 
     enableACME = mkIf (!isNull cfg.enableACME) cfg.enableACME;
 
-    locations."/" = mkIf config.vpsadmin.download-mounter.enable {
-      root = config.vpsadmin.download-mounter.mountpoint;
+    locations = {
+      "/" = mkIf config.vpsadmin.download-mounter.enable {
+        root = config.vpsadmin.download-mounter.mountpoint;
+        return = mkIf (isUnderMaintenance app name instance) "503";
+      };
+
+      "@maintenance" = {
+        root = pkgs.runCommand "${app}-maintenance-root" {} ''
+          mkdir $out
+          ln -s ${instance.maintenance.file} $out/${instance.maintenance.file.name}
+        '';
+        extraConfig = ''
+          rewrite ^(.*)$ /${instance.maintenance.file.name} break;
+        '';
+      };
     };
+
+    extraConfig = ''
+      error_page 503 @maintenance;
+    '';
   };
 
   appVirtualHosts = app: {
