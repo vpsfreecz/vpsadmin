@@ -39,6 +39,15 @@ in {
         description = "The state directory";
       };
 
+      timeZone = mkOption {
+        type = types.str;
+        description = ''
+          Time zone, defaults to the system time zone
+
+          See https://www.php.net/manual/en/timezones.php
+        '';
+      };
+
       api.externalUrl = mkOption {
         type = types.str;
         description = ''
@@ -125,6 +134,7 @@ in {
     vpsadmin = {
       enableOverlay = true;
       enableStateDir = true;
+      webui.timeZone = mkDefault config.time.timeZone;
     };
 
     systemd.tmpfiles.rules = [
@@ -147,6 +157,7 @@ in {
       };
       phpEnv."PATH" = lib.makeBinPath (with pkgs; [ git php ]);
       phpOptions = ''
+        date.timezone = ${cfg.timeZone}
         extension=${pkgs.phpExtensions.json}/lib/php/extensions/json.so
         extension=${pkgs.phpExtensions.session}/lib/php/extensions/session.so
         extension=${pkgs.phpExtensions.redis}/lib/php/extensions/redis.so
