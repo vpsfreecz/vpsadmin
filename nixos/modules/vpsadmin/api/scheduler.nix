@@ -29,12 +29,16 @@ in {
       wantedBy = [ "multi-user.target" ];
       environment.RACK_ENV = "production";
       environment.SCHEDULER_SOCKET = "${cfg.stateDir}/scheduler.sock";
+      startLimitIntervalSec = 180;
+      startLimitBurst = 5;
       serviceConfig = {
         Type = "simple";
         User = cfg.user;
         Group = cfg.group;
         WorkingDirectory = "${cfg.package}/api";
         ExecStart="${bundle} exec bin/vpsadmin-scheduler";
+        Restart = "on-failure";
+        RestartSec = 30;
       };
     };
 

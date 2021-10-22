@@ -260,6 +260,8 @@ in {
       path = with pkgs; [
         mariadb
       ];
+      startLimitIntervalSec = 180;
+      startLimitBurst = 5;
       preStart = ''
         # Cleanup previous state
         rm -f "${cfg.stateDir}/plugins/"*
@@ -301,6 +303,8 @@ in {
           ExecStart="${thin} start";
           ExecStop = "${thin} stop";
           ExecReload = "${thin} restart";
+          Restart = "on-failure";
+          RestartSec = 30;
         };
     };
 
