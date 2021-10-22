@@ -145,7 +145,7 @@ in {
         "php_admin_flag[log_errors]" = true;
         "catch_workers_output" = true;
       };
-      phpEnv."PATH" = lib.makeBinPath [ pkgs.php ];
+      phpEnv."PATH" = lib.makeBinPath (with pkgs; [ git php ]);
       phpOptions = ''
         extension=${pkgs.phpExtensions.json}/lib/php/extensions/json.so
         extension=${pkgs.phpExtensions.session}/lib/php/extensions/session.so
