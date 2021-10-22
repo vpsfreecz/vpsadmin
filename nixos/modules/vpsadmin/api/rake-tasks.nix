@@ -78,7 +78,7 @@ let
         mariadb
       ];
       serviceConfig = {
-        Type = "simple";
+        Type = "oneshot";
         User = cfg.user;
         Group = cfg.group;
         WorkingDirectory = "${cfg.package}/api";
