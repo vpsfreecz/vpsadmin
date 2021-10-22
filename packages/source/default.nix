@@ -13,15 +13,13 @@ let
 
   revisionFile = "${copiedRepo}/.git-revision";
 
+  hasRevisionFile = builtins.pathExists revisionFile;
+
   readVersion = lib.strings.sanitizeDerivationName (
     builtins.replaceStrings [ "\n" ] [ "" ] (builtins.readFile revisionFile)
   );
 
-  version =
-    if builtins.pathExists revisionFile then
-      readVersion
-    else
-      "dev";
+  version = if hasRevisionFile then readVersion else "dev";
 
 in stdenv.mkDerivation rec {
   pname = "vpsadmin-source";
@@ -35,6 +33,12 @@ in stdenv.mkDerivation rec {
 
   installPhase = ''
     cp -a ./. $out/
+
+    ${lib.optionalString hasRevisionFile ''
+    for v in api console_router webui ; do
+      cp ${revisionFile} $out/$v/.git-revision
+    done
+    ''}
   '';
 
   meta = with lib; {
