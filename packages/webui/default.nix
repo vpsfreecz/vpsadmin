@@ -1,3 +1,3 @@
-{ vpsadminPath ? <vpsadmin> }:
+{ vpsadmin-source, vpsadminPath ? <vpsadmin> }:
 pkgs:
-import "${vpsadminPath}/webui" { inherit pkgs; }
+import "${vpsadmin-source}/webui" { inherit pkgs; }
