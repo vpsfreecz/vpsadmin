@@ -832,6 +832,9 @@ function get_commit_hash () {
 		return trim(file_get_contents($revisionFile));
 	}
 
+	if (!file_exists(WWW_ROOT.'/.git'))
+		return null;
+
 	$hash = exec('cd "'.WWW_ROOT.'" && git rev-parse HEAD', $out, $ret);
 
 	if ($ret === 0)
