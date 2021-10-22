@@ -174,6 +174,8 @@ in {
       after = [ "network.target" ];
       wantedBy = [ "multi-user.target" ];
       environment.RACK_ENV = "production";
+      startLimitIntervalSec = 180;
+      startLimitBurst = 5;
       preStart = ''
         # Handle database.passwordFile & permissions
         DBPASS=${optionalString (cfg.database.passwordFile != null) "$(head -n1 ${cfg.database.passwordFile})"}
@@ -192,6 +194,8 @@ in {
           TimeoutSec = "300";
           WorkingDirectory = "${cfg.package}/console_router";
           ExecStart="${thin} start";
+          Restart = "on-failure";
+          RestartSec = 30;
         };
     };
 
