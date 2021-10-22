@@ -96,7 +96,7 @@ module VpsAdmin::ConsoleRouter
       end
 
       unless @connections.include?(vps_id)
-        n = ::Node.select('ip_addr').joins(:vpses).where(vpses: {id: vps_id})
+        n = ::Node.select('ip_addr').joins(:vpses).where(vpses: {id: vps_id}).take!
 
         @connections[vps_id] = EventMachine.connect(
           n.ip_addr,
