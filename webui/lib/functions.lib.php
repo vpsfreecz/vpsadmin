@@ -926,6 +926,5 @@ function vpsDiskUsagePercent ($vps) {
 }
 
 function showPlatformWarning ($vps) {
-	// A bit vpsFree-specific, yes...
-	return $vps->node->hypervisor_type == 'openvz' && $vps->node->location_id == 3;
+	return $vps->node->hypervisor_type == 'openvz';
 }
