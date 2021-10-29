@@ -196,6 +196,8 @@ module VpsAdmind
     def update_status(db, info)
       sql = "
           uptime = #{info.uptime},
+          vpsadmind_version = '#{VpsAdmind::VERSION}',
+          kernel = '#{info.kernel}',
           process_count = #{info.nproc},
           sum_process_count = sum_process_count + process_count,"
 
