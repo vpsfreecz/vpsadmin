@@ -46,10 +46,6 @@ in {
       '') cfg.allowedIPv6Ranges)
     );
 
-    systemd.tmpfiles.rules = [
-      "d '/var/log/mysql' 0750 ${config.services.mysql.user} ${config.services.mysql.group} - -"
-    ];
-
     services.mysql = {
       enable = true;
       package = pkgs.mariadb;
@@ -77,7 +73,7 @@ in {
           innodb_use_native_aio = mkDefault 0;
 
           slow_query_log = mkDefault 1;
-          slow_query_log_file = mkDefault "/var/log/mysql/mariadb-slow.log";
+          slow_query_log_file = mkDefault "${config.services.mysql.dataDir}/slow-query.log";
           long_query_time = mkDefault 1;
 
           log_bin = mkDefault "mysql-bin";
