@@ -80,8 +80,11 @@ in {
           slow_query_log_file = mkDefault "/var/log/mysql/mariadb-slow.log";
           long_query_time = mkDefault 1;
 
-          expire_logs_days = mkDefault 10;
+          log_bin = mkDefault "mysql-bin";
+          expire_logs_days = mkDefault 14;
           max_binlog_size = mkDefault "1000M";
+          sync_binlog = mkDefault 1;
+          binlog_format = mkDefault "ROW";
 
           max_allowed_packet = mkDefault "64M";
 
