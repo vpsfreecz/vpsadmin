@@ -8,8 +8,8 @@ GEM
     gli (2.20.1)
     highline (2.0.3)
     ipaddress (0.8.3)
-    json (2.5.1)
-    libnodectld (3.0.0.dev.build20210828191616)
+    json (2.6.1)
+    libnodectld (3.0.0.dev.build20211030141403)
       eventmachine
       filelock
       ipaddress (~> 0.8.3)
@@ -28,10 +28,10 @@ GEM
     mail (2.7.1)
       mini_mime (>= 0.1.1)
     method_source (0.9.2)
-    mini_mime (1.1.1)
+    mini_mime (1.1.2)
     mysql2 (0.5.3.vpsadminos.1)
-    nodectld (3.0.0.dev.build20210828191616)
-      libnodectld (= 3.0.0.dev.build20210828191616)
+    nodectld (3.0.0.dev.build20211030141403)
+      libnodectld (= 3.0.0.dev.build20211030141403)
     osctl (21.05.0.build20210825131711)
       curses
       gli (~> 2.20.0)
@@ -62,7 +62,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  nodectld (= 3.0.0.dev.build20210828191616)
+  nodectld (= 3.0.0.dev.build20211030141403)
 
 BUNDLED WITH
    2.1.4
