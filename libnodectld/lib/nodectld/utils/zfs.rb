@@ -60,6 +60,10 @@ module NodeCtld
       ).output)
     end
 
+    def snapshot_confirmed?(snapshot)
+      snapshot['confirmed'] == 'confirmed'
+    end
+
     def get_confirmed_snapshot_name(db, snap_id)
       db.prepared('SELECT name FROM snapshots WHERE id = ?', snap_id).get!['name']
     end

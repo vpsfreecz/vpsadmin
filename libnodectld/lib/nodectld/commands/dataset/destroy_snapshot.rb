@@ -4,7 +4,7 @@ module NodeCtld
     needs :system, :zfs
 
     def exec
-      if @snapshot['confirmed'] == 1
+      if snapshot_confirmed?(@snapshot)
         snapshot = @snapshot['name']
       else
         db = Db.new

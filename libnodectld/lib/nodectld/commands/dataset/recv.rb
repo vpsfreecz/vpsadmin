@@ -72,7 +72,7 @@ module NodeCtld
 
     protected
     def confirmed_snapshot_name(db, snap)
-      if snap['confirmed'] == 1
+      if snapshot_confirmed?(snap)
         snap['name']
       else
         get_confirmed_snapshot_name(db, snap['id'])
