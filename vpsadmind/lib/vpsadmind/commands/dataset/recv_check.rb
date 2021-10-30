@@ -6,7 +6,7 @@ module VpsAdmind
     def exec
       ds_name = @branch ? "#{@dataset_name}/#{@tree}/#{@branch}" : @dataset_name
 
-      if @snapshot['confirmed'] == 1
+      if snapshot_confirmed?(@snapshot)
         snapshot = @snapshot['name']
       else
         db = Db.new

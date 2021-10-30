@@ -65,6 +65,10 @@ module VpsAdmind
       )[:output])
     end
 
+    def snapshot_confirmed?(snapshot)
+      snapshot['confirmed'] == 'confirmed'
+    end
+
     def get_confirmed_snapshot_name(db, snap_id)
       st = db.prepared_st('SELECT name FROM snapshots WHERE id = ?', snap_id)
       ret = st.fetch
