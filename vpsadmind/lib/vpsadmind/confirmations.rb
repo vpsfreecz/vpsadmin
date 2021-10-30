@@ -161,6 +161,8 @@ module VpsAdmind
         v
       elsif v.nil?
         'NULL'
+      elsif v.is_a?(::Time)
+        "'#{v.utc.strftime('%Y-%m-%d %H:%M:%S')}'"
       else
         "'#{v}'"
       end
