@@ -96,11 +96,6 @@ in {
           transaction_isolation = mkDefault "READ-COMMITTED";
 
           skip_name_resolve = mkDefault true;
-
-          query_cache_type = mkDefault 1;
-          query_cache_limit = mkDefault "64M";
-          query_cache_size = mkDefault "512M";
-          query_cache_min_res_unit = mkDefault "4K";
         };
       };
     };
