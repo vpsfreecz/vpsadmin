@@ -80,7 +80,7 @@ in {
           expire_logs_days = mkDefault 14;
           max_binlog_size = mkDefault "1000M";
           sync_binlog = mkDefault 1;
-          binlog_format = mkDefault "ROW";
+          binlog_format = mkDefault "MIXED";
 
           max_allowed_packet = mkDefault "64M";
 
