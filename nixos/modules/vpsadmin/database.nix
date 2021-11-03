@@ -77,7 +77,7 @@ in {
           long_query_time = mkDefault 1;
 
           log_bin = mkDefault "mysql-bin";
-          expire_logs_days = mkDefault 14;
+          expire_logs_days = mkDefault 7;
           max_binlog_size = mkDefault "1000M";
           sync_binlog = mkDefault 1;
           binlog_format = mkDefault "MIXED";
