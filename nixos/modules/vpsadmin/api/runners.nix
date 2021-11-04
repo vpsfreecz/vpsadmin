@@ -30,24 +30,27 @@ let
   apiRubyRunner = pkgs.writeScript "vpsadmin-api-ruby-runner" ''
     #!${pkgs.ruby}/bin/ruby
 
-    if ARGV.length != 1
-      warn "Usage: #{$0} <script>"
+    if ARGV.length < 1
+      warn "Usage: #{$0} <script> [args...]"
       exit(false)
     end
 
     $: << "${cfg.package}/api/lib"
-    load ARGV[0]
+    script = ARGV[0]
+    ARGV.shift
+    load script
   '';
 
   apiRubyScript = pkgs.writeScriptBin "vpsadmin-api-ruby" ''
     #!${pkgs.bash}/bin/bash
 
     if [ "$1" == "" ] ; then
-      echo "Usage: $0 <script>"
+      echo "Usage: $0 <script> [args...]"
       exit 1
     fi
 
     SCRIPT="$(realpath "$1")"
+    shift
 
     exec systemd-run \
       --unit=vpsadmin-api-ruby-$(date "+%F-%T") \
@@ -61,7 +64,7 @@ let
       --setenv=SCHEMA=${cfg.stateDir}/cache/structure.sql \
       --uid ${cfg.user} \
       --gid ${cfg.group} \
-      ${bundle} exec ${apiRubyRunner} "$SCRIPT"
+      ${bundle} exec ${apiRubyRunner} "$SCRIPT" $@
   '';
 in {
   config = mkIf cfg.enable {
