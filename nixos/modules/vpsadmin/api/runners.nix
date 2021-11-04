@@ -26,10 +26,48 @@ let
       --gid ${cfg.group} \
       ${pkgs.bashInteractive}/bin/bash --rcfile ${apiShellRcFile}
   '';
+
+  apiRubyRunner = pkgs.writeScript "vpsadmin-api-ruby-runner" ''
+    #!${pkgs.ruby}/bin/ruby
+
+    if ARGV.length != 1
+      warn "Usage: #{$0} <script>"
+      exit(false)
+    end
+
+    $: << "${cfg.package}/api/lib"
+    load ARGV[0]
+  '';
+
+  apiRubyScript = pkgs.writeScriptBin "vpsadmin-api-ruby" ''
+    #!${pkgs.bash}/bin/bash
+
+    if [ "$1" == "" ] ; then
+      echo "Usage: $0 <script>"
+      exit 1
+    fi
+
+    SCRIPT="$(realpath "$1")"
+
+    exec systemd-run \
+      --unit=vpsadmin-api-ruby-$(date "+%F-%T") \
+      --description="vpsAdmin API ruby script" \
+      --pty \
+      --wait \
+      --collect \
+      --service-type=exec \
+      --working-directory=${cfg.package}/api \
+      --setenv=RACK_ENV=production \
+      --setenv=SCHEMA=${cfg.stateDir}/cache/structure.sql \
+      --uid ${cfg.user} \
+      --gid ${cfg.group} \
+      ${bundle} exec ${apiRubyRunner} "$SCRIPT"
+  '';
 in {
   config = mkIf cfg.enable {
     environment.systemPackages = [
       apiShellScript
+      apiRubyScript
     ];
   };
 }
