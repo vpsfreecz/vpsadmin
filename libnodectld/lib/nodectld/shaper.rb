@@ -98,6 +98,11 @@ module NodeCtld
         instance.flush
       end
 
+      # Initialize shaper on all interfaces
+      def init(db)
+        instance.init(db)
+      end
+
       # Reinitialize shaper on all interfaces
       # @param db [Db]
       def reinit(db)
@@ -279,6 +284,13 @@ module NodeCtld
         VethMap.each_veth do |vps_id, vps_veth, host_veth|
           tc("qdisc del dev #{host_veth} root handle 1:", [2])
         end
+      end
+    end
+
+    def init(db)
+      sync do
+        safe_init_node
+        safe_init_vps(db)
       end
     end
 
