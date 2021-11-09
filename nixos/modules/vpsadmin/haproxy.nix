@@ -28,7 +28,13 @@ let
     { config, ... }:
     {
       options = {
-        enable = mkEnableOption "Enable HAProxy for the application";
+        enable = mkOption {
+          type = types.bool;
+          default = true;
+          description = ''
+            Enable this application instance in HAProxy
+          '';
+        };
 
         frontend = {
           address = mkOption {
@@ -77,87 +83,85 @@ let
     (appAssertions "webui");
 
   appAssertions = app:
-    let
-      appCfg = cfg.${app};
-    in [
-      {
-        assertion = appCfg.enable -> (appCfg.frontend.bind != []);
-        message = "Add at least one item to vpsadmin.haproxy.${app}.frontend.bind";
-      }
-    ];
+    mapAttrsToList (name: instance: {
+      assertion = instance.enable -> (instance.frontend.bind != []);
+      message = "Add at least one item to vpsadmin.haproxy.${app}.${name}.frontend.bind";
+    }) cfg.${app};
 
   backendsConfig = backends:
     imap0 (i: backend:
       "  server app${toString i} ${backend.host}:${toString backend.port} check"
     ) backends;
 
-  apiConfig = ''
-    frontend api
-      ${concatMapStringsSep "\n" (v: "bind ${v}") cfg.api.frontend.bind}
-      default_backend app-api
+  apiConfig = name: instance: ''
+    frontend api-${name}
+      ${concatMapStringsSep "\n" (v: "bind ${v}") instance.frontend.bind}
+      default_backend app-api-${name}
 
-    backend app-api
+    backend app-api-${name}
       balance roundrobin
-    ${concatStringsSep "\n" (backendsConfig cfg.api.backends)}
+    ${concatStringsSep "\n" (backendsConfig instance.backends)}
   '';
 
-  consoleRouterConfig = ''
-    frontend console-router
-      ${concatMapStringsSep "\n" (v: "bind ${v}") cfg.console-router.frontend.bind}
-      default_backend app-console-router
+  consoleRouterConfig = name: instance: ''
+    frontend console-router-${name}
+      ${concatMapStringsSep "\n" (v: "bind ${v}") instance.frontend.bind}
+      default_backend app-console-router-${name}
 
-    backend app-console-router
+    backend app-console-router-${name}
       balance hdr(X-Forwarded-For)
-    ${concatStringsSep "\n" (backendsConfig cfg.console-router.backends)}
+    ${concatStringsSep "\n" (backendsConfig instance.backends)}
   '';
 
-  webuiConfig = ''
-    frontend webui
-      ${concatMapStringsSep "\n" (v: "bind ${v}") cfg.webui.frontend.bind}
-      default_backend app-webui
+  webuiConfig = name: instance: ''
+    frontend webui-${name}
+      ${concatMapStringsSep "\n" (v: "bind ${v}") instance.frontend.bind}
+      default_backend app-webui-${name}
 
-    backend app-webui
+    backend app-webui-${name}
       balance roundrobin
-    ${concatStringsSep "\n" (backendsConfig cfg.webui.backends)}
+    ${concatStringsSep "\n" (backendsConfig instance.backends)}
   '';
+
+  enabledInstances = instances: filterAttrs (name: instance:
+    instance.enable
+  ) instances;
+
+  stringConfigs = instances: fn:
+    concatStringsSep "\n\n" (mapAttrsToList fn (enabledInstances instances));
 in {
   options = {
     vpsadmin.haproxy = {
       enable = mkEnableOption "Enable HAProxy for vpsAdmin";
 
       api = mkOption {
-        type = types.submodule appOpts;
+        type = types.attrsOf (types.submodule appOpts);
         default = {};
         description = ''
-          HAProxy for vpsAdmin API
+          HAProxy instances for vpsAdmin API
         '';
       };
 
       console-router = mkOption {
-        type = types.submodule appOpts;
+        type = types.attrsOf (types.submodule appOpts);
         default = {};
         description = ''
-          HAProxy for vpsAdmin console router
+          HAProxy instances for vpsAdmin console router
         '';
       };
 
       webui = mkOption {
-        type = types.submodule appOpts;
+        type = types.attrsOf (types.submodule appOpts);
         default = {};
         description = ''
-          HAProxy for vpsAdmin web UI
+          HAProxy instances for vpsAdmin web UI
         '';
       };
     };
   };
 
   config = mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = cfg.api.enable || cfg.console-router.enable || cfg.webui.enable;
-        message = "Enable at least one of vpsadmin.haproxy.api, console-router or webui";
-      }
-    ] ++ allAppAssertions;
+    assertions = allAppAssertions;
 
     services.haproxy = {
       enable = true;
@@ -184,9 +188,9 @@ in {
           timeout check           10s
           maxconn                 3000
 
-        ${optionalString cfg.api.enable apiConfig}
-        ${optionalString cfg.console-router.enable consoleRouterConfig}
-        ${optionalString cfg.webui.enable webuiConfig}
+        ${stringConfigs cfg.api apiConfig}
+        ${stringConfigs cfg.console-router consoleRouterConfig}
+        ${stringConfigs cfg.webui webuiConfig}
       '';
     };
   };
