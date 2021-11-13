@@ -253,9 +253,9 @@ module VpsAdmind
 
     def full_zfs_send_cmd
       if @from_snapshot
-        "zfs send -c -v -L -I @#{@from_snapshot} #{path}@#{@snapshot}"
+        "zfs send -v -L -I @#{@from_snapshot} #{path}@#{@snapshot}"
       else
-        "zfs send -c -v -L #{path}@#{@snapshot}"
+        "zfs send -v -L #{path}@#{@snapshot}"
       end
     end
   end
