@@ -69,7 +69,7 @@ function loginUser($access_url) {
 	}
 }
 
-$authenticationCallback = function ($action, $token, $params) {
+$authenticationCallback = function ($action, $token, $params) use ($xtpl) {
 	if ($action == 'totp') {
 		session_start();
 		$_SESSION['auth_token'] = $token;
