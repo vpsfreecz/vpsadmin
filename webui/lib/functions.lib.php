@@ -404,7 +404,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null,
 			);
 
 		default:
-			continue;
+			break;
 	}
 }
 

@@ -69,7 +69,7 @@ function loginUser($access_url) {
 	}
 }
 
-function authenticationCallback($action, $token, $params) {
+$authenticationCallback = function ($action, $token, $params) {
 	if ($action == 'totp') {
 		session_start();
 		$_SESSION['auth_token'] = $token;
@@ -77,7 +77,7 @@ function authenticationCallback($action, $token, $params) {
 	}
 
 	$xtpl->perex(_('Error'), 'Unsupported authentication method, please contact support.');
-}
+};
 
 if ($_GET["action"] == 'login') {
 
@@ -88,7 +88,7 @@ if ($_GET["action"] == 'login') {
 				'password' => $_POST['passwd'],
 				'lifetime' => 'renewable_auto',
 				'interval' => USER_LOGIN_INTERVAL,
-				'callback' => authenticationCallback,
+				'callback' => $authenticationCallback,
 			]);
 
 			loginUser($_SESSION['access_url']);
@@ -109,7 +109,7 @@ if ($_GET['action'] == 'totp' && isSet($_SESSION['auth_token'])) {
 					'token' => $_SESSION['auth_token'],
 					'input' => ['code' => $_POST['code']],
 				],
-				'callback' => authenticationCallback,
+				'callback' => $authenticationCallback,
 			]);
 
 			unset($_SESSION['auth_token']);

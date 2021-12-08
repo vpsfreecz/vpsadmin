@@ -58,7 +58,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 		$xtpl->table_add_category($desc->label);
 	}
 
-	if (role == 'hypervisor' && (isAdmin() || USERNS_PUBLIC))
+	if ($role == 'hypervisor' && (isAdmin() || USERNS_PUBLIC))
 		$xtpl->table_add_category(_('UID/GID map'));
 
 	$xtpl->table_add_category(_('Mount'));
