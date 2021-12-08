@@ -48,6 +48,14 @@ in {
         '';
       };
 
+      errorReporting = mkOption {
+        type = types.str;
+        default = "E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED";
+        description = ''
+          See https://www.php.net/manual/en/errorfunc.configuration.php#ini.error-reporting
+        '';
+      };
+
       api.externalUrl = mkOption {
         type = types.str;
         description = ''
@@ -157,6 +165,7 @@ in {
       };
       phpEnv."PATH" = lib.makeBinPath (with pkgs; [ git php ]);
       phpOptions = ''
+        error_reporting = ${cfg.errorReporting}
         date.timezone = ${cfg.timeZone}
         extension=${pkgs.phpExtensions.json}/lib/php/extensions/json.so
         extension=${pkgs.phpExtensions.session}/lib/php/extensions/session.so
