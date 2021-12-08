@@ -224,6 +224,8 @@ class Vps < ActiveRecord::Base
     chain_opts[:send_mail] = opts[:send_mail]
     chain_opts[:reason] = opts[:reason]
     chain_opts[:cleanup_data] = opts[:cleanup_data]
+    chain_opts[:no_start] = opts[:no_start]
+    chain_opts[:skip_start] = opts[:skip_start]
 
     TransactionChains::Vps::Migrate.chain_for(self, node).fire(self, node, chain_opts)
   end

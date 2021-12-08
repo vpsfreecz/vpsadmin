@@ -215,8 +215,19 @@ module TransactionChains
       migrate_features
 
       # Restore VPS state
-      use_chain(Vps::Start, args: dst_vps, urgent: true) if was_running?
-      call_hooks_for(:post_start, self, args: [dst_vps, was_running?])
+      if was_running? && !@opts[:no_start]
+        use_chain(
+          Vps::Start,
+          args: dst_vps,
+          urgent: true,
+          reversible: @opts[:skip_start] ? :keep_going : nil,
+        )
+      end
+
+      call_hooks_for(:post_start, self, args: [
+        dst_vps,
+        was_running? && !@opts[:no_start],
+      ])
 
       # Remount and regenerate mount scripts of mounts in other VPSes
       mounts.remount_others

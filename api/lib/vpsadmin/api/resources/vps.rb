@@ -741,6 +741,12 @@ END
       bool :cleanup_data, label: 'Cleanup data',
           desc: 'Remove VPS dataset from the source node',
           default: true
+      bool :no_start, label: 'No start',
+          desc: 'Do not start the VPS on the target node',
+          default: false
+      bool :skip_start, label: 'Skip start',
+          desc: 'Continue even if the VPS fails to start on the target node',
+          default: false
       bool :send_mail, label: 'Send e-mails',
           desc: 'Inform the VPS owner about migration progress',
           default: true

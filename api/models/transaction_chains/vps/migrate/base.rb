@@ -27,6 +27,8 @@ module TransactionChains
     # @option opts [Boolean] send_mail (true)
     # @option opts [String] reason (nil)
     # @option opts [Boolean] cleanup_data (true) destroy datasets on the source node
+    # @option opts [Boolean] no_start (false)
+    # @option opts [Boolean] skip_start (false)
     def link_chain(vps, dst_node, opts = {})
       raise NotImplementedError
     end
@@ -48,6 +50,8 @@ module TransactionChains
         send_mail: true,
         reason: nil,
         cleanup_data: true,
+        no_start: false,
+        skip_start: false,
       })
 
       lock(vps)
