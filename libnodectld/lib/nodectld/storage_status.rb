@@ -5,9 +5,9 @@ module NodeCtld
   class StorageStatus
     include OsCtl::Lib::Utils::Log
 
-    READ_PROPERTIES = %w(used referenced available refquota)
+    READ_PROPERTIES = %w(used referenced available refquota compressratio refcompressratio)
 
-    SAVE_PROPERTIES = %w(used referenced available)
+    SAVE_PROPERTIES = %w(used referenced available compressratio refcompressratio)
 
     Pool = Struct.new(:name, :fs, :role, :refquota_check, :datasets, keyword_init: true)
 
@@ -201,7 +201,7 @@ module NodeCtld
             ds_prop = ds.properties[prop]
             next if ds_prop.nil?
 
-            ds_prop.value = tree_ds.properties[prop].to_i
+            ds_prop.value = parse_value(prop, tree_ds.properties[prop])
           end
         end
 
@@ -221,7 +221,7 @@ module NodeCtld
             ds_prop = ds.properties[prop]
             next if ds_prop.nil? || ds_prop.value.nil?
 
-            save_val = (ds_prop.value / 1024.0 / 1024).round
+            save_val = value_to_db(prop, ds_prop.value)
 
             db.prepared(
               'UPDATE dataset_properties
@@ -262,6 +262,24 @@ module NodeCtld
         'avail'
       else
         prop
+      end
+    end
+
+    def value_to_db(prop, v)
+      case prop
+      when 'compressratio', 'refcompressratio'
+        v
+      else
+        (v / 1024.0 / 1024).round
+      end
+    end
+
+    def parse_value(prop, v)
+      case prop
+      when 'compressratio', 'refcompressratio'
+        v.to_f
+      else
+        v.to_i
       end
     end
   end

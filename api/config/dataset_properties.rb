@@ -93,4 +93,20 @@ VpsAdmin::API::DatasetProperties.register do
     default 0
     editable false
   end
+
+  property :compressratio do
+    type :float
+    label 'Used compression ratio'
+    desc 'Compression ratio for used space of this dataset'
+    default 1.0
+    editable false
+  end
+
+  property :refcompressratio do
+    type :float
+    label 'Referenced compression ratio'
+    desc 'Compression ratio for referenced space of this dataset'
+    default 1.0
+    editable false
+  end
 end
