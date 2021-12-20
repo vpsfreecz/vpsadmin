@@ -893,6 +893,12 @@ switch ($_GET["action"]) {
 			break;
 	}
 
+$xtpl->assign(
+	'AJAX_SCRIPT',
+	$xtpl->vars['AJAX_SCRIPT'] . '
+	<script type="text/javascript" src="js/vps.js"></script>'
+);
+
 if (isset($show_info) && $show_info) {
 	if (!isset($veid))
 		$veid = $_GET["veid"];
@@ -904,22 +910,6 @@ if (isset($show_info) && $show_info) {
 	if (isAdmin())
 		$xtpl->sbar_add(_('State log'), '?page=lifetimes&action=changelog&resource=vps&id='.$vps->id.'&return='. urlencode($_SERVER['REQUEST_URI']));
 
-	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
-		<script type="text/javascript">
-			function confirm_vps_action(action) {
-				return function() {
-					return confirm(
-						"Do you really wish to "+action+" VPS '.h($vps->id).' "+
-						"- '.h($vps->hostname).'?"
-					);
-				};
-			}
-
-			$(document).ready(function() {
-				$("#vps-action-stop").on("click", confirm_vps_action("stop"));
-				$("#vps-action-restart").on("click", confirm_vps_action("restart"));
-			});
-		</script>');
 
 	$xtpl->table_td('ID:');
 	$xtpl->table_td($vps->id);
@@ -971,7 +961,7 @@ if (isset($show_info) && $show_info) {
 	if($vps->maintenance_lock == 'no') {
 		$xtpl->table_td(
 			(($vps->is_running) ?
-				_("running").' (<a href="?page=adminvps&action=info&run=restart&veid='.$vps->id.'&t='.csrf_token().'" id="vps-action-restart">'._("restart").'</a>, <a href="?page=adminvps&action=info&run=stop&veid='.$vps->id.'&t='.csrf_token().'" id="vps-action-stop">'._("stop").'</a>'
+				_("running").' (<a href="?page=adminvps&action=info&run=restart&veid='.$vps->id.'&t='.csrf_token().'" onclick="return vpsConfirmAction(\'restart\', '.h($vps->id).', \''.h($vps->hostname).'\');">'._("restart").'</a>, <a href="?page=adminvps&action=info&run=stop&veid='.$vps->id.'&t='.csrf_token().'" onclick="return vpsConfirmAction(\'stop\', '.h($vps->id).', \''.h($vps->hostname).'\');">'._("stop").'</a>'
 				:
 				_("stopped").' (<a href="?page=adminvps&action=info&run=start&veid='.$vps->id.'&t='.csrf_token().'">'._("start").'</a>') .
 				', <a href="?page=console&veid='.$vps->id.'&t='.csrf_token().'">'._("open remote console").'</a>)'
