@@ -108,16 +108,16 @@
         },
         {
             "name": "endroid/qr-code",
-            "version": "4.3.0",
+            "version": "4.3.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/endroid/qr-code.git",
-                "reference": "98f6d4024289ad3a8d7f3e63cab947ef6929dcdb"
+                "reference": "5630e192948b466d418608ecce697465d20260af"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/endroid/qr-code/zipball/98f6d4024289ad3a8d7f3e63cab947ef6929dcdb",
-                "reference": "98f6d4024289ad3a8d7f3e63cab947ef6929dcdb",
+                "url": "https://api.github.com/repos/endroid/qr-code/zipball/5630e192948b466d418608ecce697465d20260af",
+                "reference": "5630e192948b466d418608ecce697465d20260af",
                 "shasum": ""
             },
             "require": {
@@ -168,7 +168,7 @@
             ],
             "support": {
                 "issues": "https://github.com/endroid/qr-code/issues",
-                "source": "https://github.com/endroid/qr-code/tree/4.3.0"
+                "source": "https://github.com/endroid/qr-code/tree/4.3.5"
             },
             "funding": [
                 {
@@ -176,25 +176,25 @@
                     "type": "github"
                 }
             ],
-            "time": "2021-08-28T12:29:40+00:00"
+            "time": "2021-09-17T07:50:43+00:00"
         },
         {
             "name": "haveapi/client",
-            "version": "0.14.0",
+            "version": "0.14.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/vpsfreecz/haveapi-client-php.git",
-                "reference": "6908fad404c29484a7a09255755d481235916618"
+                "reference": "112301476e4123998914c1fcb7cbbbf0e5c5e0ce"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/6908fad404c29484a7a09255755d481235916618",
-                "reference": "6908fad404c29484a7a09255755d481235916618",
+                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/112301476e4123998914c1fcb7cbbbf0e5c5e0ce",
+                "reference": "112301476e4123998914c1fcb7cbbbf0e5c5e0ce",
                 "shasum": ""
             },
             "require": {
-                "nategood/httpful": "~0.2.20",
-                "php": ">=5.3.0"
+                "nategood/httpful": "~0.3.2",
+                "php": ">=7.4.0"
             },
             "type": "library",
             "autoload": {
@@ -216,27 +216,27 @@
             "homepage": "https://github.com/vpsfreecz/haveapi-client-php",
             "support": {
                 "issues": "https://github.com/vpsfreecz/haveapi-client-php/issues",
-                "source": "https://github.com/vpsfreecz/haveapi-client-php/tree/v0.14.0"
+                "source": "https://github.com/vpsfreecz/haveapi-client-php/tree/v0.14.2"
             },
-            "time": "2021-09-08T13:24:24+00:00"
+            "time": "2021-12-20T15:59:27+00:00"
         },
         {
             "name": "nategood/httpful",
-            "version": "0.2.20",
+            "version": "0.3.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nategood/httpful.git",
-                "reference": "c1cd4d46a4b281229032cf39d4dd852f9887c0f6"
+                "reference": "0cded3ea97ba905600de9ceb9ef13f3ab681587c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nategood/httpful/zipball/c1cd4d46a4b281229032cf39d4dd852f9887c0f6",
-                "reference": "c1cd4d46a4b281229032cf39d4dd852f9887c0f6",
+                "url": "https://api.github.com/repos/nategood/httpful/zipball/0cded3ea97ba905600de9ceb9ef13f3ab681587c",
+                "reference": "0cded3ea97ba905600de9ceb9ef13f3ab681587c",
                 "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
-                "php": ">=5.3"
+                "php": ">=7.2"
             },
             "require-dev": {
                 "phpunit/phpunit": "*"
@@ -270,9 +270,9 @@
             ],
             "support": {
                 "issues": "https://github.com/nategood/httpful/issues",
-                "source": "https://github.com/nategood/httpful/tree/v0.2.20"
+                "source": "https://github.com/nategood/httpful/tree/v0.3.2"
             },
-            "time": "2015-10-26T16:11:30+00:00"
+            "time": "2020-01-25T01:13:13+00:00"
         }
     ],
     "packages-dev": [],

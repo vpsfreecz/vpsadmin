@@ -25,30 +25,30 @@ let
     "endroid/qr-code" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "endroid-qr-code-98f6d4024289ad3a8d7f3e63cab947ef6929dcdb";
+        name = "endroid-qr-code-5630e192948b466d418608ecce697465d20260af";
         src = fetchurl {
-          url = "https://api.github.com/repos/endroid/qr-code/zipball/98f6d4024289ad3a8d7f3e63cab947ef6929dcdb";
-          sha256 = "10ydi0qggrafzmmq01a7ghj61ybjzgy8pra5ff9l5p96jg5ppgn4";
+          url = "https://api.github.com/repos/endroid/qr-code/zipball/5630e192948b466d418608ecce697465d20260af";
+          sha256 = "011jm565rd4rw45aqkiyfs2ai4ikmic7vp3v2045f5p2jznzydk3";
         };
       };
     };
     "haveapi/client" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "haveapi-client-6908fad404c29484a7a09255755d481235916618";
+        name = "haveapi-client-112301476e4123998914c1fcb7cbbbf0e5c5e0ce";
         src = fetchurl {
-          url = "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/6908fad404c29484a7a09255755d481235916618";
-          sha256 = "02k28g04gj67vcxhnqxl2sx4afdcf4ggka6gv8v3bppzn8hbvkbm";
+          url = "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/112301476e4123998914c1fcb7cbbbf0e5c5e0ce";
+          sha256 = "14cm899iwkm6z29fwzvj7fyxfg1mh9g02wy4axnyj80wdcc4m7is";
         };
       };
     };
     "nategood/httpful" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "nategood-httpful-c1cd4d46a4b281229032cf39d4dd852f9887c0f6";
+        name = "nategood-httpful-0cded3ea97ba905600de9ceb9ef13f3ab681587c";
         src = fetchurl {
-          url = "https://api.github.com/repos/nategood/httpful/zipball/c1cd4d46a4b281229032cf39d4dd852f9887c0f6";
-          sha256 = "09px7pcw5l87b5672qrg88ymx4351h3p3i2zm1rjk32xh6ng5yxk";
+          url = "https://api.github.com/repos/nategood/httpful/zipball/0cded3ea97ba905600de9ceb9ef13f3ab681587c";
+          sha256 = "13kcpb4j2n1n4fln7v0s9il729s3mmmm3s4akq3azs671pyr2i6h";
         };
       };
     };
