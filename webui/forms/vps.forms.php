@@ -735,8 +735,8 @@ function vps_list_form() {
 			}
 
 			if(isAdmin() || $vps->maintenance_lock == 'no') {
-				$xtpl->table_td(($vps->is_running) ? '<a href="?page=adminvps&run=restart&veid='.$vps->id.'&t='.csrf_token().'" onclick="return vpsConfirmAction(\'restart\', '.h($vps->id).', \''.h($vps->hostname).'\');"><img src="template/icons/vps_restart.png" title="'._("Restart").'"/></a>' : '<img src="template/icons/vps_restart_grey.png"  title="'._("Unable to restart").'" />');
-				$xtpl->table_td(($vps->is_running) ? '<a href="?page=adminvps&run=stop&veid='.$vps->id.'&t='.csrf_token().'" onclick="return vpsConfirmAction(\'stop\', '.h($vps->id).', \''.h($vps->hostname).'\');"><img src="template/icons/vps_stop.png"  title="'._("Stop").'"/></a>' : '<a href="?page=adminvps&run=start&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_start.png"  title="'._("Start").'"/></a>');
+				$xtpl->table_td(($vps->is_running) ? '<a href="?page=adminvps&run=restart&veid='.$vps->id.'&t='.csrf_token().'" '.vps_confirm_action_onclick($vps, 'restart').'><img src="template/icons/vps_restart.png" title="'._("Restart").'"/></a>' : '<img src="template/icons/vps_restart_grey.png"  title="'._("Unable to restart").'" />');
+				$xtpl->table_td(($vps->is_running) ? '<a href="?page=adminvps&run=stop&veid='.$vps->id.'&t='.csrf_token().'" '.vps_confirm_action_onclick($vps, 'stop').'><img src="template/icons/vps_stop.png"  title="'._("Stop").'"/></a>' : '<a href="?page=adminvps&run=start&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/vps_start.png"  title="'._("Start").'"/></a>');
 
 				if (!isAdmin())
 					$xtpl->table_td('<a href="?page=console&veid='.$vps->id.'&t='.csrf_token().'"><img src="template/icons/console.png"  title="'._("Remote Console").'"/></a>');
@@ -845,6 +845,13 @@ function vps_details_submenu($vps) {
 		$xtpl->sbar_add(_('Outages'), '?page=outage&action=list&vps='.$vps->id);
 
 	$xtpl->sbar_add(_('Transaction log'), '?page=transactions&class_name=Vps&row_id='.$vps->id);
+}
+
+function vps_confirm_action_onclick($vps, $action) {
+	if (isAdmin())
+		return "";
+
+	return 'onclick="return vpsConfirmAction(\''.h($action).'\', '.h($vps->id).', \''.h($vps->hostname).'\');"';
 }
 
 function vps_details_suite($vps) {

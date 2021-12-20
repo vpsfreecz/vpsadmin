@@ -961,7 +961,7 @@ if (isset($show_info) && $show_info) {
 	if($vps->maintenance_lock == 'no') {
 		$xtpl->table_td(
 			(($vps->is_running) ?
-				_("running").' (<a href="?page=adminvps&action=info&run=restart&veid='.$vps->id.'&t='.csrf_token().'" onclick="return vpsConfirmAction(\'restart\', '.h($vps->id).', \''.h($vps->hostname).'\');">'._("restart").'</a>, <a href="?page=adminvps&action=info&run=stop&veid='.$vps->id.'&t='.csrf_token().'" onclick="return vpsConfirmAction(\'stop\', '.h($vps->id).', \''.h($vps->hostname).'\');">'._("stop").'</a>'
+				_("running").' (<a href="?page=adminvps&action=info&run=restart&veid='.$vps->id.'&t='.csrf_token().'" '.vps_confirm_action_onclick($vps, 'restart').'>'._("restart").'</a>, <a href="?page=adminvps&action=info&run=stop&veid='.$vps->id.'&t='.csrf_token().'" '.vps_confirm_action_onclick($vps, 'stop').'>'._("stop").'</a>'
 				:
 				_("stopped").' (<a href="?page=adminvps&action=info&run=start&veid='.$vps->id.'&t='.csrf_token().'">'._("start").'</a>') .
 				', <a href="?page=console&veid='.$vps->id.'&t='.csrf_token().'">'._("open remote console").'</a>)'
