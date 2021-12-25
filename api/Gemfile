@@ -1,6 +1,10 @@
 source 'https://rubygems.org'
 
-$: << File.realpath(File.join(File.dirname(__FILE__), 'lib'))
+begin
+  $: << File.realpath(File.join(File.dirname(__FILE__), 'lib'))
+rescue Errno::ENOENT
+end
+
 gem 'haveapi', '~> 0.14.0'
 gem 'activerecord', '~> 6.1.4'
 gem 'sinatra-activerecord', '~> 2.0.23'
