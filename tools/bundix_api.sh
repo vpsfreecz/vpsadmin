@@ -4,6 +4,7 @@
 set -e
 pushd packages/api
 
+rm -f Gemfile.lock
 cat ../../api/Gemfile | sed '/^### vpsAdmin plugin marker ###$/,$d' > Gemfile
 
 for f in ../../plugins/*/api/Gemfile ; do
