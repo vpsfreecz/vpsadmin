@@ -42,12 +42,6 @@ require_rel '../models/transaction_chain.rb'
 require_rel '../models/transaction_chains/'
 require_rel '../models/*.rb'
 
-# Customize the API server before it is mounted.
-# @yieldparam [HaveAPI::Server]
-def api(*args, &block)
-  VpsAdmin::API.configure(*args, &block)
-end
-
 VpsAdmin::API.load_configurable(:api)
 VpsAdmin::API.load_configurable(:hooks)
 VpsAdmin::API.load_configurable(:dataset_plans)
