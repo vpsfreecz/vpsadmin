@@ -250,8 +250,8 @@ module VpsAdmin::API
         use
       end
 
-      def allocate_resource!(*args)
-        ret = allocate_resource(*args)
+      def allocate_resource!(*args, **kwargs)
+        ret = allocate_resource(*args, **kwargs)
 
         if ret.persisted?
           ret
