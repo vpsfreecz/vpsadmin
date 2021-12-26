@@ -60,8 +60,8 @@ module VpsAdmin::API
         )
       end
 
-      def self.find_resource_use!(*args)
-        ret = find_resource_use(*args)
+      def self.find_resource_use!(obj, resource)
+        ret = find_resource_use(obj, resource)
 
         raise ActiveRecord::RecordNotFound unless ret
 
