@@ -78,6 +78,7 @@ class Transaction < ActiveRecord::Base
   # @param dep [Integer] id of transaction to depend on
   # @param opts [Hash] additional options
   # @option opts [Array] args
+  # @option opts [Hash] kwargs
   # @option opts [Boolean] urgent
   # @option opts [Integer] prio
   # @option opts [Boolean] retain_context
@@ -110,7 +111,11 @@ class Transaction < ActiveRecord::Base
       end
     end
 
-    cmd_input = t.params(* (opts[:args] || [])) || {}
+    cmd_input = t.params(
+      *  (opts[:args] || []),
+      ** (opts[:kwargs] || {}),
+    )
+    cmd_input ||= {}
 
     t.input = {
       transaction_chain: t.transaction_chain_id,
@@ -135,7 +140,7 @@ class Transaction < ActiveRecord::Base
 
   # Must be implemented in subclasses.
   # Returns hash of parameters for single transaction.
-  def params(*args)
+  def params(*args, **kwargs)
     raise NotImplementedError
   end
 

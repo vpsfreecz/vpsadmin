@@ -24,15 +24,16 @@ class TransactionChain < ActiveRecord::Base
   # Create new transaction chain. This method has to be used, do not
   # create instances of TransactionChain yourself.
   # All arguments are passed to TransactionChain#link_chain.
-  def self.fire(*args)
-    fire2(args: args)
+  def self.fire(*args, **kwargs)
+    fire2(args: args, kwargs: kwargs)
   end
 
   # Same as TransactionChain.fire, except that arguments are passed
   # as a hash option +args+. This allows to also pass a list of global locks.
   # @param args [Array]
+  # @param kwargs [Hash]
   # @param locks [Array] list of global locks
-  def self.fire2(args: [], locks: [])
+  def self.fire2(args: [], kwargs: {}, locks: [])
     unless VpsAdmin::API::TransactionSigner.can_sign?
       raise VpsAdmin::API::Exceptions::ConfigurationError,
             'Transaction signing not enabled, please contact support if this error persists'
@@ -56,7 +57,7 @@ class TransactionChain < ActiveRecord::Base
       # link_chain will raise ResourceLocked if it is unable to acquire
       # a lock. It will cause the transaction to be roll backed
       # and the exception will be propagated.
-      ret = chain.link_chain(*args)
+      ret = chain.link_chain(*args, **kwargs)
 
       if chain.empty?
         if chain.class.allow_empty?
@@ -92,6 +93,7 @@ class TransactionChain < ActiveRecord::Base
   # @param chain
   # @param opts [Hash]
   # @option opts [Array] args ([])
+  # @option opts [Hash] kwargs ({})
   # @option opts [Boolean] urgent (false)
   # @option opts [Integer] prio (0)
   # @option opts [Symbol] reversible one of :is_reversible, :not_reversible, :keep_going
@@ -99,6 +101,7 @@ class TransactionChain < ActiveRecord::Base
   # @option opts [Hash] hooks ({})
   def self.use_in(chain, opts = {})
     opts[:args] ||= []
+    opts[:kwargs] ||= {}
     opts[:urgent] = false if opts[:urgent].nil?
     opts[:prio] ||= 0
     opts[:method] ||= :link_chain
@@ -120,7 +123,7 @@ class TransactionChain < ActiveRecord::Base
       c.connect_hook(k, &v)
     end
 
-    ret = c.send(opts[:method], *opts[:args])
+    ret = c.send(opts[:method], *opts[:args], **opts[:kwargs])
 
     [c, ret]
   end
@@ -152,8 +155,8 @@ class TransactionChain < ActiveRecord::Base
     @allow_empty
   end
 
-  def initialize(*args)
-    super(*args)
+  def initialize(*_, **_)
+    super
 
     @locks = []
     @named = {}
@@ -163,18 +166,18 @@ class TransactionChain < ActiveRecord::Base
   end
 
   # All chains must implement this method.
-  def link_chain(*args)
+  def link_chain(*args, **kwargs)
     raise NotImplementedError
   end
 
   # Helper method for acquiring resource locks. TransactionChain remembers
   # what locks it has, therefore it is safe to lock one resource more than
   # once, which happens when including other chains with ::use_in.
-  def lock(obj, *args)
+  def lock(obj, *args, **kwargs)
     return if @global_locks.detect { |l| l.locks?(obj) }
     return if @locks.detect { |l| l.locks?(obj) }
 
-    lock = obj.acquire_lock(@dst_chain, *args)
+    lock = obj.acquire_lock(@dst_chain, *args, **kwargs)
     @locks << lock
     lock
   end
@@ -195,6 +198,7 @@ class TransactionChain < ActiveRecord::Base
   # @param klass [Transaction] transaction subclass
   # @param opts [hash] options
   # @option opts [Array] args
+  # @option opts [Hash] kwargs
   # @option opts [Boolean] urgent
   # @option opts [Integer] prio
   # @option opts [Symbol] name
@@ -215,6 +219,7 @@ class TransactionChain < ActiveRecord::Base
   # @param klass [Transaction] transaction subclass
   # @param opts [hash] options
   # @option opts [Array] args
+  # @option opts [Hash] kwargs
   # @option opts [Boolean] urgent
   # @option opts [Integer] prio
   # @option opts [Symbol] name
@@ -232,6 +237,7 @@ class TransactionChain < ActiveRecord::Base
   # @param klass [Transaction] transaction subclass
   # @param opts [hash] options
   # @option opts [Array] args
+  # @option opts [Hash] kwargs
   # @option opts [Boolean] urgent
   # @option opts [Integer] prio
   # @option opts [Symbol] name
@@ -247,6 +253,7 @@ class TransactionChain < ActiveRecord::Base
   # @param chain
   # @param opts [Hash]
   # @option opts [Array] args
+  # @option opts [Hash] kwargs
   # @option opts [Boolean] urgent
   # @option opts [Integer] prio
   # @option opts [Symbol] reversible one of :is_reversible, :not_reversible, :keep_going
@@ -254,11 +261,13 @@ class TransactionChain < ActiveRecord::Base
   # @option opts [Hash] hooks
   def use_chain(chain, opts = {})
     args = opts[:args] || []
+    kwargs = opts[:kwargs] || {}
     urgent = opts[:urgent].nil? ? self.urgent : opts[:urgent]
     prio = opts[:prio] || self.prio
 
     c, ret = chain.use_in(self, {
       args: args.is_a?(Array) ? args : [args],
+      kwargs: kwargs,
       urgent: urgent,
       prio: prio,
       reversible: opts[:reversible],
@@ -270,8 +279,9 @@ class TransactionChain < ActiveRecord::Base
     ret
   end
 
-  def mail(*args)
-    m = ::MailTemplate.send_mail!(*args)
+  # See {MailTemplate.send_mail!} for arguments
+  def mail(name, opts = {})
+    m = ::MailTemplate.send_mail!(name, opts)
     return if m.nil?
 
     append(Transactions::Mail::Send, args: [find_mail_server, m])
@@ -279,8 +289,9 @@ class TransactionChain < ActiveRecord::Base
     m
   end
 
-  def mail_custom(*args)
-    m = ::MailTemplate.send_custom(*args)
+  # See {MailTemplate.send_custom} for arguments
+  def mail_custom(opts)
+    m = ::MailTemplate.send_custom(opts)
     append(Transactions::Mail::Send, args: [find_mail_server, m])
     m.update!(transaction_id: @last_id)
     m
@@ -350,6 +361,7 @@ class TransactionChain < ActiveRecord::Base
   # @param klass
   # @param opts [Hash]
   # @option opts [Array] args
+  # @option opts [Hash] kwargs
   # @option opts [Boolean] urgent
   # @option opts [Integer] prio
   # @option opts [Symbol] name
@@ -359,6 +371,7 @@ class TransactionChain < ActiveRecord::Base
   def do_append(dep, klass, opts, block, retain_context = false)
     t_opts = {
       args: opts[:args].is_a?(Array) ? opts[:args] : [ opts[:args] ],
+      kwargs: opts[:kwargs],
       urgent: opts[:urgent].nil? ? self.urgent : opts[:urgent],
       prio: opts[:prio] || self.prio,
       reversible: opts[:reversible] || self.reversible,
