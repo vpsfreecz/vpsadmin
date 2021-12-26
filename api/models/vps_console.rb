@@ -5,11 +5,15 @@ class VpsConsole < ActiveRecord::Base
   validates :token, uniqueness: true, length: {is: 100}, unless: :token_nil?
 
   def self.find_for(vps, user)
-    self.where(vps: vps, user: user).where('expiration > ?', Time.now).where.not(token: nil).take
+    self
+      .where(vps: vps, user: user)
+      .where('expiration > ?', Time.now)
+      .where.not(token: nil)
+      .take
   end
 
-  def self.find_for!(*args)
-    t = find_for(*args)
+  def self.find_for!(vps, user)
+    t = find_for(vps, user)
 
     if t
       t
