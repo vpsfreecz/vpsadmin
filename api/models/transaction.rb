@@ -158,24 +158,24 @@ class Transaction < ActiveRecord::Base
     end
 
     # Create an object. Pass the object as an argument.
-    def create(*args)
-      add_confirmable(:create_type, *args)
+    def create(obj)
+      add_confirmable(:create_type, obj)
     end
 
     # Create an object which does not have attribute +confirmed+.
-    def just_create(*args)
-      add_confirmable(:just_create_type, *args)
+    def just_create(obj)
+      add_confirmable(:just_create_type, obj)
     end
 
     # Destroy an object. Pass the object as an argument.
-    def destroy(*args)
-      add_confirmable(:destroy_type, *args)
+    def destroy(obj)
+      add_confirmable(:destroy_type, obj)
     end
 
     # Just destroy the row. The object does not have attribute
     # +confirmed+
-    def just_destroy(*args)
-      add_confirmable(:just_destroy_type, *args)
+    def just_destroy(obj)
+      add_confirmable(:just_destroy_type, obj)
     end
 
     # Confirm already changed attributes.
@@ -183,14 +183,14 @@ class Transaction < ActiveRecord::Base
     # Attributes are first changed in the model and when
     # the transaction succeeds, no action is taken. If
     # it fails, than the original value is restored.
-    def edit_before(obj, attrs)
-      add_confirmable(:edit_before_type, obj, attrs)
+    def edit_before(obj, attrs = nil, **kwattrs)
+      add_confirmable(:edit_before_type, obj, attrs, kwattrs)
     end
 
     # Edit hash of attributes +attrs+ of an object +obj+.
     # The model is updated only after the transaction succeeds.
-    def edit_after(obj, attrs)
-      add_confirmable(:edit_after_type, obj, attrs)
+    def edit_after(obj, attrs = nil, **kwattrs)
+      add_confirmable(:edit_after_type, obj, attrs, kwattrs)
     end
 
     def decrement(obj, attr)
@@ -204,44 +204,44 @@ class Transaction < ActiveRecord::Base
     alias_method :edit, :edit_after
 
     protected
-    def add_confirmable(type, obj, attrs = nil)
+    def add_confirmable(type, obj, attrs = nil, kwattrs = nil)
       pk = obj.class.primary_key
       pks = {}
 
       if pk.is_a?(Array)
         pk.each { |col| pks[col] = obj.send(col) }
-
       else
         pks[pk] = obj.id
       end
 
-      tr_attrs = nil
-
-      if attrs && attrs.is_a?(::Hash)
-        tr_attrs = {}
-
-        attrs.each do |k, v|
-          if v === true
-            tr_attrs[k] = 1
-
-          elsif v === false
-            tr_attrs[k] = 0
-
-          else
-            tr_attrs[k] = v
-          end
+      input_attrs =
+        if attrs && kwattrs
+          raise ArgumentError, 'provite attrs either as a hash or keyword arguments'
+        else
+          attrs || kwattrs
         end
 
-      else
-        tr_attrs = attrs
-      end
+      translated_attrs =
+        if input_attrs
+          Hash[input_attrs.map do |k, v|
+            if v === true
+              [k, 1]
+            elsif v === false
+              [k, 0]
+            else
+              [k, v]
+            end
+          end]
+        else
+          nil
+        end
 
       ::TransactionConfirmation.create(
         parent_transaction: @transaction,
         class_name: obj.class.name,
         table_name: obj.class.table_name,
         row_pks: pks,
-        attr_changes: tr_attrs,
+        attr_changes: translated_attrs,
         confirm_type: type
       )
     end
