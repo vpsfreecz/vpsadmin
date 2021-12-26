@@ -102,8 +102,8 @@ class MaintenanceLock < ActiveRecord::Base
     end
   end
 
-  def maintain_lock(*args)
-    self.class.maintain_lock(*args)
+  def maintain_lock(k)
+    self.class.maintain_lock(k)
   end
 
   def self.maintain_lock(k)
