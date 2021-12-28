@@ -61,7 +61,7 @@ class XTemplate {
 	var $_ignore_missing_blocks = true ;          // NW 17 oct 2002 - Set to FALSE to
 	var $_file_name_full_path = '';
 	var $table_rows = 0;
-	function XTemplate ($file,  $tpldir = '', $files = null, $mainblock = 'main', $autosetup = true) {
+	function __construct ($file,  $tpldir = '', $files = null, $mainblock = 'main', $autosetup = true) {
 		$this->filename = $file;
 		$this->_file_name_full_path = realpath($file);
 		$this->tpldir = $tpldir;
