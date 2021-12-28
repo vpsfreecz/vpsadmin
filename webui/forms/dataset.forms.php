@@ -111,7 +111,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 			);
 		}
 
-		if (role == 'hypervisor' && (isAdmin() || USERNS_PUBLIC)) {
+		if ($role == 'hypervisor' && (isAdmin() || USERNS_PUBLIC)) {
 			if ($ds->user_namespace_map_id) {
 				$xtpl->table_td('<a href="?page=userns&action=map_show&id='.$ds->user_namespace_map_id.'">'.$ds->user_namespace_map->label.'</a>');
 			} else {
