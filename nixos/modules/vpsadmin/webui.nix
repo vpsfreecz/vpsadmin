@@ -167,7 +167,6 @@ in {
       phpOptions = ''
         error_reporting = ${cfg.errorReporting}
         date.timezone = ${cfg.timeZone}
-        extension=${pkgs.phpExtensions.json}/lib/php/extensions/json.so
         extension=${pkgs.phpExtensions.session}/lib/php/extensions/session.so
         extension=${pkgs.phpExtensions.redis}/lib/php/extensions/redis.so
       '';
