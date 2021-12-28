@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f5ea0a2cba8641cbeebdc517d11fe1c7",
+    "content-hash": "d44a9094e95af07186dee6e5ded0b9b6",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -108,21 +108,21 @@
         },
         {
             "name": "endroid/qr-code",
-            "version": "4.3.5",
+            "version": "4.4.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/endroid/qr-code.git",
-                "reference": "5630e192948b466d418608ecce697465d20260af"
+                "reference": "361b43bbdfa4360442369d0a236e7d8756160523"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/endroid/qr-code/zipball/5630e192948b466d418608ecce697465d20260af",
-                "reference": "5630e192948b466d418608ecce697465d20260af",
+                "url": "https://api.github.com/repos/endroid/qr-code/zipball/361b43bbdfa4360442369d0a236e7d8756160523",
+                "reference": "361b43bbdfa4360442369d0a236e7d8756160523",
                 "shasum": ""
             },
             "require": {
                 "bacon/bacon-qr-code": "^2.0",
-                "php": "^7.3||^8.0"
+                "php": "^7.4||^8.0"
             },
             "require-dev": {
                 "endroid/quality": "dev-master",
@@ -168,7 +168,7 @@
             ],
             "support": {
                 "issues": "https://github.com/endroid/qr-code/issues",
-                "source": "https://github.com/endroid/qr-code/tree/4.3.5"
+                "source": "https://github.com/endroid/qr-code/tree/4.4.4"
             },
             "funding": [
                 {
@@ -176,7 +176,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2021-09-17T07:50:43+00:00"
+            "time": "2021-12-13T11:01:54+00:00"
         },
         {
             "name": "haveapi/client",

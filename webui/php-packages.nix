@@ -25,10 +25,10 @@ let
     "endroid/qr-code" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "endroid-qr-code-5630e192948b466d418608ecce697465d20260af";
+        name = "endroid-qr-code-361b43bbdfa4360442369d0a236e7d8756160523";
         src = fetchurl {
-          url = "https://api.github.com/repos/endroid/qr-code/zipball/5630e192948b466d418608ecce697465d20260af";
-          sha256 = "011jm565rd4rw45aqkiyfs2ai4ikmic7vp3v2045f5p2jznzydk3";
+          url = "https://api.github.com/repos/endroid/qr-code/zipball/361b43bbdfa4360442369d0a236e7d8756160523";
+          sha256 = "1ggrkaijzq322y83jflqfdl81q7lrnnw3d2ch2m9n5z0fxj7sry3";
         };
       };
     };
