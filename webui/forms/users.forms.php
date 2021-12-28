@@ -1085,7 +1085,7 @@ function list_user_resource_packages($user_id) {
 				if (in_array($it->cluster_resource->name, $convert))
 					$s .= data_size_to_humanreadable($it->value);
 				else
-					$s .= $it->value;
+					$s .= approx_number($it->value);
 
 				$s .= "<br>\n";
 			}
