@@ -1,6 +1,15 @@
 # vpsAdmin client
 
-TODO: Write a gem description
+vpsAdmin client is a Ruby CLI and client library for vpsAdmin API. It is based
+on [haveapi-client](https://github.com/vpsfreecz/haveapi/tree/master/clients/ruby).
+
+vpsAdmin client extends `haveapi-client` with several command-line operations
+specific to vpsAdmin, including:
+
+- VPS remote console
+- Snapshot downloads, either ZFS streams or tar archives
+- Automated utility for local backups using ZFS
+- Live IP traffic monitor
 
 ## Installation
 
@@ -17,13 +26,6 @@ Or install it yourself as:
     $ gem install vpsadmin-client
 
 ## Usage
-
-TODO: Write usage instructions here
-
-## Contributing
-
-1. Fork it ( https://github.com/[my-github-username]/vpsadminctl/fork )
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create a new Pull Request
+See
+[haveapi-client](https://github.com/vpsfreecz/haveapi/tree/master/clients/ruby)
+for usage information.
