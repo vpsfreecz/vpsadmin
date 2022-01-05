@@ -33,10 +33,11 @@ module VpsAdmind
       end
     end
 
-    def shape_set(addr, version, shaper)
+    def shape_set(addr, prefix, version, shaper)
       @@mutex.synchronize do
         shape_ip(
             addr,
+            prefix,
             version,
             shaper['class_id'],
             shaper['max_tx'],
@@ -45,10 +46,11 @@ module VpsAdmind
       end
     end
 
-    def shape_change(addr, version, shaper)
+    def shape_change(addr, prefix, version, shaper)
       @@mutex.synchronize do
         change_shaper(
             addr,
+            prefix,
             version,
             shaper['class_id'],
             shaper['max_tx'],
@@ -57,10 +59,11 @@ module VpsAdmind
       end
     end
 
-    def shape_unset(addr, version, shaper)
+    def shape_unset(addr, prefix, version, shaper)
       @@mutex.synchronize do
         free_ip(
             addr,
+            prefix,
             version,
             shaper['class_id']
         )
@@ -89,7 +92,15 @@ module VpsAdmind
 
       all_ips(db) do |ip|
         devs.each do |dev|
-          shape_ip(ip['ip_addr'], ip['ip_version'].to_i, ip['class_id'], ip['max_tx'], ip['max_rx'], dev)
+          shape_ip(
+            ip['ip_addr'],
+            ip['ip_prefix'],
+            ip['ip_version'].to_i,
+            ip['class_id'],
+            ip['max_tx'],
+            ip['max_rx'],
+            dev
+          )
         end
       end
     end
@@ -115,7 +126,7 @@ module VpsAdmind
       end
     end
 
-    def shape_ip(addr, v, class_id, tx, rx, dev = nil)
+    def shape_ip(addr, prefix, v, class_id, tx, rx, dev = nil)
       devs ||= $CFG.get(:vpsadmin, :net_interfaces)
 
       return if devs.empty? || tx == 0 || rx == 0 # it ain't perfect
@@ -124,20 +135,20 @@ module VpsAdmind
 
       devs.each do |dev|
         tc("class add dev #{dev} parent 1:1 classid 1:#{class_id} htb rate #{tx}bps ceil #{tx}bps burst 300k", [2])
-        add_filters(addr, v, class_id, dev)
+        add_filters(addr, prefix, v, class_id, dev)
         tc("qdisc add dev #{dev} parent 1:#{class_id} handle #{class_id}: sfq perturb 10", [2])
       end
 
       tc("qdisc add dev venet0 parent 1:#{class_id} handle #{class_id}: sfq perturb 10", [2])
     end
 
-    def change_shaper(addr, v, class_id, tx, rx)
+    def change_shaper(addr, prefix, v, class_id, tx, rx)
       devs ||= $CFG.get(:vpsadmin, :net_interfaces)
 
       return if devs.empty?
 
       if tx == 0 || rx == 0
-        free_ip(addr, v, class_id)
+        free_ip(addr, prefix, v, class_id)
 
       else
         ret_in = tc("class change dev venet0 parent 1:1 classid 1:#{class_id} htb rate #{rx}bps ceil #{rx}bps burst 300k", [2])
@@ -148,12 +159,12 @@ module VpsAdmind
 
         # either one of those commands reported 'RTNETLINK answers: No such file or directory'
         if ret_in[:exitstatus] == 2 || ret_outs.detect { |ret| ret[:exitstatus] == 2 }
-          shape_ip(addr, v, class_id, rx, tx, dev)
+          shape_ip(addr, prefix, v, class_id, rx, tx, dev)
         end
       end
     end
 
-    def add_filters(addr, v, class_id, dev)
+    def add_filters(addr, prefix, v, class_id, dev)
       if v == 4
         proto = 'ip'
         match = 'ip'
@@ -165,11 +176,11 @@ module VpsAdmind
         prio = 17
       end
 
-      tc("filter add dev venet0 parent 1: protocol #{proto} prio #{prio} u32 match #{match} dst #{addr} flowid 1:#{class_id}", [2])
-      tc("filter add dev #{dev} parent 1: protocol #{proto} prio #{prio} u32 match #{match} src #{addr} flowid 1:#{class_id}", [2])
+      tc("filter add dev venet0 parent 1: protocol #{proto} prio #{prio} u32 match #{match} dst #{addr}/#{prefix} flowid 1:#{class_id}", [2])
+      tc("filter add dev #{dev} parent 1: protocol #{proto} prio #{prio} u32 match #{match} src #{addr}/#{prefix} flowid 1:#{class_id}", [2])
     end
 
-    def free_ip(addr, v, class_id)
+    def free_ip(addr, prefix, v, class_id)
       devs = $CFG.get(:vpsadmin, :net_interfaces)
 
       return if devs.empty?
@@ -196,13 +207,13 @@ module VpsAdmind
       # since all filters were deleted, set them up again
       all_ips(Db.new) do |ip|
         devs.each do |dev|
-          add_filters(ip['ip_addr'], ip['ip_version'].to_i, ip['class_id'], dev)
+          add_filters(ip['ip_addr'], ip['ip_prefix'], ip['ip_version'].to_i, ip['class_id'], dev)
         end
       end
     end
 
     def all_ips(db)
-      rs = db.query("SELECT ip_addr, ip_version, class_id, max_tx, max_rx
+      rs = db.query("SELECT ip_addr, ip.prefix AS ip_prefix, ip_version, class_id, max_tx, max_rx
                     FROM vpses
                     INNER JOIN network_interfaces netifs ON netifs.vps_id = vpses.id
                     INNER JOIN ip_addresses ip ON ip.network_interface_id = netifs.id

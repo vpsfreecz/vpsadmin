@@ -3,12 +3,12 @@ module VpsAdmind
     handle 2010
 
     def exec
-      Shaper.new.shape_set(@addr, @version, @shaper)
+      Shaper.new.shape_set(@addr, @prefix, @version, @shaper)
       ok
     end
 
     def rollback
-      Shaper.new.shape_unset(@addr, @version, @shaper)
+      Shaper.new.shape_unset(@addr, @prefix, @version, @shaper)
       ok
     end
   end

@@ -11,7 +11,7 @@ module VpsAdmind
     end
 
     def rollback
-      VpsAdmind::Firewall.ip_map.set(@addr, @id, @version, @user_id) if @unregister
+      VpsAdmind::Firewall.ip_map.set(@addr, @prefix, @id, @version, @user_id) if @unregister
       NetworkInterface.new(@vps_id, @veth_name).add_route(
         @addr, @prefix, @version, @unregister, @shaper
       )
