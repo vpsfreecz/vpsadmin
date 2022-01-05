@@ -130,11 +130,13 @@ module TransactionChains
           args: [
             vps,
             node,
+          ],
+          kwargs: {
             as_id: dst_vps.id,
             network_interfaces: false,
             snapshots: false,
             passphrase: token,
-          ]
+          },
         )
 
         # In case of rollback on the target node
@@ -191,7 +193,11 @@ module TransactionChains
         # Full copy
         append_t(
           Transactions::Vps::Copy,
-          args: [vps, dst_vps.id, consistent: attrs[:stop], network_interfaces: false],
+          args: [
+            vps,
+            dst_vps.id,
+            {consistent: attrs[:stop], network_interfaces: false},
+          ],
           &confirm_creation
         )
       end
@@ -216,7 +222,13 @@ module TransactionChains
         # Finish the transfer
         append_t(
           Transactions::Vps::SendState,
-          args: [vps, clone: true, consistent: false, restart: false, start: false],
+          args: [vps],
+          kwargs: {
+            clone: true,
+            consistent: false,
+            restart: false,
+            start: false,
+          },
         )
       end
 

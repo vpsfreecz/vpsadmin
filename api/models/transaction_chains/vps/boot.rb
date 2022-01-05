@@ -14,7 +14,7 @@ module TransactionChains
       append(Transactions::Vps::Boot, args: [
         vps,
         template,
-        mount_root_dataset: opts[:mount_root_dataset],
+        {mount_root_dataset: opts[:mount_root_dataset]},
       ])
 
       vps.user.user_public_keys.where(auto_add: true).each do |key|

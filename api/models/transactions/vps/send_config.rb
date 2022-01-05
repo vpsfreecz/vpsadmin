@@ -13,7 +13,7 @@ module Transactions::Vps
     # @option opts [String] :passphrase
     # @option opts [String] :from_snapshot
     # @option opts [Boolean] :preexisting_datasets
-    def params(vps, node, opts = {})
+    def params(vps, node, **opts)
       self.vps_id = vps.id
       self.node_id = vps.node_id
 

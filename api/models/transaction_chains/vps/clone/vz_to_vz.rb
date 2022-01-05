@@ -198,11 +198,16 @@ module TransactionChains
         append(Transactions::Queue::Release, args: [vps.node, :zfs_send])
 
         # Set canmount=on on all datasets and mount them
-        append(Transactions::Storage::SetCanmount, args: [
-          datasets.map { |src, dst| dst },
-          canmount: 'on',
-          mount: true,
-        ])
+        append(
+          Transactions::Storage::SetCanmount,
+          args: [
+            datasets.map { |src, dst| dst },
+          ],
+          kwargs: {
+            canmount: 'on',
+            mount: true,
+          },
+        )
 
         use_chain(Vps::Start, args: vps, urgent: true) if vps.running?
 
@@ -211,11 +216,16 @@ module TransactionChains
         append(Transactions::Queue::Release, args: [vps.node, :zfs_send])
 
         # Set canmount=on on all datasets and mount them
-        append(Transactions::Storage::SetCanmount, args: [
-          datasets.map { |src, dst| dst },
-          canmount: 'on',
-          mount: true,
-        ])
+        append(
+          Transactions::Storage::SetCanmount,
+          args: [
+            datasets.map { |src, dst| dst },
+          ],
+          kwargs: {
+            canmount: 'on',
+            mount: true,
+          },
+        )
       end
 
       # Fix snapshots
@@ -268,11 +278,13 @@ module TransactionChains
         @dst_pool,
         nil,
         [ds],
-        automount: false,
-        properties: props,
-        user: dst_vps.user,
-        label: "vps#{dst_vps.id}",
-        create_private: false,
+        {
+          automount: false,
+          properties: props,
+          user: dst_vps.user,
+          label: "vps#{dst_vps.id}",
+          create_private: false,
+        },
       ]).last
 
       # Clone dataset plans

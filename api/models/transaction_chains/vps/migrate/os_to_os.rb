@@ -34,7 +34,14 @@ module TransactionChains
       # Copy configs
       append(
         Transactions::Vps::SendConfig,
-        args: [src_vps, dst_node, network_interfaces: true, passphrase: token],
+        args: [
+          src_vps,
+          dst_node,
+        ],
+        kwargs: {
+          network_interfaces: true,
+          passphrase: token,
+        },
       )
 
       # In case of rollback on the target node
@@ -88,7 +95,8 @@ module TransactionChains
       # Send it to the target node
       append(
         Transactions::Vps::SendState,
-        args: [src_vps, start: false],
+        args: [src_vps],
+        kwargs: {start: false},
         urgent: true,
       )
 

@@ -90,7 +90,7 @@ module TransactionChains
       # Stop the broken VPS
       append(Transactions::Vps::RecoverCleanup, args: [
         vps,
-        network_interfaces: true,
+        {network_interfaces: true},
       ])
 
       # Free resources of the original VPS
@@ -131,13 +131,18 @@ module TransactionChains
         )
 
         # Copy configs
-        append(Transactions::Vps::SendConfig, args: [
-          vps,
-          node,
-          as_id: dst_vps.id,
-          network_interfaces: true,
-          passphrase: token,
-        ])
+        append(
+          Transactions::Vps::SendConfig,
+          args: [
+            vps,
+            node,
+          ],
+          kwargs: {
+            as_id: dst_vps.id,
+            network_interfaces: true,
+            passphrase: token,
+          },
+        )
 
         # In case of rollback on the target node
         append(Transactions::Vps::SendRollbackConfig, args: dst_vps)
@@ -212,7 +217,13 @@ module TransactionChains
         # Finish the transfer
         append_t(
           Transactions::Vps::SendState,
-          args: [vps, clone: true, consistent: false, restart: false, start: false],
+          args: [vps, ],
+          kwargs: {
+            clone: true,
+            consistent: false,
+            restart: false,
+            start: false,
+          },
         )
       end
 
@@ -229,7 +240,7 @@ module TransactionChains
       # Populate config of the new VPS
       append(Transactions::Vps::PopulateConfig, args: [
         dst_vps,
-        network_interfaces: vps.network_interfaces.all,
+        {network_interfaces: vps.network_interfaces.all},
       ])
 
       # Resources
@@ -253,7 +264,11 @@ module TransactionChains
       end
 
       # Prevent the old vps to autostart
-      append(Transactions::Vps::Autostart, args: [vps, enable: false, revert: false])
+      append(
+        Transactions::Vps::Autostart,
+        args: [vps],
+        kwargs: { enable: false, revert: false},
+      )
 
       # Start the new VPS
       if attrs[:start]

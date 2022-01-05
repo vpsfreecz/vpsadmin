@@ -6,7 +6,7 @@ module TransactionChains
     # @param addrs [Array<::HostIpAddress>]
     # @param opts [Hash]
     # @option opts [Boolean] :phony
-    def link_chain(netif, addrs, opts = {})
+    def link_chain(netif, addrs, **opts)
       lock(netif)
       lock(netif.vps)
       concerns(:affect, [netif.vps.class.name, netif.vps.id])

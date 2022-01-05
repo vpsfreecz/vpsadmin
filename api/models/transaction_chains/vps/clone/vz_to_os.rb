@@ -185,13 +185,20 @@ module TransactionChains
       append(Transactions::Queue::Release, args: [vps.node, :zfs_send])
 
       # Set canmount=noauto on all datasets
-      append(Transactions::Storage::SetCanmount, args: [
-        datasets.map { |src, dst| dst },
-        canmount: 'noauto',
-      ])
+      append(
+        Transactions::Storage::SetCanmount,
+        args: [
+          datasets.map { |src, dst| dst },
+        ],
+        kwargs: {canmount: 'noauto'},
+      )
 
       # Create empty new VPS
-      append_t(Transactions::Vps::Create, args: [dst_vps, empty: true]) do |t|
+      append_t(
+        Transactions::Vps::Create,
+        args: [dst_vps],
+        kwargs: {empty: true},
+      ) do |t|
         t.create(dst_vps)
         confirm_features.each { |f| t.just_create(f) }
         confirm_windows.each { |w| t.just_create(w) }
@@ -256,12 +263,14 @@ module TransactionChains
         @dst_pool,
         nil,
         [ds],
-        automount: false,
-        properties: props,
-        user: dst_vps.user,
-        label: "vps#{dst_vps.id}",
-        userns_map: @userns_map,
-        create_private: false,
+        {
+          automount: false,
+          properties: props,
+          user: dst_vps.user,
+          label: "vps#{dst_vps.id}",
+          userns_map: @userns_map,
+          create_private: false,
+        },
       ]).last
 
       # Clone dataset plans

@@ -10,7 +10,7 @@ module Transactions::Vps
     # @option opts [Boolean] :start
     # @option opts [Boolean] :restart
     # @option opts [Boolean] :consistent
-    def params(vps, opts = {})
+    def params(vps, **opts)
       self.vps_id = vps.id
       self.node_id = vps.node_id
 

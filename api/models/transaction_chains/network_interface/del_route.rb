@@ -9,7 +9,7 @@ module TransactionChains
     # @option opts [Boolean] :reallocate
     # @option opts [Boolean] :phony
     # @option opts [Environment] :environment
-    def link_chain(netif, ips, opts = {})
+    def link_chain(netif, ips, **opts)
       lock(netif)
       lock(netif.vps)
       concerns(:affect, [netif.vps.class.name, netif.vps.id])
@@ -73,11 +73,14 @@ module TransactionChains
       ips_arr.each do |ip|
         lock(ip)
 
-        use_chain(NetworkInterface::DelHostIp, args: [
-          netif,
-          ip.host_ip_addresses.where.not(order: nil).to_a,
-          phony: opts[:phony],
-        ])
+        use_chain(
+          NetworkInterface::DelHostIp,
+          args: [
+            netif,
+            ip.host_ip_addresses.where.not(order: nil).to_a,
+          ],
+          kwargs: {phony: opts[:phony]},
+        )
 
         if opts[:phony]
           append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|

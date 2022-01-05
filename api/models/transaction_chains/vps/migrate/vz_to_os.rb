@@ -137,14 +137,25 @@ module TransactionChains
       end
 
       # Set canmount=noauto on all datasets
-      append(Transactions::Storage::SetCanmount, args: [
-        datasets.map { |src, dst| dst },
-        canmount: 'noauto',
-        mount: true,
-      ], urgent: true)
+      append(
+        Transactions::Storage::SetCanmount,
+        args: [
+          datasets.map { |src, dst| dst },
+        ],
+        kwargs: {
+          canmount: 'noauto',
+          mount: true,
+        },
+        urgent: true,
+      )
 
       # Create empty new VPS
-      append(Transactions::Vps::Create, args: [dst_vps, empty: true], urgent: true)
+      append(
+        Transactions::Vps::Create,
+        args: [dst_vps],
+        kwargs: {empty: true},
+        urgent: true,
+      )
 
       # Configure resources
       append(

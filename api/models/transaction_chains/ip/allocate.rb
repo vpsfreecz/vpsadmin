@@ -76,7 +76,8 @@ module TransactionChains
         if host_addrs
           use_chain(
             NetworkInterface::AddHostIp,
-            args: [netif, ip.host_ip_addresses.where(auto_add: true), check_addrs: false]
+            args: [netif, ip.host_ip_addresses.where(auto_add: true)],
+            kwargs: {check_addrs: false},
           )
         end
 

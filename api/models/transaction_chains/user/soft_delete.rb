@@ -23,7 +23,7 @@ module TransactionChains
       end
 
       user.exports.each do |ex|
-        use_chain(Export::Update, args: [ex, enabled: false])
+        use_chain(Export::Update, args: [ex, {enabled: false}])
       end
 
       user.session_tokens.destroy_all

@@ -48,11 +48,13 @@ module TransactionChains
         pool,
         nil,
         [ds],
-        automount: false,
-        properties: {refquota: vps.diskspace},
-        user: vps.user,
-        label: "vps#{vps.id}",
-        userns_map: userns_map,
+        {
+          automount: false,
+          properties: {refquota: vps.diskspace},
+          user: vps.user,
+          label: "vps#{vps.id}",
+          userns_map: userns_map,
+        },
       ]).last
 
       vps.dataset_in_pool = dip

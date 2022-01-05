@@ -474,11 +474,13 @@ module TransactionChains
           args: [
             dst_netif,
             ips,
+          ],
+          kwargs: {
             unregister: false,
             reallocate: opts[:reallocate_ips],
             phony: src_node.hypervisor_type != dst_node.hypervisor_type,
             environment: netif.vps.node.location.environment,
-          ],
+          },
           urgent: true
         )
       end

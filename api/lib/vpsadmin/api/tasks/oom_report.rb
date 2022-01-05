@@ -29,7 +29,10 @@ module VpsAdmin::API::Tasks
       puts "Accepted #{accepted} reports from #{vpses.length} VPS"
       puts "Disregarded #{disregarded} reports"
 
-      TransactionChains::Mail::OomReports.fire(vpses.values, cooldown: COOLDOWN)
+      TransactionChains::Mail::OomReports.fire2(
+        args: [vpses.values],
+        kwargs: {cooldown: COOLDOWN},
+      )
     end
 
     # Notify users about stale and previously unreported OOM reports
@@ -42,7 +45,10 @@ module VpsAdmin::API::Tasks
         oom_reports: {reported_at: nil},
       ).group('vpses.id')
 
-      TransactionChains::Mail::OomReports.fire(vpses, cooldown: COOLDOWN)
+      TransactionChains::Mail::OomReports.fire2(
+        args: [vpses],
+        kwargs: {cooldown: COOLDOWN},
+      )
     end
   end
 end

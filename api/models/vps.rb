@@ -167,7 +167,10 @@ class Vps < ActiveRecord::Base
   end
 
   def applyconfig(configs)
-    TransactionChains::Vps::ApplyConfig.fire(self, configs, resources: true)
+    TransactionChains::Vps::ApplyConfig.fire2(
+      args: [self, configs],
+      kwargs: {resources: true},
+    )
   end
 
   def passwd(t)

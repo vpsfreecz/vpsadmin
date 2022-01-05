@@ -2,7 +2,7 @@ module TransactionChains
   class Dataset::Transfer < ::TransactionChain
     label 'Transfer'
 
-    def link_chain(src_dataset_in_pool, dst_dataset_in_pool, opts = {})
+    def link_chain(src_dataset_in_pool, dst_dataset_in_pool, **opts)
       # FIXME: in theory, the transfer does not have to lock whole datasets.
       # It may be enough to lock only transfered snapshots. It would mean
       # that to deletedo something with a dataset, you'd have to get locks
@@ -53,8 +53,8 @@ module TransactionChains
             branch,
             true,
             nil,
-            send_reservation: opts[:send_reservation],
-          ]
+          ],
+          kwargs: {send_reservation: opts[:send_reservation]},
         )
 
       else
@@ -90,16 +90,17 @@ module TransactionChains
             # if they are the same, it is the last snapshot on source and nothing has to be sent
             unless src_last_snapshot.snapshot_id == snap.snapshot_id
               use_chain(Dataset::Send, args: [
-                port,
-                src_dataset_in_pool,
-                dst_dataset_in_pool,
-                transfer_snapshots,
-                nil,
-                branch,
-                false,
-                nil,
-                send_reservation: opts[:send_reservation],
-              ])
+                  port,
+                  src_dataset_in_pool,
+                  dst_dataset_in_pool,
+                  transfer_snapshots,
+                  nil,
+                  branch,
+                  false,
+                  nil,
+                ],
+                kwargs: {send_reservation: opts[:send_reservation]},
+              )
 
               return
             end

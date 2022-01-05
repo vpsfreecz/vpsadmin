@@ -2,7 +2,7 @@ module TransactionChains
   class Dataset::Send < ::TransactionChain
     label 'Send'
 
-    def link_chain(port, src, dst, snapshots, src_branch, dst_branch, initial = false, ds_suffix = nil, opts = {})
+    def link_chain(port, src, dst, snapshots, src_branch, dst_branch, initial = false, ds_suffix = nil, **opts)
       if opts[:send_reservation]
         append(Transactions::Queue::Reserve, args: [src.pool.node, :zfs_send])
       end

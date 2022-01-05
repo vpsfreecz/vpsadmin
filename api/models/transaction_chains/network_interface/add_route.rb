@@ -9,7 +9,7 @@ module TransactionChains
     # @option opts [Boolean] :reallocate (true)
     # @option opts [Array<::HostIpAddress>] :host_addrs
     # @option opts [::HostIpAddress] :via
-    def link_chain(netif, ips, opts = {})
+    def link_chain(netif, ips, **opts)
       opts[:register] = true unless opts.has_key?(:register)
       opts[:reallocate] = true unless opts.has_key?(:reallocate)
       opts[:host_addrs] ||= []
@@ -52,7 +52,8 @@ module TransactionChains
 
         append_t(
           Transactions::NetworkInterface::AddRoute,
-          args: [netif, ip, opts[:register], via: opts[:via]]
+          args: [netif, ip, opts[:register]],
+          kwargs: {via: opts[:via]},
         ) do |t|
           route_changes = {
             network_interface_id: netif.id,
@@ -80,7 +81,8 @@ module TransactionChains
         host_addrs = opts[:host_addrs].select { |addr| addr.ip_address == ip }
         use_chain(
           NetworkInterface::AddHostIp,
-          args: [netif, host_addrs, check_addrs: false]
+          args: [netif, host_addrs],
+          kwargs: {check_addrs: false}
         ) if host_addrs.any?
       end
 

@@ -5,9 +5,8 @@ module Transactions::Vps
     queue :vps
 
     # @param vps [::Vps]
-    # @param opts [Hash]
-    # @option opts [Boolean] :empty do not apply any template
-    def params(vps, opts = {})
+    # @param [Boolean] empty do not apply any template
+    def params(vps, empty: false)
       self.vps_id = vps.id
       self.node_id = vps.node_id
 
@@ -30,7 +29,7 @@ module Transactions::Vps
           vendor: vps.os_template.vendor,
           variant: vps.os_template.variant,
           onboot: vps.node.location.vps_onboot,
-          empty: opts[:empty] || false,
+          empty: empty,
         }
       end
     end

@@ -164,11 +164,15 @@ module TransactionChains
       end
 
       # Set canmount=on on all datasets and mount them
-      append(Transactions::Storage::SetCanmount, args: [
-        datasets.map { |src, dst| dst },
-        canmount: 'on',
-        mount: true,
-      ], urgent: true)
+      append(
+        Transactions::Storage::SetCanmount,
+        args: [datasets.map { |src, dst| dst }],
+        kwargs: {
+          canmount: 'on',
+          mount: true,
+        },
+        urgent: true,
+      )
 
       dst_ip_addresses = vps.ip_addresses
 

@@ -72,11 +72,12 @@ class NetworkInterface < ActiveRecord::Base
         end
       end
 
-      TransactionChains::NetworkInterface::AddRoute.fire(
-        self,
-        [ip],
-        host_addrs: host_addrs,
-        via: via,
+      TransactionChains::NetworkInterface::AddRoute.fire2(
+        args: [self, [ip]],
+        kwargs: {
+          host_addrs: host_addrs,
+          via: via,
+        },
       )
     end
   end
