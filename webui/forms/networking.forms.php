@@ -37,7 +37,7 @@ function ip_address_list($page) {
 			$api->network->list(['purpose' => 'vps']),
 			'id', 'label',
 			true,
-			network_label
+			'network_label'
 		),
 		get_val('network')
 	);
@@ -199,7 +199,7 @@ function host_ip_address_list($page) {
 			$api->network->list(['purpose' => 'vps']),
 			'id', 'label',
 			true,
-			network_label
+			'network_label'
 		),
 		get_val('network')
 	);
