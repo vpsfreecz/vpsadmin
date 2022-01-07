@@ -463,10 +463,12 @@ module TransactionChains
             ::ClusterResource.find_by!(name: r),
             dst_netif,
             ips[r],
+          ],
+          kwargs: {
             strict: false,
             host_addrs: true,
             address_location: attrs[:address_location],
-          ],
+          },
           method: :allocate_to_netif
         )
 

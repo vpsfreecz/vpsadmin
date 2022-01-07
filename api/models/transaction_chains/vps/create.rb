@@ -133,9 +133,11 @@ module TransactionChains
             ::ClusterResource.find_by!(name: v),
             netif,
             opts[v],
+          ],
+          kwargs: {
             host_addrs: true,
             address_location: opts[:address_location],
-          ],
+          },
           method: :allocate_to_netif,
         )
         ip_resources << user_env.reallocate_resource!(
