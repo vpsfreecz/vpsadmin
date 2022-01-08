@@ -242,7 +242,7 @@ if ($show_traffic) {
 		get_val('location')
 	);
 	$xtpl->form_add_select(_("Network").':', 'network',
-		resource_list_to_options($api->network->list(), 'id', 'label', true, network_label), get_val('network'));
+		resource_list_to_options($api->network->list(), 'id', 'label', true, 'network_label'), get_val('network'));
 
 	$xtpl->form_add_select(_("Node").':', 'node',
 		resource_list_to_options($api->node->list(), 'id', 'domain_name'), get_val('node'));
@@ -392,7 +392,7 @@ if (isAdmin() && $show_top) {
 	$xtpl->form_add_select(_("Location").':', 'location',
 		resource_list_to_options($api->location->list()), get_val('location'));
 	$xtpl->form_add_select(_("Network").':', 'network',
-		resource_list_to_options($api->network->list(), 'id', 'label', true, network_label), get_val('network'));
+		resource_list_to_options($api->network->list(), 'id', 'label', true, 'network_label'), get_val('network'));
 	$xtpl->form_add_select(_("Node").':', 'node',
 		resource_list_to_options($api->node->list(), 'id', 'domain_name'), get_val('node'));
 
@@ -472,7 +472,7 @@ if ($show_live) {
 	$xtpl->form_add_select(_("Location").':', 'location',
 		resource_list_to_options($api->location->list()), get_val('location'));
 	$xtpl->form_add_select(_("Network").':', 'network',
-		resource_list_to_options($api->network->list(), 'id', 'label', true, network_label), get_val('network'));
+		resource_list_to_options($api->network->list(), 'id', 'label', true, 'network_label'), get_val('network'));
 	$xtpl->form_add_select(_("Node").':', 'node',
 		resource_list_to_options($api->node->list(), 'id', 'domain_name'), get_val('node'));
 

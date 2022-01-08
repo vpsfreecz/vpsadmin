@@ -434,7 +434,7 @@ function ip_add_form($ip_addresses = '') {
 			$api->network->list(),
 			'id', 'label',
 			true,
-			network_label
+			'network_label'
 		),
 		$_POST['network']
 	);
