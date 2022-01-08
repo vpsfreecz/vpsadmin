@@ -562,7 +562,7 @@ function mount_create_form() {
 		'on_start_fail',
 		$params->on_start_fail,
 		post_val('on_start_fail', 'mount_later'),
-		translate_mount_on_start_fail
+		'translate_mount_on_start_fail'
 	);
 	$xtpl->table_td($params->on_start_fail->description);
 	$xtpl->table_tr();
@@ -596,7 +596,7 @@ function mount_edit_form($vps_id, $mnt_id) {
 		'on_start_fail',
 		$params->on_start_fail,
 		post_val('on_start_fail', $m->on_start_fail),
-		translate_mount_on_start_fail
+		'translate_mount_on_start_fail'
 	);
 	$xtpl->table_td($params->on_start_fail->description);
 	$xtpl->table_tr();
