@@ -849,7 +849,7 @@ function format_errors ($response) {
 
 	$body .= '<br>';
 
-	if(count($errors)) {
+	if(count((array)$errors) > 0) {
 		$body .= '<ul>';
 
 		foreach($errors as $param => $err)
