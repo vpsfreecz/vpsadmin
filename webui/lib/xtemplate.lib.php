@@ -732,7 +732,7 @@ class XTemplate {
 	  */
 	function form_add_input_pure($type = 'text', $size = '30', $name = 'input_fromgen', $value = '') {
 		$uid = uniqid();
-		$this->table_td('<input type="'.$type.'" size="'.$size.'" name="'.$name.'" id="input'. $uid .'" value="'.h($value).'" '.$maxlength.' '.$extra.' />');
+		$this->table_td('<input type="'.$type.'" size="'.$size.'" name="'.$name.'" id="input'. $uid .'" value="'.h($value).'" />');
 
 		return 'input'.$uid;
 	}
