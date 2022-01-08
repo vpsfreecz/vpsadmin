@@ -215,8 +215,8 @@ class Transaction < ActiveRecord::Base
       end
 
       input_attrs =
-        if attrs && kwattrs
-          raise ArgumentError, 'provite attrs either as a hash or keyword arguments'
+        if attrs && kwattrs && kwattrs.any?
+          raise ArgumentError, 'provide attrs either as a hash or keyword arguments'
         else
           attrs || kwattrs
         end
