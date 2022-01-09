@@ -222,7 +222,7 @@ class Transaction < ActiveRecord::Base
         end
 
       translated_attrs =
-        if input_attrs
+        if input_attrs.is_a?(::Hash)
           Hash[input_attrs.map do |k, v|
             if v === true
               [k, 1]
@@ -233,7 +233,7 @@ class Transaction < ActiveRecord::Base
             end
           end]
         else
-          nil
+          input_attrs
         end
 
       ::TransactionConfirmation.create(
