@@ -17,7 +17,10 @@ module VpsAdmin::API::Tasks
       @vps_count = registry.gauge(
         :vpsadmin_vps_count,
         docstring: 'The number of VPS in vpsAdmin',
-        labels: [:object_state, :node, :hypervisor_type, :location],
+        labels: [
+          :object_state, :node, :hypervisor_type, :location,
+          :distribution_template, :distribution_name, :distribution_version,
+        ],
       )
 
       @dataset_count = registry.gauge(
@@ -66,22 +69,34 @@ module VpsAdmin::API::Tasks
       # vps_count
       vps_count_result = ::Vps
         .unscoped
-        .joins(node: :location)
+        .joins(:os_template, node: :location)
         .where.not(object_state: 'hard_delete')
         .group(
           'vpses.object_state',
+          'os_templates.name',
+          'os_templates.distribution',
+          'os_templates.version',
           'nodes.name',
           'nodes.hypervisor_type',
           'locations.domain'
         ).count
 
       vps_count_result.each do |grp, cnt|
-        state, node, hypervisor_type, location = grp
+        state, tpl_name, tpl_dist, tpl_ver, node, hypervisor_type_val, location = grp
+
+        hypervisor_type = ::Node.hypervisor_types.key(hypervisor_type_val)
+
+        if hypervisor_type == 'openvz'
+          tpl_dist, tpl_ver, _ = tpl_name.split('-')
+        end
 
         @vps_count.set(cnt, labels: {
           object_state: state,
+          distribution_template: tpl_name,
+          distribution_name: tpl_dist,
+          distribution_version: tpl_ver,
           node: [node, location].join('.'),
-          hypervisor_type: ::Node.hypervisor_types.key(hypervisor_type),
+          hypervisor_type: hypervisor_type,
           location: location,
         })
       end
