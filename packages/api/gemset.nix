@@ -69,10 +69,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "07vrc6qfs27kilj2fgw0c7n0d7f086yp1z4rjqsxwgnn5ya452cv";
+      sha256 = "1cwz65p1j4iqpha85n9fd6lvbskwrixp9dvmpcim0h95cc9l9kps";
       type = "gem";
     };
-    version = "13.0.1";
+    version = "13.0.3";
   };
   concurrent-ruby = {
     groups = ["default"];
@@ -152,10 +152,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "09p79g4s352agbxhbld2s5m576jgrrx6zq0zmvp0nh3ring7g9q1";
+      sha256 = "17mb02cdnzi2czqi4yjbxh1ssq672m5ns5by5vww0kcj3zms1lpb";
       type = "gem";
     };
-    version = "0.15.0";
+    version = "0.15.1";
   };
   haveapi-client = {
     dependencies = ["activesupport" "highline" "json" "require_all" "rest-client" "ruby-progressbar"];
@@ -163,10 +163,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "19v5ghsd420k8xrvrpccgxbwjp11irlb5dwj1ha9shv79nqlj0yb";
+      sha256 = "1d83apdd5rjf0f81fxrgbdnsycp1011sizg73assd4xyqs2slvn8";
       type = "gem";
     };
-    version = "0.15.0";
+    version = "0.15.1";
   };
   highline = {
     groups = ["default"];
@@ -278,10 +278,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "03m3fkix2haah20kvh1jgv262yg9jlzn6wq0y31kafxk8fysfy27";
+      sha256 = "003gd7mcay800k2q4pb2zn8lwwgci4bhi42v2jvlidm8ksx03i6q";
       type = "gem";
     };
-    version = "3.2021.1115";
+    version = "3.2022.0105";
   };
   mini_mime = {
     groups = ["default"];
@@ -364,6 +364,16 @@
       type = "gem";
     };
     version = "12.1.0";
+  };
+  prometheus-client = {
+    groups = ["default"];
+    platforms = [];
+    source = {
+      remotes = ["https://rubygems.org"];
+      sha256 = "1sbi6frbiyl1zznm24mxcpg74igiqfw9w8jy6m5ckhp6rv1n7vbp";
+      type = "gem";
+    };
+    version = "2.1.0";
   };
   pry = {
     dependencies = ["coderay" "method_source"];
@@ -634,9 +644,9 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "199aq1b9ccv002iwyky5igbb2wvrdmb68k5xayr90v0yhwdw1ar7";
+      sha256 = "0lmg9x683gr9mkrbq9df2m0zb0650mdfxqna0bs10js44inv7znx";
       type = "gem";
     };
-    version = "2.5.2";
+    version = "2.5.3";
   };
 }
