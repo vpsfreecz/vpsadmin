@@ -19,6 +19,7 @@ gem 'bcrypt', '~> 3.1.10'
 gem 'ipaddress', '~> 0.8.0'
 gem 'rotp', '~> 6.2.0'
 gem 'thin'
+gem 'prometheus-client', '~> 2.1.0'
 
 group :test do
   gem 'rspec'

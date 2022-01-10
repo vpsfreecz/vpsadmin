@@ -84,6 +84,13 @@ namespace :vpsadmin do
     task run: %i(process notify)
   end
 
+  namespace :prometheus do
+    desc 'Generate text file with metrics for prometheus'
+    task :export do
+      VpsAdmin::API::Tasks.run(:prometheus, :export)
+    end
+  end
+
   namespace :plugins do
     desc 'List installed plugins'
     task :list do
