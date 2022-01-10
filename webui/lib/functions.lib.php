@@ -792,22 +792,22 @@ function h($v) {
  * @return bool
  */
 function isLoggedIn(){
-	return isset($_SESSION["logged_in"]) && $_SESSION["logged_in"];
+	return $_SESSION["logged_in"] ?? false;
 }
 
 /**
  * @return bool
  */
 function isAdmin(){
-	return isset($_SESSION["is_admin"]) && $_SESSION["is_admin"];
+	return $_SESSION["is_admin"] ?? false;
 }
 
 function mustResetPassword() {
-	return isset($_SESSION['user']) && $_SESSION['user']['password_reset'];
+	return $_SESSION['user']['password_reset'] ?? false;
 }
 
 function get_version () {
-	if ($_SESSION['commit_hash']) {
+	if (isset($_SESSION['commit_hash'])) {
 		$hash = $_SESSION['commit_hash'];
 
 	} else {

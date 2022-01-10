@@ -38,7 +38,7 @@ function vps_run_redirect_path($veid) {
 
 if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
 
-$_GET["run"] = isset($_GET["run"]) ? $_GET["run"] : false;
+$_GET["run"] = $_GET["run"] ?? false;
 
 if ($_GET["run"] == 'stop') {
 	csrf_check();
@@ -91,9 +91,7 @@ if ($_GET["run"] == 'restart') {
 	}
 }
 
-$_GET["action"] = isset($_GET["action"]) ? $_GET["action"] : false;
-
-switch ($_GET["action"]) {
+switch ($_GET["action"] ?? null) {
 		case 'list':
 			vps_list_form();
 			break;
@@ -895,7 +893,7 @@ switch ($_GET["action"]) {
 
 $xtpl->assign(
 	'AJAX_SCRIPT',
-	$xtpl->vars['AJAX_SCRIPT'] . '
+	($xtpl->vars['AJAX_SCRIPT'] ?? '') . '
 	<script type="text/javascript" src="js/vps.js"></script>'
 );
 
@@ -1102,7 +1100,7 @@ if (isset($show_info) && $show_info) {
 
 		$xtpl->table_td(_('Password or SSH key').':');
 
-		if($_SESSION['vps_password'][$vps->id]) {
+		if($_SESSION['vps_password'][$vps->id] ?? false) {
 			$xtpl->table_td("<b>".$_SESSION['vps_password'][$vps->id]."</b>");
 
 		} else {

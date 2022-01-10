@@ -1,7 +1,7 @@
 <?php
 
 if (isLoggedIn()) {
-	switch ($_GET['action']) {
+	switch ($_GET['action'] ?? null) {
 	case 'export_dataset':
 		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			try {

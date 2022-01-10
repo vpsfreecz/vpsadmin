@@ -924,8 +924,7 @@ if ($_SESSION["logged_in"]) {
 			$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Requests for approval").'" /> '._("Requests for approval"), '?page=adminm&section=members&action=approval_requests');
 	}
 
-	$action = isset($_GET["action"]) ? $_GET["action"] : null;
-	switch ($action) {
+	switch ($_GET["action"] ?? null) {
 		case 'new':
 			if (isAdmin()) {
 				print_newm();

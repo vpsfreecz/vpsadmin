@@ -7,13 +7,13 @@
     Copyright (C) 2008-2011 Pavel Snajdr, snajpa@snajpa.net
 */
 
-if ($_SESSION["logged_in"]) {
+if (isLoggedIn()) {
 	$vps_backups = false;
 	$nas_backups = false;
 
 	backup_submenu();
 
-	switch ($_GET["action"]) {
+	switch ($_GET["action"] ?? null) {
 		case 'vps':
 			$xtpl->title(_("VPS Backups"));
 			backup_vps_form();
@@ -35,7 +35,7 @@ if ($_SESSION["logged_in"]) {
 			break;
 
 		case 'snapshot':
-			$xtpl->sbar_add(_("Back"), $_GET['return'] ? $_GET['return'] : '?page=backup');
+			$xtpl->sbar_add(_("Back"), $_GET['return'] ?? '?page=backup');
 
 			try {
 				$ds = $api->dataset->find($_GET['dataset']);
@@ -72,7 +72,7 @@ if ($_SESSION["logged_in"]) {
 				));
 
 				notify_user(_('Snapshot creation scheduled.'), _('Snapshot will be taken momentarily.'));
-				redirect($_GET['return'] ? $_GET['return'] : '?page=');
+				redirect($_GET['return'] ?? '?page=');
 
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 				$xtpl->perex_format_errors(_('Snapshot failed'), $e->getResponse());
@@ -93,7 +93,7 @@ if ($_SESSION["logged_in"]) {
 						_('Restoration scheduled.'),
 						_("Restoration of dataset").' '.$ds->name.' '._('from').' '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)).' '._("planned")
 					);
-					redirect($_POST['return'] ? $_POST['return'] : '?page=backup');
+					redirect($_POST['return'] ?? '?page=backup');
 
 				}  catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 					$xtpl->perex_format_errors(_('Dataset restoration failed'), $e->getResponse());
@@ -125,7 +125,7 @@ if ($_SESSION["logged_in"]) {
 					$xtpl->table_tr();
 
 					$xtpl->table_td(_("Confirm") . ' ' .
-						'<input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">'
+						'<input type="hidden" name="return" value="'.($_GET['return'] ?? $_POST['return']).'">'
 						. '<input type="hidden" name="restore_snapshot" value="'.$_POST['restore_snapshot'].'">'
 					);
 					$xtpl->form_add_checkbox_pure('confirm', '1', false);
@@ -152,7 +152,7 @@ if ($_SESSION["logged_in"]) {
 						_('Snapshot deleted'),
 						_('The snapshot has been successfully deleted.')
 					);
-					redirect($_POST['return'] ? $_POST['return'] : '?page=backup');
+					redirect($_POST['return'] ?? '?page=backup');
 
 				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 					$xtpl->perex_format_errors(_('Snapshot deletion failed'), $e->getResponse());
@@ -182,7 +182,7 @@ if ($_SESSION["logged_in"]) {
 					$xtpl->table_tr();
 
 					$xtpl->table_td(_("Confirm") . ' ' .
-						'<input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">'
+						'<input type="hidden" name="return" value="'.($_GET['return'] ?? $_POST['return']).'">'
 					);
 					$xtpl->form_add_checkbox_pure('confirm', '1', false);
 					$xtpl->table_tr();
@@ -212,7 +212,7 @@ if ($_SESSION["logged_in"]) {
 						  _("Download of snapshot of").' '.$ds->name.' '. _('from').' '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at))." "._("planned")
 						, _("Preparing the archive may take several hours. You will receive email with download link when it is done.")
 					);
-					redirect($_POST['return'] ? $_POST['return'] : '?page=backup');
+					redirect($_POST['return'] ?? '?page=backup');
 
 				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 					$xtpl->perex_format_errors(_('Download failed'), $e->getResponse());
@@ -236,7 +236,7 @@ if ($_SESSION["logged_in"]) {
 					$xtpl->form_add_select(_('Format').':', 'format', $formats, $_POST['format']);
 
 					$xtpl->table_td(_("Confirm") . ' ' .
-						'<input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">'
+						'<input type="hidden" name="return" value="'.($_GET['return'] ?? $_POST['return']).'">'
 					);
 					$xtpl->form_add_checkbox_pure('confirm', '1', false);
 					$xtpl->table_tr();
@@ -261,7 +261,7 @@ if ($_SESSION["logged_in"]) {
 					));
 
 					notify_user(_('Snapshot mount in progress'), _('The snapshot will be mounted momentarily.'));
-					redirect($_POST['return'] ? $_POST['return'] : '?page=backup');
+					redirect($_POST['return'] ?? '?page=backup');
 
 				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 					$xtpl->perex_format_errors(_('Snapshot mount failed'), $e->getResponse());
