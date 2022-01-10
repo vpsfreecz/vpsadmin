@@ -254,6 +254,20 @@ in {
           timer.config = { OnCalendar = "00:35"; };
         };
 
+        prometheus-export = {
+          rake = [
+            "vpsadmin:prometheus:export"
+            "EXPORT_FILE=${cfg.stateDir}/cache/vpsadmin.prom"
+          ];
+          timer.enable = true;
+          timer.config = {
+            OnBootSec = "1min";
+            OnUnitActiveSec = "10min";
+            RandomizedDelaySec = "60s";
+            FixedRandomDelay = true;
+          };
+        };
+
         payments-process = {
           enable = elem "payments" cfg.plugins;
           rake = [ "vpsadmin:payments:process" "BACKEND=fio" ];
@@ -282,6 +296,35 @@ in {
             OnUnitInactiveSec = "2min";
             RandomizedDelaySec = "10s";
           };
+        };
+      };
+    })
+
+    (mkIf (cfg.enable && cfg.rake.enableDefaultTasks) {
+      systemd.services."vpsadmin-api-prometheus-export" = {
+        wants = [ "vpsadmin-api-prometheus-export-deploy.service" ];
+        before = [ "vpsadmin-api-prometheus-export-deploy.service" ];
+      };
+
+      systemd.services."vpsadmin-api-prometheus-export-deploy" = {
+        description = "Copy vpsAdmin metrics from the cache directory to node_exporter";
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = pkgs.writeScript "vpsadmin-api-prometheus-export-deploy" ''
+            #!${pkgs.bash}/bin/bash
+            src="${cfg.stateDir}/cache/vpsadmin.prom"
+            dst="${cfg.nodeExporterTextCollectorDirectory}/vpsadmin.prom"
+
+            if [ ! -e "$src" ] ; then
+              echo "File '$src' not found"
+              exit 1
+            fi
+
+            mkdir -p "${cfg.nodeExporterTextCollectorDirectory}"
+            mv "$src" "$dst.new" || exit 1
+            mv "$dst.new" "$dst" || exit 1
+            exit 0
+          '';
         };
       };
     })

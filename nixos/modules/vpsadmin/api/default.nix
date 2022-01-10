@@ -113,6 +113,15 @@ in {
         '';
       };
 
+      nodeExporterTextCollectorDirectory = mkOption {
+        type = types.str;
+        default = "/run/metrics";
+        description = ''
+          Path to a directory, which is read by node_exporter's text file
+          collector. Rake tasks may place their files there.
+        '';
+      };
+
       database = {
         host = mkOption {
           type = types.str;
