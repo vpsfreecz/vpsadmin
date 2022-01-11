@@ -262,7 +262,7 @@ in {
           timer.enable = true;
           timer.config = {
             OnBootSec = "1min";
-            OnUnitActiveSec = "10min";
+            OnUnitActiveSec = "2min";
             RandomizedDelaySec = "60s";
             FixedRandomDelay = true;
           };
