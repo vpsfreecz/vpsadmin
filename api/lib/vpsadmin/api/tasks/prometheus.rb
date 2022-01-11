@@ -38,7 +38,7 @@ module VpsAdmin::API::Tasks
       @node_last_report_seconds = registry.gauge(
         :vpsadmin_node_last_report_seconds,
         docstring: 'The number of seconds since the node last reported',
-        labels: [:node_name, :node_location],
+        labels: [:node_name, :node_location, :node_platform],
       )
 
       @transaction_chain_state_seconds = registry.gauge(
@@ -153,6 +153,7 @@ module VpsAdmin::API::Tasks
         @node_last_report_seconds.set(t_now - last_report, labels: {
           node_name: node.domain_name,
           node_location: node.location.domain,
+          node_platform: node.hypervisor_type,
         })
       end
 
