@@ -18,7 +18,7 @@ module VpsAdmin::API::Tasks
         :vpsadmin_vps_count,
         docstring: 'The number of VPS in vpsAdmin',
         labels: [
-          :object_state, :node, :hypervisor_type, :location,
+          :object_state, :vps_node, :vps_platform, :vps_location,
           :distribution_template, :distribution_name, :distribution_version,
         ],
       )
@@ -26,19 +26,19 @@ module VpsAdmin::API::Tasks
       @dataset_count = registry.gauge(
         :vpsadmin_dataset_count,
         docstring: 'The number of datasets in vpsAdmin',
-        labels: [:role, :node, :location],
+        labels: [:dataset_role, :dataset_node, :dataset_location],
       )
 
       @snapshot_count = registry.gauge(
         :vpsadmin_snapshot_count,
         docstring: 'The number of snapshots in vpsAdmin',
-        labels: [:role, :node, :location],
+        labels: [:snapshot_role, :snapshot_node, :snapshot_location],
       )
 
       @node_last_report_seconds = registry.gauge(
         :vpsadmin_node_last_report_seconds,
         docstring: 'The number of seconds since the node last reported',
-        labels: [:node, :location],
+        labels: [:node_name, :node_location],
       )
 
       @transaction_chain_state_seconds = registry.gauge(
@@ -101,9 +101,9 @@ module VpsAdmin::API::Tasks
           distribution_template: tpl_name,
           distribution_name: tpl_dist,
           distribution_version: tpl_ver,
-          node: [node, location].join('.'),
-          hypervisor_type: hypervisor_type,
-          location: location,
+          vps_node: [node, location].join('.'),
+          vps_platform: hypervisor_type,
+          vps_location: location,
         })
       end
 
@@ -117,9 +117,9 @@ module VpsAdmin::API::Tasks
         role, node, location = grp
 
         @dataset_count.set(cnt, labels: {
-          role: ::Pool.roles.key(role),
-          node: [node, location].join('.'),
-          location: location,
+          dataset_role: ::Pool.roles.key(role),
+          dataset_node: [node, location].join('.'),
+          dataset_location: location,
         })
       end
 
@@ -133,9 +133,9 @@ module VpsAdmin::API::Tasks
         role, node, location = grp
 
         @snapshot_count.set(cnt, labels: {
-          role: ::Pool.roles.key(role),
-          node: [node, location].join('.'),
-          location: location,
+          snapshot_role: ::Pool.roles.key(role),
+          snapshot_node: [node, location].join('.'),
+          snapshot_location: location,
         })
       end
 
@@ -151,8 +151,8 @@ module VpsAdmin::API::Tasks
                       || node.node_current_status.created_at
 
         @node_last_report_seconds.set(t_now - last_report, labels: {
-          node: node.domain_name,
-          location: node.location.domain,
+          node_name: node.domain_name,
+          node_location: node.location.domain,
         })
       end
 
