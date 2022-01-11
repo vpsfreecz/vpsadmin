@@ -35,6 +35,12 @@ module VpsAdmin::API::Tasks
         labels: [:role, :node, :location],
       )
 
+      @node_last_report_seconds = registry.gauge(
+        :vpsadmin_node_last_report_seconds,
+        docstring: 'The number of seconds since the node last reported',
+        labels: [:node, :location],
+      )
+
       @transaction_chain_state_seconds = registry.gauge(
         :vpsadmin_transaction_chain_queued_seconds,
         docstring: 'Number of seconds a chain has been in a run state',
@@ -130,6 +136,23 @@ module VpsAdmin::API::Tasks
           role: ::Pool.roles.key(role),
           node: [node, location].join('.'),
           location: location,
+        })
+      end
+
+      # node_last_report_seconds
+      t_now = Time.now
+
+      ::Node
+        .joins(:node_current_status)
+        .includes(:node_current_status, :location)
+        .where(active: true)
+        .each do |node|
+        last_report = node.node_current_status.updated_at \
+                      || node.node_current_status.created_at
+
+        @node_last_report_seconds.set(t_now - last_report, labels: {
+          node: node.domain_name,
+          location: node.location.domain,
         })
       end
 
