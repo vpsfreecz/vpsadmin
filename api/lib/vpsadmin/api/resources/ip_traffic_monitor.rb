@@ -103,14 +103,14 @@ module VpsAdmin::API::Resources
         end
 
         if input[:node]
-          q = q.joins(ip_address: :vps).where(
+          q = q.joins(ip_address: {network_interface: :vps}).where(
             vpses: {node_id: input[:node].id}
           )
         end
 
         if input.has_key?(:vps)
-          q = q.joins(:ip_address).where(
-            ip_addresses: {vps_id: input[:vps] && input[:vps].id}
+          q = q.joins(ip_address: :network_interface).where(
+            network_interfaces: {vps_id: input[:vps] && input[:vps].id}
           )
         end
 
@@ -162,7 +162,7 @@ module VpsAdmin::API::Resources
         q = ::IpTrafficLiveMonitor
 
         if current_user.role != :admin
-          q = q.joins(ip_address: :vps).where(vpses: {user_id: current_user.id})
+          q = q.joins(ip_address: {network_interface: :vps}).where(vpses: {user_id: current_user.id})
         end
 
         @mon = q.find_by!(id: params[:ip_traffic_monitor_id])
