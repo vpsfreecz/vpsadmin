@@ -621,7 +621,7 @@ function mount_snapshot_form() {
 	$xtpl->form_add_select(
 		_('Mount to VPS'),
 		'vps',
-		resource_list_to_options($api->vps->list(), 'id', 'hostname', true, vps_label),
+		resource_list_to_options($api->vps->list(), 'id', 'hostname', true, 'vps_label'),
 		$_POST['vps'] ? $_POST['vps'] : $_GET['vps_id']
 	);
 
