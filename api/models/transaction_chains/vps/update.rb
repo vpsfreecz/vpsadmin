@@ -113,6 +113,17 @@ module TransactionChains
         when 'cpu_limit'
           db_changes[vps][attr] = vps.send(attr) == 0 ? nil : vps.send(attr)
 
+        when 'start_menu_timeout'
+          append_t(
+            Transactions::Vps::StartMenu,
+            args: [vps, vps.start_menu_timeout_was],
+          ) do |t|
+            t.edit(vps, start_menu_timeout: vps.start_menu_timeout)
+            t.just_create(vps.log(:start_menu, {
+              timeout: vps.start_menu_timeout,
+            }))
+          end
+
         when 'config'
           # FIXME
 

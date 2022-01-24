@@ -79,7 +79,7 @@ class Vps < ActiveRecord::Base
       route_add route_del host_addr_add host_addr_del
       start stop restart passwd clone swap configs features mount umount
       maintenance_windows maintenance_window restore deploy_public_key
-      netif_rename
+      netif_rename start_menu
   )
 
   validates :user_id, :node_id, :os_template_id, presence: true, numericality: {only_integer: true}
@@ -91,6 +91,11 @@ class Vps < ActiveRecord::Base
     only_integer: true,
     greater_than_or_equal_to: 0
   }, allow_nil: true
+  validates :start_menu_timeout, numericality: {
+    only_integer: true,
+    greater_than_or_equal_to: 0,
+    less_than_or_equal_to: 24*60*60,
+  }
   validate :foreign_keys_exist
 
   default_scope {

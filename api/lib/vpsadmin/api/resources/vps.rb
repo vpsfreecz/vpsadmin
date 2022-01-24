@@ -29,6 +29,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     string :config, label: 'Config', desc: 'Custom configuration options',
            default: ''
     integer :cpu_limit, label: 'CPU limit', desc: 'Limit of maximum CPU usage'
+    integer :start_menu_timeout, label: 'Start menu timeout',
+      desc: 'Number of seconds the start menu waits for the user'
   end
 
   params(:dataset) do
@@ -445,6 +447,8 @@ END
             && input[:swap] \
             && input[:swap] > 0 && vps.node.total_swap == 0
         error("swap is not available on #{vps.node.domain_name}")
+      elsif vps.node.openvz? && input[:start_menu_timeout]
+        error("start menu is available only on vpsAdminOS")
       end
 
       @chain, _ = vps.update(to_db_names(input))
