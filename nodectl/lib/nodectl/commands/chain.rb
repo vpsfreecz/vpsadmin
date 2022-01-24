@@ -89,13 +89,13 @@ END
       list.each do |t, confirmations|
         puts "TRANSACTION ##{t}"
         puts sprintf(
-          "%-6s %-13s %-4s %-20s %-12s %s",
+          "%-8s %-13s %-4s %-20s %-12s %s",
           'ID', 'TYPE', 'DONE', 'OBJECT', 'ID', 'ATTRS'
         )
 
         confirmations.each do |c|
           puts sprintf(
-            '%-6d %-13s %-4s %-20s %-12s %s',
+            '%-8d %-13s %-4s %-20s %-12s %s',
             c[:id],
             c[:type],
             c[:done] ? 1 : 0,
