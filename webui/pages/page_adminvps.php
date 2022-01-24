@@ -739,6 +739,22 @@ switch ($_GET["action"] ?? null) {
 			}
 			break;
 
+		case 'startmenu':
+			if (isset($_GET["veid"]) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+				csrf_check();
+				try {
+					$api->vps($_GET['veid'])->update(['start_menu_timeout' => $_POST['timeout']]);
+
+					notify_user(_("Start menu set"), _('The start menu will be reconfigured momentarily.'));
+					redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Start menu change failed'), $e->getResponse());
+					$show_info=true;
+				}
+			}
+			break;
+
 		case 'maintenance_windows':
 			csrf_check();
 
@@ -1465,6 +1481,28 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_tr();
 
 		$xtpl->form_out(_("Go >>"));
+
+	// Start menu
+		if ($vps->node->hypervisor_type == 'vpsadminos') {
+			$xtpl->table_title(_('Start Menu'));
+			$xtpl->form_create('?page=adminvps&action=startmenu&veid='.$vps->id, 'post');
+
+			$xtpl->table_td(
+				_('Configure the number of seconds the start menu waits for the user '.
+				'before the system is started. Set to zero to disable the start menu.'),
+				false, false, 2
+			);
+			$xtpl->table_tr();
+
+			$xtpl->form_add_number(
+				_('Timeout').':',
+				'timeout',
+				$vps->start_menu_timeout,
+				0, 3600, 1, _('seconds')
+			);
+
+			$xtpl->form_out(_("Go >>"));
+		}
 
 	// Maintenance windows
 		$xtpl->table_title(_('Maintenance windows'));
