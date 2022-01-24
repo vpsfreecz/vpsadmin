@@ -742,7 +742,7 @@ class XTemplate {
 		$this->form_add_number_pure($name, $value, $min, $max, $step, $unit);
 
 		if ($hint)
-			$xtpl->table_td($hint);
+			$this->table_td($hint);
 
 		$this->table_tr();
 	}
