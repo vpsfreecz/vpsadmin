@@ -137,6 +137,7 @@ module NodeCtld
               connect_timeout: db[:connect_timeout],
               read_timeout: db[:read_timeout],
               write_timeout: db[:write_timeout],
+              database_timezone: :utc,
             )
             query('SET NAMES UTF8')
             log(:info, :sql, "Connected to #{host}") if problem
