@@ -73,8 +73,19 @@ module NodeCtld::Firewall
 
       @fw.synchronize do
         {4 => '0.0.0.0/0', 6 => '::/0'}.each do |v, all|
-          iptables(v, ['-L', chain, '-nvx', '-Z']).output.split("\n")[2..-2].each do |l|
-            fields = l.strip.split(/\s+/)
+          iptables(v, ['-L', chain, '-nvx', '-Z']).output.split("\n").each do |l|
+            stripped = l.strip
+
+            if stripped.start_with?('#') \
+               || stripped.start_with?('Chain') \
+               || stripped.start_with?('pkts') \
+               || stripped.start_with?('Zeroing')
+              # Skip warnings from stderr, which is merged into output,
+              # headers and the footer
+              next
+            end
+
+            fields = stripped.split(/\s+/)
             src = fields[v == 4 ? 7 : 6]
             dst = fields[v == 4 ? 8 : 7]
             ip = (src == all ? dst : src).split('/').first
