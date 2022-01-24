@@ -70,6 +70,8 @@ module NodeCtld::RemoteCommands
             end
           end
 
+        when 'resolve'
+          db.prepared('UPDATE transaction_chains SET state = 6 WHERE id = ?', @chain)
       end
 
       db.close
