@@ -75,6 +75,10 @@ class RegistrationRequest < UserRequest
       os_template,
       params[:activate],
     ])
+
+    chain.append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
+      t.edit(self, user_id: new_user.id)
+    end
   end
 
   def resubmit!(attrs)
