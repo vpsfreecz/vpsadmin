@@ -7,7 +7,7 @@ let
 
   apiShellRcFile = pkgs.writeText "vpsadmin-api-shell.rc" ''
     . /etc/profile
-    export PATH=${cfg.package}/ruby-env/bin:$PATH
+    export PATH=${cfg.package}/ruby-env/bin:${pkgs.mariadb}/bin:$PATH
   '';
 
   apiShellScript = pkgs.writeScriptBin "vpsadmin-api-shell" ''
