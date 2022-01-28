@@ -340,15 +340,6 @@ in {
         ];
       };
 
-      # This is to enable mount propagation from the host ns to systemd services,
-      # e.g. nginx. At least in vpsAdminOS containers, the default mount
-      # propagation mode seems to be `private`. That makes it impossible to
-      # use the download mounter, because NFS mounts do not appear within
-      # the nginx's mount namespace after it is created.
-      boot.postBootCommands = ''
-        mount --make-shared /
-      '';
-
       services.nginx = {
         enable = true;
 
