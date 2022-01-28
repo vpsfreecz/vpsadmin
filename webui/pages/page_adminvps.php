@@ -1483,7 +1483,7 @@ if (isset($show_info) && $show_info) {
 		$xtpl->form_out(_("Go >>"));
 
 	// Start menu
-		if ($vps->node->hypervisor_type == 'vpsadminos') {
+		if ($vps->node->hypervisor_type == 'vpsadminos' && isAdmin()) {
 			$xtpl->table_title(_('Start Menu'));
 			$xtpl->form_create('?page=adminvps&action=startmenu&veid='.$vps->id, 'post');
 
