@@ -41,6 +41,7 @@ class Dataset < ActiveRecord::Base
   # @option opts [Boolean] :automount
   # @option opts [Hash] :properties
   # @option opts [::UserNamespaceMap, :inherit, nil] :userns_map
+  # @return [Array<TransactionChain, Dataset>]
   def self.create_new(name, parent_ds, opts = {})
     opts[:properties] ||= {}
     parts = name.split('/')
@@ -95,12 +96,13 @@ class Dataset < ActiveRecord::Base
       opts[:userns_map] = parent_dip.user_namespace_map
     end
 
-    TransactionChains::Dataset::Create.fire(
+    chain, dips = TransactionChains::Dataset::Create.fire(
       parent_dip.pool,
       parent_dip,
       path,
       opts,
     )
+    [chain, dips.last.dataset]
   end
 
   def destroy
