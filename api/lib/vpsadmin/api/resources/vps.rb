@@ -1335,7 +1335,9 @@ END
       input do
         use :all, include: %i(
             dataset snapshot user_namespace_map mountpoint mode on_start_fail
+            enabled
           )
+          patch :enabled, default: true, fill: true
       end
 
       output do

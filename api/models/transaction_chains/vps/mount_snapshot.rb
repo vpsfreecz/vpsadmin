@@ -26,6 +26,7 @@ module TransactionChains
         umount_opts: '-f',
         mount_type: 'nfs',
         mode: 'ro',
+        enabled: opts.fetch(:enabled, true),
         user_editable: false,
         confirmed: ::Mount.confirmed(:confirm_create),
         expiration_date: Time.now + 3 * 24 * 60 * 60
@@ -94,11 +95,14 @@ module TransactionChains
           dst: mnt.dst,
           mode: mnt.mode,
           on_start_fail: mnt.on_start_fail,
+          enabled: mnt.enabled,
         }))
       end
 
-      use_chain(Vps::Mounts, args: vps)
-      use_chain(Vps::Mount, args: [vps, [mnt]])
+      if mnt.enabled
+        use_chain(Vps::Mounts, args: vps)
+        use_chain(Vps::Mount, args: [vps, [mnt]])
+      end
 
       mnt
     end
