@@ -103,6 +103,37 @@ module VpsAdmin::API::Resources
       end
     end
 
+    class FindByName < HaveAPI::Action
+      desc 'Look up dataset by its name, possibly with a label'
+      route 'find_by_name'
+      http_method :get
+
+      input do
+        use :common, include: %i(user name)
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        input blacklist: %i(user)
+        output blacklist: %i(sharenfs)
+        allow
+      end
+
+      def exec
+        ok(::VpsAdmin::API::Operations::Dataset::FindByName.run(
+          current_user.role == :admin ? (input[:user] || current_user) : current_user,
+          input[:name],
+        ))
+
+      rescue ActiveRecord::RecordNotFound
+        error('dataset not found')
+      end
+    end
+
     class Show < HaveAPI::Actions::Default::Show
       desc 'Show a dataset'
 

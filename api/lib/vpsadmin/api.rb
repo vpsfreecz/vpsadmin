@@ -7,6 +7,7 @@ module VpsAdmin
     module Authentication ; end
     module Operations
       module Authentication ; end
+      module Dataset ; end
       module Export ; end
       module LocationNetwork ; end
       module TotpDevice ; end
