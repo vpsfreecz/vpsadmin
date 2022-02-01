@@ -468,7 +468,7 @@ END
     end
 
     def state_id
-      @chain && @chain.id
+      @chain && !@chain.empty? && @chain.id
     end
   end
 
