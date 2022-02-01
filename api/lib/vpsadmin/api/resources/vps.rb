@@ -443,6 +443,12 @@ END
             (input[:hostname].nil? || input[:hostname].empty?)
         error('update failed', hostname: ['must be present'])
 
+      elsif input[:dns_resolver] && !input[:dns_resolver].available_to_vps?(vps)
+        error(
+          "DNS resolver '#{input[:dns_resolver].label}' is not available "+
+          "in location #{vps.node.location.label}"
+        )
+
       elsif vps.node.vpsadminos? \
             && input[:swap] \
             && input[:swap] > 0 && vps.node.total_swap == 0

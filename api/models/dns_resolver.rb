@@ -44,4 +44,8 @@ class DnsResolver < ActiveRecord::Base
       errors.add(:is_universal, 'must be either universal or location specific')
     end
   end
+
+  def available_to_vps?(vps)
+    is_universal || location_id == vps.node.location.id
+  end
 end
