@@ -228,13 +228,13 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       allow if u.role == :admin
       input whitelist: %i(environment location address_location hostname os_template
                           dns_resolver cpu memory swap diskspace ipv4 ipv4_private ipv6
-                          user_namespace_map)
+                          start_menu_timeout user_namespace_map)
       output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
                           node dataset memory swap cpu backup_enabled maintenance_lock
                           maintenance_lock_reason object_state expiration_date
                           is_running process_count used_memory used_swap used_diskspace
                           uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-                          cpu_irq cpu_softirq created_at)
+                          cpu_irq cpu_softirq start_menu_timeout created_at)
       allow
     end
 
@@ -333,6 +333,10 @@ END
         opts[:userns_map] = input.delete(:user_namespace_map)
       end
 
+      if node.openvz? && input[:start_menu_timeout]
+        error("start menu is available only on vpsAdminOS")
+      end
+
       vps = ::Vps.new(to_db_names(input))
       vps.set_cluster_resources(input)
       @chain, vps = vps.create(opts)
@@ -371,7 +375,7 @@ END
                           maintenance_lock_reason object_state expiration_date
                           is_running process_count used_memory used_swap used_diskspace
                           uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-                          cpu_irq cpu_softirq created_at)
+                          cpu_irq cpu_softirq start_menu_timeout created_at)
       allow
     end
 
