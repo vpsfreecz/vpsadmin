@@ -411,7 +411,7 @@ END
       allow if u.role == :admin
       restrict user_id: u.id
       input whitelist: %i(hostname manage_hostname os_template dns_resolver cpu
-                          memory swap start_menu_timeout)
+                          memory swap start_menu_timeout remind_after_date)
       allow
     end
 

@@ -84,10 +84,12 @@ module VpsAdmin::API::Tasks
       classes = get_objects
       days = ENV['DAYS'].to_i
       states = get_states
-      time = Time.now.utc + days * 24 * 60 * 60
+      now = Time.now.utc
+      time = now + days * 24 * 60 * 60
 
       classes.each do |cls|
         q = cls.where('expiration_date < ?', time)
+        q = q.where('remind_after_date IS NULL OR remind_after_date < ?', now)
         q = q.where(object_state: states) if states
 
         TransactionChains::Lifetimes::ExpirationWarning.fire(cls, q)

@@ -4,6 +4,8 @@ module TransactionChains
     allow_empty
 
     def link_chain(klass, q)
+      base_url = ::SysConfig.get(:webui, :base_url)
+
       q.each do |obj|
         user = if obj.is_a?(::User)
                  obj
@@ -20,6 +22,7 @@ module TransactionChains
           },
           user: user,
           vars: {
+            base_url: base_url,
             object: obj,
             state: obj.current_object_state,
             klass.name.underscore => obj

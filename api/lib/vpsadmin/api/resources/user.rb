@@ -245,7 +245,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(password new_password mailer_enabled language)
+      input whitelist: %i(password new_password mailer_enabled language remind_after_date)
       allow
     end
 

@@ -27,7 +27,8 @@ module TransactionChains
           if empty?
             obj.update!(
               object_state: target,
-              expiration_date: log.expiration_date
+              expiration_date: log.expiration_date,
+              remind_after_date: log.remind_after_date,
             )
 
           else
@@ -36,7 +37,8 @@ module TransactionChains
                 edit(
                   obj,
                   object_state: ::VpsAdmin::API::Lifetimes::STATES.index(target),
-                  expiration_date: log.expiration_date
+                  expiration_date: log.expiration_date,
+                  remind_after_date: log.remind_after_date,
                 )
               end
 
