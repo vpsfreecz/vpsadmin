@@ -209,7 +209,7 @@ module NodeCtld
         # Since all filters were deleted, set them up again
         get_vpses(Db.new).each do |vps|
           vps.netifs.each_value do |netif|
-            vps_host_veth = VethMap[vps.id][netif]
+            vps_host_veth = VethMap[vps.id][netif.name]
 
             add_filters(host_netifs, 'src', netif.ips)
             add_filters([vps_host_veth], 'dst', netif.ips) if vps_host_veth
@@ -331,7 +331,7 @@ module NodeCtld
       # Setup main host interfaces together with available per-VPS veth interfaces
       get_vpses(db).each do |vps|
         vps.netifs.each_value do |netif|
-          vps_host_veth = VethMap[vps.id][netif]
+          vps_host_veth = VethMap[vps.id][netif.name]
 
           if vps_host_veth
             tc("qdisc add dev #{vps_host_veth} root handle 1: htb", [2])
