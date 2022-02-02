@@ -78,6 +78,7 @@ $xtpl->assign("L_LOGIN", _("Login"));
 $xtpl->assign("L_LOGOUT", _("Logout"));
 
 $api_cluster = null;
+$config = null;
 
 try {
 	if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
@@ -263,19 +264,26 @@ $xtpl->logbox(isLoggedIn(),
 	$api_cluster ? $api_cluster->maintenance_lock : false
 );
 
-$xtpl->adminbox($config->get("webui", "sidebar"));
+if ($config)
+	$xtpl->adminbox($config->get("webui", "sidebar"));
 
-$help = get_helpbox();
+try {
+	$help = get_helpbox();
+} catch (\Httpful\Exception\ConnectionErrorException $e) {
+}
 
-if (isAdmin())
+if (isAdmin()) {
 	$help .= '<p><a href="?page=cluster&action=helpboxes_add&help_page='.$_GET["page"].'&help_action='.$_GET["action"].'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'">'._("Edit help box").'</a></p>';
+}
 
 if ($help)
 	$xtpl->helpbox(_("Help"), nl2br($help));
 
 $lang->lang_switcher();
 
-$xtpl->assign('PAGE_TITLE', $config->get("webui", "document_title"));
+if ($config)
+	$xtpl->assign('PAGE_TITLE', $config->get("webui", "document_title"));
+
 $xtpl->assign('API_SPENT_TIME', round($api->getSpentTime(), 6));
 
 if (defined('TRACKING_CODE')) {
