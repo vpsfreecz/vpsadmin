@@ -53,22 +53,28 @@ module NodeCtld
     end
 
     def [](vps_id)
+      k = vps_id.to_s
+
       sync do
-        @map[vps_id] = fetch(vps_id) unless @map.has_key?(vps_id)
-        @map[vps_id]
+        @map[k] = fetch(k) unless @map.has_key?(k)
+        @map[k]
       end
     end
 
     def set(vps_id, ct_veth, host_veth)
+      k = vps_id.to_s
+
       sync do
-        @map[vps_id] = {} unless @map.has_key?(vps_id)
-        @map[vps_id][ct_veth] = host_veth
+        @map[k] = {} unless @map.has_key?(k)
+        @map[k][ct_veth] = host_veth
       end
     end
 
     def reset(vps_id)
+      k = vps_id.to_s
+
       sync do
-        @map[vps_id].clear if @map.has_key?(vps_id)
+        @map[k].clear if @map.has_key?(k)
       end
     end
 
