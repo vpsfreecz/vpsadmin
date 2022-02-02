@@ -14,6 +14,7 @@ module VpsAdmin::API::Tasks
     #                   seconds.
     # [REASON]:  Provide custom reason that will be saved in every object's
     #            state log.
+    # [LIMIT]:   Maximum number of objects to progress at a time.
     # [EXECUTE]: The states are progressed only if EXECUTE is 'yes'. If not,
     #            the task just prints what would happen.
     def progress
@@ -28,6 +29,9 @@ module VpsAdmin::API::Tasks
                      nil
                    end
 
+      limit = ENV['LIMIT'] ? ENV['LIMIT'].to_i : 30
+      fail 'invalid limit' if limit <= 0
+
       puts "Progressing objects having expiration date older than #{time}"
       states = get_states
 
@@ -37,6 +41,7 @@ module VpsAdmin::API::Tasks
         q = obj.where('expiration_date < ?', time)
         q = q.where(object_state: states) if states
         q = q.order('full_name DESC') if obj.name == 'Dataset'
+        q = q.limit(limit)
 
         q.each do |instance|
           puts "  id=#{instance.send(obj.primary_key)}"
