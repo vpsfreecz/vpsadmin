@@ -42,12 +42,14 @@ if (isLoggedIn() && isAdmin()) {
 			$xtpl->table_add_category(_('Date'));
 			$xtpl->table_add_category(_('State'));
 			$xtpl->table_add_category(_('Expiration'));
-			$xtpl->table_add_category(_('Admin'));
+			$xtpl->table_add_category(_('Remind after'));
+			$xtpl->table_add_category(_('User'));
 
 			foreach ($states as $s) {
 				$xtpl->table_td(tolocaltz($s->changed_at));
 				$xtpl->table_td($s->state);
 				$xtpl->table_td($s->expiration ? tolocaltz($s->expiration) : '---');
+				$xtpl->table_td($s->remind_after ? tolocaltz($s->remind_after) : '---');
 
 				if ($s->user_id)
 					$xtpl->table_td('<a href="?page=adminm&action=edit&id='.$s->user->id.'">'.$s->user->login.'</a>');
@@ -57,7 +59,7 @@ if (isLoggedIn() && isAdmin()) {
 				$xtpl->table_tr();
 				$xtpl->table_td(
 					_('Reason').': '.nl2br($s->reason),
-					false, false, 4
+					false, false, 5
 				);
 				$xtpl->table_tr();
 			}
