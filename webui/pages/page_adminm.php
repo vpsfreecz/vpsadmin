@@ -124,7 +124,10 @@ function print_editm($u) {
 		$xtpl->table_tr();
 	}
 
-	$xtpl->form_add_checkbox(_("Enable mail notifications from vpsAdmin").':', 'm_mailer_enable', '1', $u->mailer_enabled, $hint = '');
+	$xtpl->table_td(_('Enable mail notifications from vpsAdmin').':');
+	$xtpl->form_add_checkbox_pure('m_mailer_enable', '1', $u->mailer_enabled, $hint = '');
+	$xtpl->table_td('<a href="?page=reminder&action=reminder&resource=user&id='.$u->id.'">'._('Configure payment reminder').'</a>');
+	$xtpl->table_tr();
 
 	api_param_to_form(
 		'language',

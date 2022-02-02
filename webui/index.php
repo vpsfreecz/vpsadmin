@@ -174,6 +174,9 @@ try {
 			case 'lifetimes':
 				include WWW_ROOT.'pages/page_lifetimes.php';
 				break;
+			case 'reminder':
+				include WWW_ROOT.'pages/page_reminder.php';
+				break;
 			case 'history':
 				include WWW_ROOT.'pages/page_history.php';
 				break;
