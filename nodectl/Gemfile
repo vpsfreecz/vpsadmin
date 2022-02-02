@@ -6,5 +6,6 @@ if !ENV.has_key?('VPSADMIN_BUILD_ID')
 
   gem 'libosctl', path: File.join(os_path, 'libosctl')
   gem 'osctl', path: File.join(os_path, 'osctl')
+  gem 'osctl-exportfs', path: File.join(os_path, 'osctl-exportfs')
   gem 'libnodectld', path: '../libnodectld'
 end
