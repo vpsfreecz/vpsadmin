@@ -333,7 +333,7 @@ END
         opts[:userns_map] = input.delete(:user_namespace_map)
       end
 
-      if node.openvz? && input[:start_menu_timeout]
+      if input[:node].openvz? && input[:start_menu_timeout]
         error("start menu is available only on vpsAdminOS")
       end
 
