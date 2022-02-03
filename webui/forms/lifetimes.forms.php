@@ -74,13 +74,13 @@ function lifetimes_reminder_form($resource, $id) {
 
 	if ($obj->expiration_date) {
 		$xtpl->table_td(_('Expiration date').':');
-		$xtpl->table_td(tolocaltz($obj->expiration_date));
+		$xtpl->table_td(tolocaltz($obj->expiration_date, 'Y-m-d'));
 		$xtpl->table_tr();
 	}
 
 	if ($obj->remind_after_date) {
 		$xtpl->table_td(_('Current remind after date').':');
-		$xtpl->table_td(tolocaltz($obj->remind_after_date));
+		$xtpl->table_td(tolocaltz($obj->remind_after_date, 'Y-m-d'));
 		$xtpl->table_tr();
 	}
 
@@ -97,7 +97,7 @@ function lifetimes_reminder_form($resource, $id) {
 	api_param_to_form_pure(
 		'remind_after_date',
 		$p->remind_after_date,
-		tolocaltz($obj->remind_after_date ?? "now")
+		tolocaltz($obj->remind_after_date ?? "now", 'Y-m-d')
 	);
 	$xtpl->table_tr();
 
