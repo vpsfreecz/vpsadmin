@@ -14,6 +14,7 @@ require_relative 'transaction_chains/lifetimes/not_implemented'
 class Vps < ActiveRecord::Base
   belongs_to :node
   belongs_to :user
+  belongs_to :vps_group
   belongs_to :os_template
   belongs_to :dns_resolver
   has_many :transactions

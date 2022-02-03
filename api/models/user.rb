@@ -11,6 +11,7 @@ require_relative 'transaction_chains/lifetimes/not_implemented'
 class User < ActiveRecord::Base
   has_many :user_namespaces
   has_many :vpses
+  has_many :vps_groups
   has_many :transactions
   has_many :environment_user_configs
   has_many :environments, through: :environment_user_configs

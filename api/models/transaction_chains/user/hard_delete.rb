@@ -62,6 +62,11 @@ module TransactionChains
       end
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
+        # Destroy VPS groups
+        user.vps_groups.each do |grp|
+          t.just_destroy(grp)
+        end
+
         # Free all IP addresses
         user.environment_user_configs.each do |cfg|
           cfg.free_resources(chain: self, free_objects: true).each do |use|
