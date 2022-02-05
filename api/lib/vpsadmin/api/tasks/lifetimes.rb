@@ -86,6 +86,8 @@ module VpsAdmin::API::Tasks
     # [FORCE_DAY]:  Selected number of days after/before the expiration date, where
     #               a notification is sent even if remind_after_date is set.
     # [FORCE_ONLY]: Send notification only when `FORCE_DAY` matches.
+    # [EXECUTE]:    The notifications are sent only if EXECUTE is 'yes'. If not,
+    #               the task just prints what would happen.
     #
     # Examples:
     #   FROM_DAYS=-7 to notify about objects a week before their expiration
@@ -108,10 +110,17 @@ module VpsAdmin::API::Tasks
         objects = []
 
         q.each do |obj|
-          objects << obj if send_notification?(obj, now, force_days, force_only)
+          puts "#{cls} id=#{obj.id} state=#{obj.object_state} expiration=#{obj.expiration_date} remind_after=#{obj.remind_after_date}"
+
+          if send_notification?(obj, now, force_days, force_only)
+            puts '  sending notification'
+            objects << obj
+          else
+            puts '  skip'
+          end
         end
 
-        next unless objects.any?
+        next if !objects.any? || ENV['EXECUTE'] != 'yes'
 
         TransactionChains::Lifetimes::ExpirationWarning.fire(cls, objects)
       end
@@ -128,9 +137,18 @@ module VpsAdmin::API::Tasks
           days_diff >= day && days_diff < day+1
         end
 
-        return true if do_force || (!force_only && do_remind)
+        if do_force
+          puts '  forced'
+          return true
+        elsif !force_only && do_remind
+          puts '  remind allowed'
+          return true
+        else
+          return false
+        end
 
       elsif do_remind
+        puts '  remind allowed'
         return true
       else
         return false
