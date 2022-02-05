@@ -197,6 +197,7 @@ in {
             "FROM_DAYS=-7"
             "FORCE_DAY=${toString (userExpirationGraceDays - 1)}"
             "FORCE_ONLY=no"
+            "EXECUTE=yes"
           ];
           timer.enable = true;
           timer.config = { OnCalendar = "Mon,Wed,Fri 08:00:00"; };
@@ -210,6 +211,7 @@ in {
             "FROM_DAYS=-7"
             "FORCE_DAY=${toString (userExpirationGraceDays - 1)}"
             "FORCE_ONLY=yes"
+            "EXECUTE=yes"
           ];
           timer.enable = true;
           timer.config = { OnCalendar = "Tue,Thu,Sat,Sun 08:00:00"; };
@@ -223,6 +225,7 @@ in {
             "FROM_DAYS=-7"
             "FORCE_DAY=-1"
             "FORCE_ONLY=no"
+            "EXECUTE=yes"
           ];
           timer.enable = true;
           timer.config = { OnCalendar = "Mon,Wed,Fri 08:00:00"; };
@@ -236,6 +239,7 @@ in {
             "FROM_DAYS=-7"
             "FORCE_DAY=-1"
             "FORCE_ONLY=yes"
+            "EXECUTE=yes"
           ];
           timer.enable = true;
           timer.config = { OnCalendar = "Tue,Thu,Sat,Sun 08:00:00"; };
