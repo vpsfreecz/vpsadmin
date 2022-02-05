@@ -77,31 +77,64 @@ module VpsAdmin::API::Tasks
     # Mail users regarging expiring objects.
     #
     # Accepts the following environment variables:
-    # [OBJECTS]: A list of object names to inform about, separated by a comma.
-    #            To inform about all objects, use special name 'all'.
-    # [STATES]:  A list of states that an object must be in to be included.
-    #            If not specified, all states are included.
-    # [DAYS]:    Inform only about objects that will reach expiration in +DAYS+
-    #            number of days.
+    # [OBJECTS]:   A list of object names to inform about, separated by a comma.
+    #              To inform about all objects, use special name 'all'.
+    # [STATES]:    A list of states that an object must be in to be included.
+    #              If not specified, all states are included.
+    # [FROM_DAYS]: Number of days added or removed from the expiration date. Only
+    #              objects with `expiration_date + FROM_DAYS > now` are considered.
+    # [FORCE_DAY]: Selected number of days after/before the expiration date, where
+    #              a notification is sent even if remind_after_date is set.
+    #
+    # Examples:
+    #   FROM_DAYS=-7 to notify about objects a week before their expiration
+    #   FORCE_DAY=-1 to send a forced notification a day before the expiration
     def mail_expiration
-      required_env(%w(OBJECTS DAYS))
+      required_env(%w(OBJECTS FROM_DAYS))
 
       classes = get_objects
-      days = ENV['DAYS'].to_i
+      from_days = ENV['FROM_DAYS'].to_i
+      force_days = ENV['FORCE_DAY'] ? ENV['FORCE_DAY'].split(',').map(&:to_i) : nil
       states = get_states
       now = Time.now.utc
-      time = now + days * 24 * 60 * 60
 
       classes.each do |cls|
-        q = cls.where('expiration_date < ?', time)
-        q = q.where('remind_after_date IS NULL OR remind_after_date < ?', now)
+        q = cls
+        q = q.where('expiration_date < ?', now - from_days * 24 * 60 * 60)
         q = q.where(object_state: states) if states
 
-        TransactionChains::Lifetimes::ExpirationWarning.fire(cls, q)
+        objects = []
+
+        q.each do |obj|
+          objects << obj if send_notification?(obj, now, force_days)
+        end
+
+        next unless objects.any?
+
+        TransactionChains::Lifetimes::ExpirationWarning.fire(cls, objects)
       end
     end
 
     protected
+    def send_notification?(obj, now, force_days)
+      do_remind = obj.remind_after_date.nil? || obj.remind_after_date < now
+
+      if force_days
+        days_diff = (now - obj.expiration_date) / 60 / 60 / 24
+
+        do_force = force_days.detect do |day|
+          days_diff >= day && days_diff < day+1
+        end
+
+        return true if do_force || do_remind
+
+      elsif do_remind
+        return true
+      else
+        return false
+      end
+    end
+
     def get_objects
       return VpsAdmin::API::Lifetimes.models if ENV['OBJECTS'] == 'all'
 
