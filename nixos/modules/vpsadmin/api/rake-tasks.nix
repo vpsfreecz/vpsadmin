@@ -234,7 +234,8 @@ in {
             "STATES=active"
             "GRACE=${toString (userExpirationGraceDays*24*60*60)}"
             "NEW_EXPIRATION=${toString (21*24*60*60)}"
-            "REASON=\"Nezaplacení členského příspěvku\""
+            "REASON_CS=\"Nezaplacení členského příspěvku\""
+            "REASON_EN=\"The membership fee wasn't paid\""
             "EXECUTE=yes"
           ];
           timer.enable = true;
