@@ -49,7 +49,7 @@ let
           };
         };
       };
-  };
+    };
 
   taskDescription = name: task:
     if isNull task.description then
@@ -95,6 +95,8 @@ let
       timerConfig = task.timer.config;
     };
   }) activeRakeTimers;
+
+  userExpirationGraceDays = 14;
 in {
   options = {
     vpsadmin.api.rake = {
@@ -187,8 +189,39 @@ in {
           timer.config = { OnCalendar = "*-*-* 09:00:00"; };
         };
 
-        mail-expiration = {
-          rake = [ "vpsadmin:lifetimes:mail" "OBJECTS=User,Vps" "STATES=active" "DAYS=7" ];
+        mail-user-expiration-regular = {
+          rake = [
+            "vpsadmin:lifetimes:mail"
+            "OBJECTS=User"
+            "STATES=active"
+            "FROM_DAYS=-7"
+            "FORCE_DAY=${toString (userExpirationGraceDays - 1)}"
+            "FORCE_ONLY=no"
+          ];
+          timer.enable = true;
+          timer.config = { OnCalendar = "Mon,Wed,Fri 08:00:00"; };
+        };
+
+        mail-user-expiration-forced = {
+          rake = [
+            "vpsadmin:lifetimes:mail"
+            "OBJECTS=User"
+            "STATES=active"
+            "FROM_DAYS=-7"
+            "FORCE_DAY=${toString (userExpirationGraceDays - 1)}"
+            "FORCE_ONLY=yes"
+          ];
+          timer.enable = true;
+          timer.config = { OnCalendar = "Tue,Thu,Sat,Sun 08:00:00"; };
+        };
+
+        mail-vps-expiration = {
+          rake = [
+            "vpsadmin:lifetimes:mail"
+            "OBJECTS=Vps"
+            "STATES=active"
+            "FROM_DAYS=-7"
+          ];
           timer.enable = true;
           timer.config = { OnCalendar = "*-*-* 08:00:00"; };
         };
@@ -199,7 +232,7 @@ in {
             "vpsadmin:lifetimes:progress"
             "OBJECTS=User"
             "STATES=active"
-            "GRACE=${toString (14*24*60*60)}"
+            "GRACE=${toString (userExpirationGraceDays*24*60*60)}"
             "NEW_EXPIRATION=${toString (21*24*60*60)}"
             "REASON=\"Nezaplacení členského příspěvku\""
             "EXECUTE=yes"
