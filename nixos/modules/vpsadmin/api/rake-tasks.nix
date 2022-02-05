@@ -215,15 +215,30 @@ in {
           timer.config = { OnCalendar = "Tue,Thu,Sat,Sun 08:00:00"; };
         };
 
-        mail-vps-expiration = {
+        mail-vps-expiration-regular = {
           rake = [
             "vpsadmin:lifetimes:mail"
             "OBJECTS=Vps"
             "STATES=active"
             "FROM_DAYS=-7"
+            "FORCE_DAY=-1"
+            "FORCE_ONLY=no"
           ];
           timer.enable = true;
-          timer.config = { OnCalendar = "*-*-* 08:00:00"; };
+          timer.config = { OnCalendar = "Mon,Wed,Fri 08:00:00"; };
+        };
+
+        mail-vps-expiration-forced = {
+          rake = [
+            "vpsadmin:lifetimes:mail"
+            "OBJECTS=Vps"
+            "STATES=active"
+            "FROM_DAYS=-7"
+            "FORCE_DAY=-1"
+            "FORCE_ONLY=yes"
+          ];
+          timer.enable = true;
+          timer.config = { OnCalendar = "Tue,Thu,Sat,Sun 08:00:00"; };
         };
 
         users-suspend = {
