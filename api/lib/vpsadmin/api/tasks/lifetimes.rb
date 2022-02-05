@@ -12,8 +12,8 @@ module VpsAdmin::API::Tasks
     # [NEW_EXPIRATION]: Objects progressing to another state have expiration
     #                   set to current time + +NEW_EXPIRATION+ number of
     #                   seconds.
-    # [REASON]:  Provide custom reason that will be saved in every object's
-    #            state log.
+    # [REASON_%LANG%]:  Provide custom reason that will be saved in every object's
+    #            state log. %LANG% is a language code in upper case.
     # [LIMIT]:   Maximum number of objects to progress at a time.
     # [EXECUTE]: The states are progressed only if EXECUTE is 'yes'. If not,
     #            the task just prints what would happen.
@@ -62,7 +62,7 @@ module VpsAdmin::API::Tasks
           begin
             instance.progress_object_state(
               :enter,
-              reason: ENV['REASON'],
+              reason: get_reason(instance),
               expiration: expiration
             )
 
@@ -161,6 +161,23 @@ module VpsAdmin::API::Tasks
         next(i) if i
 
         fail "Invalid object state '#{v}'"
+      end
+    end
+
+    def get_reason(obj)
+      user = get_user(obj)
+      return ENV['REASON'] if user.nil?
+
+      ENV["REASON_#{user.language.code.upcase}"] || ENV['REASON']
+    end
+
+    def get_user(obj)
+      if obj.respond_to?(:user)
+        obj.user
+      elsif obj.is_a?(::User)
+        obj
+      else
+        nil
       end
     end
   end
