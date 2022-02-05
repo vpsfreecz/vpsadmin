@@ -77,14 +77,15 @@ module VpsAdmin::API::Tasks
     # Mail users regarging expiring objects.
     #
     # Accepts the following environment variables:
-    # [OBJECTS]:   A list of object names to inform about, separated by a comma.
-    #              To inform about all objects, use special name 'all'.
-    # [STATES]:    A list of states that an object must be in to be included.
-    #              If not specified, all states are included.
-    # [FROM_DAYS]: Number of days added or removed from the expiration date. Only
-    #              objects with `expiration_date + FROM_DAYS > now` are considered.
-    # [FORCE_DAY]: Selected number of days after/before the expiration date, where
-    #              a notification is sent even if remind_after_date is set.
+    # [OBJECTS]:    A list of object names to inform about, separated by a comma.
+    #               To inform about all objects, use special name 'all'.
+    # [STATES]:     A list of states that an object must be in to be included.
+    #               If not specified, all states are included.
+    # [FROM_DAYS]:  Number of days added or removed from the expiration date. Only
+    #               objects with `expiration_date + FROM_DAYS > now` are considered.
+    # [FORCE_DAY]:  Selected number of days after/before the expiration date, where
+    #               a notification is sent even if remind_after_date is set.
+    # [FORCE_ONLY]: Send notification only when `FORCE_DAY` matches.
     #
     # Examples:
     #   FROM_DAYS=-7 to notify about objects a week before their expiration
@@ -95,6 +96,7 @@ module VpsAdmin::API::Tasks
       classes = get_objects
       from_days = ENV['FROM_DAYS'].to_i
       force_days = ENV['FORCE_DAY'] ? ENV['FORCE_DAY'].split(',').map(&:to_i) : nil
+      force_only = ENV['FORCE_ONLY'] == 'yes'
       states = get_states
       now = Time.now.utc
 
@@ -106,7 +108,7 @@ module VpsAdmin::API::Tasks
         objects = []
 
         q.each do |obj|
-          objects << obj if send_notification?(obj, now, force_days)
+          objects << obj if send_notification?(obj, now, force_days, force_only)
         end
 
         next unless objects.any?
@@ -116,7 +118,7 @@ module VpsAdmin::API::Tasks
     end
 
     protected
-    def send_notification?(obj, now, force_days)
+    def send_notification?(obj, now, force_days, force_only)
       do_remind = obj.remind_after_date.nil? || obj.remind_after_date < now
 
       if force_days
@@ -126,7 +128,7 @@ module VpsAdmin::API::Tasks
           days_diff >= day && days_diff < day+1
         end
 
-        return true if do_force || do_remind
+        return true if do_force || (!force_only && do_remind)
 
       elsif do_remind
         return true
