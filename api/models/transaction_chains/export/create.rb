@@ -117,6 +117,8 @@ module TransactionChains
     def pick_ip_address(user, location)
       loop do
         begin
+          ip = nil
+
           ::IpAddress.transaction do
             ip = ::IpAddress.pick_addr!(
               user: user,
@@ -126,8 +128,9 @@ module TransactionChains
               purpose: :export,
             )
             lock(ip)
-            return ip
           end
+
+          return ip
 
         rescue ActiveRecord::RecordNotFound
           fail 'no ipv4_private available'

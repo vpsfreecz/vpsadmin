@@ -20,7 +20,7 @@ class MaintenanceLock < ActiveRecord::Base
         active: true
       )
 
-      return false if tmp
+      next(false) if tmp
 
       self.active = true
       save!
