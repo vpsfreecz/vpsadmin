@@ -52,6 +52,12 @@ module VpsAdmin::API::Tasks
         docstring: 'Set when a transaction chains ends up in state fatal',
         labels: [:chain_id, :chain_type],
       )
+
+      @transaction_chain_count = registry.gauge(
+        :vpsadmin_transaction_chain_count,
+        docstring: 'Numbers of transaction chains by type and state',
+        labels: [:chain_type, :chain_state],
+      )
     end
 
     # Export metrics for Prometheus
@@ -174,6 +180,15 @@ module VpsAdmin::API::Tasks
         @transaction_chain_fatal.set(1, labels: {
           chain_id: chain.id,
           chain_type: chain.type.to_s,
+        })
+      end
+
+      # transaction_chain_count
+      ::TransactionChain.group('type', 'state').count.each do |grp, cnt|
+        type, state = grp
+        @transaction_chain_count.set(cnt, labels: {
+          chain_type: type,
+          chain_state: state,
         })
       end
 
