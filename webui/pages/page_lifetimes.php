@@ -12,6 +12,8 @@ if (isLoggedIn() && isAdmin()) {
 
 				if ($_POST['expiration_date'])
 					$params['expiration_date'] = date('c', strtotime($_POST['expiration_date']));
+				else
+					$params['expiration_date'] = null;
 
 				if ($_POST['change_reason'])
 					$params['change_reason'] = $_POST['change_reason'];
