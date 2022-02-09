@@ -11,15 +11,17 @@ module TransactionChains
         }
       })
 
-      user.vpses.where(object_state: [
-        ::Vps.object_states[:active],
-        ::Vps.object_states[:suspended],
-      ]).each do |vps|
-        vps.set_object_state(
-          :soft_delete,
-          reason: 'User was soft deleted',
-          chain: self
-        )
+      if target
+        user.vpses.where(object_state: [
+          ::Vps.object_states[:active],
+          ::Vps.object_states[:suspended],
+        ]).each do |vps|
+          vps.set_object_state(
+            :soft_delete,
+            reason: 'User was soft deleted',
+            chain: self
+          )
+        end
       end
 
       user.exports.each do |ex|
