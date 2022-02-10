@@ -9,7 +9,7 @@ module VpsAdmind
     end
 
     def query(q)
-      protect do
+      protect(inspectable: q) do
         @my.query(q)
       end
     end
@@ -19,7 +19,7 @@ module VpsAdmind
     end
 
     def prepared_st(q, *params)
-      protect do
+      protect(inspectable: [q, params]) do
         st = @my.prepare(q)
         st.execute(*params)
         st
@@ -139,11 +139,15 @@ module VpsAdmind
       end
     end
 
-    def protect(try_again = true)
+    def protect(try_again = true, inspectable: nil)
+      i = 0
+
       begin
         yield
       rescue Mysql::Error => err
+        i += 1
         log(:critical, :sql, "MySQL error ##{err.errno}: #{err.error}")
+        log(:critical, :sql, "Related to: #{inspectable.inspect}") if i >= 5
         close if @my
         sleep($CFG.get(:db, :retry_interval))
         connect($CFG.get(:db))
@@ -157,7 +161,7 @@ module VpsAdmind
       @my = my
     end
 
-    def protect(try_again = true)
+    def protect(try_again = true, inspectable: nil)
       begin
         yield
       rescue Mysql::Error => err
