@@ -27,7 +27,7 @@ module VpsAdmind::Firewall
       iptables(v, {Z: chain})
 
       rs = db.query("
-        SELECT ip_addr, ip.prefix
+        SELECT ip_addr
         FROM ip_addresses ip
         INNER JOIN network_interfaces netifs ON netifs.id = ip.network_interface_id
         INNER JOIN vpses ON vpses.id = netifs.vps_id
@@ -35,23 +35,23 @@ module VpsAdmind::Firewall
         WHERE node_id = #{$CFG.get(:vpsadmin, :server_id)}
               AND n.ip_version = #{v}")
       rs.each_hash do |ip|
-        reg_ip(ip['ip_addr'], ip['prefix'], v)
+        reg_ip(ip['ip_addr'], v)
       end
 
       log("#{role} accounting for #{rs.num_rows} IPv#{v} addresses")
     end
 
-    def reg_ip(addr, prefix, v)
+    def reg_ip(addr, v)
       PROTOCOLS.each do |p|
-        iptables(v, ['-A', chain, '-s', "#{addr}/#{prefix}", '-p', p.to_s, '-j', 'ACCEPT'])
-        iptables(v, ['-A', chain, '-d', "#{addr}/#{prefix}", '-p', p.to_s, '-j', 'ACCEPT'])
+        iptables(v, ['-A', chain, '-s', addr, '-p', p.to_s, '-j', 'ACCEPT'])
+        iptables(v, ['-A', chain, '-d', addr, '-p', p.to_s, '-j', 'ACCEPT'])
       end
     end
 
-    def unreg_ip(addr, prefix, v)
+    def unreg_ip(addr, v)
       PROTOCOLS.each do |p|
-        iptables(v, ['-D', chain, '-s', "#{addr}/#{prefix}", '-p', p.to_s, '-j', 'ACCEPT'])
-        iptables(v, ['-D', chain, '-d', "#{addr}/#{prefix}", '-p', p.to_s, '-j', 'ACCEPT'])
+        iptables(v, ['-D', chain, '-s', addr, '-p', p.to_s, '-j', 'ACCEPT'])
+        iptables(v, ['-D', chain, '-d', addr, '-p', p.to_s, '-j', 'ACCEPT'])
       end
     end
 
@@ -64,8 +64,12 @@ module VpsAdmind::Firewall
             fields = l.strip.split(/\s+/)
             src = fields[v == 4 ? 7 : 6]
             dst = fields[v == 4 ? 8 : 7]
-            ip = (src == all ? dst : src).split('/').first
+            ip = src == all ? dst : src
             proto = fields[3].to_sym
+
+            if v == 6
+              ip = ip.split('/').first
+            end
 
             ret[ip] ||= {}
             ret[ip][proto] ||= {:bytes => {}, :packets => {}}

@@ -3,7 +3,7 @@ module VpsAdmind
     handle 2006
 
     def exec
-      VpsAdmind::Firewall.ip_map.set(@addr, @prefix, @id, @version, @user_id) if @register
+      VpsAdmind::Firewall.ip_map.set(@addr, @id, @version, @user_id) if @register
       NetworkInterface.new(@vps_id, @veth_name).add_route(
         @addr, @prefix, @version, @register, @shaper
       )

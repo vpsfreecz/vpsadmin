@@ -1,6 +1,6 @@
 module VpsAdmind::Firewall
   class IpMap
-    IpAddr = Struct.new(:addr, :prefix, :id, :version, :user_id, :monitor) do
+    IpAddr = Struct.new(:id, :version, :user_id, :monitor) do
       def initialize(*_)
         super
 
@@ -11,10 +11,6 @@ module VpsAdmind::Firewall
         ret = super
         ret.delete(:monitor)
         ret
-      end
-
-      def to_s
-        "#{address}/#{prefix}"
       end
     end
 
@@ -28,7 +24,7 @@ module VpsAdmind::Firewall
         @map.clear unless @map.empty?
 
         db.query("
-            SELECT ip.id, ip_addr, ip.prefix, n.ip_version, vpses.user_id
+            SELECT ip.id, ip_addr, n.ip_version, vpses.user_id
             FROM ip_addresses ip
             INNER JOIN networks n ON n.id = ip.network_id
             INNER JOIN network_interfaces netifs ON netifs.id = ip.network_interface_id
@@ -36,8 +32,6 @@ module VpsAdmind::Firewall
             WHERE node_id = #{$CFG.get(:vpsadmin, :server_id)}
         ").each_hash do |ip|
           @map[ip['ip_addr']] = IpAddr.new(
-              ip['ip_addr'],
-              ip['prefix'],
               ip['id'].to_i,
               ip['ip_version'].to_i,
               ip['user_id'].to_i
@@ -48,21 +42,21 @@ module VpsAdmind::Firewall
           IpSet.create_or_replace!(
               "vpsadmin_v#{v}_local_addrs",
               "hash:ip family #{v == 4 ? 'inet' : 'inet6'}",
-              @map.select { |_, n| n.version == v }.values.map(&:to_s)
+              @map.select { |_, n| n.version == v }.keys
           )
         end
       end
     end
 
-    def set(addr, prefix, version, id, version, user_id)
+    def set(addr, id, version, user_id)
       sync do
-        @map[addr] = IpAddr.new(addr, prefix, id, version, user_id)
+        @map[addr] = IpAddr.new(id, version, user_id)
 
         [4, 6].each do |v|
           IpSet.create_or_replace!(
               "vpsadmin_v#{v}_local_addrs",
               "hash:ip family #{v == 4 ? 'inet' : 'inet6'}",
-              @map.select { |_, n| n.version == v }.values.map(&:to_s)
+              @map.select { |_, n| n.version == v }.keys
           )
         end
       end
@@ -84,7 +78,7 @@ module VpsAdmind::Firewall
           IpSet.create_or_replace!(
               "vpsadmin_v#{v}_local_addrs",
               "hash:ip family #{v == 4 ? 'inet' : 'inet6'}",
-              @map.select { |_, n| n.version == v }.values.map(&:to_s)
+              @map.select { |_, n| n.version == v }.keys
           )
         end
       end

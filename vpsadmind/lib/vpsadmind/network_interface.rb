@@ -11,15 +11,15 @@ module VpsAdmind
 
     def add_route(addr, prefix, v, register, shaper)
       if register
-        Shaper.new.shape_set(addr, prefix, v, shaper)
-        Firewall.accounting.reg_ip(addr, prefix, v)
+        Shaper.new.shape_set(addr, v, shaper)
+        Firewall.accounting.reg_ip(addr, v)
       end
     end
 
     def del_route(addr, prefix, v, unregister, shaper)
       if unregister
-        Shaper.new.shape_unset(addr, prefix, v, shaper)
-        Firewall.accounting.unreg_ip(addr, prefix, v)
+        Shaper.new.shape_unset(addr, v, shaper)
+        Firewall.accounting.unreg_ip(addr, v)
       end
     end
 
