@@ -99,12 +99,14 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       allow if u.role == :admin
       restrict user_id: u.id
       input blacklist: %i(user)
-      output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
-                          node dataset memory swap cpu backup_enabled maintenance_lock
-                          maintenance_lock_reason object_state expiration_date
-                          is_running process_count used_memory used_swap used_diskspace
-                          uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-                          cpu_irq cpu_softirq)
+      output whitelist: %i(
+        id user hostname manage_hostname os_template dns_resolver
+        node dataset memory swap cpu backup_enabled maintenance_lock
+        maintenance_lock_reason object_state expiration_date
+        is_running process_count used_memory used_swap used_diskspace
+        uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
+        cpu_irq cpu_softirq
+      )
       allow
     end
 
@@ -226,15 +228,19 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(environment location address_location hostname os_template
-                          dns_resolver cpu memory swap diskspace ipv4 ipv4_private ipv6
-                          start_menu_timeout user_namespace_map)
-      output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
-                          node dataset memory swap cpu backup_enabled maintenance_lock
-                          maintenance_lock_reason object_state expiration_date
-                          is_running process_count used_memory used_swap used_diskspace
-                          uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-                          cpu_irq cpu_softirq start_menu_timeout created_at)
+      input whitelist: %i(
+        environment location address_location hostname os_template
+        dns_resolver cpu memory swap diskspace ipv4 ipv4_private ipv6
+        start_menu_timeout user_namespace_map
+      )
+      output whitelist: %i(
+        id user hostname manage_hostname os_template dns_resolver
+        node dataset memory swap cpu backup_enabled maintenance_lock
+        maintenance_lock_reason object_state expiration_date
+        is_running process_count used_memory used_swap used_diskspace
+        uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
+        cpu_irq cpu_softirq start_menu_timeout created_at
+      )
       allow
     end
 
@@ -370,12 +376,14 @@ END
     authorize do |u|
       allow if u.role == :admin
       restrict user_id: u.id
-      output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
-                          node dataset memory swap cpu backup_enabled maintenance_lock
-                          maintenance_lock_reason object_state expiration_date
-                          is_running process_count used_memory used_swap used_diskspace
-                          uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-                          cpu_irq cpu_softirq start_menu_timeout created_at)
+      output whitelist: %i(
+        id user hostname manage_hostname os_template dns_resolver
+        node dataset memory swap cpu backup_enabled maintenance_lock
+        maintenance_lock_reason object_state expiration_date
+        is_running process_count used_memory used_swap used_diskspace
+        uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
+        cpu_irq cpu_softirq start_menu_timeout created_at
+      )
       allow
     end
 
@@ -410,8 +418,10 @@ END
     authorize do |u|
       allow if u.role == :admin
       restrict user_id: u.id
-      input whitelist: %i(hostname manage_hostname os_template dns_resolver cpu
-                          memory swap start_menu_timeout remind_after_date)
+      input whitelist: %i(
+        hostname manage_hostname os_template dns_resolver cpu
+        memory swap start_menu_timeout remind_after_date
+      )
       allow
     end
 
@@ -831,12 +841,14 @@ END
       allow if u.role == :admin
       restrict user_id: u.id
       input blacklist: %i(node user configs)
-      output whitelist: %i(id user hostname manage_hostname os_template dns_resolver
-                          node dataset memory swap cpu backup_enabled maintenance_lock
-                          maintenance_lock_reason object_state expiration_date
-                          is_running process_count used_memory used_swap used_disk uptime
-                          loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq
-                          cpu_softirq created_at)
+      output whitelist: %i(
+        id user hostname manage_hostname os_template dns_resolver
+        node dataset memory swap cpu backup_enabled maintenance_lock
+        maintenance_lock_reason object_state expiration_date
+        is_running process_count used_memory used_swap used_disk uptime
+        loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq
+        cpu_softirq created_at
+      )
       allow
     end
 
