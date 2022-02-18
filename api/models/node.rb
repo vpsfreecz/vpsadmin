@@ -66,7 +66,8 @@ class Node < ActiveRecord::Base
     "#{name}.#{location.domain}.#{location.environment.domain}"
   end
 
-  def self.pick_by_env(env, except = nil, hypervisor_type = nil)
+  # @return [Array<::Node>]
+  def self.pick_by_environment(env, except: nil, hypervisor_type: nil)
     q = self.joins('
           LEFT JOIN vpses ON vpses.node_id = nodes.id
           LEFT JOIN vps_current_statuses st ON st.vps_id = vpses.id
@@ -85,11 +86,11 @@ class Node < ActiveRecord::Base
       q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type])
     end
 
-    n = q.group('nodes.id')
+    nodes = q.group('nodes.id')
       .order(Arel.sql('COUNT(st.is_running) / max_vps ASC'))
-      .take
+      .to_a
 
-    return n if n
+    return nodes if nodes.any?
 
     q = self.joins('
       LEFT JOIN vpses ON vpses.node_id = nodes.id
@@ -108,10 +109,10 @@ class Node < ActiveRecord::Base
       q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type])
     end
 
-    q.group('nodes.id').order(Arel.sql('COUNT(vpses.id) / max_vps ASC')).take
+    q.group('nodes.id').order(Arel.sql('COUNT(vpses.id) / max_vps ASC')).to_a
   end
 
-  def self.pick_by_location(loc, except = nil, hypervisor_type = nil)
+  def self.pick_by_location(loc, except: nil, hypervisor_type: nil)
     q = self.joins('
         LEFT JOIN vpses ON vpses.node_id = nodes.id
         LEFT JOIN vps_current_statuses st ON st.vps_id = vpses.id
@@ -130,11 +131,11 @@ class Node < ActiveRecord::Base
       q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type])
     end
 
-    n = q.group('nodes.id')
+    nodes = q.group('nodes.id')
       .order(Arel.sql('COUNT(st.is_running) / max_vps ASC'))
-      .take
+      .to_a
 
-    return n if n
+    return nodes if nodes.any?
 
     q = self.joins(
       'LEFT JOIN vpses ON vpses.node_id = nodes.id'
@@ -152,7 +153,7 @@ class Node < ActiveRecord::Base
       q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type])
     end
 
-    q.group('nodes.id').order(Arel.sql('COUNT(vpses.id) / max_vps ASC')).take
+    q.group('nodes.id').order(Arel.sql('COUNT(vpses.id) / max_vps ASC')).to_a
   end
 
   def self.first_available

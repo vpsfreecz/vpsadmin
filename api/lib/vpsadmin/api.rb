@@ -10,6 +10,7 @@ module VpsAdmin
       module Dataset ; end
       module Export ; end
       module LocationNetwork ; end
+      module Node ; end
       module TotpDevice ; end
       module User ; end
       module UserSession ; end

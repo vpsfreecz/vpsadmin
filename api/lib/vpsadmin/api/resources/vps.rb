@@ -275,23 +275,11 @@ END
           error('provide either an environment or a location')
         end
 
-        if input[:environment]
-          node = ::Node.pick_by_env(
-            input[:environment],
-            nil,
-            input[:os_template].hypervisor_type
-          )
-
-        else
-          node = ::Node.pick_by_location(
-            input[:location],
-            nil,
-            input[:os_template].hypervisor_type
-          )
-        end
-
-        input.delete(:location)
-        input.delete(:environment)
+        node = VpsAdmin::API::Operations::Node::Pick.run(
+          environment: input[:environment],
+          location: input[:location],
+          hypervisor_type: input[:os_template].hypervisor_type,
+        )
 
         unless node
           error('no free node is available in selected environment/location')
@@ -305,6 +293,9 @@ END
         elsif current_user.vps_in_env(env) >= current_user.env_config(env, :max_vps_count)
           error('cannot create more VPSes in this environment')
         end
+
+        input.delete(:location)
+        input.delete(:environment)
 
         input.update({
           user: current_user,
@@ -876,18 +867,12 @@ END
       elsif input[:node]
         node = input[:node]
 
-      elsif input[:location]
-        node = ::Node.pick_by_location(
-          input[:location],
-          vps.node,
-          input[:platform] == 'same' ? vps.os_template.hypervisor_type : input[:platform],
-        )
-
-      elsif input[:environment]
-        node = ::Node.pick_by_env(
-          input[:environment],
-          vps.node,
-          input[:platform] == 'same' ? vps.os_template.hypervisor_type : input[:platform],
+      elsif input[:location] || input[:environment]
+        node = VpsAdmin::API::Operations::Node::Pick.run(
+          environment: input[:environment],
+          location: input[:location],
+          except: vps.node,
+          hypervisor_type: input[:platform] == 'same' ? vps.os_template.hypervisor_type : input[:platform],
         )
 
       else

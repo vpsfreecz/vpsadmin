@@ -135,11 +135,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         if input[:node]
           node = input[:node]
 
-        elsif input[:location]
-          node = ::Node.pick_by_location(input[:location])
-
-        elsif input[:environment]
-          node = ::Node.pick_by_env(input[:environment])
+        elsif input[:location] || input[:environment]
+          node = VpsAdmin::API::Operations::Node::Pick.run(
+            environment: input[:environment],
+            location: input[:location],
+          )
 
         else
           error('provide either an environment, a location or a node')
