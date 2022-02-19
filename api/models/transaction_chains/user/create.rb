@@ -62,6 +62,13 @@ module TransactionChains
         user.object_state = 'suspended'
       end
 
+      # Create a default VPS group
+      objects << ::VpsGroup.create!(
+        user: user,
+        label: 'Default group',
+        group_type: 'group_none',
+      )
+
       ret = user.call_class_hooks_for(
         :create,
         self,
