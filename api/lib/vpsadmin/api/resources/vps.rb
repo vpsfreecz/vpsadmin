@@ -13,6 +13,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   params(:common) do
     resource VpsAdmin::API::Resources::User, label: 'User', desc: 'VPS owner',
              value_label: :login
+    resource VpsAdmin::API::Resources::VpsGroup, label: 'VPS group'
     string :hostname, desc: 'VPS hostname'
     bool :manage_hostname, label: 'Manage hostname',
           desc: 'Determines whether vpsAdmin sets VPS hostname or not'
@@ -100,7 +101,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       restrict user_id: u.id
       input blacklist: %i(user)
       output whitelist: %i(
-        id user hostname manage_hostname os_template dns_resolver
+        id user vps_group hostname manage_hostname os_template dns_resolver
         node dataset memory swap cpu backup_enabled maintenance_lock
         maintenance_lock_reason object_state expiration_date
         is_running process_count used_memory used_swap used_diskspace
@@ -229,12 +230,12 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       input whitelist: %i(
-        environment location address_location hostname os_template
+        environment location address_location vps_group hostname os_template
         dns_resolver cpu memory swap diskspace ipv4 ipv4_private ipv6
         start_menu_timeout user_namespace_map
       )
       output whitelist: %i(
-        id user hostname manage_hostname os_template dns_resolver
+        id user vps_group hostname manage_hostname os_template dns_resolver
         node dataset memory swap cpu backup_enabled maintenance_lock
         maintenance_lock_reason object_state expiration_date
         is_running process_count used_memory used_swap used_diskspace
@@ -268,16 +269,24 @@ END
       if current_user.role == :admin
         input[:user] ||= current_user
 
+        if input[:vps_group] && input[:vps_group].user_id != input[:user].id
+          error('invalid VPS group')
+        end
+
       else
         object_state_check!(current_user)
 
         if input[:environment].nil? && input[:location].nil?
           error('provide either an environment or a location')
+
+        elsif input[:vps_group] && input[:vps_group].user_id != current_user.id
+          error('invalid VPS group')
         end
 
         node = VpsAdmin::API::Operations::Node::Pick.run(
           environment: input[:environment],
           location: input[:location],
+          vps_group: input[:vps_group],
           hypervisor_type: input[:os_template].hypervisor_type,
         )
 
@@ -368,7 +377,7 @@ END
       allow if u.role == :admin
       restrict user_id: u.id
       output whitelist: %i(
-        id user hostname manage_hostname os_template dns_resolver
+        id user vps_group hostname manage_hostname os_template dns_resolver
         node dataset memory swap cpu backup_enabled maintenance_lock
         maintenance_lock_reason object_state expiration_date
         is_running process_count used_memory used_swap used_diskspace
@@ -410,7 +419,7 @@ END
       allow if u.role == :admin
       restrict user_id: u.id
       input whitelist: %i(
-        hostname manage_hostname os_template dns_resolver cpu
+        vps_group hostname manage_hostname os_template dns_resolver cpu
         memory swap start_menu_timeout remind_after_date
       )
       allow
@@ -439,6 +448,10 @@ END
         if vps.node.vpsadminos?
           error('VPS chowning is not supported on vpsAdminOS yet')
         end
+      end
+
+      if input[:vps_group] && input[:vps_group].user_id != vps.user_id
+        error('invalid VPS group')
       end
 
       if input[:manage_hostname] === false && input[:hostname]
@@ -806,6 +819,7 @@ END
       resource VpsAdmin::API::Resources::Location, desc: 'Clone to location'
       resource VpsAdmin::API::Resources::Node, desc: 'Clone to node', value_label: :name
       resource VpsAdmin::API::Resources::User, desc: 'The owner of the cloned VPS', value_label: :login
+      resource VpsAdmin::API::Resources::VpsGroup, label: 'Target VPS group'
       resource VpsAdmin::API::Resources::Location, name: :address_location,
                label: 'Address location',
                desc: 'Location to select IP addresses from'
@@ -833,7 +847,7 @@ END
       restrict user_id: u.id
       input blacklist: %i(node user configs)
       output whitelist: %i(
-        id user hostname manage_hostname os_template dns_resolver
+        id user vps_group hostname manage_hostname os_template dns_resolver
         node dataset memory swap cpu backup_enabled maintenance_lock
         maintenance_lock_reason object_state expiration_date
         is_running process_count used_memory used_swap used_disk uptime
@@ -855,7 +869,15 @@ END
         input[:user] = current_user
       end
 
+      if input[:vps_group] && input[:vps_group].user_id != input[:user].id
+        error('invalid VPS group')
+      end
+
       error('cannot clone into itself') if input[:vps] == vps
+
+      if input[:vps_group] && input[:vps_group].user_id != input[:user].id
+        error('invalid VPS group')
+      end
 
       if input[:vps]
         node = input[:vps].node
@@ -871,6 +893,7 @@ END
         node = VpsAdmin::API::Operations::Node::Pick.run(
           environment: input[:environment],
           location: input[:location],
+          vps_group: input[:vps_group],
           except: vps.node,
           hypervisor_type: input[:platform] == 'same' ? vps.os_template.hypervisor_type : input[:platform],
         )

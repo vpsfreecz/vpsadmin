@@ -42,6 +42,7 @@ module TransactionChains
 
       dst_vps = ::Vps.new(
         user_id: attrs[:user].id,
+        vps_group: attrs[:vps_group],
         hostname: attrs[:hostname],
         manage_hostname: vps.manage_hostname,
         os_template_id: vps.os_template_id,

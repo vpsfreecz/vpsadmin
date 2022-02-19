@@ -14,6 +14,10 @@ module TransactionChains
         attrs.delete(opt)
       end
 
+      if opts[:admin_override]
+        vps.admin_override_vps_groups = true
+      end
+
       vps.assign_attributes(attrs)
       raise ActiveRecord::RecordInvalid, vps unless vps.valid?
 

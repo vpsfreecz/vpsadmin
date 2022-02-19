@@ -25,6 +25,7 @@ module TransactionChains
 
       dst_vps = ::Vps.new(
         user_id: vps.user_id,
+        vps_group: vps.vps_group,
         hostname: vps.hostname,
         manage_hostname: vps.manage_hostname,
         dns_resolver_id: vps.dns_resolver_id,

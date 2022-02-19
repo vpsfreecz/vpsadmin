@@ -80,6 +80,7 @@ module TransactionChains
       end
 
       @dst_vps.dataset_in_pool = @datasets.first[1]
+      @dst_vps.validate!
       @resources_changes = {}
     end
 

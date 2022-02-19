@@ -5,10 +5,11 @@ module VpsAdmin::API
   class Operations::Node::Pick < Operations::Base
     # @param environment [::Environment, nil]
     # @param location [::Location, nil]
+    # @param vps_group [::VpsGroup, nil]
     # @param except [::Node]
     # @param hypervisor_type [:vpsadminos, :openvz]
     # @return [::Node, nil]
-    def run(environment: nil, location: nil, except: nil, hypervisor_type: nil)
+    def run(environment: nil, location: nil, vps_group: nil, except: nil, hypervisor_type: nil)
       if environment.nil? && location.nil?
         raise ArgumentError, 'specify at least one of location or environment'
       elsif environment && location && location.environment_id != environment.id
@@ -30,7 +31,11 @@ module VpsAdmin::API
           )
         end
 
-      nodes.first
+      if vps_group
+        Operations::Vps::PickNodeForGroup.run(vps_group, nodes)
+      else
+        nodes.first
+      end
     end
   end
 end

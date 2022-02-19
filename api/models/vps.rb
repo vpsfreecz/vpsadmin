@@ -97,6 +97,7 @@ class Vps < ActiveRecord::Base
     greater_than_or_equal_to: 0,
     less_than_or_equal_to: 24*60*60,
   }
+  validate :validate_vps_group
   validate :foreign_keys_exist
 
   default_scope {
@@ -123,6 +124,8 @@ class Vps < ActiveRecord::Base
   }
 
   PathInfo = Struct.new(:dataset, :exists)
+
+  attr_accessor :admin_override_vps_groups
 
   # @param opts [Hash]
   # @option opts [Integer] ipv4
@@ -313,6 +316,20 @@ class Vps < ActiveRecord::Base
     else
       chars = ('a'..'z').to_a + (2..9).to_a
       (0..7).map { chars.sample }.join
+    end
+  end
+
+  def validate_vps_group
+    return if vps_group.nil? || admin_override_vps_groups
+
+    if new_record? || vps_group_id_changed?
+      group_errors = vps_group.validate_vps_add(self)
+      errors.merge!(group_errors)
+    end
+
+    if !new_record? && node_id_changed?
+      group_errors = vps_group.validate_vps_migrate(self, node)
+      errors.merge!(group_errors)
     end
   end
 
