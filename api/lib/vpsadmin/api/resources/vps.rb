@@ -649,6 +649,7 @@ END
     def exec
       vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
+      object_state_check!(vps, vps.user)
 
       if vps.node.hypervisor_type != 'vpsadminos'
         error('this action is available only for VPS running on vpsAdminOS')
