@@ -365,6 +365,27 @@ switch ($_GET["action"] ?? null) {
 			}
 			break;
 
+		case 'vps_group':
+			if (isset($_POST['vps_group'])) {
+				csrf_check();
+
+				try {
+					$api->vps($_GET['veid'])->update(['vps_group' => $_POST['vps_group']]);
+
+					notify_user(_("VPS group set"), '');
+					redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('VPS group change failed'), $e->getResponse());
+					$show_info=true;
+				}
+			} else {
+				$xtpl->perex(_("Error"), 'Error, contact your administrator');
+				$show_info=true;
+			}
+
+			break;
+
 		case 'resources':
 			if (isset($_POST['memory'])) {
 				csrf_check();
@@ -1407,6 +1428,21 @@ if (isset($show_info) && $show_info) {
 			$xtpl->form_add_textarea(_("Config").':', 60, 10, 'custom_config', $vps->config, _('Applied last'));
 			$xtpl->form_out(_("Go >>"));
 		}
+
+	// VPS group
+	$xtpl->table_title(_('VPS group').':');
+	$xtpl->form_create('?page=adminvps&action=vps_group&veid='.$vps->id, 'post');
+	$xtpl->form_add_select(
+		_('VPS group'),
+		'vps_group',
+		resource_list_to_options(
+			$api->vps_group->list(['user' => $vps->user_id]),
+			'id', 'label',
+			false
+		),
+		$vps->vps_group_id
+	);
+	$xtpl->form_out(_("Go >>"));
 
 	// Resources
 	$xtpl->table_title(_('Resources'));

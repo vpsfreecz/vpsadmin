@@ -798,6 +798,7 @@ function vps_list_form() {
 	if (isAdmin()) {
 		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new-step-0');
 		$xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("List VPSes").'" /> '._("List VPSes"), '?page=adminvps&action=list');
+		$xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="'._("VPS groups").'" /> '._("VPS groups"), '?page=vps_groups');
 	} else {
 		$xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New VPS").'" /> '._("New VPS"), '?page=adminvps&section=vps&action=new-step-1');
 	}

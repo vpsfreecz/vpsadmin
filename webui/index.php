@@ -52,6 +52,7 @@ include WWW_ROOT.'forms/monitoring.forms.php';
 include WWW_ROOT.'forms/userns.forms.php';
 include WWW_ROOT.'forms/login.forms.php';
 include WWW_ROOT.'forms/oom_reports.forms.php';
+include WWW_ROOT.'forms/vps_groups.forms.php';
 
 include WWW_ROOT.'lib/gettext_stream.lib.php';
 include WWW_ROOT.'lib/gettext_inc.lib.php';
@@ -195,6 +196,9 @@ try {
 				break;
 			case 'oom_reports':
 				include WWW_ROOT.'pages/page_oom_reports.php';
+				break;
+			case 'vps_groups':
+				include WWW_ROOT.'pages/page_vps_groups.php';
 				break;
 			default:
 				include WWW_ROOT.'pages/page_index.php';
