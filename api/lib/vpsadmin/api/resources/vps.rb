@@ -1055,7 +1055,7 @@ END
 
   include VpsAdmin::API::Maintainable::Action
   include VpsAdmin::API::Lifetimes::Resource
-  add_lifetime_methods([Start, Stop, Restart, Create, Clone, Update, Delete, SwapWith, Replace])
+  add_lifetime_methods([Start, Stop, Restart, Boot, Create, Clone, Update, Delete, SwapWith, Replace])
 
   class Config < HaveAPI::Resource
     route '{vps_id}/configs'
