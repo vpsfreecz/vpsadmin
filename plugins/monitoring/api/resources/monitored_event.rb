@@ -70,10 +70,10 @@ module VpsAdmin::API::Resources
           q = q.order("#{t}.created_at DESC")
 
         when 'longest'
-          q = q.order("TIMESTAMPDIFF(SECOND, #{t}.created_at, #{t}.updated_at) DESC")
+          q = q.order(Arel.sql("TIMESTAMPDIFF(SECOND, #{t}.created_at, #{t}.updated_at) DESC"))
 
         when 'shortest'
-          q = q.order("TIMESTAMPDIFF(SECOND, #{t}.created_at, #{t}.updated_at)")
+          q = q.order(Arel.sql("TIMESTAMPDIFF(SECOND, #{t}.created_at, #{t}.updated_at)"))
         end
 
         q
