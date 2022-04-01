@@ -55,5 +55,23 @@ module VpsAdmind
         call_cmd(Commands::Vps::Stop, {:vps_id => @vps_id})
       end
     end
+
+    def fork_chroot_wait(&block)
+      rootfs = ve_private
+
+      pid = Process.fork do
+        sys = VpsAdmind::Sys.new
+        sys.chroot(rootfs)
+        block.call
+      end
+
+      Process.wait(pid)
+
+      if $?.exitstatus != 0
+        fail "subprocess failed with exit status #{$?.exitstatus}"
+      end
+
+      $?
+    end
   end
 end
