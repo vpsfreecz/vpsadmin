@@ -4,7 +4,7 @@ require 'tempfile'
 module NodeCtld
   class Commands::Vps::VzToOs < Commands::Base
     handle 2024
-    needs :system, :osctl
+    needs :system, :osctl, :vps
 
     include OsCtl::Lib::Utils::File
 
@@ -12,12 +12,15 @@ module NodeCtld
       # Ensure the container is mounted
       osctl(%i(ct mount), @vps_id)
 
-      # Get path to its rootfs
-      @rootfs = osctl_parse(%i(ct show), @vps_id)[:rootfs]
-
       # Call distribution-dependent conversion code
       m = :"convert_#{@distribution}"
-      send(m) if respond_to?(m, true)
+
+      if respond_to?(m, true)
+        fork_chroot_wait do
+          @rootfs = '/'
+          send(m)
+        end
+      end
 
       m = :"runscript_#{@distribution}"
       if respond_to?(m, true)
