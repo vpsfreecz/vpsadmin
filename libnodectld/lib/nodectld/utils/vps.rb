@@ -1,3 +1,5 @@
+require 'libosctl'
+
 module NodeCtld
   module Utils::Vps
     def find_ct(vps_id = nil)
@@ -27,6 +29,24 @@ module NodeCtld
 
     def ct_hook_dir(pool_fs: @pool_fs, vps_id: @vps_id)
       File.join('/', pool_fs, '..', 'hook/ct', vps_id.to_s)
+    end
+
+    def fork_chroot_wait(&block)
+      rootfs = ct.boot_rootfs
+
+      pid = Process.fork do
+        sys = OsCtl::Lib::Sys.new
+        sys.chroot(rootfs)
+        block.call
+      end
+
+      Process.wait(pid)
+
+      if $?.exitstatus != 0
+        fail "subprocess failed with exit status #{$?.exitstatus}"
+      end
+
+      $?
     end
   end
 end
