@@ -92,7 +92,7 @@ class SysConfig < ActiveRecord::Base
   def set_value(v)
     case data_type
     when 'Hash', 'Array'
-      self.value = YAML.load(v)
+      self.value = YAML.safe_load(v)
 
     else
       self.value = v
