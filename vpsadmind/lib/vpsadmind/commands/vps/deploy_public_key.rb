@@ -4,13 +4,24 @@ module VpsAdmind
     needs :system, :vps
 
     def exec
+      fork_chroot_wait { add_key }
+      ok
+    end
+
+    def rollback
+      fork_chroot_wait { remove_key }
+      ok
+    end
+
+    protected
+    def add_key
       Dir.mkdir(root_dir, 0700) unless Dir.exists?(root_dir)
       Dir.mkdir(ssh_dir, 0700) unless Dir.exists?(ssh_dir)
 
       unless File.exists?(authorized_keys)
         File.open(authorized_keys, 'w') { |f| f.write(@pubkey + "\n") }
         File.chmod(0600, authorized_keys)
-        return ok
+        return
       end
 
       # Walk through the file, write the key if it is not there yet
@@ -24,7 +35,7 @@ module VpsAdmind
 
         if line.strip == @pubkey
           f.close
-          return ok
+          return
         end
       end
 
@@ -33,12 +44,10 @@ module VpsAdmind
       f.write(@pubkey)
       f.write("\n")
       f.close
-
-      ok
     end
 
-    def rollback
-      return ok unless File.exists?(authorized_keys)
+    def remove_key
+      return unless File.exists?(authorized_keys)
 
       tmp = File.join(ssh_dir, '.authorized_keys.new')
 
@@ -53,13 +62,11 @@ module VpsAdmind
       src.close
       dst.close
 
-      syscmd("#{$CFG.get(:bin, :mv)} \"#{tmp}\" \"#{authorized_keys}\"")
-      ok
+      File.rename(tmp, authorized_keys)
     end
 
-    protected
     def root_dir
-      File.join(ve_private, 'root')
+      '/root'
     end
 
     def ssh_dir
