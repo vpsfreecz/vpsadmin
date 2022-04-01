@@ -23,8 +23,8 @@ module VpsAdmind::RemoteCommands
             ret[row[0]] << {
                 :id => row[6],
                 :class_name => row[1],
-                :row_pks => YAML.load(row[2]),
-                :attr_changes => row[3] ? YAML.load(row[3]) : nil,
+                :row_pks => load_yaml(row[2]),
+                :attr_changes => row[3] ? load_yaml(row[3]) : nil,
                 :type => VpsAdmind::Confirmations.translate_type(row[4]),
                 :done => row[5] == 1 ? true : false
             }
@@ -138,6 +138,11 @@ module VpsAdmind::RemoteCommands
       )
 
       ret
+    end
+
+    protected
+    def load_yaml(v)
+      YAML.safe_load(v, [Symbol, Time])
     end
   end
 end

@@ -169,7 +169,7 @@ module VpsAdmind
 
     def load(db = true)
       begin
-        tmp = YAML.load(File.read(@file))
+        tmp = YAML.safe_load(File.read(@file), [Symbol])
       rescue ArgumentError
         $stderr.puts "Error loading config: #{$!.message}"
         return false

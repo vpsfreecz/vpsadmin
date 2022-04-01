@@ -58,8 +58,8 @@ module VpsAdmind
         ret[ trans['t_id'].to_i ] << {
             :id => trans['c_id'].to_i,
             :class_name => trans['class_name'],
-            :row_pks => YAML.load(trans['row_pks']),
-            :attr_changes => trans['attr_changes'] ? YAML.load(trans['attr_changes']) : nil,
+            :row_pks => load_yaml(trans['row_pks']),
+            :attr_changes => trans['attr_changes'] ? load_yaml(trans['attr_changes']) : nil,
             :type => self.class.translate_type(trans['confirm_type'].to_i),
             :done => trans['done'].to_i == 1 ? true : false
 
@@ -93,7 +93,7 @@ module VpsAdmind
     protected
     def confirm(t, trans, dir, success = nil)
       success = success.nil? ? trans[4].to_i > 0 : success
-      pk = pk_cond(YAML.load(trans[1]))
+      pk = pk_cond(load_yaml(trans[1]))
 
       case trans[3].to_i
         when 0 # create
@@ -110,7 +110,7 @@ module VpsAdmind
 
         when 2 # edit before
           if !success || dir == :rollback
-            attrs = YAML.load(trans[2])
+            attrs = load_yaml(trans[2])
             update = attrs.collect { |k, v| "`#{k}` = #{sql_val(v)}" }.join(',')
 
             t.query("UPDATE #{trans[0]} SET #{update} WHERE #{pk}")
@@ -118,7 +118,7 @@ module VpsAdmind
 
         when 3 # edit after
           if success && dir == :execute
-            attrs = YAML.load(trans[2])
+            attrs = load_yaml(trans[2])
             update = attrs.collect { |k, v| "`#{k}` = #{sql_val(v)}" }.join(',')
 
             t.query("UPDATE #{trans[0]} SET #{update} WHERE #{pk}")
@@ -138,18 +138,22 @@ module VpsAdmind
 
         when 6 # decrement
           if success && dir == :execute
-            attr = YAML.load(trans[2])
+            attr = load_yaml(trans[2])
 
             t.query("UPDATE #{trans[0]} SET #{attr} = #{attr} - 1 WHERE #{pk}")
           end
 
         when 7 # increment
           if success && dir == :execute
-            attr = YAML.load(trans[2])
+            attr = load_yaml(trans[2])
 
             t.query("UPDATE #{trans[0]} SET #{attr} = #{attr} + 1 WHERE #{pk}")
           end
       end
+    end
+
+    def load_yaml(v)
+      YAML.safe_load(v, [Symbol, Time])
     end
 
     def pk_cond(pks)
