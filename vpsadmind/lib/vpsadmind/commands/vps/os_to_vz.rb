@@ -6,12 +6,14 @@ module VpsAdmind
     needs :system, :vz, :vps, :file
 
     def exec
-      # Get path to its rootfs
-      @rootfs = ve_private
-
       # Call distribution-dependent conversion code
       m = :"convert_#{@distribution}"
-      send(m) if respond_to?(m, true)
+      if respond_to?(m, true)
+        fork_chroot_wait do
+          @rootfs = '/'
+          send(m)
+        end
+      end
 
       m = :"runscript_#{@distribution}"
       if respond_to?(m, true)
