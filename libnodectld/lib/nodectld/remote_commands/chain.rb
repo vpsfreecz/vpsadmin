@@ -23,8 +23,8 @@ module NodeCtld::RemoteCommands
             ret[row['transaction_id']] << {
               id: row['id'],
               class_name: row['class_name'],
-              row_pks: YAML.load(row['row_pks']),
-              attr_changes: row['attr_changes'] ? YAML.load(row['attr_changes']) : nil,
+              row_pks: load_yaml(row['row_pks']),
+              attr_changes: row['attr_changes'] ? load_yaml(row['attr_changes']) : nil,
               type: NodeCtld::Confirmations.translate_type(row['confirm_type']),
               done: row['done'] == 1 ? true : false
             }
@@ -136,6 +136,11 @@ module NodeCtld::RemoteCommands
       )
 
       ret
+    end
+
+    protected
+    def load_yaml(v)
+      YAML.safe_load(v, permitted_classes: [Symbol, Time])
     end
   end
 end

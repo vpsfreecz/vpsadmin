@@ -179,7 +179,7 @@ module NodeCtld
 
     def load(db = true)
       begin
-        tmp = YAML.load(File.read(@file))
+        tmp = load_yaml(File.read(@file))
       rescue ArgumentError => e
         warn "Error loading config: #{e.message}"
         return false
@@ -196,7 +196,7 @@ module NodeCtld
 
       if File.exist?(SECRET_CONFIG)
         begin
-          tmp = YAML.load(File.read(SECRET_CONFIG))
+          tmp = load_yaml(File.read(SECRET_CONFIG))
         rescue ArgumentError => e
           warn "Error loading secret config: #{e.message}"
           return false
@@ -291,6 +291,10 @@ module NodeCtld
           new_v
         end
       end
+    end
+
+    def load_yaml(v)
+      YAML.safe_load(v, permitted_classes: [Symbol])
     end
 
     def sync

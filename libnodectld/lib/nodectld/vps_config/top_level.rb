@@ -34,7 +34,13 @@ module NodeCtld
     end
 
     def load
-      data = lock { YAML.load_file(path) || {} }
+      data = lock do
+        begin
+          YAML.safe_load(File.read(path)) || {}
+        rescue ArgumentError, SystemCallError
+          {}
+        end
+      end
 
       @network_interfaces = VpsConfig::NetworkInterfaceList.load(data['network_interfaces'] || [])
       @mounts = (data['mounts'] || []).map { |v| VpsConfig::Mount.load(v) }
