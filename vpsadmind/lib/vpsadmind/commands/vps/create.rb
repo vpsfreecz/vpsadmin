@@ -6,11 +6,14 @@ module VpsAdmind
     def exec
       # FIXME: what about onboot param?
 
-      vzctl(:create, @vps_id, {
+      create_opts = {
           :ostemplate => @template,
-          :hostname => @hostname,
           :private => ve_private,
-      })
+      }
+
+      create_opts[:hostname] = @hostname if @hostname
+
+      vzctl(:create, @vps_id, create_opts)
       vzctl(:set, @vps_id, {
           :applyconfig => 'basic'
       }, true)

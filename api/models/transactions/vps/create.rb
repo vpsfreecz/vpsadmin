@@ -22,7 +22,7 @@ module Transactions::Vps
           pool_fs: vps.dataset_in_pool.pool.filesystem,
           dataset_name: vps.dataset_in_pool.dataset.full_name,
           userns_map: vps.userns_map.id.to_s,
-          hostname: vps.hostname,
+          hostname: vps.manage_hostname ? vps.hostname : nil,
           distribution: vps.os_template.distribution,
           version: vps.os_template.version,
           arch: vps.os_template.arch,
