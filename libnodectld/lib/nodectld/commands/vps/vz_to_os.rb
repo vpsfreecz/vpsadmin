@@ -13,12 +13,25 @@ module NodeCtld
       osctl(%i(ct mount), @vps_id)
 
       # Call distribution-dependent conversion code
-      m = :"convert_#{@distribution}"
+      m_convert = :"convert_#{@distribution}"
 
-      if respond_to?(m, true)
-        fork_chroot_wait do
-          @rootfs = '/'
-          send(m)
+      if respond_to?(m_convert, true)
+        m_args = []
+
+        # Configurable context, if any. The context method can be used to pass
+        # data to the forked-and-chrooted convert method.
+        m_ctx = :"context_#{@distribution}"
+        m_args << send(m_ctx) if respond_to?(m_ctx, true)
+
+        begin
+          fork_chroot_wait do
+            @rootfs = '/'
+            send(m_convert, *m_args)
+          end
+        ensure
+          # Cleanup context, if any
+          m_cleanup = :"cleanup_#{@distribution}"
+          send(m_cleanup, *m_args) if respond_to?(m_cleanup, true)
         end
       end
 
@@ -52,7 +65,19 @@ module NodeCtld
     end
 
     protected
-    def convert_alpine
+    def context_alpine
+      {
+        'cgroups-mount.initscript' => File.open(File.join(
+          NodeCtld.root, 'templates/vz_to_os', 'alpine_cgroups-mount.initscript'
+        )),
+      }
+    end
+
+    def cleanup_alpine(ctx)
+      ctx['cgroups-mount.initscript'].close
+    end
+
+    def convert_alpine(ctx)
       regenerate_file(File.join(@rootfs, 'etc/inittab'), 0644) do |new, old|
         if old.nil?
           new.puts('# vpsAdmin console')
@@ -66,6 +91,10 @@ module NodeCtld
             end
           end
         end
+      end
+
+      File.open(File.join(@rootfs, 'etc/init.d/cgroups-mount'), 'w') do |f|
+        IO.copy_stream(ctx['cgroups-mount.initscript'], f)
       end
     end
 
