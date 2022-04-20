@@ -203,7 +203,20 @@ type ifup || installpkg ifupdown
 END
     end
 
-    def convert_devuan
+    def context_devuan
+      {
+        'cgroups-mount.initscript' => File.open(File.join(
+          NodeCtld.root, 'templates/vz_to_os', 'devuan_cgroups-mount.initscript'
+        )),
+      }
+    end
+
+    def cleanup_devuan(ctx)
+      ctx['cgroups-mount.initscript'].close
+    end
+
+
+    def convert_devuan(ctx)
       inittab = File.join(@rootfs, 'etc/inittab')
 
       if File.exist?(inittab)
@@ -220,6 +233,10 @@ END
           new.puts('# Start getty on /dev/console')
           new.puts('c0:2345:respawn:/sbin/agetty --noreset 38400 console')
         end
+      end
+
+      File.open(File.join(@rootfs, 'etc/init.d/cgroups-mount'), 'w') do |f|
+        IO.copy_stream(ctx['cgroups-mount.initscript'], f)
       end
     end
 
