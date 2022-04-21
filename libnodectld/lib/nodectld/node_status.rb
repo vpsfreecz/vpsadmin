@@ -104,6 +104,7 @@ module NodeCtld
       sql = "
           uptime = #{info.uptime},
           process_count = #{info.nproc},
+          loadavg = #{info.loadavg[5]},
           vpsadmind_version = '#{NodeCtld::VERSION}',
           kernel = '#{info.kernel}',
           cpus = #{@cpus},
@@ -152,8 +153,6 @@ module NodeCtld
             sum_arc_size = arc_size,
             sum_arc_hitpercent = arc_hitpercent,"
 
-      sql += "loadavg = #{info.loadavg[5]},"
-
       db.query(
           "INSERT INTO node_current_statuses SET
             node_id = #{info.node_id},
@@ -177,6 +176,7 @@ module NodeCtld
           kernel = '#{info.kernel}',
           process_count = #{info.nproc},
           sum_process_count = sum_process_count + process_count,
+          loadavg = #{info.loadavg[5]},
           cpu_user = #{info.cpu[:user]},
           cpu_nice = #{info.cpu[:nice]},
           cpu_system = #{info.cpu[:system]},
@@ -216,8 +216,6 @@ module NodeCtld
             sum_arc_size = sum_arc_size + arc_size,
             sum_arc_hitpercent = sum_arc_hitpercent + arc_hitpercent,"
       end
-
-      sql += "loadavg = #{info.loadavg[5]},"
 
       db.query(
           "INSERT INTO node_current_statuses SET
