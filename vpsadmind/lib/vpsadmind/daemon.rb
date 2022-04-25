@@ -114,7 +114,7 @@ module VpsAdmind
       update_rs = update_st.fetch
       update_st.close
 
-      last_update = update_rs[0]
+      last_update = Time.strptime(update_rs[0].to_s + ' UTC', '%Y-%m-%d %H:%M:%S %Z')
 
       @skipped_transaction_checks ||= 0
 
