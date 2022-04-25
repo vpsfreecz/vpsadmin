@@ -137,6 +137,37 @@ module NodeCtld
       end
     end
 
+    def check_commands?(db)
+      update_rs = db.prepared(
+        'SELECT update_time
+        FROM information_schema.tables
+        WHERE table_schema = ? AND table_name = ?',
+        $CFG.get(:db, :name),
+        'transactions'
+      ).get
+
+      @skipped_transaction_checks ||= 0
+
+      current_transaction_update = @last_transaction_update
+      @last_transaction_update = update_rs['update_time']
+
+      if current_transaction_update.nil?
+        return true
+
+      elsif @skipped_transaction_checks > (120 / $CFG.get(:vpsadmin, :check_interval))
+        @skipped_transaction_checks = 0
+        return true
+
+      elsif current_transaction_update >= update_rs['update_time']
+        @skipped_transaction_checks += 1
+        return false
+
+      else
+        @skipped_transaction_checks = 0
+        return true
+      end
+    end
+
     def select_commands(db, limit = nil)
       limit ||= @queues.total_limit
 
@@ -204,6 +235,8 @@ module NodeCtld
     end
 
     def do_commands(db)
+      return unless check_commands?(db)
+
       rs = select_commands(db)
 
       rs.each do |row|
