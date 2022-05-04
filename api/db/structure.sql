@@ -1113,7 +1113,8 @@ CREATE TABLE `oom_reports` (
   `reported_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_oom_reports_on_vps_id` (`vps_id`),
-  KEY `index_oom_reports_on_processed` (`processed`)
+  KEY `index_oom_reports_on_processed` (`processed`),
+  KEY `index_oom_reports_on_reported_at` (`reported_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `os_templates`;
@@ -1369,15 +1370,17 @@ CREATE TABLE `transaction_chains` (
   `size` int(11) NOT NULL,
   `progress` int(11) NOT NULL DEFAULT 0,
   `user_id` int(11) DEFAULT NULL,
-  `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
-  `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
   `urgent_rollback` int(11) NOT NULL DEFAULT 0,
   `concern_type` int(11) NOT NULL DEFAULT 0,
   `user_session_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_transaction_chains_on_state` (`state`) USING BTREE,
   KEY `index_transaction_chains_on_user_id` (`user_id`) USING BTREE,
-  KEY `index_transaction_chains_on_user_session_id` (`user_session_id`) USING BTREE
+  KEY `index_transaction_chains_on_user_session_id` (`user_session_id`) USING BTREE,
+  KEY `index_transaction_chains_on_created_at` (`created_at`),
+  KEY `index_transaction_chains_on_type_and_state` (`type`,`state`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `transaction_confirmations`;
@@ -2074,6 +2077,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20210215160434'),
 ('20210529125923'),
 ('20220123194603'),
-('20220202111859');
+('20220202111859'),
+('20220504184116');
 
 
