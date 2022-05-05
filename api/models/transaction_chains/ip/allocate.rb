@@ -31,8 +31,8 @@ module TransactionChains
 
         rescue ActiveRecord::RecordNotFound
           if strict
-            fail "no #{r.name} available"
-
+            raise VpsAdmin::API::Exceptions::ConfigurationError,
+                  "no #{r.name} address available"
           else
             break
           end
