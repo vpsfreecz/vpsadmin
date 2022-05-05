@@ -1,3 +1,5 @@
+require 'time'
+
 module TransactionChains
   class Export::Create < ::TransactionChain
     label 'Create'
@@ -164,7 +166,10 @@ module TransactionChains
 
     def export_path(dip, sip)
       if sip
-        File.join(dip.pool.export_root, "#{dip.dataset.full_name}-#{sip.snapshot.name}")
+        File.join(
+          dip.pool.export_root,
+          "#{dip.dataset.full_name}-#{sip.snapshot.created_at.iso8601}"
+        )
       else
         File.join(dip.pool.export_root, dip.dataset.full_name)
       end
