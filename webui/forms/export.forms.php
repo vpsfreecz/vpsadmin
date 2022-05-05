@@ -52,7 +52,7 @@ function export_list() {
 			$xtpl->table_td(user_link($ex->user));
 
 		$xtpl->table_td($ex->dataset->name);
-		$xtpl->table_td($ex->snapshot_id ? $ex->snapshot->created_at : '-');
+		$xtpl->table_td($ex->snapshot_id ? tolocaltz($ex->snapshot->created_at) : '-');
 		$xtpl->table_td($ex->host_ip_address->addr);
 		$xtpl->table_td($ex->path);
 		$xtpl->table_td(boolean_icon($ex->enabled));
