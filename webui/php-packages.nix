@@ -5,10 +5,10 @@ let
     "bacon/bacon-qr-code" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "bacon-bacon-qr-code-f73543ac4e1def05f1a70bcd1525c8a157a1ad09";
+        name = "bacon-bacon-qr-code-d70c840f68657ce49094b8d91f9ee0cc07fbf66c";
         src = fetchurl {
-          url = "https://api.github.com/repos/Bacon/BaconQrCode/zipball/f73543ac4e1def05f1a70bcd1525c8a157a1ad09";
-          sha256 = "1df22bfrc8q62qz8brrs8p2rmmv5gsaxdyjrd2ln6d6j7i4jkjpk";
+          url = "https://api.github.com/repos/Bacon/BaconQrCode/zipball/d70c840f68657ce49094b8d91f9ee0cc07fbf66c";
+          sha256 = "0k2z8a6qz5xg1p85vwcp58yqbiw8bmnp3hg2pjcaqlimnf65v058";
         };
       };
     };
@@ -25,20 +25,20 @@ let
     "endroid/qr-code" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "endroid-qr-code-361b43bbdfa4360442369d0a236e7d8756160523";
+        name = "endroid-qr-code-9109eb7790ece1d46b1ab40eb7f375bbd6e7cb5d";
         src = fetchurl {
-          url = "https://api.github.com/repos/endroid/qr-code/zipball/361b43bbdfa4360442369d0a236e7d8756160523";
-          sha256 = "1ggrkaijzq322y83jflqfdl81q7lrnnw3d2ch2m9n5z0fxj7sry3";
+          url = "https://api.github.com/repos/endroid/qr-code/zipball/9109eb7790ece1d46b1ab40eb7f375bbd6e7cb5d";
+          sha256 = "1bnfrcwp9f2qj0fhn0ks09040y5hggij7syny5yjb0i03w8164pb";
         };
       };
     };
     "haveapi/client" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "haveapi-client-31254a18a5702b7a95fe3004b2c8efafa9e835db";
+        name = "haveapi-client-0b6f052c1ba8512c5b1ea5277961ff75a5e5091e";
         src = fetchurl {
-          url = "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/31254a18a5702b7a95fe3004b2c8efafa9e835db";
-          sha256 = "1wk28d959fzk459xjhx1sgaw2nvnqn4rr9mf6bgmxx8294909d78";
+          url = "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/0b6f052c1ba8512c5b1ea5277961ff75a5e5091e";
+          sha256 = "0dbrvl2n1f7c6al0khry01rkk9gryig5g1dicgxj4gxc6l7n5zkg";
         };
       };
     };

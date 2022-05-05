@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d44a9094e95af07186dee6e5ded0b9b6",
+    "content-hash": "b003c9ca41024e3a7e669270fa3bfc81",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
-            "version": "2.0.4",
+            "version": "2.0.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Bacon/BaconQrCode.git",
-                "reference": "f73543ac4e1def05f1a70bcd1525c8a157a1ad09"
+                "reference": "d70c840f68657ce49094b8d91f9ee0cc07fbf66c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Bacon/BaconQrCode/zipball/f73543ac4e1def05f1a70bcd1525c8a157a1ad09",
-                "reference": "f73543ac4e1def05f1a70bcd1525c8a157a1ad09",
+                "url": "https://api.github.com/repos/Bacon/BaconQrCode/zipball/d70c840f68657ce49094b8d91f9ee0cc07fbf66c",
+                "reference": "d70c840f68657ce49094b8d91f9ee0cc07fbf66c",
                 "shasum": ""
             },
             "require": {
@@ -26,8 +26,9 @@
                 "php": "^7.1 || ^8.0"
             },
             "require-dev": {
-                "phly/keep-a-changelog": "^1.4",
+                "phly/keep-a-changelog": "^2.1",
                 "phpunit/phpunit": "^7 | ^8 | ^9",
+                "spatie/phpunit-snapshot-assertions": "^4.2.9",
                 "squizlabs/php_codesniffer": "^3.4"
             },
             "suggest": {
@@ -55,9 +56,9 @@
             "homepage": "https://github.com/Bacon/BaconQrCode",
             "support": {
                 "issues": "https://github.com/Bacon/BaconQrCode/issues",
-                "source": "https://github.com/Bacon/BaconQrCode/tree/2.0.4"
+                "source": "https://github.com/Bacon/BaconQrCode/tree/2.0.7"
             },
-            "time": "2021-06-18T13:26:35+00:00"
+            "time": "2022-03-14T02:02:36+00:00"
         },
         {
             "name": "dasprid/enum",
@@ -108,20 +109,20 @@
         },
         {
             "name": "endroid/qr-code",
-            "version": "4.4.4",
+            "version": "4.4.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/endroid/qr-code.git",
-                "reference": "361b43bbdfa4360442369d0a236e7d8756160523"
+                "reference": "9109eb7790ece1d46b1ab40eb7f375bbd6e7cb5d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/endroid/qr-code/zipball/361b43bbdfa4360442369d0a236e7d8756160523",
-                "reference": "361b43bbdfa4360442369d0a236e7d8756160523",
+                "url": "https://api.github.com/repos/endroid/qr-code/zipball/9109eb7790ece1d46b1ab40eb7f375bbd6e7cb5d",
+                "reference": "9109eb7790ece1d46b1ab40eb7f375bbd6e7cb5d",
                 "shasum": ""
             },
             "require": {
-                "bacon/bacon-qr-code": "^2.0",
+                "bacon/bacon-qr-code": "^2.0.5",
                 "php": "^7.4||^8.0"
             },
             "require-dev": {
@@ -168,7 +169,7 @@
             ],
             "support": {
                 "issues": "https://github.com/endroid/qr-code/issues",
-                "source": "https://github.com/endroid/qr-code/tree/4.4.4"
+                "source": "https://github.com/endroid/qr-code/tree/4.4.8"
             },
             "funding": [
                 {
@@ -176,20 +177,20 @@
                     "type": "github"
                 }
             ],
-            "time": "2021-12-13T11:01:54+00:00"
+            "time": "2022-04-06T09:39:20+00:00"
         },
         {
             "name": "haveapi/client",
-            "version": "0.15.0",
+            "version": "0.16.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/vpsfreecz/haveapi-client-php.git",
-                "reference": "31254a18a5702b7a95fe3004b2c8efafa9e835db"
+                "reference": "0b6f052c1ba8512c5b1ea5277961ff75a5e5091e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/31254a18a5702b7a95fe3004b2c8efafa9e835db",
-                "reference": "31254a18a5702b7a95fe3004b2c8efafa9e835db",
+                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/0b6f052c1ba8512c5b1ea5277961ff75a5e5091e",
+                "reference": "0b6f052c1ba8512c5b1ea5277961ff75a5e5091e",
                 "shasum": ""
             },
             "require": {
@@ -216,9 +217,9 @@
             "homepage": "https://github.com/vpsfreecz/haveapi-client-php",
             "support": {
                 "issues": "https://github.com/vpsfreecz/haveapi-client-php/issues",
-                "source": "https://github.com/vpsfreecz/haveapi-client-php/tree/v0.15.0"
+                "source": "https://github.com/vpsfreecz/haveapi-client-php/tree/v0.16.0"
             },
-            "time": "2021-12-27T14:59:26+00:00"
+            "time": "2022-05-05T16:17:03+00:00"
         },
         {
             "name": "nategood/httpful",
