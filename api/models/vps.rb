@@ -84,7 +84,7 @@ class Vps < ActiveRecord::Base
 
   validates :user_id, :node_id, :os_template_id, presence: true, numericality: {only_integer: true}
   validates :hostname, presence: true, format: {
-    with: /\A[a-zA-Z\-_\.0-9]{0,255}\z/,
+    with: /\A[a-zA-Z0-9][a-zA-Z\-_\.0-9]{0,255}[a-zA-Z0-9]\z/,
     message: 'bad format'
   }
   validates :cpu_limit, numericality: {
