@@ -171,7 +171,16 @@ END
     end
 
     def convert_debian
-      if get_debian_major_version == 8
+      major_version = get_debian_major_version
+
+      convert_debian_systemd(major_version)
+      convert_debian_inittab(major_version)
+    end
+
+    def convert_debian_systemd(major_version)
+      return unless Dir.exist?(File.join(@rootfs, 'etc/systemd'))
+
+      if major_version == 8
         dir = File.join(@rootfs, 'etc/systemd/system/dbus.service.d')
         file = File.join(dir, 'override.conf')
         FileUtils.mkpath(dir)
@@ -186,6 +195,58 @@ END
 
       disable_systemd_udev_trigger
       ensure_journal_log
+    end
+
+    def convert_debian_inittab(major_version)
+      inittab = File.join(@rootfs, 'etc/inittab')
+      return unless File.exist?(inittab)
+
+      have_power = false
+      have_getty = false
+
+      regenerate_file(inittab, 0644) do |new, old|
+        old.each_line do |line|
+          if line.lstrip.start_with?('#')
+            new.write(line)
+
+          elsif line =~ /^#{Regexp.escape('pf::powerwait:/etc/init.d/powerfail start')}/
+            new.puts('pf::powerwait:/sbin/halt')
+            have_power = true
+
+          elsif line.include?('pf::powerwait:/sbin/halt')
+            new.write(line)
+            have_power = true
+
+          elsif line.include?('getty') && line.include?('tty0')
+            new.write("# Disabled by migration to vpsAdminOS")
+            new.write("# #{line}")
+
+          elsif line.include?('getty') && line.include?('console')
+            new.write(line)
+            have_getty = true
+
+          else
+            new.write(line)
+          end
+        end
+
+        unless have_power
+          new.puts('pf::powerwait:/sbin/halt')
+        end
+
+        getty_line =
+          if File.exist?(File.join(@rootfs, 'sbin/agetty'))
+            "c0:2345:respawn:/sbin/agetty --noreset 38400 console"
+          elsif File.exist?(File.join(@rootfs, 'sbin/getty'))
+            "c0:2345:respawn:/sbin/getty 38400 console"
+          end
+
+        if !have_getty && getty_line
+          new.puts
+          new.puts('# Start getty on /dev/console')
+          new.puts(getty_line)
+        end
+      end
     end
 
     def runscript_debian
@@ -404,9 +465,15 @@ END
         return $1.to_i
       elsif s.start_with?('jessie')
         return 8
+      elsif s.start_with?('wheezy')
+        return 7
+      elsif s.start_with?('squeeze')
+        return 6
+      elsif s.start_with?('lenny')
+        return 5
       end
 
-      nil
+      11
     end
 
     def link_exist?(path)
