@@ -447,6 +447,8 @@ END
     end
 
     def disable_systemd_udev_trigger
+      return unless Dir.exist?(File.join(@rootfs, 'etc/systemd/system'))
+
       f = File.join(@rootfs, 'etc/systemd/system/systemd-udev-trigger.service')
       File.lstat(f)
     rescue Errno::ENOENT
@@ -454,6 +456,8 @@ END
     end
 
     def ensure_journal_log
+      return unless Dir.exist?(File.join(@rootfs, 'etc/systemd'))
+
       FileUtils.mkdir_p(File.join(@rootfs, 'var/log/journal'))
     end
 
