@@ -61,6 +61,14 @@ module VpsAdmind
           db_vps[:total_memory] = 0
         end
 
+        # Sometimes when VPS is being stopped, vzlist reports very high
+        # swappages limit (e.g. 36028797018963964), which does not fit into
+        # the database and causes vpsadmind to get stuck on it
+        # (out of range error).
+        if db_vps[:total_swap] > 2**32
+          db_vps[:total_swap] = 0
+        end
+
         # If a VPS is stopped while the vzlist is run, it may say that status is
         # 'running', but later that it has zero processes or no load avg.
         if db_vps[:nproc] == 0 || vps[:laverage].nil? || db_vps[:uptime] == 0
