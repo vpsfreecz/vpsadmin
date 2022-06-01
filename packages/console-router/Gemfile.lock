@@ -1,12 +1,12 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (6.1.5.1)
-      activesupport (= 6.1.5.1)
-    activerecord (6.1.5.1)
-      activemodel (= 6.1.5.1)
-      activesupport (= 6.1.5.1)
-    activesupport (6.1.5.1)
+    activemodel (6.1.6)
+      activesupport (= 6.1.6)
+    activerecord (6.1.6)
+      activemodel (= 6.1.6)
+      activesupport (= 6.1.6)
+    activesupport (6.1.6)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
@@ -21,7 +21,7 @@ GEM
     mustermann (1.1.1)
       ruby2_keywords (~> 0.0.1)
     mysql2 (0.5.4)
-    rack (2.2.3)
+    rack (2.2.3.1)
     rack-protection (2.2.0)
       rack
     require_all (2.0.0)
@@ -56,4 +56,4 @@ DEPENDENCIES
   thin
 
 BUNDLED WITH
-   2.2.24
+   2.2.33
