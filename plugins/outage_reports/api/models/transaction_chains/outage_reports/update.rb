@@ -38,7 +38,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
           && (attrs[:state].nil? || attrs[:state] == ::Outage.states[:staged])
           translations.each do |lang, attrs|
             begin
-              outage.outage_translations(true).find_by!(language: lang).update!(attrs)
+              outage.outage_translations.find_by!(language: lang).update!(attrs)
 
             rescue ActiveRecord::RecordNotFound
               tr = ::OutageTranslation.new(attrs)

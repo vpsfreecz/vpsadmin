@@ -77,7 +77,7 @@ class OutageUpdate < ActiveRecord::Base
       end
     end
 
-    outage_translations(true).each do |tr|
+    outage_translations.reload.each do |tr|
       ret[:translations][tr.language.code] = {
         summary: tr.summary,
         description: tr.description,
