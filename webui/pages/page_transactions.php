@@ -57,22 +57,22 @@ function list_chains() {
 		'meta' => array('includes' => 'user')
 	);
 
-	if ($_GET['user'])
+	if ($_GET['user'] ?? false)
 		$params['user'] = $_GET['user'];
 
-	if ($_GET['user_session'])
+	if ($_GET['user_session'] ?? false)
 		$params['user_session'] = $_GET['user_session'];
 
-	if ($_GET['state'])
+	if ($_GET['state'] ?? false)
 		$params['state'] = $_GET['state'];
 
-	if ($_GET['name'])
+	if ($_GET['name'] ?? false)
 		$params['name'] = $_GET['name'];
 
-	if ($_GET['class_name'])
+	if ($_GET['class_name'] ?? false)
 		$params['class_name'] = $_GET['class_name'];
 
-	if ($_GET['row_id'])
+	if ($_GET['row_id'] ?? false)
 		$params['row_id'] = $_GET['row_id'];
 
 	$chains = $api->transaction_chain->list($params);
@@ -209,16 +209,16 @@ function chain_transactions($chain_id) {
 			'meta' => $meta
 		);
 
-		if ($_GET['node'])
+		if ($_GET['node'] ?? false)
 			$params['node'] = $_GET['node'];
 
-		if ($_GET['type'])
+		if ($_GET['type'] ?? false)
 			$params['type'] = $_GET['type'];
 
-		if ($_GET['done'])
+		if ($_GET['done'] ?? false)
 			$params['done'] = $_GET['done'];
 
-		if ($_GET['success'])
+		if ($_GET['success'] ?? false)
 			$params['success'] = $_GET['success'];
 
 		$transactions = $api->transaction->list($params);
@@ -269,9 +269,9 @@ function chain_transactions($chain_id) {
 	$xtpl->table_out();
 }
 
-if ($_SESSION["logged_in"]) {
+if (isLoggedIn()) {
 
-if ($_GET['chain']) {
+if ($_GET['chain'] ?? false) {
 	chain_transactions($_GET['chain']);
 
 } else {
