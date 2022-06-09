@@ -665,10 +665,15 @@ function transaction_chain_concerns($chain, $limit = 10) {
 
 	switch ($chain->concerns->type) {
 		case 'affect':
+			if (count($chain->concerns->objects) < 1)
+				return '---';
 			$o = $chain->concerns->objects[0];
 			return transaction_concern_class($o[0]).' '.transaction_concern_link($o[0], $o[1]);
 
 		case 'transform':
+			if (count($chain->concerns->objects) < 2)
+				return '---';
+
 			$src = $chain->concerns->objects[0];
 			$dst = $chain->concerns->objects[1];
 
