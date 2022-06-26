@@ -359,17 +359,15 @@ in {
 
       services.logrotate = {
         enable = true;
-        paths = {
+        settings = {
           nginx-vpsadmin = {
-            path = "/var/log/nginx/vpsadmin-*.log";
-            user = config.services.nginx.user;
-            group = config.services.nginx.group;
+            files = [ "/var/log/nginx/vpsadmin-*.log" ];
+            priority = 1100;
+            su = "${config.services.nginx.user} ${config.services.nginx.group}";
             frequency = "monthly";
-            keep = 13;
-            extraConfig = ''
-              postrotate
-                [ ! -f /run/nginx/nginx.pid ] || kill -USR1 `cat /run/nginx/nginx.pid`
-              endscript
+            rotate = 13;
+            postrotate = ''
+              [ ! -f /run/nginx/nginx.pid ] || kill -USR1 `cat /run/nginx/nginx.pid`
             '';
           };
         };

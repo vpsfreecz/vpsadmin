@@ -3,7 +3,7 @@ with lib;
 let
   cfg = config.vpsadmin.database;
 
-  dbPort = config.services.mysql.port;
+  dbPort = config.services.mysql.settings.mysqld.port;
 in {
   options = {
     vpsadmin.database = {

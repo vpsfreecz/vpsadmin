@@ -2,6 +2,8 @@
 with lib;
 let
   cfg = config.vpsadmin.redis;
+
+  redisSrvCfg = config.services.redis.servers.vpsadmin;
 in {
   options = {
     vpsadmin.redis = {
@@ -12,7 +14,7 @@ in {
         description = ''
           File with password to the database.
 
-          Passed to <option>services.redis.requirePassFile</option>.
+          Passed to <option>services.redis.servers.vpsadmin.requirePassFile</option>.
         '';
       };
 
@@ -37,17 +39,18 @@ in {
   config = mkIf cfg.enable {
     networking.firewall.extraCommands = concatStringsSep "\n" (
       (map (ip: ''
-        iptables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString config.services.redis.port} -j nixos-fw-accept
+        iptables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString redisSrvCfg.port} -j nixos-fw-accept
       '') cfg.allowedIPv4Ranges)
       ++
       (map (ip: ''
-        ip6tables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString config.services.redis.port} -j nixos-fw-accept
+        ip6tables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString redisSrvCfg.port} -j nixos-fw-accept
       '') cfg.allowedIPv6Ranges)
     );
 
-    services.redis = {
+    services.redis.servers.vpsadmin = {
       enable = true;
       bind = null;
+      port = 6379;
       requirePassFile = cfg.passwordFile;
     };
   };
