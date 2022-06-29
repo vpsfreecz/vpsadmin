@@ -206,6 +206,8 @@ module VpsAdmind
           elsif mnt['type'] == 'snapshot_local' \
                 && cols[1].start_with?("/#{pool_mounted_snapshot(mnt['pool_fs'], mnt['clone_name'])}")
             # pass
+          elsif mnt['type'] == 'dataset_local' && cols[1] == File.join('/', mnt['pool_fs'], mnt['dataset_name'])
+            # pass, mount of a local dataset and that dataset must be mounted somewhere
           elsif /^\/vz\/root\/(\d+)\// =~ cols[1] \
                 && check_vps_mounts_for($1, src_check)
             # pass, mount of the same src to another VPS
