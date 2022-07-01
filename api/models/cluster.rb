@@ -27,6 +27,16 @@ class Cluster
       return ret
     end
 
+    # If it is an IP address, try to compress it. The gem seems to compress only
+    # IPv6 addresses though.
+    begin
+      addr = IPAddress.parse(v)
+    rescue ArgumentError
+      # ignore
+    else
+      v = addr.to_s
+    end
+
     q = ActiveRecord::Base.connection.quote(v)
     ActiveRecord::Base.connection.execute(
       "SELECT 'User', id, 'login', login
