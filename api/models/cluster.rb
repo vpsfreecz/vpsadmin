@@ -10,7 +10,7 @@ class Cluster
       ret = []
       id = v.to_i
 
-      [::User, ::Vps, ::Export].each do |klass|
+      [::User, ::Vps, ::Export, ::TransactionChain].each do |klass|
         begin
           ret << {
             resource: klass.to_s,
