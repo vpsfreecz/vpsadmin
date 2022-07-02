@@ -10,7 +10,7 @@ class Cluster
       ret = []
       id = v.to_i
 
-      [::User, ::Vps].each do |klass|
+      [::User, ::Vps, ::Export].each do |klass|
         begin
           ret << {
             resource: klass.to_s,
@@ -66,14 +66,28 @@ class Cluster
       SELECT 'Vps', n.vps_id AS id, 'ip_addr', ip_addr
       FROM ip_addresses i
       INNER JOIN network_interfaces n ON i.network_interface_id = n.id
-      WHERE i.ip_addr = #{q}
+      WHERE i.ip_addr = #{q} AND n.vps_id IS NOT NULL
 
       UNION
       SELECT 'Vps', n.vps_id AS id, 'ip_addr', h.ip_addr
       FROM host_ip_addresses h
       INNER JOIN ip_addresses i ON h.ip_address_id = i.id
       INNER JOIN network_interfaces n ON i.network_interface_id = n.id
-      WHERE h.ip_addr = #{q}
+      WHERE h.ip_addr = #{q} AND n.vps_id IS NOT NULL
+
+      UNION
+      SELECT 'User', e.user_id AS id, 'ip_addr', ip_addr
+      FROM ip_addresses i
+      INNER JOIN network_interfaces n ON i.network_interface_id = n.id
+      INNER JOIN exports e ON n.export_id = e.id
+      WHERE ip_addr = #{q}
+
+      UNION
+      SELECT 'Export', n.export_id AS id, 'ip_addr', h.ip_addr
+      FROM host_ip_addresses h
+      INNER JOIN ip_addresses i ON h.ip_address_id = i.id
+      INNER JOIN network_interfaces n ON i.network_interface_id = n.id
+      WHERE h.ip_addr = #{q} AND n.export_id IS NOT NULL
 
       UNION
       SELECT 'Vps', id, 'hostname', hostname
