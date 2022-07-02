@@ -360,6 +360,11 @@ in {
       services.logrotate = {
         enable = true;
         settings = {
+          nginx = {
+            # Override /var/log/nginx/*.log from the nginx module
+            files = [ "/var/log/nginx/access.log" "/var/log/nginx/error.log" ];
+          };
+
           nginx-vpsadmin = {
             files = [ "/var/log/nginx/vpsadmin-*.log" ];
             priority = 1100;
