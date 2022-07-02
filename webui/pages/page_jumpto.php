@@ -42,6 +42,14 @@ if (isLoggedIn() && isAdmin()) {
 				case 'Vps':
 					$link = '?page=adminvps&action=info&veid='.$v->id;
 					break;
+
+				case 'Export':
+					$link = '?page=export&action=edit&export='.$v->id;
+					break;
+
+				case 'TransactionChain':
+					$link = '?page=transactions&chain='.$v->id;
+					break;
 				}
 
 				$xtpl->table_td($link ? '<a href="'.$link.'">'.$v->id.'</a>' : $v->id);
