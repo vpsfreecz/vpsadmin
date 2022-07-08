@@ -80,6 +80,13 @@ module TransactionChains
         end
       end
 
+      # Destroy exports of the datasets
+      @datasets.each do |dip|
+        dip.exports.each do |export|
+          use_chain(TransactionChains::Export::Destroy, args: export)
+        end
+      end
+
       top_level = @datasets.pop
 
       # Destroy all subdatasets

@@ -17,6 +17,7 @@ class DatasetInPool < ActiveRecord::Base
   has_many :dst_dataset_actions, class_name: 'DatasetAction',
            foreign_key: :dst_dataset_in_pool_id
   has_many :group_snapshots
+  has_many :exports
 
   include Lockable
   include Confirmable
