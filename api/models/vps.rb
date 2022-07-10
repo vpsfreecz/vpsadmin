@@ -38,6 +38,9 @@ class Vps < ActiveRecord::Base
   has_many :object_histories, as: :tracked_object, dependent: :destroy
   has_many :oom_reports, dependent: :destroy
 
+  has_many :vps_bgp_peers
+  has_one :vps_bgp_asn
+
   has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
 
   alias_attribute :veid, :id
