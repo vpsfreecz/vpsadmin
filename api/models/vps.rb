@@ -47,6 +47,9 @@ class Vps < ApplicationRecord
   has_many :oom_preventions, dependent: :destroy
   has_many :dataset_expansions
 
+  has_many :vps_bgp_peers
+  has_one :vps_bgp_asn
+
   enum :cgroup_version, %i[cgroup_any cgroup_v1 cgroup_v2]
   enum :map_mode, %i[native zfs], prefix: :map_mode
 
