@@ -16,7 +16,6 @@ in stdenv.mkDerivation rec {
     export GEM_HOME="$PWD/.gems"
     mkdir -p "$GEM_HOME"
     export GEM_PATH="$GEM_HOME:$PWD/lib"
-    export PATH="$GEM_HOME/bin:$PATH"
 
     BUNDLE="$GEM_HOME/bin/bundle"
 
@@ -28,5 +27,6 @@ in stdenv.mkDerivation rec {
     $BUNDLE install
 
     export RUBYOPT=-rbundler/setup
+    export PATH="$(ruby -e 'puts Gem.bindir'):$PATH"
   '';
 }
