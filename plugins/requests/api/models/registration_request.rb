@@ -70,8 +70,9 @@ class RegistrationRequest < UserRequest
       new_user,
       params[:create_vps],
       params[:create_vps] && (params[:node] || ::Node.pick_by_location(
-        location, nil, os_template.hypervisor_type
-      )),
+        location,
+        hypervisor_type: os_template.hypervisor_type,
+      ).first),
       os_template,
       params[:activate],
     ])
