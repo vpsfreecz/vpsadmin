@@ -6,7 +6,7 @@ rescue Errno::ENOENT
 end
 
 gem 'haveapi', '~> 0.16.0'
-gem 'activerecord', '~> 6.1.4'
+gem 'activerecord', '~> 6.1.6'
 gem 'sinatra-activerecord', '~> 2.0.23'
 gem 'paper_trail', '~> 12.1.0'
 gem 'require_all', '~> 2.0.0'
