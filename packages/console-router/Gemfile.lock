@@ -1,12 +1,12 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (6.1.6)
-      activesupport (= 6.1.6)
-    activerecord (6.1.6)
-      activemodel (= 6.1.6)
-      activesupport (= 6.1.6)
-    activesupport (6.1.6)
+    activemodel (6.1.6.1)
+      activesupport (= 6.1.6.1)
+    activerecord (6.1.6.1)
+      activemodel (= 6.1.6.1)
+      activesupport (= 6.1.6.1)
+    activesupport (6.1.6.1)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
@@ -15,13 +15,13 @@ GEM
     concurrent-ruby (1.1.10)
     daemons (1.4.1)
     eventmachine (1.2.7)
-    i18n (1.10.0)
+    i18n (1.11.0)
       concurrent-ruby (~> 1.0)
-    minitest (5.15.0)
+    minitest (5.16.2)
     mustermann (1.1.1)
       ruby2_keywords (~> 0.0.1)
     mysql2 (0.5.4)
-    rack (2.2.3.1)
+    rack (2.2.4)
     rack-protection (2.2.0)
       rack
     require_all (2.0.0)
@@ -41,7 +41,7 @@ GEM
     tilt (2.0.10)
     tzinfo (2.0.4)
       concurrent-ruby (~> 1.0)
-    zeitwerk (2.5.4)
+    zeitwerk (2.6.0)
 
 PLATFORMS
   x86_64-linux
@@ -56,4 +56,4 @@ DEPENDENCIES
   thin
 
 BUNDLED WITH
-   2.2.33
+   2.3.9
