@@ -209,9 +209,9 @@ class Transaction < ActiveRecord::Base
       pks = {}
 
       if pk.is_a?(Array)
-        pk.each { |col| pks[col] = obj.send(col) }
+        pk.each { |col| pks[col.to_s] = obj.send(col) }
       else
-        pks[pk] = obj.id
+        pks[pk.to_s] = obj.id
       end
 
       input_attrs =
@@ -224,13 +224,18 @@ class Transaction < ActiveRecord::Base
       translated_attrs =
         if input_attrs.is_a?(::Hash)
           Hash[input_attrs.map do |k, v|
-            if v === true
-              [k, 1]
-            elsif v === false
-              [k, 0]
-            else
-              [k, v]
-            end
+            ret_v =
+              if v === true
+                1
+              elsif v === false
+                0
+              elsif v.is_a?(::Time)
+                v.utc.strftime('%Y-%m-%d %H:%M:%S')
+              else
+                v
+              end
+
+            [k.to_s, ret_v]
           end]
         else
           input_attrs
