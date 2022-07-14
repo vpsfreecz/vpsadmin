@@ -15,6 +15,18 @@ in {
       ln -sfn /run/current-system/sw/bin/nodectl /run/nodectl/nodectl
     '';
 
+    services.bird2 = {
+      preStartCommands = mkAfter ''
+        touch /run/bird/vpsadmin.conf
+      '';
+
+      checkConfig = false;
+
+      config = mkAfter ''
+        include "/run/bird/vpsadmin.conf";
+      '';
+    };
+
     runit.services.nodectld = {
       run = ''
         ulimit -c unlimited
