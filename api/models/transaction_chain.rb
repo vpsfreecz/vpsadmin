@@ -434,4 +434,5 @@ module TransactionChains
     module VethRouted      ; end
   end
   module Export            ; end
+  module VpsBgp            ; end
 end

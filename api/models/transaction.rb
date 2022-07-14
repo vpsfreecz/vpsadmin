@@ -267,4 +267,5 @@ module Transactions
   module UserNamespace    ; end
   module NetworkInterface ; end
   module Export           ; end
+  module VpsBgp           ; end
 end
