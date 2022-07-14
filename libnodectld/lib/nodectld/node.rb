@@ -25,6 +25,9 @@ module NodeCtld
       @pools.each_value do |pool|
         wait_for_pool(pool)
       end
+
+      Bird.configure(pools.map(&:filesystem))
+      Bird.reconfigure
     end
 
     def any_pools?

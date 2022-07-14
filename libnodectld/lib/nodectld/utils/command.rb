@@ -16,7 +16,8 @@ module NodeCtld::Utils
         outage_window: :OutageWindow,
         queue: :Queue,
         mbuffer: :MBuffer,
-        dns: :Dns
+        dns: :Dns,
+        vps_bgp: :VpsBgp
       }.freeze
 
       # Includes module from NodeCtld::Utils using mapping

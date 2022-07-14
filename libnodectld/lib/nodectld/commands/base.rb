@@ -116,4 +116,5 @@ module NodeCtld::Commands
   module Export; end
   module DnsServer; end
   module DnsServerZone; end
+  module VpsBgp; end
 end

@@ -1,0 +1,38 @@
+# VPS ID:  <%= @vps_id %>
+# Peer ID: <%= @peer_id %>
+<% if @enabled -%>
+protocol bgp <%= peer_name %> {
+  local as <%= @node_asn %>;
+  neighbor <%= @host_ip_address %> as <%= @vps_asn %>;
+  multihop 2;
+  ttl security on;
+
+<%   @channels.each do |ip_v, prio_ips| -%>
+  ipv<%= ip_v %> {
+    export none;
+<%     if prio_ips.empty? -%>
+    import none;
+<%     else -%>
+    import filter {
+<%       prio_ips.each_with_index do |(prio, ips), i| -%>
+      <%= i > 0 ? 'else ' : '' %>if (net ~ [ <%= ips.map { |ip| "#{ip['ip_address']}+" }.join(', ') %> ]) then {
+        # priority = <%= prio %>
+<%         priority_to_path_prepends(prio).times do -%>
+        bgp_path.prepend(<%= @vps_asn %>);
+<%         end -%>
+        accept;
+<%       end -%>
+      } else {
+        reject;
+      }
+    };
+    import limit <%= @route_limit %> action restart;
+<%     end -%>
+  };
+
+<%   end -%>
+  graceful restart;
+}
+<% else -%>
+# Disabled
+<% end -%>
