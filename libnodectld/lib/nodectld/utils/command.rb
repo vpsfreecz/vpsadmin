@@ -16,6 +16,7 @@ module NodeCtld::Utils
         outage_window: :OutageWindow,
         queue: :Queue,
         mbuffer: :MBuffer,
+        vps_bgp: :VpsBgp,
       }
 
       # Includes module from NodeCtld::Utils using mapping

@@ -124,4 +124,5 @@ module NodeCtld::Commands
   module UserNamespace     ; end
   module NetworkInterface  ; end
   module Export            ; end
+  module VpsBgp            ; end
 end

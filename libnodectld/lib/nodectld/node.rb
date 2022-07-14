@@ -26,6 +26,9 @@ module NodeCtld
       @pools.each_value do |pool|
         wait_for_pool(pool)
       end
+
+      Bird.configure(pools.map(&:filesystem))
+      Bird.reconfigure
     end
 
     def all_pools_up?
@@ -98,6 +101,7 @@ module NodeCtld
       install_pool_hooks(pool)
     end
 
+<<<<<<< HEAD
     def install_pool_hooks(pool)
       hook_dir = File.join('/', pool.name, 'hook/pool')
 
@@ -120,6 +124,9 @@ module NodeCtld
     end
 
     def fetch_pools(db)
+=======
+    def get_pools(db)
+>>>>>>> e578fc57 (libnodectld: add support for VPS BGP)
       ret = []
 
       db.prepared(
