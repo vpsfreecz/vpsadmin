@@ -439,4 +439,5 @@ module TransactionChains
   module Export; end
   module IncidentReport; end
   module HostIpAddress; end
+  module VpsBgp; end
 end

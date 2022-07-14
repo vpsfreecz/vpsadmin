@@ -24,6 +24,7 @@ module VpsAdmin
       module UserSession; end
       module Utils; end
       module Vps; end
+      module VpsBgp; end
     end
 
     def self.initialize
