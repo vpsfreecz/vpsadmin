@@ -194,11 +194,11 @@ class Transaction < ActiveRecord::Base
     end
 
     def decrement(obj, attr)
-      add_confirmable(:decrement_type, obj, attr)
+      add_confirmable(:decrement_type, obj, attr.to_s)
     end
 
     def increment(obj, attr)
-      add_confirmable(:increment_type, obj, attr)
+      add_confirmable(:increment_type, obj, attr.to_s)
     end
 
     alias_method :edit, :edit_after
