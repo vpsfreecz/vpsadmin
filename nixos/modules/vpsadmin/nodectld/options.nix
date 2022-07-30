@@ -68,7 +68,8 @@ with lib;
       };
 
       consoleHost = mkOption {
-        type = types.str;
+        type = types.nullOr types.str;
+        default = null;
         description = "Address for console server to listen on";
       };
     };

@@ -17,7 +17,7 @@ in {
       '';
 
       environment.etc."vpsadmin/nodectld.yml".source = pkgs.writeText "nodectld-conf" ''
-        ${lib.optionalString (cfg.db.host != "") ''
+        ${optionalString (cfg.db.host != "") ''
         :db:
           :host: ${cfg.db.host}
           :user: ${cfg.db.user}
@@ -26,11 +26,12 @@ in {
         ''}
         :vpsadmin:
           :node_id: ${toString cfg.nodeId}
-          :net_interfaces: [${lib.concatStringsSep ", " cfg.netInterfaces}]
+          :net_interfaces: [${concatStringsSep ", " cfg.netInterfaces}]
           :transaction_public_key: ${cfg.transactionPublicKeyFile}
-
+        ${optionalString (cfg.consoleHost != null) ''
         :console:
           :host: ${cfg.consoleHost}
+        ''}
       '';
 
       runit.services.nodectld = {
