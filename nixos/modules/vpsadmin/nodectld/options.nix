@@ -1,6 +1,8 @@
 { config, lib, pkgs, utils, ... }:
 with lib;
-{
+let
+  cfg = config.vpsadmin.nodectld;
+in {
   options = {
     vpsadmin.nodectld = {
       enable = mkOption {
@@ -87,5 +89,30 @@ with lib;
         };
       };
     };
+  };
+
+  config = mkIf cfg.enable {
+    environment.etc."vpsadmin/nodectld.yml".source = pkgs.writeText "nodectld-conf" ''
+      ${optionalString (cfg.db.host != "") ''
+      :db:
+        :host: ${cfg.db.host}
+        :user: ${cfg.db.user}
+        :pass: ${cfg.db.password}
+        :name: ${cfg.db.name}
+      ''}
+      :vpsadmin:
+        :node_id: ${toString cfg.nodeId}
+        :net_interfaces: [${concatStringsSep ", " cfg.netInterfaces}]
+        :transaction_public_key: ${cfg.transactionPublicKeyFile}
+      ${optionalString (cfg.consoleHost != null) ''
+      :console:
+        :host: ${cfg.consoleHost}
+      ''}
+      ${optionalString cfg.mailer.enable ''
+      :mailer:
+        :smtp_server: ${cfg.mailer.smtpServer}
+        :smtp_port: ${toString cfg.mailer.smtpPort}
+      ''}
+    '';
   };
 }
