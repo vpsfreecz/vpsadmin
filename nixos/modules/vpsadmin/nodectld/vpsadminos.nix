@@ -32,6 +32,11 @@ in {
         :console:
           :host: ${cfg.consoleHost}
         ''}
+        ${optionalString cfg.mailer.enable ''
+        :mailer:
+          :smtp_server: ${cfg.mailer.smtpServer}
+          :smtp_port: ${toString cfg.mailer.smtpPort}
+        ''}
       '';
 
       runit.services.nodectld = {

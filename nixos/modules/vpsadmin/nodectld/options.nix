@@ -72,6 +72,20 @@ with lib;
         default = null;
         description = "Address for console server to listen on";
       };
+
+      mailer = {
+        enable = mkEnableOption "Enable vpsAdmin mailer";
+
+        smtpServer = mkOption {
+          type = types.str;
+          description = "SMTP server hostname";
+        };
+
+        smtpPort = mkOption {
+          type = types.int;
+          description = "SMTP server port";
+        };
+      };
     };
   };
 }
