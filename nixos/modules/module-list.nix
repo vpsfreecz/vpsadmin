@@ -17,6 +17,6 @@
   ];
 
   vpsadminos = [
-    ./vpsadmin/nodectld.nix
+    ./vpsadmin/nodectld/vpsadminos.nix
   ];
 }
