@@ -115,7 +115,6 @@ module NodeCtld::Commands
   module Firewall          ; end
   module Utils             ; end
   module Mail              ; end
-  module IntegrityCheck    ; end
   module OutageWindow      ; end
   module Queue             ; end
   module Network           ; end

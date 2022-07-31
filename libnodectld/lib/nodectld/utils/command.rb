@@ -13,7 +13,6 @@ module NodeCtld::Utils
         pool: :Pool,
         routes: :Routes,
         subprocess: :Subprocess,
-        integrity: :Integrity,
         outage_window: :OutageWindow,
         queue: :Queue,
         mbuffer: :MBuffer,
