@@ -137,6 +137,10 @@ module NodeCtld
       enable: true,
     },
 
+    exports: {
+      enable: true,
+    },
+
     mbuffer: {
       send: {
         block_size: '1M',

@@ -79,7 +79,7 @@ module NodeCtld
       Shaper.init_node
       Node.init(db)
       Shaper.init_vps(db)
-      Export.init(db)
+      Export.init(db) if $CFG.get(:exports, :enable)
 
       @node_status.init(db)
       @node_status.update(db)
