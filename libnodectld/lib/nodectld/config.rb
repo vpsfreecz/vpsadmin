@@ -127,6 +127,14 @@ module NodeCtld
       known_hosts: "/root/.ssh/known_hosts",
     },
 
+    shaper: {
+      enable: true,
+    },
+
+    traffic_accounting: {
+      enable: true,
+    },
+
     storage: {
       update_status: true,
     },
@@ -217,6 +225,8 @@ module NodeCtld
           storage: {
             update_status: false,
           },
+          shaper: {enable: false},
+          traffic_accounting: {enable: false},
           kernel_log: {enable: false},
           oom_reports: {enable: false},
           exports: {enable: false},
@@ -280,6 +290,10 @@ module NodeCtld
       end
 
       val
+    end
+
+    def minimal?
+      sync { @cfg[:mode] == 'minimal' }
     end
 
     def patch(what)

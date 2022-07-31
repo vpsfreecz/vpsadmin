@@ -71,14 +71,17 @@ module NodeCtld
     def init
       db = Db.new
 
-      @mount_reporter.start
-      @delayed_mounter.start
+      unless $CFG.minimal?
+        @mount_reporter.start
+        @delayed_mounter.start
+      end
+
       @remote_control.start
 
-      @fw.init(db)
-      Shaper.init_node
+      @fw.init(db) if $CFG.get(:traffic_accounting, :enable)
+      Shaper.init_node if $CFG.get(:shaper, :enable)
       Node.init(db)
-      Shaper.init_vps(db)
+      Shaper.init_vps(db) if $CFG.get(:shaper, :enable)
       Export.init(db) if $CFG.get(:exports, :enable)
 
       @node_status.init(db)
