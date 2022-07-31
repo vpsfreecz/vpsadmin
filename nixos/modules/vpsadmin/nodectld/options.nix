@@ -13,6 +13,18 @@ in {
         '';
       };
 
+      mode = mkOption {
+        type = types.enum [ "minimal" "standard" ];
+        default = "standard";
+        description = ''
+          nodectld runtime mode
+
+          Nodes with VPS or storage must use the standard mode. Minimal mode can
+          be used for nodes that only execute generic transactions, such as
+          sending emails.
+        '';
+      };
+
       db = mkOption {
         type = types.submodule {
           options = {
@@ -93,6 +105,7 @@ in {
 
   config = mkIf cfg.enable {
     environment.etc."vpsadmin/nodectld.yml".source = pkgs.writeText "nodectld-conf" ''
+      :mode: ${cfg.mode}
       ${optionalString (cfg.db.host != "") ''
       :db:
         :host: ${cfg.db.host}

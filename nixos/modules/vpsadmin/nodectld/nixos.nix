@@ -10,6 +10,8 @@ in {
   config = mkIf cfg.enable {
     nixpkgs.overlays = import ../../../overlays;
 
+    vpsadmin.nodectld.mode = "minimal";
+
     systemd.tmpfiles.rules = [
       "d '/run/nodectl' 0700 root root - -"
     ];
