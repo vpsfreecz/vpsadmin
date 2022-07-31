@@ -133,6 +133,10 @@ module NodeCtld
       port: 8081,
     },
 
+    kernel_log: {
+      enable: true,
+    },
+
     mbuffer: {
       send: {
         block_size: '1M',

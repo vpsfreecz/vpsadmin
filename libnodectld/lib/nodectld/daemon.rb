@@ -84,7 +84,7 @@ module NodeCtld
       @node_status.init(db)
       @node_status.update(db)
 
-      @kernel_log.start
+      @kernel_log.start if $CFG.get(:kernel_log, :enable)
 
       @init = true
 
