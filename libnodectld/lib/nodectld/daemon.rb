@@ -417,6 +417,7 @@ module NodeCtld
       @m_workers.synchronize do
         @@run = true
         @pause = nil
+        @last_transaction_update = nil
       end
     end
 
