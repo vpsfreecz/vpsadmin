@@ -16,6 +16,14 @@ module NodeCtld
       write_timeout: 15,
     },
 
+    # Choose from predefined runtime configurations: standard or minimal
+    #
+    # Minimal mode is for nodes that do not manage VPS, nor storage, but are used
+    # only for executing generic transactions, such as sending emails. Minimal
+    # mode disables the kernel log parser, NFS exports, VPS and storage status
+    # updates, etc.
+    mode: 'standard',
+
     vpsadmin: {
       node_id: nil,
       domain: "vpsfree.cz",
@@ -195,6 +203,27 @@ module NodeCtld
         end
 
         @cfg = merge(@cfg, tmp)
+      end
+
+      case @cfg[:mode]
+      when 'standard'
+        # pass
+      when 'minimal'
+        merge(@cfg, {
+          vpsadmin: {
+            track_transfers: false,
+            update_vps_status: false,
+          },
+          storage: {
+            update_status: false,
+          },
+          kernel_log: {enable: false},
+          oom_reports: {enable: false},
+          exports: {enable: false},
+        })
+      else
+        warn "Unsupported runtime mode '#{@cfg[:mode]}'"
+        return false
       end
 
       load_db_settings if db
