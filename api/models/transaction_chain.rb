@@ -392,7 +392,7 @@ class TransactionChain < ActiveRecord::Base
     return chain.mail_server if chain.mail_server
 
     t = ::NodeCurrentStatus.table_name
-    chain.mail_server = ::Node.find_by(role: ::Node.roles[:mailer])
+    chain.mail_server = ::Node.find_by(role: ::Node.roles[:mailer], active: true)
     chain.mail_server ||= ::Node
       .joins(:node_current_status)
       .where(
