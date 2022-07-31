@@ -137,6 +137,11 @@ module NodeCtld
       enable: true,
     },
 
+    oom_reports: {
+      enable: true,
+      exclude_vps_ids: [],
+    },
+
     exports: {
       enable: true,
     },

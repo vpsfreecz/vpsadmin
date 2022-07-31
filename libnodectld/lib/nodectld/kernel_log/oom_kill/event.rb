@@ -27,7 +27,7 @@ module NodeCtld
   #   oom_reaper: reaped process <pid> (<comm>)...
   class KernelLog::OomKill::Event < KernelLog::Event
     def self.start?(msg)
-      /^[^\s]+ invoked oom-killer: / =~ msg.text
+      $CFG.get(:oom_reports, :enable) && /^[^\s]+ invoked oom-killer: / =~ msg.text
     end
 
     attr_reader :report
@@ -85,6 +85,10 @@ module NodeCtld
 
         if vps_id == 0
           log(:info, "Skipping OOM report from an unmanaged VPS #{$1}:#{$4}")
+          finish!
+          return
+        elsif $CFG.get(:oom_reports, :exclude_vps_ids).include?(vps_id)
+          log(:info, "Skipping OOM report from an excluded VPS #{$1}:#{$4}")
           finish!
           return
         end
