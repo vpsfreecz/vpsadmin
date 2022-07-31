@@ -53,7 +53,11 @@ module NodeCtld::SystemProbes
       ret = {}
 
       data.each do |k, v|
-        ret[k] = (v / sum * 100).round(2)
+        if sum == 0.0
+          ret[k] = 0.0
+        else
+          ret[k] = (v / sum * 100).round(2)
+        end
       end
 
       ret
@@ -67,6 +71,7 @@ module NodeCtld::SystemProbes
 
       d1.each_key do |k|
         ret[k] = d2[k] - d1[k]
+        ret[k] = 0 if ret[k] < 0
       end
 
       ret
