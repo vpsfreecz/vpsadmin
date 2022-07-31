@@ -329,8 +329,6 @@ module NodeCtld
 
       run_thread_unless_runs(:transfers) do
         loop do
-          log(:info, :regular, 'Update transfers')
-
           update_transfers
 
           sleep($CFG.get(:vpsadmin, :transfers_interval))
@@ -365,6 +363,8 @@ module NodeCtld
 
     def update_transfers
       return unless $CFG.get(:vpsadmin, :track_transfers)
+
+      log(:info, :regular, 'Update transfers')
 
       Firewall.synchronize do |fw|
         my = Db.new

@@ -209,7 +209,7 @@ module NodeCtld
       when 'standard'
         # pass
       when 'minimal'
-        merge(@cfg, {
+        @cfg = merge(@cfg, {
           vpsadmin: {
             track_transfers: false,
             update_vps_status: false,
