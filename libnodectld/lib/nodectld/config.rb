@@ -84,16 +84,6 @@ module NodeCtld
       transaction_public_key: '/etc/vpsadmin/transaction.key',
     },
 
-    vz: {
-      vzctl: "vzctl",
-      vzlist: "vzlist",
-      vzquota: "vzquota",
-      vzmigrate: "vzmigrate",
-      vz_root: "/vz",
-      vz_conf: "/etc/vz",
-      ve_private: "/vz/private/%{veid}", # loaded from db
-    },
-
     bin: {
       cat: "cat",
       df: "df",
@@ -119,17 +109,6 @@ module NodeCtld
       ssh_keygen: "ssh-keygen",
       exportfs: "exportfs",
       tc: 'tc',
-    },
-
-    vps: {
-      zfs: {
-        root_dataset: "vz/private",
-        sharenfs: nil,
-      },
-      migration: {
-        dumpfile: "/vz/dump/Dump.%{veid}",
-      },
-      stop_timeout: 5*60,
     },
 
     node: {
@@ -227,20 +206,6 @@ module NodeCtld
       @cfg[:vpsadmin][:node_addr] = rs['ip_addr']
       @cfg[:vpsadmin][:max_tx] = rs['max_tx']
       @cfg[:vpsadmin][:max_rx] = rs['max_rx']
-
-      case @cfg[:vpsadmin][:type]
-        when :node
-          rs = db.prepared(
-            'SELECT ve_private FROM nodes WHERE id = ?',
-            @cfg[:vpsadmin][:node_id]
-          ).get
-
-          if rs
-            @cfg[:vz][:ve_private] = rs['ve_private']
-          else
-            warn 'Failed to load settings from database'
-          end
-      end
 
       db.close
     end

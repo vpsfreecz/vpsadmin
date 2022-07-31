@@ -39,14 +39,6 @@ module NodeCtld
       vzctl(:exec, @veid, "cat #{file}")
     end
 
-    def ve_private
-      $CFG.get(:vz, :ve_private).gsub(/%\{veid\}/, @veid.to_s)
-    end
-
-    def ve_root
-      "#{$CFG.get(:vz, :vz_root)}/root/#{@veid}"
-    end
-
     def status
       osctl_parse(%i(ct show), @veid)[:state].to_sym
     end
@@ -62,10 +54,6 @@ module NodeCtld
       elsif before != :running && after == :running
         stop
       end
-    end
-
-    def ve_private_ds
-      "#{$CFG.get(:vps, :zfs, :root_dataset)}/#{@veid}"
     end
 
     def log_type
