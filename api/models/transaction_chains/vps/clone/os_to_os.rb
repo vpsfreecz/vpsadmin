@@ -109,6 +109,14 @@ module TransactionChains
         } : {}
       )
 
+      if attrs[:user] == vps.user
+        @userns_map = nil
+      else
+        @userns_map = ::UserNamespaceMap.joins(:user_namespace).where(
+          user_namespaces: {user_id: attrs[:user].id}
+        ).take!
+      end
+
       dst_vps.dataset_in_pool = vps_dataset(vps, dst_vps, attrs[:dataset_plans])
       lock(dst_vps.dataset_in_pool)
       dst_vps.save!
@@ -117,6 +125,13 @@ module TransactionChains
 
       # Prepare userns
       use_chain(UserNamespaceMap::Use, args: [vps.userns_map, dst_vps.node])
+
+      # When cloning to a different user, we first send it with the original
+      # mapping and then chown it on the target node and remove the original
+      # mapping.
+      if @userns_map
+        use_chain(UserNamespaceMap::Use, args: [@userns_map, dst_vps.node])
+      end
 
       if remote
         # Authorize the migration
@@ -236,6 +251,22 @@ module TransactionChains
       # Release reserved spot in the queue
       append(Transactions::Queue::Release, args: [vps.node, :zfs_send])
 
+      # Chown the VPS if needed
+      if @userns_map
+        append_t(Transactions::Vps::Chown, args: [
+          dst_vps,
+          vps.userns_map,
+          @userns_map,
+        ])
+
+        # Release the original osctl user
+        use_chain(
+          UserNamespaceMap::Disuse,
+          args: [dst_vps],
+          kwargs: {userns_map: vps.userns_map},
+        )
+      end
+
       # Hostname
       clone_hostname(vps, dst_vps, attrs)
 
@@ -295,7 +326,7 @@ module TransactionChains
         min_snapshots: vps.dataset_in_pool.min_snapshots,
         max_snapshots: vps.dataset_in_pool.max_snapshots,
         snapshot_max_age: vps.dataset_in_pool.snapshot_max_age,
-        user_namespace_map: vps.dataset_in_pool.user_namespace_map,
+        user_namespace_map: @userns_map || vps.dataset_in_pool.user_namespace_map,
       )
 
       dip
@@ -340,7 +371,7 @@ module TransactionChains
         min_snapshots: dip.min_snapshots,
         max_snapshots: dip.max_snapshots,
         snapshot_max_age: dip.snapshot_max_age,
-        user_namespace_map: dip.user_namespace_map,
+        user_namespace_map: @userns_map || dip.user_namespace_map,
       )
 
       lock(dst)

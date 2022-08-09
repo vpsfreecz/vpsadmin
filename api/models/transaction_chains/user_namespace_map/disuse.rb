@@ -4,11 +4,13 @@ module TransactionChains
     label 'Disuse userns'
     allow_empty
 
-    def link_chain(vps)
-      lock(vps.userns_map)
+    def link_chain(vps, userns_map: nil)
+      userns_map ||= vps.userns_map
+
+      lock(userns_map)
 
       userns_map_vpses = ::Vps.joins(:dataset_in_pool).where(
-        dataset_in_pools: {user_namespace_map_id: vps.userns_map.id},
+        dataset_in_pools: {user_namespace_map_id: userns_map.id},
         node_id: vps.node_id,
       ).where.not(id: vps.id)
 
@@ -16,10 +18,10 @@ module TransactionChains
 
       append_t(
         Transactions::UserNamespace::DestroyMap,
-        args: [vps.node, vps.userns_map]
+        args: [vps.node, userns_map]
       ) do |t|
         uns_map_node = ::UserNamespaceMapNode.find_by!(
-          user_namespace_map_id: vps.userns_map.id,
+          user_namespace_map_id: userns_map.id,
           node_id: vps.node_id,
         )
 
