@@ -22,36 +22,7 @@ module TransactionChains
       vps.changed.each do |attr|
         case attr
         when 'user_id'
-          db_changes[vps][:user_id] = vps.user_id
-
-          # VPS and all related objects must be given to the target user:
-          #   - dataset and all subdatasets
-          #   - IP addresses (resource allocation)
-          #   - check that there is no dataset/snapshot mount of an object
-          #     that does NOT belong to the target user
-          #   - free/allocate cluster resources
-
-          datasets = []
-
-          # Chown datasets and transfer cluster resources
-          vps.dataset_in_pool.dataset.subtree.each do |ds|
-            datasets << ds
-            db_changes[ds] = {user_id: vps.user_id}
-
-            dip = ds.primary_dataset_in_pool!
-            db_changes.update(dip.transfer_resources!(vps.user))
-          end
-
-          # Check mounts
-          check_vps_mounts(vps, datasets)
-          datasets.each { |ds| check_ds_mounts(vps, ds, vps.user_id) }
-
-          # Transfer cluster resources
-          ## CPU, memory, swap
-          db_changes.update(vps.transfer_resources!(vps.user))
-
-          ## IP addresses
-          db_changes.update(transfer_ip_addresses(vps))
+          db_changes.update(chown_vps(vps, ::User.find(vps.user_id_was)))
 
         when 'hostname'
           append(Transactions::Vps::Hostname, args: [vps, vps.hostname_was, vps.hostname]) do
@@ -194,24 +165,171 @@ module TransactionChains
       end
     end
 
+    def chown_vps(vps, orig_user)
+      db_changes = {vps => {user_id: vps.user_id}}
+
+      # VPS and all related objects must be given to the target user:
+      #   - dataset and all subdatasets
+      #   - IP addresses (resource allocation)
+      #   - check that there is no dataset/snapshot mount of an object
+      #     that does NOT belong to the target user
+      #   - remove IPs from previous owner's nfs exports
+      #   - add IPs to new owner's nfs exports
+      #   - transfer exports of VPS's datasets / snapshots
+      #   - free/allocate cluster resources
+
+      if vps.node.vpsadminos?
+        cur_userns_map = vps.userns_map
+        new_userns_map = ::UserNamespaceMap.joins(:user_namespace).where(
+          user_namespaces: {user_id: vps.user_id}
+        ).take!
+
+        use_chain(UserNamespaceMap::Use, args: [new_userns_map, vps.node])
+      else
+        cur_userns_map = nil
+        new_userns_map = nil
+      end
+
+      datasets = []
+
+      # Chown datasets and transfer cluster resources
+      vps.dataset_in_pool.dataset.subtree.each do |ds|
+        datasets << ds
+        db_changes[ds] = {user_id: vps.user_id}
+
+        dip = ds.primary_dataset_in_pool!
+        db_changes.update(dip.transfer_resources!(vps.user))
+
+        db_changes[dip] ||= {}
+        db_changes[dip].update({
+          user_namespace_map_id: new_userns_map && new_userns_map.id,
+        })
+      end
+
+      # Check mounts
+      check_vps_mounts(vps, datasets)
+      datasets.each { |ds| check_ds_mounts(vps, ds, vps.user_id) }
+
+      # Transfer cluster resources
+      ## CPU, memory, swap
+      db_changes.update(vps.transfer_resources!(vps.user))
+
+      ## IP addresses
+      db_changes.update(transfer_ip_addresses(vps))
+
+      # Chown user namespace mapping
+      if vps.node.vpsadminos?
+        append_t(Transactions::Vps::Chown, args: [
+          vps, vps.userns_map, new_userns_map
+        ]) do |t|
+          db_changes.each do |obj, changes|
+            t.edit(obj, changes) unless changes.empty?
+          end
+        end
+
+        use_chain(
+          UserNamespaceMap::Disuse,
+          args: [vps],
+          kwargs: {userns_map: cur_userns_map},
+        )
+      end
+
+      # Transfer exports of the VPS's own datasets / snapshots
+      chown_exports = []
+
+      datasets.each do |ds|
+        ds.dataset_in_pools.each do |dip|
+          dip.exports.each do |ex|
+            # Remove hosts belonging to the original user
+            hosts_to_delete = ex.export_hosts.to_a.select do |host|
+              host.ip_address.network_interface.vps_id != vps.id
+            end
+
+            if hosts_to_delete.any?
+              use_chain(Export::DelHosts, args: [ex, hosts_to_delete])
+            end
+
+            # Add hosts belonging to the target user
+            add_hosts_to_chowned_export(ex, vps.user) if ex.all_vps
+
+            chown_exports << ex
+          end
+        end
+      end
+
+      if chown_exports.any?
+        append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
+          chown_exports.each do |ex|
+            t.edit(ex, user_id: vps.user_id)
+          end
+        end
+      end
+
+      # Remove export hosts from all exports of the original user
+      ::Export.where(user: orig_user).each do |ex|
+        next if chown_exports.include?(ex)
+
+        use_chain(Export::DelHosts, args: [ex, vps.ip_addresses])
+      end
+
+      # Add export hosts to all exports of the target user
+      use_chain(Export::AddHostsToAll, args: [vps.user, vps.ip_addresses])
+
+      if vps.node.vpsadminos?
+        return {}
+      else
+        return db_changes
+      end
+    end
+
+    def add_hosts_to_chowned_export(export, user)
+      ips = ::IpAddress.joins(:network, network_interface: :vps).where(
+        networks: {ip_version: 4},
+        vpses: {user_id: user.id},
+      ).to_a
+
+      add_hosts = ips.map do |ip|
+        begin
+          ::ExportHost.create!(
+            export: export,
+            ip_address: ip,
+            rw: export.rw,
+            sync: export.sync,
+            subtree_check: export.subtree_check,
+            root_squash: export.root_squash,
+          )
+        rescue ActiveRecord::RecordNotUnique
+          nil
+        end
+      end.compact
+
+      if add_hosts.any?
+        append_t(Transactions::Export::AddHosts, args: [export, add_hosts]) do |t|
+          add_hosts.each { |host| t.just_create(host) }
+        end
+      end
+    end
+
     # Check if this VPS has a mount of a dataset that is not being
     # given to the target user.
     def check_vps_mounts(vps, allowed)
-      any = vps.mounts.joins(dataset_in_pool: [:dataset]).where.not(
+      forbidden_mounts = vps.mounts.joins(dataset_in_pool: [:dataset]).where.not(
         datasets: {id: allowed.map { |ds| ds.id }}
-      ).any?
+      )
 
-      fail 'has forbidden mount' if any
+      if forbidden_mounts.any?
+        fail "has forbidden mounts: #{forbidden_mounts.map { |mnt| mnt.dst }.join('; ')}"
+      end
     end
 
     # Check that the dataset is not mounted in VPS that does not
     # belong to the target user.
     def check_ds_mounts(vps, dataset, user_id)
       dataset.dataset_in_pools.each do |dip|
-        if dip.mounts.joins(:vps).where.not(
-             vpses: {id: vps.id, user_id: user_id}
-           ).any?
-          fail 'is mounted elsewhere'
+        dip.mounts.each do |mnt|
+          next if mnt.vps == vps || mnt.vps.user.id == user_id
+
+          fail "dataset #{dataset.full_name} is mounted in VPS #{mnt.vps_id}"
         end
       end
     end
