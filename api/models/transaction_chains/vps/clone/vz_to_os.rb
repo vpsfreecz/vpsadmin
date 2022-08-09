@@ -105,7 +105,7 @@ module TransactionChains
       # User namespace map
       # TODO: configurable userns map
       @userns_map = ::UserNamespaceMap.joins(:user_namespace).where(
-        user_namespaces: {user_id: vps.user_id}
+        user_namespaces: {user_id: attrs[:user].id}
       ).take!
 
       use_chain(UserNamespaceMap::Use, args: [@userns_map, node])
