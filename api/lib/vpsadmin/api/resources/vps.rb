@@ -435,10 +435,6 @@ END
             error('resources cannot be changed when changing VPS owner')
           end
         end
-
-        if vps.node.vpsadminos?
-          error('VPS chowning is not supported on vpsAdminOS yet')
-        end
       end
 
       if input[:manage_hostname] === false && input[:hostname]
