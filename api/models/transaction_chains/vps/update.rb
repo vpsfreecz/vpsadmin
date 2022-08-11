@@ -22,7 +22,7 @@ module TransactionChains
       vps.changed.each do |attr|
         case attr
         when 'user_id'
-          db_changes.update(chown_vps(vps, ::User.find(vps.user_id_was)))
+          chown_vps(vps, ::User.find(vps.user_id_was))
 
         when 'hostname'
           append(Transactions::Vps::Hostname, args: [vps, vps.hostname_was, vps.hostname]) do
@@ -138,6 +138,7 @@ module TransactionChains
         }) if opts[:change_reason]
       end
 
+      return vps if db_changes.empty?
 
       if empty?
         # Save changes immediately
@@ -225,6 +226,10 @@ module TransactionChains
           db_changes.each do |obj, changes|
             t.edit(obj, changes) unless changes.empty?
           end
+
+          t.just_create(vps.log(:user, {
+            user_id: vps.user_id,
+          }))
         end
 
         use_chain(
@@ -275,10 +280,16 @@ module TransactionChains
       # Add export hosts to all exports of the target user
       use_chain(Export::AddHostsToAll, args: [vps.user, vps.ip_addresses])
 
-      if vps.node.vpsadminos?
-        return {}
-      else
-        return db_changes
+      if vps.node.openvz?
+        append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
+          db_changes.each do |obj, changes|
+            edit(obj, changes) unless changes.empty?
+          end
+
+          t.just_create(vps.log(:user, {
+            user_id: vps.user_id,
+          }))
+        end
       end
     end
 
