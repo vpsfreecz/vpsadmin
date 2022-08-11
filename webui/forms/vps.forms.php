@@ -859,15 +859,64 @@ function vps_details_suite($vps) {
 	vps_details_submenu($vps);
 }
 
-function vps_owner_form($vps) {
+function vps_owner_form_select($vps) {
 	global $xtpl, $api;
 
 	$xtpl->table_title(_('VPS owner'));
-	$xtpl->form_create('?page=adminvps&action=chown&veid='.$vps->id, 'post');
-	$xtpl->form_add_select(_("Owner").':', 'm_id',
-		resource_list_to_options($api->user->list(), 'id', 'login', false),
-		$vps->user_id);
-	$xtpl->form_out(_("Go >>"));
+	$xtpl->form_create('?page=adminvps&action=chown_confirm&veid='.$vps->id, 'post');
+
+	$xtpl->table_td(_('VPS').':');
+	$xtpl->table_td(vps_link($vps).' '.h($vps->hostname));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Current owner').':');
+	$xtpl->table_td(user_link($vps->user));
+	$xtpl->table_tr();
+
+	$xtpl->form_add_input(_("New owner's user ID").':', 'text', '30', 'user', get_val('user'));
+	$xtpl->form_out(_("Continue"));
+
+	vps_details_suite($vps);
+}
+
+function vps_owner_form_confirm($vps, $user) {
+	global $xtpl, $api;
+
+	$xtpl->table_title(_('VPS owner'));
+	$xtpl->form_create('?page=adminvps&action=chown_confirm&veid='.$vps->id, 'post');
+
+	$xtpl->form_set_hidden_fields([
+		'user' => $user->id,
+	]);
+
+	$xtpl->table_td(_('VPS').':');
+	$xtpl->table_td(vps_link($vps).' '.h($vps->hostname));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Current owner').':');
+	$xtpl->table_td(user_link($vps->user));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('New owner').':');
+	$xtpl->table_td(user_link($user));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(
+		'<strong>'._('The VPS will be restarted.').'</strong>',
+		false, false, '2'
+	);
+	$xtpl->table_tr();
+
+	$xtpl->form_add_checkbox(_('Confirm').':', 'confirm', '1', false);
+
+	$xtpl->table_td('');
+	$xtpl->table_td(
+		$xtpl->html_submit(_('Cancel'), 'cancel').
+		$xtpl->html_submit(_('Change owner'), 'chown')
+	);
+	$xtpl->table_tr();
+
+	$xtpl->form_out_raw();
 
 	vps_details_suite($vps);
 }
