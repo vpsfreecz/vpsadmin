@@ -406,23 +406,32 @@ switch ($_GET["action"] ?? null) {
 
 		case 'chown':
 			$vps = $api->vps->find($_GET['veid']);
+			vps_owner_form_select($vps);
+			break;
 
-			if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-				vps_owner_form($vps);
-				break;
-			}
+		case 'chown_confirm':
+			$vps = $api->vps->find($_GET['veid']);
+			$user = $api->user->find($_POST['user']);
 
-			try {
-				csrf_check();
-				$api->vps->update($_GET['veid'], array('user' => $_POST['m_id']));
+			if (isset($_POST['cancel'])) {
+				redirect('?page=adminvps&action=chown&veid='.$_GET['veid']);
 
-				notify_user(_("Owner changed"), '');
-				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+			} elseif (isset($_POST['chown']) && isset($_POST['confirm'])) {
+				try {
+					csrf_check();
+					$api->vps->update($_GET['veid'], ['user' => $_POST['user']]);
 
-			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				$xtpl->perex_format_errors(_('Change of the owner failed'), $e->getResponse());
-				vps_owner_form($vps);
-			}
+					notify_user(_("Owner changed"), '');
+					redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Change of the owner failed'), $e->getResponse());
+					vps_owner_form_confirm($vps, $user);
+				}
+
+			} else {
+				vps_owner_form_confirm($vps, $user);
+			};
 
 			break;
 
