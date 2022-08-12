@@ -51,7 +51,7 @@ module VpsAdmin::API
       # +api+ is an instance of HaveAPI::Params (self in Action::input
       # or Action::output).
       def to_param(api)
-        api.send(@type, *[@name, @meta])
+        api.send(@type, @name, **@meta)
       end
 
       # Returns true if the property is inheritable.
