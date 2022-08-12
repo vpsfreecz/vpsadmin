@@ -400,7 +400,10 @@ module TransactionChains
       end
 
       changes = {}
-      q.each { |ip| changes[ip] = {user_id: vps.user_id} }
+
+      if vps.node.location.environment.user_ip_ownership
+        q.each { |ip| changes[ip] = {user_id: vps.user_id} }
+      end
 
       [q.count, changes]
     end
