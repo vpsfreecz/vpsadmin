@@ -13,7 +13,7 @@ in {
         type = types.package;
         default = pkgs.vpsadmin-download-mounter;
         description = "Which vpsAdmin download mounter package to use.";
-        example = "pkgs.vpsadmin-download-mounter.override { ruby = pkgs.ruby_2_7; }";
+        example = "pkgs.vpsadmin-download-mounter.override { ruby = pkgs.ruby_3_1; }";
       };
 
       api.url = mkOption {
