@@ -30,7 +30,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'pry', '~> 0.11.3'
   s.add_runtime_dependency 'pry-remote'
   s.add_runtime_dependency 'require_all', '~> 2.0.0'
-  s.add_runtime_dependency 'mail'
+  s.add_runtime_dependency 'mail', '2.8.0.rc1'
   s.add_runtime_dependency 'filelock'
   s.add_runtime_dependency 'ipaddress', '~> 0.8.3'
   s.add_development_dependency 'rake'
