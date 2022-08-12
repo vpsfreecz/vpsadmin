@@ -6,7 +6,7 @@ in stdenv.mkDerivation rec {
   name = "vpsadmin-api";
 
   buildInputs = [
-    pkgs.ruby
+    pkgs.ruby_3_0
     pkgs.git
     pkgs.mariadb
     pkgs.mariadb-connector-c
