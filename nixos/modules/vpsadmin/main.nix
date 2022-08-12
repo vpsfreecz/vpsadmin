@@ -23,7 +23,9 @@ in {
   };
 
   config = {
-    nixpkgs.overlays = mkIf cfg.enableOverlay (import ../../overlays);
+    nixpkgs.overlays = [
+      (self: super: { ruby = super.ruby_3_0; })
+    ] ++ optionals cfg.enableOverlay (import ../../overlays);
 
     systemd.tmpfiles.rules = mkIf cfg.enableStateDir [
       "d /run/vpsadmin - - - - -"
