@@ -15,6 +15,6 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = '>= 2.0.0'
 
-  s.add_runtime_dependency 'haveapi-client', '~> 0.16.0'
+  s.add_runtime_dependency 'haveapi-client', '~> 0.16.1'
   s.add_runtime_dependency 'highline', '~> 2.0.3'
 end

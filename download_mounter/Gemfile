@@ -1,4 +1,4 @@
 source 'https://rubygems.org'
 
-gem 'haveapi-client', '~> 0.16.0'
+gem 'haveapi-client', '~> 0.16.1'
 gem 'highline'
