@@ -3,6 +3,8 @@ module NodeCtld
     handle 2010
 
     def exec
+      return ok unless $CFG.get(:shaper, :enable)
+
       Shaper.add_ip(
         @vps_id,
         interface: @netif,
@@ -17,6 +19,8 @@ module NodeCtld
     end
 
     def rollback
+      return ok unless $CFG.get(:shaper, :enable)
+
       Shaper.remove_ip(
         @vps_id,
         interface: @netif,
