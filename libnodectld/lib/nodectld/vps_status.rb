@@ -71,7 +71,12 @@ module NodeCtld
         db_vpses[ent.id.to_s] = ent
       end
 
-      lavgs = OsCtl::Lib::LoadAvgReader.read_all_hash
+      begin
+        lavgs = OsCtl::Lib::LoadAvgReader.read_all_hash
+      rescue => e
+        log(:warn, :vps_status, "Unable to read load averages: #{e.message} (#{e.class})")
+        lavgs = {}
+      end
 
       ct_list.each do |vps|
         _, db_vps = db_vpses.detect { |k, v| k == vps[:id] }
