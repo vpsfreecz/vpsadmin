@@ -15,6 +15,14 @@ class NetworkInterface < ActiveRecord::Base
   }
 
   include Lockable
+  include HaveAPI::Hookable
+
+  has_hook :create,
+      desc: 'Called when a new NetworkInterface is being created, before the transaction to create it',
+      context: 'TransactionChain instance',
+      args: {
+        network_interface: 'NetworkInterface instance'
+      }
 
   # @param new_name [String]
   def rename(new_name)

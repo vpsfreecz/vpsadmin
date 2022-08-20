@@ -74,6 +74,12 @@ module TransactionChains
       )
       lock(netif)
 
+      netif.call_class_hooks_for(
+        :create,
+        self,
+        args: [netif],
+      )
+
       ip_addr = pick_ip_address(export.user, dip.pool.node.location)
       lock(ip_addr)
       ip_addr.update!(network_interface: netif)

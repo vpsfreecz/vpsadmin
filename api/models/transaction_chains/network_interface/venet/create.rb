@@ -10,6 +10,12 @@ module TransactionChains
         name: 'venet0',
       )
 
+      netif.call_class_hooks_for(
+        :create,
+        self,
+        args: [netif],
+      )
+
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
         t.just_create(netif)
       end
