@@ -283,7 +283,7 @@ module TransactionChains
       if vps.node.openvz?
         append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
           db_changes.each do |obj, changes|
-            edit(obj, changes) unless changes.empty?
+            t.edit(obj, changes) unless changes.empty?
           end
 
           t.just_create(vps.log(:user, {
