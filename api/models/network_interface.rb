@@ -24,6 +24,15 @@ class NetworkInterface < ActiveRecord::Base
         network_interface: 'NetworkInterface instance'
       }
 
+  has_hook :morph,
+      desc: 'Called when a NetworkInterface is being morphed into a different type, after the transaction that morphs it',
+      context: 'TransactionChain instance',
+      args: {
+        network_interface: 'NetworkInterface instance',
+        original_kind: String,
+        target_kind: String,
+      }
+
   # @param new_name [String]
   def rename(new_name)
     fail 'invalid name' if NAME_RX !~ new_name
