@@ -7,6 +7,12 @@ module TransactionChains
     def link_chain(vps, name)
       netif = create_netif(vps, 'veth_routed', name)
 
+      netif.call_class_hooks_for(
+        :create,
+        self,
+        args: [netif],
+      )
+
       # Create the veth interface
       append_t(
         Transactions::NetworkInterface::CreateVethRouted,
