@@ -14,22 +14,26 @@ class UserNamespaceMap < ActiveRecord::Base
 
   include Lockable
 
-  def self.create!(userns, label)
+  def self.create_direct!(userns, label)
     self.transaction do
-      ugid = ::UserNamespaceMapUgid.where(
-        user_namespace_map_id: nil,
-      ).order('ugid').take!
-
-      map = super(
-        user_namespace: userns,
-        user_namespace_map_ugid: ugid,
-        label: label,
-      )
-
-      ugid.update!(user_namespace_map: map)
-
-      map
+      create_chained!(userns, label)
     end
+  end
+
+  def self.create_chained!(userns, label)
+    ugid = ::UserNamespaceMapUgid.where(
+      user_namespace_map_id: nil,
+    ).order('ugid').take!
+
+    map = create!(
+      user_namespace: userns,
+      user_namespace_map_ugid: ugid,
+      label: label,
+    )
+
+    ugid.update!(user_namespace_map: map)
+
+    map
   end
 
   def ugid

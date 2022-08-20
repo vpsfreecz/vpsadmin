@@ -102,7 +102,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
         error('access denied')
       end
 
-      UserNamespaceMap.create!(input[:user_namespace], input[:label])
+      UserNamespaceMap.create_direct!(input[:user_namespace], input[:label])
     end
   end
 
