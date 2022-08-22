@@ -46,6 +46,12 @@ module NodeCtld
       @mounts = (data['mounts'] || []).map { |v| VpsConfig::Mount.load(v) }
     end
 
+    def reset
+      @network_interfaces.clear
+      @mounts.clear
+      nil
+    end
+
     def save
       save_to(path)
       true

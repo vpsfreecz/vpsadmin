@@ -863,9 +863,11 @@ CREATE TABLE `network_interfaces` (
   `name` varchar(30) COLLATE utf8mb3_czech_ci NOT NULL,
   `kind` int(11) NOT NULL,
   `mac` varchar(17) COLLATE utf8mb3_czech_ci DEFAULT NULL,
-  `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
-  `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
   `export_id` int(11) DEFAULT NULL,
+  `max_tx` bigint(20) unsigned NOT NULL DEFAULT 0,
+  `max_rx` bigint(20) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_network_interfaces_on_vps_id_and_name` (`vps_id`,`name`),
   UNIQUE KEY `index_network_interfaces_on_mac` (`mac`),
@@ -2079,6 +2081,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20220123194603'),
 ('20220202111859'),
 ('20220504184116'),
-('20220714144902');
+('20220714144902'),
+('20220820133941');
 
 

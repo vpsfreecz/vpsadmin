@@ -10,6 +10,8 @@ module TransactionChains
         kind: src_netif.kind,
         name: src_netif.name,
         mac: nil,
+        max_tx: 0,
+        max_rx: 0,
       )
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
