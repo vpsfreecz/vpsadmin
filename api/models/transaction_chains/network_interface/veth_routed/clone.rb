@@ -15,6 +15,12 @@ module TransactionChains
         t.just_create(netif)
       end
 
+      src_netif.call_class_hooks_for(
+        :clone,
+        self,
+        args: [src_netif, netif],
+      )
+
       netif
     end
   end
