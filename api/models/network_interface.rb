@@ -24,6 +24,14 @@ class NetworkInterface < ActiveRecord::Base
         network_interface: 'NetworkInterface instance'
       }
 
+  has_hook :clone,
+      desc: 'Called when a NetworkInterface is being cloned, after the transaction that creates it',
+      context: 'TransactionChain instance',
+      args: {
+        src_network_interface: 'source NetworkInterface instance',
+        dst_network_interface: 'target NetworkInterface instance',
+      }
+
   has_hook :morph,
       desc: 'Called when a NetworkInterface is being morphed into a different type, after the transaction that morphs it',
       context: 'TransactionChain instance',
