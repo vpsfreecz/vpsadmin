@@ -12,6 +12,8 @@ module VpsAdmin::API::Resources
       string :type, choices: ::NetworkInterface.kinds.keys.map(&:to_s),
         db_name: :kind
       string :mac, label: 'MAC Address'
+      integer :max_tx, label: 'Max outgoing data throughput'
+      integer :max_rx, label: 'Max incoming data throughput'
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -87,7 +89,7 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        string :name, required: true
+        use :all, include: %i(name max_tx max_rx)
       end
 
       output do
@@ -96,6 +98,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
+        input whitelist: %i(name)
         restrict vpses: {user_id: u.id}
         allow
       end
@@ -108,6 +111,10 @@ module VpsAdmin::API::Resources
           network_interfaces: {id: params[:network_interface_id]},
         ))
 
+        if input.empty?
+          ok(netif)
+        end
+
         if input[:name] && !netif.vps.node.vpsadminos?
           error('veth renaming is not available on this node')
         end
@@ -115,8 +122,8 @@ module VpsAdmin::API::Resources
         maintenance_check!(netif.vps)
         object_state_check!(netif.vps, netif.vps.user)
 
-        @chain, _ = netif.rename(input[:name])
-        netif
+        @chain, ret = TransactionChains::NetworkInterface::Update.fire(netif, input)
+        ret
       end
 
       def state_id

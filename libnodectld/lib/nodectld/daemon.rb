@@ -81,7 +81,6 @@ module NodeCtld
       @fw.init(db) if $CFG.get(:traffic_accounting, :enable)
       Shaper.init_node if $CFG.get(:shaper, :enable)
       Node.init(db)
-      Shaper.init_vps(db) if $CFG.get(:shaper, :enable)
       Export.init(db) if $CFG.get(:exports, :enable)
 
       @node_status.init(db)

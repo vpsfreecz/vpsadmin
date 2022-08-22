@@ -19,7 +19,7 @@ module NodeCtld
       osctl(
         %i(ct netif new routed),
         [@vps_id, @name],
-        {hwaddr: @mac_address}
+        {hwaddr: @mac_address, max_tx: @max_tx, max_rx: @max_rx},
       )
     end
   end

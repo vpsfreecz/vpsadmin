@@ -14,6 +14,9 @@ class NetworkInterface < ActiveRecord::Base
     message: 'bad format'
   }
 
+  validates :max_tx, numericality: {greater_or_equal_to: 0}
+  validates :max_rx, numericality: {greater_or_equal_to: 0}
+
   include Lockable
   include HaveAPI::Hookable
 
@@ -40,12 +43,6 @@ class NetworkInterface < ActiveRecord::Base
         original_kind: String,
         target_kind: String,
       }
-
-  # @param new_name [String]
-  def rename(new_name)
-    fail 'invalid name' if NAME_RX !~ new_name
-    TransactionChains::NetworkInterface::Rename.fire(self, new_name)
-  end
 
   # Route `ip` to this interface
   #

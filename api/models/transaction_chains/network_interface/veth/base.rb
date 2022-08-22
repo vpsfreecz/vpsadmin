@@ -28,6 +28,8 @@ module TransactionChains
           kind: src_netif.kind,
           name: src_netif.name,
           mac: gen_mac,
+          max_tx: src_netif.max_tx,
+          max_rx: src_netif.max_rx,
         )
       end
     end
