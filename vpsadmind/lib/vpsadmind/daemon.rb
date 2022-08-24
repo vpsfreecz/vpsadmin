@@ -126,7 +126,7 @@ module VpsAdmind
       if current_transaction_update.nil? || @last_transaction_update.nil?
         return true
 
-      elsif @skipped_transaction_checks > (120 / $CFG.get(:vpsadmin, :check_interval))
+      elsif @skipped_transaction_checks > (60 / $CFG.get(:vpsadmin, :check_interval))
         @skipped_transaction_checks = 0
         return true
 
