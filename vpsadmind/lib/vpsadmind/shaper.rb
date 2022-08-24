@@ -202,7 +202,7 @@ module VpsAdmind
     end
 
     def all_ips(db)
-      rs = db.query("SELECT ip_addr, ip_version, class_id, max_tx, max_rx
+      rs = db.query("SELECT ip_addr, ip_version, class_id, ip.max_tx, ip.max_rx
                     FROM vpses
                     INNER JOIN network_interfaces netifs ON netifs.vps_id = vpses.id
                     INNER JOIN ip_addresses ip ON ip.network_interface_id = netifs.id
