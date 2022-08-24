@@ -287,6 +287,14 @@ module TransactionChains
               'migration of VPS with multiple network interfaces is not implemented'
       end
 
+      src_vps.network_interfaces.each do |netif|
+        netif.call_class_hooks_for(
+          :migrate,
+          self,
+          args: [netif, dst_vps],
+        )
+      end
+
       if opts[:transfer_ips]
         if src_node.location_id == dst_node.location_id
           raise VpsAdmin::API::Exceptions::VpsMigrationError,

@@ -44,6 +44,14 @@ class NetworkInterface < ActiveRecord::Base
         target_kind: String,
       }
 
+  has_hook :migrate,
+      desc: 'Called when a NetworkInterface is being migrated with its VPS',
+      context: 'TransactionChain instance',
+      args: {
+        network_interface: 'NetworkInterface instance',
+        dst_vps: 'target Vps instance',
+      }
+
   # Route `ip` to this interface
   #
   # Unless `safe` is true, the IP address `ip` is fetched from the database
