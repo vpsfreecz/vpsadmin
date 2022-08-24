@@ -9,9 +9,9 @@ module NodeCtld
 
     class << self
       %i(wait check check!).each do |m|
-        define_method(m) do |pool_fs, ctid, *args|
+        define_method(m) do |pool_fs, ctid, *args, **kwargs|
           check = new(pool_fs, ctid)
-          check.send(m, *args)
+          check.send(m, *args, **kwargs)
         end
       end
     end
