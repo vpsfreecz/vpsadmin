@@ -74,7 +74,13 @@ module NodeCtld
       sync { @pid = pid }
 
       until pipe.eof?
-        data = JSON.parse(pipe.readline, symbolize_names: true)
+        begin
+          data = JSON.parse(pipe.readline, symbolize_names: true)
+        rescue => e
+          log(:warn, "Unable to parse output from ct top as JSON: #{e.message} (#{e.class})")
+          next
+        end
+
         sync { @refresh = false }
         yield(data)
       end
