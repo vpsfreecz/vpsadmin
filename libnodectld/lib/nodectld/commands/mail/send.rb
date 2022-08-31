@@ -47,7 +47,8 @@ module NodeCtld
       m.delivery_method(
         :smtp,
         address: $CFG.get(:mailer, :smtp_server),
-        port: $CFG.get(:mailer, :smtp_port)
+        port: $CFG.get(:mailer, :smtp_port),
+        openssl_verify_mode: OpenSSL::SSL::VERIFY_NONE,
       )
 
       tries = 0
