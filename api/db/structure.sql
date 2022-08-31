@@ -1358,7 +1358,10 @@ CREATE TABLE `transaction_chain_concerns` (
   `class_name` varchar(255) COLLATE utf8mb3_czech_ci NOT NULL,
   `row_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_transaction_chain_concerns_on_transaction_chain_id` (`transaction_chain_id`) USING BTREE
+  KEY `index_transaction_chain_concerns_on_transaction_chain_id` (`transaction_chain_id`) USING BTREE,
+  KEY `index_transaction_chain_concerns_on_class_name` (`class_name`),
+  KEY `index_transaction_chain_concerns_on_row_id` (`row_id`),
+  KEY `index_transaction_chain_concerns_on_class_name_and_row_id` (`class_name`,`row_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `transaction_chains`;
@@ -2082,6 +2085,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20220202111859'),
 ('20220504184116'),
 ('20220714144902'),
-('20220820133941');
+('20220820133941'),
+('20220831193118');
 
 
