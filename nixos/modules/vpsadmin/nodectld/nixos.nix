@@ -28,12 +28,16 @@ in {
         iptables
         procps
       ];
+      startLimitIntervalSec = 30;
+      startLimitBurst = 4;
       preStart = ''
         ln -sfn /run/current-system/sw/bin/nodectl /run/nodectl/nodectl
       '';
       serviceConfig = {
         Type = "simple";
         ExecStart = "${pkgs.nodectld}/bin/nodectld --no-wrapper";
+        Restart = "on-failure";
+        RestartSec = 5;
       };
     };
 
