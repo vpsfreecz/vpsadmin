@@ -440,16 +440,23 @@ switch ($_GET["action"] ?? null) {
 				csrf_check();
 
 				if ($_POST['name']) {
-					$api->network_interface($_GET['id'])->update([
+					$params = [
 						'name' => trim($_POST['name']),
-					]);
+					];
+
+					if (isAdmin()) {
+						$params['max_tx'] = $_POST['max_tx'] * 1024 * 1024;
+						$params['max_rx'] = $_POST['max_rx'] * 1024 * 1024;
+					}
+
+					$api->network_interface($_GET['id'])->update($params);
 				}
 
-				notify_user(_('Interface renamed'), '');
+				notify_user(_('Interface updated'), '');
 				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
 
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				$xtpl->perex_format_errors(_('Failed to set interface name'), $e->getResponse());
+				$xtpl->perex_format_errors(_('Failed to update interface'), $e->getResponse());
 				$show_info=true;
 			}
 			break;

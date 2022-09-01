@@ -1511,6 +1511,28 @@ function vps_netif_form($vps, $netif) {
 		$xtpl->table_td(_('MAC address').':');
 		$xtpl->table_td($netif->mac);
 		$xtpl->table_tr();
+
+		if (isAdmin()) {
+			$xtpl->form_add_number(
+				_('Max TX').':',
+				'max_tx',
+				post_val('max_tx', $netif->max_tx / 1024.0 / 1024.0),
+				0,
+				999999999999,
+				1,
+				'Mbps'
+			);
+
+			$xtpl->form_add_number(
+				_('Max RX').':',
+				'max_rx',
+				post_val('max_rx', $netif->max_rx / 1024.0 / 1024.0),
+				0,
+				999999999999,
+				1,
+				'Mbps'
+			);
+		}
 	}
 
 	if ($vps->node->hypervisor_type == "vpsadminos")
