@@ -1,6 +1,7 @@
 module TransactionChains
   class NetworkInterface::Update < ::TransactionChain
-    label 'Update'
+    label 'Netif*'
+    allow_empty
 
     def link_chain(netif, attrs)
       lock(netif)
@@ -11,6 +12,8 @@ module TransactionChains
 
       netif.assign_attributes(attrs)
       raise ActiveRecord::RecordInvalid, netif unless netif.valid?
+
+      return netif unless netif.changed?
 
       shaper = {}
 
