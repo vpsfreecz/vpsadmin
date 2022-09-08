@@ -1918,6 +1918,7 @@ CREATE TABLE `vpses` (
   `start_menu_timeout` int(11) DEFAULT 5,
   `remind_after_date` datetime DEFAULT NULL,
   `autostart_enable` tinyint(1) NOT NULL DEFAULT 0,
+  `autostart_priority` int(11) NOT NULL DEFAULT 1000,
   PRIMARY KEY (`id`),
   KEY `index_vpses_on_dataset_in_pool_id` (`dataset_in_pool_id`) USING BTREE,
   KEY `index_vpses_on_dns_resolver_id` (`dns_resolver_id`) USING BTREE,
@@ -2086,6 +2087,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20220714144902'),
 ('20220820133941'),
 ('20220831193118'),
-('20220908140908');
+('20220908140908'),
+('20220908161330');
 
 

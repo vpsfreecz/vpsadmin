@@ -14,6 +14,8 @@ module TransactionChains
         attrs.delete(opt)
       end
 
+      orig_vps = ::Vps.find(vps.id)
+
       vps.assign_attributes(attrs)
       raise ActiveRecord::RecordInvalid, vps unless vps.valid?
 
@@ -100,6 +102,15 @@ module TransactionChains
 
         when 'info', 'onstartall'
           db_changes[vps][attr] = vps.send(attr)
+
+        when 'autostart_priority'
+          if vps.autostart_enable
+            append_t(Transactions::Vps::Autostart, args: [orig_vps], kwargs: {
+              priority: vps.autostart_priority,
+            }) { |t| t.edit(vps, autostart_priority: vps.autostart_priority) }
+          else
+            db_changes[vps][attr] = vps.send(attr)
+          end
         end
       end
 
