@@ -16,9 +16,9 @@ module NodeCtld
       @cmd = cmd
     end
 
-    def start
+    def start(autostart_priority)
       osctl(%i(ct start), @veid)
-      osctl(%i(ct set autostart), @veid)
+      osctl(%i(ct set autostart), @veid, {priority: autostart_priority})
     end
 
     def stop(params = {})
@@ -26,9 +26,9 @@ module NodeCtld
       osctl(%i(ct unset autostart), @veid)
     end
 
-    def restart
+    def restart(autostart_priority)
       osctl(%i(ct restart), @veid)
-      osctl(%i(ct set autostart), @veid)
+      osctl(%i(ct set autostart), @veid, {priority: autostart_priority})
     end
 
     def passwd(user, password)

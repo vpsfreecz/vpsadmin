@@ -4,21 +4,21 @@ module NodeCtld
     needs :system, :osctl
 
     def exec
-      set_autostart(@enable)
+      set_autostart(@new)
     end
 
     def rollback
       if @revert
-        set_autostart(!@enable)
+        set_autostart(@original)
       else
         ok
       end
     end
 
     protected
-    def set_autostart(enable)
-      if enable
-        osctl(%i(ct set autostart), @vps_id)
+    def set_autostart(opts)
+      if opts['enable']
+        osctl(%i(ct set autostart), @vps_id, {priority: opts['priority']})
       else
         osctl(%i(ct unset autostart), @vps_id)
       end

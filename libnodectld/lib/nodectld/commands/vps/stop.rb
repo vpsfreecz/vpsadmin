@@ -13,7 +13,7 @@ module NodeCtld
 
     def rollback
       @vps = Vps.new(@vps_id)
-      @vps.start
+      @vps.start(@autostart_priority)
       ok
     end
   end
