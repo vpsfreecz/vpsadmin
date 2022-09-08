@@ -4,8 +4,6 @@ module VpsAdmind
     needs :system, :vz, :vps, :zfs
 
     def exec
-      # FIXME: what about onboot param?
-
       create_opts = {
           :ostemplate => @template,
           :private => ve_private,

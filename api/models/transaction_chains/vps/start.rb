@@ -8,6 +8,7 @@ module TransactionChains
 
       append_t(Transactions::Vps::Start, args: vps) do |t|
         t.just_create(vps.log(:start)) unless included?
+        t.edit(vps, autostart_enable: true)
       end
     end
   end

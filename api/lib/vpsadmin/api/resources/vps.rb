@@ -22,8 +22,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
              desc: 'DNS resolver the VPS will use'
     resource VpsAdmin::API::Resources::Node, label: 'Node', desc: 'Node VPS will run on',
              value_label: :domain_name
-    bool :onboot, label: 'On boot', desc: 'Start VPS on node boot?',
-         default: true
+    bool :autostart_enable, label: 'Auto-start', desc: 'Start VPS on node boot?'
     bool :onstartall, label: 'On start all',
          desc: 'Start VPS on start all action?', default: true
     string :config, label: 'Config', desc: 'Custom configuration options',
@@ -131,7 +130,6 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
           id: 1,
           name: 'node1'
         },
-        onboot: true,
         onstartall: true,
         backup_enabled: true,
         vps_config: '',
@@ -219,6 +217,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       integer :ipv4_private, label: 'Private IPv4', default: 0, fill: true
       resource VpsAdmin::API::Resources::UserNamespaceMap, label: 'UID/GID mapping'
 
+      bool :start, label: 'Start VPS', default: true, fill: true
+
       patch :hostname, required: true
     end
 
@@ -231,7 +231,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       input whitelist: %i(
         environment location address_location hostname os_template
         dns_resolver cpu memory swap diskspace ipv4 ipv4_private ipv6
-        start_menu_timeout user_namespace_map
+        start_menu_timeout user_namespace_map start
       )
       output whitelist: %i(
         id user hostname manage_hostname os_template dns_resolver
@@ -252,7 +252,6 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         info: '',
         dns_resolver: 1,
         node: 1,
-        onboot: true,
         onstartall: true,
       })
       response({
@@ -333,6 +332,8 @@ END
       if input[:node].openvz? && input[:start_menu_timeout]
         error("start menu is available only on vpsAdminOS")
       end
+
+      opts[:start] = input.delete(:start)
 
       vps = ::Vps.new(to_db_names(input))
       vps.set_cluster_resources(input)

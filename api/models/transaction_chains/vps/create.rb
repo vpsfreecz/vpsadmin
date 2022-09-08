@@ -175,7 +175,7 @@ module TransactionChains
         use_chain(Vps::DeployPublicKey, args: [vps, key])
       end
 
-      if vps.onboot && (!opts.has_key?(:start) || opts[:start])
+      if opts.fetch(:start, true)
         use_chain(TransactionChains::Vps::Start, args: vps)
       end
 

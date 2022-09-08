@@ -31,7 +31,6 @@ module TransactionChains
         os_template_id: vps.os_template_id,
         info: "Replaced #{vps.id}. Original info:\n#{vps.info}",
         node_id: node.id,
-        onboot: vps.onboot,
         onstartall: vps.onstartall,
         config: vps.config,
         cpu_limit: vps.cpu_limit,

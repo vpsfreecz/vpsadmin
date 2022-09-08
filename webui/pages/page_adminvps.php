@@ -163,7 +163,7 @@ switch ($_GET["action"] ?? null) {
 			if (isAdmin()) {
 				$params['user'] = $_GET['user'];
 				$params['node'] = $_POST['node'];
-				$params['onboot'] = isset($_POST['boot_after_create']);
+				$params['start'] = isset($_POST['boot_after_create']);
 
 			} else {
 				if ($_GET['location'])
@@ -175,7 +175,7 @@ switch ($_GET["action"] ?? null) {
 			try {
 				$vps = $api->vps->create($params);
 
-				if ($params['onboot'] || !isAdmin()) {
+				if ($params['start'] || !isAdmin()) {
 					notify_user(
 						_("VPS create ").' '.$vps->id,
 						_("VPS will be created and booted afterwards.")
