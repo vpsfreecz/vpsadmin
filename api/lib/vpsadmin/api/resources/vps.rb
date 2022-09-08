@@ -23,6 +23,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     resource VpsAdmin::API::Resources::Node, label: 'Node', desc: 'Node VPS will run on',
              value_label: :domain_name
     bool :autostart_enable, label: 'Auto-start', desc: 'Start VPS on node boot?'
+    integer :autostart_priority, label: 'Auto-start priority', default: 1000,
+      desc: '0 is the highest priority, greater numbers have lower priority'
     bool :onstartall, label: 'On start all',
          desc: 'Start VPS on start all action?', default: true
     string :config, label: 'Config', desc: 'Custom configuration options',
@@ -455,8 +457,12 @@ END
             && input[:swap] \
             && input[:swap] > 0 && vps.node.total_swap == 0
         error("swap is not available on #{vps.node.domain_name}")
-      elsif vps.node.openvz? && input[:start_menu_timeout]
-        error("start menu is available only on vpsAdminOS")
+      elsif vps.node.openvz?
+        if input[:start_menu_timeout]
+          error("start menu is available only on vpsAdminOS")
+        elsif input[:autostart_priority]
+          error("autostart priority is available only on vpsAdminOS")
+        end
       end
 
       @chain, _ = vps.update(to_db_names(input))
