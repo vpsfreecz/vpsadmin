@@ -363,7 +363,6 @@ switch($_GET["action"]) {
 		$xtpl->form_create('?page=cluster&action=location_new_save', 'post');
 		$xtpl->form_add_input(_("Label").':', 'text', '30', 'location_label', '', _("Location name"));
 		$xtpl->form_add_checkbox(_("Has this location IPv6 support?").':', 'has_ipv6', '1', false, '');
-		$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', '1', '');
 		$xtpl->form_add_input(_("Remote console server").':', 'text', '30',	'remote_console_server',	'', _("URL"));
 		$xtpl->form_add_input(_("Domain").':', 'text', '30',	'domain',	$item["domain"], '');
 		$xtpl->form_out(_("Save changes"));
@@ -378,7 +377,6 @@ switch($_GET["action"]) {
 				'label' => $_POST['location_label'],
 				'type' => $_POST['type'],
 				'has_ipv6' => (bool)$_POST['has_ipv6'],
-				'vps_onboot' => (bool)$_POST['onboot'],
 				'remote_console_server' => $_POST['remote_console_server'],
 				'domain' => $_POST['domain']
 			));
@@ -402,7 +400,6 @@ switch($_GET["action"]) {
 			$xtpl->form_create('?page=cluster&action=location_edit_save&id='.$loc->id, 'post');
 			$xtpl->form_add_input(_("Label").':', 'text', '30', 'location_label', $loc->label, _("Location name"));
 			$xtpl->form_add_checkbox(_("Has this location IPv6 support?").':', 'has_ipv6', '1', $loc->has_ipv6, '');
-			$xtpl->form_add_checkbox(_("Run VPSes here on boot?").':', 'onboot', '1', $loc->vps_onboot, '');
 			$xtpl->form_add_input(_("Remote console server").':', 'text', '30',	'remote_console_server', $loc->remote_console_server, _("URL"));
 			$xtpl->form_add_input(_("Domain").':', 'text', '30',	'domain',	$loc->domain, '');
 
@@ -422,7 +419,6 @@ switch($_GET["action"]) {
 				'label' => $_POST['location_label'],
 				'type' => $_POST['type'],
 				'has_ipv6' => (bool)$_POST['has_ipv6'],
-				'vps_onboot' => (bool)$_POST['onboot'],
 				'remote_console_server' => $_POST['remote_console_server'],
 				'domain' => $_POST['domain']
 			));
@@ -1247,7 +1243,6 @@ if ($list_locations) {
 	$xtpl->table_add_category(_("Environment"));
 	$xtpl->table_add_category(_("Servers"));
 	$xtpl->table_add_category(_("IPv6"));
-	$xtpl->table_add_category(_("On Boot"));
 	$xtpl->table_add_category(_("Domain"));
 	$xtpl->table_add_category(_("Networks"));
 	$xtpl->table_add_category('<img title="'._("Toggle maintenance on node.").'" alt="'._("Toggle maintenance on node.").'" src="template/icons/maintenance_mode.png">');
@@ -1269,12 +1264,6 @@ if ($list_locations) {
 		$xtpl->table_td($nodes->getTotalCount(), false, true);
 
 		if ($loc->has_ipv6) {
-			$xtpl->table_td('<img src="template/icons/transact_ok.png" />');
-		} else {
-			$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
-		}
-
-		if ($loc->vps_onboot) {
 			$xtpl->table_td('<img src="template/icons/transact_ok.png" />');
 		} else {
 			$xtpl->table_td('<img src="template/icons/transact_fail.png" />');
