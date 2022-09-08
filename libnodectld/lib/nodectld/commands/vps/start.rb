@@ -4,7 +4,7 @@ module NodeCtld
 
     def exec
       @vps = Vps.new(@vps_id)
-      @vps.start
+      @vps.start(@autostart_priority)
     end
 
     def rollback
