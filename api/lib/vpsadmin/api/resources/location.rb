@@ -10,7 +10,6 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     string :label, label: 'Label', desc: 'Location label'
     string :description, label: 'Description', desc: 'Location description'
     bool :has_ipv6, label: 'Has IPv6', desc: 'True if location has IPv6 addresses'
-    bool :vps_onboot, label: 'VPS onboot', desc: 'Start all VPSes in this location on boot?'
     string :remote_console_server, label: 'Remote console server',
         desc: 'URL to HTTP remote console server'
     string :domain, label: 'Domain', desc: 'Location domain, subdomain at environment domain'
@@ -64,7 +63,6 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       response([{
         label: 'Prague',
         has_ipv6: true,
-        vps_onboot: true,
         remote_console_server: 'https://console.vpsadmin.mydomain.com',
         domain: 'prg',
         created_at: '2014-05-04 16:59:52 +0200',
@@ -205,7 +203,6 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       request({
         label: 'Brno',
         has_ipv6: true,
-        vps_onboot: true,
         remote_console_server: '',
         domain: 'brq'
       })
@@ -245,7 +242,6 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
         id: 2,
         label: 'Brno',
         has_ipv6: true,
-        vps_onboot: true,
         remote_console_server: '',
         domain: 'brq'
       })
@@ -272,7 +268,6 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       request({
         label: 'Ostrava',
         has_ipv6: true,
-        vps_onboot: true,
         remote_console_server: '',
         environment: 1,
         domain: 'ova'
