@@ -98,7 +98,6 @@ module TransactionChains
         when 'config'
           # FIXME
 
-        when 'onboot'
         when 'info', 'onstartall'
           db_changes[vps][attr] = vps.send(attr)
         end

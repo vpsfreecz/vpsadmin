@@ -681,11 +681,10 @@ CREATE TABLE `locations` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `label` varchar(63) COLLATE utf8mb3_czech_ci NOT NULL,
   `has_ipv6` tinyint(1) NOT NULL,
-  `vps_onboot` tinyint(1) NOT NULL DEFAULT 1,
   `remote_console_server` varchar(255) COLLATE utf8mb3_czech_ci NOT NULL,
   `domain` varchar(100) COLLATE utf8mb3_czech_ci NOT NULL,
-  `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
-  `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
   `maintenance_lock` int(11) NOT NULL DEFAULT 0,
   `maintenance_lock_reason` varchar(255) COLLATE utf8mb3_czech_ci DEFAULT NULL,
   `environment_id` int(11) NOT NULL,
@@ -1904,7 +1903,6 @@ CREATE TABLE `vpses` (
   `info` mediumtext COLLATE utf8mb3_czech_ci DEFAULT NULL,
   `dns_resolver_id` int(11) DEFAULT NULL,
   `node_id` int(10) unsigned NOT NULL,
-  `onboot` tinyint(1) NOT NULL DEFAULT 1,
   `onstartall` tinyint(1) NOT NULL DEFAULT 1,
   `config` text COLLATE utf8mb3_czech_ci NOT NULL,
   `confirmed` int(11) NOT NULL DEFAULT 0,
@@ -1919,6 +1917,7 @@ CREATE TABLE `vpses` (
   `cpu_limit` int(11) DEFAULT NULL,
   `start_menu_timeout` int(11) DEFAULT 5,
   `remind_after_date` datetime DEFAULT NULL,
+  `autostart_enable` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `index_vpses_on_dataset_in_pool_id` (`dataset_in_pool_id`) USING BTREE,
   KEY `index_vpses_on_dns_resolver_id` (`dns_resolver_id`) USING BTREE,
@@ -2086,6 +2085,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20220504184116'),
 ('20220714144902'),
 ('20220820133941'),
-('20220831193118');
+('20220831193118'),
+('20220908140908');
 
 

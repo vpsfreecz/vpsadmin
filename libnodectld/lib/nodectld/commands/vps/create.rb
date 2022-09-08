@@ -4,8 +4,6 @@ module NodeCtld
     needs :system, :osctl, :pool, :vps
 
     def exec
-      # FIXME: what about onboot param?
-
       opts = {
         user: @userns_map,
         dataset: File.join(@pool_fs, @dataset_name),

@@ -45,7 +45,6 @@ module TransactionChains
         os_template: replace_os_template(vps.os_template),
         info: "Cloned from #{vps.id}. Original info:\n#{vps.info}",
         node_id: node.id,
-        onboot: vps.onboot,
         onstartall: vps.onstartall,
         config: '',
         cpu_limit: attrs[:resources] ? vps.cpu_limit : nil,

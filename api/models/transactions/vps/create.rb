@@ -14,7 +14,6 @@ module Transactions::Vps
         {
           hostname: vps.hostname,
           template: vps.os_template.name,
-          onboot: vps.node.location.vps_onboot,
         }
 
       else
@@ -28,7 +27,6 @@ module Transactions::Vps
           arch: vps.os_template.arch,
           vendor: vps.os_template.vendor,
           variant: vps.os_template.variant,
-          onboot: vps.node.location.vps_onboot,
           empty: empty,
         }
       end
