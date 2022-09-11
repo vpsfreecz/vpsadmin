@@ -755,6 +755,22 @@ switch ($_GET["action"] ?? null) {
 			}
 			break;
 
+		case 'autostart':
+			if (isset($_GET["veid"]) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+				csrf_check();
+				try {
+					$api->vps($_GET['veid'])->update(['autostart_priority' => $_POST['autostart_priority']]);
+
+					notify_user(_("Auto-Start priority set"), _('The auto-start priority will be reconfigured momentarily.'));
+					redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Auto-Start change failed'), $e->getResponse());
+					$show_info=true;
+				}
+			}
+			break;
+
 		case 'startmenu':
 			if (isset($_GET["veid"]) && $_SERVER['REQUEST_METHOD'] === 'POST') {
 				csrf_check();
@@ -1497,6 +1513,20 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_tr();
 
 		$xtpl->form_out(_("Go >>"));
+
+	// Auto-start
+		if ($vps->node->hypervisor_type == 'vpsadminos' && isAdmin()) {
+			$xtpl->table_title(_('Auto-Start'));
+			$xtpl->form_create('?page=adminvps&action=autostart&veid='.$vps->id, 'post');
+
+			$xtpl->table_td(_('Active').':');
+			$xtpl->table_td(boolean_icon($vps->autostart_enable));
+			$xtpl->table_tr();
+
+			$xtpl->form_add_number(_('Priority').':', 'autostart_priority', post_val('autostart_priority', $vps->autostart_priority), 0, 100000, 1, '', $params->autostart_priority->description);
+
+			$xtpl->form_out(_("Go >>"));
+		}
 
 	// Start menu
 		if ($vps->node->hypervisor_type == 'vpsadminos') {
