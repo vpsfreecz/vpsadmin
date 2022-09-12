@@ -1152,6 +1152,7 @@ CREATE TABLE `pools` (
   `maintenance_lock_reason` varchar(255) COLLATE utf8mb3_czech_ci DEFAULT NULL,
   `export_root` varchar(100) COLLATE utf8mb3_czech_ci NOT NULL DEFAULT '/export',
   `migration_public_key` text COLLATE utf8mb3_czech_ci DEFAULT NULL,
+  `max_datasets` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -2088,6 +2089,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20220820133941'),
 ('20220831193118'),
 ('20220908140908'),
-('20220908161330');
+('20220908161330'),
+('20220912070451');
 
 

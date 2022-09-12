@@ -33,7 +33,7 @@ module TransactionChains
         userns_map = nil
       end
 
-      pool = vps.node.pools.where(role: 'hypervisor').take!
+      pool = ::Pool.take_by_node!(vps.node, role: :hypervisor)
 
       ds = ::Dataset.new(
         name: vps.id.to_s,
