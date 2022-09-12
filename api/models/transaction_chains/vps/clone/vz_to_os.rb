@@ -25,7 +25,7 @@ module TransactionChains
       # - Set features
 
       @src_pool = vps.dataset_in_pool.pool
-      @dst_pool = node.pools.where(role: ::Pool.roles[:hypervisor]).take!
+      @dst_pool = ::Pool.take_by_node!(node, role: :hypervisor)
 
       dst_features = {}
       vps_resources = nil

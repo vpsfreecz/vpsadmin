@@ -25,4 +25,34 @@ class Pool < ActiveRecord::Base
     pool = new(attrs)
     TransactionChains::Pool::Create.fire(pool, properties)
   end
+
+  # @param node [::Node]
+  # @param role [:hypervisor, :primary]
+  # @return [Array<::Pool>]
+  def self.pick_by_node(node, role: nil)
+    q = self
+      .joins('LEFT JOIN dataset_in_pools ON dataset_in_pools.pool_id = pools.id')
+      .where(
+        'pools.max_datasets > 0
+        AND pools.maintenance_lock = 0
+        AND pools.node_id = ?',
+        node.id,
+      )
+
+    q = q.where(role: role.to_s) if role
+
+    q
+      .group('pools.id')
+      .order(Arel.sql('COUNT(dataset_in_pools.id) / pools.max_datasets ASC'))
+      .to_a
+  end
+
+  # @param node [::Node]
+  # @param role [:hypervisor, :primary]
+  # @return [::Pool]
+  def self.take_by_node!(node, role: nil)
+    pool, _ = pick_by_node(node, role: role)
+    fail "no pool available on #{node.domain_name}" if pool.nil?
+    pool
+  end
 end

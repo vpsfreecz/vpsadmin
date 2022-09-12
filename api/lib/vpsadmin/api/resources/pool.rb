@@ -9,6 +9,7 @@ module VpsAdmin::API::Resources
       string :filesystem
       string :role, choices: ::Pool.roles.keys
       bool :refquota_check, label: 'Refquota check'
+      integer :max_datasets
     end
 
     params(:all_properties) do
