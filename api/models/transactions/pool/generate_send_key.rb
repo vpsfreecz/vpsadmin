@@ -7,6 +7,7 @@ module Transactions::Pool
       self.node_id = pool.node_id
       {
         pool_id: pool.id,
+        pool_name: pool.name,
         pool_fs: pool.filesystem,
       }
     end

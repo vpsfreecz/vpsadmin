@@ -55,4 +55,14 @@ class Pool < ActiveRecord::Base
     fail "no pool available on #{node.domain_name}" if pool.nil?
     pool
   end
+
+  def name
+    i = filesystem.index('/')
+
+    if i.nil?
+      filesystem
+    else
+      filesystem[0..(i-1)]
+    end
+  end
 end

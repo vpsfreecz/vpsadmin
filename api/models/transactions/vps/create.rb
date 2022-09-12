@@ -18,6 +18,7 @@ module Transactions::Vps
 
       else
         {
+          pool_name: vps.dataset_in_pool.pool.name,
           pool_fs: vps.dataset_in_pool.pool.filesystem,
           dataset_name: vps.dataset_in_pool.dataset.full_name,
           userns_map: vps.userns_map.id.to_s,

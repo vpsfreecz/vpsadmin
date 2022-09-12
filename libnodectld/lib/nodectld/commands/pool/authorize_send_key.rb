@@ -4,28 +4,25 @@ module NodeCtld
     needs :system, :osctl
 
     def exec
-      osctl(
+      osctl_pool(
+        @pool_name,
         %i(receive authorized-keys add),
         @name,
         {ctid: @ctid, passphrase: @passphrase, single_use: true},
-        {pool: pool_name},
+        {},
         {input: @pubkey},
       )
     end
 
     def rollback
-      osctl(
+      osctl_pool(
+        @pool_name,
         %i(receive authorized-keys del),
         @name,
         {},
-        {pool: pool_name},
+        {},
         {valid_rcs: [1,]},
       )
-    end
-
-    protected
-    def pool_name
-      @pool_name ||= @pool_fs.split('/').first
     end
   end
 end
