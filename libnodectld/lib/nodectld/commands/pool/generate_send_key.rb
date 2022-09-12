@@ -4,7 +4,7 @@ module NodeCtld
     needs :system, :osctl
 
     def exec
-      osctl(%i(send key gen), [], {force: true}, {pool: pool_name})
+      osctl_pool(@pool_name, %i(send key gen), [], {force: true})
 
       pubkey, privkey = get_key_paths
 
@@ -41,14 +41,10 @@ module NodeCtld
     end
 
     protected
-    def pool_name
-      @pool_name ||= @pool_fs.split('/').first
-    end
-
     def get_key_paths
       [
-        osctl(%i(send key path public), [], {}, {pool: pool_name}).output.strip,
-        osctl(%i(send key path private), [], {}, {pool: pool_name}).output.strip,
+        osctl_pool(@pool_name, %i(send key path public)).output.strip,
+        osctl_pool(@pool_name, %i(send key path private)).output.strip,
       ]
     end
   end

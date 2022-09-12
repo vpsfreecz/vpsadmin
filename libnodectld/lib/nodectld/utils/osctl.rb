@@ -35,6 +35,18 @@ module NodeCtld
       syscmd(argv.join(' '), cmd_opts)
     end
 
+    # Shortcut for {#osctl} with global option `pool`
+    # @param pool [String] pool name
+    # @param cmd [Symbol, Array<Symbol>] command name(s)
+    # @param args [Array] command arguments
+    # @param opts [Hash] command options
+    # @param gopts [Hash] global command options
+    # @param cmd_opts [Hash] options passed to {Utils::System#syscmd}
+    # @return [OsCtl::Lib::SystemCommandResult]
+    def osctl_pool(pool, cmd, args = [], opts = {}, gopts = {}, cmd_opts = {})
+      osctl(cmd, args, opts, gopts.merge({pool: pool}), cmd_opts)
+    end
+
     def osctl_parse(*args)
       JSON.parse(osctl(*args).output, symbolize_names: true)
     end
