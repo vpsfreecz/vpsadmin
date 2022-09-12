@@ -205,6 +205,10 @@ class Vps < ActiveRecord::Base
     dataset_in_pool.dataset
   end
 
+  def pool
+    dataset_in_pool.pool
+  end
+
   %i(is_running in_rescue_mode uptime process_count cpu_user cpu_nice cpu_system
      cpu_idle cpu_iowait cpu_irq cpu_softirq loadavg used_memory used_swap
   ).each do |attr|

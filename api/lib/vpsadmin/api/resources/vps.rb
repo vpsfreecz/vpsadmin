@@ -37,6 +37,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   params(:dataset) do
     resource VpsAdmin::API::Resources::Dataset, label: 'Dataset',
              desc: 'Dataset the VPS resides in', value_label: :name
+    resource VpsAdmin::API::Resources::Pool, label: 'Pool',
+             desc: 'Storage pool the VPS resides in', value_label: :name
   end
 
   params(:read_only) do
