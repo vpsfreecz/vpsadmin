@@ -965,6 +965,12 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_td($vps->node->domain_name);
 	$xtpl->table_tr();
 
+	if (isAdmin()) {
+		$xtpl->table_td(_("Pool").':');
+		$xtpl->table_td($vps->pool->name);
+		$xtpl->table_tr();
+	}
+
 	$xtpl->table_td(_("Location").':');
 	$xtpl->table_td($vps->node->location->label);
 	$xtpl->table_tr();

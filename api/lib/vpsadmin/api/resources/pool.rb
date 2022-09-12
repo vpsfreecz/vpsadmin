@@ -6,6 +6,7 @@ module VpsAdmin::API::Resources
     params(:common) do
       resource Node, value_label: :domain_name
       string :label
+      string :name
       string :filesystem
       string :role, choices: ::Pool.roles.keys
       bool :refquota_check, label: 'Refquota check'
@@ -86,7 +87,7 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :common
+        use :common, exclude: %i(name)
         use :editable_properties
       end
 
