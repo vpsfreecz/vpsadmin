@@ -225,6 +225,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       string :kernel, label: 'Kernel'
       string :hypervisor_type, label: 'Hypervisor type', desc: 'openvz or vpsadminos'
       float :cpu_idle, label: 'CPU idle'
+      use :status, include: %i(pool_state pool_scan pool_checked_at pool_status)
     end
 
     output(&VpsAdmin::API::Maintainable::Action.output_params)
