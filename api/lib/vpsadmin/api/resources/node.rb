@@ -11,6 +11,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     string :name, label: 'Name', desc: 'Node name'
     string :domain_name, label: 'Domain name',
       desc: 'Node name including location domain'
+    string :fqdn, label: 'FQDN'
     string :type, label: 'Role', desc: 'node, storage or mailer', db_name: :role
     string :hypervisor_type, label: 'Hypervisor type', desc: 'openvz or vpsadminos',
       choices: %w(openvz vpsadminos)
@@ -82,7 +83,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       input blacklist: %i(state)
-      output whitelist: %i(id name domain_name location hypervisor_type)
+      output whitelist: %i(id name domain_name fqdn location hypervisor_type)
       restrict active: true
       allow
     end
@@ -136,7 +137,9 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     def exec
-      with_includes(query).limit(input[:limit]).offset(input[:offset])
+      with_includes(query.includes(location: :environment))
+        .limit(input[:limit])
+        .offset(input[:offset])
     end
   end
 
@@ -203,7 +206,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     def exec
       with_includes
-        .includes(:node_current_status)
+        .includes(:node_current_status, location: :environment)
         .joins(:location)
         .where(active: true)
         .order('locations.environment_id, locations.id, nodes.id')
@@ -217,6 +220,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     output(:object_list) do
       bool :status, label: 'Status'
       string :name, label: 'Node name', db_name: :domain_name
+      string :fqdn, label: 'FQDN'
       resource VpsAdmin::API::Resources::Location, label: 'Location',
                desc: 'Location node is placed in'
       datetime :last_report, label: 'Last report'
@@ -281,7 +285,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     def exec
-      ::Node.includes(:location, :node_current_status)
+      ::Node.includes(:node_current_status, location: :environment)
         .joins(:location)
         .where(active: true)
         .order('locations.environment_id, locations.id, nodes.id')
@@ -297,7 +301,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      output whitelist: %i(id name domain_name location hypervisor_type)
+      output whitelist: %i(id name domain_name fqdn location hypervisor_type)
       allow
     end
 
