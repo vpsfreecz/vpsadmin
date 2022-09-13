@@ -720,6 +720,34 @@ function export_link($export) {
 	return '<a href="?page=export&action=edit&export='.$export->id.'">#'.$export->id.'</a>';
 }
 
+function munin_link($text, $path) {
+	global $config;
+
+	$url = $config->get('webui', 'munin_url');
+
+	$ret = '';
+
+	if ($url)
+		$ret .= '<a href="'.$url.'/'.$path.'" target="_blank">';
+
+	$ret .= $text;
+
+	if ($url)
+		$ret .= '</a>';
+
+	return $ret;
+}
+
+function munin_link_host($text, $fqdn, $path) {
+	$names = explode('.', $fqdn);
+	$domain = implode('.', array_slice($names, 1));
+
+	return munin_link(
+		$text,
+		'/'.$domain.'/'.$fqdn.'/'.$path
+	);
+}
+
 function kernel_version($v) {
 	if (preg_match("/\d+stab.+/",$v, $matches))
 		return $matches[0];
