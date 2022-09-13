@@ -204,6 +204,19 @@ foreach ($nodes as $node) {
 					 . ', last update: ' . $last_update
 					 . '" src="template/icons/error.png"/>';
 
+	} else if ($node->hypervisor_type == 'vpsadminos' && ($node->pool_state != 'online' || $node->pool_scan != 'none')) {
+		$issues = [];
+
+		if ($node->pool_state != 'online')
+			$issues[] = _('storage pool is').' '.$node->pool_state;
+
+		if ($node->pool_scan == 'scrub')
+			$issues[] = _('storage pool is being scrubbed to check data integrity');
+		elseif ($node->pool_scan == 'resilver')
+			$issues[] = _('storage pool is being resilvered to replace a disk');
+
+		$icons .= '<img title="'.implode(', ', $issues).'" src="template/icons/server_warning.png">';
+
 	} else {
 
 		$icons .= '<img title="'._("The server is online")
