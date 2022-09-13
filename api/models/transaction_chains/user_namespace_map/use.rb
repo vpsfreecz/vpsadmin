@@ -4,18 +4,18 @@ module TransactionChains
     label 'Use userns'
     allow_empty
 
-    def link_chain(userns_map, node)
+    def link_chain(userns_map, pool)
       lock(userns_map)
 
-      return if userns_map.nodes.where(id: node.id).any?
+      return if userns_map.pools.where(id: pool.id).any?
 
-      append_t(Transactions::UserNamespace::CreateMap, args: [node, userns_map]) do |t|
-        unsmap_on_node = ::UserNamespaceMapNode.create!(
+      append_t(Transactions::UserNamespace::CreateMap, args: [pool, userns_map]) do |t|
+        unsmap_on_pool = ::UserNamespaceMapPool.create!(
           user_namespace_map: userns_map,
-          node: node,
+          pool: pool,
         )
 
-        t.just_create(unsmap_on_node)
+        t.just_create(unsmap_on_pool)
       end
     end
   end

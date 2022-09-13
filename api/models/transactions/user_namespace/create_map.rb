@@ -6,10 +6,11 @@ module Transactions::UserNamespace
 
     include Transactions::Utils::UserNamespaces
 
-    def params(node, userns_map)
-      self.node_id = node.id
+    def params(pool, userns_map)
+      self.node_id = pool.node_id
 
       {
+        pool_name: pool.name,
         name: userns_map.id.to_s,
         ugid: userns_map.ugid,
         uidmap: build_map(userns_map, :uid),
