@@ -238,10 +238,14 @@ foreach ($nodes as $node) {
 	$xtpl->table_td($platform.'&nbsp;'.$node->name);
 	$xtpl->table_td($node->vps_count, false, true);
 
-	if ($node->cpu_idle === null)
+	if ($node->cpu_idle === null) {
 		$xtpl->table_td('---', false, true);
-	else
-		$xtpl->table_td(sprintf('%.2f %%', 100.0 - $node->cpu_idle), false, true);
+	} else {
+		$xtpl->table_td(
+			munin_link_host(sprintf('%.2f %%', 100.0 - $node->cpu_idle), $node->fqdn, 'cpu.html'),
+			false, true
+		);
+	}
 
 	$xtpl->table_td(
 		kernel_version($node->kernel),
