@@ -61,6 +61,7 @@ module NodeCtld
       @delayed_mounter = DelayedMounter.new # FIXME: call stop?
       @remote_control = RemoteControl.new(self)
       @node_status = NodeStatus.new
+      @pool_status = PoolStatus.new
       @vps_status = VpsStatus.new
       @fw = Firewall.instance
       @kernel_log = KernelLog::Parser.new
@@ -85,6 +86,8 @@ module NodeCtld
 
       @node_status.init(db)
       @node_status.update(db)
+
+      @pool_status.init(db)
 
       @kernel_log.start if $CFG.get(:kernel_log, :enable)
 
@@ -291,6 +294,13 @@ module NodeCtld
         end
       end
 
+      run_thread_unless_runs(:pool_status) do
+        loop do
+          @pool_status.update if $CFG.get(:storage, :pool_status)
+          sleep($CFG.get(:storage, :pool_interval))
+        end
+      end
+
       run_thread_unless_runs(:vps_status) do
         if $CFG.get(:vpsadmin, :update_vps_status)
           @ct_top = CtTop.new
@@ -350,6 +360,10 @@ module NodeCtld
       my = Db.new
 
       @node_status.update(my)
+
+      if $CFG.get(:storage, :pool_status)
+        @pool_status.update(my)
+      end
 
       if $CFG.get(:vpsadmin, :update_vps_status)
         # TODO

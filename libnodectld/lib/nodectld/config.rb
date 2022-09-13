@@ -137,6 +137,8 @@ module NodeCtld
 
     storage: {
       update_status: true,
+      pool_status: true,
+      pool_interval: 60,
     },
 
     mailer: {
