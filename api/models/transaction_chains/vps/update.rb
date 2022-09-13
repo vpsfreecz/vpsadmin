@@ -195,7 +195,7 @@ module TransactionChains
           user_namespaces: {user_id: vps.user_id}
         ).take!
 
-        use_chain(UserNamespaceMap::Use, args: [new_userns_map, vps.node])
+        use_chain(UserNamespaceMap::Use, args: [new_userns_map, vps.pool])
       else
         cur_userns_map = nil
         new_userns_map = nil

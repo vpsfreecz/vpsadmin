@@ -9,8 +9,8 @@ class UserNamespaceMap < ActiveRecord::Base
   belongs_to :user_namespace_map_ugid
   has_many :dataset_in_pools
   has_many :user_namespace_map_entries, dependent: :delete_all
-  has_many :user_namespace_map_nodes
-  has_many :nodes, through: :user_namespace_map_nodes
+  has_many :user_namespace_map_pools
+  has_many :pools, through: :user_namespace_map_pools
 
   include Lockable
 

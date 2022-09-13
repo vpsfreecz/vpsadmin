@@ -29,7 +29,7 @@ module TransactionChains
       transfer_cluster_resources
 
       # User namespace map
-      use_chain(UserNamespaceMap::Use, args: [userns_map, dst_node])
+      use_chain(UserNamespaceMap::Use, args: [userns_map, dst_pool])
 
       # Create datasets
       datasets.each do |pair|

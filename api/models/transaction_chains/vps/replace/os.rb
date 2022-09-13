@@ -119,7 +119,7 @@ module TransactionChains
       )
 
       # Prepare userns
-      use_chain(UserNamespaceMap::Use, args: [vps.userns_map, dst_vps.node])
+      use_chain(UserNamespaceMap::Use, args: [vps.userns_map, @dst_pool])
 
       if remote
         token = SecureRandom.hex(6)

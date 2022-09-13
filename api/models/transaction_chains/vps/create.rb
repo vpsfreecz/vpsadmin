@@ -22,18 +22,18 @@ module TransactionChains
         chain: self
       )
 
+      pool = ::Pool.take_by_node!(vps.node, role: :hypervisor)
+
       if vps.node.vpsadminos?
         userns_map = opts[:userns_map] || ::UserNamespaceMap.joins(:user_namespace).where(
           user_namespaces: {user_id: vps.user_id}
         ).take!
 
-        use_chain(UserNamespaceMap::Use, args: [userns_map, vps.node])
+        use_chain(UserNamespaceMap::Use, args: [userns_map, pool])
 
       else
         userns_map = nil
       end
-
-      pool = ::Pool.take_by_node!(vps.node, role: :hypervisor)
 
       ds = ::Dataset.new(
         name: vps.id.to_s,

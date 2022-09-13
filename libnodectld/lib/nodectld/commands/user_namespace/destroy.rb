@@ -4,12 +4,12 @@ module NodeCtld
     needs :system, :osctl
 
     def exec
-      osctl(%i(user del), @name)
+      osctl_pool(@pool_name, %i(user del), @name)
       ok
     end
 
     def rollback
-      osctl(%i(user new), @name, map_uid: @uidmap, map_gid: @gidmap)
+      osctl_pool(@pool_name, %i(user new), @name, {map_uid: @uidmap, map_gid: @gidmap})
       ok
     end
   end

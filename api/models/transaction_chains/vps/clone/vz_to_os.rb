@@ -107,7 +107,7 @@ module TransactionChains
         user_namespaces: {user_id: attrs[:user].id}
       ).take!
 
-      use_chain(UserNamespaceMap::Use, args: [@userns_map, node])
+      use_chain(UserNamespaceMap::Use, args: [@userns_map, @dst_pool])
 
       # Create root dataset
       dst_vps.dataset_in_pool = vps_dataset(vps, dst_vps, attrs[:dataset_plans])
