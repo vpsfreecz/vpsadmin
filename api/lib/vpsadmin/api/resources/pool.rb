@@ -44,6 +44,9 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
+        input whitelist: %i(node role)
+        output whitelist: %i(id node name role state scan checked_at)
+        allow
       end
 
       def query
@@ -74,6 +77,8 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
+        output whitelist: %i(id node name role state scan checked_at)
+        allow
       end
 
       def prepare
