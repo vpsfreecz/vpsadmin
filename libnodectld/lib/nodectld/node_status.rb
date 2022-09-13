@@ -5,7 +5,8 @@ require 'nodectld/system_probes'
 
 module NodeCtld
   class NodeStatus
-    def initialize
+    def initialize(pool_status)
+      @pool_status = pool_status
       @cpus = SystemProbes::Cpus.new.count
     end
 
@@ -24,6 +25,8 @@ module NodeCtld
     def update(db = nil)
       t = Time.now.utc
 
+      pool_check, pool_state, pool_scan = @pool_status.summary_values
+
       info = OpenStruct.new({
         node_id: $CFG.get(:vpsadmin, :node_id),
         time: t,
@@ -31,6 +34,9 @@ module NodeCtld
         nproc: SystemProbes::ProcessCounter.new.count,
         uptime: SystemProbes::Uptime.new.uptime.round,
         loadavg: SystemProbes::LoadAvg.new.avg,
+        pool_state: pool_state,
+        pool_scan: pool_scan,
+        pool_check: pool_check.strftime('%Y-%m-%d %H:%M:%S'),
       })
 
       info.kernel = SystemProbes::Kernel.new.version
@@ -119,6 +125,9 @@ module NodeCtld
           used_memory = #{info.mem.used / 1024},
           total_swap = #{info.mem.swap_total / 1024},
           used_swap = #{info.mem.swap_used / 1024},
+          pool_state = #{info.pool_state},
+          pool_scan = #{info.pool_scan},
+          pool_checked_at = '#{info.pool_check}',
           sum_loadavg = loadavg,
           sum_process_count = process_count,
           sum_used_memory = used_memory,
@@ -188,6 +197,9 @@ module NodeCtld
           used_memory = #{info.mem.used / 1024},
           total_swap = #{info.mem.swap_total / 1024},
           used_swap = #{info.mem.swap_used / 1024},
+          pool_state = #{info.pool_state},
+          pool_scan = #{info.pool_scan},
+          pool_checked_at = '#{info.pool_check}',
 
           sum_loadavg = sum_loadavg + loadavg,
           sum_used_memory = sum_used_memory + used_memory,
