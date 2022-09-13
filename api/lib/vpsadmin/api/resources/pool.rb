@@ -11,6 +11,9 @@ module VpsAdmin::API::Resources
       string :role, choices: ::Pool.roles.keys
       bool :refquota_check, label: 'Refquota check'
       integer :max_datasets
+      string :state, choices: ::Pool::STATE_VALUES.map(&:to_s), db_name: :state_value
+      string :scan, choices: ::Pool::SCAN_VALUES.map(&:to_s), db_name: :scan_value
+      datetime :checked_at
     end
 
     params(:all_properties) do

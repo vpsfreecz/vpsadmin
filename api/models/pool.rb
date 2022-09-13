@@ -12,6 +12,12 @@ class Pool < ActiveRecord::Base
 
   enum role: %i(hypervisor primary backup)
 
+  STATE_VALUES = %i(unknown online degraded suspended faulted error)
+  SCAN_VALUES = %i(unknown none scrub resilver error)
+
+  enum state: STATE_VALUES, _prefix: :state
+  enum scan: SCAN_VALUES, _prefix: :scan
+
   validates :node_id, :label, :filesystem, :role, presence: true
 
   include Lockable
@@ -65,5 +71,13 @@ class Pool < ActiveRecord::Base
     else
       filesystem[0..(i-1)]
     end
+  end
+
+  def state_value
+    STATE_VALUES[ self.class.states[state] ].to_s
+  end
+
+  def scan_value
+    SCAN_VALUES[ self.class.scans[scan] ].to_s
   end
 end
