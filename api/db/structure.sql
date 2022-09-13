@@ -940,8 +940,11 @@ CREATE TABLE `node_current_statuses` (
   `sum_arc_c` int(11) DEFAULT NULL,
   `sum_arc_size` int(11) DEFAULT NULL,
   `sum_arc_hitpercent` float DEFAULT NULL,
-  `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
-  `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  `pool_state` int(11) NOT NULL DEFAULT 0,
+  `pool_scan` int(11) NOT NULL DEFAULT 0,
+  `pool_checked_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_node_current_statuses_on_node_id` (`node_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;

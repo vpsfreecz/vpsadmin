@@ -52,6 +52,10 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     integer :arc_hitpercent
     string :version, db_name: :vpsadmind_version
     string :kernel
+    string :pool_state, choices: ::Pool::STATE_VALUES.map(&:to_s), db_name: :pool_state_value
+    string :pool_scan, choices: ::Pool::SCAN_VALUES.map(&:to_s), db_name: :pool_scan_value
+    datetime :pool_checked_at
+    bool :pool_status
   end
 
   params(:all) do
