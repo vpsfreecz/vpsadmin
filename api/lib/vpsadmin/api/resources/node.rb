@@ -218,6 +218,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     auth false
 
     output(:object_list) do
+      id :id
       bool :status, label: 'Status'
       string :name, label: 'Node name', db_name: :domain_name
       string :fqdn, label: 'FQDN'
@@ -234,7 +235,9 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     output(&VpsAdmin::API::Maintainable::Action.output_params)
 
-    authorize do
+    authorize do |u|
+      allow if u
+      output blacklist: %i(id)
       allow
     end
 
