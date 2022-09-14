@@ -705,6 +705,13 @@ function user_label ($user) {
 	return '#'.$user->id.' '.$user->login;
 }
 
+function node_link($node, $label = null) {
+	if (!$label)
+		$label = $node->domain_name;
+
+	return '<a href="?page=node&id='.$node->id.'">'.$label.'</a>';
+};
+
 function vps_link($vps) {
 	return '<a href="?page=adminvps&action=info&veid='.$vps->id.'">#'.$vps->id.'</a>';
 }
@@ -718,34 +725,6 @@ function user_link($user) {
 
 function export_link($export) {
 	return '<a href="?page=export&action=edit&export='.$export->id.'">#'.$export->id.'</a>';
-}
-
-function munin_link($text, $path) {
-	global $config;
-
-	$url = $config->get('webui', 'munin_url');
-
-	$ret = '';
-
-	if ($url)
-		$ret .= '<a href="'.$url.'/'.$path.'" target="_blank">';
-
-	$ret .= $text;
-
-	if ($url)
-		$ret .= '</a>';
-
-	return $ret;
-}
-
-function munin_link_host($text, $fqdn, $path) {
-	$names = explode('.', $fqdn);
-	$domain = implode('.', array_slice($names, 1));
-
-	return munin_link(
-		$text,
-		'/'.$domain.'/'.$fqdn.'/'.$path
-	);
 }
 
 function kernel_version($v) {

@@ -159,6 +159,7 @@ $position = 1;
 $last_location = 0;
 
 $nodes = $api->node->public_status();
+$munin = new Munin($config);
 
 foreach ($nodes as $node) {
 	if (
@@ -235,14 +236,14 @@ foreach ($nodes as $node) {
 		$platform = '<img src="template/icons/vpsadminos.png" width="16" title="'._('vpsAdminOS').'">';
 	}
 
-	$xtpl->table_td($platform.'&nbsp;'.$node->name);
+	$xtpl->table_td($platform.'&nbsp;'.(isLoggedIn() ? node_link($node, $node->name) : $node->name));
 	$xtpl->table_td($node->vps_count, false, true);
 
 	if ($node->cpu_idle === null) {
 		$xtpl->table_td('---', false, true);
 	} else {
 		$xtpl->table_td(
-			munin_link_host(sprintf('%.2f %%', 100.0 - $node->cpu_idle), $node->fqdn, 'cpu.html'),
+			$munin->linkHostPath(sprintf('%.2f %%', 100.0 - $node->cpu_idle), $node->fqdn, 'cpu.html'),
 			false, true
 		);
 	}

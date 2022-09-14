@@ -37,6 +37,7 @@ include WWW_ROOT.'lib/ajax.lib.php';
 include WWW_ROOT.'lib/mail.lib.php';
 include WWW_ROOT.'lib/helpbox.lib.php';
 include WWW_ROOT.'lib/security.lib.php';
+include WWW_ROOT.'lib/munin.lib.php';
 
 include WWW_ROOT.'forms/backup.forms.php';
 include WWW_ROOT.'forms/cluster.forms.php';
@@ -195,6 +196,9 @@ try {
 				break;
 			case 'oom_reports':
 				include WWW_ROOT.'pages/page_oom_reports.php';
+				break;
+			case 'node':
+				include WWW_ROOT.'pages/page_node.php';
 				break;
 			default:
 				include WWW_ROOT.'pages/page_index.php';
