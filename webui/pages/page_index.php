@@ -243,7 +243,7 @@ foreach ($nodes as $node) {
 		$xtpl->table_td('---', false, true);
 	} else {
 		$xtpl->table_td(
-			$munin->linkHostPath(sprintf('%.2f %%', 100.0 - $node->cpu_idle), $node->fqdn, 'cpu.html'),
+			$munin->linkHostPath(sprintf('%.2f %%', 100.0 - $node->cpu_idle), $node->fqdn, '#system'),
 			false, true
 		);
 	}
