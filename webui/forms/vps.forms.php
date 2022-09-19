@@ -665,6 +665,8 @@ function vps_list_form() {
 		$xtpl->table_add_category('');
 		$xtpl->table_add_category('');
 		$xtpl->table_add_category('');
+		if (isAdmin())
+			$xtpl->table_add_category('');
 		$xtpl->table_add_category('');
 
 		if (!isAdmin()) {
@@ -743,6 +745,9 @@ function vps_list_form() {
 
 				if (isAdmin())
 					$xtpl->table_td(maintenance_lock_icon('vps', $vps));
+
+				if (isAdmin())
+					$xtpl->table_td('<a href="?page=adminvps&action=offlinemigrate&veid='.$vps->id.'"><img src="template/icons/vps_migrate.png" title="'._('Migrate').'"></a>');
 
 				$deleteAction = function () use ($xtpl, $vps) {
 					$xtpl->table_td('<a href="?page=adminvps&action=delete&veid='.$vps->id.'"><img src="template/icons/vps_delete.png" title="'._("Delete").'"/></a>');
