@@ -607,6 +607,8 @@ switch ($_GET["action"] ?? null) {
 					'transfer_ip_addresses' => isset($_POST['transfer_ip_addresses']),
 					'maintenance_window' => isset($_POST['maintenance_window']),
 					'cleanup_data' => isset($_POST['cleanup_data']),
+					'no_start' => isset($_POST['no_start']),
+					'skip_start' => isset($_POST['skip_start']),
 					'send_mail' => isset($_POST['send_mail']),
 					'reason' => $_POST['reason'] ? $_POST['reason'] : null,
 				));
