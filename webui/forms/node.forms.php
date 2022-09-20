@@ -63,11 +63,11 @@ function node_details_table($node_id) {
 				$perf = _('nominal');
 				break;
 			case 'scrub':
-				$scan = _('scrub - checking data integrity');
+				$scan = _('scrub - checking data integrity').', '.round($pool->scan_percent, 1).'&nbsp;% '._('done');
 				$perf = _('decreased');
 				break;
 			case 'resilver':
-				$scan = _('resilver - replacing disk');
+				$scan = _('resilver - replacing disk').', '.round($pool->scan_percent, 1).'&nbsp;% '._('done');
 				$perf = _('decreased');
 				break;
 			case 'error':

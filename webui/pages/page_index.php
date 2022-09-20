@@ -212,9 +212,9 @@ foreach ($nodes as $node) {
 			$issues[] = _('storage pool is').' '.$node->pool_state;
 
 		if ($node->pool_scan == 'scrub')
-			$issues[] = _('storage pool is being scrubbed to check data integrity, IO performance may be impacted');
+			$issues[] = _('storage pool is being scrubbed to check data integrity, IO performance may be impacted').', '.round($node->pool_scan_percent, 1).'&nbsp;% '._('done');
 		elseif ($node->pool_scan == 'resilver')
-			$issues[] = _('storage pool is being resilvered to replace a disk, IO performance may be impacted');
+			$issues[] = _('storage pool is being resilvered to replace a disk, IO performance may be impacted').', '.round($node->pool_scan_percent, 1).'&nbsp;% '._('done');
 
 		$icons .= '<img title="'.implode(', ', $issues).'" src="template/icons/server_warning.png">';
 
