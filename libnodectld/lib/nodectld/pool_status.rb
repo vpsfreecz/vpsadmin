@@ -13,6 +13,7 @@ module NodeCtld
       @last_check = Time.now.utc
       @state_summary_value = state_to_db(:unknown)
       @scan_summary_value = scan_to_db(:unknown)
+      @scan_percent_summary = nil
     end
 
     def init(db)
@@ -25,10 +26,11 @@ module NodeCtld
       my.close unless db
     end
 
-    # @return [Array<Time, Integer, Integer>)] last check, state and scan summary values
+    # @return [Array<Time, Integer, Integer, Float>)]
+    #   last check, state, scan and scan percent summary values
     def summary_values
       @mutex.synchronize do
-        [@last_check, @state_summary_value, @scan_summary_value]
+        [@last_check, @state_summary_value, @scan_summary_value, @scan_percent_summary]
       end
     end
 
@@ -38,6 +40,7 @@ module NodeCtld
 
       state_summary = state_to_db(:unknown)
       scan_summary = scan_to_db(:unknown)
+      scan_percent_summary = nil
 
       begin
         st = OsCtl::Lib::Zfs::ZpoolStatus.new(pools: @pools.values)
@@ -50,19 +53,26 @@ module NodeCtld
 
         state = state_to_db(:error)
         scan = state_to_db(:error)
+        scan_percent = nil
 
         if pool_st
           state = state_to_db(pool_st.state)
           scan = scan_to_db(pool_st.scan)
+          scan_percent = pool_st.scan_percent
         end
 
         state_summary = state if state > state_summary
         scan_summary = scan if scan > scan_summary
 
+        if scan_percent && (scan_percent_summary.nil? || scan_percent < scan_percent_summary)
+          scan_percent_summary = scan_percent
+        end
+
         db.prepared(
-          'UPDATE pools SET state = ?, scan = ?, checked_at = ? WHERE id = ?',
+          'UPDATE pools SET state = ?, scan = ?, scan_percent = ?, checked_at = ? WHERE id = ?',
           state,
           scan,
+          scan_percent,
           t.strftime('%Y-%m-%d %H:%M:%S'),
           id,
         )
@@ -72,6 +82,7 @@ module NodeCtld
         @last_check = t
         @state_summary_value = state_summary
         @scan_summary_value = scan_summary
+        @scan_percent_summary = scan_percent_summary
       end
     end
 
