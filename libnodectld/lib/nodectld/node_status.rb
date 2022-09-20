@@ -25,7 +25,7 @@ module NodeCtld
     def update(db = nil)
       t = Time.now.utc
 
-      pool_check, pool_state, pool_scan = @pool_status.summary_values
+      pool_check, pool_state, pool_scan, pool_scan_percent = @pool_status.summary_values
 
       info = OpenStruct.new({
         node_id: $CFG.get(:vpsadmin, :node_id),
@@ -36,6 +36,7 @@ module NodeCtld
         loadavg: SystemProbes::LoadAvg.new.avg,
         pool_state: pool_state,
         pool_scan: pool_scan,
+        pool_scan_percent: pool_scan_percent,
         pool_check: pool_check.strftime('%Y-%m-%d %H:%M:%S'),
       })
 
@@ -127,6 +128,7 @@ module NodeCtld
           used_swap = #{info.mem.swap_used / 1024},
           pool_state = #{info.pool_state},
           pool_scan = #{info.pool_scan},
+          pool_scan_percent = #{info.pool_scan_percent || 'NULL'},
           pool_checked_at = '#{info.pool_check}',
           sum_loadavg = loadavg,
           sum_process_count = process_count,
@@ -199,6 +201,7 @@ module NodeCtld
           used_swap = #{info.mem.swap_used / 1024},
           pool_state = #{info.pool_state},
           pool_scan = #{info.pool_scan},
+          pool_scan_percent = #{info.pool_scan_percent || 'NULL'},
           pool_checked_at = '#{info.pool_check}',
 
           sum_loadavg = sum_loadavg + loadavg,
