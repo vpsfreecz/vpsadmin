@@ -945,6 +945,7 @@ CREATE TABLE `node_current_statuses` (
   `pool_state` int(11) NOT NULL DEFAULT 0,
   `pool_scan` int(11) NOT NULL DEFAULT 0,
   `pool_checked_at` datetime DEFAULT NULL,
+  `pool_scan_percent` float DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_node_current_statuses_on_node_id` (`node_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -1159,6 +1160,7 @@ CREATE TABLE `pools` (
   `state` int(11) NOT NULL DEFAULT 0,
   `scan` int(11) NOT NULL DEFAULT 0,
   `checked_at` datetime DEFAULT NULL,
+  `scan_percent` float DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1338,7 +1340,7 @@ CREATE TABLE `sysconfig` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_sysconfig_on_category_and_name` (`category`,`name`) USING BTREE,
   KEY `index_sysconfig_on_category` (`category`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tokens`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2098,6 +2100,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20220908161330'),
 ('20220912070451'),
 ('20220913065326'),
-('20220913114040');
+('20220913114040'),
+('20220920120951');
 
 
