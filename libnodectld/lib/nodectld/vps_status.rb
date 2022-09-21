@@ -80,6 +80,8 @@ module NodeCtld
         lavgs = {}
       end
 
+      hostname_db_vpses = []
+
       cts.each do |vps|
         _, db_vps = db_vpses.detect { |k, v| k == vps[:id] }
         next unless db_vps
@@ -106,19 +108,29 @@ module NodeCtld
 
           # Read hostname if it isn't managed by vpsAdmin
           if db_vps.read_hostname?
-            run_or_skip(db_vps) do
-              db_vps.hostname = osctl(%i(ct exec), [vps[:id], 'hostname']).output.strip
-            end
-
-            if !db_vps.hostname || db_vps.hostname.empty?
-              db_vps.hostname = 'unable to read'
-            end
+            hostname_db_vpses << db_vps
+            db_vps.hostname = 'unable-to-read'
           end
 
           # Detect osctl ct boot
           if vps[:dataset] != vps[:boot_dataset]
             db_vps.in_rescue_mode = true
           end
+        end
+      end
+
+      # Query hostname of VPSes with manual configuration
+      if hostname_db_vpses.any?
+        begin
+          osctl_parse(
+            %i(ct ls),
+            hostname_db_vpses.map { |vps| vps.id },
+            {output: %w(id hostname_readout).join(',')},
+          ).each do |ct|
+            db_vpses[ct[:id]].hostname = ct[:hostname_readout] || 'unable-to-read'
+          end
+        rescue SystemCommandFailed => e
+          log(:warn, :vps_status, "Unable to read VPS hostnames: #{e.message}")
         end
       end
 
