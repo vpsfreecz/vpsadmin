@@ -4,7 +4,7 @@ module TransactionChains
 
     def link_chain(port, src, dst, snapshots, src_branch, dst_branch, initial = false, ds_suffix = nil, **opts)
       if opts[:send_reservation]
-        append(Transactions::Queue::Reserve, args: [src.pool.node, :zfs_send])
+        append(Transactions::Queue::Reserve, args: [src.pool.node, :outage])
       end
 
       if initial
@@ -58,7 +58,7 @@ module TransactionChains
       end
 
       if opts[:send_reservation]
-        append(Transactions::Queue::Release, args: [src.pool.node, :zfs_send])
+        append(Transactions::Queue::Release, args: [src.pool.node, :outage])
       end
     end
 

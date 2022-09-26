@@ -2,7 +2,7 @@ module Transactions::Storage
   class Send < ::Transaction
     t_name :storage_send
     t_type 5221
-    queue :zfs_send
+    queue :outage
 
     def params(port, src, snapshots, branch = nil)
       self.node_id = src.pool.node_id

@@ -61,7 +61,7 @@ module TransactionChains
       migration_snapshots = []
 
       # Reserve a slot in zfs_send queue
-      append(Transactions::Queue::Reserve, args: [src_node, :zfs_send])
+      append(Transactions::Queue::Reserve, args: [src_node, :outage])
 
       datasets.each do |pair|
         src, dst = pair
@@ -77,11 +77,11 @@ module TransactionChains
       if @opts[:maintenance_window]
         # Temporarily release the reserved spot in the queue, we'll get another
         # reservation within the maintenance window
-        append(Transactions::Queue::Release, args: [src_node, :zfs_send])
+        append(Transactions::Queue::Release, args: [src_node, :outage])
 
         # Wait for the outage window to open
         append(Transactions::MaintenanceWindow::Wait, args: [src_vps, 15])
-        append(Transactions::Queue::Reserve, args: [src_node, :zfs_send])
+        append(Transactions::Queue::Reserve, args: [src_node, :outage])
         append(Transactions::MaintenanceWindow::InOrFail, args: [src_vps, 15])
 
         # Second transfer while inside the outage window. The VPS is still running.
@@ -170,7 +170,7 @@ module TransactionChains
       mounts.remount_others
 
       # Release reserved spot in the queue
-      append(Transactions::Queue::Release, args: [src_node, :zfs_send], urgent: true)
+      append(Transactions::Queue::Release, args: [src_node, :outage], urgent: true)
 
       # Remove migration snapshots
       migration_snapshots.each do |sip|

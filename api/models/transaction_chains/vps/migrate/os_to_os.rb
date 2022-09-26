@@ -67,7 +67,7 @@ module TransactionChains
       end
 
       # Reserve a slot in zfs_send queue
-      append(Transactions::Queue::Reserve, args: [src_node, :zfs_send])
+      append(Transactions::Queue::Reserve, args: [src_node, :outage])
 
       # Initial transfer
       append(Transactions::Vps::SendRootfs, args: [src_vps])
@@ -75,11 +75,11 @@ module TransactionChains
       if @opts[:maintenance_window]
         # Temporarily release the reserved spot in the queue, we'll get another
         # reservation within the maintenance window
-        append(Transactions::Queue::Release, args: [src_node, :zfs_send])
+        append(Transactions::Queue::Release, args: [src_node, :outage])
 
         # Wait for the outage window to open
         append(Transactions::MaintenanceWindow::Wait, args: [src_vps, 15])
-        append(Transactions::Queue::Reserve, args: [src_node, :zfs_send])
+        append(Transactions::Queue::Reserve, args: [src_node, :outage])
         append(Transactions::MaintenanceWindow::InOrFail, args: [src_vps, 15])
 
         append(Transactions::Vps::SendSync, args: [src_vps], urgent: true)
@@ -131,7 +131,7 @@ module TransactionChains
       ])
 
       # Release reserved spot in the queue
-      append(Transactions::Queue::Release, args: [src_node, :zfs_send], urgent: true)
+      append(Transactions::Queue::Release, args: [src_node, :outage], urgent: true)
 
       # Move the dataset in pool to the new pool in the database
       append_t(Transactions::Utils::NoOp, args: dst_node.id, urgent: true) do |t|

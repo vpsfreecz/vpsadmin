@@ -2,7 +2,7 @@ module Transactions::Storage
   class LocalSend < ::Transaction
     t_name :storage_local_send
     t_type 5223
-    queue :zfs_send
+    queue :outage
 
     def params(src, dst, snapshots, src_branch = nil, dst_branch = nil)
       self.node_id = src.pool.node_id
