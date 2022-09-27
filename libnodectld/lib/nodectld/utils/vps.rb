@@ -20,10 +20,10 @@ module NodeCtld
       after = status
 
       if before == :running && after != :running
-        call_cmd(Commands::Vps::Start, {vps_id: @vps_id})
+        osctl(%i(ct start), @vps_id)
 
       elsif before != :running && after == :running
-        call_cmd(Commands::Vps::Stop, {vps_id: @vps_id})
+        osctl(%i(ct stop), @vps_id)
       end
     end
 
