@@ -606,6 +606,7 @@ switch ($_GET["action"] ?? null) {
 					'replace_ip_addresses' => isset($_POST['replace_ip_addresses']),
 					'transfer_ip_addresses' => isset($_POST['transfer_ip_addresses']),
 					'maintenance_window' => isset($_POST['maintenance_window']),
+					'rsync' => isset($_POST['rsync']),
 					'cleanup_data' => isset($_POST['cleanup_data']),
 					'no_start' => isset($_POST['no_start']),
 					'skip_start' => isset($_POST['skip_start']),
