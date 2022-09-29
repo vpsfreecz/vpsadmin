@@ -51,7 +51,12 @@ module TransactionChains
 
         # Create datasets with canmount=off for the transfer
         append_t(Transactions::Storage::CreateDataset, args: [
-          dst, {canmount: 'off'}, {create_private: false},
+          dst,
+          {canmount: opts[:rsync] ? 'on' : 'off'},
+          {
+            set_map: opts[:rsync] ? false : true,
+            create_private: opts[:rsync] ? true : false,
+          },
         ]) { |t| t.create(dst) }
 
         # Set all properties except for quotas to ensure send/recv will pass
@@ -78,12 +83,17 @@ module TransactionChains
       datasets.each do |pair|
         src, dst = pair
 
-        # Transfer private area. All subdatasets are transfered as well.
-        # The two (or three) step transfer is done even if the VPS seems to be stopped.
-        # It does not have to be the case, vpsAdmin can have outdated information.
-        # First transfer is done when the VPS is running.
-        migration_snapshots << use_chain(Dataset::Snapshot, args: src)
-        use_chain(Dataset::Transfer, args: [src, dst])
+        if opts[:rsync]
+          append(Transactions::Storage::RsyncDataset, args: [src, dst])
+
+        else
+          # Transfer private area. All subdatasets are transfered as well.
+          # The two (or three) step transfer is done even if the VPS seems to be stopped.
+          # It does not have to be the case, vpsAdmin can have outdated information.
+          # First transfer is done when the VPS is running.
+          migration_snapshots << use_chain(Dataset::Snapshot, args: src)
+          use_chain(Dataset::Transfer, args: [src, dst])
+        end
       end
 
       if @opts[:maintenance_window]
@@ -100,8 +110,13 @@ module TransactionChains
         datasets.each do |pair|
           src, dst = pair
 
-          migration_snapshots << use_chain(Dataset::Snapshot, args: src, urgent: true)
-          use_chain(Dataset::Transfer, args: [src, dst], urgent: true)
+          if opts[:rsync]
+            append(Transactions::Storage::RsyncDataset, args: [src, dst], urgent: true)
+
+          else
+            migration_snapshots << use_chain(Dataset::Snapshot, args: src, urgent: true)
+            use_chain(Dataset::Transfer, args: [src, dst], urgent: true)
+          end
         end
 
         # Check if we're still inside the outage window. We're in if the window
@@ -116,8 +131,13 @@ module TransactionChains
         src, dst = pair
 
         # The final transfer is done when the VPS is stopped
-        migration_snapshots << use_chain(Dataset::Snapshot, args: src, urgent: true)
-        use_chain(Dataset::Transfer, args: [src, dst], urgent: true)
+        if opts[:rsync]
+          append(Transactions::Storage::RsyncDataset, args: [src, dst], urgent: true)
+
+        else
+          migration_snapshots << use_chain(Dataset::Snapshot, args: src, urgent: true)
+          use_chain(Dataset::Transfer, args: [src, dst], urgent: true)
+        end
       end
 
       # Set quotas when all data is transfered
@@ -144,10 +164,19 @@ module TransactionChains
         ],
         kwargs: {
           canmount: 'noauto',
-          mount: true,
+          mount: opts[:rsync] ? false : true,
         },
         urgent: true,
       )
+
+      # Set uid/gid map when using rsync (otherwise it is set by CreateDataset)
+      if opts[:rsync]
+        append(
+          Transactions::Storage::SetMap,
+          args: [datasets.map { |src, dst| [dst, dst.user_namespace_map] }],
+          urgent: true,
+        )
+      end
 
       # Create empty new VPS
       append(
@@ -282,6 +311,13 @@ module TransactionChains
           src: {id: src_node.id, name: src_node.domain_name},
           dst: {id: dst_node.id, name: dst_node.domain_name},
         }))
+      end
+
+      if opts[:rsync]
+        # Snapshots have not been transfered, so detach backup heads
+        datasets.each do |src, dst|
+          use_chain(DatasetInPool::DetachBackupHeads, args: [src])
+        end
       end
 
       # Call DatasetInPool.migrated hook

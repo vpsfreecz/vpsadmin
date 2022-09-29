@@ -47,6 +47,7 @@ module TransactionChains
         reallocate_ips: true,
         swap: :enforce,
         maintenance_window: true,
+        rsync: false,
         send_mail: true,
         reason: nil,
         cleanup_data: true,

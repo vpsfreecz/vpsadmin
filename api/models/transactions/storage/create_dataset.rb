@@ -11,7 +11,7 @@ module Transactions::Storage
 
       options = fs_opts || {}
 
-      if dataset_in_pool.user_namespace_map
+      if cmd_opts.fetch(:set_map, true) && dataset_in_pool.user_namespace_map
         userns_map = dataset_in_pool.user_namespace_map
 
         options[:uidmap] = build_map(userns_map, :uid).join(',')
