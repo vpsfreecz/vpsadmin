@@ -162,6 +162,8 @@ module NodeCtld
 
     exports: {
       enable: true,
+      parallel_start: 2,
+      start_delay: 5,
     },
 
     mbuffer: {
