@@ -9,7 +9,7 @@ module NodeCtld
     end
 
     def init(db)
-      tp = ThreadPool.new(8)
+      tp = ThreadPool.new($CFG.get(:exports, :parallel_start))
       cache = list_existing_servers
 
       db.prepared('
@@ -80,6 +80,7 @@ module NodeCtld
       if export['enabled'] && !cache[srv.name]
         log(:info, "Starting NFS server #{export['id']}")
         srv.start!
+        sleep($CFG.get(:exports, :start_delay))
       end
     end
 
