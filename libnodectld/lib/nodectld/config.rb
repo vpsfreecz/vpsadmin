@@ -162,7 +162,7 @@ module NodeCtld
 
     exports: {
       enable: true,
-      parallel_start: 2,
+      parallel_start: 4,
       start_delay: 5,
     },
 
