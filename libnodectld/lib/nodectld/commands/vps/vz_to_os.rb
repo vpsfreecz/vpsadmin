@@ -168,6 +168,24 @@ END
         tty2 = File.join(init, 'tty2.conf')
         File.unlink(tty2) if File.exist?(tty2)
       end
+
+      # Disable /sbin/start_udev in /etc/rc.d/rc.sysinit on centos < 7
+      rc_sysinit = File.join(@rootfs, 'etc/rc.d/rc.sysinit')
+
+      if File.exist?(rc_sysinit)
+        regenerate_file(rc_sysinit, 0755) do |new, old|
+          next if old.nil?
+
+          old.each_line do |line|
+            if line.strip == '/sbin/start_udev'
+              new.puts('# Disabled by migration to vpsAdminOS')
+              new.puts('# /sbin/start_udev')
+            else
+              new.write(line)
+            end
+          end
+        end
+      end
     end
 
     def convert_debian
