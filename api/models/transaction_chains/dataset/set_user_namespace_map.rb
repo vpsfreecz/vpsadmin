@@ -15,7 +15,7 @@ module TransactionChains
       end
 
       # Change UID/GID map
-      append_t(Transactions::Storage::SetMap, args: [dip, userns_map]) do |t|
+      append_t(Transactions::Storage::SetMap, args: [[dip, userns_map]]) do |t|
         t.edit(dip, user_namespace_map_id: userns_map && userns_map.id)
       end
 
