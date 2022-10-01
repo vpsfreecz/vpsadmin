@@ -117,6 +117,27 @@ END
           end
         end
       end
+
+      # Make sure /sbin/start_udev is enabled in /etc/rc.d/rc.sysinit on centos < 7
+      rc_sysinit = File.join(@rootfs, 'etc/rc.d/rc.sysinit')
+
+      if File.exist?(rc_sysinit)
+        regenerate_file(rc_sysinit, 0755) do |new, old|
+          next if old.nil?
+
+          old.each_line do |line|
+            stripped = line.strip
+
+            if stripped == '# Disabled by migration to vpsAdminOS'
+              next
+            elsif stripped == '# /sbin/start_udev'
+              new.puts('/sbin/start_udev')
+            else
+              new.write(line)
+            end
+          end
+        end
+      end
     end
 
     def convert_devuan
