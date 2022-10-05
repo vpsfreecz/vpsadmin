@@ -84,7 +84,11 @@ module TransactionChains
         src, dst = pair
 
         if opts[:rsync]
-          append(Transactions::Storage::RsyncDataset, args: [src, dst])
+          append(
+            Transactions::Storage::RsyncDataset,
+            args: [src, dst],
+            kwargs: {allow_partial: true},
+          )
 
         else
           # Transfer private area. All subdatasets are transfered as well.
@@ -111,7 +115,12 @@ module TransactionChains
           src, dst = pair
 
           if opts[:rsync]
-            append(Transactions::Storage::RsyncDataset, args: [src, dst], urgent: true)
+            append(
+              Transactions::Storage::RsyncDataset,
+              args: [src, dst],
+              kwargs: {allow_partial: true},
+              urgent: true,
+            )
 
           else
             migration_snapshots << use_chain(Dataset::Snapshot, args: src, urgent: true)
@@ -132,7 +141,12 @@ module TransactionChains
 
         # The final transfer is done when the VPS is stopped
         if opts[:rsync]
-          append(Transactions::Storage::RsyncDataset, args: [src, dst], urgent: true)
+          append(
+            Transactions::Storage::RsyncDataset,
+            args: [src, dst],
+            kwargs: {allow_partial: false},
+            urgent: true,
+          )
 
         else
           migration_snapshots << use_chain(Dataset::Snapshot, args: src, urgent: true)
