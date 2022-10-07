@@ -940,3 +940,35 @@ function vpsDiskUsagePercent ($vps) {
 function showPlatformWarning ($vps) {
 	return $vps->node->hypervisor_type == 'openvz';
 }
+
+function sortMaintenanceWindowsByCloseness ($windows) {
+	$ret = [];
+
+	$curWeekday = intval(date('w'));
+	$curHour = intval(date('H'));
+	$curMinute = intval(date('i'));
+
+	$nowInMins = $curHour * 60 + $curMinute;
+	$reserveTime = 5;
+
+	foreach ($windows as $w) {
+		$daydiff = 0;
+
+		if ($curWeekday == $w->weekday) {
+			if ($nowInMins >= $w->opens_at && $nowInMins <= ($w->closes_at - $reserveTime))
+				$daydiff = 0;
+			else
+				$daydiff = 7;
+		} elseif ($curWeekday > $w->weekday) {
+			$daydiff = $w->weekday - $curWeekday + 7;
+		} else {
+			$daydiff = $w->weekday - $curWeekday;
+		}
+
+		$ret[$daydiff] = $w;
+	}
+
+	ksort($ret);
+
+	return $ret;
+}

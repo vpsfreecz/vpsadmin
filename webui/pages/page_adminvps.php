@@ -590,36 +590,46 @@ switch ($_GET["action"] ?? null) {
 			}
 			break;
 
-		case 'offlinemigrate':
-			$vps = $api->vps->find($_GET['veid']);
+		case 'migrate-step-1':
+			vps_migrate_form_step1($_GET['veid']);
+			break;
 
-			if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-				vps_migrate_form($vps);
+		case 'migrate-step-2':
+			vps_migrate_form_step2($_GET['veid'], $_GET['node']);
+			break;
+
+		case 'migrate-step-3':
+			vps_migrate_form_step3($_GET['veid'], $_GET['node'], $_GET);
+			break;
+
+		case 'migrate-submit':
+			if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !post_val_issetto('confirm', '1')) {
+				vps_migrate_form_step3($_POST['veid'], $_POST['node'], $_POST);
 				break;
 			}
 
 			csrf_check();
 
 			try {
-				$vps->migrate(array(
+				$api->vps->migrate($_POST['veid'], [
 					'node' => $_POST['node'],
-					'replace_ip_addresses' => isset($_POST['replace_ip_addresses']),
-					'transfer_ip_addresses' => isset($_POST['transfer_ip_addresses']),
-					'maintenance_window' => isset($_POST['maintenance_window']),
-					'rsync' => isset($_POST['rsync']),
-					'cleanup_data' => isset($_POST['cleanup_data']),
-					'no_start' => isset($_POST['no_start']),
-					'skip_start' => isset($_POST['skip_start']),
-					'send_mail' => isset($_POST['send_mail']),
+					'replace_ip_addresses' => $_POST['replace_ip_addresses'] == '1',
+					'transfer_ip_addresses' => $_POST['transfer_ip_addresses'] == '1',
+					'maintenance_window' => $_POST['maintenance_window'] == '1',
+					'rsync' => $_POST['rsync'] == '1',
+					'cleanup_data' => $_POST['cleanup_data'] == '1',
+					'no_start' => $_POST['no_start'] == '1',
+					'skip_start' => $_POST['skip_start'] == '1',
+					'send_mail' => $_POST['send_mail'] == '1',
 					'reason' => $_POST['reason'] ? $_POST['reason'] : null,
-				));
+				]);
 
-				notify_user(_("Offline migration planned"), '');
-				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+				notify_user(_("Migration planned"), '');
+				redirect('?page=adminvps&action=info&veid='.$_POST['veid']);
 
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				$xtpl->perex_format_errors(_('Offline migration failed'), $e->getResponse());
-				vps_migrate_form($vps);
+				$xtpl->perex_format_errors(_('Migration failed'), $e->getResponse());
+				vps_migrate_form_step3($_POST['veid'], $_POST['node'], $_POST);
 			}
 
 			break;
