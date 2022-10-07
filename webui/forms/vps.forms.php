@@ -747,7 +747,7 @@ function vps_list_form() {
 					$xtpl->table_td(maintenance_lock_icon('vps', $vps));
 
 				if (isAdmin())
-					$xtpl->table_td('<a href="?page=adminvps&action=offlinemigrate&veid='.$vps->id.'"><img src="template/icons/vps_migrate.png" title="'._('Migrate').'"></a>');
+					$xtpl->table_td('<a href="?page=adminvps&action=migrate-step-1&veid='.$vps->id.'"><img src="template/icons/vps_migrate.png" title="'._('Migrate').'"></a>');
 
 				$deleteAction = function () use ($xtpl, $vps) {
 					$xtpl->table_td('<a href="?page=adminvps&action=delete&veid='.$vps->id.'"><img src="template/icons/vps_delete.png" title="'._("Delete").'"/></a>');
@@ -829,7 +829,7 @@ function vps_details_submenu($vps) {
 	$xtpl->sbar_add(_('Backups'), '?page=backup&action=vps&list=1&vps='.$vps->id.'#ds-'.$vps->dataset_id);
 
 	if ($_SESSION['is_admin']) {
-		$xtpl->sbar_add(_('Migrate VPS'), '?page=adminvps&action=offlinemigrate&veid='.$vps->id);
+		$xtpl->sbar_add(_('Migrate VPS'), '?page=adminvps&action=migrate-step-1&veid='.$vps->id);
 		$xtpl->sbar_add(_('Change owner'), '?page=adminvps&action=chown&veid='.$vps->id);
 	}
 
@@ -926,15 +926,389 @@ function vps_owner_form_confirm($vps, $user) {
 	vps_details_suite($vps);
 }
 
-function vps_migrate_form($vps) {
-	global $xtpl;
+function vps_migrate_form_step1($vps_id) {
+	global $xtpl, $api;
 
-	$xtpl->table_title(_('Offline migration'));
-	$xtpl->form_create('?page=adminvps&action=offlinemigrate&veid='.$vps->id, 'post');
-	api_params_to_form($vps->migrate, 'input');
-	$xtpl->form_out(_("Go >>"));
+	$vps = $api->vps->show(
+		$vps_id,
+		['meta' => ['includes' => 'node__location,user']]
+	);
 
-	vps_details_suite($vps);
+	$xtpl->sbar_add(
+		_('Back to VPS details'),
+		'?page=adminvps&action=info&veid='.$vps_id
+	);
+
+	$xtpl->title(_("Migrate a VPS: Select node (1/3)"));
+
+	$xtpl->table_title(_('Source VPS'));
+	$xtpl->table_td(_('VPS:'));
+	$xtpl->table_td(vps_link($vps).' '.$vps->hostname);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('User:'));
+	$xtpl->table_td(user_link($vps->user));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Platform:'));
+	$xtpl->table_td(hypervisorTypeToLabel($vps->node->hypervisor_type));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Location:'));
+	$xtpl->table_td($vps->node->location->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Node:'));
+	$xtpl->table_td($vps->node->domain_name);
+	$xtpl->table_tr();
+	$xtpl->table_out();
+
+	$xtpl->table_title(_('Choose target node'));
+	$xtpl->form_create('', 'get', 'migrate-step1', false);
+	$xtpl->form_set_hidden_fields([
+		'page' => 'adminvps',
+		'action' => 'migrate-step-2',
+		'veid' => $vps_id,
+	]);
+
+	$xtpl->form_add_select(
+		_('Node').':',
+		'node',
+		resource_list_to_options(
+			$api->node->list(['type' => 'node']),
+			'id', 'domain_name',
+			false
+		),
+		$_GET['node']
+	);
+
+	$xtpl->form_out(_("Next"));
+}
+
+function vps_migrate_form_step2($vps_id, $node_id) {
+	global $xtpl, $api;
+
+	$vps = $api->vps->show(
+		$vps_id,
+		['meta' => ['includes' => 'node__location__environment,user']]
+	);
+
+	$node = $api->node->show(
+		$node_id,
+		['meta' => ['includes' => 'location__environment']]
+	);
+
+	$xtpl->sbar_add(
+		_('Back to node selection'),
+		'?page=adminvps&action=migrate-step-1&veid='.$vps_id.'&node='.$node_id
+	);
+
+	$xtpl->title(_("Migrate a VPS: Preferences (2/3)"));
+
+	$xtpl->table_title(_('Source VPS'));
+	$xtpl->table_td(_('VPS:'));
+	$xtpl->table_td(vps_link($vps).' '.$vps->hostname);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('User:'));
+	$xtpl->table_td(user_link($vps->user));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Platform:'));
+	$xtpl->table_td(hypervisorTypeToLabel($vps->node->hypervisor_type));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Location:'));
+	$xtpl->table_td($vps->node->location->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Node:'));
+	$xtpl->table_td($vps->node->domain_name);
+	$xtpl->table_tr();
+	$xtpl->table_out();
+
+	$xtpl->table_title(_('Migration'));
+	$xtpl->form_create('', 'get', 'migrate-step2', false);
+
+	$changed_platform = $vps->node->hypervisor_type != $node->hypervisor_type;
+	$changed_env = $vps->node->location->environment_id != $node->location->environment_id;
+	$changed_loc = $vps->node->location_id != $node->location_id;
+	$input = $api->vps->migrate->getParameters('input');
+
+	$xtpl->form_set_hidden_fields([
+		'page' => 'adminvps',
+		'action' => 'migrate-step-3',
+		'veid' => $vps_id,
+		'node' => $node_id,
+	]);
+
+	$xtpl->table_td(_('Target node').':');
+	$xtpl->table_td($node->domain_name);
+	$xtpl->table_tr();
+
+	if ($changed_platform) {
+		$xtpl->table_td(_('Platform').':');
+		$xtpl->table_td('-> '.hypervisorTypeToLabel($node->hypervisor_type));
+		$xtpl->table_tr();
+	};
+
+	if ($changed_env) {
+		$xtpl->table_td(_('Environment').':');
+		$xtpl->table_td('-> '.$node->location->environment->label);
+		$xtpl->table_tr();
+	};
+
+	if ($changed_loc) {
+		$xtpl->table_td(_('Location').':');
+		$xtpl->table_td('-> '.$node->location->label);
+		$xtpl->table_tr();
+	};
+
+	if ($changed_env) {
+		api_param_to_form(
+			'transfer_ip_addresses',
+			$input->transfer_ip_addresses,
+			get_val_issetto('transfer_ip_addresses', '1', false)
+		);
+	}
+
+	if ($changed_loc) {
+		api_param_to_form(
+			'replace_ip_addresses',
+			$input->replace_ip_addresses,
+			get_val_issetto('replace_ip_addresses', '1', false)
+		);
+	}
+
+	api_param_to_form(
+		'maintenance_window',
+		$input->maintenance_window,
+		get_val_issetto('maintenance_window', '1', !$changed_platform && !$changed_env && !$changed_loc)
+	);
+
+	if ($vps->node->hypervisor_type == 'openvz') {
+		api_param_to_form(
+			'rsync',
+			$input->rsync,
+			get_val_issetto('rsync', '1', true)
+		);
+	}
+
+	api_param_to_form(
+		'cleanup_data',
+		$input->cleanup_data,
+		get_val_issetto(
+			'cleanup_data',
+			'1',
+			!$changed_platform || $vps->node->hypervisor_type == 'vpsadminos'
+		)
+	);
+
+	api_param_to_form(
+		'no_start',
+		$input->no_start,
+		get_val_issetto('no_start', '1', false)
+	);
+
+	api_param_to_form(
+		'skip_start',
+		$input->skip_start,
+		get_val_issetto('skip_start', '1', false)
+	);
+
+	api_param_to_form(
+		'send_mail',
+		$input->send_mail,
+		get_val_issetto('send_mail', '1', true)
+	);
+
+	$xtpl->form_add_textarea(_('Reason').':', 40, 8, 'reason', get_val('reason'));
+
+	$xtpl->form_out(_("Next"));
+}
+
+function vps_migrate_form_step3($vps_id, $node_id, $opts) {
+	global $xtpl, $api;
+
+	$vps = $api->vps->show(
+		$vps_id,
+		['meta' => ['includes' => 'node__location__environment,user']]
+	);
+
+	$node = $api->node->show(
+		$node_id,
+		['meta' => ['includes' => 'location__environment']]
+	);
+
+	$xtpl->sbar_add(
+		_('Back to preferences'),
+		'?page=adminvps&action=migrate-step-2&veid='.$vps_id.'&node='.$node_id.
+		'&replace_ip_addresses='.$opts['replace_ip_addresses'].
+		'&transfer_ip_addresses='.$opts['transfer_ip_addresses'].
+		'&maintenance_window='.$opts['maintenance_window'].
+		'&rsync='.$opts['rsync'].
+		'&cleanup_data='.$opts['cleanup_data'].
+		'&no_start='.$opts['no_start'].
+		'&skip_start='.$opts['skip_start'].
+		'&send_mail='.$opts['send_mail'].
+		'&reason='.urlencode($opts['reason'])
+	);
+
+	$xtpl->title(_("Migrate a VPS: Overview (3/3)"));
+
+	$xtpl->table_title(_('Source VPS'));
+	$xtpl->table_td(_('VPS:'));
+	$xtpl->table_td(vps_link($vps).' '.$vps->hostname);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('User:'));
+	$xtpl->table_td(user_link($vps->user));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Platform:'));
+	$xtpl->table_td(hypervisorTypeToLabel($vps->node->hypervisor_type));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Location:'));
+	$xtpl->table_td($vps->node->location->label);
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Node:'));
+	$xtpl->table_td($vps->node->domain_name);
+	$xtpl->table_tr();
+	$xtpl->table_out();
+
+	$xtpl->table_title(_('Migration'));
+	$xtpl->form_create('?page=adminvps&action=migrate-submit', 'post', 'migrate-step3');
+
+	$changed_platform = $vps->node->hypervisor_type != $node->hypervisor_type;
+	$changed_env = $vps->node->location->environment_id != $node->location->environment_id;
+	$changed_loc = $vps->node->location_id != $node->location_id;
+	$input = $api->vps->migrate->getParameters('input');
+
+	$xtpl->form_set_hidden_fields([
+		'veid' => $vps_id,
+		'node' => $node_id,
+		'replace_ip_addresses' => $opts['replace_ip_addresses'],
+		'transfer_ip_addresses' => $opts['transfer_ip_addresses'],
+		'maintenance_window' => $opts['maintenance_window'],
+		'rsync' => $opts['rsync'],
+		'cleanup_data' => $opts['cleanup_data'],
+		'no_start' => $opts['no_start'],
+		'skip_start' => $opts['skip_start'],
+		'send_mail' => $opts['send_mail'],
+		'reason' => $opts['reason'],
+	]);
+
+	$xtpl->table_td(_('Target node').':');
+	$xtpl->table_td($node->domain_name);
+	$xtpl->table_tr();
+
+	if ($changed_platform) {
+		$xtpl->table_td(_('Platform').':');
+		$xtpl->table_td('-> '.hypervisorTypeToLabel($node->hypervisor_type));
+		$xtpl->table_tr();
+	};
+
+	if ($changed_env) {
+		$xtpl->table_td(_('Environment').':');
+		$xtpl->table_td('-> '.$node->location->environment->label);
+		$xtpl->table_tr();
+
+		$xtpl->table_td(_('Transfer IP addresses').':');
+		$xtpl->table_td(boolean_icon($opts['transfer_ip_addresses'] == '1'));
+		$xtpl->table_tr();
+	};
+
+	if ($changed_loc) {
+		$xtpl->table_td(_('Location').':');
+		$xtpl->table_td('-> '.$node->location->label);
+		$xtpl->table_tr();
+
+		$xtpl->table_td(_('Replace IP addresses').':');
+		$xtpl->table_td(boolean_icon($opts['replace_ip_addresses'] == '1'));
+		$xtpl->table_tr();
+	};
+
+	$xtpl->table_td(_('When').':');
+
+	if ($opts['maintenance_window'] == '1') {
+		$windows_td = '<table>';
+		$windows = sortMaintenanceWindowsByCloseness($vps->maintenance_window->list());
+		$days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+		$hours = [];
+
+		for ($i = 0; $i < 25; $i++)
+			$hours[] = sprintf("%02d:00", $i);
+
+		$hours[ count($hours) - 1 ] = '23:59';
+
+		foreach ($windows as $w) {
+			if (!$w->is_open)
+				continue;
+
+			$windows_td .= '<tr>';
+			$windows_td .= '<td>'.$days[ $w->weekday ].'</td>'.
+				'<td>'.($hours[$w->opens_at / 60]).'</td>'.
+				'<td>'.($hours[$w->closes_at / 60]).'</td>';
+			$windows_td .= '</tr>';
+		}
+
+		$windows_td .= '</table>';
+
+		$xtpl->table_td($windows_td);
+	} else {
+		$xtpl->table_td(_('now'));
+	}
+	$xtpl->table_tr();
+
+	if ($vps->node->hypervisor_type == 'openvz') {
+		$xtpl->table_td(_('Rsync').':');
+		$xtpl->table_td(boolean_icon($opts['rsync'] == '1'));
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_td(_('Cleanup data').':');
+	$xtpl->table_td(boolean_icon($opts['cleanup_data'] == '1'));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('No start').':');
+	$xtpl->table_td(boolean_icon($opts['no_start'] == '1'));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Skip start').':');
+	$xtpl->table_td(boolean_icon($opts['skip_start'] == '1'));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Send e-mails').':');
+	$xtpl->table_td(boolean_icon($opts['send_mail'] == '1'));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Reason').':');
+	$xtpl->table_td(h($opts['reason']));
+	$xtpl->table_tr();
+
+	if ($changed_platform) {
+		$xtpl->table_td('<strong>'._('Warning').':</strong>');
+		$xtpl->table_td('<img src="template/icons/warning.png"> '._('Changing platform'));
+		$xtpl->table_tr();
+	}
+
+	if ($changed_env) {
+		$xtpl->table_td('<strong>'._('Warning').':</strong>');
+		$xtpl->table_td('<img src="template/icons/warning.png"> '._('Changing environment'));
+		$xtpl->table_tr();
+	}
+
+	if ($changed_loc) {
+		$xtpl->table_td('<strong>'._('Warning').':</strong>');
+		$xtpl->table_td('<img src="template/icons/warning.png"> '._('Changing location'));
+		$xtpl->table_tr();
+	}
+
+	$xtpl->form_add_checkbox(_('Confirm').':', 'confirm', '1');
+
+	$xtpl->form_out(_("Migrate"));
 }
 
 function vps_clone_form_step0($vps_id) {
