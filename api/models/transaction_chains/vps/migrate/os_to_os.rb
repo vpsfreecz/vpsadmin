@@ -97,6 +97,14 @@ module TransactionChains
         urgent: true,
       )
 
+      # Wait for routing to remove routes from the target system during rollback
+      append(
+        Transactions::Vps::WaitForRoutes,
+        args: [src_vps],
+        kwargs: {direction: :rollback},
+        urgent: true,
+      )
+
       # Send it to the target node
       append(
         Transactions::Vps::SendState,
