@@ -663,5 +663,9 @@ module TransactionChains
         to_create.each { |f| t.just_create(f) }
       end
     end
+
+    def start_timeout
+      900
+    end
   end
 end
