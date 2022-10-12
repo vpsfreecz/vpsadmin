@@ -100,6 +100,14 @@ module TransactionChains
       # Stop the VPS
       use_chain(Vps::Stop, args: src_vps, urgent: true)
 
+      # Wait for routing to remove routes from the target system during rollback
+      append(
+        Transactions::Vps::WaitForRoutes,
+        args: [src_vps],
+        kwargs: {direction: :rollback},
+        urgent: true,
+      )
+
       datasets.each do |pair|
         src, dst = pair
 
