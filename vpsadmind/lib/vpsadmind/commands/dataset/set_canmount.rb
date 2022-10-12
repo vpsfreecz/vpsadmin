@@ -10,7 +10,14 @@ module VpsAdmind
         zfs(:set, "canmount=#{@canmount}", "#{@pool_fs}/#{name}")
 
         if @mount
-          zfs(:mount, nil, "#{@pool_fs}/#{name}")
+          begin
+            zfs(:mount, nil, "#{@pool_fs}/#{name}")
+          rescue CommandFailed => err
+            # Sometimes during migration, the dataset is already mounted...
+            # this should not be possible, because up until now, canmount=off.
+            raise err unless err.include?('filesystem already mounted')
+          end
+
           begin
             zfs(:share, nil, "#{@pool_fs}/#{name}")
           rescue CommandFailed => err
