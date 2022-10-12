@@ -20,7 +20,7 @@ module NodeCtld
       after = status
 
       if before == :running && after != :running
-        osctl(%i(ct start), @vps_id)
+        osctl(%i(ct start), @vps_id, {wait: 180})
 
       elsif before != :running && after == :running
         osctl(%i(ct stop), @vps_id)

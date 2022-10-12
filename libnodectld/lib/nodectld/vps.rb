@@ -6,6 +6,8 @@ require 'nodectld/utils'
 
 module NodeCtld
   class Vps
+    START_TIMEOUT = 180
+
     include OsCtl::Lib::Utils::Log
     include Utils::System
     include Utils::OsCtl
@@ -16,8 +18,8 @@ module NodeCtld
       @cmd = cmd
     end
 
-    def start(autostart_priority)
-      osctl(%i(ct start), @veid)
+    def start(start_timeout, autostart_priority)
+      osctl(%i(ct start), @veid, {wait: start_timeout || START_TIMEOUT})
       osctl(%i(ct set autostart), @veid, {priority: autostart_priority})
     end
 
@@ -26,8 +28,8 @@ module NodeCtld
       osctl(%i(ct unset autostart), @veid)
     end
 
-    def restart(autostart_priority)
-      osctl(%i(ct restart), @veid)
+    def restart(start_timeout, autostart_priority)
+      osctl(%i(ct restart), @veid, {wait: start_timeout || START_TIMEOUT})
       osctl(%i(ct set autostart), @veid, {priority: autostart_priority})
     end
 
