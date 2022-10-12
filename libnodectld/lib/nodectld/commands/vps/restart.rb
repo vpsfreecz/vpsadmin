@@ -6,7 +6,7 @@ module NodeCtld
       NodeCtld::DelayedMounter.unregister_vps(@vps_id)
 
       @vps = Vps.new(@vps_id)
-      @vps.restart(@autostart_priority)
+      @vps.restart(@start_timeout, @autostart_priority)
       ok
     end
 
