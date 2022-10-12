@@ -90,7 +90,12 @@ module TransactionChains
       end
 
       # Stop the VPS
-      use_chain(Vps::Stop, args: src_vps, urgent: true)
+      use_chain(
+        Vps::Stop,
+        args: src_vps,
+        kwargs: {start_timeout: start_timeout},
+        urgent: true,
+      )
 
       # Send it to the target node
       append(
@@ -120,6 +125,7 @@ module TransactionChains
         use_chain(
           Vps::Start,
           args: dst_vps,
+          kwargs: {start_timeout: start_timeout},
           urgent: true,
           reversible: @opts[:skip_start] ? :keep_going : nil,
         )
