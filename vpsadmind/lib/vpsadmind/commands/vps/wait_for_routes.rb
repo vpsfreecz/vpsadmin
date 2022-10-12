@@ -15,7 +15,7 @@ module VpsAdmind
 
     protected
     def wait_for_routes
-      timeout = @timeout || 180
+      timeout = @timeout || 240
       ips = syscmd("vzlist -H -o ip #{@vps_id}")[:output].strip.split
 
       ip_vs = {

@@ -5,7 +5,7 @@ module NodeCtld
   class RouteCheck
     include OsCtl::Lib::Utils::Log
 
-    TIMEOUT = 180
+    TIMEOUT = 240
 
     class << self
       %i(wait check check!).each do |m|
