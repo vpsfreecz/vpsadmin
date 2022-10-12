@@ -4,6 +4,17 @@ module VpsAdmind
     needs :log, :system, :vz
 
     def exec
+      wait_for_routes if @direction == 'execute'
+      ok
+    end
+
+    def rollback
+      wait_for_routes if @direction == 'rollback'
+      ok
+    end
+
+    protected
+    def wait_for_routes
       timeout = @timeout || 180
       ips = syscmd("vzlist -H -o ip #{@vps_id}")[:output].strip.split
 
@@ -37,10 +48,6 @@ module VpsAdmind
         sleep(5)
       end
 
-      ok
-    end
-
-    def rollback
       ok
     end
   end

@@ -6,13 +6,15 @@ module Transactions::Vps
 
     # @param vps [::Vps]
     # @param timeout [Integer, nil]
-    def params(vps, timeout: nil)
+    # @param direction [:execute, :rollback]
+    def params(vps, timeout: nil, direction: :execute)
       self.vps_id = vps.id
       self.node_id = vps.node_id
 
       {
         pool_fs: vps.dataset_in_pool.pool.filesystem,
         timeout: timeout,
+        direction: direction.to_s,
       }
     end
   end
