@@ -235,6 +235,8 @@ class Vps < ActiveRecord::Base
     chain_opts[:transfer_ips] = opts[:transfer_ip_addresses]
     chain_opts[:swap] = opts[:swap] && opts[:swap].to_sym
     chain_opts[:maintenance_window] = opts[:maintenance_window]
+    chain_opts[:finish_weekday] = opts[:finish_weekday]
+    chain_opts[:finish_minutes] = opts[:finish_minutes]
     chain_opts[:rsync] = opts[:rsync]
     chain_opts[:send_mail] = opts[:send_mail]
     chain_opts[:reason] = opts[:reason]

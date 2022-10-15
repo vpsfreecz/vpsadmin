@@ -6,14 +6,16 @@ module Transactions::MaintenanceWindow
 
     # @param vps [::Vps]
     # @param reserve_time [Integer] number of minutes that must be left in the window
-    def params(vps, reserve_time)
+    # @param maintenance_windows [Array<::VpsMaintenanceWindow>, nil]
+    def params(vps, reserve_time, maintenance_windows: nil)
       self.vps_id = vps.id
       self.node_id = vps.node_id
 
-      windows = []
+      maintenance_windows ||= vps.vps_maintenance_windows.where(is_open: true).order('weekday')
+      window_hashes = []
 
-      vps.vps_maintenance_windows.where(is_open: true).order('weekday').each do |w|
-        windows << {
+      maintenance_windows.each do |w|
+        window_hashes << {
           weekday: w.weekday,
           opens_at: w.opens_at,
           closes_at: w.closes_at,
@@ -21,7 +23,7 @@ module Transactions::MaintenanceWindow
       end
 
       {
-        windows: windows,
+        windows: window_hashes,
         reserve_time: reserve_time,
       }
     end

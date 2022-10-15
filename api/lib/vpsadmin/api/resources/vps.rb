@@ -759,6 +759,12 @@ END
       bool :maintenance_window, label: 'Maintenance window',
           desc: 'Migrate the VPS within the nearest maintenance window',
           default: true
+      integer :finish_weekday, label: 'Finish weekday',
+        desc: 'Prepare the migration and finish it on this day',
+        number: {min: 0, max: 6}
+      integer :finish_minutes, label: 'Finish minutes',
+        desc: 'Number of minutes from midnight of start_weekday after which the migration is done',
+        number: {min: 0, max: 24 * 60 - 30}
       bool :rsync, desc: 'Use rsync instead of zfs send/recv, OpenVZ->vpsAdminOS only',
           default: false
       bool :cleanup_data, label: 'Cleanup data',
@@ -788,6 +794,20 @@ END
 
       elsif input[:node].role != 'node'
         error('target node is not a hypervisor')
+      end
+
+      if (input[:finish_weekday] || input[:finish_minutes]) \
+         && (!input[:finish_weekday] || !input[:finish_minutes])
+        error('invalid finish configuration', {
+          finish_weeday: ['must be set together with finish_minutes'],
+          finish_minutes: ['must be set together with finish_weekday'],
+        })
+      end
+
+      if input[:maintenance_window] && (input[:finish_weekday] || input[:finish_minutes])
+        error('invalid finish configuration', {
+          maintenance_window: ['conflicts with finish_weekday and finish_minutes'],
+        })
       end
 
       @chain, _ = vps.migrate(input[:node], input)
