@@ -760,7 +760,7 @@ END
           desc: 'Migrate the VPS within the nearest maintenance window',
           default: true
       bool :rsync, desc: 'Use rsync instead of zfs send/recv, OpenVZ->vpsAdminOS only',
-          default: true
+          default: false
       bool :cleanup_data, label: 'Cleanup data',
           desc: 'Remove VPS dataset from the source node',
           default: true
