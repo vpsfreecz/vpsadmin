@@ -1086,6 +1086,36 @@ function vps_migrate_form_step2($vps_id, $node_id) {
 		get_val_issetto('maintenance_window', '1', !$changed_platform && !$changed_env && !$changed_loc)
 	);
 
+
+	$days = [
+		_('Now or maintenance window'),
+		'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'
+	];
+	$hours = [
+		_('Now or maintenance window'),
+	];
+
+	for ($i = 0; $i < 25; $i++)
+		$hours[$i+1] = sprintf("%02d:00", $i);
+
+	$hours[ count($hours) - 1 ] = '23:59';
+
+	$xtpl->form_add_select(
+		_('Finish on day').':',
+		'finish_weekday',
+		$days,
+		get_val('finish_weekday', '0'),
+		$input->finish_weekday->description
+	);
+
+	$xtpl->form_add_select(
+		_('Finish from').':',
+		'finish_minutes',
+		$hours,
+		get_val('finish_minutes', '0'),
+		_('Finish the migration from this hour on')
+	);
+
 	if ($vps->node->hypervisor_type == 'openvz') {
 		api_param_to_form(
 			'rsync',
@@ -1146,6 +1176,8 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts) {
 		'&replace_ip_addresses='.$opts['replace_ip_addresses'].
 		'&transfer_ip_addresses='.$opts['transfer_ip_addresses'].
 		'&maintenance_window='.$opts['maintenance_window'].
+		'&finish_weekday='.$opts['finish_weekday'].
+		'&finish_minutes='.$opts['finish_minutes'].
 		'&rsync='.$opts['rsync'].
 		'&cleanup_data='.$opts['cleanup_data'].
 		'&no_start='.$opts['no_start'].
@@ -1192,6 +1224,8 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts) {
 		'replace_ip_addresses' => $opts['replace_ip_addresses'],
 		'transfer_ip_addresses' => $opts['transfer_ip_addresses'],
 		'maintenance_window' => $opts['maintenance_window'],
+		'finish_weekday' => $opts['finish_weekday'],
+		'finish_minutes' => $opts['finish_minutes'],
 		'rsync' => $opts['rsync'],
 		'cleanup_data' => $opts['cleanup_data'],
 		'no_start' => $opts['no_start'],
@@ -1232,16 +1266,17 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts) {
 
 	$xtpl->table_td(_('When').':');
 
+	$days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+	$hours = [];
+
+	for ($i = 0; $i < 25; $i++)
+		$hours[] = sprintf("%02d:00", $i);
+
+	$hours[ count($hours) - 1 ] = '23:59';
+
 	if ($opts['maintenance_window'] == '1') {
 		$windows_td = '<table>';
 		$windows = sortMaintenanceWindowsByCloseness($vps->maintenance_window->list());
-		$days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-		$hours = [];
-
-		for ($i = 0; $i < 25; $i++)
-			$hours[] = sprintf("%02d:00", $i);
-
-		$hours[ count($hours) - 1 ] = '23:59';
 
 		foreach ($windows as $w) {
 			if (!$w->is_open)
@@ -1257,6 +1292,8 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts) {
 		$windows_td .= '</table>';
 
 		$xtpl->table_td($windows_td);
+	} elseif ($opts['finish_weekday'] && $opts['finish_minutes']) {
+		$xtpl->table_td($days[ $opts['finish_weekday'] - 1 ]. ' - '.$hours[ $opts['finish_minutes'] - 1 ]);
 	} else {
 		$xtpl->table_td(_('now'));
 	}

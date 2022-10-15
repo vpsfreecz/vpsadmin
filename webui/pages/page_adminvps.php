@@ -610,19 +610,26 @@ switch ($_GET["action"] ?? null) {
 
 			csrf_check();
 
+			$params = [
+				'node' => $_POST['node'],
+				'replace_ip_addresses' => $_POST['replace_ip_addresses'] == '1',
+				'transfer_ip_addresses' => $_POST['transfer_ip_addresses'] == '1',
+				'maintenance_window' => $_POST['maintenance_window'] == '1',
+				'rsync' => $_POST['rsync'] == '1',
+				'cleanup_data' => $_POST['cleanup_data'] == '1',
+				'no_start' => $_POST['no_start'] == '1',
+				'skip_start' => $_POST['skip_start'] == '1',
+				'send_mail' => $_POST['send_mail'] == '1',
+				'reason' => $_POST['reason'] ? $_POST['reason'] : null,
+			];
+
+			if ($_POST['finish_weekday']) {
+				$params['finish_weekday'] = $_POST['finish_weekday'] - 1;
+				$params['finish_minutes'] = ($_POST['finish_minutes'] - 1) * 60;
+			}
+
 			try {
-				$api->vps->migrate($_POST['veid'], [
-					'node' => $_POST['node'],
-					'replace_ip_addresses' => $_POST['replace_ip_addresses'] == '1',
-					'transfer_ip_addresses' => $_POST['transfer_ip_addresses'] == '1',
-					'maintenance_window' => $_POST['maintenance_window'] == '1',
-					'rsync' => $_POST['rsync'] == '1',
-					'cleanup_data' => $_POST['cleanup_data'] == '1',
-					'no_start' => $_POST['no_start'] == '1',
-					'skip_start' => $_POST['skip_start'] == '1',
-					'send_mail' => $_POST['send_mail'] == '1',
-					'reason' => $_POST['reason'] ? $_POST['reason'] : null,
-				]);
+				$api->vps->migrate($_POST['veid'], $params);
 
 				notify_user(_("Migration planned"), '');
 				redirect('?page=adminvps&action=info&veid='.$_POST['veid']);
