@@ -1090,7 +1090,7 @@ function vps_migrate_form_step2($vps_id, $node_id) {
 		api_param_to_form(
 			'rsync',
 			$input->rsync,
-			get_val_issetto('rsync', '1', true)
+			get_val_issetto('rsync', '1', false)
 		);
 	}
 
