@@ -319,7 +319,7 @@ module NodeCtld
     end
 
     def load_yaml(v)
-      YAML.safe_load(v, permitted_classes: [Symbol])
+      YAML.safe_load(v, permitted_classes: [Symbol], symbolize_names: true)
     end
 
     def sync
