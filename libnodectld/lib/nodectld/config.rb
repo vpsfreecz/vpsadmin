@@ -63,12 +63,12 @@ module NodeCtld
             start_delay: 0
         },
         outage: {
-            threads: 24,
+            threads: 128,
             urgent: 0,
             start_delay: 0,
         },
         queue: {
-            threads: 128,
+            threads: 256,
             urgent: 16,
             start_delay: 0,
         },
