@@ -21,6 +21,8 @@ module NodeCtld
     end
 
     def update(db = nil)
+      return if @pools.empty?
+
       my = db || Db.new
       check_status(my)
       my.close unless db
