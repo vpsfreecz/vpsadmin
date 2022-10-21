@@ -77,6 +77,7 @@ module VpsAdmind
           :transfers_interval => 10,
           :update_vps_status => true,
           :track_transfers => true,
+          :ipset_update_interval => 60,
           :root => "/opt/vpsadmin/vpsadmind",
           :init => true,
           :type => nil, # loaded from db

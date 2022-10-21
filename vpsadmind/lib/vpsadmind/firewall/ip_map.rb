@@ -17,6 +17,7 @@ module VpsAdmind::Firewall
     def initialize
       @mutex = ::Mutex.new
       @map = {}
+      @update_queue = Queue.new
     end
 
     def populate(db)
@@ -38,27 +39,18 @@ module VpsAdmind::Firewall
           )
         end
 
-        [4, 6].each do |v|
-          IpSet.create_or_replace!(
-              "vpsadmin_v#{v}_local_addrs",
-              "hash:ip family #{v == 4 ? 'inet' : 'inet6'}",
-              @map.select { |_, n| n.version == v }.keys
-          )
-        end
+        update_ipset
       end
+    end
+
+    def start
+      @thread = Thread.new { run_ipset_in_background }
     end
 
     def set(addr, id, version, user_id)
       sync do
         @map[addr] = IpAddr.new(id, version, user_id)
-
-        [4, 6].each do |v|
-          IpSet.create_or_replace!(
-              "vpsadmin_v#{v}_local_addrs",
-              "hash:ip family #{v == 4 ? 'inet' : 'inet6'}",
-              @map.select { |_, n| n.version == v }.keys
-          )
-        end
+        request_ipset_update
       end
     end
 
@@ -73,14 +65,7 @@ module VpsAdmind::Firewall
     def unset(addr)
       sync do
         @map.delete(addr)
-
-        [4, 6].each do |v|
-          IpSet.create_or_replace!(
-              "vpsadmin_v#{v}_local_addrs",
-              "hash:ip family #{v == 4 ? 'inet' : 'inet6'}",
-              @map.select { |_, n| n.version == v }.keys
-          )
-        end
+        request_ipset_update
       end
     end
 
@@ -102,5 +87,32 @@ module VpsAdmind::Firewall
     end
 
     alias_method :sync, :synchronize
+
+    protected
+    def request_ipset_update
+      @update_queue << :update
+    end
+
+    def run_ipset_in_background
+      loop do
+        @update_queue.pop
+        update_ipset
+        sleep($CFG.get(:vpsadmin, :ipset_update_interval))
+      end
+    end
+
+    def update_ipset
+      sync do
+        @update_queue.clear
+
+        [4, 6].each do |v|
+          IpSet.create_or_replace!(
+            "vpsadmin_v#{v}_local_addrs",
+            "hash:ip family #{v == 4 ? 'inet' : 'inet6'}",
+            @map.select { |_, n| n.version == v }.keys
+          )
+        end
+      end
+    end
   end
 end
