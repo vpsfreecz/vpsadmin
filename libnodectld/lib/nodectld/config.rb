@@ -133,6 +133,7 @@ module NodeCtld
 
     traffic_accounting: {
       enable: true,
+      ipset_update_interval: 60,
     },
 
     storage: {
