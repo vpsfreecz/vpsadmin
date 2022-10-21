@@ -15,7 +15,7 @@ module VpsAdmind
           rescue CommandFailed => err
             # Sometimes during migration, the dataset is already mounted...
             # this should not be possible, because up until now, canmount=off.
-            raise err unless err.include?('filesystem already mounted')
+            raise err unless err.output.include?('filesystem already mounted')
           end
 
           begin
