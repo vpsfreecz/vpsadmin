@@ -44,6 +44,7 @@ module NodeCtld::Firewall
     def init(db)
       networks.populate(db)
       ip_map.populate(db)
+      ip_map.start
 
       networks.deploy!
 
