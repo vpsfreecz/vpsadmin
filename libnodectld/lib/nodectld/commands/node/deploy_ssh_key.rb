@@ -16,7 +16,7 @@ module NodeCtld
       ok
     end
 
-    def post_save(db)
+    def on_save(db)
       db.prepared(
         'UPDATE transactions SET input = ? WHERE id = ?',
         {key_type: @key_type}.to_json, @command.id

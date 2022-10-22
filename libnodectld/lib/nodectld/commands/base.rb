@@ -36,7 +36,7 @@ module NodeCtld::Commands
 
     end
 
-    def post_save(db)
+    def on_save(db)
 
     end
 
