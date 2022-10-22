@@ -30,5 +30,9 @@ in stdenv.mkDerivation rec {
 
     export RUBYOPT=-rbundler/setup
     export PATH="$(ruby -e 'puts Gem.bindir'):$PATH"
+
+    run-nodectld() {
+      bundle exec bin/nodectld --no-wrapper
+    }
   '';
 }
