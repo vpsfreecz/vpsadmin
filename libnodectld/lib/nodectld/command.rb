@@ -386,7 +386,7 @@ module NodeCtld
         @status = :failed
         @output[:cmd] = err.cmd
         @output[:exitstatus] = err.rc
-        @output[:error] = err.output
+        @output[:error] = err.output.byteslice(0, 2**15)
 
         # FIXME: if rollback fails, original error is overwritten!
         if m == :exec
