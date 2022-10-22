@@ -125,6 +125,8 @@ module NodeCtld
           end
         end
       end
+
+      post_save_transaction
     end
 
     def save_transaction(db)
@@ -154,6 +156,12 @@ module NodeCtld
         @time_end && @time_end.strftime('%Y-%m-%d %H:%M:%S'),
         @trans['id']
       )
+    end
+
+    def post_save_transaction
+      if @cmd && current_chain_direction == :execute && @status != :failed
+        @cmd.post_save
+      end
     end
 
     def run_confirmations(t)
