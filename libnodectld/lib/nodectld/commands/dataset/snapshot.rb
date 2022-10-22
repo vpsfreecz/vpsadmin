@@ -13,7 +13,7 @@ module NodeCtld
       zfs(:destroy, nil, "#{@pool_fs}/#{@dataset_name}@#{s}", valid_rcs: [1])
     end
 
-    def post_save(db)
+    def on_save(db)
       db.prepared(
         'UPDATE snapshots SET name = ?, created_at = ? WHERE id = ?',
         @name,

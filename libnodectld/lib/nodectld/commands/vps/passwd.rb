@@ -11,7 +11,7 @@ module NodeCtld
       ok
     end
 
-    def post_save(db)
+    def on_save(db)
       db.prepared("UPDATE transactions SET input = '{}' WHERE id = ?", @command.id)
     end
   end

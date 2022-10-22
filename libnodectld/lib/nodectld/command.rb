@@ -131,7 +131,7 @@ module NodeCtld
       log(:debug, self, 'Saving transaction')
 
       if @cmd && current_chain_direction == :execute && @status != :failed
-        @cmd.post_save(db)
+        @cmd.on_save(db)
       end
 
       if current_chain_direction == :execute

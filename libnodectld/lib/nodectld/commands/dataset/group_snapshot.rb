@@ -26,7 +26,7 @@ module NodeCtld
       ok
     end
 
-    def post_save(db)
+    def on_save(db)
       @snapshots.each do |snap|
         db.prepared(
           'UPDATE snapshots SET name = ?, created_at = ? WHERE id = ?',

@@ -18,7 +18,7 @@ module NodeCtld
       ok
     end
 
-    def post_save(db)
+    def on_save(db)
       db.prepared(
         'UPDATE snapshot_downloads SET size = ?, sha256sum = ? WHERE id = ?',
         @size / 1024 / 1024, @sum, @download_id
