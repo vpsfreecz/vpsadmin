@@ -47,7 +47,7 @@ module NodeCtld
 
     def rollback
       @snapshots.each do |s|
-        zfs(:destroy, nil, "#{s['pool_fs']}/#{s['dataset_name']}@#{@name}", [1])
+        zfs(:destroy, nil, "#{s['pool_fs']}/#{s['dataset_name']}@#{@name}", valid_rcs: [1])
       end
 
       ok
