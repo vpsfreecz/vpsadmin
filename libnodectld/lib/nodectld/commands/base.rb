@@ -40,6 +40,10 @@ module NodeCtld::Commands
 
     end
 
+    def post_save
+
+    end
+
     def step
       attrs do
         @step
