@@ -1122,6 +1122,11 @@ function vps_migrate_form_step2($vps_id, $node_id) {
 			$input->rsync,
 			get_val_issetto('rsync', '1', false)
 		);
+		api_param_to_form(
+			'mounts_to_exports',
+			$input->mounts_to_exports,
+			get_val_issetto('mounts_to_exports', '1', true)
+		);
 	}
 
 	api_param_to_form(
@@ -1179,6 +1184,7 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts) {
 		'&finish_weekday='.$opts['finish_weekday'].
 		'&finish_minutes='.$opts['finish_minutes'].
 		'&rsync='.$opts['rsync'].
+		'&mounts_to_exports='.$opts['mounts_to_exports'].
 		'&cleanup_data='.$opts['cleanup_data'].
 		'&no_start='.$opts['no_start'].
 		'&skip_start='.$opts['skip_start'].
@@ -1227,6 +1233,7 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts) {
 		'finish_weekday' => $opts['finish_weekday'],
 		'finish_minutes' => $opts['finish_minutes'],
 		'rsync' => $opts['rsync'],
+		'mounts_to_exports' => $opts['mounts_to_exports'],
 		'cleanup_data' => $opts['cleanup_data'],
 		'no_start' => $opts['no_start'],
 		'skip_start' => $opts['skip_start'],
@@ -1302,6 +1309,10 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts) {
 	if ($vps->node->hypervisor_type == 'openvz') {
 		$xtpl->table_td(_('Rsync').':');
 		$xtpl->table_td(boolean_icon($opts['rsync'] == '1'));
+		$xtpl->table_tr();
+
+		$xtpl->table_td(_('Mounts to exports').':');
+		$xtpl->table_td(boolean_icon($opts['mounts_to_exports'] == '1'));
 		$xtpl->table_tr();
 	}
 
