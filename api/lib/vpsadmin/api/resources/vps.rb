@@ -767,6 +767,9 @@ END
         number: {min: 0, max: 24 * 60 - 30}
       bool :rsync, desc: 'Use rsync instead of zfs send/recv, OpenVZ->vpsAdminOS only',
           default: false
+      bool :mounts_to_exports, label: 'Mounts to exports',
+          desc: 'Convert NAS mounts to exports, OpenVZ->vpsAdminOS only',
+          default: true
       bool :cleanup_data, label: 'Cleanup data',
           desc: 'Remove VPS dataset from the source node',
           default: true

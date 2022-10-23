@@ -74,6 +74,18 @@ module TransactionChains
       mounts = Vps::Migrate::MountMigrator.new(self, vps, dst_vps)
       mounts.umount_others
 
+      # Delete mounts of remote datasets -- those are not supported on vpsAdminOS
+      mounts.delete_mine_if do |m|
+        m.dataset_in_pool.pool.node_id != src_node.id
+      end
+
+      # Mounts of remote primary datasets are deleted, convert them to exports
+      if opts[:mounts_to_exports]
+        mounts_to_exports = mounts.convert_my_primary_mounts_to_exports
+      else
+        mounts_to_exports = []
+      end
+
       # Transfer datasets
       migration_snapshots = []
 
@@ -278,18 +290,13 @@ module TransactionChains
       # Regenerate mount scripts of the migrated VPS
       mounts.datasets = datasets
 
-      mounts.delete_mine_if do |m|
-        # Delete mounts of remote datasets -- those are not supported on vpsAdminOS
-        m.dataset_in_pool.pool.node_id != src_node.id
-      end
-
       mounts.remount_mine
 
       # Wait for routing to remove routes from the original system
       append(Transactions::Vps::WaitForRoutes, args: [dst_vps], urgent: true)
 
       # Convert internal configuration files to vpsAdminOS based on distribution
-      append(Transactions::Vps::VzToOs, args: [dst_vps], urgent: true)
+      append(Transactions::Vps::VzToOs, args: [dst_vps, mounts_to_exports], urgent: true)
 
       # Pre-start hook (feature configuration may start the VPS)
       call_hooks_for(:pre_start, self, args: [dst_vps, was_running?])
