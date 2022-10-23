@@ -286,12 +286,21 @@ END
 
     def runscript_debian
       <<END
+mount -t tmpfs tmpfs /tmp
+
+fakefiles="initctl invoke-rc.d restart start stop start-stop-daemon service"
+for f in $fakefiles; do
+	ln -s /bin/true /tmp/$f
+done
+
+export DEBIAN_FRONTEND=noninteractive;
+
 installpkg() {
   local pkg=$1
 
-  apt-get install -y $pkg && return 0
-  apt-get update
-  apt-get install -y $pkg
+  PATH="/tmp/:$PATH" apt-get install -y $pkg && return 0
+  PATH="/tmp/:$PATH" apt-get update
+  PATH="/tmp/:$PATH" apt-get install -y $pkg
 }
 
 type ip || installpkg iproute
