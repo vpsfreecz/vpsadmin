@@ -45,7 +45,7 @@ module NodeCtld
       scan_percent_summary = nil
 
       begin
-        st = OsCtl::Lib::Zfs::ZpoolStatus.new(pools: @pools.values)
+        st = OsCtl::Lib::Zfs::ZpoolStatus.new(pools: @pools.values.uniq)
       rescue SystemCommandFailed => e
         log(:fatal, :pool_status, e.message)
       end
