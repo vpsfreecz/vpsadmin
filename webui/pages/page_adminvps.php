@@ -616,6 +616,7 @@ switch ($_GET["action"] ?? null) {
 				'transfer_ip_addresses' => $_POST['transfer_ip_addresses'] == '1',
 				'maintenance_window' => $_POST['maintenance_window'] == '1',
 				'rsync' => $_POST['rsync'] == '1',
+				'mounts_to_exports' => $_POST['mounts_to_exports'] == '1',
 				'cleanup_data' => $_POST['cleanup_data'] == '1',
 				'no_start' => $_POST['no_start'] == '1',
 				'skip_start' => $_POST['skip_start'] == '1',
