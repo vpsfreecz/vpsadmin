@@ -582,7 +582,7 @@ END
     def get_debian_major_version
       s = File.read(File.join(@rootfs, 'etc/debian_version')).strip
 
-      if /^(\d+)\.(\d+)$/ =~ s
+      if /^(\d+)\.(\d+)/ =~ s
         return $1.to_i
       elsif s.start_with?('jessie')
         return 8
