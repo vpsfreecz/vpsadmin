@@ -96,12 +96,26 @@ module NodeCtld
       File.open(File.join(@rootfs, 'etc/init.d/cgroups-mount'), 'w') do |f|
         IO.copy_stream(ctx['cgroups-mount.initscript'], f)
       end
+
+      add_export_mounts_to_fstab
+    end
+
+    def runscript_alpine
+      if @mounts_to_exports.any?
+        <<END
+type mount.nfs || apk add nfs-utils
+rc-update add nfsmount
+END
+      else
+        "exit 0\n"
+      end
     end
 
     def convert_arch
       remove_systemd_overrides
       disable_systemd_udev_trigger
       ensure_journal_log
+      add_export_mounts_to_fstab
     end
 
     def convert_centos
@@ -193,6 +207,9 @@ END
 
       convert_debian_systemd(major_version)
       convert_debian_inittab(major_version)
+
+      add_export_mounts_to_fstab
+      add_mount_all_to_debian_rc_local if major_version <= 8
     end
 
     def convert_debian_systemd(major_version)
@@ -279,6 +296,7 @@ installpkg() {
 
 type ip || installpkg iproute
 type ifup || installpkg ifupdown
+#{@mounts_to_exports.any? ? 'type mount.nfs || installpkg nfs-common' : ''}
 END
     end
 
@@ -317,6 +335,8 @@ END
       File.open(File.join(@rootfs, 'etc/init.d/cgroups-mount'), 'w') do |f|
         IO.copy_stream(ctx['cgroups-mount.initscript'], f)
       end
+
+      add_export_mounts_to_fstab
     end
 
     alias_method :runscript_devuan, :runscript_debian
@@ -356,6 +376,8 @@ END
           end
         end
       end
+
+      add_export_mounts_to_fstab
     end
 
     def convert_nixos
@@ -370,7 +392,15 @@ END
     end
 
     def convert_opensuse
-      raise NotImplementedError
+      add_export_mounts_to_fstab
+    end
+
+    def runscript_opensuse
+      if @mounts_to_exports.any?
+        "type mount.nfs || zypper install -y nfs-utils"
+      else
+        "exit 0\n"
+      end
     end
 
     def convert_ubuntu
@@ -406,6 +436,8 @@ END
 
       disable_systemd_udev_trigger
       ensure_journal_log
+      add_export_mounts_to_fstab
+      add_mount_all_to_debian_rc_local if @version.to_i <= 14
     end
 
     alias_method :runscript_ubuntu, :runscript_debian
@@ -422,13 +454,28 @@ END
 
       disable_systemd_udev_trigger
       ensure_journal_log
+      add_export_mounts_to_fstab
+    end
+
+    def runscript_redhat
+      if @mounts_to_exports.any?
+        "type mount.nfs || yum install -y nfs-utils"
+      else
+        "exit 0\n"
+      end
     end
 
     alias_method :convert_fedora, :convert_redhat
+    alias_method :runscript_fedora, :runscript_redhat
+    alias_method :runscript_centos, :runscript_redhat
 
     def convert_void
-      File.unlink(File.join(@rootfs, 'etc/runit/core-services/90-venet.sh'))
-    rescue Errno::ENOENT
+      begin
+        File.unlink(File.join(@rootfs, 'etc/runit/core-services/90-venet.sh'))
+      rescue Errno::ENOENT
+      end
+
+      add_export_mounts_to_fstab
     end
 
     def remove_systemd_overrides
@@ -477,6 +524,58 @@ END
       return unless Dir.exist?(File.join(@rootfs, 'etc/systemd'))
 
       FileUtils.mkdir_p(File.join(@rootfs, 'var/log/journal'))
+    end
+
+    def add_export_mounts_to_fstab
+      return if @mounts_to_exports.empty?
+
+      File.open(File.join(@rootfs, 'etc/fstab'), 'a') do |f|
+        f.puts
+
+        @mounts_to_exports.each do |m|
+          prefix = m['enabled'] ? '' : '# '
+
+          opts = %w(vers=3)
+          opts << 'nofail' if m['nofail']
+          opts << 'ro' if m['mode'] == 'ro'
+
+          f.puts("# Mount of dataset #{m['dataset_name']} (id=#{m['dataset_id']}) to #{m['mountpoint']}")
+          f.puts("#{prefix}#{m['server_address']}:#{m['server_path']} #{m['mountpoint']} nfs #{opts.join(',')} 0 0")
+          f.puts
+        end
+      end
+    end
+
+    def add_mount_all_to_debian_rc_local
+      return if @mounts_to_exports.empty?
+
+      regenerate_file(File.join(@rootfs, 'etc/rc.local'), 0755) do |new, old|
+        if old.nil?
+          old.puts('#!/bin/sh -e')
+          old.puts('mount -a')
+          old.puts('exit 0')
+          next
+        end
+
+        added = false
+
+        old.each_line do |line|
+          if line.start_with?('exit ')
+            new.puts('# Added by migration to vpsAdminOS to ensure NFS mounts')
+            new.puts('mount -a')
+            new.puts
+            added = true
+          end
+
+          new.write(line)
+        end
+
+        unless added
+          new.puts('# Added by migration to vpsAdminOS to ensure NFS mounts')
+          new.puts('mount -a')
+          new.puts
+        end
+      end
     end
 
     # @return [Integer, nil]
