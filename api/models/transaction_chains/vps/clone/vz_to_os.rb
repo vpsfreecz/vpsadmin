@@ -232,7 +232,7 @@ module TransactionChains
       end
 
       # Convert internal configuration files to vpsAdminOS based on distribution
-      append(Transactions::Vps::VzToOs, args: [dst_vps])
+      append(Transactions::Vps::VzToOs, args: [dst_vps, []])
 
       # Start the new VPS
       if vps.running?
