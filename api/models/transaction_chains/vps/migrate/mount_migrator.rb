@@ -13,6 +13,8 @@ module TransactionChains
   #
   # Handling of mounts of my datasets and snapshots in other VPSes is the same.
   class Vps::Migrate::MountMigrator
+    MountToExport = Struct.new(:mount, :export)
+
     def initialize(chain, src_vps, dst_vps)
       @chain = chain
       @src_vps = src_vps
@@ -20,6 +22,7 @@ module TransactionChains
       @my_mounts = []
       @others_mounts = {}
       @my_deleted = []
+      @my_deleted_primary_mounts = []
 
       sort_mounts
     end
@@ -49,6 +52,11 @@ module TransactionChains
           m.confirmed = ::Mount.confirmed(:confirm_destroy)
           m.save!
           @my_deleted << m
+
+          if m.dataset_in_pool.pool.role == 'primary' && m.snapshot_in_pool.nil?
+            @my_deleted_primary_mounts << m
+          end
+
           true
         else
           false
@@ -105,6 +113,38 @@ module TransactionChains
             edit_before(obj, changes)
           end
         end
+      end
+    end
+
+    def convert_my_primary_mounts_to_exports
+      mounts_to_exports = []
+
+      @my_deleted_primary_mounts.each do |m|
+        ex = ::Export.find_by(
+          dataset_in_pool: m.dataset_in_pool,
+          snapshot_in_pool_clone: nil,
+        )
+
+        if ex
+          @chain.lock(ex)
+        else
+          ex = @chain.use_chain(Export::Create, args: [m.dataset_in_pool.dataset, {
+            all_vps: true,
+            rw: true,
+            sync: true,
+            subtree_check: false,
+            root_squash: false,
+            sync: true,
+            threads: 8,
+            enabled: true,
+          }])
+        end
+
+        mounts_to_exports << MountToExport.new(m, ex)
+      end
+
+      mounts_to_exports.sort do |a, b|
+        a.mount.dst <=> b.mount.dst
       end
     end
 

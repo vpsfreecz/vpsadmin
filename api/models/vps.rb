@@ -238,6 +238,7 @@ class Vps < ActiveRecord::Base
     chain_opts[:finish_weekday] = opts[:finish_weekday]
     chain_opts[:finish_minutes] = opts[:finish_minutes]
     chain_opts[:rsync] = opts[:rsync]
+    chain_opts[:mounts_to_exports] = opts[:mounts_to_exports]
     chain_opts[:send_mail] = opts[:send_mail]
     chain_opts[:reason] = opts[:reason]
     chain_opts[:cleanup_data] = opts[:cleanup_data]
