@@ -60,7 +60,7 @@ module NodeCtld
           if export['clone_name']
             srv.add_snapshot_export(
               export['pool_fs'],
-              export['snapshot_clone'],
+              export['clone_name'],
               export['path'],
               "#{host['ip_addr']}/#{host['prefix']}",
               opts,
