@@ -134,7 +134,6 @@ module TransactionChains
             sync: true,
             subtree_check: false,
             root_squash: false,
-            sync: true,
             threads: 8,
             enabled: true,
           }])
