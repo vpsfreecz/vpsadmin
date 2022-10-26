@@ -4,9 +4,7 @@ module NodeCtld
     needs :system, :osctl, :vps
 
     def exec
-      VpsConfig.edit(@pool_fs, @vps_id) do |cfg|
-        cfg.backup
-
+      VpsConfig.create_or_replace(@pool_fs, @vps_id) do |cfg|
         @network_interfaces.each do |netif_opts|
           netif = VpsConfig::NetworkInterface.new(netif_opts['name'])
 
@@ -29,13 +27,7 @@ module NodeCtld
 
     def rollback
       cfg = VpsConfig.open(@pool_fs, @vps_id)
-
-      if cfg.backup_exist?
-        cfg.restore
-      elsif cfg.exist?
-        cfg.destroy(backup: false)
-      end
-
+      cfg.destroy(backup: false) if cfg.exist?
       ok
     end
   end
