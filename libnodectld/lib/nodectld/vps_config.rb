@@ -28,5 +28,18 @@ module NodeCtld
       end
       ret
     end
+
+    # @param pool_fs [String]
+    # @param vps_id [Integer]
+    # @yiledparam cfg [VpsConfig::TopLevel]
+    def self.create_or_replace(pool_fs, vps_id)
+      ret = nil
+      cfg = TopLevel.new(pool_fs, vps_id, load: false)
+      cfg.lock do
+        ret = yield(cfg)
+        cfg.save
+      end
+      ret
+    end
   end
 end
