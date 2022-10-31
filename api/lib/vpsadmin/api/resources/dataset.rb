@@ -719,7 +719,7 @@ module VpsAdmin::API::Resources
 
           dip_plan = dip.dataset_in_pool_plans.find(params[:plan_id])
 
-          unless dip_plan.environment_dataset_plan.user_remove
+          if !dip_plan.environment_dataset_plan.user_remove && current_user.role != :admin
             error('Insufficient permission')
           end
 
