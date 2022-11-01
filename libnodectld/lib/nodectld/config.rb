@@ -180,6 +180,12 @@ module NodeCtld
         timeout: 90*60,
       },
     },
+
+    exporter: {
+      enable: true,
+      metrics_dir: '/run/metrics',
+      interval: 60,
+    },
   }
 
   class AppConfig
