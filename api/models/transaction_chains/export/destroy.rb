@@ -12,6 +12,8 @@ module TransactionChains
       lock(export.network_interface)
       lock(export)
 
+      export.update!(confirmed: ::Export.confirmed(:confirm_destroy))
+
       append_t(Transactions::Export::Disable, args: [export]) do |t|
         t.edit(export, enabled: false)
       end

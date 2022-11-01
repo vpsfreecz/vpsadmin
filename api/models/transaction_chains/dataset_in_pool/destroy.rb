@@ -82,7 +82,9 @@ module TransactionChains
 
       # Destroy exports of the datasets
       @datasets.each do |dip|
-        dip.exports.each do |export|
+        dip.exports.where.not(
+          confirmed: ::Export.confirmed(:confirm_destroy),
+        ).each do |export|
           use_chain(TransactionChains::Export::Destroy, args: export)
         end
       end
