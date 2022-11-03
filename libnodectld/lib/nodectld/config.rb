@@ -193,6 +193,7 @@ module NodeCtld
 
     def initialize(file)
       @file = file
+      @on_update = {}
       @mutex = Mutex.new
     end
 
@@ -277,6 +278,8 @@ module NodeCtld
       sync do
         load
       end
+
+      call_on_update
     end
 
     def get(*args)
@@ -311,6 +314,8 @@ module NodeCtld
       sync do
         @cfg = merge(@cfg, what)
       end
+
+      call_on_update
     end
 
     def merge(src, override)
@@ -329,10 +334,23 @@ module NodeCtld
       YAML.safe_load(v, permitted_classes: [Symbol], symbolize_names: true)
     end
 
+    def on_update(name, &block)
+      @on_update[name] = block
+    end
+
+    def unregister_update(name)
+      @on_update.delete(name)
+    end
+
     def sync
       @mutex.synchronize do
         yield
       end
+    end
+
+    protected
+    def call_on_update
+      @on_update.each_value { |block| block.call }
     end
   end
 end
