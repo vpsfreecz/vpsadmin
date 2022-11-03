@@ -30,6 +30,8 @@ module NodeCtld
               sem_down(prio, queue)
             when :up
               sem_up
+            when :resize
+              sem_resize(args[0])
             end
           end
         end
@@ -57,6 +59,10 @@ module NodeCtld
         nil
       end
 
+      def resize(new_size)
+        comm_queue << [:resize, new_size]
+      end
+
       protected
       attr_reader :size, :comm_queue, :mutex, :used, :waiting_items, :counter
 
@@ -75,13 +81,32 @@ module NodeCtld
 
       def sem_up
         mutex.synchronize do
-          if waiting_items.any?
+          if waiting_items.any? && used <= size
             sort_queue!
             it = waiting_items.shift
             it.queue << true
+          elsif waiting_items.any?
+            @used -= 1 if used > 0
           else
             @used -= 1 if used > 0
             @counter = 0
+          end
+        end
+      end
+
+      def sem_resize(new_size)
+        mutex.synchronize do
+          old_size = @size
+          @size = new_size
+
+          if new_size > old_size && waiting_items.any?
+            sort_queue!
+
+            while waiting_items.any? && used < size
+              it = waiting_items.shift
+              it.queue << true
+              @used += 1
+            end
           end
         end
       end
@@ -104,10 +129,18 @@ module NodeCtld
       @name = name
       @start_time = start_time
       @workers = {}
+
+      @size = cfg(:threads)
+      @urgent_size = cfg(:urgent)
+      @start_delay = cfg(:start_delay)
+
       @mon = Monitor.new
-      @sem = Semaphore.new(size)
+      @sem = Semaphore.new(@size)
       @sem.start
+
       @reserved = []
+
+      $CFG.on_update("queue_#{name}") { update_config }
     end
 
     def execute(cmd)
@@ -186,7 +219,7 @@ module NodeCtld
     end
 
     def size
-      cfg(:threads)
+      @size
     end
 
     def reserved_size
@@ -198,7 +231,7 @@ module NodeCtld
     end
 
     def urgent_size
-      cfg(:urgent)
+      @urgent_size
     end
 
     def total_size
@@ -206,7 +239,7 @@ module NodeCtld
     end
 
     def start_delay
-      cfg(:start_delay)
+      @start_delay
     end
 
     def each(&block)
@@ -225,7 +258,25 @@ module NodeCtld
       @workers.clear
     end
 
+    def log_type
+      "queue:#{@name}"
+    end
+
     protected
+    def update_config
+      old_size = @size
+      new_size = cfg(:threads)
+
+      if new_size != old_size
+        log(:info, "Resize #{old_size} -> #{new_size} slots")
+        @sem.resize(new_size)
+      end
+
+      @size = new_size
+      @urgent_size = cfg(:urgent)
+      @start_delay = cfg(:start_delay)
+    end
+
     def cfg(*args)
       $CFG.get(* [:vpsadmin, :queues, @name].concat(args))
     end
