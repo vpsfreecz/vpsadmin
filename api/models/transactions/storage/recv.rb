@@ -2,7 +2,7 @@ module Transactions::Storage
   class Recv < ::Transaction
     t_name :storage_recv
     t_type 5220
-    queue :storage
+    queue :zfs_recv
 
     def params(port, dst, snapshots, branch = nil, ds_suffix = nil)
       self.node_id = dst.pool.node_id
