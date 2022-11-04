@@ -20,7 +20,6 @@ module NodeCtld
   EXIT_ERR = 1
   EXIT_STOP = 100
   EXIT_RESTART = 150
-  EXIT_UPDATE = 200
 
   class Daemon
     include OsCtl::Lib::Utils::Log
