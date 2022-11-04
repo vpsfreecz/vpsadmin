@@ -14,6 +14,7 @@ module NodeCtld::RemoteCommands
           q = {
             threads: queue.size,
             urgent: queue.urgent_size,
+            open: queue.open?,
             start_delay: queue.start_delay,
             started: queue.started?,
             workers: {},

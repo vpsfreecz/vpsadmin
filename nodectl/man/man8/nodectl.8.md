@@ -73,6 +73,13 @@ start it.
 
   `resume` returns immediately.
 
+`queue pause` *name* [*seconds*]
+  Pause queue *name* either until `resume` is called, or number of *seconds*
+  pass.
+
+`queue resume` *name*
+  Reopen queue *name*.
+
 `restart` [`-f`]
   Order nodectld to restart. nodectld will wait for transactions that are running
   to finish. It will not execute more transactions.

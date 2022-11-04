@@ -130,6 +130,8 @@ module NodeCtld
       @start_time = start_time
       @workers = {}
 
+      @open = true
+
       @size = cfg(:threads)
       @urgent_size = cfg(:urgent)
       @start_delay = cfg(:start_delay)
@@ -144,7 +146,7 @@ module NodeCtld
     end
 
     def execute(cmd)
-      if !free_slot?(cmd) || !started?
+      if !open? || !free_slot?(cmd) || !started?
         return false
       end
 
@@ -173,6 +175,25 @@ module NodeCtld
         @sem.up
         true
       end
+    end
+
+    def pause(seconds = nil)
+      @open = false
+      @start_delay =
+        if seconds
+          (Time.now - @start_time).round + seconds
+        else
+          0
+        end
+    end
+
+    def resume
+      @open = true
+      @start_delay = 0
+    end
+
+    def open?
+      @open || (@start_delay > 0 && started?)
     end
 
     def empty?
