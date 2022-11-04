@@ -20,3 +20,7 @@ tmp
 *.o
 *.a
 mkmf.log
+man/style.css
+man/*.html
+man/**/*.html
+man/man?/*.?
