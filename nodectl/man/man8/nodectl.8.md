@@ -80,6 +80,10 @@ start it.
 `queue resume` *name*
   Reopen queue *name*.
 
+`queue resize` *name* *new-size*
+  Resize queue *name*. It is the same as using
+  `nodectl set config vpsadmin.queues.<name>.threads`=*new-size*.
+
 `restart` [`-f`]
   Order nodectld to restart. nodectld will wait for transactions that are running
   to finish. It will not execute more transactions.
