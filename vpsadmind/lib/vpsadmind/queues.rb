@@ -6,6 +6,7 @@ module VpsAdmind
         :network,
         :vps,
         :zfs_send,
+        :zfs_recv,
         :mail,
         :outage,
         :queue,
