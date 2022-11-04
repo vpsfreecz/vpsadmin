@@ -182,12 +182,30 @@ module NodeCtl
             queue[:threads],
             queue[:urgent],
             queue[:reservations].empty? ? '' : " *#{queue[:reservations].size}",
-            !queue[:started] ? "opens in #{format_duration((response[:start_time] + queue[:start_delay]) - Time.now.to_i)}" : ''
+            format_queue_state(queue),
           )
         end
       end
 
       ok
+    end
+
+    def format_queue_state(queue)
+      if !queue[:open]
+        if queue[:start_delay] > 0
+          "paused for #{format_queue_start_delay(queue)}"
+        else
+          "paused"
+        end
+      elsif !queue[:started]
+        "opens in #{format_queue_start_delay(queue)}"
+      else
+        ''
+      end
+    end
+
+    def format_queue_start_delay(queue)
+      format_duration((response[:start_time] + queue[:start_delay]) - Time.now.to_i)
     end
 
     def state
