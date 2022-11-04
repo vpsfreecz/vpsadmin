@@ -57,6 +57,11 @@ module NodeCtld
             urgent: 0,
             start_delay: 90*60,
         },
+        zfs_recv: {
+            threads: 3,
+            urgent: 0,
+            start_delay: 90*60,
+        },
         mail: {
             threads: 2,
             urgent: 2,

@@ -8,6 +8,7 @@ module NodeCtld
       :network,
       :vps,
       :zfs_send,
+      :zfs_recv,
       :mail,
       :outage,
       :queue,
