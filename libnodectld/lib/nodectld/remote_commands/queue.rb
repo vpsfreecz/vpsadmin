@@ -20,6 +20,22 @@ module NodeCtld::RemoteCommands
           q.resume
         end
 
+      when 'resize'
+        @daemon.queues do |queues|
+          q = queues[@queue.to_sym]
+          return {ret: :error, output: 'queue not found'} if q.nil?
+        end
+
+        $CFG.patch({
+          vpsadmin: {
+            queues: {
+              @queue.to_sym => {
+                threads: @size
+              }
+            }
+          }
+        })
+
       else
         return {ret: :error, output: 'unknown command'}
       end
