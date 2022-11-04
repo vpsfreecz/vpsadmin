@@ -4,6 +4,7 @@ module TransactionChains
 
     def link_chain(port, src, dst, snapshots, src_branch, dst_branch, initial = false, ds_suffix = nil, **opts)
       if opts[:send_reservation]
+        append(Transactions::Queue::Reserve, args: [dst.pool.node, :zfs_recv])
         append(Transactions::Queue::Reserve, args: [src.pool.node, :zfs_send])
       end
 
@@ -59,6 +60,7 @@ module TransactionChains
 
       if opts[:send_reservation]
         append(Transactions::Queue::Release, args: [src.pool.node, :zfs_send])
+        append(Transactions::Queue::Release, args: [dst.pool.node, :zfs_recv])
       end
     end
 
