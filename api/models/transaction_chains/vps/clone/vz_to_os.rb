@@ -166,8 +166,8 @@ module TransactionChains
       end
 
       # Reserve a slot in zfs_send queue
-      append(Transactions::Queue::Reserve, args: [dst_vps.node, :zfs_recv])
       append(Transactions::Queue::Reserve, args: [vps.node, :zfs_send])
+      append(Transactions::Queue::Reserve, args: [dst_vps.node, :zfs_recv])
 
       # Initial transfer
       transfer_datasets(datasets)
@@ -182,8 +182,8 @@ module TransactionChains
       end
 
       # Release reserved spot in the queue
-      append(Transactions::Queue::Release, args: [vps.node, :zfs_send])
       append(Transactions::Queue::Release, args: [dst_vps.node, :zfs_recv])
+      append(Transactions::Queue::Release, args: [vps.node, :zfs_send])
 
       # Set canmount=noauto on all datasets
       append(
