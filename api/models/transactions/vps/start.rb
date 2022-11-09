@@ -4,7 +4,7 @@ module Transactions::Vps
     t_type 1001
     queue :vps
 
-    def params(vps, start_timeout: 180)
+    def params(vps, start_timeout: 60*5)
       self.vps_id = vps.id
       self.node_id = vps.node_id
 
