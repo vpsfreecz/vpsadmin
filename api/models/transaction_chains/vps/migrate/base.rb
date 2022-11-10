@@ -761,7 +761,7 @@ module TransactionChains
     end
 
     def start_timeout
-      900
+      'infinity'
     end
   end
 end

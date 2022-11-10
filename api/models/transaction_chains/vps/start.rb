@@ -2,7 +2,7 @@ module TransactionChains
   class Vps::Start < ::TransactionChain
     label 'Start'
 
-    def link_chain(vps, start_timeout: 180)
+    def link_chain(vps, start_timeout: 'infinity')
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
