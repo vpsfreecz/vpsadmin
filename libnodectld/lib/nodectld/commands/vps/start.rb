@@ -8,8 +8,12 @@ module NodeCtld
     end
 
     def rollback
-      @vps = Vps.new(@vps_id)
-      @vps.stop
+      if @rollback_start
+        @vps = Vps.new(@vps_id)
+        @vps.stop
+      else
+        ok
+      end
     end
   end
 end
