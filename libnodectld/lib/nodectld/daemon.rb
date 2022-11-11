@@ -43,7 +43,7 @@ module NodeCtld
       end
     end
 
-    attr_reader :start_time, :export_console, :delayed_mounter, :ct_top
+    attr_reader :start_time, :export_console, :delayed_mounter, :ct_top, :node
 
     def initialize
       self.class.instance = self
@@ -59,6 +59,7 @@ module NodeCtld
       @mount_reporter = MountReporter.new
       @delayed_mounter = DelayedMounter.new # FIXME: call stop?
       @remote_control = RemoteControl.new(self)
+      @node = Node.new
       @pool_status = PoolStatus.new
       @node_status = NodeStatus.new(@pool_status)
       @vps_status = VpsStatus.new
@@ -81,7 +82,7 @@ module NodeCtld
 
       @fw.init(db) if $CFG.get(:traffic_accounting, :enable)
       Shaper.init_node if $CFG.get(:shaper, :enable)
-      Node.init(db)
+      @node.init(db)
       Export.init(db) if $CFG.get(:exports, :enable)
 
       @node_status.init(db)

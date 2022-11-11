@@ -1,0 +1,14 @@
+#!/run/nodectl/nodectl script
+require 'nodectld/standalone'
+
+vars = %w(OSCTL_POOL_NAME)
+vars.each do |v|
+  next if ENV[v]
+  warn 'Expected environment variables:'
+  warn "  #{vars.join("\n  ")}"
+  exit(false)
+end
+
+NodeCtld::PoolHook.pre_export(
+  ENV['OSCTL_POOL_NAME'],
+)

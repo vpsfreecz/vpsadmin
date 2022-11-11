@@ -1,3 +1,4 @@
+require 'fileutils'
 require 'libosctl'
 require 'nodectld/utils'
 
@@ -7,13 +8,39 @@ module NodeCtld
     include Utils::System
     include Utils::OsCtl
 
-    def self.init(db)
-      new.init(db)
+    Pool = Struct.new(:name, :filesystem, :online)
+
+    def initialize
+      @pools = {}
+      @mutex = Mutex.new
     end
 
     def init(db)
-      pools(db).each do |fs|
-        wait_for_pool(fs)
+      fetch_pools(db).each do |fs|
+        pool = new_pool(fs)
+        @pools[pool.name] = pool
+      end
+
+      @pools.each_value do |pool|
+        wait_for_pool(pool)
+      end
+    end
+
+    def all_pools_up?
+      @mutex.synchronize do
+        @pools.each_value.all?(&:online)
+      end
+    end
+
+    def pool_down(pool_name)
+      @mutex.synchronize do
+        @pools[pool_name].online = false
+      end
+    end
+
+    def pool_up(pool_name)
+      @mutex.synchronize do
+        @pools[pool_name].online = true
       end
     end
 
@@ -22,9 +49,13 @@ module NodeCtld
     end
 
     protected
-    def wait_for_pool(fs)
+    def new_pool(fs)
       name = fs.split('/').first
-      sv = "pool-#{name}"
+      Pool.new(name, fs, false)
+    end
+
+    def wait_for_pool(pool)
+      sv = "pool-#{pool.name}"
 
       # Wait for runit service pool-$name to finish
       until File.exist?(File.join('/run/service', sv, 'done'))
@@ -36,22 +67,47 @@ module NodeCtld
       if $CFG.get(:vpsadmin, :type) == :node
         loop do
           begin
-            pool = osctl_parse(%i(pool show), name)
+            osctl_pool = osctl_parse(%i(pool show), pool.name)
           rescue SystemCommandFailed
             next
           end
 
-          break if pool[:state] == 'active'
+          break if osctl_pool[:state] == 'active'
 
-          log(:info, "Waiting for osctld to import pool #{name}")
+          log(:info, "Waiting for osctld to import pool #{pool.name}")
           sleep(10)
         end
       end
 
-      log(:info, "Pool #{fs} is ready")
+      log(:info, "Pool #{pool.filesystem} is ready")
+      pool_up(pool.name)
+
+      # Install pool hooks
+      install_pool_hooks(pool)
     end
 
-    def pools(db)
+    def install_pool_hooks(pool)
+      hook_dir = File.join('/', pool.name, 'hook/pool')
+
+      unless Dir.exist?(hook_dir)
+        log(:warn, "Pool hook dir not found at #{hook_dir.inspect}")
+        return
+      end
+
+      %w(pre-import post-import pre-export).each do |hook|
+        dst = File.join(hook_dir, hook)
+
+        FileUtils.cp(
+          File.join(NodeCtld.root, 'templates', 'pool', 'hook', hook),
+          "#{dst}.new"
+        )
+
+        File.chmod(0500, "#{dst}.new")
+        File.rename("#{dst}.new", dst)
+      end
+    end
+
+    def fetch_pools(db)
       ret = []
 
       db.prepared(
