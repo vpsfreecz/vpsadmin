@@ -65,6 +65,10 @@ module NodeCtld
         if %w(running stopped).include?(event[:opts][:state])
           Daemon.instance.ct_top.refresh
         end
+
+      when 'osctld_shutdown'
+        log(:info, 'osctld is shutting down, pausing')
+        Daemon.instance.pause
       end
     end
   end
