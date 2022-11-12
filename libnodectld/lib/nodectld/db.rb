@@ -62,6 +62,10 @@ module NodeCtld
           when 1213
             log(:warn, :sql, 'Deadlock found')
 
+          when 2000
+            log(:warn, :sql, 'Unknown error')
+            @my.close
+
           when 2006
             log(:warn, :sql, 'Lost connection to MySQL server during query')
 
