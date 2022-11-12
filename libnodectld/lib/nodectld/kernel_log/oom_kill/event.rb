@@ -135,10 +135,18 @@ module NodeCtld
         return
       end
 
+      if /^Memory cgroup out of memory: Killed process (\d+) \(([^\)]+)\)/ =~ msg.text
+        report.killed_pid = $1.to_i
+        report.killed_name = $2
+        finish!
+        return
+      end
+
       if /^oom_reaper: reaped process (\d+) \(([^\)]+)\)/ =~ msg.text
         report.killed_pid = $1.to_i
         report.killed_name = $2
         finish!
+        return
       end
     end
 
