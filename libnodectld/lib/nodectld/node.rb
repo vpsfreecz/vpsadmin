@@ -18,7 +18,9 @@ module NodeCtld
     def init(db)
       fetch_pools(db).each do |fs|
         pool = new_pool(fs)
-        @pools[pool.name] = pool
+        @mutex.synchronize do
+          @pools[pool.name] = pool
+        end
       end
 
       @pools.each_value do |pool|
@@ -34,12 +36,14 @@ module NodeCtld
 
     def pool_down(pool_name)
       @mutex.synchronize do
+        next if @pools[pool_name].nil?
         @pools[pool_name].online = false
       end
     end
 
     def pool_up(pool_name)
       @mutex.synchronize do
+        next if @pools[pool_name].nil?
         @pools[pool_name].online = true
       end
     end
