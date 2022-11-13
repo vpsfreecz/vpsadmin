@@ -34,6 +34,14 @@ module NodeCtld
       end
     end
 
+    def set_all_pools_down
+      @mutex.synchronize do
+        @pools.each_value do |pool|
+          pool.online = false
+        end
+      end
+    end
+
     def pool_down(pool_name)
       @mutex.synchronize do
         next if @pools[pool_name].nil?
