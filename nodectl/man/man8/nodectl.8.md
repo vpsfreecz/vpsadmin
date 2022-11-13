@@ -77,8 +77,8 @@ start it.
   Pause queue *name* either until `resume` is called, or number of *seconds*
   pass.
 
-`queue resume` *name*
-  Reopen queue *name*.
+`queue resume` *name*|`all`
+  Reopen queue *name* or all queues.
 
 `queue resize` *name* *new-size*
   Resize queue *name*. It is the same as using
