@@ -86,7 +86,7 @@ module NodeCtld::Utils
         opens_t = open_time
         delta = opens_t - t
 
-        @cmd.step = "waiting till #{t + delta}"
+        @cmd.step = "waiting until #{t + delta}"
         sleep(delta + 10)
 
         fail 'not in the window' unless open?
