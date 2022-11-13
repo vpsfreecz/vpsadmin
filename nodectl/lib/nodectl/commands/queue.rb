@@ -7,8 +7,8 @@ module NodeCtl
     def options(parser, args)
       parser.separator <<END
 Subcommands:
-pause [SECONDS]          List transaction confirmations
-resume                   Run transaction confirmations
+pause <queue> [SECONDS]          List transaction confirmations
+resume <queue>|all               Run transaction confirmations
 END
 
     end
