@@ -8,12 +8,6 @@ module NodeCtld::RemoteCommands
 
       @resources.each do |r|
         case r
-          when 'fw'
-            log(:info, :remote, 'Flushing firewall')
-            NodeCtld::Firewall.synchronize do |fw|
-              ret[:fw] = fw.flush(db ||= NodeCtld::Db.new)
-            end
-
           when 'shaper'
             log(:info, :remote, 'Flushing shaper')
             NodeCtld::Shaper.flush

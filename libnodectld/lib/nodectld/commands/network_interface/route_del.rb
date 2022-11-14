@@ -7,12 +7,10 @@ module NodeCtld
       NetworkInterface.new(@pool_fs, @vps_id, @veth_name).del_route(
         @addr, @prefix, @version, @unregister, @shaper
       )
-      NodeCtld::Firewall.ip_map.unset(@addr) if @unregister
       ok
     end
 
     def rollback
-      NodeCtld::Firewall.ip_map.set(@addr, @prefix, @id, @version, @user_id) if @unregister
       wait_for_route_to_clear(@version, @addr, @prefix, timeout: @timeout)
       NetworkInterface.new(@pool_fs, @vps_id, @veth_name).add_route(
         @addr, @prefix, @version, @unregister, @shaper, via: @via
