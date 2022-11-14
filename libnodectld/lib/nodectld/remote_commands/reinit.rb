@@ -8,12 +8,6 @@ module NodeCtld::RemoteCommands
 
       @resources.each do |r|
         case r
-          when 'fw'
-            log(:info, :remote, 'Reinitializing firewall')
-            NodeCtld::Firewall.synchronize do |fw|
-              ret[:fw] = fw.reinit(db ||= NodeCtld::Db.new)
-            end
-
           when 'shaper'
             log(:info, :remote, 'Reinitializing shaper')
             NodeCtld::Shaper.reinit(db ||= NodeCtld::Db.new)

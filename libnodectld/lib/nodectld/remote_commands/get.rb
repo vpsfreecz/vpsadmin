@@ -41,12 +41,6 @@ module NodeCtld::RemoteCommands
 
           ok.update({output: {queue: queue}})
 
-        when 'ip_map'
-          map = {}
-          NodeCtld::Firewall.ip_map.dump.each { |k, v| map[k] = v.to_h }
-
-          ok.update({output: {ip_map: map}})
-
         when 'veth_map'
           ok.update({output: {veth_map: NodeCtld::VethMap.dump}})
 

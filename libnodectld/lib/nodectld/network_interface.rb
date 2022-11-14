@@ -13,10 +13,6 @@ module NodeCtld
     end
 
     def add_route(addr, prefix, v, register, shaper, via: nil)
-      if register
-        Firewall.accounting.reg_ip(addr, prefix, v)
-      end
-
       VpsConfig.edit(@pool_fs, @vps_id) do |cfg|
         cfg.network_interfaces[@name].add_route(config_route(
           addr, prefix, shaper, via
@@ -30,10 +26,6 @@ module NodeCtld
     end
 
     def del_route(addr, prefix, v, unregister, shaper)
-      if unregister
-        Firewall.accounting.unreg_ip(addr, prefix, v)
-      end
-
       VpsConfig.edit(@pool_fs, @vps_id) do |cfg|
         cfg.network_interfaces[@name].remove_route(config_route(
           addr, prefix, shaper, nil

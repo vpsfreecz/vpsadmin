@@ -9,7 +9,6 @@ require 'nodectld/remote_control'
 require 'nodectld/node_status'
 require 'nodectld/vps_status'
 require 'nodectld/storage_status'
-require 'nodectld/firewall'
 require 'nodectld/shaper'
 require 'nodectld/ct_top'
 require 'nodectld/ct_monitor'
@@ -63,7 +62,6 @@ module NodeCtld
       @pool_status = PoolStatus.new
       @node_status = NodeStatus.new(@pool_status)
       @vps_status = VpsStatus.new
-      @fw = Firewall.instance
       @kernel_log = KernelLog::Parser.new
       @exporter = Exporter.new(self)
       NetAccounting.instance
@@ -82,7 +80,6 @@ module NodeCtld
       @remote_control.start
 
       NetAccounting.init(db)
-      @fw.init(db) if $CFG.get(:traffic_accounting, :enable)
       Shaper.init_node if $CFG.get(:shaper, :enable)
       @node.init(db)
       Export.init(db) if $CFG.get(:exports, :enable)
@@ -342,14 +339,6 @@ module NodeCtld
           sleep($CFG.get(:vpsadmin, :storage_status_interval))
         end
       end
-
-      run_thread_unless_runs(:transfers) do
-        loop do
-          update_transfers
-
-          sleep($CFG.get(:vpsadmin, :transfers_interval))
-        end
-      end
     end
 
     def run_thread_unless_runs(name)
@@ -379,18 +368,6 @@ module NodeCtld
       end
 
       my.close
-    end
-
-    def update_transfers
-      return unless $CFG.get(:vpsadmin, :track_transfers)
-
-      log(:info, :regular, 'Update transfers')
-
-      Firewall.synchronize do |fw|
-        my = Db.new
-        fw.accounting.update_traffic(my)
-        my.close
-      end
     end
 
     def start_em(console)
