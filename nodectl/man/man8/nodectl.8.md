@@ -125,21 +125,19 @@ start it.
 `chain` *id* `resolve`
   Mark the chain as resolved.
 
-`reinit` `fw`|`shaper`|`all`
-  Reinitialize resources. resource may be one of `fw`, `shaper` or `all`.
+`reinit` `shaper`|`all`
+  Reinitialize resources. resource may be one of `shaper` or `all`.
   The reinitialization is an atomic operation.
 
   See `nodectl init` and `nodectl flush` for more information.
 
   `nodectl` blocks until reinit is finished.
 
-`flush` `fw`|`shaper`|`all`
-  `fw` flushes accounting rules from `iptables`, `shaper` flushes shaping rules
-  from kernel by `tc`. `all` will flush both.
+`flush` `shaper`|`all`
+  `shaper` flushes shaping rules from kernel by `tc`.
 
-`init` `fw`|`shaper`|`all`
-  `fw` will initialize `iptables` rules for traffic accounting. `shaper` will
-  initialize shaping rules by `tc`. `all` will initialize both.
+`init` `shaper`|`all`
+  `shaper` will initialize shaping rules by `tc`.
 
 `get` *subcommand...*
   Access nodectld's resources and properties. When used with option `-p`, output
