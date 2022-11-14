@@ -19,6 +19,13 @@ module NodeCtld
         instance[vps_id]
       end
 
+      # @param [Integer] vps_id
+      # @param [String] ct_veth
+      # @return [String, nil]
+      def get(vps_id, ct_veth)
+        instance.get(vps_id, ct_veth)
+      end
+
       # Update VPS interface
       # @param [Integer] vps_id
       def set(vps_id, ct_veth, host_veth)
@@ -58,6 +65,17 @@ module NodeCtld
       sync do
         @map[k] = fetch(k) unless @map.has_key?(k)
         @map[k]
+      end
+    end
+
+    def get(vps_id, ct_veth)
+      k = vps_id.to_s
+
+      sync do
+        vps_veths = @map[k]
+        next if vps_veths.nil?
+
+        vps_veths[ct_veth]
       end
     end
 

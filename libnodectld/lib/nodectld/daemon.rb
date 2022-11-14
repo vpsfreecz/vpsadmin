@@ -66,6 +66,7 @@ module NodeCtld
       @fw = Firewall.instance
       @kernel_log = KernelLog::Parser.new
       @exporter = Exporter.new(self)
+      NetAccounting.instance
       Shaper.instance
       TransactionVerifier.instance
     end
@@ -80,6 +81,7 @@ module NodeCtld
 
       @remote_control.start
 
+      NetAccounting.init(db)
       @fw.init(db) if $CFG.get(:traffic_accounting, :enable)
       Shaper.init_node if $CFG.get(:shaper, :enable)
       @node.init(db)
