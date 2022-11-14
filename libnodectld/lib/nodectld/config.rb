@@ -90,9 +90,7 @@ module NodeCtld
       vps_status_interval: 120,
       vps_status_log_interval: 3600,
       storage_status_interval: 3600,
-      transfers_interval: 10,
       update_vps_status: true,
-      track_transfers: true,
       type: nil, # loaded from db
       transaction_public_key: '/etc/vpsadmin/transaction.key',
     },
@@ -138,6 +136,7 @@ module NodeCtld
 
     traffic_accounting: {
       enable: true,
+      update_interval: 10,
       ipset_update_interval: 60*5,
     },
 
@@ -236,7 +235,6 @@ module NodeCtld
       when 'minimal'
         @cfg = merge(@cfg, {
           vpsadmin: {
-            track_transfers: false,
             update_vps_status: false,
           },
           storage: {
