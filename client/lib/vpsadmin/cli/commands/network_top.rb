@@ -1,15 +1,15 @@
 require 'curses'
 
 module VpsAdmin::CLI::Commands
-  class IpTrafficTop < BackupDataset
+  class NetworkTop < HaveAPI::CLI::Command
     include Curses
 
     REFRESH_RATE = 10
-    FILTERS = %i(limit ip_address ip_version environment location network ip_range node vps)
+    FILTERS = %i(limit user environment location node vps network_interface)
 
-    cmd :ip_traffic, :top
+    cmd :network, :top
     args ''
-    desc 'Live IP traffic monitor'
+    desc 'Live network traffic monitor'
 
     def options(opts)
       @opts = {
@@ -24,24 +24,8 @@ module VpsAdmin::CLI::Commands
         @opts[:limit] = v
       end
 
-      opts.on('--ip-address ADDR', 'ADDR or ID of IP addresses to monitor') do |v|
-        id = ip_address_id(v)
-
-        if id
-          @opts[:ip_address] = id
-
-        else
-          warn "IP address '#{v}' not found"
-          exit(1)
-        end
-      end
-
-      opts.on('--ip-version VER', [4, 6], 'Filter IP addresses by version') do |v|
-        @opts[:ip_version] = v
-      end
-
-      (FILTERS - %i(limit ip_address ip_version)).each do |f|
-        opts.on("--#{f.to_s.gsub(/_/, '-')} ID", Integer, "Filter IP addresses by #{f}") do |v|
+      (FILTERS - %i(limit)).each do |f|
+        opts.on("--#{f.to_s.gsub(/_/, '-')} ID", Integer, "Filter network interfaces by #{f}") do |v|
           @opts[f] = v
         end
       end
@@ -49,12 +33,13 @@ module VpsAdmin::CLI::Commands
 
     def exec(args)
       if @global_opts[:list_output]
-        exclude = %i(id ip_address user updated_at delta)
+        exclude = %i(id network_interface updated_at delta)
 
-        @api.ip_traffic_monitor.actions[:index].params.each_key do |name|
+        @api.network_interface_monitor.actions[:index].params.each_key do |name|
           next if exclude.include?(name)
           puts name
         end
+
         exit
       end
 
@@ -113,9 +98,8 @@ module VpsAdmin::CLI::Commands
     def set_global_opts
       if @global_opts[:output]
         @params = @global_opts[:output].split(',').map(&:to_sym)
-
       else
-        @params = %i(bytes_in bytes_out bytes)
+        @params = %i(bytes bytes_in bytes_out packets packets_in packets_out)
       end
 
       if @global_opts[:sort]
@@ -158,7 +142,7 @@ module VpsAdmin::CLI::Commands
       params =  {
         limit: limit > 0 ? limit : 25,
         order: "#{@sort_desc ? '-' : ''}#{@sort_param}",
-        meta: {includes: 'ip_address__network_interface'}
+        meta: {includes: 'network_interface'},
       }
 
       FILTERS.each do |f|
@@ -167,7 +151,7 @@ module VpsAdmin::CLI::Commands
         params[f] = @opts[f]
       end
 
-      @data = @api.ip_traffic_monitor.list(params)
+      @data = @api.network_interface_monitor.list(params)
     end
 
     def render(t, refresh)
@@ -177,7 +161,7 @@ module VpsAdmin::CLI::Commands
       end
 
       setpos(0, 0)
-      addstr("#{File.basename($0)} ip_traffic top - #{t.strftime('%H:%M:%S')}, ")
+      addstr("#{File.basename($0)} network top - #{t.strftime('%H:%M:%S')}, ")
       addstr("next update at #{(t + REFRESH_RATE).strftime('%H:%M:%S')}")
 
       attron(color_pair(1))
@@ -202,12 +186,12 @@ module VpsAdmin::CLI::Commands
 
     def header
       unless @header
-        fmt = (['%-30s', '%6s'] + @columns.map { |c| "%#{c[:width]}s" }).join(' ')
+        fmt = (['%8s', '%-15s'] + @columns.map { |c| "%#{c[:width]}s" }).join(' ')
 
         @header = sprintf(
           fmt,
-          'IP Address',
           'VPS',
+          'Interface',
           *@columns.map { |c| c[:title] },
         )
 
@@ -219,9 +203,9 @@ module VpsAdmin::CLI::Commands
 
     def print_row(data)
       addstr(sprintf(
-        '%-30s %6s',
-        data.ip_address.addr,
-        data.ip_address.network_interface.vps_id
+        '%8s %-15s',
+        data.network_interface.vps_id,
+        data.network_interface.name,
       ))
 
       @columns.each do |c|
@@ -234,7 +218,7 @@ module VpsAdmin::CLI::Commands
     end
 
     def stats
-      fields = %i(packets bytes public_bytes private_bytes)
+      fields = %i(bytes packets)
       stats = {}
       delta_sum = 0
 
@@ -263,17 +247,15 @@ module VpsAdmin::CLI::Commands
       setpos(lines-5, 0)
       addstr('─' * cols)
 
-      fmt = '%10s %10s %10s %14s %14s'
+      fmt = '%10s %10s %10s'
       unit = @opts[:unit].to_s.capitalize
 
       setpos(lines-4, 0)
       addstr(sprintf(
         fmt,
         '',
-        'Packets/s',
         "#{unit}/s",
-        "Public#{unit}/s",
-        "Private#{unit}/s"
+        'Packets/s',
       ))
 
       setpos(lines-3, 0)
