@@ -137,6 +137,7 @@ module NodeCtld
     traffic_accounting: {
       enable: true,
       update_interval: 10,
+      log_interval: 60,
     },
 
     storage: {

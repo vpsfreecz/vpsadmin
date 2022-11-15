@@ -30,6 +30,10 @@ module NodeCtld
       @bytes_out = 0
       @packets_in = 0
       @packets_out = 0
+      @log_bytes_in = 0
+      @log_bytes_out = 0
+      @log_packets_in = 0
+      @log_packets_out = 0
       @delta = 1
       @changed = false
       @reader = OsCtl::Lib::NetifStats.new
@@ -39,6 +43,7 @@ module NodeCtld
     def update(host_name)
       now = Time.now.utc
       @last_update ||= now
+      @last_log ||= now
 
       @reader.reset
       stats = @reader.get_stats_for(host_name)
@@ -48,6 +53,12 @@ module NodeCtld
 
       @packets_in = [stats[:tx][:packets] - @last_packets_in, 0].max
       @packets_out = [stats[:rx][:packets] - @last_packets_out, 0].max
+
+      @log_bytes_in += @bytes_in
+      @log_bytes_out += @bytes_out
+
+      @log_packets_in += @packets_in
+      @log_packets_out += @packets_out
 
       @last_bytes_in = stats[:tx][:bytes]
       @last_bytes_out = stats[:rx][:bytes]
@@ -66,9 +77,19 @@ module NodeCtld
     end
 
     # Save state to the database
-    def save(db)
+    def save(db, log_interval)
       save_monitor(db)
-      save_accounting(db)
+
+      if @last_log + log_interval <= @last_update
+        save_accounting(db)
+
+        @log_bytes_in = 0
+        @log_bytes_out = 0
+        @log_packets_in = 0
+        @log_packets_out = 0
+        @last_log = @last_update
+      end
+
       @changed = false
     end
 
@@ -146,10 +167,10 @@ module NodeCtld
             updated_at = values(updated_at)
           ",
           @id,
-          @bytes_in,
-          @bytes_out,
-          @packets_in,
-          @packets_out,
+          @log_bytes_in,
+          @log_bytes_out,
+          @log_packets_in,
+          @log_packets_out,
           @last_update_str,
           @last_update_str,
         )
