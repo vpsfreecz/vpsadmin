@@ -461,22 +461,13 @@ if ($show_live) {
 	$xtpl->form_add_input_pure('text', '30', 'limit', get_val('limit', 25));
 	$xtpl->table_tr();
 
-	$xtpl->form_add_select(_('IP version').':', 'ip_version', array(
-		0 => _('All'),
-		4 => 'IPv4',
-		6 => 'IPv6',
-	), get_val('ip_version'));
-
 	$xtpl->form_add_select(_("Environment").':', 'environment',
 		resource_list_to_options($api->environment->list()), get_val('environment'));
 	$xtpl->form_add_select(_("Location").':', 'location',
 		resource_list_to_options($api->location->list()), get_val('location'));
-	$xtpl->form_add_select(_("Network").':', 'network',
-		resource_list_to_options($api->network->list(), 'id', 'label', true, 'network_label'), get_val('network'));
 	$xtpl->form_add_select(_("Node").':', 'node',
 		resource_list_to_options($api->node->list(), 'id', 'domain_name'), get_val('node'));
 
-	$xtpl->form_add_input(_("IP address").':', 'text', '30', 'ip_address', get_val('ip_address'));
 	$xtpl->form_add_input(_("VPS ID").':', 'text', '30', 'vps', get_val('vps'));
 
 	if(isAdmin())
@@ -503,81 +494,58 @@ if ($show_live) {
 
 	$xtpl->form_out(_("Show"), 'monitor-filters');
 
-	$params = array(
+	$params = [
 		'limit' => get_val('limit', 25),
-		'meta' => array('includes' => 'ip_address__network_interface'),
-	);
+		'meta' => ['includes' => 'network_interface__vps'],
+	];
 
-	$conds = array(
-		'ip_version', 'vps', 'node', 'location', 'environment',
-		'network'
-	);
+	$conds = [
+		'vps', 'node', 'location', 'environment', 'user'
+	];
 
 	foreach ($conds as $c) {
 		if ($_GET[$c])
 			$params[$c] = $_GET[$c];
 	}
 
-	if ($_GET['ip_address']) {
-		$ip_id = get_ip_address_id($_GET['ip_address']);
-
-		if ($ip_id === false) {
-			$xtpl->perex(
-				_('IP address not found'),
-				_('IP address').' '.$_GET['ip_address'].' '._('not found.')
-			);
-
-		} else {
-			$params['ip_address'] = $ip_id;
-		}
-	}
-
-	$traffic = $api->ip_traffic_monitor->list($params);
-
-	$roles = array('public', 'private');
+	$monitors = $api->network_interface_monitor->list($params);
 
 	$xtpl->table_td(_('VPS'), '#5EAFFF; color:#FFF; font-weight:bold;', false, '1', '2');
-	$xtpl->table_td(_('IP'), '#5EAFFF; color:#FFF; font-weight:bold;', false, '1', '2');
+	$xtpl->table_td(_('Interface'), '#5EAFFF; color:#FFF; font-weight:bold;', false, '1', '2');
 
-	$xtpl->table_td(_('Public'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;', false, '3');
-	$xtpl->table_td(_('Private'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;', false, '3');
-	$xtpl->table_td(_('Total'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;', false, '3');
+	$xtpl->table_td(_('Receiving'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;', false, '2');
+	$xtpl->table_td(_('Transmitting'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;', false, '2');
+	$xtpl->table_td(_('Total'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;', false, '2');
 	$xtpl->table_tr();
 
-	$xtpl->table_td(_('In'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
-	$xtpl->table_td(_('Out'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
-	$xtpl->table_td(_('Total'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('Bps'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('Packets/s'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
 
-	$xtpl->table_td(_('In'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
-	$xtpl->table_td(_('Out'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
-	$xtpl->table_td(_('Total'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('Bps'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('Packets/s'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
 
-	$xtpl->table_td(_('In'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
-	$xtpl->table_td(_('Out'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
-	$xtpl->table_td(_('Total'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('Bps'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('Packets/s'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+
 	$xtpl->table_tr();
 
 	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
 		<script type="text/javascript" src="js/network-monitor.js"></script>'
 	);
 
-	foreach ($traffic as $data) {
-		$xtpl->table_td(
-			'<a href="?page=adminvps&action=info&veid='.$data->ip_address->network_interface->vps_id.'">'.
-			$data->ip_address->network_interface->vps_id.
-			'</a>'
-		);
-		$xtpl->table_td($data->ip_address->addr);
+	foreach ($monitors as $data) {
+		$xtpl->table_td(vps_link($data->network_interface->vps));
+		$xtpl->table_td(h($data->network_interface->name));
 
-		foreach ($roles as $role) {
-			$xtpl->table_td(format_data_rate($data->{"${role}_bytes_in"} / $data->delta * 8, ''), false, true);
-			$xtpl->table_td(format_data_rate($data->{"${role}_bytes_out"} / $data->delta * 8, ''), false, true);
-			$xtpl->table_td(format_data_rate($data->{"${role}_bytes"} / $data->delta * 8, ''), false, true);
+		foreach (['in', 'out'] as $dir) {
+			$xtpl->table_td(format_data_rate(($data->{"bytes_${dir}"} / $data->delta) * 8, ''), false, true);
+
+			$xtpl->table_td(format_number_with_unit($data->{"packets_${dir}"} / $data->delta), false, true);
 		}
 
-		$xtpl->table_td(format_data_rate($data->bytes_in / $data->delta * 8, ''), false, true);
-		$xtpl->table_td(format_data_rate($data->bytes_out / $data->delta * 8, ''), false, true);
-		$xtpl->table_td(format_data_rate($data->bytes / $data->delta * 8, ''), false, true);
+		$xtpl->table_td(format_data_rate(($data->bytes_in + $data->bytes_out / $data->delta) * 8, ''), false, true);
+
+		$xtpl->table_td(format_number_with_unit(($data->packets_in + $data->packets_out) / $data->delta), false, true);
 
 		$xtpl->table_tr();
 	}

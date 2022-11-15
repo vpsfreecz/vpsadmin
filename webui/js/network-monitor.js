@@ -2,8 +2,7 @@
 
 var timeout;
 var filters = [
-	'limit', 'ip_version', 'environment', 'location', 'network', 'ip_range',
-	'node', 'ip_address', 'vps', 'user'
+	'limit', 'environment', 'location',	'node', 'vps', 'user'
 ];
 
 function pad(num, size) {
@@ -40,22 +39,28 @@ function formatDataRate(n) {
 	return round(n, 2);
 }
 
-function getIpAddressId (v, callback) {
-	if (/^\d+$/.test(v))
-		return callback(v);
+function formatNumber(n) {
+	var units = [
+		{threshold: 1000*1000*1000, unit: 'G'},
+		{threshold: 1000*1000, unit: 'M'},
+		{threshold: 1000,  unit: 'k'},
+	];
 
-	apiClient.ip_address.list({addr: v}, function (c, ips) {
-		if (ips.length < 1)
-			return callback(false);
+	ret = "";
+	selected = 0;
 
-		callback(ips.first().id);
-	});
+	for (var i = 0; i < units.length; i++) {
+		if (n > units[i].threshold)
+			return round((n / units[i].threshold), 2) + units[i].unit;
+	}
+
+	return round(n, 2);
 }
 
 function getParams (callback) {
 	var ret = {
 		'meta': {
-			'includes': 'ip_address__network_interface',
+			'includes': 'network_interface',
 		}
 	};
 
@@ -65,20 +70,6 @@ function getParams (callback) {
 		if (v && !(v === '0'))
 			ret[param] = v;
 	 });
-
-	if (ret.ip_address) {
-			getIpAddressId(ret.ip_address, function (id) {
-				if (id)
-					ret.ip_address = id;
-
-				else
-					delete ret.ip_address;
-
-				callback(ret);
-			});
-
-			return;
-	}
 
 	return callback(ret);
 }
@@ -91,30 +82,32 @@ function rate (n, delta) {
 	return td(formatDataRate(n / delta * 8)).css('text-align', 'right');
 }
 
+function packets (n, delta) {
+	return td(formatNumber(n / delta * 8)).css('text-align', 'right');
+}
+
 function updateMonitor () {
 	getParams(function (params) {
-		apiClient.ip_traffic_monitor.list(params, function (c, list) {
+		apiClient.network_interface_monitor.list(params, function (c, list) {
 			$('#live_monitor tr').slice(3).remove();
 
 			list.each(function (stat) {
 				var tr = $('<tr>');
 
 				tr.append(td(
-					'<a href="?page=adminvps&action=info&veid='+stat.ip_address.network_interface.vps_id+'">' +
-					stat.ip_address.network_interface.vps_id +
+					'<a href="?page=adminvps&action=info&veid='+stat.network_interface.vps_id+'">#' +
+					stat.network_interface.vps_id +
 					'</a>'
 				));
-				tr.append(td(stat.ip_address.addr));
+				tr.append(td(stat.network_interface.name));
 
-				['public', 'private'].forEach(function (role) {
-					tr.append(rate(stat[role+'_bytes_in'], stat.delta));
-					tr.append(rate(stat[role+'_bytes_out'], stat.delta));
-					tr.append(rate(stat[role+'_bytes'], stat.delta));
+				['in', 'out'].forEach(function (dir) {
+					tr.append(rate(stat['bytes_'+dir], stat.delta));
+					tr.append(packets(stat['packets_'+dir], stat.delta));
 				});
 
-				tr.append(rate(stat.bytes_in, stat.delta));
-				tr.append(rate(stat.bytes_out, stat.delta));
-				tr.append(rate(stat.bytes, stat.delta));
+				tr.append(rate(stat['bytes_in'] + stat['bytes_out'], stat.delta));
+				tr.append(packets(stat['packets_in'] + stat['packets_out'], stat.delta));
 
 				tr.appendTo('#live_monitor tbody');
 			});
