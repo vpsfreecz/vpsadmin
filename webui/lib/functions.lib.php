@@ -548,6 +548,38 @@ function data_size_to_humanreadable($val) {
 	return data_size_to_humanreadable_mb($val);
 }
 
+function number_unitize($val) {
+	$units = [
+		"t" => 1000000000000,
+		"g" => 1000000000,
+		"m" => 1000000,
+		"k" => 1000,
+		"" => 0
+	];
+
+	if (!$val)
+		return [0, ""];
+
+	elseif ($val < 1000)
+		return [$val, ""];
+
+	foreach ($units as $u => $ex) {
+		if ($val >= $ex)
+			return [$val / $ex, $u];
+	}
+
+	return [$val, ""];
+}
+
+function format_number_with_unit($n) {
+	list($val, $unit) = number_unitize($n);
+
+	if ($unit != 'k')
+		$unit = strtoupper($unit);
+
+	return round($val, 2).$unit;
+}
+
 function approx_number($val) {
 	$start = 1000;
 	$units = array(
