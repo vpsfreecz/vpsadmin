@@ -266,10 +266,11 @@ module NodeCtld
       return unless changed
 
       db = NodeCtld::Db.new
+      log_interval = $CFG.get(:traffic_accounting, :log_interval)
 
       @mutex.synchronize do
         @netifs.each do |netif|
-          netif.save(db) if netif.changed?
+          netif.save(db, log_interval) if netif.changed?
         end
       end
 
