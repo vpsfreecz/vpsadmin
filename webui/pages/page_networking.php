@@ -265,8 +265,8 @@ if ($show_traffic) {
 	$xtpl->table_add_category(_('VPS'));
 	$xtpl->table_add_category(_('Interface'));
 	$xtpl->table_add_category(_('Date'));
-	$xtpl->table_add_category(_('In'));
-	$xtpl->table_add_category(_('Out'));
+	$xtpl->table_add_category(_('Received'));
+	$xtpl->table_add_category(_('Sent'));
 	$xtpl->table_add_category(_('Total'));
 
 	foreach ($stats as $stat) {
