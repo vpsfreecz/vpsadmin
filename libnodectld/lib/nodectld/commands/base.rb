@@ -116,7 +116,6 @@ module NodeCtld::Commands
   module Vps               ; end
   module Dataset           ; end
   module Shaper            ; end
-  module Firewall          ; end
   module Utils             ; end
   module Mail              ; end
   module OutageWindow      ; end
