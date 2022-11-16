@@ -298,7 +298,6 @@ module TransactionChains
       # Setup firewall and shapers
       # Unregister from firewall and remove shaper on source node
       if @opts[:handle_ips]
-        use_chain(Vps::FirewallUnregister, args: src_vps, urgent: true)
         use_chain(Vps::ShaperUnset, args: src_vps, urgent: true)
       end
 
