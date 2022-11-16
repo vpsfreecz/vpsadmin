@@ -1279,9 +1279,14 @@ if (isset($show_info) && $show_info) {
 
 		// Network interfaces
 		$netifs = $api->network_interface->list(['vps' => $vps->id]);
+		$netif_accounting = $api->network_interface_accounting->list([
+			'vps' => $vps->id,
+			'year' => date('Y'),
+			'month' => date('n'),
+		]);
 
 		foreach ($netifs as $netif) {
-			vps_netif_form($vps, $netif);
+			vps_netif_form($vps, $netif, $netif_accounting);
 		}
 
 	// DNS Server
