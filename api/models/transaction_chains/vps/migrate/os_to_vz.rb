@@ -295,12 +295,6 @@ module TransactionChains
         src.call_hooks_for(:migrated, self, args: [src, dst])
       end
 
-      # Setup firewall and shapers
-      # Unregister from firewall and remove shaper on source node
-      if @opts[:handle_ips]
-        use_chain(Vps::ShaperUnset, args: src_vps, urgent: true)
-      end
-
       # Destroy old dataset in pools
       # Do not detach backup trees and branches
       # Do not delete repeatable tasks - they are re-used for new datasets
