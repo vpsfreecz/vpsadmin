@@ -1908,7 +1908,7 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 	$xtpl->form_out_raw('vps_swap_preview');
 }
 
-function vps_netif_form($vps, $netif) {
+function vps_netif_form($vps, $netif, $netif_accounting) {
 	global $xtpl, $api;
 
 	$xtpl->table_title(_('Network interface').' '.$netif->name);
@@ -1962,6 +1962,46 @@ function vps_netif_form($vps, $netif) {
 		$xtpl->form_out(_('Go >>'));
 	else
 		$xtpl->form_out_raw();
+
+	$accounting = null;
+
+	foreach ($netif_accounting as $acc) {
+		if ($acc->network_interface_id == $netif->id) {
+			$accounting = $acc;
+			break;
+		}
+	}
+
+	if ($accounting) {
+		$xtpl->table_add_category(_('Transfers in').' '.$accounting->year.'/'.$accounting->month);
+		$xtpl->table_add_category(_('Bytes'));
+		$xtpl->table_add_category(_('Packets'));
+
+		$xtpl->table_td(_('Received').':');
+		$xtpl->table_td(data_size_to_humanreadable($accounting->bytes_in / 1024 / 1024), false, true);
+		$xtpl->table_td(format_number_with_unit($accounting->packets_in), false, true);
+		$xtpl->table_tr();
+
+		$xtpl->table_td(_('Sent').':');
+		$xtpl->table_td(data_size_to_humanreadable($accounting->bytes_out / 1024 / 1024), false, true);
+		$xtpl->table_td(format_number_with_unit($accounting->packets_out), false, true);
+		$xtpl->table_tr();
+
+		$xtpl->table_td(_('Total').':');
+		$xtpl->table_td(data_size_to_humanreadable(($accounting->bytes_in + $accounting->bytes_out) / 1024 / 1024), false, true);
+		$xtpl->table_td(format_number_with_unit($accounting->packets_in + $accounting->packets_out), false, true);
+		$xtpl->table_tr();
+
+		$xtpl->table_td(
+			'<a href="?page=networking&action=list&vps='.$netif->vps_id.'&year='.$accounting->year.'&month=">See traffic accounting log</a> '._('or').' <a href="?page=networking&action=live&vps='.$netif->vps_id.'">live monitor</a>',
+			false,
+			false,
+			3
+		);
+		$xtpl->table_tr();
+
+		$xtpl->table_out();
+	}
 
 	if ($vps->node->hypervisor_type == 'vpsadminos') {
 		vps_netif_iproutes_form($vps, $netif);
