@@ -60,14 +60,16 @@ module NodeCtld
 
     # Register a new network interface
     # @param vps_id [Integer]
+    # @param user_id [Integer]
     # @param netif_id [Integer]
     # @param vps_name [String]
-    def add_netif(vps_id, netif_id, vps_name)
+    def add_netif(vps_id, user_id, netif_id, vps_name)
       log(:info, "Registering interface in VPS #{vps_id} id=#{netif_id} name=#{vps_name}")
 
       @mutex.synchronize do
         @netifs << NetAccounting::Interface.new(
           vps_id,
+          user_id,
           netif_id,
           vps_name,
         )
@@ -172,7 +174,7 @@ module NodeCtld
     def fetch_netifs(db)
       rs = db.query(
         "SELECT
-          vpses.id AS vps_id, netifs.id AS netif_id, netifs.name,
+          vpses.id AS vps_id, vpses.user_id, netifs.id AS netif_id, netifs.name,
           m.bytes_in_readout, m.bytes_out_readout,
           m.packets_in_readout, m.packets_out_readout
         FROM network_interfaces netifs
@@ -188,6 +190,7 @@ module NodeCtld
       rs.each do |row|
         ret << NetAccounting::Interface.new(
           row['vps_id'],
+          row['user_id'],
           row['netif_id'],
           row['name'],
           bytes_in: row['bytes_in_readout'] || 0,
@@ -208,7 +211,7 @@ module NodeCtld
       # confirmed and vpses.node_id points to the source node.
       rs = db.prepared(
         "SELECT
-          vpses.id AS vps_id, netifs.id AS netif_id, netifs.name,
+          vpses.id AS vps_id, vpses.user_id, netifs.id AS netif_id, netifs.name,
           m.bytes_in_readout, m.bytes_out_readout,
           m.packets_in_readout, m.packets_out_readout
         FROM network_interfaces netifs
@@ -224,6 +227,7 @@ module NodeCtld
 
       netif = NetAccounting::Interface.new(
         row['vps_id'],
+        row['user_id'],
         row['netif_id'],
         row['name'],
         bytes_in: row['bytes_in_readout'] || 0,

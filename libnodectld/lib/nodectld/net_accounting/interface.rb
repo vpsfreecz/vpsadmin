@@ -6,6 +6,10 @@ module NodeCtld
     # @return [Integer]
     attr_reader :vps_id
 
+    # User ID
+    # @return [Integer]
+    attr_reader :user_id
+
     # Network interface ID
     # @return [Integer]
     attr_reader :id
@@ -16,10 +20,12 @@ module NodeCtld
     attr_accessor :vps_name
 
     # @param vps_id [Integer]
+    # @param user_id [Integer]
     # @param id [Integer] network interface ID
     # @param vps_name [String]
-    def initialize(vps_id, id, vps_name, bytes_in: 0, bytes_out: 0, packets_in: 0, packets_out: 0)
+    def initialize(vps_id, user_id, id, vps_name, bytes_in: 0, bytes_out: 0, packets_in: 0, packets_out: 0)
       @vps_id = vps_id
+      @user_id = user_id
       @id = id
       @vps_name = vps_name
       @last_bytes_in = bytes_in
@@ -96,6 +102,7 @@ module NodeCtld
     def dump
       {
         vps_id: @vps_id,
+        user_id: @user_id,
         netif_id: @id,
         vps_name: @vps_name,
         bytes_in: @bytes_in,
@@ -175,6 +182,7 @@ module NodeCtld
         db.prepared(
           "INSERT INTO network_interface_#{table}_accountings SET
             network_interface_id = ?,
+            user_id = ?,
             #{date_spec.map { |k, v| "`#{k}` = #{v}" }.join(', ')},
             bytes_in = ?,
             bytes_out = ?,
@@ -183,6 +191,7 @@ module NodeCtld
             created_at = ?,
             updated_at = ?
           ON DUPLICATE KEY UPDATE
+            user_id = values(user_id),
             bytes_in = bytes_in + values(bytes_in),
             bytes_out = bytes_out + values(bytes_out),
             packets_in = packets_in + values(packets_in),
@@ -190,6 +199,7 @@ module NodeCtld
             updated_at = values(updated_at)
           ",
           @id,
+          @user_id,
           @log_bytes_in,
           @log_bytes_out,
           @log_packets_in,
