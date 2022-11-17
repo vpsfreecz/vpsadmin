@@ -13,7 +13,7 @@ module NodeCtld
         [@vps_id, @name],
         {hwaddr: @mac_address, max_tx: @max_tx, max_rx: @max_rx},
       )
-      NetAccounting.add_netif(@vps_id, @netif_id, @name)
+      NetAccounting.add_netif(@vps_id, @user_id, @netif_id, @name)
       ok
     end
 
