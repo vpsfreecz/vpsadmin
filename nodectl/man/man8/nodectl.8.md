@@ -161,6 +161,10 @@ start it.
   List transactions queued for execution. Transactions whose dependencies are
   not met yet are not listed, as it is impossible to know when they will be executed.
 
+`get veth_map`
+  Print veth map contents, listing all known VPS interfaces and their names on
+  the host.
+
 `set config` *key*`=`*value*...
   Alter nodectld's configuration. Set *key* to *value*. Format of keys is the same
   as for `get`. Multiple keys may be specified, separated by spaces.
