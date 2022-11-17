@@ -174,7 +174,11 @@ module NodeCtld
     end
 
     def save_accounting(db)
-      kinds = {year: 'yearly', month: 'monthly', day: 'daily'}
+      kinds = [
+        [:year, 'yearly'],
+        [:month, 'monthly'],
+        [:day, 'daily'],
+      ]
       date_spec = {}
 
       kinds.each do |kind, table|
