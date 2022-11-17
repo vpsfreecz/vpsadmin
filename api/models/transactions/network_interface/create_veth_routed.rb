@@ -11,6 +11,7 @@ module Transactions::NetworkInterface
       {
         pool_fs: netif.vps.dataset_in_pool.pool.filesystem,
         name: netif.name,
+        user_id: netif.vps.user_id,
         netif_id: netif.id,
         mac_address: netif.mac,
         max_tx: netif.max_tx,

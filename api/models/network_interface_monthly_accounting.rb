@@ -1,7 +1,4 @@
 class NetworkInterfaceMonthlyAccounting < ActiveRecord::Base
   belongs_to :network_interface
-
-  def user
-    network_interface.vps.user
-  end
+  belongs_to :user
 end
