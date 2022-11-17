@@ -112,21 +112,22 @@ END
 
         else
           puts sprintf(
-            '%-10s %-10s %8s %8s %8s %6s ' + (['%12s'] * 4 * 3).join(' '),
-            'VPS', 'NETIF', 'NETIF_ID',
+            '%-10s %5s %-10s %8s %8s %8s %6s ' + (['%12s'] * 4 * 3).join(' '),
+            'VPS', 'USER', 'NETIF', 'NETIF_ID',
             'UPDATE', 'LOG', 'DELTA',
             'B/IN', 'B/OUT', 'PKT/IN', 'PKT/OUT',
             'LOG_B/IN', 'LOG_B/OUT', 'LOG_PKT/IN', 'LOG_PKT/OUT',
             'LAST_B/IN', 'LAST_B/OUT', 'LAST_PKT/IN', 'LAST_PKT/OUT',
           ) if opts[:header]
 
-          row_fmt = '%-10d %-10s %8d %8s %8s %6d ' + (['%12s'] * 4 * 3).join(' ')
+          row_fmt = '%-10d %5d %-10s %8d %8s %8s %6d ' + (['%12s'] * 4 * 3).join(' ')
           now = Time.now
 
           interfaces.each do |n|
             puts sprintf(
               row_fmt,
               n[:vps_id],
+              n[:user_id],
               n[:vps_name],
               n[:netif_id],
               n[:last_update] ? format_duration_ago(n[:last_update], now) : '-',
