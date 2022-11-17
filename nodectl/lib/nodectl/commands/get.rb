@@ -1,4 +1,5 @@
 require 'ipaddr'
+require 'libosctl'
 
 module NodeCtl
   class Commands::Get < Command::Remote
@@ -7,6 +8,7 @@ module NodeCtl
     description 'Get nodectld resources and properties'
 
     include Utils
+    include OsCtl::Lib::Utils::Humanize
 
     def options(parser, args)
       opts.update({
@@ -28,6 +30,7 @@ Subcommands:
 config [some.key]    Show nodectld's config or specific key
 queue                List transactions queued for execution
 veth_map             Print hash table that maps VPS interfaces to host interfaces
+net_accounting       Print network interface accounting state
 END
     end
 
@@ -101,11 +104,59 @@ END
           end
         end
 
+      when 'net_accounting'
+        interfaces = response[:interfaces]
+
+        if global_opts[:parsable]
+          puts interfaces.to_json
+
+        else
+          puts sprintf(
+            '%-10s %-10s %8s %8s %8s %6s ' + (['%12s'] * 4 * 3).join(' '),
+            'VPS', 'NETIF', 'NETIF_ID',
+            'UPDATE', 'LOG', 'DELTA',
+            'B/IN', 'B/OUT', 'PKT/IN', 'PKT/OUT',
+            'LOG_B/IN', 'LOG_B/OUT', 'LOG_PKT/IN', 'LOG_PKT/OUT',
+            'LAST_B/IN', 'LAST_B/OUT', 'LAST_PKT/IN', 'LAST_PKT/OUT',
+          ) if opts[:header]
+
+          row_fmt = '%-10d %-10s %8d %8s %8s %6d ' + (['%12s'] * 4 * 3).join(' ')
+          now = Time.now
+
+          interfaces.each do |n|
+            puts sprintf(
+              row_fmt,
+              n[:vps_id],
+              n[:vps_name],
+              n[:netif_id],
+              n[:last_update] ? format_duration_ago(n[:last_update], now) : '-',
+              n[:last_log] ? format_duration_ago(n[:last_log], now) : '-',
+              n[:delta],
+              *format_interface_stats(n, ''),
+              *format_interface_stats(n, 'log_'),
+              *format_interface_stats(n, 'last_'),
+            )
+          end
+        end
       else
         pp response
       end
 
       nil
+    end
+
+    protected
+    def format_duration_ago(timestamp, from)
+      sprintf('-%.1fs', from - Time.at(timestamp))
+    end
+
+    def format_interface_stats(n, prefix)
+      [
+        humanize_data(n[:"#{prefix}bytes_in"]),
+        humanize_data(n[:"#{prefix}bytes_out"]),
+        humanize_number(n[:"#{prefix}packets_in"]),
+        humanize_number(n[:"#{prefix}packets_out"]),
+      ]
     end
   end
 end

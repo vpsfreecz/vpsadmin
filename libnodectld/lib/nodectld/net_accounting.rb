@@ -15,6 +15,7 @@ module NodeCtld
         remove_netif
         remove_vps
         netif_up
+        dump
       ).each do |v|
         define_method(v) do |*args, **kwargs, &block|
           instance.send(v, *args, **kwargs, &block)
@@ -129,6 +130,14 @@ module NodeCtld
     def netif_up(vps_id, vps_name)
       @discovery_queue << [:up, vps_id, vps_name]
       nil
+    end
+
+    # Export a list of accounted interfaces
+    # @return [Array]
+    def dump
+      @mutex.synchronize do
+        @netifs.map(&:dump)
+      end
     end
 
     def log_type
