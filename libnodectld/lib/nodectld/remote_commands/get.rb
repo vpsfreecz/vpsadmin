@@ -44,6 +44,9 @@ module NodeCtld::RemoteCommands
         when 'veth_map'
           ok.update({output: {veth_map: NodeCtld::VethMap.dump}})
 
+        when 'net_accounting'
+          ok.update({output: {interfaces: NodeCtld::NetAccounting.dump}})
+
         else
           raise NodeCtld::SystemCommandFailed.new(
             nil,

@@ -93,6 +93,29 @@ module NodeCtld
       @changed = false
     end
 
+    def dump
+      {
+        vps_id: @vps_id,
+        netif_id: @id,
+        vps_name: @vps_name,
+        bytes_in: @bytes_in,
+        bytes_out: @bytes_out,
+        packets_in: @packets_in,
+        packets_out: @packets_out,
+        log_bytes_in: @log_bytes_in,
+        log_bytes_out: @log_bytes_out,
+        log_packets_in: @log_packets_in,
+        log_packets_out: @log_packets_out,
+        last_bytes_in: @last_bytes_in,
+        last_bytes_out: @last_bytes_out,
+        last_packets_in: @last_packets_in,
+        last_packets_out: @last_packets_out,
+        delta: @delta,
+        last_update: @last_update && @last_update.to_i,
+        last_log: @last_log && @last_log.to_i,
+      }
+    end
+
     protected
     def save_monitor(db)
       db.prepared(
