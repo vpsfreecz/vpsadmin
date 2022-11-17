@@ -14,6 +14,7 @@ module NodeCtld
         add_netif
         remove_netif
         remove_vps
+        chown_vps
         netif_up
         dump
       ).each do |v|
@@ -120,6 +121,21 @@ module NodeCtld
       @mutex.synchronize do
         @netifs.delete_if do |netif|
           netif.vps_id == vps_id
+        end
+      end
+
+      nil
+    end
+
+    # Update user ID on VPS interfaces
+    # @param vps_id [Integer]
+    # @param user_id [Integer]
+    def chown_vps(vps_id, user_id)
+      log(:info, "Chowning interfaces of VPS #{vps_id} to user_id=#{user_id}")
+
+      @mutex.synchronize do
+        @netifs.each do |netif|
+          netif.user_id = user_id
         end
       end
 

@@ -7,8 +7,9 @@ module NodeCtld
     attr_reader :vps_id
 
     # User ID
+    # @param [Integer]
     # @return [Integer]
-    attr_reader :user_id
+    attr_accessor :user_id
 
     # Network interface ID
     # @return [Integer]
