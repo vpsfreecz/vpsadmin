@@ -171,6 +171,10 @@ module NodeCtld
       start_delay: 5,
     },
 
+    route_check: {
+      default_timeout: 240,
+    },
+
     mbuffer: {
       send: {
         block_size: '1M',

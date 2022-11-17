@@ -5,8 +5,6 @@ module NodeCtld
   class RouteCheck
     include OsCtl::Lib::Utils::Log
 
-    TIMEOUT = 240
-
     class << self
       %i(wait check check!).each do |m|
         define_method(m) do |pool_fs, ctid, *args, **kwargs|
@@ -25,14 +23,20 @@ module NodeCtld
     end
 
     # Block until routes of selected VPS disappear from the routing table
-    def wait(timeout: TIMEOUT)
+    def wait(timeout: nil)
       since = Time.now
+      use_default_timeout = timeout.nil?
+      effective_timeout = timeout
 
       loop do
         routes = check
         break if routes.empty?
 
-        if since + timeout < Time.now
+        if use_default_timeout
+          effective_timeout = $CFG.get(:route_check, :default_timeout)
+        end
+
+        if since + effective_timeout < Time.now
           fail "the following routes exist: #{format_routes(routes)}"
         else
           log(
@@ -44,7 +48,7 @@ module NodeCtld
         sleep(5)
       end
 
-      log(:info, "Waited #{Time.now - since} seconds for routes to clear")
+      log(:info, "Waited #{(Time.now - since).round(2)} seconds for routes to clear")
     end
 
     # @return [Array<VpsConfig::Route>]
