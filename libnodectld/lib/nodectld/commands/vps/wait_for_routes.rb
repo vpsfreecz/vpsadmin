@@ -14,7 +14,7 @@ module NodeCtld
 
     protected
     def wait_for_routes
-      RouteCheck.wait(@pool_fs, @vps_id, timeout: @timeout || RouteCheck::TIMEOUT)
+      RouteCheck.wait(@pool_fs, @vps_id, timeout: @timeout)
     end
   end
 end
