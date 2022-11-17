@@ -172,7 +172,7 @@ module NodeCtld
     },
 
     route_check: {
-      default_timeout: 240,
+      default_timeout: 300,
     },
 
     mbuffer: {
