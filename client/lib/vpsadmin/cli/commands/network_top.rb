@@ -212,7 +212,7 @@ module VpsAdmin::CLI::Commands
         p = c[:name]
 
         attron(A_BOLD) if p == @sort_param
-        addstr(sprintf(" %#{c[:width]}s", unitize(data.send(p), data.delta)))
+        addstr(sprintf(" %#{c[:width]}s", unitize_param(p, data.send(p), data.delta)))
         attroff(A_BOLD) if p == @sort_param
       end
     end
@@ -259,18 +259,18 @@ module VpsAdmin::CLI::Commands
       ))
 
       setpos(lines-3, 0)
-      addstr(sprintf(fmt, 'In', *fields.map { |f| unitize(stats[:"#{f}_in"], avg_delta) }))
+      addstr(sprintf(fmt, 'In', *fields.map { |f| unitize_param(f, stats[:"#{f}_in"], avg_delta) }))
 
       setpos(lines-2, 0)
-      addstr(sprintf(fmt, 'Out', *fields.map { |f| unitize(stats[:"#{f}_out"], avg_delta) }))
+      addstr(sprintf(fmt, 'Out', *fields.map { |f| unitize_param(f, stats[:"#{f}_out"], avg_delta) }))
 
       setpos(lines-1, 0)
       attron(A_BOLD)
-      addstr(sprintf(fmt, 'Total', *fields.map { |f| unitize(stats[:"#{f}_in"] + stats[:"#{f}_out"], avg_delta) }))
+      addstr(sprintf(fmt, 'Total', *fields.map { |f| unitize_param(f, stats[:"#{f}_in"] + stats[:"#{f}_out"], avg_delta) }))
       attroff(A_BOLD)
     end
 
-    def unitize(n, delta)
+    def unitize_bytes(n, delta)
       if @opts[:unit] == :bytes
         per_s = n / delta.to_f
       else
@@ -278,7 +278,7 @@ module VpsAdmin::CLI::Commands
       end
 
       bits = 39
-      units = %i(T G M K)
+      units = %w(T G M k)
 
       units.each do |u|
         threshold = 2 << bits
@@ -289,6 +289,31 @@ module VpsAdmin::CLI::Commands
       end
 
       per_s.round(2).to_s
+    end
+
+    def unitize_number(n, delta)
+      per_s = n / delta.to_f
+      threshold = 1_000_000_000_000
+      units = %w(T G M k)
+
+      units.each do |u|
+        return "#{(per_s / threshold).round(2)}#{u}" if per_s >= threshold
+
+        threshold /= 1000
+      end
+
+      per_s.round(2).to_s
+    end
+
+    def unitize_param(param, n, delta)
+      case param
+      when :bytes, :bytes_in, :bytes_out
+        unitize_bytes(n, delta)
+      when :packets, :packets_in, :packets_out
+        unitize_number(n, delta)
+      else
+        fail "unknown param to unitize: #{param.inspect}"
+      end
     end
 
     def sort_next(n)
