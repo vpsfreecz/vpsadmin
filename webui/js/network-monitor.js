@@ -60,7 +60,7 @@ function formatNumber(n) {
 function getParams (callback) {
 	var ret = {
 		'meta': {
-			'includes': 'network_interface',
+			'includes': 'network_interface__vps__node',
 		}
 	};
 
@@ -97,6 +97,11 @@ function updateMonitor () {
 				tr.append(td(
 					'<a href="?page=adminvps&action=info&veid='+stat.network_interface.vps_id+'">#' +
 					stat.network_interface.vps_id +
+					'</a>'
+				));
+				tr.append(td(
+					'<a href="?page=node&id='+stat.network_interface.vps.node_id+'">' +
+					stat.network_interface.vps.node.domain_name +
 					'</a>'
 				));
 				tr.append(td(stat.network_interface.name));
