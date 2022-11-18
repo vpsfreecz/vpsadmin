@@ -38,6 +38,11 @@ module NodeCtld
         instance.reset(vps_id)
       end
 
+      # Load all interfaces anew
+      def update_all
+        instance.update_all
+      end
+
       # Dump map contents
       # @return [Hash]
       def dump
@@ -96,6 +101,20 @@ module NodeCtld
       end
     end
 
+    def update_all
+      sync do
+        netifs = list_all
+        @map.clear
+
+        netifs.each do |netif|
+          next if netif[:veth].nil?
+
+          @map[netif[:ctid]] ||= {}
+          @map[netif[:ctid]][netif[:name]] = netif[:veth]
+        end
+      end
+    end
+
     def dump
       sync do
         Hash[ @map.map { |k,v| [k.dup, v.clone] } ]
@@ -128,8 +147,12 @@ module NodeCtld
       entry
     end
 
+    def list_all
+      osctl_parse(%i(ct netif ls))
+    end
+
     def load_all
-      osctl_parse(%i(ct netif ls)).each do |netif|
+      list_all.each do |netif|
         next if netif[:veth].nil?
 
         @map[netif[:ctid]] ||= {}

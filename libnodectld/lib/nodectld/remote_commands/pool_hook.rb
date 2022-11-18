@@ -21,6 +21,7 @@ module NodeCtld::RemoteCommands
 
         if daemon.node.all_pools_up?
           log(:info, 'pool-hook', 'All pools are now online, resuming')
+          NodeCtld::VethMap.update_all
           daemon.resume
         end
 
