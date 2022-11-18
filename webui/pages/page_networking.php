@@ -409,7 +409,7 @@ if ($show_live) {
 
 	$params = [
 		'limit' => get_val('limit', 25),
-		'meta' => ['includes' => 'network_interface__vps'],
+		'meta' => ['includes' => 'network_interface__vps__node'],
 	];
 
 	$conds = [
@@ -424,6 +424,7 @@ if ($show_live) {
 	$monitors = $api->network_interface_monitor->list($params);
 
 	$xtpl->table_td(_('VPS'), '#5EAFFF; color:#FFF; font-weight:bold;', false, '1', '2');
+	$xtpl->table_td(_('Node'), '#5EAFFF; color:#FFF; font-weight:bold;', false, '1', '2');
 	$xtpl->table_td(_('Interface'), '#5EAFFF; color:#FFF; font-weight:bold;', false, '1', '2');
 
 	$xtpl->table_td(_('Receiving'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;', false, '2');
@@ -448,6 +449,7 @@ if ($show_live) {
 
 	foreach ($monitors as $data) {
 		$xtpl->table_td(vps_link($data->network_interface->vps));
+		$xtpl->table_td(node_link($data->network_interface->vps->node));
 		$xtpl->table_td(h($data->network_interface->name));
 
 		foreach (['in', 'out'] as $dir) {
