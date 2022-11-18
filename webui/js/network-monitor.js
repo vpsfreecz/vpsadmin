@@ -79,11 +79,11 @@ function td () {
 }
 
 function rate (n, delta) {
-	return td(formatDataRate(n / delta * 8)).css('text-align', 'right');
+	return td(formatDataRate((n / delta) * 8)).css('text-align', 'right');
 }
 
 function packets (n, delta) {
-	return td(formatNumber(n / delta * 8)).css('text-align', 'right');
+	return td(formatNumber(n / delta)).css('text-align', 'right');
 }
 
 function updateMonitor () {
