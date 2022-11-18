@@ -164,7 +164,7 @@ module VpsAdmin::API::Resources
         q = self.class.model
           .select("
             #{table}.id, #{table}.year, #{table}.month,
-            #{table}.network_interface_id,
+            #{table}.network_interface_id, vpses.user_id,
             SUM(bytes_in) AS sum_bytes_in, SUM(bytes_out) AS sum_bytes_out,
             SUM(packets_in) AS sum_packets_in, SUM(packets_out) AS sum_packets_out
           ")
