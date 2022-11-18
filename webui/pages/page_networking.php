@@ -458,7 +458,7 @@ if ($show_live) {
 			$xtpl->table_td(format_number_with_unit($data->{"packets_${dir}"} / $data->delta), false, true);
 		}
 
-		$xtpl->table_td(format_data_rate(($data->bytes_in + $data->bytes_out / $data->delta) * 8, ''), false, true);
+		$xtpl->table_td(format_data_rate((($data->bytes_in + $data->bytes_out) / $data->delta) * 8, ''), false, true);
 
 		$xtpl->table_td(format_number_with_unit(($data->packets_in + $data->packets_out) / $data->delta), false, true);
 
