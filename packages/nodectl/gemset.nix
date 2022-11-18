@@ -85,10 +85,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "0rxa12gx96k6dk9psz8lj38h27p78jq3dgy02din9q7vaqj72wjf";
+      sha256 = "1j8rn8mh0sd5dw5l5z1f4k97zvvckp51bzifh9qd2yx1mp5w1fp3";
       type = "gem";
     };
-    version = "3.0.0.dev.build20221113110426";
+    version = "3.0.0.dev.build20221118162951";
   };
   libosctl = {
     dependencies = ["rainbow" "require_all"];
@@ -96,10 +96,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "1qvfjabq303q0277vvgj93wj3mjqrmqxpf6ayblj9z6hfqyi0i58";
+      sha256 = "0dyy91szybwsg5narl0xdc4mr6dg6lljlgbq1l1f1dwg638bkgyd";
       type = "gem";
     };
-    version = "22.05.0.build20221113100427";
+    version = "22.05.0.build20221114160930";
   };
   mail = {
     dependencies = ["mini_mime" "net-imap" "net-pop" "net-smtp"];
@@ -187,15 +187,15 @@
     version = "0.3.3";
   };
   nodectl = {
-    dependencies = ["json" "libnodectld" "pry" "pry-remote" "require_all"];
+    dependencies = ["json" "libnodectld" "libosctl" "pry" "pry-remote" "require_all"];
     groups = ["default"];
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "0nx9yxp582ar78kbp6l3882myy8cyvqmfg3yfc5j69aph0c7k9wl";
+      sha256 = "18gg345ys9ylryz7fkd23nlnp4pjcqlhx7cg1l804bh70v0w3v88";
       type = "gem";
     };
-    version = "3.0.0.dev.build20221113110426";
+    version = "3.0.0.dev.build20221118162951";
   };
   osctl = {
     dependencies = ["curses" "gli" "highline" "ipaddress" "json" "libosctl" "rainbow" "require_all" "ruby-progressbar"];
@@ -203,10 +203,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "00jc9hwgfkkfs15agghdqzpaysx64z8r0dzp1gj30wvw7cpxa8gn";
+      sha256 = "0lxjsm183llcxd8pcjydg0yh9qjvpakmczkwzbv0q4zv8i4d9g1m";
       type = "gem";
     };
-    version = "22.05.0.build20221113100427";
+    version = "22.05.0.build20221114160930";
   };
   osctl-exportfs = {
     dependencies = ["filelock" "gli" "libosctl" "require_all"];
@@ -214,10 +214,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "0syndaqcgbf5hyjxzw4b974x5hyppyb484vd8nip757w0rnln3fg";
+      sha256 = "0m623f0wfjmiiif9dhna05dxjzgs22ac867iml39nxy6wd79vhgv";
       type = "gem";
     };
-    version = "22.05.0.build20221113100427";
+    version = "22.05.0.build20221114160930";
   };
   prometheus-client = {
     groups = ["default"];
