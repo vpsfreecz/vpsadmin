@@ -3,7 +3,7 @@ class AddVpsBgp < ActiveRecord::Migration[6.1]
 
   def change
     create_table :vps_bgp_peers do |t|
-      t.references  :vps,                        null: false
+      t.references  :vps,                        null: false, unique: true
       t.references  :host_ip_address,            null: false
       t.integer     :protocol,                   null: false
       t.integer     :route_limit,                null: false, default: 256
@@ -12,8 +12,6 @@ class AddVpsBgp < ActiveRecord::Migration[6.1]
       t.timestamps                               null: false
     end
 
-    add_index :vps_bgp_peers, %i(vps_id host_ip_address_id), unique: true
-    add_index :vps_bgp_peers, %i(vps_id protocol), unique: true
     add_index :vps_bgp_peers, :protocol
     add_index :vps_bgp_peers, :confirmed
 
