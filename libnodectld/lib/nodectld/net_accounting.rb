@@ -102,7 +102,7 @@ module NodeCtld
     # @param vps_id [Integer]
     # @param netif_id [Integer]
     def remove_netif(vps_id, netif_id)
-      log(:info, "Removing interface from VPS #{vps_id} id=#{netif_id} name=#{vps_name}")
+      log(:info, "Removing interface from VPS #{vps_id} id=#{netif_id}")
 
       @mutex.synchronize do
         @netifs.delete_if do |netif|
