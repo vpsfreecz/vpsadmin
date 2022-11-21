@@ -11,8 +11,11 @@ module NodeCtld
         i.reply
       end
 
-      def send_or_not(*args)
-        send(*args)
+      def send_or_not(sock, cmd, params = {})
+        i = new(sock)
+        i.open
+        i.cmd(cmd, params)
+        i.close
 
       rescue
         # nothing to do
