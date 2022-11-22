@@ -31,7 +31,7 @@ module NodeCtld
         node_id: $CFG.get(:vpsadmin, :node_id),
         time: t,
         str_time: t.strftime('%Y-%m-%d %H:%M:%S'),
-        nproc: SystemProbes::ProcessCounter.new.count,
+        nproc: 0,
         uptime: SystemProbes::Uptime.new.uptime.round,
         loadavg: SystemProbes::LoadAvg.new.avg,
         pool_state: pool_state,
