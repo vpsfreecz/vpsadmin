@@ -12,6 +12,7 @@ module NodeCtld
         update
         stop
         add_netif
+        rename_netif
         remove_netif
         remove_vps
         chown_vps
