@@ -123,13 +123,13 @@ module TransactionChains
       concerns(:transform, [vps.class.name, vps.id], [vps.class.name, dst_vps.id])
 
       # Prepare userns
-      use_chain(UserNamespaceMap::Use, args: [vps.userns_map, @dst_pool])
+      use_chain(UserNamespaceMap::Use, args: [dst_vps, vps.userns_map])
 
       # When cloning to a different user, we first send it with the original
       # mapping and then chown it on the target node and remove the original
       # mapping.
       if @userns_map
-        use_chain(UserNamespaceMap::Use, args: [@userns_map, @dst_pool])
+        use_chain(UserNamespaceMap::Use, args: [dst_vps, @userns_map])
       end
 
       if remote
@@ -264,7 +264,7 @@ module TransactionChains
         use_chain(
           UserNamespaceMap::Disuse,
           args: [dst_vps],
-          kwargs: {userns_map: vps.userns_map, pool: @dst_pool},
+          kwargs: {userns_map: vps.userns_map},
         )
       end
 
