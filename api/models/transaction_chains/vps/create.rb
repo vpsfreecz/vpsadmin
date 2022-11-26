@@ -29,8 +29,6 @@ module TransactionChains
           user_namespaces: {user_id: vps.user_id}
         ).take!
 
-        use_chain(UserNamespaceMap::Use, args: [userns_map, pool])
-
       else
         userns_map = nil
       end
@@ -60,6 +58,10 @@ module TransactionChains
       vps.dataset_in_pool = dip
 
       lock(vps.dataset_in_pool)
+
+      if userns_map
+        use_chain(UserNamespaceMap::Use, args: [vps, userns_map])
+      end
 
       vps_features = []
 

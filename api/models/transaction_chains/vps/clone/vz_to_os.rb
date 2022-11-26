@@ -107,11 +107,12 @@ module TransactionChains
         user_namespaces: {user_id: attrs[:user].id}
       ).take!
 
-      use_chain(UserNamespaceMap::Use, args: [@userns_map, @dst_pool])
-
       # Create root dataset
       dst_vps.dataset_in_pool = vps_dataset(vps, dst_vps, attrs[:dataset_plans])
       lock(dst_vps.dataset_in_pool)
+
+      # Create the map
+      use_chain(UserNamespaceMap::Use, args: [dst_vps, @userns_map])
 
       # Save the VPS
       dst_vps.save!

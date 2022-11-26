@@ -23,7 +23,7 @@ module TransactionChains
       transfer_cluster_resources
 
       # Prepare userns
-      use_chain(UserNamespaceMap::Use, args: [src_vps.userns_map, dst_pool])
+      use_chain(UserNamespaceMap::Use, args: [dst_vps, src_vps.userns_map])
 
       # Authorize the migration
       append(

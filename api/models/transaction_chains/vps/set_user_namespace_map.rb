@@ -15,7 +15,7 @@ module TransactionChains
       end
 
       # Ensure appropriate osctl user is present
-      use_chain(UserNamespaceMap::Use, args: [userns_map, vps.pool])
+      use_chain(UserNamespaceMap::Use, args: [vps, userns_map])
 
       # Change UID/GID map
       append_t(Transactions::Vps::SetMap, args: [vps, userns_map]) do |t|

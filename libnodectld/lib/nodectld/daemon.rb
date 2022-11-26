@@ -89,6 +89,7 @@ module NodeCtld
 
       @pool_status.init(db)
 
+      OsCtlUsers.setup(db)
       @kernel_log.start if $CFG.get(:kernel_log, :enable)
       @exporter.start if $CFG.get(:exporter, :enable)
 
