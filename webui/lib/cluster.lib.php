@@ -60,15 +60,15 @@ class SystemConfig implements Iterator {
 	}
 
 	/* Iterator methods */
-	public function current() {
+	public function current(): mixed {
 		return $this->optIterator->current()['value'];
 	}
 
-	public function key() {
+	public function key(): mixed {
 		return $this->catIterator->key().':'.$this->optIterator->key();
 	}
 
-	public function next() {
+	public function next(): void {
 		$this->optIterator->next();
 
 		if (!$this->optIterator->valid()) {
@@ -82,11 +82,11 @@ class SystemConfig implements Iterator {
 		}
 	}
 
-	public function rewind() {
+	public function rewind(): void {
 		$this->setupIterator();
 	}
 
-	public function valid() {
+	public function valid(): bool {
 		return $this->catIterator->valid() && $this->optIterator->valid();
 	}
 }

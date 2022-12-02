@@ -111,7 +111,6 @@ class XTemplate {
 		}
 		$this->blocks = $this->_maketree($this->filecontents, '');
 		$this->filevar_parent = $this->_store_filevar_parents($this->blocks);
-		$this->scan_globals();
 	}
 	function assign ($name, $val = '') {
 		if (is_array($name)) {
@@ -272,13 +271,6 @@ class XTemplate {
 	}
 	function clear_autoreset () {
 		$this->_autoreset = false;
-	}
-	function scan_globals () {
-		reset($GLOBALS);
-		foreach ($GLOBALS as $k => $v) {
-			$GLOB[$k] = $v;
-		}
-		$this->assign('PHP', $GLOB);
 	}
 	function get_error () {
 		$retval = false;
@@ -759,7 +751,7 @@ class XTemplate {
 	  * @param $selected_value - default selected value
 	  * @param $hint - helping hint
 	  */
-	function form_add_select($label = 'popisek', $name = 'select_fromgen', $options, $selected_value = '', $hint = '', $multiple = false, $size = '5', $colspan = '1') {
+	function form_add_select($label, $name, $options, $selected_value = '', $hint = '', $multiple = false, $size = '5', $colspan = '1') {
 		$this->table_td($label);
 		$code = ('<select  name="'.$name.'" id="input" '.($multiple ? 'multiple size="'.$size.'"' : '').'>');
 		if ($options)
@@ -780,7 +772,7 @@ class XTemplate {
 	  * @param $options - array of options, $option[option_name] = "Option Label"
 	  * @param $selected_value - default selected value
 	  */
-	function form_add_select_pure($name = 'select_fromgen', $options, $selected_value = '', $multiple = false, $size = '5') {
+	function form_add_select_pure($name, $options, $selected_value, $multiple = false, $size = '5') {
 		$this->table_td($this->form_select_html(
 			$name,
 			$options,
@@ -796,7 +788,7 @@ class XTemplate {
 	  * @param $options - array of options, $option[option_name] = "Option Label"
 	  * @param $selected_value - default selected value
 	  */
-	function form_select_html($name = 'select_fromgen', $options, $selected_value = '', $multiple = false, $size = '5') {
+	function form_select_html($name, $options, $selected_value = '', $multiple = false, $size = '5') {
 		$code = ('<select  name="'.$name.'" id="input" '.($multiple ? 'multiple size="'.$size.'"' : '').'>');
 		if ($options)
 		foreach ($options as $key=>$value) {
