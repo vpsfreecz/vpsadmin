@@ -25,30 +25,30 @@ let
     "endroid/qr-code" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "endroid-qr-code-9109eb7790ece1d46b1ab40eb7f375bbd6e7cb5d";
+        name = "endroid-qr-code-aec7fb1f008ed515f0580d7871dffa19428efb82";
         src = fetchurl {
-          url = "https://api.github.com/repos/endroid/qr-code/zipball/9109eb7790ece1d46b1ab40eb7f375bbd6e7cb5d";
-          sha256 = "1bnfrcwp9f2qj0fhn0ks09040y5hggij7syny5yjb0i03w8164pb";
+          url = "https://api.github.com/repos/endroid/qr-code/zipball/aec7fb1f008ed515f0580d7871dffa19428efb82";
+          sha256 = "1b8ackckk9iadygqhsyjhpfkad8s3dykyf9y5gw2miykbh3hikwq";
         };
       };
     };
     "haveapi/client" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "haveapi-client-0b6f052c1ba8512c5b1ea5277961ff75a5e5091e";
+        name = "haveapi-client-65766cbee8bc0d30b78366a883c52fc6803701f2";
         src = fetchurl {
-          url = "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/0b6f052c1ba8512c5b1ea5277961ff75a5e5091e";
-          sha256 = "0dbrvl2n1f7c6al0khry01rkk9gryig5g1dicgxj4gxc6l7n5zkg";
+          url = "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/65766cbee8bc0d30b78366a883c52fc6803701f2";
+          sha256 = "0adbkl0dkqilf0qdm8hbh2dxzcxfg4zn5600yc0pqiwcg2xrln42";
         };
       };
     };
-    "nategood/httpful" = {
+    "vpsfreecz/httpful" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "nategood-httpful-0cded3ea97ba905600de9ceb9ef13f3ab681587c";
+        name = "vpsfreecz-httpful-770a0e173e304ebbabf8424ab86a0917bd61622f";
         src = fetchurl {
-          url = "https://api.github.com/repos/nategood/httpful/zipball/0cded3ea97ba905600de9ceb9ef13f3ab681587c";
-          sha256 = "13kcpb4j2n1n4fln7v0s9il729s3mmmm3s4akq3azs671pyr2i6h";
+          url = "https://api.github.com/repos/vpsfreecz/httpful/zipball/770a0e173e304ebbabf8424ab86a0917bd61622f";
+          sha256 = "0h9slrf711sa27dbfgi8q3p9h9iwbxzw6sg3z0f069vy2dy2kyjl";
         };
       };
     };
