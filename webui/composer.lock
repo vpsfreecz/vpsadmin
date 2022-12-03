@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b003c9ca41024e3a7e669270fa3bfc81",
+    "content-hash": "86c10b6935e02515ddeeeedce2fa7d78",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -109,16 +109,16 @@
         },
         {
             "name": "endroid/qr-code",
-            "version": "4.4.8",
+            "version": "4.5.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/endroid/qr-code.git",
-                "reference": "9109eb7790ece1d46b1ab40eb7f375bbd6e7cb5d"
+                "reference": "aec7fb1f008ed515f0580d7871dffa19428efb82"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/endroid/qr-code/zipball/9109eb7790ece1d46b1ab40eb7f375bbd6e7cb5d",
-                "reference": "9109eb7790ece1d46b1ab40eb7f375bbd6e7cb5d",
+                "url": "https://api.github.com/repos/endroid/qr-code/zipball/aec7fb1f008ed515f0580d7871dffa19428efb82",
+                "reference": "aec7fb1f008ed515f0580d7871dffa19428efb82",
                 "shasum": ""
             },
             "require": {
@@ -169,7 +169,7 @@
             ],
             "support": {
                 "issues": "https://github.com/endroid/qr-code/issues",
-                "source": "https://github.com/endroid/qr-code/tree/4.4.8"
+                "source": "https://github.com/endroid/qr-code/tree/4.5.2"
             },
             "funding": [
                 {
@@ -177,25 +177,25 @@
                     "type": "github"
                 }
             ],
-            "time": "2022-04-06T09:39:20+00:00"
+            "time": "2022-09-28T11:14:01+00:00"
         },
         {
             "name": "haveapi/client",
-            "version": "0.16.0",
+            "version": "0.16.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/vpsfreecz/haveapi-client-php.git",
-                "reference": "0b6f052c1ba8512c5b1ea5277961ff75a5e5091e"
+                "reference": "65766cbee8bc0d30b78366a883c52fc6803701f2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/0b6f052c1ba8512c5b1ea5277961ff75a5e5091e",
-                "reference": "0b6f052c1ba8512c5b1ea5277961ff75a5e5091e",
+                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/65766cbee8bc0d30b78366a883c52fc6803701f2",
+                "reference": "65766cbee8bc0d30b78366a883c52fc6803701f2",
                 "shasum": ""
             },
             "require": {
-                "nategood/httpful": "~0.3.2",
-                "php": ">=7.4.0"
+                "php": ">=8.0.0",
+                "vpsfreecz/httpful": "~0.4.0"
             },
             "type": "library",
             "autoload": {
@@ -217,22 +217,22 @@
             "homepage": "https://github.com/vpsfreecz/haveapi-client-php",
             "support": {
                 "issues": "https://github.com/vpsfreecz/haveapi-client-php/issues",
-                "source": "https://github.com/vpsfreecz/haveapi-client-php/tree/v0.16.0"
+                "source": "https://github.com/vpsfreecz/haveapi-client-php/tree/v0.16.2"
             },
-            "time": "2022-05-05T16:17:03+00:00"
+            "time": "2022-12-03T17:46:49+00:00"
         },
         {
-            "name": "nategood/httpful",
-            "version": "0.3.2",
+            "name": "vpsfreecz/httpful",
+            "version": "0.4.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/nategood/httpful.git",
-                "reference": "0cded3ea97ba905600de9ceb9ef13f3ab681587c"
+                "url": "https://github.com/vpsfreecz/httpful.git",
+                "reference": "770a0e173e304ebbabf8424ab86a0917bd61622f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nategood/httpful/zipball/0cded3ea97ba905600de9ceb9ef13f3ab681587c",
-                "reference": "0cded3ea97ba905600de9ceb9ef13f3ab681587c",
+                "url": "https://api.github.com/repos/vpsfreecz/httpful/zipball/770a0e173e304ebbabf8424ab86a0917bd61622f",
+                "reference": "770a0e173e304ebbabf8424ab86a0917bd61622f",
                 "shasum": ""
             },
             "require": {
@@ -257,10 +257,14 @@
                     "name": "Nate Good",
                     "email": "me@nategood.com",
                     "homepage": "http://nategood.com"
+                },
+                {
+                    "name": "Jakub Skokan",
+                    "email": "jakub.skokan@vpsfree.cz"
                 }
             ],
             "description": "A Readable, Chainable, REST friendly, PHP HTTP Client",
-            "homepage": "http://github.com/nategood/httpful",
+            "homepage": "http://github.com/vpsfreecz/httpful",
             "keywords": [
                 "api",
                 "curl",
@@ -270,10 +274,9 @@
                 "restful"
             ],
             "support": {
-                "issues": "https://github.com/nategood/httpful/issues",
-                "source": "https://github.com/nategood/httpful/tree/v0.3.2"
+                "source": "https://github.com/vpsfreecz/httpful/tree/v0.4.0"
             },
-            "time": "2020-01-25T01:13:13+00:00"
+            "time": "2022-12-03T16:05:47+00:00"
         }
     ],
     "packages-dev": [],
@@ -284,5 +287,5 @@
     "prefer-lowest": false,
     "platform": [],
     "platform-dev": [],
-    "plugin-api-version": "2.1.0"
+    "plugin-api-version": "2.3.0"
 }
