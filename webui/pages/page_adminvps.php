@@ -1233,7 +1233,7 @@ if (isset($show_info) && $show_info) {
 
 		$xtpl->table_td(_("Password").':');
 
-		if($_SESSION['vps_password'][$vps->id]) {
+		if($_SESSION['vps_password'][$vps->id] ?? false) {
 			$xtpl->table_td("<b>".$_SESSION['vps_password'][$vps->id]."</b>");
 
 		} else
@@ -1451,7 +1451,7 @@ if (isset($show_info) && $show_info) {
 
 		if (isAdmin()) {
 			$xtpl->table_td('<input type="hidden" name="configs_order" id="configs_order" value="">' .  _('Add').':');
-			$xtpl->form_add_select_pure('add_config[]', $config_choices_empty);
+			$xtpl->form_add_select_pure('add_config[]', $config_choices_empty, null);
 			$xtpl->table_tr(false, false, false, 'add_config');
 // 			$xtpl->form_add_checkbox(_("Notify owner").':', 'notify_owner', '1', true);
 			$xtpl->table_td(_("Reason").':');

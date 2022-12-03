@@ -29,7 +29,7 @@ function export_list() {
 		$params['limit'] = get_val('limit', 25);
 		$params['offset'] = get_val('offset', 0);
 
-		if ($_GET['user'])
+		if ($_GET['user'] ?? false)
 			$params['user'] = $_GET['user'];
 	}
 

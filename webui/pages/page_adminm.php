@@ -227,10 +227,11 @@ function print_editm($u) {
 			$recp->label, false, false, 1,
 			$recp->description ? 2 : 1
 		);
+
 		$xtpl->form_add_textarea_pure(
 			50, 5,
 			"to[{$recp->id}]",
-			$_POST && $_POST['to'][$recp->id] ? $_POST['to'][$recp->id] : str_replace(',', ",\n", $recp->to)
+			str_replace(',', ",\n", $_POST['to'][$recp->id] ?? $recp->to ?? '')
 		);
 		$xtpl->table_tr();
 

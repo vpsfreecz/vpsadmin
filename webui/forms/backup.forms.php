@@ -68,7 +68,7 @@ function backup_vps_form() {
 	foreach ($vpses as $vps) {
 		$params = array('dataset' => $vps->dataset_id);
 
-		if (isAdmin() && !$_GET['subdatasets'])
+		if (isAdmin() && !($_GET['subdatasets'] ?? false))
 			$params['limit'] = 1;
 
 		$datasets = $api->dataset->list($params);

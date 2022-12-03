@@ -44,12 +44,16 @@ function maintenance_lock_by_type() {
 }
 
 $xtpl->title(_("Manage Cluster"));
+$list_locations = false;
 $list_nodes = false;
 $list_templates = false;
+$list_configs = false;
+$list_dns = false;
+$env_settings = false;
 
 $server_types = array("node" => "Node", "storage" => "Storage", "mailer" => "Mailer");
 
-switch($_GET["action"]) {
+switch($_GET["action"] ?? null) {
 	case "vps":
 		cluster_header();
 		node_vps_overview();

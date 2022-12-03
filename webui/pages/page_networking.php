@@ -27,9 +27,13 @@ function month_list() {
 	return $ret;
 }
 
-if ($_SESSION["logged_in"]) {
+$show_top = false;
+$show_live = false;
+$show_traffic = false;
 
-switch($_GET['action']) {
+if (isLoggedIn()) {
+
+switch($_GET['action'] ?? null) {
 	case 'ip_addresses':
 		ip_address_list('networking');
 		break;
@@ -231,7 +235,7 @@ if ($show_traffic) {
 
 	$xtpl->form_out(_('Show'));
 
-	if ($_GET['action'] != 'list')
+	if (($_GET['action'] ?? '') != 'list')
 		return;
 
 	$xtpl->table_title(_("Statistics"));

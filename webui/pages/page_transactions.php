@@ -195,7 +195,7 @@ function chain_transactions($chain_id) {
 
 	$meta = array('includes' => 'user,node');
 
-	if ($_GET['transaction']) {
+	if ($_GET['transaction'] ?? false) {
 		$transactions = array();
 		$transactions[] = $api->transaction->find($_GET['transaction'], array(
 			'meta' => $meta
@@ -239,13 +239,19 @@ function chain_transactions($chain_id) {
 
 	foreach ($transactions as $t) {
 		$created_at = strtotime($t->created_at);
-		$started_at = strtotime($t->started_at);
-		$finished_at = strtotime($t->finished_at);
+		$started_at = null;
+		$finished_at = null;
+
+		if ($t->started_at)
+			$started_at = strtotime($t->started_at);
+
+		if ($t->finished_at)
+			$finished_at = strtotime($t->finished_at);
 
 		$xtpl->table_td('<a href="?page=transactions&chain='.$chain->id.'&transaction='.$t->id.'&details=1">'.$t->id.'</a>');
 		$xtpl->table_td(tolocaltz($t->created_at));
-		$xtpl->table_td(format_duration(($finished_at ? $finished_at - $created_at : 0)));
-		$xtpl->table_td(format_duration($finished_at - $started_at));
+		$xtpl->table_td($finished_at ? format_duration($finished_at - $created_at) : '_');
+		$xtpl->table_td($finished_at ? format_duration($finished_at - $started_at) : '-');
 		$xtpl->table_td($t->user_id ? ($t->user_id.' <a href="?page=adminm&action=edit&id='.$t->user_id.'">'.$t->user->login.'</a>') : '---');
 		$xtpl->table_td($t->node->domain_name);
 		$xtpl->table_td($t->vps_id ? '<a href="?page=adminvps&action=info&veid='.$t->vps_id.'">'.$t->vps_id.'</a>' : '---');
@@ -255,7 +261,7 @@ function chain_transactions($chain_id) {
 		$xtpl->table_td($t->success);
 		$xtpl->table_tr(false, transaction_class($t));
 
-		if ($_GET['details']) {
+		if ($_GET['details'] ?? false) {
 			$xtpl->table_td(nl2br(
 				"<strong>"._('Input')."</strong>\n".
 				"<pre><code>".htmlspecialchars(print_r(json_decode($t->input, true), true))."</pre></code>".

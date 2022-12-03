@@ -278,7 +278,7 @@ try {
 }
 
 if (isAdmin()) {
-	$help .= '<p><a href="?page=cluster&action=helpboxes_add&help_page='.$_GET["page"].'&help_action='.$_GET["action"].'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'">'._("Edit help box").'</a></p>';
+	$help .= '<p><a href="?page=cluster&action=helpboxes_add&help_page='.($_GET["page"] ?? '').'&help_action='.($_GET["action"] ?? '').'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'">'._("Edit help box").'</a></p>';
 }
 
 if ($help)
