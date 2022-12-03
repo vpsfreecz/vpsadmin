@@ -77,9 +77,12 @@ function node_overview() {
 		// Availability icon
 		$icons = "";
 		$maintenance_toggle = $node->maintenance_lock == 'lock' ? 0 : 1;
+		$t = null;
 
-		$t = new DateTime($node->last_report);
-		$t->setTimezone(new DateTimeZone(date_default_timezone_get()));
+		if ($node->last_report) {
+			$t = new DateTime($node->last_report);
+			$t->setTimezone(new DateTimeZone(date_default_timezone_get()));
+		}
 
 		if (!$node->last_report || (time() - $t->getTimestamp()) > 150) {
 			$icons .= '<img title="'._("The server is not responding").'" src="template/icons/error.png"/>';

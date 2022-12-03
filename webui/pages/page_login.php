@@ -46,10 +46,6 @@ function loginUser($access_url) {
 
 	csrf_init($_POST['username'], $_POST['passwd']);
 
-	$xtpl->perex(_("Welcome, ").$m->login,
-			_("Login successful <br /> Your privilege level: ")
-			. $cfg_privlevel[$m->level]);
-
 	$api->user->touch($m->id);
 
 	if (mustResetPassword()) {

@@ -219,9 +219,9 @@ function redirect($loc) {
 
 function format_duration($interval) {
 	$d = $interval / 86400;
-	$h = $interval / 3600 % 24;
-	$m = $interval / 60 % 60;
-	$s = $interval % 60;
+	$h = floor($interval / 3600) % 24;
+	$m = floor($interval / 60) % 60;
+	$s = floor($interval) % 60;
 
 	if($d >= 1)
 		return sprintf("%d days, %02d:%02d:%02d", floor($d), $h, $m, $s);
@@ -230,6 +230,9 @@ function format_duration($interval) {
 }
 
 function tolocaltz($datetime, $format = "Y-m-d H:i:s") {
+	if (is_null($datetime))
+		return '-';
+
 	$t = new DateTime($datetime);
 	$t->setTimezone(new DateTimeZone(date_default_timezone_get()));
 	return $t->format($format);
@@ -339,7 +342,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null,
 		case 'String':
 		case 'Integer':
 		case 'Float':
-			if ($desc->validators && $desc->validators->include) {
+			if ($desc->validators && property_exists($desc->validators, 'include')) {
 				$desc_choices = $desc->validators->include->values;
 				$assoc = is_assoc($desc_choices);
 				$choices = array();
@@ -760,6 +763,9 @@ function export_link($export) {
 }
 
 function kernel_version($v) {
+	if (is_null($v))
+		return '-';
+
 	if (preg_match("/\d+stab.+/",$v, $matches))
 		return $matches[0];
 
@@ -829,6 +835,9 @@ function is_assoc($arr) {
 }
 
 function h($v) {
+	if (is_null($v))
+		return '';
+
 	return htmlspecialchars($v);
 }
 

@@ -44,7 +44,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 
 	$colspan = ((isAdmin() || USERNS_PUBLIC) ? 7 : 6) + count($include);
 
-	$xtpl->table_title($opts['title'] ? $opts['title'] : _('Datasets'));
+	$xtpl->table_title($opts['title'] ?? _('Datasets'));
 
 	if ($_SESSION['is_admin'])
 		$xtpl->table_add_category('#');
@@ -88,7 +88,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 	if ($offset)
 		$listParams['offset'] = $offset;
 
-	if ($opts['ugid_map'])
+	if (isset($opts['ugid_map']))
 		$listParams['user_namespace_map'] = $opts['ugid_map'];
 
 	$datasets = $api->dataset->list($listParams);
@@ -145,7 +145,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 
 	$xtpl->table_out();
 
-	if ($opts['submenu'] !== false) {
+	if ($opts['submenu'] ?? null !== false) {
 		$xtpl->sbar_add(_('Create dataset'), '?page=dataset&action=new&role='.$role.'&parent='.$parent.'&return='.urlencode($_SERVER['REQUEST_URI']));
 	}
 }
@@ -344,7 +344,7 @@ function dataset_snapshot_list($datasets, $vps = null) {
 	foreach ($datasets as $ds) {
 		$snapshots = $ds->snapshot->list(array('meta' => array('includes' => 'mount')));
 
-		if (!$snapshots->count() && $_GET['noempty'])
+		if (!$snapshots->count() && ($_GET['noempty'] ?? false))
 			continue;
 
 		if ($vps && $ds->id == $vps->dataset_id)

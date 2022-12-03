@@ -649,12 +649,12 @@ function vps_list_form() {
 			resource_list_to_options($api->environment->list()), get_val('environment'));
 
 		$p = $api->vps->index->getParameters('input')->object_state;
-		api_param_to_form('object_state', $p, $_GET['object_state']);
+		api_param_to_form('object_state', $p, $_GET['object_state'] ?? null);
 
 		$xtpl->form_out(_('Show'));
 	}
 
-	if (!isAdmin() || $_GET['action'] == 'list') {
+	if (!isAdmin() || ($_GET['action'] ?? '') == 'list') {
 		$xtpl->table_add_category('ID');
 		$xtpl->table_add_category('HW');
 		$xtpl->table_add_category(_("OWNER"));

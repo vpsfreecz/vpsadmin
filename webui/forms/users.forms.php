@@ -556,12 +556,18 @@ function approval_requests_details($type, $id) {
 function user_payment_info($u) {
 	global $xtpl;
 
-	$dt = new DateTime($u->paid_until);
-	$dt->setTimezone(new DateTimezone(date_default_timezone_get()));
+	$paid = false;
+	$paid_until = null;
+	$t = null;
 
-	$t = $dt->getTimestamp();
-	$paid = $t > time();
-	$paid_until = date('Y-m-d', $t);
+	if ($u->paid_until) {
+		$dt = new DateTime($u->paid_until);
+		$dt->setTimezone(new DateTimezone(date_default_timezone_get()));
+
+		$t = $dt->getTimestamp();
+		$paid = $t > time();
+		$paid_until = date('Y-m-d', $t);
+	}
 
 	if ($_SESSION["is_admin"]) {
 		$td = '<a href="?page=adminm&action=payset&id='.$u->id.'" class="user-'.($paid ? 'paid' : 'unpaid').'">';

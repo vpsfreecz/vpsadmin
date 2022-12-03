@@ -192,17 +192,21 @@ foreach ($nodes as $node) {
 	$last_location = $node->location_id;
 
 	$icons = "";
+	$last_report = null;
+	$last_update = null;
 
-	$last_report = strtotime($node->last_report);
-	$last_update = date('Y-m-d H:i:s', $last_report).' ('.date('i:s', (time() - $last_report)).' ago)';
+	if (!is_null($node->last_report)) {
+		$last_report = strtotime($node->last_report);
+		$last_update = date('Y-m-d H:i:s', $last_report).' ('.date('i:s', (time() - $last_report)).' ago)';
+	}
 
 	if($node->maintenance_lock != 'no') {
 		$icons .= '<img title="'._("The server is currently under maintenance").': '.htmlspecialchars($node->maintenance_lock_reason).'" src="template/icons/maintenance_mode.png">';
 
-	} elseif ((time() - $last_report) > 150) {
+	} elseif (is_null($last_report) || (time() - $last_report) > 150) {
 
 		$icons .= '<img title="'._("The server is not responding")
-					 . ', last update: ' . $last_update
+					 . ', last update: ' . ($last_update ?? _('never'))
 					 . '" src="template/icons/error.png"/>';
 
 	} else if ($node->hypervisor_type == 'vpsadminos' && ($node->pool_state != 'online' || $node->pool_scan != 'none')) {

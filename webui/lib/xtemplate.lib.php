@@ -455,7 +455,7 @@ class XTemplate {
 		if ($logged) {
 			if ($is_admin) {
 				$this->assign("L_SEARCH", _("Search"));
-				$this->assign("V_SEARCH", $_SESSION["jumpto"]);
+				$this->assign("V_SEARCH", $_SESSION["jumpto"] ?? '');
 				$this->assign("L_JUMP", _("Jump"));
 				$this->parse("main.loggedbox.jumpto");
 
