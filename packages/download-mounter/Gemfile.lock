@@ -1,7 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (7.0.3.1)
+    activesupport (7.0.4)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
@@ -9,7 +9,7 @@ GEM
     concurrent-ruby (1.1.10)
     domain_name (0.5.20190701)
       unf (>= 0.0.5, < 1.0.0)
-    haveapi-client (0.16.1)
+    haveapi-client (0.16.2)
       activesupport (>= 4.0)
       highline (~> 2.0.3)
       json
@@ -45,8 +45,8 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  haveapi-client (~> 0.16.1)
+  haveapi-client (~> 0.16.2)
   highline
 
 BUNDLED WITH
-   2.3.9
+   2.3.25
