@@ -2,11 +2,11 @@
 
 stdenv.mkDerivation rec {
   pname = "cronie";
-  version = "1.5.7";
+  version = "1.6.1";
 
   src = fetchurl {
     url = "https://github.com/cronie-crond/cronie/releases/download/cronie-${version}/cronie-${version}.tar.gz";
-    sha256 = "sha256:1cqf689nxvd9jwjfwnh0m7b730pafwm4glgnxphmlvlq5spwz2sk";
+    sha256 = "sha256-LNDw3RaA5rnDm/HjpeetbfdqqUDeHukKRTYzqlmYTmI=";
   };
 
   postPatch = ''
