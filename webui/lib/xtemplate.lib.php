@@ -772,7 +772,7 @@ class XTemplate {
 	  * @param $options - array of options, $option[option_name] = "Option Label"
 	  * @param $selected_value - default selected value
 	  */
-	function form_add_select_pure($name, $options, $selected_value, $multiple = false, $size = '5') {
+	function form_add_select_pure($name, $options, $selected_value = '', $multiple = false, $size = '5') {
 		$this->table_td($this->form_select_html(
 			$name,
 			$options,
