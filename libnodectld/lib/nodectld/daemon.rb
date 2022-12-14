@@ -99,7 +99,8 @@ module NodeCtld
     end
 
     def start
-      cmd_db = Db.new
+      cmd_db = nil
+      cmd_db_created = nil
 
       loop do
         sleep($CFG.get(:vpsadmin, :check_interval))
@@ -133,6 +134,14 @@ module NodeCtld
 
                 throw :next
               end
+            end
+
+            now = Time.now
+
+            if cmd_db.nil? || cmd_db_created + 5*60 <= now
+              cmd_db.close if cmd_db
+              cmd_db = Db.new
+              cmd_db_created = Time.now
             end
 
             do_commands(cmd_db)
