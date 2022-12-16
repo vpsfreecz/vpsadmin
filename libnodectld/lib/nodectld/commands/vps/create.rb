@@ -19,8 +19,6 @@ module NodeCtld
       osctl_pool(@pool_name, %i(ct create), @vps_id, opts)
 
       osctl_pool(@pool_name, %i(ct set hostname), [@vps_id, @hostname]) if @hostname
-      osctl_pool(@pool_name, %i(ct cgparams set), [@vps_id, 'cglimit.memory.max', 64*1024])
-      osctl_pool(@pool_name, %i(ct cgparams set), [@vps_id, 'cglimit.all.max', 512*1024])
 
       # nofile was originally set by osctld automatically, it's not working
       # because of vpsadminos#28. Until it is fixed, we'll set nofile manually.
