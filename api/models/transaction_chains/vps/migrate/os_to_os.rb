@@ -109,7 +109,7 @@ module TransactionChains
       use_chain(
         Vps::Stop,
         args: src_vps,
-        kwargs: {start_timeout: start_timeout},
+        kwargs: {start_timeout: start_timeout, rollback_stop: was_running?},
         urgent: true,
       )
 
