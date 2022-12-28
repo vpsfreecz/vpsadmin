@@ -275,7 +275,14 @@ module NodeCtld
       def remove_vps(vps_id)
         sync do
           @vpses.delete(vps_id)
-          destroy if @created && !used?
+
+          if @created && !used?
+            begin
+              destroy
+            rescue SystemCommandFailed => e
+              log(:warn, "Unable to remove osctl user #{name}: #{e.message}")
+            end
+          end
         end
 
         nil
