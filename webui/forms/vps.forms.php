@@ -839,10 +839,6 @@ function vps_migrate_form_step1($vps_id) {
 	$xtpl->table_td(user_link($vps->user));
 	$xtpl->table_tr();
 
-	$xtpl->table_td(_('Platform:'));
-	$xtpl->table_td(hypervisorTypeToLabel($vps->node->hypervisor_type));
-	$xtpl->table_tr();
-
 	$xtpl->table_td(_('Location:'));
 	$xtpl->table_td($vps->node->location->label);
 	$xtpl->table_tr();
@@ -903,10 +899,6 @@ function vps_migrate_form_step2($vps_id, $node_id) {
 	$xtpl->table_td(user_link($vps->user));
 	$xtpl->table_tr();
 
-	$xtpl->table_td(_('Platform:'));
-	$xtpl->table_td(hypervisorTypeToLabel($vps->node->hypervisor_type));
-	$xtpl->table_tr();
-
 	$xtpl->table_td(_('Location:'));
 	$xtpl->table_td($vps->node->location->label);
 	$xtpl->table_tr();
@@ -919,7 +911,6 @@ function vps_migrate_form_step2($vps_id, $node_id) {
 	$xtpl->table_title(_('Migration'));
 	$xtpl->form_create('', 'get', 'migrate-step2', false);
 
-	$changed_platform = $vps->node->hypervisor_type != $node->hypervisor_type;
 	$changed_env = $vps->node->location->environment_id != $node->location->environment_id;
 	$changed_loc = $vps->node->location_id != $node->location_id;
 	$input = $api->vps->migrate->getParameters('input');
@@ -934,12 +925,6 @@ function vps_migrate_form_step2($vps_id, $node_id) {
 	$xtpl->table_td(_('Target node').':');
 	$xtpl->table_td($node->domain_name);
 	$xtpl->table_tr();
-
-	if ($changed_platform) {
-		$xtpl->table_td(_('Platform').':');
-		$xtpl->table_td('-> '.hypervisorTypeToLabel($node->hypervisor_type));
-		$xtpl->table_tr();
-	};
 
 	if ($changed_env) {
 		$xtpl->table_td(_('Environment').':');
@@ -972,7 +957,7 @@ function vps_migrate_form_step2($vps_id, $node_id) {
 	api_param_to_form(
 		'maintenance_window',
 		$input->maintenance_window,
-		get_val_issetto('maintenance_window', '1', !$changed_platform && !$changed_env && !$changed_loc)
+		get_val_issetto('maintenance_window', '1', !$changed_env && !$changed_loc)
 	);
 
 
@@ -1003,27 +988,10 @@ function vps_migrate_form_step2($vps_id, $node_id) {
 		_('Finish the migration from this hour on')
 	);
 
-	if ($vps->node->hypervisor_type == 'openvz') {
-		api_param_to_form(
-			'rsync',
-			$input->rsync,
-			get_val_issetto('rsync', '1', false)
-		);
-		api_param_to_form(
-			'mounts_to_exports',
-			$input->mounts_to_exports,
-			get_val_issetto('mounts_to_exports', '1', true)
-		);
-	}
-
 	api_param_to_form(
 		'cleanup_data',
 		$input->cleanup_data,
-		get_val_issetto(
-			'cleanup_data',
-			'1',
-			!$changed_platform || $vps->node->hypervisor_type == 'vpsadminos'
-		)
+		get_val_issetto('cleanup_data', '1', true)
 	);
 
 	api_param_to_form(
@@ -1070,8 +1038,6 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts) {
 		'&maintenance_window='.$opts['maintenance_window'].
 		'&finish_weekday='.$opts['finish_weekday'].
 		'&finish_minutes='.$opts['finish_minutes'].
-		'&rsync='.$opts['rsync'].
-		'&mounts_to_exports='.$opts['mounts_to_exports'].
 		'&cleanup_data='.$opts['cleanup_data'].
 		'&no_start='.$opts['no_start'].
 		'&skip_start='.$opts['skip_start'].
@@ -1090,10 +1056,6 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts) {
 	$xtpl->table_td(user_link($vps->user));
 	$xtpl->table_tr();
 
-	$xtpl->table_td(_('Platform:'));
-	$xtpl->table_td(hypervisorTypeToLabel($vps->node->hypervisor_type));
-	$xtpl->table_tr();
-
 	$xtpl->table_td(_('Location:'));
 	$xtpl->table_td($vps->node->location->label);
 	$xtpl->table_tr();
@@ -1106,7 +1068,6 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts) {
 	$xtpl->table_title(_('Migration'));
 	$xtpl->form_create('?page=adminvps&action=migrate-submit', 'post', 'migrate-step3');
 
-	$changed_platform = $vps->node->hypervisor_type != $node->hypervisor_type;
 	$changed_env = $vps->node->location->environment_id != $node->location->environment_id;
 	$changed_loc = $vps->node->location_id != $node->location_id;
 	$input = $api->vps->migrate->getParameters('input');
@@ -1119,8 +1080,6 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts) {
 		'maintenance_window' => $opts['maintenance_window'],
 		'finish_weekday' => $opts['finish_weekday'],
 		'finish_minutes' => $opts['finish_minutes'],
-		'rsync' => $opts['rsync'],
-		'mounts_to_exports' => $opts['mounts_to_exports'],
 		'cleanup_data' => $opts['cleanup_data'],
 		'no_start' => $opts['no_start'],
 		'skip_start' => $opts['skip_start'],
@@ -1131,12 +1090,6 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts) {
 	$xtpl->table_td(_('Target node').':');
 	$xtpl->table_td($node->domain_name);
 	$xtpl->table_tr();
-
-	if ($changed_platform) {
-		$xtpl->table_td(_('Platform').':');
-		$xtpl->table_td('-> '.hypervisorTypeToLabel($node->hypervisor_type));
-		$xtpl->table_tr();
-	};
 
 	if ($changed_env) {
 		$xtpl->table_td(_('Environment').':');
@@ -1191,16 +1144,6 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts) {
 	}
 	$xtpl->table_tr();
 
-	if ($vps->node->hypervisor_type == 'openvz') {
-		$xtpl->table_td(_('Rsync').':');
-		$xtpl->table_td(boolean_icon($opts['rsync'] == '1'));
-		$xtpl->table_tr();
-
-		$xtpl->table_td(_('Mounts to exports').':');
-		$xtpl->table_td(boolean_icon($opts['mounts_to_exports'] == '1'));
-		$xtpl->table_tr();
-	}
-
 	$xtpl->table_td(_('Cleanup data').':');
 	$xtpl->table_td(boolean_icon($opts['cleanup_data'] == '1'));
 	$xtpl->table_tr();
@@ -1220,12 +1163,6 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts) {
 	$xtpl->table_td(_('Reason').':');
 	$xtpl->table_td(h($opts['reason']));
 	$xtpl->table_tr();
-
-	if ($changed_platform) {
-		$xtpl->table_td('<strong>'._('Warning').':</strong>');
-		$xtpl->table_td('<img src="template/icons/warning.png"> '._('Changing platform'));
-		$xtpl->table_tr();
-	}
 
 	if ($changed_env) {
 		$xtpl->table_td('<strong>'._('Warning').':</strong>');
