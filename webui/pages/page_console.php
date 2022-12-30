@@ -117,23 +117,21 @@ function vps_boot(cmd) {
 		'</tr></table>'
 	);
 
-	if ($vps->node->hypervisor_type == "vpsadminos") {
-		$os_templates = list_templates($vps);
+	$os_templates = list_templates($vps);
 
-		$xtpl->sbar_add_fragment(
-			'<h3>'._('Rescue mode').'</h3>'.
-			'<table>'.
-			'<tr>'.
-			'<td>'._('Distribution').': </td>'.
-			'<td>'.$xtpl->form_select_html('os_template', $os_templates, $vps->os_template_id).'</td>'.
-			'</tr><tr>'.
-			'<td>'._('Root dataset mountpoint').': </td>'.
-			'<td><input type="text" name="root_mountpoint" value="/mnt/vps"></td>'.
-			'</tr><tr>'.
-			'<td></td><td><button id="boot-button" onclick="vps_boot();">'._('Boot').'</button></td>'.
-			'</tr></table>'
-		);
-	}
+	$xtpl->sbar_add_fragment(
+		'<h3>'._('Rescue mode').'</h3>'.
+		'<table>'.
+		'<tr>'.
+		'<td>'._('Distribution').': </td>'.
+		'<td>'.$xtpl->form_select_html('os_template', $os_templates, $vps->os_template_id).'</td>'.
+		'</tr><tr>'.
+		'<td>'._('Root dataset mountpoint').': </td>'.
+		'<td><input type="text" name="root_mountpoint" value="/mnt/vps"></td>'.
+		'</tr><tr>'.
+		'<td></td><td><button id="boot-button" onclick="vps_boot();">'._('Boot').'</button></td>'.
+		'</tr></table>'
+	);
 
 	$xtpl->sbar_out(_("Manage VPS"));
 }

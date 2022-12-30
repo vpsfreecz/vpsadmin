@@ -1115,30 +1115,6 @@ if (isset($show_info) && $show_info) {
 		$xtpl->perex(_('VPS is deleted.'), _('This VPS is deleted and cannot be revived.'));
 
 	} else {
-		if (showPlatformWarning($vps)) {
-			$xtpl->table_title(
-				'<img src="template/icons/warning.png" alt="'._('Warning').'">&nbsp;'.
-				_('New virtualization platform available').
-				'&nbsp;<img src="template/icons/warning.png" alt="'._('Warning').'">'
-			);
-			$xtpl->table_td(_('
-				<p>
-				The VPS is running on OpenVZ Legacy. This virtualization platform
-				is old and deprecated. We recommend an upgrade to vpsAdminOS,
-				our new	virtualization platform. Please see the knowledge base
-				<a href="https://kb.vpsfree.org/manuals/vps/vpsadminos" target="_blank">English</a> / <a href="https://kb.vpsfree.cz/navody/vps/vpsadminos" target="_blank">Czech</a>
-				for more information.
-				</p>
-				<p>
-				Contact our support at
-				<a href="mailto:podpora@vpsfree.cz">podpora@vpsfree.cz</a>
-				if you wish to schedule a migration.
-				</p>
-			'));
-			$xtpl->table_tr();
-			$xtpl->table_out();
-		}
-
 		if ($vps->in_rescue_mode) {
 			$xtpl->table_title(
 				'<img src="template/icons/warning.png" alt="'._('Warning').'">&nbsp;'.
@@ -1337,39 +1313,37 @@ if (isset($show_info) && $show_info) {
 		$os_templates = list_templates($vps);
 
 	// Boot
-		if ($vps->node->hypervisor_type == 'vpsadminos') {
-			$xtpl->table_title(_('Boot VPS from template (rescue mode)'));
-			$xtpl->form_create('?page=adminvps&action=boot&veid='.$vps->id, 'post');
-			$xtpl->table_td(
-				'<p>'.
-				_('Boot the VPS from a clean template, e.g. to fix a broken system. '.
-				  'The VPS configuration (IP addresses, resources, etc.) is the same, '.
-				  'the VPS only starts from a clean system. The original root '.
-				  'filesystem from the VPS can be accessed through the mountpoint '.
-				  'configured below.').
-				'</p><p>'.
-				_('On next VPS start/restart, the VPS will start from it\'s own '.
-				  'dataset again. The clean system created by this action is '.
-				  'temporary and any changes to it will be lost.').
-				'</p>',
-				false,
-				false,
-				'3'
-			);
-			$xtpl->table_tr();
+		$xtpl->table_title(_('Boot VPS from template (rescue mode)'));
+		$xtpl->form_create('?page=adminvps&action=boot&veid='.$vps->id, 'post');
+		$xtpl->table_td(
+			'<p>'.
+			_('Boot the VPS from a clean template, e.g. to fix a broken system. '.
+			  'The VPS configuration (IP addresses, resources, etc.) is the same, '.
+			  'the VPS only starts from a clean system. The original root '.
+			  'filesystem from the VPS can be accessed through the mountpoint '.
+			  'configured below.').
+			'</p><p>'.
+			_('On next VPS start/restart, the VPS will start from it\'s own '.
+			  'dataset again. The clean system created by this action is '.
+			  'temporary and any changes to it will be lost.').
+			'</p>',
+			false,
+			false,
+			'3'
+		);
+		$xtpl->table_tr();
 
-			$xtpl->form_add_select(_("Distribution").':', 'os_template', $os_templates, $vps->os_template_id,  '');
+		$xtpl->form_add_select(_("Distribution").':', 'os_template', $os_templates, $vps->os_template_id,  '');
 
-			$xtpl->table_td(_('Mount root dataset').':');
-			$xtpl->form_add_radio_pure('mount_root_dataset', 'mount', true);
-			$xtpl->form_add_input_pure('text', '30', 'mountpoint', post_val('mountpoint', '/mnt/vps'));
-			$xtpl->table_tr();
+		$xtpl->table_td(_('Mount root dataset').':');
+		$xtpl->form_add_radio_pure('mount_root_dataset', 'mount', true);
+		$xtpl->form_add_input_pure('text', '30', 'mountpoint', post_val('mountpoint', '/mnt/vps'));
+		$xtpl->table_tr();
 
-			$xtpl->table_td(_('Do not mount the root dataset'));
-			$xtpl->form_add_radio_pure('mount_root_dataset', 'no', false);
-			$xtpl->table_tr();
-			$xtpl->form_out(_("Go >>"));
-		}
+		$xtpl->table_td(_('Do not mount the root dataset'));
+		$xtpl->form_add_radio_pure('mount_root_dataset', 'no', false);
+		$xtpl->table_tr();
+		$xtpl->form_out(_("Go >>"));
 
 	// Distribution
 		$xtpl->table_title(_('Distribution'));
@@ -1383,15 +1357,14 @@ if (isset($show_info) && $show_info) {
 			'reinstall_action',
 			'1', true,
 			_("Use if you have upgraded your system.")
-			.($vps->node->hypervisor_type == 'vpsadminos' ? ' '._('The VPS will be restarted.') : '')
+			._('The VPS will be restarted.')
 		);
 		$xtpl->table_tr();
 		$xtpl->form_add_radio(
 			_("Reinstall").':',
 			'reinstall_action',
 			'2', false,
-			_("Install base system again.").' '
-			.($vps->node->hypervisor_type == 'vpsadminos' ? _('All data in the root filesystem will be removed.') : _('All data will be removed.'))
+			_("Install base system again.").' '._('All data in the root filesystem will be removed.')
 		);
 		$xtpl->table_tr();
 		$xtpl->form_out(_("Go >>"));
@@ -1545,7 +1518,7 @@ if (isset($show_info) && $show_info) {
 		$xtpl->form_out(_("Go >>"));
 
 	// Auto-start
-		if ($vps->node->hypervisor_type == 'vpsadminos' && isAdmin()) {
+		if (isAdmin()) {
 			$xtpl->table_title(_('Auto-Start'));
 			$xtpl->form_create('?page=adminvps&action=autostart&veid='.$vps->id, 'post');
 
@@ -1559,26 +1532,24 @@ if (isset($show_info) && $show_info) {
 		}
 
 	// Start menu
-		if ($vps->node->hypervisor_type == 'vpsadminos') {
-			$xtpl->table_title(_('Start Menu'));
-			$xtpl->form_create('?page=adminvps&action=startmenu&veid='.$vps->id, 'post');
+		$xtpl->table_title(_('Start Menu'));
+		$xtpl->form_create('?page=adminvps&action=startmenu&veid='.$vps->id, 'post');
 
-			$xtpl->table_td(
-				_('Configure the number of seconds the start menu waits for the user '.
-				'before the system is started. Set to zero to disable the start menu.'),
-				false, false, 2
-			);
-			$xtpl->table_tr();
+		$xtpl->table_td(
+			_('Configure the number of seconds the start menu waits for the user '.
+			'before the system is started. Set to zero to disable the start menu.'),
+			false, false, 2
+		);
+		$xtpl->table_tr();
 
-			$xtpl->form_add_number(
-				_('Timeout').':',
-				'timeout',
-				$vps->start_menu_timeout,
-				0, 3600, 1, _('seconds')
-			);
+		$xtpl->form_add_number(
+			_('Timeout').':',
+			'timeout',
+			$vps->start_menu_timeout,
+			0, 3600, 1, _('seconds')
+		);
 
-			$xtpl->form_out(_("Go >>"));
-		}
+		$xtpl->form_out(_("Go >>"));
 
 	// Maintenance windows
 		$xtpl->table_title(_('Maintenance windows'));
