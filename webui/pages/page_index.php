@@ -234,13 +234,7 @@ foreach ($nodes as $node) {
 
 	$xtpl->table_td($icons);
 
-	if ($node->hypervisor_type == 'openvz') {
-		$platform = '<img src="template/icons/openvz.png" width="16" title="'._('OpenVZ Legacy').'">';
-	} else {
-		$platform = '<img src="template/icons/vpsadminos.png" width="16" title="'._('vpsAdminOS').'">';
-	}
-
-	$xtpl->table_td($platform.'&nbsp;'.(isLoggedIn() ? node_link($node, $node->name) : $node->name));
+	$xtpl->table_td((isLoggedIn() ? node_link($node, $node->name) : $node->name));
 	$xtpl->table_td($node->vps_count, false, true);
 
 	if ($node->cpu_idle === null) {
