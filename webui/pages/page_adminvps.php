@@ -843,19 +843,14 @@ switch ($_GET["action"] ?? null) {
 			break;
 
 		case 'clone-step-2':
-			vps_clone_form_step2($_GET['veid'], $_GET['user'], $_GET['platform']);
-			break;
-
-		case 'clone-step-3':
-			vps_clone_form_step3($_GET['veid'], $_GET['user'], $_GET['platform'], $_GET['location']);
+			vps_clone_form_step2($_GET['veid'], $_GET['user'], $_GET['location']);
 			break;
 
 		case 'clone-submit':
 			if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-				vps_clone_form_step3(
+				vps_clone_form_step2(
 					$_GET['veid'],
 					$_GET['user'],
-					$_GET['platform'],
 					$_GET['location']
 				);
 				break;
@@ -866,7 +861,6 @@ switch ($_GET["action"] ?? null) {
 			$vps = $api->vps->find($_GET['veid']);
 			$params = [
 				'hostname' => $_POST['hostname'],
-				'platform' => $_GET['platform'],
 				'subdatasets' => isset($_POST['subdatasets']),
 				'dataset_plans' => isset($_POST['dataset_plans']),
 				'resources' => isset($_POST['resources']),
@@ -891,10 +885,9 @@ switch ($_GET["action"] ?? null) {
 
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 				$xtpl->perex_format_errors(_('VPS cloning failed'), $e->getResponse());
-				vps_clone_form_step3(
+				vps_clone_form_step2(
 					$_GET['veid'],
 					$_GET['user'],
-					$_GET['platform'],
 					$_GET['location']
 				);
 			}
