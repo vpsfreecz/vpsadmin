@@ -189,17 +189,12 @@ module TransactionChains
       #   - transfer exports of VPS's datasets / snapshots
       #   - free/allocate cluster resources
 
-      if vps.node.vpsadminos?
-        cur_userns_map = vps.userns_map
-        new_userns_map = ::UserNamespaceMap.joins(:user_namespace).where(
-          user_namespaces: {user_id: vps.user_id}
-        ).take!
+      cur_userns_map = vps.userns_map
+      new_userns_map = ::UserNamespaceMap.joins(:user_namespace).where(
+        user_namespaces: {user_id: vps.user_id}
+      ).take!
 
-        use_chain(UserNamespaceMap::Use, args: [vps, new_userns_map])
-      else
-        cur_userns_map = nil
-        new_userns_map = nil
-      end
+      use_chain(UserNamespaceMap::Use, args: [vps, new_userns_map])
 
       datasets = []
 
@@ -229,25 +224,23 @@ module TransactionChains
       db_changes.update(transfer_ip_addresses(vps))
 
       # Chown user namespace mapping
-      if vps.node.vpsadminos?
-        append_t(Transactions::Vps::Chown, args: [
-          vps, vps.userns_map, new_userns_map
-        ]) do |t|
-          db_changes.each do |obj, changes|
-            t.edit(obj, changes) unless changes.empty?
-          end
-
-          t.just_create(vps.log(:user, {
-            user_id: vps.user_id,
-          }))
+      append_t(Transactions::Vps::Chown, args: [
+        vps, vps.userns_map, new_userns_map
+      ]) do |t|
+        db_changes.each do |obj, changes|
+          t.edit(obj, changes) unless changes.empty?
         end
 
-        use_chain(
-          UserNamespaceMap::Disuse,
-          args: [vps],
-          kwargs: {userns_map: cur_userns_map},
-        )
+        t.just_create(vps.log(:user, {
+          user_id: vps.user_id,
+        }))
       end
+
+      use_chain(
+        UserNamespaceMap::Disuse,
+        args: [vps],
+        kwargs: {userns_map: cur_userns_map},
+      )
 
       # Transfer exports of the VPS's own datasets / snapshots
       chown_exports = []
@@ -289,18 +282,6 @@ module TransactionChains
 
       # Add export hosts to all exports of the target user
       use_chain(Export::AddHostsToAll, args: [vps.user, vps.ip_addresses])
-
-      if vps.node.openvz?
-        append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
-          db_changes.each do |obj, changes|
-            t.edit(obj, changes) unless changes.empty?
-          end
-
-          t.just_create(vps.log(:user, {
-            user_id: vps.user_id,
-          }))
-        end
-      end
     end
 
     def add_hosts_to_chowned_export(export, user)

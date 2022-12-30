@@ -13,8 +13,8 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       desc: 'Node name including location domain'
     string :fqdn, label: 'FQDN'
     string :type, label: 'Role', desc: 'node, storage or mailer', db_name: :role
-    string :hypervisor_type, label: 'Hypervisor type', desc: 'openvz or vpsadminos',
-      choices: %w(openvz vpsadminos)
+    string :hypervisor_type, label: 'Hypervisor type', desc: 'vpsadminos',
+      choices: %w(vpsadminos)
     resource VpsAdmin::API::Resources::Location, label: 'Location',
              desc: 'Location node is placed in'
     string :ip_addr, label: 'IPv4 address', desc: 'Node\'s IP address'
@@ -229,7 +229,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       integer :vps_count, label: 'VPS count', db_name: :vps_running
       integer :vps_free, label: 'Free VPS slots'
       string :kernel, label: 'Kernel'
-      string :hypervisor_type, label: 'Hypervisor type', desc: 'openvz or vpsadminos'
+      string :hypervisor_type, label: 'Hypervisor type', desc: 'vpsadminos'
       float :cpu_idle, label: 'CPU idle'
       use :status, include: %i(pool_state pool_scan pool_scan_percent pool_checked_at pool_status)
     end

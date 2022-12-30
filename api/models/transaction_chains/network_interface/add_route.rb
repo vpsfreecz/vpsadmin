@@ -18,11 +18,6 @@ module TransactionChains
       lock(netif.vps)
       concerns(:affect, [netif.vps.class.name, netif.vps.id])
 
-      if netif.vps.node.openvz? && ips.detect { |ip| ip.size > 1 }
-        raise VpsAdmin::API::Exceptions::NotAvailableOnOpenVz,
-              "cannot add IP address with prefix other than /32 or /128"
-      end
-
       uses = []
       user_env = netif.vps.user.environment_user_configs.find_by!(
         environment: netif.vps.node.location.environment,

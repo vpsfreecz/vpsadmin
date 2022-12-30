@@ -33,7 +33,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
         desc: 'List only locations having at least one storage node'
       string :hypervisor_type,
         label: 'Hypervisor type',
-        choices: %w(openvz vpsadminos),
+        choices: %w(vpsadminos),
         desc: 'List only locations having at least one node of this type'
       resource VpsAdmin::API::Resources::Location,
         name: :shares_v4_networks_with,

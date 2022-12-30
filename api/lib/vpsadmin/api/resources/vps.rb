@@ -333,10 +333,6 @@ END
         opts[:userns_map] = input.delete(:user_namespace_map)
       end
 
-      if input[:node].openvz? && input[:start_menu_timeout]
-        error("start menu is available only on vpsAdminOS")
-      end
-
       opts[:start] = input.delete(:start)
 
       vps = ::Vps.new(to_db_names(input))
@@ -459,12 +455,6 @@ END
             && input[:swap] \
             && input[:swap] > 0 && vps.node.total_swap == 0
         error("swap is not available on #{vps.node.domain_name}")
-      elsif vps.node.openvz?
-        if input[:start_menu_timeout]
-          error("start menu is available only on vpsAdminOS")
-        elsif input[:autostart_priority]
-          error("autostart priority is available only on vpsAdminOS")
-        end
       end
 
       @chain, _ = vps.update(to_db_names(input))
@@ -765,11 +755,6 @@ END
       integer :finish_minutes, label: 'Finish minutes',
         desc: 'Number of minutes from midnight of start_weekday after which the migration is done',
         number: {min: 0, max: 24 * 60 - 30}
-      bool :rsync, desc: 'Use rsync instead of zfs send/recv, OpenVZ->vpsAdminOS only',
-          default: false
-      bool :mounts_to_exports, label: 'Mounts to exports',
-          desc: 'Convert NAS mounts to exports, OpenVZ->vpsAdminOS only',
-          default: true
       bool :cleanup_data, label: 'Cleanup data',
           desc: 'Remove VPS dataset from the source node',
           default: true
@@ -840,7 +825,7 @@ END
                label: 'Address location',
                desc: 'Location to select IP addresses from'
       #resource VpsAdmin::API::Resources::VPS, desc: 'Clone into an existing VPS', value_label: :hostname
-      string :platform, default: 'same', fill: true, choices: %w(same openvz vpsadminos)
+      string :platform, default: 'same', fill: true, choices: %w(same vpsadminos)
       bool :subdatasets, default: true, fill: true
       bool :dataset_plans, default: true, fill: true, label: 'Dataset plans'
       bool :configs, default: true, fill: true
@@ -989,9 +974,6 @@ END
 
       elsif vps.has_mount_of?(input[:vps]) || input[:vps].has_mount_of?(vps)
         error("swapping VPSes with mounts of each other is not supported")
-
-      elsif vps.node.hypervisor_type != input[:vps].node.hypervisor_type
-        error('swap between OpenVZ and vpsAdminOS platforms is not supported, contact support')
 
       elsif vps.node.vpsadminos? && input[:vps].node.vpsadminos?
         error('swap is not supported on vpsAdminOS yet')

@@ -92,13 +92,6 @@ module TransactionChains
         end
       end
 
-      if vps.node.openvz?
-        use_chain(Vps::ApplyConfig, args: [
-          vps,
-          vps.node.location.environment.vps_configs.pluck(:id)
-        ])
-      end
-
       # Set default features
       vps_features.each { |f| f.set_to_default }
 

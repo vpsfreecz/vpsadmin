@@ -98,10 +98,6 @@ module VpsAdmin::API::Tasks
 
         hypervisor_type = ::Node.hypervisor_types.key(hypervisor_type_val)
 
-        if hypervisor_type == 'openvz'
-          tpl_dist, tpl_ver, _ = tpl_name.split('-')
-        end
-
         @vps_count.set(cnt, labels: {
           object_state: state,
           distribution_template: tpl_name,

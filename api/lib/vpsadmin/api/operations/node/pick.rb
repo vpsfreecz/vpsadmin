@@ -6,7 +6,7 @@ module VpsAdmin::API
     # @param environment [::Environment, nil]
     # @param location [::Location, nil]
     # @param except [::Node]
-    # @param hypervisor_type [:vpsadminos, :openvz]
+    # @param hypervisor_type [:vpsadminos]
     # @return [::Node, nil]
     def run(environment: nil, location: nil, except: nil, hypervisor_type: nil)
       if environment.nil? && location.nil?

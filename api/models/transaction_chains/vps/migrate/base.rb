@@ -49,8 +49,6 @@ module TransactionChains
         maintenance_window: true,
         finish_weekday: nil,
         finish_minutes: nil,
-        rsync: false,
-        mounts_to_exports: true,
         send_mail: true,
         reason: nil,
         cleanup_data: true,
