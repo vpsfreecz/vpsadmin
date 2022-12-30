@@ -7,13 +7,7 @@ module TransactionChains
       src = vps.node.hypervisor_type
       dst = node.hypervisor_type
 
-      if src == 'openvz' && dst == 'openvz'
-        VzToVz
-
-      elsif src == 'openvz' && dst == 'vpsadminos'
-        VzToOs
-
-      elsif src == 'vpsadminos' && dst == 'vpsadminos'
+      if src == 'vpsadminos' && dst == 'vpsadminos'
         OsToOs
 
       else
