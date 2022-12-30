@@ -292,7 +292,7 @@ END
     def safe_download(ds, snapshot, from_snapshot = nil)
       part, full = snapshot_tmp_file(snapshot, from_snapshot)
 
-      if !File.exists?(full)
+      if !File.exist?(full)
         attempts = 0
 
         begin

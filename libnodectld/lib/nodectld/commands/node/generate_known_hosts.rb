@@ -7,7 +7,7 @@ module NodeCtld
       p = $CFG.get(:node, :known_hosts)
 
       # Backup current known_hosts for rollback
-      syscmd("#{$CFG.get(:bin, :cp)} #{p} #{p}.backup") if File.exists?(p)
+      syscmd("#{$CFG.get(:bin, :cp)} #{p} #{p}.backup") if File.exist?(p)
 
       # Write new hosts
       db = Db.new
@@ -34,10 +34,10 @@ module NodeCtld
       new = $CFG.get(:node, :known_hosts)
       backup = $CFG.get(:node, :known_hosts) + '.backup'
 
-      if File.exists?(backup)
+      if File.exist?(backup)
         syscmd("#{$CFG.get(:bin, :mv)} #{backup} #{new}")
 
-      elsif File.exists?(new)
+      elsif File.exist?(new)
         File.delete(new)
       end
 

@@ -18,7 +18,7 @@ module NodeCtld
       Dir.mkdir(root_dir, 0700) unless Dir.exists?(root_dir)
       Dir.mkdir(ssh_dir, 0700) unless Dir.exists?(ssh_dir)
 
-      unless File.exists?(authorized_keys)
+      unless File.exist?(authorized_keys)
         File.open(authorized_keys, 'w') { |f| f.write(@pubkey + "\n") }
         File.chmod(0600, authorized_keys)
         return
@@ -47,7 +47,7 @@ module NodeCtld
     end
 
     def remove_key
-      return unless File.exists?(authorized_keys)
+      return unless File.exist?(authorized_keys)
 
       tmp = File.join(ssh_dir, '.authorized_keys.new')
 

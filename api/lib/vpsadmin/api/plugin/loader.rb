@@ -6,7 +6,7 @@ module VpsAdmin::API::Plugin
         VpsAdmin::API.root,
         'plugins'
       ))
-      return unless File.exists?(plugin_dir)
+      return unless File.exist?(plugin_dir)
 
       Dir.entries(plugin_dir).select do |v|
         v != '.' && v != '..' && File.directory?(File.join(plugin_dir, v))
@@ -33,7 +33,7 @@ module VpsAdmin::API::Plugin
         rescue Errno::ENOENT
           %w(lib models resources).each do |d|
             path = File.join(basedir, d)
-            require_all(File.realpath(path)) if File.exists?(path)
+            require_all(File.realpath(path)) if File.exist?(path)
           end
         else
           Kernel.load(init)

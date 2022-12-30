@@ -7,7 +7,7 @@ module VpsAdmin::MailTemplates
       @name = File.basename(path)
       @translations = []
 
-      fail "#{path}/meta.rb does not exist" unless File.exists?(path)
+      fail "#{path}/meta.rb does not exist" unless File.exist?(path)
       require_relative File.join(path, 'meta.rb')
 
       @meta = Meta.last_meta

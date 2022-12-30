@@ -26,13 +26,13 @@ module NodeCtld
     protected
     def backup_keys
       [priv_path, pub_path, authorized_keys].each do |p|
-        syscmd("#{$CFG.get(:bin, :cp)} #{p} #{p}.backup") if File.exists?(p)
+        syscmd("#{$CFG.get(:bin, :cp)} #{p} #{p}.backup") if File.exist?(p)
       end
     end
 
     def restore_keys
       [priv_path, pub_path, authorized_keys].each do |p|
-        syscmd("#{$CFG.get(:bin, :mv)} #{p}.backup #{p}") if File.exists?("#{p}.backup")
+        syscmd("#{$CFG.get(:bin, :mv)} #{p}.backup #{p}") if File.exist?("#{p}.backup")
       end
     end
 

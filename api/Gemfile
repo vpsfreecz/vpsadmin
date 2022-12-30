@@ -35,7 +35,7 @@ end
 # resolved plugin dependencies.
 Dir.glob(File.expand_path("../plugins/*", File.realpath(__FILE__))) do |v|
   path = File.join(v, 'api', 'Gemfile')
-  next unless File.exists?(path)
+  next unless File.exist?(path)
 
   eval_gemfile path
 end

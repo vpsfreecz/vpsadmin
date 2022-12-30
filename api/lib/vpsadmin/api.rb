@@ -164,7 +164,7 @@ module VpsAdmin
 
     def self.load_configurable(name)
       path = File.join(root, 'config', "#{name}.rb")
-      require_relative path if File.exists?(path)
+      require_relative path if File.exist?(path)
     end
 
     def self.configure(&block)
