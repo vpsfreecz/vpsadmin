@@ -44,7 +44,7 @@ module VpsAdmin::DownloadMounter
     end
 
     def mountpoint_exists?
-      Dir.exists?(@full_mnt)
+      Dir.exist?(@full_mnt)
     end
 
     def run(cmd)

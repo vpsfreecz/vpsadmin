@@ -70,7 +70,7 @@ module VpsAdmin
       ret = []
 
       Dir.glob('*').each do |tpl|
-        next unless Dir.exists?(tpl)
+        next unless Dir.exist?(tpl)
 
         ret << Template.new(File.join(Dir.pwd, tpl))
       end

@@ -26,7 +26,7 @@ module VpsAdmin::API::Plugin
         end
 
         basedir = File.join(plugin_dir, p, component)
-        fail "Plugin dir '#{basedir}' not found" unless Dir.exists?(basedir)
+        fail "Plugin dir '#{basedir}' not found" unless Dir.exist?(basedir)
 
         begin
           init = File.realpath(File.join(basedir, 'init.rb'))
