@@ -105,30 +105,23 @@ switch ($_GET["action"] ?? null) {
 			break;
 
 		case 'new-step-2':
-			print_newvps_page2($_GET['user'], $_GET['platform']);
+			print_newvps_page2(
+				$_GET['user'],
+				$_GET['location']
+			);
 			break;
 
 		case 'new-step-3':
 			print_newvps_page3(
 				$_GET['user'],
-				$_GET['platform'],
-				$_GET['location']
+				$_GET['location'],
+				$_GET['os_template']
 			);
 			break;
 
 		case 'new-step-4':
 			print_newvps_page4(
 				$_GET['user'],
-				$_GET['platform'],
-				$_GET['location'],
-				$_GET['os_template']
-			);
-			break;
-
-		case 'new-step-5':
-			print_newvps_page5(
-				$_GET['user'],
-				$_GET['platform'],
 				$_GET['location'],
 				$_GET['os_template']
 			);
@@ -136,9 +129,8 @@ switch ($_GET["action"] ?? null) {
 
 		case 'new-submit':
 			if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-				print_newvps_page5(
+				print_newvps_page4(
 					$_GET['user'],
-					$_GET['platform'],
 					$_GET['location'],
 					$_GET['os_template']
 				);
@@ -192,9 +184,8 @@ switch ($_GET["action"] ?? null) {
 
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 				$xtpl->perex_format_errors(_('VPS creation failed'), $e->getResponse());
-				print_newvps_page5(
+				print_newvps_page4(
 					$_GET['user'],
-					$_GET['platform'],
 					$_GET['location'],
 					$_GET['os_template']
 				);
