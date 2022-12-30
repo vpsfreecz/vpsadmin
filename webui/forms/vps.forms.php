@@ -607,10 +607,7 @@ function vps_list_form() {
 			$xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$vps->user_id.'">'.$vps->user->login.'</a>');
 			$xtpl->table_td($vps->process_count, false, true);
 
-			if (showPlatformWarning($vps)) {
-				$xtpl->table_td(
-					'<a href="?page=adminvps&action=info&veid='.$vps->id.'"><img src="template/icons/warning.png"  title="'._("The VPS is running on OpenVZ Legacy, a deprecated virtualization platform").'"/> '.h($vps->hostname).'</a>');
-			} elseif ($vps->in_rescue_mode) {
+			if ($vps->in_rescue_mode) {
 				$xtpl->table_td(
 					'<a href="?page=adminvps&action=info&veid='.$vps->id.'"><img src="template/icons/warning.png"  title="'._("The VPS is in rescue mode").'"/> '.h($vps->hostname).'</a>');
 			} else {
@@ -671,8 +668,6 @@ function vps_list_form() {
 
 			if (!$vps->is_running)
 				$color = '#FFCCCC';
-			elseif (showPlatformWarning($vps))
-				$color = '#FFE27A';
 			elseif ($diskWarning)
 				$color = '#FFE27A';
 			elseif ($vps->in_rescue_mode)

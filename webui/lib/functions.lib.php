@@ -978,10 +978,6 @@ function vpsDiskUsagePercent ($vps) {
     return $vps->used_diskspace / $vps->diskspace * 100;
 }
 
-function showPlatformWarning ($vps) {
-	return $vps->node->hypervisor_type == 'openvz';
-}
-
 function sortMaintenanceWindowsByCloseness ($windows) {
 	$ret = [];
 

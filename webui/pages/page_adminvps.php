@@ -990,10 +990,7 @@ if (isset($show_info) && $show_info) {
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_("Platform").':');
-	$xtpl->table_td(
-		(showPlatformWarning($vps) ? '<img src="template/icons/warning.png"  title="'._("The VPS is running on OpenVZ Legacy, a deprecated virtualization platform").'"/> ' : '').
-		hypervisorTypeToLabel($vps->node->hypervisor_type)
-	);
+	$xtpl->table_td(hypervisorTypeToLabel($vps->node->hypervisor_type));
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_("Owner").':');
