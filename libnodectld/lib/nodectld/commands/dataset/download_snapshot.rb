@@ -1,4 +1,6 @@
 require 'digest'
+require 'fileutils'
+require 'pathname'
 
 module NodeCtld
   class Commands::Dataset::DownloadSnapshot < Commands::Base
@@ -9,7 +11,7 @@ module NodeCtld
       ds = "#{@pool_fs}/#{@dataset_name}"
       ds += "/#{@tree}/#{@branch}" if @tree
 
-      syscmd("#{$CFG.get(:bin, :mkdir)} \"#{secret_dir_path}\"")
+      FileUtils.mkdir_p(secret_dir_path)
 
       approx_size(ds)
       method(@format).call(ds)
@@ -26,8 +28,16 @@ module NodeCtld
     end
 
     def rollback
-      syscmd("#{$CFG.get(:bin, :rm)} -f \"#{file_path}\"") if File.exist?(file_path)
-      syscmd("#{$CFG.get(:bin, :rmdir)} \"#{secret_dir_path}\"") if File.exist?(secret_dir_path)
+      begin
+        File.unlink(file_path)
+      rescue Errno::ENOENT
+      end
+
+      begin
+        Dir.rmdir(secret_dir_path)
+      rescue Errno::ENOENT
+      end
+
       ok
     end
 
@@ -58,9 +68,15 @@ module NodeCtld
     def archive(ds)
       dir = pool_mounted_download(@pool_fs, @download_id.to_s)
 
+      FileUtils.mkdir_p(dir)
+
       begin
-        Dir.mkdir(dir) unless Dir.exist?(dir)
-        syscmd("mount -t zfs #{ds}@#{@snapshot} \"#{dir}\"")
+        # If the transaction is being restarted, e.g. after a crash, the snapshot
+        # may already be mounted.
+        unless Pathname.new(dir).mountpoint?
+          syscmd("mount -t zfs #{ds}@#{@snapshot} \"#{dir}\"")
+        end
+
         pipe_cmd("tar -cz -C \"#{dir}\" .")
       ensure
         10.times do
