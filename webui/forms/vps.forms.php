@@ -1604,50 +1604,39 @@ function vps_netif_form($vps, $netif, $netif_accounting) {
 
 	$xtpl->form_create('?page=adminvps&action=netif&veid='.$vps->id.'&id='.$netif->id, 'post');
 
-	if ($vps->node->hypervisor_type == "vpsadminos") {
-		$xtpl->form_add_input(_('Name').':', 'text', '30', 'name', $netif->name);
-	} else {
-		$xtpl->table_td(_('Name').':');
-		$xtpl->table_td($netif->name);
-		$xtpl->table_tr();
-	}
+	$xtpl->form_add_input(_('Name').':', 'text', '30', 'name', $netif->name);
 
 	$xtpl->table_td(_('Type').':');
 	$xtpl->table_td($netif->type);
 	$xtpl->table_tr();
 
-	if ($vps->node->hypervisor_type == "vpsadminos") {
-		$xtpl->table_td(_('MAC address').':');
-		$xtpl->table_td($netif->mac);
-		$xtpl->table_tr();
+	$xtpl->table_td(_('MAC address').':');
+	$xtpl->table_td($netif->mac);
+	$xtpl->table_tr();
 
-		if (isAdmin()) {
-			$xtpl->form_add_number(
-				_('Max TX').':',
-				'max_tx',
-				post_val('max_tx', $netif->max_tx / 1024.0 / 1024.0),
-				0,
-				999999999999,
-				1,
-				'Mbps'
-			);
+	if (isAdmin()) {
+		$xtpl->form_add_number(
+			_('Max TX').':',
+			'max_tx',
+			post_val('max_tx', $netif->max_tx / 1024.0 / 1024.0),
+			0,
+			999999999999,
+			1,
+			'Mbps'
+		);
 
-			$xtpl->form_add_number(
-				_('Max RX').':',
-				'max_rx',
-				post_val('max_rx', $netif->max_rx / 1024.0 / 1024.0),
-				0,
-				999999999999,
-				1,
-				'Mbps'
-			);
-		}
+		$xtpl->form_add_number(
+			_('Max RX').':',
+			'max_rx',
+			post_val('max_rx', $netif->max_rx / 1024.0 / 1024.0),
+			0,
+			999999999999,
+			1,
+			'Mbps'
+		);
 	}
 
-	if ($vps->node->hypervisor_type == "vpsadminos")
-		$xtpl->form_out(_('Go >>'));
-	else
-		$xtpl->form_out_raw();
+	$xtpl->form_out(_('Go >>'));
 
 	$accounting = null;
 
@@ -1689,12 +1678,8 @@ function vps_netif_form($vps, $netif, $netif_accounting) {
 		$xtpl->table_out();
 	}
 
-	if ($vps->node->hypervisor_type == 'vpsadminos') {
-		vps_netif_iproutes_form($vps, $netif);
-		vps_netif_ipaddrs_form($vps, $netif);
-	} else {
-		vps_netif_ip_joined_form($vps, $netif);
-	}
+	vps_netif_iproutes_form($vps, $netif);
+	vps_netif_ipaddrs_form($vps, $netif);
 }
 
 function vps_netif_iproutes_form($vps, $netif) {
@@ -1846,63 +1831,6 @@ function vps_netif_ipaddrs_form($vps, $netif) {
 		$xtpl->form_add_select(
 			_("Add public IPv6 address").':',
 			'hostaddr_public_v6',
-			$free_6,
-			'', _('Add one IP address at a time')
-		);
-	}
-	$xtpl->form_out(_('Go >>'));
-}
-
-function vps_netif_ip_joined_form($vps, $netif) {
-	global $xtpl, $api;
-
-	$ips = $api->ip_address->list([
-		'network_interface' => $netif->id,
-		'order' => 'interface',
-		'meta' => ['includes' => 'network'],
-	]);
-
-	$xtpl->table_add_category(_('IP addresses'));
-	$xtpl->table_add_category('');
-	$xtpl->form_create('?page=adminvps&action=ipjoined_add&veid='.$vps->id.'&netif='.$netif->id, 'post');
-
-	foreach ($ips as $ip) {
-		$xtpl->table_td(ip_label($ip));
-		$xtpl->table_td($ip->addr.'/'.$ip->prefix);
-		$xtpl->table_td(
-			'<a href="?page=adminvps&action=iproute_del&id='.$ip->id.
-			'&veid='.$vps->id.'&netif='.$netif->id.'&t='.csrf_token().'" title="'._('Remove').'">'.
-			'<img src="template/icons/m_remove.png" alt="'._("Remove").'">'.
-			'</a>'
-		);
-		$xtpl->table_tr();
-	}
-
-	$tmp = ['-------'];
-	$free_4_pub = $tmp + get_free_route_list('ipv4', $vps, 'public_access', 25);
-	$free_4_priv = $tmp + get_free_route_list('ipv4_private', $vps, 'private_access', 25);
-
-	if ($vps->node->location->has_ipv6)
-		$free_6 = $tmp + get_free_route_list('ipv6', $vps, null, 25);
-
-	$xtpl->form_add_select(
-		_("Add public IPv4 address").':',
-		'iproute_public_v4',
-		$free_4_pub,
-		'', _('Add one IP address at a time')
-	);
-
-	$xtpl->form_add_select(
-		_("Add private IPv4 address").':',
-		'iproute_private_v4',
-		$free_4_priv,
-		'', _('Add one IP address at a time')
-	);
-
-	if ($vps->node->location->has_ipv6) {
-		$xtpl->form_add_select(
-			_("Add public IPv6 address").':',
-			'iproute_public_v6',
 			$free_6,
 			'', _('Add one IP address at a time')
 		);
