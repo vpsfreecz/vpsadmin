@@ -144,7 +144,14 @@ module NodeCtld
               cmd_db_created = Time.now
             end
 
-            do_commands(cmd_db)
+            begin
+              do_commands(cmd_db)
+            rescue TransactionCheckError
+              log(:warn, :daemon, 'Failed to check transactions, resetting database connection')
+              cmd_db.close
+              cmd_db = nil
+              sleep(10)
+            end
           end
         end
 
@@ -161,6 +168,10 @@ module NodeCtld
         $CFG.get(:db, :name),
         'transactions'
       ).get
+
+      # Sometimes, update_rs is nil, i.e. no row is returned. It's not clear
+      # how this could happen, but handle it to avoid a crash.
+      raise TransactionCheckError if update_rs.nil?
 
       @skipped_transaction_checks ||= 0
 
