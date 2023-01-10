@@ -491,16 +491,6 @@ function mount_list($vps) {
 	);
 	$xtpl->table_tr();
 
-	if ($vps->node->hypervisor_type == 'openvz') {
-		$xtpl->table_td(
-			_('<strong>The VPS will be restarted on any mount / unmount operation!</strong>'),
-			false,
-			false, // right
-			9 // colspan
-		);
-		$xtpl->table_tr();
-	}
-
 	$xtpl->table_out();
 }
 
