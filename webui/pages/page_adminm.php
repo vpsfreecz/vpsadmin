@@ -265,6 +265,10 @@ function print_editm($u) {
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("TOTP devices").'" />'._('TOTP devices'), "?page=adminm&section=members&action=totp_devices&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Session tokens").'" />'._('Session tokens'), "?page=adminm&section=members&action=session_tokens&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Session log").'" />'._('Session log'), "?page=adminm&action=user_sessions&id={$u->id}");
+
+	if (isAdmin())
+		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Transaction log").'" />'._('Transaction log'), "?page=transactions&user={$u->id}");
+
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Resource packages").'" />'._('Resource packages'), "?page=adminm&section=members&action=resource_packages&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Cluster resources").'" />'._('Cluster resources'), "?page=adminm&section=members&action=cluster_resources&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Environment configs").'" />'._('Environment configs'), "?page=adminm&section=members&action=env_cfg&id={$u->id}");
