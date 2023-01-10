@@ -139,12 +139,6 @@ in {
           };
         };
 
-        process-transfers = {
-          rake = [ "vpsadmin:transfers:process" ];
-          timer.enable = true;
-          timer.config = { OnCalendar = "minutely"; };
-        };
-
         migration-plans = {
           rake = [ "vpsadmin:vps:migration:run_plans" ];
           timer.enable = true;
