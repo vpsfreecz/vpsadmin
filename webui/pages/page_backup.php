@@ -250,30 +250,6 @@ if (isLoggedIn()) {
 
 			break;
 
-		case 'mount':
-			if (isset($_POST['vps'])) {
-				csrf_check();
-
-				try {
-					$api->vps($_POST['vps'])->mount->create(array(
-						'snapshot' => $_GET['snapshot'],
-						'mountpoint' => $_POST['mountpoint']
-					));
-
-					notify_user(_('Snapshot mount in progress'), _('The snapshot will be mounted momentarily.'));
-					redirect($_POST['return'] ?? '?page=backup');
-
-				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-					$xtpl->perex_format_errors(_('Snapshot mount failed'), $e->getResponse());
-					mount_snapshot_form();
-				}
-
-			} else {
-				mount_snapshot_form();
-			}
-
-			break;
-
 		case 'download_destroy':
 			if (isset($_POST['confirm']) && $_POST['confirm']) {
 				csrf_check();

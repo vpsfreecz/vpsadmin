@@ -357,7 +357,6 @@ function dataset_snapshot_list($datasets, $vps = null) {
 		$xtpl->table_add_category(_('Label'));
 		$xtpl->table_add_category(_('Restore'));
 		$xtpl->table_add_category(_('Download'));
-		$xtpl->table_add_category(_('Mount'));
 
 		if (isExportPublic())
 			$xtpl->table_add_category(_('Export'));
@@ -380,16 +379,11 @@ function dataset_snapshot_list($datasets, $vps = null) {
 			$xtpl->form_add_radio_pure("restore_snapshot", $snap->id);
 			$xtpl->table_td('[<a href="?page=backup&action=download&dataset='.$ds->id.'&snapshot='.$snap->id.'&return='.$return_url.'">'._("Download").'</a>]');
 
-			if ($snap->mount_id)
-				$xtpl->table_td(_('mounted to').' <a href="?page=adminvps&action=info&veid='.$snap->mount->vps_id.'">#'.$snap->mount->vps_id.'</a>');
-			else
-				$xtpl->table_td('[<a href="?page=backup&action=mount&vps_id='.$vps->id.'&dataset='.$ds->id.'&snapshot='.$snap->id.'&return='.$return_url.'">'._("Mount").'</a>]');
-
 			if (isExportPublic()) {
 				if ($snap->export_id)
-					$xtpl->table_td('[<a href="?page=export&action=edit&export='.$snap->export_id.'">'._('exported').'</a>]');
+					$xtpl->table_td('[<a href="?page=export&action=edit&export='.$snap->export_id.'">'._('exported, can be mounted').'</a>]');
 				else
-					$xtpl->table_td('[<a href="?page=export&action=create&dataset='.$ds->id.'&snapshot='.$snap->id.'">'._('Export').'</a>]');
+					$xtpl->table_td('[<a href="?page=export&action=create&dataset='.$ds->id.'&snapshot='.$snap->id.'">'._('Export to mount').'</a>]');
 			}
 
 			if (!$vps) {
@@ -413,7 +407,6 @@ function mount_list($vps) {
 	$xtpl->table_title(_('Mounts'));
 
 	$xtpl->table_add_category(_('Dataset'));
-	$xtpl->table_add_category(_('Snapshot'));
 	$xtpl->table_add_category(_('Mountpoint'));
 	$xtpl->table_add_category(_('On mount fail'));
 	$xtpl->table_add_category(_('State'));
@@ -427,7 +420,6 @@ function mount_list($vps) {
 
 	foreach ($mounts as $m) {
 		$xtpl->table_td($m->dataset->name);
-		$xtpl->table_td($m->snapshot_id ? tolocaltz($m->snapshot->created_at, 'Y-m-d H:i'): '---');
 		$xtpl->table_td(h($m->mountpoint));
 
 		$xtpl->table_td(translate_mount_on_start_fail($m->on_start_fail));
@@ -599,44 +591,6 @@ function mount_edit_form($vps_id, $mnt_id) {
 		'translate_mount_on_start_fail'
 	);
 	$xtpl->table_td($params->on_start_fail->description);
-	$xtpl->table_tr();
-
-	$xtpl->form_out(_('Save'));
-
-	$xtpl->sbar_add(_("Back"), $_GET['return'] ? $_GET['return'] : $_POST['return']);
-	$xtpl->sbar_out(_('Mount'));
-}
-
-function mount_snapshot_form() {
-	global $xtpl, $api;
-
-	$ds = $api->dataset->find($_GET['dataset']);
-	$snap = $ds->snapshot->find($_GET['snapshot']);
-
-	$xtpl->table_title(_('Mount snapshot'));
-	$xtpl->form_create('?page=backup&action=mount&vps_id='.$_GET['vps'].'&dataset='.$_GET['dataset'].'&snapshot='.$_GET['snapshot'], 'post');
-
-	$params = $api->vps->mount->create->getParameters('input');
-
-	$xtpl->form_add_select(
-		_('Mount to VPS'),
-		'vps',
-		resource_list_to_options($api->vps->list(), 'id', 'hostname', true, 'vps_label'),
-		$_POST['vps'] ? $_POST['vps'] : $_GET['vps_id']
-	);
-
-	$xtpl->table_td(_('Mount snapshot'));
-	$xtpl->table_td($ds->name.' @ '.$snap->created_at);
-	$xtpl->table_tr();
-
-	$xtpl->table_td($params->mountpoint->label . ' <input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">');
-	api_param_to_form_pure('mountpoint', $params->mountpoint, '');
-	$xtpl->table_tr();
-
-	$xtpl->table_td(
-		_('<strong>OpenVZ VPS are restarted when a new mount is created!</strong>'),
-		false, false, 3
-	);
 	$xtpl->table_tr();
 
 	$xtpl->form_out(_('Save'));
