@@ -63,7 +63,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 
 	$xtpl->table_add_category(_('Mount'));
 
-	if (isExportPublic())
+	if ($role == 'primary' && isExportPublic())
 		$xtpl->table_add_category(_('Export'));
 
 	$xtpl->table_add_category('');
@@ -121,7 +121,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 
 		$xtpl->table_td('<a href="?page=dataset&action=mount&dataset='.$ds->id.'&vps='.$_GET['veid'].'&return='.$return.'">'._('Mount').'</a>');
 
-		if (isExportPublic()) {
+		if ($role == 'primary' && isExportPublic()) {
 			if ($ds->export_id)
 				$xtpl->table_td('<a href="?page=export&action=edit&export='.$ds->export_id.'">'._('exported').'</a>');
 			else
