@@ -86,6 +86,8 @@ function export_dataset_form() {
 function export_create_form($dataset_id, $snapshot_id) {
 	global $xtpl, $api;
 
+	include_export_scripts();
+
 	$xtpl->sbar_add(_("Back"), '?page=export');
 
 	$ds = $api->dataset->show($dataset_id);
@@ -121,18 +123,27 @@ function export_create_form($dataset_id, $snapshot_id) {
 		$params[] = 'threads';
 
 	foreach ($params as $p) {
-		api_param_to_form($p, $input->{$p}, $ex->{$p});
+		$desc = $input->{$p};
+
+		$xtpl->table_td(($desc->label ?? $p).':');
+		api_param_to_form_pure($p, $input->{$p}, $ex->{$p});
+
+		if ($desc->description)
+			$xtpl->table_td($desc->description);
+
+		$xtpl->table_tr(false, 'advanced-option');
 	}
 
-	$xtpl->form_add_checkbox(
-		_('Start').':',
+	$xtpl->table_td(_('Start').':');
+	$xtpl->form_add_checkbox_pure(
 		'enabled',
 		'1',
 		post_val('enabled', true),
 		_('Start the NFS server.')
 	);
+	$xtpl->table_tr(false, 'advanced-option');
 
-	$xtpl->form_out(_('Create'));
+	$xtpl->form_out(_('Create'), null, '<span class="advanced-option-toggle"></span>');
 }
 
 function export_edit_form($id) {
@@ -407,4 +418,14 @@ function export_host_edit_form($export_id, $host_id) {
 	}
 
 	$xtpl->form_out(_('Save'));
+}
+
+function include_export_scripts() {
+	global $xtpl;
+
+	$xtpl->assign(
+		'AJAX_SCRIPT',
+		$xtpl->vars['AJAX_SCRIPT'] .
+		'<script type="text/javascript" src="js/export.js"></script>'
+	);
 }
