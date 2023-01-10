@@ -502,8 +502,6 @@ function mount_list($vps) {
 	}
 
 	$xtpl->table_out();
-
-	$xtpl->sbar_add(_('Create mount'), '?page=dataset&action=mount&vps='.$vps->id.'&return='.$return);
 }
 
 function mount_create_form() {
@@ -514,32 +512,17 @@ function mount_create_form() {
 
 	$params = $api->vps->mount->create->getParameters('input');
 
-	if (!$_GET['vps']) {
-		$xtpl->form_add_select(_('Mount to VPS'), 'vps', resource_list_to_options(
-			$api->vps->list(),
-			'id',
-			'hostname', true,
-			function($vps) { return '#'.$vps->id.' '.$vps->hostname; }
-		), $_POST['vps']);
+	$vps = $api->vps->find($_GET['vps']);
 
-	} else {
-		$vps = $api->vps->find($_GET['vps']);
+	$xtpl->table_td(_('Mount to VPS'));
+	$xtpl->table_td($vps->id . ' <input type="hidden" name="vps" value="'.$vps->id.'">');
+	$xtpl->table_tr();
 
-		$xtpl->table_td(_('Mount to VPS'));
-		$xtpl->table_td($vps->id . ' <input type="hidden" name="vps" value="'.$vps->id.'">');
-		$xtpl->table_tr();
-	}
+	$ds = $api->dataset->find($_GET['dataset']);
 
-	if (!$_GET['dataset']) {
-		$xtpl->form_add_select(_('Mount dataset'), 'dataset', resource_list_to_options($api->dataset->list(), 'id', 'name'), $_POST['dataset']);
-
-	} else {
-		$ds = $api->dataset->find($_GET['dataset']);
-
-		$xtpl->table_td(_('Mount dataset'));
-		$xtpl->table_td($ds->name . ' <input type="hidden" name="dataset" value="'.$ds->id.'">');
-		$xtpl->table_tr();
-	}
+	$xtpl->table_td(_('Mount dataset'));
+	$xtpl->table_td($ds->name . ' <input type="hidden" name="dataset" value="'.$ds->id.'">');
+	$xtpl->table_tr();
 
 	$xtpl->table_td($params->mountpoint->label . ' <input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">');
 	api_param_to_form_pure('mountpoint', $params->mountpoint, '');
@@ -557,12 +540,6 @@ function mount_create_form() {
 		'translate_mount_on_start_fail'
 	);
 	$xtpl->table_td($params->on_start_fail->description);
-	$xtpl->table_tr();
-
-	$xtpl->table_td(
-		_('<strong>OpenVZ VPS are restarted when a new mount is created!</strong>'),
-		false, false, 3
-	);
 	$xtpl->table_tr();
 
 	$xtpl->form_out(_('Save'));
