@@ -4,6 +4,7 @@ module NodeCtld
 
     include Utils::System
     include Utils::Zfs
+    include Utils::OsCtl
 
     def exec
       origin = "#{@pool_fs}/#{@dataset_name}"
@@ -55,7 +56,7 @@ module NodeCtld
       ])
 
       # Destroy the original dataset
-      zfs(:destroy, '-r', origin)
+      osctl(%i(trash-bin dataset add), origin)
 
       # Move the rollbacked one in its place
       zfs(:rename, nil, "#{origin}.rollback #{origin}")
