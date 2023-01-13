@@ -209,7 +209,7 @@ foreach ($nodes as $node) {
 					 . ', last update: ' . ($last_update ?? _('never'))
 					 . '" src="template/icons/error.png"/>';
 
-	} else if ($node->pool_state != 'online' || $node->pool_scan != 'none') {
+	} else if ($node->type != 'mailer' && ($node->pool_state != 'online' || $node->pool_scan != 'none')) {
 		$issues = [];
 
 		if ($node->pool_state != 'online')
