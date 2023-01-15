@@ -28,6 +28,12 @@ module NodeCtld
       end
     end
 
+    def any_pools?
+      @mutex.synchronize do
+        @pools.any?
+      end
+    end
+
     def all_pools_up?
       @mutex.synchronize do
         @pools.each_value.all?(&:online)
