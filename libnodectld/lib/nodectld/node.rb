@@ -8,7 +8,9 @@ module NodeCtld
     include Utils::System
     include Utils::OsCtl
 
-    Pool = Struct.new(:name, :filesystem, :online)
+    ROLES = %i(hypervisor primary backup)
+
+    Pool = Struct.new(:name, :filesystem, :role, :online)
 
     def initialize
       @pools = {}
@@ -16,8 +18,7 @@ module NodeCtld
     end
 
     def init(db)
-      fetch_pools(db).each do |fs|
-        pool = new_pool(fs)
+      fetch_pools(db).each do |pool|
         @mutex.synchronize do
           @pools[pool.name] = pool
         end
@@ -31,6 +32,12 @@ module NodeCtld
     def any_pools?
       @mutex.synchronize do
         @pools.any?
+      end
+    end
+
+    def any_osctl_pools?
+      @mutex.synchronize do
+        !@pools.detect { |_, pool| pool.role == :hypervisor }.nil?
       end
     end
 
@@ -67,11 +74,6 @@ module NodeCtld
     end
 
     protected
-    def new_pool(fs)
-      name = fs.split('/').first
-      Pool.new(name, fs, false)
-    end
-
     def wait_for_pool(pool)
       sv = "pool-#{pool.name}"
 
@@ -129,9 +131,18 @@ module NodeCtld
       ret = []
 
       db.prepared(
-        'SELECT filesystem FROM pools WHERE node_id = ?',
+        'SELECT filesystem, role FROM pools WHERE node_id = ?',
         $CFG.get(:vpsadmin, :node_id)
-      ).each { |row| ret << row['filesystem'] }
+      ).each do |row|
+        name = row['filesystem'].split('/').first
+
+        ret << Pool.new(
+          name,
+          row['filesystem'],
+          ROLES[row['role']],
+          false,
+        )
+      end
 
       ret
     end

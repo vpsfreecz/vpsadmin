@@ -67,7 +67,7 @@ module NodeCtld
         end
 
       when 'osctld_shutdown'
-        if Daemon.instance.node.any_pools?
+        if Daemon.instance.node.any_osctl_pools?
           log(:info, 'osctld is shutting down, pausing')
           Daemon.instance.pause
           Daemon.instance.node.set_all_pools_down
