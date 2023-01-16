@@ -32,9 +32,9 @@ Layout
 #logo a {color:#FFF;}
 
 #slogan {color:#B0B0B0;}
-#search span {color:#FFFFFF;}
-#search #search-input {border:1px solid #FFF;}
-#search #search-submit {border:1px solid #969678; background:#969678; color:#FFF;}
+#logbox span {color:#FFFFFF;}
+#logbox #logbox-input {border:1px solid #FFF;}
+#logbox #logbox-submit {border:1px solid #969678; background:#969678; color:#FFF;}
 #input {border:1px solid #B0B0B0;}
 #button, .button {border:1px solid #000; background:#969678; color:#FFF;}
 .button {margin-right: 30px;}
