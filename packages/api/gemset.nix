@@ -5,10 +5,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "183d7laxvwrw1d02qgm8rg9ljjihfiyh4vzi58xm42z3fr3bbhky";
+      sha256 = "1xgfwf7xqhnb43nv86hh4rlnsq9rqlmj8mvnzh55y6lwdahif293";
       type = "gem";
     };
-    version = "6.1.7";
+    version = "6.1.7.1";
   };
   activerecord = {
     dependencies = ["activemodel" "activesupport"];
@@ -16,10 +16,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "1dsxi813wyhx2d0bbyc0nla4ck6nmmi3z3765gdqf6xl3dha5r2j";
+      sha256 = "0rr63djvf46fbq25arj3fa8ls2d8q3s0c65943gdxh1wdgy175sc";
       type = "gem";
     };
-    version = "6.1.7";
+    version = "6.1.7.1";
   };
   activesupport = {
     dependencies = ["concurrent-ruby" "i18n" "minitest" "tzinfo" "zeitwerk"];
@@ -27,10 +27,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0k5pq2swzgddmwwr6x1phbspk1vw8cl88ci8jbi18mrirjjfippr";
+      sha256 = "0dw6hdq5f2m1dsbv8gvys7sgk4ppdbkj5rwwpcr0c86309gxbriq";
       type = "gem";
     };
-    version = "6.1.7";
+    version = "6.1.7.1";
   };
   ancestry = {
     dependencies = ["activerecord"];
@@ -257,10 +257,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0s96kwzpzx8l9kl6hcqbafkb2rgbx8l2fqzg0gccrml554wz82f8";
+      sha256 = "0n0pijrc465zzrv5flxc41375zwaz9yfc2n0r80zjwarc1ixkdx1";
       type = "gem";
     };
-    version = "2.8.0";
+    version = "2.8.0.1";
   };
   method_source = {
     groups = ["default" "development"];
@@ -445,10 +445,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "14xjykbmngjhb4p02b7yghf0gqgqjfpi6i028x9g6q6xs782ci3j";
+      sha256 = "0qvp6h2abmlsl4sqjsvac03cr2mxq6143gbx4kq52rpazp021qsb";
       type = "gem";
     };
-    version = "2.2.5";
+    version = "2.2.6.2";
   };
   rack-protection = {
     dependencies = ["rack"];
@@ -562,10 +562,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0k64i7ax6sqvh702s0xrll2g8isxx1x4zam95ck7122flsyh7van";
+      sha256 = "0sq2cc9pm5gq411y7iwfvzbmgv3g91lyf7y7cqn1lr3yf1v122nc";
       type = "gem";
     };
-    version = "3.12.2";
+    version = "3.12.3";
   };
   rspec-support = {
     groups = ["default" "test"];
