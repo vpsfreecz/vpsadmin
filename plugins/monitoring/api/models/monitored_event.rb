@@ -97,7 +97,7 @@ class MonitoredEvent < ActiveRecord::Base
           event.touch
         end
 
-      elsif event.state == 'acknowledged'
+      elsif event.state == 'acknowledged' && event.skip_acknowledged
         event.touch
 
       elsif (monitor.period && (Time.now - event.created_at) >= monitor.period) \
@@ -156,6 +156,16 @@ class MonitoredEvent < ActiveRecord::Base
     end
 
     monitor.desc
+  end
+
+  def skip_acknowledged
+    unless monitor
+      self.monitor = VpsAdmin::API::Plugins::Monitoring.monitors.detect do |v|
+        v.name == monitor_name.to_sym
+      end
+    end
+
+    monitor.skip_acknowledged
   end
 
   protected
