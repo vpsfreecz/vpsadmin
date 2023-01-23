@@ -3,6 +3,7 @@ class MonitoredEvent < ActiveRecord::Base
   has_many :monitored_event_logs
   belongs_to :user
   enum state: %i(monitoring confirmed unconfirmed acknowledged ignored closed)
+  serialize :action_state
   after_update :log_state
 
   attr_accessor :monitor, :object
