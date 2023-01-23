@@ -45,8 +45,8 @@ module VpsAdmin::API::Plugin
       Migrator.migrate_plugin(self, version || migrations.last)
     end
 
-    def rollback(step)
-      Migrator.rollback_plugin(self, step)
+    def rollback(steps)
+      Migrator.rollback_plugin(self, steps)
     end
   end
 end
