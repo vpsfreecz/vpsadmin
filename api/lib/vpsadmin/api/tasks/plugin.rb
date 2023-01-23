@@ -53,7 +53,7 @@ module VpsAdmin::API::Tasks
 
       # output
       puts
-      puts "database: #{ActiveRecord::Base.connection_config[:database]}"
+      puts "database: #{ActiveRecord::Base.connection_db_config.database}"
       puts "plugin:   #{plugin.id}\n\n"
       puts "#{'Status'.center(8)}  #{'Migration ID'.ljust(14)}  Migration Name"
       puts "-" * 50
