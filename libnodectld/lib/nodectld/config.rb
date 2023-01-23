@@ -194,6 +194,12 @@ module NodeCtld
       metrics_dir: '/run/metrics',
       interval: 60,
     },
+
+    osctl_exporter: {
+      enable: true,
+      url: 'http://localhost:9101/metrics',
+      interval: 120,
+    },
   }
 
   class AppConfig

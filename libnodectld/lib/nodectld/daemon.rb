@@ -64,6 +64,7 @@ module NodeCtld
       @vps_status = VpsStatus.new
       @kernel_log = KernelLog::Parser.new
       @exporter = Exporter.new(self)
+      @osctl_exporter = OsCtlExporter.new
       NetAccounting.instance
       Shaper.instance
       TransactionVerifier.instance
@@ -92,6 +93,7 @@ module NodeCtld
       OsCtlUsers.setup(db)
       @kernel_log.start if $CFG.get(:kernel_log, :enable)
       @exporter.start if $CFG.get(:exporter, :enable)
+      @osctl_exporter.start if @osctl_exporter.enable?
 
       @init = true
 
