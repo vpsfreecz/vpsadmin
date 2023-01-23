@@ -21,14 +21,16 @@ module VpsAdmin::API::Plugins
 
       class MonitorEnv
         def initialize
-          @data = {}
+          @data = {
+            skip_acknowledged: true,
+          }
         end
 
         def data
           @data
         end
 
-        %i(label period check_count repeat cooldown desc access_level).each do |name|
+        %i(label period check_count repeat cooldown desc access_level skip_acknowledged).each do |name|
           define_method(name) { |v| @data[name] = v }
         end
 

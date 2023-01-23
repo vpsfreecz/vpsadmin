@@ -97,7 +97,7 @@ class MonitoredEvent < ActiveRecord::Base
           event.touch
         end
 
-      elsif event.state == 'acknowledged'
+      elsif event.state == 'acknowledged' && event.skip_acknowledged
         event.touch
 
       elsif (monitor.period && (Time.now - event.created_at) >= monitor.period) \
