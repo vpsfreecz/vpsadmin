@@ -23,6 +23,7 @@ module VpsAdmin::API::Plugins
         def initialize
           @data = {
             skip_acknowledged: true,
+            skip_ignored: true,
           }
         end
 
@@ -30,7 +31,17 @@ module VpsAdmin::API::Plugins
           @data
         end
 
-        %i(label period check_count repeat cooldown desc access_level skip_acknowledged).each do |name|
+        %i(
+          label
+          period
+          check_count
+          repeat
+          cooldown
+          desc
+          access_level
+          skip_acknowledged
+          skip_ignored
+        ).each do |name|
           define_method(name) { |v| @data[name] = v }
         end
 

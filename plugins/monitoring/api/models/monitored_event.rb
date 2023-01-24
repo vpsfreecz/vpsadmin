@@ -57,7 +57,7 @@ class MonitoredEvent < ActiveRecord::Base
       end
 
       # Skip ignored events completely, whether they're still active or not
-      if event.state == 'ignored'
+      if event.state == 'ignored' && event.skip_ignored
         event.touch
         next
       end
@@ -99,6 +99,9 @@ class MonitoredEvent < ActiveRecord::Base
 
       elsif event.state == 'acknowledged' && event.skip_acknowledged
         event.touch
+
+      elsif event.state == 'ignored' && event.skip_ignored
+        # ignore
 
       elsif (monitor.period && (Time.now - event.created_at) >= monitor.period) \
         || (monitor.check_count && event.check_count >= monitor.check_count)
@@ -166,6 +169,16 @@ class MonitoredEvent < ActiveRecord::Base
     end
 
     monitor.skip_acknowledged
+  end
+
+  def skip_ignored
+    unless monitor
+      self.monitor = VpsAdmin::API::Plugins::Monitoring.monitors.detect do |v|
+        v.name == monitor_name.to_sym
+      end
+    end
+
+    monitor.skip_ignored
   end
 
   protected

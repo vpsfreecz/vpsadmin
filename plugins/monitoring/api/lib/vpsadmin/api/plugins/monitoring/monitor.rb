@@ -7,7 +7,17 @@ module VpsAdmin::API::Plugins::Monitoring
       @opts = opts
     end
 
-    %i(period check_count repeat cooldown label desc access_level skip_acknowledged).each do |name|
+    %i(
+      period
+      check_count
+      repeat
+      cooldown
+      label
+      desc
+      access_level
+      skip_acknowledged
+      skip_ignored
+    ).each do |name|
       define_method(name) { @opts[name] }
     end
 
