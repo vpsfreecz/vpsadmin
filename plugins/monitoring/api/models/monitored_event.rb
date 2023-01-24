@@ -63,6 +63,11 @@ class MonitoredEvent < ActiveRecord::Base
       end
 
       # Log measured value
+      puts ">>>"
+      p event
+      p passed
+      p value
+      puts "---\n"
       event.monitored_event_logs << MonitoredEventLog.new(
         passed: passed,
         value: value,
