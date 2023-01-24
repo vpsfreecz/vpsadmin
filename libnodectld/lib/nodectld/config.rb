@@ -255,6 +255,7 @@ module NodeCtld
           kernel_log: {enable: false},
           oom_reports: {enable: false},
           exports: {enable: false},
+          osctl_exporter: {enable: false},
         })
       else
         warn "Unsupported runtime mode '#{@cfg[:mode]}'"
