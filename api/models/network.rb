@@ -30,11 +30,17 @@ class Network < ActiveRecord::Base
 
   def include?(what)
     case what
-    when ::IpAddress
+    when ::IpAddress # model
       addr = what.addr
 
     when ::Network
       addr = what.address
+
+    when ::String
+      addr = what
+
+    when ::IPAddress::IPv4, ::IPAddress::IPv6 # gem lib
+      return net_addr { |n| n.include?(what) }
     end
 
     net_addr { |n| n.include?(IPAddress.parse(addr)) }

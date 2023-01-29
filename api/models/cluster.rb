@@ -6,8 +6,9 @@ class Cluster
   maintenance_children :environments
 
   def self.search(v)
+    ret = []
+
     if /\A\d+\z/ =~ v
-      ret = []
       id = v.to_i
 
       [::User, ::Vps, ::Export, ::TransactionChain].each do |klass|
@@ -110,9 +111,22 @@ class Cluster
       SELECT 'Vps', id, 'hostname', hostname
       FROM vpses
       WHERE hostname LIKE CONCAT('%', #{q}, '%') AND object_state < 3"
-    ).map do |v|
-      {resource: v[0], id: v[1], attribute: v[2], value: v[3]}
+    ).each do |v|
+      ret << {resource: v[0], id: v[1], attribute: v[2], value: v[3]}
     end
+
+    # Find which network the address belongs to
+    if ret.empty? && addr
+      ip_v = addr.ipv4? ? 4 : 6
+
+      ::Network.where(ip_version: ip_v).each do |net|
+        if net.include?(addr)
+          ret << {resource: 'Network', id: net.id, attribute: 'network', value: net.to_s}
+        end
+      end
+    end
+
+    ret
   end
 
   def environments
