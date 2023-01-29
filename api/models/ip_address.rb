@@ -216,6 +216,16 @@ class IpAddress < ActiveRecord::Base
     ).any?
   end
 
+  def include?(what)
+    case what
+    when ::String
+      to_ip.include?(IPAddress.parse(what))
+
+    when ::IPAddress::IPv4, ::IPAddress::IPv6 # gem lib
+      to_ip.include?(what)
+    end
+  end
+
   def to_ip
     IPAddress.parse("#{addr}/#{prefix}")
   end

@@ -38,6 +38,38 @@ class Cluster
       v = addr.to_s
     end
 
+    # Find which network the address belongs to
+    if addr
+      ip_v = addr.ipv4? ? 4 : 6
+
+      ::Network.where(ip_version: ip_v).each do |net|
+        next unless net.include?(addr)
+
+        # Find a matching IP address
+        if (net.ip_version == 4 && net.split_prefix < 32) \
+           || (net.ip_version == 6 && net.split_prefix < 128)
+          # Quick check if addr is not an IpAddress itself before we walk through
+          # network's all addresses
+          unless net.ip_addresses.find_by(ip_addr: addr.address, prefix: addr.prefix)
+            # Walk the addresses
+            net.ip_addresses.each do |ip|
+              next unless ip.include?(addr)
+
+              ret << {resource: 'IpAddress', id: ip.id, attribute: 'address', value: ip.to_s}
+
+              # Switch the search to the located ip in order to find the related
+              # VPS and user.
+              v = ip.ip_addr
+              break
+            end
+          end
+        end
+
+        ret << {resource: 'Network', id: net.id, attribute: 'network', value: net.to_s}
+        break
+      end
+    end
+
     q = ActiveRecord::Base.connection.quote(v)
     ActiveRecord::Base.connection.execute(
       "SELECT 'User', id, 'login', login
@@ -113,17 +145,6 @@ class Cluster
       WHERE hostname LIKE CONCAT('%', #{q}, '%') AND object_state < 3"
     ).each do |v|
       ret << {resource: v[0], id: v[1], attribute: v[2], value: v[3]}
-    end
-
-    # Find which network the address belongs to
-    if ret.empty? && addr
-      ip_v = addr.ipv4? ? 4 : 6
-
-      ::Network.where(ip_version: ip_v).each do |net|
-        if net.include?(addr)
-          ret << {resource: 'Network', id: net.id, attribute: 'network', value: net.to_s}
-        end
-      end
     end
 
     ret
