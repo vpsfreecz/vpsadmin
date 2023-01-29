@@ -50,6 +50,10 @@ if (isLoggedIn() && isAdmin()) {
 				case 'TransactionChain':
 					$link = '?page=transactions&chain='.$v->id;
 					break;
+
+				case 'Network':
+					$link = '?page=cluster&action=network_locations&network='.$v->id;
+					break;
 				}
 
 				$xtpl->table_td($link ? '<a href="'.$link.'">'.$v->id.'</a>' : $v->id);
