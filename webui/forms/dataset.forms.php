@@ -61,7 +61,8 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 	if ($role == 'hypervisor' && (isAdmin() || USERNS_PUBLIC))
 		$xtpl->table_add_category(_('UID/GID map'));
 
-	$xtpl->table_add_category(_('Mount'));
+	if ($role == 'hypervisor')
+		$xtpl->table_add_category(_('Mount'));
 
 	if ($role == 'primary' && isExportPublic())
 		$xtpl->table_add_category(_('Export'));
@@ -119,7 +120,8 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 			}
 		}
 
-		$xtpl->table_td('<a href="?page=dataset&action=mount&dataset='.$ds->id.'&vps='.$_GET['veid'].'&return='.$return.'">'._('Mount').'</a>');
+		if ($role == 'hypervisor')
+			$xtpl->table_td('<a href="?page=dataset&action=mount&dataset='.$ds->id.'&vps='.$_GET['veid'].'&return='.$return.'">'._('Mount').'</a>');
 
 		if ($role == 'primary' && isExportPublic()) {
 			if ($ds->export_id)
