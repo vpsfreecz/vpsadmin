@@ -848,18 +848,6 @@ switch($_GET["action"] ?? null) {
 		}
 		break;
 
-	case "integrity_check":
-		integrity_check_list();
-		break;
-
-	case "integrity_objects":
-		integrity_object_list();
-		break;
-
-	case "integrity_facts":
-		integrity_fact_list();
-		break;
-
 	case "maintenance_lock":
 		$xtpl->title("Maintenance lock");
 

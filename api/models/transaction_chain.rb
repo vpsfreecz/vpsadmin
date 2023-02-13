@@ -421,7 +421,6 @@ module TransactionChains
   module Lifetimes         ; end
   module DnsResolver       ; end
   module Mail              ; end
-  module IntegrityCheck    ; end
   module MigrationPlan     ; end
   module Maintenance       ; end
   module Network           ; end

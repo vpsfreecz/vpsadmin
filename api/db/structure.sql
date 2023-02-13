@@ -421,61 +421,6 @@ CREATE TABLE `host_ip_addresses` (
   KEY `index_host_ip_addresses_on_auto_add` (`auto_add`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `integrity_checks`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `integrity_checks` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) DEFAULT NULL,
-  `status` int(11) NOT NULL DEFAULT 0,
-  `checked_objects` int(11) NOT NULL DEFAULT 0,
-  `integral_objects` int(11) NOT NULL DEFAULT 0,
-  `broken_objects` int(11) NOT NULL DEFAULT 0,
-  `checked_facts` int(11) NOT NULL DEFAULT 0,
-  `true_facts` int(11) NOT NULL DEFAULT 0,
-  `false_facts` int(11) NOT NULL DEFAULT 0,
-  `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
-  `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
-  `finished_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `integrity_facts`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `integrity_facts` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `integrity_object_id` int(11) NOT NULL,
-  `name` varchar(30) COLLATE utf8mb3_czech_ci NOT NULL,
-  `expected_value` varchar(255) COLLATE utf8mb3_czech_ci NOT NULL,
-  `actual_value` varchar(255) COLLATE utf8mb3_czech_ci NOT NULL,
-  `status` int(11) NOT NULL DEFAULT 0,
-  `severity` int(11) NOT NULL DEFAULT 1,
-  `message` varchar(1000) COLLATE utf8mb3_czech_ci DEFAULT NULL,
-  `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `integrity_objects`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `integrity_objects` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `integrity_check_id` int(11) NOT NULL,
-  `node_id` int(11) NOT NULL,
-  `class_name` varchar(100) COLLATE utf8mb3_czech_ci NOT NULL,
-  `row_id` int(11) DEFAULT NULL,
-  `ancestry` varchar(255) COLLATE utf8mb3_czech_ci DEFAULT NULL,
-  `ancestry_depth` int(11) NOT NULL DEFAULT 0,
-  `status` int(11) NOT NULL DEFAULT 0,
-  `checked_facts` int(11) NOT NULL DEFAULT 0,
-  `true_facts` int(11) NOT NULL DEFAULT 0,
-  `false_facts` int(11) NOT NULL DEFAULT 0,
-  `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
-  `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `ip_addresses`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -2036,6 +1981,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230213082735'),
 ('20230213083054'),
 ('20230213084545'),
-('20230213092308');
+('20230213092308'),
+('20230214074616');
 
 
