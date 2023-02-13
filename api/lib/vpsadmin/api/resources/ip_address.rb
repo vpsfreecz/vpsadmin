@@ -6,11 +6,6 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     id :id, label: 'ID', desc: 'IP address ID'
   end
 
-  params(:shaper) do
-    integer :max_tx, label: 'Max tx', desc: 'Maximum output throughput'
-    integer :max_rx, label: 'Max rx', desc: 'Maximum input throughput'
-  end
-
   params(:filters) do
     resource VpsAdmin::API::Resources::NetworkInterface, value_label: :name
     resource VpsAdmin::API::Resources::VPS, label: 'VPS',
@@ -28,14 +23,11 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     string :addr, label: 'Address', desc: 'Address itself', db_name: :ip_addr
     integer :prefix, label: 'Prefix'
     integer :size, label: 'Size'
-    use :shaper
   end
 
   params(:common) do
     use :filters, include: %i(network prefix size network_interface user addr)
     resource VpsAdmin::API::Resources::HostIpAddress, name: :route_via, value_label: :addr
-    use :shaper
-    integer :class_id, label: 'Class id', desc: 'Class id for shaper'
   end
 
   params(:all) do
@@ -64,7 +56,6 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       input whitelist: %i(location network version role purpose addr prefix vps
                           network_interface assigned_to_interface order
                           limit offset)
-      output blacklist: %i(class_id)
       allow
     end
 
@@ -91,7 +82,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     def query
       ips = ::IpAddress.joins(:network)
 
-      %i(prefix network network_interface user addr max_tx max_rx size).each do |filter|
+      %i(prefix network network_interface user addr size).each do |filter|
         next unless input.has_key?(filter)
 
         ips = ips.where(
@@ -235,7 +226,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     desc 'Add an IP address'
 
     input do
-      use :common, exclude: %i(vps class_id version)
+      use :common, exclude: %i(vps version)
       patch :addr, required: true
       patch :network, required: true
     end
@@ -274,7 +265,6 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     blocking true
 
     input do
-      use :shaper
       use :filters, include: %i(user)
       resource VpsAdmin::API::Resources::Environment
     end

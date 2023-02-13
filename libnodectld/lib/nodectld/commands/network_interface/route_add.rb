@@ -6,14 +6,14 @@ module NodeCtld
     def exec
       wait_for_route_to_clear(@version, @addr, @prefix, timeout: @timeout)
       NetworkInterface.new(@pool_fs, @vps_id, @veth_name).add_route(
-        @addr, @prefix, @version, @register, @shaper, via: @via
+        @addr, @prefix, @version, @register, via: @via
       )
       ok
     end
 
     def rollback
       NetworkInterface.new(@pool_fs, @vps_id, @veth_name).del_route(
-        @addr, @prefix, @version, @register, @shaper
+        @addr, @prefix, @version, @register
       )
       ok
     end

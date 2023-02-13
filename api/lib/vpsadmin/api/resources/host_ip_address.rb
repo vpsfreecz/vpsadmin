@@ -24,8 +24,6 @@ module VpsAdmin::API::Resources
       string :addr, label: 'Network address', db_name: :ip_addr
       integer :prefix, label: 'Prefix'
       integer :size, label: 'Size'
-      integer :max_tx, label: 'Max tx', desc: 'Maximum output throughput'
-      integer :max_rx, label: 'Max rx', desc: 'Maximum input throughput'
       bool :assigned, label: 'Assigned'
     end
 
@@ -63,7 +61,7 @@ module VpsAdmin::API::Resources
       def query
         ips = ::HostIpAddress.joins(ip_address: :network)
 
-        %i(prefix size max_tx max_rx).each do |filter|
+        %i(prefix size).each do |filter|
           next unless input.has_key?(filter)
 
           ips = ips.where(
@@ -114,7 +112,7 @@ module VpsAdmin::API::Resources
           ips = ips.where(ip_addresses: {ip_addr: input[:addr]})
         end
 
-        %i(prefix size max_tx max_rx).each do |filter|
+        %i(prefix size).each do |filter|
           next unless input[filter]
 
           ips = ips.where(ip_addresses: {filter => input[:filter]})

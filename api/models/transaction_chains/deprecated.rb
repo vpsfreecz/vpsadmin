@@ -15,6 +15,10 @@ module TransactionChains
     class CreateVeth < Deprecated ; end
     class RemoveVeth < Deprecated ; end
 
+    class ShaperChange < Deprecated ; end
+    class ShaperSet < Deprecated ; end
+    class ShaperUnset < Deprecated ; end
+
     module Clone
       class VzToOs < Deprecated
         label 'Clone'

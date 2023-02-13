@@ -22,11 +22,6 @@ module Transactions::NetworkInterface
         register: register,
         id: ip.id,
         user_id: ip.user_id || netif.vps.user_id,
-        shaper: {
-          class_id: ip.class_id,
-          max_tx: ip.max_tx,
-          max_rx: ip.max_rx,
-        },
       }
     end
   end

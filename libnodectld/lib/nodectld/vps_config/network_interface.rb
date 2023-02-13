@@ -1,31 +1,5 @@
 module NodeCtld
   class VpsConfig::NetworkInterface
-    Route = Struct.new(:address, :version, :via, :class_id, :max_tx, :max_rx) do
-      # @param data [Hash]
-      def self.load(data)
-        addr = IPAddress.parse(data['address'])
-        new(
-          addr,
-          addr.ipv4? ? 4 : 6,
-          data['via'],
-          data['class_id'],
-          data['max_tx'],
-          data['max_rx'],
-        )
-      end
-
-      # @return [Hash]
-      def save
-        {
-          'address' => address.to_string,
-          'via' => via,
-          'class_id' => class_id,
-          'max_tx' => max_tx,
-          'max_rx' => max_rx,
-        }
-      end
-    end
-
     # @parma data [Hash]
     def self.load(data)
       netif = new(data['name'])

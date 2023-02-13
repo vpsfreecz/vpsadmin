@@ -482,9 +482,6 @@ DROP TABLE IF EXISTS `ip_addresses`;
 CREATE TABLE `ip_addresses` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `ip_addr` varchar(40) COLLATE utf8mb3_czech_ci NOT NULL,
-  `max_tx` bigint(20) unsigned NOT NULL DEFAULT 39321600,
-  `max_rx` bigint(20) unsigned NOT NULL DEFAULT 39321600,
-  `class_id` int(11) NOT NULL,
   `user_id` int(11) DEFAULT NULL,
   `network_id` int(11) NOT NULL,
   `order` int(11) DEFAULT NULL,
@@ -494,7 +491,6 @@ CREATE TABLE `ip_addresses` (
   `route_via_id` int(11) DEFAULT NULL,
   `charged_environment_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_ip_addresses_on_class_id` (`class_id`) USING BTREE,
   KEY `index_ip_addresses_on_network_id` (`network_id`) USING BTREE,
   KEY `index_ip_addresses_on_user_id` (`user_id`) USING BTREE,
   KEY `index_ip_addresses_on_network_interface_id` (`network_interface_id`),
@@ -2144,6 +2140,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230122214018'),
 ('20230213081826'),
 ('20230213082735'),
-('20230213083054');
+('20230213083054'),
+('20230213084545');
 
 

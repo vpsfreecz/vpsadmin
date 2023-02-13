@@ -12,10 +12,10 @@ module NodeCtld
       @name = name
     end
 
-    def add_route(addr, prefix, v, register, shaper, via: nil)
+    def add_route(addr, prefix, v, register, via: nil)
       VpsConfig.edit(@pool_fs, @vps_id) do |cfg|
         cfg.network_interfaces[@name].add_route(config_route(
-          addr, prefix, shaper, via
+          addr, prefix, via
         ))
       end
 
@@ -25,10 +25,10 @@ module NodeCtld
       osctl(%i(ct netif route add), [@vps_id, @name, "#{addr}/#{prefix}"], opts)
     end
 
-    def del_route(addr, prefix, v, unregister, shaper)
+    def del_route(addr, prefix, v, unregister)
       VpsConfig.edit(@pool_fs, @vps_id) do |cfg|
         cfg.network_interfaces[@name].remove_route(config_route(
-          addr, prefix, shaper, nil
+          addr, prefix, nil
         ))
       end
 
@@ -52,14 +52,8 @@ module NodeCtld
     end
 
     protected
-    def config_route(addr, prefix, shaper, via)
-      VpsConfig::Route.new(
-        IPAddress.parse("#{addr}/#{prefix}"),
-        via,
-        shaper['class_id'],
-        shaper['max_tx'],
-        shaper['max_rx'],
-      )
+    def config_route(addr, prefix, via)
+      VpsConfig::Route.new(IPAddress.parse("#{addr}/#{prefix}"), via)
     end
   end
 end

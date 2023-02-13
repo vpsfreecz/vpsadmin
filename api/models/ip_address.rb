@@ -27,8 +27,6 @@ class IpAddress < ActiveRecord::Base
   # @option params [Location] location
   # @option params [Integer] prefix
   # @option params [Integer] size
-  # @option params [Integer] max_tx
-  # @option params [Integer] max_rx
   # @option params [Boolean] allocate (true)
   def self.register(addr, params)
     ip = nil
@@ -49,32 +47,13 @@ class IpAddress < ActiveRecord::Base
         )
       end
 
-      class_id = nil
-
-      begin
-        class_id = self.select('ip1.class_id+1 AS first_id')
-          .from('ip_addresses ip1')
-          .joins('LEFT JOIN ip_addresses ip2 ON ip2.class_id = ip1.class_id + 1')
-          .where('ip2.class_id IS NULL')
-          .order('ip1.class_id')
-          .take!.first_id
-
-      rescue ActiveRecord::RecordNotFound
-        class_id = 1
-      end
-
-      ip = self.new(
+      ip = self.create!(
         ip_addr: addr.to_s,
         prefix: params[:prefix],
         size: params[:size],
         network: params[:network],
-        class_id: class_id,
         user: params[:user]
       )
-
-      ip.max_tx = params[:max_tx] if params[:max_tx]
-      ip.max_rx = params[:max_rx] if params[:max_rx]
-      ip.save!
 
       HostIpAddress.create!(
         ip_address: ip,
@@ -191,8 +170,6 @@ class IpAddress < ActiveRecord::Base
   end
 
   # @param opts [Hash]
-  # @option opts [Integer] max_tx
-  # @option opts [Integer] max_rx
   # @option opts [User] user
   # @option opts [User] environment
   def do_update(opts)

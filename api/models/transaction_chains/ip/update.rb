@@ -5,16 +5,10 @@ module TransactionChains
 
     # @param ip [IpAddress]
     # @param opts [Hash]
-    # @option opts [Integer] max_tx
-    # @option opts [Integer] max_rx
     # @option opts [User] user
     # @option opts [Environment] environment
     def link_chain(ip, opts)
       @ip = ip
-
-      if opts[:max_tx] || opts[:max_rx]
-        set_shaper(opts[:max_tx], opts[:max_rx])
-      end
 
       if opts.has_key?(:user) && ip.user != opts[:user]
         if opts[:user]
@@ -27,22 +21,6 @@ module TransactionChains
         end
 
         chown(opts[:user], opts[:environment])
-      end
-    end
-
-    def set_shaper(tx, rx)
-      if @ip.network_interface_id && (tx != @ip.max_tx || rx != @ip.max_rx)
-        use_chain(Vps::ShaperChange, args:[
-          @ip,
-          tx || @ip.max_tx,
-          rx || @ip.max_rx
-        ])
-
-      else
-        @ip.update!(
-          max_tx: tx,
-          max_rx: rx,
-        )
       end
     end
 

@@ -12,9 +12,6 @@ module NodeCtld
             netif.add_route(VpsConfig::Route.new(
               IPAddress.parse("#{route_opts['addr']}/#{route_opts['prefix']}"),
               route_opts['via'],
-              route_opts['shaper']['class_id'],
-              route_opts['shaper']['max_tx'],
-              route_opts['shaper']['max_rx'],
             ))
           end
 

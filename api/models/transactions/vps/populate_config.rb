@@ -25,11 +25,6 @@ module Transactions::Vps
                 prefix: ip.prefix,
                 version: ip.version,
                 via: ip.route_via && ip.route_via.ip_addr,
-                shaper: {
-                  class_id: ip.class_id,
-                  max_tx: ip.max_tx,
-                  max_rx: ip.max_rx,
-                },
               }
             end
           }
