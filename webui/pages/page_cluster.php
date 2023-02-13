@@ -249,72 +249,6 @@ switch($_GET["action"] ?? null) {
 		$env_settings = true;
 		break;
 
-	case 'env_chain_save':
-		csrf_check();
-		$xtpl->sbar_add(_("Back"), '?page=cluster&action=environments');
-
-		if (isset($_POST["configs"]) || isset($_POST["add_config"])) {
-			$raw_order = explode('&', $_POST['configs_order']);
-			$cfgs = array();
-			$i = 0;
-
-			foreach($raw_order as $item) {
-				$item = explode('=', $item);
-
-				if (!$item[1])
-					continue;
-				elseif (!strncmp($item[1], "add_config", strlen("add_config")))
-					$cfgs[] = $_POST['add_config'][$i++];
-				else {
-					$order = explode('_', $item[1]);
-					$cfgs[] = $order[1];
-				}
-			}
-
-			$params = array();
-
-			if ($cfgs) {
-				// configs were changed with javascript dnd
-				foreach ($cfgs as $cfg) {
-					if (!$cfg)
-						continue;
-
-					$params[] = array('vps_config' => $cfg);
-				}
-
-			} else {
-				foreach ($_POST['configs'] as $cfg) {
-					if (!$cfg)
-						continue;
-
-					$params[] = array('vps_config' => $cfg);
-				}
-
-				foreach ($_POST['add_config'] as $cfg) {
-					if (!$cfg)
-						continue;
-
-					$params[] = array('vps_config' => $cfg);
-				}
-			}
-
-			try {
-				$api->environment($_GET['id'])->config_chain->replace($params);
-
-				notify_user(_('Environment config chain set'), '');
-				redirect('?page=cluster&action=env_edit&id='.$_GET['id']);
-
-			} catch (\HaveAPI\Client\Exception\ActionFailde $e) {
-				$xtpl->perex_format_errors(_('Change of environment config chain failed'), $e->getResponse());
-			}
-
-
-		} else {
-			$xtpl->perex(_("Error"), 'Error, contact your administrator');
-			$list_configs=true;
-		}
-
-		break;
 
 	case 'env_save':
 		if (isset($_POST['label'])) {
@@ -875,81 +809,6 @@ switch($_GET["action"] ?? null) {
 		}
 		break;
 
-	case "configs":
-		$xtpl->sbar_add(_("Back"), '?page=cluster');
-		$list_configs = true;
-		break;
-	case "config_new":
-		$xtpl->sbar_add(_("Back"), '?page=cluster&action=configs');
-		$xtpl->title2(_("Create config"));
-		$xtpl->table_add_category('');
-		$xtpl->table_add_category('');
-		$xtpl->form_create('?page=cluster&action=config_new_save', 'post');
-		$xtpl->form_add_input(_('Name'), 'text', '30', 'name');
-		$xtpl->form_add_input(_('Label'), 'text', '30', 'label');
-		$xtpl->form_add_textarea(_('Config'), '60', '30', 'config');
-		$xtpl->form_out(_('Save'));
-		break;
-	case "config_new_save":
-		csrf_check();
-		$xtpl->sbar_add(_("Back"), '?page=cluster');
-
-		try {
-			$api->vps_config->new(array(
-				'name' => $_POST['name'],
-				'label' => $_POST['label'],
-				'config' => $_POST['config']
-			));
-
-			notify_user(_('Config saved'), '');
-			redirect('?page=cluster&action=configs');
-
-		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-			$xtpl->perex_format_errors(_('Save failed'), $e->getResponse());
-		}
-
-		$list_configs = true;
-		break;
-
-	case "config_edit":
-		try {
-			$cfg = $api->vps_config->find($_GET['config']);
-
-			$xtpl->title2(_("Edit config"));
-			$xtpl->table_add_category('');
-			$xtpl->table_add_category('');
-			$xtpl->form_create('?page=cluster&action=config_edit_save&config='.$cfg->id, 'post');
-			$xtpl->form_add_input(_('Name').':', 'text', '30', 'name', $cfg->name);
-			$xtpl->form_add_input(_('Label').':', 'text', '30', 'label', $cfg->label);
-			$xtpl->form_add_textarea(_('Config').':', '60', '30', 'config', $cfg->config);
-			$xtpl->form_out(_('Save'));
-
-		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-			$xtpl->perex_format_errors(_('Fetch failed'), $e->getResponse());
-		}
-
-		$xtpl->sbar_add(_("Back"), '?page=cluster&action=configs');
-
-		break;
-
-	case "config_edit_save":
-		csrf_check();
-		try {
-			$api->vps_config($_GET['config'])->update(array(
-				'name' => $_POST['name'],
-				'label' => $_POST['label'],
-				'config' => $_POST['config']
-			));
-
-			notify_user(_('Config updated'), '');
-			redirect('?page=cluster&action=configs');
-
-		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-			$xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
-		}
-
-		$list_configs = true;
-		break;
 
 	case "newnode":
 		node_create_form();
@@ -1218,27 +1077,6 @@ if ($list_templates) {
 	$xtpl->sbar_add(_("Register new template"), '?page=cluster&action=template_register');
 }
 
-if ($list_configs) {
-	$xtpl->sbar_add(_("New config"), '?page=cluster&action=config_new');
-
-	$xtpl->title2(_("Configs"));
-
-	$xtpl->table_add_category(_('Label'));
-	$xtpl->table_add_category(_('Name'));
-	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
-
-	foreach ($api->vps_config->list() as $cfg) {
-		$xtpl->table_td($cfg->label);
-		$xtpl->table_td($cfg->name);
-		$xtpl->table_td('<a href="?page=cluster&action=config_edit&config='.$cfg->id.'"><img src="template/icons/edit.png" title="'._("Edit").'"></a>');
-		$xtpl->table_td('<a href="?page=cluster&action=config_delete&id='.$cfg->id.'"><img src="template/icons/delete.png" title="'._("Delete").'"></a>');
-		$xtpl->table_tr();
-	}
-
-	$xtpl->table_out();
-}
-
 if ($list_locations) {
 	$xtpl->title2(_("Cluster locations list"));
 
@@ -1333,57 +1171,6 @@ if ($env_settings) {
 	$xtpl->form_create('?page=cluster&action=env_save&id='.$env->id, 'post');
 	api_update_form($env);
 	$xtpl->form_out(_('Save'));
-
-	$all_configs = resource_list_to_options($api->vps_config->list());
-	$options = "";
-	$with_empty = array(0 => '---') + $all_configs;
-
-	foreach($with_empty as $id => $label)
-		$options .= '<option value="'.$id.'">'.$label.'</option>';
-
-	$xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
-	<script type="text/javascript">
-		function dnd() {
-			$("#configs").tableDnD({
-				onDrop: function(table, row) {
-					$("#configs_order").val($.tableDnD.serialize());
-				}
-			});
-		}i
-
-		$(document).ready(function() {
-			var add_config_id = 1;
-
-			dnd();
-
-			$("#add_row").click(function (){
-				$(\'<tr id="add_config_\' + add_config_id++ + \'"><td>'._('Add').':</td><td><select name="add_config[]">'.$options.'</select></td></tr>\').fadeIn("slow").insertBefore("#configs tr:nth-last-child(1)");
-				dnd();
-			});
-
-			$(".delete-config").click(function (){
-				$(this).closest("tr").remove();
-			});
-		});
-    </script>');
-
-	$chain = $env->config_chain->list();
-
-	$xtpl->form_create('?page=cluster&action=env_chain_save&id='.$env->id, 'post');
-	$xtpl->table_title($env->label.' '._("config chain"));
-	$xtpl->table_add_category(_('Config'));
-	$xtpl->table_add_category('');
-
-	foreach($chain as $cfg) {
-		$xtpl->form_add_select_pure('configs[]', $all_configs, $cfg->vps_config_id);
-		$xtpl->table_td('<a href="javascript:" class="delete-config">'._('delete').'</a>');
-		$xtpl->table_tr(false, false, false, "order_{$cfg->vps_config_id}");
-	}
-
-	$xtpl->table_td('<input type="hidden" name="configs_order" id="configs_order" value="">' .  _('Add').':');
-	$xtpl->form_add_select_pure('add_config[]', $with_empty);
-	$xtpl->table_tr(false, false, false, 'add_config');
-	$xtpl->form_out(_("Save changes"), 'configs', '<a href="javascript:" id="add_row">+</a>');
 }
 
 $xtpl->sbar_out(_("Manage Cluster"));
