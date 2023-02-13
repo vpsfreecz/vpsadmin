@@ -7,8 +7,6 @@ class IpAddress < ActiveRecord::Base
   belongs_to :route_via, class_name: 'HostIpAddress'
   belongs_to :charged_environment, class_name: 'Environment'
   has_many :host_ip_addresses
-  has_many :ip_traffics
-  has_many :ip_recent_traffics
 
   has_paper_trail
 

@@ -498,92 +498,6 @@ CREATE TABLE `ip_addresses` (
   KEY `index_ip_addresses_on_charged_environment_id` (`charged_environment_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `ip_recent_traffics`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `ip_recent_traffics` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `ip_address_id` int(11) NOT NULL,
-  `user_id` int(11) DEFAULT NULL,
-  `protocol` int(11) NOT NULL,
-  `packets_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `packets_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `bytes_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `bytes_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `created_at` datetime /* mariadb-5.3 */ NOT NULL,
-  `role` int(11) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `transfers_unique` (`ip_address_id`,`user_id`,`protocol`,`role`,`created_at`) USING BTREE,
-  KEY `index_ip_recent_traffics_on_ip_address_id` (`ip_address_id`) USING BTREE,
-  KEY `index_ip_recent_traffics_on_user_id` (`user_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `ip_traffic_live_monitors`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `ip_traffic_live_monitors` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `ip_address_id` int(11) NOT NULL,
-  `packets` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `packets_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `packets_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `bytes` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `bytes_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `bytes_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_packets` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_packets_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_packets_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_bytes` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_bytes_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_bytes_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_tcp_packets` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_tcp_packets_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_tcp_packets_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_tcp_bytes` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_tcp_bytes_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_tcp_bytes_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_udp_packets` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_udp_packets_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_udp_packets_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_udp_bytes` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_udp_bytes_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_udp_bytes_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_other_packets` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_other_packets_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_other_packets_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_other_bytes` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_other_bytes_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `public_other_bytes_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_packets` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_packets_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_packets_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_bytes` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_bytes_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_bytes_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_tcp_packets` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_tcp_packets_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_tcp_packets_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_tcp_bytes` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_tcp_bytes_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_tcp_bytes_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_udp_packets` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_udp_packets_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_udp_packets_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_udp_bytes` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_udp_bytes_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_udp_bytes_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_other_packets` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_other_packets_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_other_packets_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_other_bytes` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_other_bytes_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `private_other_bytes_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `updated_at` datetime /* mariadb-5.3 */ NOT NULL,
-  `delta` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `index_ip_traffic_live_monitors_on_ip_address_id` (`ip_address_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `ip_traffic_monthly_summaries`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -609,26 +523,6 @@ CREATE TABLE `ip_traffic_monthly_summaries` (
   KEY `index_ip_traffic_monthly_summaries_on_user_id` (`user_id`) USING BTREE,
   KEY `index_ip_traffic_monthly_summaries_on_year_and_month` (`year`,`month`) USING BTREE,
   KEY `index_ip_traffic_monthly_summaries_on_year` (`year`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `ip_traffics`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `ip_traffics` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `ip_address_id` int(11) NOT NULL,
-  `user_id` int(11) DEFAULT NULL,
-  `protocol` int(11) NOT NULL,
-  `packets_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `packets_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `bytes_in` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `bytes_out` bigint(20) unsigned NOT NULL DEFAULT 0,
-  `created_at` datetime /* mariadb-5.3 */ NOT NULL,
-  `role` int(11) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `transfers_unique` (`ip_address_id`,`user_id`,`protocol`,`role`,`created_at`) USING BTREE,
-  KEY `index_ip_traffics_on_ip_address_id` (`ip_address_id`) USING BTREE,
-  KEY `index_ip_traffics_on_user_id` (`user_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `languages`;
@@ -2141,6 +2035,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230213081826'),
 ('20230213082735'),
 ('20230213083054'),
-('20230213084545');
+('20230213084545'),
+('20230213092308');
 
 
