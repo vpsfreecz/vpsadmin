@@ -23,7 +23,6 @@ class Vps < ActiveRecord::Base
   has_many :host_ip_addresses, through: :network_interfaces
 
   has_many :vps_has_configs, -> { order '`order`' }
-  has_many :vps_configs, through: :vps_has_configs
   has_many :vps_mounts, dependent: :delete_all
   has_many :vps_features
   has_many :vps_consoles
@@ -175,13 +174,6 @@ class Vps < ActiveRecord::Base
 
   def stop
     TransactionChains::Vps::Stop.fire(self)
-  end
-
-  def applyconfig(configs)
-    TransactionChains::Vps::ApplyConfig.fire2(
-      args: [self, configs],
-      kwargs: {resources: true},
-    )
   end
 
   def passwd(t)

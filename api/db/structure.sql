@@ -302,18 +302,6 @@ CREATE TABLE `dns_resolvers` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `environment_config_chains`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `environment_config_chains` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `environment_id` int(11) NOT NULL,
-  `vps_config_id` int(11) NOT NULL,
-  `cfg_order` int(11) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `environment_config_chains_unique` (`environment_id`,`vps_config_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `environment_dataset_plans`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -1801,17 +1789,6 @@ CREATE TABLE `versions` (
   KEY `index_versions_on_item_type_and_item_id` (`item_type`,`item_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `vps_configs`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `vps_configs` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) COLLATE utf8mb3_czech_ci NOT NULL,
-  `label` varchar(50) COLLATE utf8mb3_czech_ci NOT NULL,
-  `config` text COLLATE utf8mb3_czech_ci NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `vps_consoles`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -1881,20 +1858,6 @@ CREATE TABLE `vps_features` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_vps_features_on_vps_id_and_name` (`vps_id`,`name`) USING BTREE,
   KEY `index_vps_features_on_vps_id` (`vps_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `vps_has_configs`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `vps_has_configs` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `vps_id` int(11) NOT NULL,
-  `vps_config_id` int(11) NOT NULL,
-  `order` int(11) NOT NULL,
-  `confirmed` int(11) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `index_vps_has_configs_on_vps_id_and_vps_config_id_and_confirmed` (`vps_id`,`vps_config_id`,`confirmed`) USING BTREE,
-  KEY `index_vps_has_configs_on_vps_id` (`vps_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `vps_maintenance_windows`;
@@ -2180,6 +2143,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20221112155629'),
 ('20230122214018'),
 ('20230213081826'),
-('20230213082735');
+('20230213082735'),
+('20230213083054');
 
 

@@ -6,6 +6,10 @@ module TransactionChains
   end
 
   module Vps
+    class ApplyConfig < Deprecated
+      label 'Apply config'
+    end
+
     class AddIp < Deprecated ; end
     class DelIp < Deprecated ; end
     class CreateVeth < Deprecated ; end
@@ -33,6 +37,20 @@ module TransactionChains
       class VzToVz < Deprecated
         label 'Migrate'
       end
+    end
+  end
+
+  module VpsConfig
+    class Create < Deprecated
+      label 'Create'
+    end
+
+    class Delete < Deprecated
+      label 'Delete'
+    end
+
+    class Update < Deprecated
+      label 'Update'
     end
   end
 end

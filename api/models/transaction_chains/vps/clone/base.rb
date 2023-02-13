@@ -15,18 +15,6 @@ module TransactionChains
       end
     end
 
-    def clone_configs(vps, dst_vps, clone_configs)
-      if clone_configs
-        use_chain(Vps::ApplyConfig, args: [dst_vps, vps.vps_configs.pluck(:id)])
-
-      else
-        use_chain(Vps::ApplyConfig, args: [
-          dst_vps,
-          vps.node.location.environment.vps_configs.pluck(:id)
-        ])
-      end
-    end
-
     def clone_hostname(vps, dst_vps, attrs)
       return unless vps.manage_hostname
 

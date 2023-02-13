@@ -409,7 +409,6 @@ module TransactionChains
   module Cluster           ; end
   module Node              ; end
   module Vps               ; end
-  module VpsConfig         ; end
   module Ip                ; end
   module Pool              ; end
   module Dataset           ; end

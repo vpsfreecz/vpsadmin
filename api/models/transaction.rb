@@ -258,7 +258,6 @@ module Transactions
   module Shaper           ; end
   module Storage          ; end
   module Utils            ; end
-  module Hypervisor       ; end
   module Mail             ; end
   module Network          ; end
   module Maintenanceindow ; end

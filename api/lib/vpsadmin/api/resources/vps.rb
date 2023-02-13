@@ -136,7 +136,6 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         },
         onstartall: true,
         backup_enabled: true,
-        vps_config: '',
       }])
     end
 
@@ -1065,71 +1064,6 @@ END
   include VpsAdmin::API::Maintainable::Action
   include VpsAdmin::API::Lifetimes::Resource
   add_lifetime_methods([Start, Stop, Restart, Boot, Create, Clone, Update, Delete, SwapWith, Replace])
-
-  class Config < HaveAPI::Resource
-    route '{vps_id}/configs'
-    desc 'Manage VPS configs'
-    model ::VpsHasConfig
-
-    params(:all) do
-      resource VpsAdmin::API::Resources::VpsConfig, label: 'VPS config'
-    end
-
-    class Index < HaveAPI::Actions::Default::Index
-      desc 'List VPS configs'
-
-      output(:object_list) do
-        use :all
-      end
-
-      authorize do |u|
-        allow if u.role == :admin
-        restrict user_id: u.id
-        allow
-      end
-
-      def query
-        @vps ||= ::Vps.find_by!(with_restricted(id: params[:vps_id]))
-
-        ::VpsHasConfig.where(vps: @vps)
-      end
-
-      def count
-        query.count
-      end
-
-      def exec
-        query.order(:order).limit(input[:limit]).offset(input[:offset])
-      end
-    end
-
-    class Replace < HaveAPI::Actions::Default::Update
-      desc 'Replace VPS configs'
-      route 'replace'
-      http_method :post
-      blocking true
-
-      input(:object_list) do
-        use :all
-      end
-
-      authorize do |u|
-        allow if u.role == :admin
-      end
-
-      def exec
-        vps = ::Vps.find(params[:vps_id])
-        maintenance_check!(vps)
-
-        @chain, _ = vps.applyconfig(input.map { |cfg| cfg[:vps_config].id })
-        ok
-      end
-
-      def state_id
-        @chain.id
-      end
-    end
-  end
 
   class Feature < HaveAPI::Resource
     model ::VpsFeature

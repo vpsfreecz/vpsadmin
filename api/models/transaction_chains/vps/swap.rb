@@ -84,11 +84,6 @@ module TransactionChains
         ]
       end]
 
-      if opts[:configs]
-        primary_configs = primary_vps.vps_configs.all.pluck(:id)
-        secondary_configs = secondary_vps.vps_configs.all.pluck(:id)
-      end
-
       swappable_resources = %i(memory cpu swap)
 
       primary_resources_obj = primary_vps.get_cluster_resources(swappable_resources)
@@ -190,12 +185,6 @@ module TransactionChains
               end
             end
 
-            if opts[:configs]
-              use_chain(Vps::ApplyConfig,
-                        args: [new_primary_vps, primary_configs],
-                        urgent: true)
-            end
-
             if opts[:resources]
               if same_env
                 resources = new_primary_vps.reallocate_resources(
@@ -286,12 +275,6 @@ module TransactionChains
                   urgent: true,
                 )
               end
-            end
-
-            if opts[:configs]
-              use_chain(Vps::ApplyConfig,
-                        args: [new_secondary_vps, secondary_configs],
-                        urgent: true)
             end
 
             if opts[:resources]
