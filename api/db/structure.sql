@@ -1670,30 +1670,16 @@ CREATE TABLE `user_namespace_map_pools` (
   KEY `index_user_namespace_map_pools_on_pool_id` (`pool_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `user_namespace_map_ugids`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `user_namespace_map_ugids` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_namespace_map_id` int(11) DEFAULT NULL,
-  `ugid` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `index_user_namespace_map_ugids_on_ugid` (`ugid`),
-  UNIQUE KEY `index_user_namespace_map_ugids_on_user_namespace_map_id` (`user_namespace_map_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10001 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `user_namespace_maps`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `user_namespace_maps` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_namespace_id` int(11) NOT NULL,
-  `user_namespace_map_ugid_id` int(11) NOT NULL,
   `label` varchar(255) COLLATE utf8mb3_czech_ci NOT NULL,
-  `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
-  `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_user_namespace_maps_on_user_namespace_map_ugid_id` (`user_namespace_map_ugid_id`),
   KEY `index_user_namespace_maps_on_user_namespace_id` (`user_namespace_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -2205,6 +2191,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20220913114040'),
 ('20220920120951'),
 ('20221112155629'),
-('20230122214018');
+('20230122214018'),
+('20230213081826');
 
 

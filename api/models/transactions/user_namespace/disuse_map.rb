@@ -13,7 +13,6 @@ module Transactions::UserNamespace
       {
         pool_fs: vps.dataset_in_pool.pool.filesystem,
         name: userns_map.id.to_s,
-        ugid: userns_map.ugid,
         uidmap: build_map(userns_map, :uid),
         gidmap: build_map(userns_map, :gid),
       }
