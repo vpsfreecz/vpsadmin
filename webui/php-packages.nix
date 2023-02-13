@@ -5,10 +5,10 @@ let
     "bacon/bacon-qr-code" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "bacon-bacon-qr-code-d70c840f68657ce49094b8d91f9ee0cc07fbf66c";
+        name = "bacon-bacon-qr-code-8674e51bb65af933a5ffaf1c308a660387c35c22";
         src = fetchurl {
-          url = "https://api.github.com/repos/Bacon/BaconQrCode/zipball/d70c840f68657ce49094b8d91f9ee0cc07fbf66c";
-          sha256 = "0k2z8a6qz5xg1p85vwcp58yqbiw8bmnp3hg2pjcaqlimnf65v058";
+          url = "https://api.github.com/repos/Bacon/BaconQrCode/zipball/8674e51bb65af933a5ffaf1c308a660387c35c22";
+          sha256 = "0hb0w6m5rwzghw2im3yqn6ly2kvb3jgrv8jwra1lwd0ik6ckrngl";
         };
       };
     };
@@ -35,10 +35,10 @@ let
     "haveapi/client" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "haveapi-client-65766cbee8bc0d30b78366a883c52fc6803701f2";
+        name = "haveapi-client-70ca99bab02f54c08a1d4dedf822f0d8fe6d1bf8";
         src = fetchurl {
-          url = "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/65766cbee8bc0d30b78366a883c52fc6803701f2";
-          sha256 = "0adbkl0dkqilf0qdm8hbh2dxzcxfg4zn5600yc0pqiwcg2xrln42";
+          url = "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/70ca99bab02f54c08a1d4dedf822f0d8fe6d1bf8";
+          sha256 = "0wz3f9dyzn7brnsbspjyxc2jmcmv1mzj81ilnvjky1sw0a2l4nhr";
         };
       };
     };
