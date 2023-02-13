@@ -10,7 +10,7 @@ module VpsAdmin::API::Tasks
         Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
       ).each do |t|
         puts "Token ##{t.id} valid_to=#{t.valid_to} token=#{t}"
-        next if ENV['EXECUTE'] == 'yes'
+        next if ENV['EXECUTE'] != 'yes'
 
         ActiveRecord::Base.transaction do
           VpsAdmin::API::Operations::User::IncompleteLogin.run(
