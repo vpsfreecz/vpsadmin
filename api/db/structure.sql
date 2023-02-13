@@ -1657,19 +1657,6 @@ CREATE TABLE `user_namespace_map_entries` (
   KEY `index_user_namespace_map_entries_on_user_namespace_map_id` (`user_namespace_map_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `user_namespace_map_pools`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `user_namespace_map_pools` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `user_namespace_map_id` bigint(20) NOT NULL,
-  `pool_id` bigint(20) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `user_namespace_map_pools_unique` (`user_namespace_map_id`,`pool_id`),
-  KEY `index_user_namespace_map_pools_on_user_namespace_map_id` (`user_namespace_map_id`),
-  KEY `index_user_namespace_map_pools_on_pool_id` (`pool_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `user_namespace_maps`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -2192,6 +2179,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20220920120951'),
 ('20221112155629'),
 ('20230122214018'),
-('20230213081826');
+('20230213081826'),
+('20230213082735');
 
 

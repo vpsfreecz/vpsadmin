@@ -8,7 +8,6 @@ class Pool < ActiveRecord::Base
   has_many :dataset_properties
   has_many :dataset_actions
   has_many :snapshot_downloads
-  has_many :user_namespace_maps, through: :user_namespace_map_pools
 
   enum role: %i(hypervisor primary backup)
 
