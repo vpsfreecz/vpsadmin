@@ -6,6 +6,9 @@ module VpsAdmin::API
     # @param mechanism [:totp]
     # @param reason [String]
     def run(auth_token, mechanism, reason)
+      # The user might no longer exist
+      return if auth_token.user.nil?
+
       ActiveRecord::Base.transaction do
         ::UserFailedLogin.create!(
           user: auth_token.user,
