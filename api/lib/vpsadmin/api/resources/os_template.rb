@@ -70,6 +70,8 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
         q = q.where(
           hypervisor_type: ::OsTemplate.hypervisor_types[input[:hypervisor_type]],
         )
+      else
+        q = q.where(hypervisor_type: 'vpsadminos')
       end
 
       q
