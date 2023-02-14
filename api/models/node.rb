@@ -36,7 +36,6 @@ class Node < ActiveRecord::Base
   validates :max_vps, presence: true, numericality: {
     only_integer: true,
   }, if: :hypervisor?
-  validates :ve_private, presence: true, if: :hypervisor?
 
   after_update :shaper_changed, if: :shaper_changed?
 
@@ -297,6 +296,6 @@ class Node < ActiveRecord::Base
   end
 
   def shaper_changed
-    TransactionChains::Node::ShaperRootChange.fire(self) unless net_interface.nil?
+    TransactionChains::Node::ShaperRootChange.fire(self)
   end
 end

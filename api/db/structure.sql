@@ -911,8 +911,6 @@ CREATE TABLE `nodes` (
   `location_id` int(10) unsigned NOT NULL,
   `ip_addr` varchar(127) COLLATE utf8mb3_czech_ci NOT NULL,
   `max_vps` int(11) DEFAULT NULL,
-  `ve_private` varchar(255) COLLATE utf8mb3_czech_ci DEFAULT '/vz/private/%{veid}/private',
-  `net_interface` varchar(50) COLLATE utf8mb3_czech_ci DEFAULT NULL,
   `max_tx` bigint(20) unsigned NOT NULL DEFAULT 235929600,
   `max_rx` bigint(20) unsigned NOT NULL DEFAULT 235929600,
   `maintenance_lock` int(11) NOT NULL DEFAULT 0,
@@ -1982,6 +1980,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230213083054'),
 ('20230213084545'),
 ('20230213092308'),
-('20230214074616');
+('20230214074616'),
+('20230214080054');
 
 

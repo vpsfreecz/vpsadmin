@@ -18,7 +18,6 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     resource VpsAdmin::API::Resources::Location, label: 'Location',
              desc: 'Location node is placed in'
     string :ip_addr, label: 'IPv4 address', desc: 'Node\'s IP address'
-    string :net_interface, label: 'Network interface', desc: 'Outgoing network interface'
     integer :max_tx, label: 'Max tx', desc: 'Maximum output throughput'
     integer :max_rx, label: 'Max tx', desc: 'Maximum input throughput'
 
@@ -28,7 +27,6 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     # Hypervisor-specific params
     integer :max_vps
-    string :ve_private
   end
 
   params(:status) do
@@ -149,13 +147,12 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     blocking true
 
     input do
-      use :all, include: %i(id name type hypervisor_type location ip_addr net_interface
-                            max_tx max_rx max_vps ve_private cpus total_memory total_swap)
+      use :all, include: %i(id name type hypervisor_type location ip_addr
+                            max_tx max_rx max_vps cpus total_memory total_swap)
       patch :name, required: true
       patch :type, required: true
       patch :location, required: true
       patch :ip_addr, required: true
-      patch :net_interface, required: true
       patch :cpus, required: true
       patch :total_memory, required: true
       patch :total_swap, required: true
