@@ -13,7 +13,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     bool :enabled, label: 'Enabled', desc: 'Enable/disable template usage'
     bool :supported, label: 'Supported', desc: 'Is template known to work?'
     integer :order, label: 'Order', desc: 'Template order'
-    string :hypervisor_type, choices: ::OsTemplate.hypervisor_types.keys
+    string :hypervisor_type, choices: ::OsTemplate.hypervisor_types.keys, default: 'vpsadminos'
   end
 
   params(:all) do
