@@ -6,7 +6,6 @@ function cluster_header() {
 	$xtpl->sbar_add(_("System config"), '?page=cluster&action=sysconfig');
 	$xtpl->sbar_add(_("Register new node"), '?page=cluster&action=newnode');
 	$xtpl->sbar_add(_("Manage OS templates"), '?page=cluster&action=templates');
-	$xtpl->sbar_add(_("Manage configs"), '?page=cluster&action=configs');
 	$xtpl->sbar_add(_("Manage networks"), '?page=cluster&action=networks');
 	$xtpl->sbar_add(_("Manage routable addresses"), '?page=cluster&action=ip_addresses');
 	$xtpl->sbar_add(_("Manage host addresses"), '?page=cluster&action=host_ip_addresses');
