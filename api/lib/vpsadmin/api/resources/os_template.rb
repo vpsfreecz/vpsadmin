@@ -9,11 +9,16 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
   params(:common) do
     string :name, label: 'Name', desc: 'Template file name'
     string :label, label: 'Label', desc: 'Human-friendly label'
-    string :info, label: 'Info', desc: 'Information about template'
+    text :info, label: 'Info', desc: 'Information about template'
     bool :enabled, label: 'Enabled', desc: 'Enable/disable template usage'
     bool :supported, label: 'Supported', desc: 'Is template known to work?'
     integer :order, label: 'Order', desc: 'Template order'
     string :hypervisor_type, choices: ::OsTemplate.hypervisor_types.keys, default: 'vpsadminos'
+    string :vendor
+    string :variant
+    string :arch
+    string :distribution
+    string :version
   end
 
   params(:all) do
@@ -38,21 +43,6 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
       restrict enabled: true
       output whitelist: %i(id name label info supported hypervisor_type)
       allow
-    end
-
-    example do
-      request({})
-      response([
-        {
-          id: 26,
-          name: 'scientific-6-x86_64',
-          label: 'Scientific Linux 6',
-          info: 'Some important notes',
-          enabled: true,
-          supported: true,
-          order: 1,
-        }
-      ])
     end
 
     def query
@@ -111,9 +101,10 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
   class Create < HaveAPI::Actions::Default::Create
     input do
-      use :common
-      patch :name, required: true
-      patch :label, required: true
+      use :common, exclude: %i(name)
+      %i(label vendor variant arch distribution version).each do |v|
+        patch v, required: true
+      end
     end
 
     output do

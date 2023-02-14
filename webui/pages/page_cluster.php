@@ -733,14 +733,18 @@ switch($_GET["action"] ?? null) {
 			csrf_check();
 
 			try {
-				$api->os_template->update($_GET['id'], array(
-					'name' => $_POST['name'],
+				$api->os_template->update($_GET['id'], [
 					'label' => $_POST['label'],
 					'info' => $_POST['info'],
 					'enabled' => isset($_POST['enabled']),
 					'supported' => isset($_POST['supported']),
-					'order' => $_POST['order']
-				));
+					'order' => $_POST['order'],
+					'vendor' => $_POST['vendor'],
+					'variant' => $_POST['variant'],
+					'arch' => $_POST['arch'],
+					'distribution' => $_POST['distribution'],
+					'version' => $_POST['version'],
+				]);
 
 				notify_user(_("Changes saved"), _("Changes you've made to the template were saved."));
 				redirect('?page=cluster&action=templates');
@@ -762,12 +766,16 @@ switch($_GET["action"] ?? null) {
 
 			try {
 				$api->os_template->create(array(
-					'name' => $_POST['name'],
 					'label' => $_POST['label'],
 					'info' => $_POST['info'],
 					'enabled' => isset($_POST['enabled']),
 					'supported' => isset($_POST['supported']),
-					'order' => $_POST['order']
+					'order' => $_POST['order'],
+					'vendor' => $_POST['vendor'],
+					'variant' => $_POST['variant'],
+					'arch' => $_POST['arch'],
+					'distribution' => $_POST['distribution'],
+					'version' => $_POST['version'],
 				));
 
 				notify_user(_("OS template registered"), _("The OS template was successfully registered."));
@@ -1026,8 +1034,8 @@ if ($list_nodes) {
 
 if ($list_templates) {
 	$xtpl->title2(_("Templates list"));
-	$xtpl->table_add_category(_("Filename"));
 	$xtpl->table_add_category(_("Label"));
+	$xtpl->table_add_category(_("Name"));
 	$xtpl->table_add_category(_("Uses"));
 	$xtpl->table_add_category(_("Enabled"));
 	$xtpl->table_add_category(_("Supported"));
@@ -1044,8 +1052,8 @@ if ($list_templates) {
 			'meta' => array('count' => true)
 		))->getTotalCount();
 
-		$xtpl->table_td($t->name);
 		$xtpl->table_td($t->label);
+		$xtpl->table_td($t->name);
 		$xtpl->table_td($usage);
 		$xtpl->table_td(boolean_icon($t->enabled));
 		$xtpl->table_td(boolean_icon($t->supported));
