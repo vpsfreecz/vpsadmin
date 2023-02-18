@@ -139,10 +139,6 @@ module VpsAdmin::API::Exceptions
     end
   end
 
-  class NotAvailableOnOpenVz < ::StandardError
-
-  end
-
   class UserNamespaceMapNil < ::StandardError
 
   end

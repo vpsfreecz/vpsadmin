@@ -109,15 +109,6 @@ module VpsAdmin
         HaveAPI::Hooks.stop(ret)
       end
 
-      e.rescue(VpsAdmin::API::Exceptions::NotAvailableOnOpenVz) do |ret, exception|
-        ret[:http_status] = 500
-        ret[:status] = false
-        ret[:message] = "This function is not available on OpenVZ Legacy nodes: "+
-                        exception.message
-
-        HaveAPI::Hooks.stop(ret)
-      end
-
       e.rescue(VpsAdmin::API::Exceptions::OperationNotSupported) do |ret, exception|
         ret[:http_status] = 500
         ret[:status] = false
