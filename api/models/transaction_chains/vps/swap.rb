@@ -257,6 +257,9 @@ module TransactionChains
         }
       )
 
+      # In case the second migration fails, prevent rollback of the first migration
+      append_t(Transactions::Utils::NoOp, args: find_node_id, reversible: :not_reversible)
+
       # At this point, the new primary VPS is complete. Migrate the original
       # primary VPS to the secondary node, where it becomes the new secondary
       # VPS.
