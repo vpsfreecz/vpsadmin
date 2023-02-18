@@ -1434,9 +1434,12 @@ function vps_swap_form($vps) {
 	$xtpl->table_title(_('Swap VPS'));
 	$xtpl->form_create('?page=adminvps&action=swap_preview&veid='.$vps->id, 'get', 'vps-swap', false);
 
-	api_params_to_form($vps->swap_with, 'input', array('vps' => function($vps) {
-		return '#'.$vps->id.' '.$vps->hostname;
-	}));
+	api_params_to_form($vps->swap_with, 'input', ['vps' => function($another_vps) use ($vps) {
+		if ($another_vps->id == $vps->id)
+			return null;
+
+		return '#'.$another_vps->id.' '.$another_vps->hostname;
+	}]);
 
 	$xtpl->form_out(_("Preview"), null,
 		'<input type="hidden" name="page" value="adminvps">'.
