@@ -439,7 +439,7 @@ function api_update_form($obj) {
 	$params = $obj->update->getParameters('input');
 
 	foreach ($params as $name => $desc) {
-		api_param_to_form($name, $desc, post_val($name, $obj->{$name}), $label_callbacks ? $label_callbacks[$name] : null);
+		api_param_to_form($name, $desc, post_val($name, $obj->{$name}));
 	}
 }
 
