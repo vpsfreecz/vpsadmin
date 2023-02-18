@@ -1784,7 +1784,6 @@ CREATE TABLE `vpses` (
   `dns_resolver_id` int(11) DEFAULT NULL,
   `node_id` int(10) unsigned NOT NULL,
   `onstartall` tinyint(1) NOT NULL DEFAULT 1,
-  `config` text COLLATE utf8mb3_czech_ci NOT NULL,
   `confirmed` int(11) NOT NULL DEFAULT 0,
   `dataset_in_pool_id` int(11) DEFAULT NULL,
   `maintenance_lock` int(11) NOT NULL DEFAULT 0,
@@ -1981,6 +1980,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230213084545'),
 ('20230213092308'),
 ('20230214074616'),
-('20230214080054');
+('20230214080054'),
+('20230218165608');
 
 

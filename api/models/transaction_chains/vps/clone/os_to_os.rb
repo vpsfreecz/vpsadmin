@@ -50,7 +50,6 @@ module TransactionChains
         info: "Cloned from #{vps.id}. Original info:\n#{vps.info}",
         node_id: node.id,
         onstartall: vps.onstartall,
-        config: attrs[:configs] ? vps.config : '',
         cpu_limit: attrs[:resources] ? vps.cpu_limit : nil,
         start_menu_timeout: vps.start_menu_timeout,
         confirmed: ::Vps.confirmed(:confirm_create)

@@ -32,7 +32,6 @@ module TransactionChains
         info: "Replaced #{vps.id}. Original info:\n#{vps.info}",
         node_id: node.id,
         onstartall: vps.onstartall,
-        config: vps.config,
         cpu_limit: vps.cpu_limit,
         start_menu_timeout: vps.start_menu_timeout,
         expiration_date: vps.expiration_date,
