@@ -255,17 +255,10 @@ class Vps < ActiveRecord::Base
     TransactionChains::Vps::MountDataset.fire(self, dataset, dst, opts)
   end
 
-  def mount_snapshot(snapshot, dst, opts)
-    TransactionChains::Vps::MountSnapshot.fire(self, snapshot, dst, opts)
-  end
-
   def umount(mnt)
-    if mnt.snapshot_in_pool_id
-      TransactionChains::Vps::UmountSnapshot.fire(self, mnt)
+    fail 'snapshot mounts are not supported' if mnt.snapshot_in_pool_id
 
-    else
-      TransactionChains::Vps::UmountDataset.fire(self, mnt)
-    end
+    TransactionChains::Vps::UmountDataset.fire(self, mnt)
   end
 
   # @param feature [Symbol]

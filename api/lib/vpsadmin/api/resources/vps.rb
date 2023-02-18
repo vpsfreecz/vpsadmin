@@ -1214,8 +1214,6 @@ END
       resource VpsAdmin::API::Resources::VPS, value_label: :hostname
       resource VpsAdmin::API::Resources::Dataset, label: 'Dataset',
                value_label: :name
-      resource VpsAdmin::API::Resources::Dataset::Snapshot, label: 'Snapshot',
-               value_label: :created_at
       resource VpsAdmin::API::Resources::UserNamespaceMap, label: 'UID/GID map'
       string :mountpoint, label: 'Mountpoint', db_name: :dst
       string :mode, label: 'Mode', choices: %w(ro rw), default: 'rw', fill: true
@@ -1283,14 +1281,15 @@ END
     end
 
     class Create < HaveAPI::Actions::Default::Create
-      desc 'Mount remote dataset or snapshot to directory in VPS'
+      desc 'Mount local dataset to directory in VPS'
       blocking true
 
       input do
         use :all, include: %i(
-            dataset snapshot user_namespace_map mountpoint mode on_start_fail
+            dataset user_namespace_map mountpoint mode on_start_fail
             enabled
           )
+          patch :dataset, required: true
           patch :enabled, default: true, fill: true
       end
 
@@ -1308,28 +1307,11 @@ END
         vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
 
-        if !input[:dataset] && !input[:snapshot]
-          error('specify either a dataset or a snapshot')
-        end
-
-        if input[:dataset]
-          ds = input[:dataset]
-
-        else
-          ds = input[:snapshot].dataset
-        end
-
-        if current_user.role != :admin && ds.user != current_user
+        if current_user.role != :admin && input[:dataset].user != current_user
           error('insufficient permission to mount selected snapshot')
         end
 
-        if input[:dataset]
-          @chain, ret = vps.mount_dataset(input[:dataset], input[:mountpoint], input)
-
-        else
-          @chain, ret = vps.mount_snapshot(input[:snapshot], input[:mountpoint], input)
-        end
-
+        @chain, ret = vps.mount_dataset(input[:dataset], input[:mountpoint], input)
         ret
 
       rescue VpsAdmin::API::Exceptions::SnapshotAlreadyMounted,

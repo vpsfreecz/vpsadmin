@@ -15,12 +15,9 @@ module TransactionChains
 
       # Remove mounts
       vps.mounts.each do |mnt|
-        if mnt.snapshot_in_pool_id
-          use_chain(Vps::UmountSnapshot, args: [vps, mnt, false])
+        fail 'snapshot mounts are not supported' if mnt.snapshot_in_pool_id
 
-        else
-          use_chain(Vps::UmountDataset, args: [vps, mnt, false])
-        end
+        use_chain(Vps::UmountDataset, args: [vps, mnt, false])
       end
 
       use_chain(Vps::Mounts, args: vps) if vps.mounts.any?

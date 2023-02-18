@@ -19,6 +19,14 @@ module TransactionChains
     class ShaperSet < Deprecated ; end
     class ShaperUnset < Deprecated ; end
 
+    class MountSnapshot < Deprecated
+      label 'Mount snapshot'
+    end
+
+    class UmountSnapshot < Deprecated
+      label 'Unount snapshot'
+    end
+
     module Clone
       class VzToOs < Deprecated
         label 'Clone'

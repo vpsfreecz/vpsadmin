@@ -6,12 +6,9 @@ module TransactionChains
       lock(mnt)
       concerns(:affect, [mnt.class.name, mnt.id])
 
-      if mnt.snapshot_in_pool
-        use_chain(Vps::UmountSnapshot, args: [mnt.vps, mnt])
+      fail 'snapshot mounts are not supported' if mnt.snapshot_in_pool_id
 
-      else
-        use_chain(Vps::UmountDataset, args: [mnt.vps, mnt])
-      end
+      use_chain(Vps::UmountDataset, args: [mnt.vps, mnt])
     end
   end
 end
