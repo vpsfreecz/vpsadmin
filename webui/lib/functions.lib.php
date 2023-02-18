@@ -352,11 +352,15 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null,
 
 				if ($label_callback) {
 					foreach ($desc_choices as $k => $val) {
-						if ($assoc)
-							$choices[$k] = $label_callback($val);
+						$choice_label = $label_callback($val);
 
+						if (is_null($choice_label))
+							continue;
+
+						if ($assoc)
+							$choices[$k] = $choice_label;
 						else
-							$choices[$val] = $label_callback($val);
+							$choices[$val] = $choice_label;
 					}
 
 				} else {
