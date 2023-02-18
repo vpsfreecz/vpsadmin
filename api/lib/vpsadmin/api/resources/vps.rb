@@ -971,9 +971,6 @@ END
       elsif vps.node.location_id == input[:vps].node.location_id
         error("swap within one location is not supported")
 
-      elsif vps.has_mount_of?(input[:vps]) || input[:vps].has_mount_of?(vps)
-        error("swapping VPSes with mounts of each other is not supported")
-
       elsif vps.node.vpsadminos? && input[:vps].node.vpsadminos?
         error('swap is not supported on vpsAdminOS yet')
       end
