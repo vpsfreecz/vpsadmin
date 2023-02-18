@@ -301,11 +301,7 @@ module TransactionChains
     # 3) Different location, different env
     #    - find replacements, reallocate to different env
     def migrate_network_interfaces
-      return unless opts[:handle_ips]
-
-      if src_node.vpsadminos? && dst_node.vpsadminos?
-        append(Transactions::Vps::PopulateConfig, args: dst_vps, urgent: true)
-      end
+      append(Transactions::Vps::PopulateConfig, args: dst_vps, urgent: true)
 
       if src_vps.network_interfaces.count > 1
         raise VpsAdmin::API::Exceptions::VpsMigrationError,
@@ -319,6 +315,8 @@ module TransactionChains
           args: [netif, dst_vps],
         )
       end
+
+      return unless opts[:handle_ips]
 
       if opts[:transfer_ips]
         if src_node.location_id == dst_node.location_id

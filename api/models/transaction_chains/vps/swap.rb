@@ -60,29 +60,41 @@ module TransactionChains
       end
 
       # Save IP addresses for later
+      #
+      # In the future, we will distinguish public and private interfaces. Now
+      # we assume that there's only one public interface.
       primary_netifs = Hash[primary_vps.network_interfaces.map do |netif|
         new_netif = ::NetworkInterface.find(netif.id)
-        new_netif.vps = new_primary_vps
+        new_netif.vps.node = secondary_vps.node
 
         [
-          netif,
-          target: new_netif,
+          :public,
+          netif: netif,
+          target_netif: new_netif,
           routes: netif.ip_addresses.order(:order).to_a,
-          host_addrs: netif.host_ip_addresses.order(:order).to_a,
+          host_addrs: netif.host_ip_addresses.where.not(order: nil).order(:order).to_a,
         ]
       end]
 
       secondary_netifs = Hash[secondary_vps.network_interfaces.map do |netif|
         new_netif = ::NetworkInterface.find(netif.id)
-        new_netif.vps = new_secondary_vps
+        new_netif.vps.node = primary_vps.node
 
         [
-          netif,
-          target: new_netif,
+          :public,
+          netif: netif,
+          target_netif: new_netif,
           routes: netif.ip_addresses.order(:order).to_a,
-          host_addrs: netif.host_ip_addresses.order(:order).to_a,
+          host_addrs: netif.host_ip_addresses.where.not(order: nil).order(:order).to_a,
         ]
       end]
+
+      # Check that interfaces match
+      %i(public private).each do |netif_type|
+        if primary_netifs[netif_type].nil? != secondary_netifs[netif_type].nil?
+          fail "#{netif_type} network interface mismatch"
+        end
+      end
 
       swappable_resources = %i(memory cpu swap)
 
@@ -121,67 +133,80 @@ module TransactionChains
         hooks: {
           pre_start: ->(ret, _, _) do
             # Remove addresses from the secondary (new primary) VPS
-            secondary_netifs.each do |netif, attrs|
-              dst_netif = ::NetworkInterface.find(netif.id)
-              dst_netif.vps.node = primary_vps.node
+            secondary_netifs.each_value do |attrs|
+              attrs[:routes].reverse_each do |ip|
+                attrs[:host_addrs].reverse_each do |addr|
+                  next unless addr.ip_address == ip
 
-              attrs[:host_addrs].each do |addr|
-                append_t(
-                  Transactions::NetworkInterface::DelHostIp,
-                  args: [dst_netif, addr],
-                  urgent: true,
-                )
-              end
+                  append_t(
+                    Transactions::NetworkInterface::DelHostIp,
+                    args: [attrs[:target_netif], addr],
+                    urgent: true,
+                  ) do |t|
+                    t.edit(addr, order: nil)
+                  end
+                end
 
-              attrs[:routes].each do |ip|
                 append_t(
                   Transactions::NetworkInterface::DelRoute,
-                  args: [dst_netif, ip, false],
+                  args: [attrs[:target_netif], ip, false],
                   urgent: true,
-                )
+                ) do |t|
+                  t.edit(ip, network_interface_id: nil)
+                end
               end
             end
 
-            primary_netifs.each do |netif, attrs|
-              # TODO: we need to ensure the interfaces exist
-
-              # Move the network interface to the new primary VPS
-              append_t(Transactions::Utils::NoOp, args: find_node_id, urgent: true) do |t|
-                t.edit(netif, vps_id: new_primary_vps.id, name: "#{netif.name}.tmp")
-              end
-
+            primary_netifs.each do |netif_type, attrs|
               # Remove IP addresses from the original primary VPS.
-              attrs[:host_addrs].each do |addr|
-                append_t(
-                  Transactions::NetworkInterface::DelHostIp,
-                  args: [netif, addr],
-                  urgent: true,
-                )
-              end
+              attrs[:routes].reverse_each do |ip|
+                attrs[:host_addrs].each do |addr|
+                  next unless addr.ip_address == ip
 
-              attrs[:routes].each do |ip|
+                  append_t(
+                    Transactions::NetworkInterface::DelHostIp,
+                    args: [attrs[:netif], addr],
+                    urgent: true,
+                  ) do |t|
+                    t.edit(addr, order: nil)
+                  end
+                end
+
                 append_t(
                   Transactions::NetworkInterface::DelRoute,
-                  args: [netif, ip, true],
+                  args: [attrs[:netif], ip, true],
                   urgent: true,
-                )
+                ) do |t|
+                  t.edit(ip, network_interface_id: nil)
+                end
               end
 
               # Add IPs from the original primary to the new primary
+              dst_attrs = secondary_netifs[netif_type]
+              host_i = 0
+
               attrs[:routes].each do |ip|
                 append_t(
                   Transactions::NetworkInterface::AddRoute,
-                  args: [attrs[:target], ip, true],
+                  args: [dst_attrs[:target_netif], ip, true],
+                  kwargs: {via: ip.route_via},
                   urgent: true,
-                )
-              end
+                ) do |t|
+                  t.edit(ip, network_interface_id: dst_attrs[:target_netif].id)
+                end
 
-              attrs[:host_addrs].each do |addr|
-                append_t(
-                  Transactions::NetworkInterface::AddHostIp,
-                  args: [attrs[:target], addr],
-                  urgent: true,
-                )
+                attrs[:host_addrs].each do |addr|
+                  next unless addr.ip_address == ip
+
+                  append_t(
+                    Transactions::NetworkInterface::AddHostIp,
+                    args: [dst_attrs[:target_netif], addr],
+                    urgent: true,
+                  ) do |t|
+                    t.edit(addr, order: host_i)
+                    host_i += 1
+                  end
+                end
               end
             end
 
@@ -252,28 +277,32 @@ module TransactionChains
         hooks: {
           pre_start: ->(ret, _, _) do
             # Add IP addresses to the new secondary VPS
-            secondary_netifs.each do |netif, attrs|
-              # TODO: we need to ensure the interfaces exist
-
-              # Move the network interface to the new secondary VPS
-              append_t(Transactions::Utils::NoOp, args: find_node_id, urgent: true) do |t|
-                t.edit(netif, vps_id: new_secondary_vps.id, name: "#{netif.name}.tmp")
-              end
+            secondary_netifs.each do |netif_type, attrs|
+              dst_attrs = primary_netifs[netif_type]
+              host_i = 0
 
               attrs[:routes].each do |ip|
                 append_t(
                   Transactions::NetworkInterface::AddRoute,
-                  args: [attrs[:target], ip, true],
+                  args: [dst_attrs[:target_netif], ip, true],
+                  kwargs: {via: ip.route_via},
                   urgent: true,
-                )
-              end
+                ) do |t|
+                  t.edit(ip, network_interface_id: dst_attrs[:target_netif].id)
+                end
 
-              attrs[:host_addrs].each do |addr|
-                append_t(
-                  Transactions::NetworkInterface::AddHostIp,
-                  args: [attrs[:target], addr],
-                  urgent: true,
-                )
+                attrs[:host_addrs].each do |addr|
+                  next unless addr.ip_address == ip
+
+                  append_t(
+                    Transactions::NetworkInterface::AddHostIp,
+                    args: [dst_attrs[:target_netif], addr],
+                    urgent: true,
+                  ) do |t|
+                    t.edit(addr, order: host_i)
+                    host_i += 1
+                  end
+                end
               end
             end
 
@@ -325,10 +354,6 @@ module TransactionChains
       )
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
-        # Revert original veth names
-        primary_netifs.each { |n, _| t.edit(n, name: n.name) }
-        secondary_netifs.each { |n, _| t.edit(n, name: n.name) }
-
         if faked_resources.count > 0
           faked_resources.each do |use|
             t.edit(use, confirmed: ::ClusterResourceUse.confirmed(:confirmed))
@@ -354,7 +379,7 @@ module TransactionChains
         t.just_create(new_secondary_vps.log(:swap, new_primary_vps.id))
       end
 
-#      fail 'all done!'
+      # fail 'all done!'
     end
 
     def recursive_serialize(dataset, children, pool)

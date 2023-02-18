@@ -945,7 +945,6 @@ END
           required: true
       bool :resources,
         desc: 'Swap resources (CPU, memory and swap, not disk space)'
-      bool :configs, desc: 'Swap configuration chains'
       bool :hostname, desc: 'Swap hostname', load_validators: false
       bool :expirations, desc: 'Swap expirations'
     end
@@ -953,7 +952,7 @@ END
     authorize do |u|
       allow if u.role == :admin
       restrict user_id: u.id
-      input blacklist: %i(configs expirations)
+      input blacklist: %i(expirations)
       allow
     end
 
@@ -969,14 +968,10 @@ END
         error('access denied')
 
       elsif vps.node.location_id == input[:vps].node.location_id
-        error("swap within one location is not supported")
-
-      elsif vps.node.vpsadminos? && input[:vps].node.vpsadminos?
-        error('swap is not supported on vpsAdminOS yet')
+        error("swap within one location is not needed, simply exchange IP addresses")
       end
 
       if current_user.role != :admin
-        input[:configs] = true
         input[:expirations] = true
       end
 
