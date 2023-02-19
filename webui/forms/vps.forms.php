@@ -1499,6 +1499,14 @@ function format_swap_preview($vps, $hostname, $resources_vps, $ips, $node, $expi
 	if ($vps->node_id != $node->id)
 		$ips_style = $changed_style;
 
+	$s_swap = '';
+	if (isAdmin()) {
+		$s_swap = <<<EOT
+		<dt>Swap:</dt>
+		<dd style="{$resources_style}">{$resources_vps->swap}</dd>
+EOT;
+	}
+
 	$s = <<<EOT
 	<h3 style="{$node_style}">Node {$node->domain_name}</h3>
 	<dl>
@@ -1512,8 +1520,7 @@ function format_swap_preview($vps, $hostname, $resources_vps, $ips, $node, $expi
 		<dd style="{$resources_style}">{$resources_vps->cpu}</dd>
 		<dt>Memory:</dt>
 		<dd style="{$resources_style}">{$resources_vps->memory}</dd>
-		<dt>Swap:</dt>
-		<dd style="{$resources_style}">{$resources_vps->swap}</dd>
+		{$s_swap}
 		<dt>IP addresses:</dt>
 		<dd style="{$ips_style}">$ips</dd>
 	</dl>
