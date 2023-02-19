@@ -843,8 +843,8 @@ switch ($_GET["action"] ?? null) {
 				break;
 			}
 
-			if (isset($_POST['cancel']))
-				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+			if (isset($_POST['back']))
+				redirect('?page=adminvps&action=swap&veid='.$_GET['veid'].'&vps='.$_POST['vps'].'&hostname='.$_POST['hostname'].'&resources='.$_POST['resources'].'&expirations='.$_POST['expirations']);
 
 			csrf_check();
 

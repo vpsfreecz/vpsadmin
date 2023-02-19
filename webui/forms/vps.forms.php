@@ -1438,8 +1438,8 @@ function vps_swap_form($vps) {
 		$input = $vps->swap_with->getParameters('input');
 
 		$xtpl->form_add_input(_('VPS ID').':', 'text', '30', 'vps', get_val('vps'));
-		api_param_to_form('resources', $input->resources);
-		api_param_to_form('hostname', $input->hostname);
+		api_param_to_form('resources', $input->resources, get_val('resources', false));
+		api_param_to_form('hostname', $input->hostname, get_val('hostname', false));
 		api_param_to_form('expirations', $input->expirations, get_val('expirations', true));
 	} else{
 		api_params_to_form($vps->swap_with, 'input', ['vps' => function($another_vps) use ($vps) {
@@ -1590,7 +1590,7 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 	$xtpl->table_tr(false, 'notoddrow');
 
 	$xtpl->table_td('');
-	$xtpl->table_td($xtpl->html_submit(_('Cancel'), 'cancel'));
+	$xtpl->table_td($xtpl->html_submit(_('Back'), 'back'));
 	$xtpl->table_td('');
 	$xtpl->table_td(
 		'<input type="hidden" name="vps" value="'.$secondary->id.'">'.
