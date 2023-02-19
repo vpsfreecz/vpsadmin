@@ -1494,7 +1494,7 @@ EOT;
 }
 
 function format_swap_node_cell($node, $primary = false) {
-	$outage_len = $primary ? _('minimal') : _('up to several hours');
+	$outage_len = $primary ? _('several minutes') : _('up to several hours');
 
 	$s = <<<EOT
 	<h3>{$node->domain_name}</h3>
@@ -1512,7 +1512,7 @@ EOT;
 function vps_swap_preview_form($primary, $secondary, $opts) {
 	global $xtpl, $api;
 
-	$xtpl->table_title(_("Swap VPS ".vps_link($primary)." with ".vps_link($secondary)));
+	$xtpl->table_title(_("Replace VPS ".vps_link($primary)." with ".vps_link($secondary)));
 	$xtpl->form_create('?page=adminvps&action=swap&veid='.$primary->id, 'post');
 	$xtpl->table_add_category(_('Node'));
 	$xtpl->table_add_category(_('Now'));
