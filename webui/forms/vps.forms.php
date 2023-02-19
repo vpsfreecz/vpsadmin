@@ -1594,7 +1594,6 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 		'<input type="hidden" name="vps" value="'.$secondary->id.'">'.
 		($opts['hostname'] ? '<input type="hidden" name="hostname" value="1">' : '').
 		($opts['resources'] ? '<input type="hidden" name="resources" value="1">' : '').
-		($opts['configs'] ? '<input type="hidden" name="configs" value="1">' : '').
 		($opts['expirations'] ? '<input type="hidden" name="expirations" value="1">' : '').
 		$xtpl->html_submit(_('Go >>'), 'go'),
 		false, false, '2'

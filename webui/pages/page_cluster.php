@@ -47,7 +47,6 @@ $xtpl->title(_("Manage Cluster"));
 $list_locations = false;
 $list_nodes = false;
 $list_templates = false;
-$list_configs = false;
 $list_dns = false;
 $env_settings = false;
 
