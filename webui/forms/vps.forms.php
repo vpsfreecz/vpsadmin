@@ -1459,7 +1459,7 @@ function vps_swap_form($vps) {
 	vps_details_suite($vps);
 }
 
-function format_swap_preview($vps, $hostname, $resources, $ips, $node, $expiration) {
+function format_swap_preview($vps, $hostname, $resources_vps, $ips, $node, $expiration_vps) {
 	$ips_tmp = array();
 
 	foreach ($ips as $ip) {
@@ -1467,25 +1467,27 @@ function format_swap_preview($vps, $hostname, $resources, $ips, $node, $expirati
 	}
 
 	$ips = implode(",<br>\n", $ips_tmp);
-	$expiration_date = $expiration->expiration_date
-		? tolocaltz($expiration->expiration_date, 'Y-m-d')
+	$expiration_date = $expiration_vps->expiration_date
+		? tolocaltz($expiration_vps->expiration_date, 'Y-m-d')
 		: '---';
 
-	$vps_link = vps_link($vps);
+	$s_hostname = h($hostname);
 
 	$s = <<<EOT
-	<h3>VPS {$vps_link}</h3>
+	<h3>Node {$node->domain_name}</h3>
 	<dl>
+		<dt>Environment:</dt>
+		<dd>{$node->location->environment->label}</dd>
 		<dt>Hostname:</dt>
-		<dd>$hostname</dd>
+		<dd>$s_hostname</dd>
 		<dt>Expiration:</dt>
 		<dd>{$expiration_date}</dd>
 		<dt>CPU:</dt>
-		<dd>{$resources->cpu}</dd>
+		<dd>{$resources_vps->cpu}</dd>
 		<dt>Memory:</dt>
-		<dd>{$resources->memory}</dd>
+		<dd>{$resources_vps->memory}</dd>
 		<dt>Swap:</dt>
-		<dd>{$resources->swap}</dd>
+		<dd>{$resources_vps->swap}</dd>
 		<dt>IP addresses:</dt>
 		<dd>$ips</dd>
 	</dl>
@@ -1493,14 +1495,14 @@ EOT;
 	return $s;
 }
 
-function format_swap_node_cell($node, $primary = false) {
+function format_swap_vps_cell($vps, $primary = false) {
 	$outage_len = $primary ? _('several minutes') : _('up to several hours');
 
+	$vps_link = vps_link($vps);
+
 	$s = <<<EOT
-	<h3>{$node->domain_name}</h3>
+	<h3>VPS {$vps_link}</h3>
 	<dl>
-		<dt>Environment:</dt>
-		<dd>{$node->location->environment->label}</dd>
 		<dt>Outage duration:</dt>
 		<dd>{$outage_len}</dd>
 	</dl>
@@ -1514,7 +1516,7 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 
 	$xtpl->table_title(_("Replace VPS ".vps_link($primary)." with ".vps_link($secondary)));
 	$xtpl->form_create('?page=adminvps&action=swap&veid='.$primary->id, 'post');
-	$xtpl->table_add_category(_('Node'));
+	$xtpl->table_add_category(_('VPS'));
 	$xtpl->table_add_category(_('Now'));
 	$xtpl->table_add_category("&rarr;");
 	$xtpl->table_add_category(_('After swap'));
@@ -1522,19 +1524,19 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 	$primary_ips = get_vps_ip_route_list($primary);
 	$secondary_ips = get_vps_ip_route_list($secondary);
 
-	if (!$_SESSION['is_admin'])
+	if (!isAdmin())
 		$opts['expirations'] = true;
 
-	$xtpl->table_td(format_swap_node_cell($primary->node, true));
+	$xtpl->table_td(format_swap_vps_cell($secondary, true));
 
 	$xtpl->table_td(
 		format_swap_preview(
-			$primary,
-			$primary->hostname,
-			$primary,
-			$primary_ips,
-			$primary->node,
-			$primary
+			$secondary,
+			$secondary->hostname,
+			$secondary,
+			$secondary_ips,
+			$secondary->node,
+			$secondary
 		)
 	);
 
@@ -1556,16 +1558,16 @@ function vps_swap_preview_form($primary, $secondary, $opts) {
 
 	$xtpl->table_tr();
 
-	$xtpl->table_td(format_swap_node_cell($secondary->node));
+	$xtpl->table_td(format_swap_vps_cell($primary));
 
 	$xtpl->table_td(
 		format_swap_preview(
-			$secondary,
-			$secondary->hostname,
-			$secondary,
-			$secondary_ips,
-			$secondary->node,
-			$secondary
+			$primary,
+			$primary->hostname,
+			$primary,
+			$primary_ips,
+			$primary->node,
+			$primary
 		)
 	);
 
