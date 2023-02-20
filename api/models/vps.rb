@@ -135,8 +135,6 @@ class Vps < ActiveRecord::Base
   # @Option opts [::Location, nil] address_location
   # @Option opts [Boolean] start
   def create(opts)
-    self.config = ''
-
     lifetime = self.user.env_config(
       node.location.environment,
       :vps_lifetime
