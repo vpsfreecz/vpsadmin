@@ -237,10 +237,11 @@ module TransactionChains
       end
 
       # Populate config of the new VPS
-      append(Transactions::Vps::PopulateConfig, args: [
-        dst_vps,
-        {network_interfaces: vps.network_interfaces.all},
-      ])
+      append(
+        Transactions::Vps::PopulateConfig,
+        args: [dst_vps],
+        kwargs: {network_interfaces: vps.network_interfaces.all},
+      )
 
       # Resources
       use_chain(Vps::SetResources, args: [dst_vps, vps_resources])
