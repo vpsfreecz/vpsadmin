@@ -267,10 +267,16 @@ module NodeCtld
       return unless check_commands?(db)
 
       rs = select_commands(db)
+      cmds = []
 
+      # Once again, sometimes we get invalid results
       rs.each do |row|
-        c = Command.new(row)
+        raise TransactionCheckError if row['queue'].nil?
+        cmds << row
+      end
 
+      cmds.each do |row|
+        c = Command.new(row)
         do_command(c)
       end
     end
