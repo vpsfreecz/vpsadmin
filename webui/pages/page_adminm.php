@@ -73,6 +73,10 @@ function print_editm($u) {
 	$xtpl->table_add_category('&nbsp;');
 	$xtpl->form_create('?page=adminm&section=members&action=edit_member&id='.$u->id, 'post');
 
+	$xtpl->table_td("ID".':');
+	$xtpl->table_td($u->id);
+	$xtpl->table_tr();
+
 	$xtpl->table_td("Created".':');
 	$xtpl->table_td(tolocaltz($u->created_at));
 	$xtpl->table_tr();
