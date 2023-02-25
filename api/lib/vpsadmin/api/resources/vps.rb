@@ -33,6 +33,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     integer :cpu_limit, label: 'CPU limit', desc: 'Limit of maximum CPU usage'
     integer :start_menu_timeout, label: 'Start menu timeout',
       desc: 'Number of seconds the start menu waits for the user'
+    bool :allow_admin_modifications, label: 'Allow admin modifications'
   end
 
   params(:dataset) do
@@ -106,7 +107,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       output whitelist: %i(
         id user hostname manage_hostname os_template cgroup_version dns_resolver
         node dataset pool memory swap cpu backup_enabled maintenance_lock
-        maintenance_lock_reason object_state expiration_date
+        maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq
@@ -235,12 +236,12 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       input whitelist: %i(
         environment location address_location hostname os_template cgroup_version
         dns_resolver cpu memory swap diskspace ipv4 ipv4_private ipv6
-        start_menu_timeout user_namespace_map start
+        start_menu_timeout allow_admin_modifications user_namespace_map start
       )
       output whitelist: %i(
         id user hostname manage_hostname os_template cgroup_version dns_resolver
         node dataset pool memory swap cpu backup_enabled maintenance_lock
-        maintenance_lock_reason object_state expiration_date
+        maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout created_at
@@ -372,7 +373,7 @@ END
       output whitelist: %i(
         id user hostname manage_hostname os_template cgroup_version dns_resolver
         node dataset pool memory swap cpu backup_enabled maintenance_lock
-        maintenance_lock_reason object_state expiration_date
+        maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout created_at
@@ -413,7 +414,7 @@ END
       restrict user_id: u.id
       input whitelist: %i(
         hostname manage_hostname os_template cgroup_version dns_resolver cpu
-        memory swap start_menu_timeout remind_after_date
+        memory swap start_menu_timeout allow_admin_modifications remind_after_date
       )
       allow
     end
@@ -862,7 +863,7 @@ END
       output whitelist: %i(
         id user hostname manage_hostname os_template cgroup_version dns_resolver
         node dataset pool memory swap cpu backup_enabled maintenance_lock
-        maintenance_lock_reason object_state expiration_date
+        maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_disk uptime
         loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq
         cpu_softirq created_at

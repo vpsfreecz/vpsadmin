@@ -36,6 +36,7 @@ module TransactionChains
         start_menu_timeout: vps.start_menu_timeout,
         cgroup_version: vps.cgroup_version,
         expiration_date: vps.expiration_date,
+        allow_admin_modifications: vps.allow_admin_modifications,
         confirmed: ::Vps.confirmed(:confirm_create),
       )
 

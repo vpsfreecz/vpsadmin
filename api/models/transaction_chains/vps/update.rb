@@ -103,7 +103,7 @@ module TransactionChains
         when 'config'
           # FIXME
 
-        when 'info', 'onstartall'
+        when 'info', 'onstartall', 'allow_admin_modifications'
           db_changes[vps][attr] = vps.send(attr)
 
         when 'autostart_priority'

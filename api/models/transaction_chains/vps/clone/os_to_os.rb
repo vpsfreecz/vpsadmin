@@ -53,6 +53,7 @@ module TransactionChains
         cpu_limit: attrs[:resources] ? vps.cpu_limit : nil,
         start_menu_timeout: vps.start_menu_timeout,
         cgroup_version: vps.cgroup_version,
+        allow_admin_modifications: vps.allow_admin_modifications,
         confirmed: ::Vps.confirmed(:confirm_create)
       )
 
