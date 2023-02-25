@@ -31,6 +31,7 @@ module NodeCtld
         node_id: $CFG.get(:vpsadmin, :node_id),
         time: t,
         str_time: t.strftime('%Y-%m-%d %H:%M:%S'),
+        cgroup_version: cgroup_version,
         nproc: 0,
         uptime: SystemProbes::Uptime.new.uptime.round,
         loadavg: SystemProbes::LoadAvg.new.avg,
@@ -72,13 +73,31 @@ module NodeCtld
       $CFG.get(:vpsadmin, :type) == :storage
     end
 
+    def cgroup_version
+      return @cgroup_version if @cgroup_version
+
+      path = '/run/osctl/cgroup.version'
+
+      begin
+        @cgroup_version = File.read(path).strip.to_i
+      rescue SystemCallError => e
+        unless $CFG.minimal?
+          log(:info, "Unable to read cgroup version from #{path}: #{e.message} (#{e.class})")
+        end
+
+        @cgroup_version = 0
+      end
+
+      @cgroup_version
+    end
+
     def log_status(db, info)
       db.query(
         "INSERT INTO node_statuses (
           node_id, uptime, cpus, total_memory, total_swap, process_count,
           cpu_user, cpu_nice, cpu_system, cpu_idle, cpu_iowait, cpu_irq, cpu_softirq,
           loadavg, used_memory, used_swap, arc_c_max, arc_c, arc_size, arc_hitpercent,
-          vpsadmind_version, kernel, created_at
+          vpsadmind_version, kernel, cgroup_version, created_at
         )
 
         SELECT
@@ -100,6 +119,7 @@ module NodeCtld
           sum_arc_hitpercent / update_count,
           vpsadmind_version,
           kernel,
+          cgroup_version,
           '#{info.str_time}'
 
         FROM node_current_statuses WHERE node_id = #{info.node_id}
@@ -114,6 +134,7 @@ module NodeCtld
           loadavg = #{info.loadavg[5]},
           vpsadmind_version = '#{NodeCtld::VERSION}',
           kernel = '#{info.kernel}',
+          cgroup_version = #{info.cgroup_version},
           cpus = #{@cpus},
           cpu_user = #{info.cpu[:user]},
           cpu_nice = #{info.cpu[:nice]},
@@ -185,6 +206,7 @@ module NodeCtld
           uptime = #{info.uptime},
           vpsadmind_version = '#{NodeCtld::VERSION}',
           kernel = '#{info.kernel}',
+          cgroup_version = '#{info.cgroup_version}',
           process_count = #{info.nproc},
           sum_process_count = sum_process_count + process_count,
           loadavg = #{info.loadavg[5]},
