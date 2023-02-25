@@ -739,6 +739,30 @@ switch ($_GET["action"] ?? null) {
 			}
 			break;
 
+		case 'setmodifications':
+			if (isset($_GET["veid"]) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+				csrf_check();
+				$allow_mods = $_POST['allow_admin_modifications'] === '1';
+
+				try {
+					$api->vps($_GET['veid'])->update([
+						'allow_admin_modifications' => $allow_mods,
+					]);
+
+					notify_user(
+						_("VPS modifications preference set"),
+						$allow_mods ? _('VPS modifications by the admin team have been enabled.')
+						            : _('VPS modifications by the admin team have been disabled.')
+					);
+					redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('VPS modifications preference change failed'), $e->getResponse());
+					$show_info=true;
+				}
+			}
+			break;
+
 		case 'maintenance_windows':
 			csrf_check();
 
@@ -1436,6 +1460,39 @@ if (isset($show_info) && $show_info) {
 		$xtpl->table_td(
 			_("Contact support if you'd like to use").' '.cgroupEnumTolabel($other_cgroup),
 		);
+		$xtpl->table_tr();
+
+		$xtpl->form_out(_("Go >>"));
+
+	// Admin modifications
+		$xtpl->table_title(_('VPS modifications by the admin team'));
+		$xtpl->form_create('?page=adminvps&action=setmodifications&veid='.$vps->id, 'post');
+
+		$xtpl->table_td(
+			_('New software features or bugs may require or benefit from configuration '.
+			'changes inside the VPS. If allowed, we can make these necessary changes '.
+			'for you. We usually only modify the base system configuration files '.
+			'which we would otherwise deliver in OS templates for new VPS. We do not '.
+			'access or modify your applications or data. We will email you about any '.
+			'changes we will make.'),
+			false, false, 2
+		);
+		$xtpl->table_tr();
+
+		$xtpl->form_add_radio_pure(
+			'allow_admin_modifications',
+			'1',
+			post_val('allow_admin_modification', $vps->allow_admin_modifications ? '1' : '0') == '1',
+		);
+		$xtpl->table_td(_('Allow modifications by vpsFree.cz admin team (recommended)'));
+		$xtpl->table_tr();
+
+		$xtpl->form_add_radio_pure(
+			'allow_admin_modifications',
+			'0',
+			post_val('allow_admin_modification', $vps->allow_admin_modifications ? '1' : '0') == '0',
+		);
+		$xtpl->table_td(_('Do not allow modifications by vpsFree.cz admin team'));
 		$xtpl->table_tr();
 
 		$xtpl->form_out(_("Go >>"));
