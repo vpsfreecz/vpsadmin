@@ -814,7 +814,7 @@ CREATE TABLE `node_current_statuses` (
   `cpus` int(11) DEFAULT NULL,
   `total_memory` int(11) DEFAULT NULL,
   `total_swap` int(11) DEFAULT NULL,
-  `vpsadmind_version` varchar(25) COLLATE utf8mb3_czech_ci NOT NULL,
+  `vpsadmin_version` varchar(25) COLLATE utf8mb3_czech_ci NOT NULL,
   `kernel` varchar(30) COLLATE utf8mb3_czech_ci NOT NULL,
   `update_count` int(11) NOT NULL,
   `process_count` int(11) DEFAULT NULL,
@@ -896,7 +896,7 @@ CREATE TABLE `node_statuses` (
   `arc_size` int(11) DEFAULT NULL,
   `arc_hitpercent` float DEFAULT NULL,
   `loadavg` float NOT NULL,
-  `vpsadmind_version` varchar(25) COLLATE utf8mb3_czech_ci NOT NULL,
+  `vpsadmin_version` varchar(25) COLLATE utf8mb3_czech_ci NOT NULL,
   `kernel` varchar(30) COLLATE utf8mb3_czech_ci NOT NULL,
   `created_at` datetime DEFAULT NULL,
   `cgroup_version` int(11) NOT NULL DEFAULT 1,
@@ -1988,6 +1988,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230214074616'),
 ('20230214080054'),
 ('20230218165608'),
-('20230224164856');
+('20230224164856'),
+('20230225073544');
 
 

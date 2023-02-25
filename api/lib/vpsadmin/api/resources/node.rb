@@ -49,7 +49,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     integer :arc_c
     integer :arc_size
     integer :arc_hitpercent
-    string :version, db_name: :vpsadmind_version
+    string :version, db_name: :vpsadmin_version
     string :kernel
     string :cgroup_version, label: 'Cgroup version', choices: ::NodeCurrentStatus.cgroup_versions.keys.map(&:to_s)
     string :pool_state, choices: ::Pool::STATE_VALUES.map(&:to_s), db_name: :pool_state_value
@@ -465,7 +465,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       integer :arc_c
       integer :arc_size
       float :arc_hitpercent
-      string :version, db_name: :vpsadmind_version
+      string :version, db_name: :vpsadmin_version
       string :kernel
       datetime :created_at
     end

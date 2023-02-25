@@ -97,7 +97,7 @@ module NodeCtld
           node_id, uptime, cpus, total_memory, total_swap, process_count,
           cpu_user, cpu_nice, cpu_system, cpu_idle, cpu_iowait, cpu_irq, cpu_softirq,
           loadavg, used_memory, used_swap, arc_c_max, arc_c, arc_size, arc_hitpercent,
-          vpsadmind_version, kernel, cgroup_version, created_at
+          vpsadmin_version, kernel, cgroup_version, created_at
         )
 
         SELECT
@@ -117,7 +117,7 @@ module NodeCtld
           sum_arc_c / update_count,
           sum_arc_size / update_count,
           sum_arc_hitpercent / update_count,
-          vpsadmind_version,
+          vpsadmin_version,
           kernel,
           cgroup_version,
           '#{info.str_time}'
@@ -132,7 +132,7 @@ module NodeCtld
           uptime = #{info.uptime},
           process_count = #{info.nproc},
           loadavg = #{info.loadavg[5]},
-          vpsadmind_version = '#{NodeCtld::VERSION}',
+          vpsadmin_version = '#{NodeCtld::VERSION}',
           kernel = '#{info.kernel}',
           cgroup_version = #{info.cgroup_version},
           cpus = #{@cpus},
@@ -204,7 +204,7 @@ module NodeCtld
     def update_status(db, info)
       sql = "
           uptime = #{info.uptime},
-          vpsadmind_version = '#{NodeCtld::VERSION}',
+          vpsadmin_version = '#{NodeCtld::VERSION}',
           kernel = '#{info.kernel}',
           cgroup_version = '#{info.cgroup_version}',
           process_count = #{info.nproc},

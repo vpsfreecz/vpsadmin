@@ -240,7 +240,7 @@ class Node < ActiveRecord::Base
 
   %i(uptime process_count cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
      cpu_irq cpu_softirq cpu_guest loadavg used_memory used_swap arc_c_max arc_c
-     arc_size arc_hitpercent kernel vpsadmind_version pool_state pool_scan
+     arc_size arc_hitpercent kernel vpsadmin_version pool_state pool_scan
      pool_scan_percent pool_checked_at pool_state_value pool_scan_value
      cgroup_version
   ).each do |attr|
@@ -250,7 +250,7 @@ class Node < ActiveRecord::Base
   end
 
   def daemon_version
-    node_current_status && node_current_status.vpsadmind_version
+    node_current_status && node_current_status.vpsadmin_version
   end
 
   def kernel_version
