@@ -17,6 +17,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     bool :manage_hostname, label: 'Manage hostname',
           desc: 'Determines whether vpsAdmin sets VPS hostname or not'
     use :template
+    string :cgroup_version, choices: ::Vps.cgroup_versions.keys, default: 'cgroup_any'
     string :info, label: 'Info', desc: 'VPS description'
     resource VpsAdmin::API::Resources::DnsResolver, label: 'DNS resolver',
              desc: 'DNS resolver the VPS will use'
@@ -103,7 +104,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       restrict user_id: u.id
       input blacklist: %i(user)
       output whitelist: %i(
-        id user hostname manage_hostname os_template dns_resolver
+        id user hostname manage_hostname os_template cgroup_version dns_resolver
         node dataset pool memory swap cpu backup_enabled maintenance_lock
         maintenance_lock_reason object_state expiration_date
         is_running process_count used_memory used_swap used_diskspace
@@ -232,12 +233,12 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       input whitelist: %i(
-        environment location address_location hostname os_template
+        environment location address_location hostname os_template cgroup_version
         dns_resolver cpu memory swap diskspace ipv4 ipv4_private ipv6
         start_menu_timeout user_namespace_map start
       )
       output whitelist: %i(
-        id user hostname manage_hostname os_template dns_resolver
+        id user hostname manage_hostname os_template cgroup_version dns_resolver
         node dataset pool memory swap cpu backup_enabled maintenance_lock
         maintenance_lock_reason object_state expiration_date
         is_running process_count used_memory used_swap used_diskspace
@@ -281,6 +282,7 @@ END
           environment: input[:environment],
           location: input[:location],
           hypervisor_type: input[:os_template].hypervisor_type,
+          cgroup_version: input[:cgroup_version] || input[:os_template].cgroup_version,
         )
 
         unless node
@@ -368,7 +370,7 @@ END
       allow if u.role == :admin
       restrict user_id: u.id
       output whitelist: %i(
-        id user hostname manage_hostname os_template dns_resolver
+        id user hostname manage_hostname os_template cgroup_version dns_resolver
         node dataset pool memory swap cpu backup_enabled maintenance_lock
         maintenance_lock_reason object_state expiration_date
         is_running process_count used_memory used_swap used_diskspace
@@ -410,7 +412,7 @@ END
       allow if u.role == :admin
       restrict user_id: u.id
       input whitelist: %i(
-        hostname manage_hostname os_template dns_resolver cpu
+        hostname manage_hostname os_template cgroup_version dns_resolver cpu
         memory swap start_menu_timeout remind_after_date
       )
       allow
@@ -669,6 +671,12 @@ END
           "incompatible template: needs #{tpl.hypervisor_type}, but VPS is "+
           "using #{vps.node.hypervisor_type}"
         )
+
+      elsif tpl.cgroup_version != 'cgroup_any' && tpl.cgroup_version != vps.node.cgroup_version
+        error(
+          "incompatible cgroup version: #{tpl.label} needs #{tpl.cgroup_version}, "+
+          "but node is using #{vps.node.cgroup_version}"
+        )
       end
 
       @chain, _ = vps.boot(tpl, mount_root_dataset: input[:mount_root_dataset])
@@ -717,6 +725,12 @@ END
         error(
           "incompatible template: needs #{tpl.hypervisor_type}, but VPS is "+
           "using #{vps.node.hypervisor_type}"
+        )
+
+      elsif tpl.cgroup_version != 'cgroup_any' && tpl.cgroup_version != vps.node.cgroup_version
+        error(
+          "incompatible cgroup version: #{tpl.label} needs #{tpl.cgroup_version}, "+
+          "but node is using #{vps.node.cgroup_version}"
         )
       end
 
@@ -846,7 +860,7 @@ END
       restrict user_id: u.id
       input blacklist: %i(node user configs)
       output whitelist: %i(
-        id user hostname manage_hostname os_template dns_resolver
+        id user hostname manage_hostname os_template cgroup_version dns_resolver
         node dataset pool memory swap cpu backup_enabled maintenance_lock
         maintenance_lock_reason object_state expiration_date
         is_running process_count used_memory used_swap used_disk uptime
@@ -886,6 +900,7 @@ END
           location: input[:location],
           except: vps.node,
           hypervisor_type: input[:platform] == 'same' ? vps.os_template.hypervisor_type : input[:platform],
+          cgroup_version: input[:os_template].cgroup_version,
         )
 
       else

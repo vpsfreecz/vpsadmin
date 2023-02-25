@@ -57,6 +57,9 @@ module TransactionChains
             }))
           end
 
+        when 'cgroup_version'
+          db_changes[vps][attr] = ::Vps.cgroup_versions[vps.send(attr)]
+
         when 'dns_resolver_id'
           if vps.dns_resolver_id
             append_t(

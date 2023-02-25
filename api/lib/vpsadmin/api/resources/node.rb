@@ -51,6 +51,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     integer :arc_hitpercent
     string :version, db_name: :vpsadmind_version
     string :kernel
+    string :cgroup_version, label: 'Cgroup version', choices: ::NodeCurrentStatus.cgroup_versions.keys.map(&:to_s)
     string :pool_state, choices: ::Pool::STATE_VALUES.map(&:to_s), db_name: :pool_state_value
     string :pool_scan, choices: ::Pool::SCAN_VALUES.map(&:to_s), db_name: :pool_scan_value
     float :pool_scan_percent
@@ -71,7 +72,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       resource VpsAdmin::API::Resources::Location, label: 'Location',
                desc: 'Location node is placed in'
       resource VpsAdmin::API::Resources::Environment, label: 'Environment'
-      use :common, include: %i(type hypervisor_type)
+      use :common, include: %i(type hypervisor_type cgroup_version)
       string :state, choices: %w(all active inactive)
     end
 
@@ -82,7 +83,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       input blacklist: %i(state)
-      output whitelist: %i(id name domain_name fqdn location hypervisor_type)
+      output whitelist: %i(id name domain_name fqdn location hypervisor_type cgroup_version)
       restrict active: true
       allow
     end
@@ -125,6 +126,14 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       if input[:hypervisor_type]
         q = q.where(
           hypervisor_type: ::Node.hypervisor_types[input[:hypervisor_type]],
+        )
+      end
+
+      if input[:cgroup_version]
+        q = q.joins(:node_current_status).where(
+          node_current_statuses: {
+            cgroup_version: ::NodeCurrentStatus.cgroup_versions[input[:cgroup_version]],
+          },
         )
       end
 
@@ -303,7 +312,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      output whitelist: %i(id name domain_name fqdn location hypervisor_type)
+      output whitelist: %i(id name domain_name fqdn location hypervisor_type cgroup_version)
       allow
     end
 

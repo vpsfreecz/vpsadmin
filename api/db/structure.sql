@@ -855,6 +855,7 @@ CREATE TABLE `node_current_statuses` (
   `pool_scan` int(11) NOT NULL DEFAULT 0,
   `pool_checked_at` datetime DEFAULT NULL,
   `pool_scan_percent` float DEFAULT NULL,
+  `cgroup_version` int(11) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_node_current_statuses_on_node_id` (`node_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -897,7 +898,8 @@ CREATE TABLE `node_statuses` (
   `loadavg` float NOT NULL,
   `vpsadmind_version` varchar(25) COLLATE utf8mb3_czech_ci NOT NULL,
   `kernel` varchar(30) COLLATE utf8mb3_czech_ci NOT NULL,
-  `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `cgroup_version` int(11) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   KEY `index_node_statuses_on_node_id` (`node_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -1046,7 +1048,9 @@ CREATE TABLE `os_templates` (
   `arch` varchar(255) COLLATE utf8mb3_czech_ci DEFAULT NULL,
   `distribution` varchar(255) COLLATE utf8mb3_czech_ci DEFAULT NULL,
   `version` varchar(255) COLLATE utf8mb3_czech_ci DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  `cgroup_version` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `index_os_templates_on_cgroup_version` (`cgroup_version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `pools`;
@@ -1798,13 +1802,15 @@ CREATE TABLE `vpses` (
   `remind_after_date` datetime DEFAULT NULL,
   `autostart_enable` tinyint(1) NOT NULL DEFAULT 0,
   `autostart_priority` int(11) NOT NULL DEFAULT 1000,
+  `cgroup_version` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `index_vpses_on_dataset_in_pool_id` (`dataset_in_pool_id`) USING BTREE,
   KEY `index_vpses_on_dns_resolver_id` (`dns_resolver_id`) USING BTREE,
   KEY `index_vpses_on_node_id` (`node_id`) USING BTREE,
   KEY `index_vpses_on_object_state` (`object_state`) USING BTREE,
   KEY `index_vpses_on_os_template_id` (`os_template_id`) USING BTREE,
-  KEY `index_vpses_on_user_id` (`user_id`) USING BTREE
+  KEY `index_vpses_on_user_id` (`user_id`) USING BTREE,
+  KEY `index_vpses_on_cgroup_version` (`cgroup_version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -1981,6 +1987,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230213092308'),
 ('20230214074616'),
 ('20230214080054'),
-('20230218165608');
+('20230218165608'),
+('20230224164856');
 
 

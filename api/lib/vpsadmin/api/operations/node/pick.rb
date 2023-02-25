@@ -7,6 +7,7 @@ module VpsAdmin::API
     # @param location [::Location, nil]
     # @param except [::Node]
     # @param hypervisor_type [:vpsadminos]
+    # @param cgroup_version [nil, 'cgroup_any', 'cgroup_v1', 'cgroup_v2']
     # @return [::Node, nil]
     def run(environment: nil, location: nil, except: nil, hypervisor_type: nil)
       if environment.nil? && location.nil?
@@ -21,12 +22,14 @@ module VpsAdmin::API
             location,
             except: except,
             hypervisor_type: hypervisor_type,
+            cgroup_version: cgroup_version,
           )
         else
           ::Node.pick_by_environment(
             environment,
             except: except,
             hypervisor_type: hypervisor_type,
+            cgroup_version: cgroup_version,
           )
         end
 

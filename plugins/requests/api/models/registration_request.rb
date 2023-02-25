@@ -72,6 +72,7 @@ class RegistrationRequest < UserRequest
       params[:create_vps] && (params[:node] || ::Node.pick_by_location(
         location,
         hypervisor_type: os_template.hypervisor_type,
+        cgroup_version: os_template.cgroup_version,
       ).first),
       os_template,
       params[:activate],

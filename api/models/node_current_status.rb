@@ -3,6 +3,7 @@ require_relative 'pool'
 class NodeCurrentStatus < ActiveRecord::Base
   belongs_to :node
 
+  enum cgroup_version: %i(cgroup_invalid cgroup_v1 cgroup_v2)
   enum pool_state: Pool::STATE_VALUES, _prefix: :state
   enum pool_scan: Pool::SCAN_VALUES, _prefix: :scan
 

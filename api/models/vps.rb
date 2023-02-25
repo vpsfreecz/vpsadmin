@@ -38,6 +38,8 @@ class Vps < ActiveRecord::Base
   has_many :object_histories, as: :tracked_object, dependent: :destroy
   has_many :oom_reports, dependent: :destroy
 
+  enum cgroup_version: %i(cgroup_any cgroup_v1 cgroup_v2)
+
   has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
 
   alias_attribute :veid, :id
@@ -101,6 +103,7 @@ class Vps < ActiveRecord::Base
     greater_than_or_equal_to: 0,
   }
   validate :foreign_keys_exist
+  validate :check_cgroup_version
 
   default_scope {
     where.not(object_state: object_states[:hard_delete])
@@ -297,6 +300,15 @@ class Vps < ActiveRecord::Base
     User.find(user_id)
     Node.find(node_id)
     OsTemplate.find(os_template_id)
+  end
+
+  def check_cgroup_version
+    if cgroup_version != 'cgroup_any' && cgroup_version != node.cgroup_version
+      errors.add(
+        :cgroup_version,
+        "cannot require #{cgroup_version}, #{node.domain_name} uses #{node.cgroup_version}",
+      )
+    end
   end
 
   def prefix_mountpoint(parent, part, mountpoint)

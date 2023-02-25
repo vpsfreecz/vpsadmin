@@ -34,11 +34,14 @@ module TransactionChains
         onstartall: vps.onstartall,
         cpu_limit: vps.cpu_limit,
         start_menu_timeout: vps.start_menu_timeout,
+        cgroup_version: vps.cgroup_version,
         expiration_date: vps.expiration_date,
         confirmed: ::Vps.confirmed(:confirm_create),
       )
 
       remote = dst_vps.node_id != vps.node_id
+
+      check_cgroup_version!(dst_vps, node)
 
       dst_vps.save!
       lock(dst_vps)
@@ -399,6 +402,26 @@ module TransactionChains
       end
 
       ret
+    end
+
+    def check_cgroup_version!(vps, dst_node)
+      check_v =
+        if vps.cgroup_version == 'cgroup_any'
+          vps.os_template.cgroup_version
+        else
+          vps.cgroup_version
+        end
+
+      return if check_v == 'cgroup_any'
+
+      if check_v == 'cgroup_v1' && dst_node.cgroup_version != check_v
+        raise VpsAdmin::API::Exceptions::OperationNotSupported,
+              "VPS requires cgroup v1 and #{dst_node.domain_name} has cgroup v2"
+
+      elsif check_v == 'cgroup_v2' && dst_node.cgroup_version != check_v
+        raise VpsAdmin::API::Exceptions::OperationNotSupported,
+              "VPS requires cgroup v2 and #{dst_node.domain_name} has cgroup v1"
+      end
     end
   end
 end

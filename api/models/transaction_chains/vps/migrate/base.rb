@@ -116,6 +116,26 @@ module TransactionChains
       end
     end
 
+    def check_cgroup_version!
+      check_v =
+        if vps.cgroup_version == 'cgroup_any'
+          vps.os_template.cgroup_version
+        else
+          vps.cgroup_version
+        end
+
+      return if check_v == 'cgroup_any'
+
+      if check_v == 'cgroup_v1' && dst_node.cgroup_version != check_v
+        raise VpsAdmin::API::Exceptions::OperationNotSupported,
+              "VPS requires cgroup v1 and #{dst_node.domain_name} has cgroup v2"
+
+      elsif check_v == 'cgroup_v2' && dst_node.cgroup_version != check_v
+        raise VpsAdmin::API::Exceptions::OperationNotSupported,
+              "VPS requires cgroup v2 and #{dst_node.domain_name} has cgroup v1"
+      end
+    end
+
     # Check that local snapshots of the migrated VPS are not mounted anywere
     #
     # Snapshots are always mounted using clones, but that poses a problem. Since

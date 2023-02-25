@@ -15,6 +15,9 @@ module TransactionChains
       # Check swap is available on the destination node
       check_swap!
 
+      # Check the target node is compatible with the VPS
+      check_cgroup_version!
+
       # Mail notification
       notify_begun
 

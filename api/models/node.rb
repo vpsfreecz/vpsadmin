@@ -65,7 +65,7 @@ class Node < ActiveRecord::Base
   end
 
   # @return [Array<::Node>]
-  def self.pick_by_environment(env, except: nil, hypervisor_type: nil)
+  def self.pick_by_environment(env, except: nil, hypervisor_type: nil , cgroup_version: nil)
     q = self.joins('
           LEFT JOIN vpses ON vpses.node_id = nodes.id
           LEFT JOIN vps_current_statuses st ON st.vps_id = vpses.id
@@ -84,11 +84,19 @@ class Node < ActiveRecord::Base
       q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type])
     end
 
+    if cgroup_version && cgroup_version != 'cgroup_any'
+      q = q.where('node_current_statuses.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version])
+    end
+
     nodes = q.group('nodes.id')
       .order(Arel.sql('COUNT(st.is_running) / max_vps ASC'))
       .to_a
 
-    return nodes if nodes.any?
+    if nodes.any?
+      return nodes
+    elsif cgroup_version && cgroup_version != 'cgroup_any'
+      return []
+    end
 
     q = self.joins('
       LEFT JOIN vpses ON vpses.node_id = nodes.id
@@ -110,7 +118,7 @@ class Node < ActiveRecord::Base
     q.group('nodes.id').order(Arel.sql('COUNT(vpses.id) / max_vps ASC')).to_a
   end
 
-  def self.pick_by_location(loc, except: nil, hypervisor_type: nil)
+  def self.pick_by_location(loc, except: nil, hypervisor_type: nil, cgroup_version: nil)
     q = self.joins('
         LEFT JOIN vpses ON vpses.node_id = nodes.id
         LEFT JOIN vps_current_statuses st ON st.vps_id = vpses.id
@@ -129,11 +137,19 @@ class Node < ActiveRecord::Base
       q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type])
     end
 
+    if cgroup_version && cgroup_version != 'cgroup_any'
+      q = q.where('node_current_statuses.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version])
+    end
+
     nodes = q.group('nodes.id')
       .order(Arel.sql('COUNT(st.is_running) / max_vps ASC'))
       .to_a
 
-    return nodes if nodes.any?
+    if nodes.any?
+      return nodes
+    elsif cgroup_version && cgroup_version != 'cgroup_any'
+      return []
+    end
 
     q = self.joins(
       'LEFT JOIN vpses ON vpses.node_id = nodes.id'
@@ -226,6 +242,7 @@ class Node < ActiveRecord::Base
      cpu_irq cpu_softirq cpu_guest loadavg used_memory used_swap arc_c_max arc_c
      arc_size arc_hitpercent kernel vpsadmind_version pool_state pool_scan
      pool_scan_percent pool_checked_at pool_state_value pool_scan_value
+     cgroup_version
   ).each do |attr|
     define_method(attr) do
       node_current_status && node_current_status.send(attr)

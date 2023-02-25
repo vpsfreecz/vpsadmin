@@ -14,6 +14,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     bool :supported, label: 'Supported', desc: 'Is template known to work?'
     integer :order, label: 'Order', desc: 'Template order'
     string :hypervisor_type, choices: ::OsTemplate.hypervisor_types.keys, default: 'vpsadminos'
+    string :cgroup_version, choices: ::OsTemplate.cgroup_versions.keys, default: 'cgroup_any'
     string :vendor
     string :variant
     string :arch
@@ -31,7 +32,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
     input do
       resource VpsAdmin::API::Resources::Location
-      use :common, include: %i(hypervisor_type)
+      use :common, include: %i(hypervisor_type cgroup_version)
     end
 
     output(:object_list) do
@@ -41,7 +42,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict enabled: true
-      output whitelist: %i(id name label info supported hypervisor_type)
+      output whitelist: %i(id name label info supported hypervisor_type cgroup_version)
       allow
     end
 
@@ -62,6 +63,12 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
         )
       else
         q = q.where(hypervisor_type: 'vpsadminos')
+      end
+
+      if input[:cgroup_version]
+        q = q.where(
+          cgroup_version: ::OsTemplate.cgroup_versions[input[:cgroup_version]],
+        )
       end
 
       q
@@ -86,7 +93,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      output whitelist: %i(id name label info supported enabled hypervisor_type)
+      output whitelist: %i(id name label info supported enabled hypervisor_type cgroup_version)
       allow
     end
 

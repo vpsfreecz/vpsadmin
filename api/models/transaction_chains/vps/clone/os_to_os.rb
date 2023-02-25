@@ -52,6 +52,7 @@ module TransactionChains
         onstartall: vps.onstartall,
         cpu_limit: attrs[:resources] ? vps.cpu_limit : nil,
         start_menu_timeout: vps.start_menu_timeout,
+        cgroup_version: vps.cgroup_version,
         confirmed: ::Vps.confirmed(:confirm_create)
       )
 
