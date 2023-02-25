@@ -904,8 +904,8 @@ class XTemplate {
 	  * @param $checked - if it is checked by default
 	  * @param $text - text shown next to the radio button
 	  */
-	function form_add_radio_pure($name = 'input_fromgen', $value = '', $checked=false, $text = '') {
-		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.h($value).'" '.(($checked) ? 'checked':'').' /> '.$text);
+	function form_add_radio_pure($name = 'input_fromgen', $value = '', $checked=false, $text = '', $enabled = true) {
+		$this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.h($value).'" '.(($checked) ? 'checked':'').' '.($enabled ? '' : 'disabled').' /> '.$text);
 	}
 
 	function form_csrf($name = 'common', $present = true) {

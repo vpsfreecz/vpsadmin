@@ -1013,3 +1013,16 @@ function sortMaintenanceWindowsByCloseness ($windows) {
 
 	return $ret;
 }
+
+function cgroupEnumTolabel($v) {
+	switch ($v) {
+	case 'cgroup_any':
+		return 'cgroup v1/v2';
+	case 'cgroup_v1':
+		return 'cgroup v1';
+	case 'cgroup_v2':
+		return 'cgroup v2';
+	default:
+		return 'unknown cgroup';
+	}
+}

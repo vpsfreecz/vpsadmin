@@ -723,6 +723,22 @@ switch ($_GET["action"] ?? null) {
 			}
 			break;
 
+		case 'setcgroup':
+			if (isset($_GET["veid"]) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+				csrf_check();
+				try {
+					$api->vps($_GET['veid'])->update(['cgroup_version' => $_POST['cgroup_version']]);
+
+					notify_user(_("Cgroup version set"), _('The cgroup version preference has been set.'));
+					redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Cgroup version change failed'), $e->getResponse());
+					$show_info=true;
+				}
+			}
+			break;
+
 		case 'maintenance_windows':
 			csrf_check();
 
@@ -1375,6 +1391,52 @@ if (isset($show_info) && $show_info) {
 			$vps->start_menu_timeout,
 			0, 3600, 1, _('seconds')
 		);
+
+		$xtpl->form_out(_("Go >>"));
+
+	// Cgroup version
+		$xtpl->table_title(_('Cgroup version'));
+		$xtpl->form_create('?page=adminvps&action=setcgroup&veid='.$vps->id, 'post');
+
+		$xtpl->table_td(_('In use:'));
+		$xtpl->table_td(cgroupEnumToLabel($vps->node->cgroup_version));
+		$xtpl->table_tr();
+
+		$other_cgroup = 'cgroup_v2';
+		if ($other_cgroup == $vps->node->cgroup_version)
+			$other_cgroup = 'cgroup_v1';
+
+		$xtpl->form_add_radio_pure(
+			'cgroup_version',
+			'cgroup_any',
+			post_val('cgroup_version', $vps->cgroup_version) == 'cgroup_any',
+		);
+		$xtpl->table_td(
+			_('Use cgroups supported by the distribution, i.e. ').
+			cgroupEnumToLabel($vps->os_template->cgroup_version).' '._('for').' '.
+			$vps->os_template->label.' '._('(recommended)')
+		);
+		$xtpl->table_tr();
+
+		$xtpl->form_add_radio_pure(
+			'cgroup_version',
+			$vps->node->cgroup_version,
+			post_val('cgroup_version', $vps->cgroup_version) == $vps->node->cgroup_version,
+		);
+		$xtpl->table_td(_('Always require').' '.cgroupEnumToLabel($vps->node->cgroup_version));
+		$xtpl->table_tr();
+
+		$xtpl->form_add_radio_pure(
+			'cgroup_version',
+			$other_cgroup,
+			false,
+			'',
+			false
+		);
+		$xtpl->table_td(
+			_("Contact support if you'd like to use").' '.cgroupEnumTolabel($other_cgroup),
+		);
+		$xtpl->table_tr();
 
 		$xtpl->form_out(_("Go >>"));
 
