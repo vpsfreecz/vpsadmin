@@ -10,13 +10,30 @@ class UserAccount < ActiveRecord::Base
 
   # Accept queued payments
   def self.accept_payments
+    regexps = (::SysConfig.get(:plugin_payments, :user_message_regexps) || []).map do |s|
+      Regexp.new(s)
+    end
+
     transaction do
       ::IncomingPayment.where(
           state: ::IncomingPayment.states[:queued],
       ).each do |income|
-        begin
-          u = ::User.find(income.vs.to_i)
+        search_id = nil
 
+        if income.vs
+          search_id = income.vs
+        else # no variable symbol, search by user_message
+          regexps.each do |rx|
+            matches = rx.match(income.user_message)
+            next if matches.nil? || matches[:user_id].nil?
+
+            search_id = matches[:user_id]
+            break
+          end
+        end
+
+        begin
+          u = ::User.find(search_id.to_i)
         rescue ActiveRecord::RecordNotFound
           income.update!(state: ::IncomingPayment.states[:unmatched])
           next
