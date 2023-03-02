@@ -100,9 +100,6 @@ module TransactionChains
             }))
           end
 
-        when 'config'
-          # FIXME
-
         when 'info', 'onstartall', 'allow_admin_modifications'
           db_changes[vps][attr] = vps.send(attr)
 
