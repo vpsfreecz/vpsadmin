@@ -9,7 +9,7 @@ module VpsAdmin::API
     # @param hypervisor_type [:vpsadminos]
     # @param cgroup_version [nil, 'cgroup_any', 'cgroup_v1', 'cgroup_v2']
     # @return [::Node, nil]
-    def run(environment: nil, location: nil, except: nil, hypervisor_type: nil)
+    def run(environment: nil, location: nil, except: nil, hypervisor_type: nil, cgroup_version: nil)
       if environment.nil? && location.nil?
         raise ArgumentError, 'specify at least one of location or environment'
       elsif environment && location && location.environment_id != environment.id
