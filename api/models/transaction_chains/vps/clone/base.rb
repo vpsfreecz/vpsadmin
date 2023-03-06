@@ -1,5 +1,25 @@
 module TransactionChains
   module Vps::Clone::Base
+    def check_cgroup_version!(vps, dst_node)
+      check_v =
+        if vps.cgroup_version == 'cgroup_any'
+          vps.os_template.cgroup_version
+        else
+          vps.cgroup_version
+        end
+
+      return if check_v == 'cgroup_any'
+
+      if check_v == 'cgroup_v1' && dst_node.cgroup_version != check_v
+        raise VpsAdmin::API::Exceptions::OperationNotSupported,
+              "VPS requires cgroup v1 and #{dst_node.domain_name} has cgroup v2"
+
+      elsif check_v == 'cgroup_v2' && dst_node.cgroup_version != check_v
+        raise VpsAdmin::API::Exceptions::OperationNotSupported,
+              "VPS requires cgroup v2 and #{dst_node.domain_name} has cgroup v1"
+      end
+    end
+
     # Pick correct DNS resolver. If the VPS is being cloned
     # to a different location and its DNS resolver is not universal,
     # it must be changed to DNS resolver in target location.

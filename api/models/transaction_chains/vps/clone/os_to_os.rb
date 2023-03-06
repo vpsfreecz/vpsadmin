@@ -27,6 +27,8 @@ module TransactionChains
       # - Reallocate resources if attrs[resources]
       # - Continue the process as above, except creating vz root
 
+      check_cgroup_version!(vps, node)
+
       @src_pool = vps.dataset_in_pool.pool
       @dst_pool = ::Pool.take_by_node!(node, role: :hypervisor)
 
