@@ -118,10 +118,10 @@ module TransactionChains
 
     def check_cgroup_version!
       check_v =
-        if vps.cgroup_version == 'cgroup_any'
-          vps.os_template.cgroup_version
+        if src_vps.cgroup_version == 'cgroup_any'
+          src_vps.os_template.cgroup_version
         else
-          vps.cgroup_version
+          src_vps.cgroup_version
         end
 
       return if check_v == 'cgroup_any'
