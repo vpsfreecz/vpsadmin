@@ -85,7 +85,9 @@ class Node < ActiveRecord::Base
     end
 
     if cgroup_version && cgroup_version != 'cgroup_any'
-      q = q.where('node_current_statuses.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version])
+      q = q.joins(:node_current_status).where(
+        'node_current_statuses.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version],
+      )
     end
 
     nodes = q.group('nodes.id')
@@ -138,7 +140,9 @@ class Node < ActiveRecord::Base
     end
 
     if cgroup_version && cgroup_version != 'cgroup_any'
-      q = q.where('node_current_statuses.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version])
+      q = q.joins(:node_current_status).where(
+        'node_current_statuses.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version],
+      )
     end
 
     nodes = q.group('nodes.id')
