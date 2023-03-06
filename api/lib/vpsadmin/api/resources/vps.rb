@@ -901,7 +901,7 @@ END
           location: input[:location],
           except: vps.node,
           hypervisor_type: input[:platform] == 'same' ? vps.os_template.hypervisor_type : input[:platform],
-          cgroup_version: input[:os_template].cgroup_version,
+          cgroup_version: vps.os_template.cgroup_version,
         )
 
       else
