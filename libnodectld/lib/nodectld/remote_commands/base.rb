@@ -25,6 +25,10 @@ module NodeCtld
       def ok
         {ret: :ok}
       end
+
+      def error(msg)
+        {ret: :failed, output: msg}
+      end
     end
   end
 end

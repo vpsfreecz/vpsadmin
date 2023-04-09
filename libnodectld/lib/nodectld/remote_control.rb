@@ -104,6 +104,9 @@ module NodeCtld
           output[:error] = err.output
           error(output)
 
+        rescue RemoteCommandError => err
+          error(err.message)
+
         else
           if ret[:ret] == :ok
             ok(ret[:output])

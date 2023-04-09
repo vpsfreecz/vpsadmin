@@ -6,4 +6,6 @@ module NodeCtld
   class CommandNotImplemented < StandardError ; end
 
   class TransactionCheckError < StandardError ; end
+
+  class RemoteCommandError < StandardError ; end
 end
