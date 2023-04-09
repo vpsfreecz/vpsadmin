@@ -72,6 +72,11 @@ module NodeCtld::RemoteCommands
 
         when 'resolve'
           db.prepared('UPDATE transaction_chains SET state = 6 WHERE id = ?', @chain)
+
+        when 'retry'
+          db.transaction do |t|
+            retry_chain(t, @chain, @transactions && @transactions.first)
+          end
       end
 
       db.close
@@ -136,6 +141,54 @@ module NodeCtld::RemoteCommands
       )
 
       ret
+    end
+
+    def retry_chain(t, chain_id, from_transaction_id)
+      if from_transaction_id
+        # Check we have a valid transaction from the given chain
+        rs = t.prepared(
+          'SELECT id FROM transactions WHERE transaction_chain_id = ? AND id = ?',
+          chain_id,
+          from_transaction_id
+        )
+
+        if rs.count <= 0
+          raise NodeCtld::RemoteCommandError,
+                "Transaction #{from_transaction_id} not found in chain #{chain_id}"
+        end
+
+        # Mark transactions as queued
+        t.prepared(
+          'UPDATE transactions
+          SET `done` = 0, `status` = 0
+          WHERE transaction_chain_id = ? AND id >= ?',
+          chain_id,
+          from_transaction_id
+        )
+      else
+        # Mark transactions as queued
+        t.prepared(
+          'UPDATE transactions
+          SET `done` = 0, `status` = 0
+          WHERE transaction_chain_id = ?',
+          chain_id
+        )
+      end
+
+      # Find new chain progress value
+      progress = t.prepared(
+        'SELECT COUNT(*) AS cnt
+        FROM transactions
+        WHERE transaction_chain_id = ? AND `done` = 1',
+        chain_id
+      ).get!['cnt']
+
+      # Reopen chain
+      t.prepared(
+        'UPDATE transaction_chains SET state = 1, progress = ? WHERE id = ?',
+        progress,
+        chain_id
+      )
     end
 
     protected

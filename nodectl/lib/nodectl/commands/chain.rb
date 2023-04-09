@@ -16,6 +16,7 @@ confirmations [TRANSACTION]...  List transaction confirmations
 confirm [TRANSACTION]...        Run transaction confirmations
 release [locks|ports]           Release acquired locks and reserved ports
 resolve                         Mark the chain as resolved
+retry [TRANSACTION]             Rerun transaction chain
 END
 
       return if args[1] != 'confirm'
@@ -40,7 +41,7 @@ END
       elsif /\A\d+\z/ !~ args[0]
         raise ValidationError, "invalid chain id '#{args[0]}'"
 
-      elsif !%w(confirmations confirm release resolve).include?(args[1])
+      elsif !%w(confirmations confirm release resolve retry).include?(args[1])
         raise ValidationError, "invalid subcommand '#{args[1]}'"
       end
 

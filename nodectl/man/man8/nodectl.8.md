@@ -125,6 +125,14 @@ start it.
 `chain` *id* `resolve`
   Mark the chain as resolved.
 
+`chain` *id* retry [*transaction_id*]
+  Rerun transaction chain, either from the beginning or from *transaction_id*.
+  All or transactions up from and including *transaction_id* are marked as queued
+  and executed again.
+
+  This command is intended to be used on transaction chains that end up in state
+  `fatal`.
+
 `reinit` `shaper`|`all`
   Reinitialize resources. resource may be one of `shaper` or `all`.
   The reinitialization is an atomic operation.
