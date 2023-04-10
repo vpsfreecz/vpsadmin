@@ -61,6 +61,7 @@ module NodeCtld
     def initialize
       @map = {}
       @mutex = Mutex.new
+      @update_thread = Thread.new { run_update_all }
       sync { load_all }
     end
 
@@ -157,6 +158,13 @@ module NodeCtld
 
         @map[netif[:ctid]] ||= {}
         @map[netif[:ctid]][netif[:name]] = netif[:veth]
+      end
+    end
+
+    def run_update_all
+      loop do
+        sleep($CFG.get(:vpsadmin, :veth_map_interval))
+        update_all
       end
     end
 
