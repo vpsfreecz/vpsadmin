@@ -1,7 +1,15 @@
-source 'https://rubygems.vpsfree.cz'
+source 'https://rubygems.org'
 gemspec
 
-if !ENV.has_key?('VPSADMIN_BUILD_ID')
+gem 'mysql2', source: 'https://rubygems.vpsfree.cz'
+
+if ENV.has_key?('VPSADMIN_BUILD_ID')
+  source 'https://rubygems.vpsfree.cz' do
+    gem 'libosctl'
+    gem 'osctl'
+    gem 'osctl-exportfs'
+  end
+else
   os_path = ENV['OS'] || '../../vpsadminos'
 
   gem 'libosctl', path: File.join(os_path, 'libosctl')
