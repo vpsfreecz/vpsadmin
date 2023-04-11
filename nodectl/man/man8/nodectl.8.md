@@ -216,6 +216,13 @@ start it.
 
   The session can be closed with `^D`, `quit` or `exit`.
 
+`halt-reason`
+  Look up possible maintenances/outages reported in vpsAdmin that could be used
+  as a reason for `halt`/`poweroff`/`reboot` of this node. The reason is wrote
+  to the standard output, which is meant to be processed by halt reason template
+  configured in vpsAdminOS option `runit.halt.reasonTemplates` by the nodectld
+  module.
+
 ## EXAMPLES
 Check how nodectld is doing:
 

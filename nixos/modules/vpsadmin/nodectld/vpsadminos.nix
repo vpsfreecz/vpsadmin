@@ -25,6 +25,17 @@ in {
       killMode = "process";
     };
 
+    runit.halt.reasonTemplates."10-vpsadmin-outages".source = pkgs.writeScript "vpsadmin-outages.sh" ''
+      #!${pkgs.bash}/bin/bash
+
+      if [ $# != 0 ] ; then
+        echo "Usage: $0"
+        exit 1
+      fi
+
+      nodectl halt-reason >> "$HALT_REASON_FILE"
+    '';
+
     environment.systemPackages = with pkgs; [
       mbuffer
       nodectl
