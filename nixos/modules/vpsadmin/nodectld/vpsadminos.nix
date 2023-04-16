@@ -33,6 +33,12 @@ in {
         exit 1
       fi
 
+      cat >> "$HALT_REASON_FILE" <<EOF
+      #
+      ### vpsAdmin Outage Reports for $(hostname)
+      #
+      EOF
+
       nodectl halt-reason >> "$HALT_REASON_FILE"
     '';
 
