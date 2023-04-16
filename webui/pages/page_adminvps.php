@@ -1140,6 +1140,33 @@ if (isset($show_info) && $show_info) {
 
 		$xtpl->table_out();
 
+	// SSH host keys
+		$ssh_host_keys = $vps->ssh_host_key->list();
+
+		if ($ssh_host_keys->count() > 0) {
+			$xtpl->table_title(_('SSH host keys'));
+
+			$xtpl->table_add_category(_('Algorithm'));
+			$xtpl->table_add_category(_('Fingerprint'));
+			$xtpl->table_add_category(_('Last read at'));
+
+			$xtpl->table_td(
+				_('The following SSH host keys have been found inside the VPS. '.
+				  'You can verify that the fingerprints match on your first login.'),
+				false, false, '3'
+			);
+			$xtpl->table_tr();
+
+			foreach ($ssh_host_keys as $key) {
+				$xtpl->table_td('<code>'.h($key->algorithm).'</code>');
+				$xtpl->table_td('<code>'.h($key->fingerprint).'</code>');
+				$xtpl->table_td(h(tolocaltz($key->updated_at)));
+				$xtpl->table_tr();
+			}
+
+			$xtpl->table_out();
+		}
+
 	// Password changer
 		$xtpl->table_title(_("Set root's password (in the VPS, not in the vpsAdmin)"));
 		$xtpl->form_create('?page=adminvps&action=passwd&veid='.$vps->id, 'post');
