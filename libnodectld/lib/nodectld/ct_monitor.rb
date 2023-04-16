@@ -57,9 +57,15 @@ module NodeCtld
     def process_event(event)
       case event[:type]
       when 'state'
-        if event[:opts][:state] == 'stopped'
+        vps_id = event[:opts][:id].to_i
+
+        if vps_id > 0 && event[:opts][:state] == 'running'
+          VpsSshHostKeys.schedule_update_vps(vps_id)
+        end
+
+        if vps_id > 0 && event[:opts][:state] == 'stopped'
           MountReporter.report(event[:opts][:id], :all, :unmounted)
-          VethMap.reset(event[:opts][:id].to_i)
+          VethMap.reset(vps_id)
         end
 
         if %w(running stopped).include?(event[:opts][:state])

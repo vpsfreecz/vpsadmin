@@ -201,6 +201,13 @@ module NodeCtld
       url: 'http://localhost:9101/metrics',
       interval: 120,
     },
+
+    vps_ssh_host_keys: {
+      enable: true,
+      update_vps_delay: 1,
+      update_all_interval: 3600,
+      default_schedule_delay: 15,
+    },
   }
 
   class AppConfig
@@ -257,6 +264,7 @@ module NodeCtld
           oom_reports: {enable: false},
           exports: {enable: false},
           osctl_exporter: {enable: false},
+          vps_ssh_host_keys: {enable: false},
         })
       else
         warn "Unsupported runtime mode '#{@cfg[:mode]}'"

@@ -94,6 +94,7 @@ module NodeCtld
       @kernel_log.start if $CFG.get(:kernel_log, :enable)
       @exporter.start if $CFG.get(:exporter, :enable)
       @osctl_exporter.start if @osctl_exporter.enable?
+      VpsSshHostKeys.instance
 
       @init = true
 

@@ -39,6 +39,7 @@ in {
     environment.systemPackages = with pkgs; [
       mbuffer
       nodectl
+      openssh
     ];
   };
 }

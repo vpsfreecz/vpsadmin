@@ -12,6 +12,7 @@ in stdenv.mkDerivation rec {
     pkgs.openssl
     pkgs.ncurses
     pkgs.mariadb-connector-c
+    pkgs.openssh
   ];
 
   shellHook = ''
