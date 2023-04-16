@@ -65,4 +65,9 @@ module TransactionChains
       label 'Update'
     end
   end
+
+  module IntegrityCheck
+    class Cluster < Deprecated ; end
+    class Node < Deprecated ; end
+  end
 end
