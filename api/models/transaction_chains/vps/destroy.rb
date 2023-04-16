@@ -63,6 +63,9 @@ module TransactionChains
       # Delete OS process counts
       vps.vps_os_processes.delete_all
 
+      # Delete SSH host keys
+      vps.vps_ssh_host_keys.delete_all
+
       # Note: there are too many records to delete them using transaction confirmations.
       # All VPS statuses are deleted whether the chain is successful or not.
       vps.vps_statuses.delete_all
