@@ -1638,6 +1638,69 @@ END
     end
   end
 
+  class SshHostKey < HaveAPI::Resource
+    desc 'View VPS SSH host keys'
+    route '{vps_id}/ssh_host_keys'
+    model ::VpsSshHostKey
+
+    params(:all) do
+      id :id
+      integer :bits
+      string :fingerprint
+      string :algorithm
+      datetime :created_at
+      datetime :updated_at
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      input do
+        string :algorithm
+      end
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict user_id: u.id
+        allow
+      end
+
+      def query
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+        q = vps.vps_ssh_host_keys
+        q = q.where(algorithm: input[:algorithm]) if input[:algorithm]
+        q
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        query.order('created_at DESC').offset(input[:offset]).limit(input[:limit])
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict user_id: u.id
+        allow
+      end
+
+      def exec
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+        vps.vps_ssh_host_keys.find(params[:ssh_host_key_id])
+      end
+    end
+  end
+
   class Status < HaveAPI::Resource
     desc 'View VPS statuses in time'
     route '{vps_id}/statuses'
