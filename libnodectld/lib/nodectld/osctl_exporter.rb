@@ -87,14 +87,15 @@ module NodeCtld
       return if vpses.empty?
 
       db = Db.new
+      t = Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
 
       vpses.each do |vps_id, procs|
         procs.each do |state, count|
           db.prepared(
             'INSERT INTO vps_os_processes
-            SET vps_id = ?, `state` = ?, `count` = ?, created_at = NOW(), updated_at = NOW()
-            ON DUPLICATE KEY UPDATE `count` = ?, updated_at = NOW()',
-            vps_id, state, count, count
+            SET vps_id = ?, `state` = ?, `count` = ?, created_at = ?, updated_at = ?
+            ON DUPLICATE KEY UPDATE `count` = ?, updated_at = ?',
+            vps_id, state, count, t, t, count, t
           )
         end
       end
