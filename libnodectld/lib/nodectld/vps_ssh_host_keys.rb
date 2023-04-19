@@ -134,10 +134,10 @@ module NodeCtld
         end
 
         db.prepared(
-          'DELETE FROM vps_ssh_host_keys
-          WHERE vps_id = ? AND algorithm NOT IN (?)',
+          "DELETE FROM vps_ssh_host_keys
+          WHERE vps_id = ? AND algorithm NOT IN (#{keys.map { '?' }.join(', ')})",
           vps.id,
-          keys.map(&:algorithm),
+          *keys.map(&:algorithm),
         )
 
         db.close
