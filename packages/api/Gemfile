@@ -6,20 +6,20 @@ rescue Errno::ENOENT
 end
 
 gem 'haveapi', '~> 0.16.2'
-gem 'activerecord', '~> 6.1.7'
+gem 'activerecord', '~> 7.0.4'
 gem 'sinatra-activerecord', '~> 2.0.23'
-gem 'paper_trail', '~> 12.1.0'
+gem 'paper_trail', '~> 14.0.0'
 gem 'require_all', '~> 2.0.0'
 gem 'rake'
-gem 'composite_primary_keys', '~> 13.0.1'
+gem 'composite_primary_keys', '~> 14.0.6'
 gem 'eventmachine'
-gem 'ancestry', '~> 4.1.0'
+gem 'ancestry', '~> 4.3.3'
 gem 'mysql2', '~> 0.5.3'
-gem 'bcrypt', '~> 3.1.10'
+gem 'bcrypt', '~> 3.1.13'
 gem 'ipaddress', '~> 0.8.0'
-gem 'rotp', '~> 6.2.0'
+gem 'rotp', '~> 6.2.2'
 gem 'thin'
-gem 'prometheus-client', '~> 2.1.0'
+gem 'prometheus-client', '~> 4.1.0'
 
 group :test do
   gem 'rspec'
