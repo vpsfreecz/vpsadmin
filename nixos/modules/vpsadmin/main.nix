@@ -24,7 +24,7 @@ in {
 
   config = {
     nixpkgs.overlays = [
-      (self: super: { ruby = super.ruby_3_0; })
+      (self: super: { ruby = super.ruby_3_1; })
     ] ++ optionals cfg.enableOverlay (import ../../overlays);
 
     systemd.tmpfiles.rules = mkIf cfg.enableStateDir [
