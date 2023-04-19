@@ -179,7 +179,13 @@ module NodeCtld
       keys = []
 
       ssh_r.each_line do |line|
-        bits, fingerprint, comment, algo = line.strip.split
+        # Parse lines as:
+        #   256 SHA256:AxPkTSz4jEJj3RhovDG1/sxkrj1POsWqoP61MA6lvdY user@host (ECDSA)
+        #   256 SHA256:J4lVQrcjPZJbfSXI1AGVzOlwLGHhKtRnfn07CiSD6Ec no comment (ED25519)
+        parts = line.strip.split
+        bits, fingerprint = parts
+        algo = parts.last
+
         keys << HostKey.new(bits.to_i, fingerprint, algo[1..-2])
       end
 
