@@ -10,6 +10,7 @@ module NodeCtld
     attr_accessor :tasks
     attr_accessor :pool, :group, :user, :vps_id
     attr_accessor :killed_pid, :killed_name, :no_killable
+    attr_accessor :count
 
     def initialize(time, invoked_by_name)
       @time = time
@@ -17,6 +18,7 @@ module NodeCtld
       @usage = {}
       @stats = {}
       @tasks = []
+      @count = 1
     end
 
     def complete?
@@ -26,16 +28,6 @@ module NodeCtld
        && vps_id) ? true : false
     end
 
-    def submit
-      find_vps_pids_and_uids
-      save
-    end
-
-    def log_type
-      'oom-report'
-    end
-
-    protected
     def find_vps_pids_and_uids
       tasks.each do |task|
         begin
@@ -51,8 +43,11 @@ module NodeCtld
       end
     end
 
-    def save
-      db = Db.new
+    def log_type
+      'oom-report'
+    end
+
+    def save(db)
       report_id = nil
 
       db.transaction do |t|
@@ -63,11 +58,13 @@ module NodeCtld
             invoked_by_name = ?,
             killed_pid = ?,
             killed_name = ?,
+            `count` = ?,
             created_at = ?
           ',
           vps_id,
           invoked_by_pid, invoked_by_name[0..49],
           killed_pid, killed_name && killed_name[0..49],
+          count,
           time.utc.strftime('%Y-%m-%d %H:%M:%S')
         )
 
@@ -119,8 +116,7 @@ module NodeCtld
         end
       end
 
-      db.close
-      log(:info, "Submitted OOM report ##{report_id} from VPS #{vps_id}")
+      log(:info, "Submitted OOM report ##{report_id} with #{count} OOMs from VPS #{vps_id}")
     end
   end
 end

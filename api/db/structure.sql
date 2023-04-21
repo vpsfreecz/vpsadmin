@@ -1025,6 +1025,7 @@ CREATE TABLE `oom_reports` (
   `processed` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL,
   `reported_at` datetime DEFAULT NULL,
+  `count` int(11) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   KEY `index_oom_reports_on_vps_id` (`vps_id`),
   KEY `index_oom_reports_on_processed` (`processed`),
@@ -2009,6 +2010,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230224164856'),
 ('20230225073544'),
 ('20230225142050'),
-('20230415154230');
+('20230415154230'),
+('20230421171841');
 
 

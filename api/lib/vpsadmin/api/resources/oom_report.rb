@@ -10,6 +10,7 @@ module VpsAdmin::API::Resources
       string :invoked_by_name
       integer :killed_pid
       string :killed_name
+      integer :count
       datetime :created_at
       datetime :reported_at
     end

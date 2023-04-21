@@ -64,6 +64,7 @@ function oom_reports_list() {
 
 	$xtpl->table_add_category(_("VPS"));
 	$xtpl->table_add_category(_("Killed process"));
+	$xtpl->table_add_category(_("Count"));
 	$xtpl->table_add_category('');
 
 	foreach ($reports as $r) {
@@ -76,6 +77,7 @@ function oom_reports_list() {
 
 		$xtpl->table_td(vps_link($r->vps).' '.h($r->vps->hostname));
 		$xtpl->table_td($r->killed_name ? h($r->killed_name) : _('nothing killed'));
+		$xtpl->table_td($r->count);
 
 		$xtpl->table_td(
 			'<a href="?page=oom_reports&action=show&id='.$r->id.'&return_url='.urlencode($_SERVER['REQUEST_URI']).'"><img src="template/icons/vps_edit.png" alt="'._('Details').'" title="'._('Details').'"></a>'
@@ -150,6 +152,10 @@ function oom_reports_show($id) {
 	} else {
 		$xtpl->table_td(_('nothing killed'));
 	}
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Count').':');
+	$xtpl->table_td($r->count);
 	$xtpl->table_tr();
 
 	$xtpl->table_out();

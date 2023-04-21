@@ -246,7 +246,7 @@ module TransactionChains
 
         oom_reports: {
           by_vps: ::Vps
-            .select('vpses.*, COUNT(oom_reports.id) AS oom_count')
+            .select('vpses.*, SUM(oom_reports.`count`) AS oom_count')
             .joins(:oom_reports)
             .where(vpses: {object_state: [
                 ::Vps.object_states[:active],
@@ -258,7 +258,7 @@ module TransactionChains
             .order(Arel.sql('COUNT(oom_reports.id) DESC')),
 
           by_node: ::Node
-            .select('nodes.*, COUNT(oom_reports.id) AS oom_count')
+            .select('nodes.*, SUM(oom_reports.`count`) AS oom_count')
             .joins(vpses: :oom_reports)
             .where(vpses: {object_state: [
                 ::Vps.object_states[:active],
@@ -272,7 +272,7 @@ module TransactionChains
           by_killed_name: ::OomReport
             .where('DATE_ADD(oom_reports.created_at, INTERVAL 1 DAY) >= ?', t)
             .group('killed_name')
-            .count
+            .sum(:count)
             .sort { |a, b| b[1] <=> a[1] }
         },
       }

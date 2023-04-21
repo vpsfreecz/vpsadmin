@@ -159,7 +159,7 @@ module NodeCtld
       if report
         if report.complete?
           log(:info, "Submitting OOM report from VPS #{report.vps_id}")
-          report.submit
+          KernelLog::OomKill::Submitter << report
         else
           log(:info, 'OOM report incomplete, disregarding')
         end

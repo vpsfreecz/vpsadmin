@@ -164,6 +164,7 @@ module NodeCtld
     oom_reports: {
       enable: true,
       exclude_vps_ids: [],
+      submit_interval: 60,
     },
 
     exports: {

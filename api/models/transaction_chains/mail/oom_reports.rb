@@ -31,13 +31,17 @@ module TransactionChains
         reports = reports.where('oom_reports.id > ?', last_reported_oom.id)
       end
 
+      selected_reports = reports.limit(30)
+
       mail(:vps_oom_report, {
         user: vps.user,
         vars: {
           base_url: ::SysConfig.get(:webui, :base_url),
           vps: vps,
           all_oom_reports: reports,
-          selected_oom_reports: reports[0..29],
+          all_oom_count: reports.sum(:count),
+          selected_oom_reports: selected_reports,
+          selected_oom_count: selected_reports.pluck(:count).sum,
         },
       })
 
