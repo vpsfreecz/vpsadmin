@@ -82,12 +82,16 @@ module NodeCtld
         existing_report =
           if report.no_killable
             reports.detect do |r|
-              r.no_killable && r.invoked_by_name == report.invoked_by_name
+              r.no_killable \
+                && r.cgroup == report.cgroup \
+                && r.invoked_by_name == report.invoked_by_name
             end
 
           else # a process was killed
             reports.detect do |r|
-              r.killed_pid && r.killed_name == report.killed_name
+              r.killed_pid \
+                && r.cgroup == report.cgroup \
+                && r.killed_name == report.killed_name
             end
           end
 

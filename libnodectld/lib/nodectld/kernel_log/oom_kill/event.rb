@@ -97,6 +97,13 @@ module NodeCtld
         report.group = $2
         report.user = $3
         report.vps_id = vps_id
+
+        if /lxc\.payload\.(\d+)(\/[^:]+):$/ =~ msg.text && $1.to_i == vps_id
+          report.cgroup = $2
+        else
+          report.cgroup = '/'
+        end
+
         return
       end
 

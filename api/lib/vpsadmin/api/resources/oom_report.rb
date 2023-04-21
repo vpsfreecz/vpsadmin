@@ -6,6 +6,7 @@ module VpsAdmin::API::Resources
     params(:all) do
       id :id
       resource VpsAdmin::API::Resources::VPS, value_label: :hostname
+      string :cgroup
       integer :invoked_by_pid
       string :invoked_by_name
       integer :killed_pid
@@ -21,6 +22,7 @@ module VpsAdmin::API::Resources
       resource VpsAdmin::API::Resources::Node
       resource VpsAdmin::API::Resources::Location
       resource VpsAdmin::API::Resources::Environment
+      string :cgroup
       datetime :since
       datetime :until
     end
@@ -60,6 +62,10 @@ module VpsAdmin::API::Resources
           q = q.joins(vps: {node: :location}).where(
             locations: {environment_id: input[:environment].id},
           )
+        end
+
+        if input[:cgroup]
+          q = q.where('oom_reports.cgroup = ?', input[:cgroup])
         end
 
         if input[:since]

@@ -9,6 +9,7 @@ module NodeCtld
     attr_accessor :usage, :stats
     attr_accessor :tasks
     attr_accessor :pool, :group, :user, :vps_id
+    attr_accessor :cgroup
     attr_accessor :killed_pid, :killed_name, :no_killable
     attr_accessor :count
 
@@ -54,6 +55,7 @@ module NodeCtld
         t.prepared(
           'INSERT INTO oom_reports SET
             vps_id = ?,
+            cgroup = ?,
             invoked_by_pid = ?,
             invoked_by_name = ?,
             killed_pid = ?,
@@ -62,6 +64,7 @@ module NodeCtld
             created_at = ?
           ',
           vps_id,
+          cgroup[0..254],
           invoked_by_pid, invoked_by_name[0..49],
           killed_pid, killed_name && killed_name[0..49],
           count,

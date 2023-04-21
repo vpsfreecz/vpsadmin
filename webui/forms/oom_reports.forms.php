@@ -141,6 +141,10 @@ function oom_reports_show($id) {
 	$xtpl->table_td(vps_link($r->vps).' '.h($r->vps->hostname));
 	$xtpl->table_tr();
 
+	$xtpl->table_td(_('Cgroup').':');
+	$xtpl->table_td('<code>'.h($r->cgroup).'</code>');
+	$xtpl->table_tr();
+
 	$xtpl->table_td(_('Invoked by').':');
 	$xtpl->table_td(h($r->invoked_by_name).' (PID '.($invokedByVpsPid ? $invokedByVpsPid : _('unknown')).')');
 	$xtpl->table_tr();
@@ -160,7 +164,7 @@ function oom_reports_show($id) {
 
 	$xtpl->table_out();
 
-	$xtpl->table_title(_('Memory usage'));
+	$xtpl->table_title(_('Memory usage of cgroup').' <code>'.h($r->cgroup).'</code>');
 	$xtpl->table_add_category(_('Type'));
 	$xtpl->table_add_category(_('Usage'));
 	$xtpl->table_add_category(_('Limit'));
@@ -176,7 +180,7 @@ function oom_reports_show($id) {
 
 	$xtpl->table_out();
 
-	$xtpl->table_title(_('Memory stats'));
+	$xtpl->table_title(_('Memory stats of cgroup').' <code>'.h($r->cgroup).'</code>');
 	$xtpl->table_add_category(_('Parameter'));
 	$xtpl->table_add_category(_('Value'));
 
