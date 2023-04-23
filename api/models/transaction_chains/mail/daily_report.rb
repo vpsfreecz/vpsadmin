@@ -255,7 +255,7 @@ module TransactionChains
             .where('DATE_ADD(oom_reports.created_at, INTERVAL 1 DAY) >= ?', t)
             .group('vpses.id')
             .having('oom_count > 0')
-            .order(Arel.sql('COUNT(oom_reports.id) DESC')),
+            .order(Arel.sql('SUM(oom_reports.`count`) DESC')),
 
           by_node: ::Node
             .select('nodes.*, SUM(oom_reports.`count`) AS oom_count')
@@ -267,7 +267,7 @@ module TransactionChains
             .where('DATE_ADD(oom_reports.created_at, INTERVAL 1 DAY) >= ?', t)
             .group('nodes.id')
             .having('oom_count > 0')
-            .order(Arel.sql('COUNT(oom_reports.id) DESC')),
+            .order(Arel.sql('SUM(oom_reports.`count`) DESC')),
 
           by_killed_name: ::OomReport
             .where('DATE_ADD(oom_reports.created_at, INTERVAL 1 DAY) >= ?', t)
