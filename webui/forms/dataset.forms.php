@@ -486,7 +486,7 @@ function mount_list($vps) {
 	}
 
 	$xtpl->table_td(
-		'<a href="?page=dataset&action=mount&vps='.$vps->id.'&return='.$return.'">'._('Create a new mount').'</a>',
+		_('Mount a dataset from the list above.'),
 		false,
 		true, // right
 		9 // colspan
