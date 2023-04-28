@@ -83,7 +83,7 @@ class UserAccount < ActiveRecord::Base
   def payment_instructions
     ERB.new(
       SysConfig.get(:plugin_payments, :payment_instructions) || '',
-      nil, '-'
+      trim_mode: '-',
     ).result(binding)
   end
 

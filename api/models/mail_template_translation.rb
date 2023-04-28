@@ -12,7 +12,7 @@ class MailTemplateTranslation < ActiveRecord::Base
     end
 
     def build(tpl)
-      ERB.new(tpl, nil, '-').result(binding)
+      ERB.new(tpl, trim_mode: '-').result(binding)
     end
   end
 
