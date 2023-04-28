@@ -39,7 +39,7 @@ module NodeCtld
 
       if mem > 0
         osctl(
-          %i(ct set memory),
+          %i(ct set memory-limit),
           [@vps_id, "#{mem}M", swap > 0 ? "#{swap}M" : nil].compact
         )
         osctl(
