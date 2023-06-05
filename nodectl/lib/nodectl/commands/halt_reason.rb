@@ -19,7 +19,7 @@ module NodeCtl
         end
       rescue Timeout::Error
         warn 'Timed out while fetching outages'
-        Process.kill('TERM', pid)
+        Process.kill('KILL', pid)
         Process.wait(pid)
       end
 
