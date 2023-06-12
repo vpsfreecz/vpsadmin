@@ -12,7 +12,7 @@ module TransactionChains
       end
     end
 
-    def link_chain(user, block_count, node = nil)
+    def link_chain(user, block_count)
       blocks = allocate_block_range(block_count)
 
       uns = ::UserNamespace.create!(
@@ -30,12 +30,7 @@ module TransactionChains
         blocks.each { |blk| t.edit_before(blk, user_namespace_id: nil) }
       end
 
-      if node
-        append_t(Transactions::UserNamespace::Create, args: [node, uns], &confirmations)
-
-      else
-        append_t(Transactions::Utils::NoOp, args: find_node_id, &confirmations)
-      end
+      append_t(Transactions::Utils::NoOp, args: find_node_id, &confirmations)
 
       uns
     end

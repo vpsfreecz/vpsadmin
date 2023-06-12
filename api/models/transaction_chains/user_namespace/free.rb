@@ -2,7 +2,7 @@ module TransactionChains
   class UserNamespace::Free < ::TransactionChain
     label 'Free userns'
 
-    def link_chain(userns, node = nil)
+    def link_chain(userns)
       lock(userns)
 
       userns.user_namespace_blocks.each do |blk|
@@ -21,12 +21,7 @@ module TransactionChains
         t.just_destroy(userns)
       end
 
-      if node
-        append_t(Transactions::UserNamespace::Destroy, args: [node, userns], &confirmations)
-
-      else
-        append_t(Transactions::Utils::NoOp, args: find_node_id, &confirmations)
-      end
+      append_t(Transactions::Utils::NoOp, args: find_node_id, &confirmations)
     end
   end
 end
