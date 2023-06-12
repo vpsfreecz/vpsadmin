@@ -14,9 +14,6 @@ module NodeCtld
         zfs(:mount, nil, clone)
       end
 
-      # TODO: this is needed only for mounts to OpenVZ nodes
-      zfs(:share, nil, clone, valid_rcs: [1])
-
       ok
     end
 
