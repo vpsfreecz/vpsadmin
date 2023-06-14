@@ -139,18 +139,6 @@ module VpsAdmin::API::Exceptions
     end
   end
 
-  class UserNamespaceMapNil < ::StandardError
-
-  end
-
-  class UserNamespaceMapUnchanged < ::StandardError
-
-  end
-
-  class UserNamespaceMapBusy < ::StandardError
-
-  end
-
   class VpsFeatureConflict < ::StandardError
     # @param f1 [::VpsFeature] f1 conflicts with f2
     # @param f2 [::VpsFeature]

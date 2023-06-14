@@ -54,7 +54,7 @@ module TransactionChains
       # The dataset_in_pool_id must be unset after the dataset is actually
       # deleted, as it may fail.
       append(Transactions::Utils::NoOp, args: find_node_id) do
-        edit(vps, dataset_in_pool_id: nil)
+        edit(vps, dataset_in_pool_id: nil, user_namespace_map_id: nil)
       end
 
       # Delete OOM Reports

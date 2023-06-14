@@ -44,6 +44,14 @@ module TransactionChains
         end
       end
 
+      if attrs[:user] == vps.user
+        @userns_map = nil
+      else
+        @userns_map = ::UserNamespaceMap.joins(:user_namespace).where(
+          user_namespaces: {user_id: attrs[:user].id}
+        ).take!
+      end
+
       dst_vps = ::Vps.new(
         user_id: attrs[:user].id,
         hostname: attrs[:hostname],
@@ -51,6 +59,7 @@ module TransactionChains
         os_template_id: vps.os_template_id,
         info: "Cloned from #{vps.id}. Original info:\n#{vps.info}",
         node_id: node.id,
+        user_namespace_map: @userns_map || vps.user_namespace_map,
         onstartall: vps.onstartall,
         cpu_limit: attrs[:resources] ? vps.cpu_limit : nil,
         start_menu_timeout: vps.start_menu_timeout,
@@ -110,14 +119,6 @@ module TransactionChains
           swap: vps.swap
         } : {}
       )
-
-      if attrs[:user] == vps.user
-        @userns_map = nil
-      else
-        @userns_map = ::UserNamespaceMap.joins(:user_namespace).where(
-          user_namespaces: {user_id: attrs[:user].id}
-        ).take!
-      end
 
       dst_vps.dataset_in_pool = vps_dataset(vps, dst_vps, attrs[:dataset_plans])
       lock(dst_vps.dataset_in_pool)
@@ -330,7 +331,6 @@ module TransactionChains
         min_snapshots: vps.dataset_in_pool.min_snapshots,
         max_snapshots: vps.dataset_in_pool.max_snapshots,
         snapshot_max_age: vps.dataset_in_pool.snapshot_max_age,
-        user_namespace_map: @userns_map || vps.dataset_in_pool.user_namespace_map,
       )
 
       dip
@@ -375,7 +375,6 @@ module TransactionChains
         min_snapshots: dip.min_snapshots,
         max_snapshots: dip.max_snapshots,
         snapshot_max_age: dip.snapshot_max_age,
-        user_namespace_map: @userns_map || dip.user_namespace_map,
       )
 
       lock(dst)
@@ -407,7 +406,6 @@ module TransactionChains
             min_snapshots: dip.min_snapshots,
             max_snapshots: dip.max_snapshots,
             snapshot_max_age: dip.snapshot_max_age,
-            user_namespace_map: dip.user_namespace_map,
           )
 
           lock(dst)

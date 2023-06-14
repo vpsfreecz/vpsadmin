@@ -5,6 +5,10 @@ module TransactionChains
     end
   end
 
+  module Dataset
+    class SetUserNamespaceMap < Deprecated ; end
+  end
+
   module Vps
     class ApplyConfig < Deprecated
       label 'Apply config'
@@ -14,6 +18,8 @@ module TransactionChains
     class DelIp < Deprecated ; end
     class CreateVeth < Deprecated ; end
     class RemoveVeth < Deprecated ; end
+
+    class SetUserNamespaceMap < Deprecated ; end
 
     class ShaperChange < Deprecated ; end
     class ShaperSet < Deprecated ; end

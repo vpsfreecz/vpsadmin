@@ -228,7 +228,6 @@ module TransactionChains
         min_snapshots: dip.min_snapshots,
         max_snapshots: dip.max_snapshots,
         snapshot_max_age: dip.snapshot_max_age,
-        user_namespace_map: userns_map,
       )
 
       lock(dst)
@@ -250,7 +249,6 @@ module TransactionChains
             min_snapshots: dip.min_snapshots,
             max_snapshots: dip.max_snapshots,
             snapshot_max_age: dip.snapshot_max_age,
-            user_namespace_map: userns_map,
           )
 
           lock(dst)

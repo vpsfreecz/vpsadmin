@@ -2,7 +2,7 @@ require_relative 'lockable'
 
 class UserNamespaceMap < ActiveRecord::Base
   belongs_to :user_namespace
-  has_many :dataset_in_pools
+  has_many :vpses
   has_many :user_namespace_map_entries, dependent: :delete_all
 
   include Lockable
@@ -21,6 +21,6 @@ class UserNamespaceMap < ActiveRecord::Base
   end
 
   def in_use?
-    dataset_in_pools.any?
+    vpses.any?
   end
 end

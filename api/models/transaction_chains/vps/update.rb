@@ -86,6 +86,19 @@ module TransactionChains
             end
           end
 
+        when 'user_namespace_map_id'
+          use_chain(UserNamespaceMap::Use, args: [orig_vps, vps.user_namespace_map])
+
+          append_t(Transactions::Vps::Chown, args: [
+            orig_vps,
+            orig_vps.user_namespace_map,
+            vps.user_namespace_map,
+          ]) do |t|
+            t.edit(vps, user_namespace_map_id: vps.user_namespace_map_id)
+          end
+
+          use_chain(UserNamespaceMap::Disuse, args: [orig_vps])
+
         when 'cpu_limit'
           db_changes[vps][attr] = vps.send(attr) == 0 ? nil : vps.send(attr)
 
@@ -195,21 +208,17 @@ module TransactionChains
       ).take!
 
       use_chain(UserNamespaceMap::Use, args: [vps, new_userns_map])
+      db_changes[vps][:user_namespace_map_id] = new_userns_map.id
 
       datasets = []
 
-      # Chown datasets and transfer cluster resources
+      # Transfer dataset cluster resources
       vps.dataset_in_pool.dataset.subtree.each do |ds|
         datasets << ds
         db_changes[ds] = {user_id: vps.user_id}
 
         dip = ds.primary_dataset_in_pool!
         db_changes.update(dip.transfer_resources!(vps.user))
-
-        db_changes[dip] ||= {}
-        db_changes[dip].update({
-          user_namespace_map_id: new_userns_map && new_userns_map.id,
-        })
       end
 
       # Check mounts

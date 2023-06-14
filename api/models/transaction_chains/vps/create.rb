@@ -7,7 +7,6 @@ module TransactionChains
     # @option opts [Integer] ipv6
     # @option opts [Integer] ipv4_private
     # @option opts [Boolean] start (true)
-    # @Option opts [::UserNamespaceMap, nil] userns_map
     # @Option opts [::Location, nil] address_location
     def link_chain(vps, opts)
       lock(vps.user)
@@ -24,14 +23,9 @@ module TransactionChains
 
       pool = ::Pool.take_by_node!(vps.node, role: :hypervisor)
 
-      if vps.node.vpsadminos?
-        userns_map = opts[:userns_map] || ::UserNamespaceMap.joins(:user_namespace).where(
-          user_namespaces: {user_id: vps.user_id}
-        ).take!
-
-      else
-        userns_map = nil
-      end
+      vps.user_namespace_map ||= ::UserNamespaceMap.joins(:user_namespace).where(
+        user_namespaces: {user_id: vps.user_id}
+      ).take!
 
       ds = ::Dataset.new(
         name: vps.id.to_s,
@@ -51,7 +45,7 @@ module TransactionChains
           properties: {refquota: vps.diskspace},
           user: vps.user,
           label: "vps#{vps.id}",
-          userns_map: userns_map,
+          userns_map: vps.user_namespace_map,
         },
       ]).last
 
@@ -59,9 +53,7 @@ module TransactionChains
 
       lock(vps.dataset_in_pool)
 
-      if userns_map
-        use_chain(UserNamespaceMap::Use, args: [vps, userns_map])
-      end
+      use_chain(UserNamespaceMap::Use, args: [vps, vps.user_namespace_map])
 
       vps_features = []
 

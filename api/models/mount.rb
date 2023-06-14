@@ -10,7 +10,6 @@ class Mount < ActiveRecord::Base
   belongs_to :snapshot_in_pool_clone
 
   validate :check_mountpoint
-  validate :check_userns_map
 
   include Confirmable
   include Lockable
@@ -36,15 +35,6 @@ class Mount < ActiveRecord::Base
 
     if (new_record? && cnt > 0) || (!new_record? && cnt > 1)
       errors.add(:dst, 'this mountpoint already exists')
-    end
-  end
-
-  def check_userns_map
-    if snapshot_in_pool.nil? && vps.userns_map != dataset_in_pool.user_namespace_map
-      errors.add(
-        :user_namespace_map,
-        "VPS user namespace map is not compatible with the dataset's map"
-      )
     end
   end
 

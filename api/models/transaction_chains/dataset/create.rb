@@ -32,7 +32,7 @@ module TransactionChains
       find_parent_mounts(dataset_in_pool) if @automount
 
       path[0..-2].each do |part|
-        ret << create_dataset(part)
+        ret << create_dataset(part, {}, nil, opts[:userns_map])
       end
 
       ret << create_dataset(
@@ -84,7 +84,6 @@ module TransactionChains
         dataset: part,
         pool: @pool,
         label: label,
-        user_namespace_map: userns_map,
         confirmed: ::DatasetInPool.confirmed(:confirm_create)
       )
 
@@ -98,7 +97,7 @@ module TransactionChains
 
       append_t(
         Transactions::Storage::CreateDataset,
-        args: [dip, properties, {create_private: @opts[:create_private]}]
+        args: [dip, properties, {create_private: @opts[:create_private], userns_map: userns_map}]
       ) do |t|
         t.create(part)
         t.create(dip)

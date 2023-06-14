@@ -31,6 +31,7 @@ module TransactionChains
         os_template_id: vps.os_template_id,
         info: "Replaced #{vps.id}. Original info:\n#{vps.info}",
         node_id: node.id,
+        user_namespace_map: vps.user_namespace_map,
         onstartall: vps.onstartall,
         cpu_limit: vps.cpu_limit,
         start_menu_timeout: vps.start_menu_timeout,
@@ -313,7 +314,6 @@ module TransactionChains
         min_snapshots: vps.dataset_in_pool.min_snapshots,
         max_snapshots: vps.dataset_in_pool.max_snapshots,
         snapshot_max_age: vps.dataset_in_pool.snapshot_max_age,
-        user_namespace_map: vps.dataset_in_pool.user_namespace_map,
       )
 
       dip
@@ -358,7 +358,6 @@ module TransactionChains
         min_snapshots: dip.min_snapshots,
         max_snapshots: dip.max_snapshots,
         snapshot_max_age: dip.snapshot_max_age,
-        user_namespace_map: dip.user_namespace_map,
       )
 
       lock(dst)
@@ -390,7 +389,6 @@ module TransactionChains
             min_snapshots: dip.min_snapshots,
             max_snapshots: dip.max_snapshots,
             snapshot_max_age: dip.snapshot_max_age,
-            user_namespace_map: dip.user_namespace_map,
           )
 
           lock(dst)

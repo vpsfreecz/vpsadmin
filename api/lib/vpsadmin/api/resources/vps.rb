@@ -23,6 +23,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
              desc: 'DNS resolver the VPS will use'
     resource VpsAdmin::API::Resources::Node, label: 'Node', desc: 'Node VPS will run on',
              value_label: :domain_name
+    resource VpsAdmin::API::Resources::UserNamespaceMap, label: 'UID/GID mapping'
     bool :autostart_enable, label: 'Auto-start', desc: 'Start VPS on node boot?'
     integer :autostart_priority, label: 'Auto-start priority', default: 1000,
       desc: '0 is the highest priority, greater numbers have lower priority'
@@ -110,7 +111,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-        cpu_irq cpu_softirq
+        cpu_irq cpu_softirq user_namespace_map
       )
       allow
     end
@@ -171,9 +172,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       if input.has_key?(:user_namespace_map)
-        q = q.joins(:dataset_in_pool).where(
-          dataset_in_pools: {user_namespace_map_id: input[:user_namespace_map].id},
-        )
+        q = q.where(user_namespace_map: input[:user_namespace_map])
       end
 
       if input[:os_template]
@@ -220,7 +219,6 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       integer :ipv4, label: 'IPv4', default: 1, fill: true
       integer :ipv6, label: 'IPv6', default: 1, fill: true
       integer :ipv4_private, label: 'Private IPv4', default: 0, fill: true
-      resource VpsAdmin::API::Resources::UserNamespaceMap, label: 'UID/GID mapping'
 
       bool :start, label: 'Start VPS', default: true, fill: true
 
@@ -244,7 +242,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-        cpu_irq cpu_softirq start_menu_timeout created_at
+        cpu_irq cpu_softirq start_menu_timeout user_namespace_map created_at
       )
       allow
     end
@@ -331,8 +329,6 @@ END
         if input[:user_namespace_map].user_namespace.user_id != input[:user].id
           error('user namespace map has to belong to VPS owner')
         end
-
-        opts[:userns_map] = input.delete(:user_namespace_map)
       end
 
       opts[:start] = input.delete(:start)
@@ -376,7 +372,7 @@ END
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-        cpu_irq cpu_softirq start_menu_timeout created_at
+        cpu_irq cpu_softirq start_menu_timeout user_namespace_map created_at
       )
       allow
     end
@@ -413,8 +409,8 @@ END
       allow if u.role == :admin
       restrict user_id: u.id
       input whitelist: %i(
-        hostname manage_hostname os_template cgroup_version dns_resolver cpu
-        memory swap start_menu_timeout allow_admin_modifications remind_after_date
+        hostname manage_hostname os_template cgroup_version dns_resolver user_namespace_map
+        cpu memory swap start_menu_timeout allow_admin_modifications remind_after_date
       )
       allow
     end
@@ -457,6 +453,10 @@ END
             && input[:swap] \
             && input[:swap] > 0 && vps.node.total_swap == 0
         error("swap is not available on #{vps.node.domain_name}")
+
+      elsif input[:user_namespace_map] \
+            && input[:user_namespace_map].user_namespace.user_id != vps.user_id
+          error('user namespace map belongs to a different user than the VPS')
       end
 
       @chain, _ = vps.update(to_db_names(input))
@@ -866,7 +866,7 @@ END
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_disk uptime
         loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq
-        cpu_softirq created_at
+        cpu_softirq user_namespace_map created_at
       )
       allow
     end

@@ -30,6 +30,8 @@ class Vps < ActiveRecord::Base
   has_many :vps_os_processes, dependent: :destroy
   has_many :vps_ssh_host_keys, dependent: :destroy
 
+  belongs_to :user_namespace_map
+
   belongs_to :dataset_in_pool
   has_many :mounts
 
@@ -135,7 +137,6 @@ class Vps < ActiveRecord::Base
   # @option opts [Integer] ipv4
   # @option opts [Integer] ipv6
   # @option opts [Integer] ipv4_private
-  # @Option opts [::UserNamespaceMap, nil] userns_map
   # @Option opts [::Location, nil] address_location
   # @Option opts [Boolean] start
   def create(opts)
@@ -279,11 +280,11 @@ class Vps < ActiveRecord::Base
   end
 
   def userns
-    userns_map.user_namespace
+    user_namespace_map.user_namespace
   end
 
   def userns_map
-    dataset_in_pool.user_namespace_map
+    user_namespace_map
   end
 
   private
