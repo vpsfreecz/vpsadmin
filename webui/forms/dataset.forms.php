@@ -58,9 +58,6 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 		$xtpl->table_add_category($desc->label);
 	}
 
-	if ($role == 'hypervisor' && (isAdmin() || USERNS_PUBLIC))
-		$xtpl->table_add_category(_('UID/GID map'));
-
 	if ($role == 'hypervisor')
 		$xtpl->table_add_category(_('Mount'));
 
@@ -74,7 +71,6 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 	$listParams = array(
 		'role' => $role,
 		'dataset' => $parent,
-		'meta' => ['includes' => 'user_namespace_map'],
 	);
 
 	if ($user)
@@ -88,9 +84,6 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 
 	if ($offset)
 		$listParams['offset'] = $offset;
-
-	if (isset($opts['ugid_map']))
-		$listParams['user_namespace_map'] = $opts['ugid_map'];
 
 	$datasets = $api->dataset->list($listParams);
 	$return = urlencode($_SERVER['REQUEST_URI']);
@@ -110,14 +103,6 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 			$xtpl->table_td(
 				$desc->type == 'Integer' ? data_size_to_humanreadable($ds->{$name}) : $ds->{$name}
 			);
-		}
-
-		if ($role == 'hypervisor' && (isAdmin() || USERNS_PUBLIC)) {
-			if ($ds->user_namespace_map_id) {
-				$xtpl->table_td('<a href="?page=userns&action=map_show&id='.$ds->user_namespace_map_id.'">'.$ds->user_namespace_map->label.'</a>');
-			} else {
-				$xtpl->table_td(_('none'));
-			}
 		}
 
 		if ($role == 'hypervisor')
@@ -190,22 +175,6 @@ function dataset_create_form() {
 		_('Do not prefix with VPS ID. Allowed characters: a-z A-Z 0-9 _ : .<br>'
 		.'Use / as a separator to create subdatasets. Max length 254 chars.'));
 	$xtpl->form_add_checkbox(_("Auto mount"), 'automount', '1', true, $params->automount->description);
-
-	if (isAdmin() || USERNS_PUBLIC) {
-		// User namespace map
-		$ugid_params = [];
-		if ($_GET['parent'])
-			$ugid_params['user'] = $ds->user_id;
-
-		$ugid_maps = resource_list_to_options($api->user_namespace_map->list($ugid_params));
-		$ugid_maps[0] = _('None/inherit');
-		$xtpl->form_add_select(
-			_('UID/GID map').':',
-			'user_namespace_map',
-			$ugid_maps,
-			post_val('user_namespace_map')
-		);
-	}
 
 	// Quota
 	$quota = $params->{$quota_name};
@@ -294,19 +263,6 @@ function dataset_edit_form() {
 	}
 
 	$xtpl->form_out(_('Save'), null, '<span class="advanced-property-toggle"></span>');
-
-	if (isAdmin() || USERNS_PUBLIC) {
-		$xtpl->table_title(_('UID/GID mapping'));
-		$xtpl->form_create('?page=dataset&action=edit_map&role='.$_GET['role'].'&id='.$ds->id, 'post');
-		$xtpl->form_add_select(
-			_('Map').':'.
-			'<input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">',
-			'user_namespace_map',
-			resource_list_to_options($api->user_namespace_map->list(['user' => $ds->user_id])),
-			$ds->user_namespace_map_id
-		);
-		$xtpl->form_out(_('Save'));
-	}
 
 	$xtpl->table_title(_('Backup plans'));
 

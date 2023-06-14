@@ -15,13 +15,6 @@ if (isLoggedIn()) {
 					'automount' => $_POST['automount'] ? true : false,
 				);
 
-				if ($_POST['user_namespace_map']) {
-					$params['inherit_user_namespace_map'] = false;
-					$params['user_namespace_map'] = $_POST['user_namespace_map'];
-				} else {
-					$params['inherit_user_namespace_map'] = true;
-				}
-
 				foreach ($quotas as $quota) {
 					if (isset($_POST[$quota]))
 						$params[$quota] = $_POST[$quota] * $DATASET_UNITS_TR[$_POST["quota_unit"]];
@@ -105,24 +98,6 @@ if (isLoggedIn()) {
 			} else {
 				dataset_edit_form();
 			}
-			break;
-
-		case 'edit_map':
-			csrf_check();
-
-			try {
-				$api->dataset->update($_GET['id'], [
-					'user_namespace_map' => $_POST['user_namespace_map'] ? $_POST['user_namespace_map'] : null,
-				]);
-
-				notify_user(_('Dataset mapping updated'). '');
-				redirect($_POST['return'] ? $_POST['return'] : '?page=');
-
-			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				$xtpl->perex_format_errors(_('Dataset map change failed'), $e->getResponse());
-				dataset_edit_form();
-			}
-
 			break;
 
 		case 'destroy':

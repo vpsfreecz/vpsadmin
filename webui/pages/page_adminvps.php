@@ -276,7 +276,24 @@ switch ($_GET["action"] ?? null) {
 				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
 
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-				 {}$show_info=true;
+				 $show_info=true;
+			}
+			break;
+
+		case 'userns_map':
+			csrf_check();
+
+			try {
+				$api->vps->update($_GET['veid'], [
+					'user_namespace_map' => $_POST['user_namespace_map'],
+				]);
+
+				notify_user(_('VPS user namespace mapping updated'). '');
+				redirect('?page=adminvps&action=info&veid='.$_GET['veid']);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('VPS user namespace map change failed'), $e->getResponse());
+				$shot_info=true;
 			}
 			break;
 
@@ -918,7 +935,11 @@ if (isset($show_info) && $show_info) {
 	if (!isset($veid))
 		$veid = $_GET["veid"];
 
-	$vps = $api->vps->find($veid, array('meta' => array('includes' => 'node__location__environment,user,os_template')));
+	$vps = $api->vps->find($veid, [
+		'meta' => [
+			'includes' => 'node__location__environment,user,os_template,user_namespace_map'
+		]
+	]);
 
 	vps_details_suite($vps);
 
@@ -1273,10 +1294,10 @@ if (isset($show_info) && $show_info) {
 		$xtpl->form_out(_("Go >>"));
 
 	// Datasets
-	dataset_list('hypervisor', $vps->dataset_id);
+		dataset_list('hypervisor', $vps->dataset_id);
 
 	// Mounts
-	mount_list($vps);
+		mount_list($vps);
 
 		$os_templates = list_templates($vps);
 
@@ -1572,6 +1593,48 @@ if (isset($show_info) && $show_info) {
 
 		$xtpl->form_out(_("Go >>"));
 
+	// User namespace map
+		if (isAdmin() || USERNS_PUBLIC) {
+			$xtpl->table_title(_('UID/GID mapping'));
+			$xtpl->form_create('?page=adminvps&action=userns_map&veid='.$vps->id, 'post');
+
+			$xtpl->table_td(_('Map').':');
+			$xtpl->form_add_select_pure(
+				'user_namespace_map',
+				resource_list_to_options(
+					$api->user_namespace_map->list(['user' => $vps->user_id]),
+					'id', 'label', false
+				),
+				$vps->user_namespace_map_id
+			);
+			$xtpl->table_td(
+				'<a href="?page=userns&action=maps&user_namespace='.$vps->user_namespace_map->user_namespace_id.'">'._('Manage user namespace maps').'</a>'
+			);
+			$xtpl->table_tr();
+
+			$xtpl->table_td(
+				'VPS is restarted when user namespace map is changed.',
+				false, false, 2
+			);
+			$xtpl->table_tr();
+
+			$xtpl->form_out(_('Go >>'));
+
+			$xtpl->table_add_category(_('Type'));
+			$xtpl->table_add_category(_('ID within VPS'));
+			$xtpl->table_add_category(_('ID within namespace'));
+			$xtpl->table_add_category(_('ID count'));
+
+			foreach ($vps->user_namespace_map->entry->list() as $e) {
+				$xtpl->table_td(strtoupper($e->kind));
+				$xtpl->table_td($e->vps_id);
+				$xtpl->table_td($e->ns_id);
+				$xtpl->table_td($e->count);
+				$xtpl->table_tr();
+			}
+
+			$xtpl->table_out();
+		}
 
 	// State change
 		if (isAdmin()) {

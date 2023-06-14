@@ -593,6 +593,9 @@ function vps_list_form() {
 			if ($_GET['object_state'])
 				$params['object_state'] = $_GET['object_state'];
 
+			if ($_GET['user_namespace_map'])
+				$params['user_namespace_map'] = $_GET['user_namespace_map'];
+
 			$vpses = $api->vps->list($params);
 
 		} else {
