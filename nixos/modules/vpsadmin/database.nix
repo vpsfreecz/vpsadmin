@@ -82,7 +82,7 @@ in {
           sync_binlog = mkDefault 1;
           binlog_format = mkDefault "MIXED";
 
-          max_allowed_packet = mkDefault "64M";
+          max_allowed_packet = mkDefault "256M";
 
           join_buffer_size = mkDefault "256M";
           sort_buffer_size = mkDefault "512M";
