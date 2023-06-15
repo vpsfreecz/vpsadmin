@@ -1733,14 +1733,12 @@ DROP TABLE IF EXISTS `vps_os_processes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `vps_os_processes` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `vps_id` bigint(20) NOT NULL,
   `state` varchar(5) NOT NULL,
   `count` int(10) unsigned NOT NULL,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `index_vps_os_processes_on_vps_id_and_state` (`vps_id`,`state`),
+  PRIMARY KEY (`vps_id`,`state`),
   KEY `index_vps_os_processes_on_vps_id` (`vps_id`),
   KEY `index_vps_os_processes_on_state` (`state`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -2013,6 +2011,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230421171841'),
 ('20230421182709'),
 ('20230614112319'),
-('20230615143920');
+('20230615143920'),
+('20230615150518');
 
 
