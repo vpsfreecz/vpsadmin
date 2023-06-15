@@ -700,7 +700,6 @@ DROP TABLE IF EXISTS `network_interface_monitors`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `network_interface_monitors` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `network_interface_id` bigint(20) NOT NULL,
   `packets` bigint(20) unsigned NOT NULL,
   `packets_in` bigint(20) unsigned NOT NULL,
@@ -715,8 +714,7 @@ CREATE TABLE `network_interface_monitors` (
   `bytes_out_readout` bigint(20) unsigned NOT NULL,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `index_network_interface_monitors_unique` (`network_interface_id`)
+  PRIMARY KEY (`network_interface_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `network_interface_monthly_accountings`;
@@ -2014,6 +2012,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230415154230'),
 ('20230421171841'),
 ('20230421182709'),
-('20230614112319');
+('20230614112319'),
+('20230615143920');
 
 
