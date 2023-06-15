@@ -43,7 +43,9 @@ module VpsAdmin::API::Resources
       end
 
       def query
-        q = ::NetworkInterfaceMonitor
+        q = ::NetworkInterfaceMonitor.joins(:network_interface).where.not(
+          network_interfaces: {id: nil},
+        )
 
         if current_user.role != :admin
           q = q.joins(network_interface: :vps).where(
