@@ -7,7 +7,7 @@ module TransactionChains
     label 'Migrate'
 
     def link_chain(vps, dst_node, opts = {})
-      self.userns_map = vps.userns_map
+      self.userns_map = vps.user_namespace_map
 
       setup(vps, dst_node, opts)
       token = SecureRandom.hex(6)
@@ -26,7 +26,7 @@ module TransactionChains
       transfer_cluster_resources
 
       # Prepare userns
-      use_chain(UserNamespaceMap::Use, args: [dst_vps, src_vps.userns_map])
+      use_chain(UserNamespaceMap::Use, args: [dst_vps, src_vps.user_namespace_map])
 
       # Authorize the migration
       append(

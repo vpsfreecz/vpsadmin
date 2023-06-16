@@ -127,7 +127,7 @@ module TransactionChains
       concerns(:transform, [vps.class.name, vps.id], [vps.class.name, dst_vps.id])
 
       # Prepare userns
-      use_chain(UserNamespaceMap::Use, args: [dst_vps, vps.userns_map])
+      use_chain(UserNamespaceMap::Use, args: [dst_vps, vps.user_namespace_map])
 
       # When cloning to a different user, we first send it with the original
       # mapping and then chown it on the target node and remove the original
@@ -260,7 +260,7 @@ module TransactionChains
       if @userns_map
         append_t(Transactions::Vps::Chown, args: [
           dst_vps,
-          vps.userns_map,
+          vps.user_namespace_map,
           @userns_map,
         ])
 
@@ -268,7 +268,7 @@ module TransactionChains
         use_chain(
           UserNamespaceMap::Disuse,
           args: [dst_vps],
-          kwargs: {userns_map: vps.userns_map},
+          kwargs: {userns_map: vps.user_namespace_map},
         )
       end
 

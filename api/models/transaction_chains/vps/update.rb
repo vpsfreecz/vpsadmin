@@ -202,7 +202,7 @@ module TransactionChains
       #   - transfer exports of VPS's datasets / snapshots
       #   - free/allocate cluster resources
 
-      cur_userns_map = vps.userns_map
+      cur_userns_map = vps.user_namespace_map
       new_userns_map = ::UserNamespaceMap.joins(:user_namespace).where(
         user_namespaces: {user_id: vps.user_id}
       ).take!
@@ -234,7 +234,7 @@ module TransactionChains
 
       # Chown user namespace mapping
       append_t(Transactions::Vps::Chown, args: [
-        vps, vps.userns_map, new_userns_map
+        vps, vps.user_namespace_map, new_userns_map
       ]) do |t|
         db_changes.each do |obj, changes|
           t.edit(obj, changes) unless changes.empty?

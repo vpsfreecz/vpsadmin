@@ -279,14 +279,6 @@ class Vps < ActiveRecord::Base
     TransactionChains::Vps::DeployPublicKey.fire(self, key)
   end
 
-  def userns
-    user_namespace_map.user_namespace
-  end
-
-  def userns_map
-    user_namespace_map
-  end
-
   private
   def generate_password(t)
     if t == :secure

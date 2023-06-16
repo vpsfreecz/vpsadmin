@@ -5,7 +5,7 @@ module TransactionChains
     allow_empty
 
     def link_chain(vps, userns_map: nil)
-      userns_map ||= vps.userns_map
+      userns_map ||= vps.user_namespace_map
       append_t(Transactions::UserNamespace::DisuseMap, args: [vps, userns_map])
     end
   end
