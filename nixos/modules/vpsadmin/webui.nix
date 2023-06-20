@@ -81,7 +81,7 @@ in {
 
       usernsPublic = mkOption {
         type = types.bool;
-        default = false;
+        default = true;
       };
 
       exportPublic = mkOption {
