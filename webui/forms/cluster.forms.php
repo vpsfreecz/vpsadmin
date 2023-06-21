@@ -716,10 +716,10 @@ function helpbox_edit_form($id) {
 	$box = $api->help_box->show($id);
 
 	$xtpl->form_create('?page=cluster&action=helpboxes_edit_save&id='.$box->id, 'post');
-	$xtpl->form_add_input(_("Page").':', 'text', '30', 'page', $box->page);
-	$xtpl->form_add_input(_("Action").':', 'text', '30', 'action', $box->action);
-	$xtpl->form_add_select(_("Language").':', 'language', resource_list_to_options($api->language->list()), post_val('language'));
-	$xtpl->form_add_textarea(_("Content").':', 80, 15, 'content', $box->content);
+	$xtpl->form_add_input(_("Page").':', 'text', '30', 'page', post_val('page', $box->page));
+	$xtpl->form_add_input(_("Action").':', 'text', '30', 'action', post_val('action', $box->action));
+	$xtpl->form_add_select(_("Language").':', 'language', resource_list_to_options($api->language->list()), post_val('language', $box->language_id));
+	$xtpl->form_add_textarea(_("Content").':', 80, 15, 'content', post_val('content', $box->content));
 	$xtpl->form_out(_("Update"));
 }
 
