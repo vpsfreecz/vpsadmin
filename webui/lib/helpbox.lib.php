@@ -19,6 +19,7 @@ function get_helpbox($page = null, $action = null) {
 		'view' => true,
 		'page' => $page ? $page : null,
 		'action' => $action ? $action : null,
+		'limit' => 1000,
 	]);
 
 	$ret = '';
