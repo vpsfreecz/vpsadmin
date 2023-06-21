@@ -15,10 +15,11 @@ function get_helpbox($page = null, $action = null) {
 		$action = isset($_GET["action"]) ? $_GET["action"] : null;
 	}
 
-	$boxes = $api->help_box->list(array(
+	$boxes = $api->help_box->list([
+		'view' => true,
 		'page' => $page ? $page : null,
 		'action' => $action ? $action : null,
-	));
+	]);
 
 	$ret = '';
 

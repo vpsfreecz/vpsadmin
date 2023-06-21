@@ -26,6 +26,8 @@ module VpsAdmin::API::Resources
 
       input do
         use :filters
+        bool :view, default: false, fill: true,
+          desc: 'When enabled, list help boxes for the current user, including page/action filters'
       end
 
       output(:object_list) do
@@ -39,23 +41,31 @@ module VpsAdmin::API::Resources
       def query
         q = ::HelpBox.all
 
-        if input.has_key?(:page) || input.has_key?(:action)
-          q = q.where(
-            "(page = ? AND (action = ? OR action = '*'))
-            OR
-            (page = '*' AND (action = ? OR action = '*'))",
-            input[:page], input[:action], input[:action]
-          )
-        end
+        if input[:view]
+          if input.has_key?(:page) || input.has_key?(:action)
+            q = q.where(
+              "(page = ? AND (action = ? OR action = '*'))
+              OR
+              (page = '*' AND (action = ? OR action = '*'))",
+              input[:page], input[:action], input[:action]
+            )
+          end
 
-        if input.has_key?(:language)
-          q = q.where(language: input[:language])
+          if input.has_key?(:language)
+            q = q.where(language: input[:language])
 
+          else
+            q = q.where(
+              'language_id IS NULL OR language_id = ?',
+              current_user ? current_user.language_id : ::Language.take!.id
+            )
+          end
         else
-          q = q.where(
-            'language_id IS NULL OR language_id = ?',
-            current_user ? current_user.language_id : ::Language.take!.id
-          )
+          %i(page action).each do |f|
+            q = q.where(f => input[f]) if input[f]
+          end
+
+          q = q.where(language: input[:language]) if input.has_key?(:language)
         end
 
         q
