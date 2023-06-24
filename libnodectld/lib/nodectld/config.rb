@@ -209,6 +209,16 @@ module NodeCtld
       update_all_interval: 3600,
       default_schedule_delay: 15,
     },
+
+    dataset_expander: {
+      enable: true,
+      check_interval: 90,
+      update_interval: 120,
+      min_avail_bytes: 512 * 1024 * 1024,
+      min_avail_percent: 1,
+      min_expand_bytes: 20 * 1024 * 1024 * 1024,
+      min_expand_percent: 10,
+    },
   }
 
   class AppConfig
@@ -266,6 +276,7 @@ module NodeCtld
           exports: {enable: false},
           osctl_exporter: {enable: false},
           vps_ssh_host_keys: {enable: false},
+          dataset_expander: {enable: false},
         })
       else
         warn "Unsupported runtime mode '#{@cfg[:mode]}'"

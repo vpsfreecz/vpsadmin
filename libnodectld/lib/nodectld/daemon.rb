@@ -65,6 +65,7 @@ module NodeCtld
       @kernel_log = KernelLog::Parser.new
       @exporter = Exporter.new(self)
       @osctl_exporter = OsCtlExporter.new
+      @dataset_expander = DatasetExpander.new
       NetAccounting.instance
       Shaper.instance
       TransactionVerifier.instance
@@ -95,6 +96,7 @@ module NodeCtld
       @exporter.start if $CFG.get(:exporter, :enable)
       @osctl_exporter.start if @osctl_exporter.enable?
       VpsSshHostKeys.instance
+      @dataset_expander.start if @dataset_expander.enable?
 
       @init = true
 
