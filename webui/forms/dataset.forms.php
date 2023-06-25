@@ -264,6 +264,107 @@ function dataset_edit_form() {
 
 	$xtpl->form_out(_('Save'), null, '<span class="advanced-property-toggle"></span>');
 
+	if ($ds->dataset_expansion_id) {
+		$exp = $ds->dataset_expansion;
+
+		$xtpl->table_title(_('Temporary dataset expansion'));
+
+		if (isAdmin()) {
+			$xtpl->form_create('?page=dataset&action=edit_expansion&role='.$_GET['role'].'&id='.$ds->id.'&expansion='.$exp->id, 'post');
+
+			$xtpl->form_set_hidden_fields([
+				'return' => $_GET['return'] ?? $_POST['return'],
+			]);
+		}
+
+		$xtpl->table_td(_('Expanded at').':');
+		$xtpl->table_td(tolocaltz($exp->created_at));
+		$xtpl->table_tr();
+
+		$xtpl->table_td(_('Original refquota').':');
+		$xtpl->table_td(data_size_to_humanreadable($exp->original_refquota));
+		$xtpl->table_tr();
+
+		$xtpl->table_td(_('Added space').':');
+		$xtpl->table_td(data_size_to_humanreadable($exp->added_space));
+		$xtpl->table_tr();
+
+		if (isAdmin()) {
+			$updateInput = $exp->update->getParameters('input');
+
+			api_param_to_form('deadline', $updateInput->deadline, $exp->deadline ? tolocaltz($exp->deadline) : '');
+			api_param_to_form('enable_notifications', $updateInput->enable_notifications, $exp->enable_notifications);
+			api_param_to_form('stop_vps', $updateInput->stop_vps, true);
+
+			$xtpl->form_out(_('Save'));
+		} else {
+			$xtpl->table_td(_('Deadline').':');
+			$xtpl->table_td($exp->deadline ? tolocaltz($exp->deadline) : '-');
+			$xtpl->table_tr();
+
+			$xtpl->table_out();
+		}
+
+		$xtpl->table_add_category(_('Date'));
+		$xtpl->table_add_category(_('Original refquota'));
+		$xtpl->table_add_category(_('New refquota'));
+		$xtpl->table_add_category(_('Added space'));
+
+		if (isAdmin())
+			$xtpl->table_add_category(_('Added by'));
+
+		foreach ($exp->history->list() as $hist) {
+			$xtpl->table_td(tolocaltz($hist->created_at));
+			$xtpl->table_td(data_size_to_humanreadable($hist->original_refquota));
+			$xtpl->table_td(data_size_to_humanreadable($hist->new_refquota));
+			$xtpl->table_td(data_size_to_humanreadable($hist->added_space));
+
+			if (isAdmin())
+				$xtpl->table_td($hist->admin_id ? user_link($hist->admin) : 'nodectld');
+
+			$xtpl->table_tr();
+		}
+
+		$xtpl->table_out();
+
+		if (isAdmin()) {
+			$xtpl->form_create('?page=dataset&action=expand_add_space&role='.$_GET['role'].'&id='.$ds->id.'&expansion='.$exp->id, 'post');
+
+			$xtpl->form_set_hidden_fields([
+				'return' => $_GET['return'] ?? $_POST['return'],
+			]);
+
+			$xtpl->table_td(_('Add space').':');
+			$xtpl->form_add_number_pure('added_space', post_val('added_space', '20'));
+			$xtpl->form_add_select_pure('unit', ["m" => "MiB", "g" => "GiB", "t" => "TiB"], post_val('unit', 'g'));
+			$xtpl->table_tr();
+
+			$xtpl->form_out(_('Add space'));
+		}
+
+	} elseif (isAdmin()) {
+		$xtpl->table_title(_('Temporarily expand dataset'));
+
+		$xtpl->form_create('?page=dataset&action=add_expansion&role='.$_GET['role'].'&id='.$ds->id, 'post');
+
+		$xtpl->form_set_hidden_fields([
+			'return' => $_GET['return'] ?? $_POST['return'],
+		]);
+
+		$input = $api->dataset_expansion->create->getParameters('input');
+
+		$xtpl->table_td(_('Add space').':');
+		$xtpl->form_add_number_pure('added_space', post_val('added_space', '20'));
+		$xtpl->form_add_select_pure('unit', ["m" => "MiB", "g" => "GiB", "t" => "TiB"], post_val('unit', 'g'));
+		$xtpl->table_tr();
+
+		api_param_to_form('deadline', $input->deadline, strftime("%Y-%m-%d %H:%M:%S", strtotime('+1 month')));
+		api_param_to_form('enable_notifications', $input->enable_notifications, true);
+		api_param_to_form('stop_vps', $input->stop_vps, true);
+
+		$xtpl->form_out(_('Expand'));
+	}
+
 	$xtpl->table_title(_('Backup plans'));
 
 	$plans = $ds->plan->list();
