@@ -2,6 +2,12 @@ module TransactionChains
   class Dataset::Set < ::TransactionChain
     label 'Set properties'
 
+    # @param dataset_in_pool [DatasetInPool]
+    # @param properties [Hash<Symbol, any>]
+    # @param opts [Hash]
+    # @option opts [Boolean] :admin_override
+    # @option opts [String] :admin_lock_type
+    # @option opts [Boolean] :reset_expansion
     def link_chain(dataset_in_pool, properties, opts)
       lock(dataset_in_pool)
       concerns(:affect, [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id])
@@ -45,6 +51,13 @@ module TransactionChains
         end
 
         t.edit(use, value: use.value) if use
+
+        if opts.fetch(:reset_expansion, true) \
+           && props.has_key?(:refquota) \
+           && dataset_in_pool.dataset.dataset_expansion
+          t.edit(dataset_in_pool.dataset, dataset_expansion_id: nil)
+          t.edit(dataset_in_pool.dataset.dataset_expansion, state: ::DatasetExpansion.states[:resolved])
+        end
 
       end
     end

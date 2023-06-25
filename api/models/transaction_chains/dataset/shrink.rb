@@ -10,6 +10,7 @@ module TransactionChains
         dataset_in_pool,
         {refquota: dataset_expansion.original_refquota},
         {
+          reset_expansion: false,
           admin_override: true,
           admin_lock_type: 'no_lock',
         },
