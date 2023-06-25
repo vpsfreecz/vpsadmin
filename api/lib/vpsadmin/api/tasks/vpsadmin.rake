@@ -83,6 +83,29 @@ namespace :vpsadmin do
     end
   end
 
+  namespace :dataset_expansion do
+    desc 'Process dataset expansion events'
+    task :process do
+      puts 'Process dataset expansion events'
+      VpsAdmin::API::Tasks.run(:dataset_expansion, :process_events)
+    end
+
+    desc 'Stop VPS with datasets over quota'
+    task :enforce do
+      puts 'Stopping VPS with datasets over quota'
+      VpsAdmin::API::Tasks.run(:dataset_expansion, :stop_vps)
+    end
+
+    desc 'Shrink datasets that have returned the extra space'
+    task :resolve do
+      puts 'Return extra space where possible'
+      VpsAdmin::API::Tasks.run(:dataset_expansion, :resolve_datasets)
+    end
+
+    desc 'Run whole dataset expansion pipeline'
+    task run: %i(process enforce resolve)
+  end
+
   namespace :plugins do
     desc 'List installed plugins'
     task :list do
