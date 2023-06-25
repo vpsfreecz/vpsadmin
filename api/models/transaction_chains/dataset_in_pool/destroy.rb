@@ -218,6 +218,15 @@ module TransactionChains
             dataset_in_pool.dataset.update!(
               confirmed: ::Dataset.confirmed(:confirm_destroy)
             )
+
+            dataset_in_pool.dataset.dataset_expansions.each do |exp|
+              exp.dataset_expansion_histories.each do |hist|
+                just_destroy(hist)
+              end
+
+              just_destroy(exp)
+            end
+
             destroy(dataset_in_pool.dataset)
 
           elsif dataset_in_pool.dataset.dataset_in_pools
