@@ -6,7 +6,6 @@ module TransactionChains
       lock(dataset_in_pool)
       concerns(:affect, [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id])
 
-      chain = self
       props = {}
 
       dataset_in_pool.dataset_properties.where(name: properties.keys).each do |p|
@@ -38,14 +37,14 @@ module TransactionChains
         )
       end
 
-      append(Transactions::Storage::SetDataset, args: [dataset_in_pool, props]) do
+      append_t(Transactions::Storage::SetDataset, args: [dataset_in_pool, props]) do |t|
 
         props.each_value do |p|
-          chain.edit_children(self, p[0], YAML.dump(p[1]))
-          edit(p[0], inherited: false)
+          edit_children(t, p[0], YAML.dump(p[1]))
+          t.edit(p[0], inherited: false)
         end
 
-        edit(use, value: use.value) if use
+        t.edit(use, value: use.value) if use
 
       end
     end
