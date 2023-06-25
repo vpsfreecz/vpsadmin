@@ -32,6 +32,7 @@ module VpsAdmin::API::Resources
       use :common
       use :all_properties
       resource Export, value_label: :path
+      resource DatasetExpansion, value_label: :created_at
     end
 
     class Index < HaveAPI::Actions::Default::Index
