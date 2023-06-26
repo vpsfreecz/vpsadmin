@@ -89,6 +89,14 @@ module VpsAdmin::API::Tasks
           warn "Dataset in pool id=#{dip.id} name=#{ds.full_name} locked"
           next
         end
+
+        begin
+          vps = ds.root.primary_dataset_in_pool!.vpses.where(object_state: 'active').take!
+        rescue ActiveRecord::RecordNotFound
+          next
+        end
+
+        TransactionChains::Mail::VpsDatasetExpanded.fire(vps, exp)
       end
     end
 

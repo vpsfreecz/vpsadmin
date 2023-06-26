@@ -310,6 +310,27 @@ class MailTemplate < ActiveRecord::Base
     oom_reports: 'Array<::OomReport>',
   }, roles: %i(admin), public: true
 
+  register :vps_dataset_expanded, vars: {
+    base_url: [String, "URL to the web UI"],
+    vps: ::Vps,
+    expansion: ::DatasetExpansion,
+    dataset: ::Dataset,
+  }, roles: %i(admin), public: true
+
+  register :vps_dataset_shrunk, vars: {
+    base_url: [String, "URL to the web UI"],
+    vps: ::Vps,
+    expansion: ::DatasetExpansion,
+    dataset: ::Dataset,
+  }, roles: %i(admin), public: true
+
+  register :vps_stopped_over_quota, vars: {
+    base_url: [String, "URL to the web UI"],
+    vps: ::Vps,
+    expansion: ::DatasetExpansion,
+    dataset: ::Dataset,
+  }, roles: %i(admin), public: true
+
   enum user_visibility: %i(default visible invisible)
 
   def recipients(user)
