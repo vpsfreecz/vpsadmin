@@ -16,23 +16,25 @@ module TransactionChains
         },
       ])
 
-      begin
-        vps = exp.dataset.root.primary_dataset_in_pool!.vpses.where(object_state: 'active').take!
-      rescue ActiveRecord::RecordNotFound
-        # pass
-      else
-        mail(:vps_dataset_shrunk, {
-          user: vps.user,
-          vars: {
-            base_url: ::SysConfig.get(:webui, :base_url),
-            vps: vps,
-            expansion: dataset_expansion,
-            dataset: dataset_expansion.dataset,
-          },
-        })
+      if dataset_expansion.enable_notifications
+        begin
+          vps = dataset_expansion.dataset.root.primary_dataset_in_pool!.vpses.where(object_state: 'active').take!
+        rescue ActiveRecord::RecordNotFound
+          # pass
+        else
+          mail(:vps_dataset_shrunk, {
+            user: vps.user,
+            vars: {
+              base_url: ::SysConfig.get(:webui, :base_url),
+              vps: vps,
+              expansion: dataset_expansion,
+              dataset: dataset_expansion.dataset,
+            },
+          })
+        end
       end
 
-      append_t(Transaction::Utils::NoOp, args: find_node_id) do |t|
+      append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
         t.edit(dataset_in_pool.dataset, dataset_expansion_id: nil)
         t.edit(dataset_expansion, state: ::DatasetExpansion.states[:resolved])
       end

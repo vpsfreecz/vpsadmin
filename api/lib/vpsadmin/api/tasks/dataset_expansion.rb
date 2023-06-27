@@ -96,7 +96,9 @@ module VpsAdmin::API::Tasks
           next
         end
 
-        TransactionChains::Mail::VpsDatasetExpanded.fire(vps, exp)
+        if exp.enable_notifications
+          TransactionChains::Mail::VpsDatasetExpanded.fire(vps, exp)
+        end
       end
     end
 
