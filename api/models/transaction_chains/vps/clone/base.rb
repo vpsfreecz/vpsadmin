@@ -115,6 +115,39 @@ module TransactionChains
       end
     end
 
+    def clone_dataset_expansions(src_dip, dst_dip)
+      src_exp = src_dip.dataset.dataset_expansion
+      return if src_exp.nil?
+
+      dst_exp = src_exp.dup
+      dst_exp.dataset = dst_dip.dataset
+
+      # Timestamps are not copied by #dup
+      dst_exp.created_at = src_exp.created_at
+      dst_exp.updated_at = src_exp.updated_at
+
+      dst_exp.save!
+
+      append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
+        # Create copied expansion
+        t.just_create(dst_exp)
+
+        # Copy expansion history
+        src_exp.dataset_expansion_histories.each do |src_hist|
+          dst_hist = src_hist.dup
+          dst_hist.dataset_expansion = dst_exp
+          dst_hist.created_at = src_hist.created_at
+          dst_hist.updated_at = src_hist.updated_at
+          dst_hist.save!
+
+          t.just_create(dst_hist)
+        end
+
+        # Set expansion on dataset
+        t.edit(dst_dip.dataset, dataset_expansion_id: dst_exp.id)
+      end
+    end
+
     # Clone mounts.
     # Snapshot mounts are skipped. Dataset mounts are checked if it is
     # a mount of a subdataset of this particular +vps+. If it is, the cloned
