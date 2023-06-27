@@ -103,7 +103,7 @@ module VpsAdmin::API::Resources
           deadline: input[:deadline],
         )
 
-        @chain, ret = TransactionChains::Dataset::Expand.fire(exp)
+        @chain, ret = TransactionChains::Vps::ExpandDataset.fire(exp)
         ret
       end
 
@@ -233,7 +233,7 @@ module VpsAdmin::API::Resources
             admin: current_user,
           )
 
-          @chain, ret = TransactionChains::Dataset::ExpandAgain.fire(hist)
+          @chain, ret = TransactionChains::Vps::ExpandDatasetAgain.fire(hist)
           ret
         end
 

@@ -1,5 +1,5 @@
 module TransactionChains
-  class Dataset::Expand < ::TransactionChain
+  class Vps::ExpandDataset < ::TransactionChain
     label 'Expand'
 
     def link_chain(dataset_expansion)

@@ -1,5 +1,5 @@
 module TransactionChains
-  class Dataset::Shrink < ::TransactionChain
+  class Vps::ShrinkDataset < ::TransactionChain
     label 'Shrink'
 
     def link_chain(dataset_in_pool, dataset_expansion)

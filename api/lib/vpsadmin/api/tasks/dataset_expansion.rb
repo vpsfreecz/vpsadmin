@@ -157,7 +157,7 @@ module VpsAdmin::API::Tasks
            && exp.created_at + COOLDOWN < now \
            && dip.referenced + FREE_MB < exp.original_refquota \
            && (dip.referenced.to_f / exp.original_refquota) * 100 <= (100 - FREE_PERCENT)
-          TransactionChains::Dataset::Shrink.fire(dip, exp)
+          TransactionChains::Vps::ShrinkDataset.fire(dip, exp)
           exp.update!(last_shrink: now)
         end
       end
