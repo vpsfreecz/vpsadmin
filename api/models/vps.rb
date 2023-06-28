@@ -33,6 +33,7 @@ class Vps < ActiveRecord::Base
   belongs_to :user_namespace_map
 
   belongs_to :dataset_in_pool
+  has_one :dataset, through: :dataset_in_pool, autosave: false
   has_many :mounts
 
   has_many :vps_statuses, dependent: :destroy
@@ -195,10 +196,6 @@ class Vps < ActiveRecord::Base
 
   def restore(snapshot)
     TransactionChains::Vps::Restore.fire(self, snapshot)
-  end
-
-  def dataset
-    dataset_in_pool.dataset
   end
 
   def pool
