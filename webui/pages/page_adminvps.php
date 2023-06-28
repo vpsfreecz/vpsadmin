@@ -1037,7 +1037,8 @@ if (isset($show_info) && $show_info) {
 
 	$xtpl->table_td(_("HDD").':');
 	$xtpl->table_td(
-		($vps->diskspace && showVpsDiskWarning($vps) ? ('<img src="template/icons/warning.png" title="'._('Disk at').' '.sprintf('%.2f %%', round(vpsDiskUsagePercent($vps), 2)).'"> ') : '').
+		($vps->diskspace && showVpsDiskSpaceWarning($vps) ? ('<img src="template/icons/warning.png" title="'._('Disk at').' '.sprintf('%.2f %%', round(vpsDiskUsagePercent($vps), 2)).'"> ') : '').
+		($vps->diskspace && showVpsDiskExpansionWarning($vps) ? ('<img src="template/icons/warning.png" title="'._('Disk temporarily expanded').'"> ') : '').
 		sprintf('%.2f GB',round($vps->used_diskspace / 1024, 2))
 	);
 	$xtpl->table_tr();

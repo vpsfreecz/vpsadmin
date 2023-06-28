@@ -974,12 +974,16 @@ function findBestPublicHostAddress ($hostAddrs) {
 	return null;
 }
 
-function showVpsDiskWarning ($vps) {
+function showVpsDiskSpaceWarning ($vps) {
 	return $vps->used_diskspace > $vps->diskspace / 100.0 * 90;
 }
 
 function vpsDiskUsagePercent ($vps) {
     return $vps->used_diskspace / $vps->diskspace * 100;
+}
+
+function showVpsDiskExpansionWarning ($vps) {
+	return $vps->dataset->dataset_expansion_id ? true : false;
 }
 
 function sortMaintenanceWindowsByCloseness ($windows) {

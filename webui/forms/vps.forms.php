@@ -572,11 +572,11 @@ function vps_list_form() {
 		}
 
 		if (isAdmin()) {
-			$params = array(
+			$params = [
 				'limit' => get_val('limit', 25),
 				'offset' => get_val('offset', 0),
-				'meta' => array('count' => true, 'includes' => 'user,node')
-			);
+				'meta' => ['count' => true, 'includes' => 'user,node,dataset__dataset_expansion']
+			];
 
 			if ($_GET['user'])
 				$params['user'] = $_GET['user'];
@@ -599,11 +599,15 @@ function vps_list_form() {
 			$vpses = $api->vps->list($params);
 
 		} else {
-			$vpses = $api->vps->list(array('meta' => array('count' => true, 'includes' => 'user,node')));
+			$vpses = $api->vps->list([
+				'meta' => ['count' => true, 'includes' => 'user,node,dataset__dataset_expansion']
+			]);
 		}
 
 		foreach ($vpses as $vps) {
-			$diskWarning = $vps->diskspace && showVpsDiskWarning($vps);
+			$diskSpaceWarning = showVpsDiskSpaceWarning($vps);
+			$expansionWarning = showVpsDiskExpansionWarning($vps);
+			$diskWarning = $vps->diskspace && ($diskSpaceWarning || $expansionWarning);
 
 			$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->id.'">'.$vps->id.'</a>');
 			$xtpl->table_td('<a href="?page=adminvps&action=list&node='.$vps->node_id.'">'. $vps->node->domain_name . '</a>');
@@ -622,7 +626,8 @@ function vps_list_form() {
 
 			if ($vps->used_diskspace > 0) {
 				$xtpl->table_td(
-					($diskWarning ? ('<img src="template/icons/warning.png" title="'._('Disk at').' '.sprintf('%.2f %%', round(vpsDiskUsagePercent($vps), 2)).'"> ') : '').
+					($vps->diskspace && $diskSpaceWarning ? ('<img src="template/icons/warning.png" title="'._('Disk at').' '.sprintf('%.2f %%', round(vpsDiskUsagePercent($vps), 2)).'"> ') : '').
+					($expansionWarning ? ('<img src="template/icons/warning.png" title="'._('Disk temporarily expanded').'"> ') : '').
 					sprintf('%.2f GB',round($vps->used_diskspace/1024, 2)),
 					false, true
 				);
