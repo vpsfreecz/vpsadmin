@@ -101,7 +101,8 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 				continue;
 
 			$xtpl->table_td(
-				$desc->type == 'Integer' ? data_size_to_humanreadable($ds->{$name}) : $ds->{$name}
+				($name == 'refquota' && $ds->dataset_expansion_id ? ('<img src="template/icons/warning.png" title="'._('Dataset temporarily expanded').'"> ') : '').
+				($desc->type == 'Integer' ? data_size_to_humanreadable($ds->{$name}) : $ds->{$name})
 			);
 		}
 
