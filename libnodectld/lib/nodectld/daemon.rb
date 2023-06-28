@@ -61,12 +61,12 @@ module NodeCtld
       @node = Node.new
       @pool_status = PoolStatus.new
       @node_status = NodeStatus.new(@pool_status)
-      @storage_status = StorageStatus.new
+      @dataset_expander = DatasetExpander.new
+      @storage_status = StorageStatus.new(@dataset_expander)
       @vps_status = VpsStatus.new
       @kernel_log = KernelLog::Parser.new
       @exporter = Exporter.new(self)
       @osctl_exporter = OsCtlExporter.new
-      @dataset_expander = DatasetExpander.new
       NetAccounting.instance
       Shaper.instance
       TransactionVerifier.instance

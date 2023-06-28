@@ -5,15 +5,19 @@ module NodeCtld
   class StorageStatus
     include OsCtl::Lib::Utils::Log
 
-    PROPERTIES = %w(used referenced available)
+    READ_PROPERTIES = %w(used referenced available refquota)
 
-    Pool = Struct.new(:name, :fs, :datasets, keyword_init: true)
+    SAVE_PROPERTIES = %w(used referenced available)
 
-    Dataset = Struct.new(:type, :name, :id, :properties, keyword_init: true)
+    Pool = Struct.new(:name, :fs, :role, :refquota_check, :datasets, keyword_init: true)
+
+    Dataset = Struct.new(:type, :name, :id, :dip_id, :properties, keyword_init: true)
 
     Property = Struct.new(:id, :name, :value, keyword_init: true)
 
-    def initialize
+    # @param dataset_expander [DatasetExpander]
+    def initialize(dataset_expander)
+      @dataset_expander = dataset_expander
       @mutex = Mutex.new
       @update_queue = OsCtl::Lib::Queue.new
       @read_queue = OsCtl::Lib::Queue.new
@@ -91,7 +95,7 @@ module NodeCtld
 
       # Fetch pools
       rs = db.prepared(
-        "SELECT id, filesystem FROM pools WHERE node_id = ?",
+        "SELECT id, filesystem, role, refquota_check FROM pools WHERE node_id = ?",
         $CFG.get(:vpsadmin, :node_id)
       )
 
@@ -99,24 +103,34 @@ module NodeCtld
         pools[ row['id'] ] = Pool.new(
           name: row['filesystem'].split('/').first,
           fs: row['filesystem'],
+          role: row['role'],
+          refquota_check: row['refquota_check'],
           datasets: {},
         )
       end
 
-      select_properties = PROPERTIES.map { |v| property_to_db(v) }
+      select_properties = READ_PROPERTIES.map { |v| property_to_db(v) }
 
       pools.each do |pool_id, pool|
         # Fetch datasets
         db.prepared(
-          "SELECT d.full_name, dips.id, props.name AS p_name, props.id AS p_id
+          "SELECT
+            d.full_name,
+            dips.id AS dip_id,
+            d.id AS dataset_id,
+            props.name AS p_name,
+            props.id AS p_id
           FROM dataset_in_pools dips
           INNER JOIN datasets d ON d.id = dips.dataset_id
           INNER JOIN dataset_properties props ON props.dataset_in_pool_id = dips.id
-          WHERE dips.pool_id = ? AND props.name IN (#{select_properties.map{'?'}.join(',')})",
+          WHERE
+            dips.pool_id = ?
+            AND dips.confirmed = 1
+            AND props.name IN (#{select_properties.map{'?'}.join(',')})",
           pool_id, *select_properties
         ).each do |row|
           prop_name = property_from_db(row['p_name'])
-          next unless PROPERTIES.include?(prop_name)
+          next unless READ_PROPERTIES.include?(prop_name)
 
           name = File.join(pool.fs, row['full_name'])
 
@@ -131,7 +145,8 @@ module NodeCtld
             pool.datasets[name] = Dataset.new(
               type: :filesystem,
               name: name,
-              id: row['id'],
+              id: row['dataset_id'],
+              dip_id: row['dip_id'],
               properties: {
                 prop_name => Property.new(
                   id: row['p_id'],
@@ -157,7 +172,7 @@ module NodeCtld
         begin
           tree = reader.read(
             [pool.fs],
-            PROPERTIES,
+            READ_PROPERTIES,
             recursive: true,
           )
         rescue SystemCommandFailed => e
@@ -180,13 +195,15 @@ module NodeCtld
             next
           end
 
-          PROPERTIES.each do |prop|
+          READ_PROPERTIES.each do |prop|
             ds_prop = ds.properties[prop]
             next if ds_prop.nil?
 
-            ds_prop.value = (tree_ds.properties[prop].to_i / 1024.0 / 1024).round
+            ds_prop.value = tree_ds.properties[prop].to_i
           end
         end
+
+        @dataset_expander.check(pool)
       end
     end
 
@@ -198,9 +215,11 @@ module NodeCtld
 
       pools.each_value do |pool|
         pool.datasets.each_value do |ds|
-          PROPERTIES.each do |prop|
+          SAVE_PROPERTIES.each do |prop|
             ds_prop = ds.properties[prop]
             next if ds_prop.nil? || ds_prop.value.nil?
+
+            save_val = (ds_prop.value / 1024.0 / 1024).round
 
             db.prepared(
               'UPDATE dataset_properties
@@ -209,14 +228,14 @@ module NodeCtld
                 dataset_in_pool_id = ?
                 AND
                 name = ?',
-              YAML.dump(ds_prop.value), ds.id, property_to_db(prop)
+              YAML.dump(save_val), ds.dip_id, property_to_db(prop)
             )
 
             if save_log
               db.prepared(
                 "INSERT INTO dataset_property_histories SET
                 dataset_property_id = ?, value = ?, created_at = ?",
-                ds_prop.id, ds_prop.value, Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
+                ds_prop.id, save_val, Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
               )
             end
           end

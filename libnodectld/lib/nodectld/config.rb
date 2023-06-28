@@ -214,8 +214,6 @@ module NodeCtld
 
     dataset_expander: {
       enable: true,
-      check_interval: 90,
-      update_interval: 120,
       min_avail_bytes: 512 * 1024 * 1024,
       min_avail_percent: 1,
       min_expand_bytes: 20 * 1024 * 1024 * 1024,
