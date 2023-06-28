@@ -98,6 +98,7 @@ module NodeCtld
       @osctl_exporter.start if @osctl_exporter.enable?
       VpsSshHostKeys.instance
       @dataset_expander.start if @dataset_expander.enable?
+      @storage_status.start if @storage_status.enable?
 
       @init = true
 
@@ -358,20 +359,6 @@ module NodeCtld
           @ct_monitor = nil
         end
       end
-
-      run_thread_unless_runs(:storage_status) do
-        loop do
-          if $CFG.get(:storage, :update_status)
-            log(:info, :regular, 'Update storage resources')
-
-            my = Db.new
-            @storage_status.update(my)
-            my.close
-          end
-
-          sleep($CFG.get(:vpsadmin, :storage_status_interval))
-        end
-      end
     end
 
     def run_thread_unless_runs(name)
@@ -397,7 +384,7 @@ module NodeCtld
       end
 
       if $CFG.get(:storage, :update_status)
-        @storage_status.update(my)
+        @storage_status.update
       end
 
       my.close

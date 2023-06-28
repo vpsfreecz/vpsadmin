@@ -14,13 +14,34 @@ module NodeCtld
     Property = Struct.new(:id, :name, :value, keyword_init: true)
 
     def initialize
+      @mutex = Mutex.new
+      @update_queue = OsCtl::Lib::Queue.new
+      @read_queue = OsCtl::Lib::Queue.new
+      @submit_queue = OsCtl::Lib::Queue.new
       @pools = {}
+      @last_log = nil
     end
 
-    def update(db)
-      fetch(db)
-      read
-      save(db)
+    def enable?
+      $CFG.get(:storage, :update_status)
+    end
+
+    def start
+      @reader = Thread.new { run_reader }
+      @updater = Thread.new { run_updater }
+      @submitter = Thread.new { run_submitter }
+      nil
+    end
+
+    def stop
+      @stop = true
+      [@read_queue, @update_queue, @submit_queue].each { |q| q << :stop }
+      [@reader, @updater, @submitter].each { |t| t.join }
+      nil
+    end
+
+    def update
+      @update_queue << :update
     end
 
     def log_type
@@ -28,7 +49,46 @@ module NodeCtld
     end
 
     protected
-    def fetch(db)
+    def run_reader
+      loop do
+        v = @read_queue.pop(timeout: $CFG.get(:storage, :status_interval))
+        return if v == :stop
+
+        pools = @mutex.synchronize { @pools }
+        read(pools)
+
+        # Prevent queue from piling up when db server is down
+        @submit_queue.clear if @submit_queue.length > 1
+
+        @submit_queue << pools
+      end
+    end
+
+    def run_updater
+      loop do
+        v = @update_queue.pop(timeout: $CFG.get(:storage, :update_interval))
+        return if v == :stop
+
+        pools = fetch
+        @mutex.synchronize { @pools = pools }
+        @read_queue << :read
+      end
+    end
+
+    def run_submitter
+      loop do
+        v = @submit_queue.pop
+        return if v == :stop || @stop
+
+        pools = v
+        save(pools)
+      end
+    end
+
+    def fetch
+      pools = {}
+      db = Db.new
+
       # Fetch pools
       rs = db.prepared(
         "SELECT id, filesystem FROM pools WHERE node_id = ?",
@@ -36,7 +96,7 @@ module NodeCtld
       )
 
       rs.each do |row|
-        @pools[ row['id'] ] = Pool.new(
+        pools[ row['id'] ] = Pool.new(
           name: row['filesystem'].split('/').first,
           fs: row['filesystem'],
           datasets: {},
@@ -45,7 +105,7 @@ module NodeCtld
 
       select_properties = PROPERTIES.map { |v| property_to_db(v) }
 
-      @pools.each do |pool_id, pool|
+      pools.each do |pool_id, pool|
         # Fetch datasets
         db.prepared(
           "SELECT d.full_name, dips.id, props.name AS p_name, props.id AS p_id
@@ -83,10 +143,13 @@ module NodeCtld
           end
         end
       end
+
+      db.close
+      pools
     end
 
-    def read
-      @pools.each_value do |pool|
+    def read(pools)
+      pools.each_value do |pool|
         next if pool.datasets.empty?
 
         reader = OsCtl::Lib::Zfs::PropertyReader.new
@@ -127,8 +190,13 @@ module NodeCtld
       end
     end
 
-    def save(db)
-      @pools.each_value do |pool|
+    def save(pools)
+      now = Time.now
+      db = Db.new
+      save_log = @last_log.nil? || @last_log + $CFG.get(:storage, :log_interval) < now
+      @last_log = now if save_log
+
+      pools.each_value do |pool|
         pool.datasets.each_value do |ds|
           PROPERTIES.each do |prop|
             ds_prop = ds.properties[prop]
@@ -144,14 +212,18 @@ module NodeCtld
               YAML.dump(ds_prop.value), ds.id, property_to_db(prop)
             )
 
-            db.prepared(
-              "INSERT INTO dataset_property_histories SET
-              dataset_property_id = ?, value = ?, created_at = ?",
-              ds_prop.id, ds_prop.value, Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
-            )
+            if save_log
+              db.prepared(
+                "INSERT INTO dataset_property_histories SET
+                dataset_property_id = ?, value = ?, created_at = ?",
+                ds_prop.id, ds_prop.value, Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
+              )
+            end
           end
         end
       end
+
+      db.close
     end
 
     def property_from_db(prop)
