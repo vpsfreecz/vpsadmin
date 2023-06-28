@@ -4,153 +4,172 @@ require 'nodectld/utils'
 module NodeCtld
   class StorageStatus
     include OsCtl::Lib::Utils::Log
-    include Utils::System
-    include Utils::Zfs
 
-    PROPERTIES = [:used, :referenced, :available]
+    PROPERTIES = %w(used referenced available)
 
-    def self.update(db)
-      o = new(db)
-      o.fetch
-      o.read
-      o.update
-      o
-    end
+    Pool = Struct.new(:name, :fs, :datasets, keyword_init: true)
 
-    def initialize(db)
-      @db = db
+    Dataset = Struct.new(:type, :name, :id, :properties, keyword_init: true)
+
+    Property = Struct.new(:id, :name, :value, keyword_init: true)
+
+    def initialize
       @pools = {}
-      @objects = []
     end
 
-    def fetch
+    def update(db)
+      fetch(db)
+      read
+      save(db)
+    end
+
+    def log_type
+      'storage-status'
+    end
+
+    protected
+    def fetch(db)
       # Fetch pools
-      rs = @db.prepared(
+      rs = db.prepared(
         "SELECT id, filesystem FROM pools WHERE node_id = ?",
         $CFG.get(:vpsadmin, :node_id)
       )
 
       rs.each do |row|
-        @pools[ row['id'] ] = {
+        @pools[ row['id'] ] = Pool.new(
+          name: row['filesystem'].split('/').first,
           fs: row['filesystem'],
-          objects: []
-        }
+          datasets: {},
+        )
       end
+
+      select_properties = PROPERTIES.map { |v| property_to_db(v) }
 
       @pools.each do |pool_id, pool|
         # Fetch datasets
-        @db.query("
-          SELECT d.full_name, dips.id, props.name AS p_name, props.id AS p_id
+        db.prepared(
+          "SELECT d.full_name, dips.id, props.name AS p_name, props.id AS p_id
           FROM dataset_in_pools dips
           INNER JOIN datasets d ON d.id = dips.dataset_id
           INNER JOIN dataset_properties props ON props.dataset_in_pool_id = dips.id
-          WHERE dips.pool_id = #{pool_id}
-        ").each do |row|
-          row_id = row['id'].to_i
+          WHERE dips.pool_id = ? AND props.name IN (#{select_properties.map{'?'}.join(',')})",
+          pool_id, *select_properties
+        ).each do |row|
+          prop_name = property_from_db(row['p_name'])
+          next unless PROPERTIES.include?(prop_name)
 
-          if obj = pool[:objects].detect { |o| o[:object_id] == row_id }
-            obj[:properties][ row['p_name'] ] = row['p_id'].to_i
+          name = File.join(pool.fs, row['full_name'])
+
+          if ds = pool.datasets[name]
+            ds.properties[prop_name] = Property.new(
+              id: row['p_id'],
+              name: prop_name,
+              value: nil,
+            )
 
           else
-            pool[:objects] << {
+            pool.datasets[name] = Dataset.new(
               type: :filesystem,
-              name: row['full_name'],
-              object_id: row['id'].to_i,
-              properties: { row['p_name'] => row['p_id'].to_i }
-            }
+              name: name,
+              id: row['id'],
+              properties: {
+                prop_name => Property.new(
+                  id: row['p_id'],
+                  name: prop_name,
+                  value: nil,
+                ),
+              },
+            )
           end
-        end
-
-        # FIXME: Fetch snapshots - not yet
-        next
-
-        # This code may be used in the future, when properties of snapshots are tracked
-        # as well.
-        @db.query("
-          SELECT d.full_name, s.name, sips.id
-          FROM snapshot_in_pools sips
-          INNER JOIN dataset_in_pools dips ON dips.id = sips.dataset_in_pool_id
-          INNER JOIN datasets d ON d.id = dips.dataset_id
-          INNER JOIN snapshots s ON s.id = sips.snapshot_id
-          WHERE dips.pool_id = #{pool_id}
-        ").each do |row|
-          pool[:objects] << {
-            type: :snapshot,
-            name: "#{row['full_name']}@#{row['name']}",
-            object_id: row['id'].to_i
-          }
         end
       end
     end
 
     def read
       @pools.each_value do |pool|
-        zfs(
-          :get,
-          "-Hrp -t filesystem -o name,property,value #{PROPERTIES.join(',')}",
-          pool[:fs]
-        ).output.split("\n").each do |prop|
-          parts = prop.split
-          next if parts[0] == pool[:fs]
+        next if pool.datasets.empty?
 
-          name = parts[0].sub(/^#{pool[:fs]}\//, '')
+        reader = OsCtl::Lib::Zfs::PropertyReader.new
+
+        begin
+          tree = reader.read(
+            [pool.fs],
+            PROPERTIES,
+            recursive: true,
+          )
+        rescue SystemCommandFailed => e
+          log(:warn, "Failed to get status of pool #{pool.fs}: #{e.output}")
+          next
+        end
+
+        vpsadmin_prefix = File.join(pool.fs, 'vpsadmin')
+
+        tree.each_tree_dataset do |tree_ds|
+          next if tree_ds.name.nil? || tree_ds.name == pool.name || tree_ds.name == pool.fs
 
           # Skip pool's internal datasets
-          next if name.start_with?('vpsadmin/') || name == 'vpsadmin'
+          next if tree_ds.name.start_with?("#{vpsadmin_prefix}/") || tree_ds.name == vpsadmin_prefix
 
-          i = pool[:objects].index do |v|
-            v[:name] == name
-          end
+          ds = pool.datasets[tree_ds.name]
 
-          unless i
-            log(:warn, :regular, "'#{parts[0]}' not registered in the database")
+          if ds.nil?
+            log(:warn, "'#{tree_ds.name}' not registered in the database")
             next
           end
 
-          pool[:objects][i][ parts[1].to_sym ] = parts[2].to_i / 1024 / 1024
-        end
+          PROPERTIES.each do |prop|
+            ds_prop = ds.properties[prop]
+            next if ds_prop.nil?
 
-      end
-
-    rescue SystemCommandFailed => e
-      p e
-    end
-
-    def update
-      tracked = %w(used referenced avail)
-
-      @pools.each_value do |pool|
-        pool[:objects].each do |obj|
-          PROPERTIES.each do |p|
-            next unless obj[p]
-
-            col = obj[:type] == :filesystem ? 'dataset_in_pool_id' : 'snapshot_in_pool_id'
-            prop = translate_property(p).to_s
-
-            @db.query("
-              UPDATE dataset_properties
-              SET value = '#{YAML.dump(obj[p])}'
-              WHERE
-                #{col} = #{obj[:object_id]}
-                AND
-                name = '#{prop}'
-            ")
-
-            if tracked.include?(prop)
-              @db.prepared(
-                "INSERT INTO dataset_property_histories SET
-                dataset_property_id = ?, value = ?, created_at = ?",
-                obj[:properties][prop], obj[p], Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
-              )
-            end
+            ds_prop.value = (tree_ds.properties[prop].to_i / 1024.0 / 1024).round
           end
         end
       end
     end
 
-    def translate_property(p)
-      return 'avail' if p == :available
-      p
+    def save(db)
+      @pools.each_value do |pool|
+        pool.datasets.each_value do |ds|
+          PROPERTIES.each do |prop|
+            ds_prop = ds.properties[prop]
+            next if ds_prop.nil? || ds_prop.value.nil?
+
+            db.prepared(
+              'UPDATE dataset_properties
+              SET value = ?
+              WHERE
+                dataset_in_pool_id = ?
+                AND
+                name = ?',
+              YAML.dump(ds_prop.value), ds.id, property_to_db(prop)
+            )
+
+            db.prepared(
+              "INSERT INTO dataset_property_histories SET
+              dataset_property_id = ?, value = ?, created_at = ?",
+              ds_prop.id, ds_prop.value, Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
+            )
+          end
+        end
+      end
+    end
+
+    def property_from_db(prop)
+      case prop
+      when 'avail'
+        'available'
+      else
+        prop
+      end
+    end
+
+    def property_to_db(prop)
+      case prop
+      when 'available'
+        'avail'
+      else
+        prop
+      end
     end
   end
 end
