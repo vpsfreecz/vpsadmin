@@ -23,7 +23,11 @@ module TransactionChains
       use_chain(Dataset::Set, args: [
         dip,
         {refquota: new_refquota},
-        {reset_expansion: false},
+        {
+          reset_expansion: false,
+          admin_override: true,
+          admin_lock_type: 'no_lock',
+        }
       ])
 
       if dataset_expansion.enable_notifications
