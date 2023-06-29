@@ -244,6 +244,11 @@ module TransactionChains
             .order(Arel.sql('COUNT(snapshot_in_pools.id) DESC')),
         },
 
+        dataset_expansions: ::DatasetExpansion
+            .includes(:dataset, :vps)
+            .where(state: 'active')
+            .order('deadline'),
+
         oom_reports: {
           by_vps: ::Vps
             .select('vpses.*, SUM(oom_reports.`count`) AS oom_count')
