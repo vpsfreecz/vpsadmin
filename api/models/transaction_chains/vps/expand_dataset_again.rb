@@ -8,7 +8,12 @@ module TransactionChains
       dip = ds.primary_dataset_in_pool!
 
       lock(dip)
-      concerns(:affect, [ds.class.name, ds.id])
+
+      concerns(
+        :affect,
+        [exp.vps.class.name, exp.vps.id],
+        [exp.dataset.class.name, exp.dataset.id],
+      )
 
       new_refquota = dip.refquota + dataset_expansion_history.added_space
 

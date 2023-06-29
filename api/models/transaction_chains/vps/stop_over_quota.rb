@@ -4,7 +4,11 @@ module TransactionChains
 
     def link_chain(dataset_expansion)
       lock(dataset_expansion.vps)
-      concerns(:affect, [dataset_expansion.vps.class.name, dataset_expansion.vps.id])
+      concerns(
+        :affect,
+        [dataset_expansion.vps.class.name, dataset_expansion.vps.id],
+        [dataset_expansion.dataset.class.name, dataset_expansion.dataset.id],
+      )
 
       use_chain(Vps::Stop, args: [dataset_expansion.vps])
 

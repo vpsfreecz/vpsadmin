@@ -7,7 +7,12 @@ module TransactionChains
       dip = ds.primary_dataset_in_pool!
 
       lock(dip)
-      concerns(:affect, [ds.class.name, ds.id])
+
+      concerns(
+        :affect,
+        [dataset_expansion.vps.class.name, dataset_expansion.vps.id],
+        [dataset_expansion.dataset.class.name, dataset_expansion.dataset.id],
+      )
 
       dataset_expansion.original_refquota = dip.refquota
       dataset_expansion.save!

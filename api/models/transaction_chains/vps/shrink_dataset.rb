@@ -4,7 +4,11 @@ module TransactionChains
 
     def link_chain(dataset_in_pool, dataset_expansion)
       lock(dataset_in_pool)
-      concerns(:affect, [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id])
+      concerns(
+        :affect,
+        [dataset_expansion.vps.class.name, dataset_expansion.vps.id],
+        [dataset_expansion.dataset.class.name, dataset_expansion.dataset.id],
+      )
 
       use_chain(Dataset::Set, args: [
         dataset_in_pool,
