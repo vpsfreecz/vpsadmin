@@ -95,7 +95,9 @@ module NodeCtld
 
       # Fetch pools
       rs = db.prepared(
-        "SELECT id, filesystem, role, refquota_check FROM pools WHERE node_id = ?",
+        "SELECT id, filesystem, role, refquota_check
+        FROM pools
+        WHERE role IN (0, 1) AND node_id = ?",
         $CFG.get(:vpsadmin, :node_id)
       )
 
