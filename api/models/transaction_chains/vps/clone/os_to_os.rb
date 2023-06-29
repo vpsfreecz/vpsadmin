@@ -231,7 +231,7 @@ module TransactionChains
         clone_dataset_plans(src, dst) if attrs[:dataset_plans]
 
         # Clone dataset expansions
-        clone_dataset_expansions(src, dst)
+        clone_dataset_expansions(src, dst, dst_vps)
       end
 
       if remote

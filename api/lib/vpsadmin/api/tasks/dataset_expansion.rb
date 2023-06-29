@@ -59,6 +59,7 @@ module VpsAdmin::API::Tasks
                 over_limit = free_diskspace < 0
 
                 exp = ::DatasetExpansion.create!(
+                  vps: ds.root.primary_dataset_in_pool!.vpses.take!,
                   dataset: ds,
                   state: over_limit ? 'active' : 'resolved',
                   original_refquota: orig_quota,
@@ -90,14 +91,8 @@ module VpsAdmin::API::Tasks
           next
         end
 
-        begin
-          vps = ds.root.primary_dataset_in_pool!.vpses.where(object_state: 'active').take!
-        rescue ActiveRecord::RecordNotFound
-          next
-        end
-
-        if exp.enable_notifications
-          TransactionChains::Mail::VpsDatasetExpanded.fire(vps, exp)
+        if exp.enable_notifications && exp.vps.active?
+          TransactionChains::Mail::VpsDatasetExpanded.fire(exp)
         end
       end
     end
@@ -114,23 +109,20 @@ module VpsAdmin::API::Tasks
       ::DatasetExpansion.where(state: 'active', stop_vps: true).each do |exp|
         if exp.dataset.referenced - OVERQUOTA_MB > exp.original_refquota \
            && (exp.last_vps_stop.nil? || exp.last_vps_stop + COOLDOWN < now) \
-           && vps.uptime >= COOLDOWN \
+           && exp.vps.uptime >= COOLDOWN \
            && \
              (exp.dataset_expansion_histories.count > MAX_EXPANSIONS \
              || (exp.deadline && exp.deadline < Time.now))
-          begin
-            vps = exp.dataset.root.primary_dataset_in_pool!.vpses.where(object_state: 'active').take!
-          rescue ActiveRecord::RecordNotFound
-            next
-          end
 
-          if vps.is_running?
+          vps = exp.vps
+
+          if exp.vps.active? && exp.vps.is_running?
             begin
-              TransactionChains::Vps::StopOverQuota.fire(vps, exp)
-              puts "Stopped VPS #{vps.id}"
+              TransactionChains::Vps::StopOverQuota.fire(exp)
+              puts "Stopped VPS #{exp.vps.id}"
               exp.update!(last_vps_stop: now)
             rescue ResourceLocked
-              warn "VPS #{vps.id} is locked, unable to stop at this time"
+              warn "VPS #{exp.vps.id} is locked, unable to stop at this time"
               next
             end
           end

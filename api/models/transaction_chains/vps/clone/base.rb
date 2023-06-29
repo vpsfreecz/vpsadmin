@@ -115,11 +115,12 @@ module TransactionChains
       end
     end
 
-    def clone_dataset_expansions(src_dip, dst_dip)
+    def clone_dataset_expansions(src_dip, dst_dip, dst_vps)
       src_exp = src_dip.dataset.dataset_expansion
       return if src_exp.nil?
 
       dst_exp = src_exp.dup
+      dst_exp.vps = dst_vps
       dst_exp.dataset = dst_dip.dataset
 
       # Timestamps are not copied by #dup

@@ -1,6 +1,7 @@
 class AddDatasetInPoolExpansions < ActiveRecord::Migration[7.0]
   def change
     create_table :dataset_expansions do |t|
+      t.references  :vps,                          null: false
       t.references  :dataset,                      null: false
       t.integer     :state,                        null: false, default: 0
       t.integer     :original_refquota,            null: false

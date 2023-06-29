@@ -1,4 +1,5 @@
 class DatasetExpansion < ::ActiveRecord::Base
+  belongs_to :vps
   belongs_to :dataset
   has_many :dataset_expansion_histories
   enum state: %i(active resolved)

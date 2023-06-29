@@ -8,6 +8,7 @@ module VpsAdmin::API::Resources
     end
 
     params(:common) do
+      resource VPS, value_label: :hostname
       resource Dataset, value_label: :name
       string :state, choices: ::DatasetExpansion.states.keys.map(&:to_s)
       integer :original_refquota, label: 'Original reference quota'
@@ -97,6 +98,7 @@ module VpsAdmin::API::Resources
         end
 
         exp = ::DatasetExpansion.new(
+          vps: input[:dataset].root.primary_dataset_in_pool!.vpses.take!,
           dataset: input[:dataset],
           added_space: input[:added_space],
           enable_notifications: input[:enable_notifications],
