@@ -151,6 +151,7 @@ if (isLoggedIn()) {
 					$exp->update([
 						'deadline' => $_POST['deadline'] ? date('c', strtotime($_POST['deadline'])) : null,
 						'enable_notifications' => isset($_POST['enable_notifications']),
+						'enable_shrink' => isset($_POST['enable_shrink']),
 						'stop_vps' => isset($_POST['stop_vps']),
 					]);
 
@@ -179,6 +180,7 @@ if (isLoggedIn()) {
 						'added_space' => $_POST['added_space'] * $DATASET_UNITS_TR[$_POST["unit"]],
 						'deadline' => $_POST['deadline'] ? date('c', strtotime($_POST['deadline'])) : null,
 						'enable_notifications' => isset($_POST['enable_notifications']),
+						'enable_shrink' => isset($_POST['enable_shrink']),
 						'stop_vps' => isset($_POST['stop_vps']),
 					]);
 

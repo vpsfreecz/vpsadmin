@@ -7,6 +7,7 @@ class AddDatasetInPoolExpansions < ActiveRecord::Migration[7.0]
       t.integer     :original_refquota,            null: false
       t.integer     :added_space,                  null: false
       t.boolean     :enable_notifications,         null: false, default: true
+      t.boolean     :enable_shrink,                null: false, default: true
       t.boolean     :stop_vps,                     null: false, default: true
       t.datetime    :deadline,                     null: true
       t.datetime    :last_shrink,                  null: true

@@ -139,7 +139,7 @@ module VpsAdmin::API::Tasks
     def resolve_datasets
       now = Time.now
 
-      ::DatasetExpansion.where(state: 'active').each do |exp|
+      ::DatasetExpansion.where(state: 'active', enable_shrink: true).each do |exp|
         begin
           dip = exp.dataset.primary_dataset_in_pool!
         rescue ActiveRecord::RecordNotFound

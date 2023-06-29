@@ -15,6 +15,8 @@ module VpsAdmin::API::Resources
       integer :added_space, label: 'Added space'
       bool :enable_notifications, label: 'Enable notifications',
         desc: 'Send emails about the expansion'
+      bool :enable_shrink, label: 'Enable shrink',
+        desc: 'Automatically shrink the dataset when possible'
       bool :stop_vps, label: 'Stop VPS',
         desc: 'Stop the VPS after deadline passes or too many expansions'
       datetime :deadline
@@ -81,7 +83,14 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :common, include: %i(dataset added_space enable_notifications stop_vps deadline)
+        use :common, include: %i(
+          dataset
+          added_space
+          enable_notifications
+          enable_shrink
+          stop_vps
+          deadline
+        )
       end
 
       output do
@@ -102,6 +111,7 @@ module VpsAdmin::API::Resources
           dataset: input[:dataset],
           added_space: input[:added_space],
           enable_notifications: input[:enable_notifications],
+          enable_shrink: input[:enable_shrink],
           deadline: input[:deadline],
         )
 
@@ -118,7 +128,7 @@ module VpsAdmin::API::Resources
       desc 'Update dataset expansion'
 
       input do
-        use :common, include: %i(enable_notifications stop_vps deadline)
+        use :common, include: %i(enable_notifications enable_shrink stop_vps deadline)
       end
 
       output do

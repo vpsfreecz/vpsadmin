@@ -295,6 +295,7 @@ function dataset_edit_form() {
 
 			api_param_to_form('deadline', $updateInput->deadline, $exp->deadline ? tolocaltz($exp->deadline) : '');
 			api_param_to_form('enable_notifications', $updateInput->enable_notifications, $exp->enable_notifications);
+			api_param_to_form('enable_shrink', $updateInput->enable_shrink, $exp->enable_shrink);
 			api_param_to_form('stop_vps', $updateInput->stop_vps, true);
 
 			$xtpl->form_out(_('Save'));
@@ -361,6 +362,7 @@ function dataset_edit_form() {
 
 		api_param_to_form('deadline', $input->deadline, strftime("%Y-%m-%d %H:%M:%S", strtotime('+1 month')));
 		api_param_to_form('enable_notifications', $input->enable_notifications, true);
+		api_param_to_form('enable_shrink', $input->enable_shrink, true);
 		api_param_to_form('stop_vps', $input->stop_vps, true);
 
 		$xtpl->form_out(_('Expand'));
