@@ -136,6 +136,61 @@ CREATE TABLE `dataset_actions` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dataset_expansion_events`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dataset_expansion_events` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `dataset_id` bigint(20) NOT NULL,
+  `original_refquota` int(11) NOT NULL,
+  `new_refquota` int(11) NOT NULL,
+  `added_space` int(11) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_dataset_expansion_events_on_dataset_id` (`dataset_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dataset_expansion_histories`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dataset_expansion_histories` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `dataset_expansion_id` bigint(20) NOT NULL,
+  `original_refquota` int(11) NOT NULL,
+  `new_refquota` int(11) NOT NULL,
+  `added_space` int(11) NOT NULL,
+  `admin_id` bigint(20) DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_dataset_expansion_histories_on_dataset_expansion_id` (`dataset_expansion_id`),
+  KEY `index_dataset_expansion_histories_on_admin_id` (`admin_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dataset_expansions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dataset_expansions` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `vps_id` bigint(20) NOT NULL,
+  `dataset_id` bigint(20) NOT NULL,
+  `state` int(11) NOT NULL DEFAULT 0,
+  `original_refquota` int(11) NOT NULL,
+  `added_space` int(11) NOT NULL,
+  `enable_notifications` tinyint(1) NOT NULL DEFAULT 1,
+  `enable_shrink` tinyint(1) NOT NULL DEFAULT 1,
+  `stop_vps` tinyint(1) NOT NULL DEFAULT 1,
+  `deadline` datetime(6) DEFAULT NULL,
+  `last_shrink` datetime(6) DEFAULT NULL,
+  `last_vps_stop` datetime(6) DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_dataset_expansions_on_vps_id` (`vps_id`),
+  KEY `index_dataset_expansions_on_dataset_id` (`dataset_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dataset_in_pool_plans`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -245,7 +300,9 @@ CREATE TABLE `datasets` (
   `expiration_date` datetime DEFAULT NULL,
   `current_history_id` int(11) NOT NULL DEFAULT 0,
   `remind_after_date` datetime DEFAULT NULL,
+  `dataset_expansion_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `index_datasets_on_dataset_expansion_id` (`dataset_expansion_id`),
   KEY `index_datasets_on_ancestry` (`ancestry`) USING BTREE,
   KEY `index_datasets_on_user_id` (`user_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -2012,6 +2069,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230421182709'),
 ('20230614112319'),
 ('20230615143920'),
-('20230615150518');
+('20230615150518'),
+('20230623142135');
 
 
