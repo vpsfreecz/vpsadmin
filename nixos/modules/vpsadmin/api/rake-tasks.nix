@@ -315,6 +315,17 @@ in {
           };
         };
 
+        dataset-expansion-run = {
+          rake = [ "vpsadmin:dataset_expansion:run" ];
+          timer.enable = true;
+          timer.config = {
+            OnBootSec = "5min";
+            OnUnitActiveSec = "10min";
+            RandomizedDelaySec = "60s";
+            FixedRandomDelay = true;
+          };
+        };
+
         payments-process = {
           enable = elem "payments" cfg.plugins;
           rake = [ "vpsadmin:payments:process" "BACKEND=fio" ];
