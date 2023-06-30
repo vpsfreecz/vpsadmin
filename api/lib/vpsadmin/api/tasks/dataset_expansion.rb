@@ -6,7 +6,11 @@ module VpsAdmin::API::Tasks
 
     MAX_EXPANSIONS = ENV['MAX_EXPANSIONS'] ? ENV['MAX_EXPANSIONS'].to_i : 3
 
+    STRICT_MAX_EXPANSIONS = ENV['STRICT_MAX_EXPANSIONS'] ? ENV['STRICT_MAX_EXPANSIONS'].to_i : 9
+
     OVERQUOTA_MB = ENV['OVERQUOTA_MB'] ? ENV['OVERQUOTA_MB'].to_i : 5*1024
+
+    STRICT_OVERQUOTA_MB = ENV['STRICT_OVERQUOTA_MB'] ? ENV['STRICT_OVERQUOTA_MB'].to_i : 100*1024
 
     FREE_PERCENT = ENV['FREE_PERCENT'] ? ENV['FREE_PERCENT'].to_i : 5
 
@@ -106,19 +110,37 @@ module VpsAdmin::API::Tasks
     # Stop VPS that are over quota too much or too long
     #
     # Accepts the following environment variables:
-    # [MAX_EXPANSIONS]: VPS with more than `MAX_EXPANSIONS` are suspended
-    # [OVERQUOTA_MB]: Number of MiB to be over the original quota
+    # [MAX_EXPANSIONS]: VPS with more than `MAX_EXPANSIONS` are stopped
+    # [STRICT_MAX_EXPANSIONS]: VPS with more than `STRICT_MAX_EXPANSIONS` are suspended
+    # [OVERQUOTA_MB]: Number of MiB to be over the original quota for VPS to be stopped
+    # [STRICT_OVERQUOTA_MB]: Number of MiB to be over the original quota for VPS to be suspended
     # [COOLDOWN]: Number of seconds between VPS stops
     def stop_vps
       now = Time.now
 
       ::DatasetExpansion.where(state: 'active', stop_vps: true).each do |exp|
+        exp_cnt = exp.dataset_expansion_histories.count
+
+        if exp_cnt > STRICT_MAX_EXPANSIONS \
+           && exp.vps.active? \
+           && exp.dataset.referenced - STRICT_OVERQUOTA_MB > exp.original_refquota
+          begin
+            exp.vps.set_object_state(
+              :suspended,
+              reason: "Dataset #{exp.dataset.full_name} expanded too many times",
+            )
+            puts "Suspended VPS #{exp.vps.id} due to too many expansions (#{exp_cnt})"
+          rescue ResourceLocked
+            warn "VPS #{exp.vps.id} is locked, unable to suspend at this time"
+          end
+
+          next
+        end
+
         if exp.dataset.referenced - OVERQUOTA_MB > exp.original_refquota \
            && (exp.last_vps_stop.nil? || exp.last_vps_stop + COOLDOWN < now) \
            && exp.vps.uptime >= COOLDOWN \
-           && \
-             (exp.dataset_expansion_histories.count > MAX_EXPANSIONS \
-             || (exp.deadline && exp.deadline < Time.now))
+           && (exp_cnt > MAX_EXPANSIONS || (exp.deadline && exp.deadline < Time.now))
 
           vps = exp.vps
 
