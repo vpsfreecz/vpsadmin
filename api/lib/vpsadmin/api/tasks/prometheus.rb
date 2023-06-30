@@ -58,6 +58,24 @@ module VpsAdmin::API::Tasks
         docstring: 'Numbers of transaction chains by type and state',
         labels: [:chain_type, :chain_state],
       )
+
+      @dataset_expansion_count = registry.gauge(
+        :vpsadmin_dataset_expansion_count,
+        docstring: 'Number of dataset expansions',
+        labels: [:vps_location, :vps_node, :vps_id, :dataset_name],
+      )
+
+      @dataset_expansion_added_bytes = registry.gauge(
+        :vpsadmin_dataset_expansion_added_bytes,
+        docstring: 'Amount of space added by expansion in bytes',
+        labels: [:vps_location, :vps_node, :vps_id, :dataset_name],
+      )
+
+      @dataset_expansion_seconds = registry.gauge(
+        :vpsadmin_dataset_expansion_seconds,
+        docstring: 'Number of seconds the dataset is expanded',
+        labels: [:vps_location, :vps_node, :vps_id, :dataset_name],
+      )
     end
 
     # Export metrics for Prometheus
@@ -186,6 +204,34 @@ module VpsAdmin::API::Tasks
           chain_type: type,
           chain_state: state,
         })
+      end
+
+      # dataset_expansion_*
+      ::DatasetExpansion
+        .includes(:dataset, vps: {node: :location})
+        .where(state: 'active')
+        .each do |exp|
+        labels = {
+          vps_location: exp.vps.node.location.domain,
+          vps_node: exp.vps.node.domain_name,
+          vps_id: exp.vps.id,
+          dataset_name: exp.dataset.full_name,
+        }
+
+        @dataset_expansion_count.set(
+          exp.dataset_expansion_histories.count,
+          labels: labels,
+        )
+
+        @dataset_expansion_added_bytes.set(
+          exp.added_space * 1024 * 1024,
+          labels: labels,
+        )
+
+        @dataset_expansion_seconds.set(
+          t_now - exp.created_at,
+          labels: labels,
+        )
       end
 
       save
