@@ -17,6 +17,8 @@ module VpsAdmin::API::Tasks
     # Accepts the following environment variables:
     # [DEADLINE]: Number of seconds within which the user should free space
     def process_events
+      expansions = []
+
       ::DatasetExpansionEvent.all.each do |event|
         if event.dataset.nil?
           event.destroy!
@@ -91,9 +93,13 @@ module VpsAdmin::API::Tasks
           next
         end
 
-        if exp.enable_notifications && exp.vps.active?
-          TransactionChains::Mail::VpsDatasetExpanded.fire(exp)
+        if exp.enable_notifications && exp.vps.active? && !expansions.detect { |v| v.id == exp.id }
+          expansions << exp
         end
+      end
+
+      expansions.each do |exp|
+        TransactionChains::Mail::VpsDatasetExpanded.fire(exp)
       end
     end
 
