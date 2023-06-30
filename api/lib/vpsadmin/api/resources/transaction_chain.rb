@@ -41,7 +41,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
     end
 
     def query
-      q = ::TransactionChain.where(with_restricted)
+      q = ::TransactionChain.where(with_restricted).group('transaction_chains.id')
 
       q = q.where(name: input[:name]) if input[:name]
       q = q.where(state: ::TransactionChain.states[input[:state]]) if input[:state]
