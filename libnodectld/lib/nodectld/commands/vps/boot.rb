@@ -12,6 +12,7 @@ module NodeCtld
         vendor: @vendor,
         variant: @variant,
         zfs_property: 'refquota=10G',
+        wait: @start_timeout || Vps::START_TIMEOUT,
       }
 
       if @mount_root_dataset

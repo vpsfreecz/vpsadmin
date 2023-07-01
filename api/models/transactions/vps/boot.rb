@@ -6,9 +6,9 @@ module Transactions::Vps
 
     # @param vps [::Vps]
     # @param template [::OsTemplate]
-    # @param opts [Hash]
-    # @option opts [String, nil] :mount_root_dataset mountpoint or nil
-    def params(vps, template, opts = {})
+    # @param mount_root_dataset [String, nil] mountpoint or nil
+    # @param start_timeout ['infinity', Integer]
+    def params(vps, template, mount_root_dataset: nil, start_timeout: 'infinity')
       self.vps_id = vps.id
       self.node_id = vps.node_id
 
@@ -18,7 +18,8 @@ module Transactions::Vps
         arch: template.arch,
         vendor: template.vendor,
         variant: template.variant,
-        mount_root_dataset: opts[:mount_root_dataset],
+        mount_root_dataset: mount_root_dataset,
+        start_timeout: start_timeout,
       }
     end
   end
