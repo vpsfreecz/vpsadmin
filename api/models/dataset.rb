@@ -11,6 +11,7 @@ class Dataset < ActiveRecord::Base
   has_many :dataset_in_pools
   has_many :snapshots
   has_many :dataset_properties
+  has_many :dataset_expansions
 
   has_ancestry cache_depth: true
 
