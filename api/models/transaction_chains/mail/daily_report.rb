@@ -201,6 +201,18 @@ module TransactionChains
           pending: trans.where(done: 0)
         },
 
+        cluster_resources: {
+          overused: ::UserClusterResource
+            .joins(:cluster_resource_uses, :user)
+            .select('user_cluster_resources.*, SUM(cluster_resource_uses.value) AS used_sum')
+            .where(
+              users: {object_state: 'active'},
+              cluster_resource_uses: {confirmed: ::ClusterResourceUse.confirmed(:confirmed)},
+            )
+            .group('user_cluster_resources.user_id, user_cluster_resources.environment_id, user_cluster_resources.cluster_resource_id')
+            .having('SUM(cluster_resource_uses.value) > user_cluster_resources.value'),
+        },
+
         backups: {
           old_latest_any_snapshot: ::Dataset
             .joins(dataset_in_pools: :dataset_in_pool_plans)
