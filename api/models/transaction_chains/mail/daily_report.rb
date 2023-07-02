@@ -244,10 +244,24 @@ module TransactionChains
             .order(Arel.sql('COUNT(snapshot_in_pools.id) DESC')),
         },
 
-        dataset_expansions: ::DatasetExpansion
+        dataset_expansions: {
+          active: ::DatasetExpansion
             .includes(:dataset, :vps)
             .where(state: 'active')
             .order('deadline'),
+
+          new: ::DatasetExpansion
+            .includes(:dataset, :vps)
+            .where(state: 'active')
+            .where('DATE_ADD(dataset_expansions.created_at, INTERVAL 1 DAY) >= ?', t)
+            .order('dataset_expansions.created_at'),
+
+          resolved: ::DatasetExpansion
+            .includes(:dataset, :vps)
+            .where(state: 'resolved')
+            .where('DATE_ADD(dataset_expansions.updated_at, INTERVAL 1 DAY) >= ?', t)
+            .order('dataset_expansions.updated_at'),
+        },
 
         oom_reports: {
           by_vps: ::Vps
