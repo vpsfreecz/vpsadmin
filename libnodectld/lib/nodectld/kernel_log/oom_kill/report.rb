@@ -35,12 +35,12 @@ module NodeCtld
           process = OsCtl::Lib::OsProcess.new(task[:pid])
           proc_pool, proc_ctid = process.ct_id
           next if proc_pool.nil? || proc_ctid.to_i != vps_id
+
+          task[:vps_pid] = process.ct_pid
+          task[:vps_uid] = process.ct_ruid if task[:vps_pid]
         rescue OsCtl::Lib::Exceptions::OsProcessNotFound
           next
         end
-
-        task[:vps_pid] = process.ct_pid
-        task[:vps_uid] = process.ct_ruid if task[:vps_pid]
       end
     end
 
