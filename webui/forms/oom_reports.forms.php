@@ -51,7 +51,6 @@ function oom_reports_list() {
 
 	$params['meta'] = array(
 		'includes' => 'vps__node,vps__user',
-		'count' => true,
 	);
 
 	$reports = $api->oom_report->list($params);
@@ -90,9 +89,6 @@ function oom_reports_list() {
 
 	$xtpl->table_td('Displayed reports:');
 	$xtpl->table_td($reports->count());
-	$xtpl->table_tr();
-	$xtpl->table_td('Total reports:');
-	$xtpl->table_td($reports->getTotalCount());
 	$xtpl->table_tr();
 	$xtpl->table_out();
 }
