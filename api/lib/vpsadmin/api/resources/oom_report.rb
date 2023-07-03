@@ -85,7 +85,7 @@ module VpsAdmin::API::Resources
 
       def exec
         query
-          .order('oom_reports.created_at DESC, oom_reports.id DESC')
+          .order('oom_reports.created_at DESC')
           .offset(input[:offset])
           .limit(input[:limit])
       end
