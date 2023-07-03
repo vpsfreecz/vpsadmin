@@ -1083,7 +1083,8 @@ CREATE TABLE `oom_reports` (
   PRIMARY KEY (`id`),
   KEY `index_oom_reports_on_vps_id` (`vps_id`),
   KEY `index_oom_reports_on_processed` (`processed`),
-  KEY `index_oom_reports_on_reported_at` (`reported_at`)
+  KEY `index_oom_reports_on_reported_at` (`reported_at`),
+  KEY `index_oom_reports_on_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `os_templates`;
@@ -2070,6 +2071,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230614112319'),
 ('20230615143920'),
 ('20230615150518'),
-('20230623142135');
+('20230623142135'),
+('20230703161003');
 
 
