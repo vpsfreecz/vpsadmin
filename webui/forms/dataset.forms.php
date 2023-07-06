@@ -353,19 +353,41 @@ function dataset_edit_form() {
 			'return' => $_GET['return'] ?? $_POST['return'],
 		]);
 
-		$input = $api->dataset_expansion->create->getParameters('input');
+		$newInput = $api->dataset_expansion->create->getParameters('input');
 
 		$xtpl->table_td(_('Add space').':');
 		$xtpl->form_add_number_pure('added_space', post_val('added_space', '20'));
 		$xtpl->form_add_select_pure('unit', ["m" => "MiB", "g" => "GiB", "t" => "TiB"], post_val('unit', 'g'));
 		$xtpl->table_tr();
 
-		api_param_to_form('deadline', $input->deadline, strftime("%Y-%m-%d %H:%M:%S", strtotime('+1 month')));
-		api_param_to_form('enable_notifications', $input->enable_notifications, true);
-		api_param_to_form('enable_shrink', $input->enable_shrink, true);
-		api_param_to_form('stop_vps', $input->stop_vps, true);
+		api_param_to_form('deadline', $newInput->deadline, strftime("%Y-%m-%d %H:%M:%S", strtotime('+1 month')));
+		api_param_to_form('enable_notifications', $newInput->enable_notifications, true);
+		api_param_to_form('enable_shrink', $newInput->enable_shrink, true);
+		api_param_to_form('stop_vps', $newInput->stop_vps, true);
 
 		$xtpl->form_out(_('Expand'));
+
+		$xtpl->table_title(_('Register existing expansion'));
+
+		$xtpl->form_create('?page=dataset&action=register_expansion&role='.$_GET['role'].'&id='.$ds->id, 'post');
+
+		$xtpl->form_set_hidden_fields([
+			'return' => $_GET['return'] ?? $_POST['return'],
+		]);
+
+		$addInput = $api->dataset_expansion->register_expanded->getParameters('input');
+
+		$xtpl->table_td(_('Original refquota').':');
+		$xtpl->form_add_number_pure('original_refquota', post_val('original_refquota', '120'));
+		$xtpl->form_add_select_pure('unit', ["m" => "MiB", "g" => "GiB", "t" => "TiB"], post_val('unit', 'g'));
+		$xtpl->table_tr();
+
+		api_param_to_form('deadline', $addInput->deadline, strftime("%Y-%m-%d %H:%M:%S", strtotime('+1 month')));
+		api_param_to_form('enable_notifications', $addInput->enable_notifications, true);
+		api_param_to_form('enable_shrink', $addInput->enable_shrink, true);
+		api_param_to_form('stop_vps', $addInput->stop_vps, true);
+
+		$xtpl->form_out(_('Register'));
 	}
 
 	$xtpl->table_title(_('Backup plans'));
