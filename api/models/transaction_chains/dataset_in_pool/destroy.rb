@@ -231,16 +231,14 @@ module TransactionChains
 
           elsif dataset_in_pool.dataset.dataset_in_pools
                   .joins(:pool)
-                  .where.not(
-                    confirmed: ::DatasetInPool.confirmed(:confirm_destroy),
-                    pools: {role: ::Pool.roles[:backup]}
-                  ).count == 0
+                  .where.not(confirmed: ::DatasetInPool.confirmed(:confirm_destroy))
+                  .where.not(pools: {role: ::Pool.roles[:backup]}).count == 0
 
             # Is now only in backup pools
             just_create(dataset_in_pool.dataset.set_expiration(
-              Time.now.utc + 30*24*60*60),
+              Time.now.utc + 30*24*60*60,
               reason: 'Dataset on the primary pool was deleted.'
-            )
+            ))
             edit(
               dataset_in_pool.dataset,
               expiration_date: dataset_in_pool.dataset.expiration_date
