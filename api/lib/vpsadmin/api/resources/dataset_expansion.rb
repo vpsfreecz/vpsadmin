@@ -118,6 +118,7 @@ module VpsAdmin::API::Resources
           added_space: input[:added_space],
           enable_notifications: input[:enable_notifications],
           enable_shrink: input[:enable_shrink],
+          stop_vps: input[:stop_vps],
           deadline: input[:deadline],
         )
 
