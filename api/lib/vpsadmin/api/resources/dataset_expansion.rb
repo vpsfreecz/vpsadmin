@@ -153,6 +153,59 @@ module VpsAdmin::API::Resources
       end
     end
 
+    class RegisterExpanded < HaveAPI::Action
+      desc 'Create dataset expansion for an already expanded dataset'
+      route 'register_expanded'
+      http_method :post
+
+      input do
+        use :common, include: %i(
+          dataset
+          original_refquota
+          enable_notifications
+          enable_shrink
+          stop_vps
+          deadline
+        )
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        if input[:dataset].dataset_expansion_id
+          error('this dataset is already expanded')
+        end
+
+        dip = input[:dataset].root.primary_dataset_in_pool!
+
+        if dip.pool.role != 'hypervisor'
+          error('only hypervisor datasets can be expanded')
+        end
+
+        if input[:dataset].refquota <= input[:original_refquota]
+          error('invalid parameters', original_refquota: ['must be lesser than current refquota'])
+        end
+
+        ::DatasetExpansion.create_for_expanded!(
+          dip,
+          vps: dip.vpses.take!,
+          dataset: input[:dataset],
+          original_refquota: input[:original_refquota],
+          added_space: input[:dataset].refquota - input[:original_refquota],
+          enable_notifications: input[:enable_notifications],
+          enable_shrink: input[:enable_shrink],
+          stop_vps: input[:stop_vps],
+          deadline: input[:deadline],
+        )
+      end
+    end
+
     class History < HaveAPI::Resource
       route '{dataset_expansion_id}/history'
       model ::DatasetExpansionHistory
