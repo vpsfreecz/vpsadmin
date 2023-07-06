@@ -344,7 +344,7 @@ function dataset_edit_form() {
 			$xtpl->form_out(_('Add space'));
 		}
 
-	} elseif (isAdmin()) {
+	} elseif (isAdmin() && $_GET['role'] == 'hypervisor') {
 		$xtpl->table_title(_('Temporarily expand dataset'));
 
 		$xtpl->form_create('?page=dataset&action=add_expansion&role='.$_GET['role'].'&id='.$ds->id, 'post');

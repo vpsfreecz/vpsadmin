@@ -106,8 +106,14 @@ module VpsAdmin::API::Resources
           error('this dataset is already expanded')
         end
 
+        dip = input[:dataset].root.primary_dataset_in_pool!
+
+        if dip.pool.role != 'hypervisor'
+          error('only hypervisor datasets can be expanded')
+        end
+
         exp = ::DatasetExpansion.new(
-          vps: input[:dataset].root.primary_dataset_in_pool!.vpses.take!,
+          vps: dip.vpses.take!,
           dataset: input[:dataset],
           added_space: input[:added_space],
           enable_notifications: input[:enable_notifications],
