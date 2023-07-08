@@ -145,13 +145,23 @@ in {
           timer.config = { OnCalendar = "*-*-* 08:00:00"; };
         };
 
-        monitoring = {
+        monitoring-check = {
           rake = [ "vpsadmin:monitoring:check" ];
           timer.enable = true;
           timer.config = {
             OnBootSec = "5min";
             OnUnitActiveSec = "10min";
             RandomizedDelaySec = "60s";
+            FixedRandomDelay = true;
+          };
+        };
+
+        monitoring-close = {
+          rake = [ "vpsadmin:monitoring:close" ];
+          timer.enable = true;
+          timer.config = {
+            OnCalendar = "daily";
+            RandomizedDelaySec = "900s";
             FixedRandomDelay = true;
           };
         };
