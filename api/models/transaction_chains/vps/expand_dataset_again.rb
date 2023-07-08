@@ -32,7 +32,7 @@ module TransactionChains
       ])
 
       if exp.enable_notifications
-        use_chain(Mail::VpsDatasetExpanded, args: [vps, exp])
+        use_chain(Mail::VpsDatasetExpanded, args: [exp])
       end
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
