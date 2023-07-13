@@ -56,7 +56,11 @@ module TransactionChains
            && props.has_key?(:refquota) \
            && dataset_in_pool.dataset.dataset_expansion
           t.edit(dataset_in_pool.dataset, dataset_expansion_id: nil)
-          t.edit(dataset_in_pool.dataset.dataset_expansion, state: ::DatasetExpansion.states[:resolved])
+          t.edit(
+            dataset_in_pool.dataset.dataset_expansion,
+            state: ::DatasetExpansion.states[:resolved],
+            updated_at: Time.now.utc.strftime('%Y-%m-%d %H:%M:%S'),
+          )
         end
 
       end
