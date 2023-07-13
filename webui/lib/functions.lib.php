@@ -512,19 +512,25 @@ function unit_for_cluster_resource($name) {
 
 function data_size_unitize($val) {
 	$units = ["t" => 39, "g" => 29, "m" => 19, "k" => 9, "b" => 0];
+	$sign = 1;
+
+	if ($val < 0) {
+		$sign = -1;
+		$val = $val * -1;
+	}
 
 	if (!$val)
 		return [0, "b"];
 
 	elseif ($val < 1024)
-		return [$val, "b"];
+		return [$val * $sign, "b"];
 
 	foreach ($units as $u => $ex) {
 		if ($val >= (2 << $ex))
-			return [$val / (2 << $ex), $u];
+			return [($val / (2 << $ex)) * $sign, $u];
 	}
 
-	return [$val, "b"];
+	return [$val * $sign, "b"];
 }
 
 function data_size_to_humanreadable_b($val) {
@@ -563,19 +569,25 @@ function number_unitize($val) {
 		"k" => 1000,
 		"" => 0
 	];
+	$sign = 1;
+
+	if ($val < 0) {
+		$sign = -1;
+		$val = $val * -1;
+	}
 
 	if (!$val)
 		return [0, ""];
 
 	elseif ($val < 1000)
-		return [$val, ""];
+		return [$val * $sign, ""];
 
 	foreach ($units as $u => $ex) {
 		if ($val >= $ex)
-			return [$val / $ex, $u];
+			return [($val / $ex) * $sign, $u];
 	}
 
-	return [$val, ""];
+	return [$val * $sign, ""];
 }
 
 function format_number_with_unit($n) {
@@ -589,7 +601,7 @@ function format_number_with_unit($n) {
 
 function approx_number($val) {
 	$start = 1000;
-	$units = array(
+	$units = [
 		"&nbsp;million",
 		"&nbsp;billion",
 		"&times;10<sup>12</sup>",
@@ -600,23 +612,29 @@ function approx_number($val) {
 		"&times;10<sup>27</sup>",
 		"&times;10<sup>30</sup>",
 		"&times;10<sup>33</sup>",
-	);
+	];
 
 	$i = 1;
 	$n = $start;
-	$data = array();
+	$data = [];
+	$sign = 1;
+
+	if ($val < 0) {
+		$sign = -1;
+		$val = $val * -1;
+	}
 
 	foreach ($units as $u) {
 		$n *= 1000;
-		$data[] = array('n' => $n, 'unit' => $u);
+		$data[] = ['n' => $n, 'unit' => $u];
 	}
 
 	foreach (array_reverse($data) as $unit) {
 		if ($val > $unit['n'])
-			return round($val / $unit['n'], 2).$unit['unit'];
+			return (round($val / $unit['n'], 2) * $sign).$unit['unit'];
 	}
 
-	return number_format($val, 0, '.', ' ');
+	return number_format($val * $sign, 0, '.', ' ');
 }
 
 function get_val($name, $default = '') {
