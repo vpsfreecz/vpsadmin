@@ -219,7 +219,7 @@ module VpsAdmin::API::Tasks
         }
 
         @dataset_expansion_count.set(
-          exp.dataset_expansion_histories.count,
+          exp.expansion_count,
           labels: labels,
         )
 

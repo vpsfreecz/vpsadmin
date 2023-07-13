@@ -55,12 +55,32 @@ module TransactionChains
         if opts.fetch(:reset_expansion, true) \
            && props.has_key?(:refquota) \
            && dataset_in_pool.dataset.dataset_expansion
-          t.edit(dataset_in_pool.dataset, dataset_expansion_id: nil)
-          t.edit(
-            dataset_in_pool.dataset.dataset_expansion,
-            state: ::DatasetExpansion.states[:resolved],
-            updated_at: Time.now.utc.strftime('%Y-%m-%d %H:%M:%S'),
-          )
+          exp = dataset_in_pool.dataset.dataset_expansion
+
+          if properties[:refquota] <= exp.original_refquota
+            t.edit(dataset_in_pool.dataset, dataset_expansion_id: nil)
+            t.edit(
+              exp,
+              state: ::DatasetExpansion.states[:resolved],
+              updated_at: Time.now.utc.strftime('%Y-%m-%d %H:%M:%S'),
+            )
+          elsif properties[:refquota] < dataset_in_pool.refquota
+            new_added_space = properties[:refquota] - exp.original_refquota
+            returned_space = properties[:refquota] - dataset_in_pool.refquota
+
+            t.edit(
+              exp,
+              added_space: new_added_space,
+              updated_at: Time.now.utc.strftime('%Y-%m-%d %H:%M:%S'),
+            )
+
+            t.just_create(exp.dataset_expansion_histories.create!(
+              added_space: returned_space,
+              original_refquota: dataset_in_pool.refquota,
+              new_refquota: properties[:refquota],
+              admin: ::User.current,
+            ))
+          end
         end
 
       end

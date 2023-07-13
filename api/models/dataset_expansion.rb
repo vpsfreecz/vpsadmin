@@ -26,4 +26,9 @@ class DatasetExpansion < ::ActiveRecord::Base
 
     exp
   end
+
+  # @return [Integer]
+  def expansion_count
+    dataset_expansion_histories.where('added_space > 0').count
+  end
 end

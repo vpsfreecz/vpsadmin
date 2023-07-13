@@ -119,7 +119,7 @@ module VpsAdmin::API::Tasks
       now = Time.now
 
       ::DatasetExpansion.where(state: 'active', stop_vps: true).each do |exp|
-        exp_cnt = exp.dataset_expansion_histories.count
+        exp_cnt = exp.expansion_count
 
         if exp_cnt > STRICT_MAX_EXPANSIONS \
            && exp.vps.active? \
