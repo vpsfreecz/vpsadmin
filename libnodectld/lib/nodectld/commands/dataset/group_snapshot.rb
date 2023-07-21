@@ -54,14 +54,12 @@ module NodeCtld
     end
 
     def on_save(db)
-      @snapshots.each do |snap|
-        db.prepared(
-          'UPDATE snapshots SET name = ?, created_at = ? WHERE id = ?',
-          @name,
-          @created_at,
-          snap['snapshot_id']
-        )
-      end
+      db.prepared(
+        "UPDATE snapshots SET name = ?, created_at = ? WHERE id IN (#{@snapshots.map{'?'}.join(',')})",
+        @name,
+        @created_at,
+        *(@snapshots.map { |snap| snap['snapshot_id'] }),
+      )
     end
 
     def post_save
