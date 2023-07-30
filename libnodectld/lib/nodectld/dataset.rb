@@ -6,6 +6,7 @@ module NodeCtld
     include OsCtl::Lib::Utils::Log
     include Utils::System
     include Utils::Zfs
+    include Utils::OsCtl
 
     def set
       zfs(
@@ -21,8 +22,21 @@ module NodeCtld
       )
     end
 
-    def destroy(pool_fs, name, recursive)
-      zfs(:destroy, recursive ? '-r' : nil, "#{pool_fs}/#{name}")
+    def destroy(pool_fs, name, recursive: false, trash: false)
+      ds = "#{pool_fs}/#{name}"
+
+      if trash
+        unless recursive
+          # Check that it has no descendants
+          if zfs(:list, '-H -r -t all -o name', ds).output.strip.split("\n").length > 1
+            fail "#{ds} has children, refusing to destroy"
+          end
+        end
+
+        osctl(%i(trash-bin dataset add), ds)
+      else
+        zfs(:destroy, recursive ? '-r' : nil, ds)
+      end
     end
 
     def snapshot(pool_fs, dataset_name)

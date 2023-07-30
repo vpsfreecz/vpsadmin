@@ -3,7 +3,12 @@ module NodeCtld
     handle 5203
 
     def exec
-      Dataset.new.destroy(@pool_fs, @name, false)
+      Dataset.new.destroy(
+        @pool_fs,
+        @name,
+        recursive: false,
+        trash: @pool_role == 'hypervisor'
+      )
     end
   end
 end

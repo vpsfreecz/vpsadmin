@@ -10,6 +10,7 @@ module Transactions::Storage
 
       {
         pool_fs: dataset_in_pool.pool.filesystem,
+        pool_role: dataset_in_pool.pool.role,
         name: dataset_in_pool.dataset.full_name,
       }
     end
