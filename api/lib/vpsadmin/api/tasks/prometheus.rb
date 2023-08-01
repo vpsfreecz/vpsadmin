@@ -76,6 +76,12 @@ module VpsAdmin::API::Tasks
         docstring: 'Number of seconds the dataset is expanded',
         labels: [:vps_location, :vps_node, :vps_id, :dataset_name],
       )
+
+      @export_host_ip_owner_mismatch = registry.gauge(
+        :vpsadmin_export_host_ip_owner_mismatch,
+        docstring: 'Export host with mismatching IP owner',
+        labels: [:user_id, :export_id, :ip_address_id, :ip_address_addr],
+      )
     end
 
     # Export metrics for Prometheus
@@ -231,6 +237,41 @@ module VpsAdmin::API::Tasks
         @dataset_expansion_seconds.set(
           t_now - exp.created_at,
           labels: labels,
+        )
+      end
+
+      # export_host_ip_owner_mismatch
+      export_hosts = []
+
+      # IPs not owned by a user, only assigned to a VPS
+      export_hosts.concat(
+        ::ExportHost
+          .includes(:export, :ip_address)
+          .joins(:export, ip_address: {network_interface: :vps})
+          .where('vpses.user_id != exports.user_id')
+          .to_a
+      )
+
+      # IPs owned by a user
+      export_hosts.concat(
+        ::ExportHost
+          .includes(:export, :ip_address)
+          .joins(:export, :ip_address)
+          .where('ip_addresses.user_id IS NOT NULL AND ip_addresses.user_id != exports.user_id')
+          .to_a
+      )
+
+      export_hosts.uniq do |host|
+        host.id
+      end.each do |host|
+        @export_host_ip_owner_mismatch.set(
+          1,
+          labels: {
+            user_id: host.export.user_id,
+            export_id: host.export_id,
+            ip_address_id: host.ip_address_id,
+            ip_address_addr: host.ip_address.to_s,
+          },
         )
       end
 
