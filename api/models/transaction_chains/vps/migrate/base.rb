@@ -495,6 +495,18 @@ module TransactionChains
               t.edit(dst_ip, user_id: dst_vps.user_id)
             end
           end
+
+          # Add new addresses to user's exports
+          use_chain(Export::AddHostsToAll, args: [
+            vps_user,
+            dst_ip_addresses.map { |src, dst| dst }.compact,
+          ])
+
+          # Remove old addresses from user's exports
+          use_chain(Export::DelHostsFromAll, args: [
+            vps_user,
+            dst_ip_addresses.map { |src, dst| src }.compact,
+          ])
         end
 
         # Sort src host addresses by order
