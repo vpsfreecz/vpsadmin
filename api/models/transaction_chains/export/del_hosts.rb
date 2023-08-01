@@ -6,6 +6,7 @@ module TransactionChains
     # @param hosts_or_ip_addresses [Array<::ExportHost, ::IpAddress>]
     def link_chain(export, hosts_or_ip_addresses)
       concerns(:affect, [export.class.name, export.id])
+      lock(export)
 
       hosts = hosts_or_ip_addresses.map do |host_or_ip|
         if host_or_ip.is_a?(::ExportHost)

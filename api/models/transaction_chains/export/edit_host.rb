@@ -10,6 +10,7 @@ module TransactionChains
     # @option opts [Boolean] :root_squash
     def link_chain(host, opts)
       concerns(:affect, [host.export.class.name, host.export.id])
+      lock(host.export)
 
       new_host = ::ExportHost.find(host.id)
       new_host.assign_attributes(opts)

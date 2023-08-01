@@ -6,6 +6,7 @@ module TransactionChains
     # @param hosts [Array<::ExportHost>]
     def link_chain(export, hosts)
       concerns(:affect, [export.class.name, export.id])
+      lock(export)
 
       ret = []
       ipv4_hosts = hosts.select { |h| h.ip_address.version == 4 }
