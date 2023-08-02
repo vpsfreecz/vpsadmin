@@ -14,7 +14,7 @@ GEM
     highline (2.0.3)
     ipaddress (0.8.3)
     json (2.6.3)
-    libnodectld (3.0.0.dev.build20230730115241)
+    libnodectld (3.0.0.dev.build20230802130939)
       eventmachine
       filelock
       ipaddress (~> 0.8.3)
@@ -48,8 +48,8 @@ GEM
       timeout
     net-smtp (0.3.3)
       net-protocol
-    nodectld (3.0.0.dev.build20230730115241)
-      libnodectld (= 3.0.0.dev.build20230730115241)
+    nodectld (3.0.0.dev.build20230802130939)
+      libnodectld (= 3.0.0.dev.build20230802130939)
     osctl (23.05.0.build20230730113835)
       curses
       gli (~> 2.20.0)
@@ -86,7 +86,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  nodectld (= 3.0.0.dev.build20230730115241)!
+  nodectld (= 3.0.0.dev.build20230802130939)!
 
 BUNDLED WITH
    2.4.13
