@@ -77,6 +77,12 @@ module VpsAdmin::API::Tasks
         labels: [:vps_location, :vps_node, :vps_id, :dataset_name],
       )
 
+      @dataset_expansion_deadline = registry.gauge(
+        :vpsadmin_dataset_expansion_deadline,
+        docstring: 'Timestamp of dataset expansion deadline',
+        labels: [:vps_location, :vps_node, :vps_id, :dataset_name],
+      )
+
       @export_host_ip_owner_mismatch = registry.gauge(
         :vpsadmin_export_host_ip_owner_mismatch,
         docstring: 'Export host with mismatching IP owner',
@@ -241,6 +247,13 @@ module VpsAdmin::API::Tasks
           t_now - exp.created_at,
           labels: labels,
         )
+
+        if exp.deadline
+          @dataset_expansion_deadline.set(
+            exp.deadline.to_i,
+            labels: labels,
+          )
+        end
       end
 
       # export_host_ip_owner_mismatch
