@@ -259,7 +259,10 @@ module TransactionChains
         dataset_expansions: {
           active: ::DatasetExpansion
             .includes(:dataset, :vps)
+            .joins(:vps, dataset: :user)
             .where(state: 'active')
+            .where(users: {object_state: ::User.object_states[:active]})
+            .where(vpses: {object_state: ::Vps.object_states[:active]})
             .order('deadline'),
 
           new: ::DatasetExpansion
