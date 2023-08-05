@@ -215,7 +215,10 @@ module VpsAdmin::API::Tasks
       # dataset_expansion_*
       ::DatasetExpansion
         .includes(:dataset, vps: {node: :location})
+        .joins(:vps, dataset: :user)
         .where(state: 'active')
+        .where(users: {object_state: ::User.object_states[:active]})
+        .where(vpses: {object_state: ::Vps.object_states[:active]})
         .each do |exp|
         labels = {
           vps_location: exp.vps.node.location.domain,
