@@ -94,6 +94,7 @@ function ip_address_list($page) {
 		$xtpl->table_add_category(_('Owned'));
 
 	$xtpl->table_add_category('VPS');
+	$xtpl->table_add_category('');
 
 	if ($_SESSION['is_admin'])
 		$xtpl->table_add_category('');
@@ -125,6 +126,8 @@ function ip_address_list($page) {
 			$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->id.'">'.$vps->id.' ('.h($vps->hostname).')</a>');
 		else
 			$xtpl->table_td('---');
+
+		$xtpl->table_td('<a href="?page=networking&action=assignments&ip_addr='.$ip->addr.'&ip_prefix='.$ip->prefix.'&list=1"><img src="template/icons/vps_ip_list.png" alt="'._('List assignments').'" title="'._('List assignments').'"></a>');
 
 		if ($_SESSION['is_admin']) {
 			$xtpl->table_td(
@@ -544,4 +547,118 @@ function hostaddr_unassign_form($id) {
 	$xtpl->form_add_checkbox(_('Confirm').':', 'confirm', '1', false);
 
 	$xtpl->form_out(_("Remove"));
+}
+
+function ip_address_assignment_list_form() {
+	global $xtpl, $api;
+
+	$xtpl->title(_('IP address assignments'));
+	$xtpl->table_title(_('Filters'));
+	$xtpl->form_create('', 'get', 'ip-filter', false);
+
+	$xtpl->form_set_hidden_fields([
+		'page' => $_GET['page'],
+		'action' => 'assignments',
+		'list' => '1',
+	]);
+
+	$xtpl->form_add_input(_('Limit').':', 'text', '40', 'limit', get_val('limit', '25'), '');
+	$xtpl->table_tr();
+
+	$versions = array(
+		0 => 'all',
+		4 => '4',
+		6 => '6'
+	);
+
+	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
+	$xtpl->form_add_select(_("Version").':', 'ip_version', $versions, get_val('ip_version', 0));
+	$xtpl->form_add_input(_("IP address").':', 'text', '40', 'ip_addr', get_val('ip_addr'));
+	$xtpl->form_add_input(_("Prefix").':', 'text', '40', 'ip_prefix', get_val('ip_prefix'));
+
+	if (isAdmin()) {
+		$xtpl->form_add_input(_("User ID").':', 'text', '40', 'user', get_val('user'));
+	}
+
+	$xtpl->form_add_input(_("VPS").':', 'text', '40', 'vps', get_val('vps'));
+	$xtpl->form_add_select(
+		_("Network").':',
+		'network',
+		resource_list_to_options(
+			$api->network->list(['purpose' => 'vps']),
+			'id', 'label',
+			true,
+			'network_label'
+		),
+		get_val('network')
+	);
+	$xtpl->form_add_select(_("Location").':', 'location',
+		resource_list_to_options($api->location->list()), get_val('location'));
+
+	$xtpl->form_out(_('Show'));
+
+	if (!($_GET['list'] ?? false))
+		return;
+
+	$params = [
+		'limit' => get_val('limit', 25),
+		'offset' => get_val('offset', 0),
+		'order' => 'newest',
+		'meta' => ['includes' => 'user,vps,ip_address'],
+	];
+
+	if (isAdmin() && $_GET['user']) {
+		$params['user'] = $_GET['user'];
+	}
+
+	if ($_GET['vps'])
+		$params['vps'] = $_GET['vps'];
+
+	if ($_GET['network'])
+		$params['network'] = $_GET['network'];
+
+	if ($_GET['location'])
+		$params['location'] = $_GET['location'];
+
+	if ($_GET['ip_version'])
+		$params['ip_version'] = $_GET['ip_version'];
+
+	if ($_GET['ip_addr'])
+		$params['ip_addr'] = $_GET['ip_addr'];
+
+	if ($_GET['ip_prefix'])
+		$params['ip_prefix'] = $_GET['ip_prefix'];
+
+	$assignments = $api->ip_address_assignment->list($params);
+
+	$xtpl->table_add_category(_("IP address"));
+
+	if (isAdmin())
+		$xtpl->table_add_category(_('User'));
+
+	$xtpl->table_add_category('VPS');
+	$xtpl->table_add_category(_('From'));
+	$xtpl->table_add_category(_('To'));
+	$xtpl->table_add_category(_('Assigned by'));
+	$xtpl->table_add_category(_('Unassigned by'));
+	$xtpl->table_add_category(_('Assigned at'));
+	$xtpl->table_add_category(_('Verified'));
+
+	foreach ($assignments as $as) {
+		$xtpl->table_td($as->ip_addr.'/'.$as->ip_prefix);
+
+		if (isAdmin())
+			$xtpl->table_td($as->user_id ? user_link($as->user) : $as->raw_user_id);
+
+		$xtpl->table_td($as->vps_id ? vps_link($as->vps) : $as->raw_vps_id);
+		$xtpl->table_td(tolocaltz($as->from_date));
+		$xtpl->table_td($as->to_date ? tolocaltz($as->to_date) : '-');
+		$xtpl->table_td($as->assigned_by_chain_id ? ('<a href="?page=transactions&chain='.$as->assigned_by_chain_id.'">'.$as->assigned_by_chain_id.'</a>') : '-');
+		$xtpl->table_td($as->unassigned_by_chain_id ? ('<a href="?page=transactions&chain='.$as->unassigned_by_chain_id.'">'.$as->unassigned_by_chain_id.'</a>') : '-');
+		$xtpl->table_td(tolocaltz($as->created_at));
+		$xtpl->table_td(boolean_icon(!$as->reconstructed));
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_out();
 }

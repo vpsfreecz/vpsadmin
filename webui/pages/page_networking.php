@@ -166,6 +166,10 @@ switch($_GET['action'] ?? null) {
 
 		break;
 
+	case 'assignments':
+		ip_address_assignment_list_form();
+		break;
+
 	case 'traffic':
 		$show_traffic = true;
 		break;

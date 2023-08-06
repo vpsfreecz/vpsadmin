@@ -1769,6 +1769,11 @@ function vps_netif_iproutes_form($vps, $netif) {
 
 	$xtpl->table_add_category(_('Routed addresses'));
 	$xtpl->table_add_category('');
+
+	if (isAdmin())
+		$xtpl->table_add_category('');
+
+	$xtpl->table_add_category('');
 	$xtpl->form_create('?page=adminvps&action=iproute_select&veid='.$vps->id.'&netif='.$netif->id, 'post');
 
 	foreach ($ips as $ip) {
@@ -1777,6 +1782,11 @@ function vps_netif_iproutes_form($vps, $netif) {
 			$ip->addr.'/'.$ip->prefix.
 			($ip->route_via_id ? _(' via ').$ip->route_via->addr : '')
 		);
+
+		if (isAdmin()) {
+			$xtpl->table_td('<a href="?page=networking&action=assignments&ip_addr='.$ip->addr.'&ip_prefix='.$ip->prefix.'&list=1"><img src="template/icons/vps_ip_list.png" alt="'._('List assignments').'" title="'._('List assignments').'"></a>');
+		}
+
 		$xtpl->table_td(
 			'<a href="?page=adminvps&action=iproute_del&id='.$ip->id.
 			'&veid='.$vps->id.'&netif='.$netif->id.'&t='.csrf_token().'" title="'._('Remove').'">'.
