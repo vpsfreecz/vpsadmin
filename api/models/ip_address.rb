@@ -7,6 +7,7 @@ class IpAddress < ActiveRecord::Base
   belongs_to :route_via, class_name: 'HostIpAddress'
   belongs_to :charged_environment, class_name: 'Environment'
   has_many :host_ip_addresses
+  has_many :ip_address_assignments
 
   has_paper_trail
 
@@ -181,6 +182,38 @@ class IpAddress < ActiveRecord::Base
         'can be owned only by the owner of the VPS that uses this address'
       )
     end
+  end
+
+  def log_assignment(vps:, chain:, confirmable:)
+    assignment = ip_address_assignments.create!(
+      ip_addr: ip_addr,
+      ip_prefix: prefix,
+      user: vps.user,
+      vps: vps,
+      from_date: Time.now,
+      to_date: nil,
+      assigned_by_chain: chain,
+    )
+
+    confirmable.just_create(assignment)
+    nil
+  end
+
+  def log_unassignment(chain:, confirmable:)
+    last_assignment = ip_address_assignments.all.order('id').last
+
+    if last_assignment.nil?
+      # This shouldn't be possible unless there's a bug in assignment tracking
+      return
+    end
+
+    if last_assignment.to_date
+      # Again, this shouldn't be possible, but we don't want to raise an exception
+      return
+    end
+
+    confirmable.edit(last_assignment, to_date: Time.now, unassigned_by_chain_id: chain.id)
+    nil
   end
 
   # @param env [Environment]

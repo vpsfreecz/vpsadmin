@@ -445,6 +445,8 @@ module TransactionChains
             src_host_addrs.each do |host_addr|
               t.edit(host_addr, order: nil)
             end
+
+            src_ip.log_unassignment(chain: self, confirmable: t)
           end
 
           if src_node.hypervisor_type == dst_node.hypervisor_type
@@ -494,6 +496,8 @@ module TransactionChains
             if !dst_ip.user_id && dst_node.location.environment.user_ip_ownership
               t.edit(dst_ip, user_id: dst_vps.user_id)
             end
+
+            dst_ip.log_assignment(vps: dst_netif.vps, chain: self, confirmable: t)
           end
 
           # Add new addresses to user's exports

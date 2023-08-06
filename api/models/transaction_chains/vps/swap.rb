@@ -153,6 +153,7 @@ module TransactionChains
                   urgent: true,
                 ) do |t|
                   t.edit(ip, network_interface_id: nil)
+                  ip.log_unassignment(chain: self, confirmable: t)
                 end
               end
             end
@@ -178,6 +179,7 @@ module TransactionChains
                   urgent: true,
                 ) do |t|
                   t.edit(ip, network_interface_id: nil)
+                  ip.log_unassignment(chain: self, confirmable: t)
                 end
               end
 
@@ -193,6 +195,7 @@ module TransactionChains
                   urgent: true,
                 ) do |t|
                   t.edit(ip, network_interface_id: dst_attrs[:target_netif].id)
+                  ip.log_assignment(vps: dst_attrs[:target_netif].vps, chain: self, confirmable: t)
                 end
 
                 attrs[:host_addrs].each do |addr|
@@ -292,6 +295,7 @@ module TransactionChains
                   urgent: true,
                 ) do |t|
                   t.edit(ip, network_interface_id: dst_attrs[:target_netif].id)
+                  ip.log_assignment(vps: dst_attrs[:target_netif].vps, chain: self, confirmable: t)
                 end
 
                 attrs[:host_addrs].each do |addr|

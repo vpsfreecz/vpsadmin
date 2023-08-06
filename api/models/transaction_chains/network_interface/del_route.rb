@@ -124,6 +124,8 @@ module TransactionChains
       t.just_create(
         netif.vps.log(:route_del, {id: ip.id, addr: ip.addr})
       ) unless included?
+
+      ip.log_unassignment(chain: self, confirmable: t)
     end
   end
 end

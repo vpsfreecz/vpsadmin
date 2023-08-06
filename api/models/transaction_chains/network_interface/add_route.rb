@@ -69,6 +69,8 @@ module TransactionChains
           t.just_create(
             netif.vps.log(:route_add, {id: ip.id, addr: ip.addr})
           ) unless included?
+
+          ip.log_assignment(vps: netif.vps, chain: self, confirmable: t)
         end
 
         order[ip.version] += 1

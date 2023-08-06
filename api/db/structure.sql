@@ -476,6 +476,35 @@ CREATE TABLE `host_ip_addresses` (
   KEY `index_host_ip_addresses_on_auto_add` (`auto_add`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `ip_address_assignments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `ip_address_assignments` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `ip_address_id` bigint(20) NOT NULL,
+  `ip_addr` varchar(40) NOT NULL,
+  `ip_prefix` int(11) NOT NULL,
+  `user_id` bigint(20) NOT NULL,
+  `vps_id` bigint(20) NOT NULL,
+  `from_date` datetime(6) NOT NULL,
+  `to_date` datetime(6) DEFAULT NULL,
+  `assigned_by_chain_id` bigint(20) DEFAULT NULL,
+  `unassigned_by_chain_id` bigint(20) DEFAULT NULL,
+  `reconstructed` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_ip_address_assignments_on_ip_address_id` (`ip_address_id`),
+  KEY `index_ip_address_assignments_on_user_id` (`user_id`),
+  KEY `index_ip_address_assignments_on_vps_id` (`vps_id`),
+  KEY `index_ip_address_assignments_on_assigned_by_chain_id` (`assigned_by_chain_id`),
+  KEY `index_ip_address_assignments_on_unassigned_by_chain_id` (`unassigned_by_chain_id`),
+  KEY `index_ip_address_assignments_on_ip_addr` (`ip_addr`),
+  KEY `index_ip_address_assignments_on_ip_prefix` (`ip_prefix`),
+  KEY `index_ip_address_assignments_on_from_date` (`from_date`),
+  KEY `index_ip_address_assignments_on_to_date` (`to_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `ip_addresses`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -2072,6 +2101,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230615143920'),
 ('20230615150518'),
 ('20230623142135'),
-('20230703161003');
+('20230703161003'),
+('20230803123312');
 
 

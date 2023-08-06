@@ -230,7 +230,8 @@ module TransactionChains
       db_changes.update(vps.transfer_resources!(vps.user))
 
       ## IP addresses
-      db_changes.update(transfer_ip_addresses(vps))
+      ip_changes, all_ips = transfer_ip_addresses(vps)
+      db_changes.update(ip_changes)
 
       # Chown user namespace mapping
       append_t(Transactions::Vps::Chown, args: [
@@ -243,6 +244,12 @@ module TransactionChains
         t.just_create(vps.log(:user, {
           user_id: vps.user_id,
         }))
+
+        # Update IP assignments
+        all_ips.each do |ip|
+          ip.log_unassignment(chain: self, confirmable: t)
+          ip.log_assignment(vps: vps, chain: self, confirmable: t)
+        end
       end
 
       use_chain(
@@ -349,6 +356,7 @@ module TransactionChains
     # new one.
     def transfer_ip_addresses(vps)
       ret = {}
+      all_ips = []
       src_env = ::User.find(vps.user_id_was).environment_user_configs.find_by!(
         environment: vps.node.location.environment,
       )
@@ -357,10 +365,11 @@ module TransactionChains
       )
 
       %i(ipv4 ipv4_private ipv6).each do |r|
-        st_cnt, st_changes = standalone_ips(vps, r)
+        st_cnt, st_changes, st_ips = standalone_ips(vps, r)
 
         cnt = st_cnt
         ret.update(st_changes)
+        all_ips.concat(st_ips)
 
         next if cnt == 0
 
@@ -382,7 +391,7 @@ module TransactionChains
         ret[dst_use] = {value: dst_use.value}
       end
 
-      ret
+      [ret, all_ips]
     end
 
     def standalone_ips(vps, r)
@@ -401,8 +410,10 @@ module TransactionChains
 
       changes = {}
       sum = 0
+      ips = []
 
       q.each do |ip|
+        ips << ip
         sum += ip.size
 
         if vps.node.location.environment.user_ip_ownership
@@ -410,7 +421,7 @@ module TransactionChains
         end
       end
 
-      [sum, changes]
+      [sum, changes, ips]
     end
   end
 end
