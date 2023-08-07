@@ -107,7 +107,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       input blacklist: %i(user)
       output whitelist: %i(
         id user hostname manage_hostname os_template cgroup_version dns_resolver
-        node dataset pool memory swap cpu backup_enabled maintenance_lock
+        node dataset pool memory swap cpu maintenance_lock
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
@@ -138,7 +138,6 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
           name: 'node1'
         },
         onstartall: true,
-        backup_enabled: true,
       }])
     end
 
@@ -238,7 +237,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       )
       output whitelist: %i(
         id user hostname manage_hostname os_template cgroup_version dns_resolver
-        node dataset pool memory swap cpu backup_enabled maintenance_lock
+        node dataset pool memory swap cpu maintenance_lock
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
@@ -368,7 +367,7 @@ END
       restrict user_id: u.id
       output whitelist: %i(
         id user hostname manage_hostname os_template cgroup_version dns_resolver
-        node dataset pool memory swap cpu backup_enabled maintenance_lock
+        node dataset pool memory swap cpu maintenance_lock
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
@@ -862,7 +861,7 @@ END
       input blacklist: %i(node user configs)
       output whitelist: %i(
         id user hostname manage_hostname os_template cgroup_version dns_resolver
-        node dataset pool memory swap cpu backup_enabled maintenance_lock
+        node dataset pool memory swap cpu maintenance_lock
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_disk uptime
         loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq
