@@ -476,6 +476,32 @@ CREATE TABLE `host_ip_addresses` (
   KEY `index_host_ip_addresses_on_auto_add` (`auto_add`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `incident_reports`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `incident_reports` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL,
+  `vps_id` bigint(20) NOT NULL,
+  `ip_address_assignment_id` bigint(20) DEFAULT NULL,
+  `filed_by_id` bigint(20) DEFAULT NULL,
+  `mailbox_id` bigint(20) DEFAULT NULL,
+  `subject` varchar(255) NOT NULL,
+  `text` text NOT NULL,
+  `codename` varchar(50) DEFAULT NULL,
+  `detected_at` datetime(6) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_incident_reports_on_user_id` (`user_id`),
+  KEY `index_incident_reports_on_vps_id` (`vps_id`),
+  KEY `index_incident_reports_on_ip_address_assignment_id` (`ip_address_assignment_id`),
+  KEY `index_incident_reports_on_filed_by_id` (`filed_by_id`),
+  KEY `index_incident_reports_on_mailbox_id` (`mailbox_id`),
+  KEY `index_incident_reports_on_created_at` (`created_at`),
+  KEY `index_incident_reports_on_detected_at` (`detected_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `ip_address_assignments`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -2134,6 +2160,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230623142135'),
 ('20230703161003'),
 ('20230803123312'),
-('20230806151956');
+('20230806151956'),
+('20230810143840');
 
 

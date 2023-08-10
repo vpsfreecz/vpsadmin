@@ -331,6 +331,13 @@ class MailTemplate < ActiveRecord::Base
     dataset: ::Dataset,
   }, roles: %i(admin), public: true
 
+  register :vps_incident_report, vars: {
+    base_url: [String, "URL to the web UI"],
+    user: ::User,
+    vps: ::Vps,
+    incident: ::IncidentReport,
+  }, roles: %i(admin), public: true
+
   enum user_visibility: %i(default visible invisible)
 
   def recipients(user)

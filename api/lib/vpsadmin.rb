@@ -45,6 +45,7 @@ require_rel '../models/*.rb'
 VpsAdmin::API.load_configurable(:api)
 VpsAdmin::API.load_configurable(:hooks)
 VpsAdmin::API.load_configurable(:dataset_plans)
+VpsAdmin::API.load_configurable(:incident_reports)
 
 require_rel 'vpsadmin/api/resources'
 require_rel 'vpsadmin/api/operations'
