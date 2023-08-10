@@ -35,6 +35,13 @@ namespace :vpsadmin do
     end
   end
 
+  namespace :mail do
+    desc 'Process mail from configured mailboxes'
+    task :process do
+      VpsAdmin::API::Tasks.run(:mail, :process)
+    end
+  end
+
   desc 'Mail daily report'
   task :mail_daily_report do
     puts 'Mail daily report'
