@@ -18,6 +18,7 @@ gem 'mysql2', '~> 0.5.3'
 gem 'bcrypt', '~> 3.1.13'
 gem 'ipaddress', '~> 0.8.0'
 gem 'rotp', '~> 6.2.2'
+gem 'rubyzip', '~> 2.3.2' # needed by vpsFree.cz's incident reports
 gem 'thin'
 gem 'prometheus-client', '~> 4.1.0'
 
