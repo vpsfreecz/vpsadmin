@@ -20,6 +20,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+$return_url = urlencode($_SERVER['REQUEST_URI']);
+
 $xtpl->sbar_add(_('Outages'), '?page=outage&action=list');
 
 if (isLoggedIn()) {
@@ -27,6 +29,7 @@ if (isLoggedIn()) {
 		$xtpl->sbar_add(_("Monitoring"), '?page=monitoring&action=list');
 
 	$xtpl->sbar_add(_("OOM Reports"), '?page=oom_reports&action=list');
+	$xtpl->sbar_add(_("Incident Reports"), '?page=incidents&action=list&return='.$return_url);
 }
 
 $xtpl->sbar_out(_('Overview'));

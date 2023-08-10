@@ -168,6 +168,10 @@ function available_ip_options($vps) {
 	return $ret;
 }
 
+function ip_address_assignment_label($as) {
+	return $as->ip_addr.' (VPS '.$as->raw_vps_id.', '.tolocaltz($as->from_date).' - '.($as->to_date ? tolocaltz($as->to_date) : _('now')).')';
+}
+
 function list_templates($vps = null) {
 	global $api;
 

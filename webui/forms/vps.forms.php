@@ -741,6 +741,10 @@ function vps_details_submenu($vps) {
 	$xtpl->sbar_add(_('History'), '?page=history&list=1&object=Vps&object_id='.$vps->id.'&return_url='.$return_url);
 
 	$xtpl->sbar_add(_('OOM reports'), '?page=oom_reports&action=list&vps='.$vps->id.'&list=1');
+	$xtpl->sbar_add(_('Incident reports'), '?page=incidents&action=list&list=1&vps='.$vps->id.'&return='.$return_url);
+
+	if (isAdmin())
+		$xtpl->sbar_add(_('Report incident'), '?page=incidents&action=new&vps='.$vps->id);
 
 	if ($api->outage)
 		$xtpl->sbar_add(_('Outages'), '?page=outage&action=list&vps='.$vps->id);
@@ -1769,6 +1773,7 @@ function vps_netif_iproutes_form($vps, $netif) {
 
 	$xtpl->table_add_category(_('Routed addresses'));
 	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
 
 	if (isAdmin())
 		$xtpl->table_add_category('');
@@ -1776,12 +1781,16 @@ function vps_netif_iproutes_form($vps, $netif) {
 	$xtpl->table_add_category('');
 	$xtpl->form_create('?page=adminvps&action=iproute_select&veid='.$vps->id.'&netif='.$netif->id, 'post');
 
+	$return_url = urlencode($_SERVER['REQUEST_URI']);
+
 	foreach ($ips as $ip) {
 		$xtpl->table_td(ip_label($ip));
 		$xtpl->table_td(
 			$ip->addr.'/'.$ip->prefix.
 			($ip->route_via_id ? _(' via ').$ip->route_via->addr : '')
 		);
+
+		$xtpl->table_td('<a href="?page=incidents&action=list&list=1&ip_addr='.$ip->addr.'&return='.$return_url.'"><img src="template/icons/bug.png" alt="'._('List incident reports').'" title="'._('List incident reports').'"></a>');
 
 		if (isAdmin()) {
 			$xtpl->table_td('<a href="?page=networking&action=assignments&ip_addr='.$ip->addr.'&ip_prefix='.$ip->prefix.'&list=1"><img src="template/icons/vps_ip_list.png" alt="'._('List assignments').'" title="'._('List assignments').'"></a>');

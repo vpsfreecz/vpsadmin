@@ -54,6 +54,7 @@ include WWW_ROOT.'forms/userns.forms.php';
 include WWW_ROOT.'forms/login.forms.php';
 include WWW_ROOT.'forms/oom_reports.forms.php';
 include WWW_ROOT.'forms/node.forms.php';
+include WWW_ROOT.'forms/incidents.forms.php';
 
 include WWW_ROOT.'lib/gettext_stream.lib.php';
 include WWW_ROOT.'lib/gettext_inc.lib.php';
@@ -164,6 +165,9 @@ try {
 				break;
 			case 'nas':
 				include WWW_ROOT.'pages/page_nas.php';
+				break;
+			case 'incidents':
+				include WWW_ROOT.'pages/page_incidents.php';
 				break;
 			case 'lang';
 				$lang->change($_GET['newlang']);

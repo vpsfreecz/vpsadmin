@@ -254,11 +254,13 @@ function print_editm($u) {
 	$xtpl->table_tr();
 	$xtpl->form_out_raw();
 
+	$return_url = urlencode($_SERVER["REQUEST_URI"]);
+
 	if (isAdmin()) {
 		lifetimes_set_state_form('user', $u->id, $u);
 
-		$xtpl->sbar_add("<br><img src=\"template/icons/m_switch.png\"  title=". _("Switch context") ." /> Switch context", "?page=login&action=switch_context&m_id={$u->id}&next=".urlencode($_SERVER["REQUEST_URI"]));
-		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("State log").'" />'._('State log'), '?page=lifetimes&action=changelog&resource=user&id='.$u->id.'&return='. urlencode($_SERVER['REQUEST_URI']));
+		$xtpl->sbar_add("<br><img src=\"template/icons/m_switch.png\"  title=". _("Switch context") ." /> Switch context", "?page=login&action=switch_context&m_id={$u->id}&next=".$return_url);
+		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("State log").'" />'._('State log'), '?page=lifetimes&action=changelog&resource=user&id='.$u->id.'&return='.$return_url);
 	}
 
 	if (payments_enabled())
@@ -272,6 +274,8 @@ function print_editm($u) {
 
 	if (isAdmin())
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Transaction log").'" />'._('Transaction log'), "?page=transactions&user={$u->id}");
+
+	$xtpl->sbar_add('<img src="template/icons/bug.png"  title="'._("Incident reports").'" />'._('Incident reports'), "?page=incidents&action=list&list=1&user={$u->id}&return=".$return_url);
 
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Resource packages").'" />'._('Resource packages'), "?page=adminm&section=members&action=resource_packages&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Cluster resources").'" />'._('Cluster resources'), "?page=adminm&section=members&action=cluster_resources&id={$u->id}");

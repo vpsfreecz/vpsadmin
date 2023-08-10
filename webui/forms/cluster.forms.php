@@ -2,6 +2,8 @@
 function cluster_header() {
 	global $xtpl, $api;
 
+	$return_url = urlencode($_SERVER['REQUEST_URI']);
+
 	$xtpl->sbar_add(_("VPS overview"), '?page=cluster&action=vps');
 	$xtpl->sbar_add(_("System config"), '?page=cluster&action=sysconfig');
 	$xtpl->sbar_add(_("Register new node"), '?page=cluster&action=newnode');
@@ -14,6 +16,7 @@ function cluster_header() {
 	$xtpl->sbar_add(_("Manage locations"), '?page=cluster&action=locations');
 	$xtpl->sbar_add(_("Manage resource packages"), '?page=cluster&action=resource_packages');
 	$xtpl->sbar_add(_("OOM reports"), '?page=oom_reports&action=list');
+	$xtpl->sbar_add(_("Incident reports"), '?page=incidents&action=list&return='.$return_url);
 
 	if ($api->outage)
 		$xtpl->sbar_add(_("Outage list"), '?page=outage&action=list');

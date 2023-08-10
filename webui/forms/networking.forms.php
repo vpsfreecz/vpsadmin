@@ -95,6 +95,7 @@ function ip_address_list($page) {
 
 	$xtpl->table_add_category('VPS');
 	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
 
 	if ($_SESSION['is_admin'])
 		$xtpl->table_add_category('');
@@ -126,6 +127,8 @@ function ip_address_list($page) {
 			$xtpl->table_td('<a href="?page=adminvps&action=info&veid='.$vps->id.'">'.$vps->id.' ('.h($vps->hostname).')</a>');
 		else
 			$xtpl->table_td('---');
+
+		$xtpl->table_td('<a href="?page=incidents&action=list&list=1&ip_addr='.$ip->addr.'&return='.$return_url.'"><img src="template/icons/bug.png" alt="'._('List incident reports').'" title="'._('List incident reports').'"></a>');
 
 		$xtpl->table_td('<a href="?page=networking&action=assignments&ip_addr='.$ip->addr.'&ip_prefix='.$ip->prefix.'&list=1"><img src="template/icons/vps_ip_list.png" alt="'._('List assignments').'" title="'._('List assignments').'"></a>');
 
@@ -643,6 +646,9 @@ function ip_address_assignment_list_form() {
 	$xtpl->table_add_category(_('Unassigned by'));
 	$xtpl->table_add_category(_('Assigned at'));
 	$xtpl->table_add_category(_('Verified'));
+	$xtpl->table_add_category('');
+
+	$return_url = urlencode($_SERVER['REQUEST_URI']);
 
 	foreach ($assignments as $as) {
 		$xtpl->table_td($as->ip_addr.'/'.$as->ip_prefix);
@@ -657,6 +663,7 @@ function ip_address_assignment_list_form() {
 		$xtpl->table_td($as->unassigned_by_chain_id ? ('<a href="?page=transactions&chain='.$as->unassigned_by_chain_id.'">'.$as->unassigned_by_chain_id.'</a>') : '-');
 		$xtpl->table_td(tolocaltz($as->created_at));
 		$xtpl->table_td(boolean_icon(!$as->reconstructed));
+		$xtpl->table_td('<a href="?page=incidents&action=list&list=1&ip_address_assignment='.$as->id.'&return='.$return_url.'"><img src="template/icons/bug.png" alt="'._('List incident reports').'" title="'._('List incident reports').'"></a>');
 		$xtpl->table_tr();
 	}
 
