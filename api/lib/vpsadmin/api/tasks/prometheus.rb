@@ -88,6 +88,12 @@ module VpsAdmin::API::Tasks
         docstring: 'Export host with mismatching IP owner',
         labels: [:user_id, :export_id, :ip_address_id, :ip_address_addr],
       )
+
+      @vps_incident_report_count = registry.gauge(
+        :vpsadmin_vps_incident_report_count,
+        docstring: 'Number of incident reports per VPS',
+        labels: [:vps_id, :user_id],
+      )
     end
 
     # Export metrics for Prometheus
@@ -290,6 +296,21 @@ module VpsAdmin::API::Tasks
           },
         )
       end
+
+      # vps_incident_report_count
+      ::IncidentReport
+        .joins(:vps)
+        .where(vpses: {object_state: ::Vps.object_states[:active]})
+        .group(:user_id, :vps_id)
+        .count
+        .each do |arr, cnt|
+          user_id, vps_id = arr
+
+          @vps_incident_report_count.set(
+            cnt,
+            labels: {user_id: user_id, vps_id: vps_id},
+          )
+        end
 
       save
     end
