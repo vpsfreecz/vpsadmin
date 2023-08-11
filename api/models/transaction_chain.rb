@@ -337,6 +337,11 @@ class TransactionChain < ActiveRecord::Base
     @dst_chain != self
   end
 
+  # @return [TransactionChain]
+  def current_chain
+    self.id ? self : dst_chain
+  end
+
   def empty?
     size == 0
   end

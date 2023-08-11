@@ -247,8 +247,8 @@ module TransactionChains
 
         # Update IP assignments
         all_ips.each do |ip|
-          ip.log_unassignment(chain: self, confirmable: t)
-          ip.log_assignment(vps: vps, chain: self, confirmable: t)
+          ip.log_unassignment(chain: current_chain, confirmable: t)
+          ip.log_assignment(vps: vps, chain: current_chain, confirmable: t)
         end
       end
 

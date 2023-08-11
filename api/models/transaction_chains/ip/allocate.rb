@@ -63,7 +63,7 @@ module TransactionChains
           )
           t.edit_before(ip, user_id: ip.user_id) if ownership
 
-          ip.log_assignment(vps: netif.vps, chain: self, confirmable: t)
+          ip.log_assignment(vps: netif.vps, chain: current_chain, confirmable: t)
         end
 
         ip.network_interface_id = netif.id

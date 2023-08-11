@@ -446,7 +446,7 @@ module TransactionChains
               t.edit(host_addr, order: nil)
             end
 
-            src_ip.log_unassignment(chain: self, confirmable: t)
+            src_ip.log_unassignment(chain: current_chain, confirmable: t)
           end
 
           if src_node.hypervisor_type == dst_node.hypervisor_type
@@ -497,7 +497,7 @@ module TransactionChains
               t.edit(dst_ip, user_id: dst_vps.user_id)
             end
 
-            dst_ip.log_assignment(vps: dst_netif.vps, chain: self, confirmable: t)
+            dst_ip.log_assignment(vps: dst_netif.vps, chain: current_chain, confirmable: t)
           end
 
           # Add new addresses to user's exports
