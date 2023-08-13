@@ -9,19 +9,44 @@ module VpsAdmin::API
 
       # @param message [Mail::Message]
       def handle_message(message)
-        reports = IncidentReports.handle_message(@mailbox, message)
+        result = IncidentReports.handle_message(@mailbox, message)
 
-        reports.each do |report|
-          puts "Incident ##{report.id} user=#{report.user_id} vps=#{report.vps_id} ip=#{report.ip_address_assignment && report.ip_address_assignment.ip_address}"
+        result.incidents.each do |inc|
+          puts "Incident ##{inc.id} user=#{inc.user_id} vps=#{inc.vps_id} ip=#{inc.ip_address_assignment && inc.ip_address_assignment.ip_address}"
         end
 
-        active = reports.select do |report|
-          report.user && report.user.object_state == 'active' \
-            && report.vps && report.vps.object_state == 'active'
+        if result.active.any?
+          TransactionChains::IncidentReport::Send.fire(result, message: message)
+        elsif result.incidents.any? && result.reply
+          TransactionChains::IncidentReport::Reply.fire(message, result)
         end
 
-        TransactionChains::IncidentReport::Send.fire(active) if active.any?
-        reports.any?
+        result.incidents.any?
+      end
+    end
+
+    # Returned by incident report block handler
+    class Result
+      # @return [Array<::IncidentReport>]
+      attr_reader :incidents
+
+      # @return [Array<::IncidentReport>]
+      attr_reader :active
+
+      # @return [Hash]
+      attr_reader :reply
+
+      # @param incidents [Array<::IncidentReport>]
+      # @param reply [Hash]
+      # @option reply [String] :from
+      # @option reply [Array<String>] :to
+      def initialize(incidents:, reply: nil)
+        @incidents = incidents
+        @active = incidents.select do |inc|
+          inc.user && inc.user.object_state == 'active' \
+            && inc.vps && inc.vps.object_state == 'active'
+        end
+        @reply = reply
       end
     end
 
@@ -32,7 +57,7 @@ module VpsAdmin::API
 
       # @yieldparam mailbox [Mailbox]
       # @yieldparam message [Mail::Message]
-      # @yieldreturn [Array<IncidentReport>]
+      # @yieldreturn [Result]
       def handle_message(&block)
         @handle_message = block
       end
