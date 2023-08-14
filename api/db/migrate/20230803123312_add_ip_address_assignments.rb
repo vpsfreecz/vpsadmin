@@ -13,7 +13,7 @@ class AddIpAddressAssignments < ActiveRecord::Migration[7.0]
         if record.user_id
           record.user_id
         elsif record.network_interface
-          record.network_interface.vps_id
+          record.network_interface.vps.user_id
         else
           nil
         end
@@ -49,7 +49,12 @@ class AddIpAddressAssignments < ActiveRecord::Migration[7.0]
   end
 
   class Vps < ActiveRecord::Base
+    belongs_to :user
     has_many :network_interfaces
+  end
+
+  class User < ActiveRecord::Base
+    has_many :vpses
   end
 
   def change
