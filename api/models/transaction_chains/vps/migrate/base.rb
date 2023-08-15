@@ -499,19 +499,19 @@ module TransactionChains
 
             dst_ip.log_assignment(vps: dst_netif.vps, chain: current_chain, confirmable: t)
           end
-
-          # Add new addresses to user's exports
-          use_chain(Export::AddHostsToAll, args: [
-            vps_user,
-            dst_ip_addresses.map { |src, dst| dst }.compact,
-          ])
-
-          # Remove old addresses from user's exports
-          use_chain(Export::DelHostsFromAll, args: [
-            vps_user,
-            dst_ip_addresses.map { |src, dst| src }.compact,
-          ])
         end
+
+        # Add new addresses to user's exports
+        use_chain(Export::AddHostsToAll, args: [
+          vps_user,
+          dst_ip_addresses.map { |src, dst| dst }.compact,
+        ])
+
+        # Remove old addresses from user's exports
+        use_chain(Export::DelHostsFromAll, args: [
+          vps_user,
+          dst_ip_addresses.map { |src, dst| src }.compact,
+        ])
 
         # Sort src host addresses by order
         all_src_host_addrs.sort! { |a, b| a[0].order <=> b[0].order }
