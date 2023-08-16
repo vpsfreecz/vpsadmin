@@ -21,7 +21,7 @@ module VpsAdmin::API
           TransactionChains::IncidentReport::Reply.fire(message, result)
         end
 
-        result.incidents.any?
+        result.processed?
       end
     end
 
@@ -33,6 +33,10 @@ module VpsAdmin::API
       # @return [Array<::IncidentReport>]
       attr_reader :active
 
+      # @return [Boolean]
+      attr_reader :processed
+      alias_method :processed?, :processed
+
       # @return [Hash]
       attr_reader :reply
 
@@ -40,13 +44,15 @@ module VpsAdmin::API
       # @param reply [Hash]
       # @option reply [String] :from
       # @option reply [Array<String>] :to
-      def initialize(incidents:, reply: nil)
+      # @param processed [Boolean, nil]
+      def initialize(incidents:, reply: nil, processed: nil)
         @incidents = incidents
         @active = incidents.select do |inc|
           inc.user && inc.user.object_state == 'active' \
             && inc.vps && inc.vps.object_state == 'active'
         end
         @reply = reply
+        @processed = processed.nil? ? incidents.any? : processed
       end
     end
 
