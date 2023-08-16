@@ -16,7 +16,11 @@ module VpsAdmin::API::Tasks
     #
     # Accepts the following environment variables:
     # [COUNT]: Number of messages to fetch from each mailbox
+    # [EXECUTE]: Received emails are deleted and persistent changes are made only
+    #            when set to `yes`
     def process
+      dry_run = ENV['EXECUTE'] != 'yes'
+
       ::Mailbox.all.each do |mailbox|
         retriever = ::Mail::POP3.new(
           address: mailbox.server,
@@ -26,9 +30,16 @@ module VpsAdmin::API::Tasks
           enable_ssl: mailbox.enable_ssl,
         )
 
-        #retriever.all.each do |m|
-        retriever.find_and_delete(count: COUNT).each do |m|
-          if handle_message(mailbox, m)
+        messages =
+          if dry_run
+            warn "Dry run: received messages are not removed from the mail server"
+            retriever.all
+          else
+            retriever.find_and_delete(count: COUNT)
+          end
+
+        messages.each do |m|
+          if handle_message(mailbox, m, dry_run: dry_run)
             puts "#{mailbox.label}: processed message #{m.subject}"
           else
             puts "#{mailbox.label}: ignoring message #{m.subject}"
@@ -38,12 +49,12 @@ module VpsAdmin::API::Tasks
     end
 
     protected
-    def handle_message(mailbox, m)
+    def handle_message(mailbox, m, dry_run:)
       handled = false
 
       mailbox.mailbox_handlers.each do |handler|
         instance = Object.const_get(handler.class_name).new(mailbox)
-        ret = instance.handle_message(m)
+        ret = instance.handle_message(m, dry_run: dry_run)
         handled = true if ret
 
         if ret == :continue

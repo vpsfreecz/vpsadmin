@@ -8,12 +8,15 @@ module VpsAdmin::API
       end
 
       # @param message [Mail::Message]
-      def handle_message(message)
-        result = IncidentReports.handle_message(@mailbox, message)
+      # @param dry_run [Boolean]
+      def handle_message(message, dry_run:)
+        result = IncidentReports.handle_message(@mailbox, message, dry_run: dry_run)
 
         result.incidents.each do |inc|
           puts "Incident ##{inc.id} user=#{inc.user_id} vps=#{inc.vps_id} ip=#{inc.ip_address_assignment && inc.ip_address_assignment.ip_address}"
         end
+
+        return result.processed? if dry_run
 
         if result.active.any?
           TransactionChains::IncidentReport::Send.fire(result, message: message)
@@ -69,8 +72,8 @@ module VpsAdmin::API
       end
 
       private
-      def do_handle_message(mailbox, message)
-        @handle_message.call(mailbox, message)
+      def do_handle_message(mailbox, message, dry_run:)
+        @handle_message.call(mailbox, message, dry_run: dry_run)
       end
     end
 
@@ -81,11 +84,17 @@ module VpsAdmin::API
       # @return [Mail::Message]
       attr_reader :message
 
+      # @return [Boolean]
+      attr_reader :dry_run
+      alias_method :dry_run?, :dry_run
+
       # @param mailbox [::Mailbox]
       # @param message [Mail::Message]
-      def initialize(mailbox, message)
+      # @param dry_run [Boolean]
+      def initialize(mailbox, message, dry_run:)
         @mailbox = mailbox
         @message = message
+        @dry_run = dry_run
       end
 
       protected
@@ -126,8 +135,8 @@ module VpsAdmin::API
       @config = Config.new(&block)
     end
 
-    def self.handle_message(mailbox, message)
-      @config.send(:do_handle_message, mailbox, message)
+    def self.handle_message(mailbox, message, dry_run:)
+      @config.send(:do_handle_message, mailbox, message, dry_run: dry_run)
     end
   end
 end
