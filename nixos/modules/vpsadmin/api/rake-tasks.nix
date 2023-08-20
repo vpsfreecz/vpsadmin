@@ -145,6 +145,17 @@ in {
           timer.config = { OnCalendar = "*-*-* 08:00:00"; };
         };
 
+        mail-process = {
+          rake = [ "vpsadmin:mail:process" "EXECUTE=yes" ];
+          timer.enable = true;
+          timer.config = {
+            OnBootSec = "1h";
+            OnUnitActiveSec = "10min";
+            RandomizedDelaySec = "60s";
+            FixedRandomDelay = true;
+          };
+        };
+
         monitoring-check = {
           rake = [ "vpsadmin:monitoring:check" ];
           timer.enable = true;
