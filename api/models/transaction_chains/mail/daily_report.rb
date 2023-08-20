@@ -309,6 +309,13 @@ module TransactionChains
             .sum(:count)
             .sort { |a, b| b[1] <=> a[1] }
         },
+
+        incident_reports: {
+          new: ::IncidentReport
+            .includes(:user, :vps)
+            .where('DATE_ADD(incident_reports.created_at, INTERVAL 1 DAY) >= ?', t)
+            .order('incident_reports.detected_at'),
+        },
       }
     end
   end
