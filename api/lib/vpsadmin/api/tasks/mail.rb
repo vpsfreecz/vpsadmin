@@ -1,5 +1,7 @@
 module VpsAdmin::API::Tasks
   class Mail < Base
+    FOLDERS = %w(INBOX Junk)
+
     COUNT = ENV['COUNT'] ? ENV['COUNT'].to_i : 10
 
     # Mail daily report to administrators.
@@ -22,33 +24,39 @@ module VpsAdmin::API::Tasks
       dry_run = ENV['EXECUTE'] != 'yes'
 
       ::Mailbox.all.each do |mailbox|
-        retriever = ::Mail::POP3.new(
-          address: mailbox.server,
-          port: mailbox.port,
-          user_name: mailbox.user,
-          password: mailbox.password,
-          enable_ssl: mailbox.enable_ssl,
-        )
-
-        messages =
-          if dry_run
-            warn "Dry run: received messages are not removed from the mail server"
-            retriever.all
-          else
-            retriever.find_and_delete(count: COUNT)
-          end
-
-        messages.each do |m|
-          if handle_message(mailbox, m, dry_run: dry_run)
-            puts "#{mailbox.label}: processed message #{m.subject}"
-          else
-            puts "#{mailbox.label}: ignoring message #{m.subject}"
-          end
+        FOLDERS.each do |folder|
+          check_mailbox(mailbox, folder, dry_run: dry_run)
         end
       end
     end
 
     protected
+    def check_mailbox(mailbox, folder, dry_run:)
+      retriever = ::Mail::IMAP.new(
+        address: mailbox.server,
+        port: mailbox.port,
+        user_name: mailbox.user,
+        password: mailbox.password,
+        enable_ssl: mailbox.enable_ssl,
+      )
+
+      messages =
+        if dry_run
+          warn "Dry run: received messages are not removed from the mail server"
+          retriever.all(mailbox: folder)
+        else
+          retriever.find_and_delete(mailbox: folder, count: COUNT)
+        end
+
+      messages.each do |m|
+        if handle_message(mailbox, m, dry_run: dry_run)
+          puts "#{mailbox.label}/#{folder}: processed message #{m.subject}"
+        else
+          puts "#{mailbox.label}/#{folder}: ignoring message #{m.subject}"
+        end
+      end
+    end
+
     def handle_message(mailbox, m, dry_run:)
       handled = false
 
