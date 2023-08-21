@@ -730,7 +730,7 @@ CREATE TABLE `mailboxes` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `label` varchar(255) NOT NULL,
   `server` varchar(255) NOT NULL,
-  `port` int(11) NOT NULL DEFAULT 995,
+  `port` int(11) NOT NULL DEFAULT 993,
   `user` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
   `enable_ssl` tinyint(1) NOT NULL DEFAULT 1,
@@ -2161,6 +2161,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230703161003'),
 ('20230803123312'),
 ('20230806151956'),
-('20230810143840');
+('20230810143840'),
+('20230821123710');
 
 
