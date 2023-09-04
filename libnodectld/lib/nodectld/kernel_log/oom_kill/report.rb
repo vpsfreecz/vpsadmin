@@ -94,29 +94,29 @@ module NodeCtld
             ', report_id, k, v
           )
         end
+      end
 
-        tasks.each do |task|
-          t.prepared(
-            'INSERT INTO oom_report_tasks SET
-              `oom_report_id` = ?,
-              `host_pid` = ?,
-              `vps_pid` = ?,
-              `name` = ?,
-              `host_uid` = ?,
-              `vps_uid` = ?,
-              `tgid` = ?,
-              `total_vm` = ?,
-              `rss` = ?,
-              `pgtables_bytes` = ?,
-              `swapents` = ?,
-              `oom_score_adj` = ?
-            ', report_id,
-            task[:pid], task[:vps_pid], task[:name][0..49],
-            task[:uid], task[:vps_uid], task[:tgid],
-            task[:total_vm], task[:rss], task[:pgtables_bytes], task[:swapents],
-            task[:oom_score_adj]
-          )
-        end
+      tasks.each do |task|
+        db.prepared(
+          'INSERT INTO oom_report_tasks SET
+            `oom_report_id` = ?,
+            `host_pid` = ?,
+            `vps_pid` = ?,
+            `name` = ?,
+            `host_uid` = ?,
+            `vps_uid` = ?,
+            `tgid` = ?,
+            `total_vm` = ?,
+            `rss` = ?,
+            `pgtables_bytes` = ?,
+            `swapents` = ?,
+            `oom_score_adj` = ?
+          ', report_id,
+          task[:pid], task[:vps_pid], task[:name][0..49],
+          task[:uid], task[:vps_uid], task[:tgid],
+          task[:total_vm], task[:rss], task[:pgtables_bytes], task[:swapents],
+          task[:oom_score_adj]
+        )
       end
 
       log(:info, "Submitted OOM report ##{report_id} with #{count} OOMs from VPS #{vps_id}")
