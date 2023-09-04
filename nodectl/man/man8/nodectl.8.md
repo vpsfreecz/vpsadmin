@@ -211,6 +211,18 @@ start it.
 
   `nodectl` blocks until refresh is finished.
 
+`incident-report pid` *pid...*
+  Report incident to VPS that the given PIDs belong to. `nodectl` identifies
+  the processes and opens `$EDITOR` with incident report content, which the user
+  can edit. When `$EDITOR` is closed and the file is not empty, the incident
+  reports are sent to users.
+
+  Given PIDs may belong to different VPS, incident reports are sent to each one.
+
+`incident-report vps` *vps...*
+  Open `$EDITOR` to create an incident report on given VPS. When `$EDITOR` is
+  closed and the file is not empty, the incident reports are sent to users.
+
 `pry`
   Open remote console from nodectld.
 
