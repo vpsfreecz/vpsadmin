@@ -16,6 +16,7 @@ module VpsAdmin::API::Resources
       string :subject
       text :text
       string :codename
+      integer :cpu_limit, label: 'CPU limit'
     end
 
     params(:all) do
@@ -25,6 +26,7 @@ module VpsAdmin::API::Resources
       integer :raw_vps_id
       datetime :detected_at
       datetime :created_at
+      datetime :reported_at
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -110,8 +112,7 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :all, include: %i(vps ip_address_assignment subject text codename detected_at)
-        integer :cpu_limit, label: 'CPU limit'
+        use :all, include: %i(vps ip_address_assignment subject text codename detected_at cpu_limit)
 
         %i(vps subject text).each do |v|
           patch v, required: true
@@ -136,10 +137,10 @@ module VpsAdmin::API::Resources
           text: input[:text],
           codename: input[:codename],
           detected_at: input[:detected_at] || Time.now,
+          cpu_limit: input[:cpu_limit],
         )
         @chain, _ = TransactionChains::IncidentReport::New.fire2(
           args: [incident],
-          kwargs: {cpu_limit: input[:cpu_limit]},
         )
         incident
       end

@@ -177,6 +177,17 @@ in {
           };
         };
 
+        incident-reports = {
+          rake = [ "vpsadmin:incident_report:process" ];
+          timer.enable = true;
+          timer.config = {
+            OnBootSec = "5min";
+            OnUnitActiveSec = "2min";
+            RandomizedDelaySec = "60s";
+            FixedRandomDelay = true;
+          };
+        };
+
         oom-reports = {
           rake = [ "vpsadmin:oom_report:run" ];
           timer.enable = true;

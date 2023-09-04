@@ -7,6 +7,8 @@ class IncidentReport < ActiveRecord::Base
 
   validates :subject, :text, presence: true, allow_blank: false
 
+  before_create :set_reported_at
+
   def ip_address
     ip_address_assignment && ip_address_assignment.ip_address
   end
@@ -17,5 +19,10 @@ class IncidentReport < ActiveRecord::Base
 
   def raw_vps_id
     vps_id
+  end
+
+  protected
+  def set_reported_at
+    self.reported_at ||= Time.now
   end
 end

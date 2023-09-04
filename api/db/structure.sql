@@ -492,6 +492,8 @@ CREATE TABLE `incident_reports` (
   `detected_at` datetime(6) NOT NULL,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
+  `reported_at` datetime(6) DEFAULT NULL,
+  `cpu_limit` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_incident_reports_on_user_id` (`user_id`),
   KEY `index_incident_reports_on_vps_id` (`vps_id`),
@@ -499,7 +501,9 @@ CREATE TABLE `incident_reports` (
   KEY `index_incident_reports_on_filed_by_id` (`filed_by_id`),
   KEY `index_incident_reports_on_mailbox_id` (`mailbox_id`),
   KEY `index_incident_reports_on_created_at` (`created_at`),
-  KEY `index_incident_reports_on_detected_at` (`detected_at`)
+  KEY `index_incident_reports_on_detected_at` (`detected_at`),
+  KEY `index_incident_reports_on_reported_at` (`reported_at`),
+  KEY `index_incident_reports_on_cpu_limit` (`cpu_limit`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `ip_address_assignments`;
@@ -2162,6 +2166,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230803123312'),
 ('20230806151956'),
 ('20230810143840'),
-('20230821123710');
+('20230821123710'),
+('20230904121318');
 
 

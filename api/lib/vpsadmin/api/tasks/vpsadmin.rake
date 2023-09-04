@@ -66,6 +66,13 @@ namespace :vpsadmin do
     end
   end
 
+  namespace :incident_report do
+    desc 'Process incident reports'
+    task :process do
+      VpsAdmin::API::Tasks.run(:incident_report, :process)
+    end
+  end
+
   namespace :oom_report do
     desc 'Process OOM reports'
     task :process do
