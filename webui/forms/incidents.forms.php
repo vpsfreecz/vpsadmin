@@ -156,12 +156,20 @@ function incident_show($id) {
 	$xtpl->table_td(tolocaltz($inc->created_at));
 	$xtpl->table_tr();
 
+	$xtpl->table_td(_('Reported at').':');
+	$xtpl->table_td(tolocaltz($inc->reported_at));
+	$xtpl->table_tr();
+
 	$xtpl->table_td(_('Subject').':');
 	$xtpl->table_td(h($inc->subject));
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('Codename').':');
 	$xtpl->table_td(h($inc->codename));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('CPU limit').':');
+	$xtpl->table_td($inc->cpu_limit ? ($inc->cpu_limit.'&nbsp;%') : '-');
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('Text').':');
