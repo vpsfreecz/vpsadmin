@@ -6,7 +6,15 @@ module NodeCtl
     cmd :'incident-report'
     description 'Send incident reports to users'
 
-    Incident = Struct.new(:vps_id, :subject, :codename, :cpu_limit, :message, keyword_init: true)
+    Incident = Struct.new(
+      :vps_id,
+      :subject,
+      :codename,
+      :cpu_limit,
+      :admin_id,
+      :message,
+      keyword_init: true,
+    )
 
     class ParseError < ::StandardError ; end
 
@@ -202,6 +210,7 @@ END
 Subject:
 # Codename: malware
 # CPU-Limit: 200
+#{admin_headers}
 
 ### Incident message goes here
 
@@ -252,6 +261,7 @@ END
 Subject:
 # Codename: malware
 # CPU-Limit: 200
+#{admin_headers}
 
 ### Incident message goes here
 
@@ -265,6 +275,17 @@ END
       end
 
       save_incidents(incidents)
+    end
+
+    def admin_headers
+      admin_id = ENV['VPSADMIN_USER_ID']
+      admin_name = ENV['VPSADMIN_USER_NAME']
+
+      if admin_id
+        "Admin: #{admin_id} #{admin_name}"
+      else
+        "# Admin: not found"
+      end
     end
 
     def open_editor
@@ -326,6 +347,8 @@ END
               incident.codename = header_value(stripped)
             elsif downcase.start_with?('cpu-limit:')
               incident.cpu_limit = header_value(stripped).to_i
+            elsif downcase.start_with?('admin:')
+              incident.admin_id = header_value(stripped).split.first.to_i
             else
               raise ParseError, "Unknown header in #{line.inspect}"
             end
@@ -339,6 +362,8 @@ END
         raise ParseError, 'Missing subject'
       elsif incident.cpu_limit && incident.cpu_limit <= 0
         raise ParseError, 'Invalid CPU limit value'
+      elsif incident.admin_id && incident.admin_id <= 0
+        raise ParseError, 'Invalid Admin value'
       end
 
       incident
@@ -365,6 +390,7 @@ END
           'INSERT INTO incident_reports SET
             user_id = ?,
             vps_id = ?,
+            filed_by_id = ?,
             subject = ?,
             text = ?,
             codename = ?,
@@ -373,7 +399,7 @@ END
             created_at = ?,
             updated_at = ?,
             reported_at = NULL',
-          user_id, inc.vps_id, inc.subject, inc.message, inc.codename, inc.cpu_limit,
+          user_id, inc.vps_id, inc.admin_id, inc.subject, inc.message, inc.codename, inc.cpu_limit,
           t, t, t,
         )
 
