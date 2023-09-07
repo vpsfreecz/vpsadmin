@@ -13,10 +13,17 @@ module TransactionChains
 
       incidents.each do |incident|
         if incident.cpu_limit
-          use_chain(Vps::Update, args: [incident.vps, {
-            cpu_limit: incident.cpu_limit,
-            change_reason: "Incident report ##{incident.id}",
-          }])
+          use_chain(
+            Vps::Update,
+            args: [
+              incident.vps,
+              {
+                cpu_limit: incident.cpu_limit,
+                change_reason: "Incident report ##{incident.id}",
+              },
+            ],
+            kwargs: {admin: incident.filed_by},
+          )
         end
 
         incident.update!(reported_at: now)

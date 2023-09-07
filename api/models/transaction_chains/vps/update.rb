@@ -3,7 +3,7 @@ module TransactionChains
     label 'Modify'
     allow_empty
 
-    def link_chain(vps, attrs)
+    def link_chain(vps, attrs, admin: nil)
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
@@ -155,7 +155,7 @@ module TransactionChains
           user: vps.user,
           vars: {
             vps: vps,
-            admin: ::User.current,
+            admin: admin || ::User.current,
             reason: opts[:change_reason],
           }
         }) if opts[:change_reason]
