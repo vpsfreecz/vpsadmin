@@ -49,32 +49,30 @@ module NodeCtld
     end
 
     def save(db)
-      report_id = nil
+      db.prepared(
+        'INSERT INTO oom_reports SET
+          vps_id = ?,
+          cgroup = ?,
+          invoked_by_pid = ?,
+          invoked_by_name = ?,
+          killed_pid = ?,
+          killed_name = ?,
+          `count` = ?,
+          created_at = ?
+        ',
+        vps_id,
+        cgroup[0..254],
+        invoked_by_pid, invoked_by_name[0..49],
+        killed_pid, killed_name && killed_name[0..49],
+        count,
+        time.utc.strftime('%Y-%m-%d %H:%M:%S')
+      )
 
-      db.transaction do |t|
-        t.prepared(
-          'INSERT INTO oom_reports SET
-            vps_id = ?,
-            cgroup = ?,
-            invoked_by_pid = ?,
-            invoked_by_name = ?,
-            killed_pid = ?,
-            killed_name = ?,
-            `count` = ?,
-            created_at = ?
-          ',
-          vps_id,
-          cgroup[0..254],
-          invoked_by_pid, invoked_by_name[0..49],
-          killed_pid, killed_name && killed_name[0..49],
-          count,
-          time.utc.strftime('%Y-%m-%d %H:%M:%S')
-        )
+      report_id = db.insert_id
 
-        report_id = t.insert_id
-
+      tasks.each do |task|
         usage.each do |type, attrs|
-          t.prepared(
+          db.prepared(
             'INSERT INTO oom_report_usages SET
               `oom_report_id` = ?,
               `memtype` = ?,
@@ -86,7 +84,7 @@ module NodeCtld
         end
 
         stats.each do |k, v|
-          t.prepared(
+          db.prepared(
             'INSERT INTO oom_report_stats SET
               `oom_report_id` = ?,
               `parameter` = ?,
@@ -94,9 +92,7 @@ module NodeCtld
             ', report_id, k, v
           )
         end
-      end
 
-      tasks.each do |task|
         db.prepared(
           'INSERT INTO oom_report_tasks SET
             `oom_report_id` = ?,
