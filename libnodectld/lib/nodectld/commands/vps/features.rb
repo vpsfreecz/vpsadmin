@@ -62,6 +62,42 @@ module NodeCtld
         osctl(%i(ct unset nesting), @vps_id)
       end
 
+      # AppArmor control dirs
+      if @features['apparmor_dirs'][key]
+        osctl(%i(ct mounts del), [@vps_id, '/sys/kernel/security'], {}, {}, valid_rcs: [1])
+        osctl(%i(ct mounts del), [@vps_id, '/sys/module/apparmor'], {}, {}, valid_rcs: [1])
+      else
+        begin
+          osctl(
+            %i(ct mounts new),
+            [@vps_id],
+            {
+              fs: '/run/vpsadmin/sys-kernel-security',
+              type: 'bind',
+              opts: 'bind,ro',
+              mountpoint: '/sys/kernel/security',
+            },
+          )
+        rescue SystemCommandFailed => e
+          raise if e.rc != 1 || /is already mounted/ !~ e.output
+        end
+
+        begin
+          osctl(
+            %i(ct mounts new),
+            [@vps_id],
+            {
+              fs: '/run/vpsadmin/sys-module-apparmor',
+              type: 'bind',
+              opts: 'bind,ro',
+              mountpoint: '/sys/module/apparmor',
+            },
+          )
+        rescue SystemCommandFailed => e
+          raise if e.rc != 1 || /is already mounted/ !~ e.output
+        end
+      end
+
       # Restart the VPS if it is running, this is needed for LXC nesting
       # and Docker access to take effect.
       osctl(%i(ct restart), @vps_id) if status == :running

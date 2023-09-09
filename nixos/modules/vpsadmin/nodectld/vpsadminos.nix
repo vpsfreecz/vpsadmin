@@ -2,6 +2,10 @@
 with lib;
 let
   cfg = config.vpsadmin.nodectld;
+
+  kernelSecurity = "/run/vpsadmin/sys-kernel-security";
+
+  moduleAppArmor = "/run/vpsadmin/sys-module-apparmor";
 in {
   imports = [
     ./options.nix
@@ -13,6 +17,19 @@ in {
     boot.postBootCommands = ''
       mkdir -m 0700 /run/nodectl
       ln -sfn /run/current-system/sw/bin/nodectl /run/nodectl/nodectl
+
+      # Prepare a directory that is then used to hide AppArmor inside a VPS
+      # by over-mounting directories in /sys
+      mkdir -p ${kernelSecurity}
+      mount -t tmpfs -o mode=755,size=65536 tmpfs ${kernelSecurity}
+      echo "[none] integrity confidentiality" > ${kernelSecurity}/lockdown
+      echo "capability,lockdown,yama" > ${kernelSecurity}/lsm
+      chmod 0444 ${kernelSecurity}/lsm
+      mkdir ${kernelSecurity}/integrity
+      mount -o remount,ro ${kernelSecurity}
+
+      mkdir -p ${moduleAppArmor}
+      mount -t tmpfs -o ro,mode=755,size=65536 tmpfs ${moduleAppArmor}
     '';
 
     runit.services.nodectld = {
