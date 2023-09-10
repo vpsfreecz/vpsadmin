@@ -70,29 +70,29 @@ module NodeCtld
 
       report_id = db.insert_id
 
+      usage.each do |type, attrs|
+        db.prepared(
+          'INSERT INTO oom_report_usages SET
+            `oom_report_id` = ?,
+            `memtype` = ?,
+            `usage` = ?,
+            `limit` = ?,
+            `failcnt` = ?
+          ', report_id, type.to_s, attrs[:usage], attrs[:limit], attrs[:failcnt]
+        )
+      end
+
+      stats.each do |k, v|
+        db.prepared(
+          'INSERT INTO oom_report_stats SET
+            `oom_report_id` = ?,
+            `parameter` = ?,
+            `value` = ?
+          ', report_id, k, v
+        )
+      end
+
       tasks.each do |task|
-        usage.each do |type, attrs|
-          db.prepared(
-            'INSERT INTO oom_report_usages SET
-              `oom_report_id` = ?,
-              `memtype` = ?,
-              `usage` = ?,
-              `limit` = ?,
-              `failcnt` = ?
-            ', report_id, type.to_s, attrs[:usage], attrs[:limit], attrs[:failcnt]
-          )
-        end
-
-        stats.each do |k, v|
-          db.prepared(
-            'INSERT INTO oom_report_stats SET
-              `oom_report_id` = ?,
-              `parameter` = ?,
-              `value` = ?
-            ', report_id, k, v
-          )
-        end
-
         db.prepared(
           'INSERT INTO oom_report_tasks SET
             `oom_report_id` = ?,
