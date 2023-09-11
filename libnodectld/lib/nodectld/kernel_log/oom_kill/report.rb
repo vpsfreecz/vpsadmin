@@ -37,7 +37,12 @@ module NodeCtld
           next if proc_pool.nil? || proc_ctid.to_i != vps_id
 
           task[:vps_pid] = process.ct_pid
-          task[:vps_uid] = process.ct_ruid if task[:vps_pid]
+
+          begin
+            task[:vps_uid] = process.ct_ruid if task[:vps_pid]
+          rescue OsCtl::Lib::Exceptions::IdMappingError
+            # pass
+          end
         rescue OsCtl::Lib::Exceptions::OsProcessNotFound
           next
         end
