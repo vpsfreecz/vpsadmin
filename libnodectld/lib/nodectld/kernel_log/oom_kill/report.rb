@@ -43,7 +43,10 @@ module NodeCtld
           rescue OsCtl::Lib::Exceptions::IdMappingError
             # pass
           end
-        rescue OsCtl::Lib::Exceptions::OsProcessNotFound
+
+        # Reading /proc/<pid>/uid_map is known to sometimes return EIVAL, but
+        # handle all system call errors just in case.
+        rescue OsCtl::Lib::Exceptions::OsProcessNotFound, SystemCallError
           next
         end
       end
