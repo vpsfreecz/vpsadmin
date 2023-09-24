@@ -53,7 +53,7 @@ function Client(url, opts) {
 }
 
 /** @constant HaveAPI.Client.Version */
-Client.Version = '0.13.0';
+Client.Version = '0.17.0';
 
 /** @constant HaveAPI.Client.ProtocolVersion */
 Client.ProtocolVersion = '2.0';
@@ -684,7 +684,7 @@ Http.prototype.request = function(opts) {
 	if (opts.credentials === undefined)
 		r.open(opts.method, opts.url);
 	else
-		r.open(opts.method, opts.url, true, opts.credentials.username, opts.credentials.password);
+		r.open(opts.method, opts.url, true, opts.credentials.user, opts.credentials.password);
 
 	for (var h in opts.headers) {
 		r.setRequestHeader(h, opts.headers[h]);

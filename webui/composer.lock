@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "86c10b6935e02515ddeeeedce2fa7d78",
+    "content-hash": "2af4a4140adba3627e8de6eab0c0bf14",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -62,21 +62,24 @@
         },
         {
             "name": "dasprid/enum",
-            "version": "1.0.3",
+            "version": "1.0.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/DASPRiD/Enum.git",
-                "reference": "5abf82f213618696dda8e3bf6f64dd042d8542b2"
+                "reference": "6faf451159fb8ba4126b925ed2d78acfce0dc016"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/DASPRiD/Enum/zipball/5abf82f213618696dda8e3bf6f64dd042d8542b2",
-                "reference": "5abf82f213618696dda8e3bf6f64dd042d8542b2",
+                "url": "https://api.github.com/repos/DASPRiD/Enum/zipball/6faf451159fb8ba4126b925ed2d78acfce0dc016",
+                "reference": "6faf451159fb8ba4126b925ed2d78acfce0dc016",
                 "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1 <9.0"
             },
             "require-dev": {
                 "phpunit/phpunit": "^7 | ^8 | ^9",
-                "squizlabs/php_codesniffer": "^3.4"
+                "squizlabs/php_codesniffer": "*"
             },
             "type": "library",
             "autoload": {
@@ -103,9 +106,9 @@
             ],
             "support": {
                 "issues": "https://github.com/DASPRiD/Enum/issues",
-                "source": "https://github.com/DASPRiD/Enum/tree/1.0.3"
+                "source": "https://github.com/DASPRiD/Enum/tree/1.0.5"
             },
-            "time": "2020-10-02T16:03:48+00:00"
+            "time": "2023-08-25T16:18:39+00:00"
         },
         {
             "name": "endroid/qr-code",
@@ -181,16 +184,16 @@
         },
         {
             "name": "haveapi/client",
-            "version": "0.16.3",
+            "version": "0.17.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/vpsfreecz/haveapi-client-php.git",
-                "reference": "70ca99bab02f54c08a1d4dedf822f0d8fe6d1bf8"
+                "reference": "b5587858f43ee27e1bc2a4ae9b54838d953cf551"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/70ca99bab02f54c08a1d4dedf822f0d8fe6d1bf8",
-                "reference": "70ca99bab02f54c08a1d4dedf822f0d8fe6d1bf8",
+                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/b5587858f43ee27e1bc2a4ae9b54838d953cf551",
+                "reference": "b5587858f43ee27e1bc2a4ae9b54838d953cf551",
                 "shasum": ""
             },
             "require": {
@@ -217,9 +220,9 @@
             "homepage": "https://github.com/vpsfreecz/haveapi-client-php",
             "support": {
                 "issues": "https://github.com/vpsfreecz/haveapi-client-php/issues",
-                "source": "https://github.com/vpsfreecz/haveapi-client-php/tree/v0.16.3"
+                "source": "https://github.com/vpsfreecz/haveapi-client-php/tree/v0.17.0"
             },
-            "time": "2023-02-13T12:47:53+00:00"
+            "time": "2023-09-24T14:41:56+00:00"
         },
         {
             "name": "vpsfreecz/httpful",

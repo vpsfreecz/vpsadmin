@@ -15,10 +15,10 @@ let
     "dasprid/enum" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "dasprid-enum-5abf82f213618696dda8e3bf6f64dd042d8542b2";
+        name = "dasprid-enum-6faf451159fb8ba4126b925ed2d78acfce0dc016";
         src = fetchurl {
-          url = "https://api.github.com/repos/DASPRiD/Enum/zipball/5abf82f213618696dda8e3bf6f64dd042d8542b2";
-          sha256 = "0rs7i1xiwhssy88s7bwnp5ri5fi2xy3fl7pw6l5k27xf2f1hv7q6";
+          url = "https://api.github.com/repos/DASPRiD/Enum/zipball/6faf451159fb8ba4126b925ed2d78acfce0dc016";
+          sha256 = "1c3c7zdmpd5j1pw9am0k3mj8n17vy6xjhsh2qa7c0azz0f21jk4j";
         };
       };
     };
@@ -35,10 +35,10 @@ let
     "haveapi/client" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "haveapi-client-70ca99bab02f54c08a1d4dedf822f0d8fe6d1bf8";
+        name = "haveapi-client-b5587858f43ee27e1bc2a4ae9b54838d953cf551";
         src = fetchurl {
-          url = "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/70ca99bab02f54c08a1d4dedf822f0d8fe6d1bf8";
-          sha256 = "0wz3f9dyzn7brnsbspjyxc2jmcmv1mzj81ilnvjky1sw0a2l4nhr";
+          url = "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/b5587858f43ee27e1bc2a4ae9b54838d953cf551";
+          sha256 = "1ccawmizg0y2aw22sai8jm34rp6m3xhszdnymy8hb85ys1485wvd";
         };
       };
     };
