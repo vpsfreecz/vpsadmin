@@ -404,6 +404,15 @@ END
         )
 
         puts "Created incident report ##{db.insert_id} for VPS #{inc.vps_id}"
+
+        if inc.cpu_limit
+          cmd = %W(osctl ct set cpu-limit #{inc.vps_id} #{inc.cpu_limit})
+          puts "  #{cmd.join(' ')}"
+
+          unless Kernel.system(*cmd)
+            warn "  Failed to set CPU limit on VPS #{inc.vps_id}"
+          end
+        end
       end
     end
   end
