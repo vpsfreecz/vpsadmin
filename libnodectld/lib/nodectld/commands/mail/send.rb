@@ -49,6 +49,8 @@ module NodeCtld
         address: $CFG.get(:mailer, :smtp_server),
         port: $CFG.get(:mailer, :smtp_port),
         openssl_verify_mode: OpenSSL::SSL::VERIFY_NONE,
+        open_timeout: $CFG.get(:mailer, :smtp_open_timeout),
+        read_timeout: $CFG.get(:mailer, :smtp_read_timeout),
       )
 
       tries = 0

@@ -152,6 +152,8 @@ module NodeCtld
     mailer: {
       smtp_server: "localhost",
       smtp_port: 25,
+      smtp_open_timeout: 15,
+      smtp_read_timeout: 60,
     },
 
     console: {
