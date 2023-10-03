@@ -296,7 +296,7 @@ function dataset_edit_form() {
 			api_param_to_form('deadline', $updateInput->deadline, $exp->deadline ? tolocaltz($exp->deadline) : '');
 			api_param_to_form('enable_notifications', $updateInput->enable_notifications, $exp->enable_notifications);
 			api_param_to_form('enable_shrink', $updateInput->enable_shrink, $exp->enable_shrink);
-			api_param_to_form('stop_vps', $updateInput->stop_vps, true);
+			api_param_to_form('stop_vps', $updateInput->stop_vps, $exp->stop_vps);
 
 			$xtpl->form_out(_('Save'));
 		} else {
