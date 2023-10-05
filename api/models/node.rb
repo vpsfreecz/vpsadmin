@@ -69,6 +69,7 @@ class Node < ActiveRecord::Base
     q = self.joins('
           LEFT JOIN vpses ON vpses.node_id = nodes.id
           LEFT JOIN vps_current_statuses st ON st.vps_id = vpses.id
+          INNER JOIN node_current_statuses nst ON nst.node_id = nodes.id
           INNER JOIN locations ON locations.id = nodes.location_id
         ').where('
           (st.is_running = 1 OR st.is_running IS NULL)
@@ -85,13 +86,13 @@ class Node < ActiveRecord::Base
     end
 
     if cgroup_version && cgroup_version != 'cgroup_any'
-      q = q.joins(:node_current_status).where(
-        'node_current_statuses.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version],
+      q = q.where(
+        'nst.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version],
       )
     end
 
     nodes = q.group('nodes.id')
-      .order(Arel.sql('COUNT(st.is_running) / max_vps ASC'))
+      .order(Arel.sql('nst.cgroup_version DESC, COUNT(st.is_running) / max_vps ASC'))
       .to_a
 
     if nodes.any?
@@ -102,6 +103,7 @@ class Node < ActiveRecord::Base
 
     q = self.joins('
       LEFT JOIN vpses ON vpses.node_id = nodes.id
+      INNER JOIN node_current_statuses nst ON nst.node_id = nodes.id
       INNER JOIN locations ON locations.id = nodes.location_id
     ').where(
       'max_vps > 0'
@@ -118,18 +120,22 @@ class Node < ActiveRecord::Base
     end
 
     if cgroup_version && cgroup_version != 'cgroup_any'
-      q = q.joins(:node_current_status).where(
-        'node_current_statuses.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version],
+      q = q.where(
+        'nst.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version],
       )
     end
 
-    q.group('nodes.id').order(Arel.sql('COUNT(vpses.id) / max_vps ASC')).to_a
+    q
+      .group('nodes.id')
+      .order(Arel.sql('nst.cgroup_version DESC, COUNT(vpses.id) / max_vps ASC'))
+      .to_a
   end
 
   def self.pick_by_location(loc, except: nil, hypervisor_type: nil, cgroup_version: nil)
     q = self.joins('
         LEFT JOIN vpses ON vpses.node_id = nodes.id
         LEFT JOIN vps_current_statuses st ON st.vps_id = vpses.id
+        INNER JOIN node_current_statuses nst ON nst.node_id = nodes.id
         INNER JOIN locations l ON nodes.location_id = l.id
       ').where('
         (st.is_running = 1 OR st.is_running IS NULL)
@@ -146,13 +152,13 @@ class Node < ActiveRecord::Base
     end
 
     if cgroup_version && cgroup_version != 'cgroup_any'
-      q = q.joins(:node_current_status).where(
-        'node_current_statuses.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version],
+      q = q.where(
+        'nst.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version],
       )
     end
 
     nodes = q.group('nodes.id')
-      .order(Arel.sql('COUNT(st.is_running) / max_vps ASC'))
+      .order(Arel.sql('nst.cgroup_version DESC, COUNT(st.is_running) / max_vps ASC'))
       .to_a
 
     if nodes.any?
@@ -162,7 +168,8 @@ class Node < ActiveRecord::Base
     end
 
     q = self.joins(
-      'LEFT JOIN vpses ON vpses.node_id = nodes.id'
+      'LEFT JOIN vpses ON vpses.node_id = nodes.id
+      INNER JOIN node_current_statuses nst ON nst.node_id = nodes.id'
     ).where(
       'max_vps > 0'
     ).where(
@@ -178,12 +185,15 @@ class Node < ActiveRecord::Base
     end
 
     if cgroup_version && cgroup_version != 'cgroup_any'
-      q = q.joins(:node_current_status).where(
-        'node_current_statuses.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version],
+      q = q.where(
+        'nst.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version],
       )
     end
 
-    q.group('nodes.id').order(Arel.sql('COUNT(vpses.id) / max_vps ASC')).to_a
+    q
+      .group('nodes.id')
+      .order(Arel.sql('nst.cgroup_version DESC, COUNT(vpses.id) / max_vps ASC'))
+      .to_a
   end
 
   def self.first_available
