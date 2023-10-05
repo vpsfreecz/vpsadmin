@@ -1507,7 +1507,7 @@ if (isset($show_info) && $show_info) {
 			false
 		);
 		$xtpl->table_td(
-			_("Contact support if you'd like to use").' '.cgroupEnumTolabel($other_cgroup).' '._('(not available yet)'),
+			_("Contact support if you'd like to use").' '.cgroupEnumTolabel($other_cgroup),
 		);
 		$xtpl->table_tr();
 
