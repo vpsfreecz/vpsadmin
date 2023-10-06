@@ -801,6 +801,20 @@ function kernel_version($v) {
 		return $v;
 }
 
+function cgroup_version($v) {
+	if (is_null($v))
+		return '-';
+
+	switch($v) {
+	case 'cgroup_v1':
+		return 'v1';
+	case 'cgroup_v2':
+		return 'v2';
+	default:
+		return "v1";
+	}
+}
+
 function colorize($array) {
 	$ret = array();
 

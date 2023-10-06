@@ -150,12 +150,14 @@ $xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
+$xtpl->table_td(_("cgroups"), '#5EAFFF; color:#FFF; font-weight:bold;');
 
 $xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
+$xtpl->table_td(_("cgroups"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_tr();
 
 $position = 1;
@@ -171,7 +173,7 @@ foreach ($nodes as $node) {
 		) {
 
 		 if ($position == 2) {
-			$xtpl->table_td('', false, false, 5);
+			$xtpl->table_td('', false, false, 6);
 		}
 
 		$xtpl->table_tr(true);
@@ -180,12 +182,14 @@ foreach ($nodes as $node) {
 		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("cgroups"), '#5EAFFF; color:#FFF; font-weight:bold;');
 
 		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("cgroups"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_tr(true);
 
 
@@ -254,6 +258,11 @@ foreach ($nodes as $node) {
 		false, true
 	);
 
+	$xtpl->table_td(
+		cgroup_version($node->cgroup_version),
+		false, true
+	);
+
 	$position++;
 	if ($position == 3) {
 		$position = 1;
@@ -263,7 +272,7 @@ foreach ($nodes as $node) {
 }
 
 if($position == 2) { // last row has only one node
-	$xtpl->table_td('', false, false, 5);
+	$xtpl->table_td('', false, false, 6);
 	$xtpl->table_tr(true);
 }
 
