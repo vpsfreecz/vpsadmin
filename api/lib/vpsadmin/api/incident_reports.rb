@@ -11,6 +11,7 @@ module VpsAdmin::API
       # @param dry_run [Boolean]
       def handle_message(message, dry_run:)
         result = IncidentReports.handle_message(@mailbox, message, dry_run: dry_run)
+        return false if result.nil?
 
         result.incidents.each do |inc|
           puts "Incident ##{inc.id} user=#{inc.user_id} vps=#{inc.vps_id} ip=#{inc.ip_address_assignment && inc.ip_address_assignment.ip_address}"
@@ -66,7 +67,7 @@ module VpsAdmin::API
 
       # @yieldparam mailbox [Mailbox]
       # @yieldparam message [Mail::Message]
-      # @yieldreturn [Result]
+      # @yieldreturn [Result, nil]
       def handle_message(&block)
         @handle_message = block
       end
