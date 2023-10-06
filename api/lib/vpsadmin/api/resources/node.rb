@@ -238,7 +238,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       string :type, label: 'Role', desc: 'node, storage or mailer', db_name: :role
       string :hypervisor_type, label: 'Hypervisor type', desc: 'vpsadminos'
       float :cpu_idle, label: 'CPU idle'
-      use :status, include: %i(pool_state pool_scan pool_scan_percent pool_checked_at pool_status)
+      use :status, include: %i(cgroup_version pool_state pool_scan pool_scan_percent pool_checked_at pool_status)
     end
 
     output(&VpsAdmin::API::Maintainable::Action.output_params)
