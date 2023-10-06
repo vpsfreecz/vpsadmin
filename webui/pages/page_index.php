@@ -150,14 +150,14 @@ $xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
-$xtpl->table_td(_("cgroups"), '#5EAFFF; color:#FFF; font-weight:bold;');
+$xtpl->table_td(_("cgroups").'[<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="'._('Read more about cgroups in KB').'">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
 
 $xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
-$xtpl->table_td(_("cgroups"), '#5EAFFF; color:#FFF; font-weight:bold;');
+$xtpl->table_td(_("cgroups").'[<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="'._('Read more about cgroups in KB').'">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_tr();
 
 $position = 1;
@@ -182,14 +182,14 @@ foreach ($nodes as $node) {
 		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("cgroups"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("cgroups").'[<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="'._('Read more about cgroups in KB').'">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
 
 		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("cgroups"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("cgroups").'[<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="'._('Read more about cgroups in KB').'">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_tr(true);
 
 
