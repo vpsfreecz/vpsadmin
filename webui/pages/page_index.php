@@ -152,30 +152,14 @@ $xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("cgroups").'[<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="'._('Read more about cgroups in KB').'">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
 
-$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
-$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
-$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
-$xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
-$xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
-$xtpl->table_td(_("cgroups").'[<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="'._('Read more about cgroups in KB').'">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_tr();
 
-$position = 1;
 $last_location = 0;
-
 $nodes = $api->node->public_status();
 $munin = new Munin($config);
 
 foreach ($nodes as $node) {
-	if (
-			($last_location != 0) &&
-			($last_location != $node->location_id)
-		) {
-
-		 if ($position == 2) {
-			$xtpl->table_td('', false, false, 6);
-		}
-
+	if ($last_location != 0 && $last_location != $node->location_id) {
 		$xtpl->table_tr(true);
 		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
@@ -183,17 +167,7 @@ foreach ($nodes as $node) {
 		$xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("cgroups").'[<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="'._('Read more about cgroups in KB').'">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
-
-		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("cgroups").'[<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="'._('Read more about cgroups in KB').'">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_tr(true);
-
-
-		$position = 1;
 	}
 
 	$last_location = $node->location_id;
@@ -263,17 +237,7 @@ foreach ($nodes as $node) {
 		false, true
 	);
 
-	$position++;
-	if ($position == 3) {
-		$position = 1;
-		$xtpl->table_tr(true);
-	}
-
-}
-
-if($position == 2) { // last row has only one node
-	$xtpl->table_td('', false, false, 6);
-	$xtpl->table_tr(true);
+	$xtpl->table_tr();
 }
 
 $xtpl->table_out();
