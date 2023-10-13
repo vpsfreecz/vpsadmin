@@ -982,8 +982,6 @@ function hypervisorTypeToLabel($type) {
 	switch ($type) {
 	case 'vpsadminos':
 		return 'vpsAdminOS';
-	case 'openvz':
-		return 'OpenVZ Legacy';
 	default:
 		return 'Unknown';
 	}
