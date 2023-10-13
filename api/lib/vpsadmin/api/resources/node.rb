@@ -298,7 +298,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     def exec
       ::Node.includes(:node_current_status, location: :environment)
         .joins(:location)
-        .where(active: true)
+        .where(active: true, role: %w(node storage))
         .order('locations.environment_id, locations.id, nodes.id')
     end
   end
