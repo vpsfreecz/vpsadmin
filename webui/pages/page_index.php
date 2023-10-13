@@ -3,7 +3,7 @@
     ./pages/page_index.php
 
     vpsAdmin
-    Web-admin interface for OpenVZ (see http://openvz.org)
+    Web-admin interface for vpsAdminOS (see https://vpsadminos.org)
     Copyright (C) 2008-2009 Pavel Snajdr, snajpa@snajpa.net
 
     This program is free software: you can redistribute it and/or modify
@@ -198,8 +198,6 @@ foreach ($nodes as $node) {
 					 . '" src="template/icons/server_online.png"/>';
 
 	}
-
-	//$icons .= '&nbsp;<img src="template/icons/openvz.png" width="16">';
 
 	$xtpl->table_td($icons);
 	$xtpl->table_td((isLoggedIn() ? node_link($node, $node->name) : $node->name));

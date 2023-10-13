@@ -3,7 +3,7 @@
     ./lib/functions.lib.php
 
     vpsAdmin
-    Web-admin interface for OpenVZ (see http://openvz.org)
+    Web-admin interface for vpsAdminOS (see https://vpsadminos.org)
     Copyright (C) 2008-2009 Pavel Snajdr, snajpa@snajpa.net
 
     This program is free software: you can redistribute it and/or modify
