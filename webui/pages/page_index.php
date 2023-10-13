@@ -147,6 +147,7 @@ $xtpl->table_out();
 
 $xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
+$xtpl->table_td(_("Storage"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
@@ -163,6 +164,7 @@ foreach ($nodes as $node) {
 		$xtpl->table_tr(true);
 		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
+		$xtpl->table_td(_("Storage"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 		$xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
@@ -189,20 +191,6 @@ foreach ($nodes as $node) {
 		$icons .= '<img title="'._("The server is not responding")
 					 . ', last update: ' . ($last_update ?? _('never'))
 					 . '" src="template/icons/error.png"/>';
-
-	} else if ($node->type != 'mailer' && ($node->pool_state != 'online' || $node->pool_scan != 'none')) {
-		$issues = [];
-
-		if ($node->pool_state != 'online')
-			$issues[] = _('storage pool is').' '.$node->pool_state;
-
-		if ($node->pool_scan == 'scrub')
-			$issues[] = _('storage pool is being scrubbed to check data integrity, IO performance may be impacted').', '.round($node->pool_scan_percent, 1).'&nbsp;% '._('done');
-		elseif ($node->pool_scan == 'resilver')
-			$issues[] = _('storage pool is being resilvered to replace a disk, IO performance may be impacted').', '.round($node->pool_scan_percent, 1).'&nbsp;% '._('done');
-
-		$icons .= '<img title="'.implode(', ', $issues).'" src="template/icons/server_warning.png">';
-
 	} else {
 
 		$icons .= '<img title="'._("The server is online")
@@ -214,8 +202,16 @@ foreach ($nodes as $node) {
 	//$icons .= '&nbsp;<img src="template/icons/openvz.png" width="16">';
 
 	$xtpl->table_td($icons);
-
 	$xtpl->table_td((isLoggedIn() ? node_link($node, $node->name) : $node->name));
+
+	if ($node->pool_scan == 'scrub') {
+		$xtpl->table_td(_('scrub, ').round($pool_scan_percent, 1).'&nbsp;%');
+	} elseif ($node->pool_scan == 'resilver') {
+		$xtpl->table_td(_('resilver, ').round($pool_scan_percent, 1).'&nbsp;%');
+	} else {
+		$xtpl->table_td($node->pool_state);
+	}
+
 	$xtpl->table_td($node->vps_count, false, true);
 
 	if ($node->cpu_idle === null) {
