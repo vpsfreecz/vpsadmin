@@ -919,19 +919,22 @@ function get_version () {
 function get_commit_hash () {
 	$revisionFile = WWW_ROOT.'/.git-revision';
 
-	if (file_exists($revisionFile)) {
+	if (file_exists($revisionFile))
 		return trim(file_get_contents($revisionFile));
-	}
 
-	if (!file_exists(WWW_ROOT.'/../.git'))
+	$gitDir = WWW_ROOT.'/../.git';
+
+	if (!file_exists($gitDir))
 		return null;
 
-	$hash = exec('cd "'.WWW_ROOT.'/../" && git rev-parse HEAD', $out, $ret);
+	$gitHead = file_get_contents($gitDir.'/HEAD');
 
-	if ($ret === 0)
-		return $hash;
+	if (!str_starts_with($gitHead, 'ref: '))
+		return trim($gitHead);
 
-	return null;
+	$ref = trim(explode(' ', $gitHead)[1]);
+
+	return trim(file_get_contents($gitDir.'/'.$ref));
 }
 
 function format_errors ($response) {
