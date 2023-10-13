@@ -293,7 +293,7 @@ $lang->lang_switcher();
 if ($config)
 	$xtpl->assign('PAGE_TITLE', $config->get("webui", "document_title"));
 
-$xtpl->assign('API_SPENT_TIME', round($api->getSpentTime(), 6));
+$xtpl->assign('API_SPENT_TIME', round($api->getSpentTime(), 3));
 
 if (defined('TRACKING_CODE')) {
   $xtpl->assign('TRACKING_CODE', TRACKING_CODE);
