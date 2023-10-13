@@ -913,9 +913,7 @@ function get_version () {
 
 	$short = substr($hash, 0, 8);
 
-	return VERSION.'.'.
-		   '<a href="https://github.com/vpsfreecz/vpsadmin/commit/'.$hash.'" target="_blank">'.
-		   $short.'</a>';
+	return '<a href="https://github.com/vpsfreecz/vpsadmin/commit/'.$hash.'" target="_blank">'.$short.'</a>';
 }
 
 function get_commit_hash () {
