@@ -24,12 +24,10 @@ class AddCompressratioDatasetProperties < ActiveRecord::Migration[7.0]
 
       # Dataset properties
       DatasetProperty.where.not(dataset_id: nil).group(:dataset_id).arrange.each do |prop, children|
-        if prop.parent.nil?
-          puts "Invalid property id=#{prop.id}: parent not found"
-          next
-        end
 
-        create_property(new_prop_name, pool_parents[prop.parent.pool_id], prop, children)
+        prop_parent = prop.parent
+        pool_parent = prop_parent && pool_parents[prop_parent.pool_id]
+        create_property(new_prop_name, pool_parent, prop, children)
       end
     end
   end
@@ -40,8 +38,6 @@ class AddCompressratioDatasetProperties < ActiveRecord::Migration[7.0]
 
   protected
   def create_property(new_prop_name, parent, prop, children)
-    raise ArgumentError, "expected parent for #{prop.inspect}" if parent.nil?
-
     new_prop = DatasetProperty.create!(
       pool_id: prop.pool_id,
       dataset_id: prop.dataset_id,
