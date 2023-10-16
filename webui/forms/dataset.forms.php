@@ -228,6 +228,28 @@ function dataset_edit_form() {
 	$xtpl->table_title(_('Edit dataset').' '.$ds->name);
 	$xtpl->form_create('?page=dataset&action=edit&role='.$_GET['role'].'&id='.$ds->id, 'post');
 
+	if (isAdmin()) {
+		$xtpl->table_td(_('Used space').':');
+		$xtpl->table_td(data_size_to_humanreadable($ds->used).' '.'('.(data_size_to_humanreadable($ds->used * $ds->compressratio)).' '._('uncompressed, ratio ').$ds->compressratio.'&times;)');
+		$xtpl->table_tr();
+
+		$xtpl->table_td(_('Referenced space').':');
+		$xtpl->table_td(data_size_to_humanreadable($ds->referenced).' '.'('.(data_size_to_humanreadable($ds->used * $ds->refcompressratio)).' '._('uncompressed, ratio ').$ds->refcompressratio.'&times;)');
+		$xtpl->table_tr();
+	} else {
+		if ($_GET['role'] == 'hypervisor') {
+			$used = $ds->referenced;
+			$ratio = $ds->refcompressratio;
+		} else {
+			$used = $ds->used;
+			$ratio = $ds->compressratio;
+		}
+
+		$xtpl->table_td(_('Used space').':');
+		$xtpl->table_td(data_size_to_humanreadable($used).' '.'('.(data_size_to_humanreadable($used * $ratio)).' '._('uncompressed, ratio ').$ratio.'&times;)');
+		$xtpl->table_tr();
+	}
+
 	// Quota
 	$quota = $params->{$quota_name};
 
