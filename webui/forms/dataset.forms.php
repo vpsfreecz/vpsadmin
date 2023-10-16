@@ -35,7 +35,17 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 
 	$params = $api->dataset->list->getParameters('output');
 	$ignore = array('id', 'name', 'parent', 'user');
-	$include = array('used', 'referenced', 'avail');
+	$include = [];
+
+	if ($role == 'primary') {
+		$include[] = 'used';
+		$include[] = 'compressratio';
+	} else {
+		$include[] = 'referenced';
+		$include[] = 'refcompressratio';
+	}
+
+	$include[] = 'avail';
 
 	if ($role == 'primary')
 		$include[] = 'quota';
@@ -51,11 +61,8 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 
 	$xtpl->table_add_category(_('Dataset'));
 
-	foreach ($params as $name => $desc) {
-		if (!in_array($name, $include))
-			continue;
-
-		$xtpl->table_add_category($desc->label);
+	foreach ($include as $name) {
+		$xtpl->table_add_category($params->{$name}->label);
 	}
 
 	if ($role == 'hypervisor')
@@ -96,14 +103,21 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 
 		$xtpl->table_td($ds->name);
 
-		foreach ($params as $name => $desc) {
-			if (!in_array($name, $include))
-				continue;
+		foreach ($include as $name) {
+			$desc = $params->{$name};
+			$showValue = '';
 
-			$xtpl->table_td(
-				($name == 'refquota' && $ds->dataset_expansion_id ? ('<img src="template/icons/warning.png" title="'._('Dataset temporarily expanded').'"> ') : '').
-				($desc->type == 'Integer' ? data_size_to_humanreadable($ds->{$name}) : $ds->{$name})
-			);
+			if ($name == 'refquota' && $ds->dataset_expansion_id)
+				$showValue .= '<img src="template/icons/warning.png" title="'._('Dataset temporarily expanded').'"> ';
+
+			if ($name == 'compressratio' || $name == 'refcompressratio')
+				$showValue .= compressRatioWithUsedSpace($ds, $name);
+			elseif ($desc->type == 'Integer')
+				$showValue .= data_size_to_humanreadable($ds->{$name});
+			else
+				$showValue .= $ds->{$name};
+
+			$xtpl->table_td($showValue);
 		}
 
 		if ($role == 'hypervisor')
@@ -230,23 +244,15 @@ function dataset_edit_form() {
 
 	if (isAdmin()) {
 		$xtpl->table_td(_('Used space').':');
-		$xtpl->table_td(data_size_to_humanreadable($ds->used).' '.'('.(data_size_to_humanreadable($ds->used * $ds->compressratio)).' '._('uncompressed, ratio ').$ds->compressratio.'&times;)');
+		$xtpl->table_td(usedSpaceWithCompression($ds, 'used'));
 		$xtpl->table_tr();
 
 		$xtpl->table_td(_('Referenced space').':');
-		$xtpl->table_td(data_size_to_humanreadable($ds->referenced).' '.'('.(data_size_to_humanreadable($ds->used * $ds->refcompressratio)).' '._('uncompressed, ratio ').$ds->refcompressratio.'&times;)');
+		$xtpl->table_td(usedSpaceWithCompression($ds, 'referenced'));
 		$xtpl->table_tr();
 	} else {
-		if ($_GET['role'] == 'hypervisor') {
-			$used = $ds->referenced;
-			$ratio = $ds->refcompressratio;
-		} else {
-			$used = $ds->used;
-			$ratio = $ds->compressratio;
-		}
-
 		$xtpl->table_td(_('Used space').':');
-		$xtpl->table_td(data_size_to_humanreadable($used).' '.'('.(data_size_to_humanreadable($used * $ratio)).' '._('uncompressed, ratio ').$ratio.'&times;)');
+		$xtpl->table_td(usedSpaceWithCompression($ds, 'used'));
 		$xtpl->table_tr();
 	}
 

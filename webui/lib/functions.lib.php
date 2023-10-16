@@ -1021,6 +1021,32 @@ function showVpsDiskExpansionWarning ($vps) {
 	return $vps->dataset->dataset_expansion_id ? true : false;
 }
 
+function usedSpaceWithCompression ($dataset, $property) {
+	$used = $dataset->{$property};
+	$ratio = $dataset->{$property == 'used' ? 'compressratio' : 'refcompressratio'};
+
+	$ret = '';
+	$ret .= data_size_to_humanreadable($used);
+	$ret .= ' (';
+	$ret .= data_size_to_humanreadable($used * $ratio);
+	$ret .= ' '._('uncompressed, ratio ').$ratio.'&times;)';
+
+	return $ret;
+}
+
+function compressRatioWithUsedSpace ($dataset, $property) {
+	$used = $dataset->{$property == 'compressratio' ? 'used' : 'referenced'};
+	$ratio = $dataset->{$property};
+
+	$ret = '';
+	$ret .= $ratio.'&times;';
+	$ret .= ' (';
+	$ret .= data_size_to_humanreadable($used * $ratio);
+	$ret .= ' '._('uncompressed').')';
+
+	return $ret;
+}
+
 function sortMaintenanceWindowsByCloseness ($windows) {
 	$ret = [];
 
