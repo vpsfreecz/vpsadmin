@@ -6,7 +6,7 @@ require 'nodectld/utils'
 
 module NodeCtld
   class Vps
-    START_TIMEOUT = 180
+    START_TIMEOUT = 'infinity'
 
     include OsCtl::Lib::Utils::Log
     include Utils::System
