@@ -24,6 +24,9 @@ module NodeCtld
 
       elsif before != :running && after == :running
         osctl(%i(ct stop), @vps_id)
+
+      else
+        ok
       end
     end
 
