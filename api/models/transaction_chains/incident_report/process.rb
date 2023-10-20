@@ -17,10 +17,7 @@ module TransactionChains
             Vps::Update,
             args: [
               incident.vps,
-              {
-                cpu_limit: incident.cpu_limit,
-                change_reason: "Incident report ##{incident.id}",
-              },
+              {cpu_limit: incident.cpu_limit},
             ],
             kwargs: {admin: incident.filed_by},
           )
