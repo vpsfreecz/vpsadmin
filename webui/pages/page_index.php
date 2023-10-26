@@ -203,9 +203,9 @@ foreach ($nodes as $node) {
 	$xtpl->table_td((isLoggedIn() ? node_link($node, $node->name) : $node->name));
 
 	if ($node->pool_scan == 'scrub') {
-		$xtpl->table_td(_('scrub, ').round($pool_scan_percent, 1).'&nbsp;%');
+		$xtpl->table_td(_('scrub, ').round($node->pool_scan_percent, 1).'&nbsp;%');
 	} elseif ($node->pool_scan == 'resilver') {
-		$xtpl->table_td(_('resilver, ').round($pool_scan_percent, 1).'&nbsp;%');
+		$xtpl->table_td(_('resilver, ').round($node->pool_scan_percent, 1).'&nbsp;%');
 	} else {
 		$xtpl->table_td($node->pool_state);
 	}
