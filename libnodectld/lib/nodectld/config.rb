@@ -16,6 +16,13 @@ module NodeCtld
       write_timeout: 15,
     },
 
+    rabbitmq: {
+      hosts: [],
+      vhost: '/',
+      username: nil,
+      password: nil,
+    },
+
     # Choose from predefined runtime configurations: standard or minimal
     #
     # Minimal mode is for nodes that do not manage VPS, nor storage, but are used

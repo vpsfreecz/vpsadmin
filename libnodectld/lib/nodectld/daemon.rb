@@ -58,6 +58,7 @@ module NodeCtld
       @mount_reporter = MountReporter.new
       @delayed_mounter = DelayedMounter.new # FIXME: call stop?
       @remote_control = RemoteControl.new(self)
+      NodeBunny.connect
       @node = Node.new
       @pool_status = PoolStatus.new
       @node_status = NodeStatus.new(@pool_status)
