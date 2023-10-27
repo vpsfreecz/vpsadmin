@@ -245,8 +245,9 @@ CREATE TABLE `dataset_properties` (
   `value` varchar(255) DEFAULT NULL,
   `inherited` tinyint(1) NOT NULL DEFAULT 1,
   `confirmed` int(11) NOT NULL DEFAULT 0,
-  `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
-  `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  `last_log_at` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_dataset_properties_on_dataset_id` (`dataset_id`) USING BTREE,
   KEY `index_dataset_properties_on_dataset_in_pool_id_and_name` (`dataset_in_pool_id`,`name`) USING BTREE,
@@ -999,6 +1000,7 @@ CREATE TABLE `node_current_statuses` (
   `pool_checked_at` datetime DEFAULT NULL,
   `pool_scan_percent` float DEFAULT NULL,
   `cgroup_version` int(11) NOT NULL DEFAULT 1,
+  `last_log_at` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_node_current_statuses_on_node_id` (`node_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -1825,6 +1827,7 @@ CREATE TABLE `vps_current_statuses` (
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   `in_rescue_mode` tinyint(1) DEFAULT 0,
+  `last_log_at` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_vps_current_statuses_on_vps_id` (`vps_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -2169,6 +2172,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230821123710'),
 ('20230904121318'),
 ('20230909064402'),
-('20231016100700');
+('20231016100700'),
+('20231027164147');
 
 
