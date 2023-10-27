@@ -14,7 +14,11 @@ module VpsAdmin
       )
       connection.start
 
-      [].each do |klass|
+      [
+        NodeRpc,
+        NodeStatus,
+        PoolStatus,
+      ].each do |klass|
         instance = klass.new(connection.create_channel)
         instance.start
       end

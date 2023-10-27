@@ -88,10 +88,9 @@ module NodeCtld
       @node.init(db)
       Export.init(db) if $CFG.get(:exports, :enable)
 
-      @node_status.init(db)
-      @node_status.update(db)
+      @node_status.update
 
-      @pool_status.init(db)
+      @pool_status.init
 
       OsCtlUsers.setup(db)
       @kernel_log.start if $CFG.get(:kernel_log, :enable)
@@ -373,10 +372,10 @@ module NodeCtld
     def update_all
       my = Db.new
 
-      @node_status.update(my)
+      @node_status.update
 
       if $CFG.get(:storage, :pool_status)
-        @pool_status.update(my)
+        @pool_status.update
       end
 
       if $CFG.get(:vpsadmin, :update_vps_status)

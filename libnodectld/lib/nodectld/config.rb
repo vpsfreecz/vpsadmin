@@ -93,7 +93,6 @@ module NodeCtld
       queues_reservation_prune_interval: 60,
       check_interval: 1,
       status_interval: 30,
-      status_log_interval: 900,
       vps_status_interval: 120,
       vps_status_log_interval: 3600,
       veth_map_interval: 3600,

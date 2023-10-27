@@ -3,29 +3,29 @@ require 'thread'
 
 module NodeCtld
   class PoolStatus
-    STATE_VALUES = %i(unknown online degraded suspended faulted error)
-    SCAN_VALUES = %i(unknown none scrub resilver error)
+    STATES = %i(unknown online degraded suspended faulted error)
+    SCANS = %i(unknown none scrub resilver error)
 
     include OsCtl::Lib::Utils::Log
 
     def initialize
       @mutex = Mutex.new
       @last_check = Time.now.utc
-      @state_summary_value = state_to_db(:unknown)
-      @scan_summary_value = scan_to_db(:unknown)
+      @state_summary_value = :unknown
+      @scan_summary_value = :unknown
       @scan_percent_summary = nil
+
+      @channel = NodeBunny.create_channel
+      @exchange = @channel.direct('node.pool_statuses')
     end
 
-    def init(db)
-      @pools = fetch_pools(db)
+    def init
+      @pools = fetch_pools
     end
 
-    def update(db = nil)
+    def update
       return if @pools.empty?
-
-      my = db || Db.new
-      check_status(my)
-      my.close unless db
+      check_status
     end
 
     # @return [Array<Time, Integer, Integer, Float>)]
@@ -37,11 +37,11 @@ module NodeCtld
     end
 
     protected
-    def check_status(db)
+    def check_status
       t = Time.now.utc
 
-      state_summary = state_to_db(:unknown)
-      scan_summary = scan_to_db(:unknown)
+      state_summary = :unknown
+      scan_summary = :unknown
       scan_percent_summary = nil
 
       begin
@@ -53,30 +53,32 @@ module NodeCtld
       @pools.each do |id, name|
         pool_st = st && st[name]
 
-        state = state_to_db(:error)
-        scan = state_to_db(:error)
+        state = :error
+        scan = :error
         scan_percent = nil
 
         if pool_st
-          state = state_to_db(pool_st.state)
-          scan = scan_to_db(pool_st.scan)
+          state = pool_st.state
+          scan = pool_st.scan
           scan_percent = pool_st.scan_percent
         end
 
-        state_summary = state if state > state_summary
-        scan_summary = scan if scan > scan_summary
+        state_summary = state if STATES.index(state) > STATES.index(state_summary)
+        scan_summary = scan if SCANS.index(scan) > SCANS.index(scan_summary)
 
         if scan_percent && (scan_percent_summary.nil? || scan_percent < scan_percent_summary)
           scan_percent_summary = scan_percent
         end
 
-        db.prepared(
-          'UPDATE pools SET state = ?, scan = ?, scan_percent = ?, checked_at = ? WHERE id = ?',
-          state,
-          scan,
-          scan_percent,
-          t.strftime('%Y-%m-%d %H:%M:%S'),
-          id,
+        @exchange.publish(
+          {
+            id: id,
+            time: t.to_i,
+            state: state,
+            scan: scan,
+            scan_percent: scan_percent,
+          }.to_json,
+          content_type: 'application/json',
         )
       end
 
@@ -88,21 +90,14 @@ module NodeCtld
       end
     end
 
-    def state_to_db(v)
-      STATE_VALUES.index(v) || STATE_VALUES.index(:error)
-    end
-
-    def scan_to_db(v)
-      SCAN_VALUES.index(v) || SCAN_VALUES.index(:error)
-    end
-
-    def fetch_pools(db)
+    def fetch_pools
       ret = {}
 
-      db.prepared(
-        'SELECT id, filesystem FROM pools WHERE node_id = ?',
-        $CFG.get(:vpsadmin, :node_id)
-      ).each { |row| ret[row['id']] = row['filesystem'].split('/').first }
+      RpcClient.run do |rpc|
+        rpc.list_pools.each do |pool|
+          ret[pool['id']] = pool['filesystem'].split('/').first
+        end
+      end
 
       ret
     end
