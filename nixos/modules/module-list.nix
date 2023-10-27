@@ -12,6 +12,7 @@
     ./vpsadmin/main.nix
     ./vpsadmin/database.nix
     ./vpsadmin/nodectld/nixos.nix
+    ./vpsadmin/rabbitmq.nix
     ./vpsadmin/redis.nix
     ./vpsadmin/wait-online.nix
     ./vpsadmin/webui.nix

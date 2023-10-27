@@ -49,3 +49,5 @@ VpsAdmin::API.load_configurable(:incident_reports)
 
 require_rel 'vpsadmin/api/resources'
 require_rel 'vpsadmin/api/operations'
+
+require_rel 'vpsadmin/supervisor/*.rb'
