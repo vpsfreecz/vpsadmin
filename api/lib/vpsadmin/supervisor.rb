@@ -15,6 +15,7 @@ module VpsAdmin
         NodeRpc,
         NodeStatus,
         PoolStatus,
+        VpsStatus,
       ].each do |klass|
         instance = klass.new(connection.create_channel)
         instance.start

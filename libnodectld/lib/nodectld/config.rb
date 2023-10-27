@@ -94,7 +94,6 @@ module NodeCtld
       check_interval: 1,
       status_interval: 30,
       vps_status_interval: 120,
-      vps_status_log_interval: 3600,
       veth_map_interval: 3600,
       update_vps_status: true,
       type: nil, # loaded from db

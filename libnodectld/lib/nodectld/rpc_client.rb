@@ -27,6 +27,10 @@ module NodeCtld
       send_request('list_pools', $CFG.get(:vpsadmin, :node_id))
     end
 
+    def list_vps_status_check
+      send_request('list_vps_status_check', $CFG.get(:vpsadmin, :node_id))
+    end
+
     protected
     attr_reader :lock, :condition, :call_id
     attr_accessor :response

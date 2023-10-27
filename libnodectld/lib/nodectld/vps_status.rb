@@ -8,19 +8,15 @@ require 'nodectld/system_probes'
 module NodeCtld
   class VpsStatus
     class Entry
-      attr_reader :id, :read_hostname, :last_status_id, :last_is_running,
-        :status_time, :cpus, :last_total_memory
+      attr_reader :id, :read_hostname
       attr_accessor :exists, :running, :hostname, :uptime, :cpu_usage, :memory,
         :nproc, :loadavg, :in_rescue_mode
 
-      # @param row [Hash] row from databse table `vpses`
       def initialize(row)
+        @skip = false
         @id = row['id'].to_s
-        @read_hostname = row['manage_hostname'].to_i == 0
-        @last_status_id = row['status_id'] && row['status_id'].to_i
-        @last_is_running = row['is_running'].to_i == 1
-        @status_time = row['created_at']
-        @cpus = row['cpus'].to_i
+        @read_hostname = row['read_hostname']
+        @in_rescue_mode = false
       end
 
       alias_method :read_hostname?, :read_hostname
@@ -45,32 +41,29 @@ module NodeCtld
 
     def initialize
       @tics_per_sec = Etc.sysconf(Etc::SC_CLK_TCK).to_i
+      @channel = NodeBunny.create_channel
+      @exchange = @channel.direct('node.vps_statuses')
     end
 
-    # If `db_in` is not provided, new connection to DB is opened and closed
-    # when the status is updated.
-    #
     # @param top_data [Hash] data from osctl ct top
-    # @param db_in [NodeCtld::Db]
-    def update(top_data, db_in = nil)
+    def update(top_data)
       @@mutex.synchronize do
         @top_data = top_data
         @host_uptime = SystemProbes::Uptime.new.uptime
 
-        db = db_in || Db.new
-        safe_update(db)
-        db.close unless db_in
+        safe_update
       end
     end
 
-    def safe_update(db)
-      db_vpses = {}
+    def safe_update
+      vpsadmin_vpses = {}
 
-      fetch_vpses(db).each do |row|
-        ent = Entry.new(row)
-        db_vpses[ent.id.to_s] = ent
+      fetch_vpses.each do |vps|
+        ent = Entry.new(vps)
+        vpsadmin_vpses[ent.id.to_s] = ent
       end
 
+      t = Time.now
       cts = ct_list
 
       begin
@@ -80,89 +73,80 @@ module NodeCtld
         lavgs = {}
       end
 
-      hostname_db_vpses = []
+      hostname_vpsadmin_vpses = []
 
       cts.each do |vps|
-        _, db_vps = db_vpses.detect { |k, v| k == vps[:id] }
-        next unless db_vps
+        vpsadmin_vps = vpsadmin_vpses[vps[:id]]
+        next if vpsadmin_vps.nil?
 
-        db_vps.exists = true
-        db_vps.running = vps[:state] == 'running'
+        vpsadmin_vps.exists = true
+        vpsadmin_vps.running = vps[:state] == 'running'
 
-        if db_vps.running?
+        if vpsadmin_vps.running?
           # Find matching stats from ct top
-          apply_usage_stats(db_vps)
+          apply_usage_stats(vpsadmin_vps)
 
-          run_or_skip(db_vps) do
-            db_vps.uptime = read_uptime(vps[:init_pid])
+          run_or_skip(vpsadmin_vps) do
+            vpsadmin_vps.uptime = read_uptime(vps[:init_pid])
           end
 
           # Set loadavg
           lavg = lavgs[ "#{vps[:pool]}:#{vps[:id]}" ]
 
           if lavg
-            db_vps.loadavg = lavg.avg[5]
+            vpsadmin_vps.loadavg = lavg.avg
           else
-            db_vps.loadavg = nil
+            vpsadmin_vps.loadavg = nil
           end
 
           # Read hostname if it isn't managed by vpsAdmin
-          if db_vps.read_hostname?
-            hostname_db_vpses << db_vps
-            db_vps.hostname = 'unable-to-read'
+          if vpsadmin_vps.read_hostname?
+            hostname_vpsadmin_vpses << vpsadmin_vps
+            vpsadmin_vps.hostname = 'unable-to-read'
           end
 
           # Detect osctl ct boot
           if vps[:dataset] != vps[:boot_dataset]
-            db_vps.in_rescue_mode = true
+            vpsadmin_vps.in_rescue_mode = true
           end
         end
       end
 
       # Query hostname of VPSes with manual configuration
-      if hostname_db_vpses.any?
+      if hostname_vpsadmin_vpses.any?
         begin
           osctl_parse(
             %i(ct ls),
-            hostname_db_vpses.map { |vps| vps.id },
+            hostname_vpsadmin_vpses.map(&:id),
             {output: %w(id hostname_readout).join(',')},
           ).each do |ct|
-            db_vpses[ct[:id]].hostname = ct[:hostname_readout] || 'unable-to-read'
+            vpsadmin_vpses[ct[:id]].hostname = ct[:hostname_readout] || 'unable-to-read'
           end
         rescue SystemCommandFailed => e
           log(:warn, :vps_status, "Unable to read VPS hostnames: #{e.message}")
         end
       end
 
-      # Save results to db
-      db_vpses.each do |vps_id, vps|
+      # Send results to supervisor
+      vpsadmin_vpses.each do |vps_id, vps|
         next unless vps.exists?
 
-        t = Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
-
-        # The VPS is not running
-        if !vps.running? && vps.last_status_id && !vps.last_is_running
-          db.prepared(
-            'UPDATE vps_current_statuses SET updated_at = ? WHERE vps_id = ?',
-            t, vps_id
-          )
-          next
-        end
-
-        if state_changed?(vps) || status_expired?(vps)
-          log_status(db, t, vps_id)
-          reset_status(db, t, vps_id, vps)
-
-        else
-          update_status(db, t, vps_id, vps)
-        end
-
-        if vps.hostname
-          db.prepared(
-            'UPDATE vpses SET hostname = ? WHERE id = ?',
-            vps.hostname, vps_id
-          )
-        end
+        @exchange.publish(
+          {
+            id: vps.id.to_i,
+            time: t.to_i,
+            status: !vps.skip?,
+            running: vps.running?,
+            in_rescue_mode: vps.in_rescue_mode,
+            uptime: vps.uptime,
+            loadavg: vps.loadavg,
+            process_count: vps.nproc,
+            used_memory: vps.memory,
+            cpu_usage: vps.cpu_usage,
+            hostname: vps.hostname,
+          }.to_json,
+          content_type: 'application/json',
+        )
       end
 
     rescue SystemCommandFailed => e
@@ -170,24 +154,10 @@ module NodeCtld
     end
 
     protected
-    def fetch_vpses(db)
-      sql = "
-        SELECT vpses.id, vpses.manage_hostname, st.id AS status_id, st.is_running,
-               cru.value AS cpus, st.total_memory, st.created_at
-        FROM vpses
-        LEFT JOIN vps_current_statuses st ON st.vps_id = vpses.id
-        INNER JOIN user_cluster_resources ucr ON ucr.user_id = vpses.user_id
-        INNER JOIN cluster_resources cr ON cr.id = ucr.cluster_resource_id
-        INNER JOIN cluster_resource_uses cru ON cru.user_cluster_resource_id = ucr.id
-        WHERE
-          vpses.node_id = #{$CFG.get(:vpsadmin, :node_id)}
-          AND vpses.object_state < 3
-          AND cr.name = 'cpu'
-          AND cru.class_name = 'Vps'
-          AND cru.row_id = vpses.id
-          AND cru.confirmed = 1"
-
-      db.query(sql)
+    def fetch_vpses
+      RpcClient.run do |rpc|
+        rpc.list_vps_status_check
+      end
     end
 
     def ct_list
@@ -202,15 +172,6 @@ module NodeCtld
       vps.skip
     end
 
-    def state_changed?(vps)
-      vps.last_status_id.nil? || vps.running? != vps.last_is_running
-    end
-
-    def status_expired?(vps)
-      return true if vps.status_time.nil?
-      (vps.status_time + $CFG.get(:vpsadmin, :vps_status_log_interval)) < Time.now.utc
-    end
-
     def apply_usage_stats(vps)
       st = @top_data.detect { |ct| ct[:id] == vps.id }
 
@@ -222,9 +183,8 @@ module NodeCtld
         return
       end
 
-      vps.cpu_usage = st[:cpu_usage] / vps.cpus
-
-      vps.memory = st[:memory] / 1024 / 1024
+      vps.cpu_usage = st[:cpu_usage]
+      vps.memory = st[:memory] # in bytes
       vps.nproc = st[:nproc]
     end
 
@@ -243,109 +203,6 @@ module NodeCtld
       f.close
 
       @host_uptime - (str.split(' ')[21].to_i / @tics_per_sec)
-    end
-
-    def log_status(db, t, vps_id)
-      db.query(
-        "INSERT INTO vps_statuses (
-          vps_id, status, is_running, in_rescue_mode, uptime, cpus, total_memory,
-          total_swap, process_count, cpu_idle, used_memory, loadavg, created_at
-        )
-
-        SELECT
-          vps_id, status, is_running, in_rescue_mode, uptime, cpus, total_memory,
-          total_swap,
-          sum_process_count / update_count,
-          sum_cpu_idle / update_count,
-          sum_used_memory / update_count,
-          sum_loadavg / update_count,
-          '#{t}'
-        FROM vps_current_statuses WHERE vps_id = #{vps_id}"
-      )
-    end
-
-    def reset_status(db, t, vps_id, vps)
-      if vps.last_status_id
-        sql = "UPDATE vps_current_statuses SET "
-
-      else
-        sql = "INSERT INTO vps_current_statuses SET vps_id = #{vps_id},"
-      end
-
-      sql += "
-          status = #{vps.skip? ? 0 : 1},
-          is_running = #{vps.running? ? 1 : 0},
-          in_rescue_mode = #{vps.in_rescue_mode ? 1 : 0},
-          update_count = 1,"
-
-      if vps.running? && !vps.skip?
-        sql += "
-          uptime = #{vps.uptime},
-          loadavg = #{vps.loadavg || 0.0},
-          process_count = #{vps.nproc},
-          used_memory = #{vps.memory},
-          cpu_idle = #{100.0 - vps.cpu_usage},"
-
-      else
-        sql += "
-          uptime = NULL,
-          loadavg = NULL,
-          process_count = NULL,
-          used_memory = NULL,
-          used_swap = NULL,
-          cpu_user = NULL,
-          cpu_nice = NULL,
-          cpu_system = NULL,
-          cpu_idle = NULL,
-          cpu_iowait = NULL,
-          cpu_irq = NULL,
-          cpu_softirq = NULL,"
-      end
-
-      sql += "
-          sum_loadavg = loadavg,
-          sum_process_count = process_count,
-          sum_used_memory = used_memory,
-          sum_used_swap = used_swap,
-          sum_cpu_user = cpu_user,
-          sum_cpu_nice = cpu_nice,
-          sum_cpu_system = cpu_system,
-          sum_cpu_idle = cpu_idle,
-          sum_cpu_iowait = cpu_iowait,
-          sum_cpu_irq = cpu_irq,
-          sum_cpu_softirq = cpu_softirq,"
-
-      sql += "created_at = '#{t}', updated_at = NULL "
-      sql += "WHERE vps_id = #{vps_id}" if vps.last_status_id
-
-      db.query(sql)
-    end
-
-    def update_status(db, t, vps_id, vps)
-      sql = "UPDATE vps_current_statuses SET status = #{vps.skip? ? 0 : 1},"
-
-      if vps.running? && !vps.skip?
-        sql += "
-          in_rescue_mode = #{vps.in_rescue_mode ? 1 : 0},
-          uptime = #{vps.uptime},
-          loadavg = #{vps.loadavg || 0.0},
-          process_count = #{vps.nproc},
-          used_memory = #{vps.memory},
-          cpu_idle = #{100.0 - vps.cpu_usage},
-
-          sum_loadavg = sum_loadavg + loadavg,
-          sum_process_count = sum_process_count + process_count,
-          sum_used_memory = sum_used_memory + used_memory,
-          sum_cpu_idle = sum_cpu_idle + cpu_idle,
-
-          update_count = update_count + 1,
-        "
-      end
-
-      sql += "updated_at = '#{t}' "
-      sql += "WHERE vps_id = #{vps_id}"
-
-      db.query(sql)
     end
   end
 end

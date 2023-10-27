@@ -380,7 +380,7 @@ module NodeCtld
 
       if $CFG.get(:vpsadmin, :update_vps_status)
         # TODO
-        # @vps_status.update(my)
+        # @vps_status.update
       end
 
       if $CFG.get(:storage, :update_status)

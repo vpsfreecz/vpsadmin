@@ -42,6 +42,16 @@ module VpsAdmin::Supervisor
           {id: pool.id, filesystem: pool.filesystem}
         end
       end
+
+      def list_vps_status_check(node_id)
+        ::Vps.where(
+          node_id: node_id,
+          object_state: %w(active suspended),
+          confirmed: ::Vps.confirmed(:confirmed),
+        ).map do |vps|
+          {id: vps.id, read_hostname: !vps.manage_hostname}
+        end
+      end
     end
   end
 end
