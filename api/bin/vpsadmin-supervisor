@@ -1,4 +1,4 @@
 #!/usr/bin/env ruby
 require_relative '../lib/vpsadmin'
 
-VpsAdmin::Supervisor.start
+VpsAdmin::Supervisor::Cli.run

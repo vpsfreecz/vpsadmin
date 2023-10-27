@@ -10,12 +10,22 @@ let
     vhost = cfg.rabbitmq.virtualHost;
     username = cfg.rabbitmq.username;
     password = "#rabbitmq_pass#";
+    servers = cfg.servers;
+    foreground = false;
   });
 in {
   options = {
     vpsadmin.api = {
       supervisor = {
         enable = mkEnableOption "Enable vpsAdmin supervisor";
+
+        servers = mkOption {
+          type = types.int;
+          default = 1;
+          description = ''
+            Number of servers to run
+          '';
+        };
 
         rabbitmq = {
           hosts = mkOption {
@@ -67,7 +77,7 @@ in {
         chmod 440 "${cfg.stateDir}/config/supervisor.yml"
       '';
       serviceConfig = {
-        Type = "simple";
+        Type = "forking";
         User = cfg.user;
         Group = cfg.group;
         WorkingDirectory = "${cfg.package}/api";
