@@ -10,7 +10,7 @@ require 'digest/sha1'
 
 Thread.abort_on_exception = true
 
-path = File.dirname(__FILE__)
+path = __dir__
 $: << path unless $:.include?(path)
 
 module VpsAdmin

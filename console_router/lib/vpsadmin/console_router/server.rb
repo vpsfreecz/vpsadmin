@@ -1,7 +1,7 @@
 module VpsAdmin::ConsoleRouter
   class Server < Sinatra::Application
     configure do
-      path = File.join(File.dirname(__FILE__), '..', '..', '..')
+      path = File.join(__dir__, '..', '..', '..')
 
       set :protection, except: :frame_options
       set :views, File.join(path, 'views')

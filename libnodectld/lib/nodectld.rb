@@ -6,7 +6,7 @@ module NodeCtld
   module KernelLog ; end
 
   def self.root
-    File.join(File.dirname(__FILE__), '..')
+    File.join(__dir__, '..')
   end
 end
 

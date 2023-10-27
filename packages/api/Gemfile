@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 begin
-  $: << File.realpath(File.join(File.dirname(__FILE__), 'lib'))
+  $: << File.realpath(File.join(__dir__, 'lib'))
 rescue Errno::ENOENT
 end
 

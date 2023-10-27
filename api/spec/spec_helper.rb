@@ -19,10 +19,10 @@ ActiveRecord::Base.establish_connection(configuration[environment])
 include ActiveRecord::Tasks
 
 DatabaseTasks.create_current('test')
-DatabaseTasks.load_schema(:ruby, File.join(File.dirname(__FILE__), '..', 'db', 'schema.rb'))
+DatabaseTasks.load_schema(:ruby, File.join(__dir__, '..', 'db', 'schema.rb'))
 
 # Load fixtures
-fixtures = ENV['FIXTURES'] ? ENV['FIXTURES'].split(/,/) : Dir.glob(File.join(File.dirname(__FILE__), 'fixtures', '*.yml'))
+fixtures = ENV['FIXTURES'] ? ENV['FIXTURES'].split(/,/) : Dir.glob(File.join(__dir__, 'fixtures', '*.yml'))
 
 fixtures.each do |fixture|
   ActiveRecord::FixtureSet.create_fixtures('spec/fixtures', File.basename(fixture, '.*'))

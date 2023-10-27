@@ -164,7 +164,7 @@ module VpsAdmin
 
     def self.root
       return @root if @root
-      @root = File.realpath(File.join(File.dirname(__FILE__), '..', '..'))
+      @root = File.realpath(File.join(__dir__, '..', '..'))
     end
   end
 end
