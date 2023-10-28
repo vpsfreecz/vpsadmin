@@ -6,6 +6,8 @@ module NodeCtld
   class RpcClient
     class Error < ::StandardError ; end
 
+    class Timeout < Error ; end
+
     def self.run
       rpc = new
       yield(rpc)
@@ -60,9 +62,10 @@ module NodeCtld
 
       @reply_queue.subscribe do |_delivery_info, properties, payload|
         if properties.correlation_id == that.call_id
-          that.response = JSON.parse(payload)
-
-          that.lock.synchronize { that.condition.signal }
+          that.lock.synchronize do
+            that.response = JSON.parse(payload)
+            that.condition.signal
+          end
         end
       end
     end
@@ -87,7 +90,23 @@ module NodeCtld
         reply_to: @reply_queue.name,
       )
 
-      @lock.synchronize { @condition.wait(@lock) }
+      wait_secs = 0
+      timeout = 5
+
+      @lock.synchronize do
+        loop do
+          waited = @condition.wait(@lock, timeout)
+          wait_secs += waited || timeout
+
+          if @response
+            break
+          elsif wait_secs > $CFG.get(:rpc_client, :hard_timeout)
+            raise Timeout, "No reply for #{wait_secs}s command=#{command}"
+          elsif wait_secs > $CFG.get(:rpc_client, :soft_timeout)
+            log(:warn, "request waiting secs=#{wait_secs} id=#{@call_id[0..7]} command=#{command}")
+          end
+        end
+      end
 
       if @debug
         log(:debug, "response id=#{@call_id[0..7]} time=#{(Time.now - t1).round(3)}s value=#{@response.inspect}")
