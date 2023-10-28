@@ -839,7 +839,10 @@ CREATE TABLE `network_interface_daily_accountings` (
   `updated_at` datetime(6) NOT NULL,
   PRIMARY KEY (`network_interface_id`,`user_id`,`year`,`month`,`day`),
   KEY `index_network_interface_daily_accountings_on_netif` (`network_interface_id`),
-  KEY `index_network_interface_daily_accountings_on_user_id` (`user_id`)
+  KEY `index_network_interface_daily_accountings_on_user_id` (`user_id`),
+  KEY `index_network_interface_daily_accountings_on_year` (`year`),
+  KEY `index_network_interface_daily_accountings_on_month` (`month`),
+  KEY `index_network_interface_daily_accountings_on_day` (`day`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `network_interface_monitors`;
@@ -879,7 +882,9 @@ CREATE TABLE `network_interface_monthly_accountings` (
   `updated_at` datetime(6) NOT NULL,
   PRIMARY KEY (`network_interface_id`,`user_id`,`year`,`month`),
   KEY `index_network_interface_monthly_accountings_on_netif` (`network_interface_id`),
-  KEY `index_network_interface_monthly_accountings_on_user_id` (`user_id`)
+  KEY `index_network_interface_monthly_accountings_on_user_id` (`user_id`),
+  KEY `index_network_interface_monthly_accountings_on_year` (`year`),
+  KEY `index_network_interface_monthly_accountings_on_month` (`month`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `network_interface_yearly_accountings`;
@@ -897,7 +902,8 @@ CREATE TABLE `network_interface_yearly_accountings` (
   `updated_at` datetime(6) NOT NULL,
   PRIMARY KEY (`network_interface_id`,`user_id`,`year`),
   KEY `index_network_interface_yearly_accountings_on_netif` (`network_interface_id`),
-  KEY `index_network_interface_yearly_accountings_on_user_id` (`user_id`)
+  KEY `index_network_interface_yearly_accountings_on_user_id` (`user_id`),
+  KEY `index_network_interface_yearly_accountings_on_year` (`year`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `network_interfaces`;
@@ -2168,6 +2174,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230909064402'),
 ('20231016100700'),
 ('20231027164147'),
-('20231028145905');
+('20231028145905'),
+('20231028151738');
 
 
