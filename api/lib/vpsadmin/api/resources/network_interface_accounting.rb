@@ -4,7 +4,6 @@ module VpsAdmin::API::Resources
     model ::NetworkInterfaceMonthlyAccounting
 
     params(:all) do
-      id :id
       resource VpsAdmin::API::Resources::NetworkInterface, value_label: :name
       integer :bytes_in
       integer :bytes_out
@@ -163,7 +162,7 @@ module VpsAdmin::API::Resources
 
         q = self.class.model
           .select("
-            #{table}.id, #{table}.year, #{table}.month,
+            #{table}.year, #{table}.month,
             #{table}.network_interface_id, vpses.user_id,
             SUM(bytes_in) AS sum_bytes_in, SUM(bytes_out) AS sum_bytes_out,
             SUM(packets_in) AS sum_packets_in, SUM(packets_out) AS sum_packets_out
@@ -214,33 +213,6 @@ module VpsAdmin::API::Resources
         q = query.offset(input[:offset]).limit(input[:limit])
         q = q.order(Arel.sql('(SUM(bytes_in) + SUM(bytes_out)) DESC'))
         q
-      end
-    end
-
-    class Show < HaveAPI::Actions::Default::Show
-      desc 'Show network accounting record'
-
-      output do
-        use :all
-      end
-
-      authorize do |u|
-        allow if u.role == :admin
-        output blacklist: %i(user)
-        restrict vpses: {user_id: u.id}
-        allow
-      end
-
-      def prepare
-        @accounting = self.class.model
-          .joins(network_interface: :vps)
-          .find_by!(with_restricted(
-            id: params[:network_interface_accounting_id]
-          ))
-      end
-
-      def exec
-        @accounting
       end
     end
   end

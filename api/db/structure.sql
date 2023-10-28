@@ -826,7 +826,6 @@ DROP TABLE IF EXISTS `network_interface_daily_accountings`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `network_interface_daily_accountings` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `network_interface_id` bigint(20) NOT NULL,
   `user_id` bigint(20) NOT NULL,
   `packets_in` bigint(20) unsigned NOT NULL,
@@ -838,8 +837,7 @@ CREATE TABLE `network_interface_daily_accountings` (
   `day` int(11) NOT NULL,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `index_network_interface_daily_accountings_unique` (`network_interface_id`,`year`,`month`,`day`),
+  PRIMARY KEY (`network_interface_id`,`user_id`,`year`,`month`,`day`),
   KEY `index_network_interface_daily_accountings_on_netif` (`network_interface_id`),
   KEY `index_network_interface_daily_accountings_on_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -869,7 +867,6 @@ DROP TABLE IF EXISTS `network_interface_monthly_accountings`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `network_interface_monthly_accountings` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `network_interface_id` bigint(20) NOT NULL,
   `user_id` bigint(20) NOT NULL,
   `packets_in` bigint(20) unsigned NOT NULL,
@@ -880,8 +877,7 @@ CREATE TABLE `network_interface_monthly_accountings` (
   `month` int(11) NOT NULL,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `index_network_interface_monthly_accountings_unique` (`network_interface_id`,`year`,`month`),
+  PRIMARY KEY (`network_interface_id`,`user_id`,`year`,`month`),
   KEY `index_network_interface_monthly_accountings_on_netif` (`network_interface_id`),
   KEY `index_network_interface_monthly_accountings_on_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -890,7 +886,6 @@ DROP TABLE IF EXISTS `network_interface_yearly_accountings`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `network_interface_yearly_accountings` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `network_interface_id` bigint(20) NOT NULL,
   `user_id` bigint(20) NOT NULL,
   `packets_in` bigint(20) unsigned NOT NULL,
@@ -900,8 +895,7 @@ CREATE TABLE `network_interface_yearly_accountings` (
   `year` int(11) NOT NULL,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `index_network_interface_yearly_accountings_unique` (`network_interface_id`,`year`),
+  PRIMARY KEY (`network_interface_id`,`user_id`,`year`),
   KEY `index_network_interface_yearly_accountings_on_netif` (`network_interface_id`),
   KEY `index_network_interface_yearly_accountings_on_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -2173,6 +2167,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230904121318'),
 ('20230909064402'),
 ('20231016100700'),
-('20231027164147');
+('20231027164147'),
+('20231028145905');
 
 

@@ -46,7 +46,6 @@ module VpsAdmin::Supervisor
               created_at = ?,
               updated_at = ?
             ON DUPLICATE KEY UPDATE
-              user_id = values(user_id),
               bytes_in = bytes_in + values(bytes_in),
               bytes_out = bytes_out + values(bytes_out),
               packets_in = packets_in + values(packets_in),
