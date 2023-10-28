@@ -18,6 +18,7 @@ module VpsAdmin
         NodeStatus,
         PoolStatus,
         StorageStatus,
+        VpsOsProcesses,
         VpsSshHostKeys,
         VpsStatus,
       ].each do |klass|

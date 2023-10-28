@@ -211,6 +211,7 @@ module NodeCtld
       enable: true,
       url: 'http://localhost:9101/metrics',
       interval: 120,
+      batch_size: 50,
     },
 
     vps_ssh_host_keys: {

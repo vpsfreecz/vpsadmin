@@ -8,6 +8,8 @@ module NodeCtld
 
     def initialize
       @queue = OsCtl::Lib::Queue.new
+      @channel = NodeBunny.create_channel
+      @exchange = @channel.direct('node.vps_os_processes')
     end
 
     def enable?
@@ -86,21 +88,34 @@ module NodeCtld
 
       return if vpses.empty?
 
-      db = Db.new
-      t = Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
+      t = Time.now
+      to_save = []
+      max_size = cfg(:batch_size)
 
       vpses.each do |vps_id, procs|
-        procs.each do |state, count|
-          db.prepared(
-            'INSERT INTO vps_os_processes
-            SET vps_id = ?, `state` = ?, `count` = ?, created_at = ?, updated_at = ?
-            ON DUPLICATE KEY UPDATE `count` = ?, updated_at = ?',
-            vps_id, state, count, t, t, count, t
-          )
-        end
+        to_save << {
+          vps_id: vps_id,
+          processes: procs,
+        }
+
+        save_processes(t, to_save, max_size)
       end
 
-      db.close
+      save_processes(t, to_save)
+    end
+
+    def save_processes(time, to_save, max_size = 0)
+      return if to_save.length <= max_size
+
+      @exchange.publish(
+        {
+          time: time.to_i,
+          vps_processes: to_save,
+        }.to_json,
+        content_type: 'application/json',
+      )
+
+      to_save.clear
     end
 
     def cfg(key)
