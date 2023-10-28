@@ -19,6 +19,9 @@ module NodeCtld
     def initialize
       return unless enable?
 
+      @channel = NodeBunny.create_channel
+      @exchange = @channel.direct('node.vps_ssh_host_keys')
+
       @update_vps_queue = OsCtl::Lib::Queue.new
       @update_vps_thread = Thread.new { update_vps_worker }
 
@@ -75,17 +78,11 @@ module NodeCtld
 
         vps_ids = {}
 
-        db = Db.new
-        db.prepared(
-          'SELECT vpses.id
-          FROM vpses
-          INNER JOIN vps_current_statuses st ON st.vps_id = vpses.id
-          WHERE node_id = ? AND vpses.object_state = 0 AND st.is_running = 1',
-          $CFG.get(:vpsadmin, :node_id),
-        ).each do |row|
-          vps_ids[row['id']] = true
+        RpcClient.run do |rpc|
+          rpc.list_running_vps_ids.each do |vps_id|
+            vps_ids[vps_id] = true
+          end
         end
-        db.close
 
         log(:info, "Updating ssh host keys of #{vps_ids.length} VPS")
 
@@ -104,7 +101,7 @@ module NodeCtld
     def update_vps_keys(vps)
       log(:info, "Updating keys of VPS #{vps.id}")
       vps.boot_rootfs ||= osctl_parse(%i(ct show), [vps.id])[:boot_rootfs]
-      t = Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
+      t = Time.now
 
       begin
         keys = read_vps_keys(vps)
@@ -116,32 +113,22 @@ module NodeCtld
         return
       end
 
-      if keys.any?
-        db = Db.new
+      return if keys.empty?
 
-        keys.each do |key|
-          db.prepared(
-            'INSERT INTO vps_ssh_host_keys
-                   (vps_id, bits, fingerprint, algorithm, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-              bits = ?,
-              fingerprint = ?,
-              updated_at = ?',
-              vps.id, key.bits, key.fingerprint, key.algorithm, t, t,
-              key.bits, key.fingerprint, t,
-          )
-        end
-
-        db.prepared(
-          "DELETE FROM vps_ssh_host_keys
-          WHERE vps_id = ? AND algorithm NOT IN (#{keys.map { '?' }.join(', ')})",
-          vps.id,
-          *keys.map(&:algorithm),
-        )
-
-        db.close
-      end
+      @exchange.publish(
+        {
+          vps_id: vps.id,
+          time: t.to_i,
+          keys: keys.map do |key|
+            {
+              bits: key.bits,
+              fingerprint: key.fingerprint,
+              algorithm: key.algorithm,
+            }
+          end,
+        }.to_json,
+        content_type: 'application/json',
+      )
     end
 
     def read_vps_keys(vps)

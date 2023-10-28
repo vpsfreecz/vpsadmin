@@ -200,6 +200,13 @@ module VpsAdmin::Supervisor
           packets_out_readout: netif.bytes_out_readout,
         }
       end
+
+      def list_running_vps_ids(node_id)
+        ::Vps.select('vpses.id').joins(:vps_current_status).where(
+          vpses: {node_id: node_id, object_state: 'active'},
+          vps_current_statuses: {is_running: true},
+        ).map(&:id)
+      end
     end
   end
 end

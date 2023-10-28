@@ -53,6 +53,10 @@ module NodeCtld
       send_request('find_vps_network_interface', vps_id, vps_name)
     end
 
+    def list_running_vps_ids
+      send_request('list_running_vps_ids', $CFG.get(:vpsadmin, :node_id))
+    end
+
     def log_type
       'rpc'
     end

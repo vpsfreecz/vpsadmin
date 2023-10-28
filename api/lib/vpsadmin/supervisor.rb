@@ -18,6 +18,7 @@ module VpsAdmin
         NodeStatus,
         PoolStatus,
         StorageStatus,
+        VpsSshHostKeys,
         VpsStatus,
       ].each do |klass|
         instance = klass.new(connection.create_channel)
