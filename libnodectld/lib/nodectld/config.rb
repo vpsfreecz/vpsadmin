@@ -143,6 +143,7 @@ module NodeCtld
       enable: true,
       update_interval: 10,
       log_interval: 60,
+      batch_size: 50,
     },
 
     storage: {

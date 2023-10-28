@@ -75,7 +75,6 @@ module NodeCtld
 
       @delta = [now - @last_update, 1].max.round
       @last_update = now
-      @last_update_str = @last_update.strftime('%Y-%m-%d %H:%M:%S')
       @changed = true
     end
 
@@ -83,21 +82,46 @@ module NodeCtld
       @changed
     end
 
-    # Save state to the database
-    def save(db, log_interval)
-      save_monitor(db)
+    def export_accounting?(log_interval)
+      @last_log + log_interval <= @last_update
+    end
 
-      if @last_log + log_interval <= @last_update
-        save_accounting(db)
-
-        @log_bytes_in = 0
-        @log_bytes_out = 0
-        @log_packets_in = 0
-        @log_packets_out = 0
-        @last_log = @last_update
-      end
-
+    def export_monitor
       @changed = false
+
+      {
+        id: @id,
+        time: @last_update.to_i,
+        bytes_in: @bytes_in,
+        bytes_out: @bytes_out,
+        packets_in: @packets_in,
+        packets_out: @packets_out,
+        delta: @delta,
+        bytes_in_readout: @last_bytes_in,
+        bytes_out_readout: @last_bytes_out,
+        packets_in_readout: @last_packets_in,
+        packets_out_readout: @last_packets_out,
+      }
+    end
+
+    def export_accounting
+      ret = {
+        id: @id,
+        user_id: @user_id,
+        time: @last_update.to_i,
+        bytes_in: @log_bytes_in,
+        bytes_out: @log_bytes_out,
+        packets_in: @log_packets_in,
+        packets_out: @log_packets_out,
+      }
+
+      @log_bytes_in = 0
+      @log_bytes_out = 0
+      @log_packets_in = 0
+      @log_packets_out = 0
+      @last_log = @last_update
+
+      ret
     end
 
     def dump
@@ -122,97 +146,6 @@ module NodeCtld
         last_update: @last_update && @last_update.to_i,
         last_log: @last_log && @last_log.to_i,
       }
-    end
-
-    protected
-    def save_monitor(db)
-      db.prepared(
-        'INSERT INTO network_interface_monitors SET
-          network_interface_id = ?,
-          bytes = ?,
-          bytes_in = ?,
-          bytes_out = ?,
-          packets = ?,
-          packets_in = ?,
-          packets_out = ?,
-          delta = ?,
-          bytes_in_readout = ?,
-          bytes_out_readout = ?,
-          packets_in_readout = ?,
-          packets_out_readout = ?,
-          created_at = ?,
-          updated_at = ?
-        ON DUPLICATE KEY UPDATE
-          bytes = values(bytes),
-          bytes_in = values(bytes_in),
-          bytes_out = values(bytes_out),
-          packets = values(packets),
-          packets_in = values(packets_in),
-          packets_out = values(packets_out),
-          delta = values(delta),
-          bytes_in_readout = values(bytes_in_readout),
-          bytes_out_readout = values(bytes_out_readout),
-          packets_in_readout = values(packets_in_readout),
-          packets_out_readout = values(packets_out_readout),
-          updated_at = values(updated_at)
-        ',
-        @id,
-        @bytes_in + @bytes_out,
-        @bytes_in,
-        @bytes_out,
-        @packets_in + @packets_out,
-        @packets_in,
-        @packets_out,
-        @delta,
-        @last_bytes_in,
-        @last_bytes_out,
-        @last_packets_in,
-        @last_packets_out,
-        @last_update_str,
-        @last_update_str,
-      )
-    end
-
-    def save_accounting(db)
-      kinds = [
-        [:year, 'yearly'],
-        [:month, 'monthly'],
-        [:day, 'daily'],
-      ]
-      date_spec = {}
-
-      kinds.each do |kind, table|
-        date_spec[kind.to_s] = @last_update.send(kind)
-
-        db.prepared(
-          "INSERT INTO network_interface_#{table}_accountings SET
-            network_interface_id = ?,
-            user_id = ?,
-            #{date_spec.map { |k, v| "`#{k}` = #{v}" }.join(', ')},
-            bytes_in = ?,
-            bytes_out = ?,
-            packets_in = ?,
-            packets_out = ?,
-            created_at = ?,
-            updated_at = ?
-          ON DUPLICATE KEY UPDATE
-            user_id = values(user_id),
-            bytes_in = bytes_in + values(bytes_in),
-            bytes_out = bytes_out + values(bytes_out),
-            packets_in = packets_in + values(packets_in),
-            packets_out = packets_out + values(packets_out),
-            updated_at = values(updated_at)
-          ",
-          @id,
-          @user_id,
-          @log_bytes_in,
-          @log_bytes_out,
-          @log_packets_in,
-          @log_packets_out,
-          @last_update_str,
-          @last_update_str,
-        )
-      end
     end
   end
 end

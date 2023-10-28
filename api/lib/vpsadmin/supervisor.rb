@@ -12,6 +12,8 @@ module VpsAdmin
       connection.start
 
       [
+        NetAccounting,
+        NetMonitor,
         NodeRpc,
         NodeStatus,
         PoolStatus,

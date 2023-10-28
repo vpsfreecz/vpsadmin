@@ -83,7 +83,7 @@ module NodeCtld
 
       @remote_control.start
 
-      NetAccounting.init(db)
+      NetAccounting.init
       Shaper.init_node if $CFG.get(:shaper, :enable)
       @node.init(db)
       Export.init(db) if $CFG.get(:exports, :enable)

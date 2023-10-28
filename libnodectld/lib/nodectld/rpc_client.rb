@@ -45,6 +45,14 @@ module NodeCtld
       send_request('list_vps_status_check', $CFG.get(:vpsadmin, :node_id))
     end
 
+    def list_vps_network_interfaces
+      send_request('list_vps_network_interfaces', $CFG.get(:vpsadmin, :node_id))
+    end
+
+    def find_vps_network_interface(vps_id, vps_name)
+      send_request('find_vps_network_interface', vps_id, vps_name)
+    end
+
     def log_type
       'rpc'
     end

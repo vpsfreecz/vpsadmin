@@ -30,10 +30,13 @@ module NodeCtld
       @update_queue = OsCtl::Lib::Queue.new
       @discovery_queue = OsCtl::Lib::Queue.new
       @mutex = Mutex.new
+      @channel = NodeBunny.create_channel
+      @monitor_exchange = @channel.direct('node.net_monitor')
+      @accounting_exchange = @channel.direct('node.net_accounting')
     end
 
-    def init(db)
-      @netifs = fetch_netifs(db)
+    def init
+      @netifs = fetch_netifs
       log(:info, "Accounting #{@netifs.length} network interfaces")
 
       @update_thread = Thread.new { run_reader }
@@ -188,73 +191,45 @@ module NodeCtld
       end
     end
 
-    def fetch_netifs(db)
-      rs = db.query(
-        "SELECT
-          vpses.id AS vps_id, vpses.user_id, netifs.id AS netif_id, netifs.name,
-          m.bytes_in_readout, m.bytes_out_readout,
-          m.packets_in_readout, m.packets_out_readout
-        FROM network_interfaces netifs
-        INNER JOIN vpses ON netifs.vps_id = vpses.id
-        LEFT JOIN network_interface_monitors m ON m.network_interface_id = netifs.id
-        WHERE
-          vpses.node_id = #{$CFG.get(:vpsadmin, :node_id)}
-          AND vpses.object_state = 0"
-      )
-
+    def fetch_netifs
       ret = []
 
-      rs.each do |row|
-        ret << NetAccounting::Interface.new(
-          row['vps_id'],
-          row['user_id'],
-          row['netif_id'],
-          row['name'],
-          bytes_in: row['bytes_in_readout'] || 0,
-          bytes_out: row['bytes_out_readout'] || 0,
-          packets_in: row['packets_in_readout'] || 0,
-          packets_out: row['packets_out_readout'] || 0,
-        )
+      RpcClient.run do |rpc|
+        rpc.list_vps_network_interfaces.each do |netif|
+          ret << NetAccounting::Interface.new(
+            netif['vps_id'],
+            netif['user_id'],
+            netif['id'],
+            netif['name'],
+            bytes_in: netif['bytes_in_readout'] || 0,
+            bytes_out: netif['bytes_out_readout'] || 0,
+            packets_in: netif['packets_in_readout'] || 0,
+            packets_out: netif['packets_out_readout'] || 0,
+          )
+        end
       end
 
       ret
     end
 
     def fetch_netif(vps_id, vps_name)
-      db = NodeCtld::Db.new
+      netif =
+        RpcClient.run do |rpc|
+          rpc.find_vps_network_interface(vps_id, vps_name)
+        end
 
-      # It is important to not check vpses.node_id, because this method may be
-      # called as part of a VPS migration, where database changes are not yet
-      # confirmed and vpses.node_id points to the source node.
-      rs = db.prepared(
-        "SELECT
-          vpses.id AS vps_id, vpses.user_id, netifs.id AS netif_id, netifs.name,
-          m.bytes_in_readout, m.bytes_out_readout,
-          m.packets_in_readout, m.packets_out_readout
-        FROM network_interfaces netifs
-        INNER JOIN vpses ON netifs.vps_id = vpses.id
-        LEFT JOIN network_interface_monitors m ON m.network_interface_id = netifs.id
-        WHERE vpses.id = ? AND netifs.name = ?",
-        vps_id,
-        vps_name
+      return if netif.nil?
+
+      NetAccounting::Interface.new(
+        netif['vps_id'],
+        netif['user_id'],
+        netif['id'],
+        netif['name'],
+        bytes_in: netif['bytes_in_readout'] || 0,
+        bytes_out: netif['bytes_out_readout'] || 0,
+        packets_in: netif['packets_in_readout'] || 0,
+        packets_out: netif['packets_out_readout'] || 0,
       )
-
-      row = rs.get
-      return if row.nil?
-
-      netif = NetAccounting::Interface.new(
-        row['vps_id'],
-        row['user_id'],
-        row['netif_id'],
-        row['name'],
-        bytes_in: row['bytes_in_readout'] || 0,
-        bytes_out: row['bytes_out_readout'] || 0,
-        packets_in: row['packets_in_readout'] || 0,
-        packets_out: row['packets_out_readout'] || 0,
-      )
-
-      db.close
-      netif
     end
 
     def discover_netif(vps_id, vps_name)
@@ -295,16 +270,40 @@ module NodeCtld
 
       return unless changed
 
-      db = NodeCtld::Db.new
+      monitors = []
+      accountings = []
+
       log_interval = $CFG.get(:traffic_accounting, :log_interval)
+      max_size = $CFG.get(:traffic_accounting, :batch_size)
 
       @mutex.synchronize do
         @netifs.each do |netif|
-          netif.save(db, log_interval) if netif.changed?
-        end
-      end
+          next unless netif.changed?
 
-      db.close
+          monitors << netif.export_monitor
+
+          if netif.export_accounting?(log_interval)
+            accountings << netif.export_accounting
+          end
+
+          send_data(@monitor_exchange, :monitors, monitors, max_size)
+          send_data(@accounting_exchange, :accounting, accountings, max_size)
+        end
+
+        send_data(@monitor_exchange, :monitors, monitors)
+        send_data(@accounting_exchange, :accounting, accountings)
+      end
+    end
+
+    def send_data(exchange, key, to_save, max_size = 0)
+      return if to_save.length <= max_size
+
+      exchange.publish(
+        {key => to_save}.to_json,
+        content_type: 'application/json',
+      )
+
+      to_save.clear
     end
   end
 end

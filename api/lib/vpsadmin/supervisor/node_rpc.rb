@@ -136,6 +136,70 @@ module VpsAdmin::Supervisor
           {id: vps.id, read_hostname: !vps.manage_hostname}
         end
       end
+
+      def list_vps_network_interfaces(node_id)
+        ::NetworkInterface
+          .select(
+            'network_interfaces.id,
+            network_interfaces.name,
+            vpses.id AS vps_id,
+            vpses.user_id AS user_id,
+            network_interface_monitors.bytes_in_readout,
+            network_interface_monitors.bytes_out_readout,
+            network_interface_monitors.packets_in_readout,
+            network_interface_monitors.packets_out_readout'
+          )
+          .joins(:vps)
+          .joins('LEFT JOIN network_interface_monitors ON network_interface_monitors.network_interface_id = network_interfaces.id')
+          .where(
+            vpses: {
+              node_id: node_id,
+              object_state: 'active',
+            },
+          ).map do |netif|
+          {
+            id: netif.id,
+            name: netif.name,
+            vps_id: netif.vps_id,
+            user_id: netif.user_id,
+            bytes_in_readout: netif.bytes_in_readout,
+            bytes_out_readout: netif.bytes_out_readout,
+            packets_in_readout: netif.bytes_in_readout,
+            packets_out_readout: netif.bytes_out_readout,
+          }
+        end
+      end
+
+      def find_vps_network_interface(vps_id, vps_name)
+        netif =
+          ::NetworkInterface
+            .select(
+              'network_interfaces.id,
+              network_interfaces.name,
+              vpses.id AS vps_id,
+              vpses.user_id AS user_id,
+              network_interface_monitors.bytes_in_readout,
+              network_interface_monitors.bytes_out_readout,
+              network_interface_monitors.packets_in_readout,
+              network_interface_monitors.packets_out_readout'
+            )
+            .joins(:vps)
+            .joins('LEFT JOIN network_interface_monitors ON network_interface_monitors.network_interface_id = network_interfaces.id')
+            .where(vps_id: vps_id, name: vps_name).take
+
+        return if netif.nil?
+
+        {
+          id: netif.id,
+          name: netif.name,
+          vps_id: netif.vps_id,
+          user_id: netif.user_id,
+          bytes_in_readout: netif.bytes_in_readout,
+          bytes_out_readout: netif.bytes_out_readout,
+          packets_in_readout: netif.bytes_in_readout,
+          packets_out_readout: netif.bytes_out_readout,
+        }
+      end
     end
   end
 end
