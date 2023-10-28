@@ -10,7 +10,7 @@ module NodeCtld::RemoteCommands
         case r
           when 'shaper'
             log(:info, :remote, 'Initializing shaper')
-            NodeCtld::Shaper.init(db ||= NodeCtld::Db.new)
+            NodeCtld::Shaper.init
             ret[:shaper] = true
         end
       end

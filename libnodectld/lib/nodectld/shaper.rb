@@ -1,5 +1,4 @@
 require 'libosctl'
-require 'nodectld/db'
 require 'nodectld/utils'
 require 'singleton'
 require 'thread'
@@ -30,14 +29,13 @@ module NodeCtld
       end
 
       # Initialize shaper on all interfaces
-      def init(db)
-        instance.init(db)
+      def init
+        instance.init
       end
 
       # Reinitialize shaper on all interfaces
-      # @param db [Db]
-      def reinit(db)
-        instance.reinit(db)
+      def reinit
+        instance.reinit
       end
     end
 
@@ -73,13 +71,13 @@ module NodeCtld
       end
     end
 
-    def init(db)
+    def init
       sync do
         safe_init_node
       end
     end
 
-    def reinit(db)
+    def reinit
       sync do
         flush
         safe_init_node
