@@ -4,6 +4,8 @@ require 'securerandom'
 
 module NodeCtld
   class RpcClient
+    class Error < ::StandardError ; end
+
     def self.run
       rpc = new
       yield(rpc)
@@ -58,7 +60,7 @@ module NodeCtld
 
       @reply_queue.subscribe do |_delivery_info, properties, payload|
         if properties.correlation_id == that.call_id
-          that.response = JSON.parse(payload)['response']
+          that.response = JSON.parse(payload)
 
           that.lock.synchronize { that.condition.signal }
         end
@@ -91,7 +93,11 @@ module NodeCtld
         log(:debug, "response id=#{@call_id[0..7]} time=#{(Time.now - t1).round(3)}s value=#{@response.inspect}")
       end
 
-      @response
+      if !@response['status']
+        raise Error, @response.fetch('message', 'Server error')
+      end
+
+      @response['response']
     end
 
     def generate_uuid

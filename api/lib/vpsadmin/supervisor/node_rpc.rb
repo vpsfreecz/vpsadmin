@@ -15,27 +15,73 @@ module VpsAdmin::Supervisor
       queue.bind(exchange, routing_key: 'request')
 
       queue.subscribe(manual_ack: true) do |delivery_info, properties, payload|
-        cmd = JSON.parse(payload)
-        handler = Handler.new
-
-        response = handler.send(
-          cmd.fetch('command'),
-          *cmd.fetch('args', []),
-          **cmd.fetch('kwargs', {}),
-        )
-
-        @channel.ack(delivery_info.delivery_tag)
-
-        exchange.publish(
-          {response: response}.to_json,
-          content_type: 'application/json',
-          routing_key: properties.reply_to,
-          correlation_id: properties.correlation_id,
-        )
+        request = Request.new(@channel, exchange, delivery_info, properties)
+        request.process(payload)
       end
     end
 
     protected
+    class Request
+      def initialize(channel, exchange, delivery_info, properties)
+        @channel = channel
+        @exchange = exchange
+        @delivery_info = delivery_info
+        @properties = properties
+      end
+
+      def process(payload)
+        begin
+          req = JSON.parse(payload)
+        rescue
+          send_error('Unable to parse request as json')
+          raise
+        end
+
+        handler = Handler.new
+        cmd = req['command']
+
+        if !handler.respond_to?(cmd)
+          send_error("Command #{cmd.inspect} not found")
+          return
+        end
+
+        begin
+          response = handler.send(
+            cmd,
+            *req.fetch('args', []),
+            **req.fetch('kwargs', {}),
+          )
+        rescue => e
+          send_error("#{e.class}: #{e.message}")
+          raise
+        else
+          send_response(response)
+        end
+
+        nil
+      end
+
+      protected
+      def send_response(response)
+        reply({status: true, response: response})
+      end
+
+      def send_error(message)
+        reply({status: false, message: message})
+      end
+
+      def reply(payload)
+        @channel.ack(@delivery_info.delivery_tag)
+
+        @exchange.publish(
+          payload.to_json,
+          content_type: 'application/json',
+          routing_key: @properties.reply_to,
+          correlation_id: @properties.correlation_id,
+        )
+      end
+    end
+
     class Handler
       def list_pools(node_id)
         ::Pool.where(node_id: node_id).map do |pool|
