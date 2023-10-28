@@ -149,6 +149,7 @@ module NodeCtld
       update_status: true,
       status_interval: 120,
       update_interval: 90,
+      batch_size: 50,
       pool_status: true,
       pool_interval: 60,
     },

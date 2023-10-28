@@ -23,16 +23,16 @@ module VpsAdmin::Supervisor
     protected
     def update_dataset_properties(status)
       now = Time.now
+      updated_at = Time.at(status['time'])
 
       ::DatasetProperty.where(
-        dataset_in_pool_id: status['dataset_in_pool_id'],
         id: status['properties'].map { |prop_st| prop_st['id'] },
       ).each do |prop|
         prop_st = status['properties'].detect { |v| v['id'] == prop.id }
         next if prop_st.nil?
 
         prop.value = save_value(prop, prop_st['value'])
-        prop.updated_at = Time.at(status['time'])
+        prop.updated_at = updated_at
 
         if prop.last_log_at.nil? || prop.last_log_at + LOG_INTERVAL < now
           log_value(prop)

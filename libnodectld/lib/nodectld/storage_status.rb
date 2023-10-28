@@ -191,31 +191,42 @@ module NodeCtld
 
     def save(pools)
       now = Time.now
+      max_size = $CFG.get(:storage, :batch_size)
+      to_save = []
 
       pools.each_value do |pool|
         pool.datasets.each_value do |ds|
-          property_values = []
-
           SAVE_PROPERTIES.each do |prop|
             ds_prop = ds.properties[prop]
             next if ds_prop.nil? || ds_prop.value.nil?
 
-            property_values << {
+            to_save << {
               id: ds_prop.id,
               value: ds_prop.value,
             }
           end
 
-          @exchange.publish(
-            {
-              time: now.to_i,
-              dataset_in_pool_id: ds.dip_id,
-              properties: property_values,
-            }.to_json,
-            content_type: 'application/json',
-          )
+          if to_save.length >= max_size
+            save_properties(now, to_save)
+          end
         end
       end
+
+      if to_save.any?
+        save_properties(now, to_save)
+      end
+    end
+
+    def save_properties(time, to_save)
+      @exchange.publish(
+        {
+          time: time.to_i,
+          properties: to_save,
+        }.to_json,
+        content_type: 'application/json',
+      )
+
+      to_save.clear
     end
 
     def property_from_db(prop)
