@@ -225,6 +225,10 @@ module NodeCtld
       min_expand_bytes: 20 * 1024 * 1024 * 1024,
       min_expand_percent: 10,
     },
+
+    rpc_client: {
+      debug: false,
+    }
   }
 
   class AppConfig

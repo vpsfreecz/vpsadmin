@@ -1,4 +1,5 @@
 require 'json'
+require 'libosctl'
 require 'securerandom'
 
 module NodeCtld
@@ -10,10 +11,13 @@ module NodeCtld
       rpc.close
     end
 
+    include OsCtl::Lib::Utils::Log
+
     def initialize
       @channel = NodeBunny.create_channel
       @exchange = @channel.direct('node.rpc')
       @response = nil
+      @debug = $CFG.get(:rpc_client, :debug)
 
       setup_reply_queue
     end
@@ -35,6 +39,10 @@ module NodeCtld
 
     def list_vps_status_check
       send_request('list_vps_status_check', $CFG.get(:vpsadmin, :node_id))
+    end
+
+    def log_type
+      'rpc'
     end
 
     protected
@@ -60,6 +68,11 @@ module NodeCtld
     def send_request(command, *args, **kwargs)
       @call_id = generate_uuid
 
+      if @debug
+        t1 = Time.now
+        log(:debug, "request id=#{@call_id[0..7]} command=#{command} args=#{args.inspect} kwargs=#{kwargs.inspect}")
+      end
+
       @exchange.publish(
         {
           command: command,
@@ -73,6 +86,10 @@ module NodeCtld
       )
 
       @lock.synchronize { @condition.wait(@lock) }
+
+      if @debug
+        log(:debug, "response id=#{@call_id[0..7]} time=#{(Time.now - t1).round(3)}s value=#{@response.inspect}")
+      end
 
       @response
     end
