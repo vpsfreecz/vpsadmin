@@ -23,7 +23,9 @@ module NodeCtld
       @read_queue = OsCtl::Lib::Queue.new
       @submit_queue = OsCtl::Lib::Queue.new
       @pools = {}
-      @last_log = nil
+
+      @channel = NodeBunny.create_channel
+      @exchange = @channel.direct('node.storage_statuses')
     end
 
     def enable?
@@ -61,7 +63,7 @@ module NodeCtld
         pools = @mutex.synchronize { @pools }
         read(pools)
 
-        # Prevent queue from piling up when db server is down
+        # Prevent queue from piling up when supervisor is down
         @submit_queue.clear if @submit_queue.length > 1
 
         @submit_queue << pools
@@ -91,77 +93,55 @@ module NodeCtld
 
     def fetch
       pools = {}
-      db = Db.new
 
-      # Fetch pools
-      rs = db.prepared(
-        "SELECT id, filesystem, role, refquota_check
-        FROM pools
-        WHERE role IN (0, 1) AND node_id = ?",
-        $CFG.get(:vpsadmin, :node_id)
-      )
+      RpcClient.run do |rpc|
+        rpc.list_pools.each do |pool|
+          next unless %w(primary hypervisor).include?(pool['role'])
 
-      rs.each do |row|
-        pools[ row['id'] ] = Pool.new(
-          name: row['filesystem'].split('/').first,
-          fs: row['filesystem'],
-          role: row['role'],
-          refquota_check: row['refquota_check'],
-          datasets: {},
-        )
-      end
+          pools[ pool['id'] ] = Pool.new(
+            name: pool['name'],
+            fs: pool['filesystem'],
+            role: pool['role'],
+            refquota_check: pool['refquota_check'],
+            datasets: {},
+          )
+        end
 
-      select_properties = READ_PROPERTIES.map { |v| property_to_db(v) }
+        select_properties = READ_PROPERTIES.map { |v| property_to_db(v) }
 
-      pools.each do |pool_id, pool|
-        # Fetch datasets
-        db.prepared(
-          "SELECT
-            d.full_name,
-            dips.id AS dip_id,
-            d.id AS dataset_id,
-            props.name AS p_name,
-            props.id AS p_id
-          FROM dataset_in_pools dips
-          INNER JOIN datasets d ON d.id = dips.dataset_id
-          INNER JOIN dataset_properties props ON props.dataset_in_pool_id = dips.id
-          WHERE
-            dips.pool_id = ?
-            AND dips.confirmed = 1
-            AND props.name IN (#{select_properties.map{'?'}.join(',')})",
-          pool_id, *select_properties
-        ).each do |row|
-          prop_name = property_from_db(row['p_name'])
-          next unless READ_PROPERTIES.include?(prop_name)
+        pools.each do |pool_id, pool|
+          rpc.list_pool_dataset_properties(pool_id, select_properties).each do |prop|
+            prop_name = property_from_db(prop['property_name'])
+            next unless READ_PROPERTIES.include?(prop_name)
 
-          name = File.join(pool.fs, row['full_name'])
+            name = File.join(pool.fs, prop['dataset_name'])
 
-          if ds = pool.datasets[name]
-            ds.properties[prop_name] = Property.new(
-              id: row['p_id'],
-              name: prop_name,
-              value: nil,
-            )
+            if ds = pool.datasets[name]
+              ds.properties[prop_name] = Property.new(
+                id: prop['property_id'],
+                name: prop_name,
+                value: nil,
+              )
 
-          else
-            pool.datasets[name] = Dataset.new(
-              type: :filesystem,
-              name: name,
-              id: row['dataset_id'],
-              dip_id: row['dip_id'],
-              properties: {
-                prop_name => Property.new(
-                  id: row['p_id'],
-                  name: prop_name,
-                  value: nil,
-                ),
-              },
-            )
+            else
+              pool.datasets[name] = Dataset.new(
+                type: :filesystem,
+                name: name,
+                id: prop['dataset_id'],
+                dip_id: prop['dataset_in_pool_id'],
+                properties: {
+                  prop_name => Property.new(
+                    id: prop['property_id'],
+                    name: prop_name,
+                    value: nil,
+                  ),
+                },
+              )
+            end
           end
         end
       end
 
-      db.close
       pools
     end
 
@@ -211,40 +191,31 @@ module NodeCtld
 
     def save(pools)
       now = Time.now
-      db = Db.new
-      save_log = @last_log.nil? || @last_log + $CFG.get(:storage, :log_interval) < now
-      @last_log = now if save_log
 
       pools.each_value do |pool|
         pool.datasets.each_value do |ds|
+          property_values = []
+
           SAVE_PROPERTIES.each do |prop|
             ds_prop = ds.properties[prop]
             next if ds_prop.nil? || ds_prop.value.nil?
 
-            save_val = value_to_db(prop, ds_prop.value)
-
-            db.prepared(
-              'UPDATE dataset_properties
-              SET value = ?
-              WHERE
-                dataset_in_pool_id = ?
-                AND
-                name = ?',
-              YAML.dump(save_val), ds.dip_id, property_to_db(prop)
-            )
-
-            if save_log
-              db.prepared(
-                "INSERT INTO dataset_property_histories SET
-                dataset_property_id = ?, value = ?, created_at = ?",
-                ds_prop.id, save_val, Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
-              )
-            end
+            property_values << {
+              id: ds_prop.id,
+              value: ds_prop.value,
+            }
           end
+
+          @exchange.publish(
+            {
+              time: now.to_i,
+              dataset_in_pool_id: ds.dip_id,
+              properties: property_values,
+            }.to_json,
+            content_type: 'application/json',
+          )
         end
       end
-
-      db.close
     end
 
     def property_from_db(prop)
@@ -262,15 +233,6 @@ module NodeCtld
         'avail'
       else
         prop
-      end
-    end
-
-    def value_to_db(prop, v)
-      case prop
-      when 'compressratio', 'refcompressratio'
-        v
-      else
-        (v / 1024.0 / 1024).round
       end
     end
 

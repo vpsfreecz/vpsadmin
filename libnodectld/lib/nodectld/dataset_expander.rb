@@ -37,7 +37,7 @@ module NodeCtld
 
     # @param pool [StorageStatus::Pool]
     def check(pool)
-      return if !enable? || pool.role != 0 || pool.refquota_check != 1 || pool.datasets.empty?
+      return if !enable? || pool.role != 'hypervisor' || !pool.refquota_check || pool.datasets.empty?
 
       min_avail_bytes = $CFG.get(:dataset_expander, :min_avail_bytes)
       min_avail_pct = $CFG.get(:dataset_expander, :min_avail_percent)

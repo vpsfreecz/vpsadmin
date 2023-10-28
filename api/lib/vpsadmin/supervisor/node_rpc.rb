@@ -39,8 +39,46 @@ module VpsAdmin::Supervisor
     class Handler
       def list_pools(node_id)
         ::Pool.where(node_id: node_id).map do |pool|
-          {id: pool.id, filesystem: pool.filesystem}
+          {
+            id: pool.id,
+            name: pool.filesystem.split('/').first,
+            filesystem: pool.filesystem,
+            role: pool.role,
+            refquota_check: pool.refquota_check,
+          }
         end
+      end
+
+      # @param pool_id [Integer]
+      # @param properties [Array<String>]
+      # @return [Array<Hash>]
+      def list_pool_dataset_properties(pool_id, properties)
+        ::DatasetInPool
+          .select(
+            'dataset_in_pools.id,
+            dataset_in_pools.dataset_id,
+            datasets.full_name,
+            dataset_properties.name AS property_name,
+            dataset_properties.id AS property_id'
+          )
+          .joins(:dataset, :dataset_properties)
+          .where(
+            dataset_in_pools: {
+              pool_id: pool_id,
+              confirmed: ::DatasetInPool.confirmed(:confirmed),
+            },
+            dataset_properties: {
+              name: properties,
+            },
+          ).map do |dip|
+            {
+              dataset_in_pool_id: dip.id,
+              dataset_id: dip.dataset_id,
+              dataset_name: dip.full_name,
+              property_id: dip.property_id,
+              property_name: dip.property_name,
+            }
+          end
       end
 
       def list_vps_status_check(node_id)

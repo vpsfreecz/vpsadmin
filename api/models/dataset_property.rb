@@ -7,7 +7,6 @@ class DatasetProperty < ActiveRecord::Base
   has_many :dataset_property_histories, dependent: :destroy
 
   has_ancestry cache_depth: true
-  has_paper_trail
 
   serialize :value
 

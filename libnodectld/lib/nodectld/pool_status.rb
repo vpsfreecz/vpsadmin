@@ -95,7 +95,7 @@ module NodeCtld
 
       RpcClient.run do |rpc|
         rpc.list_pools.each do |pool|
-          ret[pool['id']] = pool['filesystem'].split('/').first
+          ret[pool['id']] = pool['name']
         end
       end
 

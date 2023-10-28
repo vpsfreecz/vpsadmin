@@ -149,7 +149,6 @@ module NodeCtld
       update_status: true,
       status_interval: 120,
       update_interval: 90,
-      log_interval: 3600,
       pool_status: true,
       pool_interval: 60,
     },

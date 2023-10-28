@@ -27,6 +27,12 @@ module NodeCtld
       send_request('list_pools', $CFG.get(:vpsadmin, :node_id))
     end
 
+    # @param pool_id [Integer]
+    # @param properties [Array<String>]
+    def list_pool_dataset_properties(pool_id, properties)
+      send_request('list_pool_dataset_properties', pool_id, properties)
+    end
+
     def list_vps_status_check
       send_request('list_vps_status_check', $CFG.get(:vpsadmin, :node_id))
     end
@@ -67,6 +73,7 @@ module NodeCtld
       )
 
       @lock.synchronize { @condition.wait(@lock) }
+
       @response
     end
 
