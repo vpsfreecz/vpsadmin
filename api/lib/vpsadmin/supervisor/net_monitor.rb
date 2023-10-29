@@ -14,61 +14,41 @@ module VpsAdmin::Supervisor
 
       queue.subscribe do |_delivery_info, _properties, payload|
         monitors = JSON.parse(payload)['monitors']
-        monitors.each do |mon|
-          update_monitor(mon)
-        end
+        update_monitors(monitors)
       end
     end
 
     protected
-    def update_monitor(mon)
-      t = Time.at(mon['time'])
+    def update_monitors(monitors)
+      ::NetworkInterfaceMonitor.upsert_all(
+        monitors.map do |m|
+          t = Time.at(m['time'])
 
-      ActiveRecord::Base.connection.exec_query(
-        ::NetworkInterfaceMonitor.sanitize_sql_for_assignment([
-          'INSERT INTO network_interface_monitors SET
-            network_interface_id = ?,
-            bytes = ?,
-            bytes_in = ?,
-            bytes_out = ?,
-            packets = ?,
-            packets_in = ?,
-            packets_out = ?,
-            delta = ?,
-            bytes_in_readout = ?,
-            bytes_out_readout = ?,
-            packets_in_readout = ?,
-            packets_out_readout = ?,
-            created_at = ?,
-            updated_at = ?
-          ON DUPLICATE KEY UPDATE
-            bytes = values(bytes),
-            bytes_in = values(bytes_in),
-            bytes_out = values(bytes_out),
-            packets = values(packets),
-            packets_in = values(packets_in),
-            packets_out = values(packets_out),
-            delta = values(delta),
-            bytes_in_readout = values(bytes_in_readout),
-            bytes_out_readout = values(bytes_out_readout),
-            packets_in_readout = values(packets_in_readout),
-            packets_out_readout = values(packets_out_readout),
-            updated_at = values(updated_at)',
-          mon['id'],
-          mon['bytes_in'] + mon['bytes_out'],
-          mon['bytes_in'],
-          mon['bytes_out'],
-          mon['packets_in'] + mon['packets_out'],
-          mon['packets_in'],
-          mon['packets_out'],
-          mon['delta'],
-          mon['bytes_in_readout'],
-          mon['bytes_out_readout'],
-          mon['packets_in_readout'],
-          mon['packets_out_readout'],
-          t,
-          t,
-        ])
+          {
+            network_interface_id: m['id'],
+            bytes: m['bytes_in'] + m['bytes_out'],
+            bytes_in: m['bytes_in'],
+            bytes_out: m['bytes_out'],
+            packets: m['packets_in'] + m['packets_out'],
+            packets_in: m['packets_in'],
+            packets_out: m['packets_out'],
+            delta: m['delta'],
+            bytes_in_readout: m['bytes_in_readout'],
+            bytes_out_readout: m['bytes_out_readout'],
+            packets_in_readout: m['packets_in_readout'],
+            packets_out_readout: m['packets_out_readout'],
+            created_at: t,
+            updated_at: t,
+          }
+        end,
+        update_only: %i(
+          bytes bytes_in bytes_out
+          packets packets_in packets_out
+          delta
+          bytes_in_readout bytes_out_readout
+          packets_in_readout packets_out_readout
+          updated_at
+        ),
       )
     end
   end
