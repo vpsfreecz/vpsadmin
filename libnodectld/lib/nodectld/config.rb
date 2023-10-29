@@ -304,24 +304,22 @@ module NodeCtld
     end
 
     def load_db_settings
-      db = Db.new(@cfg[:db])
+      cfg =
+        RpcClient.run do |rpc|
+          rpc.get_node_config
+        end
 
-      rs = db.prepared(
-        'SELECT role, ip_addr, max_tx, max_rx FROM nodes WHERE id = ?',
-        @cfg[:vpsadmin][:node_id]
-      ).get
-
-      unless rs
-        warn 'Node is not registered in database!'
+      if cfg.nil?
+        warn 'Node is not registered!'
         return
       end
 
-      @cfg[:vpsadmin][:type] = %i(node storage mailer)[ rs['role'] ]
-      @cfg[:vpsadmin][:node_addr] = rs['ip_addr']
-      @cfg[:vpsadmin][:max_tx] = rs['max_tx']
-      @cfg[:vpsadmin][:max_rx] = rs['max_rx']
+      @cfg[:vpsadmin][:type] = cfg['role'].to_sym
+      @cfg[:vpsadmin][:node_addr] = cfg['ip_addr']
+      @cfg[:vpsadmin][:max_tx] = cfg['max_tx']
+      @cfg[:vpsadmin][:max_rx] = cfg['max_rx']
 
-      db.close
+      nil
     end
 
     def reload

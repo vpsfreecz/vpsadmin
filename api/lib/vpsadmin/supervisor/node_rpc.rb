@@ -84,6 +84,18 @@ module VpsAdmin::Supervisor
     end
 
     class Handler
+      def get_node_config(node_id)
+        node = ::Node.select('role, ip_addr, max_tx, max_rx').where(id: node_id).take
+        return if node.nil?
+
+        {
+          role: node.role,
+          ip_addr: node.ip_addr,
+          max_tx: node.max_tx,
+          max_rx: node.max_rx,
+        }
+      end
+
       def list_pools(node_id)
         ::Pool.where(node_id: node_id).map do |pool|
           {

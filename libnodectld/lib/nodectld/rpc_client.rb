@@ -31,6 +31,10 @@ module NodeCtld
       @channel.close
     end
 
+    def get_node_config
+      send_request('get_node_config', $CFG.get(:vpsadmin, :node_id))
+    end
+
     def list_pools
       send_request('list_pools', $CFG.get(:vpsadmin, :node_id))
     end
