@@ -33,7 +33,7 @@ in stdenv.mkDerivation rec {
     export PATH="$(ruby -e 'puts Gem.bindir'):$PATH"
 
     run-nodectld() {
-      bundle exec bin/nodectld --no-wrapper
+      bundle exec bin/nodectld --no-wrapper "$@"
     }
   '';
 }
