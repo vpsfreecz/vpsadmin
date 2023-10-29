@@ -20,6 +20,7 @@ module VpsAdmin
         OomReports,
         PoolStatus,
         StorageStatus,
+        VpsMounts,
         VpsOsProcesses,
         VpsSshHostKeys,
         VpsStatus,

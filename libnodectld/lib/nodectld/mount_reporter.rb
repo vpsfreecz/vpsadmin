@@ -6,12 +6,6 @@ module NodeCtld
   class MountReporter
     include OsCtl::Lib::Utils::Log
 
-    STATES = [
-      :created,
-      :mounted,
-      :unmounted,
-    ]
-
     class << self
       attr_accessor :instance
 
@@ -24,62 +18,14 @@ module NodeCtld
       self.class.instance = self
 
       @mutex = Mutex.new
+      @channel = NodeBunny.create_channel
+      @exchange = @channel.direct('node.vps_mounts')
 
-      # vps_id => [mounts]
       @mounts = []
     end
 
     def start
-      @thread = Thread.new do
-        db = nil
-        misses = 0
-
-        loop do
-          mnt = nil
-
-          break if @stop
-
-          sync do
-            next if @mounts.empty?
-            mnt = @mounts.pop
-          end
-
-          unless mnt
-            misses += 1
-
-            if db && misses >= 5
-              log(:debug, :mount_reporter, 'Disconnecting from the database')
-              db.close
-              db = nil
-            end
-
-            sleep(1)
-            next
-          end
-
-          log(
-            :debug,
-            :mount_reporter,
-            "vps=#{mnt[:vps_id]},mount=##{mnt[:id]},state=#{mnt[:state]}"
-          )
-          db ||= Db.new
-
-          if mnt[:id] == :all
-            db.prepared(
-              'UPDATE mounts SET current_state = ? WHERE vps_id = ?',
-              STATES.index(mnt[:state]), mnt[:vps_id]
-            )
-
-          else
-            db.prepared(
-              'UPDATE mounts SET current_state = ? WHERE id = ?',
-              STATES.index(mnt[:state]), mnt[:id]
-            )
-          end
-
-          misses = 0
-        end
-      end
+      @thread = Thread.new { report_thread }
     end
 
     def stop
@@ -101,7 +47,40 @@ module NodeCtld
       end
     end
 
+    def log_type
+      'mount_reporter'
+    end
+
     protected
+    def report_thread
+      loop do
+        break if @stop
+
+        mnt = sync { @mounts.pop }
+
+        if mnt.nil?
+          sleep(1)
+          next
+        end
+
+        log(
+          :debug,
+          "vps=#{mnt[:vps_id]},mount=##{mnt[:id]},state=#{mnt[:state]}"
+        )
+
+        @exchange.publish(
+          {
+            id: mnt[:id],
+            vps_id: mnt[:vps_id],
+            state: mnt[:state],
+            time: Time.now.to_i,
+          }.to_json,
+          persistent: true,
+          content_type: 'application/json',
+        )
+      end
+    end
+
     def sync
       @mutex.synchronize { yield }
     end
