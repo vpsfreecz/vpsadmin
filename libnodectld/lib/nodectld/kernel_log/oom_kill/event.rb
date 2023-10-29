@@ -165,7 +165,7 @@ module NodeCtld
     def close
       if report
         if report.complete?
-          log(:info, "Submitting OOM report from VPS #{report.vps_id}")
+          log(:info, "OOM report invoked by PID #{report.invoked_by_pid} from VPS #{report.vps_id} complete")
           KernelLog::OomKill::Submitter << report
         else
           log(:info, 'OOM report incomplete, disregarding')

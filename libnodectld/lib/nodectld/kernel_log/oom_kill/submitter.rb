@@ -22,6 +22,7 @@ module NodeCtld
   # aggregated.
   class KernelLog::OomKill::Submitter
     include Singleton
+    include OsCtl::Lib::Utils::Log
 
     class << self
       %i(<<).each do |v|
@@ -34,6 +35,8 @@ module NodeCtld
     def initialize
       @queue = OsCtl::Lib::Queue.new
       @mutex = Mutex.new
+      @channel = NodeBunny.create_channel
+      @exchange = @channel.direct('node.oom_reports')
       @input_thread = Thread.new { process_queue }
       @save_thread = Thread.new { save_reports }
       @vps_reports = {}
@@ -43,6 +46,10 @@ module NodeCtld
     # @param report [KernelLog::OomKill::Report]
     def <<(report)
       @queue << report
+    end
+
+    def log_type
+      'oom-submitter'
     end
 
     protected
@@ -65,13 +72,12 @@ module NodeCtld
 
         next if vps_reports.empty?
 
-        db = Db.new
-
         vps_reports.each do |vps_id, reports|
-          reports.each { |r| r.save(db) }
+          reports.each do |r|
+            log(:info, "Submitting OOM report invoked by PID #{r.invoked_by_pid} from VPS #{r.vps_id}")
+            @exchange.publish(r.export.to_json, content_type: 'application/json')
+          end
         end
-
-        db.close
       end
     end
 

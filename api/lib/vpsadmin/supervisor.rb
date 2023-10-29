@@ -16,6 +16,7 @@ module VpsAdmin
         NetMonitor,
         NodeRpc,
         NodeStatus,
+        OomReports,
         PoolStatus,
         StorageStatus,
         VpsOsProcesses,

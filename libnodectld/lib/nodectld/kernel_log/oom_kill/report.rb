@@ -31,6 +31,8 @@ module NodeCtld
 
     def find_vps_pids_and_uids
       tasks.each do |task|
+        task.update(vps_pid: nil, vps_uid: nil)
+
         begin
           process = OsCtl::Lib::OsProcess.new(task[:pid])
           proc_pool, proc_ctid = process.ct_id
@@ -56,74 +58,20 @@ module NodeCtld
       'oom-report'
     end
 
-    def save(db)
-      db.prepared(
-        'INSERT INTO oom_reports SET
-          vps_id = ?,
-          cgroup = ?,
-          invoked_by_pid = ?,
-          invoked_by_name = ?,
-          killed_pid = ?,
-          killed_name = ?,
-          `count` = ?,
-          created_at = ?
-        ',
-        vps_id,
-        cgroup[0..254],
-        invoked_by_pid, invoked_by_name[0..49],
-        killed_pid, killed_name && killed_name[0..49],
-        count,
-        time.utc.strftime('%Y-%m-%d %H:%M:%S')
-      )
-
-      report_id = db.insert_id
-
-      usage.each do |type, attrs|
-        db.prepared(
-          'INSERT INTO oom_report_usages SET
-            `oom_report_id` = ?,
-            `memtype` = ?,
-            `usage` = ?,
-            `limit` = ?,
-            `failcnt` = ?
-          ', report_id, type.to_s, attrs[:usage], attrs[:limit], attrs[:failcnt]
-        )
-      end
-
-      stats.each do |k, v|
-        db.prepared(
-          'INSERT INTO oom_report_stats SET
-            `oom_report_id` = ?,
-            `parameter` = ?,
-            `value` = ?
-          ', report_id, k, v
-        )
-      end
-
-      tasks.each do |task|
-        db.prepared(
-          'INSERT INTO oom_report_tasks SET
-            `oom_report_id` = ?,
-            `host_pid` = ?,
-            `vps_pid` = ?,
-            `name` = ?,
-            `host_uid` = ?,
-            `vps_uid` = ?,
-            `tgid` = ?,
-            `total_vm` = ?,
-            `rss` = ?,
-            `pgtables_bytes` = ?,
-            `swapents` = ?,
-            `oom_score_adj` = ?
-          ', report_id,
-          task[:pid], task[:vps_pid], task[:name][0..49],
-          task[:uid], task[:vps_uid], task[:tgid],
-          task[:total_vm], task[:rss], task[:pgtables_bytes], task[:swapents],
-          task[:oom_score_adj]
-        )
-      end
-
-      log(:info, "Submitted OOM report ##{report_id} with #{count} OOMs from VPS #{vps_id}")
+    def export
+      {
+        vps_id: vps_id,
+        cgroup: cgroup,
+        invoked_by_pid: invoked_by_pid,
+        invoked_by_name: invoked_by_name,
+        killed_pid: killed_pid,
+        killed_name: killed_name,
+        count: count,
+        time: time.to_i,
+        usage: usage,
+        stats: stats,
+        tasks: tasks,
+      }
     end
   end
 end
