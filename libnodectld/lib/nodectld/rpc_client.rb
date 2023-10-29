@@ -96,6 +96,7 @@ module NodeCtld
           args: args,
           kwargs: kwargs,
         }.to_json,
+        persistent: true,
         content_type: 'application/json',
         routing_key: 'request',
         correlation_id: @call_id,

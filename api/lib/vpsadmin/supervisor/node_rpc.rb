@@ -10,7 +10,7 @@ module VpsAdmin::Supervisor
       @channel.prefetch(1)
 
       exchange = @channel.direct('node.rpc')
-      queue = @channel.queue('node.rpc')
+      queue = @channel.queue('node.rpc', durable: true)
 
       queue.bind(exchange, routing_key: 'request')
 
@@ -75,6 +75,7 @@ module VpsAdmin::Supervisor
 
         @exchange.publish(
           payload.to_json,
+          persistent: true,
           content_type: 'application/json',
           routing_key: @properties.reply_to,
           correlation_id: @properties.correlation_id,
