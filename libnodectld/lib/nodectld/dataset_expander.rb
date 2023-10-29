@@ -17,6 +17,8 @@ module NodeCtld
     )
 
     def initialize
+      @channel = NodeBunny.create_channel
+      @exchange = @channel.direct('node.dataset_expansions')
       @submit_queue = OsCtl::Lib::Queue.new
     end
 
@@ -67,20 +69,17 @@ module NodeCtld
         event = @submit_queue.pop
         return if event == :stop
 
-        t = event.time.utc.strftime('%Y-%m-%d %H:%M:%S')
-
-        db = Db.new
-        db.prepared(
-          'INSERT INTO dataset_expansion_events SET
-            dataset_id = ?,
-            original_refquota = ?,
-            new_refquota = ?,
-            added_space = ?,
-            updated_at = ?,
-            created_at = ?',
-          event.dataset.id, event.original_refquota, event.new_refquota, event.added_space, t, t
+        @exchange.publish(
+          {
+            dataset_id: event.dataset.id,
+            original_refquota: event.original_refquota,
+            new_refquota: event.new_refquota,
+            added_space: event.added_space,
+            time: event.time.to_i,
+          }.to_json,
+          persistent: true,
+          content_type: 'application/json',
         )
-        db.close
       end
     end
 

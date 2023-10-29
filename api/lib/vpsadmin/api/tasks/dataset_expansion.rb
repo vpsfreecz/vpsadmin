@@ -24,78 +24,17 @@ module VpsAdmin::API::Tasks
       expansions = []
 
       ::DatasetExpansionEvent.all.each do |event|
-        if event.dataset.nil?
-          event.destroy!
-          next
-        end
-
-        ds = event.dataset
-        exp = nil
-
         begin
-          dip = ds.primary_dataset_in_pool!
-        rescue ActiveRecord::RecordNotFound
-          event.destroy!
-          next
-        end
-
-        begin
-          dip.acquire_lock do
-            ActiveRecord::Base.transaction do
-              orig_quota = dip.diskspace
-
-              dip.reallocate_resource!(
-                :diskspace,
-                event.new_refquota,
-                user: ds.user,
-                override: true,
-                lock_type: 'no_lock',
-                save: true,
-              )
-
-              prop = dip.dataset_properties.find_by!(name: 'refquota')
-              prop.update!(value: event.new_refquota)
-
-              if ds.dataset_expansion.nil?
-                free_diskspace = ds.user.user_cluster_resources.joins(:cluster_resource).find_by!(
-                  environment: dip.pool.node.location.environment,
-                  cluster_resources: {name: 'diskspace'},
-                ).free
-
-                over_limit = free_diskspace < 0
-
-                exp = ::DatasetExpansion.create!(
-                  vps: ds.root.primary_dataset_in_pool!.vpses.take!,
-                  dataset: ds,
-                  state: over_limit ? 'active' : 'resolved',
-                  original_refquota: orig_quota,
-                  added_space: event.added_space,
-                  deadline: Time.now + DEADLINE,
-                )
-
-                ds.update!(dataset_expansion: exp) if over_limit
-              else
-                exp = ds.dataset_expansion
-
-                exp.added_space += event.added_space
-                exp.save!
-              end
-
-              exp.dataset_expansion_histories.create!(
-                original_refquota: event.original_refquota,
-                new_refquota: event.new_refquota,
-                added_space: event.added_space,
-                created_at: event.created_at,
-                updated_at: event.updated_at,
-              )
-
-              event.destroy!
-            end
-          end
+          exp = VpsAdmin::API::Operations::DatasetExpansion::ProcessEvent.run(
+            event,
+            deadline: DEADLINE,
+          )
         rescue ResourceLocked
           warn "Dataset in pool id=#{dip.id} name=#{ds.full_name} locked"
           next
         end
+
+        next if exp.nil?
 
         if exp.enable_notifications && exp.vps.active? && !expansions.detect { |v| v.id == exp.id }
           expansions << exp

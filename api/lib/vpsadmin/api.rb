@@ -8,6 +8,7 @@ module VpsAdmin
     module Operations
       module Authentication ; end
       module Dataset ; end
+      module DatasetExpansion ; end
       module Export ; end
       module LocationNetwork ; end
       module Node ; end

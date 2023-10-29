@@ -12,6 +12,7 @@ module VpsAdmin
       connection.start
 
       [
+        DatasetExpansions,
         NetAccounting,
         NetMonitor,
         NodeRpc,
