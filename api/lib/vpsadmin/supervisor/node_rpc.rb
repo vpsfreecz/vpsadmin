@@ -220,6 +220,18 @@ module VpsAdmin::Supervisor
           vps_current_statuses: {is_running: true},
         ).map(&:id)
       end
+
+      # @param token [String]
+      # @return [Integer, nil] VPS id
+      def authenticate_console_session(token)
+        console = ::VpsConsole
+          .select('vps_id')
+          .where(token: token)
+          .where('expiration > ?', Time.now)
+          .take
+
+        console && console.vps_id
+      end
     end
   end
 end

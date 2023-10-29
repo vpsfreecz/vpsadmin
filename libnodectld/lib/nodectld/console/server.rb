@@ -68,25 +68,15 @@ module NodeCtld
     end
 
     def open_console(data)
-      db = Db.new
-      rs = db.prepared(
-        'SELECT vps_id FROM vps_consoles WHERE token = ? AND expiration > ?',
-        data[:session], # can be nil
-        Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
-      )
+      @veid =
+        RpcClient.run do |rpc|
+          rpc.authenticate_console_session(data[:session])
+        end
 
-      row = rs.get
-
-      if row
-        @veid = row['vps_id'].to_i
-
-      else
-        db.close
+      if @veid.nil?
         fatal_error("Invalid session token\r\n")
         return false
       end
-
-      db.close
 
       Console::Wrapper.consoles do |c|
         if c.include?(@veid)

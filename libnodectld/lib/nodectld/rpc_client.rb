@@ -61,6 +61,12 @@ module NodeCtld
       send_request('list_running_vps_ids', $CFG.get(:vpsadmin, :node_id))
     end
 
+    # @param token [String]
+    # @return [Integer, nil] VPS id
+    def authenticate_console_session(token)
+      send_request('authenticate_console_session', token)
+    end
+
     def log_type
       'rpc'
     end
