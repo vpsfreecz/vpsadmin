@@ -23,17 +23,18 @@ module VpsAdmin::Supervisor
       t = Time.at(vps_procs['time'])
 
       vps_procs['vps_processes'].each do |vps_proc|
-        vps_proc['processes'].each do |state, count|
-          ActiveRecord::Base.connection.exec_query(
-            ::VpsOsProcess.sanitize_sql_for_assignment([
-              'INSERT INTO vps_os_processes
-              SET vps_id = ?, `state` = ?, `count` = ?, created_at = ?, updated_at = ?
-              ON DUPLICATE KEY UPDATE `count` = ?, updated_at = ?',
-              vps_proc['vps_id'], state, count, t, t,
-              count, t,
-            ])
-          )
-        end
+        ::VpsOsProcess.upsert_all(
+          vps_proc['processes'].map do |state, count|
+            {
+              vps_id: vps_proc['vps_id'],
+              state: state,
+              count: count,
+              created_at: t,
+              updated_at: t,
+            }
+          end,
+          update_only: %i(count),
+        )
       end
     end
   end
