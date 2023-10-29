@@ -370,8 +370,6 @@ module NodeCtld
     end
 
     def update_all
-      my = Db.new
-
       @node_status.update
 
       if $CFG.get(:storage, :pool_status)
@@ -386,8 +384,6 @@ module NodeCtld
       if $CFG.get(:storage, :update_status)
         @storage_status.update
       end
-
-      my.close
     end
 
     def start_em(console)
