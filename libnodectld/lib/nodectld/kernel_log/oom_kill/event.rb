@@ -49,6 +49,7 @@ module NodeCtld
         return
       end
 
+      # cgroup v1 & v2
       if !report.usage[:mem] \
          && /^memory: usage (\d+)kB, limit (\d+)kB, failcnt (\d+)/ =~ msg.text
         report.usage[:mem] = {
@@ -59,6 +60,7 @@ module NodeCtld
         return
       end
 
+      # cgroup v1
       if !report.usage[:memswap] \
          && /^memory\+swap: usage (\d+)kB, limit (\d+)kB, failcnt (\d+)/ =~ msg.text
         report.usage[:memswap] = {
@@ -69,9 +71,21 @@ module NodeCtld
         return
       end
 
+      # cgroup v1
       if !report.usage[:kmem] \
          && /^kmem: usage (\d+)kB, limit (\d+)kB, failcnt (\d+)/ =~ msg.text
         report.usage[:kmem] = {
+          usage: $1.to_i,
+          limit: $2.to_i,
+          failcnt: $3.to_i,
+        }
+        return
+      end
+
+      # cgroup v2
+      if !report.usage[:swap] \
+         && /^swap: usage (\d+)kB, limit (\d+)kB, failcnt (\d+)/ =~ msg.text
+        report.usage[:swap] = {
           usage: $1.to_i,
           limit: $2.to_i,
           failcnt: $3.to_i,
