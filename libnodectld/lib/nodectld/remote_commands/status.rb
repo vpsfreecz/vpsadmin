@@ -55,11 +55,6 @@ module NodeCtld::RemoteCommands
         subtasks = blockers || {}
       end
 
-      mounts = nil
-      @daemon.delayed_mounter.mounts do |m|
-        mounts = m.dup
-      end
-
       q_size = db.prepared(
         'SELECT COUNT(t.id) AS cnt
         FROM transactions t
@@ -81,7 +76,6 @@ module NodeCtld::RemoteCommands
           export_console: @daemon.export_console,
           consoles: consoles,
           subprocesses: subtasks,
-          delayed_mounts: mounts,
           start_time: @daemon.start_time.to_i,
           queue_size: q_size - queue_size,
         }

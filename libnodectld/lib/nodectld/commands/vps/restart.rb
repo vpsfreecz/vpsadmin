@@ -3,8 +3,6 @@ module NodeCtld
     handle 1003
 
     def exec
-      NodeCtld::DelayedMounter.unregister_vps(@vps_id)
-
       @vps = Vps.new(@vps_id)
       @vps.restart(@start_timeout, @autostart_priority)
       ok

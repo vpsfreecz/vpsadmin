@@ -3,8 +3,7 @@ module NodeCtld
   # daemon.
   module CtHook
     def self.pre_start(pool, ct_id)
-      pool_fs = File.join(pool, 'ct')
-      Mounter.prepare_vps_mounts(pool_fs, ct_id)
+
     end
 
     def self.post_mount(pool, ct_id, rootfs_mount)

@@ -4,8 +4,6 @@ module NodeCtld
     needs :system
 
     def exec
-      NodeCtld::DelayedMounter.unregister_vps(@vps_id)
-
       @vps = Vps.new(@vps_id)
       @vps.stop
       ok

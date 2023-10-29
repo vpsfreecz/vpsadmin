@@ -45,9 +45,6 @@ start it.
       List exported consoles. Consoles are exported when accessed from vpsAdmin
       web interface.
 
-    `-m`, `--mounts`
-      List delayed mounts that nodectld attempts to mount.
-
     `-t`, `--subtasks`
       List subprocesses that block further execution of specific transaction chains.
 

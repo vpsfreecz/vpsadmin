@@ -16,10 +16,6 @@ module NodeCtl
         opts[:consoles] = true
       end
 
-      parser.on('-m', '--mounts', 'List delayed mounts') do
-        opts[:mounts] = true
-      end
-
       parser.on('-r', '--reservations', 'List queue reservations') do
         opts[:reservations] = true
       end
@@ -143,34 +139,12 @@ module NodeCtl
         end
       end
 
-      if opts[:mounts]
-        puts sprintf('%-5s %-6s %-16s %-18.16s %s', 'VEID', 'ID', 'TYPE', 'TIME', 'DST')
-
-        response[:delayed_mounts].sort do |a, b|
-          a[0].to_s.to_i <=> b[0].to_s.to_i
-
-        end.each do |vps_id, mounts|
-          mounts.each do |m|
-            puts sprintf(
-              '%-5s %-6s %-16s %-18.16s %s',
-              vps_id,
-              m[:id],
-              m[:type],
-              format_duration(Time.new.to_i - m[:registered_at]),
-              m[:dst]
-            )
-          end
-        end
-      end
-
-      unless opts[:workers] || opts[:consoles] || opts[:subtasks] \
-             || opts[:mounts] || opts[:reservations]
+      unless opts[:workers] || opts[:consoles] || opts[:subtasks] || opts[:reservations]
         puts "   Version: #{client.version}"
         puts "     State: #{state}"
         puts "    Uptime: #{format_duration(Time.new.to_i - response[:start_time])}"
         puts "  Consoles: #{response[:export_console] ? response[:consoles].size : 'disabled'}"
         puts "  Subtasks: #{response[:subprocesses].inject(0) { |sum, v| sum + v[1].size }}"
-        puts "    Mounts: #{response[:delayed_mounts].inject(0) { |sum, v| sum + v[1].size }}"
         puts "Queue size: #{response[:queue_size]}"
         puts "    Queues:"
 

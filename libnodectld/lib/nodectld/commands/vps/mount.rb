@@ -9,7 +9,6 @@ module NodeCtld
       mounter = Mounter.new(@pool_fs, @vps_id)
 
       @mounts.each do |mnt|
-        DelayedMounter.unregister_vps_mount(@vps_id, mnt['id'])
         mounter.mount_after_start(mnt, true)
       end
 

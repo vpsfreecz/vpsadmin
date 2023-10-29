@@ -10,8 +10,6 @@ module NodeCtld
       @umounted_mounts = []
 
       @mounts.each do |m|
-        DelayedMounter.unregister_vps_mount(@vps_id, m['id'])
-
         mounter.umount(m)
         @umounted_mounts << m
       end

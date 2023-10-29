@@ -4,7 +4,6 @@ require 'nodectld/db'
 require 'nodectld/command'
 require 'nodectld/queues'
 require 'nodectld/mount_reporter'
-require 'nodectld/delayed_mounter'
 require 'nodectld/remote_control'
 require 'nodectld/node_status'
 require 'nodectld/vps_status'
@@ -42,7 +41,7 @@ module NodeCtld
       end
     end
 
-    attr_reader :start_time, :export_console, :delayed_mounter, :ct_top, :node
+    attr_reader :start_time, :export_console, :ct_top, :node
 
     def initialize
       self.class.instance = self
@@ -56,7 +55,6 @@ module NodeCtld
       @chain_blockers = {}
       @queues = Queues.new(self)
       @mount_reporter = MountReporter.new
-      @delayed_mounter = DelayedMounter.new # FIXME: call stop?
       @remote_control = RemoteControl.new(self)
       NodeBunny.connect
       @node = Node.new
@@ -78,7 +76,6 @@ module NodeCtld
 
       unless $CFG.minimal?
         @mount_reporter.start
-        @delayed_mounter.start
       end
 
       @remote_control.start

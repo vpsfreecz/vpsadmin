@@ -6,8 +6,6 @@ module NodeCtld
     needs :system, :pool, :vps
 
     def exec
-      @mounts.each { |m| DelayedMounter.change_mount(@vps_id, m) }
-
       cfg = VpsConfig.open(@pool_fs, @vps_id)
 
       # Backup original config

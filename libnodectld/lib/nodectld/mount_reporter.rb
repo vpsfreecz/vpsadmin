@@ -10,9 +10,6 @@ module NodeCtld
       :created,
       :mounted,
       :unmounted,
-      :skipped,
-      :delayed,
-      :waiting
     ]
 
     class << self
