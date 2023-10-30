@@ -14,53 +14,45 @@ module VpsAdmin::Supervisor
 
       queue.subscribe do |_delivery_info, _properties, payload|
         accounting = JSON.parse(payload)['accounting']
-        accounting.each do |acc|
-          save_accounting(acc)
-        end
+        save_accounting(accounting)
       end
     end
 
     protected
-    def save_accounting(acc)
+    def save_accounting(accounting)
       kinds = [
         [:year, ::NetworkInterfaceYearlyAccounting],
         [:month, ::NetworkInterfaceMonthlyAccounting],
         [:day, ::NetworkInterfaceDailyAccounting],
       ]
-      date_spec = {}
-      t = Time.at(acc['time'])
+
+      date_spec = []
 
       kinds.each do |kind, model|
-        date_spec[kind.to_s] = t.send(kind)
+        date_spec << kind
 
-        ActiveRecord::Base.connection.exec_query(
-          model.sanitize_sql_for_assignment([
-            "INSERT INTO #{model.table_name} SET
-              network_interface_id = ?,
-              user_id = ?,
-              #{date_spec.map { |k, v| "`#{k}` = #{v}" }.join(', ')},
-              bytes_in = ?,
-              bytes_out = ?,
-              packets_in = ?,
-              packets_out = ?,
-              created_at = ?,
-              updated_at = ?
-            ON DUPLICATE KEY UPDATE
-              bytes_in = bytes_in + values(bytes_in),
-              bytes_out = bytes_out + values(bytes_out),
-              packets_in = packets_in + values(packets_in),
-              packets_out = packets_out + values(packets_out),
-              updated_at = values(updated_at)
-            ",
-            acc['id'],
-            acc['user_id'],
-            acc['bytes_in'],
-            acc['bytes_out'],
-            acc['packets_in'],
-            acc['packets_out'],
-            t,
-            t,
-          ])
+        model.upsert_all(
+          accounting.map do |acc|
+            t = Time.at(acc['time'])
+
+            data = {
+              network_interface_id: acc['id'],
+              user_id: acc['user_id'],
+              bytes_in: acc['bytes_in'],
+              bytes_out: acc['bytes_out'],
+              packets_in: acc['packets_in'],
+              packets_out: acc['packets_out'],
+              created_at: t,
+              updated_at: t,
+            }
+
+            date_spec.each do |date_part|
+              data[date_part] = t.send(date_part)
+            end
+
+            data
+          end,
+          update_only: %i(bytes_in bytes_out packets_in packets_out updated_at),
         )
       end
     end
