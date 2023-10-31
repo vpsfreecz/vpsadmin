@@ -12,7 +12,7 @@ module NodeCtld
       rpc = new
       yield(rpc)
     ensure
-      rpc.close
+      rpc.close if rpc
     end
 
     include OsCtl::Lib::Utils::Log
