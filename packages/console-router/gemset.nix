@@ -162,10 +162,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "1sg9g2zll26cp6dl27fwrzifrin62a8cbrb4ha0w5kqq6g62jk0d";
+      sha256 = "052nk7j3mvicwx8n4pcgq8xxv1v1xzadrkdfd4s9lbpfhj2fq6ss";
       type = "gem";
     };
-    version = "2.0.26";
+    version = "2.0.27";
   };
   thin = {
     dependencies = ["daemons" "eventmachine" "rack"];
