@@ -225,6 +225,51 @@ module VpsAdmin::Supervisor
         ).map(&:id)
       end
 
+      # @param node_id [Integer]
+      # @param from_id [Integer, nil]
+      # @param limit [Integer]
+      # @return [Array<Hash>]
+      def list_exports(node_id, from_id: nil, limit:)
+        q = ::Export
+          .joins(dataset_in_pool: :pool)
+          .includes(
+            :host_ip_addresses,
+            :snapshot_in_pool_clone,
+            dataset_in_pool: [:pool, :dataset],
+            network_interface: {ip_addresses: :host_ip_addresses},
+            export_hosts: :ip_address,
+          )
+          .where(
+            pools: {node_id: node_id},
+          )
+          .limit(limit)
+
+        q = q.where('exports.id > ?', from_id) if from_id
+
+        q.map do |ex|
+          {
+            id: ex.id,
+            pool_fs: ex.dataset_in_pool.pool.filesystem,
+            dataset_name: ex.dataset_in_pool.dataset.full_name,
+            clone_name: ex.snapshot_in_pool_clone && ex.snapshot_in_pool_clone.name,
+            path: ex.path,
+            threads: ex.threads,
+            enabled: ex.enabled,
+            ip_address: ex.network_interface.ip_addresses.first.host_ip_addresses.first.ip_addr,
+            hosts: ex.export_hosts.map do |host|
+              {
+                ip_address: host.ip_address.ip_addr,
+                prefix: host.ip_address.prefix,
+                rw: host.rw,
+                sync: host.sync,
+                subtree_check: host.subtree_check,
+                root_squash: host.root_squash,
+              }
+            end,
+          }
+        end
+      end
+
       # @param token [String]
       # @return [Integer, nil] VPS id
       def authenticate_console_session(token)

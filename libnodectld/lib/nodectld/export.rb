@@ -3,74 +3,50 @@ module NodeCtld
     include OsCtl::Lib::Utils::Log
     include Utils::System
 
-    def self.init(db)
+    def self.init
       ex = new
-      ex.init(db)
+      ex.init
     end
 
-    def init(db)
+    def init
       tp = ThreadPool.new($CFG.get(:exports, :parallel_start))
       cache = list_existing_servers
 
-      db.prepared('
-        SELECT
-          p.filesystem AS pool_fs, ds.full_name AS dataset, cl.name AS clone_name,
-          ex.*
-        FROM exports ex
-        INNER JOIN dataset_in_pools dips ON dips.id = ex.dataset_in_pool_id
-        INNER JOIN datasets ds ON ds.id = dips.dataset_id
-        LEFT JOIN snapshot_in_pool_clones cl ON cl.id = ex.snapshot_in_pool_clone_id
-        INNER JOIN pools p ON p.id = dips.pool_id
-        WHERE p.node_id = ?
-      ', $CFG.get(:vpsadmin, :node_id)).each do |ex|
-        tp.add { init_export(ex, cache) }
+      RpcClient.run do |rpc|
+        rpc.each_export do |ex|
+          tp.add { init_export(ex, cache) }
+        end
       end
 
       tp.run
     end
 
     def init_export(export, cache)
-      db = Db.new
-
-      ip_addr = db.prepared('
-        SELECT ips.ip_addr
-        FROM network_interfaces netifs
-        INNER JOIN ip_addresses ips ON ips.network_interface_id = netifs.id
-        WHERE netifs.export_id = ?
-        LIMIT 1
-      ', export['id']).get['ip_addr']
-      puts ip_addr
-
-      srv = NfsServer.new(export['id'], ip_addr)
+      srv = NfsServer.new(export['id'], export['ip_address'])
 
       if cache.has_key?(srv.name)
         log(:info, "Found NFS server #{export['id']}")
       else
         log(:info, "Creating NFS server #{export['id']}")
-        srv.create!
+        srv.create!(threads: export['threads'])
 
-        opts = build_options(export)
+        export['hosts'].each do |host|
+          opts = build_options(host)
 
-        db.prepared('
-          SELECT ips.ip_addr, ips.prefix
-          FROM export_hosts eh
-          INNER JOIN ip_addresses ips ON ips.id = eh.ip_address_id
-          WHERE export_id = ?
-        ', export['id']).each do |host|
           if export['clone_name']
             srv.add_snapshot_export(
               export['pool_fs'],
               export['clone_name'],
               export['path'],
-              "#{host['ip_addr']}/#{host['prefix']}",
+              "#{host['ip_address']}/#{host['prefix']}",
               opts,
             )
           else
             srv.add_filesystem_export(
               export['pool_fs'],
-              export['dataset'],
+              export['dataset_name'],
               export['path'],
-              "#{host['ip_addr']}/#{host['prefix']}",
+              "#{host['ip_address']}/#{host['prefix']}",
               opts,
             )
           end
@@ -102,7 +78,7 @@ module NodeCtld
       keys = %w(rw sync subtree_check root_squash)
 
       keys.each do |v|
-        ret[v] = export[v] == 1
+        ret[v] = export[v]
       end
 
       ret

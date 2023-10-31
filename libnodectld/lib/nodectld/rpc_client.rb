@@ -61,6 +61,29 @@ module NodeCtld
       send_request('list_running_vps_ids', $CFG.get(:vpsadmin, :node_id))
     end
 
+    # @yieldparam [Hash] export
+    def each_export(&block)
+      from_id = nil
+
+      loop do
+        exports = send_request(
+          'list_exports',
+          $CFG.get(:vpsadmin, :node_id),
+          from_id: from_id,
+          limit: 50,
+        )
+
+        if exports.empty?
+          break
+        else
+          exports.each(&block)
+          from_id = exports.last['id']
+        end
+      end
+
+      nil
+    end
+
     # @param token [String]
     # @return [Integer, nil] VPS id
     def authenticate_console_session(token)

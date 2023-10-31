@@ -83,7 +83,7 @@ module NodeCtld
       NetAccounting.init
       Shaper.init_node if $CFG.get(:shaper, :enable)
       @node.init(db)
-      Export.init(db) if $CFG.get(:exports, :enable)
+      Export.init if $CFG.get(:exports, :enable)
 
       @node_status.update
 
