@@ -26,6 +26,7 @@ module NodeCtld
 
       @channel = NodeBunny.create_channel
       @exchange = @channel.direct('node.storage_statuses')
+      @message_id = 0
     end
 
     def enable?
@@ -202,6 +203,7 @@ module NodeCtld
 
             to_save << {
               id: ds_prop.id,
+              name: ds_prop.name,
               value: ds_prop.value,
             }
           end
@@ -220,6 +222,7 @@ module NodeCtld
     def save_properties(time, to_save)
       @exchange.publish(
         {
+          message_id: @message_id,
           time: time.to_i,
           properties: to_save,
         }.to_json,
@@ -227,6 +230,8 @@ module NodeCtld
       )
 
       to_save.clear
+
+      @message_id += 1
     end
 
     def property_from_db(prop)

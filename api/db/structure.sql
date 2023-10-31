@@ -247,7 +247,6 @@ CREATE TABLE `dataset_properties` (
   `confirmed` int(11) NOT NULL DEFAULT 0,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
-  `last_log_at` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_dataset_properties_on_dataset_id` (`dataset_id`) USING BTREE,
   KEY `index_dataset_properties_on_dataset_in_pool_id_and_name` (`dataset_in_pool_id`,`name`) USING BTREE,
@@ -2175,6 +2174,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20231016100700'),
 ('20231027164147'),
 ('20231028145905'),
-('20231028151738');
+('20231028151738'),
+('20231031085006');
 
 
