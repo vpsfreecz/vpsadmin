@@ -49,7 +49,7 @@ module VpsAdmin::Supervisor
           response = handler.send(
             cmd,
             *req.fetch('args', []),
-            **req.fetch('kwargs', {}),
+            **symbolize_hash_keys(req.fetch('kwargs', {})),
           )
         rescue => e
           send_error("#{e.class}: #{e.message}")
@@ -80,6 +80,10 @@ module VpsAdmin::Supervisor
           routing_key: @properties.reply_to,
           correlation_id: @properties.correlation_id,
         )
+      end
+
+      def symbolize_hash_keys(hash)
+        Hash[hash.map { |k, v| [k.to_sym, v] }]
       end
     end
 
