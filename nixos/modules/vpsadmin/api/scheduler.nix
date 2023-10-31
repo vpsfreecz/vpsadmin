@@ -28,7 +28,7 @@ in {
         ++ optional cfg.database.createLocally [ "mysql.service" ];
       wantedBy = [ "multi-user.target" ];
       environment.RACK_ENV = "production";
-      environment.SCHEDULER_SOCKET = "${cfg.stateDir}/scheduler.sock";
+      environment.SCHEDULER_SOCKET = "${cfg.stateDirectory}/scheduler.sock";
       startLimitIntervalSec = 180;
       startLimitBurst = 5;
       serviceConfig = {

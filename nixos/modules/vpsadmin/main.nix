@@ -10,14 +10,20 @@ in {
         default = false;
       };
 
-      enableStateDir = mkOption {
+      enableStateDirectory = mkOption {
         type = types.bool;
         default = false;
       };
 
-      stateDir = mkOption {
+      stateDirectory = mkOption {
         type = types.str;
         default = "/var/lib/vpsadmin";
+      };
+
+      plugins = mkOption {
+        type = types.listOf types.str;
+        default = [];
+        description = "List of plugins to enable.";
       };
     };
   };
@@ -27,9 +33,9 @@ in {
       (self: super: { ruby = super.ruby_3_1; })
     ] ++ optionals cfg.enableOverlay (import ../../overlays);
 
-    systemd.tmpfiles.rules = mkIf cfg.enableStateDir [
+    systemd.tmpfiles.rules = mkIf cfg.enableStateDirectory [
       "d /run/vpsadmin - - - - -"
-      "d ${cfg.stateDir} - - - - -"
+      "d ${cfg.stateDirectory} - - - - -"
     ];
   };
 }

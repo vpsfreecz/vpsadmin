@@ -21,7 +21,7 @@ let
       --service-type=exec \
       --working-directory=${cfg.package}/api \
       --setenv=RACK_ENV=production \
-      --setenv=SCHEMA=${cfg.stateDir}/cache/structure.sql \
+      --setenv=SCHEMA=${cfg.stateDirectory}/cache/structure.sql \
       --uid ${cfg.user} \
       --gid ${cfg.group} \
       ${pkgs.bashInteractive}/bin/bash --rcfile ${apiShellRcFile}
@@ -61,7 +61,7 @@ let
       --service-type=exec \
       --working-directory=${cfg.package}/api \
       --setenv=RACK_ENV=production \
-      --setenv=SCHEMA=${cfg.stateDir}/cache/structure.sql \
+      --setenv=SCHEMA=${cfg.stateDirectory}/cache/structure.sql \
       --uid ${cfg.user} \
       --gid ${cfg.group} \
       ${bundle} exec ${apiRubyRunner} "$SCRIPT" $@

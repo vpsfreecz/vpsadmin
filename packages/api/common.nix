@@ -1,16 +1,17 @@
 { lib, stdenv, fetchurl, bundlerEnv, ruby, vpsadmin-source }:
+{ name }:
 let
   version = vpsadmin-source.version;
 
   rubyEnv = bundlerEnv {
-    name = "vpsadmin-api-env-${version}";
+    name = "vpsadmin-${name}-env-${version}";
 
     inherit ruby;
     gemdir = ./.;
   };
 
 in stdenv.mkDerivation rec {
-  pname = "vpsadmin-api";
+  pname = "vpsadmin-${name}";
   inherit version;
 
   src = vpsadmin-source;
@@ -22,13 +23,13 @@ in stdenv.mkDerivation rec {
   '';
 
   installPhase = ''
-    mkdir -p $out/api $out/plugins
-    cp -a api/. $out/api/
+    mkdir -p $out/${name} $out/plugins
+    cp -a api/. $out/${name}/
     cp -a plugins/. $out/plugins/
 
     for i in config plugins; do
-        rm -rf $out/api/$i
-        ln -sf /run/vpsadmin/api/$i $out/api/$i
+        rm -rf $out/${name}/$i
+        ln -sf /run/vpsadmin/${name}/$i $out/${name}/$i
     done
 
     ln -sf ${rubyEnv} $out/ruby-env

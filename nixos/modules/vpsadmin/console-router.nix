@@ -23,8 +23,8 @@ let
     address: ${cfg.address}
     port: ${toString cfg.port}
     rackup: ${cfg.package}/console_router/config.ru
-    pid: ${cfg.stateDir}/pids/thin.pid
-    log: ${cfg.stateDir}/log/thin.log
+    pid: ${cfg.stateDirectory}/pids/thin.pid
+    log: ${cfg.stateDirectory}/log/thin.log
     environment: production
     wait: ${toString serverWait}
     tag: console-router
@@ -65,9 +65,9 @@ in {
         description = "Port on which the console router is ran.";
       };
 
-      stateDir = mkOption {
+      stateDirectory = mkOption {
         type = types.str;
-        default = "${vpsadminCfg.stateDir}/console_router";
+        default = "${vpsadminCfg.stateDirectory}/console_router";
         description = "The state directory";
       };
 
@@ -147,7 +147,7 @@ in {
   config = mkIf cfg.enable {
     vpsadmin = {
       enableOverlay = true;
-      enableStateDir = true;
+      enableStateDirectory = true;
     };
 
     networking.firewall.extraCommands = concatStringsSep "\n" (
@@ -161,13 +161,13 @@ in {
     );
 
     systemd.tmpfiles.rules = [
-      "d '${cfg.stateDir}' 0750 ${cfg.user} ${cfg.group} - -"
-      "d '${cfg.stateDir}/config' 0750 ${cfg.user} ${cfg.group} - -"
-      "d '${cfg.stateDir}/log' 0750 ${cfg.user} ${cfg.group} - -"
-      "d '${cfg.stateDir}/pids' 0750 ${cfg.user} ${cfg.group} - -"
+      "d '${cfg.stateDirectory}' 0750 ${cfg.user} ${cfg.group} - -"
+      "d '${cfg.stateDirectory}/config' 0750 ${cfg.user} ${cfg.group} - -"
+      "d '${cfg.stateDirectory}/log' 0750 ${cfg.user} ${cfg.group} - -"
+      "d '${cfg.stateDirectory}/pids' 0750 ${cfg.user} ${cfg.group} - -"
 
       "d /run/vpsadmin/console_router - - - - -"
-      "L+ /run/vpsadmin/console_router/config - - - - ${cfg.stateDir}/config"
+      "L+ /run/vpsadmin/console_router/config - - - - ${cfg.stateDirectory}/config"
     ];
 
     systemd.services.vpsadmin-console-router = {
@@ -179,9 +179,9 @@ in {
       preStart = ''
         # Handle database.passwordFile & permissions
         DBPASS=${optionalString (cfg.database.passwordFile != null) "$(head -n1 ${cfg.database.passwordFile})"}
-        cp -f ${databaseYml} "${cfg.stateDir}/config/database.yml"
-        sed -e "s,#dbpass#,$DBPASS,g" -i "${cfg.stateDir}/config/database.yml"
-        chmod 440 "${cfg.stateDir}/config/database.yml"
+        cp -f ${databaseYml} "${cfg.stateDirectory}/config/database.yml"
+        sed -e "s,#dbpass#,$DBPASS,g" -i "${cfg.stateDirectory}/config/database.yml"
+        chmod 440 "${cfg.stateDirectory}/config/database.yml"
       '';
 
       serviceConfig =
@@ -202,7 +202,7 @@ in {
     users.users = optionalAttrs (cfg.user == "vpsadmin-console") {
       ${cfg.user} = {
         group = cfg.group;
-        home = cfg.stateDir;
+        home = cfg.stateDirectory;
         isSystemUser = true;
       };
     };

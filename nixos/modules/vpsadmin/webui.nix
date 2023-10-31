@@ -33,9 +33,9 @@ in {
         '';
       };
 
-      stateDir = mkOption {
+      stateDirectory = mkOption {
         type = types.str;
-        default = "${vpsadminCfg.stateDir}/webui";
+        default = "${vpsadminCfg.stateDirectory}/webui";
         description = "The state directory";
       };
 
@@ -141,12 +141,12 @@ in {
   config = mkIf cfg.enable {
     vpsadmin = {
       enableOverlay = true;
-      enableStateDir = true;
+      enableStateDirectory = true;
       webui.timeZone = mkDefault config.time.timeZone;
     };
 
     systemd.tmpfiles.rules = [
-      "d '${cfg.stateDir}' 0750 ${app} ${app} - -"
+      "d '${cfg.stateDirectory}' 0750 ${app} ${app} - -"
     ];
 
     services.phpfpm.pools.${app} = {
@@ -227,7 +227,7 @@ in {
 
     users.users.${app} = {
       isSystemUser = true;
-      home = cfg.stateDir;
+      home = cfg.stateDirectory;
       group = app;
     };
     users.groups.${app} = {};

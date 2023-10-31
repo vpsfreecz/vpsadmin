@@ -1,6 +1,7 @@
 { config, pkgs, lib, ... }:
 with lib;
 let
+  vpsadminCfg = config.vpsadmin;
   cfg = config.vpsadmin.api;
 
   bundle = "${cfg.package}/ruby-env/bin/bundle";
@@ -73,7 +74,7 @@ let
         [ "network.target" "vpsadmin-api.service" ]
         ++ optional cfg.database.createLocally [ "mysql.service" ];
       environment.RACK_ENV = "production";
-      environment.SCHEMA = "${cfg.stateDir}/cache/structure.sql";
+      environment.SCHEMA = "${cfg.stateDirectory}/cache/structure.sql";
       path = with pkgs; [
         mariadb
       ];
@@ -336,7 +337,7 @@ in {
         prometheus-export = {
           rake = [
             "vpsadmin:prometheus:export"
-            "EXPORT_FILE=${cfg.stateDir}/cache/vpsadmin.prom"
+            "EXPORT_FILE=${cfg.stateDirectory}/cache/vpsadmin.prom"
           ];
           timer.enable = true;
           timer.config = {
@@ -359,7 +360,7 @@ in {
         };
 
         payments-process = {
-          enable = elem "payments" cfg.plugins;
+          enable = elem "payments" vpsadminCfg.plugins;
           rake = [ "vpsadmin:payments:process" "BACKEND=fio" ];
           timer.enable = true;
           timer.config = {
@@ -371,14 +372,14 @@ in {
         };
 
         payments-report = {
-          enable = elem "payments" cfg.plugins;
+          enable = elem "payments" vpsadminCfg.plugins;
           rake = [ "vpsadmin:payments:mail_overview" ];
           timer.enable = true;
           timer.config = { OnCalendar = "*-*-* 23:00:00"; };
         };
 
         requests-ipqs = {
-          enable = elem "requests" cfg.plugins;
+          enable = elem "requests" vpsadminCfg.plugins;
           rake = [ "vpsadmin:requests:check_registrations" ];
           timer.enable = true;
           timer.config = {
@@ -402,7 +403,7 @@ in {
           Type = "oneshot";
           ExecStart = pkgs.writeScript "vpsadmin-api-prometheus-export-deploy" ''
             #!${pkgs.bash}/bin/bash
-            src="${cfg.stateDir}/cache/vpsadmin.prom"
+            src="${cfg.stateDirectory}/cache/vpsadmin.prom"
             dst="${cfg.nodeExporterTextCollectorDirectory}/vpsadmin.prom"
 
             if [ ! -e "$src" ] ; then
