@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
   s.executables = s.files.grep(%r{^bin/}) { |f| File.basename(f) }
   s.license     = 'GPL'
 
-  s.required_ruby_version = '>= 2.0.0'
+  s.required_ruby_version = '>= 3.0.0'
 
   s.add_runtime_dependency 'libnodectld', s.version
   s.add_development_dependency 'rake'
