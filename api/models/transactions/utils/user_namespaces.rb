@@ -1,9 +1,7 @@
 module Transactions::Utils
   module UserNamespaces
     def build_map(userns_map, kind)
-      userns_map.user_namespace_map_entries.where(
-        kind: ::UserNamespaceMapEntry.kinds[kind],
-      ).order('id').map(&:to_os)
+      userns_map.build_map(kind)
     end
   end
 end

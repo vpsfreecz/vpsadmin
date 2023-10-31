@@ -23,8 +23,8 @@ module NodeCtld
       @pool_users = {}
     end
 
-    def setup(db)
-      setup_pool_users(db)
+    def setup
+      setup_pool_users
     end
 
     # Register a new pool
@@ -59,16 +59,14 @@ module NodeCtld
     end
 
     protected
-    def setup_pool_users(db)
-      db.prepared(
-        'SELECT filesystem FROM pools WHERE node_id = ?',
-        $CFG.get(:vpsadmin, :node_id),
-      ).each do |row|
-        fs = row['filesystem']
-        pu = PoolUsers.new(fs)
-        pu.setup(db)
+    def setup_pool_users
+      RpcClient.run do |rpc|
+        rpc.list_pools.each do |pool|
+          pu = PoolUsers.new(pool['filesystem'])
+          pu.setup(rpc, pool['id'])
 
-        @pool_users[fs] = pu
+          @pool_users[ pool['filesystem'] ] = pu
+        end
       end
     end
 
@@ -85,28 +83,22 @@ module NodeCtld
         @mutex = Mutex.new
       end
 
-      def setup(db)
+      def setup(rpc, pool_id)
         if config_exist?
           load_config
           return
         end
 
-        db.prepared(
-          'SELECT vpses.id AS vps_id, dips.user_namespace_map_id
-          FROM vpses
-          INNER JOIN dataset_in_pools dips ON dips.id = vpses.dataset_in_pool_id
-          WHERE node_id = ? AND vpses.confirmed = 1 AND vpses.object_state IN (0,1,2)',
-          $CFG.get(:vpsadmin, :node_id),
-        ).each do |row|
-          name = row['user_namespace_map_id'].to_s
+        rpc.each_vps_user_namespace_map(pool_id) do |vps_map|
+          name = vps_map['map_name']
           u = @users[name]
 
           if u.nil?
-            u = User.new_from_db(db, row['user_namespace_map_id'], @pool_name, name)
+            u = User.new_from_rpc(@pool_name, vps_map)
             @users[name] = u
           end
 
-          u.add_vps(row['vps_id'])
+          u.add_vps(vps_map['vps_id'])
         end
 
         save
@@ -203,32 +195,14 @@ module NodeCtld
       include Utils::System
       include Utils::OsCtl
 
-      def self.new_from_db(db, map_id, pool_name, map_name)
-        uidmap = []
-        gidmap = []
-
-        db.prepared(
-          'SELECT uns_m_ent.kind, uns.offset, uns_m_ent.vps_id, uns_m_ent.ns_id, uns_m_ent.count
-          FROM user_namespace_map_entries uns_m_ent
-          INNER JOIN user_namespace_maps uns_m ON uns_m.id = uns_m_ent.user_namespace_map_id
-          INNER JOIN user_namespaces uns ON uns.id = uns_m.user_namespace_id
-          WHERE uns_m.id = ?
-          ORDER BY uns_m_ent.id',
-          map_id,
-        ).each do |row|
-          entry = "#{row['vps_id']}:#{row['offset'] + row['ns_id']}:#{row['count']}"
-
-          case row['kind']
-          when 0
-            uidmap << entry
-          when 1
-            gidmap << entry
-          else
-            fail "invalid user namespace map entry kind #{row['kind'].inspect} (map_id=#{map_id})"
-          end
-        end
-
-        new(pool_name, map_name, created: true, uidmap: uidmap, gidmap: gidmap)
+      def self.new_from_rpc(pool_name, vps_map)
+        new(
+          pool_name,
+          vps_map['map_name'],
+          created: true,
+          uidmap: vps_map['uidmap'],
+          gidmap: vps_map['gidmap'],
+        )
       end
 
       def self.load_from_config(pool_name, cfg)

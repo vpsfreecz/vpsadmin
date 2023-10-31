@@ -23,4 +23,14 @@ class UserNamespaceMap < ActiveRecord::Base
   def in_use?
     vpses.any?
   end
+
+  # @param kind [:uid, :gid]
+  # @return [Array<String>]
+  def build_map(kind)
+    user_namespace_map_entries.to_a.sort do |a, b|
+      a.id <=> b.id
+    end.select do |entry|
+      entry.kind.to_sym == kind
+    end.map(&:to_os)
+  end
 end

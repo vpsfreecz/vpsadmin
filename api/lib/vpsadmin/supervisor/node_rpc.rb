@@ -225,6 +225,29 @@ module VpsAdmin::Supervisor
         ).map(&:id)
       end
 
+      def list_vps_user_namespace_maps(pool_id, from_id: nil, limit:)
+        q = ::Vps
+          .joins(:dataset_in_pool)
+          .includes(user_namespace_map: :user_namespace_map_entries)
+          .where(
+            object_state: %w(active suspended soft_delete),
+            confirmed: ::Vps.confirmed(:confirmed),
+            dataset_in_pools: {pool_id: pool_id},
+          )
+          .limit(limit)
+
+        q = q.where('vpses.id > ?', from_id) if from_id
+
+        q.map do |vps|
+          {
+            vps_id: vps.id,
+            map_name: vps.user_namespace_map_id.to_s,
+            uidmap: vps.user_namespace_map.build_map(:uid),
+            gidmap: vps.user_namespace_map.build_map(:gid),
+          }
+        end
+      end
+
       # @param node_id [Integer]
       # @param from_id [Integer, nil]
       # @param limit [Integer]

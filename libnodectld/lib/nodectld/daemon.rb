@@ -72,8 +72,6 @@ module NodeCtld
     end
 
     def init
-      db = Db.new
-
       unless $CFG.minimal?
         @mount_reporter.start
       end
@@ -89,7 +87,7 @@ module NodeCtld
 
       @pool_status.init
 
-      OsCtlUsers.setup(db)
+      OsCtlUsers.setup
       @kernel_log.start if $CFG.get(:kernel_log, :enable)
       @exporter.start if $CFG.get(:exporter, :enable)
       @osctl_exporter.start if @osctl_exporter.enable?
@@ -98,8 +96,6 @@ module NodeCtld
       @storage_status.start if @storage_status.enable?
 
       @init = true
-
-      db.close
     end
 
     def start

@@ -61,6 +61,28 @@ module NodeCtld
       send_request('list_running_vps_ids', $CFG.get(:vpsadmin, :node_id))
     end
 
+    # @param pool_id [Integer]
+    # @yieldparam [Hash] user namespace map
+    def each_vps_user_namespace_map(pool_id, &block)
+      from_id = nil
+
+      loop do
+        vps_maps = send_request(
+          'list_vps_user_namespace_maps',
+          pool_id,
+          from_id: from_id,
+          limit: 50,
+        )
+
+        if vps_maps.empty?
+          break
+        else
+          vps_maps.each(&block)
+          from_id = vps_maps.last['vps_id']
+        end
+      end
+    end
+
     # @yieldparam [Hash] export
     def each_export(&block)
       from_id = nil
