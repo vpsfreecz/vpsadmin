@@ -9,6 +9,10 @@ module VpsAdmin::Supervisor
     # Note that the id counter is reset on nodectld restart.
     LOG_NTH_MESSAGE = 40
 
+    # TODO: add compressratio and refcompressratio: these values are floats while
+    # {DatasetPropertyHistory} can store only integers.
+    LOG_PROPERTIES = %w(used referenced available)
+
     def initialize(channel)
       @channel = channel
     end
@@ -41,7 +45,7 @@ module VpsAdmin::Supervisor
           updated_at: updated_at,
         )
 
-        if save_log
+        if save_log && LOG_PROPERTIES.include?(prop['name'])
           ::DatasetPropertyHistory.create!(
             dataset_property_id: prop['id'],
             value: value,
