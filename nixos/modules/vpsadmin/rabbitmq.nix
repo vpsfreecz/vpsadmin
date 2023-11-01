@@ -91,6 +91,9 @@ in {
         # "listeners.tcp.1" = "5672";
       };
       managementPlugin.enable = true;
+      plugins = [
+        "rabbitmq_prometheus"
+      ];
     };
   };
 }
