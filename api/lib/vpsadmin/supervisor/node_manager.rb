@@ -11,6 +11,25 @@ module VpsAdmin::Supervisor
     end
 
     def start
+      klasses = [
+        Node::DatasetExpansions,
+        Node::NetAccounting,
+        Node::NetMonitor,
+        Node::OomReports,
+        Node::PoolStatus,
+        Node::Rpc,
+        Node::Status,
+        Node::StorageStatus,
+        Node::VpsMounts,
+        Node::VpsOsProcesses,
+        Node::VpsSshHostKeys,
+        Node::VpsStatus,
+      ].map do |klass|
+        chan = @connection.create_channel
+        chan.prefetch(1)
+        [klass, chan]
+      end
+
       ::Node
         .includes(:location)
         .where(
@@ -18,23 +37,7 @@ module VpsAdmin::Supervisor
           role: %w(node storage),
         )
         .each do |node|
-        chan = @connection.create_channel
-        chan.prefetch(1)
-
-        [
-          Node::DatasetExpansions,
-          Node::NetAccounting,
-          Node::NetMonitor,
-          Node::OomReports,
-          Node::PoolStatus,
-          Node::Rpc,
-          Node::Status,
-          Node::StorageStatus,
-          Node::VpsMounts,
-          Node::VpsOsProcesses,
-          Node::VpsSshHostKeys,
-          Node::VpsStatus,
-        ].each do |klass|
+        klasses.each do |klass, chan|
           instance = klass.new(chan, node)
           instance.start
         end
