@@ -10,7 +10,7 @@ module NodeCtld
       @cpus = SystemProbes::Cpus.new.count
 
       @channel = NodeBunny.create_channel
-      @exchange = @channel.direct('node.statuses')
+      @exchange = @channel.direct('node:statuses')
     end
 
     def update
@@ -54,7 +54,11 @@ module NodeCtld
         },
       }
 
-      @exchange.publish(status.to_json, content_type: 'application/json')
+      @exchange.publish(
+        status.to_json,
+        content_type: 'application/json',
+        routing_key: $CFG.get(:vpsadmin, :routing_key),
+      )
     rescue SystemCommandFailed => e
       log(:fatal, :node_status, e.message)
     end

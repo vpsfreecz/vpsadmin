@@ -1,16 +1,14 @@
+require_relative 'base'
+
 module VpsAdmin::Supervisor
-  class OomReports
-    def initialize(channel)
-      @channel = channel
-    end
-
+  class Node::OomReports < Node::Base
     def start
-      @channel.prefetch(1)
+      channel.prefetch(1)
 
-      exchange = @channel.direct('node.oom_reports')
-      queue = @channel.queue('node.oom_reports')
+      exchange = channel.direct('node:oom_reports')
+      queue = channel.queue(queue_name('oom_reports'))
 
-      queue.bind(exchange)
+      queue.bind(exchange, routing_key: node.routing_key)
 
       queue.subscribe do |_delivery_info, _properties, payload|
         report = JSON.parse(payload)
@@ -20,7 +18,7 @@ module VpsAdmin::Supervisor
 
     protected
     def save_report(report)
-      vps = ::Vps.find_by(id: report['vps_id'])
+      vps = ::Vps.find_by(id: report['vps_id'], node_id: node.id)
       return if vps.nil?
 
       invoked_by_name = report.fetch('invoked_by_name')

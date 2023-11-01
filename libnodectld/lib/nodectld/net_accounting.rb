@@ -31,8 +31,8 @@ module NodeCtld
       @discovery_queue = OsCtl::Lib::Queue.new
       @mutex = Mutex.new
       @channel = NodeBunny.create_channel
-      @monitor_exchange = @channel.direct('node.net_monitor')
-      @accounting_exchange = @channel.direct('node.net_accounting')
+      @monitor_exchange = @channel.direct('node:net_monitor')
+      @accounting_exchange = @channel.direct('node:net_accounting')
     end
 
     def init
@@ -301,6 +301,7 @@ module NodeCtld
       exchange.publish(
         {key => to_save}.to_json,
         content_type: 'application/json',
+        routing_key: $CFG.get(:vpsadmin, :routing_key),
       )
 
       to_save.clear

@@ -1,16 +1,14 @@
+require_relative 'base'
+
 module VpsAdmin::Supervisor
-  class DatasetExpansions
-    def initialize(channel)
-      @channel = channel
-    end
-
+  class Node::DatasetExpansions < Node::Base
     def start
-      @channel.prefetch(1)
+      channel.prefetch(1)
 
-      exchange = @channel.direct('node.dataset_expansions')
-      queue = @channel.queue('node.dataset_expansions', durable: true)
+      exchange = channel.direct('node:dataset_expansions')
+      queue = channel.queue(queue_name('dataset_expansions'), durable: true)
 
-      queue.bind(exchange)
+      queue.bind(exchange, routing_key: node.routing_key)
 
       queue.subscribe(manual_ack: true) do |delivery_info, _properties, payload|
         event = JSON.parse(payload)
@@ -31,6 +29,9 @@ module VpsAdmin::Supervisor
         created_at: t,
         updated_at: t,
       )
+
+      # Check if we're authorized to handle expansions from this node
+      return if new_event.dataset.primary_dataset_in_pool!.pool.node_id != node.id
 
       begin
         exp = VpsAdmin::API::Operations::DatasetExpansion::ProcessEvent.run(

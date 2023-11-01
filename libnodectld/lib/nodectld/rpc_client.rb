@@ -19,7 +19,7 @@ module NodeCtld
 
     def initialize
       @channel = NodeBunny.create_channel
-      @exchange = @channel.direct('node.rpc')
+      @exchange = @channel.direct('node:rpc')
       @response = nil
       @debug = $CFG.get(:rpc_client, :debug)
 
@@ -32,11 +32,11 @@ module NodeCtld
     end
 
     def get_node_config
-      send_request('get_node_config', $CFG.get(:vpsadmin, :node_id))
+      send_request('get_node_config')
     end
 
     def list_pools
-      send_request('list_pools', $CFG.get(:vpsadmin, :node_id))
+      send_request('list_pools')
     end
 
     # @param pool_id [Integer]
@@ -46,11 +46,11 @@ module NodeCtld
     end
 
     def list_vps_status_check
-      send_request('list_vps_status_check', $CFG.get(:vpsadmin, :node_id))
+      send_request('list_vps_status_check')
     end
 
     def list_vps_network_interfaces
-      send_request('list_vps_network_interfaces', $CFG.get(:vpsadmin, :node_id))
+      send_request('list_vps_network_interfaces')
     end
 
     def find_vps_network_interface(vps_id, vps_name)
@@ -58,7 +58,7 @@ module NodeCtld
     end
 
     def list_running_vps_ids
-      send_request('list_running_vps_ids', $CFG.get(:vpsadmin, :node_id))
+      send_request('list_running_vps_ids')
     end
 
     # @param pool_id [Integer]
@@ -90,7 +90,6 @@ module NodeCtld
       loop do
         exports = send_request(
           'list_exports',
-          $CFG.get(:vpsadmin, :node_id),
           from_id: from_id,
           limit: 50,
         )
@@ -139,10 +138,11 @@ module NodeCtld
 
     def send_request(command, *args, **kwargs)
       @call_id = generate_uuid
+      routing_key = "request-#{$CFG.get(:vpsadmin, :routing_key)}"
 
       if @debug
         t1 = Time.now
-        log(:debug, "request id=#{@call_id[0..7]} command=#{command} args=#{args.inspect} kwargs=#{kwargs.inspect}")
+        log(:debug, "request id=#{@call_id[0..7]} routing-key=#{routing_key} command=#{command} args=#{args.inspect} kwargs=#{kwargs.inspect}")
       end
 
       @exchange.publish(
@@ -153,7 +153,7 @@ module NodeCtld
         }.to_json,
         persistent: true,
         content_type: 'application/json',
-        routing_key: 'request',
+        routing_key: routing_key,
         correlation_id: @call_id,
         reply_to: @reply_queue.name,
       )

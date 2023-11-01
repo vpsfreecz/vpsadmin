@@ -1,5 +1,7 @@
+require_relative 'base'
+
 module VpsAdmin::Supervisor
-  class NodeStatus
+  class Node::Status < Node::Base
     LOG_INTERVAL = 900
 
     AVERAGES = %i(
@@ -10,20 +12,18 @@ module VpsAdmin::Supervisor
       arc_c_max arc_c arc_size arc_hitpercent
     )
 
-    def initialize(channel)
-      @channel = channel
-    end
-
     def start
-      @channel.prefetch(1)
+      channel.prefetch(1)
 
-      exchange = @channel.direct('node.statuses')
-      queue = @channel.queue('node.statuses')
+      exchange = channel.direct('node:statuses')
+      queue = channel.queue(queue_name('statuses'))
 
-      queue.bind(exchange)
+      queue.bind(exchange, routing_key: node.routing_key)
 
       queue.subscribe do |_delivery_info, _properties, payload|
         new_status = JSON.parse(payload)
+
+        next if new_status['id'] != node.id
 
         current_status = ::NodeCurrentStatus.find_or_initialize_by(node_id: new_status['id'])
         update_status(current_status, new_status)

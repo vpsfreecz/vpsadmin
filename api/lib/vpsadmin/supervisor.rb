@@ -2,6 +2,8 @@ require 'bunny'
 
 module VpsAdmin
   module Supervisor
+    module Node ; end
+
     def self.start(cfg)
       connection = Bunny.new(
         hosts: cfg.fetch('hosts'),
@@ -11,23 +13,7 @@ module VpsAdmin
       )
       connection.start
 
-      [
-        DatasetExpansions,
-        NetAccounting,
-        NetMonitor,
-        NodeRpc,
-        NodeStatus,
-        OomReports,
-        PoolStatus,
-        StorageStatus,
-        VpsMounts,
-        VpsOsProcesses,
-        VpsSshHostKeys,
-        VpsStatus,
-      ].each do |klass|
-        instance = klass.new(connection.create_channel)
-        instance.start
-      end
+      NodeManager.start(connection)
     end
   end
 end

@@ -1,32 +1,29 @@
-require 'json'
+require_relative 'base'
 
 module VpsAdmin::Supervisor
-  class NodeRpc
-    def initialize(channel)
-      @channel = channel
-    end
-
+  class Node::Rpc < Node::Base
     def start
-      @channel.prefetch(1)
+      channel.prefetch(1)
 
-      exchange = @channel.direct('node.rpc')
-      queue = @channel.queue('node.rpc', durable: true)
+      exchange = channel.direct('node:rpc')
+      queue = channel.queue(queue_name('rpc'), durable: true)
 
-      queue.bind(exchange, routing_key: 'request')
+      queue.bind(exchange, routing_key: "request-#{node.routing_key}")
 
       queue.subscribe(manual_ack: true) do |delivery_info, properties, payload|
-        request = Request.new(@channel, exchange, delivery_info, properties)
+        request = Request.new(@channel, exchange, delivery_info, properties, node)
         request.process(payload)
       end
     end
 
     protected
     class Request
-      def initialize(channel, exchange, delivery_info, properties)
+      def initialize(channel, exchange, delivery_info, properties, node)
         @channel = channel
         @exchange = exchange
         @delivery_info = delivery_info
         @properties = properties
+        @node = node
       end
 
       def process(payload)
@@ -37,7 +34,7 @@ module VpsAdmin::Supervisor
           raise
         end
 
-        handler = Handler.new
+        handler = Handler.new(@node)
         cmd = req['command']
 
         if !handler.respond_to?(cmd)
@@ -88,11 +85,19 @@ module VpsAdmin::Supervisor
     end
 
     class Handler
-      def get_node_config(node_id)
-        node = ::Node.select('role, ip_addr, max_tx, max_rx').where(id: node_id).take
+      def initialize(node)
+        @node = node
+      end
+
+      def get_node_config
+        node = ::Node
+          .select('name, locations.domain, role, ip_addr, max_tx, max_rx')
+          .joins(:location)
+          .where(id: @node.id).take
         return if node.nil?
 
         {
+          name: "#{node.name}.#{node.domain}",
           role: node.role,
           ip_addr: node.ip_addr,
           max_tx: node.max_tx,
@@ -100,8 +105,8 @@ module VpsAdmin::Supervisor
         }
       end
 
-      def list_pools(node_id)
-        ::Pool.where(node_id: node_id).map do |pool|
+      def list_pools
+        ::Pool.where(node: @node).map do |pool|
           {
             id: pool.id,
             name: pool.filesystem.split('/').first,
@@ -124,11 +129,14 @@ module VpsAdmin::Supervisor
             dataset_properties.name AS property_name,
             dataset_properties.id AS property_id'
           )
-          .joins(:dataset, :dataset_properties)
+          .joins(:dataset, :dataset_properties, :pool)
           .where(
             dataset_in_pools: {
               pool_id: pool_id,
               confirmed: ::DatasetInPool.confirmed(:confirmed),
+            },
+            pools: {
+              node_id: @node.id,
             },
             dataset_properties: {
               name: properties,
@@ -144,9 +152,9 @@ module VpsAdmin::Supervisor
           end
       end
 
-      def list_vps_status_check(node_id)
+      def list_vps_status_check
         ::Vps.where(
-          node_id: node_id,
+          node: @node,
           object_state: %w(active suspended),
           confirmed: ::Vps.confirmed(:confirmed),
         ).map do |vps|
@@ -154,7 +162,7 @@ module VpsAdmin::Supervisor
         end
       end
 
-      def list_vps_network_interfaces(node_id)
+      def list_vps_network_interfaces
         ::NetworkInterface
           .select(
             'network_interfaces.id,
@@ -170,7 +178,7 @@ module VpsAdmin::Supervisor
           .joins('LEFT JOIN network_interface_monitors ON network_interface_monitors.network_interface_id = network_interfaces.id')
           .where(
             vpses: {
-              node_id: node_id,
+              node_id: @node.id,
               object_state: 'active',
             },
           ).map do |netif|
@@ -202,7 +210,11 @@ module VpsAdmin::Supervisor
             )
             .joins(:vps)
             .joins('LEFT JOIN network_interface_monitors ON network_interface_monitors.network_interface_id = network_interfaces.id')
-            .where(vps_id: vps_id, name: vps_name).take
+            .where(
+              vps_id: vps_id,
+              name: vps_name,
+              vpses: {node_id: @node.id},
+            ).take
 
         return if netif.nil?
 
@@ -218,9 +230,9 @@ module VpsAdmin::Supervisor
         }
       end
 
-      def list_running_vps_ids(node_id)
+      def list_running_vps_ids
         ::Vps.select('vpses.id').joins(:vps_current_status).where(
-          vpses: {node_id: node_id, object_state: 'active'},
+          vpses: {node_id: @node.id, object_state: 'active'},
           vps_current_statuses: {is_running: true},
         ).map(&:id)
       end
@@ -232,6 +244,7 @@ module VpsAdmin::Supervisor
           .where(
             object_state: %w(active suspended soft_delete),
             confirmed: ::Vps.confirmed(:confirmed),
+            node: @node,
             dataset_in_pools: {pool_id: pool_id},
           )
           .limit(limit)
@@ -248,11 +261,10 @@ module VpsAdmin::Supervisor
         end
       end
 
-      # @param node_id [Integer]
       # @param from_id [Integer, nil]
       # @param limit [Integer]
       # @return [Array<Hash>]
-      def list_exports(node_id, from_id: nil, limit:)
+      def list_exports(from_id: nil, limit:)
         q = ::Export
           .joins(dataset_in_pool: :pool)
           .includes(
@@ -263,7 +275,7 @@ module VpsAdmin::Supervisor
             export_hosts: :ip_address,
           )
           .where(
-            pools: {node_id: node_id},
+            pools: {node_id: @node.id},
           )
           .limit(limit)
 
@@ -298,7 +310,8 @@ module VpsAdmin::Supervisor
       def authenticate_console_session(token)
         console = ::VpsConsole
           .select('vps_id')
-          .where(token: token)
+          .joins(:vps)
+          .where(token: token, vpses: {node_id: @node.id})
           .where('expiration > ?', Time.now)
           .take
 

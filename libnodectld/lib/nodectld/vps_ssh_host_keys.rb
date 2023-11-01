@@ -20,7 +20,7 @@ module NodeCtld
       return unless enable?
 
       @channel = NodeBunny.create_channel
-      @exchange = @channel.direct('node.vps_ssh_host_keys')
+      @exchange = @channel.direct('node:vps_ssh_host_keys')
 
       @update_vps_queue = OsCtl::Lib::Queue.new
       @update_vps_thread = Thread.new { update_vps_worker }
@@ -128,6 +128,7 @@ module NodeCtld
           end,
         }.to_json,
         content_type: 'application/json',
+        routing_key: $CFG.get(:vpsadmin, :routing_key),
       )
     end
 

@@ -9,7 +9,7 @@ module NodeCtld
     def initialize
       @queue = OsCtl::Lib::Queue.new
       @channel = NodeBunny.create_channel
-      @exchange = @channel.direct('node.vps_os_processes')
+      @exchange = @channel.direct('node:vps_os_processes')
     end
 
     def enable?
@@ -113,6 +113,7 @@ module NodeCtld
           vps_processes: to_save,
         }.to_json,
         content_type: 'application/json',
+        routing_key: $CFG.get(:vpsadmin, :routing_key),
       )
 
       to_save.clear

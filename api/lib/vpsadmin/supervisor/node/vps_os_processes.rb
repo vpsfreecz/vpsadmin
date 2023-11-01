@@ -1,16 +1,14 @@
+require_relative 'base'
+
 module VpsAdmin::Supervisor
-  class VpsOsProcesses
-    def initialize(channel)
-      @channel = channel
-    end
-
+  class Node::VpsOsProcesses < Node::Base
     def start
-      @channel.prefetch(5)
+      channel.prefetch(5)
 
-      exchange = @channel.direct('node.vps_os_processes')
-      queue = @channel.queue('node.vps_os_processes')
+      exchange = channel.direct('node:vps_os_processes')
+      queue = channel.queue(queue_name('vps_os_processes'))
 
-      queue.bind(exchange)
+      queue.bind(exchange, routing_key: node.routing_key)
 
       queue.subscribe do |_delivery_info, _properties, payload|
         vps_procs = JSON.parse(payload)

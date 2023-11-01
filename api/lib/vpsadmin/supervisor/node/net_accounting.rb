@@ -1,16 +1,14 @@
+require_relative 'base'
+
 module VpsAdmin::Supervisor
-  class NetAccounting
-    def initialize(channel)
-      @channel = channel
-    end
-
+  class Node::NetAccounting < Node::Base
     def start
-      @channel.prefetch(10)
+      channel.prefetch(10)
 
-      exchange = @channel.direct('node.net_accounting')
-      queue = @channel.queue('node.net_accounting')
+      exchange = channel.direct('node:net_accounting')
+      queue = channel.queue(queue_name('net_accounting'))
 
-      queue.bind(exchange)
+      queue.bind(exchange, routing_key: node.routing_key)
 
       queue.subscribe do |_delivery_info, _properties, payload|
         accounting = JSON.parse(payload)['accounting']

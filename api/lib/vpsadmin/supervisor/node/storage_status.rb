@@ -1,5 +1,7 @@
+require_relative 'base'
+
 module VpsAdmin::Supervisor
-  class StorageStatus
+  class Node::StorageStatus < Node::Base
     # Each update carries per-node ever-incrementing message id. This id is the
     # same for one update spread over multiple messages. This constant determines
     # how often are property values logged. For example, when nodectld sends
@@ -13,17 +15,13 @@ module VpsAdmin::Supervisor
     # {DatasetPropertyHistory} can store only integers.
     LOG_PROPERTIES = %w(used referenced available)
 
-    def initialize(channel)
-      @channel = channel
-    end
-
     def start
-      @channel.prefetch(10)
+      channel.prefetch(10)
 
-      exchange = @channel.direct('node.storage_statuses')
-      queue = @channel.queue('node.storage_statuses')
+      exchange = channel.direct('node:storage_statuses')
+      queue = channel.queue(queue_name('storage_statuses'))
 
-      queue.bind(exchange)
+      queue.bind(exchange, routing_key: node.routing_key)
 
       queue.subscribe do |_delivery_info, _properties, payload|
         status = JSON.parse(payload)

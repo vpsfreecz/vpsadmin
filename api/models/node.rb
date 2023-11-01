@@ -333,6 +333,10 @@ class Node < ActiveRecord::Base
     plan
   end
 
+  def routing_key
+    id.to_s
+  end
+
   protected
   def shaper_changed?
     max_tx_changed? || max_rx_changed?

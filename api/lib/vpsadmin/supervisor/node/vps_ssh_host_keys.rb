@@ -1,16 +1,15 @@
+require_relative 'base'
+
 module VpsAdmin::Supervisor
-  class VpsSshHostKeys
-    def initialize(channel)
-      @channel = channel
-    end
-
+  class Node::VpsSshHostKeys < Node::Base
     def start
-      @channel.prefetch(5)
+      channel.prefetch(5)
 
-      exchange = @channel.direct('node.vps_ssh_host_keys')
-      queue = @channel.queue('node.vps_ssh_host_keys')
+      exchange = channel.direct('node:vps_ssh_host_keys')
 
-      queue.bind(exchange)
+      queue = channel.queue(queue_name('vps_ssh_host_keys'))
+
+      queue.bind(exchange, routing_key: node.routing_key)
 
       queue.subscribe do |_delivery_info, _properties, payload|
         vps_keys = JSON.parse(payload)
@@ -22,7 +21,10 @@ module VpsAdmin::Supervisor
     def update_vps_keys(vps_keys)
       t = Time.at(vps_keys['time'])
 
-      ::VpsSshHostKey.where(vps_id: vps_keys['vps_id']).each do |host_key|
+      ::VpsSshHostKey
+        .joins(:vps)
+        .where(vps_id: vps_keys['vps_id'], vpses: {node_id: node.id})
+        .each do |host_key|
         key_update = vps_keys['keys'].detect { |v| v['algorithm'] == host_key.algorithm }
 
         if key_update.nil?
