@@ -2,6 +2,10 @@ require_relative 'base'
 
 module VpsAdmin::Supervisor
   class Node::VpsSshHostKeys < Node::Base
+    def self.setup(channel)
+      channel.prefetch(5)
+    end
+
     def start
       exchange = channel.direct('node:vps_ssh_host_keys')
 

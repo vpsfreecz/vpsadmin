@@ -27,6 +27,7 @@ module VpsAdmin::Supervisor
       ].map do |klass|
         chan = @connection.create_channel
         chan.prefetch(1)
+        klass.setup(chan) if klass.respond_to?(:setup)
         [klass, chan]
       end
 

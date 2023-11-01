@@ -6,6 +6,10 @@ module VpsAdmin::Supervisor
 
     AVERAGES = %i(loadavg process_count used_memory cpu_idle)
 
+    def self.setup(channel)
+      channel.prefetch(5)
+    end
+
     def start
       exchange = channel.direct('node:vps_statuses')
       queue = channel.queue(queue_name('vps_statuses'))
