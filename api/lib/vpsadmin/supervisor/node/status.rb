@@ -13,8 +13,6 @@ module VpsAdmin::Supervisor
     )
 
     def start
-      channel.prefetch(1)
-
       exchange = channel.direct('node:statuses')
       queue = channel.queue(queue_name('statuses'))
 

@@ -16,8 +16,6 @@ module VpsAdmin::Supervisor
     LOG_PROPERTIES = %w(used referenced available)
 
     def start
-      channel.prefetch(10)
-
       exchange = channel.direct('node:storage_statuses')
       queue = channel.queue(queue_name('storage_statuses'))
 

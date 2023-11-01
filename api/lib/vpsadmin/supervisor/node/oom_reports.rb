@@ -3,8 +3,6 @@ require_relative 'base'
 module VpsAdmin::Supervisor
   class Node::OomReports < Node::Base
     def start
-      channel.prefetch(1)
-
       exchange = channel.direct('node:oom_reports')
       queue = channel.queue(queue_name('oom_reports'))
 

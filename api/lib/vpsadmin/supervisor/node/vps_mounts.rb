@@ -3,8 +3,6 @@ require_relative 'base'
 module VpsAdmin::Supervisor
   class Node::VpsMounts < Node::Base
     def start
-      channel.prefetch(1)
-
       exchange = channel.direct('node:vps_mounts')
       queue = channel.queue(queue_name('vps_mounts'), durable: true)
 

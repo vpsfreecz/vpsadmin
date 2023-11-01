@@ -3,8 +3,6 @@ require_relative 'base'
 module VpsAdmin::Supervisor
   class Node::VpsOsProcesses < Node::Base
     def start
-      channel.prefetch(5)
-
       exchange = channel.direct('node:vps_os_processes')
       queue = channel.queue(queue_name('vps_os_processes'))
 

@@ -3,8 +3,6 @@ require_relative 'base'
 module VpsAdmin::Supervisor
   class Node::Rpc < Node::Base
     def start
-      channel.prefetch(1)
-
       exchange = channel.direct('node:rpc')
       queue = channel.queue(queue_name('rpc'), durable: true)
 

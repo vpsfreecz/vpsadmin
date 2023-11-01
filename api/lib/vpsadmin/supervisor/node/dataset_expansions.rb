@@ -3,8 +3,6 @@ require_relative 'base'
 module VpsAdmin::Supervisor
   class Node::DatasetExpansions < Node::Base
     def start
-      channel.prefetch(1)
-
       exchange = channel.direct('node:dataset_expansions')
       queue = channel.queue(queue_name('dataset_expansions'), durable: true)
 

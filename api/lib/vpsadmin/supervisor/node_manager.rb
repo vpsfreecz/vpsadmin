@@ -19,6 +19,7 @@ module VpsAdmin::Supervisor
         )
         .each do |node|
         chan = @connection.create_channel
+        chan.prefetch(1)
 
         [
           Node::DatasetExpansions,

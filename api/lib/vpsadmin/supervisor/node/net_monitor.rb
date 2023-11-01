@@ -3,8 +3,6 @@ require_relative 'base'
 module VpsAdmin::Supervisor
   class Node::NetMonitor < Node::Base
     def start
-      channel.prefetch(10)
-
       exchange = channel.direct('node:net_monitor')
       queue = channel.queue(queue_name('net_monitor'))
 

@@ -3,8 +3,6 @@ require_relative 'base'
 module VpsAdmin::Supervisor
   class Node::PoolStatus < Node::Base
     def start
-      channel.prefetch(1)
-
       exchange = channel.direct('node:pool_statuses')
       queue = channel.queue(queue_name('pool_statuses'))
 
