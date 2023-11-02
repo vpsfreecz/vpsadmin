@@ -211,7 +211,6 @@ module VpsAdmin::Supervisor
             .where(
               vps_id: vps_id,
               name: vps_name,
-              vpses: {node_id: @node.id},
             ).take
 
         return if netif.nil?
