@@ -4,7 +4,11 @@ module VpsAdmin::Supervisor
   class Node::DatasetExpansions < Node::Base
     def start
       exchange = channel.direct('node:dataset_expansions')
-      queue = channel.queue(queue_name('dataset_expansions'), durable: true)
+      queue = channel.queue(
+        queue_name('dataset_expansions'),
+        durable: true,
+        arguments: {'x-queue-type' => 'quorum'},
+      )
 
       queue.bind(exchange, routing_key: node.routing_key)
 

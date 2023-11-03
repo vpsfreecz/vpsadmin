@@ -4,7 +4,11 @@ module VpsAdmin::Supervisor
   class Node::VpsMounts < Node::Base
     def start
       exchange = channel.direct('node:vps_mounts')
-      queue = channel.queue(queue_name('vps_mounts'), durable: true)
+      queue = channel.queue(
+        queue_name('vps_mounts'),
+        durable: true,
+        arguments: {'x-queue-type' => 'quorum'},
+      )
 
       queue.bind(exchange, routing_key: node.routing_key)
 

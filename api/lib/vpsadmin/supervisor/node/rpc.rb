@@ -4,7 +4,11 @@ module VpsAdmin::Supervisor
   class Node::Rpc < Node::Base
     def start
       exchange = channel.direct('node:rpc')
-      queue = channel.queue(queue_name('rpc'), durable: true)
+      queue = channel.queue(
+        queue_name('rpc'),
+        durable: true,
+        arguments: {'x-queue-type' => 'quorum'},
+      )
 
       queue.bind(exchange, routing_key: "request-#{node.routing_key}")
 
