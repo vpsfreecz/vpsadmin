@@ -3,10 +3,10 @@ require_relative 'base'
 module VpsAdmin::Supervisor
   class Node::NetMonitor < Node::Base
     def start
-      exchange = channel.direct('node:net_monitor')
+      exchange = channel.direct(exchange_name)
       queue = channel.queue(queue_name('net_monitor'))
 
-      queue.bind(exchange, routing_key: node.routing_key)
+      queue.bind(exchange, routing_key: 'net_monitor')
 
       queue.subscribe do |_delivery_info, _properties, payload|
         monitors = JSON.parse(payload)['monitors']

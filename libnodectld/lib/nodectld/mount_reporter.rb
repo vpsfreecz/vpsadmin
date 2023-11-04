@@ -19,7 +19,7 @@ module NodeCtld
 
       @mutex = Mutex.new
       @channel = NodeBunny.create_channel
-      @exchange = @channel.direct('node:vps_mounts')
+      @exchange = @channel.direct(NodeBunny.exchange_name)
 
       @mounts = []
     end
@@ -77,7 +77,7 @@ module NodeCtld
           }.to_json,
           persistent: true,
           content_type: 'application/json',
-          routing_key: $CFG.get(:vpsadmin, :routing_key),
+          routing_key: 'vps_mounts',
         )
       end
     end

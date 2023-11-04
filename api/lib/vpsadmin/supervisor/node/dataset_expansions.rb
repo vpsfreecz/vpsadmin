@@ -3,14 +3,14 @@ require_relative 'base'
 module VpsAdmin::Supervisor
   class Node::DatasetExpansions < Node::Base
     def start
-      exchange = channel.direct('node:dataset_expansions')
+      exchange = channel.direct(exchange_name)
       queue = channel.queue(
         queue_name('dataset_expansions'),
         durable: true,
         arguments: {'x-queue-type' => 'quorum'},
       )
 
-      queue.bind(exchange, routing_key: node.routing_key)
+      queue.bind(exchange, routing_key: 'dataset_expansions')
 
       queue.subscribe(manual_ack: true) do |delivery_info, _properties, payload|
         event = JSON.parse(payload)

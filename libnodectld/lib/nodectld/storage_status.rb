@@ -25,7 +25,7 @@ module NodeCtld
       @pools = {}
 
       @channel = NodeBunny.create_channel
-      @exchange = @channel.direct('node:storage_statuses')
+      @exchange = @channel.direct(NodeBunny.exchange_name)
       @message_id = 0
     end
 
@@ -227,7 +227,7 @@ module NodeCtld
           properties: to_save,
         }.to_json,
         content_type: 'application/json',
-        routing_key: $CFG.get(:vpsadmin, :routing_key),
+        routing_key: 'storage_statuses',
       )
 
       to_save.clear

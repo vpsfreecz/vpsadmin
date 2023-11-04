@@ -1,3 +1,4 @@
+require 'socket'
 require 'yaml'
 
 module NodeCtld
@@ -33,10 +34,9 @@ module NodeCtld
 
     vpsadmin: {
       node_id: nil,
-      node_name: nil, # loaded from db
+      node_name: nil,
       domain: "vpsfree.cz",
       node_addr: nil, # loaded from db
-      routing_key: nil, # loaded from db
       max_tx: nil, # loaded from db
       max_rx: nil, # loaded from db
       net_interfaces: [],
@@ -300,14 +300,20 @@ module NodeCtld
         return false
       end
 
+      if @cfg[:vpsadmin][:node_name].nil?
+        host_parts = Socket.gethostname.split('.')
+
+        if host_parts.length > 2
+          @cfg[:vpsadmin][:node_name] = host_parts[0..1].join('.')
+        end
+      end
+
       load_db_settings if db
 
       true
     end
 
     def load_db_settings
-      @cfg[:vpsadmin][:routing_key] = @cfg[:vpsadmin][:node_id]
-
       cfg =
         RpcClient.run do |rpc|
           rpc.get_node_config
@@ -318,7 +324,6 @@ module NodeCtld
         return
       end
 
-      @cfg[:vpsadmin][:node_name] = cfg['name']
       @cfg[:vpsadmin][:type] = cfg['role'].to_sym
       @cfg[:vpsadmin][:node_addr] = cfg['ip_addr']
       @cfg[:vpsadmin][:max_tx] = cfg['max_tx']

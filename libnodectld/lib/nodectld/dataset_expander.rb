@@ -18,7 +18,7 @@ module NodeCtld
 
     def initialize
       @channel = NodeBunny.create_channel
-      @exchange = @channel.direct('node:dataset_expansions')
+      @exchange = @channel.direct(NodeBunny.exchange_name)
       @submit_queue = OsCtl::Lib::Queue.new
     end
 
@@ -79,7 +79,7 @@ module NodeCtld
           }.to_json,
           persistent: true,
           content_type: 'application/json',
-          routing_key: $CFG.get(:vpsadmin, :routing_key),
+          routing_key: 'dataset_expansions',
         )
       end
     end

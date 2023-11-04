@@ -42,7 +42,7 @@ module NodeCtld
     def initialize
       @tics_per_sec = Etc.sysconf(Etc::SC_CLK_TCK).to_i
       @channel = NodeBunny.create_channel
-      @exchange = @channel.direct('node:vps_statuses')
+      @exchange = @channel.direct(NodeBunny.exchange_name)
     end
 
     # @param top_data [Hash] data from osctl ct top
@@ -146,7 +146,7 @@ module NodeCtld
             hostname: vps.hostname,
           }.to_json,
           content_type: 'application/json',
-          routing_key: $CFG.get(:vpsadmin, :routing_key),
+          routing_key: 'vps_statuses',
         )
       end
 

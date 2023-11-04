@@ -19,7 +19,7 @@ module NodeCtld
 
     def initialize
       @channel = NodeBunny.create_channel
-      @exchange = @channel.direct('node:rpc')
+      @exchange = @channel.direct(NodeBunny.exchange_name)
       @response = nil
       @debug = $CFG.get(:rpc_client, :debug)
 
@@ -138,11 +138,9 @@ module NodeCtld
 
     def send_request(command, *args, **kwargs)
       @call_id = generate_uuid
-      routing_key = "request-#{$CFG.get(:vpsadmin, :routing_key)}"
-
       if @debug
         t1 = Time.now
-        log(:debug, "request id=#{@call_id[0..7]} routing-key=#{routing_key} command=#{command} args=#{args.inspect} kwargs=#{kwargs.inspect}")
+        log(:debug, "request id=#{@call_id[0..7]} command=#{command} args=#{args.inspect} kwargs=#{kwargs.inspect}")
       end
 
       @exchange.publish(
@@ -153,7 +151,7 @@ module NodeCtld
         }.to_json,
         persistent: true,
         content_type: 'application/json',
-        routing_key: routing_key,
+        routing_key: 'rpc',
         correlation_id: @call_id,
         reply_to: @reply_queue.name,
       )

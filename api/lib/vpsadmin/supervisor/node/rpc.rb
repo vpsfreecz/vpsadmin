@@ -3,14 +3,14 @@ require_relative 'base'
 module VpsAdmin::Supervisor
   class Node::Rpc < Node::Base
     def start
-      exchange = channel.direct('node:rpc')
+      exchange = channel.direct(exchange_name)
       queue = channel.queue(
         queue_name('rpc'),
         durable: true,
         arguments: {'x-queue-type' => 'quorum'},
       )
 
-      queue.bind(exchange, routing_key: "request-#{node.routing_key}")
+      queue.bind(exchange, routing_key: 'rpc')
 
       queue.subscribe(manual_ack: true) do |delivery_info, properties, payload|
         request = Request.new(@channel, exchange, delivery_info, properties, node)
@@ -93,13 +93,11 @@ module VpsAdmin::Supervisor
 
       def get_node_config
         node = ::Node
-          .select('name, locations.domain, role, ip_addr, max_tx, max_rx')
-          .joins(:location)
+          .select('name, role, ip_addr, max_tx, max_rx')
           .where(id: @node.id).take
         return if node.nil?
 
         {
-          name: "#{node.name}.#{node.domain}",
           role: node.role,
           ip_addr: node.ip_addr,
           max_tx: node.max_tx,

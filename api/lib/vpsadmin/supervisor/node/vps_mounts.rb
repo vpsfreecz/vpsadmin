@@ -3,14 +3,14 @@ require_relative 'base'
 module VpsAdmin::Supervisor
   class Node::VpsMounts < Node::Base
     def start
-      exchange = channel.direct('node:vps_mounts')
+      exchange = channel.direct(exchange_name)
       queue = channel.queue(
         queue_name('vps_mounts'),
         durable: true,
         arguments: {'x-queue-type' => 'quorum'},
       )
 
-      queue.bind(exchange, routing_key: node.routing_key)
+      queue.bind(exchange, routing_key: 'vps_mounts')
 
       queue.subscribe(manual_ack: true) do |delivery_info, _properties, payload|
         state = JSON.parse(payload)

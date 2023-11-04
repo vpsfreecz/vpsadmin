@@ -16,7 +16,7 @@ module NodeCtld
       @scan_percent_summary = nil
 
       @channel = NodeBunny.create_channel
-      @exchange = @channel.direct('node:pool_statuses')
+      @exchange = @channel.direct(NodeBunny.exchange_name)
     end
 
     def init
@@ -79,7 +79,7 @@ module NodeCtld
             scan_percent: scan_percent,
           }.to_json,
           content_type: 'application/json',
-          routing_key: $CFG.get(:vpsadmin, :routing_key),
+          routing_key: 'pool_statuses',
         )
       end
 

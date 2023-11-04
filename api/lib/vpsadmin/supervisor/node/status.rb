@@ -13,10 +13,10 @@ module VpsAdmin::Supervisor
     )
 
     def start
-      exchange = channel.direct('node:statuses')
+      exchange = channel.direct(exchange_name)
       queue = channel.queue(queue_name('statuses'))
 
-      queue.bind(exchange, routing_key: node.routing_key)
+      queue.bind(exchange, routing_key: 'statuses')
 
       queue.subscribe do |_delivery_info, _properties, payload|
         new_status = JSON.parse(payload)

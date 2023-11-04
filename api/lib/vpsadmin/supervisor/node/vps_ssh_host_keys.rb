@@ -7,11 +7,11 @@ module VpsAdmin::Supervisor
     end
 
     def start
-      exchange = channel.direct('node:vps_ssh_host_keys')
+      exchange = channel.direct(exchange_name)
 
       queue = channel.queue(queue_name('vps_ssh_host_keys'))
 
-      queue.bind(exchange, routing_key: node.routing_key)
+      queue.bind(exchange, routing_key: 'vps_ssh_host_keys')
 
       queue.subscribe do |_delivery_info, _properties, payload|
         vps_keys = JSON.parse(payload)

@@ -3,10 +3,10 @@ require_relative 'base'
 module VpsAdmin::Supervisor
   class Node::PoolStatus < Node::Base
     def start
-      exchange = channel.direct('node:pool_statuses')
+      exchange = channel.direct(exchange_name)
       queue = channel.queue(queue_name('pool_statuses'))
 
-      queue.bind(exchange, routing_key: node.routing_key)
+      queue.bind(exchange, routing_key: 'pool_statuses')
 
       queue.subscribe do |_delivery_info, _properties, payload|
         status = JSON.parse(payload)

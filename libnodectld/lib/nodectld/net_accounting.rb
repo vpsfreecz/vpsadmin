@@ -31,8 +31,7 @@ module NodeCtld
       @discovery_queue = OsCtl::Lib::Queue.new
       @mutex = Mutex.new
       @channel = NodeBunny.create_channel
-      @monitor_exchange = @channel.direct('node:net_monitor')
-      @accounting_exchange = @channel.direct('node:net_accounting')
+      @exchange = @channel.direct(NodeBunny.exchange_name)
     end
 
     def init
@@ -286,22 +285,22 @@ module NodeCtld
             accountings << netif.export_accounting
           end
 
-          send_data(@monitor_exchange, :monitors, monitors, max_size)
-          send_data(@accounting_exchange, :accounting, accountings, max_size)
+          send_data('net_monitor', :monitors, monitors, max_size)
+          send_data('net_accounting', :accounting, accountings, max_size)
         end
 
-        send_data(@monitor_exchange, :monitors, monitors)
-        send_data(@accounting_exchange, :accounting, accountings)
+        send_data('net_monitor', :monitors, monitors)
+        send_data('net_accounting', :accounting, accountings)
       end
     end
 
-    def send_data(exchange, key, to_save, max_size = 0)
+    def send_data(routing_key, data_key, to_save, max_size = 0)
       return if to_save.length <= max_size
 
-      exchange.publish(
-        {key => to_save}.to_json,
+      @exchange.publish(
+        {data_key => to_save}.to_json,
         content_type: 'application/json',
-        routing_key: $CFG.get(:vpsadmin, :routing_key),
+        routing_key: routing_key,
       )
 
       to_save.clear

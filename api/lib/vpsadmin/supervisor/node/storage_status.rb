@@ -16,10 +16,10 @@ module VpsAdmin::Supervisor
     LOG_PROPERTIES = %w(used referenced available)
 
     def start
-      exchange = channel.direct('node:storage_statuses')
+      exchange = channel.direct(exchange_name)
       queue = channel.queue(queue_name('storage_statuses'))
 
-      queue.bind(exchange, routing_key: node.routing_key)
+      queue.bind(exchange, routing_key: 'storage_statuses')
 
       queue.subscribe do |_delivery_info, _properties, payload|
         status = JSON.parse(payload)
