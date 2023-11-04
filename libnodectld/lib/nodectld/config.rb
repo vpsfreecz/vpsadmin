@@ -2,7 +2,10 @@ require 'socket'
 require 'yaml'
 
 module NodeCtld
-  SECRET_CONFIG = '/var/secrets/nodectld-config'
+  SECRET_CONFIGS = [
+    '/var/secrets/nodectld-config',
+    '/var/secrets/nodectld*.yml',
+  ]
 
   IMPLICIT_CONFIG = {
     db: {
@@ -264,15 +267,17 @@ module NodeCtld
 
       @cfg = merge(IMPLICIT_CONFIG, tmp)
 
-      if File.exist?(SECRET_CONFIG)
-        begin
-          tmp = load_yaml(File.read(SECRET_CONFIG))
-        rescue ArgumentError => e
-          warn "Error loading secret config: #{e.message}"
-          return false
-        end
+      SECRET_CONFIGS.each do |pattern|
+        Dir.glob(pattern).each do |secret_cfg|
+          begin
+            tmp = load_yaml(File.read(secret_cfg))
+          rescue ArgumentError => e
+            warn "Error loading secret config #{secret_cfg.inspect}: #{e.message}"
+            return false
+          end
 
-        @cfg = merge(@cfg, tmp)
+          @cfg = merge(@cfg, tmp)
+        end
       end
 
       case @cfg[:mode]
