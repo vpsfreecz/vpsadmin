@@ -181,6 +181,14 @@ class MonitoredEvent < ActiveRecord::Base
     monitor.skip_ignored
   end
 
+  def next_alert_id
+    alert_count + 1
+  end
+
+  def prev_alert_id
+    alert_count
+  end
+
   protected
   def log_state
     return if monitored_event_states.last && monitored_event_states.last.state == state
