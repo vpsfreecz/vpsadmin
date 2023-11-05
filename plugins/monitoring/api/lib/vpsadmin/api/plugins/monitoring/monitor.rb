@@ -22,8 +22,6 @@ module VpsAdmin::API::Plugins::Monitoring
     end
 
     def check
-      ret = []
-
       @opts[:query].call.each do |obj|
         v = @opts[:value].call(obj)
         passed = @opts[:check].call(obj, v)
@@ -46,17 +44,16 @@ module VpsAdmin::API::Plugins::Monitoring
           responsible_user = nil
         end
 
-        ret << MonitoredEvent.report!(
-            self,
-            real_obj,
-            v,
-            passed,
-            responsible_user
+        MonitoredEvent.report!(
+          self,
+          real_obj,
+          v,
+          passed,
+          responsible_user
         )
       end
 
-      ret.compact!
-      ret
+      nil
     end
 
     def call_action(state, chain, *args)
