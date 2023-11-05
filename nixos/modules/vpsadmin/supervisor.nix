@@ -95,7 +95,7 @@ in {
       };
 
       database = mkOption {
-        type = types.submodule (apiApp.databaseModule {pool = 10;});
+        type = types.submodule (apiApp.databaseModule {pool = 15;});
         description = ''
           Database configuration
         '';
