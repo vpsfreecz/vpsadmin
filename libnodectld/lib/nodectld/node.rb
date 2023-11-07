@@ -87,6 +87,7 @@ module NodeCtld
           begin
             osctl_pool = osctl_parse(%i(pool show), pool.name)
           rescue SystemCommandFailed
+            sleep(5)
             next
           end
 
