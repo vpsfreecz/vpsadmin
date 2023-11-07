@@ -90,9 +90,12 @@ module VpsAdmin::Supervisor
           if current_status.status && current_status.is_running
             avg_value = current_status.send(avg_attr)
             cur_value = current_status.send(attr)
-            new_value = avg_value ? avg_value + cur_value : cur_value
 
-            current_status.assign_attributes(avg_attr => new_value)
+            if cur_value # loadavg can be nil
+              new_value = avg_value ? avg_value + cur_value : cur_value
+
+              current_status.assign_attributes(avg_attr => new_value)
+            end
           else
             current_status.assign_attributes(avg_attr => nil)
           end
