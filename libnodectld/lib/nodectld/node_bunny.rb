@@ -1,4 +1,5 @@
 require 'bunny'
+require 'libosctl'
 require 'singleton'
 
 module NodeCtld
@@ -18,13 +19,22 @@ module NodeCtld
     end
 
     def initialize
-      @connection = ::Bunny.new(
+      opts = {
         hosts: $CFG.get(:rabbitmq, :hosts),
         vhost: $CFG.get(:rabbitmq, :vhost),
         username: $CFG.get(:rabbitmq, :username),
         password: $CFG.get(:rabbitmq, :password),
-        log_file: STDERR,
-      )
+      }
+
+      logger = OsCtl::Lib::Logger.get
+
+      if logger
+        opts[:logger] = logger
+      else
+        opts[:log_file] = STDERR
+      end
+
+      @connection = ::Bunny.new(**opts)
       @connection.start
     end
 
