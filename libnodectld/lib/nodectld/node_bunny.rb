@@ -5,6 +5,7 @@ require 'singleton'
 module NodeCtld
   class NodeBunny
     include Singleton
+    include OsCtl::Lib::Utils::Log
 
     class << self
       def connect
@@ -35,7 +36,14 @@ module NodeCtld
       end
 
       @connection = ::Bunny.new(**opts)
-      @connection.start
+
+      begin
+        @connection.start
+      rescue Bunny::TCPConnectionFailed
+        log(:info, "Retry in 15s")
+        sleep(15)
+        retry
+      end
     end
 
     def create_channel
@@ -45,6 +53,10 @@ module NodeCtld
     # @return [String]
     def exchange_name
       "node:#{$CFG.get(:vpsadmin, :node_name)}"
+    end
+
+    def log_type
+      'node-bunny'
     end
   end
 end
