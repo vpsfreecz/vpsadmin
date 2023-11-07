@@ -220,7 +220,8 @@ module NodeCtld
     end
 
     def save_properties(time, to_save)
-      @exchange.publish(
+      NodeBunny.publish_wait(
+        @exchange,
         {
           message_id: @message_id,
           time: time.to_i,

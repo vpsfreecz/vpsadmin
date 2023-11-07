@@ -143,7 +143,8 @@ module NodeCtld
         log(:debug, "request id=#{@call_id[0..7]} command=#{command} args=#{args.inspect} kwargs=#{kwargs.inspect}")
       end
 
-      @exchange.publish(
+      NodeBunny.publish_wait(
+        @exchange,
         {
           command: command,
           args: args,

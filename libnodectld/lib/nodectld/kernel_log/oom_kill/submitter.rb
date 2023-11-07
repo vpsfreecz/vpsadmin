@@ -75,7 +75,8 @@ module NodeCtld
         vps_reports.each do |vps_id, reports|
           reports.each do |r|
             log(:info, "Submitting OOM report invoked by PID #{r.invoked_by_pid} from VPS #{r.vps_id}")
-            @exchange.publish(
+            NodeBunny.publish_wait(
+              @exchange,
               r.export.to_json,
               content_type: 'application/json',
               routing_key: 'oom_reports',

@@ -131,7 +131,8 @@ module NodeCtld
       vpsadmin_vpses.each do |vps_id, vps|
         next unless vps.exists?
 
-        @exchange.publish(
+        NodeBunny.publish_wait(
+          @exchange,
           {
             id: vps.id.to_i,
             time: t.to_i,

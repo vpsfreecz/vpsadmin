@@ -107,7 +107,8 @@ module NodeCtld
     def save_processes(time, to_save, max_size = 0)
       return if to_save.length <= max_size
 
-      @exchange.publish(
+      NodeBunny.publish_wait(
+        @exchange,
         {
           time: time.to_i,
           vps_processes: to_save,

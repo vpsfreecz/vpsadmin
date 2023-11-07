@@ -68,7 +68,8 @@ module NodeCtld
           "vps=#{mnt[:vps_id]},mount=##{mnt[:id]},state=#{mnt[:state]}"
         )
 
-        @exchange.publish(
+        NodeBunny.publish_wait(
+          @exchange,
           {
             id: mnt[:id],
             vps_id: mnt[:vps_id],

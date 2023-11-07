@@ -69,7 +69,8 @@ module NodeCtld
         event = @submit_queue.pop
         return if event == :stop
 
-        @exchange.publish(
+        NodeBunny.publish_wait(
+          @exchange,
           {
             dataset_id: event.dataset.id,
             original_refquota: event.original_refquota,

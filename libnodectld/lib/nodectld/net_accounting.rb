@@ -297,7 +297,8 @@ module NodeCtld
     def send_data(routing_key, data_key, to_save, max_size = 0)
       return if to_save.length <= max_size
 
-      @exchange.publish(
+      NodeBunny.publish_wait(
+        @exchange,
         {data_key => to_save}.to_json,
         content_type: 'application/json',
         routing_key: routing_key,

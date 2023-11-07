@@ -115,7 +115,8 @@ module NodeCtld
 
       return if keys.empty?
 
-      @exchange.publish(
+      NodeBunny.publish_wait(
+        @exchange,
         {
           vps_id: vps.id,
           time: t.to_i,

@@ -70,7 +70,8 @@ module NodeCtld
           scan_percent_summary = scan_percent
         end
 
-        @exchange.publish(
+        NodeBunny.publish_wait(
+          @exchange,
           {
             id: id,
             time: t.to_i,

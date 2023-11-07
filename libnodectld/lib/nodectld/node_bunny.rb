@@ -12,7 +12,7 @@ module NodeCtld
         instance
       end
 
-      %i(create_channel exchange_name).each do |v|
+      %i(create_channel publish_wait exchange_name).each do |v|
         define_method(v) do |*args, **kwargs, &block|
           instance.send(v, *args, **kwargs, &block)
         end
@@ -51,6 +51,15 @@ module NodeCtld
 
     def create_channel
       @connection.create_channel
+    end
+
+    # Call {Bunny::Exchange#publish} and handle connection closed errors
+    def publish_wait(exchange, msg, **opts)
+      exchange.publish(msg, **opts)
+    rescue Bunny::ConnectionClosedError
+      log(:warn, 'publish_wait: connection currently closed, retry in 15s')
+      sleep(15)
+      retry
     end
 
     # @return [String]

@@ -54,7 +54,8 @@ module NodeCtld
         },
       }
 
-      @exchange.publish(
+      NodeBunny.publish_wait(
+        @exchange,
         status.to_json,
         content_type: 'application/json',
         routing_key: 'statuses',
