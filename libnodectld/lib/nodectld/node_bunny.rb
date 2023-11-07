@@ -30,7 +30,10 @@ module NodeCtld
       logger = OsCtl::Lib::Logger.get
 
       if logger
-        opts[:logger] = logger
+        # Our logger logs debug messages, which we do not need from bunny
+        bunny_logger = logger.clone
+        bunny_logger.level = Logger::INFO
+        opts[:logger] = bunny_logger
       else
         opts[:log_file] = STDERR
       end
