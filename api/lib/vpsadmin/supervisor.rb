@@ -10,6 +10,7 @@ module VpsAdmin
         vhost: cfg.fetch('vhost', '/'),
         username: cfg.fetch('username'),
         password: cfg.fetch('password'),
+        log_file: STDERR,
       )
       connection.start
 

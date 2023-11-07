@@ -23,6 +23,7 @@ module NodeCtld
         vhost: $CFG.get(:rabbitmq, :vhost),
         username: $CFG.get(:rabbitmq, :username),
         password: $CFG.get(:rabbitmq, :password),
+        log_file: STDERR,
       )
       @connection.start
     end
