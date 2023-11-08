@@ -11,7 +11,6 @@ module NodeCtld
       options = {
         config: '/etc/vpsadmin/nodectld.yml',
         check: false,
-        export_console: false,
         logger: :stdout,
         wrapper: true,
       }
@@ -19,10 +18,6 @@ module NodeCtld
       OptionParser.new do |opts|
         opts.on('-c', '--config [CONFIG FILE]', 'Config file') do |cfg|
           options[:config] = cfg
-        end
-
-        opts.on('-e', '--export-console', 'Export VPS consoles via socket') do
-          options[:export_console] = true
         end
 
         opts.on('-k', '--check', 'Check config file syntax') do
@@ -78,7 +73,7 @@ module NodeCtld
             STDERR.reopen(w)
             r.close
 
-            run_daemon(options)
+            run_daemon
           end
 
           w.close
@@ -127,17 +122,16 @@ module NodeCtld
         end
       end
 
-      run_daemon(options)
+      run_daemon
     end
 
-    def self.run_daemon(options)
+    def self.run_daemon
       $CFG.load_db_settings
 
       log(:info, :init, 'nodectld starting')
 
       Thread.abort_on_exception = true
       nodectld = NodeCtld::Daemon.new
-      nodectld.start_em(options[:export_console])
       nodectld.init
       nodectld.start
     end

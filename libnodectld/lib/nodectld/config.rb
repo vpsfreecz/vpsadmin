@@ -168,8 +168,10 @@ module NodeCtld
     },
 
     console: {
+      enable: true,
       host: "localhost",
       port: 8081,
+      session_timeout: 60,
     },
 
     kernel_log: {
@@ -299,6 +301,7 @@ module NodeCtld
           osctl_exporter: {enable: false},
           vps_ssh_host_keys: {enable: false},
           dataset_expander: {enable: false},
+          console: {enable: false},
         })
       else
         warn "Unsupported runtime mode '#{@cfg[:mode]}'"

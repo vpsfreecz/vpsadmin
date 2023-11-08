@@ -8,8 +8,6 @@ in stdenv.mkDerivation rec {
   buildInputs = [
     pkgs.ruby
     pkgs.git
-    pkgs.mariadb
-    pkgs.mariadb-connector-c
   ];
 
   shellHook = ''

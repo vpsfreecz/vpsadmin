@@ -26,7 +26,6 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'osctl-exportfs', ENV['OS_BUILD_ID']
   s.add_runtime_dependency 'json'
   s.add_runtime_dependency 'mysql2', '0.5.3.vpsadminos.1'
-  s.add_runtime_dependency 'eventmachine'
   s.add_runtime_dependency 'prometheus-client', '~> 4.0.0'
   s.add_runtime_dependency 'pry', '~> 0.11.3'
   s.add_runtime_dependency 'pry-remote'

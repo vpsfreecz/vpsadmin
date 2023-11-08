@@ -2,6 +2,7 @@ require 'bunny'
 
 module VpsAdmin
   module Supervisor
+    module Console ; end
     module Node ; end
 
     def self.start(cfg)
@@ -14,6 +15,7 @@ module VpsAdmin
       )
       connection.start
 
+      Console::Rpc.start(connection)
       NodeManager.start(connection)
     end
   end

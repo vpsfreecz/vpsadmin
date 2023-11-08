@@ -51,4 +51,5 @@ require_rel 'vpsadmin/api/resources'
 require_rel 'vpsadmin/api/operations'
 
 require_rel 'vpsadmin/supervisor/*.rb'
+require_rel 'vpsadmin/supervisor/console/*.rb'
 require_rel 'vpsadmin/supervisor/node/*.rb'

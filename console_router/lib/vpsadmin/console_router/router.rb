@@ -1,154 +1,151 @@
+require 'bunny'
+require 'yaml'
+
 module VpsAdmin::ConsoleRouter
   class Router
+    CacheEntry = Struct.new(
+      :node_name,
+      :last_check,
+      :input_exchange,
+      :output_queue,
+      keyword_init: true,
+    )
+
+    # How often verify session validity, in seconds
+    SESSION_TIMEOUT = 15
+
+    # Max number of messages fetched from rabbitmq queue for one request
+    FETCH_COUNT = 256
+
+    # @return [String]
+    attr_reader :api_url
+
     def initialize
-      @connections = {}
-      @sessions = {}
+      cfg = parse_config
+
+      connection = Bunny.new(
+        hosts: cfg.fetch('hosts'),
+        vhost: cfg.fetch('vhost', '/'),
+        username: cfg.fetch('username'),
+        password: cfg.fetch('password'),
+        log_file: STDERR,
+      )
+      connection.start
+
+      @channel = connection.create_channel
+      @rpc = RpcClient.new(@channel)
+      @api_url = @rpc.get_api_url
+      @cache = {}
     end
 
-    def api_url
-      ::SysConfig.select('value').where(
-        category: 'core',
-        name: 'api_url',
-      ).take!.value
-    end
+    # Read data from console
+    # @param vps_id [Integer]
+    # @param session [String]
+    # @return [String]
+    def read_console(vps_id, session)
+      entry = get_cache(vps_id, session)
+      ret = ''
 
-    def get_console(vps_id, session)
-      check_connection(vps_id, session)
+      begin
+        FETCH_COUNT.times do
+          delivery_info, properties, payload = entry.output_queue.pop
+          break if payload.nil?
 
-      buf = @connections[vps_id].buf
-      s_id = -1
-
-      @sessions[vps_id].each do |s|
-        if s[:session] == session
-          s_id = @sessions[vps_id].index(s)
-          next
+          ret << payload
         end
-
-        s[:buf] += buf
+      rescue Timeout::Error
       end
 
-      @connections[vps_id].buf = ""
-
-      buf = @sessions[vps_id][s_id][:buf] + buf
-      @sessions[vps_id][s_id][:buf] = ""
-
-      buf
+      ret
     end
 
-    def send_cmd(vps_id, params)
-      check_connection(vps_id, params)
-      s_id = -1
+    # Write data to console
+    # @param vps_id [Integer]
+    # @param session [String]
+    # @param keys [String, nil]
+    # @param width [Integer]
+    # @param height [Integer]
+    def write_console(vps_id, session, keys, width, height)
+      entry = get_cache(vps_id, session)
 
-      @sessions[vps_id].each do |s|
-        if s[:session] == params[:session]
-          s_id = @sessions[vps_id].index(s)
-          break
-        end
+      data = {
+        session: session,
+        width: width,
+        height: height,
+      }
+
+      if keys && !keys.empty?
+        data[:keys] = Base64.strict_encode64(keys)
       end
 
-      conn = @connections[vps_id]
-
-      data = {}
-
-      if params[:keys] && !params[:keys].empty?
-        data[:keys] = Base64.strict_encode64(params[:keys])
-      end
-
-      w = params[:width].to_i
-      h = params[:height].to_i
-
-      if conn.w != w || conn.h != h
-        conn.w = w
-        conn.h = h
-        data[:width] = w
-        data[:height] = h
-      end
-
-      return if data.empty?
-
-      @sessions[vps_id][s_id][:last_access] = Time.new.to_i
-
-      conn.send_data(data.to_json + "\n")
-    end
-
-    def check_connection(vps_id, params)
-      unless @timer
-        EventMachine.add_periodic_timer(60) do
-          t = Time.now
-          t_i = t.to_i
-
-          @connections.each do |vps_id, console|
-            if (console.last_access.to_i + 60) < t_i
-              console.close_connection
-            end
-          end
-
-          @sessions.delete_if do |vps_id, sessions|
-            sessions.delete_if do |s|
-              s[:expiration] < t_i && (s[:last_access] + 300) < t_i
-            end
-
-            sessions.empty?
-          end
-        end
-
-        @timer = true
-      end
-
-      unless @connections.include?(vps_id)
-        n = ::Node.select('ip_addr').joins(:vpses).where(vpses: {id: vps_id}).take!
-
-        @connections[vps_id] = EventMachine.connect(
-          n.ip_addr,
-          8081,
-          Console, vps_id, params, self
+      begin
+        entry.input_exchange.publish(
+          data.to_json,
+          content_type: 'application/json',
         )
+      rescue Bunny::ConnectionClosedError
+        return
       end
-
-      @connections[vps_id].update_access
     end
 
-    def disconnected(vps_id)
-      @connections.delete(vps_id)
-      @sessions.delete(vps_id)
-    end
-
+    # Check session validity
+    # @param vps_id [Integer]
+    # @param session [String]
+    # @return [Boolean]
     def check_session(vps_id, session)
-      return false unless session && vps_id
+      return false if !session || !vps_id
 
-      if @sessions.include?(vps_id)
-        t = Time.now.utc.to_i
+      now = Time.now
+      k = cache_key(vps_id, session)
+      entry = @cache[k]
 
-        @sessions[vps_id].each do |s|
-          if s[:session] == session
-            if (s[:last_access] + 600) < t
-              return false
+      if entry.nil? || (entry.last_check + SESSION_TIMEOUT < now)
+        node_name = @rpc.get_session_node(vps_id, session)
+        return false if node_name.nil?
 
-            else
-              return true
-            end
-          end
-        end
+        entry.last_check = now if entry
       end
 
-      console = ::VpsConsole
-        .select('UNIX_TIMESTAMP(expiration) AS expiration_ts')
-        .where(vps_id: vps_id, token: session)
-        .where('expiration > ?', Time.now.utc)
-        .take
+      if entry.nil?
+        input_exchange = @channel.direct("console:#{node_name}:input")
 
-      if console
-        @sessions[vps_id] ||= []
-        @sessions[vps_id] << {
-          session: session,
-          expiration: console.expiration_ts,
-          last_access: Time.now.utc.to_i,
-          buf: ''
-        }
-        return true
+        output_exchange = @channel.direct("console:#{node_name}:output")
+        output_queue = @channel.queue(output_queue_name(vps_id, session))
+        output_queue.bind(output_exchange, routing_key: routing_key(vps_id, session))
+
+        entry = CacheEntry.new(
+          node_name:,
+          last_check: now,
+          input_exchange:,
+          output_queue:,
+        )
+
+        @cache[k] = entry
       end
 
-      false
+      true
+    end
+
+    protected
+    def parse_config
+      path = File.join(__dir__, '../../../', 'config/rabbitmq.yml')
+      YAML.safe_load(File.read(path))
+    end
+
+    def get_cache(vps_id, session)
+      @cache[ cache_key(vps_id, session) ]
+    end
+
+    def cache_key(vps_id, session)
+      "#{vps_id}-#{session}"
+    end
+
+    def output_queue_name(vps_id, session)
+      "console:output:#{vps_id}-#{session[0..19]}"
+    end
+
+    def routing_key(vps_id, session)
+      "#{vps_id}-#{session[0..19]}"
     end
   end
 end

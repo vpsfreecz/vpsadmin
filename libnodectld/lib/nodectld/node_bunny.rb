@@ -12,7 +12,7 @@ module NodeCtld
         instance
       end
 
-      %i(create_channel publish_wait publish_drop exchange_name).each do |v|
+      %i(create_channel publish_wait publish_drop exchange_name queue_name).each do |v|
         define_method(v) do |*args, **kwargs, &block|
           instance.send(v, *args, **kwargs, &block)
         end
@@ -72,6 +72,12 @@ module NodeCtld
     # @return [String]
     def exchange_name
       "node:#{$CFG.get(:vpsadmin, :node_name)}"
+    end
+
+    # @param [String] name
+    # @return [String]
+    def queue_name(name)
+      "node:#{$CFG.get(:vpsadmin, :node_name)}:#{name}"
     end
 
     def log_type

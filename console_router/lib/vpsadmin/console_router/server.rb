@@ -28,10 +28,16 @@ module VpsAdmin::ConsoleRouter
       v = vps_id.to_i
 
       if settings.router.check_session(v, params[:session])
-        settings.router.send_cmd(v, params)
+        settings.router.write_console(
+          v,
+          params[:session],
+          params[:keys],
+          params[:width].to_i,
+          params[:height].to_i,
+        )
 
         {
-          data: Base64.encode64(settings.router.get_console(v, params[:session])),
+          data: Base64.encode64(settings.router.read_console(v, params[:session])),
           session: true,
         }.to_json
 

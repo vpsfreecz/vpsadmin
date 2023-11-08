@@ -1,109 +1,153 @@
 require 'base64'
-require 'eventmachine'
 require 'json'
 require 'libosctl'
-require 'nodectld/console/wrapper'
 
 module NodeCtld
-  class Console::Server < EventMachine::Connection
+  class Console::Server
     include OsCtl::Lib::Utils::Log
 
-    def receive_data(raw_data)
-      raw_data.split("\n").each do |msg|
-        process_msg(JSON.parse(msg, symbolize_names: true))
+    Session = Struct.new(
+      :vps_id,
+      :token,
+      :last_input,
+      keyword_init: true,
+    )
+
+    def initialize
+      @configure_mutex = Mutex.new
+      @output_mutex = Mutex.new
+      @sessions = {}
+      @consoles = {}
+    end
+
+    def start
+      @queue = OsCtl::Lib::Queue.new
+      @upkeep = Thread.new { run_upkeep }
+
+      @channel = NodeBunny.create_channel
+      @input_exchange = @channel.direct("console:#{$CFG.get(:vpsadmin, :node_name)}:input")
+      @input_queue = @channel.queue("console:#{$CFG.get(:vpsadmin, :node_name)}:input")
+      @input_queue.bind(@input_exchange)
+
+      @output_exchange = @channel.direct("console:#{$CFG.get(:vpsadmin, :node_name)}:output")
+
+      @input_queue.subscribe do |_delivery_info, _properties, payload|
+        data = JSON.parse(payload)
+        open_write_console(data)
       end
-
-    rescue JSON::ParserError
-      fatal_error('unable to parse data as JSON')
-      puts raw_data
     end
 
-    def unbind
-      detach_console if !@detached && @console
-    end
-
-    def detach_console
-      @detached = true
-
-      @console.usage -= 1
-
-      if @console.usage == 0
-        Console::Wrapper.consoles do |c|
-          c[@veid].close_connection
-          c.delete(@veid)
-        end
+    def publish_output(data, **opts)
+      @output_mutex.synchronize do
+        @output_exchange.publish(data, **opts)
       end
     end
 
-    def console_detached
-      @detached = true
-      send_data("The console has been detached.\r\n")
-      close_connection_after_writing
+    def stats
+      @configure_mutex.synchronize do
+        Hash[@consoles.map do |vps_id, console|
+          [vps_id, console.sessions.length]
+        end]
+      end
+    end
+
+    def log_type
+      'console'
     end
 
     protected
-    def process_msg(data)
-      if data[:width] && data[:height]
-        @rows ||= data[:height]
-        @cols ||= data[:width]
-      end
+    def open_write_console(data)
+      token = data['session']
+      session = nil
+      console = nil
+      now = nil
 
-      unless @veid
-        init = true
-        return unless open_console(data)
-      end
+      @configure_mutex.synchronize do
+        session = @sessions[token]
 
-      Console::Wrapper.consoles do |c|
-        if !data[:keys].nil? && !data[:keys].empty?
-          c[@veid].send_cmd(keys: data[:keys])
-        end
+        if session.nil?
+          vps_id = authenticate(token)
+          return if vps_id.nil?
 
-        if (data[:width] && data[:height]) && \
-            (@cols != data[:width] || @rows != data[:height] || init)
-          @rows = data[:height]
-          @cols = data[:width]
-          c[@veid].send_cmd(rows: @rows, cols: @cols)
-        end
-      end
-    end
-
-    def open_console(data)
-      @veid =
-        RpcClient.run do |rpc|
-          rpc.authenticate_console_session(data[:session])
-        end
-
-      if @veid.nil?
-        fatal_error("Invalid session token\r\n")
-        return false
-      end
-
-      Console::Wrapper.consoles do |c|
-        if c.include?(@veid)
-          @console = c[@veid]
-          @console.register(self)
-
-        else
-          log(:info, :console, "Attaching console of ##{@veid}")
-          @console = EventMachine.popen(
-            "osctl -j ct console #{@veid}",
-            Console::Wrapper, @veid, self
+          now = Time.now
+          session = Session.new(
+            vps_id:,
+            token:,
+            last_input: now,
           )
+
+          @sessions[token] = session
+        end
+
+        console = @consoles[session.vps_id]
+
+        if console.nil?
+          console = open_console(session.vps_id, session)
+          @consoles[session.vps_id] = console
+        elsif console.add_session(session)
+          log(:info, "Adding client to console of VPS #{console.vps_id}")
         end
       end
 
-      send_data("Welcome to vpsFree.cz Remote Console\r\n")
-      true
+      session.last_input = now || Time.now
 
-    rescue => e
-      fatal_error("Failed to attach console, sorry.\r\n")
-      false
+      console.write(data['keys'], data['width'], data['height'])
     end
 
-    def fatal_error(msg)
-      log(:warn, :console, msg)
-      send_data("Failed to attach console, sorry.\r\n")
-      close_connection_after_writing
+    def authenticate(token)
+      RpcClient.run do |rpc|
+        rpc.authenticate_console_session(token)
+      end
+    end
+
+    def open_console(vps_id, session)
+      log(:info, "Opening console of VPS #{vps_id}")
+      c = Console::Wrapper.new(self, vps_id, session)
+      c.start
+      c
+    end
+
+    def run_upkeep
+      loop do
+        @queue.pop(timeout: 60)
+
+        session_timeout = $CFG.get(:console, :session_timeout)
+        now = Time.now
+
+        @configure_mutex.synchronize do
+          @consoles.delete_if do |vps_id, console|
+            # Remove dead consoles
+            unless console.alive?
+              close_console(console)
+              next(true)
+            end
+
+            # Prune inactive sessions
+            console.sessions.delete_if do |session|
+              if session.last_input + session_timeout < now
+                @sessions.delete(session.token)
+                true
+              else
+                false
+              end
+            end
+
+            # Remove unused consoles
+            if !console.in_use?
+              close_console(console)
+              true
+            else
+              false
+            end
+          end
+        end
+      end
+    end
+
+    def close_console(console)
+      log(:info, "Closing console of VPS #{console.vps_id}")
+      console.stop
+      console.sessions.each { |session| @sessions.delete(session.token) }
     end
   end
 end

@@ -133,10 +133,8 @@ module NodeCtld
       metrics.state_paused.set(@daemon.paused? ? 1 : 0)
       metrics.start_time_seconds.set((Time.now - @daemon.start_time).to_i)
 
-      NodeCtld::Console::Wrapper.consoles do |consoles|
-        consoles.each_key do |vps_id|
-          metrics.open_console.set(1, labels: {vps_id: vps_id})
-        end
+      @daemon.console.stats.each_key do |vps_id|
+        metrics.open_console.set(1, labels: {vps_id: vps_id})
       end
 
       @daemon.chain_blockers do |blockers|

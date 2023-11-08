@@ -1,4 +1,3 @@
-require 'eventmachine'
 require 'libosctl'
 require 'nodectld/db'
 require 'nodectld/command'
@@ -41,14 +40,13 @@ module NodeCtld
       end
     end
 
-    attr_reader :start_time, :export_console, :ct_top, :node
+    attr_reader :start_time, :ct_top, :node, :console
 
     def initialize
       self.class.instance = self
       @init = false
       @m_workers = Mutex.new
       @start_time = Time.new
-      @export_console = false
       @cmd_counter = 0
       @threads = {}
       @blockers_mutex = Mutex.new
@@ -66,6 +64,7 @@ module NodeCtld
       @kernel_log = KernelLog::Parser.new
       @exporter = Exporter.new(self)
       @osctl_exporter = OsCtlExporter.new
+      @console = Console::Server.new
       NetAccounting.instance
       Shaper.instance
       TransactionVerifier.instance
@@ -94,6 +93,7 @@ module NodeCtld
       VpsSshHostKeys.instance
       @dataset_expander.start if @dataset_expander.enable?
       @storage_status.start if @storage_status.enable?
+      @console.start if $CFG.get(:console, :enable)
 
       @init = true
     end
@@ -376,24 +376,6 @@ module NodeCtld
 
       if $CFG.get(:storage, :update_status)
         @storage_status.update
-      end
-    end
-
-    def start_em(console)
-      return if !console
-
-      @export_console = console
-
-      @em_thread = Thread.new do
-        EventMachine.run do
-          if console
-            EventMachine.start_server(
-              $CFG.get(:console, :host),
-              $CFG.get(:console, :port),
-              Console::Server
-            )
-          end
-        end
       end
     end
 

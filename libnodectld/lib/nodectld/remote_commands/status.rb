@@ -43,12 +43,7 @@ module NodeCtld::RemoteCommands
         end
       end
 
-      consoles = {}
-      NodeCtld::Console::Wrapper.consoles do |c|
-        c.each do |veid, console|
-          consoles[veid] = console.usage
-        end
-      end
+      consoles = @daemon.console.stats
 
       subtasks = nil
       @daemon.chain_blockers do |blockers|
@@ -73,7 +68,7 @@ module NodeCtld::RemoteCommands
             status: @daemon.exitstatus,
           },
           queues: res_queues,
-          export_console: @daemon.export_console,
+          export_console: $CFG.get(:console, :enable),
           consoles: consoles,
           subprocesses: subtasks,
           start_time: @daemon.start_time.to_i,
