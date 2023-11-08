@@ -72,13 +72,19 @@ module VpsAdmin::Supervisor
       def reply(payload)
         @channel.ack(@delivery_info.delivery_tag)
 
-        @exchange.publish(
-          payload.to_json,
-          persistent: true,
-          content_type: 'application/json',
-          routing_key: @properties.reply_to,
-          correlation_id: @properties.correlation_id,
-        )
+        begin
+          @exchange.publish(
+            payload.to_json,
+            persistent: true,
+            content_type: 'application/json',
+            routing_key: @properties.reply_to,
+            correlation_id: @properties.correlation_id,
+          )
+        rescue Bunny::ConnectionClosedError
+          warn "Node::Rpc#reply: connection closed, retry in 5s"
+          sleep(5)
+          retry
+        end
       end
 
       def symbolize_hash_keys(hash)
