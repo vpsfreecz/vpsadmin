@@ -48,7 +48,13 @@ module VpsAdmin::Supervisor
 
             data
           end,
-          update_only: %i(bytes_in bytes_out packets_in packets_out updated_at),
+          on_duplicate: Arel.sql('
+            bytes_in = bytes_in + values(bytes_in),
+            bytes_out = bytes_out + values(bytes_out),
+            packets_in = packets_in + values(packets_in),
+            packets_out = packets_out + values(packets_out),
+            updated_at = values(updated_at)
+          '),
         )
       end
     end
