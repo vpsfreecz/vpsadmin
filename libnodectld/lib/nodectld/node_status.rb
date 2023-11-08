@@ -54,7 +54,7 @@ module NodeCtld
         },
       }
 
-      NodeBunny.publish_wait(
+      NodeBunny.publish_drop(
         @exchange,
         status.to_json,
         content_type: 'application/json',

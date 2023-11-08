@@ -285,19 +285,20 @@ module NodeCtld
             accountings << netif.export_accounting
           end
 
-          send_data('net_monitor', :monitors, monitors, max_size)
+          send_data('net_monitor', :monitors, monitors, max_size, publish: :publish_drop)
           send_data('net_accounting', :accounting, accountings, max_size)
         end
 
-        send_data('net_monitor', :monitors, monitors)
+        send_data('net_monitor', :monitors, monitors, publish: :publish_drop)
         send_data('net_accounting', :accounting, accountings)
       end
     end
 
-    def send_data(routing_key, data_key, to_save, max_size = 0)
+    def send_data(routing_key, data_key, to_save, max_size = 0, publish: :publish_wait)
       return if to_save.length <= max_size
 
-      NodeBunny.publish_wait(
+      NodeBunny.send(
+        publish,
         @exchange,
         {data_key => to_save}.to_json,
         content_type: 'application/json',
