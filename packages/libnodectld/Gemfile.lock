@@ -39,7 +39,7 @@ GEM
     highline (2.0.3)
     ipaddress (0.8.3)
     json (2.6.3)
-    libnodectld (3.0.0.dev.build20231107180205)
+    libnodectld (3.0.0.dev.build20231108085547)
       bunny (~> 2.22.0)
       eventmachine
       filelock
@@ -94,7 +94,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  libnodectld (= 3.0.0.dev.build20231107180205)!
+  libnodectld (= 3.0.0.dev.build20231108085547)!
 
 BUNDLED WITH
    2.4.13

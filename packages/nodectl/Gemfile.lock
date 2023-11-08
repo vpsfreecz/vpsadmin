@@ -39,7 +39,7 @@ GEM
     highline (2.0.3)
     ipaddress (0.8.3)
     json (2.6.3)
-    libnodectld (3.0.0.dev.build20231107180205)
+    libnodectld (3.0.0.dev.build20231108085547)
       bunny (~> 2.22.0)
       eventmachine
       filelock
@@ -59,9 +59,9 @@ GEM
       require_all (~> 2.0.0)
     method_source (0.9.2)
     mysql2 (0.5.3.vpsadminos.1)
-    nodectl (3.0.0.dev.build20231107180205)
+    nodectl (3.0.0.dev.build20231108085547)
       json
-      libnodectld (= 3.0.0.dev.build20231107180205)
+      libnodectld (= 3.0.0.dev.build20231108085547)
       libosctl (= 23.05.0.build20231107175247)
       pry (~> 0.11.3)
       pry-remote
@@ -101,7 +101,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  nodectl (= 3.0.0.dev.build20231107180205)!
+  nodectl (= 3.0.0.dev.build20231108085547)!
 
 BUNDLED WITH
    2.4.13
