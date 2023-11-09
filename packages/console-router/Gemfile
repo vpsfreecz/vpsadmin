@@ -1,9 +1,6 @@
 source 'https://rubygems.org'
 
-gem 'activerecord', '~> 7.0.4'
-gem 'eventmachine', '1.2.7'
-gem 'mysql2', '~> 0.5.3'
+gem 'bunny', '~> 2.22.0'
 gem 'require_all', '~> 2.0.0'
-gem 'sinatra', '~> 3.0.6'
-gem 'sinatra-activerecord', '~> 2.0.23'
+gem 'sinatra', '~> 3.1.0'
 gem 'thin'
