@@ -6,16 +6,12 @@ let
 
   bundle = "${cfg.package}/ruby-env/bin/bundle";
 
-  databaseYml = pkgs.writeText "database.yml" ''
-    production:
-      adapter: mysql2
-      database: ${cfg.database.name}
-      host: ${cfg.database.host}
-      port: ${toString cfg.database.port}
-      username: ${cfg.database.user}
-      password: #dbpass#
-      ${optionalString (cfg.database.socket != null) "socket: ${cfg.database.socket}"}
-  '';
+  rabbitmqYml = pkgs.writeText "rabbitmq.yml" (builtins.toJSON {
+    hosts = cfg.rabbitmq.hosts;
+    vhost = cfg.rabbitmq.virtualHost;
+    username = cfg.rabbitmq.username;
+    password = "#rabbitmq_pass#";
+  });
 
   serverWait = 15;
 
@@ -87,58 +83,34 @@ in {
         '';
       };
 
-      database = {
-        host = mkOption {
-          type = types.str;
-          default = "localhost";
-          description = "Database host address.";
-        };
-
-        port = mkOption {
-          type = types.int;
-          default = 3306;
-          defaultText = "3306";
-          description = "Database host port.";
-        };
-
-        name = mkOption {
-          type = types.str;
-          default = "vpsadmin";
-          description = "Database name.";
-        };
-
-        user = mkOption {
-          type = types.str;
-          default = "vpsadmin-console";
-          description = "Database user.";
-        };
-
-        passwordFile = mkOption {
-          type = types.nullOr types.path;
-          default = null;
-          example = "/run/keys/vpsadmin-console-dbpassword";
+      rabbitmq = {
+        hosts = mkOption {
+          type = types.listOf types.str;
           description = ''
-            A file containing the password corresponding to
-            <option>database.user</option>.
+            A list of rabbitmq hosts to connect to
           '';
         };
 
-        socket = mkOption {
-          type = types.nullOr types.path;
-          default =
-            if cfg.database.isLocal then
-              "/run/mysqld/mysqld.sock"
-            else
-             null;
-          defaultText = "/run/mysqld/mysqld.sock";
-          example = "/run/mysqld/mysqld.sock";
-          description = "Path to the unix socket file to use for authentication.";
+        virtualHost = mkOption {
+          type = types.str;
+          default = "/";
+          description = ''
+            rabbitmq virtual host
+          '';
         };
 
-        isLocal = mkOption {
-          type = types.bool;
-          default = false;
-          description = "Set if the database is on localhost.";
+        username = mkOption {
+          type = types.str;
+          description = ''
+            Username
+          '';
+        };
+
+        passwordFile = mkOption {
+          type = types.str;
+          description = ''
+            Path to file containing password
+          '';
         };
       };
     };
@@ -177,11 +149,10 @@ in {
       startLimitIntervalSec = 180;
       startLimitBurst = 5;
       preStart = ''
-        # Handle database.passwordFile & permissions
-        DBPASS=${optionalString (cfg.database.passwordFile != null) "$(head -n1 ${cfg.database.passwordFile})"}
-        cp -f ${databaseYml} "${cfg.stateDirectory}/config/database.yml"
-        sed -e "s,#dbpass#,$DBPASS,g" -i "${cfg.stateDirectory}/config/database.yml"
-        chmod 440 "${cfg.stateDirectory}/config/database.yml"
+        RABBITMQ_PASS=${optionalString (cfg.rabbitmq.passwordFile != null) "$(head -n1 ${cfg.rabbitmq.passwordFile})"}
+        cp -f ${rabbitmqYml} "${cfg.stateDirectory}/config/rabbitmq.yml"
+        sed -e "s,#rabbitmq_pass#,$RABBITMQ_PASS,g" -i "${cfg.stateDirectory}/config/rabbitmq.yml"
+        chmod 440 "${cfg.stateDirectory}/config/rabbitmq.yml"
       '';
 
       serviceConfig =
