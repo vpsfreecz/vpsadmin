@@ -31,14 +31,15 @@ module VpsAdmin::Supervisor
         [klass, chan]
       end
 
-      ::Node
-        .includes(:location)
-        .where(
-          active: true,
-          role: %w(node storage),
-        )
-        .each do |node|
-        klasses.each do |klass, chan|
+      ::Node.includes(:location).where(active: true).each do |node|
+        use_klasses =
+          if %w(node storage).include?(node.role)
+            klasses
+          else
+            klasses.select { |klass, _| [Node::Rpc, Node::Status].include?(klass) }
+          end
+
+        use_klasses.each do |klass, chan|
           instance = klass.new(chan, node)
           instance.start
         end
