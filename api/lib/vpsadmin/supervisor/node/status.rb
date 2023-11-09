@@ -95,6 +95,11 @@ module VpsAdmin::Supervisor
         AVERAGES.each do |attr|
           avg_attr = :"sum_#{attr}"
           avg_value = current_status.send(avg_attr)
+
+          # Not all metrics must be available, e.g. there's no ZFS ARC on mailer
+          # nodes.
+          next if avg_value.nil?
+
           cur_value = current_status.send(attr)
 
           current_status.assign_attributes(avg_attr => avg_value + cur_value)
