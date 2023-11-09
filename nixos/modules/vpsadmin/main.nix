@@ -25,6 +25,23 @@ in {
         default = [];
         description = "List of plugins to enable.";
       };
+
+      rabbitmq = {
+        hosts = mkOption {
+          type = types.listOf types.str;
+          description = ''
+            A list of rabbitmq hosts to connect to
+          '';
+        };
+
+        virtualHost = mkOption {
+          type = types.str;
+          default = "/";
+          description = ''
+            rabbitmq virtual host
+          '';
+        };
+      };
     };
   };
 

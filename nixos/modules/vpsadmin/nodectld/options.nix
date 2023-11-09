@@ -1,6 +1,7 @@
 { config, lib, pkgs, utils, ... }:
 with lib;
 let
+  vpsadminCfg = config.vpsadmin;
   cfg = config.vpsadmin.nodectld;
 
   settingsFormat = pkgs.formats.yaml { };
@@ -30,6 +31,11 @@ in {
   };
 
   config = mkIf cfg.enable {
+    vpsadmin.nodectld.settings.rabbitmq = {
+      hosts = vpsadminCfg.rabbitmq.hosts;
+      vhost = vpsadminCfg.rabbitmq.virtualHost;
+    };
+
     environment.etc."vpsadmin/nodectld.yml".source = configurationYaml;
   };
 }

@@ -12,8 +12,8 @@ let
   };
 
   rabbitmqYml = pkgs.writeText "rabbitmq.yml" (builtins.toJSON {
-    hosts = cfg.rabbitmq.hosts;
-    vhost = cfg.rabbitmq.virtualHost;
+    hosts = vpsadminCfg.rabbitmq.hosts;
+    vhost = vpsadminCfg.rabbitmq.virtualHost;
     username = cfg.rabbitmq.username;
     password = "#rabbitmq_pass#";
     servers = cfg.servers;
@@ -64,21 +64,6 @@ in {
       };
 
       rabbitmq = {
-        hosts = mkOption {
-          type = types.listOf types.str;
-          description = ''
-            A list of rabbitmq hosts to connect to
-          '';
-        };
-
-        virtualHost = mkOption {
-          type = types.str;
-          default = "/";
-          description = ''
-            rabbitmq virtual host
-          '';
-        };
-
         username = mkOption {
           type = types.str;
           description = ''

@@ -20,6 +20,7 @@
   ];
 
   vpsadminos = [
+    ./vpsadmin/main.nix
     ./vpsadmin/nodectld/vpsadminos.nix
   ];
 }
