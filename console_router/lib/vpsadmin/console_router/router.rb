@@ -5,6 +5,7 @@ module VpsAdmin::ConsoleRouter
   class Router
     CacheEntry = Struct.new(
       :node_name,
+      :last_use,
       :last_check,
       :input_exchange,
       :output_queue,
@@ -36,6 +37,8 @@ module VpsAdmin::ConsoleRouter
       @rpc = RpcClient.new(@channel)
       @api_url = @rpc.get_api_url
       @cache = {}
+      @mutex = Mutex.new
+      @upkeep = Thread.new { run_upkeep }
     end
 
     # Read data from console
@@ -97,7 +100,7 @@ module VpsAdmin::ConsoleRouter
 
       now = Time.now
       k = cache_key(vps_id, session)
-      entry = @cache[k]
+      entry = sync_cache { @cache[k] }
 
       if entry.nil? || (entry.last_check + SESSION_TIMEOUT < now)
         node_name = @rpc.get_session_node(vps_id, session)
@@ -115,25 +118,42 @@ module VpsAdmin::ConsoleRouter
 
         entry = CacheEntry.new(
           node_name:,
+          last_use: now,
           last_check: now,
           input_exchange:,
           output_queue:,
         )
 
-        @cache[k] = entry
+        sync_cache { @cache[k] = entry }
+      else
+        entry.last_use = now
       end
 
       true
     end
 
     protected
+    def run_upkeep
+      loop do
+        sleep(60)
+
+        sync_cache do
+          now = Time.now
+
+          @cache.delete_if do |key, entry|
+            entry.last_use + 60 < now
+          end
+        end
+      end
+    end
+
     def parse_config
       path = File.join(__dir__, '../../../', 'config/rabbitmq.yml')
       YAML.safe_load(File.read(path))
     end
 
     def get_cache(vps_id, session)
-      @cache[ cache_key(vps_id, session) ]
+      sync_cache { @cache[ cache_key(vps_id, session) ] }
     end
 
     def cache_key(vps_id, session)
@@ -146,6 +166,10 @@ module VpsAdmin::ConsoleRouter
 
     def routing_key(vps_id, session)
       "#{vps_id}-#{session[0..19]}"
+    end
+
+    def sync_cache(&block)
+      @mutex.synchronize(&block)
     end
   end
 end
