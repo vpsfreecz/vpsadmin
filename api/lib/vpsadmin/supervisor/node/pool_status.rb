@@ -4,7 +4,11 @@ module VpsAdmin::Supervisor
   class Node::PoolStatus < Node::Base
     def start
       exchange = channel.direct(exchange_name)
-      queue = channel.queue(queue_name('pool_statuses'))
+      queue = channel.queue(
+        queue_name('pool_statuses'),
+        durable: true,
+        arguments: {'x-queue-type' => 'quorum'},
+      )
 
       queue.bind(exchange, routing_key: 'pool_statuses')
 

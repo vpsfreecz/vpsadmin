@@ -113,7 +113,11 @@ module VpsAdmin::ConsoleRouter
         input_exchange = @channel.direct("console:#{node_name}:input")
 
         output_exchange = @channel.direct("console:#{node_name}:output")
-        output_queue = @channel.queue(output_queue_name(vps_id, session))
+        output_queue = @channel.queue(
+          output_queue_name(vps_id, session),
+          durable: true,
+          arguments: {'x-queue-type' => 'quorum'},
+        )
         output_queue.bind(output_exchange, routing_key: routing_key(vps_id, session))
 
         entry = CacheEntry.new(

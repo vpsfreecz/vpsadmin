@@ -4,7 +4,11 @@ module VpsAdmin::Supervisor
   class Node::NetMonitor < Node::Base
     def start
       exchange = channel.direct(exchange_name)
-      queue = channel.queue(queue_name('net_monitor'))
+      queue = channel.queue(
+        queue_name('net_monitor'),
+        durable: true,
+        arguments: {'x-queue-type' => 'quorum'},
+      )
 
       queue.bind(exchange, routing_key: 'net_monitor')
 

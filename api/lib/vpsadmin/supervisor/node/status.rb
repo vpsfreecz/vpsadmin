@@ -14,7 +14,11 @@ module VpsAdmin::Supervisor
 
     def start
       exchange = channel.direct(exchange_name)
-      queue = channel.queue(queue_name('statuses'))
+      queue = channel.queue(
+        queue_name('statuses'),
+        durable: true,
+        arguments: {'x-queue-type' => 'quorum'},
+      )
 
       queue.bind(exchange, routing_key: 'statuses')
 

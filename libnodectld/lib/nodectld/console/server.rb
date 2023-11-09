@@ -26,7 +26,11 @@ module NodeCtld
 
       @channel = NodeBunny.create_channel
       @input_exchange = @channel.direct("console:#{$CFG.get(:vpsadmin, :node_name)}:input")
-      @input_queue = @channel.queue("console:#{$CFG.get(:vpsadmin, :node_name)}:input")
+      @input_queue = @channel.queue(
+        "console:#{$CFG.get(:vpsadmin, :node_name)}:input",
+        durable: true,
+        arguments: {'x-queue-type' => 'quorum'},
+      )
       @input_queue.bind(@input_exchange)
 
       @output_exchange = @channel.direct("console:#{$CFG.get(:vpsadmin, :node_name)}:output")

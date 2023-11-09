@@ -4,7 +4,11 @@ module VpsAdmin::Supervisor
   class Node::VpsOsProcesses < Node::Base
     def start
       exchange = channel.direct(exchange_name)
-      queue = channel.queue(queue_name('vps_os_processes'))
+      queue = channel.queue(
+        queue_name('vps_os_processes'),
+        durable: true,
+        arguments: {'x-queue-type' => 'quorum'},
+      )
 
       queue.bind(exchange, routing_key: 'vps_os_processes')
 

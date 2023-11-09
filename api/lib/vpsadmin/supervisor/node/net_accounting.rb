@@ -4,7 +4,11 @@ module VpsAdmin::Supervisor
   class Node::NetAccounting < Node::Base
     def start
       exchange = channel.direct(exchange_name)
-      queue = channel.queue(queue_name('net_accounting'))
+      queue = channel.queue(
+        queue_name('net_accounting'),
+        durable: true,
+        arguments: {'x-queue-type' => 'quorum'},
+      )
 
       queue.bind(exchange, routing_key: 'net_accounting')
 
