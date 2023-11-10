@@ -50,16 +50,6 @@
     };
     version = "3.3.4";
   };
-  eventmachine = {
-    groups = ["default"];
-    platforms = [];
-    source = {
-      remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "0wh9aqb0skz80fhfn66lbpr4f86ya2z5rx6gm5xlfhd05bj1ch4r";
-      type = "gem";
-    };
-    version = "1.2.7";
-  };
   filelock = {
     groups = ["default"];
     platforms = [];
@@ -111,15 +101,15 @@
     version = "2.6.3";
   };
   libnodectld = {
-    dependencies = ["bunny" "eventmachine" "filelock" "ipaddress" "json" "libosctl" "mail" "mysql2" "osctl" "osctl-exportfs" "prometheus-client" "pry" "pry-remote" "require_all"];
+    dependencies = ["bunny" "filelock" "ipaddress" "json" "libosctl" "mail" "mysql2" "osctl" "osctl-exportfs" "prometheus-client" "pry" "pry-remote" "require_all"];
     groups = ["default"];
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "1mjxd4l039hdil85lv344sx37mc469pdlfkjblhfzr5fjwfc8kdi";
+      sha256 = "1r2z26b1j5a2d4xwm4c5xvkrywfjsggjv13rc86v0nxhhdrpaka5";
       type = "gem";
     };
-    version = "3.0.0.dev.build20231108085547";
+    version = "3.0.0.dev.build20231110134027";
   };
   libosctl = {
     dependencies = ["rainbow" "require_all"];
