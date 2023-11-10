@@ -40,25 +40,25 @@ in {
       user = mkOption {
         type = types.str;
         default = "vpsadmin-console";
-        description = "User under which the console router is ran.";
+        description = "User under which the console router is run";
       };
 
       group = mkOption {
         type = types.str;
         default = "vpsadmin-console";
-        description = "Group under which the console router is ran.";
+        description = "Group under which the console router is run";
       };
 
       address = mkOption {
         type = types.str;
         default = "127.0.0.1";
-        description = "Address on which the console router is ran.";
+        description = "Address on which the console router is run";
       };
 
       port = mkOption {
         type = types.int;
         default = 8000;
-        description = "Port on which the console router is ran.";
+        description = "Port on which the console router is run";
       };
 
       stateDirectory = mkOption {
