@@ -78,7 +78,13 @@ module TransactionChains
         # Scenario 2) or 3)
         if snapshot_on_primary
           # Transfer the snapshots to all backup dataset in pools if they aren't backed up yet
-          dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where('pools.role = ?', ::Pool.roles[:backup]).each do |dst|
+          dataset_in_pool
+            .dataset
+            .dataset_in_pools
+            .joins(:pool)
+            .where('pools.role = ?', ::Pool.roles[:backup])
+            .where(pools: {is_open: true})
+            .each do |dst|
             use_chain(TransactionChains::Dataset::Transfer, args: [
                dataset_in_pool,
                 dst,
@@ -109,7 +115,13 @@ module TransactionChains
 
       # Backup all snapshots
       if primary_last_snap
-        dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where('pools.role = ?', ::Pool.roles[:backup]).each do |dst|
+        dataset_in_pool
+          .dataset
+          .dataset_in_pools
+          .joins(:pool)
+          .where('pools.role = ?', ::Pool.roles[:backup])
+          .where(pools: {is_open: true})
+          .each do |dst|
           use_chain(TransactionChains::Dataset::Transfer, args: [
               dataset_in_pool,
               dst,
@@ -159,7 +171,13 @@ module TransactionChains
     end
 
     def branch_backup(dataset_in_pool, snapshot)
-      dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where('pools.role = ?', ::Pool.roles[:backup]).each do |ds|
+      dataset_in_pool
+        .dataset
+        .dataset_in_pools
+        .joins(:pool)
+        .where('pools.role = ?', ::Pool.roles[:backup])
+        .where(pools: {is_open: true})
+        .each do |ds|
         lock(ds)
 
         snap_in_pool = snapshot.snapshot_in_pools.where(dataset_in_pool: ds).take!

@@ -57,7 +57,7 @@ module TransactionChains
       datasets.each do |dip|
         dip.dataset.dataset_in_pools.joins(:pool).where(
           'pools.role = ?', ::Pool.roles[:backup]
-        ).each do |dst|
+        ).where(pools: {is_open: true}).each do |dst|
           use_chain(TransactionChains::Dataset::Transfer, args: [dip, dst])
         end
       end

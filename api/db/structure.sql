@@ -1219,7 +1219,9 @@ CREATE TABLE `pools` (
   `scan` int(11) NOT NULL DEFAULT 0,
   `checked_at` datetime DEFAULT NULL,
   `scan_percent` float DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  `is_open` int(11) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `index_pools_on_is_open` (`is_open`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `port_reservations`;
@@ -2175,6 +2177,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20231027164147'),
 ('20231028145905'),
 ('20231028151738'),
-('20231031085006');
+('20231031085006'),
+('20231116085008');
 
 
