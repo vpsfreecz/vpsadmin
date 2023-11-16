@@ -40,6 +40,7 @@ class Pool < ActiveRecord::Base
       .joins('LEFT JOIN dataset_in_pools ON dataset_in_pools.pool_id = pools.id')
       .where(
         'pools.max_datasets > 0
+        AND pools.is_open = 1
         AND pools.maintenance_lock = 0
         AND pools.node_id = ?',
         node.id,
