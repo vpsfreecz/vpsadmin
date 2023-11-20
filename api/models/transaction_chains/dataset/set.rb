@@ -58,7 +58,8 @@ module TransactionChains
           exp = dataset_in_pool.dataset.dataset_expansion
 
           if (::User.current && ::User.current.role == :admin) \
-             || properties[:refquota] <= exp.original_refquota
+             || properties[:refquota] <= exp.original_refquota \
+             || properties[:refquota] > dataset_in_pool.referenced
             t.edit(dataset_in_pool.dataset, dataset_expansion_id: nil)
             t.edit(
               exp,
