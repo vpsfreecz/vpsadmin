@@ -20,6 +20,8 @@ let
     foreground = false;
   });
 in {
+  imports = apiApp.imports;
+
   options = {
     vpsadmin.supervisor = {
       enable = mkEnableOption "Enable vpsAdmin supervisor";

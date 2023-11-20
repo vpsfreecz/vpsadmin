@@ -29,6 +29,8 @@ let
 
   forAllPorts = fn: genList (i: fn (cfg.port + i)) cfg.servers;
 in {
+  imports = apiApp.imports;
+
   options = {
     vpsadmin.api = {
       enable = mkEnableOption "Enable vpsAdmin API server";

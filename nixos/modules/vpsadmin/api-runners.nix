@@ -1,33 +1,34 @@
+name:
 { config, pkgs, lib, ... }:
 with lib;
 let
-  cfg = config.vpsadmin.api;
+  cfg = config.vpsadmin.${name};
 
   bundle = "${cfg.package}/ruby-env/bin/bundle";
 
-  apiShellRcFile = pkgs.writeText "vpsadmin-api-shell.rc" ''
+  shellRcFile = pkgs.writeText "vpsadmin-${name}-shell.rc" ''
     . /etc/profile
     export PATH=${cfg.package}/ruby-env/bin:${pkgs.mariadb}/bin:$PATH
   '';
 
-  apiShellScript = pkgs.writeScriptBin "vpsadmin-api-shell" ''
+  shellScript = pkgs.writeScriptBin "vpsadmin-${name}-shell" ''
     #!${pkgs.bash}/bin/bash
     exec systemd-run \
-      --unit=vpsadmin-api-shell-$(date "+%F-%T") \
-      --description="vpsAdmin API interactive shell" \
+      --unit=vpsadmin-${name}-shell-$(date "+%F-%T") \
+      --description="vpsAdmin ${name} interactive shell" \
       --pty \
       --wait \
       --collect \
       --service-type=exec \
-      --working-directory=${cfg.package}/api \
+      --working-directory=${cfg.package}/${name} \
       --setenv=RACK_ENV=production \
       --setenv=SCHEMA=${cfg.stateDirectory}/cache/structure.sql \
       --uid ${cfg.user} \
       --gid ${cfg.group} \
-      ${pkgs.bashInteractive}/bin/bash --rcfile ${apiShellRcFile}
+      ${pkgs.bashInteractive}/bin/bash --rcfile ${shellRcFile}
   '';
 
-  apiRubyRunner = pkgs.writeScript "vpsadmin-api-ruby-runner" ''
+  rubyRunner = pkgs.writeScript "vpsadmin-${name}-ruby-runner" ''
     #!${pkgs.ruby}/bin/ruby
 
     if ARGV.length < 1
@@ -35,13 +36,13 @@ let
       exit(false)
     end
 
-    $: << "${cfg.package}/api/lib"
+    $: << "${cfg.package}/${name}/lib"
     script = ARGV[0]
     ARGV.shift
     load script
   '';
 
-  apiRubyScript = pkgs.writeScriptBin "vpsadmin-api-ruby" ''
+  rubyScript = pkgs.writeScriptBin "vpsadmin-${name}-ruby" ''
     #!${pkgs.bash}/bin/bash
 
     if [ "$1" == "" ] ; then
@@ -53,24 +54,24 @@ let
     shift
 
     exec systemd-run \
-      --unit=vpsadmin-api-ruby-$(date "+%F-%T") \
-      --description="vpsAdmin API ruby script" \
+      --unit=vpsadmin-${name}-ruby-$(date "+%F-%T") \
+      --description="vpsAdmin ${name} ruby script" \
       --pty \
       --wait \
       --collect \
       --service-type=exec \
-      --working-directory=${cfg.package}/api \
+      --working-directory=${cfg.package}/${name} \
       --setenv=RACK_ENV=production \
       --setenv=SCHEMA=${cfg.stateDirectory}/cache/structure.sql \
       --uid ${cfg.user} \
       --gid ${cfg.group} \
-      ${bundle} exec ${apiRubyRunner} "$SCRIPT" $@
+      ${bundle} exec ${rubyRunner} "$SCRIPT" $@
   '';
 in {
   config = mkIf cfg.enable {
     environment.systemPackages = [
-      apiShellScript
-      apiRubyScript
+      shellScript
+      rubyScript
     ];
   };
 }

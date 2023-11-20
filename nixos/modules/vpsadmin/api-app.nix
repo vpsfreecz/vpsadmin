@@ -20,6 +20,10 @@ let
 in {
   inherit bundle;
 
+  imports = [
+    (import ./api-runners.nix name)
+  ];
+
   databaseModule =
     { pool ? 5 }:
     { config, ... }:
