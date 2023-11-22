@@ -440,13 +440,13 @@ if ($show_live) {
 	$xtpl->table_td(_('Total'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;', false, '2');
 	$xtpl->table_tr();
 
-	$xtpl->table_td(_('Bps'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('bps'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
 	$xtpl->table_td(_('Packets/s'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
 
-	$xtpl->table_td(_('Bps'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('bps'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
 	$xtpl->table_td(_('Packets/s'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
 
-	$xtpl->table_td(_('Bps'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+	$xtpl->table_td(_('bps'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
 	$xtpl->table_td(_('Packets/s'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
 
 	$xtpl->table_tr();
