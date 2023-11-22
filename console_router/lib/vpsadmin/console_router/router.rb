@@ -7,6 +7,7 @@ module VpsAdmin::ConsoleRouter
       :node_name,
       :last_use,
       :last_check,
+      :channel,
       :input_exchange,
       :output_queue,
       keyword_init: true,
@@ -24,17 +25,16 @@ module VpsAdmin::ConsoleRouter
     def initialize
       cfg = parse_config
 
-      connection = Bunny.new(
+      @connection = Bunny.new(
         hosts: cfg.fetch('hosts'),
         vhost: cfg.fetch('vhost', '/'),
         username: cfg.fetch('username'),
         password: cfg.fetch('password'),
         log_file: STDERR,
       )
-      connection.start
+      @connection.start
 
-      @channel = connection.create_channel
-      @rpc = RpcClient.new(@channel)
+      @rpc = RpcClient.new(@connection.create_channel)
       @api_url = @rpc.get_api_url
       @cache = {}
       @mutex = Mutex.new
@@ -110,10 +110,12 @@ module VpsAdmin::ConsoleRouter
       end
 
       if entry.nil?
-        input_exchange = @channel.direct("console:#{node_name}:input")
+        channel = @connection.create_channel
 
-        output_exchange = @channel.direct("console:#{node_name}:output")
-        output_queue = @channel.queue(
+        input_exchange = channel.direct("console:#{node_name}:input")
+
+        output_exchange = channel.direct("console:#{node_name}:output")
+        output_queue = channel.queue(
           output_queue_name(vps_id, session),
           durable: true,
           arguments: {'x-queue-type' => 'quorum'},
@@ -124,6 +126,7 @@ module VpsAdmin::ConsoleRouter
           node_name:,
           last_use: now,
           last_check: now,
+          channel:,
           input_exchange:,
           output_queue:,
         )
@@ -145,7 +148,12 @@ module VpsAdmin::ConsoleRouter
           now = Time.now
 
           @cache.delete_if do |key, entry|
-            entry.last_use + 60 < now
+            if entry.last_use + 60 < now
+              entry.channel.close
+              true
+            else
+              false
+            end
           end
         end
       end
