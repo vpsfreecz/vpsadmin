@@ -9,38 +9,35 @@ module VpsAdmin::ConsoleRouter
       set :router, Router.new
     end
 
-    get '/console/:vps_id' do |vps_id|
-      v = vps_id.to_i
+    get '/console/:vps_id' do |vps_id_str|
+      vps_id = vps_id_str.to_i
 
-      if settings.router.check_session(v, params[:session])
+      if settings.router.check_session(vps_id, params[:session])
         erb :console, locals: {
           api_url: settings.router.api_url,
-          vps_id: v,
+          vps_id: vps_id,
           auth_token: params[:token],
-          session: params[:session]
+          session: params[:session],
         }
       else
         "Access denied, invalid session"
       end
     end
 
-    post '/console/feed/:vps_id' do |vps_id|
-      v = vps_id.to_i
+    post '/console/feed/:vps_id' do |vps_id_str|
+      data = settings.router.read_write_console(
+        vps_id_str.to_i,
+        params[:session],
+        params[:keys],
+        params[:width].to_i,
+        params[:height].to_i,
+      )
 
-      if settings.router.check_session(v, params[:session])
-        settings.router.write_console(
-          v,
-          params[:session],
-          params[:keys],
-          params[:width].to_i,
-          params[:height].to_i,
-        )
-
+      if data
         {
-          data: Base64.encode64(settings.router.read_console(v, params[:session])),
+          data: Base64.encode64(data),
           session: true,
         }.to_json
-
       else
         {data: 'Access denied, invalid session', session: nil}.to_json
       end

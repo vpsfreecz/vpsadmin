@@ -4,6 +4,8 @@ require 'yaml'
 module VpsAdmin::ConsoleRouter
   class Router
     CacheEntry = Struct.new(
+      :vps_id,
+      :session,
       :node_name,
       :last_use,
       :last_check,
@@ -41,12 +43,89 @@ module VpsAdmin::ConsoleRouter
       @upkeep = Thread.new { run_upkeep }
     end
 
-    # Read data from console
+    # Check session validity
     # @param vps_id [Integer]
     # @param session [String]
+    # @return [Boolean]
+    def check_session(vps_id, session)
+      get_session(vps_id, session).nil? ? false : true
+    end
+
+    # Write data to console and read from it
+    # @param vps_id [Integer]
+    # @param session [String]
+    # @param keys [String, nil]
+    # @param width [Integer]
+    # @param height [Integer]
+    # @return [String, nil]
+    def read_write_console(vps_id, session, keys, width, height)
+      sync do
+        entry = get_session(vps_id, session)
+        return if entry.nil?
+
+        write_console(entry, keys, width, height)
+        read_console(entry)
+      end
+    end
+
+    protected
+    # @param vps_id [Integer]
+    # @param session [String]
+    # @return [CacheEntry, nil]
+    def get_session(vps_id, session)
+      return if !session || !vps_id
+
+      now = Time.now
+      k = cache_key(vps_id, session)
+      entry = nil
+
+      sync do
+        entry = @cache[k]
+
+        if entry.nil? || (entry.last_check + SESSION_TIMEOUT < now)
+          node_name = @rpc.get_session_node(vps_id, session)
+          return if node_name.nil?
+
+          entry.last_check = now if entry
+        end
+
+        if entry.nil?
+          channel = @connection.create_channel
+
+          input_exchange = channel.direct("console:#{node_name}:input")
+
+          output_exchange = channel.direct("console:#{node_name}:output")
+          output_queue = channel.queue(
+            output_queue_name(vps_id, session),
+            durable: true,
+            arguments: {'x-queue-type' => 'quorum'},
+          )
+          output_queue.bind(output_exchange, routing_key: routing_key(vps_id, session))
+
+          entry = CacheEntry.new(
+            vps_id:,
+            session:,
+            node_name:,
+            last_use: now,
+            last_check: now,
+            channel:,
+            input_exchange:,
+            output_queue:,
+          )
+
+          @cache[k] = entry
+        else
+          entry.last_use = now
+        end
+      end
+
+      entry
+    end
+
+    # Read data from console
+    # @param entry [CacheEntry]
     # @return [String]
-    def read_console(vps_id, session)
-      entry = get_cache(vps_id, session)
+    def read_console(entry)
       ret = ''
 
       begin
@@ -63,16 +142,13 @@ module VpsAdmin::ConsoleRouter
     end
 
     # Write data to console
-    # @param vps_id [Integer]
-    # @param session [String]
+    # @param entry [CacheEntry]
     # @param keys [String, nil]
     # @param width [Integer]
     # @param height [Integer]
-    def write_console(vps_id, session, keys, width, height)
-      entry = get_cache(vps_id, session)
-
+    def write_console(entry, keys, width, height)
       data = {
-        session: session,
+        session: entry.session,
         width: width,
         height: height,
       }
@@ -91,60 +167,11 @@ module VpsAdmin::ConsoleRouter
       end
     end
 
-    # Check session validity
-    # @param vps_id [Integer]
-    # @param session [String]
-    # @return [Boolean]
-    def check_session(vps_id, session)
-      return false if !session || !vps_id
-
-      now = Time.now
-      k = cache_key(vps_id, session)
-      entry = sync_cache { @cache[k] }
-
-      if entry.nil? || (entry.last_check + SESSION_TIMEOUT < now)
-        node_name = @rpc.get_session_node(vps_id, session)
-        return false if node_name.nil?
-
-        entry.last_check = now if entry
-      end
-
-      if entry.nil?
-        channel = @connection.create_channel
-
-        input_exchange = channel.direct("console:#{node_name}:input")
-
-        output_exchange = channel.direct("console:#{node_name}:output")
-        output_queue = channel.queue(
-          output_queue_name(vps_id, session),
-          durable: true,
-          arguments: {'x-queue-type' => 'quorum'},
-        )
-        output_queue.bind(output_exchange, routing_key: routing_key(vps_id, session))
-
-        entry = CacheEntry.new(
-          node_name:,
-          last_use: now,
-          last_check: now,
-          channel:,
-          input_exchange:,
-          output_queue:,
-        )
-
-        sync_cache { @cache[k] = entry }
-      else
-        entry.last_use = now
-      end
-
-      true
-    end
-
-    protected
     def run_upkeep
       loop do
         sleep(60)
 
-        sync_cache do
+        sync do
           now = Time.now
 
           @cache.delete_if do |key, entry|
@@ -164,10 +191,6 @@ module VpsAdmin::ConsoleRouter
       YAML.safe_load(File.read(path))
     end
 
-    def get_cache(vps_id, session)
-      sync_cache { @cache[ cache_key(vps_id, session) ] }
-    end
-
     def cache_key(vps_id, session)
       "#{vps_id}-#{session}"
     end
@@ -180,8 +203,12 @@ module VpsAdmin::ConsoleRouter
       "#{vps_id}-#{session[0..19]}"
     end
 
-    def sync_cache(&block)
-      @mutex.synchronize(&block)
+    def sync(&block)
+      if @mutex.owned?
+        block.call
+      else
+        @mutex.synchronize(&block)
+      end
     end
   end
 end
