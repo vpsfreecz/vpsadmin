@@ -48,7 +48,7 @@ module TransactionChains
             # Check if destroying it won't break the history.
             dataset_in_pool.dataset.dataset_in_pools
               .joins(:pool)
-              .where(pools: {role: ::Pool.roles[:backup]}).each do |backup|
+              .where(pools: {role: ::Pool.roles[:backup], is_open: true}).each do |backup|
 
               # Is the snapshot in this dataset_in_pool? -> continue
               unless backup.snapshot_in_pools.find_by(snapshot_id: s.snapshot_id)
