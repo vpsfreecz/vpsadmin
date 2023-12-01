@@ -1073,6 +1073,42 @@ CREATE TABLE `nodes` (
   KEY `index_nodes_on_active` (`active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `oauth2_authorizations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oauth2_authorizations` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `oauth2_client_id` bigint(20) NOT NULL,
+  `user_id` bigint(20) NOT NULL,
+  `scope` varchar(255) DEFAULT NULL,
+  `code_id` bigint(20) DEFAULT NULL,
+  `user_session_id` bigint(20) DEFAULT NULL,
+  `refresh_token_id` bigint(20) DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_oauth2_authorizations_on_oauth2_client_id` (`oauth2_client_id`),
+  KEY `index_oauth2_authorizations_on_user_id` (`user_id`),
+  KEY `index_oauth2_authorizations_on_code_id` (`code_id`),
+  KEY `index_oauth2_authorizations_on_user_session_id` (`user_session_id`),
+  KEY `index_oauth2_authorizations_on_refresh_token_id` (`refresh_token_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `oauth2_clients`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oauth2_clients` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `client_id` varchar(255) NOT NULL,
+  `client_secret_hash` varchar(255) NOT NULL,
+  `redirect_uri` varchar(255) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_oauth2_clients_on_client_id` (`client_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `object_histories`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -1400,7 +1436,7 @@ CREATE TABLE `sysconfig` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_sysconfig_on_category_and_name` (`category`,`name`) USING BTREE,
   KEY `index_sysconfig_on_category` (`category`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tokens`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2178,6 +2214,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20231028145905'),
 ('20231028151738'),
 ('20231031085006'),
-('20231116085008');
+('20231116085008'),
+('20231201191543');
 
 

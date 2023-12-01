@@ -75,6 +75,7 @@ class SysConfig < ActiveRecord::Base
   register :core, :snapshot_download_base_url, String
   register :core, :totp_issuer, String, default: 'vpsAdmin', min_user_level: 99
   register :core, :transaction_key, Text, min_user_level: 99
+  register :core, :logo_url, String, min_user_level: 0
   register :node, :public_key, Text
   register :node, :private_key, Text
   register :node, :key_type, String

@@ -1,7 +1,7 @@
 require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
-  class Operations::UserSession::ResumeToken < Operations::Base
+  class Operations::UserSession::ResumeOAuth2 < Operations::Base
     # @param token [String]
     # @return [::UserSession, nil]
     def run(token)
@@ -21,12 +21,8 @@ module VpsAdmin::API
 
       ::SessionToken.increment_counter(:use_count, sess_token.id)
 
-      if sess_token.lifetime == 'renewable_auto'
-        sess_token.renew!
-      end
-
       begin
-        session = ::UserSession.find_for!(user, sess_token, :token)
+        session = ::UserSession.find_for!(user, sess_token, :oauth2)
       rescue ActiveRecord::RecordNotFound
         ::UserSession.current = nil
         ::User.current = nil

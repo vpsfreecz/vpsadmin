@@ -7,11 +7,13 @@ class UserSession < ActiveRecord::Base
 
   # @param user [::User]
   # @param token [::SessionToken]
+  # @param auth_type [Symbol]
   # @return [::UserSession]
-  def self.find_for!(user, token)
+  def self.find_for!(user, token, auth_type)
     find_by!(
       user: user,
       session_token: token,
+      auth_type: auth_type,
       closed_at: nil,
     )
   end

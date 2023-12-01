@@ -22,7 +22,7 @@ module VpsAdmin::API
       end
 
       begin
-        session = ::UserSession.find_for!(user, sess_token)
+        session = ::UserSession.find_for!(user, sess_token, :token)
       rescue ActiveRecord::RecordNotFound
         raise Exceptions::OperationError, 'session not found'
       end

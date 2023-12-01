@@ -145,6 +145,7 @@ module VpsAdmin
       chain = [
         Authentication::Basic,
         HaveAPI::Authentication::Token.with_config(Authentication::TokenConfig),
+        HaveAPI::Authentication::OAuth2.with_config(Authentication::OAuth2Config),
       ]
 
       if api

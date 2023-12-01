@@ -1,0 +1,26 @@
+require 'vpsadmin/api/operations/base'
+require 'vpsadmin/api/operations/user_session/utils'
+
+module VpsAdmin::API
+  class Operations::UserSession::NewOAuth2Login < Operations::Base
+    include Operations::UserSession::Utils
+
+    # @param user [User]
+    # @param request [Sinatra::Request]
+    # @param interval [Integer]
+    # @return [::UserSession]
+    def run(user, request, interval)
+      Operations::User::Login.run(user, request)
+
+      token = ::SessionToken.custom!(
+        user: user,
+        lifetime: 'fixed',
+        interval: interval,
+        label: request.user_agent,
+      )
+
+      session = open_session(user, request, :oauth2, token)
+      ::UserSession.current = session
+    end
+  end
+end

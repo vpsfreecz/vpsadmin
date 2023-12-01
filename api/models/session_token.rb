@@ -9,10 +9,10 @@ class SessionToken < ActiveRecord::Base
 
   def self.custom!(attrs)
     st = new(
-      user: attrs[:user],
-      label: attrs[:label],
-      lifetime: attrs[:lifetime],
-      interval: attrs[:interval],
+      user: attrs.fetch(:user),
+      label: attrs.fetch(:label),
+      lifetime: attrs.fetch(:lifetime),
+      interval: attrs.fetch(:interval),
     )
     valid_to = st.lifetime != 'permanent' ? Time.now + st.interval : nil
 

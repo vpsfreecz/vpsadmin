@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.8/css/all.css">
+    <title>vpsAdmin Authentication</title>
+    <style>
+      body { margin-top: 40px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-sm-4 mx-auto">
+          <div class="card">
+            <article class="card-body">
+              <img src="<%= logo_url %>" class="card-img-top" alt="vpsFree.cz">
+              <h4 class="card-title text-center mb-4 mt-1">Sign in using vpsAdmin</h4>
+              <h5 class="card-subtitle text-center text-muted mb-2"><%= client.name %></h5>
+              <hr>
+              <% (auth_result ? auth_result.errors : []).each do |error| -%>
+                <div class="alert alert-danger" role="alert">
+                  Error: <%= Rack::Utils.escape_html(error) %>
+                </div>
+              <% end -%>
+
+              <form action="<%= authorize_path %>" method="post">
+                <% oauth2_params(oauth2_request).each do |k, v| -%>
+                  <input type="hidden" name="<%= k %>" value="<%= Rack::Utils.escape_html(v) %>">
+                <% end -%>
+
+                <% if auth_token -%>
+                  <input type="hidden" name="auth_token" value="<%= auth_token %>">
+
+                  <div class="form-group">
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
+                      </div>
+                      <input type="text" class="form-control" name="totp_code" id="totp_code" placeholder="TOTP code">
+                    </div>
+                  </div>
+
+                <% else %>
+                  <div class="form-group">
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                          <span class="input-group-text"> <i class="fa fa-user"></i> </span>
+                       </div>
+                      <input type="text" class="form-control" name="user" placeholder="User">
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
+                      </div>
+                      <input class="form-control" type="password" name="password" placeholder="Password">
+                    </div>
+                  </div>
+                <% end -%>
+
+                <div class="form-group">
+                  <input type="submit" class="btn btn-primary btn-block" name="login" value="Login">
+                </div>
+
+                <div class="form-group text-center">
+                  <input type="submit" class="btn btn-outline-secondary btn-sm" name="cancel" value="Cancel">
+                </div>
+              </form>
+            </article>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
