@@ -103,10 +103,13 @@ module VpsAdmin::API
 
     renew do
       handle do |req, res|
-        t = ::SessionToken.joins(:token).where(
+        user_session = ::UserSession.joins(session_token: :token).where(
+          auth_type: :token,
           user: req.user,
           tokens: {token: req.token},
         ).take
+
+        t = user_session && user_session.session_token
 
         if t && t.lifetime.start_with?('renewable')
           t.renew!
