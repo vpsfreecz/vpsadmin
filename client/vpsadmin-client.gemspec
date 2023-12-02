@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'bundler'
   spec.add_development_dependency 'rake'
 
-  spec.add_runtime_dependency 'haveapi-client', '~> 0.17.0'
+  spec.add_runtime_dependency 'haveapi-client', '~> 0.18.0'
   spec.add_runtime_dependency 'json'
   spec.add_runtime_dependency 'curses'
 end
