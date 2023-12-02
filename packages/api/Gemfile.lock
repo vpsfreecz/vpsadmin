@@ -41,10 +41,10 @@ GEM
     fio_api (0.0.7)
       httparty (>= 0.16.2)
     github-markdown (0.6.9)
-    haveapi (0.18.0)
+    haveapi (0.18.1)
       activesupport (>= 7.0)
       github-markdown
-      haveapi-client (~> 0.18.0)
+      haveapi-client (~> 0.18.1)
       json
       mail
       nesty (~> 1.0)
@@ -54,7 +54,7 @@ GEM
       require_all (~> 2.0.0)
       sinatra (~> 3.1.0)
       tilt (~> 2.3.0)
-    haveapi-client (0.18.0)
+    haveapi-client (0.18.1)
       activesupport (>= 7.0)
       highline (~> 2.1.0)
       json
