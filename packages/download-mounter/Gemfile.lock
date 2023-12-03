@@ -18,7 +18,7 @@ GEM
     domain_name (0.6.20231109)
     drb (2.2.0)
       ruby2_keywords
-    haveapi-client (0.18.1)
+    haveapi-client (0.18.2)
       activesupport (>= 7.0)
       highline (~> 2.1.0)
       json
