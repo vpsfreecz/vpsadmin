@@ -21,6 +21,17 @@ module VpsAdmin::API::Tasks
           t.destroy!
         end
       end
+
+      ::Oauth2Authorization
+        .joins(:code)
+        .where(user_session: nil)
+        .where('tokens.valid_to < ?', Time.now)
+        .each do |auth|
+        puts "OAuth2 authorization #{auth.id} valid_to=#{auth.code.valid_to} code=#{auth.code.token}"
+        next if ENV['EXECUTE'] != 'yes'
+
+        auth.destroy!
+      end
     end
   end
 end

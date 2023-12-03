@@ -9,4 +9,26 @@ class Oauth2Authorization < ::ActiveRecord::Base
   def check_code_validity(redirect_uri)
     code.valid_to > Time.now && oauth2_client.redirect_uri == redirect_uri
   end
+
+  def refreshable?
+    refresh_token && refresh_token.valid_to > Time.now
+  end
+
+  def close
+    valid_to = nil
+
+    if refresh_token
+      valid_to = refresh_token.valid_to
+      refresh_token.destroy!
+      update!(refresh_token: nil)
+    end
+
+    if user_session && !user_session.closed_at
+      if user_session.session_token
+        fail "expected user_session.session_token to be nil on user_session=#{user_session.id}"
+      end
+
+      user_session.update!(closed_at: valid_to || Time.now)
+    end
+  end
 end

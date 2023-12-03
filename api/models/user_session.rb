@@ -3,6 +3,7 @@ class UserSession < ActiveRecord::Base
   belongs_to :admin, class_name: 'User', foreign_key: :admin_id
   belongs_to :user_agent
   belongs_to :session_token
+  has_many :oauth2_authorizations
   has_many :transaction_chains
 
   # @param user [::User]
