@@ -244,6 +244,8 @@ module VpsAdmin::API
         oauth2_client: client,
         user: auth_result.user,
         scope: oauth2_request.scope,
+        code_challenge: oauth2_request.code_challenge,
+        code_challenge_method: oauth2_request.code_challenge_method,
       )
 
       ::Token.for_new_record!(expires_at) do |token|

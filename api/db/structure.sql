@@ -1086,6 +1086,8 @@ CREATE TABLE `oauth2_authorizations` (
   `refresh_token_id` bigint(20) DEFAULT NULL,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
+  `code_challenge` varchar(255) DEFAULT NULL,
+  `code_challenge_method` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_oauth2_authorizations_on_oauth2_client_id` (`oauth2_client_id`),
   KEY `index_oauth2_authorizations_on_user_id` (`user_id`),
@@ -2215,6 +2217,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20231028151738'),
 ('20231031085006'),
 ('20231116085008'),
-('20231201191543');
+('20231201191543'),
+('20231203074758');
 
 
