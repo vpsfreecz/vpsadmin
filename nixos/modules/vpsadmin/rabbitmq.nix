@@ -89,6 +89,7 @@ in {
       listenAddress = "0.0.0.0";
       configItems = {
         # "listeners.tcp.1" = "5672";
+        cluster_partition_handling = "pause_minority";
       };
       managementPlugin.enable = true;
       plugins = [
