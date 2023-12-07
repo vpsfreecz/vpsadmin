@@ -29,17 +29,6 @@ module TransactionChains
 
         just_create(node)
       end
-
-      if node.role != 'mailer' && !node.vpsadminos?
-        # Save SSH public key to database
-        append(Transactions::Node::StorePublicKeys, args: node)
-
-        # TODO: Regenerate ~/.ssh/known_hosts on all nodes in the cluster
-        use_chain(Cluster::GenerateKnownHosts)
-
-        # Deploy private key
-        append(Transactions::Node::DeploySshKey, args: node)
-      end
     end
   end
 end

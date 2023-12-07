@@ -109,7 +109,6 @@ module NodeCtld::Commands
     end
   end
 
-  module Node              ; end
   module Pool              ; end
   module DatasetTree       ; end
   module Branch            ; end

@@ -1004,16 +1004,6 @@ CREATE TABLE `node_current_statuses` (
   UNIQUE KEY `index_node_current_statuses_on_node_id` (`node_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `node_pubkeys`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `node_pubkeys` (
-  `node_id` int(11) NOT NULL,
-  `key_type` varchar(3) NOT NULL,
-  `key` text NOT NULL,
-  KEY `index_node_pubkeys_on_node_id` (`node_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `node_statuses`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -2218,6 +2208,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20231031085006'),
 ('20231116085008'),
 ('20231201191543'),
-('20231203074758');
+('20231203074758'),
+('20231207174132');
 
 
