@@ -52,6 +52,7 @@ class Node < ActiveRecord::Base
       maintenance: attrs.delete(:maintenance)
     }
     n = new(attrs)
+    n.hypervisor_type = 'vpsadminos' if %w(node storage).include?(n.role)
 
     TransactionChains::Node::Register.fire(n, opts)
   end
