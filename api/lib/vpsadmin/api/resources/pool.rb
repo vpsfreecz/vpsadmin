@@ -9,6 +9,7 @@ module VpsAdmin::API::Resources
       string :name
       string :filesystem
       string :role, choices: ::Pool.roles.keys
+      bool :is_open
       bool :refquota_check, label: 'Refquota check'
       integer :max_datasets
       string :state, choices: ::Pool::STATE_VALUES.map(&:to_s), db_name: :state_value
@@ -57,6 +58,7 @@ module VpsAdmin::API::Resources
         q = q.where(filesystem: input[:filesystem]) if input[:filesystem]
         q = q.where(role: ::Pool.roles[input[:role]]) if input[:role]
         q = q.where(refquota_check: input[:refquota_check]) if input[:refquota_check]
+        q = q.where(is_open: input[:is_open]) if input[:is_open]
         q
       end
 
