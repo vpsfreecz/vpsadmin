@@ -108,6 +108,8 @@ let
   appModule = app: {
     api = baseModule app;
 
+    auth = baseModule app;
+
     console-router = baseModule app;
 
     download-mounter = downloadMounterModule app;
@@ -136,6 +138,8 @@ let
     in {
       api = json;
 
+      auth = html;
+
       console-router = html;
 
       download-mounter = html;
@@ -163,6 +167,8 @@ let
   appUpstreams = app: instances: {
     api = baseUpstreams app instances;
 
+    auth = baseUpstreams app instances;
+
     console-router = baseUpstreams app instances;
 
     download-mounter = {};
@@ -185,6 +191,38 @@ let
 
     locations = {
       "/" = {
+        proxyPass = mkIf (!isUnderMaintenance app name instance)
+          "http://${upstreamName app name}";
+
+        return = mkIf (isUnderMaintenance app name instance) "503";
+      };
+
+      "@maintenance" = {
+        root = pkgs.runCommand "${app}-maintenance-root" {} ''
+          mkdir $out
+          ln -s ${instance.maintenance.file} $out/${instance.maintenance.file.name}
+        '';
+        extraConfig = ''
+          rewrite ^(.*)$ /${instance.maintenance.file.name} break;
+        '';
+      };
+    };
+
+    extraConfig = ''
+      access_log ${accessLog app name};
+      error_page 503 @maintenance;
+    '';
+  };
+
+  authVirtualHosts = app: name: instance: nameValuePair instance.virtualHost {
+    serverName = mkIf (!isNull instance.domain) instance.domain;
+
+    forceSSL = mkIf (!isNull cfg.forceSSL) cfg.forceSSL;
+
+    enableACME = mkIf (!isNull cfg.enableACME) cfg.enableACME;
+
+    locations = {
+      "/_auth" = {
         proxyPass = mkIf (!isUnderMaintenance app name instance)
           "http://${upstreamName app name}";
 
@@ -239,6 +277,8 @@ let
   appVirtualHosts = app: {
     api = baseVirtualHosts app;
 
+    auth = authVirtualHosts app;
+
     console-router = baseVirtualHosts app;
 
     download-mounter = downloadMounterVirtualHosts app;
@@ -248,6 +288,8 @@ let
 
   appAssertions = app: instances: {
     api = [];
+
+    auth = [];
 
     console-router = [];
 
@@ -324,6 +366,8 @@ in {
 
       api = appOpt "api";
 
+      auth = appOpt "auth";
+
       console-router = appOpt "console-router";
 
       download-mounter = appOpt "download-mounter";
@@ -380,6 +424,8 @@ in {
     }
 
     (appConfigs "api")
+
+    (appConfigs "auth")
 
     (appConfigs "console-router")
 
