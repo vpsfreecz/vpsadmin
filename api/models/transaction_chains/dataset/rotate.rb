@@ -54,6 +54,10 @@ module TransactionChains
               unless backup.snapshot_in_pools.find_by(snapshot_id: s.snapshot_id)
                 # This snapshot is not backed up in dataset_in_pool +backup+.
                 # It cannot be destroyed as it would break the history flow.
+                #
+                # TODO: it is possible that this snapshot WAS backed up, but the
+                # backup was already deleted when the snapshot was held up on
+                # the hypervisor...
                 return
               end
 
