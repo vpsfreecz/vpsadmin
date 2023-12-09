@@ -38,6 +38,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
   params(:common) do
     use :writable
     datetime :last_activity_at, label: 'Last activity'
+    string :dokuwiki_groups, label: 'DokuWiki groups',
+      desc: 'Comma-separated list of DokuWiki groups'
   end
 
   params(:dates) do

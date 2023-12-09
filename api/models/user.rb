@@ -127,6 +127,14 @@ class User < ActiveRecord::Base
     end
   end
 
+  def dokuwiki_groups
+    if level >= 90
+      'admin,user'
+    else
+      'user'
+    end
+  end
+
   def first_name
     full_name.split(' ').first
   end
