@@ -39,7 +39,7 @@ module VpsAdmin::API::Tasks
       # Close oauth2 authorizations where even the refresh token has expired
       ::Oauth2Authorization
         .joins(:user_session, :refresh_token)
-        .where.not(user_sessions: {closed_at: nil})
+        .where(user_sessions: {closed_at: nil})
         .where.not(refresh_token: nil)
         .where('tokens.valid_to < ?', Time.now)
         .each do |auth|
