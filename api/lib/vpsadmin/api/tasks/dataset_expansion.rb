@@ -30,7 +30,7 @@ module VpsAdmin::API::Tasks
             deadline: DEADLINE,
           )
         rescue ResourceLocked
-          warn "Dataset in pool id=#{dip.id} name=#{ds.full_name} locked"
+          warn "Dataset id=#{event.dataset_id} name=#{event.dataset.full_name} locked"
           next
         end
 
