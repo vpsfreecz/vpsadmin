@@ -1,5 +1,5 @@
 module NodeCtld
-  class Commands::Node::AuthorizeSendKey < Commands::Base
+  class Commands::Pool::AuthorizeSendKey < Commands::Base
     handle 5262
     needs :system, :osctl
 

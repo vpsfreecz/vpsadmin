@@ -1,5 +1,5 @@
 module NodeCtld
-  class Commands::Node::GenerateSendKey < Commands::Base
+  class Commands::Pool::GenerateSendKey < Commands::Base
     handle 5261
     needs :system, :osctl
 
