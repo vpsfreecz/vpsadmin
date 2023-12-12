@@ -243,7 +243,7 @@ module TransactionChains
             .select('dataset_in_pools.*, COUNT(snapshot_in_pools.id) AS snapshot_count')
             .joins(:dataset, :pool, :snapshot_in_pools)
             .where(pools: {role: ::Pool.roles[:hypervisor]})
-            .group('datasets.id')
+            .group('datasets.id, pools.id')
             .having('snapshot_count > 2')
             .order(Arel.sql('COUNT(snapshot_in_pools.id) DESC')),
 
@@ -251,7 +251,7 @@ module TransactionChains
             .select('dataset_in_pools.*, COUNT(snapshot_in_pools.id) AS snapshot_count')
             .joins(:dataset, :pool, :snapshot_in_pools)
             .where(pools: {role: ::Pool.roles[:backup]})
-            .group('datasets.id')
+            .group('datasets.id, pools.id')
             .having('snapshot_count > 20')
             .order(Arel.sql('COUNT(snapshot_in_pools.id) DESC')),
         },
