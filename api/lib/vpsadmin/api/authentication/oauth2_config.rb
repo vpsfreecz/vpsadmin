@@ -147,6 +147,39 @@ module VpsAdmin::API
       end
     end
 
+    def handle_post_revoke(sinatra_request, token, token_type_hint: nil)
+      # Find access token
+      ::Oauth2Authorization
+        .joins(user_session: {session_token: :token})
+        .where(tokens: {token: token})
+        .each do |auth|
+        session_token = auth.user_session.session_token
+        auth.user_session.update!(session_token: nil)
+        session_token.destroy!
+        auth.close unless auth.refreshable?
+        return :revoked
+      end
+
+      # Find refresh token
+      ::Oauth2Authorization
+        .joins(:refresh_token)
+        .where(tokens: {token: token})
+        .each do |auth|
+        refresh_token = auth.refresh_token
+        auth.update!(refresh_token: nil)
+        refresh_token.destroy!
+
+        if auth.user_session.session_token.nil?
+          auth.user_session.update!(closed_at: Time.now)
+        end
+
+        return :revoked
+      end
+
+      # Return successfully even when the token wasn't found
+      :revoked
+    end
+
     def find_client_by_id(client_id)
       ::Oauth2Client.find_by(client_id: client_id)
     end
