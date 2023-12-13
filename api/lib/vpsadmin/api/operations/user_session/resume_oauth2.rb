@@ -21,6 +21,10 @@ module VpsAdmin::API
 
       ::SessionToken.increment_counter(:use_count, sess_token.id)
 
+      if sess_token.lifetime == 'renewable_auto'
+        sess_token.renew!
+      end
+
       begin
         session = ::UserSession.find_for!(user, sess_token, :oauth2)
       rescue ActiveRecord::RecordNotFound

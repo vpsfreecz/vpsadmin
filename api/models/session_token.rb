@@ -5,6 +5,7 @@ class SessionToken < ActiveRecord::Base
 
   validates :user_id, presence: true
 
+  # Must correspond to {Oauth2Client.lifetime}, except for permanent
   enum lifetime: %i(fixed renewable_manual renewable_auto permanent)
 
   def self.custom!(attrs)

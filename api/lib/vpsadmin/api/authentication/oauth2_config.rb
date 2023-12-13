@@ -2,10 +2,6 @@ require 'erb'
 
 module VpsAdmin::API
   class Authentication::OAuth2Config < HaveAPI::Authentication::OAuth2::Config
-    ACCESS_TOKEN_LIFETIME = 15*60
-
-    REFRESH_TOKEN_LIFETIME = 24*60*60
-
     # Authentication result passed back to HaveAPI OAuth2 provider
     #
     # See {HaveAPI::Authentication::OAuth2::AuthResult} for the interface we're
@@ -102,22 +98,29 @@ module VpsAdmin::API
       user_session = Operations::UserSession::NewOAuth2Login.run(
         authorization.user,
         sinatra_request,
-        ACCESS_TOKEN_LIFETIME,
+        authorization.oauth2_client.access_token_lifetime,
+        authorization.oauth2_client.access_token_seconds,
       )
 
       authorization.code.destroy!
 
+      ret = [
+        user_session.session_token.token.token,
+        user_session.session_token.token.valid_to,
+      ]
+
+      if authorization.oauth2_client.issue_refresh_token
+        refresh_token = ::Token.get!(Time.now + authorization.oauth2_client.refresh_token_seconds)
+        ret << refresh_token.token
+      end
+
       authorization.update!(
         code: nil,
         user_session: user_session,
-        refresh_token: ::Token.get!(Time.now + REFRESH_TOKEN_LIFETIME),
+        refresh_token: refresh_token,
       )
 
-      [
-        user_session.session_token.token.token,
-        user_session.session_token.token.valid_to,
-        authorization.refresh_token.token,
-      ]
+      ret
     end
 
     def refresh_tokens(authorization, sinatra_request)
@@ -127,23 +130,27 @@ module VpsAdmin::API
         authorization.user_session.update!(
           session_token: ::SessionToken.custom!(
             user: user,
-            lifetime: 'fixed',
-            interval: ACCESS_TOKEN_LIFETIME,
+            lifetime: authorization.oauth2_client.access_token_lifetime,
+            interval: authorization.oauth2_client.access_token_seconds,
             label: sinatra_request.user_agent,
           ),
         )
 
         authorization.refresh_token.destroy!
 
-        authorization.update!(
-          refresh_token: ::Token.get!(Time.now + REFRESH_TOKEN_LIFETIME)
-        )
-
-        [
+        ret = [
           user_session.session_token.token.token,
           user_session.session_token.token.valid_to,
-          authorization.refresh_token.token,
         ]
+
+        if authorization.oauth2_client.issue_refresh_token
+          authorization.update!(
+            refresh_token: ::Token.get!(Time.now + authorization.oauth2_client.refresh_token_seconds)
+          )
+          ret << authorization.refresh_token.token
+        end
+
+        ret
       end
     end
 

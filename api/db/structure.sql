@@ -1097,6 +1097,10 @@ CREATE TABLE `oauth2_clients` (
   `redirect_uri` varchar(255) NOT NULL,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
+  `access_token_lifetime` int(11) NOT NULL DEFAULT 0,
+  `access_token_seconds` int(11) NOT NULL DEFAULT 900,
+  `refresh_token_seconds` int(11) NOT NULL DEFAULT 3600,
+  `issue_refresh_token` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_oauth2_clients_on_client_id` (`client_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -2209,6 +2213,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20231116085008'),
 ('20231201191543'),
 ('20231203074758'),
-('20231207174132');
+('20231207174132'),
+('20231213163402');
 
 

@@ -7,14 +7,15 @@ module VpsAdmin::API
 
     # @param user [User]
     # @param request [Sinatra::Request]
+    # @param lifetime [String]
     # @param interval [Integer]
     # @return [::UserSession]
-    def run(user, request, interval)
+    def run(user, request, lifetime, interval)
       Operations::User::Login.run(user, request)
 
       token = ::SessionToken.custom!(
         user: user,
-        lifetime: 'fixed',
+        lifetime: lifetime,
         interval: interval,
         label: request.user_agent,
       )
