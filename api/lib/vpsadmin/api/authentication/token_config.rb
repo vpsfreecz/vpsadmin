@@ -29,6 +29,7 @@ module VpsAdmin::API
               req.request,
               req.input[:lifetime],
               req.input[:interval],
+              req.input[:scope].split,
             )
           rescue Exceptions::OperationError => e
             raise Exceptions::AuthenticationError, e.message
@@ -48,6 +49,7 @@ module VpsAdmin::API
         auth.token.update!(opts: {
           lifetime: req.input[:lifetime],
           interval: req.input[:interval],
+          scope: req.input[:scope].split,
         })
         res.ok
       end
@@ -79,6 +81,7 @@ module VpsAdmin::API
               req.request,
               auth.auth_token.opts['lifetime'],
               auth.auth_token.opts['interval'],
+              auth.auth_token.opts['scope'],
             )
           rescue Exceptions::OperationError => e
             raise Exceptions::AuthenticationError, e.message

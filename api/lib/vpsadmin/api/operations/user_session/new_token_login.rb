@@ -9,8 +9,9 @@ module VpsAdmin::API
     # @param request [Sinatra::Request]
     # @param lifetime [String]
     # @param interval [Integer]
+    # @param scope [Array<String>]
     # @return [::UserSession]
-    def run(user, request, lifetime, interval)
+    def run(user, request, lifetime, interval, scope)
       Operations::User::Login.run(user, request)
 
       token = ::SessionToken.custom!(
@@ -20,7 +21,7 @@ module VpsAdmin::API
         label: request.user_agent,
       )
 
-      session = open_session(user, request, :token, token, ['all'])
+      session = open_session(user, request, :token, token, scope)
       ::UserSession.current = session
     end
   end
