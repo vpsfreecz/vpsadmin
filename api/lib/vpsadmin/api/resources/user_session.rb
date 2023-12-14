@@ -6,7 +6,7 @@ module VpsAdmin::API::Resources
     params(:all) do
       id :id
       resource User, value_label: :login
-      string :auth_type, label: 'Authentication type', choices: %i(basic token)
+      string :auth_type, label: 'Authentication type', choices: %i(basic token oauth2)
       string :api_ip_addr, label: 'IP Address'
       string :api_ip_ptr, label: 'IP PTR'
       string :client_ip_addr, label: 'Client IP Address'
