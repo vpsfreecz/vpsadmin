@@ -63,13 +63,33 @@ module VpsAdmin
       # also be patterns, e.g. `vps#*` will authorize access to all actions on
       # resource `vps`.
       #
+      # Scopes can also match path parameters. For example, `vps#*:vps_id=123`
+      # will allow all actions on VPS with ID 123. Multiple path parameters are
+      # separated by commas.
+      #
       # There is one special scope `all`, which authorizes access to all actions.
       # This is the default for token authentication for backwards compatibility.
       #
       # When no scope is set, access is authorized only to action User.Current,
       # so that the client could get information about the user.
+      #
+      # Scope syntax:
+      #
+      #   all
+      #   <resource[.<resource...>]>[#<action>][:<param>=<value>[,<param>=<value...>]]
+      #
+      # resource and action can be patterns, param and value must be exact.
+      #
+      # Examples:
+      #
+      #   vps#show                 allow access to single action
+      #   vps#show:vps_id=123      allow access to specific VPS
+      #   vps#*                    access to all VPS actions
+      #   vps#*:vps_id=123         access to all VPS actions, but restricted to a specific ID
+      #   vps.feature#*            access to nested resources
+      #   {vps,user}#{index,show}  access to VPS and user index/show actions
       HaveAPI::Action.connect_hook(:pre_authorize) do |ret, ctx|
-        ret[:blocks] << Proc.new do |u|
+        ret[:blocks] << Proc.new do |u, path_params|
           # Scopes are checked only for authenticated users
           next if u.nil?
 
@@ -85,7 +105,32 @@ module VpsAdmin
 
           # Check if the user can access this action
           match = user_session.scope.detect do |scope_pattern|
-            File.fnmatch?(scope_pattern, action_scope)
+            colon = scope_pattern.index(':')
+
+            if colon
+              pattern = scope_pattern[0..(colon-1)]
+              allowed_params = Hash[scope_pattern[(colon+1)..-1].split(',').map do |v|
+                arr = v.split('=')
+
+                if arr.length != 2
+                  fail "Invalid path params in scope: #{scope_pattern.inspect}"
+                end
+
+                arr
+              end]
+            else
+              pattern = scope_pattern
+            end
+
+            next(false) unless File.fnmatch?(pattern, action_scope)
+
+            if allowed_params
+              allowed_params.all? do |k, v|
+                path_params[k] == v
+              end
+            else
+              true
+            end
           end
 
           deny if match.nil?
