@@ -56,6 +56,44 @@ module VpsAdmin
         ret
       end
 
+      # Scope-based authorization for all actions
+      #
+      # Each action has its own scope, see the API documentation for their names.
+      # Clients decide which scopes they need during authentication. Scopes can
+      # also be patterns, e.g. `vps#*` will authorize access to all actions on
+      # resource `vps`.
+      #
+      # There is one special scope `all`, which authorizes access to all actions.
+      # This is the default for token authentication for backwards compatibility.
+      #
+      # When no scope is set, access is authorized only to action User.Current,
+      # so that the client could get information about the user.
+      HaveAPI::Action.connect_hook(:pre_authorize) do |ret, ctx|
+        ret[:blocks] << Proc.new do |u|
+          # Scopes are checked only for authenticated users
+          next if u.nil?
+
+          user_session = ::UserSession.current
+          fail 'expected user session' if user_session.nil?
+
+          next if user_session.scope == ['all']
+
+          action_scope = ctx.action_scope
+
+          # User.Current is always allowed
+          next if action_scope == 'user#current'
+
+          # Check if the user can access this action
+          match = user_session.scope.detect do |scope_pattern|
+            File.fnmatch?(scope_pattern, action_scope)
+          end
+
+          deny if match.nil?
+        end
+
+        ret
+      end
+
       e = HaveAPI::Extensions::ActionExceptions
 
       e.rescue(::ActiveRecord::RecordNotFound) do |ret, exception|

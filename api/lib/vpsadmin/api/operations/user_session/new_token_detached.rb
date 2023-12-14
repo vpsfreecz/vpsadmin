@@ -21,7 +21,7 @@ module VpsAdmin::API
         label: opts[:label] || request.user_agent,
       )
 
-      open_session(opts[:user], opts[:request], :token, token, admin: opts[:admin])
+      open_session(opts[:user], opts[:request], :token, token, ['all'], admin: opts[:admin])
     end
   end
 end

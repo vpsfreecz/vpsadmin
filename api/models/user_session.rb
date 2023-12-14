@@ -6,6 +6,8 @@ class UserSession < ActiveRecord::Base
   has_many :oauth2_authorizations
   has_many :transaction_chains
 
+  serialize :scope, JSON
+
   # @param user [::User]
   # @param token [::SessionToken]
   # @param auth_type [Symbol]

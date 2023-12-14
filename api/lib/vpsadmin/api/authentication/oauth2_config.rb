@@ -100,6 +100,7 @@ module VpsAdmin::API
         sinatra_request,
         authorization.oauth2_client.access_token_lifetime,
         authorization.oauth2_client.access_token_seconds,
+        authorization.scope,
       )
 
       authorization.code.destroy!

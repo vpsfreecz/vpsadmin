@@ -11,7 +11,7 @@ module VpsAdmin::API
     def run(user, request)
       Operations::User::Login.run(user, request)
 
-      session = open_session(user, request, :basic, nil)
+      session = open_session(user, request, :basic, nil, ['all'])
       session.close!
       ::UserSession.current = session
     end

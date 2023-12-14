@@ -20,7 +20,7 @@ module VpsAdmin::API
         label: request.user_agent,
       )
 
-      session = open_session(user, request, :token, token)
+      session = open_session(user, request, :token, token, ['all'])
       ::UserSession.current = session
     end
   end

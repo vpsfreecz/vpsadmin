@@ -8,14 +8,16 @@ module VpsAdmin::API
     # @param request [Sinatra::Request]
     # @param auth [:basic, :token]
     # @param token [::SessionToken, nil]
+    # @param scope [Array<String>]
     # @param opts [Hash]
     # @option opts [::User] :admin
     # @return [::UserSession]
-    def open_session(user, request, auth, token, opts = {})
+    def open_session(user, request, auth, token, scope, opts = {})
       ::UserSession.create!(
         user: user,
         admin: opts[:admin],
         auth_type: auth,
+        scope: scope,
         api_ip_addr: request.ip,
         api_ip_ptr: get_ptr(request.ip),
         client_ip_addr: request.env['HTTP_CLIENT_IP'],

@@ -1070,7 +1070,7 @@ CREATE TABLE `oauth2_authorizations` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `oauth2_client_id` bigint(20) NOT NULL,
   `user_id` bigint(20) NOT NULL,
-  `scope` varchar(255) DEFAULT NULL,
+  `scope` text NOT NULL,
   `code_id` bigint(20) DEFAULT NULL,
   `user_session_id` bigint(20) DEFAULT NULL,
   `refresh_token_id` bigint(20) DEFAULT NULL,
@@ -1723,13 +1723,14 @@ CREATE TABLE `user_sessions` (
   `client_version` varchar(255) NOT NULL,
   `session_token_id` int(11) DEFAULT NULL,
   `session_token_str` varchar(100) DEFAULT NULL,
-  `created_at` datetime /* mariadb-5.3 */ NOT NULL,
-  `last_request_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
-  `closed_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `last_request_at` datetime DEFAULT NULL,
+  `closed_at` datetime DEFAULT NULL,
   `admin_id` int(11) DEFAULT NULL,
   `api_ip_ptr` varchar(255) DEFAULT NULL,
   `client_ip_addr` varchar(46) DEFAULT NULL,
   `client_ip_ptr` varchar(255) DEFAULT NULL,
+  `scope` text NOT NULL DEFAULT '["all"]',
   PRIMARY KEY (`id`),
   KEY `index_user_sessions_on_user_id` (`user_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -2214,6 +2215,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20231201191543'),
 ('20231203074758'),
 ('20231207174132'),
-('20231213163402');
+('20231213163402'),
+('20231214083846');
 
 
