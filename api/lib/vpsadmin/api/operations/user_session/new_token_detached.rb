@@ -11,6 +11,7 @@ module VpsAdmin::API
     # @option opts [Sinatra::Request] :request
     # @option opts [String] :lifetime
     # @option opts [Integer] :interval
+    # @options opts [Array<String>] :scope
     # @option opts [String] :label
     # @return [::UserSession]
     def run(opts)
@@ -21,7 +22,14 @@ module VpsAdmin::API
         label: opts[:label] || request.user_agent,
       )
 
-      open_session(opts[:user], opts[:request], :token, token, ['all'], admin: opts[:admin])
+      open_session(
+        opts[:user],
+        opts[:request],
+        :token,
+        token,
+        opts[:scope],
+        admin: opts[:admin],
+      )
     end
   end
 end

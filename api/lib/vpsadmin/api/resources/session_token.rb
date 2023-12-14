@@ -22,13 +22,14 @@ class VpsAdmin::API::Resources::SessionToken < HaveAPI::Resource
            choices: %i(fixed renewable_manual renewable_auto permanent)
     integer :interval, label: 'Interval',
             desc: 'An interval of validity the token was created with'
+    string :scope, label: 'Scope', desc: 'Scopes this token will be authorized for, separated by spaces'
   end
 
   params(:common) do
     use :user
     string :token, label: 'Token', desc: 'Authentication token', db_name: :token_string
     datetime :valid_to, label: 'Valid to', desc: 'End of token validity period'
-    use :create
+    use :create, exclude: %i(scope)
     integer :use_count, label: 'Use count',
             desc: 'How many times was the token used to authenticate the user'
     datetime :created_at
@@ -73,6 +74,7 @@ class VpsAdmin::API::Resources::SessionToken < HaveAPI::Resource
       patch :label, required: true
       patch :lifetime, required: true
       patch :interval, required: true
+      patch :scope, default: 'all', fill: true
     end
 
     output do
@@ -90,6 +92,7 @@ class VpsAdmin::API::Resources::SessionToken < HaveAPI::Resource
         request: request,
         lifetime: input[:lifetime],
         interval: input[:interval],
+        scope: input[:scope].split,
         label: input[:label],
       )
       ok(session.session_token)
