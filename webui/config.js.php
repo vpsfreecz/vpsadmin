@@ -17,7 +17,11 @@ root.vpsAdmin = {
 		url: "<?php echo EXT_API_URL ?>",
 		version: "<?php echo API_VERSION ?>"
 	},
+<?php if ($_SESSION['auth_type'] == 'oauth2') { ?>
+	accessToken: "<?php echo $_SESSION['access_token']['access_token'] ?>",
+<?php } elseif ($_SESSION['auth_type'] == 'token') { ?>
 	sessionToken: "<?php echo $_SESSION['session_token'] ?>",
+<?php } ?>
 	sessionLength: <?php echo USER_LOGIN_INTERVAL ?>,
 	description: <?php echo json_encode($_SESSION['api_description']) ?>,
 	sessionManagement: true
@@ -26,7 +30,12 @@ root.vpsAdmin = {
 var chainTimeout;
 var api = root.apiClient = new HaveAPI.Client(root.vpsAdmin.api.url, {version: root.vpsAdmin.api.version});
 api.useDescription(root.vpsAdmin.description);
+
+<?php if ($_SESSION['auth_type'] == 'oauth2') { ?>
+api.authenticate('oauth2', {access_token: {access_token: root.vpsAdmin.accessToken}}, function(){}, false);
+<?php } elseif ($_SESSION['auth_type'] == 'token') { ?>
 api.authenticate('token', {token: root.vpsAdmin.sessionToken}, function(){}, false);
+<?php } ?>
 
 <?php include 'js/transaction-chains.js'; ?>
 <?php include 'js/session-countdown.js'; ?>

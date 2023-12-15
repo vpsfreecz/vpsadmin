@@ -20,117 +20,30 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-function loginUser($access_url) {
-	global $xtpl, $api;
 
-	session_destroy();
-	session_start();
+// Redirect to OAuth2 authorization server
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_GET["action"] == 'login') {
+	setupOAuth2ForLogin();
+	$api->getAuthenticationProvider()->requestAuthorizationCode();
+	exit;
+}
 
-	$m = $api->user->current();
+// Callback from the OAuth2 authorization server
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && $_GET["action"] == 'callback') {
+	if (isset($_GET['code'])) {
+		setupOAuth2ForLogin();
+		$provider = $api->getAuthenticationProvider();
+		$provider->requestAccessToken();
 
-	$_SESSION["user"]["id"] = $m->id;
-
-	$_SESSION['api_description'] = $api->getDescription();
-	$_SESSION["logged_in"] = true;
-	$_SESSION["session_token"] = $api->getAuthenticationProvider()->getToken();
-	$_SESSION["user"] = array(
-		'id' => $m->id,
-		'login' => $m->login,
-		'password_reset' => $m->password_reset,
-		'password' => $m->password_reset ? $_POST['passwd'] : null,
-	);
-	$_SESSION["is_user"] =       ($m->level >= PRIV_USER) ?       true : false;
-	$_SESSION["is_poweruser"] =  ($m->level >= PRIV_POWERUSER) ?  true : false;
-	$_SESSION["is_admin"] =      ($m->level >= PRIV_ADMIN) ?      true : false;
-	$_SESSION["is_superadmin"] = ($m->level >= PRIV_SUPERADMIN) ? true : false;
-
-	csrf_init($_POST['username'], $_POST['passwd']);
-
-	$api->user->touch($m->id);
-
-	if (mustResetPassword()) {
-		redirect('?page=');
-
-	} elseif($access_url
-		&& strpos($access_url, "?page=login&action=login") === false
-		&& strpos($access_url, "?page=jumpto") === false) {
-
-		redirect($access_url);
-
-	} elseif (isAdmin()) {
-		redirect('?page=cluster');
-
+		loginUser($_SESSION['access_url']);
 	} else {
-		redirect('?page=');
+		$xtpl->perex(_('Authentication error'), _('Please try to sign in again.'));
 	}
 }
 
-$authenticationCallback = function ($action, $token, $params) use ($xtpl) {
-	if ($action == 'totp') {
-		session_start();
-		$_SESSION['auth_token'] = $token;
-		redirect('?page=login&action=totp');
-	}
-
-	$xtpl->perex(_('Error'), 'Unsupported authentication method, please contact support.');
-};
-
-if ($_GET["action"] == 'login') {
-
-	if ($_POST["passwd"] && $_POST["username"]) {
-		try {
-			$api->authenticate('token', [
-				'user' => $_POST['username'],
-				'password' => $_POST['passwd'],
-				'lifetime' => 'renewable_auto',
-				'interval' => USER_LOGIN_INTERVAL,
-				'callback' => $authenticationCallback,
-			]);
-
-			loginUser($_SESSION['access_url']);
-
-		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-			$xtpl->perex(_("Error"), $e->getMessage());
-		}
-
-	} else $xtpl->perex(_("Error"), _("Wrong username or password"));
-}
-
-if ($_GET['action'] == 'totp' && isSet($_SESSION['auth_token'])) {
-	if ($_POST['code']) {
-		try {
-			$api->authenticate('token', [
-				'resume' => [
-					'action' => 'totp',
-					'token' => $_SESSION['auth_token'],
-					'input' => ['code' => $_POST['code']],
-				],
-				'callback' => $authenticationCallback,
-			]);
-
-			unset($_SESSION['auth_token']);
-			loginUser($_SESSION['access_url']);
-
-		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-			$xtpl->perex(_("Error"), $e->getMessage());
-			totp_login_form();
-		}
-	} else {
-		totp_login_form();
-	}
-}
-
+// Revoke access token
 if ($_GET["action"] == 'logout') {
-
-	$_SESSION["logged_in"] = false;
-	$_SESSION["session_token"] = NULL;
-	unset($_SESSION["user"]);
-
-	$api->logout();
-
-	$xtpl->perex(_("Goodbye"), _("Logout successful"));
-
-	session_destroy();
+	logoutUser();
 }
 
 if (isAdmin() && ($_GET["action"] == 'drop_admin')) {
@@ -143,69 +56,9 @@ if (isAdmin() && ($_GET["action"] == 'drop_admin')) {
 }
 
 if (isAdmin() && ($_GET["action"] == 'switch_context') && isset($_GET["m_id"]) && !$_SESSION["context_switch"]) {
-
-	$admin = $_SESSION;
-
-	try {
-		$user = $api->user->show($_GET['m_id']);
-
-		// Get a token for target user
-		$token = $api->session_token->create(array(
-			'user' => $user->id,
-			'label' => client_identity().'(context switch)',
-			'lifetime' => 'renewable_auto',
-			'interval' => USER_LOGIN_INTERVAL
-		));
-
-		session_destroy();
-		session_start();
-
-		// Do this to reload description from the API
-		$api->authenticate('token', array('token' => $token->token));
-
-		$_SESSION["logged_in"] = true;
-		$_SESSION["session_token"] = $token->token;
-		$_SESSION["borrowed_token"] = true;
-		$_SESSION["user"] = array(
-			'id' => $user->id,
-			'login' => $user->login,
-		);
-		$_SESSION["is_user"] =       ($user->level >= PRIV_USER) ?       true : false;
-		$_SESSION["is_poweruser"] =  ($user->level >= PRIV_POWERUSER) ?  true : false;
-		$_SESSION["is_admin"] =      ($user->level >= PRIV_ADMIN) ?      true : false;
-		$_SESSION["is_superadmin"] = ($user->level >= PRIV_SUPERADMIN) ? true : false;
-
-		$_SESSION["context_switch"] = true;
-		$_SESSION["original_admin"] = $admin;
-
-		notify_user(_("Change to").' '.$user->login.' '._('was successful'),
-				_("Your privilege level: ")
-				. $cfg_privlevel[$user->level]);
-
-		redirect($_GET["next"]);
-
-	} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-		$xtpl->perex_format_errors(_('Failed to switch context'), $e->getResponse());
-	}
+	switchUserContext($_GET['m_id']);
 }
 
 if ($_GET["action"] == "regain_admin" && $_SESSION["context_switch"]) {
-	$admin = $_SESSION["original_admin"];
-
-	if($_SESSION["borrowed_token"]) {
-		try {
-			$api->logout();
-			$api->authenticate('token', array('token' => $admin['session_token']));
-
-		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-			notify_user(_('Failed to destroy borrowed token'), $e->getResponse());
-		}
-	}
-
-	session_destroy();
-	session_start();
-
-	$_SESSION = $admin;
-
-	redirect($_GET["next"]);
+	regainAdminUser();
 }

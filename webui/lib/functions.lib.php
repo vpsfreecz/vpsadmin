@@ -895,10 +895,6 @@ function isAdmin(){
 	return $_SESSION["is_admin"] ?? false;
 }
 
-function mustResetPassword() {
-	return $_SESSION['user']['password_reset'] ?? false;
-}
-
 function get_version () {
 	if (isset($_SESSION['commit_hash'])) {
 		$hash = $_SESSION['commit_hash'];

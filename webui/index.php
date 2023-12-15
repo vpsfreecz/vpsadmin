@@ -38,6 +38,7 @@ include WWW_ROOT.'lib/mail.lib.php';
 include WWW_ROOT.'lib/helpbox.lib.php';
 include WWW_ROOT.'lib/security.lib.php';
 include WWW_ROOT.'lib/munin.lib.php';
+include WWW_ROOT.'lib/login.lib.php';
 
 include WWW_ROOT.'forms/backup.forms.php';
 include WWW_ROOT.'forms/cluster.forms.php';
@@ -51,7 +52,6 @@ include WWW_ROOT.'forms/networking.forms.php';
 include WWW_ROOT.'forms/outage.forms.php';
 include WWW_ROOT.'forms/monitoring.forms.php';
 include WWW_ROOT.'forms/userns.forms.php';
-include WWW_ROOT.'forms/login.forms.php';
 include WWW_ROOT.'forms/oom_reports.forms.php';
 include WWW_ROOT.'forms/node.forms.php';
 include WWW_ROOT.'forms/incidents.forms.php';
@@ -75,9 +75,7 @@ $xtpl = new XTemplate(WWW_ROOT.'template/template.html');
 $lang = new Lang($langs, $xtpl);
 
 $xtpl->assign("VERSION", get_version());
-$xtpl->assign("L_USERNAME", _("Username"));
-$xtpl->assign("L_PASSWORD", _("Password"));
-$xtpl->assign("L_LOGIN", _("Login"));
+$xtpl->assign("L_LOGIN", _("Sign in"));
 $xtpl->assign("L_LOGOUT", _("Logout"));
 
 $api_cluster = null;
@@ -85,7 +83,16 @@ $config = null;
 
 try {
 	if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
-		$api->authenticate('token', array('token' => $_SESSION['session_token']), false);
+		switch ($_SESSION['auth_type']) {
+		case 'oauth2':
+			$api->authenticate('oauth2', ['access_token' => $_SESSION['access_token']], false);
+			break;
+		case 'token':
+			$api->authenticate('token', ['token' => $_SESSION['session_token']], false);
+			break;
+		default:
+			die("Unknown authentication method");
+		}
 
 		try {
 			$api_cluster = $api->cluster->show();
@@ -120,8 +127,6 @@ try {
 											This is usually used during outage to prevent data corruption.<br />")
 											."<br>".($api_cluster->maintenance_lock_reason ? _('Reason').': '.$api_cluster->maintenance_lock_reason.'<br><br>' : '')
 											._("Please be patient."));
-	} else if (mustResetPassword()) {
-		include WWW_ROOT.'pages/page_password_reset.php';
 	} else {
 		show_notification();
 

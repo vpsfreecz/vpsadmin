@@ -53,7 +53,16 @@ include WWW_ROOT.'config_cfg.php';
 
 if ($_SESSION["logged_in"]) {
 	try {
-		$api->authenticate('token', array('token' => $_SESSION['session_token']), false);
+		switch ($_SESSION['auth_type']) {
+		case 'oauth2':
+			$api->authenticate('oauth2', ['access_token' => $_SESSION['access_token']], false);
+			break;
+		case 'token':
+			$api->authentication('token', ['token' => $_SESSION['session_token']], false);
+			break;
+		default:
+			die("Unknown authentication method");
+		}
 
 		if ($_SESSION["transactbox_expiration"] < time()) {
 			unset($_SESSION);
