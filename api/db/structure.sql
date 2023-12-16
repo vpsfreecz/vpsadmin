@@ -28,13 +28,14 @@ CREATE TABLE `auth_tokens` (
   `token_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `opts` varchar(255) DEFAULT NULL,
-  `created_at` datetime /* mariadb-5.3 */ NOT NULL,
+  `created_at` datetime NOT NULL,
   `api_ip_addr` varchar(46) DEFAULT NULL,
   `api_ip_ptr` varchar(255) DEFAULT NULL,
   `client_ip_addr` varchar(46) DEFAULT NULL,
   `client_ip_ptr` varchar(255) DEFAULT NULL,
   `user_agent_id` int(11) DEFAULT NULL,
   `client_version` varchar(255) DEFAULT NULL,
+  `purpose` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1432,7 +1433,7 @@ CREATE TABLE `sysconfig` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_sysconfig_on_category_and_name` (`category`,`name`) USING BTREE,
   KEY `index_sysconfig_on_category` (`category`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tokens`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2216,6 +2217,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20231203074758'),
 ('20231207174132'),
 ('20231213163402'),
-('20231214083846');
+('20231214083846'),
+('20231216135851');
 
 

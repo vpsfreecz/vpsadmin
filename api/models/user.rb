@@ -155,7 +155,7 @@ class User < ActiveRecord::Base
       self.password = provider.encrypt(login, plaintext)
     end
 
-    if password_reset && lockout
+    if password_reset
       self.password_reset = false
       self.lockout = false
     end

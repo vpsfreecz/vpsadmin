@@ -29,6 +29,11 @@
               <h4 class="card-title text-center mb-4 mt-1">Sign in using vpsAdmin</h4>
               <h5 class="card-subtitle text-center text-muted mb-2"><%= client.name %></h5>
               <hr>
+              <% if step == :reset_password -%>
+                <div class="alert alert-primary" role="alert">
+                  Please set a new password.
+                </div>
+              <% end -%>
               <% (auth_result ? auth_result.errors : []).each do |error| -%>
                 <div class="alert alert-danger" role="alert">
                   Error: <%= Rack::Utils.escape_html(error) %>
@@ -42,17 +47,9 @@
 
                 <% if auth_token -%>
                   <input type="hidden" name="auth_token" value="<%= auth_token %>">
+                <% end -%>
 
-                  <div class="form-group">
-                    <div class="input-group">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
-                      </div>
-                      <input type="text" class="form-control" name="totp_code" id="totp_code" placeholder="TOTP code">
-                    </div>
-                  </div>
-
-                <% else %>
+                <% if step == :credentials -%>
                   <div class="form-group">
                     <div class="input-group">
                       <div class="input-group-prepend">
@@ -68,6 +65,35 @@
                         <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
                       </div>
                       <input class="form-control" type="password" name="password" placeholder="Password">
+                    </div>
+                  </div>
+
+                <% elsif step == :totp -%>
+                  <div class="form-group">
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
+                      </div>
+                      <input type="text" class="form-control" name="totp_code" id="totp_code" placeholder="TOTP code">
+                    </div>
+                  </div>
+
+                <% elsif step == :reset_password -%>
+                  <div class="form-group">
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
+                      </div>
+                      <input type="password" class="form-control" name="new_password1" placeholder="New password" minlength="8">
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
+                      </div>
+                      <input type="password" class="form-control" name="new_password2" placeholder="Repeat new password" minlength="8">
                     </div>
                   </div>
                 <% end -%>

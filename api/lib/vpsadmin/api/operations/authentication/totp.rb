@@ -2,7 +2,7 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::Authentication::Totp < Operations::Base
-    Result = Struct.new(:user, :auth_token, :recovery_device) do
+    Result = Struct.new(:user, :auth_token, :recovery_device, :reset_password) do
       def authenticated?
         !auth_token.nil?
       end
@@ -10,6 +10,8 @@ module VpsAdmin::API
       def used_recovery_code?
         !recovery_device.nil?
       end
+
+      alias_method :reset_password?, :reset_password
     end
 
     # @param token [String]
@@ -18,6 +20,7 @@ module VpsAdmin::API
     def run(token, code)
       auth_token = ::AuthToken.joins(:token).includes(:token, :user).find_by(
         tokens: {token: token},
+        purpose: 'totp',
       )
 
       if auth_token.nil? || !auth_token.token_valid?
@@ -41,8 +44,20 @@ module VpsAdmin::API
             dev.update!(enabled: false)
           end
 
-          auth_token.destroy!
-          return Result.new(user, auth_token, last_verification_at ? nil : dev)
+          reset_password = user.password_reset
+
+          if reset_password
+            auth_token.update!(purpose: 'reset_password')
+          else
+            auth_token.destroy!
+          end
+
+          return Result.new(
+            user,
+            auth_token,
+            last_verification_at ? nil : dev,
+            reset_password,
+          )
         end
       end
 

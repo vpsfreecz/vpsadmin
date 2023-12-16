@@ -12,7 +12,8 @@ module VpsAdmin::API
       def self.from_password_result(auth)
         new(
           authenticated: auth.authenticated?,
-          complete: auth.complete?,
+          complete: auth.complete? && !auth.reset_password?,
+          reset_password: auth.reset_password?,
           auth_token: auth.token,
           user: auth.user,
         )
@@ -23,7 +24,9 @@ module VpsAdmin::API
       def self.from_totp_result(auth)
         new(
           authenticated: auth.authenticated?,
-          complete: auth.authenticated?,
+          complete: auth.authenticated? && !auth.reset_password?,
+          reset_password: auth.reset_password?,
+          auth_token: auth.auth_token.to_s,
           user: auth.user,
         )
       end
@@ -32,7 +35,7 @@ module VpsAdmin::API
       attr_reader :authenticated
 
       # @return [Boolean]
-      attr_reader :complete
+      attr_accessor :complete
 
       # @return [Boolean]
       attr_reader :cancel
@@ -42,21 +45,26 @@ module VpsAdmin::API
       attr_accessor :auth_token
 
       # @return [User, nil]
-      attr_reader :user
+      attr_accessor :user
 
       # @return [Array<String>]
       attr_reader :errors
 
+      # @return [Boolean]
+      attr_accessor :reset_password
+      alias_method :reset_password?, :reset_password
+
       # @return [Oauth2Authorization]
       attr_accessor :authorization
 
-      def initialize(authenticated: false, complete: false, auth_token: nil, user: nil, cancel: false, errors: [])
+      def initialize(authenticated: false, complete: false, auth_token: nil, user: nil, cancel: false, errors: [], reset_password: false)
         @authenticated = authenticated
         @complete = complete
         @auth_token = auth_token
         @user = user
         @cancel = cancel
         @errors = errors
+        @reset_password = reset_password
       end
     end
 
@@ -65,6 +73,14 @@ module VpsAdmin::API
       # Variables passed to the ERB template
       auth_token = auth_result && auth_result.auth_token
       user = sinatra_params[:user]
+      step =
+        if auth_token && !auth_result.reset_password
+          :totp
+        elsif auth_token && auth_result.reset_password
+          :reset_password
+        else
+          :credentials
+        end
 
       @template ||= ERB.new(
         File.read(File.join(__dir__, 'oauth2_authorize.erb')),
@@ -84,6 +100,11 @@ module VpsAdmin::API
 
       elsif sinatra_params[:auth_token] && sinatra_params[:totp_code]
         auth_totp(sinatra_request, sinatra_params, oauth2_request, client)
+
+      elsif sinatra_params[:auth_token] \
+            && sinatra_params[:new_password1] \
+            && sinatra_params[:new_password2]
+        reset_password(sinatra_request, sinatra_params, oauth2_request, client)
 
       else
         nil
@@ -233,7 +254,7 @@ module VpsAdmin::API
 
       ret = AuthResult.from_password_result(auth)
 
-      if !auth.authenticated?
+      unless auth.authenticated?
         Operations::User::FailedLogin.run(
           auth.user,
           :password,
@@ -242,9 +263,10 @@ module VpsAdmin::API
         )
 
         ret.errors << 'invalid user or password'
+        return ret
       end
 
-      if auth.authenticated? && auth.complete?
+      if auth.authenticated? && auth.complete? && !auth.reset_password?
         create_authorization(ret, oauth2_request, client)
       end
 
@@ -268,7 +290,9 @@ module VpsAdmin::API
           )
         end
 
-        create_authorization(ret, oauth2_request, client)
+        unless auth.reset_password?
+          create_authorization(ret, oauth2_request, client)
+        end
       else
         Operations::User::FailedLogin.run(
           auth.user,
@@ -280,6 +304,35 @@ module VpsAdmin::API
         ret.auth_token = sinatra_params[:auth_token]
         ret.errors << 'invalid TOTP code'
       end
+
+      ret
+    end
+
+    def reset_password(sinatra_request, sinatra_params, oauth2_request, client)
+      ret = AuthResult.new(
+        authenticated: true,
+        reset_password: true,
+        auth_token: sinatra_params[:auth_token],
+      )
+
+      if sinatra_params[:new_password1] != sinatra_params[:new_password2]
+        ret.errors << 'passwords do not match'
+        return ret
+      elsif sinatra_params[:new_password1].length < 8
+        ret.errors << 'password should have at least 8 characters'
+        return ret
+      end
+
+      ret.user = Operations::Authentication::ResetPassword.run(
+        sinatra_params[:auth_token],
+        sinatra_params[:new_password1],
+      )
+
+      ret.auth_token = nil
+      ret.complete = true
+      ret.reset_password = false
+
+      create_authorization(ret, oauth2_request, client)
 
       ret
     end

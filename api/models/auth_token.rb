@@ -5,6 +5,7 @@ class AuthToken < ActiveRecord::Base
   belongs_to :user_agent
   belongs_to :token, dependent: :delete
 
+  enum purpose: %i(totp reset_password)
   serialize :opts, JSON
   validates :user_id, presence: true
 

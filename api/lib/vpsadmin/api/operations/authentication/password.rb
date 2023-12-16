@@ -3,9 +3,10 @@ require 'vpsadmin/api/operations/utils/dns'
 
 module VpsAdmin::API
   class Operations::Authentication::Password < Operations::Base
-    Result = Struct.new(:user, :authenticated, :complete, :token) do
+    Result = Struct.new(:user, :authenticated, :complete, :reset_password, :token) do
       alias_method :authenticated?, :authenticated
       alias_method :complete?, :complete
+      alias_method :reset_password?, :reset_password
     end
 
     include Operations::Utils::Dns
@@ -36,40 +37,60 @@ module VpsAdmin::API
             )
           end
         end
-      end
 
-      require_totp = require_totp?(user)
-      ret = Result.new(user, authenticated, !require_totp)
+        require_totp = require_totp?(user)
 
-      if multi_factor && require_totp
-        ret.token = ::Token.for_new_record!(Time.now + 60*5) do |token|
-          t = ::AuthToken.new(
-            user: user,
-            token: token,
-          )
+        ret = Result.new(
+          user,
+          authenticated,
+          !require_totp,
+          !require_totp && user.password_reset,
+        )
 
-          if request
-            t.assign_attributes(
-              api_ip_addr: request.ip,
-              api_ip_ptr: get_ptr(request.ip),
-              client_ip_addr: request.env['HTTP_CLIENT_IP'],
-              client_ip_ptr: request.env['HTTP_CLIENT_IP'] && get_ptr(request.env['HTTP_CLIENT_IP']),
-              user_agent: ::UserAgent.find_or_create!(request.user_agent || ''),
-              client_version: request.user_agent || '',
-            )
-          end
-
-          t.save!
-          t
+        if require_totp && multi_factor
+          ret.token = create_auth_token('totp', user, request)
+        elsif user.password_reset && multi_factor
+          ret.token = create_auth_token('reset_password', user, request)
         end
-      end
 
-      ret
+        ret
+      else
+        Result.new(
+          user,
+          false,
+          false,
+          false,
+        )
+      end
     end
 
     protected
     def require_totp?(user)
       user.user_totp_devices.where(enabled: true).any?
+    end
+
+    def create_auth_token(purpose, user, request)
+      ::Token.for_new_record!(Time.now + 60*5) do |token|
+        t = ::AuthToken.new(
+          user: user,
+          token: token,
+          purpose: purpose,
+        )
+
+        if request
+          t.assign_attributes(
+            api_ip_addr: request.ip,
+            api_ip_ptr: get_ptr(request.ip),
+            client_ip_addr: request.env['HTTP_CLIENT_IP'],
+            client_ip_ptr: request.env['HTTP_CLIENT_IP'] && get_ptr(request.env['HTTP_CLIENT_IP']),
+            user_agent: ::UserAgent.find_or_create!(request.user_agent || ''),
+            client_version: request.user_agent || '',
+          )
+        end
+
+        t.save!
+        t
+      end
     end
   end
 end
