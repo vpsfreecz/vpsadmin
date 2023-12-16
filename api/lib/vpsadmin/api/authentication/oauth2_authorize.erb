@@ -9,6 +9,15 @@
     <style>
       body { margin-top: 40px; }
     </style>
+    <script type="text/javascript">
+      function onLoginFormSubmit() {
+        setTimeout(function() {
+          var button = document.getElementById('login');
+          button.disabled = true;
+          button.value = "Logging in...";
+        }, 10);
+      }
+    </script>
   </head>
   <body>
     <div class="container">
@@ -26,7 +35,7 @@
                 </div>
               <% end -%>
 
-              <form action="<%= authorize_path %>" method="post">
+              <form action="<%= authorize_path %>" method="post" onsubmit="onLoginFormSubmit();">
                 <% oauth2_params(oauth2_request).each do |k, v| -%>
                   <input type="hidden" name="<%= k %>" value="<%= Rack::Utils.escape_html(v) %>">
                 <% end -%>
@@ -64,7 +73,7 @@
                 <% end -%>
 
                 <div class="form-group">
-                  <input type="submit" class="btn btn-primary btn-block" name="login" value="Login">
+                  <input type="submit" class="btn btn-primary btn-block" name="login" id="login" value="Login">
                 </div>
 
                 <div class="form-group text-center">
