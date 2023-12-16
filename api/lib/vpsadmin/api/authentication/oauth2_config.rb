@@ -213,6 +213,10 @@ module VpsAdmin::API
       session && session.user
     end
 
+    def base_url
+      ::SysConfig.get(:core, :auth_url) || ::SysConfig.get(:core, :api_url)
+    end
+
     protected
     def auth_credentials(sinatra_request, sinatra_params, oauth2_request, client)
       auth = Operations::Authentication::Password.run(
