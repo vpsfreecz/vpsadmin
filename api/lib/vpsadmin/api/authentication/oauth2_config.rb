@@ -68,47 +68,49 @@ module VpsAdmin::API
       end
     end
 
-    # @param auth_result [AuthResult]
-    def render_authorize_page(oauth2_request, sinatra_params, client, auth_result: nil)
-      # Variables passed to the ERB template
-      auth_token = auth_result && auth_result.auth_token
-      user = sinatra_params[:user]
-      step =
-        if auth_token && !auth_result.reset_password
-          :totp
-        elsif auth_token && auth_result.reset_password
-          :reset_password
-        else
-          :credentials
-        end
-
-      @template ||= ERB.new(
-        File.read(File.join(__dir__, 'oauth2_authorize.erb')),
-        trim_mode: '-',
+    # @return [AuthResult, nil]
+    def handle_get_authorize(sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:)
+      render_authorize_page(
+        oauth2_request:,
+        oauth2_response:,
+        sinatra_params:,
+        client:,
       )
-      @template.result(binding)
     end
 
     # @return [AuthResult, nil]
-    def handle_post_authorize(sinatra_request, sinatra_params, oauth2_request, client)
+    def handle_post_authorize(sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:)
       if !sinatra_params[:login]
         return AuthResult.new(cancel: true)
       end
 
-      if sinatra_params[:user] && sinatra_params[:password]
-        auth_credentials(sinatra_request, sinatra_params, oauth2_request, client)
+      auth_result =
+        if sinatra_params[:user] && sinatra_params[:password]
+          auth_credentials(sinatra_request, sinatra_params, oauth2_request, client)
 
-      elsif sinatra_params[:auth_token] && sinatra_params[:totp_code]
-        auth_totp(sinatra_request, sinatra_params, oauth2_request, client)
+        elsif sinatra_params[:auth_token] && sinatra_params[:totp_code]
+          auth_totp(sinatra_request, sinatra_params, oauth2_request, client)
 
-      elsif sinatra_params[:auth_token] \
-            && sinatra_params[:new_password1] \
-            && sinatra_params[:new_password2]
-        reset_password(sinatra_request, sinatra_params, oauth2_request, client)
+        elsif sinatra_params[:auth_token] \
+              && sinatra_params[:new_password1] \
+              && sinatra_params[:new_password2]
+          reset_password(sinatra_request, sinatra_params, oauth2_request, client)
 
-      else
-        nil
+        else
+          nil
+        end
+
+      if auth_result.nil? || !auth_result.authenticated || !auth_result.complete
+        render_authorize_page(
+          oauth2_request:,
+          oauth2_response:,
+          sinatra_params:,
+          client:,
+          auth_result:,
+        )
       end
+
+      auth_result
     end
 
     # @param auth_result [AuthResult]
@@ -241,6 +243,30 @@ module VpsAdmin::API
     end
 
     protected
+    # @param auth_result [AuthResult]
+    def render_authorize_page(oauth2_request:, oauth2_response:, sinatra_params:, client:, auth_result: nil)
+      # Variables passed to the ERB template
+      auth_token = auth_result && auth_result.auth_token
+      user = sinatra_params[:user]
+      step =
+        if auth_token && !auth_result.reset_password
+          :totp
+        elsif auth_token && auth_result.reset_password
+          :reset_password
+        else
+          :credentials
+        end
+
+      @template ||= ERB.new(
+        File.read(File.join(__dir__, 'oauth2_authorize.erb')),
+        trim_mode: '-',
+      )
+
+      oauth2_response.content_type = 'text/html'
+      oauth2_response.write(@template.result(binding))
+      nil
+    end
+
     def auth_credentials(sinatra_request, sinatra_params, oauth2_request, client)
       auth = Operations::Authentication::Password.run(
         sinatra_params[:user],
