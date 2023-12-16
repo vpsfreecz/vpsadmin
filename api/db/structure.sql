@@ -1079,12 +1079,14 @@ CREATE TABLE `oauth2_authorizations` (
   `updated_at` datetime(6) NOT NULL,
   `code_challenge` varchar(255) DEFAULT NULL,
   `code_challenge_method` varchar(20) DEFAULT NULL,
+  `single_sign_on_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_oauth2_authorizations_on_oauth2_client_id` (`oauth2_client_id`),
   KEY `index_oauth2_authorizations_on_user_id` (`user_id`),
   KEY `index_oauth2_authorizations_on_code_id` (`code_id`),
   KEY `index_oauth2_authorizations_on_user_session_id` (`user_session_id`),
-  KEY `index_oauth2_authorizations_on_refresh_token_id` (`refresh_token_id`)
+  KEY `index_oauth2_authorizations_on_refresh_token_id` (`refresh_token_id`),
+  KEY `index_oauth2_authorizations_on_single_sign_on_id` (`single_sign_on_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oauth2_clients`;
@@ -1102,6 +1104,7 @@ CREATE TABLE `oauth2_clients` (
   `access_token_seconds` int(11) NOT NULL DEFAULT 900,
   `refresh_token_seconds` int(11) NOT NULL DEFAULT 3600,
   `issue_refresh_token` tinyint(1) NOT NULL DEFAULT 0,
+  `allow_single_sign_on` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_oauth2_clients_on_client_id` (`client_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -1328,6 +1331,20 @@ CREATE TABLE `session_tokens` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `single_sign_ons`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `single_sign_ons` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL,
+  `token_id` bigint(20) DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_single_sign_ons_on_user_id` (`user_id`),
+  KEY `index_single_sign_ons_on_token_id` (`token_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `snapshot_downloads`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -1433,7 +1450,7 @@ CREATE TABLE `sysconfig` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_sysconfig_on_category_and_name` (`category`,`name`) USING BTREE,
   KEY `index_sysconfig_on_category` (`category`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tokens`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2218,6 +2235,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20231207174132'),
 ('20231213163402'),
 ('20231214083846'),
-('20231216135851');
+('20231216135851'),
+('20231216155818');
 
 

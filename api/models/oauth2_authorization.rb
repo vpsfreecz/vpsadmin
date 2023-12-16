@@ -4,6 +4,7 @@ class Oauth2Authorization < ::ActiveRecord::Base
   belongs_to :code, class_name: 'Token', dependent: :destroy
   belongs_to :user_session
   belongs_to :refresh_token, class_name: 'Token', dependent: :destroy
+  belongs_to :single_sign_on
   serialize :scope, JSON
 
   def check_code_validity(redirect_uri)
@@ -12,6 +13,10 @@ class Oauth2Authorization < ::ActiveRecord::Base
 
   def refreshable?
     refresh_token && refresh_token.valid_to > Time.now
+  end
+
+  def active?
+    (code && code.valid_to > Time.now) || (user_session && user_session.closed_at.nil?)
   end
 
   def close

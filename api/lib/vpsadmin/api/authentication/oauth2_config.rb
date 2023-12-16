@@ -2,6 +2,8 @@ require 'erb'
 
 module VpsAdmin::API
   class Authentication::OAuth2Config < HaveAPI::Authentication::OAuth2::Config
+    SSO_COOKIE = :vpsadmin_sso
+
     # Authentication result passed back to HaveAPI OAuth2 provider
     #
     # See {HaveAPI::Authentication::OAuth2::AuthResult} for the interface we're
@@ -69,32 +71,38 @@ module VpsAdmin::API
     end
 
     # @return [AuthResult, nil]
-    def handle_get_authorize(sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:)
-      render_authorize_page(
-        oauth2_request:,
-        oauth2_response:,
-        sinatra_params:,
-        client:,
-      )
+    def handle_get_authorize(sinatra_handler:, sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:)
+      sso = find_sso(sinatra_handler, client)
+
+      if sso
+        auth_sso(sso, oauth2_request, oauth2_response, client)
+      else
+        render_authorize_page(
+          oauth2_request:,
+          oauth2_response:,
+          sinatra_params:,
+          client:,
+        )
+      end
     end
 
     # @return [AuthResult, nil]
-    def handle_post_authorize(sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:)
+    def handle_post_authorize(sinatra_handler:, sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:)
       if !sinatra_params[:login]
         return AuthResult.new(cancel: true)
       end
 
       auth_result =
         if sinatra_params[:user] && sinatra_params[:password]
-          auth_credentials(sinatra_request, sinatra_params, oauth2_request, client)
+          auth_credentials(sinatra_request, sinatra_params, oauth2_request, oauth2_response, client)
 
         elsif sinatra_params[:auth_token] && sinatra_params[:totp_code]
-          auth_totp(sinatra_request, sinatra_params, oauth2_request, client)
+          auth_totp(sinatra_request, sinatra_params, oauth2_request, oauth2_response, client)
 
         elsif sinatra_params[:auth_token] \
               && sinatra_params[:new_password1] \
               && sinatra_params[:new_password2]
-          reset_password(sinatra_request, sinatra_params, oauth2_request, client)
+          reset_password(sinatra_request, sinatra_params, oauth2_request, oauth2_response, client)
 
         else
           nil
@@ -190,6 +198,7 @@ module VpsAdmin::API
         auth.user_session.update!(session_token: nil)
         session_token.destroy!
         auth.close unless auth.refreshable?
+        auth.single_sign_on.authorization_revoked(auth) if auth.single_sign_on
         return :revoked
       end
 
@@ -267,7 +276,7 @@ module VpsAdmin::API
       nil
     end
 
-    def auth_credentials(sinatra_request, sinatra_params, oauth2_request, client)
+    def auth_credentials(sinatra_request, sinatra_params, oauth2_request, oauth2_response, client)
       auth = Operations::Authentication::Password.run(
         sinatra_params[:user],
         sinatra_params[:password],
@@ -293,13 +302,13 @@ module VpsAdmin::API
       end
 
       if auth.authenticated? && auth.complete? && !auth.reset_password?
-        create_authorization(ret, oauth2_request, client)
+        create_authorization(ret, oauth2_request, oauth2_response, client)
       end
 
       ret
     end
 
-    def auth_totp(sinatra_request, sinatra_params, oauth2_request, client)
+    def auth_totp(sinatra_request, sinatra_params, oauth2_request, oauth2_response, client)
       auth = Operations::Authentication::Totp.run(
         sinatra_params[:auth_token],
         sinatra_params[:totp_code],
@@ -317,7 +326,7 @@ module VpsAdmin::API
         end
 
         unless auth.reset_password?
-          create_authorization(ret, oauth2_request, client)
+          create_authorization(ret, oauth2_request, oauth2_response, client)
         end
       else
         Operations::User::FailedLogin.run(
@@ -334,7 +343,7 @@ module VpsAdmin::API
       ret
     end
 
-    def reset_password(sinatra_request, sinatra_params, oauth2_request, client)
+    def reset_password(sinatra_request, sinatra_params, oauth2_request, oauth2_response, client)
       ret = AuthResult.new(
         authenticated: true,
         reset_password: true,
@@ -358,29 +367,91 @@ module VpsAdmin::API
       ret.complete = true
       ret.reset_password = false
 
-      create_authorization(ret, oauth2_request, client)
+      create_authorization(ret, oauth2_request, oauth2_response, client)
 
       ret
     end
 
-    def create_authorization(auth_result, oauth2_request, client)
-      expires_at = Time.now + 10*60
-
-      authorization = ::Oauth2Authorization.new(
-        oauth2_client: client,
-        user: auth_result.user,
-        scope: oauth2_request.scope,
-        code_challenge: oauth2_request.code_challenge,
-        code_challenge_method: oauth2_request.code_challenge_method,
+    def auth_sso(sso, oauth2_request, oauth2_response, client)
+      ret = AuthResult.new(
+        authenticated: true,
+        complete: true,
+        user: sso.user,
       )
 
-      ::Token.for_new_record!(expires_at) do |token|
-        authorization.code = token
-        authorization.save!
-        authorization
-      end
+      create_authorization(ret, oauth2_request, oauth2_response, client, sso: sso)
+      ret
+    end
 
-      auth_result.authorization = authorization
+    def find_sso(sinatra_handler, client)
+      return unless client.allow_single_sign_on
+
+      token = sinatra_handler.cookies[SSO_COOKIE]
+      return unless token
+
+      sso = ::SingleSignOn.joins(:token).where(tokens: {token: token}).take
+      return if sso.nil? || !sso.usable?
+
+      sso
+    end
+
+    def create_authorization(auth_result, oauth2_request, oauth2_response, client, sso: nil)
+      now = Time.now
+      expires_at = now + 10*60
+
+      ::ActiveRecord::Base.transaction do
+        # Create a new single sign on session if applicable
+        #
+        # We make the SSO valid for as long as the access token would be. Since
+        # the access token is not issued at this time (authorization endpoint),
+        # we make the SSO longer validity by the amount of time the authorization
+        # code is valid for.
+        if sso.nil? && client.allow_single_sign_on
+          sso = ::SingleSignOn.new(
+            user: auth_result.user,
+          )
+
+          ::Token.for_new_record!(expires_at + client.access_token_seconds) do |token|
+            sso.token = token
+            sso
+          end
+
+          sso.save!
+
+        # Extend existing single sign on session
+        elsif sso
+          new_sso_expires_at = expires_at + client.access_token_seconds
+
+          if new_sso_expires_at > sso.token.valid_to
+            sso.token.update!(valid_to: new_sso_expires_at)
+          end
+        end
+
+        # Send single sign on cookie to the client
+        if sso
+          oauth2_response.set_cookie(SSO_COOKIE, {
+            value: sso.token.token,
+            max_age: sso.token.valid_to - now,
+          })
+        end
+
+        authorization = ::Oauth2Authorization.new(
+          oauth2_client: client,
+          user: auth_result.user,
+          scope: oauth2_request.scope,
+          code_challenge: oauth2_request.code_challenge,
+          code_challenge_method: oauth2_request.code_challenge_method,
+          single_sign_on: sso,
+        )
+
+        ::Token.for_new_record!(expires_at) do |token|
+          authorization.code = token
+          authorization.save!
+          authorization
+        end
+
+        auth_result.authorization = authorization
+      end
     end
 
     def logo_url
