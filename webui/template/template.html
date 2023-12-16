@@ -41,6 +41,13 @@
     <script type="text/javascript" src="js/jquery.longclick.js"></script>
     <script type="text/javascript" src="js/haveapi-client.js"></script>
     <script type="text/javascript" src="config.js.php"></script>
+    <script type="text/javascript">
+    function onLoginFormSubmit() {
+        setTimeout(function () {
+            $('#logbox-submit').prop('disabled', true).attr('value', '{L_LOGGING_IN}');
+        }, 10);
+    }
+    </script>
     {AJAX_SCRIPT}
 </head>
 
@@ -70,7 +77,7 @@
 
         <div id="logbox">
 	<!-- BEGIN: logbox -->
-            <form action="?page=login&action=login" method="post">
+            <form action="?page=login&action=login" method="post" onsubmit="onLoginFormSubmit();">
             	<div id="l_form">
 		                <input type="submit" value="{L_LOGIN}" id="logbox-submit" />
             	</div>

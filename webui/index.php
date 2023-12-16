@@ -76,6 +76,7 @@ $lang = new Lang($langs, $xtpl);
 
 $xtpl->assign("VERSION", get_version());
 $xtpl->assign("L_LOGIN", _("Sign in"));
+$xtpl->assign("L_LOGGING_IN", _("Signing in..."));
 $xtpl->assign("L_LOGOUT", _("Logout"));
 
 $api_cluster = null;
