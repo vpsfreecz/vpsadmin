@@ -13,7 +13,7 @@ module VpsAdmin::API
         new(
           authenticated: auth.authenticated?,
           complete: auth.complete?,
-          token: auth.token,
+          auth_token: auth.token,
           user: auth.user,
         )
       end
@@ -39,7 +39,7 @@ module VpsAdmin::API
 
       # @return [String, nil] token used for multi-factor authentication,
       #                       stored as {AuthToken}
-      attr_accessor :token
+      attr_accessor :auth_token
 
       # @return [User, nil]
       attr_reader :user
@@ -50,10 +50,10 @@ module VpsAdmin::API
       # @return [Oauth2Authorization]
       attr_accessor :authorization
 
-      def initialize(authenticated: false, complete: false, token: nil, user: nil, cancel: false, errors: [])
+      def initialize(authenticated: false, complete: false, auth_token: nil, user: nil, cancel: false, errors: [])
         @authenticated = authenticated
         @complete = complete
-        @token = token
+        @auth_token = auth_token
         @user = user
         @cancel = cancel
         @errors = errors
@@ -62,7 +62,7 @@ module VpsAdmin::API
 
     # @param auth_result [AuthResult]
     def render_authorize_page(oauth2_request, sinatra_params, client, auth_result: nil)
-      auth_token = auth_result && auth_result.token
+      auth_token = auth_result && auth_result.auth_token
 
       @template ||= ERB.new(
         File.read(File.join(__dir__, 'oauth2_authorize.erb')),
@@ -275,7 +275,7 @@ module VpsAdmin::API
           sinatra_request,
         )
 
-        ret.token = sinatra_params[:auth_token]
+        ret.auth_token = sinatra_params[:auth_token]
         ret.errors << 'invalid TOTP code'
       end
 
