@@ -58,7 +58,7 @@
                       <div class="input-group-prepend">
                           <span class="input-group-text"> <i class="fa fa-user"></i> </span>
                        </div>
-                      <input type="text" class="form-control" name="user" placeholder="User">
+                       <input type="text" class="form-control" name="user" placeholder="User" value="<%= Rack::Utils.escape_html(user) %>">
                     </div>
                   </div>
 

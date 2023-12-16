@@ -62,7 +62,9 @@ module VpsAdmin::API
 
     # @param auth_result [AuthResult]
     def render_authorize_page(oauth2_request, sinatra_params, client, auth_result: nil)
+      # Variables passed to the ERB template
       auth_token = auth_result && auth_result.auth_token
+      user = sinatra_params[:user]
 
       @template ||= ERB.new(
         File.read(File.join(__dir__, 'oauth2_authorize.erb')),
