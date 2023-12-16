@@ -17,6 +17,25 @@
           button.value = "Logging in...";
         }, 10);
       }
+
+      function togglePasswords() {
+        document.querySelectorAll('form input.password-toggle').forEach(function (el) {
+          if (el.type == 'password')
+            el.type = 'text';
+          else
+            el.type = 'password';
+        });
+
+        document.querySelectorAll('form i.password-toggle').forEach(function (el) {
+          if (el.classList.contains('fa-eye-slash')) {
+            el.classList.remove('fa-eye-slash');
+            el.classList.add('fa-eye');
+          } else {
+            el.classList.remove('fa-eye');
+            el.classList.add('fa-eye-slash');
+          }
+        });
+      }
     </script>
   </head>
   <body>
@@ -64,7 +83,10 @@
                       <div class="input-group-prepend">
                         <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
                       </div>
-                      <input class="form-control" type="password" name="password" placeholder="Password">
+                      <input class="form-control password-toggle" type="password" name="password" placeholder="Password">
+                      <div class="input-group-append">
+                        <a href="#" onclick="togglePasswords();" class="input-group-text"><i class="fa fa-eye-slash password-toggle" aria-hidden="true"></i></a>
+                      </div>
                     </div>
                   </div>
 
@@ -84,7 +106,10 @@
                       <div class="input-group-prepend">
                         <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
                       </div>
-                      <input type="password" class="form-control" name="new_password1" placeholder="New password" minlength="8">
+                      <input type="password" class="form-control password-toggle" name="new_password1" placeholder="New password" minlength="8">
+                      <div class="input-group-append">
+                        <a href="#" onclick="togglePasswords();" class="input-group-text"><i class="fa fa-eye-slash password-toggle" aria-hidden="true"></i></a>
+                      </div>
                     </div>
                   </div>
 
@@ -93,7 +118,10 @@
                       <div class="input-group-prepend">
                         <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
                       </div>
-                      <input type="password" class="form-control" name="new_password2" placeholder="Repeat new password" minlength="8">
+                      <input type="password" class="form-control password-toggle" name="new_password2" placeholder="Repeat new password" minlength="8">
+                      <div class="input-group-append">
+                        <a href="#" onclick="togglePasswords();" class="input-group-text"><i class="fa fa-eye-slash password-toggle" aria-hidden="true"></i></a>
+                      </div>
                     </div>
                   </div>
                 <% end -%>
