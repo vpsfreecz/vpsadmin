@@ -42,7 +42,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
         end
       end
 
-          ::User.where('level > 90').where(mailer_enabled: true).each do |admin|
+      ::User.where('level > 90').where(mailer_enabled: true).group(:email).each do |admin|
         [
           [
             :request_action_role_type,
