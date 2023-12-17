@@ -29,6 +29,8 @@ module TransactionChains
       end
 
       user.session_tokens.destroy_all
+      user.single_sign_ons.destroy_all
+      user.oauth2_authorizations.destroy_all
     end
   end
 end
