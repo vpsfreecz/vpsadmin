@@ -33,11 +33,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $_GET["action"] == 'callback') {
 	if (isset($_GET['code'])) {
 		setupOAuth2ForLogin();
 		$provider = $api->getAuthenticationProvider();
-		$provider->requestAccessToken();
 
-		loginUser($_SESSION['access_url']);
+		try {
+			$provider->requestAccessToken();
+			loginUser($_SESSION['access_url']);
+		} catch (Exception $e) {
+			$xtpl->perex(
+				_('Authentication error'),
+				_('vpsAdmin was unable to obtain access token from the authorization server, please contact support if the error persists.')
+			);
+		}
+
 	} else {
-		$xtpl->perex(_('Authentication error'), _('Please try to sign in again.'));
+		$xtpl->perex(
+			_('Authentication error'),
+			_('Authorization server reports: ').h($_GET['error_description'] ?? $_GET['error'] ?? _('unknown error')).'<br>'.
+			_('Please try to sign in again or contact support if the error persists.')
+		);
 	}
 }
 
