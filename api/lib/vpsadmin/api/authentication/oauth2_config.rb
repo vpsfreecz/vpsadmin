@@ -265,6 +265,7 @@ module VpsAdmin::API
         else
           :credentials
         end
+      support_mail = ::SysConfig.get(:core, :support_mail)
 
       @template ||= ERB.new(
         File.read(File.join(__dir__, 'oauth2_authorize.erb')),

@@ -135,6 +135,18 @@
                   <input type="submit" class="btn btn-outline-secondary btn-sm" name="cancel" value="Cancel">
                 </div>
               </form>
+              <% if %i(credentials totp).include?(step) -%>
+                <hr>
+                <p class="text-muted text-center">
+                  <small>
+                    <% if step == :credentials -%>
+                      Forgot password? Contact <a href="mailto:<%= support_mail %>">support</a>.
+                    <% elsif step == :totp -%>
+                      Lost your authentication device? Try recovery code or contact <a href="mailto:<%= support_mail %>">support</a>.
+                    <% end -%>
+                  </small>
+                </p>
+              <% end -%>
             </article>
           </div>
         </div>
