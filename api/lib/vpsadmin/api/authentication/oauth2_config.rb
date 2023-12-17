@@ -227,16 +227,18 @@ module VpsAdmin::API
     end
 
     def find_authorization_by_code(client, code)
-      ::Oauth2Authorization.joins(:code).where(
+      ::Oauth2Authorization.joins(:code, :user).where(
         oauth2_client: client,
         tokens: {token: code},
+        users: {object_state: %w(active suspended)},
       ).take
     end
 
     def find_authorization_by_refresh_token(client, refresh_token)
-      ::Oauth2Authorization.joins(:refresh_token).where(
+      ::Oauth2Authorization.joins(:refresh_token, :user).where(
         oauth2_client: client,
         tokens: {token: refresh_token},
+        users: {object_state: %w(active suspended)},
       ).where(
         'tokens.valid_to > ?', Time.now
       ).take
