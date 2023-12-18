@@ -58,6 +58,9 @@
 	}
 
 	$(document).ready(function() {
+		if (vpsAdmin.sessionLength <= 0)
+			return;
+
 		sessionCountdown(vpsAdmin.sessionLength);
 
 		countdown = new countDownTimer(vpsAdmin.sessionLength * 1000, sessionCountdown, function() {

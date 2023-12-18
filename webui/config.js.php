@@ -4,7 +4,6 @@ include '/etc/vpsadmin/config.php';
 session_start();
 
 include WWW_ROOT.'lib/version.lib.php';
-include WWW_ROOT.'lib/members.lib.php';
 include WWW_ROOT.'lib/functions.lib.php';
 
 header('Content-Type: text/javascript');
@@ -22,7 +21,7 @@ root.vpsAdmin = {
 <?php } elseif ($_SESSION['auth_type'] == 'token') { ?>
 	sessionToken: "<?php echo $_SESSION['session_token'] ?>",
 <?php } ?>
-	sessionLength: <?php echo USER_LOGIN_INTERVAL ?>,
+	sessionLength: <?php echo $_SESSION['user']['session_length'] ?>,
 	description: <?php echo json_encode($_SESSION['api_description']) ?>,
 	sessionManagement: true
 };

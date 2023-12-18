@@ -64,12 +64,6 @@ if ($_SESSION["logged_in"]) {
 			die("Unknown authentication method");
 		}
 
-		if ($_SESSION["transactbox_expiration"] < time()) {
-			unset($_SESSION);
-			session_destroy();
-			$_GET["page"] = "";
-		}
-
 		switch ($_GET["page"]) {
 			case 'vps':
 				include WWW_ROOT.'pages/ajax_vps.php';

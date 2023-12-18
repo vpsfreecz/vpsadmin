@@ -28,6 +28,7 @@ function loginUser($access_url) {
 	$_SESSION["user"] = [
 		'id' => $m->id,
 		'login' => $m->login,
+		'session_length' => $m->preferred_session_length,
 	];
 	$_SESSION["is_user"] =       ($m->level >= PRIV_USER) ?       true : false;
 	$_SESSION["is_poweruser"] =  ($m->level >= PRIV_POWERUSER) ?  true : false;
@@ -81,7 +82,7 @@ function switchUserContext($target_user_id) {
 			'user' => $user->id,
 			'label' => client_identity().'(context switch)',
 			'lifetime' => 'renewable_auto',
-			'interval' => USER_LOGIN_INTERVAL,
+			'interval' => 20*60,
 		]);
 
 		session_destroy();
@@ -97,6 +98,7 @@ function switchUserContext($target_user_id) {
 		$_SESSION["user"] = [
 			'id' => $user->id,
 			'login' => $user->login,
+			'session_length' => 20*60,
 		];
 		$_SESSION["is_user"] =       ($user->level >= PRIV_USER) ?       true : false;
 		$_SESSION["is_poweruser"] =  ($user->level >= PRIV_POWERUSER) ?  true : false;

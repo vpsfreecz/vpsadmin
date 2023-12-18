@@ -141,6 +141,17 @@ function print_editm($u) {
 		false
 	);
 
+	$xtpl->form_add_number(
+		_('Preferred session length').':',
+		'preferred_session_length',
+		post_val('preferred_session_length', round($u->preferred_session_length / 60)),
+		0,
+		6*60,
+		1,
+		_('minutes'),
+		_('Set to 0 to disable session timeout')
+	);
+
 	if (isAdmin()) {
 		$xtpl->form_add_input(_("Monthly payment").':', 'text', '30', 'm_monthly_payment', $u->monthly_payment, ' ');
 		$xtpl->form_add_textarea(_("Info").':', 28, 4, 'm_info', $u->info, _("Note for administrators"));
@@ -1021,6 +1032,7 @@ if ($_SESSION["logged_in"]) {
 				$params = array(
 					'mailer_enabled' => isset($_POST['m_mailer_enable']),
 					'language' => $_POST['language'],
+					'preferred_session_length' => $_POST['preferred_session_length'] * 60,
 				);
 
 				if (isAdmin()) {
@@ -1038,6 +1050,9 @@ if ($_SESSION["logged_in"]) {
 						'monthly_payment' => $_POST['m_monthly_payment'],
 					));
 				}
+
+				if ($_SESSION['user']['id'] == $_GET['id'])
+					$_SESSION['user']['session_length'] = $_POST['preferred_session_length'] * 60;
 
 				notify_user(_('User updated'), _('The user was successfully updated.'));
 				redirect('?page=adminm&action=edit&id='.$user->id);

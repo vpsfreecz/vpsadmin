@@ -31,7 +31,6 @@ include WWW_ROOT.'lib/xtemplate.lib.php';
 include WWW_ROOT.'lib/functions.lib.php';
 include WWW_ROOT.'lib/transact.lib.php';
 include WWW_ROOT.'lib/vps.lib.php';
-include WWW_ROOT.'lib/members.lib.php';
 include WWW_ROOT.'lib/cluster.lib.php';
 include WWW_ROOT.'lib/ajax.lib.php';
 include WWW_ROOT.'lib/mail.lib.php';
@@ -102,7 +101,6 @@ try {
 				$api->user->touch($_SESSION["user"]["id"]);
 			}
 
-			$_SESSION["transactbox_expiration"] = time() + USER_LOGIN_INTERVAL;
 // 			$xtpl->assign('AJAX_SCRIPT', ajax_getHTML('ajax.php?page=transactbox', 'transactions', 1000));
 
 		} catch (\HaveAPI\Client\Exception\AuthenticationFailed $e) {
