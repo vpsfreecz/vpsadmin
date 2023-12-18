@@ -36,6 +36,17 @@ module VpsAdmin::API
       session.update!(last_request_at: Time.now)
       user.update!(last_request_at: Time.now)
 
+      # Extend single sign on
+      if sess_token.lifetime == 'renewable_auto'
+        oauth = ::Oauth2Authorization.find_by(user_session: session)
+
+        if oauth \
+           && oauth.single_sign_on \
+           && oauth.single_sign_on.token.valid_to < sess_token.valid_to
+          oauth.single_sign_on.token.update!(valid_to: sess_token.valid_to)
+        end
+      end
+
       ::User.current = user
       ::UserSession.current = session
     end

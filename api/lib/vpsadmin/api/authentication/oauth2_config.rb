@@ -434,7 +434,13 @@ module VpsAdmin::API
         if sso
           oauth2_response.set_cookie(SSO_COOKIE, {
             value: sso.token.token,
-            max_age: sso.token.valid_to - now,
+
+            # Make the cookie valid for a day. This is to account for renewable_auto
+            # tokens that can prolong the session length. We cannot change this
+            # cookie's duration after it has been sent, so make it long enough.
+            # The token must still be valid, so at worst the user will send
+            # an invalid token.
+            max_age: 24*60*60,
           })
         end
 
