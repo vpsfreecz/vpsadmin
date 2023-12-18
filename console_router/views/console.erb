@@ -82,13 +82,25 @@
   <script type="text/javascript" src="/vt100.js?<%= Time.now.to_i %>"></script>
   <script type="text/javascript" src="/vzconsole.js?<%= Time.now.to_i %>"></script>
   <script type="text/javascript" src="/haveapi-client.js?<%= Time.now.to_i %>"></script>
+  <script type="text/javascript">
+    function initConsole() {
+      setTimeout(function () {
+        new ShellInABox(
+          '<%= api_url %>',
+          <%= vps_id %>,
+          '<%= auth_type %>',
+          '<%= auth_token %>',
+          '<%= session %>'
+        );
+      }, 100)
+    }
+  </script>
 </head>
 <!-- Load ShellInABox from a timer as Konqueror sometimes fails to
      correctly deal with the enclosing frameset (if any), if we do not
      do this
  -->
-<body onload="setTimeout('new ShellInABox(\'<%= api_url %>\', <%= vps_id %>, \'<%= auth_token %>\', \'<%= session %>\')', 100)"
-      scroll="no">
+<body onload="initConsole();" scroll="no">
 <noscript>JavaScript
   must be enabled for ShellInABox
 </noscript>

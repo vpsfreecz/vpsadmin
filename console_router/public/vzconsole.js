@@ -103,11 +103,12 @@ function extend(subClass, baseClass) {
     subClass.prototype.superClass = baseClass.prototype;
 };
 
-function ShellInABox(api_url, vps_id, auth_token, session, container) {
+function ShellInABox(api_url, vps_id, auth_type, auth_token, session, container) {
     this.api_url = api_url;
     this.vps_id = vps_id;
     this.url = "/console/feed/" + this.vps_id
     this.nextUrl = this.url;
+    this.auth_type = auth_type;
     this.auth_token = auth_token;
     this.session = session;
     this.pendingKeys = '';
@@ -168,9 +169,21 @@ ShellInABox.prototype.reconnect = function () {
 
 	if (this.api === undefined) {
 		this.api = new HaveAPI.Client(this.api_url);
-		this.api.authenticate('token', {
-			token: that.auth_token
-		}, restart);
+
+        switch (this.auth_type) {
+        case 'oauth2':
+            this.api.authenticate('oauth2', {
+                access_token: {access_token: that.auth_token},
+            }, restart);
+            break;
+        case 'token':
+            this.api.authenticate('token', {
+                token: that.auth_token
+            }, restart);
+            break;
+        default:
+            throw "Unknown authentication type";
+        }
 
 	} else restart();
 
