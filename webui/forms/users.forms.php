@@ -168,7 +168,7 @@ function list_user_sessions($user_id) {
 
 		$color = false;
 
-		if (!$s->closed_at && $s->session_token_str == $api->getAuthenticationProvider()->getToken())
+		if (!$s->closed_at && $s->session_token_str == getAuthenticationToken())
 			$color = '#33CC00';
 
 		elseif (!$s->closed_at)

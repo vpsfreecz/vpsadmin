@@ -161,3 +161,18 @@ function getSelfUri() {
 
 	return $ret;
 }
+
+function getAuthenticationToken() {
+	global $api;
+
+	$provider = $api->getAuthenticationProvider();
+
+	switch ($_SESSION['auth_type']) {
+	case 'oauth2':
+		return $provider->jsonSerialize()['access_token'];
+	case 'token':
+		return $provider->getToken();
+	default:
+		throw "Unknown authentication type";
+	}
+}
