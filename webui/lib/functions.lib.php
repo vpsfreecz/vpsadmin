@@ -1087,3 +1087,21 @@ function cgroupEnumTolabel($v) {
 		return 'unknown cgroup';
 	}
 }
+
+function moo_inputremaining($input, $output, $chars, $uid)
+{
+	$out = "<script type=\"text/javascript\">\n";
+
+	$out .= '
+	$(document).ready(function (){
+		$("#'.$input.'").keyup(function (o){
+			var n = '.abs($chars).' - $(this).val().length;
+			$("#'.$output.'").text( n < 0 ? 0 : n );
+		});
+	});
+	';
+
+	$out .= "</script>\n";
+
+	return $out;
+}

@@ -32,7 +32,6 @@ include WWW_ROOT.'lib/functions.lib.php';
 include WWW_ROOT.'lib/transact.lib.php';
 include WWW_ROOT.'lib/vps.lib.php';
 include WWW_ROOT.'lib/cluster.lib.php';
-include WWW_ROOT.'lib/ajax.lib.php';
 include WWW_ROOT.'lib/mail.lib.php';
 include WWW_ROOT.'lib/helpbox.lib.php';
 include WWW_ROOT.'lib/security.lib.php';
@@ -100,8 +99,6 @@ try {
 			if(!isset($_SESSION["context_switch"]) || !$_SESSION["context_switch"]){
 				$api->user->touch($_SESSION["user"]["id"]);
 			}
-
-// 			$xtpl->assign('AJAX_SCRIPT', ajax_getHTML('ajax.php?page=transactbox', 'transactions', 1000));
 
 		} catch (\HaveAPI\Client\Exception\AuthenticationFailed $e) {
 			unset($_SESSION);
