@@ -60,7 +60,7 @@ include WWW_ROOT.'lib/gettext_lang.lib.php';
 // include configuration
 include WWW_ROOT.'config_cfg.php';
 
-$api = new \HaveAPI\Client(INT_API_URL, API_VERSION, client_identity());
+$api = new \HaveAPI\Client(INT_API_URL, API_VERSION, getClientIdentity());
 $api->registerDescriptionChangeFunc('api_description_changed');
 
 if(isset($_SESSION["api_description"]) && $_SESSION["api_description"]) {
@@ -72,7 +72,7 @@ $xtpl = new XTemplate(WWW_ROOT.'template/template.html');
 // Create a langauge class
 $lang = new Lang($langs, $xtpl);
 
-$xtpl->assign("VERSION", get_version());
+$xtpl->assign("VERSION", getVersionLink());
 $xtpl->assign("L_LOGIN", _("Sign in"));
 $xtpl->assign("L_LOGGING_IN", _("Signing in..."));
 $xtpl->assign("L_LOGOUT", _("Logout"));

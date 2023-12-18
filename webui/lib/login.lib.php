@@ -80,7 +80,7 @@ function switchUserContext($target_user_id) {
 		// Get a token for target user
 		$token = $api->session_token->create([
 			'user' => $user->id,
-			'label' => client_identity().'(context switch)',
+			'label' => getClientIdentity().'(context switch)',
 			'lifetime' => 'renewable_auto',
 			'interval' => 20*60,
 		]);

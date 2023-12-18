@@ -276,8 +276,15 @@ function format_data_rate($n, $suffix) {
 	return round($n, 2)."$suffix";
 }
 
-function client_identity() {
-	return  "vpsadmin-www v".VERSION;
+function getClientIdentity() {
+	$hash = getCommitHash();
+
+	if ($hash)
+		$short = substr($hash, 0, 8);
+	else
+		$short = VERSION;
+
+	return  "vpsadmin-webui ".$short;
 }
 
 function api_description_changed($api) {
@@ -895,14 +902,8 @@ function isAdmin(){
 	return $_SESSION["is_admin"] ?? false;
 }
 
-function get_version () {
-	if (isset($_SESSION['commit_hash'])) {
-		$hash = $_SESSION['commit_hash'];
-
-	} else {
-		$hash = get_commit_hash();
-		$_SESSION['commit_hash'] = $hash;
-	}
+function getVersionLink () {
+	$hash = getCommitHash();
 
 	if (!$hash)
 		return VERSION;
@@ -912,7 +913,21 @@ function get_version () {
 	return '<a href="https://github.com/vpsfreecz/vpsadmin/commit/'.$hash.'" target="_blank">'.$short.'</a>';
 }
 
-function get_commit_hash () {
+function getCommitHash() {
+	$hash = null;
+
+	if (isset($_SESSION['commit_hash'])) {
+		$hash = $_SESSION['commit_hash'];
+
+	} else {
+		$hash = readCommitHash();
+		$_SESSION['commit_hash'] = $hash;
+	}
+
+	return $hash;
+}
+
+function readCommitHash () {
 	$revisionFile = WWW_ROOT.'/.git-revision';
 
 	if (file_exists($revisionFile))
