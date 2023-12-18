@@ -48,6 +48,10 @@ class User < ActiveRecord::Base
     with: /\A[a-zA-Z0-9\.\-]{2,63}\z/,
     message: 'not a valid login'
   }, uniqueness: true
+  validates :preferred_session_length, numericality: {
+    only_integer: true,
+    greater_or_equal_than: 0,
+  }
 
   include Lockable
   include HaveAPI::Hookable
