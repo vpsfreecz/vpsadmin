@@ -103,7 +103,7 @@ function list_user_sessions($user_id) {
 	$xtpl->form_add_input(_("IP Address").':', 'text', '40', 'ip_addr', get_val('ip_addr', ''), '');
 	$xtpl->form_add_input(_("User agent").':', 'text', '40', 'user_agent', get_val('user_agent', ''), '');
 	$xtpl->form_add_input(_("Client version").':', 'text', '40', 'client_version', get_val('client_version', ''), '');
-	$xtpl->form_add_input(_("Token").':', 'text', '40', 'token_str', get_val('token_str', ''), '');
+	$xtpl->form_add_input(_("Token").':', 'text', '40', 'token_fragment', get_val('token_fragment', ''), '');
 
 	if ($_SESSION['is_admin'])
 		$xtpl->form_add_input(_("Admin ID").':', 'text', '40', 'admin', get_val('admin', ''), '');
@@ -127,7 +127,7 @@ function list_user_sessions($user_id) {
 		'ip_addr',
 		'user_agent',
 		'client_version',
-		'token_str',
+		'token_fragment',
 		'admin',
 	];
 
@@ -164,8 +164,8 @@ function list_user_sessions($user_id) {
 		$xtpl->table_td($s->closed_at ? tolocaltz($s->closed_at) : '---');
 		$xtpl->table_td(h($s->client_ip_addr ? $s->client_ip_addr : $s->api_ip_addr));
 		$xtpl->table_td($s->auth_type);
-		$xtpl->table_td($s->token_str
-			? substr($s->token_str, 0, 8).'...'
+		$xtpl->table_td($s->token_fragment
+			? substr($s->token_fragment, 0, 8).'...'
 			: '---'
 		);
 
@@ -178,7 +178,7 @@ function list_user_sessions($user_id) {
 
 		$color = false;
 
-		if (!$s->closed_at && $s->token_str == getAuthenticationToken())
+		if (!$s->closed_at && str_starts_with(getAuthenticationToken(), $s->token_fragment))
 			$color = '#33CC00';
 
 		elseif (!$s->closed_at)
@@ -201,7 +201,7 @@ function list_user_sessions($user_id) {
 			'<dt>Client IP PTR:</dt><dd>'.h($s->client_ip_ptr).'</dd>'.
 			'<dt>User agent:</dt><dd>'.h($s->user_agent).'</dd>'.
 			'<dt>Client version:</dt><dd>'.h($s->client_version).'</dd>'.
-			'<dt>Token:</dt><dd>'.$s->token_str.'</dd>'.
+			'<dt>Token:</dt><dd>'.($s->token_fragment ? $s->token_fragment.'...' : '---').'</dd>'.
 			'<dt>Token lifetime:</dt><dd>'.$s->token_lifetime.'</dd>'.
 			'<dt>Token interval:</dt><dd>'.$s->token_interval.'</dd>'.
 			'<dt>Scope:</dt><dd>'.h($s->scope).'</dd>'.

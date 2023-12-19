@@ -44,6 +44,14 @@ class UserSession < ActiveRecord::Base
     old_token && old_token.destroy!
   end
 
+  def token_fragment
+    token_str && token_str[0..9]
+  end
+
+  def token_full
+    token_str
+  end
+
   def scope_str
     scope.join(' ')
   end

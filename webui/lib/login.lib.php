@@ -89,11 +89,11 @@ function switchUserContext($target_user_id) {
 		session_start();
 
 		// Do this to reload description from the API
-		$api->authenticate('token', ['token' => $new_session->token_str]);
+		$api->authenticate('token', ['token' => $new_session->token_full]);
 
 		$_SESSION["logged_in"] = true;
 		$_SESSION["auth_type"] = "token";
-		$_SESSION["session_token"] = $new_session->token_str;
+		$_SESSION["session_token"] = $new_session->token_full;
 		$_SESSION["borrowed_token"] = true;
 		$_SESSION["user"] = [
 			'id' => $user->id,

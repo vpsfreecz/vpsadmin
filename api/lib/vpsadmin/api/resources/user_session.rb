@@ -15,7 +15,7 @@ module VpsAdmin::API::Resources
       string :user_agent, label: 'User agent', db_name: :user_agent_string
       string :client_version, label: 'Client version'
       string :scope, label: 'Scope', db_name: :scope_str
-      string :token_str, label: 'Authentication token'
+      string :token_fragment, label: 'Authentication token fragment'
       string :token_lifetime, label: 'Token lifetime', choices: ::UserSession.token_lifetimes.keys.map(&:to_s)
       integer :token_interval, label: 'Token interval'
       datetime :created_at, label: 'Created at'
@@ -30,7 +30,7 @@ module VpsAdmin::API::Resources
 
       input do
         use :all, include: %i(user auth_type ip_addr api_ip_addr client_ip_addr
-                              user_agent client_version token_str admin)
+                              user_agent client_version token_fragment admin)
         string :ip_addr, label: 'IP Address', desc: 'Search both API and client IP address'
         string :state, choices: %w(all open closed), default: 'all', fill: true
         patch :limit, default: 25, fill: true
@@ -76,7 +76,7 @@ module VpsAdmin::API::Resources
         end
 
         q = q.where('client_version LIKE ?', input[:client_version]) if input[:client_version]
-        q = q.where('token_str LIKE ?', input[:token_str]) if input[:token_str]
+        q = q.where('token_str LIKE ?', "#{input[:token_fragment]}%") if input[:token_fragment]
         q = q.where(admin_id: input[:admin].id) if input[:admin]
 
         q
@@ -131,6 +131,7 @@ module VpsAdmin::API::Resources
 
       output do
         use :all
+        string :token_full
       end
 
       authorize do |u|
