@@ -5,34 +5,30 @@ module VpsAdmin::API::Tasks
     # Accepts the following environment variables:
     # [EXECUTE]: The sessions are closed only when set to 'yes'
     def close_expired
-      ::SessionToken.joins(:token).includes(:user_sessions).where(
+      ::UserSession.joins(:token).where(
         'tokens.valid_to IS NOT NULL AND tokens.valid_to < ?',
         Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
-      ).each do |t|
-        puts "Token ##{t.id} valid_to=#{t.valid_to} token=#{t.token}"
+      ).each do |user_session|
+        puts "UserSession ##{user_session.id} valid_to=#{user_session.token.valid_to} token=#{user_session.token.token}"
 
-        ::SessionToken.transaction do
-          # There is never more than one user session
-          t.user_sessions.each do |s|
-            puts "  Close session ##{s.id}"
-            next if ENV['EXECUTE'] != 'yes'
+        ::UserSession.transaction do
+          puts "  Close session ##{user_session.id}"
+          next if ENV['EXECUTE'] != 'yes'
 
-            oauth2_open = false
+          oauth2_open = false
 
-            # There can be only one authorization per session
-            s.oauth2_authorizations.each do |auth|
-              oauth2_open = true if auth.refreshable?
-            end
-
-            session_update = {session_token: nil}
-
-            # Close the session only if oauth2 access token cannot be refreshed
-            session_update[:closed_at] = t.valid_to unless oauth2_open
-
-            s.update!(session_update)
+          # There can be only one authorization per session
+          user_session.oauth2_authorizations.each do |auth|
+            oauth2_open = true if auth.refreshable?
           end
 
-          t.destroy! if ENV['EXECUTE'] == 'yes'
+          session_update = {token: nil}
+
+          # Close the session only if oauth2 access token cannot be refreshed
+          session_update[:closed_at] = user_session.token.valid_to unless oauth2_open
+
+          user_session.token.destroy!
+          user_session.update!(session_update)
         end
       end
 

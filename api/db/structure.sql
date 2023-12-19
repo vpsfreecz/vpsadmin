@@ -1316,21 +1316,6 @@ CREATE TABLE `schema_migrations` (
   UNIQUE KEY `unique_schema_migrations` (`version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `session_tokens`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `session_tokens` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `label` varchar(255) DEFAULT NULL,
-  `use_count` int(11) NOT NULL DEFAULT 0,
-  `lifetime` int(11) NOT NULL,
-  `interval` int(11) DEFAULT NULL,
-  `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
-  `token_id` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `single_sign_ons`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -1739,8 +1724,7 @@ CREATE TABLE `user_sessions` (
   `api_ip_addr` varchar(46) NOT NULL,
   `user_agent_id` int(11) DEFAULT NULL,
   `client_version` varchar(255) NOT NULL,
-  `session_token_id` int(11) DEFAULT NULL,
-  `session_token_str` varchar(100) DEFAULT NULL,
+  `token_str` varchar(100) DEFAULT NULL,
   `created_at` datetime NOT NULL,
   `last_request_at` datetime DEFAULT NULL,
   `closed_at` datetime DEFAULT NULL,
@@ -1749,8 +1733,14 @@ CREATE TABLE `user_sessions` (
   `client_ip_addr` varchar(46) DEFAULT NULL,
   `client_ip_ptr` varchar(255) DEFAULT NULL,
   `scope` text NOT NULL DEFAULT '["all"]',
+  `label` varchar(255) NOT NULL DEFAULT '',
+  `request_count` int(11) NOT NULL DEFAULT 0,
+  `token_id` int(11) DEFAULT NULL,
+  `token_lifetime` int(11) NOT NULL DEFAULT 0,
+  `token_interval` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_user_sessions_on_user_id` (`user_id`) USING BTREE
+  KEY `index_user_sessions_on_user_id` (`user_id`) USING BTREE,
+  KEY `index_user_sessions_on_token_id` (`token_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `user_totp_devices`;
@@ -2238,6 +2228,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20231214083846'),
 ('20231216135851'),
 ('20231216155818'),
-('20231218085935');
+('20231218085935'),
+('20231219143126');
 
 

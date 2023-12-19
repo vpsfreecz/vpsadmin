@@ -13,9 +13,8 @@ module VpsAdmin::API::Resources
       string :client_ip_ptr, label: 'Client IP PTR'
       string :user_agent, label: 'User agent', db_name: :user_agent_string
       string :client_version, label: 'Client version'
-      resource SessionToken, label: 'Authentication token'
-      string :session_token_str, label: 'Authentication token',
-        db_name: :session_token_str
+      string :token_str, label: 'Authentication token',
+        db_name: :token_str
       datetime :created_at, label: 'Created at'
       datetime :last_request_at, label: 'Last request at'
       datetime :closed_at, label: 'Closed at'
@@ -27,7 +26,7 @@ module VpsAdmin::API::Resources
 
       input do
         use :all, include: %i(user auth_type ip_addr api_ip_addr client_ip_addr
-                              user_agent client_version auth_token_str admin)
+                              user_agent client_version token_str admin)
         string :ip_addr, label: 'IP Address', desc: 'Search both API and client IP address'
         patch :limit, default: 25, fill: true
       end
@@ -65,7 +64,7 @@ module VpsAdmin::API::Resources
         end
 
         q = q.where('client_version LIKE ?', input[:client_version]) if input[:client_version]
-        q = q.where('session_token_str LIKE ?', input[:auth_token_str]) if input[:auth_token_str]
+        q = q.where('token_str LIKE ?', input[:token_str]) if input[:token_str]
         q = q.where(admin_id: input[:admin].id) if input[:admin]
 
         q

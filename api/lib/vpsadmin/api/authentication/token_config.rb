@@ -36,8 +36,8 @@ module VpsAdmin::API
           end
 
           res.complete = true
-          res.token = session.session_token.to_s
-          res.valid_to = session.session_token.valid_to
+          res.token = session.token.to_s
+          res.valid_to = session.token.valid_to
           next res.ok
         end
 
@@ -88,8 +88,8 @@ module VpsAdmin::API
           end
 
           res.complete = true
-          res.token = session.session_token.to_s
-          res.valid_to = session.session_token.valid_to
+          res.token = session.token.to_s
+          res.valid_to = session.token.valid_to
           next res.ok
         else
           Operations::User::FailedLogin.run(
@@ -106,17 +106,15 @@ module VpsAdmin::API
 
     renew do
       handle do |req, res|
-        user_session = ::UserSession.joins(session_token: :token).where(
+        user_session = ::UserSession.joins(:token).where(
           auth_type: :token,
           user: req.user,
           tokens: {token: req.token},
         ).take
 
-        t = user_session && user_session.session_token
-
-        if t && t.lifetime.start_with?('renewable')
-          t.renew!
-          res.valid_to = t.valid_to
+        if user_session && user_session.token_lifetime.start_with?('renewable')
+          user_session.renew_token!
+          res.valid_to = user_session.token.valid_to
           res.ok
         else
           res.error = 'unable to renew token'

@@ -2,24 +2,12 @@ class UserSession < ActiveRecord::Base
   belongs_to :user, class_name: 'User', foreign_key: :user_id
   belongs_to :admin, class_name: 'User', foreign_key: :admin_id
   belongs_to :user_agent
-  belongs_to :session_token
+  belongs_to :token
   has_many :oauth2_authorizations
   has_many :transaction_chains
 
   serialize :scope, JSON
-
-  # @param user [::User]
-  # @param token [::SessionToken]
-  # @param auth_type [Symbol]
-  # @return [::UserSession]
-  def self.find_for!(user, token, auth_type)
-    find_by!(
-      user: user,
-      session_token: token,
-      auth_type: auth_type,
-      closed_at: nil,
-    )
-  end
+  enum token_lifetime: %i(fixed renewable_manual renewable_auto permanent)
 
   def self.current
     Thread.current[:user_session]
@@ -29,15 +17,31 @@ class UserSession < ActiveRecord::Base
     Thread.current[:user_session] = s
   end
 
+  # @param token_lifetime [String]
+  # @param token_interval [Integer, nil]
+  def refresh_token!(token_lifetime, token_interval)
+    old_token = self.token
+
+    valid_to = token_lifetime == 'permanent' ? nil : Time.now + token_interval,
+    new_token = ::Token.get(valid_to)
+
+    update!(token: new_token)
+    old_token && old_token.destroy!
+  end
+
+  def renew_token!
+    token.update!(valid_to: Time.now + token_interval)
+  end
+
   def close!
-    token = session_token
+    old_token = self.token
 
     update!(
-      session_token: nil,
+      token: nil,
       closed_at: Time.now,
     )
 
-    token && token.destroy!
+    old_token && old_token.destroy!
   end
 
   def user_agent_string

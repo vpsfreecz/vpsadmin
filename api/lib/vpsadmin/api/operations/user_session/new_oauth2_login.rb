@@ -7,21 +7,23 @@ module VpsAdmin::API
 
     # @param user [User]
     # @param request [Sinatra::Request]
-    # @param lifetime [String]
-    # @param interval [Integer]
+    # @param token_lifetime [String]
+    # @param token_interval [Integer]
     # @param scope [Array<String>]
     # @return [::UserSession]
-    def run(user, request, lifetime, interval, scope)
+    def run(user, request, token_lifetime, token_interval, scope)
       Operations::User::Login.run(user, request)
 
-      token = ::SessionToken.custom!(
-        user: user,
-        lifetime: lifetime,
-        interval: interval,
-        label: request.user_agent,
+      session = open_session(
+        user:,
+        request:,
+        auth_type: :oauth2,
+        scope:,
+        generate_token: true,
+        token_lifetime:,
+        token_interval:,
       )
 
-      session = open_session(user, request, :oauth2, token, scope)
       ::UserSession.current = session
     end
   end

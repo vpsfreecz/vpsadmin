@@ -23,7 +23,6 @@ class User < ActiveRecord::Base
   has_many :user_public_keys
   has_many :user_mail_role_recipients
   has_many :user_mail_template_recipients
-  has_many :session_tokens
   has_many :user_totp_devices
   has_many :oauth2_authorizations
   has_many :single_sign_ons

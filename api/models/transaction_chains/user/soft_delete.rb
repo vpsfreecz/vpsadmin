@@ -28,7 +28,10 @@ module TransactionChains
         use_chain(Export::Update, args: [ex, {enabled: false}])
       end
 
-      user.session_tokens.destroy_all
+      user.user_sessions.where.not(token: nil).each do |user_session|
+        user_session.close!
+      end
+
       user.single_sign_ons.destroy_all
       user.oauth2_authorizations.destroy_all
     end

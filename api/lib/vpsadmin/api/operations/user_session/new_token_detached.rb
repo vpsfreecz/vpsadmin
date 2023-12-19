@@ -6,29 +6,25 @@ module VpsAdmin::API
     include Operations::UserSession::Utils
 
     # @param opts [Hash]
-    # @option opts [User] :user
-    # @option opts [User] :admin
-    # @option opts [Sinatra::Request] :request
-    # @option opts [String] :lifetime
-    # @option opts [Integer] :interval
-    # @options opts [Array<String>] :scope
-    # @option opts [String] :label
+    # @param user [User]
+    # @param admin [User]
+    # @param request [Sinatra::Request]
+    # @param token_lifetime [String]
+    # @param token_interval [Integer]
+    # @param scope [Array<String>]
+    # @param label [String]
     # @return [::UserSession]
-    def run(opts)
-      token = ::SessionToken.custom!(
-        user: opts[:user],
-        lifetime: opts[:lifetime],
-        interval: opts[:interval],
-        label: opts[:label] || request.user_agent,
-      )
-
+    def run(user:, admin:, request:, token_lifetime:, token_interval:, scope:, label:)
       open_session(
-        opts[:user],
-        opts[:request],
-        :token,
-        token,
-        opts[:scope],
-        admin: opts[:admin],
+        user:,
+        request:,
+        auth_type: :token,
+        scope:,
+        generate_token: true,
+        token_lifetime:,
+        token_interval:,
+        admin: admin,
+        label: label,
       )
     end
   end

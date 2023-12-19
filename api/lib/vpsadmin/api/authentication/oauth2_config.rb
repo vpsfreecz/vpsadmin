@@ -139,8 +139,8 @@ module VpsAdmin::API
       authorization.code.destroy!
 
       ret = [
-        user_session.session_token.token.token,
-        user_session.session_token.token.valid_to,
+        user_session.token.token,
+        user_session.token.valid_to,
       ]
 
       if authorization.oauth2_client.issue_refresh_token
@@ -159,22 +159,18 @@ module VpsAdmin::API
 
     def refresh_tokens(authorization, sinatra_request)
       ::ActiveRecord::Base.transaction do
-        authorization.user_session.session_token.destroy!
+        authorization.user_session.token.destroy!
 
-        authorization.user_session.update!(
-          session_token: ::SessionToken.custom!(
-            user: user,
-            lifetime: authorization.oauth2_client.access_token_lifetime,
-            interval: authorization.oauth2_client.access_token_seconds,
-            label: sinatra_request.user_agent,
-          ),
+        authorization.user_session.refresh_token!(
+          authorization.oauth2_client.access_token_lifetime,
+          authorization.oauth2_client.access_token_seconds,
         )
 
         authorization.refresh_token.destroy!
 
         ret = [
-          user_session.session_token.token.token,
-          user_session.session_token.token.valid_to,
+          user_session.token.token,
+          user_session.token.valid_to,
         ]
 
         if authorization.oauth2_client.issue_refresh_token
@@ -191,12 +187,12 @@ module VpsAdmin::API
     def handle_post_revoke(sinatra_request, token, token_type_hint: nil)
       # Find access token
       ::Oauth2Authorization
-        .joins(user_session: {session_token: :token})
+        .joins(user_session: :token)
         .where(tokens: {token: token})
         .each do |auth|
-        session_token = auth.user_session.session_token
-        auth.user_session.update!(session_token: nil)
-        session_token.destroy!
+        token = auth.user_session.token
+        auth.user_session.update!(token: nil)
+        token.destroy!
         auth.close unless auth.refreshable?
         auth.single_sign_on.authorization_revoked(auth) if auth.single_sign_on
         return :revoked
@@ -211,7 +207,7 @@ module VpsAdmin::API
         auth.update!(refresh_token: nil)
         refresh_token.destroy!
 
-        if auth.user_session.session_token.nil?
+        if auth.user_session.token.nil?
           auth.user_session.update!(closed_at: Time.now)
         end
 
