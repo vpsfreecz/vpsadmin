@@ -78,22 +78,22 @@ function switchUserContext($target_user_id) {
 		$user = $api->user->show($target_user_id);
 
 		// Get a token for target user
-		$token = $api->session_token->create([
+		$new_session = $api->user_session->create([
 			'user' => $user->id,
 			'label' => getClientIdentity().'(context switch)',
-			'lifetime' => 'renewable_auto',
-			'interval' => 20*60,
+			'token_lifetime' => 'renewable_auto',
+			'token_interval' => 20*60,
 		]);
 
 		session_destroy();
 		session_start();
 
 		// Do this to reload description from the API
-		$api->authenticate('token', ['token' => $token->token]);
+		$api->authenticate('token', ['token' => $new_session->token_str]);
 
 		$_SESSION["logged_in"] = true;
 		$_SESSION["auth_type"] = "token";
-		$_SESSION["session_token"] = $token->token;
+		$_SESSION["session_token"] = $new_session->token_str;
 		$_SESSION["borrowed_token"] = true;
 		$_SESSION["user"] = [
 			'id' => $user->id,
