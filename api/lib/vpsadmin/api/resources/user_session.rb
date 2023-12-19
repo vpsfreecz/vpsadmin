@@ -6,17 +6,21 @@ module VpsAdmin::API::Resources
     params(:all) do
       id :id
       resource User, value_label: :login
-      string :auth_type, label: 'Authentication type', choices: %i(basic token oauth2)
+      string :label
+      string :auth_type, label: 'Authentication type', choices: %w(basic token oauth2)
       string :api_ip_addr, label: 'IP Address'
       string :api_ip_ptr, label: 'IP PTR'
       string :client_ip_addr, label: 'Client IP Address'
       string :client_ip_ptr, label: 'Client IP PTR'
       string :user_agent, label: 'User agent', db_name: :user_agent_string
       string :client_version, label: 'Client version'
-      string :token_str, label: 'Authentication token',
-        db_name: :token_str
+      string :scope, label: 'Scope'
+      string :token_str, label: 'Authentication token'
+      string :token_lifetime, label: 'Token lifetime', choices: ::UserSession.token_lifetimes.keys.map(&:to_s)
+      integer :token_interval, label: 'Token interval'
       datetime :created_at, label: 'Created at'
       datetime :last_request_at, label: 'Last request at'
+      integer :request_count, label: 'Request count'
       datetime :closed_at, label: 'Closed at'
       resource User, name: :admin, label: 'Admin', value_label: :login
     end
@@ -104,6 +108,61 @@ module VpsAdmin::API::Resources
 
       def exec
         @session
+      end
+    end
+
+    class Create < HaveAPI::Actions::Default::Create
+      desc 'Create a new session for token authentication'
+
+      input do
+        use :all, include: %i(user scope token_lifetime token_interval label)
+        patch :user, required: true
+        patch :token_lifetime, required: true
+        patch :scope, default: 'all', fill: true
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        VpsAdmin::API::Operations::UserSession::NewTokenDetached.run(
+          user: input[:user],
+          admin: current_user,
+          request: request,
+          token_lifetime: input[:token_lifetime],
+          token_interval: input[:token_interval],
+          scope: input[:scope].split,
+          label: input[:label],
+        )
+
+      rescue ActiveRecord::RecordInvalid
+        error('failed to create user session')
+      end
+    end
+
+    class Close < HaveAPI::Action
+      desc 'Close user session, revoke access token'
+      http_method :post
+      route '{%{resource}_id}'
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict user_id: u.id
+        allow
+      end
+
+      def exec
+        user_session = ::UserSession.find_by!(with_restricted(id: params[:user_session_id]))
+        VpsAdmin::API::Operations::UserSession::Close.run(user_session)
+        ok
+
+      rescue ActiveRecord::RecordInvalid
+        error('failed to close user session')
       end
     end
   end
