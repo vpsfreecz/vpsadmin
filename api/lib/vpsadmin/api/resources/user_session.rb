@@ -32,6 +32,7 @@ module VpsAdmin::API::Resources
         use :all, include: %i(user auth_type ip_addr api_ip_addr client_ip_addr
                               user_agent client_version token_str admin)
         string :ip_addr, label: 'IP Address', desc: 'Search both API and client IP address'
+        string :state, choices: %w(all open closed), default: 'all', fill: true
         patch :limit, default: 25, fill: true
       end
 
@@ -52,6 +53,13 @@ module VpsAdmin::API::Resources
 
         q = q.where(user: input[:user]) if input[:user] && current_user.role == :admin
         q = q.where(auth_type: input[:auth_type]) if input[:auth_type]
+
+        case input[:state]
+        when 'open'
+          q = q.where(closed_at: nil)
+        when 'closed'
+          q = q.where.not(closed_at: nil)
+        end
 
         if input[:ip_addr]
           q = q.where(
