@@ -14,7 +14,7 @@ module VpsAdmin::API::Resources
       string :client_ip_ptr, label: 'Client IP PTR'
       string :user_agent, label: 'User agent', db_name: :user_agent_string
       string :client_version, label: 'Client version'
-      string :scope, label: 'Scope'
+      string :scope, label: 'Scope', db_name: :scope_str
       string :token_str, label: 'Authentication token'
       string :token_lifetime, label: 'Token lifetime', choices: ::UserSession.token_lifetimes.keys.map(&:to_s)
       integer :token_interval, label: 'Token interval'

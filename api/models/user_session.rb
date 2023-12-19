@@ -44,6 +44,10 @@ class UserSession < ActiveRecord::Base
     old_token && old_token.destroy!
   end
 
+  def scope_str
+    scope.join(' ')
+  end
+
   def user_agent_string
     user_agent.agent
   end
