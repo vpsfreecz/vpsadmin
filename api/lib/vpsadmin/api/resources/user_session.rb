@@ -154,6 +154,33 @@ module VpsAdmin::API::Resources
       end
     end
 
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Update user session'
+
+      input do
+        use :all, include: %i(label)
+        patch :label, required: true
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict user_id: u.id
+        allow
+      end
+
+      def exec
+        user_session = ::UserSession.find_by!(with_restricted(id: params[:user_session_id]))
+        user_session.update!(label: input[:label])
+
+      rescue ActiveRecord::RecordInvalid
+        error('failed to create user session')
+      end
+    end
+
     class Close < HaveAPI::Action
       desc 'Close user session, revoke access token'
       http_method :post
