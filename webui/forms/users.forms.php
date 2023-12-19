@@ -81,6 +81,8 @@ function list_user_sessions($user_id) {
 
 	$u = $api->user->find($user_id);
 
+	$input = $api->user_session->index->getParameters('input');
+
 	$xtpl->title(_('Session log of').' <a href="?page=adminm&action=edit&id='.$u->id.'">#'.$u->id. '</a> '.$u->login);
 	$xtpl->table_title(_('Filters'));
 	$xtpl->form_create('', 'get', 'user-session-filter', false);
@@ -96,11 +98,12 @@ function list_user_sessions($user_id) {
 
 	$xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
 	$xtpl->form_add_input(_("Exact ID").':', 'text', '40', 'session_id', get_val('session_id', ''), '');
-	$xtpl->form_add_input(_("Authentication type").':', 'text', '40', 'auth_type', get_val('auth_type', ''), '');
+	api_param_to_form('auth_type', $input->auth_type, post_val('auth_type'), null, true);
+	api_param_to_form('state', $input->state, post_val('auth_type'), null, true);
 	$xtpl->form_add_input(_("IP Address").':', 'text', '40', 'ip_addr', get_val('ip_addr', ''), '');
 	$xtpl->form_add_input(_("User agent").':', 'text', '40', 'user_agent', get_val('user_agent', ''), '');
 	$xtpl->form_add_input(_("Client version").':', 'text', '40', 'client_version', get_val('client_version', ''), '');
-	$xtpl->form_add_input(_("Token").':', 'text', '40', 'session_token_str', get_val('session_token_str', ''), '');
+	$xtpl->form_add_input(_("Token").':', 'text', '40', 'token_str', get_val('token_str', ''), '');
 
 	if ($_SESSION['is_admin'])
 		$xtpl->form_add_input(_("Admin ID").':', 'text', '40', 'admin', get_val('admin', ''), '');
@@ -112,32 +115,39 @@ function list_user_sessions($user_id) {
 	if (!$_GET['list'])
 		return;
 
-	$params = array(
+	$params = [
 		'limit' => get_val('limit', 25),
 		'offset' => get_val('offset', 0),
 		'user' => $user_id
-	);
+	];
 
-	$conds = array('auth_type', 'ip_addr', 'user_agent', 'client_version',
-			'session_token_str', 'admin');
+	$conds = [
+		'auth_type',
+		'state',
+		'ip_addr',
+		'user_agent',
+		'client_version',
+		'token_str',
+		'admin',
+	];
 
 	foreach ($conds as $c) {
 		if ($_GET[$c])
 			$params[$c] = $_GET[$c];
 	}
 
-	$includes = array();
+	$includes = [];
 
 	if ($_SESSION['is_admin'])
-		$params['meta'] = array('includes' => 'admin');
+		$params['meta'] = ['includes' => 'admin'];
 
 	if ($_GET['session_id'])
-		$sessions = array( $api->user_session->show($_GET['session_id']));
+		$sessions = [ $api->user_session->show($_GET['session_id']) ];
 	else
 		$sessions = $api->user_session->list($params);
 
+	$xtpl->table_add_category(_("Label"));
 	$xtpl->table_add_category(_("Created at"));
-	$xtpl->table_add_category(_("Last request at"));
 	$xtpl->table_add_category(_("Closed at"));
 	$xtpl->table_add_category(_("IP address"));
 	$xtpl->table_add_category(_("Auth type"));
@@ -149,13 +159,13 @@ function list_user_sessions($user_id) {
 	$xtpl->table_add_category('');
 
 	foreach ($sessions as $s) {
+		$xtpl->table_td(h($s->label));
 		$xtpl->table_td(tolocaltz($s->created_at));
-		$xtpl->table_td($s->last_request_at ? tolocaltz($s->last_request_at) : '---');
 		$xtpl->table_td($s->closed_at ? tolocaltz($s->closed_at) : '---');
 		$xtpl->table_td(h($s->client_ip_addr ? $s->client_ip_addr : $s->api_ip_addr));
 		$xtpl->table_td($s->auth_type);
-		$xtpl->table_td($s->session_token_str
-			? substr($s->session_token_str, 0, 8).'...'
+		$xtpl->table_td($s->token_str
+			? substr($s->token_str, 0, 8).'...'
 			: '---'
 		);
 
@@ -168,7 +178,7 @@ function list_user_sessions($user_id) {
 
 		$color = false;
 
-		if (!$s->closed_at && $s->session_token_str == getAuthenticationToken())
+		if (!$s->closed_at && $s->token_str == getAuthenticationToken())
 			$color = '#33CC00';
 
 		elseif (!$s->closed_at)
@@ -183,15 +193,20 @@ function list_user_sessions($user_id) {
 
 		$xtpl->table_td(
 			'<dl>'.
+			'<dt>Request count:</dt><dd>'.$s->request_count.'</dd>'.
+			'<dt>Last request at:</dt><dd>'.($s->last_request_at ? tolocaltz($s->last_request_at) : '---').'</dd>'.
 			'<dt>API IP address:</dt><dd>'.h($s->api_ip_addr).'</dd>'.
 			'<dt>API IP PTR:</dt><dd>'.h($s->api_ip_ptr).'</dd>'.
 			'<dt>Client IP address:</dt><dd>'.h($s->client_ip_addr).'</dd>'.
 			'<dt>Client IP PTR:</dt><dd>'.h($s->client_ip_ptr).'</dd>'.
 			'<dt>User agent:</dt><dd>'.h($s->user_agent).'</dd>'.
 			'<dt>Client version:</dt><dd>'.h($s->client_version).'</dd>'.
-			'<dt>Token:</dt><dd>'.$s->session_token_str.'</dd>'.
+			'<dt>Token:</dt><dd>'.$s->token_str.'</dd>'.
+			'<dt>Token lifetime:</dt><dd>'.$s->token_lifetime.'</dd>'.
+			'<dt>Token interval:</dt><dd>'.$s->token_interval.'</dd>'.
+			'<dt>Scope:</dt><dd>'.h($s->scope).'</dd>'.
 			'<dl>'
-		, false, false, '7');
+		, false, false, '8');
 
 		$xtpl->table_tr();
 	}

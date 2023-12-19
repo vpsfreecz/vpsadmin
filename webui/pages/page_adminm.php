@@ -280,8 +280,7 @@ function print_editm($u) {
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Advanced mail configuration").'" />'._('Advanced e-mail configuration'), "?page=adminm&section=members&action=template_recipients&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Public keys").'" />'._('Public keys'), "?page=adminm&section=members&action=pubkeys&id={$u->id}");
 	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("TOTP devices").'" />'._('TOTP devices'), "?page=adminm&section=members&action=totp_devices&id={$u->id}");
-	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Session tokens").'" />'._('Session tokens'), "?page=adminm&section=members&action=session_tokens&id={$u->id}");
-	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Session log").'" />'._('Session log'), "?page=adminm&action=user_sessions&id={$u->id}");
+	$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Sessions").'" />'._('Sessions'), "?page=adminm&action=user_sessions&id={$u->id}");
 
 	if (isAdmin())
 		$xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Transaction log").'" />'._('Transaction log'), "?page=transactions&user={$u->id}");
@@ -410,91 +409,6 @@ function edit_pubkey($user, $id) {
 	$xtpl->form_out(_('Save'));
 
 	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to public keys").'" />'._('Back to public keys'), "?page=adminm&section=members&action=pubkeys&id={$user}");
-}
-
-function list_session_tokens() {
-	global $api, $xtpl;
-
-	$xtpl->table_title(_("Session tokens"));
-	$xtpl->table_add_category(_('Token'));
-	$xtpl->table_add_category(_('Valid to'));
-	$xtpl->table_add_category(_('Label'));
-	$xtpl->table_add_category(_('Use count'));
-	$xtpl->table_add_category(_('Lifetime'));
-	$xtpl->table_add_category(_('Interval'));
-	$xtpl->table_add_category('');
-	$xtpl->table_add_category('');
-
-	$token = array();
-
-	if(isAdmin()) {
-		$tokens = $api->session_token->list(array('user' => $_GET['id']));
-	} else {
-		$tokens = $api->session_token->list();
-	}
-
-	foreach($tokens as $t) {
-		$xtpl->table_td(substr($t->token, 0, 8).'…');
-
-		if($t->lifetime == 'permanent')
-			$xtpl->table_td(_('Forever'), '#66FF66');
-		else
-			$xtpl->table_td($t->valid_to, strtotime($t->valid_to) > time() ? '#66FF66' : '#B22222');
-
-		$xtpl->table_td(h($t->label));
-		$xtpl->table_td($t->use_count."&times;");
-		$xtpl->table_td($t->lifetime);
-		$xtpl->table_td($t->interval._(' seconds'));
-
-		$xtpl->table_td('<a href="?page=adminm&section=members&action=session_token_edit&id='.$_GET['id'].'&token_id='.$t->id.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
-		$xtpl->table_td('<a href="?page=adminm&section=members&action=session_token_del&id='.$_GET['id'].'&token_id='.$t->id.'"><img src="template/icons/m_delete.png"  title="'. _("Delete") .'" /></a>');
-
-		$xtpl->table_tr();
-	}
-
-	$xtpl->table_out();
-
-	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&section=members&action=edit&id={$_GET['id']}");
-}
-
-function edit_session_token($id) {
-	global $api, $xtpl;
-
-	$t = $api->session_token->find($id);
-
-	$xtpl->table_title(_('Edit authentication token').' #'.$id);
-	$xtpl->form_create('?page=adminm&section=members&action=session_token_edit&id='.$_GET['id'].'&token_id='.$id, 'post');
-
-	$xtpl->table_td(_('Token').':');
-	$xtpl->table_td($t->token);
-	$xtpl->table_tr();
-
-	$xtpl->table_td(_('Valid to').':');
-
-	if($t->lifetime == 'permanent')
-		$xtpl->table_td(_('Forever'), '#66FF66');
-	else
-		$xtpl->table_td($t->valid_to, strtotime($t->valid_to) > time() ? '#66FF66' : '#B22222');
-
-	$xtpl->table_tr();
-
-	$xtpl->form_add_input(_("Label").':', 'text', '30', 'label', $t->label);
-
-	$xtpl->table_td(_('Use count').':');
-	$xtpl->table_td($t->use_count.'&times;');
-	$xtpl->table_tr();
-
-	$xtpl->table_td(_('Lifetime').':');
-	$xtpl->table_td($t->lifetime);
-	$xtpl->table_tr();
-
-	$xtpl->table_td(_('Interval').':');
-	$xtpl->table_td($t->interval._(' seconds'));
-	$xtpl->table_tr();
-
-	$xtpl->form_out(_('Save'));
-
-	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to authentication tokens").'" />'._('Back to authentication tokens'), "?page=adminm&section=members&action=session_tokens&id={$_GET['id']}");
 }
 
 function list_cluster_resources() {
@@ -1473,43 +1387,6 @@ if ($_SESSION["logged_in"]) {
 			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 					$xtpl->perex_format_errors(_('Failed to delete public key'), $e->getResponse());
 					list_pubkeys();
-				}
-
-			break;
-
-		case 'session_tokens':
-			list_session_tokens();
-			break;
-
-		case 'session_token_edit':
-			if(isset($_POST['label'])) {
-				try {
-					$api->session_token->update($_GET['token_id'], array('label' => $_POST['label']));
-
-					notify_user(_('Session token updated'), '');
-					redirect('?page=adminm&section=members&action=session_tokens&id='.$_GET['id'].'&token_id='.$_GET['token_id']);
-
-				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-					$xtpl->perex_format_errors(_('Failed to edit authentication token'), $e->getResponse());
-					edit_session_token($_GET['token_id']);
-				}
-
-			} else {
-				edit_session_token($_GET['token_id']);
-			}
-
-			break;
-
-		case 'session_token_del':
-			try {
-				$api->session_token->delete($_GET['token_id']);
-
-				notify_user(_('Session token deleted'), '');
-				redirect('?page=adminm&section=members&action=session_tokens&id='.$_GET['id'].'&token_id='.$_GET['token_id']);
-
-			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-					$xtpl->perex_format_errors(_('Failed to delete authentication token'), $e->getResponse());
-					edit_session_token($_GET['token_id']);
 				}
 
 			break;
