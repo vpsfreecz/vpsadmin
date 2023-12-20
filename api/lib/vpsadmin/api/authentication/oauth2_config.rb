@@ -193,7 +193,34 @@ module VpsAdmin::API
         token = auth.user_session.token
         auth.user_session.update!(token: nil)
         token.destroy!
-        auth.close unless auth.refreshable?
+
+        unless auth.refreshable?
+          auth.close
+
+          # Revoke other authorizations from the same client
+          if auth.user.preferred_logout_all
+            ::Oauth2Authorization.where(
+              oauth2_client: auth.oauth2_client,
+              user: auth.user,
+            ).each do |other_auth|
+              if other_auth.code
+                code = other_auth.code
+                other_auth.update!(code: nil)
+                code.destroy!
+              end
+
+              if other_auth.user_session && !other_auth.user_session.closed_at
+                other_token = other_auth.user_session.token
+                other_auth.user_session.update!(token: nil)
+                other_token.destroy!
+              end
+
+              other_auth.close unless other_auth.refreshable?
+              other_auth.single_sign_on.authorization_revoked(other_auth) if other_auth.single_sign_on
+            end
+          end
+        end
+
         auth.single_sign_on.authorization_revoked(auth) if auth.single_sign_on
         return :revoked
       end

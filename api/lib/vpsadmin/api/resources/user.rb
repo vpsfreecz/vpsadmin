@@ -18,6 +18,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     bool :lockout, label: 'Lock-out'
     resource VpsAdmin::API::Resources::Language, label: 'Language of e-mails'
     integer :preferred_session_length, label: 'Preferred session length'
+    bool :preferred_logout_all, label: 'Preferred logout all'
   end
 
   params(:password) do
@@ -250,7 +251,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       allow if u.role == :admin
       input whitelist: %i(
         password new_password mailer_enabled language preferred_session_length
-        remind_after_date
+        preferred_logout_all remind_after_date
       )
       allow
     end

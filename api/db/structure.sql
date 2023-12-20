@@ -1797,6 +1797,7 @@ CREATE TABLE `users` (
   `lockout` tinyint(1) NOT NULL DEFAULT 0,
   `remind_after_date` datetime DEFAULT NULL,
   `preferred_session_length` int(11) NOT NULL DEFAULT 1200,
+  `preferred_logout_all` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_users_on_login` (`login`) USING BTREE,
   KEY `index_users_on_object_state` (`object_state`) USING BTREE
@@ -2229,6 +2230,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20231216135851'),
 ('20231216155818'),
 ('20231218085935'),
-('20231219143126');
+('20231219143126'),
+('20231220100636');
 
 
