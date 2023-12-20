@@ -152,6 +152,14 @@ function print_editm($u) {
 		_('Set to 0 to disable session timeout')
 	);
 
+	$xtpl->form_add_checkbox(
+		_('Preferred logout all').':',
+		'preferred_logout_all',
+		'1',
+		$_POST['preferred_logout_all'] ?? $u->preferred_logout_all,
+		_('Always logout from all OAuth2 authorizations of the same client, e.g. from all active vpsAdmin web UI sessions')
+	);
+
 	if (isAdmin()) {
 		$xtpl->form_add_input(_("Monthly payment").':', 'text', '30', 'm_monthly_payment', $u->monthly_payment, ' ');
 		$xtpl->form_add_textarea(_("Info").':', 28, 4, 'm_info', $u->info, _("Note for administrators"));
@@ -947,6 +955,7 @@ if ($_SESSION["logged_in"]) {
 					'mailer_enabled' => isset($_POST['m_mailer_enable']),
 					'language' => $_POST['language'],
 					'preferred_session_length' => $_POST['preferred_session_length'] * 60,
+					'preferred_logout_all' => isset($_POST['preferred_logout_all']),
 				);
 
 				if (isAdmin()) {
