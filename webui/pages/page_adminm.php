@@ -141,25 +141,6 @@ function print_editm($u) {
 		false
 	);
 
-	$xtpl->form_add_number(
-		_('Preferred session length').':',
-		'preferred_session_length',
-		post_val('preferred_session_length', round($u->preferred_session_length / 60)),
-		0,
-		6*60,
-		1,
-		_('minutes'),
-		_('Set to 0 to disable session timeout')
-	);
-
-	$xtpl->form_add_checkbox(
-		_('Preferred logout all').':',
-		'preferred_logout_all',
-		'1',
-		$_POST['preferred_logout_all'] ?? $u->preferred_logout_all,
-		_('Always logout from all OAuth2 authorizations of the same client, e.g. from all active vpsAdmin web UI sessions')
-	);
-
 	if (isAdmin()) {
 		$xtpl->form_add_input(_("Monthly payment").':', 'text', '30', 'm_monthly_payment', $u->monthly_payment, ' ');
 		$xtpl->form_add_textarea(_("Info").':', 28, 4, 'm_info', $u->info, _("Note for administrators"));
@@ -196,6 +177,40 @@ function print_editm($u) {
 	$xtpl->form_add_input(_("New password").':', 'password', '30', 'new_password', '', '', -8);
 	$xtpl->form_add_input(_("Repeat new password").':', 'password', '30', 'new_password2', '', '', -8);
 	$xtpl->form_out(_("Save"));
+
+	$xtpl->table_add_category(_('Session control'));
+	$xtpl->table_add_category('&nbsp;');
+	$xtpl->table_add_category('&nbsp;');
+	$xtpl->form_create('?page=adminm&section=members&action=session_control&id='.$u->id, 'post');
+
+	$xtpl->form_add_checkbox(
+		_('Enable single sign-on').':',
+		'enable_single_sign_on',
+		'1',
+		$_POST['enable_single_sign_on'] ?? $u->enable_single_sign_on,
+		_('Enter credentials once and sign-in to all services, such as Discourse and Knowledge base.')
+	);
+
+	$xtpl->form_add_number(
+		_('Preferred session length').':',
+		'preferred_session_length',
+		post_val('preferred_session_length', round($u->preferred_session_length / 60)),
+		0,
+		6*60,
+		1,
+		_('minutes'),
+		_('How long will the session last without any activity. Set to 0 to disable session timeout.')
+	);
+
+	$xtpl->form_add_checkbox(
+		_('Logout all').':',
+		'preferred_logout_all',
+		'1',
+		$_POST['preferred_logout_all'] ?? $u->preferred_logout_all,
+		_('Always logout all OAuth2 authorizations of the same client, e.g. from all active vpsAdmin web UI sessions, even in different browsers.')
+	);
+
+	$xtpl->form_out(_('Save'));
 
 	$hasTotp = hasTotpEnabled($u);
 
@@ -951,12 +966,10 @@ if ($_SESSION["logged_in"]) {
 			try {
 				$user = $api->user->show($_GET['id']);
 
-				$params = array(
+				$params = [
 					'mailer_enabled' => isset($_POST['m_mailer_enable']),
 					'language' => $_POST['language'],
-					'preferred_session_length' => $_POST['preferred_session_length'] * 60,
-					'preferred_logout_all' => isset($_POST['preferred_logout_all']),
-				);
+				];
 
 				if (isAdmin()) {
 					$params['login'] = $_POST['m_nick'];
@@ -973,9 +986,6 @@ if ($_SESSION["logged_in"]) {
 						'monthly_payment' => $_POST['m_monthly_payment'],
 					));
 				}
-
-				if ($_SESSION['user']['id'] == $_GET['id'])
-					$_SESSION['user']['session_length'] = $_POST['preferred_session_length'] * 60;
 
 				notify_user(_('User updated'), _('The user was successfully updated.'));
 				redirect('?page=adminm&action=edit&id='.$user->id);
@@ -1009,6 +1019,30 @@ if ($_SESSION["logged_in"]) {
 					$xtpl->perex_format_errors(_('Password change failed'), $e->getResponse());
 					print_editm($u);
 				}
+			}
+
+			break;
+		case 'session_control':
+			csrf_check();
+
+			try {
+				$user = $api->user->show($_GET['id']);
+
+				$user->update([
+					'enable_single_sign_on' => isset($_POST['enable_single_sign_on']),
+					'preferred_session_length' => $_POST['preferred_session_length'] * 60,
+					'preferred_logout_all' => isset($_POST['preferred_logout_all']),
+				]);
+
+				if ($_SESSION['user']['id'] == $_GET['id'])
+					$_SESSION['user']['session_length'] = $_POST['preferred_session_length'] * 60;
+
+				notify_user(_('Session control updated'), _('Session control was successfully updated.'));
+				redirect('?page=adminm&action=edit&id='.$user->id);
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('User update failed'), $e->getResponse());
+				print_editm($api->user->find($_GET['id']));
 			}
 
 			break;
