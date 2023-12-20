@@ -416,7 +416,7 @@ module VpsAdmin::API
       return unless token
 
       sso = ::SingleSignOn.joins(:token).where(tokens: {token: token}).take
-      return if sso.nil? || !sso.usable?
+      return if sso.nil? || !sso.usable? || !sso.user.enable_single_sign_on
 
       sso
     end
@@ -432,7 +432,7 @@ module VpsAdmin::API
         # the access token is not issued at this time (authorization endpoint),
         # we make the SSO longer validity by the amount of time the authorization
         # code is valid for.
-        if sso.nil? && client.allow_single_sign_on
+        if sso.nil? && client.allow_single_sign_on && auth_result.user.enable_single_sign_on
           sso = ::SingleSignOn.new(
             user: auth_result.user,
           )
@@ -445,7 +445,7 @@ module VpsAdmin::API
           sso.save!
 
         # Extend existing single sign on session
-        elsif sso
+        elsif sso && sso.user.enable_single_sign_on
           new_sso_expires_at = expires_at + client.access_token_seconds
 
           if new_sso_expires_at > sso.token.valid_to
