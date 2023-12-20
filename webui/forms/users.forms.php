@@ -157,6 +157,10 @@ function list_user_sessions($user_id) {
 		$xtpl->table_add_category(_("Admin"));
 
 	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+	$xtpl->table_add_category('');
+
+	$return_url = urlencode($_SERVER['REQUEST_URI']);
 
 	foreach ($sessions as $s) {
 		$xtpl->table_td(h($s->label));
@@ -185,6 +189,13 @@ function list_user_sessions($user_id) {
 			$color = '#66FF33';
 
 		$xtpl->table_td('<a href="?page=transactions&user_session='.$s->id.'">Log</a>');
+		$xtpl->table_td('<a href="?page=adminm&action=user_session_edit&id='.$_GET['id'].'&user_session='.$s->id.'&return='.$return_url.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
+
+		if (!$s->closed_at) {
+			$xtpl->table_td('<a href="?page=adminm&action=user_session_close&id='.$_GET['id'].'&user_session='.$s->id.'&t='.csrf_token().'&return='.$return_url.'"><img src="template/icons/m_delete.png"  title="'. _("Close") .'" /></a>');
+		} else {
+			$xtpl->table_td('');
+		}
 
 		$xtpl->table_tr($color);
 
@@ -206,7 +217,7 @@ function list_user_sessions($user_id) {
 			'<dt>Token interval:</dt><dd>'.$s->token_interval.'</dd>'.
 			'<dt>Scope:</dt><dd>'.h($s->scope).'</dd>'.
 			'<dl>'
-		, false, false, '8');
+		, false, false, '10');
 
 		$xtpl->table_tr();
 	}
@@ -214,6 +225,28 @@ function list_user_sessions($user_id) {
 	$xtpl->table_out();
 
 	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&action=edit&id=$user_id");
+}
+
+function user_session_edit_form($id) {
+	global $api, $xtpl;
+
+	$s = $api->user_session->show($id);
+
+	$xtpl->table_title(_('Edit user session').' #'.$id);
+	$xtpl->form_create('?page=adminm&section=members&action=user_session_edit&id='.$_GET['id'].'&user_session='.$id.'&return='.urlencode($_GET['return']), 'post');
+
+	$xtpl->table_td(_('Authentication type').':');
+	$xtpl->table_td(h($s->auth_type));
+	$xtpl->table_tr();
+
+	$xtpl->table_td(_('Token').':');
+	$xtpl->table_td($s->token_fragment ? ($s->token_fragment.'...') : '---');
+	$xtpl->table_tr();
+
+	$xtpl->form_add_input(_("Label").':', 'text', '30', 'label', $s->label);
+	$xtpl->form_out(_('Save'));
+
+	$xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to sessions").'" />'._('Back to sessions'), $_GET['return'] ?? ("?page=adminm&section=members&action=user_sessions&id={$_GET['id']}"));
 }
 
 function approval_requests_list() {

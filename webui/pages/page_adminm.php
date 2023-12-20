@@ -1395,6 +1395,46 @@ if ($_SESSION["logged_in"]) {
 			list_user_sessions($_GET['id']);
 			break;
 
+		case 'user_session_edit':
+			if (isset($_POST['label'])) {
+				csrf_check();
+
+				try {
+					$api->user_session->update($_GET['user_session'], [
+						'label' => $_POST['label']
+					]);
+
+					notify_user(_('User session updated'), '');
+
+					redirect($_GET['return'] ?? ('?page=adminm&section=members&action=user_session_edit&id='.$_GET['id']));
+
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors(_('Failed to edit user session'), $e->getResponse());
+					user_session_edit_form($_GET['user_session']);
+				}
+
+			} else {
+				user_session_edit_form($_GET['user_session']);
+			}
+
+			break;
+
+		case 'user_session_close':
+			csrf_check();
+
+			try {
+				$api->user_session->close($_GET['user_session']);
+
+				notify_user(_('User session closed'), '');
+				redirect($_GET['return'] ?? ('?page=adminm&section=members&action=user_sessions&id='.$_GET['id']));
+
+			} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+				$xtpl->perex_format_errors(_('Failed to close session'), $e->getResponse());
+				list_user_sessions($_GET['id']);
+			}
+
+			break;
+
 		case 'resource_packages':
 			list_user_resource_packages($_GET['id']);
 			break;
