@@ -368,7 +368,7 @@ function list_pubkeys() {
 		$xtpl->table_td(boolean_icon($k->auto_add));
 
 		$xtpl->table_td('<a href="?page=adminm&section=members&action=pubkey_edit&id='.$_GET['id'].'&pubkey_id='.$k->id.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
-		$xtpl->table_td('<a href="?page=adminm&section=members&action=pubkey_del&id='.$_GET['id'].'&pubkey_id='.$k->id.'"><img src="template/icons/m_delete.png"  title="'. _("Delete") .'" /></a>');
+		$xtpl->table_td('<a href="?page=adminm&section=members&action=pubkey_del&id='.$_GET['id'].'&pubkey_id='.$k->id.'&t='.csrf_token().'"><img src="template/icons/m_delete.png"  title="'. _("Delete") .'" /></a>');
 
 		$xtpl->table_tr();
 	}
@@ -895,6 +895,8 @@ if ($_SESSION["logged_in"]) {
 			}
 			break;
 		case 'new2':
+			csrf_check();
+
 			if (isAdmin()) {
 				if ($_POST['m_pass'] != $_POST['m_pass2']) {
 					$xtpl->perex(_("Passwords don't match"), _('The two passwords differ.'));
@@ -934,16 +936,20 @@ if ($_SESSION["logged_in"]) {
 			}
 			break;
 		case 'delete2':
+			csrf_check();
+
 			if (isAdmin() && ($u = $api->user->find($_GET["id"]))) {
 				$xtpl->perex(_("Are you sure, you want to delete")
 						.' '.$u->login.'?',
 						'<a href="?page=adminm">'
 						. strtoupper(_("No"))
-						. '</a> | <a href="?page=adminm&section=members&action=delete3&id='.$u->id.'&&state='.$_REQUEST["object_state"].'">'
+						. '</a> | <a href="?page=adminm&section=members&action=delete3&id='.$u->id.'&state='.$_POST["object_state"].'&t='.csrf_token().'">'
 						. strtoupper(_("Yes")).'</a>');
 				}
 			break;
 		case 'delete3':
+			csrf_check();
+
 			if (isAdmin() && ($u = $api->user->find($_GET["id"]))) {
 				try {
 					$u->delete(array(
@@ -963,6 +969,8 @@ if ($_SESSION["logged_in"]) {
 			print_editm(isAdmin() ? $api->user->find($_GET["id"]) : $api->user->current());
 			break;
 		case 'edit_member':
+			csrf_check();
+
 			try {
 				$user = $api->user->show($_GET['id']);
 
@@ -1004,6 +1012,8 @@ if ($_SESSION["logged_in"]) {
 				print_editm($u);
 
 			} else {
+				csrf_check();
+
 				try {
 					$params = array('new_password' => $_POST['new_password']);
 
@@ -1171,6 +1181,8 @@ if ($_SESSION["logged_in"]) {
 			}
 			break;
 		case 'edit_personal':
+			csrf_check();
+
 			$u = $api->user->find($_GET["id"]);
 
 			if(isAdmin()) {
@@ -1274,6 +1286,8 @@ if ($_SESSION["logged_in"]) {
 			if (!isAdmin())
 				break;
 
+			csrf_check();
+
 			try {
 				if (isset($_POST['paid_until'])) {
 					$api->user_account->update($_GET['id'], array(
@@ -1318,6 +1332,8 @@ if ($_SESSION["logged_in"]) {
 			if (!isAdmin())
 				break;
 
+			csrf_check();
+
 			try {
 				$api->incoming_payment->update($_GET['id'], client_params_to_api(
 					$api->incoming_payment->update
@@ -1336,6 +1352,8 @@ if ($_SESSION["logged_in"]) {
 		case 'incoming_payment_assign':
 			if (!isAdmin())
 				break;
+
+			csrf_check();
 
 			try {
 				$api->user_payment->create(array(
@@ -1376,6 +1394,8 @@ if ($_SESSION["logged_in"]) {
 
 		case 'pubkey_add':
 			if(isset($_POST['label'])) {
+				csrf_check();
+
 				try {
 					$api->user($_GET['id'])->public_key->create(array(
 						'label' => $_POST['label'],
@@ -1399,6 +1419,8 @@ if ($_SESSION["logged_in"]) {
 
 		case 'pubkey_edit':
 			if(isset($_POST['label'])) {
+				csrf_check();
+
 				try {
 					$api->user($_GET['id'])->public_key($_GET['pubkey_id'])->update(array(
 						'label' => $_POST['label'],
@@ -1421,6 +1443,8 @@ if ($_SESSION["logged_in"]) {
 			break;
 
 		case 'pubkey_del':
+			csrf_check();
+
 			try {
 				$api->user($_GET['id'])->public_key($_GET['pubkey_id'])->delete();
 
@@ -1610,6 +1634,8 @@ if ($_SESSION["logged_in"]) {
 		case "request_process":
 			if(!isAdmin())
 				break;
+
+			csrf_check();
 
 			$action = null;
 
