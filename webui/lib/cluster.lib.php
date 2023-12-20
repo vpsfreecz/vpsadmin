@@ -8,6 +8,13 @@
 */
 
 class SystemConfig implements Iterator {
+	private $api;
+	private $cfg;
+	private $categories;
+	private $catIterator;
+	private $options;
+	private $optIterator;
+
 	public function __construct($api, $forceLoad = false) {
 		$this->api = $api;
 
