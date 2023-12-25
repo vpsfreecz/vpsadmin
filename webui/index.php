@@ -73,7 +73,7 @@ $xtpl = new XTemplate(WWW_ROOT.'template/template.html');
 $lang = new Lang($langs, $xtpl);
 
 $xtpl->assign("VERSION", getVersionLink());
-$xtpl->assign("L_LOGIN", _("Sign in"));
+$xtpl->assign("L_LOGIN", _("Log in"));
 $xtpl->assign("L_LOGGING_IN", _("Signing in..."));
 $xtpl->assign("L_LOGOUT", _("Logout"));
 
