@@ -1,6 +1,6 @@
 {
     "require": {
-        "haveapi/client": "0.17.*",
+        "haveapi/client": "0.19.*",
 	"endroid/qr-code": "4.5.*"
     }
 }
