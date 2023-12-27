@@ -15,7 +15,7 @@ GEM
     rbtree (0.4.6)
     require_all (2.0.0)
     ruby2_keywords (0.0.5)
-    set (1.0.3)
+    set (1.1.0)
     sinatra (3.1.0)
       mustermann (~> 3.0)
       rack (~> 2.2, >= 2.2.4)
@@ -40,4 +40,4 @@ DEPENDENCIES
   thin
 
 BUNDLED WITH
-   2.4.13
+   2.4.22

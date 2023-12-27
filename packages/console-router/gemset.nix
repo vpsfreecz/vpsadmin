@@ -107,10 +107,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "07kc057nrkddrybqmlbmgf9x7nsmbc3ni6gy1z6xjx5b838vlj33";
+      sha256 = "15vmxa781w2983k5gi8wrirsva6hgbvfxfp57jxs2n8j7gr3l8sp";
       type = "gem";
     };
-    version = "1.0.3";
+    version = "1.1.0";
   };
   sinatra = {
     dependencies = ["mustermann" "rack" "rack-protection" "tilt"];
