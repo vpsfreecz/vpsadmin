@@ -65,7 +65,7 @@
 	}
 
 	function chainConcerns(chain) {
-		if (!chain.concerns)
+		if (!chain.concerns || chain.concerns.objects.length == 0)
 			return '---';
 
 		switch (chain.concerns.type) {
