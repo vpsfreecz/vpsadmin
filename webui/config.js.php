@@ -5,6 +5,7 @@ session_start();
 
 include WWW_ROOT.'lib/version.lib.php';
 include WWW_ROOT.'lib/functions.lib.php';
+include WWW_ROOT.'lib/login.lib.php';
 
 header('Content-Type: text/javascript');
 
@@ -15,6 +16,9 @@ root.vpsAdmin = {
 	api: {
 		url: "<?php echo EXT_API_URL ?>",
 		version: "<?php echo API_VERSION ?>"
+	},
+	webui: {
+		url: "<?php echo getSelfUri() ?>"
 	},
 <?php if ($_SESSION['auth_type'] == 'oauth2') { ?>
 	accessToken: "<?php echo $_SESSION['access_token']['access_token'] ?>",
@@ -36,6 +40,7 @@ api.authenticate('oauth2', {access_token: {access_token: root.vpsAdmin.accessTok
 api.authenticate('token', {token: root.vpsAdmin.sessionToken}, function(){}, false);
 <?php } ?>
 
+<?php include 'js/keepalive.js'; ?>
 <?php include 'js/transaction-chains.js'; ?>
 <?php include 'js/session-countdown.js'; ?>
 
