@@ -128,33 +128,35 @@ module VpsAdmin::API
 
     # @param authorization [Oauth2Authorization]
     def get_tokens(authorization, sinatra_request)
-      user_session = Operations::UserSession::NewOAuth2Login.run(
-        authorization.user,
-        sinatra_request,
-        authorization.oauth2_client.access_token_lifetime,
-        authorization.oauth2_client.access_token_seconds,
-        authorization.scope,
-      )
+      ::ActiveRecord::Base.transaction do
+        user_session = Operations::UserSession::NewOAuth2Login.run(
+          authorization.user,
+          sinatra_request,
+          authorization.oauth2_client.access_token_lifetime,
+          authorization.oauth2_client.access_token_seconds,
+          authorization.scope,
+        )
 
-      authorization.code.destroy!
+        authorization.code.destroy!
 
-      ret = [
-        user_session.token.token,
-        user_session.token.valid_to,
-      ]
+        ret = [
+          user_session.token.token,
+          user_session.token.valid_to,
+        ]
 
-      if authorization.oauth2_client.issue_refresh_token
-        refresh_token = ::Token.get!(Time.now + authorization.oauth2_client.refresh_token_seconds)
-        ret << refresh_token.token
+        if authorization.oauth2_client.issue_refresh_token
+          refresh_token = ::Token.get!(Time.now + authorization.oauth2_client.refresh_token_seconds)
+          ret << refresh_token.token
+        end
+
+        authorization.update!(
+          code: nil,
+          user_session: user_session,
+          refresh_token: refresh_token,
+        )
+
+        ret
       end
-
-      authorization.update!(
-        code: nil,
-        user_session: user_session,
-        refresh_token: refresh_token,
-      )
-
-      ret
     end
 
     def refresh_tokens(authorization, sinatra_request)
