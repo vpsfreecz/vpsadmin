@@ -149,7 +149,7 @@ function getOAuth2RedirectUri() {
 function getSelfUri() {
 	$ret = 'http';
 
-	if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'])
+	if (($_SERVER['HTTPS'] ?? false) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https'))
 		$ret .= 's';
 
 	$ret .= '://';
