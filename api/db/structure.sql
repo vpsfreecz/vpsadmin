@@ -1080,13 +1080,17 @@ CREATE TABLE `oauth2_authorizations` (
   `code_challenge` varchar(255) DEFAULT NULL,
   `code_challenge_method` varchar(20) DEFAULT NULL,
   `single_sign_on_id` int(11) DEFAULT NULL,
+  `client_ip_addr` varchar(46) DEFAULT NULL,
+  `client_ip_ptr` varchar(255) DEFAULT NULL,
+  `user_agent_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_oauth2_authorizations_on_oauth2_client_id` (`oauth2_client_id`),
   KEY `index_oauth2_authorizations_on_user_id` (`user_id`),
   KEY `index_oauth2_authorizations_on_code_id` (`code_id`),
   KEY `index_oauth2_authorizations_on_user_session_id` (`user_session_id`),
   KEY `index_oauth2_authorizations_on_refresh_token_id` (`refresh_token_id`),
-  KEY `index_oauth2_authorizations_on_single_sign_on_id` (`single_sign_on_id`)
+  KEY `index_oauth2_authorizations_on_single_sign_on_id` (`single_sign_on_id`),
+  KEY `index_oauth2_authorizations_on_user_agent_id` (`user_agent_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oauth2_clients`;
@@ -2233,6 +2237,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20231218085935'),
 ('20231219143126'),
 ('20231220100636'),
-('20231220124552');
+('20231220124552'),
+('20231229175415');
 
 

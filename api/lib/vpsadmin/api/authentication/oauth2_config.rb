@@ -1,8 +1,11 @@
 require 'erb'
+require 'vpsadmin/api/operations/utils/dns'
 
 module VpsAdmin::API
   class Authentication::OAuth2Config < HaveAPI::Authentication::OAuth2::Config
     SSO_COOKIE = :vpsadmin_sso
+
+    include Operations::Utils::Dns
 
     # Authentication result passed back to HaveAPI OAuth2 provider
     #
@@ -75,7 +78,7 @@ module VpsAdmin::API
       sso = find_sso(sinatra_handler, client)
 
       if sso
-        auth_sso(sso, oauth2_request, oauth2_response, client)
+        auth_sso(sso, sinatra_request, oauth2_request, oauth2_response, client)
       else
         render_authorize_page(
           oauth2_request:,
@@ -330,7 +333,7 @@ module VpsAdmin::API
       end
 
       if auth.authenticated? && auth.complete? && !auth.reset_password?
-        create_authorization(ret, oauth2_request, oauth2_response, client)
+        create_authorization(ret, sinatra_request, oauth2_request, oauth2_response, client)
       end
 
       ret
@@ -354,7 +357,7 @@ module VpsAdmin::API
         end
 
         unless auth.reset_password?
-          create_authorization(ret, oauth2_request, oauth2_response, client)
+          create_authorization(ret, sinatra_request, oauth2_request, oauth2_response, client)
         end
       else
         Operations::User::FailedLogin.run(
@@ -395,19 +398,19 @@ module VpsAdmin::API
       ret.complete = true
       ret.reset_password = false
 
-      create_authorization(ret, oauth2_request, oauth2_response, client)
+      create_authorization(ret, sinatra_request, oauth2_request, oauth2_response, client)
 
       ret
     end
 
-    def auth_sso(sso, oauth2_request, oauth2_response, client)
+    def auth_sso(sso, sinatra_request, oauth2_request, oauth2_response, client)
       ret = AuthResult.new(
         authenticated: true,
         complete: true,
         user: sso.user,
       )
 
-      create_authorization(ret, oauth2_request, oauth2_response, client, sso: sso)
+      create_authorization(ret, sinatra_request, oauth2_request, oauth2_response, client, sso: sso)
       ret
     end
 
@@ -423,7 +426,7 @@ module VpsAdmin::API
       sso
     end
 
-    def create_authorization(auth_result, oauth2_request, oauth2_response, client, sso: nil)
+    def create_authorization(auth_result, sinatra_request, oauth2_request, oauth2_response, client, sso: nil)
       now = Time.now
       expires_at = now + 10*60
 
@@ -476,6 +479,10 @@ module VpsAdmin::API
           code_challenge: oauth2_request.code_challenge,
           code_challenge_method: oauth2_request.code_challenge_method,
           single_sign_on: sso,
+
+          client_ip_addr: sinatra_request.ip,
+          client_ip_ptr: get_ptr(sinatra_request.ip),
+          user_agent: ::UserAgent.find_or_create!(sinatra_request.user_agent || ''),
         )
 
         ::Token.for_new_record!(expires_at) do |token|
