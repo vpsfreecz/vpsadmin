@@ -5,18 +5,23 @@ class Token < ActiveRecord::Base
 
   # @param owner [ActiveRecord::Base]
   # @param valid_to [Time, nil]
+  # @yieldparam [::Token] token
+  # @yieldreturn [ActiveRecord::Base] owner
+  # @return [ActiveRecord::Base] owner
   def self.for_new_record!(valid_to = nil)
     transaction do
-      t = get!(valid_to)
+      t = get!(valid_to:)
       t.owner = yield(t)
       t.save!
       t.owner
     end
   end
 
+  # @param owner [ActiveRecord::Base]
   # @param valid_to [Time, nil]
-  def self.get!(valid_to = nil)
-    t = new(valid_to: valid_to)
+  # @return [::Token]
+  def self.get!(owner: nil, valid_to: nil)
+    t = new(owner: owner, valid_to: valid_to)
 
     5.times do
       t.generate

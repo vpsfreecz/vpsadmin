@@ -148,7 +148,10 @@ module VpsAdmin::API
         ]
 
         if authorization.oauth2_client.issue_refresh_token
-          refresh_token = ::Token.get!(Time.now + authorization.oauth2_client.refresh_token_seconds)
+          refresh_token = ::Token.get!(
+            owner: user_session,
+            valid_to: Time.now + authorization.oauth2_client.refresh_token_seconds,
+          )
           ret << refresh_token.token
         end
 
@@ -164,7 +167,9 @@ module VpsAdmin::API
 
     def refresh_tokens(authorization, sinatra_request)
       ::ActiveRecord::Base.transaction do
-        authorization.user_session.token.destroy!
+        if authorization.user_session.token
+          authorization.user_session.token.destroy!
+        end
 
         authorization.user_session.refresh_token!(
           authorization.oauth2_client.access_token_lifetime,
@@ -174,13 +179,16 @@ module VpsAdmin::API
         authorization.refresh_token.destroy!
 
         ret = [
-          user_session.token.token,
-          user_session.token.valid_to,
+          authorization.user_session.token.token,
+          authorization.user_session.token.valid_to,
         ]
 
         if authorization.oauth2_client.issue_refresh_token
           authorization.update!(
-            refresh_token: ::Token.get!(Time.now + authorization.oauth2_client.refresh_token_seconds)
+            refresh_token: ::Token.get!(
+              owner: authorization.user_session,
+              valid_to: Time.now + authorization.oauth2_client.refresh_token_seconds,
+            )
           )
           ret << authorization.refresh_token.token
         end
