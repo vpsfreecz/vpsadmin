@@ -1,5 +1,5 @@
 module TransactionChains
-  class Mail::OomReports < ::TransactionChain
+  class Vps::OomReports < ::TransactionChain
     label 'OOM Reports'
     allow_empty
 

@@ -29,7 +29,7 @@ module VpsAdmin::API::Tasks
       puts "Accepted #{accepted} reports from #{vpses.length} VPS"
       puts "Disregarded #{disregarded} reports"
 
-      TransactionChains::Mail::OomReports.fire2(
+      TransactionChains::Vps::OomReports.fire2(
         args: [vpses.values],
         kwargs: {cooldown: COOLDOWN},
       )
@@ -45,7 +45,7 @@ module VpsAdmin::API::Tasks
         oom_reports: {reported_at: nil},
       ).group('vpses.id')
 
-      TransactionChains::Mail::OomReports.fire2(
+      TransactionChains::Vps::OomReports.fire2(
         args: [vpses],
         kwargs: {cooldown: COOLDOWN},
       )
