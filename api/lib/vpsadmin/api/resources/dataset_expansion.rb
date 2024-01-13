@@ -18,8 +18,9 @@ module VpsAdmin::API::Resources
       bool :enable_shrink, label: 'Enable shrink',
         desc: 'Automatically shrink the dataset when possible'
       bool :stop_vps, label: 'Stop VPS',
-        desc: 'Stop the VPS after deadline passes or too many expansions'
-      datetime :deadline
+        desc: 'Stop the VPS after extra space is used too long or there are too many expansions'
+      integer :over_refquota_seconds
+      integer :max_over_refquota_seconds
       datetime :created_at
     end
 
@@ -89,7 +90,7 @@ module VpsAdmin::API::Resources
           enable_notifications
           enable_shrink
           stop_vps
-          deadline
+          max_over_refquota_seconds
         )
       end
 
@@ -119,7 +120,7 @@ module VpsAdmin::API::Resources
           enable_notifications: input[:enable_notifications],
           enable_shrink: input[:enable_shrink],
           stop_vps: input[:stop_vps],
-          deadline: input[:deadline],
+          max_over_refquota_seconds: input[:max_over_refquota_seconds],
         )
 
         @chain, ret = TransactionChains::Vps::ExpandDataset.fire(exp)
@@ -135,7 +136,7 @@ module VpsAdmin::API::Resources
       desc 'Update dataset expansion'
 
       input do
-        use :common, include: %i(enable_notifications enable_shrink stop_vps deadline)
+        use :common, include: %i(enable_notifications enable_shrink stop_vps max_over_refquota_seconds)
       end
 
       output do
@@ -166,7 +167,7 @@ module VpsAdmin::API::Resources
           enable_notifications
           enable_shrink
           stop_vps
-          deadline
+          max_over_refquota_seconds
         )
       end
 
@@ -202,7 +203,7 @@ module VpsAdmin::API::Resources
           enable_notifications: input[:enable_notifications],
           enable_shrink: input[:enable_shrink],
           stop_vps: input[:stop_vps],
-          deadline: input[:deadline],
+          max_over_refquota_seconds: input[:max_over_refquota_seconds],
         )
       end
     end

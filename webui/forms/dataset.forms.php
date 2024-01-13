@@ -318,18 +318,22 @@ function dataset_edit_form() {
 		$xtpl->table_td(data_size_to_humanreadable($exp->added_space));
 		$xtpl->table_tr();
 
+		$xtpl->table_td(_('Number of days over refquota').':');
+		$xtpl->table_td(round($exp->over_refquota_seconds / 60 / 60 / 24, 1));
+		$xtpl->table_tr();
+
 		if (isAdmin()) {
 			$updateInput = $exp->update->getParameters('input');
 
-			api_param_to_form('deadline', $updateInput->deadline, $exp->deadline ? tolocaltz($exp->deadline) : '');
+			$xtpl->form_add_number(_('Max days over refquota').':', 'max_over_refquota_days', post_val('max_over_refquota_days', round($exp->max_over_refquota_seconds / 60 / 60 / 24)));
 			api_param_to_form('enable_notifications', $updateInput->enable_notifications, $exp->enable_notifications);
 			api_param_to_form('enable_shrink', $updateInput->enable_shrink, $exp->enable_shrink);
 			api_param_to_form('stop_vps', $updateInput->stop_vps, $exp->stop_vps);
 
 			$xtpl->form_out(_('Save'));
 		} else {
-			$xtpl->table_td(_('Deadline').':');
-			$xtpl->table_td($exp->deadline ? tolocaltz($exp->deadline) : '-');
+			$xtpl->table_td(_('Max number of days over refquota').':');
+			$xtpl->table_td(round($exp->max_over_refquota_seconds / 60 / 60 / 24));
 			$xtpl->table_tr();
 
 			$xtpl->table_out();
@@ -388,7 +392,7 @@ function dataset_edit_form() {
 		$xtpl->form_add_select_pure('unit', ["m" => "MiB", "g" => "GiB", "t" => "TiB"], post_val('unit', 'g'));
 		$xtpl->table_tr();
 
-		api_param_to_form('deadline', $newInput->deadline, strftime("%Y-%m-%d %H:%M:%S", strtotime('+1 month')));
+		$xtpl->form_add_number(_('Max number of days over refquota').':', 'max_over_refquota_days', post_val('max_over_refquota_days', 30));
 		api_param_to_form('enable_notifications', $newInput->enable_notifications, true);
 		api_param_to_form('enable_shrink', $newInput->enable_shrink, true);
 		api_param_to_form('stop_vps', $newInput->stop_vps, true);
@@ -410,7 +414,7 @@ function dataset_edit_form() {
 		$xtpl->form_add_select_pure('unit', ["m" => "MiB", "g" => "GiB", "t" => "TiB"], post_val('unit', 'g'));
 		$xtpl->table_tr();
 
-		api_param_to_form('deadline', $addInput->deadline, strftime("%Y-%m-%d %H:%M:%S", strtotime('+1 month')));
+		$xtpl->form_add_number(_('Max number of days over refquota').':', 'max_over_refquota_days', post_val('max_over_refquota_days', 30));
 		api_param_to_form('enable_notifications', $addInput->enable_notifications, true);
 		api_param_to_form('enable_shrink', $addInput->enable_shrink, true);
 		api_param_to_form('stop_vps', $addInput->stop_vps, true);

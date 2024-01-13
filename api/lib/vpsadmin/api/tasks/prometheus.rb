@@ -77,9 +77,15 @@ module VpsAdmin::API::Tasks
         labels: [:vps_location, :vps_node, :vps_id, :dataset_name],
       )
 
-      @dataset_expansion_deadline = registry.gauge(
-        :vpsadmin_dataset_expansion_deadline,
-        docstring: 'Timestamp of dataset expansion deadline',
+      @dataset_expansion_over_refquota_seconds = registry.gauge(
+        :vpsadmin_dataset_expansion_over_refquota_seconds,
+        docstring: 'Number of seconds over refquota',
+        labels: [:vps_location, :vps_node, :vps_id, :dataset_name],
+      )
+
+      @dataset_expansion_max_over_refquota_seconds = registry.gauge(
+        :vpsadmin_dataset_expansion_max_over_refquota_seconds,
+        docstring: 'Maximum number of seconds over refquota',
         labels: [:vps_location, :vps_node, :vps_id, :dataset_name],
       )
 
@@ -254,12 +260,15 @@ module VpsAdmin::API::Tasks
           labels: labels,
         )
 
-        if exp.deadline
-          @dataset_expansion_deadline.set(
-            exp.deadline.to_i,
-            labels: labels,
-          )
-        end
+        @dataset_expansion_over_refquota_seconds.set(
+          exp.over_refquota_seconds,
+          labels: labels,
+        )
+
+        @dataset_expansion_max_over_refquota_seconds.set(
+          exp.max_over_refquota_seconds,
+          labels: labels,
+        )
       end
 
       # export_host_ip_owner_mismatch

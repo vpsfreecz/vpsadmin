@@ -8,10 +8,10 @@ module VpsAdmin::API
   # {::DatasetExpansion} is created and returned.
   class Operations::DatasetExpansion::ProcessEvent < Operations::Base
     # @param event [::DatasetExpansionEvent]
-    # @param deadline [Integer] deadline from now in seconds
+    # @param max_over_refquota_seconds [Integer]
     # @raise [::ResourceLocked]
     # @return [::DatasetExpansion, nil]
-    def run(event, deadline:)
+    def run(event, max_over_refquota_seconds:)
       if event.dataset.nil?
         event.destroy!
         return
@@ -57,7 +57,7 @@ module VpsAdmin::API
               state: over_limit ? 'active' : 'resolved',
               original_refquota: orig_quota,
               added_space: event.added_space,
-              deadline: Time.now + deadline,
+              max_over_refquota_seconds: max_over_refquota_seconds,
             )
 
             ds.update!(dataset_expansion: exp) if over_limit

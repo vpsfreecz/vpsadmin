@@ -1,6 +1,6 @@
 module VpsAdmin::API::Tasks
   class DatasetExpansion < Base
-    DEADLINE = ENV['DEADLINE'] ? ENV['DEADLINE'].to_i : 30*24*60*60
+    MAX_OVER_REFQUOTA_SECONDS = ENV['MAX_OVER_REFQUOTA_SECONDS'] ? ENV['MAX_OVER_REFQUOTA_SECONDS'].to_i : 30*24*60*60
 
     COOLDOWN = ENV['COOLDOWN'] ? ENV['COOLDOWN'].to_i : 2*60*60
 
@@ -19,7 +19,7 @@ module VpsAdmin::API::Tasks
     # Process new dataset expansion events
     #
     # Accepts the following environment variables:
-    # [DEADLINE]: Number of seconds within which the user should free space
+    # [MAX_OVER_REFQUOTA_SECONDS]: Number of seconds within which the user should free space
     def process_events
       expansions = []
 
@@ -27,7 +27,7 @@ module VpsAdmin::API::Tasks
         begin
           exp = VpsAdmin::API::Operations::DatasetExpansion::ProcessEvent.run(
             event,
-            deadline: DEADLINE,
+            max_over_refquota_seconds: MAX_OVER_REFQUOTA_SECONDS,
           )
         rescue ResourceLocked
           warn "Dataset id=#{event.dataset_id} name=#{event.dataset.full_name} locked"
@@ -60,6 +60,20 @@ module VpsAdmin::API::Tasks
       ::DatasetExpansion.where(state: 'active', stop_vps: true).each do |exp|
         exp_cnt = exp.expansion_count
 
+        if exp.vps.active? && exp.dataset.referenced > exp.original_refquota
+          elapsed_time =
+            if exp.last_over_refquota_check
+              now - exp.last_over_refquota_check
+            else
+              0
+            end
+
+          exp.update!(
+            over_refquota_seconds: exp.over_refquota_seconds + elapsed_time,
+            last_over_refquota_check: now,
+          )
+        end
+
         if exp_cnt > STRICT_MAX_EXPANSIONS \
            && exp.vps.active? \
            && exp.dataset.referenced - STRICT_OVERQUOTA_MB > exp.original_refquota
@@ -81,7 +95,7 @@ module VpsAdmin::API::Tasks
            && exp.vps.active? \
            && exp.vps.is_running? \
            && exp.vps.uptime >= COOLDOWN \
-           && (exp_cnt > MAX_EXPANSIONS || (exp.deadline && exp.deadline < Time.now))
+           && (exp_cnt > MAX_EXPANSIONS || exp.over_refquota_seconds > exp.max_over_refquota_seconds)
           begin
             TransactionChains::Vps::StopOverQuota.fire(exp)
             puts "Stopped VPS #{exp.vps.id}"

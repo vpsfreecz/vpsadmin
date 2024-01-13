@@ -38,7 +38,7 @@ module VpsAdmin::Supervisor
       begin
         exp = VpsAdmin::API::Operations::DatasetExpansion::ProcessEvent.run(
           new_event,
-          deadline: VpsAdmin::API::Tasks::DatasetExpansion::DEADLINE,
+          max_over_refquota_seconds: VpsAdmin::API::Tasks::DatasetExpansion::MAX_OVER_REFQUOTA_SECONDS,
         )
       rescue ::ResourceLocked
         # Save the event to be later processed by the appropriate rake task

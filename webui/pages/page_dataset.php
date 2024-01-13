@@ -149,7 +149,7 @@ if (isLoggedIn()) {
 
 				try {
 					$exp->update([
-						'deadline' => $_POST['deadline'] ? date('c', strtotime($_POST['deadline'])) : null,
+						'max_over_refquota_seconds' => $_POST['max_over_refquota_days'] * 24 * 60 * 60,
 						'enable_notifications' => isset($_POST['enable_notifications']),
 						'enable_shrink' => isset($_POST['enable_shrink']),
 						'stop_vps' => isset($_POST['stop_vps']),
@@ -178,7 +178,7 @@ if (isLoggedIn()) {
 					$api->dataset_expansion->create([
 						'dataset' => $ds->id,
 						'added_space' => $_POST['added_space'] * $DATASET_UNITS_TR[$_POST["unit"]],
-						'deadline' => $_POST['deadline'] ? date('c', strtotime($_POST['deadline'])) : null,
+						'max_over_refquota_seconds' => $_POST['max_over_refquota_days'] * 24 * 60 * 60,
 						'enable_notifications' => isset($_POST['enable_notifications']),
 						'enable_shrink' => isset($_POST['enable_shrink']),
 						'stop_vps' => isset($_POST['stop_vps']),
@@ -207,7 +207,7 @@ if (isLoggedIn()) {
 					$api->dataset_expansion->register_expanded([
 						'dataset' => $ds->id,
 						'original_refquota' => $_POST['original_refquota'] * $DATASET_UNITS_TR[$_POST["unit"]],
-						'deadline' => $_POST['deadline'] ? date('c', strtotime($_POST['deadline'])) : null,
+						'max_over_refquota_seconds' => $_POST['max_over_refquota_days'] * 24 * 60 * 60,
 						'enable_notifications' => isset($_POST['enable_notifications']),
 						'enable_shrink' => isset($_POST['enable_shrink']),
 						'stop_vps' => isset($_POST['stop_vps']),

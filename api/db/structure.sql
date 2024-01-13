@@ -182,11 +182,13 @@ CREATE TABLE `dataset_expansions` (
   `enable_notifications` tinyint(1) NOT NULL DEFAULT 1,
   `enable_shrink` tinyint(1) NOT NULL DEFAULT 1,
   `stop_vps` tinyint(1) NOT NULL DEFAULT 1,
-  `deadline` datetime(6) DEFAULT NULL,
   `last_shrink` datetime(6) DEFAULT NULL,
   `last_vps_stop` datetime(6) DEFAULT NULL,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
+  `over_refquota_seconds` int(11) NOT NULL DEFAULT 0,
+  `max_over_refquota_seconds` int(11) NOT NULL,
+  `last_over_refquota_check` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_dataset_expansions_on_vps_id` (`vps_id`),
   KEY `index_dataset_expansions_on_dataset_id` (`dataset_id`)
@@ -2253,6 +2255,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20231220100636'),
 ('20231220124552'),
 ('20231229175415'),
-('20240113131046');
+('20240113131046'),
+('20240113193809');
 
 
