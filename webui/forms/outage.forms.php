@@ -841,3 +841,89 @@ function outage_affected_exports ($id) {
 
 	$xtpl->table_out();
 }
+
+function outage_list_recent() {
+	global $xtpl, $api;
+
+	$outages = $api->outage->list([
+		'recent' => true,
+		'limit' => 5,
+		'order' => 'oldest',
+	]);
+
+	$active = [];
+	$past = [];
+
+	foreach ($outages as $outage) {
+		if ($outage->state == 'announced')
+			$active[] = $outage;
+		else
+			$past[] = $outage;
+	}
+
+	if (count($active) > 0) {
+		$xtpl->table_title(_('Current/planned maintenances and outages'));
+		outage_list_overview($active);
+	}
+
+	if (count($past) > 0) {
+		$xtpl->table_title(_('Recently resolved maintenances and outages'));
+		outage_list_overview($past);
+	}
+}
+
+function outage_list_overview($outages) {
+	global $xtpl;
+
+	$xtpl->table_add_category(_('Date'));
+	$xtpl->table_add_category(_('Duration'));
+	$xtpl->table_add_category(_('Planned'));
+	$xtpl->table_add_category(_('Systems'));
+	$xtpl->table_add_category(_('Type'));
+	$xtpl->table_add_category(_('Reason'));
+
+	if (isAdmin()) {
+		$xtpl->table_add_category(_('Users'));
+		$xtpl->table_add_category(_('VPS'));
+
+	} elseif (isLoggedIn()) {
+		$xtpl->table_add_category(_('Affects me?'));
+	}
+
+	$xtpl->table_add_category('');
+
+	foreach ($outages as $outage) {
+		$xtpl->table_td(tolocaltz($outage->begins_at, 'Y-m-d H:i'));
+		$xtpl->table_td($outage->duration.' min', false, true);
+		$xtpl->table_td(boolean_icon($outage->planned));
+		$xtpl->table_td(implode(', ', array_map(
+			function ($v) { return h($v->label); },
+			$outage->entity->list()->asArray()
+		)));
+		$xtpl->table_td($outage->type);
+		$xtpl->table_td(h($outage->en_summary));
+
+		if (isAdmin()) {
+			$xtpl->table_td(
+				'<a href="?page=outage&action=users&id='.$outage->id.'">'.
+				$outage->affected_user_count.
+				'</a>',
+				false, true
+			);
+			$xtpl->table_td(
+				'<a href="?page=outage&action=vps&id='.$outage->id.'">'.
+				$outage->affected_direct_vps_count.
+				'</a>',
+				false, true
+			);
+
+		} elseif (isLoggedIn())
+			$xtpl->table_td(boolean_icon($outage->affected));
+
+		$xtpl->table_td('<a href="?page=outage&action=show&id='.$outage->id.'"><img src="template/icons/m_edit.png"  title="'. _("Details") .'" /></a>');
+
+		$xtpl->table_tr();
+	}
+
+	$xtpl->table_out();
+}
