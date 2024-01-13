@@ -41,6 +41,7 @@ class Vps < ActiveRecord::Base
 
   has_many :object_histories, as: :tracked_object, dependent: :destroy
   has_many :oom_reports, dependent: :destroy
+  has_many :oom_preventions, dependent: :destroy
   has_many :dataset_expansions
 
   enum cgroup_version: %i(cgroup_any cgroup_v1 cgroup_v2)

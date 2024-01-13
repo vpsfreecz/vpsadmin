@@ -310,6 +310,14 @@ class MailTemplate < ActiveRecord::Base
     oom_reports: 'Array<::OomReport>',
   }, roles: %i(admin), public: true
 
+  register :vps_oom_prevention, vars: {
+    base_url: [String, "URL to the web UI"],
+    vps: ::Vps,
+    action: ':restart, :stop',
+    ooms_in_period: Integer,
+    period_seconds: Integer,
+  }, roles: %i(admin), public: true
+
   register :vps_dataset_expanded, vars: {
     base_url: [String, "URL to the web UI"],
     vps: ::Vps,

@@ -2,6 +2,24 @@ require_relative 'base'
 
 module VpsAdmin::Supervisor
   class Node::OomReports < Node::Base
+    # Number of OOMs in one report that is considered too high, inclusive
+    HIGHRATE = 1000
+
+    # Number of seconds into the past to check for high-rate reports
+    PERIOD = 10*60
+
+    # Number of high-rate reports that trigger preventive action
+    THRESHOLD = 5
+
+    # Number of seconds in between preventive actions for one VPS
+    PREVENTION_COOLDOWN = 5*60
+
+    # Number of seconds into the past to check for previous preventions
+    PREVENTION_PERIOD = 30*60
+
+    # Number of preventive actions within {PREVENTION_PERIOD} that trigger VPS stop
+    PREVENTION_THRESHOLD = 3
+
     def start
       exchange = channel.direct(exchange_name)
       queue = channel.queue(
@@ -13,8 +31,12 @@ module VpsAdmin::Supervisor
       queue.bind(exchange, routing_key: 'oom_reports')
 
       queue.subscribe do |_delivery_info, _properties, payload|
-        report = JSON.parse(payload)
-        save_report(report)
+        data = JSON.parse(payload)
+        report = save_report(data)
+
+        if report.count >= THRESHOLD
+          handle_abuser(report.vps)
+        end
       end
     end
 
@@ -75,6 +97,53 @@ module VpsAdmin::Supervisor
           }
         end
       )
+
+      new_report
+    end
+
+    def handle_abuser(vps)
+      now = Time.now.utc
+      since = now - PERIOD
+
+      reports_in_period = ::OomReport
+        .where(vps: vps)
+        .where('created_at >= ?', since)
+
+      if !vps.is_running? || reports_in_period.where('`count` >= ?', HIGHRATE).count < THRESHOLD
+        return
+      end
+
+      last_prevention = vps.oom_preventions.order('id DESC').take
+
+      if last_prevention && last_prevention.created_at + PREVENTION_COOLDOWN > now
+        return
+      end
+
+      preventions_within_period = vps.oom_preventions.where(
+        'created_at > ?',
+        now - PREVENTION_PERIOD,
+      )
+
+      action =
+        if preventions_within_period.count >= PREVENTION_THRESHOLD
+          :stop
+        else
+          :restart
+        end
+
+      begin
+        TransactionChains::Vps::OomPrevention.fire2(
+          kwargs: {
+            vps:,
+            action:,
+            ooms_in_period: reports_in_period.sum(:count),
+            period_seconds: PERIOD,
+          },
+        )
+        puts "VPS #{vps.id} -> #{action}"
+      rescue ::ResourceLocked
+        puts "VPS #{vps.id} locked, would #{action} otherwise"
+      end
     end
   end
 end

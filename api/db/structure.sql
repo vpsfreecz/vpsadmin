@@ -1149,6 +1149,20 @@ CREATE TABLE `object_states` (
   KEY `index_object_states_on_class_name_and_row_id` (`class_name`,`row_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `oom_preventions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oom_preventions` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `vps_id` bigint(20) NOT NULL,
+  `action` int(11) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_oom_preventions_on_vps_id` (`vps_id`),
+  KEY `index_oom_preventions_on_action` (`action`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oom_report_stats`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -2238,6 +2252,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20231219143126'),
 ('20231220100636'),
 ('20231220124552'),
-('20231229175415');
+('20231229175415'),
+('20240113131046');
 
 
