@@ -291,6 +291,10 @@ module TransactionChains
             .having('oom_count > 0')
             .order(Arel.sql('SUM(oom_reports.`count`) DESC')),
 
+          preventions: ::OomPrevention
+            .where('DATE_ADD(oom_preventions.created_at, INTERVAL 1 DAY) >= ?', t)
+            .order('created_at'),
+
           by_node: ::Node
             .select('nodes.*, SUM(oom_reports.`count`) AS oom_count')
             .joins(vpses: :oom_reports)
