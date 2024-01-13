@@ -189,7 +189,7 @@ function print_newvps_page3($user_id, $loc_id, $tpl_id) {
 	$xtpl->title(_("Create a VPS: Specify parameters (3/4)"));
 	$xtpl->sbar_add(
 		_('Back to distribution selection'),
-		'?page=adminvps&action=new-step-3&user='.$user_id.'&location='.$loc_id.'&os_template='.$tpl_id
+		'?page=adminvps&action=new-step-2&user='.$user_id.'&location='.$loc_id.'&os_template='.$tpl_id
 	);
 
 	try {
