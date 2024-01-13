@@ -74,20 +74,14 @@ namespace :vpsadmin do
   end
 
   namespace :oom_report do
-    desc 'Process OOM reports'
-    task :process do
-      puts 'Process OOM reports'
-      VpsAdmin::API::Tasks.run(:oom_report, :process)
-    end
-
     desc 'Notify users about stale OOM reports'
     task :notify do
       puts 'Notifying users about stale OOM reports'
       VpsAdmin::API::Tasks.run(:oom_report, :notify)
     end
 
-    desc 'Process new reports and notify users'
-    task run: %i(process notify)
+    desc 'Run OOM reports pipeline'
+    task run: %i(notify)
   end
 
   namespace :prometheus do
