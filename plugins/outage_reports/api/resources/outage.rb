@@ -143,7 +143,7 @@ module VpsAdmin::API::Resources
             '`state` = ? OR (`state` = ? AND updated_at > ?)',
             ::Outage.states[:announced],
             ::Outage.states[:closed],
-            Time.now.utc - 12*60*60,
+            Time.now.utc - 24*60*60,
           )
         end
 
