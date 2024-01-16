@@ -846,7 +846,7 @@ function outage_list_recent() {
 	global $xtpl, $api;
 
 	$outages = $api->outage->list([
-		'recent' => true,
+		'recent_since' => date('c', strtotime('-2 days')),
 		'limit' => 5,
 		'order' => 'oldest',
 	]);

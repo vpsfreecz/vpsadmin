@@ -61,7 +61,7 @@ module VpsAdmin::API::Resources
 
       input do
         use :all, include: %i(planned state type affected)
-        bool :recent, desc: 'Filter announced or recently reported outages'
+        datetime :recent_since, desc: 'Filter announced or recently reported outages'
         resource VpsAdmin::API::Resources::User, name: :user, label: 'User',
             desc: 'Filter outages affecting a specific user'
         resource VpsAdmin::API::Resources::VPS, name: :vps, label: 'VPS',
@@ -138,12 +138,12 @@ module VpsAdmin::API::Resources
           end
         end
 
-        if input[:recent]
+        if input[:recent_since]
           q = q.where(
-            '`state` = ? OR (`state` = ? AND updated_at > ?)',
+            '`state` = ? OR (`state` = ? AND updated_at >= ?)',
             ::Outage.states[:announced],
             ::Outage.states[:closed],
-            Time.now.utc - 24*60*60,
+            input[:recent_since],
           )
         end
 
