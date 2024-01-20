@@ -1,15 +1,21 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (7.0.8)
-      activesupport (= 7.0.8)
-    activerecord (7.0.8)
-      activemodel (= 7.0.8)
-      activesupport (= 7.0.8)
-    activesupport (7.0.8)
+    activemodel (7.1.3)
+      activesupport (= 7.1.3)
+    activerecord (7.1.3)
+      activemodel (= 7.1.3)
+      activesupport (= 7.1.3)
+      timeout (>= 0.4.0)
+    activesupport (7.1.3)
+      base64
+      bigdecimal
       concurrent-ruby (~> 1.0, >= 1.0.2)
+      connection_pool (>= 2.2.5)
+      drb
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
+      mutex_m
       tzinfo (~> 2.0)
     aes_key_wrap (1.1.0)
     amq-protocol (2.3.2)
@@ -18,33 +24,34 @@ GEM
     attr_required (1.0.2)
     base64 (0.2.0)
     bcrypt (3.1.20)
+    bigdecimal (3.1.6)
     bindata (2.4.15)
     bunny (2.22.0)
       amq-protocol (~> 2.3, >= 2.3.1)
       sorted_set (~> 1, >= 1.0.2)
     coderay (1.1.3)
-    composite_primary_keys (14.0.9)
-      activerecord (~> 7.0.2)
-    concurrent-ruby (1.2.2)
+    concurrent-ruby (1.2.3)
+    connection_pool (2.4.1)
     daemons (1.4.1)
     date (3.3.4)
     diff-lcs (1.5.0)
-    domain_name (0.6.20231109)
+    domain_name (0.6.20240107)
+    drb (2.2.0)
+      ruby2_keywords
     eventmachine (1.2.7)
-    faraday (2.8.1)
-      base64
-      faraday-net_http (>= 2.0, < 3.1)
-      ruby2_keywords (>= 0.0.4)
+    faraday (2.9.0)
+      faraday-net_http (>= 2.0, < 3.2)
     faraday-follow_redirects (0.3.0)
       faraday (>= 1, < 3)
-    faraday-net_http (3.0.2)
+    faraday-net_http (3.1.0)
+      net-http
     fio_api (0.0.7)
       httparty (>= 0.16.2)
     github-markdown (0.6.9)
-    haveapi (0.19.1)
+    haveapi (0.19.3)
       activesupport (>= 7.0)
       github-markdown
-      haveapi-client (~> 0.19.1)
+      haveapi-client (~> 0.19.3)
       json
       mail
       nesty (~> 1.0)
@@ -55,7 +62,7 @@ GEM
       sinatra (~> 3.1.0)
       sinatra-contrib (~> 3.1.0)
       tilt (~> 2.3.0)
-    haveapi-client (0.19.1)
+    haveapi-client (0.19.3)
       activesupport (>= 7.0)
       highline (~> 2.1.0)
       json
@@ -73,9 +80,10 @@ GEM
       concurrent-ruby (~> 1.0)
     ipaddress (0.8.3)
     json (2.7.1)
-    json-jwt (1.16.4)
+    json-jwt (1.16.5)
       activesupport (>= 4.2)
       aes_key_wrap
+      base64
       bindata
       faraday (~> 2.0)
       faraday-follow_redirects
@@ -85,29 +93,32 @@ GEM
       net-pop
       net-smtp
     method_source (1.0.0)
-    mime-types (3.5.1)
+    mime-types (3.5.2)
       mime-types-data (~> 3.2015)
     mime-types-data (3.2023.1205)
     mini_mime (1.1.5)
-    minitest (5.20.0)
+    minitest (5.21.2)
     multi_json (1.15.0)
     multi_xml (0.6.0)
     mustermann (3.0.0)
       ruby2_keywords (~> 0.0.1)
+    mutex_m (0.2.0)
     mysql2 (0.5.5)
     nesty (1.0.2)
-    net-imap (0.4.9)
+    net-http (0.4.1)
+      uri
+    net-imap (0.4.9.1)
       date
       net-protocol
     net-pop (0.1.2)
       net-protocol
     net-protocol (0.2.2)
       timeout
-    net-smtp (0.4.0)
+    net-smtp (0.4.0.1)
       net-protocol
     netrc (0.11.0)
-    paper_trail (14.0.0)
-      activerecord (>= 6.0)
+    paper_trail (15.1.0)
+      activerecord (>= 6.1)
       request_store (~> 1.4)
     prometheus-client (4.1.0)
     pry (0.14.2)
@@ -177,23 +188,23 @@ GEM
     timeout (0.4.1)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
+    uri (0.13.0)
     yard (0.9.34)
 
 PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  activerecord (~> 7.0.4)
+  activerecord (~> 7.1.3)
   ancestry (~> 4.3.3)
   bcrypt (~> 3.1.13)
   bunny (~> 2.22.0)
-  composite_primary_keys (~> 14.0.6)
   eventmachine
   fio_api!
   haveapi (~> 0.19.0)
   ipaddress (~> 0.8.0)
   mysql2 (~> 0.5.3)
-  paper_trail (~> 14.0.0)
+  paper_trail (~> 15.1.0)
   prometheus-client (~> 4.1.0)
   pry
   rake
