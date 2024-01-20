@@ -1,8 +1,6 @@
 source 'https://rubygems.org'
 gemspec
 
-gem 'mysql2', source: 'https://rubygems.vpsfree.cz'
-
 if ENV.has_key?('VPSADMIN_BUILD_ID')
   source 'https://rubygems.vpsfree.cz' do
     gem 'libosctl'
