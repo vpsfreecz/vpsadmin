@@ -1,6 +1,5 @@
 require 'require_all'
 require 'active_record'
-require 'composite_primary_keys'
 require 'paper_trail'
 require 'pp'
 require 'haveapi'
