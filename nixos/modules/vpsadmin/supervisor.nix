@@ -30,7 +30,7 @@ in {
         type = types.package;
         default = pkgs.vpsadmin-supervisor;
         description = "Which vpsAdmin API package to use.";
-        example = "pkgs.vpsadmin-supervisor.override { ruby = pkgs.ruby_3_1; }";
+        example = "pkgs.vpsadmin-supervisor.override { ruby = pkgs.ruby_3_2; }";
       };
 
       user = mkOption {
